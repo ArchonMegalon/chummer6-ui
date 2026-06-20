@@ -5,6 +5,7 @@ using Avalonia.Layout;
 using Avalonia.Media;
 using Chummer.Campaign.Contracts;
 using Chummer.Desktop.Runtime;
+using Chummer.Presentation;
 using Chummer.Presentation.Overview;
 using System.Globalization;
 
@@ -513,6 +514,8 @@ internal sealed class DesktopHorizonsWindow : Window
 
     private static Border CreateCard(string title, string summary, Control? leadControl, params Button[] actions)
     {
+        string cleanTitle = PlayerFacingCopyHumanizer.Clean(title);
+        string cleanSummary = PlayerFacingCopyHumanizer.Clean(summary);
         StackPanel stack = new()
         {
             Spacing = 8,
@@ -520,13 +523,13 @@ internal sealed class DesktopHorizonsWindow : Window
             {
                 new TextBlock
                 {
-                    Text = title,
+                    Text = cleanTitle,
                     FontWeight = FontWeight.SemiBold,
                     TextWrapping = TextWrapping.Wrap
                 },
                 new TextBlock
                 {
-                    Text = summary,
+                    Text = cleanSummary,
                     TextWrapping = TextWrapping.Wrap
                 }
             }

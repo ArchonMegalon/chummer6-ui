@@ -15,6 +15,8 @@ internal static class DesktopHorizonWindowScaffold
 
     public static ScrollViewer CreateScroller(string title, string intro, params Control[] sections)
     {
+        string cleanTitle = PlayerFacingCopyHumanizer.Clean(title);
+        string cleanIntro = PlayerFacingCopyHumanizer.Clean(intro);
         StackPanel root = new()
         {
             Spacing = 14,
@@ -22,14 +24,14 @@ internal static class DesktopHorizonWindowScaffold
             {
                 new TextBlock
                 {
-                    Text = title,
+                    Text = cleanTitle,
                     FontSize = 22,
                     FontWeight = FontWeight.SemiBold,
                     TextWrapping = TextWrapping.Wrap
                 },
                 new TextBlock
                 {
-                    Text = intro,
+                    Text = cleanIntro,
                     TextWrapping = TextWrapping.Wrap
                 }
             }
@@ -53,6 +55,8 @@ internal static class DesktopHorizonWindowScaffold
 
     public static Border CreateCard(string title, string summary, Control? leadControl, params Button[] actions)
     {
+        string cleanTitle = PlayerFacingCopyHumanizer.Clean(title);
+        string cleanSummary = PlayerFacingCopyHumanizer.Clean(summary);
         StackPanel stack = new()
         {
             Spacing = 8,
@@ -60,13 +64,13 @@ internal static class DesktopHorizonWindowScaffold
             {
                 new TextBlock
                 {
-                    Text = title,
+                    Text = cleanTitle,
                     FontWeight = FontWeight.SemiBold,
                     TextWrapping = TextWrapping.Wrap
                 },
                 new TextBlock
                 {
-                    Text = summary,
+                    Text = cleanSummary,
                     TextWrapping = TextWrapping.Wrap
                 }
             }
@@ -106,7 +110,7 @@ internal static class DesktopHorizonWindowScaffold
     public static TextBlock CreateDetailText(string text)
         => new()
         {
-            Text = text,
+            Text = PlayerFacingCopyHumanizer.Clean(text),
             TextWrapping = TextWrapping.Wrap
         };
 
@@ -136,7 +140,7 @@ internal static class DesktopHorizonWindowScaffold
             Padding = new Thickness(8, 4),
             Child = new TextBlock
             {
-                Text = $"{label}: {value}",
+                Text = PlayerFacingCopyHumanizer.Clean($"{label}: {value}"),
                 Foreground = ResolveThemeBrush("ChummerShellInfoBrush", "#173A6C"),
                 FontWeight = FontWeight.SemiBold,
                 TextWrapping = TextWrapping.Wrap

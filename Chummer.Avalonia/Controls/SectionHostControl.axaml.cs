@@ -935,7 +935,7 @@ public partial class SectionHostControl : UserControl
 
         BuildLabTrustReceiptPanel.Children.Add(new TextBlock
         {
-            Text = "Build explain receipt and environment diff",
+            Text = "Build explanation and environment details",
             FontWeight = FontWeight.SemiBold,
             TextWrapping = TextWrapping.Wrap,
             Foreground = DesktopShellTheme.ResolveThemeBrush("ChummerShellWarningBrush", "#9A6700")
@@ -1046,10 +1046,10 @@ public partial class SectionHostControl : UserControl
         => FirstNonBlank(
             buildLab.ExplainEntryId,
             buildLab.SourceDocumentId,
-            $"{buildLab.RulesetId}/{buildLab.BuildMethod} blocker receipt");
+            $"{buildLab.RulesetId}/{buildLab.BuildMethod} blocker details");
 
     private static string BuildBuildBlockerSupport(BuildLabConceptIntakeState buildLab)
-        => FirstNonBlank(buildLab.SupportClosureSummary, string.IsNullOrWhiteSpace(buildLab.ExplainEntryId) ? "Support can cite the visible blocker receipt." : $"Support can cite explain receipt {buildLab.ExplainEntryId}.");
+        => FirstNonBlank(buildLab.SupportClosureSummary, string.IsNullOrWhiteSpace(buildLab.ExplainEntryId) ? "Support can cite the visible blocker details." : $"Support can cite explanation {buildLab.ExplainEntryId}.");
 
     private static string FirstNonBlank(params string?[] values)
         => values.FirstOrDefault(value => !string.IsNullOrWhiteSpace(value)) ?? string.Empty;
@@ -1829,7 +1829,7 @@ public partial class SectionHostControl : UserControl
             "progress" or "calendar" => "No journal entries are recorded yet.",
             "initiationgrades" => "No initiation or submersion grades are recorded yet.",
             "profile" => "Runner identity details are still blank.",
-            "rules" => "Rules and provider selections are still blank.",
+            "rules" => "Rules and service selections are still blank.",
             _ => $"{title} is ready."
         };
 

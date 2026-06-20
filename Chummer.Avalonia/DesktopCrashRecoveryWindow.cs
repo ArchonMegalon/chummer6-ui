@@ -255,7 +255,7 @@ internal sealed class DesktopCrashRecoveryWindow : Window
             lines.Add(F("desktop.crash.recovery.last_error", _pending.LastSubmissionError));
         }
 
-        lines.Add("Visible crash diagnostics receipt and environment diff stay on screen before upload, support, or local-only recovery.");
+        lines.Add("Visible crash diagnostics and environment details stay on screen before upload, support, or local-only recovery.");
 
         return string.Join("\n", lines);
     }
@@ -371,7 +371,7 @@ internal sealed class DesktopCrashRecoveryWindow : Window
         }
 
         await Clipboard.SetTextAsync(BuildCrashDiagnosticsPacketText());
-        SetStatus("Crash diagnostics packet copied with explain receipt and before/after environment diff.");
+        SetStatus("Crash diagnostics copied with explanation and before/after environment details.");
     }
 
     private string BuildCrashDiagnosticsPacketText()
@@ -388,10 +388,10 @@ internal sealed class DesktopCrashRecoveryWindow : Window
                 string.Empty,
                 _pending.SummaryText,
                 string.Empty,
-                "Visible crash diagnostics receipt and environment diff",
+                "Visible crash diagnostics and environment details",
                 visibleDiagnosticsReceipt,
                 string.Empty,
-                "Runtime crash diagnostics receipt",
+                "Runtime crash diagnostics",
                 string.Join("\n", DesktopCrashRuntime.BuildCrashDiagnosticsReceiptLines(_pending.Report)),
                 string.Empty,
                 BuildRecoveryBody()

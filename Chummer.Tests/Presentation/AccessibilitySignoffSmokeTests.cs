@@ -415,22 +415,22 @@ public sealed class AccessibilitySignoffSmokeTests
 
         RequireContains(projection.Summary, "Digest return summary");
         RequireContains(projection.Summary, "Digest return summary");
-        RequireContains(projection.RestoreSummary, "Restore packet:");
-        RequireContains(projection.RestoreSummary, "bounded offline use");
+        RequireContains(projection.RestoreSummary, "Restore:");
+        RequireContains(projection.RestoreSummary, "offline use");
         RequireContains(projection.DeviceRoleSummary, "play_tablet");
-        RequireContains(projection.SupportClosureSummary, "calmer digest keeps the fix lane");
+        RequireContains(projection.SupportClosureSummary, "calmer digest keeps the fix path");
         RequireContains(string.Join("\n", projection.ReadinessHighlights), "Digest highlight:");
         RequireContains(string.Join("\n", projection.Watchouts), "Digest watchout:");
         RequireContains(string.Join("\n", projection.ReadinessHighlights), "Campaign return:");
         RequireContains(string.Join("\n", projection.ReadinessHighlights), "Current scene:");
         RequireContains(string.Join("\n", projection.ReadinessHighlights), "Campaign adoption:");
         RequireContains(string.Join("\n", projection.ReadinessHighlights), "Adoption confidence:");
-        RequireContains(string.Join("\n", projection.ReadinessHighlights), "Adoption proof:");
+        RequireContains(string.Join("\n", projection.ReadinessHighlights), "Adoption details:");
         RequireContains(string.Join("\n", projection.ReadinessHighlights), "Goal pins:");
         RequireContains(string.Join("\n", projection.ReadinessHighlights), "ResolutionReport closeout:");
         RequireContains(string.Join("\n", projection.ReadinessHighlights), "BLACK LEDGER consequence:");
-        RequireContains(string.Join("\n", projection.ReadinessHighlights), "BLACK LEDGER proof:");
-        RequireContains(string.Join("\n", projection.ReadinessHighlights), "Build handoff:");
+        RequireContains(string.Join("\n", projection.ReadinessHighlights), "BLACK LEDGER details:");
+        RequireContains(string.Join("\n", projection.ReadinessHighlights), "Build next step:");
         RequireContains(string.Join("\n", projection.ReadinessHighlights), "Rules follow-through:");
         RequireContains(string.Join("\n", projection.ReadinessHighlights), "Migration continuity:");
         RequireContains(string.Join("\n", projection.ReadinessHighlights), "Publication trust:");
@@ -446,9 +446,9 @@ public sealed class AccessibilitySignoffSmokeTests
         RequireContains(string.Join("\n", projection.ReadinessHighlights), "First session:");
         RequireContains(string.Join("\n", projection.ReadinessHighlights), "Legal runner:");
         RequireContains(string.Join("\n", projection.ReadinessHighlights), "Understandable return:");
-        RequireContains(string.Join("\n", projection.ReadinessHighlights), "Campaign-ready lane:");
-        RequireContains(string.Join("\n", projection.ReadinessHighlights), "Starter lane next:");
-        RequireContains(string.Join("\n", projection.ReadinessHighlights), "First-session proof:");
+        RequireContains(string.Join("\n", projection.ReadinessHighlights), "Campaign-ready path:");
+        RequireContains(string.Join("\n", projection.ReadinessHighlights), "Starter path next:");
+        RequireContains(string.Join("\n", projection.ReadinessHighlights), "First-session details:");
         RequireContains(string.Join("\n", projection.ReadinessHighlights), "Campaign memory:");
         RequireContains(string.Join("\n", projection.ReadinessHighlights), "Campaign memory return:");
         RequireContains(string.Join("\n", projection.ReadinessHighlights), "Portable exchange:");
@@ -456,14 +456,14 @@ public sealed class AccessibilitySignoffSmokeTests
         RequireContains(string.Join("\n", projection.ReadinessHighlights), "Exchange asset scope:");
         RequireContains(string.Join("\n", projection.ReadinessHighlights), "Exchange formats:");
         RequireContains(string.Join("\n", projection.ReadinessHighlights), "Exchange note:");
-        RequireContains(string.Join("\n", projection.ReadinessHighlights), "Server plane highlight:");
-        RequireContains(string.Join("\n", projection.ReadinessHighlights), "Support lane:");
+        RequireContains(string.Join("\n", projection.ReadinessHighlights), "server update highlight:");
+        RequireContains(string.Join("\n", projection.ReadinessHighlights), "Support:");
         RequireContains(string.Join("\n", projection.ReadinessHighlights), "Decision notice:");
-        RequireContains(projection.NextSafeAction, "Server-plane next safe action");
+        RequireContains(projection.NextSafeAction, "server update next safe action");
         RequireContains(string.Join("\n", projection.Watchouts), "cloud-only snapshot");
         RequireContains(string.Join("\n", projection.Watchouts), "GM-only notes");
         RequireContains(string.Join("\n", projection.Watchouts), "Portable exchange:");
-        RequireContains(string.Join("\n", projection.Watchouts), "Server plane watchout:");
+        RequireContains(string.Join("\n", projection.Watchouts), "server update watchout:");
     }
 
     private static void DesktopHomeBuildExplainProjector_uses_real_contract_state()
@@ -864,10 +864,10 @@ public sealed class AccessibilitySignoffSmokeTests
         RequireContains(source, "Adoption confidence:");
         RequireContains(source, "Runner goal pins:");
         RequireContains(source, "ResolutionReport closeout:");
-        RequireContains(source, "BLACK LEDGER consequence proof:");
-        RequireContains(source, "Campaign adoption proof:");
+        RequireContains(source, "BLACK LEDGER consequence details:");
+        RequireContains(source, "Campaign adoption details:");
         RequireContains(source, "Campaign consequence summary:");
-        RequireContains(source, "Campaign consequence proof:");
+        RequireContains(source, "Campaign consequence details:");
         RequireContains(source, "Campaign next-session return:");
         RequireContains(campaignSurfaceSource, "Review campaign consequences before continuing this restore route.");
         RequireContains(source, "Review next-session return action:");
@@ -895,13 +895,13 @@ public sealed class AccessibilitySignoffSmokeTests
         string projectorSource = ReadSource("Chummer.Presentation/Overview/DesktopHomeCampaignProjector.cs");
         RequireContains(projectorSource, "Campaign return:");
         RequireContains(projectorSource, "Support closure:");
-        RequireContains(projectorSource, "Claimed device posture:");
+        RequireContains(projectorSource, "Claimed device:");
         RequireContains(projectorSource, "Migration continuity:");
         RequireContains(projectorSource, "Portable exchange:");
         RequireContains(projectorSource, "Exchange formats:");
         RequireContains(projectorSource, "Publication trust:");
         RequireContains(projectorSource, "CampaignWorkspaceDigestProjection");
-        RequireContains(projectorSource, "Support lane:");
+        RequireContains(projectorSource, "Support:");
         RequireContains(projectorSource, "Decision notice:");
         RequireContains(projectorSource, "Travel mode:");
         RequireContains(projectorSource, "Travel inventory:");
@@ -917,8 +917,8 @@ public sealed class AccessibilitySignoffSmokeTests
         RequireContains(serverPlaneSource, "TravelPrefetchInventorySummary");
         RequireContains(serverPlaneSource, "CampaignMemorySummary");
         RequireContains(serverPlaneSource, "CampaignMemoryReturnSummary");
-        RequireContains(serverPlaneSource, "Artifact trust:");
-        RequireContains(serverPlaneSource, "Artifact shelf views:");
+        RequireContains(serverPlaneSource, "Item trust:");
+        RequireContains(serverPlaneSource, "Item views:");
     }
 
     private static void DesktopCampaignWorkspace_is_a_real_top_level_surface()
@@ -960,10 +960,10 @@ public sealed class AccessibilitySignoffSmokeTests
         RequireContains(source, "Adoption confidence:");
         RequireContains(source, "Runner goal pins:");
         RequireContains(source, "ResolutionReport closeout:");
-        RequireContains(source, "BLACK LEDGER consequence proof:");
-        RequireContains(source, "Campaign adoption proof:");
+        RequireContains(source, "BLACK LEDGER consequence details:");
+        RequireContains(source, "Campaign adoption details:");
         RequireContains(source, "Campaign consequence summary:");
-        RequireContains(source, "Campaign consequence proof:");
+        RequireContains(source, "Campaign consequence details:");
         RequireContains(source, "Campaign next-session return:");
         RequireContains(source, "Review campaign consequences before continuing this restore route.");
         RequireContains(source, "Review next-session return action:");
@@ -1062,8 +1062,8 @@ public sealed class AccessibilitySignoffSmokeTests
         RequireContains(source, "\"Organizer Operations\"");
         RequireContains(source, "\"Role boundaries\"");
         RequireContains(source, "\"Publication and escalation\"");
-        RequireContains(source, "\"Organizer lane:\"");
-        RequireContains(source, "\"Operator packet lane:\"");
+        RequireContains(source, "\"Organizer:\"");
+        RequireContains(source, "\"Operations:\"");
         RequireContains(source, "\"Review Organizer Roles\"");
         RequireContains(source, "\"Open Organizer Operations\"");
         RequireContains(source, "\"Open Creator Publication\"");
@@ -1079,10 +1079,10 @@ public sealed class AccessibilitySignoffSmokeTests
     {
         string source = ReadSource("Chummer.Avalonia/DesktopOrganizerOperationsWindow.cs");
         RequireContains(source, "Desktop organizer operations keep organizer, GM, player, creator, moderator, and operator follow-through visible on one governed lane");
-        RequireContains(source, "\"GM lane:\"");
-        RequireContains(source, "\"Player lane:\"");
-        RequireContains(source, "\"Creator lane:\"");
-        RequireContains(source, "\"Support lane:\"");
+        RequireContains(source, "\"GM:\"");
+        RequireContains(source, "\"Player:\"");
+        RequireContains(source, "\"Creator:\"");
+        RequireContains(source, "\"Support:\"");
         RequireContains(source, "\"Boundary watchout:\"");
         RequireContains(source, "DesktopCampaignWorkspaceWindow.ShowAsync(this, _installState.HeadId, _portabilityActivity)");
         RequireContains(source, "DesktopCampaignWorkspaceWindow.ShowGmRunboardAsync(this, _installState.HeadId, _portabilityActivity)");
@@ -1523,21 +1523,21 @@ public sealed class AccessibilitySignoffSmokeTests
         RequireContains(runtimeReceiptSource, "Import blocker receipt");
 
         string shellFrameProjectorSource = ReadSource("Chummer.Avalonia/MainWindow.ShellFrameProjector.cs");
-        RequireContains(shellFrameProjectorSource, "Import receipt correlation key:");
-        RequireContains(shellFrameProjectorSource, "Receipt scope:");
-        RequireContains(shellFrameProjectorSource, "Import support handoff receipt:");
+        RequireContains(shellFrameProjectorSource, "Import correlation key:");
+        RequireContains(shellFrameProjectorSource, "Import scope:");
+        RequireContains(shellFrameProjectorSource, "Import support note:");
         RequireContains(shellFrameProjectorSource, "Import environment before:");
         RequireContains(shellFrameProjectorSource, "Import environment after:");
         RequireContains(shellFrameProjectorSource, "Import environment tuple diff:");
         RequireContains(shellFrameProjectorSource, "Environment diff before import:");
         RequireContains(shellFrameProjectorSource, "Environment diff after import:");
-        RequireContains(shellFrameProjectorSource, "Import explain receipt:");
-        RequireContains(shellFrameProjectorSource, "Grounded import explain receipt:");
-        RequireContains(shellFrameProjectorSource, "Import blocker receipt:");
-        RequireContains(shellFrameProjectorSource, "Import diagnostics receipt:");
+        RequireContains(shellFrameProjectorSource, "Import explanation:");
+        RequireContains(shellFrameProjectorSource, "Current import explanation:");
+        RequireContains(shellFrameProjectorSource, "Import blocker details:");
+        RequireContains(shellFrameProjectorSource, "Import diagnostics details:");
         RequireContains(shellFrameProjectorSource, "Import diagnostics diff:");
         RequireContains(shellFrameProjectorSource, "DesktopTrustReceiptComposer.BuildPortabilityDiagnosticsDiffText(portability.Receipt)");
-        RequireContains(shellFrameProjectorSource, "Import support diagnostics receipt:");
+        RequireContains(shellFrameProjectorSource, "Import support diagnostics details:");
         RequireContains(shellFrameProjectorSource, "BuildImportDiagnosticsReceipt");
         RequireContains(shellFrameProjectorSource, "BuildImportBlockerReceipt");
         RequireContains(shellFrameProjectorSource, "Import support reuse:");
@@ -1548,7 +1548,7 @@ public sealed class AccessibilitySignoffSmokeTests
         RequireContains(sectionHostSource, "DesktopTrustReceiptText.BuildBuildLabSections(buildLab)");
         RequireContains(sectionHostSource, "SetBuildLabTrustReceiptSections");
         RequireContains(sectionHostSource, "BuildLabTrustReceiptPanel");
-        RequireContains(sectionHostSource, "Build explain receipt and environment diff");
+        RequireContains(sectionHostSource, "Build explanation and environment details");
         string blazorSectionHostSource = ReadSource("Chummer.Blazor/Components/Shell/SectionPane.razor");
         RequireContains(blazorSectionHostSource, "data-build-lab-trust-receipts");
         RequireContains(blazorSectionHostSource, "Build explain receipt and environment diff");
@@ -1649,8 +1649,8 @@ public sealed class AccessibilitySignoffSmokeTests
         string dialogMarkup = ReadSource("Chummer.Avalonia/DesktopDialogWindow.axaml");
         RequireContains(dialogMarkup, "DialogTrustReceiptPanel");
         string dialogPanelFactorySource = ReadSource("Chummer.Avalonia/DesktopTrustPanelFactory.cs");
-        RequireContains(dialogPanelFactorySource, "Explain receipt and environment diff");
-        RequireContains(dialogPanelFactorySource, "Support diagnostics receipt and environment diff");
+        RequireContains(dialogPanelFactorySource, "Explanation and environment details");
+        RequireContains(dialogPanelFactorySource, "Support diagnostics and environment details");
         RequireContains(runtimeReceiptSource, "Before support environment diff");
         RequireContains(runtimeReceiptSource, "After support environment diff");
         string commandPaneSource = ReadSource("Chummer.Avalonia/Controls/CommandDialogPaneControl.axaml.cs");
@@ -1730,13 +1730,13 @@ public sealed class AccessibilitySignoffSmokeTests
         string crashRecoverySource = ReadSource("Chummer.Avalonia/DesktopCrashRecoveryWindow.cs");
         RequireContains(crashRecoverySource, "DesktopTrustPanelFactory.CreateCrashDiagnosticsPanel(");
         RequireContains(crashRecoverySource, "DesktopTrustReceiptText.BuildCrashDiagnosticsSections(_pending.Report)");
-        RequireContains(crashRecoverySource, "Visible crash diagnostics receipt and environment diff");
+        RequireContains(crashRecoverySource, "Visible crash diagnostics and environment details");
         RequireContains(crashRecoverySource, "CreateBodyWithTrustPanel(");
         RequireContains(crashRecoverySource, "DesktopCrashRuntime.BuildCrashDiagnosticsReceiptLines(_pending.Report)");
         RequireContains(crashRecoverySource, "BuildCrashDiagnosticsPacketText");
         RequireContains(crashRecoverySource, "Chummer crash support diagnostics");
-        RequireContains(crashRecoverySource, "Runtime crash diagnostics receipt");
-        RequireContains(crashRecoverySource, "Crash diagnostics packet copied with explain receipt and before/after environment diff.");
+        RequireContains(crashRecoverySource, "Runtime crash diagnostics");
+        RequireContains(crashRecoverySource, "Crash diagnostics copied with explanation and before/after environment details.");
         string importPanelSource = ReadSource("Chummer.Blazor/Components/Shell/ImportPanel.razor");
         RequireContains(importPanelSource, "Import receipt correlation key:");
         RequireContains(importPanelSource, "Grounded explain receipt");

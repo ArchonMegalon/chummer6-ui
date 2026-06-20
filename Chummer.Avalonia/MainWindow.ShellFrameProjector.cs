@@ -255,20 +255,20 @@ internal static class MainWindowShellFrameProjector
         }
 
         lines.Add($"Import rule environment: {DesktopTrustReceiptText.BuildImportRuleEnvironment(portability.Receipt)}");
-        lines.Add($"Import receipt correlation key: {BuildImportReceiptCorrelationKey(portability.Receipt)}");
-        lines.Add($"Receipt scope: {BuildImportReceiptScope(portability.Receipt)}");
-        lines.Add($"Import support handoff receipt: {BuildImportSupportHandoffReceipt(portability.Receipt)}");
+        lines.Add($"Import correlation key: {BuildImportReceiptCorrelationKey(portability.Receipt)}");
+        lines.Add($"Import scope: {BuildImportReceiptScope(portability.Receipt)}");
+        lines.Add($"Import support note: {BuildImportSupportHandoffReceipt(portability.Receipt)}");
         lines.Add($"Import environment before: {DesktopTrustReceiptText.BuildImportDiffBefore(portability.Receipt)}");
         lines.Add($"Import environment after: {DesktopTrustReceiptText.BuildImportDiffAfter(portability.Receipt)}");
         lines.Add($"Import environment tuple diff: {BuildImportEnvironmentTupleDiff(portability.Receipt)}");
         lines.Add($"Environment diff before import: {BuildGroundedImportDiffBefore(portability.Receipt)}");
         lines.Add($"Environment diff after import: {BuildGroundedImportDiffAfter(portability.Receipt)}");
-        lines.Add($"Import explain receipt: {DesktopTrustReceiptText.BuildImportExplainReceipt(portability.Receipt)}");
-        lines.Add($"Grounded import explain receipt: {BuildGroundedImportExplainReceipt(portability.Receipt)}");
-        lines.Add($"Import blocker receipt: {BuildImportBlockerReceipt(portability.Receipt)}");
-        lines.Add($"Import diagnostics receipt: {BuildImportDiagnosticsReceipt(portability.Receipt)}");
+        lines.Add($"Import explanation: {DesktopTrustReceiptText.BuildImportExplainReceipt(portability.Receipt)}");
+        lines.Add($"Current import explanation: {BuildGroundedImportExplainReceipt(portability.Receipt)}");
+        lines.Add($"Import blocker details: {BuildImportBlockerReceipt(portability.Receipt)}");
+        lines.Add($"Import diagnostics details: {BuildImportDiagnosticsReceipt(portability.Receipt)}");
         lines.Add($"Import diagnostics diff: {DesktopTrustReceiptComposer.BuildPortabilityDiagnosticsDiffText(portability.Receipt)}");
-        lines.Add($"Import support diagnostics receipt: {BuildImportSupportDiagnosticsReceipt(portability.Receipt)}");
+        lines.Add($"Import support diagnostics details: {BuildImportSupportDiagnosticsReceipt(portability.Receipt)}");
         lines.Add($"Support reuse: {BuildImportSupportReuse(portability.Receipt)}");
         lines.Add($"Import support reuse: {BuildImportSupportReuse(portability.Receipt)}");
 
@@ -309,13 +309,13 @@ internal static class MainWindowShellFrameProjector
         => $"before workspace/current-source/support-local/{NormalizeImportPayloadToken(receipt)}; after {receipt.CompatibilityState}/{NormalizeImportReceiptInline(receipt.NextSafeAction)}; correlation {BuildImportReceiptCorrelationKey(receipt)}.";
 
     private static string BuildGroundedImportDiffBefore(WorkspacePortabilityReceipt receipt)
-        => $"current workspace, support posture, and source toggles stay unchanged while {receipt.FormatId} is reviewed with payload {NormalizeImportPayloadToken(receipt)}.";
+        => $"current workspace, support state, and source toggles stay unchanged while {receipt.FormatId} is reviewed with payload {NormalizeImportPayloadToken(receipt)}.";
 
     private static string BuildGroundedImportDiffAfter(WorkspacePortabilityReceipt receipt)
-        => $"accepted content remains {receipt.CompatibilityState}; next safe action {NormalizeImportReceiptInline(receipt.NextSafeAction)}; explain receipt {NormalizeImportReceiptInline(receipt.ProvenanceSummary)}.";
+        => $"accepted content remains {receipt.CompatibilityState}; next safe action {NormalizeImportReceiptInline(receipt.NextSafeAction)}; explanation {NormalizeImportReceiptInline(receipt.ProvenanceSummary)}.";
 
     private static string BuildGroundedImportExplainReceipt(WorkspacePortabilityReceipt receipt)
-        => $"target {receipt.FormatId}; oracle {NormalizeImportReceiptInline(receipt.ProvenanceSummary)}; blocker {BuildImportBlockerReceipt(receipt)}.";
+        => $"target {receipt.FormatId}; source note {NormalizeImportReceiptInline(receipt.ProvenanceSummary)}; blocker {BuildImportBlockerReceipt(receipt)}.";
 
     private static string BuildImportSupportReuse(WorkspacePortabilityReceipt receipt)
         => string.IsNullOrWhiteSpace(receipt.PayloadSha256)
@@ -323,10 +323,10 @@ internal static class MainWindowShellFrameProjector
             : $"Support can cite payload {receipt.PayloadSha256} with {receipt.CompatibilityState} compatibility.";
 
     private static string BuildImportSupportDiagnosticsReceipt(WorkspacePortabilityReceipt receipt)
-        => $"support can cite {BuildImportReceiptCorrelationKey(receipt)} with before/after environment truth, blocker text, and explain proof without changing local workspace state.";
+        => $"support can cite {BuildImportReceiptCorrelationKey(receipt)} with before/after environment details, blocker text, and explanation without changing local workspace state.";
 
     private static string BuildImportDiagnosticsReceipt(WorkspacePortabilityReceipt receipt)
-        => $"before {receipt.FormatId}/{NormalizeImportPayloadToken(receipt)}; after {receipt.CompatibilityState}/{NormalizeImportReceiptInline(receipt.NextSafeAction)}; blocker {BuildImportBlockerReceipt(receipt)}; proof {NormalizeImportReceiptInline(receipt.ProvenanceSummary)}.";
+        => $"before {receipt.FormatId}/{NormalizeImportPayloadToken(receipt)}; after {receipt.CompatibilityState}/{NormalizeImportReceiptInline(receipt.NextSafeAction)}; blocker {BuildImportBlockerReceipt(receipt)}; source note {NormalizeImportReceiptInline(receipt.ProvenanceSummary)}.";
 
     private static string BuildImportBlockerReceipt(WorkspacePortabilityReceipt receipt)
     {

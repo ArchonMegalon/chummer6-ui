@@ -1,4 +1,5 @@
 using Chummer.Campaign.Contracts;
+using Chummer.Presentation;
 
 namespace Chummer.Presentation.Overview;
 
@@ -60,7 +61,7 @@ public sealed record DesktopHomeCampaignServerPlaneDto(
         [
             CampaignSummary.SessionReadinessSummary,
             $"Roster: {RosterReadiness.Summary}",
-            $"Publication lane: {BuildPublicationLaneSummary(CampaignSummary.PublicationSummary, leadRecapShelfEntry)}"
+            $"Publication: {BuildPublicationSummary(CampaignSummary.PublicationSummary, leadRecapShelfEntry)}"
         ];
 
         if (!string.IsNullOrWhiteSpace(Runboard?.ActiveSceneSummary))
@@ -95,17 +96,17 @@ public sealed record DesktopHomeCampaignServerPlaneDto(
 
         if (!string.IsNullOrWhiteSpace(Adoption?.Summary))
         {
-            readinessHighlights.Add($"Campaign adoption: {Adoption.Summary}");
+            readinessHighlights.Add($"Campaign adoption: {PlayerFacingCopyHumanizer.Clean(Adoption.Summary)}");
         }
 
         if (!string.IsNullOrWhiteSpace(Adoption?.ConfidenceSummary))
         {
-            readinessHighlights.Add($"Adoption confidence: {Adoption.ConfidenceSummary}");
+            readinessHighlights.Add($"Adoption confidence: {PlayerFacingCopyHumanizer.Clean(Adoption.ConfidenceSummary)}");
         }
 
         if (Adoption?.EvidenceLines.Count > 0)
         {
-            readinessHighlights.Add($"Adoption proof: {Adoption.EvidenceLines[0]}");
+            readinessHighlights.Add($"Adoption details: {PlayerFacingCopyHumanizer.Clean(Adoption.EvidenceLines[0])}");
         }
 
         if (GoalPins.Count > 0)
@@ -115,67 +116,67 @@ public sealed record DesktopHomeCampaignServerPlaneDto(
 
         if (!string.IsNullOrWhiteSpace(ResolutionReport?.Summary))
         {
-            readinessHighlights.Add($"ResolutionReport closeout: {ResolutionReport.Summary}");
+            readinessHighlights.Add($"ResolutionReport closeout: {PlayerFacingCopyHumanizer.Clean(ResolutionReport.Summary)}");
         }
 
         if (!string.IsNullOrWhiteSpace(BlackLedger?.Summary))
         {
-            readinessHighlights.Add($"BLACK LEDGER consequence: {BlackLedger.Summary}");
+            readinessHighlights.Add($"BLACK LEDGER consequence: {PlayerFacingCopyHumanizer.Clean(BlackLedger.Summary)}");
         }
 
         if (!string.IsNullOrWhiteSpace(BlackLedger?.ProofSummary))
         {
-            readinessHighlights.Add($"BLACK LEDGER proof: {BlackLedger.ProofSummary}");
+            readinessHighlights.Add($"BLACK LEDGER details: {PlayerFacingCopyHumanizer.Clean(BlackLedger.ProofSummary)}");
         }
 
         if (FirstPlayableSession is not null)
         {
-            readinessHighlights.Add($"First session: {FirstPlayableSession.CampaignStartSummary}");
-            readinessHighlights.Add($"Legal runner: {FirstPlayableSession.RuleReadySummary}");
-            readinessHighlights.Add($"Understandable return: {FirstPlayableSession.ReturnLaneSummary}");
-            readinessHighlights.Add($"Campaign-ready lane: {FirstPlayableSession.CampaignReadySummary}");
+            readinessHighlights.Add($"First session: {PlayerFacingCopyHumanizer.Clean(FirstPlayableSession.CampaignStartSummary)}");
+            readinessHighlights.Add($"Legal runner: {PlayerFacingCopyHumanizer.Clean(FirstPlayableSession.RuleReadySummary)}");
+            readinessHighlights.Add($"Understandable return: {PlayerFacingCopyHumanizer.Clean(FirstPlayableSession.ReturnLaneSummary)}");
+            readinessHighlights.Add($"Campaign-ready path: {PlayerFacingCopyHumanizer.Clean(FirstPlayableSession.CampaignReadySummary)}");
 
             if (!string.IsNullOrWhiteSpace(FirstPlayableSession.NextSafeAction))
             {
-                readinessHighlights.Add($"Starter lane next: {FirstPlayableSession.NextSafeAction}");
+                readinessHighlights.Add($"Starter path next: {PlayerFacingCopyHumanizer.Clean(FirstPlayableSession.NextSafeAction)}");
             }
 
             if (FirstPlayableSession.EvidenceLines.Count > 0)
             {
-                readinessHighlights.Add($"First-session proof: {FirstPlayableSession.EvidenceLines[0]}");
+                readinessHighlights.Add($"First-session details: {PlayerFacingCopyHumanizer.Clean(FirstPlayableSession.EvidenceLines[0])}");
             }
         }
 
         if (CampaignMemory?.EvidenceLines.Count > 0)
         {
-            readinessHighlights.Add($"Campaign memory evidence: {CampaignMemory.EvidenceLines[0]}");
+            readinessHighlights.Add($"Campaign memory details: {PlayerFacingCopyHumanizer.Clean(CampaignMemory.EvidenceLines[0])}");
         }
 
         if (leadRecapShelfEntry is not null)
         {
-            readinessHighlights.Add($"Artifact audience: {HumanizeAudience(leadRecapShelfEntry.Audience)}");
-            readinessHighlights.Add($"Artifact shelf views: {HumanizeAudience(leadRecapShelfEntry.Audience)} stay browseable from the same governed shelf.");
+            readinessHighlights.Add($"Item audience: {HumanizeAudience(leadRecapShelfEntry.Audience)}");
+            readinessHighlights.Add($"Item views: {HumanizeAudience(leadRecapShelfEntry.Audience)} stay browseable from the same page.");
 
             if (!string.IsNullOrWhiteSpace(leadRecapShelfEntry.OwnershipSummary))
             {
-                readinessHighlights.Add($"Artifact ownership: {leadRecapShelfEntry.OwnershipSummary}");
+                readinessHighlights.Add($"Item ownership: {PlayerFacingCopyHumanizer.Clean(leadRecapShelfEntry.OwnershipSummary)}");
             }
 
             if (!string.IsNullOrWhiteSpace(leadRecapShelfEntry.PublicationSummary))
             {
                 readinessHighlights.Add(
-                    $"Artifact publication: {HumanizeState(leadRecapShelfEntry.PublicationState, "Ready")} — {leadRecapShelfEntry.PublicationSummary}");
+                    $"Item publication: {HumanizeState(leadRecapShelfEntry.PublicationState, "Ready")} — {PlayerFacingCopyHumanizer.Clean(leadRecapShelfEntry.PublicationSummary)}");
             }
 
             if (!string.IsNullOrWhiteSpace(leadRecapShelfEntry.TrustBand))
             {
                 readinessHighlights.Add(
-                    $"Artifact trust: {HumanizeState(leadRecapShelfEntry.TrustBand, "Draft")} — {(leadRecapShelfEntry.Discoverable ? "Eligible now" : "Still bounded")}");
+                    $"Item trust: {HumanizeState(leadRecapShelfEntry.TrustBand, "Draft")} — {(leadRecapShelfEntry.Discoverable ? "Eligible now" : "Still limited")}");
             }
 
             if (!string.IsNullOrWhiteSpace(leadRecapShelfEntry.NextSafeAction))
             {
-                readinessHighlights.Add($"Artifact next: {leadRecapShelfEntry.NextSafeAction}");
+                readinessHighlights.Add($"Item next: {PlayerFacingCopyHumanizer.Clean(leadRecapShelfEntry.NextSafeAction)}");
             }
         }
 
@@ -225,11 +226,11 @@ public sealed record DesktopHomeCampaignServerPlaneDto(
 
         return new DesktopHomeCampaignServerPlane(
             WorkspaceId: Workspace.WorkspaceId,
-            SessionReadinessSummary: CampaignSummary.SessionReadinessSummary,
-            RestoreSummary: CampaignSummary.RestoreSummary,
-            PublicationSummary: BuildPublicationLaneSummary(CampaignSummary.PublicationSummary, leadRecapShelfEntry),
-            RosterSummary: RosterReadiness.Summary,
-            RunboardSummary: string.IsNullOrWhiteSpace(runboardSummary) ? null : runboardSummary,
+            SessionReadinessSummary: PlayerFacingCopyHumanizer.Clean(CampaignSummary.SessionReadinessSummary),
+            RestoreSummary: PlayerFacingCopyHumanizer.Clean(CampaignSummary.RestoreSummary),
+            PublicationSummary: BuildPublicationSummary(CampaignSummary.PublicationSummary, leadRecapShelfEntry),
+            RosterSummary: PlayerFacingCopyHumanizer.Clean(RosterReadiness.Summary),
+            RunboardSummary: string.IsNullOrWhiteSpace(runboardSummary) ? null : PlayerFacingCopyHumanizer.Clean(runboardSummary),
             TravelModeSummary: NormalizeOptional(TravelMode?.Summary),
             TravelPrefetchInventorySummary: NormalizeOptional(TravelMode?.PrefetchInventorySummary),
             CampaignMemorySummary: NormalizeOptional(CampaignMemory?.Summary),
@@ -257,16 +258,16 @@ public sealed record DesktopHomeCampaignServerPlaneDto(
            && !severity.Equals("ok", StringComparison.OrdinalIgnoreCase)
            && !severity.Equals("ready", StringComparison.OrdinalIgnoreCase);
 
-    private static string BuildPublicationLaneSummary(
+    private static string BuildPublicationSummary(
         string publicationSummary,
         DesktopHomeRecapShelfEntryDto? leadRecapShelfEntry)
     {
         if (leadRecapShelfEntry is null || string.IsNullOrWhiteSpace(leadRecapShelfEntry.PublicationSummary))
         {
-            return publicationSummary;
+            return PlayerFacingCopyHumanizer.Clean(publicationSummary);
         }
 
-        return $"{publicationSummary} Artifact shelf: {leadRecapShelfEntry.PublicationSummary}";
+        return PlayerFacingCopyHumanizer.Clean($"{publicationSummary} Published item: {leadRecapShelfEntry.PublicationSummary}");
     }
 
     private static string HumanizeAudience(string? audience)
@@ -307,7 +308,8 @@ public sealed record DesktopHomeCampaignServerPlaneDto(
     private static IReadOnlyList<string> FinalizeLines(IEnumerable<string> lines)
         => lines
             .Where(static item => !string.IsNullOrWhiteSpace(item))
-            .Select(static item => item.Trim())
+            .Select(static item => PlayerFacingCopyHumanizer.Clean(item))
+            .Where(static item => !string.IsNullOrWhiteSpace(item))
             .Distinct(StringComparer.OrdinalIgnoreCase)
             .Take(24)
             .ToArray();
@@ -323,7 +325,10 @@ public sealed record DesktopHomeCampaignServerPlaneDto(
                         : $"{goalPin.Label} ({goalPin.ProgressSummary})"));
 
     private static string? NormalizeOptional(string? value)
-        => string.IsNullOrWhiteSpace(value) ? null : value.Trim();
+    {
+        string cleaned = PlayerFacingCopyHumanizer.Clean(value);
+        return string.IsNullOrWhiteSpace(cleaned) ? null : cleaned;
+    }
 }
 
 public sealed record DesktopHomeWorkspaceSummaryDto(string WorkspaceId);

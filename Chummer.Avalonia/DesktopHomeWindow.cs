@@ -908,28 +908,30 @@ internal sealed class DesktopHomeWindow : Window
     {
         if (!string.IsNullOrWhiteSpace(_campaignServerPlane?.BlackLedgerProofSummary))
         {
-            return $"BLACK LEDGER consequence proof: {_campaignServerPlane.BlackLedgerProofSummary} | BLACK LEDGER proof: {_campaignServerPlane.BlackLedgerProofSummary}";
+            return $"BLACK LEDGER consequence details: {_campaignServerPlane.BlackLedgerProofSummary}";
         }
 
         if (!string.IsNullOrWhiteSpace(_campaignServerPlane?.AdoptionEvidenceSummary))
         {
-            return $"Campaign adoption proof: {_campaignServerPlane.AdoptionEvidenceSummary}";
+            return $"Campaign adoption details: {_campaignServerPlane.AdoptionEvidenceSummary}";
         }
 
         string? evidenceLine = _campaignProjection.ReadinessHighlights
-            .FirstOrDefault(static highlight => highlight.StartsWith("Campaign memory evidence:", StringComparison.OrdinalIgnoreCase));
+            .FirstOrDefault(static highlight => highlight.StartsWith("Campaign memory details:", StringComparison.OrdinalIgnoreCase));
         if (!string.IsNullOrWhiteSpace(evidenceLine))
         {
-            return evidenceLine.Replace("Campaign memory evidence", "Campaign consequence proof", StringComparison.OrdinalIgnoreCase);
+            return evidenceLine.Replace("Campaign memory details", "Campaign consequence details", StringComparison.OrdinalIgnoreCase);
         }
 
-        return "Campaign consequence proof: no consequence evidence is available.";
+        return "Campaign consequence details: no consequence details are available.";
     }
 
     private string ResolveCampaignMemoryNextSafeAction()
     {
         string? safeAction = _campaignProjection.ReadinessHighlights
-            .FirstOrDefault(static highlight => highlight.StartsWith("Campaign-ready lane:", StringComparison.OrdinalIgnoreCase));
+            .FirstOrDefault(static highlight =>
+                highlight.StartsWith("Campaign-ready path:", StringComparison.OrdinalIgnoreCase)
+                || highlight.StartsWith("Campaign-ready lane:", StringComparison.OrdinalIgnoreCase));
         return string.IsNullOrWhiteSpace(safeAction)
             ? "Review next-session return action: no next-session return action is currently projected."
             : $"Review next-session return action: {safeAction}";
@@ -1375,7 +1377,9 @@ internal sealed class DesktopHomeWindow : Window
     private bool HasFirstPlayableSession()
         => _campaignProjection.ReadinessHighlights.Any(static line =>
             line.StartsWith("First session:", StringComparison.OrdinalIgnoreCase)
+            || line.StartsWith("Starter path next:", StringComparison.OrdinalIgnoreCase)
             || line.StartsWith("Starter lane next:", StringComparison.OrdinalIgnoreCase)
+            || line.StartsWith("Campaign-ready path:", StringComparison.OrdinalIgnoreCase)
             || line.StartsWith("Campaign-ready lane:", StringComparison.OrdinalIgnoreCase));
 
     private Task OpenStarterLaneReviewAsync()

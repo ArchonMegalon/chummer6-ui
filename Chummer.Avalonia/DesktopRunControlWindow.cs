@@ -216,14 +216,14 @@ internal sealed class DesktopRunControlWindow : Window
                             ? "No active scene pinned."
                             : $"Active scene id: {selected.ActiveSceneId}";
                         selectedRunSceneText.Text = selected.Scenes.Count == 0
-                            ? "No governed scenes are currently attached to this run."
-                            : $"Governed scenes: {selected.Scenes.Count}";
+                            ? "No scenes are currently attached to this run."
+                            : $"Scenes: {selected.Scenes.Count}";
                         break;
                     case "Continuity":
                         selectedRunDetailText.Text = selected.LatestContinuity?.Summary
                             ?? "No continuity packet is currently attached to this run.";
                         selectedRunSceneText.Text = selected.RunboardContinuity?.Summary
-                            ?? "Runboard continuity is currently using the bounded default posture.";
+                            ?? "Runboard continuity is currently using the default state.";
                         break;
                     default:
                         selectedRunDetailText.Text = selected.Summary;

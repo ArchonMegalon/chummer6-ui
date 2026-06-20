@@ -680,7 +680,8 @@ internal sealed class DesktopCreatorPublicationWindow : Window
     private static bool IsPublicationHighlight(string line)
         => line.Contains("Publication ", StringComparison.OrdinalIgnoreCase)
            || line.Contains("Artifact publication:", StringComparison.OrdinalIgnoreCase)
-           || line.Contains("Artifact trust:", StringComparison.OrdinalIgnoreCase);
+           || line.Contains("Item publication:", StringComparison.OrdinalIgnoreCase)
+           || line.Contains("Item trust:", StringComparison.OrdinalIgnoreCase);
 
     private static bool IsPublicationWatchout(string line)
         => line.Contains("publication", StringComparison.OrdinalIgnoreCase)

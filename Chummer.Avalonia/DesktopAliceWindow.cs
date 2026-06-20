@@ -1505,7 +1505,7 @@ internal sealed class DesktopAliceWindow : Window
                         selectedBuildPathWarningsText.Text = preview?.SupportClosureSummary
                             ?? (preview?.RequiresConfirmation == true
                                 ? "This build path still requires explicit confirmation before apply."
-                                : "Runtime and support closure remain on the bounded default posture.");
+                                : "Runtime and support closure remain on the default state.");
                         break;
                     case "Warnings":
                         selectedBuildPathDetailText.Text = preview?.DiagnosticMessages.Count > 0
@@ -2422,7 +2422,7 @@ internal sealed class DesktopAliceWindow : Window
                $"Attributes first: {attributes}. " +
                $"Core skills: {skills}. " +
                $"Early qualities or edge picks: {qualities}. " +
-               $"Early gear and ware posture: {gear}. " +
+               $"Early gear and ware: {gear}. " +
                $"Use this as a complete first draft; no open character file is required.";
     }
 

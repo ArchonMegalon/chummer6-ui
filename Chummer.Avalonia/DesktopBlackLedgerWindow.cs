@@ -46,7 +46,7 @@ internal sealed class DesktopBlackLedgerWindow : Window
                         },
                         new TextBlock
                         {
-                            Text = "Black Ledger keeps the command map, dispatch follow-through, and validation rails visible from the desktop while preserving the living-world posture.",
+                            Text = "Black Ledger keeps the command map, dispatch follow-through, and current world state visible from the desktop.",
                             TextWrapping = TextWrapping.Wrap
                         },
                         CreateStatusCard(),
@@ -117,19 +117,19 @@ internal sealed class DesktopBlackLedgerWindow : Window
                     DesktopHorizonWindowScaffold.CreateMetricBadge("BlackLedgerBadgeWorkspaces", "Workspaces", workspaceCount.ToString()),
                     DesktopHorizonWindowScaffold.CreateMetricBadge("BlackLedgerBadgeContext", "Context", _campaignSummary is null ? "guest" : "account")),
                 CreateDetailText($"Campaigns in account context: {campaignCount}. Workspaces: {workspaceCount}."),
-                CreateDetailText(leadCampaign is null ? "No governed campaign is currently available in account context." : $"{leadCampaign.Name} is the current lead campaign with status {leadCampaign.Status}."),
-                CreateDetailText(leadCampaign?.Summary ?? "Return after the next ledger tick or campaign continuation to populate the living-world lane.")
+                CreateDetailText(leadCampaign is null ? "No campaign is currently available in account context." : $"{leadCampaign.Name} is the current lead campaign with status {leadCampaign.Status}."),
+                CreateDetailText(leadCampaign?.Summary ?? "Return after the next ledger tick or campaign continuation to populate the living-world view.")
             }
         };
 
         return CreateCard(
-            "World-state posture",
-            "The desktop can see the current governed campaign lane and use it to jump into the map, validation, and public Ledger surfaces.",
+            "World state",
+            "The desktop can see the current campaign and use it to open the map, turn review, and public Ledger surfaces.",
             details,
             "BlackLedgerStatusCard",
             CreateButton("Open public Ledger", static () => DesktopInstallLinkingRuntime.TryOpenRelativePortal("/ledger"), isPrimary: HasCampaignContext, name: "BlackLedgerOpenPublicLedgerButton"),
             CreateButton("Open map", static () => DesktopInstallLinkingRuntime.TryOpenRelativePortal("/ledger/map#ledger-map"), name: "BlackLedgerOpenMapButton"),
-            CreateButton("Open validation", static () => DesktopInstallLinkingRuntime.TryOpenRelativePortal("/account/ledger/worldtick/validation"), name: "BlackLedgerOpenValidationButton"));
+            CreateButton("Open turn review", static () => DesktopInstallLinkingRuntime.TryOpenRelativePortal("/account/ledger/worldtick/validation"), name: "BlackLedgerOpenValidationButton"));
     }
 
     private Control CreateWorkspaceCard()
@@ -212,7 +212,7 @@ internal sealed class DesktopBlackLedgerWindow : Window
                             ?? "No continuity packet is currently attached to this workspace.";
                         selectedWorkspaceSceneText.Text = selected.CampaignMemory?.ReturnSummary
                             ?? selected.NextSessionCarryForward?.Summary
-                            ?? "Continuity return remains on the bounded default posture.";
+                            ?? "Continuity return remains on the default state.";
                         break;
                     default:
                         selectedWorkspaceDetailText.Text = selected.ReturnSummary;
@@ -229,12 +229,12 @@ internal sealed class DesktopBlackLedgerWindow : Window
                 switch (mode)
                 {
                     case "Scene":
-                        selectedWorkspaceDetailText.Text = "No governed scene summary is currently available.";
-                        selectedWorkspaceSceneText.Text = "Open or create a workspace to inspect the world-state scene lane.";
+                        selectedWorkspaceDetailText.Text = "No scene summary is currently available.";
+                        selectedWorkspaceSceneText.Text = "Open or create a workspace to inspect the world-state scene.";
                         break;
                     case "Continuity":
-                        selectedWorkspaceDetailText.Text = "No governed continuity packet is currently attached.";
-                        selectedWorkspaceSceneText.Text = "Open or create a workspace to inspect continuity return posture.";
+                        selectedWorkspaceDetailText.Text = "No continuity summary is currently attached.";
+                        selectedWorkspaceSceneText.Text = "Open or create a workspace to inspect continuity return state.";
                         break;
                     default:
                         selectedWorkspaceDetailText.Text = "No campaign workspace detail is currently available.";
@@ -280,14 +280,14 @@ internal sealed class DesktopBlackLedgerWindow : Window
         }
 
         return CreateCard(
-            "Workspace return rails",
+            "Workspace return",
             workspaces.Count == 0
                 ? "Return after the next workspace continuity update."
-                : $"{workspaces.Count} campaign workspace(s) are available on the account rail.",
+                : $"{workspaces.Count} campaign workspace(s) are available on this account.",
             body,
             "BlackLedgerWorkspacesCard",
             CreateButton("Open map", static () => DesktopInstallLinkingRuntime.TryOpenRelativePortal("/ledger/map#ledger-map"), isPrimary: HasWorkspaceContext || HasCampaignContext, name: "BlackLedgerOpenMapFromWorkspacesButton"),
-            CreateButton("Open validation", static () => DesktopInstallLinkingRuntime.TryOpenRelativePortal("/account/ledger/worldtick/validation"), name: "BlackLedgerOpenValidationFromWorkspacesButton"));
+            CreateButton("Open turn review", static () => DesktopInstallLinkingRuntime.TryOpenRelativePortal("/account/ledger/worldtick/validation"), name: "BlackLedgerOpenValidationFromWorkspacesButton"));
     }
 
     private static TextBlock CreateDetailText(string text)

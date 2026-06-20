@@ -25,9 +25,9 @@ public sealed class AvaloniaCampaignMemoryProjectorTests
 
         StringAssert.Contains(source, "BLACK LEDGER consequence:");
         StringAssert.Contains(source, "Campaign consequence summary:");
-        StringAssert.Contains(source, "BLACK LEDGER consequence proof:");
-        StringAssert.Contains(source, "Campaign adoption proof:");
-        StringAssert.Contains(source, "Campaign consequence proof: no consequence evidence is available.");
+        StringAssert.Contains(source, "BLACK LEDGER consequence details:");
+        StringAssert.Contains(source, "Campaign adoption details:");
+        StringAssert.Contains(source, "Campaign consequence details: no consequence details are available.");
         StringAssert.Contains(source, "Review next-session return action:");
     }
 
@@ -42,7 +42,7 @@ public sealed class AvaloniaCampaignMemoryProjectorTests
         StringAssert.Contains(source, "Campaign consequence summary: no consequence summary is currently projected.");
         StringAssert.Contains(source, "Review next-session return action: no next-session return action is currently projected.");
         StringAssert.Contains(source, "Campaign-ready lane:");
-        StringAssert.Contains(source, "Campaign memory evidence:");
+        StringAssert.Contains(source, "Campaign memory details:");
     }
 
     private static string FindRepoRoot()

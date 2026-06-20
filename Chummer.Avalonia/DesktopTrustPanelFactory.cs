@@ -52,12 +52,12 @@ internal static class DesktopTrustPanelFactory
         }
 
         return CreatePanel(
-            "Support diagnostics receipt and environment diff",
+            "Support diagnostics and environment details",
             sections,
             new DesktopExplainCompanionRequest(
-                Title: "Support blocker explain companion",
+                Title: "Support blocker explanation",
                 SurfaceId: "explain_receipts:desktop.blocker",
-                SurfaceLabel: "Desktop blocker diagnostics explain companion",
+                SurfaceLabel: "Desktop blocker diagnostics explanation",
                 Sections: sections,
                 SurfaceFamilyId: "explain_receipts:desktop",
                 RuntimeFingerprint: updateStatus.HeadId),
@@ -80,12 +80,12 @@ internal static class DesktopTrustPanelFactory
         }
 
         return CreatePanel(
-            "Crash diagnostics receipt and environment diff",
+            "Crash diagnostics and environment details",
             sections,
             new DesktopExplainCompanionRequest(
-                Title: "Crash blocker explain companion",
+                Title: "Crash blocker explanation",
                 SurfaceId: "explain_receipts:desktop.blocker",
-                SurfaceLabel: "Desktop crash blocker explain companion",
+                SurfaceLabel: "Desktop crash blocker explanation",
                 Sections: sections,
                 SurfaceFamilyId: "explain_receipts:desktop",
                 RuntimeFingerprint: report.HeadId),
@@ -157,9 +157,11 @@ internal static class DesktopTrustPanelFactory
     private static string ResolveDialogHeading(IReadOnlyList<DesktopTrustReceiptSection> sections)
         => sections.Any(static section => section.Lines.Any(static line =>
             line.Contains("Import rule-environment receipt:", StringComparison.Ordinal)
-            || line.Contains("Import receipt correlation key:", StringComparison.Ordinal)))
-            ? "Import explain receipt and environment diff"
-            : "Explain receipt and environment diff";
+            || line.Contains("Import rule-environment record:", StringComparison.Ordinal)
+            || line.Contains("Import receipt correlation key:", StringComparison.Ordinal)
+            || line.Contains("Import record correlation key:", StringComparison.Ordinal)))
+            ? "Import explanation and environment details"
+            : "Explanation and environment details";
 
     private static string ResolveDialogCompanionTitle(
         DesktopDialogState dialog,
@@ -168,18 +170,20 @@ internal static class DesktopTrustPanelFactory
         string title = string.IsNullOrWhiteSpace(dialog.Title)
             ? ResolveDialogSurfaceLabel(sections)
             : dialog.Title.Trim();
-        return $"{title} explain companion";
+        return $"{title} explanation";
     }
 
     private static string ResolveDialogSurfaceId(IReadOnlyList<DesktopTrustReceiptSection> sections)
         => ContainsLine(sections, "Import receipt correlation key:")
+            || ContainsLine(sections, "Import record correlation key:")
             ? "explain_receipts:desktop.import"
             : "explain_receipts:desktop.dialog";
 
     private static string ResolveDialogSurfaceLabel(IReadOnlyList<DesktopTrustReceiptSection> sections)
         => ContainsLine(sections, "Import receipt correlation key:")
-            ? "Desktop import explain companion"
-            : "Desktop receipt explain companion";
+            || ContainsLine(sections, "Import record correlation key:")
+            ? "Desktop import explanation"
+            : "Desktop explanation";
 
     private static string? ResolveDialogRulesetId(
         DesktopDialogState dialog,

@@ -404,12 +404,12 @@ internal sealed class DesktopOrganizerOperationsWindow : Window
     {
         List<string> lines =
         [
-            "Organizer lane:" + " " + ResolveOrganizerBoundarySummary(),
-            "GM lane:" + " " + ResolveGmBoundarySummary(),
-            "Player lane:" + " " + ResolvePlayerBoundarySummary(),
-            "Creator lane:" + " " + ResolveCreatorBoundarySummary(),
-            "Support lane:" + " " + ResolveSupportBoundarySummary(),
-            "Operator packet lane:" + " " + ResolveOperatorPacketBoundarySummary()
+            "Organizer:" + " " + ResolveOrganizerBoundarySummary(),
+            "GM:" + " " + ResolveGmBoundarySummary(),
+            "Player:" + " " + ResolvePlayerBoundarySummary(),
+            "Creator:" + " " + ResolveCreatorBoundarySummary(),
+            "Support:" + " " + ResolveSupportBoundarySummary(),
+            "Operations:" + " " + ResolveOperatorPacketBoundarySummary()
         ];
 
         if (_campaignProjection.Watchouts.Count > 0)

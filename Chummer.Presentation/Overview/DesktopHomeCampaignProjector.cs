@@ -1,5 +1,6 @@
 using Chummer.Campaign.Contracts;
 using Chummer.Contracts.Rulesets;
+using Chummer.Presentation;
 
 namespace Chummer.Presentation.Overview;
 
@@ -28,11 +29,11 @@ public static class DesktopHomeCampaignProjector
         if (summary is null && leadDigest is null)
         {
             return new DesktopHomeCampaignProjection(
-                "No signed-in campaign workspace is loaded yet. Claim this copy before you rely on restore, continuity, or support for this install.",
-                "Claim this copy, open your workspace, and refresh Home before you rely on campaign return or device restore.",
-                "Restore: no account-backed dossiers, campaigns, or reconnectable files are loaded yet.",
-                "Device: this copy is local-only until account restore attaches it to your campaign workspace.",
-                "Support works best after this copy is claimed, because fixes and restore notes can target the exact install.",
+                PlayerFacingCopyHumanizer.Clean("No signed-in campaign workspace is loaded yet. Claim this copy before you rely on restore, continuity, or support for this install."),
+                PlayerFacingCopyHumanizer.Clean("Claim this copy, open your workspace, and refresh Home before you rely on campaign return or device restore."),
+                PlayerFacingCopyHumanizer.Clean("Restore: no account-backed dossiers, campaigns, or reconnectable files are loaded yet."),
+                PlayerFacingCopyHumanizer.Clean("Device: this copy is local-only until account restore attaches it to your campaign workspace."),
+                PlayerFacingCopyHumanizer.Clean("Support works best after this copy is claimed, because fixes and restore notes can target the exact install."),
                 LeadWorkspaceId: null,
                 ReadinessHighlights:
                 [
@@ -48,22 +49,22 @@ public static class DesktopHomeCampaignProjector
         if (summary is null && leadDigest is not null)
         {
             return new DesktopHomeCampaignProjection(
-                $"Campaign posture: {leadDigest.ReturnSummary} {(serverPlane?.RunboardSummary ?? leadDigest.ActiveSceneSummary ?? string.Empty)} {serverPlane?.SessionReadinessSummary ?? string.Empty}".Trim(),
-                string.IsNullOrWhiteSpace(serverPlane?.NextSafeAction) ? leadDigest.NextSafeAction : serverPlane.NextSafeAction,
+                PlayerFacingCopyHumanizer.Clean($"Campaign: {leadDigest.ReturnSummary} {(serverPlane?.RunboardSummary ?? leadDigest.ActiveSceneSummary ?? string.Empty)} {serverPlane?.SessionReadinessSummary ?? string.Empty}".Trim()),
+                PlayerFacingCopyHumanizer.Clean(string.IsNullOrWhiteSpace(serverPlane?.NextSafeAction) ? leadDigest.NextSafeAction : serverPlane.NextSafeAction),
                 serverPlane is null
-                    ? "Restore packet: the calmer workspace digest is present, but the full account-backed restore packet still needs a refresh."
-                    : $"Restore packet: {serverPlane.RestoreSummary}",
-                $"Claimed device posture: {leadDigest.DeviceRoleSummary}",
-                serverPlane is null || serverPlane.SupportHighlights.Count == 0
+                    ? PlayerFacingCopyHumanizer.Clean("Restore: the calmer workspace digest is present, but the full account-backed restore details still need a refresh.")
+                    : PlayerFacingCopyHumanizer.Clean($"Restore: {serverPlane.RestoreSummary}"),
+                PlayerFacingCopyHumanizer.Clean($"Claimed device: {leadDigest.DeviceRoleSummary}"),
+                PlayerFacingCopyHumanizer.Clean(serverPlane is null || serverPlane.SupportHighlights.Count == 0
                     ? $"Support closure: {leadDigest.SupportClosureSummary}"
-                    : $"Support closure: {leadDigest.SupportClosureSummary} Support lane: {serverPlane.SupportHighlights[0]}",
+                    : $"Support closure: {leadDigest.SupportClosureSummary} Support: {serverPlane.SupportHighlights[0]}"),
                 LeadWorkspaceId: serverPlane?.WorkspaceId ?? leadDigest.WorkspaceId,
                 ReadinessHighlights: FinalizeLines(
                     leadDigest.ReadinessHighlights
                         .Concat(BuildFirstPlayableSessionHighlights(serverPlane?.FirstPlayableSession ?? leadDigest.FirstPlayableSession))
                         .Concat(serverPlane?.ReadinessHighlights ?? [])
                         .Concat(BuildPortableExchangeHighlights(portableExchange))
-                        .Concat((serverPlane?.SupportHighlights ?? []).Select(static line => $"Support lane: {line}"))
+                        .Concat((serverPlane?.SupportHighlights ?? []).Select(static line => $"Support: {line}"))
                         .Concat((serverPlane?.DecisionNotices ?? []).Select(static line => $"Decision notice: {line}"))),
                 Watchouts: FinalizeLines(
                     leadDigest.Watchouts
@@ -99,8 +100,8 @@ public static class DesktopHomeCampaignProjector
             .ToArray();
 
         string summaryLine = leadWorkspace is null
-            ? $"Campaign posture: {groundedSummary.Dossiers.Count} dossier(s), {groundedSummary.Campaigns.Count} campaign(s), and {groundedSummary.Runs.Count} runboard lane(s) are attached to this account, but no current campaign workspace return target is pinned yet."
-            : $"Campaign posture: {(leadDigest?.ReturnSummary ?? leadWorkspace.ReturnSummary)} {(leadDigest?.ActiveSceneSummary ?? leadWorkspace.ActiveSceneSummary) ?? string.Empty} {groundedSummary.Dossiers.Count} dossier(s), {groundedSummary.Campaigns.Count} campaign(s), and {groundedSummary.Runs.Count} runboard lane(s) stay attached to the same account-backed continuity packet.";
+            ? $"Campaign: {groundedSummary.Dossiers.Count} dossier(s), {groundedSummary.Campaigns.Count} campaign(s), and {groundedSummary.Runs.Count} runboard item(s) are attached to this account, but no current campaign workspace return target is pinned yet."
+            : $"Campaign: {(leadDigest?.ReturnSummary ?? leadWorkspace.ReturnSummary)} {(leadDigest?.ActiveSceneSummary ?? leadWorkspace.ActiveSceneSummary) ?? string.Empty} {groundedSummary.Dossiers.Count} dossier(s), {groundedSummary.Campaigns.Count} campaign(s), and {groundedSummary.Runs.Count} runboard item(s) stay attached to the same account-backed continuity details.";
         if (!string.IsNullOrWhiteSpace(serverPlane?.SessionReadinessSummary))
         {
             summaryLine = $"{summaryLine} {serverPlane.SessionReadinessSummary}".Trim();
@@ -113,17 +114,17 @@ public static class DesktopHomeCampaignProjector
             : ResolveNextSafeAction(groundedSummary, leadWorkspace, leadDigest, leadHandoff, restore);
         string restoreInventorySummary = BuildRestoreInventorySummary(restore);
         string restoreSummary = serverPlane is null
-            ? $"Restore packet: {restoreInventorySummary}"
-            : $"Restore packet: {serverPlane.RestoreSummary} {restoreInventorySummary}".Trim();
+            ? $"Restore: {restoreInventorySummary}"
+            : $"Restore: {serverPlane.RestoreSummary} {restoreInventorySummary}".Trim();
         string deviceRoleSummary = leadDigest is null
             ? BuildClaimedDeviceSummary(claimedDevices, restore.ClaimedDevices.Count)
-            : $"Claimed device posture: {leadDigest.DeviceRoleSummary}";
+            : $"Claimed device: {leadDigest.DeviceRoleSummary}";
         string supportClosureSummary = leadDigest is null
             ? ResolveSupportClosureSummary(leadHandoff, leadRulesAnswer)
             : $"Support closure: {leadDigest.SupportClosureSummary}";
         if (serverPlane is not null && serverPlane.SupportHighlights.Count > 0)
         {
-            supportClosureSummary = $"{supportClosureSummary} Support lane: {serverPlane.SupportHighlights[0]}";
+            supportClosureSummary = $"{supportClosureSummary} Support: {serverPlane.SupportHighlights[0]}";
         }
 
         List<string> readinessHighlights = [];
@@ -134,7 +135,7 @@ public static class DesktopHomeCampaignProjector
         if (serverPlane is not null)
         {
             readinessHighlights.AddRange(serverPlane.ReadinessHighlights);
-            readinessHighlights.AddRange(serverPlane.SupportHighlights.Select(static line => $"Support lane: {line}"));
+            readinessHighlights.AddRange(serverPlane.SupportHighlights.Select(static line => $"Support: {line}"));
             readinessHighlights.AddRange(serverPlane.DecisionNotices.Select(static line => $"Decision notice: {line}"));
             if (!string.IsNullOrWhiteSpace(serverPlane.TravelModeSummary))
             {
@@ -168,7 +169,7 @@ public static class DesktopHomeCampaignProjector
 
             if (!string.IsNullOrWhiteSpace(serverPlane.AdoptionEvidenceSummary))
             {
-                readinessHighlights.Add($"Adoption proof: {serverPlane.AdoptionEvidenceSummary}");
+                readinessHighlights.Add($"Adoption details: {PlayerFacingCopyHumanizer.Clean(serverPlane.AdoptionEvidenceSummary)}");
             }
 
             if (!string.IsNullOrWhiteSpace(serverPlane.GoalPinSummary))
@@ -183,13 +184,13 @@ public static class DesktopHomeCampaignProjector
 
             if (!string.IsNullOrWhiteSpace(serverPlane.BlackLedgerSummary))
             {
-                readinessHighlights.Add($"BLACK LEDGER consequence: {serverPlane.BlackLedgerSummary}");
+                readinessHighlights.Add($"BLACK LEDGER consequence: {PlayerFacingCopyHumanizer.Clean(serverPlane.BlackLedgerSummary)}");
             }
 
             if (!string.IsNullOrWhiteSpace(serverPlane.BlackLedgerProofSummary))
             {
-                readinessHighlights.Add($"BLACK LEDGER consequence proof: {serverPlane.BlackLedgerProofSummary}");
-                readinessHighlights.Add($"BLACK LEDGER proof: {serverPlane.BlackLedgerProofSummary}");
+                readinessHighlights.Add($"BLACK LEDGER consequence details: {PlayerFacingCopyHumanizer.Clean(serverPlane.BlackLedgerProofSummary)}");
+                readinessHighlights.Add($"BLACK LEDGER details: {PlayerFacingCopyHumanizer.Clean(serverPlane.BlackLedgerProofSummary)}");
             }
         }
 
@@ -307,11 +308,11 @@ public static class DesktopHomeCampaignProjector
         }
 
         return new DesktopHomeCampaignProjection(
-            summaryLine,
-            nextSafeAction,
-            restoreSummary,
-            deviceRoleSummary,
-            supportClosureSummary,
+            PlayerFacingCopyHumanizer.Clean(summaryLine),
+            PlayerFacingCopyHumanizer.Clean(nextSafeAction),
+            PlayerFacingCopyHumanizer.Clean(restoreSummary),
+            PlayerFacingCopyHumanizer.Clean(deviceRoleSummary),
+            PlayerFacingCopyHumanizer.Clean(supportClosureSummary),
             LeadWorkspaceId: leadDigest?.WorkspaceId ?? leadWorkspace?.WorkspaceId,
             ReadinessHighlights: FinalizeLines(readinessHighlights),
             Watchouts: FinalizeLines(watchouts));
@@ -376,16 +377,16 @@ public static class DesktopHomeCampaignProjector
         yield return $"First session: {firstPlayableSession.CampaignStartSummary}";
         yield return $"Legal runner: {firstPlayableSession.RuleReadySummary}";
         yield return $"Understandable return: {firstPlayableSession.ReturnLaneSummary}";
-        yield return $"Campaign-ready lane: {firstPlayableSession.CampaignReadySummary}";
+        yield return $"Campaign-ready path: {firstPlayableSession.CampaignReadySummary}";
 
         if (!string.IsNullOrWhiteSpace(firstPlayableSession.NextSafeAction))
         {
-            yield return $"Starter lane next: {firstPlayableSession.NextSafeAction}";
+            yield return $"Starter path next: {firstPlayableSession.NextSafeAction}";
         }
 
         if (firstPlayableSession.EvidenceLines.Count > 0)
         {
-            yield return $"First-session proof: {firstPlayableSession.EvidenceLines[0]}";
+            yield return $"First-session details: {PlayerFacingCopyHumanizer.Clean(firstPlayableSession.EvidenceLines[0])}";
         }
     }
 
@@ -396,9 +397,9 @@ public static class DesktopHomeCampaignProjector
             yield break;
         }
 
-        yield return $"Portable exchange: {portableExchange.ReceiptSummary}";
-        yield return $"Exchange context: {portableExchange.ContextSummary}";
-        yield return $"Exchange asset scope: {portableExchange.AssetScopeSummary}";
+        yield return $"Portable exchange: {PlayerFacingCopyHumanizer.Clean(portableExchange.ReceiptSummary)}";
+        yield return $"Exchange context: {PlayerFacingCopyHumanizer.Clean(portableExchange.ContextSummary)}";
+        yield return $"Exchange asset scope: {PlayerFacingCopyHumanizer.Clean(portableExchange.AssetScopeSummary)}";
 
         if (portableExchange.SupportedExchangeFormats.Count > 0)
         {
@@ -435,7 +436,7 @@ public static class DesktopHomeCampaignProjector
     {
         if (claimedDevices.Count == 0)
         {
-            return "Claimed device posture: no account-backed device roles are attached to the restore packet yet.";
+            return "Claimed device: no account-backed device roles are attached to restore yet.";
         }
 
         string summary = string.Join(
@@ -448,14 +449,14 @@ public static class DesktopHomeCampaignProjector
             summary += $"; plus {totalDeviceCount - claimedDevices.Count} more claimed device(s).";
         }
 
-        return $"Claimed device posture: {summary}";
+        return $"Claimed device: {summary}";
     }
 
     private static string BuildRestoreInventorySummary(WorkspaceRestoreProjection restore)
-        => $"{DescribePrefetchInventory(restore)} are staged for bounded offline use across {restore.ClaimedDevices.Count} claimed device(s), generated at {restore.GeneratedAtUtc.ToUniversalTime():yyyy-MM-dd HH:mm} UTC.";
+        => $"{DescribePrefetchInventory(restore)} are staged for offline use across {restore.ClaimedDevices.Count} claimed device(s), updated at {restore.GeneratedAtUtc.ToUniversalTime():yyyy-MM-dd HH:mm} UTC.";
 
     private static string DescribePrefetchInventory(WorkspaceRestoreProjection restore)
-        => $"{restore.RecentDossiers.Count} recent dossier(s), {restore.RecentCampaigns.Count} recent campaign(s), {restore.RecentRuleEnvironments.Count} rule environment(s), and {restore.RecentArtifacts.Count} reconnectable artifact(s)";
+        => $"{restore.RecentDossiers.Count} recent dossier(s), {restore.RecentCampaigns.Count} recent campaign(s), {restore.RecentRuleEnvironments.Count} rule environment(s), and {restore.RecentArtifacts.Count} reconnectable item(s)";
 
     private static string ResolveSupportClosureSummary(
         BuildLabHandoffProjection? leadHandoff,
@@ -472,7 +473,7 @@ public static class DesktopHomeCampaignProjector
             return $"Support closure: {supportReuseHint}";
         }
 
-        return "Support closure: fixes, notices, and verification stay attached to the claimed install, current channel, and the campaign workspace you reopen from this home cockpit.";
+        return "Support closure: fixes, notices, and confirmation stay attached to the claimed install, current channel, and the campaign workspace you reopen from this home cockpit.";
     }
 
     private static string HumanizeValue(string? value, string fallback)
@@ -508,7 +509,8 @@ public static class DesktopHomeCampaignProjector
     private static IReadOnlyList<string> FinalizeLines(IEnumerable<string> lines)
         => lines
             .Where(static line => !string.IsNullOrWhiteSpace(line))
-            .Select(static line => line.Trim())
+            .Select(static line => PlayerFacingCopyHumanizer.Clean(line))
+            .Where(static line => !string.IsNullOrWhiteSpace(line))
             .Distinct(StringComparer.OrdinalIgnoreCase)
             .Take(64)
             .ToArray();

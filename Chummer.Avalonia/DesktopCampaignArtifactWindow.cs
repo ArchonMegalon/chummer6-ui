@@ -513,7 +513,7 @@ internal sealed class DesktopCampaignArtifactWindow : Window
 
         if (_supportProjection.NeedsAttention)
         {
-            lines.Add("Support lane: a tracked support follow-through is active on this install.");
+            lines.Add("Support: a tracked support follow-through is active on this install.");
         }
 
         return string.Join("\n", lines.Distinct(StringComparer.OrdinalIgnoreCase));

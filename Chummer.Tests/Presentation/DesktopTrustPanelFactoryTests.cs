@@ -21,7 +21,7 @@ public sealed class DesktopTrustPanelFactoryTests
     private static bool _headlessInitialized;
 
     [TestMethod]
-    public void CreateDialogPanel_surfaces_import_explain_receipt_and_companion_launch_context()
+    public void CreateDialogPanel_surfaces_import_explanation_and_companion_launch_context()
     {
         EnsureHeadlessPlatform();
 
@@ -39,8 +39,8 @@ public sealed class DesktopTrustPanelFactoryTests
 
         Assert.IsNotNull(panel);
         Assert.AreEqual(
-            "Import explain receipt and environment diff",
-            FindDescendant<TextBlock>(panel, text => text.Text?.Contains("Import explain receipt and environment diff", StringComparison.Ordinal) is true).Text);
+            "Import explanation and environment details",
+            FindDescendant<TextBlock>(panel, text => text.Text?.Contains("Import explanation and environment details", StringComparison.Ordinal) is true).Text);
 
         Button companionButton = FindDescendant<Button>(panel, "OpenDesktopDialogExplainCompanionButton");
         Assert.AreEqual("Open inspectable explain companion", AutomationProperties.GetName(companionButton));
@@ -49,8 +49,8 @@ public sealed class DesktopTrustPanelFactoryTests
         AiCoachLaunchContext context = AiCoachLaunchQuery.Parse(new Uri("https://chummer.test" + launchUri).Query);
         Assert.AreEqual(AiRouteTypes.Build, context.RouteType);
         Assert.AreEqual(RulesetDefaults.Sr5, context.RulesetId);
-        StringAssert.Contains(context.Message ?? string.Empty, "Open Character explain companion");
-        StringAssert.Contains(context.Message ?? string.Empty, "Import rule-environment receipt");
+        StringAssert.Contains(context.Message ?? string.Empty, "Open Character explanation");
+        StringAssert.Contains(context.Message ?? string.Empty, "Import rule-environment record");
     }
 
     [TestMethod]
@@ -65,16 +65,16 @@ public sealed class DesktopTrustPanelFactoryTests
 
         Assert.IsNotNull(panel);
         Assert.AreEqual(
-            "Support diagnostics receipt and environment diff",
-            FindDescendant<TextBlock>(panel, text => text.Text?.Contains("Support diagnostics receipt and environment diff", StringComparison.Ordinal) is true).Text);
+            "Support diagnostics and environment details",
+            FindDescendant<TextBlock>(panel, text => text.Text?.Contains("Support diagnostics and environment details", StringComparison.Ordinal) is true).Text);
 
         Button companionButton = FindDescendant<Button>(panel, "OpenDesktopBlockerExplainCompanionButton");
         string launchUri = AssertString(companionButton.Tag);
         AiCoachLaunchContext context = AiCoachLaunchQuery.Parse(new Uri("https://chummer.test" + launchUri).Query);
         Assert.AreEqual(AiRouteTypes.Build, context.RouteType);
         Assert.AreEqual("avalonia", context.RuntimeFingerprint);
-        StringAssert.Contains(context.Message ?? string.Empty, "Support blocker explain companion");
-        StringAssert.Contains(context.Message ?? string.Empty, "Diagnostics receipt correlation key: support/install-1/avalonia/stable");
+        StringAssert.Contains(context.Message ?? string.Empty, "Support blocker explanation");
+        StringAssert.Contains(context.Message ?? string.Empty, "Diagnostics record correlation key: support/install-1/avalonia/stable");
         StringAssert.Contains(context.Message ?? string.Empty, "Manifest signature mismatch.");
     }
 
@@ -103,16 +103,16 @@ public sealed class DesktopTrustPanelFactoryTests
 
         Assert.IsNotNull(panel);
         Assert.AreEqual(
-            "Crash diagnostics receipt and environment diff",
-            FindDescendant<TextBlock>(panel, text => text.Text?.Contains("Crash diagnostics receipt and environment diff", StringComparison.Ordinal) is true).Text);
+            "Crash diagnostics and environment details",
+            FindDescendant<TextBlock>(panel, text => text.Text?.Contains("Crash diagnostics and environment details", StringComparison.Ordinal) is true).Text);
 
         Button companionButton = FindDescendant<Button>(panel, "OpenDesktopCrashBlockerExplainCompanionButton");
         string launchUri = AssertString(companionButton.Tag);
         AiCoachLaunchContext context = AiCoachLaunchQuery.Parse(new Uri("https://chummer.test" + launchUri).Query);
         Assert.AreEqual(AiRouteTypes.Build, context.RouteType);
         Assert.AreEqual("avalonia", context.RuntimeFingerprint);
-        StringAssert.Contains(context.Message ?? string.Empty, "Crash blocker explain companion");
-        StringAssert.Contains(context.Message ?? string.Empty, "Crash diagnostics receipt");
+        StringAssert.Contains(context.Message ?? string.Empty, "Crash blocker explanation");
+        StringAssert.Contains(context.Message ?? string.Empty, "Crash diagnostics record");
     }
 
     [TestMethod]

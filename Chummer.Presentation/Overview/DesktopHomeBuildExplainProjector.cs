@@ -50,7 +50,7 @@ public static class DesktopHomeBuildExplainProjector
         {
             List<string> compatibilityReceipts =
             [
-                "Compatibility receipt: no grounded runtime fingerprint is attached yet, so campaign-safe build and explain proof still needs the first claimed workspace."
+                "Compatibility details: no current runtime fingerprint is attached yet, so campaign-safe build explanations still need the first claimed workspace."
             ];
             compatibilityReceipts.AddRange(BuildBuildPathReceipts(leadBuildPath));
             compatibilityReceipts.AddRange(campaignReceipts);
@@ -99,7 +99,7 @@ public static class DesktopHomeBuildExplainProjector
             string[] fallbackWatchouts = new[]
             {
                 "Build Lab is falling back to workspace summary until the build and rules sections can be read again.",
-                "Support answers are safer after the dossier reloads the current build and rules posture."
+                "Support answers are safer after the dossier reloads the current build and rules state."
             }
             .Concat(BuildRuntimeWatchouts(runtimeInspector))
             .Distinct(StringComparer.OrdinalIgnoreCase)
@@ -131,7 +131,7 @@ public static class DesktopHomeBuildExplainProjector
 
         string buildLane = string.IsNullOrWhiteSpace(build.BuildMethod) ? leadWorkspace.Summary.BuildMethod : build.BuildMethod;
         string priorityLadder = BuildPriorityLadder(build);
-        string gameplayMode = string.IsNullOrWhiteSpace(rules.GameplayOption) ? "default gameplay posture" : rules.GameplayOption;
+        string gameplayMode = string.IsNullOrWhiteSpace(rules.GameplayOption) ? "default gameplay state" : rules.GameplayOption;
         string bannedWare = BuildBannedWareSummary(rules.BannedWareGrades);
         int remainingContactPoints = Math.Max(build.ContactPoints - build.ContactPointsUsed, 0);
         string nextSafeAction = ResolveRefreshAction(displayName, runtimeInspector) ?? (remainingContactPoints == 0
@@ -166,7 +166,7 @@ public static class DesktopHomeBuildExplainProjector
                 : $"Contact allocation leaves {remainingContactPoints} point(s) available before the next handoff.",
             string.Equals(bannedWare, "none", StringComparison.Ordinal)
                 ? "No banned ware grades are currently blocking the next safe build/export decision."
-                : $"Current rules posture bans {bannedWare}, so gear and upgrade choices need an explicit compatibility check."
+                : $"Current rules state bans {bannedWare}, so gear and upgrade choices need an explicit compatibility review."
         ];
 
         if (rules.MaxKarma > 0)
@@ -176,7 +176,7 @@ public static class DesktopHomeBuildExplainProjector
 
         if (leadBuildPath?.Preview?.RequiresConfirmation == true)
         {
-            watchouts.Add("The recommended build path still requires explicit confirmation before the grounded receipt can be emitted.");
+            watchouts.Add("The recommended build path still requires explicit confirmation before it can be applied.");
         }
 
         watchouts.AddRange(BuildRuntimeWatchouts(runtimeInspector));
@@ -186,7 +186,7 @@ public static class DesktopHomeBuildExplainProjector
         return Humanize(new DesktopHomeBuildExplainProjection(
             RulesetId: resolvedRulesetId,
             RulesetSpotlight: rulesetSpotlight,
-            $"Build posture: {buildLane} with {priorityLadder}; contact points {build.ContactPointsUsed}/{build.ContactPoints}; special track {build.TotalSpecial}.\nRules posture: {rules.GameEdition} · {rules.Settings} · {gameplayMode}; limits {rules.MaxKarma} Karma / {rules.MaxNuyen} nuyen; banned ware {bannedWare}.",
+            $"Build state: {buildLane} with {priorityLadder}; contact points {build.ContactPointsUsed}/{build.ContactPoints}; special track {build.TotalSpecial}.\nRules state: {rules.GameEdition} · {rules.Settings} · {gameplayMode}; limits {rules.MaxKarma} Karma / {rules.MaxNuyen} nuyen; banned ware {bannedWare}.",
             nextSafeAction,
             explainFocus,
             runtimeHealthSummary,
@@ -693,11 +693,11 @@ public static class DesktopHomeBuildExplainProjector
         {
             if (string.Equals(warning.Kind, RuntimeInspectorWarningKinds.Migration, StringComparison.Ordinal))
             {
-                receipts.Add("Compatibility receipt: migration guidance is active, so the next campaign-facing handoff should stay explicitly review-required.");
+                receipts.Add("Compatibility details: migration guidance is active, so the next campaign-facing step should stay explicitly review-required.");
             }
             else if (string.Equals(warning.Kind, RuntimeInspectorWarningKinds.ProviderBinding, StringComparison.Ordinal))
             {
-                receipts.Add("Compatibility receipt: provider bindings changed recently, so explain answers should be rechecked before you trust them in support or publication.");
+                receipts.Add("Compatibility details: service links changed recently, so explanations should be rechecked before you trust them in support or publication.");
             }
         }
 
