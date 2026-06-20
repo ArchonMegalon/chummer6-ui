@@ -957,24 +957,35 @@ public sealed class DesktopUpdateRuntimeTests
             installerPath,
             true,
             true,
+            true,
             true);
         object? desktopCommand = InvokePrivateStatic<object?>(
             "ResolveLinuxDebInstallerCommand",
             installerPath,
             false,
             true,
+            true,
+            true);
+        object? sudoFallbackCommand = InvokePrivateStatic<object?>(
+            "ResolveLinuxDebInstallerCommand",
+            installerPath,
+            false,
+            true,
+            false,
             true);
         object? missingPrivilegeCommand = InvokePrivateStatic<object?>(
             "ResolveLinuxDebInstallerCommand",
             installerPath,
             false,
             true,
+            false,
             false);
         object? missingDpkgCommand = InvokePrivateStatic<object?>(
             "ResolveLinuxDebInstallerCommand",
             installerPath,
             true,
             false,
+            true,
             true);
 
         Assert.IsNotNull(rootCommand);
@@ -988,6 +999,12 @@ public sealed class DesktopUpdateRuntimeTests
         CollectionAssert.AreEqual(
             new[] { "dpkg", "-i", installerPath },
             GetPrivateProperty<IReadOnlyList<string>>(desktopCommand, "Arguments").ToArray());
+
+        Assert.IsNotNull(sudoFallbackCommand);
+        Assert.AreEqual("sudo", GetPrivateProperty<string>(sudoFallbackCommand, "FileName"));
+        CollectionAssert.AreEqual(
+            new[] { "-n", "dpkg", "-i", installerPath },
+            GetPrivateProperty<IReadOnlyList<string>>(sudoFallbackCommand, "Arguments").ToArray());
 
         Assert.IsNull(missingPrivilegeCommand);
         Assert.IsNull(missingDpkgCommand);
@@ -1005,6 +1022,8 @@ public sealed class DesktopUpdateRuntimeTests
         Assert.Contains("ResolveLinuxDebInstallerCommand", runtime, StringComparison.Ordinal);
         Assert.Contains("dpkg", runtime, StringComparison.Ordinal);
         Assert.Contains("pkexec", runtime, StringComparison.Ordinal);
+        Assert.Contains("sudo", runtime, StringComparison.Ordinal);
+        Assert.Contains("\"-n\"", runtime, StringComparison.Ordinal);
         Assert.DoesNotContain("gio", runtime, StringComparison.OrdinalIgnoreCase);
         Assert.DoesNotContain("xdg-open", runtime, StringComparison.OrdinalIgnoreCase);
         Assert.DoesNotContain("application/vnd.debian.binary-package", runtime, StringComparison.OrdinalIgnoreCase);

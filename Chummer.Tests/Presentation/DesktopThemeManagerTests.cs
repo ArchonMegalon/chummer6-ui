@@ -1,6 +1,8 @@
 using System;
+using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Text.RegularExpressions;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 
 namespace Chummer.Tests.Presentation;
@@ -312,13 +314,53 @@ public sealed class DesktopThemeManagerTests
         string repoRoot = TestContextLocator.ResolveChummerPresentationRepoRoot();
         string reportSource = File.ReadAllText(Path.Combine(repoRoot, "Chummer.Avalonia", "DesktopReportIssueWindow.cs"));
         string devicesSource = File.ReadAllText(Path.Combine(repoRoot, "Chummer.Avalonia", "DesktopDevicesAccessWindow.cs"));
+        string localizationSource = File.ReadAllText(Path.Combine(repoRoot, "Chummer.Presentation", "Overview", "DesktopLocalizationCatalog.cs"));
 
         StringAssert.Contains(reportSource, "Content = DesktopShellTheme.CreateWindowSurface(");
         StringAssert.Contains(devicesSource, "Content = DesktopShellTheme.CreateWindowSurface(");
+        StringAssert.Contains(reportSource, "CreateIntroText(S(\"desktop.report.intro\"))");
+        StringAssert.Contains(reportSource, "CreateIntroText(S(\"desktop.report.private_split\"))");
+        StringAssert.Contains(reportSource, "_statusText = new TextBlock");
+        StringAssert.Contains(reportSource, "_contextText = new TextBlock");
+        Assert.IsFalse(reportSource.Contains("Text = BuildContextBody(),\n            IsVisible = false", StringComparison.Ordinal));
         StringAssert.Contains(reportSource, "CreateField(S(\"desktop.report.bug.title_label\"), _bugTitleBox)");
+        StringAssert.Contains(reportSource, "CreateField(S(\"desktop.report.bug.expected_label\"), _bugExpectedBox)");
+        StringAssert.Contains(reportSource, "CreateField(S(\"desktop.report.bug.actual_label\"), _bugActualBox)");
+        StringAssert.Contains(reportSource, "CreateField(S(\"desktop.report.bug.repro_label\"), _bugReproStepsBox)");
+        StringAssert.Contains(reportSource, "CreateField(S(\"desktop.report.bug.evidence_label\"), _bugEvidenceBox)");
+        StringAssert.Contains(reportSource, "CreateField(S(\"desktop.report.feedback.summary_label\"), _feedbackSummaryBox)");
         StringAssert.Contains(reportSource, "CreateField(S(\"desktop.report.feedback.detail_label\"), _feedbackDetailBox)");
+        StringAssert.Contains(reportSource, "new TextBlock");
+        StringAssert.Contains(reportSource, "Text = label");
+        StringAssert.Contains(reportSource, "Watermark = tooltip");
+        StringAssert.Contains(reportSource, "AutomationProperties.SetName(box, automationName)");
+        StringAssert.Contains(reportSource, "ToolTip.SetTip(box, null);");
+        foreach (string labelKey in new[]
+                 {
+                     "desktop.report.bug.title_label",
+                     "desktop.report.bug.expected_label",
+                     "desktop.report.bug.actual_label",
+                     "desktop.report.bug.repro_label",
+                     "desktop.report.bug.evidence_label",
+                     "desktop.report.feedback.summary_label",
+                     "desktop.report.feedback.detail_label"
+                 })
+        {
+            StringAssert.Contains(localizationSource, $"[\"{labelKey}\"] = ");
+        }
+
+        StringAssert.Contains(localizationSource, "localized[\"desktop.report.section.context\"] = \"Desktop-Kontext\"");
+        StringAssert.Contains(localizationSource, "localized[\"desktop.report.section.bug\"] = \"Fehlerbericht\"");
+        StringAssert.Contains(localizationSource, "localized[\"desktop.report.section.feedback\"] = \"Feedback\"");
+        StringAssert.Contains(localizationSource, "localized[\"desktop.report.context.supportability\"] = \"Supportstatus: {0}\"");
+        Assert.IsFalse(localizationSource.Contains("localized[\"desktop.report.context.supportability\"] = \"Supportability-Posture", StringComparison.Ordinal));
+        Assert.IsFalse(localizationSource.Contains("localized[\"desktop.report.bug.intro\"] = \"Nutzen Sie diese Spur", StringComparison.Ordinal));
+        Assert.IsFalse(localizationSource.Contains("localized[\"desktop.report.section.feedback\"] = \"Leichtgewichtiges Feedback\"", StringComparison.Ordinal));
+
         Assert.IsFalse(reportSource.Contains("Child = new StackPanel", StringComparison.Ordinal));
         Assert.IsFalse(devicesSource.Contains("Child = new StackPanel", StringComparison.Ordinal));
+        Assert.IsFalse(reportSource.Contains("CreateField(S(\"desktop.report.bug.title_watermark\"", StringComparison.Ordinal));
+        Assert.IsFalse(reportSource.Contains("CreateField(S(\"desktop.report.feedback.detail_watermark\"", StringComparison.Ordinal));
     }
 
     [TestMethod]
@@ -326,6 +368,7 @@ public sealed class DesktopThemeManagerTests
     {
         string repoRoot = TestContextLocator.ResolveChummerPresentationRepoRoot();
         string desktopDialogSource = File.ReadAllText(Path.Combine(repoRoot, "Chummer.Avalonia", "DesktopDialogWindow.axaml.cs"));
+        string factorySource = File.ReadAllText(Path.Combine(repoRoot, "Chummer.Presentation", "Overview", "DesktopDialogFactory.cs"));
         int wizardStart = desktopDialogSource.IndexOf("private Control CreateLegacyOriginWizardPane", StringComparison.Ordinal);
         int buildStart = desktopDialogSource.IndexOf("private Control CreateLegacyOriginBuildPane", StringComparison.Ordinal);
         int summaryStart = desktopDialogSource.IndexOf("private static Control CreateOriginSummaryStrip", StringComparison.Ordinal);
@@ -341,9 +384,14 @@ public sealed class DesktopThemeManagerTests
         StringAssert.Contains(originSurfaceSource, "Classes = { \"shell-kicker\" }");
         StringAssert.Contains(originSurfaceSource, "Foreground = ResolveThemeBrush(\"ChummerShellForegroundBrush\", \"#111827\")");
         StringAssert.Contains(desktopDialogSource, "newCharacterOriginGmConstraintPreset");
-        StringAssert.Contains(desktopDialogSource, "build plan");
+        StringAssert.Contains(originSurfaceSource, "OriginDossierStandaloneAdvancedStoryControlsExpander");
+        StringAssert.Contains(originSurfaceSource, "Header = \"Advanced story controls\"");
+        StringAssert.Contains(originSurfaceSource, "IsExpanded = false");
+        StringAssert.Contains(originSurfaceSource, "Pick only the basics, then build the story. Advanced controls are optional.");
         StringAssert.Contains(desktopDialogSource, "\"Story Preview\"");
         StringAssert.Contains(desktopDialogSource, "\"Origin Story\"");
+        StringAssert.Contains(factorySource, "new DesktopDialogAction(\"generate_fitting_build\", \"Build story\", true)");
+        StringAssert.Contains(factorySource, "new DesktopDialogAction(\"open_origin_guided_chargen\", \"Continue to guided build\", true)");
         Assert.IsFalse(originSurfaceSource.Contains("Color.Parse", StringComparison.Ordinal));
         Assert.IsFalse(originSurfaceSource.Contains("Brushes.White", StringComparison.Ordinal));
         Assert.IsFalse(originSurfaceSource.Contains("Brushes.Black", StringComparison.Ordinal));
@@ -351,9 +399,49 @@ public sealed class DesktopThemeManagerTests
         Assert.IsFalse(originSurfaceSource.Contains("Background = Brushes", StringComparison.Ordinal));
         Assert.IsFalse(originSurfaceSource.Contains("Foreground = Brushes", StringComparison.Ordinal));
         Assert.IsFalse(desktopDialogSource.Contains("newCharacterOriginGmConstraintPreset\", \"GM Constraint\", \"none\", \"none\"", StringComparison.Ordinal));
+        Assert.IsFalse(factorySource.Contains("Review story and build", StringComparison.Ordinal));
+        Assert.IsFalse(factorySource.Contains("Open guided character creation", StringComparison.Ordinal));
         Assert.IsFalse(desktopDialogSource.Contains("build lane", StringComparison.OrdinalIgnoreCase));
         Assert.IsFalse(desktopDialogSource.Contains("\"ALICE Handoff\"", StringComparison.Ordinal));
         Assert.IsFalse(desktopDialogSource.Contains("ALICE translates the story", StringComparison.Ordinal));
+    }
+
+    [TestMethod]
+    public void Alice_origin_dossier_keeps_story_and_book_before_media_generation()
+    {
+        string repoRoot = TestContextLocator.ResolveChummerPresentationRepoRoot();
+        string aliceSource = File.ReadAllText(Path.Combine(repoRoot, "Chummer.Avalonia", "DesktopAliceWindow.cs"));
+
+        StringAssert.Contains(aliceSource, "CreateButton(\"Build story\", StartOriginDossierAsync, isPrimary: true, name: \"AliceOriginStartDossierButton\")");
+        StringAssert.Contains(aliceSource, "CreateButton(\"Open story\", () => DesktopCrashRuntime.TryOpenPathInShell(_originDraftMarkdownPath), isPrimary: true, name: \"AliceOriginOpenDraftStoryButton\")");
+        StringAssert.Contains(aliceSource, "use the story as Alice's seed for later build guidance.");
+
+        int approveStart = aliceSource.IndexOf("Task ApproveOriginCanonAsync()", StringComparison.Ordinal);
+        int renderPdfStart = aliceSource.IndexOf("Task RenderOriginDossierPdfAsync()", StringComparison.Ordinal);
+        Assert.IsTrue(approveStart >= 0 && renderPdfStart > approveStart, "Approve-origin source must be discoverable.");
+        string approveSource = aliceSource[approveStart..renderPdfStart];
+
+        int openPdfIndex = approveSource.IndexOf("\"Open dossier PDF\"", StringComparison.Ordinal);
+        int openStoryIndex = approveSource.IndexOf("\"Open story\"", StringComparison.Ordinal);
+        int portraitIndex = approveSource.IndexOf("\"Create portraits\"", StringComparison.Ordinal);
+        int voiceIndex = approveSource.IndexOf("\"Create default voice script\"", StringComparison.Ordinal);
+        int videoIndex = approveSource.IndexOf("\"Create dossier video\"", StringComparison.Ordinal);
+        Assert.IsTrue(openPdfIndex >= 0, "Approved Origin Dossier must expose the book/PDF action.");
+        Assert.IsTrue(openStoryIndex > openPdfIndex, "Story must stay adjacent to the book/PDF action.");
+        Assert.IsTrue(portraitIndex > openStoryIndex, "Portraits should not outrank the story/book.");
+        Assert.IsTrue(voiceIndex > portraitIndex, "Audiobook scripts should follow the story/book and portrait preparation.");
+        Assert.IsTrue(videoIndex > voiceIndex, "Video should follow the book, story, and voice-script preparation.");
+
+        int idleStart = aliceSource.IndexOf("void ApplyIdleState()", StringComparison.Ordinal);
+        int showOriginBundleStateStart = aliceSource.IndexOf("void ShowOriginBundleState(", StringComparison.Ordinal);
+        Assert.IsTrue(idleStart >= 0 && showOriginBundleStateStart > idleStart, "Idle-state source must be discoverable.");
+        string idleSource = aliceSource[idleStart..showOriginBundleStateStart];
+        int emptyOriginIndex = idleSource.IndexOf("CreateButton(\"Build story\", StartOriginDossierAsync", StringComparison.Ordinal);
+        Assert.IsTrue(emptyOriginIndex >= 0, "Empty Origin Dossier state must start with Build story.");
+        string emptyOriginSource = idleSource[emptyOriginIndex..];
+        Assert.IsFalse(emptyOriginSource.Contains("\"Create dossier video\"", StringComparison.Ordinal));
+        Assert.IsFalse(emptyOriginSource.Contains("\"Render audiobook now\"", StringComparison.Ordinal));
+        Assert.IsFalse(emptyOriginSource.Contains("\"Create portraits\"", StringComparison.Ordinal));
     }
 
     [TestMethod]
@@ -443,12 +531,13 @@ public sealed class DesktopThemeManagerTests
     }
 
     [TestMethod]
-    public void ComboBoxes_and_textboxes_keep_readable_non_hover_colors_in_kde_dark_mode()
+    public void ComboBoxes_textboxes_and_numeric_inputs_keep_readable_non_hover_colors_in_kde_dark_mode()
     {
         string repoRoot = TestContextLocator.ResolveChummerPresentationRepoRoot();
         string appTheme = File.ReadAllText(Path.Combine(repoRoot, "Chummer.Avalonia", "App.axaml"));
         string shellTheme = File.ReadAllText(Path.Combine(repoRoot, "Chummer.Avalonia", "DesktopShellTheme.cs"));
         string classicPortSurface = File.ReadAllText(Path.Combine(repoRoot, "Chummer.Avalonia", "Controls", "ClassicFormPorts", "ClassicFormPortSurfaceControl.cs"));
+        string desktopDialogSource = File.ReadAllText(Path.Combine(repoRoot, "Chummer.Avalonia", "DesktopDialogWindow.axaml.cs"));
 
         StringAssert.Contains(appTheme, "<Style Selector=\"ComboBoxItem:selected\">");
         StringAssert.Contains(appTheme, "<Setter Property=\"Background\" Value=\"{DynamicResource ChummerShellSelectionInsetBrush}\" />");
@@ -463,6 +552,12 @@ public sealed class DesktopThemeManagerTests
         StringAssert.Contains(shellTheme, "textBox.Background = ResolveThemeBrush(\"ChummerShellInputBackgroundBrush\", \"#FFFFFF\");");
         StringAssert.Contains(shellTheme, "textBox.Foreground = ResolveThemeBrush(\"ChummerShellInputForegroundBrush\", \"#111111\");");
         StringAssert.Contains(classicPortSurface, "DesktopShellTheme.ApplyShellComboBoxTheme(comboBox);");
+        StringAssert.Contains(appTheme, "<Style Selector=\"NumericUpDown\">");
+        StringAssert.Contains(appTheme, "<Style Selector=\"NumericUpDown:pointerover\">");
+        StringAssert.Contains(appTheme, "<Style Selector=\"NumericUpDown:focus\">");
+        StringAssert.Contains(appTheme, "<Style Selector=\"NumericUpDown /template/ TextBox\">");
+        StringAssert.Contains(shellTheme, "ApplyShellNumericUpDownTheme(NumericUpDown numericUpDown)");
+        StringAssert.Contains(desktopDialogSource, "DesktopShellTheme.ApplyShellNumericUpDownTheme(numericUpDown);");
 
         Assert.IsFalse(appTheme.Contains(
             "<Style Selector=\"ComboBoxItem:selected TextBlock\">\n      <Setter Property=\"Foreground\" Value=\"{DynamicResource ChummerShellSelectionForegroundBrush}\" />",
@@ -476,6 +571,47 @@ public sealed class DesktopThemeManagerTests
     }
 
     [TestMethod]
+    public void Desktop_comboboxes_textboxes_and_numeric_inputs_are_explicitly_bound_to_shell_theme_helpers()
+    {
+        string repoRoot = TestContextLocator.ResolveChummerPresentationRepoRoot();
+        string avaloniaRoot = Path.Combine(repoRoot, "Chummer.Avalonia");
+        Regex typedCreation = new(@"(?<type>ComboBox|TextBox|NumericUpDown)\s+(?<name>[_A-Za-z][_A-Za-z0-9]*)\s*=\s*new(?:\s+(ComboBox|TextBox|NumericUpDown))?\b", RegexOptions.Compiled);
+        Regex assignedCreation = new(@"(?<name>[_A-Za-z][_A-Za-z0-9]*)\s*=\s*new\s+(?<type>ComboBox|TextBox|NumericUpDown)\b", RegexOptions.Compiled);
+        List<string> unthemedControls = [];
+
+        foreach (string path in Directory.EnumerateFiles(avaloniaRoot, "*.cs", SearchOption.AllDirectories)
+                     .Where(static path => !path.EndsWith("DesktopShellTheme.cs", StringComparison.Ordinal)))
+        {
+            string[] lines = File.ReadAllLines(path);
+            for (int index = 0; index < lines.Length; index++)
+            {
+                foreach ((string Type, string Name) creation in FindControlCreations(lines[index], typedCreation, assignedCreation))
+                {
+                    string lookahead = string.Join('\n', lines.Skip(index).Take(45));
+                    bool themed = string.Equals(creation.Type, "ComboBox", StringComparison.Ordinal)
+                        ? lookahead.Contains($"ApplyShellComboBoxTheme({creation.Name}", StringComparison.Ordinal)
+                        : string.Equals(creation.Type, "NumericUpDown", StringComparison.Ordinal)
+                            ? lookahead.Contains($"ApplyShellNumericUpDownTheme({creation.Name}", StringComparison.Ordinal)
+                            : lookahead.Contains($"ApplyShellTextInputTheme({creation.Name}", StringComparison.Ordinal)
+                              || lookahead.Contains($"ApplyTextBoxAccessibility({creation.Name}", StringComparison.Ordinal);
+
+                    if (!themed)
+                    {
+                        string relativePath = Path.GetRelativePath(repoRoot, path);
+                        unthemedControls.Add($"{relativePath}:{index + 1} {creation.Type} {creation.Name}");
+                    }
+                }
+            }
+        }
+
+        Assert.AreEqual(
+            0,
+            unthemedControls.Count,
+            "Every Avalonia desktop ComboBox/TextBox/NumericUpDown must opt into the shell theme helper near creation so KDE/dark-mode cannot produce white-on-white controls. Missing: "
+            + string.Join(", ", unthemedControls));
+    }
+
+    [TestMethod]
     public void Selection_add_surfaces_do_not_label_readonly_context_as_navigation()
     {
         string repoRoot = TestContextLocator.ResolveChummerPresentationRepoRoot();
@@ -486,5 +622,21 @@ public sealed class DesktopThemeManagerTests
         StringAssert.Contains(desktopDialogSource, "? \"Categories\"");
         StringAssert.Contains(desktopDialogSource, ": \"Current selection\"");
         Assert.IsFalse(desktopDialogSource.Contains("CreateSelectionSurfaceCard(navigationField.Label", StringComparison.Ordinal));
+    }
+
+    private static IEnumerable<(string Type, string Name)> FindControlCreations(
+        string line,
+        Regex typedCreation,
+        Regex assignedCreation)
+    {
+        foreach (Match match in typedCreation.Matches(line))
+        {
+            yield return (match.Groups["type"].Value, match.Groups["name"].Value);
+        }
+
+        foreach (Match match in assignedCreation.Matches(line))
+        {
+            yield return (match.Groups["type"].Value, match.Groups["name"].Value);
+        }
     }
 }

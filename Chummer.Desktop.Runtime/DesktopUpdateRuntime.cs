@@ -1462,15 +1462,17 @@ public static class DesktopUpdateRuntime
     {
         bool dpkgAvailable = CommandExists("dpkg");
         bool pkexecAvailable = CommandExists("pkexec");
+        bool sudoAvailable = CommandExists("sudo");
         DesktopUpdateCommandSpec? command = ResolveLinuxDebInstallerCommand(
             installerPath,
             IsRunningAsRoot(),
             dpkgAvailable,
-            pkexecAvailable);
+            pkexecAvailable,
+            sudoAvailable);
         if (command is null)
         {
             throw new InvalidOperationException(
-                "Could not apply Linux .deb update automatically. Expected root dpkg or pkexec+dpkg to be available.");
+                "Could not apply Linux .deb update automatically. Expected root dpkg, pkexec+dpkg, or passwordless sudo+dpkg to be available.");
         }
 
         RunCommandToSuccessfulExit(command, TimeSpan.FromMinutes(InstallerCommandTimeoutMinutes));
@@ -1480,7 +1482,8 @@ public static class DesktopUpdateRuntime
         string installerPath,
         bool runningAsRoot,
         bool dpkgAvailable,
-        bool pkexecAvailable)
+        bool pkexecAvailable,
+        bool sudoAvailable)
     {
         if (string.IsNullOrWhiteSpace(installerPath) || !dpkgAvailable)
         {
@@ -1492,8 +1495,13 @@ public static class DesktopUpdateRuntime
             return new DesktopUpdateCommandSpec("dpkg", ["-i", installerPath]);
         }
 
-        return pkexecAvailable
-            ? new DesktopUpdateCommandSpec("pkexec", ["dpkg", "-i", installerPath])
+        if (pkexecAvailable)
+        {
+            return new DesktopUpdateCommandSpec("pkexec", ["dpkg", "-i", installerPath]);
+        }
+
+        return sudoAvailable
+            ? new DesktopUpdateCommandSpec("sudo", ["-n", "dpkg", "-i", installerPath])
             : null;
     }
 

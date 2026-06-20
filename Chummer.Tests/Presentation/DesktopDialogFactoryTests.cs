@@ -1829,6 +1829,43 @@ public class DesktopDialogFactoryTests
         Assert.AreEqual("auto", DesktopDialogFieldValueParser.GetValue(dialog, "newCharacterOriginBuildPreference"));
         Assert.AreEqual("auto", DesktopDialogFieldValueParser.GetValue(dialog, "newCharacterOriginMetatypePreference"));
         Assert.AreEqual("none", DesktopDialogFieldValueParser.GetValue(dialog, "newCharacterOriginGmConstraintPreset"));
+        Assert.AreEqual(
+            "Race / Metatype",
+            dialog.Fields.Single(field => string.Equals(field.Id, "newCharacterOriginMetatypePreference", StringComparison.Ordinal)).Label);
+        CollectionAssert.AreEqual(
+            new[]
+            {
+                "newCharacterOriginMetatypePreference",
+                "newCharacterOriginArchetypeIntent",
+                "newCharacterOriginSummary"
+            },
+            dialog.Fields
+                .Where(field => !string.Equals(field.LayoutSlot, DesktopDialogFieldLayoutSlots.Hidden, StringComparison.Ordinal))
+                .Select(field => field.Id)
+                .ToArray(),
+            "Origin Dossier fallback/default state must expose only race/metatype, archetype, and story preview.");
+        foreach (string hiddenAdvancedFieldId in new[]
+                 {
+                     "newCharacterName",
+                     "newCharacterAlias",
+                     "newCharacterRulesetId",
+                     "newCharacterOriginBuildPreference",
+                     "newCharacterOriginBackground",
+                     "newCharacterOriginTurningPoint",
+                     "newCharacterOriginTrainingPath",
+                     "newCharacterOriginPressureCost",
+                     "newCharacterOriginGmConstraintPreset",
+                     "newCharacterOriginUpgradeExposure",
+                     "newCharacterOriginMotivation",
+                     "newCharacterOriginTone",
+                     "newCharacterOriginGmRequirements"
+                 })
+        {
+            Assert.AreEqual(
+                DesktopDialogFieldLayoutSlots.Hidden,
+                dialog.Fields.Single(field => string.Equals(field.Id, hiddenAdvancedFieldId, StringComparison.Ordinal)).LayoutSlot,
+                $"{hiddenAdvancedFieldId} must stay hidden from the default Origin Dossier fallback surface.");
+        }
         CollectionAssert.Contains(
             dialog.Fields
                 .Single(field => string.Equals(field.Id, "newCharacterOriginGmConstraintPreset", StringComparison.Ordinal))
@@ -1838,7 +1875,7 @@ public class DesktopDialogFactoryTests
             "illegal_addiction");
         StringAssert.Contains(DesktopDialogFieldValueParser.GetValue(dialog, "newCharacterOriginSummary"), "upbringing");
         Assert.IsFalse(string.IsNullOrWhiteSpace(DesktopDialogFieldValueParser.GetValue(dialog, "newCharacterOriginBuildMethod")));
-        Assert.AreEqual("Review story and build", dialog.Actions.Single(action => string.Equals(action.Id, "generate_fitting_build", StringComparison.Ordinal)).Label);
+        Assert.AreEqual("Build story", dialog.Actions.Single(action => string.Equals(action.Id, "generate_fitting_build", StringComparison.Ordinal)).Label);
     }
 
     [TestMethod]
@@ -1864,13 +1901,16 @@ public class DesktopDialogFactoryTests
         Assert.AreEqual("dialog.new_character.origin_build", dialog.Id);
         Assert.AreEqual("Nova", DesktopDialogFieldValueParser.GetValue(dialog, "newCharacterWorkflowName"));
         Assert.AreEqual("Cipher", DesktopDialogFieldValueParser.GetValue(dialog, "newCharacterWorkflowAlias"));
+        Assert.AreEqual("approved_origin_story", DesktopDialogFieldValueParser.GetValue(dialog, "newCharacterOriginAliceSeedSource"));
         StringAssert.Contains(DesktopDialogFieldValueParser.GetValue(dialog, "newCharacterOriginBuildLogic"), "Build Method");
         StringAssert.Contains(DesktopDialogFieldValueParser.GetValue(dialog, "newCharacterOriginBuildLogic"), "BP");
         StringAssert.Contains(DesktopDialogFieldValueParser.GetValue(dialog, "newCharacterOriginBuildLogic"), "Mage");
         StringAssert.Contains(DesktopDialogFieldValueParser.GetValue(dialog, "newCharacterOriginBuildLogic"), "Troll");
+        StringAssert.Contains(DesktopDialogFieldValueParser.GetValue(dialog, "newCharacterOriginImplications"), "Alice Seed");
+        StringAssert.Contains(DesktopDialogFieldValueParser.GetValue(dialog, "newCharacterOriginImplications"), "approved origin story");
         StringAssert.Contains(DesktopDialogFieldValueParser.GetValue(dialog, "newCharacterOriginImplications"), "Addiction quality");
         StringAssert.Contains(DesktopDialogFieldValueParser.GetValue(dialog, "newCharacterOriginImplications"), "Intelligence 2+");
-        Assert.AreEqual("Open guided character creation", dialog.Actions.Single(action => string.Equals(action.Id, "open_origin_guided_chargen", StringComparison.Ordinal)).Label);
+        Assert.AreEqual("Continue to guided build", dialog.Actions.Single(action => string.Equals(action.Id, "open_origin_guided_chargen", StringComparison.Ordinal)).Label);
         CollectionAssert.AreEqual(
             new[] { "open_origin_guided_chargen", "cancel" },
             dialog.Actions.Select(action => action.Id).ToArray());
@@ -2154,9 +2194,14 @@ public class DesktopDialogFactoryTests
         DesktopDialogFieldOption[] options =
         [
             new("Human", "Human"),
+            new("Metasapient A.I.", "Metasapient A.I."),
             new("A.I.", "A.I."),
+            new("AI Companion", "AI Companion"),
+            new("ai_companion", "AI Companion"),
+            new("Artificial_Intelligence", "Artificial Intelligence"),
             new("E-Ghost", "E-Ghost"),
-            new("Xenosapient", "Xenosapient")
+            new("Xenosapient", "Xenosapient"),
+            new("Critter Powers", "Critter Powers")
         ];
 
         string[] quietOptions = DesktopDialogFactory
@@ -2170,8 +2215,21 @@ public class DesktopDialogFactoryTests
             .Select(option => option.Value)
             .ToArray();
 
-        CollectionAssert.AreEqual(new[] { "Human" }, quietOptions);
-        CollectionAssert.AreEqual(new[] { "Human", "A.I.", "E-Ghost", "Xenosapient" }, enabledOptions);
+        CollectionAssert.AreEqual(new[] { "Human", "Critter Powers" }, quietOptions);
+        CollectionAssert.AreEqual(
+            new[]
+            {
+                "Human",
+                "Metasapient A.I.",
+                "A.I.",
+                "AI Companion",
+                "ai_companion",
+                "Artificial_Intelligence",
+                "E-Ghost",
+                "Xenosapient",
+                "Critter Powers"
+            },
+            enabledOptions);
     }
 
     [TestMethod]

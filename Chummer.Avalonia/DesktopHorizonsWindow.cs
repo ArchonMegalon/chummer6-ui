@@ -102,7 +102,7 @@ internal sealed class DesktopHorizonsWindow : Window
                             Spacing = 10,
                             Children =
                             {
-                                CreateButton(S("desktop.horizons.button.open_public_index"), static () => DesktopInstallLinkingRuntime.TryOpenRelativePortal("/horizons")),
+                                CreateButton(S("desktop.horizons.button.open_public_index"), static () => DesktopInstallLinkingRuntime.TryOpenRelativePortal("/roadmap")),
                                 CreateButton(S("desktop.dialog.action.close"), static () => Task.CompletedTask, closeWindow: true)
                             }
                         }

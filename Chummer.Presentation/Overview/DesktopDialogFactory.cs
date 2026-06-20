@@ -682,21 +682,32 @@ public sealed class DesktopDialogFactory : IDesktopDialogFactory
                     "Character Name",
                     string.IsNullOrWhiteSpace(name) ? "New Character" : name.Trim(),
                     "New Character",
-                    LayoutSlot: DesktopDialogFieldLayoutSlots.Left),
+                    LayoutSlot: DesktopDialogFieldLayoutSlots.Hidden),
                 new DesktopDialogField(
                     "newCharacterAlias",
                     "Alias",
                     string.IsNullOrWhiteSpace(alias) ? "Runner" : alias.Trim(),
                     "Runner",
-                    LayoutSlot: DesktopDialogFieldLayoutSlots.Right),
-                CreateRulesetField("newCharacterRulesetId", normalizedRulesetId),
+                    LayoutSlot: DesktopDialogFieldLayoutSlots.Hidden),
+                CreateRulesetField("newCharacterRulesetId", normalizedRulesetId) with
+                {
+                    LayoutSlot = DesktopDialogFieldLayoutSlots.Hidden
+                },
+                new DesktopDialogField(
+                    "newCharacterOriginMetatypePreference",
+                    "Race / Metatype",
+                    "auto",
+                    "auto",
+                    InputType: "select",
+                    LayoutSlot: DesktopDialogFieldLayoutSlots.Left,
+                    Options: BuildOriginMetatypeOptions()),
                 new DesktopDialogField(
                     "newCharacterOriginArchetypeIntent",
                     "Archetype",
                     "decker",
                     "decker",
                     InputType: "select",
-                    LayoutSlot: DesktopDialogFieldLayoutSlots.Left,
+                    LayoutSlot: DesktopDialogFieldLayoutSlots.Right,
                     Options: BuildOriginArchetypeOptions()),
                 new DesktopDialogField(
                     "newCharacterOriginBuildPreference",
@@ -704,23 +715,15 @@ public sealed class DesktopDialogFactory : IDesktopDialogFactory
                     "auto",
                     "auto",
                     InputType: "select",
-                    LayoutSlot: DesktopDialogFieldLayoutSlots.Right,
+                    LayoutSlot: DesktopDialogFieldLayoutSlots.Hidden,
                     Options: BuildOriginBuildPreferenceOptions(normalizedRulesetId)),
-                new DesktopDialogField(
-                    "newCharacterOriginMetatypePreference",
-                    "Metatype",
-                    "auto",
-                    "auto",
-                    InputType: "select",
-                    LayoutSlot: DesktopDialogFieldLayoutSlots.Left,
-                    Options: BuildOriginMetatypeOptions()),
                 new DesktopDialogField(
                     "newCharacterOriginBackground",
                     "Background",
                     "street",
                     "street",
                     InputType: "select",
-                    LayoutSlot: DesktopDialogFieldLayoutSlots.Left,
+                    LayoutSlot: DesktopDialogFieldLayoutSlots.Hidden,
                     Options:
                     [
                         new("street", "Street"),
@@ -736,7 +739,7 @@ public sealed class DesktopDialogFactory : IDesktopDialogFactory
                     "betrayal",
                     "betrayal",
                     InputType: "select",
-                    LayoutSlot: DesktopDialogFieldLayoutSlots.Right,
+                    LayoutSlot: DesktopDialogFieldLayoutSlots.Hidden,
                     Options:
                     [
                         new("betrayal", "Betrayal"),
@@ -752,7 +755,7 @@ public sealed class DesktopDialogFactory : IDesktopDialogFactory
                     "self_taught",
                     "self_taught",
                     InputType: "select",
-                    LayoutSlot: DesktopDialogFieldLayoutSlots.Left,
+                    LayoutSlot: DesktopDialogFieldLayoutSlots.Hidden,
                     Options:
                     [
                         new("self_taught", "Self-Taught"),
@@ -768,7 +771,7 @@ public sealed class DesktopDialogFactory : IDesktopDialogFactory
                     "medical_debt",
                     "medical_debt",
                     InputType: "select",
-                    LayoutSlot: DesktopDialogFieldLayoutSlots.Right,
+                    LayoutSlot: DesktopDialogFieldLayoutSlots.Hidden,
                     Options:
                     [
                         new("addiction", "Addiction"),
@@ -784,7 +787,7 @@ public sealed class DesktopDialogFactory : IDesktopDialogFactory
                     "none",
                     "none",
                     InputType: "select",
-                    LayoutSlot: DesktopDialogFieldLayoutSlots.Left,
+                    LayoutSlot: DesktopDialogFieldLayoutSlots.Hidden,
                     Options: BuildOriginGmRequirementPresetOptions()),
                 new DesktopDialogField(
                     "newCharacterOriginUpgradeExposure",
@@ -792,7 +795,7 @@ public sealed class DesktopDialogFactory : IDesktopDialogFactory
                     "matrix",
                     "matrix",
                     InputType: "select",
-                    LayoutSlot: DesktopDialogFieldLayoutSlots.Left,
+                    LayoutSlot: DesktopDialogFieldLayoutSlots.Hidden,
                     Options:
                     [
                         new("heavy_augment", "Heavy Augment Path"),
@@ -808,7 +811,7 @@ public sealed class DesktopDialogFactory : IDesktopDialogFactory
                     "survival",
                     "survival",
                     InputType: "select",
-                    LayoutSlot: DesktopDialogFieldLayoutSlots.Right,
+                    LayoutSlot: DesktopDialogFieldLayoutSlots.Hidden,
                     Options:
                     [
                         new("revenge", "Revenge"),
@@ -824,7 +827,7 @@ public sealed class DesktopDialogFactory : IDesktopDialogFactory
                     "grounded",
                     "grounded",
                     InputType: "select",
-                    LayoutSlot: DesktopDialogFieldLayoutSlots.Left,
+                    LayoutSlot: DesktopDialogFieldLayoutSlots.Hidden,
                     Options:
                     [
                         new("grounded", "Grounded"),
@@ -839,7 +842,7 @@ public sealed class DesktopDialogFactory : IDesktopDialogFactory
                     string.Empty,
                     "Optional constraints or grants: required qualities, addiction, magical activity, attribute floors, bonus nuyen, availability, gear, ware, or banned choices.",
                     IsMultiline: true,
-                    LayoutSlot: DesktopDialogFieldLayoutSlots.Right),
+                    LayoutSlot: DesktopDialogFieldLayoutSlots.Hidden),
                 new DesktopDialogField(
                     "newCharacterOriginSummary",
                     "Story Preview",
@@ -857,7 +860,7 @@ public sealed class DesktopDialogFactory : IDesktopDialogFactory
                 BuildNewCharacterContextField("newCharacterOriginPathSummary", "Origin Path Summary", recommendation.PathSummary)
             ],
             [
-                new DesktopDialogAction("generate_fitting_build", "Review story and build", true),
+                new DesktopDialogAction("generate_fitting_build", "Build story", true),
                 new DesktopDialogAction("cancel", "Cancel")
             ]);
     }
@@ -890,6 +893,7 @@ public sealed class DesktopDialogFactory : IDesktopDialogFactory
             ("Path", recommendation.PathSummary));
         string storyNotes =
             $"Origin | {recommendation.OriginSummary}{Environment.NewLine}" +
+            "Alice Seed | approved origin story" + Environment.NewLine +
             $"Build | {recommendation.BuildSummary}{Environment.NewLine}" +
             $"GM Requirements | {recommendation.GmRequirementSummary}{Environment.NewLine}" +
             "Sheet Changes | none yet; review the path before applying mechanics";
@@ -897,7 +901,7 @@ public sealed class DesktopDialogFactory : IDesktopDialogFactory
         return new DesktopDialogState(
             NewCharacterOriginBuildDialogId,
             "Origin Dossier",
-            "Review the story first. Open guided character creation only when the story and GM constraints look right.",
+            "Review the story first. Continue to guided build only when the story and GM constraints look right.",
             [
                 BuildNewCharacterContextField("newCharacterWorkflowRulesetId", "Workflow Ruleset", rulesetId),
                 BuildNewCharacterContextField("newCharacterWorkflowBuildMethod", "Workflow Build Method", recommendation.BuildMethod),
@@ -905,6 +909,7 @@ public sealed class DesktopDialogFactory : IDesktopDialogFactory
                 BuildNewCharacterContextField("newCharacterWorkflowAlias", "Workflow Alias", string.IsNullOrWhiteSpace(alias) ? "Runner" : alias.Trim()),
                 BuildNewCharacterContextField("newCharacterWorkflowHouseRulesEnabled", "Workflow House Rules", "false"),
                 BuildNewCharacterContextField("newCharacterOriginSummary", "Origin Summary", recommendation.OriginSummary),
+                BuildNewCharacterContextField("newCharacterOriginAliceSeedSource", "Alice Seed Source", "approved_origin_story"),
                 new DesktopDialogField(
                     "newCharacterOriginStory",
                     "Origin Dossier",
@@ -933,7 +938,7 @@ public sealed class DesktopDialogFactory : IDesktopDialogFactory
                     LayoutSlot: DesktopDialogFieldLayoutSlots.Right)
             ],
             [
-                new DesktopDialogAction("open_origin_guided_chargen", "Open guided character creation", true),
+                new DesktopDialogAction("open_origin_guided_chargen", "Continue to guided build", true),
                 new DesktopDialogAction("cancel", "Cancel")
             ]);
     }

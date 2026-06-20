@@ -70,9 +70,16 @@ public class OverviewCommandPolicyTests
 
         Assert.IsTrue(OverviewCommandPolicy.IsBlockedByAiFeaturePreferenceForCharacterOrCompanionOption("A.I.", quiet));
         Assert.IsTrue(OverviewCommandPolicy.IsBlockedByAiFeaturePreferenceForCharacterOrCompanionOption("A.I. - 6 Depth", quiet));
+        Assert.IsTrue(OverviewCommandPolicy.IsBlockedByAiFeaturePreferenceForCharacterOrCompanionOption("Metasapient A.I.", quiet));
+        Assert.IsTrue(OverviewCommandPolicy.IsBlockedByAiFeaturePreferenceForCharacterOrCompanionOption("4e A.I.s", quiet));
+        Assert.IsTrue(OverviewCommandPolicy.IsBlockedByAiFeaturePreferenceForCharacterOrCompanionOption("AI Companion", quiet));
+        Assert.IsTrue(OverviewCommandPolicy.IsBlockedByAiFeaturePreferenceForCharacterOrCompanionOption("ai_companion", quiet));
+        Assert.IsTrue(OverviewCommandPolicy.IsBlockedByAiFeaturePreferenceForCharacterOrCompanionOption("Artificial_Intelligence", quiet));
         Assert.IsTrue(OverviewCommandPolicy.IsBlockedByAiFeaturePreferenceForCharacterOrCompanionOption("E-Ghost", quiet));
+        Assert.IsTrue(OverviewCommandPolicy.IsBlockedByAiFeaturePreferenceForCharacterOrCompanionOption("Xenosapients", quiet));
         Assert.IsTrue(OverviewCommandPolicy.IsBlockedByAiFeaturePreferenceForCharacterOrCompanionOption("Open Explain Companion", quiet));
         Assert.IsFalse(OverviewCommandPolicy.IsBlockedByAiFeaturePreferenceForCharacterOrCompanionOption("New Critter", quiet));
+        Assert.IsFalse(OverviewCommandPolicy.IsBlockedByAiFeaturePreferenceForCharacterOrCompanionOption("Critter Powers", quiet));
         Assert.IsFalse(OverviewCommandPolicy.IsBlockedByAiFeaturePreferenceForCharacterOrCompanionOption("Human", quiet));
         Assert.IsFalse(OverviewCommandPolicy.IsBlockedByAiFeaturePreferenceForCharacterOrCompanionOption("A.I.", DesktopPreferenceState.Default));
     }

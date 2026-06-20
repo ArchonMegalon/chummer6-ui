@@ -1,5 +1,6 @@
 using Chummer.Contracts.Presentation;
 using System.Linq;
+using System.Text;
 
 namespace Chummer.Presentation.Overview;
 
@@ -70,6 +71,20 @@ public static class OverviewCommandPolicy
         "Open Explain Companion"
     };
 
+    private static readonly HashSet<string> NormalizedAiFeatureCharacterOrCompanionOptionIds = new(StringComparer.Ordinal)
+    {
+        "ai",
+        "a i",
+        "a i s",
+        "artificial intelligence",
+        "e ghost",
+        "xenosapient",
+        "xenosapients",
+        "explain companion",
+        "open explain companion",
+        "ai companion"
+    };
+
     private static readonly HashSet<string> AiFeatureHorizonIds = new(StringComparer.Ordinal)
     {
         "alice",
@@ -118,7 +133,53 @@ public static class OverviewCommandPolicy
         string token = (optionId ?? string.Empty).Trim();
         return AiFeatureCharacterOrCompanionOptionIds.Contains(token)
             || token.StartsWith("A.I. -", StringComparison.OrdinalIgnoreCase)
-            || token.StartsWith("AI -", StringComparison.OrdinalIgnoreCase);
+            || token.StartsWith("AI -", StringComparison.OrdinalIgnoreCase)
+            || IsNormalizedAiFeatureCharacterOrCompanionOption(token);
+    }
+
+    private static bool IsNormalizedAiFeatureCharacterOrCompanionOption(string token)
+    {
+        string normalized = NormalizeAiOptionToken(token);
+        if (NormalizedAiFeatureCharacterOrCompanionOptionIds.Contains(normalized))
+        {
+            return true;
+        }
+
+        string padded = $" {normalized} ";
+        return padded.Contains(" ai ", StringComparison.Ordinal)
+            || padded.Contains(" a i ", StringComparison.Ordinal)
+            || normalized.Contains("artificial intelligence", StringComparison.Ordinal)
+            || normalized.Contains("e ghost", StringComparison.Ordinal)
+            || normalized.Contains("xenosapient", StringComparison.Ordinal)
+            || normalized.Contains("explain companion", StringComparison.Ordinal);
+    }
+
+    private static string NormalizeAiOptionToken(string value)
+    {
+        if (string.IsNullOrWhiteSpace(value))
+        {
+            return string.Empty;
+        }
+
+        var builder = new StringBuilder(value.Length);
+        bool lastWasSpace = true;
+        foreach (char character in value)
+        {
+            if (char.IsLetterOrDigit(character))
+            {
+                builder.Append(char.ToLowerInvariant(character));
+                lastWasSpace = false;
+                continue;
+            }
+
+            if (!lastWasSpace)
+            {
+                builder.Append(' ');
+                lastWasSpace = true;
+            }
+        }
+
+        return builder.ToString().Trim();
     }
 
     public static bool IsBlockedByAiFeaturePreferenceForCharacterOrCompanionOption(

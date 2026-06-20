@@ -67,6 +67,17 @@ internal static class DesktopShellTheme
         comboBox.Padding = new Thickness(8, 4);
     }
 
+    public static void ApplyShellNumericUpDownTheme(NumericUpDown numericUpDown)
+    {
+        ArgumentNullException.ThrowIfNull(numericUpDown);
+        if (!numericUpDown.Classes.Contains("shell-numeric"))
+        {
+            numericUpDown.Classes.Add("shell-numeric");
+        }
+
+        numericUpDown.MinHeight = Math.Max(numericUpDown.MinHeight, 30d);
+    }
+
     public static void ApplyShellListBoxTheme(ListBox listBox)
     {
         ArgumentNullException.ThrowIfNull(listBox);

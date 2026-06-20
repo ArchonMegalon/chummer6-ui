@@ -188,14 +188,14 @@ public static class DesktopInstallLinkingRuntime
         }
 
         DesktopInstallLinkingState state = startupContext.State;
-        await output.WriteLineAsync("Chummer install-link headless mode").ConfigureAwait(false);
+        await output.WriteLineAsync("Chummer claim-your-copy headless mode").ConfigureAwait(false);
         await output.WriteLineAsync($"Install ID: {state.InstallationId}").ConfigureAwait(false);
         await output.WriteLineAsync($"Head: {state.HeadId}").ConfigureAwait(false);
         await output.WriteLineAsync($"Platform: {state.Platform}/{state.Arch}").ConfigureAwait(false);
 
         if (startupContext.ClaimResult is { Succeeded: false } failedClaim)
         {
-            await error.WriteLineAsync($"Startup callback was received but not accepted: {failedClaim.Message}").ConfigureAwait(false);
+            await error.WriteLineAsync($"Startup claim link was received but not accepted: {failedClaim.Message}").ConfigureAwait(false);
         }
 
         if (startupContext.ClaimResult?.Succeeded == true || IsClaimed(state))
@@ -206,9 +206,9 @@ public static class DesktopInstallLinkingRuntime
 
         string relativePath = BuildClaimPortalRelativePathForInstall(state);
         string absoluteUri = BuildPublicPortalAbsoluteUri(relativePath);
-        await output.WriteLineAsync("Open this URL to sign in and finish linking this Linux install:").ConfigureAwait(false);
+        await output.WriteLineAsync("Open this URL to sign in and claim this Linux copy:").ConfigureAwait(false);
         await output.WriteLineAsync(absoluteUri).ConfigureAwait(false);
-        await output.WriteLineAsync("If the browser cannot call back into WSL, copy the callback URL from the browser page and run:").ConfigureAwait(false);
+        await output.WriteLineAsync("If the browser cannot return to WSL, copy the claim URL from the browser page and run:").ConfigureAwait(false);
         await output.WriteLineAsync($"{InstallLinkHeadlessSwitch} {InstallLinkCallbackSwitch} \"<callback-url>\"").ConfigureAwait(false);
 
         if (ShouldOpenHeadlessInstallLinkBrowser())
@@ -221,10 +221,10 @@ public static class DesktopInstallLinkingRuntime
             }
 
             await output.WriteLineAsync(opened
-                ? "Browser handoff requested; waiting for the local callback."
+                ? "Browser claim requested; waiting for this copy to finish."
                 : string.IsNullOrWhiteSpace(failureReason)
-                    ? "Browser handoff could not be opened automatically; use the URL above."
-                    : $"Browser handoff could not be opened automatically: {failureReason}. Use the URL above.")
+                    ? "Browser claim could not be opened automatically; use the URL above."
+                    : $"Browser claim could not be opened automatically: {failureReason}. Use the URL above.")
                 .ConfigureAwait(false);
         }
         else
@@ -634,8 +634,8 @@ public static class DesktopInstallLinkingRuntime
                         string.IsNullOrWhiteSpace(state.LastClaimError) ? null : $"Claim error: {state.LastClaimError}",
                         state.LastBrowserDispatchAttemptUtc is null
                             ? null
-                            : $"Browser handoff attempt: {state.LastBrowserDispatchAttemptUtc.Value.ToUniversalTime():yyyy-MM-dd HH:mm} UTC",
-                        string.IsNullOrWhiteSpace(state.LastBrowserDispatchFailure) ? null : $"Browser handoff error: {state.LastBrowserDispatchFailure}"
+                            : $"Browser claim attempt: {state.LastBrowserDispatchAttemptUtc.Value.ToUniversalTime():yyyy-MM-dd HH:mm} UTC",
+                        string.IsNullOrWhiteSpace(state.LastBrowserDispatchFailure) ? null : $"Browser claim error: {state.LastBrowserDispatchFailure}"
                     }.Where(static item => !string.IsNullOrWhiteSpace(item))),
                 InstallationId: state.InstallationId,
                 ApplicationVersion: state.ApplicationVersion,
@@ -1806,9 +1806,10 @@ public static class DesktopInstallLinkingRuntime
         string? claimError = currentState.LastClaimError;
         if (normalizedFailure is not null && !IsClaimed(currentState))
         {
-            claimError = $"Browser handoff could not open automatically: {normalizedFailure}";
+            claimError = $"Browser claim could not open automatically: {normalizedFailure}";
         }
-        else if (claimError?.StartsWith("Browser handoff could not open automatically:", StringComparison.OrdinalIgnoreCase) == true)
+        else if (claimError?.StartsWith("Browser handoff could not open automatically:", StringComparison.OrdinalIgnoreCase) == true
+            || claimError?.StartsWith("Browser claim could not open automatically:", StringComparison.OrdinalIgnoreCase) == true)
         {
             claimError = null;
         }
@@ -2115,12 +2116,12 @@ public static class DesktopInstallLinkingRuntime
 
         if (state.LastBrowserDispatchAttemptUtc is not null)
         {
-            lines.Add($"Browser handoff attempt: {state.LastBrowserDispatchAttemptUtc.Value.ToUniversalTime():yyyy-MM-dd HH:mm} UTC");
+            lines.Add($"Browser claim attempt: {state.LastBrowserDispatchAttemptUtc.Value.ToUniversalTime():yyyy-MM-dd HH:mm} UTC");
         }
 
         if (!string.IsNullOrWhiteSpace(state.LastBrowserDispatchFailure))
         {
-            lines.Add($"Browser handoff error: {state.LastBrowserDispatchFailure}");
+            lines.Add($"Browser claim error: {state.LastBrowserDispatchFailure}");
         }
 
         if (updateStatus is not null)

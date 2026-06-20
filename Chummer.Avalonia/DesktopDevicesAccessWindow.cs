@@ -55,14 +55,14 @@ internal sealed class DesktopDevicesAccessWindow : Window
         _introText = new TextBlock
         {
             Text = BuildIntro(),
-            IsVisible = false,
+            IsVisible = true,
             TextWrapping = TextWrapping.Wrap
         };
 
         _statusText = new TextBlock
         {
             Text = S("desktop.devices.status.current"),
-            IsVisible = false,
+            IsVisible = true,
             TextWrapping = TextWrapping.Wrap,
             Foreground = DesktopShellTheme.ResolveThemeBrush("ChummerShellMutedForegroundBrush", "#334155")
         };
@@ -88,28 +88,28 @@ internal sealed class DesktopDevicesAccessWindow : Window
         _currentText = new TextBlock
         {
             Text = BuildCurrentBody(),
-            IsVisible = false,
+            IsVisible = true,
             TextWrapping = TextWrapping.Wrap
         };
 
         _devicesText = new TextBlock
         {
             Text = BuildDevicesBody(),
-            IsVisible = false,
+            IsVisible = true,
             TextWrapping = TextWrapping.Wrap
         };
 
         _claimsText = new TextBlock
         {
             Text = BuildClaimsBody(),
-            IsVisible = false,
+            IsVisible = true,
             TextWrapping = TextWrapping.Wrap
         };
 
         _accessText = new TextBlock
         {
             Text = BuildAccessBody(),
-            IsVisible = false,
+            IsVisible = true,
             TextWrapping = TextWrapping.Wrap
         };
 
@@ -385,7 +385,7 @@ internal sealed class DesktopDevicesAccessWindow : Window
         =>
         [
             DesktopInstallLinkingRuntime.IsClaimed(_installState)
-                ? CreateButton(S("desktop.home.button.open_current_workspace"), OpenWorkRouteAsync, isPrimary: true)
+                ? CreateButton(S("desktop.home.button.open_current_campaign_workspace"), OpenWorkRouteAsync, isPrimary: true)
                 : CreateButton(DesktopLocalizationCatalog.GetRequiredString("desktop.install_link.button.link_copy", _preferences.Language), OpenInstallLinkingAsync, isPrimary: true),
             CreateButton(DesktopLocalizationCatalog.GetRequiredString("desktop.install_link.button.copy_install_id", _preferences.Language), CopyInstallIdAsync),
             CreateButton(S("desktop.home.button.open_update_status"), OpenUpdateWindowAsync)

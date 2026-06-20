@@ -1203,7 +1203,7 @@ internal sealed class DesktopHomeWindow : Window
         stack.Children.Add(DesktopShellTheme.CreateStackActionRow(
         [
             CreateButton(S("desktop.home.button.open_settings"), OpenSettingsAsync),
-            CreateButton(S("desktop.home.button.open_horizons_public"), static () => DesktopInstallLinkingRuntime.TryOpenRelativePortal("/horizons"))
+            CreateButton(S("desktop.home.button.open_horizons_public"), static () => DesktopInstallLinkingRuntime.TryOpenRelativePortal("/roadmap"))
         ], spacing: 8));
 
         return stack;

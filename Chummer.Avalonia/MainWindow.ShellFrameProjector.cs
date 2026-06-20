@@ -146,7 +146,10 @@ internal static class MainWindowShellFrameProjector
             RosterPaneState: new RosterPaneState(
                 Items: CharacterRosterDataBinder.CreateRosterNodes(resolvedOpenWorkspaces).ToArray(),
                 SelectedWorkspaceId: workspaceContext.ActiveWorkspaceId?.Value),
-            CommandDialogPaneState: ProjectCommandDialogState(state, commands, shellSurface.LastCommandId),
+            CommandDialogPaneState: ProjectCommandDialogState(
+                state,
+                commands,
+                SanitizeLastCommandIdForPreferences(shellSurface.LastCommandId, state.Preferences)),
             ShowNavigatorPane: false,
             NavigatorPaneState: new NavigatorPaneState(
                 OpenWorkspacesHeading: RulesetUiDirectiveCatalog.BuildOpenWorkspacesHeading(shellSurface.ActiveRulesetId),
@@ -510,6 +513,12 @@ internal static class MainWindowShellFrameProjector
             .ToArray();
     }
 
+    private static string? SanitizeLastCommandIdForPreferences(string? commandId, DesktopPreferenceState preferences)
+        => !string.IsNullOrWhiteSpace(commandId)
+        && OverviewCommandPolicy.IsBlockedByAiFeaturePreference(commandId, preferences)
+            ? null
+            : commandId;
+
     private static MenuCommandItem[] ProjectMenuCommands(
         CharacterOverviewState state,
         ShellSurfaceState shellSurface,
@@ -677,7 +686,7 @@ internal static class MainWindowShellFrameProjector
         CommandPaletteItem[] commands,
         string? lastCommandId)
     {
-        if (state.ActiveDialog is null)
+        if (state.ActiveDialog is null || IsActiveDialogBlockedByPreferences(state.ActiveDialog, state.Preferences))
         {
             return new CommandDialogPaneState(
                 Commands: commands,
@@ -716,6 +725,10 @@ internal static class MainWindowShellFrameProjector
             Fields: fields,
             Actions: actions);
     }
+
+    private static bool IsActiveDialogBlockedByPreferences(DesktopDialogState dialog, DesktopPreferenceState preferences)
+        => string.Equals(dialog.Id, DesktopAliceAssistant.DialogId, StringComparison.Ordinal)
+            && preferences.DisableAiFeatures;
 
     private static IReadOnlyDictionary<string, WorkspaceSurfaceActionDefinition> BuildWorkspaceActionLookup(
         IReadOnlyList<WorkspaceSurfaceActionDefinition> workspaceActions)

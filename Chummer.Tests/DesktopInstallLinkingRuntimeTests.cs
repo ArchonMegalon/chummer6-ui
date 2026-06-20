@@ -130,7 +130,7 @@ public sealed class DesktopInstallLinkingRuntimeTests
 
             string outputText = output.ToString();
             Assert.AreEqual(2, exitCode);
-            StringAssert.Contains(outputText, "Chummer install-link headless mode");
+            StringAssert.Contains(outputText, "Chummer claim-your-copy headless mode");
             StringAssert.Contains(outputText, "Install ID: ins-avalonia-1");
             StringAssert.Contains(outputText, "https://chummer.run/login?next=");
             StringAssert.Contains(outputText, "installLinkCallbackUri%3Dhttp%253A%252F%252F127.0.0.1%253A", StringComparison.Ordinal);
@@ -203,7 +203,7 @@ public sealed class DesktopInstallLinkingRuntimeTests
 
             string outputText = output.ToString();
             Assert.AreEqual(2, exitCode);
-            StringAssert.Contains(outputText, "Browser handoff could not be opened automatically:", StringComparison.Ordinal);
+            StringAssert.Contains(outputText, "Browser claim could not be opened automatically:", StringComparison.Ordinal);
             StringAssert.Contains(outputText, "Operation not supported", StringComparison.Ordinal);
             StringAssert.Contains(outputText, "https://chummer.run/login?next=", StringComparison.Ordinal);
 
@@ -219,7 +219,7 @@ public sealed class DesktopInstallLinkingRuntimeTests
             using JsonDocument state = JsonDocument.Parse(File.ReadAllText(statePath));
             StringAssert.Contains(GetStringProperty(state.RootElement, "lastBrowserDispatchUri") ?? string.Empty, "https://chummer.run/login?next=", StringComparison.Ordinal);
             StringAssert.Contains(GetStringProperty(state.RootElement, "lastBrowserDispatchFailure") ?? string.Empty, "Operation not supported", StringComparison.Ordinal);
-            StringAssert.Contains(GetStringProperty(state.RootElement, "lastClaimError") ?? string.Empty, "Browser handoff could not open automatically", StringComparison.Ordinal);
+            StringAssert.Contains(GetStringProperty(state.RootElement, "lastClaimError") ?? string.Empty, "Browser claim could not open automatically", StringComparison.Ordinal);
         }
         finally
         {

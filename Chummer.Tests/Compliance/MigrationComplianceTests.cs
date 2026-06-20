@@ -3417,8 +3417,11 @@ public class MigrationComplianceTests
 
         StringAssert.Contains(manifestContractsText, "string Status = \"published\"");
         StringAssert.Contains(manifestContractsText, "string Source = \"manifest\"");
-        StringAssert.Contains(downloadsViewText, "No published build is available yet");
-        StringAssert.Contains(downloadsViewText, "See what works today");
+        StringAssert.Contains(downloadsViewText, "No download is available right now");
+        StringAssert.Contains(downloadsViewText, "Open status");
+        StringAssert.Contains(downloadsViewText, "Choose the latest build for Windows or Linux.");
+        StringAssert.Contains(downloadsViewText, "Stable");
+        StringAssert.Contains(downloadsViewText, "Nightly");
     }
 
     [TestMethod]
@@ -3482,7 +3485,9 @@ public class MigrationComplianceTests
         StringAssert.Contains(runbookText, "public_stable");
         StringAssert.Contains(runbookText, "CHUMMER_WINDOWS_SIGN_PFX_BASE64");
         StringAssert.Contains(runbookText, "CHUMMER_MAC_CERTIFICATE_P12_BASE64");
-        StringAssert.Contains(runbookText, "latest-only");
+        StringAssert.Contains(runbookText, "rolling daily shelf");
+        StringAssert.Contains(runbookText, "once per day in the morning release window");
+        StringAssert.Contains(runbookText, "Build only what the proof needs.");
         StringAssert.Contains(runbookText, "RUNBOOK_LOG_DIR");
         StringAssert.Contains(runbookText, "RUNBOOK_STATE_DIR");
 
@@ -3512,12 +3517,12 @@ public class MigrationComplianceTests
         string startupSmokeScriptPath = FindPath("scripts", "run-desktop-startup-smoke.sh");
         string startupSmokeScriptText = File.ReadAllText(startupSmokeScriptPath);
 
-        StringAssert.Contains(workflowText, "project: Chummer.Avalonia/Chummer.Avalonia.csproj");
+        StringAssert.Contains(workflowText, "\"project\": \"Chummer.Avalonia/Chummer.Avalonia.csproj\"");
         StringAssert.Contains(workflowText, "Restore secondary Windows desktop head");
         StringAssert.Contains(workflowText, "dotnet restore \"Chummer.Blazor.Desktop/Chummer.Blazor.Desktop.csproj\"");
         StringAssert.Contains(workflowText, "Publish secondary Windows desktop head");
         StringAssert.Contains(workflowText, "dotnet publish \"Chummer.Blazor.Desktop/Chummer.Blazor.Desktop.csproj\"");
-        StringAssert.Contains(workflowText, "os: macos-latest");
+        Assert.IsFalse(workflowText.Contains("\"rid\": \"osx-", StringComparison.Ordinal));
         StringAssert.Contains(workflowText, "name: Publish secondary Windows desktop head");
         StringAssert.Contains(workflowText, "out/blazor-desktop/${{ matrix.rid }}");
         StringAssert.Contains(workflowText, "CHUMMER_WINDOWS_SECONDARY_HEAD_KEY");
@@ -3525,7 +3530,7 @@ public class MigrationComplianceTests
         StringAssert.Contains(workflowText, "CHUMMER_WINDOWS_SECONDARY_HEAD_LAUNCH_TARGET");
         StringAssert.Contains(workflowText, "CHUMMER_STARTUP_SMOKE_REQUIRED_INSTALL_PATHS");
         StringAssert.Contains(workflowText, "avalonia/Chummer.Avalonia.exe;blazor-desktop/Chummer.Blazor.Desktop.exe");
-        StringAssert.Contains(workflowText, "installer_ext: dmg");
+        Assert.IsFalse(workflowText.Contains("\"installer_ext\": \"dmg\"", StringComparison.Ordinal));
         StringAssert.Contains(workflowText, "name: Startup smoke");
         StringAssert.Contains(workflowText, "bash scripts/run-desktop-startup-smoke.sh");
         StringAssert.Contains(workflowText, "desktop-smoke-${{ matrix.app }}-${{ matrix.rid }}");
@@ -3544,7 +3549,7 @@ public class MigrationComplianceTests
         StringAssert.Contains(workflowText, "path: g");
         StringAssert.Contains(workflowText, "path: u");
         StringAssert.Contains(workflowText, "path: m");
-        StringAssert.Contains(workflowText, "ref: fleet/core");
+        StringAssert.Contains(workflowText, "repository: ArchonMegalon/chummer6-core");
         StringAssert.Contains(workflowText, "ref: main");
         StringAssert.Contains(workflowText, "ref: fleet/hub-registry");
         StringAssert.Contains(workflowText, "ref: fleet/media-factory");
@@ -3560,19 +3565,23 @@ public class MigrationComplianceTests
         StringAssert.Contains(workflowText, "r/dist/chummer-${{ matrix.app }}-${{ matrix.rid }}-installer.");
         StringAssert.Contains(workflowText, "path: r/dist/startup-smoke");
         StringAssert.Contains(workflowText, "bash scripts/generate-releases-manifest.sh");
-        StringAssert.Contains(workflowText, "Chummer.Application/**");
-        StringAssert.Contains(workflowText, "Chummer.Core/**");
-        StringAssert.Contains(workflowText, "Chummer.Desktop.Runtime/**");
-        StringAssert.Contains(workflowText, "Chummer.Infrastructure/**");
-        StringAssert.Contains(workflowText, "Chummer.Portal/**");
+        StringAssert.Contains(workflowText, "schedule:");
+        StringAssert.Contains(workflowText, "workflow_dispatch:");
+        Assert.IsFalse(workflowText.Contains("push:", StringComparison.Ordinal));
+        Assert.IsFalse(workflowText.Contains("Chummer.Application/**", StringComparison.Ordinal));
+        Assert.IsFalse(workflowText.Contains("Chummer.Core/**", StringComparison.Ordinal));
+        Assert.IsFalse(workflowText.Contains("Chummer.Desktop.Runtime/**", StringComparison.Ordinal));
+        Assert.IsFalse(workflowText.Contains("Chummer.Infrastructure/**", StringComparison.Ordinal));
+        Assert.IsFalse(workflowText.Contains("Chummer.Portal/**", StringComparison.Ordinal));
         StringAssert.Contains(workflowText, "scripts/generate-releases-manifest.sh");
         StringAssert.Contains(workflowText, "scripts/resolve-desktop-release-context.sh");
         StringAssert.Contains(workflowText, "scripts/prepare-macos-signing-keychain.sh");
-        StringAssert.Contains(workflowText, "scripts/sign-windows-artifacts.ps1");
+        StringAssert.Contains(workflowText, "CHUMMER_WINDOWS_SIGNING_RECEIPT_PATH");
+        StringAssert.Contains(workflowText, "bash scripts/build-desktop-installer.sh");
         StringAssert.Contains(workflowText, "scripts/publish-download-bundle.sh");
         StringAssert.Contains(workflowText, "scripts/publish-download-bundle-http.sh");
         StringAssert.Contains(workflowText, "scripts/publish-download-bundle-s3.sh");
-        StringAssert.Contains(workflowText, "branches:\n      - main\n      - Docker");
+        Assert.IsFalse(workflowText.Contains("branches:\n      - main\n      - Docker", StringComparison.Ordinal));
         StringAssert.Contains(workflowText, "CHUMMER_EFFECTIVE_DESKTOP_RELEASE_CHANNEL");
         StringAssert.Contains(workflowText, "deploy_portal_downloads");
         StringAssert.Contains(workflowText, "deploy-downloads");
@@ -3650,6 +3659,46 @@ public class MigrationComplianceTests
         StringAssert.Contains(verifyScriptText, "Provide a portal base URL or manifest path as the first argument");
         StringAssert.Contains(verifyScriptText, "verify_public_release_channel.py");
         StringAssert.Contains(verifyScriptText, "Missing registry verifier");
+    }
+
+    [TestMethod]
+    public void Desktop_download_matrix_enforces_daily_release_window_and_targeted_manual_builds()
+    {
+        string workflowPath = FindPath(".github", "workflows", "desktop-downloads-matrix.yml");
+        string workflowText = File.ReadAllText(workflowPath);
+        string runbookPath = FindPath("docs", "SELF_HOSTED_DOWNLOADS_RUNBOOK.md");
+        string runbookText = File.ReadAllText(runbookPath);
+        string releasePipelinePath = FindPath("docs", "DESKTOP_RELEASE_PIPELINE.md");
+        string releasePipelineText = File.ReadAllText(releasePipelinePath);
+
+        StringAssert.Contains(workflowText, "name: Daily Release Window");
+        StringAssert.Contains(workflowText, "cron: '0 6 * * *'");
+        StringAssert.Contains(workflowText, "cron: '0 7 * * *'");
+        StringAssert.Contains(workflowText, "TZ=Europe/Vienna date +%H");
+        StringAssert.Contains(workflowText, "if [[ \"$vienna_hour\" == \"08\" ]]; then");
+        StringAssert.Contains(workflowText, "publish_allowed=true");
+        StringAssert.Contains(workflowText, "scheduled 08:00 Europe/Vienna window");
+        StringAssert.Contains(workflowText, "scheduled outside 08:00 Europe/Vienna window");
+        StringAssert.Contains(workflowText, "manual build only");
+        StringAssert.Contains(workflowText, "force_publish_downloads");
+        StringAssert.Contains(workflowText, "manual force_publish_downloads override");
+        StringAssert.Contains(workflowText, "Manual proof target. Forced publishes always build the public Windows+Linux lanes.");
+        StringAssert.Contains(workflowText, "elif requested_platform == \"win-x64\":");
+        StringAssert.Contains(workflowText, "include = [linux_x64]");
+        StringAssert.Contains(workflowText, "if event_name == \"schedule\" or force_publish.lower() == \"true\" or requested_platform == \"public-windows-linux\":");
+        StringAssert.Contains(workflowText, "if: ${{ github.event_name == 'workflow_dispatch' || needs.release-window.outputs.publish_allowed == 'true' }}");
+        StringAssert.Contains(workflowText, "needs.release-window.outputs.publish_allowed == 'true' && github.ref_name == 'main'");
+        StringAssert.Contains(workflowText, "github.event_name == 'schedule' || (github.event_name == 'workflow_dispatch' && inputs.deploy_portal_downloads)");
+        StringAssert.Contains(workflowText, "github.event_name == 'schedule' || (github.event_name == 'workflow_dispatch' && inputs.publish_github_release)");
+
+        StringAssert.Contains(runbookText, "Pushes do not publish the downloads shelf.");
+        StringAssert.Contains(runbookText, "only publishes during the 08:00 Europe/Vienna release window");
+        StringAssert.Contains(runbookText, "Manual workflow runs are build/proof runs by default.");
+        StringAssert.Contains(runbookText, "They publish only when `force_publish_downloads` is explicitly enabled.");
+        StringAssert.Contains(runbookText, "Build only what the proof needs.");
+        StringAssert.Contains(releasePipelineText, "publishes the live `chummer.run` shelf once per day during the 08:00 Europe/Vienna release window.");
+        StringAssert.Contains(releasePipelineText, "Manual workflow runs are build/proof runs by default; they publish only when `force_publish_downloads` is explicitly enabled.");
+        StringAssert.Contains(releasePipelineText, "A full Windows+Linux release package is reserved for the scheduled release window or an explicit operator override.");
     }
 
     [TestMethod]

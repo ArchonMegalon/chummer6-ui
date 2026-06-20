@@ -99,7 +99,7 @@ public partial class ClassicToolStrip : UserControl, IToolStripSurface
         SetButtonLabel("SettingsButton", "Global Settings", "Settings");
         SetButtonLabel("ImportRawButton", "Import Raw XML", "Raw XML");
         SetButtonLabel("DesktopHomeButton", "Desktop Home", "Home");
-        SetButtonLabel("HorizonsButton", DesktopLocalizationCatalog.GetRequiredString("desktop.shell.tool.horizons", DesktopLocalizationCatalog.GetCurrentLanguage()), "Horizons");
+        SetButtonLabel("HorizonsButton", DesktopLocalizationCatalog.GetRequiredString("desktop.shell.tool.horizons", DesktopLocalizationCatalog.GetCurrentLanguage()), "Tools");
         SetButtonLabel("CampaignWorkspaceButton", "Campaign Workspace", "Campaign");
         SetButtonLabel("GmPrepButton", "Open GM Prep Packets", "GM Prep");
         SetButtonLabel("RosterMovementButton", "Open Roster Movement", "Roster");

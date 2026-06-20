@@ -755,13 +755,13 @@ public partial class DesktopDialogWindow : Window
 
         content.Children.Add(new TextBlock
         {
-            Text = "Desktop Horizon Integrations",
+            Text = "Desktop Workbench Integrations",
             FontWeight = FontWeight.SemiBold,
             TextWrapping = TextWrapping.Wrap
         });
         content.Children.Add(new TextBlock
         {
-            Text = "Open the current first-party horizon lanes from desktop settings. Karma Forge includes package browsing, tracked packages, and direct create-package intake.",
+            Text = "Open the current first-party workbenches from desktop settings. Karma Forge includes package browsing, tracked packages, and direct create-package intake.",
             TextWrapping = TextWrapping.Wrap
         });
 
@@ -774,7 +774,7 @@ public partial class DesktopDialogWindow : Window
             content.Children.Add(CreateHorizonWorkbenchRow(entry));
         }
 
-        return CreateLegacyFieldGroup("Horizons", content);
+        return CreateLegacyFieldGroup("Workbenches", content);
     }
 
     private Control CreateKarmaForgeWorkbenchRow()
@@ -792,6 +792,7 @@ public partial class DesktopDialogWindow : Window
                     TextWrapping = TextWrapping.Wrap
                 })
         };
+        ApplyShellComboBoxTheme(targetCombo);
 
         Button openSelectedButton = CreateHorizonRouteButton(
             "Open workbench",
@@ -1253,20 +1254,13 @@ public partial class DesktopDialogWindow : Window
         };
 
         shell.Children.Add(CreateLegacyFieldGroup(
-            "Runner",
-            CreateLegacyGroupLead("Name the runner and pick the rules context before the origin becomes a build plan."),
-            CreateSplitFieldRow(nameField, aliasField),
-            CreateSplitFieldRow(rulesetField, buildPreferenceField)));
-
-        shell.Children.Add(CreateLegacyFieldGroup(
-            "Build Target",
-            CreateLegacyGroupLead("Pick an archetype when you know it, or let the dossier infer one from the life path and GM constraints."),
-            CreateSplitFieldRow(archetypeField, metatypePreferenceField),
+            "Story",
+            CreateLegacyGroupLead("Pick only the basics, then build the story. Advanced controls are optional."),
+            CreateSplitFieldRow(metatypePreferenceField, archetypeField),
             CreateOriginSummaryStrip(
-                ("Method", buildMethodField.Value),
                 ("Metatype", metatypeField.Value),
-                ("Path", pathSummaryField.Value),
-                ("Pressure", qualityFocusField.Value))));
+                ("Archetype", archetypeField.Value),
+                ("Path", pathSummaryField.Value))));
 
         Grid lifePathGrid = new()
         {
@@ -1298,20 +1292,38 @@ public partial class DesktopDialogWindow : Window
         Grid.SetColumn(rightPath, 1);
         lifePathGrid.Children.Add(rightPath);
 
-        shell.Children.Add(CreateLegacyFieldGroup(
-            "Life Path",
-            CreateLegacyGroupLead("This works like a light life-module pass: choose where the runner came from, what broke, how they trained, and what still costs them."),
-            lifePathGrid));
-
-        shell.Children.Add(CreateLegacyFieldGroup(
-            "GM Steering",
-            CreateLegacyGroupLead("Optional table permissions or requirements. These guide the story and build handoff; they do not edit a sheet by themselves."),
-            CreateSplitFieldRow(gmPresetField, gmRequirementsField),
-            CreateOriginSummaryStrip(("Applied GM Constraint", gmSummaryField.Value))));
+        Expander advancedStoryControls = new()
+        {
+            Name = "OriginDossierStandaloneAdvancedStoryControlsExpander",
+            Header = "Advanced story controls",
+            IsExpanded = false,
+            Content = new StackPanel
+            {
+                Spacing = 12,
+                Children =
+                {
+                    CreateLegacyFieldGroup(
+                        "Runner",
+                        CreateLegacyGroupLead("Optional identity and rules context for the story packet."),
+                        CreateSplitFieldRow(nameField, aliasField),
+                        CreateSplitFieldRow(rulesetField, buildPreferenceField)),
+                    CreateLegacyFieldGroup(
+                        "Life Path",
+                        CreateLegacyGroupLead("Optional life-module-style steering: where the runner came from, what broke, how they trained, and what still costs them."),
+                        lifePathGrid),
+                    CreateLegacyFieldGroup(
+                        "GM Steering",
+                        CreateLegacyGroupLead("Optional table permissions or requirements. These guide the story and build handoff; they do not edit a sheet by themselves."),
+                        CreateSplitFieldRow(gmPresetField, gmRequirementsField),
+                        CreateOriginSummaryStrip(("Applied GM Constraint", gmSummaryField.Value), ("Pressure", qualityFocusField.Value)))
+                }
+            }
+        };
+        shell.Children.Add(advancedStoryControls);
 
         shell.Children.Add(CreateLegacySummaryCard(
             "Story Preview",
-            "Review the story seed before generating the build handoff.",
+            "Review the story seed first. Mechanics can follow after the story is accepted.",
             CreateFieldControl(summaryField)));
 
         return shell;
@@ -2259,6 +2271,7 @@ public partial class DesktopDialogWindow : Window
             IsEnabled = false,
             MinWidth = 260
         };
+        ApplyShellComboBoxTheme(settingsCombo);
         ApplyAccessibility(settingsCombo, settingsField.AccessibleName, settingsField.ToolTip, settingsField.HelpText);
         settingsCombo.ItemTemplate = new FuncDataTemplate<DesktopDialogFieldOption>((option, _) =>
             CreateOptionText(option?.Label ?? string.Empty, TextWrapping.Wrap));
@@ -3022,6 +3035,7 @@ public partial class DesktopDialogWindow : Window
             Increment = 1
         };
         ApplyAccessibility(numericUpDown, field.AccessibleName, field.ToolTip, field.HelpText);
+        DesktopShellTheme.ApplyShellNumericUpDownTheme(numericUpDown);
         if (!field.IsReadOnly)
         {
             numericUpDown.ValueChanged += (_, _) =>

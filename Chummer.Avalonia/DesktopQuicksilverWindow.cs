@@ -131,6 +131,7 @@ internal sealed class DesktopQuicksilverWindow : Window
                 TextWrapping = TextWrapping.Wrap
             })
         };
+        DesktopShellTheme.ApplyShellComboBoxTheme(targetCombo);
 
         TextBlock targetSummaryText = new()
         {

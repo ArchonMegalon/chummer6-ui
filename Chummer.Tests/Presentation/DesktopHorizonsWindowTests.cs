@@ -40,7 +40,8 @@ public sealed class DesktopHorizonsWindowTests
         StringAssert.Contains(source, "DesktopDevicesAccessWindow.ShowAsync(this, _headId)");
         StringAssert.Contains(source, "DesktopInstallLinkingRuntime.TryOpenRelativePortal(\"/participate/karma-forge#karma-forge-intake\")");
         StringAssert.Contains(source, "DesktopInstallLinkingRuntime.TryOpenRelativePortal(\"/account/packages\")");
-        StringAssert.Contains(source, "DesktopInstallLinkingRuntime.TryOpenRelativePortal(\"/horizons\")");
+        StringAssert.Contains(source, "DesktopInstallLinkingRuntime.TryOpenRelativePortal(\"/roadmap\")");
+        Assert.IsFalse(source.Contains("DesktopInstallLinkingRuntime.TryOpenRelativePortal(\"/horizons\")", StringComparison.Ordinal));
         Assert.IsTrue(ProductSpineCatalog.ListDesktopHorizons().Any(entry => string.Equals(entry.Id, "alice", StringComparison.Ordinal)));
         CollectionAssert.AreEqual(
             new[] { "/packages", "/account/packages", "/participate/karma-forge#karma-forge-intake" },
@@ -52,9 +53,34 @@ public sealed class DesktopHorizonsWindowTests
 
         string homeSource = File.ReadAllText(Path.Combine(repoRoot, "Chummer.Avalonia", "DesktopHomeWindow.cs"));
         StringAssert.Contains(homeSource, "OverviewCommandPolicy.IsBlockedByAiFeaturePreferenceForHorizon(item.Id, _preferences)");
+        StringAssert.Contains(homeSource, "DesktopInstallLinkingRuntime.TryOpenRelativePortal(\"/roadmap\")");
+        Assert.IsFalse(homeSource.Contains("DesktopInstallLinkingRuntime.TryOpenRelativePortal(\"/horizons\")", StringComparison.Ordinal));
 
         string dialogSource = File.ReadAllText(Path.Combine(repoRoot, "Chummer.Avalonia", "DesktopDialogWindow.axaml.cs"));
         StringAssert.Contains(dialogSource, "DesktopPreferenceRuntime.LoadOrCreateState(\"avalonia\")");
         StringAssert.Contains(dialogSource, "OverviewCommandPolicy.IsBlockedByAiFeaturePreferenceForHorizon(item.Id, preferences)");
+        StringAssert.Contains(dialogSource, "Desktop Workbench Integrations");
+        StringAssert.Contains(dialogSource, "first-party workbenches");
+        StringAssert.Contains(dialogSource, "CreateLegacyFieldGroup(\"Workbenches\", content)");
+        Assert.IsFalse(dialogSource.Contains("Desktop Horizon Integrations", StringComparison.Ordinal));
+        Assert.IsFalse(dialogSource.Contains("horizon lanes", StringComparison.Ordinal));
+        Assert.IsFalse(dialogSource.Contains("CreateLegacyFieldGroup(\"Horizons\"", StringComparison.Ordinal));
+
+        string karmaForgeSource = File.ReadAllText(Path.Combine(repoRoot, "Chummer.Avalonia", "DesktopKarmaForgeWindow.cs"));
+        StringAssert.Contains(karmaForgeSource, "CreateButton(\"Open roadmap\", static () => DesktopInstallLinkingRuntime.TryOpenRelativePortal(\"/roadmap\")");
+        Assert.IsFalse(karmaForgeSource.Contains("Open Horizons index", StringComparison.Ordinal));
+        Assert.IsFalse(karmaForgeSource.Contains("TryOpenRelativePortal(\"/horizons\")", StringComparison.Ordinal));
+
+        string toolStripSource = File.ReadAllText(Path.Combine(repoRoot, "Chummer.Avalonia", "Controls", "ClassicToolStrip.axaml.cs"));
+        StringAssert.Contains(toolStripSource, "SetButtonLabel(\"HorizonsButton\", DesktopLocalizationCatalog.GetRequiredString(\"desktop.shell.tool.horizons\", DesktopLocalizationCatalog.GetCurrentLanguage()), \"Tools\")");
+        Assert.IsFalse(toolStripSource.Contains("SetButtonLabel(\"HorizonsButton\", DesktopLocalizationCatalog.GetRequiredString(\"desktop.shell.tool.horizons\", DesktopLocalizationCatalog.GetCurrentLanguage()), \"Horizons\")", StringComparison.Ordinal));
+
+        string localizationSource = File.ReadAllText(Path.Combine(repoRoot, "Chummer.Presentation", "Overview", "DesktopLocalizationCatalog.cs"));
+        StringAssert.Contains(localizationSource, "[\"desktop.horizons.button.open_public_index\"] = \"Open roadmap\"");
+        StringAssert.Contains(localizationSource, "[\"desktop.home.button.open_horizons_public\"] = \"Open roadmap\"");
+        StringAssert.Contains(localizationSource, "localized[\"desktop.horizons.button.open_public_index\"] = \"Roadmap öffnen\"");
+        StringAssert.Contains(localizationSource, "localized[\"desktop.home.button.open_horizons_public\"] = \"Roadmap öffnen\"");
+        Assert.IsFalse(localizationSource.Contains("Open product areas", StringComparison.Ordinal));
+        Assert.IsFalse(localizationSource.Contains("Open public index", StringComparison.Ordinal));
     }
 }

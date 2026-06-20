@@ -213,6 +213,7 @@
     <Compile Include="Presentation\DesktopAnarchyWindowTests.cs" />
     <Compile Include="Presentation\DesktopGhostwireWindowTests.cs" />
     <Compile Include="Presentation\DesktopInstallLinkingShellChromeTests.cs" />
+    <Compile Include="Presentation\DesktopClaimCopyLanguageTests.cs" />
     <Compile Include="Presentation\DesktopShellDownloadDispatchTests.cs" />
     <Compile Include="Presentation\Next90M141UiImportRouteProofTests.cs" />
     <Compile Include="Presentation\DesktopShellRulesetCatalogTests.cs" />

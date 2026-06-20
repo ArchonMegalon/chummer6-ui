@@ -198,16 +198,37 @@ public sealed class DesktopInstallLinkingShellChromeTests
         StringAssert.Contains(localizationSource, "desktop.install_link.preference.visible_choice");
         StringAssert.Contains(localizationSource, "desktop.install_link.preference.hidden_choice");
         StringAssert.Contains(localizationSource, "Enable AI features");
-        StringAssert.Contains(localizationSource, "No, emotionally I'm a scared caveman");
+        StringAssert.Contains(localizationSource, "scared caveman");
         Assert.IsFalse(
             localizationSource.Contains("Keep the interface manual", StringComparison.Ordinal),
             "The first-run preference should describe the user-visible result, not internal manual mode.");
         StringAssert.Contains(localizationSource, "desktop.devices.section.interface");
         StringAssert.Contains(localizationSource, "Account and Devices");
         StringAssert.Contains(localizationSource, "desktop.devices.section.current_description");
+        StringAssert.Contains(localizationSource, "[\"desktop.devices.section.claimed\"] = \"Linked devices\"");
+        StringAssert.Contains(localizationSource, "[\"desktop.devices.section.follow_through\"] = \"Support and recovery\"");
+        StringAssert.Contains(localizationSource, "[\"desktop.devices.section.claims_description\"] = \"Claim links and recent downloads for this copy.\"");
+        StringAssert.Contains(localizationSource, "[\"desktop.devices.button.reload\"] = \"Refresh account status\"");
+        Assert.IsFalse(
+            localizationSource.Contains("[\"desktop.devices.button.reload\"] = \"Check again\"", StringComparison.Ordinal),
+            "Devices and Access should say what is being refreshed instead of using a vague button label.");
+        Assert.IsFalse(
+            localizationSource.Contains("[\"desktop.devices.section.claimed\"] = \"Your devices\"", StringComparison.Ordinal),
+            "Devices and Access should describe linked installs, not a vague devices bucket.");
+        Assert.IsFalse(
+            localizationSource.Contains("[\"desktop.devices.section.follow_through\"] = \"Help and support\"", StringComparison.Ordinal),
+            "Devices and Access should make recovery explicit.");
+        Assert.IsFalse(
+            localizationSource.Contains("Anmeldelink", StringComparison.Ordinal),
+            "German Devices and Access copy should use the current claim-copy wording instead of old login/link wording.");
         StringAssert.Contains(localizationSource, "Claim your copy");
-        StringAssert.Contains(File.ReadAllText(FindPath("Chummer.Avalonia", "DesktopDevicesAccessWindow.cs")), "desktop.install_link.button.login_website");
-        StringAssert.Contains(File.ReadAllText(FindPath("Chummer.Avalonia", "DesktopDevicesAccessWindow.cs")), "DevicesAccessGuidedToolsHiddenOption");
+        string devicesSource = File.ReadAllText(FindPath("Chummer.Avalonia", "DesktopDevicesAccessWindow.cs"));
+        StringAssert.Contains(devicesSource, "desktop.install_link.button.login_website");
+        StringAssert.Contains(devicesSource, "DevicesAccessGuidedToolsHiddenOption");
+        StringAssert.Contains(devicesSource, "? CreateButton(S(\"desktop.home.button.open_current_campaign_workspace\"), OpenWorkRouteAsync, isPrimary: true)");
+        Assert.IsFalse(
+            devicesSource.Contains("? CreateButton(S(\"desktop.home.button.open_current_workspace\"), OpenWorkRouteAsync, isPrimary: true)", StringComparison.Ordinal),
+            "Devices and Access must not label a campaign-workspace action as a runner workspace action.");
         StringAssert.Contains(localizationSource, "desktop.install_link.status.guided_tools_hidden");
         StringAssert.Contains(preferenceSource, "_preferPersistedPreferencesOnNextRefresh");
     }

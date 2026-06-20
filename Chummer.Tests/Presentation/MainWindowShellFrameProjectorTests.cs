@@ -99,7 +99,14 @@ public sealed class MainWindowShellFrameProjectorTests
             preferences: DesktopPreferenceState.Default with { DisableAiFeatures = true },
             commands: commands,
             menuRoots: [commands[0]],
-            openMenuId: "tools");
+            openMenuId: "tools",
+            activeDialog: new DesktopDialogState(
+                DesktopAliceAssistant.DialogId,
+                "Alice",
+                "Stale assistant dialog from before the preference changed.",
+                [new DesktopDialogField("autoAliceConversationMode", "Mode", "Build help", "Build help")],
+                [new DesktopDialogAction(DesktopAliceAssistant.PreviewActionId, "Preview", true)]),
+            lastCommandId: DesktopAliceAssistant.CommandId);
 
         string[] commandIds = frame.CommandDialogPaneState.Commands.Select(command => command.Id).ToArray();
         CollectionAssert.DoesNotContain(commandIds, DesktopAliceAssistant.CommandId);
@@ -113,6 +120,10 @@ public sealed class MainWindowShellFrameProjectorTests
 
         Assert.AreEqual(false, frame.HeaderState.ToolStrip.ShowAiFeatures);
         Assert.IsFalse(frame.ChromeState.WorkspaceStrip.ShowOriginDossierAction);
+        Assert.IsNull(frame.CommandDialogPaneState.SelectedCommandId);
+        Assert.IsNull(frame.CommandDialogPaneState.ActiveDialogId);
+        Assert.IsEmpty(frame.CommandDialogPaneState.Fields);
+        Assert.IsEmpty(frame.CommandDialogPaneState.Actions);
     }
 
     [TestMethod]
@@ -328,7 +339,9 @@ public sealed class MainWindowShellFrameProjectorTests
         DesktopPreferenceState? preferences = null,
         AppCommandDefinition[]? commands = null,
         AppCommandDefinition[]? menuRoots = null,
-        string? openMenuId = null)
+        string? openMenuId = null,
+        DesktopDialogState? activeDialog = null,
+        string? lastCommandId = null)
     {
         OpenWorkspaceState[] resolvedOpenWorkspaces = openWorkspaces ?? [];
         CharacterOverviewState overviewState = CharacterOverviewState.Empty with
@@ -339,6 +352,7 @@ public sealed class MainWindowShellFrameProjectorTests
             OpenWorkspaces = resolvedOpenWorkspaces,
             WorkspaceId = activeWorkspaceId,
             Preferences = preferences ?? DesktopPreferenceState.Default,
+            ActiveDialog = activeDialog,
             ActiveActionId = workspaceActions?
                 .FirstOrDefault(action => string.Equals(action.TargetId, activeSectionId, StringComparison.Ordinal))
                 ?.Id
@@ -356,7 +370,7 @@ public sealed class MainWindowShellFrameProjectorTests
             PreferredRulesetId: rulesetId,
             ActiveWorkspaceId: activeWorkspaceId,
             ActiveTabId: activeTabId,
-            LastCommandId: null,
+            LastCommandId: lastCommandId,
             WorkflowDefinitions: [],
             WorkflowSurfaces: [],
             ActiveRuntime: null)

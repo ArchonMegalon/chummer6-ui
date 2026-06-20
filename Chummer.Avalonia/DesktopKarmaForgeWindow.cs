@@ -178,6 +178,7 @@ internal sealed class DesktopKarmaForgeWindow : Window
                     TextWrapping = TextWrapping.Wrap
                 })
         };
+        DesktopShellTheme.ApplyShellComboBoxTheme(targetCombo);
 
         TextBlock targetSummaryText = new()
         {
@@ -249,7 +250,7 @@ internal sealed class DesktopKarmaForgeWindow : Window
             null,
             "KarmaForgeAccountContextCard",
             CreateButton("Open account packages", static () => DesktopInstallLinkingRuntime.TryOpenRelativePortal("/account/packages"), isPrimary: true, name: "KarmaForgeOpenAccountPackagesButton"),
-            CreateButton("Open Horizons index", static () => DesktopInstallLinkingRuntime.TryOpenRelativePortal("/horizons"), name: "KarmaForgeOpenHorizonsIndexButton"),
+            CreateButton("Open roadmap", static () => DesktopInstallLinkingRuntime.TryOpenRelativePortal("/roadmap"), name: "KarmaForgeOpenHorizonsIndexButton"),
             CreateButton("Open package browser", static () => DesktopInstallLinkingRuntime.TryOpenRelativePortal("/packages"), name: "KarmaForgeOpenPackageBrowserButton"));
     }
 

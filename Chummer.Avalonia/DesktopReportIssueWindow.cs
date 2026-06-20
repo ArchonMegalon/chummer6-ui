@@ -43,7 +43,7 @@ internal sealed class DesktopReportIssueWindow : Window
         _statusText = new TextBlock
         {
             Text = S("desktop.report.status.ready"),
-            IsVisible = false,
+            IsVisible = true,
             TextWrapping = TextWrapping.Wrap,
             Foreground = DesktopShellTheme.ResolveThemeBrush("ChummerShellMutedForegroundBrush", "#334155")
         };
@@ -51,7 +51,7 @@ internal sealed class DesktopReportIssueWindow : Window
         _contextText = new TextBlock
         {
             Text = BuildContextBody(),
-            IsVisible = false,
+            IsVisible = true,
             TextWrapping = TextWrapping.Wrap,
             Foreground = DesktopShellTheme.ResolveThemeBrush("ChummerShellMutedForegroundBrush", "#334155")
         };
@@ -80,6 +80,8 @@ internal sealed class DesktopReportIssueWindow : Window
                             TextWrapping = TextWrapping.Wrap,
                             Foreground = DesktopShellTheme.ResolveThemeBrush("ChummerShellForegroundBrush", "#0f172a")
                         },
+                        CreateIntroText(S("desktop.report.intro")),
+                        CreateIntroText(S("desktop.report.private_split")),
                         _statusText,
                         CreateSection(
                             S("desktop.report.section.context"),
@@ -177,6 +179,14 @@ internal sealed class DesktopReportIssueWindow : Window
                 },
                 input
             }
+        };
+
+    private static TextBlock CreateIntroText(string text)
+        => new()
+        {
+            Text = text,
+            TextWrapping = TextWrapping.Wrap,
+            Foreground = DesktopShellTheme.ResolveThemeBrush("ChummerShellMutedForegroundBrush", "#334155")
         };
 
     private string BuildContextBody()

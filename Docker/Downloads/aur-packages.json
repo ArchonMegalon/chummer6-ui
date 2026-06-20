@@ -27,7 +27,7 @@
       "upstreamArtifactId": "avalonia-linux-x64-installer",
       "upstreamArtifactFileName": "chummer-avalonia-linux-x64-installer.deb",
       "upstreamArtifactUrl": "https://chummer.run/downloads/files/chummer-avalonia-linux-x64-installer.deb",
-      "upstreamArtifactSha256": "22ca04be02d77c7224614fb5603c669dab5a94fb3abd11b6212d061eb199e55a",
+      "upstreamArtifactSha256": "0d2fbf54d4e02bf4f95405fd7bbdbf3bce6650508ecbba30633eeeaccd2befe3",
       "upstreamArtifactSizeBytes": 36871664
     }
   ]

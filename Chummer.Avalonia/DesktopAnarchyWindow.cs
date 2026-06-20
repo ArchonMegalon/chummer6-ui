@@ -104,6 +104,7 @@ internal sealed class DesktopAnarchyWindow : Window
             ItemsSource = detailModes,
             SelectedIndex = 0
         };
+        DesktopShellTheme.ApplyShellComboBoxTheme(detailModeCombo);
 
         TextBlock detailText = new()
         {

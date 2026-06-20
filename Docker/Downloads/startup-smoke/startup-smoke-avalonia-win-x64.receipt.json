@@ -10,7 +10,7 @@
   "readyCheckpoint": "pre_ui_event_loop",
   "hostClass": "github-actions-win-x64",
   "processPath": "C:\\Users\\RUNNER~1\\AppData\\Local\\Temp\\chummer-win-smoke.9khpX5\\Chummer.Avalonia.exe",
-  "artifactDigest": "sha256:e64e0620c86e39c8bb07f053244995e06d37bfb4571cf9ae8d592b108c665158",
+  "artifactDigest": "sha256:c41d17cea200060b0940f37f18eea6b0bd407c447cd9cd62a8e140e965bc6a51",
   "artifactDigestSource": "environment",
   "installLinkingStatus": "guest",
   "installLinkingPromptRequired": true,
@@ -26,7 +26,7 @@
   "artifactFileName": "chummer-avalonia-win-x64-installer.exe",
   "fileName": "chummer-avalonia-win-x64-installer.exe",
   "artifactRelativePath": "files/chummer-avalonia-win-x64-installer.exe",
-  "artifactSha256": "e64e0620c86e39c8bb07f053244995e06d37bfb4571cf9ae8d592b108c665158",
+  "artifactSha256": "c41d17cea200060b0940f37f18eea6b0bd407c447cd9cd62a8e140e965bc6a51",
   "artifactId": "avalonia-win-x64-installer",
   "channel": "preview"
 }

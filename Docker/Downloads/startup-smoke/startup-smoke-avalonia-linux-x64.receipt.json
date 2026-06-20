@@ -10,7 +10,7 @@
   "readyCheckpoint": "pre_ui_event_loop",
   "hostClass": "github-actions-linux-x64",
   "processPath": "/tmp/chummer-linux-smoke.jhSaly/opt/chummer6/avalonia-linux-x64/Chummer.Avalonia",
-  "artifactDigest": "sha256:22ca04be02d77c7224614fb5603c669dab5a94fb3abd11b6212d061eb199e55a",
+  "artifactDigest": "sha256:0d2fbf54d4e02bf4f95405fd7bbdbf3bce6650508ecbba30633eeeaccd2befe3",
   "artifactDigestSource": "environment",
   "installLinkingStatus": "guest",
   "installLinkingPromptRequired": true,
@@ -32,7 +32,7 @@
   "artifactFileName": "chummer-avalonia-linux-x64-installer.deb",
   "fileName": "chummer-avalonia-linux-x64-installer.deb",
   "artifactRelativePath": "files/chummer-avalonia-linux-x64-installer.deb",
-  "artifactSha256": "22ca04be02d77c7224614fb5603c669dab5a94fb3abd11b6212d061eb199e55a",
+  "artifactSha256": "0d2fbf54d4e02bf4f95405fd7bbdbf3bce6650508ecbba30633eeeaccd2befe3",
   "artifactId": "avalonia-linux-x64-installer",
   "channel": "preview"
 }

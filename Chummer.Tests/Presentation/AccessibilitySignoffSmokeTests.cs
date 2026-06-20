@@ -1232,7 +1232,10 @@ public sealed class AccessibilitySignoffSmokeTests
         RequireContains(source, "includeHeading: true");
         RequireContains(source, "desktop.devices.button.reload");
         RequireContains(source, "desktop.install_link.button.login_website");
+        RequireContains(source, "? CreateButton(S(\"desktop.home.button.open_current_campaign_workspace\"), OpenWorkRouteAsync, isPrimary: true)");
         RequireContains(source, "desktop.dialog.action.close");
+        RequireDoesNotContain(source, "IsVisible = false");
+        RequireDoesNotContain(source, "? CreateButton(S(\"desktop.home.button.open_current_workspace\"), OpenWorkRouteAsync, isPrimary: true)");
         RequireDoesNotContain(source, "desktop.install_link.button.open_work");
         RequireDoesNotContain(source, "desktop.devices.button.use_latest_claim");
         RequireDoesNotContain(source, "Use latest claim code");
@@ -1251,6 +1254,8 @@ public sealed class AccessibilitySignoffSmokeTests
         RequireContains(source, "desktop.report.section.context");
         RequireContains(source, "desktop.report.section.bug");
         RequireContains(source, "desktop.report.section.feedback");
+        RequireContains(source, "desktop.report.intro");
+        RequireContains(source, "desktop.report.private_split");
         RequireContains(source, "desktop.report.button.open_bug");
         RequireContains(source, "desktop.report.button.copy_bug");
         RequireContains(source, "desktop.report.button.open_feedback");
@@ -1264,7 +1269,10 @@ public sealed class AccessibilitySignoffSmokeTests
         RequireContains(source, "new ScrollViewer");
         RequireContains(source, "CreateField(S(\"desktop.report.bug.title_label\"), _bugTitleBox)");
         RequireContains(source, "CreateField(S(\"desktop.report.feedback.detail_label\"), _feedbackDetailBox)");
+        RequireContains(source, "CreateIntroText(S(\"desktop.report.intro\"))");
+        RequireContains(source, "CreateIntroText(S(\"desktop.report.private_split\"))");
         RequireContains(source, "Watermark = tooltip");
+        RequireContains(source, "Text = BuildContextBody()");
         RequireContains(source, "desktop.dialog.action.close");
         RequireDoesNotContain(source, "desktop.home.button.continue");
 
