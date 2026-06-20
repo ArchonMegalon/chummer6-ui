@@ -480,6 +480,43 @@ namespace Chummer
             return GetContrastRatio(objForeColor, objBackColor) >= 4.5d;
         }
 
+        private static bool IsSameColor(Color objLeft, Color objRight)
+        {
+            return objLeft.ToArgb() == objRight.ToArgb();
+        }
+
+        private static bool IsControlTextColor(Color objColor)
+        {
+            return IsSameColor(objColor, ControlTextLight)
+                || IsSameColor(objColor, ControlTextDark)
+                || IsSameColor(objColor, WindowTextLight)
+                || IsSameColor(objColor, WindowTextDark)
+                || IsSameColor(objColor, SystemColors.ControlText)
+                || IsSameColor(objColor, SystemColors.WindowText)
+                || IsSameColor(objColor, SystemColors.HighlightText);
+        }
+
+        private static bool IsControlSurfaceColor(Color objColor)
+        {
+            return IsSameColor(objColor, ControlLight)
+                || IsSameColor(objColor, ControlDark)
+                || IsSameColor(objColor, ControlLighterLight)
+                || IsSameColor(objColor, ControlLighterDark)
+                || IsSameColor(objColor, ControlLightestLight)
+                || IsSameColor(objColor, ControlLightestDark)
+                || IsSameColor(objColor, SystemColors.Control)
+                || IsSameColor(objColor, SystemColors.ControlLight)
+                || IsSameColor(objColor, SystemColors.ControlLightLight)
+                || IsSameColor(objColor, SystemColors.Highlight);
+        }
+
+        private static bool IsWindowSurfaceColor(Color objColor)
+        {
+            return IsSameColor(objColor, WindowLight)
+                || IsSameColor(objColor, WindowDark)
+                || IsSameColor(objColor, SystemColors.Window);
+        }
+
         private static double GetContrastRatio(Color objColorA, Color objColorB)
         {
             double dblLuminanceA = GetRelativeLuminance(objColorA);
@@ -662,7 +699,7 @@ namespace Chummer
                             if (blnLightMode)
                             {
                                 x.ForeColor = WindowTextLight;
-                                if (x.ReadOnly && (x.BackColor == ControlLight || x.BackColor == ControlDark))
+                                if (x.ReadOnly && IsControlSurfaceColor(x.BackColor))
                                     x.BackColor = ControlLight;
                                 else
                                     x.BackColor = WindowLight;
@@ -670,7 +707,7 @@ namespace Chummer
                             else
                             {
                                 x.ForeColor = WindowTextDark;
-                                if (x.ReadOnly && (x.BackColor == ControlLight || x.BackColor == ControlDark))
+                                if (x.ReadOnly && IsControlSurfaceColor(x.BackColor))
                                     x.BackColor = ControlDark;
                                 else
                                     x.BackColor = WindowDark;
@@ -678,12 +715,12 @@ namespace Chummer
                         }
                         else if (blnLightMode)
                         {
-                            if (x.ReadOnly && (x.BackColor == ControlLight || x.BackColor == ControlDark))
+                            if (x.ReadOnly && IsControlSurfaceColor(x.BackColor))
                                 x.BackColor = ControlLight;
                             else
                                 x.BackColor = WindowLight;
                         }
-                        else if (x.ReadOnly && (x.BackColor == ControlLight || x.BackColor == ControlDark))
+                        else if (x.ReadOnly && IsControlSurfaceColor(x.BackColor))
                             x.BackColor = ControlDark;
                         else
                             x.BackColor = WindowDark;
@@ -894,7 +931,7 @@ namespace Chummer
                                 x.ForeColor = ControlDarkestLight;
                             else if (x.ForeColor == WindowTextDark)
                                 x.ForeColor = WindowTextLight;
-                            else if (x.ForeColor == ControlTextLight || x.ForeColor == ControlTextDark)
+                            else if (IsControlTextColor(x.ForeColor))
                                 x.ForeColor = ControlTextLight;
                         }
                         else if (x.ForeColor == ControlLight)
@@ -905,7 +942,7 @@ namespace Chummer
                             x.ForeColor = ControlDarkestDark;
                         else if (x.ForeColor == WindowTextLight)
                             x.ForeColor = WindowTextDark;
-                        else if (x.ForeColor == ControlTextLight || x.ForeColor == ControlTextDark)
+                        else if (IsControlTextColor(x.ForeColor))
                             x.ForeColor = ControlTextDark;
                     }, token);
                     // These controls never have backgrounds set explicitly, so shouldn't have their backgrounds overwritten
@@ -924,18 +961,18 @@ namespace Chummer
                                     x.BackColor = ControlLighterLight;
                                 else if (x.BackColor == ControlLightestDark)
                                     x.BackColor = ControlLightestLight;
-                                else if (x.BackColor == WindowDark)
+                                else if (IsWindowSurfaceColor(x.BackColor))
                                     x.BackColor = WindowLight;
-                                else if (x.BackColor == ControlLight || x.BackColor == ControlDark)
+                                else if (IsControlSurfaceColor(x.BackColor))
                                     x.BackColor = ControlLight;
                             }
                             else if (x.BackColor == ControlLighterLight)
                                 x.BackColor = ControlLighterDark;
                             else if (x.BackColor == ControlLightestLight)
                                 x.BackColor = ControlLightestDark;
-                            else if (x.BackColor == WindowLight)
+                            else if (IsWindowSurfaceColor(x.BackColor))
                                 x.BackColor = WindowDark;
-                            else if (x.BackColor == ControlLight || x.BackColor == ControlDark)
+                            else if (IsControlSurfaceColor(x.BackColor))
                                 x.BackColor = ControlDark;
                         }, token);
                     }
@@ -1226,7 +1263,7 @@ namespace Chummer
                                 if (blnLightMode)
                                 {
                                     x.ForeColor = WindowTextLight;
-                                    if (x.ReadOnly && (x.BackColor == ControlLight || x.BackColor == ControlDark))
+                                    if (x.ReadOnly && IsControlSurfaceColor(x.BackColor))
                                         x.BackColor = ControlLight;
                                     else
                                         x.BackColor = WindowLight;
@@ -1234,7 +1271,7 @@ namespace Chummer
                                 else
                                 {
                                     x.ForeColor = WindowTextDark;
-                                    if (x.ReadOnly && (x.BackColor == ControlLight || x.BackColor == ControlDark))
+                                    if (x.ReadOnly && IsControlSurfaceColor(x.BackColor))
                                         x.BackColor = ControlDark;
                                     else
                                         x.BackColor = WindowDark;
@@ -1242,12 +1279,12 @@ namespace Chummer
                             }
                             else if (blnLightMode)
                             {
-                                if (x.ReadOnly && (x.BackColor == ControlLight || x.BackColor == ControlDark))
+                                if (x.ReadOnly && IsControlSurfaceColor(x.BackColor))
                                     x.BackColor = ControlLight;
                                 else
                                     x.BackColor = WindowLight;
                             }
-                            else if (x.ReadOnly && (x.BackColor == ControlLight || x.BackColor == ControlDark))
+                            else if (x.ReadOnly && IsControlSurfaceColor(x.BackColor))
                                 x.BackColor = ControlDark;
                             else
                                 x.BackColor = WindowDark;
@@ -1485,6 +1522,8 @@ namespace Chummer
                         Color objControlDarkestDarkColor = ControlDarkestDark;
                         Color objControlTextLightColor = ControlTextLight;
                         Color objControlTextDarkColor = ControlTextDark;
+                        Color objWindowLightColor = WindowLight;
+                        Color objWindowDarkColor = WindowDark;
                         await objControl.DoThreadSafeAsync(x =>
                         {
                             if (blnLightMode)
@@ -1495,7 +1534,7 @@ namespace Chummer
                                     x.ForeColor = objControlDarkerLightColor;
                                 else if (x.ForeColor == objControlDarkestDarkColor)
                                     x.ForeColor = objControlDarkestLightColor;
-                                else if (x.ForeColor == objControlTextLightColor || x.ForeColor == objControlTextDarkColor)
+                                else if (IsControlTextColor(x.ForeColor))
                                     x.ForeColor = objControlTextLightColor;
                             }
                             else if (x.ForeColor == objControlLightColor)
@@ -1504,7 +1543,7 @@ namespace Chummer
                                 x.ForeColor = objControlDarkerDarkColor;
                             else if (x.ForeColor == objControlDarkestLightColor)
                                 x.ForeColor = objControlDarkestDarkColor;
-                            else if (x.ForeColor == objControlTextLightColor || x.ForeColor == objControlTextDarkColor)
+                            else if (IsControlTextColor(x.ForeColor))
                                 x.ForeColor = objControlTextDarkColor;
                         }, token).ConfigureAwait(false);
                         // These controls never have backgrounds set explicitly, so shouldn't have their backgrounds overwritten
@@ -1531,14 +1570,18 @@ namespace Chummer
                                         x.BackColor = objControlLighterLightColor;
                                     else if (x.BackColor == objControlLightestDarkColor)
                                         x.BackColor = objControlLightestLightColor;
-                                    else
+                                    else if (IsWindowSurfaceColor(x.BackColor))
+                                        x.BackColor = objWindowLightColor;
+                                    else if (IsControlSurfaceColor(x.BackColor))
                                         x.BackColor = objControlLightColor;
                                 }
                                 else if (x.BackColor == objControlLighterLightColor)
                                     x.BackColor = objControlLighterDarkColor;
                                 else if (x.BackColor == objControlLightestLightColor)
                                     x.BackColor = objControlLightestDarkColor;
-                                else
+                                else if (IsWindowSurfaceColor(x.BackColor))
+                                    x.BackColor = objWindowDarkColor;
+                                else if (IsControlSurfaceColor(x.BackColor))
                                     x.BackColor = objControlDarkColor;
                             }, token).ConfigureAwait(false);
                         }

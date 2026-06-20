@@ -33,6 +33,13 @@ public sealed class DesktopThemeManagerTests
         StringAssert.Contains(source, "return GetRelativeLuminance(objBackColor) > 0.5d");
         StringAssert.Contains(source, "? Color.Black");
         StringAssert.Contains(source, ": Color.White;");
+        StringAssert.Contains(source, "IsSameColor(objColor, SystemColors.ControlText)");
+        StringAssert.Contains(source, "IsSameColor(objColor, SystemColors.Control)");
+        StringAssert.Contains(source, "IsSameColor(objColor, SystemColors.ControlLight)");
+        StringAssert.Contains(source, "IsSameColor(objColor, SystemColors.Window)");
+        StringAssert.Contains(source, "IsControlTextColor(x.ForeColor)");
+        StringAssert.Contains(source, "IsControlSurfaceColor(x.BackColor)");
+        StringAssert.Contains(source, "IsWindowSurfaceColor(x.BackColor)");
         StringAssert.Contains(source, "x.ForeColor = EnsureReadableForeground(x.ForeColor, x.BackColor, blnLightMode);");
         StringAssert.Contains(source, "objForeColor = EnsureReadableForeground(objForeColor, objBackColor);");
         StringAssert.Contains(source, "objForeColor = EnsureReadableForeground(objForeColor, objBackColor, blnLightMode);");
@@ -159,6 +166,120 @@ public sealed class DesktopThemeManagerTests
             "Add/Select/Create dialogs must not pin white, black, or system input colors in designers. "
             + "Let ColorManager own textbox/combobox/readability state. Offenders: "
             + string.Join(", ", pinnedDesignerColors));
+    }
+
+    [TestMethod]
+    public void Core_add_dialogs_keep_chummer5a_selection_contract_and_shared_theme()
+    {
+        string repoRoot = TestContextLocator.ResolveChummerPresentationRepoRoot();
+        string selectionRoot = Path.Combine(repoRoot, "Chummer", "Forms", "Selection Forms");
+        string[] addMoreDialogs =
+        [
+            "SelectArmor",
+            "SelectArmorMod",
+            "SelectComplexForm",
+            "SelectCyberware",
+            "SelectDrug",
+            "SelectGear",
+            "SelectLifestyle",
+            "SelectLifestyleQuality",
+            "SelectMartialArt",
+            "SelectPower",
+            "SelectQuality",
+            "SelectSpell",
+            "SelectVehicle",
+            "SelectVehicleMod",
+            "SelectWeapon",
+            "SelectWeaponAccessory",
+        ];
+        string[] doubleClickPickerDialogs =
+        [
+            "SelectArmor",
+            "SelectArmorMod",
+            "SelectComplexForm",
+            "SelectCyberware",
+            "SelectDrug",
+            "SelectGear",
+            "SelectLifestyleQuality",
+            "SelectMartialArt",
+            "SelectPower",
+            "SelectQuality",
+            "SelectSpell",
+            "SelectVehicleMod",
+            "SelectWeapon",
+            "SelectWeaponAccessory",
+        ];
+
+        foreach (string dialog in addMoreDialogs)
+        {
+            string source = File.ReadAllText(Path.Combine(selectionRoot, dialog + ".cs"));
+            string designer = File.ReadAllText(Path.Combine(selectionRoot, dialog + ".Designer.cs"));
+
+            StringAssert.Contains(source, "this.UpdateLightDarkMode();", dialog + " must opt into shared light/dark styling.");
+            StringAssert.Contains(source, "this.UpdateParentForToolTipControls();", dialog + " must keep Chummer5A tooltip parenting.");
+            StringAssert.Contains(designer, "this.cmdCancel.DialogResult = System.Windows.Forms.DialogResult.Cancel;", dialog + " must support normal Cancel/Escape behavior.");
+            StringAssert.Contains(designer, "this.AcceptButton = this.cmdOK;", dialog + " must accept the current highlighted selection with Enter.");
+            StringAssert.Contains(designer, "this.CancelButton = this.cmdCancel;", dialog + " must cancel with Escape.");
+            StringAssert.Contains(designer, "this.cmdOKAdd.Tag = \"String_AddMore\";", dialog + " must expose the Chummer5A Add & More workflow.");
+            StringAssert.Contains(designer, "this.cmdOKAdd.Text = \"&Add && More\";", dialog + " must keep the familiar Add & More button text.");
+            StringAssert.Contains(designer, "this.cmdOKAdd.Click += new System.EventHandler(this.cmdOKAdd_Click);", dialog + " must wire Add & More explicitly.");
+            Assert.IsTrue(
+                source.Contains("public bool AddAgain", StringComparison.Ordinal)
+                    || source.Contains("public bool AddAgain =>", StringComparison.Ordinal),
+                dialog + " must expose whether Add & More was used.");
+            if (doubleClickPickerDialogs.Contains(dialog, StringComparer.Ordinal))
+            {
+                Assert.IsTrue(
+                    designer.Contains(".DoubleClick += new System.EventHandler(", StringComparison.Ordinal),
+                    dialog + " must preserve Chummer5A double-click-to-add behavior.");
+            }
+        }
+
+        string selectSkillSource = File.ReadAllText(Path.Combine(selectionRoot, "SelectSkill.cs"));
+        string selectSkillDesigner = File.ReadAllText(Path.Combine(selectionRoot, "SelectSkill.Designer.cs"));
+        StringAssert.Contains(selectSkillSource, "this.UpdateLightDarkMode();");
+        StringAssert.Contains(selectSkillSource, "this.UpdateParentForToolTipControls();");
+        StringAssert.Contains(selectSkillDesigner, "this.cmdCancel.DialogResult = System.Windows.Forms.DialogResult.Cancel;");
+        StringAssert.Contains(selectSkillDesigner, "this.AcceptButton = this.cmdOK;");
+        StringAssert.Contains(selectSkillDesigner, "this.CancelButton = this.cmdCancel;");
+    }
+
+    [TestMethod]
+    public void Legacy_system_color_seeds_in_add_dialogs_are_normalized_by_color_manager()
+    {
+        string repoRoot = TestContextLocator.ResolveChummerPresentationRepoRoot();
+        string colorManagerSource = File.ReadAllText(Path.Combine(repoRoot, "Chummer", "Backend", "Static", "Managers", "ColorManager.cs"));
+        string selectionRoot = Path.Combine(repoRoot, "Chummer", "Forms", "Selection Forms");
+        Regex legacySeedRegex = new(
+            @"System\.Drawing\.SystemColors\.(Control|ControlLight|ControlText|Highlight|HighlightText|Window|WindowText)",
+            RegexOptions.Compiled);
+
+        string[] seededDialogDesigners = Directory
+            .EnumerateFiles(selectionRoot, "Select*.Designer.cs", SearchOption.TopDirectoryOnly)
+            .Where(path => legacySeedRegex.IsMatch(File.ReadAllText(path)))
+            .Select(path => Path.GetFileName(path))
+            .OrderBy(static path => path, StringComparer.Ordinal)
+            .ToArray();
+
+        CollectionAssert.IsSubsetOf(
+            seededDialogDesigners,
+            new[]
+            {
+                "SelectArmor.Designer.cs",
+                "SelectVehicle.Designer.cs",
+                "SelectWeapon.Designer.cs",
+            },
+            "Only the DataGrid/tabbed legacy add dialogs should seed system colors; ColorManager owns the final rendered colors.");
+        StringAssert.Contains(colorManagerSource, "IsSameColor(objColor, SystemColors.Control)");
+        StringAssert.Contains(colorManagerSource, "IsSameColor(objColor, SystemColors.ControlLight)");
+        StringAssert.Contains(colorManagerSource, "IsSameColor(objColor, SystemColors.ControlText)");
+        StringAssert.Contains(colorManagerSource, "IsSameColor(objColor, SystemColors.Highlight)");
+        StringAssert.Contains(colorManagerSource, "IsSameColor(objColor, SystemColors.HighlightText)");
+        StringAssert.Contains(colorManagerSource, "IsSameColor(objColor, SystemColors.Window)");
+        StringAssert.Contains(colorManagerSource, "IsSameColor(objColor, SystemColors.WindowText)");
+        StringAssert.Contains(colorManagerSource, "IsControlTextColor(x.ForeColor)");
+        StringAssert.Contains(colorManagerSource, "IsControlSurfaceColor(x.BackColor)");
+        StringAssert.Contains(colorManagerSource, "IsWindowSurfaceColor(x.BackColor)");
     }
 
     [TestMethod]
