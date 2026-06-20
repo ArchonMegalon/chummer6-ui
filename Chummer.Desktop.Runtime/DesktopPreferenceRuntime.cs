@@ -44,6 +44,21 @@ public static class DesktopPreferenceRuntime
         }
     }
 
+    public static bool TryLoadState(string headId, out DesktopPreferenceState state)
+    {
+        ArgumentException.ThrowIfNullOrWhiteSpace(headId);
+
+        DesktopPreferenceState? loaded = LoadState(GetStateFilePath(headId));
+        if (loaded is null)
+        {
+            state = DesktopPreferenceState.Default;
+            return false;
+        }
+
+        state = DesktopPreferenceStateRuntime.Normalize(loaded);
+        return true;
+    }
+
     private static DesktopPreferenceState? LoadState(string stateFilePath)
     {
         if (!File.Exists(stateFilePath))

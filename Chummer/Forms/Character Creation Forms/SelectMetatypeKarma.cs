@@ -25,6 +25,7 @@ using System.Threading.Tasks;
 using System.Windows.Forms;
 using System.Xml;
 using System.Xml.XPath;
+using Chummer.Desktop.Runtime;
 using Microsoft.VisualStudio.Threading;
 using IAsyncDisposable = System.IAsyncDisposable;
 
@@ -43,6 +44,7 @@ namespace Chummer
         private readonly XmlNode _xmlMetatypeDocumentMetatypesNode;
         private readonly XmlNode _xmlQualityDocumentQualitiesNode;
         private readonly AsyncLazy<XmlNode> _xmlCritterPowerDocumentPowersNode;
+        private readonly bool _blnHideAiCharacterOptions;
 
         private CancellationTokenSource _objPopulateMetatypesCancellationTokenSource;
         private CancellationTokenSource _objPopulateMetavariantsCancellationTokenSource;
@@ -64,6 +66,7 @@ namespace Chummer
             this.UpdateLightDarkMode();
             this.TranslateWinForm();
             this.UpdateParentForToolTipControls();
+            _blnHideAiCharacterOptions = DesktopAiFeaturePreferenceFilter.AreAiCharacterOptionsDisabled();
 
             string strXmlFile = _objCharacter.IsCritter ? "critters.xml" : "metatypes.xml";
             _xmlMetatypeDocumentMetatypesNode = _objCharacter.LoadData(strXmlFile).SelectSingleNode("/chummer/metatypes");
@@ -105,6 +108,8 @@ namespace Chummer
                                     {
                                         string strInnerText = objXmlCategory.Value;
                                         if (!setAlreadyProcessed.Add(strInnerText))
+                                            continue;
+                                        if (ShouldHideAiFeatureOption(strInnerText))
                                             continue;
                                         if (xmlMetatypesNode.SelectSingleNode(
                                                 "metatype[category = " + strInnerText.CleanXPath()
@@ -1025,7 +1030,7 @@ namespace Chummer
                                      "metavariants/metavariant[" + await (await _objCharacter.GetSettingsAsync(token).ConfigureAwait(false)).BookXPathAsync(token: token).ConfigureAwait(false) + "]"))
                         {
                             string strId = objXmlMetavariant.SelectSingleNodeAndCacheExpression("id", token: token)?.Value;
-                            if (!string.IsNullOrEmpty(strId))
+                            if (!string.IsNullOrEmpty(strId) && !ShouldHideAiFeatureNode(objXmlMetavariant, token))
                             {
                                 lstMetavariants.Add(new ListItem(strId,
                                                                  objXmlMetavariant.SelectSingleNodeAndCacheExpression("translate", token: token)?.Value
@@ -1149,7 +1154,7 @@ namespace Chummer
                                      "metatypes/metatype" + strFilter))
                         {
                             string strId = xmlMetatype.SelectSingleNodeAndCacheExpression("id", token: token)?.Value;
-                            if (!string.IsNullOrEmpty(strId))
+                            if (!string.IsNullOrEmpty(strId) && !ShouldHideAiFeatureNode(xmlMetatype, token))
                             {
                                 lstMetatypeItems.Add(new ListItem(strId,
                                                                   xmlMetatype.SelectSingleNodeAndCacheExpression("translate", token: token)
@@ -1235,6 +1240,17 @@ namespace Chummer
                 }
             }
         }
+
+        private bool ShouldHideAiFeatureNode(XPathNavigator xmlNode, CancellationToken token)
+            => DesktopAiFeaturePreferenceFilter.ShouldHideCharacterOrCompanionOption(
+                _blnHideAiCharacterOptions,
+                xmlNode.SelectSingleNodeAndCacheExpression("id", token)?.Value,
+                xmlNode.SelectSingleNodeAndCacheExpression("name", token)?.Value,
+                xmlNode.SelectSingleNodeAndCacheExpression("translate", token)?.Value,
+                xmlNode.SelectSingleNodeAndCacheExpression("category", token)?.Value);
+
+        private bool ShouldHideAiFeatureOption(string value)
+            => DesktopAiFeaturePreferenceFilter.ShouldHideCharacterOrCompanionOption(_blnHideAiCharacterOptions, value);
 
         private async void OpenSourceFromLabel(object sender, EventArgs e)
         {

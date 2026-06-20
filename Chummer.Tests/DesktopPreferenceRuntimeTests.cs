@@ -23,6 +23,18 @@ public sealed class DesktopPreferenceRuntimeTests
     }
 
     [TestMethod]
+    public void TryLoadState_returns_false_without_creating_default_preferences_when_missing()
+    {
+        using TestStateRootScope scope = new();
+
+        bool loaded = DesktopPreferenceRuntime.TryLoadState("avalonia", out DesktopPreferenceState state);
+
+        Assert.IsFalse(loaded);
+        Assert.AreEqual(DesktopPreferenceState.Default, state);
+        Assert.IsFalse(File.Exists(scope.GetPreferenceStatePath("avalonia")));
+    }
+
+    [TestMethod]
     public void SaveState_roundtrips_normalized_preferences()
     {
         using TestStateRootScope scope = new();
@@ -76,6 +88,52 @@ public sealed class DesktopPreferenceRuntimeTests
         finally
         {
             DesktopLocalizationCatalog.SetCurrentLanguageOverride(null);
+        }
+    }
+
+    [TestMethod]
+    public void Ai_feature_filter_prefers_current_preference_without_hiding_normal_critter_options()
+    {
+        DesktopPreferenceState previous = DesktopPreferenceStateRuntime.Current;
+        try
+        {
+            DesktopPreferenceStateRuntime.SetCurrent(DesktopPreferenceState.Default with { DisableAiFeatures = true });
+
+            Assert.IsTrue(DesktopAiFeaturePreferenceFilter.AreAiCharacterOptionsDisabled());
+            Assert.IsTrue(DesktopAiFeaturePreferenceFilter.ShouldHideCharacterOrCompanionOption(true, "A.I."));
+            Assert.IsTrue(DesktopAiFeaturePreferenceFilter.ShouldHideCharacterOrCompanionOption(true, "A.I. - 6 Depth"));
+            Assert.IsTrue(DesktopAiFeaturePreferenceFilter.ShouldHideCharacterOrCompanionOption(true, "Metasapient A.I."));
+            Assert.IsTrue(DesktopAiFeaturePreferenceFilter.ShouldHideCharacterOrCompanionOption(true, "4e A.I.s"));
+            Assert.IsTrue(DesktopAiFeaturePreferenceFilter.ShouldHideCharacterOrCompanionOption(true, "E-Ghost"));
+            Assert.IsTrue(DesktopAiFeaturePreferenceFilter.ShouldHideCharacterOrCompanionOption(true, "Xenosapient"));
+            Assert.IsFalse(DesktopAiFeaturePreferenceFilter.ShouldHideCharacterOrCompanionOption(true, "New Critter"));
+            Assert.IsFalse(DesktopAiFeaturePreferenceFilter.ShouldHideCharacterOrCompanionOption(true, "Critter Powers"));
+            Assert.IsFalse(DesktopAiFeaturePreferenceFilter.ShouldHideCharacterOrCompanionOption(true, "Metasapient"));
+            Assert.IsFalse(DesktopAiFeaturePreferenceFilter.ShouldHideCharacterOrCompanionOption(true, "Human"));
+        }
+        finally
+        {
+            DesktopPreferenceStateRuntime.SetCurrent(previous);
+        }
+    }
+
+    [TestMethod]
+    public void Ai_feature_filter_reads_saved_winforms_preference_for_legacy_dialogs()
+    {
+        using TestStateRootScope scope = new();
+        DesktopPreferenceState previous = DesktopPreferenceStateRuntime.Current;
+        try
+        {
+            DesktopPreferenceStateRuntime.SetCurrent(DesktopPreferenceState.Default);
+            DesktopPreferenceRuntime.SaveState(
+                "winforms",
+                DesktopPreferenceState.Default with { DisableAiFeatures = true });
+
+            Assert.IsTrue(DesktopAiFeaturePreferenceFilter.AreAiCharacterOptionsDisabled());
+        }
+        finally
+        {
+            DesktopPreferenceStateRuntime.SetCurrent(previous);
         }
     }
 

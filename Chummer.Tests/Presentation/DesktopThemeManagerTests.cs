@@ -63,6 +63,29 @@ public sealed class DesktopThemeManagerTests
     }
 
     [TestMethod]
+    public void Sr4_metatype_selection_forms_filter_ai_character_options_when_ai_features_are_disabled()
+    {
+        string repoRoot = TestContextLocator.ResolveChummerPresentationRepoRoot();
+        string runtimeFilterSource = File.ReadAllText(Path.Combine(repoRoot, "Chummer.Desktop.Runtime", "DesktopAiFeaturePreferenceFilter.cs"));
+        string selectMetatypeKarmaSource = File.ReadAllText(Path.Combine(repoRoot, "Chummer", "Forms", "Character Creation Forms", "SelectMetatypeKarma.cs"));
+        string selectMetatypePrioritySource = File.ReadAllText(Path.Combine(repoRoot, "Chummer", "Forms", "Character Creation Forms", "SelectMetatypePriority.cs"));
+
+        StringAssert.Contains(runtimeFilterSource, "OverviewCommandPolicy.IsAiFeatureCharacterOrCompanionOption(value)");
+        StringAssert.Contains(runtimeFilterSource, "\"avalonia\", \"winforms\"");
+
+        StringAssert.Contains(selectMetatypeKarmaSource, "DesktopAiFeaturePreferenceFilter.AreAiCharacterOptionsDisabled();");
+        StringAssert.Contains(selectMetatypeKarmaSource, "ShouldHideAiFeatureOption(strInnerText)");
+        StringAssert.Contains(selectMetatypeKarmaSource, "!ShouldHideAiFeatureNode(objXmlMetavariant, token)");
+        StringAssert.Contains(selectMetatypeKarmaSource, "!ShouldHideAiFeatureNode(xmlMetatype, token)");
+
+        StringAssert.Contains(selectMetatypePrioritySource, "DesktopAiFeaturePreferenceFilter.AreAiCharacterOptionsDisabled();");
+        StringAssert.Contains(selectMetatypePrioritySource, "ShouldHideAiFeatureOption(strTalentValue, strTalentName, strTalentTranslate)");
+        StringAssert.Contains(selectMetatypePrioritySource, "ShouldHideAiFeatureNode(objXmlMetavariant, token)");
+        StringAssert.Contains(selectMetatypePrioritySource, "ShouldHideAiFeatureNode(objXmlMetatype, token)");
+        StringAssert.Contains(selectMetatypePrioritySource, "ShouldHideAiFeatureOption(objXmlCategory.Value)");
+    }
+
+    [TestMethod]
     public void Add_select_and_create_winforms_dialogs_participate_in_light_dark_theming()
     {
         string repoRoot = TestContextLocator.ResolveChummerPresentationRepoRoot();

@@ -33,6 +33,7 @@ using Chummer.Backend.Attributes;
 using Chummer.Backend.Enums;
 using Chummer.Backend.Equipment;
 using Chummer.Backend.Skills;
+using Chummer.Desktop.Runtime;
 using Microsoft.VisualStudio.Threading;
 
 namespace Chummer
@@ -55,6 +56,7 @@ namespace Chummer
         private readonly XmlNode _xmlMetatypeDocumentMetatypesNode;
         private readonly XmlNode _xmlQualityDocumentQualitiesNode;
         private readonly AsyncLazy<XmlNode> _xmlCritterPowerDocumentPowersNode;
+        private readonly bool _blnHideAiCharacterOptions;
 
         private CancellationTokenSource _objLoadMetatypesCancellationTokenSource;
         private CancellationTokenSource _objPopulateMetatypesCancellationTokenSource;
@@ -83,6 +85,7 @@ namespace Chummer
             this.UpdateLightDarkMode();
             this.TranslateWinForm();
             this.UpdateParentForToolTipControls();
+            _blnHideAiCharacterOptions = DesktopAiFeaturePreferenceFilter.AreAiCharacterOptionsDisabled();
 
             _lstPrioritySkills = new List<string>(objCharacter.PriorityBonusSkillList);
             _xmlMetatypeDocumentMetatypesNode = _objCharacter.LoadData(strXmlFile).SelectSingleNode("/chummer/metatypes");
@@ -3214,6 +3217,12 @@ namespace Chummer
                             foreach (XPathNavigator objXmlPriorityTalent in xmlBaseTalentPriority.SelectAndCacheExpression(
                                          "talents/talent", token))
                             {
+                                string strTalentValue = objXmlPriorityTalent.SelectSingleNodeAndCacheExpression("value", token)?.Value;
+                                string strTalentName = objXmlPriorityTalent.SelectSingleNodeAndCacheExpression("name", token)?.Value;
+                                string strTalentTranslate = objXmlPriorityTalent.SelectSingleNodeAndCacheExpression("translate", token)?.Value;
+                                if (ShouldHideAiFeatureOption(strTalentValue, strTalentName, strTalentTranslate))
+                                    continue;
+
                                 XPathNavigator xmlQualitiesNode
                                     = objXmlPriorityTalent.SelectSingleNodeAndCacheExpression("qualities", token);
                                 if (xmlQualitiesNode != null)
@@ -3348,10 +3357,8 @@ namespace Chummer
                                 }
 
                                 lstTalent.Add(new ListItem(
-                                                  objXmlPriorityTalent.SelectSingleNodeAndCacheExpression("value", token)?.Value,
-                                                  objXmlPriorityTalent.SelectSingleNodeAndCacheExpression("translate", token)
-                                                                      ?.Value ??
-                                                  objXmlPriorityTalent.SelectSingleNodeAndCacheExpression("name", token)?.Value ??
+                                                  strTalentValue,
+                                                  strTalentTranslate ?? strTalentName ??
                                                   await LanguageManager.GetStringAsync("String_Unknown", token: token).ConfigureAwait(false)));
                             }
 
@@ -3464,6 +3471,9 @@ namespace Chummer
                                          "metavariants/metavariant[" + await (await _objCharacter.GetSettingsAsync(token).ConfigureAwait(false))
                                              .BookXPathAsync(token: token).ConfigureAwait(false) + "]"))
                             {
+                                if (ShouldHideAiFeatureNode(objXmlMetavariant, token))
+                                    continue;
+
                                 string strId = objXmlMetavariant
                                     .SelectSingleNodeAndCacheExpression("id", token)?.Value;
                                 string strName = objXmlMetavariant
@@ -3646,6 +3656,9 @@ namespace Chummer
                                              + " and category = " + strSelectedCategory.CleanXPath()
                                              + "]"))
                                 {
+                                    if (ShouldHideAiFeatureNode(objXmlMetatype, token))
+                                        continue;
+
                                     string strId = objXmlMetatype
                                         .SelectSingleNodeAndCacheExpression("id", token)?.Value;
                                     string strName = objXmlMetatype
@@ -3763,6 +3776,12 @@ namespace Chummer
                     foreach (XPathNavigator objXmlCategory in _xmlBaseMetatypeDataNode.SelectAndCacheExpression(
                                  "categories/category", token))
                     {
+                        if (ShouldHideAiFeatureOption(objXmlCategory.Value))
+                        {
+                            setRemoveCategories.Add(objXmlCategory.Value);
+                            continue;
+                        }
+
                         XPathNodeIterator xmlBaseMetatypePriorityList = _xmlBasePriorityDataNode.Select(
                             "priorities/priority[category = \"Heritage\" and value = "
                             + (await cboHeritage.DoThreadSafeFuncAsync(x => x.SelectedValue?.ToString(), token)
@@ -3781,6 +3800,9 @@ namespace Chummer
                                              + await (await _objCharacter.GetSettingsAsync(token).ConfigureAwait(false)).BookXPathAsync(token: token)
                                                                   .ConfigureAwait(false) + "]"))
                                 {
+                                    if (ShouldHideAiFeatureNode(objXmlMetatype, token))
+                                        continue;
+
                                     if (xmlBaseMetatypePriority.TryGetNodeByNameOrId(
                                             "metatypes/metatype", objXmlMetatype
                                                 .SelectSingleNodeAndCacheExpression(
@@ -3856,6 +3878,18 @@ namespace Chummer
         {
             return _xmlBaseSkillDataNode.SelectAndCacheExpression("skills/skill[skillgroup = \"Cracking\" or skillgroup = \"Electronics\"]", token);
         }
+
+        private bool ShouldHideAiFeatureNode(XPathNavigator xmlNode, CancellationToken token)
+            => DesktopAiFeaturePreferenceFilter.ShouldHideCharacterOrCompanionOption(
+                _blnHideAiCharacterOptions,
+                xmlNode.SelectSingleNodeAndCacheExpression("id", token)?.Value,
+                xmlNode.SelectSingleNodeAndCacheExpression("value", token)?.Value,
+                xmlNode.SelectSingleNodeAndCacheExpression("name", token)?.Value,
+                xmlNode.SelectSingleNodeAndCacheExpression("translate", token)?.Value,
+                xmlNode.SelectSingleNodeAndCacheExpression("category", token)?.Value);
+
+        private bool ShouldHideAiFeatureOption(params string[] values)
+            => DesktopAiFeaturePreferenceFilter.ShouldHideCharacterOrCompanionOption(_blnHideAiCharacterOptions, values);
 
         private XPathNodeIterator GetMagicalSkillList(CancellationToken token = default)
         {
