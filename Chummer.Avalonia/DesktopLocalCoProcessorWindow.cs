@@ -28,7 +28,7 @@ internal sealed class DesktopLocalCoProcessorWindow : Window
 
         Content = DesktopHorizonWindowScaffold.CreateScroller(
             "Local Co-Processor",
-            "Local Co-Processor keeps capability and policy posture visible in the client before any optional acceleration jump leaves the desktop.",
+            "Local Co-Processor keeps optional speedups visible in the client before anything leaves the desktop.",
             CreateCapabilityCard(),
             CreatePolicyCard(),
             new StackPanel
@@ -111,7 +111,7 @@ internal sealed class DesktopLocalCoProcessorWindow : Window
             string mode = detailModeCombo?.SelectedItem?.ToString() ?? "Policy";
             detailText.Text = mode == "Capability"
                 ? $"Rules answers: {_campaignSummary?.RulesNavigator.Count ?? 0}. Build handoffs: {_campaignSummary?.BuildLabHandoffs.Count ?? 0}."
-                : "No hidden authority leap from local acceleration into rules, payment, or account truth.";
+                : "Local acceleration can make the app faster, but it cannot change rules, payments, or account state.";
         }
 
         if (HasCapabilityContext)
@@ -139,11 +139,11 @@ internal sealed class DesktopLocalCoProcessorWindow : Window
         }
 
         return DesktopHorizonWindowScaffold.CreateCard(
-            "Policy boundary",
-            "Keep the policy boundary explicit: no hidden authority leap from local acceleration into rules or payment truth.",
+            "Local acceleration",
+            "Use local speedups without changing rules, payments, or account state.",
             details,
-            DesktopHorizonWindowScaffold.CreateAsyncButton(this, "Open policy desk", static () => DesktopInstallLinkingRuntime.TryOpenRelativePortal("/account/local-co-processor"), isPrimary: HasCapabilityContext),
-            DesktopHorizonWindowScaffold.CreateAsyncButton(this, "Open public boundary", static () => DesktopInstallLinkingRuntime.TryOpenRelativePortal("/local-co-processor")),
+            DesktopHorizonWindowScaffold.CreateAsyncButton(this, "Open settings", static () => DesktopInstallLinkingRuntime.TryOpenRelativePortal("/account/local-co-processor"), isPrimary: HasCapabilityContext),
+            DesktopHorizonWindowScaffold.CreateAsyncButton(this, "Open overview", static () => DesktopInstallLinkingRuntime.TryOpenRelativePortal("/local-co-processor")),
             DesktopHorizonWindowScaffold.CreateAsyncButton(this, "Open ALICE", static () => DesktopInstallLinkingRuntime.TryOpenRelativePortal("/account/alice")));
     }
 }

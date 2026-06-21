@@ -226,7 +226,7 @@ public sealed class DesktopAliceWindowTests
     public void PlayerFacingCopyHumanizer_removes_provider_and_proof_language_from_visible_copy()
     {
         string cleaned = Chummer.Presentation.PlayerFacingCopyHumanizer.Clean(
-            "ALICE generated proofs and an Unmixr AI narration receipt from the approved origin canon through a media-factory provider lane after validation checks, audit verdict, registry posture, explain receipt, grounded explain receipt, explain companion, explain proof, environment truth, Public Proof Shelf, Rule Environment Studio, Before-after diffs, and available follow-up.");
+            "ALICE generated proofs and an Unmixr AI narration receipt from the approved origin canon through a media-factory provider lane after validation checks, audit verdict, registry posture, explain receipt, grounded explain receipt, explain companion, explain proof, proof trail, receipt-backed authority truth, environment truth, Public Proof Shelf, Rule Environment Studio, Before-after diffs, and available follow-up.");
 
         StringAssert.Contains(cleaned, "Alice");
         StringAssert.Contains(cleaned, "Unmixr");
@@ -260,6 +260,9 @@ public sealed class DesktopAliceWindowTests
         Assert.IsFalse(cleaned.Contains("posture", StringComparison.OrdinalIgnoreCase));
         Assert.IsFalse(cleaned.Contains("explain receipt", StringComparison.OrdinalIgnoreCase));
         Assert.IsFalse(cleaned.Contains("explain proof", StringComparison.OrdinalIgnoreCase));
+        Assert.IsFalse(cleaned.Contains("proof trail", StringComparison.OrdinalIgnoreCase));
+        Assert.IsFalse(cleaned.Contains("receipt-backed", StringComparison.OrdinalIgnoreCase));
+        Assert.IsFalse(cleaned.Contains("authority truth", StringComparison.OrdinalIgnoreCase));
         Assert.IsFalse(cleaned.Contains("environment truth", StringComparison.OrdinalIgnoreCase));
     }
 }

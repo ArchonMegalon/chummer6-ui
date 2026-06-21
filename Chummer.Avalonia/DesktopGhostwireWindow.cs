@@ -118,7 +118,7 @@ internal sealed class DesktopGhostwireWindow : Window
             string mode = detailModeCombo.SelectedItem?.ToString() ?? "Report";
             detailText.Text = mode == "Consequence"
                 ? "The consequence chain stays adjacent to replay instead of vanishing into a separate markdown dead-end."
-                : "The after-action report stays one move away from replay and current run posture.";
+                : "The after-action report stays one move away from replay and the current run.";
         }
 
         detailModeCombo.SelectionChanged += (_, _) => RefreshDetail();

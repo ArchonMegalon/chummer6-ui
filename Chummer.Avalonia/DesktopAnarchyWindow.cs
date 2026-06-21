@@ -130,10 +130,10 @@ internal sealed class DesktopAnarchyWindow : Window
         }
 
         return DesktopHorizonWindowScaffold.CreateCard(
-            "World lane",
-            "Keep the world-facing Anarchy lane one move away from the play shell instead of severing it into a separate browser detour.",
+            "World",
+            "Keep the world-facing Anarchy view one move away from play instead of splitting it into a browser detour.",
             details,
-            DesktopHorizonWindowScaffold.CreateAsyncButton(this, "Open ledger lane", static () => DesktopInstallLinkingRuntime.TryOpenRelativePortal("/ledger/anarchy"), isPrimary: HasRunContext),
+            DesktopHorizonWindowScaffold.CreateAsyncButton(this, "Open ledger", static () => DesktopInstallLinkingRuntime.TryOpenRelativePortal("/ledger/anarchy"), isPrimary: HasRunContext),
             DesktopHorizonWindowScaffold.CreateAsyncButton(this, "Open public route", static () => DesktopInstallLinkingRuntime.TryOpenRelativePortal("/anarchy")),
             DesktopHorizonWindowScaffold.CreateAsyncButton(this, "Open Black Ledger", static () => DesktopInstallLinkingRuntime.TryOpenRelativePortal("/ledger")));
     }

@@ -188,9 +188,9 @@ internal sealed class DesktopCreatorOsWindow : Window
                 selectedEntryTitleText.Text = "No selected entry";
                 detailText.Text = mode switch
                 {
-                    "Publishing" => "Publishing posture: no creator publication is currently pinned for Creator OS.",
-                    "Network" => "Network posture: no dossier is currently pinned across the creator-facing network rail.",
-                    _ => "Desk posture: keep creator desk, Jackpoint, Runbook Press, and Community Hub adjacent instead of scattering creator follow-through across route-only shells."
+                    "Publishing" => "Publishing: no creator publication is pinned yet.",
+                    "Network" => "Network: no dossier is pinned yet.",
+                    _ => "Desk: keep Creator Desk, Jackpoint, Runbook Press, and Community Hub together instead of scattering the workflow."
                 };
                 selectedEntryFollowUpText.Text = "Reconnect creator context to populate the native creator desk.";
                 return;

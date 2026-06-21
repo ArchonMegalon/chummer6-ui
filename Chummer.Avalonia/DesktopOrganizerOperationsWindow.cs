@@ -373,23 +373,23 @@ internal sealed class DesktopOrganizerOperationsWindow : Window
     }
 
     private string BuildIntro()
-        => "Desktop organizer operations keep organizer, GM, player, creator, moderator, and operator follow-through visible on one governed lane without collapsing them into one catch-all admin role.";
+        => "Keep organizer, GM, player, creator, moderation, and support work separated while showing the next useful action.";
 
     private string BuildStatus()
         => _campaignServerPlane is null
-            ? "Desktop status: organizer review is using local workspace and support projections until governed community packets refresh."
-            : $"Desktop status: organizer-facing packet refreshed at {_campaignServerPlane.GeneratedAtUtc.ToUniversalTime():yyyy-MM-dd HH:mm} UTC.";
+            ? "Desktop status: organizer review is using local workspace and support details."
+            : $"Desktop status: organizer details refreshed at {_campaignServerPlane.GeneratedAtUtc.ToUniversalTime():yyyy-MM-dd HH:mm} UTC.";
 
     private string BuildOperationsBody()
     {
         List<string> lines =
         [
-            "Organizer lane:" + " " + ResolveOrganizerLaneSummary(),
-            "Event lifecycle receipt:" + " " + ResolveEventLifecycleSummary(),
-            "Roster decision receipt:" + " " + ResolveRosterDecisionSummary(),
+            "Organizer:" + " " + ResolveOrganizerLaneSummary(),
+            "Event lifecycle:" + " " + ResolveEventLifecycleSummary(),
+            "Roster decision:" + " " + ResolveRosterDecisionSummary(),
             "Season cadence:" + " " + ResolveSeasonCadenceSummary(),
-            "Audit packet:" + " " + ResolveAuditPacketSummary(),
-            "Calendar mirrors:" + " " + ResolveCalendarMirrorSummary()
+            "Review status:" + " " + ResolveAuditPacketSummary(),
+            "Calendar sync:" + " " + ResolveCalendarMirrorSummary()
         ];
 
         if (_portableExchangePreview is not null)
@@ -426,15 +426,15 @@ internal sealed class DesktopOrganizerOperationsWindow : Window
         [
             $"Publication boundary: {ResolvePublicationBoundarySummary()}",
             $"Support escalation: {ResolveSupportEscalationSummary()}",
-            $"Moderation packet: {ResolveModerationPacketSummary()}",
+            $"Moderation case: {ResolveModerationPacketSummary()}",
             $"Audience and retention: {ResolveAudienceRetentionSummary()}",
             $"Next safe action: {ResolveNextSafeAction()}",
-            $"Proof shelf: {ResolveProofShelfSummary()}"
+            $"Public files: {ResolveProofShelfSummary()}"
         ];
 
         if (_supportProjection.NeedsAttention)
         {
-            lines.Add("Support watchout: a tracked support lane is already active, so organizer escalation must attach evidence instead of self-closing the case.");
+            lines.Add("Support watchout: a tracked support case is already active, so organizer escalation must add details instead of self-closing the case.");
         }
 
         return string.Join("\n", lines);
@@ -442,7 +442,7 @@ internal sealed class DesktopOrganizerOperationsWindow : Window
 
     private IReadOnlyList<Button> CreateOperationsActions()
     {
-        bool canOpenPublicProofShelf = DesktopInstallLinkingRuntime.IsClaimed(_installState) && HasPublishedCreatorPublication();
+        bool canOpenPublicFiles = DesktopInstallLinkingRuntime.IsClaimed(_installState) && HasPublishedCreatorPublication();
         List<Button> actions =
         [
             CreateButton("Review Organizer Roles", OpenRolesSurfaceAsync, isPrimary: true),
@@ -452,9 +452,9 @@ internal sealed class DesktopOrganizerOperationsWindow : Window
             CreateButton("Open Roster Movement", OpenRosterMovementAsync)
         ];
 
-        if (canOpenPublicProofShelf)
+        if (canOpenPublicFiles)
         {
-            actions.Add(CreateButton("Open Public Proof Shelf", () => Task.FromResult(OpenArtifactShelfView("public"))));
+            actions.Add(CreateButton("Open public files", () => Task.FromResult(OpenArtifactShelfView("public"))));
         }
         else
         {
@@ -673,30 +673,30 @@ internal sealed class DesktopOrganizerOperationsWindow : Window
     private string ResolveOrganizerLaneSummary()
         => FirstNonBlank(
             _campaignProjection.NextSafeAction,
-            "Create or review group, event, and season shells from one governed desktop lane before external mirrors widen distribution.");
+            "Create or review groups, events, and season timing before sharing them outside the desktop.");
 
     private string ResolveEventLifecycleSummary()
         => FirstNonBlank(
             _campaignServerPlane?.PublicationSummary,
-            "Event creation and scheduling need a receipt-backed lifecycle before calendar mirrors or staff packets are trusted.");
+            "Event creation and scheduling need a clear lifecycle before calendar sync or staff notes are used.");
 
     private string ResolveRosterDecisionSummary()
         => _campaignProjection.SupportClosureSummary;
 
     private string ResolveSeasonCadenceSummary()
-        => "Season operator timing can publish standings windows and cross-event cadence, but it cannot rewrite campaign continuity or hidden score math.";
+        => "Season timing can publish standings windows and cross-event cadence, but it cannot rewrite campaign continuity or hidden score math.";
 
     private string ResolveAuditPacketSummary()
-        => "Every organizer-visible group, event, roster, publication, moderation, and escalation action needs one audit packet before downstream packets or mirrors become trustworthy.";
+        => "Every visible group, event, roster, publication, moderation, and escalation action needs a clear review state before it is shared.";
 
     private string ResolveCalendarMirrorSummary()
-        => "Calendar, spreadsheet, and chat mirrors may project dates or staffing, but they do not own role grants, roster acceptance, consent posture, or publication state.";
+        => "Calendar, spreadsheet, and chat sync may show dates or staffing, but role grants, roster acceptance, consent, and publication state stay in Chummer.";
 
     private string ResolveOrganizerBoundarySummary()
-        => "Organizer lane owns community structure, event visibility, and season posture, but it does not silently seize GM truth, support closure, or registry publication receipts.";
+        => "Organizer work owns community structure, event visibility, and season status; GM decisions and support closure stay separate.";
 
     private string ResolveGmBoundarySummary()
-        => "GM lane owns one run's live-table truth, roster-fit reasons, and session-close consequences even when organizer policy frames the surrounding event.";
+        => "The GM owns live-table decisions, roster-fit reasons, and session-close consequences even when organizer policy frames the event.";
 
     private string ResolvePlayerBoundarySummary()
         => "Player lane receives briefings, roster outcomes, and published artifacts, but it does not grant roles, close incidents, or rewrite organizer policy.";
@@ -704,29 +704,29 @@ internal sealed class DesktopOrganizerOperationsWindow : Window
     private string ResolveCreatorBoundarySummary()
         => FirstNonBlank(
             _leadPublication?.TrustSummary,
-            "Creator lane stays on registry-backed publication, lineage, and moderation rails instead of being folded into organizer administration.");
+            "Creator work stays focused on publication, source history, and moderation instead of being folded into organizer administration.");
 
     private string ResolveSupportBoundarySummary()
         => _supportProjection.HasTrackedCase
-            ? "Support lane still owns case state and closure; organizer escalation may attach evidence and freeze publication, but it cannot mark the incident closed."
-            : "Support lane remains separate; organizers can request escalation, but only support state can close the case.";
+            ? "Support still owns case state and closure; organizer escalation may add details and pause publication, but it cannot mark the incident closed."
+            : "Support remains separate; organizers can request escalation, but only support can close the case.";
 
     private string ResolveOperatorPacketBoundarySummary()
-        => "Fleet and EA packets may summarize organizer health, publication readiness, and support risk, but they remain projections linked back to audit packet ids.";
+        => "Internal summaries may show organizer health, publication readiness, and support risk, but they do not replace the organizer view.";
 
     private string ResolvePublicationBoundarySummary()
         => DesktopInstallLinkingRuntime.IsClaimed(_installState)
-            ? "Registry-backed publication truth still owns audience, retention, locale, and availability once a community artifact leaves draft state."
-            : "Link this install before you trust organizer publication state, artifact availability, or registry-facing follow-through.";
+            ? "Audience, retention, locale, and availability stay explicit once a community file leaves draft state."
+            : "Link this install before relying on organizer publication state or file availability.";
 
     private string ResolveSupportEscalationSummary()
         => _supportProjection.Summary;
 
     private string ResolveModerationPacketSummary()
-        => "Safety and moderation actions require a packet-backed case; temporary organizer action is not final support closure or release-health truth.";
+        => "Safety and moderation actions require a case; temporary organizer action is not final support closure.";
 
     private string ResolveAudienceRetentionSummary()
-        => "Publication, notices, and honors need explicit audience, retention, and locale posture so organizer copy cannot blur into player-safe, creator-only, or public truth.";
+        => "Publication, notices, and honors need clear audience, retention, and locale settings.";
 
     private string ResolveNextSafeAction()
         => FirstNonBlank(
@@ -736,8 +736,8 @@ internal sealed class DesktopOrganizerOperationsWindow : Window
 
     private string ResolveProofShelfSummary()
         => DesktopInstallLinkingRuntime.IsClaimed(_installState)
-            ? "Use the public proof shelf and creator publication lane to verify what the community can actually see."
-            : "Organizer proof stays blocked until this install is linked and can open the governed desktop shelves.";
+            ? "Use public files and creator publication to see what the community can actually open."
+            : "Link this install before opening organizer files.";
 
     private static string FirstNonBlank(params string?[] values)
     {

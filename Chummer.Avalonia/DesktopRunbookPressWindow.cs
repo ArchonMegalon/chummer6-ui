@@ -186,9 +186,9 @@ internal sealed class DesktopRunbookPressWindow : Window
                 selectedEntryTitleText.Text = "No selected entry";
                 detailText.Text = mode switch
                 {
-                    "Campaign" => "Campaign module posture: no governed campaign is currently pinned for Runbook Press.",
-                    "Distribution" => "Distribution posture: keep creator desk, Jackpoint, and Community Hub connected before widening a runbook into public circulation.",
-                    _ => "Publication posture: no creator publication is currently leading the runbook lane."
+                    "Campaign" => "Campaign module: no campaign is pinned for Runbook Press yet.",
+                    "Distribution" => "Distribution: connect Creator Desk, Jackpoint, and Community Hub before public circulation.",
+                    _ => "Publication: no creator publication is selected for Runbook Press yet."
                 };
                 selectedEntryFollowUpText.Text = "Reconnect a publication or campaign to populate the native runbook desk.";
                 return;
@@ -200,13 +200,13 @@ internal sealed class DesktopRunbookPressWindow : Window
                 case "Campaign":
                     detailText.Text = selectedEntry.Kind.Equals("campaign", StringComparison.OrdinalIgnoreCase)
                         ? selectedEntry.Summary
-                        : "Campaign posture: pivot to the campaign lane before widening this publication into a module.";
+                        : "Campaign: connect a campaign before turning this publication into a module.";
                     selectedEntryFollowUpText.Text = selectedEntry.Kind.Equals("campaign", StringComparison.OrdinalIgnoreCase)
                         ? selectedEntry.FollowUp
-                        : "Open the creator desk or community hub to connect the current publication to a campaign lane.";
+                        : "Open the creator desk or community hub to connect the current publication to a campaign.";
                     break;
                 case "Distribution":
-                    detailText.Text = "Distribution posture: keep creator desk, Jackpoint, and Community Hub connected before widening a runbook into public circulation.";
+                    detailText.Text = "Distribution: connect Creator Desk, Jackpoint, and Community Hub before public circulation.";
                     selectedEntryFollowUpText.Text = selectedEntry.FollowUp;
                     break;
                 default:

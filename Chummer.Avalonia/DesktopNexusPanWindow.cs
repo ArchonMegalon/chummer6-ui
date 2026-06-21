@@ -180,9 +180,9 @@ internal sealed class DesktopNexusPanWindow : Window
                 selectedWorkspaceTitleText.Text = "No selected workspace";
                 detailText.Text = mode switch
                 {
-                    "Access" => "Access posture: claim this copy before assuming continuity is available across installs.",
-                    "Recovery" => "Recovery posture: reopen Your Copy first when this desktop loses account or continuity context.",
-                    _ => "Continuity posture: no governed continuity capsule is currently pinned."
+                    "Access" => "Access: claim this copy before assuming continuity is available across installs.",
+                    "Recovery" => "Recovery: reopen Your Copy first when this desktop loses account or continuity context.",
+                    _ => "Continuity: no workspace is pinned yet."
                 };
                 selectedWorkspaceFollowUpText.Text = "Open or recover a workspace to populate the native continuity desk.";
                 return;
@@ -193,7 +193,7 @@ internal sealed class DesktopNexusPanWindow : Window
             {
                 case "Access":
                     detailText.Text = selectedWorkspace.NextSafeAction
-                        ?? "Access posture: keep device claims and relinking visible before assuming the current continuity lane is usable.";
+                        ?? "Access: keep device claims and relinking visible before assuming the current workspace is usable.";
                     selectedWorkspaceFollowUpText.Text = selectedWorkspace.ReturnSummary;
                     break;
                 case "Recovery":

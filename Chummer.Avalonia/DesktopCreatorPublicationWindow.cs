@@ -373,12 +373,12 @@ internal sealed class DesktopCreatorPublicationWindow : Window
     }
 
     private string BuildIntro()
-        => "Desktop-native creator publication route: review discovery posture, trust ranking, lineage, and moderation flow without bypassing registry truth.";
+        => "Review publishing, visibility, source history, and moderation in one place before anything reaches a wider audience.";
 
     private string BuildStatus()
         => _campaignServerPlane is null
-            ? "Desktop status: local publication fallback is active, so creator publication stays grounded on the current workspace digest."
-            : $"Desktop status: publication packet refreshed at {_campaignServerPlane.GeneratedAtUtc.ToUniversalTime():yyyy-MM-dd HH:mm} UTC.";
+            ? "Desktop status: local publication details are shown from the current workspace."
+            : $"Desktop status: publication details refreshed at {_campaignServerPlane.GeneratedAtUtc.ToUniversalTime():yyyy-MM-dd HH:mm} UTC.";
 
     private string BuildPublicationBody()
     {
@@ -386,9 +386,9 @@ internal sealed class DesktopCreatorPublicationWindow : Window
         [
             $"Next safe action: {ResolvePublicationNextSafeAction()}",
             $"Creator publication summary: {ResolvePublicationSummary()}",
-            $"Discovery posture: {ResolveDiscoverySummary()}",
+            $"Visibility: {ResolveDiscoverySummary()}",
             $"Publication status: {ResolvePublicationStatusSummary()}",
-            $"Artifact shelf view: {ResolveArtifactShelfSummary()}"
+            $"Files: {ResolveArtifactShelfSummary()}"
         ];
 
         if (_portableExchangePreview is not null)
@@ -405,8 +405,8 @@ internal sealed class DesktopCreatorPublicationWindow : Window
         [
             $"Trust ranking: {ResolveTrustSummary()}",
             $"Lineage: {ResolveLineageSummary()}",
-            $"Comparison rail: {ResolveComparisonSummary()}",
-            $"Compatibility posture: {_campaignProjection.SupportClosureSummary}"
+            $"Comparison: {ResolveComparisonSummary()}",
+            $"Compatibility: {_campaignProjection.SupportClosureSummary}"
         ];
 
         foreach (string highlight in _campaignProjection.ReadinessHighlights.Where(IsPublicationHighlight).Take(5))
@@ -422,7 +422,7 @@ internal sealed class DesktopCreatorPublicationWindow : Window
         List<string> lines =
         [
             $"Moderation flow: {ResolveModerationSummary()}",
-            $"Review lane: {ResolveModerationReviewSummary()}",
+            $"Review path: {ResolveModerationReviewSummary()}",
             $"Correction path: {ResolveCorrectionSummary()}",
             $"Support follow-through: {_supportProjection.Summary}"
         ];
@@ -434,7 +434,7 @@ internal sealed class DesktopCreatorPublicationWindow : Window
 
         if (_supportProjection.NeedsAttention)
         {
-            lines.Add("Moderation follow-through: a tracked support lane is active on this install before discovery widens further.");
+            lines.Add("Moderation follow-through: a tracked support case is active on this install before discovery widens further.");
         }
 
         return string.Join("\n", lines);
@@ -446,22 +446,22 @@ internal sealed class DesktopCreatorPublicationWindow : Window
 
         if (DesktopInstallLinkingRuntime.IsClaimed(_installState))
         {
-            actions.Add(CreateButton("Open Creator Artifact Shelf", () => Task.FromResult(OpenArtifactShelfView("creator")), isPrimary: true));
-            actions.Add(CreateButton("Open My Artifact Shelf", () => Task.FromResult(OpenArtifactShelfView("personal"))));
-            actions.Add(CreateButton("Open Campaign Artifact Shelf", () => Task.FromResult(OpenArtifactShelfView("campaign"))));
+            actions.Add(CreateButton("Open creator files", () => Task.FromResult(OpenArtifactShelfView("creator")), isPrimary: true));
+            actions.Add(CreateButton("Open my files", () => Task.FromResult(OpenArtifactShelfView("personal"))));
+            actions.Add(CreateButton("Open campaign files", () => Task.FromResult(OpenArtifactShelfView("campaign"))));
         }
         else
         {
             actions.Add(CreateButton(DesktopLocalizationCatalog.GetRequiredString("desktop.install_link.button.link_copy", _preferences.Language), OpenInstallLinkingAsync, isPrimary: true));
         }
 
-        actions.Add(CreateButton("Open Public Proof Shelf", () => Task.FromResult(OpenArtifactShelfView("public"))));
-        actions.Add(CreateButton("Review Moderation Flow", OpenModerationSurfaceAsync));
-        actions.Add(CreateButton("Open Campaign Workspace", OpenCampaignWorkspaceAsync));
+        actions.Add(CreateButton("Open public files", () => Task.FromResult(OpenArtifactShelfView("public"))));
+        actions.Add(CreateButton("Review moderation", OpenModerationSurfaceAsync));
+        actions.Add(CreateButton("Open campaign", OpenCampaignWorkspaceAsync));
 
         if (HasPortableExchangePreview())
         {
-            actions.Add(CreateButton("Review Portable Exchange", OpenPortableExchangeAsync));
+            actions.Add(CreateButton("Review portable export", OpenPortableExchangeAsync));
         }
 
         return actions;
@@ -628,7 +628,7 @@ internal sealed class DesktopCreatorPublicationWindow : Window
     private string ResolveDiscoverySummary()
         => FirstNonBlank(
             _leadPublication?.DiscoverySummary,
-            "Discovery stays bounded until governed publication posture and compatibility review are explicit.");
+            "Discovery stays limited until publication status and compatibility review are clear.");
 
     private string ResolvePublicationStatusSummary()
         => _leadPublication is null
@@ -649,23 +649,23 @@ internal sealed class DesktopCreatorPublicationWindow : Window
     private string ResolveTrustSummary()
         => FirstNonBlank(
             _leadPublication?.TrustSummary,
-            "Trust ranking stays anchored to governed provenance, compatibility posture, and campaign-return fit.");
+            "Trust ranking stays tied to source history, compatibility, and campaign fit.");
 
     private string ResolveLineageSummary()
         => FirstNonBlank(
             _leadPublication?.LineageSummary,
             _campaignProjection.ReadinessHighlights.FirstOrDefault(static line => line.StartsWith("Publication lineage:", StringComparison.OrdinalIgnoreCase)),
-            "Lineage remains bounded to the current governed campaign lane until a successor replaces it.");
+            "Source history stays tied to the current campaign until a successor replaces it.");
 
     private string ResolveComparisonSummary()
         => FirstNonBlank(
             _leadPublication?.ComparisonSummary,
-            "Compare creator publication candidates by provenance, lineage, moderation posture, and trust ranking instead of popularity fog.");
+            "Compare publication candidates by source history, moderation, and trust ranking instead of popularity.");
 
     private string ResolveModerationSummary()
         => FirstNonBlank(
             _leadPublication?.ModerationSummary,
-            "Moderation stays review-first until lineage, compatibility, and trust ranking are explicit on the same governed desktop lane.");
+            "Moderation stays review-first until source history, compatibility, and trust ranking are clear.");
 
     private string ResolveModerationReviewSummary()
         => FirstNonBlank(

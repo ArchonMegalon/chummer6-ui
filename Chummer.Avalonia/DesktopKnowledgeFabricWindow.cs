@@ -29,8 +29,8 @@ internal sealed class DesktopKnowledgeFabricWindow : Window
         Content = DesktopHorizonWindowScaffold.CreateScroller(
             "Knowledge Fabric",
             AreGuidedToolsVisible()
-                ? "Knowledge Fabric keeps grounded rules answers, provenance labels, and source-aware explain posture visible before any assistant tone gets mistaken for mechanics truth."
-                : "Knowledge Fabric keeps grounded rules answers, provenance labels, and source-aware explain posture visible without changing rules receipts into guesses.",
+                ? "Knowledge Fabric keeps rules answers tied to the current character before any assistant wording is shown."
+                : "Knowledge Fabric keeps rules answers tied to the current character without letting assistant wording guess at mechanics.",
             CreateRulesAnswerCard(),
             CreateExplainCard(),
             new StackPanel
@@ -79,24 +79,24 @@ internal sealed class DesktopKnowledgeFabricWindow : Window
                     DesktopHorizonWindowScaffold.CreateMetricBadge("KnowledgeFabricBadgeCampaigns", "Campaigns", (_campaignSummary?.Campaigns.Count ?? 0).ToString())),
                 DesktopHorizonWindowScaffold.CreateDetailText($"Rules answers in account context: {_campaignSummary?.RulesNavigator.Count ?? 0}. Campaigns: {_campaignSummary?.Campaigns.Count ?? 0}."),
                 DesktopHorizonWindowScaffold.CreateDetailText(leadAnswer is null
-                    ? "No grounded rules answer is currently pinned to the account rail."
+                    ? "No rules answer is pinned to this account yet."
                     : $"{leadAnswer.Question} -> {leadAnswer.ShortAnswer}"),
-                DesktopHorizonWindowScaffold.CreateDetailText(leadAnswer?.ProvenanceLabel ?? "Rules answers stay tied to provenance labels and explain packets, not freeform assistant certainty.")
+                DesktopHorizonWindowScaffold.CreateDetailText(leadAnswer?.ProvenanceLabel ?? "Rules answers stay tied to the current character and rule setup.")
             }
         };
 
         return DesktopHorizonWindowScaffold.CreateCard(
-            "Grounded rules answers",
-            "Keep the current rules answer and provenance label visible on native rails before widening into public explain routes.",
+            "Rules answers",
+            "Keep the current answer visible before opening the wider rules view.",
             details,
             DesktopHorizonWindowScaffold.CreateAsyncButton(this, "Open public Rules", static () => DesktopInstallLinkingRuntime.TryOpenRelativePortal("/rules"), isPrimary: HasRulesContext),
-            DesktopHorizonWindowScaffold.CreateAsyncButton(this, "Open receipts", static () => DesktopInstallLinkingRuntime.TryOpenRelativePortal("/rules/receipts")),
+            DesktopHorizonWindowScaffold.CreateAsyncButton(this, "Open details", static () => DesktopInstallLinkingRuntime.TryOpenRelativePortal("/rules/receipts")),
             DesktopHorizonWindowScaffold.CreateAsyncButton(this, "Open Edition Studio", static () => DesktopInstallLinkingRuntime.TryOpenRelativePortal("/edition-studio")));
     }
 
     private Control CreateExplainCard()
     {
-        IReadOnlyList<string> detailModes = ["Answer", "Evidence", "Studio"];
+        IReadOnlyList<string> detailModes = ["Answer", "Details", "Setup"];
         RulesNavigatorAnswerProjection? leadAnswer = _campaignSummary?.RulesNavigator.FirstOrDefault();
 
         ComboBox detailModeCombo = new()
@@ -119,11 +119,11 @@ internal sealed class DesktopKnowledgeFabricWindow : Window
             string mode = detailModeCombo.SelectedItem?.ToString() ?? "Answer";
             detailText.Text = mode switch
             {
-                "Evidence" => leadAnswer is null
-                    ? "No evidence lines are currently attached."
+                "Details" => leadAnswer is null
+                    ? "No details are attached yet."
                     : string.Join(" | ", leadAnswer.EvidenceLines),
-                "Studio" => leadAnswer?.Studio?.PromotionSummary ?? "Edition and rule-environment posture stay on the named studio rail.",
-                _ => leadAnswer?.AfterSummary ?? leadAnswer?.BeforeSummary ?? "Explain packets and grounded answers appear here after the next rules navigator sync."
+                "Setup" => leadAnswer?.Studio?.PromotionSummary ?? "Edition and rule setup appear here when available.",
+                _ => leadAnswer?.AfterSummary ?? leadAnswer?.BeforeSummary ?? "Rules answers appear here after the next sync."
             };
         }
 
@@ -156,8 +156,8 @@ internal sealed class DesktopKnowledgeFabricWindow : Window
         }
 
         return DesktopHorizonWindowScaffold.CreateCard(
-            "Explain and source posture",
-            "The explain lane should show answer, evidence, and studio posture without collapsing all of that into one assistant sentence.",
+            "Answer details",
+            "Show the answer, supporting detail, and rule setup without turning it into one assistant sentence.",
             details,
             actions.ToArray());
     }

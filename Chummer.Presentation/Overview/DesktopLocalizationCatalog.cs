@@ -157,7 +157,7 @@ public static class DesktopLocalizationCatalog
         ["desktop.home.install_summary.last_claim_attempt"] = "Last claim attempt: {0} UTC.",
         ["desktop.home.install_summary.hub_message"] = "Hub message: {0}",
         ["desktop.home.install_summary.claim_error"] = "Claim error: {0}",
-        ["desktop.home.update_summary"] = "Status: {0}\nInstalled: {1}\nManifest: {2}\nManifest published: {3} UTC\nChannel: {4}\nLast checked: {5} UTC\nAuto apply: {6}\nRelease status: {7}\nRollout reason: {8}\nSupportability: {9}\nSupportability summary: {10}\nLocal release status: {11}\nStatus updated: {12} UTC\nKnown issues: {13}\nFix availability: {14}\nRecommended action: {15}\nLast error: {16}",
+        ["desktop.home.update_summary"] = "Status: {0}\nInstalled: {1}\nRelease list: {2}\nRelease list updated: {3} UTC\nChannel: {4}\nLast checked: {5} UTC\nAuto update: {6}\nRelease state: {7}\nRelease note: {8}\nSupport status: {9}\nSupport note: {10}\nLocal status: {11}\nStatus updated: {12} UTC\nKnown issues: {13}\nFix availability: {14}\nRecommended action: {15}\nLast error: {16}",
         ["desktop.home.value.unknown"] = "Unknown",
         ["desktop.home.value.never"] = "Never",
         ["desktop.home.value.none"] = "None",
@@ -580,7 +580,7 @@ public static class DesktopLocalizationCatalog
             localized["desktop.home.intro.campaign_watchouts"] = "Diese Kopie ist verknupft und aktuell genug, aber die Kampagnen-Ruckkehr hat Punkte zu prufen, bevor Sie die Arbeit wieder offnen.";
             localized["desktop.home.intro.ready_recent_workspaces"] = "Diese Kopie ist verknupft, aktuell genug und bereit, letzte Arbeitsbereiche wieder zu offnen.";
             localized["desktop.home.intro.ready_current_campaign_workspace"] = "Diese Kopie ist verknupft, aktuell genug und bereit, den aktuellen Kampagnen-Arbeitsbereich wieder zu offnen.";
-            localized["desktop.home.update_summary"] = "Status: {0}\nInstalliert: {1}\nManifest: {2}\nManifest veroffentlicht: {3} UTC\nKanal: {4}\nZuletzt gepruft: {5} UTC\nAuto-Apply: {6}\nRelease-Status: {7}\nRollout-Grund: {8}\nSupportability: {9}\nSupportability-Zusammenfassung: {10}\nLokaler Release-Status: {11}\nStatus aktualisiert: {12} UTC\nBekannte Probleme: {13}\nFix-Verfugbarkeit: {14}\nEmpfohlene Aktion: {15}\nLetzter Fehler: {16}";
+            localized["desktop.home.update_summary"] = "Status: {0}\nInstalliert: {1}\nRelease-Liste: {2}\nRelease-Liste aktualisiert: {3} UTC\nKanal: {4}\nZuletzt gepruft: {5} UTC\nAuto-Update: {6}\nRelease-Stand: {7}\nRelease-Hinweis: {8}\nSupport-Status: {9}\nSupport-Hinweis: {10}\nLokaler Status: {11}\nStatus aktualisiert: {12} UTC\nBekannte Probleme: {13}\nFix-Verfugbarkeit: {14}\nEmpfohlene Aktion: {15}\nLetzter Fehler: {16}";
             localized["desktop.home.workspace_summary.empty"] = "Es wurden noch keine letzten Arbeitsbereiche wiederhergestellt. Importieren oder erstellen Sie einen Runner, um die Kampagnen-Arbeitsbereichs-Lane zu starten.";
             localized["desktop.home.workspace_summary.entry"] = "{0} . {1} . {2} UTC";
             localized["desktop.campaign.title"] = "Kampagnen-Arbeitsbereich";
@@ -1008,7 +1008,7 @@ public static class DesktopLocalizationCatalog
             localized["desktop.home.intro.campaign_watchouts"] = "Cette copie est liee et assez a jour pour continuer, mais le retour de campagne a des points a verifier avant de rouvrir le travail.";
             localized["desktop.home.intro.ready_recent_workspaces"] = "Cette copie est liee, assez a jour pour continuer, et prete a rouvrir les espaces de travail recents.";
             localized["desktop.home.intro.ready_current_campaign_workspace"] = "Cette copie est liee, assez a jour pour continuer, et prete a rouvrir l'espace de campagne actuel.";
-            localized["desktop.home.update_summary"] = "Statut: {0}\nInstalle: {1}\nManifeste: {2}\nManifeste publie: {3} UTC\nCanal: {4}\nDerniere verification: {5} UTC\nApplication auto: {6}\nPosture de version: {7}\nRaison de rollout: {8}\nSupportabilite: {9}\nResume de supportabilite: {10}\nPreuve locale de version: {11}\nPreuve generee: {12} UTC\nProblemes connus: {13}\nDisponibilite du correctif: {14}\nAction recommandee: {15}\nDerniere erreur: {16}";
+            localized["desktop.home.update_summary"] = "Statut: {0}\nInstalle: {1}\nListe des versions: {2}\nListe mise a jour: {3} UTC\nCanal: {4}\nDerniere verification: {5} UTC\nMise a jour auto: {6}\nEtat de version: {7}\nNote de version: {8}\nEtat du support: {9}\nNote de support: {10}\nEtat local: {11}\nStatut mis a jour: {12} UTC\nProblemes connus: {13}\nDisponibilite du correctif: {14}\nAction recommandee: {15}\nDerniere erreur: {16}";
             localized["desktop.home.workspace_summary.empty"] = "Aucun espace recent n'a encore ete restaure. Importez ou creez un runner pour amorcer la voie d'espace de campagne.";
             localized["desktop.home.workspace_summary.entry"] = "{0} . {1} . {2} UTC";
             localized["desktop.campaign.title"] = "Espace de campagne";
@@ -1436,7 +1436,7 @@ public static class DesktopLocalizationCatalog
             localized["desktop.home.intro.campaign_watchouts"] = "このコピーはリンク済みで継続可能ですが、作業を再開する前にキャンペーン復帰の確認項目があります。";
             localized["desktop.home.intro.ready_recent_workspaces"] = "このコピーはリンク済みで継続可能で、最近のワークスペースを再開できます。";
             localized["desktop.home.intro.ready_current_campaign_workspace"] = "このコピーはリンク済みで継続可能で、現在のキャンペーンワークスペースを再開できます。";
-            localized["desktop.home.update_summary"] = "状態: {0}\nインストール済み: {1}\nマニフェスト: {2}\nマニフェスト公開: {3} UTC\nチャンネル: {4}\n最終確認: {5} UTC\n自動適用: {6}\nリリース姿勢: {7}\nロールアウト理由: {8}\nサポート性: {9}\nサポート性サマリー: {10}\nローカルリリース証跡: {11}\n証跡生成: {12} UTC\n既知の問題: {13}\n修正提供状況: {14}\n推奨アクション: {15}\n最終エラー: {16}";
+            localized["desktop.home.update_summary"] = "状態: {0}\nインストール済み: {1}\nリリース一覧: {2}\n一覧更新: {3} UTC\nチャンネル: {4}\n最終確認: {5} UTC\n自動更新: {6}\nリリース状態: {7}\nリリースメモ: {8}\nサポート状態: {9}\nサポートメモ: {10}\nローカル状態: {11}\n状態更新: {12} UTC\n既知の問題: {13}\n修正提供状況: {14}\n推奨アクション: {15}\n最終エラー: {16}";
             localized["desktop.home.workspace_summary.empty"] = "最近のワークスペースはまだ復元されていません。ランナーをインポートまたは作成して、キャンペーンワークスペースレーンを開始してください。";
             localized["desktop.home.workspace_summary.entry"] = "{0} . {1} . {2} UTC";
             localized["desktop.campaign.title"] = "キャンペーンワークスペース";
@@ -1864,7 +1864,7 @@ public static class DesktopLocalizationCatalog
             localized["desktop.home.intro.campaign_watchouts"] = "Esta copia esta vinculada e atual o suficiente para continuar, mas o retorno da campanha tem pontos para revisar antes de reabrir o trabalho.";
             localized["desktop.home.intro.ready_recent_workspaces"] = "Esta copia esta vinculada, atual o suficiente para continuar e pronta para reabrir workspaces recentes.";
             localized["desktop.home.intro.ready_current_campaign_workspace"] = "Esta copia esta vinculada, atual o suficiente para continuar e pronta para reabrir o workspace atual da campanha.";
-            localized["desktop.home.update_summary"] = "Status: {0}\nInstalado: {1}\nManifesto: {2}\nManifesto publicado: {3} UTC\nCanal: {4}\nUltima verificacao: {5} UTC\nAplicacao automatica: {6}\nPostura de release: {7}\nMotivo de rollout: {8}\nSuportabilidade: {9}\nResumo de suportabilidade: {10}\nProva local de release: {11}\nProva gerada: {12} UTC\nProblemas conhecidos: {13}\nDisponibilidade de correcao: {14}\nAcao recomendada: {15}\nUltimo erro: {16}";
+            localized["desktop.home.update_summary"] = "Status: {0}\nInstalado: {1}\nLista de releases: {2}\nLista atualizada: {3} UTC\nCanal: {4}\nUltima verificacao: {5} UTC\nAtualizacao automatica: {6}\nEstado do release: {7}\nNota do release: {8}\nEstado do suporte: {9}\nNota de suporte: {10}\nEstado local: {11}\nStatus atualizado: {12} UTC\nProblemas conhecidos: {13}\nDisponibilidade de correcao: {14}\nAcao recomendada: {15}\nUltimo erro: {16}";
             localized["desktop.home.workspace_summary.empty"] = "Nenhum workspace recente foi restaurado ainda. Importe ou crie um runner para iniciar a trilha do workspace de campanha.";
             localized["desktop.home.workspace_summary.entry"] = "{0} . {1} . {2} UTC";
             localized["desktop.campaign.title"] = "Espaço de campanha";
@@ -2292,7 +2292,7 @@ public static class DesktopLocalizationCatalog
             localized["desktop.home.intro.campaign_watchouts"] = "此副本已绑定且足够新，可以继续，但重新打开工作前仍有战役回归事项需要查看。";
             localized["desktop.home.intro.ready_recent_workspaces"] = "此副本已绑定且足够新，可以重新打开最近工作区。";
             localized["desktop.home.intro.ready_current_campaign_workspace"] = "此副本已绑定且足够新，可以重新打开当前战役工作区。";
-            localized["desktop.home.update_summary"] = "状态: {0}\n已安装: {1}\n清单: {2}\n清单发布时间: {3} UTC\n通道: {4}\n上次检查: {5} UTC\n自动应用: {6}\n发布姿态: {7}\n发布原因: {8}\n可支持性: {9}\n可支持性摘要: {10}\n本地发布证据: {11}\n证据生成: {12} UTC\n已知问题: {13}\n修复可用性: {14}\n建议操作: {15}\n最后错误: {16}";
+            localized["desktop.home.update_summary"] = "状态: {0}\n已安装: {1}\n版本列表: {2}\n列表更新时间: {3} UTC\n通道: {4}\n上次检查: {5} UTC\n自动更新: {6}\n发布状态: {7}\n发布说明: {8}\n支持状态: {9}\n支持说明: {10}\n本地状态: {11}\n状态更新时间: {12} UTC\n已知问题: {13}\n修复可用性: {14}\n建议操作: {15}\n最后错误: {16}";
             localized["desktop.home.workspace_summary.empty"] = "尚未恢复任何最近工作区。请导入或创建跑者以启动战役工作区链路。";
             localized["desktop.home.workspace_summary.entry"] = "{0} . {1} . {2} UTC";
             localized["desktop.campaign.title"] = "战役工作区";

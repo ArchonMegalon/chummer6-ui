@@ -119,10 +119,10 @@ internal sealed class DesktopReadyForTonightWindow : Window
             string mode = detailModeCombo.SelectedItem?.ToString() ?? "Player";
             detailText.Text = mode switch
             {
-                "GM" => "GM verdict: confirm the current run packet, scene posture, and next safe action before pushing the table into a blind recovery loop.",
-                "Organizer" => "Organizer verdict: keep open-run, venue, and closeout posture visible before inviting anyone through the external meeting lane.",
-                "Mobile" => "Mobile handoff: a no-desktop player should still get the next safe action, starter kit, and PWA return lane without a Windows-only choke point.",
-                _ => "Player verdict: check the return lane, starter loadout, and tonight packet before assuming the whole table is session-ready."
+                "GM" => "GM: confirm the current run, scene, and next step before pushing the table into recovery.",
+                "Organizer" => "Organizer: confirm open-run status, venue, and closeout before inviting anyone through an external meeting.",
+                "Mobile" => "Mobile: a no-desktop player should still get the next step, starter kit, and PWA return path.",
+                _ => "Player: check the return path, starter loadout, and tonight packet before assuming the table is ready."
             };
         }
 

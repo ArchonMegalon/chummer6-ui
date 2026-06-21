@@ -1077,7 +1077,7 @@ public sealed class AccessibilitySignoffSmokeTests
     private static void DesktopOrganizerOperations_keeps_role_boundaries_visible()
     {
         string source = ReadSource("Chummer.Avalonia/DesktopOrganizerOperationsWindow.cs");
-        RequireContains(source, "Desktop organizer operations keep organizer, GM, player, creator, moderator, and operator follow-through visible on one governed lane");
+        RequireContains(source, "Keep organizer, GM, player, creator, moderation, and support work separated while showing the next useful action.");
         RequireContains(source, "\"GM:\"");
         RequireContains(source, "\"Player:\"");
         RequireContains(source, "\"Creator:\"");

@@ -403,13 +403,13 @@ internal sealed class DesktopCampaignArtifactWindow : Window
 
     private string BuildIntro()
         => _artifactKind == DesktopCampaignArtifactKind.Primer
-            ? "Desktop-native primer route: review the claimed-device restore lane, continuity target, and workspace handoff without leaving the promoted desktop path."
-            : "Desktop-native mission briefing route: review session readiness, active runboard context, and the next safe action without bouncing through the browser shelf.";
+            ? "Review the campaign primer, linked copy, restore target, and next step without leaving the desktop."
+            : "Review session readiness, current runboard context, and the next step without leaving the desktop.";
 
     private string BuildStatus()
         => _campaignServerPlane is null
-            ? "Desktop status: local campaign fallback is active, so this artifact is grounded on the current workspace digest."
-            : $"Desktop status: server-generated campaign packet refreshed at {_campaignServerPlane.GeneratedAtUtc.ToUniversalTime():yyyy-MM-dd HH:mm} UTC.";
+            ? "Desktop status: local campaign details are shown from the current workspace."
+            : $"Desktop status: campaign details refreshed at {_campaignServerPlane.GeneratedAtUtc.ToUniversalTime():yyyy-MM-dd HH:mm} UTC.";
 
     private string BuildSummaryBody()
     {
@@ -426,7 +426,7 @@ internal sealed class DesktopCampaignArtifactWindow : Window
         {
             lines.Add(_campaignProjection.RestoreSummary);
             lines.Add(_campaignProjection.DeviceRoleSummary);
-            lines.Add("Primer goal: confirm which workspace, install, and support lane stay authoritative before you resume the campaign.");
+            lines.Add("Primer goal: confirm which workspace, install, and support path should be used before you resume the campaign.");
         }
         else
         {
@@ -445,7 +445,7 @@ internal sealed class DesktopCampaignArtifactWindow : Window
                 lines.Add($"Roster: {_campaignServerPlane.RosterSummary}");
             }
 
-            lines.Add("Briefing goal: capture the current scene, restore posture, and publication lane before you reopen the workspace.");
+            lines.Add("Briefing goal: capture the current scene, restore status, and publication path before you reopen the workspace.");
         }
 
         if (_portableExchangePreview is not null)
@@ -600,7 +600,7 @@ internal sealed class DesktopCampaignArtifactWindow : Window
 
         if (DesktopInstallLinkingRuntime.IsClaimed(_installState))
         {
-            actions.Add(CreateButton("Open Public Proof Shelf", () => Task.FromResult(OpenArtifactShelfView("public"))));
+            actions.Add(CreateButton("Open public files", () => Task.FromResult(OpenArtifactShelfView("public"))));
         }
 
         actions.Add(CreateButton("Open Rule Environment Studio", OpenRuleEnvironmentStudioAsync));
@@ -620,7 +620,7 @@ internal sealed class DesktopCampaignArtifactWindow : Window
 
     private string BuildCampaignMemoryVisibilitySummary()
         => _campaignServerPlane is null
-            ? $"{CampaignMemoryStaleStateSummary} Server continuity is unavailable, so this artifact is grounded on local workspace state."
+            ? $"{CampaignMemoryStaleStateSummary} Server continuity is unavailable, so this file uses local workspace state."
             : IsServerContinuityOlderThanLocalWorkspace(_recentWorkspaces, _campaignServerPlane)
                 ? $"{CampaignMemoryStaleStateSummary} Local workspace changed at {ResolveLatestLocalWorkspaceUpdateUtc(_recentWorkspaces):yyyy-MM-dd HH:mm} UTC after server memory {_campaignServerPlane.GeneratedAtUtc.ToUniversalTime():yyyy-MM-dd HH:mm} UTC."
                 : $"{CampaignMemoryStaleStateSummary} Server memory packet is current as of {_campaignServerPlane.GeneratedAtUtc.ToUniversalTime():yyyy-MM-dd HH:mm} UTC.";
@@ -630,7 +630,7 @@ internal sealed class DesktopCampaignArtifactWindow : Window
         string returnSummary = !string.IsNullOrWhiteSpace(_campaignServerPlane?.CampaignMemoryReturnSummary)
             ? _campaignServerPlane.CampaignMemoryReturnSummary
             : ResolveNextSafeAction();
-        return $"{CampaignNextSessionReturnActionSummary} Return lane: {returnSummary}";
+        return $"{CampaignNextSessionReturnActionSummary} Return path: {returnSummary}";
     }
 
     private bool TryResolveWorkspaceId(out string workspaceId)

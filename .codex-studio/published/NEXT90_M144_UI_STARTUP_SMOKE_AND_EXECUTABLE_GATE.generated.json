@@ -1,6 +1,6 @@
 {
   "contract_name": "chummer6-ui.next90_m144_startup_smoke_and_executable_gate",
-  "generated_at": "2026-06-21T07:41:29Z",
+  "generated_at": "2026-06-21T07:56:57Z",
   "status": "fail",
   "summary": "Cross-platform startup-smoke and executable-gate proof is still blocked for the promoted flagship bytes.",
   "title": "Capture fresh Windows, Linux, and macOS startup-smoke and executable-gate proof for the currently promoted flagship bytes.",

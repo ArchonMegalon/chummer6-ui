@@ -919,10 +919,10 @@ public partial class SectionHostControl : UserControl
         if (HasBuildBlockerReceipt(buildLab))
         {
             // m104: avalonia_build_blocker_receipts
-            lines.Add($"Build blocker receipt: {BuildBuildBlockerBadge(buildLab)}");
-            lines.Add($"Explain receipt: {BuildBuildBlockerExplainReceipt(buildLab)}");
+            lines.Add($"Build blocker details: {BuildBuildBlockerBadge(buildLab)}");
+            lines.Add($"Explanation: {BuildBuildBlockerExplainReceipt(buildLab)}");
             lines.Add($"Rule environment: {buildLab.RulesetId} / {buildLab.BuildMethod}");
-            lines.Add($"Environment diff: {BuildBuildBlockerBefore(buildLab)} -> {BuildBuildBlockerAfter(buildLab)}");
+            lines.Add($"Environment change: {BuildBuildBlockerBefore(buildLab)} -> {BuildBuildBlockerAfter(buildLab)}");
             lines.Add($"Before: {BuildBuildBlockerBefore(buildLab)}");
             lines.Add($"After: {BuildBuildBlockerAfter(buildLab)}");
             lines.Add($"Support reuse: {BuildBuildBlockerSupport(buildLab)}");
@@ -971,7 +971,7 @@ public partial class SectionHostControl : UserControl
             {
                 BuildLabTrustReceiptPanel.Children.Add(new TextBlock
                 {
-                    Text = $"Build blocker receipt: {BuildBuildBlockerBadge(_buildLab)}",
+                    Text = $"Build blocker details: {BuildBuildBlockerBadge(_buildLab)}",
                     TextWrapping = TextWrapping.Wrap,
                     Foreground = DesktopShellTheme.ResolveThemeBrush("ChummerShellWarningBrush", "#9A6700")
                 });
@@ -1019,7 +1019,7 @@ public partial class SectionHostControl : UserControl
     {
         int warningCount = buildLab.Variants.Sum(static variant => variant.Warnings.Count)
             + (buildLab.Watchouts?.Count ?? 0);
-        return warningCount == 0 && buildLab.CanContinue ? "receipt" : $"{warningCount} blocker signal(s)";
+        return warningCount == 0 && buildLab.CanContinue ? "ready" : $"{warningCount} blocker signal(s)";
     }
 
     private static string BuildBuildCompareCompanionBadge(BuildLabConceptIntakeState buildLab)
@@ -1028,7 +1028,7 @@ public partial class SectionHostControl : UserControl
         string leadVariant = buildLab.Variants.FirstOrDefault()?.Label ?? "no variant";
         return variantCount == 0
             ? "pending variant comparison"
-            : $"{variantCount} variant lane(s); lead {leadVariant}";
+            : $"{variantCount} variant option(s); lead {leadVariant}";
     }
 
     private static string BuildBuildBlockerBefore(BuildLabConceptIntakeState buildLab)
@@ -1046,7 +1046,7 @@ public partial class SectionHostControl : UserControl
     }
 
     private static string BuildBuildBlockerAfter(BuildLabConceptIntakeState buildLab)
-        => FirstNonBlank(buildLab.NextSafeAction, buildLab.SupportClosureSummary, buildLab.CanContinue ? "Build can continue with the current receipt." : "Resolve the blocker before handoff.");
+        => FirstNonBlank(buildLab.NextSafeAction, buildLab.SupportClosureSummary, buildLab.CanContinue ? "Build can continue with the current setup." : "Resolve the blocker before continuing.");
 
     private static string BuildBuildBlockerExplainReceipt(BuildLabConceptIntakeState buildLab)
         => FirstNonBlank(

@@ -75,17 +75,17 @@ internal sealed class DesktopOnrampWindow : Window
                     DesktopHorizonWindowScaffold.CreateMetricBadge("OnrampBadgeRuns", "Runs", (_campaignSummary?.Runs.Count ?? 0).ToString())),
                 DesktopHorizonWindowScaffold.CreateDetailText($"Starter workspaces: {_campaignSummary?.Workspaces.Count ?? 0}. Runs: {_campaignSummary?.Runs.Count ?? 0}."),
                 DesktopHorizonWindowScaffold.CreateDetailText(leadWorkspace?.ReturnSummary ?? "No starter workspace is currently pinned."),
-                DesktopHorizonWindowScaffold.CreateDetailText(leadWorkspace?.NextSafeAction ?? "Starter, recovery, and first playable session cues appear here after the next governed starter sync.")
+                DesktopHorizonWindowScaffold.CreateDetailText(leadWorkspace?.NextSafeAction ?? "Starter, recovery, and first playable session cues appear here after the next sync.")
             }
         };
 
         return DesktopHorizonWindowScaffold.CreateCard(
-            "Starter lane",
-            "Keep the starter workspace, first-session posture, and next safe action visible before escalating into the full desktop shell.",
+            "Starter",
+            "Keep the starter workspace, first session, and next step visible before opening the full desktop shell.",
             details,
             DesktopHorizonWindowScaffold.CreateAsyncButton(this, "Open signed-in starter desk", static () => DesktopInstallLinkingRuntime.TryOpenRelativePortal("/account/runsites/open"), isPrimary: HasStarterContext),
             DesktopHorizonWindowScaffold.CreateAsyncButton(this, "Open public Onramp", static () => DesktopInstallLinkingRuntime.TryOpenRelativePortal("/onramp")),
-            DesktopHorizonWindowScaffold.CreateAsyncButton(this, "Open mobile rail", static () => DesktopInstallLinkingRuntime.TryOpenRelativePortal("/mobile")));
+            DesktopHorizonWindowScaffold.CreateAsyncButton(this, "Open mobile", static () => DesktopInstallLinkingRuntime.TryOpenRelativePortal("/mobile")));
     }
 
     private Control CreateRecoveryCard()
@@ -112,9 +112,9 @@ internal sealed class DesktopOnrampWindow : Window
             string mode = detailModeCombo.SelectedItem?.ToString() ?? "Starter";
             detailText.Text = mode switch
             {
-                "Recovery" => "Recovery lane: return a user to the named workspace, dossier, and next safe action instead of dropping them into a blank browser shell.",
-                "Mobile" => "No-desktop participation: the mobile and PWA rail must keep starter truth, next safe action, and return posture readable without a desktop-only choke point.",
-                _ => "Starter lane: guide the first playable session without pretending Onramp auto-builds the whole runner."
+                "Recovery" => "Recovery: return to the named workspace, dossier, and next step instead of a blank browser page.",
+                "Mobile" => "Mobile: keep starter work, the next step, and return status readable without requiring the desktop.",
+                _ => "Starter: guide the first playable session without pretending Onramp builds the whole runner."
             };
         }
 
