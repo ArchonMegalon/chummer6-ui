@@ -1236,8 +1236,10 @@ public sealed class AccessibilitySignoffSmokeTests
         RequireContains(source, "new ScrollViewer");
         RequireContains(source, "includeHeading: true");
         RequireContains(source, "desktop.devices.button.reload");
+        RequireContains(source, "desktop.devices.button.manage_linked_copies");
         RequireContains(source, "desktop.install_link.button.login_website");
         RequireContains(source, "? CreateButton(S(\"desktop.home.button.open_current_campaign_workspace\"), OpenWorkRouteAsync, isPrimary: true)");
+        RequireContains(source, "CreateButton(S(\"desktop.devices.button.manage_linked_copies\"), OpenAccountAsync, isPrimary: true)");
         RequireContains(source, "desktop.dialog.action.close");
         RequireDoesNotContain(source, "IsVisible = false");
         RequireDoesNotContain(source, "? CreateButton(S(\"desktop.home.button.open_current_workspace\"), OpenWorkRouteAsync, isPrimary: true)");
@@ -1274,6 +1276,9 @@ public sealed class AccessibilitySignoffSmokeTests
         RequireContains(source, "new ScrollViewer");
         RequireContains(source, "CreateField(S(\"desktop.report.bug.title_label\"), _bugTitleBox)");
         RequireContains(source, "CreateField(S(\"desktop.report.feedback.detail_label\"), _feedbackDetailBox)");
+        RequireContains(source, "ReportBugTitleBoxLabel");
+        RequireContains(source, "AutomationProperties.SetName(labelBlock, label)");
+        RequireContains(source, "AutomationProperties.SetHelpText(box, $\"{automationName}. {tooltip}\")");
         RequireContains(source, "CreateIntroText(S(\"desktop.report.intro\"))");
         RequireContains(source, "CreateIntroText(S(\"desktop.report.private_split\"))");
         RequireContains(source, "Watermark = tooltip");

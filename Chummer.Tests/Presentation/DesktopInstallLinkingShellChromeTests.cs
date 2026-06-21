@@ -197,8 +197,13 @@ public sealed class DesktopInstallLinkingShellChromeTests
         StringAssert.Contains(installWindowSource, "ApplyExternalPreferenceState(nextPreferences)");
         StringAssert.Contains(localizationSource, "desktop.install_link.preference.visible_choice");
         StringAssert.Contains(localizationSource, "desktop.install_link.preference.hidden_choice");
-        StringAssert.Contains(localizationSource, "Enable AI features");
-        StringAssert.Contains(localizationSource, "scared caveman");
+        StringAssert.Contains(localizationSource, "Show assistant features");
+        StringAssert.Contains(localizationSource, "Hide assistant features");
+        Assert.IsFalse(
+            localizationSource.Contains("scared caveman", StringComparison.OrdinalIgnoreCase)
+            || localizationSource.Contains("Hoehlenmensch", StringComparison.OrdinalIgnoreCase)
+            || localizationSource.Contains("homme des cavernes", StringComparison.OrdinalIgnoreCase),
+            "The first-run preference must stay respectful and product-facing.");
         Assert.IsFalse(
             localizationSource.Contains("Keep the interface manual", StringComparison.Ordinal),
             "The first-run preference should describe the user-visible result, not internal manual mode.");
@@ -209,6 +214,7 @@ public sealed class DesktopInstallLinkingShellChromeTests
         StringAssert.Contains(localizationSource, "[\"desktop.devices.section.follow_through\"] = \"Support and recovery\"");
         StringAssert.Contains(localizationSource, "[\"desktop.devices.section.claims_description\"] = \"Available claim links for this copy.\"");
         StringAssert.Contains(localizationSource, "[\"desktop.devices.button.reload\"] = \"Check status\"");
+        StringAssert.Contains(localizationSource, "[\"desktop.devices.button.manage_linked_copies\"] = \"Manage linked copies\"");
         StringAssert.Contains(localizationSource, "Deine Kopie");
         Assert.IsFalse(
             localizationSource.Contains("[\"desktop.devices.button.reload\"] = \"Check again\"", StringComparison.Ordinal),
@@ -236,6 +242,10 @@ public sealed class DesktopInstallLinkingShellChromeTests
         StringAssert.Contains(devicesSource, "desktop.install_link.button.login_website");
         StringAssert.Contains(devicesSource, "DevicesAccessGuidedToolsHiddenOption");
         StringAssert.Contains(devicesSource, "? CreateButton(S(\"desktop.home.button.open_current_campaign_workspace\"), OpenWorkRouteAsync, isPrimary: true)");
+        StringAssert.Contains(devicesSource, "CreateButton(S(\"desktop.devices.button.manage_linked_copies\"), OpenAccountAsync, isPrimary: true)");
+        Assert.IsFalse(
+            devicesSource.Contains("CreateButton(S(\"desktop.home.button.open_support_center\"), OpenSupportWindowAsync)\n        ];", StringComparison.Ordinal),
+            "Linked copies should not duplicate a support action in the same section.");
         Assert.IsFalse(
             devicesSource.Contains("? CreateButton(S(\"desktop.home.button.open_current_workspace\"), OpenWorkRouteAsync, isPrimary: true)", StringComparison.Ordinal),
             "Devices and Access must not label a campaign-workspace action as a runner workspace action.");
@@ -337,6 +347,10 @@ public sealed class DesktopInstallLinkingShellChromeTests
         StringAssert.Contains(reportWindowSource, "CreateField(S(\"desktop.report.bug.evidence_label\"), _bugEvidenceBox)");
         StringAssert.Contains(reportWindowSource, "CreateField(S(\"desktop.report.feedback.summary_label\"), _feedbackSummaryBox)");
         StringAssert.Contains(reportWindowSource, "CreateField(S(\"desktop.report.feedback.detail_label\"), _feedbackDetailBox)");
+        StringAssert.Contains(reportWindowSource, "\"ReportBugTitleBox\"");
+        StringAssert.Contains(reportWindowSource, "\"ReportBugTitleBoxLabel\"");
+        StringAssert.Contains(reportWindowSource, "AutomationProperties.SetName(labelBlock, label)");
+        StringAssert.Contains(reportWindowSource, "AutomationProperties.SetHelpText(box, $\"{automationName}. {tooltip}\")");
         StringAssert.Contains(reportWindowSource, "DesktopShellTheme.ResolveThemeBrush(\"ChummerShellForegroundBrush\"");
         StringAssert.Contains(reportWindowSource, "ToolTip.SetTip(box, null);");
         StringAssert.Contains(localizationSource, "[\"desktop.report.button.open_bug\"] = \"Open Bug Report\"");

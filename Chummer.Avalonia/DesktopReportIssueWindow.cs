@@ -11,6 +11,21 @@ namespace Chummer.Avalonia;
 
 internal sealed class DesktopReportIssueWindow : Window
 {
+    private const string ReportBugTitleBoxName = "ReportBugTitleBox";
+    private const string ReportBugExpectedBoxName = "ReportBugExpectedBox";
+    private const string ReportBugActualBoxName = "ReportBugActualBox";
+    private const string ReportBugReproStepsBoxName = "ReportBugReproStepsBox";
+    private const string ReportBugEvidenceBoxName = "ReportBugEvidenceBox";
+    private const string ReportFeedbackSummaryBoxName = "ReportFeedbackSummaryBox";
+    private const string ReportFeedbackDetailBoxName = "ReportFeedbackDetailBox";
+    private const string ReportBugTitleBoxLabelName = "ReportBugTitleBoxLabel";
+    private const string ReportBugExpectedBoxLabelName = "ReportBugExpectedBoxLabel";
+    private const string ReportBugActualBoxLabelName = "ReportBugActualBoxLabel";
+    private const string ReportBugReproStepsBoxLabelName = "ReportBugReproStepsBoxLabel";
+    private const string ReportBugEvidenceBoxLabelName = "ReportBugEvidenceBoxLabel";
+    private const string ReportFeedbackSummaryBoxLabelName = "ReportFeedbackSummaryBoxLabel";
+    private const string ReportFeedbackDetailBoxLabelName = "ReportFeedbackDetailBoxLabel";
+
     private readonly DesktopInstallLinkingState _installState;
     private readonly DesktopUpdateClientStatus _updateStatus;
     private readonly DesktopPreferenceState _preferences;
@@ -56,13 +71,13 @@ internal sealed class DesktopReportIssueWindow : Window
             Foreground = DesktopShellTheme.ResolveThemeBrush("ChummerShellMutedForegroundBrush", "#334155")
         };
 
-        _bugTitleBox = CreateInputBox(S("desktop.report.bug.title_watermark"), S("desktop.report.bug.title_label"));
-        _bugExpectedBox = CreateInputBox(S("desktop.report.bug.expected_watermark"), S("desktop.report.bug.expected_label"), isMultiline: true, minHeight: 64);
-        _bugActualBox = CreateInputBox(S("desktop.report.bug.actual_watermark"), S("desktop.report.bug.actual_label"), isMultiline: true, minHeight: 64);
-        _bugReproStepsBox = CreateInputBox(S("desktop.report.bug.repro_watermark"), S("desktop.report.bug.repro_label"), isMultiline: true, minHeight: 84);
-        _bugEvidenceBox = CreateInputBox(S("desktop.report.bug.evidence_watermark"), S("desktop.report.bug.evidence_label"), isMultiline: true, minHeight: 56);
-        _feedbackSummaryBox = CreateInputBox(S("desktop.report.feedback.summary_watermark"), S("desktop.report.feedback.summary_label"));
-        _feedbackDetailBox = CreateInputBox(S("desktop.report.feedback.detail_watermark"), S("desktop.report.feedback.detail_label"), isMultiline: true, minHeight: 84);
+        _bugTitleBox = CreateInputBox(S("desktop.report.bug.title_watermark"), S("desktop.report.bug.title_label"), ReportBugTitleBoxName);
+        _bugExpectedBox = CreateInputBox(S("desktop.report.bug.expected_watermark"), S("desktop.report.bug.expected_label"), ReportBugExpectedBoxName, isMultiline: true, minHeight: 64);
+        _bugActualBox = CreateInputBox(S("desktop.report.bug.actual_watermark"), S("desktop.report.bug.actual_label"), ReportBugActualBoxName, isMultiline: true, minHeight: 64);
+        _bugReproStepsBox = CreateInputBox(S("desktop.report.bug.repro_watermark"), S("desktop.report.bug.repro_label"), ReportBugReproStepsBoxName, isMultiline: true, minHeight: 84);
+        _bugEvidenceBox = CreateInputBox(S("desktop.report.bug.evidence_watermark"), S("desktop.report.bug.evidence_label"), ReportBugEvidenceBoxName, isMultiline: true, minHeight: 56);
+        _feedbackSummaryBox = CreateInputBox(S("desktop.report.feedback.summary_watermark"), S("desktop.report.feedback.summary_label"), ReportFeedbackSummaryBoxName);
+        _feedbackDetailBox = CreateInputBox(S("desktop.report.feedback.detail_watermark"), S("desktop.report.feedback.detail_label"), ReportFeedbackDetailBoxName, isMultiline: true, minHeight: 84);
 
         Content = new ScrollViewer
         {
@@ -165,20 +180,40 @@ internal sealed class DesktopReportIssueWindow : Window
         };
 
     private static Control CreateField(string label, TextBox input)
-        => new StackPanel
+    {
+        TextBlock labelBlock = new()
         {
-            Spacing = 3,
+            Name = ResolveFieldLabelName(input.Name),
+            Text = label,
+            FontWeight = FontWeight.SemiBold,
+            TextWrapping = TextWrapping.Wrap,
+            Foreground = DesktopShellTheme.ResolveThemeBrush("ChummerShellForegroundBrush", "#0f172a")
+        };
+        AutomationProperties.SetName(labelBlock, label);
+        AutomationProperties.SetHelpText(labelBlock, label);
+
+        return new StackPanel
+        {
+            Spacing = 4,
             Children =
             {
-                new TextBlock
-                {
-                    Text = label,
-                    FontWeight = FontWeight.SemiBold,
-                    TextWrapping = TextWrapping.Wrap,
-                    Foreground = DesktopShellTheme.ResolveThemeBrush("ChummerShellForegroundBrush", "#0f172a")
-                },
+                labelBlock,
                 input
             }
+        };
+    }
+
+    private static string? ResolveFieldLabelName(string? inputName)
+        => inputName switch
+        {
+            ReportBugTitleBoxName => ReportBugTitleBoxLabelName,
+            ReportBugExpectedBoxName => ReportBugExpectedBoxLabelName,
+            ReportBugActualBoxName => ReportBugActualBoxLabelName,
+            ReportBugReproStepsBoxName => ReportBugReproStepsBoxLabelName,
+            ReportBugEvidenceBoxName => ReportBugEvidenceBoxLabelName,
+            ReportFeedbackSummaryBoxName => ReportFeedbackSummaryBoxLabelName,
+            ReportFeedbackDetailBoxName => ReportFeedbackDetailBoxLabelName,
+            _ => string.IsNullOrWhiteSpace(inputName) ? null : $"{inputName}Label"
         };
 
     private static TextBlock CreateIntroText(string text)
@@ -305,10 +340,11 @@ internal sealed class DesktopReportIssueWindow : Window
             ? fallback
             : value.Trim();
 
-    private static TextBox CreateInputBox(string tooltip, string automationName, bool isMultiline = false, double minHeight = 0)
+    private static TextBox CreateInputBox(string tooltip, string automationName, string name, bool isMultiline = false, double minHeight = 0)
     {
         TextBox box = new()
         {
+            Name = name,
             AcceptsReturn = isMultiline,
             TextWrapping = isMultiline ? TextWrapping.Wrap : TextWrapping.NoWrap,
             MinHeight = minHeight,
@@ -316,7 +352,7 @@ internal sealed class DesktopReportIssueWindow : Window
         };
         DesktopShellTheme.ApplyShellTextInputTheme(box);
         AutomationProperties.SetName(box, automationName);
-        AutomationProperties.SetHelpText(box, tooltip);
+        AutomationProperties.SetHelpText(box, $"{automationName}. {tooltip}");
         ToolTip.SetTip(box, null);
         return box;
     }

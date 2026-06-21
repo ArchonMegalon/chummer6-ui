@@ -394,8 +394,7 @@ internal sealed class DesktopDevicesAccessWindow : Window
     private IReadOnlyList<Button> CreateDevicesActions()
         =>
         [
-            CreateButton(DesktopLocalizationCatalog.GetRequiredString("desktop.install_link.button.open_account", _preferences.Language), OpenAccountAsync, isPrimary: true),
-            CreateButton(S("desktop.home.button.open_support_center"), OpenSupportWindowAsync)
+            CreateButton(S("desktop.devices.button.manage_linked_copies"), OpenAccountAsync, isPrimary: true)
         ];
 
     private IReadOnlyList<Button> CreateClaimsActions()
@@ -410,8 +409,7 @@ internal sealed class DesktopDevicesAccessWindow : Window
         =>
         [
             CreateButton(S("desktop.home.button.open_support_center"), OpenSupportWindowAsync, isPrimary: true),
-            CreateButton(S("desktop.home.button.open_report_issue"), OpenReportIssueWindowAsync),
-            CreateButton(DesktopLocalizationCatalog.GetRequiredString("desktop.install_link.button.open_account", _preferences.Language), OpenAccountAsync)
+            CreateButton(S("desktop.home.button.open_report_issue"), OpenReportIssueWindowAsync)
         ];
 
     private async Task CopyInstallIdAsync()

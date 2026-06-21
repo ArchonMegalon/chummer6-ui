@@ -639,7 +639,12 @@ public sealed class DesktopThemeManagerTests
         StringAssert.Contains(reportSource, "new TextBlock");
         StringAssert.Contains(reportSource, "Text = label");
         StringAssert.Contains(reportSource, "Watermark = tooltip");
+        StringAssert.Contains(reportSource, "Name = name");
+        StringAssert.Contains(reportSource, "ReportBugTitleBox");
+        StringAssert.Contains(reportSource, "ReportBugTitleBoxLabel");
+        StringAssert.Contains(reportSource, "AutomationProperties.SetName(labelBlock, label)");
         StringAssert.Contains(reportSource, "AutomationProperties.SetName(box, automationName)");
+        StringAssert.Contains(reportSource, "AutomationProperties.SetHelpText(box, $\"{automationName}. {tooltip}\")");
         StringAssert.Contains(reportSource, "ToolTip.SetTip(box, null);");
         foreach (string labelKey in new[]
                  {
@@ -659,7 +664,12 @@ public sealed class DesktopThemeManagerTests
         StringAssert.Contains(localizationSource, "localized[\"desktop.report.section.bug\"] = \"Fehlerbericht\"");
         StringAssert.Contains(localizationSource, "localized[\"desktop.report.section.feedback\"] = \"Feedback\"");
         StringAssert.Contains(localizationSource, "localized[\"desktop.report.context.supportability\"] = \"Supportstatus: {0}\"");
+        StringAssert.Contains(localizationSource, "[\"desktop.devices.button.reload\"] = \"Check status\"");
+        StringAssert.Contains(localizationSource, "[\"desktop.devices.button.manage_linked_copies\"] = \"Manage linked copies\"");
+        StringAssert.Contains(localizationSource, "[\"desktop.install_link.preference.visible_choice\"] = \"Show assistant features\"");
+        StringAssert.Contains(localizationSource, "[\"desktop.install_link.preference.hidden_choice\"] = \"Hide assistant features\"");
         Assert.IsFalse(localizationSource.Contains("localized[\"desktop.report.context.supportability\"] = \"Supportability-Posture", StringComparison.Ordinal));
+        Assert.IsFalse(localizationSource.Contains("scared caveman", StringComparison.OrdinalIgnoreCase));
         Assert.IsFalse(localizationSource.Contains("localized[\"desktop.report.bug.intro\"] = \"Nutzen Sie diese Spur", StringComparison.Ordinal));
         Assert.IsFalse(localizationSource.Contains("localized[\"desktop.report.section.feedback\"] = \"Leichtgewichtiges Feedback\"", StringComparison.Ordinal));
 
