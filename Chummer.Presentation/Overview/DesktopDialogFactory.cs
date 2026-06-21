@@ -5261,7 +5261,7 @@ public sealed class DesktopDialogFactory : IDesktopDialogFactory
             new DesktopDialogField("uiSkillSearch", "Search", string.Empty, "Search skills"),
             new DesktopDialogField("uiSkillCategory", "Category", "Active", "Active"),
             new DesktopDialogField("uiSkillSelectedBranch", "Selected Branch", "Active", "Active", IsReadOnly: true, LayoutSlot: DesktopDialogFieldLayoutSlots.Hidden),
-            BuildFilterToggleField("uiSkillSearchInCategoryOnly", "Search In Category Only", true),
+            new DesktopDialogField("uiSkillSearchInCategoryOnly", "Search In Category Only", "true", "true", InputType: "checkbox", LayoutSlot: DesktopDialogFieldLayoutSlots.Hidden),
             new DesktopDialogField("uiSkillBookFilter", "Data File", "Core Rulebook", "Core Rulebook"),
             new DesktopDialogField("uiSkillName", "Skill", "Perception", "Perception"),
             new DesktopDialogField("uiSkillCandidateList", "Available Skills", candidateList, candidateList, IsReadOnly: true, IsMultiline: true, VisualKind: DesktopDialogFieldVisualKinds.List, LayoutSlot: DesktopDialogFieldLayoutSlots.Left),
@@ -5586,7 +5586,7 @@ public sealed class DesktopDialogFactory : IDesktopDialogFactory
             BuildUtilitySectionsField("uiActionSections", "Action", "Impact", "Notes"),
             new DesktopDialogField("uiActionLabel", "Action", actionLabel, actionLabel, IsReadOnly: true),
             new DesktopDialogField("uiActionDetails", "Details", NormalizeGridValue(details), NormalizeGridValue(details), IsReadOnly: true, IsMultiline: true, VisualKind: DesktopDialogFieldVisualKinds.Grid, LayoutSlot: DesktopDialogFieldLayoutSlots.Right),
-            new DesktopDialogField("uiActionImpact", "Impact", "List Context | preserved" + Environment.NewLine + "Work rhythm | compact classic utility" + Environment.NewLine + "Next step | continue in the same section", "List Context | preserved", IsReadOnly: true, IsMultiline: true, VisualKind: DesktopDialogFieldVisualKinds.Grid, LayoutSlot: DesktopDialogFieldLayoutSlots.Right),
+            new DesktopDialogField("uiActionImpact", "Impact", "List Context | preserved" + Environment.NewLine + "Work rhythm | compact classic utility" + Environment.NewLine + "Next step | return to the same section", "List Context | preserved", IsReadOnly: true, IsMultiline: true, VisualKind: DesktopDialogFieldVisualKinds.Grid, LayoutSlot: DesktopDialogFieldLayoutSlots.Right),
             new DesktopDialogField("uiActionNotes", "Notes", notes, notes, IsReadOnly: true, IsMultiline: true, VisualKind: DesktopDialogFieldVisualKinds.Snippet)
         ];
     }
@@ -6002,19 +6002,19 @@ public sealed class DesktopDialogFactory : IDesktopDialogFactory
                 "Move Entry Up",
                 "The reordered list stays visible in the same utility pane.",
                 BuildActionReceiptFields("Move Up", "Selected entry moved one position higher in the current ordered list.", "Ordering stays compact and list-oriented like the legacy utility flows."),
-                [new DesktopDialogAction("continue", "Continue", true)]),
+                [new DesktopDialogAction("close", "Close", true)]),
             "move_down" => new DesktopDialogState(
                 "dialog.ui.move_down",
                 "Move Entry Down",
                 "The reordered list stays visible in the same utility pane.",
                 BuildActionReceiptFields("Move Down", "Selected entry moved one position lower in the current ordered list.", "Ordering stays compact and list-oriented like the legacy utility flows."),
-                [new DesktopDialogAction("continue", "Continue", true)]),
+                [new DesktopDialogAction("close", "Close", true)]),
             "toggle_free_paid" => new DesktopDialogState(
                 "dialog.ui.toggle_free_paid",
                 "Pricing Posture",
                 "The new pricing posture stays visible in the same utility pane.",
                 BuildActionReceiptFields("Toggle Free/Paid", "Selected item pricing posture was toggled between free and paid.", "Pricing state changes remain compact and explicit instead of disappearing into background chrome."),
-                [new DesktopDialogAction("continue", "Continue", true)]),
+                [new DesktopDialogAction("close", "Close", true)]),
             "show_source" => new DesktopDialogState(
                 "dialog.ui.show_source",
                 "Source",

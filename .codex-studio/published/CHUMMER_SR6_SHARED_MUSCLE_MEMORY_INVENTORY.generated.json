@@ -154092,7 +154092,7 @@
           },
           {
             "fieldId": "uiAdeptPowerCategoryTree",
-            "expectedLabel": "Navigation",
+            "expectedLabel": "Categories",
             "expectedInputType": "text",
             "expectedVisualKind": "tree",
             "expectedLayoutSlot": "full",
@@ -160687,7 +160687,7 @@
           },
           {
             "fieldId": "uiArmorCategoryTree",
-            "expectedLabel": "Navigation",
+            "expectedLabel": "Categories",
             "expectedInputType": "text",
             "expectedVisualKind": "tree",
             "expectedLayoutSlot": "full",
@@ -166601,7 +166601,7 @@
           },
           {
             "fieldId": "uiWeaponCategoryTree",
-            "expectedLabel": "Navigation",
+            "expectedLabel": "Categories",
             "expectedInputType": "text",
             "expectedVisualKind": "tree",
             "expectedLayoutSlot": "full",
@@ -172291,7 +172291,7 @@
           },
           {
             "fieldId": "uiComplexFormCategoryTree",
-            "expectedLabel": "Navigation",
+            "expectedLabel": "Categories",
             "expectedInputType": "text",
             "expectedVisualKind": "tree",
             "expectedLayoutSlot": "full",
@@ -183446,7 +183446,7 @@
           },
           {
             "fieldId": "uiCritterPowerCategoryTree",
-            "expectedLabel": "Navigation",
+            "expectedLabel": "Categories",
             "expectedInputType": "text",
             "expectedVisualKind": "tree",
             "expectedLayoutSlot": "full",
@@ -190427,7 +190427,7 @@
           },
           {
             "fieldId": "uiCyberwareCategoryTree",
-            "expectedLabel": "Navigation",
+            "expectedLabel": "Categories",
             "expectedInputType": "text",
             "expectedVisualKind": "tree",
             "expectedLayoutSlot": "full",
@@ -200793,7 +200793,7 @@
           },
           {
             "fieldId": "uiDrugCategoryTree",
-            "expectedLabel": "Navigation",
+            "expectedLabel": "Categories",
             "expectedInputType": "text",
             "expectedVisualKind": "tree",
             "expectedLayoutSlot": "full",
@@ -210089,7 +210089,7 @@
           },
           {
             "fieldId": "uiGearCategoryTree",
-            "expectedLabel": "Navigation",
+            "expectedLabel": "Categories",
             "expectedInputType": "text",
             "expectedVisualKind": "tree",
             "expectedLayoutSlot": "full",
@@ -220685,7 +220685,7 @@
           },
           {
             "fieldId": "uiInitiationCategoryTree",
-            "expectedLabel": "Navigation",
+            "expectedLabel": "Categories",
             "expectedInputType": "text",
             "expectedVisualKind": "tree",
             "expectedLayoutSlot": "full",
@@ -223595,7 +223595,7 @@
           },
           {
             "fieldId": "uiMagicCategoryTree",
-            "expectedLabel": "Navigation",
+            "expectedLabel": "Categories",
             "expectedInputType": "text",
             "expectedVisualKind": "tree",
             "expectedLayoutSlot": "full",
@@ -231374,7 +231374,7 @@
           },
           {
             "fieldId": "uiMatrixProgramCategoryTree",
-            "expectedLabel": "Navigation",
+            "expectedLabel": "Categories",
             "expectedInputType": "text",
             "expectedVisualKind": "tree",
             "expectedLayoutSlot": "full",
@@ -238891,7 +238891,7 @@
           },
           {
             "fieldId": "uiQualityCategoryTree",
-            "expectedLabel": "Navigation",
+            "expectedLabel": "Categories",
             "expectedInputType": "text",
             "expectedVisualKind": "tree",
             "expectedLayoutSlot": "full",
@@ -245290,7 +245290,7 @@
           },
           {
             "fieldId": "uiSkillCategoryTree",
-            "expectedLabel": "Navigation",
+            "expectedLabel": "Categories",
             "expectedInputType": "text",
             "expectedVisualKind": "tree",
             "expectedLayoutSlot": "full",
@@ -253129,7 +253129,7 @@
           },
           {
             "fieldId": "uiSpellCategoryTree",
-            "expectedLabel": "Navigation",
+            "expectedLabel": "Categories",
             "expectedInputType": "text",
             "expectedVisualKind": "tree",
             "expectedLayoutSlot": "full",
@@ -255632,7 +255632,7 @@
           },
           {
             "fieldId": "uiSpiritCategoryTree",
-            "expectedLabel": "Navigation",
+            "expectedLabel": "Categories",
             "expectedInputType": "text",
             "expectedVisualKind": "tree",
             "expectedLayoutSlot": "full",
@@ -262795,7 +262795,7 @@
           },
           {
             "fieldId": "uiVehicleCategoryTree",
-            "expectedLabel": "Navigation",
+            "expectedLabel": "Categories",
             "expectedInputType": "text",
             "expectedVisualKind": "tree",
             "expectedLayoutSlot": "full",
@@ -271178,7 +271178,7 @@
           },
           {
             "fieldId": "uiVehicleModCategoryTree",
-            "expectedLabel": "Navigation",
+            "expectedLabel": "Categories",
             "expectedInputType": "text",
             "expectedVisualKind": "tree",
             "expectedLayoutSlot": "full",

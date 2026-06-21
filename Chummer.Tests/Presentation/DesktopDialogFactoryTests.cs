@@ -1547,7 +1547,7 @@ public class DesktopDialogFactoryTests
         Assert.AreEqual("Move Up", DesktopDialogFieldValueParser.GetValue(dialog, "uiActionLabel"));
         StringAssert.Contains(DesktopDialogFieldValueParser.GetValue(dialog, "uiActionDetails"), "one position higher");
         StringAssert.Contains(DesktopDialogFieldValueParser.GetValue(dialog, "uiActionImpact"), "List Context | preserved");
-        Assert.AreEqual("Continue", dialog.Actions.Single(action => string.Equals(action.Id, "continue", StringComparison.Ordinal)).Label);
+        Assert.AreEqual("Close", dialog.Actions.Single(action => string.Equals(action.Id, "close", StringComparison.Ordinal)).Label);
         Assert.AreEqual(DesktopDialogFieldVisualKinds.Grid, dialog.Fields.Single(field => string.Equals(field.Id, "uiActionDetails", StringComparison.Ordinal)).VisualKind);
         Assert.AreEqual(DesktopDialogFieldVisualKinds.Grid, dialog.Fields.Single(field => string.Equals(field.Id, "uiActionImpact", StringComparison.Ordinal)).VisualKind);
         Assert.AreEqual(DesktopDialogFieldVisualKinds.Snippet, dialog.Fields.Single(field => string.Equals(field.Id, "uiActionNotes", StringComparison.Ordinal)).VisualKind);
@@ -1563,9 +1563,32 @@ public class DesktopDialogFactoryTests
         Assert.AreEqual("dialog.ui.toggle_free_paid", dialog.Id);
         Assert.AreEqual("Toggle Free/Paid", DesktopDialogFieldValueParser.GetValue(dialog, "uiActionLabel"));
         StringAssert.Contains(DesktopDialogFieldValueParser.GetValue(dialog, "uiActionSections"), "Impact");
-        StringAssert.Contains(DesktopDialogFieldValueParser.GetValue(dialog, "uiActionImpact"), "Next step | continue in the same section");
+        StringAssert.Contains(DesktopDialogFieldValueParser.GetValue(dialog, "uiActionImpact"), "Next step | return to the same section");
         StringAssert.Contains(DesktopDialogFieldValueParser.GetValue(dialog, "uiActionNotes"), "Pricing state changes remain compact");
-        Assert.AreEqual("Continue", dialog.Actions.Single(action => string.Equals(action.Id, "continue", StringComparison.Ordinal)).Label);
+        Assert.AreEqual("Close", dialog.Actions.Single(action => string.Equals(action.Id, "close", StringComparison.Ordinal)).Label);
+    }
+
+    [TestMethod]
+    public void CreateUiControlDialog_receipt_utilities_use_explicit_close_action()
+    {
+        DesktopDialogFactory factory = new();
+        string[] receiptUtilityIds =
+        [
+            "move_up",
+            "move_down",
+            "toggle_free_paid"
+        ];
+
+        foreach (string dialogId in receiptUtilityIds)
+        {
+            DesktopDialogState dialog = factory.CreateUiControlDialog(dialogId, DesktopPreferenceState.Default);
+
+            Assert.AreEqual("Close", dialog.Actions.Single(action => string.Equals(action.Id, "close", StringComparison.Ordinal)).Label, dialogId);
+            Assert.IsFalse(
+                dialog.Actions.Any(action => string.Equals(action.Id, "continue", StringComparison.Ordinal)
+                    || string.Equals(action.Label, "Continue", StringComparison.Ordinal)),
+                $"{dialogId} is a dismissible receipt, not a continuing workflow.");
+        }
     }
 
     [TestMethod]
