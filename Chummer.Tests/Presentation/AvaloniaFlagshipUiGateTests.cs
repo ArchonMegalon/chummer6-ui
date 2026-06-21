@@ -37,6 +37,7 @@ using Chummer.Contracts.Characters;
 using Chummer.Contracts.Presentation;
 using Chummer.Contracts.Rulesets;
 using Chummer.Contracts.Workspaces;
+using Chummer.Desktop.Runtime;
 using Chummer.Infrastructure.Workspaces;
 using Chummer.Infrastructure.Xml;
 using Chummer.Presentation;
@@ -5059,6 +5060,35 @@ public sealed class AvaloniaFlagshipUiGateTests
     }
 
     [TestMethod]
+    public void Standalone_report_issue_window_labels_every_text_input()
+    {
+        WithStandaloneReportIssueWindow(window =>
+        {
+            (string InputName, string LabelName, string ExpectedLabel)[] requiredFields =
+            [
+                ("ReportBugTitleBox", "ReportBugTitleBoxLabel", "Title"),
+                ("ReportBugExpectedBox", "ReportBugExpectedBoxLabel", "Expected behavior"),
+                ("ReportBugActualBox", "ReportBugActualBoxLabel", "Actual behavior"),
+                ("ReportBugReproStepsBox", "ReportBugReproStepsBoxLabel", "Repro steps"),
+                ("ReportBugEvidenceBox", "ReportBugEvidenceBoxLabel", "Screenshot or attachment note"),
+                ("ReportFeedbackSummaryBox", "ReportFeedbackSummaryBoxLabel", "Feedback summary"),
+                ("ReportFeedbackDetailBox", "ReportFeedbackDetailBoxLabel", "More detail")
+            ];
+
+            foreach ((string inputName, string labelName, string expectedLabel) in requiredFields)
+            {
+                TextBox input = FindDescendant<TextBox>(window, inputName);
+                TextBlock label = FindDescendant<TextBlock>(window, labelName);
+
+                Assert.IsTrue(input.IsVisible, $"Report Issue field '{inputName}' must be visible.");
+                Assert.IsTrue(label.IsVisible, $"Report Issue field '{inputName}' must have a visible label.");
+                Assert.AreEqual(expectedLabel, label.Text, $"Report Issue label for '{inputName}' must stay explicit.");
+                Assert.AreEqual(expectedLabel, AutomationProperties.GetName(input), $"Report Issue field '{inputName}' must expose its label to assistive tech.");
+            }
+        });
+    }
+
+    [TestMethod]
     public void Vehicles_and_drones_builder_preserves_familiar_browse_detail_confirm_rhythm()
     {
         WithLoadedRunnerHarness(harness =>
@@ -7852,6 +7882,108 @@ public sealed class AvaloniaFlagshipUiGateTests
         }
 
         throw new AssertFailedException("Avalonia standalone dialog-window headless session did not stabilize for flagship UI proof.", lastFailure);
+    }
+
+    private static void WithStandaloneReportIssueWindow(Action<Window> assertion)
+    {
+        EnsureHeadlessPlatform();
+        Exception? lastFailure = null;
+        for (int attempt = 1; attempt <= HeadlessSessionAttempts; attempt++)
+        {
+            HeadlessUnitTestSession? session = null;
+            try
+            {
+                session = HeadlessUnitTestSession.StartNew(typeof(FlagshipHeadlessAppBootstrap));
+                session.Dispatch(
+                        () =>
+                        {
+                            ConstructorInfo constructor = typeof(DesktopReportIssueWindow).GetConstructor(
+                                BindingFlags.Instance | BindingFlags.NonPublic,
+                                binder: null,
+                                [
+                                    typeof(DesktopInstallLinkingState),
+                                    typeof(DesktopUpdateClientStatus),
+                                    typeof(DesktopPreferenceState)
+                                ],
+                                modifiers: null)
+                                ?? throw new AssertFailedException("DesktopReportIssueWindow private constructor was not found.");
+                            Window window = (Window)constructor.Invoke(
+                                [
+                                    CreateReportIssueInstallState(),
+                                    CreateReportIssueUpdateStatus(),
+                                    DesktopPreferenceState.Default
+                                ]);
+                            window.Show();
+                            PumpStandaloneUi();
+
+                            try
+                            {
+                                assertion(window);
+                            }
+                            finally
+                            {
+                                window.Close();
+                                PumpStandaloneUi();
+                            }
+                        },
+                        CancellationToken.None)
+                    .GetAwaiter()
+                    .GetResult();
+                return;
+            }
+            catch (Exception ex) when (IsTransientHeadlessFailure(ex) && attempt < HeadlessSessionAttempts)
+            {
+                lastFailure = ex;
+            }
+            finally
+            {
+                DisposeHeadlessSessionQuietly(session);
+            }
+        }
+
+        throw new AssertFailedException("Avalonia report-issue headless session did not stabilize for flagship UI proof.", lastFailure);
+    }
+
+    private static DesktopInstallLinkingState CreateReportIssueInstallState()
+    {
+        DateTimeOffset now = DateTimeOffset.UtcNow;
+        return new DesktopInstallLinkingState(
+            InstallationId: "install-report-issue",
+            HeadId: "avalonia",
+            ApplicationVersion: "run-test",
+            ChannelId: "stable",
+            Platform: "linux",
+            Arch: "x64",
+            Status: "claimed",
+            CreatedAtUtc: now,
+            UpdatedAtUtc: now,
+            LaunchCount: 1,
+            LastStartedAtUtc: now,
+            ClaimedAtUtc: now,
+            LastPromptDismissedAtUtc: null,
+            PublicKey: "public",
+            PrivateKey: "private",
+            GrantToken: "grant-token");
+    }
+
+    private static DesktopUpdateClientStatus CreateReportIssueUpdateStatus()
+    {
+        DateTimeOffset now = DateTimeOffset.UtcNow;
+        return new DesktopUpdateClientStatus(
+            HeadId: "avalonia",
+            InstalledVersion: "run-test",
+            ChannelId: "stable",
+            Platform: "linux",
+            Arch: "x64",
+            UpdatesEnabled: true,
+            AutoApply: true,
+            ManifestLocation: "/tmp/chummer-release.json",
+            LastCheckedAtUtc: now,
+            LastManifestVersion: "run-test",
+            LastManifestPublishedAtUtc: now,
+            LastError: null,
+            Status: "current",
+            RecommendedAction: "Continue.");
     }
 
     private static T FindDescendant<T>(Control root, string name)
