@@ -26,6 +26,9 @@ internal static class Program
     private const string ChummerIconFileName = "chummer.ico";
     private const string ChummerProtocolScheme = "chummer";
     private const string InstallerTraceFileName = "chummer-desktop-installer-progress.log";
+    private static readonly Size InstallerDialogClientSize = new(880, 440);
+    private static readonly Size InstallerActionButtonSize = new(172, 40);
+    private static readonly Padding InstallerSurfacePadding = new(36, 28, 36, 28);
 
     [STAThread]
     private static int Main(string[] args)
@@ -1342,8 +1345,8 @@ internal static class Program
             Font = new Font("Segoe UI", 7.75F, FontStyle.Regular, GraphicsUnit.Point),
             FormBorderStyle = FormBorderStyle.FixedDialog,
             StartPosition = FormStartPosition.CenterScreen,
-            ClientSize = new Size(860, 420),
-            MinimumSize = new Size(860, 420),
+            ClientSize = InstallerDialogClientSize,
+            MinimumSize = InstallerDialogClientSize,
             MinimizeBox = false,
             MaximizeBox = false,
             ShowInTaskbar = true,
@@ -1373,7 +1376,7 @@ internal static class Program
             ForeColor = Color.FromArgb(116, 223, 193),
             Text = "INSTALLED",
             Dock = DockStyle.Fill,
-            Height = 18,
+            Height = 20,
             TextAlign = ContentAlignment.BottomLeft,
             AutoEllipsis = false,
             UseMnemonic = false
@@ -1386,7 +1389,7 @@ internal static class Program
             ForeColor = Color.White,
             Text = headline,
             Dock = DockStyle.Fill,
-            Height = 42,
+            Height = 48,
             TextAlign = ContentAlignment.MiddleLeft,
             Padding = new Padding(0, 0, 0, 0),
             AutoEllipsis = true,
@@ -1400,7 +1403,7 @@ internal static class Program
             ForeColor = Color.FromArgb(205, 213, 226),
             Text = pathText,
             Dock = DockStyle.Fill,
-            Height = 32,
+            Height = 36,
             TextAlign = ContentAlignment.MiddleLeft,
             Padding = new Padding(0, 0, 0, 0),
             AutoEllipsis = true,
@@ -1419,7 +1422,7 @@ internal static class Program
             ForeColor = Color.FromArgb(156, 169, 190),
             Text = noteText,
             Dock = DockStyle.Fill,
-            Height = 28,
+            Height = 34,
             TextAlign = ContentAlignment.MiddleLeft,
             Padding = new Padding(0, 0, 0, 0),
             AutoEllipsis = true,
@@ -1431,7 +1434,7 @@ internal static class Program
             Dock = DockStyle.Fill,
             FlowDirection = FlowDirection.RightToLeft,
             Padding = new Padding(0, 18, 0, 0),
-            Height = 62,
+            Height = 66,
             WrapContents = false
         };
 
@@ -1439,8 +1442,8 @@ internal static class Program
         {
             Text = options.PrimaryButtonText,
             AutoSize = false,
-            Size = new Size(164, 38),
-            MinimumSize = new Size(164, 38),
+            Size = InstallerActionButtonSize,
+            MinimumSize = InstallerActionButtonSize,
             Font = new Font("Segoe UI", 7.75F, FontStyle.Regular, GraphicsUnit.Point),
             DialogResult = DialogResult.Yes,
             Margin = new Padding(8, 0, 0, 0),
@@ -1461,8 +1464,8 @@ internal static class Program
         {
             Text = options.SecondaryButtonText,
             AutoSize = false,
-            Size = new Size(164, 38),
-            MinimumSize = new Size(164, 38),
+            Size = InstallerActionButtonSize,
+            MinimumSize = InstallerActionButtonSize,
             Font = new Font("Segoe UI", 7.75F, FontStyle.Regular, GraphicsUnit.Point),
             DialogResult = DialogResult.No,
             Margin = new Padding(8, 0, 0, 0),
@@ -1483,8 +1486,8 @@ internal static class Program
         {
             Text = options.CancelButtonText ?? "Cancel",
             AutoSize = false,
-            Size = new Size(164, 38),
-            MinimumSize = new Size(164, 38),
+            Size = InstallerActionButtonSize,
+            MinimumSize = InstallerActionButtonSize,
             Font = new Font("Segoe UI", 7.75F, FontStyle.Regular, GraphicsUnit.Point),
             DialogResult = DialogResult.Cancel,
             Margin = new Padding(8, 0, 0, 0),
@@ -1510,15 +1513,15 @@ internal static class Program
         {
             Dock = DockStyle.Fill,
             BackColor = Color.FromArgb(14, 19, 28),
-            Padding = new Padding(32, 24, 32, 24),
+            Padding = InstallerSurfacePadding,
             ColumnCount = 1,
             RowCount = 5
         };
-        content.RowStyles.Add(new RowStyle(SizeType.Absolute, 22));
-        content.RowStyles.Add(new RowStyle(SizeType.Absolute, 48));
-        content.RowStyles.Add(new RowStyle(SizeType.Absolute, 38));
+        content.RowStyles.Add(new RowStyle(SizeType.Absolute, 24));
+        content.RowStyles.Add(new RowStyle(SizeType.Absolute, 54));
+        content.RowStyles.Add(new RowStyle(SizeType.Absolute, 42));
         content.RowStyles.Add(new RowStyle(SizeType.Percent, 100));
-        content.RowStyles.Add(new RowStyle(SizeType.Absolute, 72));
+        content.RowStyles.Add(new RowStyle(SizeType.Absolute, 80));
 
         content.Controls.Add(stateLabel, 0, 0);
         content.Controls.Add(titleLabel, 0, 1);
@@ -2108,8 +2111,8 @@ internal static class Program
         public InstallSplashForm(string displayName)
         {
             AutoScaleMode = AutoScaleMode.Dpi;
-            ClientSize = new Size(860, 420);
-            MinimumSize = new Size(860, 420);
+            ClientSize = InstallerDialogClientSize;
+            MinimumSize = InstallerDialogClientSize;
             FormBorderStyle = FormBorderStyle.FixedDialog;
             MaximizeBox = false;
             MinimizeBox = false;
@@ -2134,7 +2137,7 @@ internal static class Program
             Panel surface = new()
             {
                 Dock = DockStyle.Fill,
-                Padding = new Padding(32, 24, 32, 24),
+                Padding = InstallerSurfacePadding,
                 BackColor = Color.FromArgb(14, 19, 28)
             };
 
@@ -2169,7 +2172,7 @@ internal static class Program
                 Font = new Font("Segoe UI Semibold", 6.75F, FontStyle.Bold, GraphicsUnit.Point),
                 ForeColor = Color.FromArgb(116, 223, 193),
                 Dock = DockStyle.Top,
-                Height = 12,
+                Height = 16,
                 TextAlign = ContentAlignment.BottomLeft,
                 Margin = new Padding(0, 0, 0, 2)
             };
@@ -2181,7 +2184,7 @@ internal static class Program
                 Font = new Font("Segoe UI Semibold", 10F, FontStyle.Bold, GraphicsUnit.Point),
                 ForeColor = Color.White,
                 Dock = DockStyle.Top,
-                Height = 40,
+                Height = 44,
                 TextAlign = ContentAlignment.BottomLeft,
                 Margin = new Padding(0, 0, 0, 2),
                 AutoEllipsis = true,
@@ -2195,7 +2198,7 @@ internal static class Program
                 Font = new Font("Segoe UI", 7.5F, FontStyle.Regular, GraphicsUnit.Point),
                 ForeColor = Color.FromArgb(207, 216, 230),
                 Dock = DockStyle.Top,
-                Height = 34,
+                Height = 40,
                 TextAlign = ContentAlignment.MiddleLeft,
                 Margin = new Padding(0, 0, 0, 10),
                 AutoEllipsis = true,
@@ -2209,7 +2212,7 @@ internal static class Program
                 Font = new Font("Segoe UI", 7.5F, FontStyle.Regular, GraphicsUnit.Point),
                 ForeColor = Color.White,
                 Dock = DockStyle.Top,
-                Height = 38,
+                Height = 44,
                 TextAlign = ContentAlignment.MiddleLeft,
                 Margin = new Padding(0, 0, 0, 8),
                 AutoEllipsis = true,
@@ -2235,7 +2238,7 @@ internal static class Program
             Panel progressMetaRow = new()
             {
                 Dock = DockStyle.Top,
-                Height = 24,
+                Height = 28,
                 Margin = new Padding(0, 0, 0, 8)
             };
 
@@ -2273,7 +2276,7 @@ internal static class Program
                 Font = new Font("Segoe UI", 7.25F, FontStyle.Regular, GraphicsUnit.Point),
                 ForeColor = Color.FromArgb(146, 160, 180),
                 Dock = DockStyle.Top,
-                Height = 22,
+                Height = 26,
                 TextAlign = ContentAlignment.MiddleLeft,
                 AutoEllipsis = true
             };
@@ -2290,7 +2293,7 @@ internal static class Program
             Panel heroRow = new()
             {
                 Dock = DockStyle.Top,
-                Height = 104
+                Height = 112
             };
             heroRow.Controls.Add(textColumn);
             heroRow.Controls.Add(glyphTile);
@@ -2351,15 +2354,20 @@ internal static class Program
         private static string BuildProgressDisplayStage(string stage)
         {
             if (stage.StartsWith("Extracting ", StringComparison.OrdinalIgnoreCase)
-                && stage.Contains(" MB of ", StringComparison.OrdinalIgnoreCase))
+                && !stage.Equals("Extracting application files", StringComparison.OrdinalIgnoreCase))
             {
                 return "Extracting application files";
             }
 
             if (stage.StartsWith("Copying ", StringComparison.OrdinalIgnoreCase)
-                && stage.Contains(" MB of ", StringComparison.OrdinalIgnoreCase))
+                && !stage.Equals("Copying application files", StringComparison.OrdinalIgnoreCase))
             {
                 return "Copying application files";
+            }
+
+            if (stage.StartsWith("Caching packaged files (", StringComparison.OrdinalIgnoreCase))
+            {
+                return "Reading packaged files";
             }
 
             return stage;
