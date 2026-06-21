@@ -1274,10 +1274,11 @@ public sealed class AccessibilitySignoffSmokeTests
         RequireContains(source, "DesktopInstallLinkingRuntime.TryOpenSupportPortalForBugReport");
         RequireContains(source, "DesktopInstallLinkingRuntime.TryOpenSupportPortalForFeedback");
         RequireContains(source, "new ScrollViewer");
-        RequireContains(source, "CreateField(S(\"desktop.report.bug.title_label\"), _bugTitleBox)");
-        RequireContains(source, "CreateField(S(\"desktop.report.feedback.detail_label\"), _feedbackDetailBox)");
+        RequireContains(source, "CreateField(S(\"desktop.report.bug.title_label\"), S(\"desktop.report.bug.title_watermark\"), _bugTitleBox)");
+        RequireContains(source, "CreateField(S(\"desktop.report.feedback.detail_label\"), S(\"desktop.report.feedback.detail_watermark\"), _feedbackDetailBox)");
         RequireContains(source, "ReportBugTitleBoxLabel");
         RequireContains(source, "AutomationProperties.SetName(labelBlock, label)");
+        RequireContains(source, "AutomationProperties.SetName(hintBlock, $\"{label} hint\")");
         RequireContains(source, "AutomationProperties.SetHelpText(box, $\"{automationName}. {tooltip}\")");
         RequireContains(source, "CreateIntroText(S(\"desktop.report.intro\"))");
         RequireContains(source, "CreateIntroText(S(\"desktop.report.private_split\"))");

@@ -340,16 +340,17 @@ public sealed class DesktopInstallLinkingShellChromeTests
         string reportWindowSource = File.ReadAllText(FindPath("Chummer.Avalonia", "DesktopReportIssueWindow.cs"));
         string localizationSource = File.ReadAllText(FindPath("Chummer.Presentation", "Overview", "DesktopLocalizationCatalog.cs"));
 
-        StringAssert.Contains(reportWindowSource, "CreateField(S(\"desktop.report.bug.title_label\"), _bugTitleBox)");
-        StringAssert.Contains(reportWindowSource, "CreateField(S(\"desktop.report.bug.expected_label\"), _bugExpectedBox)");
-        StringAssert.Contains(reportWindowSource, "CreateField(S(\"desktop.report.bug.actual_label\"), _bugActualBox)");
-        StringAssert.Contains(reportWindowSource, "CreateField(S(\"desktop.report.bug.repro_label\"), _bugReproStepsBox)");
-        StringAssert.Contains(reportWindowSource, "CreateField(S(\"desktop.report.bug.evidence_label\"), _bugEvidenceBox)");
-        StringAssert.Contains(reportWindowSource, "CreateField(S(\"desktop.report.feedback.summary_label\"), _feedbackSummaryBox)");
-        StringAssert.Contains(reportWindowSource, "CreateField(S(\"desktop.report.feedback.detail_label\"), _feedbackDetailBox)");
+        StringAssert.Contains(reportWindowSource, "CreateField(S(\"desktop.report.bug.title_label\"), S(\"desktop.report.bug.title_watermark\"), _bugTitleBox)");
+        StringAssert.Contains(reportWindowSource, "CreateField(S(\"desktop.report.bug.expected_label\"), S(\"desktop.report.bug.expected_watermark\"), _bugExpectedBox)");
+        StringAssert.Contains(reportWindowSource, "CreateField(S(\"desktop.report.bug.actual_label\"), S(\"desktop.report.bug.actual_watermark\"), _bugActualBox)");
+        StringAssert.Contains(reportWindowSource, "CreateField(S(\"desktop.report.bug.repro_label\"), S(\"desktop.report.bug.repro_watermark\"), _bugReproStepsBox)");
+        StringAssert.Contains(reportWindowSource, "CreateField(S(\"desktop.report.bug.evidence_label\"), S(\"desktop.report.bug.evidence_watermark\"), _bugEvidenceBox)");
+        StringAssert.Contains(reportWindowSource, "CreateField(S(\"desktop.report.feedback.summary_label\"), S(\"desktop.report.feedback.summary_watermark\"), _feedbackSummaryBox)");
+        StringAssert.Contains(reportWindowSource, "CreateField(S(\"desktop.report.feedback.detail_label\"), S(\"desktop.report.feedback.detail_watermark\"), _feedbackDetailBox)");
         StringAssert.Contains(reportWindowSource, "\"ReportBugTitleBox\"");
         StringAssert.Contains(reportWindowSource, "\"ReportBugTitleBoxLabel\"");
         StringAssert.Contains(reportWindowSource, "AutomationProperties.SetName(labelBlock, label)");
+        StringAssert.Contains(reportWindowSource, "AutomationProperties.SetName(hintBlock, $\"{label} hint\")");
         StringAssert.Contains(reportWindowSource, "AutomationProperties.SetHelpText(box, $\"{automationName}. {tooltip}\")");
         StringAssert.Contains(reportWindowSource, "DesktopShellTheme.ResolveThemeBrush(\"ChummerShellForegroundBrush\"");
         StringAssert.Contains(reportWindowSource, "ToolTip.SetTip(box, null);");

@@ -160,11 +160,11 @@ internal sealed class DesktopReportIssueWindow : Window
             Spacing = 6,
             Children =
             {
-                CreateField(S("desktop.report.bug.title_label"), _bugTitleBox),
-                CreateField(S("desktop.report.bug.expected_label"), _bugExpectedBox),
-                CreateField(S("desktop.report.bug.actual_label"), _bugActualBox),
-                CreateField(S("desktop.report.bug.repro_label"), _bugReproStepsBox),
-                CreateField(S("desktop.report.bug.evidence_label"), _bugEvidenceBox)
+                CreateField(S("desktop.report.bug.title_label"), S("desktop.report.bug.title_watermark"), _bugTitleBox),
+                CreateField(S("desktop.report.bug.expected_label"), S("desktop.report.bug.expected_watermark"), _bugExpectedBox),
+                CreateField(S("desktop.report.bug.actual_label"), S("desktop.report.bug.actual_watermark"), _bugActualBox),
+                CreateField(S("desktop.report.bug.repro_label"), S("desktop.report.bug.repro_watermark"), _bugReproStepsBox),
+                CreateField(S("desktop.report.bug.evidence_label"), S("desktop.report.bug.evidence_watermark"), _bugEvidenceBox)
             }
         };
 
@@ -174,12 +174,12 @@ internal sealed class DesktopReportIssueWindow : Window
             Spacing = 6,
             Children =
             {
-                CreateField(S("desktop.report.feedback.summary_label"), _feedbackSummaryBox),
-                CreateField(S("desktop.report.feedback.detail_label"), _feedbackDetailBox)
+                CreateField(S("desktop.report.feedback.summary_label"), S("desktop.report.feedback.summary_watermark"), _feedbackSummaryBox),
+                CreateField(S("desktop.report.feedback.detail_label"), S("desktop.report.feedback.detail_watermark"), _feedbackDetailBox)
             }
         };
 
-    private static Control CreateField(string label, TextBox input)
+    private static Control CreateField(string label, string hint, TextBox input)
     {
         TextBlock labelBlock = new()
         {
@@ -190,7 +190,18 @@ internal sealed class DesktopReportIssueWindow : Window
             Foreground = DesktopShellTheme.ResolveThemeBrush("ChummerShellForegroundBrush", "#0f172a")
         };
         AutomationProperties.SetName(labelBlock, label);
-        AutomationProperties.SetHelpText(labelBlock, label);
+        AutomationProperties.SetHelpText(labelBlock, hint);
+
+        TextBlock hintBlock = new()
+        {
+            Name = string.IsNullOrWhiteSpace(input.Name) ? null : $"{input.Name}Hint",
+            Text = hint,
+            TextWrapping = TextWrapping.Wrap,
+            Classes = { "shell-caption" },
+            Foreground = DesktopShellTheme.ResolveThemeBrush("ChummerShellMutedForegroundBrush", "#334155")
+        };
+        AutomationProperties.SetName(hintBlock, $"{label} hint");
+        AutomationProperties.SetHelpText(hintBlock, hint);
 
         return new StackPanel
         {
@@ -198,6 +209,7 @@ internal sealed class DesktopReportIssueWindow : Window
             Children =
             {
                 labelBlock,
+                hintBlock,
                 input
             }
         };
