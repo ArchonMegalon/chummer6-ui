@@ -466,7 +466,8 @@ public partial class DesktopDialogWindow : Window
         {
             Name = DesktopDialogAccessibility.BuildFieldInputName(categoryTreeField.Id),
             ItemsSource = items,
-            MinHeight = 112
+            MinHeight = 112,
+            Cursor = categoryFieldId is null ? null : new Cursor(StandardCursorType.Hand)
         };
         ApplyShellListBoxTheme(listBox);
         listBox.ItemTemplate = new FuncDataTemplate<SelectionCandidateItem>((item, _) => BuildClassicSelectionCandidateRow(item));

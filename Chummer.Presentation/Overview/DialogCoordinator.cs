@@ -2043,6 +2043,7 @@ public sealed class DialogCoordinator : IDialogCoordinator
             "dialog.ui.gear_add" => new LegacySelectionDialogConfig("uiGearCategory", "uiGearSearchInCategoryOnly", "uiGearSelectedBranch"),
             "dialog.ui.combat_add_weapon" => new LegacySelectionDialogConfig("uiWeaponCategory", "uiWeaponSearchInCategoryOnly", "uiWeaponSelectedBranch"),
             "dialog.ui.combat_add_armor" => new LegacySelectionDialogConfig("uiArmorCategory", "uiArmorSearchInCategoryOnly", "uiArmorSelectedBranch"),
+            "dialog.ui.skill_add" => new LegacySelectionDialogConfig("uiSkillCategory", "uiSkillSearchInCategoryOnly", "uiSkillSelectedBranch"),
             "dialog.ui.vehicle_add" => new LegacySelectionDialogConfig("uiVehicleCategory", "uiVehicleSearchInCategoryOnly", "uiVehicleSelectedBranch"),
             _ => new LegacySelectionDialogConfig(string.Empty, string.Empty, string.Empty)
         };

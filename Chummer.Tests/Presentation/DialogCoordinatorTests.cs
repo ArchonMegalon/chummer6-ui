@@ -1082,6 +1082,34 @@ public class DialogCoordinatorTests
     }
 
     [TestMethod]
+    public async Task CoordinateAsync_focus_category_for_skill_add_filters_the_skill_selector()
+    {
+        DialogCoordinator coordinator = new();
+        DesktopDialogFactory factory = new();
+        CharacterOverviewState published = CharacterOverviewState.Empty with
+        {
+            Preferences = DesktopPreferenceState.Default,
+            ActiveDialog = factory.CreateUiControlDialog("skill_add", DesktopPreferenceState.Default)
+        };
+
+        DialogCoordinationContext context = new(
+            State: published,
+            Publish: state => published = state,
+            ImportAsync: static (_, _) => Task.CompletedTask,
+            UpdateMetadataAsync: static (_, _) => Task.CompletedTask,
+            GetState: () => published);
+
+        await coordinator.CoordinateAsync("focus_category", context, CancellationToken.None);
+
+        Assert.IsNotNull(published.ActiveDialog);
+        Assert.AreEqual("Show All", DesktopDialogFieldValueParser.GetValue(published.ActiveDialog, "uiSkillCategory"));
+        Assert.AreEqual("Focus Active", published.ActiveDialog.Actions.Single(action => string.Equals(action.Id, "focus_category", StringComparison.Ordinal)).Label);
+        StringAssert.Contains(DesktopDialogFieldValueParser.GetValue(published.ActiveDialog, "uiSkillCandidateList"), "Perception");
+        StringAssert.Contains(DesktopDialogFieldValueParser.GetValue(published.ActiveDialog, "uiSkillCandidateList"), "Stealth Group");
+        StringAssert.Contains(published.Notice ?? string.Empty, "Show All");
+    }
+
+    [TestMethod]
     public async Task CoordinateAsync_add_more_cyberware_keeps_dialog_open_and_rebuilds_preview()
     {
         DialogCoordinator coordinator = new();

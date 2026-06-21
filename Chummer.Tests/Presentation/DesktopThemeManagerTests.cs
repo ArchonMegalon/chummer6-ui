@@ -1220,9 +1220,12 @@ public sealed class DesktopThemeManagerTests
     public void Selection_add_surfaces_do_not_label_readonly_context_as_navigation()
     {
         string repoRoot = TestContextLocator.ResolveChummerPresentationRepoRoot();
+        string factorySource = File.ReadAllText(Path.Combine(repoRoot, "Chummer.Presentation", "Overview", "DesktopDialogFactory.cs"));
         string desktopDialogSource = File.ReadAllText(Path.Combine(repoRoot, "Chummer.Avalonia", "DesktopDialogWindow.axaml.cs"));
         string commandDialogSource = File.ReadAllText(Path.Combine(repoRoot, "Chummer.Avalonia", "Controls", "CommandDialogPaneControl.axaml.cs"));
 
+        StringAssert.Contains(factorySource, "id.EndsWith(\"CategoryTree\", StringComparison.Ordinal)");
+        StringAssert.Contains(factorySource, "? \"Categories\"");
         StringAssert.Contains(desktopDialogSource, "ResolveSelectionNavigationTitle(navigationField)");
         StringAssert.Contains(desktopDialogSource, "private static string ResolveSelectionNavigationTitle(DesktopDialogField field)");
         StringAssert.Contains(commandDialogSource, "ResolveSelectionNavigationTitle(navigationField)");
@@ -1231,6 +1234,10 @@ public sealed class DesktopThemeManagerTests
         StringAssert.Contains(desktopDialogSource, ": \"Current selection\"");
         StringAssert.Contains(commandDialogSource, "? \"Categories\"");
         StringAssert.Contains(commandDialogSource, ": \"Current selection\"");
+        StringAssert.Contains(desktopDialogSource, "Cursor = categoryFieldId is null ? null : new Cursor(StandardCursorType.Hand)");
+        StringAssert.Contains(commandDialogSource, "using Avalonia.Input;");
+        StringAssert.Contains(commandDialogSource, "Cursor = categoryFieldId is null ? null : new Cursor(StandardCursorType.Hand)");
+        Assert.IsFalse(factorySource.Contains("BuildSelectionTreeField(\"uiSkillCategoryTree\", \"Navigation\"", StringComparison.Ordinal));
         Assert.IsFalse(desktopDialogSource.Contains("CreateSelectionSurfaceCard(navigationField.Label", StringComparison.Ordinal));
         Assert.IsFalse(commandDialogSource.Contains("CreateSelectionSurfaceCard(navigationField.Label", StringComparison.Ordinal));
     }

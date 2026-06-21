@@ -826,6 +826,7 @@ public class DesktopDialogFactoryTests
         Assert.AreEqual("Perception", DesktopDialogFieldValueParser.GetValue(dialog, "uiSkillName"));
         StringAssert.Contains(DesktopDialogFieldValueParser.GetValue(dialog, "uiSkillSections"), "Browse");
         StringAssert.Contains(DesktopDialogFieldValueParser.GetValue(dialog, "uiSkillSections"), "Filters");
+        Assert.AreEqual("Categories", dialog.Fields.Single(field => string.Equals(field.Id, "uiSkillCategoryTree", StringComparison.Ordinal)).Label);
         Assert.AreEqual("Core Rulebook", DesktopDialogFieldValueParser.GetValue(dialog, "uiSkillBookFilter"));
         Assert.AreEqual("true", DesktopDialogFieldValueParser.GetValue(dialog, "uiSkillShowOnlyUsable"));
         StringAssert.Contains(DesktopDialogFieldValueParser.GetValue(dialog, "uiSkillSelectionDetails"), "Defaulting | Yes");
@@ -836,7 +837,9 @@ public class DesktopDialogFactoryTests
         Assert.AreEqual(DesktopDialogFieldVisualKinds.Snippet, dialog.Fields.Single(field => string.Equals(field.Id, "uiSkillNotes", StringComparison.Ordinal)).VisualKind);
         Assert.AreEqual(DesktopDialogFieldLayoutSlots.Left, dialog.Fields.Single(field => string.Equals(field.Id, "uiSkillCandidateList", StringComparison.Ordinal)).LayoutSlot);
         Assert.AreEqual(DesktopDialogFieldLayoutSlots.Right, dialog.Fields.Single(field => string.Equals(field.Id, "uiSkillSelectionDetails", StringComparison.Ordinal)).LayoutSlot);
-        Assert.AreEqual("OK", dialog.Actions.Single(action => string.Equals(action.Id, "add", StringComparison.Ordinal)).Label);
+        Assert.AreEqual("Show All Categories", dialog.Actions.Single(action => string.Equals(action.Id, "focus_category", StringComparison.Ordinal)).Label);
+        Assert.AreEqual("Search All Categories", dialog.Actions.Single(action => string.Equals(action.Id, "toggle_search_scope", StringComparison.Ordinal)).Label);
+        Assert.AreEqual("Add Perception", dialog.Actions.Single(action => string.Equals(action.Id, "add", StringComparison.Ordinal)).Label);
     }
 
     [TestMethod]

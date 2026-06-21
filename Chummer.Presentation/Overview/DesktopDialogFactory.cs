@@ -2567,6 +2567,7 @@ public sealed class DesktopDialogFactory : IDesktopDialogFactory
             "dialog.ui.gear_add" => RebuildGearSelectionDialog(dialog),
             "dialog.ui.combat_add_weapon" => RebuildWeaponSelectionDialog(dialog),
             "dialog.ui.combat_add_armor" => RebuildArmorSelectionDialog(dialog),
+            "dialog.ui.skill_add" => RebuildSkillSelectionDialog(dialog),
             "dialog.ui.vehicle_add" => RebuildVehicleSelectionDialog(dialog),
             "dialog.ui.cyberware_edit" => RebuildCyberwareEditDialog(dialog),
             "dialog.ui.gear_edit" => RebuildGearEditDialog(dialog),
@@ -4528,9 +4529,14 @@ public sealed class DesktopDialogFactory : IDesktopDialogFactory
 
     private static DesktopDialogField BuildSelectionTreeField(string id, string label, string tree)
     {
+        string displayLabel = string.Equals(label, "Navigation", StringComparison.Ordinal)
+            && id.EndsWith("CategoryTree", StringComparison.Ordinal)
+                ? "Categories"
+                : label;
+
         return new DesktopDialogField(
             id,
-            label,
+            displayLabel,
             tree,
             tree,
             IsReadOnly: true,
@@ -4681,7 +4687,7 @@ public sealed class DesktopDialogFactory : IDesktopDialogFactory
         return
         [
             BuildSelectionSectionsField("uiCyberwareSections"),
-            BuildSelectionTreeField("uiCyberwareCategoryTree", "Navigation", categoryTree),
+            BuildSelectionTreeField("uiCyberwareCategoryTree", "Categories", categoryTree),
             new DesktopDialogField("uiCyberwareSearch", "Search", string.Empty, "Search cyberware"),
             new DesktopDialogField("uiCyberwareCategory", "Category", "Show All", "Show All"),
             new DesktopDialogField("uiCyberwareSelectedBranch", "Selected Branch", "Bodyware", "Bodyware", IsReadOnly: true, LayoutSlot: DesktopDialogFieldLayoutSlots.Hidden),
@@ -4786,7 +4792,7 @@ public sealed class DesktopDialogFactory : IDesktopDialogFactory
         return
         [
             BuildSelectionSectionsField("uiGearSections"),
-            BuildSelectionTreeField("uiGearCategoryTree", "Navigation", categoryTree),
+            BuildSelectionTreeField("uiGearCategoryTree", "Categories", categoryTree),
             new DesktopDialogField("uiGearSearch", "Search", string.Empty, "Search gear"),
             new DesktopDialogField("uiGearCategory", "Category", "Show All", "Show All", InputType: "select", Options: categoryOptions),
             new DesktopDialogField("uiGearSelectedBranch", "Selected Branch", "Pistols", "Pistols", IsReadOnly: true, LayoutSlot: DesktopDialogFieldLayoutSlots.Hidden),
@@ -4875,7 +4881,7 @@ public sealed class DesktopDialogFactory : IDesktopDialogFactory
         return
         [
             BuildSelectionSectionsField("uiMagicSections"),
-            BuildSelectionTreeField("uiMagicCategoryTree", "Navigation", categoryTree),
+            BuildSelectionTreeField("uiMagicCategoryTree", "Categories", categoryTree),
             new DesktopDialogField("uiMagicSearch", "Search", string.Empty, "Search spell or power"),
             new DesktopDialogField("uiMagicFamily", "Family", "Spell", "Spell"),
             new DesktopDialogField("uiMagicName", "Name", "Stunbolt", "Stunbolt"),
@@ -4910,7 +4916,7 @@ public sealed class DesktopDialogFactory : IDesktopDialogFactory
         return
         [
             BuildSelectionSectionsField("uiSpellSections"),
-            BuildSelectionTreeField("uiSpellCategoryTree", "Navigation", categoryTree),
+            BuildSelectionTreeField("uiSpellCategoryTree", "Categories", categoryTree),
             new DesktopDialogField("uiSpellSearch", "Search", string.Empty, "Search spells"),
             new DesktopDialogField("uiSpellCategoryFilter", "Category Filter", "All", "All"),
             new DesktopDialogField("uiSpellBookFilter", "Data File", "All Books", "All Books"),
@@ -4945,7 +4951,7 @@ public sealed class DesktopDialogFactory : IDesktopDialogFactory
         return
         [
             BuildSelectionSectionsField("uiAdeptPowerSections"),
-            BuildSelectionTreeField("uiAdeptPowerCategoryTree", "Navigation", categoryTree),
+            BuildSelectionTreeField("uiAdeptPowerCategoryTree", "Categories", categoryTree),
             new DesktopDialogField("uiAdeptPowerSearch", "Search", string.Empty, "Search adept powers"),
             new DesktopDialogField("uiAdeptPowerName", "Power", "Improved Reflexes", "Improved Reflexes"),
             new DesktopDialogField("uiAdeptPowerCandidateList", "Available Powers", candidateList, candidateList, IsReadOnly: true, IsMultiline: true, VisualKind: DesktopDialogFieldVisualKinds.List, LayoutSlot: DesktopDialogFieldLayoutSlots.Left),
@@ -4977,7 +4983,7 @@ public sealed class DesktopDialogFactory : IDesktopDialogFactory
         return
         [
             BuildSelectionSectionsField("uiDrugSections"),
-            BuildSelectionTreeField("uiDrugCategoryTree", "Navigation", categoryTree),
+            BuildSelectionTreeField("uiDrugCategoryTree", "Categories", categoryTree),
             new DesktopDialogField("uiDrugSearch", "Search", string.Empty, "Search drugs"),
             new DesktopDialogField("uiDrugName", "Drug", "Jazz", "Jazz"),
             new DesktopDialogField("uiDrugCandidateList", "Available Drugs", candidateList, candidateList, IsReadOnly: true, IsMultiline: true, VisualKind: DesktopDialogFieldVisualKinds.List, LayoutSlot: DesktopDialogFieldLayoutSlots.Left),
@@ -5172,7 +5178,7 @@ public sealed class DesktopDialogFactory : IDesktopDialogFactory
         return
         [
             BuildSelectionSectionsField("uiComplexFormSections"),
-            BuildSelectionTreeField("uiComplexFormCategoryTree", "Navigation", categoryTree),
+            BuildSelectionTreeField("uiComplexFormCategoryTree", "Categories", categoryTree),
             new DesktopDialogField("uiComplexFormSearch", "Search", string.Empty, "Search complex forms"),
             new DesktopDialogField("uiComplexFormName", "Complex Form", "Cleaner", "Cleaner"),
             new DesktopDialogField("uiComplexFormCandidateList", "Available Forms", candidateList, candidateList, IsReadOnly: true, IsMultiline: true, VisualKind: DesktopDialogFieldVisualKinds.List, LayoutSlot: DesktopDialogFieldLayoutSlots.Left),
@@ -5205,7 +5211,7 @@ public sealed class DesktopDialogFactory : IDesktopDialogFactory
         return
         [
             BuildSelectionSectionsField("uiMatrixProgramSections"),
-            BuildSelectionTreeField("uiMatrixProgramCategoryTree", "Navigation", categoryTree),
+            BuildSelectionTreeField("uiMatrixProgramCategoryTree", "Categories", categoryTree),
             new DesktopDialogField("uiMatrixProgramSearch", "Search", string.Empty, "Search programs"),
             new DesktopDialogField("uiMatrixProgramBookFilter", "Data File", "Data Trails", "Data Trails"),
             new DesktopDialogField("uiMatrixProgramName", "Program", "Armor", "Armor"),
@@ -5241,9 +5247,11 @@ public sealed class DesktopDialogFactory : IDesktopDialogFactory
         return
         [
             BuildSelectionSectionsField("uiSkillSections"),
-            BuildSelectionTreeField("uiSkillCategoryTree", "Navigation", categoryTree),
+            BuildSelectionTreeField("uiSkillCategoryTree", "Categories", categoryTree),
             new DesktopDialogField("uiSkillSearch", "Search", string.Empty, "Search skills"),
             new DesktopDialogField("uiSkillCategory", "Category", "Active", "Active"),
+            new DesktopDialogField("uiSkillSelectedBranch", "Selected Branch", "Active", "Active", IsReadOnly: true, LayoutSlot: DesktopDialogFieldLayoutSlots.Hidden),
+            BuildFilterToggleField("uiSkillSearchInCategoryOnly", "Search In Category Only", true),
             new DesktopDialogField("uiSkillBookFilter", "Data File", "Core Rulebook", "Core Rulebook"),
             new DesktopDialogField("uiSkillName", "Skill", "Perception", "Perception"),
             new DesktopDialogField("uiSkillCandidateList", "Available Skills", candidateList, candidateList, IsReadOnly: true, IsMultiline: true, VisualKind: DesktopDialogFieldVisualKinds.List, LayoutSlot: DesktopDialogFieldLayoutSlots.Left),
@@ -5253,6 +5261,72 @@ public sealed class DesktopDialogFactory : IDesktopDialogFactory
             new DesktopDialogField("uiSkillSelectionDetails", "Selection Details", selectionDetails, selectionDetails, IsReadOnly: true, IsMultiline: true, VisualKind: DesktopDialogFieldVisualKinds.Grid, LayoutSlot: DesktopDialogFieldLayoutSlots.Right),
             new DesktopDialogField("uiSkillNotes", "Notes", "Skill category, linked attribute, defaulting, and skill-family filters remain visible before confirmation.", "Skill category, linked attribute, defaulting, and skill-family filters remain visible before confirmation.", IsReadOnly: true, IsMultiline: true, VisualKind: DesktopDialogFieldVisualKinds.Snippet)
         ];
+    }
+
+    private static DesktopDialogState RebuildSkillSelectionDialog(DesktopDialogState dialog)
+    {
+        string category = DesktopDialogFieldValueParser.GetValue(dialog, "uiSkillCategory") ?? "Active";
+        bool searchInCategoryOnly = DesktopDialogFieldValueParser.ParseBool(dialog, "uiSkillSearchInCategoryOnly", true);
+        bool showOnlyUsable = DesktopDialogFieldValueParser.ParseBool(dialog, "uiSkillShowOnlyUsable", true);
+        bool showKnowledge = DesktopDialogFieldValueParser.ParseBool(dialog, "uiSkillShowKnowledge", false);
+        string search = (DesktopDialogFieldValueParser.GetValue(dialog, "uiSkillSearch") ?? string.Empty).Trim();
+        string requestedName = DesktopDialogFieldValueParser.GetValue(dialog, "uiSkillName") ?? "Perception";
+
+        var options = new[]
+        {
+            new { Name = "Perception", Branch = "Active", Family = "Active Skill", Attribute = "Intuition", Defaulting = "Yes", Book = "Core Rulebook", CandidateLine = "Perception · Active Skill · Linked Attribute: Intuition", Usable = true },
+            new { Name = "Sneaking", Branch = "Active", Family = "Active Skill", Attribute = "Agility", Defaulting = "Yes", Book = "Core Rulebook", CandidateLine = "Sneaking · Active Skill · Linked Attribute: Agility", Usable = true },
+            new { Name = "Pilot Ground Craft", Branch = "Active", Family = "Active Skill", Attribute = "Reaction", Defaulting = "No", Book = "Core Rulebook", CandidateLine = "Pilot Ground Craft · Active Skill · Linked Attribute: Reaction", Usable = true },
+            new { Name = "Seattle Street Gangs", Branch = "Knowledge", Family = "Knowledge Skill", Attribute = "Logic", Defaulting = "No", Book = "Core Rulebook", CandidateLine = "Seattle Street Gangs · Knowledge Skill · Linked Attribute: Logic", Usable = false },
+            new { Name = "Sperethiel", Branch = "Language", Family = "Language Skill", Attribute = "Intuition", Defaulting = "No", Book = "Core Rulebook", CandidateLine = "Sperethiel · Language Skill · Linked Attribute: Intuition", Usable = false },
+            new { Name = "Stealth Group", Branch = "Groups", Family = "Skill Group", Attribute = "Agility", Defaulting = "No", Book = "Core Rulebook", CandidateLine = "Stealth Group · Skill Group · Linked Attribute: Agility", Usable = true }
+        };
+
+        var filtered = options
+            .Where(option => MatchesSelectionCategory(category, option.Branch))
+            .Where(option => showKnowledge
+                || option.Usable
+                || string.Equals(category, "Knowledge", StringComparison.OrdinalIgnoreCase)
+                || string.Equals(category, "Language", StringComparison.OrdinalIgnoreCase))
+            .Where(option => string.IsNullOrWhiteSpace(search)
+                || option.Name.Contains(search, StringComparison.OrdinalIgnoreCase)
+                || (!searchInCategoryOnly && option.Branch.Contains(search, StringComparison.OrdinalIgnoreCase))
+                || (!searchInCategoryOnly && option.Family.Contains(search, StringComparison.OrdinalIgnoreCase)))
+            .ToArray();
+
+        if (filtered.Length == 0)
+            filtered = options.Where(option => MatchesSelectionCategory(category, option.Branch)).ToArray();
+        if (filtered.Length == 0)
+            filtered = options;
+
+        var selected = filtered.FirstOrDefault(option => string.Equals(option.Name, requestedName, StringComparison.OrdinalIgnoreCase))
+            ?? filtered[0];
+        string effectiveCategory = MatchesSelectionCategory(category, selected.Branch)
+            ? category
+            : selected.Branch;
+        string categoryTree = BuildSelectionBranchTree("Skills", options.Select(option => option.Branch), ResolveSelectionTreeBranch(category, selected.Branch));
+        string candidateList = BuildSelectionList(filtered.Select(option => $"{(string.Equals(option.Name, selected.Name, StringComparison.OrdinalIgnoreCase) ? ">" : " ")} {option.CandidateLine}"));
+        string selectionDetails = BuildGridValue(
+            ("Selected", selected.Name),
+            ("Category", selected.Family),
+            ("Attribute", selected.Attribute),
+            ("Defaulting", selected.Defaulting),
+            ("Search Scope", BuildSelectionSearchScope(searchInCategoryOnly)),
+            ("Book", selected.Book));
+
+        return ReplaceDialogActions(
+            ReplaceDialogFields(
+                dialog,
+                ("uiSkillCategory", effectiveCategory, effectiveCategory),
+                ("uiSkillCategoryTree", categoryTree, categoryTree),
+                ("uiSkillCandidateList", candidateList, candidateList),
+                ("uiSkillName", selected.Name, selected.Name),
+                ("uiSkillSelectedBranch", selected.Branch, selected.Branch),
+                ("uiSkillSelectionDetails", selectionDetails, selectionDetails)),
+            ("focus_category", BuildSelectionCategoryActionLabel(effectiveCategory, selected.Branch), false),
+            ("toggle_search_scope", BuildSelectionSearchActionLabel(searchInCategoryOnly), false),
+            ("add", $"Add {selected.Name}", true),
+            ("add_more", $"Add & More {selected.Name}", false));
     }
 
     private static IReadOnlyList<DesktopDialogField> BuildSkillSpecializationFields()
@@ -5293,7 +5367,7 @@ public sealed class DesktopDialogFactory : IDesktopDialogFactory
         return
         [
             BuildSelectionSectionsField("uiInitiationSections"),
-            BuildSelectionTreeField("uiInitiationCategoryTree", "Navigation", categoryTree),
+            BuildSelectionTreeField("uiInitiationCategoryTree", "Categories", categoryTree),
             new DesktopDialogField("uiInitiationTrack", "Track", "Initiation", "Initiation"),
             new DesktopDialogField("uiInitiationGrade", "Grade", "1", "1", InputType: "number"),
             new DesktopDialogField("uiInitiationCandidateList", "Available Rewards", candidateList, candidateList, IsReadOnly: true, IsMultiline: true, VisualKind: DesktopDialogFieldVisualKinds.List, LayoutSlot: DesktopDialogFieldLayoutSlots.Left),
@@ -5324,7 +5398,7 @@ public sealed class DesktopDialogFactory : IDesktopDialogFactory
         return
         [
             BuildSelectionSectionsField("uiSpiritSections"),
-            BuildSelectionTreeField("uiSpiritCategoryTree", "Navigation", categoryTree),
+            BuildSelectionTreeField("uiSpiritCategoryTree", "Categories", categoryTree),
             new DesktopDialogField("uiSpiritSearch", "Search", string.Empty, "Search spirits"),
             new DesktopDialogField("uiSpiritType", "Type", "Spirit", "Spirit"),
             new DesktopDialogField("uiSpiritName", "Name", "Watcher Spirit", "Watcher Spirit"),
@@ -5356,7 +5430,7 @@ public sealed class DesktopDialogFactory : IDesktopDialogFactory
         return
         [
             BuildSelectionSectionsField("uiCritterPowerSections"),
-            BuildSelectionTreeField("uiCritterPowerCategoryTree", "Navigation", categoryTree),
+            BuildSelectionTreeField("uiCritterPowerCategoryTree", "Categories", categoryTree),
             new DesktopDialogField("uiCritterPowerSearch", "Search", string.Empty, "Search critter powers"),
             new DesktopDialogField("uiCritterPowerName", "Power", "Natural Weapon", "Natural Weapon"),
             new DesktopDialogField("uiCritterPowerCandidateList", "Available Powers", candidateList, candidateList, IsReadOnly: true, IsMultiline: true, VisualKind: DesktopDialogFieldVisualKinds.List, LayoutSlot: DesktopDialogFieldLayoutSlots.Left),
@@ -5535,7 +5609,7 @@ public sealed class DesktopDialogFactory : IDesktopDialogFactory
         [
             BuildSelectionSectionsField("uiVehicleSections"),
             new DesktopDialogField("uiVehicleViewModes", "View Modes", "List View" + Environment.NewLine + "Browse", "Browse", IsReadOnly: true, IsMultiline: true, VisualKind: DesktopDialogFieldVisualKinds.Tabs),
-            BuildSelectionTreeField("uiVehicleCategoryTree", "Navigation", categoryTree),
+            BuildSelectionTreeField("uiVehicleCategoryTree", "Categories", categoryTree),
             new DesktopDialogField("uiVehicleSearch", "Search", string.Empty, "Search vehicles"),
             new DesktopDialogField("uiVehicleCategory", "Category", "Show All", "Show All"),
             new DesktopDialogField("uiVehicleSelectedBranch", "Selected Branch", "Cars", "Cars", IsReadOnly: true, LayoutSlot: DesktopDialogFieldLayoutSlots.Hidden),
@@ -5625,7 +5699,7 @@ public sealed class DesktopDialogFactory : IDesktopDialogFactory
         return
         [
             BuildSelectionSectionsField("uiVehicleModSections"),
-            BuildSelectionTreeField("uiVehicleModCategoryTree", "Navigation", categoryTree),
+            BuildSelectionTreeField("uiVehicleModCategoryTree", "Categories", categoryTree),
             new DesktopDialogField("uiVehicleModSearch", "Search", string.Empty, "Search vehicle mods"),
             new DesktopDialogField("uiVehicleModName", "Modification", "Spoof Chips", "Spoof Chips"),
             new DesktopDialogField("uiVehicleModCandidateList", "Available Mods", candidateList, candidateList, IsReadOnly: true, IsMultiline: true, VisualKind: DesktopDialogFieldVisualKinds.List, LayoutSlot: DesktopDialogFieldLayoutSlots.Left),
@@ -5722,7 +5796,7 @@ public sealed class DesktopDialogFactory : IDesktopDialogFactory
         return
         [
             BuildSelectionSectionsField("uiQualitySections"),
-            BuildSelectionTreeField("uiQualityCategoryTree", "Navigation", categoryTree),
+            BuildSelectionTreeField("uiQualityCategoryTree", "Categories", categoryTree),
             new DesktopDialogField("uiQualitySearch", "Search", string.Empty, "Search qualities"),
             new DesktopDialogField("uiQualityType", "Type", "Positive", "Positive", InputType: "select", Options: typeOptions),
             new DesktopDialogField("uiQualityBookFilter", "Data File", "Core Rulebook", "Core Rulebook", InputType: "select", Options: dataFileOptions),
@@ -5770,7 +5844,7 @@ public sealed class DesktopDialogFactory : IDesktopDialogFactory
         [
             BuildSelectionSectionsField("uiWeaponSections"),
             new DesktopDialogField("uiWeaponViewModes", "View Modes", "List View" + Environment.NewLine + "Browse", "Browse", IsReadOnly: true, IsMultiline: true, VisualKind: DesktopDialogFieldVisualKinds.Tabs),
-            BuildSelectionTreeField("uiWeaponCategoryTree", "Navigation", categoryTree),
+            BuildSelectionTreeField("uiWeaponCategoryTree", "Categories", categoryTree),
             new DesktopDialogField("uiWeaponSearch", "Search", string.Empty, "Search weapons"),
             new DesktopDialogField("uiWeaponCategory", "Category", "Show All", "Show All"),
             new DesktopDialogField("uiWeaponSelectedBranch", "Selected Branch", "Heavy Pistols", "Heavy Pistols", IsReadOnly: true, LayoutSlot: DesktopDialogFieldLayoutSlots.Hidden),
@@ -5834,7 +5908,7 @@ public sealed class DesktopDialogFactory : IDesktopDialogFactory
         [
             BuildSelectionSectionsField("uiArmorSections"),
             new DesktopDialogField("uiArmorViewModes", "View Modes", "List View" + Environment.NewLine + "Browse", "Browse", IsReadOnly: true, IsMultiline: true, VisualKind: DesktopDialogFieldVisualKinds.Tabs),
-            BuildSelectionTreeField("uiArmorCategoryTree", "Navigation", categoryTree),
+            BuildSelectionTreeField("uiArmorCategoryTree", "Categories", categoryTree),
             new DesktopDialogField("uiArmorSearch", "Search", string.Empty, "Search armor"),
             new DesktopDialogField("uiArmorCategory", "Category", "Show All", "Show All"),
             new DesktopDialogField("uiArmorSelectedBranch", "Selected Branch", "Armor", "Armor", IsReadOnly: true, LayoutSlot: DesktopDialogFieldLayoutSlots.Hidden),
@@ -6101,12 +6175,13 @@ public sealed class DesktopDialogFactory : IDesktopDialogFactory
                 "Browse matrix programs and cyberdeck items, inspect slot and source, then confirm the selected entry.",
                 BuildMatrixProgramSelectionFields(),
                 BuildLegacySelectionActions()),
-            "skill_add" => new DesktopDialogState(
-                "dialog.ui.skill_add",
-                "Add Skill",
-                "Browse skills, inspect category and linked attribute, then confirm the selected skill.",
-                BuildSkillSelectionFields(),
-                BuildLegacySelectionActions()),
+            "skill_add" => RebuildSkillSelectionDialog(
+                new DesktopDialogState(
+                    "dialog.ui.skill_add",
+                    "Add Skill",
+                    "Browse skills, inspect category and linked attribute, then confirm the selected skill.",
+                    BuildSkillSelectionFields(),
+                    BuildLegacySelectionActions())),
             "skill_specialize" => new DesktopDialogState(
                 "dialog.ui.skill_specialize",
                 "Specialize Skill",

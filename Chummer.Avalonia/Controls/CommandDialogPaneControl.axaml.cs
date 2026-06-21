@@ -2,6 +2,7 @@ using Avalonia;
 using Avalonia.Automation;
 using Avalonia.Controls;
 using Avalonia.Controls.Templates;
+using Avalonia.Input;
 using Avalonia.Interactivity;
 using Avalonia.Media;
 using Avalonia.Media.Imaging;
@@ -571,7 +572,8 @@ public partial class CommandDialogPaneControl : UserControl
         {
             Name = DesktopDialogAccessibility.BuildFieldInputName(categoryTreeField.Id),
             ItemsSource = items,
-            MinHeight = 112
+            MinHeight = 112,
+            Cursor = categoryFieldId is null ? null : new Cursor(StandardCursorType.Hand)
         };
         DesktopShellTheme.ApplyShellListBoxTheme(listBox);
         listBox.ItemTemplate = new FuncDataTemplate<SelectionCandidateItem>((item, _) => BuildClassicSelectionCandidateRow(item));
