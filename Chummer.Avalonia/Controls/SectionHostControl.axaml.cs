@@ -949,9 +949,9 @@ public partial class SectionHostControl : UserControl
         BuildLabTrustReceiptPanel.Children.Add(DesktopExplainCompanionLauncher.CreateLaunchButton(
             this,
             new DesktopExplainCompanionRequest(
-                Title: "Build Lab explain companion",
+                Title: "Build Lab details",
                 SurfaceId: "build_explain:artifact_launch",
-                SurfaceLabel: "Desktop Build Lab compare and blocker explain companion",
+                SurfaceLabel: "Desktop Build Lab comparison and blocker details",
                 Sections: sections,
                 SurfaceFamilyId: "build_explain:artifact_launch",
                 RulesetId: _buildLab?.RulesetId,
@@ -962,7 +962,7 @@ public partial class SectionHostControl : UserControl
         {
             BuildLabTrustReceiptPanel.Children.Add(new TextBlock
             {
-                Text = $"Build compare companion: {BuildBuildCompareCompanionBadge(_buildLab)}",
+                Text = $"Build comparison: {BuildBuildCompareCompanionBadge(_buildLab)}",
                 TextWrapping = TextWrapping.Wrap,
                 Foreground = DesktopShellTheme.ResolveThemeBrush("ChummerShellWarningBrush", "#9A6700")
             });

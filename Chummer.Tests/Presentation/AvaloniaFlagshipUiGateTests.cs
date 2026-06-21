@@ -3248,7 +3248,7 @@ public sealed class AvaloniaFlagshipUiGateTests
     }
 
     [TestMethod]
-    public void Standalone_section_host_launches_build_lab_compare_and_blocker_explain_companion()
+    public void Standalone_section_host_launches_build_lab_compare_and_blocker_details_without_ai_copy()
     {
         WithStandaloneControl<SectionHostControl>(control =>
         {
@@ -3284,7 +3284,8 @@ public sealed class AvaloniaFlagshipUiGateTests
             CollectionAssert.Contains(visibleText, "Build explanation and environment details");
             Assert.AreEqual("Open details", companionButton.Content?.ToString());
             Assert.IsTrue(visibleText.Any(text => text.Contains("Build blocker", StringComparison.Ordinal)));
-            Assert.IsTrue(visibleText.Any(text => text.Contains("Build compare companion:", StringComparison.Ordinal)));
+            Assert.IsTrue(visibleText.Any(text => text.Contains("Build comparison:", StringComparison.Ordinal)));
+            Assert.IsFalse(visibleText.Any(text => text.Contains("companion", StringComparison.OrdinalIgnoreCase)));
         });
     }
 
