@@ -631,6 +631,7 @@
     </Style>
     <Style Selector="ComboBox /template/ ContentPresenter">
       <Setter Property="Foreground" Value="{DynamicResource ComboBoxForeground}" />
+      <Setter Property="TextElement.Foreground" Value="{DynamicResource ComboBoxForeground}" />
     </Style>
     <Style Selector="ComboBox /template/ TextBlock">
       <Setter Property="Foreground" Value="{DynamicResource ComboBoxForeground}" />
@@ -638,8 +639,13 @@
     <Style Selector="ComboBox /template/ TextPresenter">
       <Setter Property="TextElement.Foreground" Value="{DynamicResource ComboBoxForeground}" />
     </Style>
+    <Style Selector="ComboBox /template/ Border">
+      <Setter Property="Background" Value="{DynamicResource ComboBoxBackground}" />
+      <Setter Property="BorderBrush" Value="{DynamicResource ComboBoxBorderBrush}" />
+    </Style>
     <Style Selector="ComboBox:pointerover /template/ ContentPresenter">
       <Setter Property="Foreground" Value="{DynamicResource ComboBoxForegroundPointerOver}" />
+      <Setter Property="TextElement.Foreground" Value="{DynamicResource ComboBoxForegroundPointerOver}" />
     </Style>
     <Style Selector="ComboBox:pointerover /template/ TextBlock">
       <Setter Property="Foreground" Value="{DynamicResource ComboBoxForegroundPointerOver}" />
@@ -647,8 +653,13 @@
     <Style Selector="ComboBox:pointerover /template/ TextPresenter">
       <Setter Property="TextElement.Foreground" Value="{DynamicResource ComboBoxForegroundPointerOver}" />
     </Style>
+    <Style Selector="ComboBox:pointerover /template/ Border">
+      <Setter Property="Background" Value="{DynamicResource ComboBoxBackgroundPointerOver}" />
+      <Setter Property="BorderBrush" Value="{DynamicResource ComboBoxBorderBrushPointerOver}" />
+    </Style>
     <Style Selector="ComboBox:focus /template/ ContentPresenter">
       <Setter Property="Foreground" Value="{DynamicResource ComboBoxForegroundPressed}" />
+      <Setter Property="TextElement.Foreground" Value="{DynamicResource ComboBoxForegroundPressed}" />
     </Style>
     <Style Selector="ComboBox:focus /template/ TextBlock">
       <Setter Property="Foreground" Value="{DynamicResource ComboBoxForegroundPressed}" />
@@ -656,14 +667,23 @@
     <Style Selector="ComboBox:focus /template/ TextPresenter">
       <Setter Property="TextElement.Foreground" Value="{DynamicResource ComboBoxForegroundPressed}" />
     </Style>
+    <Style Selector="ComboBox:focus /template/ Border">
+      <Setter Property="Background" Value="{DynamicResource ComboBoxBackgroundPressed}" />
+      <Setter Property="BorderBrush" Value="{DynamicResource ComboBoxBorderBrushPressed}" />
+    </Style>
     <Style Selector="ComboBox:disabled /template/ ContentPresenter">
       <Setter Property="Foreground" Value="{DynamicResource ComboBoxForegroundDisabled}" />
+      <Setter Property="TextElement.Foreground" Value="{DynamicResource ComboBoxForegroundDisabled}" />
     </Style>
     <Style Selector="ComboBox:disabled /template/ TextBlock">
       <Setter Property="Foreground" Value="{DynamicResource ComboBoxForegroundDisabled}" />
     </Style>
     <Style Selector="ComboBox:disabled /template/ TextPresenter">
       <Setter Property="TextElement.Foreground" Value="{DynamicResource ComboBoxForegroundDisabled}" />
+    </Style>
+    <Style Selector="ComboBox:disabled /template/ Border">
+      <Setter Property="Background" Value="{DynamicResource ComboBoxBackgroundDisabled}" />
+      <Setter Property="BorderBrush" Value="{DynamicResource ComboBoxBorderBrushDisabled}" />
     </Style>
     <Style Selector="ComboBoxItem:selected TextBlock">
       <Setter Property="Foreground" Value="{DynamicResource ComboBoxItemForegroundSelected}" />
@@ -762,11 +782,19 @@
     <Style Selector="TextBox /template/ TextPresenter">
       <Setter Property="TextElement.Foreground" Value="{DynamicResource TextControlForeground}" />
     </Style>
+    <Style Selector="TextBox /template/ Border">
+      <Setter Property="Background" Value="{DynamicResource TextControlBackground}" />
+      <Setter Property="BorderBrush" Value="{DynamicResource TextControlBorderBrush}" />
+    </Style>
     <Style Selector="TextBox:pointerover /template/ TextBlock">
       <Setter Property="Foreground" Value="{DynamicResource TextControlPlaceholderForegroundPointerOver}" />
     </Style>
     <Style Selector="TextBox:pointerover /template/ TextPresenter">
       <Setter Property="TextElement.Foreground" Value="{DynamicResource TextControlForegroundPointerOver}" />
+    </Style>
+    <Style Selector="TextBox:pointerover /template/ Border">
+      <Setter Property="Background" Value="{DynamicResource TextControlBackgroundPointerOver}" />
+      <Setter Property="BorderBrush" Value="{DynamicResource TextControlBorderBrushPointerOver}" />
     </Style>
     <Style Selector="TextBox:focus /template/ TextBlock">
       <Setter Property="Foreground" Value="{DynamicResource TextControlPlaceholderForegroundFocused}" />
@@ -774,11 +802,19 @@
     <Style Selector="TextBox:focus /template/ TextPresenter">
       <Setter Property="TextElement.Foreground" Value="{DynamicResource TextControlForegroundFocused}" />
     </Style>
+    <Style Selector="TextBox:focus /template/ Border">
+      <Setter Property="Background" Value="{DynamicResource TextControlBackgroundFocused}" />
+      <Setter Property="BorderBrush" Value="{DynamicResource TextControlBorderBrushFocused}" />
+    </Style>
     <Style Selector="TextBox:disabled /template/ TextBlock">
       <Setter Property="Foreground" Value="{DynamicResource TextControlPlaceholderForegroundDisabled}" />
     </Style>
     <Style Selector="TextBox:disabled /template/ TextPresenter">
       <Setter Property="TextElement.Foreground" Value="{DynamicResource TextControlForegroundDisabled}" />
+    </Style>
+    <Style Selector="TextBox:disabled /template/ Border">
+      <Setter Property="Background" Value="{DynamicResource TextControlBackgroundDisabled}" />
+      <Setter Property="BorderBrush" Value="{DynamicResource TextControlBorderBrushDisabled}" />
     </Style>
     <Style Selector="NumericUpDown">
       <Setter Property="MinHeight" Value="30" />

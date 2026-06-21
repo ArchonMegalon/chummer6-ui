@@ -3482,18 +3482,41 @@ public sealed class AvaloniaFlagshipUiGateTests
     }
 
     [TestMethod]
-    public void Standalone_priority_workflow_dialog_keeps_input_controls_readable_before_hover()
+    public void Standalone_priority_workflow_dialog_keeps_input_controls_readable_before_hover_in_dark_mode()
     {
         WithStandaloneDialogWindow(window =>
         {
-            DesktopDialogState dialog = BuildPriorityWorkflowDialogForTesting("Priority");
-            dialog = RebuildPriorityWorkflowDialogField(dialog, "newCharacterPriorityTalent", "B");
-            dialog = RebuildPriorityWorkflowDialogField(dialog, "newCharacterPriorityTalentChoice", "Magician");
+            try
+            {
+                if (global::Avalonia.Application.Current is not null)
+                {
+                    global::Avalonia.Application.Current.RequestedThemeVariant = ThemeVariant.Dark;
+                }
 
-            window.BindDialog(dialog);
-            PumpStandaloneUi();
+                window.RequestedThemeVariant = ThemeVariant.Dark;
+                window.InvalidateVisual();
+                PumpStandaloneUi();
 
-            AssertVisibleInputControlContrast(window, "SR priority workflow dialog");
+                DesktopDialogState dialog = BuildPriorityWorkflowDialogForTesting("Priority");
+                dialog = RebuildPriorityWorkflowDialogField(dialog, "newCharacterPriorityTalent", "B");
+                dialog = RebuildPriorityWorkflowDialogField(dialog, "newCharacterPriorityTalentChoice", "Magician");
+
+                window.BindDialog(dialog);
+                PumpStandaloneUi();
+
+                AssertVisibleInputControlContrast(window, "SR priority workflow dialog dark mode");
+            }
+            finally
+            {
+                if (global::Avalonia.Application.Current is not null)
+                {
+                    global::Avalonia.Application.Current.RequestedThemeVariant = ThemeVariant.Light;
+                }
+
+                window.RequestedThemeVariant = ThemeVariant.Light;
+                window.InvalidateVisual();
+                PumpStandaloneUi();
+            }
         });
     }
 
