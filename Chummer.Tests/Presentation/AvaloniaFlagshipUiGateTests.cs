@@ -1014,6 +1014,37 @@ public sealed class AvaloniaFlagshipUiGateTests
     }
 
     [TestMethod]
+    public void New_character_options_button_expands_inline_without_closing_build_method_dialog()
+    {
+        WithRuntimeHarness(harness =>
+        {
+            harness.WaitForReady();
+
+            harness.Click("FileMenuButton");
+            harness.WaitUntil(() => IsCommandVisibleInCommandList(harness, "new_character"));
+            harness.ClickMenuCommand("new_character");
+            harness.WaitUntil(() =>
+                string.Equals(harness.State.ActiveDialog?.Id, "dialog.new_character", StringComparison.Ordinal)
+                && harness.Window.PeekDialogWindowForTesting() is { IsVisible: true, BoundDialogId: "dialog.new_character" }
+                && !harness.State.IsBusy);
+
+            Control optionsPanel = harness.FindControl<Control>("newCharacterOptionsPanel");
+            Assert.IsFalse(optionsPanel.IsVisible, "House-rule options should start collapsed.");
+
+            harness.Click("newCharacterModifyButton");
+            harness.WaitUntil(() =>
+                string.Equals(harness.State.ActiveDialog?.Id, "dialog.new_character", StringComparison.Ordinal)
+                && harness.Window.PeekDialogWindowForTesting() is { IsVisible: true, BoundDialogId: "dialog.new_character" }
+                && harness.FindControl<Control>("newCharacterOptionsPanel").IsVisible,
+                context: "Options must expand in place without closing Select Build Method.");
+
+            Assert.AreEqual("dialog.new_character", harness.State.ActiveDialog?.Id);
+            Assert.IsNull(harness.State.WorkspaceId);
+            Assert.IsTrue(harness.Window.PeekDialogWindowForTesting() is { IsVisible: true, BoundDialogId: "dialog.new_character" });
+        });
+    }
+
+    [TestMethod]
     public void File_menu_new_character_completes_into_visible_runtime_workspace()
     {
         WithRuntimeHarness(harness =>

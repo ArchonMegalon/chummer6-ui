@@ -1313,6 +1313,7 @@ public partial class DesktopDialogWindow : Window
         Control optionsPanel = CreateLegacyFieldGroup(
             "Options",
             CreateStandaloneFieldRow(houseRulesField));
+        optionsPanel.Name = "newCharacterOptionsPanel";
         optionsPanel.IsVisible = false;
         ApplyAccessibility(
             modifyButton,
