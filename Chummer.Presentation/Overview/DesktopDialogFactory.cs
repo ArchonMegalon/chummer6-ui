@@ -1393,38 +1393,38 @@ public sealed class DesktopDialogFactory : IDesktopDialogFactory
         };
         string pathSummary = archetype switch
         {
-            "decker" => "matrix-first lane",
-            "technomancer" => "resonance and matrix lane",
-            "rigger" => "vehicle/drone control lane",
-            "adept" => "physical adept lane",
-            "mage" => "magic-forward lane",
-            "street_sam" => "heavy combat augmentation lane",
-            "face" => "social leverage lane",
+            "decker" => "matrix-first focus",
+            "technomancer" => "resonance and matrix focus",
+            "rigger" => "vehicle/drone control focus",
+            "adept" => "physical adept focus",
+            "mage" => "magic-forward focus",
+            "street_sam" => "heavy combat augmentation focus",
+            "face" => "social leverage focus",
             _ => normalizedUpgradeExposure switch
             {
-                "magic" => "magic-forward lane",
-                "matrix" => "matrix-first lane",
-                "heavy_augment" => "heavy augmentation lane",
-                "light_augment" => "light augmentation lane",
-                "mundane" => "mundane specialist lane",
-                _ => "open specialist lane"
+                "magic" => "magic-forward focus",
+                "matrix" => "matrix-first focus",
+                "heavy_augment" => "heavy augmentation focus",
+                "light_augment" => "light augmentation focus",
+                "mundane" => "mundane specialist focus",
+                _ => "open specialist focus"
             }
         };
         string exposureSummary = normalizedUpgradeExposure switch
         {
-            "magic" => "magic-forward lane",
-            "matrix" => "matrix-first lane",
-            "heavy_augment" => "heavy augmentation lane",
-            "light_augment" => "light augmentation lane",
-            "mundane" => "mundane specialist lane",
-            _ => "open specialist lane"
+            "magic" => "magic-forward focus",
+            "matrix" => "matrix-first focus",
+            "heavy_augment" => "heavy augmentation focus",
+            "light_augment" => "light augmentation focus",
+            "mundane" => "mundane specialist focus",
+            _ => "open specialist focus"
         };
         string gmRequirementSummary = ResolveOriginGmRequirementSummary(
             normalizedGmRequirementPreset,
             normalizedGmRequirements);
         string originSummary = PlayerFacingCopyHumanizer.Clean(
             $"{FormatChoiceLabel(normalizedBackground)} upbringing, {FormatChoiceLabel(normalizedTurningPoint)} turning point, and a {FormatChoiceLabel(normalizedTrainingPath)} training path pushed this runner toward {FormatChoiceLabel(archetype)} work. " +
-            $"{FormatChoiceLabel(normalizedPressureCost)} still shapes their decisions, while {FormatChoiceLabel(normalizedMotivation)} keeps the current run lane active. " +
+            $"{FormatChoiceLabel(normalizedPressureCost)} still shapes their decisions, while {FormatChoiceLabel(normalizedMotivation)} keeps the next run in view. " +
             $"The dossier keeps {exposureSummary} visible as the story reason for the build choices.");
         string buildSummary = PlayerFacingCopyHumanizer.Clean(
             $"{FormatChoiceLabel(archetype)} posture, {buildMethod} build, {metatype} lean, {qualityFocus.ToLowerInvariant()}, {pathSummary}.");

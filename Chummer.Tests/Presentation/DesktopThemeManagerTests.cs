@@ -752,8 +752,29 @@ public sealed class DesktopThemeManagerTests
         Assert.IsFalse(factorySource.Contains("Review story and build", StringComparison.Ordinal));
         Assert.IsFalse(factorySource.Contains("Open guided character creation", StringComparison.Ordinal));
         Assert.IsFalse(desktopDialogSource.Contains("build lane", StringComparison.OrdinalIgnoreCase));
+        Assert.IsFalse(factorySource.Contains("matrix-first lane", StringComparison.OrdinalIgnoreCase));
+        Assert.IsFalse(factorySource.Contains("magic-forward lane", StringComparison.OrdinalIgnoreCase));
+        Assert.IsFalse(factorySource.Contains("current run lane", StringComparison.OrdinalIgnoreCase));
         Assert.IsFalse(desktopDialogSource.Contains("\"ALICE Handoff\"", StringComparison.Ordinal));
         Assert.IsFalse(desktopDialogSource.Contains("ALICE translates the story", StringComparison.Ordinal));
+    }
+
+    [TestMethod]
+    public void Build_explain_home_copy_uses_build_method_not_lane_jargon()
+    {
+        string repoRoot = TestContextLocator.ResolveChummerPresentationRepoRoot();
+        string projectorSource = File.ReadAllText(Path.Combine(repoRoot, "Chummer.Presentation", "Overview", "DesktopHomeBuildExplainProjector.cs"));
+
+        StringAssert.Contains(projectorSource, "buildMethodLabel");
+        StringAssert.Contains(projectorSource, "inspect the current {buildMethodLabel} build");
+        StringAssert.Contains(projectorSource, "Explain focus: {buildMethodLabel} build");
+        StringAssert.Contains(projectorSource, "Campaign rules cap this build");
+        StringAssert.Contains(projectorSource, "current story path");
+        StringAssert.Contains(projectorSource, "for this workspace yet");
+        Assert.IsFalse(projectorSource.Contains("buildLane", StringComparison.Ordinal));
+        Assert.IsFalse(projectorSource.Contains("grounded {buildLane} lane", StringComparison.Ordinal));
+        Assert.IsFalse(projectorSource.Contains("current dossier lane", StringComparison.OrdinalIgnoreCase));
+        Assert.IsFalse(projectorSource.Contains("desktop lane", StringComparison.OrdinalIgnoreCase));
     }
 
     [TestMethod]

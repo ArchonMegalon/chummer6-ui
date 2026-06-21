@@ -2020,12 +2020,19 @@ public class DesktopDialogFactoryTests
         StringAssert.Contains(DesktopDialogFieldValueParser.GetValue(dialog, "newCharacterOriginBuildLogic"), "BP");
         StringAssert.Contains(DesktopDialogFieldValueParser.GetValue(dialog, "newCharacterOriginBuildLogic"), "Mage");
         StringAssert.Contains(DesktopDialogFieldValueParser.GetValue(dialog, "newCharacterOriginBuildLogic"), "Troll");
+        StringAssert.Contains(DesktopDialogFieldValueParser.GetValue(dialog, "newCharacterOriginBuildLogic"), "magic-forward focus");
         StringAssert.Contains(DesktopDialogFieldValueParser.GetValue(dialog, "newCharacterOriginBookPreview"), "Cipher: Origin Dossier");
         StringAssert.Contains(DesktopDialogFieldValueParser.GetValue(dialog, "newCharacterOriginBookPreview"), "When this origin feels right, start character creation.");
         StringAssert.Contains(DesktopDialogFieldValueParser.GetValue(dialog, "newCharacterOriginImplications"), "Alice Seed");
         StringAssert.Contains(DesktopDialogFieldValueParser.GetValue(dialog, "newCharacterOriginImplications"), "approved origin story");
         StringAssert.Contains(DesktopDialogFieldValueParser.GetValue(dialog, "newCharacterOriginImplications"), "Addiction quality");
         StringAssert.Contains(DesktopDialogFieldValueParser.GetValue(dialog, "newCharacterOriginImplications"), "Intelligence 2+");
+        string visibleOriginText = string.Join(
+            Environment.NewLine,
+            dialog.Fields
+                .Where(field => !string.Equals(field.LayoutSlot, DesktopDialogFieldLayoutSlots.Hidden, StringComparison.Ordinal))
+                .Select(field => field.Value));
+        Assert.IsFalse(visibleOriginText.Contains(" lane", StringComparison.OrdinalIgnoreCase), "Origin Dossier visible copy should describe focus/path, not internal lanes.");
         Assert.AreEqual("Start character creation", dialog.Actions.Single(action => string.Equals(action.Id, "open_origin_guided_chargen", StringComparison.Ordinal)).Label);
         CollectionAssert.AreEqual(
             new[] { "open_origin_guided_chargen", "cancel" },

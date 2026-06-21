@@ -129,14 +129,14 @@ public static class DesktopHomeBuildExplainProjector
                     .ToArray()));
         }
 
-        string buildLane = string.IsNullOrWhiteSpace(build.BuildMethod) ? leadWorkspace.Summary.BuildMethod : build.BuildMethod;
+        string buildMethodLabel = string.IsNullOrWhiteSpace(build.BuildMethod) ? leadWorkspace.Summary.BuildMethod : build.BuildMethod;
         string priorityLadder = BuildPriorityLadder(build);
         string gameplayMode = string.IsNullOrWhiteSpace(rules.GameplayOption) ? "default gameplay state" : rules.GameplayOption;
         string bannedWare = BuildBannedWareSummary(rules.BannedWareGrades);
         int remainingContactPoints = Math.Max(build.ContactPoints - build.ContactPointsUsed, 0);
         string nextSafeAction = ResolveRefreshAction(displayName, runtimeInspector) ?? (remainingContactPoints == 0
             ? $"Continue {displayName}, but review contact allocation before you export or hand the dossier back into campaign play."
-            : $"Continue {displayName} and inspect the grounded {buildLane} lane before you export, publish, or reopen campaign work.");
+            : $"Continue {displayName} and inspect the current {buildMethodLabel} build before you export, publish, or reopen campaign work.");
         if (!string.IsNullOrWhiteSpace(campaignNextSafeAction) && string.IsNullOrWhiteSpace(ResolveRefreshAction(displayName, runtimeInspector)))
         {
             nextSafeAction = campaignNextSafeAction!;
@@ -145,8 +145,8 @@ public static class DesktopHomeBuildExplainProjector
             ? string.Empty
             : $" Build path focus: {leadBuildPath.Suggestion.Title} keeps the next grounded handoff explicit.";
         string explainFocus = !string.IsNullOrWhiteSpace(campaignExplainFocus)
-            ? $"Explain focus: {buildLane} with {priorityLadder}; {gameplayMode}; current limits {rules.MaxKarma} Karma / {rules.MaxNuyen} nuyen.{buildPathFocus} {campaignExplainFocus}".Trim()
-            : $"Explain focus: {buildLane} with {priorityLadder}; {gameplayMode}; current limits {rules.MaxKarma} Karma / {rules.MaxNuyen} nuyen.{buildPathFocus}";
+            ? $"Explain focus: {buildMethodLabel} build with {priorityLadder}; {gameplayMode}; current limits {rules.MaxKarma} Karma / {rules.MaxNuyen} nuyen.{buildPathFocus} {campaignExplainFocus}".Trim()
+            : $"Explain focus: {buildMethodLabel} build with {priorityLadder}; {gameplayMode}; current limits {rules.MaxKarma} Karma / {rules.MaxNuyen} nuyen.{buildPathFocus}";
         string returnTarget = $"Return target: {displayName} on runtime {runtimeFingerprint}.";
         string installState = string.IsNullOrWhiteSpace(activeRuntime?.InstallState)
             ? "workspace-only"
@@ -171,7 +171,7 @@ public static class DesktopHomeBuildExplainProjector
 
         if (rules.MaxKarma > 0)
         {
-            watchouts.Add($"Campaign rules cap this lane at {rules.MaxKarma} Karma before the next progression checkpoint changes.");
+            watchouts.Add($"Campaign rules cap this build at {rules.MaxKarma} Karma before the next progression checkpoint changes.");
         }
 
         if (leadBuildPath?.Preview?.RequiresConfirmation == true)
@@ -186,7 +186,7 @@ public static class DesktopHomeBuildExplainProjector
         return Humanize(new DesktopHomeBuildExplainProjection(
             RulesetId: resolvedRulesetId,
             RulesetSpotlight: rulesetSpotlight,
-            $"Build state: {buildLane} with {priorityLadder}; contact points {build.ContactPointsUsed}/{build.ContactPoints}; special track {build.TotalSpecial}.\nRules state: {rules.GameEdition} · {rules.Settings} · {gameplayMode}; limits {rules.MaxKarma} Karma / {rules.MaxNuyen} nuyen; banned ware {bannedWare}.",
+            $"Build state: {buildMethodLabel} build with {priorityLadder}; contact points {build.ContactPointsUsed}/{build.ContactPoints}; special track {build.TotalSpecial}.\nRules state: {rules.GameEdition} · {rules.Settings} · {gameplayMode}; limits {rules.MaxKarma} Karma / {rules.MaxNuyen} nuyen; banned ware {bannedWare}.",
             nextSafeAction,
             explainFocus,
             runtimeHealthSummary,
@@ -483,7 +483,7 @@ public static class DesktopHomeBuildExplainProjector
                     ?? $"State {candidate.Preview.State} is ready to compare.";
                 string nextStep = candidate.Preview.RequiresConfirmation
                     ? "Requires explicit confirmation before the receipt is emitted."
-                    : "Receipt is ready to move into the current dossier lane.";
+                    : "Record is ready to move into the current story path.";
                 string runtime = string.IsNullOrWhiteSpace(candidate.Preview.RuntimeFingerprint)
                     ? "runtime pending"
                     : $"runtime {candidate.Preview.RuntimeFingerprint}";
@@ -556,7 +556,7 @@ public static class DesktopHomeBuildExplainProjector
     {
         if (activeRuntime is null)
         {
-            return "Runtime health: no active runtime profile is loaded for this desktop lane yet.";
+            return "Runtime health: no active runtime profile is loaded for this workspace yet.";
         }
 
         string installState = string.IsNullOrWhiteSpace(activeRuntime.InstallState)
