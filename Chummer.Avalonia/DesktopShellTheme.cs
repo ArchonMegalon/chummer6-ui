@@ -102,6 +102,14 @@ internal static class DesktopShellTheme
         listBox.Padding = new Thickness(2);
     }
 
+    public static void ApplyShellTreeViewTheme(TreeView treeView)
+    {
+        ArgumentNullException.ThrowIfNull(treeView);
+        treeView.Background = ResolveThemeBrush("ChummerShellSurfaceBrush", "#FBFCFE");
+        treeView.BorderThickness = new Thickness(0);
+        treeView.Padding = new Thickness(2);
+    }
+
     public static void ApplyShellReadOnlyPanelTheme(Border panel)
     {
         ArgumentNullException.ThrowIfNull(panel);

@@ -1073,6 +1073,15 @@ public sealed class DesktopThemeManagerTests
         StringAssert.Contains(appTheme, "<Style Selector=\"TextBox:pointerover\">");
         StringAssert.Contains(appTheme, "<Style Selector=\"TextBox:focus\">");
         StringAssert.Contains(appTheme, "<Style Selector=\"ListBox\">");
+        StringAssert.Contains(appTheme, "<Style Selector=\"TreeView\">");
+        StringAssert.Contains(appTheme, "<Style Selector=\"TreeViewItem\">");
+        StringAssert.Contains(appTheme, "<Style Selector=\"TreeViewItem:pointerover\">");
+        StringAssert.Contains(appTheme, "<Style Selector=\"TreeViewItem:selected\">");
+        StringAssert.Contains(appTheme, "<Style Selector=\"TreeViewItem:selected:pointerover\">");
+        StringAssert.Contains(appTheme, "<Style Selector=\"TreeViewItem TextBlock\">");
+        StringAssert.Contains(appTheme, "<Style Selector=\"TreeViewItem /template/ ContentPresenter\">");
+        StringAssert.Contains(appTheme, "<Style Selector=\"TreeViewItem:selected TextBlock\">");
+        StringAssert.Contains(appTheme, "<Style Selector=\"TreeViewItem:selected /template/ ContentPresenter\">");
         StringAssert.Contains(appTheme, "<Style Selector=\"ListBoxItem\">");
         StringAssert.Contains(appTheme, "<Style Selector=\"ListBoxItem:pointerover\">");
         StringAssert.Contains(appTheme, "<Style Selector=\"ListBoxItem:selected\">");
@@ -1108,6 +1117,9 @@ public sealed class DesktopThemeManagerTests
         StringAssert.Contains(appTheme, "<Style Selector=\"MenuItem.menu-root.active-menu TextBlock\">");
         StringAssert.Contains(shellTheme, "textBox.Background = ResolveThemeBrush(\"TextControlBackground\", \"#FFFFFF\");");
         StringAssert.Contains(shellTheme, "textBox.Foreground = ResolveThemeBrush(\"TextControlForeground\", \"#111111\");");
+        StringAssert.Contains(shellTheme, "ApplyShellTreeViewTheme(TreeView treeView)");
+        StringAssert.Contains(shellTheme, "treeView.Background = ResolveThemeBrush(\"ChummerShellSurfaceBrush\", \"#FBFCFE\");");
+        StringAssert.Contains(desktopDialogSource, "DesktopShellTheme.ApplyShellTreeViewTheme(treeView);");
         StringAssert.Contains(classicPortSurface, "DesktopShellTheme.ApplyShellComboBoxTheme(comboBox);");
         StringAssert.Contains(shellTheme, "ApplyShellListBoxTheme(ListBox listBox)");
         StringAssert.Contains(appTheme, "<Style Selector=\"NumericUpDown\">");
@@ -1226,8 +1238,8 @@ public sealed class DesktopThemeManagerTests
     {
         string repoRoot = TestContextLocator.ResolveChummerPresentationRepoRoot();
         string avaloniaRoot = Path.Combine(repoRoot, "Chummer.Avalonia");
-        Regex typedCreation = new(@"(?<type>ListBox|ComboBox|TextBox|NumericUpDown)\s+(?<name>[_A-Za-z][_A-Za-z0-9]*)\s*=\s*new(?:\s+(ListBox|ComboBox|TextBox|NumericUpDown))?\b", RegexOptions.Compiled);
-        Regex assignedCreation = new(@"(?<name>[_A-Za-z][_A-Za-z0-9]*)\s*=\s*new\s+(?<type>ListBox|ComboBox|TextBox|NumericUpDown)\b", RegexOptions.Compiled);
+        Regex typedCreation = new(@"(?<type>ListBox|ComboBox|TextBox|NumericUpDown|TreeView)\s+(?<name>[_A-Za-z][_A-Za-z0-9]*)\s*=\s*new(?:\s+(ListBox|ComboBox|TextBox|NumericUpDown|TreeView))?\b", RegexOptions.Compiled);
+        Regex assignedCreation = new(@"(?<name>[_A-Za-z][_A-Za-z0-9]*)\s*=\s*new\s+(?<type>ListBox|ComboBox|TextBox|NumericUpDown|TreeView)\b", RegexOptions.Compiled);
         List<string> unthemedControls = [];
 
         foreach (string path in Directory.EnumerateFiles(avaloniaRoot, "*.cs", SearchOption.AllDirectories)
@@ -1243,6 +1255,8 @@ public sealed class DesktopThemeManagerTests
                         ? lookahead.Contains($"ApplyShellComboBoxTheme({creation.Name}", StringComparison.Ordinal)
                         : string.Equals(creation.Type, "ListBox", StringComparison.Ordinal)
                             ? lookahead.Contains($"ApplyShellListBoxTheme({creation.Name}", StringComparison.Ordinal)
+                        : string.Equals(creation.Type, "TreeView", StringComparison.Ordinal)
+                            ? lookahead.Contains($"ApplyShellTreeViewTheme({creation.Name}", StringComparison.Ordinal)
                         : string.Equals(creation.Type, "NumericUpDown", StringComparison.Ordinal)
                             ? lookahead.Contains($"ApplyShellNumericUpDownTheme({creation.Name}", StringComparison.Ordinal)
                             : lookahead.Contains($"ApplyShellTextInputTheme({creation.Name}", StringComparison.Ordinal)
@@ -1260,7 +1274,7 @@ public sealed class DesktopThemeManagerTests
         Assert.AreEqual(
             0,
             unthemedControls.Count,
-            "Every Avalonia desktop ListBox/ComboBox/TextBox/NumericUpDown must opt into the shell theme helper near creation so KDE/dark-mode cannot produce white-on-white controls. Missing: "
+            "Every Avalonia desktop ListBox/TreeView/ComboBox/TextBox/NumericUpDown must opt into the shell theme helper near creation so KDE/dark-mode cannot produce white-on-white controls. Missing: "
             + string.Join(", ", unthemedControls));
     }
 

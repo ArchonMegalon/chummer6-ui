@@ -4434,6 +4434,11 @@ public sealed class AvaloniaFlagshipUiGateTests
         StringAssert.Contains(appAxamlText, "<Style Selector=\"MenuItem:pointerover TextBlock\">");
         StringAssert.Contains(appAxamlText, "<Style Selector=\"MenuItem:selected TextBlock\">");
         StringAssert.Contains(appAxamlText, "<Style Selector=\"MenuItem.menu-root.active-menu TextBlock\">");
+        StringAssert.Contains(appAxamlText, "<Style Selector=\"TreeView\">");
+        StringAssert.Contains(appAxamlText, "<Style Selector=\"TreeViewItem\">");
+        StringAssert.Contains(appAxamlText, "<Style Selector=\"TreeViewItem:selected\">");
+        StringAssert.Contains(appAxamlText, "<Style Selector=\"TreeViewItem:selected TextBlock\">");
+        StringAssert.Contains(appAxamlText, "<Style Selector=\"TreeViewItem:selected /template/ ContentPresenter\">");
         StringAssert.Contains(appAxamlText, "<Style Selector=\"ListBoxItem:selected TextBlock\">");
 
         Assert.AreEqual("#1C4A2D", ToHex(light["ChummerShellActiveMenuBorderBrush"]));

@@ -3480,6 +3480,7 @@ public partial class DesktopDialogWindow : Window
         {
             ItemsSource = roots
         };
+        DesktopShellTheme.ApplyShellTreeViewTheme(treeView);
         treeView.ItemTemplate = new FuncTreeDataTemplate<RosterTreeItem>(
             (item, _) => new TextBlock
             {

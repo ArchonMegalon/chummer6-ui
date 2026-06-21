@@ -485,11 +485,49 @@
       <Setter Property="BorderBrush" Value="{DynamicResource ChummerShellActiveMenuBorderBrush}" />
     </Style>
     <Style Selector="TreeView">
-      <Setter Property="Background" Value="Transparent" />
+      <Setter Property="Background" Value="{DynamicResource ChummerShellSurfaceBrush}" />
       <Setter Property="BorderThickness" Value="0" />
     </Style>
     <Style Selector="TreeViewItem">
-      <Setter Property="Padding" Value="1,0" />
+      <Setter Property="Padding" Value="2,1" />
+      <Setter Property="Foreground" Value="{DynamicResource ChummerShellForegroundBrush}" />
+      <Setter Property="Background" Value="Transparent" />
+    </Style>
+    <Style Selector="TreeViewItem:pointerover">
+      <Setter Property="Foreground" Value="{DynamicResource ChummerShellForegroundBrush}" />
+      <Setter Property="Background" Value="{DynamicResource ChummerShellChromeSubtleBrush}" />
+    </Style>
+    <Style Selector="TreeViewItem:selected">
+      <Setter Property="Foreground" Value="{DynamicResource ChummerShellSelectionForegroundBrush}" />
+      <Setter Property="Background" Value="{DynamicResource ChummerShellSelectionBrush}" />
+    </Style>
+    <Style Selector="TreeViewItem:selected:pointerover">
+      <Setter Property="Foreground" Value="{DynamicResource ChummerShellSelectionForegroundBrush}" />
+      <Setter Property="Background" Value="{DynamicResource ChummerShellSelectionBrush}" />
+    </Style>
+    <Style Selector="TreeViewItem TextBlock">
+      <Setter Property="Foreground" Value="{DynamicResource ChummerShellForegroundBrush}" />
+    </Style>
+    <Style Selector="TreeViewItem /template/ ContentPresenter">
+      <Setter Property="TextElement.Foreground" Value="{DynamicResource ChummerShellForegroundBrush}" />
+    </Style>
+    <Style Selector="TreeViewItem:pointerover TextBlock">
+      <Setter Property="Foreground" Value="{DynamicResource ChummerShellForegroundBrush}" />
+    </Style>
+    <Style Selector="TreeViewItem:pointerover /template/ ContentPresenter">
+      <Setter Property="TextElement.Foreground" Value="{DynamicResource ChummerShellForegroundBrush}" />
+    </Style>
+    <Style Selector="TreeViewItem:selected TextBlock">
+      <Setter Property="Foreground" Value="{DynamicResource ChummerShellSelectionForegroundBrush}" />
+    </Style>
+    <Style Selector="TreeViewItem:selected /template/ ContentPresenter">
+      <Setter Property="TextElement.Foreground" Value="{DynamicResource ChummerShellSelectionForegroundBrush}" />
+    </Style>
+    <Style Selector="TreeViewItem:selected:pointerover TextBlock">
+      <Setter Property="Foreground" Value="{DynamicResource ChummerShellSelectionForegroundBrush}" />
+    </Style>
+    <Style Selector="TreeViewItem:selected:pointerover /template/ ContentPresenter">
+      <Setter Property="TextElement.Foreground" Value="{DynamicResource ChummerShellSelectionForegroundBrush}" />
     </Style>
     <Style Selector="ListBox">
       <Setter Property="Background" Value="{DynamicResource ChummerShellSurfaceBrush}" />
