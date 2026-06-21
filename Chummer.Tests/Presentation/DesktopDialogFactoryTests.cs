@@ -2349,7 +2349,11 @@ public class DesktopDialogFactoryTests
             new("AI Companion", "AI Companion"),
             new("ai_companion", "AI Companion"),
             new("Artificial_Intelligence", "Artificial Intelligence"),
+            new("Digital Entity", "Digital Entity"),
+            new("digital_intelligence", "Digital Intelligence"),
             new("E-Ghost", "E-Ghost"),
+            new("Machine Mind", "Machine Mind"),
+            new("Synthetic Intelligence", "Synthetic Intelligence"),
             new("Xenosapient", "Xenosapient"),
             new("Critter Powers", "Critter Powers")
         ];
@@ -2375,7 +2379,11 @@ public class DesktopDialogFactoryTests
                 "AI Companion",
                 "ai_companion",
                 "Artificial_Intelligence",
+                "Digital Entity",
+                "digital_intelligence",
                 "E-Ghost",
+                "Machine Mind",
+                "Synthetic Intelligence",
                 "Xenosapient",
                 "Critter Powers"
             },

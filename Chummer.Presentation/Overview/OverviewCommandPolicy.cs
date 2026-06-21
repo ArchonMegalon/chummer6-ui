@@ -65,7 +65,11 @@ public static class OverviewCommandPolicy
         "A.I",
         "A.I.",
         "Artificial Intelligence",
+        "Digital Companion",
+        "Digital Entity",
         "E-Ghost",
+        "Machine Mind",
+        "Synthetic Intelligence",
         "Xenosapient",
         "Explain Companion",
         "Open Explain Companion"
@@ -78,6 +82,11 @@ public static class OverviewCommandPolicy
         "a i",
         "a i s",
         "artificial intelligence",
+        "digital companion",
+        "digital entity",
+        "digital intelligence",
+        "machine mind",
+        "synthetic intelligence",
         "e ghost",
         "xenosapient",
         "xenosapients",
@@ -151,7 +160,12 @@ public static class OverviewCommandPolicy
             || padded.Contains(" ais ", StringComparison.Ordinal)
             || padded.Contains(" a i ", StringComparison.Ordinal)
             || normalized.Contains("artificial intelligence", StringComparison.Ordinal)
+            || normalized.Contains("digital companion", StringComparison.Ordinal)
+            || normalized.Contains("digital entity", StringComparison.Ordinal)
+            || normalized.Contains("digital intelligence", StringComparison.Ordinal)
             || normalized.Contains("e ghost", StringComparison.Ordinal)
+            || normalized.Contains("machine mind", StringComparison.Ordinal)
+            || normalized.Contains("synthetic intelligence", StringComparison.Ordinal)
             || normalized.Contains("xenosapient", StringComparison.Ordinal)
             || normalized.Contains("explain companion", StringComparison.Ordinal);
     }
