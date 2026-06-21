@@ -51,7 +51,7 @@ public sealed class Next90M105PrimaryRouteDecisionGuardTests
         StringAssert.Contains(code, "restore-decision-keep-local-work");
         StringAssert.Contains(code, "restore-decision-review-campaign-workspace");
         StringAssert.Contains(code, "restore-decision-open-workspace-support");
-        StringAssert.Contains(code, "AutomationProperties.SetName(RestoreContinuityStatusBorder, \"Workspace continuity gate\")");
+        StringAssert.Contains(code, "AutomationProperties.SetName(RestoreContinuityStatusBorder, \"Workspace continuity status\")");
         StringAssert.Contains(code, "AutomationProperties.SetName(StaleStateStatusText, \"Stale state visibility status\")");
         StringAssert.Contains(code, "AutomationProperties.SetName(ConflictChoiceStatusText, \"Workspace review status\")");
         StringAssert.Contains(code, "AutomationProperties.SetName(RestoreContinuityDecisionOrderText, \"Workspace decision order\")");

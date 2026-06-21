@@ -2620,7 +2620,7 @@ public sealed class AvaloniaFlagshipUiGateTests
             Assert.IsFalse(FindDescendant<TextBlock>(control, "StaleStateStatusText").IsVisible);
             Assert.IsFalse(FindDescendant<TextBlock>(control, "ConflictChoiceStatusText").IsVisible);
             Assert.AreEqual(
-                "Workspace continuity gate",
+                "Workspace continuity status",
                 AutomationProperties.GetName(FindDescendant<Control>(control, "RestoreContinuityStatusBorder")));
             Assert.AreEqual(
                 "The desktop app keeps local work under explicit user control.",

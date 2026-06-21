@@ -197,7 +197,7 @@ public partial class SummaryHeaderControl : UserControl
 
     private void ApplyAutomationProperties()
     {
-        AutomationProperties.SetName(RestoreContinuityStatusBorder, "Workspace continuity gate");
+        AutomationProperties.SetName(RestoreContinuityStatusBorder, "Workspace continuity status");
         AutomationProperties.SetHelpText(RestoreContinuityStatusBorder, "The desktop app keeps local work under explicit user control.");
         AutomationProperties.SetName(RestoreContinuityStatusText, "Restore continuation status");
         AutomationProperties.SetName(StaleStateStatusText, "Stale state visibility status");
