@@ -1,17 +1,67 @@
 {
   "contract_name": "chummer6-ui.external_host_proof_blockers",
-  "generated_at": "2026-06-20T22:05:01Z",
-  "manifest_path": "/tmp/chummer-generate-release-sync-28ab8649b5864bf9b9fb7639955a9120/canonical/RELEASE_CHANNEL.generated.json",
-  "downloads_dir": "/tmp/chummer-generate-release-sync-28ab8649b5864bf9b9fb7639955a9120/canonical/files",
-  "startup_smoke_dir": "/tmp/chummer-generate-release-sync-28ab8649b5864bf9b9fb7639955a9120/canonical/startup-smoke",
+  "generated_at": "2026-06-21T05:53:28Z",
+  "manifest_path": "/docker/chummercomplete/chummer.run-services/Chummer.Portal/downloads/RELEASE_CHANNEL.generated.json",
+  "downloads_dir": "/docker/chummercomplete/chummer.run-services/Chummer.Portal/downloads/files",
+  "startup_smoke_dir": "/docker/chummercomplete/chummer.run-services/Chummer.Portal/downloads/startup-smoke",
   "base_url": "https://chummer.run",
   "timeout_seconds": 10,
   "max_receipt_age_seconds": 604800,
-  "release_published_at": "2026-06-20T22:05:00Z",
-  "status": "ready",
-  "missing_required_platform_head_rid_tuples": [],
-  "unresolved_hosts": [],
-  "unresolved_tuples": [],
-  "external_proof_request_count": 0,
-  "external_proof_requests": []
+  "release_published_at": "2026-06-21T05:53:14Z",
+  "status": "blocked",
+  "missing_required_platform_head_rid_tuples": [
+    "avalonia:osx-arm64:macos"
+  ],
+  "unresolved_hosts": [
+    "macos"
+  ],
+  "unresolved_tuples": [
+    "avalonia:osx-arm64:macos"
+  ],
+  "external_proof_request_count": 1,
+  "external_proof_requests": [
+    {
+      "tupleId": "avalonia:osx-arm64:macos",
+      "requiredHost": "macos",
+      "expectedPublicInstallRoute": "/downloads/install/avalonia-osx-arm64-installer",
+      "requiredProofs": [
+        "promoted_installer_artifact",
+        "startup_smoke_receipt"
+      ],
+      "expectedArtifactId": "avalonia-osx-arm64-installer",
+      "installAccessClass": "account_required",
+      "expectedInstallerRelativePath": "files/chummer-avalonia-osx-arm64-installer.dmg",
+      "expectedStartupSmokeReceiptPath": "startup-smoke/startup-smoke-avalonia-osx-arm64.receipt.json",
+      "installerPresent": false,
+      "installerSha256": "",
+      "expectedInstallerSha256": "",
+      "startupSmokeReceiptPresent": true,
+      "startupSmokeReceiptRecordedAtUtc": "2026-06-12T12:30:16Z",
+      "startupSmokeReceiptAgeSeconds": 753792,
+      "startupSmokeReceiptStatus": "pass",
+      "startupSmokeReceiptChannelId": "public_stable",
+      "startupSmokeReceiptVersion": "run-20260621-054902",
+      "publicRouteProbe": {
+        "checked": true,
+        "url": "https://chummer.run/downloads/install/avalonia-osx-arm64-installer",
+        "http_status": 403,
+        "ok": true,
+        "error": "",
+        "installAccessClass": "account_required",
+        "authExpected": true,
+        "authChallengeAccepted": true
+      },
+      "blockerCodes": [
+        "installer_missing",
+        "receipt_stale",
+        "receipt_precedes_release_publication"
+      ],
+      "blockerMessages": [
+        "installer missing at /tmp/tmp.vOm3a9uRtT/chummer-avalonia-osx-arm64-installer.dmg",
+        "startup smoke receipt is stale (age_seconds=753792, max_age_seconds=604800)",
+        "startup smoke receipt was captured before the current release channel was published (receipt_recorded_at=2026-06-12T12:30:16Z, release_published_at=2026-06-21T05:53:14Z)"
+      ],
+      "ready": false
+    }
+  ]
 }
