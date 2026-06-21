@@ -596,6 +596,7 @@ public sealed class DesktopThemeManagerTests
         Assert.IsFalse(homeSource.Contains("ResolveThemeBrush(\"ChummerShellAccentButtonBrush\", \"#163A59\")", StringComparison.Ordinal));
         Assert.IsFalse(homeSource.Contains("ResolveThemeBrush(\"ChummerShellActiveMenuBorderBrush\", \"#7FB3DA\")", StringComparison.Ordinal));
 
+        StringAssert.Contains(horizonsSource, "Content = DesktopShellTheme.CreateWindowSurface(");
         StringAssert.Contains(horizonsSource, "DesktopShellTheme.CreateWrapActionRow(actions, new Thickness(0, 0, 8, 8))");
         StringAssert.Contains(horizonsSource, "DesktopShellTheme.CreateSection(");
         Assert.IsFalse(horizonsSource.Contains("Background = DesktopShellTheme.ResolveThemeBrush(\"ChummerShellSurfaceAltBrush\", \"#F2F5FA\")", StringComparison.Ordinal));

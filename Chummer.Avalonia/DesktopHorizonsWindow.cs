@@ -74,12 +74,10 @@ internal sealed class DesktopHorizonsWindow : Window
 
         BuildCatalog();
 
-        Content = new ScrollViewer
-        {
-            Content = new Border
+        Content = DesktopShellTheme.CreateWindowSurface(
+            new ScrollViewer
             {
-                Padding = new Thickness(16),
-                Child = new StackPanel
+                Content = new StackPanel
                 {
                     Spacing = 14,
                     Children =
@@ -109,8 +107,8 @@ internal sealed class DesktopHorizonsWindow : Window
                         }
                     }
                 }
-            }
-        };
+            },
+            padding: 16);
     }
 
     public static async Task ShowAsync(Window owner, string headId)
