@@ -152,11 +152,11 @@
             <Grid x:Name="AttributeParityHeaderGrid"
                   ColumnDefinitions="*,128,128,72,120"
                   ColumnSpacing="8">
-              <TextBlock Grid.Column="0" Text="Attribute" Classes="shell-section-title" />
-              <TextBlock Grid.Column="1" Text="Start" Classes="shell-caption" HorizontalAlignment="Right" />
-              <TextBlock Grid.Column="2" Text="Add" Classes="shell-caption" HorizontalAlignment="Right" />
-              <TextBlock Grid.Column="3" Text="Total" Classes="shell-caption" HorizontalAlignment="Right" />
-              <TextBlock Grid.Column="4" Text="Limits" Classes="shell-caption" HorizontalAlignment="Right" />
+              <TextBlock Grid.Column="0" x:Name="AttributeParityHeaderAttributeText" Text="Attribute" Classes="shell-section-title" />
+              <TextBlock Grid.Column="1" x:Name="AttributeParityHeaderStartText" Text="Start" Classes="shell-caption" HorizontalAlignment="Right" />
+              <TextBlock Grid.Column="2" x:Name="AttributeParityHeaderAddText" Text="Add" Classes="shell-caption" HorizontalAlignment="Right" />
+              <TextBlock Grid.Column="3" x:Name="AttributeParityHeaderTotalText" Text="Total" Classes="shell-caption" HorizontalAlignment="Right" />
+              <TextBlock Grid.Column="4" x:Name="AttributeParityHeaderLimitsText" Text="Limits" Classes="shell-caption" HorizontalAlignment="Right" />
             </Grid>
             <ScrollViewer Grid.Row="1"
                           VerticalScrollBarVisibility="Auto"

@@ -875,11 +875,11 @@ public sealed class DesktopThemeManagerTests
         string repoRoot = TestContextLocator.ResolveChummerPresentationRepoRoot();
         string sectionHostMarkup = File.ReadAllText(Path.Combine(repoRoot, "Chummer.Avalonia", "Controls", "SectionHostControl.axaml"));
 
-        StringAssert.Contains(sectionHostMarkup, "Text=\"Attribute\" Classes=\"shell-section-title\"");
-        StringAssert.Contains(sectionHostMarkup, "Text=\"Start\" Classes=\"shell-caption\"");
-        StringAssert.Contains(sectionHostMarkup, "Text=\"Add\" Classes=\"shell-caption\"");
-        StringAssert.Contains(sectionHostMarkup, "Text=\"Total\" Classes=\"shell-caption\"");
-        StringAssert.Contains(sectionHostMarkup, "Text=\"Limits\" Classes=\"shell-caption\"");
+        StringAssert.Contains(sectionHostMarkup, "x:Name=\"AttributeParityHeaderAttributeText\" Text=\"Attribute\" Classes=\"shell-section-title\"");
+        StringAssert.Contains(sectionHostMarkup, "x:Name=\"AttributeParityHeaderStartText\" Text=\"Start\" Classes=\"shell-caption\"");
+        StringAssert.Contains(sectionHostMarkup, "x:Name=\"AttributeParityHeaderAddText\" Text=\"Add\" Classes=\"shell-caption\"");
+        StringAssert.Contains(sectionHostMarkup, "x:Name=\"AttributeParityHeaderTotalText\" Text=\"Total\" Classes=\"shell-caption\"");
+        StringAssert.Contains(sectionHostMarkup, "x:Name=\"AttributeParityHeaderLimitsText\" Text=\"Limits\" Classes=\"shell-caption\"");
         StringAssert.Contains(sectionHostMarkup, "ColumnDefinitions=\"*,128,128,72,120\"");
         Assert.IsFalse(sectionHostMarkup.Contains("Text=\"Base\" Classes=\"shell-caption\"", StringComparison.Ordinal));
         Assert.IsFalse(sectionHostMarkup.Contains("Text=\"Karma bump\" Classes=\"shell-caption\"", StringComparison.Ordinal));

@@ -4620,10 +4620,20 @@ public sealed class AvaloniaFlagshipUiGateTests
             Grid karmaEditor = FindDescendant<Grid>(control, "AttributeKarmaEditor_BOD");
             Button baseIncreaseButton = FindDescendant<Button>(control, "AttributeBaseEditor_BOD_Increase");
             Button baseDecreaseButton = FindDescendant<Button>(control, "AttributeBaseEditor_BOD_Decrease");
+            TextBlock attributeHeader = FindDescendant<TextBlock>(control, "AttributeParityHeaderAttributeText");
+            TextBlock startHeader = FindDescendant<TextBlock>(control, "AttributeParityHeaderStartText");
+            TextBlock addHeader = FindDescendant<TextBlock>(control, "AttributeParityHeaderAddText");
+            TextBlock totalHeader = FindDescendant<TextBlock>(control, "AttributeParityHeaderTotalText");
+            TextBlock limitsHeader = FindDescendant<TextBlock>(control, "AttributeParityHeaderLimitsText");
             Control? reviewExpander = FindDescendantOrDefault<Expander>(control, "SectionReviewExpander");
             Control reviewPanel = FindDescendant<Control>(control, "SectionReviewPanel");
 
             Assert.IsTrue(attributeEditor.IsVisible, "Character creation parity requires the dedicated attribute editor surface.");
+            Assert.AreEqual("Attribute", attributeHeader.Text);
+            Assert.AreEqual("Start", startHeader.Text);
+            Assert.AreEqual("Add", addHeader.Text);
+            Assert.AreEqual("Total", totalHeader.Text);
+            Assert.AreEqual("Limits", limitsHeader.Text);
             Assert.AreEqual(128d, bodyRow.ColumnDefinitions[1].Width.Value, 0.01d, "Start column must leave room for the attribute value and stepper buttons.");
             Assert.AreEqual(128d, bodyRow.ColumnDefinitions[2].Width.Value, 0.01d, "Add column must leave room for the attribute value and stepper buttons.");
             Assert.AreEqual(28d, baseEditor.ColumnDefinitions[0].Width.Value, 0.01d, "Attribute stepper buttons need a stable touch target column.");
