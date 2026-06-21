@@ -21,6 +21,59 @@ public sealed class DesktopUpdateRuntimeTests
     private const string UpdateProcessPathOverrideEnvironmentVariable = "CHUMMER_DESKTOP_UPDATE_PROCESS_PATH_OVERRIDE";
 
     [TestMethod]
+    public void DesktopSurfacePostureText_uses_plain_user_language()
+    {
+        DesktopUpdateClientStatus status = new(
+            HeadId: "avalonia",
+            InstalledVersion: "run-20260621-054902",
+            ChannelId: "stable",
+            Platform: "linux",
+            Arch: "x64",
+            UpdatesEnabled: true,
+            AutoApply: true,
+            ManifestLocation: "https://chummer.run/downloads/RELEASE_CHANNEL.generated.json",
+            LastCheckedAtUtc: DateTimeOffset.UtcNow,
+            LastManifestVersion: "run-20260621-054902",
+            LastManifestPublishedAtUtc: DateTimeOffset.UtcNow,
+            LastError: null,
+            Status: "current",
+            RecommendedAction: "Continue.",
+            InstallAccessClass: "open_public",
+            DesktopChannelRef: "desktop-channel:stable",
+            InstallGuidanceRef: "install-guidance:stable",
+            ParticipationReceiptRef: "participation-receipt:stable",
+            RewardPublicationRef: "reward-publication:stable",
+            PublicInstallRoute: "/downloads",
+            DesktopSurfaceRationale: "Registry proof posture is open_public on the install rail.");
+
+        string copy = string.Join("\n", DesktopSurfacePostureText.BuildLines(status));
+
+        StringAssert.Contains(copy, "Account link: optional.");
+        StringAssert.Contains(copy, "Devices & Access keeps this copy, downloads, updates, and recovery in one place.");
+        StringAssert.Contains(copy, "Download channel: available.");
+        StringAssert.Contains(copy, "Install help: available.");
+        StringAssert.Contains(copy, "Account activity: available.");
+        StringAssert.Contains(copy, "Recovery page: /downloads");
+        foreach (string forbidden in new[]
+                 {
+                     "Entitlement posture",
+                     "Desktop follow-through",
+                     "Desktop channel ref",
+                     "Install guidance ref",
+                     "Participation receipt",
+                     "Reward publication ref",
+                     "Registry rationale",
+                     "proof",
+                     "receipt",
+                     "posture",
+                     "rail"
+                 })
+        {
+            Assert.IsFalse(copy.Contains(forbidden, StringComparison.OrdinalIgnoreCase), copy);
+        }
+    }
+
+    [TestMethod]
     public async Task CheckAndScheduleStartupUpdateAsync_manifest_load_failed_records_retry_backoff()
     {
         string manifestPath = Path.Combine(Path.GetTempPath(), $"desktop-update-manifest-missing-{Guid.NewGuid():N}.json");
