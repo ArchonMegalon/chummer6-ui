@@ -843,6 +843,67 @@ public class DesktopDialogFactoryTests
     }
 
     [TestMethod]
+    public void CreateUiControlDialog_static_add_selectors_do_not_expose_unbacked_category_actions()
+    {
+        DesktopDialogFactory factory = new();
+        string[] staticSelectorIds =
+        [
+            "drug_add",
+            "magic_add",
+            "spell_add",
+            "adept_power_add",
+            "complex_form_add",
+            "initiation_add",
+            "spirit_add",
+            "critter_power_add",
+            "matrix_program_add",
+            "vehicle_mod_add",
+            "quality_add"
+        ];
+
+        foreach (string dialogId in staticSelectorIds)
+        {
+            DesktopDialogState dialog = factory.CreateUiControlDialog(dialogId, DesktopPreferenceState.Default);
+
+            Assert.IsFalse(
+                dialog.Actions.Any(action => string.Equals(action.Id, "focus_category", StringComparison.Ordinal)),
+                $"{dialogId} must not expose a category action unless DialogCoordinator can rebuild it.");
+            Assert.IsFalse(
+                dialog.Actions.Any(action => string.Equals(action.Id, "toggle_search_scope", StringComparison.Ordinal)),
+                $"{dialogId} must not expose a search-scope action unless the dialog has a live search-scope field.");
+            Assert.IsTrue(dialog.Actions.Any(action => string.Equals(action.Id, "add", StringComparison.Ordinal)), $"{dialogId} still needs a primary add action.");
+            Assert.IsTrue(dialog.Actions.Any(action => string.Equals(action.Id, "add_more", StringComparison.Ordinal)), $"{dialogId} still needs Add & More.");
+        }
+    }
+
+    [TestMethod]
+    public void CreateUiControlDialog_dynamic_add_selectors_keep_backed_category_actions()
+    {
+        DesktopDialogFactory factory = new();
+        string[] dynamicSelectorIds =
+        [
+            "cyberware_add",
+            "gear_add",
+            "skill_add",
+            "combat_add_weapon",
+            "combat_add_armor",
+            "vehicle_add"
+        ];
+
+        foreach (string dialogId in dynamicSelectorIds)
+        {
+            DesktopDialogState dialog = factory.CreateUiControlDialog(dialogId, DesktopPreferenceState.Default);
+
+            Assert.IsTrue(
+                dialog.Actions.Any(action => string.Equals(action.Id, "focus_category", StringComparison.Ordinal)),
+                $"{dialogId} should expose its backed category action.");
+            Assert.IsTrue(
+                dialog.Actions.Any(action => string.Equals(action.Id, "toggle_search_scope", StringComparison.Ordinal)),
+                $"{dialogId} should expose its backed search-scope action.");
+        }
+    }
+
+    [TestMethod]
     public void CreateUiControlDialog_drug_add_uses_selection_form_posture()
     {
         DesktopDialogFactory factory = new();
@@ -1069,6 +1130,8 @@ public class DesktopDialogFactoryTests
         DesktopDialogFactory factory = new();
         string[] selectionDialogIds =
         [
+            "cyberware_add",
+            "gear_add",
             "drug_add",
             "magic_add",
             "spell_add",
@@ -1079,8 +1142,20 @@ public class DesktopDialogFactoryTests
             "critter_power_add",
             "matrix_program_add",
             "skill_add",
+            "combat_add_weapon",
+            "combat_add_armor",
+            "vehicle_add",
             "vehicle_mod_add",
             "quality_add"
+        ];
+        string[] dynamicSelectionDialogIds =
+        [
+            "cyberware_add",
+            "gear_add",
+            "skill_add",
+            "combat_add_weapon",
+            "combat_add_armor",
+            "vehicle_add"
         ];
 
         foreach (string dialogId in selectionDialogIds)
@@ -1088,8 +1163,15 @@ public class DesktopDialogFactoryTests
             DesktopDialogState dialog = factory.CreateUiControlDialog(dialogId, DesktopPreferenceState.Default);
 
             StringAssert.StartsWith(dialog.Actions.Single(action => string.Equals(action.Id, "add_more", StringComparison.Ordinal)).Label, "Add & More", dialogId);
-            Assert.IsFalse(string.IsNullOrWhiteSpace(dialog.Actions.Single(action => string.Equals(action.Id, "focus_category", StringComparison.Ordinal)).Label), dialogId);
-            Assert.AreEqual("Search All Categories", dialog.Actions.Single(action => string.Equals(action.Id, "toggle_search_scope", StringComparison.Ordinal)).Label, dialogId);
+            bool shouldExposeCategoryActions = dynamicSelectionDialogIds.Contains(dialogId, StringComparer.Ordinal);
+            Assert.AreEqual(
+                shouldExposeCategoryActions,
+                dialog.Actions.Any(action => string.Equals(action.Id, "focus_category", StringComparison.Ordinal)),
+                dialogId);
+            Assert.AreEqual(
+                shouldExposeCategoryActions,
+                dialog.Actions.Any(action => string.Equals(action.Id, "toggle_search_scope", StringComparison.Ordinal)),
+                dialogId);
         }
     }
 

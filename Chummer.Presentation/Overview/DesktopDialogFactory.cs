@@ -4656,6 +4656,16 @@ public sealed class DesktopDialogFactory : IDesktopDialogFactory
         ];
     }
 
+    private static IReadOnlyList<DesktopDialogAction> BuildSelectionConfirmationActions(string primaryLabel = "OK")
+    {
+        return
+        [
+            new DesktopDialogAction("add", primaryLabel, true),
+            new DesktopDialogAction("add_more", "Add & More"),
+            new DesktopDialogAction("cancel", "Cancel")
+        ];
+    }
+
     private static IReadOnlyList<DesktopDialogField> BuildCyberwareSelectionFields()
     {
         string categoryTree = BuildSelectionGroupedBranchTree(
@@ -6087,7 +6097,7 @@ public sealed class DesktopDialogFactory : IDesktopDialogFactory
                 "Add Drug",
                 "Browse drugs, inspect speed and crash posture, then confirm the selected dose.",
                 BuildDrugSelectionFields(),
-                BuildLegacySelectionActions()),
+                BuildSelectionConfirmationActions()),
             "drug_delete" => new DesktopDialogState(
                 "dialog.ui.drug_delete",
                 "Remove Jazz",
@@ -6102,7 +6112,7 @@ public sealed class DesktopDialogFactory : IDesktopDialogFactory
                 "Add Spell/Power",
                 "Choose the magical entry, keep category and drain visible, then confirm the selection.",
                 BuildMagicSelectionFields(),
-                BuildLegacySelectionActions()),
+                BuildSelectionConfirmationActions()),
             "magic_delete" => new DesktopDialogState(
                 "dialog.ui.magic_delete",
                 "Remove Stunbolt",
@@ -6138,43 +6148,43 @@ public sealed class DesktopDialogFactory : IDesktopDialogFactory
                 "Add Spell",
                 "Search the spell list, inspect source and drain, then confirm the learned spell.",
                 BuildSpellSelectionFields(),
-                BuildLegacySelectionActions()),
+                BuildSelectionConfirmationActions()),
             "adept_power_add" => new DesktopDialogState(
                 "dialog.ui.adept_power_add",
                 "Add Adept Power",
                 "Search available adept powers, inspect PP cost and source, then confirm the selected power.",
                 BuildAdeptPowerSelectionFields(),
-                BuildLegacySelectionActions()),
+                BuildSelectionConfirmationActions()),
             "complex_form_add" => new DesktopDialogState(
                 "dialog.ui.complex_form_add",
                 "Add Complex Form",
                 "Browse complex forms, inspect target and source, then confirm the selected form.",
                 BuildComplexFormSelectionFields(),
-                BuildLegacySelectionActions()),
+                BuildSelectionConfirmationActions()),
             "initiation_add" => new DesktopDialogState(
                 "dialog.ui.initiation_add",
                 "Add Initiation / Submersion",
                 "Choose the reward, keep grade and track visible, then confirm the initiation or submersion step.",
                 BuildInitiationSelectionFields(),
-                BuildLegacySelectionActions()),
+                BuildSelectionConfirmationActions()),
             "spirit_add" => new DesktopDialogState(
                 "dialog.ui.spirit_add",
                 "Add Spirit / Ally / Familiar",
                 "Browse spirits and allies, inspect force and type, then confirm the selected entry.",
                 BuildSpiritSelectionFields(),
-                BuildLegacySelectionActions()),
+                BuildSelectionConfirmationActions()),
             "critter_power_add" => new DesktopDialogState(
                 "dialog.ui.critter_power_add",
                 "Add Critter Power",
                 "Browse critter powers, inspect type and source, then confirm the selected power.",
                 BuildCritterPowerSelectionFields(),
-                BuildLegacySelectionActions()),
+                BuildSelectionConfirmationActions()),
             "matrix_program_add" => new DesktopDialogState(
                 "dialog.ui.matrix_program_add",
                 "Add Program / Cyberdeck Item",
                 "Browse matrix programs and cyberdeck items, inspect slot and source, then confirm the selected entry.",
                 BuildMatrixProgramSelectionFields(),
-                BuildLegacySelectionActions()),
+                BuildSelectionConfirmationActions()),
             "skill_add" => RebuildSkillSelectionDialog(
                 new DesktopDialogState(
                     "dialog.ui.skill_add",
@@ -6291,7 +6301,7 @@ public sealed class DesktopDialogFactory : IDesktopDialogFactory
                 "Add Vehicle Mod",
                 "Browse modifications, inspect slot, availability, and source, then confirm the selected mod.",
                 BuildVehicleModSelectionFields(),
-                BuildLegacySelectionActions()),
+                BuildSelectionConfirmationActions()),
             "contact_add" => new DesktopDialogState(
                 "dialog.ui.contact_add",
                 "Add Contact",
@@ -6331,7 +6341,7 @@ public sealed class DesktopDialogFactory : IDesktopDialogFactory
                     "Add Quality",
                     "Browse qualities, inspect karma cost and source, then confirm the selected quality.",
                     BuildQualitySelectionFields(),
-                    BuildLegacySelectionActions())),
+                    BuildSelectionConfirmationActions())),
             "quality_delete" => new DesktopDialogState(
                 "dialog.ui.quality_delete",
                 "Remove First Impression",
