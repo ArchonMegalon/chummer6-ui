@@ -884,7 +884,7 @@ public sealed class DesktopDialogFactory : IDesktopDialogFactory
                     VisualKind: DesktopDialogFieldVisualKinds.Snippet),
                 BuildNewCharacterContextField("newCharacterOriginArchetype", "Origin Archetype", recommendation.ArchetypeLabel),
                 BuildNewCharacterContextField("newCharacterOriginBuildMethod", "Origin Build Method", recommendation.BuildMethod),
-                BuildNewCharacterContextField("newCharacterOriginMetatypeCategory", "Origin Metatype Filter", recommendation.MetatypeCategory),
+                BuildNewCharacterContextField("newCharacterOriginMetatypeCategory", "Origin Metatype Range", recommendation.MetatypeCategory),
                 BuildNewCharacterContextField("newCharacterOriginMetatype", "Origin Metatype", recommendation.Metatype),
                 BuildNewCharacterContextField("newCharacterOriginQualityFocus", "Origin Quality Focus", recommendation.QualityFocus),
                 BuildNewCharacterContextField("newCharacterOriginGmRequirementSummary", "GM Requirement Summary", recommendation.GmRequirementSummary),
@@ -918,7 +918,7 @@ public sealed class DesktopDialogFactory : IDesktopDialogFactory
         string buildLogic = BuildGridValue(
             ("Build Method", recommendation.BuildMethod),
             ("Likely Archetype", recommendation.ArchetypeLabel),
-            ("Likely Metatype", $"{recommendation.Metatype} ({recommendation.MetatypeCategory})"),
+            ("Likely Metatype", BuildMetatypeSummaryValue(recommendation.Metatype, recommendation.MetatypeCategory)),
             ("Quality Focus", recommendation.QualityFocus),
             ("GM Requirements", recommendation.GmRequirementSummary),
             ("Path", recommendation.PathSummary));
@@ -1114,7 +1114,7 @@ public sealed class DesktopDialogFactory : IDesktopDialogFactory
                 BuildNewCharacterContextField("newCharacterDisableAiFeatures", "Disable Helper Features", preferences.DisableAiFeatures ? "true" : "false"),
                 new DesktopDialogField(
                     "newCharacterMetatypeCategory",
-                    "Metatype Filter",
+                    "Show Metatypes",
                     resolution.Category,
                     resolution.Category,
                     InputType: "select",
@@ -1269,7 +1269,7 @@ public sealed class DesktopDialogFactory : IDesktopDialogFactory
                 BuildNewCharacterContextField("newCharacterDisableAiFeatures", "Disable Helper Features", preferences.DisableAiFeatures ? "true" : "false"),
                 new DesktopDialogField(
                     "newCharacterMetatypeCategory",
-                    "Metatype Filter",
+                    "Show Metatypes",
                     category,
                     category,
                     InputType: "select",
@@ -1508,10 +1508,20 @@ public sealed class DesktopDialogFactory : IDesktopDialogFactory
     private static IReadOnlyList<DesktopDialogFieldOption> BuildMetatypeCategoryOptions()
         => new[]
         {
-            new DesktopDialogFieldOption("Standard", "Core metatypes"),
-            new DesktopDialogFieldOption("Metahuman", "Metahumans only"),
-            new DesktopDialogFieldOption("Show All", "All available")
+            new DesktopDialogFieldOption("Standard", "Core choices"),
+            new DesktopDialogFieldOption("Metahuman", "Non-human choices"),
+            new DesktopDialogFieldOption("Show All", "All playable options")
         };
+
+    private static string BuildMetatypeSummaryValue(string metatype, string? category)
+        => $"{metatype} · {BuildMetatypeFilterSummary(category)}";
+
+    private static string BuildMetatypeFilterSummary(string? category)
+        => string.Equals(category, "Metahuman", StringComparison.Ordinal)
+            ? "non-human choices"
+            : string.Equals(category, "Show All", StringComparison.Ordinal)
+                ? "all playable options"
+                : "core choices";
 
     private static IReadOnlyList<DesktopDialogFieldOption> BuildMetatypeOptions(string? category, DesktopPreferenceState? preferences = null)
     {
@@ -2341,7 +2351,7 @@ public sealed class DesktopDialogFactory : IDesktopDialogFactory
         string[] lines =
         [
             $"Route | {rulesetId.ToUpperInvariant()} {buildMethod}",
-            $"Metatype | {metatype} ({category})",
+            $"Metatype | {BuildMetatypeSummaryValue(metatype, category)}",
             $"Priority Ladder | Heritage {heritagePriority}, Attributes {attributesPriority}, Talent {talentPriority}, Skills {skillsPriority}, Resources {resourcesPriority}",
             $"Talent Choice | {talentChoice}",
             $"House Rules | {(houseRulesEnabled ? "Enabled" : "Disabled")}"
@@ -2370,7 +2380,7 @@ public sealed class DesktopDialogFactory : IDesktopDialogFactory
             new[]
             {
                 $"Route | {rulesetId.ToUpperInvariant()} {buildMethod}",
-                $"Metatype | {metatype} ({category})",
+                $"Metatype | {BuildMetatypeSummaryValue(metatype, category)}",
                 BuildNewCharacterBudgetLine(rulesetId, buildMethod),
                 $"House Rules | {(houseRulesEnabled ? "Enabled" : "Disabled")}"
             });

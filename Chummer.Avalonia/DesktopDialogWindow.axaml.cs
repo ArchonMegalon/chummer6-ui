@@ -1877,7 +1877,7 @@ public partial class DesktopDialogWindow : Window
             ColumnSpacing = 14,
             RowSpacing = 10
         };
-        selectorGrid.Children.Add(CreateRowLabel("Metatype Filter:", DesktopDialogAccessibility.BuildFieldLabelName(categoryField.Id)));
+        selectorGrid.Children.Add(CreateRowLabel("Show Metatypes:", DesktopDialogAccessibility.BuildFieldLabelName(categoryField.Id)));
         Grid.SetColumn(categoryCombo, 1);
         selectorGrid.Children.Add(categoryCombo);
 
@@ -1891,7 +1891,7 @@ public partial class DesktopDialogWindow : Window
         {
             Child = CreateLegacySummaryCard(
                 "Metatype Selection",
-                "Choose a filter first, then confirm the exact metatype.",
+                "Pick which metatypes to show, then choose one.",
                 selectorGrid)
         };
 

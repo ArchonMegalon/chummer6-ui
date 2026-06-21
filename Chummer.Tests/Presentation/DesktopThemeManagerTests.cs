@@ -849,14 +849,15 @@ public sealed class DesktopThemeManagerTests
         StringAssert.Contains(newCharacterPaneSource, "Content = \"Options\"");
         StringAssert.Contains(newCharacterPaneSource, "optionsPanel.IsVisible = !optionsPanel.IsVisible;");
         StringAssert.Contains(newCharacterPaneSource, "Text = \"Build method:\"");
-        StringAssert.Contains(desktopDialogSource, "CreateRowLabel(\"Metatype Filter:\"");
-        StringAssert.Contains(factorySource, "new DesktopDialogFieldOption(\"Standard\", \"Core metatypes\")");
-        StringAssert.Contains(factorySource, "new DesktopDialogFieldOption(\"Metahuman\", \"Metahumans only\")");
-        StringAssert.Contains(factorySource, "new DesktopDialogFieldOption(\"Show All\", \"All available\")");
+        StringAssert.Contains(desktopDialogSource, "CreateRowLabel(\"Show Metatypes:\"");
+        StringAssert.Contains(factorySource, "new DesktopDialogFieldOption(\"Standard\", \"Core choices\")");
+        StringAssert.Contains(factorySource, "new DesktopDialogFieldOption(\"Metahuman\", \"Non-human choices\")");
+        StringAssert.Contains(factorySource, "new DesktopDialogFieldOption(\"Show All\", \"All playable options\")");
         StringAssert.Contains(factorySource, "\"Remaining Karma | tracked when the character opens\"");
         StringAssert.Contains(factorySource, "\"start_from_origin\", \"Start Origin Dossier\"");
         Assert.IsFalse(newCharacterPaneSource.Contains("ExecuteCommandAsync(\"character_settings\"", StringComparison.Ordinal));
         Assert.IsFalse(factorySource.Contains("\"Metatype Category\"", StringComparison.Ordinal));
+        Assert.IsFalse(factorySource.Contains("\"Metatype Filter\"", StringComparison.Ordinal));
         Assert.IsFalse(factorySource.Contains("legacy metatype continuation", StringComparison.OrdinalIgnoreCase));
     }
 

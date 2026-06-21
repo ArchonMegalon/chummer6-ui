@@ -466,9 +466,9 @@ public sealed class WorkflowParityGateTests
                 mutatedDialog,
                 "newCharacterMetatypeCategory",
                 "Metahuman",
-                ("Standard", "Core metatypes"),
-                ("Metahuman", "Metahumans only"),
-                ("Show All", "All available"));
+                ("Standard", "Core choices"),
+                ("Metahuman", "Non-human choices"),
+                ("Show All", "All playable options"));
             AssertExactVisibleSelectField(
                 mutatedDialog,
                 "newCharacterMetatype",
@@ -485,7 +485,7 @@ public sealed class WorkflowParityGateTests
                 ("Technomancer", "Technomancer"));
 
             DesktopDialogField summaryField = mutatedDialog.Fields.Single(field => string.Equals(field.Id, "newCharacterPriorityWorkflowSummary", StringComparison.Ordinal));
-            StringAssert.Contains(summaryField.Value ?? string.Empty, "Metatype | Elf (Metahuman)");
+            StringAssert.Contains(summaryField.Value ?? string.Empty, "Metatype | Elf · non-human choices");
             StringAssert.Contains(summaryField.Value ?? string.Empty, "Talent Choice | Adept");
         }
 
@@ -956,9 +956,9 @@ public sealed class WorkflowParityGateTests
             ("dialog.new_character.priority_workflow", "newCharacterMetatypeCategory", _)
                 or ("dialog.new_character.karma_workflow", "newCharacterMetatypeCategory", _) => Create(
                     "Standard",
-                    ("Standard", "Core metatypes"),
-                    ("Metahuman", "Metahumans only"),
-                    ("Show All", "All available")),
+                    ("Standard", "Core choices"),
+                    ("Metahuman", "Non-human choices"),
+                    ("Show All", "All playable options")),
 
             ("dialog.new_character.priority_workflow", "newCharacterMetatype", _) => ResolvePriorityMetatypeContract(dialog),
 

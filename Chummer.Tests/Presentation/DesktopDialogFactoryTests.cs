@@ -2318,12 +2318,21 @@ public class DesktopDialogFactoryTests
         dialog = RebuildDynamicDialog(UpdateDialogField(dialog, "newCharacterMetatypeCategory", "Show All"));
         dialog = RebuildDynamicDialog(UpdateDialogField(dialog, "newCharacterPriorityHeritage", "C"));
 
+        DesktopDialogField metatypeScopeField = dialog.Fields
+            .Single(field => string.Equals(field.Id, "newCharacterMetatypeCategory", StringComparison.Ordinal));
         string[] metatypeOptions = dialog.Fields
             .Single(field => string.Equals(field.Id, "newCharacterMetatype", StringComparison.Ordinal))
             .Options!
             .Select(option => option.Value)
             .ToArray();
 
+        Assert.AreEqual("Show Metatypes", metatypeScopeField.Label);
+        CollectionAssert.AreEqual(
+            new[] { "Core choices", "Non-human choices", "All playable options" },
+            metatypeScopeField.Options!.Select(option => option.Label).ToArray());
+        StringAssert.Contains(
+            DesktopDialogFieldValueParser.GetValue(dialog, "newCharacterPriorityWorkflowSummary"),
+            "Metatype | Human · all playable options");
         CollectionAssert.AreEquivalent(
             new[] { "Human", "Elf", "Ork", "Shapeshifter: Vulpine" },
             metatypeOptions);
@@ -2409,11 +2418,18 @@ public class DesktopDialogFactoryTests
 
         Assert.AreEqual("dialog.new_character.karma_workflow", dialog.Id);
         Assert.AreEqual("Karma", DesktopDialogFieldValueParser.GetValue(dialog, "newCharacterWorkflowBuildMethod"));
-        Assert.IsNotNull(dialog.Fields.SingleOrDefault(field => string.Equals(field.Id, "newCharacterMetatypeCategory", StringComparison.Ordinal)));
+        DesktopDialogField metatypeScopeField = dialog.Fields.Single(field => string.Equals(field.Id, "newCharacterMetatypeCategory", StringComparison.Ordinal));
+        Assert.AreEqual("Show Metatypes", metatypeScopeField.Label);
+        CollectionAssert.AreEqual(
+            new[] { "Core choices", "Non-human choices", "All playable options" },
+            metatypeScopeField.Options!.Select(option => option.Label).ToArray());
         Assert.IsNotNull(dialog.Fields.SingleOrDefault(field => string.Equals(field.Id, "newCharacterMetatype", StringComparison.Ordinal)));
         StringAssert.Contains(
             DesktopDialogFieldValueParser.GetValue(dialog, "newCharacterKarmaWorkflowSummary"),
             "Route | SR4 Karma");
+        StringAssert.Contains(
+            DesktopDialogFieldValueParser.GetValue(dialog, "newCharacterKarmaWorkflowSummary"),
+            "Metatype | Human · core choices");
     }
 
     [TestMethod]
