@@ -1,10 +1,10 @@
 {
-  "generatedAt": "2026-06-20T21:54:37.263292Z",
+  "generatedAt": "2026-06-21T07:19:32.207831Z",
   "contractName": "chummer6-ui.chummer5a_screenshot_review_gate",
   "channelId": "public_stable",
   "channel": "public_stable",
-  "releaseVersion": "run-258",
-  "version": "run-258",
+  "releaseVersion": "run-20260621-054902",
+  "version": "run-20260621-054902",
   "status": "pass",
   "summary": "Chummer5a screenshot-based compare review is mandatory and passing for dense builder, master index, roster, settings, translator, XML editor, and Hero Lab import routes.",
   "reasons": [],
@@ -290,12 +290,12 @@
     "supportingReceipts": {
       "visualFamiliarityGate": "/docker/chummercomplete/chummer6-ui/.codex-studio/published/DESKTOP_VISUAL_FAMILIARITY_EXIT_GATE.generated.json",
       "flagshipGate": "/docker/chummercomplete/chummer6-ui/.codex-studio/published/UI_FLAGSHIP_RELEASE_GATE.generated.json",
-      "releaseChannel": "/docker/chummercomplete/chummer6-ui/.tmp/verify-release-channel/RELEASE_CHANNEL.generated.json"
+      "releaseChannel": "/docker/chummercomplete/chummer-hub-registry/.codex-studio/published/RELEASE_CHANNEL.generated.json"
     },
     "screenshotDirectory": "/docker/chummercomplete/chummer6-ui/.codex-studio/published/ui-flagship-release-gate-screenshots",
-    "releaseChannelPath": "/docker/chummercomplete/chummer6-ui/.tmp/verify-release-channel/RELEASE_CHANNEL.generated.json",
+    "releaseChannelPath": "/docker/chummercomplete/chummer-hub-registry/.codex-studio/published/RELEASE_CHANNEL.generated.json",
     "releaseChannelChannelId": "public_stable",
-    "releaseChannelVersion": "run-258",
+    "releaseChannelVersion": "run-20260621-054902",
     "requiredVisualReviewKeys": [
       "flagshipGateReview",
       "headProofReview",
@@ -320,7 +320,9 @@
     "skipFlagshipGateDependency": false,
     "flagshipGateRouteLocalOnly": false,
     "flagshipGateExternalDesktopOnly": false,
-    "desktopExecutableLocalBlockingFindings": [],
+    "desktopExecutableLocalBlockingFindings": [
+      "Windows gate reason: Windows installer visual proof is missing; capture progress and completion screenshots on a Windows host."
+    ],
     "reviewedJobs": [
       "dense_builder",
       "dense_workbench_and_initiative",

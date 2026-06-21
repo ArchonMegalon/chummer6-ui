@@ -3282,7 +3282,7 @@ public sealed class AvaloniaFlagshipUiGateTests
                 .Select(textBlock => textBlock.Text ?? string.Empty)
                 .ToArray();
             CollectionAssert.Contains(visibleText, "Build explanation and environment details");
-            Assert.AreEqual("Open Explain Companion", companionButton.Content?.ToString());
+            Assert.AreEqual("Open details", companionButton.Content?.ToString());
             Assert.IsTrue(visibleText.Any(text => text.Contains("Build blocker", StringComparison.Ordinal)));
             Assert.IsTrue(visibleText.Any(text => text.Contains("Build compare companion:", StringComparison.Ordinal)));
         });

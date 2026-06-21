@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-06-20T22:04:43.4581633Z",
+  "generatedAt": "2026-06-21T07:41:04.8311924Z",
   "authority": {
     "visualBaseline": "Chummer5a",
     "releaseAuthorityPlatform": "windows",
@@ -241,7 +241,7 @@
           "Text": "Character: none",
           "X": 25,
           "Y": 765,
-          "Width": 312,
+          "Width": 315,
           "Height": 15
         },
         {
@@ -896,7 +896,7 @@
           "Name": "ServiceStateText",
           "ControlType": "TextBlock",
           "Text": "Service: online",
-          "X": 358,
+          "X": 361,
           "Y": 766,
           "Width": 77,
           "Height": 14
@@ -949,10 +949,10 @@
         {
           "Name": "TimeStateText",
           "ControlType": "TextBlock",
-          "Text": "Time: 2026-06-20 22:04:35Z",
-          "X": 465,
+          "Text": "Time: 2026-06-21 07:40:55Z",
+          "X": 468,
           "Y": 766,
-          "Width": 153,
+          "Width": 150,
           "Height": 14
         },
         {
@@ -1015,7 +1015,7 @@
         "Grouped by ruleset",
         "Character: none",
         "Service: online",
-        "Time: 2026-06-20 22:04:35Z",
+        "Time: 2026-06-21 07:40:55Z",
         "Ruleset: Shadowrun 5 .chum5 | Workflows: 0 defs / 0 surfaces | Prefs: 100%/classic/en-us"
       ],
       "visibleMenuCommandIds": [],
@@ -1118,7 +1118,7 @@
           "Text": "Character: none",
           "X": 25,
           "Y": 765,
-          "Width": 312,
+          "Width": 315,
           "Height": 15
         },
         {
@@ -1791,7 +1791,7 @@
           "Name": "ServiceStateText",
           "ControlType": "TextBlock",
           "Text": "Service: online",
-          "X": 358,
+          "X": 361,
           "Y": 766,
           "Width": 77,
           "Height": 14
@@ -1844,10 +1844,10 @@
         {
           "Name": "TimeStateText",
           "ControlType": "TextBlock",
-          "Text": "Time: 2026-06-20 22:04:35Z",
-          "X": 465,
+          "Text": "Time: 2026-06-21 07:40:55Z",
+          "X": 468,
           "Y": 766,
-          "Width": 153,
+          "Width": 150,
           "Height": 14
         },
         {
@@ -1911,7 +1911,7 @@
         "Menu \u0027file\u0027 opened.",
         "Character: none",
         "Service: online",
-        "Time: 2026-06-20 22:04:35Z",
+        "Time: 2026-06-21 07:40:55Z",
         "Ruleset: Shadowrun 5 .chum5 | Workflows: 0 defs / 0 surfaces | Prefs: 100%/classic/en-us"
       ],
       "visibleMenuCommandIds": [
@@ -2045,7 +2045,7 @@
           "Text": "Character: none",
           "X": 25,
           "Y": 765,
-          "Width": 312,
+          "Width": 314,
           "Height": 15
         },
         {
@@ -2925,7 +2925,7 @@
           "Name": "ServiceStateText",
           "ControlType": "TextBlock",
           "Text": "Service: online",
-          "X": 358,
+          "X": 360,
           "Y": 766,
           "Width": 77,
           "Height": 14
@@ -3014,10 +3014,10 @@
         {
           "Name": "TimeStateText",
           "ControlType": "TextBlock",
-          "Text": "Time: 2026-06-20 22:04:35Z",
-          "X": 465,
+          "Text": "Time: 2026-06-21 07:40:56Z",
+          "X": 467,
           "Y": 766,
-          "Width": 153,
+          "Width": 151,
           "Height": 14
         },
         {
@@ -3098,7 +3098,7 @@
         "ClassicPortLineItem { Label = Status, Detail = No global settings are currently loaded. }",
         "Character: none",
         "Service: online",
-        "Time: 2026-06-20 22:04:35Z",
+        "Time: 2026-06-21 07:40:56Z",
         "Ruleset: Shadowrun 5 .chum5 | Workflows: 0 defs / 0 surfaces | Prefs: 100%/classic/en-us"
       ],
       "visibleMenuCommandIds": [],
@@ -3219,7 +3219,7 @@
           "Text": "Character: loaded",
           "X": 25,
           "Y": 765,
-          "Width": 312,
+          "Width": 314,
           "Height": 15
         },
         {
@@ -4549,7 +4549,7 @@
           "Name": "ServiceStateText",
           "ControlType": "TextBlock",
           "Text": "Service: online",
-          "X": 358,
+          "X": 360,
           "Y": 766,
           "Width": 77,
           "Height": 14
@@ -4602,10 +4602,10 @@
         {
           "Name": "TimeStateText",
           "ControlType": "TextBlock",
-          "Text": "Time: 2026-06-20 22:04:35Z",
-          "X": 465,
+          "Text": "Time: 2026-06-21 07:40:56Z",
+          "X": 467,
           "Y": 766,
-          "Width": 153,
+          "Width": 151,
           "Height": 14
         },
         {
@@ -4727,7 +4727,7 @@
         "Add Cyberware",
         "Character: loaded",
         "Service: online",
-        "Time: 2026-06-20 22:04:35Z",
+        "Time: 2026-06-21 07:40:56Z",
         "Ruleset: Shadowrun 5 .chum5 | Workflows: 0 defs / 0 surfaces | Prefs: 100%/classic/en-us"
       ],
       "visibleMenuCommandIds": [],
@@ -4851,7 +4851,7 @@
           "Text": "Character: loaded",
           "X": 25,
           "Y": 765,
-          "Width": 312,
+          "Width": 315,
           "Height": 15
         },
         {
@@ -6100,7 +6100,7 @@
           "Name": "ServiceStateText",
           "ControlType": "TextBlock",
           "Text": "Service: online",
-          "X": 358,
+          "X": 361,
           "Y": 766,
           "Width": 77,
           "Height": 14
@@ -6153,10 +6153,10 @@
         {
           "Name": "TimeStateText",
           "ControlType": "TextBlock",
-          "Text": "Time: 2026-06-20 22:04:36Z",
-          "X": 465,
+          "Text": "Time: 2026-06-21 07:40:57Z",
+          "X": 468,
           "Y": 766,
-          "Width": 153,
+          "Width": 150,
           "Height": 14
         },
         {
@@ -6254,7 +6254,7 @@
         "Add Skill",
         "Character: loaded",
         "Service: online",
-        "Time: 2026-06-20 22:04:36Z",
+        "Time: 2026-06-21 07:40:57Z",
         "Ruleset: Shadowrun 5 .chum5 | Workflows: 0 defs / 0 surfaces | Prefs: 100%/classic/en-us"
       ],
       "visibleMenuCommandIds": [],
@@ -6380,7 +6380,7 @@
           "Text": "Character: loaded",
           "X": 25,
           "Y": 765,
-          "Width": 312,
+          "Width": 314,
           "Height": 15
         },
         {
@@ -7620,7 +7620,7 @@
           "Name": "ServiceStateText",
           "ControlType": "TextBlock",
           "Text": "Service: online",
-          "X": 358,
+          "X": 360,
           "Y": 766,
           "Width": 77,
           "Height": 14
@@ -7673,10 +7673,10 @@
         {
           "Name": "TimeStateText",
           "ControlType": "TextBlock",
-          "Text": "Time: 2026-06-20 22:04:38Z",
-          "X": 465,
+          "Text": "Time: 2026-06-21 07:40:59Z",
+          "X": 467,
           "Y": 766,
-          "Width": 153,
+          "Width": 151,
           "Height": 14
         },
         {
@@ -7773,7 +7773,7 @@
         "Add Entry",
         "Character: loaded",
         "Service: online",
-        "Time: 2026-06-20 22:04:38Z",
+        "Time: 2026-06-21 07:40:59Z",
         "Ruleset: Shadowrun 5 .chum5 | Workflows: 0 defs / 0 surfaces | Prefs: 100%/classic/en-us"
       ],
       "visibleMenuCommandIds": [],
@@ -7897,7 +7897,7 @@
           "Text": "Character: loaded",
           "X": 25,
           "Y": 765,
-          "Width": 312,
+          "Width": 314,
           "Height": 15
         },
         {
@@ -9137,7 +9137,7 @@
           "Name": "ServiceStateText",
           "ControlType": "TextBlock",
           "Text": "Service: online",
-          "X": 358,
+          "X": 360,
           "Y": 766,
           "Width": 77,
           "Height": 14
@@ -9190,10 +9190,10 @@
         {
           "Name": "TimeStateText",
           "ControlType": "TextBlock",
-          "Text": "Time: 2026-06-20 22:04:38Z",
-          "X": 465,
+          "Text": "Time: 2026-06-21 07:40:59Z",
+          "X": 467,
           "Y": 766,
-          "Width": 153,
+          "Width": 151,
           "Height": 14
         },
         {
@@ -9290,7 +9290,7 @@
         "Add Entry",
         "Character: loaded",
         "Service: online",
-        "Time: 2026-06-20 22:04:38Z",
+        "Time: 2026-06-21 07:40:59Z",
         "Ruleset: Shadowrun 5 .chum5 | Workflows: 0 defs / 0 surfaces | Prefs: 100%/classic/en-us"
       ],
       "visibleMenuCommandIds": [],
@@ -9414,7 +9414,7 @@
           "Text": "Character: loaded",
           "X": 25,
           "Y": 765,
-          "Width": 312,
+          "Width": 314,
           "Height": 15
         },
         {
@@ -10654,7 +10654,7 @@
           "Name": "ServiceStateText",
           "ControlType": "TextBlock",
           "Text": "Service: online",
-          "X": 358,
+          "X": 360,
           "Y": 766,
           "Width": 77,
           "Height": 14
@@ -10707,10 +10707,10 @@
         {
           "Name": "TimeStateText",
           "ControlType": "TextBlock",
-          "Text": "Time: 2026-06-20 22:04:39Z",
-          "X": 465,
+          "Text": "Time: 2026-06-21 07:40:59Z",
+          "X": 467,
           "Y": 766,
-          "Width": 153,
+          "Width": 151,
           "Height": 14
         },
         {
@@ -10807,7 +10807,7 @@
         "Add Cyberware",
         "Character: loaded",
         "Service: online",
-        "Time: 2026-06-20 22:04:39Z",
+        "Time: 2026-06-21 07:40:59Z",
         "Ruleset: Shadowrun 5 .chum5 | Workflows: 0 defs / 0 surfaces | Prefs: 100%/classic/en-us"
       ],
       "visibleMenuCommandIds": [],
@@ -10931,7 +10931,7 @@
           "Text": "Character: loaded",
           "X": 25,
           "Y": 765,
-          "Width": 312,
+          "Width": 316,
           "Height": 15
         },
         {
@@ -12171,7 +12171,7 @@
           "Name": "ServiceStateText",
           "ControlType": "TextBlock",
           "Text": "Service: online",
-          "X": 358,
+          "X": 362,
           "Y": 766,
           "Width": 77,
           "Height": 14
@@ -12224,10 +12224,10 @@
         {
           "Name": "TimeStateText",
           "ControlType": "TextBlock",
-          "Text": "Time: 2026-06-20 22:04:39Z",
-          "X": 465,
+          "Text": "Time: 2026-06-21 07:41:00Z",
+          "X": 469,
           "Y": 766,
-          "Width": 153,
+          "Width": 149,
           "Height": 14
         },
         {
@@ -12324,7 +12324,7 @@
         "Add Vehicle",
         "Character: loaded",
         "Service: online",
-        "Time: 2026-06-20 22:04:39Z",
+        "Time: 2026-06-21 07:41:00Z",
         "Ruleset: Shadowrun 5 .chum5 | Workflows: 0 defs / 0 surfaces | Prefs: 100%/classic/en-us"
       ],
       "visibleMenuCommandIds": [],
@@ -12450,7 +12450,7 @@
           "Text": "Character: loaded",
           "X": 25,
           "Y": 765,
-          "Width": 312,
+          "Width": 316,
           "Height": 15
         },
         {
@@ -13690,7 +13690,7 @@
           "Name": "ServiceStateText",
           "ControlType": "TextBlock",
           "Text": "Service: online",
-          "X": 358,
+          "X": 362,
           "Y": 766,
           "Width": 77,
           "Height": 14
@@ -13743,10 +13743,10 @@
         {
           "Name": "TimeStateText",
           "ControlType": "TextBlock",
-          "Text": "Time: 2026-06-20 22:04:39Z",
-          "X": 465,
+          "Text": "Time: 2026-06-21 07:41:00Z",
+          "X": 469,
           "Y": 766,
-          "Width": 153,
+          "Width": 149,
           "Height": 14
         },
         {
@@ -13842,7 +13842,7 @@
         "Add Contact",
         "Character: loaded",
         "Service: online",
-        "Time: 2026-06-20 22:04:39Z",
+        "Time: 2026-06-21 07:41:00Z",
         "Ruleset: Shadowrun 5 .chum5 | Workflows: 0 defs / 0 surfaces | Prefs: 100%/classic/en-us"
       ],
       "visibleMenuCommandIds": [],
@@ -13968,7 +13968,7 @@
           "Text": "Character: loaded",
           "X": 25,
           "Y": 765,
-          "Width": 312,
+          "Width": 316,
           "Height": 15
         },
         {
@@ -15208,7 +15208,7 @@
           "Name": "ServiceStateText",
           "ControlType": "TextBlock",
           "Text": "Service: online",
-          "X": 358,
+          "X": 362,
           "Y": 766,
           "Width": 77,
           "Height": 14
@@ -15261,10 +15261,10 @@
         {
           "Name": "TimeStateText",
           "ControlType": "TextBlock",
-          "Text": "Time: 2026-06-20 22:04:39Z",
-          "X": 465,
+          "Text": "Time: 2026-06-21 07:41:00Z",
+          "X": 469,
           "Y": 766,
-          "Width": 153,
+          "Width": 149,
           "Height": 14
         },
         {
@@ -15361,7 +15361,7 @@
         "Add Entry",
         "Character: loaded",
         "Service: online",
-        "Time: 2026-06-20 22:04:39Z",
+        "Time: 2026-06-21 07:41:00Z",
         "Ruleset: Shadowrun 5 .chum5 | Workflows: 0 defs / 0 surfaces | Prefs: 100%/classic/en-us"
       ],
       "visibleMenuCommandIds": [],
@@ -15485,7 +15485,7 @@
           "Text": "Character: loaded",
           "X": 25,
           "Y": 765,
-          "Width": 312,
+          "Width": 316,
           "Height": 15
         },
         {
@@ -16725,7 +16725,7 @@
           "Name": "ServiceStateText",
           "ControlType": "TextBlock",
           "Text": "Service: online",
-          "X": 358,
+          "X": 362,
           "Y": 766,
           "Width": 77,
           "Height": 14
@@ -16778,10 +16778,10 @@
         {
           "Name": "TimeStateText",
           "ControlType": "TextBlock",
-          "Text": "Time: 2026-06-20 22:04:39Z",
-          "X": 465,
+          "Text": "Time: 2026-06-21 07:41:00Z",
+          "X": 469,
           "Y": 766,
-          "Width": 153,
+          "Width": 149,
           "Height": 14
         },
         {
@@ -16877,7 +16877,7 @@
         "Add Spell",
         "Character: loaded",
         "Service: online",
-        "Time: 2026-06-20 22:04:39Z",
+        "Time: 2026-06-21 07:41:00Z",
         "Ruleset: Shadowrun 5 .chum5 | Workflows: 0 defs / 0 surfaces | Prefs: 100%/classic/en-us"
       ],
       "visibleMenuCommandIds": [],
@@ -17001,7 +17001,7 @@
           "Text": "Character: loaded",
           "X": 25,
           "Y": 765,
-          "Width": 312,
+          "Width": 318,
           "Height": 15
         },
         {
@@ -18241,7 +18241,7 @@
           "Name": "ServiceStateText",
           "ControlType": "TextBlock",
           "Text": "Service: online",
-          "X": 358,
+          "X": 364,
           "Y": 766,
           "Width": 77,
           "Height": 14
@@ -18294,10 +18294,10 @@
         {
           "Name": "TimeStateText",
           "ControlType": "TextBlock",
-          "Text": "Time: 2026-06-20 22:04:39Z",
-          "X": 465,
+          "Text": "Time: 2026-06-21 07:41:01Z",
+          "X": 471,
           "Y": 766,
-          "Width": 153,
+          "Width": 147,
           "Height": 14
         },
         {
@@ -18394,7 +18394,7 @@
         "Add Program",
         "Character: loaded",
         "Service: online",
-        "Time: 2026-06-20 22:04:39Z",
+        "Time: 2026-06-21 07:41:01Z",
         "Ruleset: Shadowrun 5 .chum5 | Workflows: 0 defs / 0 surfaces | Prefs: 100%/classic/en-us"
       ],
       "visibleMenuCommandIds": [],
@@ -18518,7 +18518,7 @@
           "Text": "Character: loaded",
           "X": 25,
           "Y": 765,
-          "Width": 311,
+          "Width": 318,
           "Height": 15
         },
         {
@@ -19758,7 +19758,7 @@
           "Name": "ServiceStateText",
           "ControlType": "TextBlock",
           "Text": "Service: online",
-          "X": 357,
+          "X": 364,
           "Y": 766,
           "Width": 77,
           "Height": 14
@@ -19811,10 +19811,10 @@
         {
           "Name": "TimeStateText",
           "ControlType": "TextBlock",
-          "Text": "Time: 2026-06-20 22:04:40Z",
-          "X": 464,
+          "Text": "Time: 2026-06-21 07:41:01Z",
+          "X": 471,
           "Y": 766,
-          "Width": 154,
+          "Width": 147,
           "Height": 14
         },
         {
@@ -19911,7 +19911,7 @@
         "Add Initiation",
         "Character: loaded",
         "Service: online",
-        "Time: 2026-06-20 22:04:40Z",
+        "Time: 2026-06-21 07:41:01Z",
         "Ruleset: Shadowrun 5 .chum5 | Workflows: 0 defs / 0 surfaces | Prefs: 100%/classic/en-us"
       ],
       "visibleMenuCommandIds": [],
@@ -19943,23 +19943,34 @@
         "AttributeBaseEditor_AGI",
         "AttributeBaseEditor_AGI_Decrease",
         "AttributeBaseEditor_AGI_Increase",
+        "AttributeBaseEditor_AGI_Value",
         "AttributeBaseEditor_BOD",
         "AttributeBaseEditor_BOD_Decrease",
         "AttributeBaseEditor_BOD_Increase",
+        "AttributeBaseEditor_BOD_Value",
         "AttributeBaseEditor_REA",
         "AttributeBaseEditor_REA_Decrease",
         "AttributeBaseEditor_REA_Increase",
+        "AttributeBaseEditor_REA_Value",
         "AttributeKarmaEditor_AGI",
         "AttributeKarmaEditor_AGI_Decrease",
         "AttributeKarmaEditor_AGI_Increase",
+        "AttributeKarmaEditor_AGI_Value",
         "AttributeKarmaEditor_BOD",
         "AttributeKarmaEditor_BOD_Decrease",
         "AttributeKarmaEditor_BOD_Increase",
+        "AttributeKarmaEditor_BOD_Value",
         "AttributeKarmaEditor_REA",
         "AttributeKarmaEditor_REA_Decrease",
         "AttributeKarmaEditor_REA_Increase",
+        "AttributeKarmaEditor_REA_Value",
         "AttributeParityEditorBorder",
+        "AttributeParityHeaderAddText",
+        "AttributeParityHeaderAttributeText",
         "AttributeParityHeaderGrid",
+        "AttributeParityHeaderLimitsText",
+        "AttributeParityHeaderStartText",
+        "AttributeParityHeaderTotalText",
         "AttributeParityRow_AGI",
         "AttributeParityRow_BOD",
         "AttributeParityRow_REA",
@@ -20032,163 +20043,217 @@
           "Name": "AttributeBaseEditor_AGI",
           "ControlType": "Grid",
           "Text": "",
-          "X": 830,
+          "X": 792,
           "Y": 344,
-          "Width": 104,
+          "Width": 128,
           "Height": 32
         },
         {
           "Name": "AttributeBaseEditor_AGI_Decrease",
           "ControlType": "Button",
           "Text": "-",
-          "X": 830,
+          "X": 792,
           "Y": 344,
-          "Width": 22,
+          "Width": 24,
           "Height": 32
         },
         {
           "Name": "AttributeBaseEditor_AGI_Increase",
           "ControlType": "Button",
           "Text": "\u002B",
-          "X": 926,
+          "X": 892,
           "Y": 344,
-          "Width": 22,
+          "Width": 24,
           "Height": 32
+        },
+        {
+          "Name": "AttributeBaseEditor_AGI_Value",
+          "ControlType": "TextBlock",
+          "Text": "5",
+          "X": 835,
+          "Y": 352,
+          "Width": 42,
+          "Height": 16
         },
         {
           "Name": "AttributeBaseEditor_BOD",
           "ControlType": "Grid",
           "Text": "",
-          "X": 830,
+          "X": 792,
           "Y": 309,
-          "Width": 104,
+          "Width": 128,
           "Height": 32
         },
         {
           "Name": "AttributeBaseEditor_BOD_Decrease",
           "ControlType": "Button",
           "Text": "-",
-          "X": 830,
+          "X": 792,
           "Y": 309,
-          "Width": 22,
+          "Width": 24,
           "Height": 32
         },
         {
           "Name": "AttributeBaseEditor_BOD_Increase",
           "ControlType": "Button",
           "Text": "\u002B",
-          "X": 926,
+          "X": 892,
           "Y": 309,
-          "Width": 22,
+          "Width": 24,
           "Height": 32
+        },
+        {
+          "Name": "AttributeBaseEditor_BOD_Value",
+          "ControlType": "TextBlock",
+          "Text": "3",
+          "X": 835,
+          "Y": 317,
+          "Width": 42,
+          "Height": 16
         },
         {
           "Name": "AttributeBaseEditor_REA",
           "ControlType": "Grid",
           "Text": "",
-          "X": 830,
+          "X": 792,
           "Y": 379,
-          "Width": 104,
+          "Width": 128,
           "Height": 32
         },
         {
           "Name": "AttributeBaseEditor_REA_Decrease",
           "ControlType": "Button",
           "Text": "-",
-          "X": 830,
+          "X": 792,
           "Y": 379,
-          "Width": 22,
+          "Width": 24,
           "Height": 32
         },
         {
           "Name": "AttributeBaseEditor_REA_Increase",
           "ControlType": "Button",
           "Text": "\u002B",
-          "X": 926,
+          "X": 892,
           "Y": 379,
-          "Width": 22,
+          "Width": 24,
           "Height": 32
+        },
+        {
+          "Name": "AttributeBaseEditor_REA_Value",
+          "ControlType": "TextBlock",
+          "Text": "4",
+          "X": 835,
+          "Y": 387,
+          "Width": 42,
+          "Height": 16
         },
         {
           "Name": "AttributeKarmaEditor_AGI",
           "ControlType": "Grid",
           "Text": "",
-          "X": 942,
+          "X": 928,
           "Y": 344,
-          "Width": 116,
+          "Width": 128,
           "Height": 32
         },
         {
           "Name": "AttributeKarmaEditor_AGI_Decrease",
           "ControlType": "Button",
           "Text": "-",
-          "X": 942,
+          "X": 928,
           "Y": 344,
-          "Width": 22,
+          "Width": 24,
           "Height": 32
         },
         {
           "Name": "AttributeKarmaEditor_AGI_Increase",
           "ControlType": "Button",
           "Text": "\u002B",
-          "X": 1050,
+          "X": 1028,
           "Y": 344,
-          "Width": 22,
+          "Width": 24,
           "Height": 32
+        },
+        {
+          "Name": "AttributeKarmaEditor_AGI_Value",
+          "ControlType": "TextBlock",
+          "Text": "0",
+          "X": 971,
+          "Y": 352,
+          "Width": 42,
+          "Height": 16
         },
         {
           "Name": "AttributeKarmaEditor_BOD",
           "ControlType": "Grid",
           "Text": "",
-          "X": 942,
+          "X": 928,
           "Y": 309,
-          "Width": 116,
+          "Width": 128,
           "Height": 32
         },
         {
           "Name": "AttributeKarmaEditor_BOD_Decrease",
           "ControlType": "Button",
           "Text": "-",
-          "X": 942,
+          "X": 928,
           "Y": 309,
-          "Width": 22,
+          "Width": 24,
           "Height": 32
         },
         {
           "Name": "AttributeKarmaEditor_BOD_Increase",
           "ControlType": "Button",
           "Text": "\u002B",
-          "X": 1050,
+          "X": 1028,
           "Y": 309,
-          "Width": 22,
+          "Width": 24,
           "Height": 32
+        },
+        {
+          "Name": "AttributeKarmaEditor_BOD_Value",
+          "ControlType": "TextBlock",
+          "Text": "1",
+          "X": 971,
+          "Y": 317,
+          "Width": 42,
+          "Height": 16
         },
         {
           "Name": "AttributeKarmaEditor_REA",
           "ControlType": "Grid",
           "Text": "",
-          "X": 942,
+          "X": 928,
           "Y": 379,
-          "Width": 116,
+          "Width": 128,
           "Height": 32
         },
         {
           "Name": "AttributeKarmaEditor_REA_Decrease",
           "ControlType": "Button",
           "Text": "-",
-          "X": 942,
+          "X": 928,
           "Y": 379,
-          "Width": 22,
+          "Width": 24,
           "Height": 32
         },
         {
           "Name": "AttributeKarmaEditor_REA_Increase",
           "ControlType": "Button",
           "Text": "\u002B",
-          "X": 1050,
+          "X": 1028,
           "Y": 379,
-          "Width": 22,
+          "Width": 24,
           "Height": 32
+        },
+        {
+          "Name": "AttributeKarmaEditor_REA_Value",
+          "ControlType": "TextBlock",
+          "Text": "1",
+          "X": 971,
+          "Y": 387,
+          "Width": 42,
+          "Height": 16
         },
         {
           "Name": "AttributeParityEditorBorder",
@@ -20200,12 +20265,57 @@
           "Height": 235
         },
         {
+          "Name": "AttributeParityHeaderAddText",
+          "ControlType": "TextBlock",
+          "Text": "Add",
+          "X": 1032,
+          "Y": 290,
+          "Width": 24,
+          "Height": 15
+        },
+        {
+          "Name": "AttributeParityHeaderAttributeText",
+          "ControlType": "TextBlock",
+          "Text": "Attribute",
+          "X": 280,
+          "Y": 290,
+          "Width": 504,
+          "Height": 15
+        },
+        {
           "Name": "AttributeParityHeaderGrid",
           "ControlType": "Grid",
           "Text": "",
           "X": 280,
           "Y": 290,
           "Width": 984,
+          "Height": 15
+        },
+        {
+          "Name": "AttributeParityHeaderLimitsText",
+          "ControlType": "TextBlock",
+          "Text": "Limits",
+          "X": 1230,
+          "Y": 290,
+          "Width": 34,
+          "Height": 15
+        },
+        {
+          "Name": "AttributeParityHeaderStartText",
+          "ControlType": "TextBlock",
+          "Text": "Start",
+          "X": 891,
+          "Y": 290,
+          "Width": 29,
+          "Height": 15
+        },
+        {
+          "Name": "AttributeParityHeaderTotalText",
+          "ControlType": "TextBlock",
+          "Text": "Total",
+          "X": 1108,
+          "Y": 290,
+          "Width": 28,
           "Height": 15
         },
         {
@@ -20268,7 +20378,7 @@
           "Text": "Character: loaded",
           "X": 25,
           "Y": 765,
-          "Width": 311,
+          "Width": 318,
           "Height": 15
         },
         {
@@ -20851,108 +20961,108 @@
           "Name": "PART_ContentPresenter",
           "ControlType": "ContentPresenter",
           "Text": "",
-          "X": 830,
+          "X": 792,
           "Y": 309,
-          "Width": 22,
+          "Width": 24,
           "Height": 32
         },
         {
           "Name": "PART_ContentPresenter",
           "ControlType": "ContentPresenter",
           "Text": "",
-          "X": 926,
+          "X": 892,
           "Y": 309,
-          "Width": 22,
+          "Width": 24,
           "Height": 32
         },
         {
           "Name": "PART_ContentPresenter",
           "ControlType": "ContentPresenter",
           "Text": "",
-          "X": 942,
+          "X": 928,
           "Y": 309,
-          "Width": 22,
+          "Width": 24,
           "Height": 32
         },
         {
           "Name": "PART_ContentPresenter",
           "ControlType": "ContentPresenter",
           "Text": "",
-          "X": 1050,
+          "X": 1028,
           "Y": 309,
-          "Width": 22,
+          "Width": 24,
           "Height": 32
         },
         {
           "Name": "PART_ContentPresenter",
           "ControlType": "ContentPresenter",
           "Text": "",
-          "X": 830,
+          "X": 792,
           "Y": 344,
-          "Width": 22,
+          "Width": 24,
           "Height": 32
         },
         {
           "Name": "PART_ContentPresenter",
           "ControlType": "ContentPresenter",
           "Text": "",
-          "X": 926,
+          "X": 892,
           "Y": 344,
-          "Width": 22,
+          "Width": 24,
           "Height": 32
         },
         {
           "Name": "PART_ContentPresenter",
           "ControlType": "ContentPresenter",
           "Text": "",
-          "X": 942,
+          "X": 928,
           "Y": 344,
-          "Width": 22,
+          "Width": 24,
           "Height": 32
         },
         {
           "Name": "PART_ContentPresenter",
           "ControlType": "ContentPresenter",
           "Text": "",
-          "X": 1050,
+          "X": 1028,
           "Y": 344,
-          "Width": 22,
+          "Width": 24,
           "Height": 32
         },
         {
           "Name": "PART_ContentPresenter",
           "ControlType": "ContentPresenter",
           "Text": "",
-          "X": 830,
+          "X": 792,
           "Y": 379,
-          "Width": 22,
+          "Width": 24,
           "Height": 32
         },
         {
           "Name": "PART_ContentPresenter",
           "ControlType": "ContentPresenter",
           "Text": "",
-          "X": 926,
+          "X": 892,
           "Y": 379,
-          "Width": 22,
+          "Width": 24,
           "Height": 32
         },
         {
           "Name": "PART_ContentPresenter",
           "ControlType": "ContentPresenter",
           "Text": "",
-          "X": 942,
+          "X": 928,
           "Y": 379,
-          "Width": 22,
+          "Width": 24,
           "Height": 32
         },
         {
           "Name": "PART_ContentPresenter",
           "ControlType": "ContentPresenter",
           "Text": "",
-          "X": 1050,
+          "X": 1028,
           "Y": 379,
-          "Width": 22,
+          "Width": 24,
           "Height": 32
         },
         {
@@ -21535,7 +21645,7 @@
           "Name": "ServiceStateText",
           "ControlType": "TextBlock",
           "Text": "Service: online",
-          "X": 357,
+          "X": 364,
           "Y": 766,
           "Width": 77,
           "Height": 14
@@ -21588,10 +21698,10 @@
         {
           "Name": "TimeStateText",
           "ControlType": "TextBlock",
-          "Text": "Time: 2026-06-20 22:04:40Z",
-          "X": 464,
+          "Text": "Time: 2026-06-21 07:41:01Z",
+          "X": 471,
           "Y": 766,
-          "Width": 154,
+          "Width": 147,
           "Height": 14
         },
         {
@@ -21674,8 +21784,8 @@
         "Martial Arts",
         "3 visible entries  \u2022  Attribute 1: Body 4",
         "Attribute",
-        "Base",
-        "Karma bump",
+        "Start",
+        "Add",
         "Total",
         "Limits",
         "BOD",
@@ -21693,7 +21803,7 @@
         "4",
         "Character: loaded",
         "Service: online",
-        "Time: 2026-06-20 22:04:40Z",
+        "Time: 2026-06-21 07:41:01Z",
         "Ruleset: Shadowrun 5 .chum5 | Workflows: 0 defs / 0 surfaces | Prefs: 100%/classic/en-us"
       ],
       "visibleMenuCommandIds": [],
@@ -21723,23 +21833,34 @@
         "AttributeBaseEditor_AGI",
         "AttributeBaseEditor_AGI_Decrease",
         "AttributeBaseEditor_AGI_Increase",
+        "AttributeBaseEditor_AGI_Value",
         "AttributeBaseEditor_BOD",
         "AttributeBaseEditor_BOD_Decrease",
         "AttributeBaseEditor_BOD_Increase",
+        "AttributeBaseEditor_BOD_Value",
         "AttributeBaseEditor_REA",
         "AttributeBaseEditor_REA_Decrease",
         "AttributeBaseEditor_REA_Increase",
+        "AttributeBaseEditor_REA_Value",
         "AttributeKarmaEditor_AGI",
         "AttributeKarmaEditor_AGI_Decrease",
         "AttributeKarmaEditor_AGI_Increase",
+        "AttributeKarmaEditor_AGI_Value",
         "AttributeKarmaEditor_BOD",
         "AttributeKarmaEditor_BOD_Decrease",
         "AttributeKarmaEditor_BOD_Increase",
+        "AttributeKarmaEditor_BOD_Value",
         "AttributeKarmaEditor_REA",
         "AttributeKarmaEditor_REA_Decrease",
         "AttributeKarmaEditor_REA_Increase",
+        "AttributeKarmaEditor_REA_Value",
         "AttributeParityEditorBorder",
+        "AttributeParityHeaderAddText",
+        "AttributeParityHeaderAttributeText",
         "AttributeParityHeaderGrid",
+        "AttributeParityHeaderLimitsText",
+        "AttributeParityHeaderStartText",
+        "AttributeParityHeaderTotalText",
         "AttributeParityRow_AGI",
         "AttributeParityRow_BOD",
         "AttributeParityRow_REA",
@@ -21812,163 +21933,217 @@
           "Name": "AttributeBaseEditor_AGI",
           "ControlType": "Grid",
           "Text": "",
-          "X": 830,
+          "X": 792,
           "Y": 344,
-          "Width": 104,
+          "Width": 128,
           "Height": 32
         },
         {
           "Name": "AttributeBaseEditor_AGI_Decrease",
           "ControlType": "Button",
           "Text": "-",
-          "X": 830,
+          "X": 792,
           "Y": 344,
-          "Width": 22,
+          "Width": 24,
           "Height": 32
         },
         {
           "Name": "AttributeBaseEditor_AGI_Increase",
           "ControlType": "Button",
           "Text": "\u002B",
-          "X": 926,
+          "X": 892,
           "Y": 344,
-          "Width": 22,
+          "Width": 24,
           "Height": 32
+        },
+        {
+          "Name": "AttributeBaseEditor_AGI_Value",
+          "ControlType": "TextBlock",
+          "Text": "5",
+          "X": 835,
+          "Y": 352,
+          "Width": 42,
+          "Height": 16
         },
         {
           "Name": "AttributeBaseEditor_BOD",
           "ControlType": "Grid",
           "Text": "",
-          "X": 830,
+          "X": 792,
           "Y": 309,
-          "Width": 104,
+          "Width": 128,
           "Height": 32
         },
         {
           "Name": "AttributeBaseEditor_BOD_Decrease",
           "ControlType": "Button",
           "Text": "-",
-          "X": 830,
+          "X": 792,
           "Y": 309,
-          "Width": 22,
+          "Width": 24,
           "Height": 32
         },
         {
           "Name": "AttributeBaseEditor_BOD_Increase",
           "ControlType": "Button",
           "Text": "\u002B",
-          "X": 926,
+          "X": 892,
           "Y": 309,
-          "Width": 22,
+          "Width": 24,
           "Height": 32
+        },
+        {
+          "Name": "AttributeBaseEditor_BOD_Value",
+          "ControlType": "TextBlock",
+          "Text": "3",
+          "X": 835,
+          "Y": 317,
+          "Width": 42,
+          "Height": 16
         },
         {
           "Name": "AttributeBaseEditor_REA",
           "ControlType": "Grid",
           "Text": "",
-          "X": 830,
+          "X": 792,
           "Y": 379,
-          "Width": 104,
+          "Width": 128,
           "Height": 32
         },
         {
           "Name": "AttributeBaseEditor_REA_Decrease",
           "ControlType": "Button",
           "Text": "-",
-          "X": 830,
+          "X": 792,
           "Y": 379,
-          "Width": 22,
+          "Width": 24,
           "Height": 32
         },
         {
           "Name": "AttributeBaseEditor_REA_Increase",
           "ControlType": "Button",
           "Text": "\u002B",
-          "X": 926,
+          "X": 892,
           "Y": 379,
-          "Width": 22,
+          "Width": 24,
           "Height": 32
+        },
+        {
+          "Name": "AttributeBaseEditor_REA_Value",
+          "ControlType": "TextBlock",
+          "Text": "4",
+          "X": 835,
+          "Y": 387,
+          "Width": 42,
+          "Height": 16
         },
         {
           "Name": "AttributeKarmaEditor_AGI",
           "ControlType": "Grid",
           "Text": "",
-          "X": 942,
+          "X": 928,
           "Y": 344,
-          "Width": 116,
+          "Width": 128,
           "Height": 32
         },
         {
           "Name": "AttributeKarmaEditor_AGI_Decrease",
           "ControlType": "Button",
           "Text": "-",
-          "X": 942,
+          "X": 928,
           "Y": 344,
-          "Width": 22,
+          "Width": 24,
           "Height": 32
         },
         {
           "Name": "AttributeKarmaEditor_AGI_Increase",
           "ControlType": "Button",
           "Text": "\u002B",
-          "X": 1050,
+          "X": 1028,
           "Y": 344,
-          "Width": 22,
+          "Width": 24,
           "Height": 32
+        },
+        {
+          "Name": "AttributeKarmaEditor_AGI_Value",
+          "ControlType": "TextBlock",
+          "Text": "0",
+          "X": 971,
+          "Y": 352,
+          "Width": 42,
+          "Height": 16
         },
         {
           "Name": "AttributeKarmaEditor_BOD",
           "ControlType": "Grid",
           "Text": "",
-          "X": 942,
+          "X": 928,
           "Y": 309,
-          "Width": 116,
+          "Width": 128,
           "Height": 32
         },
         {
           "Name": "AttributeKarmaEditor_BOD_Decrease",
           "ControlType": "Button",
           "Text": "-",
-          "X": 942,
+          "X": 928,
           "Y": 309,
-          "Width": 22,
+          "Width": 24,
           "Height": 32
         },
         {
           "Name": "AttributeKarmaEditor_BOD_Increase",
           "ControlType": "Button",
           "Text": "\u002B",
-          "X": 1050,
+          "X": 1028,
           "Y": 309,
-          "Width": 22,
+          "Width": 24,
           "Height": 32
+        },
+        {
+          "Name": "AttributeKarmaEditor_BOD_Value",
+          "ControlType": "TextBlock",
+          "Text": "1",
+          "X": 971,
+          "Y": 317,
+          "Width": 42,
+          "Height": 16
         },
         {
           "Name": "AttributeKarmaEditor_REA",
           "ControlType": "Grid",
           "Text": "",
-          "X": 942,
+          "X": 928,
           "Y": 379,
-          "Width": 116,
+          "Width": 128,
           "Height": 32
         },
         {
           "Name": "AttributeKarmaEditor_REA_Decrease",
           "ControlType": "Button",
           "Text": "-",
-          "X": 942,
+          "X": 928,
           "Y": 379,
-          "Width": 22,
+          "Width": 24,
           "Height": 32
         },
         {
           "Name": "AttributeKarmaEditor_REA_Increase",
           "ControlType": "Button",
           "Text": "\u002B",
-          "X": 1050,
+          "X": 1028,
           "Y": 379,
-          "Width": 22,
+          "Width": 24,
           "Height": 32
+        },
+        {
+          "Name": "AttributeKarmaEditor_REA_Value",
+          "ControlType": "TextBlock",
+          "Text": "1",
+          "X": 971,
+          "Y": 387,
+          "Width": 42,
+          "Height": 16
         },
         {
           "Name": "AttributeParityEditorBorder",
@@ -21980,12 +22155,57 @@
           "Height": 235
         },
         {
+          "Name": "AttributeParityHeaderAddText",
+          "ControlType": "TextBlock",
+          "Text": "Add",
+          "X": 1032,
+          "Y": 290,
+          "Width": 24,
+          "Height": 15
+        },
+        {
+          "Name": "AttributeParityHeaderAttributeText",
+          "ControlType": "TextBlock",
+          "Text": "Attribute",
+          "X": 280,
+          "Y": 290,
+          "Width": 504,
+          "Height": 15
+        },
+        {
           "Name": "AttributeParityHeaderGrid",
           "ControlType": "Grid",
           "Text": "",
           "X": 280,
           "Y": 290,
           "Width": 984,
+          "Height": 15
+        },
+        {
+          "Name": "AttributeParityHeaderLimitsText",
+          "ControlType": "TextBlock",
+          "Text": "Limits",
+          "X": 1230,
+          "Y": 290,
+          "Width": 34,
+          "Height": 15
+        },
+        {
+          "Name": "AttributeParityHeaderStartText",
+          "ControlType": "TextBlock",
+          "Text": "Start",
+          "X": 891,
+          "Y": 290,
+          "Width": 29,
+          "Height": 15
+        },
+        {
+          "Name": "AttributeParityHeaderTotalText",
+          "ControlType": "TextBlock",
+          "Text": "Total",
+          "X": 1108,
+          "Y": 290,
+          "Width": 28,
           "Height": 15
         },
         {
@@ -22048,7 +22268,7 @@
           "Text": "Character: loaded",
           "X": 25,
           "Y": 765,
-          "Width": 311,
+          "Width": 318,
           "Height": 15
         },
         {
@@ -22631,108 +22851,108 @@
           "Name": "PART_ContentPresenter",
           "ControlType": "ContentPresenter",
           "Text": "",
-          "X": 830,
+          "X": 792,
           "Y": 309,
-          "Width": 22,
+          "Width": 24,
           "Height": 32
         },
         {
           "Name": "PART_ContentPresenter",
           "ControlType": "ContentPresenter",
           "Text": "",
-          "X": 926,
+          "X": 892,
           "Y": 309,
-          "Width": 22,
+          "Width": 24,
           "Height": 32
         },
         {
           "Name": "PART_ContentPresenter",
           "ControlType": "ContentPresenter",
           "Text": "",
-          "X": 942,
+          "X": 928,
           "Y": 309,
-          "Width": 22,
+          "Width": 24,
           "Height": 32
         },
         {
           "Name": "PART_ContentPresenter",
           "ControlType": "ContentPresenter",
           "Text": "",
-          "X": 1050,
+          "X": 1028,
           "Y": 309,
-          "Width": 22,
+          "Width": 24,
           "Height": 32
         },
         {
           "Name": "PART_ContentPresenter",
           "ControlType": "ContentPresenter",
           "Text": "",
-          "X": 830,
+          "X": 792,
           "Y": 344,
-          "Width": 22,
+          "Width": 24,
           "Height": 32
         },
         {
           "Name": "PART_ContentPresenter",
           "ControlType": "ContentPresenter",
           "Text": "",
-          "X": 926,
+          "X": 892,
           "Y": 344,
-          "Width": 22,
+          "Width": 24,
           "Height": 32
         },
         {
           "Name": "PART_ContentPresenter",
           "ControlType": "ContentPresenter",
           "Text": "",
-          "X": 942,
+          "X": 928,
           "Y": 344,
-          "Width": 22,
+          "Width": 24,
           "Height": 32
         },
         {
           "Name": "PART_ContentPresenter",
           "ControlType": "ContentPresenter",
           "Text": "",
-          "X": 1050,
+          "X": 1028,
           "Y": 344,
-          "Width": 22,
+          "Width": 24,
           "Height": 32
         },
         {
           "Name": "PART_ContentPresenter",
           "ControlType": "ContentPresenter",
           "Text": "",
-          "X": 830,
+          "X": 792,
           "Y": 379,
-          "Width": 22,
+          "Width": 24,
           "Height": 32
         },
         {
           "Name": "PART_ContentPresenter",
           "ControlType": "ContentPresenter",
           "Text": "",
-          "X": 926,
+          "X": 892,
           "Y": 379,
-          "Width": 22,
+          "Width": 24,
           "Height": 32
         },
         {
           "Name": "PART_ContentPresenter",
           "ControlType": "ContentPresenter",
           "Text": "",
-          "X": 942,
+          "X": 928,
           "Y": 379,
-          "Width": 22,
+          "Width": 24,
           "Height": 32
         },
         {
           "Name": "PART_ContentPresenter",
           "ControlType": "ContentPresenter",
           "Text": "",
-          "X": 1050,
+          "X": 1028,
           "Y": 379,
-          "Width": 22,
+          "Width": 24,
           "Height": 32
         },
         {
@@ -23315,7 +23535,7 @@
           "Name": "ServiceStateText",
           "ControlType": "TextBlock",
           "Text": "Service: online",
-          "X": 357,
+          "X": 364,
           "Y": 766,
           "Width": 77,
           "Height": 14
@@ -23368,10 +23588,10 @@
         {
           "Name": "TimeStateText",
           "ControlType": "TextBlock",
-          "Text": "Time: 2026-06-20 22:04:40Z",
-          "X": 464,
+          "Text": "Time: 2026-06-21 07:41:01Z",
+          "X": 471,
           "Y": 766,
-          "Width": 154,
+          "Width": 147,
           "Height": 14
         },
         {
@@ -23454,8 +23674,8 @@
         "Martial Arts",
         "3 visible entries  \u2022  Attribute 1: Body 4",
         "Attribute",
-        "Base",
-        "Karma bump",
+        "Start",
+        "Add",
         "Total",
         "Limits",
         "BOD",
@@ -23473,7 +23693,7 @@
         "4",
         "Character: loaded",
         "Service: online",
-        "Time: 2026-06-20 22:04:40Z",
+        "Time: 2026-06-21 07:41:01Z",
         "Ruleset: Shadowrun 5 .chum5 | Workflows: 0 defs / 0 surfaces | Prefs: 100%/classic/en-us"
       ],
       "visibleMenuCommandIds": [],
@@ -23503,23 +23723,34 @@
         "AttributeBaseEditor_AGI",
         "AttributeBaseEditor_AGI_Decrease",
         "AttributeBaseEditor_AGI_Increase",
+        "AttributeBaseEditor_AGI_Value",
         "AttributeBaseEditor_BOD",
         "AttributeBaseEditor_BOD_Decrease",
         "AttributeBaseEditor_BOD_Increase",
+        "AttributeBaseEditor_BOD_Value",
         "AttributeBaseEditor_REA",
         "AttributeBaseEditor_REA_Decrease",
         "AttributeBaseEditor_REA_Increase",
+        "AttributeBaseEditor_REA_Value",
         "AttributeKarmaEditor_AGI",
         "AttributeKarmaEditor_AGI_Decrease",
         "AttributeKarmaEditor_AGI_Increase",
+        "AttributeKarmaEditor_AGI_Value",
         "AttributeKarmaEditor_BOD",
         "AttributeKarmaEditor_BOD_Decrease",
         "AttributeKarmaEditor_BOD_Increase",
+        "AttributeKarmaEditor_BOD_Value",
         "AttributeKarmaEditor_REA",
         "AttributeKarmaEditor_REA_Decrease",
         "AttributeKarmaEditor_REA_Increase",
+        "AttributeKarmaEditor_REA_Value",
         "AttributeParityEditorBorder",
+        "AttributeParityHeaderAddText",
+        "AttributeParityHeaderAttributeText",
         "AttributeParityHeaderGrid",
+        "AttributeParityHeaderLimitsText",
+        "AttributeParityHeaderStartText",
+        "AttributeParityHeaderTotalText",
         "AttributeParityRow_AGI",
         "AttributeParityRow_BOD",
         "AttributeParityRow_REA",
@@ -23592,163 +23823,217 @@
           "Name": "AttributeBaseEditor_AGI",
           "ControlType": "Grid",
           "Text": "",
-          "X": 830,
+          "X": 792,
           "Y": 344,
-          "Width": 104,
+          "Width": 128,
           "Height": 32
         },
         {
           "Name": "AttributeBaseEditor_AGI_Decrease",
           "ControlType": "Button",
           "Text": "-",
-          "X": 830,
+          "X": 792,
           "Y": 344,
-          "Width": 22,
+          "Width": 24,
           "Height": 32
         },
         {
           "Name": "AttributeBaseEditor_AGI_Increase",
           "ControlType": "Button",
           "Text": "\u002B",
-          "X": 926,
+          "X": 892,
           "Y": 344,
-          "Width": 22,
+          "Width": 24,
           "Height": 32
+        },
+        {
+          "Name": "AttributeBaseEditor_AGI_Value",
+          "ControlType": "TextBlock",
+          "Text": "5",
+          "X": 835,
+          "Y": 352,
+          "Width": 42,
+          "Height": 16
         },
         {
           "Name": "AttributeBaseEditor_BOD",
           "ControlType": "Grid",
           "Text": "",
-          "X": 830,
+          "X": 792,
           "Y": 309,
-          "Width": 104,
+          "Width": 128,
           "Height": 32
         },
         {
           "Name": "AttributeBaseEditor_BOD_Decrease",
           "ControlType": "Button",
           "Text": "-",
-          "X": 830,
+          "X": 792,
           "Y": 309,
-          "Width": 22,
+          "Width": 24,
           "Height": 32
         },
         {
           "Name": "AttributeBaseEditor_BOD_Increase",
           "ControlType": "Button",
           "Text": "\u002B",
-          "X": 926,
+          "X": 892,
           "Y": 309,
-          "Width": 22,
+          "Width": 24,
           "Height": 32
+        },
+        {
+          "Name": "AttributeBaseEditor_BOD_Value",
+          "ControlType": "TextBlock",
+          "Text": "3",
+          "X": 835,
+          "Y": 317,
+          "Width": 42,
+          "Height": 16
         },
         {
           "Name": "AttributeBaseEditor_REA",
           "ControlType": "Grid",
           "Text": "",
-          "X": 830,
+          "X": 792,
           "Y": 379,
-          "Width": 104,
+          "Width": 128,
           "Height": 32
         },
         {
           "Name": "AttributeBaseEditor_REA_Decrease",
           "ControlType": "Button",
           "Text": "-",
-          "X": 830,
+          "X": 792,
           "Y": 379,
-          "Width": 22,
+          "Width": 24,
           "Height": 32
         },
         {
           "Name": "AttributeBaseEditor_REA_Increase",
           "ControlType": "Button",
           "Text": "\u002B",
-          "X": 926,
+          "X": 892,
           "Y": 379,
-          "Width": 22,
+          "Width": 24,
           "Height": 32
+        },
+        {
+          "Name": "AttributeBaseEditor_REA_Value",
+          "ControlType": "TextBlock",
+          "Text": "4",
+          "X": 835,
+          "Y": 387,
+          "Width": 42,
+          "Height": 16
         },
         {
           "Name": "AttributeKarmaEditor_AGI",
           "ControlType": "Grid",
           "Text": "",
-          "X": 942,
+          "X": 928,
           "Y": 344,
-          "Width": 116,
+          "Width": 128,
           "Height": 32
         },
         {
           "Name": "AttributeKarmaEditor_AGI_Decrease",
           "ControlType": "Button",
           "Text": "-",
-          "X": 942,
+          "X": 928,
           "Y": 344,
-          "Width": 22,
+          "Width": 24,
           "Height": 32
         },
         {
           "Name": "AttributeKarmaEditor_AGI_Increase",
           "ControlType": "Button",
           "Text": "\u002B",
-          "X": 1050,
+          "X": 1028,
           "Y": 344,
-          "Width": 22,
+          "Width": 24,
           "Height": 32
+        },
+        {
+          "Name": "AttributeKarmaEditor_AGI_Value",
+          "ControlType": "TextBlock",
+          "Text": "0",
+          "X": 971,
+          "Y": 352,
+          "Width": 42,
+          "Height": 16
         },
         {
           "Name": "AttributeKarmaEditor_BOD",
           "ControlType": "Grid",
           "Text": "",
-          "X": 942,
+          "X": 928,
           "Y": 309,
-          "Width": 116,
+          "Width": 128,
           "Height": 32
         },
         {
           "Name": "AttributeKarmaEditor_BOD_Decrease",
           "ControlType": "Button",
           "Text": "-",
-          "X": 942,
+          "X": 928,
           "Y": 309,
-          "Width": 22,
+          "Width": 24,
           "Height": 32
         },
         {
           "Name": "AttributeKarmaEditor_BOD_Increase",
           "ControlType": "Button",
           "Text": "\u002B",
-          "X": 1050,
+          "X": 1028,
           "Y": 309,
-          "Width": 22,
+          "Width": 24,
           "Height": 32
+        },
+        {
+          "Name": "AttributeKarmaEditor_BOD_Value",
+          "ControlType": "TextBlock",
+          "Text": "1",
+          "X": 971,
+          "Y": 317,
+          "Width": 42,
+          "Height": 16
         },
         {
           "Name": "AttributeKarmaEditor_REA",
           "ControlType": "Grid",
           "Text": "",
-          "X": 942,
+          "X": 928,
           "Y": 379,
-          "Width": 116,
+          "Width": 128,
           "Height": 32
         },
         {
           "Name": "AttributeKarmaEditor_REA_Decrease",
           "ControlType": "Button",
           "Text": "-",
-          "X": 942,
+          "X": 928,
           "Y": 379,
-          "Width": 22,
+          "Width": 24,
           "Height": 32
         },
         {
           "Name": "AttributeKarmaEditor_REA_Increase",
           "ControlType": "Button",
           "Text": "\u002B",
-          "X": 1050,
+          "X": 1028,
           "Y": 379,
-          "Width": 22,
+          "Width": 24,
           "Height": 32
+        },
+        {
+          "Name": "AttributeKarmaEditor_REA_Value",
+          "ControlType": "TextBlock",
+          "Text": "1",
+          "X": 971,
+          "Y": 387,
+          "Width": 42,
+          "Height": 16
         },
         {
           "Name": "AttributeParityEditorBorder",
@@ -23760,12 +24045,57 @@
           "Height": 235
         },
         {
+          "Name": "AttributeParityHeaderAddText",
+          "ControlType": "TextBlock",
+          "Text": "Add",
+          "X": 1032,
+          "Y": 290,
+          "Width": 24,
+          "Height": 15
+        },
+        {
+          "Name": "AttributeParityHeaderAttributeText",
+          "ControlType": "TextBlock",
+          "Text": "Attribute",
+          "X": 280,
+          "Y": 290,
+          "Width": 504,
+          "Height": 15
+        },
+        {
           "Name": "AttributeParityHeaderGrid",
           "ControlType": "Grid",
           "Text": "",
           "X": 280,
           "Y": 290,
           "Width": 984,
+          "Height": 15
+        },
+        {
+          "Name": "AttributeParityHeaderLimitsText",
+          "ControlType": "TextBlock",
+          "Text": "Limits",
+          "X": 1230,
+          "Y": 290,
+          "Width": 34,
+          "Height": 15
+        },
+        {
+          "Name": "AttributeParityHeaderStartText",
+          "ControlType": "TextBlock",
+          "Text": "Start",
+          "X": 891,
+          "Y": 290,
+          "Width": 29,
+          "Height": 15
+        },
+        {
+          "Name": "AttributeParityHeaderTotalText",
+          "ControlType": "TextBlock",
+          "Text": "Total",
+          "X": 1108,
+          "Y": 290,
+          "Width": 28,
           "Height": 15
         },
         {
@@ -23828,7 +24158,7 @@
           "Text": "Character: loaded",
           "X": 25,
           "Y": 765,
-          "Width": 311,
+          "Width": 316,
           "Height": 15
         },
         {
@@ -24411,108 +24741,108 @@
           "Name": "PART_ContentPresenter",
           "ControlType": "ContentPresenter",
           "Text": "",
-          "X": 830,
+          "X": 792,
           "Y": 309,
-          "Width": 22,
+          "Width": 24,
           "Height": 32
         },
         {
           "Name": "PART_ContentPresenter",
           "ControlType": "ContentPresenter",
           "Text": "",
-          "X": 926,
+          "X": 892,
           "Y": 309,
-          "Width": 22,
+          "Width": 24,
           "Height": 32
         },
         {
           "Name": "PART_ContentPresenter",
           "ControlType": "ContentPresenter",
           "Text": "",
-          "X": 942,
+          "X": 928,
           "Y": 309,
-          "Width": 22,
+          "Width": 24,
           "Height": 32
         },
         {
           "Name": "PART_ContentPresenter",
           "ControlType": "ContentPresenter",
           "Text": "",
-          "X": 1050,
+          "X": 1028,
           "Y": 309,
-          "Width": 22,
+          "Width": 24,
           "Height": 32
         },
         {
           "Name": "PART_ContentPresenter",
           "ControlType": "ContentPresenter",
           "Text": "",
-          "X": 830,
+          "X": 792,
           "Y": 344,
-          "Width": 22,
+          "Width": 24,
           "Height": 32
         },
         {
           "Name": "PART_ContentPresenter",
           "ControlType": "ContentPresenter",
           "Text": "",
-          "X": 926,
+          "X": 892,
           "Y": 344,
-          "Width": 22,
+          "Width": 24,
           "Height": 32
         },
         {
           "Name": "PART_ContentPresenter",
           "ControlType": "ContentPresenter",
           "Text": "",
-          "X": 942,
+          "X": 928,
           "Y": 344,
-          "Width": 22,
+          "Width": 24,
           "Height": 32
         },
         {
           "Name": "PART_ContentPresenter",
           "ControlType": "ContentPresenter",
           "Text": "",
-          "X": 1050,
+          "X": 1028,
           "Y": 344,
-          "Width": 22,
+          "Width": 24,
           "Height": 32
         },
         {
           "Name": "PART_ContentPresenter",
           "ControlType": "ContentPresenter",
           "Text": "",
-          "X": 830,
+          "X": 792,
           "Y": 379,
-          "Width": 22,
+          "Width": 24,
           "Height": 32
         },
         {
           "Name": "PART_ContentPresenter",
           "ControlType": "ContentPresenter",
           "Text": "",
-          "X": 926,
+          "X": 892,
           "Y": 379,
-          "Width": 22,
+          "Width": 24,
           "Height": 32
         },
         {
           "Name": "PART_ContentPresenter",
           "ControlType": "ContentPresenter",
           "Text": "",
-          "X": 942,
+          "X": 928,
           "Y": 379,
-          "Width": 22,
+          "Width": 24,
           "Height": 32
         },
         {
           "Name": "PART_ContentPresenter",
           "ControlType": "ContentPresenter",
           "Text": "",
-          "X": 1050,
+          "X": 1028,
           "Y": 379,
-          "Width": 22,
+          "Width": 24,
           "Height": 32
         },
         {
@@ -25095,7 +25425,7 @@
           "Name": "ServiceStateText",
           "ControlType": "TextBlock",
           "Text": "Service: online",
-          "X": 357,
+          "X": 362,
           "Y": 766,
           "Width": 77,
           "Height": 14
@@ -25148,10 +25478,10 @@
         {
           "Name": "TimeStateText",
           "ControlType": "TextBlock",
-          "Text": "Time: 2026-06-20 22:04:40Z",
-          "X": 464,
+          "Text": "Time: 2026-06-21 07:41:02Z",
+          "X": 469,
           "Y": 766,
-          "Width": 154,
+          "Width": 149,
           "Height": 14
         },
         {
@@ -25234,8 +25564,8 @@
         "Martial Arts",
         "3 visible entries  \u2022  Attribute 1: Body 4",
         "Attribute",
-        "Base",
-        "Karma bump",
+        "Start",
+        "Add",
         "Total",
         "Limits",
         "BOD",
@@ -25253,7 +25583,7 @@
         "4",
         "Character: loaded",
         "Service: online",
-        "Time: 2026-06-20 22:04:40Z",
+        "Time: 2026-06-21 07:41:02Z",
         "Ruleset: Shadowrun 5 .chum5 | Workflows: 0 defs / 0 surfaces | Prefs: 100%/classic/en-us"
       ],
       "visibleMenuCommandIds": [],
@@ -25283,23 +25613,34 @@
         "AttributeBaseEditor_AGI",
         "AttributeBaseEditor_AGI_Decrease",
         "AttributeBaseEditor_AGI_Increase",
+        "AttributeBaseEditor_AGI_Value",
         "AttributeBaseEditor_BOD",
         "AttributeBaseEditor_BOD_Decrease",
         "AttributeBaseEditor_BOD_Increase",
+        "AttributeBaseEditor_BOD_Value",
         "AttributeBaseEditor_REA",
         "AttributeBaseEditor_REA_Decrease",
         "AttributeBaseEditor_REA_Increase",
+        "AttributeBaseEditor_REA_Value",
         "AttributeKarmaEditor_AGI",
         "AttributeKarmaEditor_AGI_Decrease",
         "AttributeKarmaEditor_AGI_Increase",
+        "AttributeKarmaEditor_AGI_Value",
         "AttributeKarmaEditor_BOD",
         "AttributeKarmaEditor_BOD_Decrease",
         "AttributeKarmaEditor_BOD_Increase",
+        "AttributeKarmaEditor_BOD_Value",
         "AttributeKarmaEditor_REA",
         "AttributeKarmaEditor_REA_Decrease",
         "AttributeKarmaEditor_REA_Increase",
+        "AttributeKarmaEditor_REA_Value",
         "AttributeParityEditorBorder",
+        "AttributeParityHeaderAddText",
+        "AttributeParityHeaderAttributeText",
         "AttributeParityHeaderGrid",
+        "AttributeParityHeaderLimitsText",
+        "AttributeParityHeaderStartText",
+        "AttributeParityHeaderTotalText",
         "AttributeParityRow_AGI",
         "AttributeParityRow_BOD",
         "AttributeParityRow_REA",
@@ -25374,163 +25715,217 @@
           "Name": "AttributeBaseEditor_AGI",
           "ControlType": "Grid",
           "Text": "",
-          "X": 830,
+          "X": 792,
           "Y": 344,
-          "Width": 104,
+          "Width": 128,
           "Height": 32
         },
         {
           "Name": "AttributeBaseEditor_AGI_Decrease",
           "ControlType": "Button",
           "Text": "-",
-          "X": 830,
+          "X": 792,
           "Y": 344,
-          "Width": 22,
+          "Width": 24,
           "Height": 32
         },
         {
           "Name": "AttributeBaseEditor_AGI_Increase",
           "ControlType": "Button",
           "Text": "\u002B",
-          "X": 926,
+          "X": 892,
           "Y": 344,
-          "Width": 22,
+          "Width": 24,
           "Height": 32
+        },
+        {
+          "Name": "AttributeBaseEditor_AGI_Value",
+          "ControlType": "TextBlock",
+          "Text": "5",
+          "X": 835,
+          "Y": 352,
+          "Width": 42,
+          "Height": 16
         },
         {
           "Name": "AttributeBaseEditor_BOD",
           "ControlType": "Grid",
           "Text": "",
-          "X": 830,
+          "X": 792,
           "Y": 309,
-          "Width": 104,
+          "Width": 128,
           "Height": 32
         },
         {
           "Name": "AttributeBaseEditor_BOD_Decrease",
           "ControlType": "Button",
           "Text": "-",
-          "X": 830,
+          "X": 792,
           "Y": 309,
-          "Width": 22,
+          "Width": 24,
           "Height": 32
         },
         {
           "Name": "AttributeBaseEditor_BOD_Increase",
           "ControlType": "Button",
           "Text": "\u002B",
-          "X": 926,
+          "X": 892,
           "Y": 309,
-          "Width": 22,
+          "Width": 24,
           "Height": 32
+        },
+        {
+          "Name": "AttributeBaseEditor_BOD_Value",
+          "ControlType": "TextBlock",
+          "Text": "3",
+          "X": 835,
+          "Y": 317,
+          "Width": 42,
+          "Height": 16
         },
         {
           "Name": "AttributeBaseEditor_REA",
           "ControlType": "Grid",
           "Text": "",
-          "X": 830,
+          "X": 792,
           "Y": 379,
-          "Width": 104,
+          "Width": 128,
           "Height": 32
         },
         {
           "Name": "AttributeBaseEditor_REA_Decrease",
           "ControlType": "Button",
           "Text": "-",
-          "X": 830,
+          "X": 792,
           "Y": 379,
-          "Width": 22,
+          "Width": 24,
           "Height": 32
         },
         {
           "Name": "AttributeBaseEditor_REA_Increase",
           "ControlType": "Button",
           "Text": "\u002B",
-          "X": 926,
+          "X": 892,
           "Y": 379,
-          "Width": 22,
+          "Width": 24,
           "Height": 32
+        },
+        {
+          "Name": "AttributeBaseEditor_REA_Value",
+          "ControlType": "TextBlock",
+          "Text": "4",
+          "X": 835,
+          "Y": 387,
+          "Width": 42,
+          "Height": 16
         },
         {
           "Name": "AttributeKarmaEditor_AGI",
           "ControlType": "Grid",
           "Text": "",
-          "X": 942,
+          "X": 928,
           "Y": 344,
-          "Width": 116,
+          "Width": 128,
           "Height": 32
         },
         {
           "Name": "AttributeKarmaEditor_AGI_Decrease",
           "ControlType": "Button",
           "Text": "-",
-          "X": 942,
+          "X": 928,
           "Y": 344,
-          "Width": 22,
+          "Width": 24,
           "Height": 32
         },
         {
           "Name": "AttributeKarmaEditor_AGI_Increase",
           "ControlType": "Button",
           "Text": "\u002B",
-          "X": 1050,
+          "X": 1028,
           "Y": 344,
-          "Width": 22,
+          "Width": 24,
           "Height": 32
+        },
+        {
+          "Name": "AttributeKarmaEditor_AGI_Value",
+          "ControlType": "TextBlock",
+          "Text": "0",
+          "X": 971,
+          "Y": 352,
+          "Width": 42,
+          "Height": 16
         },
         {
           "Name": "AttributeKarmaEditor_BOD",
           "ControlType": "Grid",
           "Text": "",
-          "X": 942,
+          "X": 928,
           "Y": 309,
-          "Width": 116,
+          "Width": 128,
           "Height": 32
         },
         {
           "Name": "AttributeKarmaEditor_BOD_Decrease",
           "ControlType": "Button",
           "Text": "-",
-          "X": 942,
+          "X": 928,
           "Y": 309,
-          "Width": 22,
+          "Width": 24,
           "Height": 32
         },
         {
           "Name": "AttributeKarmaEditor_BOD_Increase",
           "ControlType": "Button",
           "Text": "\u002B",
-          "X": 1050,
+          "X": 1028,
           "Y": 309,
-          "Width": 22,
+          "Width": 24,
           "Height": 32
+        },
+        {
+          "Name": "AttributeKarmaEditor_BOD_Value",
+          "ControlType": "TextBlock",
+          "Text": "1",
+          "X": 971,
+          "Y": 317,
+          "Width": 42,
+          "Height": 16
         },
         {
           "Name": "AttributeKarmaEditor_REA",
           "ControlType": "Grid",
           "Text": "",
-          "X": 942,
+          "X": 928,
           "Y": 379,
-          "Width": 116,
+          "Width": 128,
           "Height": 32
         },
         {
           "Name": "AttributeKarmaEditor_REA_Decrease",
           "ControlType": "Button",
           "Text": "-",
-          "X": 942,
+          "X": 928,
           "Y": 379,
-          "Width": 22,
+          "Width": 24,
           "Height": 32
         },
         {
           "Name": "AttributeKarmaEditor_REA_Increase",
           "ControlType": "Button",
           "Text": "\u002B",
-          "X": 1050,
+          "X": 1028,
           "Y": 379,
-          "Width": 22,
+          "Width": 24,
           "Height": 32
+        },
+        {
+          "Name": "AttributeKarmaEditor_REA_Value",
+          "ControlType": "TextBlock",
+          "Text": "1",
+          "X": 971,
+          "Y": 387,
+          "Width": 42,
+          "Height": 16
         },
         {
           "Name": "AttributeParityEditorBorder",
@@ -25542,12 +25937,57 @@
           "Height": 235
         },
         {
+          "Name": "AttributeParityHeaderAddText",
+          "ControlType": "TextBlock",
+          "Text": "Add",
+          "X": 1032,
+          "Y": 290,
+          "Width": 24,
+          "Height": 15
+        },
+        {
+          "Name": "AttributeParityHeaderAttributeText",
+          "ControlType": "TextBlock",
+          "Text": "Attribute",
+          "X": 280,
+          "Y": 290,
+          "Width": 504,
+          "Height": 15
+        },
+        {
           "Name": "AttributeParityHeaderGrid",
           "ControlType": "Grid",
           "Text": "",
           "X": 280,
           "Y": 290,
           "Width": 984,
+          "Height": 15
+        },
+        {
+          "Name": "AttributeParityHeaderLimitsText",
+          "ControlType": "TextBlock",
+          "Text": "Limits",
+          "X": 1230,
+          "Y": 290,
+          "Width": 34,
+          "Height": 15
+        },
+        {
+          "Name": "AttributeParityHeaderStartText",
+          "ControlType": "TextBlock",
+          "Text": "Start",
+          "X": 891,
+          "Y": 290,
+          "Width": 29,
+          "Height": 15
+        },
+        {
+          "Name": "AttributeParityHeaderTotalText",
+          "ControlType": "TextBlock",
+          "Text": "Total",
+          "X": 1108,
+          "Y": 290,
+          "Width": 28,
           "Height": 15
         },
         {
@@ -25610,7 +26050,7 @@
           "Text": "Character: loaded",
           "X": 25,
           "Y": 765,
-          "Width": 313,
+          "Width": 316,
           "Height": 15
         },
         {
@@ -26211,108 +26651,108 @@
           "Name": "PART_ContentPresenter",
           "ControlType": "ContentPresenter",
           "Text": "",
-          "X": 830,
+          "X": 792,
           "Y": 309,
-          "Width": 22,
+          "Width": 24,
           "Height": 32
         },
         {
           "Name": "PART_ContentPresenter",
           "ControlType": "ContentPresenter",
           "Text": "",
-          "X": 926,
+          "X": 892,
           "Y": 309,
-          "Width": 22,
+          "Width": 24,
           "Height": 32
         },
         {
           "Name": "PART_ContentPresenter",
           "ControlType": "ContentPresenter",
           "Text": "",
-          "X": 942,
+          "X": 928,
           "Y": 309,
-          "Width": 22,
+          "Width": 24,
           "Height": 32
         },
         {
           "Name": "PART_ContentPresenter",
           "ControlType": "ContentPresenter",
           "Text": "",
-          "X": 1050,
+          "X": 1028,
           "Y": 309,
-          "Width": 22,
+          "Width": 24,
           "Height": 32
         },
         {
           "Name": "PART_ContentPresenter",
           "ControlType": "ContentPresenter",
           "Text": "",
-          "X": 830,
+          "X": 792,
           "Y": 344,
-          "Width": 22,
+          "Width": 24,
           "Height": 32
         },
         {
           "Name": "PART_ContentPresenter",
           "ControlType": "ContentPresenter",
           "Text": "",
-          "X": 926,
+          "X": 892,
           "Y": 344,
-          "Width": 22,
+          "Width": 24,
           "Height": 32
         },
         {
           "Name": "PART_ContentPresenter",
           "ControlType": "ContentPresenter",
           "Text": "",
-          "X": 942,
+          "X": 928,
           "Y": 344,
-          "Width": 22,
+          "Width": 24,
           "Height": 32
         },
         {
           "Name": "PART_ContentPresenter",
           "ControlType": "ContentPresenter",
           "Text": "",
-          "X": 1050,
+          "X": 1028,
           "Y": 344,
-          "Width": 22,
+          "Width": 24,
           "Height": 32
         },
         {
           "Name": "PART_ContentPresenter",
           "ControlType": "ContentPresenter",
           "Text": "",
-          "X": 830,
+          "X": 792,
           "Y": 379,
-          "Width": 22,
+          "Width": 24,
           "Height": 32
         },
         {
           "Name": "PART_ContentPresenter",
           "ControlType": "ContentPresenter",
           "Text": "",
-          "X": 926,
+          "X": 892,
           "Y": 379,
-          "Width": 22,
+          "Width": 24,
           "Height": 32
         },
         {
           "Name": "PART_ContentPresenter",
           "ControlType": "ContentPresenter",
           "Text": "",
-          "X": 942,
+          "X": 928,
           "Y": 379,
-          "Width": 22,
+          "Width": 24,
           "Height": 32
         },
         {
           "Name": "PART_ContentPresenter",
           "ControlType": "ContentPresenter",
           "Text": "",
-          "X": 1050,
+          "X": 1028,
           "Y": 379,
-          "Width": 22,
+          "Width": 24,
           "Height": 32
         },
         {
@@ -26895,7 +27335,7 @@
           "Name": "ServiceStateText",
           "ControlType": "TextBlock",
           "Text": "Service: online",
-          "X": 359,
+          "X": 362,
           "Y": 766,
           "Width": 77,
           "Height": 14
@@ -26948,10 +27388,10 @@
         {
           "Name": "TimeStateText",
           "ControlType": "TextBlock",
-          "Text": "Time: 2026-06-20 22:04:41Z",
-          "X": 466,
+          "Text": "Time: 2026-06-21 07:41:02Z",
+          "X": 469,
           "Y": 766,
-          "Width": 152,
+          "Width": 149,
           "Height": 14
         },
         {
@@ -27035,8 +27475,8 @@
         "Menu \u0027file\u0027 opened.",
         "3 visible entries  \u2022  Attribute 1: Body 4",
         "Attribute",
-        "Base",
-        "Karma bump",
+        "Start",
+        "Add",
         "Total",
         "Limits",
         "BOD",
@@ -27054,7 +27494,7 @@
         "4",
         "Character: loaded",
         "Service: online",
-        "Time: 2026-06-20 22:04:41Z",
+        "Time: 2026-06-21 07:41:02Z",
         "Ruleset: Shadowrun 5 .chum5 | Workflows: 0 defs / 0 surfaces | Prefs: 100%/classic/en-us"
       ],
       "visibleMenuCommandIds": [
@@ -27189,7 +27629,7 @@
           "Text": "Character: loaded",
           "X": 25,
           "Y": 765,
-          "Width": 312,
+          "Width": 314,
           "Height": 15
         },
         {
@@ -28537,7 +28977,7 @@
           "Name": "ServiceStateText",
           "ControlType": "TextBlock",
           "Text": "Service: online",
-          "X": 358,
+          "X": 360,
           "Y": 766,
           "Width": 77,
           "Height": 14
@@ -28590,10 +29030,10 @@
         {
           "Name": "TimeStateText",
           "ControlType": "TextBlock",
-          "Text": "Time: 2026-06-20 22:04:35Z",
-          "X": 465,
+          "Text": "Time: 2026-06-21 07:40:56Z",
+          "X": 467,
           "Y": 766,
-          "Width": 153,
+          "Width": 151,
           "Height": 14
         },
         {
@@ -28716,7 +29156,7 @@
         "Add Cyberware",
         "Character: loaded",
         "Service: online",
-        "Time: 2026-06-20 22:04:35Z",
+        "Time: 2026-06-21 07:40:56Z",
         "Ruleset: Shadowrun 5 .chum5 | Workflows: 0 defs / 0 surfaces | Prefs: 100%/classic/en-us"
       ],
       "visibleMenuCommandIds": [
@@ -28850,7 +29290,7 @@
           "Text": "Character: loaded",
           "X": 25,
           "Y": 765,
-          "Width": 312,
+          "Width": 315,
           "Height": 15
         },
         {
@@ -30099,7 +30539,7 @@
           "Name": "ServiceStateText",
           "ControlType": "TextBlock",
           "Text": "Service: online",
-          "X": 358,
+          "X": 361,
           "Y": 766,
           "Width": 77,
           "Height": 14
@@ -30152,10 +30592,10 @@
         {
           "Name": "TimeStateText",
           "ControlType": "TextBlock",
-          "Text": "Time: 2026-06-20 22:04:36Z",
-          "X": 465,
+          "Text": "Time: 2026-06-21 07:40:57Z",
+          "X": 468,
           "Y": 766,
-          "Width": 153,
+          "Width": 150,
           "Height": 14
         },
         {
@@ -30253,7 +30693,7 @@
         "Add Skill",
         "Character: loaded",
         "Service: online",
-        "Time: 2026-06-20 22:04:36Z",
+        "Time: 2026-06-21 07:40:57Z",
         "Ruleset: Shadowrun 5 .chum5 | Workflows: 0 defs / 0 surfaces | Prefs: 100%/classic/en-us"
       ],
       "visibleMenuCommandIds": [],
@@ -30379,7 +30819,7 @@
           "Text": "Character: loaded",
           "X": 25,
           "Y": 765,
-          "Width": 312,
+          "Width": 315,
           "Height": 15
         },
         {
@@ -31628,7 +32068,7 @@
           "Name": "ServiceStateText",
           "ControlType": "TextBlock",
           "Text": "Service: online",
-          "X": 358,
+          "X": 361,
           "Y": 766,
           "Width": 77,
           "Height": 14
@@ -31681,10 +32121,10 @@
         {
           "Name": "TimeStateText",
           "ControlType": "TextBlock",
-          "Text": "Time: 2026-06-20 22:04:36Z",
-          "X": 465,
+          "Text": "Time: 2026-06-21 07:40:57Z",
+          "X": 468,
           "Y": 766,
-          "Width": 153,
+          "Width": 150,
           "Height": 14
         },
         {
@@ -31782,7 +32222,7 @@
         "Add Skill",
         "Character: loaded",
         "Service: online",
-        "Time: 2026-06-20 22:04:36Z",
+        "Time: 2026-06-21 07:40:57Z",
         "Ruleset: Shadowrun 5 .chum5 | Workflows: 0 defs / 0 surfaces | Prefs: 100%/classic/en-us"
       ],
       "visibleMenuCommandIds": [],
@@ -31906,7 +32346,7 @@
           "Text": "Character: loaded",
           "X": 25,
           "Y": 765,
-          "Width": 312,
+          "Width": 315,
           "Height": 15
         },
         {
@@ -33155,7 +33595,7 @@
           "Name": "ServiceStateText",
           "ControlType": "TextBlock",
           "Text": "Service: online",
-          "X": 358,
+          "X": 361,
           "Y": 766,
           "Width": 77,
           "Height": 14
@@ -33208,10 +33648,10 @@
         {
           "Name": "TimeStateText",
           "ControlType": "TextBlock",
-          "Text": "Time: 2026-06-20 22:04:36Z",
-          "X": 465,
+          "Text": "Time: 2026-06-21 07:40:57Z",
+          "X": 468,
           "Y": 766,
-          "Width": 153,
+          "Width": 150,
           "Height": 14
         },
         {
@@ -33309,7 +33749,7 @@
         "Add Quality",
         "Character: loaded",
         "Service: online",
-        "Time: 2026-06-20 22:04:36Z",
+        "Time: 2026-06-21 07:40:57Z",
         "Ruleset: Shadowrun 5 .chum5 | Workflows: 0 defs / 0 surfaces | Prefs: 100%/classic/en-us"
       ],
       "visibleMenuCommandIds": [],
@@ -33433,7 +33873,7 @@
           "Text": "Character: loaded",
           "X": 25,
           "Y": 765,
-          "Width": 312,
+          "Width": 315,
           "Height": 15
         },
         {
@@ -34682,7 +35122,7 @@
           "Name": "ServiceStateText",
           "ControlType": "TextBlock",
           "Text": "Service: online",
-          "X": 358,
+          "X": 361,
           "Y": 766,
           "Width": 77,
           "Height": 14
@@ -34735,10 +35175,10 @@
         {
           "Name": "TimeStateText",
           "ControlType": "TextBlock",
-          "Text": "Time: 2026-06-20 22:04:36Z",
-          "X": 465,
+          "Text": "Time: 2026-06-21 07:40:57Z",
+          "X": 468,
           "Y": 766,
-          "Width": 153,
+          "Width": 150,
           "Height": 14
         },
         {
@@ -34836,7 +35276,7 @@
         "Add Quality",
         "Character: loaded",
         "Service: online",
-        "Time: 2026-06-20 22:04:36Z",
+        "Time: 2026-06-21 07:40:57Z",
         "Ruleset: Shadowrun 5 .chum5 | Workflows: 0 defs / 0 surfaces | Prefs: 100%/classic/en-us"
       ],
       "visibleMenuCommandIds": [],
@@ -34967,7 +35407,7 @@
           "Text": "Character: loaded",
           "X": 25,
           "Y": 765,
-          "Width": 312,
+          "Width": 315,
           "Height": 15
         },
         {
@@ -36306,7 +36746,7 @@
           "Name": "ServiceStateText",
           "ControlType": "TextBlock",
           "Text": "Service: online",
-          "X": 358,
+          "X": 361,
           "Y": 766,
           "Width": 77,
           "Height": 14
@@ -36359,10 +36799,10 @@
         {
           "Name": "TimeStateText",
           "ControlType": "TextBlock",
-          "Text": "Time: 2026-06-20 22:04:36Z",
-          "X": 465,
+          "Text": "Time: 2026-06-21 07:40:57Z",
+          "X": 468,
           "Y": 766,
-          "Width": 153,
+          "Width": 150,
           "Height": 14
         },
         {
@@ -36468,7 +36908,7 @@
         "Review Bounded Follow-up",
         "Character: loaded",
         "Service: online",
-        "Time: 2026-06-20 22:04:36Z",
+        "Time: 2026-06-21 07:40:57Z",
         "Ruleset: Shadowrun 5 .chum5 | Workflows: 0 defs / 0 surfaces | Prefs: 100%/classic/en-us"
       ],
       "visibleMenuCommandIds": [],
@@ -36604,7 +37044,7 @@
           "Text": "Character: loaded",
           "X": 25,
           "Y": 765,
-          "Width": 312,
+          "Width": 315,
           "Height": 15
         },
         {
@@ -37943,7 +38383,7 @@
           "Name": "ServiceStateText",
           "ControlType": "TextBlock",
           "Text": "Service: online",
-          "X": 358,
+          "X": 361,
           "Y": 766,
           "Width": 77,
           "Height": 14
@@ -37996,10 +38436,10 @@
         {
           "Name": "TimeStateText",
           "ControlType": "TextBlock",
-          "Text": "Time: 2026-06-20 22:04:37Z",
-          "X": 465,
+          "Text": "Time: 2026-06-21 07:40:57Z",
+          "X": 468,
           "Y": 766,
-          "Width": 153,
+          "Width": 150,
           "Height": 14
         },
         {
@@ -38105,7 +38545,7 @@
         "Review Bounded Follow-up",
         "Character: loaded",
         "Service: online",
-        "Time: 2026-06-20 22:04:37Z",
+        "Time: 2026-06-21 07:40:57Z",
         "Ruleset: Shadowrun 5 .chum5 | Workflows: 0 defs / 0 surfaces | Prefs: 100%/classic/en-us"
       ],
       "visibleMenuCommandIds": [],
@@ -38234,7 +38674,7 @@
           "Text": "Character: loaded",
           "X": 25,
           "Y": 765,
-          "Width": 312,
+          "Width": 314,
           "Height": 15
         },
         {
@@ -39474,7 +39914,7 @@
           "Name": "ServiceStateText",
           "ControlType": "TextBlock",
           "Text": "Service: online",
-          "X": 358,
+          "X": 360,
           "Y": 766,
           "Width": 77,
           "Height": 14
@@ -39527,10 +39967,10 @@
         {
           "Name": "TimeStateText",
           "ControlType": "TextBlock",
-          "Text": "Time: 2026-06-20 22:04:37Z",
-          "X": 465,
+          "Text": "Time: 2026-06-21 07:40:58Z",
+          "X": 467,
           "Y": 766,
-          "Width": 153,
+          "Width": 151,
           "Height": 14
         },
         {
@@ -39627,7 +40067,7 @@
         "Add Weapon",
         "Character: loaded",
         "Service: online",
-        "Time: 2026-06-20 22:04:37Z",
+        "Time: 2026-06-21 07:40:58Z",
         "Ruleset: Shadowrun 5 .chum5 | Workflows: 0 defs / 0 surfaces | Prefs: 100%/classic/en-us"
       ],
       "visibleMenuCommandIds": [],
@@ -39751,7 +40191,7 @@
           "Text": "Character: loaded",
           "X": 25,
           "Y": 765,
-          "Width": 312,
+          "Width": 314,
           "Height": 15
         },
         {
@@ -40991,7 +41431,7 @@
           "Name": "ServiceStateText",
           "ControlType": "TextBlock",
           "Text": "Service: online",
-          "X": 358,
+          "X": 360,
           "Y": 766,
           "Width": 77,
           "Height": 14
@@ -41044,10 +41484,10 @@
         {
           "Name": "TimeStateText",
           "ControlType": "TextBlock",
-          "Text": "Time: 2026-06-20 22:04:37Z",
-          "X": 465,
+          "Text": "Time: 2026-06-21 07:40:58Z",
+          "X": 467,
           "Y": 766,
-          "Width": 153,
+          "Width": 151,
           "Height": 14
         },
         {
@@ -41144,7 +41584,7 @@
         "Add Weapon",
         "Character: loaded",
         "Service: online",
-        "Time: 2026-06-20 22:04:37Z",
+        "Time: 2026-06-21 07:40:58Z",
         "Ruleset: Shadowrun 5 .chum5 | Workflows: 0 defs / 0 surfaces | Prefs: 100%/classic/en-us"
       ],
       "visibleMenuCommandIds": [],
@@ -41268,7 +41708,7 @@
           "Text": "Character: loaded",
           "X": 25,
           "Y": 765,
-          "Width": 312,
+          "Width": 314,
           "Height": 15
         },
         {
@@ -42508,7 +42948,7 @@
           "Name": "ServiceStateText",
           "ControlType": "TextBlock",
           "Text": "Service: online",
-          "X": 358,
+          "X": 360,
           "Y": 766,
           "Width": 77,
           "Height": 14
@@ -42561,10 +43001,10 @@
         {
           "Name": "TimeStateText",
           "ControlType": "TextBlock",
-          "Text": "Time: 2026-06-20 22:04:37Z",
-          "X": 465,
+          "Text": "Time: 2026-06-21 07:40:58Z",
+          "X": 467,
           "Y": 766,
-          "Width": 153,
+          "Width": 151,
           "Height": 14
         },
         {
@@ -42661,7 +43101,7 @@
         "Add Armor",
         "Character: loaded",
         "Service: online",
-        "Time: 2026-06-20 22:04:37Z",
+        "Time: 2026-06-21 07:40:58Z",
         "Ruleset: Shadowrun 5 .chum5 | Workflows: 0 defs / 0 surfaces | Prefs: 100%/classic/en-us"
       ],
       "visibleMenuCommandIds": [],
@@ -42785,7 +43225,7 @@
           "Text": "Character: loaded",
           "X": 25,
           "Y": 765,
-          "Width": 312,
+          "Width": 314,
           "Height": 15
         },
         {
@@ -44025,7 +44465,7 @@
           "Name": "ServiceStateText",
           "ControlType": "TextBlock",
           "Text": "Service: online",
-          "X": 358,
+          "X": 360,
           "Y": 766,
           "Width": 77,
           "Height": 14
@@ -44078,10 +44518,10 @@
         {
           "Name": "TimeStateText",
           "ControlType": "TextBlock",
-          "Text": "Time: 2026-06-20 22:04:37Z",
-          "X": 465,
+          "Text": "Time: 2026-06-21 07:40:58Z",
+          "X": 467,
           "Y": 766,
-          "Width": 153,
+          "Width": 151,
           "Height": 14
         },
         {
@@ -44178,7 +44618,7 @@
         "Add Armor",
         "Character: loaded",
         "Service: online",
-        "Time: 2026-06-20 22:04:37Z",
+        "Time: 2026-06-21 07:40:58Z",
         "Ruleset: Shadowrun 5 .chum5 | Workflows: 0 defs / 0 surfaces | Prefs: 100%/classic/en-us"
       ],
       "visibleMenuCommandIds": [],
@@ -44302,7 +44742,7 @@
           "Text": "Character: loaded",
           "X": 25,
           "Y": 765,
-          "Width": 312,
+          "Width": 314,
           "Height": 15
         },
         {
@@ -45542,7 +45982,7 @@
           "Name": "ServiceStateText",
           "ControlType": "TextBlock",
           "Text": "Service: online",
-          "X": 358,
+          "X": 360,
           "Y": 766,
           "Width": 77,
           "Height": 14
@@ -45595,10 +46035,10 @@
         {
           "Name": "TimeStateText",
           "ControlType": "TextBlock",
-          "Text": "Time: 2026-06-20 22:04:37Z",
-          "X": 465,
+          "Text": "Time: 2026-06-21 07:40:58Z",
+          "X": 467,
           "Y": 766,
-          "Width": 153,
+          "Width": 151,
           "Height": 14
         },
         {
@@ -45695,7 +46135,7 @@
         "Add Cyberware",
         "Character: loaded",
         "Service: online",
-        "Time: 2026-06-20 22:04:37Z",
+        "Time: 2026-06-21 07:40:58Z",
         "Ruleset: Shadowrun 5 .chum5 | Workflows: 0 defs / 0 surfaces | Prefs: 100%/classic/en-us"
       ],
       "visibleMenuCommandIds": [],
@@ -45819,7 +46259,7 @@
           "Text": "Character: loaded",
           "X": 25,
           "Y": 765,
-          "Width": 312,
+          "Width": 314,
           "Height": 15
         },
         {
@@ -47059,7 +47499,7 @@
           "Name": "ServiceStateText",
           "ControlType": "TextBlock",
           "Text": "Service: online",
-          "X": 358,
+          "X": 360,
           "Y": 766,
           "Width": 77,
           "Height": 14
@@ -47112,10 +47552,10 @@
         {
           "Name": "TimeStateText",
           "ControlType": "TextBlock",
-          "Text": "Time: 2026-06-20 22:04:38Z",
-          "X": 465,
+          "Text": "Time: 2026-06-21 07:40:58Z",
+          "X": 467,
           "Y": 766,
-          "Width": 153,
+          "Width": 151,
           "Height": 14
         },
         {
@@ -47211,7 +47651,7 @@
         "Add Adept Power",
         "Character: loaded",
         "Service: online",
-        "Time: 2026-06-20 22:04:38Z",
+        "Time: 2026-06-21 07:40:58Z",
         "Ruleset: Shadowrun 5 .chum5 | Workflows: 0 defs / 0 surfaces | Prefs: 100%/classic/en-us"
       ],
       "visibleMenuCommandIds": [],
@@ -47335,7 +47775,7 @@
           "Text": "Character: loaded",
           "X": 25,
           "Y": 765,
-          "Width": 312,
+          "Width": 314,
           "Height": 15
         },
         {
@@ -48575,7 +49015,7 @@
           "Name": "ServiceStateText",
           "ControlType": "TextBlock",
           "Text": "Service: online",
-          "X": 358,
+          "X": 360,
           "Y": 766,
           "Width": 77,
           "Height": 14
@@ -48628,10 +49068,10 @@
         {
           "Name": "TimeStateText",
           "ControlType": "TextBlock",
-          "Text": "Time: 2026-06-20 22:04:38Z",
-          "X": 465,
+          "Text": "Time: 2026-06-21 07:40:58Z",
+          "X": 467,
           "Y": 766,
-          "Width": 153,
+          "Width": 151,
           "Height": 14
         },
         {
@@ -48727,7 +49167,7 @@
         "Add Adept Power",
         "Character: loaded",
         "Service: online",
-        "Time: 2026-06-20 22:04:38Z",
+        "Time: 2026-06-21 07:40:58Z",
         "Ruleset: Shadowrun 5 .chum5 | Workflows: 0 defs / 0 surfaces | Prefs: 100%/classic/en-us"
       ],
       "visibleMenuCommandIds": [],
@@ -48851,7 +49291,7 @@
           "Text": "Character: loaded",
           "X": 25,
           "Y": 765,
-          "Width": 312,
+          "Width": 314,
           "Height": 15
         },
         {
@@ -50100,7 +50540,7 @@
           "Name": "ServiceStateText",
           "ControlType": "TextBlock",
           "Text": "Service: online",
-          "X": 358,
+          "X": 360,
           "Y": 766,
           "Width": 77,
           "Height": 14
@@ -50153,10 +50593,10 @@
         {
           "Name": "TimeStateText",
           "ControlType": "TextBlock",
-          "Text": "Time: 2026-06-20 22:04:38Z",
-          "X": 465,
+          "Text": "Time: 2026-06-21 07:40:59Z",
+          "X": 467,
           "Y": 766,
-          "Width": 153,
+          "Width": 151,
           "Height": 14
         },
         {
@@ -50254,7 +50694,7 @@
         "Add Complex Form",
         "Character: loaded",
         "Service: online",
-        "Time: 2026-06-20 22:04:38Z",
+        "Time: 2026-06-21 07:40:59Z",
         "Ruleset: Shadowrun 5 .chum5 | Workflows: 0 defs / 0 surfaces | Prefs: 100%/classic/en-us"
       ],
       "visibleMenuCommandIds": [],
@@ -50375,7 +50815,7 @@
           "Text": "Character: loaded",
           "X": 25,
           "Y": 765,
-          "Width": 312,
+          "Width": 314,
           "Height": 15
         },
         {
@@ -51579,7 +52019,7 @@
           "Name": "ServiceStateText",
           "ControlType": "TextBlock",
           "Text": "Service: online",
-          "X": 358,
+          "X": 360,
           "Y": 766,
           "Width": 77,
           "Height": 14
@@ -51632,10 +52072,10 @@
         {
           "Name": "TimeStateText",
           "ControlType": "TextBlock",
-          "Text": "Time: 2026-06-20 22:04:38Z",
-          "X": 465,
+          "Text": "Time: 2026-06-21 07:40:59Z",
+          "X": 467,
           "Y": 766,
-          "Width": 153,
+          "Width": 151,
           "Height": 14
         },
         {
@@ -51731,7 +52171,7 @@
         "Ready for a flagship shell smoke pass",
         "Character: loaded",
         "Service: online",
-        "Time: 2026-06-20 22:04:38Z",
+        "Time: 2026-06-21 07:40:59Z",
         "Ruleset: Shadowrun 5 .chum5 | Workflows: 0 defs / 0 surfaces | Prefs: 100%/classic/en-us"
       ],
       "visibleMenuCommandIds": [],
@@ -51850,7 +52290,7 @@
           "Text": "Character: loaded",
           "X": 25,
           "Y": 765,
-          "Width": 312,
+          "Width": 314,
           "Height": 15
         },
         {
@@ -53054,7 +53494,7 @@
           "Name": "ServiceStateText",
           "ControlType": "TextBlock",
           "Text": "Service: online",
-          "X": 358,
+          "X": 360,
           "Y": 766,
           "Width": 77,
           "Height": 14
@@ -53107,10 +53547,10 @@
         {
           "Name": "TimeStateText",
           "ControlType": "TextBlock",
-          "Text": "Time: 2026-06-20 22:04:38Z",
-          "X": 465,
+          "Text": "Time: 2026-06-21 07:40:59Z",
+          "X": 467,
           "Y": 766,
-          "Width": 153,
+          "Width": 151,
           "Height": 14
         },
         {
@@ -53206,7 +53646,7 @@
         "Ready for a flagship shell smoke pass",
         "Character: loaded",
         "Service: online",
-        "Time: 2026-06-20 22:04:38Z",
+        "Time: 2026-06-21 07:40:59Z",
         "Ruleset: Shadowrun 5 .chum5 | Workflows: 0 defs / 0 surfaces | Prefs: 100%/classic/en-us"
       ],
       "visibleMenuCommandIds": [],
@@ -53329,7 +53769,7 @@
           "Text": "Character: loaded",
           "X": 25,
           "Y": 765,
-          "Width": 312,
+          "Width": 314,
           "Height": 15
         },
         {
@@ -54659,7 +55099,7 @@
           "Name": "ServiceStateText",
           "ControlType": "TextBlock",
           "Text": "Service: online",
-          "X": 358,
+          "X": 360,
           "Y": 766,
           "Width": 77,
           "Height": 14
@@ -54712,10 +55152,10 @@
         {
           "Name": "TimeStateText",
           "ControlType": "TextBlock",
-          "Text": "Time: 2026-06-20 22:04:36Z",
-          "X": 465,
+          "Text": "Time: 2026-06-21 07:40:56Z",
+          "X": 467,
           "Y": 766,
-          "Width": 153,
+          "Width": 151,
           "Height": 14
         },
         {
@@ -54837,7 +55277,7 @@
         "Add Cyberware",
         "Character: loaded",
         "Service: online",
-        "Time: 2026-06-20 22:04:36Z",
+        "Time: 2026-06-21 07:40:56Z",
         "Ruleset: Shadowrun 5 .chum5 | Workflows: 0 defs / 0 surfaces | Prefs: 100%/classic/en-us"
       ],
       "visibleMenuCommandIds": [],
@@ -54961,7 +55401,7 @@
           "Text": "Character: loaded",
           "X": 25,
           "Y": 765,
-          "Width": 312,
+          "Width": 314,
           "Height": 15
         },
         {
@@ -56201,7 +56641,7 @@
           "Name": "ServiceStateText",
           "ControlType": "TextBlock",
           "Text": "Service: online",
-          "X": 358,
+          "X": 360,
           "Y": 766,
           "Width": 77,
           "Height": 14
@@ -56254,10 +56694,10 @@
         {
           "Name": "TimeStateText",
           "ControlType": "TextBlock",
-          "Text": "Time: 2026-06-20 22:04:38Z",
-          "X": 465,
+          "Text": "Time: 2026-06-21 07:40:59Z",
+          "X": 467,
           "Y": 766,
-          "Width": 153,
+          "Width": 151,
           "Height": 14
         },
         {
@@ -56354,7 +56794,7 @@
         "Add Entry",
         "Character: loaded",
         "Service: online",
-        "Time: 2026-06-20 22:04:38Z",
+        "Time: 2026-06-21 07:40:59Z",
         "Ruleset: Shadowrun 5 .chum5 | Workflows: 0 defs / 0 surfaces | Prefs: 100%/classic/en-us"
       ],
       "visibleMenuCommandIds": [],
@@ -56386,23 +56826,34 @@
         "AttributeBaseEditor_AGI",
         "AttributeBaseEditor_AGI_Decrease",
         "AttributeBaseEditor_AGI_Increase",
+        "AttributeBaseEditor_AGI_Value",
         "AttributeBaseEditor_BOD",
         "AttributeBaseEditor_BOD_Decrease",
         "AttributeBaseEditor_BOD_Increase",
+        "AttributeBaseEditor_BOD_Value",
         "AttributeBaseEditor_REA",
         "AttributeBaseEditor_REA_Decrease",
         "AttributeBaseEditor_REA_Increase",
+        "AttributeBaseEditor_REA_Value",
         "AttributeKarmaEditor_AGI",
         "AttributeKarmaEditor_AGI_Decrease",
         "AttributeKarmaEditor_AGI_Increase",
+        "AttributeKarmaEditor_AGI_Value",
         "AttributeKarmaEditor_BOD",
         "AttributeKarmaEditor_BOD_Decrease",
         "AttributeKarmaEditor_BOD_Increase",
+        "AttributeKarmaEditor_BOD_Value",
         "AttributeKarmaEditor_REA",
         "AttributeKarmaEditor_REA_Decrease",
         "AttributeKarmaEditor_REA_Increase",
+        "AttributeKarmaEditor_REA_Value",
         "AttributeParityEditorBorder",
+        "AttributeParityHeaderAddText",
+        "AttributeParityHeaderAttributeText",
         "AttributeParityHeaderGrid",
+        "AttributeParityHeaderLimitsText",
+        "AttributeParityHeaderStartText",
+        "AttributeParityHeaderTotalText",
         "AttributeParityRow_AGI",
         "AttributeParityRow_BOD",
         "AttributeParityRow_REA",
@@ -56477,163 +56928,217 @@
           "Name": "AttributeBaseEditor_AGI",
           "ControlType": "Grid",
           "Text": "",
-          "X": 830,
+          "X": 792,
           "Y": 344,
-          "Width": 104,
+          "Width": 128,
           "Height": 32
         },
         {
           "Name": "AttributeBaseEditor_AGI_Decrease",
           "ControlType": "Button",
           "Text": "-",
-          "X": 830,
+          "X": 792,
           "Y": 344,
-          "Width": 22,
+          "Width": 24,
           "Height": 32
         },
         {
           "Name": "AttributeBaseEditor_AGI_Increase",
           "ControlType": "Button",
           "Text": "\u002B",
-          "X": 926,
+          "X": 892,
           "Y": 344,
-          "Width": 22,
+          "Width": 24,
           "Height": 32
+        },
+        {
+          "Name": "AttributeBaseEditor_AGI_Value",
+          "ControlType": "TextBlock",
+          "Text": "5",
+          "X": 835,
+          "Y": 352,
+          "Width": 42,
+          "Height": 16
         },
         {
           "Name": "AttributeBaseEditor_BOD",
           "ControlType": "Grid",
           "Text": "",
-          "X": 830,
+          "X": 792,
           "Y": 309,
-          "Width": 104,
+          "Width": 128,
           "Height": 32
         },
         {
           "Name": "AttributeBaseEditor_BOD_Decrease",
           "ControlType": "Button",
           "Text": "-",
-          "X": 830,
+          "X": 792,
           "Y": 309,
-          "Width": 22,
+          "Width": 24,
           "Height": 32
         },
         {
           "Name": "AttributeBaseEditor_BOD_Increase",
           "ControlType": "Button",
           "Text": "\u002B",
-          "X": 926,
+          "X": 892,
           "Y": 309,
-          "Width": 22,
+          "Width": 24,
           "Height": 32
+        },
+        {
+          "Name": "AttributeBaseEditor_BOD_Value",
+          "ControlType": "TextBlock",
+          "Text": "3",
+          "X": 835,
+          "Y": 317,
+          "Width": 42,
+          "Height": 16
         },
         {
           "Name": "AttributeBaseEditor_REA",
           "ControlType": "Grid",
           "Text": "",
-          "X": 830,
+          "X": 792,
           "Y": 379,
-          "Width": 104,
+          "Width": 128,
           "Height": 32
         },
         {
           "Name": "AttributeBaseEditor_REA_Decrease",
           "ControlType": "Button",
           "Text": "-",
-          "X": 830,
+          "X": 792,
           "Y": 379,
-          "Width": 22,
+          "Width": 24,
           "Height": 32
         },
         {
           "Name": "AttributeBaseEditor_REA_Increase",
           "ControlType": "Button",
           "Text": "\u002B",
-          "X": 926,
+          "X": 892,
           "Y": 379,
-          "Width": 22,
+          "Width": 24,
           "Height": 32
+        },
+        {
+          "Name": "AttributeBaseEditor_REA_Value",
+          "ControlType": "TextBlock",
+          "Text": "4",
+          "X": 835,
+          "Y": 387,
+          "Width": 42,
+          "Height": 16
         },
         {
           "Name": "AttributeKarmaEditor_AGI",
           "ControlType": "Grid",
           "Text": "",
-          "X": 942,
+          "X": 928,
           "Y": 344,
-          "Width": 116,
+          "Width": 128,
           "Height": 32
         },
         {
           "Name": "AttributeKarmaEditor_AGI_Decrease",
           "ControlType": "Button",
           "Text": "-",
-          "X": 942,
+          "X": 928,
           "Y": 344,
-          "Width": 22,
+          "Width": 24,
           "Height": 32
         },
         {
           "Name": "AttributeKarmaEditor_AGI_Increase",
           "ControlType": "Button",
           "Text": "\u002B",
-          "X": 1050,
+          "X": 1028,
           "Y": 344,
-          "Width": 22,
+          "Width": 24,
           "Height": 32
+        },
+        {
+          "Name": "AttributeKarmaEditor_AGI_Value",
+          "ControlType": "TextBlock",
+          "Text": "0",
+          "X": 971,
+          "Y": 352,
+          "Width": 42,
+          "Height": 16
         },
         {
           "Name": "AttributeKarmaEditor_BOD",
           "ControlType": "Grid",
           "Text": "",
-          "X": 942,
+          "X": 928,
           "Y": 309,
-          "Width": 116,
+          "Width": 128,
           "Height": 32
         },
         {
           "Name": "AttributeKarmaEditor_BOD_Decrease",
           "ControlType": "Button",
           "Text": "-",
-          "X": 942,
+          "X": 928,
           "Y": 309,
-          "Width": 22,
+          "Width": 24,
           "Height": 32
         },
         {
           "Name": "AttributeKarmaEditor_BOD_Increase",
           "ControlType": "Button",
           "Text": "\u002B",
-          "X": 1050,
+          "X": 1028,
           "Y": 309,
-          "Width": 22,
+          "Width": 24,
           "Height": 32
+        },
+        {
+          "Name": "AttributeKarmaEditor_BOD_Value",
+          "ControlType": "TextBlock",
+          "Text": "1",
+          "X": 971,
+          "Y": 317,
+          "Width": 42,
+          "Height": 16
         },
         {
           "Name": "AttributeKarmaEditor_REA",
           "ControlType": "Grid",
           "Text": "",
-          "X": 942,
+          "X": 928,
           "Y": 379,
-          "Width": 116,
+          "Width": 128,
           "Height": 32
         },
         {
           "Name": "AttributeKarmaEditor_REA_Decrease",
           "ControlType": "Button",
           "Text": "-",
-          "X": 942,
+          "X": 928,
           "Y": 379,
-          "Width": 22,
+          "Width": 24,
           "Height": 32
         },
         {
           "Name": "AttributeKarmaEditor_REA_Increase",
           "ControlType": "Button",
           "Text": "\u002B",
-          "X": 1050,
+          "X": 1028,
           "Y": 379,
-          "Width": 22,
+          "Width": 24,
           "Height": 32
+        },
+        {
+          "Name": "AttributeKarmaEditor_REA_Value",
+          "ControlType": "TextBlock",
+          "Text": "1",
+          "X": 971,
+          "Y": 387,
+          "Width": 42,
+          "Height": 16
         },
         {
           "Name": "AttributeParityEditorBorder",
@@ -56645,12 +57150,57 @@
           "Height": 235
         },
         {
+          "Name": "AttributeParityHeaderAddText",
+          "ControlType": "TextBlock",
+          "Text": "Add",
+          "X": 1032,
+          "Y": 290,
+          "Width": 24,
+          "Height": 15
+        },
+        {
+          "Name": "AttributeParityHeaderAttributeText",
+          "ControlType": "TextBlock",
+          "Text": "Attribute",
+          "X": 280,
+          "Y": 290,
+          "Width": 504,
+          "Height": 15
+        },
+        {
           "Name": "AttributeParityHeaderGrid",
           "ControlType": "Grid",
           "Text": "",
           "X": 280,
           "Y": 290,
           "Width": 984,
+          "Height": 15
+        },
+        {
+          "Name": "AttributeParityHeaderLimitsText",
+          "ControlType": "TextBlock",
+          "Text": "Limits",
+          "X": 1230,
+          "Y": 290,
+          "Width": 34,
+          "Height": 15
+        },
+        {
+          "Name": "AttributeParityHeaderStartText",
+          "ControlType": "TextBlock",
+          "Text": "Start",
+          "X": 891,
+          "Y": 290,
+          "Width": 29,
+          "Height": 15
+        },
+        {
+          "Name": "AttributeParityHeaderTotalText",
+          "ControlType": "TextBlock",
+          "Text": "Total",
+          "X": 1108,
+          "Y": 290,
+          "Width": 28,
           "Height": 15
         },
         {
@@ -56713,7 +57263,7 @@
           "Text": "Character: loaded",
           "X": 25,
           "Y": 765,
-          "Width": 313,
+          "Width": 316,
           "Height": 15
         },
         {
@@ -57314,108 +57864,108 @@
           "Name": "PART_ContentPresenter",
           "ControlType": "ContentPresenter",
           "Text": "",
-          "X": 830,
+          "X": 792,
           "Y": 309,
-          "Width": 22,
+          "Width": 24,
           "Height": 32
         },
         {
           "Name": "PART_ContentPresenter",
           "ControlType": "ContentPresenter",
           "Text": "",
-          "X": 926,
+          "X": 892,
           "Y": 309,
-          "Width": 22,
+          "Width": 24,
           "Height": 32
         },
         {
           "Name": "PART_ContentPresenter",
           "ControlType": "ContentPresenter",
           "Text": "",
-          "X": 942,
+          "X": 928,
           "Y": 309,
-          "Width": 22,
+          "Width": 24,
           "Height": 32
         },
         {
           "Name": "PART_ContentPresenter",
           "ControlType": "ContentPresenter",
           "Text": "",
-          "X": 1050,
+          "X": 1028,
           "Y": 309,
-          "Width": 22,
+          "Width": 24,
           "Height": 32
         },
         {
           "Name": "PART_ContentPresenter",
           "ControlType": "ContentPresenter",
           "Text": "",
-          "X": 830,
+          "X": 792,
           "Y": 344,
-          "Width": 22,
+          "Width": 24,
           "Height": 32
         },
         {
           "Name": "PART_ContentPresenter",
           "ControlType": "ContentPresenter",
           "Text": "",
-          "X": 926,
+          "X": 892,
           "Y": 344,
-          "Width": 22,
+          "Width": 24,
           "Height": 32
         },
         {
           "Name": "PART_ContentPresenter",
           "ControlType": "ContentPresenter",
           "Text": "",
-          "X": 942,
+          "X": 928,
           "Y": 344,
-          "Width": 22,
+          "Width": 24,
           "Height": 32
         },
         {
           "Name": "PART_ContentPresenter",
           "ControlType": "ContentPresenter",
           "Text": "",
-          "X": 1050,
+          "X": 1028,
           "Y": 344,
-          "Width": 22,
+          "Width": 24,
           "Height": 32
         },
         {
           "Name": "PART_ContentPresenter",
           "ControlType": "ContentPresenter",
           "Text": "",
-          "X": 830,
+          "X": 792,
           "Y": 379,
-          "Width": 22,
+          "Width": 24,
           "Height": 32
         },
         {
           "Name": "PART_ContentPresenter",
           "ControlType": "ContentPresenter",
           "Text": "",
-          "X": 926,
+          "X": 892,
           "Y": 379,
-          "Width": 22,
+          "Width": 24,
           "Height": 32
         },
         {
           "Name": "PART_ContentPresenter",
           "ControlType": "ContentPresenter",
           "Text": "",
-          "X": 942,
+          "X": 928,
           "Y": 379,
-          "Width": 22,
+          "Width": 24,
           "Height": 32
         },
         {
           "Name": "PART_ContentPresenter",
           "ControlType": "ContentPresenter",
           "Text": "",
-          "X": 1050,
+          "X": 1028,
           "Y": 379,
-          "Width": 22,
+          "Width": 24,
           "Height": 32
         },
         {
@@ -57998,7 +58548,7 @@
           "Name": "ServiceStateText",
           "ControlType": "TextBlock",
           "Text": "Service: online",
-          "X": 359,
+          "X": 362,
           "Y": 766,
           "Width": 77,
           "Height": 14
@@ -58051,10 +58601,10 @@
         {
           "Name": "TimeStateText",
           "ControlType": "TextBlock",
-          "Text": "Time: 2026-06-20 22:04:41Z",
-          "X": 466,
+          "Text": "Time: 2026-06-21 07:41:02Z",
+          "X": 469,
           "Y": 766,
-          "Width": 152,
+          "Width": 149,
           "Height": 14
         },
         {
@@ -58138,8 +58688,8 @@
         "Menu \u0027file\u0027 opened.",
         "3 visible entries  \u2022  Attribute 1: Body 4",
         "Attribute",
-        "Base",
-        "Karma bump",
+        "Start",
+        "Add",
         "Total",
         "Limits",
         "BOD",
@@ -58157,7 +58707,7 @@
         "4",
         "Character: loaded",
         "Service: online",
-        "Time: 2026-06-20 22:04:41Z",
+        "Time: 2026-06-21 07:41:02Z",
         "Ruleset: Shadowrun 5 .chum5 | Workflows: 0 defs / 0 surfaces | Prefs: 100%/classic/en-us"
       ],
       "visibleMenuCommandIds": [
@@ -58197,23 +58747,34 @@
         "AttributeBaseEditor_AGI",
         "AttributeBaseEditor_AGI_Decrease",
         "AttributeBaseEditor_AGI_Increase",
+        "AttributeBaseEditor_AGI_Value",
         "AttributeBaseEditor_BOD",
         "AttributeBaseEditor_BOD_Decrease",
         "AttributeBaseEditor_BOD_Increase",
+        "AttributeBaseEditor_BOD_Value",
         "AttributeBaseEditor_REA",
         "AttributeBaseEditor_REA_Decrease",
         "AttributeBaseEditor_REA_Increase",
+        "AttributeBaseEditor_REA_Value",
         "AttributeKarmaEditor_AGI",
         "AttributeKarmaEditor_AGI_Decrease",
         "AttributeKarmaEditor_AGI_Increase",
+        "AttributeKarmaEditor_AGI_Value",
         "AttributeKarmaEditor_BOD",
         "AttributeKarmaEditor_BOD_Decrease",
         "AttributeKarmaEditor_BOD_Increase",
+        "AttributeKarmaEditor_BOD_Value",
         "AttributeKarmaEditor_REA",
         "AttributeKarmaEditor_REA_Decrease",
         "AttributeKarmaEditor_REA_Increase",
+        "AttributeKarmaEditor_REA_Value",
         "AttributeParityEditorBorder",
+        "AttributeParityHeaderAddText",
+        "AttributeParityHeaderAttributeText",
         "AttributeParityHeaderGrid",
+        "AttributeParityHeaderLimitsText",
+        "AttributeParityHeaderStartText",
+        "AttributeParityHeaderTotalText",
         "AttributeParityRow_AGI",
         "AttributeParityRow_BOD",
         "AttributeParityRow_REA",
@@ -58288,163 +58849,217 @@
           "Name": "AttributeBaseEditor_AGI",
           "ControlType": "Grid",
           "Text": "",
-          "X": 830,
+          "X": 792,
           "Y": 344,
-          "Width": 104,
+          "Width": 128,
           "Height": 32
         },
         {
           "Name": "AttributeBaseEditor_AGI_Decrease",
           "ControlType": "Button",
           "Text": "-",
-          "X": 830,
+          "X": 792,
           "Y": 344,
-          "Width": 22,
+          "Width": 24,
           "Height": 32
         },
         {
           "Name": "AttributeBaseEditor_AGI_Increase",
           "ControlType": "Button",
           "Text": "\u002B",
-          "X": 926,
+          "X": 892,
           "Y": 344,
-          "Width": 22,
+          "Width": 24,
           "Height": 32
+        },
+        {
+          "Name": "AttributeBaseEditor_AGI_Value",
+          "ControlType": "TextBlock",
+          "Text": "5",
+          "X": 835,
+          "Y": 352,
+          "Width": 42,
+          "Height": 16
         },
         {
           "Name": "AttributeBaseEditor_BOD",
           "ControlType": "Grid",
           "Text": "",
-          "X": 830,
+          "X": 792,
           "Y": 309,
-          "Width": 104,
+          "Width": 128,
           "Height": 32
         },
         {
           "Name": "AttributeBaseEditor_BOD_Decrease",
           "ControlType": "Button",
           "Text": "-",
-          "X": 830,
+          "X": 792,
           "Y": 309,
-          "Width": 22,
+          "Width": 24,
           "Height": 32
         },
         {
           "Name": "AttributeBaseEditor_BOD_Increase",
           "ControlType": "Button",
           "Text": "\u002B",
-          "X": 926,
+          "X": 892,
           "Y": 309,
-          "Width": 22,
+          "Width": 24,
           "Height": 32
+        },
+        {
+          "Name": "AttributeBaseEditor_BOD_Value",
+          "ControlType": "TextBlock",
+          "Text": "3",
+          "X": 835,
+          "Y": 317,
+          "Width": 42,
+          "Height": 16
         },
         {
           "Name": "AttributeBaseEditor_REA",
           "ControlType": "Grid",
           "Text": "",
-          "X": 830,
+          "X": 792,
           "Y": 379,
-          "Width": 104,
+          "Width": 128,
           "Height": 32
         },
         {
           "Name": "AttributeBaseEditor_REA_Decrease",
           "ControlType": "Button",
           "Text": "-",
-          "X": 830,
+          "X": 792,
           "Y": 379,
-          "Width": 22,
+          "Width": 24,
           "Height": 32
         },
         {
           "Name": "AttributeBaseEditor_REA_Increase",
           "ControlType": "Button",
           "Text": "\u002B",
-          "X": 926,
+          "X": 892,
           "Y": 379,
-          "Width": 22,
+          "Width": 24,
           "Height": 32
+        },
+        {
+          "Name": "AttributeBaseEditor_REA_Value",
+          "ControlType": "TextBlock",
+          "Text": "4",
+          "X": 835,
+          "Y": 387,
+          "Width": 42,
+          "Height": 16
         },
         {
           "Name": "AttributeKarmaEditor_AGI",
           "ControlType": "Grid",
           "Text": "",
-          "X": 942,
+          "X": 928,
           "Y": 344,
-          "Width": 116,
+          "Width": 128,
           "Height": 32
         },
         {
           "Name": "AttributeKarmaEditor_AGI_Decrease",
           "ControlType": "Button",
           "Text": "-",
-          "X": 942,
+          "X": 928,
           "Y": 344,
-          "Width": 22,
+          "Width": 24,
           "Height": 32
         },
         {
           "Name": "AttributeKarmaEditor_AGI_Increase",
           "ControlType": "Button",
           "Text": "\u002B",
-          "X": 1050,
+          "X": 1028,
           "Y": 344,
-          "Width": 22,
+          "Width": 24,
           "Height": 32
+        },
+        {
+          "Name": "AttributeKarmaEditor_AGI_Value",
+          "ControlType": "TextBlock",
+          "Text": "0",
+          "X": 971,
+          "Y": 352,
+          "Width": 42,
+          "Height": 16
         },
         {
           "Name": "AttributeKarmaEditor_BOD",
           "ControlType": "Grid",
           "Text": "",
-          "X": 942,
+          "X": 928,
           "Y": 309,
-          "Width": 116,
+          "Width": 128,
           "Height": 32
         },
         {
           "Name": "AttributeKarmaEditor_BOD_Decrease",
           "ControlType": "Button",
           "Text": "-",
-          "X": 942,
+          "X": 928,
           "Y": 309,
-          "Width": 22,
+          "Width": 24,
           "Height": 32
         },
         {
           "Name": "AttributeKarmaEditor_BOD_Increase",
           "ControlType": "Button",
           "Text": "\u002B",
-          "X": 1050,
+          "X": 1028,
           "Y": 309,
-          "Width": 22,
+          "Width": 24,
           "Height": 32
+        },
+        {
+          "Name": "AttributeKarmaEditor_BOD_Value",
+          "ControlType": "TextBlock",
+          "Text": "1",
+          "X": 971,
+          "Y": 317,
+          "Width": 42,
+          "Height": 16
         },
         {
           "Name": "AttributeKarmaEditor_REA",
           "ControlType": "Grid",
           "Text": "",
-          "X": 942,
+          "X": 928,
           "Y": 379,
-          "Width": 116,
+          "Width": 128,
           "Height": 32
         },
         {
           "Name": "AttributeKarmaEditor_REA_Decrease",
           "ControlType": "Button",
           "Text": "-",
-          "X": 942,
+          "X": 928,
           "Y": 379,
-          "Width": 22,
+          "Width": 24,
           "Height": 32
         },
         {
           "Name": "AttributeKarmaEditor_REA_Increase",
           "ControlType": "Button",
           "Text": "\u002B",
-          "X": 1050,
+          "X": 1028,
           "Y": 379,
-          "Width": 22,
+          "Width": 24,
           "Height": 32
+        },
+        {
+          "Name": "AttributeKarmaEditor_REA_Value",
+          "ControlType": "TextBlock",
+          "Text": "1",
+          "X": 971,
+          "Y": 387,
+          "Width": 42,
+          "Height": 16
         },
         {
           "Name": "AttributeParityEditorBorder",
@@ -58456,12 +59071,57 @@
           "Height": 235
         },
         {
+          "Name": "AttributeParityHeaderAddText",
+          "ControlType": "TextBlock",
+          "Text": "Add",
+          "X": 1032,
+          "Y": 290,
+          "Width": 24,
+          "Height": 15
+        },
+        {
+          "Name": "AttributeParityHeaderAttributeText",
+          "ControlType": "TextBlock",
+          "Text": "Attribute",
+          "X": 280,
+          "Y": 290,
+          "Width": 504,
+          "Height": 15
+        },
+        {
           "Name": "AttributeParityHeaderGrid",
           "ControlType": "Grid",
           "Text": "",
           "X": 280,
           "Y": 290,
           "Width": 984,
+          "Height": 15
+        },
+        {
+          "Name": "AttributeParityHeaderLimitsText",
+          "ControlType": "TextBlock",
+          "Text": "Limits",
+          "X": 1230,
+          "Y": 290,
+          "Width": 34,
+          "Height": 15
+        },
+        {
+          "Name": "AttributeParityHeaderStartText",
+          "ControlType": "TextBlock",
+          "Text": "Start",
+          "X": 891,
+          "Y": 290,
+          "Width": 29,
+          "Height": 15
+        },
+        {
+          "Name": "AttributeParityHeaderTotalText",
+          "ControlType": "TextBlock",
+          "Text": "Total",
+          "X": 1108,
+          "Y": 290,
+          "Width": 28,
           "Height": 15
         },
         {
@@ -58524,7 +59184,7 @@
           "Text": "Character: loaded",
           "X": 25,
           "Y": 765,
-          "Width": 313,
+          "Width": 316,
           "Height": 15
         },
         {
@@ -59125,108 +59785,108 @@
           "Name": "PART_ContentPresenter",
           "ControlType": "ContentPresenter",
           "Text": "",
-          "X": 830,
+          "X": 792,
           "Y": 309,
-          "Width": 22,
+          "Width": 24,
           "Height": 32
         },
         {
           "Name": "PART_ContentPresenter",
           "ControlType": "ContentPresenter",
           "Text": "",
-          "X": 926,
+          "X": 892,
           "Y": 309,
-          "Width": 22,
+          "Width": 24,
           "Height": 32
         },
         {
           "Name": "PART_ContentPresenter",
           "ControlType": "ContentPresenter",
           "Text": "",
-          "X": 942,
+          "X": 928,
           "Y": 309,
-          "Width": 22,
+          "Width": 24,
           "Height": 32
         },
         {
           "Name": "PART_ContentPresenter",
           "ControlType": "ContentPresenter",
           "Text": "",
-          "X": 1050,
+          "X": 1028,
           "Y": 309,
-          "Width": 22,
+          "Width": 24,
           "Height": 32
         },
         {
           "Name": "PART_ContentPresenter",
           "ControlType": "ContentPresenter",
           "Text": "",
-          "X": 830,
+          "X": 792,
           "Y": 344,
-          "Width": 22,
+          "Width": 24,
           "Height": 32
         },
         {
           "Name": "PART_ContentPresenter",
           "ControlType": "ContentPresenter",
           "Text": "",
-          "X": 926,
+          "X": 892,
           "Y": 344,
-          "Width": 22,
+          "Width": 24,
           "Height": 32
         },
         {
           "Name": "PART_ContentPresenter",
           "ControlType": "ContentPresenter",
           "Text": "",
-          "X": 942,
+          "X": 928,
           "Y": 344,
-          "Width": 22,
+          "Width": 24,
           "Height": 32
         },
         {
           "Name": "PART_ContentPresenter",
           "ControlType": "ContentPresenter",
           "Text": "",
-          "X": 1050,
+          "X": 1028,
           "Y": 344,
-          "Width": 22,
+          "Width": 24,
           "Height": 32
         },
         {
           "Name": "PART_ContentPresenter",
           "ControlType": "ContentPresenter",
           "Text": "",
-          "X": 830,
+          "X": 792,
           "Y": 379,
-          "Width": 22,
+          "Width": 24,
           "Height": 32
         },
         {
           "Name": "PART_ContentPresenter",
           "ControlType": "ContentPresenter",
           "Text": "",
-          "X": 926,
+          "X": 892,
           "Y": 379,
-          "Width": 22,
+          "Width": 24,
           "Height": 32
         },
         {
           "Name": "PART_ContentPresenter",
           "ControlType": "ContentPresenter",
           "Text": "",
-          "X": 942,
+          "X": 928,
           "Y": 379,
-          "Width": 22,
+          "Width": 24,
           "Height": 32
         },
         {
           "Name": "PART_ContentPresenter",
           "ControlType": "ContentPresenter",
           "Text": "",
-          "X": 1050,
+          "X": 1028,
           "Y": 379,
-          "Width": 22,
+          "Width": 24,
           "Height": 32
         },
         {
@@ -59809,7 +60469,7 @@
           "Name": "ServiceStateText",
           "ControlType": "TextBlock",
           "Text": "Service: online",
-          "X": 359,
+          "X": 362,
           "Y": 766,
           "Width": 77,
           "Height": 14
@@ -59862,10 +60522,10 @@
         {
           "Name": "TimeStateText",
           "ControlType": "TextBlock",
-          "Text": "Time: 2026-06-20 22:04:41Z",
-          "X": 466,
+          "Text": "Time: 2026-06-21 07:41:02Z",
+          "X": 469,
           "Y": 766,
-          "Width": 152,
+          "Width": 149,
           "Height": 14
         },
         {
@@ -59949,8 +60609,8 @@
         "Menu \u0027file\u0027 opened.",
         "3 visible entries  \u2022  Attribute 1: Body 4",
         "Attribute",
-        "Base",
-        "Karma bump",
+        "Start",
+        "Add",
         "Total",
         "Limits",
         "BOD",
@@ -59968,7 +60628,7 @@
         "4",
         "Character: loaded",
         "Service: online",
-        "Time: 2026-06-20 22:04:41Z",
+        "Time: 2026-06-21 07:41:02Z",
         "Ruleset: Shadowrun 5 .chum5 | Workflows: 0 defs / 0 surfaces | Prefs: 100%/classic/en-us"
       ],
       "visibleMenuCommandIds": [
@@ -60008,23 +60668,34 @@
         "AttributeBaseEditor_AGI",
         "AttributeBaseEditor_AGI_Decrease",
         "AttributeBaseEditor_AGI_Increase",
+        "AttributeBaseEditor_AGI_Value",
         "AttributeBaseEditor_BOD",
         "AttributeBaseEditor_BOD_Decrease",
         "AttributeBaseEditor_BOD_Increase",
+        "AttributeBaseEditor_BOD_Value",
         "AttributeBaseEditor_REA",
         "AttributeBaseEditor_REA_Decrease",
         "AttributeBaseEditor_REA_Increase",
+        "AttributeBaseEditor_REA_Value",
         "AttributeKarmaEditor_AGI",
         "AttributeKarmaEditor_AGI_Decrease",
         "AttributeKarmaEditor_AGI_Increase",
+        "AttributeKarmaEditor_AGI_Value",
         "AttributeKarmaEditor_BOD",
         "AttributeKarmaEditor_BOD_Decrease",
         "AttributeKarmaEditor_BOD_Increase",
+        "AttributeKarmaEditor_BOD_Value",
         "AttributeKarmaEditor_REA",
         "AttributeKarmaEditor_REA_Decrease",
         "AttributeKarmaEditor_REA_Increase",
+        "AttributeKarmaEditor_REA_Value",
         "AttributeParityEditorBorder",
+        "AttributeParityHeaderAddText",
+        "AttributeParityHeaderAttributeText",
         "AttributeParityHeaderGrid",
+        "AttributeParityHeaderLimitsText",
+        "AttributeParityHeaderStartText",
+        "AttributeParityHeaderTotalText",
         "AttributeParityRow_AGI",
         "AttributeParityRow_BOD",
         "AttributeParityRow_REA",
@@ -60099,163 +60770,217 @@
           "Name": "AttributeBaseEditor_AGI",
           "ControlType": "Grid",
           "Text": "",
-          "X": 830,
+          "X": 792,
           "Y": 344,
-          "Width": 104,
+          "Width": 128,
           "Height": 32
         },
         {
           "Name": "AttributeBaseEditor_AGI_Decrease",
           "ControlType": "Button",
           "Text": "-",
-          "X": 830,
+          "X": 792,
           "Y": 344,
-          "Width": 22,
+          "Width": 24,
           "Height": 32
         },
         {
           "Name": "AttributeBaseEditor_AGI_Increase",
           "ControlType": "Button",
           "Text": "\u002B",
-          "X": 926,
+          "X": 892,
           "Y": 344,
-          "Width": 22,
+          "Width": 24,
           "Height": 32
+        },
+        {
+          "Name": "AttributeBaseEditor_AGI_Value",
+          "ControlType": "TextBlock",
+          "Text": "5",
+          "X": 835,
+          "Y": 352,
+          "Width": 42,
+          "Height": 16
         },
         {
           "Name": "AttributeBaseEditor_BOD",
           "ControlType": "Grid",
           "Text": "",
-          "X": 830,
+          "X": 792,
           "Y": 309,
-          "Width": 104,
+          "Width": 128,
           "Height": 32
         },
         {
           "Name": "AttributeBaseEditor_BOD_Decrease",
           "ControlType": "Button",
           "Text": "-",
-          "X": 830,
+          "X": 792,
           "Y": 309,
-          "Width": 22,
+          "Width": 24,
           "Height": 32
         },
         {
           "Name": "AttributeBaseEditor_BOD_Increase",
           "ControlType": "Button",
           "Text": "\u002B",
-          "X": 926,
+          "X": 892,
           "Y": 309,
-          "Width": 22,
+          "Width": 24,
           "Height": 32
+        },
+        {
+          "Name": "AttributeBaseEditor_BOD_Value",
+          "ControlType": "TextBlock",
+          "Text": "3",
+          "X": 835,
+          "Y": 317,
+          "Width": 42,
+          "Height": 16
         },
         {
           "Name": "AttributeBaseEditor_REA",
           "ControlType": "Grid",
           "Text": "",
-          "X": 830,
+          "X": 792,
           "Y": 379,
-          "Width": 104,
+          "Width": 128,
           "Height": 32
         },
         {
           "Name": "AttributeBaseEditor_REA_Decrease",
           "ControlType": "Button",
           "Text": "-",
-          "X": 830,
+          "X": 792,
           "Y": 379,
-          "Width": 22,
+          "Width": 24,
           "Height": 32
         },
         {
           "Name": "AttributeBaseEditor_REA_Increase",
           "ControlType": "Button",
           "Text": "\u002B",
-          "X": 926,
+          "X": 892,
           "Y": 379,
-          "Width": 22,
+          "Width": 24,
           "Height": 32
+        },
+        {
+          "Name": "AttributeBaseEditor_REA_Value",
+          "ControlType": "TextBlock",
+          "Text": "4",
+          "X": 835,
+          "Y": 387,
+          "Width": 42,
+          "Height": 16
         },
         {
           "Name": "AttributeKarmaEditor_AGI",
           "ControlType": "Grid",
           "Text": "",
-          "X": 942,
+          "X": 928,
           "Y": 344,
-          "Width": 116,
+          "Width": 128,
           "Height": 32
         },
         {
           "Name": "AttributeKarmaEditor_AGI_Decrease",
           "ControlType": "Button",
           "Text": "-",
-          "X": 942,
+          "X": 928,
           "Y": 344,
-          "Width": 22,
+          "Width": 24,
           "Height": 32
         },
         {
           "Name": "AttributeKarmaEditor_AGI_Increase",
           "ControlType": "Button",
           "Text": "\u002B",
-          "X": 1050,
+          "X": 1028,
           "Y": 344,
-          "Width": 22,
+          "Width": 24,
           "Height": 32
+        },
+        {
+          "Name": "AttributeKarmaEditor_AGI_Value",
+          "ControlType": "TextBlock",
+          "Text": "0",
+          "X": 971,
+          "Y": 352,
+          "Width": 42,
+          "Height": 16
         },
         {
           "Name": "AttributeKarmaEditor_BOD",
           "ControlType": "Grid",
           "Text": "",
-          "X": 942,
+          "X": 928,
           "Y": 309,
-          "Width": 116,
+          "Width": 128,
           "Height": 32
         },
         {
           "Name": "AttributeKarmaEditor_BOD_Decrease",
           "ControlType": "Button",
           "Text": "-",
-          "X": 942,
+          "X": 928,
           "Y": 309,
-          "Width": 22,
+          "Width": 24,
           "Height": 32
         },
         {
           "Name": "AttributeKarmaEditor_BOD_Increase",
           "ControlType": "Button",
           "Text": "\u002B",
-          "X": 1050,
+          "X": 1028,
           "Y": 309,
-          "Width": 22,
+          "Width": 24,
           "Height": 32
+        },
+        {
+          "Name": "AttributeKarmaEditor_BOD_Value",
+          "ControlType": "TextBlock",
+          "Text": "1",
+          "X": 971,
+          "Y": 317,
+          "Width": 42,
+          "Height": 16
         },
         {
           "Name": "AttributeKarmaEditor_REA",
           "ControlType": "Grid",
           "Text": "",
-          "X": 942,
+          "X": 928,
           "Y": 379,
-          "Width": 116,
+          "Width": 128,
           "Height": 32
         },
         {
           "Name": "AttributeKarmaEditor_REA_Decrease",
           "ControlType": "Button",
           "Text": "-",
-          "X": 942,
+          "X": 928,
           "Y": 379,
-          "Width": 22,
+          "Width": 24,
           "Height": 32
         },
         {
           "Name": "AttributeKarmaEditor_REA_Increase",
           "ControlType": "Button",
           "Text": "\u002B",
-          "X": 1050,
+          "X": 1028,
           "Y": 379,
-          "Width": 22,
+          "Width": 24,
           "Height": 32
+        },
+        {
+          "Name": "AttributeKarmaEditor_REA_Value",
+          "ControlType": "TextBlock",
+          "Text": "1",
+          "X": 971,
+          "Y": 387,
+          "Width": 42,
+          "Height": 16
         },
         {
           "Name": "AttributeParityEditorBorder",
@@ -60267,12 +60992,57 @@
           "Height": 235
         },
         {
+          "Name": "AttributeParityHeaderAddText",
+          "ControlType": "TextBlock",
+          "Text": "Add",
+          "X": 1032,
+          "Y": 290,
+          "Width": 24,
+          "Height": 15
+        },
+        {
+          "Name": "AttributeParityHeaderAttributeText",
+          "ControlType": "TextBlock",
+          "Text": "Attribute",
+          "X": 280,
+          "Y": 290,
+          "Width": 504,
+          "Height": 15
+        },
+        {
           "Name": "AttributeParityHeaderGrid",
           "ControlType": "Grid",
           "Text": "",
           "X": 280,
           "Y": 290,
           "Width": 984,
+          "Height": 15
+        },
+        {
+          "Name": "AttributeParityHeaderLimitsText",
+          "ControlType": "TextBlock",
+          "Text": "Limits",
+          "X": 1230,
+          "Y": 290,
+          "Width": 34,
+          "Height": 15
+        },
+        {
+          "Name": "AttributeParityHeaderStartText",
+          "ControlType": "TextBlock",
+          "Text": "Start",
+          "X": 891,
+          "Y": 290,
+          "Width": 29,
+          "Height": 15
+        },
+        {
+          "Name": "AttributeParityHeaderTotalText",
+          "ControlType": "TextBlock",
+          "Text": "Total",
+          "X": 1108,
+          "Y": 290,
+          "Width": 28,
           "Height": 15
         },
         {
@@ -60335,7 +61105,7 @@
           "Text": "Character: loaded",
           "X": 25,
           "Y": 765,
-          "Width": 313,
+          "Width": 316,
           "Height": 15
         },
         {
@@ -60936,108 +61706,108 @@
           "Name": "PART_ContentPresenter",
           "ControlType": "ContentPresenter",
           "Text": "",
-          "X": 830,
+          "X": 792,
           "Y": 309,
-          "Width": 22,
+          "Width": 24,
           "Height": 32
         },
         {
           "Name": "PART_ContentPresenter",
           "ControlType": "ContentPresenter",
           "Text": "",
-          "X": 926,
+          "X": 892,
           "Y": 309,
-          "Width": 22,
+          "Width": 24,
           "Height": 32
         },
         {
           "Name": "PART_ContentPresenter",
           "ControlType": "ContentPresenter",
           "Text": "",
-          "X": 942,
+          "X": 928,
           "Y": 309,
-          "Width": 22,
+          "Width": 24,
           "Height": 32
         },
         {
           "Name": "PART_ContentPresenter",
           "ControlType": "ContentPresenter",
           "Text": "",
-          "X": 1050,
+          "X": 1028,
           "Y": 309,
-          "Width": 22,
+          "Width": 24,
           "Height": 32
         },
         {
           "Name": "PART_ContentPresenter",
           "ControlType": "ContentPresenter",
           "Text": "",
-          "X": 830,
+          "X": 792,
           "Y": 344,
-          "Width": 22,
+          "Width": 24,
           "Height": 32
         },
         {
           "Name": "PART_ContentPresenter",
           "ControlType": "ContentPresenter",
           "Text": "",
-          "X": 926,
+          "X": 892,
           "Y": 344,
-          "Width": 22,
+          "Width": 24,
           "Height": 32
         },
         {
           "Name": "PART_ContentPresenter",
           "ControlType": "ContentPresenter",
           "Text": "",
-          "X": 942,
+          "X": 928,
           "Y": 344,
-          "Width": 22,
+          "Width": 24,
           "Height": 32
         },
         {
           "Name": "PART_ContentPresenter",
           "ControlType": "ContentPresenter",
           "Text": "",
-          "X": 1050,
+          "X": 1028,
           "Y": 344,
-          "Width": 22,
+          "Width": 24,
           "Height": 32
         },
         {
           "Name": "PART_ContentPresenter",
           "ControlType": "ContentPresenter",
           "Text": "",
-          "X": 830,
+          "X": 792,
           "Y": 379,
-          "Width": 22,
+          "Width": 24,
           "Height": 32
         },
         {
           "Name": "PART_ContentPresenter",
           "ControlType": "ContentPresenter",
           "Text": "",
-          "X": 926,
+          "X": 892,
           "Y": 379,
-          "Width": 22,
+          "Width": 24,
           "Height": 32
         },
         {
           "Name": "PART_ContentPresenter",
           "ControlType": "ContentPresenter",
           "Text": "",
-          "X": 942,
+          "X": 928,
           "Y": 379,
-          "Width": 22,
+          "Width": 24,
           "Height": 32
         },
         {
           "Name": "PART_ContentPresenter",
           "ControlType": "ContentPresenter",
           "Text": "",
-          "X": 1050,
+          "X": 1028,
           "Y": 379,
-          "Width": 22,
+          "Width": 24,
           "Height": 32
         },
         {
@@ -61620,7 +62390,7 @@
           "Name": "ServiceStateText",
           "ControlType": "TextBlock",
           "Text": "Service: online",
-          "X": 359,
+          "X": 362,
           "Y": 766,
           "Width": 77,
           "Height": 14
@@ -61673,10 +62443,10 @@
         {
           "Name": "TimeStateText",
           "ControlType": "TextBlock",
-          "Text": "Time: 2026-06-20 22:04:41Z",
-          "X": 466,
+          "Text": "Time: 2026-06-21 07:41:02Z",
+          "X": 469,
           "Y": 766,
-          "Width": 152,
+          "Width": 149,
           "Height": 14
         },
         {
@@ -61760,8 +62530,8 @@
         "Menu \u0027file\u0027 opened.",
         "3 visible entries  \u2022  Attribute 1: Body 4",
         "Attribute",
-        "Base",
-        "Karma bump",
+        "Start",
+        "Add",
         "Total",
         "Limits",
         "BOD",
@@ -61779,7 +62549,7 @@
         "4",
         "Character: loaded",
         "Service: online",
-        "Time: 2026-06-20 22:04:41Z",
+        "Time: 2026-06-21 07:41:02Z",
         "Ruleset: Shadowrun 5 .chum5 | Workflows: 0 defs / 0 surfaces | Prefs: 100%/classic/en-us"
       ],
       "visibleMenuCommandIds": [
@@ -62734,10 +63504,10 @@
           "Name": "PART_ContentPresenter",
           "ControlType": "ScrollContentPresenter",
           "Text": "",
-          "X": 0,
-          "Y": 0,
-          "Width": 920,
-          "Height": 680
+          "X": 16,
+          "Y": 16,
+          "Width": 888,
+          "Height": 648
         },
         {
           "Name": "PART_ContentPresenter",
@@ -63463,8 +64233,8 @@
           "Name": "PART_ContentPresenter",
           "ControlType": "ContentPresenter",
           "Text": "",
-          "X": 904,
-          "Y": 0,
+          "X": 888,
+          "Y": 16,
           "Width": 16,
           "Height": 16
         },
@@ -63472,8 +64242,8 @@
           "Name": "PART_ContentPresenter",
           "ControlType": "ContentPresenter",
           "Text": "",
-          "X": 904,
-          "Y": 664,
+          "X": 888,
+          "Y": 648,
           "Width": 16,
           "Height": 16
         },
@@ -63490,8 +64260,8 @@
           "Name": "PART_LineDownButton",
           "ControlType": "RepeatButton",
           "Text": "",
-          "X": 904,
-          "Y": 664,
+          "X": 888,
+          "Y": 648,
           "Width": 16,
           "Height": 16
         },
@@ -63499,8 +64269,8 @@
           "Name": "PART_LineUpButton",
           "ControlType": "RepeatButton",
           "Text": "",
-          "X": 904,
-          "Y": 0,
+          "X": 888,
+          "Y": 16,
           "Width": 16,
           "Height": 16
         },
@@ -63508,10 +64278,10 @@
           "Name": "PART_PageDownButton",
           "ControlType": "RepeatButton",
           "Text": "",
-          "X": 904,
-          "Y": 161,
+          "X": 888,
+          "Y": 164,
           "Width": 16,
-          "Height": 504
+          "Height": 484
         },
         {
           "Name": "PART_Popup",
@@ -63553,10 +64323,10 @@
           "Name": "PART_VerticalScrollBar",
           "ControlType": "ScrollBar",
           "Text": "",
-          "X": 904,
-          "Y": 0,
+          "X": 888,
+          "Y": 16,
           "Width": 16,
-          "Height": 680
+          "Height": 648
         },
         {
           "Name": "PART_Watermark",
@@ -63571,28 +64341,28 @@
           "Name": "Root",
           "ControlType": "Grid",
           "Text": "",
-          "X": 904,
-          "Y": 0,
+          "X": 888,
+          "Y": 16,
           "Width": 16,
-          "Height": 680
+          "Height": 648
         },
         {
           "Name": "TrackRect",
           "ControlType": "Rectangle",
           "Text": "",
-          "X": 904,
-          "Y": 0,
+          "X": 888,
+          "Y": 16,
           "Width": 16,
-          "Height": 680
+          "Height": 648
         },
         {
           "Name": "VerticalRoot",
           "ControlType": "Border",
           "Text": "",
-          "X": 904,
-          "Y": 0,
+          "X": 888,
+          "Y": 16,
           "Width": 16,
-          "Height": 680
+          "Height": 648
         }
       ],
       "visibleTextSamples": [
@@ -64749,8 +65519,8 @@
           "Name": "ExpandCollapseChevron",
           "ControlType": "Path",
           "Text": "",
-          "X": 143.80303502745548,
-          "Y": 829.8842883005087,
+          "X": 143.47158194758651,
+          "Y": 829.813359214095,
           "Width": 14,
           "Height": 7
         },

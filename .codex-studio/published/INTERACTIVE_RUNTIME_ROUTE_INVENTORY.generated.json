@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-06-20T22:04:26.4181163\u002B00:00",
+  "generatedAt": "2026-06-21T07:40:45.9382754\u002B00:00",
   "contractName": "chummer6-ui.interactive_runtime_route_inventory",
   "status": "pass",
   "summary": "Runtime route inventory captures recursive shell, popup, dialog, section, and ruleset-lane surfaces.",
@@ -25,8 +25,8 @@
       "visibleTexts": [
         "100%",
         "ALICE",
+        "Add",
         "Attribute",
-        "Base",
         "Character: none",
         "Characters",
         "Classic settings keeps global preferences, custom data, issues, and plugin posture grouped like the legacy dialog.",
@@ -43,7 +43,6 @@
         "Global Settings Classic",
         "Grouped by ruleset",
         "Help",
-        "Karma bump",
         "Limits",
         "Loadout summary",
         "No global settings",
@@ -60,7 +59,8 @@
         "Service: online",
         "Settings",
         "Special",
-        "Time: 2026-06-20 22:04:25Z",
+        "Start",
+        "Time: 2026-06-21 07:40:44Z",
         "Tools",
         "Total",
         "Windows",
@@ -2429,7 +2429,7 @@
                                                                                     "isVisible": true,
                                                                                     "children": [
                                                                                       {
-                                                                                        "name": "",
+                                                                                        "name": "AttributeParityHeaderAttributeText",
                                                                                         "controlType": "TextBlock",
                                                                                         "text": "Attribute",
                                                                                         "toolTip": "",
@@ -2437,23 +2437,23 @@
                                                                                         "children": []
                                                                                       },
                                                                                       {
-                                                                                        "name": "",
+                                                                                        "name": "AttributeParityHeaderStartText",
                                                                                         "controlType": "TextBlock",
-                                                                                        "text": "Base",
+                                                                                        "text": "Start",
                                                                                         "toolTip": "",
                                                                                         "isVisible": true,
                                                                                         "children": []
                                                                                       },
                                                                                       {
-                                                                                        "name": "",
+                                                                                        "name": "AttributeParityHeaderAddText",
                                                                                         "controlType": "TextBlock",
-                                                                                        "text": "Karma bump",
+                                                                                        "text": "Add",
                                                                                         "toolTip": "",
                                                                                         "isVisible": true,
                                                                                         "children": []
                                                                                       },
                                                                                       {
-                                                                                        "name": "",
+                                                                                        "name": "AttributeParityHeaderTotalText",
                                                                                         "controlType": "TextBlock",
                                                                                         "text": "Total",
                                                                                         "toolTip": "",
@@ -2461,7 +2461,7 @@
                                                                                         "children": []
                                                                                       },
                                                                                       {
-                                                                                        "name": "",
+                                                                                        "name": "AttributeParityHeaderLimitsText",
                                                                                         "controlType": "TextBlock",
                                                                                         "text": "Limits",
                                                                                         "toolTip": "",
@@ -2770,7 +2770,7 @@
                                                       {
                                                         "name": "TimeStateText",
                                                         "controlType": "TextBlock",
-                                                        "text": "Time: 2026-06-20 22:04:25Z",
+                                                        "text": "Time: 2026-06-21 07:40:44Z",
                                                         "toolTip": "",
                                                         "isVisible": true,
                                                         "children": []
@@ -2892,7 +2892,7 @@
                                     "name": "StatusStripControl",
                                     "controlType": "StatusStripControl",
                                     "text": "",
-                                    "toolTip": "Character: none | Service: online | Time: 2026-06-20 22:04:25Z | Ruleset: Shadowrun 5 .chum5 | Workflows: 5 defs / 6 surfaces | Prefs: 100%/classic/en-us",
+                                    "toolTip": "Character: none | Service: online | Time: 2026-06-21 07:40:44Z | Ruleset: Shadowrun 5 .chum5 | Workflows: 5 defs / 6 surfaces | Prefs: 100%/classic/en-us",
                                     "isVisible": false,
                                     "children": []
                                   }
@@ -2920,8 +2920,8 @@
       "visibleTexts": [
         "100%",
         "ALICE",
+        "Add",
         "Attribute",
-        "Base",
         "Character: none",
         "Characters",
         "Close",
@@ -2931,7 +2931,6 @@
         "Gear",
         "Grouped by ruleset",
         "Help",
-        "Karma bump",
         "Limits",
         "Loadout summary",
         "Open",
@@ -2946,7 +2945,8 @@
         "Service: online",
         "Settings",
         "Special",
-        "Time: 2026-06-20 22:04:25Z",
+        "Start",
+        "Time: 2026-06-21 07:40:44Z",
         "Tools",
         "Total",
         "Windows",
@@ -4675,7 +4675,7 @@
                                                                                     "isVisible": true,
                                                                                     "children": [
                                                                                       {
-                                                                                        "name": "",
+                                                                                        "name": "AttributeParityHeaderAttributeText",
                                                                                         "controlType": "TextBlock",
                                                                                         "text": "Attribute",
                                                                                         "toolTip": "",
@@ -4683,23 +4683,23 @@
                                                                                         "children": []
                                                                                       },
                                                                                       {
-                                                                                        "name": "",
+                                                                                        "name": "AttributeParityHeaderStartText",
                                                                                         "controlType": "TextBlock",
-                                                                                        "text": "Base",
+                                                                                        "text": "Start",
                                                                                         "toolTip": "",
                                                                                         "isVisible": true,
                                                                                         "children": []
                                                                                       },
                                                                                       {
-                                                                                        "name": "",
+                                                                                        "name": "AttributeParityHeaderAddText",
                                                                                         "controlType": "TextBlock",
-                                                                                        "text": "Karma bump",
+                                                                                        "text": "Add",
                                                                                         "toolTip": "",
                                                                                         "isVisible": true,
                                                                                         "children": []
                                                                                       },
                                                                                       {
-                                                                                        "name": "",
+                                                                                        "name": "AttributeParityHeaderTotalText",
                                                                                         "controlType": "TextBlock",
                                                                                         "text": "Total",
                                                                                         "toolTip": "",
@@ -4707,7 +4707,7 @@
                                                                                         "children": []
                                                                                       },
                                                                                       {
-                                                                                        "name": "",
+                                                                                        "name": "AttributeParityHeaderLimitsText",
                                                                                         "controlType": "TextBlock",
                                                                                         "text": "Limits",
                                                                                         "toolTip": "",
@@ -5016,7 +5016,7 @@
                                                       {
                                                         "name": "TimeStateText",
                                                         "controlType": "TextBlock",
-                                                        "text": "Time: 2026-06-20 22:04:25Z",
+                                                        "text": "Time: 2026-06-21 07:40:44Z",
                                                         "toolTip": "",
                                                         "isVisible": true,
                                                         "children": []
@@ -5138,7 +5138,7 @@
                                     "name": "StatusStripControl",
                                     "controlType": "StatusStripControl",
                                     "text": "",
-                                    "toolTip": "Character: none | Service: online | Time: 2026-06-20 22:04:25Z | Ruleset: Shadowrun 5 .chum5 | Workflows: 5 defs / 6 surfaces | Prefs: 100%/classic/en-us",
+                                    "toolTip": "Character: none | Service: online | Time: 2026-06-21 07:40:44Z | Ruleset: Shadowrun 5 .chum5 | Workflows: 5 defs / 6 surfaces | Prefs: 100%/classic/en-us",
                                     "isVisible": false,
                                     "children": []
                                   }
@@ -5179,7 +5179,7 @@
         "Cancel",
         "Choice Follow-Through",
         "Complete the skill choices unlocked by the selected priorities.",
-        "Core metatypes",
+        "Core choices",
         "Counterspelling",
         "D",
         "E",
@@ -6570,7 +6570,7 @@
                                                                             "name": "DialogFieldInput_newCharacterMetatypeCategory",
                                                                             "controlType": "ComboBox",
                                                                             "text": "",
-                                                                            "toolTip": "Metatype Filter",
+                                                                            "toolTip": "Show Metatypes",
                                                                             "isVisible": true,
                                                                             "children": [
                                                                               {
@@ -6650,7 +6650,7 @@
                                                                                                       {
                                                                                                         "name": "",
                                                                                                         "controlType": "TextBlock",
-                                                                                                        "text": "Core metatypes",
+                                                                                                        "text": "Core choices",
                                                                                                         "toolTip": "",
                                                                                                         "isVisible": true,
                                                                                                         "children": []
@@ -6662,7 +6662,7 @@
                                                                                               {
                                                                                                 "name": "PART_EditableTextBox",
                                                                                                 "controlType": "TextBox",
-                                                                                                "text": "DesktopDialogFieldOption { Value = Standard, Label = Core metatypes }",
+                                                                                                "text": "DesktopDialogFieldOption { Value = Standard, Label = Core choices }",
                                                                                                 "toolTip": "",
                                                                                                 "isVisible": false,
                                                                                                 "children": []
@@ -8213,7 +8213,7 @@
         "Cancel",
         "Choice Follow-Through",
         "Complete the skill choices unlocked by the selected priorities.",
-        "Core metatypes",
+        "Core choices",
         "Counterspelling",
         "D",
         "Elf",
@@ -9603,7 +9603,7 @@
                                                                             "name": "DialogFieldInput_newCharacterMetatypeCategory",
                                                                             "controlType": "ComboBox",
                                                                             "text": "",
-                                                                            "toolTip": "Metatype Filter",
+                                                                            "toolTip": "Show Metatypes",
                                                                             "isVisible": true,
                                                                             "children": [
                                                                               {
@@ -9683,7 +9683,7 @@
                                                                                                       {
                                                                                                         "name": "",
                                                                                                         "controlType": "TextBlock",
-                                                                                                        "text": "Core metatypes",
+                                                                                                        "text": "Core choices",
                                                                                                         "toolTip": "",
                                                                                                         "isVisible": true,
                                                                                                         "children": []
@@ -9695,7 +9695,7 @@
                                                                                               {
                                                                                                 "name": "PART_EditableTextBox",
                                                                                                 "controlType": "TextBox",
-                                                                                                "text": "DesktopDialogFieldOption { Value = Standard, Label = Core metatypes }",
+                                                                                                "text": "DesktopDialogFieldOption { Value = Standard, Label = Core choices }",
                                                                                                 "toolTip": "",
                                                                                                 "isVisible": false,
                                                                                                 "children": []
@@ -11232,8 +11232,8 @@
       "visibleTexts": [
         "100%",
         "ALICE",
+        "Add",
         "Attribute",
-        "Base",
         "Character: none",
         "Characters",
         "Close",
@@ -11243,7 +11243,6 @@
         "Gear",
         "Grouped by ruleset",
         "Help",
-        "Karma bump",
         "Limits",
         "Loadout summary",
         "Menu \u0027file\u0027 opened.",
@@ -11259,7 +11258,8 @@
         "Service: online",
         "Settings",
         "Special",
-        "Time: 2026-06-20 22:04:24Z",
+        "Start",
+        "Time: 2026-06-21 07:40:44Z",
         "Tools",
         "Total",
         "Windows",
@@ -12988,7 +12988,7 @@
                                                                                     "isVisible": true,
                                                                                     "children": [
                                                                                       {
-                                                                                        "name": "",
+                                                                                        "name": "AttributeParityHeaderAttributeText",
                                                                                         "controlType": "TextBlock",
                                                                                         "text": "Attribute",
                                                                                         "toolTip": "",
@@ -12996,23 +12996,23 @@
                                                                                         "children": []
                                                                                       },
                                                                                       {
-                                                                                        "name": "",
+                                                                                        "name": "AttributeParityHeaderStartText",
                                                                                         "controlType": "TextBlock",
-                                                                                        "text": "Base",
+                                                                                        "text": "Start",
                                                                                         "toolTip": "",
                                                                                         "isVisible": true,
                                                                                         "children": []
                                                                                       },
                                                                                       {
-                                                                                        "name": "",
+                                                                                        "name": "AttributeParityHeaderAddText",
                                                                                         "controlType": "TextBlock",
-                                                                                        "text": "Karma bump",
+                                                                                        "text": "Add",
                                                                                         "toolTip": "",
                                                                                         "isVisible": true,
                                                                                         "children": []
                                                                                       },
                                                                                       {
-                                                                                        "name": "",
+                                                                                        "name": "AttributeParityHeaderTotalText",
                                                                                         "controlType": "TextBlock",
                                                                                         "text": "Total",
                                                                                         "toolTip": "",
@@ -13020,7 +13020,7 @@
                                                                                         "children": []
                                                                                       },
                                                                                       {
-                                                                                        "name": "",
+                                                                                        "name": "AttributeParityHeaderLimitsText",
                                                                                         "controlType": "TextBlock",
                                                                                         "text": "Limits",
                                                                                         "toolTip": "",
@@ -13329,7 +13329,7 @@
                                                       {
                                                         "name": "TimeStateText",
                                                         "controlType": "TextBlock",
-                                                        "text": "Time: 2026-06-20 22:04:24Z",
+                                                        "text": "Time: 2026-06-21 07:40:44Z",
                                                         "toolTip": "",
                                                         "isVisible": true,
                                                         "children": []
@@ -13451,7 +13451,7 @@
                                     "name": "StatusStripControl",
                                     "controlType": "StatusStripControl",
                                     "text": "",
-                                    "toolTip": "Character: none | Service: online | Time: 2026-06-20 22:04:24Z | Ruleset: Shadowrun 5 .chum5 | Workflows: 5 defs / 6 surfaces | Prefs: 100%/classic/en-us",
+                                    "toolTip": "Character: none | Service: online | Time: 2026-06-21 07:40:44Z | Ruleset: Shadowrun 5 .chum5 | Workflows: 5 defs / 6 surfaces | Prefs: 100%/classic/en-us",
                                     "isVisible": false,
                                     "children": []
                                   }
@@ -13483,6 +13483,7 @@
         "35",
         "6 2",
         "ALICE",
+        "Add",
         "Adept",
         "Age",
         "Alias",
@@ -13492,7 +13493,6 @@
         "Attribute Details",
         "Attributes",
         "Awakening",
-        "Base",
         "Black",
         "Build Plan",
         "Career Log",
@@ -13517,14 +13517,13 @@
         "Height",
         "Help",
         "Human",
-        "Karma bump",
         "Lifestyle",
         "Limits",
         "Loadout summary",
         "Magician",
         "Male",
         "Martial Arts",
-        "Menu \u0027tools\u0027 opened.\nImport rule environment: Target chummer.workspace.native-xml.v1 (compatible)\nImport correlation key: import/chummer.workspace.native-xml.v1/compatible/26a113f69c004ff0af0579f0d76dfb145671182d807bb75a25aca2b9183fd76f\nImport scope: import target chummer.workspace.native-xml.v1; before/after diff is copy-safe and excludes raw payload or merge actions until the user accepts the next safe action.\nImport support note: support can cite import/chummer.workspace.native-xml.v1/compatible/26a113f69c004ff0af0579f0d76dfb145671182d807bb75a25aca2b9183fd76f with context, blocker, and explain text without mutating the local workspace.\nImport environment before: Soma was imported into reviewed dossier status on sr5.\nImport environment after: Use the workspace normally or export a portable package when you need a reviewed cross-surface next step.\nImport environment tuple diff: before workspace/current-source/support-local/26a113f69c004ff0af0579f0d76dfb145671182d807bb75a25aca2b9183fd76f; after compatible/Use the workspace normally or export a portable package when you need a governed cross-surface handoff; correlation import/chummer.workspace.native-xml.v1/compatible/26a113f69c004ff0af0579f0d76dfb145671182d807bb75a25aca2b9183fd76f.\nEnvironment diff before import: current workspace, support state, and source toggles stay unchanged while chummer.workspace.native-xml.v1 is reviewed with payload 26a113f69c004ff0af0579f0d76dfb145671182d807bb75a25aca2b9183fd76f.\nEnvironment diff after import: accepted content remains compatible; next safe action Use the workspace normally or export a portable package when you need a governed cross-surface handoff; explanation Imported workspace e3370ab8670f4038aa76aab68f93e4f4 from NativeXml with payload hash 26a113f69c00 on sr5.\nImport explanation: Imported workspace e3370ab8670f4038aa76aab68f93e4f4 from NativeXml with payload hash 26a113f69c00 on sr5.\nCurrent import explanation: target chummer.workspace.native-xml.v1; source note Imported workspace e3370ab8670f4038aa76aab68f93e4f4 from NativeXml with payload hash 26a113f69c00 on sr5; blocker no grounded import blocker is present before acceptance.\nImport blocker details: no grounded import blocker is present before acceptance\nImport diagnostics details: before chummer.workspace.native-xml.v1/26a113f69c004ff0af0579f0d76dfb145671182d807bb75a25aca2b9183fd76f; after compatible/Use the workspace normally or export a portable package when you need a governed cross-surface handoff; blocker no grounded import blocker is present before acceptance; source note Imported workspace e3370ab8670f4038aa76aab68f93e4f4 from NativeXml with payload hash 26a113f69c00 on sr5.\nImport diagnostics diff: Import diagnostics receipt: chummer.workspace.native-xml.v1; compatible. Import support diagnostics receipt: Support can cite payload 26a113f69c004ff0af0579f0d76dfb145671182d807bb75a25aca2b9183fd76f with compatible compatibility.. Grounded import explain receipt: Imported workspace e3370ab8670f4038aa76aab68f93e4f4 from NativeXml with payload hash 26a113f69c00 on sr5.. Import blocker receipt: no grounded import blocker is present before acceptance. Environment diff before import: Soma was imported into governed dossier truth on sr5.. Environment diff after import: Use the workspace normally or export a portable package when you need a governed cross-surface handoff..\nImport support diagnostics details: support can cite import/chummer.workspace.native-xml.v1/compatible/26a113f69c004ff0af0579f0d76dfb145671182d807bb75a25aca2b9183fd76f with before/after environment details, blocker text, and explanation without changing local workspace state.\nSupport reuse: Support can cite payload 26a113f69c004ff0af0579f0d76dfb145671182d807bb75a25aca2b9183fd76f with compatible compatibility.\nImport support reuse: Support can cite payload 26a113f69c004ff0af0579f0d76dfb145671182d807bb75a25aca2b9183fd76f with compatible compatibility.",
+        "Menu \u0027tools\u0027 opened.\nImport ready. Review the character, then keep or discard the changes.\nNothing changes until you accept the import.",
         "Metatype",
         "Metavariant",
         "Movement",
@@ -13554,9 +13553,10 @@
         "Soma",
         "Special",
         "Spells",
+        "Start",
         "SumtoTen",
         "Technomancer",
-        "Time: 2026-06-20 22:04:25Z",
+        "Time: 2026-06-21 07:40:45Z",
         "Tools",
         "Total",
         "Vehicles",
@@ -17168,7 +17168,7 @@
                                                                               {
                                                                                 "name": "NoticeText",
                                                                                 "controlType": "TextBlock",
-                                                                                "text": "Menu \u0027tools\u0027 opened.\nImport rule environment: Target chummer.workspace.native-xml.v1 (compatible)\nImport correlation key: import/chummer.workspace.native-xml.v1/compatible/26a113f69c004ff0af0579f0d76dfb145671182d807bb75a25aca2b9183fd76f\nImport scope: import target chummer.workspace.native-xml.v1; before/after diff is copy-safe and excludes raw payload or merge actions until the user accepts the next safe action.\nImport support note: support can cite import/chummer.workspace.native-xml.v1/compatible/26a113f69c004ff0af0579f0d76dfb145671182d807bb75a25aca2b9183fd76f with context, blocker, and explain text without mutating the local workspace.\nImport environment before: Soma was imported into reviewed dossier status on sr5.\nImport environment after: Use the workspace normally or export a portable package when you need a reviewed cross-surface next step.\nImport environment tuple diff: before workspace/current-source/support-local/26a113f69c004ff0af0579f0d76dfb145671182d807bb75a25aca2b9183fd76f; after compatible/Use the workspace normally or export a portable package when you need a governed cross-surface handoff; correlation import/chummer.workspace.native-xml.v1/compatible/26a113f69c004ff0af0579f0d76dfb145671182d807bb75a25aca2b9183fd76f.\nEnvironment diff before import: current workspace, support state, and source toggles stay unchanged while chummer.workspace.native-xml.v1 is reviewed with payload 26a113f69c004ff0af0579f0d76dfb145671182d807bb75a25aca2b9183fd76f.\nEnvironment diff after import: accepted content remains compatible; next safe action Use the workspace normally or export a portable package when you need a governed cross-surface handoff; explanation Imported workspace e3370ab8670f4038aa76aab68f93e4f4 from NativeXml with payload hash 26a113f69c00 on sr5.\nImport explanation: Imported workspace e3370ab8670f4038aa76aab68f93e4f4 from NativeXml with payload hash 26a113f69c00 on sr5.\nCurrent import explanation: target chummer.workspace.native-xml.v1; source note Imported workspace e3370ab8670f4038aa76aab68f93e4f4 from NativeXml with payload hash 26a113f69c00 on sr5; blocker no grounded import blocker is present before acceptance.\nImport blocker details: no grounded import blocker is present before acceptance\nImport diagnostics details: before chummer.workspace.native-xml.v1/26a113f69c004ff0af0579f0d76dfb145671182d807bb75a25aca2b9183fd76f; after compatible/Use the workspace normally or export a portable package when you need a governed cross-surface handoff; blocker no grounded import blocker is present before acceptance; source note Imported workspace e3370ab8670f4038aa76aab68f93e4f4 from NativeXml with payload hash 26a113f69c00 on sr5.\nImport diagnostics diff: Import diagnostics receipt: chummer.workspace.native-xml.v1; compatible. Import support diagnostics receipt: Support can cite payload 26a113f69c004ff0af0579f0d76dfb145671182d807bb75a25aca2b9183fd76f with compatible compatibility.. Grounded import explain receipt: Imported workspace e3370ab8670f4038aa76aab68f93e4f4 from NativeXml with payload hash 26a113f69c00 on sr5.. Import blocker receipt: no grounded import blocker is present before acceptance. Environment diff before import: Soma was imported into governed dossier truth on sr5.. Environment diff after import: Use the workspace normally or export a portable package when you need a governed cross-surface handoff..\nImport support diagnostics details: support can cite import/chummer.workspace.native-xml.v1/compatible/26a113f69c004ff0af0579f0d76dfb145671182d807bb75a25aca2b9183fd76f with before/after environment details, blocker text, and explanation without changing local workspace state.\nSupport reuse: Support can cite payload 26a113f69c004ff0af0579f0d76dfb145671182d807bb75a25aca2b9183fd76f with compatible compatibility.\nImport support reuse: Support can cite payload 26a113f69c004ff0af0579f0d76dfb145671182d807bb75a25aca2b9183fd76f with compatible compatibility.",
+                                                                                "text": "Menu \u0027tools\u0027 opened.\nImport ready. Review the character, then keep or discard the changes.\nNothing changes until you accept the import.",
                                                                                 "toolTip": "",
                                                                                 "isVisible": true,
                                                                                 "children": []
@@ -17495,7 +17495,7 @@
                                                                                     "isVisible": true,
                                                                                     "children": [
                                                                                       {
-                                                                                        "name": "",
+                                                                                        "name": "AttributeParityHeaderAttributeText",
                                                                                         "controlType": "TextBlock",
                                                                                         "text": "Attribute",
                                                                                         "toolTip": "",
@@ -17503,23 +17503,23 @@
                                                                                         "children": []
                                                                                       },
                                                                                       {
-                                                                                        "name": "",
+                                                                                        "name": "AttributeParityHeaderStartText",
                                                                                         "controlType": "TextBlock",
-                                                                                        "text": "Base",
+                                                                                        "text": "Start",
                                                                                         "toolTip": "",
                                                                                         "isVisible": true,
                                                                                         "children": []
                                                                                       },
                                                                                       {
-                                                                                        "name": "",
+                                                                                        "name": "AttributeParityHeaderAddText",
                                                                                         "controlType": "TextBlock",
-                                                                                        "text": "Karma bump",
+                                                                                        "text": "Add",
                                                                                         "toolTip": "",
                                                                                         "isVisible": true,
                                                                                         "children": []
                                                                                       },
                                                                                       {
-                                                                                        "name": "",
+                                                                                        "name": "AttributeParityHeaderTotalText",
                                                                                         "controlType": "TextBlock",
                                                                                         "text": "Total",
                                                                                         "toolTip": "",
@@ -17527,7 +17527,7 @@
                                                                                         "children": []
                                                                                       },
                                                                                       {
-                                                                                        "name": "",
+                                                                                        "name": "AttributeParityHeaderLimitsText",
                                                                                         "controlType": "TextBlock",
                                                                                         "text": "Limits",
                                                                                         "toolTip": "",
@@ -18485,7 +18485,7 @@
                                             "name": "CoachSidecarControl",
                                             "controlType": "CoachSidecarControl",
                                             "text": "",
-                                            "toolTip": "Status: unloaded\nPrompt policy: Policy not loaded yet\nBudget: Budget not loaded yet\nWorkspace: e3370ab8670f4038aa76aab68f93e4f4\nRuntime: No runtime fingerprint yet\nfile:///coach/%3FrouteType=coach\u0026workspaceId=e3370ab8670f4038aa76aab68f93e4f4\nOpen Coach in your browser, or copy the link if you need to hand it off.\nError: disabled",
+                                            "toolTip": "Status: unloaded\nPrompt policy: Policy not loaded yet\nBudget: Budget not loaded yet\nWorkspace: f4ee9206331a49b7ae72d07ff83b043e\nRuntime: No runtime fingerprint yet\nfile:///coach/%3FrouteType=coach\u0026workspaceId=f4ee9206331a49b7ae72d07ff83b043e\nOpen Coach in your browser, or copy the link if you need to hand it off.\nError: disabled",
                                             "isVisible": true,
                                             "children": []
                                           }
@@ -18574,7 +18574,7 @@
                                                       {
                                                         "name": "TimeStateText",
                                                         "controlType": "TextBlock",
-                                                        "text": "Time: 2026-06-20 22:04:25Z",
+                                                        "text": "Time: 2026-06-21 07:40:45Z",
                                                         "toolTip": "",
                                                         "isVisible": true,
                                                         "children": []
@@ -18696,7 +18696,7 @@
                                     "name": "StatusStripControl",
                                     "controlType": "StatusStripControl",
                                     "text": "",
-                                    "toolTip": "Character: loaded | Service: online | Time: 2026-06-20 22:04:25Z | Ruleset: Shadowrun 5 .chum5 | Workflows: 5 defs / 6 surfaces | Prefs: 100%/classic/en-us",
+                                    "toolTip": "Character: loaded | Service: online | Time: 2026-06-21 07:40:45Z | Ruleset: Shadowrun 5 .chum5 | Workflows: 5 defs / 6 surfaces | Prefs: 100%/classic/en-us",
                                     "isVisible": false,
                                     "children": []
                                   }
@@ -18724,8 +18724,8 @@
       "visibleTexts": [
         "100%",
         "ALICE",
+        "Add",
         "Attribute",
-        "Base",
         "Character: none",
         "Characters",
         "Close",
@@ -18736,7 +18736,6 @@
         "Global Settings Classic",
         "Grouped by ruleset",
         "Help",
-        "Karma bump",
         "Limits",
         "Loadout summary",
         "Open",
@@ -18752,7 +18751,8 @@
         "Service: online",
         "Settings",
         "Special",
-        "Time: 2026-06-20 22:04:26Z",
+        "Start",
+        "Time: 2026-06-21 07:40:45Z",
         "Tools",
         "Total",
         "Windows",
@@ -20676,7 +20676,7 @@
                                                                                     "isVisible": true,
                                                                                     "children": [
                                                                                       {
-                                                                                        "name": "",
+                                                                                        "name": "AttributeParityHeaderAttributeText",
                                                                                         "controlType": "TextBlock",
                                                                                         "text": "Attribute",
                                                                                         "toolTip": "",
@@ -20684,23 +20684,23 @@
                                                                                         "children": []
                                                                                       },
                                                                                       {
-                                                                                        "name": "",
+                                                                                        "name": "AttributeParityHeaderStartText",
                                                                                         "controlType": "TextBlock",
-                                                                                        "text": "Base",
+                                                                                        "text": "Start",
                                                                                         "toolTip": "",
                                                                                         "isVisible": true,
                                                                                         "children": []
                                                                                       },
                                                                                       {
-                                                                                        "name": "",
+                                                                                        "name": "AttributeParityHeaderAddText",
                                                                                         "controlType": "TextBlock",
-                                                                                        "text": "Karma bump",
+                                                                                        "text": "Add",
                                                                                         "toolTip": "",
                                                                                         "isVisible": true,
                                                                                         "children": []
                                                                                       },
                                                                                       {
-                                                                                        "name": "",
+                                                                                        "name": "AttributeParityHeaderTotalText",
                                                                                         "controlType": "TextBlock",
                                                                                         "text": "Total",
                                                                                         "toolTip": "",
@@ -20708,7 +20708,7 @@
                                                                                         "children": []
                                                                                       },
                                                                                       {
-                                                                                        "name": "",
+                                                                                        "name": "AttributeParityHeaderLimitsText",
                                                                                         "controlType": "TextBlock",
                                                                                         "text": "Limits",
                                                                                         "toolTip": "",
@@ -21468,7 +21468,7 @@
                                                       {
                                                         "name": "TimeStateText",
                                                         "controlType": "TextBlock",
-                                                        "text": "Time: 2026-06-20 22:04:26Z",
+                                                        "text": "Time: 2026-06-21 07:40:45Z",
                                                         "toolTip": "",
                                                         "isVisible": true,
                                                         "children": []
@@ -21590,7 +21590,7 @@
                                     "name": "StatusStripControl",
                                     "controlType": "StatusStripControl",
                                     "text": "",
-                                    "toolTip": "Character: none | Service: online | Time: 2026-06-20 22:04:26Z | Ruleset: Shadowrun 4 .chum4 | Workflows: 5 defs / 6 surfaces | Prefs: 100%/classic/en-us",
+                                    "toolTip": "Character: none | Service: online | Time: 2026-06-21 07:40:45Z | Ruleset: Shadowrun 4 .chum4 | Workflows: 5 defs / 6 surfaces | Prefs: 100%/classic/en-us",
                                     "isVisible": false,
                                     "children": []
                                   }
@@ -21618,8 +21618,8 @@
       "visibleTexts": [
         "100%",
         "ALICE",
+        "Add",
         "Attribute",
-        "Base",
         "Character: none",
         "Characters",
         "Close",
@@ -21630,7 +21630,6 @@
         "Global Settings Classic",
         "Grouped by ruleset",
         "Help",
-        "Karma bump",
         "Limits",
         "Loadout summary",
         "Open",
@@ -21646,7 +21645,8 @@
         "Service: online",
         "Settings",
         "Special",
-        "Time: 2026-06-20 22:04:26Z",
+        "Start",
+        "Time: 2026-06-21 07:40:45Z",
         "Tools",
         "Total",
         "Windows",
@@ -23570,7 +23570,7 @@
                                                                                     "isVisible": true,
                                                                                     "children": [
                                                                                       {
-                                                                                        "name": "",
+                                                                                        "name": "AttributeParityHeaderAttributeText",
                                                                                         "controlType": "TextBlock",
                                                                                         "text": "Attribute",
                                                                                         "toolTip": "",
@@ -23578,23 +23578,23 @@
                                                                                         "children": []
                                                                                       },
                                                                                       {
-                                                                                        "name": "",
+                                                                                        "name": "AttributeParityHeaderStartText",
                                                                                         "controlType": "TextBlock",
-                                                                                        "text": "Base",
+                                                                                        "text": "Start",
                                                                                         "toolTip": "",
                                                                                         "isVisible": true,
                                                                                         "children": []
                                                                                       },
                                                                                       {
-                                                                                        "name": "",
+                                                                                        "name": "AttributeParityHeaderAddText",
                                                                                         "controlType": "TextBlock",
-                                                                                        "text": "Karma bump",
+                                                                                        "text": "Add",
                                                                                         "toolTip": "",
                                                                                         "isVisible": true,
                                                                                         "children": []
                                                                                       },
                                                                                       {
-                                                                                        "name": "",
+                                                                                        "name": "AttributeParityHeaderTotalText",
                                                                                         "controlType": "TextBlock",
                                                                                         "text": "Total",
                                                                                         "toolTip": "",
@@ -23602,7 +23602,7 @@
                                                                                         "children": []
                                                                                       },
                                                                                       {
-                                                                                        "name": "",
+                                                                                        "name": "AttributeParityHeaderLimitsText",
                                                                                         "controlType": "TextBlock",
                                                                                         "text": "Limits",
                                                                                         "toolTip": "",
@@ -24362,7 +24362,7 @@
                                                       {
                                                         "name": "TimeStateText",
                                                         "controlType": "TextBlock",
-                                                        "text": "Time: 2026-06-20 22:04:26Z",
+                                                        "text": "Time: 2026-06-21 07:40:45Z",
                                                         "toolTip": "",
                                                         "isVisible": true,
                                                         "children": []
@@ -24484,7 +24484,7 @@
                                     "name": "StatusStripControl",
                                     "controlType": "StatusStripControl",
                                     "text": "",
-                                    "toolTip": "Character: none | Service: online | Time: 2026-06-20 22:04:26Z | Ruleset: Shadowrun 5 .chum5 | Workflows: 5 defs / 6 surfaces | Prefs: 100%/classic/en-us",
+                                    "toolTip": "Character: none | Service: online | Time: 2026-06-21 07:40:45Z | Ruleset: Shadowrun 5 .chum5 | Workflows: 5 defs / 6 surfaces | Prefs: 100%/classic/en-us",
                                     "isVisible": false,
                                     "children": []
                                   }
@@ -24512,8 +24512,8 @@
       "visibleTexts": [
         "100%",
         "ALICE",
+        "Add",
         "Attribute",
-        "Base",
         "Character: none",
         "Characters",
         "Close",
@@ -24524,7 +24524,6 @@
         "Global Settings Classic",
         "Grouped by ruleset",
         "Help",
-        "Karma bump",
         "Limits",
         "Loadout summary",
         "Open",
@@ -24540,7 +24539,8 @@
         "Service: online",
         "Settings",
         "Special",
-        "Time: 2026-06-20 22:04:26Z",
+        "Start",
+        "Time: 2026-06-21 07:40:45Z",
         "Tools",
         "Total",
         "Windows",
@@ -26464,7 +26464,7 @@
                                                                                     "isVisible": true,
                                                                                     "children": [
                                                                                       {
-                                                                                        "name": "",
+                                                                                        "name": "AttributeParityHeaderAttributeText",
                                                                                         "controlType": "TextBlock",
                                                                                         "text": "Attribute",
                                                                                         "toolTip": "",
@@ -26472,23 +26472,23 @@
                                                                                         "children": []
                                                                                       },
                                                                                       {
-                                                                                        "name": "",
+                                                                                        "name": "AttributeParityHeaderStartText",
                                                                                         "controlType": "TextBlock",
-                                                                                        "text": "Base",
+                                                                                        "text": "Start",
                                                                                         "toolTip": "",
                                                                                         "isVisible": true,
                                                                                         "children": []
                                                                                       },
                                                                                       {
-                                                                                        "name": "",
+                                                                                        "name": "AttributeParityHeaderAddText",
                                                                                         "controlType": "TextBlock",
-                                                                                        "text": "Karma bump",
+                                                                                        "text": "Add",
                                                                                         "toolTip": "",
                                                                                         "isVisible": true,
                                                                                         "children": []
                                                                                       },
                                                                                       {
-                                                                                        "name": "",
+                                                                                        "name": "AttributeParityHeaderTotalText",
                                                                                         "controlType": "TextBlock",
                                                                                         "text": "Total",
                                                                                         "toolTip": "",
@@ -26496,7 +26496,7 @@
                                                                                         "children": []
                                                                                       },
                                                                                       {
-                                                                                        "name": "",
+                                                                                        "name": "AttributeParityHeaderLimitsText",
                                                                                         "controlType": "TextBlock",
                                                                                         "text": "Limits",
                                                                                         "toolTip": "",
@@ -27256,7 +27256,7 @@
                                                       {
                                                         "name": "TimeStateText",
                                                         "controlType": "TextBlock",
-                                                        "text": "Time: 2026-06-20 22:04:26Z",
+                                                        "text": "Time: 2026-06-21 07:40:45Z",
                                                         "toolTip": "",
                                                         "isVisible": true,
                                                         "children": []
@@ -27378,7 +27378,7 @@
                                     "name": "StatusStripControl",
                                     "controlType": "StatusStripControl",
                                     "text": "",
-                                    "toolTip": "Character: none | Service: online | Time: 2026-06-20 22:04:26Z | Ruleset: Shadowrun 6 .chum6 | Workflows: 5 defs / 6 surfaces | Prefs: 100%/classic/en-us",
+                                    "toolTip": "Character: none | Service: online | Time: 2026-06-21 07:40:45Z | Ruleset: Shadowrun 6 .chum6 | Workflows: 5 defs / 6 surfaces | Prefs: 100%/classic/en-us",
                                     "isVisible": false,
                                     "children": []
                                   }
@@ -27410,6 +27410,7 @@
         "35",
         "6 2",
         "ALICE",
+        "Add",
         "Adept",
         "Age",
         "Alias",
@@ -27419,7 +27420,6 @@
         "Attribute Details",
         "Attributes",
         "Awakening",
-        "Base",
         "Black",
         "Build Plan",
         "Career Log",
@@ -27444,7 +27444,6 @@
         "Height",
         "Help",
         "Human",
-        "Karma bump",
         "Lifestyle",
         "Limits",
         "Loadout summary",
@@ -27462,7 +27461,7 @@
         "Open Print",
         "Origin Dossier",
         "Playername",
-        "Portable import ready: Portable import completed as governed dossier truth and is ready for normal use or portable export.\nImport rule environment: Target chummer.workspace.native-xml.v1 (compatible)\nImport correlation key: import/chummer.workspace.native-xml.v1/compatible/26a113f69c004ff0af0579f0d76dfb145671182d807bb75a25aca2b9183fd76f\nImport scope: import target chummer.workspace.native-xml.v1; before/after diff is copy-safe and excludes raw payload or merge actions until the user accepts the next safe action.\nImport support note: support can cite import/chummer.workspace.native-xml.v1/compatible/26a113f69c004ff0af0579f0d76dfb145671182d807bb75a25aca2b9183fd76f with context, blocker, and explain text without mutating the local workspace.\nImport environment before: Soma was imported into reviewed dossier status on sr5.\nImport environment after: Use the workspace normally or export a portable package when you need a reviewed cross-surface next step.\nImport environment tuple diff: before workspace/current-source/support-local/26a113f69c004ff0af0579f0d76dfb145671182d807bb75a25aca2b9183fd76f; after compatible/Use the workspace normally or export a portable package when you need a governed cross-surface handoff; correlation import/chummer.workspace.native-xml.v1/compatible/26a113f69c004ff0af0579f0d76dfb145671182d807bb75a25aca2b9183fd76f.\nEnvironment diff before import: current workspace, support state, and source toggles stay unchanged while chummer.workspace.native-xml.v1 is reviewed with payload 26a113f69c004ff0af0579f0d76dfb145671182d807bb75a25aca2b9183fd76f.\nEnvironment diff after import: accepted content remains compatible; next safe action Use the workspace normally or export a portable package when you need a governed cross-surface handoff; explanation Imported workspace e3370ab8670f4038aa76aab68f93e4f4 from NativeXml with payload hash 26a113f69c00 on sr5.\nImport explanation: Imported workspace e3370ab8670f4038aa76aab68f93e4f4 from NativeXml with payload hash 26a113f69c00 on sr5.\nCurrent import explanation: target chummer.workspace.native-xml.v1; source note Imported workspace e3370ab8670f4038aa76aab68f93e4f4 from NativeXml with payload hash 26a113f69c00 on sr5; blocker no grounded import blocker is present before acceptance.\nImport blocker details: no grounded import blocker is present before acceptance\nImport diagnostics details: before chummer.workspace.native-xml.v1/26a113f69c004ff0af0579f0d76dfb145671182d807bb75a25aca2b9183fd76f; after compatible/Use the workspace normally or export a portable package when you need a governed cross-surface handoff; blocker no grounded import blocker is present before acceptance; source note Imported workspace e3370ab8670f4038aa76aab68f93e4f4 from NativeXml with payload hash 26a113f69c00 on sr5.\nImport diagnostics diff: Import diagnostics receipt: chummer.workspace.native-xml.v1; compatible. Import support diagnostics receipt: Support can cite payload 26a113f69c004ff0af0579f0d76dfb145671182d807bb75a25aca2b9183fd76f with compatible compatibility.. Grounded import explain receipt: Imported workspace e3370ab8670f4038aa76aab68f93e4f4 from NativeXml with payload hash 26a113f69c00 on sr5.. Import blocker receipt: no grounded import blocker is present before acceptance. Environment diff before import: Soma was imported into governed dossier truth on sr5.. Environment diff after import: Use the workspace normally or export a portable package when you need a governed cross-surface handoff..\nImport support diagnostics details: support can cite import/chummer.workspace.native-xml.v1/compatible/26a113f69c004ff0af0579f0d76dfb145671182d807bb75a25aca2b9183fd76f with before/after environment details, blocker text, and explanation without changing local workspace state.\nSupport reuse: Support can cite payload 26a113f69c004ff0af0579f0d76dfb145671182d807bb75a25aca2b9183fd76f with compatible compatibility.\nImport support reuse: Support can cite payload 26a113f69c004ff0af0579f0d76dfb145671182d807bb75a25aca2b9183fd76f with compatible compatibility.",
+        "Portable import ready: Portable import completed as governed dossier truth and is ready for normal use or portable export.\nImport ready. Review the character, then keep or discard the changes.\nNothing changes until you accept the import.",
         "Powers",
         "Print",
         "Profile",
@@ -27481,9 +27480,10 @@
         "Soma",
         "Special",
         "Spells",
+        "Start",
         "SumtoTen",
         "Technomancer",
-        "Time: 2026-06-20 22:04:25Z",
+        "Time: 2026-06-21 07:40:45Z",
         "Tools",
         "Total",
         "Vehicles",
@@ -31095,7 +31095,7 @@
                                                                               {
                                                                                 "name": "NoticeText",
                                                                                 "controlType": "TextBlock",
-                                                                                "text": "Portable import ready: Portable import completed as governed dossier truth and is ready for normal use or portable export.\nImport rule environment: Target chummer.workspace.native-xml.v1 (compatible)\nImport correlation key: import/chummer.workspace.native-xml.v1/compatible/26a113f69c004ff0af0579f0d76dfb145671182d807bb75a25aca2b9183fd76f\nImport scope: import target chummer.workspace.native-xml.v1; before/after diff is copy-safe and excludes raw payload or merge actions until the user accepts the next safe action.\nImport support note: support can cite import/chummer.workspace.native-xml.v1/compatible/26a113f69c004ff0af0579f0d76dfb145671182d807bb75a25aca2b9183fd76f with context, blocker, and explain text without mutating the local workspace.\nImport environment before: Soma was imported into reviewed dossier status on sr5.\nImport environment after: Use the workspace normally or export a portable package when you need a reviewed cross-surface next step.\nImport environment tuple diff: before workspace/current-source/support-local/26a113f69c004ff0af0579f0d76dfb145671182d807bb75a25aca2b9183fd76f; after compatible/Use the workspace normally or export a portable package when you need a governed cross-surface handoff; correlation import/chummer.workspace.native-xml.v1/compatible/26a113f69c004ff0af0579f0d76dfb145671182d807bb75a25aca2b9183fd76f.\nEnvironment diff before import: current workspace, support state, and source toggles stay unchanged while chummer.workspace.native-xml.v1 is reviewed with payload 26a113f69c004ff0af0579f0d76dfb145671182d807bb75a25aca2b9183fd76f.\nEnvironment diff after import: accepted content remains compatible; next safe action Use the workspace normally or export a portable package when you need a governed cross-surface handoff; explanation Imported workspace e3370ab8670f4038aa76aab68f93e4f4 from NativeXml with payload hash 26a113f69c00 on sr5.\nImport explanation: Imported workspace e3370ab8670f4038aa76aab68f93e4f4 from NativeXml with payload hash 26a113f69c00 on sr5.\nCurrent import explanation: target chummer.workspace.native-xml.v1; source note Imported workspace e3370ab8670f4038aa76aab68f93e4f4 from NativeXml with payload hash 26a113f69c00 on sr5; blocker no grounded import blocker is present before acceptance.\nImport blocker details: no grounded import blocker is present before acceptance\nImport diagnostics details: before chummer.workspace.native-xml.v1/26a113f69c004ff0af0579f0d76dfb145671182d807bb75a25aca2b9183fd76f; after compatible/Use the workspace normally or export a portable package when you need a governed cross-surface handoff; blocker no grounded import blocker is present before acceptance; source note Imported workspace e3370ab8670f4038aa76aab68f93e4f4 from NativeXml with payload hash 26a113f69c00 on sr5.\nImport diagnostics diff: Import diagnostics receipt: chummer.workspace.native-xml.v1; compatible. Import support diagnostics receipt: Support can cite payload 26a113f69c004ff0af0579f0d76dfb145671182d807bb75a25aca2b9183fd76f with compatible compatibility.. Grounded import explain receipt: Imported workspace e3370ab8670f4038aa76aab68f93e4f4 from NativeXml with payload hash 26a113f69c00 on sr5.. Import blocker receipt: no grounded import blocker is present before acceptance. Environment diff before import: Soma was imported into governed dossier truth on sr5.. Environment diff after import: Use the workspace normally or export a portable package when you need a governed cross-surface handoff..\nImport support diagnostics details: support can cite import/chummer.workspace.native-xml.v1/compatible/26a113f69c004ff0af0579f0d76dfb145671182d807bb75a25aca2b9183fd76f with before/after environment details, blocker text, and explanation without changing local workspace state.\nSupport reuse: Support can cite payload 26a113f69c004ff0af0579f0d76dfb145671182d807bb75a25aca2b9183fd76f with compatible compatibility.\nImport support reuse: Support can cite payload 26a113f69c004ff0af0579f0d76dfb145671182d807bb75a25aca2b9183fd76f with compatible compatibility.",
+                                                                                "text": "Portable import ready: Portable import completed as governed dossier truth and is ready for normal use or portable export.\nImport ready. Review the character, then keep or discard the changes.\nNothing changes until you accept the import.",
                                                                                 "toolTip": "",
                                                                                 "isVisible": true,
                                                                                 "children": []
@@ -31422,7 +31422,7 @@
                                                                                     "isVisible": true,
                                                                                     "children": [
                                                                                       {
-                                                                                        "name": "",
+                                                                                        "name": "AttributeParityHeaderAttributeText",
                                                                                         "controlType": "TextBlock",
                                                                                         "text": "Attribute",
                                                                                         "toolTip": "",
@@ -31430,23 +31430,23 @@
                                                                                         "children": []
                                                                                       },
                                                                                       {
-                                                                                        "name": "",
+                                                                                        "name": "AttributeParityHeaderStartText",
                                                                                         "controlType": "TextBlock",
-                                                                                        "text": "Base",
+                                                                                        "text": "Start",
                                                                                         "toolTip": "",
                                                                                         "isVisible": true,
                                                                                         "children": []
                                                                                       },
                                                                                       {
-                                                                                        "name": "",
+                                                                                        "name": "AttributeParityHeaderAddText",
                                                                                         "controlType": "TextBlock",
-                                                                                        "text": "Karma bump",
+                                                                                        "text": "Add",
                                                                                         "toolTip": "",
                                                                                         "isVisible": true,
                                                                                         "children": []
                                                                                       },
                                                                                       {
-                                                                                        "name": "",
+                                                                                        "name": "AttributeParityHeaderTotalText",
                                                                                         "controlType": "TextBlock",
                                                                                         "text": "Total",
                                                                                         "toolTip": "",
@@ -31454,7 +31454,7 @@
                                                                                         "children": []
                                                                                       },
                                                                                       {
-                                                                                        "name": "",
+                                                                                        "name": "AttributeParityHeaderLimitsText",
                                                                                         "controlType": "TextBlock",
                                                                                         "text": "Limits",
                                                                                         "toolTip": "",
@@ -32412,7 +32412,7 @@
                                             "name": "CoachSidecarControl",
                                             "controlType": "CoachSidecarControl",
                                             "text": "",
-                                            "toolTip": "Status: unloaded\nPrompt policy: Policy not loaded yet\nBudget: Budget not loaded yet\nWorkspace: e3370ab8670f4038aa76aab68f93e4f4\nRuntime: No runtime fingerprint yet\nfile:///coach/%3FrouteType=coach\u0026workspaceId=e3370ab8670f4038aa76aab68f93e4f4\nOpen Coach in your browser, or copy the link if you need to hand it off.\nError: disabled",
+                                            "toolTip": "Status: unloaded\nPrompt policy: Policy not loaded yet\nBudget: Budget not loaded yet\nWorkspace: f4ee9206331a49b7ae72d07ff83b043e\nRuntime: No runtime fingerprint yet\nfile:///coach/%3FrouteType=coach\u0026workspaceId=f4ee9206331a49b7ae72d07ff83b043e\nOpen Coach in your browser, or copy the link if you need to hand it off.\nError: disabled",
                                             "isVisible": true,
                                             "children": []
                                           }
@@ -32501,7 +32501,7 @@
                                                       {
                                                         "name": "TimeStateText",
                                                         "controlType": "TextBlock",
-                                                        "text": "Time: 2026-06-20 22:04:25Z",
+                                                        "text": "Time: 2026-06-21 07:40:45Z",
                                                         "toolTip": "",
                                                         "isVisible": true,
                                                         "children": []
@@ -32623,7 +32623,7 @@
                                     "name": "StatusStripControl",
                                     "controlType": "StatusStripControl",
                                     "text": "",
-                                    "toolTip": "Character: loaded | Service: online | Time: 2026-06-20 22:04:25Z | Ruleset: Shadowrun 5 .chum5 | Workflows: 5 defs / 6 surfaces | Prefs: 100%/classic/en-us",
+                                    "toolTip": "Character: loaded | Service: online | Time: 2026-06-21 07:40:45Z | Ruleset: Shadowrun 5 .chum5 | Workflows: 5 defs / 6 surfaces | Prefs: 100%/classic/en-us",
                                     "isVisible": false,
                                     "children": []
                                   }
@@ -32658,15 +32658,15 @@
         "5",
         "5 (9)",
         "AGI",
+        "Add",
         "Attribute",
         "Attributes",
         "BOD",
-        "Base",
         "Gear",
-        "Karma bump",
         "Limits",
         "Loadout summary",
         "No attribute values are recorded yet.",
+        "Start",
         "Total"
       ],
       "visibleCommandIds": [],
@@ -32961,7 +32961,7 @@
                                                 "isVisible": true,
                                                 "children": [
                                                   {
-                                                    "name": "",
+                                                    "name": "AttributeParityHeaderAttributeText",
                                                     "controlType": "TextBlock",
                                                     "text": "Attribute",
                                                     "toolTip": "",
@@ -32969,23 +32969,23 @@
                                                     "children": []
                                                   },
                                                   {
-                                                    "name": "",
+                                                    "name": "AttributeParityHeaderStartText",
                                                     "controlType": "TextBlock",
-                                                    "text": "Base",
+                                                    "text": "Start",
                                                     "toolTip": "",
                                                     "isVisible": true,
                                                     "children": []
                                                   },
                                                   {
-                                                    "name": "",
+                                                    "name": "AttributeParityHeaderAddText",
                                                     "controlType": "TextBlock",
-                                                    "text": "Karma bump",
+                                                    "text": "Add",
                                                     "toolTip": "",
                                                     "isVisible": true,
                                                     "children": []
                                                   },
                                                   {
-                                                    "name": "",
+                                                    "name": "AttributeParityHeaderTotalText",
                                                     "controlType": "TextBlock",
                                                     "text": "Total",
                                                     "toolTip": "",
@@ -32993,7 +32993,7 @@
                                                     "children": []
                                                   },
                                                   {
-                                                    "name": "",
+                                                    "name": "AttributeParityHeaderLimitsText",
                                                     "controlType": "TextBlock",
                                                     "text": "Limits",
                                                     "toolTip": "",
@@ -33065,14 +33065,14 @@
                                                                     "name": "AttributeBaseEditor_BOD",
                                                                     "controlType": "Grid",
                                                                     "text": "",
-                                                                    "toolTip": "BOD base allocation: 0-6",
+                                                                    "toolTip": "BOD starting value: 0-6",
                                                                     "isVisible": true,
                                                                     "children": [
                                                                       {
                                                                         "name": "AttributeBaseEditor_BOD_Decrease",
                                                                         "controlType": "Button",
                                                                         "text": "-",
-                                                                        "toolTip": "Decrease BOD base allocation",
+                                                                        "toolTip": "Decrease BOD starting value",
                                                                         "isVisible": true,
                                                                         "children": [
                                                                           {
@@ -33095,10 +33095,10 @@
                                                                         ]
                                                                       },
                                                                       {
-                                                                        "name": "",
+                                                                        "name": "AttributeBaseEditor_BOD_Value",
                                                                         "controlType": "TextBlock",
                                                                         "text": "4",
-                                                                        "toolTip": "BOD base allocation",
+                                                                        "toolTip": "BOD starting value",
                                                                         "isVisible": true,
                                                                         "children": []
                                                                       },
@@ -33106,7 +33106,7 @@
                                                                         "name": "AttributeBaseEditor_BOD_Increase",
                                                                         "controlType": "Button",
                                                                         "text": "\u002B",
-                                                                        "toolTip": "Increase BOD base allocation",
+                                                                        "toolTip": "Increase BOD starting value",
                                                                         "isVisible": true,
                                                                         "children": [
                                                                           {
@@ -33134,14 +33134,14 @@
                                                                     "name": "AttributeKarmaEditor_BOD",
                                                                     "controlType": "Grid",
                                                                     "text": "",
-                                                                    "toolTip": "BOD karma adjustment: 0-6",
+                                                                    "toolTip": "BOD added value: 0-6",
                                                                     "isVisible": true,
                                                                     "children": [
                                                                       {
                                                                         "name": "AttributeKarmaEditor_BOD_Decrease",
                                                                         "controlType": "Button",
                                                                         "text": "-",
-                                                                        "toolTip": "Decrease BOD karma adjustment",
+                                                                        "toolTip": "Decrease BOD added value",
                                                                         "isVisible": true,
                                                                         "children": [
                                                                           {
@@ -33164,10 +33164,10 @@
                                                                         ]
                                                                       },
                                                                       {
-                                                                        "name": "",
+                                                                        "name": "AttributeKarmaEditor_BOD_Value",
                                                                         "controlType": "TextBlock",
                                                                         "text": "1",
-                                                                        "toolTip": "BOD karma adjustment",
+                                                                        "toolTip": "BOD added value",
                                                                         "isVisible": true,
                                                                         "children": []
                                                                       },
@@ -33175,7 +33175,7 @@
                                                                         "name": "AttributeKarmaEditor_BOD_Increase",
                                                                         "controlType": "Button",
                                                                         "text": "\u002B",
-                                                                        "toolTip": "Increase BOD karma adjustment",
+                                                                        "toolTip": "Increase BOD added value",
                                                                         "isVisible": true,
                                                                         "children": [
                                                                           {
@@ -33236,14 +33236,14 @@
                                                                     "name": "AttributeBaseEditor_AGI",
                                                                     "controlType": "Grid",
                                                                     "text": "",
-                                                                    "toolTip": "AGI base allocation: 0-6",
+                                                                    "toolTip": "AGI starting value: 0-6",
                                                                     "isVisible": true,
                                                                     "children": [
                                                                       {
                                                                         "name": "AttributeBaseEditor_AGI_Decrease",
                                                                         "controlType": "Button",
                                                                         "text": "-",
-                                                                        "toolTip": "Decrease AGI base allocation",
+                                                                        "toolTip": "Decrease AGI starting value",
                                                                         "isVisible": true,
                                                                         "children": [
                                                                           {
@@ -33266,10 +33266,10 @@
                                                                         ]
                                                                       },
                                                                       {
-                                                                        "name": "",
+                                                                        "name": "AttributeBaseEditor_AGI_Value",
                                                                         "controlType": "TextBlock",
                                                                         "text": "5",
-                                                                        "toolTip": "AGI base allocation",
+                                                                        "toolTip": "AGI starting value",
                                                                         "isVisible": true,
                                                                         "children": []
                                                                       },
@@ -33277,7 +33277,7 @@
                                                                         "name": "AttributeBaseEditor_AGI_Increase",
                                                                         "controlType": "Button",
                                                                         "text": "\u002B",
-                                                                        "toolTip": "Increase AGI base allocation",
+                                                                        "toolTip": "Increase AGI starting value",
                                                                         "isVisible": true,
                                                                         "children": [
                                                                           {
@@ -33305,14 +33305,14 @@
                                                                     "name": "AttributeKarmaEditor_AGI",
                                                                     "controlType": "Grid",
                                                                     "text": "",
-                                                                    "toolTip": "AGI karma adjustment: 0-6",
+                                                                    "toolTip": "AGI added value: 0-6",
                                                                     "isVisible": true,
                                                                     "children": [
                                                                       {
                                                                         "name": "AttributeKarmaEditor_AGI_Decrease",
                                                                         "controlType": "Button",
                                                                         "text": "-",
-                                                                        "toolTip": "Decrease AGI karma adjustment",
+                                                                        "toolTip": "Decrease AGI added value",
                                                                         "isVisible": true,
                                                                         "children": [
                                                                           {
@@ -33335,10 +33335,10 @@
                                                                         ]
                                                                       },
                                                                       {
-                                                                        "name": "",
+                                                                        "name": "AttributeKarmaEditor_AGI_Value",
                                                                         "controlType": "TextBlock",
                                                                         "text": "0",
-                                                                        "toolTip": "AGI karma adjustment",
+                                                                        "toolTip": "AGI added value",
                                                                         "isVisible": true,
                                                                         "children": []
                                                                       },
@@ -33346,7 +33346,7 @@
                                                                         "name": "AttributeKarmaEditor_AGI_Increase",
                                                                         "controlType": "Button",
                                                                         "text": "\u002B",
-                                                                        "toolTip": "Increase AGI karma adjustment",
+                                                                        "toolTip": "Increase AGI added value",
                                                                         "isVisible": true,
                                                                         "children": [
                                                                           {
@@ -33647,8 +33647,8 @@
       "visibleTexts": [
         "100%",
         "ALICE",
+        "Add",
         "Attribute",
-        "Base",
         "Character: none",
         "Characters",
         "Close",
@@ -33660,7 +33660,6 @@
         "Global Settings Classic",
         "Grouped by ruleset",
         "Help",
-        "Karma bump",
         "Limits",
         "Loadout summary",
         "Open",
@@ -33675,7 +33674,8 @@
         "Service: online",
         "Settings",
         "Special",
-        "Time: 2026-06-20 22:04:26Z",
+        "Start",
+        "Time: 2026-06-21 07:40:45Z",
         "Tools",
         "Total",
         "Windows",
@@ -35599,7 +35599,7 @@
                                                                                     "isVisible": true,
                                                                                     "children": [
                                                                                       {
-                                                                                        "name": "",
+                                                                                        "name": "AttributeParityHeaderAttributeText",
                                                                                         "controlType": "TextBlock",
                                                                                         "text": "Attribute",
                                                                                         "toolTip": "",
@@ -35607,23 +35607,23 @@
                                                                                         "children": []
                                                                                       },
                                                                                       {
-                                                                                        "name": "",
+                                                                                        "name": "AttributeParityHeaderStartText",
                                                                                         "controlType": "TextBlock",
-                                                                                        "text": "Base",
+                                                                                        "text": "Start",
                                                                                         "toolTip": "",
                                                                                         "isVisible": true,
                                                                                         "children": []
                                                                                       },
                                                                                       {
-                                                                                        "name": "",
+                                                                                        "name": "AttributeParityHeaderAddText",
                                                                                         "controlType": "TextBlock",
-                                                                                        "text": "Karma bump",
+                                                                                        "text": "Add",
                                                                                         "toolTip": "",
                                                                                         "isVisible": true,
                                                                                         "children": []
                                                                                       },
                                                                                       {
-                                                                                        "name": "",
+                                                                                        "name": "AttributeParityHeaderTotalText",
                                                                                         "controlType": "TextBlock",
                                                                                         "text": "Total",
                                                                                         "toolTip": "",
@@ -35631,7 +35631,7 @@
                                                                                         "children": []
                                                                                       },
                                                                                       {
-                                                                                        "name": "",
+                                                                                        "name": "AttributeParityHeaderLimitsText",
                                                                                         "controlType": "TextBlock",
                                                                                         "text": "Limits",
                                                                                         "toolTip": "",
@@ -36391,7 +36391,7 @@
                                                       {
                                                         "name": "TimeStateText",
                                                         "controlType": "TextBlock",
-                                                        "text": "Time: 2026-06-20 22:04:26Z",
+                                                        "text": "Time: 2026-06-21 07:40:45Z",
                                                         "toolTip": "",
                                                         "isVisible": true,
                                                         "children": []
@@ -36513,7 +36513,7 @@
                                     "name": "StatusStripControl",
                                     "controlType": "StatusStripControl",
                                     "text": "",
-                                    "toolTip": "Character: none | Service: online | Time: 2026-06-20 22:04:26Z | Ruleset: Shadowrun 5 .chum5 | Workflows: 5 defs / 6 surfaces | Prefs: 100%/classic/en-us",
+                                    "toolTip": "Character: none | Service: online | Time: 2026-06-21 07:40:45Z | Ruleset: Shadowrun 5 .chum5 | Workflows: 5 defs / 6 surfaces | Prefs: 100%/classic/en-us",
                                     "isVisible": false,
                                     "children": []
                                   }
@@ -36545,6 +36545,7 @@
         "35",
         "6 2",
         "ALICE",
+        "Add",
         "Adept",
         "Age",
         "Alias",
@@ -36554,7 +36555,6 @@
         "Attribute Details",
         "Attributes",
         "Awakening",
-        "Base",
         "Black",
         "Build Plan",
         "Career Log",
@@ -36579,7 +36579,6 @@
         "Height",
         "Help",
         "Human",
-        "Karma bump",
         "Lifestyle",
         "Limits",
         "Loadout summary",
@@ -36597,7 +36596,7 @@
         "Open Print",
         "Origin Dossier",
         "Playername",
-        "Portable import ready: Portable import completed as governed dossier truth and is ready for normal use or portable export.\nImport rule environment: Target chummer.workspace.native-xml.v1 (compatible)\nImport correlation key: import/chummer.workspace.native-xml.v1/compatible/26a113f69c004ff0af0579f0d76dfb145671182d807bb75a25aca2b9183fd76f\nImport scope: import target chummer.workspace.native-xml.v1; before/after diff is copy-safe and excludes raw payload or merge actions until the user accepts the next safe action.\nImport support note: support can cite import/chummer.workspace.native-xml.v1/compatible/26a113f69c004ff0af0579f0d76dfb145671182d807bb75a25aca2b9183fd76f with context, blocker, and explain text without mutating the local workspace.\nImport environment before: Soma was imported into reviewed dossier status on sr5.\nImport environment after: Use the workspace normally or export a portable package when you need a reviewed cross-surface next step.\nImport environment tuple diff: before workspace/current-source/support-local/26a113f69c004ff0af0579f0d76dfb145671182d807bb75a25aca2b9183fd76f; after compatible/Use the workspace normally or export a portable package when you need a governed cross-surface handoff; correlation import/chummer.workspace.native-xml.v1/compatible/26a113f69c004ff0af0579f0d76dfb145671182d807bb75a25aca2b9183fd76f.\nEnvironment diff before import: current workspace, support state, and source toggles stay unchanged while chummer.workspace.native-xml.v1 is reviewed with payload 26a113f69c004ff0af0579f0d76dfb145671182d807bb75a25aca2b9183fd76f.\nEnvironment diff after import: accepted content remains compatible; next safe action Use the workspace normally or export a portable package when you need a governed cross-surface handoff; explanation Imported workspace e3370ab8670f4038aa76aab68f93e4f4 from NativeXml with payload hash 26a113f69c00 on sr5.\nImport explanation: Imported workspace e3370ab8670f4038aa76aab68f93e4f4 from NativeXml with payload hash 26a113f69c00 on sr5.\nCurrent import explanation: target chummer.workspace.native-xml.v1; source note Imported workspace e3370ab8670f4038aa76aab68f93e4f4 from NativeXml with payload hash 26a113f69c00 on sr5; blocker no grounded import blocker is present before acceptance.\nImport blocker details: no grounded import blocker is present before acceptance\nImport diagnostics details: before chummer.workspace.native-xml.v1/26a113f69c004ff0af0579f0d76dfb145671182d807bb75a25aca2b9183fd76f; after compatible/Use the workspace normally or export a portable package when you need a governed cross-surface handoff; blocker no grounded import blocker is present before acceptance; source note Imported workspace e3370ab8670f4038aa76aab68f93e4f4 from NativeXml with payload hash 26a113f69c00 on sr5.\nImport diagnostics diff: Import diagnostics receipt: chummer.workspace.native-xml.v1; compatible. Import support diagnostics receipt: Support can cite payload 26a113f69c004ff0af0579f0d76dfb145671182d807bb75a25aca2b9183fd76f with compatible compatibility.. Grounded import explain receipt: Imported workspace e3370ab8670f4038aa76aab68f93e4f4 from NativeXml with payload hash 26a113f69c00 on sr5.. Import blocker receipt: no grounded import blocker is present before acceptance. Environment diff before import: Soma was imported into governed dossier truth on sr5.. Environment diff after import: Use the workspace normally or export a portable package when you need a governed cross-surface handoff..\nImport support diagnostics details: support can cite import/chummer.workspace.native-xml.v1/compatible/26a113f69c004ff0af0579f0d76dfb145671182d807bb75a25aca2b9183fd76f with before/after environment details, blocker text, and explanation without changing local workspace state.\nSupport reuse: Support can cite payload 26a113f69c004ff0af0579f0d76dfb145671182d807bb75a25aca2b9183fd76f with compatible compatibility.\nImport support reuse: Support can cite payload 26a113f69c004ff0af0579f0d76dfb145671182d807bb75a25aca2b9183fd76f with compatible compatibility.",
+        "Portable import ready: Portable import completed as governed dossier truth and is ready for normal use or portable export.\nImport ready. Review the character, then keep or discard the changes.\nNothing changes until you accept the import.",
         "Powers",
         "Print",
         "Profile",
@@ -36616,9 +36615,10 @@
         "Soma",
         "Special",
         "Spells",
+        "Start",
         "SumtoTen",
         "Technomancer",
-        "Time: 2026-06-20 22:04:25Z",
+        "Time: 2026-06-21 07:40:45Z",
         "Tools",
         "Total",
         "Vehicles",
@@ -40230,7 +40230,7 @@
                                                                               {
                                                                                 "name": "NoticeText",
                                                                                 "controlType": "TextBlock",
-                                                                                "text": "Portable import ready: Portable import completed as governed dossier truth and is ready for normal use or portable export.\nImport rule environment: Target chummer.workspace.native-xml.v1 (compatible)\nImport correlation key: import/chummer.workspace.native-xml.v1/compatible/26a113f69c004ff0af0579f0d76dfb145671182d807bb75a25aca2b9183fd76f\nImport scope: import target chummer.workspace.native-xml.v1; before/after diff is copy-safe and excludes raw payload or merge actions until the user accepts the next safe action.\nImport support note: support can cite import/chummer.workspace.native-xml.v1/compatible/26a113f69c004ff0af0579f0d76dfb145671182d807bb75a25aca2b9183fd76f with context, blocker, and explain text without mutating the local workspace.\nImport environment before: Soma was imported into reviewed dossier status on sr5.\nImport environment after: Use the workspace normally or export a portable package when you need a reviewed cross-surface next step.\nImport environment tuple diff: before workspace/current-source/support-local/26a113f69c004ff0af0579f0d76dfb145671182d807bb75a25aca2b9183fd76f; after compatible/Use the workspace normally or export a portable package when you need a governed cross-surface handoff; correlation import/chummer.workspace.native-xml.v1/compatible/26a113f69c004ff0af0579f0d76dfb145671182d807bb75a25aca2b9183fd76f.\nEnvironment diff before import: current workspace, support state, and source toggles stay unchanged while chummer.workspace.native-xml.v1 is reviewed with payload 26a113f69c004ff0af0579f0d76dfb145671182d807bb75a25aca2b9183fd76f.\nEnvironment diff after import: accepted content remains compatible; next safe action Use the workspace normally or export a portable package when you need a governed cross-surface handoff; explanation Imported workspace e3370ab8670f4038aa76aab68f93e4f4 from NativeXml with payload hash 26a113f69c00 on sr5.\nImport explanation: Imported workspace e3370ab8670f4038aa76aab68f93e4f4 from NativeXml with payload hash 26a113f69c00 on sr5.\nCurrent import explanation: target chummer.workspace.native-xml.v1; source note Imported workspace e3370ab8670f4038aa76aab68f93e4f4 from NativeXml with payload hash 26a113f69c00 on sr5; blocker no grounded import blocker is present before acceptance.\nImport blocker details: no grounded import blocker is present before acceptance\nImport diagnostics details: before chummer.workspace.native-xml.v1/26a113f69c004ff0af0579f0d76dfb145671182d807bb75a25aca2b9183fd76f; after compatible/Use the workspace normally or export a portable package when you need a governed cross-surface handoff; blocker no grounded import blocker is present before acceptance; source note Imported workspace e3370ab8670f4038aa76aab68f93e4f4 from NativeXml with payload hash 26a113f69c00 on sr5.\nImport diagnostics diff: Import diagnostics receipt: chummer.workspace.native-xml.v1; compatible. Import support diagnostics receipt: Support can cite payload 26a113f69c004ff0af0579f0d76dfb145671182d807bb75a25aca2b9183fd76f with compatible compatibility.. Grounded import explain receipt: Imported workspace e3370ab8670f4038aa76aab68f93e4f4 from NativeXml with payload hash 26a113f69c00 on sr5.. Import blocker receipt: no grounded import blocker is present before acceptance. Environment diff before import: Soma was imported into governed dossier truth on sr5.. Environment diff after import: Use the workspace normally or export a portable package when you need a governed cross-surface handoff..\nImport support diagnostics details: support can cite import/chummer.workspace.native-xml.v1/compatible/26a113f69c004ff0af0579f0d76dfb145671182d807bb75a25aca2b9183fd76f with before/after environment details, blocker text, and explanation without changing local workspace state.\nSupport reuse: Support can cite payload 26a113f69c004ff0af0579f0d76dfb145671182d807bb75a25aca2b9183fd76f with compatible compatibility.\nImport support reuse: Support can cite payload 26a113f69c004ff0af0579f0d76dfb145671182d807bb75a25aca2b9183fd76f with compatible compatibility.",
+                                                                                "text": "Portable import ready: Portable import completed as governed dossier truth and is ready for normal use or portable export.\nImport ready. Review the character, then keep or discard the changes.\nNothing changes until you accept the import.",
                                                                                 "toolTip": "",
                                                                                 "isVisible": true,
                                                                                 "children": []
@@ -40557,7 +40557,7 @@
                                                                                     "isVisible": true,
                                                                                     "children": [
                                                                                       {
-                                                                                        "name": "",
+                                                                                        "name": "AttributeParityHeaderAttributeText",
                                                                                         "controlType": "TextBlock",
                                                                                         "text": "Attribute",
                                                                                         "toolTip": "",
@@ -40565,23 +40565,23 @@
                                                                                         "children": []
                                                                                       },
                                                                                       {
-                                                                                        "name": "",
+                                                                                        "name": "AttributeParityHeaderStartText",
                                                                                         "controlType": "TextBlock",
-                                                                                        "text": "Base",
+                                                                                        "text": "Start",
                                                                                         "toolTip": "",
                                                                                         "isVisible": true,
                                                                                         "children": []
                                                                                       },
                                                                                       {
-                                                                                        "name": "",
+                                                                                        "name": "AttributeParityHeaderAddText",
                                                                                         "controlType": "TextBlock",
-                                                                                        "text": "Karma bump",
+                                                                                        "text": "Add",
                                                                                         "toolTip": "",
                                                                                         "isVisible": true,
                                                                                         "children": []
                                                                                       },
                                                                                       {
-                                                                                        "name": "",
+                                                                                        "name": "AttributeParityHeaderTotalText",
                                                                                         "controlType": "TextBlock",
                                                                                         "text": "Total",
                                                                                         "toolTip": "",
@@ -40589,7 +40589,7 @@
                                                                                         "children": []
                                                                                       },
                                                                                       {
-                                                                                        "name": "",
+                                                                                        "name": "AttributeParityHeaderLimitsText",
                                                                                         "controlType": "TextBlock",
                                                                                         "text": "Limits",
                                                                                         "toolTip": "",
@@ -41547,7 +41547,7 @@
                                             "name": "CoachSidecarControl",
                                             "controlType": "CoachSidecarControl",
                                             "text": "",
-                                            "toolTip": "Status: unloaded\nPrompt policy: Policy not loaded yet\nBudget: Budget not loaded yet\nWorkspace: e3370ab8670f4038aa76aab68f93e4f4\nRuntime: No runtime fingerprint yet\nfile:///coach/%3FrouteType=coach\u0026workspaceId=e3370ab8670f4038aa76aab68f93e4f4\nOpen Coach in your browser, or copy the link if you need to hand it off.\nError: disabled",
+                                            "toolTip": "Status: unloaded\nPrompt policy: Policy not loaded yet\nBudget: Budget not loaded yet\nWorkspace: f4ee9206331a49b7ae72d07ff83b043e\nRuntime: No runtime fingerprint yet\nfile:///coach/%3FrouteType=coach\u0026workspaceId=f4ee9206331a49b7ae72d07ff83b043e\nOpen Coach in your browser, or copy the link if you need to hand it off.\nError: disabled",
                                             "isVisible": true,
                                             "children": []
                                           }
@@ -41636,7 +41636,7 @@
                                                       {
                                                         "name": "TimeStateText",
                                                         "controlType": "TextBlock",
-                                                        "text": "Time: 2026-06-20 22:04:25Z",
+                                                        "text": "Time: 2026-06-21 07:40:45Z",
                                                         "toolTip": "",
                                                         "isVisible": true,
                                                         "children": []
@@ -41758,7 +41758,7 @@
                                     "name": "StatusStripControl",
                                     "controlType": "StatusStripControl",
                                     "text": "",
-                                    "toolTip": "Character: loaded | Service: online | Time: 2026-06-20 22:04:25Z | Ruleset: Shadowrun 5 .chum5 | Workflows: 5 defs / 6 surfaces | Prefs: 100%/classic/en-us",
+                                    "toolTip": "Character: loaded | Service: online | Time: 2026-06-21 07:40:45Z | Ruleset: Shadowrun 5 .chum5 | Workflows: 5 defs / 6 surfaces | Prefs: 100%/classic/en-us",
                                     "isVisible": false,
                                     "children": []
                                   }
@@ -41786,8 +41786,8 @@
       "visibleTexts": [
         "100%",
         "ALICE",
+        "Add",
         "Attribute",
-        "Base",
         "Character: none",
         "Characters",
         "Close",
@@ -41797,7 +41797,6 @@
         "Gear",
         "Grouped by ruleset",
         "Help",
-        "Karma bump",
         "Limits",
         "Loadout summary",
         "Open",
@@ -41812,7 +41811,8 @@
         "Service: online",
         "Settings",
         "Special",
-        "Time: 2026-06-20 22:04:24Z",
+        "Start",
+        "Time: 2026-06-21 07:40:44Z",
         "Tools",
         "Total",
         "Windows",
@@ -43541,7 +43541,7 @@
                                                                                     "isVisible": true,
                                                                                     "children": [
                                                                                       {
-                                                                                        "name": "",
+                                                                                        "name": "AttributeParityHeaderAttributeText",
                                                                                         "controlType": "TextBlock",
                                                                                         "text": "Attribute",
                                                                                         "toolTip": "",
@@ -43549,23 +43549,23 @@
                                                                                         "children": []
                                                                                       },
                                                                                       {
-                                                                                        "name": "",
+                                                                                        "name": "AttributeParityHeaderStartText",
                                                                                         "controlType": "TextBlock",
-                                                                                        "text": "Base",
+                                                                                        "text": "Start",
                                                                                         "toolTip": "",
                                                                                         "isVisible": true,
                                                                                         "children": []
                                                                                       },
                                                                                       {
-                                                                                        "name": "",
+                                                                                        "name": "AttributeParityHeaderAddText",
                                                                                         "controlType": "TextBlock",
-                                                                                        "text": "Karma bump",
+                                                                                        "text": "Add",
                                                                                         "toolTip": "",
                                                                                         "isVisible": true,
                                                                                         "children": []
                                                                                       },
                                                                                       {
-                                                                                        "name": "",
+                                                                                        "name": "AttributeParityHeaderTotalText",
                                                                                         "controlType": "TextBlock",
                                                                                         "text": "Total",
                                                                                         "toolTip": "",
@@ -43573,7 +43573,7 @@
                                                                                         "children": []
                                                                                       },
                                                                                       {
-                                                                                        "name": "",
+                                                                                        "name": "AttributeParityHeaderLimitsText",
                                                                                         "controlType": "TextBlock",
                                                                                         "text": "Limits",
                                                                                         "toolTip": "",
@@ -43882,7 +43882,7 @@
                                                       {
                                                         "name": "TimeStateText",
                                                         "controlType": "TextBlock",
-                                                        "text": "Time: 2026-06-20 22:04:24Z",
+                                                        "text": "Time: 2026-06-21 07:40:44Z",
                                                         "toolTip": "",
                                                         "isVisible": true,
                                                         "children": []
@@ -44004,7 +44004,7 @@
                                     "name": "StatusStripControl",
                                     "controlType": "StatusStripControl",
                                     "text": "",
-                                    "toolTip": "Character: none | Service: online | Time: 2026-06-20 22:04:24Z | Ruleset: Shadowrun 5 .chum5 | Workflows: 5 defs / 6 surfaces | Prefs: 100%/classic/en-us",
+                                    "toolTip": "Character: none | Service: online | Time: 2026-06-21 07:40:44Z | Ruleset: Shadowrun 5 .chum5 | Workflows: 5 defs / 6 surfaces | Prefs: 100%/classic/en-us",
                                     "isVisible": false,
                                     "children": []
                                   }

@@ -43,7 +43,7 @@ public sealed class DesktopTrustPanelFactoryTests
             FindDescendant<TextBlock>(panel, text => text.Text?.Contains("Import explanation and environment details", StringComparison.Ordinal) is true).Text);
 
         Button companionButton = FindDescendant<Button>(panel, "OpenDesktopDialogExplainCompanionButton");
-        Assert.AreEqual("Open inspectable explain companion", AutomationProperties.GetName(companionButton));
+        Assert.AreEqual("Open explanation details", AutomationProperties.GetName(companionButton));
 
         string launchUri = AssertString(companionButton.Tag);
         AiCoachLaunchContext context = AiCoachLaunchQuery.Parse(new Uri("https://chummer.test" + launchUri).Query);
@@ -51,6 +51,7 @@ public sealed class DesktopTrustPanelFactoryTests
         Assert.AreEqual(RulesetDefaults.Sr5, context.RulesetId);
         StringAssert.Contains(context.Message ?? string.Empty, "Open Character explanation");
         StringAssert.Contains(context.Message ?? string.Empty, "Import rules setup record");
+        Assert.IsFalse((context.Message ?? string.Empty).Contains("receipt", StringComparison.OrdinalIgnoreCase));
         Assert.IsFalse((context.Message ?? string.Empty).Contains("rule-environment", StringComparison.OrdinalIgnoreCase));
     }
 
@@ -141,8 +142,54 @@ public sealed class DesktopTrustPanelFactoryTests
         Assert.AreEqual("sha256:runtime", context.RuntimeFingerprint);
         Assert.AreEqual("ws-77", context.WorkspaceId);
         Assert.AreEqual(RulesetDefaults.Sr6, context.RulesetId);
-        StringAssert.Contains(context.Message ?? string.Empty, "build_lab:desktop");
-        StringAssert.Contains(context.Message ?? string.Empty, "Grounded explain receipt");
+        Assert.IsFalse((context.Message ?? string.Empty).Contains("build_lab:desktop", StringComparison.Ordinal));
+        Assert.IsFalse((context.Message ?? string.Empty).Contains("Grounded explain receipt", StringComparison.OrdinalIgnoreCase));
+        Assert.IsFalse((context.Message ?? string.Empty).Contains("receipt", StringComparison.OrdinalIgnoreCase));
+        StringAssert.Contains(context.Message ?? string.Empty, "Build lab details");
+        StringAssert.Contains(context.Message ?? string.Empty, "Support next step record");
+    }
+
+    [TestMethod]
+    public void DesktopExplainCompanionWindow_uses_plain_labels_and_hides_internal_ids()
+    {
+        EnsureHeadlessPlatform();
+        DesktopExplainCompanionRequest request = new(
+            Title: "Build lab explain companion",
+            SurfaceId: "build_lab:desktop",
+            SurfaceLabel: "Desktop build lab explain companion",
+            Sections:
+            [
+                new DesktopTrustReceiptSection(
+                    "Grounded explain receipt",
+                    ["Support handoff receipt: support/build-lab/123", "Correlation key: build-lab/123"])
+            ],
+            SurfaceFamilyId: "explain_receipts:desktop",
+            WorkspaceId: "ws-77",
+            RulesetId: RulesetDefaults.Sr6,
+            RuntimeFingerprint: "sha256:runtime");
+
+        DesktopExplainCompanionWindow window = new(request);
+        Control root = (Control)window.Content!;
+        Control[] controls = CollectControls(root).ToArray();
+        string visibleText = string.Join(
+            "\n",
+            controls.OfType<TextBlock>().Select(static text => text.Text)
+                .Concat(controls.OfType<Button>().Select(static button => button.Content?.ToString()))
+                .Concat(controls.OfType<TextBox>().Select(static textBox => textBox.Text))
+                .Where(static text => !string.IsNullOrWhiteSpace(text)));
+
+        StringAssert.Contains(visibleText, "Help link");
+        StringAssert.Contains(visibleText, "Details");
+        StringAssert.Contains(visibleText, "Copy details");
+        StringAssert.Contains(visibleText, "Current explanation");
+        StringAssert.Contains(visibleText, "Support next step record");
+        Assert.IsFalse(visibleText.Contains("Receipt text", StringComparison.OrdinalIgnoreCase), visibleText);
+        Assert.IsFalse(visibleText.Contains("Copy Explain Receipt", StringComparison.OrdinalIgnoreCase), visibleText);
+        Assert.IsFalse(visibleText.Contains("Companion launch link", StringComparison.OrdinalIgnoreCase), visibleText);
+        Assert.IsFalse(visibleText.Contains("build_lab:desktop", StringComparison.OrdinalIgnoreCase), visibleText);
+        Assert.IsFalse(visibleText.Contains("explain_receipts", StringComparison.OrdinalIgnoreCase), visibleText);
+        Assert.IsFalse(visibleText.Contains("receipt", StringComparison.OrdinalIgnoreCase), visibleText);
+        Assert.IsFalse(visibleText.Contains("proof", StringComparison.OrdinalIgnoreCase), visibleText);
     }
 
     [TestMethod]
@@ -219,6 +266,32 @@ public sealed class DesktopTrustPanelFactoryTests
         => root.GetVisualDescendants()
             .OfType<T>()
             .Single(predicate);
+
+    private static IEnumerable<Control> CollectControls(Control root)
+    {
+        yield return root;
+
+        IEnumerable<object?> children = root switch
+        {
+            Panel panel => panel.Children,
+            Border border => [border.Child],
+            ContentControl contentControl => [contentControl.Content],
+            _ => []
+        };
+
+        foreach (object? child in children)
+        {
+            if (child is not Control childControl)
+            {
+                continue;
+            }
+
+            foreach (Control descendant in CollectControls(childControl))
+            {
+                yield return descendant;
+            }
+        }
+    }
 
     private static string AssertString(object? value)
     {

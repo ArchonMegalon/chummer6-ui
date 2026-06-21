@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-06-19T01:07:39.107690Z",
+  "generatedAt": "2026-06-21T07:34:20.126539Z",
   "contract_name": "chummer6-ui.sr4_sr6_desktop_parity_frontier",
   "channelId": "public_stable",
   "status": "pass",
@@ -15,8 +15,8 @@
     "releaseChannelMaxAgeSeconds": 86400,
     "releaseChannelMaxFutureSkewSeconds": 300,
     "releaseChannelChannelId": "public_stable",
-    "releaseChannelGeneratedAt": "2026-06-19T00:49:02Z",
-    "releaseChannelAgeSeconds": 1117,
+    "releaseChannelGeneratedAt": "2026-06-21T05:53:14Z",
+    "releaseChannelAgeSeconds": 6066,
     "releaseChannelFutureSkewSeconds": 0,
     "sr4Status": "pass",
     "sr6Status": "pass",
@@ -35,8 +35,8 @@
     "reasons": [],
     "path": "/docker/chummercomplete/chummer-hub-registry/.codex-studio/published/RELEASE_CHANNEL.generated.json",
     "channelId": "public_stable",
-    "generatedAt": "2026-06-19T00:49:02Z",
-    "ageSeconds": 1117,
+    "generatedAt": "2026-06-21T05:53:14Z",
+    "ageSeconds": 6066,
     "futureSkewSeconds": 0,
     "maxAgeSeconds": 86400,
     "maxFutureSkewSeconds": 300
@@ -52,10 +52,10 @@
       "rulesetUiAdaptation": "pass"
     },
     "receiptGeneratedAts": {
-      "sr4": "2026-06-19T01:04:09.501899Z",
-      "sr6": "2026-06-19T01:07:25.296164Z",
-      "chummer5a": "2026-06-19T01:07:31.459179Z",
-      "rulesetUiAdaptation": "2026-06-19T01:07:39.076402Z"
+      "sr4": "2026-06-21T07:30:38.348441Z",
+      "sr6": "2026-06-21T07:33:59.938144Z",
+      "chummer5a": "2026-06-21T07:34:07.115103Z",
+      "rulesetUiAdaptation": "2026-06-21T07:34:20.092997Z"
     }
   },
   "workflowCoverageReview": {
@@ -131,10 +131,10 @@
       "rulesetUiAdaptation": "public_stable"
     },
     "receiptReleaseChannelGeneratedAts": {
-      "sr4": "2026-06-19T00:49:02Z",
-      "sr6": "2026-06-19T00:49:02Z",
-      "chummer5a": "2026-06-19T00:49:02Z",
-      "rulesetUiAdaptation": "2026-06-19T00:49:02Z"
+      "sr4": "2026-06-21T05:53:14Z",
+      "sr6": "2026-06-21T05:53:14Z",
+      "chummer5a": "2026-06-21T05:53:14Z",
+      "rulesetUiAdaptation": "2026-06-21T05:53:14Z"
     }
   },
   "gateExecutionReview": {

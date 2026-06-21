@@ -31,6 +31,8 @@ public static class PlayerFacingCopyHumanizer
         ("Diagnostics environment diff", "System details"),
         ("Diagnostics environment change", "System details"),
         ("Before-after diffs", "Changes"),
+        ("Grounded explain receipt", "Current explanation"),
+        ("explain companion", "details"),
         ("Explain receipts", "Explanations"),
         ("Explain receipt", "Explanation"),
         ("Unmixr AI", "Unmixr"),

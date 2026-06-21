@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-06-20T21:43:40.608340Z",
+  "generatedAt": "2026-06-21T07:34:07.115103Z",
   "contract_name": "chummer6-ui.chummer5a_desktop_workflow_parity",
   "channelId": "public_stable",
   "status": "pass",
@@ -19,8 +19,8 @@
     "releaseChannelMaxAgeSeconds": 86400,
     "releaseChannelMaxFutureSkewSeconds": 300,
     "releaseChannelChannelId": "public_stable",
-    "releaseChannelGeneratedAt": "2026-06-20T08:00:00Z",
-    "releaseChannelAgeSeconds": 49420,
+    "releaseChannelGeneratedAt": "2026-06-21T05:53:14Z",
+    "releaseChannelAgeSeconds": 6053,
     "releaseChannelFutureSkewSeconds": 0,
     "requiredFamilyCount": 10,
     "ledgerFamilyCount": 10,
@@ -104,8 +104,8 @@
     "reasons": [],
     "path": "/docker/chummercomplete/chummer-hub-registry/.codex-studio/published/RELEASE_CHANNEL.generated.json",
     "channelId": "public_stable",
-    "generatedAt": "2026-06-20T08:00:00Z",
-    "ageSeconds": 49420,
+    "generatedAt": "2026-06-21T05:53:14Z",
+    "ageSeconds": 6053,
     "futureSkewSeconds": 0,
     "maxAgeSeconds": 86400,
     "maxFutureSkewSeconds": 300

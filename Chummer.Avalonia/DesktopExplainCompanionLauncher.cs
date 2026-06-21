@@ -5,6 +5,7 @@ using Avalonia.Controls.Primitives;
 using Avalonia.Layout;
 using Avalonia.Media;
 using Chummer.Contracts.AI;
+using Chummer.Presentation;
 using Chummer.Presentation.Overview;
 using System.Globalization;
 
@@ -59,15 +60,15 @@ internal static class DesktopExplainCompanionLauncher
         Button button = new()
         {
             Name = controlName,
-            Content = "Open Explain Companion",
+            Content = "Open details",
             Tag = launchUri,
             MinWidth = 176,
             Classes = { "shell-action", "quiet" }
         };
-        AutomationProperties.SetName(button, "Open inspectable explain companion");
+        AutomationProperties.SetName(button, "Open explanation details");
         AutomationProperties.SetHelpText(
             button,
-            "Opens a desktop companion with the same receipt, blocker, compare, and environment-diff context.");
+            "Opens the same blocker, comparison, and system details.");
         button.Click += (_, _) => Show(source, request with { LaunchUri = launchUri });
         return button;
     }
@@ -79,7 +80,8 @@ internal static class DesktopExplainCompanionLauncher
                 " ",
                 new[] { section.Title }.Concat(section.Lines.Take(2))))
             .Where(static line => !string.IsNullOrWhiteSpace(line));
-        return $"{request.SurfaceLabel} ({request.SurfaceId}): inspect {request.Title}. {string.Join(" ", sectionSummaries)}";
+        return PlayerFacingCopyHumanizer.Clean(
+            $"{request.SurfaceLabel}: inspect {request.Title}. {string.Join(" ", sectionSummaries)}");
     }
 }
 
@@ -94,7 +96,7 @@ internal sealed class DesktopExplainCompanionWindow : Window
     public DesktopExplainCompanionWindow(DesktopExplainCompanionRequest request)
     {
         _receiptText = DesktopTrustReceiptText.BuildReceiptText(request.Sections);
-        Title = request.Title;
+        Title = PlayerFacingCopyHumanizer.Clean(request.Title);
         Width = 760;
         Height = 640;
         MinWidth = 560;
@@ -112,13 +114,13 @@ internal sealed class DesktopExplainCompanionWindow : Window
 
         content.Children.Add(new TextBlock
         {
-            Text = request.SurfaceLabel,
+            Text = PlayerFacingCopyHumanizer.Clean(request.SurfaceLabel),
             FontWeight = FontWeight.SemiBold,
             TextWrapping = TextWrapping.Wrap
         });
         content.Children.Add(new TextBlock
         {
-            Text = request.Title,
+            Text = PlayerFacingCopyHumanizer.Clean(request.Title),
             FontSize = 20,
             FontWeight = FontWeight.Bold,
             TextWrapping = TextWrapping.Wrap
@@ -127,7 +129,7 @@ internal sealed class DesktopExplainCompanionWindow : Window
         string launchUri = request.LaunchUri ?? DesktopExplainCompanionLauncher.BuildLaunchUri(request);
         content.Children.Add(new TextBlock
         {
-            Text = "Companion launch link",
+            Text = "Help link",
             FontWeight = FontWeight.SemiBold,
             TextWrapping = TextWrapping.Wrap
         });
@@ -140,23 +142,23 @@ internal sealed class DesktopExplainCompanionWindow : Window
             MinHeight = 34
         };
         DesktopShellTheme.ApplyShellTextInputTheme(launchUriTextBox);
-        AutomationProperties.SetName(launchUriTextBox, "Inspectable explain companion launch link");
-        AutomationProperties.SetHelpText(launchUriTextBox, "Copy-safe launch link for reopening the same receipt, blocker, compare, and environment-diff context.");
+        AutomationProperties.SetName(launchUriTextBox, "Explanation help link");
+        AutomationProperties.SetHelpText(launchUriTextBox, "Copy-safe link for reopening the same blocker, comparison, and system details.");
         content.Children.Add(launchUriTextBox);
         Button copyLaunchUriButton = new()
         {
             Name = "CopyExplainCompanionLaunchUriButton",
-            Content = "Copy Companion Link",
+            Content = "Copy help link",
             MinWidth = 160,
             Classes = { "shell-action", "quiet" }
         };
-        AutomationProperties.SetName(copyLaunchUriButton, "Copy explain companion link");
-        AutomationProperties.SetHelpText(copyLaunchUriButton, "Copies the companion launch link for the same receipt, blocker, compare, and environment-diff context.");
-        copyLaunchUriButton.Click += async (_, _) => await CopyTextAsync(launchUri, "Explain companion link copied.").ConfigureAwait(true);
+        AutomationProperties.SetName(copyLaunchUriButton, "Copy explanation help link");
+        AutomationProperties.SetHelpText(copyLaunchUriButton, "Copies the help link for the same blocker, comparison, and system details.");
+        copyLaunchUriButton.Click += async (_, _) => await CopyTextAsync(launchUri, "Help link copied.").ConfigureAwait(true);
         content.Children.Add(copyLaunchUriButton);
         content.Children.Add(new TextBlock
         {
-            Text = "Receipt text",
+            Text = "Details",
             FontWeight = FontWeight.SemiBold,
             TextWrapping = TextWrapping.Wrap
         });
@@ -170,19 +172,19 @@ internal sealed class DesktopExplainCompanionWindow : Window
             AcceptsReturn = true
         };
         DesktopShellTheme.ApplyShellTextInputTheme(receiptTextBox);
-        AutomationProperties.SetName(receiptTextBox, "Inspectable explain companion receipt text");
-        AutomationProperties.SetHelpText(receiptTextBox, "Copy-safe receipt text for support, blocker, compare, and environment-diff review.");
+        AutomationProperties.SetName(receiptTextBox, "Explanation details");
+        AutomationProperties.SetHelpText(receiptTextBox, "Copy-safe details for support, blocker, comparison, and system review.");
         content.Children.Add(receiptTextBox);
         Button copyReceiptButton = new()
         {
             Name = "CopyExplainCompanionReceiptButton",
-            Content = "Copy Explain Receipt",
+            Content = "Copy details",
             MinWidth = 160,
             Classes = { "shell-action", "quiet" }
         };
-        AutomationProperties.SetName(copyReceiptButton, "Copy explain companion receipt");
-        AutomationProperties.SetHelpText(copyReceiptButton, "Copies the companion receipt, blocker, compare, and environment-diff context.");
-        copyReceiptButton.Click += async (_, _) => await CopyTextAsync(_receiptText, "Explain receipt copied.").ConfigureAwait(true);
+        AutomationProperties.SetName(copyReceiptButton, "Copy explanation details");
+        AutomationProperties.SetHelpText(copyReceiptButton, "Copies the same blocker, comparison, and system details.");
+        copyReceiptButton.Click += async (_, _) => await CopyTextAsync(_receiptText, "Details copied.").ConfigureAwait(true);
         content.Children.Add(copyReceiptButton);
         content.Children.Add(_copyStatusText);
 
@@ -211,13 +213,13 @@ internal sealed class DesktopExplainCompanionWindow : Window
     {
         List<(string Label, string? Value, string ValueName)> metadataRows =
         [
-            ("Surface", request.SurfaceId, "ExplainCompanionSurfaceIdText"),
-            ("Owned surface", request.SurfaceFamilyId ?? request.SurfaceId, "ExplainCompanionSurfaceFamilyIdText"),
             ("Ruleset", request.RulesetId, "ExplainCompanionRulesetIdText"),
             ("Workspace", request.WorkspaceId, "ExplainCompanionWorkspaceIdText"),
             ("Runtime", request.RuntimeFingerprint, "ExplainCompanionRuntimeFingerprintText"),
-            ("Correlation", TryExtractSectionValue(request.Sections, "correlation key:"), "ExplainCompanionCorrelationKeyText"),
-            ("Support handoff", TryExtractSectionValue(request.Sections, "handoff receipt:"), "ExplainCompanionSupportHandoffText"),
+            ("Reference", TryExtractSectionValue(request.Sections, "correlation key:"), "ExplainCompanionCorrelationKeyText"),
+            ("Support note", TryExtractSectionValue(request.Sections, "next step record:")
+                ?? TryExtractSectionValue(request.Sections, "handoff record:")
+                ?? TryExtractSectionValue(request.Sections, "handoff receipt:"), "ExplainCompanionSupportHandoffText"),
             ("Sections", request.Sections.Count.ToString(CultureInfo.InvariantCulture), "ExplainCompanionSectionCountText")
         ];
 
@@ -281,7 +283,7 @@ internal sealed class DesktopExplainCompanionWindow : Window
         TextBlock valueBlock = new()
         {
             Name = valueName,
-            Text = value,
+            Text = PlayerFacingCopyHumanizer.Clean(value),
             TextWrapping = TextWrapping.Wrap,
             Margin = new Thickness(0, 0, 0, 6)
         };
@@ -298,7 +300,7 @@ internal sealed class DesktopExplainCompanionWindow : Window
         };
         content.Children.Add(new TextBlock
         {
-            Text = section.Title,
+            Text = PlayerFacingCopyHumanizer.Clean(section.Title),
             FontWeight = FontWeight.SemiBold,
             TextWrapping = TextWrapping.Wrap
         });
@@ -307,7 +309,7 @@ internal sealed class DesktopExplainCompanionWindow : Window
         {
             content.Children.Add(new TextBlock
             {
-                Text = line,
+                Text = PlayerFacingCopyHumanizer.Clean(line),
                 TextWrapping = TextWrapping.Wrap
             });
         }

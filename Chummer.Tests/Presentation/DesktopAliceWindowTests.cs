@@ -226,7 +226,7 @@ public sealed class DesktopAliceWindowTests
     public void PlayerFacingCopyHumanizer_removes_provider_and_proof_language_from_visible_copy()
     {
         string cleaned = Chummer.Presentation.PlayerFacingCopyHumanizer.Clean(
-            "ALICE generated proofs and an Unmixr AI narration receipt from the approved origin canon through a media-factory provider lane after validation checks, audit verdict, registry posture, explain receipt, explain proof, environment truth, Public Proof Shelf, Rule Environment Studio, Before-after diffs, and available follow-up.");
+            "ALICE generated proofs and an Unmixr AI narration receipt from the approved origin canon through a media-factory provider lane after validation checks, audit verdict, registry posture, explain receipt, grounded explain receipt, explain companion, explain proof, environment truth, Public Proof Shelf, Rule Environment Studio, Before-after diffs, and available follow-up.");
 
         StringAssert.Contains(cleaned, "Alice");
         StringAssert.Contains(cleaned, "Unmixr");
@@ -237,6 +237,7 @@ public sealed class DesktopAliceWindowTests
         StringAssert.Contains(cleaned, "review decision");
         StringAssert.Contains(cleaned, "app record status");
         StringAssert.Contains(cleaned, "explanation");
+        StringAssert.Contains(cleaned, "Current explanation");
         StringAssert.Contains(cleaned, "environment details");
         StringAssert.Contains(cleaned, "Public Files");
         StringAssert.Contains(cleaned, "Rules Setup");
@@ -244,6 +245,8 @@ public sealed class DesktopAliceWindowTests
         Assert.IsFalse(cleaned.Contains("Proof Shelf", StringComparison.OrdinalIgnoreCase));
         Assert.IsFalse(cleaned.Contains("Rule Environment Studio", StringComparison.OrdinalIgnoreCase));
         Assert.IsFalse(cleaned.Contains("Before-after diffs", StringComparison.OrdinalIgnoreCase));
+        Assert.IsFalse(cleaned.Contains("Grounded explain receipt", StringComparison.OrdinalIgnoreCase));
+        Assert.IsFalse(cleaned.Contains("explain companion", StringComparison.OrdinalIgnoreCase));
         StringAssert.Contains(cleaned, "available");
         Assert.IsFalse(cleaned.Contains("Unmixr AI", StringComparison.Ordinal));
         Assert.IsFalse(cleaned.Contains("generated", StringComparison.OrdinalIgnoreCase));
