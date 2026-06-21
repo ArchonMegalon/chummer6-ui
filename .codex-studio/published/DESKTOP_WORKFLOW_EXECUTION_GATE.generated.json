@@ -108,8 +108,8 @@
     "release_channel_receipt_exists": true,
     "release_channel_channel_id": "public_stable",
     "release_channel_version": "run-258",
-    "release_channel_generated_at": "2026-06-20T21:50:21Z",
-    "release_channel_age_seconds": 1,
+    "release_channel_generated_at": "2026-06-20T21:50:24Z",
+    "release_channel_age_seconds": 5110,
     "release_channel_required_desktop_heads": [
       "avalonia"
     ],
