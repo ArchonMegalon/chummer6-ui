@@ -3828,6 +3828,50 @@ public sealed class AvaloniaFlagshipUiGateTests
     }
 
     [TestMethod]
+    public void Loaded_runner_add_skill_dialog_candidate_selection_updates_the_selected_skill()
+    {
+        WithLoadedRunnerHarness(harness =>
+        {
+            harness.SetActiveSectionForTesting("skills");
+            harness.WaitUntil(() => harness.FindControlOrDefault<Control>("SectionQuickAction_skill_add")?.IsVisible == true);
+            harness.Click("SectionQuickAction_skill_add");
+            harness.WaitUntil(() =>
+                string.Equals(
+                    harness.FindControlOrDefault<TextBlock>("DialogTitleText")?.Text,
+                    "Add Skill",
+                    StringComparison.Ordinal));
+
+            string candidateInputName = DesktopDialogAccessibility.BuildFieldInputName("uiSkillCandidateList");
+            ListBox candidateList = harness.FindControl<ListBox>(candidateInputName);
+            Assert.IsTrue(candidateList.IsVisible, "Add Skill must expose available skills as a visible selectable list.");
+            Assert.IsNull(
+                harness.FindControlOrDefault<TextBox>(candidateInputName),
+                "Add Skill must not render available skills as a readonly text field.");
+
+            object sneakingCandidate = SnapshotListBoxItems(candidateList)
+                .FirstOrDefault(item => item.ToString()?.Contains("Sneaking", StringComparison.OrdinalIgnoreCase) == true)
+                ?? throw new AssertFailedException("Add Skill candidate list must include Sneaking as a selectable row.");
+            candidateList.SelectedItem = sneakingCandidate;
+            harness.AdvanceFrames(3);
+
+            harness.WaitUntil(() =>
+                harness.Presenter.DialogFieldUpdates.Any(update =>
+                    string.Equals(update.FieldId, "uiSkillName", StringComparison.Ordinal)
+                    && string.Equals(update.Value, "Sneaking", StringComparison.Ordinal)));
+            harness.WaitUntil(() =>
+                string.Equals(
+                    harness.State.ActiveDialog?.Fields.FirstOrDefault(field => string.Equals(field.Id, "uiSkillName", StringComparison.Ordinal))?.Value,
+                    "Sneaking",
+                    StringComparison.Ordinal));
+            Assert.IsTrue(
+                harness.State.ActiveDialog?.Actions.Any(action =>
+                    string.Equals(action.Id, "add", StringComparison.Ordinal)
+                    && string.Equals(action.Label, "Add Sneaking", StringComparison.Ordinal)) == true,
+                "Add Skill action text must follow the selected skill after candidate selection.");
+        });
+    }
+
+    [TestMethod]
     public void Keyboard_shortcuts_resolve_to_the_same_shell_commands()
     {
         WithHarness(harness =>
