@@ -672,14 +672,26 @@
       <Setter Property="Background" Value="{DynamicResource ComboBoxItemBackgroundSelected}" />
       <Setter Property="Foreground" Value="{DynamicResource ComboBoxItemForegroundSelected}" />
     </Style>
+    <Style Selector="ComboBoxItem:disabled">
+      <Setter Property="Background" Value="{DynamicResource ComboBoxItemBackgroundDisabled}" />
+      <Setter Property="Foreground" Value="{DynamicResource ComboBoxItemForegroundDisabled}" />
+    </Style>
     <Style Selector="ComboBoxItem TextBlock">
       <Setter Property="Foreground" Value="{DynamicResource ComboBoxItemForeground}" />
+    </Style>
+    <Style Selector="ComboBoxItem ContentPresenter">
+      <Setter Property="Foreground" Value="{DynamicResource ComboBoxItemForeground}" />
+      <Setter Property="TextElement.Foreground" Value="{DynamicResource ComboBoxItemForeground}" />
     </Style>
     <Style Selector="ComboBoxItem /template/ ContentPresenter">
       <Setter Property="TextElement.Foreground" Value="{DynamicResource ComboBoxItemForeground}" />
     </Style>
     <Style Selector="ComboBox TextBlock">
       <Setter Property="Foreground" Value="{DynamicResource ComboBoxForeground}" />
+    </Style>
+    <Style Selector="ComboBox ContentPresenter">
+      <Setter Property="Foreground" Value="{DynamicResource ComboBoxForeground}" />
+      <Setter Property="TextElement.Foreground" Value="{DynamicResource ComboBoxForeground}" />
     </Style>
     <Style Selector="ComboBox /template/ ContentPresenter">
       <Setter Property="Foreground" Value="{DynamicResource ComboBoxForeground}" />
@@ -699,6 +711,10 @@
       <Setter Property="Foreground" Value="{DynamicResource ComboBoxForegroundPointerOver}" />
       <Setter Property="TextElement.Foreground" Value="{DynamicResource ComboBoxForegroundPointerOver}" />
     </Style>
+    <Style Selector="ComboBox:pointerover ContentPresenter">
+      <Setter Property="Foreground" Value="{DynamicResource ComboBoxForegroundPointerOver}" />
+      <Setter Property="TextElement.Foreground" Value="{DynamicResource ComboBoxForegroundPointerOver}" />
+    </Style>
     <Style Selector="ComboBox:pointerover /template/ TextBlock">
       <Setter Property="Foreground" Value="{DynamicResource ComboBoxForegroundPointerOver}" />
     </Style>
@@ -710,6 +726,10 @@
       <Setter Property="BorderBrush" Value="{DynamicResource ComboBoxBorderBrushPointerOver}" />
     </Style>
     <Style Selector="ComboBox:pressed /template/ ContentPresenter">
+      <Setter Property="Foreground" Value="{DynamicResource ComboBoxForegroundPressed}" />
+      <Setter Property="TextElement.Foreground" Value="{DynamicResource ComboBoxForegroundPressed}" />
+    </Style>
+    <Style Selector="ComboBox:pressed ContentPresenter">
       <Setter Property="Foreground" Value="{DynamicResource ComboBoxForegroundPressed}" />
       <Setter Property="TextElement.Foreground" Value="{DynamicResource ComboBoxForegroundPressed}" />
     </Style>
@@ -727,6 +747,10 @@
       <Setter Property="Foreground" Value="{DynamicResource ComboBoxForegroundPressed}" />
       <Setter Property="TextElement.Foreground" Value="{DynamicResource ComboBoxForegroundPressed}" />
     </Style>
+    <Style Selector="ComboBox:focus ContentPresenter">
+      <Setter Property="Foreground" Value="{DynamicResource ComboBoxForegroundPressed}" />
+      <Setter Property="TextElement.Foreground" Value="{DynamicResource ComboBoxForegroundPressed}" />
+    </Style>
     <Style Selector="ComboBox:focus /template/ TextBlock">
       <Setter Property="Foreground" Value="{DynamicResource ComboBoxForegroundPressed}" />
     </Style>
@@ -738,6 +762,10 @@
       <Setter Property="BorderBrush" Value="{DynamicResource ComboBoxBorderBrushPressed}" />
     </Style>
     <Style Selector="ComboBox:disabled /template/ ContentPresenter">
+      <Setter Property="Foreground" Value="{DynamicResource ComboBoxForegroundDisabled}" />
+      <Setter Property="TextElement.Foreground" Value="{DynamicResource ComboBoxForegroundDisabled}" />
+    </Style>
+    <Style Selector="ComboBox:disabled ContentPresenter">
       <Setter Property="Foreground" Value="{DynamicResource ComboBoxForegroundDisabled}" />
       <Setter Property="TextElement.Foreground" Value="{DynamicResource ComboBoxForegroundDisabled}" />
     </Style>
@@ -757,6 +785,10 @@
     <Style Selector="ComboBoxItem:selected /template/ ContentPresenter">
       <Setter Property="TextElement.Foreground" Value="{DynamicResource ComboBoxItemForegroundSelected}" />
     </Style>
+    <Style Selector="ComboBoxItem:selected ContentPresenter">
+      <Setter Property="Foreground" Value="{DynamicResource ComboBoxItemForegroundSelected}" />
+      <Setter Property="TextElement.Foreground" Value="{DynamicResource ComboBoxItemForegroundSelected}" />
+    </Style>
     <Style Selector="ComboBoxItem:selected TextBlock.shell-caption">
       <Setter Property="Foreground" Value="{DynamicResource ComboBoxItemForegroundSelected}" />
     </Style>
@@ -766,11 +798,29 @@
     <Style Selector="ComboBoxItem:pointerover /template/ ContentPresenter">
       <Setter Property="TextElement.Foreground" Value="{DynamicResource ComboBoxItemForegroundPointerOver}" />
     </Style>
+    <Style Selector="ComboBoxItem:pointerover ContentPresenter">
+      <Setter Property="Foreground" Value="{DynamicResource ComboBoxItemForegroundPointerOver}" />
+      <Setter Property="TextElement.Foreground" Value="{DynamicResource ComboBoxItemForegroundPointerOver}" />
+    </Style>
     <Style Selector="ComboBoxItem:pressed TextBlock">
       <Setter Property="Foreground" Value="{DynamicResource ComboBoxItemForegroundPressed}" />
     </Style>
     <Style Selector="ComboBoxItem:pressed /template/ ContentPresenter">
       <Setter Property="TextElement.Foreground" Value="{DynamicResource ComboBoxItemForegroundPressed}" />
+    </Style>
+    <Style Selector="ComboBoxItem:pressed ContentPresenter">
+      <Setter Property="Foreground" Value="{DynamicResource ComboBoxItemForegroundPressed}" />
+      <Setter Property="TextElement.Foreground" Value="{DynamicResource ComboBoxItemForegroundPressed}" />
+    </Style>
+    <Style Selector="ComboBoxItem:disabled TextBlock">
+      <Setter Property="Foreground" Value="{DynamicResource ComboBoxItemForegroundDisabled}" />
+    </Style>
+    <Style Selector="ComboBoxItem:disabled ContentPresenter">
+      <Setter Property="Foreground" Value="{DynamicResource ComboBoxItemForegroundDisabled}" />
+      <Setter Property="TextElement.Foreground" Value="{DynamicResource ComboBoxItemForegroundDisabled}" />
+    </Style>
+    <Style Selector="ComboBoxItem:disabled /template/ ContentPresenter">
+      <Setter Property="TextElement.Foreground" Value="{DynamicResource ComboBoxItemForegroundDisabled}" />
     </Style>
     <Style Selector="ComboBoxItem:selected TextBlock.shell-option-label">
       <Setter Property="Foreground" Value="{DynamicResource ComboBoxItemForegroundSelected}" />
@@ -788,6 +838,10 @@
       <Setter Property="Foreground" Value="{DynamicResource ComboBoxItemForegroundSelected}" />
     </Style>
     <Style Selector="ComboBoxItem:selected:pointerover /template/ ContentPresenter">
+      <Setter Property="TextElement.Foreground" Value="{DynamicResource ComboBoxItemForegroundSelected}" />
+    </Style>
+    <Style Selector="ComboBoxItem:selected:pointerover ContentPresenter">
+      <Setter Property="Foreground" Value="{DynamicResource ComboBoxItemForegroundSelected}" />
       <Setter Property="TextElement.Foreground" Value="{DynamicResource ComboBoxItemForegroundSelected}" />
     </Style>
     <Style Selector="ComboBoxItem:selected:pointerover TextBlock.shell-caption">

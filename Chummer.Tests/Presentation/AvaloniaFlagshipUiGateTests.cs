@@ -4421,10 +4421,15 @@ public sealed class AvaloniaFlagshipUiGateTests
 
         StringAssert.Contains(appAxamlText, "<Style Selector=\"ComboBox\">");
         StringAssert.Contains(appAxamlText, "<Style Selector=\"ComboBoxItem TextBlock\">");
+        StringAssert.Contains(appAxamlText, "<Style Selector=\"ComboBoxItem ContentPresenter\">");
         StringAssert.Contains(appAxamlText, "<Style Selector=\"ComboBox /template/ ContentPresenter\">");
+        StringAssert.Contains(appAxamlText, "<Style Selector=\"ComboBox ContentPresenter\">");
         StringAssert.Contains(appAxamlText, "<Style Selector=\"ComboBox /template/ TextPresenter\">");
         StringAssert.Contains(appAxamlText, "<Style Selector=\"ComboBoxItem:selected\">");
         StringAssert.Contains(appAxamlText, "<Style Selector=\"ComboBoxItem:selected TextBlock\">");
+        StringAssert.Contains(appAxamlText, "<Style Selector=\"ComboBoxItem:selected ContentPresenter\">");
+        StringAssert.Contains(appAxamlText, "<Style Selector=\"ComboBoxItem:disabled ContentPresenter\">");
+        StringAssert.Contains(appAxamlText, "<Style Selector=\"ComboBox:disabled ContentPresenter\">");
         StringAssert.Contains(appAxamlText, "<Style Selector=\"TextBox\">");
         StringAssert.Contains(appAxamlText, "<Style Selector=\"TextBox /template/ TextPresenter\">");
         StringAssert.Contains(appAxamlText, "<Style Selector=\"NumericUpDown\">");
