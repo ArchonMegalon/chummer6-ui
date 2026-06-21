@@ -4584,16 +4584,30 @@ public sealed class AvaloniaFlagshipUiGateTests
             PumpStandaloneUi();
 
             Border attributeEditor = FindDescendant<Border>(control, "AttributeParityEditorBorder");
+            Grid bodyRow = FindDescendant<Grid>(control, "AttributeParityRow_BOD");
             Grid baseEditor = FindDescendant<Grid>(control, "AttributeBaseEditor_BOD");
             Grid karmaEditor = FindDescendant<Grid>(control, "AttributeKarmaEditor_BOD");
             Button baseIncreaseButton = FindDescendant<Button>(control, "AttributeBaseEditor_BOD_Increase");
+            Button baseDecreaseButton = FindDescendant<Button>(control, "AttributeBaseEditor_BOD_Decrease");
             Control? reviewExpander = FindDescendantOrDefault<Expander>(control, "SectionReviewExpander");
             Control reviewPanel = FindDescendant<Control>(control, "SectionReviewPanel");
 
             Assert.IsTrue(attributeEditor.IsVisible, "Character creation parity requires the dedicated attribute editor surface.");
+            Assert.AreEqual(128d, bodyRow.ColumnDefinitions[1].Width.Value, 0.01d, "Start column must leave room for the attribute value and stepper buttons.");
+            Assert.AreEqual(128d, bodyRow.ColumnDefinitions[2].Width.Value, 0.01d, "Add column must leave room for the attribute value and stepper buttons.");
+            Assert.AreEqual(28d, baseEditor.ColumnDefinitions[0].Width.Value, 0.01d, "Attribute stepper buttons need a stable touch target column.");
+            Assert.AreEqual(18d, baseEditor.ColumnDefinitions[1].Width.Value, 0.01d, "Attribute value must not sit directly against the minus button.");
+            Assert.AreEqual(18d, baseEditor.ColumnDefinitions[3].Width.Value, 0.01d, "Attribute value must not sit directly against the plus button.");
+            Assert.AreEqual(24d, baseDecreaseButton.Width, 0.01d, "Attribute stepper buttons need a clear visual target.");
+            Assert.AreEqual(24d, baseIncreaseButton.Width, 0.01d, "Attribute stepper buttons need a clear visual target.");
             Assert.IsTrue(baseEditor.IsVisible, "Character creation parity requires a visible base stepper editor.");
             Assert.IsTrue(karmaEditor.IsVisible, "Character creation parity requires a visible karma stepper editor.");
             Assert.IsTrue(baseIncreaseButton.IsVisible, "Character creation parity requires visible stepper controls.");
+            TextBlock baseValueText = baseEditor.GetVisualDescendants()
+                .OfType<TextBlock>()
+                .Single(text => string.Equals(text.Text, "3", StringComparison.Ordinal));
+            Assert.AreEqual(72d, baseValueText.MinWidth, 0.01d, "The base attribute value must have a stable readable width.");
+            Assert.AreEqual(new Thickness(14d, 0d), baseValueText.Margin, "The base attribute value must have breathing room before +/- buttons.");
             Assert.IsTrue(
                 baseEditor.GetVisualDescendants().OfType<TextBlock>().Any(text => string.Equals(text.Text, "3", StringComparison.Ordinal)),
                 "The base attribute editor must render the value cleanly between the stepper buttons.");
