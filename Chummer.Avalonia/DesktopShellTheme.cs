@@ -52,12 +52,6 @@ internal static class DesktopShellTheme
             textBox.Classes.Add("shell-input");
         }
 
-        textBox.Background = ResolveThemeBrush("TextControlBackground", "#FFFFFF");
-        textBox.Foreground = ResolveThemeBrush("TextControlForeground", "#111111");
-        textBox.BorderBrush = ResolveThemeBrush("TextControlBorderBrush", "#B5C0CF");
-        textBox.CaretBrush = ResolveThemeBrush("TextControlCaretBrush", "#111111");
-        textBox.SelectionBrush = ResolveThemeBrush("ChummerShellSelectionBrush", "#2C5FB8");
-        textBox.SelectionForegroundBrush = ResolveThemeBrush("TextControlSelectionForeground", "#FFFFFF");
         textBox.MinHeight = Math.Max(textBox.MinHeight, 30d);
         textBox.Padding = new Thickness(8, 4);
         ToolTip.SetTip(textBox, null);
@@ -71,9 +65,6 @@ internal static class DesktopShellTheme
             comboBox.Classes.Add("shell-combo");
         }
 
-        comboBox.Background = ResolveThemeBrush("ComboBoxBackground", "#FBFCFE");
-        comboBox.Foreground = ResolveThemeBrush("ComboBoxForeground", "#111827");
-        comboBox.BorderBrush = ResolveThemeBrush("ComboBoxBorderBrush", "#B5C0CF");
         comboBox.MinHeight = Math.Max(comboBox.MinHeight, 30d);
         comboBox.Padding = new Thickness(8, 4);
     }
@@ -86,9 +77,6 @@ internal static class DesktopShellTheme
             numericUpDown.Classes.Add("shell-numeric");
         }
 
-        numericUpDown.Background = ResolveThemeBrush("TextControlBackground", "#FFFFFF");
-        numericUpDown.Foreground = ResolveThemeBrush("TextControlForeground", "#111111");
-        numericUpDown.BorderBrush = ResolveThemeBrush("TextControlBorderBrush", "#B5C0CF");
         numericUpDown.MinHeight = Math.Max(numericUpDown.MinHeight, 30d);
     }
 
