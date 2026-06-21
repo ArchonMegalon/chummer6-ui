@@ -237,7 +237,7 @@ internal static class MainWindowShellFrameProjector
         if (!string.IsNullOrWhiteSpace(shellNotice)
             && !IsRoutineShellNotice(shellNotice))
         {
-            lines.Add($"Notice: {shellNotice}");
+            lines.Add(shellNotice);
         }
 
         WorkspacePortabilityActivity? portability = state.LatestPortabilityActivity;
@@ -251,26 +251,18 @@ internal static class MainWindowShellFrameProjector
             ?.Summary;
         if (!string.IsNullOrWhiteSpace(watchout))
         {
-            lines.Add($"Import watchout: {watchout}");
+            lines.Add($"Import needs review: {watchout.Trim()}");
+        }
+        else if (string.Equals(portability.Receipt.CompatibilityState, WorkspacePortabilityCompatibilityStates.Compatible, StringComparison.OrdinalIgnoreCase))
+        {
+            lines.Add("Import ready. Review the character, then keep or discard the changes.");
+        }
+        else
+        {
+            lines.Add("Import needs review before it can change this character.");
         }
 
-        lines.Add($"Import rule environment: {DesktopTrustReceiptText.BuildImportRuleEnvironment(portability.Receipt)}");
-        lines.Add($"Import correlation key: {BuildImportReceiptCorrelationKey(portability.Receipt)}");
-        lines.Add($"Import scope: {BuildImportReceiptScope(portability.Receipt)}");
-        lines.Add($"Import support note: {BuildImportSupportHandoffReceipt(portability.Receipt)}");
-        lines.Add($"Import environment before: {DesktopTrustReceiptText.BuildImportDiffBefore(portability.Receipt)}");
-        lines.Add($"Import environment after: {DesktopTrustReceiptText.BuildImportDiffAfter(portability.Receipt)}");
-        lines.Add($"Import environment tuple diff: {BuildImportEnvironmentTupleDiff(portability.Receipt)}");
-        lines.Add($"Environment diff before import: {BuildGroundedImportDiffBefore(portability.Receipt)}");
-        lines.Add($"Environment diff after import: {BuildGroundedImportDiffAfter(portability.Receipt)}");
-        lines.Add($"Import explanation: {DesktopTrustReceiptText.BuildImportExplainReceipt(portability.Receipt)}");
-        lines.Add($"Current import explanation: {BuildGroundedImportExplainReceipt(portability.Receipt)}");
-        lines.Add($"Import blocker details: {BuildImportBlockerReceipt(portability.Receipt)}");
-        lines.Add($"Import diagnostics details: {BuildImportDiagnosticsReceipt(portability.Receipt)}");
-        lines.Add($"Import diagnostics diff: {DesktopTrustReceiptComposer.BuildPortabilityDiagnosticsDiffText(portability.Receipt)}");
-        lines.Add($"Import support diagnostics details: {BuildImportSupportDiagnosticsReceipt(portability.Receipt)}");
-        lines.Add($"Support reuse: {BuildImportSupportReuse(portability.Receipt)}");
-        lines.Add($"Import support reuse: {BuildImportSupportReuse(portability.Receipt)}");
+        lines.Add("Nothing changes until you accept the import.");
 
         return string.Join(Environment.NewLine, lines);
     }
@@ -290,65 +282,6 @@ internal static class MainWindowShellFrameProjector
         return shellNotice.StartsWith("Command '", StringComparison.OrdinalIgnoreCase)
             && shellNotice.EndsWith("dispatched.", StringComparison.OrdinalIgnoreCase);
     }
-
-    private static string BuildImportReceiptCorrelationKey(WorkspacePortabilityReceipt receipt)
-    {
-        string payload = string.IsNullOrWhiteSpace(receipt.PayloadSha256)
-            ? "no-payload-hash"
-            : receipt.PayloadSha256.Trim();
-        return $"import/{receipt.FormatId}/{receipt.CompatibilityState}/{payload}";
-    }
-
-    private static string BuildImportReceiptScope(WorkspacePortabilityReceipt receipt)
-        => $"import target {receipt.FormatId}; before/after diff is copy-safe and excludes raw payload or merge actions until the user accepts the next safe action.";
-
-    private static string BuildImportSupportHandoffReceipt(WorkspacePortabilityReceipt receipt)
-        => $"support can cite {BuildImportReceiptCorrelationKey(receipt)} with context, blocker, and explain text without mutating the local workspace.";
-
-    private static string BuildImportEnvironmentTupleDiff(WorkspacePortabilityReceipt receipt)
-        => $"before workspace/current-source/support-local/{NormalizeImportPayloadToken(receipt)}; after {receipt.CompatibilityState}/{NormalizeImportReceiptInline(receipt.NextSafeAction)}; correlation {BuildImportReceiptCorrelationKey(receipt)}.";
-
-    private static string BuildGroundedImportDiffBefore(WorkspacePortabilityReceipt receipt)
-        => $"current workspace, support state, and source toggles stay unchanged while {receipt.FormatId} is reviewed with payload {NormalizeImportPayloadToken(receipt)}.";
-
-    private static string BuildGroundedImportDiffAfter(WorkspacePortabilityReceipt receipt)
-        => $"accepted content remains {receipt.CompatibilityState}; next safe action {NormalizeImportReceiptInline(receipt.NextSafeAction)}; explanation {NormalizeImportReceiptInline(receipt.ProvenanceSummary)}.";
-
-    private static string BuildGroundedImportExplainReceipt(WorkspacePortabilityReceipt receipt)
-        => $"target {receipt.FormatId}; source note {NormalizeImportReceiptInline(receipt.ProvenanceSummary)}; blocker {BuildImportBlockerReceipt(receipt)}.";
-
-    private static string BuildImportSupportReuse(WorkspacePortabilityReceipt receipt)
-        => string.IsNullOrWhiteSpace(receipt.PayloadSha256)
-            ? receipt.ProvenanceSummary
-            : $"Support can cite payload {receipt.PayloadSha256} with {receipt.CompatibilityState} compatibility.";
-
-    private static string BuildImportSupportDiagnosticsReceipt(WorkspacePortabilityReceipt receipt)
-        => $"support can cite {BuildImportReceiptCorrelationKey(receipt)} with before/after environment details, blocker text, and explanation without changing local workspace state.";
-
-    private static string BuildImportDiagnosticsReceipt(WorkspacePortabilityReceipt receipt)
-        => $"before {receipt.FormatId}/{NormalizeImportPayloadToken(receipt)}; after {receipt.CompatibilityState}/{NormalizeImportReceiptInline(receipt.NextSafeAction)}; blocker {BuildImportBlockerReceipt(receipt)}; source note {NormalizeImportReceiptInline(receipt.ProvenanceSummary)}.";
-
-    private static string BuildImportBlockerReceipt(WorkspacePortabilityReceipt receipt)
-    {
-        WorkspacePortabilityNote? blocker = receipt.Notes
-            .FirstOrDefault(note => !string.Equals(note.Severity, WorkspacePortabilityNoteSeverities.Info, StringComparison.OrdinalIgnoreCase));
-        if (blocker is not null && !string.IsNullOrWhiteSpace(blocker.Summary))
-        {
-            return $"{NormalizeImportReceiptInline(blocker.Severity)}: {blocker.Summary.Trim()}";
-        }
-
-        return string.Equals(receipt.CompatibilityState, WorkspacePortabilityCompatibilityStates.Compatible, StringComparison.OrdinalIgnoreCase)
-            ? "no grounded import blocker is present before acceptance"
-            : $"review required for {receipt.CompatibilityState} compatibility before acceptance";
-    }
-
-    private static string NormalizeImportReceiptInline(string? value)
-        => string.IsNullOrWhiteSpace(value) ? "not published" : value.Trim().TrimEnd('.');
-
-    private static string NormalizeImportPayloadToken(WorkspacePortabilityReceipt receipt)
-        => string.IsNullOrWhiteSpace(receipt.PayloadSha256)
-            ? "no-payload-hash"
-            : receipt.PayloadSha256.Trim();
 
     private static string BuildToolStripStatusText(
         CharacterOverviewState state,

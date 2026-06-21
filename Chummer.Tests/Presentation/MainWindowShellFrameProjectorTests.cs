@@ -127,6 +127,64 @@ public sealed class MainWindowShellFrameProjectorTests
     }
 
     [TestMethod]
+    public void Project_keeps_portable_import_notice_human_and_short()
+    {
+        MainWindowShellFrame frame = ProjectFrame(
+            RulesetDefaults.Sr5,
+            activeSectionId: "summary",
+            activeTabId: "tab-info",
+            latestPortabilityActivity: new WorkspacePortabilityActivity(
+                "Last portable import",
+                new WorkspacePortabilityReceipt(
+                    FormatId: WorkspacePortabilityFormatIds.PortableDossierV1,
+                    CompatibilityState: WorkspacePortabilityCompatibilityStates.Compatible,
+                    ContextSummary: "Imported runner is now governed dossier truth.",
+                    ReceiptSummary: "Portable import completed as governed dossier truth and is ready for normal use or portable export.",
+                    ProvenanceSummary: "Import receipt import-ws-1-abc123 captured payload hash abc123.",
+                    PayloadSha256: "abc123",
+                    NextSafeAction: "Use the workspace normally or export it when you need a governed handoff.",
+                    SupportedExchangeModes:
+                    [
+                        WorkspacePortabilityExchangeModes.InspectOnly,
+                        WorkspacePortabilityExchangeModes.Merge,
+                        WorkspacePortabilityExchangeModes.Replace
+                    ],
+                    Notes:
+                    [
+                        new WorkspacePortabilityNote(
+                            Code: "format-identity",
+                            Severity: WorkspacePortabilityNoteSeverities.Info,
+                            Summary: "Imported native workspace XML on the governed dossier rail.")
+                    ])));
+
+        string notice = frame.SectionHostState.Notice ?? string.Empty;
+
+        StringAssert.Contains(notice, "Import ready. Review the character, then keep or discard the changes.");
+        StringAssert.Contains(notice, "Nothing changes until you accept the import.");
+
+        string[] forbiddenVisibleTerms =
+        [
+            "receipt",
+            "proof",
+            "correlation",
+            "environment",
+            "diagnostics",
+            "tuple",
+            "payload",
+            "handoff",
+            "governed",
+            "support reuse"
+        ];
+
+        foreach (string forbidden in forbiddenVisibleTerms)
+        {
+            Assert.IsFalse(
+                notice.Contains(forbidden, StringComparison.OrdinalIgnoreCase),
+                $"Portable import notice should not expose '{forbidden}'. Notice: {notice}");
+        }
+    }
+
+    [TestMethod]
     public void Project_formats_ruleset_conditioned_navigator_section_action_labels()
     {
         foreach ((string rulesetId, WorkspaceSurfaceActionDefinition action, string expectedLabel) in NavigatorLabelExpectations)
@@ -341,7 +399,8 @@ public sealed class MainWindowShellFrameProjectorTests
         AppCommandDefinition[]? menuRoots = null,
         string? openMenuId = null,
         DesktopDialogState? activeDialog = null,
-        string? lastCommandId = null)
+        string? lastCommandId = null,
+        WorkspacePortabilityActivity? latestPortabilityActivity = null)
     {
         OpenWorkspaceState[] resolvedOpenWorkspaces = openWorkspaces ?? [];
         CharacterOverviewState overviewState = CharacterOverviewState.Empty with
@@ -353,6 +412,7 @@ public sealed class MainWindowShellFrameProjectorTests
             WorkspaceId = activeWorkspaceId,
             Preferences = preferences ?? DesktopPreferenceState.Default,
             ActiveDialog = activeDialog,
+            LatestPortabilityActivity = latestPortabilityActivity,
             ActiveActionId = workspaceActions?
                 .FirstOrDefault(action => string.Equals(action.TargetId, activeSectionId, StringComparison.Ordinal))
                 ?.Id
