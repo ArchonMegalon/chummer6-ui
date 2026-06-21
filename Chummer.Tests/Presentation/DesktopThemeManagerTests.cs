@@ -895,9 +895,10 @@ public sealed class DesktopThemeManagerTests
         StringAssert.Contains(sectionHostSource, "static next => next.ToString(CultureInfo.InvariantCulture)");
         StringAssert.Contains(sectionHostSource, "AutomationProperties.SetName(stepper, accessibleName)");
         StringAssert.Contains(sectionHostSource, "ColumnDefinitions = new ColumnDefinitions(\"*,128,128,72,120\")");
-        StringAssert.Contains(sectionHostSource, "ColumnDefinitions = new ColumnDefinitions(\"28,18,*,18,28\")");
-        StringAssert.Contains(sectionHostSource, "MinWidth = 72");
-        StringAssert.Contains(sectionHostSource, "Margin = new Thickness(14d, 0d)");
+        StringAssert.Contains(sectionHostSource, "ColumnDefinitions = new ColumnDefinitions(\"28,10,*,10,28\")");
+        StringAssert.Contains(sectionHostSource, "Name = $\"{name}_Value\"");
+        StringAssert.Contains(sectionHostSource, "MinWidth = 42");
+        StringAssert.Contains(sectionHostSource, "Margin = new Thickness(4d, 0d)");
         StringAssert.Contains(sectionHostSource, "Width = 24");
         Assert.IsFalse(sectionHostSource.Contains("$\"{row.DisplayName} base allocation\"", StringComparison.Ordinal));
         Assert.IsFalse(sectionHostSource.Contains("$\"{row.DisplayName} karma adjustment\"", StringComparison.Ordinal));

@@ -505,7 +505,7 @@ public partial class SectionHostControl : UserControl
         Grid stepper = new()
         {
             Name = name,
-            ColumnDefinitions = new ColumnDefinitions("28,18,*,18,28"),
+            ColumnDefinitions = new ColumnDefinitions("28,10,*,10,28"),
             MinHeight = 26,
             HorizontalAlignment = global::Avalonia.Layout.HorizontalAlignment.Stretch
         };
@@ -516,14 +516,15 @@ public partial class SectionHostControl : UserControl
         Button decrement = CreateAttributeStepperButton("-", $"{name}_Decrease", enabled, foreground, surface, border, $"Decrease {accessibleName}");
         TextBlock valueText = new()
         {
+            Name = $"{name}_Value",
             Text = valueFormatter(current),
             Foreground = foreground,
             FontWeight = FontWeight.SemiBold,
             HorizontalAlignment = global::Avalonia.Layout.HorizontalAlignment.Center,
             VerticalAlignment = global::Avalonia.Layout.VerticalAlignment.Center,
             TextAlignment = TextAlignment.Center,
-            MinWidth = 72,
-            Margin = new Thickness(14d, 0d)
+            MinWidth = 42,
+            Margin = new Thickness(4d, 0d)
         };
         ToolTip.SetTip(valueText, accessibleName);
         global::Avalonia.Automation.AutomationProperties.SetName(valueText, $"{accessibleName} value");

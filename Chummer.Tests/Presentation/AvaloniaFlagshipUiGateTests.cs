@@ -4682,18 +4682,30 @@ public sealed class AvaloniaFlagshipUiGateTests
             Assert.AreEqual(128d, bodyRow.ColumnDefinitions[1].Width.Value, 0.01d, "Start column must leave room for the attribute value and stepper buttons.");
             Assert.AreEqual(128d, bodyRow.ColumnDefinitions[2].Width.Value, 0.01d, "Add column must leave room for the attribute value and stepper buttons.");
             Assert.AreEqual(28d, baseEditor.ColumnDefinitions[0].Width.Value, 0.01d, "Attribute stepper buttons need a stable touch target column.");
-            Assert.AreEqual(18d, baseEditor.ColumnDefinitions[1].Width.Value, 0.01d, "Attribute value must not sit directly against the minus button.");
-            Assert.AreEqual(18d, baseEditor.ColumnDefinitions[3].Width.Value, 0.01d, "Attribute value must not sit directly against the plus button.");
+            Assert.AreEqual(10d, baseEditor.ColumnDefinitions[1].Width.Value, 0.01d, "Attribute value must not sit directly against the minus button.");
+            Assert.AreEqual(10d, baseEditor.ColumnDefinitions[3].Width.Value, 0.01d, "Attribute value must not sit directly against the plus button.");
             Assert.AreEqual(24d, baseDecreaseButton.Width, 0.01d, "Attribute stepper buttons need a clear visual target.");
             Assert.AreEqual(24d, baseIncreaseButton.Width, 0.01d, "Attribute stepper buttons need a clear visual target.");
             Assert.IsTrue(baseEditor.IsVisible, "Character creation parity requires a visible base stepper editor.");
             Assert.IsTrue(karmaEditor.IsVisible, "Character creation parity requires a visible karma stepper editor.");
             Assert.IsTrue(baseIncreaseButton.IsVisible, "Character creation parity requires visible stepper controls.");
-            TextBlock baseValueText = baseEditor.GetVisualDescendants()
-                .OfType<TextBlock>()
-                .Single(text => string.Equals(text.Text, "3", StringComparison.Ordinal));
-            Assert.AreEqual(72d, baseValueText.MinWidth, 0.01d, "The base attribute value must have a stable readable width.");
-            Assert.AreEqual(new Thickness(14d, 0d), baseValueText.Margin, "The base attribute value must have breathing room before +/- buttons.");
+            TextBlock baseValueText = FindDescendant<TextBlock>(control, "AttributeBaseEditor_BOD_Value");
+            TextBlock karmaValueText = FindDescendant<TextBlock>(control, "AttributeKarmaEditor_BOD_Value");
+            Assert.AreEqual("3", baseValueText.Text);
+            Assert.AreEqual("1", karmaValueText.Text);
+            Assert.AreEqual(42d, baseValueText.MinWidth, 0.01d, "The base attribute value must have a stable readable width that fits the Start column.");
+            Assert.AreEqual(new Thickness(4d, 0d), baseValueText.Margin, "The base attribute value must keep breathing room before +/- buttons.");
+            double baseStepperMinimumWidth =
+                baseEditor.ColumnDefinitions[0].Width.Value
+                + baseEditor.ColumnDefinitions[1].Width.Value
+                + baseValueText.MinWidth
+                + baseValueText.Margin.Left
+                + baseValueText.Margin.Right
+                + baseEditor.ColumnDefinitions[3].Width.Value
+                + baseEditor.ColumnDefinitions[4].Width.Value;
+            Assert.IsTrue(
+                baseStepperMinimumWidth <= bodyRow.ColumnDefinitions[1].Width.Value,
+                "Attribute stepper value, margins, and buttons must fit inside the Start column without clipping.");
             Assert.IsTrue(
                 baseEditor.GetVisualDescendants().OfType<TextBlock>().Any(text => string.Equals(text.Text, "3", StringComparison.Ordinal)),
                 "The base attribute editor must render the value cleanly between the stepper buttons.");
