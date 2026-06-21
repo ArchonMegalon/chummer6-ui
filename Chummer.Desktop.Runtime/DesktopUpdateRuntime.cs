@@ -54,7 +54,8 @@ public sealed record DesktopUpdateClientStatus(
     string? PendingUpdateChannelId = null,
     DateTimeOffset? LastUpdateLaunchAttemptAtUtc = null,
     DateTimeOffset? RollbackWindowStartedAtUtc = null,
-    DateTimeOffset? RollbackWindowExpiresAtUtc = null);
+    DateTimeOffset? RollbackWindowExpiresAtUtc = null,
+    string? LastManifestChannelId = null);
 
 public static class DesktopUpdateRuntime
 {
@@ -223,7 +224,8 @@ public static class DesktopUpdateRuntime
                 PendingUpdateChannelId: state?.PendingUpdateChannelId,
                 LastUpdateLaunchAttemptAtUtc: state?.LastUpdateLaunchAttemptAtUtc,
                 RollbackWindowStartedAtUtc: state?.RollbackWindowStartedAtUtc,
-                RollbackWindowExpiresAtUtc: state?.RollbackWindowExpiresAtUtc);
+                RollbackWindowExpiresAtUtc: state?.RollbackWindowExpiresAtUtc,
+                LastManifestChannelId: state?.LastManifestChannelId);
     }
 
     private static bool RequiresReleaseAttention(DesktopUpdateState? state)
@@ -525,8 +527,9 @@ public static class DesktopUpdateRuntime
                 HeadId = headId,
                 Platform = identity.Platform,
                 Arch = identity.Arch,
-                ChannelId = string.IsNullOrWhiteSpace(manifest.ChannelId)
-                    ? state.ChannelId
+                ChannelId = ResolveInstalledChannelId(state, releaseMetadata),
+                LastManifestChannelId = string.IsNullOrWhiteSpace(manifest.ChannelId)
+                    ? state.LastManifestChannelId
                     : manifest.ChannelId,
                 LastCheckedAt = now,
                 LastManifestVersion = manifest.Version,
@@ -1182,6 +1185,19 @@ public static class DesktopUpdateRuntime
 
     private static string BuildUpdateFailureMessage(Exception ex)
         => $"Update preparation failed: {ex.GetType().Name}: {ex.Message}";
+
+    private static string ResolveInstalledChannelId(DesktopUpdateState state, DesktopReleaseMetadata releaseMetadata)
+    {
+        if (!string.IsNullOrWhiteSpace(releaseMetadata.ChannelId)
+            && !string.Equals(releaseMetadata.ChannelId, "local", StringComparison.OrdinalIgnoreCase))
+        {
+            return releaseMetadata.ChannelId;
+        }
+
+        return string.IsNullOrWhiteSpace(state.ChannelId)
+            ? releaseMetadata.ChannelId
+            : state.ChannelId;
+    }
 
     private static DateTimeOffset CalculateBackoffTime(int attempt)
         => DateTimeOffset.UtcNow.Add(CalculateFailureBackoff(attempt));
@@ -1963,7 +1979,8 @@ public static class DesktopUpdateRuntime
         DateTimeOffset? RollbackWindowStartedAtUtc = null,
         DateTimeOffset? RollbackWindowExpiresAtUtc = null,
         string? LastStartupPromptedManifestVersion = null,
-        DateTimeOffset? LastStartupPromptedAtUtc = null);
+        DateTimeOffset? LastStartupPromptedAtUtc = null,
+        string? LastManifestChannelId = null);
 
     private static class DesktopUpdateStateStore
     {
