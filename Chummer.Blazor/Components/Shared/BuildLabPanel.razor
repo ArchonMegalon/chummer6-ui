@@ -109,13 +109,13 @@
     {
         <section class="coach-card" data-build-blocker-explain-receipt>
             <div class="coach-card-header">
-                <h3>Build blocker receipt</h3>
+                <h3>Build blocker details</h3>
                 <span class="badge">@BuildBuildBlockerBadge(Projection)</span>
             </div>
             <dl class="facts compact">
-                <div><dt>Explain receipt</dt><dd>@BuildBuildBlockerExplainReceipt(Projection)</dd></div>
+                <div><dt>Explanation</dt><dd>@BuildBuildBlockerExplainReceipt(Projection)</dd></div>
                 <div><dt>Rule environment</dt><dd>@BuildBuildBlockerEnvironment(Projection)</dd></div>
-                <div><dt>Environment diff</dt><dd>@BuildBuildBlockerEnvironmentDiff(Projection)</dd></div>
+                <div><dt>Environment change</dt><dd>@BuildBuildBlockerEnvironmentDiff(Projection)</dd></div>
                 <div><dt>Before</dt><dd>@BuildBuildBlockerBefore(Projection)</dd></div>
                 <div><dt>After</dt><dd>@BuildBuildBlockerAfter(Projection)</dd></div>
                 <div><dt>Support reuse</dt><dd>@BuildBuildBlockerSupport(Projection)</dd></div>
@@ -385,7 +385,7 @@
 
             if (strongestCoverageStep is null)
             {
-                lines.Add($"{timeline.Title}: {timeline.Steps.Count} checkpoint(s) keep the plan ready for handoff.");
+                lines.Add($"{timeline.Title}: {timeline.Steps.Count} checkpoint(s) keep the plan ready for the next step.");
                 continue;
             }
 
@@ -470,7 +470,7 @@
     {
         int warningCount = projection.Variants.Sum(static variant => variant.Warnings.Count)
             + (projection.Watchouts?.Count ?? 0);
-        return warningCount == 0 && projection.CanContinue ? "receipt" : $"{warningCount} blocker signal(s)";
+        return warningCount == 0 && projection.CanContinue ? "ready" : $"{warningCount} blocker signal(s)";
     }
 
     private static string BuildBuildBlockerEnvironment(BuildLabConceptIntakeProjection projection)
@@ -497,20 +497,20 @@
         => FirstNonBlank(
             projection.NextSafeAction,
             projection.SupportClosureSummary,
-            projection.CanContinue ? "Build can continue with the current receipt." : "Resolve the blocker before handoff.");
+            projection.CanContinue ? "Build can continue with the current setup." : "Resolve the blocker before continuing.");
 
     private static string BuildBuildBlockerExplainReceipt(BuildLabConceptIntakeProjection projection)
         => FirstNonBlank(
             projection.ExplainEntryId,
             projection.SourceDocumentId,
-            $"{projection.RulesetId}/{projection.BuildMethod} blocker receipt");
+            $"{projection.RulesetId}/{projection.BuildMethod} blocker details");
 
     private static string BuildBuildBlockerSupport(BuildLabConceptIntakeProjection projection)
         => FirstNonBlank(
             projection.SupportClosureSummary,
             string.IsNullOrWhiteSpace(projection.ExplainEntryId)
-                ? "Support can cite the visible blocker receipt."
-                : $"Support can cite explain receipt {projection.ExplainEntryId}.");
+                ? "Support can use the visible blocker details."
+                : $"Support can use explanation {projection.ExplainEntryId}.");
 
     private static string FirstNonBlank(params string?[] values)
         => values.FirstOrDefault(value => !string.IsNullOrWhiteSpace(value)) ?? string.Empty;

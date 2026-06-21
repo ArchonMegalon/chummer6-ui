@@ -67,7 +67,7 @@ public sealed class AccessibilitySignoffSmokeTests
         RequireContains(source, "role=\"option\"");
         RequireContains(source, "aria-activedescendant=");
         RequireContains(source, "aria-selected=\"@(IsBrowseResultActive(browseWorkspace, item) ? \"true\" : \"false\")");
-        RequireContains(source, "Build blocker receipt:");
+        RequireContains(source, "Build blocker details:");
         RequireContains(source, "BuildBuildBlockerBefore(buildLab)");
     }
 
@@ -594,28 +594,28 @@ public sealed class AccessibilitySignoffSmokeTests
             HandoffId: "handoff-1",
             DossierId: "dossier-1",
             CampaignId: "campaign-1",
-            Title: "Prime runner handoff",
-            Summary: "The next grounded handoff keeps build, runtime, and campaign return aligned.",
+            Title: "Prime runner transfer",
+            Summary: "The next campaign step keeps build, runtime, and return path aligned.",
             VariantLabel: "Prime runner preview",
             ProgressionLabel: "Street launch",
             ExplainEntryId: "explain-1",
             TradeoffLines: ["Trade a late armor bump for cleaner campaign re-entry."],
-            ProgressionOutcomes: ["The runner stays campaign-ready after the handoff."],
+            ProgressionOutcomes: ["The runner stays campaign-ready after the campaign step."],
             Outputs: [],
             UpdatedAtUtc: DateTimeOffset.Parse("2026-03-27T10:21:00+00:00"),
-            NextSafeAction: "Review the grounded handoff before you publish or return to campaign play.",
-            RuntimeCompatibilitySummary: "The campaign handoff still matches the current runtime fingerprint.",
-            CampaignReturnSummary: "The handoff can return through the current campaign workspace once confirmed.",
-            SupportClosureSummary: "Support can cite the same handoff if verification fails.",
+            NextSafeAction: "Review the grounded transfer before you publish or return to campaign play.",
+            RuntimeCompatibilitySummary: "The campaign transfer still matches the current runtime fingerprint.",
+            CampaignReturnSummary: "The transfer can return through the current campaign workspace once confirmed.",
+            SupportClosureSummary: "Support can use the same transfer if verification fails.",
             PlannerCoverageSummary: "4 of 4 build follow-through checkpoints are already grounded.",
             PlannerCoverageLines:
             [
-                "Campaign continuity: Apex is already attached as the governed return lane for this handoff.",
-                "Outputs: no dossier or campaign-safe output is attached yet, so export and recap proof are still pending.",
-                "Restore posture: no restore conflicts are currently blocking replay-safe handoff follow-through.",
+                "Campaign continuity: Apex is already attached as the return path for this transfer.",
+                "Outputs: no dossier or campaign-safe output is attached yet, so export and recap details are still pending.",
+                "Restore status: no restore conflicts are currently blocking replay-safe transfer follow-through.",
                 "Claimed install: no linked device is attached yet for install-aware follow-through."
             ],
-            Watchouts: ["The handoff still needs an explicit campaign confirmation click."]);
+            Watchouts: ["The campaign step still needs an explicit confirmation click."]);
         RulesNavigatorAnswerProjection rulesAnswer = new(
             EntryId: "rules-1",
             Question: "Can this runner re-enter the campaign under the current rule environment?",
@@ -719,7 +719,7 @@ public sealed class AccessibilitySignoffSmokeTests
         {
             throw new InvalidOperationException("Desktop build/explain projection should surface multiple watchouts for the flagship home surface.");
         }
-        RequireContains(string.Join("\n", projection.Watchouts), "campaign confirmation click");
+        RequireContains(string.Join("\n", projection.Watchouts), "explicit confirmation click");
     }
 
     private static void DesktopHomeBuildExplainProjector_exposes_safe_action_and_watchouts_when_workspace_is_missing()
@@ -1563,7 +1563,7 @@ public sealed class AccessibilitySignoffSmokeTests
         RequireContains(sectionHostSource, "Build explanation and environment details");
         string blazorSectionHostSource = ReadSource("Chummer.Blazor/Components/Shell/SectionPane.razor");
         RequireContains(blazorSectionHostSource, "data-build-lab-trust-receipts");
-        RequireContains(blazorSectionHostSource, "Build explain receipt and environment diff");
+        RequireContains(blazorSectionHostSource, "Build explanation and environment details");
         RequireContains(blazorSectionHostSource, "data-build-lab-trust-section");
         RequireContains(blazorSectionHostSource, "NormalizeBuildLabReceiptToken(receiptSection.Title)");
         RequireContains(blazorSectionHostSource, "BuildBuildLabTrustReceiptSections(buildLab)");
@@ -1674,7 +1674,7 @@ public sealed class AccessibilitySignoffSmokeTests
         string blazorDialogSource = ReadSource("Chummer.Blazor/Components/Shell/DialogHost.razor");
         RequireContains(blazorDialogSource, "data-dialog-trust-receipt");
         RequireContains(blazorDialogSource, "DialogTrustReceiptText.BuildDialogReceipt(dialog)");
-        RequireContains(blazorDialogSource, "Explain receipt and environment diff");
+        RequireContains(blazorDialogSource, "Explanation and environment details");
         RequireContains(blazorDialogSource, "BuildDialogTrustReceiptSections(dialog)");
         string blazorDialogReceiptSource = ReadSource("Chummer.Blazor/Components/Shell/DialogTrustReceiptText.cs");
         RequireContains(blazorDialogReceiptSource, "DesktopTrustReceiptComposer.BuildDialogReceipt(dialog)");

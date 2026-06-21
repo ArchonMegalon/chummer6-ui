@@ -137,11 +137,11 @@
                 string trustReceipt = DialogTrustReceiptText.BuildDialogReceipt(dialog);
                 @* m104: blazor_dialog_surface *@
                 <aside class="dialog-trust-receipt" data-dialog-trust-receipt data-dialog-explain-receipt>
-                    <strong>Explain receipt and environment diff</strong>
+                    <strong>Explanation and environment details</strong>
                     <p class="dialog-note">@(renderFallbackTrustReceipt ? BuildFallbackDialogTrustReceipt(dialog) : trustReceipt)</p>
                     <dl class="facts compact">
                         <div><dt>Before</dt><dd>@(renderFallbackTrustReceipt ? ReadDialogTrustField(dialog, "before") : DialogTrustReceiptText.BuildDialogBefore(dialog))</dd></div>
-                        <div><dt>Explain receipt</dt><dd>@(renderFallbackTrustReceipt ? ReadDialogTrustField(dialog, "receipt") : DialogTrustReceiptText.BuildDialogExplainReceipt(dialog))</dd></div>
+                        <div><dt>Explanation</dt><dd>@(renderFallbackTrustReceipt ? ReadDialogTrustField(dialog, "receipt") : DialogTrustReceiptText.BuildDialogExplainReceipt(dialog))</dd></div>
                         <div><dt>Support reuse</dt><dd>@(renderFallbackTrustReceipt ? ReadDialogTrustField(dialog, "support") : DialogTrustReceiptText.BuildDialogSupportReuse(dialog))</dd></div>
                     </dl>
                     @foreach (DialogTrustReceiptSection receiptSection in trustSections)

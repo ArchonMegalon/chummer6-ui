@@ -102,10 +102,10 @@ public sealed class CampaignSpineShowcaseComponentTests
             NextSafeAction: "Rebind runtime before export.",
             RuntimeCompatibilitySummary: "One provider binding still needs review.",
             CampaignFitSummary: "Fits sparse-ops crews.",
-            SupportClosureSummary: "Support can cite the same runtime fingerprint.",
+            SupportClosureSummary: "Support can use the same runtime fingerprint.",
             TeamCoverage: new BuildLabTeamCoverageProjection(
-                Summary: "2 of 3 required crew roles are covered before handoff; one deliberate face overlap stays visible while astral support remains missing.",
-                CoverageSummary: "Coverage score stays stable with Face and Legwork already covered before the first campaign handoff.",
+                Summary: "2 of 3 required crew roles are covered before the next step; one deliberate face overlap stays visible while astral support remains missing.",
+                CoverageSummary: "Coverage score stays stable with Face and Legwork already covered before the first campaign step.",
                 RolePressureSummary: "Role pressure stays light because the duplicate face lane is intentional, but astral support still needs a partner runner.",
                 MissingRoleTags: ["astral"],
                 CoveredRoleTags: ["face", "legwork"],
@@ -113,7 +113,7 @@ public sealed class CampaignSpineShowcaseComponentTests
                 ExplainEntryId: "buildlab.teamcoverage.ops-first"),
             Watchouts:
             [
-                "Do not export until the runtime rebind receipt exists."
+                "Do not export until the runtime rebind is done."
             ]);
 
         using var context = new BunitContext();
@@ -121,11 +121,11 @@ public sealed class CampaignSpineShowcaseComponentTests
             .Add(component => component.Projection, projection));
 
         StringAssert.Contains(cut.Markup, "Campaign-safe decision rail");
-        StringAssert.Contains(cut.Markup, "Build blocker receipt");
+        StringAssert.Contains(cut.Markup, "Build blocker details");
         StringAssert.Contains(cut.Markup, "1 blocker signal(s)");
-        StringAssert.Contains(cut.Markup, "Explain receipt");
+        StringAssert.Contains(cut.Markup, "Explanation");
         StringAssert.Contains(cut.Markup, "Rule environment");
-        StringAssert.Contains(cut.Markup, "Environment diff");
+        StringAssert.Contains(cut.Markup, "Environment change");
         StringAssert.Contains(cut.Markup, "One provider binding still needs review. -&gt; Rebind runtime before export.");
         StringAssert.Contains(cut.Markup, "sr5 / Priority");
         StringAssert.Contains(cut.Markup, "Before");
@@ -133,8 +133,8 @@ public sealed class CampaignSpineShowcaseComponentTests
         StringAssert.Contains(cut.Markup, "Support reuse");
         StringAssert.Contains(cut.Markup, "Rebind runtime before export.");
         StringAssert.Contains(cut.Markup, "Fits sparse-ops crews.");
-        StringAssert.Contains(cut.Markup, "Support can cite the same runtime fingerprint.");
-        StringAssert.Contains(cut.Markup, "Do not export until the runtime rebind receipt exists.");
+        StringAssert.Contains(cut.Markup, "Support can use the same runtime fingerprint.");
+        StringAssert.Contains(cut.Markup, "Do not export until the runtime rebind is done.");
         StringAssert.Contains(cut.Markup, "Planner + team coverage");
         StringAssert.Contains(cut.Markup, "Covered roles: Face | Legwork");
         StringAssert.Contains(cut.Markup, "Missing roles: Astral");

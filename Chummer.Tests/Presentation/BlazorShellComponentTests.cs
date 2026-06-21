@@ -893,8 +893,8 @@ public sealed class BlazorShellComponentTests
                     new BuildLabExportPayload(
                         PayloadId: "payload.social-operator",
                         Title: "Ops-first Social Operator",
-                        Summary: "Generic hand-off payload for either Build Idea Card or local template creation.",
-                        PayloadKind: "build-lab-handoff",
+                        Summary: "Reusable payload for either Build Idea Card or local template creation.",
+                        PayloadKind: "build-lab-export",
                         Fields:
                         [
                             new BuildLabExportField("concept", "Concept", "Street Face"),
@@ -945,10 +945,10 @@ public sealed class BlazorShellComponentTests
                 NextSafeAction: "Rebind the active runtime before export.",
                 RuntimeCompatibilitySummary: "One quick-action binding still needs review.",
                 CampaignFitSummary: "Best fit is an ops-first crew with sparse matrix scenes.",
-                SupportClosureSummary: "Support can cite the same runtime fingerprint after handoff.",
+                SupportClosureSummary: "Support can use the same runtime fingerprint after the next step.",
                 TeamCoverage: new BuildLabTeamCoverageProjection(
-                    Summary: "2 of 3 required crew roles are covered before handoff; one deliberate face overlap stays visible while astral support remains missing.",
-                    CoverageSummary: "Coverage score stays stable with Face and Legwork already covered before the first campaign handoff.",
+                    Summary: "2 of 3 required crew roles are covered before the next step; one deliberate face overlap stays visible while astral support remains missing.",
+                    CoverageSummary: "Coverage score stays stable with Face and Legwork already covered before the first campaign step.",
                     RolePressureSummary: "Role pressure stays light because the duplicate face lane is intentional, but astral support still needs a partner runner.",
                     MissingRoleTags: ["astral"],
                     CoveredRoleTags: ["face", "legwork"],
@@ -989,11 +989,11 @@ public sealed class BlazorShellComponentTests
         StringAssert.Contains(cut.Markup, "strongest coverage checkpoint at 100 Karma");
         StringAssert.Contains(cut.Markup, "Decision rail");
         StringAssert.Contains(cut.Markup, "Rebind the active runtime before export.");
-        StringAssert.Contains(cut.Markup, "Support can cite the same runtime fingerprint after handoff.");
-        StringAssert.Contains(cut.Markup, "Build blocker receipt");
-        StringAssert.Contains(cut.Markup, "Explain receipt");
+        StringAssert.Contains(cut.Markup, "Support can use the same runtime fingerprint after the next step.");
+        StringAssert.Contains(cut.Markup, "Build blocker details");
+        StringAssert.Contains(cut.Markup, "Explanation");
         StringAssert.Contains(cut.Markup, "Rule environment");
-        StringAssert.Contains(cut.Markup, "Environment diff");
+        StringAssert.Contains(cut.Markup, "Environment change");
         StringAssert.Contains(cut.Markup, "One quick-action binding still needs review. -&gt; Rebind the active runtime before export.");
         StringAssert.Contains(cut.Markup, "One quick-action binding still needs review.");
         Assert.IsNotNull(cut.Find("[data-build-blocker-explain-receipt]"));
@@ -1906,14 +1906,14 @@ public sealed class BlazorShellComponentTests
         DesktopDialogState dialog = new(
             Id: "import-support",
             Title: "Import support",
-            Message: "Review the support receipt before continuing.",
+            Message: "Review the support details before continuing.",
             Fields:
             [
                 new DesktopDialogField("environment", "Rule environment", "sr5; approved; payload sha256:abc123.", string.Empty, IsReadOnly: true),
                 new DesktopDialogField("before", "Before", "Incoming chum5 payload before workspace merge.", string.Empty, IsReadOnly: true),
                 new DesktopDialogField("after", "After", "Rebind gear plugins after import.", string.Empty, IsReadOnly: true),
-                new DesktopDialogField("receipt", "Explain receipt", "dialog/import-support", string.Empty, IsReadOnly: true),
-                new DesktopDialogField("support", "Support reuse", "Support can cite payload sha256:abc123.", string.Empty, IsReadOnly: true)
+                new DesktopDialogField("receipt", "Explanation", "dialog/import-support", string.Empty, IsReadOnly: true),
+                new DesktopDialogField("support", "Support reuse", "Support can use payload sha256:abc123.", string.Empty, IsReadOnly: true)
             ],
             Actions:
             [
@@ -1927,7 +1927,7 @@ public sealed class BlazorShellComponentTests
         IElement explainReceipt = cut.Find("[data-dialog-explain-receipt]");
         StringAssert.Contains(explainReceipt.TextContent, "Incoming chum5 payload before workspace merge.");
         StringAssert.Contains(explainReceipt.TextContent, "dialog/import-support");
-        StringAssert.Contains(explainReceipt.TextContent, "Support can cite payload sha256:abc123.");
+        StringAssert.Contains(explainReceipt.TextContent, "Support can use payload sha256:abc123.");
     }
 
     [TestMethod]
