@@ -1026,13 +1026,16 @@ public sealed class DesktopThemeManagerTests
 
         StringAssert.Contains(appTheme, "<Style Selector=\"ComboBoxItem:selected\">");
         StringAssert.Contains(appTheme, "<Style Selector=\"ComboBoxItem:selected:pointerover\">");
+        StringAssert.Contains(appTheme, "<Style Selector=\"ComboBoxItem:pressed\">");
         StringAssert.Contains(appTheme, "<Setter Property=\"Background\" Value=\"{DynamicResource ComboBoxItemBackgroundSelected}\" />");
         StringAssert.Contains(appTheme, "<Setter Property=\"Foreground\" Value=\"{DynamicResource ComboBoxItemForegroundSelected}\" />");
         StringAssert.Contains(appTheme, "<Style Selector=\"ComboBoxItem:selected TextBlock\">");
         StringAssert.Contains(appTheme, "<Style Selector=\"ComboBoxItem:selected:pointerover TextBlock\">");
+        StringAssert.Contains(appTheme, "<Style Selector=\"ComboBoxItem:pressed TextBlock\">");
         StringAssert.Contains(appTheme, "<Style Selector=\"ComboBoxItem /template/ ContentPresenter\">");
         StringAssert.Contains(appTheme, "<Style Selector=\"ComboBoxItem:selected /template/ ContentPresenter\">");
         StringAssert.Contains(appTheme, "<Style Selector=\"ComboBoxItem:pointerover /template/ ContentPresenter\">");
+        StringAssert.Contains(appTheme, "<Style Selector=\"ComboBoxItem:pressed /template/ ContentPresenter\">");
         StringAssert.Contains(appTheme, "<Style Selector=\"ComboBoxItem:selected:pointerover /template/ ContentPresenter\">");
         StringAssert.Contains(appTheme, "<Style Selector=\"ListBoxItem /template/ ContentPresenter\">");
         StringAssert.Contains(appTheme, "<Style Selector=\"ListBoxItem:selected /template/ ContentPresenter\">");
@@ -1048,6 +1051,12 @@ public sealed class DesktopThemeManagerTests
         StringAssert.Contains(appTheme, "<Style Selector=\"ComboBox:pointerover /template/ ContentPresenter\">");
         StringAssert.Contains(appTheme, "<Style Selector=\"ComboBox:pointerover /template/ TextPresenter\">");
         StringAssert.Contains(appTheme, "<Style Selector=\"ComboBox:pointerover /template/ Border\">");
+        StringAssert.Contains(appTheme, "<Style Selector=\"ComboBox:pressed\">");
+        StringAssert.Contains(appTheme, "<Style Selector=\"ComboBox.shell-combo:pressed\">");
+        StringAssert.Contains(appTheme, "<Style Selector=\"ComboBox:pressed /template/ ContentPresenter\">");
+        StringAssert.Contains(appTheme, "<Style Selector=\"ComboBox:pressed /template/ TextBlock\">");
+        StringAssert.Contains(appTheme, "<Style Selector=\"ComboBox:pressed /template/ TextPresenter\">");
+        StringAssert.Contains(appTheme, "<Style Selector=\"ComboBox:pressed /template/ Border\">");
         StringAssert.Contains(appTheme, "<Style Selector=\"ComboBox:focus /template/ ContentPresenter\">");
         StringAssert.Contains(appTheme, "<Style Selector=\"ComboBox:focus /template/ TextPresenter\">");
         StringAssert.Contains(appTheme, "<Style Selector=\"ComboBox:focus /template/ Border\">");
