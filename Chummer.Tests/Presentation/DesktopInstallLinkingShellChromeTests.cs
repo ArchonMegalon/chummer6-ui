@@ -213,12 +213,17 @@ public sealed class DesktopInstallLinkingShellChromeTests
         StringAssert.Contains(localizationSource, "[\"desktop.devices.section.claimed\"] = \"Linked copies\"");
         StringAssert.Contains(localizationSource, "[\"desktop.devices.section.follow_through\"] = \"Support and recovery\"");
         StringAssert.Contains(localizationSource, "[\"desktop.devices.section.claims_description\"] = \"Available claim links for this copy.\"");
-        StringAssert.Contains(localizationSource, "[\"desktop.devices.button.reload\"] = \"Check status\"");
+        StringAssert.Contains(localizationSource, "[\"desktop.devices.button.reload\"] = \"Refresh account state\"");
+        StringAssert.Contains(localizationSource, "[\"desktop.devices.status.refresh_failed\"] = \"Could not refresh account state. The last loaded state is still shown.\"");
+        StringAssert.Contains(localizationSource, "localized[\"desktop.devices.button.reload\"] = \"Kontostand aktualisieren\"");
         StringAssert.Contains(localizationSource, "[\"desktop.devices.button.manage_linked_copies\"] = \"Manage linked copies\"");
         StringAssert.Contains(localizationSource, "Deine Kopie");
         Assert.IsFalse(
             localizationSource.Contains("[\"desktop.devices.button.reload\"] = \"Check again\"", StringComparison.Ordinal),
             "Devices and Access should say what is being refreshed instead of using a vague button label.");
+        Assert.IsFalse(
+            localizationSource.Contains("[\"desktop.devices.button.reload\"] = \"Check status\"", StringComparison.Ordinal),
+            "Devices and Access should say it refreshes account state instead of asking the user to guess what status means.");
         Assert.IsFalse(
             localizationSource.Contains("[\"desktop.devices.section.claimed\"] = \"Your devices\"", StringComparison.Ordinal),
             "Devices and Access should describe linked installs, not a vague devices bucket.");

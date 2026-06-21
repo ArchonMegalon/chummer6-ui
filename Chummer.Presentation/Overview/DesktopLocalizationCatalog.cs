@@ -256,7 +256,7 @@ public static class DesktopLocalizationCatalog
         ["desktop.devices.section.claims_description"] = "Available claim links for this copy.",
         ["desktop.devices.section.follow_through_description"] = "Recovery, support, and account pages for this install.",
         ["desktop.devices.section.interface"] = "AI tools",
-        ["desktop.devices.button.reload"] = "Check status",
+        ["desktop.devices.button.reload"] = "Refresh account state",
         ["desktop.devices.button.manage_linked_copies"] = "Manage linked copies",
         ["desktop.devices.button.use_latest_claim"] = "Claim your copy",
         ["desktop.devices.button.copy_claim_code"] = "Open Claim Link",
@@ -265,7 +265,7 @@ public static class DesktopLocalizationCatalog
         ["desktop.devices.intro.claimed_single"] = "This install is linked.",
         ["desktop.devices.intro.claimed_multi"] = "This install is linked with other copies on your account.",
         ["desktop.devices.status.current"] = "Account state loaded.",
-        ["desktop.devices.status.refresh_failed"] = "Refresh failed. The last loaded state is still shown.",
+        ["desktop.devices.status.refresh_failed"] = "Could not refresh account state. The last loaded state is still shown.",
         ["desktop.devices.status.claim_code_copied"] = "Opened the current claim link inside Chummer.",
         ["desktop.devices.status.no_claim_code"] = "No claim link is visible for this account right now.",
         ["desktop.devices.context.current_local"] = "Local install state is loaded from this machine.",
@@ -819,7 +819,7 @@ public static class DesktopLocalizationCatalog
             localized["desktop.devices.section.claims_description"] = "Verfügbare Claim-Links für diese Kopie.";
             localized["desktop.devices.section.follow_through_description"] = "Wiederherstellung, Support und Kontoseiten für diese Installation.";
             localized["desktop.devices.section.interface"] = "KI-Werkzeuge";
-            localized["desktop.devices.button.reload"] = "Status prüfen";
+            localized["desktop.devices.button.reload"] = "Kontostand aktualisieren";
             localized["desktop.devices.button.manage_linked_copies"] = "Verknuepfte Kopien verwalten";
             localized["desktop.devices.button.use_latest_claim"] = "Kopie claimen";
             localized["desktop.devices.button.copy_claim_code"] = "Claim-Link öffnen";
@@ -828,7 +828,7 @@ public static class DesktopLocalizationCatalog
             localized["desktop.devices.intro.claimed_single"] = "Diese Installation ist verknupft.";
             localized["desktop.devices.intro.claimed_multi"] = "Diese Installation ist zusammen mit weiteren Kopien in Ihrem Konto verknupft.";
             localized["desktop.devices.status.current"] = "Kontostand geladen.";
-            localized["desktop.devices.status.refresh_failed"] = "Aktualisierung fehlgeschlagen. Der zuletzt geladene Stand bleibt sichtbar.";
+            localized["desktop.devices.status.refresh_failed"] = "Kontostand konnte nicht aktualisiert werden. Der zuletzt geladene Stand bleibt sichtbar.";
             localized["desktop.devices.status.claim_code_copied"] = "Der aktuelle Claim-Link wurde in Chummer geöffnet.";
             localized["desktop.devices.status.no_claim_code"] = "Aktuell ist kein Claim-Link für dieses Konto sichtbar.";
             localized["desktop.devices.context.current_local"] = "Der lokale Installationsstand kommt von diesem Rechner.";
@@ -1247,7 +1247,7 @@ public static class DesktopLocalizationCatalog
             localized["desktop.devices.section.claims_description"] = "Available claim links for this copy.";
             localized["desktop.devices.section.follow_through_description"] = "Recovery, support, and account pages for this install.";
             localized["desktop.devices.section.interface"] = "AI tools";
-            localized["desktop.devices.button.reload"] = "Check status";
+            localized["desktop.devices.button.reload"] = "Refresh account state";
             localized["desktop.devices.button.manage_linked_copies"] = "Manage linked copies";
             localized["desktop.devices.button.use_latest_claim"] = "Claim your copy";
             localized["desktop.devices.button.copy_claim_code"] = "Open claim link";
@@ -1256,7 +1256,7 @@ public static class DesktopLocalizationCatalog
             localized["desktop.devices.intro.claimed_single"] = "This install is linked.";
             localized["desktop.devices.intro.claimed_multi"] = "This install is linked with other copies on your account.";
             localized["desktop.devices.status.current"] = "Account state loaded.";
-            localized["desktop.devices.status.refresh_failed"] = "Refresh failed. The last loaded state is still shown.";
+            localized["desktop.devices.status.refresh_failed"] = "Could not refresh account state. The last loaded state is still shown.";
             localized["desktop.devices.status.claim_code_copied"] = "Opened the current claim link inside Chummer.";
             localized["desktop.devices.status.no_claim_code"] = "No claim link is visible for this account right now.";
             localized["desktop.devices.context.current_local"] = "Local install state is loaded from this machine.";
@@ -1675,7 +1675,7 @@ public static class DesktopLocalizationCatalog
             localized["desktop.devices.section.claims_description"] = "Available claim links for this copy.";
             localized["desktop.devices.section.follow_through_description"] = "Recovery, support, and account pages for this install.";
             localized["desktop.devices.section.interface"] = "AI tools";
-            localized["desktop.devices.button.reload"] = "Check status";
+            localized["desktop.devices.button.reload"] = "Refresh account state";
             localized["desktop.devices.button.manage_linked_copies"] = "Manage linked copies";
             localized["desktop.devices.button.use_latest_claim"] = "Claim your copy";
             localized["desktop.devices.button.copy_claim_code"] = "Open claim link";
@@ -1684,7 +1684,7 @@ public static class DesktopLocalizationCatalog
             localized["desktop.devices.intro.claimed_single"] = "This install is linked.";
             localized["desktop.devices.intro.claimed_multi"] = "This install is linked with other copies on your account.";
             localized["desktop.devices.status.current"] = "Account state loaded.";
-            localized["desktop.devices.status.refresh_failed"] = "Refresh failed. The last loaded state is still shown.";
+            localized["desktop.devices.status.refresh_failed"] = "Could not refresh account state. The last loaded state is still shown.";
             localized["desktop.devices.status.claim_code_copied"] = "Opened the current claim link inside Chummer.";
             localized["desktop.devices.status.no_claim_code"] = "No claim link is visible for this account right now.";
             localized["desktop.devices.context.current_local"] = "Local install state is loaded directly from this desktop copy.";
@@ -2103,7 +2103,7 @@ public static class DesktopLocalizationCatalog
             localized["desktop.devices.section.claims_description"] = "Available claim links for this copy.";
             localized["desktop.devices.section.follow_through_description"] = "Recovery, support, and account pages for this install.";
             localized["desktop.devices.section.interface"] = "AI tools";
-            localized["desktop.devices.button.reload"] = "Check status";
+            localized["desktop.devices.button.reload"] = "Refresh account state";
             localized["desktop.devices.button.manage_linked_copies"] = "Manage linked copies";
             localized["desktop.devices.button.use_latest_claim"] = "Claim your copy";
             localized["desktop.devices.button.copy_claim_code"] = "Open claim link";
@@ -2112,7 +2112,7 @@ public static class DesktopLocalizationCatalog
             localized["desktop.devices.intro.claimed_single"] = "This install is linked.";
             localized["desktop.devices.intro.claimed_multi"] = "This install is linked with other copies on your account.";
             localized["desktop.devices.status.current"] = "Account state loaded.";
-            localized["desktop.devices.status.refresh_failed"] = "Refresh failed. The last loaded state is still shown.";
+            localized["desktop.devices.status.refresh_failed"] = "Could not refresh account state. The last loaded state is still shown.";
             localized["desktop.devices.status.claim_code_copied"] = "Opened the current claim link inside Chummer.";
             localized["desktop.devices.status.no_claim_code"] = "No claim link is visible for this account right now.";
             localized["desktop.devices.context.current_local"] = "Local install state is loaded directly from this desktop copy.";
@@ -2531,7 +2531,7 @@ public static class DesktopLocalizationCatalog
             localized["desktop.devices.section.claims_description"] = "Available claim links for this copy.";
             localized["desktop.devices.section.follow_through_description"] = "Recovery, support, and account pages for this install.";
             localized["desktop.devices.section.interface"] = "AI tools";
-            localized["desktop.devices.button.reload"] = "Check status";
+            localized["desktop.devices.button.reload"] = "Refresh account state";
             localized["desktop.devices.button.manage_linked_copies"] = "Manage linked copies";
             localized["desktop.devices.button.use_latest_claim"] = "Claim your copy";
             localized["desktop.devices.button.copy_claim_code"] = "Open claim link";
@@ -2540,7 +2540,7 @@ public static class DesktopLocalizationCatalog
             localized["desktop.devices.intro.claimed_single"] = "This install is linked.";
             localized["desktop.devices.intro.claimed_multi"] = "This install is linked with other copies on your account.";
             localized["desktop.devices.status.current"] = "Account state loaded.";
-            localized["desktop.devices.status.refresh_failed"] = "Refresh failed. The last loaded state is still shown.";
+            localized["desktop.devices.status.refresh_failed"] = "Could not refresh account state. The last loaded state is still shown.";
             localized["desktop.devices.status.claim_code_copied"] = "Opened the current claim link inside Chummer.";
             localized["desktop.devices.status.no_claim_code"] = "No claim link is visible for this account right now.";
             localized["desktop.devices.context.current_local"] = "Local install state is loaded directly from this desktop copy.";

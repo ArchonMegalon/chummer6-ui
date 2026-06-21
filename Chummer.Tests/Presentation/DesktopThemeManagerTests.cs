@@ -670,7 +670,9 @@ public sealed class DesktopThemeManagerTests
         StringAssert.Contains(localizationSource, "localized[\"desktop.report.section.bug\"] = \"Fehlerbericht\"");
         StringAssert.Contains(localizationSource, "localized[\"desktop.report.section.feedback\"] = \"Feedback\"");
         StringAssert.Contains(localizationSource, "localized[\"desktop.report.context.supportability\"] = \"Supportstatus: {0}\"");
-        StringAssert.Contains(localizationSource, "[\"desktop.devices.button.reload\"] = \"Check status\"");
+        StringAssert.Contains(localizationSource, "[\"desktop.devices.button.reload\"] = \"Refresh account state\"");
+        StringAssert.Contains(localizationSource, "[\"desktop.devices.status.refresh_failed\"] = \"Could not refresh account state. The last loaded state is still shown.\"");
+        StringAssert.Contains(localizationSource, "localized[\"desktop.devices.button.reload\"] = \"Kontostand aktualisieren\"");
         StringAssert.Contains(localizationSource, "[\"desktop.devices.button.manage_linked_copies\"] = \"Manage linked copies\"");
         StringAssert.Contains(localizationSource, "[\"desktop.install_link.preference.visible_choice\"] = \"Show assistant features\"");
         StringAssert.Contains(localizationSource, "[\"desktop.install_link.preference.hidden_choice\"] = \"Hide assistant features\"");
