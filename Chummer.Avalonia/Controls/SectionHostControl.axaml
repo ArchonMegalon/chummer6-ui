@@ -153,8 +153,8 @@
                   ColumnDefinitions="*,104,116,72,118"
                   ColumnSpacing="8">
               <TextBlock Grid.Column="0" Text="Attribute" Classes="shell-section-title" />
-              <TextBlock Grid.Column="1" Text="Base" Classes="shell-caption" HorizontalAlignment="Right" />
-              <TextBlock Grid.Column="2" Text="Karma bump" Classes="shell-caption" HorizontalAlignment="Right" />
+              <TextBlock Grid.Column="1" Text="Start" Classes="shell-caption" HorizontalAlignment="Right" />
+              <TextBlock Grid.Column="2" Text="Add" Classes="shell-caption" HorizontalAlignment="Right" />
               <TextBlock Grid.Column="3" Text="Total" Classes="shell-caption" HorizontalAlignment="Right" />
               <TextBlock Grid.Column="4" Text="Limits" Classes="shell-caption" HorizontalAlignment="Right" />
             </Grid>

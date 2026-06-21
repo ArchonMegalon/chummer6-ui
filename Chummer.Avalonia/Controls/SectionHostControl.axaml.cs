@@ -352,7 +352,7 @@ public partial class SectionHostControl : UserControl
 
         Control baseEditor = CreateAttributeValueStepper(
             $"AttributeBaseEditor_{ShortAttributeLabel(row.AttributeName)}",
-            $"{row.DisplayName} base allocation",
+            $"{row.DisplayName} starting value",
             baseValue,
             0,
             Math.Max(0, row.PriorityMaximum),
@@ -376,7 +376,7 @@ public partial class SectionHostControl : UserControl
 
         Control karmaEditor = CreateAttributeValueStepper(
             $"AttributeKarmaEditor_{ShortAttributeLabel(row.AttributeName)}",
-            $"{row.DisplayName} karma adjustment",
+            $"{row.DisplayName} added value",
             karmaValue,
             0,
             Math.Max(0, row.KarmaMaximum),
@@ -505,7 +505,7 @@ public partial class SectionHostControl : UserControl
         Grid stepper = new()
         {
             Name = name,
-            ColumnDefinitions = new ColumnDefinitions("24,10,*,10,24"),
+            ColumnDefinitions = new ColumnDefinitions("24,12,*,12,24"),
             MinHeight = 26,
             HorizontalAlignment = global::Avalonia.Layout.HorizontalAlignment.Stretch
         };
@@ -522,8 +522,8 @@ public partial class SectionHostControl : UserControl
             HorizontalAlignment = global::Avalonia.Layout.HorizontalAlignment.Center,
             VerticalAlignment = global::Avalonia.Layout.VerticalAlignment.Center,
             TextAlignment = TextAlignment.Center,
-            MinWidth = 56,
-            Margin = new Thickness(8d, 0d)
+            MinWidth = 64,
+            Margin = new Thickness(10d, 0d)
         };
         ToolTip.SetTip(valueText, accessibleName);
         global::Avalonia.Automation.AutomationProperties.SetName(valueText, $"{accessibleName} value");

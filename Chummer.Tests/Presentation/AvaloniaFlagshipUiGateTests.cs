@@ -4602,10 +4602,10 @@ public sealed class AvaloniaFlagshipUiGateTests
                 "The karma attribute editor must render the value cleanly between the stepper buttons.");
             Assert.IsFalse(
                 baseEditor.GetVisualDescendants().OfType<TextBlock>().Any(text => (text.Text ?? string.Empty).Contains("Base", StringComparison.Ordinal)),
-                "The row already has a Base header; the stepper value should not repeat it.");
+                "The row already has a Start header; the stepper value should not repeat internal base wording.");
             Assert.IsFalse(
                 karmaEditor.GetVisualDescendants().OfType<TextBlock>().Any(text => (text.Text ?? string.Empty).Contains("Karma", StringComparison.Ordinal)),
-                "The row already has a Karma header; the stepper value should not repeat it.");
+                "The row already has an Add header; the stepper value should not repeat internal karma wording.");
             // Legacy-equivalent chrome gate marker: The section preview header must not invent Review chrome that Chummer5A never had.
             Assert.IsNull(reviewExpander, "Character creation parity must not fall back to the review expander.");
             Assert.IsFalse(reviewPanel.IsVisible, "Character creation parity must not fall back to a profile review panel.");

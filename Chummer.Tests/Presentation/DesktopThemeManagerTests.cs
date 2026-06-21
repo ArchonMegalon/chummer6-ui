@@ -840,17 +840,19 @@ public sealed class DesktopThemeManagerTests
     }
 
     [TestMethod]
-    public void Attribute_editor_keeps_column_headers_visible()
+    public void Attribute_editor_keeps_clear_column_headers_visible()
     {
         string repoRoot = TestContextLocator.ResolveChummerPresentationRepoRoot();
         string sectionHostMarkup = File.ReadAllText(Path.Combine(repoRoot, "Chummer.Avalonia", "Controls", "SectionHostControl.axaml"));
 
         StringAssert.Contains(sectionHostMarkup, "Text=\"Attribute\" Classes=\"shell-section-title\"");
-        StringAssert.Contains(sectionHostMarkup, "Text=\"Base\" Classes=\"shell-caption\"");
-        StringAssert.Contains(sectionHostMarkup, "Text=\"Karma bump\" Classes=\"shell-caption\"");
+        StringAssert.Contains(sectionHostMarkup, "Text=\"Start\" Classes=\"shell-caption\"");
+        StringAssert.Contains(sectionHostMarkup, "Text=\"Add\" Classes=\"shell-caption\"");
         StringAssert.Contains(sectionHostMarkup, "Text=\"Total\" Classes=\"shell-caption\"");
         StringAssert.Contains(sectionHostMarkup, "Text=\"Limits\" Classes=\"shell-caption\"");
         StringAssert.Contains(sectionHostMarkup, "ColumnDefinitions=\"*,104,116,72,118\"");
+        Assert.IsFalse(sectionHostMarkup.Contains("Text=\"Base\" Classes=\"shell-caption\"", StringComparison.Ordinal));
+        Assert.IsFalse(sectionHostMarkup.Contains("Text=\"Karma bump\" Classes=\"shell-caption\"", StringComparison.Ordinal));
         Assert.IsFalse(sectionHostMarkup.Contains("Text=\"Val (Aug)\"", StringComparison.Ordinal));
         Assert.IsFalse(sectionHostMarkup.Contains("Text=\"Points\" Classes=\"shell-caption\" HorizontalAlignment=\"Right\" IsVisible=\"False\"", StringComparison.Ordinal));
 
@@ -858,13 +860,15 @@ public sealed class DesktopThemeManagerTests
         StringAssert.Contains(sectionHostSource, "CreateAttributeValueStepper(");
         StringAssert.Contains(sectionHostSource, "$\"AttributeBaseEditor_{ShortAttributeLabel(row.AttributeName)}\"");
         StringAssert.Contains(sectionHostSource, "$\"AttributeKarmaEditor_{ShortAttributeLabel(row.AttributeName)}\"");
-        StringAssert.Contains(sectionHostSource, "$\"{row.DisplayName} base allocation\"");
-        StringAssert.Contains(sectionHostSource, "$\"{row.DisplayName} karma adjustment\"");
+        StringAssert.Contains(sectionHostSource, "$\"{row.DisplayName} starting value\"");
+        StringAssert.Contains(sectionHostSource, "$\"{row.DisplayName} added value\"");
         StringAssert.Contains(sectionHostSource, "static next => next.ToString(CultureInfo.InvariantCulture)");
         StringAssert.Contains(sectionHostSource, "AutomationProperties.SetName(stepper, accessibleName)");
-        StringAssert.Contains(sectionHostSource, "ColumnDefinitions = new ColumnDefinitions(\"24,10,*,10,24\")");
-        StringAssert.Contains(sectionHostSource, "MinWidth = 56");
-        StringAssert.Contains(sectionHostSource, "Margin = new Thickness(8d, 0d)");
+        StringAssert.Contains(sectionHostSource, "ColumnDefinitions = new ColumnDefinitions(\"24,12,*,12,24\")");
+        StringAssert.Contains(sectionHostSource, "MinWidth = 64");
+        StringAssert.Contains(sectionHostSource, "Margin = new Thickness(10d, 0d)");
+        Assert.IsFalse(sectionHostSource.Contains("$\"{row.DisplayName} base allocation\"", StringComparison.Ordinal));
+        Assert.IsFalse(sectionHostSource.Contains("$\"{row.DisplayName} karma adjustment\"", StringComparison.Ordinal));
         Assert.IsFalse(sectionHostSource.Contains("$\"Base {next}\"", StringComparison.Ordinal));
         Assert.IsFalse(sectionHostSource.Contains("\"Karma 0\"", StringComparison.Ordinal));
         Assert.IsFalse(sectionHostSource.Contains("$\"Karma +{next}\"", StringComparison.Ordinal));
