@@ -1058,9 +1058,11 @@ public sealed class DesktopThemeManagerTests
         StringAssert.Contains(appTheme, "<Style Selector=\"ComboBox:pressed /template/ TextPresenter\">");
         StringAssert.Contains(appTheme, "<Style Selector=\"ComboBox:pressed /template/ Border\">");
         StringAssert.Contains(appTheme, "<Style Selector=\"ComboBox:focus /template/ ContentPresenter\">");
+        StringAssert.Contains(appTheme, "<Style Selector=\"ComboBox:focus /template/ TextBlock\">");
         StringAssert.Contains(appTheme, "<Style Selector=\"ComboBox:focus /template/ TextPresenter\">");
         StringAssert.Contains(appTheme, "<Style Selector=\"ComboBox:focus /template/ Border\">");
         StringAssert.Contains(appTheme, "<Style Selector=\"ComboBox:disabled /template/ ContentPresenter\">");
+        StringAssert.Contains(appTheme, "<Style Selector=\"ComboBox:disabled /template/ TextBlock\">");
         StringAssert.Contains(appTheme, "<Style Selector=\"ComboBox:disabled /template/ TextPresenter\">");
         StringAssert.Contains(appTheme, "<Style Selector=\"ComboBox:disabled /template/ Border\">");
         StringAssert.Contains(appTheme, "<Setter Property=\"TextElement.Foreground\" Value=\"{DynamicResource ComboBoxForeground}\" />");
@@ -1083,10 +1085,13 @@ public sealed class DesktopThemeManagerTests
         StringAssert.Contains(appTheme, "<Style Selector=\"TextBox /template/ TextBlock\">");
         StringAssert.Contains(appTheme, "<Style Selector=\"TextBox /template/ TextPresenter\">");
         StringAssert.Contains(appTheme, "<Style Selector=\"TextBox /template/ Border\">");
+        StringAssert.Contains(appTheme, "<Style Selector=\"TextBox:pointerover /template/ TextBlock\">");
         StringAssert.Contains(appTheme, "<Style Selector=\"TextBox:pointerover /template/ TextPresenter\">");
         StringAssert.Contains(appTheme, "<Style Selector=\"TextBox:pointerover /template/ Border\">");
+        StringAssert.Contains(appTheme, "<Style Selector=\"TextBox:focus /template/ TextBlock\">");
         StringAssert.Contains(appTheme, "<Style Selector=\"TextBox:focus /template/ TextPresenter\">");
         StringAssert.Contains(appTheme, "<Style Selector=\"TextBox:focus /template/ Border\">");
+        StringAssert.Contains(appTheme, "<Style Selector=\"TextBox:disabled /template/ TextBlock\">");
         StringAssert.Contains(appTheme, "<Style Selector=\"TextBox:disabled /template/ TextPresenter\">");
         StringAssert.Contains(appTheme, "<Style Selector=\"TextBox:disabled /template/ Border\">");
         StringAssert.Contains(appTheme, "<Setter Property=\"TextElement.Foreground\" Value=\"{DynamicResource TextControlForeground}\" />");
