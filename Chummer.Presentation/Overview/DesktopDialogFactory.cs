@@ -408,7 +408,7 @@ public sealed class DesktopDialogFactory : IDesktopDialogFactory
             "update" => new DesktopDialogState(
                 "dialog.update",
                 "Check for Updates",
-                "Desktop heads check the configured registry manifest (`CHUMMER_DESKTOP_UPDATE_MANIFEST`) at startup, stage either an in-place payload or a platform installer, and keep install linking plus support continuity intact across the relaunch boundary.",
+                "See where this copy gets updates, how it behaves when a newer build is available, and where support picks up if an update needs help.",
                 BuildUpdateUtilityFields(),
                 [new DesktopDialogAction("close", "Close", true)]),
             _ => new DesktopDialogState(
@@ -5623,21 +5623,60 @@ public sealed class DesktopDialogFactory : IDesktopDialogFactory
     private static IReadOnlyList<DesktopDialogField> BuildUpdateUtilityFields()
     {
         string manifest = Environment.GetEnvironmentVariable("CHUMMER_DESKTOP_UPDATE_MANIFEST") ?? string.Empty;
-        string updateMode = Environment.GetEnvironmentVariable("CHUMMER_DESKTOP_UPDATE_MODE") ?? "full";
+        string manifestDisplay = string.IsNullOrWhiteSpace(manifest)
+            ? "Chummer public release feed"
+            : manifest;
+        string updateMode = ResolveUpdateUtilityMode();
         string details = BuildGridValue(
-            ("Update Source", string.IsNullOrWhiteSpace(manifest) ? "default" : manifest),
-            ("Update Mode", updateMode),
-            ("Support Path", "/account/support"));
+            ("Update source", manifestDisplay),
+            ("Update mode", FormatUpdateUtilityMode(updateMode)),
+            ("Support after update", "/account/support"));
 
         return
         [
             BuildUtilitySectionsField("updateSections", "Channel", "Details", "Notes"),
-            new DesktopDialogField("updateManifest", "Update source", manifest, "default", IsReadOnly: true),
-            new DesktopDialogField("updateMode", "Update mode", updateMode, "full", IsReadOnly: true),
+            new DesktopDialogField("updateManifest", "Update source", manifestDisplay, manifestDisplay, IsReadOnly: true),
+            new DesktopDialogField("updateMode", "Update mode", FormatUpdateUtilityMode(updateMode), FormatUpdateUtilityMode(updateMode), IsReadOnly: true),
             new DesktopDialogField("updateSupportPath", "Support after update", "/account/support", "/account/support", IsReadOnly: true),
             new DesktopDialogField("updateDetails", "Details", details, details, IsReadOnly: true, IsMultiline: true, VisualKind: DesktopDialogFieldVisualKinds.Grid, LayoutSlot: DesktopDialogFieldLayoutSlots.Right),
-            new DesktopDialogField("updateNotes", "Notes", "Channel, update source, and support route remain visible while updates are checked.", "Channel, update source, and support route remain visible while updates are checked.", IsReadOnly: true, IsMultiline: true, VisualKind: DesktopDialogFieldVisualKinds.Snippet)
+            new DesktopDialogField("updateNotes", "Notes", "This screen keeps the update source, behavior, and support path visible in one place.", "This screen keeps the update source, behavior, and support path visible in one place.", IsReadOnly: true, IsMultiline: true, VisualKind: DesktopDialogFieldVisualKinds.Snippet)
         ];
+    }
+
+    private static string ResolveUpdateUtilityMode()
+    {
+        DesktopPreferenceState preferences = DesktopPreferenceStateRuntime.Current;
+        string? configured = Environment.GetEnvironmentVariable("CHUMMER_DESKTOP_UPDATE_MODE");
+        if (!string.IsNullOrWhiteSpace(configured))
+        {
+            string normalized = configured.Trim().ToLowerInvariant().Replace("_", "-");
+            if (normalized is "full" or "auto" or "automatic" or "full-auto" or "full-autoupdate")
+            {
+                return "full";
+            }
+
+            if (normalized is "notify" or "notification" or "notify-only" or "manual")
+            {
+                return "notify";
+            }
+
+            if (normalized is "off" or "disabled" or "disable" or "none")
+            {
+                return "off";
+            }
+        }
+
+        return DesktopPreferenceStateRuntime.NormalizeUpdateMode(preferences.UpdateMode, preferences.CheckForUpdatesOnLaunch);
+    }
+
+    private static string FormatUpdateUtilityMode(string updateMode)
+    {
+        return updateMode switch
+        {
+            "notify" => "Tell me, do not install",
+            "off" => "Do not check",
+            _ => "Install updates and restart"
+        };
     }
 
     private static IReadOnlyList<DesktopDialogField> BuildActionReceiptFields(string actionLabel, string details, string notes)

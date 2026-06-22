@@ -192,18 +192,35 @@ public class DesktopDialogFactoryTests
     public void CreateCommandDialog_update_uses_dense_update_posture()
     {
         DesktopDialogFactory factory = new();
+        DesktopPreferenceState previous = DesktopPreferenceStateRuntime.Current;
+        string? previousUpdateMode = Environment.GetEnvironmentVariable("CHUMMER_DESKTOP_UPDATE_MODE");
 
-        DesktopDialogState dialog = factory.CreateCommandDialog(
-            "update",
-            profile: null,
-            DesktopPreferenceState.Default,
-            activeSectionJson: null,
-            currentWorkspace: null,
-            rulesetId: null);
+        try
+        {
+            Environment.SetEnvironmentVariable("CHUMMER_DESKTOP_UPDATE_MODE", null);
+            DesktopPreferenceStateRuntime.SetCurrent(DesktopPreferenceState.Default with { UpdateMode = "notify" });
 
-        Assert.AreEqual("dialog.update", dialog.Id);
-        StringAssert.Contains(DesktopDialogFieldValueParser.GetValue(dialog, "updateSections"), "Channel");
-        StringAssert.Contains(DesktopDialogFieldValueParser.GetValue(dialog, "updateDetails"), "Support Path | /account/support");
+            DesktopDialogState dialog = factory.CreateCommandDialog(
+                "update",
+                profile: null,
+                DesktopPreferenceState.Default,
+                activeSectionJson: null,
+                currentWorkspace: null,
+                rulesetId: null);
+
+            Assert.AreEqual("dialog.update", dialog.Id);
+            Assert.AreEqual("Tell me, do not install", DesktopDialogFieldValueParser.GetValue(dialog, "updateMode"));
+            StringAssert.Contains(DesktopDialogFieldValueParser.GetValue(dialog, "updateSections"), "Channel");
+            StringAssert.Contains(DesktopDialogFieldValueParser.GetValue(dialog, "updateDetails"), "Support after update | /account/support");
+            StringAssert.Contains(DesktopDialogFieldValueParser.GetValue(dialog, "updateDetails"), "Update mode | Tell me, do not install");
+            StringAssert.Contains(DesktopDialogFieldValueParser.GetValue(dialog, "updateNotes"), "support path visible in one place");
+            Assert.IsFalse((dialog.Message ?? string.Empty).Contains("CHUMMER_DESKTOP_UPDATE_MANIFEST", StringComparison.Ordinal));
+        }
+        finally
+        {
+            DesktopPreferenceStateRuntime.SetCurrent(previous);
+            Environment.SetEnvironmentVariable("CHUMMER_DESKTOP_UPDATE_MODE", previousUpdateMode);
+        }
     }
 
     [TestMethod]

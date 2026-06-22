@@ -1415,6 +1415,31 @@ public sealed class DesktopUpdateRuntimeTests
     }
 
     [TestMethod]
+    public void Update_configuration_load_prefers_explicit_env_mode_over_persisted_preference_mode()
+    {
+        using TestStateRootScope stateRootScope = new();
+        using TestEnvironmentScope envScope = new(new Dictionary<string, string?>()
+        {
+            [ManifestEnvironmentVariable] = "/tmp/promoted",
+            [UpdateModeEnvironmentVariable] = "notify",
+            [UpdateEnabledEnvironmentVariable] = null,
+            [UpdateAutoApplyEnvironmentVariable] = null,
+            [StateRootEnvironmentVariable] = stateRootScope.Root
+        });
+        DesktopPreferenceRuntime.SaveState(
+            "avalonia",
+            Chummer.Presentation.Overview.DesktopPreferenceState.Default with { UpdateMode = "full" });
+
+        object configuration = InvokeNestedStatic("DesktopUpdateConfiguration", "Load");
+        Type configurationType = configuration.GetType();
+
+        Assert.AreEqual(true, configurationType.GetProperty("Enabled")!.GetValue(configuration));
+        Assert.AreEqual(false, configurationType.GetProperty("AutoApply")!.GetValue(configuration));
+        Assert.AreEqual("/tmp/promoted", configurationType.GetProperty("ManifestLocation")!.GetValue(configuration));
+        Assert.AreEqual("notify", configurationType.GetProperty("Mode")!.GetValue(configuration));
+    }
+
+    [TestMethod]
     public void Default_public_manifest_location_uses_public_portal_base_override()
     {
         using TestEnvironmentScope envScope = new(new Dictionary<string, string?>()
