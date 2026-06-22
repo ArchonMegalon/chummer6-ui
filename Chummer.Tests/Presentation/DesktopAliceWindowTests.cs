@@ -226,7 +226,7 @@ public sealed class DesktopAliceWindowTests
     public void PlayerFacingCopyHumanizer_removes_provider_and_proof_language_from_visible_copy()
     {
         string cleaned = Chummer.Presentation.PlayerFacingCopyHumanizer.Clean(
-            "ALICE generated proofs and an Unmixr AI narration receipt from the approved origin canon through a media-factory provider lane after validation checks, audit verdict, registry posture, explain receipt, grounded explain receipt, explain companion, explain proof, proof trail, receipt-backed authority truth, environment truth, Public Proof Shelf, Rule Environment Studio, Before-after diffs, and available follow-up.");
+            "ALICE generated proofs and an Unmixr AI narration receipt from the approved origin canon through a media-factory provider lane after validation checks, audit verdict, registry posture, explain receipt, grounded explain receipt, explain companion, explain proof, proof trail, receipt-backed authority truth, environment truth, Public Proof Shelf, Rule Environment Studio, Before-after diffs, and available follow-up. The synthetic flagship client keeps reporter-ready release path copy visible in the signed-in support lane.");
 
         StringAssert.Contains(cleaned, "Alice");
         StringAssert.Contains(cleaned, "Unmixr");
@@ -242,6 +242,11 @@ public sealed class DesktopAliceWindowTests
         StringAssert.Contains(cleaned, "Public Files");
         StringAssert.Contains(cleaned, "Rules Setup");
         StringAssert.Contains(cleaned, "Changes");
+        StringAssert.Contains(cleaned, "Next step");
+        StringAssert.Contains(cleaned, "local");
+        StringAssert.Contains(cleaned, "desktop app");
+        StringAssert.Contains(cleaned, "available release");
+        StringAssert.Contains(cleaned, "account support");
         Assert.IsFalse(cleaned.Contains("Proof Shelf", StringComparison.OrdinalIgnoreCase));
         Assert.IsFalse(cleaned.Contains("Rule Environment Studio", StringComparison.OrdinalIgnoreCase));
         Assert.IsFalse(cleaned.Contains("Before-after diffs", StringComparison.OrdinalIgnoreCase));
@@ -264,5 +269,11 @@ public sealed class DesktopAliceWindowTests
         Assert.IsFalse(cleaned.Contains("receipt-backed", StringComparison.OrdinalIgnoreCase));
         Assert.IsFalse(cleaned.Contains("authority truth", StringComparison.OrdinalIgnoreCase));
         Assert.IsFalse(cleaned.Contains("environment truth", StringComparison.OrdinalIgnoreCase));
+        Assert.IsFalse(cleaned.Contains("follow-up", StringComparison.OrdinalIgnoreCase));
+        Assert.IsFalse(cleaned.Contains("follow-through", StringComparison.OrdinalIgnoreCase));
+        Assert.IsFalse(cleaned.Contains("synthetic", StringComparison.OrdinalIgnoreCase));
+        Assert.IsFalse(cleaned.Contains("flagship", StringComparison.OrdinalIgnoreCase));
+        Assert.IsFalse(cleaned.Contains("reporter-ready", StringComparison.OrdinalIgnoreCase));
+        Assert.IsFalse(cleaned.Contains("signed-in support", StringComparison.OrdinalIgnoreCase));
     }
 }

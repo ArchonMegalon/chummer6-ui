@@ -19,7 +19,7 @@ public sealed class DesktopSupportDiagnosticsTextTests
 
         StringAssert.Contains(text, "System before support: installed version 6.0.1-preview; update status update_available;");
         StringAssert.Contains(text, "Before: installed version 6.0.1-preview; update status update_available;");
-        StringAssert.Contains(text, "After: target version 6.0.2-preview; recommended action Install the reporter-ready fix and verify the tracked case.;");
+        StringAssert.Contains(text, "After: target version 6.0.2-preview; recommended action Install the available fix and verify the tracked case.;");
         StringAssert.Contains(text, "Support explanation: installed avalonia/6.0.1-preview stays the before state;");
         StringAssert.Contains(text, "Support record: Support can use support/install-123/avalonia/preview");
         StringAssert.Contains(text, "Install: Install is ready for reporter confirmation.");
@@ -40,7 +40,7 @@ public sealed class DesktopSupportDiagnosticsTextTests
 
         StringAssert.Contains(text, "System before support: installed version 6.0.1-preview; update status update_available;");
         StringAssert.Contains(text, "Before: installed version 6.0.1-preview; update status update_available;");
-        StringAssert.Contains(text, "After: target version 6.0.2-preview; recommended action Install the reporter-ready fix and verify the tracked case.;");
+        StringAssert.Contains(text, "After: target version 6.0.2-preview; recommended action Install the available fix and verify the tracked case.;");
         StringAssert.Contains(text, "Support explanation: installed avalonia/6.0.1-preview stays the before state;");
         StringAssert.Contains(text, "Support record: Support can use support/install-123/avalonia/preview");
         StringAssert.Contains(text, "Case: case-456 (released_to_reporter_channel).");

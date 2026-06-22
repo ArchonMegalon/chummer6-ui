@@ -431,7 +431,7 @@ public sealed class AccessibilitySignoffSmokeTests
         RequireContains(string.Join("\n", projection.ReadinessHighlights), "BLACK LEDGER consequence:");
         RequireContains(string.Join("\n", projection.ReadinessHighlights), "BLACK LEDGER details:");
         RequireContains(string.Join("\n", projection.ReadinessHighlights), "Build next step:");
-        RequireContains(string.Join("\n", projection.ReadinessHighlights), "Rules follow-through:");
+        RequireContains(string.Join("\n", projection.ReadinessHighlights), "Rules next step:");
         RequireContains(string.Join("\n", projection.ReadinessHighlights), "Migration continuity:");
         RequireContains(string.Join("\n", projection.ReadinessHighlights), "Publication trust:");
         RequireContains(string.Join("\n", projection.ReadinessHighlights), "Publication visibility:");
@@ -815,7 +815,7 @@ public sealed class AccessibilitySignoffSmokeTests
         RequireDoesNotContain(string.Join("\n", projection.Highlights), "Verification:");
         RequireContains(string.Join("\n", projection.Highlights), "Fixed release: preview 0.6.3-smoke");
         RequireContains(string.Join("\n", projection.Highlights), "Affected install:");
-        RequireContains(string.Join("\n", projection.Highlights), "Follow-up:");
+        RequireContains(string.Join("\n", projection.Highlights), "Next step:");
         if (!projection.NeedsAttention || !projection.HasTrackedCase)
         {
             throw new InvalidOperationException("Desktop support projection should mark reporter-verification follow-through as attention-worthy when a tracked fix is ready.");
