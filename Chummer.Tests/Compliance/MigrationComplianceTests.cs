@@ -3508,123 +3508,49 @@ public class MigrationComplianceTests
     [TestMethod]
     public void Desktop_download_matrix_includes_avalonia_and_blazor_desktop_artifacts()
     {
-        string workflowPath = FindPath(".github", "workflows", "desktop-downloads-matrix.yml");
-        string workflowText = File.ReadAllText(workflowPath);
         string manifestScriptPath = FindPath("scripts", "generate-releases-manifest.sh");
         string manifestScriptText = File.ReadAllText(manifestScriptPath);
         string verifyScriptPath = FindPath("scripts", "verify-releases-manifest.sh");
         string verifyScriptText = File.ReadAllText(verifyScriptPath);
         string startupSmokeScriptPath = FindPath("scripts", "run-desktop-startup-smoke.sh");
         string startupSmokeScriptText = File.ReadAllText(startupSmokeScriptPath);
+        string runbookPath = FindPath("docs", "SELF_HOSTED_DOWNLOADS_RUNBOOK.md");
+        string runbookText = File.ReadAllText(runbookPath);
+        string publishBundleScriptText = File.ReadAllText(FindPath("scripts", "publish-download-bundle.sh"));
+        string publishBundleS3ScriptText = File.ReadAllText(FindPath("scripts", "publish-download-bundle-s3.sh"));
+        string avaloniaProjectText = File.ReadAllText(FindPath("Chummer.Avalonia", "Chummer.Avalonia.csproj"));
+        string blazorDesktopProjectText = File.ReadAllText(FindPath("Chummer.Blazor.Desktop", "Chummer.Blazor.Desktop.csproj"));
+        string blazorDesktopProgramText = File.ReadAllText(FindPath("Chummer.Blazor.Desktop", "Program.cs"));
 
-        StringAssert.Contains(workflowText, "\"project\": \"Chummer.Avalonia/Chummer.Avalonia.csproj\"");
-        StringAssert.Contains(workflowText, "Restore secondary Windows desktop head");
-        StringAssert.Contains(workflowText, "dotnet restore \"Chummer.Blazor.Desktop/Chummer.Blazor.Desktop.csproj\"");
-        StringAssert.Contains(workflowText, "Publish secondary Windows desktop head");
-        StringAssert.Contains(workflowText, "dotnet publish \"Chummer.Blazor.Desktop/Chummer.Blazor.Desktop.csproj\"");
-        Assert.IsFalse(workflowText.Contains("\"rid\": \"osx-", StringComparison.Ordinal));
-        StringAssert.Contains(workflowText, "name: Publish secondary Windows desktop head");
-        StringAssert.Contains(workflowText, "out/blazor-desktop/${{ matrix.rid }}");
-        StringAssert.Contains(workflowText, "CHUMMER_WINDOWS_SECONDARY_HEAD_KEY");
-        StringAssert.Contains(workflowText, "CHUMMER_WINDOWS_SECONDARY_HEAD_PUBLISH_DIR");
-        StringAssert.Contains(workflowText, "CHUMMER_WINDOWS_SECONDARY_HEAD_LAUNCH_TARGET");
-        StringAssert.Contains(workflowText, "CHUMMER_STARTUP_SMOKE_REQUIRED_INSTALL_PATHS");
-        StringAssert.Contains(workflowText, "avalonia/Chummer.Avalonia.exe;blazor-desktop/Chummer.Blazor.Desktop.exe");
-        Assert.IsFalse(workflowText.Contains("\"installer_ext\": \"dmg\"", StringComparison.Ordinal));
-        StringAssert.Contains(workflowText, "name: Startup smoke");
-        StringAssert.Contains(workflowText, "bash scripts/run-desktop-startup-smoke.sh");
-        StringAssert.Contains(workflowText, "desktop-smoke-${{ matrix.app }}-${{ matrix.rid }}");
-        StringAssert.Contains(workflowText, "CHUMMER_DESKTOP_STARTUP_SMOKE_HOST_CLASS");
-        StringAssert.Contains(workflowText, "Checkout core-engine compatibility tree");
-        StringAssert.Contains(workflowText, "Checkout run-services compatibility tree");
-        StringAssert.Contains(workflowText, "Checkout hub-registry compatibility tree");
-        StringAssert.Contains(workflowText, "Checkout ui-kit compatibility tree");
-        StringAssert.Contains(workflowText, "Checkout media-factory compatibility tree");
-        StringAssert.Contains(workflowText, "Prepare compatibility tree aliases (Windows)");
-        StringAssert.Contains(workflowText, "Prepare compatibility tree aliases (POSIX)");
-        StringAssert.Contains(workflowText, "Build compatibility contracts");
-        StringAssert.Contains(workflowText, "path: r");
-        StringAssert.Contains(workflowText, "path: c");
-        StringAssert.Contains(workflowText, "path: h");
-        StringAssert.Contains(workflowText, "path: g");
-        StringAssert.Contains(workflowText, "path: u");
-        StringAssert.Contains(workflowText, "path: m");
-        StringAssert.Contains(workflowText, "repository: ArchonMegalon/chummer6-core");
-        StringAssert.Contains(workflowText, "ref: main");
-        StringAssert.Contains(workflowText, "ref: fleet/hub-registry");
-        StringAssert.Contains(workflowText, "ref: fleet/media-factory");
-        StringAssert.Contains(workflowText, "ref: fleet/ui-kit");
-        StringAssert.Contains(workflowText, "-p:ChummerUseLocalCompatibilityTree=true");
-        StringAssert.Contains(workflowText, "ChummerLocalContractsProject");
-        StringAssert.Contains(workflowText, "ChummerLocalCampaignContractsProject");
-        StringAssert.Contains(workflowText, "ChummerLocalRunContractsProject");
-        StringAssert.Contains(workflowText, "ChummerLocalHubRegistryContractsProject");
-        StringAssert.Contains(workflowText, "ChummerLocalUiKitProject");
-        StringAssert.Contains(workflowText, "UseChummerEngineContractsLocalFeed=false");
-        StringAssert.Contains(workflowText, "if-no-files-found: ignore");
-        StringAssert.Contains(workflowText, "r/dist/chummer-${{ matrix.app }}-${{ matrix.rid }}-installer.");
-        StringAssert.Contains(workflowText, "path: r/dist/startup-smoke");
-        StringAssert.Contains(workflowText, "bash scripts/generate-releases-manifest.sh");
-        StringAssert.Contains(workflowText, "schedule:");
-        StringAssert.Contains(workflowText, "workflow_dispatch:");
-        Assert.IsFalse(workflowText.Contains("push:", StringComparison.Ordinal));
-        Assert.IsFalse(workflowText.Contains("Chummer.Application/**", StringComparison.Ordinal));
-        Assert.IsFalse(workflowText.Contains("Chummer.Core/**", StringComparison.Ordinal));
-        Assert.IsFalse(workflowText.Contains("Chummer.Desktop.Runtime/**", StringComparison.Ordinal));
-        Assert.IsFalse(workflowText.Contains("Chummer.Infrastructure/**", StringComparison.Ordinal));
-        Assert.IsFalse(workflowText.Contains("Chummer.Portal/**", StringComparison.Ordinal));
-        StringAssert.Contains(workflowText, "scripts/generate-releases-manifest.sh");
-        StringAssert.Contains(workflowText, "scripts/resolve-desktop-release-context.sh");
-        StringAssert.Contains(workflowText, "scripts/prepare-macos-signing-keychain.sh");
-        StringAssert.Contains(workflowText, "CHUMMER_WINDOWS_SIGNING_RECEIPT_PATH");
-        StringAssert.Contains(workflowText, "bash scripts/build-desktop-installer.sh");
-        StringAssert.Contains(workflowText, "scripts/publish-download-bundle.sh");
-        StringAssert.Contains(workflowText, "scripts/publish-download-bundle-http.sh");
-        StringAssert.Contains(workflowText, "scripts/publish-download-bundle-s3.sh");
-        Assert.IsFalse(workflowText.Contains("branches:\n      - main\n      - Docker", StringComparison.Ordinal));
-        StringAssert.Contains(workflowText, "CHUMMER_EFFECTIVE_DESKTOP_RELEASE_CHANNEL");
-        StringAssert.Contains(workflowText, "deploy_portal_downloads");
-        StringAssert.Contains(workflowText, "deploy-downloads");
-        StringAssert.Contains(workflowText, "deploy-downloads-http");
-        StringAssert.Contains(workflowText, "deploy-downloads-object-storage");
-        StringAssert.Contains(workflowText, "github.ref_name == 'main'");
-        StringAssert.Contains(workflowText, "id: release-context");
-        StringAssert.Contains(workflowText, "bash scripts/resolve-desktop-release-context.sh >> \"$GITHUB_OUTPUT\"");
-        StringAssert.Contains(workflowText, "CHUMMER_DESKTOP_RELEASE_CHANNEL: ${{ env.CHUMMER_EFFECTIVE_DESKTOP_RELEASE_CHANNEL }}");
-        StringAssert.Contains(workflowText, "CHUMMER_ALLOW_UNSIGNED_PUBLIC_RELEASE: ${{ vars.CHUMMER_ALLOW_UNSIGNED_PUBLIC_RELEASE }}");
-        StringAssert.Contains(workflowText, "name: Prepare macOS signing keychain");
-        StringAssert.Contains(workflowText, "bash scripts/prepare-macos-signing-keychain.sh");
-        StringAssert.Contains(workflowText, "CHUMMER_DESKTOP_RELEASE_CHANNEL: ${{ steps.release-context.outputs.channel }}");
-        StringAssert.Contains(workflowText, "CHUMMER_ALLOW_UNSIGNED_PUBLIC_RELEASE: ${{ steps.release-context.outputs.allow_unsigned_public_release }}");
-        StringAssert.Contains(workflowText, "CHUMMER_WINDOWS_SIGNING_REQUIRED: ${{ steps.release-context.outputs.windows_signing_required }}");
-        StringAssert.Contains(workflowText, "CHUMMER_MAC_NOTARIZATION_REQUIRED: ${{ steps.release-context.outputs.mac_notarization_required }}");
-        StringAssert.Contains(workflowText, "desktop-signing-${{ matrix.app }}-${{ matrix.rid }}");
-        StringAssert.Contains(workflowText, "path: r/dist/signing");
-        StringAssert.Contains(workflowText, "name: Download signing evidence");
-        StringAssert.Contains(workflowText, "path: dist/signing");
-        StringAssert.Contains(workflowText, "SIGNING_RECEIPTS_DIR=\"dist/signing\"");
+        StringAssert.Contains(avaloniaProjectText, "Avalonia.Desktop");
+        StringAssert.Contains(blazorDesktopProjectText, "Photino.Blazor");
+        StringAssert.Contains(blazorDesktopProgramText, "AddChummerLocalRuntimeClient");
+        StringAssert.Contains(blazorDesktopProgramText, "DesktopUpdateRuntime.CheckAndScheduleStartupUpdateAsync");
+        StringAssert.Contains(blazorDesktopProgramText, "DesktopInstallLinkingRuntime.InitializeForStartupAsync");
+        StringAssert.Contains(blazorDesktopProgramText, "builder.RootComponents.Add<DesktopAppHost>(\"app\")");
         StringAssert.Contains(startupSmokeScriptText, "CHUMMER_STARTUP_SMOKE_REQUIRED_INSTALL_PATHS");
         StringAssert.Contains(startupSmokeScriptText, "Missing required installed path(s) after Windows smoke install:");
+        StringAssert.Contains(startupSmokeScriptText, "CHUMMER_DESKTOP_STARTUP_SMOKE_HOST_CLASS");
         StringAssert.Contains(manifestScriptText, "--startup-smoke-dir");
         StringAssert.Contains(manifestScriptText, "SIGNING_RECEIPTS_DIR");
         StringAssert.Contains(manifestScriptText, "--signing-receipts-dir");
         StringAssert.Contains(manifestScriptText, "promotion_evidence_args");
         StringAssert.Contains(verifyScriptText, "--skip-startup-smoke-filter");
-        StringAssert.Contains(workflowText, "CHUMMER_PORTAL_DOWNLOADS_VERIFY_URL");
-        StringAssert.Contains(workflowText, "CHUMMER_PORTAL_DOWNLOADS_VERIFY_LINKS");
-        StringAssert.Contains(workflowText, "CHUMMER_PORTAL_DOWNLOADS_DEPLOY_ENABLED");
-        StringAssert.Contains(workflowText, "CHUMMER_PORTAL_DOWNLOADS_REQUIRE_PUBLISHED_VERSION");
-        StringAssert.Contains(workflowText, "CHUMMER_PORTAL_DOWNLOADS_S3_URI");
-        StringAssert.Contains(workflowText, "CHUMMER_PORTAL_DOWNLOADS_AWS_ACCESS_KEY_ID");
-        StringAssert.Contains(workflowText, "Validate live verify URL");
-        StringAssert.Contains(workflowText, "Set CHUMMER_PORTAL_DOWNLOADS_VERIFY_URL to verify the live portal manifest after deployment.");
-        StringAssert.Contains(workflowText, "Verify deployed manifest has artifacts");
-        StringAssert.Contains(workflowText, "bash scripts/verify-releases-manifest.sh \"$CHUMMER_PORTAL_DOWNLOADS_DEPLOY_DIR\"");
-        StringAssert.Contains(workflowText, "Verify deployed portal manifest has artifacts");
+        StringAssert.Contains(publishBundleScriptText, "CHUMMER_PORTAL_DOWNLOADS_VERIFY_URL");
+        StringAssert.Contains(publishBundleScriptText, "CHUMMER_PORTAL_DOWNLOADS_VERIFY_LINKS");
+        StringAssert.Contains(publishBundleScriptText, "CHUMMER_PORTAL_DOWNLOADS_DEPLOY_ENABLED");
+        StringAssert.Contains(publishBundleScriptText, "CHUMMER_PORTAL_DOWNLOADS_REQUIRE_PUBLISHED_VERSION");
+        StringAssert.Contains(publishBundleScriptText, "Deployment mode requires CHUMMER_PORTAL_DOWNLOADS_VERIFY_URL");
+        StringAssert.Contains(publishBundleScriptText, "bash \"$SCRIPT_DIR/verify-releases-manifest.sh\" \"$DEPLOY_DIR\"");
+        StringAssert.Contains(publishBundleScriptText, "bash \"$SCRIPT_DIR/verify-releases-manifest.sh\" \"$LIVE_VERIFY_TARGET\"");
+        StringAssert.Contains(publishBundleS3ScriptText, "CHUMMER_PORTAL_DOWNLOADS_S3_URI");
+        StringAssert.Contains(publishBundleS3ScriptText, "Set CHUMMER_PORTAL_DOWNLOADS_S3_URI");
+        StringAssert.Contains(runbookText, "CHUMMER_PORTAL_DOWNLOADS_AWS_ACCESS_KEY_ID");
+        StringAssert.Contains(runbookText, "CHUMMER_PORTAL_DOWNLOADS_VERIFY_URL");
         Assert.IsFalse(
-            workflowText.Contains("if: ${{ vars.CHUMMER_PORTAL_DOWNLOADS_VERIFY_URL != '' }}", StringComparison.Ordinal),
+            publishBundleScriptText.Contains("CHUMMER_PORTAL_DOWNLOADS_VERIFY_URL != ''", StringComparison.Ordinal),
             "Live portal manifest verification should be mandatory when deployment is enabled.");
-        StringAssert.Contains(workflowText, "scripts/verify-releases-manifest.sh");
+        StringAssert.Contains(verifyScriptText, "CHUMMER_PORTAL_DOWNLOADS_VERIFY_URL");
 
         StringAssert.Contains(manifestScriptText, "materialize_public_release_channel.py");
         StringAssert.Contains(manifestScriptText, "normalize_release_channel_artifact_identity_fields");
@@ -3635,6 +3561,9 @@ public class MigrationComplianceTests
         StringAssert.Contains(manifestScriptText, "generate-public-promotion-evidence.py");
         StringAssert.Contains(manifestScriptText, "promoted_file_names");
         StringAssert.Contains(manifestScriptText, "portal_artifacts");
+        StringAssert.Contains(manifestScriptText, "chummer-*-installer.deb");
+        StringAssert.Contains(manifestScriptText, "chummer-*-installer.dmg");
+        StringAssert.Contains(manifestScriptText, "chummer-*-installer.msix");
         StringAssert.Contains(manifestScriptText, "--startup-smoke-dir");
         StringAssert.Contains(manifestScriptText, "UI_LOCALIZATION_RELEASE_GATE_PATH");
         StringAssert.Contains(manifestScriptText, "--ui-localization-release-gate");
@@ -3659,46 +3588,39 @@ public class MigrationComplianceTests
         StringAssert.Contains(verifyScriptText, "Provide a portal base URL or manifest path as the first argument");
         StringAssert.Contains(verifyScriptText, "verify_public_release_channel.py");
         StringAssert.Contains(verifyScriptText, "Missing registry verifier");
+        StringAssert.Contains(runbookText, "CHUMMER_RELEASE_UPLOAD_URL");
+        StringAssert.Contains(runbookText, "CHUMMER_PORTAL_DOWNLOADS_VERIFY_URL");
+        StringAssert.Contains(runbookText, "CHUMMER_PORTAL_DOWNLOADS_DEPLOY_DIR");
+        StringAssert.Contains(runbookText, "CHUMMER_PORTAL_DOWNLOADS_S3_URI");
+        StringAssert.Contains(runbookText, "CHUMMER_WINDOWS_SIGN_PFX_BASE64");
+        StringAssert.Contains(runbookText, "CHUMMER_MAC_CERTIFICATE_P12_BASE64");
     }
 
     [TestMethod]
     public void Desktop_download_matrix_enforces_daily_release_window_and_targeted_manual_builds()
     {
-        string workflowPath = FindPath(".github", "workflows", "desktop-downloads-matrix.yml");
-        string workflowText = File.ReadAllText(workflowPath);
         string runbookPath = FindPath("docs", "SELF_HOSTED_DOWNLOADS_RUNBOOK.md");
         string runbookText = File.ReadAllText(runbookPath);
         string releasePipelinePath = FindPath("docs", "DESKTOP_RELEASE_PIPELINE.md");
         string releasePipelineText = File.ReadAllText(releasePipelinePath);
+        string runbookScriptPath = FindPath("scripts", "runbook.sh");
+        string runbookScriptText = File.ReadAllText(runbookScriptPath);
+        string manifestScriptPath = FindPath("scripts", "generate-releases-manifest.sh");
+        string manifestScriptText = File.ReadAllText(manifestScriptPath);
 
-        StringAssert.Contains(workflowText, "name: Daily Release Window");
-        StringAssert.Contains(workflowText, "cron: '0 6 * * *'");
-        StringAssert.Contains(workflowText, "cron: '0 7 * * *'");
-        StringAssert.Contains(workflowText, "TZ=Europe/Vienna date +%H");
-        StringAssert.Contains(workflowText, "if [[ \"$vienna_hour\" == \"08\" ]]; then");
-        StringAssert.Contains(workflowText, "publish_allowed=true");
-        StringAssert.Contains(workflowText, "scheduled 08:00 Europe/Vienna window");
-        StringAssert.Contains(workflowText, "scheduled outside 08:00 Europe/Vienna window");
-        StringAssert.Contains(workflowText, "manual build only");
-        StringAssert.Contains(workflowText, "force_publish_downloads");
-        StringAssert.Contains(workflowText, "manual force_publish_downloads override");
-        StringAssert.Contains(workflowText, "Manual proof target. Forced publishes always build the public Windows+Linux lanes.");
-        StringAssert.Contains(workflowText, "elif requested_platform == \"win-x64\":");
-        StringAssert.Contains(workflowText, "include = [linux_x64]");
-        StringAssert.Contains(workflowText, "if event_name == \"schedule\" or force_publish.lower() == \"true\" or requested_platform == \"public-windows-linux\":");
-        StringAssert.Contains(workflowText, "if: ${{ github.event_name == 'workflow_dispatch' || needs.release-window.outputs.publish_allowed == 'true' }}");
-        StringAssert.Contains(workflowText, "needs.release-window.outputs.publish_allowed == 'true' && github.ref_name == 'main'");
-        StringAssert.Contains(workflowText, "github.event_name == 'schedule' || (github.event_name == 'workflow_dispatch' && inputs.deploy_portal_downloads)");
-        StringAssert.Contains(workflowText, "github.event_name == 'schedule' || (github.event_name == 'workflow_dispatch' && inputs.publish_github_release)");
-        StringAssert.Contains(workflowText, "for artifact in dist/chummer-*-installer.exe dist/chummer-*-installer.deb; do");
-        StringAssert.Contains(workflowText, "-name 'chummer-*.zip'");
-        StringAssert.Contains(workflowText, "-name 'chummer-*.tar.gz'");
-        StringAssert.Contains(workflowText, "-name 'chummer-*-installer.dmg'");
+        StringAssert.Contains(runbookScriptText, "RUNBOOK_MODE=publish-latest-nightly");
+        StringAssert.Contains(runbookScriptText, "CHUMMER_FORCE_NIGHTLY_PUBLISH");
+        StringAssert.Contains(runbookScriptText, "Europe/Vienna");
+        StringAssert.Contains(runbookScriptText, "08:00 Europe/Vienna");
+        StringAssert.Contains(runbookScriptText, "already published today");
+        StringAssert.Contains(manifestScriptText, "\"kind\": \"installer\"");
+        StringAssert.Contains(manifestScriptText, "chummer-*-installer.deb");
+        StringAssert.Contains(manifestScriptText, "chummer-*-installer.dmg");
         Assert.IsFalse(
-            workflowText.Contains("for artifact in dist/chummer-*-installer.exe dist/chummer-*.exe", StringComparison.Ordinal),
+            manifestScriptText.Contains("for artifact in dist/chummer-*-installer.exe dist/chummer-*.exe", StringComparison.Ordinal),
             "Public download bundles must not stage portable Windows launchers.");
         Assert.IsFalse(
-            workflowText.Contains("for artifact in dist/chummer-*-installer.exe dist/chummer-*.zip", StringComparison.Ordinal),
+            manifestScriptText.Contains("for artifact in dist/chummer-*-installer.exe dist/chummer-*.zip", StringComparison.Ordinal),
             "Public download bundles must not stage portable archives.");
 
         StringAssert.Contains(runbookText, "Pushes do not publish the downloads shelf.");
@@ -7172,19 +7094,14 @@ public class MigrationComplianceTests
     [TestMethod]
     public void Amend_manifest_checksum_policy_is_enforced_in_ci()
     {
-        string desktopWorkflowPath = FindPath(".github", "workflows", "desktop-downloads-matrix.yml");
-        string desktopWorkflowText = File.ReadAllText(desktopWorkflowPath);
-        string guardrailsWorkflowPath = FindPath(".github", "workflows", "docker-architecture-guardrails.yml");
-        string guardrailsWorkflowText = File.ReadAllText(guardrailsWorkflowPath);
+        string runbookPath = FindPath("scripts", "runbook.sh");
+        string runbookText = File.ReadAllText(runbookPath);
         string manifestPath = FindPath("Docker", "Amends", "manifest.json");
         string manifestText = File.ReadAllText(manifestPath);
 
-        StringAssert.Contains(desktopWorkflowText, "scripts/validate-amend-manifests.sh");
-        StringAssert.Contains(desktopWorkflowText, "scripts/build-desktop-installer.sh");
-        StringAssert.Contains(desktopWorkflowText, "installer.exe");
-        StringAssert.Contains(desktopWorkflowText, "Validate amend manifests checksums");
-        StringAssert.Contains(guardrailsWorkflowText, "amend-manifest-checksums");
-        StringAssert.Contains(guardrailsWorkflowText, "bash scripts/validate-amend-manifests.sh");
+        StringAssert.Contains(runbookText, "RUNBOOK_MODE\" == \"amend-checksums\"");
+        StringAssert.Contains(runbookText, "bash scripts/validate-amend-manifests.sh");
+        StringAssert.Contains(runbookText, "scripts/build-desktop-installer.sh");
 
         StringAssert.Contains(manifestText, "\"checksums\"");
         StringAssert.Contains(manifestText, "\"data/qualities.test-amend.xml\"");
@@ -7222,26 +7139,21 @@ public class MigrationComplianceTests
     }
 
     [TestMethod]
-    public void Docker_architecture_guardrails_workflow_validates_compose_and_portal_formatting()
+    public void Docker_architecture_guardrails_are_local_script_backed()
     {
-        string guardrailsWorkflowPath = FindPath(".github", "workflows", "docker-architecture-guardrails.yml");
-        string guardrailsWorkflowText = File.ReadAllText(guardrailsWorkflowPath);
+        string runbookPath = FindPath("scripts", "runbook.sh");
+        string runbookText = File.ReadAllText(runbookPath);
+        string strictGatesPath = FindPath("scripts", "runbook-strict-host-gates.sh");
+        string strictGatesText = File.ReadAllText(strictGatesPath);
 
-        StringAssert.Contains(guardrailsWorkflowText, "compose-config-validation");
-        StringAssert.Contains(guardrailsWorkflowText, "docker compose config > /tmp/chummer-compose-config.out");
-        StringAssert.Contains(guardrailsWorkflowText, "portal-format-guardrail");
-        StringAssert.Contains(guardrailsWorkflowText, "dotnet restore Chummer.Portal/Chummer.Portal.csproj");
-        StringAssert.Contains(guardrailsWorkflowText, "dotnet format style Chummer.Portal/Chummer.Portal.csproj --verify-no-changes --no-restore --include Chummer.Portal/Program.cs");
-        StringAssert.Contains(guardrailsWorkflowText, "parity-checklist-sync");
-        StringAssert.Contains(guardrailsWorkflowText, "RUNBOOK_MODE=parity-checklist bash scripts/runbook.sh");
-        StringAssert.Contains(guardrailsWorkflowText, "downloads-smoke-runbook");
-        StringAssert.Contains(guardrailsWorkflowText, "RUNBOOK_MODE=downloads-smoke bash scripts/runbook.sh");
-        StringAssert.Contains(guardrailsWorkflowText, "fresh-state-local-runbook");
-        StringAssert.Contains(guardrailsWorkflowText, "RUNBOOK_LOG_DIR=\"$PWD/.tmp/runbook-logs\"");
-        StringAssert.Contains(guardrailsWorkflowText, "RUNBOOK_STATE_DIR=\"$PWD/.tmp/runbook-state\"");
-        StringAssert.Contains(guardrailsWorkflowText, "TEST_NUGET_SOFT_FAIL=0");
-        StringAssert.Contains(guardrailsWorkflowText, "bash scripts/runbook.sh local-tests net10.0 \"FullyQualifiedName~MigrationComplianceTests\"");
-        StringAssert.Contains(guardrailsWorkflowText, "git diff --exit-code -- docs/PARITY_CHECKLIST.md");
+        StringAssert.Contains(runbookText, "RUNBOOK_MODE\" == \"desktop-gate\"");
+        StringAssert.Contains(runbookText, "RUNBOOK_MODE\" == \"parity-checklist\"");
+        StringAssert.Contains(runbookText, "RUNBOOK_MODE\" == \"downloads-smoke\"");
+        StringAssert.Contains(runbookText, "bash scripts/generate-parity-checklist.sh");
+        StringAssert.Contains(strictGatesText, "DOCKER_TESTS_SOFT_FAIL=0");
+        StringAssert.Contains(strictGatesText, "TEST_NUGET_SOFT_FAIL=0");
+        StringAssert.Contains(strictGatesText, "RUNBOOK_MODE=docker-tests");
+        StringAssert.Contains(strictGatesText, "RUNBOOK_MODE=local-tests");
     }
 
     [TestMethod]
