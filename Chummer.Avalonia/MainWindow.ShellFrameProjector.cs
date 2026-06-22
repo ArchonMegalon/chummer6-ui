@@ -660,8 +660,9 @@ internal static class MainWindowShellFrameProjector
     }
 
     private static bool IsActiveDialogBlockedByPreferences(DesktopDialogState dialog, DesktopPreferenceState preferences)
-        => string.Equals(dialog.Id, DesktopAliceAssistant.DialogId, StringComparison.Ordinal)
-            && preferences.DisableAiFeatures;
+        => preferences.DisableAiFeatures
+            && (string.Equals(dialog.Id, DesktopAliceAssistant.DialogId, StringComparison.Ordinal)
+                || dialog.Id.StartsWith("dialog.new_character.origin_", StringComparison.Ordinal));
 
     private static IReadOnlyDictionary<string, WorkspaceSurfaceActionDefinition> BuildWorkspaceActionLookup(
         IReadOnlyList<WorkspaceSurfaceActionDefinition> workspaceActions)

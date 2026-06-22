@@ -119,6 +119,17 @@ public sealed class DialogCoordinator : IDialogCoordinator
         if (string.Equals(dialog.Id, "dialog.new_character.origin_wizard", StringComparison.Ordinal)
             && string.Equals(actionId, "generate_fitting_build", StringComparison.Ordinal))
         {
+            if (context.State.Preferences.DisableAiFeatures)
+            {
+                context.Publish(context.State with
+                {
+                    ActiveDialog = null,
+                    Error = null,
+                    Notice = "Helper buttons are hidden in Settings."
+                });
+                return;
+            }
+
             context.Publish(context.State with
             {
                 ActiveDialog = DesktopDialogFactory.BuildNewCharacterOriginBuildDialog(dialog),
@@ -130,6 +141,17 @@ public sealed class DialogCoordinator : IDialogCoordinator
         if (string.Equals(dialog.Id, "dialog.new_character.origin_build", StringComparison.Ordinal)
             && string.Equals(actionId, "open_origin_guided_chargen", StringComparison.Ordinal))
         {
+            if (context.State.Preferences.DisableAiFeatures)
+            {
+                context.Publish(context.State with
+                {
+                    ActiveDialog = null,
+                    Error = null,
+                    Notice = "Helper buttons are hidden in Settings."
+                });
+                return;
+            }
+
             string rulesetId = RulesetDefaults.NormalizeOptional(DesktopDialogFieldValueParser.GetValue(dialog, "newCharacterWorkflowRulesetId")) ?? RulesetDefaults.Sr5;
             string buildMethod = DesktopDialogFieldValueParser.GetValue(dialog, "newCharacterWorkflowBuildMethod") ?? string.Empty;
             string name = DesktopDialogFieldValueParser.GetValue(dialog, "newCharacterWorkflowName") ?? "New Character";

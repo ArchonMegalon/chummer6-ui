@@ -127,6 +127,24 @@ public sealed class MainWindowShellFrameProjectorTests
     }
 
     [TestMethod]
+    public void Project_hides_stale_origin_dossier_dialog_when_global_ai_features_are_disabled()
+    {
+        MainWindowShellFrame frame = ProjectFrame(
+            RulesetDefaults.Sr5,
+            activeSectionId: "summary",
+            activeTabId: "tab-info",
+            preferences: DesktopPreferenceState.Default with { DisableAiFeatures = true },
+            activeDialog: DesktopDialogFactory.BuildNewCharacterOriginWizardDialog(
+                RulesetDefaults.Sr5,
+                "Nova",
+                "Cipher"));
+
+        Assert.IsNull(frame.CommandDialogPaneState.ActiveDialogId);
+        Assert.IsEmpty(frame.CommandDialogPaneState.Fields);
+        Assert.IsEmpty(frame.CommandDialogPaneState.Actions);
+    }
+
+    [TestMethod]
     public void Project_keeps_portable_import_notice_human_and_short()
     {
         MainWindowShellFrame frame = ProjectFrame(

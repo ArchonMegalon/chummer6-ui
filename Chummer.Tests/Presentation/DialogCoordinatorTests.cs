@@ -734,6 +734,29 @@ public class DialogCoordinatorTests
     }
 
     [TestMethod]
+    public async Task CoordinateAsync_origin_dialog_actions_close_when_helper_features_are_disabled()
+    {
+        DialogCoordinator coordinator = new();
+        CharacterOverviewState published = CharacterOverviewState.Empty with
+        {
+            ActiveDialog = DesktopDialogFactory.BuildNewCharacterOriginWizardDialog(RulesetDefaults.Sr5, "Nova", "Cipher"),
+            Preferences = DesktopPreferenceState.Default with { DisableAiFeatures = true }
+        };
+
+        DialogCoordinationContext context = new(
+            State: published,
+            Publish: state => published = state,
+            ImportAsync: static (_, _) => Task.CompletedTask,
+            UpdateMetadataAsync: static (_, _) => Task.CompletedTask,
+            GetState: () => published);
+
+        await coordinator.CoordinateAsync("generate_fitting_build", context, CancellationToken.None);
+
+        Assert.IsNull(published.ActiveDialog);
+        Assert.AreEqual("Helper buttons are hidden in Settings.", published.Notice);
+    }
+
+    [TestMethod]
     public async Task CoordinateAsync_origin_dossier_mouse_first_path_steers_story_before_alice_build()
     {
         DialogCoordinator coordinator = new();
