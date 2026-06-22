@@ -246,6 +246,54 @@ public class DesktopLocalizationCatalogTests
         }
     }
 
+    [TestMethod]
+    public void Support_and_update_copy_uses_plain_next_step_language()
+    {
+        string[] languages = [DesktopLocalizationCatalog.DefaultLanguage, "de-de"];
+        string[] keys =
+        [
+            "desktop.update.section.follow_through",
+            "desktop.support.section.follow_through",
+            "desktop.support.section.diagnostics",
+            "desktop.support.intro.action_needed",
+            "desktop.support.follow_through.claimed",
+            "desktop.support.follow_through.attention",
+            "desktop.support_case.section.follow_through",
+            "desktop.support_case.section.diagnostics",
+            "desktop.support_case.intro.preview",
+            "desktop.support_case.intro.action_needed",
+            "desktop.support_case.follow_through.attention",
+            "desktop.support_case.follow_through.verify"
+        ];
+        string[] blockedFragments =
+        [
+            "follow-through",
+            "closure",
+            "reporter-ready",
+            "signed-in support",
+            "flagship",
+            "Nachverfolgung",
+            "Abschluss",
+            "reporter-bereit",
+            "angemeldeten Support",
+            "Flagship"
+        ];
+
+        foreach (string languageCode in languages)
+        {
+            foreach (string key in keys)
+            {
+                string localizedValue = DesktopLocalizationCatalog.GetRequiredString(key, languageCode);
+                foreach (string blockedFragment in blockedFragments)
+                {
+                    Assert.IsFalse(
+                        ContainsBlockedTerm(localizedValue, blockedFragment),
+                        $"Expected plain support/update copy for {key} / {languageCode}, but found '{blockedFragment}' in '{localizedValue}'.");
+                }
+            }
+        }
+    }
+
     private static bool ContainsBlockedTerm(string value, string blockedFragment)
     {
         if (string.IsNullOrWhiteSpace(value) || string.IsNullOrWhiteSpace(blockedFragment))

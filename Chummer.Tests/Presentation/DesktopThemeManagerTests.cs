@@ -718,6 +718,7 @@ public sealed class DesktopThemeManagerTests
                  {
                      "release lane",
                      "support lane",
+                     "follow-through",
                      "proof posture",
                      "release truth",
                      "verification:",
@@ -729,12 +730,11 @@ public sealed class DesktopThemeManagerTests
                 $"Visible desktop copy must not contain '{forbidden}'.");
         }
 
-        StringAssert.Contains(updateSource, "release path move this install forward");
-        StringAssert.Contains(updateSource, "Update, release, or rollout status needs review");
         StringAssert.Contains(updateSource, "configured update path");
-        StringAssert.Contains(supportCaseSource, "reporter-ready release path");
-        StringAssert.Contains(supportCaseSource, "signed-in support");
-        StringAssert.Contains(supportCaseSource, "Confirmation:");
+        StringAssert.Contains(updateSource, "Update, release, or rollout status needs review");
+        StringAssert.Contains(supportCaseSource, "Tracked case preview.");
+        StringAssert.Contains(supportCaseSource, "Use account support to record final confirmation");
+        StringAssert.Contains(supportCaseSource, "System details stay visible while this case still needs attention.");
     }
 
     [TestMethod]

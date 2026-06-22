@@ -110,7 +110,7 @@ internal sealed class DesktopSupportWindow : Window
                         _statusText,
                         CreateSection(S("desktop.support.section.case"), _caseText, _caseActionsRow),
                         CreateSection(S("desktop.support.section.release"), _releaseText, _releaseActionsRow),
-                        CreateSection("Diagnostics environment diff", _diagnosticsText, null),
+                        CreateSection(S("desktop.support.section.diagnostics"), _diagnosticsText, null),
                         CreateSection(S("desktop.support.section.follow_through"), _followThroughText, _followThroughActionsRow),
                         new StackPanel
                         {

@@ -117,7 +117,7 @@ internal sealed class DesktopSupportCaseWindow : Window
                         _statusText,
                         CreateSection(S("desktop.support_case.section.summary"), _summaryText, _summaryActionsRow),
                         CreateSection(S("desktop.support_case.section.timeline"), _timelineText, _timelineActionsRow),
-                        CreateSection("Diagnostics environment diff", _diagnosticsText, null),
+                        CreateSection(S("desktop.support_case.section.diagnostics"), _diagnosticsText, null),
                         CreateSection(S("desktop.support_case.section.follow_through"), _followThroughText, _followThroughActionsRow),
                         new StackPanel
                         {
@@ -229,20 +229,20 @@ internal sealed class DesktopSupportCaseWindow : Window
         DateTimeOffset now = DateTimeOffset.UtcNow;
         return new DesktopHomeSupportProjection(
             CaseId: "preview-support-case",
-            Summary: "Tracked case: synthetic support closure preview for flagship desktop smoke verification.",
-            NextSafeAction: "Review the native release and install status on this desktop, then return to the tracked case if more follow-up is needed.",
+            Summary: "Tracked case preview.",
+            NextSafeAction: "Review update status on this desktop, then return here if you still need help.",
             PrimaryActionLabel: DesktopLocalizationCatalog.GetRequiredString("desktop.home.button.open_update_status", language),
             PrimaryActionHref: "/downloads",
             DetailHref: "/account/support/preview-support-case",
-            InstallReadinessSummary: "This preview install already has the reporter-ready fix, so the last visible closure step stays tied to this exact desktop copy.",
+            InstallReadinessSummary: "This preview copy already includes the fix shown here.",
             StatusLabel: "Released",
             StageLabel: "Released",
             UpdatedLabel: FormatDisplayTime(now),
             FixedReleaseLabel: "preview smoke",
-            AffectedInstallSummary: "This preview case stays attached to the linked avalonia desktop copy.",
-            FollowUpLaneSummary: "Follow-up stays attached to signed-in support when the account page is reachable again.",
-            ReleaseProgressSummary: "The preview fix already reached the reporter-ready release path for this desktop.",
-            VerificationSummary: "Use signed-in support to record final fix confirmation once the account page is available again.",
+            AffectedInstallSummary: "This preview stays attached to this desktop copy.",
+            FollowUpLaneSummary: "Final confirmation returns here when account support is available again.",
+            ReleaseProgressSummary: "The preview fix is already included in this desktop release.",
+            VerificationSummary: "Use account support to record final confirmation once the account page is available again.",
             HasTrackedCase: true,
             NeedsAttention: true,
             FixReadyOnLinkedInstall: true,
@@ -251,10 +251,10 @@ internal sealed class DesktopSupportCaseWindow : Window
             Highlights:
             [
                 "Stage: Released (Released)",
-                "Closure: The preview fix already reached the reporter-ready release path for this desktop.",
-                "Release progress: The preview fix already reached the reporter-ready release path for this desktop.",
+                "Closure: The preview fix is already included in this desktop release.",
+                "Release progress: The preview fix is already included in this desktop release.",
                 "Fix availability: preview smoke is the tracked fix target for this desktop support path.",
-                "Confirmation: Use signed-in support to record final fix confirmation once the account page is available again.",
+                "Confirmation: Use account support to record final fix confirmation once the account page is available again.",
                 $"Updated: {FormatDisplayTime(now)}"
             ]);
     }
@@ -275,9 +275,9 @@ internal sealed class DesktopSupportCaseWindow : Window
             CaseId: supportProjection.CaseId ?? "preview-support-case",
             Kind: "bug_report",
             Status: "released_to_reporter_channel",
-            Title: "Synthetic support closure preview",
-            Summary: "This preview simulates the tracked support-case state that the flagship desktop should expose natively.",
-            Detail: "Synthetic support case preview for flagship desktop smoke verification. The live account surface can replace this preview whenever a real tracked case is available.",
+            Title: "Support case preview",
+            Summary: "This preview shows how a tracked support case appears in the desktop app.",
+            Detail: "A live account case can replace this preview whenever one is available.",
             CandidateOwnerRepo: "chummer-presentation",
             DesignImpactSuspected: false,
             CreatedAtUtc: now.AddDays(-2),
@@ -307,13 +307,13 @@ internal sealed class DesktopSupportCaseWindow : Window
                 new DesktopSupportCaseTimelineEntry(
                     EventId: "preview-routed",
                     Status: "routed",
-                    Summary: "The tracked case moved into desktop support closure.",
+                    Summary: "The tracked case moved into desktop support.",
                     OccurredAtUtc: now.AddDays(-1),
                     Actor: "support"),
                 new DesktopSupportCaseTimelineEntry(
                     EventId: "preview-received",
                     Status: "new",
-                    Summary: "Synthetic support case preview created for flagship desktop smoke verification.",
+                    Summary: "Local support case preview created for this desktop.",
                     OccurredAtUtc: now.AddDays(-2),
                     Actor: "desktop")
             ],
@@ -459,7 +459,7 @@ internal sealed class DesktopSupportCaseWindow : Window
 
         if (supportProjection.NeedsAttention)
         {
-            lines.Add("Diagnostics diff stays visible while the tracked case still needs reporter follow-through.");
+            lines.Add("System details stay visible while this case still needs attention.");
         }
     }
 

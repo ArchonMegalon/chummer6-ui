@@ -1685,7 +1685,7 @@ public sealed class AccessibilitySignoffSmokeTests
         string supportSource = ReadSource("Chummer.Avalonia/DesktopSupportWindow.cs");
         RequireContains(supportSource, "DesktopTrustReceiptText.BuildDiagnosticsDiff(_installState, _updateStatus),");
         RequireContains(supportSource, "DesktopSupportDiagnosticsText.BuildSupportCenterDiagnostics(_installState, _updateStatus, _supportProjection)");
-        RequireContains(supportSource, "CreateSection(\"Diagnostics environment diff\", _diagnosticsText, null)");
+        RequireContains(supportSource, "CreateSection(S(\"desktop.support.section.diagnostics\"), _diagnosticsText, null)");
         RequireContains(supportSource, "CreateButton(S(\"desktop.home.button.open_update_status\"), OpenUpdateWindowAsync, isPrimary: true)");
         RequireContains(supportSource, "CreateButton(S(\"desktop.home.button.open_report_issue\"), OpenReportIssueWindowAsync)");
         RequireContains(supportSource, "DesktopInstallLinkingRuntime.TryOpenSupportPortalForInstall(_installState)");
@@ -1693,7 +1693,7 @@ public sealed class AccessibilitySignoffSmokeTests
         string supportCaseSource = ReadSource("Chummer.Avalonia/DesktopSupportCaseWindow.cs");
         RequireContains(supportCaseSource, "DesktopTrustReceiptText.BuildDiagnosticsDiff(_installState, _updateStatus),");
         RequireContains(supportCaseSource, "DesktopSupportDiagnosticsText.BuildTrackedCaseDiagnostics(_installState, _updateStatus, _supportProjection, _supportCase)");
-        RequireContains(supportCaseSource, "CreateSection(\"Diagnostics environment diff\", _diagnosticsText, null)");
+        RequireContains(supportCaseSource, "CreateSection(S(\"desktop.support_case.section.diagnostics\"), _diagnosticsText, null)");
         RequireContains(supportCaseSource, "CreateButton(S(\"desktop.home.button.open_support_center\"), OpenSupportWindowAsync)");
         RequireContains(supportCaseSource, "CreateButton(S(\"desktop.home.button.open_report_issue\"), OpenReportIssueWindowAsync)");
         RequireContains(supportCaseSource, "CreateButton(S(\"desktop.home.button.open_update_status\"), OpenUpdateWindowAsync, isPrimary: true)");
