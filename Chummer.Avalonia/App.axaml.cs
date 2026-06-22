@@ -18,6 +18,7 @@ public partial class App : global::Avalonia.Application
     private ServiceProvider? _serviceProvider;
     internal static IServiceProvider? Services { get; private set; }
     internal static DesktopInstallLinkingStartupContext? InstallLinkingStartupContext { get; set; }
+    internal static string[] StartupArguments { get; set; } = [];
 
     public override void Initialize()
     {
@@ -170,6 +171,23 @@ public partial class App : global::Avalonia.Application
         {
             await DesktopMouseFirstJourneyRunner.RunAsync(owner, "avalonia");
             return;
+        }
+
+        try
+        {
+            bool updateHandoffStarted = await DesktopStartupUpdateWindow.TryRunStartupUpdateAsync(
+                owner,
+                "avalonia",
+                StartupArguments);
+            if (updateHandoffStarted)
+            {
+                owner.Close();
+                return;
+            }
+        }
+        catch (Exception ex)
+        {
+            Console.Error.WriteLine($"Failed to run the visible desktop startup update flow: {ex}");
         }
 
         bool crashRecoveryShown = false;

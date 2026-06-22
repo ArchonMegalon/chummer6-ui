@@ -20,6 +20,12 @@ public sealed record DesktopUpdateStartupResult(
         => new(true, reason);
 }
 
+public sealed record DesktopUpdateProgressUpdate(
+    string Stage,
+    string Message,
+    int? Completed = null,
+    int? Total = null);
+
 public sealed record DesktopUpdateClientStatus(
     string HeadId,
     string InstalledVersion,
@@ -427,14 +433,23 @@ public static class DesktopUpdateRuntime
         string headId,
         string[] relaunchArgs,
         CancellationToken ct)
+        => await CheckAndScheduleStartupUpdateAsync(headId, relaunchArgs, progress: null, ct).ConfigureAwait(false);
+
+    public static async Task<DesktopUpdateStartupResult> CheckAndScheduleStartupUpdateAsync(
+        string headId,
+        string[] relaunchArgs,
+        IProgress<DesktopUpdateProgressUpdate>? progress,
+        CancellationToken ct)
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(headId);
         ArgumentNullException.ThrowIfNull(relaunchArgs);
 
+        progress?.Report(new DesktopUpdateProgressUpdate("checking", "Checking for the newest Chummer build"));
         DateTimeOffset now = DateTimeOffset.UtcNow;
         DesktopUpdateConfiguration configuration = DesktopUpdateConfiguration.Load();
         if (!configuration.Enabled)
         {
+            progress?.Report(new DesktopUpdateProgressUpdate("skipped", "Updates are not configured"));
             return DesktopUpdateStartupResult.Continue("manifest_not_configured");
         }
 
@@ -482,6 +497,7 @@ public static class DesktopUpdateRuntime
         {
             if (state.NextRetryAtUtc is not null && state.NextRetryAtUtc > now && !string.IsNullOrWhiteSpace(state.LastError))
             {
+                progress?.Report(new DesktopUpdateProgressUpdate("waiting", "Update retry is delayed after the last failure"));
                 return DesktopUpdateStartupResult.Continue("retry_backoff");
             }
 
@@ -498,6 +514,7 @@ public static class DesktopUpdateRuntime
             }
 
             Uri manifestUri = ResolveManifestUri(configuration.ManifestLocation);
+            progress?.Report(new DesktopUpdateProgressUpdate("checking", "Reading update information"));
             DesktopUpdateChannelManifest? manifest = await TryLoadManifestAsync(manifestUri, ct).ConfigureAwait(false);
             if (manifest is null)
             {
@@ -510,6 +527,7 @@ public static class DesktopUpdateRuntime
                     RetryAttempt = state.RetryAttempt + 1,
                     NextRetryAtUtc = now.AddMinutes(StartupManifestBackoffMinutes)
                 });
+                progress?.Report(new DesktopUpdateProgressUpdate("failed", "Could not read update information"));
                 return DesktopUpdateStartupResult.Continue("manifest_load_failed");
             }
 
@@ -571,6 +589,7 @@ public static class DesktopUpdateRuntime
                     NextRetryAtUtc = null
                 };
                 DesktopUpdateStateStore.Save(paths.StateFilePath, updatedState);
+                progress?.Report(new DesktopUpdateProgressUpdate("current", "Chummer is already current"));
                 return DesktopUpdateStartupResult.Continue("seeded_from_manifest");
             }
 
@@ -585,6 +604,7 @@ public static class DesktopUpdateRuntime
                     NextRetryAtUtc = null
                 };
                 DesktopUpdateStateStore.Save(paths.StateFilePath, updatedState);
+                progress?.Report(new DesktopUpdateProgressUpdate("current", "Chummer is already current"));
                 return DesktopUpdateStartupResult.Continue(releaseComparison == 0 ? "already_current" : "installed_ahead_of_manifest");
             }
 
@@ -599,6 +619,7 @@ public static class DesktopUpdateRuntime
                     NextRetryAtUtc = null
                 };
                 DesktopUpdateStateStore.Save(paths.StateFilePath, updatedState);
+                progress?.Report(new DesktopUpdateProgressUpdate("available", "A newer build is available"));
                 return DesktopUpdateStartupResult.Continue("auto_apply_disabled");
             }
 
@@ -613,6 +634,7 @@ public static class DesktopUpdateRuntime
                     NextRetryAtUtc = null
                 };
                 DesktopUpdateStateStore.Save(paths.StateFilePath, updatedState);
+                progress?.Report(new DesktopUpdateProgressUpdate("blocked", "This update is currently paused"));
                 return DesktopUpdateStartupResult.Continue("rollout_blocked");
             }
 
@@ -628,6 +650,7 @@ public static class DesktopUpdateRuntime
                     NextRetryAtUtc = null
                 };
                 DesktopUpdateStateStore.Save(paths.StateFilePath, updatedState);
+                progress?.Report(new DesktopUpdateProgressUpdate("blocked", "No installer is available for this platform"));
                 return DesktopUpdateStartupResult.Continue("no_matching_payload");
             }
 
@@ -642,6 +665,7 @@ public static class DesktopUpdateRuntime
                     RetryAttempt = updatedState.RetryAttempt + 1,
                     NextRetryAtUtc = CalculateBackoffTime(updatedState.RetryAttempt + 1)
                 });
+                progress?.Report(new DesktopUpdateProgressUpdate("blocked", "The update helper is not available"));
                 return DesktopUpdateStartupResult.Continue("helper_unavailable");
             }
 
@@ -655,6 +679,7 @@ public static class DesktopUpdateRuntime
                     RetryAttempt = 0,
                     NextRetryAtUtc = null
                 });
+                progress?.Report(new DesktopUpdateProgressUpdate("waiting", "The latest build is not published yet"));
                 return DesktopUpdateStartupResult.Continue("manifest_not_published");
             }
 
@@ -669,6 +694,7 @@ public static class DesktopUpdateRuntime
                     RetryAttempt = updatedState.RetryAttempt + 1,
                     NextRetryAtUtc = now.AddMinutes(StartupApplyBackoffMinutes)
                 });
+                progress?.Report(new DesktopUpdateProgressUpdate("blocked", "The update helper could not resolve the app executable"));
                 return DesktopUpdateStartupResult.Continue("helper_invalid_state");
             }
 
@@ -683,12 +709,23 @@ public static class DesktopUpdateRuntime
                 {
                     Uri downloadUri = ResolveArtifactUri(manifest.SourceUri, artifact);
                     Directory.CreateDirectory(stageRoot);
-                    await DownloadArtifactAsync(downloadUri, downloadedArtifactPath, ct).ConfigureAwait(false);
+                    progress?.Report(new DesktopUpdateProgressUpdate(
+                        "downloading",
+                        $"Downloading {artifact.FileName}",
+                        0,
+                        1000));
+                    await DownloadArtifactAsync(downloadUri, downloadedArtifactPath, artifact.FileName, progress, ct).ConfigureAwait(false);
+                    progress?.Report(new DesktopUpdateProgressUpdate(
+                        "validating",
+                        $"Checking {artifact.FileName}",
+                        1000,
+                        1000));
                     ValidateArtifactIntegrity(downloadedArtifactPath, artifact);
 
                     string helperPath = CopyProcessExecutableToHelper(processPath, paths.TempRoot);
                     if (artifact.SupportsInPlaceApply)
                     {
+                        progress?.Report(new DesktopUpdateProgressUpdate("staging", "Preparing the in-place update"));
                         string payloadRoot = Path.Combine(stageRoot, "payload");
                         Directory.CreateDirectory(payloadRoot);
                         ExtractArchive(downloadedArtifactPath, payloadRoot);
@@ -712,10 +749,29 @@ public static class DesktopUpdateRuntime
                             RelaunchArgs: relaunchArgs);
                         string requestPath = Path.Combine(stageRoot, "apply-request.json");
                         WriteApplyRequest(requestPath, request);
+                        progress?.Report(new DesktopUpdateProgressUpdate("relaunching", "Installing the update and restarting Chummer"));
                         LaunchApplyHelper(helperPath, requestPath);
                     }
                     else if (artifact.SupportsInstallerHandoff)
                     {
+                        if (OperatingSystem.IsMacOS())
+                        {
+                            DesktopUpdateStateStore.Save(paths.StateFilePath, updatedState with
+                            {
+                                LastError = "A macOS update is available, but automatic installer handoff is disabled for unsigned or quarantined installer images. Open Downloads to install it manually.",
+                                LastFailureReason = "macos_manual_install_required",
+                                LastFailureAtUtc = now,
+                                RetryAttempt = 0,
+                                NextRetryAtUtc = null,
+                                PendingUpdateVersion = manifest.Version,
+                                PendingUpdateChannelId = manifest.ChannelId,
+                                PendingUpdatePreparedAtUtc = DateTimeOffset.UtcNow
+                            });
+                            progress?.Report(new DesktopUpdateProgressUpdate("manual", "A macOS update is ready. Manual install is required."));
+                            return DesktopUpdateStartupResult.Continue("macos_manual_install_required");
+                        }
+
+                        progress?.Report(new DesktopUpdateProgressUpdate("staging", "Preparing the installer handoff"));
                         DesktopUpdateInstallerLaunchRequest request = new(
                             ParentProcessId: Environment.ProcessId,
                             StageRoot: stageRoot,
@@ -727,6 +783,7 @@ public static class DesktopUpdateRuntime
                             RelaunchArgs: relaunchArgs);
                         string requestPath = Path.Combine(stageRoot, "installer-request.json");
                         WriteInstallerLaunchRequest(requestPath, request);
+                        progress?.Report(new DesktopUpdateProgressUpdate("relaunching", "Starting the installer and restarting Chummer"));
                         LaunchInstallerHelper(helperPath, requestPath);
                     }
                     else
@@ -751,6 +808,7 @@ public static class DesktopUpdateRuntime
                         RollbackWindowStartedAtUtc = scheduledAt,
                         RollbackWindowExpiresAtUtc = rollbackWindowExpiresAt
                     });
+                    progress?.Report(new DesktopUpdateProgressUpdate("relaunching", "Update handoff started"));
                     return DesktopUpdateStartupResult.ExitForApply();
                 }
                 catch (Exception ex)
@@ -772,10 +830,12 @@ public static class DesktopUpdateRuntime
                         RetryAttempt = updatedState.RetryAttempt + 1,
                         NextRetryAtUtc = CalculateBackoffTime(updatedState.RetryAttempt + 1)
                     });
+                    progress?.Report(new DesktopUpdateProgressUpdate("failed", "Update preparation failed"));
                     return DesktopUpdateStartupResult.Continue("update_schedule_failed");
                 }
             }
 
+            progress?.Report(new DesktopUpdateProgressUpdate("failed", "Update preparation failed"));
             return DesktopUpdateStartupResult.Continue("update_schedule_failed");
         }
         catch (Exception ex)
@@ -794,6 +854,7 @@ public static class DesktopUpdateRuntime
                 RetryAttempt = state.RetryAttempt + 1,
                 NextRetryAtUtc = CalculateBackoffTime(state.RetryAttempt + 1)
             });
+            progress?.Report(new DesktopUpdateProgressUpdate("failed", "Update preparation failed"));
             return DesktopUpdateStartupResult.Continue("update_schedule_failed");
         }
     }
@@ -1142,7 +1203,12 @@ public static class DesktopUpdateRuntime
         return new Uri(Path.Combine(baseDirectory, relative.Replace('/', Path.DirectorySeparatorChar)));
     }
 
-    private static async Task DownloadArtifactAsync(Uri downloadUri, string destinationPath, CancellationToken ct)
+    private static async Task DownloadArtifactAsync(
+        Uri downloadUri,
+        string destinationPath,
+        string displayName,
+        IProgress<DesktopUpdateProgressUpdate>? progress,
+        CancellationToken ct)
     {
         for (int attempt = 1; attempt <= ArtifactDownloadRetryCount; attempt++)
         {
@@ -1152,7 +1218,7 @@ public static class DesktopUpdateRuntime
                 Directory.CreateDirectory(Path.GetDirectoryName(destinationPath)!);
                 if (downloadUri.IsFile)
                 {
-                    File.Copy(downloadUri.LocalPath, destinationPath, overwrite: true);
+                    CopyFileWithProgress(downloadUri.LocalPath, destinationPath, displayName, progress);
                     return;
                 }
 
@@ -1164,7 +1230,13 @@ public static class DesktopUpdateRuntime
                 response.EnsureSuccessStatusCode();
                 await using Stream source = await response.Content.ReadAsStreamAsync(ct).ConfigureAwait(false);
                 await using FileStream target = File.Create(destinationPath);
-                await source.CopyToAsync(target, ct).ConfigureAwait(false);
+                await CopyStreamWithProgressAsync(
+                    source,
+                    target,
+                    response.Content.Headers.ContentLength,
+                    displayName,
+                    progress,
+                    ct).ConfigureAwait(false);
                 return;
             }
             catch (Exception ex) when (attempt < ArtifactDownloadRetryCount && IsRetryableDownloadFailure(ex))
@@ -1175,6 +1247,74 @@ public static class DesktopUpdateRuntime
 
         throw new InvalidOperationException(
             $"Failed to download desktop update artifact from '{downloadUri}' after {ArtifactDownloadRetryCount} attempts.");
+    }
+
+    private static void CopyFileWithProgress(
+        string sourcePath,
+        string destinationPath,
+        string displayName,
+        IProgress<DesktopUpdateProgressUpdate>? progress)
+    {
+        Directory.CreateDirectory(Path.GetDirectoryName(destinationPath)!);
+        using FileStream source = File.OpenRead(sourcePath);
+        using FileStream target = File.Create(destinationPath);
+        byte[] buffer = new byte[1024 * 1024];
+        long copied = 0L;
+        while (true)
+        {
+            int read = source.Read(buffer, 0, buffer.Length);
+            if (read <= 0)
+            {
+                break;
+            }
+
+            target.Write(buffer, 0, read);
+            copied += read;
+            progress?.Report(new DesktopUpdateProgressUpdate(
+                "downloading",
+                $"Downloading {displayName}",
+                ToProgressUnits(copied, source.Length),
+                1000));
+        }
+    }
+
+    private static async Task CopyStreamWithProgressAsync(
+        Stream source,
+        Stream target,
+        long? totalBytes,
+        string displayName,
+        IProgress<DesktopUpdateProgressUpdate>? progress,
+        CancellationToken ct)
+    {
+        byte[] buffer = new byte[1024 * 1024];
+        long copied = 0L;
+        while (true)
+        {
+            int read = await source.ReadAsync(buffer.AsMemory(0, buffer.Length), ct).ConfigureAwait(false);
+            if (read <= 0)
+            {
+                break;
+            }
+
+            await target.WriteAsync(buffer.AsMemory(0, read), ct).ConfigureAwait(false);
+            copied += read;
+            progress?.Report(new DesktopUpdateProgressUpdate(
+                "downloading",
+                $"Downloading {displayName}",
+                ToProgressUnits(copied, totalBytes),
+                1000));
+        }
+    }
+
+    private static int ToProgressUnits(long completed, long? total)
+    {
+        if (total is null or <= 0)
+        {
+            return 0;
+        }
+
+        decimal ratio = Math.Clamp((decimal)completed / total.Value, 0m, 1m);
+        return (int)Math.Round(ratio * 1000m, MidpointRounding.AwayFromZero);
     }
 
     private static bool IsRetryableDownloadFailure(Exception ex)

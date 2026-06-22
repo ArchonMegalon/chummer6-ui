@@ -16,15 +16,7 @@ internal static class Program
             return specialModeExitCode.Value;
         }
 
-        DesktopUpdateStartupResult updateResult = await DesktopUpdateRuntime.CheckAndScheduleStartupUpdateAsync(
-            "avalonia",
-            args,
-            CancellationToken.None).ConfigureAwait(false);
-        if (updateResult.ExitRequested)
-        {
-            return 0;
-        }
-
+        App.StartupArguments = args;
         App.InstallLinkingStartupContext = await DesktopInstallLinkingRuntime.InitializeForStartupAsync(
             "avalonia",
             args,

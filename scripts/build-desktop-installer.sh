@@ -249,6 +249,15 @@ print(hasher.hexdigest())
 PY
 }
 
+file_size_bytes() {
+  python3 - "$1" <<'PY'
+from pathlib import Path
+import sys
+
+print(Path(sys.argv[1]).stat().st_size)
+PY
+}
+
 signing_receipt_path() {
   if [[ "$RID" == win-* ]]; then
     printf '%s' "${CHUMMER_WINDOWS_SIGNING_RECEIPT_PATH:-$DIST_DIR/signing/signing-$APP_KEY-$RID.receipt.json}"
@@ -984,6 +993,10 @@ build_windows_installer() {
   local installer_install_dir_name="$INSTALL_DIR_NAME-$RID"
   local heads_json_base64=""
   local stage_root=""
+  local installer_mode="${CHUMMER_WINDOWS_INSTALLER_MODE:-bootstrap}"
+  local bootstrap_payload_url=""
+  local bootstrap_payload_sha256=""
+  local bootstrap_payload_size_bytes=""
 
   if [[ -n "$secondary_head_key" || -n "$secondary_publish_dir" || -n "$secondary_launch_target" ]]; then
     if [[ -z "$secondary_head_key" || -z "$secondary_publish_dir" || -z "$secondary_launch_target" ]]; then
@@ -1013,6 +1026,23 @@ build_windows_installer() {
   fi
 
   build_payload_zip_from_dir "$payload_source_dir" "$payload_zip"
+  bootstrap_payload_sha256="$(sha256_file "$payload_zip")"
+  bootstrap_payload_size_bytes="$(file_size_bytes "$payload_zip")"
+
+  case "$(echo "$installer_mode" | tr '[:upper:]' '[:lower:]')" in
+    bootstrap)
+      installer_mode="bootstrap"
+      local downloads_prefix="${CHUMMER_PUBLIC_DOWNLOADS_PREFIX:-https://chummer.run/downloads/files}"
+      bootstrap_payload_url="${CHUMMER_WINDOWS_BOOTSTRAP_PAYLOAD_URL:-${downloads_prefix%/}/$(basename "$payload_zip")}"
+      ;;
+    bundled|append|appended)
+      installer_mode="bundled"
+      ;;
+    *)
+      echo "Unsupported CHUMMER_WINDOWS_INSTALLER_MODE: $installer_mode (expected bootstrap or bundled)." >&2
+      exit 1
+      ;;
+  esac
 
   rm -rf "$installer_out_dir"
   "$REPO_ROOT/scripts/ai/with-package-plane.sh" publish "$REPO_ROOT/Chummer.Desktop.Installer/Chummer.Desktop.Installer.csproj" \
@@ -1024,11 +1054,15 @@ build_windows_installer() {
     -p:PublishTrimmed=false \
     -p:EnableCompressionInSingleFile=true \
     -p:IncludeNativeLibrariesForSelfExtract=true \
+    -p:ChummerInstallerPayloadRequired=false \
     -p:ChummerInstallerEmbedPayload=false \
     -p:ChummerInstallerIncludeSidecarPayload=false \
     -p:ChummerInstallerAssemblyName="Chummer6Installer-$APP_KEY-$RID" \
     -p:InstallerPayloadZip="$payload_zip" \
     -p:ChummerInstallerPayloadResourceName="$payload_resource_name" \
+    -p:ChummerInstallerPayloadUrl="$bootstrap_payload_url" \
+    -p:ChummerInstallerPayloadSha256="$bootstrap_payload_sha256" \
+    -p:ChummerInstallerPayloadSizeBytes="$bootstrap_payload_size_bytes" \
     -p:ChummerInstallerAppId="$APP_KEY-$RID" \
     -p:ChummerInstallerHeadId="$APP_KEY" \
     -p:ChummerInstallerDisplayName="$installer_display_name" \
@@ -1048,7 +1082,23 @@ build_windows_installer() {
   fi
 
   cp "$installer_source" "$DIST_DIR/$installer_name"
-  append_payload_zip_to_windows_installer "$DIST_DIR/$installer_name" "$payload_zip"
+  if [[ "$installer_mode" == "bootstrap" ]]; then
+    mkdir -p "$DIST_DIR/files"
+    cp -f "$payload_zip" "$DIST_DIR/files/$(basename "$payload_zip")"
+    cat > "$DIST_DIR/files/$(basename "$payload_zip").json" <<EOF
+{
+  "contractName": "chummer6-ui.windows_bootstrap_payload",
+  "fileName": "$(basename "$payload_zip")",
+  "downloadUrl": "$bootstrap_payload_url",
+  "sha256": "$bootstrap_payload_sha256",
+  "sizeBytes": $bootstrap_payload_size_bytes,
+  "installerFileName": "$installer_name",
+  "releaseVersion": "$VERSION"
+}
+EOF
+  else
+    append_payload_zip_to_windows_installer "$DIST_DIR/$installer_name" "$payload_zip"
+  fi
   rm -f "$payload_zip"
   if [[ -n "$stage_root" ]]; then
     rm -rf "$stage_root"

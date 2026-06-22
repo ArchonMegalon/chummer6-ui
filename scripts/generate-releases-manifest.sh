@@ -1584,6 +1584,79 @@ normalize_release_channel_artifact_identity_fields(manifest_path)
 PY
 normalize_preview_install_access_classes "$CANONICAL_MANIFEST_PATH" "$RELEASE_CHANNEL"
 run_materializer "$CANONICAL_MANIFEST_PATH"
+python3 - "$CANONICAL_MANIFEST_PATH" "$MANIFEST_PATH" "$PORTAL_MANIFEST_PATH" "$DOWNLOADS_DIR" "$DOWNLOADS_PREFIX" <<'PY'
+from __future__ import annotations
+
+import hashlib
+import json
+import sys
+from pathlib import Path
+
+
+def sha256_file(path: Path) -> str:
+    hasher = hashlib.sha256()
+    with path.open("rb") as handle:
+        for chunk in iter(lambda: handle.read(1024 * 1024), b""):
+            hasher.update(chunk)
+    return hasher.hexdigest()
+
+
+def candidate_payload_name(installer_name: str) -> str:
+    lowered = installer_name.lower()
+    if lowered.endswith("-installer.exe"):
+        return installer_name[:-len("-installer.exe")] + "-payload.zip"
+    return ""
+
+
+def enrich_manifest(path: Path, downloads_dir: Path, downloads_prefix: str) -> None:
+    if not path.is_file():
+        return
+
+    payload = json.loads(path.read_text(encoding="utf-8-sig"))
+    if not isinstance(payload, dict):
+        return
+
+    changed = False
+    for artifact in payload.get("artifacts") or []:
+        if not isinstance(artifact, dict):
+            continue
+        file_name = str(artifact.get("fileName") or "").strip()
+        kind = str(artifact.get("kind") or "").strip().lower()
+        platform = str(artifact.get("platform") or "").strip().lower()
+        if kind != "installer" or platform != "windows" or not file_name:
+            continue
+
+        payload_name = candidate_payload_name(file_name)
+        if not payload_name:
+            continue
+        payload_path = downloads_dir / payload_name
+        if not payload_path.is_file():
+            continue
+
+        payload_url = f"{downloads_prefix.rstrip('/')}/{payload_name}"
+        payload_sha256 = sha256_file(payload_path)
+        payload_size = payload_path.stat().st_size
+        expected = {
+            "installerMode": "bootstrap",
+            "payloadFileName": payload_name,
+            "payloadDownloadUrl": payload_url,
+            "payloadSha256": payload_sha256,
+            "payloadSizeBytes": payload_size,
+        }
+        for key, value in expected.items():
+            if artifact.get(key) != value:
+                artifact[key] = value
+                changed = True
+
+    if changed:
+        path.write_text(json.dumps(payload, indent=2) + "\n", encoding="utf-8")
+
+
+downloads_dir = Path(sys.argv[4]).resolve()
+downloads_prefix = sys.argv[5]
+for raw_path in sys.argv[1:4]:
+    enrich_manifest(Path(raw_path).resolve(), downloads_dir, downloads_prefix)
+PY
 python3 - "$CANONICAL_MANIFEST_PATH" "$MANIFEST_PATH" "$PORTAL_MANIFEST_PATH" <<'PY'
 from __future__ import annotations
 

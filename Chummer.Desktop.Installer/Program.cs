@@ -4,6 +4,7 @@ using System.IO.Compression;
 using System.Linq;
 using System.Reflection;
 using System.Runtime.InteropServices;
+using System.Security.Cryptography;
 using System.Text;
 using System.Text.Json;
 using Microsoft.Win32;
@@ -16,7 +17,13 @@ internal static class Program
     private const string PreferredPayloadMetadataKey = "ChummerInstallerPayloadResourceName";
     private const string AppendedPayloadMagic = "CHUMMER6PAYLOAD1";
     private const string ClaimCodeEnvironmentVariable = "CHUMMER_INSTALL_CLAIM_CODE";
+    private const string PayloadUrlEnvironmentVariable = "CHUMMER_INSTALLER_PAYLOAD_URL";
+    private const string PayloadSha256EnvironmentVariable = "CHUMMER_INSTALLER_PAYLOAD_SHA256";
+    private const string PayloadSizeBytesEnvironmentVariable = "CHUMMER_INSTALLER_PAYLOAD_SIZE_BYTES";
     private const string ClaimCodeSwitch = "--install-claim-code";
+    private const string PayloadUrlSwitch = "--payload-url";
+    private const string PayloadSha256Switch = "--payload-sha256";
+    private const string PayloadSizeBytesSwitch = "--payload-size-bytes";
     private const string InstallLinkCallbackSwitch = "--install-link-callback";
     private const string AutoUpdateSwitch = "--auto-update";
     private const string LaunchHeadSwitch = "--launch-head";
@@ -26,9 +33,9 @@ internal static class Program
     private const string ChummerIconFileName = "chummer.ico";
     private const string ChummerProtocolScheme = "chummer";
     private const string InstallerTraceFileName = "chummer-desktop-installer-progress.log";
-    private static readonly Size InstallerDialogClientSize = new(880, 440);
-    private static readonly Size InstallerActionButtonSize = new(172, 40);
-    private static readonly Padding InstallerSurfacePadding = new(36, 28, 36, 28);
+    private static readonly Size InstallerDialogClientSize = new(780, 380);
+    private static readonly Size InstallerActionButtonSize = new(184, 42);
+    private static readonly Padding InstallerSurfacePadding = new(30, 24, 30, 24);
 
     [STAThread]
     private static int Main(string[] args)
@@ -64,6 +71,7 @@ internal static class Program
             TraceInstaller($"start args={FormatTraceArguments(args)}");
             InstallerMetadata metadata = InstallerMetadata.Load();
             string? payloadPathOverride = ResolvePayloadPathOverride(args);
+            PayloadDownloadRequest? payloadDownload = ResolvePayloadDownloadRequest(args);
             string? claimCode = ResolveClaimCode(args);
             bool autoUpdate = args.Any(arg => string.Equals(arg, AutoUpdateSwitch, StringComparison.OrdinalIgnoreCase));
             string? requestedLaunchHeadId = ResolveLaunchHeadId(args);
@@ -76,10 +84,10 @@ internal static class Program
 
             if (args.Length > 1 && string.Equals(args[0], "--smoke-install", StringComparison.OrdinalIgnoreCase))
             {
-                return SmokeInstall(metadata, args[1], payloadPathOverride);
+                return SmokeInstall(metadata, args[1], payloadPathOverride, payloadDownload);
             }
 
-            return Install(metadata, payloadPathOverride, claimCode, autoUpdate, requestedLaunchHeadId, relaunchArgs);
+            return Install(metadata, payloadPathOverride, payloadDownload, claimCode, autoUpdate, requestedLaunchHeadId, relaunchArgs);
         }
         catch (Exception ex)
         {
@@ -103,6 +111,7 @@ internal static class Program
     private static int Install(
         InstallerMetadata metadata,
         string? payloadPathOverride,
+        PayloadDownloadRequest? payloadDownload,
         string? claimCode,
         bool autoUpdate,
         string? requestedLaunchHeadId,
@@ -121,7 +130,7 @@ internal static class Program
 
         Stopwatch installStopwatch = Stopwatch.StartNew();
         TimeSpan lastPulse = TimeSpan.Zero;
-        Task<string> installTask = Task.Run(() => CompleteInstall(metadata, payloadPathOverride, claimCode, progress));
+        Task<string> installTask = Task.Run(() => CompleteInstall(metadata, payloadPathOverride, payloadDownload, claimCode, progress));
         try
         {
             while (!installTask.Wait(50))
@@ -149,7 +158,7 @@ internal static class Program
         }
         finally
         {
-            splash.Close();
+            splash.CloseSafely();
         }
 
         string targetDir = installTask.GetAwaiter().GetResult();
@@ -176,10 +185,11 @@ internal static class Program
     private static string CompleteInstall(
         InstallerMetadata metadata,
         string? payloadPathOverride,
+        PayloadDownloadRequest? payloadDownload,
         string? claimCode,
         IProgress<InstallProgressUpdate>? progress)
     {
-        string targetDir = InstallPayload(metadata, metadata.InstallDirectory, payloadPathOverride, progress);
+        string targetDir = InstallPayload(metadata, metadata.InstallDirectory, payloadPathOverride, payloadDownload, progress);
         progress?.Report(new InstallProgressUpdate("Cleaning previous install layout"));
         TryDeleteLegacyInstallDirectories(metadata);
 
@@ -325,14 +335,18 @@ internal static class Program
         }
     }
 
-    private static int SmokeInstall(InstallerMetadata metadata, string targetDirectory, string? payloadPathOverride)
+    private static int SmokeInstall(
+        InstallerMetadata metadata,
+        string targetDirectory,
+        string? payloadPathOverride,
+        PayloadDownloadRequest? payloadDownload)
     {
         if (string.IsNullOrWhiteSpace(targetDirectory))
         {
             throw new InvalidOperationException("Smoke install requires a target directory.");
         }
 
-        InstallPayload(metadata, targetDirectory, payloadPathOverride);
+        InstallPayload(metadata, targetDirectory, payloadPathOverride, payloadDownload);
         return 0;
     }
 
@@ -340,6 +354,7 @@ internal static class Program
         InstallerMetadata metadata,
         string targetDirectory,
         string? payloadPathOverride,
+        PayloadDownloadRequest? payloadDownload,
         IProgress<InstallProgressUpdate>? progress = null)
     {
         string targetDir = Path.GetFullPath(targetDirectory);
@@ -347,7 +362,7 @@ internal static class Program
         Directory.CreateDirectory(tempExtractDir);
         try
         {
-            ExtractPayload(tempExtractDir, payloadPathOverride, progress);
+            ExtractPayload(tempExtractDir, payloadPathOverride, payloadDownload, progress);
 
             if (metadata.UsesBundledLayout)
             {
@@ -386,12 +401,13 @@ internal static class Program
     private static void ExtractPayload(
         string tempExtractDir,
         string? payloadPathOverride,
+        PayloadDownloadRequest? payloadDownload,
         IProgress<InstallProgressUpdate>? progress)
     {
         Assembly assembly = Assembly.GetExecutingAssembly();
 
         progress?.Report(new InstallProgressUpdate("Opening bundled desktop payload"));
-        using Stream payload = OpenPayloadStream(assembly, payloadPathOverride);
+        using Stream payload = OpenPayloadStream(assembly, payloadPathOverride, payloadDownload, tempExtractDir, progress);
         Stream archivePayload = PreparePayloadArchiveStream(payload, tempExtractDir, progress);
         bool leaveArchivePayloadOpen = ReferenceEquals(archivePayload, payload);
 
@@ -489,10 +505,25 @@ internal static class Program
         }
     }
 
-    private static Stream OpenPayloadStream(Assembly assembly, string? payloadPathOverride = null)
+    private static Stream OpenPayloadStream(
+        Assembly assembly,
+        string? payloadPathOverride = null,
+        PayloadDownloadRequest? payloadDownload = null,
+        string? tempRoot = null,
+        IProgress<InstallProgressUpdate>? progress = null)
     {
         List<string> failureReports = new();
         string baseDirectory = AppContext.BaseDirectory;
+
+        if (payloadDownload is { IsExplicit: true })
+        {
+            if (TryDownloadPayload(payloadDownload, tempRoot, progress, out Stream? downloadStream, out string? downloadFailure))
+            {
+                return downloadStream!;
+            }
+
+            failureReports.Add($"0) {downloadFailure}");
+        }
 
         if (!string.IsNullOrWhiteSpace(payloadPathOverride))
         {
@@ -541,6 +572,17 @@ internal static class Program
             failureReports.Add($"4.{i + 1}) {sidecarFailure}");
         }
 
+        if (payloadDownload is not null)
+        {
+            if (TryDownloadPayload(payloadDownload, tempRoot, progress, out Stream? downloadStream, out string? downloadFailure))
+            {
+                RecordPayloadResolution("bootstrap-download", failureReports);
+                return downloadStream!;
+            }
+
+            failureReports.Add($"5) {downloadFailure}");
+        }
+
         string resourceNames = FormatResourceNames(assembly);
         string failureSummary = failureReports.Count > 0
             ? string.Join("; ", failureReports)
@@ -550,10 +592,159 @@ internal static class Program
             : "<none>";
         throw new InvalidOperationException(
             $"Bundled desktop payload was not found. Expected '{PreferredPayloadResourceName}'. " +
+            $"Bootstrap payload URL: '{payloadDownload?.Url ?? "<none>"}'. " +
             $"Appended payload marker: '{AppendedPayloadMagic}'. " +
             $"Embedded resources: {resourceNames}. " +
             $"Checked {baseDirectory} for sidecar payloads: {sidecarSummary}. " +
             $"Discovery trace: {failureSummary}");
+    }
+
+    private static bool TryDownloadPayload(
+        PayloadDownloadRequest request,
+        string? tempRoot,
+        IProgress<InstallProgressUpdate>? progress,
+        out Stream? payloadStream,
+        out string? failure)
+    {
+        payloadStream = null;
+        failure = null;
+
+        try
+        {
+            string payloadPath = DownloadPayloadToTempFileAsync(request, tempRoot, progress).GetAwaiter().GetResult();
+            ValidateDownloadedPayload(payloadPath, request);
+            payloadStream = new FileStream(
+                payloadPath,
+                FileMode.Open,
+                FileAccess.Read,
+                FileShare.Read,
+                bufferSize: 1024 * 1024,
+                options: FileOptions.DeleteOnClose);
+            TraceInstaller($"opened bootstrap payload url={request.Url} path={payloadPath}");
+            return true;
+        }
+        catch (Exception ex)
+        {
+            failure = $"bootstrap payload '{request.Url}' could not be downloaded or verified: {ex.Message}";
+            return false;
+        }
+    }
+
+    private static async Task<string> DownloadPayloadToTempFileAsync(
+        PayloadDownloadRequest request,
+        string? tempRoot,
+        IProgress<InstallProgressUpdate>? progress)
+    {
+        if (!Uri.TryCreate(request.Url, UriKind.Absolute, out Uri? uri)
+            || !(uri.IsFile
+                || string.Equals(uri.Scheme, Uri.UriSchemeHttp, StringComparison.OrdinalIgnoreCase)
+                || string.Equals(uri.Scheme, Uri.UriSchemeHttps, StringComparison.OrdinalIgnoreCase)))
+        {
+            throw new InvalidOperationException("Payload URL must be an absolute file, http, or https URL.");
+        }
+
+        string root = string.IsNullOrWhiteSpace(tempRoot) ? Path.GetTempPath() : tempRoot;
+        Directory.CreateDirectory(root);
+        string payloadPath = Path.Combine(root, $"payload-download-{Guid.NewGuid():N}.zip");
+
+        progress?.Report(new InstallProgressUpdate("Downloading application files", 0, ProgressUnitScale));
+        if (uri.IsFile)
+        {
+            using FileStream fileSource = File.OpenRead(uri.LocalPath);
+            using FileStream fileTarget = File.Create(payloadPath);
+            CopyStreamWithProgress(
+                fileSource,
+                fileTarget,
+                fileSource.Length,
+                bytesCopied => progress?.Report(new InstallProgressUpdate(
+                    $"Downloading application files ({FormatBytes(bytesCopied)} of {FormatBytes(fileSource.Length)})",
+                    ToProgressUnits(bytesCopied, fileSource.Length),
+                    ProgressUnitScale)));
+            return payloadPath;
+        }
+
+        using HttpClient client = new()
+        {
+            Timeout = TimeSpan.FromMinutes(10)
+        };
+        using HttpResponseMessage response = await client.GetAsync(uri, HttpCompletionOption.ResponseHeadersRead).ConfigureAwait(false);
+        response.EnsureSuccessStatusCode();
+        long? totalBytes = response.Content.Headers.ContentLength ?? request.SizeBytes;
+        await using Stream source = await response.Content.ReadAsStreamAsync().ConfigureAwait(false);
+        await using FileStream target = File.Create(payloadPath);
+        byte[] buffer = new byte[1024 * 1024];
+        long copied = 0L;
+        int lastReportedUnit = -1;
+        while (true)
+        {
+            int bytesRead = await source.ReadAsync(buffer.AsMemory(0, buffer.Length)).ConfigureAwait(false);
+            if (bytesRead <= 0)
+            {
+                break;
+            }
+
+            await target.WriteAsync(buffer.AsMemory(0, bytesRead)).ConfigureAwait(false);
+            copied += bytesRead;
+            int currentUnit = ToProgressUnits(copied, totalBytes);
+            if (currentUnit == lastReportedUnit && copied != totalBytes)
+            {
+                continue;
+            }
+
+            lastReportedUnit = currentUnit;
+            progress?.Report(new InstallProgressUpdate(
+                totalBytes is null
+                    ? $"Downloading application files ({FormatBytes(copied)} copied)"
+                    : $"Downloading application files ({FormatBytes(copied)} of {FormatBytes(totalBytes.Value)})",
+                currentUnit,
+                ProgressUnitScale));
+        }
+
+        progress?.Report(new InstallProgressUpdate("Downloading application files", ProgressUnitScale, ProgressUnitScale));
+        return payloadPath;
+    }
+
+    private static void ValidateDownloadedPayload(string payloadPath, PayloadDownloadRequest request)
+    {
+        if (request.SizeBytes is { } expectedSize)
+        {
+            long observedSize = new FileInfo(payloadPath).Length;
+            if (observedSize != expectedSize)
+            {
+                throw new InvalidOperationException(
+                    $"Downloaded payload size mismatch. Expected {expectedSize} bytes, observed {observedSize} bytes.");
+            }
+        }
+
+        if (string.IsNullOrWhiteSpace(request.Sha256))
+        {
+            return;
+        }
+
+        string expectedSha256 = NormalizeSha256(request.Sha256);
+        string observedSha256 = ComputeSha256(payloadPath);
+        if (!string.Equals(observedSha256, expectedSha256, StringComparison.OrdinalIgnoreCase))
+        {
+            throw new InvalidOperationException(
+                $"Downloaded payload checksum mismatch. Expected {expectedSha256}, observed {observedSha256}.");
+        }
+    }
+
+    private static string ComputeSha256(string path)
+    {
+        using FileStream stream = File.OpenRead(path);
+        return Convert.ToHexString(SHA256.HashData(stream)).ToLowerInvariant();
+    }
+
+    private static string NormalizeSha256(string value)
+    {
+        string normalized = value.Trim();
+        if (normalized.StartsWith("sha256:", StringComparison.OrdinalIgnoreCase))
+        {
+            normalized = normalized["sha256:".Length..];
+        }
+
+        return normalized;
     }
 
     private static bool TryOpenPayloadFile(string payloadPath, string context, out Stream? payloadStream, out string? failure)
@@ -703,6 +894,84 @@ internal static class Program
 
         return string.IsNullOrWhiteSpace(overridePath) ? null : overridePath;
     }
+
+    private static PayloadDownloadRequest? ResolvePayloadDownloadRequest(string[] args)
+    {
+        Assembly assembly = Assembly.GetExecutingAssembly();
+        string? url = ResolveSwitchValue(args, PayloadUrlSwitch)
+            ?? Environment.GetEnvironmentVariable(PayloadUrlEnvironmentVariable)
+            ?? ReadAssemblyMetadata(assembly, "ChummerInstallerPayloadUrl");
+        if (string.IsNullOrWhiteSpace(url))
+        {
+            return null;
+        }
+
+        string? sha256 = ResolveSwitchValue(args, PayloadSha256Switch)
+            ?? Environment.GetEnvironmentVariable(PayloadSha256EnvironmentVariable)
+            ?? ReadAssemblyMetadata(assembly, "ChummerInstallerPayloadSha256");
+        string? sizeText = ResolveSwitchValue(args, PayloadSizeBytesSwitch)
+            ?? Environment.GetEnvironmentVariable(PayloadSizeBytesEnvironmentVariable)
+            ?? ReadAssemblyMetadata(assembly, "ChummerInstallerPayloadSizeBytes");
+        long? sizeBytes = long.TryParse(sizeText, out long parsedSize) && parsedSize > 0
+            ? parsedSize
+            : null;
+        bool isExplicit = args.Any(arg =>
+                string.Equals(arg, PayloadUrlSwitch, StringComparison.OrdinalIgnoreCase)
+                || arg.StartsWith(PayloadUrlSwitch + "=", StringComparison.OrdinalIgnoreCase)
+                || arg.StartsWith(PayloadUrlSwitch + ":", StringComparison.OrdinalIgnoreCase))
+            || !string.IsNullOrWhiteSpace(Environment.GetEnvironmentVariable(PayloadUrlEnvironmentVariable));
+
+        return new PayloadDownloadRequest(url.Trim(), sha256?.Trim(), sizeBytes, isExplicit);
+    }
+
+    private static string? ResolveSwitchValue(IReadOnlyList<string> args, string switchName)
+    {
+        for (int i = 0; i < args.Count; i++)
+        {
+            string arg = args[i]?.Trim() ?? string.Empty;
+            if (arg.Length == 0)
+            {
+                continue;
+            }
+
+            if (string.Equals(arg, switchName, StringComparison.OrdinalIgnoreCase))
+            {
+                return i + 1 < args.Count && !string.IsNullOrWhiteSpace(args[i + 1])
+                    ? args[i + 1]
+                    : null;
+            }
+
+            string normalized = arg;
+            if (normalized.StartsWith("--", StringComparison.Ordinal))
+            {
+                normalized = normalized[2..];
+            }
+            else if (normalized.StartsWith("-", StringComparison.Ordinal)
+                || normalized.StartsWith("/", StringComparison.Ordinal))
+            {
+                normalized = normalized[1..];
+            }
+
+            string switchToken = switchName.TrimStart('-');
+            if (normalized.StartsWith(switchToken + "=", StringComparison.OrdinalIgnoreCase))
+            {
+                return normalized[(switchToken.Length + 1)..];
+            }
+
+            if (normalized.StartsWith(switchToken + ":", StringComparison.OrdinalIgnoreCase))
+            {
+                return normalized[(switchToken.Length + 1)..];
+            }
+        }
+
+        return null;
+    }
+
+    private static string? ReadAssemblyMetadata(Assembly assembly, string key)
+        => assembly
+            .GetCustomAttributes<AssemblyMetadataAttribute>()
+            .FirstOrDefault(attribute => string.Equals(attribute.Key, key, StringComparison.Ordinal))?
+            .Value;
 
     private static string? ResolveClaimCode(string[] args)
     {
@@ -2095,6 +2364,12 @@ internal static class Program
         string? ShortcutName,
         string? RelativeRoot);
 
+    private sealed record PayloadDownloadRequest(
+        string Url,
+        string? Sha256,
+        long? SizeBytes,
+        bool IsExplicit);
+
     private readonly record struct InstallProgressUpdate(
         string Stage,
         int? Completed = null,
@@ -2107,6 +2382,7 @@ internal static class Program
         private readonly Panel _progressTrack;
         private readonly Panel _progressFill;
         private readonly Label _progressValueLabel;
+        private bool _isClosing;
 
         public InstallSplashForm(string displayName)
         {
@@ -2314,8 +2590,30 @@ internal static class Program
             Controls.Add(accentBar);
         }
 
+        public void CloseSafely()
+        {
+            if (IsDisposed || Disposing)
+            {
+                return;
+            }
+
+            _isClosing = true;
+            Close();
+        }
+
+        protected override void OnFormClosing(FormClosingEventArgs e)
+        {
+            _isClosing = true;
+            base.OnFormClosing(e);
+        }
+
         public void ApplyElapsed(TimeSpan elapsed)
         {
+            if (!CanUpdateControls())
+            {
+                return;
+            }
+
             string elapsedText = elapsed.TotalMinutes >= 1
                 ? $"Elapsed: {(int)elapsed.TotalMinutes}m {elapsed.Seconds:00}s"
                 : $"Elapsed: {Math.Max(0, (int)elapsed.TotalSeconds)}s";
@@ -2324,6 +2622,11 @@ internal static class Program
 
         public void ApplyProgress(InstallProgressUpdate update)
         {
+            if (!CanUpdateControls())
+            {
+                return;
+            }
+
             int? total = update.Total is > 0 ? update.Total : null;
             int? completed = update.Completed;
             string statusText = BuildProgressDisplayStage(update.Stage);
@@ -2350,6 +2653,15 @@ internal static class Program
             _progressFill.Width = Math.Min(pulsingTrackWidth, pulse);
             _progressValueLabel.Text = "Preparing…";
         }
+
+        private bool CanUpdateControls()
+            => !_isClosing
+                && !IsDisposed
+                && !Disposing
+                && IsHandleCreated
+                && !_statusLabel.IsDisposed
+                && !_progressFill.IsDisposed
+                && !_progressValueLabel.IsDisposed;
 
         private static string BuildProgressDisplayStage(string stage)
         {

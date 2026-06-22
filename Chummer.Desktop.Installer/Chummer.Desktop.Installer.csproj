@@ -25,6 +25,9 @@
     <ChummerInstallerPayloadRequired Condition="'$(ChummerInstallerPayloadRequired)' == ''">true</ChummerInstallerPayloadRequired>
     <ChummerInstallerEmbedPayload Condition="'$(ChummerInstallerEmbedPayload)' == ''">true</ChummerInstallerEmbedPayload>
     <ChummerInstallerIncludeSidecarPayload Condition="'$(ChummerInstallerIncludeSidecarPayload)' == ''">false</ChummerInstallerIncludeSidecarPayload>
+    <ChummerInstallerPayloadUrl Condition="'$(ChummerInstallerPayloadUrl)' == ''"></ChummerInstallerPayloadUrl>
+    <ChummerInstallerPayloadSha256 Condition="'$(ChummerInstallerPayloadSha256)' == ''"></ChummerInstallerPayloadSha256>
+    <ChummerInstallerPayloadSizeBytes Condition="'$(ChummerInstallerPayloadSizeBytes)' == ''"></ChummerInstallerPayloadSizeBytes>
     <ApplicationIcon>..\Chummer\chummer.ico</ApplicationIcon>
     <Win32Icon>..\Chummer\chummer.ico</Win32Icon>
   </PropertyGroup>
@@ -85,6 +88,18 @@
     <AssemblyAttribute Include="System.Reflection.AssemblyMetadataAttribute">
       <_Parameter1>ChummerInstallerPayloadResourceName</_Parameter1>
       <_Parameter2>$(ChummerInstallerPayloadResourceName)</_Parameter2>
+    </AssemblyAttribute>
+    <AssemblyAttribute Include="System.Reflection.AssemblyMetadataAttribute">
+      <_Parameter1>ChummerInstallerPayloadUrl</_Parameter1>
+      <_Parameter2>$(ChummerInstallerPayloadUrl)</_Parameter2>
+    </AssemblyAttribute>
+    <AssemblyAttribute Include="System.Reflection.AssemblyMetadataAttribute">
+      <_Parameter1>ChummerInstallerPayloadSha256</_Parameter1>
+      <_Parameter2>$(ChummerInstallerPayloadSha256)</_Parameter2>
+    </AssemblyAttribute>
+    <AssemblyAttribute Include="System.Reflection.AssemblyMetadataAttribute">
+      <_Parameter1>ChummerInstallerPayloadSizeBytes</_Parameter1>
+      <_Parameter2>$(ChummerInstallerPayloadSizeBytes)</_Parameter2>
     </AssemblyAttribute>
   </ItemGroup>
 

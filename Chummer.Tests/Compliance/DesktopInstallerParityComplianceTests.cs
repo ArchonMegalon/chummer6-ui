@@ -61,7 +61,14 @@ public sealed class DesktopInstallerParityComplianceTests
         StringAssert.Contains(installerProgramText, "if (autoUpdate)");
         StringAssert.Contains(installerProgramText, "LaunchInstalledApp(metadata, claimCode, requestedLaunchHeadId, relaunchArgs, null);");
         StringAssert.Contains(installerProjectText, "<ChummerInstallerIncludeSidecarPayload Condition=\"'$(ChummerInstallerIncludeSidecarPayload)' == ''\">false</ChummerInstallerIncludeSidecarPayload>");
+        StringAssert.Contains(installerProjectText, "<ChummerInstallerPayloadUrl Condition=\"'$(ChummerInstallerPayloadUrl)' == ''\"></ChummerInstallerPayloadUrl>");
+        StringAssert.Contains(installerProjectText, "<_Parameter1>ChummerInstallerPayloadUrl</_Parameter1>");
         StringAssert.Contains(installerScriptText, "-p:ChummerInstallerIncludeSidecarPayload=false");
+        StringAssert.Contains(installerScriptText, "CHUMMER_WINDOWS_INSTALLER_MODE:-bootstrap");
+        StringAssert.Contains(installerScriptText, "-p:ChummerInstallerPayloadUrl=\"$bootstrap_payload_url\"");
+        StringAssert.Contains(installerScriptText, "-p:ChummerInstallerPayloadSha256=\"$bootstrap_payload_sha256\"");
+        StringAssert.Contains(installerScriptText, "-p:ChummerInstallerPayloadSizeBytes=\"$bootstrap_payload_size_bytes\"");
+        StringAssert.Contains(installerScriptText, "\"contractName\": \"chummer6-ui.windows_bootstrap_payload\"");
         StringAssert.Contains(selectionHandlersText, "DesktopReportIssueWindow.ShowAsync(this, DesktopHeadId)");
         Assert.IsFalse(selectionHandlersText.Contains("LegacyReportBugUrl", StringComparison.Ordinal));
     }
@@ -73,9 +80,9 @@ public sealed class DesktopInstallerParityComplianceTests
         string installerProgramPath = Path.Combine(repoRoot, "Chummer.Desktop.Installer", "Program.cs");
         string installerProgramText = File.ReadAllText(installerProgramPath);
 
-        StringAssert.Contains(installerProgramText, "InstallerDialogClientSize = new(880, 440);");
-        StringAssert.Contains(installerProgramText, "InstallerActionButtonSize = new(172, 40);");
-        StringAssert.Contains(installerProgramText, "InstallerSurfacePadding = new(36, 28, 36, 28);");
+        StringAssert.Contains(installerProgramText, "InstallerDialogClientSize = new(780, 380);");
+        StringAssert.Contains(installerProgramText, "InstallerActionButtonSize = new(184, 42);");
+        StringAssert.Contains(installerProgramText, "InstallerSurfacePadding = new(30, 24, 30, 24);");
         StringAssert.Contains(installerProgramText, "ClientSize = InstallerDialogClientSize;");
         StringAssert.Contains(installerProgramText, "MinimumSize = InstallerDialogClientSize;");
         StringAssert.Contains(installerProgramText, "Font = new Font(\"Segoe UI Semibold\", 10F");
@@ -117,6 +124,16 @@ public sealed class DesktopInstallerParityComplianceTests
         StringAssert.Contains(installerProgramText, "_progressTrack.ClientSize.Width");
         StringAssert.Contains(installerProgramText, "Preparing copy claim");
         StringAssert.Contains(installerProgramText, "BuildProgressDisplayStage(update.Stage)");
+        StringAssert.Contains(installerProgramText, "CloseSafely()");
+        StringAssert.Contains(installerProgramText, "CanUpdateControls()");
+        StringAssert.Contains(installerProgramText, "_isClosing");
+        StringAssert.Contains(installerProgramText, "ResolvePayloadDownloadRequest(args)");
+        StringAssert.Contains(installerProgramText, "PayloadUrlSwitch = \"--payload-url\"");
+        StringAssert.Contains(installerProgramText, "PayloadSha256Switch = \"--payload-sha256\"");
+        StringAssert.Contains(installerProgramText, "PayloadSizeBytesSwitch = \"--payload-size-bytes\"");
+        StringAssert.Contains(installerProgramText, "Downloading application files");
+        StringAssert.Contains(installerProgramText, "ValidateDownloadedPayload(payloadPath, request);");
+        StringAssert.Contains(installerProgramText, "Downloaded payload checksum mismatch");
         StringAssert.Contains(installerProgramText, "ShouldShowInlineCount(total.Value)");
         StringAssert.Contains(installerProgramText, "return total < ProgressUnitScale || total % ProgressUnitScale != 0;");
         StringAssert.Contains(installerProgramText, "return \"Extracting application files\";");
@@ -157,9 +174,45 @@ public sealed class DesktopInstallerParityComplianceTests
         Assert.IsFalse(installerProgramText.Contains("This usually takes less than a minute.", StringComparison.Ordinal));
         Assert.IsFalse(installerProgramText.Contains("prompt.Show();", StringComparison.Ordinal));
         Assert.IsFalse(installerProgramText.Contains("while (!prompt.IsDisposed && prompt.Visible)", StringComparison.Ordinal));
+        Assert.IsFalse(installerProgramText.Contains("splash.Close();", StringComparison.Ordinal));
         Assert.IsFalse(installerProgramText.Contains(
             "if (total.HasValue && completed.HasValue)\n            {",
             StringComparison.Ordinal));
+    }
+
+    [TestMethod]
+    public void Startup_update_handoff_is_visible_and_keeps_macos_manual_install_recoverable()
+    {
+        string repoRoot = FindRepoRoot();
+        string avaloniaProgramPath = Path.Combine(repoRoot, "Chummer.Avalonia", "Program.cs");
+        string avaloniaProgramText = File.ReadAllText(avaloniaProgramPath);
+        string appPath = Path.Combine(repoRoot, "Chummer.Avalonia", "App.axaml.cs");
+        string appText = File.ReadAllText(appPath);
+        string startupWindowPath = Path.Combine(repoRoot, "Chummer.Avalonia", "DesktopStartupUpdateWindow.cs");
+        string startupWindowText = File.ReadAllText(startupWindowPath);
+        string runtimePath = Path.Combine(repoRoot, "Chummer.Desktop.Runtime", "DesktopUpdateRuntime.cs");
+        string runtimeText = File.ReadAllText(runtimePath);
+        string publishBundlePath = Path.Combine(repoRoot, "scripts", "publish-download-bundle.sh");
+        string publishBundleText = File.ReadAllText(publishBundlePath);
+        string manifestGeneratorPath = Path.Combine(repoRoot, "scripts", "generate-releases-manifest.sh");
+        string manifestGeneratorText = File.ReadAllText(manifestGeneratorPath);
+
+        Assert.IsFalse(
+            avaloniaProgramText.Contains("DesktopUpdateRuntime.CheckAndScheduleStartupUpdateAsync(\n            \"avalonia\"", StringComparison.Ordinal),
+            "Avalonia startup must not run the updater before any visible window can appear.");
+        StringAssert.Contains(avaloniaProgramText, "App.StartupArguments = args;");
+        StringAssert.Contains(appText, "DesktopStartupUpdateWindow.TryRunStartupUpdateAsync(");
+        StringAssert.Contains(startupWindowText, "Installing update and restarting Chummer");
+        StringAssert.Contains(startupWindowText, "A macOS update is ready. Open Downloads to install it manually; this copy will stay usable.");
+        StringAssert.Contains(runtimeText, "public sealed record DesktopUpdateProgressUpdate");
+        StringAssert.Contains(runtimeText, "IProgress<DesktopUpdateProgressUpdate>? progress");
+        StringAssert.Contains(runtimeText, "OperatingSystem.IsMacOS()");
+        StringAssert.Contains(runtimeText, "macos_manual_install_required");
+        StringAssert.Contains(publishBundleText, "payloadFileName");
+        StringAssert.Contains(publishBundleText, "payloadDownloadUrl");
+        StringAssert.Contains(manifestGeneratorText, "\"installerMode\": \"bootstrap\"");
+        StringAssert.Contains(manifestGeneratorText, "\"payloadFileName\"");
+        StringAssert.Contains(manifestGeneratorText, "\"payloadDownloadUrl\"");
     }
 
     private static string FindRepoRoot()

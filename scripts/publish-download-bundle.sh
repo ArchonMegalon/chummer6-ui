@@ -517,12 +517,19 @@ seen = set()
 for artifact in payload.get("artifacts") or []:
     if not isinstance(artifact, dict):
         continue
+    names = []
     file_name = str(artifact.get("fileName") or "").strip()
     if not file_name:
         file_name = Path(str(artifact.get("downloadUrl") or "").strip()).name
-    if file_name and file_name not in seen:
-        print(file_name)
-        seen.add(file_name)
+    names.append(file_name)
+    payload_name = str(artifact.get("payloadFileName") or "").strip()
+    if not payload_name:
+        payload_name = Path(str(artifact.get("payloadDownloadUrl") or "").strip()).name
+    names.append(payload_name)
+    for candidate in names:
+        if candidate and candidate not in seen:
+            print(candidate)
+            seen.add(candidate)
 PY
 )
 
