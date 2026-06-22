@@ -3,14 +3,15 @@
 @using Chummer.Contracts.Content
 @using Chummer.Contracts.Rulesets
 @using Chummer.Desktop.Runtime
+@using Chummer.Presentation
 @using Chummer.Presentation.Overview
 @using Chummer.Presentation.UiKit
 
 <section class="panel design-panel">
     <header class="panel-header">
         <div>
-            <h2>Runtime Inspector</h2>
-            <p class="meta">Resolved runtime lock, compatibility diagnostics, and provider bindings rendered from shared contracts.</p>
+            <h2>Rules setup</h2>
+            <p class="meta">Review the installed rules, compatibility notes, and service links for this workspace.</p>
         </div>
         @if (Projection is not null)
         {
@@ -30,14 +31,14 @@
         <section class="runtime-inspector-grid">
             <article class="panel trace-card">
                 <header>
-                    <h3>Runtime Identity</h3>
+                    <h3>Active rules setup</h3>
                     <span class="badge">@Projection.TargetKind</span>
                 </header>
                 <dl class="facts compact">
                     <div><dt>Target</dt><dd>@Projection.TargetId</dd></div>
                     <div><dt>Profile Source</dt><dd>@Projection.ProfileSourceKind</dd></div>
                     <div><dt>Engine API</dt><dd>@Projection.RuntimeLock.EngineApiVersion</dd></div>
-                    <div><dt>Fingerprint</dt><dd class="mono">@Projection.RuntimeLock.RuntimeFingerprint</dd></div>
+                    <div><dt>Version fingerprint</dt><dd class="mono">@Projection.RuntimeLock.RuntimeFingerprint</dd></div>
                     <div><dt>Generated</dt><dd>@Projection.GeneratedAtUtc.ToLocalTime().ToString("u")</dd></div>
                     <div><dt>Install Target</dt><dd>@RuntimeInspectorDiagnostics.FormatInstallTarget(Projection.Install)</dd></div>
                 </dl>
@@ -76,7 +77,7 @@
 
         <article class="panel trace-card" data-runtime-rule-profile-diagnostics>
             <header>
-                <h3>Rule Profile Diagnostics</h3>
+                <h3>Rules setup health</h3>
                 <span class="badge">@RuntimeInspectorDiagnostics.CountProfileAttentionItems(Projection) attention</span>
             </header>
             <dl class="facts compact">
@@ -112,7 +113,7 @@
 
         <article class="panel trace-card" data-runtime-hub-diagnostics>
             <header>
-                <h3>Hub Client Diagnostics</h3>
+                <h3>Desktop connection</h3>
                 <span class="badge">@RuntimeInspectorDiagnostics.CountHubOriginRulePacks(Projection)/@Projection.ResolvedRulePacks.Count hub-origin</span>
             </header>
             <dl class="facts compact">
@@ -128,24 +129,23 @@
 
         <article class="panel trace-card" data-runtime-support-diagnostics-receipt>
             <header>
-                <h3>Support Diagnostics Receipt</h3>
+                <h3>Support details</h3>
                 <span class="badge">@BuildSupportDiagnosticsStatusBadge(Projection)</span>
             </header>
-            <p class="hint"><strong>Diagnostics receipt correlation key:</strong> @BuildSupportDiagnosticsCorrelationKey(Projection)</p>
-            <p class="hint"><strong>Support diagnostics packet id:</strong> @BuildSupportDiagnosticsPacketId(Projection)</p>
-            <p class="hint"><strong>Support diagnostics correlation:</strong> @BuildSupportDiagnosticsCorrelation(Projection)</p>
-            <p class="hint"><strong>Grounded support receipt:</strong> @BuildGroundedSupportReceipt(Projection)</p>
-            <p class="hint"><strong>Support diagnostics receipt:</strong> @BuildSupportDiagnosticsReceipt(Projection)</p>
-            <p class="hint"><strong>Grounded support explain receipt:</strong> @BuildSupportExplainReceipt(Projection)</p>
-            <p class="hint"><strong>Support diagnostics explain receipt:</strong> @BuildSupportExplainReceipt(Projection)</p>
-            <p class="hint"><strong>Support handoff receipt:</strong> @BuildSupportHandoffReceipt(Projection)</p>
-            <p class="hint"><strong>Support proof diff receipt:</strong> @BuildSupportProofDiffReceipt(Projection)</p>
-            <p class="hint"><strong>Support environment tuple diff:</strong> @BuildSupportEnvironmentTupleDiff(Projection)</p>
-            <p class="hint"><strong>Support packet diff receipt:</strong> @BuildSupportPacketDiffReceipt(Projection)</p>
-            <p class="hint"><strong>Before support environment diff:</strong> @BuildSupportEnvironmentBefore(Projection)</p>
-            <p class="hint"><strong>After support environment diff:</strong> @BuildSupportEnvironmentAfter(Projection)</p>
+            <p class="hint"><strong>Reference:</strong> @BuildSupportDiagnosticsCorrelationKey(Projection)</p>
+            <p class="hint"><strong>Support package:</strong> @BuildSupportDiagnosticsPacketId(Projection)</p>
+            <p class="hint"><strong>Support link:</strong> @BuildSupportDiagnosticsCorrelation(Projection)</p>
+            <p class="hint"><strong>Current setup:</strong> @BuildGroundedSupportReceipt(Projection)</p>
+            <p class="hint"><strong>Support summary:</strong> @BuildSupportDiagnosticsReceipt(Projection)</p>
+            <p class="hint"><strong>Explanation:</strong> @BuildSupportExplainReceipt(Projection)</p>
+            <p class="hint"><strong>Next step:</strong> @BuildSupportHandoffReceipt(Projection)</p>
+            <p class="hint"><strong>Change summary:</strong> @BuildSupportProofDiffReceipt(Projection)</p>
+            <p class="hint"><strong>System tuple:</strong> @BuildSupportEnvironmentTupleDiff(Projection)</p>
+            <p class="hint"><strong>Support package details:</strong> @BuildSupportPacketDiffReceipt(Projection)</p>
+            <p class="hint"><strong>Before support:</strong> @BuildSupportEnvironmentBefore(Projection)</p>
+            <p class="hint"><strong>After support:</strong> @BuildSupportEnvironmentAfter(Projection)</p>
             <aside class="trust-receipt" data-runtime-support-trust-receipt>
-                <strong>Support diagnostics receipt and environment diff</strong>
+                <strong>Support and system details</strong>
                 @foreach (RuntimeSupportReceiptSection receiptSection in BuildRuntimeSupportReceiptSections(Projection))
                 {
                     <section class="trust-receipt-section" data-runtime-support-trust-section="@NormalizeSupportToken(receiptSection.Title)">
@@ -307,12 +307,12 @@
 
         <article class="panel trace-card">
             <header>
-                <h3>Compatibility Diagnostics</h3>
+                <h3>Compatibility notes</h3>
                 <span class="badge">@Projection.CompatibilityDiagnostics.Count</span>
             </header>
             @if (Projection.CompatibilityDiagnostics.Count == 0)
             {
-                <p class="hint">No compatibility diagnostics were emitted.</p>
+                <p class="hint">No compatibility notes are active.</p>
             }
             else
             {
@@ -331,12 +331,12 @@
                                     · Required ruleset: @(diagnostic.RequiredRulesetId ?? "(current)")
                                 </p>
                             }
-                            <p class="hint"><strong>Compatibility diagnostics packet id:</strong> @BuildCompatibilityDiagnosticsPacketId(Projection, diagnostic)</p>
-                            <p class="hint"><strong>Compatibility blocker receipt:</strong> @BuildCompatibilityBlockerReceipt(Projection, diagnostic)</p>
-                            <p class="hint"><strong>Compatibility environment diff:</strong> @BuildCompatibilityEnvironmentDiff(Projection, diagnostic)</p>
-                            <p class="hint"><strong>Compatibility proof diff receipt:</strong> @BuildCompatibilityProofDiffReceipt(Projection, diagnostic)</p>
-                            <p class="hint"><strong>Compatibility packet diff receipt:</strong> @BuildCompatibilityPacketDiffReceipt(Projection, diagnostic)</p>
-                            <p class="hint"><strong>Compatibility support handoff receipt:</strong> @BuildCompatibilitySupportHandoffReceipt(Projection, diagnostic)</p>
+                            <p class="hint"><strong>Compatibility package:</strong> @BuildCompatibilityDiagnosticsPacketId(Projection, diagnostic)</p>
+                            <p class="hint"><strong>Compatibility blocker:</strong> @BuildCompatibilityBlockerReceipt(Projection, diagnostic)</p>
+                            <p class="hint"><strong>Compatibility change:</strong> @BuildCompatibilityEnvironmentDiff(Projection, diagnostic)</p>
+                            <p class="hint"><strong>Required update:</strong> @BuildCompatibilityProofDiffReceipt(Projection, diagnostic)</p>
+                            <p class="hint"><strong>Support package details:</strong> @BuildCompatibilityPacketDiffReceipt(Projection, diagnostic)</p>
+                            <p class="hint"><strong>Support next step:</strong> @BuildCompatibilitySupportHandoffReceipt(Projection, diagnostic)</p>
                         </li>
                     }
                 </ul>
@@ -402,14 +402,14 @@
         {
             <article class="panel trace-card" data-diagnostics-environment-diff>
                 <header>
-                    <h3>Diagnostics environment diff</h3>
+                    <h3>System details</h3>
                     <span class="badge">@BuildDiagnosticsDiffBadge(Projection)</span>
                 </header>
                 <dl class="facts compact">
                     <div><dt>Rule environment</dt><dd>@Projection.RuntimeLock.RulesetId · @Projection.RuntimeLock.RuntimeFingerprint</dd></div>
                     <div><dt>Before</dt><dd>@BuildDiagnosticsDiffBefore(Projection)</dd></div>
                     <div><dt>After</dt><dd>@BuildDiagnosticsDiffAfter(Projection)</dd></div>
-                    <div><dt>Explain receipt</dt><dd>@BuildDiagnosticsExplainReceipt(Projection)</dd></div>
+                    <div><dt>Explanation</dt><dd>@BuildDiagnosticsExplainReceipt(Projection)</dd></div>
                     <div><dt>Support reuse</dt><dd>@RuntimeInspectorDiagnostics.BuildHubClientDiagnosticsSummary(Projection)</dd></div>
                 </dl>
             </article>
@@ -543,35 +543,37 @@
             NormalizeSupportToken(BuildRequiredFingerprintOrCurrent(projection)));
 
     private static string BuildGroundedSupportReceipt(RuntimeInspectorProjection projection)
-        => $"runtime {projection.RuntimeLock.RulesetId} for {projection.TargetKind} {projection.TargetId} stays pinned to {projection.Install.State} via {RuntimeInspectorDiagnostics.FormatInstallTarget(projection.Install)} with fingerprint {projection.RuntimeLock.RuntimeFingerprint}.";
+        => $"Rules setup {projection.RuntimeLock.RulesetId} for {projection.TargetKind} {projection.TargetId} stays {projection.Install.State} via {RuntimeInspectorDiagnostics.FormatInstallTarget(projection.Install)} with fingerprint {projection.RuntimeLock.RuntimeFingerprint}.";
 
     private static string BuildSupportDiagnosticsReceipt(RuntimeInspectorProjection projection)
-        => $"before {BuildSupportBeforeState(projection)}; after {BuildSupportAfterState(projection)}; blocker {BuildSupportBlockerReceipt(projection)}; proof {BuildSupportProofReceipt(projection)}.";
+        => $"Before {BuildSupportBeforeState(projection)}; after {BuildSupportAfterState(projection)}; blocker {BuildSupportBlockerReceipt(projection)}; release {BuildSupportProofReceipt(projection)}.";
 
     private static string BuildSupportExplainReceipt(RuntimeInspectorProjection projection)
-        => $"installed runtime {projection.RuntimeLock.RuntimeFingerprint} stays the before state; support reviews {BuildSupportAfterState(projection)} with blocker {BuildSupportBlockerReceipt(projection)} and proof {BuildSupportProofReceipt(projection)}.";
+        => $"Installed rules {projection.RuntimeLock.RuntimeFingerprint} stay unchanged while support reviews {BuildSupportAfterState(projection)}, blocker {BuildSupportBlockerReceipt(projection)}, and release {BuildSupportProofReceipt(projection)}.";
 
     private static string BuildSupportHandoffReceipt(RuntimeInspectorProjection projection)
-        => $"support can cite {BuildSupportDiagnosticsCorrelationKey(projection)} with before/after tuple, blocker, proof, and promotion posture without changing the active runtime lock.";
+        => $"Support can use {BuildSupportDiagnosticsCorrelationKey(projection)} with the before/after state and blocker without changing the active rules setup.";
 
     private static string BuildSupportProofDiffReceipt(RuntimeInspectorProjection projection)
-        => $"before runtime proof {projection.RuntimeLock.RuntimeFingerprint} remains the active lock; after support reviews {BuildSupportProofReceipt(projection)} and required fingerprint {BuildRequiredFingerprintOrCurrent(projection)} without mutating the workspace.";
+        => $"Current rules setup {projection.RuntimeLock.RuntimeFingerprint} remains active; support reviews release {BuildSupportProofReceipt(projection)} and required fingerprint {BuildRequiredFingerprintOrCurrent(projection)} without changing the workspace.";
 
     private static string BuildSupportEnvironmentTupleDiff(RuntimeInspectorProjection projection)
         => $"before {projection.TargetKind}/{projection.TargetId}/{projection.RuntimeLock.RulesetId}/{NormalizeSupportToken(projection.Install.State)}/{NormalizeSupportToken(projection.RuntimeLock.RuntimeFingerprint)}; after {NormalizeSupportToken(BuildPromotionStageOrFallback(projection))}/{NormalizeSupportToken(BuildPromotionChannelOrFallback(projection))}/{NormalizeSupportToken(BuildRequiredFingerprintOrCurrent(projection))}.";
 
     private static string BuildSupportPacketDiffReceipt(RuntimeInspectorProjection projection)
-        => $"before/after runtime diagnostics are attached before the user is asked to rebind, reinstall, publish, or contact support; packet {BuildSupportDiagnosticsPacketId(projection)} stays copy-safe.";
+        => $"Before/after rules setup details are attached before the user is asked to rebind, reinstall, publish, or contact support; package {BuildSupportDiagnosticsPacketId(projection)} stays safe to copy.";
 
     private static string BuildSupportEnvironmentBefore(RuntimeInspectorProjection projection)
         => $"install {projection.Install.State} targets {RuntimeInspectorDiagnostics.FormatInstallTarget(projection.Install)}; runtime {projection.RuntimeLock.RulesetId} uses fingerprint {projection.RuntimeLock.RuntimeFingerprint}; last blocker {BuildSupportBlockerReceipt(projection)}.";
 
     private static string BuildSupportEnvironmentAfter(RuntimeInspectorProjection projection)
-        => $"support reviews {BuildSupportAfterState(projection)} with proof {BuildSupportProofReceipt(projection)}; before/after diagnostics stay copy-safe and do not change the active runtime lock.";
+        => $"Support reviews {BuildSupportAfterState(projection)} with release {BuildSupportProofReceipt(projection)}; before/after details stay safe to copy and do not change the active rules setup.";
 
     private static IReadOnlyList<RuntimeSupportReceiptSection> BuildRuntimeSupportReceiptSections(RuntimeInspectorProjection projection)
         => DesktopTrustReceiptComposer.BuildRuntimeInspectorSupportSections(projection)
-            .Select(static section => new RuntimeSupportReceiptSection(section.Title, section.Lines))
+            .Select(static section => new RuntimeSupportReceiptSection(
+                PlayerFacingCopyHumanizer.Clean(section.Title),
+                PlayerFacingCopyHumanizer.CleanLines(section.Lines)))
             .OrderBy(BuildRuntimeSupportReceiptOrder)
             .ToArray();
 
@@ -605,7 +607,7 @@
 
     private static string BuildSupportProofReceipt(RuntimeInspectorProjection projection)
         => projection.Promotion is null
-            ? "promotion posture not published locally"
+            ? "release status is not published locally"
             : $"{projection.Promotion.PublicationStatus}/{projection.Promotion.UpdateChannel}";
 
     private static string BuildPromotionStageOrFallback(RuntimeInspectorProjection projection)
@@ -626,7 +628,7 @@
         RuntimeLockCompatibilityDiagnostic diagnostic)
     {
         string message = string.IsNullOrWhiteSpace(diagnostic.Message)
-            ? "compatibility diagnostic did not publish a blocker message"
+            ? "compatibility note did not include a blocker message"
             : diagnostic.Message.Trim().TrimEnd('.');
         return $"{diagnostic.State}: {message}; active runtime {projection.RuntimeLock.RuntimeFingerprint} remains unchanged.";
     }
@@ -639,22 +641,22 @@
     private static string BuildCompatibilityEnvironmentDiff(
         RuntimeInspectorProjection projection,
         RuntimeLockCompatibilityDiagnostic diagnostic)
-        => $"before {projection.RuntimeLock.RulesetId}/{projection.RuntimeLock.RuntimeFingerprint}; after {ResolveCompatibilityRequiredRuleset(projection, diagnostic)}/{ResolveCompatibilityRequiredFingerprint(projection, diagnostic)}; diagnostic {diagnostic.State}; no rebind, reinstall, or support action is applied from this receipt.";
+        => $"Before {projection.RuntimeLock.RulesetId}/{projection.RuntimeLock.RuntimeFingerprint}; after {ResolveCompatibilityRequiredRuleset(projection, diagnostic)}/{ResolveCompatibilityRequiredFingerprint(projection, diagnostic)}; note {diagnostic.State}; no rebind, reinstall, or support action is applied from this view.";
 
     private static string BuildCompatibilityProofDiffReceipt(
         RuntimeInspectorProjection projection,
         RuntimeLockCompatibilityDiagnostic diagnostic)
-        => $"before active runtime proof {projection.RuntimeLock.RuntimeFingerprint} remains pinned; after diagnostic requires {ResolveCompatibilityRequiredFingerprint(projection, diagnostic)} for ruleset {ResolveCompatibilityRequiredRuleset(projection, diagnostic)}; no local rebind is applied.";
+        => $"Active rules setup {projection.RuntimeLock.RuntimeFingerprint} remains pinned; this note requires {ResolveCompatibilityRequiredFingerprint(projection, diagnostic)} for ruleset {ResolveCompatibilityRequiredRuleset(projection, diagnostic)}; no local rebind is applied.";
 
     private static string BuildCompatibilityPacketDiffReceipt(
         RuntimeInspectorProjection projection,
         RuntimeLockCompatibilityDiagnostic diagnostic)
-        => $"support packet {BuildCompatibilityDiagnosticsPacketId(projection, diagnostic)} stays copy-safe and carries blocker {NormalizeSupportToken(diagnostic.State)}, before/after runtime diff, and required ruleset/fingerprint.";
+        => $"Support package {BuildCompatibilityDiagnosticsPacketId(projection, diagnostic)} stays safe to copy and carries blocker {NormalizeSupportToken(diagnostic.State)}, before/after rules setup change, and required ruleset/fingerprint.";
 
     private static string BuildCompatibilitySupportHandoffReceipt(
         RuntimeInspectorProjection projection,
         RuntimeLockCompatibilityDiagnostic diagnostic)
-        => $"support can cite {BuildSupportDiagnosticsCorrelationKey(projection)} with compatibility blocker {NormalizeSupportToken(diagnostic.State)} and before/after runtime diff without changing the active runtime lock.";
+        => $"Support can use {BuildSupportDiagnosticsCorrelationKey(projection)} with compatibility blocker {NormalizeSupportToken(diagnostic.State)} and before/after rules setup change without changing the active rules setup.";
 
     private static string ResolveCompatibilityRequiredRuleset(
         RuntimeInspectorProjection projection,
@@ -742,7 +744,7 @@
         }
 
         return RuntimeInspectorDiagnostics.HasStaleOrInvalidatedState(projection)
-            ? "Refresh the runtime projection and keep the support packet open until the receipt is current."
+            ? "Refresh the rules setup and keep the support details open until the review is current."
             : "No environment change is required before support closure.";
     }
 
@@ -761,7 +763,7 @@
         }
 
         RuntimeInspectorProviderBinding? binding = projection.ProviderBindings.FirstOrDefault();
-        return binding is null ? "No explainable provider binding is active." : $"{binding.CapabilityId} via {binding.ProviderId}";
+        return binding is null ? "No explanation service link is active." : $"{binding.CapabilityId} via {binding.ProviderId}";
     }
 }
 

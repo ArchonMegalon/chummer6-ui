@@ -1586,9 +1586,9 @@ public sealed class BlazorShellComponentTests
                         PackId: "house.magic")
                 ])));
 
-        StringAssert.Contains(cut.Markup, "Rule Profile Diagnostics");
+        StringAssert.Contains(cut.Markup, "Rules setup health");
         StringAssert.Contains(cut.Markup, "Rule Pack Diagnostics");
-        StringAssert.Contains(cut.Markup, "Hub Client Diagnostics");
+        StringAssert.Contains(cut.Markup, "Desktop connection");
         StringAssert.Contains(cut.Markup, "Review State");
         StringAssert.Contains(cut.Markup, "refresh pending");
         StringAssert.Contains(cut.Markup, "Session-safe Bindings");
@@ -1599,7 +1599,7 @@ public sealed class BlazorShellComponentTests
         StringAssert.Contains(cut.Markup, "Promote To");
         StringAssert.Contains(cut.Markup, "Published");
         StringAssert.Contains(cut.Markup, "Rollback can re-pin sha256:sr5-runtime-fingerprint");
-        StringAssert.Contains(cut.Markup, "Diagnostics environment diff");
+        StringAssert.Contains(cut.Markup, "System details");
         StringAssert.Contains(cut.Markup, "Rebind to sha256:next before support closure.");
         StringAssert.Contains(cut.Markup, "Quick actions will move to v2.");
         StringAssert.Contains(cut.Markup, "derive.stat via official.sr5.core/derive.stat");

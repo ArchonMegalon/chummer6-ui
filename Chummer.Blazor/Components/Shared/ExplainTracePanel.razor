@@ -2,6 +2,7 @@
 
 @using System.Linq
 @using Chummer.Contracts.Rulesets
+@using Chummer.Presentation
 @using Chummer.Presentation.Explain
 
 <section class="panel design-panel">
@@ -35,11 +36,11 @@
                             <p class="meta">@Trace.SubjectId.Text</p>
                         </div>
                         <div class="explain-badges">
-                            <span class="badge" data-explain-provenance-id="@provider.Provider.Id">@Chrome.ProviderLabel.Text: @provider.ProviderId.Text</span>
-                            <span class="badge" data-explain-provenance-id="@provider.Capability.Id">@Chrome.CapabilityLabel.Text: @provider.CapabilityId.Text</span>
+                            <span class="badge" data-explain-provenance-id="@provider.Provider.Id">@FormatExplainLabel(Chrome.ProviderLabel, "Source"): @provider.ProviderId.Text</span>
+                            <span class="badge" data-explain-provenance-id="@provider.Capability.Id">@FormatExplainLabel(Chrome.CapabilityLabel, "Check"): @provider.CapabilityId.Text</span>
                             @if (provider.PackId is not null)
                             {
-                                <span class="badge" data-explain-provenance-id="@provider.Pack?.Id">@Chrome.PackLabel.Text: @provider.PackId.Text</span>
+                                <span class="badge" data-explain-provenance-id="@provider.Pack?.Id">@FormatExplainLabel(Chrome.PackLabel, "Rules pack"): @provider.PackId.Text</span>
                             }
                             @if (provider.Message is not null)
                             {
@@ -113,11 +114,11 @@
                                 }
                                 @if (fragment.PackId is not null)
                                 {
-                                    <div><dt>@Chrome.PackLabel.Text</dt><dd data-explain-key="@fragment.PackId.Key" data-explain-provenance-id="@fragment.Pack?.Id">@fragment.PackId.Text</dd></div>
+                                    <div><dt>@FormatExplainLabel(Chrome.PackLabel, "Rules pack")</dt><dd data-explain-key="@fragment.PackId.Key" data-explain-provenance-id="@fragment.Pack?.Id">@fragment.PackId.Text</dd></div>
                                 }
                                 @if (fragment.ProviderId is not null)
                                 {
-                                    <div><dt>@Chrome.ProviderLabel.Text</dt><dd data-explain-key="@fragment.ProviderId.Key" data-explain-provenance-id="@fragment.Provider?.Id">@fragment.ProviderId.Text</dd></div>
+                                    <div><dt>@FormatExplainLabel(Chrome.ProviderLabel, "Source")</dt><dd data-explain-key="@fragment.ProviderId.Key" data-explain-provenance-id="@fragment.Provider?.Id">@fragment.ProviderId.Text</dd></div>
                                 }
                             }
                         </dl>
@@ -127,13 +128,13 @@
         }
 
         <aside class="trust-receipt" data-explain-trust-receipt>
-            <strong>Explain receipt and environment diff</strong>
-            <p><strong>Explain receipt correlation key:</strong> @BuildExplainReceiptCorrelationKey(Trace)</p>
-            <p><strong>Explain receipt scope:</strong> @BuildExplainReceiptScope(Trace)</p>
-            <p><strong>Grounded explain receipt:</strong> @BuildGroundedExplainReceipt(Trace)</p>
-            <p><strong>Environment diff before explain:</strong> @BuildExplainEnvironmentBefore(Trace)</p>
-            <p><strong>Environment diff after explain:</strong> @BuildExplainEnvironmentAfter(Trace)</p>
-            <p><strong>Explain diff receipt:</strong> @BuildExplainDiffReceipt(Trace)</p>
+            <strong>Explanation details</strong>
+            <p><strong>Reference:</strong> @BuildExplainReceiptCorrelationKey(Trace)</p>
+            <p><strong>Scope:</strong> @BuildExplainReceiptScope(Trace)</p>
+            <p><strong>Current explanation:</strong> @BuildGroundedExplainReceipt(Trace)</p>
+            <p><strong>Before:</strong> @BuildExplainEnvironmentBefore(Trace)</p>
+            <p><strong>After:</strong> @BuildExplainEnvironmentAfter(Trace)</p>
+            <p><strong>Changes:</strong> @BuildExplainDiffReceipt(Trace)</p>
         </aside>
     }
 </section>
@@ -146,22 +147,28 @@
     public LocalizedExplainChrome Chrome { get; set; } = RulesetExplainRenderer.CreateChrome();
 
     private static string BuildExplainReceiptCorrelationKey(LocalizedRulesetExplainTrace trace)
-        => $"explain/{NormalizeExplainToken(trace.SubjectId.Text)}/{trace.Providers.Count}-providers";
+        => $"explain/{NormalizeExplainToken(trace.SubjectId.Text)}/{trace.Providers.Count}-sources";
 
     private static string BuildExplainReceiptScope(LocalizedRulesetExplainTrace trace)
-        => $"Explain review for {NormalizeExplainText(trace.SubjectId.Text, "the current subject")}; trace inspection stays copy-safe and does not apply a build, import, export, or support action.";
+        => $"Review for {NormalizeExplainText(trace.SubjectId.Text, "the current subject")}; this view does not apply a build, import, export, or support action.";
 
     private static string BuildGroundedExplainReceipt(LocalizedRulesetExplainTrace trace)
-        => $"Subject {NormalizeExplainText(trace.SubjectId.Text, "the current subject")} with {trace.Providers.Count} provider(s) and {trace.Messages.Count} headline message(s).";
+        => $"Subject {NormalizeExplainText(trace.SubjectId.Text, "the current subject")} with {trace.Providers.Count} source(s) and {trace.Messages.Count} headline message(s).";
 
     private static string BuildExplainEnvironmentBefore(LocalizedRulesetExplainTrace trace)
-        => $"Before explain, {NormalizeExplainText(trace.SubjectId.Text, "the current subject")} remains unchanged while provider evidence is reviewed.";
+        => $"Before review, {NormalizeExplainText(trace.SubjectId.Text, "the current subject")} remains unchanged while the supporting details are reviewed.";
 
     private static string BuildExplainEnvironmentAfter(LocalizedRulesetExplainTrace trace)
-        => $"After explain, the same subject remains unchanged; only grounded trace context, diffs, and provider receipts are visible.";
+        => "After review, the same subject remains unchanged; only the explanation details are visible.";
 
     private static string BuildExplainDiffReceipt(LocalizedRulesetExplainTrace trace)
-        => $"Trace diff receipt keeps {CountExplainDiffs(trace)} diff row(s), {trace.Providers.Count} provider lane(s), and the current subject readable without mutating the workspace.";
+        => $"Shows {CountExplainDiffs(trace)} change row(s) and keeps the current subject readable without changing the workspace.";
+
+    private static string FormatExplainLabel(LocalizedExplainText label, string fallback)
+    {
+        string text = PlayerFacingCopyHumanizer.Clean(label.Text);
+        return string.IsNullOrWhiteSpace(text) ? fallback : text;
+    }
 
     private static int CountExplainDiffs(LocalizedRulesetExplainTrace trace)
         => trace.Providers.Sum(static provider => provider.Diffs.Count);
