@@ -22,11 +22,11 @@ internal sealed class DesktopStartupUpdateWindow : Window
         _relaunchArgs = relaunchArgs;
 
         Title = "Chummer Update";
-        Width = 520;
-        Height = 220;
+        Width = 560;
+        Height = 280;
         MinWidth = 520;
-        MinHeight = 220;
-        CanResize = false;
+        MinHeight = 260;
+        CanResize = true;
         WindowStartupLocation = WindowStartupLocation.CenterOwner;
         ShowInTaskbar = true;
         Background = DesktopShellTheme.ResolveThemeBrush("ChummerShellWindowBackgroundBrush", "#050B16");
@@ -63,19 +63,24 @@ internal sealed class DesktopStartupUpdateWindow : Window
             Height = 8
         };
 
-        Content = new Border
+        Content = new ScrollViewer
         {
-            Padding = new Thickness(24),
-            Background = DesktopShellTheme.ResolveThemeBrush("ChummerShellSurfaceBrush", "#111827"),
-            Child = new StackPanel
+            VerticalScrollBarVisibility = global::Avalonia.Controls.Primitives.ScrollBarVisibility.Auto,
+            HorizontalScrollBarVisibility = global::Avalonia.Controls.Primitives.ScrollBarVisibility.Disabled,
+            Content = new Border
             {
-                Spacing = 14,
-                Children =
+                Padding = new Thickness(24),
+                Background = DesktopShellTheme.ResolveThemeBrush("ChummerShellSurfaceBrush", "#111827"),
+                Child = new StackPanel
                 {
-                    _titleText,
-                    _bodyText,
-                    _progressBar,
-                    _waitText
+                    Spacing = 14,
+                    Children =
+                    {
+                        _titleText,
+                        _bodyText,
+                        _progressBar,
+                        _waitText
+                    }
                 }
             }
         };
