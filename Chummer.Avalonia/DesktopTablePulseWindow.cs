@@ -28,7 +28,7 @@ internal sealed class DesktopTablePulseWindow : Window
 
         Content = DesktopHorizonWindowScaffold.CreateScroller(
             "Table Pulse",
-            "Table Pulse keeps live heat and aftermath follow-through visible in the client, so the session lane does not dissolve into disconnected browser tabs.",
+            "Table Pulse keeps live heat and aftermath follow-up visible in the client, so the table stays together instead of dissolving into browser tabs.",
             CreateLiveHeatCard(),
             CreateAftermathCard(),
             new StackPanel
@@ -87,7 +87,7 @@ internal sealed class DesktopTablePulseWindow : Window
 
         return DesktopHorizonWindowScaffold.CreateCard(
             "Live heat",
-            "Keep the live notification lane and active run pressure reachable from a single native surface.",
+            "Keep live notifications and active run pressure reachable from one native surface.",
             details,
             DesktopHorizonWindowScaffold.CreateAsyncButton(this, "Open live heat", static () => DesktopInstallLinkingRuntime.TryOpenRelativePortal("/account/ledger/notifications"), isPrimary: HasRunContext),
             DesktopHorizonWindowScaffold.CreateAsyncButton(this, "Open Run Control", static () => DesktopInstallLinkingRuntime.TryOpenRelativePortal("/account/run-control")),
@@ -121,7 +121,7 @@ internal sealed class DesktopTablePulseWindow : Window
             string mode = detailModeCombo.SelectedItem?.ToString() ?? "Summary";
             detailText.Text = mode == "Continuity"
                 ? leadWorkspace?.LatestContinuity?.Summary ?? "No aftermath continuity packet is currently attached."
-                : leadWorkspace?.NextSafeAction ?? leadWorkspace?.ReturnSummary ?? "Aftermath packages appear here after the next governed recap turn.";
+                : leadWorkspace?.NextSafeAction ?? leadWorkspace?.ReturnSummary ?? "Aftermath packages appear here after the next recap.";
         }
 
         detailModeCombo.SelectionChanged += (_, _) => RefreshDetail();
@@ -149,7 +149,7 @@ internal sealed class DesktopTablePulseWindow : Window
 
         return DesktopHorizonWindowScaffold.CreateCard(
             "Aftermath packages",
-            "Move from live pressure into aftermath closure without losing the signed-in work rail.",
+            "Move from live pressure into aftermath closure without losing the signed-in workspace.",
             details,
             DesktopHorizonWindowScaffold.CreateAsyncButton(this, "Open aftermath", static () => DesktopInstallLinkingRuntime.TryOpenRelativePortal("/account/work#aftermath-packages"), isPrimary: HasAftermathContext),
             DesktopHorizonWindowScaffold.CreateAsyncButton(this, "Open campaign", static () => DesktopInstallLinkingRuntime.TryOpenRelativePortal("/account/runsites")),

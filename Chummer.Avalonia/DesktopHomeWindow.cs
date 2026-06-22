@@ -765,7 +765,7 @@ internal sealed class DesktopHomeWindow : Window
             manifestPublished,
             _updateStatus.ChannelId,
             lastChecked,
-            _updateStatus.AutoApply ? "enabled" : "disabled",
+            FormatUpdateMode(_updateStatus.UpdateMode),
             rolloutState,
             rolloutReason,
             supportabilityState,
@@ -777,6 +777,15 @@ internal sealed class DesktopHomeWindow : Window
             _updateStatus.RecommendedAction,
             lastError);
     }
+
+    private static string FormatUpdateMode(string? updateMode)
+        => updateMode?.Trim().ToLowerInvariant() switch
+        {
+            "full" => "full auto-update",
+            "notify" => "notify only",
+            "off" => "off",
+            _ => "unknown"
+        };
 
     private string BuildWorkspaceSummary()
     {

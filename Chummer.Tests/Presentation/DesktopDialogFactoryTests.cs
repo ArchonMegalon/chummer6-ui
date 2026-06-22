@@ -2,6 +2,7 @@ using System;
 using System.IO;
 using System.Linq;
 using System.Reflection;
+using System.Text.RegularExpressions;
 using Chummer.Contracts.Api;
 using Chummer.Contracts.Characters;
 using Chummer.Contracts.Content;
@@ -38,6 +39,7 @@ public class DesktopDialogFactoryTests
             Language = "de-de",
             CompactMode = true,
             HideMasterIndex = true,
+            UpdateMode = "notify",
             DisableAiFeatures = true
         };
 
@@ -58,6 +60,7 @@ public class DesktopDialogFactoryTests
         Assert.AreEqual("/Characters", DesktopDialogFieldValueParser.GetValue(dialog, "globalCharacterRosterPath"));
         Assert.AreEqual("true", DesktopDialogFieldValueParser.GetValue(dialog, "globalHideMasterIndex"));
         Assert.AreEqual("true", DesktopDialogFieldValueParser.GetValue(dialog, "globalDisableAiFeatures"));
+        Assert.AreEqual("notify", DesktopDialogFieldValueParser.GetValue(dialog, "globalUpdateMode"));
         Assert.AreEqual("true", DesktopDialogFieldValueParser.GetValue(dialog, "globalPreferNightlyBuilds"));
         CollectionAssert.AreEqual(
             new[] { "save", "cancel" },
@@ -66,12 +69,22 @@ public class DesktopDialogFactoryTests
         Assert.AreEqual("number", dialog.Fields.Single(field => string.Equals(field.Id, "globalUiScale", StringComparison.Ordinal)).InputType);
         Assert.AreEqual("select", dialog.Fields.Single(field => string.Equals(field.Id, "globalLanguage", StringComparison.Ordinal)).InputType);
         Assert.AreEqual("select", dialog.Fields.Single(field => string.Equals(field.Id, "globalCharacterPriority", StringComparison.Ordinal)).InputType);
-        Assert.AreEqual("checkbox", dialog.Fields.Single(field => string.Equals(field.Id, "globalCheckForUpdates", StringComparison.Ordinal)).InputType);
+        DesktopDialogField updateModeField = dialog.Fields.Single(field => string.Equals(field.Id, "globalUpdateMode", StringComparison.Ordinal));
+        Assert.AreEqual("select", updateModeField.InputType);
+        Assert.AreEqual("Startup updates", updateModeField.Label);
+        CollectionAssert.AreEqual(
+            new[] { "full", "notify", "off" },
+            updateModeField.Options?.Select(option => option.Value).ToArray());
+        CollectionAssert.AreEqual(
+            new[] { "Install updates and restart", "Tell me, do not install", "Do not check" },
+            updateModeField.Options?.Select(option => option.Label).ToArray());
         Assert.AreEqual("checkbox", dialog.Fields.Single(field => string.Equals(field.Id, "globalPreferNightlyBuilds", StringComparison.Ordinal)).InputType);
         Assert.AreEqual("checkbox", dialog.Fields.Single(field => string.Equals(field.Id, "globalDisableAiFeatures", StringComparison.Ordinal)).InputType);
         Assert.AreEqual(DesktopDialogFieldLayoutSlots.Hidden, dialog.Fields.Single(field => string.Equals(field.Id, "globalTheme", StringComparison.Ordinal)).LayoutSlot);
         Assert.AreEqual(DesktopDialogFieldLayoutSlots.Hidden, dialog.Fields.Single(field => string.Equals(field.Id, "globalUiScale", StringComparison.Ordinal)).LayoutSlot);
         Assert.AreEqual(DesktopDialogFieldLayoutSlots.Hidden, dialog.Fields.Single(field => string.Equals(field.Id, "globalUpdatePolicy", StringComparison.Ordinal)).LayoutSlot);
+        Assert.AreEqual(DesktopDialogFieldLayoutSlots.Hidden, dialog.Fields.Single(field => string.Equals(field.Id, "globalCheckForUpdates", StringComparison.Ordinal)).LayoutSlot);
+        Assert.AreEqual(DesktopDialogFieldLayoutSlots.Left, dialog.Fields.Single(field => string.Equals(field.Id, "globalUpdateMode", StringComparison.Ordinal)).LayoutSlot);
         Assert.AreEqual(DesktopDialogFieldLayoutSlots.Right, dialog.Fields.Single(field => string.Equals(field.Id, "globalHideMasterIndex", StringComparison.Ordinal)).LayoutSlot);
         Assert.AreEqual(DesktopDialogFieldLayoutSlots.Right, dialog.Fields.Single(field => string.Equals(field.Id, "globalDisableAiFeatures", StringComparison.Ordinal)).LayoutSlot);
         Assert.IsFalse(dialog.Fields.Any(field => string.Equals(field.Id, "globalActivePane", StringComparison.Ordinal)));
@@ -205,6 +218,67 @@ public class DesktopDialogFactoryTests
         Assert.IsNotNull(gearAddDialog.Actions.SingleOrDefault(action => string.Equals(action.Id, "add", StringComparison.Ordinal)));
         Assert.IsNotNull(gearEditDialog.Actions.SingleOrDefault(action => string.Equals(action.Id, "apply", StringComparison.Ordinal)));
         Assert.IsNotNull(gearDeleteDialog.Actions.SingleOrDefault(action => string.Equals(action.Id, "delete", StringComparison.Ordinal)));
+    }
+
+    [TestMethod]
+    public void CreateUiControlDialog_add_edit_delete_surfaces_do_not_show_internal_posture_copy()
+    {
+        DesktopDialogFactory factory = new();
+        string[] commandIds =
+        [
+            "cyberware_add",
+            "cyberware_edit",
+            "cyberware_delete",
+            "gear_add",
+            "gear_edit",
+            "gear_delete",
+            "vehicle_add",
+            "vehicle_edit",
+            "vehicle_delete",
+            "skill_delete",
+            "delete_entry",
+            "delete_drug",
+            "spell_delete",
+            "contact_delete",
+            "quality_add",
+            "quality_delete",
+            "weapon_add",
+            "armor_add",
+            "edit_entry",
+            "combat_reload",
+            "damage_track",
+            "contact_add",
+            "contact_edit"
+        ];
+        string[] forbiddenPhrases =
+        [
+            "posture",
+            "Filter Posture",
+            "Undo Posture",
+            "Command Posture",
+            "legacy utility posture",
+            "utility lane",
+            "governed"
+        ];
+
+        foreach (string commandId in commandIds)
+        {
+            DesktopDialogState dialog = factory.CreateUiControlDialog(commandId, DesktopPreferenceState.Default);
+            string visibleText = string.Join(
+                Environment.NewLine,
+                dialog.Fields
+                    .Where(static field => field.LayoutSlot != DesktopDialogFieldLayoutSlots.Hidden)
+                    .SelectMany(static field => new[] { field.Label, field.Value, field.Placeholder })
+                    .Concat(dialog.Actions.Select(static action => action.Label))
+                    .Where(static value => !string.IsNullOrWhiteSpace(value)));
+
+            foreach (string phrase in forbiddenPhrases)
+            {
+                Assert.IsFalse(
+                    visibleText.Contains(phrase, StringComparison.OrdinalIgnoreCase),
+                    $"{commandId} must not show '{phrase}' in visible dialog copy.");
+            }
+        }
     }
 
     [TestMethod]
@@ -397,8 +471,8 @@ public class DesktopDialogFactoryTests
                 TranslatorBridgePosture: "governed",
                 EnabledLanguageOverlayCount: 3));
 
-        Assert.AreEqual("governed", DesktopDialogFieldValueParser.GetValue(dialog, "translatorLanePosture"));
-        Assert.AreEqual("governed", DesktopDialogFieldValueParser.GetValue(dialog, "translatorBridgePosture"));
+        Assert.AreEqual("reviewed", DesktopDialogFieldValueParser.GetValue(dialog, "translatorLanePosture"));
+        Assert.AreEqual("reviewed", DesktopDialogFieldValueParser.GetValue(dialog, "translatorBridgePosture"));
         Assert.AreEqual("3", DesktopDialogFieldValueParser.GetValue(dialog, "translatorOverlayCount"));
         CollectionAssert.AreEquivalent(
             new[] { "en-us", "de-de" },
@@ -420,11 +494,11 @@ public class DesktopDialogFactoryTests
             masterIndex: CreateMasterIndexResponse());
 
         Assert.AreEqual("dialog.xml_editor", dialog.Id);
-        Assert.AreEqual("governed", DesktopDialogFieldValueParser.GetValue(dialog, "xmlEditorLanePosture"));
+        Assert.AreEqual("reviewed", DesktopDialogFieldValueParser.GetValue(dialog, "xmlEditorLanePosture"));
         Assert.AreEqual("2", DesktopDialogFieldValueParser.GetValue(dialog, "xmlEditorOverlayCount"));
         Assert.AreEqual("partial", DesktopDialogFieldValueParser.GetValue(dialog, "xmlEditorCustomDataLanePosture"));
         Assert.AreEqual("2", DesktopDialogFieldValueParser.GetValue(dialog, "xmlEditorCustomDataDirectoryCount"));
-        Assert.AreEqual("xml bridge is governed: 2 enabled data overlays expose XML payloads.", DesktopDialogFieldValueParser.GetValue(dialog, "xmlEditorReceipt"));
+        Assert.AreEqual("xml bridge is reviewed: 2 enabled data overlays expose XML payloads.", DesktopDialogFieldValueParser.GetValue(dialog, "xmlEditorReceipt"));
         Assert.AreEqual("{\"sectionId\":\"profile\"}", DesktopDialogFieldValueParser.GetValue(dialog, "xmlEditorDialog"));
     }
 
@@ -533,7 +607,7 @@ public class DesktopDialogFactoryTests
             StringAssert.Contains(DesktopDialogFieldValueParser.GetValue(dialog, "rosterTree"), "APX.chum5");
             StringAssert.Contains(DesktopDialogFieldValueParser.GetValue(dialog, "rosterTree"), "GST.chum5");
             StringAssert.Contains(DesktopDialogFieldValueParser.GetValue(dialog, "rosterSelectionTrail"), "Active Runner | GST · Ghost");
-            StringAssert.Contains(DesktopDialogFieldValueParser.GetValue(dialog, "rosterSelectionTrail"), "Save Posture | not saved yet");
+            StringAssert.Contains(DesktopDialogFieldValueParser.GetValue(dialog, "rosterSelectionTrail"), "Save status | not saved yet");
             StringAssert.Contains(DesktopDialogFieldValueParser.GetValue(dialog, "rosterSelectionTrail"), $"Watch Folder | {rosterPath}");
             StringAssert.Contains(DesktopDialogFieldValueParser.GetValue(dialog, "rosterSelectionTrail"), "Watch File | GST.chum5");
             StringAssert.Contains(DesktopDialogFieldValueParser.GetValue(dialog, "rosterSelectedRunner"), "Character Name | Ghost");
@@ -1176,6 +1250,84 @@ public class DesktopDialogFactoryTests
     }
 
     [TestMethod]
+    public void Selection_add_dialogs_do_not_show_internal_proof_language()
+    {
+        DesktopDialogFactory factory = new();
+        string[] selectionDialogIds =
+        [
+            "cyberware_add",
+            "gear_add",
+            "drug_add",
+            "magic_add",
+            "spell_add",
+            "adept_power_add",
+            "complex_form_add",
+            "initiation_add",
+            "spirit_add",
+            "critter_power_add",
+            "matrix_program_add",
+            "skill_add",
+            "combat_add_weapon",
+            "combat_add_armor",
+            "vehicle_add",
+            "vehicle_mod_add",
+            "contact_add",
+            "quality_add"
+        ];
+        string[] forbiddenWords =
+        [
+            "artifact",
+            "bounded",
+            "canonical",
+            "generated",
+            "grounded",
+            "handoff",
+            "lane",
+            "operator",
+            "oracle",
+            "posture",
+            "proof",
+            "provider",
+            "rail",
+            "receipt",
+            "registry",
+            "truth"
+        ];
+        Regex forbidden = new(
+            $@"\b({string.Join("|", forbiddenWords.Select(Regex.Escape))})\b",
+            RegexOptions.IgnoreCase | RegexOptions.CultureInvariant);
+
+        foreach (string dialogId in selectionDialogIds)
+        {
+            DesktopDialogState dialog = factory.CreateUiControlDialog(dialogId, DesktopPreferenceState.Default);
+            string visibleText = BuildVisibleDialogText(dialog);
+
+            Assert.IsFalse(
+                forbidden.IsMatch(visibleText),
+                $"{dialogId} contains internal wording in visible copy: {forbidden.Match(visibleText).Value}");
+        }
+    }
+
+    private static string BuildVisibleDialogText(DesktopDialogState dialog)
+    {
+        string[] fieldTexts = dialog.Fields
+            .Where(field => !string.Equals(field.LayoutSlot, DesktopDialogFieldLayoutSlots.Hidden, StringComparison.Ordinal))
+            .SelectMany(field => new[]
+            {
+                field.Label,
+                field.Value,
+                field.Placeholder
+            }.Concat(field.Options?.SelectMany(option => new[] { option.Value, option.Label }) ?? []))
+            .ToArray();
+
+        return string.Join(
+            Environment.NewLine,
+            new[] { dialog.Title, dialog.Message ?? string.Empty }
+                .Concat(fieldTexts)
+                .Concat(dialog.Actions.Select(action => action.Label)));
+    }
+
+    [TestMethod]
     public void CreateUiControlDialog_skill_specialize_uses_dense_specialization_posture()
     {
         DesktopDialogFactory factory = new();
@@ -1564,7 +1716,7 @@ public class DesktopDialogFactoryTests
         Assert.AreEqual("Toggle Free/Paid", DesktopDialogFieldValueParser.GetValue(dialog, "uiActionLabel"));
         StringAssert.Contains(DesktopDialogFieldValueParser.GetValue(dialog, "uiActionSections"), "Impact");
         StringAssert.Contains(DesktopDialogFieldValueParser.GetValue(dialog, "uiActionImpact"), "Next step | return to the same section");
-        StringAssert.Contains(DesktopDialogFieldValueParser.GetValue(dialog, "uiActionNotes"), "Pricing state changes remain compact");
+        StringAssert.Contains(DesktopDialogFieldValueParser.GetValue(dialog, "uiActionNotes"), "Pricing changes remain compact");
         Assert.AreEqual("Close", dialog.Actions.Single(action => string.Equals(action.Id, "close", StringComparison.Ordinal)).Label);
     }
 
@@ -1604,7 +1756,7 @@ public class DesktopDialogFactoryTests
         StringAssert.Contains(DesktopDialogFieldValueParser.GetValue(dialog, "uiDeleteSections"), "Impact");
         StringAssert.Contains(DesktopDialogFieldValueParser.GetValue(dialog, "uiDeleteNavigationTree"), "Armor Jacket");
         StringAssert.Contains(DesktopDialogFieldValueParser.GetValue(dialog, "uiDeleteNeighborList"), "> Armor Jacket");
-        StringAssert.Contains(DesktopDialogFieldValueParser.GetValue(dialog, "uiDeleteImpact"), "Undo Posture | re-add from gear selector");
+        StringAssert.Contains(DesktopDialogFieldValueParser.GetValue(dialog, "uiDeleteImpact"), "Undo | re-add from gear selector");
         StringAssert.Contains(DesktopDialogFieldValueParser.GetValue(dialog, "uiDeleteRecoveryCommands"), "Return to gear tab");
         Assert.AreEqual("Remove Armor Jacket", dialog.Actions.Single(action => string.Equals(action.Id, "delete", StringComparison.Ordinal)).Label);
         Assert.AreEqual(DesktopDialogFieldVisualKinds.Tree, dialog.Fields.Single(field => string.Equals(field.Id, "uiDeleteNavigationTree", StringComparison.Ordinal)).VisualKind);
@@ -1625,7 +1777,7 @@ public class DesktopDialogFactoryTests
         StringAssert.Contains(DesktopDialogFieldValueParser.GetValue(dialog, "uiDeleteNavigationTree"), "Cybereyes Rating 4");
         StringAssert.Contains(DesktopDialogFieldValueParser.GetValue(dialog, "uiDeleteNeighborList"), "Datajack");
         StringAssert.Contains(DesktopDialogFieldValueParser.GetValue(dialog, "uiDeleteSummary"), "Essence | 0.40");
-        StringAssert.Contains(DesktopDialogFieldValueParser.GetValue(dialog, "uiDeleteImpact"), "Undo Posture | re-add from selector");
+        StringAssert.Contains(DesktopDialogFieldValueParser.GetValue(dialog, "uiDeleteImpact"), "Undo | re-add from selector");
         StringAssert.Contains(DesktopDialogFieldValueParser.GetValue(dialog, "uiDeleteRecoveryCommands"), "Return to cyberware tab");
         Assert.AreEqual("Remove Cybereyes Rating 4", dialog.Actions.Single(action => string.Equals(action.Id, "delete", StringComparison.Ordinal)).Label);
     }
@@ -2073,7 +2225,7 @@ public class DesktopDialogFactoryTests
             activeDialogId: null);
 
         Assert.AreEqual(DesktopAliceAssistant.DialogId, dialog.Id);
-        Assert.AreEqual("Auto ALICE", dialog.Title);
+        Assert.AreEqual("Auto Alice", dialog.Title);
         Assert.AreEqual("skills", DesktopDialogFieldValueParser.GetValue(dialog, "autoAliceSurfaceId"));
         Assert.AreEqual("QuickAddApply", DesktopDialogFieldValueParser.GetValue(dialog, "autoAliceSupportMode"));
         Assert.AreEqual("street_sam", DesktopDialogFieldValueParser.GetValue(dialog, "autoAliceArchetype"));
@@ -2100,7 +2252,7 @@ public class DesktopDialogFactoryTests
         Assert.AreEqual("character_create", DesktopDialogFieldValueParser.GetValue(dialog, "autoAliceSurfaceId"));
         Assert.AreEqual("GuidedBuildPlan", DesktopDialogFieldValueParser.GetValue(dialog, "autoAliceSupportMode"));
         Assert.AreEqual("new_character", DesktopDialogFieldValueParser.GetValue(dialog, "autoAliceHandoffCommandId"));
-        StringAssert.Contains(dialog.Message ?? string.Empty, "guided workflow handoff");
+        StringAssert.Contains(dialog.Message ?? string.Empty, "guided workflow next step");
     }
 
     [TestMethod]
@@ -2466,7 +2618,7 @@ public class DesktopDialogFactoryTests
         Assert.AreEqual("sr6", DesktopDialogFieldValueParser.GetValue(dialog, "importRulesetId"));
         StringAssert.Contains(DesktopDialogFieldValueParser.GetValue(dialog, "heroLabImportOracleLanePosture"), "partial");
         Assert.AreEqual("import oracle is partial: 3/4 fixture families covered (missing: Hero Lab), adjacent SR6 oracle coverage 1/2.", DesktopDialogFieldValueParser.GetValue(dialog, "heroLabImportOracleReceipt"));
-        Assert.AreEqual("Adjacent SR6 oracle lane is partial: 1/2 covered with stale receipts for Genesis/CommLink.", DesktopDialogFieldValueParser.GetValue(dialog, "heroLabAdjacentSr6OracleReceipt"));
+        Assert.AreEqual("Adjacent SR6 oracle path is partial: 1/2 covered with stale records for Genesis/CommLink.", DesktopDialogFieldValueParser.GetValue(dialog, "heroLabAdjacentSr6OracleReceipt"));
         Assert.AreEqual("Hero Lab", DesktopDialogFieldValueParser.GetValue(dialog, "heroLabImportOracleMissingSources"));
         Assert.IsNotNull(dialog.Actions.SingleOrDefault(action => string.Equals(action.Id, "import", StringComparison.Ordinal)));
     }

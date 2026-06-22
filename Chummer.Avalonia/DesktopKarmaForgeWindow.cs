@@ -48,8 +48,8 @@ internal sealed class DesktopKarmaForgeWindow : Window
                         new TextBlock
                         {
                             Text = AreGuidedToolsVisible()
-                                ? "Governed package work stays in the desktop now: browse packages, jump into intake, review your signed-in package shelf, and keep ALICE one move away when a rules package turns into a build tradeoff."
-                                : "Governed package work stays in the desktop now: browse packages, jump into intake, and review your signed-in package shelf.",
+                                ? "Package work stays in the desktop now: browse packages, jump into intake, review your signed-in package shelf, and keep ALICE one move away when a rules package turns into a build tradeoff."
+                                : "Package work stays in the desktop now: browse packages, jump into intake, and review your signed-in package shelf.",
                             TextWrapping = TextWrapping.Wrap
                         },
                         CreateStatusCard(),
@@ -116,10 +116,10 @@ internal sealed class DesktopKarmaForgeWindow : Window
 
         string handoffLine = _campaignSummary is null
             ? (showGuidedTools
-                ? "ALICE handoff counts are unavailable until the client can read the signed-in campaign spine."
-                : "Package handoff counts are unavailable until the client can read the signed-in campaign spine.")
+                ? "ALICE build links are unavailable until the client can read the signed-in campaign spine."
+                : "Package links are unavailable until the client can read the signed-in campaign spine.")
             : showGuidedTools
-                ? $"ALICE handoffs in account context: {_campaignSummary.BuildLabHandoffs.Count}. Campaigns: {_campaignSummary.Campaigns.Count}. Workspaces: {_campaignSummary.Workspaces.Count}."
+                ? $"ALICE build links in account context: {_campaignSummary.BuildLabHandoffs.Count}. Campaigns: {_campaignSummary.Campaigns.Count}. Workspaces: {_campaignSummary.Workspaces.Count}."
                 : $"Package context: campaigns {_campaignSummary.Campaigns.Count}. Workspaces {_campaignSummary.Workspaces.Count}.";
 
         StackPanel lead = new()
@@ -127,9 +127,9 @@ internal sealed class DesktopKarmaForgeWindow : Window
             Spacing = 4,
             Children =
             {
-                DesktopHorizonWindowScaffold.CreateBadgeStrip(
+                    DesktopHorizonWindowScaffold.CreateBadgeStrip(
                     DesktopHorizonWindowScaffold.CreateMetricBadge("KarmaForgeBadgeContext", "Context", _campaignSummary is null ? "guest" : "account"),
-                    DesktopHorizonWindowScaffold.CreateMetricBadge("KarmaForgeBadgeHandoffs", "Handoffs", (_campaignSummary?.BuildLabHandoffs.Count ?? 0).ToString()),
+                    DesktopHorizonWindowScaffold.CreateMetricBadge("KarmaForgeBadgeHandoffs", "Build links", (_campaignSummary?.BuildLabHandoffs.Count ?? 0).ToString()),
                     DesktopHorizonWindowScaffold.CreateMetricBadge("KarmaForgeBadgePublications", "Publications", (_campaignSummary?.CreatorPublications.Count ?? 0).ToString())),
                 new TextBlock
                 {
@@ -152,7 +152,7 @@ internal sealed class DesktopKarmaForgeWindow : Window
         }
 
         return CreateCard(
-            "Current posture",
+            "Current state",
             signedInLine,
             lead,
             "KarmaForgeStatusCard",
@@ -222,7 +222,7 @@ internal sealed class DesktopKarmaForgeWindow : Window
 
         return CreateCard(
             "Package targets",
-            "Keep the public browser, signed-in shelf, and governed intake reachable from one native desktop surface.",
+            "Keep the public browser, signed-in shelf, and package intake reachable from one native desktop surface.",
             targetDetails,
             "KarmaForgePackageTargetsCard",
             CreateButton("Open selected", () =>
@@ -241,8 +241,8 @@ internal sealed class DesktopKarmaForgeWindow : Window
     private Control CreateAccountContextCard()
     {
         string summary = _campaignSummary is null
-            ? "This desktop copy can still launch Karma Forge lanes, but it cannot yet materialize signed-in package detail without account context."
-            : "Account context is present. Use the shelf and intake as account-bound lanes instead of loose browser searches.";
+            ? "This desktop copy can still open Karma Forge, but it cannot show signed-in package detail without account context."
+            : "Account context is present. Use the shelf and intake instead of loose browser searches.";
 
         return CreateCard(
             "Account-bound follow-through",

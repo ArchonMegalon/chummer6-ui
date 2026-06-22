@@ -840,6 +840,12 @@ public sealed class DesktopThemeManagerTests
         Assert.IsFalse(emptyOriginSource.Contains("\"Create dossier video\"", StringComparison.Ordinal));
         Assert.IsFalse(emptyOriginSource.Contains("\"Render audiobook now\"", StringComparison.Ordinal));
         Assert.IsFalse(emptyOriginSource.Contains("\"Create portraits\"", StringComparison.Ordinal));
+        Assert.IsFalse(aliceSource.Contains("Reviewed variants stay bounded", StringComparison.Ordinal));
+        Assert.IsFalse(aliceSource.Contains("bounded preview", StringComparison.Ordinal));
+        Assert.IsFalse(aliceSource.Contains("safest origin draft is a bounded", StringComparison.Ordinal));
+        Assert.IsFalse(aliceSource.Contains("audiobook artifact", StringComparison.Ordinal));
+        Assert.IsFalse(aliceSource.Contains("Cold medical lane", StringComparison.Ordinal));
+        Assert.IsFalse(aliceSource.Contains("sterile upgrade lane", StringComparison.Ordinal));
     }
 
     [TestMethod]

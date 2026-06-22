@@ -27,7 +27,7 @@ internal sealed class DesktopReadyForTonightWindow : Window
 
         Content = DesktopHorizonWindowScaffold.CreateScroller(
             "Ready for Tonight",
-            "Ready for Tonight keeps the shortest honest route into tonight's run visible from the desktop: verdict, blocker posture, next step, and mobile-safe handoff stay on named first-party rails.",
+            "Ready for Tonight keeps the shortest honest route into tonight's run visible from the desktop: status, blockers, next step, and mobile-safe return.",
             CreateVerdictCard(),
             CreateRoleCard(),
             new StackPanel
@@ -81,16 +81,16 @@ internal sealed class DesktopReadyForTonightWindow : Window
                     DesktopHorizonWindowScaffold.CreateMetricBadge("ReadyForTonightBadgeWorkspaces", "Workspaces", (_campaignSummary?.Workspaces.Count ?? 0).ToString()),
                     DesktopHorizonWindowScaffold.CreateMetricBadge("ReadyForTonightBadgeCampaigns", "Campaigns", (_campaignSummary?.Campaigns.Count ?? 0).ToString())),
                 DesktopHorizonWindowScaffold.CreateDetailText($"Runs: {_campaignSummary?.Runs.Count ?? 0}. Workspaces: {_campaignSummary?.Workspaces.Count ?? 0}. Campaigns: {_campaignSummary?.Campaigns.Count ?? 0}."),
-                DesktopHorizonWindowScaffold.CreateDetailText(leadRun?.Summary ?? "No governed run is currently pinned for tonight."),
-                DesktopHorizonWindowScaffold.CreateDetailText(leadWorkspace?.NextSafeAction ?? leadWorkspace?.ReturnSummary ?? "Open the signed-in starter or return rail to get the next safe move for tonight.")
+                DesktopHorizonWindowScaffold.CreateDetailText(leadRun?.Summary ?? "No run is currently pinned for tonight."),
+                DesktopHorizonWindowScaffold.CreateDetailText(leadWorkspace?.NextSafeAction ?? leadWorkspace?.ReturnSummary ?? "Open the signed-in starter or return path to get the next safe move for tonight.")
             }
         };
 
         return DesktopHorizonWindowScaffold.CreateCard(
             "Tonight verdict",
-            "Keep the current run posture, workspace return lane, and next safe action visible before you widen into browser-only follow-through.",
+            "Keep the current run, workspace return path, and next safe action visible before you open the browser.",
             details,
-            DesktopHorizonWindowScaffold.CreateAsyncButton(this, "Open signed-in return lane", static () => DesktopInstallLinkingRuntime.TryOpenRelativePortal("/account/runsites/open"), isPrimary: HasTonightContext),
+            DesktopHorizonWindowScaffold.CreateAsyncButton(this, "Open signed-in return path", static () => DesktopInstallLinkingRuntime.TryOpenRelativePortal("/account/runsites/open"), isPrimary: HasTonightContext),
             DesktopHorizonWindowScaffold.CreateAsyncButton(this, "Open Run Control", static () => DesktopInstallLinkingRuntime.TryOpenRelativePortal("/account/run-control")),
             DesktopHorizonWindowScaffold.CreateAsyncButton(this, "Open public route", static () => DesktopInstallLinkingRuntime.TryOpenRelativePortal("/ready")));
     }
@@ -144,11 +144,11 @@ internal sealed class DesktopReadyForTonightWindow : Window
         }
 
         return DesktopHorizonWindowScaffold.CreateCard(
-            "Role kits and handoff",
-            "Ready for Tonight is strongest when player, GM, organizer, and mobile handoff answers stay one move away instead of scattered across help text.",
+            "Role kits",
+            "Ready for Tonight is strongest when player, GM, organizer, and mobile answers stay one move away instead of scattered across help text.",
             details,
             DesktopHorizonWindowScaffold.CreateAsyncButton(this, "Open public packet", static () => DesktopInstallLinkingRuntime.TryOpenRelativePortal("/ready"), isPrimary: HasTonightContext),
             DesktopHorizonWindowScaffold.CreateAsyncButton(this, "Open Onramp", static () => DesktopInstallLinkingRuntime.TryOpenRelativePortal("/onramp")),
-            DesktopHorizonWindowScaffold.CreateAsyncButton(this, "Open mobile rail", static () => DesktopInstallLinkingRuntime.TryOpenRelativePortal("/mobile")));
+            DesktopHorizonWindowScaffold.CreateAsyncButton(this, "Open mobile page", static () => DesktopInstallLinkingRuntime.TryOpenRelativePortal("/mobile")));
     }
 }

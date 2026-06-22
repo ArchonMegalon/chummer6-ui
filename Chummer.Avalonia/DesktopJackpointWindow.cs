@@ -81,13 +81,13 @@ internal sealed class DesktopJackpointWindow : Window
                 DesktopHorizonWindowScaffold.CreateDetailText(leadPublication is null
                     ? "No publication is currently pinned to the signed-in desk."
                     : $"{leadPublication.Title} is the current lead publication with status {leadPublication.PublicationStatus}."),
-                DesktopHorizonWindowScaffold.CreateDetailText(leadPublication?.Summary ?? "Return after the next creator publication or discovery-safe handoff.")
+                DesktopHorizonWindowScaffold.CreateDetailText(leadPublication?.Summary ?? "Return after the next creator publication.")
             }
         };
 
         return DesktopHorizonWindowScaffold.CreateCard(
             "Publication desk",
-            "Use the signed-in Jackpoint desk for the current publication lane, then widen into the public route only when you need the public-facing network posture.",
+            "Use the signed-in Jackpoint desk for current publications, then open the public page only when you need the public-facing network.",
             details,
             DesktopHorizonWindowScaffold.CreateAsyncButton(this, "Open account desk", static () => DesktopInstallLinkingRuntime.TryOpenRelativePortal("/account/jackpoint"), isPrimary: HasPublicationContext),
             DesktopHorizonWindowScaffold.CreateAsyncButton(this, "Open public route", static () => DesktopInstallLinkingRuntime.TryOpenRelativePortal("/jackpoint")),
@@ -122,7 +122,7 @@ internal sealed class DesktopJackpointWindow : Window
             detailText.Text = mode == "Identity"
                 ? leadDossier is null
                     ? "No runner identity is currently pinned to Jackpoint."
-                    : $"{leadDossier.RunnerHandle} keeps owner {leadDossier.OwnerUserId} and dossier status {leadDossier.Status} on the account rail."
+                    : $"{leadDossier.RunnerHandle} keeps owner {leadDossier.OwnerUserId} and dossier status {leadDossier.Status} on the account page."
                 : leadDossier?.DisplayName ?? "Dossier follow-through appears here after the next publication-safe import or campaign sync.";
         }
 
@@ -138,7 +138,7 @@ internal sealed class DesktopJackpointWindow : Window
                     DesktopHorizonWindowScaffold.CreateMetricBadge("JackpointBadgeCampaigns", "Campaigns", (_campaignSummary?.Campaigns.Count ?? 0).ToString())),
                 DesktopHorizonWindowScaffold.CreateDetailText($"Dossiers in account context: {_campaignSummary?.Dossiers.Count ?? 0}. Campaigns: {_campaignSummary?.Campaigns.Count ?? 0}."),
                 DesktopHorizonWindowScaffold.CreateDetailText(leadDossier is null
-                    ? "No runner dossier is currently leading the Jackpoint lane."
+                    ? "No runner dossier is currently selected for Jackpoint."
                     : $"{leadDossier.RunnerHandle} is the current lead dossier with status {leadDossier.Status}."),
                 detailText
             }
@@ -151,7 +151,7 @@ internal sealed class DesktopJackpointWindow : Window
 
         return DesktopHorizonWindowScaffold.CreateCard(
             "Dossiers and briefings",
-            "Keep the signed-in briefings and dossier posture visible without hunting through multiple browser routes.",
+            "Keep signed-in briefings and dossier status visible without hunting through multiple browser pages.",
             details,
             DesktopHorizonWindowScaffold.CreateAsyncButton(this, "Open account desk", static () => DesktopInstallLinkingRuntime.TryOpenRelativePortal("/account/jackpoint"), isPrimary: HasDossierContext),
             DesktopHorizonWindowScaffold.CreateAsyncButton(this, "Open campaign", static () => DesktopInstallLinkingRuntime.TryOpenRelativePortal("/account/runsites")),

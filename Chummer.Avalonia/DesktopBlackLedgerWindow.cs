@@ -238,7 +238,7 @@ internal sealed class DesktopBlackLedgerWindow : Window
                         break;
                     default:
                         selectedWorkspaceDetailText.Text = "No campaign workspace detail is currently available.";
-                        selectedWorkspaceSceneText.Text = "Choose a workspace to inspect its world-state return lane.";
+                        selectedWorkspaceSceneText.Text = "Choose a workspace to inspect its world-state return path.";
                         break;
                 }
             }

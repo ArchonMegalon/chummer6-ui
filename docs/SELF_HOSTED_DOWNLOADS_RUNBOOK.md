@@ -43,11 +43,11 @@ Repository variables:
 3. Optional `CHUMMER_DESKTOP_RELEASE_CHANNEL` override for non-mainline lanes
 4. `CHUMMER_ALLOW_UNSIGNED_PUBLIC_RELEASE` (optional; explicit unsigned public-release posture)
 
-Workflow path:
-1. Push the release-ready source to `main` or run workflow `Desktop Downloads Matrix` from `main`.
-2. If `CHUMMER_PORTAL_DOWNLOADS_DEPLOY_DIR` is configured, deploy job `deploy-downloads` runs automatically after bundle generation.
+Local release path:
+1. Push the release-ready source to `main`, then build the release bundle on the controlled release host.
+2. If `CHUMMER_PORTAL_DOWNLOADS_DEPLOY_DIR` is configured, run `RUNBOOK_MODE=downloads-sync` after bundle generation.
 3. `scripts/publish-download-bundle.sh` prunes superseded desktop artifacts from the target downloads root before syncing the freshly built bundle.
-4. Job verifies local deployed manifest and live manifest URL.
+4. The runbook verifies the local deployed manifest and live manifest URL.
 
 Manual path:
 1. `RUNBOOK_MODE=downloads-sync DOWNLOAD_BUNDLE_DIR=<bundleDir> DOWNLOAD_DEPLOY_DIR=<deployDir> DOWNLOADS_SYNC_DEPLOY_MODE=1 DOWNLOADS_SYNC_VERIFY_TARGET=<portalBaseOrManifestUrl> bash scripts/runbook.sh`
@@ -70,11 +70,11 @@ Repository secrets:
 2. `CHUMMER_PORTAL_DOWNLOADS_AWS_SECRET_ACCESS_KEY`
 3. `CHUMMER_PORTAL_DOWNLOADS_AWS_SESSION_TOKEN` (optional)
 
-Workflow path:
-1. Push the release-ready source to `main` or run workflow `Desktop Downloads Matrix` from `main`.
-2. If `CHUMMER_PORTAL_DOWNLOADS_S3_URI` is configured, deploy job `deploy-downloads-object-storage` runs automatically after bundle generation.
-3. Job syncs bundle using `scripts/publish-download-bundle-s3.sh`.
-4. Job verifies live manifest URL.
+Local release path:
+1. Push the release-ready source to `main`, then build the release bundle on the controlled release host.
+2. If `CHUMMER_PORTAL_DOWNLOADS_S3_URI` is configured, run `RUNBOOK_MODE=downloads-sync-s3` after bundle generation.
+3. The runbook syncs the bundle using `scripts/publish-download-bundle-s3.sh`.
+4. The runbook verifies the live manifest URL.
 
 Manual path:
 1. `RUNBOOK_MODE=downloads-sync-s3 DOWNLOAD_BUNDLE_DIR=<bundleDir> CHUMMER_PORTAL_DOWNLOADS_S3_URI=<s3://bucket/path> CHUMMER_PORTAL_DOWNLOADS_VERIFY_URL=<portalBaseOrManifestUrl> [CHUMMER_PORTAL_DOWNLOADS_S3_ENDPOINT_URL=<endpoint>] bash scripts/runbook.sh`
@@ -100,12 +100,12 @@ Local-preview note:
 2. When no P12 and no preconfigured `CHUMMER_MAC_APP_SIGN_IDENTITY` are present, the script reuses or creates a self-signed local code-signing identity in that persistent keychain.
 3. This preserves the signing identity across upgrades on a stable Mac host so app-permission prompts do not churn between preview installs.
 
-Workflow path:
-1. Push the release-ready source to `main` or run workflow `Desktop Downloads Matrix` from `main`.
-2. Pushes do not publish the downloads shelf. The workflow owns the scheduled nightly publication path and only publishes during the 08:00 Europe/Vienna release window.
-3. Manual workflow runs are build/proof runs by default. They publish only when `force_publish_downloads` is explicitly enabled.
-4. If `CHUMMER_RELEASE_UPLOAD_URL` is configured and the release window allows publication, deploy job `deploy-downloads-http` uploads the finished desktop bundle with `scripts/publish-download-bundle-http.sh`.
-5. Job verifies the live `RELEASE_CHANNEL.generated.json` response from `chummer.run`.
+Local release path:
+1. Push the release-ready source to `main`, then run the affected local build and release scripts from the controlled release host.
+2. Pushes do not publish the downloads shelf. `RUNBOOK_MODE=publish-latest-nightly` owns the scheduled nightly publication path and only publishes during the 08:00 Europe/Vienna release window.
+3. Manual build/proof runs do not publish by default. Publish only through the guarded runbook mode or an explicit emergency override.
+4. If `CHUMMER_RELEASE_UPLOAD_URL` is configured and the release window allows publication, `RUNBOOK_MODE=downloads-upload-http` uploads the finished desktop bundle with `scripts/publish-download-bundle-http.sh`.
+5. The runbook verifies the live `RELEASE_CHANNEL.generated.json` response from `chummer.run`.
 
 Manual path:
 1. `RUNBOOK_MODE=downloads-upload-http DOWNLOAD_BUNDLE_DIR=<bundleDir> CHUMMER_RELEASE_UPLOAD_URL=<uploadUrl> CHUMMER_PORTAL_DOWNLOADS_VERIFY_URL=<portalManifestUrl> CHUMMER_RELEASE_UPLOAD_TOKEN=<token> bash scripts/runbook.sh`

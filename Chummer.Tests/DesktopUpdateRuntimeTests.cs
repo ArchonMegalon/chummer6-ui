@@ -15,6 +15,7 @@ namespace Chummer.Tests;
 public sealed class DesktopUpdateRuntimeTests
 {
     private const string ManifestEnvironmentVariable = "CHUMMER_DESKTOP_UPDATE_MANIFEST";
+    private const string UpdateModeEnvironmentVariable = "CHUMMER_DESKTOP_UPDATE_MODE";
     private const string UpdateEnabledEnvironmentVariable = "CHUMMER_DESKTOP_UPDATE_ENABLED";
     private const string UpdateAutoApplyEnvironmentVariable = "CHUMMER_DESKTOP_UPDATE_AUTO_APPLY";
     private const string StateRootEnvironmentVariable = "CHUMMER_DESKTOP_STATE_ROOT";
@@ -294,6 +295,106 @@ public sealed class DesktopUpdateRuntimeTests
     }
 
     [TestMethod]
+    public async Task CheckAndScheduleStartupUpdateAsync_notify_mode_records_available_update_without_staging_payload()
+    {
+        DesktopUpdatePlatformIdentity identity = DesktopUpdatePlatformIdentity.Current();
+        string version = $"run-29991231-235959";
+        string manifestPath = Path.Combine(Path.GetTempPath(), $"desktop-update-manifest-notify-{Guid.NewGuid():N}.json");
+        string payloadPath = Path.Combine(Path.GetTempPath(), $"desktop-update-notify-should-not-download-{Guid.NewGuid():N}.zip");
+        string manifestJson = $$"""
+            {
+              "channelId": "stable",
+              "version": "{{version}}",
+              "status": "published",
+              "publishedAt": "{{DateTimeOffset.UtcNow:O}}",
+              "artifacts": [
+                {
+                  "artifactId": "avalonia-{{identity.Platform}}-{{identity.Arch}}",
+                  "head": "avalonia",
+                  "platform": "{{identity.Platform}}",
+                  "arch": "{{identity.Arch}}",
+                  "kind": "archive",
+                  "fileName": "chummer-avalonia-{{identity.Platform}}-{{identity.Arch}}.zip",
+                  "downloadUrl": "{{payloadPath.Replace("\\", "/")}}"
+                }
+              ]
+            }
+            """;
+        File.WriteAllText(manifestPath, manifestJson);
+
+        using TestStateRootScope stateRootScope = new();
+        using TestProcessPathOverrideScope processPathScope = TestProcessPathOverrideScope.CreatePackagedLike();
+        using TestEnvironmentScope envScope = new(new Dictionary<string, string?>()
+        {
+            [ManifestEnvironmentVariable] = manifestPath,
+            [UpdateModeEnvironmentVariable] = "notify",
+            [UpdateEnabledEnvironmentVariable] = "true",
+            [UpdateAutoApplyEnvironmentVariable] = "true",
+            [StateRootEnvironmentVariable] = stateRootScope.Root
+        });
+
+        try
+        {
+            DesktopUpdateStartupResult result = await DesktopUpdateRuntime.CheckAndScheduleStartupUpdateAsync(
+                "avalonia",
+                [],
+                CancellationToken.None).ConfigureAwait(false);
+
+            Assert.AreEqual("notify_only", result.Reason);
+
+            string statePath = stateRootScope.StatePathForHead("avalonia");
+            Assert.IsTrue(File.Exists(statePath));
+            using JsonDocument state = JsonDocument.Parse(File.ReadAllText(statePath));
+            Assert.AreEqual(version, GetStringProperty(state.RootElement, "lastManifestVersion"));
+            Assert.IsNull(GetStringProperty(state.RootElement, "pendingUpdateVersion"));
+            Assert.IsNull(GetStringProperty(state.RootElement, "lastFailureReason"));
+            Assert.IsFalse(Directory.Exists(stateRootScope.TempRootForHead("avalonia")));
+
+            DesktopUpdateClientStatus status = DesktopUpdateRuntime.GetCurrentStatus("avalonia");
+            Assert.AreEqual("notify", status.UpdateMode);
+            Assert.IsFalse(status.AutoApply);
+            Assert.AreEqual("update_available", status.Status);
+        }
+        finally
+        {
+            if (File.Exists(manifestPath))
+            {
+                File.Delete(manifestPath);
+            }
+        }
+    }
+
+    [TestMethod]
+    public async Task CheckAndScheduleStartupUpdateAsync_off_mode_skips_without_reading_manifest()
+    {
+        string manifestPath = Path.Combine(Path.GetTempPath(), $"desktop-update-manifest-off-{Guid.NewGuid():N}.json");
+        using TestStateRootScope stateRootScope = new();
+        using TestEnvironmentScope envScope = new(new Dictionary<string, string?>()
+        {
+            [ManifestEnvironmentVariable] = manifestPath,
+            [UpdateModeEnvironmentVariable] = "off",
+            [UpdateEnabledEnvironmentVariable] = "true",
+            [UpdateAutoApplyEnvironmentVariable] = "true",
+            [StateRootEnvironmentVariable] = stateRootScope.Root
+        });
+
+        DesktopUpdateStartupResult result = await DesktopUpdateRuntime.CheckAndScheduleStartupUpdateAsync(
+            "avalonia",
+            [],
+            CancellationToken.None).ConfigureAwait(false);
+
+        Assert.AreEqual("update_mode_off", result.Reason);
+        Assert.IsFalse(File.Exists(stateRootScope.StatePathForHead("avalonia")));
+
+        DesktopUpdateClientStatus status = DesktopUpdateRuntime.GetCurrentStatus("avalonia");
+        Assert.AreEqual("off", status.UpdateMode);
+        Assert.IsFalse(status.UpdatesEnabled);
+        Assert.IsFalse(status.AutoApply);
+        Assert.AreEqual("disabled", status.Status);
+        StringAssert.Contains(status.RecommendedAction, "turned off", StringComparison.OrdinalIgnoreCase);
+    }
+
+    [TestMethod]
     public void TryCompareReleaseVersions_orders_run_timestamps_and_blocks_downgrades()
     {
         System.Reflection.MethodInfo? method = typeof(DesktopUpdateRuntime).GetMethod(
@@ -565,7 +666,7 @@ public sealed class DesktopUpdateRuntimeTests
         DesktopUpdateClientStatus status = DesktopUpdateRuntime.GetCurrentStatus("avalonia");
 
         Assert.AreEqual("disabled", status.Status);
-        StringAssert.Contains(status.RecommendedAction, "Configure the desktop update manifest", StringComparison.Ordinal);
+        StringAssert.Contains(status.RecommendedAction, "Choose an update source", StringComparison.Ordinal);
     }
 
     [TestMethod]
@@ -603,7 +704,8 @@ public sealed class DesktopUpdateRuntimeTests
         DesktopUpdateClientStatus status = DesktopUpdateRuntime.GetCurrentStatus("avalonia");
 
         Assert.AreEqual("attention_required", status.Status);
-        StringAssert.Contains(status.RecommendedAction, "latest local release proof failed", StringComparison.OrdinalIgnoreCase);
+        StringAssert.Contains(status.RecommendedAction, "latest release check failed", StringComparison.OrdinalIgnoreCase);
+        Assert.IsFalse(status.RecommendedAction.Contains("proof", StringComparison.OrdinalIgnoreCase), status.RecommendedAction);
     }
 
     [TestMethod]
@@ -1149,6 +1251,18 @@ public sealed class DesktopUpdateRuntimeTests
     }
 
     [TestMethod]
+    public void Linux_deb_installer_unavailable_message_keeps_manual_recovery_command()
+    {
+        const string installerPath = "/tmp/chummer update/runner's build.deb";
+
+        string message = InvokePrivateStatic<string>("BuildLinuxDebInstallerUnavailableMessage", installerPath);
+
+        StringAssert.Contains(message, "Could not apply Linux .deb update automatically.");
+        StringAssert.Contains(message, "The downloaded package remains at '/tmp/chummer update/runner's build.deb'.");
+        StringAssert.Contains(message, "sudo dpkg -i '/tmp/chummer update/runner'\"'\"'s build.deb'");
+    }
+
+    [TestMethod]
     public async Task TryHandleSpecialModeAsync_installer_launch_failure_records_structured_failure_reason()
     {
         string tempRoot = Path.Combine(Path.GetTempPath(), $"desktop-update-installer-failure-{Guid.NewGuid():N}");
@@ -1221,6 +1335,7 @@ public sealed class DesktopUpdateRuntimeTests
         {
             [ManifestEnvironmentVariable] = null,
             ["CHUMMER_PORTAL_DOWNLOADS_VERIFY_URL"] = "/tmp/promoted",
+            [UpdateModeEnvironmentVariable] = null,
             [UpdateEnabledEnvironmentVariable] = "yes",
             [UpdateAutoApplyEnvironmentVariable] = "off"
         });
@@ -1231,6 +1346,72 @@ public sealed class DesktopUpdateRuntimeTests
         Assert.AreEqual(true, configurationType.GetProperty("Enabled")!.GetValue(configuration));
         Assert.AreEqual(false, configurationType.GetProperty("AutoApply")!.GetValue(configuration));
         Assert.AreEqual("/tmp/promoted", configurationType.GetProperty("ManifestLocation")!.GetValue(configuration));
+        Assert.AreEqual("notify", configurationType.GetProperty("Mode")!.GetValue(configuration));
+    }
+
+    [TestMethod]
+    public void Update_configuration_load_honors_explicit_notify_mode()
+    {
+        using TestEnvironmentScope envScope = new(new Dictionary<string, string?>()
+        {
+            [ManifestEnvironmentVariable] = "/tmp/promoted",
+            [UpdateModeEnvironmentVariable] = "notify",
+            [UpdateEnabledEnvironmentVariable] = "false",
+            [UpdateAutoApplyEnvironmentVariable] = "true"
+        });
+
+        object configuration = InvokeNestedStatic("DesktopUpdateConfiguration", "Load");
+        Type configurationType = configuration.GetType();
+
+        Assert.AreEqual(true, configurationType.GetProperty("Enabled")!.GetValue(configuration));
+        Assert.AreEqual(false, configurationType.GetProperty("AutoApply")!.GetValue(configuration));
+        Assert.AreEqual("/tmp/promoted", configurationType.GetProperty("ManifestLocation")!.GetValue(configuration));
+        Assert.AreEqual("notify", configurationType.GetProperty("Mode")!.GetValue(configuration));
+    }
+
+    [TestMethod]
+    public void Update_configuration_load_honors_explicit_off_mode()
+    {
+        using TestEnvironmentScope envScope = new(new Dictionary<string, string?>()
+        {
+            [ManifestEnvironmentVariable] = "/tmp/promoted",
+            [UpdateModeEnvironmentVariable] = "off",
+            [UpdateEnabledEnvironmentVariable] = "true",
+            [UpdateAutoApplyEnvironmentVariable] = "true"
+        });
+
+        object configuration = InvokeNestedStatic("DesktopUpdateConfiguration", "Load");
+        Type configurationType = configuration.GetType();
+
+        Assert.AreEqual(false, configurationType.GetProperty("Enabled")!.GetValue(configuration));
+        Assert.AreEqual(false, configurationType.GetProperty("AutoApply")!.GetValue(configuration));
+        Assert.AreEqual("/tmp/promoted", configurationType.GetProperty("ManifestLocation")!.GetValue(configuration));
+        Assert.AreEqual("off", configurationType.GetProperty("Mode")!.GetValue(configuration));
+    }
+
+    [TestMethod]
+    public void Update_configuration_load_uses_persisted_preference_mode_when_no_env_override_exists()
+    {
+        using TestStateRootScope stateRootScope = new();
+        using TestEnvironmentScope envScope = new(new Dictionary<string, string?>()
+        {
+            [ManifestEnvironmentVariable] = "/tmp/promoted",
+            [UpdateModeEnvironmentVariable] = null,
+            [UpdateEnabledEnvironmentVariable] = null,
+            [UpdateAutoApplyEnvironmentVariable] = null,
+            [StateRootEnvironmentVariable] = stateRootScope.Root
+        });
+        DesktopPreferenceRuntime.SaveState(
+            "avalonia",
+            Chummer.Presentation.Overview.DesktopPreferenceState.Default with { UpdateMode = "notify" });
+
+        object configuration = InvokeNestedStatic("DesktopUpdateConfiguration", "Load");
+        Type configurationType = configuration.GetType();
+
+        Assert.AreEqual(true, configurationType.GetProperty("Enabled")!.GetValue(configuration));
+        Assert.AreEqual(false, configurationType.GetProperty("AutoApply")!.GetValue(configuration));
+        Assert.AreEqual("/tmp/promoted", configurationType.GetProperty("ManifestLocation")!.GetValue(configuration));
+        Assert.AreEqual("notify", configurationType.GetProperty("Mode")!.GetValue(configuration));
     }
 
     [TestMethod]

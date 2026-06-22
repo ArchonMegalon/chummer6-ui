@@ -27,7 +27,7 @@ internal sealed class DesktopCommunityHubWindow : Window
 
         Content = DesktopHorizonWindowScaffold.CreateScroller(
             "Community Hub",
-            "Community Hub keeps the open-run network and the signed-in board on native rails, so operator posture and campaign groups are visible before you jump outward.",
+            "Community Hub keeps public games and signed-in campaign groups in one place before you open the site.",
             CreateOperationsCard(),
             CreateCampaignCard(),
             new StackPanel
@@ -78,15 +78,15 @@ internal sealed class DesktopCommunityHubWindow : Window
                     DesktopHorizonWindowScaffold.CreateMetricBadge("CommunityHubBadgeCampaigns", "Campaigns", (_campaignSummary?.Campaigns.Count ?? 0).ToString())),
                 DesktopHorizonWindowScaffold.CreateDetailText($"Community operations in account context: {_campaignSummary?.CommunityOperations.Count ?? 0}."),
                 DesktopHorizonWindowScaffold.CreateDetailText(leadOperation is null
-                    ? "No community operator group is currently leading the board."
+                    ? "No community group is currently leading the board."
                     : $"{leadOperation.GroupName} is the current lead group with role {leadOperation.OperatorRole}."),
-                DesktopHorizonWindowScaffold.CreateDetailText(leadOperation?.CampaignVisibilitySummary ?? "Open-run network posture appears here after the next operator sync.")
+                DesktopHorizonWindowScaffold.CreateDetailText(leadOperation?.CampaignVisibilitySummary ?? "Public game status appears here after the next account sync.")
             }
         };
 
         return DesktopHorizonWindowScaffold.CreateCard(
             "Open-run network",
-            "Use the signed-in board for operator groups and network posture, then widen into the public Community lane only when needed.",
+            "Use the signed-in board for groups and public game status, then open the public page only when needed.",
             details,
             DesktopHorizonWindowScaffold.CreateAsyncButton(this, "Open account board", static () => DesktopInstallLinkingRuntime.TryOpenRelativePortal("/account/community"), isPrimary: HasOperationsContext),
             DesktopHorizonWindowScaffold.CreateAsyncButton(this, "Open public route", static () => DesktopInstallLinkingRuntime.TryOpenRelativePortal("/community")),
@@ -125,7 +125,7 @@ internal sealed class DesktopCommunityHubWindow : Window
                 .OrderByDescending(static operation => operation.MemberCount)
                 .FirstOrDefault();
             detailText.Text = mode == "Operations"
-                ? leadOperation?.OperationsSummary ?? "No operator operations summary is currently available."
+                ? leadOperation?.OperationsSummary ?? "No group summary is currently available."
                 : campaignNames.Count == 0
                     ? "No community-linked campaigns are currently materialized in account context."
                     : $"Visible campaign groups: {string.Join(", ", campaignNames)}";

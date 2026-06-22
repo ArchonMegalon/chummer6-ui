@@ -12,6 +12,7 @@ internal sealed class DesktopStartupUpdateWindow : Window
     private readonly string[] _relaunchArgs;
     private readonly TextBlock _titleText;
     private readonly TextBlock _bodyText;
+    private readonly TextBlock _waitText;
     private readonly ProgressBar _progressBar;
     private bool _started;
 
@@ -46,6 +47,14 @@ internal sealed class DesktopStartupUpdateWindow : Window
             Foreground = DesktopShellTheme.ResolveThemeBrush("ChummerShellMutedForegroundBrush", "#cbd5e1")
         };
 
+        _waitText = new TextBlock
+        {
+            Text = "Keep this window open. Starting another copy can interrupt the update.",
+            TextWrapping = TextWrapping.Wrap,
+            FontSize = 12,
+            Foreground = DesktopShellTheme.ResolveThemeBrush("ChummerShellMutedForegroundBrush", "#cbd5e1")
+        };
+
         _progressBar = new ProgressBar
         {
             Minimum = 0,
@@ -65,7 +74,8 @@ internal sealed class DesktopStartupUpdateWindow : Window
                 {
                     _titleText,
                     _bodyText,
-                    _progressBar
+                    _progressBar,
+                    _waitText
                 }
             }
         };
@@ -111,6 +121,7 @@ internal sealed class DesktopStartupUpdateWindow : Window
                 || string.Equals(result.Reason, "installed_ahead_of_manifest", StringComparison.OrdinalIgnoreCase)
                 || string.Equals(result.Reason, "seeded_from_manifest", StringComparison.OrdinalIgnoreCase)
                 || string.Equals(result.Reason, "manifest_not_configured", StringComparison.OrdinalIgnoreCase)
+                || string.Equals(result.Reason, "update_mode_off", StringComparison.OrdinalIgnoreCase)
                 || string.Equals(result.Reason, "retry_backoff", StringComparison.OrdinalIgnoreCase))
             {
                 Close(false);
@@ -138,6 +149,8 @@ internal sealed class DesktopStartupUpdateWindow : Window
             "validating" => "Checking update",
             "staging" => "Preparing update",
             "relaunching" => "Restarting Chummer",
+            "available" => "Update available",
+            "skipped" => "Update check skipped",
             "manual" => "Update ready",
             "failed" => "Update needs attention",
             "blocked" => "Update paused",
@@ -145,6 +158,7 @@ internal sealed class DesktopStartupUpdateWindow : Window
         };
 
         _bodyText.Text = update.Message;
+        _waitText.IsVisible = update.Stage is "downloading" or "validating" or "staging" or "relaunching";
         if (update.Total is > 0 && update.Completed is >= 0)
         {
             _progressBar.IsIndeterminate = false;
@@ -161,6 +175,7 @@ internal sealed class DesktopStartupUpdateWindow : Window
         => reason switch
         {
             "auto_apply_disabled" => "A newer build is available. Open Devices & Access when you want to update.",
+            "notify_only" => "A newer build is available. Open Devices & Access when you want to update.",
             "macos_manual_install_required" => "A macOS update is ready. Open Downloads to install it manually; this copy will stay usable.",
             "manifest_load_failed" => "Chummer could not reach the update list. This copy will keep running.",
             "update_schedule_failed" => "The update could not be prepared. This copy will keep running.",

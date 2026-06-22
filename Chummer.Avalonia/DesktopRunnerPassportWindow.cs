@@ -27,7 +27,7 @@ internal sealed class DesktopRunnerPassportWindow : Window
 
         Content = DesktopHorizonWindowScaffold.CreateScroller(
             "Runner Passport",
-            "Runner Passport keeps identity-network posture on native rails, so dossier ownership and account access are visible together before you widen into the public lane.",
+            "Runner Passport keeps identity records, dossier ownership, and account access together before you open the public page.",
             CreateIdentityCard(),
             CreateAccessCard(),
             new StackPanel
@@ -78,9 +78,9 @@ internal sealed class DesktopRunnerPassportWindow : Window
                     DesktopHorizonWindowScaffold.CreateMetricBadge("RunnerPassportBadgeCrews", "Crews", (_campaignSummary?.Crews.Count ?? 0).ToString())),
                 DesktopHorizonWindowScaffold.CreateDetailText($"Dossiers: {_campaignSummary?.Dossiers.Count ?? 0}. Crews: {_campaignSummary?.Crews.Count ?? 0}. Campaigns: {_campaignSummary?.Campaigns.Count ?? 0}."),
                 DesktopHorizonWindowScaffold.CreateDetailText(leadDossier is null
-                    ? "No runner dossier is currently leading the passport lane."
+                    ? "No runner dossier is currently selected for the passport."
                     : $"{leadDossier.RunnerHandle} is the current lead dossier with owner {leadDossier.OwnerUserId}."),
-                DesktopHorizonWindowScaffold.CreateDetailText(leadDossier?.DisplayName ?? "Identity posture appears here after the next roster or campaign sync.")
+                DesktopHorizonWindowScaffold.CreateDetailText(leadDossier?.DisplayName ?? "Identity status appears here after the next roster or campaign sync.")
             }
         };
 

@@ -24,8 +24,26 @@ public static class DesktopPreferenceStateRuntime
             CharacterNotes = state.CharacterNotes ?? string.Empty,
             StartupBehavior = string.IsNullOrWhiteSpace(state.StartupBehavior) ? DesktopPreferenceState.Default.StartupBehavior : state.StartupBehavior.Trim(),
             UpdateChannel = string.IsNullOrWhiteSpace(state.UpdateChannel) ? DesktopPreferenceState.Default.UpdateChannel : state.UpdateChannel.Trim(),
+            UpdateMode = NormalizeUpdateMode(state.UpdateMode, state.CheckForUpdatesOnLaunch),
+            CheckForUpdatesOnLaunch = NormalizeUpdateMode(state.UpdateMode, state.CheckForUpdatesOnLaunch) != "off",
             CharacterRosterPath = string.IsNullOrWhiteSpace(state.CharacterRosterPath) ? DesktopPreferenceState.Default.CharacterRosterPath : state.CharacterRosterPath.Trim(),
             PdfViewerPath = string.IsNullOrWhiteSpace(state.PdfViewerPath) ? DesktopPreferenceState.Default.PdfViewerPath : state.PdfViewerPath.Trim(),
             VisibleChromePolicy = string.IsNullOrWhiteSpace(state.VisibleChromePolicy) ? DesktopPreferenceState.Default.VisibleChromePolicy : state.VisibleChromePolicy.Trim()
         };
+
+    public static string NormalizeUpdateMode(string? updateMode, bool fallbackCheckForUpdatesOnLaunch = true)
+    {
+        if (string.IsNullOrWhiteSpace(updateMode))
+        {
+            return fallbackCheckForUpdatesOnLaunch ? "full" : "off";
+        }
+
+        return updateMode.Trim().ToLowerInvariant().Replace("_", "-") switch
+        {
+            "full" or "auto" or "automatic" or "full-auto" or "full-autoupdate" => "full",
+            "notify" or "notification" or "notify-only" or "manual" => "notify",
+            "off" or "disabled" or "disable" or "none" => "off",
+            _ => fallbackCheckForUpdatesOnLaunch ? "full" : "off"
+        };
+    }
 }

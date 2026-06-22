@@ -29,6 +29,6 @@
     </StackPanel>
     <TextBlock x:Name="WorkspaceCaptionText"
                IsVisible="False"
-               Text="Ruleset, tabs, and save posture stay visible while you move through dense builder sections." />
+               Text="Ruleset, tabs, and save state stay visible while you move through dense builder sections." />
   </Grid>
 </UserControl>

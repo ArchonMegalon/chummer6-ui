@@ -278,7 +278,7 @@ public partial class CommandDialogPaneControl : UserControl
         DialogFieldDisplayItem? sheetLanguageField = FindOptionalField(fields, "globalSheetLanguage");
         DialogFieldDisplayItem? compactModeField = FindOptionalField(fields, "globalCompactMode");
         DialogFieldDisplayItem? characterPriorityField = FindOptionalField(fields, "globalCharacterPriority");
-        DialogFieldDisplayItem? updateCheckField = FindOptionalField(fields, "globalCheckForUpdates");
+        DialogFieldDisplayItem? updateModeField = FindOptionalField(fields, "globalUpdateMode");
         DialogFieldDisplayItem? preferNightlyField = FindOptionalField(fields, "globalPreferNightlyBuilds");
         DialogFieldDisplayItem? rosterPathField = FindOptionalField(fields, "globalCharacterRosterPath");
         DialogFieldDisplayItem? hideMasterIndexField = FindOptionalField(fields, "globalHideMasterIndex");
@@ -290,7 +290,7 @@ public partial class CommandDialogPaneControl : UserControl
             || sheetLanguageField is null
             || compactModeField is null
             || characterPriorityField is null
-            || updateCheckField is null
+            || updateModeField is null
             || preferNightlyField is null
             || rosterPathField is null
             || hideMasterIndexField is null
@@ -302,7 +302,7 @@ public partial class CommandDialogPaneControl : UserControl
         DialogFieldsHost.Children.Add(CreateLegacySettingsPairRow(themeField, uiScaleField));
         DialogFieldsHost.Children.Add(CreateLegacySettingsPairRow(languageField, sheetLanguageField));
         DialogFieldsHost.Children.Add(CreateLegacySettingsPairRow(characterPriorityField, compactModeField));
-        DialogFieldsHost.Children.Add(CreateLegacySettingsPairRow(updateCheckField, preferNightlyField));
+        DialogFieldsHost.Children.Add(CreateLegacySettingsPairRow(updateModeField, preferNightlyField));
         DialogFieldsHost.Children.Add(CreateLegacySettingsPairRow(hideMasterIndexField, analyticsOptInField));
         DialogFieldsHost.Children.Add(CreateStandaloneFieldRow(rosterPathField));
         return true;

@@ -164,7 +164,7 @@ internal sealed class DesktopHorizonsWindow : Window
             entry.Id is "runsite" or "run_control" or "table_pulse" or "black_ledger" or "ghostwire" or "anarchy");
         AddGroupedCards(filteredEntries, "Community and identity", static entry =>
             entry.Id is "jackpoint" or "community_hub" or "runner_passport");
-        AddGroupedCards(filteredEntries, "Publishing and creator lanes", static entry =>
+        AddGroupedCards(filteredEntries, "Publishing and creators", static entry =>
             entry.Id is "runbook_press" or "creator_os");
 
         if (_catalogStack.Children.Count == 0)
@@ -239,10 +239,10 @@ internal sealed class DesktopHorizonsWindow : Window
     {
         if (_campaignSummary is null)
         {
-            return "Native-first mode. Signed-in campaign context is not available in this desktop session, so posture summaries stay conservative.";
+            return "Native-first mode. Signed-in campaign context is not available in this desktop session, so summaries stay conservative.";
         }
 
-        return $"Native-first mode. Campaigns {_campaignSummary.Campaigns.Count} | Runs {_campaignSummary.Runs.Count} | Workspaces {_campaignSummary.Workspaces.Count} | Handoffs {_campaignSummary.BuildLabHandoffs.Count} | Publications {_campaignSummary.CreatorPublications.Count}";
+        return $"Native-first mode. Campaigns {_campaignSummary.Campaigns.Count} | Runs {_campaignSummary.Runs.Count} | Workspaces {_campaignSummary.Workspaces.Count} | Build links {_campaignSummary.BuildLabHandoffs.Count} | Publications {_campaignSummary.CreatorPublications.Count}";
     }
 
     private Control CreateKarmaForgeCard()
@@ -261,9 +261,9 @@ internal sealed class DesktopHorizonsWindow : Window
 
         return CreateCard(
             "Karma Forge",
-            "Browse governed package lanes, open your signed-in package shelf, or jump straight into a new package intake.",
+            "Browse packages, open your signed-in package page, or jump straight into a new package intake.",
             CreateLeadPanel(
-                BuildCompactPosture("Packages", $"Handoffs {_campaignSummary?.BuildLabHandoffs.Count ?? 0} | Publications {_campaignSummary?.CreatorPublications.Count ?? 0}"),
+                BuildCompactPosture("Packages", $"Build links {_campaignSummary?.BuildLabHandoffs.Count ?? 0} | Publications {_campaignSummary?.CreatorPublications.Count ?? 0}"),
                 targetCombo),
             CreateButton("Open", () => DesktopKarmaForgeWindow.ShowAsync(this, _headId), isPrimary: true, name: "HorizonsOpenWorkbench_karma_forge"),
             CreateButton("Open selected", () =>
@@ -453,9 +453,9 @@ internal sealed class DesktopHorizonsWindow : Window
     {
         string? posture = horizonId switch
         {
-            "alice" => BuildCompactPosture("Build handoffs", $"Handoffs {_campaignSummary?.BuildLabHandoffs.Count ?? 0} | Rules {_campaignSummary?.RulesNavigator.Count ?? 0}"),
+            "alice" => BuildCompactPosture("Build links", $"Build links {_campaignSummary?.BuildLabHandoffs.Count ?? 0} | Rules {_campaignSummary?.RulesNavigator.Count ?? 0}"),
             "ready_for_tonight" => BuildCompactPosture("Tonight verdict", $"Runs {_campaignSummary?.Runs.Count ?? 0} | Workspaces {_campaignSummary?.Workspaces.Count ?? 0}"),
-            "onramp" => BuildCompactPosture("Starter lane", $"Workspaces {_campaignSummary?.Workspaces.Count ?? 0} | Campaigns {_campaignSummary?.Campaigns.Count ?? 0}"),
+            "onramp" => BuildCompactPosture("Starter path", $"Workspaces {_campaignSummary?.Workspaces.Count ?? 0} | Campaigns {_campaignSummary?.Campaigns.Count ?? 0}"),
             "nexus_pan" => BuildCompactPosture("Access and continuity", $"Campaigns {_campaignSummary?.Campaigns.Count ?? 0} | Workspaces {_campaignSummary?.Workspaces.Count ?? 0}"),
             "jackpoint" => BuildCompactPosture("Briefings and dossiers", $"Publications {_campaignSummary?.CreatorPublications.Count ?? 0} | Dossiers {_campaignSummary?.Dossiers.Count ?? 0}"),
             "knowledge_fabric" => BuildCompactPosture("Grounded explain", $"Rules {_campaignSummary?.RulesNavigator.Count ?? 0} | Campaigns {_campaignSummary?.Campaigns.Count ?? 0}"),
@@ -464,13 +464,13 @@ internal sealed class DesktopHorizonsWindow : Window
             "runbook_press" => BuildCompactPosture("Publishing", $"Publications {_campaignSummary?.CreatorPublications.Count ?? 0} | Campaigns {_campaignSummary?.Campaigns.Count ?? 0}"),
             "table_pulse" => BuildCompactPosture("Live and aftermath", $"Runs {_campaignSummary?.Runs.Count ?? 0} | Workspaces {_campaignSummary?.Workspaces.Count ?? 0}"),
             "black_ledger" => BuildCompactPosture("World state", $"Campaigns {_campaignSummary?.Campaigns.Count ?? 0} | Workspaces {_campaignSummary?.Workspaces.Count ?? 0}"),
-            "community_hub" => BuildCompactPosture("Groups and operators", $"Operations {_campaignSummary?.CommunityOperations.Count ?? 0} | Campaigns {_campaignSummary?.Campaigns.Count ?? 0}"),
-            "creator_os" => BuildCompactPosture("Creator desk", $"Publications {_campaignSummary?.CreatorPublications.Count ?? 0} | Handoffs {_campaignSummary?.BuildLabHandoffs.Count ?? 0}"),
+            "community_hub" => BuildCompactPosture("Groups and hosts", $"Operations {_campaignSummary?.CommunityOperations.Count ?? 0} | Campaigns {_campaignSummary?.Campaigns.Count ?? 0}"),
+            "creator_os" => BuildCompactPosture("Creator desk", $"Publications {_campaignSummary?.CreatorPublications.Count ?? 0} | Build links {_campaignSummary?.BuildLabHandoffs.Count ?? 0}"),
             "anarchy" => BuildCompactPosture("Rules-light play", $"Runs {_campaignSummary?.Runs.Count ?? 0} | Dossiers {_campaignSummary?.Dossiers.Count ?? 0}"),
             "ghostwire" => BuildCompactPosture("Replay and after-action", $"Runs {_campaignSummary?.Runs.Count ?? 0} | Workspaces {_campaignSummary?.Workspaces.Count ?? 0}"),
             "runner_passport" => BuildCompactPosture("Identity network", $"Dossiers {_campaignSummary?.Dossiers.Count ?? 0} | Crews {_campaignSummary?.Crews.Count ?? 0}"),
             "quicksilver" => BuildCompactPosture("Command deck", $"Rules {_campaignSummary?.RulesNavigator.Count ?? 0} | Publications {_campaignSummary?.CreatorPublications.Count ?? 0}"),
-            "local_co_processor" => BuildCompactPosture("Capability and policy", $"Rules {_campaignSummary?.RulesNavigator.Count ?? 0} | Handoffs {_campaignSummary?.BuildLabHandoffs.Count ?? 0}"),
+            "local_co_processor" => BuildCompactPosture("Capability and policy", $"Rules {_campaignSummary?.RulesNavigator.Count ?? 0} | Build links {_campaignSummary?.BuildLabHandoffs.Count ?? 0}"),
             _ => null
         };
 

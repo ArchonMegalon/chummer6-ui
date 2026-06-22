@@ -79,9 +79,9 @@ internal sealed class DesktopLocalCoProcessorWindow : Window
             {
                 DesktopHorizonWindowScaffold.CreateBadgeStrip(
                     DesktopHorizonWindowScaffold.CreateMetricBadge("LocalCoProcessorBadgeRules", "Rules", (_campaignSummary?.RulesNavigator.Count ?? 0).ToString()),
-                    DesktopHorizonWindowScaffold.CreateMetricBadge("LocalCoProcessorBadgeHandoffs", "Handoffs", (_campaignSummary?.BuildLabHandoffs.Count ?? 0).ToString())),
+                    DesktopHorizonWindowScaffold.CreateMetricBadge("LocalCoProcessorBadgeHandoffs", "Build links", (_campaignSummary?.BuildLabHandoffs.Count ?? 0).ToString())),
                 DesktopHorizonWindowScaffold.CreateDetailText($"Rules answers in account context: {_campaignSummary?.RulesNavigator.Count ?? 0}."),
-                DesktopHorizonWindowScaffold.CreateDetailText($"Build handoffs in account context: {_campaignSummary?.BuildLabHandoffs.Count ?? 0}."),
+                DesktopHorizonWindowScaffold.CreateDetailText($"Build links in account context: {_campaignSummary?.BuildLabHandoffs.Count ?? 0}."),
                 DesktopHorizonWindowScaffold.CreateDetailText("Capabilities should remain reviewable before they become automation assumptions.")
             }
         };
@@ -110,7 +110,7 @@ internal sealed class DesktopLocalCoProcessorWindow : Window
         {
             string mode = detailModeCombo?.SelectedItem?.ToString() ?? "Policy";
             detailText.Text = mode == "Capability"
-                ? $"Rules answers: {_campaignSummary?.RulesNavigator.Count ?? 0}. Build handoffs: {_campaignSummary?.BuildLabHandoffs.Count ?? 0}."
+                ? $"Rules answers: {_campaignSummary?.RulesNavigator.Count ?? 0}. Build links: {_campaignSummary?.BuildLabHandoffs.Count ?? 0}."
                 : "Local acceleration can make the app faster, but it cannot change rules, payments, or account state.";
         }
 

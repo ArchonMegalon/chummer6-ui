@@ -92,7 +92,7 @@ public sealed class DesktopDialogFactory : IDesktopDialogFactory
         string alias = profile?.Alias ?? string.Empty;
         string workspace = currentWorkspace?.Value ?? "(none)";
 
-        return commandId switch
+        return HumanizeVisibleDialog(commandId switch
         {
             OverviewCommandPolicy.RuntimeInspectorCommandId when runtimeInspector is not null => CreateRuntimeInspectorDialog(runtimeInspector),
             "open_character" => CreateOpenCharacterDialog(
@@ -131,7 +131,7 @@ public sealed class DesktopDialogFactory : IDesktopDialogFactory
             "dice_roller" => new DesktopDialogState(
                 "dialog.dice_roller",
                 "Dice Roller",
-                "Legacy dice roller posture with roll method, threshold, gremlins, and reroll support.",
+                "Choose a roll method, threshold, and reroll options.",
                 BuildDiceToolFields(currentWorkspace, openWorkspaces, rulesetId),
                 [
                     new DesktopDialogAction("roll", "Roll", true),
@@ -199,15 +199,15 @@ public sealed class DesktopDialogFactory : IDesktopDialogFactory
                 "dialog.translator",
                 S("desktop.dialog.translator.title"),
                 F("desktop.dialog.translator.message", DesktopLocalizationCatalog.BuildSupportedLanguageCodeSummary())
-                + " Language Search and Enabled Language Overlays remain visible in the governed translator lane.",
+                + " Language search and enabled overlays remain visible.",
                 BuildTranslatorFields(language, masterIndex, translatorLanguages),
                 [new DesktopDialogAction("close", S("desktop.dialog.action.close"), true)]),
             "xml_editor" => new DesktopDialogState(
                 "dialog.xml_editor",
                 "XML Editor",
                 masterIndex is null
-                    ? "Edit/import flow in this head is file-first; this preview surfaces current XML Bridge posture while keeping the Custom Data Lane visible."
-                    : $"Edit/import flow stays file-first while XML Bridge posture is {masterIndex.XmlBridgePosture} with {masterIndex.EnabledDataOverlayCount} enabled overlays and Custom Data Lane {masterIndex.CustomDataLanePosture}.",
+                    ? "Edit/import flow in this head is file-first; this preview shows the current XML bridge and custom data status."
+                    : $"Edit/import flow stays file-first. XML Bridge is {masterIndex.XmlBridgePosture} with {masterIndex.EnabledDataOverlayCount} enabled overlays. Custom Data is {masterIndex.CustomDataLanePosture}.",
                 [
                     new DesktopDialogField("xmlEditorLanePosture", "XML Bridge", NormalizeGoverned(masterIndex?.XmlBridgePosture), "governed", IsReadOnly: true),
                     new DesktopDialogField("xmlEditorXmlBridgePosture", "XML Bridge Posture", NormalizeGoverned(masterIndex?.XmlBridgePosture), "governed", IsReadOnly: true, LayoutSlot: DesktopDialogFieldLayoutSlots.Hidden),
@@ -292,8 +292,8 @@ public sealed class DesktopDialogFactory : IDesktopDialogFactory
                 "dialog.hero_lab_importer",
                 "Hero Lab Importer",
                 masterIndex is null
-                    ? "Paste Hero Lab XML payload to import while keeping the Import Oracle Lane and Adjacent SR6 Oracle Receipt visible."
-                    : $"Paste Hero Lab XML payload to import while Import Oracle Lane posture is {masterIndex.ImportOracleLanePosture} across {masterIndex.ImportOracleSourcesCovered}/{masterIndex.ImportOracleSourcesExpected} route families with Adjacent SR6 Oracle Receipt {masterIndex.AdjacentSr6OracleReceiptPosture}.",
+                    ? "Paste Hero Lab XML payload to import."
+                    : $"Paste Hero Lab XML payload to import. Import Oracle is {masterIndex.ImportOracleLanePosture} across {masterIndex.ImportOracleSourcesCovered}/{masterIndex.ImportOracleSourcesExpected} route families. Adjacent SR6 Oracle is {masterIndex.AdjacentSr6OracleReceiptPosture}.",
                 [
                     new DesktopDialogField("heroLabSource", "Input File", ".por/.xml", ".por/.xml"),
                     CreateRulesetField("importRulesetId", rulesetId),
@@ -403,7 +403,7 @@ public sealed class DesktopDialogFactory : IDesktopDialogFactory
                 "dialog.print_multiple",
                 "Print Multiple",
                 "Batch print is available through roster and print endpoints.",
-                BuildPrintUtilityFields("Roster batch", "Batch print remains roster-driven and uses the same compact print utility posture."),
+                BuildPrintUtilityFields("Roster batch", "Batch print remains roster-driven and uses the same compact print utility."),
                 [new DesktopDialogAction("close", "Close", true)]),
             "update" => new DesktopDialogState(
                 "dialog.update",
@@ -417,7 +417,7 @@ public sealed class DesktopDialogFactory : IDesktopDialogFactory
                 $"Command '{commandId}' is recognized but has no dedicated dialog template yet.",
                 [],
                 [new DesktopDialogAction("close", "Close", true)])
-        };
+        });
     }
 
     private static DesktopDialogState CreateRuntimeInspectorDialog(RuntimeInspectorProjection projection)
@@ -2483,7 +2483,7 @@ public sealed class DesktopDialogFactory : IDesktopDialogFactory
             return "No active runner. Roll history stays available and initiative context appears after opening a roster entry.";
         }
 
-        return $"{active.Alias} · {active.Name} [{active.RulesetId}]{Environment.NewLine}Initiative preview uses the active roster runner and keeps results local to this utility lane.";
+        return $"{active.Alias} · {active.Name} [{active.RulesetId}]{Environment.NewLine}Initiative preview uses the active roster runner and keeps results local to this utility.";
     }
 
     private static IReadOnlyList<DesktopDialogFieldOption> BuildDiceMethodOptions()
@@ -2522,6 +2522,9 @@ public sealed class DesktopDialogFactory : IDesktopDialogFactory
             dialog,
             "globalPreferNightlyBuilds",
             UsesPreviewUpdateChannel(DesktopDialogFieldValueParser.GetValue(dialog, "globalUpdatePolicy") ?? fallback.UpdateChannel));
+        string updateMode = DesktopPreferenceStateRuntime.NormalizeUpdateMode(
+            DesktopDialogFieldValueParser.GetValue(dialog, "globalUpdateMode"),
+            DesktopDialogFieldValueParser.ParseBool(dialog, "globalCheckForUpdates", fallback.CheckForUpdatesOnLaunch));
 
         return DesktopPreferenceStateRuntime.Normalize(fallback with
         {
@@ -2537,7 +2540,8 @@ public sealed class DesktopDialogFactory : IDesktopDialogFactory
             UpdateChannel = preferNightlyBuilds
                 ? "Preview channel · check weekly"
                 : "Stable channel · check weekly",
-            CheckForUpdatesOnLaunch = DesktopDialogFieldValueParser.ParseBool(dialog, "globalCheckForUpdates", fallback.CheckForUpdatesOnLaunch),
+            CheckForUpdatesOnLaunch = updateMode != "off",
+            UpdateMode = updateMode,
             CharacterRosterPath = DesktopDialogFieldValueParser.GetValue(dialog, "globalCharacterRosterPath") ?? fallback.CharacterRosterPath,
             PdfViewerPath = DesktopDialogFieldValueParser.GetValue(dialog, "globalPdfViewerPath") ?? fallback.PdfViewerPath,
             VisibleChromePolicy = DesktopDialogFieldValueParser.GetValue(dialog, "globalVisibilityPolicy") ?? fallback.VisibleChromePolicy,
@@ -2562,7 +2566,7 @@ public sealed class DesktopDialogFactory : IDesktopDialogFactory
         if (string.Equals(dialog.Id, "dialog.global_settings", StringComparison.Ordinal))
             return RebuildGlobalSettingsDialog(dialog, fallback);
 
-        return dialog.Id switch
+        return HumanizeVisibleDialog(dialog.Id switch
         {
             DesktopAliceAssistant.DialogId => dialog,
             "dialog.new_character" => RebuildNewCharacterDialog(dialog, fallback),
@@ -2583,6 +2587,37 @@ public sealed class DesktopDialogFactory : IDesktopDialogFactory
             "dialog.ui.gear_edit" => RebuildGearEditDialog(dialog),
             "dialog.ui.vehicle_edit" => RebuildVehicleEditDialog(dialog),
             _ => dialog
+        });
+    }
+
+    private static DesktopDialogState HumanizeVisibleDialog(DesktopDialogState dialog)
+        => dialog with
+        {
+            Title = PlayerFacingCopyHumanizer.Clean(dialog.Title),
+            Message = string.IsNullOrWhiteSpace(dialog.Message)
+                ? dialog.Message
+                : PlayerFacingCopyHumanizer.Clean(dialog.Message),
+            Fields = dialog.Fields.Select(HumanizeVisibleField).ToArray(),
+            Actions = dialog.Actions
+                .Select(action => action with { Label = PlayerFacingCopyHumanizer.Clean(action.Label) })
+                .ToArray()
+        };
+
+    private static DesktopDialogField HumanizeVisibleField(DesktopDialogField field)
+    {
+        if (string.Equals(field.LayoutSlot, DesktopDialogFieldLayoutSlots.Hidden, StringComparison.Ordinal))
+            return field;
+
+        return field with
+        {
+            Label = PlayerFacingCopyHumanizer.Clean(field.Label),
+            Value = PlayerFacingCopyHumanizer.Clean(field.Value),
+            Placeholder = PlayerFacingCopyHumanizer.Clean(field.Placeholder),
+            Options = field.Options?
+                .Select(option => new DesktopDialogFieldOption(
+                    PlayerFacingCopyHumanizer.Clean(option.Value),
+                    PlayerFacingCopyHumanizer.Clean(option.Label)))
+                .ToArray()
         };
     }
 
@@ -3210,7 +3245,7 @@ public sealed class DesktopDialogFactory : IDesktopDialogFactory
             new DesktopDialogField("rosterWatchedCount", "Watched Files", watchedCount.ToString(), "0", IsReadOnly: true, LayoutSlot: DesktopDialogFieldLayoutSlots.Hidden),
             new DesktopDialogField("rosterRulesetMix", "Ruleset Mix", string.IsNullOrWhiteSpace(rulesetMix) ? "(none)" : rulesetMix, "(none)", IsReadOnly: true, LayoutSlot: DesktopDialogFieldLayoutSlots.Left),
             new DesktopDialogField("rosterActiveWorkspace", "Active Workspace", currentWorkspace?.Value ?? workspace, workspace, IsReadOnly: true, LayoutSlot: DesktopDialogFieldLayoutSlots.Hidden),
-            new DesktopDialogField("rosterOpsLane", "Operator Lane", "open runners + save posture + ruleset mix", "open runners + save posture + ruleset mix", IsReadOnly: true, LayoutSlot: DesktopDialogFieldLayoutSlots.Hidden),
+            new DesktopDialogField("rosterOpsLane", "Operator Lane", "open runners + save state + ruleset mix", "open runners + save state + ruleset mix", IsReadOnly: true, LayoutSlot: DesktopDialogFieldLayoutSlots.Hidden),
             new DesktopDialogField("rosterSelectedRunnerId", "Selected Runner Id", selectedRunner?.Id.Value ?? string.Empty, string.Empty, IsReadOnly: true, LayoutSlot: DesktopDialogFieldLayoutSlots.Hidden),
             new DesktopDialogField("rosterSelectedRunnerAlias", "Selected Runner Alias", selectedRunner?.Alias ?? alias, alias, IsReadOnly: true, LayoutSlot: DesktopDialogFieldLayoutSlots.Hidden),
             new DesktopDialogField("rosterWatchFolderPath", "Watch Folder Path", rosterPath, rosterPath, IsReadOnly: true, LayoutSlot: DesktopDialogFieldLayoutSlots.Hidden),
@@ -3437,12 +3472,20 @@ public sealed class DesktopDialogFactory : IDesktopDialogFactory
                 LayoutSlot: DesktopDialogFieldLayoutSlots.Hidden,
                 Options: BuildUpdateChannelOptions()),
             new DesktopDialogField(
+                "globalUpdateMode",
+                "Startup updates",
+                DesktopPreferenceStateRuntime.NormalizeUpdateMode(preferences.UpdateMode, preferences.CheckForUpdatesOnLaunch),
+                DesktopPreferenceState.Default.UpdateMode,
+                InputType: "select",
+                LayoutSlot: DesktopDialogFieldLayoutSlots.Left,
+                Options: BuildUpdateModeOptions()),
+            new DesktopDialogField(
                 "globalCheckForUpdates",
-                "Automatically download updates",
+                "Legacy update check",
                 preferences.CheckForUpdatesOnLaunch ? "true" : "false",
                 "true",
                 InputType: "checkbox",
-                LayoutSlot: DesktopDialogFieldLayoutSlots.Left),
+                LayoutSlot: DesktopDialogFieldLayoutSlots.Hidden),
             new DesktopDialogField(
                 "globalPreferNightlyBuilds",
                 "Prefer Nightly builds when updating",
@@ -3528,6 +3571,14 @@ public sealed class DesktopDialogFactory : IDesktopDialogFactory
             new DesktopDialogFieldOption("Preview channel · check weekly", "Preview channel · check weekly"),
             new DesktopDialogFieldOption("Preview channel · check daily", "Preview channel · check daily"),
             new DesktopDialogFieldOption("Stable channel · check weekly", "Stable channel · check weekly")
+        };
+
+    private static IReadOnlyList<DesktopDialogFieldOption> BuildUpdateModeOptions()
+        => new[]
+        {
+            new DesktopDialogFieldOption("full", "Install updates and restart"),
+            new DesktopDialogFieldOption("notify", "Tell me, do not install"),
+            new DesktopDialogFieldOption("off", "Do not check")
         };
 
     private static bool UsesPreviewUpdateChannel(string? updateChannel)
@@ -3847,7 +3898,7 @@ public sealed class DesktopDialogFactory : IDesktopDialogFactory
             ("Search Scope", searchScope),
             ("Selected Entry", selected.Name),
             ("Follow-through", "Add & More keeps the selector open"));
-        string filterSummary = $"Filtered Catalog | {filtered.Length} shown / {options.Length} total{Environment.NewLine}Category Path | {BuildSelectionCategoryPath("Cyberware", selectedGroup, selected.Branch)}{Environment.NewLine}Filter Posture | grade, availability, and source stay live";
+        string filterSummary = $"Filtered Catalog | {filtered.Length} shown / {options.Length} total{Environment.NewLine}Category Path | {BuildSelectionCategoryPath("Cyberware", selectedGroup, selected.Branch)}{Environment.NewLine}Filters | grade, availability, and source stay live";
         string liveRecalc = BuildGridValue(
             ("Recalculated Cost", FormatNuyen(cost)),
             ("Recalculated Essence", essence.ToString("0.00", CultureInfo.InvariantCulture)),
@@ -3859,14 +3910,14 @@ public sealed class DesktopDialogFactory : IDesktopDialogFactory
             $"Category | {selected.Branch}",
             $"Search Scope | {searchScope}",
             $"Data File | {selected.Book}",
-            "Move the tree without losing grade or availability posture",
+            "Move the tree without losing grade or availability",
             "Suites and accessories after picking the base implant"
         ]);
         string resultCommands = BuildSelectionList(
         [
             $"Source, cost, and essence for {selected.Name}",
             $"Use OK once or Add & More for repeated {selected.Branch.ToLowerInvariant()} picks",
-            $"Keep grade {grade} and rating posture visible while browsing"
+            $"Keep grade {grade} and rating visible while browsing"
         ]);
         string browseGrid = BuildSelectionBrowseGrid(
             filtered.Take(3).Select(option => (
@@ -3955,8 +4006,8 @@ public sealed class DesktopDialogFactory : IDesktopDialogFactory
             ("Category Path", BuildSelectionCategoryPath("Gear", selected.Group, selected.Branch, selected.Name)),
             ("Search Scope", searchScope),
             ("Selected Entry", selected.Name),
-            ("Follow-through", "Stack and discount posture stay live"));
-        string filterSummary = $"Filtered Catalog | {filtered.Length} shown / {options.Length} total{Environment.NewLine}Category Path | {BuildSelectionCategoryPath("Gear", selected.Group, selected.Branch)}{Environment.NewLine}Filter Posture | availability, source, and pricing stay live";
+            ("Follow-through", "Stack and discount stay live"));
+        string filterSummary = $"Filtered Catalog | {filtered.Length} shown / {options.Length} total{Environment.NewLine}Category Path | {BuildSelectionCategoryPath("Gear", selected.Group, selected.Branch)}{Environment.NewLine}Filters | availability, source, and pricing stay live";
         string liveRecalc = BuildGridValue(
             ("Recalculated Cost", FormatNuyen(cost)),
             ("Free Item", freeItem ? "Yes" : "No"),
@@ -4066,7 +4117,7 @@ public sealed class DesktopDialogFactory : IDesktopDialogFactory
             ("Search Scope", searchScope),
             ("Selected Entry", selected.Name),
             ("Follow-through", "Add & More keeps the selector open"));
-        string filterSummary = $"Filtered Catalog | {filtered.Length} shown / {options.Length} total{Environment.NewLine}Category Path | {BuildSelectionCategoryPath("Weapons", selected.Group, selected.Branch)}{Environment.NewLine}Filter Posture | availability, discounts, and source stay live";
+        string filterSummary = $"Filtered Catalog | {filtered.Length} shown / {options.Length} total{Environment.NewLine}Category Path | {BuildSelectionCategoryPath("Weapons", selected.Group, selected.Branch)}{Environment.NewLine}Filters | availability, discounts, and source stay live";
         string liveRecalc = BuildGridValue(
             ("Recalculated Cost", FormatNuyen(cost)),
             ("Accuracy", selected.Accuracy),
@@ -4178,7 +4229,7 @@ public sealed class DesktopDialogFactory : IDesktopDialogFactory
             ("Search Scope", searchScope),
             ("Selected Entry", selected.Name),
             ("Follow-through", "Source and markup stay visible through confirmation"));
-        string filterSummary = $"Filtered Catalog | {filtered.Length} shown / {options.Length} total{Environment.NewLine}Category Path | {BuildSelectionCategoryPath("Armor", selectedGroup, selected.Branch)}{Environment.NewLine}Filter Posture | availability, source, and markup stay live";
+        string filterSummary = $"Filtered Catalog | {filtered.Length} shown / {options.Length} total{Environment.NewLine}Category Path | {BuildSelectionCategoryPath("Armor", selectedGroup, selected.Branch)}{Environment.NewLine}Filters | availability, source, and markup stay live";
         string liveRecalc = BuildGridValue(
             ("Recalculated Cost", FormatNuyen(cost)),
             ("Armor", selected.Armor),
@@ -4191,13 +4242,13 @@ public sealed class DesktopDialogFactory : IDesktopDialogFactory
             $"Search Scope | {searchScope}",
             $"Data File | {selected.Book}",
             $"Black Market | {(blackMarket ? "On" : "Off")}",
-            "Keep protection, source, and markup posture visible while browsing"
+            "Keep protection, source, and markup visible while browsing"
         ]);
         string resultCommands = BuildSelectionList(
         [
             $"Armor value and source for {selected.Name}",
             "Use OK for one add or Add & More to keep the selector open",
-            $"Keep free-item and cost posture visible while confirming {selected.Name}"
+            $"Keep free-item and cost visible while confirming {selected.Name}"
         ]);
         string browseGrid = BuildSelectionBrowseGrid(
             filtered.Take(3).Select(option => (
@@ -4301,8 +4352,8 @@ public sealed class DesktopDialogFactory : IDesktopDialogFactory
             ("Category Path", BuildSelectionCategoryPath("Vehicles", selectedGroup, selected.Branch, selected.Name)),
             ("Search Scope", searchScope),
             ("Selected Entry", selected.Name),
-            ("Follow-through", "Used-vehicle and drone posture stay live"));
-        string filterSummary = $"Filtered Catalog | {filtered.Length} shown / {options.Length} total{Environment.NewLine}Category Path | {BuildSelectionCategoryPath("Vehicles", selectedGroup, selected.Branch)}{Environment.NewLine}Filter Posture | vehicle/drone and availability stay live";
+            ("Follow-through", "Used-vehicle and drone filters stay live"));
+        string filterSummary = $"Filtered Catalog | {filtered.Length} shown / {options.Length} total{Environment.NewLine}Category Path | {BuildSelectionCategoryPath("Vehicles", selectedGroup, selected.Branch)}{Environment.NewLine}Filters | vehicle/drone and availability stay live";
         string liveRecalc = BuildGridValue(
             ("Selected Cost", FormatNuyen(cost)),
             ("Show Drones", showDrones ? "Yes" : "No"),
@@ -4320,7 +4371,7 @@ public sealed class DesktopDialogFactory : IDesktopDialogFactory
         string resultCommands = BuildSelectionList(
         [
             $"Handling, armor, and source for {selected.Name}",
-            "Keep cost and used-vehicle posture visible through confirmation",
+            "Keep cost and used-vehicle settings visible through confirmation",
             $"Use OK once or Add & More to keep browsing {selected.Role.ToLowerInvariant()} entries"
         ]);
         string browseGrid = BuildSelectionBrowseGrid(
@@ -4427,17 +4478,17 @@ public sealed class DesktopDialogFactory : IDesktopDialogFactory
         string trail = BuildGridValue(
             ("Category Path", BuildSelectionCategoryPath("Qualities", selected.Type, selected.Branch, selected.Name)),
             ("Selected Entry", selected.Name),
-            ("Filter Posture", metagenicOnly ? "metagenic-only" : "full catalog"),
+            ("Filters", metagenicOnly ? "metagenic-only" : "full catalog"),
             ("Follow-through", "Add & More keeps the selector open"));
         string filterSummary =
             $"Filtered Catalog | {filtered.Length} shown / {options.Length} total{Environment.NewLine}" +
             $"Category Path | {BuildSelectionCategoryPath("Qualities", selected.Type, selected.Branch)}{Environment.NewLine}" +
-            $"Negative Posture | {(showNegative ? "included" : "hidden")}";
+            $"Negative Qualities | {(showNegative ? "included" : "hidden")}";
         string resultCommands = BuildSelectionList(
         [
             $"Karma, tag, and source for {selected.Name}",
             "Use Add once or Add & More to keep browsing",
-            "Keep type and metagenic posture visible while confirming"
+            "Keep type and metagenic filters visible while confirming"
         ]);
 
         return ReplaceDialogActions(
@@ -4736,9 +4787,9 @@ public sealed class DesktopDialogFactory : IDesktopDialogFactory
                 "Group | Core Systems",
                 "Category | Bodyware",
                 "Data File | Core Rulebook",
-                "Move the tree without losing grade or availability posture",
+                "Move the tree without losing grade or availability",
                 "Suites and accessories after picking the base implant"),
-            new DesktopDialogField("uiCyberwareFilterSummary", "Filter Summary", "Filtered Catalog | 3 shown / 9 total" + Environment.NewLine + "Category Path | Cyberware > Core Systems > Bodyware" + Environment.NewLine + "Filter Posture | grade, availability, and source stay live", "Filtered Catalog | 3 shown / 9 total", IsReadOnly: true, IsMultiline: true, VisualKind: DesktopDialogFieldVisualKinds.Snippet),
+            new DesktopDialogField("uiCyberwareFilterSummary", "Filter Summary", "Filtered Catalog | 3 shown / 9 total" + Environment.NewLine + "Category Path | Cyberware > Core Systems > Bodyware" + Environment.NewLine + "Filters | grade, availability, and source stay live", "Filtered Catalog | 3 shown / 9 total", IsReadOnly: true, IsMultiline: true, VisualKind: DesktopDialogFieldVisualKinds.Snippet),
             new DesktopDialogField("uiCyberwareLiveRecalc", "Live Recalculation", "Recalculated Cost | ¥149,000" + Environment.NewLine + "Recalculated Essence | 3.00" + Environment.NewLine + "Black Market | No" + Environment.NewLine + "Add Again | Stays open", "Recalculated Cost | ¥149,000", IsReadOnly: true, IsMultiline: true, VisualKind: DesktopDialogFieldVisualKinds.Grid, LayoutSlot: DesktopDialogFieldLayoutSlots.Right),
             BuildSelectionCommandsField("uiCyberwareResultCommands", "Result Commands",
                 "Compare source, cost, and essence on the right before adding",
@@ -4773,8 +4824,8 @@ public sealed class DesktopDialogFactory : IDesktopDialogFactory
             new DesktopDialogField("uiCyberwareEditEssence", "Essence", "0.40", "0.40", IsReadOnly: true),
             new DesktopDialogField("uiCyberwareEditSource", "Source", "Core Rulebook p. 455", "Core Rulebook p. 455", IsReadOnly: true),
             new DesktopDialogField("uiCyberwareEditDetails", "Implant Details", details, details, IsReadOnly: true, IsMultiline: true, VisualKind: DesktopDialogFieldVisualKinds.Grid, LayoutSlot: DesktopDialogFieldLayoutSlots.Right),
-            new DesktopDialogField("uiCyberwareEditLiveSummary", "Live Summary", "Recalculated Cost | ¥16,000" + Environment.NewLine + "Recalculated Essence | 0.40" + Environment.NewLine + "Posture | legacy edit utility" + Environment.NewLine + "Follow-through | use implant tabs for payloads", "Recalculated Cost | ¥16,000", IsReadOnly: true, IsMultiline: true, VisualKind: DesktopDialogFieldVisualKinds.Grid, LayoutSlot: DesktopDialogFieldLayoutSlots.Right),
-            new DesktopDialogField("uiCyberwareEditCommands", "Command Posture", "Adjust grade, rating, or cost while details stay visible" + Environment.NewLine + "Keep implant list context visible" + Environment.NewLine + "Return to cyberware tabs for payload follow-through", "Adjust grade, rating, or cost while details stay visible", IsReadOnly: true, IsMultiline: true, VisualKind: DesktopDialogFieldVisualKinds.List, LayoutSlot: DesktopDialogFieldLayoutSlots.Right),
+            new DesktopDialogField("uiCyberwareEditLiveSummary", "Live Summary", "Recalculated Cost | ¥16,000" + Environment.NewLine + "Recalculated Essence | 0.40" + Environment.NewLine + "Mode | edit installed ware" + Environment.NewLine + "Follow-through | use implant tabs for payloads", "Recalculated Cost | ¥16,000", IsReadOnly: true, IsMultiline: true, VisualKind: DesktopDialogFieldVisualKinds.Grid, LayoutSlot: DesktopDialogFieldLayoutSlots.Right),
+            new DesktopDialogField("uiCyberwareEditCommands", "Commands", "Adjust grade, rating, or cost while details stay visible" + Environment.NewLine + "Keep implant list context visible" + Environment.NewLine + "Return to cyberware tabs for payload follow-through", "Adjust grade, rating, or cost while details stay visible", IsReadOnly: true, IsMultiline: true, VisualKind: DesktopDialogFieldVisualKinds.List, LayoutSlot: DesktopDialogFieldLayoutSlots.Right),
             new DesktopDialogField("uiCyberwareEditNotes", "Notes", notes, notes, IsReadOnly: true, IsMultiline: true, VisualKind: DesktopDialogFieldVisualKinds.Snippet)
         ];
     }
@@ -4833,20 +4884,20 @@ public sealed class DesktopDialogFactory : IDesktopDialogFactory
             new DesktopDialogField("uiGearCost", "Cost", "725", "725", IsReadOnly: true),
             new DesktopDialogField("uiGearSource", "Source", "Core Rulebook p. 424", "Core Rulebook p. 424", IsReadOnly: true),
             new DesktopDialogField("uiGearSelectionDetails", "Selection Details", selectionDetails, selectionDetails, IsReadOnly: true, IsMultiline: true, VisualKind: DesktopDialogFieldVisualKinds.Grid, LayoutSlot: DesktopDialogFieldLayoutSlots.Right),
-            BuildSelectionTrailField("uiGearSelectionTrail", BuildSelectionCategoryPath("Gear", "Firearms", "Pistols", "Ares Predator V"), "Ares Predator V", "Stack and discount posture stay live"),
+            BuildSelectionTrailField("uiGearSelectionTrail", BuildSelectionCategoryPath("Gear", "Firearms", "Pistols", "Ares Predator V"), "Ares Predator V", "Stack and discount stay live"),
             BuildSelectionCommandsField("uiGearCategoryCommands", "Category Commands",
                 "Group | Firearms",
                 "Category | Pistols",
                 "Data File | Core Rulebook",
-                "Move the tree without losing source or legality posture",
+                "Move the tree without losing source or legality",
                 "Keep Do It Yourself and Stack visible while browsing"),
-            new DesktopDialogField("uiGearFilterSummary", "Filter Summary", "Filtered Catalog | 6 shown / 8 total" + Environment.NewLine + "Category Path | Gear > Firearms > Pistols" + Environment.NewLine + "Filter Posture | availability, source, and pricing stay live", "Filtered Catalog | 6 shown / 8 total", IsReadOnly: true, IsMultiline: true, VisualKind: DesktopDialogFieldVisualKinds.Snippet),
+            new DesktopDialogField("uiGearFilterSummary", "Filter Summary", "Filtered Catalog | 6 shown / 8 total" + Environment.NewLine + "Category Path | Gear > Firearms > Pistols" + Environment.NewLine + "Filters | availability, source, and pricing stay live", "Filtered Catalog | 6 shown / 8 total", IsReadOnly: true, IsMultiline: true, VisualKind: DesktopDialogFieldVisualKinds.Snippet),
             new DesktopDialogField("uiGearLiveRecalc", "Live Recalculation", "Recalculated Cost | ¥725" + Environment.NewLine + "Free Item | No" + Environment.NewLine + "Black Market | No" + Environment.NewLine + "Add Again | Stays open", "Recalculated Cost | ¥725", IsReadOnly: true, IsMultiline: true, VisualKind: DesktopDialogFieldVisualKinds.Grid, LayoutSlot: DesktopDialogFieldLayoutSlots.Right),
             BuildSelectionCommandsField("uiGearResultCommands", "Result Commands",
                 "Compare cost, rating, and legality on the right before adding",
                 "Use OK for one add or Add & More to keep shopping",
                 "Keep markup, quantity, and source visible through confirmation"),
-            new DesktopDialogField("uiGearNotes", "Notes", "Use gear details to confirm legality, source, rating, and discount posture before adding.", "Use gear details to confirm legality, source, rating, and discount posture before adding.", IsReadOnly: true, IsMultiline: true, VisualKind: DesktopDialogFieldVisualKinds.Snippet)
+            new DesktopDialogField("uiGearNotes", "Notes", "Use gear details to confirm legality, source, rating, and discount before adding.", "Use gear details to confirm legality, source, rating, and discount before adding.", IsReadOnly: true, IsMultiline: true, VisualKind: DesktopDialogFieldVisualKinds.Snippet)
         ];
     }
 
@@ -4859,7 +4910,7 @@ public sealed class DesktopDialogFactory : IDesktopDialogFactory
             "Wireless | n/a" + Environment.NewLine +
             "Legality | Restricted carry not required";
         string notes =
-            "Edit quantity, rating, and cost adjustments while keeping the legacy summary posture visible." + Environment.NewLine +
+            "Edit quantity, rating, and cost adjustments while keeping the summary visible." + Environment.NewLine +
             "Use the runner gear tabs for nested accessories after confirming the base item.";
 
         return
@@ -4875,7 +4926,7 @@ public sealed class DesktopDialogFactory : IDesktopDialogFactory
             new DesktopDialogField("uiGearEditSource", "Source", "Core Rulebook p. 437", "Core Rulebook p. 437", IsReadOnly: true),
             new DesktopDialogField("uiGearEditDetails", "Item Details", details, details, IsReadOnly: true, IsMultiline: true, VisualKind: DesktopDialogFieldVisualKinds.Grid, LayoutSlot: DesktopDialogFieldLayoutSlots.Right),
             new DesktopDialogField("uiGearEditLiveSummary", "Live Summary", "Total Cost | ¥1,000" + Environment.NewLine + "Wireless | n/a" + Environment.NewLine + "Legality | Restricted carry not required" + Environment.NewLine + "Posture | legacy edit utility", "Total Cost | ¥1,000", IsReadOnly: true, IsMultiline: true, VisualKind: DesktopDialogFieldVisualKinds.Grid, LayoutSlot: DesktopDialogFieldLayoutSlots.Right),
-            new DesktopDialogField("uiGearEditCommands", "Command Posture", "Adjust quantity, rating, or price while details stay visible" + Environment.NewLine + "Keep inventory list context visible" + Environment.NewLine + "Return to gear tabs for accessories and mounts", "Adjust quantity, rating, or price while details stay visible", IsReadOnly: true, IsMultiline: true, VisualKind: DesktopDialogFieldVisualKinds.List, LayoutSlot: DesktopDialogFieldLayoutSlots.Right),
+            new DesktopDialogField("uiGearEditCommands", "Commands", "Adjust quantity, rating, or price while details stay visible" + Environment.NewLine + "Keep inventory list context visible" + Environment.NewLine + "Return to gear tabs for accessories and mounts", "Adjust quantity, rating, or price while details stay visible", IsReadOnly: true, IsMultiline: true, VisualKind: DesktopDialogFieldVisualKinds.List, LayoutSlot: DesktopDialogFieldLayoutSlots.Right),
             new DesktopDialogField("uiGearEditNotes", "Notes", notes, notes, IsReadOnly: true, IsMultiline: true, VisualKind: DesktopDialogFieldVisualKinds.Snippet)
         ];
     }
@@ -5036,7 +5087,7 @@ public sealed class DesktopDialogFactory : IDesktopDialogFactory
             new DesktopDialogField("uiDeleteNeighborList", "Current List", nearbyEntries, nearbyEntries, IsReadOnly: true, IsMultiline: true, VisualKind: DesktopDialogFieldVisualKinds.List, LayoutSlot: DesktopDialogFieldLayoutSlots.Left),
             new DesktopDialogField("uiDeleteTarget", "Selected Item", entityName, entityName, IsReadOnly: true),
             new DesktopDialogField("uiDeleteSummary", "Details", NormalizeGridValue(summary), NormalizeGridValue(summary), IsReadOnly: true, IsMultiline: true, VisualKind: DesktopDialogFieldVisualKinds.Grid, LayoutSlot: DesktopDialogFieldLayoutSlots.Right),
-            new DesktopDialogField("uiDeleteImpact", "Impact", "Removal Scope | current runner only" + Environment.NewLine + "Undo Posture | re-add manually from the same utility family" + Environment.NewLine + "Neighbor Context | surrounding list remains in view", "Removal Scope | current runner only", IsReadOnly: true, IsMultiline: true, VisualKind: DesktopDialogFieldVisualKinds.Grid, LayoutSlot: DesktopDialogFieldLayoutSlots.Right),
+            new DesktopDialogField("uiDeleteImpact", "Impact", "Removal Scope | current runner only" + Environment.NewLine + "Undo | re-add manually from the same utility family" + Environment.NewLine + "Neighbor Context | surrounding list remains in view", "Removal Scope | current runner only", IsReadOnly: true, IsMultiline: true, VisualKind: DesktopDialogFieldVisualKinds.Grid, LayoutSlot: DesktopDialogFieldLayoutSlots.Right),
             new DesktopDialogField("uiDeleteRecoveryCommands", "Recovery", recoveryCommands, recoveryCommands, IsReadOnly: true, IsMultiline: true, VisualKind: DesktopDialogFieldVisualKinds.List, LayoutSlot: DesktopDialogFieldLayoutSlots.Right),
             new DesktopDialogField("uiDeleteNotes", "Notes", notes, notes, IsReadOnly: true, IsMultiline: true, VisualKind: DesktopDialogFieldVisualKinds.Snippet)
         ];
@@ -5051,9 +5102,9 @@ public sealed class DesktopDialogFactory : IDesktopDialogFactory
             new DesktopDialogField("uiDeleteNeighborList", "Current List", "Armor Vest" + Environment.NewLine + "> Armor Jacket" + Environment.NewLine + "Actioneer Business Clothes", "Armor Vest", IsReadOnly: true, IsMultiline: true, VisualKind: DesktopDialogFieldVisualKinds.List, LayoutSlot: DesktopDialogFieldLayoutSlots.Left),
             new DesktopDialogField("uiDeleteTarget", "Selected Item", "Armor Jacket", "Armor Jacket", IsReadOnly: true),
             new DesktopDialogField("uiDeleteSummary", "Details", BuildGridValue(("Category", "Armor"), ("Cost", "¥1000"), ("Source", "Core Rulebook p. 437"), ("Encumbrance", "none")), "Category | Armor", IsReadOnly: true, IsMultiline: true, VisualKind: DesktopDialogFieldVisualKinds.Grid, LayoutSlot: DesktopDialogFieldLayoutSlots.Right),
-            new DesktopDialogField("uiDeleteImpact", "Impact", BuildGridValue(("Removal Scope", "runner inventory only"), ("Armor Totals", "recalculate after remove"), ("Undo Posture", "re-add from gear selector"), ("Workbench", "inventory tab stays active")), "Removal Scope | runner inventory only", IsReadOnly: true, IsMultiline: true, VisualKind: DesktopDialogFieldVisualKinds.Grid, LayoutSlot: DesktopDialogFieldLayoutSlots.Right),
+            new DesktopDialogField("uiDeleteImpact", "Impact", BuildGridValue(("Removal Scope", "runner inventory only"), ("Armor Totals", "recalculate after remove"), ("Undo", "re-add from gear selector"), ("Workspace", "inventory tab stays active")), "Removal Scope | runner inventory only", IsReadOnly: true, IsMultiline: true, VisualKind: DesktopDialogFieldVisualKinds.Grid, LayoutSlot: DesktopDialogFieldLayoutSlots.Right),
             new DesktopDialogField("uiDeleteRecoveryCommands", "Recovery", "Return to gear tab" + Environment.NewLine + "Re-open Add Gear" + Environment.NewLine + "Armor totals and mods", "Return to gear tab", IsReadOnly: true, IsMultiline: true, VisualKind: DesktopDialogFieldVisualKinds.List, LayoutSlot: DesktopDialogFieldLayoutSlots.Right),
-            new DesktopDialogField("uiDeleteNotes", "Notes", "The selected item will be removed from the runner inventory while the current gear list remains visible in the same utility posture.", "The selected item will be removed from the runner inventory while the current gear list remains visible in the same utility posture.", IsReadOnly: true, IsMultiline: true, VisualKind: DesktopDialogFieldVisualKinds.Snippet)
+            new DesktopDialogField("uiDeleteNotes", "Notes", "The selected item will be removed from the runner inventory while the current gear list remains visible.", "The selected item will be removed from the runner inventory while the current gear list remains visible.", IsReadOnly: true, IsMultiline: true, VisualKind: DesktopDialogFieldVisualKinds.Snippet)
         ];
     }
 
@@ -5066,9 +5117,9 @@ public sealed class DesktopDialogFactory : IDesktopDialogFactory
             new DesktopDialogField("uiDeleteNeighborList", "Installed Ware", "Datajack" + Environment.NewLine + "> Cybereyes Rating 4" + Environment.NewLine + "Image Link", "Datajack", IsReadOnly: true, IsMultiline: true, VisualKind: DesktopDialogFieldVisualKinds.List, LayoutSlot: DesktopDialogFieldLayoutSlots.Left),
             new DesktopDialogField("uiDeleteTarget", "Selected Item", "Cybereyes Rating 4", "Cybereyes Rating 4", IsReadOnly: true),
             new DesktopDialogField("uiDeleteSummary", "Details", BuildGridValue(("Category", "Headware"), ("Essence", "0.40"), ("Capacity", "16"), ("Source", "Core Rulebook p. 455")), "Category | Headware", IsReadOnly: true, IsMultiline: true, VisualKind: DesktopDialogFieldVisualKinds.Grid, LayoutSlot: DesktopDialogFieldLayoutSlots.Right),
-            new DesktopDialogField("uiDeleteImpact", "Impact", BuildGridValue(("Removal Scope", "installed ware only"), ("Essence Refund", "none"), ("Undo Posture", "re-add from selector"), ("Workbench", "cyberware tab stays active")), "Removal Scope | installed ware only", IsReadOnly: true, IsMultiline: true, VisualKind: DesktopDialogFieldVisualKinds.Grid, LayoutSlot: DesktopDialogFieldLayoutSlots.Right),
+            new DesktopDialogField("uiDeleteImpact", "Impact", BuildGridValue(("Removal Scope", "installed ware only"), ("Essence Refund", "none"), ("Undo", "re-add from selector"), ("Workspace", "cyberware tab stays active")), "Removal Scope | installed ware only", IsReadOnly: true, IsMultiline: true, VisualKind: DesktopDialogFieldVisualKinds.Grid, LayoutSlot: DesktopDialogFieldLayoutSlots.Right),
             new DesktopDialogField("uiDeleteRecoveryCommands", "Recovery", "Return to cyberware tab" + Environment.NewLine + "Re-open Add Cyberware" + Environment.NewLine + "Essence and capacity totals", "Return to cyberware tab", IsReadOnly: true, IsMultiline: true, VisualKind: DesktopDialogFieldVisualKinds.List, LayoutSlot: DesktopDialogFieldLayoutSlots.Right),
-            new DesktopDialogField("uiDeleteNotes", "Notes", "The selected implant will be removed from the runner while essence and capacity posture stay explicit in the same utility pane.", "The selected implant will be removed from the runner while essence and capacity posture stay explicit in the same utility pane.", IsReadOnly: true, IsMultiline: true, VisualKind: DesktopDialogFieldVisualKinds.Snippet)
+            new DesktopDialogField("uiDeleteNotes", "Notes", "The selected implant will be removed from the runner while essence and capacity stay explicit in the same utility pane.", "The selected implant will be removed from the runner while essence and capacity stay explicit in the same utility pane.", IsReadOnly: true, IsMultiline: true, VisualKind: DesktopDialogFieldVisualKinds.Snippet)
         ];
     }
 
@@ -5081,7 +5132,7 @@ public sealed class DesktopDialogFactory : IDesktopDialogFactory
             new DesktopDialogField("uiDeleteNeighborList", "Current Garage", "Hyundai Shin-Hyung" + Environment.NewLine + "> GMC Roadmaster" + Environment.NewLine + "MCT Fly-Spy", "Hyundai Shin-Hyung", IsReadOnly: true, IsMultiline: true, VisualKind: DesktopDialogFieldVisualKinds.List, LayoutSlot: DesktopDialogFieldLayoutSlots.Left),
             new DesktopDialogField("uiDeleteTarget", "Selected Item", "GMC Roadmaster", "GMC Roadmaster", IsReadOnly: true),
             new DesktopDialogField("uiDeleteSummary", "Details", BuildGridValue(("Role", "Truck"), ("Armor", "16"), ("Seats", "6"), ("Source", "Core Rulebook p. 466")), "Role | Truck", IsReadOnly: true, IsMultiline: true, VisualKind: DesktopDialogFieldVisualKinds.Grid, LayoutSlot: DesktopDialogFieldLayoutSlots.Right),
-            new DesktopDialogField("uiDeleteImpact", "Impact", BuildGridValue(("Removal Scope", "garage only"), ("Mounted Gear", "check after remove"), ("Undo Posture", "re-add from vehicle selector"), ("Workbench", "vehicle tab stays active")), "Removal Scope | garage only", IsReadOnly: true, IsMultiline: true, VisualKind: DesktopDialogFieldVisualKinds.Grid, LayoutSlot: DesktopDialogFieldLayoutSlots.Right),
+            new DesktopDialogField("uiDeleteImpact", "Impact", BuildGridValue(("Removal Scope", "garage only"), ("Mounted Gear", "check after remove"), ("Undo", "re-add from vehicle selector"), ("Workspace", "vehicle tab stays active")), "Removal Scope | garage only", IsReadOnly: true, IsMultiline: true, VisualKind: DesktopDialogFieldVisualKinds.Grid, LayoutSlot: DesktopDialogFieldLayoutSlots.Right),
             new DesktopDialogField("uiDeleteRecoveryCommands", "Recovery", "Return to vehicle tab" + Environment.NewLine + "Re-open Add Vehicle / Drone" + Environment.NewLine + "Mods, mounts, and seats", "Return to vehicle tab", IsReadOnly: true, IsMultiline: true, VisualKind: DesktopDialogFieldVisualKinds.List, LayoutSlot: DesktopDialogFieldLayoutSlots.Right),
             new DesktopDialogField("uiDeleteNotes", "Notes", "The selected vehicle or drone will be removed while garage context remains visible for the next decision.", "The selected vehicle or drone will be removed while garage context remains visible for the next decision.", IsReadOnly: true, IsMultiline: true, VisualKind: DesktopDialogFieldVisualKinds.Snippet)
         ];
@@ -5096,7 +5147,7 @@ public sealed class DesktopDialogFactory : IDesktopDialogFactory
             new DesktopDialogField("uiDeleteNeighborList", "Current List", "Etiquette" + Environment.NewLine + "> Perception" + Environment.NewLine + "Sneaking", "Etiquette", IsReadOnly: true, IsMultiline: true, VisualKind: DesktopDialogFieldVisualKinds.List, LayoutSlot: DesktopDialogFieldLayoutSlots.Left),
             new DesktopDialogField("uiDeleteTarget", "Selected Item", "Perception", "Perception", IsReadOnly: true),
             new DesktopDialogField("uiDeleteSummary", "Details", BuildGridValue(("Category", "Active Skill"), ("Rating", "6"), ("Linked Attribute", "Intuition"), ("Specialization", "Visual")), "Category | Active Skill", IsReadOnly: true, IsMultiline: true, VisualKind: DesktopDialogFieldVisualKinds.Grid, LayoutSlot: DesktopDialogFieldLayoutSlots.Right),
-            new DesktopDialogField("uiDeleteImpact", "Impact", BuildGridValue(("Removal Scope", "skill list only"), ("Derived Dice", "recalculate after remove"), ("Undo Posture", "re-add from skill selector"), ("Workbench", "skills tab stays active")), "Removal Scope | skill list only", IsReadOnly: true, IsMultiline: true, VisualKind: DesktopDialogFieldVisualKinds.Grid, LayoutSlot: DesktopDialogFieldLayoutSlots.Right),
+            new DesktopDialogField("uiDeleteImpact", "Impact", BuildGridValue(("Removal Scope", "skill list only"), ("Derived Dice", "recalculate after remove"), ("Undo", "re-add from skill selector"), ("Workspace", "skills tab stays active")), "Removal Scope | skill list only", IsReadOnly: true, IsMultiline: true, VisualKind: DesktopDialogFieldVisualKinds.Grid, LayoutSlot: DesktopDialogFieldLayoutSlots.Right),
             new DesktopDialogField("uiDeleteRecoveryCommands", "Recovery", "Return to skills tab" + Environment.NewLine + "Re-open Add Skill" + Environment.NewLine + "Linked attribute totals", "Return to skills tab", IsReadOnly: true, IsMultiline: true, VisualKind: DesktopDialogFieldVisualKinds.List, LayoutSlot: DesktopDialogFieldLayoutSlots.Right),
             new DesktopDialogField("uiDeleteNotes", "Notes", "The selected skill will be removed while surrounding skill context remains visible like the old utility flow.", "The selected skill will be removed while surrounding skill context remains visible like the old utility flow.", IsReadOnly: true, IsMultiline: true, VisualKind: DesktopDialogFieldVisualKinds.Snippet)
         ];
@@ -5111,9 +5162,9 @@ public sealed class DesktopDialogFactory : IDesktopDialogFactory
             new DesktopDialogField("uiDeleteNeighborList", "Current List", "Previous Entry" + Environment.NewLine + "> Current Entry" + Environment.NewLine + "Next Entry", "Previous Entry", IsReadOnly: true, IsMultiline: true, VisualKind: DesktopDialogFieldVisualKinds.List, LayoutSlot: DesktopDialogFieldLayoutSlots.Left),
             new DesktopDialogField("uiDeleteTarget", "Selected Item", "Current Entry", "Current Entry", IsReadOnly: true),
             new DesktopDialogField("uiDeleteSummary", "Details", BuildGridValue(("Group", "Entry Group"), ("Operation", "irreversible remove"), ("Source Posture", "current utility list"), ("Workbench", "current tab stays active")), "Group | Entry Group", IsReadOnly: true, IsMultiline: true, VisualKind: DesktopDialogFieldVisualKinds.Grid, LayoutSlot: DesktopDialogFieldLayoutSlots.Right),
-            new DesktopDialogField("uiDeleteImpact", "Impact", BuildGridValue(("Removal Scope", "active list only"), ("Undo Posture", "re-create manually from the same utility"), ("Neighbor Context", "surrounding entries remain visible"), ("Focus", "selection moves to adjacent entry")), "Removal Scope | active list only", IsReadOnly: true, IsMultiline: true, VisualKind: DesktopDialogFieldVisualKinds.Grid, LayoutSlot: DesktopDialogFieldLayoutSlots.Right),
+            new DesktopDialogField("uiDeleteImpact", "Impact", BuildGridValue(("Removal Scope", "active list only"), ("Undo", "re-create manually from the same utility"), ("Neighbor Context", "surrounding entries remain visible"), ("Focus", "selection moves to adjacent entry")), "Removal Scope | active list only", IsReadOnly: true, IsMultiline: true, VisualKind: DesktopDialogFieldVisualKinds.Grid, LayoutSlot: DesktopDialogFieldLayoutSlots.Right),
             new DesktopDialogField("uiDeleteRecoveryCommands", "Recovery", "Return to current list" + Environment.NewLine + "Re-open Add Entry" + Environment.NewLine + "Adjacent entries", "Return to current list", IsReadOnly: true, IsMultiline: true, VisualKind: DesktopDialogFieldVisualKinds.List, LayoutSlot: DesktopDialogFieldLayoutSlots.Right),
-            new DesktopDialogField("uiDeleteNotes", "Notes", "The selected entry will be removed while the surrounding list stays visible in the same compact legacy utility posture.", "The selected entry will be removed while the surrounding list stays visible in the same compact legacy utility posture.", IsReadOnly: true, IsMultiline: true, VisualKind: DesktopDialogFieldVisualKinds.Snippet)
+            new DesktopDialogField("uiDeleteNotes", "Notes", "The selected entry will be removed while the surrounding list stays visible.", "The selected entry will be removed while the surrounding list stays visible.", IsReadOnly: true, IsMultiline: true, VisualKind: DesktopDialogFieldVisualKinds.Snippet)
         ];
     }
 
@@ -5126,9 +5177,9 @@ public sealed class DesktopDialogFactory : IDesktopDialogFactory
             new DesktopDialogField("uiDeleteNeighborList", "Current Ledger", "Cram" + Environment.NewLine + "> Jazz" + Environment.NewLine + "Kamikaze", "Cram", IsReadOnly: true, IsMultiline: true, VisualKind: DesktopDialogFieldVisualKinds.List, LayoutSlot: DesktopDialogFieldLayoutSlots.Left),
             new DesktopDialogField("uiDeleteTarget", "Selected Item", "Jazz", "Jazz", IsReadOnly: true),
             new DesktopDialogField("uiDeleteSummary", "Details", BuildGridValue(("Quantity", "1"), ("Speed", "1 Combat Turn"), ("Crash", "Stun + fatigue"), ("Source", "Core Rulebook p. 411")), "Quantity | 1", IsReadOnly: true, IsMultiline: true, VisualKind: DesktopDialogFieldVisualKinds.Grid, LayoutSlot: DesktopDialogFieldLayoutSlots.Right),
-            new DesktopDialogField("uiDeleteImpact", "Impact", BuildGridValue(("Removal Scope", "runner ledger only"), ("Crash Tracking", "check after remove"), ("Undo Posture", "re-add from drug selector"), ("Workbench", "drugs tab stays active")), "Removal Scope | runner ledger only", IsReadOnly: true, IsMultiline: true, VisualKind: DesktopDialogFieldVisualKinds.Grid, LayoutSlot: DesktopDialogFieldLayoutSlots.Right),
+            new DesktopDialogField("uiDeleteImpact", "Impact", BuildGridValue(("Removal Scope", "runner ledger only"), ("Crash Tracking", "check after remove"), ("Undo", "re-add from drug selector"), ("Workspace", "drugs tab stays active")), "Removal Scope | runner ledger only", IsReadOnly: true, IsMultiline: true, VisualKind: DesktopDialogFieldVisualKinds.Grid, LayoutSlot: DesktopDialogFieldLayoutSlots.Right),
             new DesktopDialogField("uiDeleteRecoveryCommands", "Recovery", "Return to drugs tab" + Environment.NewLine + "Re-open Add Drug" + Environment.NewLine + "Crash and addiction notes", "Return to drugs tab", IsReadOnly: true, IsMultiline: true, VisualKind: DesktopDialogFieldVisualKinds.List, LayoutSlot: DesktopDialogFieldLayoutSlots.Right),
-            new DesktopDialogField("uiDeleteNotes", "Notes", "The selected drug entry will be removed while quantity, crash posture, and nearby doses remain visible in the same utility flow.", "The selected drug entry will be removed while quantity, crash posture, and nearby doses remain visible in the same utility flow.", IsReadOnly: true, IsMultiline: true, VisualKind: DesktopDialogFieldVisualKinds.Snippet)
+            new DesktopDialogField("uiDeleteNotes", "Notes", "The selected drug entry will be removed while quantity, crash state, and nearby doses remain visible.", "The selected drug entry will be removed while quantity, crash state, and nearby doses remain visible.", IsReadOnly: true, IsMultiline: true, VisualKind: DesktopDialogFieldVisualKinds.Snippet)
         ];
     }
 
@@ -5141,8 +5192,8 @@ public sealed class DesktopDialogFactory : IDesktopDialogFactory
             new DesktopDialogField("uiDeleteNeighborList", "Current List", "Heal" + Environment.NewLine + "> Stunbolt" + Environment.NewLine + "Increase Reflexes", "Heal", IsReadOnly: true, IsMultiline: true, VisualKind: DesktopDialogFieldVisualKinds.List, LayoutSlot: DesktopDialogFieldLayoutSlots.Left),
             new DesktopDialogField("uiDeleteTarget", "Selected Item", "Stunbolt", "Stunbolt", IsReadOnly: true),
             new DesktopDialogField("uiDeleteSummary", "Details", BuildGridValue(("Category", "Combat"), ("Drain", "F-3"), ("Type", "Mana"), ("Source", "Core Rulebook p. 288")), "Category | Combat", IsReadOnly: true, IsMultiline: true, VisualKind: DesktopDialogFieldVisualKinds.Grid, LayoutSlot: DesktopDialogFieldLayoutSlots.Right),
-            new DesktopDialogField("uiDeleteImpact", "Impact", BuildGridValue(("Removal Scope", "magic list only"), ("Drain Notes", "current drain options stay visible"), ("Undo Posture", "re-learn from spell selector"), ("Workbench", "magic tab stays active")), "Removal Scope | magic list only", IsReadOnly: true, IsMultiline: true, VisualKind: DesktopDialogFieldVisualKinds.Grid, LayoutSlot: DesktopDialogFieldLayoutSlots.Right),
-            new DesktopDialogField("uiDeleteRecoveryCommands", "Recovery", "Return to magic tab" + Environment.NewLine + "Re-open Add Spell / Power" + Environment.NewLine + "Drain and category posture", "Return to magic tab", IsReadOnly: true, IsMultiline: true, VisualKind: DesktopDialogFieldVisualKinds.List, LayoutSlot: DesktopDialogFieldLayoutSlots.Right),
+            new DesktopDialogField("uiDeleteImpact", "Impact", BuildGridValue(("Removal Scope", "magic list only"), ("Drain Notes", "current drain options stay visible"), ("Undo", "re-learn from spell selector"), ("Workspace", "magic tab stays active")), "Removal Scope | magic list only", IsReadOnly: true, IsMultiline: true, VisualKind: DesktopDialogFieldVisualKinds.Grid, LayoutSlot: DesktopDialogFieldLayoutSlots.Right),
+            new DesktopDialogField("uiDeleteRecoveryCommands", "Recovery", "Return to magic tab" + Environment.NewLine + "Re-open Add Spell / Power" + Environment.NewLine + "Drain and category", "Return to magic tab", IsReadOnly: true, IsMultiline: true, VisualKind: DesktopDialogFieldVisualKinds.List, LayoutSlot: DesktopDialogFieldLayoutSlots.Right),
             new DesktopDialogField("uiDeleteNotes", "Notes", "The selected magical entry will be removed while category, drain, and neighboring spell context stay visible like the old utility flow.", "The selected magical entry will be removed while category, drain, and neighboring spell context stay visible like the old utility flow.", IsReadOnly: true, IsMultiline: true, VisualKind: DesktopDialogFieldVisualKinds.Snippet)
         ];
     }
@@ -5156,7 +5207,7 @@ public sealed class DesktopDialogFactory : IDesktopDialogFactory
             new DesktopDialogField("uiDeleteNeighborList", "Current Roster", "Cecilia Vargas" + Environment.NewLine + "> Mr. Johnson" + Environment.NewLine + "Nyx", "Cecilia Vargas", IsReadOnly: true, IsMultiline: true, VisualKind: DesktopDialogFieldVisualKinds.List, LayoutSlot: DesktopDialogFieldLayoutSlots.Left),
             new DesktopDialogField("uiDeleteTarget", "Selected Item", "Mr. Johnson", "Mr. Johnson", IsReadOnly: true),
             new DesktopDialogField("uiDeleteSummary", "Details", BuildGridValue(("Role", "Fixer"), ("Connection / Loyalty", "5 / 3"), ("Location", "Seattle"), ("Notes", "Premium jobs")), "Role | Fixer", IsReadOnly: true, IsMultiline: true, VisualKind: DesktopDialogFieldVisualKinds.Grid, LayoutSlot: DesktopDialogFieldLayoutSlots.Right),
-            new DesktopDialogField("uiDeleteImpact", "Impact", BuildGridValue(("Removal Scope", "contact roster only"), ("Linked Notes", "check after remove"), ("Undo Posture", "re-add from contact dialog"), ("Workbench", "contacts tab stays active")), "Removal Scope | contact roster only", IsReadOnly: true, IsMultiline: true, VisualKind: DesktopDialogFieldVisualKinds.Grid, LayoutSlot: DesktopDialogFieldLayoutSlots.Right),
+            new DesktopDialogField("uiDeleteImpact", "Impact", BuildGridValue(("Removal Scope", "contact roster only"), ("Linked Notes", "check after remove"), ("Undo", "re-add from contact dialog"), ("Workspace", "contacts tab stays active")), "Removal Scope | contact roster only", IsReadOnly: true, IsMultiline: true, VisualKind: DesktopDialogFieldVisualKinds.Grid, LayoutSlot: DesktopDialogFieldLayoutSlots.Right),
             new DesktopDialogField("uiDeleteRecoveryCommands", "Recovery", "Return to contacts tab" + Environment.NewLine + "Re-open Add Contact" + Environment.NewLine + "Nearby contact notes", "Return to contacts tab", IsReadOnly: true, IsMultiline: true, VisualKind: DesktopDialogFieldVisualKinds.List, LayoutSlot: DesktopDialogFieldLayoutSlots.Right),
             new DesktopDialogField("uiDeleteNotes", "Notes", "The selected contact will be removed while connection, loyalty, and surrounding roster context remain visible in the same utility pane.", "The selected contact will be removed while connection, loyalty, and surrounding roster context remain visible in the same utility pane.", IsReadOnly: true, IsMultiline: true, VisualKind: DesktopDialogFieldVisualKinds.Snippet)
         ];
@@ -5171,9 +5222,9 @@ public sealed class DesktopDialogFactory : IDesktopDialogFactory
             new DesktopDialogField("uiDeleteNeighborList", "Current List", "Analytical Mind" + Environment.NewLine + "> First Impression" + Environment.NewLine + "Distinctive Style", "Analytical Mind", IsReadOnly: true, IsMultiline: true, VisualKind: DesktopDialogFieldVisualKinds.List, LayoutSlot: DesktopDialogFieldLayoutSlots.Left),
             new DesktopDialogField("uiDeleteTarget", "Selected Item", "First Impression", "First Impression", IsReadOnly: true),
             new DesktopDialogField("uiDeleteSummary", "Details", BuildGridValue(("Type", "Positive"), ("Karma", "11"), ("Source", "Core Rulebook p. 73"), ("Tag", "Social")), "Type | Positive", IsReadOnly: true, IsMultiline: true, VisualKind: DesktopDialogFieldVisualKinds.Grid, LayoutSlot: DesktopDialogFieldLayoutSlots.Right),
-            new DesktopDialogField("uiDeleteImpact", "Impact", BuildGridValue(("Removal Scope", "quality list only"), ("Karma Posture", "recalculate after remove"), ("Undo Posture", "re-add from quality selector"), ("Workbench", "qualities tab stays active")), "Removal Scope | quality list only", IsReadOnly: true, IsMultiline: true, VisualKind: DesktopDialogFieldVisualKinds.Grid, LayoutSlot: DesktopDialogFieldLayoutSlots.Right),
+            new DesktopDialogField("uiDeleteImpact", "Impact", BuildGridValue(("Removal Scope", "quality list only"), ("Karma", "recalculate after remove"), ("Undo", "re-add from quality selector"), ("Workspace", "qualities tab stays active")), "Removal Scope | quality list only", IsReadOnly: true, IsMultiline: true, VisualKind: DesktopDialogFieldVisualKinds.Grid, LayoutSlot: DesktopDialogFieldLayoutSlots.Right),
             new DesktopDialogField("uiDeleteRecoveryCommands", "Recovery", "Return to qualities tab" + Environment.NewLine + "Re-open Add Quality" + Environment.NewLine + "Karma totals and tags", "Return to qualities tab", IsReadOnly: true, IsMultiline: true, VisualKind: DesktopDialogFieldVisualKinds.List, LayoutSlot: DesktopDialogFieldLayoutSlots.Right),
-            new DesktopDialogField("uiDeleteNotes", "Notes", "The selected quality will be removed while karma, source, and surrounding list context remain visible like the legacy utility posture.", "The selected quality will be removed while karma, source, and surrounding list context remain visible like the legacy utility posture.", IsReadOnly: true, IsMultiline: true, VisualKind: DesktopDialogFieldVisualKinds.Snippet)
+            new DesktopDialogField("uiDeleteNotes", "Notes", "The selected quality will be removed while karma, source, and surrounding list context remain visible.", "The selected quality will be removed while karma, source, and surrounding list context remain visible.", IsReadOnly: true, IsMultiline: true, VisualKind: DesktopDialogFieldVisualKinds.Snippet)
         ];
     }
 
@@ -5362,7 +5413,7 @@ public sealed class DesktopDialogFactory : IDesktopDialogFactory
             new DesktopDialogField("uiSkillSpecializationSkill", "Skill", "Perception", "Perception", IsReadOnly: true),
             new DesktopDialogField("uiSkillSpec", "Specialization", "Visual", "Visual"),
             new DesktopDialogField("uiSkillSpecializationDetails", "Selection Details", NormalizeGridValue(details), NormalizeGridValue(details), IsReadOnly: true, IsMultiline: true, VisualKind: DesktopDialogFieldVisualKinds.Grid, LayoutSlot: DesktopDialogFieldLayoutSlots.Right),
-            new DesktopDialogField("uiSkillSpecializationNotes", "Notes", "Skill, existing specialization posture, and linked attribute remain visible before applying the specialization.", "Skill, existing specialization posture, and linked attribute remain visible before applying the specialization.", IsReadOnly: true, IsMultiline: true, VisualKind: DesktopDialogFieldVisualKinds.Snippet)
+            new DesktopDialogField("uiSkillSpecializationNotes", "Notes", "Skill, existing specialization, and linked attribute remain visible before applying the specialization.", "Skill, existing specialization, and linked attribute remain visible before applying the specialization.", IsReadOnly: true, IsMultiline: true, VisualKind: DesktopDialogFieldVisualKinds.Snippet)
         ];
     }
 
@@ -5572,20 +5623,20 @@ public sealed class DesktopDialogFactory : IDesktopDialogFactory
     private static IReadOnlyList<DesktopDialogField> BuildUpdateUtilityFields()
     {
         string manifest = Environment.GetEnvironmentVariable("CHUMMER_DESKTOP_UPDATE_MANIFEST") ?? string.Empty;
-        string autoApply = Environment.GetEnvironmentVariable("CHUMMER_DESKTOP_UPDATE_AUTO_APPLY") ?? "true";
+        string updateMode = Environment.GetEnvironmentVariable("CHUMMER_DESKTOP_UPDATE_MODE") ?? "full";
         string details = BuildGridValue(
-            ("Manifest", manifest),
-            ("Auto Apply", autoApply),
+            ("Update Source", string.IsNullOrWhiteSpace(manifest) ? "default" : manifest),
+            ("Update Mode", updateMode),
             ("Support Path", "/account/support"));
 
         return
         [
             BuildUtilitySectionsField("updateSections", "Channel", "Details", "Notes"),
-            new DesktopDialogField("updateManifest", "Manifest", manifest, "unset", IsReadOnly: true),
-            new DesktopDialogField("updateAutoApply", "Auto apply", autoApply, "true", IsReadOnly: true),
+            new DesktopDialogField("updateManifest", "Update source", manifest, "default", IsReadOnly: true),
+            new DesktopDialogField("updateMode", "Update mode", updateMode, "full", IsReadOnly: true),
             new DesktopDialogField("updateSupportPath", "Support after update", "/account/support", "/account/support", IsReadOnly: true),
             new DesktopDialogField("updateDetails", "Details", details, details, IsReadOnly: true, IsMultiline: true, VisualKind: DesktopDialogFieldVisualKinds.Grid, LayoutSlot: DesktopDialogFieldLayoutSlots.Right),
-            new DesktopDialogField("updateNotes", "Notes", "Channel, manifest, and support route remain visible while update posture is reviewed.", "Channel, manifest, and support route remain visible while update posture is reviewed.", IsReadOnly: true, IsMultiline: true, VisualKind: DesktopDialogFieldVisualKinds.Snippet)
+            new DesktopDialogField("updateNotes", "Notes", "Channel, update source, and support route remain visible while updates are checked.", "Channel, update source, and support route remain visible while updates are checked.", IsReadOnly: true, IsMultiline: true, VisualKind: DesktopDialogFieldVisualKinds.Snippet)
         ];
     }
 
@@ -5650,20 +5701,20 @@ public sealed class DesktopDialogFactory : IDesktopDialogFactory
             new DesktopDialogField("uiVehicleCost", "Cost", "16000", "16000", IsReadOnly: true),
             new DesktopDialogField("uiVehicleSource", "Source", "Core Rulebook p. 465", "Core Rulebook p. 465", IsReadOnly: true),
             new DesktopDialogField("uiVehicleSelectionDetails", "Selection Details", selectionDetails, selectionDetails, IsReadOnly: true, IsMultiline: true, VisualKind: DesktopDialogFieldVisualKinds.Grid, LayoutSlot: DesktopDialogFieldLayoutSlots.Right),
-            BuildSelectionTrailField("uiVehicleSelectionTrail", selectionTrailPath, "Hyundai Shin-Hyung", "Used-vehicle and drone posture stay live"),
+            BuildSelectionTrailField("uiVehicleSelectionTrail", selectionTrailPath, "Hyundai Shin-Hyung", "Used-vehicle and drone filters stay live"),
             BuildSelectionCommandsField("uiVehicleCategoryCommands", "Category Commands",
                 "Group | Ground Vehicles",
                 "Category | Cars",
                 "Data File | Core Rulebook",
                 "Move between chassis and drone branches without losing live filters",
-                "Keep used-vehicle and availability posture visible while browsing"),
-            new DesktopDialogField("uiVehicleFilterSummary", "Filter Summary", "Filtered Catalog | 5 shown / 8 total" + Environment.NewLine + "Category Path | Vehicles > Ground Vehicles > Cars" + Environment.NewLine + "Filter Posture | vehicle/drone and availability stay live", "Filtered Catalog | 5 shown / 8 total", IsReadOnly: true, IsMultiline: true, VisualKind: DesktopDialogFieldVisualKinds.Snippet),
+                "Keep used-vehicle and availability visible while browsing"),
+            new DesktopDialogField("uiVehicleFilterSummary", "Filter Summary", "Filtered Catalog | 5 shown / 8 total" + Environment.NewLine + "Category Path | Vehicles > Ground Vehicles > Cars" + Environment.NewLine + "Filters | vehicle/drone and availability stay live", "Filtered Catalog | 5 shown / 8 total", IsReadOnly: true, IsMultiline: true, VisualKind: DesktopDialogFieldVisualKinds.Snippet),
             new DesktopDialogField("uiVehicleLiveRecalc", "Live Recalculation", "Selected Cost | ¥16,000" + Environment.NewLine + "Show Drones | Yes" + Environment.NewLine + "Availability Filter | On" + Environment.NewLine + "Add Again | Stays open", "Selected Cost | ¥16,000", IsReadOnly: true, IsMultiline: true, VisualKind: DesktopDialogFieldVisualKinds.Grid, LayoutSlot: DesktopDialogFieldLayoutSlots.Right),
             BuildSelectionCommandsField("uiVehicleResultCommands", "Result Commands",
                 "Compare handling, armor, and source on the right before adding",
                 "Use OK for one add or Add & More to keep the selector open",
-                "Keep cost and used-vehicle posture visible through confirmation"),
-            new DesktopDialogField("uiVehicleNotes", "Notes", "Vehicle stats, source, and vehicle/drone filter posture remain visible before the selection is confirmed.", "Vehicle stats, source, and vehicle/drone filter posture remain visible before the selection is confirmed.", IsReadOnly: true, IsMultiline: true, VisualKind: DesktopDialogFieldVisualKinds.Snippet)
+                "Keep cost and used-vehicle settings visible through confirmation"),
+            new DesktopDialogField("uiVehicleNotes", "Notes", "Vehicle stats, source, and vehicle/drone filters remain visible before the selection is confirmed.", "Vehicle stats, source, and vehicle/drone filters remain visible before the selection is confirmed.", IsReadOnly: true, IsMultiline: true, VisualKind: DesktopDialogFieldVisualKinds.Snippet)
         ];
     }
 
@@ -5693,7 +5744,7 @@ public sealed class DesktopDialogFactory : IDesktopDialogFactory
             new DesktopDialogField("uiVehicleEditSource", "Source", "Core Rulebook p. 466", "Core Rulebook p. 466", IsReadOnly: true),
             new DesktopDialogField("uiVehicleEditDetails", "Vehicle Details", details, details, IsReadOnly: true, IsMultiline: true, VisualKind: DesktopDialogFieldVisualKinds.Grid, LayoutSlot: DesktopDialogFieldLayoutSlots.Right),
             new DesktopDialogField("uiVehicleEditLiveSummary", "Live Summary", "Control Posture | manual + rigger ready" + Environment.NewLine + "Damage Soak | 34" + Environment.NewLine + "Seats | 6" + Environment.NewLine + "Posture | legacy edit utility", "Control Posture | manual + rigger ready", IsReadOnly: true, IsMultiline: true, VisualKind: DesktopDialogFieldVisualKinds.Grid, LayoutSlot: DesktopDialogFieldLayoutSlots.Right),
-            new DesktopDialogField("uiVehicleEditCommands", "Command Posture", "Adjust handling, speed, body, or armor while stats stay visible" + Environment.NewLine + "Keep garage list context visible" + Environment.NewLine + "Return to vehicle tabs for mounts and mods", "Adjust handling, speed, body, or armor while stats stay visible", IsReadOnly: true, IsMultiline: true, VisualKind: DesktopDialogFieldVisualKinds.List, LayoutSlot: DesktopDialogFieldLayoutSlots.Right),
+            new DesktopDialogField("uiVehicleEditCommands", "Commands", "Adjust handling, speed, body, or armor while stats stay visible" + Environment.NewLine + "Keep garage list context visible" + Environment.NewLine + "Return to vehicle tabs for mounts and mods", "Adjust handling, speed, body, or armor while stats stay visible", IsReadOnly: true, IsMultiline: true, VisualKind: DesktopDialogFieldVisualKinds.List, LayoutSlot: DesktopDialogFieldLayoutSlots.Right),
             new DesktopDialogField("uiVehicleEditNotes", "Notes", notes, notes, IsReadOnly: true, IsMultiline: true, VisualKind: DesktopDialogFieldVisualKinds.Snippet)
         ];
     }
@@ -5831,7 +5882,7 @@ public sealed class DesktopDialogFactory : IDesktopDialogFactory
             BuildSelectionCommandsField("uiQualityResultCommands", "Result Commands",
                 "Karma, tag, and source stay visible on the right",
                 "Use Add for one entry or Add & More to keep browsing",
-                "Keep type and metagenic posture visible while confirming"),
+                "Keep type and metagenic filters visible while confirming"),
             new DesktopDialogField("uiQualityNotes", "Notes", "Quality type, karma cost, source, and metagenic filters remain visible before confirmation.", "Quality type, karma cost, source, and metagenic filters remain visible before confirmation.", IsReadOnly: true, IsMultiline: true, VisualKind: DesktopDialogFieldVisualKinds.Snippet)
         ];
     }
@@ -5889,13 +5940,13 @@ public sealed class DesktopDialogFactory : IDesktopDialogFactory
                 "Category | Heavy Pistols",
                 "Data File | Core Rulebook",
                 "Move between firearm branches without losing live filters",
-                "Keep availability and discount posture visible while browsing"),
-            new DesktopDialogField("uiWeaponFilterSummary", "Filter Summary", "Filtered Catalog | 7 shown / 10 total" + Environment.NewLine + "Category Path | Weapons > Firearms > Heavy Pistols" + Environment.NewLine + "Filter Posture | availability, discounts, and source stay live", "Filtered Catalog | 7 shown / 10 total", IsReadOnly: true, IsMultiline: true, VisualKind: DesktopDialogFieldVisualKinds.Snippet),
+                "Keep availability and discount visible while browsing"),
+            new DesktopDialogField("uiWeaponFilterSummary", "Filter Summary", "Filtered Catalog | 7 shown / 10 total" + Environment.NewLine + "Category Path | Weapons > Firearms > Heavy Pistols" + Environment.NewLine + "Filters | availability, discounts, and source stay live", "Filtered Catalog | 7 shown / 10 total", IsReadOnly: true, IsMultiline: true, VisualKind: DesktopDialogFieldVisualKinds.Snippet),
             new DesktopDialogField("uiWeaponLiveRecalc", "Live Recalculation", "Recalculated Cost | ¥750" + Environment.NewLine + "Accuracy | 5" + Environment.NewLine + "Black Market | No" + Environment.NewLine + "Add Again | Stays open", "Recalculated Cost | ¥750", IsReadOnly: true, IsMultiline: true, VisualKind: DesktopDialogFieldVisualKinds.Grid, LayoutSlot: DesktopDialogFieldLayoutSlots.Right),
             BuildSelectionCommandsField("uiWeaponResultCommands", "Result Commands",
                 "Compare damage, AP, and source on the right before adding",
                 "Use OK for one add or Add & More to keep the selector open",
-                "Keep markup and legality posture visible through confirmation"),
+                "Keep markup and legality visible through confirmation"),
             new DesktopDialogField("uiWeaponNotes", "Notes", "Damage, AP, firing mode, source, and pricing filters remain visible before confirmation.", "Damage, AP, firing mode, source, and pricing filters remain visible before confirmation.", IsReadOnly: true, IsMultiline: true, VisualKind: DesktopDialogFieldVisualKinds.Snippet)
         ];
     }
@@ -5952,13 +6003,13 @@ public sealed class DesktopDialogFactory : IDesktopDialogFactory
                 "Category | Armor",
                 "Data File | Core Rulebook",
                 "Move between armor branches without losing live filters",
-                "Keep availability and free-item posture visible while browsing"),
-            new DesktopDialogField("uiArmorFilterSummary", "Filter Summary", "Filtered Catalog | 5 shown / 7 total" + Environment.NewLine + "Category Path | Armor > Protective Wear > Armor" + Environment.NewLine + "Filter Posture | availability, source, and markup stay live", "Filtered Catalog | 5 shown / 7 total", IsReadOnly: true, IsMultiline: true, VisualKind: DesktopDialogFieldVisualKinds.Snippet),
+                "Keep availability and free-item settings visible while browsing"),
+            new DesktopDialogField("uiArmorFilterSummary", "Filter Summary", "Filtered Catalog | 5 shown / 7 total" + Environment.NewLine + "Category Path | Armor > Protective Wear > Armor" + Environment.NewLine + "Filters | availability, source, and markup stay live", "Filtered Catalog | 5 shown / 7 total", IsReadOnly: true, IsMultiline: true, VisualKind: DesktopDialogFieldVisualKinds.Snippet),
             new DesktopDialogField("uiArmorLiveRecalc", "Live Recalculation", "Recalculated Cost | ¥1,000" + Environment.NewLine + "Armor | 12" + Environment.NewLine + "Free Item | No" + Environment.NewLine + "Add Again | Stays open", "Recalculated Cost | ¥1,000", IsReadOnly: true, IsMultiline: true, VisualKind: DesktopDialogFieldVisualKinds.Grid, LayoutSlot: DesktopDialogFieldLayoutSlots.Right),
             BuildSelectionCommandsField("uiArmorResultCommands", "Result Commands",
                 "Compare armor, legality, and source on the right before adding",
                 "Use OK for one add or Add & More to keep browsing",
-                "Keep markup and capacity posture visible through confirmation"),
+                "Keep markup and capacity visible through confirmation"),
             new DesktopDialogField("uiArmorNotes", "Notes", "Armor rating, legality, source, and pricing filters remain visible before confirmation.", "Armor rating, legality, source, and pricing filters remain visible before confirmation.", IsReadOnly: true, IsMultiline: true, VisualKind: DesktopDialogFieldVisualKinds.Snippet)
         ];
     }
@@ -5969,21 +6020,21 @@ public sealed class DesktopDialogFactory : IDesktopDialogFactory
     {
         if (!LegacyUiControlCatalog.IsKnown(controlId))
         {
-            return CreateGenericUiControlDialog(controlId);
+            return HumanizeVisibleDialog(CreateGenericUiControlDialog(controlId));
         }
 
-        return controlId switch
+        return HumanizeVisibleDialog(controlId switch
         {
             "create_entry" => new DesktopDialogState(
                 "dialog.ui.create_entry",
                 "Add Entry",
-                "Add a new entry while keeping the compact list/detail editor posture.",
+                "Add a new entry while keeping the compact list/detail editor visible.",
                 BuildEntryEditorFields("New entry", false),
                 BuildAddAndMoreActions("Add")),
             "edit_entry" => new DesktopDialogState(
                 "dialog.ui.edit_entry",
                 "Edit Entry",
-                "Edit the selected entry in the same compact list/detail editor posture.",
+                "Edit the selected entry in the same compact list/detail editor.",
                 BuildEntryEditorFields("Current Entry", true),
                 [
                     new DesktopDialogAction("apply", "Apply", true),
@@ -6022,13 +6073,13 @@ public sealed class DesktopDialogFactory : IDesktopDialogFactory
             "toggle_free_paid" => new DesktopDialogState(
                 "dialog.ui.toggle_free_paid",
                 "Pricing Posture",
-                "The new pricing posture stays visible in the same utility pane.",
-                BuildActionReceiptFields("Toggle Free/Paid", "Selected item pricing posture was toggled between free and paid.", "Pricing state changes remain compact and explicit instead of disappearing into background chrome."),
+                "The new pricing state stays visible in the same utility pane.",
+                BuildActionReceiptFields("Toggle Free/Paid", "Selected item pricing was toggled between free and paid.", "Pricing changes remain compact and explicit instead of disappearing into background chrome."),
                 [new DesktopDialogAction("close", "Close", true)]),
             "show_source" => new DesktopDialogState(
                 "dialog.ui.show_source",
                 "Source",
-                "Source book, page, and reference posture are surfaced in the same compact utility rhythm as classic Chummer.",
+                "Source book, page, and reference stay visible in the same compact utility rhythm as classic Chummer.",
                 BuildSourceDetailsFields(),
                 [new DesktopDialogAction("close", "Close", true)]),
             "gear_add" => RebuildGearSelectionDialog(
@@ -6105,7 +6156,7 @@ public sealed class DesktopDialogFactory : IDesktopDialogFactory
             "drug_add" => new DesktopDialogState(
                 "dialog.ui.drug_add",
                 "Add Drug",
-                "Browse drugs, inspect speed and crash posture, then confirm the selected dose.",
+                "Browse drugs, inspect speed and crash state, then confirm the selected dose.",
                 BuildDrugSelectionFields(),
                 BuildSelectionConfirmationActions()),
             "drug_delete" => new DesktopDialogState(
@@ -6258,7 +6309,7 @@ public sealed class DesktopDialogFactory : IDesktopDialogFactory
                     new DesktopDialogField("uiCombatReloadWeapon", "Weapon", "Colt M23", "Colt M23", IsReadOnly: true),
                     new DesktopDialogField("uiCombatReloadAmmo", "Ammo", "Regular Ammo (15)", "Regular Ammo (15)"),
                     new DesktopDialogField("uiCombatReloadDetails", "Reload Details", "Selected Weapon | Colt M23" + Environment.NewLine + "Current Magazine | 3 / 15" + Environment.NewLine + "Selected Ammo | Regular Ammo (15)", "Selected Weapon | Colt M23" + Environment.NewLine + "Current Magazine | 3 / 15" + Environment.NewLine + "Selected Ammo | Regular Ammo (15)", IsReadOnly: true, IsMultiline: true, VisualKind: DesktopDialogFieldVisualKinds.Grid, LayoutSlot: DesktopDialogFieldLayoutSlots.Right),
-                    new DesktopDialogField("uiCombatReloadCommands", "Command Posture", "Reload selected weapon" + Environment.NewLine + "Keep ammo and magazine posture visible" + Environment.NewLine + "Return to combat tab after applying", "Reload selected weapon", IsReadOnly: true, IsMultiline: true, VisualKind: DesktopDialogFieldVisualKinds.List, LayoutSlot: DesktopDialogFieldLayoutSlots.Right),
+                    new DesktopDialogField("uiCombatReloadCommands", "Commands", "Reload selected weapon" + Environment.NewLine + "Keep ammo and magazine visible" + Environment.NewLine + "Return to combat tab after applying", "Reload selected weapon", IsReadOnly: true, IsMultiline: true, VisualKind: DesktopDialogFieldVisualKinds.List, LayoutSlot: DesktopDialogFieldLayoutSlots.Right),
                     new DesktopDialogField("uiCombatReloadNotes", "Notes", "Weapon and ammo selection remain visible while reloading.", "Weapon and ammo selection remain visible while reloading.", IsReadOnly: true, IsMultiline: true, VisualKind: DesktopDialogFieldVisualKinds.Snippet)
                 ],
                 [
@@ -6268,14 +6319,14 @@ public sealed class DesktopDialogFactory : IDesktopDialogFactory
             "combat_damage_track" => new DesktopDialogState(
                 "dialog.ui.combat_damage_track",
                 "Damage Track",
-                "Current physical and stun track posture stays visible before applying the change.",
+                "Current physical and stun tracks stay visible before applying the change.",
                 [
                     BuildUtilitySectionsField("uiDamageTrackSections", "Tracks", "Details", "Notes"),
                     new DesktopDialogField("uiDamageTrackPhysical", "Physical", "3 / 10", "3 / 10", IsReadOnly: true),
                     new DesktopDialogField("uiDamageTrackStun", "Stun", "1 / 10", "1 / 10", IsReadOnly: true),
                     new DesktopDialogField("uiDamageTrackDetails", "Track Details", "Physical | 3 / 10" + Environment.NewLine + "Stun | 1 / 10" + Environment.NewLine + "Penalty | none", "Physical | 3 / 10" + Environment.NewLine + "Stun | 1 / 10" + Environment.NewLine + "Penalty | none", IsReadOnly: true, IsMultiline: true, VisualKind: DesktopDialogFieldVisualKinds.Grid, LayoutSlot: DesktopDialogFieldLayoutSlots.Right),
-                    new DesktopDialogField("uiDamageTrackCommands", "Command Posture", "Apply current damage step" + Environment.NewLine + "Keep penalty posture visible" + Environment.NewLine + "Return to combat tab after applying", "Apply current damage step", IsReadOnly: true, IsMultiline: true, VisualKind: DesktopDialogFieldVisualKinds.List, LayoutSlot: DesktopDialogFieldLayoutSlots.Right),
-                    new DesktopDialogField("uiDamageTrackNotes", "Notes", "Current track posture remains visible before applying the damage step.", "Current track posture remains visible before applying the damage step.", IsReadOnly: true, IsMultiline: true, VisualKind: DesktopDialogFieldVisualKinds.Snippet)
+                    new DesktopDialogField("uiDamageTrackCommands", "Commands", "Apply current damage step" + Environment.NewLine + "Keep penalty visible" + Environment.NewLine + "Return to combat tab after applying", "Apply current damage step", IsReadOnly: true, IsMultiline: true, VisualKind: DesktopDialogFieldVisualKinds.List, LayoutSlot: DesktopDialogFieldLayoutSlots.Right),
+                    new DesktopDialogField("uiDamageTrackNotes", "Notes", "Current track state remains visible before applying the damage step.", "Current track state remains visible before applying the damage step.", IsReadOnly: true, IsMultiline: true, VisualKind: DesktopDialogFieldVisualKinds.Snippet)
                 ],
                 [
                     new DesktopDialogAction("apply", "Apply", true),
@@ -6315,13 +6366,13 @@ public sealed class DesktopDialogFactory : IDesktopDialogFactory
             "contact_add" => new DesktopDialogState(
                 "dialog.ui.contact_add",
                 "Add Contact",
-                "Author the contact with the same dense detail posture used by classic Chummer utility forms.",
+                "Author the contact with the same dense detail layout used by classic Chummer utility forms.",
                 BuildContactAddFields(),
                 BuildAddAndMoreActions()),
             "contact_edit" => new DesktopDialogState(
                 "dialog.ui.contact_edit",
                 "Edit Contact",
-                "Edit the selected contact while keeping role and connection posture visible.",
+                "Edit the selected contact while keeping role and connection visible.",
                 BuildContactEditFields(),
                 [
                     new DesktopDialogAction("apply", "Apply", true),
@@ -6362,7 +6413,7 @@ public sealed class DesktopDialogFactory : IDesktopDialogFactory
                     new DesktopDialogAction("cancel", "Cancel")
                 ]),
             _ => throw new InvalidOperationException($"Known legacy UI control '{controlId}' is missing a dedicated dialog mapping.")
-        };
+        });
     }
 
     private static DesktopDialogState CreateGenericUiControlDialog(string controlId)

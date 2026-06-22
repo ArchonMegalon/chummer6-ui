@@ -30,7 +30,7 @@ internal sealed class DesktopNexusPanWindow : Window
 
         Content = DesktopHorizonWindowScaffold.CreateScroller(
             "NEXUS-PAN",
-            "NEXUS-PAN keeps continuity, devices, and access posture on a dedicated native desk so the desktop can show the current safe state before you jump into account routes.",
+            "NEXUS-PAN keeps continuity, devices, and access status on a dedicated native desk before you open account pages.",
             CreateContinuityCard(),
             CreateAccessCard(),
             CreateDetailCard(),
@@ -82,14 +82,14 @@ internal sealed class DesktopNexusPanWindow : Window
                 DesktopHorizonWindowScaffold.CreateBadgeStrip(
                     DesktopHorizonWindowScaffold.CreateMetricBadge("NexusPanBadgeWorkspaces", "Workspaces", (_campaignSummary?.Workspaces.Count ?? 0).ToString()),
                     DesktopHorizonWindowScaffold.CreateMetricBadge("NexusPanBadgeCampaigns", "Campaigns", (_campaignSummary?.Campaigns.Count ?? 0).ToString())),
-                DesktopHorizonWindowScaffold.CreateDetailText(leadWorkspace?.LatestContinuity?.Summary ?? "No governed continuity capsule is currently pinned."),
-                DesktopHorizonWindowScaffold.CreateDetailText(leadWorkspace?.ReturnSummary ?? "Open the continuity lane to reconnect the next return-safe state."),
+                DesktopHorizonWindowScaffold.CreateDetailText(leadWorkspace?.LatestContinuity?.Summary ?? "No continuity summary is currently pinned."),
+                DesktopHorizonWindowScaffold.CreateDetailText(leadWorkspace?.ReturnSummary ?? "Open continuity to reconnect the next safe return state."),
                 DesktopHorizonWindowScaffold.CreateDetailText(leadWorkspace?.NextSafeAction ?? "Claim this copy again if it needs to reconnect before the next return.")
             }
         };
 
         return DesktopHorizonWindowScaffold.CreateCard(
-            "Continuity posture",
+            "Continuity",
             "Keep the current continuity and return-safe state visible before opening account recovery.",
             details,
             DesktopHorizonWindowScaffold.CreateAsyncButton(this, "Open workspace desk", () => DesktopCampaignWorkspaceWindow.ShowAsync(this, _headId), isPrimary: HasContinuityContext),
@@ -107,8 +107,8 @@ internal sealed class DesktopNexusPanWindow : Window
                 DesktopHorizonWindowScaffold.CreateBadgeStrip(
                     DesktopHorizonWindowScaffold.CreateMetricBadge("NexusPanBadgeRuns", "Runs", (_campaignSummary?.Runs.Count ?? 0).ToString()),
                     DesktopHorizonWindowScaffold.CreateMetricBadge("NexusPanBadgeContext", "Context", _campaignSummary is null ? "guest" : "account")),
-                DesktopHorizonWindowScaffold.CreateDetailText("Your copy, grants, and account access stay one move away instead of disappearing into support chrome."),
-                DesktopHorizonWindowScaffold.CreateDetailText("If this desktop loses account posture, reopen Your Copy before assuming continuity is intact.")
+                DesktopHorizonWindowScaffold.CreateDetailText("Your copy, grants, and account access stay one move away instead of disappearing into support."),
+                DesktopHorizonWindowScaffold.CreateDetailText("If this desktop loses account access, reopen Your Copy before assuming continuity is intact.")
             }
         };
 
@@ -252,7 +252,7 @@ internal sealed class DesktopNexusPanWindow : Window
 
         return DesktopHorizonWindowScaffold.CreateCard(
             "Detail modes",
-            "NEXUS-PAN should show continuity, access, and recovery posture without forcing the user to decode the account model.",
+            "NEXUS-PAN shows continuity, access, and recovery status without forcing the user to decode the account model.",
             details,
             DesktopHorizonWindowScaffold.CreateAsyncButton(this, "Open workspace desk", () => DesktopCampaignWorkspaceWindow.ShowAsync(this, _headId), isPrimary: HasContinuityContext),
             DesktopHorizonWindowScaffold.CreateAsyncButton(this, "Open Your Copy", () => DesktopDevicesAccessWindow.ShowAsync(this, _headId)),

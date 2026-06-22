@@ -1241,7 +1241,7 @@ internal sealed class DesktopAliceWindow : Window
                     DesktopHorizonWindowScaffold.CreateMetricBadge("AliceBadgeProgression", "Progression", lead.ProgressionLabel)),
                 CreateDetailText($"Variant: {lead.VariantLabel}"),
                 CreateDetailText($"Progression: {lead.ProgressionLabel}"),
-                CreateDetailText(lead.NextSafeAction ?? "Reviewed variants stay bounded until you deliberately continue."),
+                CreateDetailText(HumanCopy(lead.NextSafeAction ?? "Review the variants and continue only when the next step looks right.")),
                 CreateDetailText(lead.RuntimeCompatibilitySummary ?? "Runtime compatibility stays attached to this build link.")
             }
         };
@@ -1271,7 +1271,7 @@ internal sealed class DesktopAliceWindow : Window
 
         body.Children.Add(
             DesktopHorizonWindowScaffold.CreateBadgeStrip(
-                DesktopHorizonWindowScaffold.CreateMetricBadge("AliceBadgeHandoffs", "Handoffs", handoffs.Count.ToString()),
+                DesktopHorizonWindowScaffold.CreateMetricBadge("AliceBadgeHandoffs", "Build links", handoffs.Count.ToString()),
                 DesktopHorizonWindowScaffold.CreateMetricBadge("AliceBadgeContext", "Context", _campaignSummary is null ? "guest" : "account")));
 
         ComboBox detailModeCombo = new()
@@ -1292,7 +1292,7 @@ internal sealed class DesktopAliceWindow : Window
             ItemTemplate = new FuncDataTemplate<BuildLabHandoffProjection>((handoff, _) =>
                 new TextBlock
                 {
-                    Text = handoff is null ? string.Empty : $"{handoff.Title} [{handoff.VariantLabel}]",
+                    Text = handoff is null ? string.Empty : HumanCopy($"{handoff.Title} [{handoff.VariantLabel}]"),
                     TextWrapping = TextWrapping.Wrap
                 })
         };
@@ -2068,7 +2068,7 @@ internal sealed class DesktopAliceWindow : Window
             DesktopBuildPathCandidate lead = _buildPathCandidates[0];
             string leadSummary = lead.Preview?.CampaignReturnSummary
                 ?? lead.Preview?.RuntimeCompatibilitySummary
-                ?? "Open the proposal studio card below for the current bounded preview.";
+                ?? "Open the proposal card below for the current preview.";
             if (_originBundle is not null)
             {
                 return HumanCopy($"Alice answered locally. Approved origin story: {_originBundle.Canon.Summary}. " +
@@ -2267,7 +2267,7 @@ internal sealed class DesktopAliceWindow : Window
             : $"The current build signals a runner assembled around practical survival choices rather than ornamental flavor.";
         string sentenceThree = packet.CausalityHints.Count > 0
             ? $"That history fits the current build because {packet.CausalityHints[0].TrimEnd('.')}. Any later upgrades or qualities should feel like consequences of that same path, not disconnected add-ons."
-            : $"The safest origin draft is a bounded one: each quality, augmentation, or build choice should read like the consequence of one hard life track, not unrelated cool ideas.";
+            : "The safest origin draft is focused: each quality, augmentation, or build choice should read like the consequence of one hard life track, not unrelated cool ideas.";
 
         string summary = $"{packet.Alias} exists at the intersection of {packet.RulesetId}, {packet.Metatype}, and a build path that rewards focused tradeoffs.";
         string[] gmHooks = new string?[]
@@ -2731,7 +2731,7 @@ internal sealed class DesktopAliceWindow : Window
             new("portrait-candidate-01", "Noir Ink", "Grounded dossier portrait with low-noise contrast.", "#0F172A", "#1D4ED8", "#E2E8F0", "#93C5FD"),
             new("portrait-candidate-02", "Chrome Editorial", "Sharper editorial framing with brighter chrome accents.", "#111827", "#0F766E", "#F8FAFC", "#67E8F9"),
             new("portrait-candidate-03", "Neon Street", "Street-lit version with stronger nightlife saturation.", "#1F1630", "#7C3AED", "#F5F3FF", "#C084FC"),
-            new("portrait-candidate-04", "Quiet Clinic", "Cold medical lane with controlled sterile highlights.", "#17202A", "#475569", "#F8FAFC", "#CBD5E1")
+            new("portrait-candidate-04", "Quiet Clinic", "Cold medical scene with controlled sterile highlights.", "#17202A", "#475569", "#F8FAFC", "#CBD5E1")
         ];
 
         List<string> portraitPaths = [];
@@ -2832,7 +2832,7 @@ internal sealed class DesktopAliceWindow : Window
         OriginSceneCandidate[] candidates =
         [
             new("scene-candidate-01", "Turning Point", "The moment the runner learned the current loadout was not optional anymore.", "#09131F", "#1D4ED8"),
-            new("scene-candidate-02", "Clinic Memory", "A sterile upgrade lane that explains the cost of implants and quality drift.", "#111827", "#0F766E"),
+            new("scene-candidate-02", "Clinic Memory", "A sterile upgrade scene that explains the cost of implants and quality drift.", "#111827", "#0F766E"),
             new("scene-candidate-03", "Before the Run", "A quiet preparation frame just before stepping onto the current role path.", "#1E1B4B", "#7C3AED")
         ];
 
@@ -3950,8 +3950,8 @@ internal sealed class DesktopAliceWindow : Window
         builder.AppendLine("- If the alternate voice fails, keep the default voice.");
         builder.AppendLine();
         builder.AppendLine("## Expected outputs");
-        builder.AppendLine("- one default audiobook artifact");
-        builder.AppendLine("- one alternate audiobook artifact");
+        builder.AppendLine("- one default audiobook file");
+        builder.AppendLine("- one alternate audiobook file");
         builder.AppendLine("- render logs");
         builder.AppendLine("- preview/audio companion refs for later dossier/video phases");
         return builder.ToString().TrimEnd();
@@ -4025,9 +4025,9 @@ internal sealed class DesktopAliceWindow : Window
     private static string BuildStatusLine(AiConversationTurnResponse response)
     {
         string confidence = response.StructuredAnswer?.Confidence ?? AiConfidenceLevels.Scaffolded;
-        string provider = response.RouteDecision.ProviderId;
+        string provider = HumanCopy(response.RouteDecision.ProviderId);
         string routeReason = response.RouteDecision.Reason;
-        return $"{provider} · {confidence} · {routeReason}";
+        return HumanCopy($"{provider} · {confidence} · {routeReason}");
     }
 
     private static string[] BuildEvidenceLines(AiConversationTurnResponse response)

@@ -6,6 +6,7 @@ using System.Security.Cryptography;
 using System.Text;
 using System.Text.Json;
 using System.Text.RegularExpressions;
+using Chummer.Presentation.Overview;
 
 namespace Chummer.Desktop.Runtime;
 
@@ -61,15 +62,20 @@ public sealed record DesktopUpdateClientStatus(
     DateTimeOffset? LastUpdateLaunchAttemptAtUtc = null,
     DateTimeOffset? RollbackWindowStartedAtUtc = null,
     DateTimeOffset? RollbackWindowExpiresAtUtc = null,
-    string? LastManifestChannelId = null);
+    string? LastManifestChannelId = null,
+    string UpdateMode = "full");
 
 public static class DesktopUpdateRuntime
 {
     private const string ApplySwitch = "--desktop-update-apply";
     private const string LaunchInstallerSwitch = "--desktop-update-launch-installer";
     private const string UpdateManifestEnvironmentVariable = "CHUMMER_DESKTOP_UPDATE_MANIFEST";
+    private const string UpdateModeEnvironmentVariable = "CHUMMER_DESKTOP_UPDATE_MODE";
     private const string UpdateEnabledEnvironmentVariable = "CHUMMER_DESKTOP_UPDATE_ENABLED";
     private const string UpdateAutoApplyEnvironmentVariable = "CHUMMER_DESKTOP_UPDATE_AUTO_APPLY";
+    private const string UpdateModeFull = "full";
+    private const string UpdateModeNotify = "notify";
+    private const string UpdateModeOff = "off";
     private const string LegacyManifestEnvironmentVariable = "CHUMMER_PORTAL_DOWNLOADS_VERIFY_URL";
     private const string UpdateRootDirectoryName = "desktop-update";
     private const string UpdateProcessPathOverrideEnvironmentVariable = "CHUMMER_DESKTOP_UPDATE_PROCESS_PATH_OVERRIDE";
@@ -158,24 +164,26 @@ public static class DesktopUpdateRuntime
         if (!configuration.Enabled)
         {
             status = "disabled";
-            recommendedAction = "Configure the desktop update manifest before promising self-update.";
+            recommendedAction = configuration.Mode == UpdateModeOff
+                ? "Updates are turned off for this install."
+                : "Choose an update source before relying on in-app updates.";
         }
         else if (!string.IsNullOrWhiteSpace(state?.LastError))
         {
             status = "attention_required";
-            recommendedAction = "Review the last update error and route support before promotion.";
+            recommendedAction = "Review the last update error or open support before continuing.";
         }
         else if (!string.IsNullOrWhiteSpace(state?.PendingUpdateVersion))
         {
             status = "update_staged";
             recommendedAction = configuration.AutoApply
                 ? "Update is staged. Chummer is installing it in place and should relaunch on the new build."
-                : "Update is staged for this install. Finish the handoff before continuing work.";
+                : "Update is staged for this install. Finish the update before continuing.";
         }
         else if (state?.LastCheckedAt is null)
         {
             status = "never_checked";
-            recommendedAction = "Open the desktop once with update checks enabled so the local install seeds update truth.";
+            recommendedAction = "Open Chummer once with update checks enabled so this copy can read current release information.";
         }
         else if (!string.IsNullOrWhiteSpace(state.LastManifestVersion)
             && !string.Equals(installedVersion, state.LastManifestVersion, StringComparison.OrdinalIgnoreCase))
@@ -231,7 +239,8 @@ public static class DesktopUpdateRuntime
                 LastUpdateLaunchAttemptAtUtc: state?.LastUpdateLaunchAttemptAtUtc,
                 RollbackWindowStartedAtUtc: state?.RollbackWindowStartedAtUtc,
                 RollbackWindowExpiresAtUtc: state?.RollbackWindowExpiresAtUtc,
-                LastManifestChannelId: state?.LastManifestChannelId);
+                LastManifestChannelId: state?.LastManifestChannelId,
+                UpdateMode: configuration.Mode);
     }
 
     private static bool RequiresReleaseAttention(DesktopUpdateState? state)
@@ -264,7 +273,7 @@ public static class DesktopUpdateRuntime
 
         if (string.Equals(state.LastProofStatus, "failed", StringComparison.OrdinalIgnoreCase))
         {
-            return "Open Downloads and Support before relying on this release because the latest local release proof failed.";
+            return "Open Downloads or Support before relying on this release because the latest release check failed.";
         }
 
         if (string.Equals(state.LastSupportabilityState, "review_required", StringComparison.OrdinalIgnoreCase))
@@ -275,7 +284,7 @@ public static class DesktopUpdateRuntime
         if (string.Equals(state.LastRolloutState, "paused", StringComparison.OrdinalIgnoreCase)
             || string.Equals(state.LastRolloutState, "revoked", StringComparison.OrdinalIgnoreCase))
         {
-            return "Do not rely on this release until Downloads confirms the current rollout posture.";
+            return "Do not rely on this release until Downloads confirms the current rollout state.";
         }
 
         return "Open Downloads and Support before relying on this release.";
@@ -327,7 +336,7 @@ public static class DesktopUpdateRuntime
 
         if (string.IsNullOrWhiteSpace(rolloutState))
         {
-            return "Desktop update was skipped because rollout is blocked by registry posture.";
+            return "Desktop update was skipped because rollout is paused.";
         }
 
         return $"Desktop update was skipped because rollout is {rolloutState}.";
@@ -449,8 +458,12 @@ public static class DesktopUpdateRuntime
         DesktopUpdateConfiguration configuration = DesktopUpdateConfiguration.Load();
         if (!configuration.Enabled)
         {
-            progress?.Report(new DesktopUpdateProgressUpdate("skipped", "Updates are not configured"));
-            return DesktopUpdateStartupResult.Continue("manifest_not_configured");
+            progress?.Report(new DesktopUpdateProgressUpdate("skipped", configuration.Mode == UpdateModeOff
+                ? "Updates are turned off"
+                : "Updates are not configured"));
+            return DesktopUpdateStartupResult.Continue(configuration.Mode == UpdateModeOff
+                ? "update_mode_off"
+                : "manifest_not_configured");
         }
 
         DesktopUpdatePlatformIdentity identity = DesktopUpdatePlatformIdentity.Current();
@@ -620,7 +633,9 @@ public static class DesktopUpdateRuntime
                 };
                 DesktopUpdateStateStore.Save(paths.StateFilePath, updatedState);
                 progress?.Report(new DesktopUpdateProgressUpdate("available", "A newer build is available"));
-                return DesktopUpdateStartupResult.Continue("auto_apply_disabled");
+                return DesktopUpdateStartupResult.Continue(configuration.Mode == UpdateModeNotify
+                    ? "notify_only"
+                    : "auto_apply_disabled");
             }
 
             if (IsRolloutBlocked(manifest.RolloutState))
@@ -1628,11 +1643,23 @@ public static class DesktopUpdateRuntime
         if (command is null)
         {
             throw new InvalidOperationException(
-                "Could not apply Linux .deb update automatically. Expected root dpkg, pkexec+dpkg, or passwordless sudo+dpkg to be available.");
+                BuildLinuxDebInstallerUnavailableMessage(installerPath));
         }
 
-        RunCommandToSuccessfulExit(command, TimeSpan.FromMinutes(InstallerCommandTimeoutMinutes));
+        try
+        {
+            RunCommandToSuccessfulExit(command, TimeSpan.FromMinutes(InstallerCommandTimeoutMinutes));
+        }
+        catch (Exception ex) when (ex is not OperationCanceledException)
+        {
+            throw new InvalidOperationException(
+                $"Could not apply Linux .deb update automatically. The downloaded package remains at '{installerPath}'. You can install it manually with: sudo dpkg -i {QuoteShellArgument(installerPath)}",
+                ex);
+        }
     }
+
+    private static string BuildLinuxDebInstallerUnavailableMessage(string installerPath)
+        => $"Could not apply Linux .deb update automatically. Expected root dpkg, pkexec+dpkg, or passwordless sudo+dpkg to be available. The downloaded package remains at '{installerPath}'. You can install it manually with: sudo dpkg -i {QuoteShellArgument(installerPath)}";
 
     private static DesktopUpdateCommandSpec? ResolveLinuxDebInstallerCommand(
         string installerPath,
@@ -1660,6 +1687,9 @@ public static class DesktopUpdateRuntime
             ? new DesktopUpdateCommandSpec("sudo", ["-n", "dpkg", "-i", installerPath])
             : null;
     }
+
+    private static string QuoteShellArgument(string value)
+        => "'" + (value ?? string.Empty).Replace("'", "'\"'\"'", StringComparison.Ordinal) + "'";
 
     private static void TryLaunchLinuxInstalledApplication(string headId, IReadOnlyList<string> relaunchArgs)
     {
@@ -2001,7 +2031,8 @@ public static class DesktopUpdateRuntime
     private sealed record DesktopUpdateConfiguration(
         bool Enabled,
         bool AutoApply,
-        string ManifestLocation)
+        string ManifestLocation,
+        string Mode)
     {
         public static DesktopUpdateConfiguration Load()
         {
@@ -2020,12 +2051,63 @@ public static class DesktopUpdateRuntime
                 }
             }
 
-            bool enabled = ParseBool(Environment.GetEnvironmentVariable(UpdateEnabledEnvironmentVariable), !string.IsNullOrWhiteSpace(manifestLocation));
-            bool autoApply = ParseBool(Environment.GetEnvironmentVariable(UpdateAutoApplyEnvironmentVariable), defaultValue: true);
+            string? requestedMode = ParseMode(Environment.GetEnvironmentVariable(UpdateModeEnvironmentVariable));
+            if (requestedMode is null
+                && string.IsNullOrWhiteSpace(Environment.GetEnvironmentVariable(UpdateEnabledEnvironmentVariable))
+                && string.IsNullOrWhiteSpace(Environment.GetEnvironmentVariable(UpdateAutoApplyEnvironmentVariable))
+                && DesktopPreferenceRuntime.TryLoadState("avalonia", out DesktopPreferenceState preferences))
+            {
+                requestedMode = ParseMode(preferences.UpdateMode);
+            }
+
+            bool enabled;
+            bool autoApply;
+            string mode;
+            if (requestedMode is not null)
+            {
+                mode = requestedMode;
+                enabled = mode != UpdateModeOff;
+                autoApply = mode == UpdateModeFull;
+            }
+            else
+            {
+                enabled = ParseBool(Environment.GetEnvironmentVariable(UpdateEnabledEnvironmentVariable), !string.IsNullOrWhiteSpace(manifestLocation));
+                autoApply = ParseBool(Environment.GetEnvironmentVariable(UpdateAutoApplyEnvironmentVariable), defaultValue: true);
+                mode = ResolveMode(enabled, autoApply);
+            }
+
             return new DesktopUpdateConfiguration(
                 Enabled: enabled && !string.IsNullOrWhiteSpace(manifestLocation),
                 AutoApply: autoApply,
-                ManifestLocation: manifestLocation ?? string.Empty);
+                ManifestLocation: manifestLocation ?? string.Empty,
+                Mode: mode);
+        }
+
+        private static string ResolveMode(bool enabled, bool autoApply)
+        {
+            if (!enabled)
+            {
+                return UpdateModeOff;
+            }
+
+            return autoApply ? UpdateModeFull : UpdateModeNotify;
+        }
+
+        private static string? ParseMode(string? raw)
+        {
+            if (string.IsNullOrWhiteSpace(raw))
+            {
+                return null;
+            }
+
+            string normalized = raw.Trim().ToLowerInvariant().Replace("_", "-");
+            return normalized switch
+            {
+                "full" or "auto" or "automatic" or "full-auto" or "full-autoupdate" => UpdateModeFull,
+                "notify" or "notification" or "notify-only" or "manual" => UpdateModeNotify,
+                "off" or "disabled" or "disable" or "none" => UpdateModeOff,
+                _ => null
+            };
         }
 
         private static bool ParseBool(string? raw, bool defaultValue)

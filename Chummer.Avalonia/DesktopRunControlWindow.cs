@@ -116,14 +116,14 @@ internal sealed class DesktopRunControlWindow : Window
                     DesktopHorizonWindowScaffold.CreateMetricBadge("RunControlBadgeWorkspaces", "Workspaces", workspaceCount.ToString()),
                     DesktopHorizonWindowScaffold.CreateMetricBadge("RunControlBadgeContext", "Context", _campaignSummary is null ? "guest" : "account")),
                 CreateDetailText($"Runs in account context: {runCount}. Workspaces: {workspaceCount}."),
-                CreateDetailText(leadRun is null ? "No active governed run is currently available in account context." : $"{leadRun.Title} is the current lead run with status {leadRun.Status}."),
-                CreateDetailText(leadRun?.Summary ?? "Return after the next prep or session handoff to populate the native run desk.")
+                CreateDetailText(leadRun is null ? "No active run is currently available in account context." : $"{leadRun.Title} is the current lead run with status {leadRun.Status}."),
+                CreateDetailText(leadRun?.Summary ?? "Return after the next prep or session update to populate the native run desk.")
             }
         };
 
         return CreateCard(
-            "Current session posture",
-            "The desktop can see the current governed run lane and use it to jump into the signed-in desk or public control route.",
+            "Current session",
+            "The desktop can see the current run and use it to jump into the signed-in desk or public control page.",
             details,
             "RunControlStatusCard",
             CreateButton("Open account desk", static () => DesktopInstallLinkingRuntime.TryOpenRelativePortal("/account/run-control"), isPrimary: HasRunContext, name: "RunControlOpenAccountDeskButton"),
@@ -250,16 +250,16 @@ internal sealed class DesktopRunControlWindow : Window
                 switch (mode)
                 {
                     case "Scene":
-                        selectedRunDetailText.Text = "No governed scene detail is currently available.";
-                        selectedRunSceneText.Text = "Open or create a run to inspect active scene posture.";
+                        selectedRunDetailText.Text = "No scene detail is currently available.";
+                        selectedRunSceneText.Text = "Open or create a run to inspect the active scene.";
                         break;
                     case "Continuity":
-                        selectedRunDetailText.Text = "No governed continuity packet is currently attached.";
+                        selectedRunDetailText.Text = "No continuity packet is currently attached.";
                         selectedRunSceneText.Text = "Open or create a run to inspect runboard continuity.";
                         break;
                     default:
-                        selectedRunDetailText.Text = "No governed run detail is currently available.";
-                        selectedRunSceneText.Text = "Choose a run to inspect its current session posture.";
+                        selectedRunDetailText.Text = "No run detail is currently available.";
+                        selectedRunSceneText.Text = "Choose a run to inspect its current session.";
                         break;
                 }
             }
@@ -301,7 +301,7 @@ internal sealed class DesktopRunControlWindow : Window
             "Governed runs",
             runs.Count == 0
                 ? "Return after the next campaign runboard update."
-                : $"{runs.Count} governed run(s) are available in the current account context.",
+                : $"{runs.Count} run(s) are available in the current account context.",
             body,
             "RunControlRunsCard",
             CreateButton("Open account desk", static () => DesktopInstallLinkingRuntime.TryOpenRelativePortal("/account/run-control"), isPrimary: true, name: "RunControlOpenAccountDeskFromRunsButton"),

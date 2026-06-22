@@ -852,7 +852,7 @@ public partial class DesktopDialogWindow : Window
         DesktopDialogField sheetLanguageField = FindRequiredField(fields, "globalSheetLanguage");
         DesktopDialogField compactModeField = FindRequiredField(fields, "globalCompactMode");
         DesktopDialogField characterPriorityField = FindRequiredField(fields, "globalCharacterPriority");
-        DesktopDialogField updateCheckField = FindRequiredField(fields, "globalCheckForUpdates");
+        DesktopDialogField updateModeField = FindRequiredField(fields, "globalUpdateMode");
         DesktopDialogField preferNightlyField = FindRequiredField(fields, "globalPreferNightlyBuilds");
         DesktopDialogField rosterPathField = FindRequiredField(fields, "globalCharacterRosterPath");
         DesktopDialogField hideMasterIndexField = FindRequiredField(fields, "globalHideMasterIndex");
@@ -868,7 +868,7 @@ public partial class DesktopDialogWindow : Window
             CreateLegacyGlobalAppearanceRow(themeField, uiScaleField),
             CreateLegacySettingsPairRow(languageField, sheetLanguageField),
             CreateLegacySettingsPairRow(characterPriorityField, compactModeField),
-            CreateLegacySettingsPairRow(updateCheckField, preferNightlyField),
+            CreateLegacySettingsPairRow(updateModeField, preferNightlyField),
             CreateLegacySettingsPairRow(hideMasterIndexField, analyticsOptInField),
             CreateLegacyRosterPathRow(rosterPathField)));
 

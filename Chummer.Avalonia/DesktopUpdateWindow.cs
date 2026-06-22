@@ -181,6 +181,7 @@ internal sealed class DesktopUpdateWindow : Window
     {
         List<string> lines =
         [
+            F("desktop.update.mode", FormatUpdateMode(_updateStatus.UpdateMode)),
             F("desktop.update.updates_enabled", _updateStatus.UpdatesEnabled),
             F("desktop.update.manifest_location", _updateStatus.ManifestLocation)
         ];
@@ -239,7 +240,11 @@ internal sealed class DesktopUpdateWindow : Window
 
             if (_updateStatus.AutoApply)
             {
-                lines.Add("Auto-apply stays on. The updater should install the staged build in place and relaunch without another approval prompt.");
+                lines.Add("Full auto-update is on. Chummer should install the staged build in place and relaunch without another prompt.");
+            }
+            else if (string.Equals(_updateStatus.UpdateMode, "notify", StringComparison.OrdinalIgnoreCase))
+            {
+                lines.Add("Notify-only mode is on. Chummer will tell you about newer builds without installing them automatically.");
             }
         }
         else
@@ -435,7 +440,7 @@ internal sealed class DesktopUpdateWindow : Window
                 "#F8FAFC"),
             "disabled" => (
                 "Updater disabled",
-                "This install is not currently attached to a working desktop update manifest.",
+                "This install is not currently attached to a working update source.",
                 "ChummerShellSelectionPanelBrush",
                 "#F8FAFC"),
             _ => (
@@ -452,6 +457,15 @@ internal sealed class DesktopUpdateWindow : Window
             ? DesktopShellTheme.ResolveThemeBrush("ChummerShellActiveMenuBorderBrush", "#60A5FA")
             : DesktopShellTheme.ResolveThemeBrush("ChummerShellBorderBrush", "#B5C0CF");
     }
+
+    private static string FormatUpdateMode(string? updateMode)
+        => updateMode?.Trim().ToLowerInvariant() switch
+        {
+            "full" => "full auto-update",
+            "notify" => "notify only",
+            "off" => "off",
+            _ => "unknown"
+        };
 
     private static Border CreateSection(string title, Control body, Control? actionContent)
         => DesktopShellTheme.CreateSection(title, body, actionContent, padding: 10, cornerRadius: 4);

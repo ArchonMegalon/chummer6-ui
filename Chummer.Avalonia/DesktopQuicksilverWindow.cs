@@ -30,7 +30,7 @@ internal sealed class DesktopQuicksilverWindow : Window
         Content = DesktopHorizonWindowScaffold.CreateScroller(
             "Quicksilver",
             AreGuidedToolsVisible()
-                ? "Quicksilver is the native command deck for the account context: rules answers, build handoffs, publications, and tools stay one move away."
+                ? "Quicksilver is the native command deck for the account context: rules answers, build links, publications, and tools stay one move away."
                 : "Quicksilver is the native command deck for the account context: rules answers, publications, and tools stay one move away.",
             CreateCommandDeckCard(),
             CreateJumpTargetsCard(),
@@ -77,11 +77,11 @@ internal sealed class DesktopQuicksilverWindow : Window
                 DesktopHorizonWindowScaffold.CreateBadgeStrip(
                     DesktopHorizonWindowScaffold.CreateMetricBadge(
                         "QuicksilverBadgeHandoffs",
-                        showGuidedTools ? "Handoffs" : "Workspaces",
+                        showGuidedTools ? "Build links" : "Workspaces",
                         (showGuidedTools ? (_campaignSummary?.BuildLabHandoffs.Count ?? 0) : (_campaignSummary?.Workspaces.Count ?? 0)).ToString()),
                     DesktopHorizonWindowScaffold.CreateMetricBadge("QuicksilverBadgeRules", "Rules", (_campaignSummary?.RulesNavigator.Count ?? 0).ToString())),
                 DesktopHorizonWindowScaffold.CreateDetailText(showGuidedTools
-                    ? $"ALICE handoffs: {_campaignSummary?.BuildLabHandoffs.Count ?? 0}. Rules answers: {_campaignSummary?.RulesNavigator.Count ?? 0}."
+                    ? $"ALICE build links: {_campaignSummary?.BuildLabHandoffs.Count ?? 0}. Rules answers: {_campaignSummary?.RulesNavigator.Count ?? 0}."
                     : $"Rules answers: {_campaignSummary?.RulesNavigator.Count ?? 0}. Workspaces: {_campaignSummary?.Workspaces.Count ?? 0}."),
                 DesktopHorizonWindowScaffold.CreateDetailText($"Creator publications: {_campaignSummary?.CreatorPublications.Count ?? 0}. Workspaces: {_campaignSummary?.Workspaces.Count ?? 0}."),
                 DesktopHorizonWindowScaffold.CreateDetailText("Quicksilver should compress the distance between decision surfaces rather than becoming another dead launcher.")

@@ -84,16 +84,16 @@ internal sealed class DesktopRunbookPressWindow : Window
                 DesktopHorizonWindowScaffold.CreateBadgeStrip(
                     DesktopHorizonWindowScaffold.CreateMetricBadge("RunbookPressBadgePublications", "Publications", (_campaignSummary?.CreatorPublications.Count ?? 0).ToString()),
                     DesktopHorizonWindowScaffold.CreateMetricBadge("RunbookPressBadgeCampaigns", "Campaigns", (_campaignSummary?.Campaigns.Count ?? 0).ToString())),
-                DesktopHorizonWindowScaffold.CreateDetailText(leadPublication?.Summary ?? "No creator publication is currently leading the runbook lane."),
+                DesktopHorizonWindowScaffold.CreateDetailText(leadPublication?.Summary ?? "No creator publication is currently selected for Runbook Press."),
                 DesktopHorizonWindowScaffold.CreateDetailText(leadPublication is null
-                    ? "Return after the next publication-safe handoff."
+                    ? "Return after the next publication-safe draft."
                     : $"{leadPublication.Title} is the current lead publication with status {leadPublication.PublicationStatus}.")
             }
         };
 
         return DesktopHorizonWindowScaffold.CreateCard(
             "Publication assembly",
-            "Runbook Press owns campaign-book assembly, publication posture, and the jump back into the signed-in creator desk.",
+            "Runbook Press owns campaign-book assembly, publication status, and the jump back into the signed-in creator desk.",
             details,
             DesktopHorizonWindowScaffold.CreateAsyncButton(this, "Open publication desk", () => DesktopCreatorPublicationWindow.ShowAsync(this, _headId), isPrimary: HasPublicationContext),
             DesktopHorizonWindowScaffold.CreateAsyncButton(this, "Open creator desk", () => DesktopCreatorOsWindow.ShowAsync(this, _headId)),
@@ -123,7 +123,7 @@ internal sealed class DesktopRunbookPressWindow : Window
 
         return DesktopHorizonWindowScaffold.CreateCard(
             "Campaign books and modules",
-            "Keep the current campaign, dossier lane, and module follow-through visible without collapsing Runbook Press into generic creator chrome.",
+            "Keep the current campaign, dossier, and module follow-up visible without collapsing Runbook Press into generic creator chrome.",
             details,
             DesktopHorizonWindowScaffold.CreateAsyncButton(this, "Open workspace desk", () => DesktopCampaignWorkspaceWindow.ShowAsync(this, _headId), isPrimary: HasCampaignContext),
             DesktopHorizonWindowScaffold.CreateAsyncButton(this, "Open creator desk", () => DesktopCreatorOsWindow.ShowAsync(this, _headId)),
@@ -255,7 +255,7 @@ internal sealed class DesktopRunbookPressWindow : Window
 
         return DesktopHorizonWindowScaffold.CreateCard(
             "Detail modes",
-            "Runbook Press should separate publication assembly, campaign context, and distribution posture instead of collapsing them into one summary.",
+            "Runbook Press separates publication assembly, campaign context, and distribution status instead of collapsing them into one summary.",
             details,
             DesktopHorizonWindowScaffold.CreateAsyncButton(this, "Open publication desk", () => DesktopCreatorPublicationWindow.ShowAsync(this, _headId), isPrimary: HasPublicationContext),
             DesktopHorizonWindowScaffold.CreateAsyncButton(this, "Open workspace desk", () => DesktopCampaignWorkspaceWindow.ShowAsync(this, _headId)),

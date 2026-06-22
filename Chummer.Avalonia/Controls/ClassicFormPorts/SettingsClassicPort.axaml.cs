@@ -34,7 +34,7 @@ public partial class SettingsClassicPort : ClassicFormPortSurfaceControl
     {
         if (_noticeText is not null)
         {
-            SetLeadNotice(_noticeText, state.Notice, "Classic settings keeps global preferences, custom data, issues, and plugin posture grouped like the legacy dialog.");
+            SetLeadNotice(_noticeText, state.Notice, "Classic settings keeps global preferences, custom data, issues, and plugins grouped like the legacy dialog.");
         }
 
         SetActiveTab(_tabs, state.ActiveTabId, "Global", "Custom Data", "GitHub Issues", "Plugins");

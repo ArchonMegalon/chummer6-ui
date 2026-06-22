@@ -203,6 +203,8 @@ public sealed class DesktopInstallerParityComplianceTests
         StringAssert.Contains(avaloniaProgramText, "App.StartupArguments = args;");
         StringAssert.Contains(appText, "DesktopStartupUpdateWindow.TryRunStartupUpdateAsync(");
         StringAssert.Contains(startupWindowText, "Installing update and restarting Chummer");
+        StringAssert.Contains(startupWindowText, "Keep this window open. Starting another copy can interrupt the update.");
+        StringAssert.Contains(startupWindowText, "update.Stage is \"downloading\" or \"validating\" or \"staging\" or \"relaunching\"");
         StringAssert.Contains(startupWindowText, "A macOS update is ready. Open Downloads to install it manually; this copy will stay usable.");
         StringAssert.Contains(runtimeText, "public sealed record DesktopUpdateProgressUpdate");
         StringAssert.Contains(runtimeText, "IProgress<DesktopUpdateProgressUpdate>? progress");

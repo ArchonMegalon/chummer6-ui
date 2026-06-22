@@ -33,7 +33,7 @@ internal sealed class DesktopRunsiteWindow : Window
 
         Content = DesktopHorizonWindowScaffold.CreateScroller(
             "Runsite",
-            "Runsite keeps mission-space prep, workspace digests, and starter return lanes visible from the desktop before you widen into public or signed-in browser routes.",
+            "Runsite keeps mission prep, workspace digests, and starter return paths visible from the desktop before you open browser pages.",
             CreateStatusCard(),
             CreateWorkspaceCard(),
             new StackPanel
@@ -104,17 +104,17 @@ internal sealed class DesktopRunsiteWindow : Window
                     DesktopHorizonWindowScaffold.CreateMetricBadge("RunsiteBadgeCampaigns", "Campaigns", (_campaignSummary?.Campaigns.Count ?? 0).ToString()),
                     DesktopHorizonWindowScaffold.CreateMetricBadge("RunsiteBadgeDigests", "Digests", _workspaceDigests.Count.ToString())),
                 DesktopHorizonWindowScaffold.CreateDetailText($"Signed-in workspaces: {_campaignSummary?.Workspaces.Count ?? 0}. Digest shelf: {_workspaceDigests.Count}. Campaigns: {_campaignSummary?.Campaigns.Count ?? 0}."),
-                DesktopHorizonWindowScaffold.CreateDetailText(leadWorkspace?.ReturnSummary ?? leadDigest?.ReturnSummary ?? "No governed runsite workspace is currently pinned."),
+                DesktopHorizonWindowScaffold.CreateDetailText(leadWorkspace?.ReturnSummary ?? leadDigest?.ReturnSummary ?? "No runsite workspace is currently pinned."),
                 DesktopHorizonWindowScaffold.CreateDetailText(leadWorkspace?.NextSafeAction ?? leadDigest?.NextSafeAction ?? "Open the signed-in runsite bench to recover the next safe mission-space move.")
             }
         };
 
         return DesktopHorizonWindowScaffold.CreateCard(
-            "Mission-space posture",
+            "Mission prep",
             "Keep the current workspace digest, return summary, and next safe action visible before you hand prep and orientation back to browser-only routes.",
             details,
             DesktopHorizonWindowScaffold.CreateAsyncButton(this, "Open signed-in runsites", static () => DesktopInstallLinkingRuntime.TryOpenRelativePortal("/account/runsites"), isPrimary: HasWorkspaceContext),
-            DesktopHorizonWindowScaffold.CreateAsyncButton(this, "Open return lane", static () => DesktopInstallLinkingRuntime.TryOpenRelativePortal("/account/runsites/open")),
+            DesktopHorizonWindowScaffold.CreateAsyncButton(this, "Open return path", static () => DesktopInstallLinkingRuntime.TryOpenRelativePortal("/account/runsites/open")),
             DesktopHorizonWindowScaffold.CreateAsyncButton(this, "Open public Runsite", static () => DesktopInstallLinkingRuntime.TryOpenRelativePortal("/runsites")));
     }
 
@@ -134,7 +134,7 @@ internal sealed class DesktopRunsiteWindow : Window
                     new TextBlock
                     {
                         Name = "RunsiteSelectedWorkspaceDetailText",
-                        Text = "No governed runsite workspace is currently available.",
+                        Text = "No runsite workspace is currently available.",
                         TextWrapping = TextWrapping.Wrap
                     },
                     new TextBlock
@@ -148,10 +148,10 @@ internal sealed class DesktopRunsiteWindow : Window
 
             return DesktopHorizonWindowScaffold.CreateCard(
                 "Workspace desk",
-                "Return after the next governed runsite sync to inspect workspace digests natively.",
+                "Return after the next runsite sync to inspect workspace digests natively.",
                 emptyBody,
                 DesktopHorizonWindowScaffold.CreateAsyncButton(this, "Open signed-in bench", static () => DesktopInstallLinkingRuntime.TryOpenRelativePortal("/account/runsites"), isPrimary: false),
-                DesktopHorizonWindowScaffold.CreateAsyncButton(this, "Open starter lane", static () => DesktopInstallLinkingRuntime.TryOpenRelativePortal("/account/runsites/open")),
+                DesktopHorizonWindowScaffold.CreateAsyncButton(this, "Open starter path", static () => DesktopInstallLinkingRuntime.TryOpenRelativePortal("/account/runsites/open")),
                 DesktopHorizonWindowScaffold.CreateAsyncButton(this, "Open public route", static () => DesktopInstallLinkingRuntime.TryOpenRelativePortal("/runsites")));
         }
 
@@ -235,14 +235,14 @@ internal sealed class DesktopRunsiteWindow : Window
                 {
                     case "Orientation":
                         selectedWorkspaceDetailText.Text = "No first-session or orientation packet is currently pinned.";
-                        selectedWorkspaceFollowUpText.Text = "Reconnect a governed workspace to inspect the runsite starter lane.";
+                        selectedWorkspaceFollowUpText.Text = "Reconnect a workspace to inspect the runsite starter path.";
                         break;
                     case "Memory":
                         selectedWorkspaceDetailText.Text = "No campaign memory packet is currently attached.";
-                        selectedWorkspaceFollowUpText.Text = "Reconnect a governed workspace to inspect memory and watchouts.";
+                        selectedWorkspaceFollowUpText.Text = "Reconnect a workspace to inspect memory and watchouts.";
                         break;
                     default:
-                        selectedWorkspaceDetailText.Text = "No governed runsite workspace is currently available.";
+                        selectedWorkspaceDetailText.Text = "No runsite workspace is currently available.";
                         selectedWorkspaceFollowUpText.Text = "Open or create a workspace to populate the native runsite desk.";
                         break;
                 }
@@ -285,10 +285,10 @@ internal sealed class DesktopRunsiteWindow : Window
 
         return DesktopHorizonWindowScaffold.CreateCard(
             "Workspace desk",
-            $"{entries.Count} governed runsite workspace entry or digest(s) are available on native rails.",
+            $"{entries.Count} runsite workspace entry or digest(s) are available in the desktop.",
             body,
             DesktopHorizonWindowScaffold.CreateAsyncButton(this, "Open signed-in bench", static () => DesktopInstallLinkingRuntime.TryOpenRelativePortal("/account/runsites"), isPrimary: true),
-            DesktopHorizonWindowScaffold.CreateAsyncButton(this, "Open starter lane", static () => DesktopInstallLinkingRuntime.TryOpenRelativePortal("/account/runsites/open")),
+            DesktopHorizonWindowScaffold.CreateAsyncButton(this, "Open starter path", static () => DesktopInstallLinkingRuntime.TryOpenRelativePortal("/account/runsites/open")),
             DesktopHorizonWindowScaffold.CreateAsyncButton(this, "Open public route", static () => DesktopInstallLinkingRuntime.TryOpenRelativePortal("/runsites")));
     }
 

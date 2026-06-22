@@ -33,7 +33,7 @@ internal sealed class DesktopCreatorOsWindow : Window
 
         Content = DesktopHorizonWindowScaffold.CreateScroller(
             "Creator OS",
-            "Creator OS keeps publication, dossier, and campaign-facing creator operations on a dedicated native desk instead of reusing the narrower Runbook Press assembly lane.",
+            "Creator OS keeps publications, dossiers, and campaign-facing creator work on one native desk.",
             CreateCreatorDeskCard(),
             CreatePublishingStackCard(),
             CreateDetailCard(),
@@ -88,16 +88,16 @@ internal sealed class DesktopCreatorOsWindow : Window
                 DesktopHorizonWindowScaffold.CreateBadgeStrip(
                     DesktopHorizonWindowScaffold.CreateMetricBadge("CreatorOsBadgePublications", "Publications", (_campaignSummary?.CreatorPublications.Count ?? 0).ToString()),
                     DesktopHorizonWindowScaffold.CreateMetricBadge("CreatorOsBadgeDossiers", "Dossiers", (_campaignSummary?.Dossiers.Count ?? 0).ToString()),
-                    DesktopHorizonWindowScaffold.CreateMetricBadge("CreatorOsBadgeCampaigns", "Campaigns", (_campaignSummary?.Campaigns.Count ?? 0).ToString())),
+                DesktopHorizonWindowScaffold.CreateMetricBadge("CreatorOsBadgeCampaigns", "Campaigns", (_campaignSummary?.Campaigns.Count ?? 0).ToString())),
                 DesktopHorizonWindowScaffold.CreateDetailText(leadPublication?.Summary ?? "No creator publication is currently pinned."),
-                DesktopHorizonWindowScaffold.CreateDetailText(leadDossier?.DisplayName ?? "No dossier is currently pinned to the creator lane."),
+                DesktopHorizonWindowScaffold.CreateDetailText(leadDossier?.DisplayName ?? "No dossier is currently pinned to Creator OS."),
                 DesktopHorizonWindowScaffold.CreateDetailText("Creator OS should keep publishing, dossier follow-through, and campaign-facing output in one native place.")
             }
         };
 
         return DesktopHorizonWindowScaffold.CreateCard(
             "Creator desk",
-            "Use Creator OS when you need the full creator-facing operating surface, not just the campaign-book assembly lane.",
+            "Use Creator OS when you need the full creator-facing desk, not just campaign-book assembly.",
             details,
             DesktopHorizonWindowScaffold.CreateAsyncButton(this, "Open publication desk", () => DesktopCreatorPublicationWindow.ShowAsync(this, _headId), isPrimary: HasPublicationContext),
             DesktopHorizonWindowScaffold.CreateAsyncButton(this, "Open Runbook Press", () => DesktopRunbookPressWindow.ShowAsync(this, _headId)),
@@ -116,10 +116,10 @@ internal sealed class DesktopCreatorOsWindow : Window
             Children =
             {
                 DesktopHorizonWindowScaffold.CreateBadgeStrip(
-                    DesktopHorizonWindowScaffold.CreateMetricBadge("CreatorOsBadgeRuns", "Runs", (_campaignSummary?.Runs.Count ?? 0).ToString()),
-                    DesktopHorizonWindowScaffold.CreateMetricBadge("CreatorOsBadgeWorkspaces", "Workspaces", (_campaignSummary?.Workspaces.Count ?? 0).ToString())),
+                DesktopHorizonWindowScaffold.CreateMetricBadge("CreatorOsBadgeRuns", "Runs", (_campaignSummary?.Runs.Count ?? 0).ToString()),
+                DesktopHorizonWindowScaffold.CreateMetricBadge("CreatorOsBadgeWorkspaces", "Workspaces", (_campaignSummary?.Workspaces.Count ?? 0).ToString())),
                 DesktopHorizonWindowScaffold.CreateDetailText(leadCampaign?.Summary ?? "No campaign is currently pinned for creator follow-through."),
-                DesktopHorizonWindowScaffold.CreateDetailText("Creator OS should keep Runbook Press, Jackpoint, and Community Hub as adjacent lanes instead of treating them like separate hidden tools.")
+                DesktopHorizonWindowScaffold.CreateDetailText("Creator OS keeps Runbook Press, Jackpoint, and Community Hub close instead of hiding them as separate tools.")
             }
         };
 
@@ -202,13 +202,13 @@ internal sealed class DesktopCreatorOsWindow : Window
                 case "Publishing":
                     detailText.Text = selectedEntry.Kind.Equals("publication", StringComparison.OrdinalIgnoreCase)
                         ? selectedEntry.Summary
-                        : "Publishing posture: switch to a publication-led lane before widening creator output.";
+                        : "Publishing: choose a publication before widening creator output.";
                     selectedEntryFollowUpText.Text = selectedEntry.FollowUp;
                     break;
                 case "Network":
                     detailText.Text = selectedEntry.Kind.Equals("dossier", StringComparison.OrdinalIgnoreCase)
                         ? selectedEntry.Summary
-                        : "Network posture: keep the current dossier and community-facing lane visible before widening creator output.";
+                        : "Network: keep the current dossier and community page visible before widening creator output.";
                     selectedEntryFollowUpText.Text = selectedEntry.FollowUp;
                     break;
                 default:
@@ -257,7 +257,7 @@ internal sealed class DesktopCreatorOsWindow : Window
 
         return DesktopHorizonWindowScaffold.CreateCard(
             "Detail modes",
-            "Creator OS should separate the creator desk, publishing stack, and network-facing posture instead of flattening them into one paragraph.",
+            "Creator OS separates the creator desk, publishing stack, and public-facing status instead of flattening them into one paragraph.",
             details,
             DesktopHorizonWindowScaffold.CreateAsyncButton(this, "Open publication desk", () => DesktopCreatorPublicationWindow.ShowAsync(this, _headId), isPrimary: HasCreatorContext),
             DesktopHorizonWindowScaffold.CreateAsyncButton(this, "Open workspace desk", () => DesktopCampaignWorkspaceWindow.ShowAsync(this, _headId)),
