@@ -70,6 +70,29 @@ public sealed class DesktopInstallLinkingRuntimeTests
     }
 
     [TestMethod]
+    public void ShouldPromptForStartup_stops_after_user_dismisses_optional_claim()
+    {
+        DateTimeOffset dismissedAt = DateTimeOffset.Parse("2026-03-28T14:05:00+00:00");
+        DesktopInstallLinkingState guestState = CreateState() with
+        {
+            ChannelId = "stable",
+            Status = "guest",
+            ClaimedAtUtc = null,
+            GrantId = null,
+            GrantToken = null,
+            GrantIssuedAtUtc = null,
+            GrantExpiresAtUtc = null,
+            LastPromptDismissedAtUtc = null
+        };
+
+        Assert.IsTrue(DesktopInstallLinkingRuntime.ShouldPromptForStartup(guestState));
+        Assert.IsFalse(DesktopInstallLinkingRuntime.ShouldPromptForStartup(guestState with
+        {
+            LastPromptDismissedAtUtc = dismissedAt
+        }));
+    }
+
+    [TestMethod]
     public async Task TryHandleHeadlessInstallLinkModeAsync_ignores_normal_startup()
     {
         using StringWriter output = new();

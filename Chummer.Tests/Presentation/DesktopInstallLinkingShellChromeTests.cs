@@ -83,17 +83,21 @@ public sealed class DesktopInstallLinkingShellChromeTests
     }
 
     [TestMethod]
-    public void Windows_install_link_gate_copy_stays_fail_closed_until_user_claims_online()
+    public void Windows_install_link_gate_copy_allows_local_unlinked_continuation()
     {
         string formPath = FindPath("Chummer", "Forms", "DesktopInstallLinkingGateForm.cs");
         string formText = File.ReadAllText(formPath);
 
-        StringAssert.Contains(formText, "This copy is not claimed yet.");
+        StringAssert.Contains(formText, "This copy is not linked yet.");
         StringAssert.Contains(formText, "Claim your copy");
-        StringAssert.Contains(formText, "This downloaded copy is not linked to a Chummer account yet.");
+        StringAssert.Contains(formText, "Continue unlinked");
+        StringAssert.Contains(formText, "Close this window to keep using Chummer unlinked.");
+        Assert.IsFalse(
+            formText.Contains("Install link required", StringComparison.Ordinal),
+            "Claiming a copy is optional; the dialog must not read like activation.");
         Assert.IsFalse(
             formText.Contains("dashboard", StringComparison.OrdinalIgnoreCase),
-            "The unlinked Windows gate must not suggest that the desktop continues into dashboard or workbench content before linking.");
+            "The Windows claim surface should stay narrowly focused on account linking.");
         Assert.IsFalse(
             formText.Contains("premium", StringComparison.OrdinalIgnoreCase),
             "The unlinked Windows gate should stay narrowly focused on account linking.");
@@ -116,18 +120,21 @@ public sealed class DesktopInstallLinkingShellChromeTests
     }
 
     [TestMethod]
-    public void Guest_install_link_window_keeps_login_path_but_allows_explicit_exit()
+    public void Guest_install_link_window_keeps_login_path_but_allows_unlinked_close()
     {
         string source = FindPath("Chummer.Avalonia", "DesktopInstallLinkingWindow.cs");
         string text = File.ReadAllText(source);
 
-        StringAssert.Contains(text, "desktop.install_link.button.exit_desktop");
-        StringAssert.Contains(text, "_allowGuestClose = true;");
-        StringAssert.Contains(text, "desktopLifetime.Shutdown();");
+        StringAssert.Contains(text, "desktop.install_link.button.continue_unlinked");
+        StringAssert.Contains(text, "ContinueUnlinkedAsync");
+        StringAssert.Contains(text, "DesktopInstallLinkingRuntime.MarkPromptDismissed(_state.HeadId)");
         StringAssert.Contains(text, "desktop.install_link.button.login_website");
         Assert.IsFalse(
             text.Contains("e.Cancel = true;", StringComparison.Ordinal),
-            "Closing the unlinked install-link window should exit the desktop instead of trapping the user in the dialog.");
+            "Closing the unlinked install-link window should continue locally instead of trapping the user in the dialog.");
+        Assert.IsFalse(
+            text.Contains("desktopLifetime.Shutdown();", StringComparison.Ordinal),
+            "Closing the optional claim window must not shut down the desktop.");
     }
 
     [TestMethod]
@@ -275,7 +282,6 @@ public sealed class DesktopInstallLinkingShellChromeTests
         StringAssert.Contains(installWindowSource, "ShowLoginVideoAsync(Window owner, string headId)");
         StringAssert.Contains(installWindowSource, "PromptReason: \"desktop_help_login_video\"");
         StringAssert.Contains(installWindowSource, "loginVideoPreview: true");
-        StringAssert.Contains(installWindowSource, "_allowGuestClose = loginVideoPreview;");
         StringAssert.Contains(installWindowSource, "The browser will not open unless you press the claim button.");
         StringAssert.Contains(installWindowSource, "_exitButton.Content = \"Close\";");
     }

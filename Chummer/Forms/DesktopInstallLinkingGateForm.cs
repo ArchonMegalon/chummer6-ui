@@ -31,7 +31,7 @@ namespace Chummer.Forms
         public DesktopInstallLinkingGateForm(DesktopInstallLinkingStartupContext startupContext)
         {
             _startupContext = startupContext;
-            Text = "Install link required";
+            Text = "Claim your copy";
             Font = new Font(FontFamily.GenericSansSerif, 9.0f);
             StartPosition = FormStartPosition.CenterScreen;
             FormBorderStyle = FormBorderStyle.FixedDialog;
@@ -48,7 +48,7 @@ namespace Chummer.Forms
                 Font = new Font(Font, FontStyle.Bold),
                 Padding = new Padding(16, 14, 16, 2),
                 Height = 52,
-                Text = "This copy is not claimed yet."
+                Text = "This copy is not linked yet."
             };
 
             Label objInfo = new()
@@ -69,7 +69,7 @@ namespace Chummer.Forms
 
             Button objCloseButton = new()
             {
-                Text = "Exit",
+                Text = "Continue unlinked",
                 DialogResult = DialogResult.Cancel,
                 AutoSize = true,
                 Anchor = AnchorStyles.None
@@ -102,8 +102,8 @@ namespace Chummer.Forms
 
         private static string BuildMessage(DesktopInstallLinkingStartupContext startupContext)
         {
-            string strMessage = "This downloaded copy is not linked to a Chummer account yet. " +
-                                "Claim it online so recovery, updates, and support stay attached to this install.";
+            string strMessage = "Claim this copy online when you want recovery, updates, and support to stay attached to this install. " +
+                                "Close this window to keep using Chummer unlinked.";
             if (!string.IsNullOrWhiteSpace(startupContext.PromptReason))
                 strMessage += Environment.NewLine + Environment.NewLine + "Status: " + startupContext.PromptReason;
             if (!string.IsNullOrWhiteSpace(startupContext.ClaimResult?.Message))

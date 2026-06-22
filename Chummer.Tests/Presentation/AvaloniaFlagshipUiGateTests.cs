@@ -239,13 +239,17 @@ public sealed class AvaloniaFlagshipUiGateTests
             "Startup modal prompts should still be gated on active install-linking context.");
         Assert.IsTrue(
             appText.Contains("if (installLinkingContext.ShouldPrompt && !DesktopInstallLinkingRuntime.IsClaimed(currentInstallState))", StringComparison.Ordinal),
-            "Only real public linking prompts should hard-stop startup continuation; local channels must stay usable.");
+            "Only real public linking prompts should record an optional dismissed state; local channels must stay usable.");
         Assert.IsTrue(
             appText.Contains("MarkPromptDismissed(currentInstallState.HeadId)", StringComparison.Ordinal),
             "Unclaimed installs must record the dismissed-state turn and avoid looping prompts.");
         Assert.IsTrue(
-            appText.Contains("owner.Close();", StringComparison.Ordinal),
-            "Unlinked sessions must close the main shell instead of continuing into app surfaces.");
+            appText.Contains("owner.ApplyInstallLinkingChrome(currentInstallState);", StringComparison.Ordinal),
+            "Unlinked sessions must continue into app surfaces with guest chrome after the claim window closes.");
+        Assert.IsFalse(
+            appText.Contains("owner.Close();\n                return;", StringComparison.Ordinal)
+            || appText.Contains("owner.Close();\r\n                return;", StringComparison.Ordinal),
+            "Optional claim dismissal must not close the main shell.");
         Assert.IsFalse(
             appText.Contains("lifetime.Shutdown()", StringComparison.Ordinal),
             "Guest continuation must not force-quit the Avalonia desktop after the native install-linking surface closes.");

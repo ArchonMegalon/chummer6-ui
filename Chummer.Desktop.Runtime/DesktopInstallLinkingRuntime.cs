@@ -333,7 +333,9 @@ public static class DesktopInstallLinkingRuntime
     public static bool ShouldPromptForStartup(DesktopInstallLinkingState state)
     {
         ArgumentNullException.ThrowIfNull(state);
-        return !IsClaimed(state) && RequiresInstallLinkPrompt(state.ChannelId);
+        return !IsClaimed(state)
+               && RequiresInstallLinkPrompt(state.ChannelId)
+               && state.LastPromptDismissedAtUtc is null;
     }
 
     public static bool TryOpenAccountPortalForInstall(DesktopInstallLinkingState state)

@@ -728,7 +728,10 @@ namespace Chummer
             using (DesktopInstallLinkingGateForm objGateForm = new(startupContext))
             {
                 if (objGateForm.ShowDialog() != DialogResult.OK)
-                    return false;
+                {
+                    DesktopInstallLinkingRuntime.MarkPromptDismissed(startupContext.State.HeadId);
+                    return true;
+                }
             }
 
             DesktopInstallLinkingStartupContext objRefreshedContext = DesktopInstallLinkingRuntime.InitializeForStartup(
@@ -740,19 +743,7 @@ namespace Chummer
                 return true;
 
             DesktopInstallLinkingRuntime.MarkPromptDismissed(objRefreshedContext.State.HeadId);
-
-            string strStatusMessage = "Please claim this copy online, then restart Chummer to continue.";
-            if (!string.IsNullOrWhiteSpace(objRefreshedContext.ClaimResult?.Message))
-                strStatusMessage = objRefreshedContext.ClaimResult.Message + Environment.NewLine + Environment.NewLine + strStatusMessage;
-            if (!string.IsNullOrWhiteSpace(objRefreshedContext.PromptReason))
-                strStatusMessage = $"{strStatusMessage}{Environment.NewLine}Reason: {objRefreshedContext.PromptReason}";
-
-            MessageBox.Show(
-                strStatusMessage,
-                System.Windows.Forms.Application.ProductName,
-                MessageBoxButtons.OK,
-                MessageBoxIcon.Information);
-            return false;
+            return true;
         }
 
         public static void SetProcessDPI(DpiScalingMethod eMethod)

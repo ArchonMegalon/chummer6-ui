@@ -135,12 +135,13 @@ public static class DesktopLocalizationCatalog
         ["desktop.install_link.button.copy_login_url"] = "Copy Claim Link",
         ["desktop.install_link.button.redeem_claim_code"] = "Use Fallback Code",
         ["desktop.install_link.button.login_website"] = "Claim your copy",
+        ["desktop.install_link.button.continue_unlinked"] = "Continue unlinked",
         ["desktop.install_link.button.exit_desktop"] = "Exit desktop",
         ["desktop.home.language_summary"] = "Language: {0}\nShipping locales: {1}\nLanguage changes apply fully on restart during the current desktop wave.",
         ["desktop.home.next_safe_action"] = "Next safe action: {0}",
         ["desktop.home.watchout"] = "Watchout: {0}",
         ["desktop.home.intro.claim_failed_guest"] = "This copy is still running as a guest because the last claim attempt failed. Claim it before you rely on support, fix notices, or recovery.",
-        ["desktop.home.intro.guest_recommended_link"] = "This copy is not claimed yet. Claim it online before Chummer shows anything else.",
+        ["desktop.home.intro.guest_recommended_link"] = "This copy is not linked yet. Claim it when you want recovery and support history attached.",
         ["desktop.home.intro.update_available"] = "A promoted update is ready for this install. Review the update posture before you jump back into campaign work.",
         ["desktop.home.intro.release_posture_review"] = "This copy is linked, but the current release needs review before you rely on updates, support, or campaign continuity.",
         ["desktop.home.intro.campaign_watchouts"] = "This copy is linked and current enough to continue, but campaign return has items to review before you reopen work.",
@@ -237,7 +238,7 @@ public static class DesktopLocalizationCatalog
         ["desktop.install_link.summary.platform"] = "Platform: {0}/{1}",
         ["desktop.install_link.summary.status"] = "Status: {0}",
         ["desktop.install_link.summary.linked_status"] = "Linked. Grant expires {0} UTC.",
-        ["desktop.install_link.summary.guest_status"] = "This copy is not claimed yet.",
+        ["desktop.install_link.summary.guest_status"] = "This copy is not linked yet.",
         ["desktop.install_link.summary.last_claim_attempt"] = "Last claim attempt: {0} UTC.",
         ["desktop.install_link.summary.hub_message"] = "Hub message: {0}",
         ["desktop.install_link.summary.claim_error"] = "Claim error: {0}",
@@ -574,7 +575,7 @@ public static class DesktopLocalizationCatalog
             localized["desktop.home.value.no_supportability_summary"] = "Noch keine Supportability-Zusammenfassung veröffentlicht.";
             localized["desktop.home.value.no_fix_guidance"] = "Noch keine Fix-Empfehlung veröffentlicht.";
             localized["desktop.home.intro.claim_failed_guest"] = "Diese Kopie läuft noch als Gast, weil der letzte Claim-Versuch fehlgeschlagen ist. Beanspruchen Sie sie, bevor Sie Support, Fix-Hinweise oder Wiederherstellung nutzen.";
-            localized["desktop.home.intro.guest_recommended_link"] = "Diese Kopie ist noch nicht beansprucht. Beanspruchen Sie sie online, bevor Chummer weitere Schritte zeigt.";
+            localized["desktop.home.intro.guest_recommended_link"] = "Diese Kopie ist noch nicht verknuepft. Beanspruchen Sie sie, wenn Wiederherstellung und Supportverlauf verbunden bleiben sollen.";
             localized["desktop.home.intro.update_available"] = "Ein promoviertes Update ist für diese Installation bereit. Prüfen Sie die Update-Posture, bevor Sie zur Kampagnenarbeit zurückkehren.";
             localized["desktop.home.intro.release_posture_review"] = "Diese Kopie ist verknüpft, aber das aktuelle Release muss geprüft werden, bevor Sie Updates, Support oder Kampagnen-Kontinuität nutzen.";
             localized["desktop.home.intro.campaign_watchouts"] = "Diese Kopie ist verknüpft und aktuell genug, aber die Kampagnen-Rückkehr hat Punkte zu prüfen, bevor Sie die Arbeit wieder öffnen.";
@@ -622,6 +623,7 @@ public static class DesktopLocalizationCatalog
             localized["desktop.install_link.button.link_copy"] = "Diese Kopie beanspruchen";
             localized["desktop.install_link.button.redeem_claim_code"] = "Fallback-Code nutzen";
             localized["desktop.install_link.button.login_website"] = "Diese Kopie beanspruchen";
+            localized["desktop.install_link.button.continue_unlinked"] = "Ohne Verknuepfung fortfahren";
             localized["desktop.install_link.button.exit_desktop"] = "Desktop beenden";
             localized["desktop.install_link.shipping_locales"] = "Verfügbare Sprachen: {0}.";
             localized["desktop.install_link.claim_code_watermark"] = "Anmeldecode einfugen";
@@ -1002,7 +1004,7 @@ public static class DesktopLocalizationCatalog
             localized["desktop.home.value.no_supportability_summary"] = "Aucun resume de supportabilite publie pour le moment.";
             localized["desktop.home.value.no_fix_guidance"] = "Aucune recommandation de correctif publiee pour le moment.";
             localized["desktop.home.intro.claim_failed_guest"] = "Cette copie fonctionne encore en invite car la derniere tentative de reclamation a echoue. Reclamez-la avant de compter sur le support, les avis de correctif ou la restauration.";
-            localized["desktop.home.intro.guest_recommended_link"] = "Cette copie n'est pas encore reclamee. Reclamez-la en ligne avant que Chummer affiche la suite.";
+            localized["desktop.home.intro.guest_recommended_link"] = "Cette copie n'est pas encore liee. Reclamez-la quand vous voulez associer recuperation et historique de support.";
             localized["desktop.home.intro.update_available"] = "Une mise a jour promue est prete pour cette installation. Verifiez la posture de mise a jour avant de revenir au travail de campagne.";
             localized["desktop.home.intro.release_posture_review"] = "Cette copie est liee, mais la version actuelle doit etre verifiee avant de compter sur les mises a jour, le support ou la continuite de campagne.";
             localized["desktop.home.intro.campaign_watchouts"] = "Cette copie est liee et assez a jour pour continuer, mais le retour de campagne a des points a verifier avant de rouvrir le travail.";
@@ -1050,6 +1052,7 @@ public static class DesktopLocalizationCatalog
             localized["desktop.install_link.button.link_copy"] = "Lier cette copie";
             localized["desktop.install_link.button.redeem_claim_code"] = "Utiliser dans l'app";
             localized["desktop.install_link.button.login_website"] = "Reclamer cette copie";
+            localized["desktop.install_link.button.continue_unlinked"] = "Continuer sans lien";
             localized["desktop.install_link.button.exit_desktop"] = "Quitter le client";
             localized["desktop.install_link.shipping_locales"] = "Langues disponibles : {0}.";
             localized["desktop.install_link.claim_code_watermark"] = "Collez le relais d'installation depuis le telechargement Chummer connecte ou le flux de recuperation guide";
@@ -1430,7 +1433,7 @@ public static class DesktopLocalizationCatalog
             localized["desktop.home.value.no_supportability_summary"] = "サポート性サマリーはまだ公開されていません。";
             localized["desktop.home.value.no_fix_guidance"] = "修正ガイダンスはまだ公開されていません。";
             localized["desktop.home.intro.claim_failed_guest"] = "前回の請求試行が失敗したため、このコピーはまだゲストとして実行されています。サポート、修正通知、復元を頼る前にこのコピーを取得してください。";
-            localized["desktop.home.intro.guest_recommended_link"] = "このコピーはまだ取得されていません。Chummer が次を表示する前にオンラインで取得してください。";
+            localized["desktop.home.intro.guest_recommended_link"] = "このコピーはまだリンクされていません。復旧とサポート履歴を紐付けたいときに取得してください。";
             localized["desktop.home.intro.update_available"] = "このインストール向けに昇格済み更新が利用可能です。キャンペーン作業に戻る前に更新姿勢を確認してください。";
             localized["desktop.home.intro.release_posture_review"] = "このコピーはリンク済みですが、更新、サポート、キャンペーン継続を頼る前に現在のリリース確認が必要です。";
             localized["desktop.home.intro.campaign_watchouts"] = "このコピーはリンク済みで継続可能ですが、作業を再開する前にキャンペーン復帰の確認項目があります。";
@@ -1478,6 +1481,7 @@ public static class DesktopLocalizationCatalog
             localized["desktop.install_link.button.link_copy"] = "このコピーをリンク";
             localized["desktop.install_link.button.redeem_claim_code"] = "アプリ内で引き換え";
             localized["desktop.install_link.button.login_website"] = "このコピーを取得";
+            localized["desktop.install_link.button.continue_unlinked"] = "リンクせずに続行";
             localized["desktop.install_link.button.exit_desktop"] = "デスクトップを終了";
             localized["desktop.install_link.shipping_locales"] = "利用できる言語: {0}。";
             localized["desktop.install_link.claim_code_watermark"] = "サインイン済み Chummer ダウンロードまたはガイド付き復旧フローのインストール引き継ぎを貼り付けてください";
@@ -1858,7 +1862,7 @@ public static class DesktopLocalizationCatalog
             localized["desktop.home.value.no_supportability_summary"] = "Nenhum resumo de suportabilidade foi publicado ainda.";
             localized["desktop.home.value.no_fix_guidance"] = "Nenhuma orientacao de correcao foi publicada ainda.";
             localized["desktop.home.intro.claim_failed_guest"] = "Esta copia ainda esta em modo convidado porque a ultima tentativa de reivindicacao falhou. Reivindique-a antes de confiar em suporte, avisos de correcao ou recuperacao.";
-            localized["desktop.home.intro.guest_recommended_link"] = "Esta copia ainda nao foi reivindicada. Reivindique-a online antes de o Chummer mostrar os proximos passos.";
+            localized["desktop.home.intro.guest_recommended_link"] = "Esta copia ainda nao esta vinculada. Reivindique-a quando quiser manter recuperacao e historico de suporte anexados.";
             localized["desktop.home.intro.update_available"] = "Uma atualizacao promovida esta pronta para esta instalacao. Revise a postura de atualizacao antes de voltar ao trabalho de campanha.";
             localized["desktop.home.intro.release_posture_review"] = "Esta copia esta vinculada, mas a versao atual precisa de revisao antes de confiar em atualizacoes, suporte ou continuidade de campanha.";
             localized["desktop.home.intro.campaign_watchouts"] = "Esta copia esta vinculada e atual o suficiente para continuar, mas o retorno da campanha tem pontos para revisar antes de reabrir o trabalho.";
@@ -1906,6 +1910,7 @@ public static class DesktopLocalizationCatalog
             localized["desktop.install_link.button.link_copy"] = "Vincular esta cópia";
             localized["desktop.install_link.button.redeem_claim_code"] = "Resgatar no app";
             localized["desktop.install_link.button.login_website"] = "Reivindicar esta cópia";
+            localized["desktop.install_link.button.continue_unlinked"] = "Continuar sem vincular";
             localized["desktop.install_link.button.exit_desktop"] = "Sair do desktop";
             localized["desktop.install_link.shipping_locales"] = "Idiomas disponiveis: {0}.";
             localized["desktop.install_link.claim_code_watermark"] = "Cole a transferência da instalação vinda do download conectado do Chummer ou do fluxo guiado de recuperação";
@@ -2286,7 +2291,7 @@ public static class DesktopLocalizationCatalog
             localized["desktop.home.value.no_supportability_summary"] = "尚未发布支持性摘要。";
             localized["desktop.home.value.no_fix_guidance"] = "尚未发布修复建议。";
             localized["desktop.home.intro.claim_failed_guest"] = "上次认领失败，因此此副本仍以访客模式运行。依赖支持、修复通知或恢复前，请先认领此副本。";
-            localized["desktop.home.intro.guest_recommended_link"] = "此副本尚未认领。请先在线认领，然后 Chummer 才会显示后续步骤。";
+            localized["desktop.home.intro.guest_recommended_link"] = "此副本尚未关联。需要恢复和支持历史时再认领即可。";
             localized["desktop.home.intro.update_available"] = "该安装已有可推广更新。返回战役工作前请先检查更新姿态。";
             localized["desktop.home.intro.release_posture_review"] = "此副本已绑定，但在依赖更新、支持或战役连续性之前，仍需先检查当前版本。";
             localized["desktop.home.intro.campaign_watchouts"] = "此副本已绑定且足够新，可以继续，但重新打开工作前仍有战役回归事项需要查看。";
@@ -2334,6 +2339,7 @@ public static class DesktopLocalizationCatalog
             localized["desktop.install_link.button.link_copy"] = "绑定此副本";
             localized["desktop.install_link.button.redeem_claim_code"] = "在应用内兑换";
             localized["desktop.install_link.button.login_website"] = "认领此副本";
+            localized["desktop.install_link.button.continue_unlinked"] = "不关联继续";
             localized["desktop.install_link.button.exit_desktop"] = "退出桌面客户端";
             localized["desktop.install_link.shipping_locales"] = "可用语言: {0}。";
             localized["desktop.install_link.claim_code_watermark"] = "粘贴来自已登录 Chummer 下载或引导恢复流程的安装接续";

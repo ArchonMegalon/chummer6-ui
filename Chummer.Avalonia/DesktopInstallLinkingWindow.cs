@@ -1,7 +1,6 @@
 using Avalonia;
 using Avalonia.Automation;
 using Avalonia.Controls;
-using Avalonia.Controls.ApplicationLifetimes;
 using Avalonia.Layout;
 using Avalonia.Media;
 using Avalonia.Media.Imaging;
@@ -44,7 +43,6 @@ internal sealed class DesktopInstallLinkingWindow : Window
     private readonly Button _exitButton;
     private CancellationTokenSource? _handoffPollCancellation;
     private readonly bool _loginVideoPreview;
-    private bool _allowGuestClose;
     private bool _automaticHandoffStarted;
     private bool _browserFallbackVisible;
     private string? _lastLoginUrl;
@@ -55,7 +53,6 @@ internal sealed class DesktopInstallLinkingWindow : Window
 
         _state = context.State;
         _loginVideoPreview = loginVideoPreview;
-        _allowGuestClose = loginVideoPreview;
         _updateStatus = DesktopUpdateRuntime.GetCurrentStatus(context.State.HeadId);
         _preferences = DesktopPreferenceRuntime.LoadOrCreateState(context.State.HeadId);
         _language = _preferences.Language;
@@ -181,8 +178,8 @@ internal sealed class DesktopInstallLinkingWindow : Window
             DesktopLocalizationCatalog.GetRequiredString("desktop.install_link.button.redeem_claim_code", _language),
             RedeemClaimCodeAsync);
         _exitButton = CreateButton(
-            DesktopLocalizationCatalog.GetRequiredString("desktop.install_link.button.exit_desktop", _language),
-            ExitDesktopAsync);
+            DesktopLocalizationCatalog.GetRequiredString("desktop.install_link.button.continue_unlinked", _language),
+            ContinueUnlinkedAsync);
         _claimCodeEntryRow = new StackPanel
         {
             Orientation = Orientation.Vertical,
@@ -956,9 +953,13 @@ internal sealed class DesktopInstallLinkingWindow : Window
         return Task.CompletedTask;
     }
 
-    private Task ExitDesktopAsync()
+    private Task ContinueUnlinkedAsync()
     {
-        _allowGuestClose = true;
+        if (!DesktopInstallLinkingRuntime.IsClaimed(_state))
+        {
+            DesktopInstallLinkingRuntime.MarkPromptDismissed(_state.HeadId);
+        }
+
         Close();
         return Task.CompletedTask;
     }
@@ -1017,6 +1018,10 @@ internal sealed class DesktopInstallLinkingWindow : Window
         {
             _exitButton.Content = "Close";
         }
+        else if (!claimed)
+        {
+            _exitButton.Content = DesktopLocalizationCatalog.GetRequiredString("desktop.install_link.button.continue_unlinked", _language);
+        }
 
         RefreshButtonTip(_followThroughButton);
         RefreshButtonTip(_accountButton);
@@ -1044,19 +1049,10 @@ internal sealed class DesktopInstallLinkingWindow : Window
     {
         _handoffPollCancellation?.Cancel();
 
-        if (DesktopInstallLinkingRuntime.IsClaimed(_state) || _allowGuestClose)
+        if (!DesktopInstallLinkingRuntime.IsClaimed(_state) && !_loginVideoPreview)
         {
-            return;
+            DesktopInstallLinkingRuntime.MarkPromptDismissed(_state.HeadId);
         }
-
-        _allowGuestClose = true;
-        if (global::Avalonia.Application.Current?.ApplicationLifetime is IClassicDesktopStyleApplicationLifetime desktopLifetime)
-        {
-            desktopLifetime.Shutdown();
-            return;
-        }
-
-        Close();
     }
 
     private void SetStatus(string message)
