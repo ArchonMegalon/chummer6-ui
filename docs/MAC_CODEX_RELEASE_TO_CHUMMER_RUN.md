@@ -395,42 +395,13 @@ Important rule:
 
 Do not stream directly into the live public downloads directory and call that “published”. The intake endpoint must stage, verify, and promote atomically, or you will eventually publish a broken manifest or a half-written artifact.
 
-## Minimal GitHub Actions shape for the Mac
+## Minimal self-hosted Mac runner shape
 
-If you prefer CI, adapt the existing workflow and pin the mac build job to a self-hosted Mac:
+Run the Mac release from a controlled Mac host with the required repositories checked out into the compatibility tree expected by the UI build scripts. The runner script should do exactly the steps from this runbook and fail on the first broken gate:
 
-```yaml
-jobs:
-  build-macos-public:
-    runs-on: [self-hosted, macOS, ARM64]
-    steps:
-      - uses: actions/checkout@v4
-        with:
-          path: r
-      - uses: actions/checkout@v4
-        with:
-          repository: ArchonMegalon/chummer6-core
-          ref: fleet/core
-          path: .c/core
-      - uses: actions/checkout@v4
-        with:
-          repository: ArchonMegalon/chummer6-hub
-          ref: main
-          path: .c/hub
-      - uses: actions/checkout@v4
-        with:
-          repository: ArchonMegalon/chummer6-ui-kit
-          ref: fleet/ui-kit
-          path: .c/ui
-      - uses: actions/setup-dotnet@v4
-        with:
-          dotnet-version: "10.0.x"
-      - name: Build, sign, notarize, smoke, publish
-        working-directory: r
-        run: bash scripts/your-macos-public-release-wrapper.sh
+```bash
+bash scripts/your-macos-public-release-wrapper.sh
 ```
-
-The wrapper script should do exactly the steps from this runbook and fail on the first broken gate.
 
 ## The clean exit condition
 

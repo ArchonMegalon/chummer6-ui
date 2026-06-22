@@ -16,12 +16,12 @@ Published portal builds do not ship the checked-in `Chummer.Portal/downloads`
 snapshot. This mounted directory is the deploy-time projection target for
 registry-owned desktop release truth.
 
-Populate this directory from the `desktop-download-bundle` artifact produced by
-`.github/workflows/desktop-downloads-matrix.yml`, or use:
+Populate this directory from the `desktop-download-bundle` produced by the
+self-hosted release path, or use:
 
 ```bash
 bash scripts/runbook.sh downloads-sync
 ```
 
-If repository variable `CHUMMER_PORTAL_DOWNLOADS_DEPLOY_DIR` is configured,
-Docker-branch workflow runs can publish this bundle automatically.
+If `CHUMMER_PORTAL_DOWNLOADS_DEPLOY_DIR` is configured, the local release
+path can publish this bundle automatically.

@@ -8,7 +8,7 @@ if ! rg -q '^- \[x\] `MIG-095` Add benchmark guardrails for import/section/save 
   exit 3
 fi
 
-if ! rg -q '\.\./chummer-core-engine/Chummer.Benchmarks|workspace\.import\.bastion|workspace\.section\.skills\.bastion|workspace\.save\.bastion|benchmark-guardrails\.yml' docs/MIGRATION_BACKLOG.md; then
+if ! rg -q '\.\./chummer-core-engine/Chummer.Benchmarks|workspace\.import\.bastion|workspace\.section\.skills\.bastion|workspace\.save\.bastion' docs/MIGRATION_BACKLOG.md; then
   echo "[MIG-095] FAIL: MIGRATION_BACKLOG.md must point at core-engine benchmark ownership and named workloads."
   exit 4
 fi
@@ -23,14 +23,9 @@ if ! rg -q 'ForeachSplitComparison' Chummer.Benchmarks/Program.cs; then
   exit 6
 fi
 
-if [ ! -f ../chummer-core-engine/.github/workflows/benchmark-guardrails.yml ]; then
-  echo "[MIG-095] FAIL: sibling core-engine benchmark workflow is missing."
-  exit 7
-fi
-
 if [ ! -f ../chummer-core-engine/Chummer.Benchmarks/workspace-benchmark-budgets.json ]; then
   echo "[MIG-095] FAIL: sibling core-engine workspace benchmark budgets are missing."
-  exit 8
+  exit 7
 fi
 
 echo "[MIG-095] PASS"
