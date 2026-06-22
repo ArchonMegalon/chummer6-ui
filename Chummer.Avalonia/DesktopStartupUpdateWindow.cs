@@ -28,7 +28,7 @@ internal sealed class DesktopStartupUpdateWindow : Window
         CanResize = false;
         WindowStartupLocation = WindowStartupLocation.CenterOwner;
         ShowInTaskbar = true;
-        Background = DesktopShellTheme.ResolveThemeBrush("ChummerShellBackgroundBrush", "#0f172a");
+        Background = DesktopShellTheme.ResolveThemeBrush("ChummerShellWindowBackgroundBrush", "#050B16");
 
         _titleText = new TextBlock
         {
@@ -57,7 +57,7 @@ internal sealed class DesktopStartupUpdateWindow : Window
         Content = new Border
         {
             Padding = new Thickness(24),
-            Background = DesktopShellTheme.ResolveThemeBrush("ChummerShellPanelBrush", "#111827"),
+            Background = DesktopShellTheme.ResolveThemeBrush("ChummerShellSurfaceBrush", "#111827"),
             Child = new StackPanel
             {
                 Spacing = 14,

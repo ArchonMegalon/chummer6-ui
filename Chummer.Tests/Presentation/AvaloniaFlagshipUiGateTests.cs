@@ -2608,7 +2608,7 @@ public sealed class AvaloniaFlagshipUiGateTests
                 ActiveTabId: "tab-profile",
                 RuntimeSummary: "Runtime: SR6 preview.",
                 RestoreContinuitySummary: "Continuity note: keep ws-1 open before accepting a newer packet.",
-                StaleStateSummary: "Stale state: desktop service is reachable, but server restore continuity still needs Campaign Workspace or Workspace Support review; local save posture is unsaved.",
+                StaleStateSummary: "Stale state: desktop service is reachable, but server restore continuity still needs Campaign Workspace or workspace help review; local save posture is unsaved.",
                 ConflictChoiceSummary: "Workspace note: review before replacing this unsaved desktop state.",
                 CanSaveLocalWorkBeforeRestore: true));
             control.Measure(new Size(1440d, 960d));
@@ -2646,13 +2646,13 @@ public sealed class AvaloniaFlagshipUiGateTests
                 "Workspace decision order",
                 AutomationProperties.GetName(FindDescendant<TextBlock>(control, "RestoreContinuityDecisionOrderText")));
             Assert.AreEqual(
-                "Use the visible choices in order: keep local work visible, save local work when available, review Campaign Workspace, then open Workspace Support.",
+                "Use the visible choices in order: keep local work visible, save local work when available, review Campaign Workspace, then get workspace help.",
                 AutomationProperties.GetHelpText(FindDescendant<TextBlock>(control, "RestoreContinuityDecisionOrderText")));
             Assert.AreEqual(
                 "Workspace local authority",
                 AutomationProperties.GetName(FindDescendant<TextBlock>(control, "RestoreContinuityLocalAuthorityText")));
             Assert.AreEqual(
-                "Your local desktop copy stays authoritative until you choose Campaign Workspace review or Workspace Support.",
+                "Your local desktop copy stays authoritative until you choose Campaign Workspace review or workspace help.",
                 AutomationProperties.GetHelpText(FindDescendant<TextBlock>(control, "RestoreContinuityLocalAuthorityText")));
             Assert.AreEqual(
                 "Workspace change guard",
@@ -2664,7 +2664,7 @@ public sealed class AvaloniaFlagshipUiGateTests
                 "Workspace support handoff",
                 AutomationProperties.GetName(FindDescendant<TextBlock>(control, "RestoreContinuitySupportHandoffText")));
             Assert.AreEqual(
-                "Workspace Support opens with the current local workspace context.",
+                "Workspace help opens with the current local workspace context.",
                 AutomationProperties.GetHelpText(FindDescendant<TextBlock>(control, "RestoreContinuitySupportHandoffText")));
             Assert.AreEqual("restore-decision-keep-local-work", FindDescendant<Button>(control, "KeepLocalWorkButton").Tag);
             Assert.AreEqual("Keep Local", AutomationProperties.GetName(FindDescendant<Button>(control, "KeepLocalWorkButton")));
@@ -2674,7 +2674,7 @@ public sealed class AvaloniaFlagshipUiGateTests
             Assert.AreEqual("restore-decision-review-campaign-workspace", FindDescendant<Button>(control, "ReviewCampaignWorkspaceButton").Tag);
             Assert.AreEqual("Review Campaign Workspace", AutomationProperties.GetName(FindDescendant<Button>(control, "ReviewCampaignWorkspaceButton")));
             Assert.AreEqual("restore-decision-open-workspace-support", FindDescendant<Button>(control, "OpenWorkspaceSupportButton").Tag);
-            Assert.AreEqual("Open Workspace Support", AutomationProperties.GetName(FindDescendant<Button>(control, "OpenWorkspaceSupportButton")));
+            Assert.AreEqual("Get workspace help", AutomationProperties.GetName(FindDescendant<Button>(control, "OpenWorkspaceSupportButton")));
             Assert.IsFalse(FindDescendant<TextBlock>(control, "RestoreContinuityActionStatusText").IsVisible);
             Assert.AreEqual(
                 "Workspace decision action status",
@@ -2742,10 +2742,10 @@ public sealed class AvaloniaFlagshipUiGateTests
                 NavigationTabs: [],
                 ActiveTabId: null,
                 RestoreContinuitySummary: "Continuity note: keep ws-1 open before accepting a newer packet.",
-                StaleStateSummary: "Stale state: desktop service is reachable, but server restore continuity still needs Campaign Workspace or Workspace Support review; local save posture is unsaved.",
+                StaleStateSummary: "Stale state: desktop service is reachable, but server restore continuity still needs Campaign Workspace or workspace help review; local save posture is unsaved.",
                 ConflictChoiceSummary: "Workspace note: review before replacing this unsaved desktop state.",
                 CanSaveLocalWorkBeforeRestore: true,
-                RestoreDecisionActionStatus: "Opening Workspace Support with workspace context.",
+                RestoreDecisionActionStatus: "Opening workspace help with workspace context.",
                 RestoreDecisionSelectionId: "restore-decision-open-workspace-support");
             control.SetState(state);
             control.Measure(new Size(1440d, 960d));
@@ -2789,7 +2789,7 @@ public sealed class AvaloniaFlagshipUiGateTests
             ?? throw new AssertFailedException("ApplyShellFrame returned null for saved state.");
         SummaryHeaderState savedSummaryHeader = ReadTransientSummaryHeader(resolvedSavedFrame);
         Assert.AreEqual(
-            "Local work saved; keep local work visible, review Campaign Workspace, or open Workspace Support before changing this desktop copy.",
+            "Local work saved; keep local work visible, review Campaign Workspace, or get workspace help before changing this desktop copy.",
             savedSummaryHeader.RestoreDecisionActionStatus);
         Assert.IsNull(savedSummaryHeader.RestoreDecisionSelectionId);
 
@@ -2819,7 +2819,7 @@ public sealed class AvaloniaFlagshipUiGateTests
             ?? throw new AssertFailedException("ApplyShellFrame returned null for anchored workspace state.");
         SummaryHeaderState anchoredSummaryHeader = ReadTransientSummaryHeader(resolvedAnchoredFrame);
         Assert.AreEqual(
-            "Opening Workspace Support with the current workspace context.",
+            "Opening workspace help with the current workspace context.",
             anchoredSummaryHeader.RestoreDecisionActionStatus);
         Assert.AreEqual("restore-decision-open-workspace-support", anchoredSummaryHeader.RestoreDecisionSelectionId);
 
@@ -2891,7 +2891,7 @@ public sealed class AvaloniaFlagshipUiGateTests
                 NavigationTabs: Array.Empty<NavigatorTabItem>(),
                 ActiveTabId: null,
                 RestoreContinuitySummary: "Continuity note: keep ws-1 open before accepting a newer packet.",
-                StaleStateSummary: "Stale state: desktop service is reachable, but server restore continuity still needs Campaign Workspace or Workspace Support review; local save posture is unsaved.",
+                StaleStateSummary: "Stale state: desktop service is reachable, but server restore continuity still needs Campaign Workspace or workspace help review; local save posture is unsaved.",
                 ConflictChoiceSummary: "Workspace note: review Campaign Workspace or open workspace support.",
                 CanSaveLocalWorkBeforeRestore: canSaveLocalWorkBeforeRestore,
                 RestoreDecisionWorkspaceId: workspaceId),

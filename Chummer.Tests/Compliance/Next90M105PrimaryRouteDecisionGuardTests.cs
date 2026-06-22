@@ -55,7 +55,7 @@ public sealed class Next90M105PrimaryRouteDecisionGuardTests
         StringAssert.Contains(code, "AutomationProperties.SetName(StaleStateStatusText, \"Stale state visibility status\")");
         StringAssert.Contains(code, "AutomationProperties.SetName(ConflictChoiceStatusText, \"Workspace review status\")");
         StringAssert.Contains(code, "AutomationProperties.SetName(RestoreContinuityDecisionOrderText, \"Workspace decision order\")");
-        StringAssert.Contains(code, "AutomationProperties.SetHelpText(OpenWorkspaceSupportButton, \"Open Workspace Support with the current workspace context attached.\")");
+        StringAssert.Contains(code, "AutomationProperties.SetHelpText(OpenWorkspaceSupportButton, \"Get workspace help with the current workspace context attached.\")");
 
         StringAssert.Contains(projector, "HasVisibleContent: false");
         Assert.IsFalse(projector.Contains("RestoreContinuitySummary:", StringComparison.Ordinal));

@@ -14,7 +14,7 @@ internal sealed class DesktopCampaignArtifactWindow : Window
 {
     private const string CampaignConsequenceVisibilitySummary = "Campaign consequences stay visible on this promoted desktop route before the next session.";
     private const string CampaignMemoryStaleStateSummary = "Campaign memory stale-state check stays visible beside the current desktop workspace before any return decision.";
-    private const string CampaignNextSessionReturnActionSummary = "Next-session return actions stay visible here: reopen the current workspace, review Campaign Workspace, review devices/access, or route Workspace Support.";
+    private const string CampaignNextSessionReturnActionSummary = "Next-session return actions stay visible here: reopen the current workspace, review Campaign Workspace, review devices/access, or get workspace help.";
     private readonly DesktopInstallLinkingState _installState;
     private readonly DesktopPreferenceState _preferences;
     private readonly IReadOnlyList<WorkspaceListItem> _recentWorkspaces;

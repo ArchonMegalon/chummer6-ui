@@ -14,19 +14,19 @@ public partial class SummaryHeaderControl : UserControl
     private const string SaveLocalWorkSelectionId = "restore-decision-save-local-work";
     private const string ReviewCampaignWorkspaceSelectionId = "restore-decision-review-campaign-workspace";
     private const string OpenWorkspaceSupportSelectionId = "restore-decision-open-workspace-support";
-    private const string DecisionOrderSummary = "Open Campaign Workspace or Workspace Support when you need continuity help.";
-    private const string LocalAuthoritySummary = "The desktop workspace remains the working copy until you choose Campaign Workspace review or Workspace Support.";
+    private const string DecisionOrderSummary = "Open Campaign Workspace or get workspace help when you need continuity help.";
+    private const string LocalAuthoritySummary = "The desktop workspace remains the working copy until you choose Campaign Workspace review or workspace help.";
     private const string ReplacementGuardSummary = "Workspace changes stay explicit.";
-    private const string SupportHandoffSummary = "Workspace Support opens with the current local workspace context.";
+    private const string SupportHandoffSummary = "Workspace help opens with the current local workspace context.";
     private const string SaveAvailableDecisionSummary = "Save first if needed before changing this desktop copy.";
     private const string SaveUnavailableDecisionSummary = "Keep local work or open support before changing this desktop copy.";
     private const string SaveAvailableStatus = "Save local work is available before changing this desktop copy.";
     private const string SaveUnavailableStatus = "Save local work is unavailable because no dirty local workspace is active.";
     private const string KeepLocalStatus = "Keep Local leaves this desktop copy in place.";
     private const string SaveRequestedStatus = "Saving local work before changing this desktop copy.";
-    private const string SavedLocalWorkStatus = "Local work saved. Keep Local, review Campaign Workspace, or open Workspace Support before replacing anything.";
+    private const string SavedLocalWorkStatus = "Local work saved. Keep Local, review Campaign Workspace, or get workspace help before replacing anything.";
     private const string ReviewCampaignWorkspaceStatus = "Opening Campaign Workspace.";
-    private const string OpenWorkspaceSupportStatus = "Opening Workspace Support with the current workspace context attached.";
+    private const string OpenWorkspaceSupportStatus = "Opening workspace help with the current workspace context attached.";
 
     private readonly Dictionary<string, Button> _navigationTabButtons = new(StringComparer.Ordinal);
     private WorkspaceStripState _workspaceStripState = new("No character open");
@@ -192,7 +192,7 @@ public partial class SummaryHeaderControl : UserControl
         ToolTip.SetTip(KeepLocalWorkButton, "Keep Local keeps this desktop copy visible.");
         ToolTip.SetTip(SaveLocalWorkButton, "Save local work before changing this desktop copy.");
         ToolTip.SetTip(ReviewCampaignWorkspaceButton, "Open Campaign Workspace.");
-        ToolTip.SetTip(OpenWorkspaceSupportButton, "Open Workspace Support with the current workspace context attached.");
+        ToolTip.SetTip(OpenWorkspaceSupportButton, "Get workspace help with the current workspace context attached.");
     }
 
     private void ApplyAutomationProperties()
@@ -205,18 +205,18 @@ public partial class SummaryHeaderControl : UserControl
         AutomationProperties.SetName(RestoreContinuityDecisionText, "Workspace decision guard");
         AutomationProperties.SetHelpText(RestoreContinuityDecisionText, "Chummer keeps local work under explicit user control.");
         AutomationProperties.SetName(RestoreContinuityDecisionOrderText, "Workspace decision order");
-        AutomationProperties.SetHelpText(RestoreContinuityDecisionOrderText, "Use the visible choices in order: keep local work visible, save local work when available, review Campaign Workspace, then open Workspace Support.");
+        AutomationProperties.SetHelpText(RestoreContinuityDecisionOrderText, "Use the visible choices in order: keep local work visible, save local work when available, review Campaign Workspace, then get workspace help.");
         AutomationProperties.SetName(RestoreContinuityLocalAuthorityText, "Workspace local authority");
-        AutomationProperties.SetHelpText(RestoreContinuityLocalAuthorityText, "Your local desktop copy stays authoritative until you choose Campaign Workspace review or Workspace Support.");
+        AutomationProperties.SetHelpText(RestoreContinuityLocalAuthorityText, "Your local desktop copy stays authoritative until you choose Campaign Workspace review or workspace help.");
         AutomationProperties.SetName(RestoreContinuityReplacementGuardText, "Workspace change guard");
         AutomationProperties.SetHelpText(RestoreContinuityReplacementGuardText, "There is no automatic or one-click replacement from this desktop route.");
         AutomationProperties.SetName(RestoreContinuitySupportHandoffText, "Workspace support handoff");
-        AutomationProperties.SetHelpText(RestoreContinuitySupportHandoffText, "Workspace Support opens with the current local workspace context.");
+        AutomationProperties.SetHelpText(RestoreContinuitySupportHandoffText, "Workspace help opens with the current local workspace context.");
         AutomationProperties.SetName(KeepLocalWorkButton, "Keep Local");
         AutomationProperties.SetName(SaveLocalWorkButton, "Save local work before workspace review");
         AutomationProperties.SetName(ReviewCampaignWorkspaceButton, "Review Campaign Workspace");
-        AutomationProperties.SetName(OpenWorkspaceSupportButton, "Open Workspace Support");
-        AutomationProperties.SetHelpText(OpenWorkspaceSupportButton, "Open Workspace Support with the current workspace context attached.");
+        AutomationProperties.SetName(OpenWorkspaceSupportButton, "Get workspace help");
+        AutomationProperties.SetHelpText(OpenWorkspaceSupportButton, "Get workspace help with the current workspace context attached.");
         AutomationProperties.SetName(RestoreContinuityActionStatusText, "Workspace decision action status");
     }
 

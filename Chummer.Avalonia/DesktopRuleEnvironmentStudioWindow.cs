@@ -256,7 +256,7 @@ internal sealed class DesktopRuleEnvironmentStudioWindow : Window
 
         if (!string.IsNullOrWhiteSpace(_projection.WorkspaceId))
         {
-            actions.Add(CreateButton("Open Workspace", () => OpenWorkspaceInDesktopShellAsync(owner, _projection.WorkspaceId!)));
+            actions.Add(CreateButton("Open current workspace", () => OpenWorkspaceInDesktopShellAsync(owner, _projection.WorkspaceId!)));
         }
 
         return actions;

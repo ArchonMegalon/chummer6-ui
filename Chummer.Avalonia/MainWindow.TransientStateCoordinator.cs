@@ -12,9 +12,9 @@ internal sealed class MainWindowTransientStateCoordinator
     private const string OpenWorkspaceSupportSelectionId = "restore-decision-open-workspace-support";
     private const string KeepLocalStatus = "Kept local work visible; no workspace continuity action replaced desktop state.";
     private const string SaveRequestedStatus = "Save local work requested before workspace continuity changes desktop state.";
-    private const string SavedLocalWorkStatus = "Local work saved; keep local work visible, review Campaign Workspace, or open Workspace Support before changing this desktop copy.";
+    private const string SavedLocalWorkStatus = "Local work saved; keep local work visible, review Campaign Workspace, or get workspace help before changing this desktop copy.";
     private const string ReviewCampaignWorkspaceStatus = "Opening Campaign Workspace to review workspace continuity before changing local work.";
-    private const string OpenWorkspaceSupportStatus = "Opening Workspace Support with the current workspace context.";
+    private const string OpenWorkspaceSupportStatus = "Opening workspace help with the current workspace context.";
 
     private IReadOnlyDictionary<string, WorkspaceSurfaceActionDefinition> _workspaceActionsById
         = new Dictionary<string, WorkspaceSurfaceActionDefinition>(StringComparer.Ordinal);
