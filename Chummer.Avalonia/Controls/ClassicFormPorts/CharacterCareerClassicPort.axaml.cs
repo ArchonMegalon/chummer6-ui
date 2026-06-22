@@ -28,6 +28,11 @@ public partial class CharacterCareerClassicPort : ClassicFormPortSurfaceControl
         _noticeText = this.FindControl<TextBlock>("CareerNoticeText");
         _tabs = this.FindControl<TabControl>("CareerTabs");
         _actionSelector = this.FindControl<ComboBox>("CareerActionSelector");
+        if (_actionSelector is not null)
+        {
+            DesktopShellTheme.ApplyShellComboBoxTheme(_actionSelector);
+        }
+
         _snapshotList = this.FindControl<ListBox>("CareerSnapshotList");
         _advancementTree = this.FindControl<TreeView>("CareerAdvancementTree");
         _gearList = this.FindControl<ListBox>("CareerGearList");

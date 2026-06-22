@@ -24,6 +24,11 @@ public partial class SettingsClassicPort : ClassicFormPortSurfaceControl
             _noticeText = this.FindControl<TextBlock>("SettingsNoticeText");
             _tabs = this.FindControl<TabControl>("SettingsTabs");
             _globalSelector = this.FindControl<ComboBox>("SettingsGlobalSelector");
+            if (_globalSelector is not null)
+            {
+                DesktopShellTheme.ApplyShellComboBoxTheme(_globalSelector);
+            }
+
             _globalList = this.FindControl<ListBox>("SettingsGlobalList");
             _customDataList = this.FindControl<ListBox>("SettingsCustomDataList");
             _githubIssuesTree = this.FindControl<TreeView>("SettingsGitHubIssuesTree");

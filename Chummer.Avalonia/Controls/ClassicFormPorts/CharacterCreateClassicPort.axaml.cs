@@ -27,6 +27,11 @@ public partial class CharacterCreateClassicPort : ClassicFormPortSurfaceControl
         _noticeText = this.FindControl<TextBlock>("CreateNoticeText");
         _tabs = this.FindControl<TabControl>("CreateTabs");
         _prioritySelector = this.FindControl<ComboBox>("CreatePrioritySelector");
+        if (_prioritySelector is not null)
+        {
+            DesktopShellTheme.ApplyShellComboBoxTheme(_prioritySelector);
+        }
+
         _prioritiesList = this.FindControl<ListBox>("CreatePrioritiesList");
         _attributesList = this.FindControl<ListBox>("CreateAttributesList");
         _skillsTree = this.FindControl<TreeView>("CreateSkillsTree");

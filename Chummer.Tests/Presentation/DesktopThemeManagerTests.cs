@@ -1326,6 +1326,53 @@ public sealed class DesktopThemeManagerTests
     }
 
     [TestMethod]
+    public void Xaml_declared_desktop_inputs_are_themed_as_soon_as_codebehind_finds_them()
+    {
+        string repoRoot = TestContextLocator.ResolveChummerPresentationRepoRoot();
+        string avaloniaRoot = Path.Combine(repoRoot, "Chummer.Avalonia");
+        Regex findControlInput = new(
+            @"(?<field>[_A-Za-z][_A-Za-z0-9]*)\s*=\s*this\.FindControl<(?<type>ComboBox|TextBox|NumericUpDown)>\(""(?<name>[^""]+)""\);",
+            RegexOptions.Compiled);
+        List<string> unthemedLookups = [];
+
+        foreach (string sourcePath in Directory.EnumerateFiles(avaloniaRoot, "*.cs", SearchOption.AllDirectories)
+                     .Where(static path => !path.EndsWith("DesktopShellTheme.cs", StringComparison.Ordinal)))
+        {
+            string[] lines = File.ReadAllLines(sourcePath);
+            for (int index = 0; index < lines.Length; index++)
+            {
+                Match match = findControlInput.Match(lines[index]);
+                if (!match.Success)
+                {
+                    continue;
+                }
+
+                string field = match.Groups["field"].Value;
+                string type = match.Groups["type"].Value;
+                string helper = type switch
+                {
+                    "ComboBox" => "ApplyShellComboBoxTheme",
+                    "TextBox" => "ApplyShellTextInputTheme",
+                    "NumericUpDown" => "ApplyShellNumericUpDownTheme",
+                    _ => throw new InvalidOperationException($"Unexpected input type: {type}")
+                };
+                string lookahead = string.Join('\n', lines.Skip(index).Take(10));
+                if (!lookahead.Contains($"{helper}({field}", StringComparison.Ordinal))
+                {
+                    string relativePath = Path.GetRelativePath(repoRoot, sourcePath);
+                    unthemedLookups.Add($"{relativePath}:{index + 1} {type} {match.Groups["name"].Value}");
+                }
+            }
+        }
+
+        Assert.AreEqual(
+            0,
+            unthemedLookups.Count,
+            "Named XAML desktop inputs must opt into shell theming immediately after lookup, before state/data binding. Missing: "
+            + string.Join(", ", unthemedLookups.OrderBy(static item => item, StringComparer.Ordinal)));
+    }
+
+    [TestMethod]
     public void Selection_add_surfaces_do_not_label_readonly_context_as_navigation()
     {
         string repoRoot = TestContextLocator.ResolveChummerPresentationRepoRoot();

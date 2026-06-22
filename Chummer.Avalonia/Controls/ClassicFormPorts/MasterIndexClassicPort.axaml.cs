@@ -23,6 +23,11 @@ public partial class MasterIndexClassicPort : ClassicFormPortSurfaceControl
             _noticeText = this.FindControl<TextBlock>("IndexNoticeText");
             _tabs = this.FindControl<TabControl>("IndexTabs");
             _browseSelector = this.FindControl<ComboBox>("IndexBrowseSelector");
+            if (_browseSelector is not null)
+            {
+                DesktopShellTheme.ApplyShellComboBoxTheme(_browseSelector);
+            }
+
             _browseTree = this.FindControl<TreeView>("IndexBrowseTree");
             _searchList = this.FindControl<ListBox>("IndexSearchList");
             _sourceList = this.FindControl<ListBox>("IndexSourceList");
