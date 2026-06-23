@@ -32,7 +32,7 @@ internal sealed class DesktopRunbookPressWindow : Window
 
         Content = DesktopHorizonWindowScaffold.CreateScroller(
             "Runbook Press",
-            "Runbook Press keeps campaign books, module assembly, and creator follow-through on a dedicated native desk instead of aliasing the broader creator area.",
+            "Runbook Press keeps campaign books, module assembly, and creator publishing on a dedicated native desk instead of aliasing the broader creator area.",
             CreatePublicationCard(),
             CreateCampaignBookCard(),
             CreateDetailCard(),
@@ -86,7 +86,7 @@ internal sealed class DesktopRunbookPressWindow : Window
                     DesktopHorizonWindowScaffold.CreateMetricBadge("RunbookPressBadgeCampaigns", "Campaigns", (_campaignSummary?.Campaigns.Count ?? 0).ToString())),
                 DesktopHorizonWindowScaffold.CreateDetailText(leadPublication?.Summary ?? "No creator publication is currently selected for Runbook Press."),
                 DesktopHorizonWindowScaffold.CreateDetailText(leadPublication is null
-                    ? "Return after the next publication-safe draft."
+                    ? "Return after the next draft."
                     : $"{leadPublication.Title} is the current lead publication with status {leadPublication.PublicationStatus}.")
             }
         };
@@ -117,7 +117,7 @@ internal sealed class DesktopRunbookPressWindow : Window
                 DesktopHorizonWindowScaffold.CreateDetailText(leadCampaign?.Summary ?? "No campaign is currently pinned for runbook assembly."),
                 DesktopHorizonWindowScaffold.CreateDetailText(leadCampaign is null
                     ? "Use the signed-in creator desk or Jackpoint to seed the next module or dossier packet."
-                    : $"{leadCampaign.Name} is the current lead campaign for publication-safe follow-through.")
+                    : $"{leadCampaign.Name} is the current lead campaign for publishing work.")
             }
         };
 
@@ -274,7 +274,7 @@ internal sealed class DesktopRunbookPressWindow : Window
                 publication.Summary,
                 publication.NextSafeAction
                     ?? publication.CampaignReturnSummary
-                    ?? "No publication follow-through is currently pinned.")));
+                    ?? "No publication step is currently pinned.")));
         entries.AddRange((_campaignSummary?.Campaigns ?? Array.Empty<CampaignProjection>())
             .OrderByDescending(static campaign => campaign.UpdatedAtUtc)
             .Take(3)

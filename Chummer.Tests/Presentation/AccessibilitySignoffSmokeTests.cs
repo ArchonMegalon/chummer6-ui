@@ -691,9 +691,9 @@ public sealed class AccessibilitySignoffSmokeTests
         {
             throw new InvalidOperationException("Desktop build/explain projection should surface explicit compatibility records for the flagship home surface.");
         }
-        RequireContains(string.Join("\n", projection.CompatibilityReceipts), "Compatibility record:");
-        RequireContains(string.Join("\n", projection.CompatibilityReceipts), "profile rebind");
-        RequireContains(string.Join("\n", projection.CompatibilityReceipts), "Build path record: Edge Runner Starter is ready");
+        RequireContains(string.Join("\n", projection.CompatibilityReceipts), "Compatibility note:");
+        RequireContains(string.Join("\n", projection.CompatibilityReceipts), "profile refresh");
+        RequireContains(string.Join("\n", projection.CompatibilityReceipts), "Build path option: Edge Runner Starter is ready");
         RequireContains(string.Join("\n", projection.CompatibilityReceipts), "Build path runtime:");
         RequireContains(string.Join("\n", projection.CompatibilityReceipts), "Build path return:");
         RequireContains(string.Join("\n", projection.CompatibilityReceipts), "Build path support:");
@@ -703,8 +703,8 @@ public sealed class AccessibilitySignoffSmokeTests
         RequireContains(string.Join("\n", projection.CompatibilityReceipts), "Build Lab coverage:");
         RequireContains(string.Join("\n", projection.CompatibilityReceipts), "Build Lab coverage detail:");
         RequireContains(string.Join("\n", projection.CompatibilityReceipts), "Rules navigator:");
-        RequireContains(string.Join("\n", projection.CompatibilityReceipts), "Migration record:");
-        RequireContains(string.Join("\n", projection.CompatibilityReceipts), "Publication record:");
+        RequireContains(string.Join("\n", projection.CompatibilityReceipts), "Migration summary:");
+        RequireContains(string.Join("\n", projection.CompatibilityReceipts), "Publication summary:");
         if (projection.BuildPathComparisons.Count < 2)
         {
             throw new InvalidOperationException("Desktop build/explain projection should compare multiple build paths in the flagship home surface.");
@@ -747,7 +747,7 @@ public sealed class AccessibilitySignoffSmokeTests
         RequireContains(projection.RulePosture, "Shadowrun 5");
         RequireContains(projection.RulePosture, ".chum5");
         RequireContains(string.Join("\n", projection.CompatibilityReceipts), "no current runtime fingerprint");
-        RequireContains(string.Join("\n", projection.CompatibilityReceipts), "Build path record: Street Sam Starter is available");
+        RequireContains(string.Join("\n", projection.CompatibilityReceipts), "Build path option: Street Sam Starter is available");
         RequireContains(string.Join("\n", projection.BuildPathComparisons), "Build path compare: Street Sam Starter");
         RequireNoPlayerFacingMachineryTerms(projection);
         if (projection.Watchouts.Count < 2)
@@ -1463,8 +1463,8 @@ public sealed class AccessibilitySignoffSmokeTests
         RequireContains(source, "ReadCampaignSummaryAsync");
 
         string projectorSource = ReadSource("Chummer.Presentation/Overview/DesktopHomeBuildExplainProjector.cs");
-        RequireContains(projectorSource, "Compatibility receipt:");
-        RequireContains(projectorSource, "Build path receipt:");
+        RequireContains(projectorSource, "Compatibility note:");
+        RequireContains(projectorSource, "Build path option:");
         RequireContains(projectorSource, "Build path runtime:");
         RequireContains(projectorSource, "Build path return:");
         RequireContains(projectorSource, "Build path support:");
@@ -1475,8 +1475,8 @@ public sealed class AccessibilitySignoffSmokeTests
         RequireContains(projectorSource, "Build Lab coverage:");
         RequireContains(projectorSource, "Build Lab coverage detail:");
         RequireContains(projectorSource, "Rules navigator:");
-        RequireContains(projectorSource, "Migration receipt:");
-        RequireContains(projectorSource, "Publication receipt:");
+        RequireContains(projectorSource, "Migration summary:");
+        RequireContains(projectorSource, "Publication summary:");
         RequireDoesNotContain(source, "Open work follow-through");
     }
 
@@ -1591,7 +1591,7 @@ public sealed class AccessibilitySignoffSmokeTests
         RequireContains(runtimeReceiptSource, "no variant, export, or campaign fit result is applied before review");
         RequireContains(runtimeReceiptSource, "support closure not required");
         string resultPanelSource = ReadSource("Chummer.Blazor/Components/Shell/ResultPanel.razor");
-        RequireContains(resultPanelSource, "PlayerFacingCopyHumanizer.Clean");
+        RequireContains(resultPanelSource, "UndetectableHumanizerCopyAdapter.Humanize");
         RequireContains(resultPanelSource, "Import reference:");
         RequireContains(resultPanelSource, "Import scope:");
         RequireContains(resultPanelSource, "Support note:");
@@ -1898,7 +1898,7 @@ public sealed class AccessibilitySignoffSmokeTests
         RequireContains(importPanelSource, "DesktopTrustReceiptComposer.BuildImportReviewSections(");
         RequireContains(importPanelSource, "Import review");
         RequireContains(importPanelSource, "Import setup");
-        RequireContains(importPanelSource, "PlayerFacingCopyHumanizer.Clean");
+        RequireContains(importPanelSource, "UndetectableHumanizerCopyAdapter.Humanize");
         RequireContains(importPanelSource, "Grounded explain receipt");
         RequireContains(importPanelSource, "Before import environment diff");
         RequireContains(importPanelSource, "After review environment diff");
@@ -2074,7 +2074,7 @@ public sealed class AccessibilitySignoffSmokeTests
         string source = ReadSource("Chummer.Avalonia/DesktopHomeWindow.cs");
         RequireContains(source, "CreateInstallActions()");
         RequireContains(source, "CreateUpdateActions()");
-        RequireContains(source, "desktop.install_link.button.link_copy");
+        RequireContains(source, "DesktopDevicesAccessWindow.BuildInstallLinkEntryButtonLabel(_installState, _preferences.Language)");
         RequireContains(source, "desktop.home.button.open_devices_access");
         RequireContains(source, "desktop.home.button.open_current_workspace");
         RequireContains(source, "desktop.home.button.open_update_status");

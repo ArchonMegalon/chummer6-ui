@@ -150,7 +150,7 @@ namespace Chummer
             this.chkHideOverAvailLimit.Size = new System.Drawing.Size(175, 17);
             this.chkHideOverAvailLimit.TabIndex = 65;
             this.chkHideOverAvailLimit.Tag = "Checkbox_HideOverAvailLimit";
-            this.chkHideOverAvailLimit.Text = "Hide Items Over Avail Limit ({0})";
+            this.chkHideOverAvailLimit.Text = "Hide Over Avail ({0})";
             this.chkHideOverAvailLimit.UseVisualStyleBackColor = true;
             this.chkHideOverAvailLimit.CheckedChanged += new System.EventHandler(this.chkHideOverAvailLimit_CheckedChanged);
             // 
@@ -167,7 +167,7 @@ namespace Chummer
             this.chkHideBannedGrades.Size = new System.Drawing.Size(178, 17);
             this.chkHideBannedGrades.TabIndex = 67;
             this.chkHideBannedGrades.Tag = "Checkbox_HideBannedCyberwareGrades";
-            this.chkHideBannedGrades.Text = "Hide Banned Cyberware Grades";
+            this.chkHideBannedGrades.Text = "Hide Banned Grades";
             this.chkHideBannedGrades.UseVisualStyleBackColor = true;
             this.chkHideBannedGrades.CheckedChanged += new System.EventHandler(this.chkHideBannedGrades_CheckedChanged);
             // 
@@ -182,7 +182,7 @@ namespace Chummer
             this.chkShowOnlyAffordItems.Size = new System.Drawing.Size(164, 17);
             this.chkShowOnlyAffordItems.TabIndex = 72;
             this.chkShowOnlyAffordItems.Tag = "Checkbox_ShowOnlyAffordItems";
-            this.chkShowOnlyAffordItems.Text = "Show Only Items I Can Afford";
+            this.chkShowOnlyAffordItems.Text = "Only Affordable";
             this.chkShowOnlyAffordItems.UseVisualStyleBackColor = true;
             this.chkShowOnlyAffordItems.CheckedChanged += new System.EventHandler(this.chkHideOverAvailLimit_CheckedChanged);
             // 
@@ -474,7 +474,7 @@ namespace Chummer
             this.chkFree.Size = new System.Drawing.Size(50, 17);
             this.chkFree.TabIndex = 17;
             this.chkFree.Tag = "Checkbox_Free";
-            this.chkFree.Text = "Free!";
+            this.chkFree.Text = "Free";
             this.chkFree.UseVisualStyleBackColor = true;
             this.chkFree.CheckedChanged += new System.EventHandler(this.chkFree_CheckedChanged);
             // 
@@ -489,7 +489,7 @@ namespace Chummer
             this.chkBlackMarketDiscount.Size = new System.Drawing.Size(163, 17);
             this.chkBlackMarketDiscount.TabIndex = 39;
             this.chkBlackMarketDiscount.Tag = "Checkbox_BlackMarketDiscount";
-            this.chkBlackMarketDiscount.Text = "Black Market Discount (10%)";
+            this.chkBlackMarketDiscount.Text = "Market -10%";
             this.chkBlackMarketDiscount.UseVisualStyleBackColor = true;
             this.chkBlackMarketDiscount.Visible = false;
             this.chkBlackMarketDiscount.CheckedChanged += new System.EventHandler(this.chkBlackMarketDiscount_CheckedChanged);
@@ -504,7 +504,7 @@ namespace Chummer
             this.lblMarkupLabel.Size = new System.Drawing.Size(46, 13);
             this.lblMarkupLabel.TabIndex = 40;
             this.lblMarkupLabel.Tag = "Label_SelectGear_Markup";
-            this.lblMarkupLabel.Text = "Markup:";
+            this.lblMarkupLabel.Text = "Price Adj.:";
             // 
             // flpMarkup
             // 

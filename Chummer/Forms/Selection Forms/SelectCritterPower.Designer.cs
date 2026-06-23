@@ -306,7 +306,7 @@ namespace Chummer
             this.lblCategory.Size = new System.Drawing.Size(52, 13);
             this.lblCategory.TabIndex = 1;
             this.lblCategory.Tag = "Label_Category";
-            this.lblCategory.Text = "Category:";
+            this.lblCategory.Text = "Filter:";
             // 
             // cboCategory
             // 

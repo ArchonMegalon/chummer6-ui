@@ -28,7 +28,7 @@ internal sealed class DesktopJackpointWindow : Window
 
         Content = DesktopHorizonWindowScaffold.CreateScroller(
             "Jackpoint",
-            "Jackpoint keeps dossiers, creator publications, and signed-in briefing follow-through visible from a native desktop surface instead of dropping straight into the browser.",
+            "Jackpoint keeps dossiers, creator publications, and signed-in briefings visible from a native desktop surface instead of dropping straight into the browser.",
             CreatePublicationCard(),
             CreateDossierCard(),
             new StackPanel
@@ -123,7 +123,7 @@ internal sealed class DesktopJackpointWindow : Window
                 ? leadDossier is null
                     ? "No runner identity is currently pinned to Jackpoint."
                     : $"{leadDossier.RunnerHandle} keeps owner {leadDossier.OwnerUserId} and dossier status {leadDossier.Status} on the account page."
-                : leadDossier?.DisplayName ?? "Dossier follow-through appears here after the next publication-safe import or campaign sync.";
+                : leadDossier?.DisplayName ?? "Dossier status appears here after the next import or campaign sync.";
         }
 
         detailModeCombo.SelectionChanged += (_, _) => RefreshDetail();

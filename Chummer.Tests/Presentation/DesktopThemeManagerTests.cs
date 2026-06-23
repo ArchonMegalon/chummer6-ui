@@ -77,6 +77,297 @@ public sealed class DesktopThemeManagerTests
     }
 
     [TestMethod]
+    public void Builder_entry_dialogs_use_clearer_ruleset_and_filter_copy()
+    {
+        string repoRoot = TestContextLocator.ResolveChummerPresentationRepoRoot();
+        string selectBuildMethodSource = File.ReadAllText(Path.Combine(repoRoot, "Chummer", "Forms", "Character Creation Forms", "SelectBuildMethod.cs"));
+        string selectBuildMethodDesigner = File.ReadAllText(Path.Combine(repoRoot, "Chummer", "Forms", "Character Creation Forms", "SelectBuildMethod.Designer.cs"));
+        string selectMetatypeKarmaSource = File.ReadAllText(Path.Combine(repoRoot, "Chummer", "Forms", "Character Creation Forms", "SelectMetatypeKarma.cs"));
+        string selectMetatypeKarmaDesigner = File.ReadAllText(Path.Combine(repoRoot, "Chummer", "Forms", "Character Creation Forms", "SelectMetatypeKarma.Designer.cs"));
+        string selectMetatypePrioritySource = File.ReadAllText(Path.Combine(repoRoot, "Chummer", "Forms", "Character Creation Forms", "SelectMetatypePriority.cs"));
+        string selectMetatypePriorityDesigner = File.ReadAllText(Path.Combine(repoRoot, "Chummer", "Forms", "Character Creation Forms", "SelectMetatypePriority.Designer.cs"));
+        string selectQualitySource = File.ReadAllText(Path.Combine(repoRoot, "Chummer", "Forms", "Selection Forms", "SelectQuality.cs"));
+        string selectQualityDesigner = File.ReadAllText(Path.Combine(repoRoot, "Chummer", "Forms", "Selection Forms", "SelectQuality.Designer.cs"));
+
+        StringAssert.Contains(selectBuildMethodDesigner, "this.Text = \"Choose Character Ruleset\";");
+        StringAssert.Contains(selectBuildMethodDesigner, "this.lblCharacterSetting.Text = \"Ruleset:\";");
+        StringAssert.Contains(selectBuildMethodDesigner, "this.cmdEditCharacterSetting.Text = \"Edit...\";");
+        StringAssert.Contains(selectBuildMethodDesigner, "this.lblBuildMethodLabel.Text = \"Creation:\";");
+        StringAssert.Contains(selectMetatypeKarmaSource, "new ListItem(\"Show All\", \"All Metatypes\")");
+        StringAssert.Contains(selectMetatypeKarmaSource, "x.Enabled = lstCategories.Count > 1;");
+
+        StringAssert.Contains(selectMetatypePrioritySource, "x.Enabled = lstCategory.Count > 1;");
+
+        StringAssert.Contains(selectQualitySource, "new ListItem(\"Show All\", \"All Qualities\")");
+        StringAssert.Contains(selectQualityDesigner, "this.lblCategory.Text = \"Filter:\";");
+        StringAssert.Contains(selectQualityDesigner, "this.chkMetagenic.Text = \"Only Metagenic\";");
+        StringAssert.Contains(selectQualityDesigner, "this.chkLimitList.Text = \"Only Available\";");
+        StringAssert.Contains(selectMetatypeKarmaDesigner, "this.lblQualitiesLabel.Text = \"Included Qualities:\";");
+        StringAssert.Contains(selectMetatypePriorityDesigner, "this.lblMetavariantQualitiesLabel.Text = \"Included Qualities:\";");
+    }
+
+    [TestMethod]
+    public void Major_add_dialogs_use_filter_copy_and_disable_dead_category_filters()
+    {
+        string repoRoot = TestContextLocator.ResolveChummerPresentationRepoRoot();
+        string selectArmorSource = File.ReadAllText(Path.Combine(repoRoot, "Chummer", "Forms", "Selection Forms", "SelectArmor.cs"));
+        string selectArmorDesigner = File.ReadAllText(Path.Combine(repoRoot, "Chummer", "Forms", "Selection Forms", "SelectArmor.Designer.cs"));
+        string selectGearSource = File.ReadAllText(Path.Combine(repoRoot, "Chummer", "Forms", "Selection Forms", "SelectGear.cs"));
+        string selectGearDesigner = File.ReadAllText(Path.Combine(repoRoot, "Chummer", "Forms", "Selection Forms", "SelectGear.Designer.cs"));
+        string selectWeaponSource = File.ReadAllText(Path.Combine(repoRoot, "Chummer", "Forms", "Selection Forms", "SelectWeapon.cs"));
+        string selectWeaponDesigner = File.ReadAllText(Path.Combine(repoRoot, "Chummer", "Forms", "Selection Forms", "SelectWeapon.Designer.cs"));
+        string selectCyberwareSource = File.ReadAllText(Path.Combine(repoRoot, "Chummer", "Forms", "Selection Forms", "SelectCyberware.cs"));
+        string selectCyberwareDesigner = File.ReadAllText(Path.Combine(repoRoot, "Chummer", "Forms", "Selection Forms", "SelectCyberware.Designer.cs"));
+        string selectVehicleSource = File.ReadAllText(Path.Combine(repoRoot, "Chummer", "Forms", "Selection Forms", "SelectVehicle.cs"));
+        string selectVehicleDesigner = File.ReadAllText(Path.Combine(repoRoot, "Chummer", "Forms", "Selection Forms", "SelectVehicle.Designer.cs"));
+        string selectSpellSource = File.ReadAllText(Path.Combine(repoRoot, "Chummer", "Forms", "Selection Forms", "SelectSpell.cs"));
+        string selectSpellDesigner = File.ReadAllText(Path.Combine(repoRoot, "Chummer", "Forms", "Selection Forms", "SelectSpell.Designer.cs"));
+
+        StringAssert.Contains(selectArmorDesigner, "this.lblCategory.Text = \"Filter:\";");
+        StringAssert.Contains(selectArmorDesigner, "this.cmdOKAdd.Text = \"&Add && More\";");
+        StringAssert.Contains(selectArmorDesigner, "this.chkHideOverAvailLimit.Text = \"Hide Over Avail ({0})\";");
+        StringAssert.Contains(selectArmorDesigner, "this.chkShowOnlyAffordItems.Text = \"Only Affordable\";");
+        StringAssert.Contains(selectArmorDesigner, "this.chkBlackMarketDiscount.Text = \"Market -10%\";");
+        StringAssert.Contains(selectArmorDesigner, "this.lblMarkupLabel.Text = \"Price Adj.:\";");
+        StringAssert.Contains(selectArmorDesigner, "this.chkFreeItem.Text = \"Free\";");
+        StringAssert.Contains(selectArmorSource, "new ListItem(\"Show All\", \"All Armor\")");
+        StringAssert.Contains(selectArmorSource, "x.Enabled = _lstCategory.Count > 1;");
+
+        StringAssert.Contains(selectGearDesigner, "this.lblCategory.Text = \"Filter:\";");
+        StringAssert.Contains(selectGearDesigner, "this.cmdOKAdd.Text = \"&Add && More\";");
+        StringAssert.Contains(selectGearDesigner, "this.chkDoItYourself.Text = \"Self-Made\";");
+        StringAssert.Contains(selectGearDesigner, "this.chkHideOverAvailLimit.Text = \"Hide Over Avail ({0})\";");
+        StringAssert.Contains(selectGearDesigner, "this.chkShowOnlyAffordItems.Text = \"Only Affordable\";");
+        StringAssert.Contains(selectGearDesigner, "this.chkBlackMarketDiscount.Text = \"Market -10%\";");
+        StringAssert.Contains(selectGearDesigner, "this.lblMarkupLabel.Text = \"Price Adj.:\";");
+        StringAssert.Contains(selectGearDesigner, "this.chkFreeItem.Text = \"Free\";");
+        StringAssert.Contains(selectGearSource, "new ListItem(\"Show All\", \"All Gear\")");
+        StringAssert.Contains(selectGearSource, "x.Enabled = _lstCategory.Count > 1;");
+
+        StringAssert.Contains(selectWeaponDesigner, "this.lblCategory.Text = \"Filter:\";");
+        StringAssert.Contains(selectWeaponDesigner, "this.cmdOKAdd.Text = \"&Add && More\";");
+        StringAssert.Contains(selectWeaponDesigner, "this.chkHideOverAvailLimit.Text = \"Hide Over Avail ({0})\";");
+        StringAssert.Contains(selectWeaponDesigner, "this.chkShowOnlyAffordItems.Text = \"Only Affordable\";");
+        StringAssert.Contains(selectWeaponDesigner, "this.chkBlackMarketDiscount.Text = \"Market -10%\";");
+        StringAssert.Contains(selectWeaponDesigner, "this.lblMarkupLabel.Text = \"Price Adj.:\";");
+        StringAssert.Contains(selectWeaponDesigner, "this.chkFreeItem.Text = \"Free\";");
+        StringAssert.Contains(selectWeaponSource, "new ListItem(\"Show All\", \"All Weapons\")");
+        StringAssert.Contains(selectWeaponSource, "x.Enabled = _lstCategory.Count > 1;");
+
+        StringAssert.Contains(selectCyberwareDesigner, "this.lblCategory.Text = \"Filter:\";");
+        StringAssert.Contains(selectCyberwareDesigner, "this.cmdOKAdd.Text = \"&Add && More\";");
+        StringAssert.Contains(selectCyberwareDesigner, "this.chkHideOverAvailLimit.Text = \"Hide Over Avail ({0})\";");
+        StringAssert.Contains(selectCyberwareDesigner, "this.chkHideBannedGrades.Text = \"Hide Banned Grades\";");
+        StringAssert.Contains(selectCyberwareDesigner, "this.chkBlackMarketDiscount.Text = \"Market -10%\";");
+        StringAssert.Contains(selectCyberwareDesigner, "this.lblMarkupLabel.Text = \"Price Adj.:\";");
+        StringAssert.Contains(selectCyberwareDesigner, "this.chkFree.Text = \"Free\";");
+        StringAssert.Contains(selectCyberwareSource, "new ListItem(\"Show All\", \"All Cyberware\")");
+        StringAssert.Contains(selectCyberwareSource, "x.Enabled = lstCategory.Count > 1;");
+
+        StringAssert.Contains(selectVehicleDesigner, "this.lblCategory.Text = \"Filter:\";");
+        StringAssert.Contains(selectVehicleDesigner, "this.cmdOKAdd.Text = \"&Add && More\";");
+        StringAssert.Contains(selectVehicleDesigner, "this.chkHideOverAvailLimit.Text = \"Hide Over Avail ({0})\";");
+        StringAssert.Contains(selectVehicleDesigner, "this.chkShowOnlyAffordItems.Text = \"Only Affordable\";");
+        StringAssert.Contains(selectVehicleDesigner, "this.chkBlackMarketDiscount.Text = \"Market -10%\";");
+        StringAssert.Contains(selectVehicleDesigner, "this.lblMarkupLabel.Text = \"Price Adj.:\";");
+        StringAssert.Contains(selectVehicleDesigner, "this.chkFreeItem.Text = \"Free\";");
+        StringAssert.Contains(selectVehicleSource, "new ListItem(\"Show All\", \"All Vehicles\")");
+        StringAssert.Contains(selectVehicleSource, "x.Enabled = _lstCategory.Count > 1;");
+
+        StringAssert.Contains(selectSpellDesigner, "this.lblCategory.Text = \"Filter:\";");
+        StringAssert.Contains(selectSpellDesigner, "this.cmdOKAdd.Text = \"&Add && More\";");
+        StringAssert.Contains(selectSpellDesigner, "this.chkFreeBonus.Text = \"Free\";");
+        StringAssert.Contains(selectSpellSource, "new ListItem(\"Show All\", \"All Spells\")");
+        StringAssert.Contains(selectSpellSource, "x.Enabled = _lstCategory.Count > 1;");
+    }
+
+    [TestMethod]
+    public void Secondary_add_dialogs_use_filter_copy_and_all_state_labels()
+    {
+        string repoRoot = TestContextLocator.ResolveChummerPresentationRepoRoot();
+        string selectAiProgramSource = File.ReadAllText(Path.Combine(repoRoot, "Chummer", "Forms", "Selection Forms", "SelectAIProgram.cs"));
+        string selectAiProgramDesigner = File.ReadAllText(Path.Combine(repoRoot, "Chummer", "Forms", "Selection Forms", "SelectAIProgram.Designer.cs"));
+        string selectLifestyleQualitySource = File.ReadAllText(Path.Combine(repoRoot, "Chummer", "Forms", "Selection Forms", "SelectLifestyleQuality.cs"));
+        string selectLifestyleQualityDesigner = File.ReadAllText(Path.Combine(repoRoot, "Chummer", "Forms", "Selection Forms", "SelectLifestyleQuality.Designer.cs"));
+        string selectPacksKitSource = File.ReadAllText(Path.Combine(repoRoot, "Chummer", "Forms", "Selection Forms", "SelectPACKSKit.cs"));
+        string selectPacksKitDesigner = File.ReadAllText(Path.Combine(repoRoot, "Chummer", "Forms", "Selection Forms", "SelectPACKSKit.Designer.cs"));
+        string selectCritterPowerSource = File.ReadAllText(Path.Combine(repoRoot, "Chummer", "Forms", "Selection Forms", "SelectCritterPower.cs"));
+        string selectCritterPowerDesigner = File.ReadAllText(Path.Combine(repoRoot, "Chummer", "Forms", "Selection Forms", "SelectCritterPower.Designer.cs"));
+
+        StringAssert.Contains(selectAiProgramDesigner, "this.lblCategory.Text = \"Filter:\";");
+        StringAssert.Contains(selectAiProgramDesigner, "this.cmdOKAdd.Text = \"&Add && More\";");
+        StringAssert.Contains(selectAiProgramSource, "new ListItem(\"Show All\", \"All Programs\")");
+        StringAssert.Contains(selectAiProgramSource, "x.Enabled = _lstCategory.Count > 1;");
+
+        StringAssert.Contains(selectLifestyleQualityDesigner, "this.lblCategory.Text = \"Filter:\";");
+        StringAssert.Contains(selectLifestyleQualityDesigner, "this.cmdOKAdd.Text = \"&Add && More\";");
+        StringAssert.Contains(selectLifestyleQualityDesigner, "this.chkLimitList.Text = \"Only Available\";");
+        StringAssert.Contains(selectLifestyleQualityDesigner, "this.chkFree.Text = \"Free\";");
+        StringAssert.Contains(selectLifestyleQualitySource, "new ListItem(\"Show All\", \"All Lifestyle Qualities\")");
+
+        StringAssert.Contains(selectPacksKitDesigner, "this.lblCategory.Text = \"Filter:\";");
+        StringAssert.Contains(selectPacksKitDesigner, "this.cmdOKAdd.Text = \"&Add && More\";");
+        StringAssert.Contains(selectPacksKitSource, "new ListItem(\"Show All\", \"All Kits\")");
+        StringAssert.Contains(selectPacksKitSource, "x.Enabled = _lstCategory.Count > 1;");
+
+        StringAssert.Contains(selectCritterPowerDesigner, "this.lblCategory.Text = \"Filter:\";");
+        StringAssert.Contains(selectCritterPowerDesigner, "this.cmdOKAdd.Text = \"&Add && More\";");
+        StringAssert.Contains(selectCritterPowerSource, "new ListItem(\"Show All\", \"All Powers\")");
+        StringAssert.Contains(selectCritterPowerSource, "x.Enabled = _lstCategory.Count > 1;");
+    }
+
+    [TestMethod]
+    public void Mod_and_drug_selection_dialogs_use_compact_selector_copy()
+    {
+        string repoRoot = TestContextLocator.ResolveChummerPresentationRepoRoot();
+        string selectArmorModDesigner = File.ReadAllText(Path.Combine(repoRoot, "Chummer", "Forms", "Selection Forms", "SelectArmorMod.Designer.cs"));
+        string selectVehicleModSource = File.ReadAllText(Path.Combine(repoRoot, "Chummer", "Forms", "Selection Forms", "SelectVehicleMod.cs"));
+        string selectVehicleModDesigner = File.ReadAllText(Path.Combine(repoRoot, "Chummer", "Forms", "Selection Forms", "SelectVehicleMod.Designer.cs"));
+        string selectDrugDesigner = File.ReadAllText(Path.Combine(repoRoot, "Chummer", "Forms", "Selection Forms", "SelectDrug.Designer.cs"));
+
+        StringAssert.Contains(selectArmorModDesigner, "this.cmdOKAdd.Text = \"&Add && More\";");
+        StringAssert.Contains(selectArmorModDesigner, "this.chkFreeItem.Text = \"Free\";");
+        StringAssert.Contains(selectArmorModDesigner, "this.lblMarkupLabel.Text = \"Price Adj.:\";");
+        StringAssert.Contains(selectArmorModDesigner, "this.chkBlackMarketDiscount.Text = \"Market -10%\";");
+        StringAssert.Contains(selectArmorModDesigner, "this.chkHideOverAvailLimit.Text = \"Hide Over Avail ({0})\";");
+        StringAssert.Contains(selectArmorModDesigner, "this.chkShowOnlyAffordItems.Text = \"Only Affordable\";");
+
+        StringAssert.Contains(selectVehicleModDesigner, "this.lblCategoryLabel.Text = \"Filter:\";");
+        StringAssert.Contains(selectVehicleModDesigner, "this.label1.Text = \"Filter:\";");
+        StringAssert.Contains(selectVehicleModDesigner, "this.cmdOKAdd.Text = \"&Add && More\";");
+        StringAssert.Contains(selectVehicleModDesigner, "this.chkFreeItem.Text = \"Free\";");
+        StringAssert.Contains(selectVehicleModDesigner, "this.lblMarkupLabel.Text = \"Price Adj.:\";");
+        StringAssert.Contains(selectVehicleModDesigner, "this.chkBlackMarketDiscount.Text = \"Market -10%\";");
+        StringAssert.Contains(selectVehicleModDesigner, "this.chkHideOverAvailLimit.Text = \"Hide Over Avail ({0})\";");
+        StringAssert.Contains(selectVehicleModDesigner, "this.chkShowOnlyAffordItems.Text = \"Only Affordable\";");
+        StringAssert.Contains(selectVehicleModSource, "new ListItem(\"Show All\", \"All Vehicle Mods\")");
+        StringAssert.Contains(selectVehicleModSource, "x.Enabled = _lstCategory.Count > 1;");
+
+        StringAssert.Contains(selectDrugDesigner, "this.chkHideOverAvailLimit.Text = \"Hide Over Avail ({0})\";");
+        StringAssert.Contains(selectDrugDesigner, "this.chkHideBannedGrades.Text = \"Hide Banned Grades\";");
+        StringAssert.Contains(selectDrugDesigner, "this.chkShowOnlyAffordItems.Text = \"Only Affordable\";");
+        StringAssert.Contains(selectDrugDesigner, "this.cmdOKAdd.Text = \"&Add && More\";");
+        StringAssert.Contains(selectDrugDesigner, "this.chkFree.Text = \"Free\";");
+        StringAssert.Contains(selectDrugDesigner, "this.chkBlackMarketDiscount.Text = \"Market -10%\";");
+        StringAssert.Contains(selectDrugDesigner, "this.lblMarkupLabel.Text = \"Price Adj.:\";");
+    }
+
+    [TestMethod]
+    public void Remaining_selector_dialogs_use_compact_add_more_copy()
+    {
+        string repoRoot = TestContextLocator.ResolveChummerPresentationRepoRoot();
+        string selectWeaponAccessoryDesigner = File.ReadAllText(Path.Combine(repoRoot, "Chummer", "Forms", "Selection Forms", "SelectWeaponAccessory.Designer.cs"));
+        string selectQualityDesigner = File.ReadAllText(Path.Combine(repoRoot, "Chummer", "Forms", "Selection Forms", "SelectQuality.Designer.cs"));
+        string selectPowerDesigner = File.ReadAllText(Path.Combine(repoRoot, "Chummer", "Forms", "Selection Forms", "SelectPower.Designer.cs"));
+        string selectMartialArtDesigner = File.ReadAllText(Path.Combine(repoRoot, "Chummer", "Forms", "Selection Forms", "SelectMartialArt.Designer.cs"));
+        string selectMartialArtTechniqueDesigner = File.ReadAllText(Path.Combine(repoRoot, "Chummer", "Forms", "Selection Forms", "SelectMartialArtTechnique.Designer.cs"));
+        string selectLifestyleDesigner = File.ReadAllText(Path.Combine(repoRoot, "Chummer", "Forms", "Selection Forms", "SelectLifestyle.Designer.cs"));
+        string selectComplexFormDesigner = File.ReadAllText(Path.Combine(repoRoot, "Chummer", "Forms", "Selection Forms", "SelectComplexForm.Designer.cs"));
+        string selectProgramOptionDesigner = File.ReadAllText(Path.Combine(repoRoot, "Chummer", "Forms", "Selection Forms", "SelectProgramOption.Designer.cs"));
+
+        StringAssert.Contains(selectWeaponAccessoryDesigner, "this.cmdOKAdd.Text = \"&Add && More\";");
+        StringAssert.Contains(selectWeaponAccessoryDesigner, "this.chkFreeItem.Text = \"Free\";");
+        StringAssert.Contains(selectWeaponAccessoryDesigner, "this.lblMarkupLabel.Text = \"Price Adj.:\";");
+        StringAssert.Contains(selectWeaponAccessoryDesigner, "this.chkBlackMarketDiscount.Text = \"Market -10%\";");
+        StringAssert.Contains(selectWeaponAccessoryDesigner, "this.chkHideOverAvailLimit.Text = \"Hide Over Avail ({0})\";");
+        StringAssert.Contains(selectWeaponAccessoryDesigner, "this.chkShowOnlyAffordItems.Text = \"Only Affordable\";");
+
+        StringAssert.Contains(selectQualityDesigner, "this.cmdOKAdd.Text = \"&Add && More\";");
+        StringAssert.Contains(selectQualityDesigner, "this.chkFree.Text = \"Free\";");
+        StringAssert.Contains(selectPowerDesigner, "this.cmdOKAdd.Text = \"&Add && More\";");
+        StringAssert.Contains(selectMartialArtDesigner, "this.cmdOKAdd.Text = \"&Add && More\";");
+        StringAssert.Contains(selectMartialArtTechniqueDesigner, "this.cmdOKAdd.Text = \"&Add && More\";");
+        StringAssert.Contains(selectLifestyleDesigner, "this.cmdOKAdd.Text = \"&Add && More\";");
+        StringAssert.Contains(selectComplexFormDesigner, "this.cmdOKAdd.Text = \"&Add && More\";");
+        StringAssert.Contains(selectProgramOptionDesigner, "this.cmdOKAdd.Text = \"&Add && More\";");
+    }
+
+    [TestMethod]
+    public void Adjacent_creation_surfaces_use_the_same_compact_copy()
+    {
+        string repoRoot = TestContextLocator.ResolveChummerPresentationRepoRoot();
+        string createImprovementDesigner = File.ReadAllText(Path.Combine(repoRoot, "Chummer", "Forms", "Creation Forms", "CreateImprovement.Designer.cs"));
+        string createWeaponMountDesigner = File.ReadAllText(Path.Combine(repoRoot, "Chummer", "Forms", "Creation Forms", "CreateWeaponMount.Designer.cs"));
+        string selectLifeModuleDesigner = File.ReadAllText(Path.Combine(repoRoot, "Chummer", "Forms", "Character Creation Forms", "SelectLifeModule.Designer.cs"));
+        string characterCreateDesigner = File.ReadAllText(Path.Combine(repoRoot, "Chummer", "Forms", "Character Forms", "CharacterCreate.Designer.cs"));
+
+        StringAssert.Contains(createImprovementDesigner, "this.chkFree.Text = \"Free\";");
+        StringAssert.Contains(createWeaponMountDesigner, "this.chkFreeItem.Text = \"Free\";");
+        StringAssert.Contains(createWeaponMountDesigner, "this.lblMarkupLabel.Text = \"Price Adj.:\";");
+        StringAssert.Contains(createWeaponMountDesigner, "this.chkBlackMarketDiscount.Text = \"Market -10%\";");
+        StringAssert.Contains(selectLifeModuleDesigner, "this.cmdOKAdd.Text = \"&Add && More\";");
+        StringAssert.Contains(characterCreateDesigner, "this.chkCyberwareBlackMarketDiscount.Text = \"Market -10%\";");
+        StringAssert.Contains(characterCreateDesigner, "this.chkGearBlackMarketDiscount.Text = \"Market -10%\";");
+        StringAssert.Contains(characterCreateDesigner, "this.chkArmorBlackMarketDiscount.Text = \"Market -10%\";");
+        StringAssert.Contains(characterCreateDesigner, "this.chkWeaponBlackMarketDiscount.Text = \"Market -10%\";");
+        StringAssert.Contains(characterCreateDesigner, "this.chkVehicleBlackMarketDiscount.Text = \"Market -10%\";");
+    }
+
+    [TestMethod]
+    public void Attribute_control_keeps_compact_numeric_rows_without_cumulative_margin_drift()
+    {
+        string repoRoot = TestContextLocator.ResolveChummerPresentationRepoRoot();
+        string source = File.ReadAllText(Path.Combine(repoRoot, "Chummer", "Controls", "Attributes", "AttributeControl.cs"));
+
+        StringAssert.Contains(source, "private readonly Padding _nudKarmaBaseMargin;");
+        StringAssert.Contains(source, "private readonly Padding _nudBaseBaseMargin;");
+        StringAssert.Contains(source, "_nudKarmaBaseMargin = nudKarma.Margin;");
+        StringAssert.Contains(source, "_nudBaseBaseMargin = nudBase.Margin;");
+        StringAssert.Contains(source, "RowCount = 1");
+        StringAssert.Contains(source, "tlpValues.Controls.Add(nudBase, 0, 0);");
+        StringAssert.Contains(source, "tlpValues.Controls.Add(nudKarma, 1, 0);");
+        StringAssert.Contains(source, "_nudBaseBaseMargin.Left + Math.Max(intNudBaseWidth - x.Width, 0)");
+        StringAssert.Contains(source, "_nudKarmaBaseMargin.Left + Math.Max(intNudKarmaWidth - x.Width, 0)");
+        Assert.IsFalse(source.Contains("tlpValues.Controls.Add(lblBase", StringComparison.Ordinal));
+        Assert.IsFalse(source.Contains("tlpValues.Controls.Add(lblKarma", StringComparison.Ordinal));
+        Assert.IsFalse(source.Contains("x.Margin.Right + Math.Max(intNudBaseWidth - x.Width, 0)", StringComparison.Ordinal));
+        Assert.IsFalse(source.Contains("x.Margin.Right + Math.Max(intNudKarmaWidth - x.Width, 0)", StringComparison.Ordinal));
+    }
+
+    [TestMethod]
+    public void ColorManager_themes_numeric_up_down_inputs_and_their_embedded_edit_fields()
+    {
+        string repoRoot = TestContextLocator.ResolveChummerPresentationRepoRoot();
+        string source = File.ReadAllText(Path.Combine(repoRoot, "Chummer", "Backend", "Static", "Managers", "ColorManager.cs"));
+
+        StringAssert.Contains(source, "private static void ApplyNumericUpDownColors(NumericUpDown objControl, bool blnLightMode)");
+        StringAssert.Contains(source, "case NumericUpDown nudControl:");
+        StringAssert.Contains(source, "ApplyNumericUpDownColors(x, blnLightMode)");
+        StringAssert.Contains(source, "objControl.ReadOnly && IsControlSurfaceColor(objControl.BackColor)");
+        StringAssert.Contains(source, "foreach (Control objChild in objControl.Controls)");
+        StringAssert.Contains(source, "if (objChild is TextBoxBase objTextBox)");
+        StringAssert.Contains(source, "objTextBox.ForeColor = objForeColor;");
+        StringAssert.Contains(source, "objTextBox.BackColor = objBackColor;");
+    }
+
+    [TestMethod]
+    public void ColorManager_themes_textboxbase_and_date_picker_inputs_in_shared_dark_mode_path()
+    {
+        string repoRoot = TestContextLocator.ResolveChummerPresentationRepoRoot();
+        string source = File.ReadAllText(Path.Combine(repoRoot, "Chummer", "Backend", "Static", "Managers", "ColorManager.cs"));
+
+        StringAssert.Contains(source, "case TextBoxBase txtControl when txtControl is not RichTextBox:");
+        StringAssert.Contains(source, "case DateTimePicker dtpControl:");
+        StringAssert.Contains(source, "x.CalendarForeColor = WindowTextLight;");
+        StringAssert.Contains(source, "x.CalendarMonthBackground = WindowLight;");
+        StringAssert.Contains(source, "x.CalendarForeColor = WindowTextDark;");
+        StringAssert.Contains(source, "x.CalendarMonthBackground = WindowDark;");
+        StringAssert.Contains(source, "x.CalendarTitleForeColor = HighlightText;");
+        StringAssert.Contains(source, "x.CalendarTitleBackColor = Highlight;");
+        StringAssert.Contains(source, "x.CalendarTrailingForeColor = GrayText;");
+    }
+
+    [TestMethod]
+    public void Character_career_splitter_does_not_seed_legacy_light_blue_chrome()
+    {
+        string repoRoot = TestContextLocator.ResolveChummerPresentationRepoRoot();
+        string designer = File.ReadAllText(Path.Combine(repoRoot, "Chummer", "Forms", "Character Forms", "CharacterCareer.Designer.cs"));
+
+        StringAssert.Contains(designer, "this.splitKarmaNuyen.BackColor = System.Drawing.SystemColors.InactiveCaption;");
+        Assert.IsFalse(designer.Contains("this.splitKarmaNuyen.BackColor = System.Drawing.Color.LightBlue;", StringComparison.Ordinal));
+    }
+
+    [TestMethod]
     public void Sr4_metatype_selection_forms_filter_ai_character_options_when_ai_features_are_disabled()
     {
         string repoRoot = TestContextLocator.ResolveChummerPresentationRepoRoot();
@@ -735,6 +1026,30 @@ public sealed class DesktopThemeManagerTests
         StringAssert.Contains(supportCaseSource, "Tracked case preview.");
         StringAssert.Contains(supportCaseSource, "Use account support to record final confirmation");
         StringAssert.Contains(supportCaseSource, "System details stay visible while this case still needs attention.");
+    }
+
+    [TestMethod]
+    public void Campaign_world_and_publication_desktop_surfaces_do_not_use_internal_follow_through_copy()
+    {
+        string repoRoot = TestContextLocator.ResolveChummerPresentationRepoRoot();
+        string[] sources =
+        [
+            File.ReadAllText(Path.Combine(repoRoot, "Chummer.Avalonia", "DesktopBlackLedgerWindow.cs")),
+            File.ReadAllText(Path.Combine(repoRoot, "Chummer.Avalonia", "DesktopCampaignArtifactWindow.cs")),
+            File.ReadAllText(Path.Combine(repoRoot, "Chummer.Avalonia", "DesktopCreatorPublicationWindow.cs")),
+            File.ReadAllText(Path.Combine(repoRoot, "Chummer.Avalonia", "DesktopGhostwireWindow.cs")),
+            File.ReadAllText(Path.Combine(repoRoot, "Chummer.Avalonia", "DesktopJackpointWindow.cs")),
+            File.ReadAllText(Path.Combine(repoRoot, "Chummer.Avalonia", "DesktopNexusPanWindow.cs")),
+            File.ReadAllText(Path.Combine(repoRoot, "Chummer.Avalonia", "DesktopOrganizerOperationsWindow.cs")),
+            File.ReadAllText(Path.Combine(repoRoot, "Chummer.Avalonia", "DesktopRunbookPressWindow.cs")),
+            File.ReadAllText(Path.Combine(repoRoot, "Chummer.Avalonia", "DesktopRunnerPassportWindow.cs")),
+            File.ReadAllText(Path.Combine(repoRoot, "Chummer.Avalonia", "DesktopTablePulseWindow.cs"))
+        ];
+
+        string combined = string.Join("\n", sources);
+        Assert.IsFalse(combined.Contains("follow-through", StringComparison.OrdinalIgnoreCase));
+        Assert.IsFalse(combined.Contains("account-bound", StringComparison.OrdinalIgnoreCase));
+        Assert.IsFalse(combined.Contains("device/access", StringComparison.OrdinalIgnoreCase));
     }
 
     [TestMethod]

@@ -130,7 +130,7 @@ namespace Chummer
 
                             lstCategories.Sort(CompareListItems.CompareNames);
                             lstCategories.Insert(
-                                0, new ListItem("Show All", await LanguageManager.GetStringAsync("String_ShowAll", token: _objGenericToken).ConfigureAwait(false)));
+                                0, new ListItem("Show All", "All Metatypes"));
 
                             await cboCategory.PopulateWithListItemsAsync(lstCategories, _objGenericToken).ConfigureAwait(false);
                             // Attempt to select the default Metahuman Category. If it could not be found, select the first item in the list instead.
@@ -140,6 +140,7 @@ namespace Chummer
                                 x.SelectedValue = strMetatypeCategory;
                                 if (x.SelectedIndex == -1 && lstCategories.Count > 0)
                                     x.SelectedIndex = 0;
+                                x.Enabled = lstCategories.Count > 1;
                             }, _objGenericToken).ConfigureAwait(false);
                         }
 

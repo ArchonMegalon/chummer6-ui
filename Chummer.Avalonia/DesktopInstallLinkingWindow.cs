@@ -31,6 +31,12 @@ internal sealed class DesktopInstallLinkingWindow : Window
     private readonly TextBlock _claimCodeLabelText;
     private readonly TextBox _claimCodeTextBox;
     private readonly StackPanel _claimCodeEntryRow;
+    private readonly Control _browserFallbackPanel;
+    private readonly TextBlock _browserFallbackHeadingText;
+    private readonly TextBlock _browserFallbackSummaryText;
+    private readonly TextBlock _browserFallbackDetailText;
+    private readonly TextBlock _browserFallbackUrlLabelText;
+    private readonly TextBlock _browserFallbackUrlText;
     private readonly TextBlock _guidedPreferenceStatusText;
     private readonly RadioButton _guidedToolsRadioButton;
     private readonly RadioButton _quietToolsRadioButton;
@@ -192,6 +198,45 @@ internal sealed class DesktopInstallLinkingWindow : Window
                 _redeemClaimCodeButton
             }
         };
+        _browserFallbackHeadingText = new TextBlock
+        {
+            FontWeight = FontWeight.SemiBold,
+            TextWrapping = TextWrapping.Wrap
+        };
+        _browserFallbackSummaryText = new TextBlock
+        {
+            TextWrapping = TextWrapping.Wrap,
+            Foreground = DesktopShellTheme.ResolveThemeBrush("ChummerShellMutedForegroundBrush", "#334155")
+        };
+        _browserFallbackDetailText = new TextBlock
+        {
+            TextWrapping = TextWrapping.Wrap,
+            Foreground = DesktopShellTheme.ResolveThemeBrush("ChummerShellMutedForegroundBrush", "#334155")
+        };
+        _browserFallbackUrlLabelText = new TextBlock
+        {
+            FontWeight = FontWeight.SemiBold,
+            TextWrapping = TextWrapping.Wrap
+        };
+        _browserFallbackUrlText = new TextBlock
+        {
+            TextWrapping = TextWrapping.Wrap,
+            Foreground = DesktopShellTheme.ResolveThemeBrush("ChummerShellForegroundBrush", "#0f172a")
+        };
+        _browserFallbackPanel = DesktopShellTheme.CreateUtilityPanel(
+            new StackPanel
+            {
+                Spacing = 6,
+                Children =
+                {
+                    _browserFallbackHeadingText,
+                    _browserFallbackSummaryText,
+                    _browserFallbackDetailText,
+                    _browserFallbackUrlLabelText,
+                    _browserFallbackUrlText
+                }
+            });
+        _browserFallbackPanel.IsVisible = false;
         _guidedPreferenceStatusText = new TextBlock
         {
             Text = BuildGuidedToolsPreferenceStatus(_preferences, _language),
@@ -603,6 +648,7 @@ internal sealed class DesktopInstallLinkingWindow : Window
                                 FontWeight = FontWeight.SemiBold,
                                 TextWrapping = TextWrapping.Wrap
                             },
+                            _browserFallbackPanel,
                             _claimCodeHintText,
                             _claimCodeLabelText,
                             _claimCodeEntryRow,
@@ -1008,9 +1054,7 @@ internal sealed class DesktopInstallLinkingWindow : Window
         _followThroughButton.Content = claimed
             ? DesktopLocalizationCatalog.GetRequiredString("desktop.install_link.button.open_work", _language)
             : DesktopLocalizationCatalog.GetRequiredString("desktop.home.button.open_devices_access", _language);
-        _accountButton.Content = claimed
-            ? DesktopLocalizationCatalog.GetRequiredString("desktop.install_link.button.open_account", _language)
-            : DesktopLocalizationCatalog.GetRequiredString("desktop.install_link.button.login_website", _language);
+        _accountButton.Content = BuildAccountButtonLabel(claimed, _browserFallbackVisible, _language);
         _followThroughButton.IsVisible = claimed;
         _copyLoginUrlButton.IsVisible = !claimed && _browserFallbackVisible;
         _exitButton.IsVisible = !claimed;
@@ -1031,6 +1075,7 @@ internal sealed class DesktopInstallLinkingWindow : Window
         _claimCodeHintText.IsVisible = !claimed && _browserFallbackVisible;
         _claimCodeLabelText.IsVisible = !claimed && _browserFallbackVisible;
         _claimCodeEntryRow.IsVisible = !claimed && _browserFallbackVisible;
+        _browserFallbackPanel.IsVisible = !claimed && _browserFallbackVisible;
         _moreToolsHeading.IsVisible = claimed;
         _moreToolsPanel.IsVisible = claimed;
     }
@@ -1070,7 +1115,7 @@ internal sealed class DesktopInstallLinkingWindow : Window
             try
             {
                 await Clipboard.SetTextAsync(loginUrl);
-                SetStatus(DesktopLocalizationCatalog.GetRequiredString("desktop.install_link.status.login_url_copied", _language));
+                SetStatus(BuildBrowserFallbackStatus(_language, copiedToClipboard: true));
                 return;
             }
             catch
@@ -1079,23 +1124,56 @@ internal sealed class DesktopInstallLinkingWindow : Window
             }
         }
 
-        SetStatus(DesktopLocalizationCatalog.GetRequiredString("desktop.install_link.status.manual_login_url", _language));
+        SetStatus(BuildBrowserFallbackStatus(_language, copiedToClipboard: false));
     }
 
     private void ShowManualBrowserFallback(string loginUrl, string? failureReason)
     {
         _browserFallbackVisible = true;
         _lastLoginUrl = loginUrl;
-        string headline = DesktopLocalizationCatalog.GetRequiredString("desktop.install_link.status.manual_login_url", _language);
-        string detail = string.IsNullOrWhiteSpace(failureReason)
-            ? "Copy or open the link below, claim this copy, then return here. The local callback will finish automatically when this desktop can receive it."
-            : $"Copy or open the link below, claim this copy, then return here. Host detail: {failureReason.Trim()}";
-        _claimCodeHintText.Text = $"{headline}\n{detail}\n{loginUrl}";
+        _browserFallbackHeadingText.Text = BuildBrowserFallbackHeading(_language);
+        _browserFallbackSummaryText.Text = BuildBrowserFallbackSummary(_language);
+        _browserFallbackDetailText.Text = BuildBrowserFallbackDetail(_language, failureReason);
+        _browserFallbackUrlLabelText.Text = DesktopLocalizationCatalog.GetRequiredString("desktop.install_link.fallback.claim_url_label", _language);
+        _browserFallbackUrlText.Text = loginUrl;
+        _claimCodeHintText.Text = DesktopLocalizationCatalog.GetRequiredString("desktop.install_link.status.prompt_guest_claim", _language);
         _claimCodeHintText.IsVisible = true;
-        ToolTip.SetTip(_claimCodeHintText, loginUrl);
+        ToolTip.SetTip(_browserFallbackUrlText, loginUrl);
+        ToolTip.SetTip(_claimCodeHintText, DesktopLocalizationCatalog.GetRequiredString("desktop.install_link.status.prompt_guest_claim", _language));
         UpdateMatrixHandoffState("Browser fallback ready");
         RefreshSummary();
         RefreshActionState();
+    }
+
+    internal static string BuildBrowserFallbackHeading(string language)
+        => DesktopLocalizationCatalog.GetRequiredString("desktop.install_link.fallback.heading", language);
+
+    internal static string BuildBrowserFallbackSummary(string language)
+        => DesktopLocalizationCatalog.GetRequiredString("desktop.install_link.fallback.summary", language);
+
+    internal static string BuildBrowserFallbackDetail(string language, string? failureReason)
+        => string.IsNullOrWhiteSpace(failureReason)
+            ? DesktopLocalizationCatalog.GetRequiredString("desktop.install_link.fallback.detail", language)
+            : DesktopLocalizationCatalog.GetRequiredFormattedString(
+                "desktop.install_link.fallback.detail_with_reason",
+                language,
+                failureReason.Trim());
+
+    internal static string BuildBrowserFallbackStatus(string language, bool copiedToClipboard)
+        => copiedToClipboard
+            ? DesktopLocalizationCatalog.GetRequiredString("desktop.install_link.status.login_url_copied", language)
+            : DesktopLocalizationCatalog.GetRequiredString("desktop.install_link.status.manual_login_url", language);
+
+    internal static string BuildAccountButtonLabel(bool claimed, bool browserFallbackVisible, string language)
+    {
+        if (claimed)
+        {
+            return DesktopLocalizationCatalog.GetRequiredString("desktop.install_link.button.open_account", language);
+        }
+
+        return browserFallbackVisible
+            ? DesktopLocalizationCatalog.GetRequiredString("desktop.install_link.button.open_claim_link", language)
+            : DesktopLocalizationCatalog.GetRequiredString("desktop.install_link.button.login_website", language);
     }
 
     private static void RefreshButtonTip(Button button)

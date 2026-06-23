@@ -35,7 +35,6 @@ using ListBox = System.Windows.Forms.ListBox;
 using ListView = System.Windows.Forms.ListView;
 using SystemColors = System.Drawing.SystemColors;
 using TableCell = Chummer.UI.Table.TableCell;
-using TextBox = System.Windows.Forms.TextBox;
 using Timer = System.Timers.Timer;
 using TreeNode = System.Windows.Forms.TreeNode;
 using TreeView = System.Windows.Forms.TreeView;
@@ -575,6 +574,47 @@ namespace Chummer
             }
         }
 
+        private static void ApplyNumericUpDownColors(NumericUpDown objControl, bool blnLightMode)
+        {
+            Color objForeColor;
+            Color objBackColor;
+            Color objButtonColor;
+            if (blnLightMode)
+            {
+                objForeColor = WindowTextLight;
+                objBackColor = objControl.ReadOnly && IsControlSurfaceColor(objControl.BackColor)
+                    ? ControlLight
+                    : WindowLight;
+                objButtonColor = ControlLight;
+            }
+            else
+            {
+                objForeColor = WindowTextDark;
+                objBackColor = objControl.ReadOnly && IsControlSurfaceColor(objControl.BackColor)
+                    ? ControlDark
+                    : WindowDark;
+                objButtonColor = ControlDark;
+            }
+
+            objForeColor = EnsureReadableForeground(objForeColor, objBackColor, blnLightMode);
+            objControl.ForeColor = objForeColor;
+            objControl.BackColor = objBackColor;
+
+            foreach (Control objChild in objControl.Controls)
+            {
+                if (objChild is TextBoxBase objTextBox)
+                {
+                    objTextBox.ForeColor = objForeColor;
+                    objTextBox.BackColor = objBackColor;
+                }
+                else
+                {
+                    objChild.ForeColor = objForeColor;
+                    objChild.BackColor = objButtonColor;
+                }
+            }
+        }
+
         private static void ApplyColorsRecursively(Control objControl, bool blnLightMode, CancellationToken token = default)
         {
             void ApplyButtonStyle()
@@ -691,7 +731,7 @@ namespace Chummer
                         ApplyColorsRecursively(objNode, blnLightMode, token);
                     break;
 
-                case TextBox txtControl:
+                case TextBoxBase txtControl when txtControl is not RichTextBox:
                     txtControl.DoThreadSafe((x, y) =>
                     {
                         if (x.ForeColor != ErrorColor)
@@ -728,6 +768,35 @@ namespace Chummer
                         if (x.ForeColor != ErrorColor)
                             x.ForeColor = EnsureReadableForeground(x.ForeColor, x.BackColor, blnLightMode);
                     }, token);
+                    break;
+
+                case DateTimePicker dtpControl:
+                    dtpControl.DoThreadSafe((x, y) =>
+                    {
+                        if (blnLightMode)
+                        {
+                            x.ForeColor = WindowTextLight;
+                            x.BackColor = WindowLight;
+                            x.CalendarForeColor = WindowTextLight;
+                            x.CalendarMonthBackground = WindowLight;
+                        }
+                        else
+                        {
+                            x.ForeColor = WindowTextDark;
+                            x.BackColor = WindowDark;
+                            x.CalendarForeColor = WindowTextDark;
+                            x.CalendarMonthBackground = WindowDark;
+                        }
+
+                        x.CalendarTitleForeColor = HighlightText;
+                        x.CalendarTitleBackColor = Highlight;
+                        x.CalendarTrailingForeColor = GrayText;
+                        x.ForeColor = EnsureReadableForeground(x.ForeColor, x.BackColor, blnLightMode);
+                    }, token);
+                    break;
+
+                case NumericUpDown nudControl:
+                    nudControl.DoThreadSafe((x, y) => ApplyNumericUpDownColors(x, blnLightMode), token);
                     break;
 
                 case ListView objListView:
@@ -1254,7 +1323,7 @@ namespace Chummer
                             await ApplyColorsRecursivelyAsync(objNode, blnLightMode, token).ConfigureAwait(false);
                         break;
                     }
-                case TextBox txtControl:
+                case TextBoxBase txtControl when txtControl is not RichTextBox:
                     {
                         await txtControl.DoThreadSafeAsync(x =>
                         {
@@ -1292,6 +1361,38 @@ namespace Chummer
                             if (x.ForeColor != ErrorColor)
                                 x.ForeColor = EnsureReadableForeground(x.ForeColor, x.BackColor, blnLightMode);
                         }, token).ConfigureAwait(false);
+                        break;
+                    }
+                case DateTimePicker dtpControl:
+                    {
+                        await dtpControl.DoThreadSafeAsync(x =>
+                        {
+                            if (blnLightMode)
+                            {
+                                x.ForeColor = WindowTextLight;
+                                x.BackColor = WindowLight;
+                                x.CalendarForeColor = WindowTextLight;
+                                x.CalendarMonthBackground = WindowLight;
+                            }
+                            else
+                            {
+                                x.ForeColor = WindowTextDark;
+                                x.BackColor = WindowDark;
+                                x.CalendarForeColor = WindowTextDark;
+                                x.CalendarMonthBackground = WindowDark;
+                            }
+
+                            x.CalendarTitleForeColor = HighlightText;
+                            x.CalendarTitleBackColor = Highlight;
+                            x.CalendarTrailingForeColor = GrayText;
+                            x.ForeColor = EnsureReadableForeground(x.ForeColor, x.BackColor, blnLightMode);
+                        }, token).ConfigureAwait(false);
+                        break;
+                    }
+                case NumericUpDown nudControl:
+                    {
+                        await nudControl.DoThreadSafeAsync(x => ApplyNumericUpDownColors(x, blnLightMode), token)
+                            .ConfigureAwait(false);
                         break;
                     }
                 case ListView objListView:

@@ -86,7 +86,7 @@ internal sealed class DesktopRunnerPassportWindow : Window
 
         return DesktopHorizonWindowScaffold.CreateCard(
             "Identity network",
-            "Keep runner identity, ownership, and account-bound follow-through in one native surface.",
+            "Keep runner identity, ownership, and account access in one native surface.",
             details,
             DesktopHorizonWindowScaffold.CreateAsyncButton(this, "Open account desk", static () => DesktopInstallLinkingRuntime.TryOpenRelativePortal("/account/passport"), isPrimary: HasIdentityContext),
             DesktopHorizonWindowScaffold.CreateAsyncButton(this, "Open public route", static () => DesktopInstallLinkingRuntime.TryOpenRelativePortal("/passport")),
@@ -109,7 +109,7 @@ internal sealed class DesktopRunnerPassportWindow : Window
             string mode = detailModeCombo?.SelectedItem?.ToString() ?? "Access";
             detailText.Text = mode == "Identity"
                 ? $"Identity-linked dossiers: {_campaignSummary?.Dossiers.Count ?? 0}. Crews: {_campaignSummary?.Crews.Count ?? 0}."
-                : "Device/access follow-through stays one move away from the account-bound passport desk.";
+                : "Install and account help stays one move away from the passport desk.";
         }
 
         if (HasIdentityContext)

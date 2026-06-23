@@ -548,7 +548,7 @@ public class CharacterOverviewPresenterTests
         Assert.IsNotNull(presenter.State.PendingExport);
         Assert.AreEqual(WorkspaceDocumentFormat.Json, presenter.State.PendingExport?.Format);
         StringAssert.EndsWith(presenter.State.PendingExport?.FileName ?? string.Empty, "-export.json");
-        StringAssert.Contains(presenter.State.Notice ?? string.Empty, "Portable export prepared:");
+        StringAssert.Contains(presenter.State.Notice ?? string.Empty, "Portable export ready:");
         StringAssert.Contains(presenter.State.Notice ?? string.Empty, "Portable export is ready");
         Assert.IsNotNull(presenter.State.LatestPortabilityActivity);
         Assert.AreEqual("Last portable export", presenter.State.LatestPortabilityActivity?.Title);
@@ -718,7 +718,7 @@ public class CharacterOverviewPresenterTests
         Assert.IsNotNull(presenter.State.ActiveDialog);
         Assert.AreEqual("dialog.master_index", presenter.State.ActiveDialog?.Id);
         Assert.AreEqual("source selection governed", DesktopDialogFieldValueParser.GetValue(presenter.State.ActiveDialog!, "masterIndexSourceSelectionReceipt"));
-        StringAssert.Contains(DesktopDialogFieldValueParser.GetValue(presenter.State.ActiveDialog!, "masterIndexSettingsSummary"), "governed");
+        StringAssert.Contains(DesktopDialogFieldValueParser.GetValue(presenter.State.ActiveDialog!, "masterIndexSettingsSummary"), "reviewed");
         Assert.AreEqual("All", DesktopDialogFieldValueParser.GetValue(presenter.State.ActiveDialog!, "masterIndexFileSelection"));
         StringAssert.Contains(DesktopDialogFieldValueParser.GetValue(presenter.State.ActiveDialog!, "masterIndexCurrentSourcebook"), "Core Rulebook");
         StringAssert.Contains(DesktopDialogFieldValueParser.GetValue(presenter.State.ActiveDialog!, "masterIndexImportOracleReceipt"), "import oracle partial");
@@ -762,8 +762,8 @@ public class CharacterOverviewPresenterTests
 
         Assert.IsNotNull(presenter.State.ActiveDialog);
         Assert.AreEqual("dialog.translator", presenter.State.ActiveDialog?.Id);
-        Assert.AreEqual("governed", DesktopDialogFieldValueParser.GetValue(presenter.State.ActiveDialog!, "translatorLanePosture"));
-        Assert.AreEqual("governed", DesktopDialogFieldValueParser.GetValue(presenter.State.ActiveDialog!, "translatorBridgePosture"));
+        Assert.AreEqual("reviewed", DesktopDialogFieldValueParser.GetValue(presenter.State.ActiveDialog!, "translatorLanePosture"));
+        Assert.AreEqual("reviewed", DesktopDialogFieldValueParser.GetValue(presenter.State.ActiveDialog!, "translatorBridgePosture"));
         Assert.AreEqual("3", DesktopDialogFieldValueParser.GetValue(presenter.State.ActiveDialog!, "translatorOverlayCount"));
     }
 

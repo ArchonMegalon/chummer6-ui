@@ -96,17 +96,17 @@ public sealed record DesktopHomeCampaignServerPlaneDto(
 
         if (!string.IsNullOrWhiteSpace(Adoption?.Summary))
         {
-            readinessHighlights.Add($"Campaign adoption: {PlayerFacingCopyHumanizer.Clean(Adoption.Summary)}");
+            readinessHighlights.Add($"Campaign adoption: {UndetectableHumanizerCopyAdapter.Humanize(Adoption.Summary)}");
         }
 
         if (!string.IsNullOrWhiteSpace(Adoption?.ConfidenceSummary))
         {
-            readinessHighlights.Add($"Adoption confidence: {PlayerFacingCopyHumanizer.Clean(Adoption.ConfidenceSummary)}");
+            readinessHighlights.Add($"Adoption confidence: {UndetectableHumanizerCopyAdapter.Humanize(Adoption.ConfidenceSummary)}");
         }
 
         if (Adoption?.EvidenceLines.Count > 0)
         {
-            readinessHighlights.Add($"Adoption details: {PlayerFacingCopyHumanizer.Clean(Adoption.EvidenceLines[0])}");
+            readinessHighlights.Add($"Adoption details: {UndetectableHumanizerCopyAdapter.Humanize(Adoption.EvidenceLines[0])}");
         }
 
         if (GoalPins.Count > 0)
@@ -116,40 +116,40 @@ public sealed record DesktopHomeCampaignServerPlaneDto(
 
         if (!string.IsNullOrWhiteSpace(ResolutionReport?.Summary))
         {
-            readinessHighlights.Add($"ResolutionReport closeout: {PlayerFacingCopyHumanizer.Clean(ResolutionReport.Summary)}");
+            readinessHighlights.Add($"ResolutionReport closeout: {UndetectableHumanizerCopyAdapter.Humanize(ResolutionReport.Summary)}");
         }
 
         if (!string.IsNullOrWhiteSpace(BlackLedger?.Summary))
         {
-            readinessHighlights.Add($"BLACK LEDGER consequence: {PlayerFacingCopyHumanizer.Clean(BlackLedger.Summary)}");
+            readinessHighlights.Add($"BLACK LEDGER consequence: {UndetectableHumanizerCopyAdapter.Humanize(BlackLedger.Summary)}");
         }
 
         if (!string.IsNullOrWhiteSpace(BlackLedger?.ProofSummary))
         {
-            readinessHighlights.Add($"BLACK LEDGER details: {PlayerFacingCopyHumanizer.Clean(BlackLedger.ProofSummary)}");
+            readinessHighlights.Add($"BLACK LEDGER details: {UndetectableHumanizerCopyAdapter.Humanize(BlackLedger.ProofSummary)}");
         }
 
         if (FirstPlayableSession is not null)
         {
-            readinessHighlights.Add($"First session: {PlayerFacingCopyHumanizer.Clean(FirstPlayableSession.CampaignStartSummary)}");
-            readinessHighlights.Add($"Legal runner: {PlayerFacingCopyHumanizer.Clean(FirstPlayableSession.RuleReadySummary)}");
-            readinessHighlights.Add($"Understandable return: {PlayerFacingCopyHumanizer.Clean(FirstPlayableSession.ReturnLaneSummary)}");
-            readinessHighlights.Add($"Campaign-ready path: {PlayerFacingCopyHumanizer.Clean(FirstPlayableSession.CampaignReadySummary)}");
+            readinessHighlights.Add($"First session: {UndetectableHumanizerCopyAdapter.Humanize(FirstPlayableSession.CampaignStartSummary)}");
+            readinessHighlights.Add($"Legal runner: {UndetectableHumanizerCopyAdapter.Humanize(FirstPlayableSession.RuleReadySummary)}");
+            readinessHighlights.Add($"Understandable return: {UndetectableHumanizerCopyAdapter.Humanize(FirstPlayableSession.ReturnLaneSummary)}");
+            readinessHighlights.Add($"Campaign-ready path: {UndetectableHumanizerCopyAdapter.Humanize(FirstPlayableSession.CampaignReadySummary)}");
 
             if (!string.IsNullOrWhiteSpace(FirstPlayableSession.NextSafeAction))
             {
-                readinessHighlights.Add($"Starter path next: {PlayerFacingCopyHumanizer.Clean(FirstPlayableSession.NextSafeAction)}");
+                readinessHighlights.Add($"Starter path next: {UndetectableHumanizerCopyAdapter.Humanize(FirstPlayableSession.NextSafeAction)}");
             }
 
             if (FirstPlayableSession.EvidenceLines.Count > 0)
             {
-                readinessHighlights.Add($"First-session details: {PlayerFacingCopyHumanizer.Clean(FirstPlayableSession.EvidenceLines[0])}");
+                readinessHighlights.Add($"First-session details: {UndetectableHumanizerCopyAdapter.Humanize(FirstPlayableSession.EvidenceLines[0])}");
             }
         }
 
         if (CampaignMemory?.EvidenceLines.Count > 0)
         {
-            readinessHighlights.Add($"Campaign memory details: {PlayerFacingCopyHumanizer.Clean(CampaignMemory.EvidenceLines[0])}");
+            readinessHighlights.Add($"Campaign memory details: {UndetectableHumanizerCopyAdapter.Humanize(CampaignMemory.EvidenceLines[0])}");
         }
 
         if (leadRecapShelfEntry is not null)
@@ -159,13 +159,13 @@ public sealed record DesktopHomeCampaignServerPlaneDto(
 
             if (!string.IsNullOrWhiteSpace(leadRecapShelfEntry.OwnershipSummary))
             {
-                readinessHighlights.Add($"Item ownership: {PlayerFacingCopyHumanizer.Clean(leadRecapShelfEntry.OwnershipSummary)}");
+                readinessHighlights.Add($"Item ownership: {UndetectableHumanizerCopyAdapter.Humanize(leadRecapShelfEntry.OwnershipSummary)}");
             }
 
             if (!string.IsNullOrWhiteSpace(leadRecapShelfEntry.PublicationSummary))
             {
                 readinessHighlights.Add(
-                    $"Item publication: {HumanizeState(leadRecapShelfEntry.PublicationState, "Ready")} — {PlayerFacingCopyHumanizer.Clean(leadRecapShelfEntry.PublicationSummary)}");
+                    $"Item publication: {HumanizeState(leadRecapShelfEntry.PublicationState, "Ready")} — {UndetectableHumanizerCopyAdapter.Humanize(leadRecapShelfEntry.PublicationSummary)}");
             }
 
             if (!string.IsNullOrWhiteSpace(leadRecapShelfEntry.TrustBand))
@@ -176,7 +176,7 @@ public sealed record DesktopHomeCampaignServerPlaneDto(
 
             if (!string.IsNullOrWhiteSpace(leadRecapShelfEntry.NextSafeAction))
             {
-                readinessHighlights.Add($"Item next: {PlayerFacingCopyHumanizer.Clean(leadRecapShelfEntry.NextSafeAction)}");
+                readinessHighlights.Add($"Item next: {UndetectableHumanizerCopyAdapter.Humanize(leadRecapShelfEntry.NextSafeAction)}");
             }
         }
 
@@ -226,11 +226,11 @@ public sealed record DesktopHomeCampaignServerPlaneDto(
 
         return new DesktopHomeCampaignServerPlane(
             WorkspaceId: Workspace.WorkspaceId,
-            SessionReadinessSummary: PlayerFacingCopyHumanizer.Clean(CampaignSummary.SessionReadinessSummary),
-            RestoreSummary: PlayerFacingCopyHumanizer.Clean(CampaignSummary.RestoreSummary),
+            SessionReadinessSummary: UndetectableHumanizerCopyAdapter.Humanize(CampaignSummary.SessionReadinessSummary),
+            RestoreSummary: UndetectableHumanizerCopyAdapter.Humanize(CampaignSummary.RestoreSummary),
             PublicationSummary: BuildPublicationSummary(CampaignSummary.PublicationSummary, leadRecapShelfEntry),
-            RosterSummary: PlayerFacingCopyHumanizer.Clean(RosterReadiness.Summary),
-            RunboardSummary: string.IsNullOrWhiteSpace(runboardSummary) ? null : PlayerFacingCopyHumanizer.Clean(runboardSummary),
+            RosterSummary: UndetectableHumanizerCopyAdapter.Humanize(RosterReadiness.Summary),
+            RunboardSummary: string.IsNullOrWhiteSpace(runboardSummary) ? null : UndetectableHumanizerCopyAdapter.Humanize(runboardSummary),
             TravelModeSummary: NormalizeOptional(TravelMode?.Summary),
             TravelPrefetchInventorySummary: NormalizeOptional(TravelMode?.PrefetchInventorySummary),
             CampaignMemorySummary: NormalizeOptional(CampaignMemory?.Summary),
@@ -264,10 +264,10 @@ public sealed record DesktopHomeCampaignServerPlaneDto(
     {
         if (leadRecapShelfEntry is null || string.IsNullOrWhiteSpace(leadRecapShelfEntry.PublicationSummary))
         {
-            return PlayerFacingCopyHumanizer.Clean(publicationSummary);
+            return UndetectableHumanizerCopyAdapter.Humanize(publicationSummary);
         }
 
-        return PlayerFacingCopyHumanizer.Clean($"{publicationSummary} Published item: {leadRecapShelfEntry.PublicationSummary}");
+        return UndetectableHumanizerCopyAdapter.Humanize($"{publicationSummary} Published item: {leadRecapShelfEntry.PublicationSummary}");
     }
 
     private static string HumanizeAudience(string? audience)
@@ -308,7 +308,7 @@ public sealed record DesktopHomeCampaignServerPlaneDto(
     private static IReadOnlyList<string> FinalizeLines(IEnumerable<string> lines)
         => lines
             .Where(static item => !string.IsNullOrWhiteSpace(item))
-            .Select(static item => PlayerFacingCopyHumanizer.Clean(item))
+            .Select(static item => UndetectableHumanizerCopyAdapter.Humanize(item))
             .Where(static item => !string.IsNullOrWhiteSpace(item))
             .Distinct(StringComparer.OrdinalIgnoreCase)
             .Take(24)
@@ -326,7 +326,7 @@ public sealed record DesktopHomeCampaignServerPlaneDto(
 
     private static string? NormalizeOptional(string? value)
     {
-        string cleaned = PlayerFacingCopyHumanizer.Clean(value);
+        string cleaned = UndetectableHumanizerCopyAdapter.Humanize(value);
         return string.IsNullOrWhiteSpace(cleaned) ? null : cleaned;
     }
 }

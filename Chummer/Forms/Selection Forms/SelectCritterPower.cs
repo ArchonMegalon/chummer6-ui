@@ -102,7 +102,7 @@ namespace Chummer
 
             if (_lstCategory.Count > 0)
             {
-                _lstCategory.Insert(0, new ListItem("Show All", await LanguageManager.GetStringAsync("String_ShowAll").ConfigureAwait(false)));
+                _lstCategory.Insert(0, new ListItem("Show All", "All Powers"));
             }
 
             await cboCategory.PopulateWithListItemsAsync(_lstCategory).ConfigureAwait(false);
@@ -119,6 +119,7 @@ namespace Chummer
 
                 if (cboCategory.SelectedIndex == -1)
                     x.SelectedIndex = 0;
+                x.Enabled = _lstCategory.Count > 1;
             }).ConfigureAwait(false);
         }
 

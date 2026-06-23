@@ -325,7 +325,7 @@ namespace Chummer
             this.chkFree.Size = new System.Drawing.Size(50, 17);
             this.chkFree.TabIndex = 19;
             this.chkFree.Tag = "Checkbox_Free";
-            this.chkFree.Text = "Free!";
+            this.chkFree.Text = "Free";
             this.chkFree.UseVisualStyleBackColor = true;
             // 
             // tlpMain

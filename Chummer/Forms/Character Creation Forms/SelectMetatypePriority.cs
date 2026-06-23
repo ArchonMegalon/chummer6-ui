@@ -3868,7 +3868,9 @@ namespace Chummer
                                 x.SelectedValue = strOldSelected;
                             if (x.SelectedIndex == -1 && lstCategory.Count > 0)
                                 x.SelectedIndex = 0;
+                            x.Enabled = lstCategory.Count > 1;
                         }, token).ConfigureAwait(false);
+
                     }
                 }
             }

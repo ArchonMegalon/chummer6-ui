@@ -80,7 +80,7 @@ internal static class DesktopExplainCompanionLauncher
                 " ",
                 new[] { section.Title }.Concat(section.Lines.Take(2))))
             .Where(static line => !string.IsNullOrWhiteSpace(line));
-        return PlayerFacingCopyHumanizer.Clean(
+        return UndetectableHumanizerCopyAdapter.Humanize(
             $"{request.SurfaceLabel}: inspect {request.Title}. {string.Join(" ", sectionSummaries)}");
     }
 }
@@ -96,7 +96,7 @@ internal sealed class DesktopExplainCompanionWindow : Window
     public DesktopExplainCompanionWindow(DesktopExplainCompanionRequest request)
     {
         _receiptText = DesktopTrustReceiptText.BuildReceiptText(request.Sections);
-        Title = PlayerFacingCopyHumanizer.Clean(request.Title);
+        Title = UndetectableHumanizerCopyAdapter.Humanize(request.Title);
         Width = 760;
         Height = 640;
         MinWidth = 560;
@@ -114,13 +114,13 @@ internal sealed class DesktopExplainCompanionWindow : Window
 
         content.Children.Add(new TextBlock
         {
-            Text = PlayerFacingCopyHumanizer.Clean(request.SurfaceLabel),
+            Text = UndetectableHumanizerCopyAdapter.Humanize(request.SurfaceLabel),
             FontWeight = FontWeight.SemiBold,
             TextWrapping = TextWrapping.Wrap
         });
         content.Children.Add(new TextBlock
         {
-            Text = PlayerFacingCopyHumanizer.Clean(request.Title),
+            Text = UndetectableHumanizerCopyAdapter.Humanize(request.Title),
             FontSize = 20,
             FontWeight = FontWeight.Bold,
             TextWrapping = TextWrapping.Wrap
@@ -216,7 +216,8 @@ internal sealed class DesktopExplainCompanionWindow : Window
             ("Ruleset", request.RulesetId, "ExplainCompanionRulesetIdText"),
             ("Workspace", request.WorkspaceId, "ExplainCompanionWorkspaceIdText"),
             ("Runtime", request.RuntimeFingerprint, "ExplainCompanionRuntimeFingerprintText"),
-            ("Reference", TryExtractSectionValue(request.Sections, "correlation key:"), "ExplainCompanionCorrelationKeyText"),
+            ("Reference", TryExtractSectionValue(request.Sections, "reference:")
+                ?? TryExtractSectionValue(request.Sections, "correlation key:"), "ExplainCompanionCorrelationKeyText"),
             ("Support note", TryExtractSectionValue(request.Sections, "next step record:")
                 ?? TryExtractSectionValue(request.Sections, "handoff record:")
                 ?? TryExtractSectionValue(request.Sections, "handoff receipt:"), "ExplainCompanionSupportHandoffText"),
@@ -283,7 +284,7 @@ internal sealed class DesktopExplainCompanionWindow : Window
         TextBlock valueBlock = new()
         {
             Name = valueName,
-            Text = PlayerFacingCopyHumanizer.Clean(value),
+            Text = UndetectableHumanizerCopyAdapter.Humanize(value),
             TextWrapping = TextWrapping.Wrap,
             Margin = new Thickness(0, 0, 0, 6)
         };
@@ -300,7 +301,7 @@ internal sealed class DesktopExplainCompanionWindow : Window
         };
         content.Children.Add(new TextBlock
         {
-            Text = PlayerFacingCopyHumanizer.Clean(section.Title),
+            Text = UndetectableHumanizerCopyAdapter.Humanize(section.Title),
             FontWeight = FontWeight.SemiBold,
             TextWrapping = TextWrapping.Wrap
         });
@@ -309,7 +310,7 @@ internal sealed class DesktopExplainCompanionWindow : Window
         {
             content.Children.Add(new TextBlock
             {
-                Text = PlayerFacingCopyHumanizer.Clean(line),
+                Text = UndetectableHumanizerCopyAdapter.Humanize(line),
                 TextWrapping = TextWrapping.Wrap
             });
         }

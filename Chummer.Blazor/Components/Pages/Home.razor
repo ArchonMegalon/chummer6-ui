@@ -6,7 +6,7 @@
 @using Chummer.Presentation.Explain
 @using Chummer.Presentation.Overview
 
-<!-- Desktop shell route anchor: the flagship workbench stays home cockpit off the root route. -->
+<!-- Desktop shell route anchor: the main workbench stays off the root route. -->
 <section hidden data-testid="desktop-shell-route-anchor">
     Desktop shell route anchor.
 </section>
@@ -36,32 +36,32 @@
             DossierId: "home-dossier",
             CampaignId: "home-campaign",
             Title: "Build Lab handoff",
-            Summary: "Tradeoffs + progression stay visible next to dossier + campaign outputs on the flagship home route anchor.",
+            Summary: "Tradeoffs and progression stay visible next to dossier and campaign outputs on the home route.",
             VariantLabel: "Home route anchor",
             ProgressionLabel: "25 / 50 / 100 Karma path",
             ExplainEntryId: "buildlab.handoff.home",
             TradeoffLines:
             [
-                "Role overlap stays explicit before the handoff leaves the home route."
+                "Role overlap stays visible before the handoff leaves the home route."
             ],
             ProgressionOutcomes:
             [
-                "Dossier + campaign outputs remain attached to the same handoff packet."
+                "Dossier and campaign outputs remain attached to the same handoff."
             ],
             Outputs:
             [
                 new PublicationSafeProjection("home-projection", "dossier_card", "Living dossier", "Stable runner identity.", "home-artifact")
             ],
             UpdatedAtUtc: DateTimeOffset.UtcNow,
-            NextSafeAction: "Open the governed Build Lab route before widening the handoff.",
+            NextSafeAction: "Open Build Lab before sharing this handoff more widely.",
             RuntimeCompatibilitySummary: "Runtime compatibility stays visible before the handoff leaves home.",
             CampaignReturnSummary: "Campaign return stays attached to the same home-route dossier identity.",
-            SupportClosureSummary: "Support can cite the same handoff fingerprint if trust breaks.",
-            PlannerCoverageSummary: "4 of 4 build follow-through checkpoints are already grounded.",
+            SupportClosureSummary: "Support can use the same handoff reference if something breaks.",
+            PlannerCoverageSummary: "All four build follow-through checkpoints are already covered.",
             PlannerCoverageLines:
             [
-                "Campaign continuity: the home route anchor already points at a governed campaign return lane.",
-                "Outputs: 1 dossier or campaign-safe output is already attached to the handoff.",
+                "Campaign continuity: the home route already points at the same campaign return path.",
+                "Outputs: 1 dossier or campaign-safe output is already attached to this handoff.",
                 "Restore posture: no restore conflicts are currently blocking replay-safe handoff follow-through.",
                 "Claimed install: home route anchor keeps install-aware follow-through visible."
             ]);
@@ -70,32 +70,32 @@
         new(
             EntryId: "rules.home",
             Question: "Why did the total move?",
-            ShortAnswer: "Grounded answer with visible source anchors, before / after posture, and evidence + reuse hints.",
+            ShortAnswer: "A clear answer with visible source anchors, before and after context, and help for follow-up.",
             BeforeSummary: "Before / after",
-            AfterSummary: "Grounded answer",
+            AfterSummary: "Clear answer",
             ExplainEntryId: "rules.navigator.home",
             ProvenanceLabel: "home scope · sr6.preview.v1",
             EvidenceLines:
             [
-                "Grounded answer",
-                "Evidence + reuse"
+                "Clear answer",
+                "Source and follow-up"
             ],
             SupportReuseHints:
             [
-                "Evidence + reuse"
+                "Source and follow-up"
             ]);
 
     private static readonly CreatorPublicationProjection DefaultCreatorPublicationProjection =
         new(
             PublicationId: "creator.home",
-            Title: "Trusted publication posture",
+            Title: "Publication status",
             Kind: "campaign_packet",
-            Summary: "Creator publication posture stays honest about review state, proof, and next action.",
+            Summary: "Creator publication status stays honest about what is ready, what still needs review, and what to do next.",
             CampaignId: "home-campaign",
             DossierId: "home-dossier",
             ArtifactId: "creator-home-artifact",
-            ProvenanceSummary: "publication posture",
-            DiscoverySummary: "Trusted publication posture",
+            ProvenanceSummary: "publication status",
+            DiscoverySummary: "Publication status",
             Visibility: "group",
             PublicationStatus: "preview_ready",
             TrustBand: "review-pending",
@@ -107,14 +107,14 @@
         new(
             DefaultPersonaId: "home-route-anchor",
             SelectedPersonaId: "home-route-anchor",
-            PromptPolicy: "Keep the NPC persona policy rails available on the Blazor home route.",
+            PromptPolicy: "Keep the NPC persona policy available on the Blazor home route.",
             Personas:
             [
                 new NpcPersonaDescriptorState(
                     PersonaId: "home-route-anchor",
                     Label: "Home Route Anchor",
                     EvidenceFirst: true,
-                    Summary: "The root route keeps the NPC persona contract visible without changing the flagship desktop posture.",
+                    Summary: "The root route keeps the NPC persona setup visible without changing the main desktop posture.",
                     Provenance: "home.route/default",
                     ApprovalState: "approved",
                     IsSelected: true)
@@ -140,7 +140,7 @@
             ],
             EvidenceLines:
             [
-                "Prompt policy: Keep the NPC persona policy rails available on the Blazor home route.",
+                "Prompt policy: Keep the NPC persona policy available on the Blazor home route.",
                 "Persona provenance: home.route/default"
             ],
             HasDraftPolicies: true,

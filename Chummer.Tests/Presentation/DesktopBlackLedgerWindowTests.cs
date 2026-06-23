@@ -18,5 +18,6 @@ public sealed class DesktopBlackLedgerWindowTests
         StringAssert.Contains(source, "DesktopInstallLinkingRuntime.TryOpenRelativePortal(\"/ledger\")");
         StringAssert.Contains(source, "DesktopInstallLinkingRuntime.TryOpenRelativePortal(\"/ledger/map#ledger-map\")");
         StringAssert.Contains(source, "DesktopInstallLinkingRuntime.TryOpenRelativePortal(\"/account/ledger/worldtick/validation\")");
+        Assert.IsFalse(source.Contains("follow-through", System.StringComparison.OrdinalIgnoreCase));
     }
 }

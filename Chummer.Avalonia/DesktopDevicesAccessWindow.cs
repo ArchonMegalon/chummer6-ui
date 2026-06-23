@@ -386,7 +386,7 @@ internal sealed class DesktopDevicesAccessWindow : Window
         [
             DesktopInstallLinkingRuntime.IsClaimed(_installState)
                 ? CreateButton(S("desktop.home.button.open_current_campaign_workspace"), OpenWorkRouteAsync, isPrimary: true)
-                : CreateButton(DesktopLocalizationCatalog.GetRequiredString("desktop.install_link.button.link_copy", _preferences.Language), OpenInstallLinkingAsync, isPrimary: true),
+                : CreateButton(BuildInstallLinkEntryButtonLabel(_installState, _preferences.Language), OpenInstallLinkingAsync, isPrimary: true),
             CreateButton(DesktopLocalizationCatalog.GetRequiredString("desktop.install_link.button.copy_install_id", _preferences.Language), CopyInstallIdAsync),
             CreateButton(S("desktop.home.button.open_update_status"), OpenUpdateWindowAsync)
         ];
@@ -400,7 +400,7 @@ internal sealed class DesktopDevicesAccessWindow : Window
     private IReadOnlyList<Button> CreateClaimsActions()
         =>
         [
-            CreateButton(DesktopLocalizationCatalog.GetRequiredString("desktop.install_link.button.login_website", _preferences.Language), OpenInstallLinkingAsync, isPrimary: true),
+            CreateButton(BuildInstallLinkEntryButtonLabel(_installState, _preferences.Language), OpenInstallLinkingAsync, isPrimary: true),
             CreateButton(DesktopLocalizationCatalog.GetRequiredString("desktop.install_link.button.open_downloads", _preferences.Language), OpenDownloadsAsync),
             CreateButton(DesktopLocalizationCatalog.GetRequiredString("desktop.install_link.button.copy_install_id", _preferences.Language), CopyInstallIdAsync)
         ];
@@ -469,6 +469,15 @@ internal sealed class DesktopDevicesAccessWindow : Window
         DesktopInstallLinkingWindow dialog = new(context);
         await dialog.ShowDialog(this).ConfigureAwait(true);
         await RefreshDevicesAccessStateAsync().ConfigureAwait(true);
+    }
+
+    internal static string BuildInstallLinkEntryButtonLabel(DesktopInstallLinkingState state, string language)
+    {
+        ArgumentNullException.ThrowIfNull(state);
+
+        return string.IsNullOrWhiteSpace(state.LastBrowserDispatchFailure)
+            ? DesktopLocalizationCatalog.GetRequiredString("desktop.install_link.button.login_website", language)
+            : DesktopLocalizationCatalog.GetRequiredString("desktop.install_link.button.open_claim_link", language);
     }
 
     private Task OpenDownloadsAsync()

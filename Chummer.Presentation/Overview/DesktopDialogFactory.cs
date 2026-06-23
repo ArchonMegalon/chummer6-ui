@@ -986,7 +986,7 @@ public sealed class DesktopDialogFactory : IDesktopDialogFactory
     private static string BuildOriginBookPreview(string alias, OriginBuildRecommendation recommendation)
     {
         string runnerName = string.IsNullOrWhiteSpace(alias) ? "Runner" : alias.Trim();
-        return PlayerFacingCopyHumanizer.Clean(
+        return UndetectableHumanizerCopyAdapter.Humanize(
             $"{runnerName}: Origin Dossier{Environment.NewLine}{Environment.NewLine}" +
             $"{recommendation.OriginSummary}{Environment.NewLine}{Environment.NewLine}" +
             $"The shape of the build is visible in the fiction: {recommendation.BuildSummary}{Environment.NewLine}{Environment.NewLine}" +
@@ -1422,11 +1422,11 @@ public sealed class DesktopDialogFactory : IDesktopDialogFactory
         string gmRequirementSummary = ResolveOriginGmRequirementSummary(
             normalizedGmRequirementPreset,
             normalizedGmRequirements);
-        string originSummary = PlayerFacingCopyHumanizer.Clean(
+        string originSummary = UndetectableHumanizerCopyAdapter.Humanize(
             $"{FormatChoiceLabel(normalizedBackground)} upbringing, {FormatChoiceLabel(normalizedTurningPoint)} turning point, and a {FormatChoiceLabel(normalizedTrainingPath)} training path pushed this runner toward {FormatChoiceLabel(archetype)} work. " +
             $"{FormatChoiceLabel(normalizedPressureCost)} still shapes their decisions, while {FormatChoiceLabel(normalizedMotivation)} keeps the next run in view. " +
             $"The dossier keeps {exposureSummary} visible as the story reason for the build choices.");
-        string buildSummary = PlayerFacingCopyHumanizer.Clean(
+        string buildSummary = UndetectableHumanizerCopyAdapter.Humanize(
             $"{FormatChoiceLabel(archetype)} posture, {buildMethod} build, {metatype} lean, {qualityFocus.ToLowerInvariant()}, {pathSummary}.");
 
         return new OriginBuildRecommendation(
@@ -1437,7 +1437,7 @@ public sealed class DesktopDialogFactory : IDesktopDialogFactory
             metatype,
             qualityFocus,
             pathSummary,
-            PlayerFacingCopyHumanizer.Clean(gmRequirementSummary),
+            UndetectableHumanizerCopyAdapter.Humanize(gmRequirementSummary),
             originSummary,
             buildSummary);
     }
@@ -1485,15 +1485,15 @@ public sealed class DesktopDialogFactory : IDesktopDialogFactory
 
         if (string.IsNullOrWhiteSpace(presetSummary))
         {
-            return PlayerFacingCopyHumanizer.Clean(customRequirements);
+            return UndetectableHumanizerCopyAdapter.Humanize(customRequirements);
         }
 
         if (string.IsNullOrWhiteSpace(customRequirements))
         {
-            return PlayerFacingCopyHumanizer.Clean(presetSummary);
+            return UndetectableHumanizerCopyAdapter.Humanize(presetSummary);
         }
 
-        return PlayerFacingCopyHumanizer.Clean($"{presetSummary} {customRequirements.Trim()}");
+        return UndetectableHumanizerCopyAdapter.Humanize($"{presetSummary} {customRequirements.Trim()}");
     }
 
     private static DesktopDialogField BuildNewCharacterContextField(string id, string label, string value)
@@ -2593,13 +2593,13 @@ public sealed class DesktopDialogFactory : IDesktopDialogFactory
     private static DesktopDialogState HumanizeVisibleDialog(DesktopDialogState dialog)
         => dialog with
         {
-            Title = PlayerFacingCopyHumanizer.Clean(dialog.Title),
+            Title = UndetectableHumanizerCopyAdapter.Humanize(dialog.Title),
             Message = string.IsNullOrWhiteSpace(dialog.Message)
                 ? dialog.Message
-                : PlayerFacingCopyHumanizer.Clean(dialog.Message),
+                : UndetectableHumanizerCopyAdapter.Humanize(dialog.Message),
             Fields = dialog.Fields.Select(HumanizeVisibleField).ToArray(),
             Actions = dialog.Actions
-                .Select(action => action with { Label = PlayerFacingCopyHumanizer.Clean(action.Label) })
+                .Select(action => action with { Label = UndetectableHumanizerCopyAdapter.Humanize(action.Label) })
                 .ToArray()
         };
 
@@ -2610,13 +2610,13 @@ public sealed class DesktopDialogFactory : IDesktopDialogFactory
 
         return field with
         {
-            Label = PlayerFacingCopyHumanizer.Clean(field.Label),
-            Value = PlayerFacingCopyHumanizer.Clean(field.Value),
-            Placeholder = PlayerFacingCopyHumanizer.Clean(field.Placeholder),
+            Label = UndetectableHumanizerCopyAdapter.Humanize(field.Label),
+            Value = UndetectableHumanizerCopyAdapter.Humanize(field.Value),
+            Placeholder = UndetectableHumanizerCopyAdapter.Humanize(field.Placeholder),
             Options = field.Options?
                 .Select(option => new DesktopDialogFieldOption(
-                    PlayerFacingCopyHumanizer.Clean(option.Value),
-                    PlayerFacingCopyHumanizer.Clean(option.Label)))
+                    UndetectableHumanizerCopyAdapter.Humanize(option.Value),
+                    UndetectableHumanizerCopyAdapter.Humanize(option.Label)))
                 .ToArray()
         };
     }
@@ -5518,7 +5518,7 @@ public sealed class DesktopDialogFactory : IDesktopDialogFactory
             ("Page", "424"),
             ("PDF", "/books/core-rulebook.pdf#page=424"),
             ("Site Snapshot", "governed"),
-            ("Reference posture", "canonical flagship route"));
+            ("Reference", "core release route"));
 
         return
         [
@@ -7053,7 +7053,7 @@ public sealed class DesktopDialogFactory : IDesktopDialogFactory
             return normalized;
 
         if (string.Equals(normalized, "missing", StringComparison.OrdinalIgnoreCase))
-            return "No Adjacent SR6 oracle certification receipt coverage was discovered for Genesis/CommLink6.";
+            return "No Adjacent SR6 compatibility coverage was found for Genesis/CommLink6.";
 
         if (normalized.StartsWith("adjacent SR6 oracle", StringComparison.OrdinalIgnoreCase))
             return "Adjacent SR6 oracle" + normalized["adjacent SR6 oracle".Length..];

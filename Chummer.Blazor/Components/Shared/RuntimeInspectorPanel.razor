@@ -572,8 +572,8 @@
     private static IReadOnlyList<RuntimeSupportReceiptSection> BuildRuntimeSupportReceiptSections(RuntimeInspectorProjection projection)
         => DesktopTrustReceiptComposer.BuildRuntimeInspectorSupportSections(projection)
             .Select(static section => new RuntimeSupportReceiptSection(
-                PlayerFacingCopyHumanizer.Clean(section.Title),
-                PlayerFacingCopyHumanizer.CleanLines(section.Lines)))
+                UndetectableHumanizerCopyAdapter.Humanize(section.Title),
+                UndetectableHumanizerCopyAdapter.HumanizeLines(section.Lines)))
             .OrderBy(BuildRuntimeSupportReceiptOrder)
             .ToArray();
 

@@ -512,8 +512,8 @@ internal sealed class DesktopHorizonsWindow : Window
 
     private static Border CreateCard(string title, string summary, Control? leadControl, params Button[] actions)
     {
-        string cleanTitle = PlayerFacingCopyHumanizer.Clean(title);
-        string cleanSummary = PlayerFacingCopyHumanizer.Clean(summary);
+        string cleanTitle = UndetectableHumanizerCopyAdapter.Humanize(title);
+        string cleanSummary = UndetectableHumanizerCopyAdapter.Humanize(summary);
         StackPanel stack = new()
         {
             Spacing = 8,
@@ -567,7 +567,7 @@ internal sealed class DesktopHorizonsWindow : Window
         Button button = new()
         {
             Name = name,
-            Content = PlayerFacingCopyHumanizer.Clean(label),
+            Content = UndetectableHumanizerCopyAdapter.Humanize(label),
             MinWidth = 120,
             Padding = new Thickness(10, 6),
             HorizontalAlignment = HorizontalAlignment.Left

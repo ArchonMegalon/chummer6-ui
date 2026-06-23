@@ -1155,8 +1155,8 @@ public sealed class HttpChummerClient : IChummerClient
             return new DesktopHomePortableExchangePreview(
                 CampaignId: CampaignId,
                 CompatibilityState: NormalizeOptional(Compatibility.CompatibilityState) ?? "compatible-with-warnings",
-                ContextSummary: PlayerFacingCopyHumanizer.Clean(NormalizeOptional(Compatibility.ContextSummary) ?? "Portable dossier and campaign exchange stays available in the signed-in workspace."),
-                ReceiptSummary: PlayerFacingCopyHumanizer.Clean(NormalizeOptional(Compatibility.ReceiptSummary) ?? "Portable dossier and campaign exchange is ready for review from the signed-in workspace."),
+                ContextSummary: UndetectableHumanizerCopyAdapter.Humanize(NormalizeOptional(Compatibility.ContextSummary) ?? "Portable dossier and campaign exchange stays available in the signed-in workspace."),
+                ReceiptSummary: UndetectableHumanizerCopyAdapter.Humanize(NormalizeOptional(Compatibility.ReceiptSummary) ?? "Portable dossier and campaign exchange is ready for review from the signed-in workspace."),
                 NextSafeAction: NormalizeOptional(Compatibility.NextSafeAction) ?? "Open inspect-only first before you hand the package to another surface.",
                 AssetScopeSummary: BuildPortableExchangeAssetScopeSummary(Manifest),
                 SupportedExchangeFormats: NormalizePortableExchangeFormats(Compatibility.SupportedExchangeFormats),
@@ -1218,7 +1218,7 @@ public sealed class HttpChummerClient : IChummerClient
 
         return parts.Count == 0
             ? "No portable asset families are currently attached to this exchange."
-            : PlayerFacingCopyHumanizer.Clean($"{manifest.TotalCount} portable asset(s): {string.Join(", ", parts)}.");
+            : UndetectableHumanizerCopyAdapter.Humanize($"{manifest.TotalCount} portable asset(s): {string.Join(", ", parts)}.");
     }
 
     private static IReadOnlyList<string> NormalizePortableExchangeFormats(IReadOnlyList<string>? formats)

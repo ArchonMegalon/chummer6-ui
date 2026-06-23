@@ -101,8 +101,7 @@ namespace Chummer
             _lstCategory.Sort(CompareListItems.CompareNames);
             if (_lstCategory.Count != 1)
             {
-                _lstCategory.Insert(0,
-                    new ListItem("Show All", await LanguageManager.GetStringAsync("String_ShowAll").ConfigureAwait(false)));
+                _lstCategory.Insert(0, new ListItem("Show All", "All Spells"));
             }
 
             await cboCategory.PopulateWithListItemsAsync(_lstCategory).ConfigureAwait(false);
@@ -115,6 +114,7 @@ namespace Chummer
                     x.SelectedValue = _strSelectCategory;
                 if (x.SelectedIndex == -1)
                     x.SelectedIndex = 0;
+                x.Enabled = _lstCategory.Count > 1;
             }).ConfigureAwait(false);
 
             // Don't show the Extended Spell checkbox if the option to Extend any Detection Spell is disabled.

@@ -126,10 +126,7 @@ namespace Chummer
 
                     _lstCategory.Sort(CompareListItems.CompareNames);
 
-                    _lstCategory.Insert(0,
-                        new ListItem("Show All",
-                            await LanguageManager.GetStringAsync("String_ShowAll", token: _objGenericToken)
-                                .ConfigureAwait(false)));
+                    _lstCategory.Insert(0, new ListItem("Show All", "All Weapons"));
 
                     await cboCategory.PopulateWithListItemsAsync(_lstCategory, _objGenericToken).ConfigureAwait(false);
                     await cboCategory.DoThreadSafeAsync(x =>
@@ -143,6 +140,7 @@ namespace Chummer
                             if (x.SelectedIndex == -1)
                                 x.SelectedIndex = 0;
                         }
+                        x.Enabled = _lstCategory.Count > 1;
                     }, _objGenericToken).ConfigureAwait(false);
 
                     bool blnBlackMarketDiscount = await _objCharacter.GetBlackMarketDiscountAsync(_objGenericToken).ConfigureAwait(false);

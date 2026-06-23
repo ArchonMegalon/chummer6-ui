@@ -66,9 +66,9 @@ public static class DesktopHomeBuildExplainProjector
                         ?? $"Create or import the first dossier, then review the recommended {leadBuildPath.Suggestion.Title} build path before you trust this install to carry campaign continuity.",
                 leadBuildPath is null
                     ? campaignExplainFocus
-                        ?? "Claim the install and seed one real workspace so grounded build receipts, rule answers, and support closure all share the same continuity target."
+                        ?? "Claim the install and add one real workspace so build guidance, rules answers, and support all stay tied to the same character."
                     : campaignExplainFocus
-                        ?? $"Claim the install, seed one real workspace, and hand the suggested {leadBuildPath.Suggestion.Title} build path into a grounded receipt before you reopen campaign work.",
+                        ?? $"Claim the install, add one real workspace, and review the suggested {leadBuildPath.Suggestion.Title} path before you reopen campaign work.",
                 runtimeHealthSummary,
                 "No workspace return target is pinned yet.",
                 RulesetUiDirectiveCatalog.BuildUngroundedRulePosture(effectiveRulesetId),
@@ -293,12 +293,12 @@ public static class DesktopHomeBuildExplainProjector
 
         if (leadMigration is not null)
         {
-            receipts.Add($"Migration receipt: {leadMigration.Summary}");
+            receipts.Add($"Migration summary: {leadMigration.Summary}");
         }
 
         if (leadPublication is not null)
         {
-            receipts.Add($"Publication receipt: {leadPublication.Title} — {leadPublication.ProvenanceSummary}");
+            receipts.Add($"Publication summary: {leadPublication.Title} — {leadPublication.ProvenanceSummary}");
         }
 
         return receipts
@@ -365,7 +365,7 @@ public static class DesktopHomeBuildExplainProjector
         RulesNavigatorAnswerProjection? leadRulesAnswer = campaignSummary.RulesNavigator.FirstOrDefault();
         if (!string.IsNullOrWhiteSpace(leadRulesAnswer?.AfterSummary))
         {
-            return $"Review the grounded rules answer before the next handoff: {leadRulesAnswer.AfterSummary}";
+            return $"Review the current rules answer before the next handoff: {leadRulesAnswer.AfterSummary}";
         }
 
         return null;
@@ -427,8 +427,8 @@ public static class DesktopHomeBuildExplainProjector
         List<string> receipts =
         [
             buildPathPreview is null
-                ? $"Build path receipt: {buildPathSuggestion.Title} is available for {string.Join(", ", buildPathSuggestion.Targets)} once a grounded workspace is ready."
-                : $"Build path receipt: {buildPathSuggestion.Title} is {buildPathPreview.State} for this workspace on runtime {buildPathPreview.RuntimeFingerprint ?? "pending"}."
+                ? $"Build path option: {buildPathSuggestion.Title} is available for {string.Join(", ", buildPathSuggestion.Targets)} once a workspace is ready."
+                : $"Build path option: {buildPathSuggestion.Title} is {buildPathPreview.State} for this workspace on runtime {buildPathPreview.RuntimeFingerprint ?? "pending"}."
         ];
 
         string? firstChange = buildPathPreview?.ChangeSummaries.FirstOrDefault(summary => !string.IsNullOrWhiteSpace(summary));
@@ -482,8 +482,8 @@ public static class DesktopHomeBuildExplainProjector
                     ?? candidate.Preview.DiagnosticMessages.FirstOrDefault(message => !string.IsNullOrWhiteSpace(message))
                     ?? $"State {candidate.Preview.State} is ready to compare.";
                 string nextStep = candidate.Preview.RequiresConfirmation
-                    ? "Requires explicit confirmation before the receipt is emitted."
-                    : "Record is ready to move into the current story path.";
+                    ? "Requires explicit confirmation before it is applied."
+                    : "Ready to move into the current story path.";
                 string runtime = string.IsNullOrWhiteSpace(candidate.Preview.RuntimeFingerprint)
                     ? "runtime pending"
                     : $"runtime {candidate.Preview.RuntimeFingerprint}";
@@ -527,16 +527,16 @@ public static class DesktopHomeBuildExplainProjector
     private static DesktopHomeBuildExplainProjection Humanize(DesktopHomeBuildExplainProjection projection)
         => projection with
         {
-            RulesetSpotlight = PlayerFacingCopyHumanizer.Clean(projection.RulesetSpotlight),
-            Summary = PlayerFacingCopyHumanizer.Clean(projection.Summary),
-            NextSafeAction = PlayerFacingCopyHumanizer.Clean(projection.NextSafeAction),
-            ExplainFocus = PlayerFacingCopyHumanizer.Clean(projection.ExplainFocus),
-            RuntimeHealthSummary = PlayerFacingCopyHumanizer.Clean(projection.RuntimeHealthSummary),
-            ReturnTarget = PlayerFacingCopyHumanizer.Clean(projection.ReturnTarget),
-            RulePosture = PlayerFacingCopyHumanizer.Clean(projection.RulePosture),
-            CompatibilityReceipts = PlayerFacingCopyHumanizer.CleanLines(projection.CompatibilityReceipts),
-            BuildPathComparisons = PlayerFacingCopyHumanizer.CleanLines(projection.BuildPathComparisons),
-            Watchouts = PlayerFacingCopyHumanizer.CleanLines(projection.Watchouts)
+            RulesetSpotlight = UndetectableHumanizerCopyAdapter.Humanize(projection.RulesetSpotlight),
+            Summary = UndetectableHumanizerCopyAdapter.Humanize(projection.Summary),
+            NextSafeAction = UndetectableHumanizerCopyAdapter.Humanize(projection.NextSafeAction),
+            ExplainFocus = UndetectableHumanizerCopyAdapter.Humanize(projection.ExplainFocus),
+            RuntimeHealthSummary = UndetectableHumanizerCopyAdapter.Humanize(projection.RuntimeHealthSummary),
+            ReturnTarget = UndetectableHumanizerCopyAdapter.Humanize(projection.ReturnTarget),
+            RulePosture = UndetectableHumanizerCopyAdapter.Humanize(projection.RulePosture),
+            CompatibilityReceipts = UndetectableHumanizerCopyAdapter.HumanizeLines(projection.CompatibilityReceipts),
+            BuildPathComparisons = UndetectableHumanizerCopyAdapter.HumanizeLines(projection.BuildPathComparisons),
+            Watchouts = UndetectableHumanizerCopyAdapter.HumanizeLines(projection.Watchouts)
         };
 
     private static string BuildBannedWareSummary(IReadOnlyList<string> bannedWareGrades)
@@ -632,7 +632,7 @@ public static class DesktopHomeBuildExplainProjector
             }
             else if (string.Equals(diagnostic.State, RuntimeLockCompatibilityStates.MissingPack, StringComparison.Ordinal))
             {
-                yield return "A required rule pack is missing, so grounded rules answers and dossier handoffs are not trustworthy yet.";
+                yield return "A required rule pack is missing, so rules answers and dossier handoffs need review first.";
             }
             else if (!string.Equals(diagnostic.State, RuntimeLockCompatibilityStates.Compatible, StringComparison.Ordinal))
             {
@@ -659,33 +659,33 @@ public static class DesktopHomeBuildExplainProjector
         {
             return
             [
-                $"Compatibility receipt: runtime inspector details are still loading for fingerprint {runtimeFingerprint}, so drift-sensitive decisions should stay review-only."
+                $"Compatibility note: runtime details are still loading for fingerprint {runtimeFingerprint}, so drift-sensitive decisions should stay in review."
             ];
         }
 
         List<string> receipts = [];
         if (runtimeInspector.CompatibilityDiagnostics.Count == 0)
         {
-            receipts.Add($"Compatibility receipt: fingerprint {runtimeFingerprint} is aligned with the current workspace and no runtime drift is active.");
+            receipts.Add($"Compatibility note: fingerprint {runtimeFingerprint} is aligned with the current workspace and no runtime drift is active.");
         }
 
         foreach (RuntimeLockCompatibilityDiagnostic diagnostic in runtimeInspector.CompatibilityDiagnostics)
         {
             if (string.Equals(diagnostic.State, RuntimeLockCompatibilityStates.RebindRequired, StringComparison.Ordinal))
             {
-                receipts.Add("Compatibility receipt: runtime drift requires a profile rebind before the next campaign return, export, or publication handoff.");
+                receipts.Add("Compatibility note: runtime drift requires a profile refresh before the next campaign return, export, or publication handoff.");
             }
             else if (string.Equals(diagnostic.State, RuntimeLockCompatibilityStates.MissingPack, StringComparison.Ordinal))
             {
-                receipts.Add("Compatibility receipt: at least one required rule pack is missing, so grounded build and explain answers are incomplete.");
+                receipts.Add("Compatibility note: at least one required rule pack is missing, so build guidance and rules answers are incomplete.");
             }
             else if (string.Equals(diagnostic.State, RuntimeLockCompatibilityStates.EngineApiMismatch, StringComparison.Ordinal))
             {
-                receipts.Add("Compatibility receipt: engine API mismatch blocks a safe handoff until the runtime and rules content converge again.");
+                receipts.Add("Compatibility note: an engine mismatch blocks a safe handoff until the runtime and rules content line up again.");
             }
             else if (!string.Equals(diagnostic.State, RuntimeLockCompatibilityStates.Compatible, StringComparison.Ordinal))
             {
-                receipts.Add($"Compatibility receipt: {diagnostic.Message}");
+                receipts.Add($"Compatibility note: {diagnostic.Message}");
             }
         }
 

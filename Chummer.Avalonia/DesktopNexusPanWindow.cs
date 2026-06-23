@@ -201,14 +201,14 @@ internal sealed class DesktopNexusPanWindow : Window
                     selectedWorkspaceFollowUpText.Text = selectedWorkspace.NextSessionCarryForward?.Summary
                         ?? selectedWorkspace.CampaignMemory?.ReturnSummary
                         ?? selectedWorkspace.NextSafeAction
-                        ?? "No recovery follow-through is currently pinned.";
+                        ?? "No recovery step is currently pinned.";
                     break;
                 default:
                     detailText.Text = selectedWorkspace.LatestContinuity?.Summary
                         ?? selectedWorkspace.ReturnSummary;
                     selectedWorkspaceFollowUpText.Text = selectedWorkspace.ActiveSceneSummary
                         ?? selectedWorkspace.NextSafeAction
-                        ?? "No live continuity follow-through is currently pinned.";
+                        ?? "No live continuity step is currently pinned.";
                     break;
             }
         }

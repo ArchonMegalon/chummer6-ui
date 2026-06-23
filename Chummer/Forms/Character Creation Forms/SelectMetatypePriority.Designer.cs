@@ -781,7 +781,7 @@ namespace Chummer
             this.lblMetavariantQualitiesLabel.Size = new System.Drawing.Size(60, 13);
             this.lblMetavariantQualitiesLabel.TabIndex = 62;
             this.lblMetavariantQualitiesLabel.Tag = "Label_Qualities";
-            this.lblMetavariantQualitiesLabel.Text = "Qualities:";
+            this.lblMetavariantQualitiesLabel.Text = "Included Qualities:";
             // 
             // pnlQualities
             // 

@@ -59,11 +59,11 @@ internal static class DialogTrustReceiptText
         string payload = string.IsNullOrWhiteSpace(receipt.PayloadSha256)
             ? "payload unavailable"
             : $"payload {receipt.PayloadSha256}";
-        return PlayerFacingCopyHumanizer.Clean($"{receipt.FormatId}; {receipt.CompatibilityState}; {exchangeModes}; {payload}.");
+        return UndetectableHumanizerCopyAdapter.Humanize($"{receipt.FormatId}; {receipt.CompatibilityState}; {exchangeModes}; {payload}.");
     }
 
     public static string BuildImportDiffBefore(WorkspacePortabilityReceipt receipt)
-        => PlayerFacingCopyHumanizer.Clean(string.IsNullOrWhiteSpace(receipt.ContextSummary)
+        => UndetectableHumanizerCopyAdapter.Humanize(string.IsNullOrWhiteSpace(receipt.ContextSummary)
             ? $"Incoming {receipt.FormatId} payload before workspace merge."
             : receipt.ContextSummary);
 
@@ -78,16 +78,16 @@ internal static class DialogTrustReceiptText
         string result = string.IsNullOrWhiteSpace(watchout)
             ? nextSafeAction
             : $"{nextSafeAction} Diff signal: {watchout}";
-        return PlayerFacingCopyHumanizer.Clean(result);
+        return UndetectableHumanizerCopyAdapter.Humanize(result);
     }
 
     public static string BuildImportExplainReceipt(WorkspacePortabilityReceipt receipt)
-        => PlayerFacingCopyHumanizer.Clean(string.IsNullOrWhiteSpace(receipt.ProvenanceSummary)
+        => UndetectableHumanizerCopyAdapter.Humanize(string.IsNullOrWhiteSpace(receipt.ProvenanceSummary)
             ? $"Target {receipt.FormatId} stays review-only until the explain receipt is grounded."
             : receipt.ProvenanceSummary);
 
     public static string BuildImportSupportReuse(WorkspacePortabilityReceipt receipt)
-        => PlayerFacingCopyHumanizer.Clean(string.IsNullOrWhiteSpace(receipt.PayloadSha256)
+        => UndetectableHumanizerCopyAdapter.Humanize(string.IsNullOrWhiteSpace(receipt.PayloadSha256)
             ? receipt.ProvenanceSummary
             : $"Support can cite payload {receipt.PayloadSha256} with {receipt.CompatibilityState} compatibility.");
 

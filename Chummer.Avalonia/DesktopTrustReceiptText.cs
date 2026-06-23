@@ -18,7 +18,7 @@ internal static class DesktopTrustReceiptText
     public static IReadOnlyList<string> BuildDiagnosticsDiff(
         DesktopInstallLinkingState installState,
         DesktopUpdateClientStatus updateStatus)
-        => PlayerFacingCopyHumanizer.CleanLines(DesktopTrustReceiptComposer.BuildDiagnosticsDiff(installState, updateStatus));
+        => UndetectableHumanizerCopyAdapter.HumanizeLines(DesktopTrustReceiptComposer.BuildDiagnosticsDiff(installState, updateStatus));
 
     public static IReadOnlyList<DesktopTrustReceiptSection> BuildDiagnosticsSections(
         DesktopInstallLinkingState installState,
@@ -33,11 +33,11 @@ internal static class DesktopTrustReceiptText
 
     // m104: import_rule_environment_receipt
     public static string BuildImportRuleEnvironment(WorkspacePortabilityReceipt receipt)
-        => PlayerFacingCopyHumanizer.Clean($"Target {receipt.FormatId} ({receipt.CompatibilityState})");
+        => UndetectableHumanizerCopyAdapter.Humanize($"Import target: {receipt.FormatId} ({receipt.CompatibilityState})");
 
     public static string BuildImportDiffBefore(WorkspacePortabilityReceipt receipt)
-        => PlayerFacingCopyHumanizer.Clean(string.IsNullOrWhiteSpace(receipt.ContextSummary)
-            ? $"Incoming {receipt.FormatId} payload before workspace merge."
+        => UndetectableHumanizerCopyAdapter.Humanize(string.IsNullOrWhiteSpace(receipt.ContextSummary)
+            ? $"Incoming {receipt.FormatId} data before it is added to this workspace."
             : receipt.ContextSummary);
 
     public static string BuildImportDiffAfter(WorkspacePortabilityReceipt receipt)
@@ -51,18 +51,18 @@ internal static class DesktopTrustReceiptText
         string line = string.IsNullOrWhiteSpace(watchout)
             ? nextSafeAction
             : $"{nextSafeAction} Diff signal: {watchout}";
-        return PlayerFacingCopyHumanizer.Clean(line);
+        return UndetectableHumanizerCopyAdapter.Humanize(line);
     }
 
     public static string BuildImportExplainReceipt(WorkspacePortabilityReceipt receipt)
-        => PlayerFacingCopyHumanizer.Clean(string.IsNullOrWhiteSpace(receipt.ProvenanceSummary)
-            ? $"Target {receipt.FormatId} stays review-only until the explain record is ready."
+        => UndetectableHumanizerCopyAdapter.Humanize(string.IsNullOrWhiteSpace(receipt.ProvenanceSummary)
+            ? $"Keep {receipt.FormatId} in review mode until Chummer can explain the imported changes."
             : receipt.ProvenanceSummary);
 
     public static string BuildImportSupportReuse(WorkspacePortabilityReceipt receipt)
-        => PlayerFacingCopyHumanizer.Clean(string.IsNullOrWhiteSpace(receipt.PayloadSha256)
+        => UndetectableHumanizerCopyAdapter.Humanize(string.IsNullOrWhiteSpace(receipt.PayloadSha256)
             ? receipt.ProvenanceSummary
-            : $"Support can cite payload {receipt.PayloadSha256} with {receipt.CompatibilityState} compatibility.");
+            : $"If you contact support, mention import {receipt.PayloadSha256} and {receipt.CompatibilityState} compatibility.");
 
     // m104: diagnostics_environment_diff
     public static string BuildDiagnosticsEnvironmentLine(
@@ -76,7 +76,7 @@ internal static class DesktopTrustReceiptText
                 "Before support environment diff",
                 "Diagnostics environment diff before support:")
             ?? $"Diagnostics environment diff: installed version {installState.ApplicationVersion}; last blocker {Normalize(updateStatus.LastError, "none recorded")}.";
-        return PlayerFacingCopyHumanizer.Clean(AppendSupportContext(line, supportProjection, supportCase));
+        return UndetectableHumanizerCopyAdapter.Humanize(AppendSupportContext(line, supportProjection, supportCase));
     }
 
     public static string BuildDiagnosticsBeforeLine(
@@ -90,7 +90,7 @@ internal static class DesktopTrustReceiptText
                 "Before support environment diff",
                 "Before:")
             ?? $"Before: installed version {installState.ApplicationVersion}; update status {Normalize(updateStatus.Status, "unknown")}.";
-        return PlayerFacingCopyHumanizer.Clean(AppendSupportContext(line, supportProjection, supportCase));
+        return UndetectableHumanizerCopyAdapter.Humanize(AppendSupportContext(line, supportProjection, supportCase));
     }
 
     public static string BuildDiagnosticsAfterLine(
@@ -98,8 +98,8 @@ internal static class DesktopTrustReceiptText
         DesktopHomeSupportProjection supportProjection,
         DesktopSupportCaseDetails? supportCase = null)
     {
-        string line = $"After: target version {Normalize(updateStatus.LastManifestVersion, "unknown")}; recommended action {Normalize(updateStatus.RecommendedAction, "review support status")}; release status {Normalize(updateStatus.ProofStatus, "release status not published locally")}; rollout {Normalize(updateStatus.RolloutState, "rollout state not published locally")}.";
-        return PlayerFacingCopyHumanizer.Clean(AppendSupportContext(line, supportProjection, supportCase));
+        string line = $"After: target version {Normalize(updateStatus.LastManifestVersion, "unknown")}; recommended action {Normalize(updateStatus.RecommendedAction, "review support status")}; release status {Normalize(updateStatus.ProofStatus, "release status not available locally")}; rollout {Normalize(updateStatus.RolloutState, "rollout state not available locally")}.";
+        return UndetectableHumanizerCopyAdapter.Humanize(AppendSupportContext(line, supportProjection, supportCase));
     }
 
     public static string BuildDiagnosticsExplainReceiptLine(
@@ -112,8 +112,8 @@ internal static class DesktopTrustReceiptText
                 DesktopTrustReceiptComposer.BuildDiagnosticsSections(installState, updateStatus),
                 "Grounded support explain receipt",
                 "Support diagnostics explain receipt:")
-            ?? $"Support note: installed {installState.HeadId}/{installState.ApplicationVersion} remains the before state while support reviews the next safe action.";
-        return PlayerFacingCopyHumanizer.Clean(AppendSupportContext(line, supportProjection, supportCase));
+            ?? $"Support note: installed {installState.HeadId}/{installState.ApplicationVersion} remains unchanged while support reviews the next safe action.";
+        return UndetectableHumanizerCopyAdapter.Humanize(AppendSupportContext(line, supportProjection, supportCase));
     }
 
     public static string BuildDiagnosticsSupportReuseLine(
@@ -121,8 +121,8 @@ internal static class DesktopTrustReceiptText
         DesktopHomeSupportProjection supportProjection,
         DesktopSupportCaseDetails? supportCase = null)
     {
-        string line = $"Support record: support can cite support/{installState.InstallationId}/{installState.HeadId}/{installState.ChannelId} with before/after details, blocker, release status, rollout, and supportability without changing local install state.";
-        return PlayerFacingCopyHumanizer.Clean(AppendSupportContext(line, supportProjection, supportCase));
+        string line = $"Support detail: if you need help, share support/{installState.InstallationId}/{installState.HeadId}/{installState.ChannelId} so the team can review before/after details, blocker state, release status, rollout, and install health without changing this install.";
+        return UndetectableHumanizerCopyAdapter.Humanize(AppendSupportContext(line, supportProjection, supportCase));
     }
 
     public static string BuildReceiptText(IReadOnlyList<DesktopTrustReceiptSection> sections)
@@ -140,14 +140,14 @@ internal static class DesktopTrustReceiptText
             lines.AddRange(section.Lines);
         }
 
-        return PlayerFacingCopyHumanizer.Clean(string.Join("\n", lines));
+        return UndetectableHumanizerCopyAdapter.Humanize(string.Join("\n", lines));
     }
 
     private static IReadOnlyList<DesktopTrustReceiptSection> MapSections(IReadOnlyList<DesktopTrustReceiptSectionData> sections)
         => sections
             .Select(static section => new DesktopTrustReceiptSection(
-                PlayerFacingCopyHumanizer.Clean(section.Title),
-                PlayerFacingCopyHumanizer.CleanLines(section.Lines)))
+                UndetectableHumanizerCopyAdapter.Humanize(section.Title),
+                UndetectableHumanizerCopyAdapter.HumanizeLines(section.Lines)))
             .ToArray();
 
     private static string? ExtractSectionLine(

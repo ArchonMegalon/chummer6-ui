@@ -305,7 +305,7 @@ internal sealed class DesktopSupportWindow : Window
         [
             DesktopInstallLinkingRuntime.IsClaimed(_installState)
                 ? CreateButton(S("desktop.home.button.open_devices_access"), OpenDevicesAccessWindowAsync, isPrimary: true)
-                : CreateButton(DesktopLocalizationCatalog.GetRequiredString("desktop.install_link.button.link_copy", _preferences.Language), OpenInstallLinkingAsync, isPrimary: true),
+                : CreateButton(DesktopDevicesAccessWindow.BuildInstallLinkEntryButtonLabel(_installState, _preferences.Language), OpenInstallLinkingAsync, isPrimary: true),
             CreateButton(S("desktop.home.button.open_report_issue"), OpenReportIssueWindowAsync)
         ];
 

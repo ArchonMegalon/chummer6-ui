@@ -176,6 +176,22 @@ public sealed class DesktopInstallLinkingShellChromeTests
         StringAssert.Contains(text, "out string loginUrl");
         StringAssert.Contains(text, "out string? failureReason");
         StringAssert.Contains(text, "ShowManualBrowserFallbackAsync(loginUrl, failureReason)");
+        StringAssert.Contains(text, "_browserFallbackPanel");
+        StringAssert.Contains(text, "_browserFallbackHeadingText");
+        StringAssert.Contains(text, "_browserFallbackSummaryText");
+        StringAssert.Contains(text, "_browserFallbackDetailText");
+        StringAssert.Contains(text, "_browserFallbackUrlLabelText");
+        StringAssert.Contains(text, "_browserFallbackUrlText");
+        StringAssert.Contains(text, "BuildBrowserFallbackHeading");
+        StringAssert.Contains(text, "BuildBrowserFallbackSummary");
+        StringAssert.Contains(text, "BuildBrowserFallbackDetail");
+        StringAssert.Contains(text, "BuildAccountButtonLabel");
+        StringAssert.Contains(text, "desktop.install_link.button.open_claim_link");
+        StringAssert.Contains(text, "desktop.install_link.fallback.heading");
+        StringAssert.Contains(text, "desktop.install_link.fallback.summary");
+        StringAssert.Contains(text, "desktop.install_link.fallback.detail_with_reason");
+        StringAssert.Contains(text, "desktop.install_link.fallback.claim_url_label");
+        StringAssert.Contains(text, "_browserFallbackPanel.IsVisible = !claimed && _browserFallbackVisible;");
         StringAssert.Contains(text, "desktop.install_link.button.copy_login_url");
         StringAssert.Contains(text, "private bool _browserFallbackVisible;");
         StringAssert.Contains(text, "_copyLoginUrlButton.IsVisible = !claimed && _browserFallbackVisible;");
@@ -251,7 +267,14 @@ public sealed class DesktopInstallLinkingShellChromeTests
             "German first-run claim copy must not frame the normal account flow as install linking.");
         StringAssert.Contains(localizationSource, "Claim your copy");
         string devicesSource = File.ReadAllText(FindPath("Chummer.Avalonia", "DesktopDevicesAccessWindow.cs"));
-        StringAssert.Contains(devicesSource, "desktop.install_link.button.login_website");
+        StringAssert.Contains(devicesSource, "BuildInstallLinkEntryButtonLabel");
+        StringAssert.Contains(devicesSource, "desktop.install_link.button.open_claim_link");
+        StringAssert.Contains(File.ReadAllText(FindPath("Chummer.Avalonia", "DesktopHomeWindow.cs")), "DesktopDevicesAccessWindow.BuildInstallLinkEntryButtonLabel");
+        StringAssert.Contains(File.ReadAllText(FindPath("Chummer.Avalonia", "DesktopSupportWindow.cs")), "DesktopDevicesAccessWindow.BuildInstallLinkEntryButtonLabel");
+        StringAssert.Contains(File.ReadAllText(FindPath("Chummer.Avalonia", "DesktopUpdateWindow.cs")), "DesktopDevicesAccessWindow.BuildInstallLinkEntryButtonLabel");
+        StringAssert.Contains(File.ReadAllText(FindPath("Chummer.Avalonia", "DesktopCampaignWorkspaceWindow.cs")), "DesktopDevicesAccessWindow.BuildInstallLinkEntryButtonLabel");
+        StringAssert.Contains(File.ReadAllText(FindPath("Chummer.Avalonia", "DesktopCreatorPublicationWindow.cs")), "DesktopDevicesAccessWindow.BuildInstallLinkEntryButtonLabel");
+        StringAssert.Contains(File.ReadAllText(FindPath("Chummer.Avalonia", "DesktopOrganizerOperationsWindow.cs")), "DesktopDevicesAccessWindow.BuildInstallLinkEntryButtonLabel");
         StringAssert.Contains(devicesSource, "DevicesAccessGuidedToolsHiddenOption");
         StringAssert.Contains(devicesSource, "? CreateButton(S(\"desktop.home.button.open_current_campaign_workspace\"), OpenWorkRouteAsync, isPrimary: true)");
         StringAssert.Contains(devicesSource, "CreateButton(S(\"desktop.devices.button.manage_linked_copies\"), OpenAccountAsync, isPrimary: true)");
@@ -343,6 +366,50 @@ public sealed class DesktopInstallLinkingShellChromeTests
         Assert.IsTrue(compact.Length <= 34);
         StringAssert.Contains(compact, "...");
         StringAssert.EndsWith(compact, "domain.test");
+    }
+
+    [TestMethod]
+    public void Browser_fallback_copy_stays_clear_and_user_facing()
+    {
+        Assert.AreEqual(
+            "Open the claim link manually",
+            DesktopInstallLinkingWindow.BuildBrowserFallbackHeading(DesktopLocalizationCatalog.DefaultLanguage));
+        StringAssert.Contains(
+            DesktopInstallLinkingWindow.BuildBrowserFallbackSummary(DesktopLocalizationCatalog.DefaultLanguage),
+            "Chummer could not open your browser automatically.");
+        StringAssert.Contains(
+            DesktopInstallLinkingWindow.BuildBrowserFallbackDetail(DesktopLocalizationCatalog.DefaultLanguage, "Operation not supported"),
+            "Operation not supported");
+        StringAssert.Contains(
+            DesktopInstallLinkingWindow.BuildBrowserFallbackDetail(DesktopLocalizationCatalog.DefaultLanguage, null),
+            "browser");
+        Assert.AreEqual(
+            "Open Claim Link",
+            DesktopInstallLinkingWindow.BuildAccountButtonLabel(
+                claimed: false,
+                browserFallbackVisible: true,
+                DesktopLocalizationCatalog.DefaultLanguage));
+        Assert.AreEqual(
+            "Claim your copy",
+            DesktopInstallLinkingWindow.BuildAccountButtonLabel(
+                claimed: false,
+                browserFallbackVisible: false,
+                DesktopLocalizationCatalog.DefaultLanguage));
+        Assert.AreEqual(
+            "Copied the claim link. Open it in your browser to claim this copy.",
+            DesktopInstallLinkingWindow.BuildBrowserFallbackStatus(
+                DesktopLocalizationCatalog.DefaultLanguage,
+                copiedToClipboard: true));
+        Assert.AreEqual(
+            "Open Claim Link",
+            DesktopDevicesAccessWindow.BuildInstallLinkEntryButtonLabel(
+                CreateInstallState(status: "guest", lastClaimError: null) with { LastBrowserDispatchFailure = "Operation not supported" },
+                DesktopLocalizationCatalog.DefaultLanguage));
+        Assert.AreEqual(
+            "Claim your copy",
+            DesktopDevicesAccessWindow.BuildInstallLinkEntryButtonLabel(
+                CreateInstallState(status: "guest"),
+                DesktopLocalizationCatalog.DefaultLanguage));
     }
 
     [TestMethod]

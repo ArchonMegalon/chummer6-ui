@@ -29,11 +29,11 @@ public static class DesktopHomeCampaignProjector
         if (summary is null && leadDigest is null)
         {
             return new DesktopHomeCampaignProjection(
-                PlayerFacingCopyHumanizer.Clean("No signed-in campaign workspace is loaded yet. Claim this copy before you rely on restore, continuity, or support for this install."),
-                PlayerFacingCopyHumanizer.Clean("Claim this copy, open your workspace, and refresh Home before you rely on campaign return or device restore."),
-                PlayerFacingCopyHumanizer.Clean("Restore: no account-backed dossiers, campaigns, or reconnectable files are loaded yet."),
-                PlayerFacingCopyHumanizer.Clean("Device: this copy is local-only until account restore attaches it to your campaign workspace."),
-                PlayerFacingCopyHumanizer.Clean("Support works best after this copy is claimed, because fixes and restore notes can target the exact install."),
+                UndetectableHumanizerCopyAdapter.Humanize("No signed-in campaign workspace is loaded yet. Claim this copy before you rely on restore, continuity, or support for this install."),
+                UndetectableHumanizerCopyAdapter.Humanize("Claim this copy, open your workspace, and refresh Home before you rely on campaign return or device restore."),
+                UndetectableHumanizerCopyAdapter.Humanize("Restore: no account-backed dossiers, campaigns, or reconnectable files are loaded yet."),
+                UndetectableHumanizerCopyAdapter.Humanize("Device: this copy is local-only until account restore attaches it to your campaign workspace."),
+                UndetectableHumanizerCopyAdapter.Humanize("Support works best after this copy is claimed, because fixes and restore notes can target the exact install."),
                 LeadWorkspaceId: null,
                 ReadinessHighlights:
                 [
@@ -49,13 +49,13 @@ public static class DesktopHomeCampaignProjector
         if (summary is null && leadDigest is not null)
         {
             return new DesktopHomeCampaignProjection(
-                PlayerFacingCopyHumanizer.Clean($"Campaign: {leadDigest.ReturnSummary} {(serverPlane?.RunboardSummary ?? leadDigest.ActiveSceneSummary ?? string.Empty)} {serverPlane?.SessionReadinessSummary ?? string.Empty}".Trim()),
-                PlayerFacingCopyHumanizer.Clean(string.IsNullOrWhiteSpace(serverPlane?.NextSafeAction) ? leadDigest.NextSafeAction : serverPlane.NextSafeAction),
+                UndetectableHumanizerCopyAdapter.Humanize($"Campaign: {leadDigest.ReturnSummary} {(serverPlane?.RunboardSummary ?? leadDigest.ActiveSceneSummary ?? string.Empty)} {serverPlane?.SessionReadinessSummary ?? string.Empty}".Trim()),
+                UndetectableHumanizerCopyAdapter.Humanize(string.IsNullOrWhiteSpace(serverPlane?.NextSafeAction) ? leadDigest.NextSafeAction : serverPlane.NextSafeAction),
                 serverPlane is null
-                    ? PlayerFacingCopyHumanizer.Clean("Restore: the calmer workspace digest is present, but the full account-backed restore details still need a refresh.")
-                    : PlayerFacingCopyHumanizer.Clean($"Restore: {serverPlane.RestoreSummary}"),
-                PlayerFacingCopyHumanizer.Clean($"Claimed device: {leadDigest.DeviceRoleSummary}"),
-                PlayerFacingCopyHumanizer.Clean(serverPlane is null || serverPlane.SupportHighlights.Count == 0
+                    ? UndetectableHumanizerCopyAdapter.Humanize("Restore: the calmer workspace digest is present, but the full account-backed restore details still need a refresh.")
+                    : UndetectableHumanizerCopyAdapter.Humanize($"Restore: {serverPlane.RestoreSummary}"),
+                UndetectableHumanizerCopyAdapter.Humanize($"Claimed device: {leadDigest.DeviceRoleSummary}"),
+                UndetectableHumanizerCopyAdapter.Humanize(serverPlane is null || serverPlane.SupportHighlights.Count == 0
                     ? $"Support closure: {leadDigest.SupportClosureSummary}"
                     : $"Support closure: {leadDigest.SupportClosureSummary} Support: {serverPlane.SupportHighlights[0]}"),
                 LeadWorkspaceId: serverPlane?.WorkspaceId ?? leadDigest.WorkspaceId,
@@ -169,7 +169,7 @@ public static class DesktopHomeCampaignProjector
 
             if (!string.IsNullOrWhiteSpace(serverPlane.AdoptionEvidenceSummary))
             {
-                readinessHighlights.Add($"Adoption details: {PlayerFacingCopyHumanizer.Clean(serverPlane.AdoptionEvidenceSummary)}");
+                readinessHighlights.Add($"Adoption details: {UndetectableHumanizerCopyAdapter.Humanize(serverPlane.AdoptionEvidenceSummary)}");
             }
 
             if (!string.IsNullOrWhiteSpace(serverPlane.GoalPinSummary))
@@ -184,13 +184,13 @@ public static class DesktopHomeCampaignProjector
 
             if (!string.IsNullOrWhiteSpace(serverPlane.BlackLedgerSummary))
             {
-                readinessHighlights.Add($"BLACK LEDGER consequence: {PlayerFacingCopyHumanizer.Clean(serverPlane.BlackLedgerSummary)}");
+                readinessHighlights.Add($"BLACK LEDGER consequence: {UndetectableHumanizerCopyAdapter.Humanize(serverPlane.BlackLedgerSummary)}");
             }
 
             if (!string.IsNullOrWhiteSpace(serverPlane.BlackLedgerProofSummary))
             {
-                readinessHighlights.Add($"BLACK LEDGER consequence details: {PlayerFacingCopyHumanizer.Clean(serverPlane.BlackLedgerProofSummary)}");
-                readinessHighlights.Add($"BLACK LEDGER details: {PlayerFacingCopyHumanizer.Clean(serverPlane.BlackLedgerProofSummary)}");
+                readinessHighlights.Add($"BLACK LEDGER consequence details: {UndetectableHumanizerCopyAdapter.Humanize(serverPlane.BlackLedgerProofSummary)}");
+                readinessHighlights.Add($"BLACK LEDGER details: {UndetectableHumanizerCopyAdapter.Humanize(serverPlane.BlackLedgerProofSummary)}");
             }
         }
 
@@ -308,11 +308,11 @@ public static class DesktopHomeCampaignProjector
         }
 
         return new DesktopHomeCampaignProjection(
-            PlayerFacingCopyHumanizer.Clean(summaryLine),
-            PlayerFacingCopyHumanizer.Clean(nextSafeAction),
-            PlayerFacingCopyHumanizer.Clean(restoreSummary),
-            PlayerFacingCopyHumanizer.Clean(deviceRoleSummary),
-            PlayerFacingCopyHumanizer.Clean(supportClosureSummary),
+            UndetectableHumanizerCopyAdapter.Humanize(summaryLine),
+            UndetectableHumanizerCopyAdapter.Humanize(nextSafeAction),
+            UndetectableHumanizerCopyAdapter.Humanize(restoreSummary),
+            UndetectableHumanizerCopyAdapter.Humanize(deviceRoleSummary),
+            UndetectableHumanizerCopyAdapter.Humanize(supportClosureSummary),
             LeadWorkspaceId: leadDigest?.WorkspaceId ?? leadWorkspace?.WorkspaceId,
             ReadinessHighlights: FinalizeLines(readinessHighlights),
             Watchouts: FinalizeLines(watchouts));
@@ -386,7 +386,7 @@ public static class DesktopHomeCampaignProjector
 
         if (firstPlayableSession.EvidenceLines.Count > 0)
         {
-            yield return $"First-session details: {PlayerFacingCopyHumanizer.Clean(firstPlayableSession.EvidenceLines[0])}";
+            yield return $"First-session details: {UndetectableHumanizerCopyAdapter.Humanize(firstPlayableSession.EvidenceLines[0])}";
         }
     }
 
@@ -397,9 +397,9 @@ public static class DesktopHomeCampaignProjector
             yield break;
         }
 
-        yield return $"Portable exchange: {PlayerFacingCopyHumanizer.Clean(portableExchange.ReceiptSummary)}";
-        yield return $"Exchange context: {PlayerFacingCopyHumanizer.Clean(portableExchange.ContextSummary)}";
-        yield return $"Exchange asset scope: {PlayerFacingCopyHumanizer.Clean(portableExchange.AssetScopeSummary)}";
+        yield return $"Portable exchange: {UndetectableHumanizerCopyAdapter.Humanize(portableExchange.ReceiptSummary)}";
+        yield return $"Exchange context: {UndetectableHumanizerCopyAdapter.Humanize(portableExchange.ContextSummary)}";
+        yield return $"Exchange asset scope: {UndetectableHumanizerCopyAdapter.Humanize(portableExchange.AssetScopeSummary)}";
 
         if (portableExchange.SupportedExchangeFormats.Count > 0)
         {
@@ -509,7 +509,7 @@ public static class DesktopHomeCampaignProjector
     private static IReadOnlyList<string> FinalizeLines(IEnumerable<string> lines)
         => lines
             .Where(static line => !string.IsNullOrWhiteSpace(line))
-            .Select(static line => PlayerFacingCopyHumanizer.Clean(line))
+            .Select(static line => UndetectableHumanizerCopyAdapter.Humanize(line))
             .Where(static line => !string.IsNullOrWhiteSpace(line))
             .Distinct(StringComparer.OrdinalIgnoreCase)
             .Take(64)

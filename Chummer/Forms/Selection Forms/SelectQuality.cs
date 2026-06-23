@@ -76,7 +76,7 @@ namespace Chummer
 
             if (_lstCategory.Count > 0)
             {
-                _lstCategory.Insert(0, new ListItem("Show All", await LanguageManager.GetStringAsync("String_ShowAll").ConfigureAwait(false)));
+                _lstCategory.Insert(0, new ListItem("Show All", "All Qualities"));
             }
 
             await cboCategory.PopulateWithListItemsAsync(_lstCategory).ConfigureAwait(false);
@@ -94,7 +94,6 @@ namespace Chummer
 
                 x.Enabled = _lstCategory.Count > 1;
             }).ConfigureAwait(false);
-
             // Populate the XPath queries list.
             await PopulateXPathQueries().ConfigureAwait(false);
 

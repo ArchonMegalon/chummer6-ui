@@ -135,7 +135,7 @@ internal static class DesktopShellTheme
     {
         ArgumentNullException.ThrowIfNull(body);
 
-        string visibleTitle = PlayerFacingCopyHumanizer.Clean(title);
+        string visibleTitle = UndetectableHumanizerCopyAdapter.Humanize(title);
         ToolTip.SetTip(body, visibleTitle);
 
         StackPanel content = new() { Spacing = spacing };
@@ -205,7 +205,7 @@ internal static class DesktopShellTheme
     {
         ArgumentNullException.ThrowIfNull(action);
 
-        string resolvedLabel = PlayerFacingCopyHumanizer.Clean(ResolveCloseActionLabel(label, closeWindow));
+        string resolvedLabel = UndetectableHumanizerCopyAdapter.Humanize(ResolveCloseActionLabel(label, closeWindow));
         Button button = new()
         {
             Content = resolvedLabel,

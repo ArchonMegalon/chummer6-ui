@@ -40,13 +40,13 @@
                 <span class="badge">@activity.Receipt.CompatibilityState</span>
             </div>
             <dl class="facts compact">
-                <div><dt>Status</dt><dd>@PlayerFacingCopyHumanizer.Clean(activity.Receipt.ReceiptSummary)</dd></div>
+                <div><dt>Status</dt><dd>@UndetectableHumanizerCopyAdapter.Humanize(activity.Receipt.ReceiptSummary)</dd></div>
                 <div><dt>Rules setup</dt><dd>@DialogTrustReceiptText.BuildImportRuleEnvironment(activity.Receipt)</dd></div>
                 <div><dt>Before</dt><dd>@DialogTrustReceiptText.BuildImportDiffBefore(activity.Receipt)</dd></div>
                 <div><dt>After</dt><dd>@DialogTrustReceiptText.BuildImportDiffAfter(activity.Receipt)</dd></div>
                 <div><dt>Explanation</dt><dd>@DialogTrustReceiptText.BuildImportExplainReceipt(activity.Receipt)</dd></div>
-                <div><dt>Source</dt><dd>@PlayerFacingCopyHumanizer.Clean(activity.Receipt.ProvenanceSummary)</dd></div>
-                <div><dt>Next step</dt><dd>@PlayerFacingCopyHumanizer.Clean(activity.Receipt.NextSafeAction)</dd></div>
+                <div><dt>Source</dt><dd>@UndetectableHumanizerCopyAdapter.Humanize(activity.Receipt.ProvenanceSummary)</dd></div>
+                <div><dt>Next step</dt><dd>@UndetectableHumanizerCopyAdapter.Humanize(activity.Receipt.NextSafeAction)</dd></div>
                 <div><dt>Support note</dt><dd>@DialogTrustReceiptText.BuildImportSupportReuse(activity.Receipt)</dd></div>
             </dl>
             @if (activity.Receipt.Notes.Count > 0)
@@ -54,7 +54,7 @@
                 <ul class="browse-detail-lines">
                     @foreach (var note in activity.Receipt.Notes.Take(3))
                     {
-                        <li><strong>@note.Severity:</strong> @PlayerFacingCopyHumanizer.Clean(note.Summary)</li>
+                        <li><strong>@note.Severity:</strong> @UndetectableHumanizerCopyAdapter.Humanize(note.Summary)</li>
                     }
                 </ul>
             }
@@ -163,8 +163,8 @@
         IReadOnlyList<ImportTrustReceiptSection> sections)
         => sections
             .Select(static section => new ImportTrustReceiptSection(
-                PlayerFacingCopyHumanizer.Clean(section.Title),
-                PlayerFacingCopyHumanizer.CleanLines(section.Lines)))
+                UndetectableHumanizerCopyAdapter.Humanize(section.Title),
+                UndetectableHumanizerCopyAdapter.HumanizeLines(section.Lines)))
             .ToArray();
 
     private static IReadOnlyList<ImportTrustReceiptSection> EnsureCanonicalImportTrustReceiptSections(

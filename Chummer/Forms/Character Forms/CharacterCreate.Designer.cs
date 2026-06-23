@@ -8198,7 +8198,7 @@ namespace Chummer
             this.chkCyberwareBlackMarketDiscount.Size = new System.Drawing.Size(163, 17);
             this.chkCyberwareBlackMarketDiscount.TabIndex = 229;
             this.chkCyberwareBlackMarketDiscount.Tag = "Checkbox_BlackMarketDiscount";
-            this.chkCyberwareBlackMarketDiscount.Text = "Black Market Discount (10%)";
+            this.chkCyberwareBlackMarketDiscount.Text = "Market -10%";
             this.chkCyberwareBlackMarketDiscount.UseVisualStyleBackColor = true;
             this.chkCyberwareBlackMarketDiscount.CheckedChanged += new System.EventHandler(this.chkCyberwareBlackMarketDiscount_CheckedChanged);
             // 
@@ -8908,7 +8908,7 @@ namespace Chummer
             this.chkGearBlackMarketDiscount.Size = new System.Drawing.Size(163, 17);
             this.chkGearBlackMarketDiscount.TabIndex = 230;
             this.chkGearBlackMarketDiscount.Tag = "Checkbox_BlackMarketDiscount";
-            this.chkGearBlackMarketDiscount.Text = "Black Market Discount (10%)";
+            this.chkGearBlackMarketDiscount.Text = "Market -10%";
             this.chkGearBlackMarketDiscount.UseVisualStyleBackColor = true;
             this.chkGearBlackMarketDiscount.CheckedChanged += new System.EventHandler(this.chkGearBlackMarketDiscount_CheckedChanged);
             // 
@@ -9594,7 +9594,7 @@ namespace Chummer
             this.chkArmorBlackMarketDiscount.Size = new System.Drawing.Size(163, 17);
             this.chkArmorBlackMarketDiscount.TabIndex = 231;
             this.chkArmorBlackMarketDiscount.Tag = "Checkbox_BlackMarketDiscount";
-            this.chkArmorBlackMarketDiscount.Text = "Black Market Discount (10%)";
+            this.chkArmorBlackMarketDiscount.Text = "Market -10%";
             this.chkArmorBlackMarketDiscount.UseVisualStyleBackColor = true;
             this.chkArmorBlackMarketDiscount.CheckedChanged += new System.EventHandler(this.chkArmorBlackMarketDiscount_CheckedChanged);
             // 
@@ -10360,7 +10360,7 @@ namespace Chummer
             this.chkWeaponBlackMarketDiscount.Size = new System.Drawing.Size(163, 17);
             this.chkWeaponBlackMarketDiscount.TabIndex = 231;
             this.chkWeaponBlackMarketDiscount.Tag = "Checkbox_BlackMarketDiscount";
-            this.chkWeaponBlackMarketDiscount.Text = "Black Market Discount (10%)";
+            this.chkWeaponBlackMarketDiscount.Text = "Market -10%";
             this.chkWeaponBlackMarketDiscount.UseVisualStyleBackColor = true;
             this.chkWeaponBlackMarketDiscount.CheckedChanged += new System.EventHandler(this.chkWeaponBlackMarketDiscount_CheckedChanged);
             // 
@@ -12406,7 +12406,7 @@ namespace Chummer
             this.chkVehicleBlackMarketDiscount.Size = new System.Drawing.Size(163, 17);
             this.chkVehicleBlackMarketDiscount.TabIndex = 231;
             this.chkVehicleBlackMarketDiscount.Tag = "Checkbox_BlackMarketDiscount";
-            this.chkVehicleBlackMarketDiscount.Text = "Black Market Discount (10%)";
+            this.chkVehicleBlackMarketDiscount.Text = "Market -10%";
             this.chkVehicleBlackMarketDiscount.UseVisualStyleBackColor = true;
             this.chkVehicleBlackMarketDiscount.CheckedChanged += new System.EventHandler(this.chkVehicleBlackMarketDiscount_CheckedChanged);
             // 

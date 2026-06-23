@@ -1390,6 +1390,68 @@ public sealed class DesktopUpdateRuntimeTests
     }
 
     [TestMethod]
+    public void ResolveLinuxInstalledLauncherPath_prefers_path_command_for_linux_relaunch()
+    {
+        if (!OperatingSystem.IsLinux())
+        {
+            return;
+        }
+
+        string tempRoot = Path.Combine(Path.GetTempPath(), $"chummer-linux-launcher-{Guid.NewGuid():N}");
+        string binRoot = Path.Combine(tempRoot, "bin");
+        Directory.CreateDirectory(binRoot);
+        string launcherPath = Path.Combine(binRoot, "chummer6-avalonia");
+        File.WriteAllText(launcherPath, "#!/usr/bin/env bash\nexit 0\n");
+        File.SetUnixFileMode(
+            launcherPath,
+            UnixFileMode.UserRead | UnixFileMode.UserWrite | UnixFileMode.UserExecute |
+            UnixFileMode.GroupRead | UnixFileMode.GroupExecute |
+            UnixFileMode.OtherRead | UnixFileMode.OtherExecute);
+
+        string? priorPath = Environment.GetEnvironmentVariable("PATH");
+        try
+        {
+            Environment.SetEnvironmentVariable("PATH", $"{binRoot}{Path.PathSeparator}{priorPath}");
+            string? resolved = InvokePrivateStatic<string?>("ResolveLinuxInstalledLauncherPath", "avalonia");
+            Assert.AreEqual(launcherPath, resolved);
+        }
+        finally
+        {
+            Environment.SetEnvironmentVariable("PATH", priorPath);
+            if (Directory.Exists(tempRoot))
+            {
+                Directory.Delete(tempRoot, recursive: true);
+            }
+        }
+    }
+
+    [TestMethod]
+    public void TryLaunchLinuxInstalledApplication_skips_noisy_stderr_when_launcher_is_unavailable()
+    {
+        if (!OperatingSystem.IsLinux())
+        {
+            return;
+        }
+
+        StringWriter errorWriter = new();
+        TextWriter priorError = Console.Error;
+        string? priorPath = Environment.GetEnvironmentVariable("PATH");
+        try
+        {
+            Console.SetError(errorWriter);
+            Environment.SetEnvironmentVariable("PATH", "/nonexistent");
+            InvokePrivateStatic<object?>("TryLaunchLinuxInstalledApplication", "avalonia", Array.Empty<string>());
+            Assert.AreEqual(string.Empty, errorWriter.ToString());
+        }
+        finally
+        {
+            Environment.SetEnvironmentVariable("PATH", priorPath);
+            Console.SetError(priorError);
+            errorWriter.Dispose();
+        }
+    }
+
+    [TestMethod]
     public void Update_configuration_load_uses_persisted_preference_mode_when_no_env_override_exists()
     {
         using TestStateRootScope stateRootScope = new();

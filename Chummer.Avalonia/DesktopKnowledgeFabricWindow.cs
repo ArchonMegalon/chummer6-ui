@@ -90,7 +90,7 @@ internal sealed class DesktopKnowledgeFabricWindow : Window
             "Keep the current answer visible before opening the wider rules view.",
             details,
             DesktopHorizonWindowScaffold.CreateAsyncButton(this, "Open public Rules", static () => DesktopInstallLinkingRuntime.TryOpenRelativePortal("/rules"), isPrimary: HasRulesContext),
-            DesktopHorizonWindowScaffold.CreateAsyncButton(this, "Open details", static () => DesktopInstallLinkingRuntime.TryOpenRelativePortal("/rules/receipts")),
+            DesktopHorizonWindowScaffold.CreateAsyncButton(this, "Open explanations", static () => DesktopInstallLinkingRuntime.TryOpenRelativePortal("/rules/receipts")),
             DesktopHorizonWindowScaffold.CreateAsyncButton(this, "Open Edition Studio", static () => DesktopInstallLinkingRuntime.TryOpenRelativePortal("/edition-studio")));
     }
 

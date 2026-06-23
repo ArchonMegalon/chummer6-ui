@@ -136,7 +136,7 @@ internal sealed class DesktopTablePulseWindow : Window
                     DesktopHorizonWindowScaffold.CreateMetricBadge("TablePulseBadgeAftermath", "Aftermath workspaces", (_campaignSummary?.Workspaces.Count ?? 0).ToString())),
                 DesktopHorizonWindowScaffold.CreateDetailText($"Aftermath workspaces in account context: {_campaignSummary?.Workspaces.Count ?? 0}."),
                 DesktopHorizonWindowScaffold.CreateDetailText(leadWorkspace is null
-                    ? "No workspace is currently pinned for aftermath follow-through."
+                    ? "No workspace is currently pinned for aftermath details."
                     : $"{leadWorkspace.CampaignName} is the current lead workspace."),
                 detailText
             }

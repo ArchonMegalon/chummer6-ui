@@ -8,6 +8,10 @@ namespace Chummer.Avalonia;
 
 internal sealed class DesktopStartupUpdateWindow : Window
 {
+    private const int RelaunchVisibilityDelayMs = 1200;
+    private const int AttentionVisibilityDelayMs = 1600;
+    private const int FailureVisibilityDelayMs = 1800;
+
     private readonly string _headId;
     private readonly string[] _relaunchArgs;
     private readonly TextBlock _titleText;
@@ -42,7 +46,7 @@ internal sealed class DesktopStartupUpdateWindow : Window
 
         _bodyText = new TextBlock
         {
-            Text = "Chummer will continue automatically if this copy is current.",
+            Text = "Chummer will open automatically if this copy is already current.",
             TextWrapping = TextWrapping.Wrap,
             Foreground = DesktopShellTheme.ResolveThemeBrush("ChummerShellMutedForegroundBrush", "#cbd5e1")
         };
@@ -117,7 +121,7 @@ internal sealed class DesktopStartupUpdateWindow : Window
             if (result.ExitRequested)
             {
                 ApplyProgress(new DesktopUpdateProgressUpdate("relaunching", "Installing update and restarting Chummer", 1000, 1000));
-                await Task.Delay(650).ConfigureAwait(true);
+                await Task.Delay(GetCompletionDisplayDelayMs(exitRequested: true, reason: result.Reason)).ConfigureAwait(true);
                 Close(true);
                 return;
             }
@@ -134,20 +138,31 @@ internal sealed class DesktopStartupUpdateWindow : Window
             }
 
             ApplyProgress(new DesktopUpdateProgressUpdate("attention", BuildAttentionMessage(result.Reason), null, null));
-            await Task.Delay(1200).ConfigureAwait(true);
+            await Task.Delay(GetCompletionDisplayDelayMs(exitRequested: false, reason: result.Reason)).ConfigureAwait(true);
             Close(false);
         }
         catch (Exception ex)
         {
             ApplyProgress(new DesktopUpdateProgressUpdate("failed", $"Update check failed. Chummer will continue. {ex.Message}", null, null));
-            await Task.Delay(1400).ConfigureAwait(true);
+            await Task.Delay(GetCompletionDisplayDelayMs(exitRequested: false, reason: "failed")).ConfigureAwait(true);
             Close(false);
         }
     }
 
     private void ApplyProgress(DesktopUpdateProgressUpdate update)
     {
-        _titleText.Text = update.Stage switch
+        DesktopStartupUpdateViewState state = BuildViewState(update);
+        _titleText.Text = state.Title;
+        _bodyText.Text = state.Body;
+        _waitText.IsVisible = state.ShowWaitText;
+        _progressBar.IsIndeterminate = state.IsIndeterminate;
+        _progressBar.Maximum = state.ProgressMaximum;
+        _progressBar.Value = state.ProgressValue;
+    }
+
+    internal static DesktopStartupUpdateViewState BuildViewState(DesktopUpdateProgressUpdate update)
+    {
+        string title = update.Stage switch
         {
             "checking" => "Checking for updates",
             "downloading" => "Downloading update",
@@ -161,22 +176,35 @@ internal sealed class DesktopStartupUpdateWindow : Window
             "blocked" => "Update paused",
             _ => "Updating Chummer"
         };
-
-        _bodyText.Text = update.Message;
-        _waitText.IsVisible = update.Stage is "downloading" or "validating" or "staging" or "relaunching";
-        if (update.Total is > 0 && update.Completed is >= 0)
-        {
-            _progressBar.IsIndeterminate = false;
-            _progressBar.Maximum = update.Total.Value;
-            _progressBar.Value = Math.Clamp(update.Completed.Value, 0, update.Total.Value);
-        }
-        else
-        {
-            _progressBar.IsIndeterminate = true;
-        }
+        bool showWaitText = update.Stage is "downloading" or "validating" or "staging" or "relaunching";
+        bool determinate = update.Total is > 0 && update.Completed is >= 0;
+        int progressMaximum = determinate ? update.Total!.Value : 1000;
+        int progressValue = determinate ? Math.Clamp(update.Completed!.Value, 0, progressMaximum) : 0;
+        return new DesktopStartupUpdateViewState(
+            Title: title,
+            Body: update.Message,
+            ShowWaitText: showWaitText,
+            IsIndeterminate: !determinate,
+            ProgressMaximum: progressMaximum,
+            ProgressValue: progressValue);
     }
 
-    private static string BuildAttentionMessage(string reason)
+    internal static int GetCompletionDisplayDelayMs(bool exitRequested, string? reason)
+    {
+        if (exitRequested)
+        {
+            return RelaunchVisibilityDelayMs;
+        }
+
+        if (string.Equals(reason, "failed", StringComparison.OrdinalIgnoreCase))
+        {
+            return FailureVisibilityDelayMs;
+        }
+
+        return AttentionVisibilityDelayMs;
+    }
+
+    internal static string BuildAttentionMessage(string reason)
         => reason switch
         {
             "auto_apply_disabled" => "A newer build is available. Open Devices & Access when you want to update.",
@@ -188,3 +216,11 @@ internal sealed class DesktopStartupUpdateWindow : Window
             _ => "This copy will keep running."
         };
 }
+
+internal sealed record DesktopStartupUpdateViewState(
+    string Title,
+    string Body,
+    bool ShowWaitText,
+    bool IsIndeterminate,
+    int ProgressMaximum,
+    int ProgressValue);

@@ -133,6 +133,7 @@ public static class DesktopLocalizationCatalog
         ["desktop.install_link.button.open_account"] = "Open Account",
         ["desktop.install_link.button.link_copy"] = "Claim your copy",
         ["desktop.install_link.button.copy_login_url"] = "Copy Claim Link",
+        ["desktop.install_link.button.open_claim_link"] = "Open Claim Link",
         ["desktop.install_link.button.redeem_claim_code"] = "Use Fallback Code",
         ["desktop.install_link.button.login_website"] = "Claim your copy",
         ["desktop.install_link.button.continue_unlinked"] = "Continue unlinked",
@@ -163,7 +164,7 @@ public static class DesktopLocalizationCatalog
         ["desktop.home.value.never"] = "Never",
         ["desktop.home.value.none"] = "None",
         ["desktop.home.value.none_published"] = "None published",
-        ["desktop.home.value.no_supportability_summary"] = "No supportability summary published yet.",
+        ["desktop.home.value.no_supportability_summary"] = "No support summary is available yet.",
         ["desktop.home.value.no_fix_guidance"] = "No fix guidance published yet.",
         ["desktop.home.workspace_summary.empty"] = "No recent workspaces were restored yet. Import or create a runner to seed the campaign workspace lane.",
         ["desktop.home.workspace_summary.entry"] = "{0} . {1} . {2} UTC",
@@ -178,9 +179,9 @@ public static class DesktopLocalizationCatalog
         ["desktop.home.button.open_campaign_followthrough"] = "Open Campaign Follow-through",
         ["desktop.home.button.open_campaign_primer"] = "Open Campaign Primer",
         ["desktop.home.button.open_mission_briefing"] = "Open Mission Briefing",
-        ["desktop.home.button.open_my_artifacts"] = "Open My Stuff",
-        ["desktop.home.button.open_campaign_artifacts"] = "Open Campaign Stuff",
-        ["desktop.home.button.open_published_artifacts"] = "Open Published Stuff",
+        ["desktop.home.button.open_my_artifacts"] = "Open My Files",
+        ["desktop.home.button.open_campaign_artifacts"] = "Open Campaign Files",
+        ["desktop.home.button.open_published_artifacts"] = "Open Published Files",
         ["desktop.home.button.open_build_followthrough"] = "Open Build Follow-through",
         ["desktop.home.button.open_workspace_followthrough"] = "Open Workspace Follow-through",
         ["desktop.home.button.open_update_status"] = "Open Update Status",
@@ -215,6 +216,11 @@ public static class DesktopLocalizationCatalog
         ["desktop.shell.notice.print_completed"] = "Notice: saved print preview {0}.",
         ["desktop.install_link.claim_code_watermark"] = "Paste fallback claim code",
         ["desktop.install_link.status.prompt_guest_claim"] = "If the online claim did not finish, paste the fallback code here.",
+        ["desktop.install_link.fallback.heading"] = "Open the claim link manually",
+        ["desktop.install_link.fallback.summary"] = "Chummer could not open your browser automatically. Open or copy this claim link, claim this copy, then return here. The local callback will finish automatically when it arrives.",
+        ["desktop.install_link.fallback.detail"] = "If the browser is blocked on this desktop, you can still finish the claim in any browser and return here afterward.",
+        ["desktop.install_link.fallback.detail_with_reason"] = "Browser detail: {0}",
+        ["desktop.install_link.fallback.claim_url_label"] = "Claim link",
         ["desktop.install_link.status.clipboard_unavailable"] = "Clipboard access is unavailable in this host.",
         ["desktop.install_link.status.install_id_copied"] = "Copied the installation id to the clipboard.",
         ["desktop.install_link.status.opened_work_route"] = "Opened your workspace.",
@@ -281,7 +287,7 @@ public static class DesktopLocalizationCatalog
         ["desktop.devices.context.claims_pending"] = "Claim link for {1} {2} stays ready until {3} UTC.",
         ["desktop.devices.context.claims_pending_install"] = "Claim link is already bound to install {1} until {2} UTC.",
         ["desktop.devices.context.claims_local_last"] = "A previous claim attempt is saved locally on this install.",
-        ["desktop.devices.context.claims_receipt"] = "Recent download: {0} · {1} {2} on {3}/{4}, issued {5} UTC.",
+        ["desktop.devices.context.claims_receipt"] = "Recent download: {0} · {1} {2} for {3}/{4}, added {5} UTC.",
         ["desktop.devices.context.access_guest"] = "Claim this copy before using account recovery or support history.",
         ["desktop.devices.context.access_claimed"] = "Support, updates, and workspace recovery are attached to this linked install.",
         ["desktop.devices.context.access_no_grants"] = "No active access grants are visible for this account yet.",
@@ -355,7 +361,7 @@ public static class DesktopLocalizationCatalog
         ["desktop.support_case.context.fixed_release"] = "Fixed release: {0}",
         ["desktop.support_case.context.affected_install"] = "Affected install: {0}",
         ["desktop.support_case.context.release_progress"] = "Release progress: {0}",
-        ["desktop.support_case.context.verification"] = "Confirmation: {0}",
+        ["desktop.support_case.context.verification"] = "Check: {0}",
         ["desktop.support_case.context.follow_up"] = "Follow-up: {0}",
         ["desktop.support_case.context.detail"] = "Detail: {0}",
         ["desktop.support_case.context.timeline_entry"] = "{0} UTC | {1} | {2}",
@@ -547,9 +553,9 @@ public static class DesktopLocalizationCatalog
             localized["desktop.home.button.open_devices_access"] = "Deine Kopie";
             localized["desktop.home.button.open_current_workspace"] = "Runner-Arbeitsbereich öffnen";
             localized["desktop.home.button.open_current_campaign_workspace"] = "Kampagnen-Arbeitsbereich öffnen";
-            localized["desktop.home.button.open_my_artifacts"] = "Meine Artefakte öffnen";
-            localized["desktop.home.button.open_campaign_artifacts"] = "Kampagnen-Artefakte öffnen";
-            localized["desktop.home.button.open_published_artifacts"] = "Veröffentlichte Artefakte öffnen";
+            localized["desktop.home.button.open_my_artifacts"] = "Meine Dateien öffnen";
+            localized["desktop.home.button.open_campaign_artifacts"] = "Kampagnendateien öffnen";
+            localized["desktop.home.button.open_published_artifacts"] = "Veröffentlichte Dateien öffnen";
             localized["desktop.home.button.open_build_followthrough"] = "Build-Nachverfolgung öffnen";
             localized["desktop.home.button.open_workspace_followthrough"] = "Arbeitsbereichs-Nachverfolgung öffnen";
             localized["desktop.home.button.open_update_status"] = "Update-Status öffnen";
@@ -575,7 +581,7 @@ public static class DesktopLocalizationCatalog
             localized["desktop.home.value.never"] = "Nie";
             localized["desktop.home.value.unknown"] = "Unbekannt";
             localized["desktop.home.value.none_published"] = "Nichts veröffentlicht";
-            localized["desktop.home.value.no_supportability_summary"] = "Noch keine Supportability-Zusammenfassung veröffentlicht.";
+            localized["desktop.home.value.no_supportability_summary"] = "Noch keine Support-Zusammenfassung verfügbar.";
             localized["desktop.home.value.no_fix_guidance"] = "Noch keine Fix-Empfehlung veröffentlicht.";
             localized["desktop.home.intro.claim_failed_guest"] = "Diese Kopie läuft noch als Gast, weil der letzte Claim-Versuch fehlgeschlagen ist. Beanspruchen Sie sie, bevor Sie Support, Fix-Hinweise oder Wiederherstellung nutzen.";
             localized["desktop.home.intro.guest_recommended_link"] = "Diese Kopie ist noch nicht verknuepft. Beanspruchen Sie sie, wenn Wiederherstellung und Supportverlauf verbunden bleiben sollen.";
@@ -624,6 +630,7 @@ public static class DesktopLocalizationCatalog
             localized["desktop.install_link.button.open_work"] = "Verknüpften Arbeitsbereich öffnen";
             localized["desktop.install_link.button.open_account"] = "Konto öffnen";
             localized["desktop.install_link.button.link_copy"] = "Diese Kopie beanspruchen";
+            localized["desktop.install_link.button.open_claim_link"] = "Claim-Link offnen";
             localized["desktop.install_link.button.redeem_claim_code"] = "Fallback-Code nutzen";
             localized["desktop.install_link.button.login_website"] = "Diese Kopie beanspruchen";
             localized["desktop.install_link.button.continue_unlinked"] = "Ohne Verknuepfung fortfahren";
@@ -631,6 +638,11 @@ public static class DesktopLocalizationCatalog
             localized["desktop.install_link.shipping_locales"] = "Verfügbare Sprachen: {0}.";
             localized["desktop.install_link.claim_code_watermark"] = "Anmeldecode einfugen";
             localized["desktop.install_link.status.prompt_guest_claim"] = "Wenn der Browser den Claim nicht abgeschlossen hat, fugen Sie hier den Fallback-Code ein.";
+            localized["desktop.install_link.fallback.heading"] = "Beanspruchungslink manuell offnen";
+            localized["desktop.install_link.fallback.summary"] = "Chummer konnte den Browser nicht automatisch offnen. Offnen oder kopieren Sie diesen Beanspruchungslink, beanspruchen Sie diese Kopie und kehren Sie dann hierher zuruck. Der lokale Callback beendet den Vorgang automatisch, sobald er eintrifft.";
+            localized["desktop.install_link.fallback.detail"] = "Wenn der Browser auf diesem Desktop blockiert ist, konnen Sie die Beanspruchung trotzdem in einem beliebigen Browser abschliessen und danach hierher zuruckkehren.";
+            localized["desktop.install_link.fallback.detail_with_reason"] = "Browser-Detail: {0}";
+            localized["desktop.install_link.fallback.claim_url_label"] = "Beanspruchungslink";
             localized["desktop.install_link.status.clipboard_unavailable"] = "Der Zugriff auf die Zwischenablage ist auf diesem Host nicht verfügbar.";
             localized["desktop.install_link.status.install_id_copied"] = "Die Installations-ID wurde in die Zwischenablage kopiert.";
             localized["desktop.install_link.status.opened_work_route"] = "Der Arbeitsbereich wurde geöffnet.";
@@ -777,7 +789,7 @@ public static class DesktopLocalizationCatalog
             localized["desktop.support_case.context.fixed_release"] = "Behobenes Release: {0}";
             localized["desktop.support_case.context.affected_install"] = "Betroffene Installation: {0}";
             localized["desktop.support_case.context.release_progress"] = "Release-Fortschritt: {0}";
-            localized["desktop.support_case.context.verification"] = "Bestätigung: {0}";
+            localized["desktop.support_case.context.verification"] = "Prüfung: {0}";
             localized["desktop.support_case.context.follow_up"] = "Nachverfolgung: {0}";
             localized["desktop.support_case.context.detail"] = "Detail: {0}";
             localized["desktop.support_case.context.timeline_entry"] = "{0} UTC | {1} | {2}";
@@ -851,7 +863,7 @@ public static class DesktopLocalizationCatalog
             localized["desktop.devices.context.claims_pending"] = "Claim-Link für {1} {2} bleibt bis {3} UTC bereit.";
             localized["desktop.devices.context.claims_pending_install"] = "Claim-Link ist bereits bis {2} UTC an Installation {1} gebunden.";
             localized["desktop.devices.context.claims_local_last"] = "Ein vorheriger Anmeldeversuch ist lokal auf dieser Installation gespeichert.";
-            localized["desktop.devices.context.claims_receipt"] = "Letzter Download: {0} · {1} {2} auf {3}/{4}, ausgestellt {5} UTC.";
+            localized["desktop.devices.context.claims_receipt"] = "Letzter Download: {0} · {1} {2} auf {3}/{4}, erstellt {5} UTC.";
             localized["desktop.devices.context.access_guest"] = "Verknüpfen Sie diese Installation, bevor Sie Kontowiederherstellung oder Supportverlauf nutzen.";
             localized["desktop.devices.context.access_claimed"] = "Support, Updates und Arbeitsbereich-Wiederherstellung sind mit dieser verknüpften Installation verbunden.";
             localized["desktop.devices.context.access_no_grants"] = "Für dieses Konto sind noch keine aktiven Zugriffsgrants sichtbar.";
@@ -979,9 +991,9 @@ public static class DesktopLocalizationCatalog
             localized["desktop.home.button.open_devices_access"] = "Votre copie";
             localized["desktop.home.button.open_current_workspace"] = "Ouvrir l'espace de travail actuel";
             localized["desktop.home.button.open_current_campaign_workspace"] = "Ouvrir l'espace de campagne actuel";
-            localized["desktop.home.button.open_my_artifacts"] = "Ouvrir mes artefacts";
-            localized["desktop.home.button.open_campaign_artifacts"] = "Ouvrir les artefacts de campagne";
-            localized["desktop.home.button.open_published_artifacts"] = "Ouvrir les artefacts publies";
+            localized["desktop.home.button.open_my_artifacts"] = "Ouvrir mes fichiers";
+            localized["desktop.home.button.open_campaign_artifacts"] = "Ouvrir les fichiers de campagne";
+            localized["desktop.home.button.open_published_artifacts"] = "Ouvrir les fichiers publies";
             localized["desktop.home.button.open_build_followthrough"] = "Ouvrir le suivi build";
             localized["desktop.home.button.open_workspace_followthrough"] = "Ouvrir le suivi workspace";
             localized["desktop.home.button.open_update_status"] = "Ouvrir l'etat de mise a jour";
@@ -1007,7 +1019,7 @@ public static class DesktopLocalizationCatalog
             localized["desktop.home.value.never"] = "Jamais";
             localized["desktop.home.value.unknown"] = "Inconnu";
             localized["desktop.home.value.none_published"] = "Rien publie";
-            localized["desktop.home.value.no_supportability_summary"] = "Aucun resume de supportabilite publie pour le moment.";
+            localized["desktop.home.value.no_supportability_summary"] = "Aucun resume de support n'est disponible pour le moment.";
             localized["desktop.home.value.no_fix_guidance"] = "Aucune recommandation de correctif publiee pour le moment.";
             localized["desktop.home.intro.claim_failed_guest"] = "Cette copie fonctionne encore en invite car la derniere tentative de reclamation a echoue. Reclamez-la avant de compter sur le support, les avis de correctif ou la restauration.";
             localized["desktop.home.intro.guest_recommended_link"] = "Cette copie n'est pas encore liee. Reclamez-la quand vous voulez associer recuperation et historique de support.";
@@ -1144,7 +1156,7 @@ public static class DesktopLocalizationCatalog
             localized["desktop.crash.section.recovery"] = "Récupération et suivi";
             localized["desktop.crash.button.retry_send"] = "Réessayer l'envoi";
             localized["desktop.crash.button.keep_local_only"] = "Conserver localement";
-            localized["desktop.crash.intro.preview"] = "Ceci est un apercu borne de crash pour verification live sans incident reel en attente.";
+            localized["desktop.crash.intro.preview"] = "Ceci est un apercu local de recuperation apres crash sans incident reel en attente.";
             localized["desktop.crash.intro.current"] = "La derniere capture de crash pour cette installation est disponible et peut etre suivie en securite.";
             localized["desktop.crash.recovery.preview"] = "Aucun crash reel n'est en attente ; cette surface reste active en mode apercu sur.";
             localized["desktop.crash.recovery.incident"] = "ID incident : {0}";
@@ -1183,7 +1195,7 @@ public static class DesktopLocalizationCatalog
             localized["desktop.report.feedback.detail_label"] = "Detail";
             localized["desktop.report.feedback.detail_watermark"] = "Optionnel : contexte supplementaire, proposition ou resultat souhaite";
             localized["desktop.report.context.manifest"] = "Manifeste desktop : {0}";
-            localized["desktop.report.context.supportability"] = "Posture de supportabilite : {0}";
+            localized["desktop.report.context.supportability"] = "Statut du support : {0}";
             localized["desktop.support_case.title"] = "Dossier de support suivi";
             localized["desktop.support_case.section.summary"] = "Résumé du dossier et posture de confiance";
             localized["desktop.support_case.section.timeline"] = "Chronologie et preuves";
@@ -1197,7 +1209,7 @@ public static class DesktopLocalizationCatalog
             localized["desktop.support_case.intro.action_needed"] = "Ce dossier suivi a encore besoin d'un suivi avant de pouvoir etre clos pour cette copie.";
             localized["desktop.support_case.intro.current"] = "Ce dossier suivi est ancre au desktop flagship et peut expliquer pourquoi il reste ouvert, ce qui a change et ce qu'il est sur de faire ensuite.";
             localized["desktop.support_case.status.current"] = "Statut dossier suivi: le detail actuel et le suivi sur de desktop sont charges.";
-            localized["desktop.support_case.status.preview"] = "Statut dossier suivi: apercu synthetique charge pour la verification smoke desktop flagship.";
+            localized["desktop.support_case.status.preview"] = "Statut dossier suivi: apercu synthetique charge localement.";
             localized["desktop.support_case.status.case_unavailable"] = "Statut dossier suivi: l'enregistrement detaille de support est indisponible, donc le digest local borne reste affiche.";
             localized["desktop.support_case.status.refresh_failed"] = "Statut dossier suivi: l'actualisation a echoue, donc la derniere projection desktop valide reste affichee.";
             localized["desktop.support_case.context.case_id"] = "ID du dossier: {0}";
@@ -1209,7 +1221,7 @@ public static class DesktopLocalizationCatalog
             localized["desktop.support_case.context.fixed_release"] = "Version corrigee: {0}";
             localized["desktop.support_case.context.affected_install"] = "Installation affectee: {0}";
             localized["desktop.support_case.context.release_progress"] = "Progression de version: {0}";
-            localized["desktop.support_case.context.verification"] = "Verification: {0}";
+            localized["desktop.support_case.context.verification"] = "Controle: {0}";
             localized["desktop.support_case.context.follow_up"] = "Suivi: {0}";
             localized["desktop.support_case.context.detail"] = "Detail: {0}";
             localized["desktop.support_case.context.timeline_entry"] = "{0} UTC | {1} | {2}";
@@ -1283,7 +1295,7 @@ public static class DesktopLocalizationCatalog
             localized["desktop.devices.context.claims_pending"] = "Claim this copy for {1} {2} stays ready until {3} UTC.";
             localized["desktop.devices.context.claims_pending_install"] = "Claim this copy is already bound to install {1} until {2} UTC.";
             localized["desktop.devices.context.claims_local_last"] = "A previous claim attempt is saved locally on this install.";
-            localized["desktop.devices.context.claims_receipt"] = "Recent download: {0} · {1} {2} on {3}/{4}, issued {5} UTC.";
+            localized["desktop.devices.context.claims_receipt"] = "Recent download: {0} · {1} {2} for {3}/{4}, added {5} UTC.";
             localized["desktop.devices.context.access_guest"] = "Claim this copy before using account recovery or support history.";
             localized["desktop.devices.context.access_claimed"] = "Support, updates, and workspace recovery are attached to this linked install.";
             localized["desktop.devices.context.access_no_grants"] = "No active access grants are visible for this account yet.";
@@ -1411,9 +1423,9 @@ public static class DesktopLocalizationCatalog
             localized["desktop.home.button.open_devices_access"] = "Your Copy";
             localized["desktop.home.button.open_current_workspace"] = "現在のワークスペースを開く";
             localized["desktop.home.button.open_current_campaign_workspace"] = "現在のキャンペーンワークスペースを開く";
-            localized["desktop.home.button.open_my_artifacts"] = "自分のアーティファクトを開く";
-            localized["desktop.home.button.open_campaign_artifacts"] = "キャンペーンのアーティファクトを開く";
-            localized["desktop.home.button.open_published_artifacts"] = "公開済みアーティファクトを開く";
+            localized["desktop.home.button.open_my_artifacts"] = "自分のファイルを開く";
+            localized["desktop.home.button.open_campaign_artifacts"] = "キャンペーンのファイルを開く";
+            localized["desktop.home.button.open_published_artifacts"] = "公開済みファイルを開く";
             localized["desktop.home.button.open_build_followthrough"] = "ビルドのフォローアップを開く";
             localized["desktop.home.button.open_workspace_followthrough"] = "ワークスペースのフォローアップを開く";
             localized["desktop.home.button.open_update_status"] = "更新ステータスを開く";
@@ -1439,7 +1451,7 @@ public static class DesktopLocalizationCatalog
             localized["desktop.home.value.never"] = "なし";
             localized["desktop.home.value.unknown"] = "不明";
             localized["desktop.home.value.none_published"] = "公開なし";
-            localized["desktop.home.value.no_supportability_summary"] = "サポート性サマリーはまだ公開されていません。";
+            localized["desktop.home.value.no_supportability_summary"] = "サポート概要はまだ利用できません。";
             localized["desktop.home.value.no_fix_guidance"] = "修正ガイダンスはまだ公開されていません。";
             localized["desktop.home.intro.claim_failed_guest"] = "前回の請求試行が失敗したため、このコピーはまだゲストとして実行されています。サポート、修正通知、復元を頼る前にこのコピーを取得してください。";
             localized["desktop.home.intro.guest_recommended_link"] = "このコピーはまだリンクされていません。復旧とサポート履歴を紐付けたいときに取得してください。";
@@ -1576,7 +1588,7 @@ public static class DesktopLocalizationCatalog
             localized["desktop.crash.section.recovery"] = "復旧とフォローアップ";
             localized["desktop.crash.button.retry_send"] = "再送信";
             localized["desktop.crash.button.keep_local_only"] = "ローカルのみ保持";
-            localized["desktop.crash.intro.preview"] = "これは実際の保留クラッシュなしでライブ検証するための限定クラッシュプレビューです。";
+            localized["desktop.crash.intro.preview"] = "これは実際の保留クラッシュなしで開くローカルのクラッシュ復旧プレビューです。";
             localized["desktop.crash.intro.current"] = "このインストールの最新クラッシュ取得情報が利用可能で、安全にフォローアップできます。";
             localized["desktop.crash.recovery.preview"] = "実際の保留クラッシュはありません。この画面は安全なプレビューモードのままです。";
             localized["desktop.crash.recovery.incident"] = "インシデント ID: {0}";
@@ -1615,7 +1627,7 @@ public static class DesktopLocalizationCatalog
             localized["desktop.report.feedback.detail_label"] = "詳細";
             localized["desktop.report.feedback.detail_watermark"] = "任意: 追加文脈、提案、または望ましい結果";
             localized["desktop.report.context.manifest"] = "デスクトップマニフェスト: {0}";
-            localized["desktop.report.context.supportability"] = "サポータビリティ姿勢: {0}";
+            localized["desktop.report.context.supportability"] = "サポート状態: {0}";
             localized["desktop.support_case.title"] = "追跡サポートケース";
             localized["desktop.support_case.section.summary"] = "ケース概要と信頼姿勢";
             localized["desktop.support_case.section.timeline"] = "タイムラインと証拠";
@@ -1641,7 +1653,7 @@ public static class DesktopLocalizationCatalog
             localized["desktop.support_case.context.fixed_release"] = "修正済みリリース: {0}";
             localized["desktop.support_case.context.affected_install"] = "影響を受けるインストール: {0}";
             localized["desktop.support_case.context.release_progress"] = "リリース進行: {0}";
-            localized["desktop.support_case.context.verification"] = "検証: {0}";
+            localized["desktop.support_case.context.verification"] = "確認: {0}";
             localized["desktop.support_case.context.follow_up"] = "フォローアップ: {0}";
             localized["desktop.support_case.context.detail"] = "詳細: {0}";
             localized["desktop.support_case.context.timeline_entry"] = "{0} UTC | {1} | {2}";
@@ -1715,7 +1727,7 @@ public static class DesktopLocalizationCatalog
             localized["desktop.devices.context.claims_pending"] = "Claim this copy for {1} {2} stays ready until {3} UTC.";
             localized["desktop.devices.context.claims_pending_install"] = "Claim this copy is already bound to install {1} until {2} UTC.";
             localized["desktop.devices.context.claims_local_last"] = "A previous claim attempt is saved locally on this install.";
-            localized["desktop.devices.context.claims_receipt"] = "Recent download: {0} · {1} {2} on {3}/{4}, issued {5} UTC.";
+            localized["desktop.devices.context.claims_receipt"] = "Recent download: {0} · {1} {2} for {3}/{4}, added {5} UTC.";
             localized["desktop.devices.context.access_guest"] = "Link this install before using account recovery or support history.";
             localized["desktop.devices.context.access_claimed"] = "Support, updates, and workspace recovery are attached to this linked install.";
             localized["desktop.devices.context.access_no_grants"] = "No active access grants are visible for this account yet.";
@@ -1843,9 +1855,9 @@ public static class DesktopLocalizationCatalog
             localized["desktop.home.button.open_devices_access"] = "Sua copia";
             localized["desktop.home.button.open_current_workspace"] = "Abrir workspace atual";
             localized["desktop.home.button.open_current_campaign_workspace"] = "Abrir workspace atual da campanha";
-            localized["desktop.home.button.open_my_artifacts"] = "Abrir meus artefatos";
-            localized["desktop.home.button.open_campaign_artifacts"] = "Abrir artefatos da campanha";
-            localized["desktop.home.button.open_published_artifacts"] = "Abrir artefatos publicados";
+            localized["desktop.home.button.open_my_artifacts"] = "Abrir meus arquivos";
+            localized["desktop.home.button.open_campaign_artifacts"] = "Abrir arquivos da campanha";
+            localized["desktop.home.button.open_published_artifacts"] = "Abrir arquivos publicados";
             localized["desktop.home.button.open_build_followthrough"] = "Abrir acompanhamento de build";
             localized["desktop.home.button.open_workspace_followthrough"] = "Abrir acompanhamento de workspace";
             localized["desktop.home.button.open_update_status"] = "Abrir status de atualizacao";
@@ -1871,7 +1883,7 @@ public static class DesktopLocalizationCatalog
             localized["desktop.home.value.never"] = "Nunca";
             localized["desktop.home.value.unknown"] = "Desconhecido";
             localized["desktop.home.value.none_published"] = "Nada publicado";
-            localized["desktop.home.value.no_supportability_summary"] = "Nenhum resumo de suportabilidade foi publicado ainda.";
+            localized["desktop.home.value.no_supportability_summary"] = "Nenhum resumo de suporte está disponível ainda.";
             localized["desktop.home.value.no_fix_guidance"] = "Nenhuma orientacao de correcao foi publicada ainda.";
             localized["desktop.home.intro.claim_failed_guest"] = "Esta copia ainda esta em modo convidado porque a ultima tentativa de reivindicacao falhou. Reivindique-a antes de confiar em suporte, avisos de correcao ou recuperacao.";
             localized["desktop.home.intro.guest_recommended_link"] = "Esta copia ainda nao esta vinculada. Reivindique-a quando quiser manter recuperacao e historico de suporte anexados.";
@@ -2008,7 +2020,7 @@ public static class DesktopLocalizationCatalog
             localized["desktop.crash.section.recovery"] = "Recuperação e acompanhamento";
             localized["desktop.crash.button.retry_send"] = "Tentar envio novamente";
             localized["desktop.crash.button.keep_local_only"] = "Manter apenas local";
-            localized["desktop.crash.intro.preview"] = "Esta e uma visualizacao limitada de crash para verificacao ao vivo sem incidente real pendente.";
+            localized["desktop.crash.intro.preview"] = "Esta e uma visualizacao local de recuperacao de crash sem incidente real pendente.";
             localized["desktop.crash.intro.current"] = "A ultima captura de crash desta instalacao esta disponivel e pode ser acompanhada com seguranca.";
             localized["desktop.crash.recovery.preview"] = "Nao ha crash real pendente; esta superficie permanece em modo de visualizacao segura.";
             localized["desktop.crash.recovery.incident"] = "ID do incidente: {0}";
@@ -2073,7 +2085,7 @@ public static class DesktopLocalizationCatalog
             localized["desktop.support_case.context.fixed_release"] = "Release corrigido: {0}";
             localized["desktop.support_case.context.affected_install"] = "Instalacao afetada: {0}";
             localized["desktop.support_case.context.release_progress"] = "Progresso do release: {0}";
-            localized["desktop.support_case.context.verification"] = "Verificacao: {0}";
+            localized["desktop.support_case.context.verification"] = "Conferencia: {0}";
             localized["desktop.support_case.context.follow_up"] = "Acompanhamento: {0}";
             localized["desktop.support_case.context.detail"] = "Detalhe: {0}";
             localized["desktop.support_case.context.timeline_entry"] = "{0} UTC | {1} | {2}";
@@ -2147,7 +2159,7 @@ public static class DesktopLocalizationCatalog
             localized["desktop.devices.context.claims_pending"] = "Claim this copy for {1} {2} stays ready until {3} UTC.";
             localized["desktop.devices.context.claims_pending_install"] = "Claim this copy is already bound to install {1} until {2} UTC.";
             localized["desktop.devices.context.claims_local_last"] = "A previous claim attempt is saved locally on this install.";
-            localized["desktop.devices.context.claims_receipt"] = "Recent claim: {0} · {1} {2} on {3}/{4}, issued {5} UTC.";
+            localized["desktop.devices.context.claims_receipt"] = "Recent download: {0} · {1} {2} for {3}/{4}, added {5} UTC.";
             localized["desktop.devices.context.access_guest"] = "Claim this copy before using recovery or support history.";
             localized["desktop.devices.context.access_claimed"] = "Support, updates, and workspace recovery are attached to this linked install.";
             localized["desktop.devices.context.access_no_grants"] = "No active access grants are visible for this account yet.";
@@ -2275,9 +2287,9 @@ public static class DesktopLocalizationCatalog
             localized["desktop.home.button.open_devices_access"] = "Your Copy";
             localized["desktop.home.button.open_current_workspace"] = "打开当前工作区";
             localized["desktop.home.button.open_current_campaign_workspace"] = "打开当前战役工作区";
-            localized["desktop.home.button.open_my_artifacts"] = "打开我的工件";
-            localized["desktop.home.button.open_campaign_artifacts"] = "打开战役工件";
-            localized["desktop.home.button.open_published_artifacts"] = "打开已发布工件";
+            localized["desktop.home.button.open_my_artifacts"] = "打开我的文件";
+            localized["desktop.home.button.open_campaign_artifacts"] = "打开战役文件";
+            localized["desktop.home.button.open_published_artifacts"] = "打开已发布文件";
             localized["desktop.home.button.open_build_followthrough"] = "打开构建跟进";
             localized["desktop.home.button.open_workspace_followthrough"] = "打开工作区跟进";
             localized["desktop.home.button.open_update_status"] = "打开更新状态";
@@ -2303,7 +2315,7 @@ public static class DesktopLocalizationCatalog
             localized["desktop.home.value.never"] = "从不";
             localized["desktop.home.value.unknown"] = "未知";
             localized["desktop.home.value.none_published"] = "未发布";
-            localized["desktop.home.value.no_supportability_summary"] = "尚未发布支持性摘要。";
+            localized["desktop.home.value.no_supportability_summary"] = "暂时没有可用的支持摘要。";
             localized["desktop.home.value.no_fix_guidance"] = "尚未发布修复建议。";
             localized["desktop.home.intro.claim_failed_guest"] = "上次认领失败，因此此副本仍以访客模式运行。依赖支持、修复通知或恢复前，请先认领此副本。";
             localized["desktop.home.intro.guest_recommended_link"] = "此副本尚未关联。需要恢复和支持历史时再认领即可。";
@@ -2440,7 +2452,7 @@ public static class DesktopLocalizationCatalog
             localized["desktop.crash.section.recovery"] = "恢复与跟进";
             localized["desktop.crash.button.retry_send"] = "重试发送";
             localized["desktop.crash.button.keep_local_only"] = "仅保留本地";
-            localized["desktop.crash.intro.preview"] = "这是一个受限崩溃预览，用于在无真实待处理事故时进行实时验证。";
+            localized["desktop.crash.intro.preview"] = "这是一个本地崩溃恢复预览，目前没有真实待处理的崩溃。";
             localized["desktop.crash.intro.current"] = "此安装最近一次崩溃采集可用，现可安全跟进。";
             localized["desktop.crash.recovery.preview"] = "当前没有真实待处理崩溃；该界面保持为安全预览模式。";
             localized["desktop.crash.recovery.incident"] = "事件 ID: {0}";
@@ -2505,7 +2517,7 @@ public static class DesktopLocalizationCatalog
             localized["desktop.support_case.context.fixed_release"] = "已修复版本: {0}";
             localized["desktop.support_case.context.affected_install"] = "受影响安装: {0}";
             localized["desktop.support_case.context.release_progress"] = "发布进度: {0}";
-            localized["desktop.support_case.context.verification"] = "验证: {0}";
+            localized["desktop.support_case.context.verification"] = "检查: {0}";
             localized["desktop.support_case.context.follow_up"] = "后续跟进: {0}";
             localized["desktop.support_case.context.detail"] = "详情: {0}";
             localized["desktop.support_case.context.timeline_entry"] = "{0} UTC | {1} | {2}";
@@ -2579,7 +2591,7 @@ public static class DesktopLocalizationCatalog
             localized["desktop.devices.context.claims_pending"] = "Claim this copy for {1} {2} stays ready until {3} UTC.";
             localized["desktop.devices.context.claims_pending_install"] = "Claim this copy is already bound to install {1} until {2} UTC.";
             localized["desktop.devices.context.claims_local_last"] = "A previous claim attempt is saved locally on this install.";
-            localized["desktop.devices.context.claims_receipt"] = "Recent claim: {0} · {1} {2} on {3}/{4}, issued {5} UTC.";
+            localized["desktop.devices.context.claims_receipt"] = "Recent download: {0} · {1} {2} for {3}/{4}, added {5} UTC.";
             localized["desktop.devices.context.access_guest"] = "Claim this copy before using recovery or support history.";
             localized["desktop.devices.context.access_claimed"] = "Support, updates, and workspace recovery are attached to this linked install.";
             localized["desktop.devices.context.access_no_grants"] = "No active access grants are visible for this account yet.";
@@ -2679,12 +2691,12 @@ public static class DesktopLocalizationCatalog
         string normalizedLanguage = NormalizeOrDefault(languageCode);
         if (TryGetLocalizedValue(normalizedLanguage, key, out string? value))
         {
-            return PlayerFacingCopyHumanizer.Clean(value);
+            return UndetectableHumanizerCopyAdapter.Humanize(value);
         }
 
         if (TryGetLocalizedValue(DefaultLanguage, key, out value))
         {
-            string cleaned = PlayerFacingCopyHumanizer.Clean(value);
+            string cleaned = UndetectableHumanizerCopyAdapter.Humanize(value);
             return normalizedLanguage == DefaultLanguage ? cleaned : string.Concat(cleaned, EnglishFallbackMarker, "[", normalizedLanguage, "]");
         }
 
@@ -2705,7 +2717,7 @@ public static class DesktopLocalizationCatalog
     }
 
     public static string GetRequiredFormattedString(string key, string? languageCode, params object[] values)
-        => PlayerFacingCopyHumanizer.Clean(string.Format(GetRequiredString(key, languageCode), values));
+        => UndetectableHumanizerCopyAdapter.Humanize(string.Format(GetRequiredString(key, languageCode), values));
 
     public static IReadOnlyList<string> RequiredTrustSurfaceKeys()
         => DefaultTrustSurfaceStrings.Keys.OrderBy(static key => key, StringComparer.Ordinal).ToArray();

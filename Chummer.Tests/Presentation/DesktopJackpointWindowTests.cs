@@ -18,5 +18,7 @@ public sealed class DesktopJackpointWindowTests
         StringAssert.Contains(source, "DesktopInstallLinkingRuntime.TryOpenRelativePortal(\"/account/jackpoint\")");
         StringAssert.Contains(source, "DesktopInstallLinkingRuntime.TryOpenRelativePortal(\"/jackpoint\")");
         StringAssert.Contains(source, "DesktopInstallLinkingRuntime.TryOpenRelativePortal(\"/account/creator\")");
+        Assert.IsFalse(source.Contains("follow-through", System.StringComparison.OrdinalIgnoreCase));
+        Assert.IsFalse(source.Contains("publication-safe", System.StringComparison.OrdinalIgnoreCase));
     }
 }

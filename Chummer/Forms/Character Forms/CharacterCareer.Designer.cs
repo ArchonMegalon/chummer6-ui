@@ -20939,7 +20939,7 @@ namespace Chummer
             // 
             // splitKarmaNuyen
             // 
-            this.splitKarmaNuyen.BackColor = System.Drawing.Color.LightBlue;
+            this.splitKarmaNuyen.BackColor = System.Drawing.SystemColors.InactiveCaption;
             this.splitKarmaNuyen.Dock = System.Windows.Forms.DockStyle.Fill;
             this.splitKarmaNuyen.Location = new System.Drawing.Point(3, 3);
             this.splitKarmaNuyen.Name = "splitKarmaNuyen";

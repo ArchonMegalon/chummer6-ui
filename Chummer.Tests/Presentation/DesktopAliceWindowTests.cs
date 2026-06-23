@@ -225,8 +225,11 @@ public sealed class DesktopAliceWindowTests
     [TestMethod]
     public void PlayerFacingCopyHumanizer_removes_provider_and_proof_language_from_visible_copy()
     {
-        string cleaned = Chummer.Presentation.PlayerFacingCopyHumanizer.Clean(
-            "ALICE generated proofs and an Unmixr AI narration receipt from the approved origin canon through a media-factory provider lane after validation checks, audit verdict, registry posture, explain receipt, grounded explain receipt, explain companion, explain proof, proof trail, receipt-backed authority truth, environment truth, Public Proof Shelf, Rule Environment Studio, Before-after diffs, and available follow-up. The synthetic flagship client keeps reporter-ready release path copy visible in the signed-in support lane.");
+        const string raw = "ALICE generated proofs and an Unmixr AI narration receipt from the approved origin canon through a media-factory provider lane after validation checks, audit verdict, registry posture, explain receipt, grounded explain receipt, explain companion, explain proof, proof trail, receipt-backed authority truth, environment truth, Public Proof Shelf, Rule Environment Studio, Before-after diffs, and available follow-up. The synthetic flagship client keeps reporter-ready release path copy visible in the signed-in support lane.";
+        string cleaned = Chummer.Presentation.UndetectableHumanizerCopyAdapter.Humanize(raw);
+        string direct = Chummer.Presentation.UndetectableHumanizerCopyAdapter.Humanize(raw);
+
+        Assert.AreEqual(direct, cleaned);
 
         StringAssert.Contains(cleaned, "Alice");
         StringAssert.Contains(cleaned, "Unmixr");
@@ -275,5 +278,41 @@ public sealed class DesktopAliceWindowTests
         Assert.IsFalse(cleaned.Contains("flagship", StringComparison.OrdinalIgnoreCase));
         Assert.IsFalse(cleaned.Contains("reporter-ready", StringComparison.OrdinalIgnoreCase));
         Assert.IsFalse(cleaned.Contains("signed-in support", StringComparison.OrdinalIgnoreCase));
+    }
+
+    [TestMethod]
+    public void Active_presentation_surfaces_use_the_undetectable_humanizer_adapter_directly()
+    {
+        string repoRoot = TestContextLocator.ResolveChummerPresentationRepoRoot();
+        string[] activeSurfaceFiles =
+        [
+            Path.Combine(repoRoot, "Chummer.Avalonia", "DesktopTrustReceiptText.cs"),
+            Path.Combine(repoRoot, "Chummer.Avalonia", "DesktopAliceWindow.cs"),
+            Path.Combine(repoRoot, "Chummer.Avalonia", "DesktopShellTheme.cs"),
+            Path.Combine(repoRoot, "Chummer.Avalonia", "DesktopHorizonsWindow.cs"),
+            Path.Combine(repoRoot, "Chummer.Avalonia", "DesktopHorizonWindowScaffold.cs"),
+            Path.Combine(repoRoot, "Chummer.Avalonia", "DesktopExplainCompanionLauncher.cs"),
+            Path.Combine(repoRoot, "Chummer.Blazor", "Components", "Shell", "ImportPanel.razor"),
+            Path.Combine(repoRoot, "Chummer.Blazor", "Components", "Shell", "DialogTrustReceiptText.cs"),
+            Path.Combine(repoRoot, "Chummer.Blazor", "Components", "Shell", "ResultPanel.razor"),
+            Path.Combine(repoRoot, "Chummer.Blazor", "Components", "Shared", "ExplainTracePanel.razor"),
+            Path.Combine(repoRoot, "Chummer.Blazor", "Components", "Shared", "RuntimeInspectorPanel.razor"),
+            Path.Combine(repoRoot, "Chummer.Presentation", "HttpChummerClient.cs"),
+            Path.Combine(repoRoot, "Chummer.Presentation", "Rulesets", "RulesetUiDirectiveCatalog.cs"),
+            Path.Combine(repoRoot, "Chummer.Presentation", "Overview", "DesktopHomeCampaignServerPlane.cs"),
+            Path.Combine(repoRoot, "Chummer.Presentation", "Overview", "DesktopHomeCampaignProjector.cs"),
+            Path.Combine(repoRoot, "Chummer.Presentation", "Overview", "DesktopHomeSupportProjector.cs"),
+            Path.Combine(repoRoot, "Chummer.Presentation", "Overview", "DesktopHomeBuildExplainProjector.cs"),
+            Path.Combine(repoRoot, "Chummer.Presentation", "Overview", "DesktopDialogFactory.cs"),
+            Path.Combine(repoRoot, "Chummer.Presentation", "Overview", "DesktopLocalizationCatalog.cs"),
+        ];
+
+        foreach (string path in activeSurfaceFiles)
+        {
+            string source = File.ReadAllText(path);
+            StringAssert.Contains(source, "UndetectableHumanizerCopyAdapter");
+            Assert.IsFalse(source.Contains("PlayerFacingCopyHumanizer.Clean", StringComparison.Ordinal), path);
+            Assert.IsFalse(source.Contains("PlayerFacingCopyHumanizer.CleanLines", StringComparison.Ordinal), path);
+        }
     }
 }

@@ -393,7 +393,7 @@ internal sealed class DesktopCreatorPublicationWindow : Window
 
         if (_portableExchangePreview is not null)
         {
-            lines.Add($"Portable exchange follow-through: {_portableExchangePreview.NextSafeAction}");
+            lines.Add($"Portable exchange next step: {_portableExchangePreview.NextSafeAction}");
         }
 
         return string.Join("\n", lines);
@@ -424,7 +424,7 @@ internal sealed class DesktopCreatorPublicationWindow : Window
             $"Moderation flow: {ResolveModerationSummary()}",
             $"Review path: {ResolveModerationReviewSummary()}",
             $"Correction path: {ResolveCorrectionSummary()}",
-            $"Support follow-through: {_supportProjection.Summary}"
+            $"Support status: {_supportProjection.Summary}"
         ];
 
         foreach (string watchout in _campaignProjection.Watchouts.Where(IsPublicationWatchout).Take(4))
@@ -434,7 +434,7 @@ internal sealed class DesktopCreatorPublicationWindow : Window
 
         if (_supportProjection.NeedsAttention)
         {
-            lines.Add("Moderation follow-through: a tracked support case is active on this install before discovery widens further.");
+            lines.Add("Moderation status: a tracked support case is active on this install before discovery widens further.");
         }
 
         return string.Join("\n", lines);
@@ -452,10 +452,10 @@ internal sealed class DesktopCreatorPublicationWindow : Window
         }
         else
         {
-            actions.Add(CreateButton(DesktopLocalizationCatalog.GetRequiredString("desktop.install_link.button.link_copy", _preferences.Language), OpenInstallLinkingAsync, isPrimary: true));
+            actions.Add(CreateButton(DesktopDevicesAccessWindow.BuildInstallLinkEntryButtonLabel(_installState, _preferences.Language), OpenInstallLinkingAsync, isPrimary: true));
         }
 
-        actions.Add(CreateButton("Open public files", () => Task.FromResult(OpenArtifactShelfView("public"))));
+        actions.Add(CreateButton("Open Public Files", () => Task.FromResult(OpenArtifactShelfView("public"))));
         actions.Add(CreateButton("Review moderation", OpenModerationSurfaceAsync));
         actions.Add(CreateButton("Open campaign", OpenCampaignWorkspaceAsync));
 
@@ -637,8 +637,8 @@ internal sealed class DesktopCreatorPublicationWindow : Window
 
     private string ResolveArtifactShelfSummary()
         => DesktopInstallLinkingRuntime.IsClaimed(_installState)
-            ? "Open the creator artifact shelf from this desktop route before widening audience or discovery."
-            : "Link this install before you trust creator publication or moderation follow-through.";
+            ? "Open the creator files from this desktop route before widening audience or discovery."
+            : "Link this install before you rely on creator publication or moderation status.";
 
     private string ResolvePublicationNextSafeAction()
         => FirstNonBlank(

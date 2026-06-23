@@ -217,7 +217,7 @@ namespace Chummer
             this.lblQualitiesLabel.Size = new System.Drawing.Size(60, 13);
             this.lblQualitiesLabel.TabIndex = 62;
             this.lblQualitiesLabel.Tag = "String_Qualities";
-            this.lblQualitiesLabel.Text = "Qualities:";
+            this.lblQualitiesLabel.Text = "Included Qualities:";
             // 
             // pnlQualities
             // 

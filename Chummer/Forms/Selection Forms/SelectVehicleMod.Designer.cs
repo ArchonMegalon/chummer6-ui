@@ -273,7 +273,7 @@ namespace Chummer
             this.lblCategoryLabel.Size = new System.Drawing.Size(52, 13);
             this.lblCategoryLabel.TabIndex = 2;
             this.lblCategoryLabel.Tag = "Label_Category";
-            this.lblCategoryLabel.Text = "Category:";
+            this.lblCategoryLabel.Text = "Filter:";
             // 
             // lblLimit
             // 
@@ -338,7 +338,7 @@ namespace Chummer
             this.chkFreeItem.Size = new System.Drawing.Size(50, 17);
             this.chkFreeItem.TabIndex = 15;
             this.chkFreeItem.Tag = "Checkbox_Free";
-            this.chkFreeItem.Text = "Free!";
+            this.chkFreeItem.Text = "Free";
             this.chkFreeItem.UseVisualStyleBackColor = true;
             this.chkFreeItem.CheckedChanged += new System.EventHandler(this.chkFreeItem_CheckedChanged);
             // 
@@ -396,7 +396,7 @@ namespace Chummer
             this.lblMarkupLabel.Size = new System.Drawing.Size(46, 13);
             this.lblMarkupLabel.TabIndex = 16;
             this.lblMarkupLabel.Tag = "Label_SelectGear_Markup";
-            this.lblMarkupLabel.Text = "Markup:";
+            this.lblMarkupLabel.Text = "Price Adj.:";
             // 
             // lblMarkupPercentLabel
             // 
@@ -443,7 +443,7 @@ namespace Chummer
             this.chkBlackMarketDiscount.Size = new System.Drawing.Size(163, 17);
             this.chkBlackMarketDiscount.TabIndex = 39;
             this.chkBlackMarketDiscount.Tag = "Checkbox_BlackMarketDiscount";
-            this.chkBlackMarketDiscount.Text = "Black Market Discount (10%)";
+            this.chkBlackMarketDiscount.Text = "Market -10%";
             this.chkBlackMarketDiscount.UseVisualStyleBackColor = true;
             this.chkBlackMarketDiscount.Visible = false;
             this.chkBlackMarketDiscount.CheckedChanged += new System.EventHandler(this.chkBlackMarketDiscount_CheckedChanged);
@@ -458,7 +458,7 @@ namespace Chummer
             this.label1.Size = new System.Drawing.Size(52, 13);
             this.label1.TabIndex = 40;
             this.label1.Tag = "Label_Category";
-            this.label1.Text = "Category:";
+            this.label1.Text = "Filter:";
             // 
             // lblVehicleCapacity
             // 
@@ -495,7 +495,7 @@ namespace Chummer
             this.chkHideOverAvailLimit.Size = new System.Drawing.Size(175, 17);
             this.chkHideOverAvailLimit.TabIndex = 65;
             this.chkHideOverAvailLimit.Tag = "Checkbox_HideOverAvailLimit";
-            this.chkHideOverAvailLimit.Text = "Hide Items Over Avail Limit ({0})";
+            this.chkHideOverAvailLimit.Text = "Hide Over Avail ({0})";
             this.chkHideOverAvailLimit.UseVisualStyleBackColor = true;
             this.chkHideOverAvailLimit.CheckedChanged += new System.EventHandler(this.RefreshCurrentList);
             // 
@@ -539,7 +539,7 @@ namespace Chummer
             this.chkShowOnlyAffordItems.Size = new System.Drawing.Size(164, 17);
             this.chkShowOnlyAffordItems.TabIndex = 68;
             this.chkShowOnlyAffordItems.Tag = "Checkbox_ShowOnlyAffordItems";
-            this.chkShowOnlyAffordItems.Text = "Show Only Items I Can Afford";
+            this.chkShowOnlyAffordItems.Text = "Only Affordable";
             this.chkShowOnlyAffordItems.UseVisualStyleBackColor = true;
             this.chkShowOnlyAffordItems.CheckedChanged += new System.EventHandler(this.RefreshCurrentList);
             // 

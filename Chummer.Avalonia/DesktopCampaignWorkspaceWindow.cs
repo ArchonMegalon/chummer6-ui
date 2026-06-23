@@ -575,7 +575,7 @@ internal sealed class DesktopCampaignWorkspaceWindow : Window
             ]
             :
             [
-                CreateButton(DesktopLocalizationCatalog.GetRequiredString("desktop.install_link.button.link_copy", _preferences.Language), OpenInstallLinkingAsync, isPrimary: true),
+                CreateButton(DesktopDevicesAccessWindow.BuildInstallLinkEntryButtonLabel(_installState, _preferences.Language), OpenInstallLinkingAsync, isPrimary: true),
                 CreateButton(S("desktop.home.button.open_install_support"), OpenInstallSupport)
             ];
     }
@@ -605,7 +605,7 @@ internal sealed class DesktopCampaignWorkspaceWindow : Window
         }
         else
         {
-            actions.Add(CreateButton(DesktopLocalizationCatalog.GetRequiredString("desktop.install_link.button.link_copy", _preferences.Language), OpenInstallLinkingAsync, isPrimary: true));
+            actions.Add(CreateButton(DesktopDevicesAccessWindow.BuildInstallLinkEntryButtonLabel(_installState, _preferences.Language), OpenInstallLinkingAsync, isPrimary: true));
         }
 
         actions.Add(_recentWorkspaces.Count > 0 || !string.IsNullOrWhiteSpace(_campaignProjection.LeadWorkspaceId)

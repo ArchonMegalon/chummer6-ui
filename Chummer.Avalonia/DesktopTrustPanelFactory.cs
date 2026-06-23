@@ -9,12 +9,12 @@ namespace Chummer.Avalonia;
 
 internal static class DesktopTrustPanelFactory
 {
-    public static Control? CreateDialogPanel(DesktopDialogState dialog, string receiptText)
+    public static Control? CreateDialogPanel(DesktopDialogState dialog, string detailText)
     {
         IReadOnlyList<DesktopTrustReceiptSection> sections = DesktopTrustReceiptText.BuildDialogReceiptSections(dialog);
         if (sections.Count == 0)
         {
-            sections = BuildFallbackSections(receiptText);
+            sections = BuildFallbackSections(detailText);
         }
 
         if (sections.Count == 0)
@@ -30,7 +30,7 @@ internal static class DesktopTrustPanelFactory
                 SurfaceId: ResolveDialogSurfaceId(sections),
                 SurfaceLabel: ResolveDialogSurfaceLabel(sections),
                 Sections: sections,
-                SurfaceFamilyId: "explain_receipts:desktop",
+                SurfaceFamilyId: "explain_details:desktop",
                 RulesetId: ResolveDialogRulesetId(dialog, sections)),
             "OpenDesktopDialogExplainCompanionButton");
     }
@@ -59,7 +59,7 @@ internal static class DesktopTrustPanelFactory
                 SurfaceId: "explain_receipts:desktop.blocker",
                 SurfaceLabel: "Desktop blocker diagnostics explanation",
                 Sections: sections,
-                SurfaceFamilyId: "explain_receipts:desktop",
+                SurfaceFamilyId: "explain_details:desktop",
                 RuntimeFingerprint: updateStatus.HeadId),
             "OpenDesktopBlockerExplainCompanionButton");
     }
@@ -87,7 +87,7 @@ internal static class DesktopTrustPanelFactory
                 SurfaceId: "explain_receipts:desktop.blocker",
                 SurfaceLabel: "Desktop crash blocker explanation",
                 Sections: sections,
-                SurfaceFamilyId: "explain_receipts:desktop",
+                SurfaceFamilyId: "explain_details:desktop",
                 RuntimeFingerprint: report.HeadId),
             "OpenDesktopCrashBlockerExplainCompanionButton");
     }
@@ -156,9 +156,9 @@ internal static class DesktopTrustPanelFactory
 
     private static string ResolveDialogHeading(IReadOnlyList<DesktopTrustReceiptSection> sections)
         => sections.Any(static section => section.Lines.Any(static line =>
-            line.Contains("Import rule-environment receipt:", StringComparison.Ordinal)
+            line.Contains("Import target:", StringComparison.Ordinal)
             || line.Contains("Import rule-environment record:", StringComparison.Ordinal)
-            || line.Contains("Import receipt correlation key:", StringComparison.Ordinal)
+            || line.Contains("Import reference:", StringComparison.Ordinal)
             || line.Contains("Import record correlation key:", StringComparison.Ordinal)))
             ? "Import explanation and environment details"
             : "Explanation and environment details";
@@ -174,13 +174,13 @@ internal static class DesktopTrustPanelFactory
     }
 
     private static string ResolveDialogSurfaceId(IReadOnlyList<DesktopTrustReceiptSection> sections)
-        => ContainsLine(sections, "Import receipt correlation key:")
+        => ContainsLine(sections, "Import reference:")
             || ContainsLine(sections, "Import record correlation key:")
-            ? "explain_receipts:desktop.import"
-            : "explain_receipts:desktop.dialog";
+            ? "explain_details:desktop.import"
+            : "explain_details:desktop.dialog";
 
     private static string ResolveDialogSurfaceLabel(IReadOnlyList<DesktopTrustReceiptSection> sections)
-        => ContainsLine(sections, "Import receipt correlation key:")
+        => ContainsLine(sections, "Import reference:")
             || ContainsLine(sections, "Import record correlation key:")
             ? "Desktop import explanation"
             : "Desktop explanation";
@@ -198,15 +198,15 @@ internal static class DesktopTrustPanelFactory
 
         string? ruleEnvironmentLine = sections
             .SelectMany(static section => section.Lines)
-            .FirstOrDefault(static line => line.StartsWith("Import rule-environment receipt: target ruleset ", StringComparison.Ordinal));
+            .FirstOrDefault(static line => line.StartsWith("Import target: ", StringComparison.Ordinal));
         if (string.IsNullOrWhiteSpace(ruleEnvironmentLine))
         {
             return null;
         }
 
-        const string prefix = "Import rule-environment receipt: target ruleset ";
+        const string prefix = "Import target: ";
         string tail = ruleEnvironmentLine[prefix.Length..];
-        int end = tail.IndexOf(';', StringComparison.Ordinal);
+        int end = tail.IndexOf(' ', StringComparison.Ordinal);
         return (end >= 0 ? tail[..end] : tail).Trim();
     }
 
@@ -236,6 +236,6 @@ internal static class DesktopTrustPanelFactory
             return [];
         }
 
-        return [new DesktopTrustReceiptSection("Trust receipt fallback", normalizedLines)];
+        return [new DesktopTrustReceiptSection("Details", normalizedLines)];
     }
 }

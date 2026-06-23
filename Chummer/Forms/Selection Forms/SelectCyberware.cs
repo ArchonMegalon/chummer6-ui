@@ -2517,7 +2517,7 @@ namespace Chummer
 
                 if (lstCategory.Count > 0)
                 {
-                    lstCategory.Insert(0, new ListItem("Show All", await LanguageManager.GetStringAsync("String_ShowAll", token: token).ConfigureAwait(false)));
+                    lstCategory.Insert(0, new ListItem("Show All", "All Cyberware"));
                 }
 
                 string strOldSelected = _strSelectedCategory;
@@ -2536,6 +2536,7 @@ namespace Chummer
                         x.SelectedValue = strOldSelected;
                     if (x.SelectedIndex == -1 && lstCategory.Count > 0)
                         x.SelectedIndex = 0;
+                    x.Enabled = lstCategory.Count > 1;
                 }, token: token).ConfigureAwait(false);
             }
 

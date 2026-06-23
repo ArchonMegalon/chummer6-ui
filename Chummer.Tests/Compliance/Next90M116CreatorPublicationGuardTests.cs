@@ -44,7 +44,7 @@ public sealed class Next90M116CreatorPublicationGuardTests
         StringAssert.Contains(scriptText, "EXPECTED_DIRECT_PROOF_COMMAND = \"bash scripts/ai/milestones/next90-m116-ui-creator-publication-check.sh\"");
         StringAssert.Contains(scriptText, "EXPECTED_TARGETED_TEST_COMMAND = 'dotnet test --project Chummer.Tests/Chummer.Tests.csproj --filter \"FullyQualifiedName~Next90M116CreatorPublicationGuardTests\" --no-restore'");
         StringAssert.Contains(scriptText, "EXPECTED_PRESENTATION_TEST_COMMAND = 'dotnet test --project Chummer.Tests/Presentation/Chummer.Presentation.Signoff.Tests.csproj --filter \"AccessibilitySignoffSmokeTests\" --no-restore'");
-        StringAssert.Contains(scriptText, "\"Open Creator Artifact Shelf\"");
+        StringAssert.Contains(scriptText, "\"Open Creator Files\"");
         StringAssert.Contains(scriptText, "\"Review Moderation Flow\"");
         StringAssert.Contains(scriptText, "DesktopCreatorPublicationWindow.ShowAsync(");
         StringAssert.Contains(scriptText, "DesktopCreatorPublicationWindow.ShowModerationAsync(");

@@ -83,7 +83,7 @@ SOURCE_MARKERS = {
         "Trust ranking and lineage",
         "Moderation flow",
         "review discovery posture, trust ranking, lineage, and moderation flow",
-        'CreateButton("Open Creator Artifact Shelf", () => Task.FromResult(OpenArtifactShelfView("creator")), isPrimary: true)',
+        'CreateButton("Open Creator Files", () => Task.FromResult(OpenArtifactShelfView("creator")), isPrimary: true)',
         'CreateButton("Review Moderation Flow", OpenModerationSurfaceAsync)',
         "DesktopCampaignWorkspaceWindow.ShowAsync(this, _installState.HeadId, _portabilityActivity)",
         "DesktopRuleEnvironmentStudioWindow.ShowAsync(this, _installState.HeadId, _portabilityActivity)",

@@ -15,8 +15,8 @@ internal static class DesktopHorizonWindowScaffold
 
     public static ScrollViewer CreateScroller(string title, string intro, params Control[] sections)
     {
-        string cleanTitle = PlayerFacingCopyHumanizer.Clean(title);
-        string cleanIntro = PlayerFacingCopyHumanizer.Clean(intro);
+        string cleanTitle = UndetectableHumanizerCopyAdapter.Humanize(title);
+        string cleanIntro = UndetectableHumanizerCopyAdapter.Humanize(intro);
         StackPanel root = new()
         {
             Spacing = 14,
@@ -55,8 +55,8 @@ internal static class DesktopHorizonWindowScaffold
 
     public static Border CreateCard(string title, string summary, Control? leadControl, params Button[] actions)
     {
-        string cleanTitle = PlayerFacingCopyHumanizer.Clean(title);
-        string cleanSummary = PlayerFacingCopyHumanizer.Clean(summary);
+        string cleanTitle = UndetectableHumanizerCopyAdapter.Humanize(title);
+        string cleanSummary = UndetectableHumanizerCopyAdapter.Humanize(summary);
         StackPanel stack = new()
         {
             Spacing = 8,
@@ -110,7 +110,7 @@ internal static class DesktopHorizonWindowScaffold
     public static TextBlock CreateDetailText(string text)
         => new()
         {
-            Text = PlayerFacingCopyHumanizer.Clean(text),
+            Text = UndetectableHumanizerCopyAdapter.Humanize(text),
             TextWrapping = TextWrapping.Wrap
         };
 
@@ -140,7 +140,7 @@ internal static class DesktopHorizonWindowScaffold
             Padding = new Thickness(8, 4),
             Child = new TextBlock
             {
-                Text = PlayerFacingCopyHumanizer.Clean($"{label}: {value}"),
+                Text = UndetectableHumanizerCopyAdapter.Humanize($"{label}: {value}"),
                 Foreground = ResolveThemeBrush("ChummerShellInfoBrush", "#173A6C"),
                 FontWeight = FontWeight.SemiBold,
                 TextWrapping = TextWrapping.Wrap
@@ -152,7 +152,7 @@ internal static class DesktopHorizonWindowScaffold
     {
         Button button = new()
         {
-            Content = PlayerFacingCopyHumanizer.Clean(label),
+            Content = UndetectableHumanizerCopyAdapter.Humanize(label),
             MinWidth = 132,
             Padding = new Thickness(10, 6),
             HorizontalAlignment = HorizontalAlignment.Left
@@ -181,7 +181,7 @@ internal static class DesktopHorizonWindowScaffold
 
     public static Button CreateAsyncButton(Window owner, string label, Func<Task> action, bool closeWindow = false, bool isPrimary = false)
     {
-        string resolvedLabel = PlayerFacingCopyHumanizer.Clean(ResolveCloseActionLabel(label, closeWindow));
+        string resolvedLabel = UndetectableHumanizerCopyAdapter.Humanize(ResolveCloseActionLabel(label, closeWindow));
         Button button = new()
         {
             Content = resolvedLabel,

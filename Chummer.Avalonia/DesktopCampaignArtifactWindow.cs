@@ -14,7 +14,7 @@ internal sealed class DesktopCampaignArtifactWindow : Window
 {
     private const string CampaignConsequenceVisibilitySummary = "Campaign consequences stay visible on this promoted desktop route before the next session.";
     private const string CampaignMemoryStaleStateSummary = "Campaign memory stale-state check stays visible beside the current desktop workspace before any return decision.";
-    private const string CampaignNextSessionReturnActionSummary = "Next-session return actions stay visible here: reopen the current workspace, review Campaign Workspace, review devices/access, or get workspace help.";
+    private const string CampaignNextSessionReturnActionSummary = "Next-session return actions stay visible here: reopen the current workspace, review Campaign Workspace, review install and account, or get workspace help.";
     private readonly DesktopInstallLinkingState _installState;
     private readonly DesktopPreferenceState _preferences;
     private readonly IReadOnlyList<WorkspaceListItem> _recentWorkspaces;
@@ -110,7 +110,7 @@ internal sealed class DesktopCampaignArtifactWindow : Window
                         statusText,
                         CreateSection("Summary", summaryText, CreateActionRow(CreateSummaryActions())),
                         CreateSection("Briefing highlights", highlightsText, CreateActionRow(CreateHighlightsActions())),
-                        CreateSection("Follow-through", followThroughText, CreateActionRow(CreateFollowThroughActions())),
+                        CreateSection("Next step", followThroughText, CreateActionRow(CreateFollowThroughActions())),
                         new StackPanel
                         {
                             Orientation = Orientation.Horizontal,
@@ -451,7 +451,7 @@ internal sealed class DesktopCampaignArtifactWindow : Window
         if (_portableExchangePreview is not null)
         {
             lines.Add($"Portable exchange: {_portableExchangePreview.ReceiptSummary}");
-            lines.Add($"Replay follow-through: {_portableExchangePreview.NextSafeAction}");
+            lines.Add($"Replay next step: {_portableExchangePreview.NextSafeAction}");
         }
 
         return string.Join("\n", lines);
@@ -503,17 +503,17 @@ internal sealed class DesktopCampaignArtifactWindow : Window
         ];
 
         lines.Add(_artifactKind == DesktopCampaignArtifactKind.Primer
-            ? "Primer follow-through: open the current workspace, review devices/access, or route workspace support before replacing local work."
-            : "Mission briefing follow-through: reopen the current workspace, review Campaign Workspace, or route support before widening the artifact audience.");
+            ? "Primer next step: open the current workspace, review install and account, or route workspace support before replacing local work."
+            : "Mission briefing next step: reopen the current workspace, review Campaign Workspace, or route support before sharing this more widely.");
 
         if (_portableExchangePreview is not null)
         {
-            lines.Add($"Portable exchange follow-through: {_portableExchangePreview.NextSafeAction}");
+            lines.Add($"Portable exchange next step: {_portableExchangePreview.NextSafeAction}");
         }
 
         if (_supportProjection.NeedsAttention)
         {
-            lines.Add("Support: a tracked support follow-through is active on this install.");
+            lines.Add("Support: a tracked support case is active on this install.");
         }
 
         return string.Join("\n", lines.Distinct(StringComparer.OrdinalIgnoreCase));
@@ -545,7 +545,7 @@ internal sealed class DesktopCampaignArtifactWindow : Window
 
         if (DesktopInstallLinkingRuntime.IsClaimed(_installState))
         {
-            actions.Add(CreateButton("Open Campaign Artifact Shelf", () => Task.FromResult(OpenArtifactShelfView("campaign"))));
+            actions.Add(CreateButton("Open Campaign Files", () => Task.FromResult(OpenArtifactShelfView("campaign"))));
         }
 
         if (_portableExchangePreview is not null)
@@ -572,8 +572,8 @@ internal sealed class DesktopCampaignArtifactWindow : Window
 
         if (DesktopInstallLinkingRuntime.IsClaimed(_installState))
         {
-            actions.Add(CreateButton("Open My Artifact Shelf", () => Task.FromResult(OpenArtifactShelfView("personal"))));
-            actions.Add(CreateButton("Open Creator Artifact Shelf", () => Task.FromResult(OpenArtifactShelfView("creator"))));
+            actions.Add(CreateButton("Open My Files", () => Task.FromResult(OpenArtifactShelfView("personal"))));
+            actions.Add(CreateButton("Open Creator Files", () => Task.FromResult(OpenArtifactShelfView("creator"))));
         }
 
         actions.Add(CreateButton("Open Rule Environment Studio", OpenRuleEnvironmentStudioAsync));
@@ -600,7 +600,7 @@ internal sealed class DesktopCampaignArtifactWindow : Window
 
         if (DesktopInstallLinkingRuntime.IsClaimed(_installState))
         {
-            actions.Add(CreateButton("Open public files", () => Task.FromResult(OpenArtifactShelfView("public"))));
+            actions.Add(CreateButton("Open Public Files", () => Task.FromResult(OpenArtifactShelfView("public"))));
         }
 
         actions.Add(CreateButton("Open Rule Environment Studio", OpenRuleEnvironmentStudioAsync));

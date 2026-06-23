@@ -256,7 +256,7 @@ public sealed partial class CharacterOverviewPresenter
     {
         if (receipt.Portability is { } portability)
         {
-            return $"Portable export prepared: {receipt.FileName} ({receipt.DocumentLength} bytes). {portability.ReceiptSummary}";
+            return $"Portable export ready: {receipt.FileName} ({receipt.DocumentLength} bytes). {portability.ReceiptSummary}";
         }
 
         return $"Export prepared: {receipt.FileName} ({receipt.DocumentLength} bytes).";

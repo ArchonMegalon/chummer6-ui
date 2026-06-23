@@ -179,7 +179,7 @@ internal sealed class DesktopCrashRecoveryWindow : Window
             CurrentDirectoryLabel: Path.GetFileName(Directory.GetCurrentDirectory().TrimEnd(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar)),
             ExceptionType: "System.InvalidOperationException",
             ExceptionMessage: "Synthetic crash recovery preview.",
-            ExceptionDetail: "Synthetic crash recovery preview for flagship desktop smoke verification.");
+            ExceptionDetail: "Synthetic crash recovery preview for desktop smoke testing.");
 
         string reportPath = Path.Combine(reportDirectory, "report.json");
         string summaryPath = Path.Combine(reportDirectory, "summary.txt");
@@ -231,7 +231,7 @@ internal sealed class DesktopCrashRecoveryWindow : Window
                 F("desktop.crash.context.os", _pending.Report.OperatingSystem),
                 F("desktop.crash.context.arch", _pending.Report.ProcessArchitecture)
             }
-            .Concat(["Runtime crash diagnostics receipt"])
+            .Concat(["Runtime crash details"])
             .Concat(DesktopCrashRuntime.BuildCrashDiagnosticsReceiptLines(_pending.Report)));
     }
 

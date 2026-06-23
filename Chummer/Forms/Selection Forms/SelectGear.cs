@@ -192,7 +192,7 @@ namespace Chummer
 
                 if (_lstCategory.Count > 0)
                 {
-                    _lstCategory.Insert(0, new ListItem("Show All", await LanguageManager.GetStringAsync("String_ShowAll", token: _objGenericToken).ConfigureAwait(false)));
+                    _lstCategory.Insert(0, new ListItem("Show All", "All Gear"));
                 }
 
                 await cboCategory.PopulateWithListItemsAsync(_lstCategory, _objGenericToken).ConfigureAwait(false);
@@ -217,6 +217,7 @@ namespace Chummer
                         x.SelectedIndex = 0;
                     else
                         blnRefreshList = true;
+                    x.Enabled = _lstCategory.Count > 1;
                 }, _objGenericToken).ConfigureAwait(false);
                 if (blnRefreshList)
                     await RefreshList(token: _objGenericToken).ConfigureAwait(false);

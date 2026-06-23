@@ -147,18 +147,18 @@ public static class DesktopHomeSupportProjector
     private static DesktopHomeSupportProjection Humanize(DesktopHomeSupportProjection projection)
         => projection with
         {
-            Summary = PlayerFacingCopyHumanizer.Clean(projection.Summary),
-            NextSafeAction = PlayerFacingCopyHumanizer.Clean(projection.NextSafeAction),
-            InstallReadinessSummary = PlayerFacingCopyHumanizer.Clean(projection.InstallReadinessSummary),
-            StatusLabel = PlayerFacingCopyHumanizer.Clean(projection.StatusLabel),
-            StageLabel = PlayerFacingCopyHumanizer.Clean(projection.StageLabel),
-            UpdatedLabel = PlayerFacingCopyHumanizer.Clean(projection.UpdatedLabel),
-            FixedReleaseLabel = PlayerFacingCopyHumanizer.Clean(projection.FixedReleaseLabel),
-            AffectedInstallSummary = PlayerFacingCopyHumanizer.Clean(projection.AffectedInstallSummary),
-            FollowUpLaneSummary = PlayerFacingCopyHumanizer.Clean(projection.FollowUpLaneSummary),
-            ReleaseProgressSummary = PlayerFacingCopyHumanizer.Clean(projection.ReleaseProgressSummary),
-            VerificationSummary = PlayerFacingCopyHumanizer.Clean(projection.VerificationSummary),
-            Highlights = PlayerFacingCopyHumanizer.CleanLines(projection.Highlights)
+            Summary = UndetectableHumanizerCopyAdapter.Humanize(projection.Summary),
+            NextSafeAction = UndetectableHumanizerCopyAdapter.Humanize(projection.NextSafeAction),
+            InstallReadinessSummary = UndetectableHumanizerCopyAdapter.Humanize(projection.InstallReadinessSummary),
+            StatusLabel = UndetectableHumanizerCopyAdapter.Humanize(projection.StatusLabel),
+            StageLabel = UndetectableHumanizerCopyAdapter.Humanize(projection.StageLabel),
+            UpdatedLabel = UndetectableHumanizerCopyAdapter.Humanize(projection.UpdatedLabel),
+            FixedReleaseLabel = UndetectableHumanizerCopyAdapter.Humanize(projection.FixedReleaseLabel),
+            AffectedInstallSummary = UndetectableHumanizerCopyAdapter.Humanize(projection.AffectedInstallSummary),
+            FollowUpLaneSummary = UndetectableHumanizerCopyAdapter.Humanize(projection.FollowUpLaneSummary),
+            ReleaseProgressSummary = UndetectableHumanizerCopyAdapter.Humanize(projection.ReleaseProgressSummary),
+            VerificationSummary = UndetectableHumanizerCopyAdapter.Humanize(projection.VerificationSummary),
+            Highlights = UndetectableHumanizerCopyAdapter.HumanizeLines(projection.Highlights)
         };
 
     private static string BuildFixAvailabilitySummary(DesktopHomeSupportDigest lead)

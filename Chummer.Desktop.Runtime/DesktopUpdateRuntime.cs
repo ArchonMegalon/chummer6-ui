@@ -1693,10 +1693,9 @@ public static class DesktopUpdateRuntime
 
     private static void TryLaunchLinuxInstalledApplication(string headId, IReadOnlyList<string> relaunchArgs)
     {
-        string launcherPath = ResolveLinuxInstalledLauncherPath(headId);
-        if (!File.Exists(launcherPath))
+        string? launcherPath = ResolveLinuxInstalledLauncherPath(headId);
+        if (string.IsNullOrWhiteSpace(launcherPath))
         {
-            Console.Error.WriteLine($"Linux update installed, but launcher '{launcherPath}' was not found for relaunch.");
             return;
         }
 
@@ -1721,7 +1720,28 @@ public static class DesktopUpdateRuntime
         }
     }
 
-    private static string ResolveLinuxInstalledLauncherPath(string headId)
+    private static string? ResolveLinuxInstalledLauncherPath(string headId)
+    {
+        string launcherName = BuildLinuxInstalledLauncherName(headId);
+        string? resolvedFromPath = TryResolveCommandPath(launcherName);
+        if (!string.IsNullOrWhiteSpace(resolvedFromPath) && File.Exists(resolvedFromPath))
+        {
+            return resolvedFromPath;
+        }
+
+        foreach (string baseDirectory in new[] { "/usr/local/bin", "/usr/bin", "/bin" })
+        {
+            string candidate = Path.Combine(baseDirectory, launcherName);
+            if (File.Exists(candidate))
+            {
+                return candidate;
+            }
+        }
+
+        return null;
+    }
+
+    private static string BuildLinuxInstalledLauncherName(string headId)
     {
         string normalizedHead = string.IsNullOrWhiteSpace(headId)
             ? "avalonia"
@@ -1732,16 +1752,16 @@ public static class DesktopUpdateRuntime
             normalizedHead = "avalonia";
         }
 
-        return Path.Combine("/usr/bin", $"chummer6-{normalizedHead}");
+        return $"chummer6-{normalizedHead}";
     }
 
-    private static bool CommandExists(string command)
+    private static string? TryResolveCommandPath(string command)
     {
         try
         {
             ProcessStartInfo startInfo = new()
             {
-                FileName = OperatingSystem.IsWindows() ? "where" : "which",
+                FileName = "which",
                 UseShellExecute = false,
                 CreateNoWindow = true,
                 RedirectStandardOutput = true,
@@ -1752,16 +1772,57 @@ public static class DesktopUpdateRuntime
             using Process? process = Process.Start(startInfo);
             if (process is null)
             {
-                return false;
+                return null;
             }
 
+            string output = process.StandardOutput.ReadToEnd();
             process.WaitForExit(2000);
-            return process.ExitCode == 0;
+            if (process.ExitCode != 0)
+            {
+                return null;
+            }
+
+            string resolved = output.Trim();
+            return string.IsNullOrWhiteSpace(resolved) ? null : resolved;
         }
         catch
         {
-            return false;
+            return null;
         }
+    }
+
+    private static bool CommandExists(string command)
+    {
+        if (OperatingSystem.IsWindows())
+        {
+            try
+            {
+                ProcessStartInfo startInfo = new()
+                {
+                    FileName = "where",
+                    UseShellExecute = false,
+                    CreateNoWindow = true,
+                    RedirectStandardOutput = true,
+                    RedirectStandardError = true
+                };
+                startInfo.ArgumentList.Add(command);
+
+                using Process? process = Process.Start(startInfo);
+                if (process is null)
+                {
+                    return false;
+                }
+
+                process.WaitForExit(2000);
+                return process.ExitCode == 0;
+            }
+            catch
+            {
+                return false;
+            }
+        }
+
+        return !string.IsNullOrWhiteSpace(TryResolveCommandPath(command));
     }
 
     private static bool IsRunningAsRoot()

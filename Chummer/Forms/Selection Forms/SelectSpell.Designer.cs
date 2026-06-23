@@ -370,7 +370,7 @@ namespace Chummer
             this.chkFreeBonus.Size = new System.Drawing.Size(50, 17);
             this.chkFreeBonus.TabIndex = 22;
             this.chkFreeBonus.Tag = "Checkbox_Free";
-            this.chkFreeBonus.Text = "Free!";
+            this.chkFreeBonus.Text = "Free";
             this.chkFreeBonus.UseVisualStyleBackColor = true;
             // 
             // lblCategory
@@ -383,7 +383,7 @@ namespace Chummer
             this.lblCategory.Size = new System.Drawing.Size(52, 13);
             this.lblCategory.TabIndex = 37;
             this.lblCategory.Tag = "Label_Category";
-            this.lblCategory.Text = "Category:";
+            this.lblCategory.Text = "Filter:";
             // 
             // cboCategory
             // 

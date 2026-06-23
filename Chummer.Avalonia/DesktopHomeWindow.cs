@@ -1005,7 +1005,7 @@ internal sealed class DesktopHomeWindow : Window
 
         if (!DesktopInstallLinkingRuntime.IsClaimed(_installState))
         {
-            actions.Insert(0, CreateButton(DesktopLocalizationCatalog.GetRequiredString("desktop.install_link.button.link_copy", _preferences.Language), OpenInstallLinkingAsync, isPrimary: true));
+            actions.Insert(0, CreateButton(DesktopDevicesAccessWindow.BuildInstallLinkEntryButtonLabel(_installState, _preferences.Language), OpenInstallLinkingAsync, isPrimary: true));
         }
 
         actions.Add(CreateButton(S("desktop.home.button.open_install_support"), OpenInstallSupport));
@@ -1037,7 +1037,7 @@ internal sealed class DesktopHomeWindow : Window
                     ? CreateButton(S("desktop.home.button.open_current_workspace"), OpenCurrentWorkspace, isPrimary: true)
                     : DesktopInstallLinkingRuntime.IsClaimed(_installState)
                         ? CreateButton(CreateNextSafeActionButtonLabel(_campaignProjection.NextSafeAction, S("desktop.home.button.open_campaign_followthrough")), OpenCampaignFollowThroughAsync, isPrimary: true)
-                        : CreateButton(DesktopLocalizationCatalog.GetRequiredString("desktop.install_link.button.link_copy", _preferences.Language), OpenInstallLinkingAsync, isPrimary: true)
+                        : CreateButton(DesktopDevicesAccessWindow.BuildInstallLinkEntryButtonLabel(_installState, _preferences.Language), OpenInstallLinkingAsync, isPrimary: true)
         ];
 
         if (DesktopInstallLinkingRuntime.IsClaimed(_installState))
@@ -1092,7 +1092,7 @@ internal sealed class DesktopHomeWindow : Window
         }
         else
         {
-            actions.Add(CreateButton(DesktopLocalizationCatalog.GetRequiredString("desktop.install_link.button.link_copy", _preferences.Language), OpenInstallLinkingAsync, isPrimary: true));
+            actions.Add(CreateButton(DesktopDevicesAccessWindow.BuildInstallLinkEntryButtonLabel(_installState, _preferences.Language), OpenInstallLinkingAsync, isPrimary: true));
         }
         if (AreAiFeaturesVisible())
         {

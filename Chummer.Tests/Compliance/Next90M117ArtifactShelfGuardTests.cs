@@ -44,8 +44,8 @@ public sealed class Next90M117ArtifactShelfGuardTests
         StringAssert.Contains(scriptText, "EXPECTED_DIRECT_PROOF_COMMAND = \"bash scripts/ai/milestones/next90-m117-ui-artifact-shelf-check.sh\"");
         StringAssert.Contains(scriptText, "EXPECTED_TARGETED_TEST_COMMAND = 'dotnet test --project Chummer.Tests/Chummer.Tests.csproj --filter \"FullyQualifiedName~Next90M117ArtifactShelfGuardTests|FullyQualifiedName~Next90M116CreatorPublicationGuardTests\" --no-restore'");
         StringAssert.Contains(scriptText, "EXPECTED_PRESENTATION_TEST_COMMAND = 'dotnet test --project Chummer.Tests/Presentation/Chummer.Presentation.Signoff.Tests.csproj --filter \"AccessibilitySignoffSmokeTests\" --no-restore'");
-        StringAssert.Contains(scriptText, "\"Open Public Proof Shelf\"");
-        StringAssert.Contains(scriptText, "\"Open Creator Artifact Shelf\"");
+        StringAssert.Contains(scriptText, "\"Open Public Files\"");
+        StringAssert.Contains(scriptText, "\"Open Creator Files\"");
         StringAssert.Contains(scriptText, "OpenArtifactShelfView(\"public\")");
         StringAssert.Contains(scriptText, "OpenArtifactShelfView(\"creator\")");
     }

@@ -151,7 +151,7 @@ namespace Chummer
             this.lblDescription.Size = new System.Drawing.Size(218, 13);
             this.lblDescription.TabIndex = 0;
             this.lblDescription.Tag = "String_SelectBP_Summary";
-            this.lblDescription.Text = "Brief Summary of Selected Gameplay Option:";
+            this.lblDescription.Text = "Selected ruleset";
             // 
             // lblMaxNuyenLabel
             // 
@@ -163,7 +163,7 @@ namespace Chummer
             this.lblMaxNuyenLabel.Size = new System.Drawing.Size(94, 13);
             this.lblMaxNuyenLabel.TabIndex = 15;
             this.lblMaxNuyenLabel.Tag = "Label_SelectBP_MaxNuyen";
-            this.lblMaxNuyenLabel.Text = "Max Nuyen Karma";
+            this.lblMaxNuyenLabel.Text = "Nuyen from Karma";
             this.lblMaxNuyenLabel.TextAlign = System.Drawing.ContentAlignment.MiddleRight;
             // 
             // tlpMain
@@ -207,7 +207,7 @@ namespace Chummer
             this.cmdEditCharacterSetting.Size = new System.Drawing.Size(80, 23);
             this.cmdEditCharacterSetting.TabIndex = 17;
             this.cmdEditCharacterSetting.Tag = "String_ModifyEllipses";
-            this.cmdEditCharacterSetting.Text = "Modify...";
+            this.cmdEditCharacterSetting.Text = "Edit...";
             this.cmdEditCharacterSetting.UseVisualStyleBackColor = true;
             this.cmdEditCharacterSetting.Click += new System.EventHandler(this.cmdEditCharacterOption_Click);
             // 
@@ -221,7 +221,7 @@ namespace Chummer
             this.lblCharacterSetting.Size = new System.Drawing.Size(65, 13);
             this.lblCharacterSetting.TabIndex = 18;
             this.lblCharacterSetting.Tag = "Label_SelectBP_UseSetting";
-            this.lblCharacterSetting.Text = "Use Setting:";
+            this.lblCharacterSetting.Text = "Ruleset:";
             // 
             // tlpSummary
             // 
@@ -270,7 +270,7 @@ namespace Chummer
             this.lblBuildMethodLabel.Size = new System.Drawing.Size(69, 13);
             this.lblBuildMethodLabel.TabIndex = 16;
             this.lblBuildMethodLabel.Tag = "Label_SelectBP_BuildMethod";
-            this.lblBuildMethodLabel.Text = "Build Method";
+            this.lblBuildMethodLabel.Text = "Creation:";
             // 
             // lblBuildMethod
             // 
@@ -293,7 +293,7 @@ namespace Chummer
             this.lblBuildMethodParamLabel.Size = new System.Drawing.Size(62, 13);
             this.lblBuildMethodParamLabel.TabIndex = 10;
             this.lblBuildMethodParamLabel.Tag = "Label_SelectBP_SumToX";
-            this.lblBuildMethodParamLabel.Text = "Sum to Ten";
+            this.lblBuildMethodParamLabel.Text = "Priority Track";
             this.lblBuildMethodParamLabel.TextAlign = System.Drawing.ContentAlignment.MiddleRight;
             // 
             // lblBuildMethodParam
@@ -549,7 +549,7 @@ namespace Chummer
             this.ShowInTaskbar = false;
             this.StartPosition = System.Windows.Forms.FormStartPosition.CenterParent;
             this.Tag = "Title_SelectBP";
-            this.Text = "Select Build Method";
+            this.Text = "Choose Character Ruleset";
             this.FormClosing += new System.Windows.Forms.FormClosingEventHandler(this.SelectBuildMethod_Closing);
             this.Load += new System.EventHandler(this.SelectBuildMethod_Load);
             this.tlpMain.ResumeLayout(false);

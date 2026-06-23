@@ -28,7 +28,7 @@ internal sealed class DesktopGhostwireWindow : Window
 
         Content = DesktopHorizonWindowScaffold.CreateScroller(
             "Ghostwire",
-            "Ghostwire keeps replay and after-action follow-through native, so the consequence chain is not buried behind raw markdown links and blind browser jumps.",
+            "Ghostwire keeps replay and after-action details native, so the consequence chain is not buried behind raw markdown links and blind browser jumps.",
             CreateReplayCard(),
             CreateAfterActionCard(),
             new StackPanel

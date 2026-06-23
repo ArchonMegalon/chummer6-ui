@@ -166,7 +166,7 @@
 
     private static string FormatExplainLabel(LocalizedExplainText label, string fallback)
     {
-        string text = PlayerFacingCopyHumanizer.Clean(label.Text);
+        string text = UndetectableHumanizerCopyAdapter.Humanize(label.Text);
         return string.IsNullOrWhiteSpace(text) ? fallback : text;
     }
 

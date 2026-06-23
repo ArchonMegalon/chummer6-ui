@@ -40,6 +40,8 @@ namespace Chummer.UI.Attributes
 
         private readonly NumericUpDownEx nudKarma;
         private readonly NumericUpDownEx nudBase;
+        private readonly Padding _nudKarmaBaseMargin;
+        private readonly Padding _nudBaseBaseMargin;
         private readonly Timer _tmrKarmaChangeTimer;
         private readonly Timer _tmrBaseChangeTimer;
 
@@ -105,24 +107,6 @@ namespace Chummer.UI.Attributes
                 }
                 else
                 {
-                    LabelWithToolTip lblBase = new LabelWithToolTip
-                    {
-                        Anchor = AnchorStyles.Right,
-                        AutoSize = true,
-                        Font = new Font(Font, FontStyle.Regular),
-                        Margin = new Padding(3, 0, 3, 1),
-                        Name = "lblBase",
-                        Text = LanguageManager.GetString("Label_Base", token: objMyToken).TrimEnd(':')
-                    };
-                    LabelWithToolTip lblKarma = new LabelWithToolTip
-                    {
-                        Anchor = AnchorStyles.Right,
-                        AutoSize = true,
-                        Font = new Font(Font, FontStyle.Regular),
-                        Margin = new Padding(3, 0, 3, 1),
-                        Name = "lblKarma",
-                        Text = LanguageManager.GetString("String_Karma", token: objMyToken).TrimEnd(':')
-                    };
                     nudKarma = new NumericUpDownEx
                     {
                         Anchor = AnchorStyles.Right,
@@ -133,6 +117,7 @@ namespace Chummer.UI.Attributes
                         MinimumSize = new Size(42, 0),
                         Name = "nudKarma"
                     };
+                    _nudKarmaBaseMargin = nudKarma.Margin;
                     nudKarma.BeforeValueIncrement += nudKarma_BeforeValueIncrement;
                     nudKarma.ValueChanged += nudKarma_ValueChanged;
                     _tmrKarmaChangeTimer = new Timer { Interval = 250 };
@@ -147,6 +132,7 @@ namespace Chummer.UI.Attributes
                         MinimumSize = new Size(42, 0),
                         Name = "nudBase"
                     };
+                    _nudBaseBaseMargin = nudBase.Margin;
                     nudBase.BeforeValueIncrement += nudBase_BeforeValueIncrement;
                     nudBase.ValueChanged += nudBase_ValueChanged;
                     _tmrBaseChangeTimer = new Timer { Interval = 250 };
@@ -159,17 +145,14 @@ namespace Chummer.UI.Attributes
                         ColumnCount = 2,
                         Margin = new Padding(0),
                         Name = "tlpAttributeValues",
-                        RowCount = 2
+                        RowCount = 1
                     };
                     tlpValues.ColumnStyles.Add(new ColumnStyle(SizeType.AutoSize));
                     tlpValues.ColumnStyles.Add(new ColumnStyle(SizeType.AutoSize));
                     tlpValues.RowStyles.Add(new RowStyle(SizeType.AutoSize));
-                    tlpValues.RowStyles.Add(new RowStyle(SizeType.AutoSize));
 
-                    tlpValues.Controls.Add(lblBase, 0, 0);
-                    tlpValues.Controls.Add(lblKarma, 1, 0);
-                    tlpValues.Controls.Add(nudBase, 0, 1);
-                    tlpValues.Controls.Add(nudKarma, 1, 1);
+                    tlpValues.Controls.Add(nudBase, 0, 0);
+                    tlpValues.Controls.Add(nudKarma, 1, 0);
                     flpRight.Controls.Add(tlpValues);
                 }
 
@@ -488,10 +471,10 @@ namespace Chummer.UI.Attributes
                         if (x.Visible)
                         {
                             x.Margin = new Padding(
-                                x.Margin.Right + Math.Max(intNudBaseWidth - x.Width, 0),
-                                x.Margin.Top,
-                                x.Margin.Right,
-                                x.Margin.Bottom);
+                                _nudBaseBaseMargin.Left + Math.Max(intNudBaseWidth - x.Width, 0),
+                                _nudBaseBaseMargin.Top,
+                                _nudBaseBaseMargin.Right,
+                                _nudBaseBaseMargin.Bottom);
                         }
                     }, token);
                 }
@@ -503,10 +486,10 @@ namespace Chummer.UI.Attributes
                         if (x.Visible)
                         {
                             x.Margin = new Padding(
-                                x.Margin.Right + Math.Max(intNudKarmaWidth - x.Width, 0),
-                                x.Margin.Top,
-                                x.Margin.Right,
-                                x.Margin.Bottom);
+                                _nudKarmaBaseMargin.Left + Math.Max(intNudKarmaWidth - x.Width, 0),
+                                _nudKarmaBaseMargin.Top,
+                                _nudKarmaBaseMargin.Right,
+                                _nudKarmaBaseMargin.Bottom);
                         }
                     }, token);
                 }

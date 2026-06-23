@@ -229,8 +229,8 @@ internal sealed class DesktopRuleEnvironmentStudioWindow : Window
                 "\n",
                 [
                     $"Explanations: {_projection.ReceiptSummary}",
-                    "Rules setup: no recent import record is attached.",
-                    "Support reuse: support can reuse runtime, build-path, and workspace summaries after the next portable import/export."
+                    "Rules setup: no recent import details are attached.",
+                    "Support: runtime, build-path, and workspace summaries can be reused after the next portable import or export."
                 ]);
         }
 
@@ -241,7 +241,7 @@ internal sealed class DesktopRuleEnvironmentStudioWindow : Window
                 $"Explanations: {_projection.ReceiptSummary}",
                 $"Rules setup: {DesktopTrustReceiptText.BuildImportRuleEnvironment(receipt)}",
                 "Explanation: " + DesktopTrustReceiptText.BuildImportExplainReceipt(receipt),
-                $"Support reuse: {DesktopTrustReceiptText.BuildImportSupportReuse(receipt)}"
+                $"Support: {DesktopTrustReceiptText.BuildImportSupportReuse(receipt)}"
             ]);
     }
 

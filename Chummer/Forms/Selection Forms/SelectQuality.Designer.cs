@@ -103,7 +103,7 @@ namespace Chummer
             this.lblCategory.Size = new System.Drawing.Size(52, 13);
             this.lblCategory.TabIndex = 10;
             this.lblCategory.Tag = "Label_Category";
-            this.lblCategory.Text = "Category:";
+            this.lblCategory.Text = "Filter:";
             // 
             // cboCategory
             // 
@@ -225,7 +225,7 @@ namespace Chummer
             this.chkFree.Size = new System.Drawing.Size(50, 17);
             this.chkFree.TabIndex = 8;
             this.chkFree.Tag = "Checkbox_Free";
-            this.chkFree.Text = "Free!";
+            this.chkFree.Text = "Free";
             this.chkFree.UseVisualStyleBackColor = true;
             this.chkFree.CheckedChanged += new System.EventHandler(this.CostControl_Changed);
             // 
@@ -240,7 +240,7 @@ namespace Chummer
             this.chkMetagenic.Size = new System.Drawing.Size(171, 17);
             this.chkMetagenic.TabIndex = 7;
             this.chkMetagenic.Tag = "Checkbox_SelectQuality_Metagenic";
-            this.chkMetagenic.Text = "Show only Metagenic Qualities";
+            this.chkMetagenic.Text = "Only Metagenic";
             this.chkMetagenic.UseVisualStyleBackColor = true;
             this.chkMetagenic.CheckedChanged += new System.EventHandler(this.chkMetagenic_CheckedChanged);
             // 
@@ -497,7 +497,7 @@ namespace Chummer
             this.chkLimitList.Size = new System.Drawing.Size(169, 17);
             this.chkLimitList.TabIndex = 6;
             this.chkLimitList.Tag = "Checkbox_SelectQuality_LimitList";
-            this.chkLimitList.Text = "Show only Qualities I can take";
+            this.chkLimitList.Text = "Only Available";
             this.chkLimitList.UseVisualStyleBackColor = true;
             this.chkLimitList.CheckedChanged += new System.EventHandler(this.chkLimitList_CheckedChanged);
             // 

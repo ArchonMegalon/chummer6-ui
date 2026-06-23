@@ -23,5 +23,7 @@ public sealed class DesktopRunnerPassportWindowTests
         Assert.IsFalse(source.Contains("Open devices & access", System.StringComparison.Ordinal));
         Assert.IsFalse(source.Contains("Device and access", System.StringComparison.Ordinal));
         Assert.IsFalse(source.Contains("device/access", System.StringComparison.Ordinal));
+        Assert.IsFalse(source.Contains("follow-through", System.StringComparison.OrdinalIgnoreCase));
+        Assert.IsFalse(source.Contains("account-bound", System.StringComparison.OrdinalIgnoreCase));
     }
 }

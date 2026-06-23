@@ -621,9 +621,9 @@ internal sealed class DesktopAliceWindow : Window
                     actionRow.Children.Add(CreateButton("Open bundle folder", () => DesktopCrashRuntime.TryOpenPathInShell(_originBundle.BundleDirectory), name: "AliceOriginOpenBundleFolderButton"));
                     actionRow.Children.Add(CreateButton("Create portraits", RenderOriginPortraitSetAsync, name: "AliceOriginGeneratePortraitSetButton"));
                     actionRow.Children.Add(CreateButton("Create scenes", RenderOriginSceneSetAsync, name: "AliceOriginGenerateSceneSetButton"));
-                    actionRow.Children.Add(CreateButton("Open main voice notes", () => !string.IsNullOrWhiteSpace(_originBundle.SoundmadeseenPacketPath) && DesktopCrashRuntime.TryOpenPathInShell(_originBundle.SoundmadeseenPacketPath), name: "AliceOriginOpenNarrationPacketButton"));
-                    actionRow.Children.Add(CreateButton("Open alternate voice notes", () => !string.IsNullOrWhiteSpace(_originBundle.UnmixrPacketPath) && DesktopCrashRuntime.TryOpenPathInShell(_originBundle.UnmixrPacketPath), name: "AliceOriginOpenAlternateNarrationPacketButton"));
-                    actionRow.Children.Add(CreateButton("Open audiobook notes", () => !string.IsNullOrWhiteSpace(_originBundle.MediaFactoryNarrationRequestPath) && DesktopCrashRuntime.TryOpenPathInShell(_originBundle.MediaFactoryNarrationRequestPath), name: "AliceOriginOpenMediaFactoryNarrationRequestButton"));
+                    actionRow.Children.Add(CreateButton("Open main voice setup", () => !string.IsNullOrWhiteSpace(_originBundle.SoundmadeseenPacketPath) && DesktopCrashRuntime.TryOpenPathInShell(_originBundle.SoundmadeseenPacketPath), name: "AliceOriginOpenNarrationPacketButton"));
+                    actionRow.Children.Add(CreateButton("Open alternate voice setup", () => !string.IsNullOrWhiteSpace(_originBundle.UnmixrPacketPath) && DesktopCrashRuntime.TryOpenPathInShell(_originBundle.UnmixrPacketPath), name: "AliceOriginOpenAlternateNarrationPacketButton"));
+                    actionRow.Children.Add(CreateButton("Open audiobook setup", () => !string.IsNullOrWhiteSpace(_originBundle.MediaFactoryNarrationRequestPath) && DesktopCrashRuntime.TryOpenPathInShell(_originBundle.MediaFactoryNarrationRequestPath), name: "AliceOriginOpenMediaFactoryNarrationRequestButton"));
                     actionRow.Children.Add(CreateButton("Create audiobook", RenderOriginAudiobookNowAsync, name: "AliceOriginRenderAudiobookNowButton"));
                     actionRow.Children.Add(CreateButton("Create dossier video", RenderOriginDossierVideoAsync, name: "AliceOriginGenerateDossierVideoButton"));
                     actionRow.Children.Add(CreateButton("Create video", RenderOriginDossierVideoNowAsync, name: "AliceOriginRenderDossierVideoNowButton"));
@@ -645,11 +645,11 @@ internal sealed class DesktopAliceWindow : Window
                     }
                     if (!string.IsNullOrWhiteSpace(_originBundle.MediaFactoryNarrationReceiptPath))
                     {
-                        actionRow.Children.Add(CreateButton("Open audiobook notes", () => DesktopCrashRuntime.TryOpenPathInShell(_originBundle.MediaFactoryNarrationReceiptPath), name: "AliceOriginOpenMediaFactoryNarrationReceiptButton"));
+                        actionRow.Children.Add(CreateButton("Open audiobook details", () => DesktopCrashRuntime.TryOpenPathInShell(_originBundle.MediaFactoryNarrationReceiptPath), name: "AliceOriginOpenMediaFactoryNarrationReceiptButton"));
                     }
                     if (!string.IsNullOrWhiteSpace(_originBundle.MediaFactoryVideoReceiptPath))
                     {
-                        actionRow.Children.Add(CreateButton("Open video notes", () => DesktopCrashRuntime.TryOpenPathInShell(_originBundle.MediaFactoryVideoReceiptPath), name: "AliceOriginOpenMediaFactoryVideoReceiptButton"));
+                        actionRow.Children.Add(CreateButton("Open video details", () => DesktopCrashRuntime.TryOpenPathInShell(_originBundle.MediaFactoryVideoReceiptPath), name: "AliceOriginOpenMediaFactoryVideoReceiptButton"));
                     }
                     if (!string.IsNullOrWhiteSpace(_originBundle.RenderedVideoPath))
                     {
@@ -869,7 +869,7 @@ internal sealed class DesktopAliceWindow : Window
                 "Alternate voice ready.",
                 $"Script: {Path.GetFileName(bundle.UnmixrScriptPath)}. Voice notes: {Path.GetFileName(bundle.UnmixrPacketPath)}.",
                 BuildOriginBundleEvidence(bundle),
-                CreateButton("Open alternate voice notes", () => !string.IsNullOrWhiteSpace(bundle.UnmixrPacketPath) && DesktopCrashRuntime.TryOpenPathInShell(bundle.UnmixrPacketPath), isPrimary: true, name: "AliceOriginOpenAlternateNarrationPacketButton"),
+                CreateButton("Open alternate voice setup", () => !string.IsNullOrWhiteSpace(bundle.UnmixrPacketPath) && DesktopCrashRuntime.TryOpenPathInShell(bundle.UnmixrPacketPath), isPrimary: true, name: "AliceOriginOpenAlternateNarrationPacketButton"),
                 CreateButton("Open alternate script", () => !string.IsNullOrWhiteSpace(bundle.UnmixrScriptPath) && DesktopCrashRuntime.TryOpenPathInShell(bundle.UnmixrScriptPath), name: "AliceOriginOpenAlternateNarrationScriptButton"),
                 CreateButton("Create audiobook script", RenderOriginAudiobookPacketAsync, name: "AliceOriginGenerateAudiobookPacketButton"),
                 CreateButton("Set up audiobook", RenderOriginMediaFactoryRequestAsync, name: "AliceOriginGenerateMediaFactoryNarrationRequestButton"),
@@ -889,13 +889,13 @@ internal sealed class DesktopAliceWindow : Window
             _originBundle = bundle;
             ShowOriginBundleState(
                 "Audiobook setup ready.",
-                $"Audiobook notes: {Path.GetFileName(bundle.MediaFactoryNarrationRequestPath)}. Run notes: {Path.GetFileName(bundle.MediaFactoryNarrationRunbookPath)}.",
+                $"Audiobook setup: {Path.GetFileName(bundle.MediaFactoryNarrationRequestPath)}. Brief: {Path.GetFileName(bundle.MediaFactoryNarrationRunbookPath)}.",
                 BuildOriginBundleEvidence(bundle),
-                CreateButton("Open audiobook notes", () => !string.IsNullOrWhiteSpace(bundle.MediaFactoryNarrationRequestPath) && DesktopCrashRuntime.TryOpenPathInShell(bundle.MediaFactoryNarrationRequestPath), isPrimary: true, name: "AliceOriginOpenMediaFactoryNarrationRequestButton"),
-                CreateButton("Open audiobook notes", () => !string.IsNullOrWhiteSpace(bundle.MediaFactoryNarrationRunbookPath) && DesktopCrashRuntime.TryOpenPathInShell(bundle.MediaFactoryNarrationRunbookPath), name: "AliceOriginOpenMediaFactoryNarrationRunbookButton"),
+                CreateButton("Open audiobook setup", () => !string.IsNullOrWhiteSpace(bundle.MediaFactoryNarrationRequestPath) && DesktopCrashRuntime.TryOpenPathInShell(bundle.MediaFactoryNarrationRequestPath), isPrimary: true, name: "AliceOriginOpenMediaFactoryNarrationRequestButton"),
+                CreateButton("Open audiobook brief", () => !string.IsNullOrWhiteSpace(bundle.MediaFactoryNarrationRunbookPath) && DesktopCrashRuntime.TryOpenPathInShell(bundle.MediaFactoryNarrationRunbookPath), name: "AliceOriginOpenMediaFactoryNarrationRunbookButton"),
                 CreateButton("Create audiobook", RenderOriginAudiobookNowAsync, name: "AliceOriginRenderAudiobookNowButton"),
-                CreateButton("Open main voice notes", () => !string.IsNullOrWhiteSpace(bundle.SoundmadeseenPacketPath) && DesktopCrashRuntime.TryOpenPathInShell(bundle.SoundmadeseenPacketPath), name: "AliceOriginOpenNarrationPacketButton"),
-                CreateButton("Open alternate voice notes", () => !string.IsNullOrWhiteSpace(bundle.UnmixrPacketPath) && DesktopCrashRuntime.TryOpenPathInShell(bundle.UnmixrPacketPath), name: "AliceOriginOpenAlternateNarrationPacketButton"));
+                CreateButton("Open main voice setup", () => !string.IsNullOrWhiteSpace(bundle.SoundmadeseenPacketPath) && DesktopCrashRuntime.TryOpenPathInShell(bundle.SoundmadeseenPacketPath), name: "AliceOriginOpenNarrationPacketButton"),
+                CreateButton("Open alternate voice setup", () => !string.IsNullOrWhiteSpace(bundle.UnmixrPacketPath) && DesktopCrashRuntime.TryOpenPathInShell(bundle.UnmixrPacketPath), name: "AliceOriginOpenAlternateNarrationPacketButton"));
             return Task.CompletedTask;
         }
 
@@ -962,9 +962,9 @@ internal sealed class DesktopAliceWindow : Window
             _originBundle = updatedBundle;
             ShowOriginBundleState(
                 "Audiobook ready.",
-                $"Audio notes: {Path.GetFileName(receiptPath)}. Default and alternate voice paths are ready to review.",
+                $"Audio details: {Path.GetFileName(receiptPath)}. Default and alternate voice paths are ready to review.",
                 BuildOriginBundleEvidence(updatedBundle),
-                CreateButton("Open audiobook notes", () => DesktopCrashRuntime.TryOpenPathInShell(receiptPath), isPrimary: true, name: "AliceOriginOpenMediaFactoryNarrationReceiptButton"),
+                CreateButton("Open audiobook details", () => DesktopCrashRuntime.TryOpenPathInShell(receiptPath), isPrimary: true, name: "AliceOriginOpenMediaFactoryNarrationReceiptButton"),
                 CreateButton("Open audiobook setup", () => !string.IsNullOrWhiteSpace(updatedBundle.MediaFactoryNarrationRequestPath) && DesktopCrashRuntime.TryOpenPathInShell(updatedBundle.MediaFactoryNarrationRequestPath), name: "AliceOriginOpenMediaFactoryNarrationRequestButton"),
                 CreateButton("Open bundle folder", () => DesktopCrashRuntime.TryOpenPathInShell(updatedBundle.BundleDirectory), name: "AliceOriginOpenBundleFolderButton"));
         }
@@ -987,10 +987,10 @@ internal sealed class DesktopAliceWindow : Window
             _originBundle = updatedBundle;
             ShowOriginBundleState(
                 "Dossier video finished.",
-                $"Video: {Path.GetFileName(renderedVideoPath)}. Notes: {Path.GetFileName(receiptPath)}.",
+                $"Video: {Path.GetFileName(renderedVideoPath)}. Details: {Path.GetFileName(receiptPath)}.",
                 BuildOriginBundleEvidence(updatedBundle),
                 CreateButton("Open video", () => DesktopCrashRuntime.TryOpenPathInShell(renderedVideoPath), isPrimary: true, name: "AliceOriginOpenRenderedVideoButton"),
-                CreateButton("Open video notes", () => DesktopCrashRuntime.TryOpenPathInShell(receiptPath), name: "AliceOriginOpenMediaFactoryVideoReceiptButton"),
+                CreateButton("Open video details", () => DesktopCrashRuntime.TryOpenPathInShell(receiptPath), name: "AliceOriginOpenMediaFactoryVideoReceiptButton"),
                 CreateButton("Open video plan", () => !string.IsNullOrWhiteSpace(updatedBundle.VidBoardPacketPath) && DesktopCrashRuntime.TryOpenPathInShell(updatedBundle.VidBoardPacketPath), name: "AliceOriginOpenVidBoardPacketButton"));
         }
 
@@ -1521,7 +1521,7 @@ internal sealed class DesktopAliceWindow : Window
                             : $"Targets: {string.Join(", ", selected.Suggestion.Targets)}";
                         selectedBuildPathWarningsText.Text = preview?.CampaignReturnSummary
                             ?? preview?.RuntimeCompatibilitySummary
-                            ?? $"Trust tier {selected.Suggestion.TrustTier} stays visible before any apply-safe follow-through.";
+                            ?? $"Trust tier {selected.Suggestion.TrustTier} stays visible before anything is applied.";
                         break;
                 }
             }
@@ -1777,10 +1777,10 @@ internal sealed class DesktopAliceWindow : Window
     }
 
     private static string HumanCopy(string? value)
-        => PlayerFacingCopyHumanizer.Clean(value);
+        => UndetectableHumanizerCopyAdapter.Humanize(value);
 
     private static string[] HumanLines(IEnumerable<string> values)
-        => PlayerFacingCopyHumanizer.CleanLines(values);
+        => UndetectableHumanizerCopyAdapter.HumanizeLines(values);
 
     private static string ComputeSha256(string path)
     {
@@ -2678,10 +2678,10 @@ internal sealed class DesktopAliceWindow : Window
                 : Array.Empty<string>()),
             string.Empty,
             "GM hooks:",
-            .. bundle.Canon.GmHooks.Select(static hook => $"- {PlayerFacingCopyHumanizer.Clean(hook)}"),
+            .. bundle.Canon.GmHooks.Select(static hook => $"- {UndetectableHumanizerCopyAdapter.Humanize(hook)}"),
             string.Empty,
             "Open questions:",
-            .. bundle.Packet.ContradictionFlags.DefaultIfEmpty("None found in the current character context.").Select(static line => $"- {PlayerFacingCopyHumanizer.Clean(line)}")
+            .. bundle.Packet.ContradictionFlags.DefaultIfEmpty("None found in the current character context.").Select(static line => $"- {UndetectableHumanizerCopyAdapter.Humanize(line)}")
         ];
         File.WriteAllBytes(pdfPath, BuildSimplePdfDocument($"Origin Dossier · {bundle.Packet.Alias}", dossierLines));
         File.WriteAllText(markupGoPacketPath, JsonSerializer.Serialize(
@@ -3221,12 +3221,12 @@ internal sealed class DesktopAliceWindow : Window
 
         if (!string.IsNullOrWhiteSpace(bundle.MediaFactoryNarrationRunbookPath))
         {
-            lines.Add($"Audiobook notes: {Path.GetFileName(bundle.MediaFactoryNarrationRunbookPath)}");
+            lines.Add($"Audiobook brief: {Path.GetFileName(bundle.MediaFactoryNarrationRunbookPath)}");
         }
 
         if (!string.IsNullOrWhiteSpace(bundle.MediaFactoryNarrationReceiptPath))
         {
-            lines.Add($"Audio notes: {Path.GetFileName(bundle.MediaFactoryNarrationReceiptPath)}");
+            lines.Add($"Audio details: {Path.GetFileName(bundle.MediaFactoryNarrationReceiptPath)}");
         }
 
         if (!string.IsNullOrWhiteSpace(bundle.VideoStoryboardPath))

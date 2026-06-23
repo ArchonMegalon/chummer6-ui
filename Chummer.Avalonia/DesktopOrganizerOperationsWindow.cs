@@ -394,7 +394,7 @@ internal sealed class DesktopOrganizerOperationsWindow : Window
 
         if (_portableExchangePreview is not null)
         {
-            lines.Add("Portable exchange follow-through:" + " " + _portableExchangePreview.NextSafeAction);
+            lines.Add("Portable exchange next step:" + " " + _portableExchangePreview.NextSafeAction);
         }
 
         return string.Join("\n", lines);
@@ -424,7 +424,7 @@ internal sealed class DesktopOrganizerOperationsWindow : Window
     {
         List<string> lines =
         [
-            $"Publication boundary: {ResolvePublicationBoundarySummary()}",
+            $"Publication status: {ResolvePublicationBoundarySummary()}",
             $"Support escalation: {ResolveSupportEscalationSummary()}",
             $"Moderation case: {ResolveModerationPacketSummary()}",
             $"Audience and retention: {ResolveAudienceRetentionSummary()}",
@@ -454,12 +454,12 @@ internal sealed class DesktopOrganizerOperationsWindow : Window
 
         if (canOpenPublicFiles)
         {
-            actions.Add(CreateButton("Open public files", () => Task.FromResult(OpenArtifactShelfView("public"))));
+            actions.Add(CreateButton("Open Public Files", () => Task.FromResult(OpenArtifactShelfView("public"))));
         }
         else
         {
             actions.Add(CreateButton(
-                DesktopLocalizationCatalog.GetRequiredString("desktop.install_link.button.link_copy", _preferences.Language),
+                DesktopDevicesAccessWindow.BuildInstallLinkEntryButtonLabel(_installState, _preferences.Language),
                 OpenInstallLinkingAsync));
         }
 
@@ -489,7 +489,7 @@ internal sealed class DesktopOrganizerOperationsWindow : Window
 
         if (DesktopInstallLinkingRuntime.IsClaimed(_installState) && HasPublishedCreatorPublication())
         {
-            actions.Add(CreateButton("Open Creator Artifact Shelf", () => Task.FromResult(OpenArtifactShelfView("creator"))));
+            actions.Add(CreateButton("Open Creator Files", () => Task.FromResult(OpenArtifactShelfView("creator"))));
         }
 
         return actions;
@@ -699,7 +699,7 @@ internal sealed class DesktopOrganizerOperationsWindow : Window
         => "The GM owns live-table decisions, roster-fit reasons, and session-close consequences even when organizer policy frames the event.";
 
     private string ResolvePlayerBoundarySummary()
-        => "Player lane receives briefings, roster outcomes, and published artifacts, but it does not grant roles, close incidents, or rewrite organizer policy.";
+        => "Player lane receives briefings, roster outcomes, and published files, but it does not grant roles, close incidents, or rewrite organizer policy.";
 
     private string ResolveCreatorBoundarySummary()
         => FirstNonBlank(

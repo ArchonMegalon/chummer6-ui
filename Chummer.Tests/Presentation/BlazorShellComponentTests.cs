@@ -502,7 +502,7 @@ public sealed class BlazorShellComponentTests
     {
         CharacterOverviewState state = CharacterOverviewState.Empty with
         {
-            Notice = "Portable export prepared.",
+            Notice = "Portable export ready.",
             LatestPortabilityActivity = new WorkspacePortabilityActivity(
                 "Last portable export",
                 new WorkspacePortabilityReceipt(

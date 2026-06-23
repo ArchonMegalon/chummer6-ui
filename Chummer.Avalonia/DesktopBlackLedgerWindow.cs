@@ -46,7 +46,7 @@ internal sealed class DesktopBlackLedgerWindow : Window
                         },
                         new TextBlock
                         {
-                            Text = "Black Ledger keeps the command map, dispatch follow-through, and current world state visible from the desktop.",
+                            Text = "Black Ledger keeps the command map, dispatches, and current world state visible from the desktop.",
                             TextWrapping = TextWrapping.Wrap
                         },
                         CreateStatusCard(),

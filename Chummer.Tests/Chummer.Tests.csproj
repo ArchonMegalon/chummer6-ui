@@ -215,6 +215,7 @@
     <Compile Include="Presentation\DesktopInstallLinkingShellChromeTests.cs" />
     <Compile Include="Presentation\DesktopClaimCopyLanguageTests.cs" />
     <Compile Include="Presentation\DesktopShellDownloadDispatchTests.cs" />
+    <Compile Include="Presentation\DesktopStartupUpdateWindowTests.cs" />
     <Compile Include="Presentation\Next90M141UiImportRouteProofTests.cs" />
     <Compile Include="Presentation\DesktopShellRulesetCatalogTests.cs" />
     <Compile Include="Presentation\DesktopShellStartupSyncTests.cs" />

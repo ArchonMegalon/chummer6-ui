@@ -494,7 +494,7 @@ public static class RulesetUiDirectiveCatalog
 
     public static IReadOnlyList<string> BuildBuildExplainWatchouts(string? rulesetId)
     {
-        return PlayerFacingCopyHumanizer.CleanLines(Resolve(rulesetId).BuildExplainWatchouts);
+        return UndetectableHumanizerCopyAdapter.HumanizeLines(Resolve(rulesetId).BuildExplainWatchouts);
     }
 
     public static string BuildWorkspaceResumeSummary(
@@ -628,7 +628,7 @@ public static class RulesetUiDirectiveCatalog
     }
 
     private static string Clean(string value)
-        => PlayerFacingCopyHumanizer.Clean(value);
+        => UndetectableHumanizerCopyAdapter.Humanize(value);
 
     private static bool HasRulesetSpecificLabel(string? label)
     {
