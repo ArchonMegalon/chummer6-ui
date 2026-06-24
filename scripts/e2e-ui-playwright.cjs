@@ -674,7 +674,7 @@ async function createSr4BpTrollDeckerAndExerciseAddWorkflows(page) {
       quickActionId: 'skill_add',
       dialogTitle: 'add skill',
       dialogMarkers: ['Perception', 'Linked Attribute'],
-      confirmButton: 'OK',
+      confirmButton: /Add Perception/i,
       resultMarker: 'Perception'
     },
     {
