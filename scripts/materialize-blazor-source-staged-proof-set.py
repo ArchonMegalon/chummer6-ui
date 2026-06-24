@@ -233,6 +233,21 @@ REQUIRED_RECEIPTS = [
         "contract_name": "chummer6-ui.blazor_workbench_character_library_staged_proof",
     },
     {
+        "id": "workbench_campaign_session",
+        "path": PUBLISHED / "BLAZOR_WORKBENCH_CAMPAIGN_SESSION_STAGED_PROOF.generated.json",
+        "contract_name": "chummer6-ui.blazor_workbench_campaign_session_staged_proof",
+    },
+    {
+        "id": "workbench_observability_privacy",
+        "path": PUBLISHED / "BLAZOR_WORKBENCH_OBSERVABILITY_PRIVACY_STAGED_PROOF.generated.json",
+        "contract_name": "chummer6-ui.blazor_workbench_observability_privacy_staged_proof",
+    },
+    {
+        "id": "workbench_first_run",
+        "path": PUBLISHED / "BLAZOR_WORKBENCH_FIRST_RUN_STAGED_PROOF.generated.json",
+        "contract_name": "chummer6-ui.blazor_workbench_first_run_staged_proof",
+    },
+    {
         "id": "legacy_control_coverage",
         "path": PUBLISHED / "BLAZOR_LEGACY_CONTROL_COVERAGE_STAGED_PROOF.generated.json",
         "contract_name": "chummer6-ui.blazor_legacy_control_coverage_staged_proof",

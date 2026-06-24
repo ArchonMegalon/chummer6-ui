@@ -170,6 +170,12 @@ Current docs already define the intended shipped posture and the evidence contra
 - `docs/examples/blazor-workbench-data-packs-staged-proof.receipt.example.json` shows the compact generated receipt shape for `BLAZOR_WORKBENCH_DATA_PACKS_STAGED_PROOF.generated.json`.
 - `docs/BLAZOR_WORKBENCH_CHARACTER_LIBRARY_STAGED_PROOF.md` defines the source-staged promoted workbench character-library posture contract. It is not runtime proof.
 - `docs/examples/blazor-workbench-character-library-staged-proof.receipt.example.json` shows the compact generated receipt shape for `BLAZOR_WORKBENCH_CHARACTER_LIBRARY_STAGED_PROOF.generated.json`.
+- `docs/BLAZOR_WORKBENCH_CAMPAIGN_SESSION_STAGED_PROOF.md` defines the source-staged promoted workbench campaign-session posture contract. It is not runtime proof.
+- `docs/examples/blazor-workbench-campaign-session-staged-proof.receipt.example.json` shows the compact generated receipt shape for `BLAZOR_WORKBENCH_CAMPAIGN_SESSION_STAGED_PROOF.generated.json`.
+- `docs/BLAZOR_WORKBENCH_OBSERVABILITY_PRIVACY_STAGED_PROOF.md` defines the source-staged promoted workbench observability-privacy posture contract. It is not runtime proof.
+- `docs/examples/blazor-workbench-observability-privacy-staged-proof.receipt.example.json` shows the compact generated receipt shape for `BLAZOR_WORKBENCH_OBSERVABILITY_PRIVACY_STAGED_PROOF.generated.json`.
+- `docs/BLAZOR_WORKBENCH_FIRST_RUN_STAGED_PROOF.md` defines the source-staged promoted workbench first-run posture contract. It is not runtime proof.
+- `docs/examples/blazor-workbench-first-run-staged-proof.receipt.example.json` shows the compact generated receipt shape for `BLAZOR_WORKBENCH_FIRST_RUN_STAGED_PROOF.generated.json`.
 
 ## Portal Installer Handoff
 

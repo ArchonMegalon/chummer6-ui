@@ -69,6 +69,9 @@ The aggregate currently covers:
 - `workbench_sync_presence`
 - `workbench_data_packs`
 - `workbench_character_library`
+- `workbench_campaign_session`
+- `workbench_observability_privacy`
+- `workbench_first_run`
 - `legacy_control_coverage`
 
 Each family must keep `proof_tier` set to:

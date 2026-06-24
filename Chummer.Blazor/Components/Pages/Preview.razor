@@ -1167,6 +1167,108 @@
             </div>
         </section>
 
+        <section class="browser-workbench-campaign-session" aria-label="Workbench campaign and session lane" data-workbench-campaign-session="strip">
+            <div class="browser-workbench-campaign-session-copy">
+                <span class="browser-preview-status-label">Campaign</span>
+                <strong>Keep table workflow beside the sheet.</strong>
+                <p>Keep roster, GM review, notes, rewards, sharing, and run handoff visible next to the active runner.</p>
+            </div>
+            <div class="browser-workbench-campaign-session-actions" role="list" aria-label="Campaign and session shortcuts">
+                <a role="listitem" href="@BuildPreviewHref("blue", command: "open_campaign_roster")" data-workbench-campaign-session-action="roster">
+                    <span>Roster</span>
+                    <small>Open the current campaign runner list.</small>
+                </a>
+                <a role="listitem" href="@BuildPreviewHref("blue", command: "request_gm_review")" data-workbench-campaign-session-action="gm_review">
+                    <span>GM review</span>
+                    <small>Reserve approval and audit handoff.</small>
+                </a>
+                <a role="listitem" href="@BuildPreviewHref("blue", command: "open_session_notes")" data-workbench-campaign-session-action="session_notes">
+                    <span>Session notes</span>
+                    <small>Keep table context near the character.</small>
+                </a>
+                <a role="listitem" href="@BuildPreviewHref("blue", command: "apply_rewards")" data-workbench-campaign-session-action="rewards">
+                    <span>Rewards</span>
+                    <small>Expose karma and nuyen award posture.</small>
+                </a>
+                <a role="listitem" href="@BuildPreviewHref("blue", command: "share_to_table")" data-workbench-campaign-session-action="table_share">
+                    <span>Table share</span>
+                    <small>Prepare player and GM co-view links.</small>
+                </a>
+                <a role="listitem" href="@BuildPreviewHref("blue", command: "handoff_to_run")" data-workbench-campaign-session-action="run_handoff">
+                    <span>Run handoff</span>
+                    <small>Move from build work into live play.</small>
+                </a>
+            </div>
+        </section>
+
+        <section class="browser-workbench-observability-privacy" aria-label="Workbench observability and privacy lane" data-workbench-observability-privacy="strip">
+            <div class="browser-workbench-observability-privacy-copy">
+                <span class="browser-preview-status-label">Observability</span>
+                <strong>Make analytics privacy explicit for Chummer Run.</strong>
+                <p>The hosted web client can be Rybbit-ready without hiding consent, route events, error traces, privacy logs, self-host toggles, or operator telemetry posture from users and admins.</p>
+            </div>
+            <div class="browser-workbench-observability-privacy-actions" role="list" aria-label="Observability and privacy shortcuts">
+                <a role="listitem" href="@BuildPreviewHref("blue", command: "analytics_consent")" data-workbench-observability-privacy-action="consent">
+                    <span>Consent</span>
+                    <small>Show analytics choice before tracking.</small>
+                </a>
+                <a role="listitem" href="@BuildPreviewHref("blue", command: "analytics_status")" data-workbench-observability-privacy-action="analytics_status">
+                    <span>Rybbit status</span>
+                    <small>Reserve hosted analytics health posture.</small>
+                </a>
+                <a role="listitem" href="@BuildPreviewHref("blue", command: "route_event_audit")" data-workbench-observability-privacy-action="route_events">
+                    <span>Route events</span>
+                    <small>Keep navigation telemetry visible and bounded.</small>
+                </a>
+                <a role="listitem" href="@BuildPreviewHref("blue", command: "error_trace_review")" data-workbench-observability-privacy-action="error_traces">
+                    <span>Error traces</span>
+                    <small>Separate diagnostics from personal sheet data.</small>
+                </a>
+                <a role="listitem" href="@BuildPreviewHref("blue", command: "privacy_log")" data-workbench-observability-privacy-action="privacy_log">
+                    <span>Privacy log</span>
+                    <small>Surface what the client says it records.</small>
+                </a>
+                <a role="listitem" href="@BuildPreviewHref("blue", command: "self_host_telemetry")" data-workbench-observability-privacy-action="self_host_toggle">
+                    <span>Self-host toggle</span>
+                    <small>Keep Docker analytics controls explicit.</small>
+                </a>
+            </div>
+        </section>
+
+        <section class="browser-workbench-first-run" aria-label="Workbench first-run onboarding lane" data-workbench-first-run="strip">
+            <div class="browser-workbench-first-run-copy">
+                <span class="browser-preview-status-label">First run</span>
+                <strong>Make web setup feel intentional.</strong>
+                <p>A polished browser client should help users start fresh, import desktop files, try a sample runner, restore a session, configure Docker self-hosting, and open docs without hunting through menus.</p>
+            </div>
+            <div class="browser-workbench-first-run-actions" role="list" aria-label="First-run onboarding shortcuts">
+                <a role="listitem" href="@BuildPreviewHref("blue", command: "start_new_runner")" data-workbench-first-run-action="new_runner">
+                    <span>New runner</span>
+                    <small>Begin with the shared character flow.</small>
+                </a>
+                <a role="listitem" href="@BuildPreviewHref("blue", command: "import_desktop_file")" data-workbench-first-run-action="import_desktop">
+                    <span>Import desktop</span>
+                    <small>Bring existing Chummer files forward.</small>
+                </a>
+                <a role="listitem" href="@BuildPreviewHref("blue", command: "load_sample_runner")" data-workbench-first-run-action="sample_runner">
+                    <span>Sample runner</span>
+                    <small>Open a guided example workspace.</small>
+                </a>
+                <a role="listitem" href="@BuildPreviewHref("blue", command: "restore_last_session")" data-workbench-first-run-action="restore_session">
+                    <span>Restore session</span>
+                    <small>Resume the last browser workspace posture.</small>
+                </a>
+                <a role="listitem" href="@BuildPreviewHref("blue", command: "open_self_host_setup")" data-workbench-first-run-action="self_host_setup">
+                    <span>Self-host setup</span>
+                    <small>Expose Docker operator setup from the workbench.</small>
+                </a>
+                <a role="listitem" href="@BuildPreviewHref("blue", command: "open_web_docs")" data-workbench-first-run-action="docs">
+                    <span>Docs</span>
+                    <small>Link web-client help and parity notes.</small>
+                </a>
+            </div>
+        </section>
+
         <section class="browser-preview-status-grid" aria-label="Workbench quick starts">
             <article class="browser-preview-status-card" data-workbench-entry-card="new-character">
                 <span class="browser-preview-status-label">Quick start</span>

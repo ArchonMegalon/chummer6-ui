@@ -57,6 +57,9 @@ WORKBENCH_HISTORY_UNDO_STAGED_PROOF = PUBLISHED / "BLAZOR_WORKBENCH_HISTORY_UNDO
 WORKBENCH_SYNC_PRESENCE_STAGED_PROOF = PUBLISHED / "BLAZOR_WORKBENCH_SYNC_PRESENCE_STAGED_PROOF.generated.json"
 WORKBENCH_DATA_PACKS_STAGED_PROOF = PUBLISHED / "BLAZOR_WORKBENCH_DATA_PACKS_STAGED_PROOF.generated.json"
 WORKBENCH_CHARACTER_LIBRARY_STAGED_PROOF = PUBLISHED / "BLAZOR_WORKBENCH_CHARACTER_LIBRARY_STAGED_PROOF.generated.json"
+WORKBENCH_CAMPAIGN_SESSION_STAGED_PROOF = PUBLISHED / "BLAZOR_WORKBENCH_CAMPAIGN_SESSION_STAGED_PROOF.generated.json"
+WORKBENCH_OBSERVABILITY_PRIVACY_STAGED_PROOF = PUBLISHED / "BLAZOR_WORKBENCH_OBSERVABILITY_PRIVACY_STAGED_PROOF.generated.json"
+WORKBENCH_FIRST_RUN_STAGED_PROOF = PUBLISHED / "BLAZOR_WORKBENCH_FIRST_RUN_STAGED_PROOF.generated.json"
 LEGACY_CONTROL_COVERAGE_STAGED_PROOF = PUBLISHED / "BLAZOR_LEGACY_CONTROL_COVERAGE_STAGED_PROOF.generated.json"
 SOURCE_STAGED_PROOF_SET = PUBLISHED / "BLAZOR_SOURCE_STAGED_PROOF_SET.generated.json"
 PORTAL_INSTALLER_HANDOFF_STAGED_PROOF = PUBLISHED / "BLAZOR_PORTAL_INSTALLER_HANDOFF_STAGED_PROOF.generated.json"
@@ -163,6 +166,9 @@ def main() -> int:
     workbench_sync_presence_staged = load_json(WORKBENCH_SYNC_PRESENCE_STAGED_PROOF)
     workbench_data_packs_staged = load_json(WORKBENCH_DATA_PACKS_STAGED_PROOF)
     workbench_character_library_staged = load_json(WORKBENCH_CHARACTER_LIBRARY_STAGED_PROOF)
+    workbench_campaign_session_staged = load_json(WORKBENCH_CAMPAIGN_SESSION_STAGED_PROOF)
+    workbench_observability_privacy_staged = load_json(WORKBENCH_OBSERVABILITY_PRIVACY_STAGED_PROOF)
+    workbench_first_run_staged = load_json(WORKBENCH_FIRST_RUN_STAGED_PROOF)
     legacy_control_coverage_staged = load_json(LEGACY_CONTROL_COVERAGE_STAGED_PROOF)
     source_staged_proof_set = load_json(SOURCE_STAGED_PROOF_SET)
     portal_installer_handoff_staged = load_json(PORTAL_INSTALLER_HANDOFF_STAGED_PROOF)
@@ -671,6 +677,36 @@ def main() -> int:
     print(f"workbench_character_library_staged_source_checks={count_staged_source_checks(workbench_character_library_staged)}")
     print(
         "workbench_character_library_staged_note="
+        "source_alignment_only_not_browser_execution"
+    )
+    print(f"workbench_campaign_session_staged_receipt={WORKBENCH_CAMPAIGN_SESSION_STAGED_PROOF}")
+    print(f"workbench_campaign_session_staged_status={str(workbench_campaign_session_staged.get('status') or '').strip() or 'not_generated'}")
+    print(f"workbench_campaign_session_staged_contract={str(workbench_campaign_session_staged.get('contract_name') or '').strip() or 'missing'}")
+    print(f"workbench_campaign_session_staged_tier={str(workbench_campaign_session_staged.get('proof_tier') or '').strip() or 'missing'}")
+    print(f"workbench_campaign_session_staged_route_count={len(workbench_campaign_session_staged.get('expected_routes') or [])}")
+    print(f"workbench_campaign_session_staged_source_checks={count_staged_source_checks(workbench_campaign_session_staged)}")
+    print(
+        "workbench_campaign_session_staged_note="
+        "source_alignment_only_not_browser_execution"
+    )
+    print(f"workbench_observability_privacy_staged_receipt={WORKBENCH_OBSERVABILITY_PRIVACY_STAGED_PROOF}")
+    print(f"workbench_observability_privacy_staged_status={str(workbench_observability_privacy_staged.get('status') or '').strip() or 'not_generated'}")
+    print(f"workbench_observability_privacy_staged_contract={str(workbench_observability_privacy_staged.get('contract_name') or '').strip() or 'missing'}")
+    print(f"workbench_observability_privacy_staged_tier={str(workbench_observability_privacy_staged.get('proof_tier') or '').strip() or 'missing'}")
+    print(f"workbench_observability_privacy_staged_route_count={len(workbench_observability_privacy_staged.get('expected_routes') or [])}")
+    print(f"workbench_observability_privacy_staged_source_checks={count_staged_source_checks(workbench_observability_privacy_staged)}")
+    print(
+        "workbench_observability_privacy_staged_note="
+        "source_alignment_only_not_browser_execution"
+    )
+    print(f"workbench_first_run_staged_receipt={WORKBENCH_FIRST_RUN_STAGED_PROOF}")
+    print(f"workbench_first_run_staged_status={str(workbench_first_run_staged.get('status') or '').strip() or 'not_generated'}")
+    print(f"workbench_first_run_staged_contract={str(workbench_first_run_staged.get('contract_name') or '').strip() or 'missing'}")
+    print(f"workbench_first_run_staged_tier={str(workbench_first_run_staged.get('proof_tier') or '').strip() or 'missing'}")
+    print(f"workbench_first_run_staged_route_count={len(workbench_first_run_staged.get('expected_routes') or [])}")
+    print(f"workbench_first_run_staged_source_checks={count_staged_source_checks(workbench_first_run_staged)}")
+    print(
+        "workbench_first_run_staged_note="
         "source_alignment_only_not_browser_execution"
     )
     print(f"legacy_control_coverage_staged_receipt={LEGACY_CONTROL_COVERAGE_STAGED_PROOF}")

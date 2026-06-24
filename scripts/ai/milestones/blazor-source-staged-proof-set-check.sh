@@ -46,5 +46,8 @@ python3 "$repo_root/scripts/materialize-blazor-workbench-history-undo-staged-pro
 python3 "$repo_root/scripts/materialize-blazor-workbench-sync-presence-staged-proof.py"
 python3 "$repo_root/scripts/materialize-blazor-workbench-data-packs-staged-proof.py"
 python3 "$repo_root/scripts/materialize-blazor-workbench-character-library-staged-proof.py"
+python3 "$repo_root/scripts/materialize-blazor-workbench-campaign-session-staged-proof.py"
+python3 "$repo_root/scripts/materialize-blazor-workbench-observability-privacy-staged-proof.py"
+python3 "$repo_root/scripts/materialize-blazor-workbench-first-run-staged-proof.py"
 python3 "$repo_root/scripts/materialize-blazor-legacy-control-coverage-staged-proof.py"
 python3 "$repo_root/scripts/materialize-blazor-source-staged-proof-set.py"
