@@ -1,6 +1,10 @@
 global using System;
 global using System.Collections.Generic;
 global using System.Linq;
+global using System.IO;
+global using System.Reflection;
+global using System.Runtime.CompilerServices;
+global using System.Runtime.Loader;
 global using AngleSharp.Dom;
 global using Chummer;
 global using Chummer.Contracts.Content;
@@ -28,3 +32,29 @@ global using BuildLabVariantProjection = Chummer.Contracts.Presentation.BuildLab
 global using BuildLabVariantWarning = Chummer.Contracts.Presentation.BuildLabVariantWarning;
 global using BuildLabWarningKinds = Chummer.Contracts.Presentation.BuildLabWarningKinds;
 global using IEngineEvaluator = Chummer.Contracts.Rulesets.IRulesetCapabilityHost;
+
+internal static class TestAssemblyResolutionBootstrap
+{
+    [ModuleInitializer]
+    internal static void Initialize()
+    {
+        AssemblyLoadContext.Default.Resolving += ResolveFromLocalOutput;
+    }
+
+    private static Assembly? ResolveFromLocalOutput(AssemblyLoadContext context, AssemblyName assemblyName)
+    {
+        if (string.IsNullOrWhiteSpace(assemblyName.Name) ||
+            !assemblyName.Name.StartsWith("Chummer.", StringComparison.Ordinal))
+        {
+            return null;
+        }
+
+        string candidatePath = Path.Combine(AppContext.BaseDirectory, $"{assemblyName.Name}.dll");
+        if (!File.Exists(candidatePath))
+        {
+            return null;
+        }
+
+        return context.LoadFromAssemblyPath(candidatePath);
+    }
+}

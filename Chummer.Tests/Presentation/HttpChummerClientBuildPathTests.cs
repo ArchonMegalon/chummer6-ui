@@ -561,11 +561,11 @@ public sealed class HttpChummerClientBuildPathTests
         Assert.IsNotNull(projection);
         Assert.AreEqual("workspace-123", projection.WorkspaceId);
         Assert.AreEqual("Open the shared campaign view.", projection.NextSafeAction);
-        Assert.AreEqual("Two claimed devices can reopen the campaign, but one travel lane still needs a grounded checkpoint.", projection.TravelModeSummary);
+        Assert.AreEqual("Two claimed devices can reopen the campaign, but one travel path still needs a grounded checkpoint.", projection.TravelModeSummary);
         Assert.AreEqual("The governed memory lane keeps the Dockside handoff, the courier objective, and the downtime follow-through attached to the same workspace.", projection.CampaignMemorySummary);
         CollectionAssert.Contains(projection.ReadinessHighlights.ToArray(), "Roster: One dossier is ready.");
         CollectionAssert.Contains(projection.ReadinessHighlights.ToArray(), "Roster transfer: APEX — APEX moved into Thursday Crew Relay with governed ownership receipts attached.");
-        CollectionAssert.Contains(projection.ReadinessHighlights.ToArray(), "Travel mode: Two claimed devices can reopen the campaign, but one travel lane still needs a grounded checkpoint.");
+        CollectionAssert.Contains(projection.ReadinessHighlights.ToArray(), "Travel mode: Two claimed devices can reopen the campaign, but one travel path still needs a grounded checkpoint.");
         CollectionAssert.Contains(projection.ReadinessHighlights.ToArray(), "Travel inventory: 2 dossiers, 1 campaign, 1 rule environment, and governed prep packets stay bounded to the staged travel cache.");
         CollectionAssert.Contains(projection.ReadinessHighlights.ToArray(), "First session: The first playable session can start from Dockside without repo-only setup.");
         CollectionAssert.Contains(projection.ReadinessHighlights.ToArray(), "Legal runner: The starter build stays legal under the approved Seattle Streets environment.");
@@ -583,7 +583,7 @@ public sealed class HttpChummerClientBuildPathTests
         CollectionAssert.Contains(projection.ReadinessHighlights.ToArray(), "Item next: Open publication status before you widen the item audience.");
         CollectionAssert.Contains(projection.SupportHighlights.ToArray(), "Released: The fix reached the same claimed install.");
         CollectionAssert.Contains(projection.DecisionNotices.ToArray(), "install_role: preview_scout stays attached to windows/avalonia on preview.");
-        CollectionAssert.Contains(projection.Watchouts.ToArray(), "Travel mode: Two claimed devices can reopen the campaign, but one travel lane still needs a grounded checkpoint.");
+        CollectionAssert.Contains(projection.Watchouts.ToArray(), "Travel mode: Two claimed devices can reopen the campaign, but one travel path still needs a grounded checkpoint.");
         StringAssert.Contains(projection.PublicationSummary, "Artifact shelf: Dockside campaign packet is already attached on the publication shelf with shared visibility.");
     }
 
@@ -610,8 +610,8 @@ public sealed class HttpChummerClientBuildPathTests
     "formatId": "chummer.portable-campaign.v1",
     "compatibilityState": "compatible-with-warnings",
     "contextSummary": "Campaign Dockside is portable, but the package does not yet pin a live session cutover.",
-    "receiptSummary": "Portable dossier/campaign exchange is ready for inspect-only review or merge, while governed replace stays review-required until a live session export is pinned.",
-    "nextSafeAction": "Open inspect-only first or export again with a pinned session before you authorize governed replace on another surface.",
+    "receiptSummary": "Portable dossier/campaign exchange is ready for inspect-only review or merge, while reviewed replace stays review-required until a live session export is pinned.",
+    "nextSafeAction": "Open inspect-only first or export again with a pinned session before you authorize reviewed replace on another surface.",
     "supportedExchangeFormats": [
       "chummer.portable-dossier.v1",
       "chummer.portable-campaign.v1"
@@ -648,9 +648,9 @@ public sealed class HttpChummerClientBuildPathTests
         Assert.AreEqual("campaign-123", preview.CampaignId);
         Assert.AreEqual("compatible-with-warnings", preview.CompatibilityState);
         Assert.AreEqual("Campaign Dockside is portable, but the package does not yet pin a live session cutover.", preview.ContextSummary);
-        Assert.AreEqual("Portable dossier/campaign exchange is ready for inspect-only review or merge, while governed replace stays review-required until a live session export is pinned.", preview.ReceiptSummary);
-        Assert.AreEqual("Open inspect-only first or export again with a pinned session before you authorize governed replace on another surface.", preview.NextSafeAction);
-        Assert.AreEqual("6 portable asset(s): 1 dossier(s), 1 NPC(s), 1 session bundle(s), 1 encounter packet(s), 2 governed prep packet(s).", preview.AssetScopeSummary);
+        Assert.AreEqual("Portable dossier/campaign exchange is ready for inspect-only review or merge, while reviewed replace stays review-required until a live session export is pinned.", preview.ReceiptSummary);
+        Assert.AreEqual("Open inspect-only first or export again with a pinned session before you authorize reviewed replace on another surface.", preview.NextSafeAction);
+        Assert.AreEqual("6 portable asset(s): 1 dossier(s), 1 NPC(s), 1 session bundle(s), 1 encounter packet(s), 2 reviewed prep packet(s).", preview.AssetScopeSummary);
         CollectionAssert.AreEqual(
             new[] { "chummer.portable-dossier.v1", "chummer.portable-campaign.v1" },
             preview.SupportedExchangeFormats.ToArray());

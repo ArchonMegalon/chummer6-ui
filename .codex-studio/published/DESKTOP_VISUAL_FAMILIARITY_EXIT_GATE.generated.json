@@ -1,16 +1,20 @@
 {
-  "generatedAt": "2026-06-21T07:19:30.071755Z",
+  "generatedAt": "2026-06-24T03:37:31.206633Z",
   "contract_name": "chummer6-ui.desktop_visual_familiarity_exit_gate",
   "channelId": "public_stable",
-  "releaseVersion": "run-20260621-054902",
-  "status": "pass",
-  "summary": "Desktop visual familiarity is proven for shell chrome, loaded-runner tabs, dense builder posture, and explicit milestone-2 surface cues across creation, advancement, magic, matrix, gear, cyberware, vehicles, contacts, and diary plus SR4/SR5/SR6 codex orientation.",
-  "reasons": [],
+  "releaseVersion": "run-20260623-102621",
+  "status": "fail",
+  "summary": "Desktop visual familiarity is not fully proven.",
+  "reasons": [
+    "flagship_ui_release_gate is stale (245881s old; max 86400s)."
+  ],
   "reviews": {
     "flagshipGateReview": {
-      "status": "pass",
-      "reasonCount": 0,
-      "reasons": [],
+      "status": "fail",
+      "reasonCount": 1,
+      "reasons": [
+        "flagship_ui_release_gate is stale (245881s old; max 86400s)."
+      ],
       "receiptPath": "/docker/chummercomplete/chummer6-ui/.codex-studio/published/UI_FLAGSHIP_RELEASE_GATE.generated.json",
       "releaseChannelPath": "/docker/chummercomplete/chummer-hub-registry/.codex-studio/published/RELEASE_CHANNEL.generated.json"
     },
@@ -180,11 +184,12 @@
     "release_channel_path": "/docker/chummercomplete/chummer-hub-registry/.codex-studio/published/RELEASE_CHANNEL.generated.json",
     "flagship_gate_status": "fail",
     "flagship_ui_release_gate_generated_at": "2026-06-21T07:19:29.710336Z",
-    "flagship_ui_release_gate_age_seconds": 0,
+    "flagship_ui_release_gate_age_seconds": 245881,
+    "flagship_ui_release_gate_stale_pass_receipt_allowed": false,
     "release_channel_receipt_exists": true,
     "release_channel_channel_id": "public_stable",
-    "release_channel_version": "run-20260621-054902",
-    "release_channel_generated_at": "2026-06-21T05:53:14Z",
+    "release_channel_version": "run-20260623-102621",
+    "release_channel_generated_at": "2026-06-23T10:31:26Z",
     "flagship_gate.headProofs.status_normalized": {
       "avalonia": "pass",
       "blazor-desktop": "pass"
@@ -496,27 +501,27 @@
     "undersized_screenshots": {},
     "flagship_gate_reference_generated_at": "2026-06-21T07:19:29.710336Z",
     "screenshot_timestamps": {
-      "01-initial-shell-light.png": "2026-06-21T07:19:29.982831Z",
-      "02-menu-open-light.png": "2026-06-21T07:19:29.982831Z",
-      "03-settings-open-light.png": "2026-06-21T07:19:29.982831Z",
-      "04-loaded-runner-light.png": "2026-06-21T07:19:29.982831Z",
-      "05-dense-section-light.png": "2026-06-21T07:19:29.982831Z",
-      "06-dense-section-dark.png": "2026-06-21T07:19:29.982831Z",
-      "07-loaded-runner-tabs-light.png": "2026-06-21T07:19:29.982831Z",
-      "08-cyberware-dialog-light.png": "2026-06-21T07:19:29.982831Z",
-      "09-vehicles-section-light.png": "2026-06-21T07:19:29.982831Z",
-      "10-contacts-section-light.png": "2026-06-21T07:19:29.982831Z",
-      "11-diary-dialog-light.png": "2026-06-21T07:19:29.982831Z",
-      "12-magic-dialog-light.png": "2026-06-21T07:19:29.982831Z",
-      "13-matrix-dialog-light.png": "2026-06-21T07:19:29.982831Z",
-      "14-advancement-dialog-light.png": "2026-06-21T07:19:29.982831Z",
-      "15-creation-section-light.png": "2026-06-21T07:19:29.982831Z",
-      "16-master-index-dialog-light.png": "2026-06-21T07:19:29.982831Z",
-      "17-character-roster-dialog-light.png": "2026-06-21T07:19:29.982831Z",
-      "18-import-dialog-light.png": "2026-06-21T07:19:29.982831Z",
-      "38-translator-dialog-light.png": "2026-06-21T07:19:29.982831Z",
-      "39-xml-editor-dialog-light.png": "2026-06-21T07:19:29.982831Z",
-      "40-hero-lab-importer-dialog-light.png": "2026-06-21T07:19:29.982831Z"
+      "01-initial-shell-light.png": "2026-06-24T03:37:24.205288Z",
+      "02-menu-open-light.png": "2026-06-24T03:37:24.205288Z",
+      "03-settings-open-light.png": "2026-06-24T03:37:24.205288Z",
+      "04-loaded-runner-light.png": "2026-06-24T03:37:24.205288Z",
+      "05-dense-section-light.png": "2026-06-24T03:37:24.205288Z",
+      "06-dense-section-dark.png": "2026-06-24T03:37:24.205288Z",
+      "07-loaded-runner-tabs-light.png": "2026-06-24T03:37:24.205288Z",
+      "08-cyberware-dialog-light.png": "2026-06-24T03:37:24.205288Z",
+      "09-vehicles-section-light.png": "2026-06-24T03:37:24.205288Z",
+      "10-contacts-section-light.png": "2026-06-24T03:37:24.205288Z",
+      "11-diary-dialog-light.png": "2026-06-24T03:37:24.205288Z",
+      "12-magic-dialog-light.png": "2026-06-24T03:37:24.205288Z",
+      "13-matrix-dialog-light.png": "2026-06-24T03:37:24.205288Z",
+      "14-advancement-dialog-light.png": "2026-06-24T03:37:24.205288Z",
+      "15-creation-section-light.png": "2026-06-24T03:37:24.205288Z",
+      "16-master-index-dialog-light.png": "2026-06-24T03:37:24.205288Z",
+      "17-character-roster-dialog-light.png": "2026-06-24T03:37:24.205288Z",
+      "18-import-dialog-light.png": "2026-06-24T03:37:24.205288Z",
+      "38-translator-dialog-light.png": "2026-06-24T03:37:24.205288Z",
+      "39-xml-editor-dialog-light.png": "2026-06-24T03:37:24.205288Z",
+      "40-hero-lab-importer-dialog-light.png": "2026-06-24T03:37:24.205288Z"
     },
     "stale_screenshots": [],
     "screenshots_older_than_flagship_receipt": [],
@@ -570,6 +575,6 @@
     "contacts_diary_method_has_rhythm_markers": true,
     "ruleset_orientation_method_has_markers": true,
     "missing_ruleset_orientation_markers": [],
-    "failureCount": 0
+    "failureCount": 1
   }
 }

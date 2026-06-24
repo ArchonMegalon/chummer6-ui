@@ -56,7 +56,19 @@ public sealed record DesktopHomeCampaignServerPlaneDto(
 {
     public DesktopHomeCampaignServerPlane ToProjection()
     {
-        DesktopHomeRecapShelfEntryDto? leadRecapShelfEntry = RecapShelf.FirstOrDefault();
+        IReadOnlyList<DesktopHomeCampaignReadinessCueDto> readinessCues = ReadinessCues ?? [];
+        IReadOnlyList<DesktopHomeWorkspaceChangePacketDto> changePackets = ChangePackets ?? [];
+        IReadOnlyList<DesktopHomeRosterTransferDto> rosterTransfers = RosterTransfers ?? [];
+        IReadOnlyList<DesktopHomeDossierFreshnessCueDto> dossierFreshness = DossierFreshness ?? [];
+        IReadOnlyList<DesktopHomeRuleEnvironmentHealthCueDto> ruleEnvironmentHealth = RuleEnvironmentHealth ?? [];
+        IReadOnlyList<DesktopHomeContinuityConflictCueDto> continuityConflicts = ContinuityConflicts ?? [];
+        IReadOnlyList<DesktopHomeRecapShelfEntryDto> recapShelf = RecapShelf ?? [];
+        IReadOnlyList<DesktopHomeSupportClosureCueDto> supportClosures = SupportClosures ?? [];
+        IReadOnlyList<DesktopHomeKnownIssueCueDto> knownIssues = KnownIssues ?? [];
+        IReadOnlyList<DesktopHomeDecisionNoticeDto> decisionNoticesSource = DecisionNotices ?? [];
+        IReadOnlyList<DesktopHomeRunnerGoalPinDto> goalPins = GoalPins ?? [];
+
+        DesktopHomeRecapShelfEntryDto? leadRecapShelfEntry = recapShelf.FirstOrDefault();
         List<string> readinessHighlights =
         [
             CampaignSummary.SessionReadinessSummary,
@@ -109,9 +121,9 @@ public sealed record DesktopHomeCampaignServerPlaneDto(
             readinessHighlights.Add($"Adoption details: {UndetectableHumanizerCopyAdapter.Humanize(Adoption.EvidenceLines[0])}");
         }
 
-        if (GoalPins.Count > 0)
+        if (goalPins.Count > 0)
         {
-            readinessHighlights.Add($"Goal pins: {BuildGoalPinSummary(GoalPins)}");
+            readinessHighlights.Add($"Goal pins: {BuildGoalPinSummary(goalPins)}");
         }
 
         if (!string.IsNullOrWhiteSpace(ResolutionReport?.Summary))
@@ -180,35 +192,35 @@ public sealed record DesktopHomeCampaignServerPlaneDto(
             }
         }
 
-        readinessHighlights.AddRange(ReadinessCues
+        readinessHighlights.AddRange(readinessCues
             .Take(3)
             .Select(static cue => $"{cue.Title} — {cue.Summary}"));
-        readinessHighlights.AddRange(ChangePackets
+        readinessHighlights.AddRange(changePackets
             .Take(2)
             .Select(static packet => $"{packet.Label} — {packet.Summary}"));
-        readinessHighlights.AddRange(RosterTransfers
+        readinessHighlights.AddRange(rosterTransfers
             .Take(2)
             .Select(static transfer => $"Roster transfer: {transfer.RunnerHandle} — {transfer.Summary}"));
 
         List<string> watchouts = [];
-        watchouts.AddRange(DossierFreshness
+        watchouts.AddRange(dossierFreshness
             .Where(static cue => NeedsAttention(cue.Severity))
             .Select(static cue => $"{cue.RunnerHandle}: {cue.Summary}"));
-        watchouts.AddRange(RuleEnvironmentHealth
+        watchouts.AddRange(ruleEnvironmentHealth
             .Where(static cue => NeedsAttention(cue.Severity))
             .Select(static cue => $"{cue.Title}: {cue.Summary}"));
-        watchouts.AddRange(ContinuityConflicts.Select(static cue => cue.Summary));
-        watchouts.AddRange(KnownIssues.Select(static cue => cue.Summary));
+        watchouts.AddRange(continuityConflicts.Select(static cue => cue.Summary));
+        watchouts.AddRange(knownIssues.Select(static cue => cue.Summary));
         if (NeedsAttention(TravelMode?.Status))
         {
             watchouts.Add($"Travel mode: {TravelMode!.Summary}");
         }
 
-        IReadOnlyList<string> supportHighlights = SupportClosures
+        IReadOnlyList<string> supportHighlights = supportClosures
             .Take(3)
             .Select(static cue => $"{cue.StageLabel}: {cue.Summary}")
             .ToArray();
-        IReadOnlyList<string> decisionNotices = DecisionNotices
+        IReadOnlyList<string> decisionNotices = decisionNoticesSource
             .Take(3)
             .Select(static notice => $"{notice.Kind}: {notice.Summary}")
             .ToArray();
@@ -238,7 +250,7 @@ public sealed record DesktopHomeCampaignServerPlaneDto(
             AdoptionSummary: NormalizeOptional(Adoption?.Summary),
             AdoptionConfidenceSummary: NormalizeOptional(Adoption?.ConfidenceSummary),
             AdoptionEvidenceSummary: Adoption?.EvidenceLines.Count > 0 ? NormalizeOptional(Adoption.EvidenceLines[0]) : null,
-            GoalPinSummary: GoalPins.Count > 0 ? BuildGoalPinSummary(GoalPins) : null,
+            GoalPinSummary: goalPins.Count > 0 ? BuildGoalPinSummary(goalPins) : null,
             ResolutionReportSummary: NormalizeOptional(ResolutionReport?.Summary),
             BlackLedgerSummary: NormalizeOptional(BlackLedger?.Summary),
             BlackLedgerProofSummary: NormalizeOptional(BlackLedger?.ProofSummary),

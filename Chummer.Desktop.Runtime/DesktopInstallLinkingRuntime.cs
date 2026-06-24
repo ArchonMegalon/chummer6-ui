@@ -26,6 +26,16 @@ public sealed record DesktopInstallClaimResult(
     string Message,
     DesktopInstallLinkingState State);
 
+public sealed record DesktopStartupAccountLaunchRequest(
+    string? Ticket,
+    string? Kind,
+    string? ResourceId);
+
+public sealed record DesktopStartupAccountLaunchResult(
+    string Kind,
+    string ResourceId,
+    string Source);
+
 public sealed record DesktopInstallLinkingState(
     string InstallationId,
     string HeadId,
@@ -167,6 +177,57 @@ public static class DesktopInstallLinkingRuntime
         => Task.Run(() => InitializeForStartupAsync(headId, args, cancellationToken), cancellationToken)
             .GetAwaiter()
             .GetResult();
+
+    public static bool TryExtractStartupAccountLaunchFromArguments(
+        IReadOnlyList<string> args,
+        out DesktopStartupAccountLaunchRequest? launch)
+    {
+        ArgumentNullException.ThrowIfNull(args);
+        return TryExtractStartupAccountLaunchFromArgumentsCore(args, out launch);
+    }
+
+    public static async Task<DesktopStartupAccountLaunchResult?> ResolveStartupAccountLaunchAsync(
+        string headId,
+        IReadOnlyList<string> args,
+        DesktopInstallLinkingState state,
+        CancellationToken cancellationToken)
+    {
+        ArgumentException.ThrowIfNullOrWhiteSpace(headId);
+        ArgumentNullException.ThrowIfNull(args);
+        ArgumentNullException.ThrowIfNull(state);
+
+        if (!TryExtractStartupAccountLaunchFromArgumentsCore(args, out DesktopStartupAccountLaunchRequest? launch)
+            || launch is null)
+        {
+            return null;
+        }
+
+        if (!string.IsNullOrWhiteSpace(launch.Ticket)
+            && IsClaimed(state)
+            && !string.IsNullOrWhiteSpace(state.GrantToken))
+        {
+            DesktopStartupAccountLaunchResult? exchanged = await TryExchangeStartupAccountLaunchTicketAsync(
+                state,
+                launch.Ticket!,
+                cancellationToken).ConfigureAwait(false);
+            if (exchanged is not null)
+            {
+                return exchanged;
+            }
+        }
+
+        string? normalizedKind = NormalizeLaunchKind(launch.Kind);
+        string? normalizedResourceId = NormalizeLaunchResourceId(launch.ResourceId);
+        if (normalizedKind is null || normalizedResourceId is null)
+        {
+            return null;
+        }
+
+        return new DesktopStartupAccountLaunchResult(
+            Kind: normalizedKind,
+            ResourceId: normalizedResourceId,
+            Source: "uri_fallback");
+    }
 
     public static async Task<int?> TryHandleHeadlessInstallLinkModeAsync(
         string headId,
@@ -1577,6 +1638,49 @@ public static class DesktopInstallLinkingRuntime
         return false;
     }
 
+    private static bool TryExtractStartupAccountLaunchFromArgumentsCore(
+        IReadOnlyList<string> args,
+        out DesktopStartupAccountLaunchRequest? launch)
+    {
+        launch = null;
+        for (int i = 0; i < args.Count; i++)
+        {
+            if (TryExtractStartupAccountLaunchFromUri(args[i], out launch))
+            {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    private static bool TryExtractStartupAccountLaunchFromUri(string? rawValue, out DesktopStartupAccountLaunchRequest? launch)
+    {
+        launch = null;
+        if (string.IsNullOrWhiteSpace(rawValue))
+        {
+            return false;
+        }
+
+        string candidate = rawValue.Trim().Trim('"');
+        if (!Uri.TryCreate(candidate, UriKind.Absolute, out Uri? uri) || !IsStartupAccountLaunchUri(uri))
+        {
+            return false;
+        }
+
+        Dictionary<string, string> query = ParseQueryParameters(uri.Query);
+        string? ticket = query.TryGetValue("ticket", out string? rawTicket) ? NormalizeLaunchTicket(rawTicket) : null;
+        string? kind = query.TryGetValue("kind", out string? rawKind) ? NormalizeLaunchKind(rawKind) : null;
+        string? resourceId = query.TryGetValue("id", out string? rawId) ? NormalizeLaunchResourceId(rawId) : null;
+        if (ticket is null && (kind is null || resourceId is null))
+        {
+            return false;
+        }
+
+        launch = new DesktopStartupAccountLaunchRequest(ticket, kind, resourceId);
+        return true;
+    }
+
     private static IReadOnlyList<string> GetPendingClaimCodePaths(DesktopInstallLinkingState state)
     {
         HashSet<string> pendingPaths = [];
@@ -2228,6 +2332,22 @@ public static class DesktopInstallLinkingRuntime
         return claimCode is not null;
     }
 
+    private static bool IsStartupAccountLaunchUri(Uri uri)
+    {
+        if (!string.Equals(uri.Scheme, "chummer", StringComparison.OrdinalIgnoreCase))
+        {
+            return false;
+        }
+
+        if (string.Equals(uri.Host, "open", StringComparison.OrdinalIgnoreCase))
+        {
+            return true;
+        }
+
+        string absolutePath = uri.AbsolutePath.Trim('/');
+        return string.Equals(absolutePath, "open", StringComparison.OrdinalIgnoreCase);
+    }
+
     private static bool IsInstallLinkCallbackUri(Uri uri)
     {
         if (string.Equals(uri.Scheme, "chummer", StringComparison.OrdinalIgnoreCase))
@@ -2238,6 +2358,78 @@ public static class DesktopInstallLinkingRuntime
         string absolutePath = uri.AbsolutePath.Trim('/');
         return absolutePath.Contains("install-link", StringComparison.OrdinalIgnoreCase)
                || absolutePath.Contains("downloads/install", StringComparison.OrdinalIgnoreCase);
+    }
+
+    private static async Task<DesktopStartupAccountLaunchResult?> TryExchangeStartupAccountLaunchTicketAsync(
+        DesktopInstallLinkingState state,
+        string ticket,
+        CancellationToken cancellationToken)
+    {
+        string? normalizedTicket = NormalizeLaunchTicket(ticket);
+        if (normalizedTicket is null || string.IsNullOrWhiteSpace(state.GrantToken))
+        {
+            return null;
+        }
+
+        try
+        {
+            DesktopAccountLaunchExchangeRequestDto request = new(
+                InstallationId: state.InstallationId,
+                AccessToken: state.GrantToken,
+                Ticket: normalizedTicket);
+
+            using HttpClient client = CreateApiHttpClient(TimeSpan.FromSeconds(20));
+            using StringContent content = new(
+                JsonSerializer.Serialize(request, JsonOptions),
+                Encoding.UTF8,
+                MediaTypeNames.Application.Json);
+            using HttpResponseMessage response = await client.PostAsync("api/v1/install-linking/desktop-launch/exchange", content, cancellationToken).ConfigureAwait(false);
+            if (!response.IsSuccessStatusCode)
+            {
+                return null;
+            }
+
+            string responseText = await response.Content.ReadAsStringAsync(cancellationToken).ConfigureAwait(false);
+            DesktopAccountLaunchExchangeResponseDto? accepted = JsonSerializer.Deserialize<DesktopAccountLaunchExchangeResponseDto>(responseText, JsonOptions);
+            string? kind = NormalizeLaunchKind(accepted?.Kind);
+            string? resourceId = NormalizeLaunchResourceId(accepted?.ResourceId);
+            if (kind is null || resourceId is null)
+            {
+                return null;
+            }
+
+            return new DesktopStartupAccountLaunchResult(
+                Kind: kind,
+                ResourceId: resourceId,
+                Source: "validated_ticket");
+        }
+        catch
+        {
+            return null;
+        }
+    }
+
+    private static string? NormalizeLaunchTicket(string? value)
+        => string.IsNullOrWhiteSpace(value) ? null : value.Trim();
+
+    private static string? NormalizeLaunchResourceId(string? value)
+        => string.IsNullOrWhiteSpace(value) ? null : value.Trim();
+
+    private static string? NormalizeLaunchKind(string? value)
+    {
+        if (string.IsNullOrWhiteSpace(value))
+        {
+            return null;
+        }
+
+        return value.Trim().ToLowerInvariant() switch
+        {
+            "character" => "character",
+            "campaign" => "campaign",
+            "group" => "group",
+            "example-character" => "example-character",
+            _ => null
+        };
     }
 
     private static string? TryReadBrowserCallbackCodeFromQueryString(string? rawQuery)

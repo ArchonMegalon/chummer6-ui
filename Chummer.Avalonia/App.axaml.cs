@@ -221,6 +221,19 @@ public partial class App : global::Avalonia.Application
                 currentInstallState = DesktopInstallLinkingRuntime.LoadOrCreateState(currentInstallState.HeadId);
                 owner.ApplyInstallLinkingChrome(currentInstallState);
             }
+
+            try
+            {
+                bool startupLaunchHandled = await TryOpenStartupAccountLaunchAsync(owner, currentInstallState).ConfigureAwait(true);
+                if (startupLaunchHandled)
+                {
+                    return;
+                }
+            }
+            catch (Exception ex)
+            {
+                Console.Error.WriteLine($"Failed to open the requested desktop surface from the account launch bridge: {ex}");
+            }
         }
 
         if (DesktopUpdateRuntime.ShouldPromptForStartupUpdate("avalonia"))
@@ -446,5 +459,36 @@ public partial class App : global::Avalonia.Application
             DesktopStartupSurfaceCatalog.CrashRecovery => true,
             _ => false
         };
+    }
+
+    private static async Task<bool> TryOpenStartupAccountLaunchAsync(Window owner, DesktopInstallLinkingState installState)
+    {
+        DesktopStartupAccountLaunchResult? launch = await DesktopInstallLinkingRuntime.ResolveStartupAccountLaunchAsync(
+            installState.HeadId,
+            StartupArguments,
+            installState,
+            CancellationToken.None).ConfigureAwait(true);
+        if (launch is null)
+        {
+            return false;
+        }
+
+        switch (launch.Kind)
+        {
+            case "character":
+                await DesktopJackpointWindow.ShowAsync(owner, installState.HeadId).ConfigureAwait(true);
+                return true;
+            case "campaign":
+                await DesktopCampaignWorkspaceWindow.ShowAsync(owner, installState.HeadId).ConfigureAwait(true);
+                return true;
+            case "group":
+                await DesktopCommunityHubWindow.ShowAsync(owner, installState.HeadId).ConfigureAwait(true);
+                return true;
+            case "example-character":
+                await DesktopAliceWindow.ShowAsync(owner, installState.HeadId).ConfigureAwait(true);
+                return true;
+            default:
+                return false;
+        }
     }
 }

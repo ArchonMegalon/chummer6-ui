@@ -34,7 +34,7 @@
     <NoWarn>$(NoWarn);NU1701;CS0162;CS0169;CS8632;CS9124;MSTEST0037;VSTHRD003;VSTHRD100;VSTHRD103;VSTHRD200</NoWarn>
     <RestoreNoWarn>$(RestoreNoWarn);NU1701</RestoreNoWarn>
     <EmbeddedResourceUseDependentUponConvention>true</EmbeddedResourceUseDependentUponConvention>
-    <AppendTargetFrameworkToOutputPath>false</AppendTargetFrameworkToOutputPath>
+    <AppendTargetFrameworkToOutputPath>true</AppendTargetFrameworkToOutputPath>
     <AssemblyVersion>5.225.0.0</AssemblyVersion>
     <FileVersion>5.225.0.0</FileVersion>
     <InformationalVersion>5.225.0.0</InformationalVersion>
@@ -371,13 +371,21 @@
     <Compile Remove="CoreXmlNodeExtensionsTests.cs" />
   </ItemGroup>
   <ItemGroup>
-    <ProjectReference Include="..\Chummer.Avalonia\Chummer.Avalonia.csproj" />
-    <ProjectReference Include="..\Chummer.Api\Chummer.Api.csproj" Condition="Exists('..\\Chummer.Api\\Chummer.Api.csproj')" />
+    <ProjectReference Include="..\Chummer.Avalonia\Chummer.Avalonia.csproj">
+      <Private>false</Private>
+    </ProjectReference>
+    <ProjectReference Include="..\Chummer.Api\Chummer.Api.csproj" Condition="Exists('..\\Chummer.Api\\Chummer.Api.csproj')">
+      <Private>false</Private>
+    </ProjectReference>
     <ProjectReference Include="..\..\chummer-core-engine\Chummer.Application\Chummer.Application.csproj" Condition="Exists('..\\..\\chummer-core-engine\\Chummer.Application\\Chummer.Application.csproj')" />
-    <ProjectReference Include="..\Chummer.Blazor\Chummer.Blazor.csproj" />
+    <ProjectReference Include="..\Chummer.Blazor\Chummer.Blazor.csproj">
+      <Private>false</Private>
+    </ProjectReference>
     <ProjectReference Include="..\Chummer.Desktop.Runtime\Chummer.Desktop.Runtime.csproj" />
     <ProjectReference Include="..\..\chummer-core-engine\Chummer.Core\Chummer.Core.csproj" Condition="Exists('..\\..\\chummer-core-engine\\Chummer.Core\\Chummer.Core.csproj')" />
-    <ProjectReference Include="..\Chummer.Hub.Web\Chummer.Hub.Web.csproj" Condition="Exists('..\\Chummer.Hub.Web\\Chummer.Hub.Web.csproj')" />
+    <ProjectReference Include="..\Chummer.Hub.Web\Chummer.Hub.Web.csproj" Condition="Exists('..\\Chummer.Hub.Web\\Chummer.Hub.Web.csproj')">
+      <Private>false</Private>
+    </ProjectReference>
     <ProjectReference Include="..\..\chummer-core-engine\Chummer.Infrastructure.Browser\Chummer.Infrastructure.Browser.csproj" Condition="Exists('..\\..\\chummer-core-engine\\Chummer.Infrastructure.Browser\\Chummer.Infrastructure.Browser.csproj')" />
     <ProjectReference Include="..\..\chummer-core-engine\Chummer.Infrastructure\Chummer.Infrastructure.csproj" Condition="Exists('..\\..\\chummer-core-engine\\Chummer.Infrastructure\\Chummer.Infrastructure.csproj')" />
     <ProjectReference Include="..\Chummer.Portal\Chummer.Portal.csproj" Condition="Exists('..\\Chummer.Portal\\Chummer.Portal.csproj')" />
@@ -424,4 +432,19 @@
     <PackageReference Include="System.Configuration.ConfigurationManager" Version="10.0.0" />
     <PackageReference Include="XMLUnit.Core" Version="2.11.1" />
   </ItemGroup>
+
+  <ItemGroup Condition="'$(TargetFramework)' == 'net10.0'">
+    <_DesktopSurfaceAssembly Include="..\Chummer.Avalonia\bin\$(Configuration)\net10.0\Chummer.Avalonia.dll" Condition="Exists('..\Chummer.Avalonia\bin\$(Configuration)\net10.0\Chummer.Avalonia.dll')" />
+    <_DesktopSurfaceAssembly Include="..\Chummer.Avalonia\bin\$(Configuration)\net10.0\Chummer.Avalonia.pdb" Condition="Exists('..\Chummer.Avalonia\bin\$(Configuration)\net10.0\Chummer.Avalonia.pdb')" />
+    <_DesktopSurfaceAssembly Include="..\Chummer.Api\bin\$(Configuration)\net10.0\Chummer.Api.dll" Condition="Exists('..\Chummer.Api\bin\$(Configuration)\net10.0\Chummer.Api.dll')" />
+    <_DesktopSurfaceAssembly Include="..\Chummer.Api\bin\$(Configuration)\net10.0\Chummer.Api.pdb" Condition="Exists('..\Chummer.Api\bin\$(Configuration)\net10.0\Chummer.Api.pdb')" />
+    <_DesktopSurfaceAssembly Include="..\Chummer.Blazor\bin\$(Configuration)\net10.0\Chummer.Blazor.dll" Condition="Exists('..\Chummer.Blazor\bin\$(Configuration)\net10.0\Chummer.Blazor.dll')" />
+    <_DesktopSurfaceAssembly Include="..\Chummer.Blazor\bin\$(Configuration)\net10.0\Chummer.Blazor.pdb" Condition="Exists('..\Chummer.Blazor\bin\$(Configuration)\net10.0\Chummer.Blazor.pdb')" />
+    <_DesktopSurfaceAssembly Include="..\Chummer.Hub.Web\bin\$(Configuration)\net10.0\Chummer.Hub.Web.dll" Condition="Exists('..\Chummer.Hub.Web\bin\$(Configuration)\net10.0\Chummer.Hub.Web.dll')" />
+    <_DesktopSurfaceAssembly Include="..\Chummer.Hub.Web\bin\$(Configuration)\net10.0\Chummer.Hub.Web.pdb" Condition="Exists('..\Chummer.Hub.Web\bin\$(Configuration)\net10.0\Chummer.Hub.Web.pdb')" />
+  </ItemGroup>
+
+  <Target Name="CopyDesktopSurfaceAssembliesForTestDiscovery" AfterTargets="Build" Condition="'$(TargetFramework)' == 'net10.0' and '@(_DesktopSurfaceAssembly)' != ''">
+    <Copy SourceFiles="@(_DesktopSurfaceAssembly)" DestinationFolder="$(OutDir)" SkipUnchangedFiles="true" />
+  </Target>
 </Project>

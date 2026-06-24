@@ -1,58 +1,127 @@
 {
-  "generated_at": "2026-06-21T07:36:14.003078Z",
-  "generatedAt": "2026-06-21T07:36:14.003078Z",
+  "generated_at": "2026-06-24T03:02:45.020933Z",
+  "generatedAt": "2026-06-24T03:02:45.020933Z",
   "contract_name": "chummer6-ui.desktop_executable_exit_gate",
   "channelId": "public_stable",
-  "releaseVersion": "run-20260621-054902",
+  "releaseVersion": "run-20260623-102621",
   "status": "fail",
   "summary": "Desktop executable exit gate is not fully proven.",
   "reasons": [
-    "Release channel supportabilityState must be local_docker_proven/preview_supported/gold_supported when status is publishable and required desktop tuple coverage is complete.",
-    "Release channel supportabilityState cannot remain review_required when required desktop tuple coverage is complete.",
+    "flagship UI release gate proof is stale (243790s old).",
+    "Desktop visual familiarity exit gate is missing or not passing.",
+    "Desktop workflow execution gate is missing or not passing.",
     "Windows desktop exit gate requires a Windows-capable host; current host cannot run promoted Windows installer smoke.",
-    "Windows gate reason: Windows installer visual proof is missing; capture progress and completion screenshots on a Windows host."
+    "Windows gate reason: Published Windows installer is missing a recognizable desktop payload marker.",
+    "Windows gate reason: Published Windows installer is missing the bundled sample-character marker.",
+    "Windows gate reason: Windows installer visual proof is missing; capture progress and completion screenshots on a Windows host.",
+    "Windows gate reason: Chummer5a desktop workflow parity proof is missing or not passed.",
+    "Windows installer receipt does not confirm a recognizable payload marker for promoted tuple avalonia:win-x64.",
+    "Windows installer receipt does not confirm bundled demo sample marker for promoted tuple avalonia:win-x64.",
+    "linux desktop exit gate proof for avalonia:linux-x64 is stale (242793s old).",
+    "Linux desktop exit gate receipt checks.release_channel_version does not match release channel version for promoted head 'avalonia'.",
+    "Linux desktop exit gate receipt releaseVersion/version does not match release channel version for promoted head 'avalonia'.",
+    "Linux installer startup smoke receipt version does not match release channel version for promoted head 'avalonia'.",
+    "Linux gate embedded release_channel_linux_artifact version/releaseVersion does not match promoted release channel version.",
+    "Linux gate embedded release_channel_linux_artifact sha256 does not match promoted release channel.",
+    "Linux gate embedded release_channel_linux_artifact sizeBytes does not match promoted release channel."
   ],
   "blockingFindings": [
-    "Release channel supportabilityState must be local_docker_proven/preview_supported/gold_supported when status is publishable and required desktop tuple coverage is complete.",
-    "Release channel supportabilityState cannot remain review_required when required desktop tuple coverage is complete.",
+    "flagship UI release gate proof is stale (243790s old).",
+    "Desktop visual familiarity exit gate is missing or not passing.",
+    "Desktop workflow execution gate is missing or not passing.",
     "Windows desktop exit gate requires a Windows-capable host; current host cannot run promoted Windows installer smoke.",
-    "Windows gate reason: Windows installer visual proof is missing; capture progress and completion screenshots on a Windows host."
+    "Windows gate reason: Published Windows installer is missing a recognizable desktop payload marker.",
+    "Windows gate reason: Published Windows installer is missing the bundled sample-character marker.",
+    "Windows gate reason: Windows installer visual proof is missing; capture progress and completion screenshots on a Windows host.",
+    "Windows gate reason: Chummer5a desktop workflow parity proof is missing or not passed.",
+    "Windows installer receipt does not confirm a recognizable payload marker for promoted tuple avalonia:win-x64.",
+    "Windows installer receipt does not confirm bundled demo sample marker for promoted tuple avalonia:win-x64.",
+    "linux desktop exit gate proof for avalonia:linux-x64 is stale (242793s old).",
+    "Linux desktop exit gate receipt checks.release_channel_version does not match release channel version for promoted head 'avalonia'.",
+    "Linux desktop exit gate receipt releaseVersion/version does not match release channel version for promoted head 'avalonia'.",
+    "Linux installer startup smoke receipt version does not match release channel version for promoted head 'avalonia'.",
+    "Linux gate embedded release_channel_linux_artifact version/releaseVersion does not match promoted release channel version.",
+    "Linux gate embedded release_channel_linux_artifact sha256 does not match promoted release channel.",
+    "Linux gate embedded release_channel_linux_artifact sizeBytes does not match promoted release channel."
   ],
   "blocking_findings": [
-    "Release channel supportabilityState must be local_docker_proven/preview_supported/gold_supported when status is publishable and required desktop tuple coverage is complete.",
-    "Release channel supportabilityState cannot remain review_required when required desktop tuple coverage is complete.",
+    "flagship UI release gate proof is stale (243790s old).",
+    "Desktop visual familiarity exit gate is missing or not passing.",
+    "Desktop workflow execution gate is missing or not passing.",
     "Windows desktop exit gate requires a Windows-capable host; current host cannot run promoted Windows installer smoke.",
-    "Windows gate reason: Windows installer visual proof is missing; capture progress and completion screenshots on a Windows host."
+    "Windows gate reason: Published Windows installer is missing a recognizable desktop payload marker.",
+    "Windows gate reason: Published Windows installer is missing the bundled sample-character marker.",
+    "Windows gate reason: Windows installer visual proof is missing; capture progress and completion screenshots on a Windows host.",
+    "Windows gate reason: Chummer5a desktop workflow parity proof is missing or not passed.",
+    "Windows installer receipt does not confirm a recognizable payload marker for promoted tuple avalonia:win-x64.",
+    "Windows installer receipt does not confirm bundled demo sample marker for promoted tuple avalonia:win-x64.",
+    "linux desktop exit gate proof for avalonia:linux-x64 is stale (242793s old).",
+    "Linux desktop exit gate receipt checks.release_channel_version does not match release channel version for promoted head 'avalonia'.",
+    "Linux desktop exit gate receipt releaseVersion/version does not match release channel version for promoted head 'avalonia'.",
+    "Linux installer startup smoke receipt version does not match release channel version for promoted head 'avalonia'.",
+    "Linux gate embedded release_channel_linux_artifact version/releaseVersion does not match promoted release channel version.",
+    "Linux gate embedded release_channel_linux_artifact sha256 does not match promoted release channel.",
+    "Linux gate embedded release_channel_linux_artifact sizeBytes does not match promoted release channel."
   ],
-  "blockingFindingsCount": 4,
-  "blocking_findings_count": 4,
+  "blockingFindingsCount": 17,
+  "blocking_findings_count": 17,
   "externalBlockingFindings": [
-    "Windows desktop exit gate requires a Windows-capable host; current host cannot run promoted Windows installer smoke."
+    "Windows desktop exit gate requires a Windows-capable host; current host cannot run promoted Windows installer smoke.",
+    "Windows installer receipt does not confirm a recognizable payload marker for promoted tuple avalonia:win-x64.",
+    "Windows installer receipt does not confirm bundled demo sample marker for promoted tuple avalonia:win-x64."
   ],
   "external_blocking_findings": [
-    "Windows desktop exit gate requires a Windows-capable host; current host cannot run promoted Windows installer smoke."
+    "Windows desktop exit gate requires a Windows-capable host; current host cannot run promoted Windows installer smoke.",
+    "Windows installer receipt does not confirm a recognizable payload marker for promoted tuple avalonia:win-x64.",
+    "Windows installer receipt does not confirm bundled demo sample marker for promoted tuple avalonia:win-x64."
   ],
-  "externalBlockingFindingsCount": 1,
-  "external_blocking_findings_count": 1,
+  "externalBlockingFindingsCount": 3,
+  "external_blocking_findings_count": 3,
   "localBlockingFindings": [
-    "Release channel supportabilityState must be local_docker_proven/preview_supported/gold_supported when status is publishable and required desktop tuple coverage is complete.",
-    "Release channel supportabilityState cannot remain review_required when required desktop tuple coverage is complete.",
-    "Windows gate reason: Windows installer visual proof is missing; capture progress and completion screenshots on a Windows host."
+    "flagship UI release gate proof is stale (243790s old).",
+    "Desktop visual familiarity exit gate is missing or not passing.",
+    "Desktop workflow execution gate is missing or not passing.",
+    "Windows gate reason: Published Windows installer is missing a recognizable desktop payload marker.",
+    "Windows gate reason: Published Windows installer is missing the bundled sample-character marker.",
+    "Windows gate reason: Windows installer visual proof is missing; capture progress and completion screenshots on a Windows host.",
+    "Windows gate reason: Chummer5a desktop workflow parity proof is missing or not passed.",
+    "linux desktop exit gate proof for avalonia:linux-x64 is stale (242793s old).",
+    "Linux desktop exit gate receipt checks.release_channel_version does not match release channel version for promoted head 'avalonia'.",
+    "Linux desktop exit gate receipt releaseVersion/version does not match release channel version for promoted head 'avalonia'.",
+    "Linux installer startup smoke receipt version does not match release channel version for promoted head 'avalonia'.",
+    "Linux gate embedded release_channel_linux_artifact version/releaseVersion does not match promoted release channel version.",
+    "Linux gate embedded release_channel_linux_artifact sha256 does not match promoted release channel.",
+    "Linux gate embedded release_channel_linux_artifact sizeBytes does not match promoted release channel."
   ],
   "local_blocking_findings": [
-    "Release channel supportabilityState must be local_docker_proven/preview_supported/gold_supported when status is publishable and required desktop tuple coverage is complete.",
-    "Release channel supportabilityState cannot remain review_required when required desktop tuple coverage is complete.",
-    "Windows gate reason: Windows installer visual proof is missing; capture progress and completion screenshots on a Windows host."
+    "flagship UI release gate proof is stale (243790s old).",
+    "Desktop visual familiarity exit gate is missing or not passing.",
+    "Desktop workflow execution gate is missing or not passing.",
+    "Windows gate reason: Published Windows installer is missing a recognizable desktop payload marker.",
+    "Windows gate reason: Published Windows installer is missing the bundled sample-character marker.",
+    "Windows gate reason: Windows installer visual proof is missing; capture progress and completion screenshots on a Windows host.",
+    "Windows gate reason: Chummer5a desktop workflow parity proof is missing or not passed.",
+    "linux desktop exit gate proof for avalonia:linux-x64 is stale (242793s old).",
+    "Linux desktop exit gate receipt checks.release_channel_version does not match release channel version for promoted head 'avalonia'.",
+    "Linux desktop exit gate receipt releaseVersion/version does not match release channel version for promoted head 'avalonia'.",
+    "Linux installer startup smoke receipt version does not match release channel version for promoted head 'avalonia'.",
+    "Linux gate embedded release_channel_linux_artifact version/releaseVersion does not match promoted release channel version.",
+    "Linux gate embedded release_channel_linux_artifact sha256 does not match promoted release channel.",
+    "Linux gate embedded release_channel_linux_artifact sizeBytes does not match promoted release channel."
   ],
-  "localBlockingFindingsCount": 3,
-  "local_blocking_findings_count": 3,
+  "localBlockingFindingsCount": 14,
+  "local_blocking_findings_count": 14,
   "blockedByExternalConstraintsOnly": false,
   "blocked_by_external_constraints_only": false,
   "reviews": {
     "upstreamReceiptReview": {
-      "status": "pass",
-      "reasonCount": 0,
-      "reasons": [],
+      "status": "fail",
+      "reasonCount": 3,
+      "reasons": [
+        "flagship UI release gate proof is stale (243790s old).",
+        "Desktop visual familiarity exit gate is missing or not passing.",
+        "Desktop workflow execution gate is missing or not passing."
+      ],
       "requiredReceipts": [
         "/docker/chummercomplete/chummer6-ui/.codex-studio/published/UI_FLAGSHIP_RELEASE_GATE.generated.json",
         "/docker/chummercomplete/chummer6-ui/.codex-studio/published/DESKTOP_VISUAL_FAMILIARITY_EXIT_GATE.generated.json",
@@ -60,12 +129,9 @@
       ]
     },
     "releaseChannelReview": {
-      "status": "fail",
-      "reasonCount": 2,
-      "reasons": [
-        "Release channel supportabilityState must be local_docker_proven/preview_supported/gold_supported when status is publishable and required desktop tuple coverage is complete.",
-        "Release channel supportabilityState cannot remain review_required when required desktop tuple coverage is complete."
-      ],
+      "status": "pass",
+      "reasonCount": 0,
+      "reasons": [],
       "requiredPlatforms": [
         "linux",
         "windows"
@@ -76,10 +142,15 @@
     },
     "windowsPlatformReview": {
       "status": "fail",
-      "reasonCount": 2,
+      "reasonCount": 7,
       "reasons": [
         "Windows desktop exit gate requires a Windows-capable host; current host cannot run promoted Windows installer smoke.",
-        "Windows gate reason: Windows installer visual proof is missing; capture progress and completion screenshots on a Windows host."
+        "Windows gate reason: Published Windows installer is missing a recognizable desktop payload marker.",
+        "Windows gate reason: Published Windows installer is missing the bundled sample-character marker.",
+        "Windows gate reason: Windows installer visual proof is missing; capture progress and completion screenshots on a Windows host.",
+        "Windows gate reason: Chummer5a desktop workflow parity proof is missing or not passed.",
+        "Windows installer receipt does not confirm a recognizable payload marker for promoted tuple avalonia:win-x64.",
+        "Windows installer receipt does not confirm bundled demo sample marker for promoted tuple avalonia:win-x64."
       ],
       "gateStatuses": {
         "avalonia:win-x64": "fail"
@@ -94,11 +165,19 @@
       ]
     },
     "linuxPlatformReview": {
-      "status": "pass",
-      "reasonCount": 0,
-      "reasons": [],
+      "status": "fail",
+      "reasonCount": 7,
+      "reasons": [
+        "linux desktop exit gate proof for avalonia:linux-x64 is stale (242793s old).",
+        "Linux desktop exit gate receipt checks.release_channel_version does not match release channel version for promoted head 'avalonia'.",
+        "Linux desktop exit gate receipt releaseVersion/version does not match release channel version for promoted head 'avalonia'.",
+        "Linux installer startup smoke receipt version does not match release channel version for promoted head 'avalonia'.",
+        "Linux gate embedded release_channel_linux_artifact version/releaseVersion does not match promoted release channel version.",
+        "Linux gate embedded release_channel_linux_artifact sha256 does not match promoted release channel.",
+        "Linux gate embedded release_channel_linux_artifact sizeBytes does not match promoted release channel."
+      ],
       "gateStatuses": {
-        "avalonia:linux-x64": "pass"
+        "avalonia:linux-x64": "fail"
       }
     },
     "macosPlatformReview": {
@@ -146,16 +225,17 @@
     "release_gate_lock_observed_but_receipts_current": false,
     "flagship UI release gate proof_generated_at_alias_conflict": false,
     "flagship UI release gate proof_generated_at": "2026-06-21T07:19:29.710336Z",
-    "flagship UI release gate proof_age_seconds": 1003,
+    "flagship UI release gate proof_age_seconds": 243790,
+    "flagship UI release gate proof_stale_pass_receipt_allowed": false,
     "desktop visual familiarity gate proof_generated_at_alias_conflict": false,
-    "desktop visual familiarity gate proof_generated_at": "2026-06-21T07:19:30.071755Z",
-    "desktop visual familiarity gate proof_age_seconds": 1003,
+    "desktop visual familiarity gate proof_generated_at": "2026-06-24T02:52:18.400259Z",
+    "desktop visual familiarity gate proof_age_seconds": 622,
     "desktop workflow execution gate proof_generated_at_alias_conflict": false,
-    "desktop workflow execution gate proof_generated_at": "2026-06-21T07:34:28.368256Z",
-    "desktop workflow execution gate proof_age_seconds": 105,
+    "desktop workflow execution gate proof_generated_at": "2026-06-24T03:00:19.420400Z",
+    "desktop workflow execution gate proof_age_seconds": 141,
     "flagship_status": "fail",
-    "visual_familiarity_status": "pass",
-    "workflow_execution_status": "pass",
+    "visual_familiarity_status": "fail",
+    "workflow_execution_status": "fail",
     "workflow_execution_failures_external_only": false,
     "workflow_execution_failing_receipts_external": [],
     "receipt_scope": {
@@ -241,29 +321,29 @@
       "40-hero-lab-importer-dialog-light.png"
     ],
     "visual_familiarity_missing_screenshots_now": [],
-    "visual_familiarity_screenshot_reference_generated_at": "2026-06-21T07:19:30.071755Z",
+    "visual_familiarity_screenshot_reference_generated_at": "2026-06-24T02:52:18.400259Z",
     "visual_familiarity_screenshot_file_timestamps": {
-      "01-initial-shell-light.png": "2026-06-21T07:19:29.982831Z",
-      "02-menu-open-light.png": "2026-06-21T07:19:29.982831Z",
-      "03-settings-open-light.png": "2026-06-21T07:19:29.982831Z",
-      "04-loaded-runner-light.png": "2026-06-21T07:19:29.982831Z",
-      "05-dense-section-light.png": "2026-06-21T07:19:29.982831Z",
-      "06-dense-section-dark.png": "2026-06-21T07:19:29.982831Z",
-      "07-loaded-runner-tabs-light.png": "2026-06-21T07:19:29.982831Z",
-      "08-cyberware-dialog-light.png": "2026-06-21T07:19:29.982831Z",
-      "09-vehicles-section-light.png": "2026-06-21T07:19:29.982831Z",
-      "10-contacts-section-light.png": "2026-06-21T07:19:29.982831Z",
-      "11-diary-dialog-light.png": "2026-06-21T07:19:29.982831Z",
-      "12-magic-dialog-light.png": "2026-06-21T07:19:29.982831Z",
-      "13-matrix-dialog-light.png": "2026-06-21T07:19:29.982831Z",
-      "14-advancement-dialog-light.png": "2026-06-21T07:19:29.982831Z",
-      "15-creation-section-light.png": "2026-06-21T07:19:29.982831Z",
-      "16-master-index-dialog-light.png": "2026-06-21T07:19:29.982831Z",
-      "17-character-roster-dialog-light.png": "2026-06-21T07:19:29.982831Z",
-      "18-import-dialog-light.png": "2026-06-21T07:19:29.982831Z",
-      "38-translator-dialog-light.png": "2026-06-21T07:19:29.982831Z",
-      "39-xml-editor-dialog-light.png": "2026-06-21T07:19:29.982831Z",
-      "40-hero-lab-importer-dialog-light.png": "2026-06-21T07:19:29.982831Z"
+      "01-initial-shell-light.png": "2026-06-24T02:52:11.710259Z",
+      "02-menu-open-light.png": "2026-06-24T02:52:11.710259Z",
+      "03-settings-open-light.png": "2026-06-24T02:52:11.710259Z",
+      "04-loaded-runner-light.png": "2026-06-24T02:52:11.710259Z",
+      "05-dense-section-light.png": "2026-06-24T02:52:11.710259Z",
+      "06-dense-section-dark.png": "2026-06-24T02:52:11.710259Z",
+      "07-loaded-runner-tabs-light.png": "2026-06-24T02:52:11.710259Z",
+      "08-cyberware-dialog-light.png": "2026-06-24T02:52:11.710259Z",
+      "09-vehicles-section-light.png": "2026-06-24T02:52:11.710259Z",
+      "10-contacts-section-light.png": "2026-06-24T02:52:11.710259Z",
+      "11-diary-dialog-light.png": "2026-06-24T02:52:11.710259Z",
+      "12-magic-dialog-light.png": "2026-06-24T02:52:11.710259Z",
+      "13-matrix-dialog-light.png": "2026-06-24T02:52:11.710259Z",
+      "14-advancement-dialog-light.png": "2026-06-24T02:52:11.710259Z",
+      "15-creation-section-light.png": "2026-06-24T02:52:11.710259Z",
+      "16-master-index-dialog-light.png": "2026-06-24T02:52:11.710259Z",
+      "17-character-roster-dialog-light.png": "2026-06-24T02:52:11.710259Z",
+      "18-import-dialog-light.png": "2026-06-24T02:52:11.710259Z",
+      "38-translator-dialog-light.png": "2026-06-24T02:52:11.710259Z",
+      "39-xml-editor-dialog-light.png": "2026-06-24T02:52:11.710259Z",
+      "40-hero-lab-importer-dialog-light.png": "2026-06-24T02:52:11.710259Z"
     },
     "visual_familiarity_stale_screenshots": [],
     "visual_familiarity_screenshots_older_than_receipt": [],
@@ -282,17 +362,17 @@
     "release_channel.channel_normalized": "public_stable",
     "release_channel.version_present": true,
     "release_channel.version_raw_type": "str",
-    "release_channel.version_normalized": "run-20260621-054902",
+    "release_channel.version_normalized": "run-20260623-102621",
     "release_channel.releaseVersion_present": false,
     "release_channel_version_alias_conflict": false,
     "release_channel_status": "published",
     "release_channel_channel_id": "public_stable",
-    "release_channel_version": "run-20260621-054902",
-    "release_channel_generated_at": "2026-06-21T05:53:14Z",
+    "release_channel_version": "run-20260623-102621",
+    "release_channel_generated_at": "2026-06-23T10:31:26Z",
     "release_channel_generated_at_alias_conflict": false,
     "release_channel_freshness_max_age_seconds": 86400,
     "release_channel_freshness_max_future_skew_seconds": 300,
-    "release_channel_age_seconds": 6179,
+    "release_channel_age_seconds": 59474,
     "release_channel_tuple_coverage_unexpected_keys": [],
     "desktopTupleCoverage.requiredDesktopPlatforms_normalized": [
       "linux",
@@ -395,9 +475,9 @@
     "release_channel.rolloutState_normalized": "public_stable",
     "release_channel.supportabilityState_present": true,
     "release_channel.supportabilityState_raw_type": "str",
-    "release_channel.supportabilityState_normalized": "review_required",
+    "release_channel.supportabilityState_normalized": "gold_supported",
     "release_channel_rollout_state": "public_stable",
-    "release_channel_supportability_state": "review_required",
+    "release_channel_supportability_state": "gold_supported",
     "release_channel_rollout_state_present": true,
     "release_channel_supportability_state_present": true,
     "release_channel_allowed_rollout_states": [
@@ -497,8 +577,8 @@
       "public_stable"
     ],
     "release_channel_desktop_install_artifact_versions": [
-      "run-20260621-054902",
-      "run-20260621-054902"
+      "run-20260623-102621",
+      "run-20260623-102621"
     ],
     "release_channel_desktop_install_artifacts_missing_head": [],
     "release_channel_desktop_install_artifacts_missing_channel": [],
@@ -548,20 +628,20 @@
         "file_name": "chummer-avalonia-linux-x64-installer.deb",
         "path": "/docker/chummercomplete/chummer6-ui/Docker/Downloads/files/chummer-avalonia-linux-x64-installer.deb",
         "exists": true,
-        "size_bytes": 36903678,
-        "sha256": "105e2f92928541e8928bc84a8a5300b5c599a0a89a176a802beb8f5138e604e8",
-        "expected_size_bytes": 36903678,
-        "expected_sha256": "105e2f92928541e8928bc84a8a5300b5c599a0a89a176a802beb8f5138e604e8"
+        "size_bytes": 36910708,
+        "sha256": "bcc2522d4f8083b4ba2a1cafdbbd847ee32f18199d54384702fd45cfcde67636",
+        "expected_size_bytes": 36910708,
+        "expected_sha256": "bcc2522d4f8083b4ba2a1cafdbbd847ee32f18199d54384702fd45cfcde67636"
       },
       "avalonia-win-x64-installer": {
         "artifact_id": "avalonia-win-x64-installer",
         "file_name": "chummer-avalonia-win-x64-installer.exe",
         "path": "/docker/chummercomplete/chummer6-ui/Docker/Downloads/files/chummer-avalonia-win-x64-installer.exe",
         "exists": true,
-        "size_bytes": 98990355,
-        "sha256": "c5691dcdb5176394e9529985bf85022577a593098b3eddeda50d9d91af914c5b",
-        "expected_size_bytes": 98990355,
-        "expected_sha256": "c5691dcdb5176394e9529985bf85022577a593098b3eddeda50d9d91af914c5b"
+        "size_bytes": 51856809,
+        "sha256": "2f4ad755491b86e3a4ae0fb3251b0c863552ec4f0ae29049cedb7973bc372a4f",
+        "expected_size_bytes": 51856809,
+        "expected_sha256": "2f4ad755491b86e3a4ae0fb3251b0c863552ec4f0ae29049cedb7973bc372a4f"
       }
     },
     "desktop_shelf_installer_candidates": [
@@ -675,7 +755,7 @@
       "preview_supported",
       "gold_supported"
     ],
-    "release_channel_supportability_state_invalid_for_publishable_complete": true,
+    "release_channel_supportability_state_invalid_for_publishable_complete": false,
     "release_channel_publishable_status_with_incomplete_desktop_tuple_coverage": false,
     "windows_artifacts_missing_rid_by_head": [],
     "windows_heads_expected": [
@@ -725,8 +805,8 @@
           "kind": "installer",
           "fileName": "chummer-avalonia-win-x64-installer.exe",
           "downloadUrl": "https://chummer.run/downloads/files/chummer-avalonia-win-x64-installer.exe",
-          "sha256": "c5691dcdb5176394e9529985bf85022577a593098b3eddeda50d9d91af914c5b",
-          "sizeBytes": 98990355,
+          "sha256": "2f4ad755491b86e3a4ae0fb3251b0c863552ec4f0ae29049cedb7973bc372a4f",
+          "sizeBytes": 51856809,
           "platformLabel": "Avalonia Desktop Windows X64 Installer",
           "updateFeedUrl": null,
           "embeddedRuntimeBundleHeadId": null,
@@ -735,15 +815,18 @@
           "compatibilityReason": null,
           "channelId": "public_stable",
           "channel": "public_stable",
-          "version": "run-20260621-054902",
-          "releaseVersion": "run-20260621-054902",
-          "generated_at": "2026-06-21T05:53:14Z",
-          "generatedAt": "2026-06-21T05:53:14Z",
+          "version": "run-20260623-102621",
+          "releaseVersion": "run-20260623-102621",
+          "generated_at": "2026-06-23T10:31:26Z",
+          "generatedAt": "2026-06-23T10:31:26Z",
           "id": "avalonia-win-x64-installer"
         },
-        "windows_installer_path": "/docker/chummercomplete/chummer-hub-registry/.codex-studio/published/files/chummer-avalonia-win-x64-installer.exe",
+        "windows_installer_path": "/docker/chummercomplete/chummer6-ui/Docker/Downloads/files/chummer-avalonia-win-x64-installer.exe",
         "gate_reasons": [
-          "Windows installer visual proof is missing; capture progress and completion screenshots on a Windows host."
+          "Published Windows installer is missing a recognizable desktop payload marker.",
+          "Published Windows installer is missing the bundled sample-character marker.",
+          "Windows installer visual proof is missing; capture progress and completion screenshots on a Windows host.",
+          "Chummer5a desktop workflow parity proof is missing or not passed."
         ],
         "checks_startup_smoke_receipt_found": true,
         "checks_startup_smoke_receipt_path": "/docker/chummercomplete/chummer6-ui/Docker/Downloads/startup-smoke/startup-smoke-avalonia-win-x64.receipt.json",
@@ -751,17 +834,17 @@
         "host_supports_windows_startup_smoke": false,
         "startup_smoke_external_blocker": "missing_windows_host_capability",
         "windows desktop exit gate proof_generated_at_alias_conflict": false,
-        "windows desktop exit gate proof_generated_at": "2026-06-21T07:36:13Z",
-        "windows desktop exit gate proof_age_seconds": 0,
+        "windows desktop exit gate proof_generated_at": "2026-06-24T03:02:28Z",
+        "windows desktop exit gate proof_age_seconds": 14,
         "embedded_payload_marker_present": false,
-        "appended_payload_marker_present": true,
-        "embedded_sample_marker_present": true,
-        "gate_release_version": "run-20260621-054902",
+        "appended_payload_marker_present": false,
+        "embedded_sample_marker_present": false,
+        "gate_release_version": "run-20260623-102621",
         "gate_channel_id": "public_stable",
         "gate_channel_id_alias_conflict": false,
         "checks_release_channel_id": "public_stable",
-        "checks_release_channel_version": "run-20260621-054902",
-        "gate_release_version_primary": "run-20260621-054902",
+        "checks_release_channel_version": "run-20260623-102621",
+        "gate_release_version_primary": "run-20260623-102621",
         "gate_release_version_alias": "",
         "gate_release_version_alias_conflict": false,
         "windows_gate_external_only": true,
@@ -783,17 +866,17 @@
         "expected_artifact_arch_alias_conflict": false,
         "release_channel_windows_artifact_channel_id": "public_stable",
         "release_channel_windows_artifact_channel_id_alias_conflict": false,
-        "release_channel_windows_artifact_version": "run-20260621-054902",
+        "release_channel_windows_artifact_version": "run-20260623-102621",
         "release_channel_windows_artifact_version_alias_conflict": false,
         "release_channel_windows_artifact_arch": "x64",
         "release_channel_windows_artifact_arch_alias_conflict": false,
-        "release_channel_windows_artifact_generated_at": "2026-06-21T05:53:14Z",
+        "release_channel_windows_artifact_generated_at": "2026-06-23T10:31:26Z",
         "release_channel_windows_artifact_generated_at_valid": true,
         "release_channel_windows_artifact_generated_at_alias_conflict": false,
-        "windows_installer_size_bytes": 98990355,
-        "windows_installer_sha256": "c5691dcdb5176394e9529985bf85022577a593098b3eddeda50d9d91af914c5b",
+        "windows_installer_size_bytes": 51856809,
+        "windows_installer_sha256": "2f4ad755491b86e3a4ae0fb3251b0c863552ec4f0ae29049cedb7973bc372a4f",
         "expected_windows_shelf_path": "/docker/chummercomplete/chummer6-ui/Docker/Downloads/files/chummer-avalonia-win-x64-installer.exe",
-        "expected_windows_shelf_sha256": "c5691dcdb5176394e9529985bf85022577a593098b3eddeda50d9d91af914c5b",
+        "expected_windows_shelf_sha256": "2f4ad755491b86e3a4ae0fb3251b0c863552ec4f0ae29049cedb7973bc372a4f",
         "startup_smoke_incompatible_host_skip": true,
         "trusted_path_scope": {
           "windows_startup_smoke": {
@@ -823,7 +906,7 @@
         "startup_smoke_receipt_source": "file",
         "startup_smoke_status": "skipped",
         "startup_smoke_ready_checkpoint": "",
-        "startup_smoke_artifact_digest": "sha256:c5691dcdb5176394e9529985bf85022577a593098b3eddeda50d9d91af914c5b",
+        "startup_smoke_artifact_digest": "sha256:2f4ad755491b86e3a4ae0fb3251b0c863552ec4f0ae29049cedb7973bc372a4f",
         "startup_smoke_head_id": "avalonia",
         "startup_smoke_platform": "windows",
         "startup_smoke_rid": "win-x64",
@@ -831,20 +914,20 @@
         "startup_smoke_arch_alias_conflict": false,
         "startup_smoke_channel": "public_stable",
         "startup_smoke_channel_id_alias_conflict": false,
-        "startup_smoke_version": "run-20260621-054902",
+        "startup_smoke_version": "run-20260623-102621",
         "startup_smoke_version_alias_conflict": false,
         "startup_smoke_timestamp_alias_conflict": false,
-        "startup_smoke_host_class": "local-windows-unavailable",
+        "startup_smoke_host_class": "linux-release-host",
         "startup_smoke_operating_system": "",
         "startup_smoke_skip_class": "incompatible_host",
         "startup_smoke_verification_disposition": "incompatible_host",
         "startup_smoke_skip_reason": "Windows startup smoke requires Wine, PowerShell, or a Windows-compatible shell bridge; current host cannot execute Windows installer smoke.",
-        "startup_smoke_recorded_at": "2026-06-21T05:53:00.068252+00:00",
+        "startup_smoke_recorded_at": "2026-06-23T10:30:58.179476+00:00",
         "startup_smoke_incompatible_host_skip_accepted": true,
         "startup_smoke_incompatible_host_skip_accepted_reason": "Rolling-release publication accepts this as an explicit incompatible-host boundary after matching the skipped receipt to the exact promoted Windows installer bytes, channel, version, head, RID, and arch.",
         "startup_smoke_stale_age_acceptable": false,
         "startup_smoke_stale_age_accepted_reason": "",
-        "startup_smoke_receipt_age_seconds": 6193
+        "startup_smoke_receipt_age_seconds": 59506
       }
     },
     "windows_statuses": {
@@ -905,24 +988,24 @@
     "workflow_execution_release_channel_id_alias_conflict": false,
     "visual_familiarity.release_channel_version_present": true,
     "visual_familiarity.release_channel_version_raw_type": "str",
-    "visual_familiarity.release_channel_version_normalized": "run-20260621-054902",
+    "visual_familiarity.release_channel_version_normalized": "run-20260623-102621",
     "visual_familiarity.releaseVersion_present": true,
     "visual_familiarity.releaseVersion_raw_type": "str",
-    "visual_familiarity.releaseVersion_normalized": "run-20260621-054902",
+    "visual_familiarity.releaseVersion_normalized": "run-20260623-102621",
     "visual_familiarity.version_present": false,
     "visual_familiarity_release_version_alias_conflict": false,
     "workflow_execution.release_channel_version_present": true,
     "workflow_execution.release_channel_version_raw_type": "str",
-    "workflow_execution.release_channel_version_normalized": "run-20260621-054902",
+    "workflow_execution.release_channel_version_normalized": "run-20260623-102621",
     "workflow_execution.releaseVersion_present": true,
     "workflow_execution.releaseVersion_raw_type": "str",
-    "workflow_execution.releaseVersion_normalized": "run-20260621-054902",
+    "workflow_execution.releaseVersion_normalized": "run-20260623-102621",
     "workflow_execution.version_present": false,
     "workflow_execution_release_version_alias_conflict": false,
     "visual_familiarity_release_channel_id": "public_stable",
     "workflow_execution_release_channel_id": "public_stable",
-    "visual_familiarity_release_version": "run-20260621-054902",
-    "workflow_execution_release_version": "run-20260621-054902",
+    "visual_familiarity_release_version": "run-20260623-102621",
+    "workflow_execution_release_version": "run-20260623-102621",
     "visual_familiarity_required_desktop_heads": [
       "avalonia",
       "blazor-desktop"
@@ -1082,7 +1165,8 @@
         "status": "passed",
         "linux desktop exit gate proof for avalonia:linux-x64_generated_at_alias_conflict": false,
         "linux desktop exit gate proof for avalonia:linux-x64_generated_at": "2026-06-21T07:36:12Z",
-        "linux desktop exit gate proof for avalonia:linux-x64_age_seconds": 1,
+        "linux desktop exit gate proof for avalonia:linux-x64_age_seconds": 242793,
+        "linux desktop exit gate proof for avalonia:linux-x64_stale_pass_receipt_allowed": false,
         "contract_name": "chummer6-ui.linux_desktop_exit_gate",
         "gate_reasons": [],
         "receipt_head": {
@@ -1278,8 +1362,8 @@
         "primary_receipt_version_alias_conflict": false,
         "primary_receipt_timestamp_alias_conflict": false,
         "primary_receipt_recorded_at": "2026-06-21T07:36:03.1138721+00:00",
-        "primary_receipt_age_seconds": 10,
-        "primary_receipt_version_proves_release": true,
+        "primary_receipt_age_seconds": 242801,
+        "primary_receipt_version_proves_release": false,
         "expected_artifact_source": "",
         "expected_installer_file_name": "chummer-avalonia-linux-x64-installer.deb",
         "quarantined_installer_candidates": [],
@@ -1302,7 +1386,7 @@
       }
     },
     "linux_statuses": {
-      "avalonia:linux-x64": "pass"
+      "avalonia:linux-x64": "fail"
     },
     "macos_artifacts_missing_rid_by_head": [],
     "macos_heads_expected": [],
@@ -1345,7 +1429,7 @@
         "tuple": "avalonia:linux-x64:linux",
         "status": "pass",
         "artifactFileName": "chummer-avalonia-linux-x64-installer.deb",
-        "artifactDigest": "sha256:105e2f92928541e8928bc84a8a5300b5c599a0a89a176a802beb8f5138e604e8",
+        "artifactDigest": "sha256:bcc2522d4f8083b4ba2a1cafdbbd847ee32f18199d54384702fd45cfcde67636",
         "matchesPublishedArtifact": true,
         "publishedArtifactFileNames": [
           "chummer-avalonia-linux-x64-installer.deb"
@@ -1369,7 +1453,7 @@
         "tuple": "avalonia:win-x64:windows",
         "status": "skipped",
         "artifactFileName": "chummer-avalonia-win-x64-installer.exe",
-        "artifactDigest": "sha256:c5691dcdb5176394e9529985bf85022577a593098b3eddeda50d9d91af914c5b",
+        "artifactDigest": "sha256:2f4ad755491b86e3a4ae0fb3251b0c863552ec4f0ae29049cedb7973bc372a4f",
         "matchesPublishedArtifact": true,
         "publishedArtifactFileNames": [
           "chummer-avalonia-win-x64-installer.exe"
@@ -1402,11 +1486,13 @@
       }
     ],
     "macos_statuses": {},
-    "linux_missing_or_failing_keys": [],
+    "linux_missing_or_failing_keys": [
+      "avalonia:linux-x64"
+    ],
     "windows_missing_or_failing_keys": [
       "avalonia:win-x64"
     ],
     "macos_missing_or_failing_keys": [],
-    "failureCount": 4
+    "failureCount": 17
   }
 }

@@ -1096,6 +1096,45 @@ public sealed class DesktopInstallLinkingRuntimeTests
     }
 
     [TestMethod]
+    public void StartupAccountLaunchExtraction_reads_direct_open_uri()
+    {
+        bool parsed = DesktopInstallLinkingRuntime.TryExtractStartupAccountLaunchFromArguments(
+            ["chummer://open?ticket=ticket-42&kind=character&id=dossier-7"],
+            out DesktopStartupAccountLaunchRequest? launch);
+
+        Assert.IsTrue(parsed);
+        Assert.IsNotNull(launch);
+        Assert.AreEqual("ticket-42", launch.Ticket);
+        Assert.AreEqual("character", launch.Kind);
+        Assert.AreEqual("dossier-7", launch.ResourceId);
+    }
+
+    [TestMethod]
+    public async Task ResolveStartupAccountLaunchAsync_falls_back_to_uri_kind_when_ticket_cannot_be_exchanged()
+    {
+        DesktopStartupAccountLaunchResult? launch = await DesktopInstallLinkingRuntime.ResolveStartupAccountLaunchAsync(
+            "avalonia",
+            ["chummer://open?ticket=ticket-42&kind=campaign&id=campaign-9"],
+            CreateState() with
+            {
+                Status = "guest",
+                ClaimedAtUtc = null,
+                GrantId = null,
+                GrantToken = null,
+                GrantIssuedAtUtc = null,
+                GrantExpiresAtUtc = null,
+                UserId = null,
+                SubjectId = null
+            },
+            CancellationToken.None);
+
+        Assert.IsNotNull(launch);
+        Assert.AreEqual("campaign", launch.Kind);
+        Assert.AreEqual("campaign-9", launch.ResourceId);
+        Assert.AreEqual("uri_fallback", launch.Source);
+    }
+
+    [TestMethod]
     public void LoadOrCreateState_persists_private_key_outside_state_json_on_windows()
     {
         string? previousStateRoot = Environment.GetEnvironmentVariable("CHUMMER_DESKTOP_STATE_ROOT");

@@ -1,10 +1,10 @@
 {
-  "generatedAt": "2026-06-21T07:19:32.207831Z",
+  "generatedAt": "2026-06-24T03:37:39.099843Z",
   "contractName": "chummer6-ui.chummer5a_screenshot_review_gate",
   "channelId": "public_stable",
   "channel": "public_stable",
-  "releaseVersion": "run-20260621-054902",
-  "version": "run-20260621-054902",
+  "releaseVersion": "run-20260623-102621",
+  "version": "run-20260623-102621",
   "status": "pass",
   "summary": "Chummer5a screenshot-based compare review is mandatory and passing for dense builder, master index, roster, settings, translator, XML editor, and Hero Lab import routes.",
   "reasons": [],
@@ -31,14 +31,14 @@
     "status": "pass",
     "reasons": [],
     "receiptStatuses": {
-      "visualFamiliarityGate": "pass",
+      "visualFamiliarityGate": "fail",
       "flagshipGate": "fail"
     },
     "skipFlagshipGateDependency": false,
     "flagshipGateRouteLocalOnly": false,
     "flagshipGateExternalDesktopOnly": false,
     "visualReviewStatuses": {
-      "flagshipGateReview": "pass",
+      "flagshipGateReview": "fail",
       "headProofReview": "pass",
       "interactionProofReview": "pass",
       "sourceAnchorReview": "pass",
@@ -46,7 +46,7 @@
       "legacyFamiliarityReview": "pass",
       "muscleMemoryParityReview": "pass"
     },
-    "visualFailureCount": 0,
+    "visualFailureCount": 1,
     "routeLocalVisualFailureCount": 0
   },
   "screenshotAssetReview": {
@@ -295,7 +295,7 @@
     "screenshotDirectory": "/docker/chummercomplete/chummer6-ui/.codex-studio/published/ui-flagship-release-gate-screenshots",
     "releaseChannelPath": "/docker/chummercomplete/chummer-hub-registry/.codex-studio/published/RELEASE_CHANNEL.generated.json",
     "releaseChannelChannelId": "public_stable",
-    "releaseChannelVersion": "run-20260621-054902",
+    "releaseChannelVersion": "run-20260623-102621",
     "requiredVisualReviewKeys": [
       "flagshipGateReview",
       "headProofReview",
@@ -315,7 +315,7 @@
     ],
     "missingVisualReviewKeys": [],
     "failingVisualReviewKeys": [],
-    "visualFailureCount": 0,
+    "visualFailureCount": 1,
     "routeLocalVisualFailureCount": 0,
     "skipFlagshipGateDependency": false,
     "flagshipGateRouteLocalOnly": false,

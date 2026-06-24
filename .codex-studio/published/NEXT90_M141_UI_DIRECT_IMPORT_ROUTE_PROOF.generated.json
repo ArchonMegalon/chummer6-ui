@@ -1,12 +1,15 @@
 {
-  "generatedAt": "2026-06-21T07:39:44Z",
-  "status": "pass",
-  "unresolved": [],
+  "generatedAt": "2026-06-24T03:46:41Z",
+  "status": "fail",
+  "unresolved": [
+    "visual_familiarity_gate_pass",
+    "ui_flagship_gate_pass"
+  ],
   "contract_name": "chummer6-ui.next90_m141_ui_direct_import_route_proof",
   "channelId": "public_stable",
   "channel": "public_stable",
-  "releaseVersion": "run-20260621-054902",
-  "version": "run-20260621-054902",
+  "releaseVersion": "run-20260623-102621",
+  "version": "run-20260623-102621",
   "evidence": {
     "packageId": "next90-m141-ui-capture-direct-screenshot-and-runtime-proof-for-translator-xml-amendment",
     "title": "Capture direct screenshot and runtime proof for translator, XML amendment editor, Hero Lab importer, and adjacent import-oracle routes.",
@@ -154,7 +157,7 @@
     "receiptChecks": {
       "release_channel_is_not_preview": true,
       "release_channel_version_present": true,
-      "visual_familiarity_gate_pass": true,
+      "visual_familiarity_gate_pass": false,
       "visual_required_screenshots_present": true,
       "visual_missing_screenshots_clear": true,
       "visual_screenshot_dir_exists": true,
@@ -163,12 +166,12 @@
       "veteran_task_gate_pass": true,
       "veteran_task_jobs_present": true,
       "veteran_task_screenshot_jobs_present": true,
-      "ui_flagship_gate_pass": true,
+      "ui_flagship_gate_pass": false,
       "ui_flagship_gate_route_local_only": false,
       "ui_flagship_gate_external_blocking_only": false,
       "screenshot_review_gate_route_local_only": false,
       "screenshot_review_gate_external_blocking_only": false,
-      "skip_flagship_gate_dependency": true,
+      "skip_flagship_gate_dependency": false,
       "ui_flagship_gate_tokens_present": true
     },
     "routeReceiptChecks": {

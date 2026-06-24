@@ -1,10 +1,12 @@
 {
-  "generatedAt": "2026-06-21T07:34:07.115103Z",
+  "generatedAt": "2026-06-24T01:59:05.711477Z",
   "contract_name": "chummer6-ui.chummer5a_desktop_workflow_parity",
   "channelId": "public_stable",
-  "status": "pass",
-  "summary": "Chummer5a desktop workflow parity is explicitly proven across source artifacts, release-channel identity, catalog coverage, workflow-family readiness, executable test references, and recursive workflow gate execution for recursive menu workflows, legacy UI-control workflows, quick-action roots, and returned-surface parity.",
-  "reasons": [],
+  "status": "fail",
+  "summary": "Chummer5a desktop workflow parity is not yet exhaustively proven.",
+  "reasons": [
+    "Workflow parity gate tests exited non-zero: 1"
+  ],
   "evidence": {
     "releaseChannelPath": "/docker/chummercomplete/chummer-hub-registry/.codex-studio/published/RELEASE_CHANNEL.generated.json",
     "releaseChannelExists": true,
@@ -15,12 +17,12 @@
     "complianceTestsPath": "/docker/chummercomplete/chummer6-ui/Chummer.Tests/Compliance/MigrationComplianceTests.cs",
     "uiGateTestsPath": "/docker/chummercomplete/chummer6-ui/Chummer.Tests/Presentation/AvaloniaFlagshipUiGateTests.cs",
     "workflowGateTestsPath": "/docker/chummercomplete/chummer6-ui/Chummer.Tests/Presentation/WorkflowParityGateTests.cs",
-    "workflowGateExit": 0,
+    "workflowGateExit": 1,
     "releaseChannelMaxAgeSeconds": 86400,
     "releaseChannelMaxFutureSkewSeconds": 300,
     "releaseChannelChannelId": "public_stable",
-    "releaseChannelGeneratedAt": "2026-06-21T05:53:14Z",
-    "releaseChannelAgeSeconds": 6053,
+    "releaseChannelGeneratedAt": "2026-06-23T10:31:26Z",
+    "releaseChannelAgeSeconds": 55659,
     "releaseChannelFutureSkewSeconds": 0,
     "requiredFamilyCount": 10,
     "ledgerFamilyCount": 10,
@@ -82,7 +84,7 @@
       "uiGateTests": true,
       "workflowGateTests": true
     },
-    "failureCount": 0
+    "failureCount": 1
   },
   "sourceArtifactReview": {
     "status": "pass",
@@ -104,8 +106,8 @@
     "reasons": [],
     "path": "/docker/chummercomplete/chummer-hub-registry/.codex-studio/published/RELEASE_CHANNEL.generated.json",
     "channelId": "public_stable",
-    "generatedAt": "2026-06-21T05:53:14Z",
-    "ageSeconds": 6053,
+    "generatedAt": "2026-06-23T10:31:26Z",
+    "ageSeconds": 55659,
     "futureSkewSeconds": 0,
     "maxAgeSeconds": 86400,
     "maxFutureSkewSeconds": 300
@@ -133,10 +135,12 @@
     "missingTestRefs": {}
   },
   "recursiveWorkflowGateReview": {
-    "status": "pass",
-    "summary": "Recursive workflow gate tests executed and the ledger keeps recursive menu workflows, legacy UI-control workflows, quick-action roots, and returned-surface parity explicit.",
-    "reasons": [],
-    "workflowGateExit": 0,
+    "status": "fail",
+    "summary": "Recursive workflow gate execution or ledger recursive proof-area requirements are incomplete.",
+    "reasons": [
+      "Workflow parity gate tests exited non-zero: 1"
+    ],
+    "workflowGateExit": 1,
     "requiredTests": [
       "Menu_dialog_workflows_are_exhaustively_classified",
       "Legacy_ui_controls_are_exhaustively_classified",

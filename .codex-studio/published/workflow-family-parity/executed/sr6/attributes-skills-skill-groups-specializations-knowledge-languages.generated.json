@@ -1,9 +1,12 @@
 {
-  "generatedAt": "2026-06-21T07:33:59.773588Z",
+  "generatedAt": "2026-06-24T01:15:37.503071Z",
   "contract_name": "chummer6-ui.sr6_workflow_family_execution_receipt",
-  "status": "pass",
-  "summary": "SR6 workflow-family execution evidence is explicitly grounded for attributes-skills-skill-groups-specializations-knowledge-languages.",
-  "reasons": [],
+  "status": "fail",
+  "summary": "SR6 workflow-family execution evidence is incomplete for attributes-skills-skill-groups-specializations-knowledge-languages.",
+  "reasons": [
+    "Audit tests not present in executed TRX results: Avalonia_and_Blazor_attributes_and_skills_workspace_actions_render_matching_sections, Avalonia_and_Blazor_dialog_and_import_commands_expose_matching_dialog_contracts, Runtime_loaded_runner_tabpanel_covers_legacy_tabs_actions_and_backed_quick_actions_across_sr4_sr5_and_sr6, Legacy_ui_controls_keep_recursive_parity, Quick_action_roots_are_exhaustively_classified",
+    "dotnet test execution failed (exit 1): Build failed with exit code: 1."
+  ],
   "evidence": {
     "edition": "sr6",
     "familyId": "attributes-skills-skill-groups-specializations-knowledge-languages",
@@ -59,8 +62,8 @@
         "Avalonia_and_Blazor_tab_selection_loads_same_workspace_section": "/docker/chummercomplete/chummer-presentation/.codex-studio/out/workflow-family-parity/executed/sr6/27-Avalonia_and_Blazor_tab_selection_loads_same_workspace_section.trx",
         "Menu_click_surfaces_visible_command_choices_in_shell": "/docker/chummercomplete/chummer-presentation/.codex-studio/out/workflow-family-parity/executed/sr6/28-Menu_click_surfaces_visible_command_choices_in_shell.trx"
       },
-      "exitCode": 0,
-      "attemptCount": 1,
+      "exitCode": 1,
+      "attemptCount": 2,
       "maxAttempts": 2
     },
     "apiProbe": {
@@ -82,14 +85,14 @@
       "warmed": true
     },
     "external_blocker": "",
-    "matchedPassedTests": [
+    "matchedPassedTests": [],
+    "missingAuditTests": [
       "Avalonia_and_Blazor_attributes_and_skills_workspace_actions_render_matching_sections",
       "Avalonia_and_Blazor_dialog_and_import_commands_expose_matching_dialog_contracts",
       "Runtime_loaded_runner_tabpanel_covers_legacy_tabs_actions_and_backed_quick_actions_across_sr4_sr5_and_sr6",
       "Legacy_ui_controls_keep_recursive_parity",
       "Quick_action_roots_are_exhaustively_classified"
     ],
-    "missingAuditTests": [],
     "failedAuditTests": {}
   }
 }
