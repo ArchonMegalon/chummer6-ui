@@ -1711,6 +1711,40 @@
             </div>
         </section>
 
+        <section class="browser-workbench-progression-ledger" aria-label="Workbench progression ledger lane" data-workbench-progression-ledger="strip">
+            <div class="browser-workbench-progression-ledger-copy">
+                <span class="browser-preview-status-label">Progression</span>
+                <strong>Keep advancement easy to review.</strong>
+                <p>Karma, nuyen, purchases, reputation, and carryover stay close to the active sheet before anything changes.</p>
+            </div>
+            <div class="browser-workbench-progression-ledger-actions" role="list" aria-label="Progression ledger shortcuts">
+                <a role="listitem" href="@BuildPreviewHref("blue", command: "karma_spend_ledger")" data-workbench-progression-ledger-action="karma_spend">
+                    <span>Karma spend</span>
+                    <small>Review advancement costs before commit.</small>
+                </a>
+                <a role="listitem" href="@BuildPreviewHref("blue", command: "nuyen_ledger")" data-workbench-progression-ledger-action="nuyen_ledger">
+                    <span>Nuyen ledger</span>
+                    <small>Track income, expenses, and balances.</small>
+                </a>
+                <a role="listitem" href="@BuildPreviewHref("blue", command: "purchase_queue")" data-workbench-progression-ledger-action="purchase_queue">
+                    <span>Purchase queue</span>
+                    <small>Stage gear buys before applying them.</small>
+                </a>
+                <a role="listitem" href="@BuildPreviewHref("blue", command: "reputation_review")" data-workbench-progression-ledger-action="reputation">
+                    <span>Reputation</span>
+                    <small>Keep street cred and notoriety visible.</small>
+                </a>
+                <a role="listitem" href="@BuildPreviewHref("blue", command: "carryover_review")" data-workbench-progression-ledger-action="carryover">
+                    <span>Carryover</span>
+                    <small>Show unspent rewards across sessions.</small>
+                </a>
+                <a role="listitem" href="@BuildPreviewHref("blue", command: "progression_audit")" data-workbench-progression-ledger-action="audit_trail">
+                    <span>History</span>
+                    <small>See what changed and when.</small>
+                </a>
+            </div>
+        </section>
+
         <section class="browser-preview-status-grid" aria-label="Workbench quick starts">
             <article class="browser-preview-status-card" data-workbench-entry-card="new-character">
                 <span class="browser-preview-status-label">Quick start</span>

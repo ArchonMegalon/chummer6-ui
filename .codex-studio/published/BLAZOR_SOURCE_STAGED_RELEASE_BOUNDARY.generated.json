@@ -1,6 +1,6 @@
 {
   "contract_name": "chummer6-ui.blazor_source_staged_release_boundary",
-  "generated_at": "2026-06-24T23:28:12.830201+00:00",
+  "generated_at": "2026-06-24T23:32:02.512497+00:00",
   "status": "passed",
   "proof_tier": "source_policy_no_browser_execution",
   "scope": "staged_receipts_must_not_enter_release_readiness_aggregation",
@@ -96,7 +96,8 @@
     "BLAZOR_WORKBENCH_PORTRAIT_ATTACHMENTS_STAGED_PROOF",
     "BLAZOR_WORKBENCH_WINDOWING_PANES_STAGED_PROOF",
     "BLAZOR_WORKBENCH_CALCULATION_PROVENANCE_STAGED_PROOF",
-    "BLAZOR_WORKBENCH_LIFECYCLE_CALENDAR_STAGED_PROOF"
+    "BLAZOR_WORKBENCH_LIFECYCLE_CALENDAR_STAGED_PROOF",
+    "BLAZOR_WORKBENCH_PROGRESSION_LEDGER_STAGED_PROOF"
   ],
   "failures": [],
   "notes": [

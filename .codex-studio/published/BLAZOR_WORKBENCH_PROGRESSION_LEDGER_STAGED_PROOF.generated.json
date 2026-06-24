@@ -1,6 +1,6 @@
 {
-  "contract_name": "chummer6-ui.blazor_workbench_search_filter_staged_proof",
-  "generated_at": "2026-06-24T23:32:01.628578+00:00",
+  "contract_name": "chummer6-ui.blazor_workbench_progression_ledger_staged_proof",
+  "generated_at": "2026-06-24T23:32:02.416113+00:00",
   "status": "passed",
   "proof_tier": "source_staged_no_browser_execution",
   "route_lane": "promoted_blazor_workbench",
@@ -9,14 +9,14 @@
   ],
   "checks": [
     {
-      "id": "product_workbench_search_filter",
+      "id": "product_workbench_progression_ledger",
       "path": "Chummer.Blazor/Components/Pages/Preview.razor",
       "status": "passed",
       "required_token_count": 9,
       "missing_tokens": []
     },
     {
-      "id": "scoped_search_filter_visual_design",
+      "id": "scoped_progression_ledger_visual_design",
       "path": "Chummer.Blazor/Components/Pages/Preview.razor.css",
       "status": "passed",
       "required_token_count": 4,
@@ -46,8 +46,8 @@
   ],
   "failures": [],
   "notes": [
-    "This receipt only proves that promoted workbench search/filter source, style, status, and docs agree.",
-    "It is not a substitute for hosted Playwright execution proof, Docker self-host proof, live search indexing proof, or filter execution proof.",
-    "Do not use this receipt to claim live search indexing, filter execution, or browser execution parity."
+    "This receipt only proves that promoted workbench progression-ledger source, style, status, and docs agree.",
+    "It is not a substitute for hosted Playwright execution proof, Docker self-host proof, ledger-mutation proof, purchase-execution proof, reputation-mutation proof, or accounting proof.",
+    "Do not use this receipt to claim ledger mutation, purchase execution, reputation mutation, accounting, or browser execution parity."
   ]
 }

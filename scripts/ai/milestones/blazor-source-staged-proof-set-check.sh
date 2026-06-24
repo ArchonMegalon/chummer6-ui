@@ -62,5 +62,6 @@ python3 "$repo_root/scripts/materialize-blazor-workbench-portrait-attachments-st
 python3 "$repo_root/scripts/materialize-blazor-workbench-windowing-panes-staged-proof.py"
 python3 "$repo_root/scripts/materialize-blazor-workbench-calculation-provenance-staged-proof.py"
 python3 "$repo_root/scripts/materialize-blazor-workbench-lifecycle-calendar-staged-proof.py"
+python3 "$repo_root/scripts/materialize-blazor-workbench-progression-ledger-staged-proof.py"
 python3 "$repo_root/scripts/materialize-blazor-legacy-control-coverage-staged-proof.py"
 python3 "$repo_root/scripts/materialize-blazor-source-staged-proof-set.py"

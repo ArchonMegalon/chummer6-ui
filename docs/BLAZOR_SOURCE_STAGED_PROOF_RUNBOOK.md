@@ -85,6 +85,7 @@ The aggregate currently covers:
 - `workbench_windowing_panes`
 - `workbench_calculation_provenance`
 - `workbench_lifecycle_calendar`
+- `workbench_progression_ledger`
 - `legacy_control_coverage`
 
 Each family must keep `proof_tier` set to:
