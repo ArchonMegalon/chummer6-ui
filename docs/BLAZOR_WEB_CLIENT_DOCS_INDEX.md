@@ -82,6 +82,8 @@ The hosted execution contract already spans more than startup posture alone. Its
 - in-place edit and delete/recovery utilities across contacts, gear, qualities, magic, and cyberware
 - resumed result, action, committed-action, and advanced-action families
 
+The next hosted and self-host proof refresh is staged to add the career/support workflow family on the promoted workbench route. That staged family covers `tab-calendar` section resume, `create_entry`, `create_entry&dialog_action=add`, `edit_entry`, `edit_entry&dialog_action=apply`, `delete_entry`, and `delete_entry&dialog_action=delete`. It remains staged until the public-edge and Docker receipts are regenerated from the updated proof runners.
+
 ## Current Documentation Truth
 
 The documentation set is ahead of full proof completion by design.
