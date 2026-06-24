@@ -24,8 +24,12 @@ The goal is straightforward: `Chummer.Blazor` should ship as a polished web clie
 - `scripts/ai/milestones/blazor-public-edge-execution-proof-check.sh`: milestone-style wrapper for the hosted execution-proof verifier
 - `docs/examples/blazor-public-edge-execution-proof.receipt.example.json`: example hosted execution-proof receipt shape
 - `scripts/print_blazor_public_edge_proof_status.py`: shared status summary utility for self-host proof, hosted route-entry proof, hosted execution proof, analytics posture, connected-runtime posture, and external-host blocker receipts
+- `scripts/print_blazor_public_edge_proof_status.py`: also reports the optional staged career/support source-alignment receipt when it has been generated; that status line is not browser execution proof
 - `scripts/materialize-blazor-browser-lane-proof-set.py`: aggregate proof-set materializer that fails unless the required browser-lane receipts are all in their expected passing/ready states
 - `scripts/ai/milestones/blazor-browser-lane-proof-set-check.sh`: milestone-style wrapper for the aggregate browser-lane proof set
+- `scripts/materialize-blazor-career-support-staged-proof.py`: source-structural staged proof materializer for the next career/support workflow refresh
+- `scripts/ai/milestones/blazor-career-support-staged-proof-check.sh`: milestone-style wrapper for the staged career/support source-alignment check
+- `docs/examples/blazor-career-support-staged-proof.receipt.example.json`: example receipt shape for the staged career/support source-alignment proof
 - `.codex-studio/published/BLAZOR_BROWSER_LANE_PROOF_SET.generated.json`: published aggregate browser-lane proof-set receipt
 - `.codex-studio/published/BLAZOR_PUBLIC_EDGE_EXECUTION_PROOF.generated.json`: published hosted execution-proof receipt
 - `.codex-studio/published/BLAZOR_PUBLIC_EDGE_WORKBENCH_PROOF.generated.json`: published hosted route-entry/workbench proof receipt
@@ -83,6 +87,8 @@ The hosted execution contract already spans more than startup posture alone. Its
 - resumed result, action, committed-action, and advanced-action families
 
 The next hosted and self-host proof refresh is staged to add the career/support workflow family on the promoted workbench route. That staged family covers `tab-calendar` section resume, `create_entry`, `create_entry&dialog_action=add`, `edit_entry`, `edit_entry&dialog_action=apply`, `delete_entry`, and `delete_entry&dialog_action=delete`. It remains staged until the public-edge and Docker receipts are regenerated from the updated proof runners.
+
+`scripts/ai/milestones/blazor-career-support-staged-proof-check.sh` can be used before the live proof refresh to verify that product UI, hosted route-entry probing, hosted execution probing, Docker self-host probing, receipt metadata, and docs still agree about that staged route family.
 
 ## Current Documentation Truth
 

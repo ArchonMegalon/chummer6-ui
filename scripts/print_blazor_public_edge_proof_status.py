@@ -14,6 +14,7 @@ SELF_HOST_PROOF = PUBLISHED / "BLAZOR_SELF_HOST_WORKBENCH_PROOF.generated.json"
 ANALYTICS_PROOF = PUBLISHED / "BLAZOR_ANALYTICS_POSTURE.generated.json"
 CONNECTED_RUNTIME_PROOF = PUBLISHED / "BLAZOR_CONNECTED_RUNTIME_POSTURE.generated.json"
 AGGREGATE_PROOF_SET = PUBLISHED / "BLAZOR_BROWSER_LANE_PROOF_SET.generated.json"
+CAREER_SUPPORT_STAGED_PROOF = PUBLISHED / "BLAZOR_CAREER_SUPPORT_STAGED_PROOF.generated.json"
 BLOCKERS = PUBLISHED / "UI_EXTERNAL_HOST_PROOF_BLOCKERS.generated.json"
 EXPANDED_ROUTE_PROOF_MARKERS = {
     "public_startup_workbench_command_routes",
@@ -58,6 +59,11 @@ def count_execution_checks(execution: dict) -> int:
     return total
 
 
+def count_staged_source_checks(staged: dict) -> int:
+    checks = staged.get("checks") or []
+    return len(checks) if isinstance(checks, list) else 0
+
+
 def main() -> int:
     route = load_json(ROUTE_PROOF)
     execution = load_json(EXECUTION_PROOF)
@@ -65,6 +71,7 @@ def main() -> int:
     analytics = load_json(ANALYTICS_PROOF)
     connected_runtime = load_json(CONNECTED_RUNTIME_PROOF)
     aggregate = load_json(AGGREGATE_PROOF_SET)
+    career_support_staged = load_json(CAREER_SUPPORT_STAGED_PROOF)
     blockers = load_json(BLOCKERS)
 
     print("Blazor public-edge proof status")
@@ -138,6 +145,16 @@ def main() -> int:
     print(f"aggregate_required_receipts={aggregate.get('required_receipt_count', 'unknown')}")
     print(f"aggregate_passed_receipts={aggregate.get('passed_receipt_count', 'unknown')}")
     print(f"aggregate_scope={str(aggregate.get('scope') or '').strip() or 'missing'}")
+    print(f"career_support_staged_receipt={CAREER_SUPPORT_STAGED_PROOF}")
+    print(f"career_support_staged_status={str(career_support_staged.get('status') or '').strip() or 'not_generated'}")
+    print(f"career_support_staged_contract={str(career_support_staged.get('contract_name') or '').strip() or 'missing'}")
+    print(f"career_support_staged_tier={str(career_support_staged.get('proof_tier') or '').strip() or 'missing'}")
+    print(f"career_support_staged_route_count={len(career_support_staged.get('expected_routes') or [])}")
+    print(f"career_support_staged_source_checks={count_staged_source_checks(career_support_staged)}")
+    print(
+        "career_support_staged_note="
+        "source_alignment_only_not_browser_execution"
+    )
     print(f"blocker_receipt={BLOCKERS}")
     print(f"blocker_status={str(blockers.get('status') or '').strip() or 'missing'}")
     print(

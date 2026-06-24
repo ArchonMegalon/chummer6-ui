@@ -1,0 +1,73 @@
+{
+  "contract_name": "chummer6-ui.blazor_career_support_staged_proof",
+  "generated_at": "2026-06-24T00:00:00+00:00",
+  "status": "passed",
+  "proof_tier": "source_staged_no_browser_execution",
+  "route_lane": "promoted_blazor_workbench",
+  "expected_routes": [
+    "/blazor/workbench?workspace=ws-1&tab=tab-calendar",
+    "/blazor/workbench?workspace=ws-1&tab=tab-calendar&control=create_entry",
+    "/blazor/workbench?workspace=ws-1&tab=tab-calendar&control=create_entry&dialog_action=add",
+    "/blazor/workbench?workspace=ws-1&tab=tab-calendar&control=edit_entry",
+    "/blazor/workbench?workspace=ws-1&tab=tab-calendar&control=edit_entry&dialog_action=apply",
+    "/blazor/workbench?workspace=ws-1&tab=tab-calendar&control=delete_entry",
+    "/blazor/workbench?workspace=ws-1&tab=tab-calendar&control=delete_entry&dialog_action=delete"
+  ],
+  "checks": [
+    {
+      "id": "product_workbench_affordances",
+      "path": "Chummer.Blazor/Components/Pages/Preview.razor",
+      "status": "passed",
+      "required_token_count": 7,
+      "missing_tokens": []
+    },
+    {
+      "id": "hosted_route_entry_probe",
+      "path": "scripts/e2e-public-edge.cjs",
+      "status": "passed",
+      "required_token_count": 7,
+      "missing_tokens": []
+    },
+    {
+      "id": "hosted_execution_runner",
+      "path": "scripts/e2e-public-edge-playwright.cjs",
+      "status": "passed",
+      "required_token_count": 10,
+      "missing_tokens": []
+    },
+    {
+      "id": "self_host_playwright_runner",
+      "path": "scripts/e2e-portal-playwright.cjs",
+      "status": "passed",
+      "required_token_count": 10,
+      "missing_tokens": []
+    },
+    {
+      "id": "self_host_receipt_metadata",
+      "path": "scripts/e2e-portal.sh",
+      "status": "passed",
+      "required_token_count": 7,
+      "missing_tokens": []
+    },
+    {
+      "id": "operator_docs",
+      "path": "docs/BLAZOR_SELF_HOST_RUNBOOK.md",
+      "status": "passed",
+      "required_token_count": 7,
+      "missing_tokens": []
+    },
+    {
+      "id": "release_truth_docs",
+      "path": "docs/WORKBENCH_RELEASE_SIGNOFF.md",
+      "status": "passed",
+      "required_token_count": 2,
+      "missing_tokens": []
+    }
+  ],
+  "failures": [],
+  "notes": [
+    "This receipt only proves that source, runner, metadata, and documentation staging agree.",
+    "It is not a substitute for hosted Playwright execution proof or Docker self-host proof.",
+    "Do not use this receipt to claim the career/support browser workflow has passed on chummer.run."
+  ]
+}

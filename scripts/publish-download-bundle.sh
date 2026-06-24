@@ -10,6 +10,7 @@ PORTAL_MANIFEST_PATH="${PORTAL_MANIFEST_PATH:-}"
 PORTAL_DOWNLOADS_DIR="${PORTAL_DOWNLOADS_DIR:-}"
 DEPLOY_MODE="${CHUMMER_PORTAL_DOWNLOADS_DEPLOY_ENABLED:-false}"
 LIVE_VERIFY_TARGET="${CHUMMER_PORTAL_DOWNLOADS_VERIFY_URL:-}"
+REQUIRE_EXTERNAL_PUBLISH="${CHUMMER_DOWNLOADS_REQUIRE_EXTERNAL_PUBLISH:-false}"
 MANIFEST_SOURCE="$BUNDLE_DIR/releases.json"
 FILES_SOURCE="$BUNDLE_DIR/files"
 RELEASE_PROOF_PATH="${RELEASE_PROOF_PATH:-}"
@@ -963,4 +964,26 @@ if [[ -n "$LIVE_VERIFY_TARGET" ]]; then
     bash "$SCRIPT_DIR/verify-releases-manifest.sh" "$LIVE_VERIFY_TARGET"
 fi
 
-echo "Published ${#promoted_file_names[@]} desktop artifact(s) into $DEPLOY_DIR"
+scope_args=(
+  --output "$DEPLOY_DIR/PUBLICATION_SCOPE.generated.json"
+  --deploy-dir "$DEPLOY_DIR"
+  --release-version "$release_version"
+  --release-channel "$release_channel"
+  --promoted-artifact-count "${#promoted_file_names[@]}"
+)
+if to_bool "$DEPLOY_MODE"; then
+  scope_args+=(--deploy-mode)
+fi
+if [[ -n "$LIVE_VERIFY_TARGET" ]]; then
+  scope_args+=(--live-verify-target "$LIVE_VERIFY_TARGET")
+fi
+if to_bool "$REQUIRE_EXTERNAL_PUBLISH"; then
+  scope_args+=(--require-external-publish)
+fi
+python3 "$SCRIPT_DIR/materialize-downloads-publication-scope.py" "${scope_args[@]}"
+
+if to_bool "$DEPLOY_MODE"; then
+  echo "Published ${#promoted_file_names[@]} desktop artifact(s) through verified external downloads lane: $LIVE_VERIFY_TARGET"
+else
+  echo "Updated local downloads shelf with ${#promoted_file_names[@]} desktop artifact(s): $DEPLOY_DIR"
+fi
