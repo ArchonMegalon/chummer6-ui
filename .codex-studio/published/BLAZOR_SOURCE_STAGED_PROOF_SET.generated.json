@@ -1,13 +1,13 @@
 {
   "contract_name": "chummer6-ui.blazor_source_staged_proof_set",
-  "generated_at": "2026-06-24T22:26:39.879316+00:00",
+  "generated_at": "2026-06-24T22:30:18.135115+00:00",
   "status": "passed",
   "proof_tier": "source_staged_no_browser_execution",
   "route_lane": "promoted_blazor_workbench",
-  "required_receipt_count": 37,
-  "passed_receipt_count": 37,
-  "expected_route_count": 94,
-  "source_check_count": 228,
+  "required_receipt_count": 38,
+  "passed_receipt_count": 38,
+  "expected_route_count": 95,
+  "source_check_count": 233,
   "required_receipts": [
     {
       "id": "career_support",
@@ -434,6 +434,18 @@
       "path": "/docker/chummercomplete/chummer-presentation/.codex-studio/published/BLAZOR_WORKBENCH_TREE_TOOLS_STAGED_PROOF.generated.json",
       "expected_contract_name": "chummer6-ui.blazor_workbench_tree_tools_staged_proof",
       "contract_name": "chummer6-ui.blazor_workbench_tree_tools_staged_proof",
+      "status": "passed",
+      "proof_tier": "source_staged_no_browser_execution",
+      "expected_route_count": 1,
+      "source_check_count": 5,
+      "control_count": null,
+      "covered_control_count": null
+    },
+    {
+      "id": "workbench_save_session",
+      "path": "/docker/chummercomplete/chummer-presentation/.codex-studio/published/BLAZOR_WORKBENCH_SAVE_SESSION_STAGED_PROOF.generated.json",
+      "expected_contract_name": "chummer6-ui.blazor_workbench_save_session_staged_proof",
+      "contract_name": "chummer6-ui.blazor_workbench_save_session_staged_proof",
       "status": "passed",
       "proof_tier": "source_staged_no_browser_execution",
       "expected_route_count": 1,

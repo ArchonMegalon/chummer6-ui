@@ -198,6 +198,11 @@ REQUIRED_RECEIPTS = [
         "contract_name": "chummer6-ui.blazor_workbench_tree_tools_staged_proof",
     },
     {
+        "id": "workbench_save_session",
+        "path": PUBLISHED / "BLAZOR_WORKBENCH_SAVE_SESSION_STAGED_PROOF.generated.json",
+        "contract_name": "chummer6-ui.blazor_workbench_save_session_staged_proof",
+    },
+    {
         "id": "legacy_control_coverage",
         "path": PUBLISHED / "BLAZOR_LEGACY_CONTROL_COVERAGE_STAGED_PROOF.generated.json",
         "contract_name": "chummer6-ui.blazor_legacy_control_coverage_staged_proof",

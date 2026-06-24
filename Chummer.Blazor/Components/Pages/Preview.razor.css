@@ -1966,6 +1966,77 @@
     line-height: 1.35;
 }
 
+.browser-workbench-save-session {
+    width: min(1240px, calc(100% - 1rem));
+    margin: 0 auto 0.85rem;
+    display: grid;
+    grid-template-columns: minmax(18rem, 0.82fr) minmax(0, 1.55fr);
+    gap: 0.75rem;
+    align-items: stretch;
+    padding: 0.8rem;
+    border: 1px solid rgba(255, 191, 105, 0.24);
+    border-radius: 1rem;
+    background:
+        linear-gradient(135deg, rgba(255, 191, 105, 0.105), rgba(112, 224, 198, 0.055)),
+        rgba(9, 12, 15, 0.95);
+}
+
+.browser-workbench-save-session-copy {
+    display: grid;
+    gap: 0.35rem;
+    align-content: center;
+}
+
+.browser-workbench-save-session-copy strong,
+.browser-workbench-save-session-copy p {
+    margin: 0;
+}
+
+.browser-workbench-save-session-copy strong {
+    color: #fff7e7;
+    font-size: 1rem;
+}
+
+.browser-workbench-save-session-copy p {
+    color: rgba(245, 239, 225, 0.74);
+    line-height: 1.42;
+}
+
+.browser-workbench-save-session-actions {
+    display: grid;
+    grid-template-columns: repeat(6, minmax(0, 1fr));
+    gap: 0.5rem;
+}
+
+.browser-workbench-save-session-actions a {
+    display: grid;
+    gap: 0.25rem;
+    min-height: 4.75rem;
+    padding: 0.72rem;
+    border: 1px solid rgba(255, 191, 105, 0.2);
+    border-radius: 0.85rem;
+    background: rgba(255, 255, 255, 0.042);
+    color: #fff7e7;
+    text-decoration: none;
+    transition: transform 150ms ease, border-color 150ms ease, background 150ms ease;
+}
+
+.browser-workbench-save-session-actions a:hover,
+.browser-workbench-save-session-actions a:focus-visible {
+    transform: translateY(-1px);
+    border-color: rgba(255, 191, 105, 0.58);
+    background: rgba(255, 191, 105, 0.11);
+}
+
+.browser-workbench-save-session-actions span {
+    font-weight: 850;
+}
+
+.browser-workbench-save-session-actions small {
+    color: rgba(245, 239, 225, 0.72);
+    line-height: 1.35;
+}
+
 .browser-preview-frame {
     padding-bottom: 1rem;
 }
@@ -2182,6 +2253,14 @@
     }
 
     .browser-workbench-tree-tools-actions {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+
+    .browser-workbench-save-session {
+        grid-template-columns: 1fr;
+    }
+
+    .browser-workbench-save-session-actions {
         grid-template-columns: repeat(2, minmax(0, 1fr));
     }
 }

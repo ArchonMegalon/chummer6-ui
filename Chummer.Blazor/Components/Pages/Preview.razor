@@ -929,6 +929,40 @@
             </div>
         </section>
 
+        <section class="browser-workbench-save-session" aria-label="Workbench save and session lifecycle" data-workbench-save-session="strip">
+            <div class="browser-workbench-save-session-copy">
+                <span class="browser-preview-status-label">Save state</span>
+                <strong>Make browser saves feel like desktop Chummer.</strong>
+                <p>Desktop users expect explicit save state, Save As handoff, autosave cues, dirty-state warnings, recovery, and export paths; the web workbench keeps those lifecycle actions in reach.</p>
+            </div>
+            <div class="browser-workbench-save-session-actions" role="list" aria-label="Save and session lifecycle shortcuts">
+                <a role="listitem" href="@BuildPreviewHref("blue", command: "save_character")" data-workbench-save-session-action="save">
+                    <span>Save</span>
+                    <small>Return to the primary save command posture.</small>
+                </a>
+                <a role="listitem" href="@BuildPreviewHref("blue", command: "save_character_as")" data-workbench-save-session-action="save_as">
+                    <span>Save As</span>
+                    <small>Keep file handoff visible for browser users.</small>
+                </a>
+                <a role="listitem" href="@BuildPreviewHref(tab: "tab-calendar", control: "refresh", useWorkbenchRoute: true)" data-workbench-save-session-action="autosave">
+                    <span>Autosave</span>
+                    <small>Reserve space for hosted session checkpoints.</small>
+                </a>
+                <a role="listitem" href="@BuildWorkbenchLaneHref("tab-info")" data-workbench-save-session-action="dirty_state">
+                    <span>Dirty state</span>
+                    <small>Surface unsaved-change warnings near identity.</small>
+                </a>
+                <a role="listitem" href="@BuildWorkbenchLaneHref("tab-calendar")" data-workbench-save-session-action="recovery">
+                    <span>Recovery</span>
+                    <small>Keep recent session restoration discoverable.</small>
+                </a>
+                <a role="listitem" href="@BuildPreviewHref("blue", command: "export_character")" data-workbench-save-session-action="export">
+                    <span>Export</span>
+                    <small>Separate output handoff from ordinary saves.</small>
+                </a>
+            </div>
+        </section>
+
         <section class="browser-preview-status-grid" aria-label="Workbench quick starts">
             <article class="browser-preview-status-card" data-workbench-entry-card="new-character">
                 <span class="browser-preview-status-label">Quick start</span>

@@ -39,5 +39,6 @@ python3 "$repo_root/scripts/materialize-blazor-workbench-activity-feed-staged-pr
 python3 "$repo_root/scripts/materialize-blazor-workbench-keyboard-shortcuts-staged-proof.py"
 python3 "$repo_root/scripts/materialize-blazor-workbench-resource-meters-staged-proof.py"
 python3 "$repo_root/scripts/materialize-blazor-workbench-tree-tools-staged-proof.py"
+python3 "$repo_root/scripts/materialize-blazor-workbench-save-session-staged-proof.py"
 python3 "$repo_root/scripts/materialize-blazor-legacy-control-coverage-staged-proof.py"
 python3 "$repo_root/scripts/materialize-blazor-source-staged-proof-set.py"

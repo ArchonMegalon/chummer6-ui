@@ -1,0 +1,25 @@
+{
+  "contract_name": "chummer6-ui.blazor_workbench_save_session_staged_proof",
+  "generated_at": "2026-06-24T00:00:00+00:00",
+  "status": "passed",
+  "proof_tier": "source_staged_no_browser_execution",
+  "route_lane": "promoted_blazor_workbench",
+  "expected_routes": [
+    "/blazor/workbench"
+  ],
+  "checks": [
+    {
+      "id": "product_workbench_save_session",
+      "path": "Chummer.Blazor/Components/Pages/Preview.razor",
+      "status": "passed",
+      "required_token_count": 9,
+      "missing_tokens": []
+    }
+  ],
+  "failures": [],
+  "notes": [
+    "This receipt only proves that promoted workbench save-session source, style, status, and docs agree.",
+    "It is not a substitute for hosted Playwright execution proof, Docker self-host proof, autosave execution proof, or browser file-write proof.",
+    "Do not use this receipt to claim persisted browser mutation, file-write, autosave execution, or browser execution parity."
+  ]
+}

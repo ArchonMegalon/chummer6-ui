@@ -62,6 +62,7 @@ The aggregate currently covers:
 - `workbench_keyboard_shortcuts`
 - `workbench_resource_meters`
 - `workbench_tree_tools`
+- `workbench_save_session`
 - `legacy_control_coverage`
 
 Each family must keep `proof_tier` set to:
