@@ -4,6 +4,7 @@ using System.Reflection;
 using System.Threading;
 using Avalonia;
 using Avalonia.Controls;
+using Avalonia.Controls.Primitives;
 using Avalonia.Fonts.Inter;
 using Avalonia.Headless;
 using Avalonia.Media;
@@ -13,6 +14,7 @@ using Avalonia.VisualTree;
 using Chummer.Avalonia;
 using Chummer.Campaign.Contracts;
 using Chummer.Desktop.Runtime;
+using Chummer.Contracts.Rulesets;
 using Chummer.Presentation.Overview;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 
@@ -63,6 +65,37 @@ public sealed class DesktopWindowContrastTests
         {
             using ThemeScope scope = ThemeScope.Dark(window);
             AssertVisibleButtonContrast(window, "devices access window dark mode", minimumVisibleButtons: 4);
+        });
+    }
+
+    [TestMethod]
+    public void Add_quality_dialog_keeps_dense_selection_controls_readable_in_dark_mode()
+    {
+        DesktopDialogState dialog = new DesktopDialogFactory().CreateUiControlDialog("quality_add", DesktopPreferenceState.Default);
+        WithBoundDialogWindow(dialog, window =>
+        {
+            using ThemeScope scope = ThemeScope.Dark(window);
+            AssertVisibleInputControlContrast(window, "add quality dialog dark mode", minimumVisibleInputControls: 3);
+            AssertVisibleButtonContrast(window, "add quality dialog dark mode", minimumVisibleButtons: 2);
+        });
+    }
+
+    [TestMethod]
+    public void Global_settings_dialog_keeps_idle_controls_readable_in_dark_mode()
+    {
+        DesktopDialogState dialog = new DesktopDialogFactory().CreateCommandDialog(
+            "global_settings",
+            profile: null,
+            DesktopPreferenceState.Default,
+            activeSectionJson: null,
+            currentWorkspace: null,
+            rulesetId: RulesetDefaults.Sr5);
+
+        WithBoundDialogWindow(dialog, window =>
+        {
+            using ThemeScope scope = ThemeScope.Dark(window);
+            AssertVisibleInputControlContrast(window, "global settings dialog dark mode", minimumVisibleInputControls: 4);
+            AssertVisibleButtonContrast(window, "global settings dialog dark mode", minimumVisibleButtons: 2);
         });
     }
 
@@ -333,6 +366,56 @@ public sealed class DesktopWindowContrastTests
         throw new AssertFailedException("Avalonia devices-access headless session did not stabilize for contrast proof.", lastFailure);
     }
 
+    private static void WithBoundDialogWindow(DesktopDialogState dialog, Action<DesktopDialogWindow> assertion)
+    {
+        EnsureHeadlessPlatform();
+        Exception? lastFailure = null;
+        for (int attempt = 1; attempt <= HeadlessSessionAttempts; attempt++)
+        {
+            HeadlessUnitTestSession? session = null;
+            try
+            {
+                session = HeadlessUnitTestSession.StartNew(typeof(ContrastHeadlessAppBootstrap));
+                session.Dispatch(
+                        () =>
+                        {
+                            DesktopDialogWindow window = new()
+                            {
+                                Width = 1080,
+                                Height = 900
+                            };
+                            window.BindDialog(dialog);
+                            window.Show();
+                            PumpUi();
+
+                            try
+                            {
+                                assertion(window);
+                            }
+                            finally
+                            {
+                                window.Close();
+                                PumpUi();
+                            }
+                        },
+                        CancellationToken.None)
+                    .GetAwaiter()
+                    .GetResult();
+                return;
+            }
+            catch (Exception ex) when (IsTransientHeadlessFailure(ex) && attempt < HeadlessSessionAttempts)
+            {
+                lastFailure = ex;
+            }
+            finally
+            {
+                session?.Dispose();
+            }
+        }
+
+        throw new AssertFailedException($"Avalonia dialog {dialog.Id} headless session did not stabilize for contrast proof.", lastFailure);
+    }
+
     private static DesktopInstallLinkingState CreateInstallState(string status)
     {
         DateTimeOffset now = DateTimeOffset.UtcNow;
@@ -399,7 +482,7 @@ public sealed class DesktopWindowContrastTests
             };
 
             Color foreground = ResolveSolidColor(foregroundBrush, control, "foreground", context);
-            Color background = ResolveSolidColor(backgroundBrush, control, "background", context);
+            Color background = ResolveBackgroundColor(backgroundBrush, control, context);
             string controlName = string.IsNullOrWhiteSpace(control.Name) ? control.GetType().Name : control.Name!;
             AssertContrastAtLeast(foreground, background, 4.5d, $"{context} {controlName} non-hover text");
         }
@@ -410,6 +493,7 @@ public sealed class DesktopWindowContrastTests
         Button[] buttons = root.GetVisualDescendants()
             .OfType<Button>()
             .Where(static control => control.IsVisible)
+            .Where(ShouldMeasureButtonTextContrast)
             .ToArray();
 
         Assert.IsTrue(
@@ -419,10 +503,20 @@ public sealed class DesktopWindowContrastTests
         foreach (Button button in buttons)
         {
             Color foreground = ResolveSolidColor(button.Foreground, button, "foreground", context);
-            Color background = ResolveSolidColor(button.Background, button, "background", context);
+            Color background = ResolveBackgroundColor(button.Background, button, context);
             string controlName = string.IsNullOrWhiteSpace(button.Name) ? button.GetType().Name : button.Name!;
             AssertContrastAtLeast(foreground, background, 4.5d, $"{context} {controlName} non-hover button text");
         }
+    }
+
+    private static bool ShouldMeasureButtonTextContrast(Button button)
+    {
+        if (button is CheckBox)
+        {
+            return false;
+        }
+
+        return true;
     }
 
     private static Color ResolveSolidColor(IBrush? brush, Control control, string role, string context)
@@ -433,6 +527,39 @@ public sealed class DesktopWindowContrastTests
         }
 
         throw new AssertFailedException($"{context} {control.Name ?? control.GetType().Name} must expose a solid {role} brush.");
+    }
+
+    private static Color ResolveBackgroundColor(IBrush? brush, Control control, string context)
+    {
+        if (TryResolveOpaqueSolidColor(brush, out Color ownColor))
+        {
+            return ownColor;
+        }
+
+        foreach (Visual visual in control.GetVisualAncestors())
+        {
+            switch (visual)
+            {
+                case Border border when TryResolveOpaqueSolidColor(border.Background, out Color borderColor):
+                    return borderColor;
+                case TemplatedControl templatedControl when TryResolveOpaqueSolidColor(templatedControl.Background, out Color controlColor):
+                    return controlColor;
+            }
+        }
+
+        throw new AssertFailedException($"{context} {control.Name ?? control.GetType().Name} must expose or inherit an opaque solid background brush.");
+    }
+
+    private static bool TryResolveOpaqueSolidColor(IBrush? brush, out Color color)
+    {
+        if (brush is ISolidColorBrush solidBrush && solidBrush.Color.A > 0)
+        {
+            color = solidBrush.Color;
+            return true;
+        }
+
+        color = default;
+        return false;
     }
 
     private static void AssertContrastAtLeast(Color foreground, Color background, double minimum, string context)

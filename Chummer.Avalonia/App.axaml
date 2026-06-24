@@ -1017,5 +1017,21 @@
     <Style Selector="CheckBox">
       <Setter Property="Foreground" Value="{DynamicResource ChummerShellForegroundBrush}" />
     </Style>
+    <Style Selector="CheckBox ContentPresenter">
+      <Setter Property="Foreground" Value="{DynamicResource ChummerShellForegroundBrush}" />
+    </Style>
+    <Style Selector="CheckBox TextBlock">
+      <Setter Property="Foreground" Value="{DynamicResource ChummerShellForegroundBrush}" />
+    </Style>
+    <Style Selector="CheckBox /template/ Border">
+      <Setter Property="Background" Value="Transparent" />
+      <Setter Property="BorderBrush" Value="{DynamicResource ChummerShellBorderBrush}" />
+    </Style>
+    <Style Selector="CheckBox:disabled ContentPresenter">
+      <Setter Property="Foreground" Value="{DynamicResource ChummerShellMutedForegroundBrush}" />
+    </Style>
+    <Style Selector="CheckBox:disabled TextBlock">
+      <Setter Property="Foreground" Value="{DynamicResource ChummerShellMutedForegroundBrush}" />
+    </Style>
   </Application.Styles>
 </Application>
