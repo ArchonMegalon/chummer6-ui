@@ -18,6 +18,10 @@ CAREER_SUPPORT_STAGED_PROOF = PUBLISHED / "BLAZOR_CAREER_SUPPORT_STAGED_PROOF.ge
 IDENTITY_LICENSE_STAGED_PROOF = PUBLISHED / "BLAZOR_IDENTITY_LICENSE_STAGED_PROOF.generated.json"
 COMBAT_SUPPORT_STAGED_PROOF = PUBLISHED / "BLAZOR_COMBAT_SUPPORT_STAGED_PROOF.generated.json"
 SKILL_MAINTENANCE_STAGED_PROOF = PUBLISHED / "BLAZOR_SKILL_MAINTENANCE_STAGED_PROOF.generated.json"
+MAGIC_SUPPORT_STAGED_PROOF = PUBLISHED / "BLAZOR_MAGIC_SUPPORT_STAGED_PROOF.generated.json"
+GEAR_MAINTENANCE_STAGED_PROOF = PUBLISHED / "BLAZOR_GEAR_MAINTENANCE_STAGED_PROOF.generated.json"
+SOURCE_GEAR_UTILITY_STAGED_PROOF = PUBLISHED / "BLAZOR_SOURCE_GEAR_UTILITY_STAGED_PROOF.generated.json"
+MAGIC_CLEANUP_STAGED_PROOF = PUBLISHED / "BLAZOR_MAGIC_CLEANUP_STAGED_PROOF.generated.json"
 BLOCKERS = PUBLISHED / "UI_EXTERNAL_HOST_PROOF_BLOCKERS.generated.json"
 EXPANDED_ROUTE_PROOF_MARKERS = {
     "public_startup_workbench_command_routes",
@@ -78,6 +82,10 @@ def main() -> int:
     identity_license_staged = load_json(IDENTITY_LICENSE_STAGED_PROOF)
     combat_support_staged = load_json(COMBAT_SUPPORT_STAGED_PROOF)
     skill_maintenance_staged = load_json(SKILL_MAINTENANCE_STAGED_PROOF)
+    magic_support_staged = load_json(MAGIC_SUPPORT_STAGED_PROOF)
+    gear_maintenance_staged = load_json(GEAR_MAINTENANCE_STAGED_PROOF)
+    source_gear_utility_staged = load_json(SOURCE_GEAR_UTILITY_STAGED_PROOF)
+    magic_cleanup_staged = load_json(MAGIC_CLEANUP_STAGED_PROOF)
     blockers = load_json(BLOCKERS)
 
     print("Blazor public-edge proof status")
@@ -189,6 +197,46 @@ def main() -> int:
     print(f"skill_maintenance_staged_source_checks={count_staged_source_checks(skill_maintenance_staged)}")
     print(
         "skill_maintenance_staged_note="
+        "source_alignment_only_not_browser_execution"
+    )
+    print(f"magic_support_staged_receipt={MAGIC_SUPPORT_STAGED_PROOF}")
+    print(f"magic_support_staged_status={str(magic_support_staged.get('status') or '').strip() or 'not_generated'}")
+    print(f"magic_support_staged_contract={str(magic_support_staged.get('contract_name') or '').strip() or 'missing'}")
+    print(f"magic_support_staged_tier={str(magic_support_staged.get('proof_tier') or '').strip() or 'missing'}")
+    print(f"magic_support_staged_route_count={len(magic_support_staged.get('expected_routes') or [])}")
+    print(f"magic_support_staged_source_checks={count_staged_source_checks(magic_support_staged)}")
+    print(
+        "magic_support_staged_note="
+        "source_alignment_only_not_browser_execution"
+    )
+    print(f"gear_maintenance_staged_receipt={GEAR_MAINTENANCE_STAGED_PROOF}")
+    print(f"gear_maintenance_staged_status={str(gear_maintenance_staged.get('status') or '').strip() or 'not_generated'}")
+    print(f"gear_maintenance_staged_contract={str(gear_maintenance_staged.get('contract_name') or '').strip() or 'missing'}")
+    print(f"gear_maintenance_staged_tier={str(gear_maintenance_staged.get('proof_tier') or '').strip() or 'missing'}")
+    print(f"gear_maintenance_staged_route_count={len(gear_maintenance_staged.get('expected_routes') or [])}")
+    print(f"gear_maintenance_staged_source_checks={count_staged_source_checks(gear_maintenance_staged)}")
+    print(
+        "gear_maintenance_staged_note="
+        "source_alignment_only_not_browser_execution"
+    )
+    print(f"source_gear_utility_staged_receipt={SOURCE_GEAR_UTILITY_STAGED_PROOF}")
+    print(f"source_gear_utility_staged_status={str(source_gear_utility_staged.get('status') or '').strip() or 'not_generated'}")
+    print(f"source_gear_utility_staged_contract={str(source_gear_utility_staged.get('contract_name') or '').strip() or 'missing'}")
+    print(f"source_gear_utility_staged_tier={str(source_gear_utility_staged.get('proof_tier') or '').strip() or 'missing'}")
+    print(f"source_gear_utility_staged_route_count={len(source_gear_utility_staged.get('expected_routes') or [])}")
+    print(f"source_gear_utility_staged_source_checks={count_staged_source_checks(source_gear_utility_staged)}")
+    print(
+        "source_gear_utility_staged_note="
+        "source_alignment_only_not_browser_execution"
+    )
+    print(f"magic_cleanup_staged_receipt={MAGIC_CLEANUP_STAGED_PROOF}")
+    print(f"magic_cleanup_staged_status={str(magic_cleanup_staged.get('status') or '').strip() or 'not_generated'}")
+    print(f"magic_cleanup_staged_contract={str(magic_cleanup_staged.get('contract_name') or '').strip() or 'missing'}")
+    print(f"magic_cleanup_staged_tier={str(magic_cleanup_staged.get('proof_tier') or '').strip() or 'missing'}")
+    print(f"magic_cleanup_staged_route_count={len(magic_cleanup_staged.get('expected_routes') or [])}")
+    print(f"magic_cleanup_staged_source_checks={count_staged_source_checks(magic_cleanup_staged)}")
+    print(
+        "magic_cleanup_staged_note="
         "source_alignment_only_not_browser_execution"
     )
     print(f"blocker_receipt={BLOCKERS}")

@@ -24,11 +24,15 @@ const requiredWorkflowFamilyIds = [
   'promoted_quality_selection_execution',
   'promoted_quality_delete_execution',
   'promoted_spell_selection_execution',
+  'promoted_magic_support_execution',
   'promoted_magic_delete_execution',
   'promoted_cyberware_selection_execution',
   'promoted_cyberware_edit_execution',
   'promoted_cyberware_delete_execution',
   'promoted_drug_selection_execution',
+  'promoted_gear_maintenance_execution',
+  'promoted_source_gear_utility_execution',
+  'promoted_magic_cleanup_utility_execution',
   'promoted_contact_connection_execution',
   'promoted_vehicle_edit_execution',
   'promoted_vehicle_delete_execution',
@@ -697,6 +701,21 @@ async function auditAdvancedActionAffordances(page) {
   expectTextIncludes(bodyText, 'Specialize skill for BLUE', 'hosted advanced action affordances');
   expectTextIncludes(bodyText, 'Remove skill for BLUE', 'hosted advanced action affordances');
   expectTextIncludes(bodyText, 'Edit skill group for BLUE', 'hosted advanced action affordances');
+  expectTextIncludes(bodyText, 'Add adept power for BLUE', 'hosted advanced action affordances');
+  expectTextIncludes(bodyText, 'Add spirit for BLUE', 'hosted advanced action affordances');
+  expectTextIncludes(bodyText, 'Add critter power for BLUE', 'hosted advanced action affordances');
+  expectTextIncludes(bodyText, 'Add Matrix program for BLUE', 'hosted advanced action affordances');
+  expectTextIncludes(bodyText, 'Add gear for BLUE', 'hosted advanced action affordances');
+  expectTextIncludes(bodyText, 'Edit gear for BLUE', 'hosted advanced action affordances');
+  expectTextIncludes(bodyText, 'Remove gear for BLUE', 'hosted advanced action affordances');
+  expectTextIncludes(bodyText, 'Show source for BLUE', 'hosted advanced action affordances');
+  expectTextIncludes(bodyText, 'Show gear source for BLUE', 'hosted advanced action affordances');
+  expectTextIncludes(bodyText, 'Mount gear for BLUE', 'hosted advanced action affordances');
+  expectTextIncludes(bodyText, 'Toggle gear free/paid for BLUE', 'hosted advanced action affordances');
+  expectTextIncludes(bodyText, 'Add general magic item for BLUE', 'hosted advanced action affordances');
+  expectTextIncludes(bodyText, 'Bind spirit for BLUE', 'hosted advanced action affordances');
+  expectTextIncludes(bodyText, 'Show magic source for BLUE', 'hosted advanced action affordances');
+  expectTextIncludes(bodyText, 'Remove drug for BLUE', 'hosted advanced action affordances');
   return {
     route,
     assertion: 'advanced and career/support restored action affordances remain visible on promoted workbench route',
@@ -1010,6 +1029,124 @@ async function run() {
       route_lane: 'promoted_blazor_workbench',
       workflow_contract: 'workspace_resume_continuity',
       checks: [await auditResumedWorkspace(page)],
+    });
+    receipt.workflow_families.push({
+      id: 'promoted_magic_cleanup_utility_execution',
+      route_lane: 'promoted_blazor_workbench',
+      workflow_contract: 'magic_cleanup_utility_execution',
+      checks: [
+        await auditAdvancedActionExecution(
+          page,
+          `${promotedRouteBase}?${promotedContinuationQuery}&tab=tab-magician&control=magic_add`,
+          'Magic',
+          'Magic'
+        ),
+        await auditAdvancedActionExecution(
+          page,
+          `${promotedRouteBase}?${promotedContinuationQuery}&tab=tab-magician&control=magic_bind`,
+          'Bind',
+          'Bind'
+        ),
+        await auditAdvancedActionExecution(
+          page,
+          `${promotedRouteBase}?${promotedContinuationQuery}&tab=tab-magician&control=magic_source`,
+          'Source',
+          'Source'
+        ),
+        await auditAdvancedActionExecution(
+          page,
+          `${promotedRouteBase}?${promotedContinuationQuery}&tab=tab-gear&control=drug_delete`,
+          'Remove',
+          'Remove'
+        ),
+      ],
+    });
+    receipt.workflow_families.push({
+      id: 'promoted_source_gear_utility_execution',
+      route_lane: 'promoted_blazor_workbench',
+      workflow_contract: 'source_gear_utility_execution',
+      checks: [
+        await auditAdvancedActionExecution(
+          page,
+          `${promotedRouteBase}?${promotedContinuationQuery}&tab=tab-info&control=show_source`,
+          'Source',
+          'Source'
+        ),
+        await auditAdvancedActionExecution(
+          page,
+          `${promotedRouteBase}?${promotedContinuationQuery}&tab=tab-gear&control=gear_source`,
+          'Source',
+          'Source'
+        ),
+        await auditAdvancedActionExecution(
+          page,
+          `${promotedRouteBase}?${promotedContinuationQuery}&tab=tab-gear&control=gear_mount`,
+          'Mount',
+          'Mount'
+        ),
+        await auditAdvancedActionExecution(
+          page,
+          `${promotedRouteBase}?${promotedContinuationQuery}&tab=tab-gear&control=toggle_free_paid`,
+          'Free',
+          'Free'
+        ),
+      ],
+    });
+    receipt.workflow_families.push({
+      id: 'promoted_gear_maintenance_execution',
+      route_lane: 'promoted_blazor_workbench',
+      workflow_contract: 'gear_maintenance_utility_execution',
+      checks: [
+        await auditAdvancedActionExecution(
+          page,
+          `${promotedRouteBase}?${promotedContinuationQuery}&tab=tab-gear&control=gear_add`,
+          'Add Gear',
+          'Browse the catalog'
+        ),
+        await auditAdvancedActionExecution(
+          page,
+          `${promotedRouteBase}?${promotedContinuationQuery}&tab=tab-gear&control=gear_edit`,
+          'Edit Gear',
+          'Edit'
+        ),
+        await auditAdvancedActionExecution(
+          page,
+          `${promotedRouteBase}?${promotedContinuationQuery}&tab=tab-gear&control=gear_delete`,
+          'Remove Armor Jacket',
+          'Removal Scope'
+        ),
+      ],
+    });
+    receipt.workflow_families.push({
+      id: 'promoted_magic_support_execution',
+      route_lane: 'promoted_blazor_workbench',
+      workflow_contract: 'magic_resonance_support_utility_execution',
+      checks: [
+        await auditAdvancedActionExecution(
+          page,
+          `${promotedRouteBase}?${promotedContinuationQuery}&tab=tab-adept&control=adept_power_add`,
+          'Power',
+          'Power'
+        ),
+        await auditAdvancedActionExecution(
+          page,
+          `${promotedRouteBase}?${promotedContinuationQuery}&tab=tab-magician&control=spirit_add`,
+          'Spirit',
+          'Spirit'
+        ),
+        await auditAdvancedActionExecution(
+          page,
+          `${promotedRouteBase}?${promotedContinuationQuery}&tab=tab-critter&control=critter_power_add`,
+          'Power',
+          'Critter'
+        ),
+        await auditAdvancedActionExecution(
+          page,
+          `${promotedRouteBase}?${promotedContinuationQuery}&tab=tab-technomancer&control=matrix_program_add`,
+          'Program',
+          'Program'
+        ),
+      ],
     });
     receipt.workflow_families.push({
       id: 'promoted_skill_maintenance_execution',

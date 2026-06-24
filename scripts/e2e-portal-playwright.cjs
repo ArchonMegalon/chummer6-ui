@@ -455,6 +455,21 @@ async function auditPortalWorkspaceResumeRoute(page) {
   expectTextIncludes(bodyText, 'Specialize skill for BLUE', 'portal workspace resume route');
   expectTextIncludes(bodyText, 'Remove skill for BLUE', 'portal workspace resume route');
   expectTextIncludes(bodyText, 'Edit skill group for BLUE', 'portal workspace resume route');
+  expectTextIncludes(bodyText, 'Add adept power for BLUE', 'portal workspace resume route');
+  expectTextIncludes(bodyText, 'Add spirit for BLUE', 'portal workspace resume route');
+  expectTextIncludes(bodyText, 'Add critter power for BLUE', 'portal workspace resume route');
+  expectTextIncludes(bodyText, 'Add Matrix program for BLUE', 'portal workspace resume route');
+  expectTextIncludes(bodyText, 'Add gear for BLUE', 'portal workspace resume route');
+  expectTextIncludes(bodyText, 'Edit gear for BLUE', 'portal workspace resume route');
+  expectTextIncludes(bodyText, 'Remove gear for BLUE', 'portal workspace resume route');
+  expectTextIncludes(bodyText, 'Show source for BLUE', 'portal workspace resume route');
+  expectTextIncludes(bodyText, 'Show gear source for BLUE', 'portal workspace resume route');
+  expectTextIncludes(bodyText, 'Mount gear for BLUE', 'portal workspace resume route');
+  expectTextIncludes(bodyText, 'Toggle gear free/paid for BLUE', 'portal workspace resume route');
+  expectTextIncludes(bodyText, 'Add general magic item for BLUE', 'portal workspace resume route');
+  expectTextIncludes(bodyText, 'Bind spirit for BLUE', 'portal workspace resume route');
+  expectTextIncludes(bodyText, 'Show magic source for BLUE', 'portal workspace resume route');
+  expectTextIncludes(bodyText, 'Remove drug for BLUE', 'portal workspace resume route');
   expectTextIncludes(bodyText, 'Continue BLUE on advanced', 'portal workspace resume route');
   expectTextIncludes(bodyText, 'Continue BLUE for download', 'portal workspace resume route');
   expectTextIncludes(bodyText, 'Continue BLUE for export', 'portal workspace resume route');
@@ -699,6 +714,86 @@ async function auditPortalRestoredCareerEntryReorderRoute(page, controlId, expec
   const dialogText = await page.locator('.desktop-dialog').innerText();
   expectTextIncludes(dialogText, expectedTitle, `portal restored career entry reorder route ${controlId}`);
   expectTextIncludes(dialogText, 'The reordered list stays visible in the same utility pane.', `portal restored career entry reorder route ${controlId}`);
+}
+
+async function auditPortalRestoredMagicCleanupUtilityRoute(page, tabId, controlId, expectedTitle, expectedMarker) {
+  await openPortalPreviewPath(
+    page,
+    '/blazor/preview?fixture=blue&tab=tab-create',
+    '[data-build-lab]'
+  );
+
+  await openPortalPreviewPath(
+    page,
+    `/blazor/workbench?workspace=ws-1&tab=${tabId}&control=${controlId}`,
+    '.desktop-dialog'
+  );
+
+  await expectDialogFits(page, expectedTitle.toLowerCase());
+
+  const dialogText = await page.locator('.desktop-dialog').innerText();
+  expectTextIncludes(dialogText, expectedTitle, `portal restored magic cleanup utility route ${controlId}`);
+  expectTextIncludes(dialogText, expectedMarker, `portal restored magic cleanup utility route ${controlId}`);
+}
+
+async function auditPortalRestoredSourceGearUtilityRoute(page, tabId, controlId, expectedTitle, expectedMarker) {
+  await openPortalPreviewPath(
+    page,
+    '/blazor/preview?fixture=blue&tab=tab-create',
+    '[data-build-lab]'
+  );
+
+  await openPortalPreviewPath(
+    page,
+    `/blazor/workbench?workspace=ws-1&tab=${tabId}&control=${controlId}`,
+    '.desktop-dialog'
+  );
+
+  await expectDialogFits(page, expectedTitle.toLowerCase());
+
+  const dialogText = await page.locator('.desktop-dialog').innerText();
+  expectTextIncludes(dialogText, expectedTitle, `portal restored source/gear utility route ${controlId}`);
+  expectTextIncludes(dialogText, expectedMarker, `portal restored source/gear utility route ${controlId}`);
+}
+
+async function auditPortalRestoredGearMaintenanceRoute(page, controlId, expectedTitle, expectedMarker) {
+  await openPortalPreviewPath(
+    page,
+    '/blazor/preview?fixture=blue&tab=tab-create',
+    '[data-build-lab]'
+  );
+
+  await openPortalPreviewPath(
+    page,
+    `/blazor/workbench?workspace=ws-1&tab=tab-gear&control=${controlId}`,
+    '.desktop-dialog'
+  );
+
+  await expectDialogFits(page, expectedTitle.toLowerCase());
+
+  const dialogText = await page.locator('.desktop-dialog').innerText();
+  expectTextIncludes(dialogText, expectedTitle, `portal restored gear maintenance route ${controlId}`);
+  expectTextIncludes(dialogText, expectedMarker, `portal restored gear maintenance route ${controlId}`);
+}
+
+async function auditPortalRestoredMagicSupportRoute(page, tabId, controlId, expectedTitle, expectedMarker) {
+  await openPortalPreviewPath(
+    page,
+    '/blazor/preview?fixture=blue&tab=tab-create',
+    '[data-build-lab]'
+  );
+
+  await openPortalPreviewPath(
+    page,
+    `/blazor/workbench?workspace=ws-1&tab=${tabId}&control=${controlId}`,
+    '.desktop-dialog'
+  );
+
+  await expectDialogFits(page, expectedTitle.toLowerCase());
+
+  const dialogText = await page.locator('.desktop-dialog').innerText();
+  expectTextIncludes(dialogText, expectedTitle, `portal restored magic support route ${controlId}`);
+  expectTextIncludes(dialogText, expectedMarker, `portal restored magic support route ${controlId}`);
 }
 
 async function auditPortalRestoredSkillMaintenanceRoute(page, controlId, expectedTitle, expectedMarker) {
@@ -1030,6 +1125,66 @@ async function run() {
     const restoredCareerEntryMoveDownPage = await browser.newPage({ viewport: { width: 1440, height: 960 } });
     await auditPortalRestoredCareerEntryReorderRoute(restoredCareerEntryMoveDownPage, 'move_down', 'Move Entry Down');
     await restoredCareerEntryMoveDownPage.close();
+
+    const restoredMagicAddPage = await browser.newPage({ viewport: { width: 1440, height: 960 } });
+    await auditPortalRestoredMagicCleanupUtilityRoute(restoredMagicAddPage, 'tab-magician', 'magic_add', 'Magic', 'Magic');
+    await restoredMagicAddPage.close();
+
+    const restoredMagicBindPage = await browser.newPage({ viewport: { width: 1440, height: 960 } });
+    await auditPortalRestoredMagicCleanupUtilityRoute(restoredMagicBindPage, 'tab-magician', 'magic_bind', 'Bind', 'Bind');
+    await restoredMagicBindPage.close();
+
+    const restoredMagicSourcePage = await browser.newPage({ viewport: { width: 1440, height: 960 } });
+    await auditPortalRestoredMagicCleanupUtilityRoute(restoredMagicSourcePage, 'tab-magician', 'magic_source', 'Source', 'Source');
+    await restoredMagicSourcePage.close();
+
+    const restoredDrugDeletePage = await browser.newPage({ viewport: { width: 1440, height: 960 } });
+    await auditPortalRestoredMagicCleanupUtilityRoute(restoredDrugDeletePage, 'tab-gear', 'drug_delete', 'Remove', 'Remove');
+    await restoredDrugDeletePage.close();
+
+    const restoredShowSourcePage = await browser.newPage({ viewport: { width: 1440, height: 960 } });
+    await auditPortalRestoredSourceGearUtilityRoute(restoredShowSourcePage, 'tab-info', 'show_source', 'Source', 'Source');
+    await restoredShowSourcePage.close();
+
+    const restoredGearSourcePage = await browser.newPage({ viewport: { width: 1440, height: 960 } });
+    await auditPortalRestoredSourceGearUtilityRoute(restoredGearSourcePage, 'tab-gear', 'gear_source', 'Source', 'Source');
+    await restoredGearSourcePage.close();
+
+    const restoredGearMountPage = await browser.newPage({ viewport: { width: 1440, height: 960 } });
+    await auditPortalRestoredSourceGearUtilityRoute(restoredGearMountPage, 'tab-gear', 'gear_mount', 'Mount', 'Mount');
+    await restoredGearMountPage.close();
+
+    const restoredToggleFreePaidPage = await browser.newPage({ viewport: { width: 1440, height: 960 } });
+    await auditPortalRestoredSourceGearUtilityRoute(restoredToggleFreePaidPage, 'tab-gear', 'toggle_free_paid', 'Free', 'Free');
+    await restoredToggleFreePaidPage.close();
+
+    const restoredGearAddPage = await browser.newPage({ viewport: { width: 1440, height: 960 } });
+    await auditPortalRestoredGearMaintenanceRoute(restoredGearAddPage, 'gear_add', 'Add Gear', 'Browse the catalog');
+    await restoredGearAddPage.close();
+
+    const restoredGearEditPage = await browser.newPage({ viewport: { width: 1440, height: 960 } });
+    await auditPortalRestoredGearMaintenanceRoute(restoredGearEditPage, 'gear_edit', 'Edit Gear', 'Edit');
+    await restoredGearEditPage.close();
+
+    const restoredGearDeletePage = await browser.newPage({ viewport: { width: 1440, height: 960 } });
+    await auditPortalRestoredGearMaintenanceRoute(restoredGearDeletePage, 'gear_delete', 'Remove Armor Jacket', 'Removal Scope');
+    await restoredGearDeletePage.close();
+
+    const restoredAdeptPowerPage = await browser.newPage({ viewport: { width: 1440, height: 960 } });
+    await auditPortalRestoredMagicSupportRoute(restoredAdeptPowerPage, 'tab-adept', 'adept_power_add', 'Power', 'Power');
+    await restoredAdeptPowerPage.close();
+
+    const restoredSpiritPage = await browser.newPage({ viewport: { width: 1440, height: 960 } });
+    await auditPortalRestoredMagicSupportRoute(restoredSpiritPage, 'tab-magician', 'spirit_add', 'Spirit', 'Spirit');
+    await restoredSpiritPage.close();
+
+    const restoredCritterPowerPage = await browser.newPage({ viewport: { width: 1440, height: 960 } });
+    await auditPortalRestoredMagicSupportRoute(restoredCritterPowerPage, 'tab-critter', 'critter_power_add', 'Power', 'Critter');
+    await restoredCritterPowerPage.close();
+
+    const restoredMatrixProgramPage = await browser.newPage({ viewport: { width: 1440, height: 960 } });
+    await auditPortalRestoredMagicSupportRoute(restoredMatrixProgramPage, 'tab-technomancer', 'matrix_program_add', 'Program', 'Program');
+    await restoredMatrixProgramPage.close();
 
     const restoredSkillSpecializePage = await browser.newPage({ viewport: { width: 1440, height: 960 } });
     await auditPortalRestoredSkillMaintenanceRoute(restoredSkillSpecializePage, 'skill_specialize', 'Specialization', 'Specialization');

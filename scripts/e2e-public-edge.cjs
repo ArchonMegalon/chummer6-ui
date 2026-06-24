@@ -447,6 +447,100 @@ const checks = [
       /\/blazor\/workbench\?workspace=ws-1&tab=tab-skills&control=skill_group$/.test(response.url)
       && hasBlazorBaseHref(text)
   }
+,
+  {
+    url: `${baseUrl}/blazor/workbench?workspace=ws-1&tab=tab-adept&control=adept_power_add`,
+    assert: (text, response) =>
+      /\/blazor\/workbench\?workspace=ws-1&tab=tab-adept&control=adept_power_add$/.test(response.url)
+      && hasBlazorBaseHref(text)
+  },
+  {
+    url: `${baseUrl}/blazor/workbench?workspace=ws-1&tab=tab-magician&control=spirit_add`,
+    assert: (text, response) =>
+      /\/blazor\/workbench\?workspace=ws-1&tab=tab-magician&control=spirit_add$/.test(response.url)
+      && hasBlazorBaseHref(text)
+  },
+  {
+    url: `${baseUrl}/blazor/workbench?workspace=ws-1&tab=tab-critter&control=critter_power_add`,
+    assert: (text, response) =>
+      /\/blazor\/workbench\?workspace=ws-1&tab=tab-critter&control=critter_power_add$/.test(response.url)
+      && hasBlazorBaseHref(text)
+  },
+  {
+    url: `${baseUrl}/blazor/workbench?workspace=ws-1&tab=tab-technomancer&control=matrix_program_add`,
+    assert: (text, response) =>
+      /\/blazor\/workbench\?workspace=ws-1&tab=tab-technomancer&control=matrix_program_add$/.test(response.url)
+      && hasBlazorBaseHref(text)
+  }
+,
+  {
+    url: `${baseUrl}/blazor/workbench?workspace=ws-1&tab=tab-gear&control=gear_add`,
+    assert: (text, response) =>
+      /\/blazor\/workbench\?workspace=ws-1&tab=tab-gear&control=gear_add$/.test(response.url)
+      && hasBlazorBaseHref(text)
+  },
+  {
+    url: `${baseUrl}/blazor/workbench?workspace=ws-1&tab=tab-gear&control=gear_edit`,
+    assert: (text, response) =>
+      /\/blazor\/workbench\?workspace=ws-1&tab=tab-gear&control=gear_edit$/.test(response.url)
+      && hasBlazorBaseHref(text)
+  },
+  {
+    url: `${baseUrl}/blazor/workbench?workspace=ws-1&tab=tab-gear&control=gear_delete`,
+    assert: (text, response) =>
+      /\/blazor\/workbench\?workspace=ws-1&tab=tab-gear&control=gear_delete$/.test(response.url)
+      && hasBlazorBaseHref(text)
+  }
+,
+  {
+    url: `${baseUrl}/blazor/workbench?workspace=ws-1&tab=tab-info&control=show_source`,
+    assert: (text, response) =>
+      /\/blazor\/workbench\?workspace=ws-1&tab=tab-info&control=show_source$/.test(response.url)
+      && hasBlazorBaseHref(text)
+  },
+  {
+    url: `${baseUrl}/blazor/workbench?workspace=ws-1&tab=tab-gear&control=gear_source`,
+    assert: (text, response) =>
+      /\/blazor\/workbench\?workspace=ws-1&tab=tab-gear&control=gear_source$/.test(response.url)
+      && hasBlazorBaseHref(text)
+  },
+  {
+    url: `${baseUrl}/blazor/workbench?workspace=ws-1&tab=tab-gear&control=gear_mount`,
+    assert: (text, response) =>
+      /\/blazor\/workbench\?workspace=ws-1&tab=tab-gear&control=gear_mount$/.test(response.url)
+      && hasBlazorBaseHref(text)
+  },
+  {
+    url: `${baseUrl}/blazor/workbench?workspace=ws-1&tab=tab-gear&control=toggle_free_paid`,
+    assert: (text, response) =>
+      /\/blazor\/workbench\?workspace=ws-1&tab=tab-gear&control=toggle_free_paid$/.test(response.url)
+      && hasBlazorBaseHref(text)
+  }
+,
+  {
+    url: `${baseUrl}/blazor/workbench?workspace=ws-1&tab=tab-magician&control=magic_add`,
+    assert: (text, response) =>
+      /\/blazor\/workbench\?workspace=ws-1&tab=tab-magician&control=magic_add$/.test(response.url)
+      && hasBlazorBaseHref(text)
+  },
+  {
+    url: `${baseUrl}/blazor/workbench?workspace=ws-1&tab=tab-magician&control=magic_bind`,
+    assert: (text, response) =>
+      /\/blazor\/workbench\?workspace=ws-1&tab=tab-magician&control=magic_bind$/.test(response.url)
+      && hasBlazorBaseHref(text)
+  },
+  {
+    url: `${baseUrl}/blazor/workbench?workspace=ws-1&tab=tab-magician&control=magic_source`,
+    assert: (text, response) =>
+      /\/blazor\/workbench\?workspace=ws-1&tab=tab-magician&control=magic_source$/.test(response.url)
+      && hasBlazorBaseHref(text)
+  },
+  {
+    url: `${baseUrl}/blazor/workbench?workspace=ws-1&tab=tab-gear&control=drug_delete`,
+    assert: (text, response) =>
+      /\/blazor\/workbench\?workspace=ws-1&tab=tab-gear&control=drug_delete$/.test(response.url)
+      && hasBlazorBaseHref(text)
+  }
 
 ];
 
