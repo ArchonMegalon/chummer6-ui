@@ -46,6 +46,7 @@ internal sealed class DesktopInstallLinkingWindow : Window
     private readonly Button _accountButton;
     private readonly Button _copyLoginUrlButton;
     private readonly Button _redeemClaimCodeButton;
+    private readonly Button _unlinkButton;
     private readonly Button _exitButton;
     private CancellationTokenSource? _handoffPollCancellation;
     private readonly bool _loginVideoPreview;
@@ -183,6 +184,9 @@ internal sealed class DesktopInstallLinkingWindow : Window
         _redeemClaimCodeButton = CreateButton(
             DesktopLocalizationCatalog.GetRequiredString("desktop.install_link.button.redeem_claim_code", _language),
             RedeemClaimCodeAsync);
+        _unlinkButton = CreateButton(
+            DesktopLocalizationCatalog.GetRequiredString("desktop.install_link.button.unlink_copy", _language),
+            UnlinkCopyAsync);
         _exitButton = CreateButton(
             DesktopLocalizationCatalog.GetRequiredString("desktop.install_link.button.continue_unlinked", _language),
             ContinueUnlinkedAsync);
@@ -303,6 +307,7 @@ internal sealed class DesktopInstallLinkingWindow : Window
             Children =
             {
                 CreateButton(DesktopLocalizationCatalog.GetRequiredString("desktop.install_link.button.open_account", _language), OpenAccountAsync),
+                _unlinkButton,
                 CreateButton(DesktopLocalizationCatalog.GetRequiredString("desktop.install_link.button.copy_install_id", _language), CopyInstallIdAsync),
                 CreateButton(DesktopLocalizationCatalog.GetRequiredString("desktop.install_link.button.open_downloads", _language), OpenDownloadsAsync),
                 CreateButton(DesktopLocalizationCatalog.GetRequiredString("desktop.install_link.button.open_support", _language), OpenSupportAsync),
@@ -1010,6 +1015,17 @@ internal sealed class DesktopInstallLinkingWindow : Window
         return Task.CompletedTask;
     }
 
+    private Task UnlinkCopyAsync()
+    {
+        _state = DesktopInstallLinkingRuntime.UnlinkInstall(_state.HeadId);
+        _browserFallbackVisible = false;
+        _lastLoginUrl = null;
+        RefreshSummary();
+        RefreshActionState();
+        SetStatus(DesktopLocalizationCatalog.GetRequiredString("desktop.install_link.status.unlinked_copy", _language));
+        return Task.CompletedTask;
+    }
+
     private void ApplyGuidedFeaturePreference(bool disableAiFeatures)
     {
         DesktopPreferenceState nextPreferences = DesktopPreferenceStateRuntime.Normalize(
@@ -1057,6 +1073,7 @@ internal sealed class DesktopInstallLinkingWindow : Window
         _accountButton.Content = BuildAccountButtonLabel(claimed, _browserFallbackVisible, _language);
         _followThroughButton.IsVisible = claimed;
         _copyLoginUrlButton.IsVisible = !claimed && _browserFallbackVisible;
+        _unlinkButton.IsVisible = claimed;
         _exitButton.IsVisible = !claimed;
         if (_loginVideoPreview)
         {
@@ -1070,6 +1087,7 @@ internal sealed class DesktopInstallLinkingWindow : Window
         RefreshButtonTip(_followThroughButton);
         RefreshButtonTip(_accountButton);
         RefreshButtonTip(_copyLoginUrlButton);
+        RefreshButtonTip(_unlinkButton);
         RefreshButtonTip(_exitButton);
 
         _claimCodeHintText.IsVisible = !claimed && _browserFallbackVisible;

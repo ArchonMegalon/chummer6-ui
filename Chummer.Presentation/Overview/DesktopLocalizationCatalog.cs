@@ -135,6 +135,7 @@ public static class DesktopLocalizationCatalog
         ["desktop.install_link.button.copy_login_url"] = "Copy Claim Link",
         ["desktop.install_link.button.open_claim_link"] = "Open Claim Link",
         ["desktop.install_link.button.redeem_claim_code"] = "Use Fallback Code",
+        ["desktop.install_link.button.unlink_copy"] = "Unlink this copy",
         ["desktop.install_link.button.login_website"] = "Claim your copy",
         ["desktop.install_link.button.continue_unlinked"] = "Continue unlinked",
         ["desktop.install_link.button.exit_desktop"] = "Exit desktop",
@@ -227,6 +228,7 @@ public static class DesktopLocalizationCatalog
         ["desktop.install_link.status.unable_open_work_route"] = "Unable to open the workspace from this host.",
         ["desktop.install_link.status.opened_account"] = "Opened the claim page for this copy.",
         ["desktop.install_link.status.unable_open_account"] = "Unable to open the Hub account page from this host.",
+        ["desktop.install_link.status.unlinked_copy"] = "This copy is now unlinked on this device.",
         ["desktop.install_link.status.login_url_copied"] = "Copied the claim link. Open it in your browser to claim this copy.",
         ["desktop.install_link.status.manual_login_url"] = "Browser claim did not open automatically. Open or copy this claim link to finish claiming this copy:",
         ["desktop.install_link.status.opened_downloads"] = "Opened downloads.",
@@ -632,6 +634,7 @@ public static class DesktopLocalizationCatalog
             localized["desktop.install_link.button.link_copy"] = "Diese Kopie beanspruchen";
             localized["desktop.install_link.button.open_claim_link"] = "Claim-Link offnen";
             localized["desktop.install_link.button.redeem_claim_code"] = "Fallback-Code nutzen";
+            localized["desktop.install_link.button.unlink_copy"] = "Diese Kopie trennen";
             localized["desktop.install_link.button.login_website"] = "Diese Kopie beanspruchen";
             localized["desktop.install_link.button.continue_unlinked"] = "Ohne Verknuepfung fortfahren";
             localized["desktop.install_link.button.exit_desktop"] = "Desktop beenden";
@@ -649,6 +652,7 @@ public static class DesktopLocalizationCatalog
             localized["desktop.install_link.status.unable_open_work_route"] = "Der Arbeitsbereich kann auf diesem Host nicht geöffnet werden.";
             localized["desktop.install_link.status.opened_account"] = "Die Claim-Seite für diese Kopie wurde geöffnet.";
             localized["desktop.install_link.status.unable_open_account"] = "Die Hub-Kontoseite kann auf diesem Host nicht geöffnet werden.";
+            localized["desktop.install_link.status.unlinked_copy"] = "Diese Kopie ist jetzt auf diesem Geraet nicht mehr verknuepft.";
             localized["desktop.install_link.status.opened_downloads"] = "Downloads wurden geöffnet.";
             localized["desktop.install_link.status.unable_open_downloads"] = "Downloads konnen auf diesem Host nicht geöffnet werden.";
             localized["desktop.install_link.status.opened_support"] = "Support für diese Kopie wurde geöffnet.";

@@ -138,6 +138,25 @@ public sealed class DesktopInstallLinkingShellChromeTests
     }
 
     [TestMethod]
+    public void Claimed_install_link_window_supports_unlinking_this_copy()
+    {
+        string windowSource = File.ReadAllText(FindPath("Chummer.Avalonia", "DesktopInstallLinkingWindow.cs"));
+        string runtimeSource = File.ReadAllText(FindPath("Chummer.Desktop.Runtime", "DesktopInstallLinkingRuntime.cs"));
+        string localizationSource = File.ReadAllText(FindPath("Chummer.Presentation", "Overview", "DesktopLocalizationCatalog.cs"));
+
+        StringAssert.Contains(windowSource, "desktop.install_link.button.unlink_copy");
+        StringAssert.Contains(windowSource, "UnlinkCopyAsync");
+        StringAssert.Contains(windowSource, "DesktopInstallLinkingRuntime.UnlinkInstall(_state.HeadId)");
+        StringAssert.Contains(windowSource, "_unlinkButton.IsVisible = claimed;");
+        StringAssert.Contains(runtimeSource, "public static DesktopInstallLinkingState UnlinkInstall(string headId)");
+        StringAssert.Contains(runtimeSource, "Status = GuestStatus");
+        StringAssert.Contains(runtimeSource, "GrantToken = null");
+        StringAssert.Contains(runtimeSource, "LinkedEmail = null");
+        StringAssert.Contains(localizationSource, "[\"desktop.install_link.button.unlink_copy\"] = \"Unlink this copy\"");
+        StringAssert.Contains(localizationSource, "[\"desktop.install_link.status.unlinked_copy\"] = \"This copy is now unlinked on this device.\"");
+    }
+
+    [TestMethod]
     public void Avalonia_startup_supports_headless_install_linking_before_graphics_init()
     {
         string source = FindPath("Chummer.Avalonia", "Program.cs");

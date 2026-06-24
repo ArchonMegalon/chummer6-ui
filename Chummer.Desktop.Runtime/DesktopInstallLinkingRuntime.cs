@@ -386,6 +386,38 @@ public static class DesktopInstallLinkingRuntime
         });
     }
 
+    public static DesktopInstallLinkingState UnlinkInstall(string headId)
+    {
+        DesktopInstallLinkingState state = LoadOrCreateState(headId);
+        DateTimeOffset now = DateTimeOffset.UtcNow;
+        DesktopInstallLinkingState unlinkedState = RefreshRuntimeMetadata(state, now) with
+        {
+            Status = GuestStatus,
+            ClaimedAtUtc = null,
+            LastPromptDismissedAtUtc = now,
+            ClaimTicketId = null,
+            LastClaimCode = null,
+            LastClaimMessage = null,
+            LastClaimError = null,
+            LastClaimAttemptUtc = null,
+            GrantId = null,
+            GrantToken = null,
+            GrantIssuedAtUtc = null,
+            GrantExpiresAtUtc = null,
+            UserId = null,
+            SubjectId = null,
+            LinkedEmail = null,
+            LastBrowserDispatchAttemptUtc = null,
+            LastBrowserDispatchUri = null,
+            LastBrowserDispatchFailure = null,
+            UpdatedAtUtc = now
+        };
+        SaveState(unlinkedState);
+        TryDeletePendingClaimCode(unlinkedState);
+        TryDeletePendingInstallLinkCallback(unlinkedState);
+        return unlinkedState;
+    }
+
     public static bool TryOpenAccountPortal()
     {
         return TryOpenPublicPortal("/account#desktop");

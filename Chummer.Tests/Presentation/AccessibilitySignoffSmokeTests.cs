@@ -2111,9 +2111,12 @@ public sealed class AccessibilitySignoffSmokeTests
         RequireContains(source, "DesktopInstallLinkingRuntime.RedeemClaimCodeAsync");
         RequireContains(source, "RefreshActionState()");
         RequireContains(source, "desktop.install_link.button.login_website");
+        RequireContains(source, "desktop.install_link.button.unlink_copy");
         RequireContains(source, "desktop.install_link.button.continue_unlinked");
         RequireContains(source, "ContinueUnlinkedAsync");
+        RequireContains(source, "UnlinkCopyAsync");
         RequireContains(source, "DesktopInstallLinkingRuntime.MarkPromptDismissed(_state.HeadId)");
+        RequireContains(source, "DesktopInstallLinkingRuntime.UnlinkInstall(_state.HeadId)");
         RequireDoesNotContain(source, "desktopLifetime.Shutdown();");
         RequireDoesNotContain(source, "e.Cancel = true;");
         RequireDoesNotContain(source, "ContinueAsGuestAsync");
