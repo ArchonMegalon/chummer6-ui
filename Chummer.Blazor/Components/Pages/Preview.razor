@@ -409,6 +409,41 @@
             </div>
         </section>
 
+        <section class="browser-workbench-diagnostics" aria-label="Workbench diagnostics" data-workbench-diagnostics="strip">
+            <div class="browser-workbench-diagnostics-copy">
+                <span class="browser-preview-status-label">Diagnostics</span>
+                <strong>Check the app when something feels off.</strong>
+                <p>Open runtime details, About, health, release status, or preview tools from the workbench.</p>
+            </div>
+            <div class="browser-workbench-diagnostics-actions">
+                <a href="@BuildPreviewHref(command: OverviewCommandPolicy.RuntimeInspectorCommandId, useWorkbenchRoute: true)"
+                   data-workbench-diagnostics-action="runtime-inspector">
+                    <span>Runtime</span>
+                    <small>Inspect current browser state.</small>
+                </a>
+                <a href="@BuildPreviewHref(command: "about", useWorkbenchRoute: true)"
+                   data-workbench-diagnostics-action="about">
+                    <span>About</span>
+                    <small>Review client identity.</small>
+                </a>
+                <a href="/blazor/health"
+                   data-workbench-diagnostics-action="health">
+                    <span>Health</span>
+                    <small>Check the browser service.</small>
+                </a>
+                <a href="/status"
+                   data-workbench-diagnostics-action="status">
+                    <span>Status</span>
+                    <small>Read release status.</small>
+                </a>
+                <a href="/preview"
+                   data-workbench-diagnostics-action="proof-shelf">
+                    <span>Preview</span>
+                    <small>Open preview tools.</small>
+                </a>
+            </div>
+        </section>
+
         <section class="browser-preview-status-grid" aria-label="Workbench quick starts">
             <article class="browser-preview-status-card" data-workbench-entry-card="new-character">
                 <span class="browser-preview-status-label">Quick start</span>

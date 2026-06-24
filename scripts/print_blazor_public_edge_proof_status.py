@@ -33,6 +33,7 @@ WORKBENCH_WORKFLOW_LEDGER_STAGED_PROOF = PUBLISHED / "BLAZOR_WORKBENCH_WORKFLOW_
 WORKBENCH_FILE_INTAKE_STAGED_PROOF = PUBLISHED / "BLAZOR_WORKBENCH_FILE_INTAKE_STAGED_PROOF.generated.json"
 WORKBENCH_RULES_DATA_STAGED_PROOF = PUBLISHED / "BLAZOR_WORKBENCH_RULES_DATA_STAGED_PROOF.generated.json"
 WORKBENCH_SETTINGS_STAGED_PROOF = PUBLISHED / "BLAZOR_WORKBENCH_SETTINGS_STAGED_PROOF.generated.json"
+WORKBENCH_DIAGNOSTICS_STAGED_PROOF = PUBLISHED / "BLAZOR_WORKBENCH_DIAGNOSTICS_STAGED_PROOF.generated.json"
 LEGACY_CONTROL_COVERAGE_STAGED_PROOF = PUBLISHED / "BLAZOR_LEGACY_CONTROL_COVERAGE_STAGED_PROOF.generated.json"
 SOURCE_STAGED_PROOF_SET = PUBLISHED / "BLAZOR_SOURCE_STAGED_PROOF_SET.generated.json"
 PORTAL_INSTALLER_HANDOFF_STAGED_PROOF = PUBLISHED / "BLAZOR_PORTAL_INSTALLER_HANDOFF_STAGED_PROOF.generated.json"
@@ -115,6 +116,7 @@ def main() -> int:
     workbench_file_intake_staged = load_json(WORKBENCH_FILE_INTAKE_STAGED_PROOF)
     workbench_rules_data_staged = load_json(WORKBENCH_RULES_DATA_STAGED_PROOF)
     workbench_settings_staged = load_json(WORKBENCH_SETTINGS_STAGED_PROOF)
+    workbench_diagnostics_staged = load_json(WORKBENCH_DIAGNOSTICS_STAGED_PROOF)
     legacy_control_coverage_staged = load_json(LEGACY_CONTROL_COVERAGE_STAGED_PROOF)
     source_staged_proof_set = load_json(SOURCE_STAGED_PROOF_SET)
     portal_installer_handoff_staged = load_json(PORTAL_INSTALLER_HANDOFF_STAGED_PROOF)
@@ -383,6 +385,16 @@ def main() -> int:
     print(f"workbench_settings_staged_source_checks={count_staged_source_checks(workbench_settings_staged)}")
     print(
         "workbench_settings_staged_note="
+        "source_alignment_only_not_browser_execution"
+    )
+    print(f"workbench_diagnostics_staged_receipt={WORKBENCH_DIAGNOSTICS_STAGED_PROOF}")
+    print(f"workbench_diagnostics_staged_status={str(workbench_diagnostics_staged.get('status') or '').strip() or 'not_generated'}")
+    print(f"workbench_diagnostics_staged_contract={str(workbench_diagnostics_staged.get('contract_name') or '').strip() or 'missing'}")
+    print(f"workbench_diagnostics_staged_tier={str(workbench_diagnostics_staged.get('proof_tier') or '').strip() or 'missing'}")
+    print(f"workbench_diagnostics_staged_route_count={len(workbench_diagnostics_staged.get('expected_routes') or [])}")
+    print(f"workbench_diagnostics_staged_source_checks={count_staged_source_checks(workbench_diagnostics_staged)}")
+    print(
+        "workbench_diagnostics_staged_note="
         "source_alignment_only_not_browser_execution"
     )
     print(f"legacy_control_coverage_staged_receipt={LEGACY_CONTROL_COVERAGE_STAGED_PROOF}")

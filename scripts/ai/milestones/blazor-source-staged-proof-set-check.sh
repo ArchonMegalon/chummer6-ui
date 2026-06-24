@@ -22,5 +22,6 @@ python3 "$repo_root/scripts/materialize-blazor-workbench-workflow-ledger-staged-
 python3 "$repo_root/scripts/materialize-blazor-workbench-file-intake-staged-proof.py"
 python3 "$repo_root/scripts/materialize-blazor-workbench-rules-data-staged-proof.py"
 python3 "$repo_root/scripts/materialize-blazor-workbench-settings-staged-proof.py"
+python3 "$repo_root/scripts/materialize-blazor-workbench-diagnostics-staged-proof.py"
 python3 "$repo_root/scripts/materialize-blazor-legacy-control-coverage-staged-proof.py"
 python3 "$repo_root/scripts/materialize-blazor-source-staged-proof-set.py"

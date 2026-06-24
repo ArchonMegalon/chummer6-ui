@@ -45,7 +45,7 @@ The aggregate currently covers:
 - `workbench_file_intake`
 - `workbench_rules_data`
 - `workbench_settings`
-- `workbench_settings`
+- `workbench_diagnostics`
 - `legacy_control_coverage`
 
 Each family must keep `proof_tier` set to:
