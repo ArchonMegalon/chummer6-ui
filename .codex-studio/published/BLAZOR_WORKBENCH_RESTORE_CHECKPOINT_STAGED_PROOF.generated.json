@@ -1,6 +1,6 @@
 {
-  "contract_name": "chummer6-ui.blazor_workbench_inspector_rail_staged_proof",
-  "generated_at": "2026-06-24T23:44:06.607901+00:00",
+  "contract_name": "chummer6-ui.blazor_workbench_restore_checkpoint_staged_proof",
+  "generated_at": "2026-06-24T23:44:07.529725+00:00",
   "status": "passed",
   "proof_tier": "source_staged_no_browser_execution",
   "route_lane": "promoted_blazor_workbench",
@@ -9,14 +9,14 @@
   ],
   "checks": [
     {
-      "id": "product_workbench_inspector_rail",
+      "id": "product_workbench_restore_checkpoint",
       "path": "Chummer.Blazor/Components/Pages/Preview.razor",
       "status": "passed",
-      "required_token_count": 8,
+      "required_token_count": 9,
       "missing_tokens": []
     },
     {
-      "id": "scoped_inspector_rail_visual_design",
+      "id": "scoped_restore_checkpoint_visual_design",
       "path": "Chummer.Blazor/Components/Pages/Preview.razor.css",
       "status": "passed",
       "required_token_count": 4,
@@ -46,8 +46,8 @@
   ],
   "failures": [],
   "notes": [
-    "This receipt only proves that promoted workbench inspector-rail source, style, status, and docs agree.",
-    "It is not a substitute for hosted Playwright execution proof, Docker self-host proof, live inspector state proof, or split-pane persistence proof.",
-    "Do not use this receipt to claim live inspector state, split-pane persistence, or browser execution parity."
+    "This receipt only proves that promoted workbench restore/checkpoint source, style, status, and docs agree.",
+    "It is not a substitute for hosted browser execution, snapshot persistence, restore execution, backup generation, rollback mutation, or retention policy parity.",
+    "Do not use this receipt to claim complete recovery, persistence, or browser execution parity."
   ]
 }

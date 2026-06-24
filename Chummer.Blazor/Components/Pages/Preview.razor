@@ -1779,6 +1779,40 @@
             </div>
         </section>
 
+
+        <section class="browser-workbench-restore-checkpoint-strip" aria-label="Workbench restore and checkpoint posture" data-workbench-restore-checkpoint="strip">
+            <div class="browser-workbench-restore-checkpoint-copy">
+                <span class="browser-preview-status-label">Restore</span>
+                <strong>Keep recovery close to risky edits.</strong>
+                <p>Autosaves, named checkpoints, backups, previews, rollback, and retention stay visible while the sheet changes.</p>
+            </div>
+            <div class="browser-workbench-restore-checkpoint-actions" role="list" aria-label="Restore checkpoint actions">
+                <a href="@BuildPreviewHref("blue", command: "checkpoint_autosave")" role="listitem" data-workbench-restore-checkpoint-action="autosave">Autosave</a>
+                <a href="@BuildPreviewHref("blue", command: "checkpoint_named")" role="listitem" data-workbench-restore-checkpoint-action="named-checkpoint">Named checkpoint</a>
+                <a href="@BuildPreviewHref("blue", command: "checkpoint_backup")" role="listitem" data-workbench-restore-checkpoint-action="backup-download">Backup</a>
+                <a href="@BuildPreviewHref("blue", command: "checkpoint_restore_preview")" role="listitem" data-workbench-restore-checkpoint-action="restore-preview">Preview</a>
+                <a href="@BuildPreviewHref("blue", command: "checkpoint_rollback")" role="listitem" data-workbench-restore-checkpoint-action="rollback">Rollback</a>
+                <a href="@BuildPreviewHref("blue", command: "checkpoint_retention")" role="listitem" data-workbench-restore-checkpoint-action="retention">Retention</a>
+            </div>
+        </section>
+
+
+        <section class="browser-workbench-offline-cache-strip" aria-label="Workbench offline cache posture" data-workbench-offline-cache="strip">
+            <div class="browser-workbench-offline-cache-copy">
+                <span class="browser-preview-status-label">Offline cache</span>
+                <strong>Keep the browser workbench useful when the network gets rough.</strong>
+                <p>Cache status, queued edits, reconnect review, local export fallback, stale-data warnings, and sync health keep web Chummer from feeling more fragile than desktop.</p>
+            </div>
+            <div class="browser-workbench-offline-cache-actions" role="list" aria-label="Offline cache actions">
+                <a href="/workbench?command=open_character&offline=cache-status" role="listitem" data-workbench-offline-cache-action="cache-status">Cache status</a>
+                <a href="/workbench?command=save_character&offline=queued-edits" role="listitem" data-workbench-offline-cache-action="queued-edits">Queued edits</a>
+                <a href="/workbench?command=open_character&offline=reconnect-review" role="listitem" data-workbench-offline-cache-action="reconnect-review">Reconnect review</a>
+                <a href="/workbench?command=export_character&offline=local-export" role="listitem" data-workbench-offline-cache-action="local-export">Local export</a>
+                <a href="/workbench?command=open_character&offline=stale-data" role="listitem" data-workbench-offline-cache-action="stale-data">Stale data</a>
+                <a href="/workbench?command=open_character&offline=sync-health" role="listitem" data-workbench-offline-cache-action="sync-health">Sync health</a>
+            </div>
+        </section>
+
         <section class="browser-preview-status-grid" aria-label="Workbench quick starts">
             <article class="browser-preview-status-card" data-workbench-entry-card="new-character">
                 <span class="browser-preview-status-label">Quick start</span>

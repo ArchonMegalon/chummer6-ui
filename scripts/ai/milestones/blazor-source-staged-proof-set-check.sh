@@ -65,5 +65,7 @@ python3 "$repo_root/scripts/materialize-blazor-workbench-lifecycle-calendar-stag
 python3 "$repo_root/scripts/materialize-blazor-workbench-progression-ledger-staged-proof.py"
 python3 "$repo_root/scripts/materialize-blazor-workbench-import-reconcile-staged-proof.py"
 python3 "$repo_root/scripts/materialize-blazor-workbench-compare-merge-staged-proof.py"
+python3 "$repo_root/scripts/materialize-blazor-workbench-restore-checkpoint-staged-proof.py"
+python3 "$repo_root/scripts/materialize-blazor-workbench-offline-cache-staged-proof.py"
 python3 "$repo_root/scripts/materialize-blazor-legacy-control-coverage-staged-proof.py"
 python3 "$repo_root/scripts/materialize-blazor-source-staged-proof-set.py"

@@ -147,6 +147,142 @@
     background: rgba(137, 224, 179, 0.09);
 }
 
+
+.browser-workbench-restore-checkpoint-strip {
+    width: min(1240px, calc(100% - 1rem));
+    margin: 0 auto 0.85rem;
+    display: grid;
+    grid-template-columns: minmax(17rem, 0.76fr) minmax(0, 1.5fr);
+    gap: 0.8rem;
+    align-items: stretch;
+    padding: 0.85rem;
+    border: 1px solid rgba(198, 185, 154, 0.22);
+    border-radius: 1rem;
+    background:
+        linear-gradient(135deg, rgba(198, 185, 154, 0.085), rgba(137, 224, 179, 0.045)),
+        rgba(10, 12, 9, 0.95);
+}
+
+.browser-workbench-restore-checkpoint-copy {
+    display: grid;
+    gap: 0.35rem;
+    align-content: center;
+    padding: 0.55rem 0.65rem;
+    border-radius: 0.85rem;
+    background: rgba(0, 0, 0, 0.16);
+}
+
+.browser-workbench-restore-checkpoint-copy strong,
+.browser-workbench-restore-checkpoint-copy p {
+    margin: 0;
+}
+
+.browser-workbench-restore-checkpoint-copy strong {
+    color: #f4efe4;
+    font-size: 1rem;
+}
+
+.browser-workbench-restore-checkpoint-copy p {
+    color: rgba(238, 241, 246, 0.78);
+    line-height: 1.45;
+}
+
+.browser-workbench-restore-checkpoint-actions {
+    display: grid;
+    grid-template-columns: repeat(6, minmax(0, 1fr));
+    gap: 0.5rem;
+    align-content: center;
+}
+
+.browser-workbench-restore-checkpoint-actions a {
+    min-height: 3.15rem;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0.55rem 0.6rem;
+    border: 1px solid rgba(198, 185, 154, 0.2);
+    border-radius: 0.85rem;
+    color: #eef1f6;
+    text-align: center;
+    text-decoration: none;
+    font-weight: 850;
+    background: rgba(255, 255, 255, 0.042);
+}
+
+.browser-workbench-restore-checkpoint-actions a:hover,
+.browser-workbench-restore-checkpoint-actions a:focus-visible {
+    border-color: rgba(137, 224, 179, 0.5);
+    background: rgba(137, 224, 179, 0.09);
+}
+
+
+.browser-workbench-offline-cache-strip {
+    width: min(1240px, calc(100% - 1rem));
+    margin: 0 auto 0.85rem;
+    display: grid;
+    grid-template-columns: minmax(17rem, 0.76fr) minmax(0, 1.5fr);
+    gap: 0.8rem;
+    align-items: stretch;
+    padding: 0.85rem;
+    border: 1px solid rgba(52, 211, 153, 0.28);
+    border-radius: 1rem;
+    background:
+        radial-gradient(circle at top right, rgba(52, 211, 153, 0.14), transparent 30rem),
+        linear-gradient(135deg, rgba(12, 28, 24, 0.95), rgba(13, 16, 22, 0.9));
+}
+
+.browser-workbench-offline-cache-copy {
+    display: grid;
+    gap: 0.35rem;
+    align-content: center;
+    padding: 0.55rem 0.65rem;
+    border-radius: 0.85rem;
+    background: rgba(0, 0, 0, 0.16);
+}
+
+.browser-workbench-offline-cache-copy strong,
+.browser-workbench-offline-cache-copy p {
+    margin: 0;
+}
+
+.browser-workbench-offline-cache-copy strong {
+    color: #c9ffe9;
+    font-size: 1rem;
+}
+
+.browser-workbench-offline-cache-copy p {
+    color: rgba(238, 241, 246, 0.78);
+    line-height: 1.45;
+}
+
+.browser-workbench-offline-cache-actions {
+    display: grid;
+    grid-template-columns: repeat(6, minmax(0, 1fr));
+    gap: 0.5rem;
+    align-content: center;
+}
+
+.browser-workbench-offline-cache-actions a {
+    min-height: 3.15rem;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0.55rem 0.6rem;
+    border: 1px solid rgba(52, 211, 153, 0.26);
+    border-radius: 0.85rem;
+    color: #eef1f6;
+    text-align: center;
+    text-decoration: none;
+    font-weight: 850;
+    background: rgba(52, 211, 153, 0.07);
+}
+
+.browser-workbench-offline-cache-actions a:hover,
+.browser-workbench-offline-cache-actions a:focus-visible {
+    border-color: rgba(244, 207, 115, 0.7);
+    background: rgba(244, 207, 115, 0.13);
+}
+
 .browser-preview-frame {
     width: min(1240px, calc(100% - 1rem));
     margin: 0 auto;
@@ -4232,6 +4368,20 @@
 @media (max-width: 720px) {
     .browser-workbench-compare-merge-strip,
     .browser-workbench-compare-merge-actions {
+        grid-template-columns: 1fr;
+    }
+}
+
+@media (max-width: 720px) {
+    .browser-workbench-restore-checkpoint-strip,
+    .browser-workbench-restore-checkpoint-actions {
+        grid-template-columns: 1fr;
+    }
+}
+
+@media (max-width: 720px) {
+    .browser-workbench-offline-cache-strip,
+    .browser-workbench-offline-cache-actions {
         grid-template-columns: 1fr;
     }
 }

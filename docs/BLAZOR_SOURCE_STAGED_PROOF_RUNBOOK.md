@@ -88,6 +88,8 @@ The aggregate currently covers:
 - `workbench_progression_ledger`
 - `workbench_import_reconcile`
 - `workbench_compare_merge`
+- `workbench_restore_checkpoint`
+- `workbench_offline_cache`
 - `legacy_control_coverage`
 
 Each family must keep `proof_tier` set to:

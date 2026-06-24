@@ -76,6 +76,8 @@ WORKBENCH_LIFECYCLE_CALENDAR_STAGED_PROOF = PUBLISHED / "BLAZOR_WORKBENCH_LIFECY
 WORKBENCH_PROGRESSION_LEDGER_STAGED_PROOF = PUBLISHED / "BLAZOR_WORKBENCH_PROGRESSION_LEDGER_STAGED_PROOF.generated.json"
 WORKBENCH_IMPORT_RECONCILE_STAGED_PROOF = PUBLISHED / "BLAZOR_WORKBENCH_IMPORT_RECONCILE_STAGED_PROOF.generated.json"
 WORKBENCH_COMPARE_MERGE_STAGED_PROOF = PUBLISHED / "BLAZOR_WORKBENCH_COMPARE_MERGE_STAGED_PROOF.generated.json"
+WORKBENCH_RESTORE_CHECKPOINT_STAGED_PROOF = PUBLISHED / "BLAZOR_WORKBENCH_RESTORE_CHECKPOINT_STAGED_PROOF.generated.json"
+WORKBENCH_OFFLINE_CACHE_STAGED_PROOF = PUBLISHED / "BLAZOR_WORKBENCH_OFFLINE_CACHE_STAGED_PROOF.generated.json"
 LEGACY_CONTROL_COVERAGE_STAGED_PROOF = PUBLISHED / "BLAZOR_LEGACY_CONTROL_COVERAGE_STAGED_PROOF.generated.json"
 SOURCE_STAGED_PROOF_SET = PUBLISHED / "BLAZOR_SOURCE_STAGED_PROOF_SET.generated.json"
 PORTAL_INSTALLER_HANDOFF_STAGED_PROOF = PUBLISHED / "BLAZOR_PORTAL_INSTALLER_HANDOFF_STAGED_PROOF.generated.json"
@@ -201,6 +203,8 @@ def main() -> int:
     workbench_progression_ledger_staged = load_json(WORKBENCH_PROGRESSION_LEDGER_STAGED_PROOF)
     workbench_import_reconcile_staged = load_json(WORKBENCH_IMPORT_RECONCILE_STAGED_PROOF)
     workbench_compare_merge_staged = load_json(WORKBENCH_COMPARE_MERGE_STAGED_PROOF)
+    workbench_restore_checkpoint_staged = load_json(WORKBENCH_RESTORE_CHECKPOINT_STAGED_PROOF)
+    workbench_offline_cache_staged = load_json(WORKBENCH_OFFLINE_CACHE_STAGED_PROOF)
     legacy_control_coverage_staged = load_json(LEGACY_CONTROL_COVERAGE_STAGED_PROOF)
     source_staged_proof_set = load_json(SOURCE_STAGED_PROOF_SET)
     portal_installer_handoff_staged = load_json(PORTAL_INSTALLER_HANDOFF_STAGED_PROOF)
@@ -900,6 +904,26 @@ def main() -> int:
     print(
         "workbench_compare_merge_staged_note="
         "source_alignment_only_not_browser_execution"
+    )
+    print(f"workbench_restore_checkpoint_staged_receipt={WORKBENCH_RESTORE_CHECKPOINT_STAGED_PROOF}")
+    print(f"workbench_restore_checkpoint_staged_status={str(workbench_restore_checkpoint_staged.get('status') or '').strip() or 'not_generated'}")
+    print(f"workbench_restore_checkpoint_staged_contract={str(workbench_restore_checkpoint_staged.get('contract_name') or '').strip() or 'missing'}")
+    print(f"workbench_restore_checkpoint_staged_tier={str(workbench_restore_checkpoint_staged.get('proof_tier') or '').strip() or 'missing'}")
+    print(f"workbench_restore_checkpoint_staged_route_count={len(workbench_restore_checkpoint_staged.get('expected_routes') or [])}")
+    print(f"workbench_restore_checkpoint_staged_source_checks={count_staged_source_checks(workbench_restore_checkpoint_staged)}")
+    print(
+        "workbench_restore_checkpoint_staged_note="
+        "source_alignment_only_not_browser_execution"
+    )
+    print(f"workbench_offline_cache_staged_receipt={WORKBENCH_OFFLINE_CACHE_STAGED_PROOF}")
+    print(f"workbench_offline_cache_staged_status={str(workbench_offline_cache_staged.get('status') or '').strip() or 'not_generated'}")
+    print(f"workbench_offline_cache_staged_contract={str(workbench_offline_cache_staged.get('contract_name') or '').strip() or 'missing'}")
+    print(f"workbench_offline_cache_staged_tier={str(workbench_offline_cache_staged.get('proof_tier') or '').strip() or 'missing'}")
+    print(f"workbench_offline_cache_staged_route_count={len(workbench_offline_cache_staged.get('expected_routes') or [])}")
+    print(f"workbench_offline_cache_staged_source_checks={count_staged_source_checks(workbench_offline_cache_staged)}")
+    print(
+        "workbench_offline_cache_staged_note="
+        "source_alignment_only_not_service_worker_or_offline_execution_proof"
     )
     print(f"legacy_control_coverage_staged_receipt={LEGACY_CONTROL_COVERAGE_STAGED_PROOF}")
     print(f"legacy_control_coverage_staged_status={str(legacy_control_coverage_staged.get('status') or '').strip() or 'not_generated'}")
