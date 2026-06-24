@@ -105,7 +105,7 @@
             <div class="browser-workbench-task-dock-copy">
                 <span class="browser-preview-status-label">Task dock</span>
                 <strong>Keep the common Chummer jobs one click from the browser workbench.</strong>
-                <p>Start, edit, output, and portal handoff stay in one dense strip so the web client behaves like another desktop client instead of a detached page stack.</p>
+                <p>Start, edit, output, and portal handoff stay in one dense strip.</p>
             </div>
             <nav class="browser-workbench-task-dock-actions" aria-label="Workbench task shortcuts">
                 <a href="/workbench?command=new_character" data-workbench-dock-action="start-new">New runner</a>
@@ -1742,6 +1742,40 @@
                     <span>History</span>
                     <small>See what changed and when.</small>
                 </a>
+            </div>
+        </section>
+
+
+        <section class="browser-workbench-import-reconcile-strip" aria-label="Workbench import and reconcile posture" data-workbench-import-reconcile="strip">
+            <div class="browser-workbench-import-reconcile-copy">
+                <span class="browser-preview-status-label">Import</span>
+                <strong>Bring existing runners across carefully.</strong>
+                <p>Files, career state, custom data, attachments, and conflicts stay visible before anything is accepted.</p>
+            </div>
+            <div class="browser-workbench-import-reconcile-actions" role="list" aria-label="Import reconcile actions">
+                <a href="@BuildPreviewHref("blue", command: "import_select_file")" role="listitem" data-workbench-import-reconcile-action="select-file">Select file</a>
+                <a href="@BuildPreviewHref("blue", command: "import_parse_summary")" role="listitem" data-workbench-import-reconcile-action="parse-summary">Parse summary</a>
+                <a href="@BuildPreviewHref("blue", command: "import_rules_map")" role="listitem" data-workbench-import-reconcile-action="rules-map">Rules map</a>
+                <a href="@BuildPreviewHref("blue", command: "import_custom_data")" role="listitem" data-workbench-import-reconcile-action="custom-data">Custom data</a>
+                <a href="@BuildPreviewHref("blue", command: "import_conflicts")" role="listitem" data-workbench-import-reconcile-action="conflicts">Conflicts</a>
+                <a href="@BuildPreviewHref("blue", command: "import_commit")" role="listitem" data-workbench-import-reconcile-action="commit-import">Accept</a>
+            </div>
+        </section>
+
+
+        <section class="browser-workbench-compare-merge-strip" aria-label="Workbench compare and merge posture" data-workbench-compare-merge="strip">
+            <div class="browser-workbench-compare-merge-copy">
+                <span class="browser-preview-status-label">Compare</span>
+                <strong>Review imported changes before they touch the runner.</strong>
+                <p>Deltas, conflicts, sources, dry-run totals, and rollback stay visible before a merge is accepted.</p>
+            </div>
+            <div class="browser-workbench-compare-merge-actions" role="list" aria-label="Compare merge actions">
+                <a href="@BuildPreviewHref("blue", command: "merge_diff_view")" role="listitem" data-workbench-compare-merge-action="diff-view">Diff view</a>
+                <a href="@BuildPreviewHref("blue", command: "merge_conflict_choice")" role="listitem" data-workbench-compare-merge-action="conflict-choice">Choose side</a>
+                <a href="@BuildPreviewHref("blue", command: "merge_source_trace")" role="listitem" data-workbench-compare-merge-action="source-trace">Source trace</a>
+                <a href="@BuildPreviewHref("blue", command: "merge_dry_run")" role="listitem" data-workbench-compare-merge-action="dry-run">Dry run</a>
+                <a href="@BuildPreviewHref("blue", command: "merge_apply")" role="listitem" data-workbench-compare-merge-action="apply-merge">Apply</a>
+                <a href="@BuildPreviewHref("blue", command: "merge_rollback_plan")" role="listitem" data-workbench-compare-merge-action="rollback-plan">Rollback</a>
             </div>
         </section>
 

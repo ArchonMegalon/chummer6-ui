@@ -74,6 +74,8 @@ WORKBENCH_WINDOWING_PANES_STAGED_PROOF = PUBLISHED / "BLAZOR_WORKBENCH_WINDOWING
 WORKBENCH_CALCULATION_PROVENANCE_STAGED_PROOF = PUBLISHED / "BLAZOR_WORKBENCH_CALCULATION_PROVENANCE_STAGED_PROOF.generated.json"
 WORKBENCH_LIFECYCLE_CALENDAR_STAGED_PROOF = PUBLISHED / "BLAZOR_WORKBENCH_LIFECYCLE_CALENDAR_STAGED_PROOF.generated.json"
 WORKBENCH_PROGRESSION_LEDGER_STAGED_PROOF = PUBLISHED / "BLAZOR_WORKBENCH_PROGRESSION_LEDGER_STAGED_PROOF.generated.json"
+WORKBENCH_IMPORT_RECONCILE_STAGED_PROOF = PUBLISHED / "BLAZOR_WORKBENCH_IMPORT_RECONCILE_STAGED_PROOF.generated.json"
+WORKBENCH_COMPARE_MERGE_STAGED_PROOF = PUBLISHED / "BLAZOR_WORKBENCH_COMPARE_MERGE_STAGED_PROOF.generated.json"
 LEGACY_CONTROL_COVERAGE_STAGED_PROOF = PUBLISHED / "BLAZOR_LEGACY_CONTROL_COVERAGE_STAGED_PROOF.generated.json"
 SOURCE_STAGED_PROOF_SET = PUBLISHED / "BLAZOR_SOURCE_STAGED_PROOF_SET.generated.json"
 PORTAL_INSTALLER_HANDOFF_STAGED_PROOF = PUBLISHED / "BLAZOR_PORTAL_INSTALLER_HANDOFF_STAGED_PROOF.generated.json"
@@ -197,6 +199,8 @@ def main() -> int:
     workbench_calculation_provenance_staged = load_json(WORKBENCH_CALCULATION_PROVENANCE_STAGED_PROOF)
     workbench_lifecycle_calendar_staged = load_json(WORKBENCH_LIFECYCLE_CALENDAR_STAGED_PROOF)
     workbench_progression_ledger_staged = load_json(WORKBENCH_PROGRESSION_LEDGER_STAGED_PROOF)
+    workbench_import_reconcile_staged = load_json(WORKBENCH_IMPORT_RECONCILE_STAGED_PROOF)
+    workbench_compare_merge_staged = load_json(WORKBENCH_COMPARE_MERGE_STAGED_PROOF)
     legacy_control_coverage_staged = load_json(LEGACY_CONTROL_COVERAGE_STAGED_PROOF)
     source_staged_proof_set = load_json(SOURCE_STAGED_PROOF_SET)
     portal_installer_handoff_staged = load_json(PORTAL_INSTALLER_HANDOFF_STAGED_PROOF)
@@ -875,6 +879,26 @@ def main() -> int:
     print(f"workbench_progression_ledger_staged_source_checks={count_staged_source_checks(workbench_progression_ledger_staged)}")
     print(
         "workbench_progression_ledger_staged_note="
+        "source_alignment_only_not_browser_execution"
+    )
+    print(f"workbench_import_reconcile_staged_receipt={WORKBENCH_IMPORT_RECONCILE_STAGED_PROOF}")
+    print(f"workbench_import_reconcile_staged_status={str(workbench_import_reconcile_staged.get('status') or '').strip() or 'not_generated'}")
+    print(f"workbench_import_reconcile_staged_contract={str(workbench_import_reconcile_staged.get('contract_name') or '').strip() or 'missing'}")
+    print(f"workbench_import_reconcile_staged_tier={str(workbench_import_reconcile_staged.get('proof_tier') or '').strip() or 'missing'}")
+    print(f"workbench_import_reconcile_staged_route_count={len(workbench_import_reconcile_staged.get('expected_routes') or [])}")
+    print(f"workbench_import_reconcile_staged_source_checks={count_staged_source_checks(workbench_import_reconcile_staged)}")
+    print(
+        "workbench_import_reconcile_staged_note="
+        "source_alignment_only_not_browser_execution"
+    )
+    print(f"workbench_compare_merge_staged_receipt={WORKBENCH_COMPARE_MERGE_STAGED_PROOF}")
+    print(f"workbench_compare_merge_staged_status={str(workbench_compare_merge_staged.get('status') or '').strip() or 'not_generated'}")
+    print(f"workbench_compare_merge_staged_contract={str(workbench_compare_merge_staged.get('contract_name') or '').strip() or 'missing'}")
+    print(f"workbench_compare_merge_staged_tier={str(workbench_compare_merge_staged.get('proof_tier') or '').strip() or 'missing'}")
+    print(f"workbench_compare_merge_staged_route_count={len(workbench_compare_merge_staged.get('expected_routes') or [])}")
+    print(f"workbench_compare_merge_staged_source_checks={count_staged_source_checks(workbench_compare_merge_staged)}")
+    print(
+        "workbench_compare_merge_staged_note="
         "source_alignment_only_not_browser_execution"
     )
     print(f"legacy_control_coverage_staged_receipt={LEGACY_CONTROL_COVERAGE_STAGED_PROOF}")

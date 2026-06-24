@@ -30,6 +30,12 @@ The goal is straightforward: `Chummer.Blazor` should ship as a polished web clie
 - `scripts/materialize-blazor-career-support-staged-proof.py`: source-structural staged proof materializer for the next career/support workflow refresh
 - `scripts/ai/milestones/blazor-career-support-staged-proof-check.sh`: milestone-style wrapper for the staged career/support source-alignment check
 - `docs/examples/blazor-career-support-staged-proof.receipt.example.json`: example receipt shape for the staged career/support source-alignment proof
+- `scripts/materialize-blazor-workbench-import-reconcile-staged-proof.py`: source-structural staged proof materializer for import/reconcile workbench posture
+- `scripts/ai/milestones/blazor-workbench-import-reconcile-staged-proof-check.sh`: milestone-style wrapper for the import/reconcile source-alignment check
+- `docs/examples/blazor-workbench-import-reconcile-staged-proof.receipt.example.json`: example receipt shape for the import/reconcile source-alignment proof
+- `scripts/materialize-blazor-workbench-compare-merge-staged-proof.py`: source-structural staged proof materializer for compare/merge workbench posture
+- `scripts/ai/milestones/blazor-workbench-compare-merge-staged-proof-check.sh`: milestone-style wrapper for the compare/merge source-alignment check
+- `docs/examples/blazor-workbench-compare-merge-staged-proof.receipt.example.json`: example receipt shape for the compare/merge source-alignment proof
 - `.codex-studio/published/BLAZOR_BROWSER_LANE_PROOF_SET.generated.json`: published aggregate browser-lane proof-set receipt
 - `.codex-studio/published/BLAZOR_PUBLIC_EDGE_EXECUTION_PROOF.generated.json`: published hosted execution-proof receipt
 - `.codex-studio/published/BLAZOR_PUBLIC_EDGE_WORKBENCH_PROOF.generated.json`: published hosted route-entry/workbench proof receipt

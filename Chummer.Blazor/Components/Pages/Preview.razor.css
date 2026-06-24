@@ -7,6 +7,146 @@
 
 .browser-preview-banner,
 .browser-preview-boundary,
+.browser-workbench-import-reconcile-strip {
+    width: min(1240px, calc(100% - 1rem));
+    margin-left: auto;
+    margin-right: auto;
+}
+
+.browser-workbench-import-reconcile-strip {
+    margin: 0 auto 0.85rem;
+    display: grid;
+    grid-template-columns: minmax(17rem, 0.76fr) minmax(0, 1.5fr);
+    gap: 0.8rem;
+    align-items: stretch;
+    padding: 0.85rem;
+    border: 1px solid rgba(198, 185, 154, 0.22);
+    border-radius: 1rem;
+    background:
+        linear-gradient(135deg, rgba(198, 185, 154, 0.085), rgba(137, 224, 179, 0.045)),
+        rgba(10, 12, 9, 0.95);
+}
+
+.browser-workbench-import-reconcile-copy {
+    display: grid;
+    gap: 0.35rem;
+    align-content: center;
+    padding: 0.55rem 0.65rem;
+    border-radius: 0.85rem;
+    background: rgba(0, 0, 0, 0.16);
+}
+
+.browser-workbench-import-reconcile-copy strong,
+.browser-workbench-import-reconcile-copy p {
+    margin: 0;
+}
+
+.browser-workbench-import-reconcile-copy strong {
+    color: #f4efe4;
+    font-size: 1rem;
+}
+
+.browser-workbench-import-reconcile-copy p {
+    color: rgba(238, 241, 246, 0.78);
+    line-height: 1.45;
+}
+
+.browser-workbench-import-reconcile-actions {
+    display: grid;
+    grid-template-columns: repeat(6, minmax(0, 1fr));
+    gap: 0.5rem;
+    align-content: center;
+}
+
+.browser-workbench-import-reconcile-actions a {
+    min-height: 3.15rem;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0.55rem 0.6rem;
+    border: 1px solid rgba(198, 185, 154, 0.2);
+    border-radius: 0.85rem;
+    color: #eef1f6;
+    text-align: center;
+    text-decoration: none;
+    font-weight: 850;
+    background: rgba(255, 255, 255, 0.042);
+}
+
+.browser-workbench-import-reconcile-actions a:hover,
+.browser-workbench-import-reconcile-actions a:focus-visible {
+    border-color: rgba(137, 224, 179, 0.5);
+    background: rgba(137, 224, 179, 0.09);
+}
+
+
+.browser-workbench-compare-merge-strip {
+    width: min(1240px, calc(100% - 1rem));
+    margin: 0 auto 0.85rem;
+    display: grid;
+    grid-template-columns: minmax(17rem, 0.76fr) minmax(0, 1.5fr);
+    gap: 0.8rem;
+    align-items: stretch;
+    padding: 0.85rem;
+    border: 1px solid rgba(198, 185, 154, 0.22);
+    border-radius: 1rem;
+    background:
+        linear-gradient(135deg, rgba(198, 185, 154, 0.085), rgba(137, 224, 179, 0.045)),
+        rgba(10, 12, 9, 0.95);
+}
+
+.browser-workbench-compare-merge-copy {
+    display: grid;
+    gap: 0.35rem;
+    align-content: center;
+    padding: 0.55rem 0.65rem;
+    border-radius: 0.85rem;
+    background: rgba(0, 0, 0, 0.16);
+}
+
+.browser-workbench-compare-merge-copy strong,
+.browser-workbench-compare-merge-copy p {
+    margin: 0;
+}
+
+.browser-workbench-compare-merge-copy strong {
+    color: #f4efe4;
+    font-size: 1rem;
+}
+
+.browser-workbench-compare-merge-copy p {
+    color: rgba(238, 241, 246, 0.78);
+    line-height: 1.45;
+}
+
+.browser-workbench-compare-merge-actions {
+    display: grid;
+    grid-template-columns: repeat(6, minmax(0, 1fr));
+    gap: 0.5rem;
+    align-content: center;
+}
+
+.browser-workbench-compare-merge-actions a {
+    min-height: 3.15rem;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0.55rem 0.6rem;
+    border: 1px solid rgba(198, 185, 154, 0.2);
+    border-radius: 0.85rem;
+    color: #eef1f6;
+    text-align: center;
+    text-decoration: none;
+    font-weight: 850;
+    background: rgba(255, 255, 255, 0.042);
+}
+
+.browser-workbench-compare-merge-actions a:hover,
+.browser-workbench-compare-merge-actions a:focus-visible {
+    border-color: rgba(137, 224, 179, 0.5);
+    background: rgba(137, 224, 179, 0.09);
+}
+
 .browser-preview-frame {
     width: min(1240px, calc(100% - 1rem));
     margin: 0 auto;
@@ -4079,5 +4219,19 @@
 
     .browser-workbench-progression-ledger-actions {
         grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+}
+
+@media (max-width: 720px) {
+    .browser-workbench-import-reconcile-strip,
+    .browser-workbench-import-reconcile-actions {
+        grid-template-columns: 1fr;
+    }
+}
+
+@media (max-width: 720px) {
+    .browser-workbench-compare-merge-strip,
+    .browser-workbench-compare-merge-actions {
+        grid-template-columns: 1fr;
     }
 }

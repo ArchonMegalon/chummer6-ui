@@ -86,6 +86,8 @@ The aggregate currently covers:
 - `workbench_calculation_provenance`
 - `workbench_lifecycle_calendar`
 - `workbench_progression_ledger`
+- `workbench_import_reconcile`
+- `workbench_compare_merge`
 - `legacy_control_coverage`
 
 Each family must keep `proof_tier` set to:
