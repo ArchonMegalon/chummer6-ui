@@ -18,5 +18,8 @@ python3 "$repo_root/scripts/materialize-blazor-workbench-recovery-staged-proof.p
 python3 "$repo_root/scripts/materialize-blazor-workbench-hosting-privacy-staged-proof.py"
 python3 "$repo_root/scripts/materialize-blazor-workbench-command-palette-staged-proof.py"
 python3 "$repo_root/scripts/materialize-blazor-workbench-density-staged-proof.py"
+python3 "$repo_root/scripts/materialize-blazor-workbench-workflow-ledger-staged-proof.py"
+python3 "$repo_root/scripts/materialize-blazor-workbench-file-intake-staged-proof.py"
+python3 "$repo_root/scripts/materialize-blazor-workbench-rules-data-staged-proof.py"
 python3 "$repo_root/scripts/materialize-blazor-legacy-control-coverage-staged-proof.py"
 python3 "$repo_root/scripts/materialize-blazor-source-staged-proof-set.py"

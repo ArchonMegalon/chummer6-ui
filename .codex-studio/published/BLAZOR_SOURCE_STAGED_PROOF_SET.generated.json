@@ -1,13 +1,13 @@
 {
   "contract_name": "chummer6-ui.blazor_source_staged_proof_set",
-  "generated_at": "2026-06-24T20:59:29.294318+00:00",
+  "generated_at": "2026-06-24T21:10:00.737141+00:00",
   "status": "passed",
   "proof_tier": "source_staged_no_browser_execution",
   "route_lane": "promoted_blazor_workbench",
-  "required_receipt_count": 16,
-  "passed_receipt_count": 16,
-  "expected_route_count": 51,
-  "source_check_count": 118,
+  "required_receipt_count": 19,
+  "passed_receipt_count": 19,
+  "expected_route_count": 54,
+  "source_check_count": 135,
   "required_receipts": [
     {
       "id": "career_support",
@@ -186,6 +186,42 @@
       "proof_tier": "source_staged_no_browser_execution",
       "expected_route_count": 1,
       "source_check_count": 5,
+      "control_count": null,
+      "covered_control_count": null
+    },
+    {
+      "id": "workbench_workflow_ledger",
+      "path": "/docker/chummercomplete/chummer-presentation/.codex-studio/published/BLAZOR_WORKBENCH_WORKFLOW_LEDGER_STAGED_PROOF.generated.json",
+      "expected_contract_name": "chummer6-ui.blazor_workbench_workflow_ledger_staged_proof",
+      "contract_name": "chummer6-ui.blazor_workbench_workflow_ledger_staged_proof",
+      "status": "passed",
+      "proof_tier": "source_staged_no_browser_execution",
+      "expected_route_count": 1,
+      "source_check_count": 5,
+      "control_count": null,
+      "covered_control_count": null
+    },
+    {
+      "id": "workbench_file_intake",
+      "path": "/docker/chummercomplete/chummer-presentation/.codex-studio/published/BLAZOR_WORKBENCH_FILE_INTAKE_STAGED_PROOF.generated.json",
+      "expected_contract_name": "chummer6-ui.blazor_workbench_file_intake_staged_proof",
+      "contract_name": "chummer6-ui.blazor_workbench_file_intake_staged_proof",
+      "status": "passed",
+      "proof_tier": "source_staged_no_browser_execution",
+      "expected_route_count": 1,
+      "source_check_count": 6,
+      "control_count": null,
+      "covered_control_count": null
+    },
+    {
+      "id": "workbench_rules_data",
+      "path": "/docker/chummercomplete/chummer-presentation/.codex-studio/published/BLAZOR_WORKBENCH_RULES_DATA_STAGED_PROOF.generated.json",
+      "expected_contract_name": "chummer6-ui.blazor_workbench_rules_data_staged_proof",
+      "contract_name": "chummer6-ui.blazor_workbench_rules_data_staged_proof",
+      "status": "passed",
+      "proof_tier": "source_staged_no_browser_execution",
+      "expected_route_count": 1,
+      "source_check_count": 6,
       "control_count": null,
       "covered_control_count": null
     },

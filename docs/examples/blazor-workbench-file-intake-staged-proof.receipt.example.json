@@ -1,0 +1,32 @@
+{
+  "contract_name": "chummer6-ui.blazor_workbench_file_intake_staged_proof",
+  "generated_at": "2026-06-24T00:00:00+00:00",
+  "status": "passed",
+  "proof_tier": "source_staged_no_browser_execution",
+  "route_lane": "promoted_blazor_workbench",
+  "expected_routes": [
+    "/blazor/workbench"
+  ],
+  "checks": [
+    {
+      "id": "product_workbench_file_intake",
+      "path": "Chummer.Blazor/Components/Pages/Preview.razor",
+      "status": "passed",
+      "required_token_count": 10,
+      "missing_tokens": []
+    },
+    {
+      "id": "desktop_import_dialog_sources",
+      "path": "Chummer.Presentation/Overview/DesktopDialogFactory.cs",
+      "status": "passed",
+      "required_token_count": 3,
+      "missing_tokens": []
+    }
+  ],
+  "failures": [],
+  "notes": [
+    "This receipt only proves that promoted workbench file-intake source, style, status, and docs agree.",
+    "It is not a substitute for hosted Playwright execution proof or Docker self-host proof.",
+    "Do not use this receipt to claim file picker, import execution, XML mutation, or native file-system parity."
+  ]
+}

@@ -4,8 +4,8 @@
   "status": "passed",
   "proof_tier": "source_staged_no_browser_execution",
   "route_lane": "promoted_blazor_workbench",
-  "required_receipt_count": 16,
-  "passed_receipt_count": 16,
+  "required_receipt_count": 19,
+  "passed_receipt_count": 19,
   "expected_route_count": 0,
   "source_check_count": 0,
   "required_receipts": [
@@ -102,6 +102,42 @@
       "proof_tier": "source_staged_no_browser_execution",
       "expected_route_count": 1,
       "source_check_count": 5,
+      "control_count": null,
+      "covered_control_count": null
+    },
+    {
+      "id": "workbench_workflow_ledger",
+      "path": ".codex-studio/published/BLAZOR_WORKBENCH_WORKFLOW_LEDGER_STAGED_PROOF.generated.json",
+      "expected_contract_name": "chummer6-ui.blazor_workbench_workflow_ledger_staged_proof",
+      "contract_name": "chummer6-ui.blazor_workbench_workflow_ledger_staged_proof",
+      "status": "passed",
+      "proof_tier": "source_staged_no_browser_execution",
+      "expected_route_count": 1,
+      "source_check_count": 5,
+      "control_count": null,
+      "covered_control_count": null
+    },
+    {
+      "id": "workbench_file_intake",
+      "path": ".codex-studio/published/BLAZOR_WORKBENCH_FILE_INTAKE_STAGED_PROOF.generated.json",
+      "expected_contract_name": "chummer6-ui.blazor_workbench_file_intake_staged_proof",
+      "contract_name": "chummer6-ui.blazor_workbench_file_intake_staged_proof",
+      "status": "passed",
+      "proof_tier": "source_staged_no_browser_execution",
+      "expected_route_count": 1,
+      "source_check_count": 6,
+      "control_count": null,
+      "covered_control_count": null
+    },
+    {
+      "id": "workbench_rules_data",
+      "path": ".codex-studio/published/BLAZOR_WORKBENCH_RULES_DATA_STAGED_PROOF.generated.json",
+      "expected_contract_name": "chummer6-ui.blazor_workbench_rules_data_staged_proof",
+      "contract_name": "chummer6-ui.blazor_workbench_rules_data_staged_proof",
+      "status": "passed",
+      "proof_tier": "source_staged_no_browser_execution",
+      "expected_route_count": 1,
+      "source_check_count": 6,
       "control_count": null,
       "covered_control_count": null
     }

@@ -264,6 +264,116 @@
             </fieldset>
         </section>
 
+        <section class="browser-workbench-workflow-ledger" aria-label="Workbench workflow summary" data-workbench-workflow-ledger="strip">
+            <div class="browser-workbench-ledger-copy">
+                <span class="browser-preview-status-label">Workbench</span>
+                <strong>See what opens here.</strong>
+                <p>A compact map of the browser client, with clear handoffs when desktop is still the better tool.</p>
+            </div>
+            <div class="browser-workbench-ledger-grid">
+                <article data-workbench-ledger-row="startup">
+                    <span>Startup</span>
+                    <strong>New runners, open files, origins, and lists</strong>
+                    <p>Common entry points stay in the browser and survive a reload.</p>
+                </article>
+                <article data-workbench-ledger-row="editing">
+                    <span>Editing</span>
+                    <strong>Dense runner sections and focused dialogs</strong>
+                    <p>Sheet work stays section-based so the page does not turn into a wall of controls.</p>
+                </article>
+                <article data-workbench-ledger-row="output">
+                    <span>Output</span>
+                    <strong>Save, download, export, and print</strong>
+                    <p>Browser-safe output is visible; native file work hands off cleanly.</p>
+                </article>
+                <article data-workbench-ledger-row="recovery">
+                    <span>Recovery</span>
+                    <strong>Recent, restored, and direct-entry work</strong>
+                    <p>Continuation paths are visible before the user has to hunt for them.</p>
+                </article>
+                <article data-workbench-ledger-row="portal">
+                    <span>Portal</span>
+                    <strong>Downloads, status, support, and account work</strong>
+                    <p>Account and support links stay on the Chummer route.</p>
+                </article>
+                <article data-workbench-ledger-row="proof">
+                    <span>Boundaries</span>
+                    <strong>Some desktop-only actions still open Chummer desktop</strong>
+                    <p>The browser route names those handoffs instead of pretending every native action belongs here.</p>
+                </article>
+            </div>
+        </section>
+
+        <section class="browser-workbench-file-intake" aria-label="Workbench files" data-workbench-file-intake="strip">
+            <div class="browser-workbench-file-intake-copy">
+                <span class="browser-preview-status-label">Files</span>
+                <strong>Open or import a runner.</strong>
+                <p>Paste XML in the browser, keep Hero Lab and XML tools nearby, or use desktop when direct file access matters.</p>
+            </div>
+            <div class="browser-workbench-file-intake-actions">
+                <a href="@BuildPreviewHref(command: "open_character", useWorkbenchRoute: true)"
+                   data-workbench-file-intake-action="open-character">
+                    <span>Open</span>
+                    <small>Paste or stage Chummer XML.</small>
+                </a>
+                <a href="@BuildPreviewHref(command: "hero_lab_importer", useWorkbenchRoute: true)"
+                   data-workbench-file-intake-action="hero-lab">
+                    <span>Hero Lab import</span>
+                    <small>Bring in a Hero Lab runner.</small>
+                </a>
+                <a href="@BuildPreviewHref(command: "xml_editor", useWorkbenchRoute: true)"
+                   data-workbench-file-intake-action="xml-editor">
+                    <span>XML editor</span>
+                    <small>Inspect bridge and custom data.</small>
+                </a>
+                <a href="/downloads/"
+                   data-workbench-file-intake-action="desktop-handoff">
+                    <span>Desktop</span>
+                    <small>Use native file dialogs.</small>
+                </a>
+                <a href="/contact"
+                   data-workbench-file-intake-action="support">
+                    <span>Help</span>
+                    <small>Get help with files or installs.</small>
+                </a>
+            </div>
+        </section>
+
+        <section class="browser-workbench-rules-data" aria-label="Workbench rules" data-workbench-rules-data="strip">
+            <div class="browser-workbench-rules-data-copy">
+                <span class="browser-preview-status-label">Rules</span>
+                <strong>Check rules and references.</strong>
+                <p>Open ruleset, source, XML, or language tools without leaving the workbench.</p>
+            </div>
+            <div class="browser-workbench-rules-data-actions">
+                <a href="@RulesLaneHref"
+                   data-workbench-rules-data-action="rules-review">
+                    <span>Rules</span>
+                    <small>Open the active rules lane.</small>
+                </a>
+                <a href="@BuildPreviewHref(command: "switch_ruleset", useWorkbenchRoute: true)"
+                   data-workbench-rules-data-action="switch-ruleset">
+                    <span>Ruleset</span>
+                    <small>Review edition choice.</small>
+                </a>
+                <a href="@BuildPreviewHref(command: "master_index", useWorkbenchRoute: true)"
+                   data-workbench-rules-data-action="master-index">
+                    <span>Index</span>
+                    <small>Browse sources and references.</small>
+                </a>
+                <a href="@BuildPreviewHref(command: "xml_editor", useWorkbenchRoute: true)"
+                   data-workbench-rules-data-action="xml-editor">
+                    <span>XML data</span>
+                    <small>Inspect custom data.</small>
+                </a>
+                <a href="@BuildPreviewHref(command: "translator", useWorkbenchRoute: true)"
+                   data-workbench-rules-data-action="translator">
+                    <span>Language</span>
+                    <small>Check translations.</small>
+                </a>
+            </div>
+        </section>
+
         <section class="browser-preview-status-grid" aria-label="Workbench quick starts">
             <article class="browser-preview-status-card" data-workbench-entry-card="new-character">
                 <span class="browser-preview-status-label">Quick start</span>

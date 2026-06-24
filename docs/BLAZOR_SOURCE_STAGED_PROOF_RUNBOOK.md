@@ -41,6 +41,10 @@ The aggregate currently covers:
 - `workbench_hosting_privacy`
 - `workbench_command_palette`
 - `workbench_density`
+- `workbench_workflow_ledger`
+- `workbench_file_intake`
+- `workbench_rules_data`
+- `workbench_rules_data`
 - `legacy_control_coverage`
 
 Each family must keep `proof_tier` set to:
