@@ -39,18 +39,22 @@ Expected public routes:
 14. `/blazor/workbench?workspace=ws-1&tab=tab-calendar&control=edit_entry&dialog_action=apply`
 15. `/blazor/workbench?workspace=ws-1&tab=tab-calendar&control=delete_entry`
 16. `/blazor/workbench?workspace=ws-1&tab=tab-calendar&control=delete_entry&dialog_action=delete`
-17. `/blazor/preview`
-18. `/blazor/preview?command=new_character`
-19. `/blazor/preview?command=new_character_origin`
-20. `/blazor/preview?command=open_character`
-21. `/blazor/preview?command=open_for_printing`
-22. `/blazor/preview?command=open_for_export`
-23. `/blazor/preview?fixture=blue&command=save_character`
-24. `/blazor/preview?fixture=blue&command=save_character_as`
-25. `/blazor/preview?fixture=blue&command=print_character`
-26. `/blazor/preview?fixture=blue&command=export_character&dialog_action=download`
-27. `/downloads/`
-28. `/downloads/releases.json`
+17. `/blazor/workbench?workspace=ws-1&tab=tab-info&control=open_notes`
+18. `/blazor/workbench?workspace=ws-1&tab=tab-info&control=open_notes&dialog_action=save`
+19. `/blazor/workbench?workspace=ws-1&tab=tab-calendar&control=move_up`
+20. `/blazor/workbench?workspace=ws-1&tab=tab-calendar&control=move_down`
+21. `/blazor/preview`
+22. `/blazor/preview?command=new_character`
+23. `/blazor/preview?command=new_character_origin`
+24. `/blazor/preview?command=open_character`
+25. `/blazor/preview?command=open_for_printing`
+26. `/blazor/preview?command=open_for_export`
+27. `/blazor/preview?fixture=blue&command=save_character`
+28. `/blazor/preview?fixture=blue&command=save_character_as`
+29. `/blazor/preview?fixture=blue&command=print_character`
+30. `/blazor/preview?fixture=blue&command=export_character&dialog_action=download`
+31. `/downloads/`
+32. `/downloads/releases.json`
 
 Route intent:
 
@@ -164,6 +168,10 @@ curl -fsS "http://127.0.0.1:${CHUMMER_PORTAL_PORT:-8091}/blazor/workbench?worksp
 curl -fsS "http://127.0.0.1:${CHUMMER_PORTAL_PORT:-8091}/blazor/workbench?workspace=ws-1&tab=tab-calendar&control=edit_entry&dialog_action=apply"
 curl -fsS "http://127.0.0.1:${CHUMMER_PORTAL_PORT:-8091}/blazor/workbench?workspace=ws-1&tab=tab-calendar&control=delete_entry"
 curl -fsS "http://127.0.0.1:${CHUMMER_PORTAL_PORT:-8091}/blazor/workbench?workspace=ws-1&tab=tab-calendar&control=delete_entry&dialog_action=delete"
+curl -fsS "http://127.0.0.1:${CHUMMER_PORTAL_PORT:-8091}/blazor/workbench?workspace=ws-1&tab=tab-info&control=open_notes"
+curl -fsS "http://127.0.0.1:${CHUMMER_PORTAL_PORT:-8091}/blazor/workbench?workspace=ws-1&tab=tab-info&control=open_notes&dialog_action=save"
+curl -fsS "http://127.0.0.1:${CHUMMER_PORTAL_PORT:-8091}/blazor/workbench?workspace=ws-1&tab=tab-calendar&control=move_up"
+curl -fsS "http://127.0.0.1:${CHUMMER_PORTAL_PORT:-8091}/blazor/workbench?workspace=ws-1&tab=tab-calendar&control=move_down"
 curl -fsS http://127.0.0.1:${CHUMMER_PORTAL_PORT:-8091}/blazor/preview
 curl -fsS "http://127.0.0.1:${CHUMMER_PORTAL_PORT:-8091}/blazor/preview?command=new_character"
 curl -fsS "http://127.0.0.1:${CHUMMER_PORTAL_PORT:-8091}/blazor/preview?command=new_character_origin"
@@ -188,7 +196,7 @@ The Playwright lane is the current proof-backed way to confirm that the portal e
 
 When the full portal harness is used through `bash scripts/e2e-portal.sh`, the self-hosted browser proof receipt is written to `.codex-studio/published/BLAZOR_SELF_HOST_WORKBENCH_PROOF.generated.json`.
 
-The next receipt refresh is staged to declare the career/support route family in the receipt route list as well as exercising it through Playwright: `tab-calendar`, `create_entry`, `create_entry&dialog_action=add`, `edit_entry`, `edit_entry&dialog_action=apply`, `delete_entry`, and `delete_entry&dialog_action=delete`.
+The next receipt refresh is staged to declare the career/support route family in the receipt route list as well as exercising it through Playwright: `tab-calendar`, `create_entry`, `create_entry&dialog_action=add`, `edit_entry`, `edit_entry&dialog_action=apply`, `delete_entry`, `delete_entry&dialog_action=delete`, `open_notes`, `open_notes&dialog_action=save`, `move_up`, and `move_down`.
 
 ## Production posture notes
 

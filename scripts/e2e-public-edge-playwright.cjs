@@ -40,6 +40,9 @@ const requiredWorkflowFamilyIds = [
   'promoted_career_entry_delete_execution',
   'promoted_career_entry_edit_committed_execution',
   'promoted_career_entry_delete_committed_execution',
+  'promoted_runner_notes_execution',
+  'promoted_runner_notes_committed_execution',
+  'promoted_career_entry_reorder_execution',
   'promoted_recent_work_affordances',
   'promoted_restored_section_continuations',
   'promoted_restored_tab_landings',
@@ -539,6 +542,34 @@ async function auditCareerEntryDeleteSurface(page) {
   };
 }
 
+async function auditRunnerNotesSurface(page) {
+  const route = `${promotedRouteBase}?${promotedContinuationQuery}&tab=tab-info&control=open_notes`;
+  await openPath(page, route, '.desktop-dialog');
+  const dialogText = await page.locator('.desktop-dialog').innerText();
+  expectTextIncludes(dialogText, 'Edit Notes', 'hosted runner notes route');
+  expectTextIncludes(dialogText, 'Edit runner notes in a compact text utility pane.', 'hosted runner notes route');
+  expectTextIncludes(dialogText, 'Notes', 'hosted runner notes route');
+  expectTextIncludes(dialogText, 'Save target', 'hosted runner notes route');
+  return {
+    route,
+    assertion: 'runner notes dialog rendered compact notes editor with visible metadata/save context',
+    status: 'pass',
+  };
+}
+
+async function auditCareerEntryReorderSurface(page, controlId, expectedTitle) {
+  const route = `${promotedRouteBase}?${promotedContinuationQuery}&tab=tab-calendar&control=${controlId}`;
+  await openPath(page, route, '.desktop-dialog');
+  const dialogText = await page.locator('.desktop-dialog').innerText();
+  expectTextIncludes(dialogText, expectedTitle, `hosted career entry reorder route ${route}`);
+  expectTextIncludes(dialogText, 'The reordered list stays visible in the same utility pane.', `hosted career entry reorder route ${route}`);
+  return {
+    route,
+    assertion: `${expectedTitle} dialog rendered compact list-reorder utility posture`,
+    status: 'pass',
+  };
+}
+
 async function auditResumedResultContinuation(page, route, expectedText) {
   await openPath(page, route, 'body');
   const bodyText = await page.locator('body').innerText();
@@ -631,8 +662,14 @@ async function auditAdvancedActionAffordances(page) {
   expectTextIncludes(bodyText, 'Add a spell for BLUE', 'hosted advanced action affordances');
   expectTextIncludes(bodyText, 'Add and keep career entry for BLUE', 'hosted advanced action affordances');
   expectTextIncludes(bodyText, 'Add career entry for BLUE', 'hosted advanced action affordances');
+  expectTextIncludes(bodyText, 'Apply career entry edit for BLUE', 'hosted advanced action affordances');
   expectTextIncludes(bodyText, 'Edit career entry for BLUE', 'hosted advanced action affordances');
+  expectTextIncludes(bodyText, 'Remove and keep career entry result for BLUE', 'hosted advanced action affordances');
   expectTextIncludes(bodyText, 'Remove career entry for BLUE', 'hosted advanced action affordances');
+  expectTextIncludes(bodyText, 'Save runner notes for BLUE', 'hosted advanced action affordances');
+  expectTextIncludes(bodyText, 'Edit runner notes for BLUE', 'hosted advanced action affordances');
+  expectTextIncludes(bodyText, 'Move career entry up for BLUE', 'hosted advanced action affordances');
+  expectTextIncludes(bodyText, 'Move career entry down for BLUE', 'hosted advanced action affordances');
   return {
     route,
     assertion: 'advanced and career/support restored action affordances remain visible on promoted workbench route',
@@ -912,6 +949,33 @@ async function run() {
           `${promotedRouteBase}?${promotedContinuationQuery}&tab=tab-calendar&control=delete_entry&dialog_action=delete`,
           "Entry 'Current Entry' removed.",
         ),
+      ],
+    });
+    receipt.workflow_families.push({
+      id: 'promoted_runner_notes_execution',
+      route_lane: 'promoted_blazor_workbench',
+      workflow_contract: 'runner_notes_edit_execution',
+      checks: [await auditRunnerNotesSurface(page)],
+    });
+    receipt.workflow_families.push({
+      id: 'promoted_runner_notes_committed_execution',
+      route_lane: 'promoted_blazor_workbench',
+      workflow_contract: 'runner_notes_committed_visible_state',
+      checks: [
+        await auditAdvancedCommittedAction(
+          page,
+          `${promotedRouteBase}?${promotedContinuationQuery}&tab=tab-info&control=open_notes&dialog_action=save`,
+          "Notes saved.",
+        ),
+      ],
+    });
+    receipt.workflow_families.push({
+      id: 'promoted_career_entry_reorder_execution',
+      route_lane: 'promoted_blazor_workbench',
+      workflow_contract: 'career_calendar_reorder_execution',
+      checks: [
+        await auditCareerEntryReorderSurface(page, 'move_up', 'Move Entry Up'),
+        await auditCareerEntryReorderSurface(page, 'move_down', 'Move Entry Down'),
       ],
     });
     receipt.workflow_families.push({

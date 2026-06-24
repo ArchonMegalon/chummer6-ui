@@ -255,7 +255,7 @@ internal sealed record OriginBookGoldPublication(
             && HasRealPath(DossierVideoReceiptPath)
             && HasRealPath(TelegramShareDeliveryReceiptPath)
             && HasOwnerArtifactUrl(BookArtifactUrl, "book")
-            && HasOwnerArtifactUrl(AudiobookshelfShareUrl, "listen")
+            && HasTrustedAudiobookshelfShareUrl(AudiobookshelfShareUrl)
             && HasOwnerArtifactUrl(DossierVideoUrl, "video")
             && HasOwnerArtifactUrl(StorySceneCoverUrl, "cover")
             && HasChummerRunOwnerUrl(ChummerRunOwnerUrl);
@@ -277,7 +277,7 @@ internal sealed record OriginBookGoldPublication(
             AddIfMissing(missing, BookArtifactVerified && HasRealPath(BookArtifactPath) && HasRealPath(BookArtifactReceiptPath) && HasOwnerArtifactUrl(BookArtifactUrl, "book"), "verified_book_artifact");
             AddIfMissing(missing, StorySceneCoverUsesSelectedCharacterFace && HasRealPath(StorySceneCoverPath) && HasRealPath(StorySceneCoverReceiptPath) && HasOwnerArtifactUrl(StorySceneCoverUrl, "cover"), "story_scene_cover_with_selected_face");
             AddIfMissing(missing, HasRealPath(AudiobookPath) && HasRealPath(AudiobookshelfImportReceiptPath), "audiobook_import_receipt");
-            AddIfMissing(missing, AudiobookshelfPlaybackVerified && HasOwnerArtifactUrl(AudiobookshelfShareUrl, "listen"), "verified_audiobookshelf_playback_share");
+            AddIfMissing(missing, AudiobookshelfPlaybackVerified && HasTrustedAudiobookshelfShareUrl(AudiobookshelfShareUrl), "trusted_audiobookshelf_playback_share");
             AddIfMissing(missing, DossierVideoVerified && HasRealPath(DossierVideoPath) && HasRealPath(DossierVideoReceiptPath) && HasOwnerArtifactUrl(DossierVideoUrl, "video"), "verified_dossier_video");
             AddIfMissing(missing, TelegramShareDelivered && HasRealPath(TelegramShareDeliveryReceiptPath), "telegram_share_delivery_receipt");
             AddIfMissing(missing, RequiresAuthenticatedChummerRunUser && HasChummerRunOwnerUrl(ChummerRunOwnerUrl), "authenticated_chummer_run_owner_url");
@@ -307,6 +307,13 @@ internal sealed record OriginBookGoldPublication(
         => HasChummerRunOwnerUrl(value)
             && Uri.TryCreate(value, UriKind.Absolute, out Uri? uri)
             && uri.AbsolutePath.EndsWith($"/{artifactKind}", StringComparison.OrdinalIgnoreCase);
+
+    private static bool HasTrustedAudiobookshelfShareUrl(string? value)
+        => Uri.TryCreate(value, UriKind.Absolute, out Uri? uri)
+            && string.Equals(uri.Scheme, Uri.UriSchemeHttps, StringComparison.OrdinalIgnoreCase)
+            && (string.Equals(uri.Host, "audio.chummer.run", StringComparison.OrdinalIgnoreCase)
+                || string.Equals(uri.Host, "audiobookshelf.chummer.run", StringComparison.OrdinalIgnoreCase))
+            && uri.AbsolutePath.Contains("/share/", StringComparison.OrdinalIgnoreCase);
 
     private static bool HasRealPath(string? value)
         => !string.IsNullOrWhiteSpace(value)

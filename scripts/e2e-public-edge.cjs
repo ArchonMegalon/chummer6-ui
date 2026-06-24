@@ -339,6 +339,30 @@ const checks = [
       && hasBlazorBaseHref(text)
   },
   {
+    url: `${baseUrl}/blazor/workbench?workspace=ws-1&tab=tab-info&control=open_notes`,
+    assert: (text, response) =>
+      /\/blazor\/workbench\?workspace=ws-1&tab=tab-info&control=open_notes$/.test(response.url)
+      && hasBlazorBaseHref(text)
+  },
+  {
+    url: `${baseUrl}/blazor/workbench?workspace=ws-1&tab=tab-info&control=open_notes&dialog_action=save`,
+    assert: (text, response) =>
+      /\/blazor\/workbench\?workspace=ws-1&tab=tab-info&control=open_notes&dialog_action=save$/.test(response.url)
+      && hasBlazorBaseHref(text)
+  },
+  {
+    url: `${baseUrl}/blazor/workbench?workspace=ws-1&tab=tab-calendar&control=move_up`,
+    assert: (text, response) =>
+      /\/blazor\/workbench\?workspace=ws-1&tab=tab-calendar&control=move_up$/.test(response.url)
+      && hasBlazorBaseHref(text)
+  },
+  {
+    url: `${baseUrl}/blazor/workbench?workspace=ws-1&tab=tab-calendar&control=move_down`,
+    assert: (text, response) =>
+      /\/blazor\/workbench\?workspace=ws-1&tab=tab-calendar&control=move_down$/.test(response.url)
+      && hasBlazorBaseHref(text)
+  },
+  {
     url: `${baseUrl}/blazor/workbench?workspace=ws-1&tab=tab-technomancer&control=complex_form_add`,
     assert: (text, response) =>
       /\/blazor\/workbench\?workspace=ws-1&tab=tab-technomancer&control=complex_form_add$/.test(response.url)

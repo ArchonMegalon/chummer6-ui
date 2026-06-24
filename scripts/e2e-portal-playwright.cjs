@@ -442,6 +442,10 @@ async function auditPortalWorkspaceResumeRoute(page) {
   expectTextIncludes(bodyText, 'Resume BLUE on career log', 'portal workspace resume route');
   expectTextIncludes(bodyText, 'Edit career entry for BLUE', 'portal workspace resume route');
   expectTextIncludes(bodyText, 'Remove career entry for BLUE', 'portal workspace resume route');
+  expectTextIncludes(bodyText, 'Save runner notes for BLUE', 'portal workspace resume route');
+  expectTextIncludes(bodyText, 'Edit runner notes for BLUE', 'portal workspace resume route');
+  expectTextIncludes(bodyText, 'Move career entry up for BLUE', 'portal workspace resume route');
+  expectTextIncludes(bodyText, 'Move career entry down for BLUE', 'portal workspace resume route');
   expectTextIncludes(bodyText, 'Continue BLUE on advanced', 'portal workspace resume route');
   expectTextIncludes(bodyText, 'Continue BLUE for download', 'portal workspace resume route');
   expectTextIncludes(bodyText, 'Continue BLUE for export', 'portal workspace resume route');
@@ -627,6 +631,65 @@ async function auditPortalRestoredCareerEntryDeleteCommitRoute(page) {
 
   const bodyText = await page.locator('body').innerText();
   expectTextIncludes(bodyText, "Entry 'Current Entry' removed.", 'portal restored career entry delete commit route');
+}
+
+async function auditPortalRestoredRunnerNotesRoute(page) {
+  await openPortalPreviewPath(
+    page,
+    '/blazor/preview?fixture=blue&tab=tab-create',
+    '[data-build-lab]'
+  );
+
+  await openPortalPreviewPath(
+    page,
+    '/blazor/workbench?workspace=ws-1&tab=tab-info&control=open_notes',
+    '.desktop-dialog'
+  );
+
+  await expectDialogFits(page, 'edit runner notes');
+
+  const dialogText = await page.locator('.desktop-dialog').innerText();
+  expectTextIncludes(dialogText, 'Edit Notes', 'portal restored runner notes route');
+  expectTextIncludes(dialogText, 'Save target', 'portal restored runner notes route');
+}
+
+async function auditPortalRestoredRunnerNotesCommitRoute(page) {
+  await openPortalPreviewPath(
+    page,
+    '/blazor/preview?fixture=blue&tab=tab-create',
+    '[data-build-lab]'
+  );
+
+  await openPortalPreviewPath(
+    page,
+    '/blazor/workbench?workspace=ws-1&tab=tab-info&control=open_notes&dialog_action=save',
+    '#summaryName'
+  );
+
+  await page.waitForFunction(() => !document.querySelector('#dialogBackdrop'), { timeout: 15000 });
+
+  const bodyText = await page.locator('body').innerText();
+  expectTextIncludes(bodyText, 'Notes saved.', 'portal restored runner notes commit route');
+}
+
+async function auditPortalRestoredCareerEntryReorderRoute(page, controlId, expectedTitle) {
+  await openPortalPreviewPath(
+    page,
+    '/blazor/preview?fixture=blue&tab=tab-create',
+    '[data-build-lab]'
+  );
+
+  await openPortalPreviewPath(
+    page,
+    `/blazor/workbench?workspace=ws-1&tab=tab-calendar&control=${controlId}`,
+    '.desktop-dialog'
+  );
+
+  await expectDialogFits(page, expectedTitle.toLowerCase());
+
+  const dialogText = await page.locator('.desktop-dialog').innerText();
+  expectTextIncludes(dialogText, expectedTitle, `portal restored career entry reorder route ${controlId}`);
+  expectTextIncludes(dialogText, 'The reordered list stays visible in the same utility pane.', `portal restored career entry reorder route ${controlId}`);
 }
 
 async function auditPortalRestoredComplexFormActionRoute(page) {
@@ -881,6 +944,22 @@ async function run() {
     const restoredCareerEntryDeleteCommitPage = await browser.newPage({ viewport: { width: 1440, height: 960 } });
     await auditPortalRestoredCareerEntryDeleteCommitRoute(restoredCareerEntryDeleteCommitPage);
     await restoredCareerEntryDeleteCommitPage.close();
+
+    const restoredRunnerNotesCommitPage = await browser.newPage({ viewport: { width: 1440, height: 960 } });
+    await auditPortalRestoredRunnerNotesCommitRoute(restoredRunnerNotesCommitPage);
+    await restoredRunnerNotesCommitPage.close();
+
+    const restoredRunnerNotesPage = await browser.newPage({ viewport: { width: 1440, height: 960 } });
+    await auditPortalRestoredRunnerNotesRoute(restoredRunnerNotesPage);
+    await restoredRunnerNotesPage.close();
+
+    const restoredCareerEntryMoveUpPage = await browser.newPage({ viewport: { width: 1440, height: 960 } });
+    await auditPortalRestoredCareerEntryReorderRoute(restoredCareerEntryMoveUpPage, 'move_up', 'Move Entry Up');
+    await restoredCareerEntryMoveUpPage.close();
+
+    const restoredCareerEntryMoveDownPage = await browser.newPage({ viewport: { width: 1440, height: 960 } });
+    await auditPortalRestoredCareerEntryReorderRoute(restoredCareerEntryMoveDownPage, 'move_down', 'Move Entry Down');
+    await restoredCareerEntryMoveDownPage.close();
 
     const restoredComplexFormActionPage = await browser.newPage({ viewport: { width: 1440, height: 960 } });
     await auditPortalRestoredComplexFormActionRoute(restoredComplexFormActionPage);

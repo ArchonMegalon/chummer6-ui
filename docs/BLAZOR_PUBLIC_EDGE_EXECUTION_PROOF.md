@@ -143,6 +143,14 @@ The first acceptable hosted execution tier should prove these families:
   `/blazor/workbench?workspace=<promoted-workspace-id>&tab=tab-calendar&control=edit_entry&dialog_action=apply`
   `/blazor/workbench?workspace=<promoted-workspace-id>&tab=tab-calendar&control=delete_entry&dialog_action=delete`
   with visible `Entry renamed to 'Current Entry'.` and `Entry 'Current Entry' removed.` follow-through so edit/remove route continuations prove the same post-action result posture as add-entry
+- staged runner-notes execution on the promoted workbench route:
+  `/blazor/workbench?workspace=<promoted-workspace-id>&tab=tab-info&control=open_notes`
+  `/blazor/workbench?workspace=<promoted-workspace-id>&tab=tab-info&control=open_notes&dialog_action=save`
+  with visible compact notes editor posture and `Notes saved.` follow-through so the support workflow family includes runner notes, not only calendar entries
+- staged career-entry reorder execution on the promoted workbench route:
+  `/blazor/workbench?workspace=<promoted-workspace-id>&tab=tab-calendar&control=move_up`
+  `/blazor/workbench?workspace=<promoted-workspace-id>&tab=tab-calendar&control=move_down`
+  with visible compact reorder utility posture so the support workflow family includes classic list operations beyond add/edit/delete
 - resumed workbench load:
   `/blazor/workbench?workspace=<promoted-workspace-id>`
 - recent-work resume affordance visibility on the promoted workbench route:
@@ -186,7 +194,7 @@ These are the first promoted families because they map directly to the current C
 
 Later hosted tiers should expand to the other workflow families in `docs/BLAZOR_WEB_CLIENT_PARITY_GOAL.md`, especially startup/recent-work recovery, rules/origin flow, dense section-family editing, career/support utility editing, and cross-route continuity.
 
-The hosted Playwright runner is already staged to record `promoted_career_log_continuity` through the `tab-calendar` route, `promoted_career_entry_execution` through the `tab-calendar&control=create_entry` route, `promoted_career_entry_committed_execution` through the matching `dialog_action=add` route, edit/delete coverage through `promoted_career_entry_edit_execution` plus `promoted_career_entry_delete_execution`, and committed edit/delete coverage through `promoted_career_entry_edit_committed_execution` plus `promoted_career_entry_delete_committed_execution`. Those staged families are not yet part of the verifier-required set or the current published receipt until the live `chummer.run` proof is refreshed and promoted.
+The hosted Playwright runner is already staged to record `promoted_career_log_continuity` through the `tab-calendar` route, `promoted_career_entry_execution` through the `tab-calendar&control=create_entry` route, `promoted_career_entry_committed_execution` through the matching `dialog_action=add` route, edit/delete coverage through `promoted_career_entry_edit_execution` plus `promoted_career_entry_delete_execution`, committed edit/delete coverage through `promoted_career_entry_edit_committed_execution` plus `promoted_career_entry_delete_committed_execution`, runner-notes coverage through `promoted_runner_notes_execution` plus `promoted_runner_notes_committed_execution`, and list reorder coverage through `promoted_career_entry_reorder_execution`. Those staged families are not yet part of the verifier-required set or the current published receipt until the live `chummer.run` proof is refreshed and promoted.
 
 ## Required browser-visible assertions
 

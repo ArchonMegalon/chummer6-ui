@@ -23,6 +23,10 @@ EXPECTED_ROUTES = [
     "/blazor/workbench?workspace=ws-1&tab=tab-calendar&control=edit_entry&dialog_action=apply",
     "/blazor/workbench?workspace=ws-1&tab=tab-calendar&control=delete_entry",
     "/blazor/workbench?workspace=ws-1&tab=tab-calendar&control=delete_entry&dialog_action=delete",
+    "/blazor/workbench?workspace=ws-1&tab=tab-info&control=open_notes",
+    "/blazor/workbench?workspace=ws-1&tab=tab-info&control=open_notes&dialog_action=save",
+    "/blazor/workbench?workspace=ws-1&tab=tab-calendar&control=move_up",
+    "/blazor/workbench?workspace=ws-1&tab=tab-calendar&control=move_down",
 ]
 
 CHECKS = [
@@ -37,6 +41,10 @@ CHECKS = [
             "Edit career entry",
             "Remove and keep career entry result",
             "Remove career entry",
+            "Save runner notes",
+            "Edit runner notes",
+            "Move career entry up",
+            "Move career entry down",
         ],
     },
     {
@@ -55,9 +63,15 @@ CHECKS = [
             "promoted_career_entry_delete_execution",
             "promoted_career_entry_edit_committed_execution",
             "promoted_career_entry_delete_committed_execution",
+            "promoted_runner_notes_execution",
+            "promoted_runner_notes_committed_execution",
+            "promoted_career_entry_reorder_execution",
             "Entry 'New entry' added.",
             "Entry renamed to 'Current Entry'.",
             "Entry 'Current Entry' removed.",
+            "Notes saved.",
+            "Move Entry Up",
+            "Move Entry Down",
         ],
     },
     {
@@ -71,9 +85,16 @@ CHECKS = [
             "/blazor/workbench?workspace=ws-1&tab=tab-calendar&control=edit_entry&dialog_action=apply",
             "/blazor/workbench?workspace=ws-1&tab=tab-calendar&control=delete_entry",
             "/blazor/workbench?workspace=ws-1&tab=tab-calendar&control=delete_entry&dialog_action=delete",
+            "/blazor/workbench?workspace=ws-1&tab=tab-info&control=open_notes",
+            "/blazor/workbench?workspace=ws-1&tab=tab-info&control=open_notes&dialog_action=save",
+            "/blazor/workbench?workspace=ws-1&tab=tab-calendar&control=move_up",
+            "/blazor/workbench?workspace=ws-1&tab=tab-calendar&control=move_down",
             "Entry 'New entry' added.",
             "Entry renamed to 'Current Entry'.",
             "Entry 'Current Entry' removed.",
+            "Notes saved.",
+            "Move Entry Up",
+            "Move Entry Down",
         ],
     },
     {
@@ -92,6 +113,16 @@ CHECKS = [
         "tokens": [
             "career/support workflow family",
             "not yet current published receipt evidence",
+        ],
+    },
+    {
+        "id": "status_utility_reporting",
+        "path": "scripts/print_blazor_public_edge_proof_status.py",
+        "tokens": [
+            "CAREER_SUPPORT_STAGED_PROOF",
+            "career_support_staged_status",
+            "career_support_staged_route_count",
+            "source_alignment_only_not_browser_execution",
         ],
     },
 ]

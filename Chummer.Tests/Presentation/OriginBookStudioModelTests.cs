@@ -106,7 +106,7 @@ public sealed class OriginBookStudioModelTests
         Assert.IsFalse(pending.IsGoldReady);
         CollectionAssert.Contains(pending.MissingGoldRequirements.ToArray(), "provider_authored_manuscript");
         CollectionAssert.Contains(pending.MissingGoldRequirements.ToArray(), "verified_book_artifact");
-        CollectionAssert.Contains(pending.MissingGoldRequirements.ToArray(), "verified_audiobookshelf_playback_share");
+        CollectionAssert.Contains(pending.MissingGoldRequirements.ToArray(), "trusted_audiobookshelf_playback_share");
         CollectionAssert.Contains(pending.MissingGoldRequirements.ToArray(), "verified_dossier_video");
         CollectionAssert.Contains(pending.MissingGoldRequirements.ToArray(), "telegram_share_delivery_receipt");
         CollectionAssert.Contains(pending.MissingGoldRequirements.ToArray(), "authenticated_chummer_run_owner_url");
@@ -148,11 +148,22 @@ public sealed class OriginBookStudioModelTests
         OriginBookGoldPublication ready = stubbed with
         {
             ProviderManuscriptPath = "/secure/origin/provider-manuscript.md",
-            AudiobookshelfShareUrl = "https://chummer.run/account/work/origin-dossiers/example/listen",
+            AudiobookshelfShareUrl = "https://audio.chummer.run/share/example",
             StorySceneCoverUrl = "https://chummer.run/account/work/origin-dossiers/example/cover"
         };
         Assert.IsTrue(ready.IsGoldReady);
         Assert.AreEqual(0, ready.MissingGoldRequirements.Count);
+
+        OriginBookGoldPublication chummerListenRouteAsProviderEvidence = ready with
+        {
+            AudiobookshelfShareUrl = "https://chummer.run/account/work/origin-dossiers/example/listen"
+        };
+        Assert.IsFalse(
+            chummerListenRouteAsProviderEvidence.IsGoldReady,
+            "The import payload must keep the raw trusted Audiobookshelf provider share; chummer.run/listen is derived server-side for the owner.");
+        CollectionAssert.Contains(
+            chummerListenRouteAsProviderEvidence.MissingGoldRequirements.ToArray(),
+            "trusted_audiobookshelf_playback_share");
     }
 
     [TestMethod]

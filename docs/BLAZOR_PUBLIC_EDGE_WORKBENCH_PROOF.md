@@ -66,6 +66,10 @@ The current hosted route-entry tier should cover these route families:
   `/blazor/workbench?workspace=ws-1&tab=tab-calendar&control=edit_entry&dialog_action=apply`
   `/blazor/workbench?workspace=ws-1&tab=tab-calendar&control=delete_entry`
   `/blazor/workbench?workspace=ws-1&tab=tab-calendar&control=delete_entry&dialog_action=delete`
+  `/blazor/workbench?workspace=ws-1&tab=tab-info&control=open_notes`
+  `/blazor/workbench?workspace=ws-1&tab=tab-info&control=open_notes&dialog_action=save`
+  `/blazor/workbench?workspace=ws-1&tab=tab-calendar&control=move_up`
+  `/blazor/workbench?workspace=ws-1&tab=tab-calendar&control=move_down`
 
 These route families establish that:
 
@@ -130,6 +134,10 @@ Required receipt contract:
   `/blazor/workbench?workspace=ws-1&tab=tab-calendar&control=edit_entry&dialog_action=apply`
   `/blazor/workbench?workspace=ws-1&tab=tab-calendar&control=delete_entry`
   `/blazor/workbench?workspace=ws-1&tab=tab-calendar&control=delete_entry&dialog_action=delete`
+  `/blazor/workbench?workspace=ws-1&tab=tab-info&control=open_notes`
+  `/blazor/workbench?workspace=ws-1&tab=tab-info&control=open_notes&dialog_action=save`
+  `/blazor/workbench?workspace=ws-1&tab=tab-calendar&control=move_up`
+  `/blazor/workbench?workspace=ws-1&tab=tab-calendar&control=move_down`
 - route probe count must match the number of proof routes
 - route probe failures must be empty for a passing receipt
 
