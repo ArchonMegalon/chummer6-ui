@@ -2987,6 +2987,182 @@ public class MigrationComplianceTests
     }
 
     [TestMethod]
+    public void Preview_surface_keeps_browser_proof_cards_for_shared_startup_workflows()
+    {
+        string previewPath = FindPath("Chummer.Blazor", "Components", "Pages", "Preview.razor");
+        string previewText = File.ReadAllText(previewPath);
+        string previewTestsPath = FindPath("Chummer.Tests", "Presentation", "PublicPreviewSurfaceTests.cs");
+        string previewTestsText = File.ReadAllText(previewTestsPath);
+
+        StringAssert.Contains(previewText, "data-preview-proof-card=\"new-character\"");
+        StringAssert.Contains(previewText, "data-preview-proof-card=\"open-character\"");
+        StringAssert.Contains(previewText, "data-preview-proof-card=\"open-for-printing\"");
+        StringAssert.Contains(previewText, "data-preview-proof-card=\"open-for-export\"");
+        StringAssert.Contains(previewText, "data-preview-proof-card=\"print-character-result\"");
+        StringAssert.Contains(previewText, "data-preview-proof-card=\"export-character-result\"");
+        StringAssert.Contains(previewText, "data-preview-proof-card=\"save-character-result\"");
+        StringAssert.Contains(previewText, "data-preview-proof-card=\"save-character-as-result\"");
+        StringAssert.Contains(previewText, "data-preview-proof-card=\"origin-dossier\"");
+        StringAssert.Contains(previewText, "if (IsWorkbenchRoute)");
+        StringAssert.Contains(previewText, "Open preview proof shelf");
+        StringAssert.Contains(previewText, "Workbench route");
+        StringAssert.Contains(previewText, "product-shaped browser workbench entrypoint");
+        StringAssert.Contains(previewText, "data-workbench-entry-card=\"new-character\"");
+        StringAssert.Contains(previewText, "data-workbench-entry-card=\"open-character\"");
+        StringAssert.Contains(previewText, "data-workbench-entry-card=\"seeded-build-lab\"");
+        StringAssert.Contains(previewText, "data-workbench-entry-card=\"continue-recent\"");
+        StringAssert.Contains(previewText, "data-workbench-entry-card=\"recent-work\"");
+        StringAssert.Contains(previewText, "data-workbench-entry-card=\"restored-continuations\"");
+        StringAssert.Contains(previewText, "data-workbench-entry-card=\"restored-actions\"");
+        StringAssert.Contains(previewText, "data-workbench-entry-card=\"profile\"");
+        StringAssert.Contains(previewText, "data-workbench-entry-card=\"rules\"");
+        StringAssert.Contains(previewText, "data-workbench-entry-card=\"gear\"");
+        StringAssert.Contains(previewText, "data-workbench-entry-card=\"technomancer\"");
+        StringAssert.Contains(previewText, "data-workbench-entry-card=\"save-as\"");
+        StringAssert.Contains(previewText, "data-workbench-entry-card=\"export\"");
+        StringAssert.Contains(previewText, "data-workbench-entry-card=\"print\"");
+        StringAssert.Contains(previewText, "href=\"/workbench?command=new_character\"");
+        StringAssert.Contains(previewText, "href=\"/workbench?command=open_character\"");
+        StringAssert.Contains(previewText, "Continue @PrimaryRecentWorkspace.ShortLabel in build lab");
+        StringAssert.Contains(previewText, "Add a contact for @PrimaryRecentWorkspace.ShortLabel");
+        StringAssert.Contains(previewText, "Add and keep contact for @PrimaryRecentWorkspace.ShortLabel");
+        StringAssert.Contains(previewText, "Add a complex form for @PrimaryRecentWorkspace.ShortLabel");
+        StringAssert.Contains(previewText, "Add and keep initiation for @PrimaryRecentWorkspace.ShortLabel");
+        StringAssert.Contains(previewText, "Add initiation for @PrimaryRecentWorkspace.ShortLabel");
+        StringAssert.Contains(previewText, "Add and keep cyberware for @PrimaryRecentWorkspace.ShortLabel");
+        StringAssert.Contains(previewText, "Add cyberware for @PrimaryRecentWorkspace.ShortLabel");
+        StringAssert.Contains(previewText, "Add and keep spell for @PrimaryRecentWorkspace.ShortLabel");
+        StringAssert.Contains(previewText, "Add a spell for @PrimaryRecentWorkspace.ShortLabel");
+        StringAssert.Contains(previewText, "href=\"/workbench?workspace=");
+        StringAssert.Contains(previewText, "data-workbench-recent-workspace=");
+        StringAssert.Contains(previewText, "openWorkspace.Alias");
+        StringAssert.Contains(previewText, "openWorkspace.Name");
+        StringAssert.Contains(previewText, "saved");
+        StringAssert.Contains(previewText, "Resume @PrimaryRecentWorkspace.ShortLabel on profile");
+        StringAssert.Contains(previewText, "Resume @PrimaryRecentWorkspace.ShortLabel on rules");
+        StringAssert.Contains(previewText, "Resume @PrimaryRecentWorkspace.ShortLabel on gear");
+        StringAssert.Contains(previewText, "Resume @PrimaryRecentWorkspace.ShortLabel on advanced");
+        StringAssert.Contains(previewText, "Continue @PrimaryRecentWorkspace.ShortLabel on contacts");
+        StringAssert.Contains(previewText, "Continue @PrimaryRecentWorkspace.ShortLabel on profile");
+        StringAssert.Contains(previewText, "Continue @PrimaryRecentWorkspace.ShortLabel on rules");
+        StringAssert.Contains(previewText, "Continue @PrimaryRecentWorkspace.ShortLabel on gear");
+        StringAssert.Contains(previewText, "Continue @PrimaryRecentWorkspace.ShortLabel on advanced");
+        StringAssert.Contains(previewText, "Continue @PrimaryRecentWorkspace.ShortLabel for download");
+        StringAssert.Contains(previewText, "Continue @PrimaryRecentWorkspace.ShortLabel for export");
+        StringAssert.Contains(previewText, "Continue @PrimaryRecentWorkspace.ShortLabel for print");
+        StringAssert.Contains(previewText, "tab: \"tab-info\"");
+        StringAssert.Contains(previewText, "tab: \"tab-create\"");
+        StringAssert.Contains(previewText, "tab: \"tab-rules\"");
+        StringAssert.Contains(previewText, "tab: \"tab-gear\"");
+        StringAssert.Contains(previewText, "tab: \"tab-technomancer\"");
+        StringAssert.Contains(previewText, "tab: \"tab-contacts\"");
+        StringAssert.Contains(previewText, "tab: \"tab-adept\"");
+        StringAssert.Contains(previewText, "tab: \"tab-cyberware\"");
+        StringAssert.Contains(previewText, "tab: \"tab-magician\"");
+        StringAssert.Contains(previewText, "control: \"contact_add\"");
+        StringAssert.Contains(previewText, "control: \"complex_form_add\"");
+        StringAssert.Contains(previewText, "control: \"initiation_add\"");
+        StringAssert.Contains(previewText, "control: \"cyberware_add\"");
+        StringAssert.Contains(previewText, "control: \"spell_add\"");
+        StringAssert.Contains(previewText, "dialog_action={Uri.EscapeDataString(dialogAction)}");
+        StringAssert.Contains(previewText, "command: \"save_character_as\"");
+        StringAssert.Contains(previewText, "command: \"export_character\"");
+        StringAssert.Contains(previewText, "command: \"print_character\"");
+        StringAssert.Contains(previewText, "DemoWorkspaceId=\"@Workspace\"");
+        StringAssert.Contains(previewText, "href=\"/workbench?fixture=blue&tab=tab-contacts\"");
+        StringAssert.Contains(previewText, "href=\"/workbench?fixture=blue&tab=tab-info\"");
+        StringAssert.Contains(previewText, "href=\"/workbench?fixture=blue&tab=tab-rules\"");
+        StringAssert.Contains(previewText, "href=\"/workbench?fixture=blue&tab=tab-gear\"");
+        StringAssert.Contains(previewText, "href=\"/workbench?fixture=blue&tab=tab-technomancer\"");
+        StringAssert.Contains(previewText, "href=\"/workbench?fixture=blue&command=save_character_as\"");
+        StringAssert.Contains(previewText, "href=\"/workbench?fixture=blue&command=export_character\"");
+        StringAssert.Contains(previewText, "href=\"/workbench?fixture=blue&command=print_character\"");
+        StringAssert.Contains(previewText, "Open New Character proof");
+        StringAssert.Contains(previewText, "Open Character proof");
+        StringAssert.Contains(previewText, "Open for Printing proof");
+        StringAssert.Contains(previewText, "Open for Export proof");
+        StringAssert.Contains(previewText, "Open Print Result proof");
+        StringAssert.Contains(previewText, "Open Export Result proof");
+        StringAssert.Contains(previewText, "Open Save Result proof");
+        StringAssert.Contains(previewText, "Open Save As Result proof");
+        StringAssert.Contains(previewText, "Open Origin Dossier proof");
+        StringAssert.Contains(previewText, "/preview?command=new_character");
+        StringAssert.Contains(previewText, "/preview?command=open_character");
+        StringAssert.Contains(previewText, "/preview?command=open_for_printing");
+        StringAssert.Contains(previewText, "/preview?command=open_for_export");
+        StringAssert.Contains(previewText, "/preview?fixture=blue&command=save_character");
+        StringAssert.Contains(previewText, "/preview?fixture=blue&command=save_character_as");
+        StringAssert.Contains(previewText, "/preview?fixture=blue&command=print_character");
+        StringAssert.Contains(previewText, "/preview?fixture=blue&command=export_character");
+        StringAssert.Contains(previewText, "/preview?command=new_character_origin");
+
+        StringAssert.Contains(previewTestsText, "DataRow(\"open_character\")");
+        StringAssert.Contains(previewTestsText, "DataRow(\"open_for_printing\")");
+        StringAssert.Contains(previewTestsText, "DataRow(\"open_for_export\")");
+        StringAssert.Contains(previewTestsText, "DataRow(\"save_character\")");
+        StringAssert.Contains(previewTestsText, "DataRow(\"save_character_as\")");
+        StringAssert.Contains(previewTestsText, "DataRow(\"print_character\")");
+        StringAssert.Contains(previewTestsText, "DataRow(\"export_character\")");
+        StringAssert.Contains(previewTestsText, "Workbench_route_renders_product_facing_browser_entrypoint_with_preview_link");
+        StringAssert.Contains(previewTestsText, "Workbench_workspace_query_bootstraps_shared_workspace_load");
+        StringAssert.Contains(previewTestsText, "Workbench_control_query_bootstraps_shared_ui_control");
+        StringAssert.Contains(previewTestsText, "Workbench_dialog_action_query_bootstraps_shared_dialog_action");
+        StringAssert.Contains(previewTestsText, "Workbench_advanced_control_query_bootstraps_shared_ui_control");
+        StringAssert.Contains(previewTestsText, "Workbench_initiation_dialog_action_query_bootstraps_shared_dialog_action");
+        StringAssert.Contains(previewTestsText, "Workbench_initiation_control_query_bootstraps_shared_ui_control");
+        StringAssert.Contains(previewTestsText, "Workbench_cyberware_control_query_bootstraps_shared_ui_control");
+        StringAssert.Contains(previewTestsText, "Workbench_cyberware_dialog_action_query_bootstraps_shared_dialog_action");
+        StringAssert.Contains(previewTestsText, "Workbench_spell_control_query_bootstraps_shared_ui_control");
+        StringAssert.Contains(previewTestsText, "Workbench_spell_dialog_action_query_bootstraps_shared_dialog_action");
+        StringAssert.Contains(previewTestsText, "[data-workbench-entry-card='new-character']");
+        StringAssert.Contains(previewTestsText, "[data-workbench-entry-card='open-character']");
+        StringAssert.Contains(previewTestsText, "[data-workbench-entry-card='seeded-build-lab']");
+        StringAssert.Contains(previewTestsText, "Continue PRV in build lab");
+        StringAssert.Contains(previewTestsText, "[data-workbench-entry-card='continue-recent']");
+        StringAssert.Contains(previewTestsText, "[data-workbench-entry-card='recent-work']");
+        StringAssert.Contains(previewTestsText, "data-workbench-recent-workspace=\"preview-ws\"");
+        StringAssert.Contains(previewTestsText, "Resume PRV");
+        StringAssert.Contains(previewTestsText, "saved");
+        StringAssert.Contains(previewTestsText, "[data-workbench-entry-card='restored-continuations']");
+        StringAssert.Contains(previewTestsText, "[data-workbench-entry-card='restored-actions']");
+        StringAssert.Contains(previewTestsText, "Add a contact for PRV");
+        StringAssert.Contains(previewTestsText, "Add and keep contact for PRV");
+        StringAssert.Contains(previewTestsText, "Add a complex form for PRV");
+        StringAssert.Contains(previewTestsText, "Add and keep initiation for PRV");
+        StringAssert.Contains(previewTestsText, "Add initiation for PRV");
+        StringAssert.Contains(previewTestsText, "Add and keep cyberware for PRV");
+        StringAssert.Contains(previewTestsText, "Add cyberware for PRV");
+        StringAssert.Contains(previewTestsText, "Add and keep spell for PRV");
+        StringAssert.Contains(previewTestsText, "Add a spell for PRV");
+        StringAssert.Contains(previewTestsText, "Continue PRV on contacts");
+        StringAssert.Contains(previewTestsText, "Continue PRV on profile");
+        StringAssert.Contains(previewTestsText, "Continue PRV on rules");
+        StringAssert.Contains(previewTestsText, "Continue PRV on gear");
+        StringAssert.Contains(previewTestsText, "Continue PRV on advanced");
+        StringAssert.Contains(previewTestsText, "Continue PRV for download");
+        StringAssert.Contains(previewTestsText, "Continue PRV for export");
+        StringAssert.Contains(previewTestsText, "Continue PRV for print");
+        StringAssert.Contains(previewTestsText, "Resume PRV on profile");
+        StringAssert.Contains(previewTestsText, "Resume PRV on rules");
+        StringAssert.Contains(previewTestsText, "Resume PRV on gear");
+        StringAssert.Contains(previewTestsText, "Resume PRV on advanced");
+        StringAssert.Contains(previewTestsText, "[data-workbench-entry-card='profile']");
+        StringAssert.Contains(previewTestsText, "[data-workbench-entry-card='rules']");
+        StringAssert.Contains(previewTestsText, "[data-workbench-entry-card='gear']");
+        StringAssert.Contains(previewTestsText, "[data-workbench-entry-card='technomancer']");
+        StringAssert.Contains(previewTestsText, "[data-workbench-entry-card='save-as']");
+        StringAssert.Contains(previewTestsText, "[data-workbench-entry-card='export']");
+        StringAssert.Contains(previewTestsText, "[data-workbench-entry-card='print']");
+        StringAssert.Contains(previewTestsText, "[data-preview-proof-card='open-character']");
+        StringAssert.Contains(previewTestsText, "[data-preview-proof-card='open-for-printing']");
+        StringAssert.Contains(previewTestsText, "[data-preview-proof-card='open-for-export']");
+        StringAssert.Contains(previewTestsText, "[data-preview-proof-card='save-character-result']");
+        StringAssert.Contains(previewTestsText, "[data-preview-proof-card='save-character-as-result']");
+        StringAssert.Contains(previewTestsText, "[data-preview-proof-card='print-character-result']");
+        StringAssert.Contains(previewTestsText, "[data-preview-proof-card='export-character-result']");
+    }
+
+    [TestMethod]
     public void Dual_head_acceptance_suite_is_present_for_primary_migration_gate()
     {
         string testPath = FindPath("Chummer.Tests", "Presentation", "DualHeadAcceptanceTests.cs");
@@ -3050,13 +3226,22 @@ public class MigrationComplianceTests
         StringAssert.Contains(playwrightScriptText, "[data-testid=\"startup-workbench\"]");
         StringAssert.Contains(playwrightScriptText, "main.public-preview");
         StringAssert.Contains(playwrightScriptText, "openPreviewWithRetry");
-        StringAssert.Contains(playwrightScriptText, "It is deliberately not the full desktop client.");
-        StringAssert.Contains(playwrightScriptText, "guided browser preview");
+        StringAssert.Contains(playwrightScriptText, "Character workflows are live in the browser where parity is actually implemented");
+        StringAssert.Contains(playwrightScriptText, "Published self-hosted Docker surface");
         StringAssert.Contains(playwrightScriptText, "390, height: 844");
         StringAssert.Contains(playwrightScriptText, "[data-startup-command=\"new_character\"]");
+        StringAssert.Contains(playwrightScriptText, "/preview?command=new_character");
+        StringAssert.Contains(playwrightScriptText, "/preview?command=new_character_origin");
+        StringAssert.Contains(playwrightScriptText, "/preview?command=open_character");
+        StringAssert.Contains(playwrightScriptText, "/preview?command=open_for_printing");
+        StringAssert.Contains(playwrightScriptText, "/preview?command=open_for_export");
         StringAssert.Contains(playwrightScriptText, "CHUMMER_UI_SAMPLE_FILE");
         StringAssert.Contains(playwrightScriptText, "BLUE.chum5");
+        StringAssert.Contains(playwrightScriptText, "preview open character command deep link");
+        StringAssert.Contains(playwrightScriptText, "preview open for printing command deep link");
+        StringAssert.Contains(playwrightScriptText, "preview open for export command deep link");
         StringAssert.Contains(playwrightScriptText, "select build method");
+        StringAssert.Contains(playwrightScriptText, "origin dossier");
         StringAssert.Contains(playwrightScriptText, "select metatype priority");
         StringAssert.Contains(playwrightScriptText, "Playwright Runner");
         StringAssert.Contains(playwrightScriptText, "SR4 BP Troll Decker");
@@ -3073,8 +3258,8 @@ public class MigrationComplianceTests
         StringAssert.Contains(playwrightScriptText, "#summaryName");
         StringAssert.Contains(playwrightScriptText, "playwright UI flow completed");
         StringAssert.Contains(uiE2eText, "blazor-preview-html");
-        StringAssert.Contains(uiE2eText, "Chummer Browser Preview");
-        StringAssert.Contains(uiE2eText, "Browser-safe shell preview");
+        StringAssert.Contains(uiE2eText, "Chummer Browser Workbench");
+        StringAssert.Contains(uiE2eText, "shared workbench shell, running in the browser");
 
         StringAssert.Contains(dockerComposeText, "dockerfile: chummer-presentation/Chummer.Blazor/Dockerfile");
         StringAssert.Contains(blazorDockerfileText, "COPY . .");
@@ -3092,24 +3277,53 @@ public class MigrationComplianceTests
         string portalRouteProbeText = File.ReadAllText(portalRouteProbePath);
         string portalFixtureProbePath = FindPath("scripts", "e2e-portal.cjs");
         string portalFixtureProbeText = File.ReadAllText(portalFixtureProbePath);
+        string portalPlaywrightPath = FindPath("scripts", "e2e-portal-playwright.cjs");
+        string portalPlaywrightText = File.ReadAllText(portalPlaywrightPath);
 
         StringAssert.Contains(portalScriptText, "CHUMMER_E2E_PLAYWRIGHT_SOFT_FAIL");
         StringAssert.Contains(portalScriptText, "skipping portal e2e: docker daemon permission denied in this environment.");
         StringAssert.Contains(portalScriptText, "PORTAL_EDGE_COMPOSE_FILE");
+        StringAssert.Contains(portalScriptText, "PORTAL_PLAYWRIGHT_SCRIPT");
+        StringAssert.Contains(portalScriptText, "running portal playwright e2e");
+        StringAssert.Contains(portalScriptText, "portal playwright e2e failed or timed out");
         StringAssert.Contains(portalScriptText, "docker compose -f \"$PORTAL_EDGE_COMPOSE_FILE\" up -d --build --remove-orphans chummer-run-identity chummer-portal");
         StringAssert.Contains(portalScriptText, "node /docker/chummercomplete/chummer-presentation/scripts/e2e-public-edge.cjs");
+        StringAssert.Contains(portalScriptText, "node \"$PORTAL_PLAYWRIGHT_SCRIPT\"");
+        StringAssert.Contains(portalScriptText, "node /work/scripts/e2e-portal-playwright.cjs");
         Assert.IsFalse(portalScriptText.Contains("chummer-hub-web-portal", StringComparison.Ordinal));
         Assert.IsFalse(portalScriptText.Contains("chummer-session-web-portal", StringComparison.Ordinal));
         StringAssert.Contains(portalScriptText, "PORTAL_LOCAL_PROOF_PATH");
+        StringAssert.Contains(portalScriptText, "PORTAL_SELF_HOST_WORKBENCH_PROOF_PATH");
         StringAssert.Contains(portalScriptText, "\"contract_name\": \"chummer6-ui.local_release_proof\"");
+        StringAssert.Contains(portalScriptText, "\"contract_name\": \"chummer6-ui.blazor_self_host_workbench_proof\"");
         StringAssert.Contains(portalScriptText, "\"proof_routes\": [");
         StringAssert.Contains(portalScriptText, "\"status\": \"passed\" if route_probe_executed else \"failed\"");
         StringAssert.Contains(portalScriptText, "\"runtime_required\": runtime_required.lower() in {\"1\", \"true\"}");
         StringAssert.Contains(portalScriptText, "\"route_probe_executed\": route_probe_executed");
+        StringAssert.Contains(portalScriptText, "\"operator_runbook\": \"docs/BLAZOR_SELF_HOST_RUNBOOK.md\"");
+        StringAssert.Contains(portalScriptText, "\"operator_env_example\": \"docs/examples/self-hosted-browser-workbench.env.example\"");
+        StringAssert.Contains(portalScriptText, "\"/blazor/workbench\"");
+        StringAssert.Contains(portalScriptText, "\"portal_blazor_root_redirect\"");
+        StringAssert.Contains(portalScriptText, "\"/blazor/preview?command=open_character\"");
+        StringAssert.Contains(portalScriptText, "\"/blazor/preview?command=open_for_printing\"");
+        StringAssert.Contains(portalScriptText, "\"/blazor/preview?command=open_for_export\"");
+        StringAssert.Contains(portalScriptText, "\"/blazor/preview?fixture=blue&command=save_character\"");
+        StringAssert.Contains(portalScriptText, "\"/blazor/preview?fixture=blue&command=save_character_as\"");
+        StringAssert.Contains(portalScriptText, "\"/blazor/preview?fixture=blue&command=print_character\"");
+        StringAssert.Contains(portalScriptText, "\"/blazor/preview?fixture=blue&command=export_character\"");
+        StringAssert.Contains(portalScriptText, "\"/blazor/preview?command=new_character\"");
+        StringAssert.Contains(portalScriptText, "\"/blazor/preview?command=new_character_origin\"");
+        StringAssert.Contains(portalScriptText, "\"workflow_proofs\": [");
         Assert.IsFalse(portalScriptText.Contains("contract-only local release proof", StringComparison.Ordinal));
         Assert.IsFalse(portalScriptText.Contains("contract_only", StringComparison.Ordinal));
         StringAssert.Contains(portalRouteProbeText, "requiredLandingLinks");
         StringAssert.Contains(portalRouteProbeText, "requiredLandingLinks.every(link => text.includes(link))");
+        StringAssert.Contains(portalRouteProbeText, "expectedImplicitOwner");
+        StringAssert.Contains(portalRouteProbeText, "implicit self-host sign-in");
+        StringAssert.Contains(portalRouteProbeText, "Current owner: <code>");
+        StringAssert.Contains(portalRouteProbeText, "url: `${baseUrl}/api/ai/build-ideas`");
+        StringAssert.Contains(portalRouteProbeText, "payload?.ownerId === expectedImplicitOwner");
+        StringAssert.Contains(portalRouteProbeText, "response.headers.get('set-cookie')");
         StringAssert.Contains(portalRouteProbeText, "'/downloads'");
         StringAssert.Contains(portalRouteProbeText, "'/help'");
         StringAssert.Contains(portalRouteProbeText, "'/contact'");
@@ -3123,6 +3337,34 @@ public class MigrationComplianceTests
         StringAssert.Contains(portalRouteProbeText, "url: `${baseUrl}/status`");
         StringAssert.Contains(portalRouteProbeText, "url: `${baseUrl}/ledger`");
         StringAssert.Contains(portalRouteProbeText, "url: `${baseUrl}/faq`");
+        StringAssert.Contains(portalPlaywrightText, "const baseUrl = (process.env.CHUMMER_PORTAL_BASE_URL");
+        StringAssert.Contains(portalPlaywrightText, "expectedImplicitOwner");
+        StringAssert.Contains(portalPlaywrightText, "implicit self-host sign-in");
+        StringAssert.Contains(portalPlaywrightText, "data-startup-command=\"new_character_origin\"");
+        StringAssert.Contains(portalPlaywrightText, "implicit owner session posture");
+        StringAssert.Contains(portalPlaywrightText, "/blazor/preview?command=open_character");
+        StringAssert.Contains(portalPlaywrightText, "/blazor/preview?command=open_for_printing");
+        StringAssert.Contains(portalPlaywrightText, "/blazor/preview?command=open_for_export");
+        StringAssert.Contains(portalPlaywrightText, "/blazor/preview?command=new_character");
+        StringAssert.Contains(portalPlaywrightText, "/blazor/preview?command=new_character_origin");
+        StringAssert.Contains(portalPlaywrightText, "/blazor/preview?fixture=blue&tab=tab-create");
+        StringAssert.Contains(portalPlaywrightText, "/blazor/preview?fixture=blue&tab=tab-technomancer");
+        StringAssert.Contains(portalPlaywrightText, "data-build-lab");
+        StringAssert.Contains(portalPlaywrightText, "Build Lab Intake");
+        StringAssert.Contains(portalPlaywrightText, "portal new character deep link");
+        StringAssert.Contains(portalPlaywrightText, "portal open character deep link");
+        StringAssert.Contains(portalPlaywrightText, "portal open for printing deep link");
+        StringAssert.Contains(portalPlaywrightText, "portal open for export deep link");
+        StringAssert.Contains(portalPlaywrightText, "portal origin dossier deep link");
+        StringAssert.Contains(portalPlaywrightText, "complex_form_add");
+        StringAssert.Contains(portalPlaywrightText, "Complex Forms");
+        StringAssert.Contains(portalPlaywrightText, "portal playwright e2e completed");
+        StringAssert.Contains(portalRouteProbeText, "/blazor/workbench?command=new_character");
+        StringAssert.Contains(portalRouteProbeText, "/blazor/workbench?command=open_character");
+        StringAssert.Contains(portalRouteProbeText, "/blazor/workbench?command=open_for_printing");
+        StringAssert.Contains(portalRouteProbeText, "/blazor/workbench?command=open_for_export");
+        StringAssert.Contains(portalRouteProbeText, "/blazor/workbench?workspace=ws-1&tab=tab-technomancer&control=complex_form_add");
+        StringAssert.Contains(portalRouteProbeText, "/blazor/workbench?workspace=ws-1&tab=tab-technomancer&control=complex_form_add&dialog_action=add");
         StringAssert.Contains(portalFixtureProbeText, "deep-link-check");
         StringAssert.Contains(portalFixtureProbeText, "deep-link-signoff");
         StringAssert.Contains(portalFixtureProbeText, "cross-origin-opener-policy");
@@ -4291,6 +4533,7 @@ public class MigrationComplianceTests
         StringAssert.Contains(flagshipGateScriptText, "required_dense_builder_route_local_evidence_suffixes");
         StringAssert.Contains(flagshipGateScriptText, "CLASSIC_DENSE_WORKBENCH_POSTURE_GATE.generated.json");
         StringAssert.Contains(flagshipGateScriptText, "UI_LOCAL_RELEASE_PROOF.generated.json");
+        StringAssert.Contains(flagshipGateScriptText, "BLAZOR_SELF_HOST_WORKBENCH_PROOF.generated.json");
         StringAssert.Contains(flagshipGateScriptText, "Dense builder parity audit row is missing route-local proof evidence:");
         StringAssert.Contains(flagshipGateScriptText, "\"blockingFindings\": blocking_findings");
         StringAssert.Contains(flagshipGateScriptText, "Top-level release gate cannot pass while parity matrix still has no-parity rows.");
@@ -4332,6 +4575,84 @@ public class MigrationComplianceTests
                 evidence.Any(path => path.EndsWith(suffix, StringComparison.Ordinal)),
                 $"Dense builder parity row is missing route-local proof evidence '{suffix}'.");
         }
+    }
+
+    [TestMethod]
+    public void Next90_m142_direct_workflow_guard_stays_desktop_route_local()
+    {
+        string workflowGuardPath = FindPath("scripts", "ai", "milestones", "next90-m142-ui-direct-workflow-proof-check.sh");
+        string workflowGuardText = File.ReadAllText(workflowGuardPath);
+        string uiPlaywrightPath = FindPath("scripts", "e2e-ui-playwright.cjs");
+        string uiPlaywrightText = File.ReadAllText(uiPlaywrightPath);
+        string portalPlaywrightPath = FindPath("scripts", "e2e-portal-playwright.cjs");
+        string portalPlaywrightText = File.ReadAllText(portalPlaywrightPath);
+
+        StringAssert.Contains(workflowGuardText, "\"family:dense_builder_and_career_workflows\"");
+        StringAssert.Contains(workflowGuardText, "\"UI_LOCAL_RELEASE_PROOF.generated.json\"");
+        StringAssert.Contains(workflowGuardText, "\"scripts/ai/milestones/b14-flagship-ui-release-gate.sh\"");
+        Assert.IsFalse(
+            workflowGuardText.Contains("self_host_workbench_receipt = read_json", StringComparison.Ordinal),
+            "M142 is the desktop route-local workflow proof; Blazor self-host proof is owned by M113 and Blazor-specific gates.");
+        StringAssert.Contains(uiPlaywrightText, "product-shaped browser workbench entrypoint");
+        StringAssert.Contains(uiPlaywrightText, "Open preview proof shelf");
+        StringAssert.Contains(uiPlaywrightText, "data-workbench-entry-card=\"new-character\"");
+        StringAssert.Contains(uiPlaywrightText, "data-workbench-entry-card=\"open-character\"");
+        StringAssert.Contains(uiPlaywrightText, "data-workbench-entry-card=\"continue-recent\"");
+        StringAssert.Contains(uiPlaywrightText, "data-workbench-entry-card=\"profile\"");
+        StringAssert.Contains(uiPlaywrightText, "data-workbench-entry-card=\"rules\"");
+        StringAssert.Contains(uiPlaywrightText, "data-workbench-entry-card=\"gear\"");
+        StringAssert.Contains(uiPlaywrightText, "data-workbench-entry-card=\"technomancer\"");
+        StringAssert.Contains(uiPlaywrightText, "data-workbench-entry-card=\"save-as\"");
+        StringAssert.Contains(uiPlaywrightText, "data-workbench-entry-card=\"export\"");
+        StringAssert.Contains(uiPlaywrightText, "data-workbench-entry-card=\"print\"");
+        StringAssert.Contains(portalPlaywrightText, "product-shaped browser workbench entrypoint");
+        StringAssert.Contains(portalPlaywrightText, "Open preview proof shelf");
+        StringAssert.Contains(portalPlaywrightText, "Expected portal /blazor/ root to resolve to /blazor/workbench");
+        StringAssert.Contains(portalPlaywrightText, "/blazor/workbench?workspace=ws-1");
+        StringAssert.Contains(uiPlaywrightText, "/workbench?workspace=");
+
+        string m142ReceiptPath = FindPath(".codex-studio", "published", "NEXT90_M142_UI_DIRECT_WORKFLOW_PROOF.generated.json");
+        string m142ReceiptText = File.ReadAllText(m142ReceiptPath);
+        StringAssert.Contains(m142ReceiptText, "\"route_local_dense_initiative_pass\": true");
+        StringAssert.Contains(m142ReceiptText, "\"workflow_initiative_utility_pass\": true");
+        Assert.IsFalse(
+            m142ReceiptText.Contains("BLAZOR_SELF_HOST_WORKBENCH_PROOF.generated.json", StringComparison.Ordinal),
+            "M142 receipt must remain desktop route-local and not gate on the Blazor self-host lane.");
+    }
+
+    [TestMethod]
+    public void Next90_m113_gm_prep_roster_surface_check_validates_blazor_self_host_workbench_proof_payload()
+    {
+        string m113CheckPath = FindPath("scripts", "ai", "milestones", "next90-m113-ui-gm-prep-roster-surface-check.sh");
+        string m113CheckText = File.ReadAllText(m113CheckPath);
+
+        StringAssert.Contains(m113CheckText, "CHUMMER_BLAZOR_SELF_HOST_WORKBENCH_PROOF_PATH");
+        StringAssert.Contains(m113CheckText, "self_host_workbench_proof = json.loads");
+        StringAssert.Contains(m113CheckText, "\"self_host_workbench_proof_status_pass\"");
+        StringAssert.Contains(m113CheckText, "\"self_host_workbench_proof_contract_matches\"");
+        StringAssert.Contains(m113CheckText, "\"self_host_workbench_proof_new_character_deep_link_present\"");
+        StringAssert.Contains(m113CheckText, "\"self_host_workbench_proof_origin_dossier_deep_link_present\"");
+        StringAssert.Contains(m113CheckText, "\"chummer6-ui.blazor_self_host_workbench_proof\"");
+    }
+
+    [TestMethod]
+    public void Windows_exit_gate_published_receipt_records_blazor_self_host_workbench_proof_status()
+    {
+        string windowsGateReceiptPath = FindPath(".codex-studio", "published", "UI_WINDOWS_DESKTOP_EXIT_GATE.generated.json");
+        string windowsGateReceiptText = File.ReadAllText(windowsGateReceiptPath);
+
+        StringAssert.Contains(windowsGateReceiptText, "\"blazor_self_host_workbench_proof_path\":");
+        StringAssert.Contains(windowsGateReceiptText, "\"blazor_self_host_workbench_proof_status\": \"passed\"");
+    }
+
+    [TestMethod]
+    public void Parity_inventory_dense_workbench_family_cites_blazor_self_host_workbench_proof()
+    {
+        string parityInventoryPath = FindPath(".codex-studio", "published", "PARITY_INVENTORY.generated.json");
+        string parityInventoryText = File.ReadAllText(parityInventoryPath);
+
+        StringAssert.Contains(parityInventoryText, "\"Dense Builder And Career Workflows\"");
+        StringAssert.Contains(parityInventoryText, "BLAZOR_SELF_HOST_WORKBENCH_PROOF.generated.json");
     }
 
     [TestMethod]
@@ -5423,9 +5744,10 @@ public class MigrationComplianceTests
         StringAssert.Contains(windowsGateScriptText, "HUB_REGISTRY_ROOT=\"${CHUMMER_HUB_REGISTRY_ROOT:-$(\"$REPO_ROOT/scripts/resolve-hub-registry-root.sh\" 2>/dev/null || true)}\"");
         StringAssert.Contains(windowsGateScriptText, "RELEASE_CHANNEL_PATH_DEFAULT");
         StringAssert.Contains(windowsGateScriptText, "WINDOWS_INSTALLER_VISUAL_PROOF_PATH=\"${CHUMMER_WINDOWS_INSTALLER_VISUAL_PROOF_PATH:-$REPO_ROOT/.codex-studio/published/WINDOWS_INSTALLER_VISUAL_PROOF.generated.json}\"");
-        StringAssert.Contains(windowsGateScriptText, "windows_installer_visual_proof_path = Path(sys.argv[11])");
-        StringAssert.Contains(windowsGateScriptText, "repo_root = Path(sys.argv[12])");
-        StringAssert.Contains(windowsGateScriptText, "hub_registry_root_arg = str(sys.argv[13] or \"\").strip()");
+        StringAssert.Contains(windowsGateScriptText, "blazor_self_host_workbench_proof_path = Path(sys.argv[6])");
+        StringAssert.Contains(windowsGateScriptText, "windows_installer_visual_proof_path = Path(sys.argv[12])");
+        StringAssert.Contains(windowsGateScriptText, "repo_root = Path(sys.argv[13])");
+        StringAssert.Contains(windowsGateScriptText, "hub_registry_root_arg = str(sys.argv[14] or \"\").strip()");
         StringAssert.Contains(windowsGateScriptText, "hub_registry_root / \".codex-studio\" / \"published\" / \"startup-smoke\"");
         StringAssert.Contains(windowsGateScriptText, "hub_registry_root / \"Docker\" / \"Downloads\" / \"startup-smoke\"");
         StringAssert.Contains(windowsGateScriptText, "CHUMMER_WINDOWS_STARTUP_SMOKE_RECEIPT_PATH");
@@ -5433,6 +5755,7 @@ public class MigrationComplianceTests
         StringAssert.Contains(windowsGateScriptText, "expected_rid.startswith(\"win-\")");
         StringAssert.Contains(windowsGateScriptText, "CHUMMER_WINDOWS_LOCAL_DESKTOP_FILES_ROOT");
         StringAssert.Contains(windowsGateScriptText, "WINDOWS_LOCAL_DESKTOP_FILES_ROOT=\"${CHUMMER_WINDOWS_LOCAL_DESKTOP_FILES_ROOT:-$REPO_ROOT/Docker/Downloads/files}\"");
+        StringAssert.Contains(windowsGateScriptText, "BLAZOR_SELF_HOST_WORKBENCH_PROOF_PATH=\"${CHUMMER_BLAZOR_SELF_HOST_WORKBENCH_PROOF_PATH:-$REPO_ROOT/.codex-studio/published/BLAZOR_SELF_HOST_WORKBENCH_PROOF.generated.json}\"");
         StringAssert.Contains(windowsGateScriptText, "primary_shelf_candidates = [");
         StringAssert.Contains(windowsGateScriptText, "installer_candidates = primary_shelf_candidates + override_candidates");
         StringAssert.Contains(windowsGateScriptText, "windows_installer_override_ignored_for_promoted_shelf");
@@ -5486,6 +5809,9 @@ public class MigrationComplianceTests
         StringAssert.Contains(windowsGateScriptText, "if normalize_token(startup_smoke_artifact_digest) != normalize_token(expected_startup_smoke_digest):");
         StringAssert.Contains(windowsGateScriptText, "evidence[\"startup_smoke_stale_age_acceptable\"] = stale_age_acceptable");
         StringAssert.Contains(windowsGateScriptText, "\"Trusted Windows host proof still matches the exact promoted installer bytes and release version.\"");
+        StringAssert.Contains(windowsGateScriptText, "expected_contract=\"chummer6-ui.blazor_self_host_workbench_proof\"");
+        StringAssert.Contains(windowsGateScriptText, "evidence[\"blazor_self_host_workbench_proof_status\"] = blazor_self_host_workbench_proof_status");
+        StringAssert.Contains(windowsGateScriptText, "Blazor self-host workbench proof is missing or not passed.");
     }
 
     [TestMethod]
@@ -5619,6 +5945,7 @@ public class MigrationComplianceTests
         StringAssert.Contains(readmeText, "release-channel publication truth now lives downstream in `chummer6-hub-registry`");
         StringAssert.Contains(readmeText, "CHUMMER_DESKTOP_UPDATE_MANIFEST");
         StringAssert.Contains(readmeText, "docs/WORKBENCH_RELEASE_SIGNOFF.md");
+        StringAssert.Contains(readmeText, "docs/BLAZOR_WEB_CLIENT_PARITY_GOAL.md");
         StringAssert.Contains(readmeText, "docs/COMPATIBILITY_CARGO.md");
         Assert.IsFalse(
             readmeText.Contains("Current multi-head runtime (Docker branch)", StringComparison.Ordinal),
@@ -5626,6 +5953,100 @@ public class MigrationComplianceTests
         Assert.IsFalse(
             readmeText.Contains("two UI heads (`Chummer.Blazor`, `Chummer.Avalonia`)", StringComparison.Ordinal),
             "README summary regressed to outdated two-head architecture language.");
+    }
+
+    [TestMethod]
+    public void Blazor_web_client_parity_goal_stays_explicit_and_release_bound()
+    {
+        string goalPath = FindPath("docs", "BLAZOR_WEB_CLIENT_PARITY_GOAL.md");
+        string goalText = File.ReadAllText(goalPath);
+        string selfHostRunbookPath = FindPath("docs", "BLAZOR_SELF_HOST_RUNBOOK.md");
+        string selfHostRunbookText = File.ReadAllText(selfHostRunbookPath);
+        string selfHostEnvPath = FindPath("docs", "examples", "self-hosted-browser-workbench.env.example");
+        string selfHostEnvText = File.ReadAllText(selfHostEnvPath);
+        string releaseSignoffPath = FindPath("docs", "WORKBENCH_RELEASE_SIGNOFF.md");
+        string releaseSignoffText = File.ReadAllText(releaseSignoffPath);
+        string productCutPath = FindPath(".codex-design", "product", "DESKTOP_CLIENT_PRODUCT_CUT.md");
+        string productCutText = File.ReadAllText(productCutPath);
+        string backlogPath = FindPath("docs", "MIGRATION_BACKLOG.md");
+        string backlogText = File.ReadAllText(backlogPath);
+
+        StringAssert.Contains(goalText, "Make `Chummer.Blazor` a polished browser-hosted Chummer client");
+        StringAssert.Contains(goalText, "another desktop client");
+        StringAssert.Contains(goalText, "hosted on `chummer.run` behind `Chummer.Portal`");
+        StringAssert.Contains(goalText, "self-hostable through Docker");
+        StringAssert.Contains(goalText, "desktop-equivalent");
+        StringAssert.Contains(goalText, "browser-specific tests, screenshots, and route/runtime evidence");
+        StringAssert.Contains(goalText, "first launch presents the same practical workbench entry points as Avalonia");
+        StringAssert.Contains(goalText, "public hosted and Docker self-hosted lanes have separate proof");
+        StringAssert.Contains(goalText, "docs/BLAZOR_SELF_HOST_RUNBOOK.md");
+        StringAssert.Contains(goalText, "docs/examples/self-hosted-browser-workbench.env.example");
+        StringAssert.Contains(goalText, "operator documentation that points self-host users at the portal-backed browser workbench lane");
+
+        StringAssert.Contains(selfHostRunbookText, "Browser Workbench Self-Host Runbook");
+        StringAssert.Contains(selfHostRunbookText, "Chummer.Blazor");
+        StringAssert.Contains(selfHostRunbookText, "Chummer.Portal");
+        StringAssert.Contains(selfHostRunbookText, "docker compose --profile portal up -d --build");
+        StringAssert.Contains(selfHostRunbookText, "/blazor/workbench");
+        StringAssert.Contains(selfHostRunbookText, "resolves into `/blazor/workbench`");
+        StringAssert.Contains(selfHostRunbookText, "curl -fsSI http://127.0.0.1:${CHUMMER_PORTAL_PORT:-8091}/blazor/");
+        StringAssert.Contains(selfHostRunbookText, "/blazor/preview?command=new_character");
+        StringAssert.Contains(selfHostRunbookText, "/blazor/preview?command=new_character_origin");
+        StringAssert.Contains(selfHostRunbookText, "node scripts/e2e-portal-playwright.cjs");
+        StringAssert.Contains(selfHostRunbookText, ".codex-studio/published/BLAZOR_SELF_HOST_WORKBENCH_PROOF.generated.json");
+        StringAssert.Contains(selfHostRunbookText, "SELF_HOSTED_DOWNLOADS_RUNBOOK.md");
+
+        StringAssert.Contains(selfHostEnvText, "CHUMMER_PORTAL_BLAZOR_URL=/blazor/");
+        StringAssert.Contains(selfHostEnvText, "CHUMMER_BLAZOR_PATH_BASE=/blazor");
+        StringAssert.Contains(selfHostEnvText, "CHUMMER_PORTAL_IMPLICIT_OWNER=local@self-host");
+
+        string selfHostProofPath = FindPath(".codex-studio", "published", "BLAZOR_SELF_HOST_WORKBENCH_PROOF.generated.json");
+        string selfHostProofText = File.ReadAllText(selfHostProofPath);
+        string compileManifestPath = FindPath(".codex-studio", "published", "compile.manifest.json");
+        string compileManifestText = File.ReadAllText(compileManifestPath);
+        StringAssert.Contains(selfHostProofText, "\"contract_name\": \"chummer6-ui.blazor_self_host_workbench_proof\"");
+        StringAssert.Contains(selfHostProofText, "\"/blazor/preview?command=new_character\"");
+        StringAssert.Contains(selfHostProofText, "\"/blazor/preview?command=new_character_origin\"");
+        StringAssert.Contains(selfHostProofText, "\"/blazor/preview?command=open_character\"");
+        StringAssert.Contains(selfHostProofText, "\"/blazor/preview?command=open_for_printing\"");
+        StringAssert.Contains(selfHostProofText, "\"/blazor/preview?command=open_for_export\"");
+        StringAssert.Contains(selfHostProofText, "\"/blazor/workbench\"");
+        StringAssert.Contains(selfHostProofText, "\"workspace_resume_route\"");
+        StringAssert.Contains(selfHostProofText, "\"/blazor/preview?fixture=blue&command=save_character\"");
+        StringAssert.Contains(selfHostProofText, "\"/blazor/preview?fixture=blue&command=save_character_as\"");
+        StringAssert.Contains(selfHostProofText, "\"/blazor/preview?fixture=blue&command=print_character\"");
+        StringAssert.Contains(selfHostProofText, "\"/blazor/preview?fixture=blue&command=export_character\"");
+        StringAssert.Contains(selfHostProofText, "\"operator_runbook\": \"docs/BLAZOR_SELF_HOST_RUNBOOK.md\"");
+        StringAssert.Contains(selfHostProofText, "\"operator_env_example\": \"docs/examples/self-hosted-browser-workbench.env.example\"");
+        StringAssert.Contains(selfHostProofText, "\"route_proof_markers\"");
+        StringAssert.Contains(selfHostProofText, "\"portal_preview_command_deep_links\"");
+        StringAssert.Contains(selfHostProofText, "\"portal_workbench_route\"");
+        StringAssert.Contains(selfHostProofText, "\"portal_preview_seeded_result_states\"");
+        StringAssert.Contains(selfHostProofText, "\"mobile_workbench\"");
+        StringAssert.Contains(selfHostProofText, "\"workbench_route\"");
+        StringAssert.Contains(selfHostProofText, "\"open_character_deep_link\"");
+        StringAssert.Contains(selfHostProofText, "\"open_for_printing_deep_link\"");
+        StringAssert.Contains(selfHostProofText, "\"open_for_export_deep_link\"");
+        StringAssert.Contains(selfHostProofText, "\"seeded_save_result\"");
+        StringAssert.Contains(selfHostProofText, "\"seeded_save_as_result\"");
+        StringAssert.Contains(selfHostProofText, "\"seeded_print_result\"");
+        StringAssert.Contains(selfHostProofText, "\"seeded_export_result\"");
+        StringAssert.Contains(selfHostProofText, "\"downloads_manifest\"");
+        StringAssert.Contains(compileManifestText, "BLAZOR_SELF_HOST_WORKBENCH_PROOF.generated.json");
+
+        StringAssert.Contains(releaseSignoffText, "docs/BLAZOR_WEB_CLIENT_PARITY_GOAL.md");
+        StringAssert.Contains(releaseSignoffText, "docs/BLAZOR_SELF_HOST_RUNBOOK.md");
+        StringAssert.Contains(releaseSignoffText, "BLAZOR_SELF_HOST_WORKBENCH_PROOF.generated.json");
+        StringAssert.Contains(releaseSignoffText, "release copy must not imply that the web client has already reached full Avalonia workflow parity");
+        StringAssert.Contains(productCutText, "docs/BLAZOR_WEB_CLIENT_PARITY_GOAL.md");
+        StringAssert.Contains(productCutText, "first-class browser-hosted desktop-equivalent client behind `Chummer.Portal` on `chummer.run`");
+        StringAssert.Contains(productCutText, "does not change the current native desktop preview truth by itself");
+        StringAssert.Contains(backlogText, "`MIG-106` Raise `Chummer.Blazor` from browser preview to desktop-equivalent startup/workbench posture.");
+        StringAssert.Contains(backlogText, "`MIG-107` Add browser-specific parity proof for core dialog, section, and runner workflows.");
+        StringAssert.Contains(backlogText, "`MIG-108` Close hosted and self-hosted web-client route/runtime proof.");
+        StringAssert.Contains(backlogText, "`MIG-109` Define honest browser parity boundaries for native-only desktop behaviors.");
+        StringAssert.Contains(backlogText, "browser proof must stand on its own and must not borrow Avalonia-only receipts");
+        StringAssert.Contains(backlogText, "hosted and self-hosted proof distinct");
     }
 
     [TestMethod]

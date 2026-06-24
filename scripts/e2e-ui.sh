@@ -239,8 +239,8 @@ if ! grep -q '"head":"blazor"' <<<"$ui_health"; then
   exit 1
 fi
 
-if ! grep -q "Chummer Browser Preview" <<<"$ui_html"; then
-  echo "Public preview marker not found in root page response." >&2
+if ! grep -q "Chummer Browser Workbench" <<<"$ui_html"; then
+  echo "Public browser workbench marker not found in root page response." >&2
   exit 1
 fi
 
@@ -249,8 +249,8 @@ if ! grep -q "_framework/blazor.web.js" <<<"$ui_html"; then
   exit 1
 fi
 
-if ! grep -q "Browser-safe shell preview" <<<"$ui_preview_html"; then
-  echo "Workbench preview marker not found in /preview page response." >&2
+if ! grep -q "shared workbench shell, running in the browser" <<<"$ui_preview_html"; then
+  echo "Browser workbench marker not found in /preview page response." >&2
   exit 1
 fi
 

@@ -3,12 +3,18 @@ set -euo pipefail
 
 CHUMMER_API_KEY="${CHUMMER_API_KEY:-}"
 PORTAL_PLAYWRIGHT_TIMEOUT_SECONDS="${CHUMMER_PORTAL_E2E_TIMEOUT_SECONDS:-240}"
-PORTAL_EDGE_COMPOSE_FILE="${CHUMMER_PORTAL_EDGE_COMPOSE_FILE:-/docker/chummercomplete/chummer.run-services/docker-compose.public-edge.yml}"
-PORTAL_BASE_URL="${CHUMMER_PORTAL_BASE_URL:-http://127.0.0.1:${CHUMMER_PUBLIC_EDGE_PORT:-8091}}"
+PORTAL_EDGE_COMPOSE_FILE="${CHUMMER_PORTAL_EDGE_COMPOSE_FILE:-/docker/chummercomplete/chummer-presentation/docker-compose.yml}"
+PORTAL_COMPOSE_PROFILE="${CHUMMER_PORTAL_COMPOSE_PROFILE:-portal}"
+PORTAL_EDGE_SERVICES="${CHUMMER_PORTAL_EDGE_SERVICES:-chummer-api chummer-blazor-portal chummer-hub-web-portal chummer-avalonia-browser chummer-portal}"
+PORTAL_BASE_URL="${CHUMMER_PORTAL_BASE_URL:-http://127.0.0.1:${CHUMMER_PORTAL_PORT:-8091}}"
 PORTAL_LOCAL_PROOF_PATH="${CHUMMER_PORTAL_LOCAL_PROOF_PATH:-.codex-studio/published/UI_LOCAL_RELEASE_PROOF.generated.json}"
+PORTAL_SELF_HOST_WORKBENCH_PROOF_PATH="${CHUMMER_PORTAL_SELF_HOST_WORKBENCH_PROOF_PATH:-.codex-studio/published/BLAZOR_SELF_HOST_WORKBENCH_PROOF.generated.json}"
 NEXT90_M113_RECEIPT_PATH="${CHUMMER_NEXT90_M113_RECEIPT_PATH:-.codex-studio/published/NEXT90_M113_UI_GM_PREP_ROSTER_SURFACE.generated.json}"
 PORTAL_SKIP_EDGE_REBUILD="${CHUMMER_PORTAL_E2E_SKIP_EDGE_REBUILD:-0}"
 PORTAL_RUNTIME_REQUIRED="${CHUMMER_PORTAL_E2E_REQUIRE_RUNTIME:-1}"
+PORTAL_PLAYWRIGHT_SCRIPT="${CHUMMER_PORTAL_PLAYWRIGHT_SCRIPT:-/docker/chummercomplete/chummer-presentation/scripts/e2e-portal-playwright.cjs}"
+PORTAL_ROUTE_PROBE_SCRIPT="${CHUMMER_PORTAL_ROUTE_PROBE_SCRIPT:-/docker/chummercomplete/chummer-presentation/scripts/e2e-portal.cjs}"
+PORTAL_PLAYWRIGHT_COMPOSE_FILE="${CHUMMER_PORTAL_PLAYWRIGHT_COMPOSE_FILE:-/docker/chummercomplete/chummer-presentation/docker-compose.yml}"
 if [[ -n "${CHUMMER_PORTAL_PLAYWRIGHT:-}" ]]; then
   RUN_PORTAL_PLAYWRIGHT="$CHUMMER_PORTAL_PLAYWRIGHT"
 elif [[ "${CI:-}" == "true" || "${GITHUB_ACTIONS:-}" == "true" ]]; then
@@ -23,10 +29,42 @@ elif [[ "${CI:-}" == "true" || "${GITHUB_ACTIONS:-}" == "true" ]]; then
 else
   PLAYWRIGHT_SOFT_FAIL="0"
 fi
+LOCAL_PLAYWRIGHT_NODE_PATH=""
+read -r -a PORTAL_COMPOSE_SERVICES <<< "$PORTAL_EDGE_SERVICES"
 
 is_docker_permission_error_text() {
   local source_file="$1"
   grep -Eqi "permission denied while trying to connect to the Docker daemon socket|operation not permitted|got permission denied while trying to connect to the docker daemon socket" "$source_file"
+}
+
+detect_local_playwright() {
+  if ! command -v node >/dev/null 2>&1; then
+    return 1
+  fi
+
+  local candidates=()
+  if [[ -n "${NODE_PATH:-}" ]]; then
+    candidates+=("$NODE_PATH")
+  fi
+  candidates+=(
+    "/docker/chummercomplete/chummer.run-services/node_modules"
+    "/docker/chummercomplete/node_modules"
+    "/docker/chummercomplete/chummer-presentation/scripts/node_modules"
+  )
+
+  local candidate
+  for candidate in "${candidates[@]}"; do
+    if [[ -z "$candidate" || ! -d "$candidate" ]]; then
+      continue
+    fi
+
+    if NODE_PATH="$candidate" node -e "require('playwright');" >/dev/null 2>&1; then
+      LOCAL_PLAYWRIGHT_NODE_PATH="$candidate"
+      return 0
+    fi
+  done
+
+  return 1
 }
 
 wait_for_portal_url() {
@@ -55,11 +93,11 @@ if [[ "$RUN_PORTAL_PLAYWRIGHT" != "1" ]] \
 fi
 
 if [[ "$PORTAL_SKIP_EDGE_REBUILD" == "1" || "$PORTAL_SKIP_EDGE_REBUILD" == "true" || "$PORTAL_SKIP_EDGE_REBUILD" == "TRUE" ]]; then
-  echo "reusing current downstream public-edge containers for portal route probe"
+  echo "reusing current self-host portal containers for portal route probe"
 else
   compose_rm_log="$(mktemp)"
   set +e
-  docker compose -f "$PORTAL_EDGE_COMPOSE_FILE" rm -fsv chummer-run-identity chummer-portal 2>&1 | tee "$compose_rm_log"
+  docker compose -f "$PORTAL_EDGE_COMPOSE_FILE" --profile "$PORTAL_COMPOSE_PROFILE" rm -fsv "${PORTAL_COMPOSE_SERVICES[@]}" 2>&1 | tee "$compose_rm_log"
   compose_rm_status=${PIPESTATUS[0]}
   set -e
   if [[ "$compose_rm_status" -ne 0 ]]; then
@@ -76,7 +114,7 @@ else
 
   compose_up_log="$(mktemp)"
   set +e
-  docker compose -f "$PORTAL_EDGE_COMPOSE_FILE" up -d --build --remove-orphans chummer-run-identity chummer-portal 2>&1 | tee "$compose_up_log"
+  docker compose -f "$PORTAL_EDGE_COMPOSE_FILE" --profile "$PORTAL_COMPOSE_PROFILE" up -d --build --remove-orphans "${PORTAL_COMPOSE_SERVICES[@]}" 2>&1 | tee "$compose_up_log"
   compose_up_status=${PIPESTATUS[0]}
   set -e
   if [[ "$compose_up_status" -ne 0 ]]; then
@@ -99,7 +137,7 @@ if [[ "$RUN_PORTAL_PLAYWRIGHT" == "1" ]]; then
   echo "running portal route probe (timeout: ${PORTAL_PLAYWRIGHT_TIMEOUT_SECONDS}s)"
   route_probe_log="$(mktemp)"
   set +e
-  timeout "${PORTAL_PLAYWRIGHT_TIMEOUT_SECONDS}"s env CHUMMER_PORTAL_BASE_URL="$PORTAL_BASE_URL" node /docker/chummercomplete/chummer-presentation/scripts/e2e-public-edge.cjs \
+  timeout "${PORTAL_PLAYWRIGHT_TIMEOUT_SECONDS}"s env CHUMMER_PORTAL_BASE_URL="$PORTAL_BASE_URL" node "$PORTAL_ROUTE_PROBE_SCRIPT" \
     2>&1 | tee "$route_probe_log"
   route_probe_status=${PIPESTATUS[0]}
   set -e
@@ -115,18 +153,55 @@ if [[ "$RUN_PORTAL_PLAYWRIGHT" == "1" ]]; then
     exit "$route_probe_status"
   fi
   rm -f "$route_probe_log"
+
+  echo "running portal playwright e2e (timeout: ${PORTAL_PLAYWRIGHT_TIMEOUT_SECONDS}s)"
+  if detect_local_playwright; then
+    set +e
+    NODE_PATH="$LOCAL_PLAYWRIGHT_NODE_PATH" \
+      CHUMMER_PORTAL_BASE_URL="$PORTAL_BASE_URL" \
+      timeout "${PORTAL_PLAYWRIGHT_TIMEOUT_SECONDS}"s node "$PORTAL_PLAYWRIGHT_SCRIPT"
+    portal_playwright_status=$?
+    set -e
+    if [[ "$portal_playwright_status" -ne 0 ]]; then
+      echo "portal playwright e2e failed or timed out after ${PORTAL_PLAYWRIGHT_TIMEOUT_SECONDS}s" >&2
+      exit "$portal_playwright_status"
+    fi
+  else
+    portal_playwright_log="$(mktemp)"
+    set +e
+    timeout "${PORTAL_PLAYWRIGHT_TIMEOUT_SECONDS}"s \
+      docker compose -f "$PORTAL_PLAYWRIGHT_COMPOSE_FILE" --profile test run --build --rm -T \
+      -e CHUMMER_PORTAL_BASE_URL="$PORTAL_BASE_URL" \
+      chummer-playwright node /work/scripts/e2e-portal-playwright.cjs \
+      2>&1 | tee "$portal_playwright_log"
+    portal_playwright_status=${PIPESTATUS[0]}
+    set -e
+    if [[ "$portal_playwright_status" -ne 0 ]]; then
+      if [[ "$PLAYWRIGHT_SOFT_FAIL" == "1" ]] && is_docker_permission_error_text "$portal_playwright_log"; then
+        echo "skipping portal playwright e2e: docker daemon permission denied in this environment."
+        rm -f "$portal_playwright_log"
+        exit 0
+      fi
+
+      rm -f "$portal_playwright_log"
+      echo "portal playwright e2e failed or timed out after ${PORTAL_PLAYWRIGHT_TIMEOUT_SECONDS}s" >&2
+      exit "$portal_playwright_status"
+    fi
+    rm -f "$portal_playwright_log"
+  fi
 else
   echo "portal route probe skipped; emitting failed non-release local proof"
 fi
 
 mkdir -p "$(dirname "$PORTAL_LOCAL_PROOF_PATH")"
-python3 - "$PORTAL_LOCAL_PROOF_PATH" "$PORTAL_BASE_URL" "$PORTAL_PLAYWRIGHT_TIMEOUT_SECONDS" "$RUN_PORTAL_PLAYWRIGHT" "$PORTAL_EDGE_COMPOSE_FILE" "$PORTAL_SKIP_EDGE_REBUILD" "$NEXT90_M113_RECEIPT_PATH" "$PORTAL_RUNTIME_REQUIRED" <<'PY'
+mkdir -p "$(dirname "$PORTAL_SELF_HOST_WORKBENCH_PROOF_PATH")"
+python3 - "$PORTAL_LOCAL_PROOF_PATH" "$PORTAL_SELF_HOST_WORKBENCH_PROOF_PATH" "$PORTAL_BASE_URL" "$PORTAL_PLAYWRIGHT_TIMEOUT_SECONDS" "$RUN_PORTAL_PLAYWRIGHT" "$PORTAL_EDGE_COMPOSE_FILE" "$PORTAL_SKIP_EDGE_REBUILD" "$NEXT90_M113_RECEIPT_PATH" "$PORTAL_RUNTIME_REQUIRED" <<'PY'
 import datetime as dt
 import json
 import sys
 from pathlib import Path
 
-out_path, base_url, timeout_seconds, run_portal_playwright, compose_file, skip_edge_rebuild, next90_m113_receipt_path, runtime_required = sys.argv[1:]
+local_out_path, self_host_out_path, base_url, timeout_seconds, run_portal_playwright, compose_file, skip_edge_rebuild, next90_m113_receipt_path, runtime_required = sys.argv[1:]
 route_probe_executed = run_portal_playwright == "1"
 receipt_path = Path(next90_m113_receipt_path)
 receipt_status = "missing"
@@ -141,7 +216,7 @@ if receipt_path.is_file():
         receipt_status = str(receipt_payload.get("status") or "").strip().lower() or "missing"
         receipt_package_id = str(receipt_payload.get("packageId") or "").strip()
 
-payload = {
+local_payload = {
     "contract_name": "chummer6-ui.local_release_proof",
     "generated_at": dt.datetime.now(dt.timezone.utc).replace(microsecond=0).isoformat().replace("+00:00", "Z"),
     "status": "passed" if route_probe_executed else "failed",
@@ -186,8 +261,87 @@ payload = {
         "next90-m113-ui-gm-prep-roster-surface anchors the desktop workspace proof shelf for GM prep and roster movement.",
     ],
 }
-with open(out_path, "w", encoding="utf-8") as handle:
-    json.dump(payload, handle, indent=2)
+
+self_host_payload = {
+    "contract_name": "chummer6-ui.blazor_self_host_workbench_proof",
+    "generated_at": local_payload["generated_at"],
+    "status": "passed" if route_probe_executed else "failed",
+    "base_url": base_url,
+    "compose_file": compose_file,
+    "playwright_timeout_seconds": int(timeout_seconds),
+    "edge_rebuild_skipped": skip_edge_rebuild.lower() in {"1", "true"},
+    "runtime_required": runtime_required.lower() in {"1", "true"},
+    "route_probe_executed": route_probe_executed,
+    "portal_route_probe_script": "scripts/e2e-portal.cjs",
+    "portal_playwright_script": "scripts/e2e-portal-playwright.cjs",
+    "operator_runbook": "docs/BLAZOR_SELF_HOST_RUNBOOK.md",
+    "operator_env_example": "docs/examples/self-hosted-browser-workbench.env.example",
+    "route_proof_markers": [
+        "portal_home_owner_context",
+        "portal_downloads_manifest",
+        "portal_blazor_health",
+        "portal_preview_path_base",
+        "portal_blazor_root_redirect",
+        "portal_workbench_route",
+        "portal_preview_command_deep_links",
+        "portal_preview_seeded_result_states",
+    ],
+    "proof_routes": [
+        "/",
+        "/blazor/",
+        "/blazor/workbench",
+        "/blazor/workbench?workspace=ws-1",
+        "/blazor/preview",
+        "/blazor/preview?fixture=blue&command=save_character_as",
+        "/blazor/preview?fixture=blue&command=save_character",
+        "/blazor/preview?fixture=blue&command=print_character",
+        "/blazor/preview?fixture=blue&command=export_character&dialog_action=download",
+        "/blazor/preview?command=open_character",
+        "/blazor/preview?command=open_for_printing",
+        "/blazor/preview?command=open_for_export",
+        "/blazor/preview?command=new_character",
+        "/blazor/preview?command=new_character_origin",
+        "/downloads/",
+        "/downloads/releases.json",
+    ],
+    "workflow_proofs": [
+        "startup_workbench",
+        "blazor_root_redirect",
+        "workbench_route",
+        "workspace_resume_route",
+        "recent_work_resume_card",
+        "restored_continuation_lanes",
+        "restored_result_continuations",
+        "restored_build_lab_continuation",
+        "restored_contact_action_continuation",
+        "restored_advanced_action_continuation",
+        "restored_committed_action_continuations",
+        "mobile_workbench",
+        "open_character_deep_link",
+        "open_for_printing_deep_link",
+        "open_for_export_deep_link",
+        "new_character_deep_link",
+        "origin_dossier_deep_link",
+        "seeded_save_as_result",
+        "seeded_save_result",
+        "seeded_print_result",
+        "seeded_export_result",
+        "seeded_build_lab",
+        "advanced_complex_forms",
+        "downloads_manifest",
+    ],
+    "notes": [
+        "Self-hosted browser proof is separate from public chummer.run promotion proof.",
+        "Portal-backed browser workbench proof must cover reload-safe /blazor routing, startup deep links, state-backed recent-work resume links, restored-session continuation lanes, restored-session result continuations, restored-session build-lab continuation, multiple restored-session action continuations, and multiple restored actions that commit visible state changes.",
+    ],
+}
+
+with open(local_out_path, "w", encoding="utf-8") as handle:
+    json.dump(local_payload, handle, indent=2)
+    handle.write("\n")
+
+with open(self_host_out_path, "w", encoding="utf-8") as handle:
+    json.dump(self_host_payload, handle, indent=2)
     handle.write("\n")
 PY
 

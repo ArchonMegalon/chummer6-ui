@@ -1,0 +1,204 @@
+#!/usr/bin/env python3
+from __future__ import annotations
+
+import json
+from pathlib import Path
+
+
+REPO_ROOT = Path("/docker/chummercomplete/chummer-presentation")
+RECEIPT_PATH = REPO_ROOT / ".codex-studio" / "published" / "BLAZOR_PUBLIC_EDGE_WORKBENCH_PROOF.generated.json"
+EXPECTED_CONTRACT = "chummer6-ui.blazor_public_edge_workbench_proof"
+ALLOWED_STATUSES = {"not_run", "pass", "passed", "ready"}
+REQUIRED_ROUTE_PROOF_MARKERS = {
+    "public_blazor_root_redirect",
+    "public_blazor_health",
+    "public_workbench_route",
+    "public_workspace_restore_route",
+    "public_startup_deep_link_route",
+    "public_result_continuation_routes",
+    "public_action_continuation_routes",
+    "public_committed_action_route",
+}
+EXPANDED_ROUTE_PROOF_MARKERS = {
+    "public_startup_workbench_command_routes",
+    "public_advanced_action_routes",
+    "public_advanced_committed_action_routes",
+}
+REQUIRED_WORKFLOW_PROOFS = {
+    "blazor_root_redirect",
+    "workbench_route",
+    "workspace_resume_route_shape",
+    "new_character_deep_link_route_shape",
+    "result_continuation_route_shapes",
+    "action_continuation_route_shapes",
+    "committed_action_route_shape",
+}
+EXPANDED_WORKFLOW_PROOFS = {
+    "startup_command_route_shapes",
+    "advanced_action_route_shapes",
+    "advanced_committed_action_route_shapes",
+}
+REQUIRED_PROOF_ROUTES = {
+    "/blazor/",
+    "/blazor/health",
+    "/blazor/workbench",
+    "/blazor/workbench?workspace=ws-1",
+    "/blazor/preview?command=new_character",
+    "/blazor/workbench?workspace=ws-1&command=save_character_as",
+    "/blazor/workbench?workspace=ws-1&command=export_character&dialog_action=download",
+    "/blazor/workbench?workspace=ws-1&command=print_character",
+    "/blazor/workbench?workspace=ws-1&tab=tab-contacts&control=contact_add",
+    "/blazor/workbench?workspace=ws-1&tab=tab-contacts&control=contact_add&dialog_action=add",
+}
+EXPANDED_PROOF_ROUTES = {
+    "/blazor/workbench?command=new_character",
+    "/blazor/workbench?command=open_character",
+    "/blazor/workbench?command=open_for_printing",
+    "/blazor/workbench?command=open_for_export",
+    "/blazor/workbench?workspace=ws-1&tab=tab-technomancer&control=complex_form_add",
+    "/blazor/workbench?workspace=ws-1&tab=tab-technomancer&control=complex_form_add&dialog_action=add",
+}
+ALLOWED_PROOF_SHAPES = {"core", "expanded"}
+
+
+def load_json(path: Path) -> dict:
+    return json.loads(path.read_text(encoding="utf-8-sig"))
+
+
+def main() -> int:
+    reasons: list[str] = []
+
+    if not RECEIPT_PATH.is_file():
+        print(f"missing receipt: {RECEIPT_PATH}")
+        return 1
+
+    payload = load_json(RECEIPT_PATH)
+    contract = str(payload.get("contract_name") or "").strip()
+    status = str(payload.get("status") or "").strip().lower()
+    base_url = str(payload.get("base_url") or "").strip()
+    proof_shape = str(payload.get("proof_shape") or "").strip().lower()
+
+    if contract != EXPECTED_CONTRACT:
+        reasons.append(
+            f"contract mismatch: expected {EXPECTED_CONTRACT!r}, got {contract!r}"
+        )
+    if status not in ALLOWED_STATUSES:
+        reasons.append(
+            f"status must be one of {sorted(ALLOWED_STATUSES)!r}, got {status!r}"
+        )
+    if not base_url:
+        reasons.append("base_url is missing")
+    if proof_shape and proof_shape not in ALLOWED_PROOF_SHAPES:
+        reasons.append(
+            f"proof_shape must be one of {sorted(ALLOWED_PROOF_SHAPES)!r} when present, got {proof_shape!r}"
+        )
+
+    if status in {"pass", "passed", "ready"}:
+        runtime_required = payload.get("runtime_required")
+        route_probe_executed = payload.get("route_probe_executed")
+        route_proof_markers = payload.get("route_proof_markers")
+        workflow_proofs = payload.get("workflow_proofs")
+        proof_routes = payload.get("proof_routes")
+        route_probes = payload.get("route_probes")
+        route_probe_failures = payload.get("route_probe_failures")
+        route_probe_count = payload.get("route_probe_count")
+
+        if runtime_required is not True:
+            reasons.append("passing hosted route-entry receipt must set runtime_required=true")
+        if route_probe_executed is not True:
+            reasons.append("passing hosted route-entry receipt must set route_probe_executed=true")
+
+        if not isinstance(route_proof_markers, list) or not route_proof_markers:
+            reasons.append("passing hosted route-entry receipt must include route_proof_markers")
+            route_marker_ids: set[str] = set()
+        else:
+            route_marker_ids = {str(item).strip() for item in route_proof_markers if str(item).strip()}
+            missing_markers = sorted(REQUIRED_ROUTE_PROOF_MARKERS - route_marker_ids)
+            if missing_markers:
+                reasons.append(
+                    "passing hosted route-entry receipt is missing required route proof markers: "
+                    + ", ".join(missing_markers)
+                )
+            expanded_route_markers_present = bool(EXPANDED_ROUTE_PROOF_MARKERS & route_marker_ids)
+            missing_expanded_route_markers = sorted(EXPANDED_ROUTE_PROOF_MARKERS - route_marker_ids)
+            if expanded_route_markers_present and missing_expanded_route_markers:
+                reasons.append(
+                    "passing hosted route-entry receipt partially declares expanded route proof markers but is missing: "
+                    + ", ".join(missing_expanded_route_markers)
+                )
+
+        if not isinstance(workflow_proofs, list) or not workflow_proofs:
+            reasons.append("passing hosted route-entry receipt must include workflow_proofs")
+            workflow_proof_ids: set[str] = set()
+        else:
+            workflow_proof_ids = {str(item).strip() for item in workflow_proofs if str(item).strip()}
+            missing_workflows = sorted(REQUIRED_WORKFLOW_PROOFS - workflow_proof_ids)
+            if missing_workflows:
+                reasons.append(
+                    "passing hosted route-entry receipt is missing required workflow proofs: "
+                    + ", ".join(missing_workflows)
+                )
+            expanded_workflows_present = bool(EXPANDED_WORKFLOW_PROOFS & workflow_proof_ids)
+            missing_expanded_workflows = sorted(EXPANDED_WORKFLOW_PROOFS - workflow_proof_ids)
+            if expanded_workflows_present and missing_expanded_workflows:
+                reasons.append(
+                    "passing hosted route-entry receipt partially declares expanded workflow proofs but is missing: "
+                    + ", ".join(missing_expanded_workflows)
+                )
+
+        if not isinstance(proof_routes, list) or not proof_routes:
+            reasons.append("passing hosted route-entry receipt must include proof_routes")
+            proof_route_ids: set[str] = set()
+        else:
+            proof_route_ids = {str(item).strip() for item in proof_routes if str(item).strip()}
+            missing_routes = sorted(REQUIRED_PROOF_ROUTES - proof_route_ids)
+            if missing_routes:
+                reasons.append(
+                    "passing hosted route-entry receipt is missing required proof routes: "
+                    + ", ".join(missing_routes)
+                )
+            expanded_routes_present = bool(EXPANDED_PROOF_ROUTES & proof_route_ids)
+            missing_expanded_routes = sorted(EXPANDED_PROOF_ROUTES - proof_route_ids)
+            if expanded_routes_present and missing_expanded_routes:
+                reasons.append(
+                    "passing hosted route-entry receipt partially declares expanded proof routes but is missing: "
+                    + ", ".join(missing_expanded_routes)
+                )
+
+        if not isinstance(route_probes, list) or not route_probes:
+            reasons.append("passing hosted route-entry receipt must include route_probes")
+        if route_probe_failures not in ([], None):
+            reasons.append("passing hosted route-entry receipt must not contain route_probe_failures")
+        if isinstance(route_probe_count, int) and isinstance(proof_routes, list):
+            if route_probe_count != len(proof_routes):
+                reasons.append(
+                    "route_probe_count mismatch: "
+                    f"expected {len(proof_routes)}, got {route_probe_count}"
+                )
+        else:
+            reasons.append("passing hosted route-entry receipt must include integer route_probe_count")
+
+        expanded_declared = (
+            EXPANDED_ROUTE_PROOF_MARKERS.issubset(route_marker_ids)
+            or EXPANDED_WORKFLOW_PROOFS.issubset(workflow_proof_ids)
+            or EXPANDED_PROOF_ROUTES.issubset(proof_route_ids)
+        )
+        if proof_shape == "core" and expanded_declared:
+            reasons.append(
+                "proof_shape='core' is inconsistent with expanded hosted route-entry markers, workflows, or routes"
+            )
+        if proof_shape == "expanded" and not expanded_declared:
+            reasons.append(
+                "proof_shape='expanded' requires the full expanded hosted route-entry marker/workflow/route set"
+            )
+
+    if reasons:
+        print("\n".join(reasons))
+        return 1
+
+    print(f"blazor_public_edge_workbench_proof:ok {RECEIPT_PATH}")
+    return 0
+
+
+if __name__ == "__main__":
+    raise SystemExit(main())

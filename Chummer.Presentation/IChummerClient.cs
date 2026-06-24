@@ -6,6 +6,7 @@ using Chummer.Contracts.Presentation;
 using Chummer.Contracts.Workspaces;
 using Chummer.Presentation.Overview;
 using System.Text.Json.Nodes;
+using Chummer.Run.Contracts.Billing;
 
 namespace Chummer.Presentation;
 
@@ -24,6 +25,10 @@ public interface IChummerClient
     Task<IReadOnlyList<WorkspaceListItem>> ListWorkspacesAsync(CancellationToken ct);
 
     Task<AccountCampaignSummary?> GetAccountCampaignSummaryAsync(CancellationToken ct);
+
+    Task<MyFirstBookQuotaSnapshotDto?> GetMyFirstBookQuotaAsync(CancellationToken ct);
+
+    Task<MyFirstBookQuotaConsumeResultDto> ConsumeMyFirstBookQuotaAsync(CancellationToken ct);
 
     Task<IReadOnlyList<CampaignWorkspaceDigestProjection>> GetCampaignWorkspaceDigestsAsync(CancellationToken ct);
 

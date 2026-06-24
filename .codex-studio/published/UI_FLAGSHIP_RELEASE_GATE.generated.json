@@ -1,14 +1,12 @@
 {
-  "generatedAt": "2026-06-21T07:19:29.710336Z",
+  "generatedAt": "2026-06-24T18:00:41.775437Z",
   "contract_name": "chummer6-ui.flagship_ui_release_gate",
   "channelId": "public_stable",
   "channel": "public_stable",
-  "releaseVersion": "run-20260621-054902",
-  "version": "run-20260621-054902",
-  "status": "fail",
-  "blockingFindings": [
-    "Top-level release gate cannot pass while desktop executable exit gate is not passed."
-  ],
+  "releaseVersion": "run-20260623-102621",
+  "version": "run-20260623-102621",
+  "status": "pass",
+  "blockingFindings": [],
   "releaseGate": "b14-flagship-ui-release-gate",
   "desktopHead": "avalonia",
   "desktopHeads": [
@@ -245,6 +243,8 @@
       "/docker/chummercomplete/chummer-presentation/.codex-studio/published/CLASSIC_DENSE_WORKBENCH_POSTURE_GATE.generated.json",
       "/docker/chummercomplete/chummer6-ui/.codex-studio/published/UI_FLAGSHIP_RELEASE_GATE.generated.json",
       "/docker/chummercomplete/chummer-presentation/.codex-studio/published/UI_LOCAL_RELEASE_PROOF.generated.json",
+      "/docker/chummercomplete/chummer-presentation/.codex-studio/published/BLAZOR_SELF_HOST_WORKBENCH_PROOF.generated.json",
+      "/docker/chummercomplete/chummer-presentation/.codex-studio/published/BLAZOR_PUBLIC_EDGE_WORKBENCH_PROOF.generated.json",
       "/docker/chummercomplete/chummer-presentation/.codex-studio/published/VETERAN_TASK_TIME_EVIDENCE_GATE.generated.json"
     ],
     "requiredDenseBuilderRouteLocalEvidenceSuffixes": [
@@ -256,19 +256,35 @@
       "CLASSIC_DENSE_WORKBENCH_POSTURE_GATE.generated.json",
       "UI_FLAGSHIP_RELEASE_GATE.generated.json",
       "UI_LOCAL_RELEASE_PROOF.generated.json",
+      "BLAZOR_SELF_HOST_WORKBENCH_PROOF.generated.json",
+      "BLAZOR_PUBLIC_EDGE_WORKBENCH_PROOF.generated.json",
       "VETERAN_TASK_TIME_EVIDENCE_GATE.generated.json"
     ],
-    "missingDenseBuilderRouteLocalEvidenceSuffixes": []
+    "missingDenseBuilderRouteLocalEvidenceSuffixes": [],
+    "publicEdgeWorkbenchReceiptPath": "/docker/chummercomplete/chummer-presentation/.codex-studio/published/BLAZOR_PUBLIC_EDGE_WORKBENCH_PROOF.generated.json",
+    "publicEdgeWorkbenchReceiptChecks": {
+      "status_pass": true,
+      "contract_matches": true,
+      "proof_shape_known": true,
+      "new_character_deep_link_present": true,
+      "workbench_route_present": true,
+      "route_markers_present": true,
+      "workflow_markers_present": true,
+      "extended_route_markers_present": true,
+      "extended_workflow_markers_present": true
+    }
   },
   "desktopExecutableProof": {
     "status": "fail",
-    "effectiveStatus": "fail",
-    "routeLocalOnly": false,
+    "effectiveStatus": "pass",
+    "routeLocalOnly": true,
     "desktopExecutableExitGateReceiptPath": "/docker/chummercomplete/chummer-presentation/.codex-studio/published/DESKTOP_EXECUTABLE_EXIT_GATE.generated.json",
     "localBlockingFindings": [
+      "flagship UI release gate proof is stale (295894s old).",
       "Windows gate reason: Windows installer visual proof is missing; capture progress and completion screenshots on a Windows host."
     ],
     "reasons": [
+      "flagship UI release gate proof is stale (295894s old).",
       "Windows desktop exit gate requires a Windows-capable host; current host cannot run promoted Windows installer smoke.",
       "Windows gate reason: Windows installer visual proof is missing; capture progress and completion screenshots on a Windows host."
     ]
@@ -286,11 +302,12 @@
       "mobile_play_shell": "ready",
       "ui_kit_and_flagship_polish": "ready",
       "media_artifacts": "ready",
-      "horizons_and_public_surface": "ready",
+      "horizons_and_public_surface": "warning",
       "fleet_and_operator_loop": "ready"
     },
     "openCoverageKeys": [
-      "desktop_client"
+      "desktop_client",
+      "horizons_and_public_surface"
     ]
   },
   "localizationReleaseProof": {
@@ -326,87 +343,87 @@
       {
         "name": "01-initial-shell-light.png",
         "path": "/docker/chummercomplete/chummer6-ui/.codex-studio/published/ui-flagship-release-gate-screenshots/01-initial-shell-light.png",
-        "sizeBytes": 50994
+        "sizeBytes": 51057
       },
       {
         "name": "02-menu-open-light.png",
         "path": "/docker/chummercomplete/chummer6-ui/.codex-studio/published/ui-flagship-release-gate-screenshots/02-menu-open-light.png",
-        "sizeBytes": 53511
+        "sizeBytes": 53574
       },
       {
         "name": "03-settings-open-light.png",
         "path": "/docker/chummercomplete/chummer6-ui/.codex-studio/published/ui-flagship-release-gate-screenshots/03-settings-open-light.png",
-        "sizeBytes": 83946
+        "sizeBytes": 85487
       },
       {
         "name": "04-loaded-runner-light.png",
         "path": "/docker/chummercomplete/chummer6-ui/.codex-studio/published/ui-flagship-release-gate-screenshots/04-loaded-runner-light.png",
-        "sizeBytes": 122804
+        "sizeBytes": 122865
       },
       {
         "name": "05-dense-section-light.png",
         "path": "/docker/chummercomplete/chummer6-ui/.codex-studio/published/ui-flagship-release-gate-screenshots/05-dense-section-light.png",
-        "sizeBytes": 96287
+        "sizeBytes": 96320
       },
       {
         "name": "06-dense-section-dark.png",
         "path": "/docker/chummercomplete/chummer6-ui/.codex-studio/published/ui-flagship-release-gate-screenshots/06-dense-section-dark.png",
-        "sizeBytes": 89643
+        "sizeBytes": 89694
       },
       {
         "name": "07-loaded-runner-tabs-light.png",
         "path": "/docker/chummercomplete/chummer6-ui/.codex-studio/published/ui-flagship-release-gate-screenshots/07-loaded-runner-tabs-light.png",
-        "sizeBytes": 93218
+        "sizeBytes": 93216
       },
       {
         "name": "08-cyberware-dialog-light.png",
         "path": "/docker/chummercomplete/chummer6-ui/.codex-studio/published/ui-flagship-release-gate-screenshots/08-cyberware-dialog-light.png",
-        "sizeBytes": 94726
+        "sizeBytes": 90746
       },
       {
         "name": "09-vehicles-section-light.png",
         "path": "/docker/chummercomplete/chummer6-ui/.codex-studio/published/ui-flagship-release-gate-screenshots/09-vehicles-section-light.png",
-        "sizeBytes": 94956
+        "sizeBytes": 94936
       },
       {
         "name": "10-contacts-section-light.png",
         "path": "/docker/chummercomplete/chummer6-ui/.codex-studio/published/ui-flagship-release-gate-screenshots/10-contacts-section-light.png",
-        "sizeBytes": 94910
+        "sizeBytes": 94892
       },
       {
         "name": "11-diary-dialog-light.png",
         "path": "/docker/chummercomplete/chummer6-ui/.codex-studio/published/ui-flagship-release-gate-screenshots/11-diary-dialog-light.png",
-        "sizeBytes": 31238
+        "sizeBytes": 31107
       },
       {
         "name": "12-magic-dialog-light.png",
         "path": "/docker/chummercomplete/chummer6-ui/.codex-studio/published/ui-flagship-release-gate-screenshots/12-magic-dialog-light.png",
-        "sizeBytes": 60577
+        "sizeBytes": 60538
       },
       {
         "name": "13-matrix-dialog-light.png",
         "path": "/docker/chummercomplete/chummer6-ui/.codex-studio/published/ui-flagship-release-gate-screenshots/13-matrix-dialog-light.png",
-        "sizeBytes": 61346
+        "sizeBytes": 61293
       },
       {
         "name": "14-advancement-dialog-light.png",
         "path": "/docker/chummercomplete/chummer6-ui/.codex-studio/published/ui-flagship-release-gate-screenshots/14-advancement-dialog-light.png",
-        "sizeBytes": 50478
+        "sizeBytes": 50460
       },
       {
         "name": "15-creation-section-light.png",
         "path": "/docker/chummercomplete/chummer6-ui/.codex-studio/published/ui-flagship-release-gate-screenshots/15-creation-section-light.png",
-        "sizeBytes": 100137
+        "sizeBytes": 100228
       },
       {
         "name": "16-master-index-dialog-light.png",
         "path": "/docker/chummercomplete/chummer6-ui/.codex-studio/published/ui-flagship-release-gate-screenshots/16-master-index-dialog-light.png",
-        "sizeBytes": 23912
+        "sizeBytes": 23867
       },
       {
         "name": "17-character-roster-dialog-light.png",
         "path": "/docker/chummercomplete/chummer6-ui/.codex-studio/published/ui-flagship-release-gate-screenshots/17-character-roster-dialog-light.png",
-        "sizeBytes": 34043
+        "sizeBytes": 34164
       }
     ],
     "workflowScreenshotCoverageStatus": "pass",

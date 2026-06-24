@@ -11,6 +11,8 @@ using System.Threading.Tasks;
 using Chummer.Contracts.Workspaces;
 using Chummer.Presentation;
 using Chummer.Presentation.Overview;
+using Chummer.Run.Contracts.Billing;
+using Chummer.Run.Contracts.Community;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 
 namespace Chummer.Tests.Presentation;
@@ -656,6 +658,177 @@ public sealed class HttpChummerClientBuildPathTests
             preview.SupportedExchangeFormats.ToArray());
         CollectionAssert.Contains(preview.Highlights.ToArray(), "Package format chummer.portable-campaign.v1 stays on interop_export_v1/1.0.0.");
         CollectionAssert.Contains(preview.Watchouts.ToArray(), "No live session binding was requested, so replace should wait for a session-scoped export even though inspect-only and merge remain safe.");
+    }
+
+    [TestMethod]
+    public async Task GetMyFirstBookQuotaAsync_reads_signed_in_quota_projection()
+    {
+        StrictHttpMessageHandler handler = new((request, _) =>
+        {
+            if (request.Method == HttpMethod.Get
+                && request.RequestUri?.PathAndQuery == "/api/billing/myfirstbook-quota/me")
+            {
+                return JsonResponse("""
+{
+  "userId": "user-a",
+  "planKey": "supporter",
+  "planName": "Supporter",
+  "supporterActive": true,
+  "monthlyLimit": 2,
+  "monthlyUsed": 1,
+  "monthlyRemaining": 1,
+  "windowStartUtc": "2026-06-01T00:00:00Z",
+  "windowEndUtc": "2026-07-01T00:00:00Z"
+}
+""");
+            }
+
+            throw new InvalidOperationException($"Unexpected request: {request.Method} {request.RequestUri}");
+        });
+
+        using HttpClient httpClient = new(handler)
+        {
+            BaseAddress = new Uri("http://localhost")
+        };
+        HttpChummerClient client = new(httpClient);
+
+        MyFirstBookQuotaSnapshotDto? quota = await client.GetMyFirstBookQuotaAsync(CancellationToken.None);
+
+        Assert.IsNotNull(quota);
+        Assert.AreEqual("user-a", quota.UserId);
+        Assert.AreEqual(2, quota.MonthlyLimit);
+        Assert.AreEqual(1, quota.MonthlyRemaining);
+    }
+
+    [TestMethod]
+    public async Task ConsumeMyFirstBookQuotaAsync_surfaces_limit_message_from_problem_details()
+    {
+        StrictHttpMessageHandler handler = new((request, _) =>
+        {
+            if (request.Method == HttpMethod.Post
+                && request.RequestUri?.PathAndQuery == "/api/billing/myfirstbook-quota/me/consume")
+            {
+                return new HttpResponseMessage((HttpStatusCode)429)
+                {
+                    Content = new StringContent("""
+{
+  "title": "Quota exhausted",
+  "detail": "Monthly MyFirstBook allowance is exhausted for this account."
+}
+""", Encoding.UTF8, "application/json")
+                };
+            }
+
+            throw new InvalidOperationException($"Unexpected request: {request.Method} {request.RequestUri}");
+        });
+
+        using HttpClient httpClient = new(handler)
+        {
+            BaseAddress = new Uri("http://localhost")
+        };
+        HttpChummerClient client = new(httpClient);
+
+        InvalidOperationException ex;
+        try
+        {
+            await client.ConsumeMyFirstBookQuotaAsync(CancellationToken.None);
+            Assert.Fail("Expected ConsumeMyFirstBookQuotaAsync to throw InvalidOperationException.");
+            return;
+        }
+        catch (InvalidOperationException thrown)
+        {
+            ex = thrown;
+        }
+
+        StringAssert.Contains(ex.Message, "Monthly MyFirstBook allowance is exhausted");
+    }
+
+    [TestMethod]
+    public async Task ImportOriginDossierPublicationAsync_posts_verified_artifact_receipt_to_account_api()
+    {
+        StrictHttpMessageHandler handler = new((request, _) =>
+        {
+            if (request.Method == HttpMethod.Post
+                && request.RequestUri?.PathAndQuery == "/api/v1/accounts/me/origin-dossiers/publications")
+            {
+                string body = request.Content?.ReadAsStringAsync().GetAwaiter().GetResult() ?? string.Empty;
+                StringAssert.Contains(body, "\"projectId\":\"origin-imported\"");
+                StringAssert.Contains(body, "\"bookArtifactVerified\":true");
+                StringAssert.Contains(body, "\"dossierVideoVerified\":true");
+                StringAssert.Contains(body, "\"telegramShareDelivered\":true");
+                return JsonResponse("""
+{
+  "projectId": "origin-imported",
+  "title": "Imported Rain",
+  "runnerAlias": "Vanta",
+  "publicationState": "published_for_owner",
+  "chummerRunOwnerUrl": "https://chummer.run/account/work/origin-dossiers/origin-imported",
+  "bookArtifactUrl": "https://chummer.run/account/work/origin-dossiers/origin-imported/book",
+  "audiobookshelfShareUrl": "https://chummer.run/account/work/origin-dossiers/origin-imported/listen",
+  "dossierVideoUrl": "https://chummer.run/account/work/origin-dossiers/origin-imported/video",
+  "storySceneCoverUrl": "https://chummer.run/account/work/origin-dossiers/origin-imported/cover",
+  "providerAuthoredManuscriptImported": true,
+  "undetectableHumanizerApplied": true,
+  "bookArtifactVerified": true,
+  "dossierVideoVerified": true,
+  "storySceneCoverUsesSelectedCharacterFace": true,
+  "audiobookshelfPlaybackVerified": true,
+  "telegramShareDelivered": true,
+  "requiresAuthenticatedChummerRunUser": true,
+  "goldReady": true,
+  "missingGoldRequirements": []
+}
+""");
+            }
+
+            throw new InvalidOperationException($"Unexpected request: {request.Method} {request.RequestUri}");
+        });
+
+        using HttpClient httpClient = new(handler)
+        {
+            BaseAddress = new Uri("http://localhost")
+        };
+        HttpChummerClient client = new(httpClient);
+
+        OriginDossierPublicationImportResultDto result = await client.ImportOriginDossierPublicationAsync(
+            new OriginDossierPublicationImportRequest(
+                ProjectId: "origin-imported",
+                Title: "Imported Rain",
+                RunnerAlias: "Vanta",
+                PublicationState: "published_for_owner",
+                BookArtifactUrl: "https://chummer.run/account/work/origin-dossiers/origin-imported/book",
+                AudiobookshelfShareUrl: "https://audio.chummer.run/share/origin-imported",
+                DossierVideoUrl: "https://chummer.run/account/work/origin-dossiers/origin-imported/video",
+                StorySceneCoverUrl: "https://chummer.run/account/work/origin-dossiers/origin-imported/cover",
+                ProviderAuthoredManuscriptImported: true,
+                UndetectableHumanizerApplied: true,
+                BookArtifactVerified: true,
+                DossierVideoVerified: true,
+                StorySceneCoverUsesSelectedCharacterFace: true,
+                AudiobookshelfPlaybackVerified: true,
+                TelegramShareDelivered: true,
+                SourcePacketPath: "/vault/origin/origin-imported/approved-source-packet.json",
+                SourcePacketReceiptPath: "/vault/origin/origin-imported/approved-source-packet.receipt.json",
+                CanonAuditReceiptPath: "/vault/origin/origin-imported/chummer-canon-audit.receipt.json",
+                ProviderManuscriptPath: "/vault/origin/origin-imported/provider-manuscript.md",
+                ProviderManuscriptReceiptPath: "/vault/origin/origin-imported/provider-manuscript.receipt.json",
+                HumanizerReceiptPath: "/vault/origin/origin-imported/undetectable-humanizer.receipt.json",
+                BookArtifactPath: "/vault/origin/origin-imported/book.pdf",
+                BookArtifactReceiptPath: "/vault/origin/origin-imported/book.receipt.json",
+                StorySceneCoverPath: "/vault/origin/origin-imported/story-scene-cover.png",
+                StorySceneCoverReceiptPath: "/vault/origin/origin-imported/story-scene-cover.receipt.json",
+                AudiobookPath: "/vault/origin/origin-imported/audiobook.m4b",
+                AudiobookshelfImportReceiptPath: "/vault/origin/origin-imported/audiobookshelf-import.receipt.json",
+                DossierVideoPath: "/vault/origin/origin-imported/dossier-film.mp4",
+                DossierVideoReceiptPath: "/vault/origin/origin-imported/dossier-film.receipt.json",
+                TelegramShareDeliveryReceiptPath: "/vault/origin/origin-imported/telegram-share.receipt.json"),
+            CancellationToken.None);
+
+        Assert.IsTrue(result.GoldReady);
+        Assert.AreEqual("https://chummer.run/account/work/origin-dossiers/origin-imported", result.ChummerRunOwnerUrl);
+        Assert.AreEqual("https://chummer.run/account/work/origin-dossiers/origin-imported/listen", result.AudiobookshelfShareUrl);
+        Assert.AreEqual("https://chummer.run/account/work/origin-dossiers/origin-imported/cover", result.StorySceneCoverUrl);
+        Assert.IsTrue(result.TelegramShareDelivered);
     }
 
     private static HttpResponseMessage JsonResponse(string json)

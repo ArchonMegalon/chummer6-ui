@@ -213,7 +213,7 @@ internal sealed class DesktopSupportWindow : Window
 
         if (!string.IsNullOrWhiteSpace(_updateStatus.LastError))
         {
-            lines.Add($"Something still needs attention: {_updateStatus.LastError}");
+            lines.Add($"Still needs attention: {_updateStatus.LastError}");
         }
 
         return string.Join("\n", lines.Where(static line => !string.IsNullOrWhiteSpace(line)));

@@ -9,6 +9,7 @@ using Microsoft.AspNetCore.Hosting.StaticWebAssets;
 
 WebApplicationBuilder builder = WebApplication.CreateBuilder(args);
 StaticWebAssetsLoader.UseStaticWebAssets(builder.Environment, builder.Configuration);
+PathString pathBase = NormalizePathBase(builder.Configuration["CHUMMER_BLAZOR_PATH_BASE"]);
 
 builder.Services.AddRazorComponents()
     .AddInteractiveServerComponents();
@@ -34,6 +35,11 @@ builder.Services.AddScoped<IShellSurfaceResolver, ShellSurfaceResolver>();
 
 WebApplication app = builder.Build();
 
+if (pathBase.HasValue)
+{
+    app.UsePathBase(pathBase);
+}
+
 app.UseAntiforgery();
 
 app.MapGet("/health", () => Results.Ok(new
@@ -41,7 +47,9 @@ app.MapGet("/health", () => Results.Ok(new
     ok = true,
     service = "Chummer",
     status = "running",
-    head = "blazor"
+    head = "blazor",
+    pathBase = pathBase.Value,
+    analytics = BuildAnalyticsHealth(builder.Configuration)
 }));
 
 app.MapStaticAssets();
@@ -49,6 +57,27 @@ app.MapRazorComponents<App>()
     .AddInteractiveServerRenderMode();
 
 app.Run();
+
+static PathString NormalizePathBase(string? rawPathBase)
+{
+    if (string.IsNullOrWhiteSpace(rawPathBase))
+    {
+        return PathString.Empty;
+    }
+
+    string normalized = rawPathBase.Trim();
+    if (!normalized.StartsWith("/", StringComparison.Ordinal))
+    {
+        normalized = "/" + normalized;
+    }
+
+    if (normalized.Length > 1 && normalized.EndsWith("/", StringComparison.Ordinal))
+    {
+        normalized = normalized.TrimEnd('/');
+    }
+
+    return normalized == "/" ? PathString.Empty : new PathString(normalized);
+}
 
 static Uri ResolveEngineBaseAddress(IConfiguration configuration)
 {
@@ -65,3 +94,26 @@ static Uri ResolveEngineBaseAddress(IConfiguration configuration)
 
     return uri;
 }
+
+static AnalyticsHealth BuildAnalyticsHealth(IConfiguration configuration)
+{
+    string provider = (configuration["CHUMMER_ANALYTICS_PROVIDER"] ?? "none").Trim();
+    bool rybbitRequested = string.Equals(provider, "rybbit", StringComparison.OrdinalIgnoreCase);
+    bool siteIdConfigured = !string.IsNullOrWhiteSpace(configuration["CHUMMER_RYBBIT_SITE_ID"]);
+    bool scriptUrlConfigured = !string.IsNullOrWhiteSpace(configuration["CHUMMER_RYBBIT_SCRIPT_URL"]);
+    bool baseUrlConfigured = !string.IsNullOrWhiteSpace(configuration["CHUMMER_RYBBIT_BASE_URL"]);
+
+    return new AnalyticsHealth(
+        Provider: rybbitRequested ? "rybbit" : "none",
+        Enabled: rybbitRequested && siteIdConfigured,
+        SiteIdConfigured: siteIdConfigured,
+        ScriptUrlConfigured: scriptUrlConfigured,
+        BaseUrlConfigured: baseUrlConfigured);
+}
+
+sealed record AnalyticsHealth(
+    string Provider,
+    bool Enabled,
+    bool SiteIdConfigured,
+    bool ScriptUrlConfigured,
+    bool BaseUrlConfigured);

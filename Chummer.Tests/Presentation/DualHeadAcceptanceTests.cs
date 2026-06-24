@@ -840,8 +840,8 @@ public class DualHeadAcceptanceTests
         CollectionAssert.IsSubsetOf(
             new[] { "xmlEditorLanePosture", "xmlEditorOverlayCount", "xmlEditorCustomDataLanePosture", "xmlEditorCustomDataDirectoryCount", "xmlEditorReceipt", "xmlEditorDialog" },
             xmlEditorFields.Select(field => field.Id).ToArray());
-        Assert.AreEqual("governed", xmlEditorFields.Single(field => string.Equals(field.Id, "xmlEditorLanePosture", StringComparison.Ordinal)).Value);
-        Assert.AreEqual("governed", xmlEditorFields.Single(field => string.Equals(field.Id, "xmlEditorCustomDataLanePosture", StringComparison.Ordinal)).Value);
+        Assert.AreEqual("reviewed", xmlEditorFields.Single(field => string.Equals(field.Id, "xmlEditorLanePosture", StringComparison.Ordinal)).Value);
+        Assert.AreEqual("reviewed", xmlEditorFields.Single(field => string.Equals(field.Id, "xmlEditorCustomDataLanePosture", StringComparison.Ordinal)).Value);
     }
 
     [TestMethod]
@@ -863,7 +863,9 @@ public class DualHeadAcceptanceTests
         CollectionAssert.IsSubsetOf(
             new[] { "heroLabImportOracleLanePosture", "heroLabImportOracleCoverage", "heroLabFixtureCount", "heroLabImportOracleMatrix", "heroLabImportOracleReceipt", "heroLabAdjacentSr6OracleReceipt", "heroLabXml" },
             heroLabFields.Select(field => field.Id).ToArray());
-        Assert.AreEqual("governed", heroLabFields.Single(field => string.Equals(field.Id, "heroLabImportOracleLanePosture", StringComparison.Ordinal)).Value);
+        StringAssert.Contains(
+            heroLabFields.Single(field => string.Equals(field.Id, "heroLabImportOracleLanePosture", StringComparison.Ordinal)).Value,
+            "reviewed");
         StringAssert.Contains(
             heroLabFields.Single(field => string.Equals(field.Id, "heroLabImportOracleCoverage", StringComparison.Ordinal)).Value,
             "100%");

@@ -105,6 +105,7 @@ public sealed class CatalogOnlyRulesetShellCatalogResolverTests
         "paste",
         "dice_roller",
         "auto_alice",
+        "new_character_origin",
         "global_settings",
         "character_settings",
         "update",

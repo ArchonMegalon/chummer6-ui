@@ -4,6 +4,9 @@ namespace Chummer.Presentation;
 
 public static class UndetectableHumanizerCopyAdapter
 {
+    private const string GroundedDossierToken = "__CHUMMER_KEEP_GROUNDED_DOSSIER__";
+    private const string GroundedDossierPortraitToken = "__CHUMMER_KEEP_GROUNDED_DOSSIER_PORTRAIT__";
+
     private static readonly (string From, string To)[] PhraseReplacements =
     [
         ("Public Proof Shelf", "Public Files"),
@@ -127,11 +130,18 @@ public static class UndetectableHumanizerCopyAdapter
             return string.Empty;
         }
 
-        string cleaned = value.Trim();
+        string cleaned = value.Trim()
+            .Replace("Grounded dossier portrait", GroundedDossierPortraitToken, StringComparison.OrdinalIgnoreCase)
+            .Replace("Grounded dossier", GroundedDossierToken, StringComparison.OrdinalIgnoreCase);
+
         foreach ((string from, string to) in PhraseReplacements)
         {
             cleaned = ReplaceWholePhrase(cleaned, from, to);
         }
+
+        cleaned = cleaned
+            .Replace(GroundedDossierPortraitToken, "Grounded dossier portrait", StringComparison.Ordinal)
+            .Replace(GroundedDossierToken, "Grounded dossier", StringComparison.Ordinal);
 
         cleaned = Regex.Replace(cleaned, @"\bALICE\b", "Alice", RegexOptions.CultureInvariant);
         cleaned = Regex.Replace(cleaned, @"\bAI\b", "assistant", RegexOptions.IgnoreCase | RegexOptions.CultureInvariant);

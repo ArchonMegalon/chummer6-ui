@@ -36,8 +36,14 @@ fi
 release_channel_path="${CHUMMER_DESKTOP_WORKFLOW_RELEASE_CHANNEL_PATH:-$release_channel_path_default}"
 
 mkdir -p "$(dirname "$receipt_path")"
+workflow_gate_build_exit=0
 workflow_gate_exit=0
-dotnet test --project Chummer.Tests/Chummer.Tests.csproj --filter "FullyQualifiedName~WorkflowParityGateTests" --no-restore -v minimal >/dev/null || workflow_gate_exit=$?
+dotnet build Chummer.Tests/Chummer.Tests.csproj --no-restore -v minimal >/dev/null || workflow_gate_build_exit=$?
+if [[ "$workflow_gate_build_exit" -eq 0 ]]; then
+  dotnet test --project Chummer.Tests/Chummer.Tests.csproj --no-build --filter "FullyQualifiedName~WorkflowParityGateTests" -v minimal >/dev/null || workflow_gate_exit=$?
+else
+  workflow_gate_exit=$workflow_gate_build_exit
+fi
 
 python3 - <<'PY' "$receipt_path" "$ledger_path" "$oracle_path" "$checklist_path" "$dual_head_tests_path" "$compliance_tests_path" "$ui_gate_tests_path" "$workflow_gate_tests_path" "$workflow_gate_exit" "$release_channel_path"
 from __future__ import annotations

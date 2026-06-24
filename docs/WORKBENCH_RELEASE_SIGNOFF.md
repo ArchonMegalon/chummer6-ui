@@ -2,6 +2,14 @@
 
 Purpose: close `WL-202` and `WL-203` with explicit, verifier-backed evidence instead of leaving workbench completion implied by older milestone notes.
 
+Documentation map for the browser lane:
+
+- `docs/BLAZOR_WEB_CLIENT_DOCS_INDEX.md` is the top-level browser-client docs index
+- `docs/BLAZOR_WEB_CLIENT_PARITY_GOAL.md` is the primary design and parity contract
+- `docs/BLAZOR_PUBLIC_EDGE_WORKBENCH_PROOF.md` defines the hosted route-entry/workbench proof tier
+- `docs/BLAZOR_SELF_HOST_RUNBOOK.md` defines the Docker/self-host operator lane
+- `docs/BLAZOR_PUBLIC_EDGE_EXECUTION_PROOF.md` defines the stricter hosted execution-proof tier
+
 ## Workbench completion surface
 
 `chummer6-ui` is treated as release-complete for the current workbench/browser/desktop scope when the following verification lanes all stay green:
@@ -24,11 +32,40 @@ Purpose: close `WL-202` and `WL-203` with explicit, verifier-backed evidence ins
 
 Those checks are all part of the normal `scripts/ai/verify.sh` path, so release truth does not depend on ad hoc manual demos.
 
-For local docker-backed release proof, `scripts/e2e-portal.sh` is the canonical executable lane. It boots the downstream public-edge stack from `chummer6-hub` and materializes `.codex-studio/published/UI_LOCAL_RELEASE_PROOF.generated.json` with the probed base URL, route coverage, and whether the route probe actually ran.
+For local docker-backed release proof, `scripts/e2e-portal.sh` is the canonical executable lane. It boots the repository `portal` Docker profile (`chummer-api`, `chummer-blazor-portal`, `chummer-hub-web-portal`, `chummer-avalonia-browser`, and `chummer-portal`) and materializes `.codex-studio/published/UI_LOCAL_RELEASE_PROOF.generated.json` with the probed base URL, route coverage, and whether the route probe actually ran. The same lane also materializes `.codex-studio/published/BLAZOR_SELF_HOST_WORKBENCH_PROOF.generated.json` so the Docker self-hosted browser workbench proof stays distinct from the broader local release receipt.
+
+For hosted public-edge browser posture, `scripts/e2e-public-edge.cjs` and `scripts/materialize-external-host-proof-blockers.py` now also publish `.codex-studio/published/BLAZOR_PUBLIC_EDGE_WORKBENCH_PROOF.generated.json`. That hosted receipt proves route-entry posture for `/blazor/`, `/blazor/workbench`, workspace restore route shape, hosted startup-command route shape for `new_character_origin`, `character_roster`, and `master_index` alongside the other promoted startup routes, `/blazor/health`, resumed result-continuation route shapes, and resumed action/committed-action route shapes. The stricter hosted execution tier defined in `docs/BLAZOR_PUBLIC_EDGE_EXECUTION_PROOF.md` is now also published as a real passing receipt at `.codex-studio/published/BLAZOR_PUBLIC_EDGE_EXECUTION_PROOF.generated.json`, covering resumed workflow execution on `https://chummer.run/blazor/workbench` rather than only self-host Playwright posture.
+
+That hosted execution tier is no longer limited to startup-command evidence. The current verifier-backed contract now spans:
+
+- startup execution for `new_character`, `new_character_origin`, `character_roster`, `master_index`, `open_character`, `open_for_printing`, and `open_for_export`
+- dense startup-utility surfaces for `character_roster` and `master_index`
+- restored origin/rules continuity, including `new_character_origin` structure and restored `tab-rules`
+- restored build-lab continuity on `tab-create`
+- dense selection/edit/delete families across gear, qualities, magic, cyberware, and contacts
+- resumed result, action, committed-action, and advanced-action families on the promoted `/blazor/workbench` lane
+
+That hosted route-entry tier is now enforced explicitly by `scripts/verify_blazor_public_edge_workbench_proof.py` and `scripts/ai/milestones/blazor-public-edge-workbench-proof-check.sh`, while the stricter hosted execution tier is enforced by `scripts/verify_blazor_public_edge_execution_proof.py` and `scripts/ai/milestones/blazor-public-edge-execution-proof-check.sh`.
+
+The promoted browser product shape is now explicit: `/blazor/` is the stable public entry, `/blazor/workbench` is the product-shaped Chummer6 browser client, and `/blazor/preview` is supporting proof surface rather than the primary user promise. The acceptance bar for that lane is tracked in `docs/BLAZOR_WEB_CLIENT_PARITY_GOAL.md`, and the current self-host operator path is documented in `docs/BLAZOR_SELF_HOST_RUNBOOK.md`.
+
+`scripts/print_blazor_public_edge_proof_status.py` is the combined browser-lane proof summary. It reports Docker self-host proof, hosted route-entry proof, hosted execution proof, analytics posture, connected-runtime posture, aggregate proof-set status, and external-host blocker state from the current published receipts.
+
+`scripts/ai/milestones/blazor-browser-lane-proof-set-check.sh` materializes `.codex-studio/published/BLAZOR_BROWSER_LANE_PROOF_SET.generated.json` and must fail if any required browser-lane receipt is missing, has the wrong contract, or is not in its expected passing/ready state. This aggregate receipt is a release-readiness convenience for the browser lane; it still does not claim full desktop parity beyond the receipts it aggregates.
+
+Release truth for the browser lane therefore splits into three separate statements:
+
+- Docker self-host browser workbench proof exists and is published as `.codex-studio/published/BLAZOR_SELF_HOST_WORKBENCH_PROOF.generated.json`
+- hosted `chummer.run` route-entry posture exists and is published as `.codex-studio/published/BLAZOR_PUBLIC_EDGE_WORKBENCH_PROOF.generated.json`
+- hosted `chummer.run` workflow execution is a stricter proof tier, published separately as `.codex-studio/published/BLAZOR_PUBLIC_EDGE_EXECUTION_PROOF.generated.json`, and it now passes for the promoted `/blazor/workbench` browser workflow lane
+- hosted/self-host browser analytics posture is published separately as `.codex-studio/published/BLAZOR_ANALYTICS_POSTURE.generated.json`; it only proves optional Rybbit wiring and privacy boundaries, not workflow parity
+- optional connected-runtime portal forwarding posture is published separately as `.codex-studio/published/BLAZOR_CONNECTED_RUNTIME_POSTURE.generated.json`; it proves session/coach/AI routing boundary and signed owner forwarding, not full workflow parity
+
+Hosted execution proof passing removes the old "route posture only" limit for the promoted browser lane, but it still does not by itself prove full browser/Desktop parity breadth outside the workflow families covered by the hosted execution contract and the broader parity ledger.
 
 For the hard Linux desktop exit gate, `scripts/materialize-linux-desktop-exit-gate.sh` is the canonical executable lane. It must build the Linux Avalonia binary, package the primary `.deb` plus fallback archive, install and purge the primary `.deb` inside an isolated dpkg root while running startup smoke from the installed path, run startup smoke against the fallback archive, run the desktop runtime unit-test suite, and publish `.codex-studio/published/UI_LINUX_DESKTOP_EXIT_GATE.generated.json`.
 
-For the hard Windows desktop exit gate, `scripts/materialize-windows-desktop-exit-gate.sh` is the canonical executable lane. It must validate that the promoted Avalonia Windows installer is present on the active release shelf, require release-channel digest/size alignment for that installer, require current local release plus desktop workflow parity proofs, and publish `.codex-studio/published/UI_WINDOWS_DESKTOP_EXIT_GATE.generated.json`.
+For the hard Windows desktop exit gate, `scripts/materialize-windows-desktop-exit-gate.sh` is the canonical executable lane. It must validate that the promoted Avalonia Windows installer is present on the active release shelf, require release-channel digest/size alignment for that installer, require current local release plus desktop workflow parity proofs, require the aggregate Blazor browser-lane proof set, and publish `.codex-studio/published/UI_WINDOWS_DESKTOP_EXIT_GATE.generated.json`.
 
 ## Cross-head hardening proof
 
@@ -51,7 +88,9 @@ For the hard Windows desktop exit gate, `scripts/materialize-windows-desktop-exi
 
 Installer-capable artifacts and updater integration are owned here.
 Promoted release channels, installer/update-feed publication truth, and public `/downloads` state are owned downstream by `chummer6-hub-registry` and rendered by `chummer6-hub`.
-Repo-local docker release proof for the portal/workbench shell is owned here, executed against the downstream public edge, and published as `.codex-studio/published/UI_LOCAL_RELEASE_PROOF.generated.json`.
+Repo-local docker release proof for the portal/workbench shell is owned here, executed against the downstream public edge, and published as `.codex-studio/published/UI_LOCAL_RELEASE_PROOF.generated.json`. The browser self-host workbench lane is separately published as `.codex-studio/published/BLAZOR_SELF_HOST_WORKBENCH_PROOF.generated.json`, and the hosted `chummer.run` browser route-entry lane is published as `.codex-studio/published/BLAZOR_PUBLIC_EDGE_WORKBENCH_PROOF.generated.json`.
+
+Hosted `chummer.run` workflow execution proof is separately published as `.codex-studio/published/BLAZOR_PUBLIC_EDGE_EXECUTION_PROOF.generated.json` and must remain distinct from both the self-host workbench receipt and the hosted route-entry receipt.
 
 ## Exit statement
 

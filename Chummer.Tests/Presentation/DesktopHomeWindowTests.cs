@@ -224,6 +224,19 @@ public sealed class DesktopHomeWindowTests
         Assert.AreEqual("Karma Forge", karmaForge.Title);
     }
 
+    [TestMethod]
+    public void DesktopHome_source_keeps_install_and_update_copy_plain()
+    {
+        string repoRoot = TestContextLocator.ResolveChummerPresentationRepoRoot();
+        string source = File.ReadAllText(Path.Combine(repoRoot, "Chummer.Avalonia", "DesktopHomeWindow.cs"));
+
+        StringAssert.Contains(source, "Linking issue:");
+        StringAssert.Contains(source, "\"full\" => \"auto-update\"");
+
+        Assert.IsFalse(source.Contains("Linking still needs attention:", StringComparison.Ordinal));
+        Assert.IsFalse(source.Contains("\"full\" => \"full auto-update\"", StringComparison.Ordinal));
+    }
+
     private static bool InvokeShouldShowOnStartup(
         DesktopInstallLinkingStartupContext? installContext,
         DesktopInstallLinkingState installState,

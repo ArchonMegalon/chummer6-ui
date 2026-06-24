@@ -1,10 +1,12 @@
 using Chummer.Contracts.Presentation;
 using Chummer.Contracts.Workspaces;
 using Chummer.Desktop.Runtime;
+using Chummer.Contracts.Rulesets;
 using Chummer.Presentation.Overview;
 using Chummer.Presentation.Shell;
 using Microsoft.AspNetCore.Components;
 using Microsoft.JSInterop;
+using System.Text;
 
 namespace Chummer.Blazor.Components.Layout;
 
@@ -37,6 +39,9 @@ public partial class DesktopShell : IDisposable
     public IJSRuntime JsRuntime { get; set; } = default!;
 
     [Inject]
+    public NavigationManager Navigation { get; set; } = default!;
+
+    [Inject]
     public IShellSurfaceResolver ShellSurfaceResolver { get; set; } = default!;
 
     [Inject]
@@ -44,6 +49,24 @@ public partial class DesktopShell : IDisposable
 
     [Parameter]
     public DesktopInstallLinkingStartupContext? InstallLinkingStartupContext { get; set; }
+
+    [Parameter]
+    public string? DemoFixtureId { get; set; }
+
+    [Parameter]
+    public string? DemoWorkspaceId { get; set; }
+
+    [Parameter]
+    public string? DemoTabId { get; set; }
+
+    [Parameter]
+    public string? DemoStartupCommandId { get; set; }
+
+    [Parameter]
+    public string? DemoUiControlId { get; set; }
+
+    [Parameter]
+    public string? DemoDialogActionId { get; set; }
 
     private DesktopInstallLinkingStartupContext? EffectiveInstallLinkingStartupContext =>
         InstallLinkingStartupContext
@@ -61,6 +84,9 @@ public partial class DesktopShell : IDisposable
     private long _lastExportVersionHandled;
     private long _lastPrintVersionHandled;
     private bool _isDisposed;
+    private bool _demoBootstrapCompleted;
+    private string? _lastDemoBootstrapKey;
+    private string? _bootstrappedDemoFixtureId;
     private ShellSurfaceState _shellSurfaceState = ShellSurfaceState.Empty;
 
     private CharacterOverviewState State => _bridge?.Current ?? Presenter.State;
@@ -82,10 +108,7 @@ public partial class DesktopShell : IDisposable
 
     private bool ShowLeftPane =>
         _shellSurfaceState.ActiveWorkspaceId is not null
-        && (_shellSurfaceState.OpenWorkspaces.Count > 1
-            || _shellSurfaceState.NavigationTabs.Count > 0
-            || _shellSurfaceState.WorkspaceActions.Count > 0
-            || _shellSurfaceState.ActiveWorkflowSurfaceActions.Count > 0);
+        && _shellSurfaceState.OpenWorkspaces.Count > 1;
 
     private IReadOnlyList<AppCommandDefinition> MenuRoots =>
         _shellSurfaceState.MenuRoots;
@@ -123,6 +146,7 @@ public partial class DesktopShell : IDisposable
         }
 
         RefreshShellSurfaceState();
+        await TryBootstrapDemoWorkspaceAsync();
     }
 
     protected override async Task OnAfterRenderAsync(bool firstRender)
@@ -219,4 +243,176 @@ public partial class DesktopShell : IDisposable
 
     private string BuildInstallDownloadsHref()
         => DesktopInstallLinkingRuntime.BuildPublicPortalAbsoluteUri("/downloads");
+
+    protected override async Task OnParametersSetAsync()
+    {
+        await base.OnParametersSetAsync();
+        await TryBootstrapDemoWorkspaceAsync();
+    }
+
+    private async Task TryBootstrapDemoWorkspaceAsync()
+    {
+        if (_bridge is null)
+            return;
+
+        string? fixtureId = NormalizeDemoFixtureId(DemoFixtureId);
+        string? workspaceId = NormalizeOptionalToken(DemoWorkspaceId);
+        if (fixtureId is null
+            && workspaceId is not null
+            && string.Equals(workspaceId, "ws-1", StringComparison.OrdinalIgnoreCase)
+            && State.WorkspaceId is null
+            && State.Session.OpenWorkspaces.Count == 0)
+        {
+            fixtureId = "BLUE";
+        }
+        string? tabId = NormalizeOptionalToken(DemoTabId);
+        string? commandId = NormalizeDemoStartupCommandId(DemoStartupCommandId);
+        string? controlId = NormalizeOptionalToken(DemoUiControlId);
+        string? dialogActionId = NormalizeOptionalToken(DemoDialogActionId);
+        string? demoKey =
+            fixtureId is null && workspaceId is null && tabId is null && commandId is null && controlId is null && dialogActionId is null
+                ? null
+                : $"{fixtureId ?? string.Empty}|{workspaceId ?? string.Empty}|{tabId ?? string.Empty}|{commandId ?? string.Empty}|{controlId ?? string.Empty}|{dialogActionId ?? string.Empty}";
+        if (demoKey is null)
+            return;
+
+        if (_demoBootstrapCompleted && string.Equals(_lastDemoBootstrapKey, demoKey, StringComparison.Ordinal))
+        {
+            return;
+        }
+
+        if (workspaceId is not null
+            && fixtureId is null
+            && (State.WorkspaceId is null || !string.Equals(State.WorkspaceId.Value.Value, workspaceId, StringComparison.Ordinal)))
+        {
+            await LoadWorkspaceAsync(workspaceId);
+        }
+        else if (fixtureId is not null
+            && (!string.Equals(_bootstrappedDemoFixtureId, fixtureId, StringComparison.Ordinal)
+                || State.WorkspaceId is null
+                || State.Session.OpenWorkspaces.Count == 0))
+        {
+            string fixturePath = ResolveDemoFixturePath(fixtureId!);
+            string xml = await File.ReadAllTextAsync(fixturePath, Encoding.UTF8);
+            await Presenter.ImportAsync(
+                new WorkspaceImportDocument(xml, RulesetDefaults.Sr5, WorkspaceDocumentFormat.NativeXml),
+                CancellationToken.None);
+            await SyncShellWorkspaceContextAsync();
+            SyncMetadataDraftFromState();
+            _bootstrappedDemoFixtureId = fixtureId;
+            RewriteFixtureRouteToWorkspaceRoute();
+        }
+
+        if (tabId is not null && State.WorkspaceId is not null && !string.Equals(State.ActiveTabId, tabId, StringComparison.Ordinal))
+        {
+            await _bridge.SelectTabAsync(tabId, CancellationToken.None);
+            await SyncShellWorkspaceContextAsync();
+        }
+
+        if (controlId is not null)
+        {
+            await HandleUiControlAsync(controlId);
+        }
+
+        if (commandId is not null)
+        {
+            await ExecuteCommandAsync(commandId);
+        }
+
+        if (dialogActionId is not null)
+        {
+            await ExecuteDialogActionAsync(dialogActionId);
+        }
+
+        _demoBootstrapCompleted = true;
+        _lastDemoBootstrapKey = demoKey;
+        RefreshShellSurfaceState();
+    }
+
+    private static string? NormalizeDemoFixtureId(string? fixtureId)
+    {
+        string? normalized = NormalizeOptionalToken(fixtureId);
+        if (normalized is null)
+            return null;
+
+        return string.Equals(normalized, "blue", StringComparison.OrdinalIgnoreCase)
+            ? "BLUE"
+            : null;
+    }
+
+    private static string ResolveDemoFixturePath(string fixtureId)
+    {
+        string fileName = fixtureId switch
+        {
+            "BLUE" => "BLUE.chum5",
+            _ => throw new InvalidOperationException($"Unknown browser demo fixture '{fixtureId}'.")
+        };
+
+        string fixturePath = Path.Combine(AppContext.BaseDirectory, "Fixtures", fileName);
+        if (!File.Exists(fixturePath))
+        {
+            throw new FileNotFoundException($"Browser demo fixture '{fileName}' was not found.", fixturePath);
+        }
+
+        return fixturePath;
+    }
+
+    private static string? NormalizeOptionalToken(string? value)
+        => string.IsNullOrWhiteSpace(value)
+            ? null
+            : value.Trim();
+
+    private static string? NormalizeDemoStartupCommandId(string? commandId)
+    {
+        string? normalized = NormalizeOptionalToken(commandId);
+        return normalized is not null && OverviewCommandPolicy.IsKnownSharedCommand(normalized)
+            ? normalized
+            : null;
+    }
+
+    private void RewriteFixtureRouteToWorkspaceRoute()
+    {
+        if (State.WorkspaceId is not { } workspaceId)
+            return;
+
+        List<string> query = [$"workspace={Uri.EscapeDataString(workspaceId.Value)}"];
+
+        string? tabId = NormalizeOptionalToken(DemoTabId);
+        string? commandId = NormalizeDemoStartupCommandId(DemoStartupCommandId);
+        string? controlId = NormalizeOptionalToken(DemoUiControlId);
+        string? dialogActionId = NormalizeOptionalToken(DemoDialogActionId);
+
+        if (tabId is not null)
+        {
+            query.Add($"tab={Uri.EscapeDataString(tabId)}");
+        }
+
+        if (commandId is not null)
+        {
+            query.Add($"command={Uri.EscapeDataString(commandId)}");
+        }
+
+        if (controlId is not null)
+        {
+            query.Add($"control={Uri.EscapeDataString(controlId)}");
+        }
+
+        if (dialogActionId is not null)
+        {
+            query.Add($"dialog_action={Uri.EscapeDataString(dialogActionId)}");
+        }
+
+        string currentRoute = Navigation.ToBaseRelativePath(Navigation.Uri);
+        int queryOrFragmentIndex = currentRoute.IndexOfAny(['?', '#']);
+        if (queryOrFragmentIndex >= 0)
+        {
+            currentRoute = currentRoute[..queryOrFragmentIndex];
+        }
+
+        string target = $"{currentRoute}?{string.Join("&", query)}";
+        if (string.Equals(Navigation.ToBaseRelativePath(Navigation.Uri), target, StringComparison.Ordinal))
+            return;
+
+        Navigation.NavigateTo(target, replace: true);
+    }
 }

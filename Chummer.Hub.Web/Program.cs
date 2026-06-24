@@ -19,7 +19,7 @@ if (!string.IsNullOrWhiteSpace(pathBase))
 app.UseStaticFiles();
 app.UseAntiforgery();
 
-app.MapGet("/health", () => Results.Ok(new { status = "ok", head = "hub-web" }));
+app.MapGet("/health", () => Results.Ok(new { status = "ok", head = "hub-web", pathBase }));
 app.MapRazorComponents<App>()
     .AddInteractiveServerRenderMode();
 

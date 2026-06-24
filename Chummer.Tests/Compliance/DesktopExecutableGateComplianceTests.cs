@@ -207,8 +207,6 @@ public sealed class DesktopExecutableGateComplianceTests
         string repoRoot = FindRepoRoot();
         string m113Path = Path.Combine(repoRoot, "scripts", "ai", "milestones", "next90-m113-ui-gm-prep-roster-surface-check.sh");
         string m113Text = File.ReadAllText(m113Path);
-        string m142Path = Path.Combine(repoRoot, "scripts", "ai", "milestones", "next90-m142-ui-direct-workflow-proof-check.sh");
-        string m142Text = File.ReadAllText(m142Path);
         string goldGatePath = Path.Combine(repoRoot, "scripts", "ai", "milestones", "ui-gold-proof-depth-gate.sh");
         string goldGateText = File.ReadAllText(goldGatePath);
         string b14Path = Path.Combine(repoRoot, "scripts", "ai", "milestones", "b14-flagship-ui-release-gate.sh");
@@ -217,10 +215,6 @@ public sealed class DesktopExecutableGateComplianceTests
         StringAssert.Contains(m113Text, "public_edge_workbench_proof_shape = str(public_edge_workbench_proof.get(\"proof_shape\") or \"\").strip()");
         StringAssert.Contains(m113Text, "\"public_edge_workbench_proof_shape_known\": public_edge_workbench_proof_shape in {\"core\", \"expanded\"}");
         StringAssert.Contains(m113Text, "\"proofShape\": public_edge_workbench_proof_shape");
-
-        StringAssert.Contains(m142Text, "public_edge_workbench_proof_shape = str(public_edge_workbench_receipt.get(\"proof_shape\") or \"\").strip()");
-        StringAssert.Contains(m142Text, "\"public_edge_workbench_proof_shape_known\": public_edge_workbench_proof_shape in {\"core\", \"expanded\"}");
-        StringAssert.Contains(m142Text, "\"proofShape\": public_edge_workbench_proof_shape");
 
         StringAssert.Contains(goldGateText, "def classify_workbench_proof_shape(payload: dict) -> str:");
         StringAssert.Contains(goldGateText, "\"blazor_public_edge_workbench_proof_shape\"] = public_edge_workbench_proof_shape");
@@ -321,7 +315,7 @@ public sealed class DesktopExecutableGateComplianceTests
     }
 
     [TestMethod]
-    public void Hosted_public_edge_execution_proof_contract_stays_aligned_across_verifier_docs_example_and_placeholder()
+    public void Hosted_public_edge_execution_proof_contract_stays_aligned_across_verifier_docs_example_and_published_receipt()
     {
         string repoRoot = FindRepoRoot();
         string verifierPath = Path.Combine(repoRoot, "scripts", "verify_blazor_public_edge_execution_proof.py");
@@ -330,8 +324,8 @@ public sealed class DesktopExecutableGateComplianceTests
         string contractDocText = File.ReadAllText(contractDocPath);
         string examplePath = Path.Combine(repoRoot, "docs", "examples", "blazor-public-edge-execution-proof.receipt.example.json");
         string exampleText = File.ReadAllText(examplePath);
-        string placeholderPath = Path.Combine(repoRoot, ".codex-studio", "published", "BLAZOR_PUBLIC_EDGE_EXECUTION_PROOF.generated.json");
-        string placeholderText = File.ReadAllText(placeholderPath);
+        string receiptPath = Path.Combine(repoRoot, ".codex-studio", "published", "BLAZOR_PUBLIC_EDGE_EXECUTION_PROOF.generated.json");
+        string receiptText = File.ReadAllText(receiptPath);
         string statusScriptPath = Path.Combine(repoRoot, "scripts", "print_blazor_public_edge_proof_status.py");
         string statusScriptText = File.ReadAllText(statusScriptPath);
 
@@ -354,12 +348,12 @@ public sealed class DesktopExecutableGateComplianceTests
         StringAssert.Contains(exampleText, "\"promoted_route_base\": \"/blazor/workbench\"");
         StringAssert.Contains(exampleText, "\"promoted_advanced_committed_actions\"");
 
-        StringAssert.Contains(placeholderText, "\"contract_name\": \"chummer6-ui.blazor_public_edge_execution_proof\"");
-        StringAssert.Contains(placeholderText, "\"status\": \"not_run\"");
-        StringAssert.Contains(placeholderText, "\"proof_tier\": \"hosted_promoted_route_execution\"");
-        StringAssert.Contains(placeholderText, "\"route_lane\": \"promoted_blazor_workbench\"");
-        StringAssert.Contains(placeholderText, "\"promoted_route_base\": \"/blazor/workbench\"");
-        StringAssert.Contains(placeholderText, "Committed complex-form execution is now part of the promoted advanced committed-action lane.");
+        StringAssert.Contains(receiptText, "\"contract_name\": \"chummer6-ui.blazor_public_edge_execution_proof\"");
+        StringAssert.Contains(receiptText, "\"status\": \"passed\"");
+        StringAssert.Contains(receiptText, "\"proof_tier\": \"hosted_promoted_route_execution\"");
+        StringAssert.Contains(receiptText, "\"route_lane\": \"promoted_blazor_workbench\"");
+        StringAssert.Contains(receiptText, "\"promoted_route_base\": \"/blazor/workbench\"");
+        StringAssert.Contains(receiptText, "\"promoted_advanced_committed_actions\"");
 
         StringAssert.Contains(statusScriptText, "execution_proof_tier=");
         StringAssert.Contains(statusScriptText, "execution_route_lane=");
@@ -388,7 +382,7 @@ public sealed class DesktopExecutableGateComplianceTests
         StringAssert.Contains(uiGoldText, "\"hosted_execution_required_workflow_family_ids\"] = HOSTED_EXECUTION_REQUIRED_FAMILY_IDS");
 
         StringAssert.Contains(releaseSignoffText, ".codex-studio/published/BLAZOR_PUBLIC_EDGE_EXECUTION_PROOF.generated.json");
-        StringAssert.Contains(releaseSignoffText, "with an explicit `not_run` status until a real hosted run succeeds");
+        StringAssert.Contains(releaseSignoffText, "real passing receipt");
         StringAssert.Contains(releaseSignoffText, "Hosted `chummer.run` workflow execution proof is separately published as `.codex-studio/published/BLAZOR_PUBLIC_EDGE_EXECUTION_PROOF.generated.json`");
 
         StringAssert.Contains(docsIndexText, "docs/examples/blazor-public-edge-execution-proof.receipt.example.json");
@@ -517,13 +511,13 @@ public sealed class DesktopExecutableGateComplianceTests
     }
 
     [TestMethod]
-    public void Hosted_public_edge_execution_required_workflow_family_inventory_stays_aligned_across_placeholder_verifier_and_downstream_consumers()
+    public void Hosted_public_edge_execution_required_workflow_family_inventory_stays_aligned_across_published_receipt_verifier_and_downstream_consumers()
     {
         string repoRoot = FindRepoRoot();
         string verifierPath = Path.Combine(repoRoot, "scripts", "verify_blazor_public_edge_execution_proof.py");
         string verifierText = File.ReadAllText(verifierPath);
-        string placeholderPath = Path.Combine(repoRoot, ".codex-studio", "published", "BLAZOR_PUBLIC_EDGE_EXECUTION_PROOF.generated.json");
-        string placeholderText = File.ReadAllText(placeholderPath);
+        string receiptPath = Path.Combine(repoRoot, ".codex-studio", "published", "BLAZOR_PUBLIC_EDGE_EXECUTION_PROOF.generated.json");
+        string receiptText = File.ReadAllText(receiptPath);
         string uiGoldPath = Path.Combine(repoRoot, "scripts", "ai", "milestones", "ui-gold-proof-depth-gate.sh");
         string uiGoldText = File.ReadAllText(uiGoldPath);
 
@@ -540,18 +534,18 @@ public sealed class DesktopExecutableGateComplianceTests
         StringAssert.Contains(verifierText, "\"promoted_committed_actions\"");
         StringAssert.Contains(verifierText, "\"promoted_advanced_committed_actions\"");
 
-        StringAssert.Contains(placeholderText, "\"promoted_startup_command_executions\"");
-        StringAssert.Contains(placeholderText, "\"promoted_resumed_workspace\"");
-        StringAssert.Contains(placeholderText, "\"promoted_recent_work_affordances\"");
-        StringAssert.Contains(placeholderText, "\"promoted_restored_section_continuations\"");
-        StringAssert.Contains(placeholderText, "\"promoted_restored_tab_landings\"");
-        StringAssert.Contains(placeholderText, "\"promoted_restored_section_content\"");
-        StringAssert.Contains(placeholderText, "\"promoted_result_continuations\"");
-        StringAssert.Contains(placeholderText, "\"promoted_action_continuations\"");
-        StringAssert.Contains(placeholderText, "\"promoted_advanced_action_affordances\"");
-        StringAssert.Contains(placeholderText, "\"promoted_advanced_action_executions\"");
-        StringAssert.Contains(placeholderText, "\"promoted_committed_actions\"");
-        StringAssert.Contains(placeholderText, "\"promoted_advanced_committed_actions\"");
+        StringAssert.Contains(receiptText, "\"promoted_startup_command_executions\"");
+        StringAssert.Contains(receiptText, "\"promoted_resumed_workspace\"");
+        StringAssert.Contains(receiptText, "\"promoted_recent_work_affordances\"");
+        StringAssert.Contains(receiptText, "\"promoted_restored_section_continuations\"");
+        StringAssert.Contains(receiptText, "\"promoted_restored_tab_landings\"");
+        StringAssert.Contains(receiptText, "\"promoted_restored_section_content\"");
+        StringAssert.Contains(receiptText, "\"promoted_result_continuations\"");
+        StringAssert.Contains(receiptText, "\"promoted_action_continuations\"");
+        StringAssert.Contains(receiptText, "\"promoted_advanced_action_affordances\"");
+        StringAssert.Contains(receiptText, "\"promoted_advanced_action_executions\"");
+        StringAssert.Contains(receiptText, "\"promoted_committed_actions\"");
+        StringAssert.Contains(receiptText, "\"promoted_advanced_committed_actions\"");
 
         StringAssert.Contains(uiGoldText, "\"promoted_startup_command_executions\"");
         StringAssert.Contains(uiGoldText, "\"promoted_resumed_workspace\"");
@@ -584,7 +578,7 @@ public sealed class DesktopExecutableGateComplianceTests
         Assert.IsFalse(routeReceiptText.Contains("\"contract_name\": \"chummer6-ui.blazor_public_edge_execution_proof\"", StringComparison.Ordinal));
         StringAssert.Contains(executionReceiptText, "\"contract_name\": \"chummer6-ui.blazor_public_edge_execution_proof\"");
         Assert.IsFalse(executionReceiptText.Contains("\"contract_name\": \"chummer6-ui.blazor_public_edge_workbench_proof\"", StringComparison.Ordinal));
-        StringAssert.Contains(executionReceiptText, "\"status\": \"not_run\"");
+        StringAssert.Contains(executionReceiptText, "\"status\": \"passed\"");
 
         StringAssert.Contains(executionDocText, "Route-entry proof lives in BLAZOR_PUBLIC_EDGE_WORKBENCH_PROOF.generated.json and is not equivalent to this execution-proof receipt.");
         StringAssert.Contains(releaseSignoffText, "hosted `chummer.run` route-entry posture exists and is published as `.codex-studio/published/BLAZOR_PUBLIC_EDGE_WORKBENCH_PROOF.generated.json`");
@@ -629,13 +623,13 @@ public sealed class DesktopExecutableGateComplianceTests
         StringAssert.Contains(releaseSignoffText, ".codex-studio/published/BLAZOR_PUBLIC_EDGE_WORKBENCH_PROOF.generated.json");
         StringAssert.Contains(releaseSignoffText, ".codex-studio/published/BLAZOR_PUBLIC_EDGE_EXECUTION_PROOF.generated.json");
         StringAssert.Contains(releaseSignoffText, "Release truth for the browser lane therefore splits into three separate statements:");
-        StringAssert.Contains(releaseSignoffText, "Until the hosted execution tier passes");
+        StringAssert.Contains(releaseSignoffText, "Hosted execution proof passing removes the old \"route posture only\" limit");
 
         StringAssert.Contains(parityGoalText, "public hosted and Docker self-hosted lanes have separate proof so local success is not mistaken for `chummer.run` readiness");
         StringAssert.Contains(parityGoalText, "a separate hosted execution-proof lane for `chummer.run` browser workflows, not only hosted route-entry posture");
         StringAssert.Contains(parityGoalText, "separate self-host receipt proof for portal-backed `/blazor/workbench` and `/blazor/preview` routes under Docker");
         StringAssert.Contains(parityGoalText, "separate hosted route-entry proof for the `https://chummer.run/blazor/` public edge");
-        StringAssert.Contains(parityGoalText, "a dedicated hosted execution-proof contract, runner scaffold, verifier, and published placeholder receipt");
+        StringAssert.Contains(parityGoalText, "a dedicated hosted execution-proof contract, runner scaffold, verifier, and published passing receipt");
     }
 
     [TestMethod]

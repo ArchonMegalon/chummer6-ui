@@ -610,8 +610,10 @@ public sealed class BlazorShellComponentTests
             [
                 new AppCommandDefinition("open_character", "Open", "file", false, true, RulesetDefaults.Sr5),
                 new AppCommandDefinition("new_character", "New", "file", false, true, RulesetDefaults.Sr5),
+                new AppCommandDefinition("new_character_origin", "Origin", "tools", false, true, RulesetDefaults.Sr5),
                 new AppCommandDefinition("character_roster", "Roster", "tools", false, true, RulesetDefaults.Sr5),
                 new AppCommandDefinition("master_index", "Index", "tools", false, true, RulesetDefaults.Sr5),
+                new AppCommandDefinition("auto_alice", "Alice", "tools", false, true, RulesetDefaults.Sr5),
                 new AppCommandDefinition("global_settings", "Options", "tools", false, true, RulesetDefaults.Sr5),
                 new AppCommandDefinition("report_bug", "Report Issue", "help", false, true, RulesetDefaults.Sr5)
             ]
@@ -624,8 +626,10 @@ public sealed class BlazorShellComponentTests
             .Add(component => component.LoadWorkspaceRequested, (Action<string>)(workspaceId => loadedWorkspaceId = workspaceId)));
 
         StringAssert.Contains(cut.Markup, "Continue Your Workbench");
+        StringAssert.Contains(cut.Markup, "Origin Dossier");
         StringAssert.Contains(cut.Markup, "Character Roster");
         StringAssert.Contains(cut.Markup, "Master Index");
+        StringAssert.Contains(cut.Markup, "Auto ALICE");
         StringAssert.Contains(cut.Markup, "ws-recent-1");
 
         cut.Find("[data-startup-command='open_character']").Click();
@@ -633,6 +637,32 @@ public sealed class BlazorShellComponentTests
 
         Assert.AreEqual("open_character", executedCommandId);
         Assert.AreEqual("ws-recent-1", loadedWorkspaceId);
+    }
+
+    [TestMethod]
+    public void DialogHost_renders_origin_story_and_build_surfaces_with_specialized_browser_panes()
+    {
+        DesktopDialogState originWizard = DesktopDialogFactory.BuildNewCharacterOriginWizardDialog(RulesetDefaults.Sr4, "Nova", "Cipher");
+        DesktopDialogState originBuild = DesktopDialogFactory.BuildNewCharacterOriginBuildDialog(originWizard);
+
+        using var context = new BunitContext();
+
+        IRenderedComponent<DialogHost> wizardCut = context.Render<DialogHost>(parameters => parameters
+            .Add(component => component.Dialog, originWizard));
+        StringAssert.Contains(wizardCut.Markup, "Advanced story controls");
+        StringAssert.Contains(wizardCut.Markup, "Story Preview");
+        Assert.IsNotNull(wizardCut.Find("[data-origin-wizard]"));
+        Assert.IsNotNull(wizardCut.Find("select[data-field-id='newCharacterOriginMetatypePreference']"));
+        Assert.IsNotNull(wizardCut.Find("select[data-field-id='newCharacterOriginBuildPreference']"));
+        Assert.IsNotNull(wizardCut.Find("[data-origin-story-preview]"));
+
+        IRenderedComponent<DialogHost> buildCut = context.Render<DialogHost>(parameters => parameters
+            .Add(component => component.Dialog, originBuild));
+        StringAssert.Contains(buildCut.Markup, "Build Handoff");
+        StringAssert.Contains(buildCut.Markup, "Book Preview");
+        StringAssert.Contains(buildCut.Markup, "Build Translation");
+        Assert.IsNotNull(buildCut.Find("[data-origin-build]"));
+        Assert.IsNotNull(buildCut.Find("[data-origin-book-preview]"));
     }
 
     [TestMethod]
@@ -1819,6 +1849,17 @@ public sealed class BlazorShellComponentTests
             Fields:
             [
                 new DesktopDialogField("name", "Name", "Old Name", "enter name"),
+                new DesktopDialogField(
+                    "ruleset",
+                    "Ruleset",
+                    "sr5",
+                    "choose ruleset",
+                    InputType: "select",
+                    Options:
+                    [
+                        new DesktopDialogFieldOption("sr4", "SR4"),
+                        new DesktopDialogFieldOption("sr5", "SR5")
+                    ]),
                 new DesktopDialogField("houseRules", "House Rules", "false", string.Empty, false, false, "checkbox"),
                 new DesktopDialogField("notes", "Notes", "Old", "enter notes", true, false, "text"),
                 new DesktopDialogField("token", "Token", "abc", "readonly token", false, true, "text")
@@ -1851,6 +1892,7 @@ public sealed class BlazorShellComponentTests
         StringAssert.Contains(cut.Find(".dialog-body").ClassName, "classic-dialog-grid");
         StringAssert.StartsWith(cut.Find(".desktop-dialog").GetAttribute("aria-describedby"), "dialog-description-save-dialog", StringComparison.Ordinal);
         IElement nameInput = cut.Find("input[placeholder='enter name']");
+        IElement rulesetSelect = cut.Find("select[data-field-id='ruleset']");
         IElement notesInput = cut.Find("textarea[placeholder='enter notes']");
         IElement readonlyToken = cut.Find("input[placeholder='readonly token']");
         IElement checkbox = cut.Find("input[type='checkbox']");
@@ -1861,6 +1903,9 @@ public sealed class BlazorShellComponentTests
         Assert.IsTrue(string.IsNullOrEmpty(nameInput.GetAttribute("title")));
         Assert.AreEqual("Name", nameInput.GetAttribute("aria-label"));
         StringAssert.Contains(nameInput.GetAttribute("aria-description"), "Editable text field");
+        Assert.AreEqual("Ruleset", rulesetSelect.GetAttribute("aria-label"));
+        StringAssert.Contains(rulesetSelect.GetAttribute("aria-description"), "Editable");
+        StringAssert.Contains(rulesetSelect.GetAttribute("aria-description"), "choose ruleset");
         Assert.IsTrue(string.IsNullOrEmpty(notesInput.GetAttribute("title")));
         Assert.AreEqual("Notes", notesInput.GetAttribute("aria-label"));
         StringAssert.Contains(notesInput.GetAttribute("aria-description"), "Editable multi-line text field");
@@ -1875,12 +1920,13 @@ public sealed class BlazorShellComponentTests
         Assert.AreEqual("Close dialog", closeButton.GetAttribute("aria-label"));
 
         cut.Find("input[placeholder='enter name']").Input("Neo");
+        cut.Find("select[data-field-id='ruleset']").Change("sr4");
         cut.Find("textarea[placeholder='enter notes']").Input("Updated notes");
         cut.Find("input[type='checkbox']").Change(true);
         cut.Find("#dialogFooter .action-btn.primary").Click();
         cut.Find("#dialogClose").Click();
 
-        string[] expectedInputFieldIds = ["name", "notes"];
+        string[] expectedInputFieldIds = ["name", "ruleset", "notes"];
         CollectionAssert.AreEquivalent(
             expectedInputFieldIds,
             inputChanges.Select(change => change.FieldId).ToArray());
@@ -1975,6 +2021,150 @@ public sealed class BlazorShellComponentTests
                 File.Delete(portraitPath);
             }
         }
+    }
+
+    [TestMethod]
+    public void DialogHost_renders_priority_workflow_with_real_controls_and_commit_gate()
+    {
+        PriorityWorkflowDialogRuntimeState runtimeState = new(
+            Mode: "Priority",
+            SumToTenLabel: "Total priority value: 10 / 10",
+            MetavariantOptions:
+            [
+                new DesktopDialogFieldOption("Elf", "Elf"),
+                new DesktopDialogFieldOption("Dryad", "Dryad")
+            ],
+            SelectedMetavariant: "Dryad",
+            MetatypeKarma: "30",
+            SpecialAttributes: "5",
+            Source: "Run Faster p. 65",
+            InspectAttributes:
+            [
+                new PriorityWorkflowInspectAttributeState("BOD", "3"),
+                new PriorityWorkflowInspectAttributeState("AGI", "7")
+            ],
+            Qualities: ["Low-Light Vision", "Keen Ears"],
+            ForceVisible: false,
+            Force: 1,
+            PossessionVisible: false,
+            PossessionBased: false,
+            PossessionMethodOptions: [],
+            SelectedPossessionMethod: string.Empty,
+            SkillSelectionLabel: "Choose the magical skills granted by your talent path.",
+            SkillChoice1: new PriorityWorkflowChoiceState(
+                true,
+                "Spellcasting",
+                [
+                    new DesktopDialogFieldOption("Spellcasting", "Spellcasting"),
+                    new DesktopDialogFieldOption("Counterspelling", "Counterspelling")
+                ]),
+            SkillChoice2: new PriorityWorkflowChoiceState(
+                true,
+                "Assensing",
+                [
+                    new DesktopDialogFieldOption("Assensing", "Assensing"),
+                    new DesktopDialogFieldOption("Summoning", "Summoning")
+                ]),
+            SkillChoice3: PriorityWorkflowChoiceState.Hidden,
+            CanCommit: false);
+
+        DesktopDialogState dialog = new(
+            Id: "dialog.new_character.priority_workflow",
+            Title: "Priority Build",
+            Message: "Allocate priorities before creating the character.",
+            Fields:
+            [
+                SelectField("newCharacterMetatypeCategory", "Category", "Metahuman", "Standard", "Core choices", "Metahuman", "Non-human choices"),
+                SelectField("newCharacterMetatype", "Metatype", "Elf", "Elf", "Elf", "Troll", "Troll"),
+                SelectField("newCharacterPriorityHeritage", "Metatype", "A", "A", "A", "B", "B"),
+                SelectField("newCharacterPriorityAttributes", "Attributes", "B", "A", "A", "B", "B", "C", "C"),
+                SelectField("newCharacterPriorityTalent", "Magic or Resonance", "C", "A", "A", "C", "C", "D", "D"),
+                SelectField("newCharacterPrioritySkills", "Skills", "D", "A", "A", "D", "D", "E", "E"),
+                SelectField("newCharacterPriorityResources", "Resources", "E", "A", "A", "E", "E", "B", "B"),
+                SelectField("newCharacterPriorityTalentChoice", "Talent Choice", "Mystic Adept", "Mundane", "Mundane", "Mystic Adept", "Mystic Adept", "Adept", "Adept"),
+                new DesktopDialogField(
+                    "newCharacterMetavariant",
+                    "Metavariant",
+                    runtimeState.SelectedMetavariant,
+                    runtimeState.SelectedMetavariant,
+                    InputType: "select",
+                    Options: runtimeState.MetavariantOptions),
+                new DesktopDialogField(
+                    "newCharacterPrioritySkillChoice1",
+                    "Skill Choice 1",
+                    runtimeState.SkillChoice1.Value,
+                    runtimeState.SkillChoice1.Value,
+                    InputType: "select",
+                    Options: runtimeState.SkillChoice1.Options),
+                new DesktopDialogField(
+                    "newCharacterPrioritySkillChoice2",
+                    "Skill Choice 2",
+                    runtimeState.SkillChoice2.Value,
+                    runtimeState.SkillChoice2.Value,
+                    InputType: "select",
+                    Options: runtimeState.SkillChoice2.Options),
+                new DesktopDialogField(
+                    "newCharacterPriorityWorkflowCanCommit",
+                    "Can Commit",
+                    "false",
+                    "false",
+                    InputType: "text",
+                    LayoutSlot: DesktopDialogFieldLayoutSlots.Hidden),
+                new DesktopDialogField(
+                    "newCharacterPriorityWorkflowState",
+                    "Runtime State",
+                    PriorityWorkflowDialogRuntimeStateSerializer.Serialize(runtimeState),
+                    string.Empty,
+                    InputType: "text",
+                    LayoutSlot: DesktopDialogFieldLayoutSlots.Hidden)
+            ],
+            Actions:
+            [
+                new DesktopDialogAction("cancel", "Cancel"),
+                new DesktopDialogAction("complete_new_character_workflow", "OK", true)
+            ]);
+
+        List<DialogFieldInputChange> inputChanges = [];
+
+        using var context = new BunitContext();
+        IRenderedComponent<DialogHost> cut = context.Render<DialogHost>(parameters => parameters
+            .Add(component => component.Dialog, dialog)
+            .Add(component => component.FieldInputRequested, (Action<DialogFieldInputChange>)(change => inputChanges.Add(change))));
+
+        Assert.IsNotNull(cut.Find("[data-priority-workflow]"));
+        Assert.AreEqual("12", cut.Find("select[data-field-id='newCharacterMetatype']").GetAttribute("size"));
+        StringAssert.Contains(cut.Markup, "Total priority value: 10 / 10");
+        StringAssert.Contains(cut.Markup, "Run Faster p. 65");
+        StringAssert.Contains(cut.Markup, "Low-Light Vision");
+        Assert.IsTrue(cut.Find("#dialogFooter .action-btn.primary").HasAttribute("disabled"));
+
+        cut.Find("select[data-field-id='newCharacterPrioritySkillChoice1']").Change("Counterspelling");
+
+        Assert.AreEqual(1, inputChanges.Count);
+        Assert.AreEqual("newCharacterPrioritySkillChoice1", inputChanges[0].FieldId);
+        Assert.AreEqual("Counterspelling", inputChanges[0].Value);
+    }
+
+    private static DesktopDialogField SelectField(
+        string id,
+        string label,
+        string value,
+        params string[] optionPairs)
+    {
+        Assert.AreEqual(0, optionPairs.Length % 2, $"Select field {id} requires value/label pairs.");
+        List<DesktopDialogFieldOption> options = [];
+        for (int index = 0; index < optionPairs.Length; index += 2)
+        {
+            options.Add(new DesktopDialogFieldOption(optionPairs[index], optionPairs[index + 1]));
+        }
+
+        return new DesktopDialogField(
+            id,
+            label,
+            value,
+            value,
+            InputType: "select",
+            Options: options);
     }
 
     [TestMethod]

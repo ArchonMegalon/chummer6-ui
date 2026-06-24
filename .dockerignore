@@ -27,5 +27,15 @@
 **/obj
 **/secrets.dev.yaml
 **/values.dev.yaml
+.codex-studio
+out
+dist
+unpublished
+Docker/Downloads
+Chummer.Portal/downloads
+deploy-readiness
+feedback
+solution.log
+signoff.binlog
 LICENSE
 !README.md

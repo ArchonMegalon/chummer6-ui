@@ -1,6 +1,6 @@
 {
   "contract_name": "chummer6-ui.localization_release_gate",
-  "generated_at": "2026-06-20T21:44:10Z",
+  "generated_at": "2026-06-24T17:42:15Z",
   "status": "pass",
   "shipping_locales": [
     "en-us",
@@ -10,7 +10,7 @@
     "pt-br",
     "zh-cn"
   ],
-  "default_key_count": 420,
+  "default_key_count": 433,
   "release_seed_keys": [
     "desktop.shell.menu.file",
     "desktop.shell.tool.update_status",
@@ -31,15 +31,15 @@
       "  failed: 0",
       "  succeeded: 1",
       "  skipped: 0",
-      "  duration: 278ms"
+      "  duration: 447ms"
     ]
   },
   "locale_summary": [
     {
       "locale": "en-us",
-      "override_count": 420,
-      "minimum_override_count": 420,
-      "default_key_count": 420,
+      "override_count": 433,
+      "minimum_override_count": 433,
+      "default_key_count": 433,
       "untranslated_key_count": 0,
       "missing_release_seed_keys": [],
       "legacy_xml_present": true,
@@ -47,9 +47,9 @@
     },
     {
       "locale": "de-de",
-      "override_count": 420,
+      "override_count": 433,
       "minimum_override_count": 40,
-      "default_key_count": 420,
+      "default_key_count": 433,
       "untranslated_key_count": 0,
       "missing_release_seed_keys": [],
       "legacy_xml_present": true,
@@ -57,9 +57,9 @@
     },
     {
       "locale": "fr-fr",
-      "override_count": 420,
+      "override_count": 433,
       "minimum_override_count": 40,
-      "default_key_count": 420,
+      "default_key_count": 433,
       "untranslated_key_count": 0,
       "missing_release_seed_keys": [],
       "legacy_xml_present": true,
@@ -67,9 +67,9 @@
     },
     {
       "locale": "ja-jp",
-      "override_count": 420,
+      "override_count": 433,
       "minimum_override_count": 40,
-      "default_key_count": 420,
+      "default_key_count": 433,
       "untranslated_key_count": 0,
       "missing_release_seed_keys": [],
       "legacy_xml_present": true,
@@ -77,9 +77,9 @@
     },
     {
       "locale": "pt-br",
-      "override_count": 420,
+      "override_count": 433,
       "minimum_override_count": 40,
-      "default_key_count": 420,
+      "default_key_count": 433,
       "untranslated_key_count": 0,
       "missing_release_seed_keys": [],
       "legacy_xml_present": true,
@@ -87,9 +87,9 @@
     },
     {
       "locale": "zh-cn",
-      "override_count": 420,
+      "override_count": 433,
       "minimum_override_count": 40,
-      "default_key_count": 420,
+      "default_key_count": 433,
       "untranslated_key_count": 0,
       "missing_release_seed_keys": [],
       "legacy_xml_present": true,
@@ -367,8 +367,8 @@
     },
     "install_update_support": {
       "status": "pass",
-      "matched_default_key_count": 251,
-      "required_key_count": 251,
+      "matched_default_key_count": 264,
+      "required_key_count": 264,
       "required_keys": [
         "desktop.crash.button.copy_summary",
         "desktop.crash.button.keep_local_only",
@@ -403,6 +403,7 @@
         "desktop.crash.status.unable_open_path",
         "desktop.crash.title",
         "desktop.devices.button.copy_claim_code",
+        "desktop.devices.button.manage_linked_copies",
         "desktop.devices.button.reload",
         "desktop.devices.button.use_latest_claim",
         "desktop.devices.context.access_claimed",
@@ -443,18 +444,26 @@
         "desktop.devices.title",
         "desktop.home.section.install_support",
         "desktop.home.section.update_posture",
+        "desktop.install_link.button.continue_unlinked",
         "desktop.install_link.button.copy_install_id",
         "desktop.install_link.button.copy_login_url",
         "desktop.install_link.button.exit_desktop",
         "desktop.install_link.button.link_copy",
         "desktop.install_link.button.login_website",
         "desktop.install_link.button.open_account",
+        "desktop.install_link.button.open_claim_link",
         "desktop.install_link.button.open_downloads",
         "desktop.install_link.button.open_support",
         "desktop.install_link.button.open_work",
         "desktop.install_link.button.redeem_claim_code",
+        "desktop.install_link.button.unlink_copy",
         "desktop.install_link.claim_code_label",
         "desktop.install_link.claim_code_watermark",
+        "desktop.install_link.fallback.claim_url_label",
+        "desktop.install_link.fallback.detail",
+        "desktop.install_link.fallback.detail_with_reason",
+        "desktop.install_link.fallback.heading",
+        "desktop.install_link.fallback.summary",
         "desktop.install_link.heading",
         "desktop.install_link.more_tools",
         "desktop.install_link.next_step",
@@ -484,6 +493,7 @@
         "desktop.install_link.status.unable_open_downloads",
         "desktop.install_link.status.unable_open_support",
         "desktop.install_link.status.unable_open_work_route",
+        "desktop.install_link.status.unlinked_copy",
         "desktop.install_link.summary",
         "desktop.install_link.summary.browser_open_attempt",
         "desktop.install_link.summary.browser_open_error",
@@ -557,6 +567,7 @@
         "desktop.support.intro.quiet",
         "desktop.support.intro.tracked",
         "desktop.support.section.case",
+        "desktop.support.section.diagnostics",
         "desktop.support.section.follow_through",
         "desktop.support.section.release",
         "desktop.support.status.current",
@@ -591,6 +602,7 @@
         "desktop.support_case.intro.current",
         "desktop.support_case.intro.fallback",
         "desktop.support_case.intro.preview",
+        "desktop.support_case.section.diagnostics",
         "desktop.support_case.section.follow_through",
         "desktop.support_case.section.summary",
         "desktop.support_case.section.timeline",
@@ -613,6 +625,7 @@
         "desktop.update.last_checked",
         "desktop.update.last_launch_attempt",
         "desktop.update.manifest_location",
+        "desktop.update.mode",
         "desktop.update.no_pending_update",
         "desktop.update.pending_update",
         "desktop.update.rollback_window",
@@ -657,13 +670,13 @@
       },
       "legacy_corpus_domain": false,
       "local_source_fallback": {
-        "ready": true,
+        "ready": false,
         "signoff_smoke_runner_status": "pass",
         "source_markers": {
           "desktop_trust_receipts": true,
           "dialog_receipts": true,
-          "dialog_host": true,
-          "section_pane": true
+          "dialog_host": false,
+          "section_pane": false
         }
       }
     },

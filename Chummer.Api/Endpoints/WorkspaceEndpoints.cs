@@ -22,17 +22,24 @@ public static class WorkspaceEndpoints
             }
 
             WorkspaceDocumentFormat format = ParseFormat(request.Format);
-            WorkspaceImportResult imported = await client.ImportAsync(
-                new WorkspaceImportDocument(content, request.RulesetId ?? string.Empty, format),
-                ct).ConfigureAwait(false);
+            try
+            {
+                WorkspaceImportResult imported = await client.ImportAsync(
+                    new WorkspaceImportDocument(content, request.RulesetId ?? string.Empty, format),
+                    ct).ConfigureAwait(false);
 
-            return Results.Ok(new WorkspaceImportResponse(
-                Id: imported.Id.Value,
-                Summary: imported.Summary,
-                RulesetId: imported.RulesetId,
-                ImportReceiptId: imported.ImportReceiptId,
-                ImportedAtUtc: imported.ImportedAtUtc,
-                Portability: imported.Portability));
+                return Results.Ok(new WorkspaceImportResponse(
+                    Id: imported.Id.Value,
+                    Summary: imported.Summary,
+                    RulesetId: imported.RulesetId,
+                    ImportReceiptId: imported.ImportReceiptId,
+                    ImportedAtUtc: imported.ImportedAtUtc,
+                    Portability: imported.Portability));
+            }
+            catch (Exception ex) when (ex is FormatException or InvalidOperationException or ArgumentException)
+            {
+                return Results.BadRequest(new { error = ex.Message });
+            }
         });
 
         app.MapGet("/api/workspaces", async (int? maxCount, IChummerClient client, CancellationToken ct) =>

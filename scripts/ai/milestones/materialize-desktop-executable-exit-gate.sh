@@ -387,7 +387,9 @@ import hashlib
 import json
 import os
 import sys
+import zipfile
 from datetime import datetime, timezone
+from pathlib import Path
 
 
 DESKTOP_PROOF_MAX_AGE_SECONDS = int(os.environ.get("CHUMMER_DESKTOP_EXECUTABLE_PROOF_MAX_AGE_SECONDS", "86400"))
@@ -563,6 +565,7 @@ EXTERNAL_REASON_MARKERS = (
     "current host cannot run promoted windows installer smoke",
     "current host cannot run promoted macos installer smoke",
     "current host cannot run promoted linux installer smoke",
+    "windows installer visual proof is missing; capture progress and completion screenshots on a windows host",
     "requires a chummer-api host exposing /api/workspaces and /api/shell/bootstrap",
     "require a chummer-api host exposing /api/workspaces and /api/shell/bootstrap",
     "desktop downloads shelf contains installer artifact(s) not promoted in release-channel truth",
@@ -1536,13 +1539,28 @@ def summarize_quarantine_installer_markers(paths: List[str], platform: str = "")
         payload_present = payload_marker in blob
         appended_payload_present = appended_payload_marker in blob
         sample_present = sample_marker in blob
+        bootstrap_payload_present = False
+        if suffix == ".exe":
+            name = path.name
+            if name.lower().endswith("-installer.exe"):
+                payload_zip = path.with_name(name[:-len("-installer.exe")] + "-payload.zip")
+                if payload_zip.is_file():
+                    bootstrap_payload_present = True
+                    try:
+                        with zipfile.ZipFile(payload_zip) as archive:
+                            names = {entry.filename.replace("\\", "/").lstrip("/") for entry in archive.infolist()}
+                            sample_present = sample_present or "Samples/Legacy/Soma-Career.chum5" in names
+                    except (OSError, zipfile.BadZipFile):
+                        pass
         if payload_present:
             summary["payload_marker_present_paths"].append(str(path))
         if appended_payload_present:
             summary["appended_payload_marker_present_paths"].append(str(path))
+        if bootstrap_payload_present:
+            summary["payload_marker_present_paths"].append(str(path))
         if sample_present:
             summary["sample_marker_present_paths"].append(str(path))
-        if (payload_present or appended_payload_present) and sample_present:
+        if (payload_present or appended_payload_present or bootstrap_payload_present) and sample_present:
             summary["payload_and_sample_marker_present_paths"].append(str(path))
         else:
             summary["payload_or_sample_marker_missing_paths"].append(str(path))
@@ -2195,9 +2213,13 @@ def validate_windows_gate(
     embedded_payload_marker_present = bool(gate_checks.get("embedded_payload_marker_present"))
     appended_payload_marker_present = bool(gate_checks.get("appended_payload_marker_present"))
     embedded_sample_marker_present = bool(gate_checks.get("embedded_sample_marker_present"))
+    bootstrap_payload_exists = bool(gate_checks.get("bootstrap_payload_exists"))
+    bootstrap_payload_sample_marker_present = bool(gate_checks.get("bootstrap_payload_sample_marker_present"))
     gate_evidence["embedded_payload_marker_present"] = embedded_payload_marker_present
     gate_evidence["appended_payload_marker_present"] = appended_payload_marker_present
     gate_evidence["embedded_sample_marker_present"] = embedded_sample_marker_present
+    gate_evidence["bootstrap_payload_exists"] = bootstrap_payload_exists
+    gate_evidence["bootstrap_payload_sample_marker_present"] = bootstrap_payload_sample_marker_present
     gate_release_version = str(
         gate_payload.get("releaseVersion")
         or gate_checks.get("release_channel_version")
@@ -2664,9 +2686,9 @@ def validate_windows_gate(
                     f"Windows startup smoke receipt is stale for promoted installer bytes ({startup_smoke_age_seconds}s old)."
                 )
 
-    if not (embedded_payload_marker_present or appended_payload_marker_present):
+    if not (embedded_payload_marker_present or appended_payload_marker_present or bootstrap_payload_exists):
         reasons.append(f"Windows installer receipt does not confirm a recognizable payload marker for promoted tuple {gate_label}.")
-    if not embedded_sample_marker_present:
+    if not (embedded_sample_marker_present or bootstrap_payload_sample_marker_present):
         reasons.append(f"Windows installer receipt does not confirm bundled demo sample marker for promoted tuple {gate_label}.")
 
     evidence.setdefault("windows_gates", {})[gate_label] = gate_evidence
@@ -4692,6 +4714,11 @@ allowed_desktop_install_artifact_keys = {
     "head",
     "installAccessClass",
     "kind",
+    "installerMode",
+    "payloadDownloadUrl",
+    "payloadFileName",
+    "payloadSha256",
+    "payloadSizeBytes",
     "platform",
     "platformLabel",
     "id",
@@ -6532,6 +6559,13 @@ external_blocking_findings, local_blocking_findings = split_external_and_local_r
 external_blocking_findings_count = len(external_blocking_findings)
 local_blocking_findings_count = len(local_blocking_findings)
 blocked_by_external_constraints_only = bool(external_blocking_findings) and not local_blocking_findings
+blocking_mode = (
+    "none"
+    if status == "pass"
+    else "external_only"
+    if blocked_by_external_constraints_only
+    else "mixed_or_local"
+)
 generated_at = now_iso()
 reviews = {
     "upstreamReceiptReview": {
@@ -6586,6 +6620,8 @@ payload = {
     "summary": (
         f"Desktop executable exit gate is proven by passing packaged-head receipts for promoted desktop platforms ({platform_scope}) and per-head flagship UI release proof."
         if status == "pass"
+        else "Desktop executable exit gate is blocked only by external execution constraints."
+        if blocked_by_external_constraints_only
         else "Desktop executable exit gate is not fully proven."
     ),
     "reasons": reasons,
@@ -6603,6 +6639,8 @@ payload = {
     "local_blocking_findings_count": local_blocking_findings_count,
     "blockedByExternalConstraintsOnly": blocked_by_external_constraints_only,
     "blocked_by_external_constraints_only": blocked_by_external_constraints_only,
+    "blockingMode": blocking_mode,
+    "blocking_mode": blocking_mode,
     "reviews": reviews,
     "evidence": evidence,
 }

@@ -458,9 +458,9 @@ public partial class DesktopDialogWindow : Window
         DesktopDialogField categoryTreeField,
         IReadOnlyList<DesktopDialogField> allFields)
     {
-        IReadOnlyList<SelectionCandidateItem> items = ParseSelectionTreeBranchItems(categoryTreeField.Value);
         string? categoryFieldId = ResolveSelectionCategoryFieldId(categoryTreeField, allFields);
         string? selectedName = ResolveSelectionCategoryValue(categoryTreeField, allFields, categoryFieldId);
+        IReadOnlyList<SelectionCandidateItem> items = BuildSelectionCategoryItems(categoryTreeField, allFields, categoryFieldId);
 
         ListBox listBox = new()
         {
@@ -492,6 +492,32 @@ public partial class DesktopDialogWindow : Window
 
         ApplyAccessibility(listBox, categoryTreeField.AccessibleName, categoryTreeField.ToolTip, categoryTreeField.HelpText);
         return listBox;
+    }
+
+    private static IReadOnlyList<SelectionCandidateItem> BuildSelectionCategoryItems(
+        DesktopDialogField categoryTreeField,
+        IReadOnlyList<DesktopDialogField> allFields,
+        string? categoryFieldId)
+    {
+        DesktopDialogField? categoryField = allFields.FirstOrDefault(field =>
+            string.Equals(field.Id, categoryFieldId, StringComparison.Ordinal));
+        DesktopDialogFieldOption[] options = categoryField?.Options?
+            .DistinctBy(option => option.Value, StringComparer.OrdinalIgnoreCase)
+            .ToArray()
+            ?? [];
+
+        if (options.Length > 0)
+        {
+            return options
+                .Where(static option => !string.IsNullOrWhiteSpace(option.Value))
+                .Select(option => new SelectionCandidateItem(
+                    option.Value,
+                    option.Label,
+                    string.Equals(option.Value, categoryField?.Value, StringComparison.OrdinalIgnoreCase)))
+                .ToArray();
+        }
+
+        return ParseSelectionTreeBranchItems(categoryTreeField.Value);
     }
 
     private static Border CreateClassicSelectionToolbar(params Control[] children)

@@ -51,7 +51,12 @@ echo "[verify] checking windows installer payload gate syntax and regression tes
 bash -n scripts/publish-download-bundle.sh
 bash -n scripts/publish-download-bundle-http.sh
 bash -n scripts/publish-download-bundle-s3.sh
-python3 -m pytest -q tests/test_windows_installer_payload_gate.py
+python3 -m pytest -q \
+  tests/test_desktop_release_matrix_gate.py \
+  tests/test_public_windows_payload_metadata.py \
+  tests/test_windows_bootstrap_payload_gate_support.py \
+  tests/test_windows_installer_payload_gate.py \
+  tests/test_windows_installer_update_handoff_gate.py
 
 if ! rg -n '<ChummerUseLocalCompatibilityTree Condition="'\''\$\(ChummerUseLocalCompatibilityTree\)'\'' == '\'''\''">false</ChummerUseLocalCompatibilityTree>' \
   Directory.Build.props >/dev/null; then
@@ -296,6 +301,10 @@ blocking_findings = payload.get("blockingFindings")
 blocking_findings_alias = payload.get("blocking_findings")
 blocking_findings_count = payload.get("blockingFindingsCount")
 blocking_findings_count_alias = payload.get("blocking_findings_count")
+blocked_by_external_constraints_only = payload.get("blockedByExternalConstraintsOnly")
+blocked_by_external_constraints_only_alias = payload.get("blocked_by_external_constraints_only")
+blocking_mode = payload.get("blockingMode")
+blocking_mode_alias = payload.get("blocking_mode")
 
 if not isinstance(reasons, list):
     raise SystemExit("verify gate failed: desktop executable gate payload is missing reasons list.")
@@ -311,6 +320,18 @@ if not isinstance(blocking_findings_count, int) or blocking_findings_count != le
     raise SystemExit("verify gate failed: desktop executable gate payload blockingFindingsCount does not match reasons count.")
 if not isinstance(blocking_findings_count_alias, int) or blocking_findings_count_alias != len(reasons):
     raise SystemExit("verify gate failed: desktop executable gate payload blocking_findings_count does not match reasons count.")
+if not isinstance(blocked_by_external_constraints_only, bool):
+    raise SystemExit("verify gate failed: desktop executable gate payload is missing blockedByExternalConstraintsOnly bool.")
+if not isinstance(blocked_by_external_constraints_only_alias, bool):
+    raise SystemExit("verify gate failed: desktop executable gate payload is missing blocked_by_external_constraints_only bool.")
+if blocked_by_external_constraints_only != blocked_by_external_constraints_only_alias:
+    raise SystemExit(
+        "verify gate failed: desktop executable gate payload carries blocked-by-external alias drift between blockedByExternalConstraintsOnly and blocked_by_external_constraints_only."
+    )
+if blocking_mode not in {"none", "external_only", "mixed_or_local"}:
+    raise SystemExit("verify gate failed: desktop executable gate payload blockingMode is invalid.")
+if blocking_mode_alias != blocking_mode:
+    raise SystemExit("verify gate failed: desktop executable gate payload carries blockingMode/blocking_mode alias drift.")
 PY
 
 restore_desktop_executable_exit_gate_receipt() {

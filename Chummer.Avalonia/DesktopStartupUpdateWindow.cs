@@ -137,7 +137,7 @@ internal sealed class DesktopStartupUpdateWindow : Window
                 return;
             }
 
-            ApplyProgress(new DesktopUpdateProgressUpdate("attention", BuildAttentionMessage(result.Reason), null, null));
+            ApplyProgress(new DesktopUpdateProgressUpdate("attention", result.Message ?? BuildAttentionMessage(result.Reason), null, null));
             await Task.Delay(GetCompletionDisplayDelayMs(exitRequested: false, reason: result.Reason)).ConfigureAwait(true);
             Close(false);
         }

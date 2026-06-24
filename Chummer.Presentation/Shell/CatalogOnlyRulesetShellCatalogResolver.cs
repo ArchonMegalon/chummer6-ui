@@ -22,7 +22,7 @@ public sealed class CatalogOnlyRulesetShellCatalogResolver : IRulesetShellCatalo
     [
         new("catalog.shell.menu", WorkflowDefinitionIds.LibraryShell, WorkflowSurfaceKinds.ShellRegion, ShellRegionIds.MenuBar, WorkflowLayoutTokens.ShellFrame, ["file", "edit", "special", "tools", "windows", "help"]),
         new("catalog.shell.toolbar", WorkflowDefinitionIds.LibraryShell, WorkflowSurfaceKinds.ShellRegion, ShellRegionIds.ToolStrip, WorkflowLayoutTokens.ShellFrame, ["save_character", "print_character", "copy", "new_character", "open_character", "close_window"]),
-        new("catalog.career.section", WorkflowDefinitionIds.CareerWorkbench, WorkflowSurfaceKinds.Workbench, ShellRegionIds.SectionPane, WorkflowLayoutTokens.CareerWorkbench, ["tab-info.summary", "tab-info.profile", "tab-skills.skills"]),
+        new("catalog.career.section", WorkflowDefinitionIds.CareerWorkbench, WorkflowSurfaceKinds.Workbench, ShellRegionIds.SectionPane, WorkflowLayoutTokens.CareerWorkbench, ["tab-create.build-lab", "tab-info.summary", "tab-info.profile", "tab-skills.skills"]),
         new("catalog.selection.dialog", WorkflowDefinitionIds.SelectionDialog, WorkflowSurfaceKinds.Dialog, ShellRegionIds.DialogHost, WorkflowLayoutTokens.SelectionDialog, ["tab-gear.inventory"]),
         new("catalog.tool.dice", WorkflowDefinitionIds.DiceTool, WorkflowSurfaceKinds.Tool, ShellRegionIds.DialogHost, WorkflowLayoutTokens.ToolPanel, ["dice_roller"]),
         new("catalog.tool.roster", WorkflowDefinitionIds.DiceTool, WorkflowSurfaceKinds.Tool, ShellRegionIds.DialogHost, WorkflowLayoutTokens.ToolPanel, ["character_roster"]),
@@ -50,6 +50,7 @@ public sealed class CatalogOnlyRulesetShellCatalogResolver : IRulesetShellCatalo
         Command("paste", "command.paste", "edit", true),
         Command("dice_roller", "command.dice_roller", "tools", false),
         Command(DesktopAliceAssistant.CommandId, "command.auto_alice", "tools", false),
+        Command("new_character_origin", "command.new_character_origin", "tools", false),
         Command("global_settings", "command.global_settings", "tools", false),
         Command("character_settings", "command.character_settings", "tools", true),
         Command("update", "command.update", "tools", false),
@@ -78,6 +79,7 @@ public sealed class CatalogOnlyRulesetShellCatalogResolver : IRulesetShellCatalo
 
     private static readonly IReadOnlyList<NavigationTabDefinition> CompatibilityTabs =
     [
+        Tab("tab-create", "Character", "build-lab", "character"),
         Tab("tab-info", "Info", "profile", "character"),
         Tab("tab-attributes", "Attributes", "attributes", "character"),
         Tab("tab-skills", "Skills", "skills", "character"),
@@ -94,6 +96,7 @@ public sealed class CatalogOnlyRulesetShellCatalogResolver : IRulesetShellCatalo
 
     private static readonly IReadOnlyList<WorkspaceSurfaceActionDefinition> CompatibilityActions =
     [
+        Action("tab-create.build-lab", "Character", "tab-create", WorkspaceSurfaceActionKind.Section, "build-lab"),
         Action("tab-info.summary", "Summary", "tab-info", WorkspaceSurfaceActionKind.Summary, "summary"),
         Action("tab-info.validate", "Validate", "tab-info", WorkspaceSurfaceActionKind.Validate, "validate"),
         Action("tab-info.profile", "Profile", "tab-info", WorkspaceSurfaceActionKind.Section, "profile"),

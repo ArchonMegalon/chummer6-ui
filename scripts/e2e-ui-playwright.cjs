@@ -295,10 +295,18 @@ async function openRootWithRetry(page) {
 }
 
 async function openPreviewWithRetry(page) {
+  return openPreviewPathWithRetry(page, '/preview');
+}
+
+async function openWorkbenchWithRetry(page) {
+  return openPreviewPathWithRetry(page, '/workbench');
+}
+
+async function openPreviewPathWithRetry(page, relativePath) {
   let lastError = null;
   for (let attempt = 1; attempt <= ROOT_NAV_RETRY_ATTEMPTS; attempt += 1) {
     try {
-      await page.goto(`${UI_URL}/preview`, { waitUntil: NAVIGATION_WAIT_UNTIL, timeout: ROOT_NAV_TIMEOUT_MS });
+      await page.goto(`${UI_URL}${relativePath}`, { waitUntil: NAVIGATION_WAIT_UNTIL, timeout: ROOT_NAV_TIMEOUT_MS });
       return;
     } catch (error) {
       lastError = error;
@@ -310,7 +318,7 @@ async function openPreviewWithRetry(page) {
     }
   }
 
-  throw lastError || new Error(`Unable to open ${UI_URL}/preview`);
+  throw lastError || new Error(`Unable to open ${UI_URL}${relativePath}`);
 }
 
 async function expectVisibleSelector(page, selector, context) {
@@ -474,10 +482,10 @@ async function auditPublicRootSurface(page) {
   await expectVisibleSelector(page, '#proof', 'proof section');
 
   const bodyText = await page.locator('body').innerText();
-  expectTextIncludes(bodyText, 'no desktop cosplay', 'public preview root');
-  expectTextIncludes(bodyText, 'It is deliberately not the full desktop client.', 'public preview root');
-  expectTextIncludes(bodyText, 'Launch browser preview', 'public preview root');
-  expectTextIncludes(bodyText, 'Open the preview workbench', 'public preview root');
+  expectTextIncludes(bodyText, "public browser workbench, grounded in the real product", 'public preview root');
+  expectTextIncludes(bodyText, 'Character workflows are live in the browser where parity is actually implemented', 'public preview root');
+  expectTextIncludes(bodyText, 'Launch browser workbench', 'public preview root');
+  expectTextIncludes(bodyText, 'Open the browser workbench', 'public preview root');
   await expectPremiumSurfaceQuality(page, 'public preview root', 'main.public-preview');
 }
 
@@ -492,11 +500,210 @@ async function auditPreviewDesktopSurface(page) {
   await expectVisibleSelector(page, '[data-startup-command="new_character"]', 'new character startup command');
 
   const bodyText = await page.locator('body').innerText();
-  expectTextIncludes(bodyText, 'Browser-safe shell preview', 'preview desktop shell');
-  expectTextIncludes(bodyText, 'guided browser preview', 'preview desktop shell');
+  expectTextIncludes(bodyText, "shared workbench shell, running in the browser", 'preview desktop shell');
+  expectTextIncludes(bodyText, 'Live browser workbench', 'preview desktop shell');
+  expectTextIncludes(bodyText, 'Workbench route', 'preview desktop shell');
+  expectTextIncludes(bodyText, 'Browser-owned here:', 'preview desktop shell');
+  expectTextIncludes(bodyText, 'Published self-hosted Docker surface', 'preview desktop shell');
   expectTextIncludes(bodyText, 'New Character', 'preview desktop shell');
   expectTextIncludes(bodyText, 'Open', 'preview desktop shell');
   await expectPremiumSurfaceQuality(page, 'preview desktop shell');
+}
+
+async function auditWorkbenchDesktopSurface(page) {
+  await openWorkbenchWithRetry(page);
+  await page.waitForSelector('[data-testid="startup-workbench"]', { timeout: 15000 });
+
+  await expectVisibleSelector(page, '.browser-preview-boundary', 'workbench boundary banner');
+  await expectVisibleSelector(page, '.classic-desktop-shell', 'workbench desktop shell');
+  await expectVisibleSelector(page, '[data-testid="startup-primary-actions"]', 'workbench startup primary actions');
+
+  const bodyText = await page.locator('body').innerText();
+  expectTextIncludes(bodyText, "shared workbench shell, running in the browser", 'workbench desktop shell');
+  expectTextIncludes(bodyText, 'product-shaped browser workbench entrypoint', 'workbench desktop shell');
+  expectTextIncludes(bodyText, 'Open preview proof shelf', 'workbench desktop shell');
+  expectTextIncludes(bodyText, 'Start a new runner', 'workbench desktop shell');
+  expectTextIncludes(bodyText, 'Import an existing runner', 'workbench desktop shell');
+  expectTextIncludes(bodyText, 'Continue PRV in build lab', 'workbench desktop shell');
+  expectTextIncludes(bodyText, 'Resume from restored session state', 'workbench desktop shell');
+  expectTextIncludes(bodyText, 'Resume PRV', 'workbench desktop shell');
+  expectTextIncludes(bodyText, 'saved', 'workbench desktop shell');
+  expectTextIncludes(bodyText, 'Continue restored runner lanes', 'workbench desktop shell');
+  expectTextIncludes(bodyText, 'Continue PRV on contacts', 'workbench desktop shell');
+  expectTextIncludes(bodyText, 'Continue PRV on profile', 'workbench desktop shell');
+  expectTextIncludes(bodyText, 'Continue PRV on rules', 'workbench desktop shell');
+  expectTextIncludes(bodyText, 'Continue PRV on gear', 'workbench desktop shell');
+  expectTextIncludes(bodyText, 'Continue PRV on advanced', 'workbench desktop shell');
+  expectTextIncludes(bodyText, 'Continue PRV for download', 'workbench desktop shell');
+  expectTextIncludes(bodyText, 'Continue PRV for export', 'workbench desktop shell');
+  expectTextIncludes(bodyText, 'Continue PRV for print', 'workbench desktop shell');
+  expectTextIncludes(bodyText, 'Resume PRV on profile', 'workbench desktop shell');
+  expectTextIncludes(bodyText, 'Continue a recent dossier', 'workbench desktop shell');
+  expectTextIncludes(bodyText, 'Review identity and profile', 'workbench desktop shell');
+  expectTextIncludes(bodyText, 'Review rules and references', 'workbench desktop shell');
+  expectTextIncludes(bodyText, 'Review loadout and gear', 'workbench desktop shell');
+  expectTextIncludes(bodyText, 'Open advanced build lanes', 'workbench desktop shell');
+  expectTextIncludes(bodyText, 'Prepare a browser download', 'workbench desktop shell');
+  expectTextIncludes(bodyText, 'Prepare an export package', 'workbench desktop shell');
+  expectTextIncludes(bodyText, 'Prepare a print preview', 'workbench desktop shell');
+  await expectVisibleSelector(page, '[data-workbench-entry-card="new-character"]', 'workbench new character entry card');
+  await expectVisibleSelector(page, '[data-workbench-entry-card="open-character"]', 'workbench open character entry card');
+  await expectVisibleSelector(page, '[data-workbench-entry-card="seeded-build-lab"]', 'workbench seeded build lab entry card');
+  await expectVisibleSelector(page, '[data-workbench-entry-card="continue-recent"]', 'workbench continue recent entry card');
+  await expectVisibleSelector(page, '[data-workbench-entry-card="recent-work"]', 'workbench recent work entry card');
+  await expectVisibleSelector(page, '[data-workbench-recent-workspace="preview-ws"]', 'workbench recent workspace resume link');
+  await expectVisibleSelector(page, '[data-workbench-entry-card="restored-continuations"]', 'workbench restored continuations entry card');
+  await expectVisibleSelector(page, '[data-workbench-entry-card="profile"]', 'workbench profile entry card');
+  await expectVisibleSelector(page, '[data-workbench-entry-card="rules"]', 'workbench rules entry card');
+  await expectVisibleSelector(page, '[data-workbench-entry-card="gear"]', 'workbench gear entry card');
+  await expectVisibleSelector(page, '[data-workbench-entry-card="technomancer"]', 'workbench technomancer entry card');
+  await expectVisibleSelector(page, '[data-workbench-entry-card="save-as"]', 'workbench save-as entry card');
+  await expectVisibleSelector(page, '[data-workbench-entry-card="export"]', 'workbench export entry card');
+  await expectVisibleSelector(page, '[data-workbench-entry-card="print"]', 'workbench print entry card');
+  expectTextIncludes(bodyText, 'Published self-hosted Docker surface', 'workbench desktop shell');
+
+  if (!page.url().includes('/workbench')) {
+    throw new Error(`Expected workbench route to stay on /workbench, got '${page.url()}'.`);
+  }
+}
+
+async function auditPreviewNewCharacterCommandDeepLink(page) {
+  await openPreviewPathWithRetry(page, '/preview?command=new_character');
+  await expectPremiumDialogPosture(page, 'select build method');
+
+  const dialogTitle = (await page.locator('#dialogTitle').textContent()) || '';
+  expectTextIncludes(dialogTitle, 'select build method', 'preview new character command deep link');
+
+  const dialogText = await page.locator('.desktop-dialog').innerText();
+  expectTextIncludes(dialogText, 'Character Name', 'preview new character command deep link');
+  expectTextIncludes(dialogText, 'Build Method', 'preview new character command deep link');
+
+  if (!page.url().includes('/preview?command=new_character')) {
+    throw new Error(`Expected preview new character deep link to stay on /preview?command=new_character, got '${page.url()}'.`);
+  }
+}
+
+async function auditPreviewOriginDossierCommandDeepLink(page) {
+  await openPreviewPathWithRetry(page, '/preview?command=new_character_origin');
+  await expectPremiumDialogPosture(page, 'origin dossier');
+
+  const dialogTitle = (await page.locator('#dialogTitle').textContent()) || '';
+  expectTextIncludes(dialogTitle, 'origin dossier', 'preview origin dossier command deep link');
+
+  const dialogText = await page.locator('.desktop-dialog').innerText();
+  expectTextIncludes(dialogText, 'Advanced story controls', 'preview origin dossier command deep link');
+  expectTextIncludes(dialogText, 'Story Preview', 'preview origin dossier command deep link');
+
+  if (!page.url().includes('/preview?command=new_character_origin')) {
+    throw new Error(`Expected preview origin dossier deep link to stay on /preview?command=new_character_origin, got '${page.url()}'.`);
+  }
+}
+
+async function auditPreviewOpenCharacterCommandDeepLink(page) {
+  await openPreviewPathWithRetry(page, '/preview?command=open_character');
+  await expectPremiumDialogPosture(page, 'open character');
+
+  const dialogTitle = (await page.locator('#dialogTitle').textContent()) || '';
+  expectTextIncludes(dialogTitle, 'open character', 'preview open character command deep link');
+
+  const dialogText = await page.locator('.desktop-dialog').innerText();
+  expectTextIncludes(dialogText, 'Ruleset', 'preview open character command deep link');
+  expectTextIncludes(dialogText, 'Portable import ready', 'preview open character command deep link');
+
+  if (!page.url().includes('/preview?command=open_character')) {
+    throw new Error(`Expected preview open character deep link to stay on /preview?command=open_character, got '${page.url()}'.`);
+  }
+}
+
+async function auditPreviewOpenForPrintingCommandDeepLink(page) {
+  await openPreviewPathWithRetry(page, '/preview?command=open_for_printing');
+  await expectPremiumDialogPosture(page, 'open for printing');
+
+  const dialogTitle = (await page.locator('#dialogTitle').textContent()) || '';
+  expectTextIncludes(dialogTitle, 'open for printing', 'preview open for printing command deep link');
+
+  const dialogText = await page.locator('.desktop-dialog').innerText();
+  expectTextIncludes(dialogText, 'Import Ruleset', 'preview open for printing command deep link');
+  expectTextIncludes(dialogText, 'Import Source', 'preview open for printing command deep link');
+  expectTextIncludes(dialogText, 'Review imported summary', 'preview open for printing command deep link');
+
+  if (!page.url().includes('/preview?command=open_for_printing')) {
+    throw new Error(`Expected preview open for printing deep link to stay on /preview?command=open_for_printing, got '${page.url()}'.`);
+  }
+}
+
+async function auditPreviewOpenForExportCommandDeepLink(page) {
+  await openPreviewPathWithRetry(page, '/preview?command=open_for_export');
+  await expectPremiumDialogPosture(page, 'open for export');
+
+  const dialogTitle = (await page.locator('#dialogTitle').textContent()) || '';
+  expectTextIncludes(dialogTitle, 'open for export', 'preview open for export command deep link');
+
+  const dialogText = await page.locator('.desktop-dialog').innerText();
+  expectTextIncludes(dialogText, 'Import Ruleset', 'preview open for export command deep link');
+  expectTextIncludes(dialogText, 'Import Source', 'preview open for export command deep link');
+  expectTextIncludes(dialogText, 'Review imported summary', 'preview open for export command deep link');
+
+  if (!page.url().includes('/preview?command=open_for_export')) {
+    throw new Error(`Expected preview open for export deep link to stay on /preview?command=open_for_export, got '${page.url()}'.`);
+  }
+}
+
+async function auditPreviewSeededPrintResultDeepLink(page) {
+  await openPreviewPathWithRetry(page, '/preview?fixture=blue&command=print_character');
+  await expectVisibleSelector(page, '[data-result-dispatch="print"]', 'preview seeded print result dispatch');
+
+  const bodyText = await page.locator('body').innerText();
+  expectTextIncludes(bodyText, 'Print preview prepared:', 'preview seeded print result');
+  expectTextIncludes(bodyText, 'Browser print dispatch', 'preview seeded print result');
+  expectTextIncludes(bodyText, 'Troy Simmons', 'preview seeded print result');
+
+  if (!page.url().includes('/preview?fixture=blue&command=print_character')) {
+    throw new Error(`Expected preview seeded print result route to stay on /preview?fixture=blue&command=print_character, got '${page.url()}'.`);
+  }
+}
+
+async function auditPreviewSeededExportResultDeepLink(page) {
+  await openPreviewPathWithRetry(page, '/preview?fixture=blue&command=export_character&dialog_action=download');
+  await expectVisibleSelector(page, '[data-result-dispatch="export"]', 'preview seeded export result dispatch');
+  await expectVisibleSelector(page, '[data-result-trust-receipt]', 'preview seeded export trust receipt');
+
+  const bodyText = await page.locator('body').innerText();
+  expectTextIncludes(bodyText, 'Portable export ready:', 'preview seeded export result');
+  expectTextIncludes(bodyText, 'Browser export dispatch', 'preview seeded export result');
+  expectTextIncludes(bodyText, 'Last portable export', 'preview seeded export result');
+  expectTextIncludes(bodyText, 'Import review', 'preview seeded export result');
+
+  if (!page.url().includes('/preview') || !page.url().includes('command=export_character') || !page.url().includes('dialog_action=download')) {
+    throw new Error(`Expected preview seeded export result route to stay on export_character download action, got '${page.url()}'.`);
+  }
+}
+
+async function auditPreviewSeededSaveResultDeepLink(page) {
+  await openPreviewPathWithRetry(page, '/preview?fixture=blue&command=save_character');
+  await expectVisibleSelector(page, '[data-result-dispatch="save"]', 'preview seeded save result dispatch');
+
+  const bodyText = await page.locator('body').innerText();
+  expectTextIncludes(bodyText, 'Workspace saved.', 'preview seeded save result');
+  expectTextIncludes(bodyText, 'Browser save dispatch', 'preview seeded save result');
+  expectTextIncludes(bodyText, 'save_character', 'preview seeded save result');
+
+  if (!page.url().includes('/preview?fixture=blue&command=save_character')) {
+    throw new Error(`Expected preview seeded save result route to stay on /preview?fixture=blue&command=save_character, got '${page.url()}'.`);
+  }
+}
+
+async function auditPreviewSeededSaveAsResultDeepLink(page) {
+  await openPreviewPathWithRetry(page, '/preview?fixture=blue&command=save_character_as');
+  await expectVisibleSelector(page, '[data-result-dispatch="download"]', 'preview seeded save-as result dispatch');
+
+  const bodyText = await page.locator('body').innerText();
+  expectTextIncludes(bodyText, 'Download prepared:', 'preview seeded save-as result');
+  expectTextIncludes(bodyText, 'Browser download dispatch', 'preview seeded save-as result');
+
+  if (!page.url().includes('/preview?fixture=blue&command=save_character_as')) {
+    throw new Error(`Expected preview seeded save-as result route to stay on /preview?fixture=blue&command=save_character_as, got '${page.url()}'.`);
+  }
 }
 
 async function auditShowcaseSurface(page) {
@@ -810,6 +1017,124 @@ async function createSr4BpTrollDeckerAndExerciseAddWorkflows(page) {
   }
 }
 
+async function auditWorkbenchWorkspaceResumeRoute(page, workspaceId, expectedName, expectedAlias) {
+  await openPreviewPathWithRetry(page, `/workbench?workspace=${encodeURIComponent(workspaceId)}`);
+  await page.waitForSelector('[data-testid="startup-workbench"]', { timeout: 15000 });
+  await waitForWorkspaceLoaded(page, expectedName, expectedAlias);
+
+  const bodyText = await page.locator('body').innerText();
+  expectTextIncludes(bodyText, 'Resume from restored session state', 'workbench workspace resume route');
+  expectTextIncludes(bodyText, `Continue ${expectedAlias} in build lab`, 'workbench workspace resume route');
+  expectTextIncludes(bodyText, `Resume ${expectedAlias}`, 'workbench workspace resume route');
+  expectTextIncludes(bodyText, `Continue ${expectedAlias} on contacts`, 'workbench workspace resume route');
+  expectTextIncludes(bodyText, `Continue ${expectedAlias} on profile`, 'workbench workspace resume route');
+  expectTextIncludes(bodyText, `Continue ${expectedAlias} on rules`, 'workbench workspace resume route');
+  expectTextIncludes(bodyText, `Continue ${expectedAlias} on gear`, 'workbench workspace resume route');
+  expectTextIncludes(bodyText, `Continue ${expectedAlias} on advanced`, 'workbench workspace resume route');
+  expectTextIncludes(bodyText, `Continue ${expectedAlias} for download`, 'workbench workspace resume route');
+  expectTextIncludes(bodyText, `Continue ${expectedAlias} for export`, 'workbench workspace resume route');
+  expectTextIncludes(bodyText, `Continue ${expectedAlias} for print`, 'workbench workspace resume route');
+  expectTextIncludes(bodyText, `Resume ${expectedAlias} on profile`, 'workbench workspace resume route');
+  expectTextIncludes(bodyText, expectedName, 'workbench workspace resume route');
+  expectTextIncludes(bodyText, 'saved', 'workbench workspace resume route');
+  await expectVisibleSelector(page, `[data-workbench-recent-workspace="${workspaceId}"]`, 'workbench workspace resume link');
+
+  if (!page.url().includes(`/workbench?workspace=${workspaceId}`)) {
+    throw new Error(`Expected workbench workspace resume route to stay on /workbench?workspace=${workspaceId}, got '${page.url()}'.`);
+  }
+}
+
+async function auditWorkbenchRestoredContactActionRoute(page, workspaceId, expectedName, expectedAlias) {
+  await openPreviewPathWithRetry(page, `/workbench?workspace=${encodeURIComponent(workspaceId)}&tab=tab-contacts&control=contact_add`);
+  await page.waitForSelector('.desktop-dialog', { timeout: 15000 });
+  await waitForWorkspaceLoaded(page, expectedName, expectedAlias);
+  await expectPremiumDialogPosture(page, 'add contact');
+
+  const dialogText = await page.locator('.desktop-dialog').innerText();
+  expectTextIncludes(dialogText, 'Street Doc', 'workbench restored contact action route');
+  expectTextIncludes(dialogText, 'Connection/Loyalty', 'workbench restored contact action route');
+}
+
+async function auditWorkbenchRestoredContactAddCommitRoute(page, workspaceId, expectedName, expectedAlias) {
+  await openPreviewPathWithRetry(page, `/workbench?workspace=${encodeURIComponent(workspaceId)}&tab=tab-contacts&control=contact_add&dialog_action=add`);
+  await waitForWorkspaceLoaded(page, expectedName, expectedAlias);
+  await page.waitForFunction(() => !document.querySelector('#dialogBackdrop'), { timeout: 15000 });
+
+  const bodyText = await page.locator('body').innerText();
+  expectTextIncludes(bodyText, 'Dr. Mercy', 'workbench restored contact commit route');
+}
+
+async function auditWorkbenchRestoredComplexFormActionRoute(page, workspaceId, expectedName, expectedAlias) {
+  await openPreviewPathWithRetry(page, `/workbench?workspace=${encodeURIComponent(workspaceId)}&tab=tab-technomancer&control=complex_form_add`);
+  await page.waitForSelector('.desktop-dialog', { timeout: 15000 });
+  await waitForWorkspaceLoaded(page, expectedName, expectedAlias);
+  await expectPremiumDialogPosture(page, 'add complex form');
+
+  const dialogText = await page.locator('.desktop-dialog').innerText();
+  expectTextIncludes(dialogText, 'Armor', 'workbench restored complex form route');
+  expectTextIncludes(dialogText, 'Data Trails', 'workbench restored complex form route');
+}
+
+async function auditWorkbenchRestoredInitiationActionRoute(page, workspaceId, expectedName, expectedAlias) {
+  await openPreviewPathWithRetry(page, `/workbench?workspace=${encodeURIComponent(workspaceId)}&tab=tab-adept&control=initiation_add`);
+  await page.waitForSelector('.desktop-dialog', { timeout: 15000 });
+  await waitForWorkspaceLoaded(page, expectedName, expectedAlias);
+  await expectPremiumDialogPosture(page, 'add initiation');
+
+  const dialogText = await page.locator('.desktop-dialog').innerText();
+  expectTextIncludes(dialogText, 'Masking', 'workbench restored initiation route');
+  expectTextIncludes(dialogText, 'Grade', 'workbench restored initiation route');
+}
+
+async function auditWorkbenchRestoredInitiationAddCommitRoute(page, workspaceId, expectedName, expectedAlias) {
+  await openPreviewPathWithRetry(page, `/workbench?workspace=${encodeURIComponent(workspaceId)}&tab=tab-adept&control=initiation_add&dialog_action=add`);
+  await waitForWorkspaceLoaded(page, expectedName, expectedAlias);
+  await page.waitForFunction(() => !document.querySelector('#dialogBackdrop'), { timeout: 15000 });
+
+  const bodyText = await page.locator('body').innerText();
+  expectTextIncludes(bodyText, 'Initiation Grade 1', 'workbench restored initiation commit route');
+}
+
+async function auditWorkbenchRestoredCyberwareActionRoute(page, workspaceId, expectedName, expectedAlias) {
+  await openPreviewPathWithRetry(page, `/workbench?workspace=${encodeURIComponent(workspaceId)}&tab=tab-cyberware&control=cyberware_add`);
+  await page.waitForSelector('.desktop-dialog', { timeout: 15000 });
+  await waitForWorkspaceLoaded(page, expectedName, expectedAlias);
+  await expectPremiumDialogPosture(page, 'add cyberware');
+
+  const dialogText = await page.locator('.desktop-dialog').innerText();
+  expectTextIncludes(dialogText, 'Wired Reflexes 2', 'workbench restored cyberware route');
+  expectTextIncludes(dialogText, 'Essence', 'workbench restored cyberware route');
+}
+
+async function auditWorkbenchRestoredCyberwareAddCommitRoute(page, workspaceId, expectedName, expectedAlias) {
+  await openPreviewPathWithRetry(page, `/workbench?workspace=${encodeURIComponent(workspaceId)}&tab=tab-cyberware&control=cyberware_add&dialog_action=add`);
+  await waitForWorkspaceLoaded(page, expectedName, expectedAlias);
+  await page.waitForFunction(() => !document.querySelector('#dialogBackdrop'), { timeout: 15000 });
+
+  const bodyText = await page.locator('body').innerText();
+  expectTextIncludes(bodyText, 'Wired Reflexes 2', 'workbench restored cyberware commit route');
+}
+
+async function auditWorkbenchRestoredSpellActionRoute(page, workspaceId, expectedName, expectedAlias) {
+  await openPreviewPathWithRetry(page, `/workbench?workspace=${encodeURIComponent(workspaceId)}&tab=tab-magician&control=spell_add`);
+  await page.waitForSelector('.desktop-dialog', { timeout: 15000 });
+  await waitForWorkspaceLoaded(page, expectedName, expectedAlias);
+  await expectPremiumDialogPosture(page, 'add spell');
+
+  const dialogText = await page.locator('.desktop-dialog').innerText();
+  expectTextIncludes(dialogText, 'Stunbolt', 'workbench restored spell route');
+  expectTextIncludes(dialogText, 'Drain', 'workbench restored spell route');
+}
+
+async function auditWorkbenchRestoredSpellAddCommitRoute(page, workspaceId, expectedName, expectedAlias) {
+  await openPreviewPathWithRetry(page, `/workbench?workspace=${encodeURIComponent(workspaceId)}&tab=tab-magician&control=spell_add&dialog_action=add`);
+  await waitForWorkspaceLoaded(page, expectedName, expectedAlias);
+  await page.waitForFunction(() => !document.querySelector('#dialogBackdrop'), { timeout: 15000 });
+
+  const bodyText = await page.locator('body').innerText();
+  expectTextIncludes(bodyText, 'Stunbolt', 'workbench restored spell commit route');
+}
+
 async function run() {
   const browser = await chromium.launch({ headless: true });
 
@@ -826,12 +1151,62 @@ async function run() {
     await auditPreviewDesktopSurface(previewAuditPage);
     await previewAuditPage.close();
 
+    const workbenchAuditPage = await browser.newPage({ viewport: { width: 1440, height: 960 } });
+    await auditWorkbenchDesktopSurface(workbenchAuditPage);
+    await workbenchAuditPage.close();
+
+    const previewNewCharacterDeepLinkPage = await browser.newPage({ viewport: { width: 1440, height: 960 } });
+    await auditPreviewNewCharacterCommandDeepLink(previewNewCharacterDeepLinkPage);
+    await previewNewCharacterDeepLinkPage.close();
+
+    const previewOriginDossierDeepLinkPage = await browser.newPage({ viewport: { width: 1440, height: 960 } });
+    await auditPreviewOriginDossierCommandDeepLink(previewOriginDossierDeepLinkPage);
+    await previewOriginDossierDeepLinkPage.close();
+
+    const previewOpenCharacterDeepLinkPage = await browser.newPage({ viewport: { width: 1440, height: 960 } });
+    await auditPreviewOpenCharacterCommandDeepLink(previewOpenCharacterDeepLinkPage);
+    await previewOpenCharacterDeepLinkPage.close();
+
+    const previewOpenForPrintingDeepLinkPage = await browser.newPage({ viewport: { width: 1440, height: 960 } });
+    await auditPreviewOpenForPrintingCommandDeepLink(previewOpenForPrintingDeepLinkPage);
+    await previewOpenForPrintingDeepLinkPage.close();
+
+    const previewOpenForExportDeepLinkPage = await browser.newPage({ viewport: { width: 1440, height: 960 } });
+    await auditPreviewOpenForExportCommandDeepLink(previewOpenForExportDeepLinkPage);
+    await previewOpenForExportDeepLinkPage.close();
+
+    const previewSeededPrintResultPage = await browser.newPage({ viewport: { width: 1440, height: 960 } });
+    await auditPreviewSeededPrintResultDeepLink(previewSeededPrintResultPage);
+    await previewSeededPrintResultPage.close();
+
+    const previewSeededExportResultPage = await browser.newPage({ viewport: { width: 1440, height: 960 } });
+    await auditPreviewSeededExportResultDeepLink(previewSeededExportResultPage);
+    await previewSeededExportResultPage.close();
+
+    const previewSeededSaveResultPage = await browser.newPage({ viewport: { width: 1440, height: 960 } });
+    await auditPreviewSeededSaveResultDeepLink(previewSeededSaveResultPage);
+    await previewSeededSaveResultPage.close();
+
+    const previewSeededSaveAsResultPage = await browser.newPage({ viewport: { width: 1440, height: 960 } });
+    await auditPreviewSeededSaveAsResultDeepLink(previewSeededSaveAsResultPage);
+    await previewSeededSaveAsResultPage.close();
+
     const showcaseAuditPage = await browser.newPage({ viewport: { width: 1440, height: 960 } });
     await auditShowcaseSurface(showcaseAuditPage);
     await showcaseAuditPage.close();
 
     const sr5Page = await browser.newPage({ viewport: { width: 1440, height: 960 } });
     await createDefaultSr5PriorityRunner(sr5Page);
+    await auditWorkbenchWorkspaceResumeRoute(sr5Page, 'ws-1', 'Playwright Runner', 'PW');
+    await auditWorkbenchRestoredContactAddCommitRoute(sr5Page, 'ws-1', 'Playwright Runner', 'PW');
+    await auditWorkbenchRestoredContactActionRoute(sr5Page, 'ws-1', 'Playwright Runner', 'PW');
+    await auditWorkbenchRestoredComplexFormActionRoute(sr5Page, 'ws-1', 'Playwright Runner', 'PW');
+    await auditWorkbenchRestoredInitiationAddCommitRoute(sr5Page, 'ws-1', 'Playwright Runner', 'PW');
+    await auditWorkbenchRestoredInitiationActionRoute(sr5Page, 'ws-1', 'Playwright Runner', 'PW');
+    await auditWorkbenchRestoredCyberwareAddCommitRoute(sr5Page, 'ws-1', 'Playwright Runner', 'PW');
+    await auditWorkbenchRestoredCyberwareActionRoute(sr5Page, 'ws-1', 'Playwright Runner', 'PW');
+    await auditWorkbenchRestoredSpellAddCommitRoute(sr5Page, 'ws-1', 'Playwright Runner', 'PW');
+    await auditWorkbenchRestoredSpellActionRoute(sr5Page, 'ws-1', 'Playwright Runner', 'PW');
     await sr5Page.close();
 
     const sr4Page = await browser.newPage({ viewport: { width: 1440, height: 960 } });

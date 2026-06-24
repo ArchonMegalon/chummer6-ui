@@ -1,17 +1,157 @@
 {
   "contract_name": "chummer6-ui.external_host_proof_blockers",
-  "generated_at": "2026-06-23T10:31:39Z",
-  "manifest_path": "/docker/chummercomplete/chummer.run-services/Chummer.Portal/downloads/RELEASE_CHANNEL.generated.json",
-  "downloads_dir": "/docker/chummercomplete/chummer.run-services/Chummer.Portal/downloads/files",
-  "startup_smoke_dir": "/docker/chummercomplete/chummer.run-services/Chummer.Portal/downloads/startup-smoke",
+  "generated_at": "2026-06-24T16:10:51Z",
+  "manifest_path": "/docker/chummercomplete/chummer-presentation/Docker/Downloads/RELEASE_CHANNEL.generated.json",
+  "downloads_dir": "/docker/chummercomplete/chummer-presentation/Docker/Downloads/files",
+  "startup_smoke_dir": "/docker/chummercomplete/chummer-presentation/Docker/Downloads/startup-smoke",
   "base_url": "https://chummer.run",
   "timeout_seconds": 10,
   "max_receipt_age_seconds": 604800,
-  "release_published_at": "2026-06-23T10:31:26Z",
+  "release_published_at": "2026-06-23T10:26:21Z",
   "status": "ready",
   "missing_required_platform_head_rid_tuples": [],
   "unresolved_hosts": [],
   "unresolved_tuples": [],
+  "browser_workbench_routes": [
+    "/blazor/",
+    "/blazor/health",
+    "/blazor/workbench",
+    "/blazor/workbench?workspace=ws-1",
+    "/blazor/workbench?command=new_character_origin",
+    "/blazor/workbench?command=character_roster",
+    "/blazor/workbench?command=master_index",
+    "/blazor/preview?command=new_character",
+    "/blazor/workbench?workspace=ws-1&command=save_character_as",
+    "/blazor/workbench?workspace=ws-1&command=export_character",
+    "/blazor/workbench?workspace=ws-1&command=print_character",
+    "/blazor/workbench?workspace=ws-1&tab=tab-contacts&control=contact_add",
+    "/blazor/workbench?workspace=ws-1&tab=tab-contacts&control=contact_add&dialog_action=add"
+  ],
+  "browser_route_probe_count": 13,
+  "browser_route_blocker_count": 0,
+  "browser_route_probes": [
+    {
+      "checked": true,
+      "url": "https://chummer.run/blazor/",
+      "http_status": 200,
+      "ok": true,
+      "error": "",
+      "route": "/blazor/"
+    },
+    {
+      "checked": true,
+      "url": "https://chummer.run/blazor/health",
+      "http_status": 200,
+      "ok": true,
+      "error": "",
+      "route": "/blazor/health"
+    },
+    {
+      "checked": true,
+      "url": "https://chummer.run/blazor/workbench",
+      "http_status": 200,
+      "ok": true,
+      "error": "",
+      "route": "/blazor/workbench"
+    },
+    {
+      "checked": true,
+      "url": "https://chummer.run/blazor/workbench?workspace=ws-1",
+      "http_status": 200,
+      "ok": true,
+      "error": "",
+      "route": "/blazor/workbench?workspace=ws-1"
+    },
+    {
+      "checked": true,
+      "url": "https://chummer.run/blazor/workbench?command=new_character_origin",
+      "http_status": 200,
+      "ok": true,
+      "error": "",
+      "route": "/blazor/workbench?command=new_character_origin"
+    },
+    {
+      "checked": true,
+      "url": "https://chummer.run/blazor/workbench?command=character_roster",
+      "http_status": 200,
+      "ok": true,
+      "error": "",
+      "route": "/blazor/workbench?command=character_roster"
+    },
+    {
+      "checked": true,
+      "url": "https://chummer.run/blazor/workbench?command=master_index",
+      "http_status": 200,
+      "ok": true,
+      "error": "",
+      "route": "/blazor/workbench?command=master_index"
+    },
+    {
+      "checked": true,
+      "url": "https://chummer.run/blazor/preview?command=new_character",
+      "http_status": 200,
+      "ok": true,
+      "error": "",
+      "route": "/blazor/preview?command=new_character"
+    },
+    {
+      "checked": true,
+      "url": "https://chummer.run/blazor/workbench?workspace=ws-1&command=save_character_as",
+      "http_status": 200,
+      "ok": true,
+      "error": "",
+      "route": "/blazor/workbench?workspace=ws-1&command=save_character_as"
+    },
+    {
+      "checked": true,
+      "url": "https://chummer.run/blazor/workbench?workspace=ws-1&command=export_character",
+      "http_status": 200,
+      "ok": true,
+      "error": "",
+      "route": "/blazor/workbench?workspace=ws-1&command=export_character"
+    },
+    {
+      "checked": true,
+      "url": "https://chummer.run/blazor/workbench?workspace=ws-1&command=print_character",
+      "http_status": 200,
+      "ok": true,
+      "error": "",
+      "route": "/blazor/workbench?workspace=ws-1&command=print_character"
+    },
+    {
+      "checked": true,
+      "url": "https://chummer.run/blazor/workbench?workspace=ws-1&tab=tab-contacts&control=contact_add",
+      "http_status": 200,
+      "ok": true,
+      "error": "",
+      "route": "/blazor/workbench?workspace=ws-1&tab=tab-contacts&control=contact_add"
+    },
+    {
+      "checked": true,
+      "url": "https://chummer.run/blazor/workbench?workspace=ws-1&tab=tab-contacts&control=contact_add&dialog_action=add",
+      "http_status": 200,
+      "ok": true,
+      "error": "",
+      "route": "/blazor/workbench?workspace=ws-1&tab=tab-contacts&control=contact_add&dialog_action=add"
+    }
+  ],
+  "browser_route_blockers": [],
   "external_proof_request_count": 0,
-  "external_proof_requests": []
+  "external_proof_requests": [],
+  "browser_execution_proof_target": "/docker/chummercomplete/chummer-presentation/.codex-studio/published/BLAZOR_PUBLIC_EDGE_EXECUTION_PROOF.generated.json",
+  "browser_execution_proof_status": "passed",
+  "browser_execution_proof_contract": "chummer6-ui.blazor_public_edge_execution_proof",
+  "browser_execution_proof_error": "",
+  "browser_execution_proof_runner": "/docker/chummercomplete/chummer-presentation/scripts/e2e-public-edge-execution.sh",
+  "browser_execution_proof_status_summary": "/docker/chummercomplete/chummer-presentation/scripts/print_blazor_public_edge_proof_status.py",
+  "browser_execution_proof_verifier": "/docker/chummercomplete/chummer-presentation/scripts/verify_blazor_public_edge_execution_proof.py",
+  "browser_execution_proof_contract_doc": "/docker/chummercomplete/chummer-presentation/docs/BLAZOR_PUBLIC_EDGE_EXECUTION_PROOF.md",
+  "browser_route_entry_proof_target": "/docker/chummercomplete/chummer-presentation/.codex-studio/published/BLAZOR_PUBLIC_EDGE_WORKBENCH_PROOF.generated.json",
+  "browser_route_entry_proof_status": "passed",
+  "browser_route_entry_proof_contract": "chummer6-ui.blazor_public_edge_workbench_proof",
+  "browser_route_entry_proof_shape": "expanded",
+  "browser_route_entry_proof_status_summary": "/docker/chummercomplete/chummer-presentation/scripts/print_blazor_public_edge_proof_status.py",
+  "browser_route_entry_proof_verifier": "/docker/chummercomplete/chummer-presentation/scripts/verify_blazor_public_edge_workbench_proof.py",
+  "browser_route_entry_proof_verifier_wrapper": "/docker/chummercomplete/chummer-presentation/scripts/ai/milestones/blazor-public-edge-workbench-proof-check.sh",
+  "browser_route_entry_proof_contract_doc": "/docker/chummercomplete/chummer-presentation/docs/BLAZOR_PUBLIC_EDGE_WORKBENCH_PROOF.md"
 }

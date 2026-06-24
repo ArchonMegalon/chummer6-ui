@@ -19,6 +19,7 @@ using Chummer.Infrastructure.Xml;
 using Chummer.Presentation;
 using Chummer.Presentation.Overview;
 using Chummer.Rulesets.Hosting;
+using Chummer.Run.Contracts.Billing;
 
 namespace Chummer.Desktop.Runtime;
 
@@ -124,6 +125,18 @@ public sealed class InProcessChummerClient : IChummerClient
     {
         ct.ThrowIfCancellationRequested();
         return Task.FromResult<AccountCampaignSummary?>(null);
+    }
+
+    public Task<MyFirstBookQuotaSnapshotDto?> GetMyFirstBookQuotaAsync(CancellationToken ct)
+    {
+        ct.ThrowIfCancellationRequested();
+        return Task.FromResult<MyFirstBookQuotaSnapshotDto?>(null);
+    }
+
+    public Task<MyFirstBookQuotaConsumeResultDto> ConsumeMyFirstBookQuotaAsync(CancellationToken ct)
+    {
+        ct.ThrowIfCancellationRequested();
+        throw new InvalidOperationException("Link your copy before creating a MyFirstBook origin book.");
     }
 
     public Task<IReadOnlyList<CampaignWorkspaceDigestProjection>> GetCampaignWorkspaceDigestsAsync(CancellationToken ct)

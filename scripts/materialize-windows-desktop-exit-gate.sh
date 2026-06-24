@@ -91,6 +91,9 @@ RID="${RID_OVERRIDE:-${RELEASE_PROMOTED_TUPLE[1]:-win-x64}}"
 WINDOWS_INSTALLER_PATH="${CHUMMER_WINDOWS_INSTALLER_PATH:-}"
 WINDOWS_LOCAL_DESKTOP_FILES_ROOT="${CHUMMER_WINDOWS_LOCAL_DESKTOP_FILES_ROOT:-$REPO_ROOT/Docker/Downloads/files}"
 UI_LOCAL_RELEASE_PROOF_PATH="${CHUMMER_UI_LOCAL_RELEASE_PROOF_PATH:-$REPO_ROOT/.codex-studio/published/UI_LOCAL_RELEASE_PROOF.generated.json}"
+BLAZOR_SELF_HOST_WORKBENCH_PROOF_PATH="${CHUMMER_BLAZOR_SELF_HOST_WORKBENCH_PROOF_PATH:-$REPO_ROOT/.codex-studio/published/BLAZOR_SELF_HOST_WORKBENCH_PROOF.generated.json}"
+BLAZOR_PUBLIC_EDGE_WORKBENCH_PROOF_PATH="${CHUMMER_BLAZOR_PUBLIC_EDGE_WORKBENCH_PROOF_PATH:-$REPO_ROOT/.codex-studio/published/BLAZOR_PUBLIC_EDGE_WORKBENCH_PROOF.generated.json}"
+BLAZOR_BROWSER_LANE_PROOF_SET_PATH="${CHUMMER_BLAZOR_BROWSER_LANE_PROOF_SET_PATH:-$REPO_ROOT/.codex-studio/published/BLAZOR_BROWSER_LANE_PROOF_SET.generated.json}"
 UI_FLAGSHIP_RELEASE_GATE_PATH="${CHUMMER_UI_FLAGSHIP_RELEASE_GATE_PATH:-$REPO_ROOT/.codex-studio/published/UI_FLAGSHIP_RELEASE_GATE.generated.json}"
 DESKTOP_WORKFLOW_EXECUTION_GATE_PATH="${CHUMMER_DESKTOP_WORKFLOW_EXECUTION_GATE_PATH:-$REPO_ROOT/.codex-studio/published/DESKTOP_WORKFLOW_EXECUTION_GATE.generated.json}"
 UI_WORKFLOW_PARITY_PATH="${CHUMMER_UI_WORKFLOW_PARITY_PATH:-$REPO_ROOT/.codex-studio/published/CHUMMER5A_DESKTOP_WORKFLOW_PARITY.generated.json}"
@@ -100,7 +103,7 @@ WINDOWS_INSTALLER_VISUAL_PROOF_PATH="${CHUMMER_WINDOWS_INSTALLER_VISUAL_PROOF_PA
 
 mkdir -p "$(dirname "$PROOF_PATH")"
 
-python3 - "$PROOF_PATH" "$RELEASE_CHANNEL_PATH" "$WINDOWS_INSTALLER_PATH" "$WINDOWS_LOCAL_DESKTOP_FILES_ROOT" "$UI_LOCAL_RELEASE_PROOF_PATH" "$UI_FLAGSHIP_RELEASE_GATE_PATH" "$DESKTOP_WORKFLOW_EXECUTION_GATE_PATH" "$UI_WORKFLOW_PARITY_PATH" "$SR4_WORKFLOW_PARITY_PATH" "$SR6_WORKFLOW_PARITY_PATH" "$WINDOWS_INSTALLER_VISUAL_PROOF_PATH" "$REPO_ROOT" "$HUB_REGISTRY_ROOT" "$APP_KEY" "$RID" <<'PY'
+python3 - "$PROOF_PATH" "$RELEASE_CHANNEL_PATH" "$WINDOWS_INSTALLER_PATH" "$WINDOWS_LOCAL_DESKTOP_FILES_ROOT" "$UI_LOCAL_RELEASE_PROOF_PATH" "$BLAZOR_SELF_HOST_WORKBENCH_PROOF_PATH" "$BLAZOR_PUBLIC_EDGE_WORKBENCH_PROOF_PATH" "$BLAZOR_BROWSER_LANE_PROOF_SET_PATH" "$UI_FLAGSHIP_RELEASE_GATE_PATH" "$DESKTOP_WORKFLOW_EXECUTION_GATE_PATH" "$UI_WORKFLOW_PARITY_PATH" "$SR4_WORKFLOW_PARITY_PATH" "$SR6_WORKFLOW_PARITY_PATH" "$WINDOWS_INSTALLER_VISUAL_PROOF_PATH" "$REPO_ROOT" "$HUB_REGISTRY_ROOT" "$APP_KEY" "$RID" <<'PY'
 from __future__ import annotations
 
 import hashlib
@@ -109,6 +112,7 @@ import os
 import platform
 import shutil
 import sys
+import zipfile
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any, Dict, List
@@ -361,6 +365,22 @@ def path_uses_legacy_chummer5a_root(path: Path) -> bool:
     return "/chummer5a/" in normalized
 
 
+def expected_bootstrap_payload_path(installer_path: Path) -> Path:
+    name = installer_path.name
+    if name.lower().endswith("-installer.exe"):
+        return installer_path.with_name(name[:-len("-installer.exe")] + "-payload.zip")
+    return installer_path.with_name(f"{installer_path.stem}-payload.zip")
+
+
+def zip_contains_sample_character(payload_path: Path) -> bool:
+    try:
+        with zipfile.ZipFile(payload_path) as archive:
+            names = {entry.filename.replace("\\", "/").lstrip("/") for entry in archive.infolist()}
+            return "Samples/Legacy/Soma-Career.chum5" in names
+    except (OSError, zipfile.BadZipFile):
+        return False
+
+
 def resolve_receipt_artifact_path(
     raw_candidates: List[str],
     repo_root: Path,
@@ -501,17 +521,20 @@ installer_path = Path(sys.argv[3])
 windows_installer_path_override = Path(sys.argv[3]).expanduser() if str(sys.argv[3]).strip() else None
 windows_local_desktop_files_root = Path(sys.argv[4])
 ui_local_release_proof_path = Path(sys.argv[5])
-ui_flagship_release_gate_path = Path(sys.argv[6])
-desktop_workflow_execution_gate_path = Path(sys.argv[7])
-ui_workflow_parity_path = Path(sys.argv[8])
-sr4_workflow_parity_path = Path(sys.argv[9])
-sr6_workflow_parity_path = Path(sys.argv[10])
-windows_installer_visual_proof_path = Path(sys.argv[11])
-repo_root = Path(sys.argv[12])
-hub_registry_root_arg = str(sys.argv[13] or "").strip()
+blazor_self_host_workbench_proof_path = Path(sys.argv[6])
+blazor_public_edge_workbench_proof_path = Path(sys.argv[7])
+blazor_browser_lane_proof_set_path = Path(sys.argv[8])
+ui_flagship_release_gate_path = Path(sys.argv[9])
+desktop_workflow_execution_gate_path = Path(sys.argv[10])
+ui_workflow_parity_path = Path(sys.argv[11])
+sr4_workflow_parity_path = Path(sys.argv[12])
+sr6_workflow_parity_path = Path(sys.argv[13])
+windows_installer_visual_proof_path = Path(sys.argv[14])
+repo_root = Path(sys.argv[15])
+hub_registry_root_arg = str(sys.argv[16] or "").strip()
 hub_registry_root = Path(hub_registry_root_arg).resolve() if hub_registry_root_arg else None
-expected_head_override = normalize_token(sys.argv[14])
-expected_rid_override = normalize_token(sys.argv[15])
+expected_head_override = normalize_token(sys.argv[17])
+expected_rid_override = normalize_token(sys.argv[18])
 host_os_name = platform.system().strip()
 host_os_normalized = normalize_token(host_os_name)
 host_supports_windows_smoke = bool(os.name == "nt" or shutil.which("cygpath"))
@@ -522,6 +545,9 @@ evidence: Dict[str, Any] = {
     "windows_installer_path_override": str(windows_installer_path_override) if windows_installer_path_override else "",
     "windows_local_desktop_files_root": str(windows_local_desktop_files_root),
     "ui_local_release_proof_path": str(ui_local_release_proof_path),
+    "blazor_self_host_workbench_proof_path": str(blazor_self_host_workbench_proof_path),
+    "blazor_public_edge_workbench_proof_path": str(blazor_public_edge_workbench_proof_path),
+    "blazor_browser_lane_proof_set_path": str(blazor_browser_lane_proof_set_path),
     "ui_flagship_release_gate_path": str(ui_flagship_release_gate_path),
     "desktop_workflow_execution_gate_path": str(desktop_workflow_execution_gate_path),
     "ui_workflow_parity_path": str(ui_workflow_parity_path),
@@ -693,19 +719,30 @@ if windows_artifact is not None:
 payload_marker_present = False
 appended_payload_marker_present = False
 sample_marker_present = False
+bootstrap_payload_path = expected_bootstrap_payload_path(installer_path)
+bootstrap_payload_exists = bootstrap_payload_path.is_file()
+bootstrap_payload_sample_marker_present = False
 if installer_exists:
     blob = installer_path.read_bytes()
     payload_marker_present = b"ChummerInstaller.Payload.zip" in blob
     appended_payload_marker_present = b"CHUMMER6PAYLOAD1" in blob
     sample_marker_present = b"Samples/Legacy/Soma-Career.chum5" in blob
+if bootstrap_payload_exists:
+    bootstrap_payload_sample_marker_present = zip_contains_sample_character(bootstrap_payload_path)
 evidence["embedded_payload_marker_present"] = payload_marker_present
 evidence["appended_payload_marker_present"] = appended_payload_marker_present
 evidence["embedded_sample_marker_present"] = sample_marker_present
-evidence["installer_payload_validation_mode"] = "release-channel digest-size-and-payload-markers"
+evidence["bootstrap_payload_path"] = str(bootstrap_payload_path)
+evidence["bootstrap_payload_exists"] = bootstrap_payload_exists
+evidence["bootstrap_payload_sample_marker_present"] = bootstrap_payload_sample_marker_present
+evidence["installer_payload_validation_mode"] = "release-channel digest-size-and-payload-markers-or-bootstrap-sidecar"
 
-if installer_exists and not (payload_marker_present or appended_payload_marker_present):
+has_recognizable_payload = payload_marker_present or appended_payload_marker_present or bootstrap_payload_exists
+has_sample_marker = sample_marker_present or bootstrap_payload_sample_marker_present
+
+if installer_exists and not has_recognizable_payload:
     reasons.append("Published Windows installer is missing a recognizable desktop payload marker.")
-if installer_exists and not sample_marker_present:
+if installer_exists and not has_sample_marker:
     reasons.append("Published Windows installer is missing the bundled sample-character marker.")
 
 visual_proof_payload = load_json(windows_installer_visual_proof_path)
@@ -1098,6 +1135,18 @@ ui_local_release_status = read_status(
     ui_local_release_proof_path,
     expected_contract="chummer6-ui.local_release_proof",
 )
+blazor_self_host_workbench_proof_status = read_status(
+    blazor_self_host_workbench_proof_path,
+    expected_contract="chummer6-ui.blazor_self_host_workbench_proof",
+)
+blazor_public_edge_workbench_proof_status = read_status(
+    blazor_public_edge_workbench_proof_path,
+    expected_contract="chummer6-ui.blazor_public_edge_workbench_proof",
+)
+blazor_browser_lane_proof_set_status = read_status(
+    blazor_browser_lane_proof_set_path,
+    expected_contract="chummer6-ui.blazor_browser_lane_proof_set",
+)
 ui_flagship_gate_status = read_status(ui_flagship_release_gate_path)
 desktop_workflow_execution_gate_status = read_status(
     desktop_workflow_execution_gate_path,
@@ -1116,6 +1165,9 @@ sr6_workflow_parity_status = read_status(
     expected_contract="chummer6-ui.sr6_desktop_workflow_parity",
 )
 evidence["ui_local_release_status"] = ui_local_release_status
+evidence["blazor_self_host_workbench_proof_status"] = blazor_self_host_workbench_proof_status
+evidence["blazor_public_edge_workbench_proof_status"] = blazor_public_edge_workbench_proof_status
+evidence["blazor_browser_lane_proof_set_status"] = blazor_browser_lane_proof_set_status
 evidence["ui_flagship_release_gate_status"] = ui_flagship_gate_status
 evidence["desktop_workflow_execution_gate_status"] = desktop_workflow_execution_gate_status
 evidence["ui_workflow_parity_status"] = ui_workflow_parity_status
@@ -1135,6 +1187,12 @@ evidence["sr6_workflow_parity_external_only"] = sr6_workflow_parity_external_onl
 
 if ui_local_release_status not in {"pass", "passed"}:
     reasons.append("UI local release proof is missing or not passed.")
+if blazor_self_host_workbench_proof_status not in {"pass", "passed"}:
+    reasons.append("Blazor self-host workbench proof is missing or not passed.")
+if blazor_public_edge_workbench_proof_status not in {"pass", "passed", "ready"}:
+    reasons.append("Blazor public-edge workbench proof is missing or not passed.")
+if blazor_browser_lane_proof_set_status not in {"pass", "passed"}:
+    reasons.append("Blazor browser-lane aggregate proof set is missing or not passed.")
 aggregate_workflow_execution_pass = desktop_workflow_execution_gate_status in {"pass", "passed", "ready"}
 if not aggregate_workflow_execution_pass and ui_workflow_parity_status not in {"pass", "passed", "ready"}:
     reasons.append("Chummer5a desktop workflow parity proof is missing or not passed.")

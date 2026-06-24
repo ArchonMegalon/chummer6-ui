@@ -7,7 +7,7 @@
 @using Chummer.Presentation.Explain
 @using Chummer.Presentation.Overview
 
-<PageTitle>Chummer Browser Preview</PageTitle>
+<PageTitle>Chummer Browser Workbench</PageTitle>
 
 <main class="public-preview">
     <header class="public-hero">
@@ -16,7 +16,7 @@
                 <span class="brand-mark">CH</span>
                 <span class="brand-copy">
                     <strong>Chummer</strong>
-                    <span>Browser preview</span>
+                    <span>Browser workbench</span>
                 </span>
             </a>
 
@@ -24,51 +24,56 @@
                 <a href="#tour">Tour</a>
                 <a href="#boundaries">Boundaries</a>
                 <a href="#proof">Proof</a>
-                <a class="nav-cta" href="/preview">Open Preview</a>
+                <a href="/downloads/">Downloads</a>
+                <a href="/docs/">Docs</a>
+                <a class="nav-cta" href="/workbench">Open Workbench</a>
             </div>
         </nav>
 
         <section class="hero-grid">
             <div class="hero-copy">
-                <p class="hero-kicker">Truthful public preview</p>
-                <h1>Chummer in the browser, with clear scope and no desktop cosplay.</h1>
+                <p class="hero-kicker">Published browser surface</p>
+                <h1>Chummer's public browser workbench, grounded in the real product.</h1>
                 <p class="hero-summary">
-                    This surface is the public evaluation lane for Chummer's workbench, rules guidance, and campaign-safe output review.
-                    It is deliberately not the full desktop client.
+                    This surface is the public landing lane for the self-hosted Chummer portal: browser workbench, rules guidance,
+                    campaign-safe review, and Docker-backed evaluation. Character workflows are live in the browser where parity is
+                    actually implemented; native install and file-heavy paths stay with the desktop client.
                 </p>
 
                 <div class="hero-actions">
-                    <a class="primary-link" href="/preview">Launch browser preview</a>
-                    <a class="secondary-link" href="/showcase">Inspect showcase components</a>
+                    <a class="primary-link" href="/workbench">Launch browser workbench</a>
+                    <a class="secondary-link" href="/showcase">Inspect shared components</a>
                 </div>
 
                 <dl class="hero-facts">
                     <div>
-                        <dt>Works here</dt>
-                        <dd>Public navigation, guided preview, responsive evaluation, browser-safe review rails.</dd>
+                        <dt>Live now</dt>
+                        <dd>Self-hosted portal, responsive workbench chrome, implicit owner session, and browser-safe workflow rails.</dd>
                     </div>
                     <div>
                         <dt>Desktop stays primary for</dt>
-                        <dd>Claimed install flows, full file-native editing, and deep utility workflows.</dd>
+                        <dd>Native file handling, claimed install state, and runtime-dependent utility windows.</dd>
                     </div>
                     <div>
-                        <dt>Boundary</dt>
-                        <dd>No claim that this route replaces the real desktop client today.</dd>
+                        <dt>Verification</dt>
+                        <dd>Docker portal health, owner propagation, browser shell rendering, and end-to-end route proof stay on the record.</dd>
                     </div>
                 </dl>
             </div>
 
             <aside class="hero-panel" aria-label="Preview promise">
-                <p class="eyebrow">Browser preview promise</p>
+                <p class="eyebrow">Browser workbench promise</p>
                 <ul class="promise-list">
-                    <li>Strong first-run explanation before the user reaches the workbench.</li>
-                    <li>Explicit browser-versus-desktop boundaries on every primary path.</li>
-                    <li>Responsive layout that holds together on laptop, tablet, and phone widths.</li>
+                    <li>Self-hosted Docker deployment with one published front door.</li>
+                    <li>Implicit owner sign-in propagated across the browser-facing stack.</li>
+                    <li>Browser parity claims only where the underlying workflow is genuinely live.</li>
                 </ul>
                 <div class="route-pills">
                     <span>Public root: <code>/</code></span>
-                    <span>Workbench preview: <code>/preview</code></span>
+                    <span>Workbench: <code>/workbench</code></span>
+                    <span>Proof route: <code>/preview</code></span>
                     <span>Component showcase: <code>/showcase</code></span>
+                    <span>Self-host docs: <code>/docs</code></span>
                 </div>
             </aside>
         </section>
@@ -77,27 +82,32 @@
     <section id="tour" class="content-band">
         <div class="band-heading">
             <p class="section-kicker">Why this exists</p>
-            <h2>Evaluate the shape of Chummer before you commit to the desktop workflow.</h2>
+            <h2>Use the browser to evaluate Chummer's real shell, not a disconnected marketing mock.</h2>
             <p>
-                The browser preview is for orientation, product pitch, and safe evaluation. It gives a coherent view of the workbench direction
-                without pretending to expose every desktop capability.
+                The browser workbench is for orientation, product pitch, guided workflows, and self-hosted evaluation.
+                It is allowed to be ambitious, but it is not allowed to lie about parity.
             </p>
         </div>
 
         <div class="tour-grid">
             <article class="tour-card">
-                <h3>Guided workbench preview</h3>
-                <p>Open a browser-safe shell that shows navigation, section behavior, and core workflow posture.</p>
-                <a href="/preview">Open the preview workbench</a>
+                <h3>Live browser workbench</h3>
+                <p>Open the same shared shell stack that drives the browser-facing workbench, with responsive navigation and active workflows.</p>
+                <a href="/workbench">Open the browser workbench</a>
             </article>
             <article class="tour-card">
                 <h3>Structured proof rails</h3>
-                <p>Inspect build handoff, rule explainability, and publication posture as first-class product surfaces.</p>
+                <p>Inspect build handoff, rule explainability, publication posture, and review surfaces backed by the real presentation contracts.</p>
                 <a href="#proof">Jump to proof section</a>
             </article>
             <article class="tour-card">
+                <h3>Self-hosted deployment path</h3>
+                <p>Jump from the public surface into downloads and docs without leaving the browser-facing product story.</p>
+                <a href="/docs/">Open self-host docs</a>
+            </article>
+            <article class="tour-card">
                 <h3>Component-level audit path</h3>
-                <p>Use the showcase route when you need denser UI samples instead of the public-facing pitch.</p>
+                <p>Use the showcase route when you need denser shared-component samples instead of the public-facing pitch.</p>
                 <a href="/showcase">Open showcase</a>
             </article>
         </div>
@@ -106,27 +116,27 @@
     <section id="boundaries" class="content-band content-band-boundary">
         <div class="band-heading">
             <p class="section-kicker">Clear boundaries</p>
-            <h2>What the browser preview is, and what still belongs to the real desktop client.</h2>
+            <h2>What the browser workbench owns today, and what still belongs to the native desktop client.</h2>
         </div>
 
         <div class="boundary-grid">
             <article class="boundary-card boundary-card-good">
-                <h3>Good fit for browser</h3>
+                <h3>Good fit for browser today</h3>
                 <ul>
-                    <li>Product tour and first-run orientation</li>
-                    <li>Rules and build-path explanation</li>
-                    <li>Responsive review of preview data and media</li>
-                    <li>Public links into deeper surfaces</li>
+                    <li>Portal entry, navigation, and self-hosted orientation</li>
+                    <li>Rules guidance, build-path explanation, and campaign-safe review</li>
+                    <li>Shared-shell workbench flows and browser-ready workflow continuations</li>
+                    <li>Public links into docs, downloads, hub, and deeper product surfaces</li>
                 </ul>
             </article>
 
             <article class="boundary-card boundary-card-caution">
                 <h3>Desktop client remains authoritative for</h3>
                 <ul>
-                    <li>Install-claim state and linked-device continuity</li>
-                    <li>Full dossier editing and local file-heavy workflows</li>
-                    <li>Deep utility windows and native runtime operations</li>
-                    <li>Production use where browser storage is not the right trust boundary</li>
+                    <li>Linked-device continuity and native install ownership</li>
+                    <li>Local-file import/export patterns that need desktop trust and storage semantics</li>
+                    <li>Utility windows that still rely on native runtime capabilities</li>
+                    <li>Workflow slices where browser parity has not yet been proven end to end</li>
                 </ul>
             </article>
         </div>
@@ -135,9 +145,10 @@
     <section id="proof" class="content-band">
         <div class="band-heading">
             <p class="section-kicker">Product proof</p>
-            <h2>Real preview rails, not placeholder marketing panels.</h2>
+            <h2>Real browser product rails, not placeholder marketing panels.</h2>
             <p>
-                These samples stay grounded in the same presentation contracts used elsewhere in the Chummer UI work.
+                These samples stay grounded in the same presentation contracts used elsewhere in the Chummer UI work,
+                so the public surface can pitch the product without breaking truth.
             </p>
         </div>
 
@@ -150,7 +161,7 @@
     </section>
 
     <footer class="public-footer">
-        <p>Chummer browser preview: public-facing, responsive, and explicit about where the desktop client still owns the workflow.</p>
+        <p>Chummer browser workbench: published, self-hostable, responsive, and explicit about where the desktop client still owns the workflow.</p>
     </footer>
 </main>
 

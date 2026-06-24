@@ -181,9 +181,7 @@ internal sealed class DesktopUpdateWindow : Window
     {
         List<string> lines =
         [
-            F("desktop.update.mode", FormatUpdateMode(_updateStatus.UpdateMode)),
-            F("desktop.update.updates_enabled", _updateStatus.UpdatesEnabled),
-            F("desktop.update.manifest_location", _updateStatus.ManifestLocation)
+            F("desktop.update.mode", FormatUpdateMode(_updateStatus.UpdateMode))
         ];
 
         if (_updateStatus.LastCheckedAtUtc is not null)
@@ -200,13 +198,13 @@ internal sealed class DesktopUpdateWindow : Window
     {
         List<string> lines =
         [
-            $"Installed now: {_updateStatus.InstalledVersion}",
-            $"Latest available: {(_updateStatus.LastManifestVersion ?? S("desktop.home.value.unknown"))}"
+            $"This build: {_updateStatus.InstalledVersion}",
+            $"Latest build: {(_updateStatus.LastManifestVersion ?? S("desktop.home.value.unknown"))}"
         ];
 
         if (string.Equals(_updateStatus.Status, "update_staged", StringComparison.Ordinal))
         {
-            lines.Add("Update state: staged for in-place install and relaunch.");
+            lines.Add("The next build is already staged for this copy.");
         }
 
         if (!string.IsNullOrWhiteSpace(_updateStatus.RecommendedAction))
@@ -216,7 +214,7 @@ internal sealed class DesktopUpdateWindow : Window
 
         if (!string.IsNullOrWhiteSpace(_updateStatus.LastError))
         {
-            lines.Add($"Something still needs attention: {_updateStatus.LastError}");
+            lines.Add($"Still needs attention: {_updateStatus.LastError}");
         }
 
         return string.Join("\n", lines);
@@ -240,11 +238,11 @@ internal sealed class DesktopUpdateWindow : Window
 
             if (_updateStatus.AutoApply)
             {
-                lines.Add("Full auto-update is on. Chummer should install the staged build in place and relaunch without another prompt.");
+                lines.Add("Full auto-update is on. Chummer should install the staged build and reopen on the newer version.");
             }
             else if (string.Equals(_updateStatus.UpdateMode, "notify", StringComparison.OrdinalIgnoreCase))
             {
-                lines.Add("Notify-only mode is on. Chummer will tell you about newer builds without installing them automatically.");
+                lines.Add("Notify only is on. Chummer will tell you when a newer build is ready.");
             }
         }
         else
@@ -286,7 +284,7 @@ internal sealed class DesktopUpdateWindow : Window
 
         if (!string.IsNullOrWhiteSpace(_installState.LastClaimError))
         {
-            lines.Add($"Linking still needs attention: {_installState.LastClaimError}");
+            lines.Add($"Linking issue: {_installState.LastClaimError}");
         }
 
         return string.Join("\n", lines);
@@ -345,7 +343,7 @@ internal sealed class DesktopUpdateWindow : Window
             {
                 _statusText.Text = S("desktop.update.apply_scheduled");
                 _statusBannerTitleText.Text = "Installing update";
-                _statusBannerBodyText.Text = "Chummer is closing this build, applying the staged update in place, and relaunching the newer build.";
+                _statusBannerBodyText.Text = "Chummer is closing this build, installing the staged update, and reopening on the newer build.";
                 _statusBanner.Background = DesktopShellTheme.ResolveThemeBrush("ChummerShellChromeAccentBrush", "#DEE8F6");
                 _statusBanner.BorderBrush = DesktopShellTheme.ResolveThemeBrush("ChummerShellActiveMenuBorderBrush", "#60A5FA");
                 await Task.Delay(1200).ConfigureAwait(true);
@@ -425,27 +423,27 @@ internal sealed class DesktopUpdateWindow : Window
         {
             "update_staged" => (
                 "Update staged",
-                "A newer build is already staged for this install. Chummer should install it in place and relaunch on the next step.",
+                "A newer build is already staged for this copy. Chummer should install it and reopen on the next step.",
                 "ChummerShellChromeAccentBrush",
                 "#DEE8F6"),
             "update_available" => (
                 "Update available",
-                "A newer published build is available for this desktop. Check now or let the release path move this install forward.",
+                "A newer build is available for this copy. Check now or keep working and update when you are ready.",
                 "ChummerShellSelectionPanelBrush",
                 "#F8FAFC"),
             "attention_required" => (
                 "Needs attention",
-                "Update, release, or rollout status needs review before this install is treated as current.",
+                "Something about updates needs review before you treat this copy as current.",
                 "ChummerShellSelectionPanelBrush",
                 "#F8FAFC"),
             "disabled" => (
                 "Updater disabled",
-                "This install is not currently attached to a working update source.",
+                "This copy is not attached to a working update source yet.",
                 "ChummerShellSelectionPanelBrush",
                 "#F8FAFC"),
             _ => (
                 "Current build",
-                "This install currently matches the latest known release for its configured update path.",
+                "This copy matches the latest known build for its current update setting.",
                 "ChummerShellSurfaceAltBrush",
                 "#F2F5FA")
         };
@@ -461,7 +459,7 @@ internal sealed class DesktopUpdateWindow : Window
     private static string FormatUpdateMode(string? updateMode)
         => updateMode?.Trim().ToLowerInvariant() switch
         {
-            "full" => "full auto-update",
+            "full" => "auto-update",
             "notify" => "notify only",
             "off" => "off",
             _ => "unknown"

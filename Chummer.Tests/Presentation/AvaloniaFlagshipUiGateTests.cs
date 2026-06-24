@@ -10,6 +10,7 @@ using System.Reflection;
 using System.Globalization;
 using System.Text;
 using System.Text.Json;
+using System.Text.Json.Nodes;
 using System.Text.RegularExpressions;
 using System.Threading;
 using System.Threading.Tasks;
@@ -32,7 +33,9 @@ using Chummer.Avalonia;
 using Chummer.Avalonia.Controls;
 using Chummer.Application.Characters;
 using Chummer.Application.Workspaces;
+using Chummer.Campaign.Contracts;
 using Chummer.Contracts.AI;
+using Chummer.Contracts.Api;
 using Chummer.Contracts.Characters;
 using Chummer.Contracts.Presentation;
 using Chummer.Contracts.Rulesets;
@@ -49,6 +52,7 @@ using Chummer.Rulesets.Hosting.Presentation;
 using Chummer.Rulesets.Sr4;
 using Chummer.Rulesets.Sr5;
 using Chummer.Rulesets.Sr6;
+using Chummer.Run.Contracts.Billing;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 
@@ -165,8 +169,8 @@ public sealed class AvaloniaFlagshipUiGateTests
     private static readonly VeteranCertificationReviewStep[] ImportRouteReviewSteps =
     [
         new("translator", "38-translator-dialog-light.png", "Execute translator and capture the governed translator route on the promoted desktop head.", "Chummer5a Translator utility lineage.", ["Translator", "Language Search", "Enabled Language Overlays"]),
-        new("xml_amendment_editor", "39-xml-editor-dialog-light.png", "Execute xml_editor and capture XML bridge plus custom-data posture directly on the desktop route.", "Chummer5a custom-data/XML amendment authoring lineage.", ["XML Editor", "Custom Data Lane", "XML Bridge"]),
-        new("hero_lab_importer", "40-hero-lab-importer-dialog-light.png", "Execute hero_lab_importer and capture direct Hero Lab import-oracle posture.", "Chummer5a Hero Lab importer lineage.", ["Hero Lab Importer", "Import Oracle Lane", "Adjacent SR6 Oracle"])
+        new("xml_amendment_editor", "39-xml-editor-dialog-light.png", "Execute xml_editor and capture XML bridge plus custom-data posture directly on the desktop route.", "Chummer5a custom-data/XML amendment authoring lineage.", ["XML Editor", "Custom Data", "XML Bridge"]),
+        new("hero_lab_importer", "40-hero-lab-importer-dialog-light.png", "Execute hero_lab_importer and capture direct Hero Lab import-oracle posture.", "Chummer5a Hero Lab importer lineage.", ["Hero Lab Importer", "Import Oracle", "Adjacent SR6 Oracle"])
     ];
     private static readonly WorkflowScreenshotCoverageEntry[] WorkflowScreenshotCoverage =
     [
@@ -514,12 +518,24 @@ public sealed class AvaloniaFlagshipUiGateTests
     [TestMethod]
     public void Alice_supports_blank_state_build_help_and_gm_steered_origin_dossier_flow()
     {
-        WithRuntimeHarness(harness =>
-        {
-            string bundleRoot = Path.Combine(Path.GetTempPath(), "chummer-origin-dossier-bundles");
-            HashSet<string> existingBundleDirectories = Directory.Exists(bundleRoot)
-                ? Directory.GetDirectories(bundleRoot).ToHashSet(StringComparer.Ordinal)
-                : [];
+        WithRuntimeHarness(
+                () =>
+                {
+                    RulesetPluginRegistry pluginRegistry = CreateShellPluginRegistry();
+                    DefaultRulesetSelectionPolicy selectionPolicy = new(pluginRegistry);
+                    RulesetShellCatalogResolverService shellCatalogResolver = new(pluginRegistry, selectionPolicy);
+                    return new MyFirstBookEnabledChummerClient(
+                        new FixtureBackedChummerClient(
+                            CreateWorkspaceService(),
+                            shellCatalogResolver,
+                            rulesetSelectionPolicy: selectionPolicy));
+                },
+                harness =>
+                {
+                string bundleRoot = Path.Combine(Path.GetTempPath(), "chummer-origin-dossier-bundles");
+                HashSet<string> existingBundleDirectories = Directory.Exists(bundleRoot)
+                    ? Directory.GetDirectories(bundleRoot).ToHashSet(StringComparer.Ordinal)
+                    : [];
 
             harness.WaitForReady();
             harness.Click("HorizonsButton");
@@ -540,6 +556,7 @@ public sealed class AvaloniaFlagshipUiGateTests
             TextBox promptBox = harness.FindControlInWindow<TextBox>(aliceWindow, "AliceQuestionTextBox");
             TextBlock statusText = harness.FindControlInWindow<TextBlock>(aliceWindow, "AliceAssistantStatusText");
             TextBlock answerText = harness.FindControlInWindow<TextBlock>(aliceWindow, "AliceAssistantAnswerText");
+            ListBox evidenceList = harness.FindControlInWindow<ListBox>(aliceWindow, "AliceAssistantEvidenceList");
             Button askButton = harness.FindControlInWindow<Button>(aliceWindow, "AliceAskButton");
 
             modeCombo.SelectedItem = "Build help";
@@ -565,34 +582,33 @@ public sealed class AvaloniaFlagshipUiGateTests
             Border originWizardPanel = harness.FindControlInWindow<Border>(aliceWindow, "AliceOriginWizardPanel");
             ComboBox originMetatypeCombo = harness.FindControlInWindow<ComboBox>(aliceWindow, "AliceOriginMetatypeCombo");
             ComboBox originArchetypeCombo = harness.FindControlInWindow<ComboBox>(aliceWindow, "AliceOriginArchetypeCombo");
-            Expander advancedStoryControls = harness.FindControlInWindow<Expander>(aliceWindow, "AliceOriginAdvancedStoryControlsExpander");
-            Expander gmNotesControls = harness.FindControlInWindow<Expander>(aliceWindow, "AliceGmAllowanceExpander");
+            Border storySteeringPanel = harness.FindControlInWindow<Border>(aliceWindow, "AliceOriginStorySteeringPanel");
             WrapPanel starterPromptRow = harness.FindControlInWindow<WrapPanel>(aliceWindow, "AliceStarterPromptRow");
             Button startDossierButton = harness.FindControlInWindow<Button>(aliceWindow, "AliceOriginStartDossierButton");
             Assert.IsTrue(originWizardPanel.IsVisible, "Origin dossier mode must show the story-first wizard surface.");
             Assert.IsTrue(originMetatypeCombo.IsVisible, "Origin dossier's default screen must expose only the basic metatype choice.");
             Assert.IsTrue(originArchetypeCombo.IsVisible, "Origin dossier's default screen must expose only the basic archetype choice.");
-            Assert.AreEqual("Build story", startDossierButton.Content?.ToString(), "Origin dossier must lead with story generation, not media or setup copy.");
-            Assert.IsFalse(advancedStoryControls.IsExpanded, "Story steering controls must stay collapsed by default.");
-            Assert.IsFalse(gmNotesControls.IsExpanded, "GM grant and constraint notes must stay collapsed by default.");
+            Assert.AreEqual("Draft story", startDossierButton.Content?.ToString(), "Origin dossier must lead with story drafting, not media or setup copy.");
+            Assert.IsTrue(storySteeringPanel.IsVisible, "Story steering must stay visible so constraints and style selections do not disappear.");
             Assert.IsFalse(starterPromptRow.IsVisible, "Origin dossier mode must not show generic prompt chips beside the story wizard.");
-            Assert.IsNull(
+            Assert.IsNotNull(
                 harness.FindControlInWindowOrDefault<ComboBox>(aliceWindow, "AliceOriginBuildFrameCombo"),
-                "Build-frame steering must be hidden until the advanced story controls are expanded.");
-            Assert.IsNull(
+                "Build-frame steering must stay visible in the story steering panel.");
+            Assert.IsNotNull(
                 harness.FindControlInWindowOrDefault<ComboBox>(aliceWindow, "AliceOriginPressureCombo"),
-                "Story-pressure steering must be hidden until the advanced story controls are expanded.");
-            Assert.IsNull(
-                harness.FindControlInWindowOrDefault<ComboBox>(aliceWindow, "AliceOriginGmRequirementPresetCombo"),
-                "GM requirement presets must be hidden until the advanced story controls are expanded.");
-            Assert.IsNull(
-                harness.FindControlInWindowOrDefault<TextBox>(aliceWindow, "AliceGmAllowanceTextBox"),
-                "Free-form GM notes must be hidden until the GM notes section is expanded.");
-
-            gmNotesControls.IsExpanded = true;
-            harness.AdvanceFrames(4);
+                "Story-pressure steering must stay visible in the story steering panel.");
+            Assert.IsNotNull(
+                harness.FindControlInWindowOrDefault<ComboBox>(aliceWindow, "AliceOriginBookSurfaceCombo"),
+                "Book or presentation selection must be visible before drafting.");
+            Assert.IsNotNull(
+                harness.FindControlInWindowOrDefault<ComboBox>(aliceWindow, "AliceOriginPrimaryVoiceCombo"),
+                "Voice selection must be visible before audiobook generation.");
             TextBox gmAllowanceBox = harness.FindControlInWindow<TextBox>(aliceWindow, "AliceGmAllowanceTextBox");
-            Assert.IsTrue(gmAllowanceBox.IsVisible, "Expanding GM notes must reveal the steering field.");
+            Assert.IsTrue(gmAllowanceBox.IsVisible, "GM notes must stay visible in the story steering panel.");
+
+            CheckBox gmConstraintCheckBox = harness.FindControlInWindow<CheckBox>(aliceWindow, "AliceOriginGmConstraint_Must_be_magically_active");
+            gmConstraintCheckBox.IsChecked = true;
+            harness.AdvanceFrames(2);
 
             gmAllowanceBox.Text = "GM allows one restricted ware exception, +20000 nuyen, and one extra quality if the origin supports it.";
             harness.WaitUntil(
@@ -612,8 +628,12 @@ public sealed class AvaloniaFlagshipUiGateTests
                 harness.FindControlInWindowOrDefault<Button>(aliceWindow, "AliceOriginOpenDraftStoryButton"),
                 "Origin dossier must make the generated story the first review artifact.");
             Assert.IsNotNull(
-                harness.FindControlInWindowOrDefault<Button>(aliceWindow, "AliceOriginOpenDraftFlipLinkPacketButton"),
-                "Origin dossier must create a book preview for draft story review.");
+                harness.FindControlInWindowOrDefault<Button>(aliceWindow, "AliceOriginOpenDraftMyFirstBookPacketButton"),
+                "Origin dossier must create a presentation handoff for draft story review.");
+            CollectionAssert.DoesNotContain(
+                EnumerateListBoxItemTexts(evidenceList),
+                "MyFirstBook left this month: 2 of 2 (Supporter)",
+                "Standard origin dossier draft review must stay on the internal lane and avoid premium quota evidence.");
             WrapPanel actionRow = harness.FindControlInWindow<WrapPanel>(aliceWindow, "AliceAssistantActionRow");
             AssertOriginDossierActionTitlesStayHuman(actionRow, "draft origin dossier");
             Assert.IsNull(
@@ -634,10 +654,14 @@ public sealed class AvaloniaFlagshipUiGateTests
                 harness.FindControlInWindowOrDefault<Button>(aliceWindow, "AliceOriginOpenCanonStoryButton"),
                 "Approved origin dossier must keep the story as the first-class artifact.");
             Assert.IsNotNull(
-                harness.FindControlInWindowOrDefault<Button>(aliceWindow, "AliceOriginOpenFlipLinkPacketButton"),
-                "Approved origin dossier must expose the book preview after approval.");
+                harness.FindControlInWindowOrDefault<Button>(aliceWindow, "AliceOriginOpenMyFirstBookPacketButton"),
+                "Approved origin dossier must expose the presentation handoff after approval.");
             Button openDossierPdfButton = harness.FindControlInWindow<Button>(aliceWindow, "AliceOriginOpenDossierPdfButton");
             Assert.IsTrue(openDossierPdfButton.IsVisible, "Approved origin dossier must immediately expose the book artifact.");
+            CollectionAssert.DoesNotContain(
+                EnumerateListBoxItemTexts(evidenceList),
+                "MyFirstBook left this month: 1 of 2 (Supporter)",
+                "Approved standard origin dossier must not consume premium quota.");
             AssertOriginDossierActionTitlesStayHuman(actionRow, "approved origin dossier");
             string firstVisibleAction = actionRow.Children
                 .OfType<Button>()
@@ -654,13 +678,89 @@ public sealed class AvaloniaFlagshipUiGateTests
                 .Where(path => !existingBundleDirectories.Contains(path))
                 .OrderByDescending(Directory.GetCreationTimeUtc)
                 .First();
+            string presentationHtmlPath = Path.Combine(createdBundleDirectory, "myfirstbook-origin-story.presentation.html");
+            string packetJsonPath = Path.Combine(createdBundleDirectory, "myfirstbook-origin-story.packet.json");
             harness.WaitUntil(
                 () => File.Exists(Path.Combine(createdBundleDirectory, "origin-canon.md"))
                     && File.Exists(Path.Combine(createdBundleDirectory, "origin-canon.json"))
-                    && File.Exists(Path.Combine(createdBundleDirectory, "fliplink-origin-story.packet.json"))
+                    && File.Exists(packetJsonPath)
+                    && File.Exists(presentationHtmlPath)
                     && File.Exists(Path.Combine(createdBundleDirectory, "origin-dossier.pdf"))
                     && File.Exists(Path.Combine(createdBundleDirectory, "markupgo-origin-dossier.packet.json")),
-                context: "origin approval must write canonical story, FlipLink, and book-first PDF artifacts");
+                context: "origin approval must write canonical story, MyFirstBook, and book-first PDF artifacts");
+            string presentationHtml = File.ReadAllText(presentationHtmlPath);
+            StringAssert.Contains(presentationHtml, "MyFirstBook presentation");
+            StringAssert.Contains(presentationHtml, "Creative Direction");
+            StringAssert.Contains(presentationHtml, "Measured dossier");
+            StringAssert.Contains(presentationHtml, "Cinematic narration");
+            StringAssert.Contains(presentationHtml, "Grounded dossier");
+            StringAssert.Contains(presentationHtml, "Must be magically active");
+            string myFirstBookPacket = File.ReadAllText(packetJsonPath);
+            StringAssert.Contains(myFirstBookPacket, "\"creativeDirection\"");
+            StringAssert.Contains(myFirstBookPacket, "\"primaryVoiceStyle\": \"Measured dossier\"");
+            StringAssert.Contains(myFirstBookPacket, "\"alternateVoiceStyle\": \"Cinematic narration\"");
+            string projectArchiveJson = File.ReadAllText(Path.Combine(createdBundleDirectory, "origin-book-project.json"));
+            StringAssert.Contains(projectArchiveJson, "\"BookKind\": \"narrative_origin\"");
+            StringAssert.Contains(projectArchiveJson, "\"ProviderStrategy\": \"inkfluence_narrative_edition\"");
+            StringAssert.Contains(projectArchiveJson, "\"AuditStatus\":");
+            StringAssert.Contains(projectArchiveJson, "\"PublicationState\": \"awaiting_provider_manuscript\"");
+            StringAssert.Contains(projectArchiveJson, "\"ProviderAuthoredManuscriptImported\": false");
+            Assert.IsFalse(
+                projectArchiveJson.Contains("premium-outline-review.md", StringComparison.Ordinal),
+                "Standard origin dossier must not emit premium memoir outline artifacts.");
+
+            RaiseClick(harness.FindControlInWindow<Button>(aliceWindow, "AliceOriginGenerateAudiobookPacketButton"));
+            harness.WaitUntil(
+                () => (statusText.Text ?? string.Empty).Contains("Audiobook script ready", StringComparison.Ordinal)
+                    && harness.FindControlInWindowOrDefault<Button>(aliceWindow, "AliceOriginOpenNarrationPacketButton") is { IsVisible: true },
+                context: "approved origin dossier must prepare the Inkfluence audiobook voice setup");
+            harness.WaitUntil(
+                () => File.Exists(Path.Combine(createdBundleDirectory, "inkfluence-origin-reading.txt"))
+                    && File.Exists(Path.Combine(createdBundleDirectory, "inkfluence-origin-reading.packet.json")),
+                context: "Inkfluence audiobook voice setup must write the reading script and provider packet");
+
+            RaiseClick(harness.FindControlInWindow<Button>(aliceWindow, "AliceOriginGenerateAlternateAudiobookPacketButton"));
+            harness.WaitUntil(
+                () => (statusText.Text ?? string.Empty).Contains("Alternate voice ready", StringComparison.Ordinal)
+                    && harness.FindControlInWindowOrDefault<Button>(aliceWindow, "AliceOriginOpenAlternateNarrationPacketButton") is { IsVisible: true },
+                context: "approved origin dossier must prepare the alternate audiobook voice setup");
+            harness.WaitUntil(
+                () => File.Exists(Path.Combine(createdBundleDirectory, "unmixr-origin-reading.txt"))
+                    && File.Exists(Path.Combine(createdBundleDirectory, "unmixr-origin-reading.packet.json")),
+                context: "alternate audiobook voice setup must write the reading script and provider packet");
+
+            RaiseClick(harness.FindControlInWindow<Button>(aliceWindow, "AliceOriginGenerateMediaFactoryNarrationRequestButton"));
+            harness.WaitUntil(
+                () => (statusText.Text ?? string.Empty).Contains("Audiobook setup ready", StringComparison.Ordinal)
+                    && harness.FindControlInWindowOrDefault<Button>(aliceWindow, "AliceOriginOpenMediaFactoryNarrationRequestButton") is { IsVisible: true },
+                context: "approved origin dossier must prepare the final audiobook render handoff");
+            string audiobookRequestPath = Path.Combine(createdBundleDirectory, "media-factory-origin-audiobook.request.json");
+            string audiobookRunbookPath = Path.Combine(createdBundleDirectory, "media-factory-origin-audiobook.runbook.md");
+            harness.WaitUntil(
+                () => File.Exists(audiobookRequestPath)
+                    && File.Exists(audiobookRunbookPath),
+                context: "audiobook setup must write the media-factory request and runbook");
+            string audiobookRequest = File.ReadAllText(audiobookRequestPath);
+            StringAssert.Contains(audiobookRequest, "\"provider\": \"Inkfluence\"");
+            StringAssert.Contains(audiobookRequest, "\"provider\": \"Unmixr\"");
+            StringAssert.Contains(audiobookRequest, "\"preferredVoice\": \"Measured dossier\"");
+            StringAssert.Contains(audiobookRequest, "\"preferredVoice\": \"Cinematic narration\"");
+            Assert.IsNull(
+                harness.FindControlInWindowOrDefault<Button>(aliceWindow, "AliceOriginRenderAudiobookNowButton"),
+                "Origin dossier must not expose live audiobook rendering without CHUMMER_MEDIA_FACTORY_ALLOW_LIVE_EXECUTION=1.");
+            Assert.AreEqual(
+                0,
+                Directory.GetFiles(createdBundleDirectory, "*origin-audiobook*.receipt.json", SearchOption.TopDirectoryOnly).Length,
+                "Origin dossier must not fabricate audiobook receipts in non-live execution.");
+
+            modeCombo.SelectedItem = "Build help";
+            harness.WaitUntil(
+                () => (settingsGuideText.Text ?? string.Empty).Contains("Strict avoids restricted picks", StringComparison.Ordinal),
+                context: "switching away from origin mode must still restore the build-help explainer after audiobook setup");
+            modeCombo.SelectedItem = "Origin Dossier";
+            harness.WaitUntil(
+                () => harness.FindControlInWindowOrDefault<Button>(aliceWindow, "AliceOriginGeneratePortraitSetButton") is { IsVisible: true },
+                context: "returning to origin mode must restore the approved dossier action set after audiobook setup");
 
             RaiseClick(harness.FindControlInWindow<Button>(aliceWindow, "AliceOriginGeneratePortraitSetButton"));
             harness.WaitUntil(
@@ -701,6 +801,19 @@ public sealed class AvaloniaFlagshipUiGateTests
                     && File.Exists(Path.Combine(createdBundleDirectory, "origin-dossier-video-poster.png"))
                     && File.Exists(Path.Combine(createdBundleDirectory, "vidboard-origin-dossier.packet.json")),
                 context: "video preparation must use the approved book/story and produce storyboard, poster, and vidBoard packet artifacts");
+            string videoPacket = File.ReadAllText(Path.Combine(createdBundleDirectory, "vidboard-origin-dossier.packet.json"));
+            StringAssert.Contains(videoPacket, "\"videoStyle\": \"Grounded dossier\"");
+            Assert.IsNull(
+                harness.FindControlInWindowOrDefault<Button>(aliceWindow, "AliceOriginRenderDossierVideoNowButton"),
+                "Origin dossier must not expose live video rendering without CHUMMER_MEDIA_FACTORY_ALLOW_LIVE_EXECUTION=1.");
+            Assert.AreEqual(
+                0,
+                Directory.GetFiles(createdBundleDirectory, "*origin-dossier*.receipt.json", SearchOption.TopDirectoryOnly).Length,
+                "Origin dossier must not fabricate video receipts in non-live execution.");
+            Assert.AreEqual(
+                0,
+                Directory.GetFiles(createdBundleDirectory, "*.mp4", SearchOption.TopDirectoryOnly).Length,
+                "Origin dossier must not fabricate rendered video files in non-live execution.");
 
             modeCombo.SelectedItem = "Build help";
             harness.WaitUntil(
@@ -712,9 +825,9 @@ public sealed class AvaloniaFlagshipUiGateTests
 
             aliceWindow.Close();
             harness.WaitUntil(() => DesktopAliceWindow.LastOpenedWindowForTesting is null, context: "close ALICE after runtime-backed origin flow validation");
-            hubWindow.Close();
-            harness.AdvanceFrames(12);
-        });
+                hubWindow.Close();
+                harness.AdvanceFrames(12);
+                });
     }
 
     [TestMethod]
@@ -759,7 +872,263 @@ public sealed class AvaloniaFlagshipUiGateTests
 
             hubWindow.Close();
             harness.AdvanceFrames(12);
-        });
+            });
+    }
+
+    [TestMethod]
+    public void Runner_memoir_shows_myfirstbook_allowance_and_premium_review_artifacts_before_story_approval()
+    {
+        string? priorLivePremiumConsumption = Environment.GetEnvironmentVariable("CHUMMER_ORIGIN_ALLOW_LIVE_PREMIUM_CONSUMPTION");
+        Environment.SetEnvironmentVariable("CHUMMER_ORIGIN_ALLOW_LIVE_PREMIUM_CONSUMPTION", "1");
+        try
+        {
+        WithRuntimeHarness(
+            () =>
+            {
+                RulesetPluginRegistry pluginRegistry = CreateShellPluginRegistry();
+                DefaultRulesetSelectionPolicy selectionPolicy = new(pluginRegistry);
+                RulesetShellCatalogResolverService shellCatalogResolver = new(pluginRegistry, selectionPolicy);
+                return new MyFirstBookEnabledChummerClient(
+                    new FixtureBackedChummerClient(
+                        CreateWorkspaceService(),
+                        shellCatalogResolver,
+                        rulesetSelectionPolicy: selectionPolicy));
+            },
+            harness =>
+            {
+                harness.WaitForReady();
+                harness.Click("HorizonsButton");
+                harness.WaitUntil(() => DesktopHorizonsWindow.LastOpenedWindowForTesting is { IsVisible: true }, context: "open Horizons hub before validating MyFirstBook allowance visibility");
+
+                Window hubWindow = DesktopHorizonsWindow.LastOpenedWindowForTesting
+                    ?? throw new AssertFailedException("Horizons hub window was not opened.");
+
+                RaiseClick(harness.FindControlInWindow<Button>(hubWindow, "HorizonsOpenWorkbench_alice"));
+                harness.WaitUntil(() => DesktopAliceWindow.LastOpenedWindowForTesting is { IsVisible: true }, context: "open ALICE workbench before validating MyFirstBook allowance visibility");
+
+                Window aliceWindow = DesktopAliceWindow.LastOpenedWindowForTesting
+                    ?? throw new AssertFailedException("ALICE workbench did not stay open.");
+
+                string bundleRoot = Path.Combine(Path.GetTempPath(), "chummer-origin-dossier-bundles");
+                HashSet<string> existingBundleDirectories = Directory.Exists(bundleRoot)
+                    ? Directory.GetDirectories(bundleRoot).ToHashSet(StringComparer.Ordinal)
+                    : [];
+
+                ComboBox modeCombo = harness.FindControlInWindow<ComboBox>(aliceWindow, "AliceConversationModeCombo");
+                ComboBox editionCombo = harness.FindControlInWindow<ComboBox>(aliceWindow, "AliceOriginEditionCombo");
+                TextBox promptBox = harness.FindControlInWindow<TextBox>(aliceWindow, "AliceQuestionTextBox");
+                TextBlock statusText = harness.FindControlInWindow<TextBlock>(aliceWindow, "AliceAssistantStatusText");
+                ListBox evidenceList = harness.FindControlInWindow<ListBox>(aliceWindow, "AliceAssistantEvidenceList");
+                Button askButton = harness.FindControlInWindow<Button>(aliceWindow, "AliceAskButton");
+
+                modeCombo.SelectedItem = "Origin Dossier";
+                editionCombo.SelectedItem = "Runner Memoir";
+                promptBox.Text = "Draft a runner memoir for a troll decker whose GM wants the backstory to justify the restricted ware and bonus nuyen.";
+                RaiseClick(askButton);
+                harness.WaitUntil(
+                    () => (statusText.Text ?? string.Empty).Contains("Origin draft ready", StringComparison.Ordinal),
+                    context: "runner memoir mode must create a draft before allowance visibility can be checked");
+
+                CollectionAssert.Contains(
+                    EnumerateListBoxItemTexts(evidenceList),
+                    "MyFirstBook left this month: 2 of 2 (Supporter)",
+                    "Runner memoir draft review must show the current monthly MyFirstBook allowance before approval.");
+
+                RaiseClick(harness.FindControlInWindow<Button>(aliceWindow, "AliceOriginApproveCanonButton"));
+                harness.WaitUntil(
+                    () => (statusText.Text ?? string.Empty).Contains("Origin story approved", StringComparison.Ordinal),
+                    context: "runner memoir draft must be approvable after allowance visibility is shown");
+
+                CollectionAssert.Contains(
+                    EnumerateListBoxItemTexts(evidenceList),
+                    "MyFirstBook left this month: 1 of 2 (Supporter)",
+                    "Approved runner memoir must show the remaining monthly MyFirstBook allowance after one book is consumed.");
+
+                string createdBundleDirectory = Directory.GetDirectories(bundleRoot)
+                    .Where(path => !existingBundleDirectories.Contains(path))
+                    .OrderByDescending(Directory.GetCreationTimeUtc)
+                    .First();
+                harness.WaitUntil(
+                    () => File.Exists(Path.Combine(createdBundleDirectory, "premium-outline-review.md"))
+                        && File.Exists(Path.Combine(createdBundleDirectory, "premium-chapter-plan.json"))
+                        && Directory.Exists(Path.Combine(createdBundleDirectory, "premium-chapter-reviews")),
+                    context: "runner memoir approval must materialize premium review artifacts before external provider use");
+                string projectArchiveJson = File.ReadAllText(Path.Combine(createdBundleDirectory, "origin-book-project.json"));
+                StringAssert.Contains(projectArchiveJson, "\"BookKind\": \"runner_memoir\"");
+                StringAssert.Contains(projectArchiveJson, "\"ProviderStrategy\": \"premium_guided_authoring\"");
+                StringAssert.Contains(projectArchiveJson, "\"OutlineReviewState\": \"outline_review_required\"");
+                StringAssert.Contains(projectArchiveJson, "\"ChapterReviewState\": \"chapter_review_required\"");
+
+                aliceWindow.Close();
+                harness.WaitUntil(() => DesktopAliceWindow.LastOpenedWindowForTesting is null, context: "close ALICE after allowance visibility validation");
+                hubWindow.Close();
+                harness.AdvanceFrames(12);
+            });
+        }
+        finally
+        {
+            Environment.SetEnvironmentVariable("CHUMMER_ORIGIN_ALLOW_LIVE_PREMIUM_CONSUMPTION", priorLivePremiumConsumption);
+        }
+    }
+
+    [TestMethod]
+    public void Origin_dossier_approval_stays_internal_when_premium_quota_is_exhausted()
+    {
+        WithRuntimeHarness(
+            () =>
+            {
+                RulesetPluginRegistry pluginRegistry = CreateShellPluginRegistry();
+                DefaultRulesetSelectionPolicy selectionPolicy = new(pluginRegistry);
+                RulesetShellCatalogResolverService shellCatalogResolver = new(pluginRegistry, selectionPolicy);
+                return new QuotaBlockingChummerClient(
+                    new FixtureBackedChummerClient(
+                        CreateWorkspaceService(),
+                        shellCatalogResolver,
+                        rulesetSelectionPolicy: selectionPolicy),
+                    "Monthly MyFirstBook allowance is exhausted for this account.");
+            },
+            harness =>
+            {
+                harness.WaitForReady();
+                harness.Click("HorizonsButton");
+                harness.WaitUntil(() => DesktopHorizonsWindow.LastOpenedWindowForTesting is { IsVisible: true }, context: "open Horizons hub before validating internal origin dossier behavior");
+
+                Window hubWindow = DesktopHorizonsWindow.LastOpenedWindowForTesting
+                    ?? throw new AssertFailedException("Horizons hub window was not opened.");
+
+                RaiseClick(harness.FindControlInWindow<Button>(hubWindow, "HorizonsOpenWorkbench_alice"));
+                harness.WaitUntil(() => DesktopAliceWindow.LastOpenedWindowForTesting is { IsVisible: true }, context: "open ALICE workbench before validating internal origin dossier behavior");
+
+                Window aliceWindow = DesktopAliceWindow.LastOpenedWindowForTesting
+                    ?? throw new AssertFailedException("ALICE workbench did not stay open.");
+
+                ComboBox modeCombo = harness.FindControlInWindow<ComboBox>(aliceWindow, "AliceConversationModeCombo");
+                ComboBox editionCombo = harness.FindControlInWindow<ComboBox>(aliceWindow, "AliceOriginEditionCombo");
+                TextBox promptBox = harness.FindControlInWindow<TextBox>(aliceWindow, "AliceQuestionTextBox");
+                TextBlock statusText = harness.FindControlInWindow<TextBlock>(aliceWindow, "AliceAssistantStatusText");
+                ListBox evidenceList = harness.FindControlInWindow<ListBox>(aliceWindow, "AliceAssistantEvidenceList");
+                Button askButton = harness.FindControlInWindow<Button>(aliceWindow, "AliceAskButton");
+
+                modeCombo.SelectedItem = "Origin Dossier";
+                editionCombo.SelectedItem = "Origin Dossier";
+                promptBox.Text = "Draft an origin dossier for a troll decker whose GM wants the backstory to justify the restricted ware and bonus nuyen.";
+                RaiseClick(askButton);
+                harness.WaitUntil(
+                    () => (statusText.Text ?? string.Empty).Contains("Origin draft ready", StringComparison.Ordinal),
+                    context: "origin-dossier mode must create a draft before internal approval can be checked");
+
+                CollectionAssert.DoesNotContain(
+                    EnumerateListBoxItemTexts(evidenceList),
+                    "MyFirstBook left this month: 2 of 2 (Supporter)",
+                    "Standard origin dossier must not surface premium allowance even when the provider reports quota exhaustion.");
+
+                RaiseClick(harness.FindControlInWindow<Button>(aliceWindow, "AliceOriginApproveCanonButton"));
+                harness.WaitUntil(
+                    () => (statusText.Text ?? string.Empty).Contains("Origin story approved", StringComparison.Ordinal),
+                    context: "standard origin dossier must approve without a premium quota dependency");
+
+                Assert.IsNotNull(
+                    harness.FindControlInWindowOrDefault<Button>(aliceWindow, "AliceOriginOpenDossierPdfButton"),
+                    "Standard origin dossier must still produce the internal book artifact.");
+                Assert.IsNull(
+                    harness.FindControlInWindowOrDefault<Button>(aliceWindow, "AliceOriginOpenBillingButton"),
+                    "Internal origin dossier must not route the user to premium billing when quota is exhausted.");
+
+                aliceWindow.Close();
+                harness.WaitUntil(() => DesktopAliceWindow.LastOpenedWindowForTesting is null, context: "close ALICE after internal origin dossier validation");
+                hubWindow.Close();
+                harness.AdvanceFrames(12);
+            });
+    }
+
+    [TestMethod]
+    public void Runner_memoir_blocks_book_approval_when_myfirstbook_allowance_is_exhausted()
+    {
+        string? priorLivePremiumConsumption = Environment.GetEnvironmentVariable("CHUMMER_ORIGIN_ALLOW_LIVE_PREMIUM_CONSUMPTION");
+        Environment.SetEnvironmentVariable("CHUMMER_ORIGIN_ALLOW_LIVE_PREMIUM_CONSUMPTION", "1");
+        try
+        {
+        WithRuntimeHarness(
+            () =>
+            {
+                RulesetPluginRegistry pluginRegistry = CreateShellPluginRegistry();
+                DefaultRulesetSelectionPolicy selectionPolicy = new(pluginRegistry);
+                RulesetShellCatalogResolverService shellCatalogResolver = new(pluginRegistry, selectionPolicy);
+                return new QuotaBlockingChummerClient(
+                    new FixtureBackedChummerClient(
+                        CreateWorkspaceService(),
+                        shellCatalogResolver,
+                        rulesetSelectionPolicy: selectionPolicy),
+                    "Monthly MyFirstBook allowance is exhausted for this account.");
+            },
+            harness =>
+            {
+                string bundleRoot = Path.Combine(Path.GetTempPath(), "chummer-origin-dossier-bundles");
+                HashSet<string> existingBundleDirectories = Directory.Exists(bundleRoot)
+                    ? Directory.GetDirectories(bundleRoot).ToHashSet(StringComparer.Ordinal)
+                    : [];
+
+                harness.WaitForReady();
+                harness.Click("HorizonsButton");
+                harness.WaitUntil(() => DesktopHorizonsWindow.LastOpenedWindowForTesting is { IsVisible: true }, context: "open Horizons hub before validating exhausted MyFirstBook quota handling");
+
+                Window hubWindow = DesktopHorizonsWindow.LastOpenedWindowForTesting
+                    ?? throw new AssertFailedException("Horizons hub window was not opened.");
+
+                RaiseClick(harness.FindControlInWindow<Button>(hubWindow, "HorizonsOpenWorkbench_alice"));
+                harness.WaitUntil(() => DesktopAliceWindow.LastOpenedWindowForTesting is { IsVisible: true }, context: "open ALICE workbench before validating exhausted MyFirstBook quota handling");
+
+                Window aliceWindow = DesktopAliceWindow.LastOpenedWindowForTesting
+                    ?? throw new AssertFailedException("ALICE workbench did not stay open.");
+
+                ComboBox modeCombo = harness.FindControlInWindow<ComboBox>(aliceWindow, "AliceConversationModeCombo");
+                ComboBox editionCombo = harness.FindControlInWindow<ComboBox>(aliceWindow, "AliceOriginEditionCombo");
+                TextBox promptBox = harness.FindControlInWindow<TextBox>(aliceWindow, "AliceQuestionTextBox");
+                TextBlock statusText = harness.FindControlInWindow<TextBlock>(aliceWindow, "AliceAssistantStatusText");
+                TextBlock answerText = harness.FindControlInWindow<TextBlock>(aliceWindow, "AliceAssistantAnswerText");
+                Button askButton = harness.FindControlInWindow<Button>(aliceWindow, "AliceAskButton");
+
+                modeCombo.SelectedItem = "Origin Dossier";
+                editionCombo.SelectedItem = "Runner Memoir";
+                promptBox.Text = "Draft a runner memoir for a troll decker whose GM wants the backstory to justify the restricted ware and bonus nuyen.";
+                RaiseClick(askButton);
+                harness.WaitUntil(
+                    () => (statusText.Text ?? string.Empty).Contains("Origin draft ready", StringComparison.Ordinal),
+                    context: "runner memoir mode must create a draft before testing the exhausted MyFirstBook quota path");
+
+                RaiseClick(harness.FindControlInWindow<Button>(aliceWindow, "AliceOriginApproveCanonButton"));
+                harness.WaitUntil(
+                    () => (statusText.Text ?? string.Empty).Contains("MyFirstBook is not available for this account.", StringComparison.Ordinal),
+                    context: "exhausted MyFirstBook quota must block runner memoir approval");
+
+                StringAssert.Contains(answerText.Text ?? string.Empty, "Monthly MyFirstBook allowance is exhausted for this account.");
+                Assert.IsNotNull(
+                    harness.FindControlInWindowOrDefault<Button>(aliceWindow, "AliceOriginOpenBillingButton"),
+                    "Quota exhaustion must route the user toward billing.");
+                Assert.IsNotNull(
+                    harness.FindControlInWindowOrDefault<Button>(aliceWindow, "AliceOriginOpenAccessButton"),
+                    "Quota exhaustion must route the user toward account linking/access.");
+                Assert.IsNull(
+                    harness.FindControlInWindowOrDefault<Button>(aliceWindow, "AliceOriginOpenDossierPdfButton"),
+                    "Quota exhaustion must not produce the approved book artifact.");
+                Assert.IsNull(
+                    harness.FindControlInWindowOrDefault<Button>(aliceWindow, "AliceOriginOpenBundleFolderButton"),
+                    "Quota exhaustion must not produce the approved runner memoir bundle.");
+                Assert.IsFalse(
+                    Directory.Exists(bundleRoot)
+                    && Directory.GetDirectories(bundleRoot).Any(path => !existingBundleDirectories.Contains(path)),
+                    "Quota exhaustion must fail closed before any new approved origin bundle is created.");
+
+                aliceWindow.Close();
+                harness.WaitUntil(() => DesktopAliceWindow.LastOpenedWindowForTesting is null, context: "close ALICE after exhausted MyFirstBook quota validation");
+                hubWindow.Close();
+                harness.AdvanceFrames(12);
+            });
+        }
+        finally
+        {
+            Environment.SetEnvironmentVariable("CHUMMER_ORIGIN_ALLOW_LIVE_PREMIUM_CONSUMPTION", priorLivePremiumConsumption);
+        }
     }
 
     [TestMethod]
@@ -1824,7 +2193,7 @@ public sealed class AvaloniaFlagshipUiGateTests
                 GetImportRouteReviewStep("hero_lab_importer").RequiredDialogMarkers);
             StringAssert.Contains(
                 DesktopDialogFieldValueParser.GetValue(harness.State.ActiveDialog!, "heroLabImportOracleLanePosture"),
-                "governed");
+                "reviewed");
             harness.InvokeDialogAction("cancel");
             harness.WaitUntil(() =>
                 !string.Equals(
@@ -6075,6 +6444,15 @@ public sealed class AvaloniaFlagshipUiGateTests
         });
     }
 
+    private static void WithRuntimeHarness(Func<IChummerClient> clientFactory, Action<RuntimeFlagshipUiHarness> assertion)
+    {
+        WithRuntimeHarness<bool>(clientFactory, harness =>
+        {
+            assertion(harness);
+            return true;
+        });
+    }
+
     private static TResult WithRuntimeHarness<TResult>(Func<RuntimeFlagshipUiHarness, TResult> assertion)
     {
         EnsureHeadlessPlatform();
@@ -6088,6 +6466,38 @@ public sealed class AvaloniaFlagshipUiGateTests
                 return session.Dispatch(() =>
                     {
                         using RuntimeFlagshipUiHarness harness = new();
+                        return assertion(harness);
+                    },
+                    CancellationToken.None)
+                    .GetAwaiter()
+                    .GetResult();
+            }
+            catch (Exception ex) when (IsTransientHeadlessFailure(ex) && attempt < HeadlessSessionAttempts)
+            {
+                lastFailure = ex;
+            }
+            finally
+            {
+                DisposeHeadlessSessionQuietly(session);
+            }
+        }
+
+        throw new AssertFailedException("Avalonia runtime headless session did not stabilize for flagship UI proof.", lastFailure);
+    }
+
+    private static TResult WithRuntimeHarness<TResult>(Func<IChummerClient> clientFactory, Func<RuntimeFlagshipUiHarness, TResult> assertion)
+    {
+        EnsureHeadlessPlatform();
+        Exception? lastFailure = null;
+        for (int attempt = 1; attempt <= HeadlessSessionAttempts; attempt++)
+        {
+            HeadlessUnitTestSession? session = null;
+            try
+            {
+                session = HeadlessUnitTestSession.StartNew(typeof(FlagshipHeadlessAppBootstrap));
+                return session.Dispatch(() =>
+                    {
+                        using RuntimeFlagshipUiHarness harness = new(clientFactory());
                         return assertion(harness);
                     },
                     CancellationToken.None)
@@ -7019,9 +7429,9 @@ public sealed class AvaloniaFlagshipUiGateTests
             "receipt",
             "provider",
             "media-factory",
-            "FlipLink",
+            "MyFirstBook",
             "MarkupGo",
-            "Soundmadeseen",
+            "Inkfluence",
             "Unmixr",
             "vidBoard"
         ];
@@ -9012,11 +9422,16 @@ public sealed class AvaloniaFlagshipUiGateTests
         private readonly ServiceProvider _runtimeServices;
 
         public RuntimeFlagshipUiHarness()
+            : this(client: null)
+        {
+        }
+
+        public RuntimeFlagshipUiHarness(IChummerClient? client)
         {
             RulesetPluginRegistry pluginRegistry = CreateShellPluginRegistry();
             var selectionPolicy = new DefaultRulesetSelectionPolicy(pluginRegistry);
             var shellCatalogResolver = new RulesetShellCatalogResolverService(pluginRegistry, selectionPolicy);
-            var client = new FixtureBackedChummerClient(
+            client ??= new FixtureBackedChummerClient(
                 CreateWorkspaceService(),
                 shellCatalogResolver,
                 rulesetSelectionPolicy: selectionPolicy);
@@ -10167,6 +10582,140 @@ public sealed class AvaloniaFlagshipUiGateTests
                         ]);
             }
         }
+    }
+
+    private sealed class QuotaBlockingChummerClient : IChummerClient
+    {
+        private readonly IChummerClient _inner;
+        private readonly string _message;
+
+        public QuotaBlockingChummerClient(IChummerClient inner, string message)
+        {
+            _inner = inner;
+            _message = message;
+        }
+
+        public Task<ShellPreferences> GetShellPreferencesAsync(CancellationToken ct) => _inner.GetShellPreferencesAsync(ct);
+        public Task SaveShellPreferencesAsync(ShellPreferences preferences, CancellationToken ct) => _inner.SaveShellPreferencesAsync(preferences, ct);
+        public Task<ShellSessionState> GetShellSessionAsync(CancellationToken ct) => _inner.GetShellSessionAsync(ct);
+        public Task SaveShellSessionAsync(ShellSessionState session, CancellationToken ct) => _inner.SaveShellSessionAsync(session, ct);
+        public Task<WorkspaceImportResult> ImportAsync(WorkspaceImportDocument document, CancellationToken ct) => _inner.ImportAsync(document, ct);
+        public Task<IReadOnlyList<WorkspaceListItem>> ListWorkspacesAsync(CancellationToken ct) => _inner.ListWorkspacesAsync(ct);
+        public Task<AccountCampaignSummary?> GetAccountCampaignSummaryAsync(CancellationToken ct) => _inner.GetAccountCampaignSummaryAsync(ct);
+
+        public Task<MyFirstBookQuotaSnapshotDto?> GetMyFirstBookQuotaAsync(CancellationToken ct)
+            => Task.FromResult<MyFirstBookQuotaSnapshotDto?>(new MyFirstBookQuotaSnapshotDto(
+                UserId: "quota-blocked",
+                PlanKey: BrilliantDirectoriesBillingConstants.FreePlanKey,
+                PlanName: BrilliantDirectoriesBillingConstants.FreePlanName,
+                SupporterActive: false,
+                MonthlyLimit: 1,
+                MonthlyUsed: 1,
+                MonthlyRemaining: 0,
+                WindowStartUtc: new DateTimeOffset(2026, 6, 1, 0, 0, 0, TimeSpan.Zero),
+                WindowEndUtc: new DateTimeOffset(2026, 7, 1, 0, 0, 0, TimeSpan.Zero)));
+
+        public Task<MyFirstBookQuotaConsumeResultDto> ConsumeMyFirstBookQuotaAsync(CancellationToken ct)
+            => Task.FromException<MyFirstBookQuotaConsumeResultDto>(new InvalidOperationException(_message));
+
+        public Task<IReadOnlyList<CampaignWorkspaceDigestProjection>> GetCampaignWorkspaceDigestsAsync(CancellationToken ct) => _inner.GetCampaignWorkspaceDigestsAsync(ct);
+        public Task<IReadOnlyList<DesktopHomeSupportDigest>> GetDesktopHomeSupportDigestsAsync(CancellationToken ct) => _inner.GetDesktopHomeSupportDigestsAsync(ct);
+        public Task<DesktopSupportCaseDetails?> GetDesktopSupportCaseDetailsAsync(string caseId, CancellationToken ct) => _inner.GetDesktopSupportCaseDetailsAsync(caseId, ct);
+        public Task<DesktopInstallLinkingSummaryProjection> GetDesktopInstallLinkingSummaryAsync(CancellationToken ct) => _inner.GetDesktopInstallLinkingSummaryAsync(ct);
+        public Task<bool> CloseWorkspaceAsync(CharacterWorkspaceId id, CancellationToken ct) => _inner.CloseWorkspaceAsync(id, ct);
+        public Task<IReadOnlyList<AppCommandDefinition>> GetCommandsAsync(string? rulesetId, CancellationToken ct) => _inner.GetCommandsAsync(rulesetId, ct);
+        public Task<IReadOnlyList<NavigationTabDefinition>> GetNavigationTabsAsync(string? rulesetId, CancellationToken ct) => _inner.GetNavigationTabsAsync(rulesetId, ct);
+        public Task<ShellBootstrapSnapshot> GetShellBootstrapAsync(string? rulesetId, CancellationToken ct) => _inner.GetShellBootstrapAsync(rulesetId, ct);
+        public Task<RuntimeInspectorProjection?> GetRuntimeInspectorProfileAsync(string profileId, string? rulesetId, CancellationToken ct) => _inner.GetRuntimeInspectorProfileAsync(profileId, rulesetId, ct);
+        public Task<MasterIndexResponse> GetMasterIndexAsync(CancellationToken ct) => _inner.GetMasterIndexAsync(ct);
+        public Task<TranslatorLanguagesResponse> GetTranslatorLanguagesAsync(CancellationToken ct) => _inner.GetTranslatorLanguagesAsync(ct);
+        public Task<IReadOnlyList<DesktopBuildPathSuggestion>> GetBuildPathSuggestionsAsync(string? rulesetId, CancellationToken ct) => _inner.GetBuildPathSuggestionsAsync(rulesetId, ct);
+        public Task<DesktopBuildPathPreview?> GetBuildPathPreviewAsync(string buildKitId, CharacterWorkspaceId workspaceId, string? rulesetId, CancellationToken ct) => _inner.GetBuildPathPreviewAsync(buildKitId, workspaceId, rulesetId, ct);
+        public Task<JsonNode> GetSectionAsync(CharacterWorkspaceId id, string sectionId, CancellationToken ct) => _inner.GetSectionAsync(id, sectionId, ct);
+        public Task<CharacterFileSummary> GetSummaryAsync(CharacterWorkspaceId id, CancellationToken ct) => _inner.GetSummaryAsync(id, ct);
+        public Task<CharacterValidationResult> ValidateAsync(CharacterWorkspaceId id, CancellationToken ct) => _inner.ValidateAsync(id, ct);
+        public Task<CharacterProfileSection> GetProfileAsync(CharacterWorkspaceId id, CancellationToken ct) => _inner.GetProfileAsync(id, ct);
+        public Task<CharacterProgressSection> GetProgressAsync(CharacterWorkspaceId id, CancellationToken ct) => _inner.GetProgressAsync(id, ct);
+        public Task<CharacterSkillsSection> GetSkillsAsync(CharacterWorkspaceId id, CancellationToken ct) => _inner.GetSkillsAsync(id, ct);
+        public Task<CharacterRulesSection> GetRulesAsync(CharacterWorkspaceId id, CancellationToken ct) => _inner.GetRulesAsync(id, ct);
+        public Task<CharacterBuildSection> GetBuildAsync(CharacterWorkspaceId id, CancellationToken ct) => _inner.GetBuildAsync(id, ct);
+        public Task<CharacterMovementSection> GetMovementAsync(CharacterWorkspaceId id, CancellationToken ct) => _inner.GetMovementAsync(id, ct);
+        public Task<CharacterAwakeningSection> GetAwakeningAsync(CharacterWorkspaceId id, CancellationToken ct) => _inner.GetAwakeningAsync(id, ct);
+        public Task<CommandResult<CharacterProfileSection>> UpdateMetadataAsync(CharacterWorkspaceId id, UpdateWorkspaceMetadata command, CancellationToken ct) => _inner.UpdateMetadataAsync(id, command, ct);
+        public Task<CommandResult<WorkspaceSaveReceipt>> SaveAsync(CharacterWorkspaceId id, CancellationToken ct) => _inner.SaveAsync(id, ct);
+        public Task<CommandResult<WorkspaceDownloadReceipt>> DownloadAsync(CharacterWorkspaceId id, CancellationToken ct) => _inner.DownloadAsync(id, ct);
+        public Task<CommandResult<WorkspaceExportReceipt>> ExportAsync(CharacterWorkspaceId id, CancellationToken ct) => _inner.ExportAsync(id, ct);
+        public Task<CommandResult<WorkspacePrintReceipt>> PrintAsync(CharacterWorkspaceId id, CancellationToken ct) => _inner.PrintAsync(id, ct);
+    }
+
+    private sealed class MyFirstBookEnabledChummerClient : IChummerClient
+    {
+        private readonly IChummerClient _inner;
+        private int _monthlyUsed;
+
+        public MyFirstBookEnabledChummerClient(IChummerClient inner)
+        {
+            _inner = inner;
+        }
+
+        public Task<ShellPreferences> GetShellPreferencesAsync(CancellationToken ct) => _inner.GetShellPreferencesAsync(ct);
+        public Task SaveShellPreferencesAsync(ShellPreferences preferences, CancellationToken ct) => _inner.SaveShellPreferencesAsync(preferences, ct);
+        public Task<ShellSessionState> GetShellSessionAsync(CancellationToken ct) => _inner.GetShellSessionAsync(ct);
+        public Task SaveShellSessionAsync(ShellSessionState session, CancellationToken ct) => _inner.SaveShellSessionAsync(session, ct);
+        public Task<WorkspaceImportResult> ImportAsync(WorkspaceImportDocument document, CancellationToken ct) => _inner.ImportAsync(document, ct);
+        public Task<IReadOnlyList<WorkspaceListItem>> ListWorkspacesAsync(CancellationToken ct) => _inner.ListWorkspacesAsync(ct);
+        public Task<AccountCampaignSummary?> GetAccountCampaignSummaryAsync(CancellationToken ct) => _inner.GetAccountCampaignSummaryAsync(ct);
+
+        public Task<MyFirstBookQuotaSnapshotDto?> GetMyFirstBookQuotaAsync(CancellationToken ct)
+            => Task.FromResult<MyFirstBookQuotaSnapshotDto?>(BuildSnapshot());
+
+        public Task<MyFirstBookQuotaConsumeResultDto> ConsumeMyFirstBookQuotaAsync(CancellationToken ct)
+        {
+            _monthlyUsed = Math.Min(_monthlyUsed + 1, 2);
+            MyFirstBookQuotaSnapshotDto snapshot = BuildSnapshot();
+            return Task.FromResult(new MyFirstBookQuotaConsumeResultDto("consumed", snapshot));
+        }
+
+        public Task<IReadOnlyList<CampaignWorkspaceDigestProjection>> GetCampaignWorkspaceDigestsAsync(CancellationToken ct) => _inner.GetCampaignWorkspaceDigestsAsync(ct);
+        public Task<IReadOnlyList<DesktopHomeSupportDigest>> GetDesktopHomeSupportDigestsAsync(CancellationToken ct) => _inner.GetDesktopHomeSupportDigestsAsync(ct);
+        public Task<DesktopSupportCaseDetails?> GetDesktopSupportCaseDetailsAsync(string caseId, CancellationToken ct) => _inner.GetDesktopSupportCaseDetailsAsync(caseId, ct);
+        public Task<DesktopInstallLinkingSummaryProjection> GetDesktopInstallLinkingSummaryAsync(CancellationToken ct) => _inner.GetDesktopInstallLinkingSummaryAsync(ct);
+        public Task<bool> CloseWorkspaceAsync(CharacterWorkspaceId id, CancellationToken ct) => _inner.CloseWorkspaceAsync(id, ct);
+        public Task<IReadOnlyList<AppCommandDefinition>> GetCommandsAsync(string? rulesetId, CancellationToken ct) => _inner.GetCommandsAsync(rulesetId, ct);
+        public Task<IReadOnlyList<NavigationTabDefinition>> GetNavigationTabsAsync(string? rulesetId, CancellationToken ct) => _inner.GetNavigationTabsAsync(rulesetId, ct);
+        public Task<ShellBootstrapSnapshot> GetShellBootstrapAsync(string? rulesetId, CancellationToken ct) => _inner.GetShellBootstrapAsync(rulesetId, ct);
+        public Task<RuntimeInspectorProjection?> GetRuntimeInspectorProfileAsync(string profileId, string? rulesetId, CancellationToken ct) => _inner.GetRuntimeInspectorProfileAsync(profileId, rulesetId, ct);
+        public Task<MasterIndexResponse> GetMasterIndexAsync(CancellationToken ct) => _inner.GetMasterIndexAsync(ct);
+        public Task<TranslatorLanguagesResponse> GetTranslatorLanguagesAsync(CancellationToken ct) => _inner.GetTranslatorLanguagesAsync(ct);
+        public Task<IReadOnlyList<DesktopBuildPathSuggestion>> GetBuildPathSuggestionsAsync(string? rulesetId, CancellationToken ct) => _inner.GetBuildPathSuggestionsAsync(rulesetId, ct);
+        public Task<DesktopBuildPathPreview?> GetBuildPathPreviewAsync(string buildKitId, CharacterWorkspaceId workspaceId, string? rulesetId, CancellationToken ct) => _inner.GetBuildPathPreviewAsync(buildKitId, workspaceId, rulesetId, ct);
+        public Task<JsonNode> GetSectionAsync(CharacterWorkspaceId id, string sectionId, CancellationToken ct) => _inner.GetSectionAsync(id, sectionId, ct);
+        public Task<CharacterFileSummary> GetSummaryAsync(CharacterWorkspaceId id, CancellationToken ct) => _inner.GetSummaryAsync(id, ct);
+        public Task<CharacterValidationResult> ValidateAsync(CharacterWorkspaceId id, CancellationToken ct) => _inner.ValidateAsync(id, ct);
+        public Task<CharacterProfileSection> GetProfileAsync(CharacterWorkspaceId id, CancellationToken ct) => _inner.GetProfileAsync(id, ct);
+        public Task<CharacterProgressSection> GetProgressAsync(CharacterWorkspaceId id, CancellationToken ct) => _inner.GetProgressAsync(id, ct);
+        public Task<CharacterSkillsSection> GetSkillsAsync(CharacterWorkspaceId id, CancellationToken ct) => _inner.GetSkillsAsync(id, ct);
+        public Task<CharacterRulesSection> GetRulesAsync(CharacterWorkspaceId id, CancellationToken ct) => _inner.GetRulesAsync(id, ct);
+        public Task<CharacterBuildSection> GetBuildAsync(CharacterWorkspaceId id, CancellationToken ct) => _inner.GetBuildAsync(id, ct);
+        public Task<CharacterMovementSection> GetMovementAsync(CharacterWorkspaceId id, CancellationToken ct) => _inner.GetMovementAsync(id, ct);
+        public Task<CharacterAwakeningSection> GetAwakeningAsync(CharacterWorkspaceId id, CancellationToken ct) => _inner.GetAwakeningAsync(id, ct);
+        public Task<CommandResult<CharacterProfileSection>> UpdateMetadataAsync(CharacterWorkspaceId id, UpdateWorkspaceMetadata command, CancellationToken ct) => _inner.UpdateMetadataAsync(id, command, ct);
+        public Task<CommandResult<WorkspaceSaveReceipt>> SaveAsync(CharacterWorkspaceId id, CancellationToken ct) => _inner.SaveAsync(id, ct);
+        public Task<CommandResult<WorkspaceDownloadReceipt>> DownloadAsync(CharacterWorkspaceId id, CancellationToken ct) => _inner.DownloadAsync(id, ct);
+        public Task<CommandResult<WorkspaceExportReceipt>> ExportAsync(CharacterWorkspaceId id, CancellationToken ct) => _inner.ExportAsync(id, ct);
+        public Task<CommandResult<WorkspacePrintReceipt>> PrintAsync(CharacterWorkspaceId id, CancellationToken ct) => _inner.PrintAsync(id, ct);
+
+        private MyFirstBookQuotaSnapshotDto BuildSnapshot()
+            => new(
+                UserId: "linked-runner",
+                PlanKey: BrilliantDirectoriesBillingConstants.SupporterPlanKey,
+                PlanName: BrilliantDirectoriesBillingConstants.SupporterPlanName,
+                SupporterActive: true,
+                MonthlyLimit: 2,
+                MonthlyUsed: _monthlyUsed,
+                MonthlyRemaining: Math.Max(0, 2 - _monthlyUsed),
+                WindowStartUtc: new DateTimeOffset(2026, 6, 1, 0, 0, 0, TimeSpan.Zero),
+                WindowEndUtc: new DateTimeOffset(2026, 7, 1, 0, 0, 0, TimeSpan.Zero));
     }
 
     private sealed class RecordingShellPresenter : IShellPresenter

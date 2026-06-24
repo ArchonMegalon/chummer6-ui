@@ -206,13 +206,13 @@ public sealed class DesktopDialogFactory : IDesktopDialogFactory
                 "dialog.xml_editor",
                 "XML Editor",
                 masterIndex is null
-                    ? "Edit/import flow in this head is file-first; this preview shows the current XML bridge and custom data status."
-                    : $"Edit/import flow stays file-first. XML Bridge is {masterIndex.XmlBridgePosture} with {masterIndex.EnabledDataOverlayCount} enabled overlays. Custom Data is {masterIndex.CustomDataLanePosture}.",
+                    ? "Edit and import stay file-first here. This preview shows XML bridge status and custom data status."
+                    : $"Edit and import stay file-first. XML Bridge is {masterIndex.XmlBridgePosture} with {masterIndex.EnabledDataOverlayCount} enabled overlays. Custom Data is {masterIndex.CustomDataLanePosture}.",
                 [
                     new DesktopDialogField("xmlEditorLanePosture", "XML Bridge", NormalizeGoverned(masterIndex?.XmlBridgePosture), "governed", IsReadOnly: true),
                     new DesktopDialogField("xmlEditorXmlBridgePosture", "XML Bridge Posture", NormalizeGoverned(masterIndex?.XmlBridgePosture), "governed", IsReadOnly: true, LayoutSlot: DesktopDialogFieldLayoutSlots.Hidden),
                     new DesktopDialogField("xmlEditorOverlayCount", "Enabled XML Overlays", (masterIndex?.EnabledDataOverlayCount ?? 0).ToString(), "0", IsReadOnly: true),
-                    new DesktopDialogField("xmlEditorCustomDataLanePosture", "Custom Data Lane", NormalizeGoverned(masterIndex?.CustomDataLanePosture), "governed", IsReadOnly: true),
+                    new DesktopDialogField("xmlEditorCustomDataLanePosture", "Custom Data", NormalizeGoverned(masterIndex?.CustomDataLanePosture), "governed", IsReadOnly: true),
                     new DesktopDialogField("xmlEditorCustomDataDirectoryCount", "Custom Data Directories", (masterIndex?.DistinctCustomDataDirectoryCount ?? 0).ToString(), "0", IsReadOnly: true),
                     new DesktopDialogField("xmlEditorReceipt", "XML Bridge Receipt", masterIndex?.XmlBridgeLaneReceipt ?? "missing", "missing", IsReadOnly: true),
                     new DesktopDialogField(
@@ -293,11 +293,11 @@ public sealed class DesktopDialogFactory : IDesktopDialogFactory
                 "Hero Lab Importer",
                 masterIndex is null
                     ? "Paste Hero Lab XML payload to import."
-                    : $"Paste Hero Lab XML payload to import. Import Oracle is {masterIndex.ImportOracleLanePosture} across {masterIndex.ImportOracleSourcesCovered}/{masterIndex.ImportOracleSourcesExpected} route families. Adjacent SR6 Oracle is {masterIndex.AdjacentSr6OracleReceiptPosture}.",
+                    : $"Paste Hero Lab XML payload to import. Import Oracle is {masterIndex.ImportOracleLanePosture} across {masterIndex.ImportOracleSourcesCovered}/{masterIndex.ImportOracleSourcesExpected} source families. Adjacent SR6 Oracle is {masterIndex.AdjacentSr6OracleReceiptPosture}.",
                 [
                     new DesktopDialogField("heroLabSource", "Input File", ".por/.xml", ".por/.xml"),
                     CreateRulesetField("importRulesetId", rulesetId),
-                    new DesktopDialogField("heroLabImportOracleLanePosture", "Import Oracle Lane", NormalizeGoverned(masterIndex?.ImportOracleLanePosture), "governed", IsReadOnly: true),
+                    new DesktopDialogField("heroLabImportOracleLanePosture", "Import Oracle", NormalizeGoverned(masterIndex?.ImportOracleLanePosture), "governed", IsReadOnly: true),
                     new DesktopDialogField(
                         "heroLabImportOracleCoverage",
                         "Import Oracle Coverage",
@@ -891,7 +891,7 @@ public sealed class DesktopDialogFactory : IDesktopDialogFactory
                 BuildNewCharacterContextField("newCharacterOriginPathSummary", "Origin Path Summary", recommendation.PathSummary)
             ],
             [
-                new DesktopDialogAction("generate_fitting_build", "Build story", true),
+                new DesktopDialogAction("generate_fitting_build", "Draft story", true),
                 new DesktopDialogAction("cancel", "Cancel")
             ]);
     }

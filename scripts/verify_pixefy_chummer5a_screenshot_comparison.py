@@ -313,6 +313,7 @@ def main() -> int:
     screenshot_matrix_path = PUBLISHED / "CHUMMER5A_HUMAN_PARITY_SCREENSHOT_MATRIX.generated.json"
     windows_gate_path = PUBLISHED / "UI_WINDOWS_DESKTOP_EXIT_GATE.generated.json"
     startup_smoke_gate_path = PUBLISHED / "NEXT90_M144_UI_STARTUP_SMOKE_AND_EXECUTABLE_GATE.generated.json"
+    public_edge_execution_proof_path = PUBLISHED / "BLAZOR_PUBLIC_EDGE_EXECUTION_PROOF.generated.json"
 
     for path in [
         pixefy_targets_path,
@@ -323,6 +324,7 @@ def main() -> int:
         screenshot_matrix_path,
         windows_gate_path,
         startup_smoke_gate_path,
+        public_edge_execution_proof_path,
     ]:
         if not path.is_file():
             reasons.append(f"missing required receipt: {_receipt_path(path)}")
@@ -335,6 +337,7 @@ def main() -> int:
     screenshot_matrix = _load_json(screenshot_matrix_path) if screenshot_matrix_path.is_file() else {}
     windows_gate = _load_json(windows_gate_path) if windows_gate_path.is_file() else {}
     startup_smoke_gate = _load_json(startup_smoke_gate_path) if startup_smoke_gate_path.is_file() else {}
+    public_edge_execution_proof = _load_json(public_edge_execution_proof_path) if public_edge_execution_proof_path.is_file() else {}
 
     if str(pixefy_targets.get("provider") or "").strip().lower() != "pixefy":
         reasons.append("PUBLIC_SURFACE_QA_TARGETS.generated.json must declare provider Pixefy.")
@@ -342,6 +345,67 @@ def main() -> int:
         reasons.append("PUBLIC_SURFACE_QA_TARGETS.generated.json must stay scoped to public_routes_only.")
     if str(pixefy_targets.get("status") or "").strip().lower() != "ready_for_pixefy_capture":
         reasons.append("PUBLIC_SURFACE_QA_TARGETS.generated.json must be ready_for_pixefy_capture.")
+    capture_evidence = pixefy_targets.get("capture_evidence")
+    if not isinstance(capture_evidence, dict):
+        reasons.append("PUBLIC_SURFACE_QA_TARGETS.generated.json must include capture_evidence metadata.")
+        capture_evidence = {}
+    if str(capture_evidence.get("blazor_public_edge_execution_runner") or "").strip() == "":
+        reasons.append("PUBLIC_SURFACE_QA_TARGETS.generated.json must include blazor_public_edge_execution_runner.")
+    if str(capture_evidence.get("blazor_public_edge_execution_status_summary") or "").strip() == "":
+        reasons.append("PUBLIC_SURFACE_QA_TARGETS.generated.json must include blazor_public_edge_execution_status_summary.")
+    if str(capture_evidence.get("blazor_public_edge_execution_verifier") or "").strip() == "":
+        reasons.append("PUBLIC_SURFACE_QA_TARGETS.generated.json must include blazor_public_edge_execution_verifier.")
+    if str(capture_evidence.get("blazor_public_edge_execution_contract") or "").strip() == "":
+        reasons.append("PUBLIC_SURFACE_QA_TARGETS.generated.json must include blazor_public_edge_execution_contract.")
+    if str(capture_evidence.get("blazor_public_edge_execution_proof_target") or "").strip() == "":
+        reasons.append("PUBLIC_SURFACE_QA_TARGETS.generated.json must include blazor_public_edge_execution_proof_target.")
+    if str(capture_evidence.get("blazor_public_edge_execution_proof_tier") or "").strip() != "hosted_promoted_route_execution":
+        reasons.append("PUBLIC_SURFACE_QA_TARGETS.generated.json must include blazor_public_edge_execution_proof_tier=hosted_promoted_route_execution.")
+    if str(capture_evidence.get("blazor_public_edge_execution_route_lane") or "").strip() != "promoted_blazor_workbench":
+        reasons.append("PUBLIC_SURFACE_QA_TARGETS.generated.json must include blazor_public_edge_execution_route_lane=promoted_blazor_workbench.")
+    if str(capture_evidence.get("blazor_public_edge_execution_promoted_route_base") or "").strip() != "/blazor/workbench":
+        reasons.append("PUBLIC_SURFACE_QA_TARGETS.generated.json must include blazor_public_edge_execution_promoted_route_base=/blazor/workbench.")
+    required_family_ids = capture_evidence.get("blazor_public_edge_execution_required_workflow_family_ids")
+    if required_family_ids != [
+        "promoted_startup_command_executions",
+        "promoted_resumed_workspace",
+        "promoted_recent_work_affordances",
+        "promoted_restored_section_continuations",
+        "promoted_restored_tab_landings",
+        "promoted_restored_section_content",
+        "promoted_result_continuations",
+        "promoted_action_continuations",
+        "promoted_advanced_action_affordances",
+        "promoted_advanced_action_executions",
+        "promoted_committed_actions",
+        "promoted_advanced_committed_actions",
+    ]:
+        reasons.append("PUBLIC_SURFACE_QA_TARGETS.generated.json must include the promoted hosted execution required workflow family ids.")
+    if str(public_edge_execution_proof.get("contract_name") or "").strip() != "chummer6-ui.blazor_public_edge_execution_proof":
+        reasons.append("BLAZOR_PUBLIC_EDGE_EXECUTION_PROOF.generated.json must use contract chummer6-ui.blazor_public_edge_execution_proof.")
+    if str(public_edge_execution_proof.get("status") or "").strip().lower() not in {"not_run", "pass", "passed", "ready"}:
+        reasons.append("BLAZOR_PUBLIC_EDGE_EXECUTION_PROOF.generated.json must be not_run or passing.")
+    if str(public_edge_execution_proof.get("proof_tier") or "").strip() != "hosted_promoted_route_execution":
+        reasons.append("BLAZOR_PUBLIC_EDGE_EXECUTION_PROOF.generated.json must use proof_tier hosted_promoted_route_execution.")
+    if str(public_edge_execution_proof.get("route_lane") or "").strip() != "promoted_blazor_workbench":
+        reasons.append("BLAZOR_PUBLIC_EDGE_EXECUTION_PROOF.generated.json must use route_lane promoted_blazor_workbench.")
+    if str(public_edge_execution_proof.get("promoted_route_base") or "").strip() != "/blazor/workbench":
+        reasons.append("BLAZOR_PUBLIC_EDGE_EXECUTION_PROOF.generated.json must use promoted_route_base /blazor/workbench.")
+    if public_edge_execution_proof.get("required_workflow_family_ids") != [
+        "promoted_startup_command_executions",
+        "promoted_resumed_workspace",
+        "promoted_recent_work_affordances",
+        "promoted_restored_section_continuations",
+        "promoted_restored_tab_landings",
+        "promoted_restored_section_content",
+        "promoted_result_continuations",
+        "promoted_action_continuations",
+        "promoted_advanced_action_affordances",
+        "promoted_advanced_action_executions",
+        "promoted_committed_actions",
+        "promoted_advanced_committed_actions",
+    ]:
+        reasons.append("BLAZOR_PUBLIC_EDGE_EXECUTION_PROOF.generated.json must include the promoted hosted execution required workflow family ids.")
 
     if not _status_is_pass(screenshot_review):
         reasons.append("CHUMMER5A_SCREENSHOT_REVIEW_GATE.generated.json is not passing.")

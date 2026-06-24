@@ -23,6 +23,7 @@ REQUIRE_COMPLETE_DESKTOP_COVERAGE="${CHUMMER_RELEASE_REQUIRE_COMPLETE_DESKTOP_CO
 PROMOTE_PROOF_BACKED_QUARANTINED_INSTALLERS="${CHUMMER_PROMOTE_PROOF_BACKED_QUARANTINED_INSTALLERS:-1}"
 UI_LOCALIZATION_RELEASE_GATE_PATH="${CHUMMER_UI_LOCALIZATION_RELEASE_GATE_PATH:-$REPO_ROOT/.codex-studio/published/UI_LOCALIZATION_RELEASE_GATE.generated.json}"
 EXTERNAL_HOST_PROOF_BLOCKERS_PATH="${CHUMMER_UI_EXTERNAL_HOST_PROOF_BLOCKERS_PATH:-$REPO_ROOT/.codex-studio/published/UI_EXTERNAL_HOST_PROOF_BLOCKERS.generated.json}"
+PUBLIC_EDGE_WORKBENCH_PROOF_PATH="${CHUMMER_BLAZOR_PUBLIC_EDGE_WORKBENCH_PROOF_PATH:-$REPO_ROOT/.codex-studio/published/BLAZOR_PUBLIC_EDGE_WORKBENCH_PROOF.generated.json}"
 CANONICAL_MANIFEST_PATH="${CANONICAL_MANIFEST_PATH:-$(dirname "$MANIFEST_PATH")/RELEASE_CHANNEL.generated.json}"
 PORTAL_CANONICAL_MANIFEST_PATH="${PORTAL_CANONICAL_MANIFEST_PATH:-$(dirname "$PORTAL_MANIFEST_PATH")/RELEASE_CHANNEL.generated.json}"
 PROMOTION_EVIDENCE_PATH="${PROMOTION_EVIDENCE_PATH:-$(dirname "$MANIFEST_PATH")/release-evidence/public-promotion.json}"
@@ -1765,36 +1766,37 @@ def enrich_manifest(path: Path, downloads_dir: Path, downloads_prefix: str) -> N
         return
 
     changed = False
-    for artifact in payload.get("artifacts") or []:
-        if not isinstance(artifact, dict):
-            continue
-        file_name = str(artifact.get("fileName") or "").strip()
-        kind = str(artifact.get("kind") or "").strip().lower()
-        platform = str(artifact.get("platform") or "").strip().lower()
-        if kind != "installer" or platform != "windows" or not file_name:
-            continue
+    for collection_name in ("artifacts", "downloads"):
+        for artifact in payload.get(collection_name) or []:
+            if not isinstance(artifact, dict):
+                continue
+            file_name = str(artifact.get("fileName") or "").strip()
+            kind = str(artifact.get("kind") or "").strip().lower()
+            platform = str(artifact.get("platform") or "").strip().lower()
+            if kind != "installer" or platform != "windows" or not file_name:
+                continue
 
-        payload_name = candidate_payload_name(file_name)
-        if not payload_name:
-            continue
-        payload_path = downloads_dir / payload_name
-        if not payload_path.is_file():
-            continue
+            payload_name = candidate_payload_name(file_name)
+            if not payload_name:
+                continue
+            payload_path = downloads_dir / payload_name
+            if not payload_path.is_file():
+                continue
 
-        payload_url = f"{downloads_prefix.rstrip('/')}/{payload_name}"
-        payload_sha256 = sha256_file(payload_path)
-        payload_size = payload_path.stat().st_size
-        expected = {
-            "installerMode": "bootstrap",
-            "payloadFileName": payload_name,
-            "payloadDownloadUrl": payload_url,
-            "payloadSha256": payload_sha256,
-            "payloadSizeBytes": payload_size,
-        }
-        for key, value in expected.items():
-            if artifact.get(key) != value:
-                artifact[key] = value
-                changed = True
+            payload_url = f"{downloads_prefix.rstrip('/')}/{payload_name}"
+            payload_sha256 = sha256_file(payload_path)
+            payload_size = payload_path.stat().st_size
+            expected = {
+                "installerMode": "bootstrap",
+                "payloadFileName": payload_name,
+                "payloadDownloadUrl": payload_url,
+                "payloadSha256": payload_sha256,
+                "payloadSizeBytes": payload_size,
+            }
+            for key, value in expected.items():
+                if artifact.get(key) != value:
+                    artifact[key] = value
+                    changed = True
 
     if changed:
         path.write_text(json.dumps(payload, indent=2) + "\n", encoding="utf-8")
@@ -1941,6 +1943,11 @@ def hydrate_download_compatibility_from_canonical(local_payload: dict) -> None:
             ("platform", "platformId"),
             ("arch", "arch"),
             ("installAccessClass", "installAccessClass"),
+            ("installerMode", "installerMode"),
+            ("payloadFileName", "payloadFileName"),
+            ("payloadDownloadUrl", "payloadDownloadUrl"),
+            ("payloadSha256", "payloadSha256"),
+            ("payloadSizeBytes", "payloadSizeBytes"),
         ):
             value = canonical.get(source_key)
             if value is not None and str(value).strip():
@@ -2304,6 +2311,7 @@ python3 "$SCRIPT_DIR/materialize-external-host-proof-blockers.py" \
   --display-downloads-dir "$CANONICAL_FILES_DIR" \
   --display-startup-smoke-dir "$(dirname "$CANONICAL_MANIFEST_PATH")/startup-smoke" \
   --output "$EXTERNAL_HOST_PROOF_BLOCKERS_PATH" \
+  --browser-proof-output "$PUBLIC_EDGE_WORKBENCH_PROOF_PATH" \
   --base-url "${CHUMMER_EXTERNAL_PROOF_BASE_URL:-https://chummer.run}" \
   --timeout-seconds "${CHUMMER_EXTERNAL_PROOF_ROUTE_TIMEOUT_SECONDS:-10}" \
   --max-receipt-age-seconds "${CHUMMER_EXTERNAL_PROOF_MAX_RECEIPT_AGE_SECONDS:-604800}" \

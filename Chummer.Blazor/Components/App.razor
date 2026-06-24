@@ -1,4 +1,5 @@
 @inject NavigationManager Navigation
+@inject IConfiguration Configuration
 
 <!DOCTYPE html>
 <html lang="en">
@@ -6,9 +7,13 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <base href="@BuildBaseHref()" />
-    <title>Chummer Browser Preview</title>
+    <title>Chummer Browser Workbench</title>
     <link rel="stylesheet" href="Chummer.Blazor.styles.css" />
     <link rel="stylesheet" href="app.css" />
+    @if (BuildRybbitAnalyticsOptions() is { } rybbitAnalytics)
+    {
+        <script src="@rybbitAnalytics.ScriptUrl" async data-site-id="@rybbitAnalytics.SiteId"></script>
+    }
 </head>
 <body>
 <Routes @rendermode="new InteractiveServerRenderMode()" />
@@ -41,6 +46,208 @@
     window.chummerExports.downloadBase64 = function(fileName, contentBase64, mimeType) {
         window.chummerDownloads.downloadBase64(fileName, contentBase64, mimeType);
     };
+    window.chummerAnalytics = window.chummerAnalytics || {};
+    (function(analytics) {
+        const maxQueueLength = 20;
+        const forbiddenPropertyPattern = /(alias|character|content|document|email|file|hash|name|owner|payload|workspace|xml)/i;
+        const safeTokenPattern = /^[a-z0-9_.:-]{1,80}$/i;
+        let lastRouteKey = '';
+
+        analytics._queue = analytics._queue || [];
+
+        function safeToken(value) {
+            if (typeof value !== 'string') {
+                return null;
+            }
+
+            const trimmed = value.trim();
+            return safeTokenPattern.test(trimmed) ? trimmed : null;
+        }
+
+        function safePropertyKey(key) {
+            const normalized = String(key || '')
+                .trim()
+                .toLowerCase()
+                .replace(/[^a-z0-9_]/g, '_')
+                .slice(0, 64);
+
+            if (!normalized || forbiddenPropertyPattern.test(normalized)) {
+                return null;
+            }
+
+            return normalized;
+        }
+
+        function safePropertyValue(value) {
+            if (typeof value === 'number' && Number.isFinite(value)) {
+                return value;
+            }
+
+            if (typeof value === 'boolean') {
+                return value ? 'true' : 'false';
+            }
+
+            if (typeof value === 'string') {
+                const trimmed = value.trim();
+                return trimmed.length <= 120 && safeTokenPattern.test(trimmed) ? trimmed : null;
+            }
+
+            return null;
+        }
+
+        function sanitizeProperties(properties) {
+            const safe = {};
+            const entries = Object.entries(properties || {});
+            for (const [key, value] of entries) {
+                const safeKey = safePropertyKey(key);
+                if (!safeKey) {
+                    continue;
+                }
+
+                const safeValue = safePropertyValue(value);
+                if (safeValue === null) {
+                    continue;
+                }
+
+                safe[safeKey] = safeValue;
+            }
+
+            return safe;
+        }
+
+        function dispatch(eventName, properties) {
+            const safeEventName = safeToken(eventName);
+            if (!safeEventName) {
+                return;
+            }
+
+            const payload = sanitizeProperties(properties);
+            if (window.rybbit && typeof window.rybbit.event === 'function') {
+                window.rybbit.event(`chummer_${safeEventName}`, payload);
+                return;
+            }
+
+            if (analytics._queue.length < maxQueueLength) {
+                analytics._queue.push([safeEventName, payload]);
+            }
+        }
+
+        function flush() {
+            if (!window.rybbit || typeof window.rybbit.event !== 'function') {
+                return;
+            }
+
+            const queued = analytics._queue.splice(0, analytics._queue.length);
+            for (const [eventName, payload] of queued) {
+                window.rybbit.event(`chummer_${eventName}`, payload);
+            }
+        }
+
+        function currentRouteProperties() {
+            const url = new URL(window.location.href);
+            const path = url.pathname.toLowerCase();
+            const query = url.searchParams;
+            let routeFamily = 'other';
+
+            if (path.endsWith('/blazor') || path.endsWith('/blazor/') || path.endsWith('/workbench')) {
+                routeFamily = 'workbench';
+            } else if (path.endsWith('/preview')) {
+                routeFamily = 'preview';
+            } else if (path.endsWith('/showcase')) {
+                routeFamily = 'showcase';
+            } else if (path.includes('/downloads')) {
+                routeFamily = 'downloads';
+            } else if (path.includes('/docs')) {
+                routeFamily = 'docs';
+            }
+
+            return {
+                host_class: 'blazor',
+                route_family: routeFamily,
+                command_id: safeToken(query.get('command')),
+                tab_id: safeToken(query.get('tab')),
+                control_id: safeToken(query.get('control')),
+                dialog_action_id: safeToken(query.get('dialog_action')),
+                has_workspace: query.has('workspace'),
+                has_fixture: query.has('fixture')
+            };
+        }
+
+        function trackRoute() {
+            const properties = currentRouteProperties();
+            const routeKey = JSON.stringify(properties);
+            if (routeKey === lastRouteKey) {
+                return;
+            }
+
+            lastRouteKey = routeKey;
+            dispatch('browser_route', properties);
+        }
+
+        function scheduleRouteTracking() {
+            window.setTimeout(trackRoute, 0);
+        }
+
+        const originalPushState = window.history.pushState;
+        const originalReplaceState = window.history.replaceState;
+        window.history.pushState = function() {
+            const result = originalPushState.apply(this, arguments);
+            scheduleRouteTracking();
+            return result;
+        };
+        window.history.replaceState = function() {
+            const result = originalReplaceState.apply(this, arguments);
+            scheduleRouteTracking();
+            return result;
+        };
+
+        analytics.event = dispatch;
+        analytics.trackRoute = trackRoute;
+        window.addEventListener('popstate', scheduleRouteTracking);
+        window.setInterval(flush, 1000);
+        scheduleRouteTracking();
+    })(window.chummerAnalytics);
+    window.chummerDialogs = window.chummerDialogs || {};
+    window.chummerDialogs._lastRevealedBackdrop = window.chummerDialogs._lastRevealedBackdrop || null;
+    window.chummerDialogs.revealActiveDialog = function() {
+        return new Promise((resolve) => {
+            const reveal = function() {
+                const backdrop = document.getElementById('dialogBackdrop');
+                if (backdrop) {
+                    window.chummerDialogs._lastRevealedBackdrop = backdrop;
+                    backdrop.scrollIntoView({ block: 'center', inline: 'center' });
+                }
+
+                resolve();
+            };
+
+            if (window.requestAnimationFrame) {
+                window.requestAnimationFrame(reveal);
+                return;
+            }
+
+            window.setTimeout(reveal, 0);
+        });
+    };
+    window.chummerDialogs.startObserver = function() {
+        if (window.chummerDialogs._observer) {
+            return;
+        }
+
+        const revealIfNeeded = function() {
+            const backdrop = document.getElementById('dialogBackdrop');
+            if (!backdrop || window.chummerDialogs._lastRevealedBackdrop === backdrop) {
+                return;
+            }
+
+            window.chummerDialogs.revealActiveDialog();
+        };
+
+        window.chummerDialogs._observer = new MutationObserver(revealIfNeeded);
+        window.chummerDialogs._observer.observe(document.body, { childList: true, subtree: true });
+        window.setTimeout(revealIfNeeded, 0);
+    };
+    window.chummerDialogs.startObserver();
     window.chummerPrints = window.chummerPrints || {};
     window.chummerPrints.openBase64 = function(fileName, contentBase64, mimeType, title) {
         if (!contentBase64) {
@@ -104,4 +311,58 @@
 
         return $"{uri.AbsolutePath}/";
     }
+
+    private RybbitAnalyticsOptions? BuildRybbitAnalyticsOptions()
+    {
+        if (!string.Equals(Configuration["CHUMMER_ANALYTICS_PROVIDER"], "rybbit", StringComparison.OrdinalIgnoreCase))
+            return null;
+
+        string? siteId = NormalizeAnalyticsToken(Configuration["CHUMMER_RYBBIT_SITE_ID"]);
+        if (siteId is null)
+            return null;
+
+        string scriptUrl = ResolveRybbitScriptUrl();
+        return new RybbitAnalyticsOptions(scriptUrl, siteId);
+    }
+
+    private string ResolveRybbitScriptUrl()
+    {
+        string? configuredScriptUrl = NormalizeOptionalValue(Configuration["CHUMMER_RYBBIT_SCRIPT_URL"]);
+        if (configuredScriptUrl is not null && IsSafeScriptUrl(configuredScriptUrl))
+            return configuredScriptUrl;
+
+        string? baseUrl = NormalizeOptionalValue(Configuration["CHUMMER_RYBBIT_BASE_URL"]);
+        if (baseUrl is not null && Uri.TryCreate(baseUrl, UriKind.Absolute, out Uri? uri))
+        {
+            return new Uri(uri, "/api/script.js").ToString();
+        }
+
+        return "https://app.rybbit.io/api/script.js";
+    }
+
+    private static bool IsSafeScriptUrl(string value)
+        => value.StartsWith("/", StringComparison.Ordinal)
+            || (Uri.TryCreate(value, UriKind.Absolute, out Uri? uri)
+                && (string.Equals(uri.Scheme, Uri.UriSchemeHttps, StringComparison.OrdinalIgnoreCase)
+                    || string.Equals(uri.Scheme, Uri.UriSchemeHttp, StringComparison.OrdinalIgnoreCase)));
+
+    private static string? NormalizeAnalyticsToken(string? value)
+    {
+        string? normalized = NormalizeOptionalValue(value);
+        if (normalized is null)
+            return null;
+
+        foreach (char c in normalized)
+        {
+            if (!char.IsLetterOrDigit(c) && c is not '-' and not '_')
+                return null;
+        }
+
+        return normalized.Length <= 128 ? normalized : null;
+    }
+
+    private static string? NormalizeOptionalValue(string? value)
+        => string.IsNullOrWhiteSpace(value) ? null : value.Trim();
+
+    private sealed record RybbitAnalyticsOptions(string ScriptUrl, string SiteId);
 }

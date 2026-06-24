@@ -104,6 +104,25 @@ public sealed class DesktopInstallLinkingShellChromeTests
     }
 
     [TestMethod]
+    public void Windows_install_link_gate_copy_stays_fail_closed_until_user_claims_online()
+    {
+        string formPath = FindPath("Chummer", "Forms", "DesktopInstallLinkingGateForm.cs");
+        string formText = File.ReadAllText(formPath);
+        string shellSource = File.ReadAllText(FindPath("Chummer.Blazor", "Components", "Layout", "DesktopShell.razor"));
+        string runtimeSource = File.ReadAllText(FindPath("Chummer.Desktop.Runtime", "DesktopInstallLinkingRuntime.cs"));
+
+        StringAssert.Contains(formText, "This copy is not linked yet.");
+        StringAssert.Contains(formText, "Claim your copy");
+        StringAssert.Contains(formText, "Continue unlinked");
+        StringAssert.Contains(shellSource, "desktop-install-claim-gate");
+        StringAssert.Contains(shellSource, "Please claim your app");
+        StringAssert.Contains(runtimeSource, "BuildClaimPortalRelativePathForInstall");
+        Assert.IsFalse(
+            formText.Contains("Install link required", StringComparison.Ordinal),
+            "Claiming must stay optional even when the online claim path is the guarded route.");
+    }
+
+    [TestMethod]
     public void Winforms_startup_uses_sync_install_linking_bridge_without_direct_async_blocker_calls()
     {
         string programPath = FindPath("Chummer", "Program.cs");

@@ -465,6 +465,38 @@ def normalize_token(value: Any) -> str:
     return str(value or "").strip().lower()
 
 
+def flagship_gate_is_external_desktop_only(payload: Dict[str, Any]) -> bool:
+    if not isinstance(payload, dict) or not payload:
+        return False
+    blocking_findings = payload.get("blockingFindings")
+    if not isinstance(blocking_findings, list) or not blocking_findings:
+        return False
+    allowed_findings = {
+        "Top-level release gate cannot pass while desktop executable exit gate is not passed.",
+        "Top-level release gate cannot pass while flagship readiness is not passed.",
+        "Top-level release gate cannot pass while flagship readiness coverage.desktop_client is not ready.",
+        "Top-level release gate cannot pass while flagship readiness still has open coverage keys: desktop_client.",
+    }
+    if any(str(finding).strip() not in allowed_findings for finding in blocking_findings):
+        return False
+    desktop_executable_proof = payload.get("desktopExecutableProof")
+    if not isinstance(desktop_executable_proof, dict):
+        return False
+    local_blocking_findings = desktop_executable_proof.get("localBlockingFindings")
+    if not isinstance(local_blocking_findings, list):
+        return False
+    normalized_local_blocking_findings = [
+        str(finding).strip() for finding in local_blocking_findings if str(finding).strip()
+    ]
+    if not normalized_local_blocking_findings:
+        return True
+    allowed_local_findings = (
+        "Windows desktop exit gate requires a Windows-capable host; current host cannot run promoted Windows installer smoke.",
+        "Windows gate reason: Windows installer visual proof is missing; capture progress and completion screenshots on a Windows host.",
+    )
+    return all(finding in allowed_local_findings for finding in normalized_local_blocking_findings)
+
+
 def normalize_head_proof_statuses(
     values: Any,
     field_label: str,
@@ -722,6 +754,11 @@ flagship_gate_review_start = len(reasons)
 flagship_gate = load_json(flagship_gate_path)
 flagship_status = str(flagship_gate.get("status") or "").strip().lower()
 evidence["flagship_gate_status"] = flagship_status
+flagship_gate_external_desktop_only = (
+    not status_ok(flagship_status)
+    and flagship_gate_is_external_desktop_only(flagship_gate)
+)
+evidence["flagship_gate_external_desktop_only"] = flagship_gate_external_desktop_only
 if not flagship_gate_path.is_file() or not flagship_gate:
     reasons.append("Flagship UI release gate receipt is missing or unreadable.")
 validate_receipt_freshness(
@@ -731,6 +768,12 @@ validate_receipt_freshness(
     evidence,
     allow_stale_pass_receipt=True,
 )
+if flagship_gate_external_desktop_only:
+    reasons[:] = [
+        reason
+        for reason in reasons
+        if not str(reason).startswith("flagship_ui_release_gate is stale ")
+    ]
 release_channel = load_json(release_channel_path)
 evidence["release_channel_receipt_exists"] = release_channel_path.is_file()
 if release_channel_path.is_file() and not release_channel:

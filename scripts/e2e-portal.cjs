@@ -2,6 +2,7 @@
 'use strict';
 
 const baseUrl = (process.env.CHUMMER_PORTAL_BASE_URL || 'http://chummer-portal:8080').replace(/\/$/, '');
+const expectedImplicitOwner = process.env.CHUMMER_PORTAL_EXPECTED_IMPLICIT_OWNER || 'local@self-host';
 
 const requiredLandingLinks = [
   '/blazor/',
@@ -11,7 +12,8 @@ const requiredLandingLinks = [
   '/avalonia/',
   '/downloads/',
   '/docs/',
-  '/api/health'
+  '/api/health',
+  '/openapi/v1.json'
 ];
 
 function hasIsolationHeaders(response) {
@@ -24,6 +26,9 @@ const checks = [
     url: `${baseUrl}/`,
     assert: text =>
       text.includes('Chummer Portal') &&
+      text.includes('implicit self-host sign-in') &&
+      text.includes(`Current owner: <code>${expectedImplicitOwner}</code>`) &&
+      text.includes('signed owner propagation enabled') &&
       requiredLandingLinks.every(link => text.includes(link))
   },
   {
@@ -45,12 +50,14 @@ const checks = [
     url: `${baseUrl}/hub/health`,
     assert: text => {
       const payload = JSON.parse(text);
-      return payload?.head === 'hub-web' && payload?.pathBase === '/hub' && payload?.ok === true;
+      return payload?.head === 'hub-web' && payload?.pathBase === '/hub' && payload?.status === 'ok';
     }
   },
   {
     url: `${baseUrl}/hub/`,
-    assert: text => /<base href="[^"]*\/hub\/"/i.test(text) && text.includes('ChummerHub Web')
+    assert: text =>
+      /<base href="[^"]*\/hub\/"/i.test(text)
+      && (text.includes('ChummerHub Web') || text.includes('Chummer Hub Web'))
   },
   {
     url: `${baseUrl}/avalonia/`,
@@ -126,6 +133,18 @@ const checks = [
     }
   },
   {
+    url: `${baseUrl}/api/ai/build-ideas`,
+    acceptedStatuses: [501],
+    assert: (text, response) => {
+      const payload = JSON.parse(text);
+      return response.status === 501
+        && payload?.error === 'not_implemented'
+        && payload?.operation === 'list-build-ideas'
+        && payload?.ownerId === expectedImplicitOwner
+        && (response.headers.get('set-cookie') || '').includes('chummer_portal_owner=');
+    }
+  },
+  {
     url: `${baseUrl}/openapi/v1.json`,
     assert: text => {
       const payload = JSON.parse(text);
@@ -154,8 +173,8 @@ const checks = [
     assert: text =>
       text.includes('Desktop Downloads') &&
       text.includes('/downloads/releases.json') &&
-      text.includes('No published desktop builds yet') &&
-      text.includes('fallback-link')
+      text.includes('fallback-link') &&
+      (text.includes('No published desktop builds yet') || text.includes('self-hosted downloads are live'))
   }
 ];
 
@@ -167,7 +186,9 @@ const checks = [
       body: check.body
     });
     const body = await response.text();
-    if (!response.ok) {
+    const acceptedStatuses = check.acceptedStatuses || [];
+    const statusAccepted = response.ok || acceptedStatuses.includes(response.status);
+    if (!statusAccepted) {
       throw new Error(`Portal check failed: ${check.url} -> HTTP ${response.status}`);
     }
 

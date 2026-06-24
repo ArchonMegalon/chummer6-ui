@@ -107,6 +107,7 @@ public abstract class ClassicFormPortSurfaceControl : UserControl
             return;
         }
 
+        DesktopShellTheme.ApplyShellListBoxTheme(listBox);
         ClassicPortLineItem[] materialized = lines.Where(static line => !string.IsNullOrWhiteSpace(line.Detail)).ToArray();
         listBox.ItemsSource = materialized.Length == 0
             ? [new ClassicPortLineItem("Status", emptyMessage)]
@@ -120,6 +121,7 @@ public abstract class ClassicFormPortSurfaceControl : UserControl
             return;
         }
 
+        DesktopShellTheme.ApplyShellTreeViewTheme(treeView);
         ClassicPortLineItem[] materialized = lines.Where(static line => !string.IsNullOrWhiteSpace(line.Detail)).ToArray();
         treeView.ItemsSource = materialized.Length == 0
             ? [new ClassicPortLineItem("Status", emptyMessage)]

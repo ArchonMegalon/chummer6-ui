@@ -40,7 +40,12 @@ public sealed record DesktopUpdateArtifact(
     string DownloadUrl,
     string? UpdateFeedUrl,
     string? Sha256,
-    long? SizeBytes)
+    long? SizeBytes,
+    string? InstallerMode = null,
+    string? PayloadFileName = null,
+    string? PayloadDownloadUrl = null,
+    string? PayloadSha256 = null,
+    long? PayloadSizeBytes = null)
 {
     public string Extension
     {
@@ -230,7 +235,12 @@ public static class DesktopUpdateManifestParser
                 DownloadUrl: downloadUrl,
                 UpdateFeedUrl: updateFeedUrl,
                 Sha256: sha256,
-                SizeBytes: sizeBytes));
+                SizeBytes: sizeBytes,
+                InstallerMode: GetOptionalString(element, "installerMode"),
+                PayloadFileName: GetOptionalString(element, "payloadFileName"),
+                PayloadDownloadUrl: GetOptionalString(element, "payloadDownloadUrl"),
+                PayloadSha256: NormalizeSha256(GetOptionalString(element, "payloadSha256")),
+                PayloadSizeBytes: GetOptionalLong(element, "payloadSizeBytes")));
         }
 
         return new DesktopUpdateChannelManifest(
@@ -289,7 +299,12 @@ public static class DesktopUpdateManifestParser
                 DownloadUrl: rawUrl,
                 UpdateFeedUrl: null,
                 Sha256: NormalizeSha256(GetOptionalString(element, "sha256")),
-                SizeBytes: GetOptionalLong(element, "sizeBytes")));
+                SizeBytes: GetOptionalLong(element, "sizeBytes"),
+                InstallerMode: GetOptionalString(element, "installerMode"),
+                PayloadFileName: GetOptionalString(element, "payloadFileName"),
+                PayloadDownloadUrl: GetOptionalString(element, "payloadDownloadUrl"),
+                PayloadSha256: NormalizeSha256(GetOptionalString(element, "payloadSha256")),
+                PayloadSizeBytes: GetOptionalLong(element, "payloadSizeBytes")));
         }
 
         return new DesktopUpdateChannelManifest(

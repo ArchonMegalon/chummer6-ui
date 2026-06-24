@@ -11,10 +11,13 @@ using Chummer.Contracts.Presentation;
 using Chummer.Contracts.Rulesets;
 using Chummer.Contracts.Workspaces;
 using Chummer.Presentation.Overview;
+using Chummer.Presentation.OriginBooks;
+using Chummer.Run.Contracts.Billing;
+using Chummer.Run.Contracts.Community;
 
 namespace Chummer.Presentation;
 
-public sealed class HttpChummerClient : IChummerClient
+public sealed class HttpChummerClient : IChummerClient, IOriginDossierPublicationClient
 {
     private static readonly TimeSpan ShellBootstrapRequestTimeout = TimeSpan.FromSeconds(10);
     private readonly HttpClient _httpClient;
@@ -146,6 +149,95 @@ public sealed class HttpChummerClient : IChummerClient
         return payload;
     }
 
+    public async Task<MyFirstBookQuotaSnapshotDto?> GetMyFirstBookQuotaAsync(CancellationToken ct)
+    {
+        using HttpResponseMessage response = await _httpClient.GetAsync("/api/billing/myfirstbook-quota/me", ct);
+        if (response.StatusCode is System.Net.HttpStatusCode.NotFound
+            or System.Net.HttpStatusCode.Unauthorized
+            or System.Net.HttpStatusCode.Forbidden)
+        {
+            return null;
+        }
+
+        if (!response.IsSuccessStatusCode)
+        {
+            string detail = await ReadProblemDetailAsync(
+                response,
+                $"MyFirstBook quota request failed with HTTP {(int)response.StatusCode}.",
+                ct).ConfigureAwait(false);
+            throw new InvalidOperationException(detail);
+        }
+
+        MyFirstBookQuotaSnapshotDto? payload = await response.Content.ReadFromJsonAsync<MyFirstBookQuotaSnapshotDto>(ct);
+        if (payload is null)
+        {
+            throw new InvalidOperationException("MyFirstBook quota response was empty.");
+        }
+
+        return payload;
+    }
+
+    public async Task<MyFirstBookQuotaConsumeResultDto> ConsumeMyFirstBookQuotaAsync(CancellationToken ct)
+    {
+        using HttpResponseMessage response = await _httpClient.PostAsync("/api/billing/myfirstbook-quota/me/consume", content: null, ct);
+        if (response.StatusCode is System.Net.HttpStatusCode.NotFound
+            or System.Net.HttpStatusCode.Unauthorized
+            or System.Net.HttpStatusCode.Forbidden)
+        {
+            throw new InvalidOperationException("Link your copy before creating a MyFirstBook origin book.");
+        }
+
+        if (!response.IsSuccessStatusCode)
+        {
+            string detail = await ReadProblemDetailAsync(
+                response,
+                $"MyFirstBook quota update failed with HTTP {(int)response.StatusCode}.",
+                ct).ConfigureAwait(false);
+            throw new InvalidOperationException(detail);
+        }
+
+        MyFirstBookQuotaConsumeResultDto? payload = await response.Content.ReadFromJsonAsync<MyFirstBookQuotaConsumeResultDto>(ct);
+        if (payload is null)
+        {
+            throw new InvalidOperationException("MyFirstBook quota update response was empty.");
+        }
+
+        return payload;
+    }
+
+    public async Task<OriginDossierPublicationImportResultDto> ImportOriginDossierPublicationAsync(
+        OriginDossierPublicationImportRequest request,
+        CancellationToken ct)
+    {
+        using HttpResponseMessage response = await _httpClient.PostAsJsonAsync(
+            "/api/v1/accounts/me/origin-dossiers/publications",
+            request,
+            ct);
+        if (response.StatusCode is System.Net.HttpStatusCode.NotFound
+            or System.Net.HttpStatusCode.Unauthorized
+            or System.Net.HttpStatusCode.Forbidden)
+        {
+            throw new InvalidOperationException("Link this Chummer copy before publishing an Origin Dossier to chummer.run.");
+        }
+
+        if (!response.IsSuccessStatusCode)
+        {
+            string detail = await ReadProblemDetailAsync(
+                response,
+                $"Origin Dossier publication import failed with HTTP {(int)response.StatusCode}.",
+                ct).ConfigureAwait(false);
+            throw new InvalidOperationException(detail);
+        }
+
+        OriginDossierPublicationImportResultDto? payload = await response.Content.ReadFromJsonAsync<OriginDossierPublicationImportResultDto>(ct);
+        if (payload is null)
+        {
+            throw new InvalidOperationException("Origin Dossier publication import response was empty.");
+        }
+
+        return payload;
+    }
+
     public async Task<IReadOnlyList<CampaignWorkspaceDigestProjection>> GetCampaignWorkspaceDigestsAsync(CancellationToken ct)
     {
         using HttpResponseMessage response = await _httpClient.GetAsync("/api/v1/campaign-spine/me/workspace-digests", ct);
@@ -163,6 +255,34 @@ public sealed class HttpChummerClient : IChummerClient
 
         CampaignWorkspaceDigestProjection[]? payload = await response.Content.ReadFromJsonAsync<CampaignWorkspaceDigestProjection[]>(ct);
         return payload ?? Array.Empty<CampaignWorkspaceDigestProjection>();
+    }
+
+    private static async Task<string> ReadProblemDetailAsync(HttpResponseMessage response, string fallback, CancellationToken ct)
+    {
+        try
+        {
+            string body = await response.Content.ReadAsStringAsync(ct).ConfigureAwait(false);
+            if (!string.IsNullOrWhiteSpace(body)
+                && JsonNode.Parse(body) is JsonNode node)
+            {
+                string? detail = node["detail"]?.GetValue<string>();
+                if (!string.IsNullOrWhiteSpace(detail))
+                {
+                    return detail.Trim();
+                }
+
+                string? title = node["title"]?.GetValue<string>();
+                if (!string.IsNullOrWhiteSpace(title))
+                {
+                    return title.Trim();
+                }
+            }
+        }
+        catch
+        {
+        }
+
+        return fallback;
     }
 
     public async Task<DesktopHomeCampaignServerPlane?> GetCampaignWorkspaceServerPlaneAsync(string workspaceId, CancellationToken ct)

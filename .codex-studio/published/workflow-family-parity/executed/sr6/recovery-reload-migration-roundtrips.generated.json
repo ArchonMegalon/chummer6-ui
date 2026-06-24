@@ -1,11 +1,11 @@
 {
-  "generatedAt": "2026-06-24T01:15:37.511848Z",
+  "generatedAt": "2026-06-24T12:39:47.098647Z",
   "contract_name": "chummer6-ui.sr6_workflow_family_execution_receipt",
   "status": "fail",
   "summary": "SR6 workflow-family execution evidence is incomplete for recovery-reload-migration-roundtrips.",
   "reasons": [
     "Audit tests not present in executed TRX results: Avalonia_and_Blazor_metadata_save_roundtrip_match, Avalonia_and_Blazor_tab_selection_loads_same_workspace_section, Menu_dialog_workflows_keep_recursive_parity, Legacy_ui_controls_keep_recursive_parity",
-    "dotnet test execution failed (exit 1): Build failed with exit code: 1."
+    "dotnet test execution failed (exit 1): Get projects properties with MSBuild didn't execute properly with exit code: 1."
   ],
   "evidence": {
     "edition": "sr6",

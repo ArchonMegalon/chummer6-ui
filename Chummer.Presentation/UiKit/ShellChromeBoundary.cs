@@ -18,6 +18,7 @@ public static class ShellChromeBoundary
         ["windows"] = "Windows",
         ["help"] = "Help",
         ["new_character"] = "New Character",
+        ["new_character_origin"] = "Origin Dossier",
         ["new_critter"] = "New Critter",
         ["open_character"] = "Open...",
         ["open_for_printing"] = "Open for Printing...",

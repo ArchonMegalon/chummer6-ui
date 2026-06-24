@@ -4,10 +4,47 @@
 @using Chummer.Contracts.Workspaces
 @using Chummer.Desktop.Runtime
 
-<section class="panel results">
+<section class="panel results" data-result-panel>
     <h2>@BuildResultHeading()</h2>
     <p class="hint">@BuildResultPostureHint()</p>
-    <p class="note">@(State.Notice ?? BuildResultReadyNotice())</p>
+    <p class="note" data-result-notice>@(State.Notice ?? BuildResultReadyNotice())</p>
+    @if (string.Equals(State.LastCommandId, "save_character", StringComparison.Ordinal) && State.HasSavedWorkspace)
+    {
+        <aside class="trust-receipt" data-result-dispatch="save">
+            <strong>Browser save dispatch</strong>
+            <p class="hint"><strong>Workspace:</strong> @(State.WorkspaceId?.Value ?? "none")</p>
+            <p class="hint"><strong>Saved posture:</strong> persisted workspace state is marked saved and ready for continuity.</p>
+            <p class="hint"><strong>Command:</strong> @State.LastCommandId</p>
+        </aside>
+    }
+    @if (State.PendingDownload is { } pendingDownload)
+    {
+        <aside class="trust-receipt" data-result-dispatch="download">
+            <strong>Browser download dispatch</strong>
+            <p class="hint"><strong>File:</strong> @pendingDownload.FileName</p>
+            <p class="hint"><strong>Format:</strong> @pendingDownload.Format</p>
+            <p class="hint"><strong>Length:</strong> @pendingDownload.DocumentLength bytes</p>
+        </aside>
+    }
+    @if (State.PendingPrint is { } pendingPrint)
+    {
+        <aside class="trust-receipt" data-result-dispatch="print">
+            <strong>Browser print dispatch</strong>
+            <p class="hint"><strong>Title:</strong> @pendingPrint.Title</p>
+            <p class="hint"><strong>File:</strong> @pendingPrint.FileName</p>
+            <p class="hint"><strong>Type:</strong> @pendingPrint.MimeType</p>
+            <p class="hint"><strong>Length:</strong> @pendingPrint.DocumentLength bytes</p>
+        </aside>
+    }
+    @if (State.PendingExport is { } pendingExport)
+    {
+        <aside class="trust-receipt" data-result-dispatch="export">
+            <strong>Browser export dispatch</strong>
+            <p class="hint"><strong>File:</strong> @pendingExport.FileName</p>
+            <p class="hint"><strong>Format:</strong> @pendingExport.Format</p>
+            <p class="hint"><strong>Length:</strong> @pendingExport.DocumentLength bytes</p>
+        </aside>
+    }
     @if (State.LatestPortabilityActivity is { } portability)
     {
         <p class="hint"><strong>@UndetectableHumanizerCopyAdapter.Humanize(portability.Title):</strong> @UndetectableHumanizerCopyAdapter.Humanize(portability.Receipt.ReceiptSummary)</p>

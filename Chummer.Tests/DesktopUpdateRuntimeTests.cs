@@ -3,6 +3,8 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
+using System.IO.Compression;
+using System.Security.Cryptography;
 using System.Threading;
 using System.Threading.Tasks;
 using Chummer.Desktop.Runtime;
@@ -188,7 +190,9 @@ public sealed class DesktopUpdateRuntimeTests
                   "arch": "{{identity.Arch}}",
                   "kind": "archive",
                   "fileName": "chummer-avalonia-{{identity.Platform}}-{{identity.Arch}}.zip",
-                  "downloadUrl": "{{missingPayloadPath.Replace("\\", "/")}}"
+                  "downloadUrl": "{{missingPayloadPath.Replace("\\", "/")}}",
+                  "sizeBytes": 12,
+                  "sha256": "{{new string('a', 64)}}"
                 }
               ]
             }
@@ -213,6 +217,7 @@ public sealed class DesktopUpdateRuntimeTests
                 CancellationToken.None).ConfigureAwait(false);
 
             Assert.AreEqual("update_schedule_failed", result.Reason);
+            StringAssert.Contains(result.Message ?? string.Empty, "update download failed", StringComparison.OrdinalIgnoreCase);
 
             string statePath = stateRootScope.StatePathForHead("avalonia");
             Assert.IsTrue(File.Exists(statePath));
@@ -467,6 +472,7 @@ public sealed class DesktopUpdateRuntimeTests
                 CancellationToken.None).ConfigureAwait(false);
 
             Assert.AreEqual("update_schedule_failed", result.Reason);
+            StringAssert.Contains(result.Message ?? string.Empty, "integrity", StringComparison.OrdinalIgnoreCase);
 
             string statePath = stateRootScope.StatePathForHead("avalonia");
             Assert.IsTrue(File.Exists(statePath));
@@ -485,6 +491,229 @@ public sealed class DesktopUpdateRuntimeTests
                 File.Delete(manifestPath);
             }
         }
+    }
+
+    [TestMethod]
+    public async Task CheckAndScheduleStartupUpdateAsync_rejects_payload_without_checksum()
+    {
+        DesktopUpdatePlatformIdentity identity = DesktopUpdatePlatformIdentity.Current();
+        string version = $"0.0.0-test-{Guid.NewGuid():N}";
+        string payloadPath = Path.Combine(Path.GetTempPath(), $"desktop-update-artifact-no-sha-{Guid.NewGuid():N}.zip");
+        File.WriteAllText(payloadPath, "payload-data");
+        string manifestPath = Path.Combine(Path.GetTempPath(), $"desktop-update-manifest-no-sha-{Guid.NewGuid():N}.json");
+        string manifestJson = $$"""
+            {
+              "channelId": "preview",
+              "version": "{{version}}",
+              "status": "published",
+              "publishedAt": "{{DateTimeOffset.UtcNow:O}}",
+              "artifacts": [
+                {
+                  "artifactId": "avalonia-{{identity.Platform}}-{{identity.Arch}}",
+                  "head": "avalonia",
+                  "platform": "{{identity.Platform}}",
+                  "arch": "{{identity.Arch}}",
+                  "kind": "archive",
+                  "fileName": "chummer-avalonia-{{identity.Platform}}-{{identity.Arch}}.zip",
+                  "downloadUrl": "{{payloadPath.Replace("\\", "/")}}",
+                  "sizeBytes": 12
+                }
+              ]
+            }
+            """;
+        File.WriteAllText(manifestPath, manifestJson);
+
+        using TestStateRootScope stateRootScope = new();
+        using TestProcessPathOverrideScope processPathScope = TestProcessPathOverrideScope.CreatePackagedLike();
+        using TestEnvironmentScope envScope = new(new Dictionary<string, string?>()
+        {
+            [ManifestEnvironmentVariable] = manifestPath,
+            [UpdateEnabledEnvironmentVariable] = "true",
+            [UpdateAutoApplyEnvironmentVariable] = "true",
+            [StateRootEnvironmentVariable] = stateRootScope.Root
+        });
+
+        try
+        {
+            DesktopUpdateStartupResult result = await DesktopUpdateRuntime.CheckAndScheduleStartupUpdateAsync(
+                "avalonia",
+                [],
+                CancellationToken.None).ConfigureAwait(false);
+
+            Assert.AreEqual("update_schedule_failed", result.Reason);
+            string statePath = stateRootScope.StatePathForHead("avalonia");
+            Assert.IsTrue(File.Exists(statePath));
+            using JsonDocument state = JsonDocument.Parse(File.ReadAllText(statePath));
+            StringAssert.Contains(GetStringProperty(state.RootElement, "lastError") ?? string.Empty, "missing a required SHA-256 checksum", StringComparison.OrdinalIgnoreCase);
+        }
+        finally
+        {
+            if (File.Exists(payloadPath))
+            {
+                File.Delete(payloadPath);
+            }
+            if (File.Exists(manifestPath))
+            {
+                File.Delete(manifestPath);
+            }
+        }
+    }
+
+    [TestMethod]
+    public async Task CheckAndScheduleStartupUpdateAsync_rejects_payload_without_size_metadata()
+    {
+        DesktopUpdatePlatformIdentity identity = DesktopUpdatePlatformIdentity.Current();
+        string version = $"0.0.0-test-{Guid.NewGuid():N}";
+        string payloadPath = Path.Combine(Path.GetTempPath(), $"desktop-update-artifact-no-size-{Guid.NewGuid():N}.zip");
+        File.WriteAllText(payloadPath, "payload-data");
+        string manifestPath = Path.Combine(Path.GetTempPath(), $"desktop-update-manifest-no-size-{Guid.NewGuid():N}.json");
+        string manifestJson = $$"""
+            {
+              "channelId": "preview",
+              "version": "{{version}}",
+              "status": "published",
+              "publishedAt": "{{DateTimeOffset.UtcNow:O}}",
+              "artifacts": [
+                {
+                  "artifactId": "avalonia-{{identity.Platform}}-{{identity.Arch}}",
+                  "head": "avalonia",
+                  "platform": "{{identity.Platform}}",
+                  "arch": "{{identity.Arch}}",
+                  "kind": "archive",
+                  "fileName": "chummer-avalonia-{{identity.Platform}}-{{identity.Arch}}.zip",
+                  "downloadUrl": "{{payloadPath.Replace("\\", "/")}}",
+                  "sha256": "{{new string('a', 64)}}"
+                }
+              ]
+            }
+            """;
+        File.WriteAllText(manifestPath, manifestJson);
+
+        using TestStateRootScope stateRootScope = new();
+        using TestProcessPathOverrideScope processPathScope = TestProcessPathOverrideScope.CreatePackagedLike();
+        using TestEnvironmentScope envScope = new(new Dictionary<string, string?>()
+        {
+            [ManifestEnvironmentVariable] = manifestPath,
+            [UpdateEnabledEnvironmentVariable] = "true",
+            [UpdateAutoApplyEnvironmentVariable] = "true",
+            [StateRootEnvironmentVariable] = stateRootScope.Root
+        });
+
+        try
+        {
+            DesktopUpdateStartupResult result = await DesktopUpdateRuntime.CheckAndScheduleStartupUpdateAsync(
+                "avalonia",
+                [],
+                CancellationToken.None).ConfigureAwait(false);
+
+            Assert.AreEqual("update_schedule_failed", result.Reason);
+            string statePath = stateRootScope.StatePathForHead("avalonia");
+            Assert.IsTrue(File.Exists(statePath));
+            using JsonDocument state = JsonDocument.Parse(File.ReadAllText(statePath));
+            StringAssert.Contains(GetStringProperty(state.RootElement, "lastError") ?? string.Empty, "sizeBytes", StringComparison.OrdinalIgnoreCase);
+        }
+        finally
+        {
+            if (File.Exists(payloadPath))
+            {
+                File.Delete(payloadPath);
+            }
+            if (File.Exists(manifestPath))
+            {
+                File.Delete(manifestPath);
+            }
+        }
+    }
+
+    [TestMethod]
+    public async Task CheckAndScheduleStartupUpdateAsync_rejects_payload_archive_that_does_not_contain_launch_executable()
+    {
+        DesktopUpdatePlatformIdentity identity = DesktopUpdatePlatformIdentity.Current();
+        string version = $"0.0.0-test-{Guid.NewGuid():N}";
+        string payloadPath = Path.Combine(Path.GetTempPath(), $"desktop-update-artifact-missing-launch-{Guid.NewGuid():N}.zip");
+        using (ZipArchive archive = ZipFile.Open(payloadPath, ZipArchiveMode.Create))
+        {
+            ZipArchiveEntry notesEntry = archive.CreateEntry("notes/readme.txt");
+            using StreamWriter writer = new(notesEntry.Open());
+            writer.Write("payload exists but launch executable is missing");
+        }
+
+        byte[] payloadBytes = File.ReadAllBytes(payloadPath);
+        string payloadSha = Convert.ToHexString(SHA256.HashData(payloadBytes)).ToLowerInvariant();
+        string manifestPath = Path.Combine(Path.GetTempPath(), $"desktop-update-manifest-missing-launch-{Guid.NewGuid():N}.json");
+        string manifestJson = $$"""
+            {
+              "channelId": "preview",
+              "version": "{{version}}",
+              "status": "published",
+              "publishedAt": "{{DateTimeOffset.UtcNow:O}}",
+              "artifacts": [
+                {
+                  "artifactId": "avalonia-{{identity.Platform}}-{{identity.Arch}}",
+                  "head": "avalonia",
+                  "platform": "{{identity.Platform}}",
+                  "arch": "{{identity.Arch}}",
+                  "kind": "archive",
+                  "fileName": "chummer-avalonia-{{identity.Platform}}-{{identity.Arch}}.zip",
+                  "downloadUrl": "{{payloadPath.Replace("\\", "/")}}",
+                  "sizeBytes": {{payloadBytes.Length}},
+                  "sha256": "sha256:{{payloadSha}}"
+                }
+              ]
+            }
+            """;
+        File.WriteAllText(manifestPath, manifestJson);
+
+        using TestStateRootScope stateRootScope = new();
+        using TestProcessPathOverrideScope processPathScope = TestProcessPathOverrideScope.CreatePackagedLike();
+        using TestEnvironmentScope envScope = new(new Dictionary<string, string?>()
+        {
+            [ManifestEnvironmentVariable] = manifestPath,
+            [UpdateEnabledEnvironmentVariable] = "true",
+            [UpdateAutoApplyEnvironmentVariable] = "true",
+            [StateRootEnvironmentVariable] = stateRootScope.Root
+        });
+
+        try
+        {
+            DesktopUpdateStartupResult result = await DesktopUpdateRuntime.CheckAndScheduleStartupUpdateAsync(
+                "avalonia",
+                [],
+                CancellationToken.None).ConfigureAwait(false);
+
+            Assert.AreEqual("update_schedule_failed", result.Reason);
+            StringAssert.Contains(result.Message ?? string.Empty, "installer payload was missing", StringComparison.OrdinalIgnoreCase);
+
+            string statePath = stateRootScope.StatePathForHead("avalonia");
+            Assert.IsTrue(File.Exists(statePath));
+            using JsonDocument state = JsonDocument.Parse(File.ReadAllText(statePath));
+            Assert.AreEqual("update_apply_failed", GetStringProperty(state.RootElement, "lastFailureReason"));
+            StringAssert.Contains(GetStringProperty(state.RootElement, "lastError") ?? string.Empty, "did not contain", StringComparison.OrdinalIgnoreCase);
+            Assert.IsNotNull(GetDateTimeProperty(state.RootElement, "nextRetryAtUtc"));
+        }
+        finally
+        {
+            if (File.Exists(payloadPath))
+            {
+                File.Delete(payloadPath);
+            }
+            if (File.Exists(manifestPath))
+            {
+                File.Delete(manifestPath);
+            }
+        }
+    }
+
+    [TestMethod]
+    public void BuildAttentionMessageForUpdateScheduleFailure_humanizes_disposed_object_failures()
+    {
+        string message = InvokePrivateStatic<string>(
+            "BuildAttentionMessageForUpdateScheduleFailure",
+            "Update preparation failed: ObjectDisposedException: Cannot access a disposed object.");
+
+        Assert.AreEqual(
+            "The update could not be prepared. This copy will keep running. The local update helper closed before the handoff finished.",
+            message);
     }
 
     [TestMethod]
@@ -571,6 +800,139 @@ public sealed class DesktopUpdateRuntimeTests
             if (File.Exists(manifestPath))
             {
                 File.Delete(manifestPath);
+            }
+        }
+    }
+
+    [TestMethod]
+    public async Task CheckAndScheduleStartupUpdateAsync_bootstrap_installer_handoff_stages_payload_and_sidecar()
+    {
+        DesktopUpdatePlatformIdentity identity = DesktopUpdatePlatformIdentity.Current();
+        string version = $"run-20260624-{Guid.NewGuid():N}".Substring(0, 23);
+        string tempRoot = Path.Combine(Path.GetTempPath(), $"desktop-update-bootstrap-handoff-{Guid.NewGuid():N}");
+        Directory.CreateDirectory(tempRoot);
+        string installerSourcePath = Path.Combine(tempRoot, "chummer-avalonia-linux-x64-installer.deb");
+        string payloadSourcePath = Path.Combine(tempRoot, "chummer-avalonia-win-x64-payload.zip");
+        string manifestPath = Path.Combine(tempRoot, "RELEASE_CHANNEL.generated.json");
+        string helperPath = Path.Combine(AppContext.BaseDirectory, $"desktop-update-helper-script-{Guid.NewGuid():N}");
+
+        try
+        {
+            File.WriteAllText(installerSourcePath, "installer-bytes");
+            using (ZipArchive archive = ZipFile.Open(payloadSourcePath, ZipArchiveMode.Create))
+            {
+                ZipArchiveEntry launcher = archive.CreateEntry("Chummer.Avalonia.exe");
+                using StreamWriter writer = new(launcher.Open());
+                writer.Write("launcher");
+            }
+
+            byte[] installerBytes = File.ReadAllBytes(installerSourcePath);
+            string installerSha = Convert.ToHexString(SHA256.HashData(installerBytes)).ToLowerInvariant();
+            byte[] payloadBytes = File.ReadAllBytes(payloadSourcePath);
+            string payloadSha = Convert.ToHexString(SHA256.HashData(payloadBytes)).ToLowerInvariant();
+
+            File.WriteAllText(
+                manifestPath,
+                $$"""
+                {
+                  "channelId": "stable",
+                  "version": "{{version}}",
+                  "status": "published",
+                  "publishedAt": "{{DateTimeOffset.UtcNow:O}}",
+                  "artifacts": [
+                    {
+                      "artifactId": "avalonia-{{identity.Platform}}-{{identity.Arch}}-installer",
+                      "head": "avalonia",
+                      "platform": "{{identity.Platform}}",
+                      "arch": "{{identity.Arch}}",
+                      "kind": "installer",
+                      "fileName": "{{Path.GetFileName(installerSourcePath)}}",
+                      "downloadUrl": "{{installerSourcePath.Replace("\\", "/")}}",
+                      "sha256": "{{installerSha}}",
+                      "sizeBytes": {{installerBytes.LongLength}},
+                      "installerMode": "bootstrap",
+                      "payloadFileName": "{{Path.GetFileName(payloadSourcePath)}}",
+                      "payloadDownloadUrl": "{{payloadSourcePath.Replace("\\", "/")}}",
+                      "payloadSha256": "{{payloadSha}}",
+                      "payloadSizeBytes": {{payloadBytes.LongLength}}
+                    }
+                  ]
+                }
+                """);
+
+            File.WriteAllText(
+                helperPath,
+                "#!/usr/bin/env bash\nexit 0\n");
+            if (OperatingSystem.IsLinux() || OperatingSystem.IsMacOS())
+            {
+                File.SetUnixFileMode(
+                    helperPath,
+                    UnixFileMode.UserRead | UnixFileMode.UserWrite | UnixFileMode.UserExecute |
+                    UnixFileMode.GroupRead | UnixFileMode.GroupExecute |
+                    UnixFileMode.OtherRead | UnixFileMode.OtherExecute);
+            }
+
+            using TestStateRootScope stateRootScope = new();
+            using TestEnvironmentScope envScope = new(new Dictionary<string, string?>()
+            {
+                [ManifestEnvironmentVariable] = manifestPath,
+                [UpdateEnabledEnvironmentVariable] = "true",
+                [UpdateAutoApplyEnvironmentVariable] = "true",
+                [StateRootEnvironmentVariable] = stateRootScope.Root,
+                [UpdateProcessPathOverrideEnvironmentVariable] = helperPath
+            });
+
+            DesktopUpdateStartupResult result = await DesktopUpdateRuntime.CheckAndScheduleStartupUpdateAsync(
+                "avalonia",
+                [],
+                CancellationToken.None).ConfigureAwait(false);
+
+            Assert.IsTrue(result.ExitRequested);
+            Assert.AreEqual("apply_scheduled", result.Reason);
+
+            string statePath = stateRootScope.StatePathForHead("avalonia");
+            Assert.IsTrue(File.Exists(statePath));
+            using JsonDocument state = JsonDocument.Parse(File.ReadAllText(statePath));
+            Assert.AreEqual(version, GetStringProperty(state.RootElement, "pendingUpdateVersion"));
+            Assert.AreEqual("stable", GetStringProperty(state.RootElement, "pendingUpdateChannelId"));
+            Assert.IsNotNull(GetDateTimeProperty(state.RootElement, "pendingUpdatePreparedAtUtc"));
+
+            string runtimeTempRoot = stateRootScope.TempRootForHead("avalonia");
+            string[] stageDirectories = Directory.GetDirectories(runtimeTempRoot, "stage-*", SearchOption.TopDirectoryOnly);
+            Assert.AreEqual(1, stageDirectories.Length);
+
+            string stageDirectory = stageDirectories[0];
+            string stagedInstallerPath = Path.Combine(stageDirectory, Path.GetFileName(installerSourcePath));
+            string stagedPayloadPath = Path.Combine(stageDirectory, Path.GetFileName(payloadSourcePath));
+            string stagedPayloadSidecarPath = stagedPayloadPath + ".json";
+            string requestPath = Path.Combine(stageDirectory, "installer-request.json");
+
+            Assert.IsTrue(File.Exists(stagedInstallerPath));
+            Assert.IsTrue(File.Exists(stagedPayloadPath));
+            Assert.IsTrue(File.Exists(stagedPayloadSidecarPath));
+            Assert.IsTrue(File.Exists(requestPath));
+            CollectionAssert.AreEqual(payloadBytes, File.ReadAllBytes(stagedPayloadPath));
+
+            using JsonDocument request = JsonDocument.Parse(File.ReadAllText(requestPath));
+            Assert.AreEqual(stagedInstallerPath, GetStringProperty(request.RootElement, "installerPath"));
+
+            using JsonDocument sidecar = JsonDocument.Parse(File.ReadAllText(stagedPayloadSidecarPath));
+            Assert.AreEqual("chummer6-ui.windows_bootstrap_payload", GetStringProperty(sidecar.RootElement, "contractName"));
+            Assert.AreEqual(Path.GetFileName(payloadSourcePath), GetStringProperty(sidecar.RootElement, "fileName"));
+            Assert.AreEqual(Path.GetFileName(installerSourcePath), GetStringProperty(sidecar.RootElement, "installerFileName"));
+            Assert.AreEqual(payloadSha, GetStringProperty(sidecar.RootElement, "sha256"));
+            Assert.AreEqual(version, GetStringProperty(sidecar.RootElement, "releaseVersion"));
+        }
+        finally
+        {
+            if (Directory.Exists(tempRoot))
+            {
+                Directory.Delete(tempRoot, recursive: true);
+            }
+
+            if (File.Exists(helperPath))
+            {
+                File.Delete(helperPath);
             }
         }
     }
@@ -1078,6 +1440,225 @@ public sealed class DesktopUpdateRuntimeTests
     }
 
     [TestMethod]
+    public void Compatibility_manifest_parser_preserves_windows_bootstrap_installer_metadata()
+    {
+        string json =
+            """
+            {
+              "channel": "public_stable",
+              "version": "run-20260623-102621",
+              "status": "published",
+              "publishedAt": "2026-06-23T10:26:21Z",
+              "downloads": [
+                {
+                  "id": "avalonia-win-x64-installer",
+                  "platform": "Avalonia Desktop Windows X64 Installer",
+                  "url": "https://chummer.run/downloads/files/chummer-avalonia-win-x64-installer.exe",
+                  "sha256": "2f4ad755491b86e3a4ae0fb3251b0c863552ec4f0ae29049cedb7973bc372a4f",
+                  "sizeBytes": 51856809,
+                  "format": "exe",
+                  "flavor": "installer",
+                  "kind": "installer",
+                  "head": "avalonia",
+                  "platformId": "windows-x64",
+                  "arch": "x64",
+                  "fileName": "chummer-avalonia-win-x64-installer.exe",
+                  "channelId": "public_stable",
+                  "releaseVersion": "run-20260623-102621",
+                  "installerMode": "bootstrap",
+                  "payloadFileName": "chummer-avalonia-win-x64-payload.zip",
+                  "payloadDownloadUrl": "https://chummer.run/downloads/files/chummer-avalonia-win-x64-payload.zip",
+                  "payloadSha256": "00d34c7514b9e44bd315c3d9914547d0c750865ddf5bffaf3e17f861648fe4b7",
+                  "payloadSizeBytes": 47152146,
+                  "installAccessClass": "open_public"
+                }
+              ]
+            }
+            """;
+
+        DesktopUpdateChannelManifest manifest = DesktopUpdateManifestParser.Parse(
+            json,
+            new Uri("https://chummer.run/downloads/releases.json"));
+
+        Assert.AreEqual("public_stable", manifest.ChannelId);
+        Assert.AreEqual("run-20260623-102621", manifest.Version);
+        Assert.AreEqual(1, manifest.Artifacts.Count);
+
+        DesktopUpdateArtifact artifact = manifest.Artifacts[0];
+        Assert.AreEqual("avalonia-win-x64-installer", artifact.ArtifactId);
+        Assert.AreEqual("avalonia", artifact.HeadId);
+        Assert.AreEqual("windows", artifact.Platform);
+        Assert.AreEqual("x64", artifact.Arch);
+        Assert.AreEqual("installer", artifact.Kind);
+        Assert.IsTrue(artifact.SupportsInstallerHandoff);
+        Assert.AreEqual("bootstrap", artifact.InstallerMode);
+        Assert.AreEqual("chummer-avalonia-win-x64-payload.zip", artifact.PayloadFileName);
+        Assert.AreEqual("https://chummer.run/downloads/files/chummer-avalonia-win-x64-payload.zip", artifact.PayloadDownloadUrl);
+        Assert.AreEqual("00d34c7514b9e44bd315c3d9914547d0c750865ddf5bffaf3e17f861648fe4b7", artifact.PayloadSha256);
+        Assert.AreEqual(47152146L, artifact.PayloadSizeBytes);
+    }
+
+    [TestMethod]
+    public void Canonical_manifest_parser_preserves_windows_bootstrap_installer_metadata()
+    {
+        string json =
+            """
+            {
+              "channelId": "public_stable",
+              "version": "run-20260623-102621",
+              "status": "published",
+              "publishedAt": "2026-06-23T10:26:21Z",
+              "artifacts": [
+                {
+                  "artifactId": "avalonia-win-x64-installer",
+                  "head": "avalonia",
+                  "platform": "windows",
+                  "arch": "x64",
+                  "kind": "installer",
+                  "fileName": "chummer-avalonia-win-x64-installer.exe",
+                  "downloadUrl": "https://chummer.run/downloads/files/chummer-avalonia-win-x64-installer.exe",
+                  "sha256": "2f4ad755491b86e3a4ae0fb3251b0c863552ec4f0ae29049cedb7973bc372a4f",
+                  "sizeBytes": 51856809,
+                  "installerMode": "bootstrap",
+                  "payloadFileName": "chummer-avalonia-win-x64-payload.zip",
+                  "payloadDownloadUrl": "https://chummer.run/downloads/files/chummer-avalonia-win-x64-payload.zip",
+                  "payloadSha256": "sha256:00d34c7514b9e44bd315c3d9914547d0c750865ddf5bffaf3e17f861648fe4b7",
+                  "payloadSizeBytes": 47152146
+                }
+              ]
+            }
+            """;
+
+        DesktopUpdateChannelManifest manifest = DesktopUpdateManifestParser.Parse(
+            json,
+            new Uri("https://chummer.run/downloads/RELEASE_CHANNEL.generated.json"));
+
+        Assert.AreEqual(1, manifest.Artifacts.Count);
+
+        DesktopUpdateArtifact artifact = manifest.Artifacts[0];
+        Assert.AreEqual("bootstrap", artifact.InstallerMode);
+        Assert.AreEqual("chummer-avalonia-win-x64-payload.zip", artifact.PayloadFileName);
+        Assert.AreEqual("https://chummer.run/downloads/files/chummer-avalonia-win-x64-payload.zip", artifact.PayloadDownloadUrl);
+        Assert.AreEqual("00d34c7514b9e44bd315c3d9914547d0c750865ddf5bffaf3e17f861648fe4b7", artifact.PayloadSha256);
+        Assert.AreEqual(47152146L, artifact.PayloadSizeBytes);
+    }
+
+    [TestMethod]
+    public void BuildInstallerBootstrapPayloadArtifact_requires_payload_metadata()
+    {
+        DesktopUpdateArtifact installerArtifact = new(
+            ArtifactId: "avalonia-win-x64-installer",
+            HeadId: "avalonia",
+            Platform: "windows",
+            Arch: "x64",
+            Kind: "installer",
+            FileName: "chummer-avalonia-win-x64-installer.exe",
+            DownloadUrl: "https://chummer.run/downloads/files/chummer-avalonia-win-x64-installer.exe",
+            UpdateFeedUrl: null,
+            Sha256: "2f4ad755491b86e3a4ae0fb3251b0c863552ec4f0ae29049cedb7973bc372a4f",
+            SizeBytes: 51856809,
+            InstallerMode: "bootstrap",
+            PayloadFileName: "chummer-avalonia-win-x64-payload.zip",
+            PayloadDownloadUrl: "https://chummer.run/downloads/files/chummer-avalonia-win-x64-payload.zip",
+            PayloadSha256: null,
+            PayloadSizeBytes: 47152146);
+
+        try
+        {
+            _ = InvokePrivateStatic<DesktopUpdateArtifact>("BuildInstallerBootstrapPayloadArtifact", installerArtifact);
+            Assert.Fail("Expected bootstrap payload artifact construction to reject missing payloadSha256.");
+        }
+        catch (System.Reflection.TargetInvocationException ex) when (ex.InnerException is InvalidOperationException inner)
+        {
+            StringAssert.Contains(inner.Message, "missing payloadSha256", StringComparison.OrdinalIgnoreCase);
+        }
+    }
+
+    [TestMethod]
+    public async Task StageInstallerBootstrapPayloadIfNeededAsync_downloads_payload_and_writes_sidecar()
+    {
+        string tempRoot = Path.Combine(Path.GetTempPath(), $"desktop-update-bootstrap-stage-{Guid.NewGuid():N}");
+        Directory.CreateDirectory(tempRoot);
+        string payloadSourcePath = Path.Combine(tempRoot, "source-payload.zip");
+        string installerPath = Path.Combine(tempRoot, "chummer-avalonia-win-x64-installer.exe");
+        File.WriteAllText(installerPath, "installer");
+        using (ZipArchive archive = ZipFile.Open(payloadSourcePath, ZipArchiveMode.Create))
+        {
+            ZipArchiveEntry launcher = archive.CreateEntry("Chummer.Avalonia.exe");
+            using StreamWriter writer = new(launcher.Open());
+            writer.Write("launcher");
+        }
+
+        byte[] payloadBytes = File.ReadAllBytes(payloadSourcePath);
+        string payloadSha256 = Convert.ToHexString(SHA256.HashData(payloadBytes)).ToLowerInvariant();
+        DesktopUpdateArtifact installerArtifact = new(
+            ArtifactId: "avalonia-win-x64-installer",
+            HeadId: "avalonia",
+            Platform: "windows",
+            Arch: "x64",
+            Kind: "installer",
+            FileName: Path.GetFileName(installerPath),
+            DownloadUrl: "https://chummer.run/downloads/files/chummer-avalonia-win-x64-installer.exe",
+            UpdateFeedUrl: null,
+            Sha256: "2f4ad755491b86e3a4ae0fb3251b0c863552ec4f0ae29049cedb7973bc372a4f",
+            SizeBytes: 51856809,
+            InstallerMode: "bootstrap",
+            PayloadFileName: "chummer-avalonia-win-x64-payload.zip",
+            PayloadDownloadUrl: payloadSourcePath.Replace("\\", "/"),
+            PayloadSha256: payloadSha256,
+            PayloadSizeBytes: payloadBytes.LongLength);
+        DesktopUpdateChannelManifest manifest = new(
+            ChannelId: "stable",
+            Version: "run-20260624-090000",
+            Status: "published",
+            PublishedAt: DateTimeOffset.UtcNow,
+            Artifacts: [installerArtifact],
+            DesktopSurfaceRefs: [],
+            RolloutState: null,
+            RolloutReason: null,
+            SupportabilityState: null,
+            SupportabilitySummary: null,
+            KnownIssueSummary: null,
+            FixAvailabilitySummary: null,
+            ProofStatus: null,
+            ProofGeneratedAt: null,
+            SourceUri: new Uri(Path.Combine(tempRoot, "RELEASE_CHANNEL.generated.json")));
+
+        try
+        {
+            await InvokePrivateStaticTask(
+                "StageInstallerBootstrapPayloadIfNeededAsync",
+                manifest.SourceUri,
+                manifest,
+                installerArtifact,
+                installerPath,
+                null,
+                CancellationToken.None).ConfigureAwait(false);
+
+            string stagedPayloadPath = Path.Combine(tempRoot, installerArtifact.PayloadFileName!);
+            string stagedSidecarPath = stagedPayloadPath + ".json";
+            Assert.IsTrue(File.Exists(stagedPayloadPath));
+            Assert.IsTrue(File.Exists(stagedSidecarPath));
+            CollectionAssert.AreEqual(payloadBytes, File.ReadAllBytes(stagedPayloadPath));
+
+            using JsonDocument sidecar = JsonDocument.Parse(File.ReadAllText(stagedSidecarPath));
+            Assert.AreEqual("chummer6-ui.windows_bootstrap_payload", GetStringProperty(sidecar.RootElement, "contractName"));
+            Assert.AreEqual(installerArtifact.PayloadFileName, GetStringProperty(sidecar.RootElement, "fileName"));
+            Assert.AreEqual(installerArtifact.FileName, GetStringProperty(sidecar.RootElement, "installerFileName"));
+            Assert.AreEqual(installerArtifact.PayloadDownloadUrl, GetStringProperty(sidecar.RootElement, "downloadUrl"));
+            Assert.AreEqual(payloadSha256, GetStringProperty(sidecar.RootElement, "sha256"));
+            Assert.AreEqual(manifest.Version, GetStringProperty(sidecar.RootElement, "releaseVersion"));
+        }
+        finally
+        {
+            if (Directory.Exists(tempRoot))
+            {
+                Directory.Delete(tempRoot, recursive: true);
+            }
+        }
+    }
+
+    [TestMethod]
     public void Resolve_manifest_and_artifact_uris_support_directory_and_download_routes()
     {
         string manifestDirectory = Path.Combine(Path.GetTempPath(), $"desktop-update-manifest-dir-{Guid.NewGuid():N}");
@@ -1112,6 +1693,24 @@ public sealed class DesktopUpdateRuntimeTests
     }
 
     [TestMethod]
+    public void Resolve_manifest_uri_rejects_non_loopback_http_manifest()
+    {
+        System.Reflection.TargetInvocationException ex;
+        try
+        {
+            _ = InvokePrivateStatic<Uri>("ResolveManifestUri", "http://updates.example.invalid/channel");
+            Assert.Fail("Expected non-loopback HTTP manifest locations to be rejected.");
+            return;
+        }
+        catch (System.Reflection.TargetInvocationException caught)
+        {
+            ex = caught;
+        }
+
+        StringAssert.Contains(ex.InnerException?.Message ?? ex.Message, "must use HTTPS or loopback HTTP", StringComparison.Ordinal);
+    }
+
+    [TestMethod]
     public void Resolve_artifact_uri_keeps_root_relative_web_downloads_on_manifest_host()
     {
         Uri manifestUri = new("https://chummer.run/downloads/RELEASE_CHANNEL.generated.json");
@@ -1132,6 +1731,68 @@ public sealed class DesktopUpdateRuntimeTests
         Assert.AreEqual("https", artifactUri.Scheme);
         Assert.AreEqual("chummer.run", artifactUri.Host);
         Assert.AreEqual("/downloads/files/chummer-avalonia-linux-x64-installer.deb", artifactUri.AbsolutePath);
+    }
+
+    [TestMethod]
+    public void Resolve_artifact_uri_rejects_cross_origin_remote_artifact()
+    {
+        Uri manifestUri = new("https://chummer.run/downloads/RELEASE_CHANNEL.generated.json");
+        DesktopUpdateArtifact artifact = new(
+            "installer",
+            "avalonia",
+            "linux",
+            "x64",
+            "installer",
+            "chummer-avalonia-linux-x64-installer.deb",
+            "https://evil.example.invalid/chummer-avalonia-linux-x64-installer.deb",
+            null,
+            new string('a', 64),
+            42);
+
+        System.Reflection.TargetInvocationException ex;
+        try
+        {
+            _ = InvokePrivateStatic<Uri>("ResolveArtifactUri", manifestUri, artifact);
+            Assert.Fail("Expected cross-origin remote artifacts to be rejected.");
+            return;
+        }
+        catch (System.Reflection.TargetInvocationException caught)
+        {
+            ex = caught;
+        }
+
+        StringAssert.Contains(ex.InnerException?.Message ?? ex.Message, "same host as manifest", StringComparison.Ordinal);
+    }
+
+    [TestMethod]
+    public void Resolve_artifact_uri_rejects_protocol_relative_artifact()
+    {
+        Uri manifestUri = new("https://chummer.run/downloads/RELEASE_CHANNEL.generated.json");
+        DesktopUpdateArtifact artifact = new(
+            "installer",
+            "avalonia",
+            "linux",
+            "x64",
+            "installer",
+            "chummer-avalonia-linux-x64-installer.deb",
+            "//evil.example.invalid/chummer-avalonia-linux-x64-installer.deb",
+            null,
+            new string('a', 64),
+            42);
+
+        System.Reflection.TargetInvocationException ex;
+        try
+        {
+            _ = InvokePrivateStatic<Uri>("ResolveArtifactUri", manifestUri, artifact);
+            Assert.Fail("Expected protocol-relative artifacts to be rejected.");
+            return;
+        }
+        catch (System.Reflection.TargetInvocationException caught)
+        {
+            ex = caught;
+        }
+
+        StringAssert.Contains(ex.InnerException?.Message ?? ex.Message, "protocol-relative URL", StringComparison.Ordinal);
     }
 
     [TestMethod]
@@ -1588,6 +2249,22 @@ public sealed class DesktopUpdateRuntimeTests
             System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Static);
         Assert.IsNotNull(method, $"Expected DesktopUpdateRuntime.{methodName} to remain available for coverage.");
         return (T)method.Invoke(null, args)!;
+    }
+
+    private static async Task InvokePrivateStaticTask(string methodName, params object?[] args)
+    {
+        System.Reflection.MethodInfo? method = typeof(DesktopUpdateRuntime).GetMethod(
+            methodName,
+            System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Static);
+        Assert.IsNotNull(method, $"Expected DesktopUpdateRuntime.{methodName} to remain available for coverage.");
+        object? result = method.Invoke(null, args);
+        if (result is not Task task)
+        {
+            Assert.Fail($"Expected DesktopUpdateRuntime.{methodName} to return Task for coverage.");
+            return;
+        }
+
+        await task.ConfigureAwait(false);
     }
 
     private static T GetPrivateProperty<T>(object target, string propertyName)

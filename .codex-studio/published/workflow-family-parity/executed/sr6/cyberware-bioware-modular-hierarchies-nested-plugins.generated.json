@@ -1,11 +1,11 @@
 {
-  "generatedAt": "2026-06-24T01:15:37.507162Z",
+  "generatedAt": "2026-06-24T12:39:47.098121Z",
   "contract_name": "chummer6-ui.sr6_workflow_family_execution_receipt",
   "status": "fail",
   "summary": "SR6 workflow-family execution evidence is incomplete for cyberware-bioware-modular-hierarchies-nested-plugins.",
   "reasons": [
     "Audit tests not present in executed TRX results: Avalonia_and_Blazor_dialog_and_import_commands_expose_matching_dialog_contracts, Avalonia_and_Blazor_combat_and_cyberware_workspace_actions_render_matching_sections, Avalonia_and_Blazor_cyberware_workspace_preserves_modular_legacy_fixture_details, Cyberware_and_cyberlimb_builder_preserve_legacy_dialog_familiarity_cues, Runtime_loaded_runner_quick_action_workflows_materialize_dialog_contracts_and_continuations_across_sr4_sr5_and_sr6, Legacy_ui_controls_keep_recursive_parity",
-    "dotnet test execution failed (exit 1): Build failed with exit code: 1."
+    "dotnet test execution failed (exit 1): Get projects properties with MSBuild didn't execute properly with exit code: 1."
   ],
   "evidence": {
     "edition": "sr6",

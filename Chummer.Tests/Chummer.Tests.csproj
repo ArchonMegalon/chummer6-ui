@@ -200,6 +200,7 @@
     <Compile Include="Presentation\DesktopHorizonsWindowTests.cs" />
     <Compile Include="Presentation\DesktopKarmaForgeWindowTests.cs" />
     <Compile Include="Presentation\DesktopAliceWindowTests.cs" />
+    <Compile Include="Presentation\OriginBookStudioModelTests.cs" />
     <Compile Include="Presentation\DesktopNexusPanWindowTests.cs" />
     <Compile Include="Presentation\DesktopRunControlWindowTests.cs" />
     <Compile Include="Presentation\DesktopBlackLedgerWindowTests.cs" />

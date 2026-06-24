@@ -12,13 +12,14 @@ namespace Chummer.Desktop.Runtime;
 
 public sealed record DesktopUpdateStartupResult(
     bool ExitRequested,
-    string Reason)
+    string Reason,
+    string? Message = null)
 {
-    public static DesktopUpdateStartupResult Continue(string reason = "disabled")
-        => new(false, reason);
+    public static DesktopUpdateStartupResult Continue(string reason = "disabled", string? message = null)
+        => new(false, reason, message);
 
-    public static DesktopUpdateStartupResult ExitForApply(string reason = "apply_scheduled")
-        => new(true, reason);
+    public static DesktopUpdateStartupResult ExitForApply(string reason = "apply_scheduled", string? message = null)
+        => new(true, reason, message);
 }
 
 public sealed record DesktopUpdateProgressUpdate(
@@ -87,6 +88,8 @@ public static class DesktopUpdateRuntime
     private const int StartupApplyBackoffMinutes = 10;
     private const int InstallerCommandTimeoutMinutes = 10;
     private const int RollbackWindowDays = 1;
+    private const long MaximumManifestBytes = 4L * 1024L * 1024L;
+    private const long MaximumArtifactBytes = 512L * 1024L * 1024L;
     private static readonly Regex RunVersionPattern = new(
         "^run-(?<date>\\d{8})-(?<time>\\d{6})$",
         RegexOptions.Compiled | RegexOptions.CultureInvariant | RegexOptions.IgnoreCase);
@@ -165,7 +168,7 @@ public static class DesktopUpdateRuntime
         {
             status = "disabled";
             recommendedAction = configuration.Mode == UpdateModeOff
-                ? "Updates are turned off for this install."
+                ? "Updates are turned off for this install. Choose an update source before relying on in-app updates."
                 : "Choose an update source before relying on in-app updates.";
         }
         else if (!string.IsNullOrWhiteSpace(state?.LastError))
@@ -344,19 +347,41 @@ public static class DesktopUpdateRuntime
 
     private static void ValidateArtifactIntegrity(string filePath, DesktopUpdateArtifact artifact)
     {
-        if (artifact.SizeBytes is not null)
+        string expectedSha256 = ValidateArtifactManifestMetadata(artifact);
+        long observedSize = GetFileSize(filePath);
+        if (observedSize != artifact.SizeBytes!.Value)
         {
-            long observedSize = GetFileSize(filePath);
-            if (observedSize != artifact.SizeBytes.Value)
-            {
-                throw new InvalidOperationException(
-                    $"Desktop update artifact '{artifact.FileName}' failed size validation. Expected {artifact.SizeBytes} bytes, observed {observedSize} bytes.");
-            }
+            throw new InvalidOperationException(
+                $"Desktop update artifact '{artifact.FileName}' failed size validation. Expected {artifact.SizeBytes} bytes, observed {observedSize} bytes.");
+        }
+
+        string observedSha256 = ComputeSha256(filePath);
+        if (!string.Equals(observedSha256, expectedSha256, StringComparison.OrdinalIgnoreCase))
+        {
+            throw new InvalidOperationException(
+                $"Desktop update artifact '{artifact.FileName}' failed checksum validation. " +
+            $"Expected '{expectedSha256}', observed '{observedSha256}'.");
+        }
+    }
+
+    private static string ValidateArtifactManifestMetadata(DesktopUpdateArtifact artifact)
+    {
+        if (artifact.SizeBytes is null or <= 0)
+        {
+            throw new InvalidOperationException(
+                $"Desktop update artifact '{artifact.FileName}' is missing required positive sizeBytes metadata.");
+        }
+
+        if (artifact.SizeBytes.Value > MaximumArtifactBytes)
+        {
+            throw new InvalidOperationException(
+                $"Desktop update artifact '{artifact.FileName}' is too large for automatic updates. Expected at most {MaximumArtifactBytes} bytes, manifest declared {artifact.SizeBytes.Value} bytes.");
         }
 
         if (string.IsNullOrWhiteSpace(artifact.Sha256))
         {
-            return;
+            throw new InvalidOperationException(
+                $"Desktop update artifact '{artifact.FileName}' is missing a required SHA-256 checksum.");
         }
 
         string expectedSha256 = NormalizeSha256(artifact.Sha256);
@@ -366,13 +391,7 @@ public static class DesktopUpdateRuntime
                 $"Desktop update artifact '{artifact.FileName}' has an invalid checksum format.");
         }
 
-        string observedSha256 = ComputeSha256(filePath);
-        if (!string.Equals(observedSha256, expectedSha256, StringComparison.OrdinalIgnoreCase))
-        {
-            throw new InvalidOperationException(
-                $"Desktop update artifact '{artifact.FileName}' failed checksum validation. " +
-                $"Expected '{expectedSha256}', observed '{observedSha256}'.");
-        }
+        return expectedSha256;
     }
 
     private static long GetFileSize(string path)
@@ -388,7 +407,9 @@ public static class DesktopUpdateRuntime
             normalized = normalized["sha256:".Length..];
         }
 
-        return normalized;
+        return Regex.IsMatch(normalized, "^[a-fA-F0-9]{64}$")
+            ? normalized.ToLowerInvariant()
+            : string.Empty;
     }
 
     private static string ComputeSha256(string path)
@@ -541,7 +562,9 @@ public static class DesktopUpdateRuntime
                     NextRetryAtUtc = now.AddMinutes(StartupManifestBackoffMinutes)
                 });
                 progress?.Report(new DesktopUpdateProgressUpdate("failed", "Could not read update information"));
-                return DesktopUpdateStartupResult.Continue("manifest_load_failed");
+                return DesktopUpdateStartupResult.Continue(
+                    "manifest_load_failed",
+                    "Chummer could not reach the update list. This copy will keep running.");
             }
 
             bool manifestVersionChanged = !string.Equals(state.LastManifestVersion, manifest.Version, StringComparison.OrdinalIgnoreCase);
@@ -635,7 +658,8 @@ public static class DesktopUpdateRuntime
                 progress?.Report(new DesktopUpdateProgressUpdate("available", "A newer build is available"));
                 return DesktopUpdateStartupResult.Continue(configuration.Mode == UpdateModeNotify
                     ? "notify_only"
-                    : "auto_apply_disabled");
+                    : "auto_apply_disabled",
+                    "A newer build is available. Open Devices & Access when you want to update.");
             }
 
             if (IsRolloutBlocked(manifest.RolloutState))
@@ -650,7 +674,9 @@ public static class DesktopUpdateRuntime
                 };
                 DesktopUpdateStateStore.Save(paths.StateFilePath, updatedState);
                 progress?.Report(new DesktopUpdateProgressUpdate("blocked", "This update is currently paused"));
-                return DesktopUpdateStartupResult.Continue("rollout_blocked");
+                return DesktopUpdateStartupResult.Continue(
+                    "rollout_blocked",
+                    "The newest build is paused. This copy will keep running.");
             }
 
             IReadOnlyList<DesktopUpdateArtifact> artifacts = SelectCompatibleArtifacts(manifest, headId, identity);
@@ -666,7 +692,9 @@ public static class DesktopUpdateRuntime
                 };
                 DesktopUpdateStateStore.Save(paths.StateFilePath, updatedState);
                 progress?.Report(new DesktopUpdateProgressUpdate("blocked", "No installer is available for this platform"));
-                return DesktopUpdateStartupResult.Continue("no_matching_payload");
+                return DesktopUpdateStartupResult.Continue(
+                    "no_matching_payload",
+                    "No update payload is available for this platform yet. This copy will keep running.");
             }
 
             string processPath = ResolveProcessPath();
@@ -681,7 +709,9 @@ public static class DesktopUpdateRuntime
                     NextRetryAtUtc = CalculateBackoffTime(updatedState.RetryAttempt + 1)
                 });
                 progress?.Report(new DesktopUpdateProgressUpdate("blocked", "The update helper is not available"));
-                return DesktopUpdateStartupResult.Continue("helper_unavailable");
+                return DesktopUpdateStartupResult.Continue(
+                    "helper_unavailable",
+                    "The update helper is not available on this install. This copy will keep running.");
             }
 
             if (!IsPublishedManifest(manifest))
@@ -722,6 +752,7 @@ public static class DesktopUpdateRuntime
 
                 try
                 {
+                    ValidateArtifactManifestMetadata(artifact);
                     Uri downloadUri = ResolveArtifactUri(manifest.SourceUri, artifact);
                     Directory.CreateDirectory(stageRoot);
                     progress?.Report(new DesktopUpdateProgressUpdate(
@@ -729,7 +760,7 @@ public static class DesktopUpdateRuntime
                         $"Downloading {artifact.FileName}",
                         0,
                         1000));
-                    await DownloadArtifactAsync(downloadUri, downloadedArtifactPath, artifact.FileName, progress, ct).ConfigureAwait(false);
+                    await DownloadArtifactAsync(downloadUri, downloadedArtifactPath, artifact, progress, ct).ConfigureAwait(false);
                     progress?.Report(new DesktopUpdateProgressUpdate(
                         "validating",
                         $"Checking {artifact.FileName}",
@@ -783,10 +814,19 @@ public static class DesktopUpdateRuntime
                                 PendingUpdatePreparedAtUtc = DateTimeOffset.UtcNow
                             });
                             progress?.Report(new DesktopUpdateProgressUpdate("manual", "A macOS update is ready. Manual install is required."));
-                            return DesktopUpdateStartupResult.Continue("macos_manual_install_required");
+                            return DesktopUpdateStartupResult.Continue(
+                                "macos_manual_install_required",
+                                "A macOS update is ready. Open Downloads to install it manually; this copy will stay usable.");
                         }
 
                         progress?.Report(new DesktopUpdateProgressUpdate("staging", "Preparing the installer handoff"));
+                        await StageInstallerBootstrapPayloadIfNeededAsync(
+                            manifestUri,
+                            manifest,
+                            artifact,
+                            downloadedArtifactPath,
+                            progress,
+                            ct).ConfigureAwait(false);
                         DesktopUpdateInstallerLaunchRequest request = new(
                             ParentProcessId: Environment.ProcessId,
                             StageRoot: stageRoot,
@@ -846,12 +886,16 @@ public static class DesktopUpdateRuntime
                         NextRetryAtUtc = CalculateBackoffTime(updatedState.RetryAttempt + 1)
                     });
                     progress?.Report(new DesktopUpdateProgressUpdate("failed", "Update preparation failed"));
-                    return DesktopUpdateStartupResult.Continue("update_schedule_failed");
+                    return DesktopUpdateStartupResult.Continue(
+                        "update_schedule_failed",
+                        BuildAttentionMessageForUpdateScheduleFailure(string.Join(" | ", artifactFailureSummaries)));
                 }
             }
 
             progress?.Report(new DesktopUpdateProgressUpdate("failed", "Update preparation failed"));
-            return DesktopUpdateStartupResult.Continue("update_schedule_failed");
+            return DesktopUpdateStartupResult.Continue(
+                "update_schedule_failed",
+                "The update could not be prepared. This copy will keep running.");
         }
         catch (Exception ex)
         {
@@ -870,7 +914,9 @@ public static class DesktopUpdateRuntime
                 NextRetryAtUtc = CalculateBackoffTime(state.RetryAttempt + 1)
             });
             progress?.Report(new DesktopUpdateProgressUpdate("failed", "Update preparation failed"));
-            return DesktopUpdateStartupResult.Continue("update_schedule_failed");
+            return DesktopUpdateStartupResult.Continue(
+                "update_schedule_failed",
+                BuildAttentionMessageForUpdateScheduleFailure(BuildUpdateFailureMessage(ex)));
         }
     }
 
@@ -1075,16 +1121,29 @@ public static class DesktopUpdateRuntime
                 return null;
             }
 
+            EnsureFileWithinLimit(localPath, MaximumManifestBytes, "Desktop update manifest");
             string json = await File.ReadAllTextAsync(localPath, ct).ConfigureAwait(false);
             return DesktopUpdateManifestParser.Parse(json, manifestUri);
         }
 
+        EnsureTrustedRemoteManifestUri(manifestUri);
+        string remoteJson = await ReadRemoteManifestAsync(manifestUri, ct).ConfigureAwait(false);
+        return DesktopUpdateManifestParser.Parse(remoteJson, manifestUri);
+    }
+
+    private static async Task<string> ReadRemoteManifestAsync(Uri manifestUri, CancellationToken ct)
+    {
         using HttpClient client = new()
         {
             Timeout = TimeSpan.FromSeconds(20)
         };
-        string remoteJson = await client.GetStringAsync(manifestUri, ct).ConfigureAwait(false);
-        return DesktopUpdateManifestParser.Parse(remoteJson, manifestUri);
+        using HttpResponseMessage response = await client.GetAsync(manifestUri, HttpCompletionOption.ResponseHeadersRead, ct).ConfigureAwait(false);
+        response.EnsureSuccessStatusCode();
+        EnsureContentLengthWithinLimit(response.Content.Headers.ContentLength, MaximumManifestBytes, "Desktop update manifest");
+        await using Stream source = await response.Content.ReadAsStreamAsync(ct).ConfigureAwait(false);
+        using MemoryStream target = new();
+        await CopyStreamWithByteLimitAsync(source, target, MaximumManifestBytes, "Desktop update manifest", ct).ConfigureAwait(false);
+        return Encoding.UTF8.GetString(target.ToArray());
     }
 
     private static bool IsRetryableManifestFailure(Exception ex)
@@ -1117,6 +1176,11 @@ public static class DesktopUpdateRuntime
                 || string.Equals(absoluteUri.Scheme, Uri.UriSchemeHttp, StringComparison.OrdinalIgnoreCase)
                 || string.Equals(absoluteUri.Scheme, Uri.UriSchemeHttps, StringComparison.OrdinalIgnoreCase)))
         {
+            if (!absoluteUri.IsFile)
+            {
+                EnsureTrustedRemoteManifestUri(absoluteUri);
+            }
+
             if (absoluteUri.AbsolutePath.EndsWith(".json", StringComparison.OrdinalIgnoreCase))
             {
                 return absoluteUri;
@@ -1172,16 +1236,30 @@ public static class DesktopUpdateRuntime
         string rawUrl = !string.IsNullOrWhiteSpace(artifact.DownloadUrl)
             ? artifact.DownloadUrl
             : artifact.UpdateFeedUrl ?? string.Empty;
+        if (rawUrl.TrimStart().StartsWith("//", StringComparison.Ordinal))
+        {
+            throw new InvalidOperationException(
+                $"Desktop update artifact '{artifact.FileName}' cannot use a protocol-relative URL.");
+        }
+
         if (Uri.TryCreate(rawUrl, UriKind.Absolute, out Uri? absoluteUri))
         {
-            bool isHttpUri = string.Equals(absoluteUri.Scheme, Uri.UriSchemeHttp, StringComparison.OrdinalIgnoreCase)
-                || string.Equals(absoluteUri.Scheme, Uri.UriSchemeHttps, StringComparison.OrdinalIgnoreCase);
             bool isExplicitFileUri = string.Equals(absoluteUri.Scheme, Uri.UriSchemeFile, StringComparison.OrdinalIgnoreCase)
                 && (rawUrl.StartsWith("file:", StringComparison.OrdinalIgnoreCase) || manifestUri.IsFile);
-            if (isHttpUri || isExplicitFileUri)
+            if (isExplicitFileUri)
             {
                 return absoluteUri;
             }
+
+            if (string.Equals(absoluteUri.Scheme, Uri.UriSchemeFile, StringComparison.OrdinalIgnoreCase))
+            {
+                return manifestUri.IsFile
+                    ? ResolveLocalArtifactUri(manifestUri, rawUrl)
+                    : new Uri(manifestUri, rawUrl);
+            }
+
+            EnsureTrustedArtifactUri(manifestUri, absoluteUri);
+            return absoluteUri;
         }
 
         if (manifestUri.IsFile)
@@ -1189,7 +1267,70 @@ public static class DesktopUpdateRuntime
             return ResolveLocalArtifactUri(manifestUri, rawUrl);
         }
 
-        return new Uri(manifestUri, rawUrl);
+        Uri resolvedUri = new(manifestUri, rawUrl);
+        EnsureTrustedArtifactUri(manifestUri, resolvedUri);
+        return resolvedUri;
+    }
+
+    private static void EnsureTrustedRemoteManifestUri(Uri manifestUri)
+    {
+        if (manifestUri.IsFile)
+        {
+            return;
+        }
+
+        if (string.Equals(manifestUri.Scheme, Uri.UriSchemeHttps, StringComparison.OrdinalIgnoreCase))
+        {
+            return;
+        }
+
+        if (string.Equals(manifestUri.Scheme, Uri.UriSchemeHttp, StringComparison.OrdinalIgnoreCase)
+            && manifestUri.IsLoopback)
+        {
+            return;
+        }
+
+        throw new InvalidOperationException(
+            $"Desktop update manifest '{manifestUri}' must use HTTPS or loopback HTTP.");
+    }
+
+    private static void EnsureTrustedArtifactUri(Uri manifestUri, Uri artifactUri)
+    {
+        if (artifactUri.IsFile)
+        {
+            if (manifestUri.IsFile)
+            {
+                return;
+            }
+
+            throw new InvalidOperationException(
+                $"Desktop update artifact '{artifactUri}' cannot use file URLs when the manifest is remote.");
+        }
+
+        if (string.Equals(artifactUri.Scheme, Uri.UriSchemeHttp, StringComparison.OrdinalIgnoreCase))
+        {
+            if (artifactUri.IsLoopback && manifestUri.IsLoopback)
+            {
+                return;
+            }
+
+            throw new InvalidOperationException(
+                $"Desktop update artifact '{artifactUri}' must use HTTPS unless both manifest and artifact stay on loopback HTTP.");
+        }
+
+        if (!string.Equals(artifactUri.Scheme, Uri.UriSchemeHttps, StringComparison.OrdinalIgnoreCase))
+        {
+            throw new InvalidOperationException(
+                $"Desktop update artifact '{artifactUri}' must use HTTPS or a trusted local file path.");
+        }
+
+        if (!manifestUri.IsFile
+            && !manifestUri.IsLoopback
+            && !string.Equals(manifestUri.Host, artifactUri.Host, StringComparison.OrdinalIgnoreCase))
+        {
+            throw new InvalidOperationException(
+                $"Desktop update artifact '{artifactUri}' must stay on the same host as manifest '{manifestUri}'.");
+        }
     }
 
     private static Uri ResolveLocalArtifactUri(Uri manifestUri, string rawUrl)
@@ -1221,10 +1362,14 @@ public static class DesktopUpdateRuntime
     private static async Task DownloadArtifactAsync(
         Uri downloadUri,
         string destinationPath,
-        string displayName,
+        DesktopUpdateArtifact artifact,
         IProgress<DesktopUpdateProgressUpdate>? progress,
         CancellationToken ct)
     {
+        string displayName = artifact.FileName;
+        long expectedBytes = artifact.SizeBytes
+            ?? throw new InvalidOperationException(
+                $"Desktop update artifact '{artifact.FileName}' is missing required positive sizeBytes metadata.");
         for (int attempt = 1; attempt <= ArtifactDownloadRetryCount; attempt++)
         {
             ct.ThrowIfCancellationRequested();
@@ -1233,7 +1378,8 @@ public static class DesktopUpdateRuntime
                 Directory.CreateDirectory(Path.GetDirectoryName(destinationPath)!);
                 if (downloadUri.IsFile)
                 {
-                    CopyFileWithProgress(downloadUri.LocalPath, destinationPath, displayName, progress);
+                    EnsureFileWithinLimit(downloadUri.LocalPath, MaximumArtifactBytes, $"Desktop update artifact '{displayName}'");
+                    CopyFileWithProgress(downloadUri.LocalPath, destinationPath, displayName, expectedBytes, progress);
                     return;
                 }
 
@@ -1243,12 +1389,19 @@ public static class DesktopUpdateRuntime
                 };
                 using HttpResponseMessage response = await client.GetAsync(downloadUri, HttpCompletionOption.ResponseHeadersRead, ct).ConfigureAwait(false);
                 response.EnsureSuccessStatusCode();
+                EnsureContentLengthWithinLimit(response.Content.Headers.ContentLength, MaximumArtifactBytes, $"Desktop update artifact '{displayName}'");
+                if (response.Content.Headers.ContentLength is long contentLength && contentLength != expectedBytes)
+                {
+                    throw new InvalidOperationException(
+                        $"Desktop update artifact '{displayName}' failed size validation. Expected {expectedBytes} bytes, response declared {contentLength} bytes.");
+                }
+
                 await using Stream source = await response.Content.ReadAsStreamAsync(ct).ConfigureAwait(false);
                 await using FileStream target = File.Create(destinationPath);
                 await CopyStreamWithProgressAsync(
                     source,
                     target,
-                    response.Content.Headers.ContentLength,
+                    expectedBytes,
                     displayName,
                     progress,
                     ct).ConfigureAwait(false);
@@ -1268,8 +1421,16 @@ public static class DesktopUpdateRuntime
         string sourcePath,
         string destinationPath,
         string displayName,
+        long expectedBytes,
         IProgress<DesktopUpdateProgressUpdate>? progress)
     {
+        long sourceLength = GetFileSize(sourcePath);
+        if (sourceLength != expectedBytes)
+        {
+            throw new InvalidOperationException(
+                $"Desktop update artifact '{displayName}' failed size validation. Expected {expectedBytes} bytes, source has {sourceLength} bytes.");
+        }
+
         Directory.CreateDirectory(Path.GetDirectoryName(destinationPath)!);
         using FileStream source = File.OpenRead(sourcePath);
         using FileStream target = File.Create(destinationPath);
@@ -1296,7 +1457,7 @@ public static class DesktopUpdateRuntime
     private static async Task CopyStreamWithProgressAsync(
         Stream source,
         Stream target,
-        long? totalBytes,
+        long expectedBytes,
         string displayName,
         IProgress<DesktopUpdateProgressUpdate>? progress,
         CancellationToken ct)
@@ -1313,11 +1474,70 @@ public static class DesktopUpdateRuntime
 
             await target.WriteAsync(buffer.AsMemory(0, read), ct).ConfigureAwait(false);
             copied += read;
+            if (copied > expectedBytes)
+            {
+                throw new InvalidOperationException(
+                    $"Desktop update artifact '{displayName}' exceeded the manifest size while downloading. Expected {expectedBytes} bytes.");
+            }
+
             progress?.Report(new DesktopUpdateProgressUpdate(
                 "downloading",
                 $"Downloading {displayName}",
-                ToProgressUnits(copied, totalBytes),
+                ToProgressUnits(copied, expectedBytes),
                 1000));
+        }
+
+        if (copied != expectedBytes)
+        {
+            throw new InvalidOperationException(
+                $"Desktop update artifact '{displayName}' failed size validation. Expected {expectedBytes} bytes, observed {copied} bytes.");
+        }
+    }
+
+    private static async Task CopyStreamWithByteLimitAsync(
+        Stream source,
+        Stream target,
+        long maximumBytes,
+        string displayName,
+        CancellationToken ct)
+    {
+        byte[] buffer = new byte[64 * 1024];
+        long copied = 0L;
+        while (true)
+        {
+            int read = await source.ReadAsync(buffer.AsMemory(0, buffer.Length), ct).ConfigureAwait(false);
+            if (read <= 0)
+            {
+                break;
+            }
+
+            copied += read;
+            if (copied > maximumBytes)
+            {
+                throw new InvalidOperationException(
+                    $"{displayName} exceeded the maximum allowed size of {maximumBytes} bytes.");
+            }
+
+            await target.WriteAsync(buffer.AsMemory(0, read), ct).ConfigureAwait(false);
+        }
+    }
+
+    private static void EnsureContentLengthWithinLimit(long? contentLength, long maximumBytes, string displayName)
+    {
+        if (contentLength is > 0 && contentLength.Value > maximumBytes)
+        {
+            throw new InvalidOperationException(
+                $"{displayName} is too large. Expected at most {maximumBytes} bytes, response declared {contentLength.Value} bytes.");
+        }
+    }
+
+    private static void EnsureFileWithinLimit(string path, long maximumBytes, string displayName)
+    {
+        long length = GetFileSize(path);
+        if (length > maximumBytes)
+        {
+            throw new InvalidOperationException(
+                $"{displayName} is too large. Expected at most {maximumBytes} bytes, file has {length} bytes.");
         }
     }
 
@@ -1340,6 +1560,169 @@ public static class DesktopUpdateRuntime
 
     private static string BuildUpdateFailureMessage(Exception ex)
         => $"Update preparation failed: {ex.GetType().Name}: {ex.Message}";
+
+    private static async Task StageInstallerBootstrapPayloadIfNeededAsync(
+        Uri manifestUri,
+        DesktopUpdateChannelManifest manifest,
+        DesktopUpdateArtifact artifact,
+        string installerPath,
+        IProgress<DesktopUpdateProgressUpdate>? progress,
+        CancellationToken ct)
+    {
+        if (!string.Equals(artifact.InstallerMode, "bootstrap", StringComparison.OrdinalIgnoreCase))
+        {
+            return;
+        }
+
+        DesktopUpdateArtifact payloadArtifact = BuildInstallerBootstrapPayloadArtifact(artifact);
+        Uri payloadUri = ResolveArtifactUri(manifestUri, payloadArtifact);
+        string installerDirectory = Path.GetDirectoryName(installerPath)
+            ?? throw new InvalidOperationException($"Installer path '{installerPath}' did not have a parent directory.");
+        string payloadPath = Path.Combine(installerDirectory, payloadArtifact.FileName);
+        await DownloadArtifactAsync(payloadUri, payloadPath, payloadArtifact, progress, ct).ConfigureAwait(false);
+        ValidateArtifactIntegrity(payloadPath, payloadArtifact);
+        WriteInstallerBootstrapPayloadSidecar(payloadPath, artifact.FileName, payloadArtifact, manifest.Version, payloadUri);
+    }
+
+    private static DesktopUpdateArtifact BuildInstallerBootstrapPayloadArtifact(DesktopUpdateArtifact artifact)
+    {
+        string payloadFileName = string.IsNullOrWhiteSpace(artifact.PayloadFileName)
+            ? throw new InvalidOperationException(
+                $"Desktop bootstrap installer '{artifact.FileName}' is missing payloadFileName.")
+            : artifact.PayloadFileName.Trim();
+        string payloadDownloadUrl = !string.IsNullOrWhiteSpace(artifact.PayloadDownloadUrl)
+            ? artifact.PayloadDownloadUrl.Trim()
+            : payloadFileName;
+        if (string.IsNullOrWhiteSpace(artifact.PayloadSha256))
+        {
+            throw new InvalidOperationException(
+                $"Desktop bootstrap installer '{artifact.FileName}' is missing payloadSha256.");
+        }
+
+        if (artifact.PayloadSizeBytes is null or <= 0)
+        {
+            throw new InvalidOperationException(
+                $"Desktop bootstrap installer '{artifact.FileName}' is missing payloadSizeBytes.");
+        }
+
+        return new DesktopUpdateArtifact(
+            ArtifactId: $"{artifact.ArtifactId}-payload",
+            HeadId: artifact.HeadId,
+            Platform: artifact.Platform,
+            Arch: artifact.Arch,
+            Kind: "archive",
+            FileName: payloadFileName,
+            DownloadUrl: payloadDownloadUrl,
+            UpdateFeedUrl: null,
+            Sha256: artifact.PayloadSha256,
+            SizeBytes: artifact.PayloadSizeBytes);
+    }
+
+    private static void WriteInstallerBootstrapPayloadSidecar(
+        string payloadPath,
+        string installerFileName,
+        DesktopUpdateArtifact payloadArtifact,
+        string manifestVersion,
+        Uri payloadUri)
+    {
+        string sidecarPath = payloadPath + ".json";
+        string payloadSha256 = NormalizeSha256(payloadArtifact.Sha256 ?? string.Empty);
+        if (string.IsNullOrWhiteSpace(payloadSha256))
+        {
+            throw new InvalidOperationException(
+                $"Desktop bootstrap payload '{payloadArtifact.FileName}' is missing a valid SHA-256 checksum.");
+        }
+
+        object sidecarPayload = new
+        {
+            contractName = "chummer6-ui.windows_bootstrap_payload",
+            fileName = payloadArtifact.FileName,
+            downloadUrl = payloadUri.IsFile ? payloadUri.LocalPath : payloadUri.AbsoluteUri,
+            sha256 = payloadSha256,
+            sizeBytes = payloadArtifact.SizeBytes,
+            installerFileName,
+            releaseVersion = manifestVersion
+        };
+
+        File.WriteAllText(
+            sidecarPath,
+            JsonSerializer.Serialize(sidecarPayload, new JsonSerializerOptions
+            {
+                WriteIndented = true
+            }),
+            Encoding.UTF8);
+    }
+
+    internal static string BuildAttentionMessageForUpdateScheduleFailure(string? failureDetail)
+    {
+        const string prefix = "The update could not be prepared. This copy will keep running.";
+        string? detail = HumanizeUpdateFailureDetail(failureDetail);
+        return string.IsNullOrWhiteSpace(detail)
+            ? prefix
+            : $"{prefix} {detail}";
+    }
+
+    private static string? HumanizeUpdateFailureDetail(string? failureDetail)
+    {
+        if (string.IsNullOrWhiteSpace(failureDetail))
+        {
+            return null;
+        }
+
+        string detail = failureDetail.Trim();
+        detail = Regex.Replace(detail, @"\bUpdate preparation failed:\s*", string.Empty, RegexOptions.IgnoreCase);
+        detail = Regex.Replace(detail, @"\b(?:InvalidOperationException|IOException|UnauthorizedAccessException|HttpRequestException|TaskCanceledException|ObjectDisposedException):\s*", string.Empty, RegexOptions.IgnoreCase);
+
+        if (detail.Contains("Bundled desktop payload was not found", StringComparison.OrdinalIgnoreCase)
+            || detail.Contains("Installer payload was not found", StringComparison.OrdinalIgnoreCase)
+            || detail.Contains("staged desktop payload did not contain", StringComparison.OrdinalIgnoreCase))
+        {
+            return "The installer payload was missing.";
+        }
+
+        if (detail.Contains("checksum", StringComparison.OrdinalIgnoreCase))
+        {
+            return "The downloaded update did not pass integrity checks.";
+        }
+
+        if (detail.Contains("size validation", StringComparison.OrdinalIgnoreCase)
+            || detail.Contains("size mismatch", StringComparison.OrdinalIgnoreCase))
+        {
+            return "The downloaded update size did not match the release manifest.";
+        }
+
+        if (detail.Contains("No compatible desktop update payload", StringComparison.OrdinalIgnoreCase))
+        {
+            return "No update payload is available for this platform yet.";
+        }
+
+        if (detail.Contains("Failed to download desktop update artifact", StringComparison.OrdinalIgnoreCase))
+        {
+            return "The update download failed.";
+        }
+
+        if (detail.Contains("FileNotFoundException", StringComparison.OrdinalIgnoreCase)
+            || detail.Contains("Could not find file", StringComparison.OrdinalIgnoreCase))
+        {
+            return "The update download failed.";
+        }
+
+        if (detail.Contains("Desktop update helper could not", StringComparison.OrdinalIgnoreCase))
+        {
+            return "The local update helper could not start.";
+        }
+
+        if (detail.Contains("Cannot access a disposed object", StringComparison.OrdinalIgnoreCase)
+            || detail.Contains("disposed object", StringComparison.OrdinalIgnoreCase))
+        {
+            return "The local update helper closed before the handoff finished.";
+        }
+
+        detail = detail.Trim().TrimEnd('.', ';', '|');
+        return string.IsNullOrWhiteSpace(detail)
+            ? null
+            : detail.EndsWith('.') ? detail : $"{detail}.";
+    }
 
     private static string ResolveInstalledChannelId(DesktopUpdateState state, DesktopReleaseMetadata releaseMetadata)
     {

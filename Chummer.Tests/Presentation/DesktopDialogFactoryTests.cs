@@ -20,9 +20,8 @@ public class DesktopDialogFactoryTests
     [TestMethod]
     public void Master_index_source_selection_receipt_keeps_readiness_marker()
     {
-        string factoryPath = Path.GetFullPath(Path.Combine(
-            AppContext.BaseDirectory,
-            "../../../Chummer.Presentation/Overview/DesktopDialogFactory.cs"));
+        string repoRoot = TestContextLocator.ResolveChummerPresentationRepoRoot();
+        string factoryPath = Path.Combine(repoRoot, "Chummer.Presentation", "Overview", "DesktopDialogFactory.cs");
         string factorySource = File.ReadAllText(factoryPath);
 
         StringAssert.Contains(factorySource, "new DesktopDialogField(\"masterIndexSourceSelectionReceipt\"");
@@ -2158,7 +2157,7 @@ public class DesktopDialogFactoryTests
             "illegal_addiction");
         StringAssert.Contains(DesktopDialogFieldValueParser.GetValue(dialog, "newCharacterOriginSummary"), "upbringing");
         Assert.IsFalse(string.IsNullOrWhiteSpace(DesktopDialogFieldValueParser.GetValue(dialog, "newCharacterOriginBuildMethod")));
-        Assert.AreEqual("Build story", dialog.Actions.Single(action => string.Equals(action.Id, "generate_fitting_build", StringComparison.Ordinal)).Label);
+        Assert.AreEqual("Draft story", dialog.Actions.Single(action => string.Equals(action.Id, "generate_fitting_build", StringComparison.Ordinal)).Label);
     }
 
     [TestMethod]

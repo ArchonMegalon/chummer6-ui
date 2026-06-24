@@ -743,6 +743,8 @@ public sealed class DesktopThemeManagerTests
         StringAssert.Contains(commandDialogSource, "DesktopShellTheme.ApplyShellListBoxTheme(listBox);");
         StringAssert.Contains(sectionHost, "Background=\"{DynamicResource ChummerShellSurfaceBrush}\"");
         StringAssert.Contains(classicPortSurface, "Background = DesktopShellTheme.ResolveThemeBrush(\"ChummerShellSurfaceBrush\", \"#FBFCFE\")");
+        StringAssert.Contains(classicPortSurface, "DesktopShellTheme.ApplyShellListBoxTheme(listBox);");
+        StringAssert.Contains(classicPortSurface, "DesktopShellTheme.ApplyShellTreeViewTheme(treeView);");
         StringAssert.Contains(appTheme, "ChummerShellActiveMenuBorderBrush");
         StringAssert.Contains(appTheme, "#1C4A2D");
         StringAssert.Contains(appTheme, "#90C39A");
@@ -1021,11 +1023,40 @@ public sealed class DesktopThemeManagerTests
                 $"Visible desktop copy must not contain '{forbidden}'.");
         }
 
-        StringAssert.Contains(updateSource, "configured update path");
-        StringAssert.Contains(updateSource, "Update, release, or rollout status needs review");
+        StringAssert.Contains(updateSource, "This copy is not attached to a working update source yet.");
+        StringAssert.Contains(updateSource, "Something about updates needs review before you treat this copy as current.");
         StringAssert.Contains(supportCaseSource, "Tracked case preview.");
         StringAssert.Contains(supportCaseSource, "Use account support to record final confirmation");
         StringAssert.Contains(supportCaseSource, "System details stay visible while this case still needs attention.");
+    }
+
+    [TestMethod]
+    public void Localized_update_strings_do_not_use_release_posture_or_truth_jargon()
+    {
+        string repoRoot = TestContextLocator.ResolveChummerPresentationRepoRoot();
+        string localizationSource = File.ReadAllText(Path.Combine(repoRoot, "Chummer.Presentation", "Overview", "DesktopLocalizationCatalog.cs"));
+
+        StringAssert.Contains(localizationSource, "localized[\"desktop.update.section.current\"] = \"Version actuelle\"");
+        StringAssert.Contains(localizationSource, "localized[\"desktop.update.intro.never_checked\"] = \"Aucun etat de mise a jour n'a encore ete charge pour cette installation.\"");
+        StringAssert.Contains(localizationSource, "localized[\"desktop.update.section.current\"] = \"現在のバージョン\"");
+        StringAssert.Contains(localizationSource, "localized[\"desktop.update.intro.current\"] = \"このインストールはそのまま使い続けられます。\"");
+        StringAssert.Contains(localizationSource, "localized[\"desktop.update.section.current\"] = \"Versao atual\"");
+        StringAssert.Contains(localizationSource, "localized[\"desktop.update.intro.never_checked\"] = \"Nenhum status de atualizacao foi carregado para esta instalacao.\"");
+        StringAssert.Contains(localizationSource, "localized[\"desktop.update.section.current\"] = \"当前版本\"");
+        StringAssert.Contains(localizationSource, "localized[\"desktop.update.intro.current\"] = \"此安装可以继续使用。\"");
+
+        Assert.IsFalse(localizationSource.Contains("Posture de version actuelle", StringComparison.Ordinal));
+        Assert.IsFalse(localizationSource.Contains("La verite locale de mise a jour", StringComparison.Ordinal));
+        Assert.IsFalse(localizationSource.Contains("更新ステータスとリリース姿勢", StringComparison.Ordinal));
+        Assert.IsFalse(localizationSource.Contains("現在のリリース姿勢", StringComparison.Ordinal));
+        Assert.IsFalse(localizationSource.Contains("ローカル更新トゥルース", StringComparison.Ordinal));
+        Assert.IsFalse(localizationSource.Contains("Status da atualizacao e postura de release", StringComparison.Ordinal));
+        Assert.IsFalse(localizationSource.Contains("Postura da versão atual", StringComparison.Ordinal));
+        Assert.IsFalse(localizationSource.Contains("A verdade local de atualizacao", StringComparison.Ordinal));
+        Assert.IsFalse(localizationSource.Contains("更新状态与发布姿态", StringComparison.Ordinal));
+        Assert.IsFalse(localizationSource.Contains("当前发布姿态", StringComparison.Ordinal));
+        Assert.IsFalse(localizationSource.Contains("本地更新真相", StringComparison.Ordinal));
+        Assert.IsFalse(localizationSource.Contains("注册表支持的发布姿态", StringComparison.Ordinal));
     }
 
     [TestMethod]
@@ -1080,7 +1111,7 @@ public sealed class DesktopThemeManagerTests
         StringAssert.Contains(desktopDialogSource, "\"Story Preview\"");
         StringAssert.Contains(desktopDialogSource, "\"Book Preview\"");
         StringAssert.Contains(desktopDialogSource, "CreateBookPreviewPanel(field.Value)");
-        StringAssert.Contains(factorySource, "new DesktopDialogAction(\"generate_fitting_build\", \"Build story\", true)");
+        StringAssert.Contains(factorySource, "new DesktopDialogAction(\"generate_fitting_build\", \"Draft story\", true)");
         StringAssert.Contains(factorySource, "newCharacterOriginBookPreview");
         StringAssert.Contains(factorySource, "VisualKind: DesktopDialogFieldVisualKinds.Book");
         StringAssert.Contains(factorySource, "new DesktopDialogAction(\"open_origin_guided_chargen\", \"Start character creation\", true)");
@@ -1125,7 +1156,7 @@ public sealed class DesktopThemeManagerTests
         string repoRoot = TestContextLocator.ResolveChummerPresentationRepoRoot();
         string aliceSource = File.ReadAllText(Path.Combine(repoRoot, "Chummer.Avalonia", "DesktopAliceWindow.cs"));
 
-        StringAssert.Contains(aliceSource, "CreateButton(\"Build story\", StartOriginDossierAsync, isPrimary: true, name: \"AliceOriginStartDossierButton\")");
+        StringAssert.Contains(aliceSource, "CreateButton(\"Draft story\", StartOriginDossierAsync, isPrimary: true, name: \"AliceOriginStartDossierButton\")");
         StringAssert.Contains(aliceSource, "CreateButton(\"Open story\", () => DesktopCrashRuntime.TryOpenPathInShell(_originDraftMarkdownPath), isPrimary: true, name: \"AliceOriginOpenDraftStoryButton\")");
         StringAssert.Contains(aliceSource, "use the story as Alice's seed for later build guidance.");
 
@@ -1137,7 +1168,7 @@ public sealed class DesktopThemeManagerTests
         int openBookIndex = approveSource.IndexOf("\"Open book\"", StringComparison.Ordinal);
         int openStoryIndex = approveSource.IndexOf("\"Open story\"", StringComparison.Ordinal);
         int portraitIndex = approveSource.IndexOf("\"Create portraits\"", StringComparison.Ordinal);
-        int voiceIndex = approveSource.IndexOf("\"Create audiobook script\"", StringComparison.Ordinal);
+        int voiceIndex = approveSource.IndexOf("\"Set up main voice\"", StringComparison.Ordinal);
         int videoIndex = approveSource.IndexOf("\"Create dossier video\"", StringComparison.Ordinal);
         Assert.IsTrue(openBookIndex >= 0, "Approved Origin Dossier must expose the book action.");
         Assert.IsTrue(openStoryIndex > openBookIndex, "Story must stay adjacent to the book action.");
@@ -1149,8 +1180,8 @@ public sealed class DesktopThemeManagerTests
         int showOriginBundleStateStart = aliceSource.IndexOf("void ShowOriginBundleState(", StringComparison.Ordinal);
         Assert.IsTrue(idleStart >= 0 && showOriginBundleStateStart > idleStart, "Idle-state source must be discoverable.");
         string idleSource = aliceSource[idleStart..showOriginBundleStateStart];
-        int emptyOriginIndex = idleSource.IndexOf("CreateButton(\"Build story\", StartOriginDossierAsync", StringComparison.Ordinal);
-        Assert.IsTrue(emptyOriginIndex >= 0, "Empty Origin Dossier state must start with Build story.");
+        int emptyOriginIndex = idleSource.IndexOf("CreateButton(\"Draft story\", StartOriginDossierAsync", StringComparison.Ordinal);
+        Assert.IsTrue(emptyOriginIndex >= 0, "Empty Origin Dossier state must start with Draft story.");
         string emptyOriginSource = idleSource[emptyOriginIndex..];
         Assert.IsFalse(emptyOriginSource.Contains("\"Create dossier video\"", StringComparison.Ordinal));
         Assert.IsFalse(emptyOriginSource.Contains("\"Render audiobook now\"", StringComparison.Ordinal));

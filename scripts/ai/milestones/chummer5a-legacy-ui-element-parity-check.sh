@@ -1138,23 +1138,37 @@ evidence["b14ConsumesReceipt"] = all(evidence["b14Markers"].values())
 if not evidence["b14ConsumesReceipt"]:
     add_reason(f"B14 flagship UI release gate does not consume the {legacy_subject} legacy UI element parity receipt.")
 
-test_command = [
-    "bash",
-    "scripts/ai/test.sh",
-    "Chummer.Tests/Chummer.Tests.csproj",
-    "--no-restore",
-    "-f",
-    "net10.0",
-    "--filter",
-    PROOF_FILTER,
-    "-v",
-    "minimal",
-]
-evidence["testCommand"] = test_command
-evidence["testFilter"] = PROOF_FILTER
-test_assembly_path = repo_root / "Chummer.Tests" / "bin" / "Debug" / "Chummer.Tests.dll"
+test_assembly_path = repo_root / "Chummer.Tests" / "bin" / "Debug" / "net10.0" / "Chummer.Tests.dll"
 evidence["testAssemblyPath"] = str(test_assembly_path)
 evidence["reusedExistingTestBuild"] = bool(reuse_existing_test_build and test_assembly_path.is_file())
+if reuse_existing_test_build and test_assembly_path.is_file():
+    test_command = [
+        "dotnet",
+        "test",
+        "--project",
+        "Chummer.Tests/Chummer.Tests.csproj",
+        "--no-restore",
+        "--no-build",
+        "--filter",
+        PROOF_FILTER,
+        "-v",
+        "minimal",
+    ]
+else:
+    test_command = [
+        "bash",
+        "scripts/ai/test.sh",
+        "Chummer.Tests/Chummer.Tests.csproj",
+        "--no-restore",
+        "-f",
+        "net10.0",
+        "--filter",
+        PROOF_FILTER,
+        "-v",
+        "minimal",
+    ]
+evidence["testCommand"] = test_command
+evidence["testFilter"] = PROOF_FILTER
 
 execution_failures: list[str] = []
 if not reasons:

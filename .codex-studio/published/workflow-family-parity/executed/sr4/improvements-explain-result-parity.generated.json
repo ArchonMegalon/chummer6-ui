@@ -1,12 +1,11 @@
 {
-  "generatedAt": "2026-06-24T05:58:09.525305Z",
+  "generatedAt": "2026-06-24T15:41:11.321045Z",
   "contract_name": "chummer6-ui.sr4_workflow_family_execution_receipt",
   "status": "fail",
   "summary": "SR4 workflow-family execution evidence is incomplete for improvements-explain-result-parity.",
   "reasons": [
-    "Audit tests not present in executed TRX results: Menu_dialog_workflows_keep_recursive_parity",
-    "Audit tests did not pass in executed TRX results: Legacy_ui_controls_keep_recursive_parity=Failed",
-    "dotnet test execution failed (exit 1):   duration: 43s 405ms"
+    "Audit tests did not pass in executed TRX results: Legacy_ui_controls_keep_recursive_parity=Failed, Menu_dialog_workflows_keep_recursive_parity=Failed",
+    "dotnet test execution failed (exit 2):   duration: 14s 614ms"
   ],
   "evidence": {
     "edition": "sr4",
@@ -57,7 +56,7 @@
         "Avalonia_and_Blazor_tab_selection_loads_same_workspace_section": "/docker/chummercomplete/chummer-presentation/.codex-studio/out/workflow-family-parity/executed/sr4/27-Avalonia_and_Blazor_tab_selection_loads_same_workspace_section.trx",
         "Menu_click_surfaces_visible_command_choices_in_shell": "/docker/chummercomplete/chummer-presentation/.codex-studio/out/workflow-family-parity/executed/sr4/28-Menu_click_surfaces_visible_command_choices_in_shell.trx"
       },
-      "exitCode": 1,
+      "exitCode": 2,
       "attemptCount": 2,
       "maxAttempts": 2
     },
@@ -83,10 +82,11 @@
     "matchedPassedTests": [
       "Avalonia_and_Blazor_workspace_action_summary_matches"
     ],
-    "missingAuditTests": [
-      "Menu_dialog_workflows_keep_recursive_parity"
-    ],
+    "missingAuditTests": [],
     "failedAuditTests": {
+      "Menu_dialog_workflows_keep_recursive_parity": [
+        "Failed"
+      ],
       "Legacy_ui_controls_keep_recursive_parity": [
         "Failed"
       ]

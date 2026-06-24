@@ -1,0 +1,60 @@
+{
+  "checks": [
+    {
+      "evidence": "Chummer.Portal forwards signed owner headers for optional session and coach pass-through routes.",
+      "id": "portal_session_and_coach_routes_forward_signed_owner_headers",
+      "passed": true
+    },
+    {
+      "evidence": "Chummer.Portal keeps AI forwarding behind the same signed owner header seam.",
+      "id": "portal_ai_route_keeps_signed_owner_header_seam",
+      "passed": true
+    },
+    {
+      "evidence": "docker-compose.yml exposes optional session, coach, AI, run URL, and owner shared-key settings.",
+      "id": "portal_compose_exposes_optional_connected_runtime_env",
+      "passed": true
+    },
+    {
+      "evidence": "Standalone and portal Blazor containers receive connected-runtime configuration for server-rendered status only.",
+      "id": "blazor_compose_receives_connected_runtime_state_without_exposing_urls",
+      "passed": true
+    },
+    {
+      "evidence": "The browser workbench proof shelf renders a visible connected-runtime posture card without exposing proxy URLs.",
+      "id": "blazor_preview_renders_connected_runtime_posture_card",
+      "passed": true
+    },
+    {
+      "evidence": "Live hosted workbench HTML at https://chummer.run/blazor/workbench renders the connected-runtime posture card.",
+      "id": "hosted_chummer_run_workbench_renders_connected_runtime_posture_card",
+      "passed": true
+    },
+    {
+      "evidence": "The self-host environment example exposes optional connected-runtime lanes without enabling them by default.",
+      "id": "self_host_env_example_lists_connected_runtime_settings",
+      "passed": true
+    },
+    {
+      "evidence": "Browser-client operator docs expose the connected-runtime receipt and signed owner forwarding boundary.",
+      "id": "operator_docs_reference_connected_runtime_receipt",
+      "passed": true
+    },
+    {
+      "evidence": "Parity/signoff docs distinguish connected-runtime posture from full web-client workflow parity.",
+      "id": "parity_and_signoff_docs_keep_connected_runtime_scope_separate",
+      "passed": true
+    }
+  ],
+  "connected_runtime_routes": [
+    "/session/",
+    "/coach/",
+    "/api/ai/"
+  ],
+  "contract_name": "chummer6-ui.blazor_connected_runtime_posture",
+  "generated_at": "2026-06-24T18:58:48.309391+00:00",
+  "live_url": "https://chummer.run/blazor/workbench",
+  "owner_context_boundary": "signed-portal-owner-header-when-shared-key-configured",
+  "scope": "posture-and-forwarding-boundary-not-full-runtime-parity",
+  "status": "passed"
+}

@@ -1,5 +1,8 @@
 {
   "artifacts": [
+    "BLAZOR_PUBLIC_EDGE_EXECUTION_PROOF.generated.json",
+    "BLAZOR_PUBLIC_EDGE_WORKBENCH_PROOF.generated.json",
+    "BLAZOR_SELF_HOST_WORKBENCH_PROOF.generated.json",
     "CHUMMER4_SR4_MUSCLE_MEMORY_INVENTORY.generated.json",
     "CHUMMER4_SR4_MUSCLE_MEMORY_PARITY_GATE.generated.json",
     "CHUMMER5A_ABSOLUTE_PARITY_TESTER.generated.json",

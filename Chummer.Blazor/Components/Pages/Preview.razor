@@ -1,33 +1,527 @@
 @namespace Chummer.Blazor.Components.Pages
 @page "/preview"
+@page "/workbench"
 @layout Chummer.Blazor.Components.Layout.NoLayout
 @using Microsoft.AspNetCore.Components
+@using Microsoft.Extensions.Configuration
 @using Chummer.Blazor.Components.Layout
+@using Chummer.Presentation.Overview
+@implements IDisposable
 
-<PageTitle>Chummer Workbench Preview</PageTitle>
+<PageTitle>Chummer Browser Workbench</PageTitle>
 
 <main class="browser-preview-shell">
     <header class="browser-preview-banner">
         <div class="browser-preview-banner-copy">
-            <p class="browser-preview-kicker">Workbench preview</p>
-            <h1>Browser-safe shell preview</h1>
-            <p>
-                This route demonstrates the workbench and navigation model in the browser.
-                The full desktop client remains the authoritative path for install-claimed and file-heavy workflows.
-            </p>
+            @if (IsWorkbenchRoute)
+            {
+                <p class="browser-preview-kicker">Browser workbench</p>
+                <h1>Chummer's shared workbench shell, running in the browser.</h1>
+                <p>
+                    This is the product-shaped browser workbench entrypoint: the same shared shell, navigation, and workflow contracts,
+                    presented as a real web client surface instead of a proof-only lane.
+                </p>
+            }
+            else
+            {
+                <p class="browser-preview-kicker">Live browser workbench</p>
+                <h1>Chummer's shared workbench shell, running in the browser.</h1>
+                <p>
+                    This route runs the browser-facing Chummer shell with the same shared navigation and workflow contracts used elsewhere in the product.
+                    The desktop client still owns native install and file-heavy operations, but this surface is more than a guided mock.
+                </p>
+            }
         </div>
 
-        <nav class="browser-preview-actions" aria-label="Preview navigation">
+        <nav class="browser-preview-actions" aria-label="Workbench navigation">
             <a href="/">Public home</a>
+            @if (IsWorkbenchRoute)
+            {
+                <a href="/preview">Proof routes</a>
+            }
+            else
+            {
+                <a href="/workbench">Workbench route</a>
+            }
             <a href="/showcase">Showcase</a>
+            <a href="/downloads/">Downloads</a>
+            <a href="/docs/">Docs</a>
         </nav>
     </header>
 
     <section class="browser-preview-boundary" aria-label="Boundary notice">
-        <strong>Boundary:</strong> treat this as a guided browser preview, not as a claim of full desktop parity.
+        <div>
+            <strong>Browser-owned here:</strong> responsive shell navigation, implicit owner session posture, and browser-ready workflows that already have parity proof.
+        </div>
+        <div>
+            <strong>Desktop-owned still:</strong> native install continuity, local-file-heavy operations, and any workflow slice that has not yet been proven end to end in browser.
+        </div>
     </section>
 
+    <section class="browser-preview-status-grid" aria-label="Workbench status">
+        <article class="browser-preview-status-card">
+            <span class="browser-preview-status-label">Deployment</span>
+            <strong>Published self-hosted Docker surface</strong>
+            <p>Portal, browser shell, docs, downloads, and API routes are exposed through one public front door.</p>
+        </article>
+        <article class="browser-preview-status-card">
+            <span class="browser-preview-status-label">Session</span>
+            <strong>Implicit owner sign-in</strong>
+            <p>The browser-facing stack carries a self-hosted owner identity without forcing an explicit login wall first.</p>
+        </article>
+        <article class="browser-preview-status-card">
+            <span class="browser-preview-status-label">Workflow truth</span>
+            <strong>Parity where implemented, boundaries where not</strong>
+            <p>The browser surface is allowed to claim real capability, but it must keep native-only paths clearly separated.</p>
+        </article>
+        <article class="browser-preview-status-card"
+                 data-connected-runtime-posture
+                 data-connected-runtime-session="@BuildRuntimeLaneState(Configuration["CHUMMER_PORTAL_SESSION_PROXY_URL"])"
+                 data-connected-runtime-coach="@BuildRuntimeLaneState(Configuration["CHUMMER_PORTAL_COACH_PROXY_URL"])"
+                 data-connected-runtime-ai="@BuildRuntimeLaneState(Configuration["CHUMMER_PORTAL_AI_PROXY_URL"])">
+            <span class="browser-preview-status-label">Connected runtime</span>
+            <strong>@BuildConnectedRuntimeTitle()</strong>
+            <p>@BuildConnectedRuntimeSummary()</p>
+        </article>
+    </section>
+
+    @if (IsWorkbenchRoute)
+    {
+        <section class="browser-preview-status-grid" aria-label="Workbench route guidance">
+            <article class="browser-preview-status-card">
+                <span class="browser-preview-status-label">Product route</span>
+                <strong>Use this route as the browser client entrypoint</strong>
+                <p>The shell below is the product-facing browser workbench route while broader parity work continues to mature.</p>
+            </article>
+            <article class="browser-preview-status-card">
+                <span class="browser-preview-status-label">Proof route</span>
+                <strong>Open detailed route and workflow proof on demand</strong>
+                <p>Use the preview route when you need the denser proof shelf for startup deep links, seeded workflows, and browser result-state receipts.</p>
+                <a href="/preview">Open preview proof shelf</a>
+            </article>
+        </section>
+
+        <section class="browser-preview-status-grid" aria-label="Workbench quick starts">
+            <article class="browser-preview-status-card" data-workbench-entry-card="new-character">
+                <span class="browser-preview-status-label">Quick start</span>
+                <strong>Start a new runner</strong>
+                <p>Launch the shared new-character flow directly from the browser workbench route.</p>
+                <a href="/workbench?command=new_character">Open New Character</a>
+            </article>
+            <article class="browser-preview-status-card" data-workbench-entry-card="open-character">
+                <span class="browser-preview-status-label">Quick start</span>
+                <strong>Import an existing runner</strong>
+                <p>Open the shared browser import flow for an existing Chummer dossier.</p>
+                <a href="/workbench?command=open_character">Open Character</a>
+            </article>
+            <article class="browser-preview-status-card" data-workbench-entry-card="seeded-build-lab">
+                <span class="browser-preview-status-label">Guided start</span>
+                <strong>Open a live seeded workspace</strong>
+                <p>@BuildLabLaneDescription</p>
+                <a href="@BuildLabLaneHref">@BuildLabLaneLabel</a>
+            </article>
+            <article class="browser-preview-status-card" data-workbench-entry-card="continue-recent">
+                <span class="browser-preview-status-label">Continue work</span>
+                <strong>Continue a recent dossier</strong>
+                <p>@ContinueRecentDescription</p>
+                <a href="@ContinueRecentHref">@ContinueRecentLabel</a>
+            </article>
+        </section>
+
+        @if (RecentWorkspaceIds.Count > 0)
+        {
+            <section class="browser-preview-status-grid" aria-label="Workbench recent work">
+                <article class="browser-preview-status-card" data-workbench-entry-card="recent-work">
+                    <span class="browser-preview-status-label">Recent work</span>
+                    <strong>Resume from restored session state</strong>
+                    <p>These links come from the current shared session state instead of seeded demo routes.</p>
+                    @foreach (RecentWorkspaceLink recentWorkspace in RecentWorkspaces.Take(3))
+                    {
+                        <a href="@BuildPreviewHref(workspace: recentWorkspace.WorkspaceId, useWorkbenchRoute: true)"
+                           data-workbench-recent-workspace="@recentWorkspace.WorkspaceId">
+                            Resume @recentWorkspace.Label
+                        </a>
+                    }
+                </article>
+            </section>
+
+            @if (PrimaryRecentWorkspace is not null)
+            {
+                <section class="browser-preview-status-grid" aria-label="Workbench restored continuations">
+                    <article class="browser-preview-status-card" data-workbench-entry-card="restored-continuations">
+                        <span class="browser-preview-status-label">Restored continuations</span>
+                        <strong>Continue restored runner lanes</strong>
+                        <p>Open the most recent restored workspace directly on the same browser lanes you would continue from in a desktop session.</p>
+                        <a href="@BuildPreviewHref(workspace: PrimaryRecentWorkspace.WorkspaceId, tab: "tab-info", useWorkbenchRoute: true)">Resume @PrimaryRecentWorkspace.ShortLabel on profile</a>
+                        <a href="@BuildPreviewHref(workspace: PrimaryRecentWorkspace.WorkspaceId, tab: "tab-rules", useWorkbenchRoute: true)">Resume @PrimaryRecentWorkspace.ShortLabel on rules</a>
+                        <a href="@BuildPreviewHref(workspace: PrimaryRecentWorkspace.WorkspaceId, tab: "tab-gear", useWorkbenchRoute: true)">Resume @PrimaryRecentWorkspace.ShortLabel on gear</a>
+                        <a href="@BuildPreviewHref(workspace: PrimaryRecentWorkspace.WorkspaceId, tab: "tab-technomancer", useWorkbenchRoute: true)">Resume @PrimaryRecentWorkspace.ShortLabel on advanced</a>
+                    </article>
+                    <article class="browser-preview-status-card" data-workbench-entry-card="restored-actions">
+                        <span class="browser-preview-status-label">Restored actions</span>
+                        <strong>Continue live editing</strong>
+                        <p>Open the most recent restored workspace directly into a live add-contact action so browser continuity proves a real post-resume editing step.</p>
+                        <a href="@BuildPreviewHref(workspace: PrimaryRecentWorkspace.WorkspaceId, tab: "tab-contacts", control: "contact_add", dialogAction: "add", useWorkbenchRoute: true)">Add and keep contact for @PrimaryRecentWorkspace.ShortLabel</a>
+                        <a href="@BuildPreviewHref(workspace: PrimaryRecentWorkspace.WorkspaceId, tab: "tab-contacts", control: "contact_add", useWorkbenchRoute: true)">Add a contact for @PrimaryRecentWorkspace.ShortLabel</a>
+                        <a href="@BuildPreviewHref(workspace: PrimaryRecentWorkspace.WorkspaceId, tab: "tab-technomancer", control: "complex_form_add", dialogAction: "add", useWorkbenchRoute: true)">Add and keep complex form for @PrimaryRecentWorkspace.ShortLabel</a>
+                        <a href="@BuildPreviewHref(workspace: PrimaryRecentWorkspace.WorkspaceId, tab: "tab-technomancer", control: "complex_form_add", useWorkbenchRoute: true)">Add a complex form for @PrimaryRecentWorkspace.ShortLabel</a>
+                        <a href="@BuildPreviewHref(workspace: PrimaryRecentWorkspace.WorkspaceId, tab: "tab-adept", control: "initiation_add", dialogAction: "add", useWorkbenchRoute: true)">Add and keep initiation for @PrimaryRecentWorkspace.ShortLabel</a>
+                        <a href="@BuildPreviewHref(workspace: PrimaryRecentWorkspace.WorkspaceId, tab: "tab-adept", control: "initiation_add", useWorkbenchRoute: true)">Add initiation for @PrimaryRecentWorkspace.ShortLabel</a>
+                        <a href="@BuildPreviewHref(workspace: PrimaryRecentWorkspace.WorkspaceId, tab: "tab-cyberware", control: "cyberware_add", dialogAction: "add", useWorkbenchRoute: true)">Add and keep cyberware for @PrimaryRecentWorkspace.ShortLabel</a>
+                        <a href="@BuildPreviewHref(workspace: PrimaryRecentWorkspace.WorkspaceId, tab: "tab-cyberware", control: "cyberware_add", useWorkbenchRoute: true)">Add cyberware for @PrimaryRecentWorkspace.ShortLabel</a>
+                        <a href="@BuildPreviewHref(workspace: PrimaryRecentWorkspace.WorkspaceId, tab: "tab-magician", control: "spell_add", dialogAction: "add", useWorkbenchRoute: true)">Add and keep spell for @PrimaryRecentWorkspace.ShortLabel</a>
+                        <a href="@BuildPreviewHref(workspace: PrimaryRecentWorkspace.WorkspaceId, tab: "tab-magician", control: "spell_add", useWorkbenchRoute: true)">Add a spell for @PrimaryRecentWorkspace.ShortLabel</a>
+                    </article>
+                </section>
+            }
+        }
+
+        <section class="browser-preview-status-grid" aria-label="Workbench browser continuations">
+            <article class="browser-preview-status-card" data-workbench-entry-card="profile">
+                <span class="browser-preview-status-label">Continue work</span>
+                <strong>Review identity and profile</strong>
+                <p>@ProfileLaneDescription</p>
+                <a href="@ProfileLaneHref">@ProfileLaneLabel</a>
+            </article>
+            <article class="browser-preview-status-card" data-workbench-entry-card="rules">
+                <span class="browser-preview-status-label">Continue work</span>
+                <strong>Review rules and references</strong>
+                <p>@RulesLaneDescription</p>
+                <a href="@RulesLaneHref">@RulesLaneLabel</a>
+            </article>
+            <article class="browser-preview-status-card" data-workbench-entry-card="gear">
+                <span class="browser-preview-status-label">Continue work</span>
+                <strong>Review loadout and gear</strong>
+                <p>@GearLaneDescription</p>
+                <a href="@GearLaneHref">@GearLaneLabel</a>
+            </article>
+            <article class="browser-preview-status-card" data-workbench-entry-card="technomancer">
+                <span class="browser-preview-status-label">Continue work</span>
+                <strong>Open advanced build lanes</strong>
+                <p>@AdvancedLaneDescription</p>
+                <a href="@AdvancedLaneHref">@AdvancedLaneLabel</a>
+            </article>
+            <article class="browser-preview-status-card" data-workbench-entry-card="save-as">
+                <span class="browser-preview-status-label">Browser file flow</span>
+                <strong>Prepare a browser download</strong>
+                <p>@SaveAsFlowDescription</p>
+                <a href="@SaveAsFlowHref">@SaveAsFlowLabel</a>
+            </article>
+            <article class="browser-preview-status-card" data-workbench-entry-card="export">
+                <span class="browser-preview-status-label">Browser file flow</span>
+                <strong>Prepare an export package</strong>
+                <p>@ExportFlowDescription</p>
+                <a href="@ExportFlowHref">@ExportFlowLabel</a>
+            </article>
+            <article class="browser-preview-status-card" data-workbench-entry-card="print">
+                <span class="browser-preview-status-label">Browser file flow</span>
+                <strong>Prepare a print preview</strong>
+                <p>@PrintFlowDescription</p>
+                <a href="@PrintFlowHref">@PrintFlowLabel</a>
+            </article>
+        </section>
+    }
+    else
+    {
+    <section class="browser-preview-status-grid" aria-label="Verified workflow entries">
+        <article class="browser-preview-status-card" data-preview-proof-card="build-lab">
+            <span class="browser-preview-status-label">Browser proof</span>
+            <strong>Seed Build Lab with a real SR5 workspace</strong>
+            <p>Loads the published browser shell with the `BLUE` fixture and lands on the live `Create` tab so Build Lab can be verified in-place.</p>
+            <a href="@BuildPreviewHref("blue", "tab-create")">Open Build Lab proof</a>
+        </article>
+        <article class="browser-preview-status-card" data-preview-proof-card="rules">
+            <span class="browser-preview-status-label">Rules proof</span>
+            <strong>Open the same seeded workspace on Rules</strong>
+            <p>Uses the same deterministic workspace import but pivots to the rules-facing tab for browser continuity checks.</p>
+            <a href="@BuildPreviewHref("blue", "tab-rules")">Open Rules proof</a>
+        </article>
+        <article class="browser-preview-status-card" data-preview-proof-card="technomancer">
+            <span class="browser-preview-status-label">Advanced proof</span>
+            <strong>Open Complex Forms in the browser</strong>
+            <p>Drives the seeded workspace into the `Technomancer` lane so advanced build sections can be verified with live section rendering and add actions.</p>
+            <a href="@BuildPreviewHref("blue", "tab-technomancer")">Open Complex Forms proof</a>
+        </article>
+        <article class="browser-preview-status-card" data-preview-proof-card="contacts">
+            <span class="browser-preview-status-label">Continuity proof</span>
+            <strong>Keep dossier context on Contacts</strong>
+            <p>Verifies that a seeded browser workspace can move past startup into a living continuation tab instead of stopping at marketing copy.</p>
+            <a href="@BuildPreviewHref("blue", "tab-contacts")">Open Contacts proof</a>
+        </article>
+        <article class="browser-preview-status-card" data-preview-proof-card="new-character">
+            <span class="browser-preview-status-label">Startup proof</span>
+            <strong>Open New Character directly in the browser</strong>
+            <p>Deep-links the browser workbench into the same shared new-character command so startup workflow proof does not depend on manual clicking.</p>
+            <a href="@BuildPreviewHref(command: "new_character")">Open New Character proof</a>
+        </article>
+        <article class="browser-preview-status-card" data-preview-proof-card="open-character">
+            <span class="browser-preview-status-label">Import proof</span>
+            <strong>Open Character import directly in the browser</strong>
+            <p>Deep-links the browser workbench into the shared import dialog so existing-runner intake is proven from the same route model as desktop startup commands.</p>
+            <a href="@BuildPreviewHref(command: "open_character")">Open Character proof</a>
+        </article>
+        <article class="browser-preview-status-card" data-preview-proof-card="open-for-printing">
+            <span class="browser-preview-status-label">Print proof</span>
+            <strong>Open print staging directly in the browser</strong>
+            <p>Uses the shared print-intake dialog so browser proof covers the same imported-document staging entry used before print workflows continue.</p>
+            <a href="@BuildPreviewHref(command: "open_for_printing")">Open for Printing proof</a>
+        </article>
+        <article class="browser-preview-status-card" data-preview-proof-card="open-for-export">
+            <span class="browser-preview-status-label">Export proof</span>
+            <strong>Open export staging directly in the browser</strong>
+            <p>Uses the shared export-intake dialog so browser proof covers imported-document staging before export workflows continue.</p>
+            <a href="@BuildPreviewHref(command: "open_for_export")">Open for Export proof</a>
+        </article>
+        <article class="browser-preview-status-card" data-preview-proof-card="print-character-result">
+            <span class="browser-preview-status-label">Result proof</span>
+            <strong>Prepare a seeded print preview in the browser</strong>
+            <p>Loads the published `BLUE` workspace and executes the shared print command so the browser shell shows a real print dispatch state instead of just an entry dialog.</p>
+            <a href="@BuildPreviewHref("blue", command: "print_character")">Open Print Result proof</a>
+        </article>
+        <article class="browser-preview-status-card" data-preview-proof-card="export-character-result">
+            <span class="browser-preview-status-label">Result proof</span>
+            <strong>Prepare a seeded export in the browser</strong>
+            <p>Loads the published `BLUE` workspace and executes the shared export command plus its download action so the browser shell shows a real export receipt and portability handoff.</p>
+            <a href="@BuildPreviewHref("blue", command: "export_character", dialogAction: "download")">Open Export Result proof</a>
+        </article>
+        <article class="browser-preview-status-card" data-preview-proof-card="save-character-result">
+            <span class="browser-preview-status-label">Result proof</span>
+            <strong>Save a seeded workspace in the browser</strong>
+            <p>Loads the published `BLUE` workspace and executes the shared save command so the browser shell shows a real saved-state result instead of only toolstrip posture.</p>
+            <a href="@BuildPreviewHref("blue", command: "save_character")">Open Save Result proof</a>
+        </article>
+        <article class="browser-preview-status-card" data-preview-proof-card="save-character-as-result">
+            <span class="browser-preview-status-label">Result proof</span>
+            <strong>Prepare a seeded download in the browser</strong>
+            <p>Loads the published `BLUE` workspace and executes the shared save-as command so the browser shell shows a real browser download handoff instead of only a toolbar affordance.</p>
+            <a href="@BuildPreviewHref("blue", command: "save_character_as")">Open Save As Result proof</a>
+        </article>
+        <article class="browser-preview-status-card" data-preview-proof-card="origin-dossier">
+            <span class="browser-preview-status-label">Story proof</span>
+            <strong>Open Origin Dossier directly in the browser</strong>
+            <p>Deep-links the browser workbench into the same origin-dossier wizard used by the shared startup flow.</p>
+            <a href="@BuildPreviewHref(command: "new_character_origin")">Open Origin Dossier proof</a>
+        </article>
+    </section>
+    }
+
     <section class="browser-preview-frame">
-        <DesktopShell />
+        <div class="browser-preview-frame-header">
+            <div>
+                <p class="browser-preview-frame-kicker">Workbench shell</p>
+                <h2>Open the browser-facing Chummer workbench</h2>
+            </div>
+            <p>
+                Use the shell below to verify navigation, startup posture, and active browser workflow routes.
+            </p>
+        </div>
+        <DesktopShell DemoFixtureId="@Fixture"
+                      DemoWorkspaceId="@Workspace"
+                      DemoTabId="@Tab"
+                      DemoStartupCommandId="@Command"
+                      DemoUiControlId="@Control"
+                      DemoDialogActionId="@DialogAction" />
     </section>
 </main>
+
+@code {
+    [Inject]
+    public NavigationManager Navigation { get; set; } = default!;
+
+    [Inject]
+    public IConfiguration Configuration { get; set; } = default!;
+
+    [Inject]
+    public ICharacterOverviewPresenter Presenter { get; set; } = default!;
+
+    [SupplyParameterFromQuery(Name = "fixture")]
+    public string? Fixture { get; set; }
+
+    [SupplyParameterFromQuery(Name = "workspace")]
+    public string? Workspace { get; set; }
+
+    [SupplyParameterFromQuery(Name = "tab")]
+    public string? Tab { get; set; }
+
+    [SupplyParameterFromQuery(Name = "command")]
+    public string? Command { get; set; }
+
+    [SupplyParameterFromQuery(Name = "control")]
+    public string? Control { get; set; }
+
+    [SupplyParameterFromQuery(Name = "dialog_action")]
+    public string? DialogAction { get; set; }
+
+    private bool IsWorkbenchRoute => Navigation.Uri.Contains("/workbench", StringComparison.OrdinalIgnoreCase);
+    private IReadOnlyList<string> RecentWorkspaceIds => Presenter.State.Session.RecentWorkspaceIds.Select(static id => id.Value).ToArray();
+    private IReadOnlyList<RecentWorkspaceLink> RecentWorkspaces => BuildRecentWorkspaceLinks();
+    private RecentWorkspaceLink? PrimaryRecentWorkspace => RecentWorkspaces.FirstOrDefault();
+    private string ContinueRecentHref => PrimaryRecentWorkspace is null
+        ? "/workbench?fixture=blue&tab=tab-contacts"
+        : BuildPreviewHref(workspace: PrimaryRecentWorkspace.WorkspaceId, tab: "tab-contacts", useWorkbenchRoute: true);
+    private string ContinueRecentLabel => PrimaryRecentWorkspace is null
+        ? "Continue Seeded Dossier"
+        : $"Continue {PrimaryRecentWorkspace.ShortLabel} on contacts";
+    private string ContinueRecentDescription => PrimaryRecentWorkspace is null
+        ? "Open a live seeded continuation tab so the browser workbench can behave like an already-opened desktop session."
+        : "Open the most recent restored workspace directly on its contacts lane so browser continuity follows shared session state instead of a seeded-only demo.";
+    private string BuildLabLaneHref => BuildWorkbenchLaneHref("tab-create");
+    private string BuildLabLaneLabel => PrimaryRecentWorkspace is null
+        ? "Open Seeded Build Lab"
+        : $"Continue {PrimaryRecentWorkspace.ShortLabel} in build lab";
+    private string BuildLabLaneDescription => PrimaryRecentWorkspace is null
+        ? "Jump into the seeded SR5 runner workbench when you want a real browser session immediately."
+        : "Open the most recent restored workspace on its build lane so browser continuation starts from the live shared session instead of a seeded-only runner.";
+    private string ProfileLaneHref => BuildWorkbenchLaneHref("tab-info");
+    private string ProfileLaneLabel => BuildWorkbenchLaneLabel("Open Profile lane", "profile");
+    private string ProfileLaneDescription => PrimaryRecentWorkspace is null
+        ? "Open the seeded dossier on its profile lane when you want the runner summary, identity, and core details first."
+        : "Open the most recent restored workspace on its profile lane so browser continuity starts from shared session state.";
+    private string RulesLaneHref => BuildWorkbenchLaneHref("tab-rules");
+    private string RulesLaneLabel => BuildWorkbenchLaneLabel("Open Rules lane", "rules");
+    private string RulesLaneDescription => PrimaryRecentWorkspace is null
+        ? "Open the seeded runner on the rules-facing lane when you want source, ruleset, and guidance context first."
+        : "Open the most recent restored workspace on its rules lane so browser continuity keeps source and rules context attached to the live session.";
+    private string GearLaneHref => BuildWorkbenchLaneHref("tab-gear");
+    private string GearLaneLabel => BuildWorkbenchLaneLabel("Open Gear lane", "gear");
+    private string GearLaneDescription => PrimaryRecentWorkspace is null
+        ? "Jump into the seeded loadout lane when you want equipment, carry choices, and gear context without restarting the workbench."
+        : "Open the most recent restored workspace on its gear lane so equipment and carry context come from shared session state instead of a seeded-only runner.";
+    private string AdvancedLaneHref => BuildWorkbenchLaneHref("tab-technomancer");
+    private string AdvancedLaneLabel => BuildWorkbenchLaneLabel("Open Advanced lane", "advanced");
+    private string AdvancedLaneDescription => PrimaryRecentWorkspace is null
+        ? "Jump into the seeded technomancer workflow when you need a denser continuation path than the startup shell alone."
+        : "Open the most recent restored workspace on its advanced lane so denser browser continuation follows the live restored runner.";
+    private string SaveAsFlowHref => BuildWorkbenchCommandHref("save_character_as");
+    private string SaveAsFlowLabel => BuildWorkbenchCommandLabel("Open Save As flow", "download");
+    private string SaveAsFlowDescription => PrimaryRecentWorkspace is null
+        ? "Use the shared save-as path to hand a seeded workspace back to the browser as a real download."
+        : "Use the shared save-as path to hand the most recent restored workspace back to the browser as a real download.";
+    private string ExportFlowHref => BuildWorkbenchCommandHref("export_character", "download");
+    private string ExportFlowLabel => BuildWorkbenchCommandLabel("Open Export flow", "export");
+    private string ExportFlowDescription => PrimaryRecentWorkspace is null
+        ? "Open the seeded export result path from the product route instead of jumping straight to the proof shelf."
+        : "Open the export result path for the most recent restored workspace so browser portability starts from the live session.";
+    private string PrintFlowHref => BuildWorkbenchCommandHref("print_character");
+    private string PrintFlowLabel => BuildWorkbenchCommandLabel("Open Print flow", "print");
+    private string PrintFlowDescription => PrimaryRecentWorkspace is null
+        ? "Open the seeded print result path directly from the browser workbench when you need a browser-safe print continuation."
+        : "Open the print result path for the most recent restored workspace so browser print continuation follows the live session.";
+    private bool IsAnyConnectedRuntimeLaneConfigured
+        => IsConfigured(Configuration["CHUMMER_PORTAL_SESSION_PROXY_URL"])
+            || IsConfigured(Configuration["CHUMMER_PORTAL_COACH_PROXY_URL"])
+            || IsConfigured(Configuration["CHUMMER_PORTAL_AI_PROXY_URL"]);
+    private string BuildConnectedRuntimeTitle()
+        => IsAnyConnectedRuntimeLaneConfigured
+            ? "Optional connected runtime lanes are configured"
+            : "Optional connected runtime lanes are disabled";
+    private string BuildConnectedRuntimeSummary()
+        => $"Session {BuildRuntimeLaneState(Configuration["CHUMMER_PORTAL_SESSION_PROXY_URL"])}, "
+            + $"coach {BuildRuntimeLaneState(Configuration["CHUMMER_PORTAL_COACH_PROXY_URL"])}, "
+            + $"AI {BuildRuntimeLaneState(Configuration["CHUMMER_PORTAL_AI_PROXY_URL"])}. "
+            + "When enabled, forwarding stays behind the portal signed-owner boundary.";
+
+    protected override void OnInitialized()
+    {
+        Presenter.StateChanged += OnPresenterStateChanged;
+    }
+
+    public void Dispose()
+    {
+        Presenter.StateChanged -= OnPresenterStateChanged;
+    }
+
+    private void OnPresenterStateChanged(object? sender, EventArgs e)
+    {
+        _ = InvokeAsync(StateHasChanged);
+    }
+
+    private IReadOnlyList<RecentWorkspaceLink> BuildRecentWorkspaceLinks()
+    {
+        Dictionary<string, OpenWorkspaceState> openWorkspaces = Presenter.State.Session.OpenWorkspaces
+            .ToDictionary(workspace => workspace.Id.Value, StringComparer.Ordinal);
+
+        return Presenter.State.Session.RecentWorkspaceIds
+            .Select(recentWorkspaceId =>
+            {
+                if (openWorkspaces.TryGetValue(recentWorkspaceId.Value, out OpenWorkspaceState? openWorkspace))
+                {
+                    string savedLabel = openWorkspace.HasSavedWorkspace ? "saved" : "unsaved";
+                    return new RecentWorkspaceLink(
+                        recentWorkspaceId.Value,
+                        $"{openWorkspace.Alias} · {openWorkspace.Name} · {openWorkspace.RulesetId} · {savedLabel}",
+                        openWorkspace.Alias);
+                }
+
+                return new RecentWorkspaceLink(recentWorkspaceId.Value, recentWorkspaceId.Value, recentWorkspaceId.Value);
+            })
+            .ToArray();
+    }
+
+    private static string BuildPreviewHref(string? fixture = null, string? workspace = null, string? tab = null, string? command = null, string? control = null, string? dialogAction = null, bool useWorkbenchRoute = false)
+    {
+        List<string> query = [];
+        if (!string.IsNullOrWhiteSpace(fixture))
+        {
+            query.Add($"fixture={Uri.EscapeDataString(fixture)}");
+        }
+
+        if (!string.IsNullOrWhiteSpace(workspace))
+        {
+            query.Add($"workspace={Uri.EscapeDataString(workspace)}");
+        }
+
+        if (!string.IsNullOrWhiteSpace(tab))
+        {
+            query.Add($"tab={Uri.EscapeDataString(tab)}");
+        }
+
+        if (!string.IsNullOrWhiteSpace(command))
+        {
+            query.Add($"command={Uri.EscapeDataString(command)}");
+        }
+
+        if (!string.IsNullOrWhiteSpace(control))
+        {
+            query.Add($"control={Uri.EscapeDataString(control)}");
+        }
+
+        if (!string.IsNullOrWhiteSpace(dialogAction))
+        {
+            query.Add($"dialog_action={Uri.EscapeDataString(dialogAction)}");
+        }
+
+        string route = useWorkbenchRoute ? "/workbench" : "/preview";
+        return query.Count == 0
+            ? route
+            : $"{route}?{string.Join("&", query)}";
+    }
+
+    private string BuildWorkbenchLaneHref(string tabId)
+        => PrimaryRecentWorkspace is null
+            ? BuildPreviewHref("blue", tab: tabId, useWorkbenchRoute: true)
+            : BuildPreviewHref(workspace: PrimaryRecentWorkspace.WorkspaceId, tab: tabId, useWorkbenchRoute: true);
+
+    private string BuildWorkbenchLaneLabel(string seededLabel, string laneName)
+        => PrimaryRecentWorkspace is null
+            ? seededLabel
+            : $"Continue {PrimaryRecentWorkspace.ShortLabel} on {laneName}";
+
+    private string BuildWorkbenchCommandHref(string commandId, string? dialogAction = null)
+        => PrimaryRecentWorkspace is null
+            ? BuildPreviewHref("blue", command: commandId, dialogAction: dialogAction, useWorkbenchRoute: true)
+            : BuildPreviewHref(workspace: PrimaryRecentWorkspace.WorkspaceId, command: commandId, dialogAction: dialogAction, useWorkbenchRoute: true);
+
+    private string BuildWorkbenchCommandLabel(string seededLabel, string workflowName)
+        => PrimaryRecentWorkspace is null
+            ? seededLabel
+            : $"Continue {PrimaryRecentWorkspace.ShortLabel} for {workflowName}";
+
+    private static bool IsConfigured(string? value)
+        => !string.IsNullOrWhiteSpace(value);
+
+    private static string BuildRuntimeLaneState(string? value)
+        => IsConfigured(value) ? "configured" : "off";
+
+    private sealed record RecentWorkspaceLink(string WorkspaceId, string Label, string ShortLabel);
+}

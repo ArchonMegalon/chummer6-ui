@@ -1,11 +1,11 @@
 {
   "contract_name": "chummer6-ui.local_release_proof",
-  "generated_at": "2026-06-19T07:19:35Z",
+  "generated_at": "2026-06-24T18:33:16Z",
   "status": "passed",
-  "base_url": "http://127.0.0.1:8091",
-  "compose_file": "/docker/chummercomplete/chummer.run-services/docker-compose.public-edge.yml",
+  "base_url": "http://127.0.0.1:18091",
+  "compose_file": "/docker/chummercomplete/chummer-presentation/docker-compose.yml",
   "playwright_timeout_seconds": 240,
-  "edge_rebuild_skipped": true,
+  "edge_rebuild_skipped": false,
   "runtime_required": true,
   "route_probe_executed": true,
   "journeys_passed": [
@@ -29,7 +29,7 @@
   ],
   "receipts": [
     {
-      "path": "/tmp/m113-proof-1362c16b176042d3a3557533cea5eace/NEXT90_M113_UI_GM_PREP_ROSTER_SURFACE.generated.json",
+      "path": "/docker/chummercomplete/chummer-presentation/.codex-studio/published/NEXT90_M113_UI_GM_PREP_ROSTER_SURFACE.generated.json",
       "package_id": "next90-m113-ui-gm-prep-roster-surface",
       "status": "pass",
       "surface_routes": [

@@ -1,6 +1,7 @@
 using Chummer.Application.Owners;
 using Chummer.Infrastructure.DependencyInjection;
 using Chummer.Presentation;
+using Chummer.Presentation.OriginBooks;
 using Chummer.Rulesets.Sr4;
 using Chummer.Rulesets.Sr5;
 using Chummer.Rulesets.Sr6;
@@ -50,6 +51,7 @@ public static class ServiceCollectionDesktopRuntimeExtensions
             services.TryAddSingleton(CreateApiHttpClient());
             services.TryAddSingleton<IDesktopWorkspaceRoamingSync, NoOpDesktopWorkspaceRoamingSync>();
             services.TryAddSingleton<IChummerClient, HttpChummerClient>();
+            services.TryAddSingleton(static provider => (IOriginDossierPublicationClient)provider.GetRequiredService<IChummerClient>());
             services.TryAddSingleton<ISessionClient, HttpSessionClient>();
             return services;
         }

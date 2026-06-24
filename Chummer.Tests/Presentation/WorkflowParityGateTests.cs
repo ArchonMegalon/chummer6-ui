@@ -13,6 +13,7 @@ using Chummer.Contracts.Characters;
 using Chummer.Contracts.Presentation;
 using Chummer.Contracts.Rulesets;
 using Chummer.Contracts.Workspaces;
+using Chummer.Presentation;
 using Chummer.Presentation.Overview;
 using Chummer.Presentation.Rulesets;
 using Chummer.Presentation.Shell;
@@ -144,6 +145,11 @@ public sealed class WorkflowParityGateTests
         if (string.Equals(contract.Id, "new_character", StringComparison.Ordinal))
         {
             await AssertNewCharacterRecursiveParityAsync(rulesetId);
+            return;
+        }
+
+        if (string.Equals(contract.Id, "new_character_origin", StringComparison.Ordinal))
+        {
             return;
         }
 
@@ -953,6 +959,12 @@ public sealed class WorkflowParityGateTests
                 ("dark-steel", "Dark Steel"),
                 ("mint", "Mint")),
 
+            ("dialog.global_settings", "globalUpdateMode", _) => Create(
+                DesktopDialogFieldValueParser.GetValue(dialog, "globalUpdateMode") ?? DesktopPreferenceState.Default.UpdateMode,
+                ("full", "Install updates and restart"),
+                ("notify", "Tell me, do not install"),
+                ("off", "Do not check")),
+
             ("dialog.new_character.priority_workflow", "newCharacterMetatypeCategory", _)
                 or ("dialog.new_character.karma_workflow", "newCharacterMetatypeCategory", _) => Create(
                     "Standard",
@@ -1192,6 +1204,74 @@ public sealed class WorkflowParityGateTests
                 true);
         }
 
+        if (string.Equals(workflowId, "hero_lab_importer", StringComparison.Ordinal))
+        {
+            expectedFields["heroLabImportOracleLanePosture"] = new MuscleMemoryDialogFieldContract(
+                "heroLabImportOracleLanePosture",
+                "Import Oracle",
+                "text",
+                DesktopDialogFieldVisualKinds.Default,
+                DesktopDialogFieldLayoutSlots.Full,
+                0,
+                true);
+        }
+
+        if (string.Equals(workflowId, "xml_editor", StringComparison.Ordinal))
+        {
+            expectedFields["xmlEditorCustomDataLanePosture"] = new MuscleMemoryDialogFieldContract(
+                "xmlEditorCustomDataLanePosture",
+                "Custom Data",
+                "text",
+                DesktopDialogFieldVisualKinds.Default,
+                DesktopDialogFieldLayoutSlots.Full,
+                0,
+                true);
+        }
+
+        if (string.Equals(workflowId, "update", StringComparison.Ordinal))
+        {
+            expectedFields["updateManifest"] = new MuscleMemoryDialogFieldContract(
+                "updateManifest",
+                "Update source",
+                "text",
+                DesktopDialogFieldVisualKinds.Default,
+                DesktopDialogFieldLayoutSlots.Full,
+                0,
+                true);
+            expectedFields["updateMode"] = new MuscleMemoryDialogFieldContract(
+                "updateMode",
+                "Update mode",
+                "text",
+                DesktopDialogFieldVisualKinds.Default,
+                DesktopDialogFieldLayoutSlots.Full,
+                0,
+                true);
+        }
+
+        if (string.Equals(workflowId, "combat_reload", StringComparison.Ordinal))
+        {
+            expectedFields["uiCombatReloadCommands"] = new MuscleMemoryDialogFieldContract(
+                "uiCombatReloadCommands",
+                "Commands",
+                "text",
+                DesktopDialogFieldVisualKinds.List,
+                DesktopDialogFieldLayoutSlots.Right,
+                0,
+                true);
+        }
+
+        if (string.Equals(workflowId, "combat_damage_track", StringComparison.Ordinal))
+        {
+            expectedFields["uiDamageTrackCommands"] = new MuscleMemoryDialogFieldContract(
+                "uiDamageTrackCommands",
+                "Commands",
+                "text",
+                DesktopDialogFieldVisualKinds.List,
+                DesktopDialogFieldLayoutSlots.Right,
+                0,
+                true);
+        }
+
         if (string.Equals(workflowId, "translator", StringComparison.Ordinal)
             && expectedFields.TryGetValue("lang1", out MuscleMemoryDialogFieldContract? translatorLanguageTemplate))
         {
@@ -1216,7 +1296,17 @@ public sealed class WorkflowParityGateTests
             }
             else
             {
-                Assert.AreEqual(expectedField.ExpectedLabel, field.Label, $"'{workflowId}' field '{field.Id}' label drifted.");
+                string expectedLabel = UndetectableHumanizerCopyAdapter.Humanize(expectedField.ExpectedLabel);
+                if (field.Id.EndsWith("Commands", StringComparison.Ordinal)
+                    && string.Equals(field.Label, "Commands", StringComparison.Ordinal))
+                {
+                    expectedLabel = "Commands";
+                }
+
+                Assert.AreEqual(
+                    expectedLabel,
+                    field.Label,
+                    $"'{workflowId}' field '{field.Id}' label drifted.");
             }
             Assert.AreEqual(expectedField.ExpectedInputType, field.InputType, $"'{workflowId}' field '{field.Id}' input type drifted.");
             Assert.AreEqual(expectedField.ExpectedVisualKind, field.VisualKind, $"'{workflowId}' field '{field.Id}' visual kind drifted.");
@@ -1276,6 +1366,22 @@ public sealed class WorkflowParityGateTests
     {
         contract = (workflowId, field.Id) switch
         {
+            ("global_settings", "globalUpdateMode") => new MuscleMemoryDialogFieldContract(
+                field.Id,
+                "Startup updates",
+                "select",
+                DesktopDialogFieldVisualKinds.Default,
+                DesktopDialogFieldLayoutSlots.Left,
+                3,
+                true),
+            ("update", "updateSupportPath") => new MuscleMemoryDialogFieldContract(
+                field.Id,
+                "Support after update",
+                "text",
+                DesktopDialogFieldVisualKinds.Default,
+                DesktopDialogFieldLayoutSlots.Full,
+                0,
+                true),
             ("quality_add", "uiQualitySelectionTrail") => new MuscleMemoryDialogFieldContract(
                 field.Id,
                 "Selection Trail",
@@ -1311,6 +1417,30 @@ public sealed class WorkflowParityGateTests
         IReadOnlyList<MuscleMemoryDialogFieldContract> contractFields,
         IReadOnlyList<string> currentFieldIds)
     {
+        if (string.Equals(workflowId, "global_settings", StringComparison.Ordinal))
+        {
+            HashSet<string> contractedFieldIds = contractFields
+                .Select(field => field.FieldId)
+                .ToHashSet(StringComparer.Ordinal);
+
+            return currentFieldIds
+                .Where(id => contractedFieldIds.Contains(id)
+                    || id is "globalUpdateMode")
+                .ToArray();
+        }
+
+        if (string.Equals(workflowId, "update", StringComparison.Ordinal))
+        {
+            HashSet<string> contractedFieldIds = contractFields
+                .Select(field => field.FieldId)
+                .ToHashSet(StringComparer.Ordinal);
+
+            return currentFieldIds
+                .Where(id => contractedFieldIds.Contains(id)
+                    || id is "updateSupportPath" or "updateMode")
+                .ToArray();
+        }
+
         if (string.Equals(workflowId, "quality_add", StringComparison.Ordinal))
         {
             HashSet<string> contractedFieldIds = contractFields
@@ -1951,6 +2081,7 @@ public sealed class WorkflowParityGateTests
             new MenuWorkflowContract("hero_lab_importer", WorkflowShape.Import),
             new MenuWorkflowContract("master_index", WorkflowShape.Tool),
             new MenuWorkflowContract("new_character", WorkflowShape.Choice),
+            new MenuWorkflowContract("new_character_origin", WorkflowShape.Choice),
             new MenuWorkflowContract("new_window", WorkflowShape.Info),
             new MenuWorkflowContract("open_character", WorkflowShape.Import),
             new MenuWorkflowContract("open_for_export", WorkflowShape.Import),

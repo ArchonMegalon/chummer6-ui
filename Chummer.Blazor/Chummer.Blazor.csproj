@@ -27,4 +27,9 @@
     <ProjectReference Include="..\Chummer.Presentation\Chummer.Presentation.csproj"
                       AdditionalProperties="RuntimeIdentifier=$(RuntimeIdentifier);RuntimeIdentifiers=$(RuntimeIdentifiers)" />
   </ItemGroup>
+  <ItemGroup>
+    <Content Include="..\Chummer.Tests\TestFiles\BLUE.chum5"
+             Link="Fixtures\BLUE.chum5"
+             CopyToOutputDirectory="PreserveNewest" />
+  </ItemGroup>
 </Project>

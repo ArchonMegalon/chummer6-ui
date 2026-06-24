@@ -727,7 +727,7 @@ internal sealed class DesktopHomeWindow : Window
 
         if (!string.IsNullOrWhiteSpace(_installState.LastClaimError))
         {
-            lines.Add($"Linking still needs attention: {_installState.LastClaimError}");
+            lines.Add($"Linking issue: {_installState.LastClaimError}");
         }
 
         if (_installState.LastClaimAttemptUtc is DateTimeOffset lastClaimAttemptUtc)
@@ -781,7 +781,7 @@ internal sealed class DesktopHomeWindow : Window
     private static string FormatUpdateMode(string? updateMode)
         => updateMode?.Trim().ToLowerInvariant() switch
         {
-            "full" => "full auto-update",
+            "full" => "auto-update",
             "notify" => "notify only",
             "off" => "off",
             _ => "unknown"

@@ -1,6 +1,6 @@
 {
   "contract_name": "chummer6-ui.windows_desktop_exit_gate",
-  "generated_at": "2026-06-24T03:02:28Z",
+  "generated_at": "2026-06-24T17:30:56Z",
   "channelId": "public_stable",
   "releaseVersion": "run-20260623-102621",
   "status": "failed",
@@ -11,12 +11,14 @@
     "rid": "win-x64",
     "launch_target": "Chummer.Avalonia.exe"
   },
-  "summary": "Windows desktop exit gate failed: Published Windows installer is missing a recognizable desktop payload marker.; Published Windows installer is missing the bundled sample-character marker.; Windows installer visual proof is missing; capture progress and completion screenshots on a Windows host.; Chummer5a desktop workflow parity proof is missing or not passed.",
+  "summary": "Windows desktop exit gate failed: Windows installer visual proof is missing; capture progress and completion screenshots on a Windows host.",
   "checks": {
     "release_channel_path": "/docker/chummercomplete/chummer-hub-registry/.codex-studio/published/RELEASE_CHANNEL.generated.json",
     "windows_installer_path_override": "",
     "windows_local_desktop_files_root": "/docker/chummercomplete/chummer6-ui/Docker/Downloads/files",
     "ui_local_release_proof_path": "/docker/chummercomplete/chummer6-ui/.codex-studio/published/UI_LOCAL_RELEASE_PROOF.generated.json",
+    "blazor_self_host_workbench_proof_path": "/docker/chummercomplete/chummer6-ui/.codex-studio/published/BLAZOR_SELF_HOST_WORKBENCH_PROOF.generated.json",
+    "blazor_public_edge_workbench_proof_path": "/docker/chummercomplete/chummer6-ui/.codex-studio/published/BLAZOR_PUBLIC_EDGE_WORKBENCH_PROOF.generated.json",
     "ui_flagship_release_gate_path": "/docker/chummercomplete/chummer6-ui/.codex-studio/published/UI_FLAGSHIP_RELEASE_GATE.generated.json",
     "desktop_workflow_execution_gate_path": "/docker/chummercomplete/chummer6-ui/.codex-studio/published/DESKTOP_WORKFLOW_EXECUTION_GATE.generated.json",
     "ui_workflow_parity_path": "/docker/chummercomplete/chummer6-ui/.codex-studio/published/CHUMMER5A_DESKTOP_WORKFLOW_PARITY.generated.json",
@@ -63,14 +65,22 @@
       "channel": "public_stable",
       "version": "run-20260623-102621",
       "releaseVersion": "run-20260623-102621",
-      "generated_at": "2026-06-23T10:31:26Z",
-      "generatedAt": "2026-06-23T10:31:26Z",
-      "id": "avalonia-win-x64-installer"
+      "generated_at": "2026-06-23T10:26:21Z",
+      "generatedAt": "2026-06-23T10:26:21Z",
+      "id": "avalonia-win-x64-installer",
+      "installerMode": "bootstrap",
+      "payloadFileName": "chummer-avalonia-win-x64-payload.zip",
+      "payloadDownloadUrl": "https://chummer.run/downloads/files/chummer-avalonia-win-x64-payload.zip",
+      "payloadSha256": "00d34c7514b9e44bd315c3d9914547d0c750865ddf5bffaf3e17f861648fe4b7",
+      "payloadSizeBytes": 47152146
     },
     "embedded_payload_marker_present": false,
     "appended_payload_marker_present": false,
     "embedded_sample_marker_present": false,
-    "installer_payload_validation_mode": "release-channel digest-size-and-payload-markers",
+    "bootstrap_payload_path": "/docker/chummercomplete/chummer6-ui/Docker/Downloads/files/chummer-avalonia-win-x64-payload.zip",
+    "bootstrap_payload_exists": true,
+    "bootstrap_payload_sample_marker_present": true,
+    "installer_payload_validation_mode": "release-channel digest-size-and-payload-markers-or-bootstrap-sidecar",
     "windows_installer_visual_proof_found": false,
     "windows_installer_visual_proof_contract": "",
     "windows_installer_visual_proof_status": "",
@@ -129,26 +139,25 @@
       "/docker/chummercomplete/chummer-hub-registry/.codex-studio/published/files/chummer-avalonia-win-x64-installer.exe",
       "/docker/chummercomplete/chummer-hub-registry/.codex-studio/files/chummer-avalonia-win-x64-installer.exe",
       "/docker/chummercomplete/chummer6-ui/files/chummer-avalonia-win-x64-installer.exe",
-      "/docker/chummercomplete/chummer.run-services/Chummer.Portal/downloads/files/chummer-avalonia-win-x64-installer.exe"
+      "/tmp/tmp.a58gjtuMBb/files/chummer-avalonia-win-x64-installer.exe"
     ],
     "startup_smoke_digest_matches_expected": true,
     "startup_smoke_completed_at": "2026-06-23T10:30:58Z",
-    "startup_smoke_age_seconds": 59490,
+    "startup_smoke_age_seconds": 111598,
     "startup_smoke_max_age_seconds": 604800,
     "startup_smoke_max_future_skew_seconds": 300,
     "ui_local_release_status": "passed",
+    "blazor_self_host_workbench_proof_status": "passed",
+    "blazor_public_edge_workbench_proof_status": "passed",
     "ui_flagship_release_gate_status": "fail",
-    "desktop_workflow_execution_gate_status": "fail",
-    "ui_workflow_parity_status": "fail",
-    "sr4_workflow_parity_status": "pass",
+    "desktop_workflow_execution_gate_status": "pass",
+    "ui_workflow_parity_status": "pass",
+    "sr4_workflow_parity_status": "fail",
     "sr6_workflow_parity_status": "pass",
     "sr4_workflow_parity_external_only": false,
     "sr6_workflow_parity_external_only": false
   },
   "reasons": [
-    "Published Windows installer is missing a recognizable desktop payload marker.",
-    "Published Windows installer is missing the bundled sample-character marker.",
-    "Windows installer visual proof is missing; capture progress and completion screenshots on a Windows host.",
-    "Chummer5a desktop workflow parity proof is missing or not passed."
+    "Windows installer visual proof is missing; capture progress and completion screenshots on a Windows host."
   ]
 }

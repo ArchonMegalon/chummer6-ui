@@ -13,15 +13,30 @@
     "local_release_proof_status_pass": true,
     "local_release_proof_surfaces_present": true,
     "owned_surfaces_exact": true,
+    "public_edge_workbench_proof_contract_matches": true,
+    "public_edge_workbench_proof_extended_route_shapes_present": true,
+    "public_edge_workbench_proof_new_character_deep_link_present": true,
+    "public_edge_workbench_proof_result_route_shapes_present": true,
+    "public_edge_workbench_proof_shape_known": true,
+    "public_edge_workbench_proof_status_pass": true,
+    "public_edge_workbench_proof_workbench_route_present": true,
     "queue_package_unique": true,
     "queue_task_matches": true,
     "queue_title_matches": true,
     "queue_work_task_id_matches": true,
     "registry_has_m113_ui_task": true,
-    "registry_task_unique": true
+    "registry_task_unique": true,
+    "self_host_workbench_proof_contract_matches": true,
+    "self_host_workbench_proof_new_character_deep_link_present": true,
+    "self_host_workbench_proof_origin_dossier_deep_link_present": true,
+    "self_host_workbench_proof_status_pass": true
   },
   "failures": [],
-  "generatedAt": "2026-06-19T01:29:41Z",
+  "generatedAt": "2026-06-24T18:33:16Z",
+  "hostedRouteEntryProof": {
+    "proofShape": "expanded",
+    "receiptPath": "/docker/chummercomplete/chummer-presentation/.codex-studio/published/BLAZOR_PUBLIC_EDGE_WORKBENCH_PROOF.generated.json"
+  },
   "packageId": "next90-m113-ui-gm-prep-roster-surface",
   "proofCommands": {
     "directProofCommand": "bash scripts/ai/milestones/next90-m113-ui-gm-prep-roster-surface-check.sh",
@@ -31,6 +46,8 @@
   "proofFiles": [
     "/docker/chummercomplete/chummer-presentation/.codex-studio/published/NEXT90_M113_UI_GM_PREP_ROSTER_SURFACE.generated.json",
     "/docker/chummercomplete/chummer-presentation/.codex-studio/published/UI_LOCAL_RELEASE_PROOF.generated.json",
+    "/docker/chummercomplete/chummer-presentation/.codex-studio/published/BLAZOR_SELF_HOST_WORKBENCH_PROOF.generated.json",
+    "/docker/chummercomplete/chummer-presentation/.codex-studio/published/BLAZOR_PUBLIC_EDGE_WORKBENCH_PROOF.generated.json",
     "/docker/chummercomplete/chummer-presentation/scripts/ai/milestones/next90-m113-ui-gm-prep-roster-surface-check.sh",
     "/docker/chummercomplete/chummer-presentation/scripts/e2e-portal.sh",
     "/docker/chummercomplete/chummer-presentation/Chummer.Avalonia/DesktopCampaignWorkspaceWindow.cs",
@@ -136,11 +153,13 @@
     },
     "scripts/e2e-portal.sh": {
       "\"Desktop campaign workspace keeps GM prep packets and roster movement as first-class successor surfaces.\"": true,
+      "\"chummer6-ui.blazor_self_host_workbench_proof\"": true,
       "\"desktop_workspace_routes\": [": true,
       "\"gm_prep_packets:desktop\"": true,
       "\"next90-m113-ui-gm-prep-roster-surface\"": true,
       "\"roster_movement:desktop\"": true,
-      "NEXT90_M113_RECEIPT_PATH": true
+      "NEXT90_M113_RECEIPT_PATH": true,
+      "PORTAL_SELF_HOST_WORKBENCH_PROOF_PATH": true
     }
   },
   "sourceDesignQueuePath": "/docker/chummercomplete/chummer-design/products/chummer/NEXT_90_DAY_QUEUE_STAGING.generated.yaml",

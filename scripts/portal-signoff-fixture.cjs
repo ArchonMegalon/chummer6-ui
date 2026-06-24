@@ -42,7 +42,7 @@ const landingPage = `<!doctype html>
   <body>
     <h1>Chummer Portal</h1>
     <nav>
-      <a href="/blazor/">Blazor</a>
+      <a href="/blazor/workbench">Blazor</a>
       <a href="/hub/">Hub</a>
       <a href="/session/">Session</a>
       <a href="/coach/">Coach</a>

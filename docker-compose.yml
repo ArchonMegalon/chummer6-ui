@@ -9,6 +9,7 @@ services:
       CHUMMER_STATE_PATH: "/app/state"
       CHUMMER_API_KEY: "${CHUMMER_API_KEY:-}"
       CHUMMER_PROTECT_API_DOCS: "${CHUMMER_PROTECT_API_DOCS:-}"
+      CHUMMER_PORTAL_OWNER_SHARED_KEY: "${CHUMMER_PORTAL_OWNER_SHARED_KEY:-local-self-hosted-portal-shared-key}"
       CHUMMER_AMENDS_PATH: "/app/amends"
       CHUMMER_AI_AIMAGICX_PRIMARY_API_KEY: "${CHUMMER_AI_AIMAGICX_PRIMARY_API_KEY:-}"
       CHUMMER_AI_AIMAGICX_FALLBACK_API_KEY: "${CHUMMER_AI_AIMAGICX_FALLBACK_API_KEY:-}"
@@ -35,6 +36,13 @@ services:
       CHUMMER_API_BASE_URL: "http://chummer-api:8080"
       CHUMMER_API_KEY: "${CHUMMER_API_KEY:-}"
       CHUMMER_BLAZOR_PATH_BASE: "${CHUMMER_BLAZOR_PATH_BASE:-}"
+      CHUMMER_ANALYTICS_PROVIDER: "${CHUMMER_ANALYTICS_PROVIDER:-none}"
+      CHUMMER_RYBBIT_SCRIPT_URL: "${CHUMMER_RYBBIT_SCRIPT_URL:-}"
+      CHUMMER_RYBBIT_BASE_URL: "${CHUMMER_RYBBIT_BASE_URL:-}"
+      CHUMMER_RYBBIT_SITE_ID: "${CHUMMER_RYBBIT_SITE_ID:-}"
+      CHUMMER_PORTAL_SESSION_PROXY_URL: "${CHUMMER_PORTAL_SESSION_PROXY_URL:-}"
+      CHUMMER_PORTAL_COACH_PROXY_URL: "${CHUMMER_PORTAL_COACH_PROXY_URL:-}"
+      CHUMMER_PORTAL_AI_PROXY_URL: "${CHUMMER_PORTAL_AI_PROXY_URL:-}"
     ports:
       - "${CHUMMER_BLAZOR_PORT:-8089}:8080"
       - "${CHUMMER_HUB_PORT:-8092}:8080"
@@ -50,11 +58,18 @@ services:
       CHUMMER_API_BASE_URL: "http://chummer-api:8080"
       CHUMMER_API_KEY: "${CHUMMER_API_KEY:-}"
       CHUMMER_BLAZOR_PATH_BASE: "/blazor"
+      CHUMMER_ANALYTICS_PROVIDER: "${CHUMMER_ANALYTICS_PROVIDER:-none}"
+      CHUMMER_RYBBIT_SCRIPT_URL: "${CHUMMER_RYBBIT_SCRIPT_URL:-}"
+      CHUMMER_RYBBIT_BASE_URL: "${CHUMMER_RYBBIT_BASE_URL:-}"
+      CHUMMER_RYBBIT_SITE_ID: "${CHUMMER_RYBBIT_SITE_ID:-}"
+      CHUMMER_PORTAL_SESSION_PROXY_URL: "${CHUMMER_PORTAL_SESSION_PROXY_URL:-}"
+      CHUMMER_PORTAL_COACH_PROXY_URL: "${CHUMMER_PORTAL_COACH_PROXY_URL:-}"
+      CHUMMER_PORTAL_AI_PROXY_URL: "${CHUMMER_PORTAL_AI_PROXY_URL:-}"
   chummer-hub-web-portal:
     image: chummer-hub-web:local
     build:
-      context: .
-      dockerfile: Chummer.Hub.Web/Dockerfile
+      context: ..
+      dockerfile: chummer-presentation/Chummer.Hub.Web/Dockerfile
     depends_on:
       - chummer-api
     profiles: ["portal"]
@@ -71,8 +86,8 @@ services:
   chummer-portal:
     image: chummer-portal:local
     build:
-      context: .
-      dockerfile: Chummer.Portal/Dockerfile
+      context: ..
+      dockerfile: chummer-presentation/Chummer.Portal/Dockerfile
     depends_on:
       - chummer-api
       - chummer-blazor-portal
@@ -100,6 +115,8 @@ services:
       CHUMMER_PORTAL_DOWNLOADS_PROXY_URL: "${CHUMMER_PORTAL_DOWNLOADS_PROXY_URL:-}"
       CHUMMER_PORTAL_RELEASES_FILE: "${CHUMMER_PORTAL_RELEASES_FILE:-/app/downloads/releases.json}"
       CHUMMER_PORTAL_RELEASES_DIR: "${CHUMMER_PORTAL_RELEASES_DIR:-/app/downloads}"
+      CHUMMER_PORTAL_OWNER_SHARED_KEY: "${CHUMMER_PORTAL_OWNER_SHARED_KEY:-local-self-hosted-portal-shared-key}"
+      CHUMMER_PORTAL_IMPLICIT_OWNER: "${CHUMMER_PORTAL_IMPLICIT_OWNER:-local@self-host}"
     volumes:
       - ./Docker/Downloads:/app/downloads:ro
     ports:

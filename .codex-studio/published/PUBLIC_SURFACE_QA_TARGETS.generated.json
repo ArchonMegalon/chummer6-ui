@@ -1,5 +1,11 @@
 {
   "capture_evidence": {
+    "blazor_public_edge_workbench_proof": "/docker/chummercomplete/chummer-presentation/.codex-studio/published/BLAZOR_PUBLIC_EDGE_WORKBENCH_PROOF.generated.json",
+    "blazor_public_edge_execution_proof_target": "/docker/chummercomplete/chummer-presentation/.codex-studio/published/BLAZOR_PUBLIC_EDGE_EXECUTION_PROOF.generated.json",
+    "blazor_public_edge_execution_runner": "/docker/chummercomplete/chummer-presentation/scripts/e2e-public-edge-execution.sh",
+    "blazor_public_edge_execution_status_summary": "/docker/chummercomplete/chummer-presentation/scripts/print_blazor_public_edge_proof_status.py",
+    "blazor_public_edge_execution_verifier": "/docker/chummercomplete/chummer-presentation/scripts/verify_blazor_public_edge_execution_proof.py",
+    "blazor_public_edge_execution_contract": "/docker/chummercomplete/chummer-presentation/docs/BLAZOR_PUBLIC_EDGE_EXECUTION_PROOF.md",
     "live_public_web_recrawl": "/docker/chummercomplete/chummer.run-services/.codex-studio/published/LIVE_PUBLIC_WEB_RECRAWL.generated.json",
     "public_shell_clickability": "/docker/chummercomplete/chummer.run-services/.codex-studio/published/PUBLIC_SHELL_CLICKABILITY_GATE.generated.json",
     "public_ui_frame_integrity": "/docker/chummercomplete/chummer.run-services/tests/public/ui-frame-integrity.spec.ts"
@@ -51,6 +57,36 @@
       "id": "play",
       "required": true,
       "url": "https://chummer.run/play"
+    },
+    {
+      "id": "blazor_root",
+      "required": true,
+      "url": "https://chummer.run/blazor/"
+    },
+    {
+      "id": "blazor_workbench",
+      "required": true,
+      "url": "https://chummer.run/blazor/workbench"
+    },
+    {
+      "id": "blazor_resume",
+      "required": true,
+      "url": "https://chummer.run/blazor/workbench?workspace=ws-1"
+    },
+    {
+      "id": "blazor_result_continue",
+      "required": true,
+      "url": "https://chummer.run/blazor/workbench?workspace=ws-1&command=save_character_as"
+    },
+    {
+      "id": "blazor_action_continue",
+      "required": true,
+      "url": "https://chummer.run/blazor/workbench?workspace=ws-1&tab=tab-contacts&control=contact_add"
+    },
+    {
+      "id": "blazor_action_commit",
+      "required": true,
+      "url": "https://chummer.run/blazor/workbench?workspace=ws-1&tab=tab-contacts&control=contact_add&dialog_action=add"
     },
     {
       "id": "help",

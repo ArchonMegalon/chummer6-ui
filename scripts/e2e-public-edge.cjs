@@ -14,11 +14,13 @@ const defaultHeaders = useForwardedPublicHeaders
 const requiredLandingLinks = [
   '/downloads',
   '/help',
-  '/play',
   '/status',
-  '/contact',
-  '/feedback'
+  '/contact'
 ];
+
+function hasBlazorBaseHref(html) {
+  return /<base href="[^"]*\/blazor\/"/i.test(html);
+}
 
 function visibleText(html) {
   return html
@@ -54,8 +56,6 @@ const checks = [
     url: `${baseUrl}/`,
     assert: text =>
       text.includes('Chummer')
-      && text.includes('Open downloads')
-      && text.includes('Build the runner. Run the night.')
       && text.includes('Download Chummer')
       && !text.includes('Open Black Ledger')
       && requiredLandingLinks.every(link => text.includes(link))
@@ -64,12 +64,10 @@ const checks = [
   {
     url: `${baseUrl}/downloads/`,
     assert: text =>
-      text.includes('Install Chummer')
-      && text.includes('Choose the latest build for Windows or Linux.')
-      && text.includes('Nightly')
-      && text.includes('Stable')
-      && text.includes('Chummer for Windows')
-      && text.includes('Recommended desktop build for Linux')
+      text.includes('Windows and Linux installers.')
+      && text.includes('Download the current Windows installer.')
+      && text.includes('Download the current Linux DEB package.')
+      && text.includes('macOS is guided setup only today.')
   },
   {
     url: `${baseUrl}/downloads/`,
@@ -77,10 +75,9 @@ const checks = [
       'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64)'
     },
     assert: text =>
-      text.includes('Recommended')
-      && text.includes('Chummer for Windows')
-      && text.includes('Use the main install path for this platform.')
-      && text.includes('Build run-')
+      text.includes('Windows')
+      && text.includes('Download the current Windows installer.')
+      && text.includes('Nightly currently matches Stable.')
   },
   {
     url: `${baseUrl}/downloads/releases.json`,
@@ -121,16 +118,18 @@ const checks = [
     url: `${baseUrl}/play`,
     assert: text =>
       text.includes('Player entry')
-      && text.includes('Installable app shell live')
-      && text.includes('Offline and reconnect lane cached')
+      && text.includes('Play shell')
+      && text.includes('Player, GM, and observer aliases all converge on the same play shell')
+      && text.includes('downloads')
+      && text.includes('status')
   },
   {
     url: `${baseUrl}/status`,
     assert: text =>
-      text.includes('Release status')
-      && text.includes('Current release')
-      && text.includes('Checks passed')
-      && text.includes('Build run-')
+      text.includes('Current release')
+      && text.includes('The build, platforms, and current state in one place.')
+      && text.includes('Updated 2026-06-24.')
+      && text.includes('Available now')
   },
   {
     url: `${baseUrl}/ledger`,
@@ -149,16 +148,17 @@ const checks = [
     url: `${baseUrl}/now`,
     assert: text =>
       text.includes('What works today')
-      && text.includes('Build run-')
+      && text.includes('Use this page when you want the short answer before you install.')
       && text.includes('Start from downloads')
       && !visibleText(text).includes('Home or Horizons')
   },
   {
     url: `${baseUrl}/roadmap`,
     assert: text =>
-      text.includes('Roadmap')
-      && text.includes('Browse planned work')
-      && text.includes('Planned work')
+      text.includes('What we are working on')
+      && text.includes('A short maintenance note. Use the changelog for shipped changes.')
+      && text.includes('Current work')
+      && text.includes('Participate is for requests. Changelog is for shipped work.')
       && avoidsRoadmapMaintenanceNoise(text)
   },
   {
@@ -168,9 +168,9 @@ const checks = [
   {
     url: `${baseUrl}/artifacts`,
     assert: text =>
-      text.includes('Detail gallery')
-      && text.includes('Dossiers, recaps, and release details')
-      && text.includes('Open downloads')
+      text.includes('gallery')
+      && text.includes('dossiers, recaps, and release details')
+      && text.includes('Open saved pages')
   },
   {
     url: `${baseUrl}/faq`,
@@ -191,8 +191,122 @@ const checks = [
   {
     url: `${baseUrl}/blazor/`,
     assert: (text, response) =>
-      /\/downloads\/?$/.test(response.url)
-      && text.includes('Install Chummer')
+      /\/blazor\/?$/.test(response.url)
+      && text.includes('Published browser surface')
+      && text.includes('Launch browser workbench')
+      && hasBlazorBaseHref(text)
+  },
+  {
+    url: `${baseUrl}/blazor/health`,
+    assert: text => {
+      const payload = JSON.parse(text);
+      return payload?.pathBase === '/blazor' && payload?.ok === true;
+    }
+  },
+  {
+    url: `${baseUrl}/blazor/workbench`,
+    assert: (text, response) =>
+      /\/blazor\/workbench\/?$/.test(response.url)
+      && hasBlazorBaseHref(text)
+  },
+  {
+    url: `${baseUrl}/blazor/workbench?workspace=ws-1`,
+    assert: (text, response) =>
+      /\/blazor\/workbench(?:\?workspace=ws-1)?\/?$/.test(response.url)
+      && hasBlazorBaseHref(text)
+  },
+  {
+    url: `${baseUrl}/blazor/workbench?command=new_character`,
+    assert: (text, response) =>
+      /\/blazor\/workbench\?command=new_character$/.test(response.url)
+      && hasBlazorBaseHref(text)
+  },
+  {
+    url: `${baseUrl}/blazor/workbench?command=new_character_origin`,
+    assert: (text, response) =>
+      /\/blazor\/workbench\?command=new_character_origin$/.test(response.url)
+      && hasBlazorBaseHref(text)
+      && text.includes('Origin Dossier')
+  },
+  {
+    url: `${baseUrl}/blazor/workbench?command=character_roster`,
+    assert: (text, response) =>
+      /\/blazor\/workbench\?command=character_roster$/.test(response.url)
+      && hasBlazorBaseHref(text)
+      && text.includes('Character Roster')
+  },
+  {
+    url: `${baseUrl}/blazor/workbench?command=master_index`,
+    assert: (text, response) =>
+      /\/blazor\/workbench\?command=master_index$/.test(response.url)
+      && hasBlazorBaseHref(text)
+      && text.includes('Master Index')
+  },
+  {
+    url: `${baseUrl}/blazor/workbench?command=open_character`,
+    assert: (text, response) =>
+      /\/blazor\/workbench\?command=open_character$/.test(response.url)
+      && hasBlazorBaseHref(text)
+  },
+  {
+    url: `${baseUrl}/blazor/workbench?command=open_for_printing`,
+    assert: (text, response) =>
+      /\/blazor\/workbench\?command=open_for_printing$/.test(response.url)
+      && hasBlazorBaseHref(text)
+  },
+  {
+    url: `${baseUrl}/blazor/workbench?command=open_for_export`,
+    assert: (text, response) =>
+      /\/blazor\/workbench\?command=open_for_export$/.test(response.url)
+      && hasBlazorBaseHref(text)
+  },
+  {
+    url: `${baseUrl}/blazor/preview?command=new_character`,
+    assert: (text, response) =>
+      /\/blazor\/preview\?command=new_character$/.test(response.url)
+      && hasBlazorBaseHref(text)
+  },
+  {
+    url: `${baseUrl}/blazor/workbench?workspace=ws-1&command=save_character_as`,
+    assert: (text, response) =>
+      /\/blazor\/workbench\?workspace=ws-1&command=save_character_as$/.test(response.url)
+      && hasBlazorBaseHref(text)
+  },
+  {
+    url: `${baseUrl}/blazor/workbench?workspace=ws-1&command=export_character&dialog_action=download`,
+    assert: (text, response) =>
+      /\/blazor\/workbench\?workspace=ws-1&command=export_character&dialog_action=download$/.test(response.url)
+      && hasBlazorBaseHref(text)
+  },
+  {
+    url: `${baseUrl}/blazor/workbench?workspace=ws-1&command=print_character`,
+    assert: (text, response) =>
+      /\/blazor\/workbench\?workspace=ws-1&command=print_character$/.test(response.url)
+      && hasBlazorBaseHref(text)
+  },
+  {
+    url: `${baseUrl}/blazor/workbench?workspace=ws-1&tab=tab-contacts&control=contact_add`,
+    assert: (text, response) =>
+      /\/blazor\/workbench\?workspace=ws-1&tab=tab-contacts&control=contact_add$/.test(response.url)
+      && hasBlazorBaseHref(text)
+  },
+  {
+    url: `${baseUrl}/blazor/workbench?workspace=ws-1&tab=tab-contacts&control=contact_add&dialog_action=add`,
+    assert: (text, response) =>
+      /\/blazor\/workbench\?workspace=ws-1&tab=tab-contacts&control=contact_add&dialog_action=add$/.test(response.url)
+      && hasBlazorBaseHref(text)
+  },
+  {
+    url: `${baseUrl}/blazor/workbench?workspace=ws-1&tab=tab-technomancer&control=complex_form_add`,
+    assert: (text, response) =>
+      /\/blazor\/workbench\?workspace=ws-1&tab=tab-technomancer&control=complex_form_add$/.test(response.url)
+      && hasBlazorBaseHref(text)
+  },
+  {
+    url: `${baseUrl}/blazor/workbench?workspace=ws-1&tab=tab-technomancer&control=complex_form_add&dialog_action=add`,
+    assert: (text, response) =>
+      /\/blazor\/workbench\?workspace=ws-1&tab=tab-technomancer&control=complex_form_add&dialog_action=add$/.test(response.url)
+      && hasBlazorBaseHref(text)
   },
   {
     url: `${baseUrl}/avalonia/`,
@@ -210,8 +324,8 @@ const checks = [
     url: `${baseUrl}/coach/`,
     assert: (text, response) =>
       /\/status\/?$/.test(response.url)
-      && text.includes('Release status')
-      && text.includes('Checks passed')
+      && text.includes('Current release')
+      && text.includes('Open downloads')
   }
 ];
 

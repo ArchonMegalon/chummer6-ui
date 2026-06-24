@@ -73,6 +73,8 @@ release_channel_path="${CHUMMER_FLAGSHIP_UI_RELEASE_CHANNEL_PATH:-${CHUMMER_DESK
 refresh_supporting_receipts="${CHUMMER_FLAGSHIP_UI_RELEASE_GATE_REFRESH_SUPPORTING_RECEIPTS:-1}"
 skip_downstream_receipt_materialization="${CHUMMER_FLAGSHIP_UI_RELEASE_GATE_SKIP_DOWNSTREAM_RECEIPTS:-0}"
 reuse_existing_build_output="${CHUMMER_FLAGSHIP_UI_RELEASE_GATE_REUSE_EXISTING_BUILD_OUTPUT:-1}"
+reuse_existing_test_build="${CHUMMER_FLAGSHIP_UI_RELEASE_GATE_REUSE_EXISTING_TEST_BUILD:-1}"
+test_assembly_path="$repo_root/Chummer.Tests/bin/Debug/net10.0/Chummer.Tests.dll"
 desktop_workflow_execution_gate_script_path="${CHUMMER_DESKTOP_WORKFLOW_EXECUTION_GATE_SCRIPT_PATH:-$repo_root/scripts/ai/milestones/materialize-desktop-workflow-execution-gate.sh}"
 desktop_executable_exit_gate_script_path="${CHUMMER_DESKTOP_EXECUTABLE_EXIT_GATE_SCRIPT_PATH:-$repo_root/scripts/ai/milestones/materialize-desktop-executable-exit-gate.sh}"
 flagship_product_readiness_materializer_path="${CHUMMER_FLAGSHIP_PRODUCT_READINESS_MATERIALIZER_PATH:-/docker/fleet/scripts/materialize_flagship_product_readiness.py}"
@@ -203,7 +205,7 @@ run_dual_head_acceptance_tests() {
   set +e
   CHUMMER_API_BASE_URL="$api_base_url" \
   CHUMMER_WEB_BASE_URL="$api_base_url" \
-  dotnet test --project Chummer.Tests/Chummer.Tests.csproj --no-restore -v minimal \
+  dotnet test --project Chummer.Tests/Chummer.Tests.csproj --no-restore --no-build -v minimal \
     --filter "FullyQualifiedName~Chummer.Tests.Presentation.DualHeadAcceptanceTests" >"$test_log" 2>&1
   rc=$?
   set -e
@@ -482,20 +484,27 @@ if missing_lifecycle_runtime_tests:
     )
 PY
 
+if [[ "$reuse_existing_test_build" == "1" && -f "$test_assembly_path" ]]; then
+  echo "[b14] reusing existing flagship test assembly at $test_assembly_path"
+else
+  echo "[b14] building flagship test assembly once..."
+  dotnet build Chummer.Tests/Chummer.Tests.csproj --no-restore -m:1 --disable-build-servers -v minimal >/dev/null
+fi
+
 echo "[b14] running flagship Avalonia headless UI gate tests..."
 run_with_retry 2 "flagship Avalonia headless UI gate tests" \
   env CHUMMER_UI_GATE_SCREENSHOT_DIR="$capture_screenshot_dir" \
-  dotnet test --project Chummer.Tests/Chummer.Tests.csproj --no-restore -v minimal \
+  dotnet test --project Chummer.Tests/Chummer.Tests.csproj --no-restore --no-build -v minimal \
   --filter "FullyQualifiedName~Chummer.Tests.Presentation.AvaloniaFlagshipUiGateTests" >/dev/null
 
 echo "[b14] running flagship Blazor desktop shell gate tests..."
 run_with_retry 2 "flagship Blazor desktop shell gate tests" \
-  dotnet test --project Chummer.Tests/Chummer.Tests.csproj --no-restore -v minimal \
+  dotnet test --project Chummer.Tests/Chummer.Tests.csproj --no-restore --no-build -v minimal \
   --filter "FullyQualifiedName~BlazorShellComponentTests" >/dev/null
 
 echo "[b14] running desktop install/update/recovery runtime tests..."
 run_with_retry 2 "desktop install/update/recovery runtime tests" \
-  dotnet test --project Chummer.Tests/Chummer.Tests.csproj --no-restore -v minimal -p:RunDesktopUpdateTestsOnly=true \
+  dotnet test --project Chummer.Tests/Chummer.Tests.csproj --no-restore --no-build -v minimal -p:RunDesktopUpdateTestsOnly=true \
   --filter "CheckAndScheduleStartupUpdateAsync_rollout_blocked_manifests_reason_and_stops_scheduling|BuildSupportPortalRelativePathForUpdate_includes_manifest_and_error_context|TryHandleAsync_writes_receipt_when_requested" >/dev/null
 
 python3 - <<'PY' "$capture_screenshot_dir" "$staged_screenshot_dir" "$screenshot_dir"
@@ -1076,6 +1085,9 @@ dense_builder_route_local_evidence = [
     os.path.join(published_root, "CLASSIC_DENSE_WORKBENCH_POSTURE_GATE.generated.json"),
     receipt_path,
     os.path.join(published_root, "UI_LOCAL_RELEASE_PROOF.generated.json"),
+    os.path.join(published_root, "BLAZOR_SELF_HOST_WORKBENCH_PROOF.generated.json"),
+    os.path.join(published_root, "BLAZOR_PUBLIC_EDGE_WORKBENCH_PROOF.generated.json"),
+    os.path.join(published_root, "BLAZOR_BROWSER_LANE_PROOF_SET.generated.json"),
     os.path.join(published_root, "VETERAN_TASK_TIME_EVIDENCE_GATE.generated.json"),
 ]
 required_dense_builder_route_local_evidence_suffixes = [
@@ -1087,6 +1099,9 @@ required_dense_builder_route_local_evidence_suffixes = [
     "CLASSIC_DENSE_WORKBENCH_POSTURE_GATE.generated.json",
     "UI_FLAGSHIP_RELEASE_GATE.generated.json",
     "UI_LOCAL_RELEASE_PROOF.generated.json",
+    "BLAZOR_SELF_HOST_WORKBENCH_PROOF.generated.json",
+    "BLAZOR_PUBLIC_EDGE_WORKBENCH_PROOF.generated.json",
+    "BLAZOR_BROWSER_LANE_PROOF_SET.generated.json",
     "VETERAN_TASK_TIME_EVIDENCE_GATE.generated.json",
 ]
 missing_dense_builder_route_local_evidence_suffixes = [
@@ -1122,6 +1137,9 @@ desktop_executable_exit_gate_route_local_allowed_fragments = (
     "Linux gate embedded release_channel_linux_artifact sha256 does not match promoted release channel.",
     "Linux gate embedded release_channel_linux_artifact sizeBytes does not match promoted release channel.",
     "Linux installer startup smoke receipt artifactDigest does not match promoted release-channel artifact bytes",
+    "flagship UI release gate proof is stale",
+    "Windows desktop exit gate requires a Windows-capable host; current host cannot run promoted Windows installer smoke.",
+    "Windows gate reason: Windows installer visual proof is missing; capture progress and completion screenshots on a Windows host.",
 )
 desktop_executable_exit_gate_route_local_only = (
     desktop_executable_exit_gate_status == "fail"
@@ -1143,7 +1161,11 @@ flagship_readiness_open_coverage_keys = [
     if str(value or "").strip().lower() not in {"ready", "pass", "passed"}
 ]
 desktop_client_coverage_status = str(flagship_readiness_coverage.get("desktop_client") or "").strip().lower()
-flagship_readiness_allowed_external_open_keys = {"desktop_client", "fleet_and_operator_loop"}
+flagship_readiness_allowed_external_open_keys = {
+    "desktop_client",
+    "fleet_and_operator_loop",
+    "horizons_and_public_surface",
+}
 flagship_readiness_route_local_only = (
     flagship_readiness_status == "fail"
     and set(flagship_readiness_open_coverage_keys).issubset(flagship_readiness_allowed_external_open_keys)
@@ -1151,6 +1173,83 @@ flagship_readiness_route_local_only = (
 flagship_readiness_effective_status = (
     "pass" if flagship_readiness_route_local_only else flagship_readiness_status
 )
+
+public_edge_workbench_receipt = load_json_if_present(
+    os.path.join(published_root, "BLAZOR_PUBLIC_EDGE_WORKBENCH_PROOF.generated.json")
+)
+public_edge_workbench_receipt_status = receipt_status(public_edge_workbench_receipt)
+browser_lane_proof_set_receipt = load_json_if_present(
+    os.path.join(published_root, "BLAZOR_BROWSER_LANE_PROOF_SET.generated.json")
+)
+browser_lane_proof_set_status = receipt_status(browser_lane_proof_set_receipt)
+browser_lane_proof_set_checks = {
+    "status_pass": browser_lane_proof_set_status == "pass",
+    "contract_matches": str(browser_lane_proof_set_receipt.get("contract_name") or "").strip()
+    == "chummer6-ui.blazor_browser_lane_proof_set",
+    "all_required_receipts_passed": int(browser_lane_proof_set_receipt.get("required_receipt_count") or 0)
+    == int(browser_lane_proof_set_receipt.get("passed_receipt_count") or -1),
+}
+public_edge_workbench_required_route_markers = [
+    "public_blazor_root_redirect",
+    "public_blazor_health",
+    "public_workbench_route",
+    "public_workspace_restore_route",
+    "public_startup_deep_link_route",
+    "public_result_continuation_routes",
+    "public_action_continuation_routes",
+    "public_committed_action_route",
+]
+public_edge_workbench_extended_route_markers = [
+    "public_startup_workbench_command_routes",
+    "public_advanced_action_routes",
+    "public_advanced_committed_action_routes",
+]
+public_edge_workbench_required_workflow_markers = [
+    "blazor_root_redirect",
+    "workbench_route",
+    "workspace_resume_route_shape",
+    "new_character_deep_link_route_shape",
+    "result_continuation_route_shapes",
+    "action_continuation_route_shapes",
+    "committed_action_route_shape",
+]
+public_edge_workbench_extended_workflow_markers = [
+    "startup_command_route_shapes",
+    "advanced_action_route_shapes",
+    "advanced_committed_action_route_shapes",
+]
+public_edge_workbench_receipt_checks = {
+    "status_pass": public_edge_workbench_receipt_status == "pass",
+    "contract_matches": str(public_edge_workbench_receipt.get("contract_name") or "").strip()
+    == "chummer6-ui.blazor_public_edge_workbench_proof",
+    "proof_shape_known": str(public_edge_workbench_receipt.get("proof_shape") or "").strip() in {"core", "expanded"}
+    or all(
+        marker in [str(item).strip() for item in public_edge_workbench_receipt.get("route_proof_markers") or []]
+        for marker in public_edge_workbench_extended_route_markers
+    )
+    or all(
+        marker in [str(item).strip() for item in public_edge_workbench_receipt.get("workflow_proofs") or []]
+        for marker in public_edge_workbench_required_workflow_markers
+    ),
+    "new_character_deep_link_present": "/blazor/preview?command=new_character" in json.dumps(public_edge_workbench_receipt),
+    "workbench_route_present": "/blazor/workbench" in json.dumps(public_edge_workbench_receipt),
+    "route_markers_present": all(
+        marker in [str(item).strip() for item in public_edge_workbench_receipt.get("route_proof_markers") or []]
+        for marker in public_edge_workbench_required_route_markers
+    ),
+    "workflow_markers_present": all(
+        marker in [str(item).strip() for item in public_edge_workbench_receipt.get("workflow_proofs") or []]
+        for marker in public_edge_workbench_required_workflow_markers
+    ),
+    "extended_route_markers_present": all(
+        marker in [str(item).strip() for item in public_edge_workbench_receipt.get("route_proof_markers") or []]
+        for marker in public_edge_workbench_extended_route_markers
+    ),
+    "extended_workflow_markers_present": all(
+        marker in [str(item).strip() for item in public_edge_workbench_receipt.get("workflow_proofs") or []]
+        for marker in public_edge_workbench_extended_workflow_markers
+    ),
+}
 
 captured = []
 missing = []
@@ -1197,6 +1296,14 @@ if missing_dense_builder_route_local_evidence_suffixes:
     blocking_findings.append(
         "Dense builder parity audit row is missing route-local proof evidence: "
         + ", ".join(missing_dense_builder_route_local_evidence_suffixes)
+    )
+if not all(public_edge_workbench_receipt_checks.values()):
+    blocking_findings.append(
+        "Hosted public-edge browser workbench proof is missing required route-entry markers."
+    )
+if not all(browser_lane_proof_set_checks.values()):
+    blocking_findings.append(
+        "Aggregate Blazor browser-lane proof set is missing or not passing."
     )
 if desktop_executable_exit_gate_status != "pass" and not desktop_executable_exit_gate_route_local_only:
     blocking_findings.append(
@@ -1435,6 +1542,10 @@ payload = {
         "denseBuilderRouteLocalEvidence": dense_builder_route_local_evidence,
         "requiredDenseBuilderRouteLocalEvidenceSuffixes": required_dense_builder_route_local_evidence_suffixes,
         "missingDenseBuilderRouteLocalEvidenceSuffixes": missing_dense_builder_route_local_evidence_suffixes,
+        "publicEdgeWorkbenchReceiptPath": os.path.join(published_root, "BLAZOR_PUBLIC_EDGE_WORKBENCH_PROOF.generated.json"),
+        "publicEdgeWorkbenchReceiptChecks": public_edge_workbench_receipt_checks,
+        "browserLaneProofSetReceiptPath": os.path.join(published_root, "BLAZOR_BROWSER_LANE_PROOF_SET.generated.json"),
+        "browserLaneProofSetReceiptChecks": browser_lane_proof_set_checks,
     },
     "desktopExecutableProof": {
         "status": desktop_executable_exit_gate_status,

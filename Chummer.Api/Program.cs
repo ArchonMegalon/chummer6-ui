@@ -1,9 +1,9 @@
 using Chummer.Api.Endpoints;
 using Chummer.Api.Owners;
 using Chummer.Application.Owners;
+using Chummer.Contracts.Owners;
 using Chummer.Desktop.Runtime;
 using Chummer.Infrastructure.DependencyInjection;
-using Chummer.Contracts.Owners;
 using Chummer.Presentation;
 using Chummer.Rulesets.Sr4;
 using Chummer.Rulesets.Sr6;
@@ -40,6 +40,7 @@ app.MapCommandEndpoints();
 app.MapNavigationEndpoints();
 app.MapShellEndpoints();
 app.MapToolEndpoints();
+app.MapAiEndpoints();
 app.MapWorkspaceEndpoints();
 
 app.Run();

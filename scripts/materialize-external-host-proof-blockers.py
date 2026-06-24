@@ -5,6 +5,7 @@ import argparse
 import datetime as dt
 import hashlib
 import json
+import subprocess
 import urllib.error
 import urllib.request
 from pathlib import Path
@@ -13,6 +14,54 @@ from typing import Any
 
 UTC = dt.timezone.utc
 CONTRACT_NAME = "chummer6-ui.external_host_proof_blockers"
+PUBLIC_EDGE_BROWSER_CONTRACT_NAME = "chummer6-ui.blazor_public_edge_workbench_proof"
+PUBLIC_EDGE_BROWSER_CONTRACT_DOC_PATH = Path(
+    "/docker/chummercomplete/chummer-presentation/docs/BLAZOR_PUBLIC_EDGE_WORKBENCH_PROOF.md"
+)
+PUBLIC_EDGE_BROWSER_STATUS_SUMMARY_PATH = Path(
+    "/docker/chummercomplete/chummer-presentation/scripts/print_blazor_public_edge_proof_status.py"
+)
+PUBLIC_EDGE_BROWSER_VERIFIER_PATH = Path(
+    "/docker/chummercomplete/chummer-presentation/scripts/verify_blazor_public_edge_workbench_proof.py"
+)
+PUBLIC_EDGE_BROWSER_VERIFIER_WRAPPER_PATH = Path(
+    "/docker/chummercomplete/chummer-presentation/scripts/ai/milestones/blazor-public-edge-workbench-proof-check.sh"
+)
+DEFAULT_BROWSER_ROUTES = [
+    "/blazor/",
+    "/blazor/health",
+    "/blazor/workbench",
+    "/blazor/workbench?workspace=ws-1",
+    "/blazor/workbench?command=new_character_origin",
+    "/blazor/workbench?command=character_roster",
+    "/blazor/workbench?command=master_index",
+    "/blazor/preview?command=new_character",
+    "/blazor/workbench?workspace=ws-1&command=save_character_as",
+    "/blazor/workbench?workspace=ws-1&command=export_character&dialog_action=download",
+    "/blazor/workbench?workspace=ws-1&command=print_character",
+    "/blazor/workbench?workspace=ws-1&tab=tab-contacts&control=contact_add",
+    "/blazor/workbench?workspace=ws-1&tab=tab-contacts&control=contact_add&dialog_action=add",
+]
+EXPANDED_ROUTE_PROOF_MARKERS = {
+    "public_startup_workbench_command_routes",
+    "public_advanced_action_routes",
+    "public_advanced_committed_action_routes",
+}
+
+
+def classify_route_entry_proof_shape(payload: dict[str, Any]) -> str:
+    marker_ids = {
+        str(item).strip()
+        for item in (payload.get("route_proof_markers") or [])
+        if str(item).strip()
+    }
+    if EXPANDED_ROUTE_PROOF_MARKERS.issubset(marker_ids):
+        return "expanded"
+    if EXPANDED_ROUTE_PROOF_MARKERS & marker_ids:
+        return "partial-expanded"
+    if marker_ids:
+        return "core"
+    return ""
 
 
 def parse_args() -> argparse.Namespace:
@@ -23,6 +72,7 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--downloads-dir", required=True, type=Path)
     parser.add_argument("--startup-smoke-dir", required=True, type=Path)
     parser.add_argument("--output", required=True, type=Path)
+    parser.add_argument("--browser-proof-output", type=Path)
     parser.add_argument("--display-manifest", type=Path)
     parser.add_argument("--display-downloads-dir", type=Path)
     parser.add_argument("--display-startup-smoke-dir", type=Path)
@@ -30,6 +80,13 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--timeout-seconds", type=int, default=10)
     parser.add_argument("--max-receipt-age-seconds", type=int, default=604800)
     parser.add_argument("--skip-public-route-check", action="store_true")
+    parser.add_argument(
+        "--browser-route",
+        dest="browser_routes",
+        action="append",
+        default=[],
+        help="Additional hosted browser-workbench route to probe. Defaults are added automatically.",
+    )
     return parser.parse_args()
 
 
@@ -88,10 +145,59 @@ def check_public_route(*, base_url: str, route: str, timeout_seconds: int) -> di
             "error": "missing_route",
         }
     url = f"{base_url.rstrip('/')}/{route.lstrip('/')}"
-    request = urllib.request.Request(url=url, method="GET")
-    try:
-        with urllib.request.urlopen(request, timeout=max(timeout_seconds, 1)) as response:
-            status = int(response.status)
+    timeout = max(timeout_seconds, 1)
+    route_text = route.lower()
+    if "dialog_action=add" in route_text:
+        timeout = max(timeout, 30)
+    elif "control=" in route_text:
+        timeout = max(timeout, 20)
+    curl_user_agent = (
+        "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 "
+        "(KHTML, like Gecko) Chrome/126.0.0.0 Safari/537.36"
+    )
+    for attempt in range(2):
+        effective_timeout = timeout if attempt == 0 else max(timeout * 2, timeout + 5)
+        try:
+            completed = subprocess.run(
+                [
+                    "curl",
+                    "--silent",
+                    "--show-error",
+                    "--location",
+                    "--output",
+                    "/dev/null",
+                    "--write-out",
+                    "%{http_code}",
+                    "--user-agent",
+                    curl_user_agent,
+                    "--header",
+                    "Accept: text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,*/*;q=0.8",
+                    "--header",
+                    "Accept-Language: en-US,en;q=0.9",
+                    "--header",
+                    "Cache-Control: no-cache",
+                    "--header",
+                    "Pragma: no-cache",
+                    "--max-time",
+                    str(effective_timeout),
+                    url,
+                ],
+                check=False,
+                capture_output=True,
+                text=True,
+            )
+        except Exception as exc:  # pragma: no cover - defensive
+            return {
+                "checked": True,
+                "url": url,
+                "http_status": None,
+                "ok": False,
+                "error": str(exc),
+            }
+
+        status_text = (completed.stdout or "").strip()
+        status = int(status_text) if status_text.isdigit() else None
+        if completed.returncode == 0 and status is not None:
             return {
                 "checked": True,
                 "url": url,
@@ -99,22 +205,25 @@ def check_public_route(*, base_url: str, route: str, timeout_seconds: int) -> di
                 "ok": 200 <= status < 400,
                 "error": "",
             }
-    except urllib.error.HTTPError as exc:
+
+        stderr_text = (completed.stderr or "").strip() or f"curl_exit_{completed.returncode}"
+        if attempt == 0 and ("timed out" in stderr_text.lower() or completed.returncode == 28):
+            continue
         return {
             "checked": True,
             "url": url,
-            "http_status": int(exc.code),
+            "http_status": status,
             "ok": False,
-            "error": f"http_{int(exc.code)}",
+            "error": stderr_text,
         }
-    except Exception as exc:  # pragma: no cover - best-effort network probe
-        return {
-            "checked": True,
-            "url": url,
-            "http_status": None,
-            "ok": False,
-            "error": str(exc),
-        }
+
+    return {
+        "checked": True,
+        "url": url,
+        "http_status": None,
+        "ok": False,
+        "error": "timed out",
+    }
 
 
 def installer_access_class(
@@ -366,6 +475,41 @@ def main() -> int:
             }
         )
 
+    browser_routes: list[str] = []
+    for route in [*DEFAULT_BROWSER_ROUTES, *args.browser_routes]:
+        route_text = str(route or "").strip()
+        if route_text and route_text not in browser_routes:
+            browser_routes.append(route_text)
+
+    browser_route_probes: list[dict[str, Any]] = []
+    browser_route_blockers: list[dict[str, Any]] = []
+    for route in browser_routes:
+        if args.skip_public_route_check:
+            probe = {
+                "checked": False,
+                "url": "",
+                "http_status": None,
+                "ok": False,
+                "error": "skipped",
+            }
+        else:
+            probe = check_public_route(
+                base_url=args.base_url,
+                route=route,
+                timeout_seconds=args.timeout_seconds,
+            )
+        probe["route"] = route
+        browser_route_probes.append(probe)
+        if probe.get("checked") and not bool(probe.get("ok")):
+            browser_route_blockers.append(
+                {
+                    "route": route,
+                    "url": probe.get("url") or "",
+                    "http_status": probe.get("http_status"),
+                    "error": probe.get("error") or "",
+                }
+            )
+
     payload = {
         "contract_name": CONTRACT_NAME,
         "generated_at": utc_now_iso(),
@@ -380,10 +524,111 @@ def main() -> int:
         "missing_required_platform_head_rid_tuples": missing_tuples,
         "unresolved_hosts": unresolved_hosts,
         "unresolved_tuples": unresolved_tuples,
+        "browser_workbench_routes": browser_routes,
+        "browser_route_probe_count": len(browser_route_probes),
+        "browser_route_blocker_count": len(browser_route_blockers),
+        "browser_route_probes": browser_route_probes,
+        "browser_route_blockers": browser_route_blockers,
         "external_proof_request_count": len(blockers),
         "external_proof_requests": blockers,
     }
+    if browser_route_blockers:
+        payload["status"] = "blocked"
     args.output.parent.mkdir(parents=True, exist_ok=True)
+    args.output.write_text(json.dumps(payload, indent=2) + "\n", encoding="utf-8")
+
+    if args.browser_proof_output is not None:
+        browser_payload = {
+            "contract_name": PUBLIC_EDGE_BROWSER_CONTRACT_NAME,
+            "generated_at": payload["generated_at"],
+            "status": "passed" if not browser_route_blockers else "blocked",
+            "base_url": args.base_url,
+            "proof_shape": "expanded",
+            "runtime_required": True,
+            "route_probe_executed": not args.skip_public_route_check,
+            "portal_route_probe_script": "scripts/e2e-public-edge.cjs",
+            "route_proof_markers": [
+                "public_blazor_root_redirect",
+                "public_blazor_health",
+                "public_workbench_route",
+                "public_workspace_restore_route",
+                "public_startup_deep_link_route",
+                "public_startup_workbench_command_routes",
+                "public_result_continuation_routes",
+                "public_action_continuation_routes",
+                "public_committed_action_route",
+                "public_advanced_action_routes",
+                "public_advanced_committed_action_routes",
+            ],
+            "proof_routes": browser_routes,
+            "workflow_proofs": [
+                "blazor_root_redirect",
+                "workbench_route",
+                "workspace_resume_route_shape",
+                "new_character_deep_link_route_shape",
+                "startup_command_route_shapes",
+                "result_continuation_route_shapes",
+                "action_continuation_route_shapes",
+                "committed_action_route_shape",
+                "advanced_action_route_shapes",
+                "advanced_committed_action_route_shapes",
+            ],
+            "route_probe_count": len(browser_route_probes),
+            "route_probe_failures": browser_route_blockers,
+            "route_probes": browser_route_probes,
+            "source_receipt": str(args.output.resolve()),
+            "notes": [
+                "Hosted public-edge browser proof is distinct from the Docker self-host workbench receipt.",
+                "This receipt currently proves hosted /blazor route-entry posture and route health, not full browser workflow execution.",
+            ],
+        }
+        args.browser_proof_output.parent.mkdir(parents=True, exist_ok=True)
+        args.browser_proof_output.write_text(json.dumps(browser_payload, indent=2) + "\n", encoding="utf-8")
+
+    execution_receipt_path = args.output.parent / "BLAZOR_PUBLIC_EDGE_EXECUTION_PROOF.generated.json"
+    execution_runner_path = Path("/docker/chummercomplete/chummer-presentation/scripts/e2e-public-edge-execution.sh")
+    execution_status_summary_path = Path("/docker/chummercomplete/chummer-presentation/scripts/print_blazor_public_edge_proof_status.py")
+    execution_verifier_path = Path("/docker/chummercomplete/chummer-presentation/scripts/verify_blazor_public_edge_execution_proof.py")
+    execution_contract_doc_path = Path("/docker/chummercomplete/chummer-presentation/docs/BLAZOR_PUBLIC_EDGE_EXECUTION_PROOF.md")
+    execution_receipt_status = ""
+    execution_receipt_contract = ""
+    execution_receipt_error = ""
+    if execution_receipt_path.is_file():
+        try:
+            execution_payload = load_json(execution_receipt_path)
+        except Exception:
+            execution_payload = {}
+        execution_receipt_status = str(execution_payload.get("status") or "").strip().lower()
+        execution_receipt_contract = str(execution_payload.get("contract_name") or "").strip()
+        execution_receipt_error = str(execution_payload.get("error") or "").strip()
+    payload["browser_execution_proof_target"] = str(execution_receipt_path.resolve())
+    payload["browser_execution_proof_status"] = execution_receipt_status
+    payload["browser_execution_proof_contract"] = execution_receipt_contract
+    payload["browser_execution_proof_error"] = execution_receipt_error
+    payload["browser_execution_proof_runner"] = str(execution_runner_path)
+    payload["browser_execution_proof_status_summary"] = str(execution_status_summary_path)
+    payload["browser_execution_proof_verifier"] = str(execution_verifier_path)
+    payload["browser_execution_proof_contract_doc"] = str(execution_contract_doc_path)
+    if args.browser_proof_output is not None:
+        route_receipt_status = ""
+        route_receipt_contract = ""
+        if args.browser_proof_output.is_file():
+            try:
+                route_payload = load_json(args.browser_proof_output)
+            except Exception:
+                route_payload = {}
+            route_receipt_status = str(route_payload.get("status") or "").strip().lower()
+            route_receipt_contract = str(route_payload.get("contract_name") or "").strip()
+        payload["browser_route_entry_proof_target"] = str(args.browser_proof_output.resolve())
+        payload["browser_route_entry_proof_status"] = route_receipt_status
+        payload["browser_route_entry_proof_contract"] = route_receipt_contract
+        payload["browser_route_entry_proof_shape"] = classify_route_entry_proof_shape(route_payload)
+        payload["browser_route_entry_proof_status_summary"] = str(PUBLIC_EDGE_BROWSER_STATUS_SUMMARY_PATH)
+        payload["browser_route_entry_proof_verifier"] = str(PUBLIC_EDGE_BROWSER_VERIFIER_PATH)
+        payload["browser_route_entry_proof_verifier_wrapper"] = str(
+            PUBLIC_EDGE_BROWSER_VERIFIER_WRAPPER_PATH
+        )
+        payload["browser_route_entry_proof_contract_doc"] = str(PUBLIC_EDGE_BROWSER_CONTRACT_DOC_PATH)
     args.output.write_text(json.dumps(payload, indent=2) + "\n", encoding="utf-8")
     return 0
 

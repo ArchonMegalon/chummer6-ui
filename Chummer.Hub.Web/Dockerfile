@@ -1,0 +1,13 @@
+FROM mcr.microsoft.com/dotnet/sdk:10.0 AS build
+WORKDIR /src
+
+COPY . .
+
+WORKDIR /src/chummer-presentation
+RUN dotnet restore Chummer.Hub.Web/Chummer.Hub.Web.csproj
+RUN dotnet publish Chummer.Hub.Web/Chummer.Hub.Web.csproj -c Release -o /app/publish --no-restore
+
+FROM mcr.microsoft.com/dotnet/aspnet:10.0 AS final
+WORKDIR /app
+COPY --from=build /app/publish .
+ENTRYPOINT ["dotnet", "Chummer.Hub.Web.dll"]

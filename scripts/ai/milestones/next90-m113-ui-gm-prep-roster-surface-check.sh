@@ -9,7 +9,10 @@ queue_path="${CHUMMER_NEXT90_QUEUE_PATH:-/docker/fleet/.codex-studio/published/N
 design_queue_path="${CHUMMER_NEXT90_DESIGN_QUEUE_PATH:-/docker/chummercomplete/chummer-design/products/chummer/NEXT_90_DAY_QUEUE_STAGING.generated.yaml}"
 receipt_path="${CHUMMER_NEXT90_M113_UI_RECEIPT_PATH:-$repo_root/.codex-studio/published/NEXT90_M113_UI_GM_PREP_ROSTER_SURFACE.generated.json}"
 local_release_proof_path="${CHUMMER_UI_LOCAL_RELEASE_PROOF_PATH:-$repo_root/.codex-studio/published/UI_LOCAL_RELEASE_PROOF.generated.json}"
+self_host_workbench_proof_path="${CHUMMER_BLAZOR_SELF_HOST_WORKBENCH_PROOF_PATH:-$repo_root/.codex-studio/published/BLAZOR_SELF_HOST_WORKBENCH_PROOF.generated.json}"
 reuse_local_release_proof="${CHUMMER_NEXT90_M113_REUSE_LOCAL_RELEASE_PROOF:-0}"
+portal_e2e_port="${CHUMMER_NEXT90_M113_PORTAL_PORT:-${CHUMMER_PORTAL_PORT:-18091}}"
+portal_e2e_base_url="${CHUMMER_NEXT90_M113_PORTAL_BASE_URL:-${CHUMMER_PORTAL_BASE_URL:-http://127.0.0.1:${portal_e2e_port}}}"
 
 mkdir -p "$(dirname "$receipt_path")"
 if [[ "$reuse_local_release_proof" == "1" || "$reuse_local_release_proof" == "true" || "$reuse_local_release_proof" == "TRUE" ]]; then
@@ -18,10 +21,10 @@ if [[ "$reuse_local_release_proof" == "1" || "$reuse_local_release_proof" == "tr
     exit 2
   fi
 else
-  CHUMMER_PORTAL_E2E_SKIP_EDGE_REBUILD=1 CHUMMER_PORTAL_PLAYWRIGHT=1 CHUMMER_PORTAL_LOCAL_PROOF_PATH="$local_release_proof_path" CHUMMER_NEXT90_M113_RECEIPT_PATH="$receipt_path" bash "$repo_root/scripts/e2e-portal.sh" >/dev/null
+  CHUMMER_PORTAL_PORT="$portal_e2e_port" CHUMMER_PORTAL_BASE_URL="$portal_e2e_base_url" CHUMMER_PORTAL_E2E_SKIP_EDGE_REBUILD=0 CHUMMER_PORTAL_PLAYWRIGHT=1 CHUMMER_PORTAL_LOCAL_PROOF_PATH="$local_release_proof_path" CHUMMER_NEXT90_M113_RECEIPT_PATH="$receipt_path" bash "$repo_root/scripts/e2e-portal.sh" >/dev/null
 fi
 
-python3 - "$registry_path" "$queue_path" "$design_queue_path" "$receipt_path" "$local_release_proof_path" "$repo_root" <<'PY'
+python3 - "$registry_path" "$queue_path" "$design_queue_path" "$receipt_path" "$local_release_proof_path" "$self_host_workbench_proof_path" "$repo_root" <<'PY'
 from __future__ import annotations
 
 import json
@@ -34,7 +37,8 @@ queue_path = Path(sys.argv[2])
 design_queue_path = Path(sys.argv[3])
 receipt_path = Path(sys.argv[4])
 local_release_proof_path = Path(sys.argv[5])
-repo_root = Path(sys.argv[6])
+self_host_workbench_proof_path = Path(sys.argv[6])
+repo_root = Path(sys.argv[7])
 
 PACKAGE_ID = "next90-m113-ui-gm-prep-roster-surface"
 TITLE = "Add GM prep and roster movement surfaces to the desktop workspace"
@@ -148,11 +152,13 @@ SOURCE_MARKERS = {
     ],
     "scripts/e2e-portal.sh": [
         "NEXT90_M113_RECEIPT_PATH",
+        "PORTAL_SELF_HOST_WORKBENCH_PROOF_PATH",
         "\"desktop_workspace_routes\": [",
         "\"gm_prep_packets:desktop\"",
         "\"roster_movement:desktop\"",
         "\"next90-m113-ui-gm-prep-roster-surface\"",
         "\"Desktop campaign workspace keeps GM prep packets and roster movement as first-class successor surfaces.\"",
+        "\"chummer6-ui.blazor_self_host_workbench_proof\"",
     ],
 }
 
@@ -238,6 +244,27 @@ design_queue_text = read_text(design_queue_path)
 queue_block = block_for_package(queue_text, PACKAGE_ID)
 design_queue_block = block_for_package(design_queue_text, PACKAGE_ID)
 local_release_proof = json.loads(local_release_proof_path.read_text(encoding="utf-8"))
+self_host_workbench_proof = json.loads(self_host_workbench_proof_path.read_text(encoding="utf-8"))
+public_edge_workbench_proof = json.loads((repo_root / ".codex-studio/published/BLAZOR_PUBLIC_EDGE_WORKBENCH_PROOF.generated.json").read_text(encoding="utf-8"))
+public_edge_workbench_required_workflow_markers = [
+    "result_continuation_route_shapes",
+    "action_continuation_route_shapes",
+    "committed_action_route_shape",
+]
+public_edge_workbench_extended_workflow_markers = [
+    "startup_command_route_shapes",
+    "advanced_action_route_shapes",
+    "advanced_committed_action_route_shapes",
+]
+public_edge_workbench_proof_shape = str(public_edge_workbench_proof.get("proof_shape") or "").strip()
+if not public_edge_workbench_proof_shape:
+    workflow_marker_ids = [str(item).strip() for item in public_edge_workbench_proof.get("workflow_proofs") or []]
+    if all(marker in workflow_marker_ids for marker in public_edge_workbench_extended_workflow_markers):
+        public_edge_workbench_proof_shape = "expanded"
+    elif workflow_marker_ids:
+        public_edge_workbench_proof_shape = "core"
+    else:
+        public_edge_workbench_proof_shape = "missing"
 
 checks = {
     "registry_has_m113_ui_task": MILESTONE_TASK_ANCHOR in registry_text,
@@ -259,6 +286,23 @@ checks = {
     "local_release_proof_receipt_path_present": str(receipt_path) in json.dumps(local_release_proof),
     "local_release_proof_package_present": PACKAGE_ID in json.dumps(local_release_proof),
     "local_release_proof_surfaces_present": all(surface in json.dumps(local_release_proof) for surface in EXPECTED_SURFACES),
+    "self_host_workbench_proof_status_pass": str(self_host_workbench_proof.get("status") or "").strip().lower() in {"pass", "passed"},
+    "self_host_workbench_proof_contract_matches": str(self_host_workbench_proof.get("contract_name") or "").strip() == "chummer6-ui.blazor_self_host_workbench_proof",
+    "self_host_workbench_proof_new_character_deep_link_present": "/blazor/preview?command=new_character" in json.dumps(self_host_workbench_proof),
+    "self_host_workbench_proof_origin_dossier_deep_link_present": "/blazor/preview?command=new_character_origin" in json.dumps(self_host_workbench_proof),
+    "public_edge_workbench_proof_status_pass": str(public_edge_workbench_proof.get("status") or "").strip().lower() in {"pass", "passed", "ready"},
+    "public_edge_workbench_proof_contract_matches": str(public_edge_workbench_proof.get("contract_name") or "").strip() == "chummer6-ui.blazor_public_edge_workbench_proof",
+    "public_edge_workbench_proof_shape_known": public_edge_workbench_proof_shape in {"core", "expanded"},
+    "public_edge_workbench_proof_new_character_deep_link_present": "/blazor/preview?command=new_character" in json.dumps(public_edge_workbench_proof),
+    "public_edge_workbench_proof_workbench_route_present": "/blazor/workbench" in json.dumps(public_edge_workbench_proof),
+    "public_edge_workbench_proof_result_route_shapes_present": all(
+        marker in [str(item).strip() for item in public_edge_workbench_proof.get("workflow_proofs") or []]
+        for marker in public_edge_workbench_required_workflow_markers
+    ),
+    "public_edge_workbench_proof_extended_route_shapes_present": all(
+        marker in [str(item).strip() for item in public_edge_workbench_proof.get("workflow_proofs") or []]
+        for marker in public_edge_workbench_extended_workflow_markers
+    ),
 }
 
 source_checks: dict[str, dict[str, bool]] = {}
@@ -293,6 +337,8 @@ receipt = {
     "proofFiles": [
         str(receipt_path),
         str(local_release_proof_path),
+        str(self_host_workbench_proof_path),
+        str(repo_root / ".codex-studio/published/BLAZOR_PUBLIC_EDGE_WORKBENCH_PROOF.generated.json"),
         f"{repo_root}/scripts/ai/milestones/next90-m113-ui-gm-prep-roster-surface-check.sh",
         f"{repo_root}/scripts/e2e-portal.sh",
         f"{repo_root}/Chummer.Avalonia/DesktopCampaignWorkspaceWindow.cs",
@@ -308,6 +354,10 @@ receipt = {
         f"{repo_root}/Chummer.Tests/Presentation/AccessibilitySignoffSmokeTests.cs",
         f"{repo_root}/Chummer.Tests/Compliance/Next90M113GmPrepRosterSurfaceGuardTests.cs",
     ],
+    "hostedRouteEntryProof": {
+        "receiptPath": str(repo_root / ".codex-studio/published/BLAZOR_PUBLIC_EDGE_WORKBENCH_PROOF.generated.json"),
+        "proofShape": public_edge_workbench_proof_shape,
+    },
     "failures": failed,
 }
 

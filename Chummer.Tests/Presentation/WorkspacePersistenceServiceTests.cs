@@ -12,6 +12,7 @@ using Chummer.Contracts.Content;
 using Chummer.Contracts.Presentation;
 using Chummer.Contracts.Workspaces;
 using Chummer.Presentation;
+using Chummer.Run.Contracts.Billing;
 using Chummer.Presentation.Overview;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 
@@ -196,6 +197,12 @@ public class WorkspacePersistenceServiceTests
 
         public Task<AccountCampaignSummary?> GetAccountCampaignSummaryAsync(CancellationToken ct)
             => Task.FromResult<AccountCampaignSummary?>(null);
+
+        public Task<MyFirstBookQuotaSnapshotDto?> GetMyFirstBookQuotaAsync(CancellationToken ct)
+            => Task.FromResult<MyFirstBookQuotaSnapshotDto?>(null);
+
+        public Task<MyFirstBookQuotaConsumeResultDto> ConsumeMyFirstBookQuotaAsync(CancellationToken ct)
+            => Task.FromException<MyFirstBookQuotaConsumeResultDto>(new InvalidOperationException("Not used in this test."));
 
         public Task<IReadOnlyList<CampaignWorkspaceDigestProjection>> GetCampaignWorkspaceDigestsAsync(CancellationToken ct)
             => Task.FromResult<IReadOnlyList<CampaignWorkspaceDigestProjection>>(Array.Empty<CampaignWorkspaceDigestProjection>());

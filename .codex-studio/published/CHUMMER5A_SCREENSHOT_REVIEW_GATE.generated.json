@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-06-24T03:37:39.099843Z",
+  "generatedAt": "2026-06-24T11:53:40.498931Z",
   "contractName": "chummer6-ui.chummer5a_screenshot_review_gate",
   "channelId": "public_stable",
   "channel": "public_stable",
@@ -31,14 +31,14 @@
     "status": "pass",
     "reasons": [],
     "receiptStatuses": {
-      "visualFamiliarityGate": "fail",
+      "visualFamiliarityGate": "pass",
       "flagshipGate": "fail"
     },
     "skipFlagshipGateDependency": false,
     "flagshipGateRouteLocalOnly": false,
     "flagshipGateExternalDesktopOnly": false,
     "visualReviewStatuses": {
-      "flagshipGateReview": "fail",
+      "flagshipGateReview": "pass",
       "headProofReview": "pass",
       "interactionProofReview": "pass",
       "sourceAnchorReview": "pass",
@@ -46,7 +46,7 @@
       "legacyFamiliarityReview": "pass",
       "muscleMemoryParityReview": "pass"
     },
-    "visualFailureCount": 1,
+    "visualFailureCount": 0,
     "routeLocalVisualFailureCount": 0
   },
   "screenshotAssetReview": {
@@ -315,7 +315,7 @@
     ],
     "missingVisualReviewKeys": [],
     "failingVisualReviewKeys": [],
-    "visualFailureCount": 1,
+    "visualFailureCount": 0,
     "routeLocalVisualFailureCount": 0,
     "skipFlagshipGateDependency": false,
     "flagshipGateRouteLocalOnly": false,

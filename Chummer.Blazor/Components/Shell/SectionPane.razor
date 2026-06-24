@@ -90,6 +90,17 @@
             <p class="note">Select a tab to render a workspace section.</p>
         }
     }
+    else if ((string.Equals(State.LastCommandId, "save_character", StringComparison.Ordinal)
+            && State.HasSavedWorkspace
+            && !string.IsNullOrWhiteSpace(State.Notice))
+        || State.PendingDownload is not null
+        || State.PendingPrint is not null
+        || State.PendingExport is not null
+        || State.LatestPortabilityActivity is not null)
+    {
+        <ResultPanel RulesetId="@ResolveResultRulesetId()"
+                     State="@State" />
+    }
     else if (State.ActiveBuildLab is { } buildLab)
     {
         <section class="build-lab-shell" data-build-lab="@buildLab.WorkspaceId">
@@ -1151,11 +1162,13 @@
         => ResolveStartupCommands(
             "open_character",
             "new_character",
+            "new_character_origin",
             "character_roster",
             "master_index");
 
     private IReadOnlyList<AppCommandDefinition> GetStartupSupportCommands()
         => ResolveStartupCommands(
+            "auto_alice",
             "global_settings",
             "report_bug");
 
@@ -1212,6 +1225,13 @@
 
     private bool HasSectionQuickActions()
         => BuildSectionQuickActions().Count > 0;
+
+    private string? ResolveResultRulesetId()
+        => RulesetDefaults.NormalizeOptional(State.Rules?.GameEdition)
+            ?? RulesetDefaults.NormalizeOptional(State.OpenWorkspaces
+                .FirstOrDefault(workspace => string.Equals(workspace.Id.Value, State.WorkspaceId?.Value, StringComparison.Ordinal))
+                ?.RulesetId)
+            ?? RulesetDefaults.NormalizeOptional(State.OpenWorkspaces.FirstOrDefault()?.RulesetId);
 
     private string BuildClassicSheetHeading()
     {

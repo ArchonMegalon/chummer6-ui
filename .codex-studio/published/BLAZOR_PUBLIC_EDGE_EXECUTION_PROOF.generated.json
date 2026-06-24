@@ -1,0 +1,544 @@
+{
+  "contract_name": "chummer6-ui.blazor_public_edge_execution_proof",
+  "generated_at": "2026-06-24T17:29:10.578Z",
+  "status": "passed",
+  "base_url": "https://chummer.run",
+  "proof_tier": "hosted_promoted_route_execution",
+  "route_lane": "promoted_blazor_workbench",
+  "promoted_route_base": "/blazor/workbench",
+  "required_workflow_family_ids": [
+    "promoted_startup_command_executions",
+    "promoted_dense_tool_surfaces",
+    "promoted_origin_rules_continuity",
+    "promoted_build_lab_continuity",
+    "promoted_weapon_selection_execution",
+    "promoted_skill_selection_execution",
+    "promoted_vehicle_selection_execution",
+    "promoted_vehicle_mod_selection_execution",
+    "promoted_quality_selection_execution",
+    "promoted_quality_delete_execution",
+    "promoted_spell_selection_execution",
+    "promoted_magic_delete_execution",
+    "promoted_cyberware_selection_execution",
+    "promoted_cyberware_edit_execution",
+    "promoted_cyberware_delete_execution",
+    "promoted_drug_selection_execution",
+    "promoted_contact_connection_execution",
+    "promoted_vehicle_edit_execution",
+    "promoted_vehicle_delete_execution",
+    "promoted_contact_delete_execution",
+    "promoted_contact_edit_execution",
+    "promoted_resumed_workspace",
+    "promoted_recent_work_affordances",
+    "promoted_restored_section_continuations",
+    "promoted_restored_tab_landings",
+    "promoted_restored_section_content",
+    "promoted_result_continuations",
+    "promoted_action_continuations",
+    "promoted_advanced_action_affordances",
+    "promoted_advanced_action_executions",
+    "promoted_committed_actions",
+    "promoted_advanced_committed_actions"
+  ],
+  "workflow_families": [
+    {
+      "id": "promoted_startup_command_executions",
+      "route_lane": "promoted_blazor_workbench",
+      "workflow_contract": "startup_command_execution",
+      "checks": [
+        {
+          "route": "/blazor/workbench?command=new_character",
+          "assertion": "startup command surface 'New Character' rendered from promoted workbench route",
+          "status": "pass"
+        },
+        {
+          "route": "/blazor/workbench?command=new_character_origin",
+          "assertion": "startup command surface 'Origin Dossier' rendered from promoted workbench route",
+          "status": "pass"
+        },
+        {
+          "route": "/blazor/workbench?command=character_roster",
+          "assertion": "startup command surface 'Character Roster' rendered from promoted workbench route",
+          "status": "pass"
+        },
+        {
+          "route": "/blazor/workbench?command=master_index",
+          "assertion": "startup command surface 'Master Index' rendered from promoted workbench route",
+          "status": "pass"
+        },
+        {
+          "route": "/blazor/workbench?command=open_character",
+          "assertion": "startup command surface 'Open Character' rendered from promoted workbench route",
+          "status": "pass"
+        },
+        {
+          "route": "/blazor/workbench?command=open_for_printing",
+          "assertion": "startup command surface 'Open for Printing' rendered from promoted workbench route",
+          "status": "pass"
+        },
+        {
+          "route": "/blazor/workbench?command=open_for_export",
+          "assertion": "startup command surface 'Open for Export' rendered from promoted workbench route",
+          "status": "pass"
+        }
+      ]
+    },
+    {
+      "id": "promoted_dense_tool_surfaces",
+      "route_lane": "promoted_blazor_workbench",
+      "workflow_contract": "dense_tool_surface_execution",
+      "checks": [
+        {
+          "route": "/blazor/workbench?command=character_roster",
+          "assertion": "dense tool surface 'Character Roster' rendered with compact browser-visible utility markers",
+          "status": "pass"
+        },
+        {
+          "route": "/blazor/workbench?command=master_index",
+          "assertion": "dense tool surface 'Master Index' rendered with compact browser-visible utility markers",
+          "status": "pass"
+        }
+      ]
+    },
+    {
+      "id": "promoted_origin_rules_continuity",
+      "route_lane": "promoted_blazor_workbench",
+      "workflow_contract": "origin_and_rules_surface_continuity",
+      "checks": [
+        {
+          "route": "/blazor/workbench?command=new_character_origin",
+          "assertion": "origin dossier wizard rendered with story, advanced controls, and preview surfaces",
+          "status": "pass"
+        },
+        {
+          "route": "/blazor/workbench?fixture=blue&tab=tab-rules",
+          "assertion": "rules continuity route preserved the rules tab and visible imported ruleset summary",
+          "status": "pass"
+        }
+      ]
+    },
+    {
+      "id": "promoted_build_lab_continuity",
+      "route_lane": "promoted_blazor_workbench",
+      "workflow_contract": "build_lab_runner_continuity",
+      "checks": [
+        {
+          "route": "/blazor/workbench?fixture=blue&tab=tab-create",
+          "assertion": "build-lab continuity route rendered the seeded build-lab creation and export surfaces",
+          "status": "pass"
+        }
+      ]
+    },
+    {
+      "id": "promoted_weapon_selection_execution",
+      "route_lane": "promoted_blazor_workbench",
+      "workflow_contract": "combat_lane_weapon_selection_execution",
+      "checks": [
+        {
+          "route": "/blazor/workbench?fixture=blue&tab=tab-combat&control=combat_add_weapon",
+          "assertion": "weapon selection dialog rendered dense combat catalog with visible accessories, filters, and source context",
+          "status": "pass"
+        }
+      ]
+    },
+    {
+      "id": "promoted_skill_selection_execution",
+      "route_lane": "promoted_blazor_workbench",
+      "workflow_contract": "skills_lane_skill_selection_execution",
+      "checks": [
+        {
+          "route": "/blazor/workbench?fixture=blue&tab=tab-skills&control=skill_add",
+          "assertion": "skill selection dialog rendered dense skill catalog with visible linked-attribute and filter controls",
+          "status": "pass"
+        }
+      ]
+    },
+    {
+      "id": "promoted_vehicle_selection_execution",
+      "route_lane": "promoted_blazor_workbench",
+      "workflow_contract": "gear_lane_vehicle_selection_execution",
+      "checks": [
+        {
+          "route": "/blazor/workbench?fixture=blue&tab=tab-gear&control=vehicle_add",
+          "assertion": "vehicle selection dialog rendered dense gear-lane catalog, filters, and selection details",
+          "status": "pass"
+        }
+      ]
+    },
+    {
+      "id": "promoted_vehicle_mod_selection_execution",
+      "route_lane": "promoted_blazor_workbench",
+      "workflow_contract": "gear_lane_vehicle_mod_selection_execution",
+      "checks": [
+        {
+          "route": "/blazor/workbench?fixture=blue&tab=tab-gear&control=vehicle_mod_add",
+          "assertion": "vehicle mod selection dialog rendered dense catalog, slot, availability, and source context",
+          "status": "pass"
+        }
+      ]
+    },
+    {
+      "id": "promoted_quality_selection_execution",
+      "route_lane": "promoted_blazor_workbench",
+      "workflow_contract": "qualities_lane_quality_selection_execution",
+      "checks": [
+        {
+          "route": "/blazor/workbench?fixture=blue&tab=tab-qualities&control=quality_add",
+          "assertion": "quality selection dialog rendered dense category, karma, source, and filter context",
+          "status": "pass"
+        }
+      ]
+    },
+    {
+      "id": "promoted_quality_delete_execution",
+      "route_lane": "promoted_blazor_workbench",
+      "workflow_contract": "qualities_lane_quality_delete_execution",
+      "checks": [
+        {
+          "route": "/blazor/workbench?fixture=blue&tab=tab-qualities&control=quality_delete",
+          "assertion": "quality delete dialog rendered karma-impact and recovery context with visible surrounding quality state",
+          "status": "pass"
+        }
+      ]
+    },
+    {
+      "id": "promoted_spell_selection_execution",
+      "route_lane": "promoted_blazor_workbench",
+      "workflow_contract": "magic_lane_spell_selection_execution",
+      "checks": [
+        {
+          "route": "/blazor/workbench?fixture=blue&tab=tab-magician&control=spell_add",
+          "assertion": "spell selection dialog rendered dense magic catalog with visible drain, source, and category context",
+          "status": "pass"
+        }
+      ]
+    },
+    {
+      "id": "promoted_magic_delete_execution",
+      "route_lane": "promoted_blazor_workbench",
+      "workflow_contract": "magic_lane_delete_execution",
+      "checks": [
+        {
+          "route": "/blazor/workbench?fixture=blue&tab=tab-magician&control=magic_delete",
+          "assertion": "magic delete dialog rendered drain-impact and recovery context with visible surrounding magic state",
+          "status": "pass"
+        }
+      ]
+    },
+    {
+      "id": "promoted_cyberware_selection_execution",
+      "route_lane": "promoted_blazor_workbench",
+      "workflow_contract": "cyberware_lane_selection_execution",
+      "checks": [
+        {
+          "route": "/blazor/workbench?fixture=blue&tab=tab-cyberware&control=cyberware_add",
+          "assertion": "cyberware selection dialog rendered dense catalog with visible essence, cost, source, and filter context",
+          "status": "pass"
+        }
+      ]
+    },
+    {
+      "id": "promoted_cyberware_edit_execution",
+      "route_lane": "promoted_blazor_workbench",
+      "workflow_contract": "cyberware_lane_edit_execution",
+      "checks": [
+        {
+          "route": "/blazor/workbench?fixture=blue&tab=tab-cyberware&control=cyberware_edit",
+          "assertion": "cyberware edit dialog rendered installed-ware context with live recalculation and follow-through posture",
+          "status": "pass"
+        }
+      ]
+    },
+    {
+      "id": "promoted_cyberware_delete_execution",
+      "route_lane": "promoted_blazor_workbench",
+      "workflow_contract": "cyberware_lane_delete_execution",
+      "checks": [
+        {
+          "route": "/blazor/workbench?fixture=blue&tab=tab-cyberware&control=cyberware_delete",
+          "assertion": "cyberware delete dialog rendered installed-ware removal impact and recovery context",
+          "status": "pass"
+        }
+      ]
+    },
+    {
+      "id": "promoted_drug_selection_execution",
+      "route_lane": "promoted_blazor_workbench",
+      "workflow_contract": "gear_lane_drug_selection_execution",
+      "checks": [
+        {
+          "route": "/blazor/workbench?fixture=blue&tab=tab-gear&control=drug_add",
+          "assertion": "drug selection dialog rendered dense gear-lane catalog and dose-specific crash/source details",
+          "status": "pass"
+        }
+      ]
+    },
+    {
+      "id": "promoted_contact_connection_execution",
+      "route_lane": "promoted_blazor_workbench",
+      "workflow_contract": "contact_lane_connection_edit_execution",
+      "checks": [
+        {
+          "route": "/blazor/workbench?fixture=blue&tab=tab-contacts&control=contact_connection",
+          "assertion": "contact connection dialog rendered compact edit controls with visible selected-contact summary context",
+          "status": "pass"
+        }
+      ]
+    },
+    {
+      "id": "promoted_vehicle_edit_execution",
+      "route_lane": "promoted_blazor_workbench",
+      "workflow_contract": "gear_lane_vehicle_edit_execution",
+      "checks": [
+        {
+          "route": "/blazor/workbench?fixture=blue&tab=tab-gear&control=vehicle_edit",
+          "assertion": "vehicle edit dialog rendered selected-item context with live summary and visible garage navigation state",
+          "status": "pass"
+        }
+      ]
+    },
+    {
+      "id": "promoted_vehicle_delete_execution",
+      "route_lane": "promoted_blazor_workbench",
+      "workflow_contract": "gear_lane_vehicle_delete_execution",
+      "checks": [
+        {
+          "route": "/blazor/workbench?fixture=blue&tab=tab-gear&control=vehicle_delete",
+          "assertion": "vehicle delete dialog rendered removal impact and recovery context with visible garage navigation state",
+          "status": "pass"
+        }
+      ]
+    },
+    {
+      "id": "promoted_contact_delete_execution",
+      "route_lane": "promoted_blazor_workbench",
+      "workflow_contract": "contacts_lane_contact_delete_execution",
+      "checks": [
+        {
+          "route": "/blazor/workbench?fixture=blue&tab=tab-contacts&control=contact_remove",
+          "assertion": "contact delete dialog rendered roster impact and recovery context with visible surrounding contact state",
+          "status": "pass"
+        }
+      ]
+    },
+    {
+      "id": "promoted_contact_edit_execution",
+      "route_lane": "promoted_blazor_workbench",
+      "workflow_contract": "contacts_lane_contact_edit_execution",
+      "checks": [
+        {
+          "route": "/blazor/workbench?fixture=blue&tab=tab-contacts&control=contact_edit",
+          "assertion": "contact edit dialog rendered selected-contact details with visible role and connection editing context",
+          "status": "pass"
+        }
+      ]
+    },
+    {
+      "id": "promoted_resumed_workspace",
+      "route_lane": "promoted_blazor_workbench",
+      "workflow_contract": "workspace_resume_continuity",
+      "checks": [
+        {
+          "route": "/blazor/workbench?fixture=blue",
+          "assertion": "restored workspace copy rendered",
+          "status": "pass"
+        }
+      ]
+    },
+    {
+      "id": "promoted_recent_work_affordances",
+      "route_lane": "promoted_blazor_workbench",
+      "workflow_contract": "recent_work_resume_affordances",
+      "checks": [
+        {
+          "route": "/blazor/workbench?fixture=blue",
+          "assertion": "recent restored workspace affordance remains visible on promoted workbench route",
+          "status": "pass"
+        }
+      ]
+    },
+    {
+      "id": "promoted_restored_section_continuations",
+      "route_lane": "promoted_blazor_workbench",
+      "workflow_contract": "section_continuation_affordances",
+      "checks": [
+        {
+          "route": "/blazor/workbench?fixture=blue",
+          "assertion": "restored section continuation affordances remain visible on promoted workbench route",
+          "status": "pass"
+        }
+      ]
+    },
+    {
+      "id": "promoted_restored_tab_landings",
+      "route_lane": "promoted_blazor_workbench",
+      "workflow_contract": "restored_tab_landing_execution",
+      "checks": [
+        {
+          "route": "/blazor/workbench?fixture=blue&tab=tab-info",
+          "assertion": "restored route landed on 'Profile' section for promoted workbench route",
+          "status": "pass"
+        },
+        {
+          "route": "/blazor/workbench?fixture=blue&tab=tab-rules",
+          "assertion": "restored route landed on 'Rules' section for promoted workbench route",
+          "status": "pass"
+        },
+        {
+          "route": "/blazor/workbench?fixture=blue&tab=tab-gear",
+          "assertion": "restored route landed on 'Gear' section for promoted workbench route",
+          "status": "pass"
+        },
+        {
+          "route": "/blazor/workbench?fixture=blue&tab=tab-technomancer",
+          "assertion": "restored route landed on 'Complex Forms' section for promoted workbench route",
+          "status": "pass"
+        }
+      ]
+    },
+    {
+      "id": "promoted_restored_section_content",
+      "route_lane": "promoted_blazor_workbench",
+      "workflow_contract": "restored_section_surface_content",
+      "checks": [
+        {
+          "route": "/blazor/workbench?fixture=blue&tab=tab-info",
+          "assertion": "restored route rendered section-specific marker 'Profile'",
+          "status": "pass"
+        },
+        {
+          "route": "/blazor/workbench?fixture=blue&tab=tab-rules",
+          "assertion": "restored route rendered section-specific marker 'Rules'",
+          "status": "pass"
+        },
+        {
+          "route": "/blazor/workbench?fixture=blue&tab=tab-gear",
+          "assertion": "restored route rendered section-specific marker 'Gear'",
+          "status": "pass"
+        },
+        {
+          "route": "/blazor/workbench?fixture=blue&tab=tab-technomancer",
+          "assertion": "restored route rendered section-specific marker 'Complex Forms'",
+          "status": "pass"
+        }
+      ]
+    },
+    {
+      "id": "promoted_result_continuations",
+      "route_lane": "promoted_blazor_workbench",
+      "workflow_contract": "browser_result_continuations",
+      "checks": [
+        {
+          "route": "/blazor/workbench?fixture=blue&command=save_character_as",
+          "assertion": "visible result continuation text 'Download prepared:' rendered",
+          "status": "pass"
+        },
+        {
+          "route": "/blazor/workbench?fixture=blue&command=export_character",
+          "assertion": "visible result continuation text 'Export Character' rendered",
+          "status": "pass"
+        },
+        {
+          "route": "/blazor/workbench?fixture=blue&command=print_character",
+          "assertion": "visible result continuation text 'Print preview prepared:' rendered",
+          "status": "pass"
+        }
+      ]
+    },
+    {
+      "id": "promoted_action_continuations",
+      "route_lane": "promoted_blazor_workbench",
+      "workflow_contract": "dialog_action_continuity",
+      "checks": [
+        {
+          "route": "/blazor/workbench?fixture=blue&tab=tab-contacts&control=contact_add",
+          "assertion": "contact dialog opened with expected browser-visible fields",
+          "status": "pass"
+        }
+      ]
+    },
+    {
+      "id": "promoted_advanced_action_affordances",
+      "route_lane": "promoted_blazor_workbench",
+      "workflow_contract": "advanced_action_continuation_affordances",
+      "checks": [
+        {
+          "route": "/blazor/workbench?fixture=blue",
+          "assertion": "advanced restored action affordances remain visible on promoted workbench route",
+          "status": "pass"
+        }
+      ]
+    },
+    {
+      "id": "promoted_advanced_action_executions",
+      "route_lane": "promoted_blazor_workbench",
+      "workflow_contract": "advanced_dialog_action_execution",
+      "checks": [
+        {
+          "route": "/blazor/workbench?fixture=blue&tab=tab-technomancer&control=complex_form_add",
+          "assertion": "advanced dialog 'Add Complex Form' rendered with expected browser-visible details",
+          "status": "pass"
+        },
+        {
+          "route": "/blazor/workbench?fixture=blue&tab=tab-adept&control=initiation_add",
+          "assertion": "advanced dialog 'Add Initiation / Submersion' rendered with expected browser-visible details",
+          "status": "pass"
+        },
+        {
+          "route": "/blazor/workbench?fixture=blue&tab=tab-cyberware&control=cyberware_add",
+          "assertion": "advanced dialog 'Add Cyberware' rendered with expected browser-visible details",
+          "status": "pass"
+        },
+        {
+          "route": "/blazor/workbench?fixture=blue&tab=tab-magician&control=spell_add",
+          "assertion": "advanced dialog 'Add Spell' rendered with expected browser-visible details",
+          "status": "pass"
+        }
+      ]
+    },
+    {
+      "id": "promoted_committed_actions",
+      "route_lane": "promoted_blazor_workbench",
+      "workflow_contract": "committed_visible_state",
+      "checks": [
+        {
+          "route": "/blazor/workbench?fixture=blue&tab=tab-contacts&control=contact_add&dialog_action=add",
+          "assertion": "committed contact remains visible after dialog action",
+          "status": "pass"
+        }
+      ]
+    },
+    {
+      "id": "promoted_advanced_committed_actions",
+      "route_lane": "promoted_blazor_workbench",
+      "workflow_contract": "advanced_committed_visible_state",
+      "checks": [
+        {
+          "route": "/blazor/workbench?fixture=blue&tab=tab-technomancer&control=complex_form_add&dialog_action=add",
+          "assertion": "advanced committed action published visible notice 'Complex form 'Cleaner' added.'",
+          "status": "pass"
+        },
+        {
+          "route": "/blazor/workbench?fixture=blue&tab=tab-adept&control=initiation_add&dialog_action=add",
+          "assertion": "advanced committed action published visible notice 'Initiation/submersion reward 'Masking' added.'",
+          "status": "pass"
+        },
+        {
+          "route": "/blazor/workbench?fixture=blue&tab=tab-cyberware&control=cyberware_add&dialog_action=add",
+          "assertion": "advanced committed action published visible notice 'Cyberware 'Wired Reflexes 2' added.'",
+          "status": "pass"
+        },
+        {
+          "route": "/blazor/workbench?fixture=blue&tab=tab-magician&control=spell_add&dialog_action=add",
+          "assertion": "advanced committed action published visible notice 'Spell 'Stunbolt' added.'",
+          "status": "pass"
+        }
+      ]
+    }
+  ],
+  "notes": [
+    "This receipt is for hosted browser execution proof against the public edge.",
+    "Do not treat route-entry proof as equivalent to this execution receipt.",
+    "Only promoted /blazor/workbench workflow execution counts for this proof tier."
+  ]
+}

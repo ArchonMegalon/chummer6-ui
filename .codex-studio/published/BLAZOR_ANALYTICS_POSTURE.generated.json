@@ -1,0 +1,62 @@
+{
+  "checks": [
+    {
+      "evidence": "Chummer.Blazor/Components/App.razor conditionally renders the Rybbit script from configuration.",
+      "id": "blazor_shell_loads_rybbit_only_from_config",
+      "passed": true
+    },
+    {
+      "evidence": "The Blazor shell event bridge emits route/workflow metadata instead of character payloads.",
+      "id": "analytics_event_bridge_uses_sanitized_route_metadata",
+      "passed": true
+    },
+    {
+      "evidence": "The client-side analytics bridge rejects sensitive property keys before dispatch.",
+      "id": "analytics_sensitive_property_denylist_present",
+      "passed": true
+    },
+    {
+      "evidence": "docker-compose.yml keeps standalone and portal Blazor analytics default-off for self-hosters.",
+      "id": "self_host_compose_defaults_analytics_off",
+      "passed": true
+    },
+    {
+      "evidence": "docker-compose.public-edge.yml maps hosted Rybbit configuration into the public Blazor container.",
+      "id": "hosted_chummer_run_public_blazor_enables_rybbit",
+      "passed": true
+    },
+    {
+      "evidence": "The self-host environment example exposes optional Rybbit variables while keeping analytics disabled.",
+      "id": "self_host_env_example_documents_default_off",
+      "passed": true
+    },
+    {
+      "evidence": "The self-host runbook documents the opt-in analytics posture and sensitive-data boundary.",
+      "id": "runbook_documents_privacy_boundary",
+      "passed": true
+    },
+    {
+      "evidence": "Browser parity and release signoff docs distinguish analytics posture proof from workflow parity proof.",
+      "id": "browser_parity_docs_reference_analytics_receipt",
+      "passed": true
+    },
+    {
+      "evidence": "Live hosted Blazor HTML at https://chummer.run/blazor/ contains the Rybbit script tag and sanitized analytics bridge.",
+      "id": "hosted_chummer_run_blazor_renders_rybbit_adapter",
+      "passed": true
+    },
+    {
+      "evidence": "Live hosted Blazor health at https://chummer.run/blazor/health reports Rybbit enabled without exposing secret values.",
+      "id": "hosted_chummer_run_blazor_health_reports_rybbit_enabled",
+      "passed": true
+    }
+  ],
+  "contract_name": "chummer6-ui.blazor_analytics_posture",
+  "generated_at": "2026-06-24T18:47:58.321354+00:00",
+  "health_url": "https://chummer.run/blazor/health",
+  "hosted_public_edge": "rybbit-enabled-when-site-id-configured",
+  "live_url": "https://chummer.run/blazor/",
+  "self_host_default": "analytics-disabled",
+  "sensitive_data_policy": "route-and-workflow-metadata-only",
+  "status": "passed"
+}

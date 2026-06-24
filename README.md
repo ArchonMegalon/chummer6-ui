@@ -30,6 +30,8 @@ For a quick orientation, read `.codex-design/product/START_HERE.md`.
 
 For the current release posture, read `docs/WORKBENCH_RELEASE_SIGNOFF.md`.
 
+For the browser-hosted desktop-equivalent target, read `docs/BLAZOR_WEB_CLIENT_PARITY_GOAL.md`.
+
 legacy compatibility cargo is explicitly isolated in `docs/COMPATIBILITY_CARGO.md` instead of being treated as active boundary truth.
 
 For the larger campaign-layer showcase, read `docs/TABLE_PULSE_FLAGSHIP_SHOWCASE.md`.
