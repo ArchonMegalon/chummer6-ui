@@ -33,6 +33,7 @@ PREVIEW_INSTALL_ACCESS_CLASS="${CHUMMER_PREVIEW_INSTALL_ACCESS_CLASS:-}"
 EXTERNAL_PROOF_BASE_URL="${CHUMMER_EXTERNAL_PROOF_BASE_URL:-https://chummer.run}"
 DOWNLOADS_PREFIX="${CHUMMER_PUBLIC_DOWNLOADS_PREFIX:-${EXTERNAL_PROOF_BASE_URL%/}/downloads/files}"
 RELEASE_PROOF_MAX_AGE_SECONDS="${CHUMMER_RELEASE_PROOF_MAX_AGE_SECONDS:-86400}"
+UI_LOCALIZATION_RELEASE_GATE_MAX_AGE_SECONDS="${CHUMMER_UI_LOCALIZATION_RELEASE_GATE_MAX_AGE_SECONDS:-604800}"
 REGISTRY_CANONICAL_MANIFEST_PATH="${REGISTRY_CANONICAL_MANIFEST_PATH:-$REGISTRY_ROOT/.codex-studio/published/RELEASE_CHANNEL.generated.json}"
 REGISTRY_RELEASES_MANIFEST_PATH="${REGISTRY_RELEASES_MANIFEST_PATH:-$REGISTRY_ROOT/.codex-studio/published/releases.json}"
 REGISTRY_FILES_DIR="${REGISTRY_FILES_DIR:-$REGISTRY_ROOT/.codex-studio/published/files}"
@@ -437,6 +438,23 @@ resolve_hub_release_proof_generator_root() {
   printf '%s\n' ""
 }
 
+resolve_ui_localization_release_gate_generator_root() {
+  local -a roots=(
+    "$REPO_ROOT"
+    "$REPO_ROOT/../chummer6-ui"
+    "/docker/chummercomplete/chummer-presentation"
+    "/docker/chummercomplete/chummer6-ui"
+  )
+  local root
+  for root in "${roots[@]}"; do
+    if [[ -f "$root/scripts/ai/milestones/b15-localization-release-gate.sh" ]]; then
+      printf '%s\n' "$root"
+      return 0
+    fi
+  done
+  printf '%s\n' ""
+}
+
 materialize_fresh_release_proof() {
   local base_url="${1:-}"
   local hub_root
@@ -464,6 +482,29 @@ materialize_fresh_release_proof() {
 
   if ! release_proof_is_fresh "$generated_output" "$RELEASE_PROOF_MAX_AGE_SECONDS"; then
     rm -f "$generated_output"
+    return 1
+  fi
+
+  printf '%s\n' "$generated_output"
+}
+
+materialize_fresh_ui_localization_release_gate() {
+  local ui_root
+  ui_root="$(resolve_ui_localization_release_gate_generator_root)"
+  if [[ -z "$ui_root" ]]; then
+    return 1
+  fi
+
+  if ! (cd "$ui_root" && bash "$ui_root/scripts/ai/milestones/b15-localization-release-gate.sh" >/dev/null); then
+    return 1
+  fi
+
+  local generated_output="$ui_root/.codex-studio/published/UI_LOCALIZATION_RELEASE_GATE.generated.json"
+  if [[ ! -f "$generated_output" ]]; then
+    return 1
+  fi
+
+  if ! release_proof_is_fresh "$generated_output" "$UI_LOCALIZATION_RELEASE_GATE_MAX_AGE_SECONDS"; then
     return 1
   fi
 
@@ -571,6 +612,102 @@ PY
   fi
 
   generated_candidate="$(materialize_fresh_release_proof "$EXTERNAL_PROOF_BASE_URL" || true)"
+  if [[ -n "$generated_candidate" && -f "$generated_candidate" ]]; then
+    printf '%s\n' "$generated_candidate"
+    return 0
+  fi
+
+  if [[ -n "$freshest_candidate" ]]; then
+    printf '%s\n' "$freshest_candidate"
+    return 0
+  fi
+
+  printf '%s\n' ""
+}
+
+resolve_ui_localization_release_gate_path() {
+  local requested="${1:-}"
+  local -a candidates=()
+  local freshest_candidate=""
+  local generated_candidate=""
+
+  if [[ -n "$requested" && -f "$requested" ]]; then
+    if release_proof_is_fresh "$requested" "$UI_LOCALIZATION_RELEASE_GATE_MAX_AGE_SECONDS"; then
+      printf '%s\n' "$requested"
+      return 0
+    fi
+    generated_candidate="$(materialize_fresh_ui_localization_release_gate || true)"
+    if [[ -n "$generated_candidate" && -f "$generated_candidate" ]]; then
+      printf '%s\n' "$generated_candidate"
+      return 0
+    fi
+    printf '%s\n' "$requested"
+    return 0
+  fi
+
+  candidates+=(
+    "$REPO_ROOT/.codex-studio/published/UI_LOCALIZATION_RELEASE_GATE.generated.json"
+    "$REPO_ROOT/../chummer6-ui/.codex-studio/published/UI_LOCALIZATION_RELEASE_GATE.generated.json"
+    "/docker/chummercomplete/chummer-presentation/.codex-studio/published/UI_LOCALIZATION_RELEASE_GATE.generated.json"
+    "/docker/chummercomplete/chummer6-ui/.codex-studio/published/UI_LOCALIZATION_RELEASE_GATE.generated.json"
+    "$REGISTRY_ROOT/.codex-studio/published/.tmp_ui_localization_release_gate.json"
+  )
+
+  freshest_candidate="$(python3 - "${candidates[@]}" <<'PY'
+import datetime as dt
+import json
+import sys
+from pathlib import Path
+
+UTC = dt.timezone.utc
+
+def parse_timestamp(payload: dict) -> dt.datetime:
+    raw = str(payload.get("generatedAt") or payload.get("generated_at") or "").strip()
+    if not raw:
+        return dt.datetime.min.replace(tzinfo=UTC)
+    if raw.endswith("Z"):
+        raw = raw[:-1] + "+00:00"
+    try:
+        parsed = dt.datetime.fromisoformat(raw)
+    except ValueError:
+        return dt.datetime.min.replace(tzinfo=UTC)
+    if parsed.tzinfo is None:
+        parsed = parsed.replace(tzinfo=UTC)
+    return parsed.astimezone(UTC)
+
+seen = set()
+best_path = None
+best_timestamp = dt.datetime.min.replace(tzinfo=UTC)
+
+for raw_candidate in sys.argv[1:]:
+    candidate = Path(raw_candidate).resolve(strict=False)
+    if candidate in seen or not candidate.is_file():
+        continue
+    seen.add(candidate)
+    try:
+        payload = json.loads(candidate.read_text(encoding="utf-8-sig"))
+    except Exception:
+        continue
+    if not isinstance(payload, dict):
+        continue
+    timestamp = parse_timestamp(payload)
+    if best_path is None or timestamp >= best_timestamp:
+        best_path = candidate
+        best_timestamp = timestamp
+
+if best_path is not None:
+    print(best_path)
+PY
+)"
+
+  if [[ -n "$freshest_candidate" && -f "$freshest_candidate" ]]; then
+    if release_proof_is_fresh "$freshest_candidate" "$UI_LOCALIZATION_RELEASE_GATE_MAX_AGE_SECONDS"; then
+      printf '%s\n' "$freshest_candidate"
+      return 0
+    fi
+  fi
+
+  generated_candidate="$(materialize_fresh_ui_localization_release_gate || true)"
   if [[ -n "$generated_candidate" && -f "$generated_candidate" ]]; then
     printf '%s\n' "$generated_candidate"
     return 0
@@ -1337,8 +1474,10 @@ PY
 }
 
 RELEASE_PROOF_PATH="$(resolve_release_proof_path "$RELEASE_PROOF_PATH")"
+UI_LOCALIZATION_RELEASE_GATE_PATH="$(resolve_ui_localization_release_gate_path "$UI_LOCALIZATION_RELEASE_GATE_PATH")"
 SANITIZED_RELEASE_PROOF_PATH=""
 GENERATED_RELEASE_PROOF_PATH=""
+GENERATED_UI_LOCALIZATION_RELEASE_GATE_PATH=""
 SANITIZED_UI_LOCALIZATION_RELEASE_GATE_PATH=""
 SANITIZED_STARTUP_SMOKE_DIR=""
 SANITIZED_SOURCE_MANIFEST_PATH=""
@@ -1348,6 +1487,9 @@ cleanup_generate_release_manifest() {
   fi
   if [[ -n "$SANITIZED_RELEASE_PROOF_PATH" && -f "$SANITIZED_RELEASE_PROOF_PATH" ]]; then
     rm -f "$SANITIZED_RELEASE_PROOF_PATH"
+  fi
+  if [[ -n "$GENERATED_UI_LOCALIZATION_RELEASE_GATE_PATH" && -f "$GENERATED_UI_LOCALIZATION_RELEASE_GATE_PATH" ]]; then
+    rm -f "$GENERATED_UI_LOCALIZATION_RELEASE_GATE_PATH"
   fi
   if [[ -n "$SANITIZED_UI_LOCALIZATION_RELEASE_GATE_PATH" && -f "$SANITIZED_UI_LOCALIZATION_RELEASE_GATE_PATH" ]]; then
     rm -f "$SANITIZED_UI_LOCALIZATION_RELEASE_GATE_PATH"
@@ -1369,6 +1511,9 @@ if [[ -n "$RELEASE_PROOF_PATH" && -f "$RELEASE_PROOF_PATH" ]]; then
   RELEASE_PROOF_PATH="$SANITIZED_RELEASE_PROOF_PATH"
 fi
 if [[ -n "$UI_LOCALIZATION_RELEASE_GATE_PATH" && -f "$UI_LOCALIZATION_RELEASE_GATE_PATH" ]]; then
+  if [[ "$UI_LOCALIZATION_RELEASE_GATE_PATH" == /tmp/* ]]; then
+    GENERATED_UI_LOCALIZATION_RELEASE_GATE_PATH="$UI_LOCALIZATION_RELEASE_GATE_PATH"
+  fi
   SANITIZED_UI_LOCALIZATION_RELEASE_GATE_PATH="$(mktemp)"
   sanitize_ui_localization_release_gate_payload \
     "$UI_LOCALIZATION_RELEASE_GATE_PATH" \
@@ -2184,9 +2329,18 @@ prune_downloads_dir_to_promoted_files() {
   local file_path=""
   local file_name=""
   local keep=""
+  local repo_owned_downloads_dir=""
+  local resolved_downloads_dir=""
 
   if [[ "${#promoted_file_names[@]}" -eq 0 ]]; then
     echo "no promoted desktop artifacts discovered in $CANONICAL_MANIFEST_PATH; skipping downloads prune"
+    return 0
+  fi
+
+  repo_owned_downloads_dir="$(realpath -m "$REPO_ROOT/Docker/Downloads/files")"
+  resolved_downloads_dir="$(realpath -m "$DOWNLOADS_DIR")"
+  if [[ "$resolved_downloads_dir" != "$repo_owned_downloads_dir" ]]; then
+    echo "skipping downloads prune because source dir is external to repo-owned staging: $DOWNLOADS_DIR"
     return 0
   fi
 
@@ -2235,11 +2389,23 @@ resolve_promoted_artifact_source() {
   return 1
 }
 
+windows_payload_name_for_installer() {
+  local file_name="$1"
+  if [[ "$file_name" == chummer-*-win-*-installer.exe ]]; then
+    printf '%s\n' "${file_name%-installer.exe}-payload.zip"
+    return 0
+  fi
+  return 1
+}
+
 sync_promoted_files_dir() {
   local target_dir="$1"
   local target_label="$2"
   local artifact_path=""
   local file_name=""
+  local payload_file_name=""
+  local payload_source_path=""
+  local payload_sidecar_path=""
   # portal_artifacts: keep historical variable naming expected by migration compliance checks.
   local -a portal_artifacts=()
   local source_path=""
@@ -2258,12 +2424,35 @@ sync_promoted_files_dir() {
       source_path="$DOWNLOADS_DIR/$file_name"
     fi
     portal_artifacts+=("$source_path")
+
+    payload_file_name="$(windows_payload_name_for_installer "$file_name" || true)"
+    if [[ -n "$payload_file_name" ]]; then
+      payload_source_path="$(resolve_promoted_artifact_source "$payload_file_name" || true)"
+      if [[ -z "$payload_source_path" ]]; then
+        echo "windows installer payload sidecar missing from all local/registry sources: $payload_file_name" >&2
+        exit 1
+      fi
+      if [[ "$payload_source_path" != "$DOWNLOADS_DIR/$payload_file_name" ]]; then
+        mkdir -p "$DOWNLOADS_DIR"
+        cp -f "$payload_source_path" "$DOWNLOADS_DIR/$payload_file_name"
+        echo "restored missing artifact into downloads source: $payload_file_name"
+        payload_source_path="$DOWNLOADS_DIR/$payload_file_name"
+      fi
+      portal_artifacts+=("$payload_source_path")
+
+      payload_sidecar_path="$payload_source_path.json"
+      if [[ -f "$payload_sidecar_path" ]]; then
+        portal_artifacts+=("$payload_sidecar_path")
+      fi
+    fi
   done
 
   if [[ "${#portal_artifacts[@]}" -gt 0 ]]; then
     rm -f \
       "$target_dir"/chummer-*.exe \
       "$target_dir"/chummer-*.zip \
+      "$target_dir"/chummer-*-payload.zip \
+      "$target_dir"/chummer-*-payload.zip.json \
       "$target_dir"/chummer-*.tar.gz \
       "$target_dir"/chummer-*-installer.deb \
       "$target_dir"/chummer-*-installer.pkg \

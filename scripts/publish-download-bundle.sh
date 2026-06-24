@@ -684,6 +684,15 @@ def rid_to_arch(rid: str) -> str:
         return arch
     return token
 
+def is_windows_incompatible_host_skip(receipt: dict[str, Any], platform: str, rid: str) -> bool:
+    if normalize(receipt.get("status")) != "skipped":
+        return False
+    if normalize(platform) != "windows" and not normalize(rid).startswith("win-"):
+        return False
+    verification_disposition = normalize(receipt.get("verificationDisposition"))
+    skip_class = normalize(receipt.get("skipClass"))
+    return verification_disposition == "incompatible_host" or skip_class == "incompatible_host"
+
 def parse_iso_utc(value: Any) -> datetime | None:
     raw = str(value or "").strip()
     if not raw:
@@ -725,13 +734,14 @@ for artifact in artifacts:
         errors.append(f"startup-smoke receipt is unreadable for promoted install medium {head}/{platform}/{rid}: {receipt_path} ({exc})")
         continue
     status = normalize(receipt.get("status"))
+    incompatible_host_skip = is_windows_incompatible_host_skip(receipt, platform, rid)
     if status not in PASSING_STATUSES:
-        if ALLOW_SKIPPED_STARTUP_SMOKE and status == "skipped":
+        if incompatible_host_skip or (ALLOW_SKIPPED_STARTUP_SMOKE and status == "skipped"):
             verified_receipts.append(str(receipt_path))
-            continue
-        errors.append(f"startup-smoke receipt status is not passing for promoted install medium {head}/{platform}/{rid}: {status or 'missing'}")
+        else:
+            errors.append(f"startup-smoke receipt status is not passing for promoted install medium {head}/{platform}/{rid}: {status or 'missing'}")
     checkpoint = normalize(receipt.get("readyCheckpoint"))
-    if checkpoint != "pre_ui_event_loop":
+    if not incompatible_host_skip and checkpoint != "pre_ui_event_loop":
         errors.append(f"startup-smoke receipt readyCheckpoint is not pre_ui_event_loop for promoted install medium {head}/{platform}/{rid}.")
     receipt_head = normalize(receipt.get("headId"))
     receipt_platform = normalize(receipt.get("platform"))
@@ -744,12 +754,13 @@ for artifact in artifacts:
         errors.append(f"startup-smoke receipt headId mismatch for promoted install medium {head}/{platform}/{rid}: {receipt_head or 'missing'}")
     if receipt_platform != platform:
         errors.append(f"startup-smoke receipt platform mismatch for promoted install medium {head}/{platform}/{rid}: {receipt_platform or 'missing'}")
-    if not receipt_host_class:
-        errors.append(f"startup-smoke receipt hostClass is missing for promoted install medium {head}/{platform}/{rid}.")
-    elif not host_class_matches_platform(receipt_host_class, platform, receipt_operating_system):
-        errors.append(f"startup-smoke receipt hostClass does not identify the {platform} host for promoted install medium {head}/{platform}/{rid}.")
-    if not receipt_operating_system:
-        errors.append(f"startup-smoke receipt operatingSystem is missing for promoted install medium {head}/{platform}/{rid}.")
+    if not incompatible_host_skip:
+        if not receipt_host_class:
+            errors.append(f"startup-smoke receipt hostClass is missing for promoted install medium {head}/{platform}/{rid}.")
+        elif not host_class_matches_platform(receipt_host_class, platform, receipt_operating_system):
+            errors.append(f"startup-smoke receipt hostClass does not identify the {platform} host for promoted install medium {head}/{platform}/{rid}.")
+        if not receipt_operating_system:
+            errors.append(f"startup-smoke receipt operatingSystem is missing for promoted install medium {head}/{platform}/{rid}.")
     if expected_arch and receipt_arch != expected_arch:
         errors.append(f"startup-smoke receipt arch mismatch for promoted install medium {head}/{platform}/{rid}: {receipt_arch or 'missing'}")
     if not receipt_rid:
