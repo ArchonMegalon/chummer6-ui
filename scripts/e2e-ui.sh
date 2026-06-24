@@ -227,6 +227,7 @@ unset wait_status
 api_health=$(curl_with_key "$API_URL/api/health" "api-health")
 ui_health=$(curl_with_key "$UI_URL/health" "blazor-health")
 ui_html=$(curl_with_key "$UI_URL/" "blazor-root-html")
+ui_preview_html=$(curl_with_key "$UI_URL/preview" "blazor-preview-html")
 
 if ! grep -q '"ok":true' <<<"$api_health"; then
   echo "API health response did not contain ok=true: $api_health" >&2
@@ -238,13 +239,18 @@ if ! grep -q '"head":"blazor"' <<<"$ui_health"; then
   exit 1
 fi
 
-if ! grep -q "Chummer Blazor Head" <<<"$ui_html"; then
-  echo "Blazor shell marker not found in root page response." >&2
+if ! grep -q "Chummer Browser Preview" <<<"$ui_html"; then
+  echo "Public preview marker not found in root page response." >&2
   exit 1
 fi
 
 if ! grep -q "_framework/blazor.web.js" <<<"$ui_html"; then
   echo "Blazor framework script marker missing from root page response." >&2
+  exit 1
+fi
+
+if ! grep -q "Browser-safe shell preview" <<<"$ui_preview_html"; then
+  echo "Workbench preview marker not found in /preview page response." >&2
   exit 1
 fi
 

@@ -833,8 +833,8 @@ public class DualHeadAcceptanceTests
         CollectionAssert.IsSubsetOf(
             new[] { "translatorLanePosture", "translatorBridgePosture", "translatorOverlayCount", "translatorSearch" },
             translatorFields.Select(field => field.Id).ToArray());
-        Assert.AreEqual("governed", translatorFields.Single(field => string.Equals(field.Id, "translatorLanePosture", StringComparison.Ordinal)).Value);
-        Assert.AreEqual("governed", translatorFields.Single(field => string.Equals(field.Id, "translatorBridgePosture", StringComparison.Ordinal)).Value);
+        Assert.AreEqual("reviewed", translatorFields.Single(field => string.Equals(field.Id, "translatorLanePosture", StringComparison.Ordinal)).Value);
+        Assert.AreEqual("reviewed", translatorFields.Single(field => string.Equals(field.Id, "translatorBridgePosture", StringComparison.Ordinal)).Value);
 
         DialogFieldSnapshot[] xmlEditorFields = avaloniaSnapshots["xml_editor"].Fields;
         CollectionAssert.IsSubsetOf(

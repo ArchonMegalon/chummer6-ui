@@ -294,6 +294,25 @@ async function openRootWithRetry(page) {
   throw lastError || new Error(`Unable to open ${UI_URL}/`);
 }
 
+async function openPreviewWithRetry(page) {
+  let lastError = null;
+  for (let attempt = 1; attempt <= ROOT_NAV_RETRY_ATTEMPTS; attempt += 1) {
+    try {
+      await page.goto(`${UI_URL}/preview`, { waitUntil: NAVIGATION_WAIT_UNTIL, timeout: ROOT_NAV_TIMEOUT_MS });
+      return;
+    } catch (error) {
+      lastError = error;
+      if (attempt >= ROOT_NAV_RETRY_ATTEMPTS) {
+        break;
+      }
+
+      await delay(ROOT_NAV_RETRY_DELAY_MS);
+    }
+  }
+
+  throw lastError || new Error(`Unable to open ${UI_URL}/preview`);
+}
+
 async function expectVisibleSelector(page, selector, context) {
   await page.waitForSelector(selector, { timeout: 15000, state: 'attached' });
   const count = await page.locator(selector).count();
@@ -445,19 +464,39 @@ async function openNewCharacterDialog(page) {
   }
 }
 
-async function auditRootDesktopSurface(page) {
+async function auditPublicRootSurface(page) {
   await openRootWithRetry(page);
+  await page.waitForSelector('main.public-preview', { timeout: 15000 });
+
+  await expectVisibleSelector(page, '.public-nav', 'public preview navigation');
+  await expectVisibleSelector(page, '.hero-actions .primary-link', 'public preview primary CTA');
+  await expectVisibleSelector(page, '#boundaries', 'boundary section');
+  await expectVisibleSelector(page, '#proof', 'proof section');
+
+  const bodyText = await page.locator('body').innerText();
+  expectTextIncludes(bodyText, 'no desktop cosplay', 'public preview root');
+  expectTextIncludes(bodyText, 'It is deliberately not the full desktop client.', 'public preview root');
+  expectTextIncludes(bodyText, 'Launch browser preview', 'public preview root');
+  expectTextIncludes(bodyText, 'Open the preview workbench', 'public preview root');
+  await expectPremiumSurfaceQuality(page, 'public preview root', 'main.public-preview');
+}
+
+async function auditPreviewDesktopSurface(page) {
+  await openPreviewWithRetry(page);
   await page.waitForSelector('[data-testid="startup-workbench"]', { timeout: 15000 });
 
-  await expectVisibleSelector(page, '.classic-desktop-shell', 'root desktop shell');
+  await expectVisibleSelector(page, '.browser-preview-boundary', 'preview boundary banner');
+  await expectVisibleSelector(page, '.classic-desktop-shell', 'preview desktop shell');
   await expectVisibleSelector(page, '[data-testid="startup-primary-actions"]', 'startup primary actions');
   await expectVisibleSelector(page, '[data-testid="startup-support-actions"]', 'startup support actions');
   await expectVisibleSelector(page, '[data-startup-command="new_character"]', 'new character startup command');
 
   const bodyText = await page.locator('body').innerText();
-  expectTextIncludes(bodyText, 'New Character', 'root desktop shell');
-  expectTextIncludes(bodyText, 'Open', 'root desktop shell');
-  await expectPremiumSurfaceQuality(page, 'root desktop shell');
+  expectTextIncludes(bodyText, 'Browser-safe shell preview', 'preview desktop shell');
+  expectTextIncludes(bodyText, 'guided browser preview', 'preview desktop shell');
+  expectTextIncludes(bodyText, 'New Character', 'preview desktop shell');
+  expectTextIncludes(bodyText, 'Open', 'preview desktop shell');
+  await expectPremiumSurfaceQuality(page, 'preview desktop shell');
 }
 
 async function auditShowcaseSurface(page) {
@@ -488,7 +527,7 @@ async function auditShowcaseSurface(page) {
 }
 
 async function createDefaultSr5PriorityRunner(page) {
-  await openRootWithRetry(page);
+  await openPreviewWithRetry(page);
   await page.waitForSelector('[data-testid="startup-workbench"]', { timeout: 15000 });
   await openNewCharacterDialog(page);
 
@@ -592,7 +631,7 @@ async function countBodyOccurrences(page, marker) {
 }
 
 async function createSr4BpTrollDeckerAndExerciseAddWorkflows(page) {
-  await openRootWithRetry(page);
+  await openPreviewWithRetry(page);
   await page.waitForSelector('[data-testid="startup-workbench"]', { timeout: 15000 });
   await openNewCharacterDialog(page);
 
@@ -775,19 +814,27 @@ async function run() {
   const browser = await chromium.launch({ headless: true });
 
   try {
-    const rootAuditPage = await browser.newPage();
-    await auditRootDesktopSurface(rootAuditPage);
+    const rootAuditPage = await browser.newPage({ viewport: { width: 1440, height: 960 } });
+    await auditPublicRootSurface(rootAuditPage);
     await rootAuditPage.close();
 
-    const showcaseAuditPage = await browser.newPage();
+    const mobileRootAuditPage = await browser.newPage({ viewport: { width: 390, height: 844 } });
+    await auditPublicRootSurface(mobileRootAuditPage);
+    await mobileRootAuditPage.close();
+
+    const previewAuditPage = await browser.newPage({ viewport: { width: 1440, height: 960 } });
+    await auditPreviewDesktopSurface(previewAuditPage);
+    await previewAuditPage.close();
+
+    const showcaseAuditPage = await browser.newPage({ viewport: { width: 1440, height: 960 } });
     await auditShowcaseSurface(showcaseAuditPage);
     await showcaseAuditPage.close();
 
-    const sr5Page = await browser.newPage();
+    const sr5Page = await browser.newPage({ viewport: { width: 1440, height: 960 } });
     await createDefaultSr5PriorityRunner(sr5Page);
     await sr5Page.close();
 
-    const sr4Page = await browser.newPage();
+    const sr4Page = await browser.newPage({ viewport: { width: 1440, height: 960 } });
     await createSr4BpTrollDeckerAndExerciseAddWorkflows(sr4Page);
     await sr4Page.close();
 

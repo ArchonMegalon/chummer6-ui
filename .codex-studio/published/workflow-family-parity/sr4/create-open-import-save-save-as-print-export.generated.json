@@ -1,9 +1,11 @@
 {
-  "generatedAt": "2026-06-21T07:30:38.268177Z",
+  "generatedAt": "2026-06-24T05:58:13.148971Z",
   "contract_name": "chummer6-ui.sr4_workflow_family_verification_receipt",
-  "status": "pass",
-  "summary": "SR4 workflow-family verification evidence is explicitly grounded for create-open-import-save-save-as-print-export.",
-  "reasons": [],
+  "status": "fail",
+  "summary": "SR4 workflow-family verification evidence is incomplete for create-open-import-save-save-as-print-export.",
+  "reasons": [
+    "Execution receipts are missing or not passing: /docker/chummercomplete/chummer-presentation/.codex-studio/published/workflow-family-parity/executed/sr4/create-open-import-save-save-as-print-export.generated.json (fail)"
+  ],
   "evidence": {
     "edition": "sr4",
     "familyId": "create-open-import-save-save-as-print-export",
@@ -19,10 +21,10 @@
       "sourceRepoPath": "/docker/fleet/repos/chummer4",
       "sourceRepoHead": "fe9a0c0e67be86785ccce1be041d098f3b5cfa71"
     },
-    "executionReceipts": [
-      "/docker/chummercomplete/chummer-presentation/.codex-studio/published/workflow-family-parity/executed/sr4/create-open-import-save-save-as-print-export.generated.json"
+    "executionReceipts": [],
+    "executionFailures": [
+      "/docker/chummercomplete/chummer-presentation/.codex-studio/published/workflow-family-parity/executed/sr4/create-open-import-save-save-as-print-export.generated.json (fail)"
     ],
-    "executionFailures": [],
     "executionExternalBlockers": []
   }
 }

@@ -81,7 +81,11 @@ public partial class DesktopShell : IDisposable
         ResolveToolStripCommands();
 
     private bool ShowLeftPane =>
-        _shellSurfaceState.OpenWorkspaces.Count > 1;
+        _shellSurfaceState.ActiveWorkspaceId is not null
+        && (_shellSurfaceState.OpenWorkspaces.Count > 1
+            || _shellSurfaceState.NavigationTabs.Count > 0
+            || _shellSurfaceState.WorkspaceActions.Count > 0
+            || _shellSurfaceState.ActiveWorkflowSurfaceActions.Count > 0);
 
     private IReadOnlyList<AppCommandDefinition> MenuRoots =>
         _shellSurfaceState.MenuRoots;

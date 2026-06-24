@@ -48,8 +48,25 @@ verify_windows_installer_payload_gate() {
     exit 1
   fi
 
-  local -a gate_args=(--files-dir "$FILES_SOURCE" --allow-empty)
+  local -a gate_args=(--files-dir "$FILES_SOURCE")
+  local -a installer_candidates=()
   [[ -f "$MANIFEST_SOURCE" ]] && gate_args+=(--manifest "$MANIFEST_SOURCE")
+  while IFS= read -r installer_path; do
+    [[ -n "$installer_path" ]] || continue
+    installer_candidates+=("$installer_path")
+  done < <(find "$BUNDLE_DIR" -maxdepth 1 -type f -name 'chummer-*-win-*-installer.exe' | sort)
+  while IFS= read -r installer_path; do
+    [[ -n "$installer_path" ]] || continue
+    installer_candidates+=("$installer_path")
+  done < <(find "$FILES_SOURCE" -maxdepth 1 -type f -name 'chummer-*-win-*-installer.exe' | sort)
+  if [[ "${#installer_candidates[@]}" -eq 0 ]]; then
+    gate_args+=(--allow-empty)
+  else
+    local installer_path=""
+    for installer_path in "${installer_candidates[@]}"; do
+      gate_args+=(--installer "$installer_path")
+    done
+  fi
   python3 "$SCRIPT_DIR/verify-windows-installer-payloads.py" "${gate_args[@]}"
 }
 
@@ -527,12 +544,13 @@ bash "$SCRIPT_DIR/generate-releases-manifest.sh"
 strip_non_public_manifest_rows "$DEPLOY_DIR/RELEASE_CHANNEL.generated.json"
 strip_non_public_manifest_rows "$DEPLOY_DIR/releases.json"
 
-readarray -t promoted_file_names < <(python3 - "$DEPLOY_DIR/RELEASE_CHANNEL.generated.json" <<'PY'
+readarray -t promoted_file_names < <(python3 - "$DEPLOY_DIR/RELEASE_CHANNEL.generated.json" "$sync_source_dir" <<'PY'
 import json
 import sys
 from pathlib import Path
 
 payload = json.loads(Path(sys.argv[1]).read_text(encoding="utf-8"))
+source_root = Path(sys.argv[2])
 seen = set()
 for artifact in payload.get("artifacts") or []:
     if not isinstance(artifact, dict):
@@ -546,6 +564,10 @@ for artifact in payload.get("artifacts") or []:
     if not payload_name:
         payload_name = Path(str(artifact.get("payloadDownloadUrl") or "").strip()).name
     names.append(payload_name)
+    if payload_name:
+        payload_metadata_name = payload_name + ".json"
+        if (source_root / payload_metadata_name).is_file():
+            names.append(payload_metadata_name)
     for candidate in names:
         if candidate and candidate not in seen:
             print(candidate)

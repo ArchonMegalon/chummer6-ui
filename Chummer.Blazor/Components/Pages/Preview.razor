@@ -1,0 +1,33 @@
+@namespace Chummer.Blazor.Components.Pages
+@page "/preview"
+@layout Chummer.Blazor.Components.Layout.NoLayout
+@using Microsoft.AspNetCore.Components
+@using Chummer.Blazor.Components.Layout
+
+<PageTitle>Chummer Workbench Preview</PageTitle>
+
+<main class="browser-preview-shell">
+    <header class="browser-preview-banner">
+        <div class="browser-preview-banner-copy">
+            <p class="browser-preview-kicker">Workbench preview</p>
+            <h1>Browser-safe shell preview</h1>
+            <p>
+                This route demonstrates the workbench and navigation model in the browser.
+                The full desktop client remains the authoritative path for install-claimed and file-heavy workflows.
+            </p>
+        </div>
+
+        <nav class="browser-preview-actions" aria-label="Preview navigation">
+            <a href="/">Public home</a>
+            <a href="/showcase">Showcase</a>
+        </nav>
+    </header>
+
+    <section class="browser-preview-boundary" aria-label="Boundary notice">
+        <strong>Boundary:</strong> treat this as a guided browser preview, not as a claim of full desktop parity.
+    </section>
+
+    <section class="browser-preview-frame">
+        <DesktopShell />
+    </section>
+</main>

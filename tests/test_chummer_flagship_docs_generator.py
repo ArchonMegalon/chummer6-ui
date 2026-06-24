@@ -26,17 +26,20 @@ def test_flagship_docs_spec_promotes_origin_dossier_and_alice() -> None:
 
 
 def test_flagship_docs_generator_syncs_visual_gallery_and_user_first_story() -> None:
-    source = Path("/docker/chummercomplete/chummer-presentation/scripts/generate_jammer5_flagship_docs.py").read_text(
+    source = Path("/docker/chummercomplete/chummer-presentation/scripts/generate_chummer_flagship_docs.py").read_text(
         encoding="utf-8"
     )
 
+    assert "sentence_join" in source
     assert "sync_visual_gallery" in source
     assert "## Product Scenes" in source
     assert "## Watch The Scenes" in source
     assert "release_and_support_posture" in source
     assert "media_posture" in source
     assert "## Related Surface" in source
-    assert "Where ALICE helps:" in source
+    assert "ALICE keeps the line tight by doing the following:" in source
     assert "Origin dossier and ALICE" in source
     assert "flagship story no longer starts only with table heat" in source
+    assert "It should feel {feels}. A reader should immediately grasp {must_show}." in source
+    assert "The payoff can be " in source
     assert "GENERATED FILE" not in source

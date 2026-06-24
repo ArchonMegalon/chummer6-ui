@@ -14,11 +14,11 @@ Use this as the presentation story for the workbench plus campaign layer. Some s
 
 Chummer6 should read like one product with a strong core and a few ambitious expansion bets. If a user needs it to build, understand, run, remember, or return to a campaign, it belongs in the product story. The future shelf is only for the larger bets that still need distance from today’s download.
 
-The core product story is the builder plus the things that make that builder feel alive at a table: Workbench, ALICE, Origin Dossier, NEXUS-PAN, Ready for Tonight, Runner Passport, Knowledge Fabric, Table Pulse and GM Cockpit.
+The core story stays anchored in Workbench, ALICE, Origin Dossier, NEXUS-PAN, Ready for Tonight, Runner Passport, Knowledge Fabric, and Table Pulse and GM Cockpit. Those are the surfaces that make Chummer feel useful before it feels ambitious.
 
-The future shelf is smaller on purpose: Karma Forge, Black Ledger, Runbook Press and Creator OS, Community Hub and Jackpoint, Runsite, Ghostwire, and Anarchy. These are bigger bets, not the first thing a visitor has to understand.
+Keep Karma Forge, Black Ledger, Runbook Press and Creator OS, Community Hub and Jackpoint, and Runsite, Ghostwire, and Anarchy on the future shelf for now. They matter, but they should not be the first burden on a new visitor.
 
-A few labels should stay quiet: Onramp, Quicksilver as a headline Horizon, Local Co-Processor as a public promise. They are starter help, navigation polish, or infrastructure, so the app should absorb them instead of selling them as separate ideas.
+A few labels should stay quiet: Onramp, Quicksilver as a headline Horizon, and Local Co-Processor as a public promise. They are starter help, navigation polish, or infrastructure, so the app should absorb them instead of selling them as separate ideas.
 
 
 ## Why You Would Open This
@@ -133,7 +133,7 @@ What stays trustworthy:
 
 Origin Dossier should now read as a flagship base feature: a player enters Chummer as a runner with causes, debts, people, scars, secrets, and unfinished consequences. ALICE keeps that story connected to rules explanation without letting prose silently mutate build truth.
 
-What the player gets:
+A player should leave this lane with:
 
 - origin draft and canon approval
 - blank-state start and finished-runner additive entry points
@@ -142,7 +142,7 @@ What the player gets:
 - bounded GM gimmick steering as advisory context
 - later ALICE follow-up that references approved canon instead of inventing a new story spine
 
-Where ALICE helps:
+ALICE keeps the line tight by doing the following:
 
 - ALICE owns the native desktop workbench for Build Help, Rules Coach, and Origin Dossier.
 - Origin Dossier may start before chargen or from an already-finished runner without forcing mechanics back into edit mode.
@@ -151,7 +151,7 @@ Where ALICE helps:
 - Narration lanes should expose voice posture as an explicit user choice, not an invisible provider default.
 - The lane is strongest when narrative continuity and rules explanation stay on the same governed rail.
 
-It does not mean:
+That still does not mean:
 
 - origin prose becomes mechanical truth by itself
 - downstream portrait or video providers become rules authority
@@ -161,7 +161,7 @@ It does not mean:
 
 GM Cockpit is the calm authority surface for steering Table Pulse, origin-dossier context, remote reactions, and public-safe fallout without turning a maintenance list into the product experience.
 
-What the GM can trust:
+A GM should be able to trust these rails immediately:
 
 - pulse policy and heat thresholds
 - recipient reasoning, quiet-hours, mute, and opt-out posture
@@ -170,20 +170,20 @@ What the GM can trust:
 - public-safe release controls before any newsroom or public map projection
 - receipt trail, override reason, and what remains manual review
 
-From origin story to table call:
+From origin story to table call, the intended flow is:
 
 1. GM steer may come before the origin story so it can shape tone, faction pressure, and allowed context.
 2. The fixed SR4 troll decker test gimmick is a clinic contact that fronts restricted starter ware and one over-availability deck part.
 3. ALICE may explain how that changes story pressure, legality posture, availability risk, and ware consequences.
 4. The cockpit must keep those allowances advisory until a GM or player explicitly applies legal mechanics in the normal character workflow.
 
-What it should feel like:
+The visual language should read as:
 
 - control room, action board, pressure map, and dossier drawer rather than admin table
 - dense but scannable cards for heat, consent, receipt, and consequence state
 - one strong primary action for adjudicate, approve, suppress, or request revision
 
-It does not mean:
+That still does not permit:
 
 - the GM cockpit is an autonomous simulator
 - GM gimmicks auto-apply ware, money, gear, qualities, or availability exceptions
@@ -194,79 +194,21 @@ It does not mean:
 
 ### Player Action Cards
 
-Player Action Cards is the quick player-facing response surface.
-
-How it should feel:
-
-- urgent
-- tactical
-- dense but readable
-- connected to the city, not just the session transcript
-
-What the reader should understand:
-
-- current signals
-- heat pressure
-- reaction windows
-- consequence lanes
-- validated follow-through
+Player Action Cards is the quick player-facing response surface. It should feel urgent, tactical, dense but readable, and connected to the city, not just the session transcript. A reader should immediately grasp current signals, heat pressure, reaction windows, consequence lanes, and validated follow-through.
 
 ### Runner Passport
 
-Runner Passport is the identity and continuity surface.
-
-How it should feel:
-
-- personal
-- earned
-- faction-aware
-- session-to-session
-
-What the reader should understand:
-
-- standing
-- role path
-- recent receipts
-- unlocked pressure lanes
-- social and faction context
+Runner Passport is the identity and continuity surface. It should feel personal, earned, faction-aware, and session-to-session. A reader should immediately grasp standing, role path, recent receipts, unlocked pressure lanes, and social and faction context.
 
 ### GM Cockpit
 
-GM Cockpit is the authority surface.
-
-How it should feel:
-
-- calm
-- sovereign
-- readable under pressure
-
-What the reader should understand:
-
-- pulse policy
-- heat thresholds
-- recipient routes
-- mini-game approvals
-- quiet-hours and opt-out posture
-- public-safe release controls
+GM Cockpit is the authority surface. It should feel calm, sovereign, and readable under pressure. A reader should immediately grasp pulse policy, heat thresholds, recipient routes, mini-game approvals, quiet-hours and opt-out posture, and public-safe release controls.
 
 ### Living Newsroom
 
-Living Newsroom is the public-safe consequence layer.
+Living Newsroom is the public-safe consequence layer. It should feel cinematic, reactive, and consequence-driven. A reader should immediately grasp aftermath, faction motion, opposition clocks, and GM-approved public fallout.
 
-How it should feel:
-
-- cinematic
-- reactive
-- consequence-driven
-
-What the reader should understand:
-
-- aftermath
-- faction motion
-- opposition clocks
-- GM-approved public fallout
-
-It does not mean:
+It should never imply:
 
 - private table truth leaked automatically
 - the event was invented after the fact

@@ -1,10 +1,13 @@
 {
-  "generatedAt": "2026-06-21T07:30:38.348441Z",
+  "generatedAt": "2026-06-24T05:58:16.311611Z",
   "contract_name": "chummer6-ui.sr4_desktop_workflow_parity",
   "channelId": "public_stable",
-  "status": "pass",
-  "summary": "SR4 desktop workflow parity is explicitly proven across source artifacts, release-channel identity, oracle provenance, workflow-family readiness, executable test references, recursive workflow gate execution for recursive menu workflows, legacy UI-control workflows, quick-action roots, and returned-surface parity, receipt proof, and materialization.",
-  "reasons": [],
+  "status": "fail",
+  "summary": "SR4 desktop workflow parity is not yet exhaustively proven against the local Chummer4 oracle.",
+  "reasons": [
+    "Workflow parity gate tests exited non-zero: 1",
+    "SR4 workflow parity receipts are missing or not passing: armor-weapons-gear-vehicles-drones-mods-custom-items-locations-containers: /docker/chummercomplete/chummer6-ui/.codex-studio/published/workflow-family-parity/SR4_WORKFLOW_FAMILY_armor-weapons-gear-vehicles-drones-mods-custom-items-locations-containers.generated.json (fail), attributes-skills-skill-groups-specializations-knowledge-languages: /docker/chummercomplete/chummer6-ui/.codex-studio/published/workflow-family-parity/SR4_WORKFLOW_FAMILY_attributes-skills-skill-groups-specializations-knowledge-languages.generated.json (fail), create-open-import-save-save-as-print-export: /docker/chummercomplete/chummer6-ui/.codex-studio/published/workflow-family-parity/SR4_WORKFLOW_FAMILY_create-open-import-save-save-as-print-export.generated.json (fail), cyberware-bioware-modular-hierarchies-nested-plugins: /docker/chummercomplete/chummer6-ui/.codex-studio/published/workflow-family-parity/SR4_WORKFLOW_FAMILY_cyberware-bioware-modular-hierarchies-nested-plugins.generated.json (fail), dense-workbench-affordances-search-add-edit-remove-preview-drill-in-compare: /docker/chummercomplete/chummer6-ui/.codex-studio/published/workflow-family-parity/SR4_WORKFLOW_FAMILY_dense-workbench-affordances-search-add-edit-remove-preview-drill-in-compare.generated.json (fail), improvements-explain-result-parity: /docker/chummercomplete/chummer6-ui/.codex-studio/published/workflow-family-parity/SR4_WORKFLOW_FAMILY_improvements-explain-result-parity.generated.json (fail), magic-adept-resonance-sprites-spells-rituals-spirits-powers-metamagics-echoes-complex-forms: /docker/chummercomplete/chummer6-ui/.codex-studio/published/workflow-family-parity/SR4_WORKFLOW_FAMILY_magic-adept-resonance-sprites-spells-rituals-spirits-powers-metamagics-echoes-complex-forms.generated.json (fail), metatype-priorities-karma-entry: /docker/chummercomplete/chummer6-ui/.codex-studio/published/workflow-family-parity/SR4_WORKFLOW_FAMILY_metatype-priorities-karma-entry.generated.json (fail), qualities-contacts-identities-notes-calendar-expenses-lifestyles-sources: /docker/chummercomplete/chummer6-ui/.codex-studio/published/workflow-family-parity/SR4_WORKFLOW_FAMILY_qualities-contacts-identities-notes-calendar-expenses-lifestyles-sources.generated.json (fail), recovery-reload-migration-roundtrips: /docker/chummercomplete/chummer6-ui/.codex-studio/published/workflow-family-parity/SR4_WORKFLOW_FAMILY_recovery-reload-migration-roundtrips.generated.json (fail)"
+  ],
   "evidence": {
     "releaseChannelPath": "/docker/chummercomplete/chummer-hub-registry/.codex-studio/published/RELEASE_CHANNEL.generated.json",
     "releaseChannelExists": true,
@@ -14,15 +17,15 @@
     "complianceTestsPath": "/docker/chummercomplete/chummer6-ui/Chummer.Tests/Compliance/MigrationComplianceTests.cs",
     "uiGateTestsPath": "/docker/chummercomplete/chummer6-ui/Chummer.Tests/Presentation/AvaloniaFlagshipUiGateTests.cs",
     "workflowGateTestsPath": "/docker/chummercomplete/chummer6-ui/Chummer.Tests/Presentation/WorkflowParityGateTests.cs",
-    "workflowGateExit": 0,
+    "workflowGateExit": 1,
     "releaseChannelMaxAgeSeconds": 86400,
     "releaseChannelMaxFutureSkewSeconds": 300,
-    "executionExit": 0,
-    "verificationExit": 0,
-    "materializerExit": 0,
+    "executionExit": 43,
+    "verificationExit": 43,
+    "materializerExit": 43,
     "releaseChannelChannelId": "public_stable",
-    "releaseChannelGeneratedAt": "2026-06-21T05:53:14Z",
-    "releaseChannelAgeSeconds": 5844,
+    "releaseChannelGeneratedAt": "2026-06-23T10:31:26Z",
+    "releaseChannelAgeSeconds": 70010,
     "releaseChannelFutureSkewSeconds": 0,
     "sourceRepoPath": "/docker/fleet/repos/chummer4",
     "sourceRepoHead": "fe9a0c0e67be86785ccce1be041d098f3b5cfa71",
@@ -77,7 +80,38 @@
     "recursiveWorkflowGateUnexpectedProofAreaTests": [],
     "recursiveWorkflowGateReturnSurfaceRequirement": "Recursive workflows must close any active dialog, clear errors, and restore the expected tab, section, and populated return surface before parity can pass.",
     "missingParityReceipts": {},
-    "failingParityReceipts": {},
+    "failingParityReceipts": {
+      "create-open-import-save-save-as-print-export": [
+        "/docker/chummercomplete/chummer6-ui/.codex-studio/published/workflow-family-parity/SR4_WORKFLOW_FAMILY_create-open-import-save-save-as-print-export.generated.json (fail)"
+      ],
+      "metatype-priorities-karma-entry": [
+        "/docker/chummercomplete/chummer6-ui/.codex-studio/published/workflow-family-parity/SR4_WORKFLOW_FAMILY_metatype-priorities-karma-entry.generated.json (fail)"
+      ],
+      "attributes-skills-skill-groups-specializations-knowledge-languages": [
+        "/docker/chummercomplete/chummer6-ui/.codex-studio/published/workflow-family-parity/SR4_WORKFLOW_FAMILY_attributes-skills-skill-groups-specializations-knowledge-languages.generated.json (fail)"
+      ],
+      "qualities-contacts-identities-notes-calendar-expenses-lifestyles-sources": [
+        "/docker/chummercomplete/chummer6-ui/.codex-studio/published/workflow-family-parity/SR4_WORKFLOW_FAMILY_qualities-contacts-identities-notes-calendar-expenses-lifestyles-sources.generated.json (fail)"
+      ],
+      "armor-weapons-gear-vehicles-drones-mods-custom-items-locations-containers": [
+        "/docker/chummercomplete/chummer6-ui/.codex-studio/published/workflow-family-parity/SR4_WORKFLOW_FAMILY_armor-weapons-gear-vehicles-drones-mods-custom-items-locations-containers.generated.json (fail)"
+      ],
+      "cyberware-bioware-modular-hierarchies-nested-plugins": [
+        "/docker/chummercomplete/chummer6-ui/.codex-studio/published/workflow-family-parity/SR4_WORKFLOW_FAMILY_cyberware-bioware-modular-hierarchies-nested-plugins.generated.json (fail)"
+      ],
+      "magic-adept-resonance-sprites-spells-rituals-spirits-powers-metamagics-echoes-complex-forms": [
+        "/docker/chummercomplete/chummer6-ui/.codex-studio/published/workflow-family-parity/SR4_WORKFLOW_FAMILY_magic-adept-resonance-sprites-spells-rituals-spirits-powers-metamagics-echoes-complex-forms.generated.json (fail)"
+      ],
+      "improvements-explain-result-parity": [
+        "/docker/chummercomplete/chummer6-ui/.codex-studio/published/workflow-family-parity/SR4_WORKFLOW_FAMILY_improvements-explain-result-parity.generated.json (fail)"
+      ],
+      "recovery-reload-migration-roundtrips": [
+        "/docker/chummercomplete/chummer6-ui/.codex-studio/published/workflow-family-parity/SR4_WORKFLOW_FAMILY_recovery-reload-migration-roundtrips.generated.json (fail)"
+      ],
+      "dense-workbench-affordances-search-add-edit-remove-preview-drill-in-compare": [
+        "/docker/chummercomplete/chummer6-ui/.codex-studio/published/workflow-family-parity/SR4_WORKFLOW_FAMILY_dense-workbench-affordances-search-add-edit-remove-preview-drill-in-compare.generated.json (fail)"
+      ]
+    },
     "failingParityReceiptsExternalOnly": false,
     "failingParityReceiptsExternal": {},
     "sourceArtifactChecks": {
@@ -88,7 +122,7 @@
       "uiGateTests": true,
       "workflowGateTests": true
     },
-    "failureCount": 0
+    "failureCount": 2
   },
   "sourceArtifactReview": {
     "status": "pass",
@@ -109,8 +143,8 @@
     "reasons": [],
     "path": "/docker/chummercomplete/chummer-hub-registry/.codex-studio/published/RELEASE_CHANNEL.generated.json",
     "channelId": "public_stable",
-    "generatedAt": "2026-06-21T05:53:14Z",
-    "ageSeconds": 5844,
+    "generatedAt": "2026-06-23T10:31:26Z",
+    "ageSeconds": 70010,
     "futureSkewSeconds": 0,
     "maxAgeSeconds": 86400,
     "maxFutureSkewSeconds": 300
@@ -138,10 +172,12 @@
     "missingTestRefs": {}
   },
   "recursiveWorkflowGateReview": {
-    "status": "pass",
-    "summary": "Recursive workflow gate tests executed and the SR4 ledger keeps recursive menu workflows, legacy UI-control workflows, quick-action roots, and returned-surface parity explicit.",
-    "reasons": [],
-    "workflowGateExit": 0,
+    "status": "fail",
+    "summary": "Recursive workflow gate execution or the SR4 ledger recursive proof-area requirements are incomplete.",
+    "reasons": [
+      "Workflow parity gate tests exited non-zero: 1"
+    ],
+    "workflowGateExit": 1,
     "requiredTests": [
       "Menu_dialog_workflows_are_exhaustively_classified",
       "Legacy_ui_controls_are_exhaustively_classified",
@@ -182,11 +218,44 @@
     "returnSurfaceRequirement": "Recursive workflows must close any active dialog, clear errors, and restore the expected tab, section, and populated return surface before parity can pass."
   },
   "parityReceiptReview": {
-    "status": "pass",
-    "summary": "SR4 family-specific parity receipts are present and passing.",
-    "reasons": [],
+    "status": "fail",
+    "summary": "SR4 family-specific parity receipts are missing, failing, or externally blocked.",
+    "reasons": [
+      "SR4 workflow parity receipts are missing or not passing: armor-weapons-gear-vehicles-drones-mods-custom-items-locations-containers: /docker/chummercomplete/chummer6-ui/.codex-studio/published/workflow-family-parity/SR4_WORKFLOW_FAMILY_armor-weapons-gear-vehicles-drones-mods-custom-items-locations-containers.generated.json (fail), attributes-skills-skill-groups-specializations-knowledge-languages: /docker/chummercomplete/chummer6-ui/.codex-studio/published/workflow-family-parity/SR4_WORKFLOW_FAMILY_attributes-skills-skill-groups-specializations-knowledge-languages.generated.json (fail), create-open-import-save-save-as-print-export: /docker/chummercomplete/chummer6-ui/.codex-studio/published/workflow-family-parity/SR4_WORKFLOW_FAMILY_create-open-import-save-save-as-print-export.generated.json (fail), cyberware-bioware-modular-hierarchies-nested-plugins: /docker/chummercomplete/chummer6-ui/.codex-studio/published/workflow-family-parity/SR4_WORKFLOW_FAMILY_cyberware-bioware-modular-hierarchies-nested-plugins.generated.json (fail), dense-workbench-affordances-search-add-edit-remove-preview-drill-in-compare: /docker/chummercomplete/chummer6-ui/.codex-studio/published/workflow-family-parity/SR4_WORKFLOW_FAMILY_dense-workbench-affordances-search-add-edit-remove-preview-drill-in-compare.generated.json (fail), improvements-explain-result-parity: /docker/chummercomplete/chummer6-ui/.codex-studio/published/workflow-family-parity/SR4_WORKFLOW_FAMILY_improvements-explain-result-parity.generated.json (fail), magic-adept-resonance-sprites-spells-rituals-spirits-powers-metamagics-echoes-complex-forms: /docker/chummercomplete/chummer6-ui/.codex-studio/published/workflow-family-parity/SR4_WORKFLOW_FAMILY_magic-adept-resonance-sprites-spells-rituals-spirits-powers-metamagics-echoes-complex-forms.generated.json (fail), metatype-priorities-karma-entry: /docker/chummercomplete/chummer6-ui/.codex-studio/published/workflow-family-parity/SR4_WORKFLOW_FAMILY_metatype-priorities-karma-entry.generated.json (fail), qualities-contacts-identities-notes-calendar-expenses-lifestyles-sources: /docker/chummercomplete/chummer6-ui/.codex-studio/published/workflow-family-parity/SR4_WORKFLOW_FAMILY_qualities-contacts-identities-notes-calendar-expenses-lifestyles-sources.generated.json (fail), recovery-reload-migration-roundtrips: /docker/chummercomplete/chummer6-ui/.codex-studio/published/workflow-family-parity/SR4_WORKFLOW_FAMILY_recovery-reload-migration-roundtrips.generated.json (fail)"
+    ],
     "missingParityReceipts": {},
-    "failingParityReceipts": {},
+    "failingParityReceipts": {
+      "create-open-import-save-save-as-print-export": [
+        "/docker/chummercomplete/chummer6-ui/.codex-studio/published/workflow-family-parity/SR4_WORKFLOW_FAMILY_create-open-import-save-save-as-print-export.generated.json (fail)"
+      ],
+      "metatype-priorities-karma-entry": [
+        "/docker/chummercomplete/chummer6-ui/.codex-studio/published/workflow-family-parity/SR4_WORKFLOW_FAMILY_metatype-priorities-karma-entry.generated.json (fail)"
+      ],
+      "attributes-skills-skill-groups-specializations-knowledge-languages": [
+        "/docker/chummercomplete/chummer6-ui/.codex-studio/published/workflow-family-parity/SR4_WORKFLOW_FAMILY_attributes-skills-skill-groups-specializations-knowledge-languages.generated.json (fail)"
+      ],
+      "qualities-contacts-identities-notes-calendar-expenses-lifestyles-sources": [
+        "/docker/chummercomplete/chummer6-ui/.codex-studio/published/workflow-family-parity/SR4_WORKFLOW_FAMILY_qualities-contacts-identities-notes-calendar-expenses-lifestyles-sources.generated.json (fail)"
+      ],
+      "armor-weapons-gear-vehicles-drones-mods-custom-items-locations-containers": [
+        "/docker/chummercomplete/chummer6-ui/.codex-studio/published/workflow-family-parity/SR4_WORKFLOW_FAMILY_armor-weapons-gear-vehicles-drones-mods-custom-items-locations-containers.generated.json (fail)"
+      ],
+      "cyberware-bioware-modular-hierarchies-nested-plugins": [
+        "/docker/chummercomplete/chummer6-ui/.codex-studio/published/workflow-family-parity/SR4_WORKFLOW_FAMILY_cyberware-bioware-modular-hierarchies-nested-plugins.generated.json (fail)"
+      ],
+      "magic-adept-resonance-sprites-spells-rituals-spirits-powers-metamagics-echoes-complex-forms": [
+        "/docker/chummercomplete/chummer6-ui/.codex-studio/published/workflow-family-parity/SR4_WORKFLOW_FAMILY_magic-adept-resonance-sprites-spells-rituals-spirits-powers-metamagics-echoes-complex-forms.generated.json (fail)"
+      ],
+      "improvements-explain-result-parity": [
+        "/docker/chummercomplete/chummer6-ui/.codex-studio/published/workflow-family-parity/SR4_WORKFLOW_FAMILY_improvements-explain-result-parity.generated.json (fail)"
+      ],
+      "recovery-reload-migration-roundtrips": [
+        "/docker/chummercomplete/chummer6-ui/.codex-studio/published/workflow-family-parity/SR4_WORKFLOW_FAMILY_recovery-reload-migration-roundtrips.generated.json (fail)"
+      ],
+      "dense-workbench-affordances-search-add-edit-remove-preview-drill-in-compare": [
+        "/docker/chummercomplete/chummer6-ui/.codex-studio/published/workflow-family-parity/SR4_WORKFLOW_FAMILY_dense-workbench-affordances-search-add-edit-remove-preview-drill-in-compare.generated.json (fail)"
+      ]
+    },
     "failingParityReceiptsExternalOnly": false,
     "failingParityReceiptsExternal": {}
   },
@@ -194,8 +263,8 @@
     "status": "pass",
     "summary": "SR4 family execution, verification, and receipt materializers exited within allowed bounds.",
     "reasons": [],
-    "executionExit": 0,
-    "verificationExit": 0,
-    "materializerExit": 0
+    "executionExit": 43,
+    "verificationExit": 43,
+    "materializerExit": 43
   }
 }

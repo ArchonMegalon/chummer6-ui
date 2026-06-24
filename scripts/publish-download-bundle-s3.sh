@@ -30,10 +30,22 @@ if [[ ! -f "$SCRIPT_DIR/verify-windows-installer-payloads.py" ]]; then
   exit 1
 fi
 
-python3 "$SCRIPT_DIR/verify-windows-installer-payloads.py" \
-  --files-dir "$FILES_SOURCE" \
-  --manifest "$MANIFEST_SOURCE" \
-  --allow-empty
+windows_payload_gate_args=(
+  --files-dir "$FILES_SOURCE"
+  --manifest "$MANIFEST_SOURCE"
+)
+while IFS= read -r installer_path; do
+  [[ -n "$installer_path" ]] || continue
+  windows_payload_gate_args+=(--installer "$installer_path")
+done < <(find "$BUNDLE_DIR" -maxdepth 1 -type f -name 'chummer-*-win-*-installer.exe' | sort)
+while IFS= read -r installer_path; do
+  [[ -n "$installer_path" ]] || continue
+  windows_payload_gate_args+=(--installer "$installer_path")
+done < <(find "$FILES_SOURCE" -maxdepth 1 -type f -name 'chummer-*-win-*-installer.exe' | sort)
+if [[ "${#windows_payload_gate_args[@]}" -eq 4 ]]; then
+  windows_payload_gate_args+=(--allow-empty)
+fi
+python3 "$SCRIPT_DIR/verify-windows-installer-payloads.py" "${windows_payload_gate_args[@]}"
 
 sync_source_dir="$(mktemp -d)"
 cleanup() {

@@ -18,12 +18,9 @@
         <section class="panel tabs classic-tab-rail" aria-label="@BuildNavigationTabsHeading()">
             <h2>@BuildNavigationTabsHeading()</h2>
             <div class="virtual-list tab-grid">
-                <Virtualize Items="@(NavigationTabs.ToArray())"
-                            Context="tab"
-                            ItemSize="40">
-                    @{
-                        bool enabled = IsNavigationTabEnabled(tab);
-                    }
+                @foreach (NavigationTabDefinition tab in NavigationTabs)
+                {
+                    bool enabled = IsNavigationTabEnabled(tab);
                     <button class="tab-btn @(ActiveTabId == tab.Id ? "active" : string.Empty)"
                             id="@tab.Id"
                             data-nav-tab="@tab.Id"
@@ -32,7 +29,7 @@
                             @onclick="() => SelectTabRequested.InvokeAsync(tab.Id)">
                         @FormatNavigationTabLabel(tab)
                     </button>
-                </Virtualize>
+                }
             </div>
         </section>
     }
@@ -40,12 +37,10 @@
     @if (ShowSectionActions)
     {
         <section class="panel section-actions classic-action-rail" aria-label="@BuildSectionActionsHeading()">
-            <h2 class="visually-hidden">@BuildSectionActionsHeading()</h2>
+            <h2 class="visually-hidden" aria-hidden="true">@BuildSectionActionsHeading()</h2>
             <div class="virtual-list action-grid">
-                @* <Virtualize Items="@ActiveWorkspaceActions" ItemsTagName="ul" ItemTagName="li"> *@
-                <Virtualize Items="@(ActiveWorkspaceActions.ToArray())"
-                            Context="action"
-                            ItemSize="40">
+                @foreach (WorkspaceSurfaceActionDefinition action in ActiveWorkspaceActions)
+                {
                     <button class="action-button @(State.ActiveActionId == action.Id ? "selected" : string.Empty)"
                             data-workspace-action="@action.Id"
                             aria-label="@FormatWorkspaceActionLabel(action)"
@@ -53,7 +48,7 @@
                             @onclick="() => ExecuteWorkspaceActionRequested.InvokeAsync(action)">
                         @FormatWorkspaceActionLabel(action)
                     </button>
-                </Virtualize>
+                }
             </div>
         </section>
     }
@@ -61,19 +56,17 @@
     @if (ShowWorkflowSurfaces)
     {
         <section class="panel controls classic-flow-rail" aria-label="@BuildWorkflowSurfacesHeading()">
-            <h2 class="visually-hidden">@BuildWorkflowSurfacesHeading()</h2>
+            <h2 class="visually-hidden" aria-hidden="true">@BuildWorkflowSurfacesHeading()</h2>
             <div class="virtual-list mini-grid">
-                @* <Virtualize Items="@ActiveWorkflowSurfaceActions" ItemsTagName="ul" ItemTagName="li"> *@
-                <Virtualize Items="@(ActiveWorkflowSurfaceActions.ToArray())"
-                            Context="surface"
-                            ItemSize="36">
+                @foreach (WorkflowSurfaceActionBinding surface in ActiveWorkflowSurfaceActions)
+                {
                     <button class="mini-btn"
                             data-workflow-surface="@surface.SurfaceId"
                             disabled="@State.IsBusy"
                             @onclick="() => ExecuteWorkflowSurfaceRequested.InvokeAsync(surface.ActionId)">
                         @FormatWorkflowSurfaceLabel(surface)
                     </button>
-                </Virtualize>
+                }
             </div>
         </section>
     }

@@ -1,11 +1,12 @@
 {
-  "generatedAt": "2026-06-24T01:04:47.408247Z",
+  "generatedAt": "2026-06-24T05:58:09.599272Z",
   "contract_name": "chummer6-ui.sr4_workflow_family_execution_receipt",
   "status": "fail",
   "summary": "SR4 workflow-family execution evidence is incomplete for recovery-reload-migration-roundtrips.",
   "reasons": [
-    "Audit tests not present in executed TRX results: Avalonia_and_Blazor_metadata_save_roundtrip_match, Avalonia_and_Blazor_tab_selection_loads_same_workspace_section, Menu_dialog_workflows_keep_recursive_parity, Legacy_ui_controls_keep_recursive_parity",
-    "dotnet test execution failed (exit 1): Build failed with exit code: 1."
+    "Audit tests not present in executed TRX results: Avalonia_and_Blazor_tab_selection_loads_same_workspace_section, Menu_dialog_workflows_keep_recursive_parity",
+    "Audit tests did not pass in executed TRX results: Legacy_ui_controls_keep_recursive_parity=Failed",
+    "dotnet test execution failed (exit 1):   duration: 43s 405ms"
   ],
   "evidence": {
     "edition": "sr4",
@@ -80,13 +81,17 @@
       "warmed": true
     },
     "external_blocker": "",
-    "matchedPassedTests": [],
-    "missingAuditTests": [
-      "Avalonia_and_Blazor_metadata_save_roundtrip_match",
-      "Avalonia_and_Blazor_tab_selection_loads_same_workspace_section",
-      "Menu_dialog_workflows_keep_recursive_parity",
-      "Legacy_ui_controls_keep_recursive_parity"
+    "matchedPassedTests": [
+      "Avalonia_and_Blazor_metadata_save_roundtrip_match"
     ],
-    "failedAuditTests": {}
+    "missingAuditTests": [
+      "Avalonia_and_Blazor_tab_selection_loads_same_workspace_section",
+      "Menu_dialog_workflows_keep_recursive_parity"
+    ],
+    "failedAuditTests": {
+      "Legacy_ui_controls_keep_recursive_parity": [
+        "Failed"
+      ]
+    }
   }
 }

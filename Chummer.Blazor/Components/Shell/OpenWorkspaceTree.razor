@@ -5,7 +5,7 @@
 @using Chummer.Presentation.Rulesets
 
 <section class="panel navigator classic-navigator" aria-label="@BuildOpenWorkspacesHeading()">
-    <h2 class="visually-hidden">@BuildOpenWorkspacesHeading()</h2>
+    <h2 class="visually-hidden" aria-hidden="true">@BuildOpenWorkspacesHeading()</h2>
     @if (OpenWorkspaces.Count == 0)
     {
         <p class="hint">No open workspaces.</p>

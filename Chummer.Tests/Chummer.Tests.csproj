@@ -372,7 +372,7 @@
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\Chummer.Avalonia\Chummer.Avalonia.csproj">
-      <Private>false</Private>
+      <Private>true</Private>
     </ProjectReference>
     <ProjectReference Include="..\Chummer.Api\Chummer.Api.csproj" Condition="Exists('..\\Chummer.Api\\Chummer.Api.csproj')">
       <Private>false</Private>

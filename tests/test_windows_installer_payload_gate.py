@@ -141,3 +141,26 @@ def test_publish_download_bundle_fails_before_promotion_when_windows_payload_is_
     assert result.returncode != 0
     assert "windows_installer_payload_gate:fail" in result.stderr
     assert "no appended payload and no bootstrap sidecar" in result.stderr
+
+
+def test_publish_download_bundle_fails_when_root_installer_has_no_matching_payload_sidecar(tmp_path: Path) -> None:
+    bundle_dir = tmp_path / "bundle"
+    files_dir = bundle_dir / "files"
+    files_dir.mkdir(parents=True)
+    installer_path = bundle_dir / "chummer-avalonia-win-x64-installer.exe"
+    installer_path.write_bytes(b"installer-stub" * 200)
+    (files_dir / "chummer-avalonia-win-x64.zip").write_bytes(b"portable-placeholder")
+    _write_bundle_manifest(bundle_dir / "releases.json", installer_name=installer_path.name)
+
+    deploy_dir = tmp_path / "deploy"
+    result = subprocess.run(
+        ["bash", str(PUBLISH_SCRIPT), str(bundle_dir), str(deploy_dir)],
+        cwd=REPO_ROOT,
+        text=True,
+        capture_output=True,
+        check=False,
+    )
+
+    assert result.returncode != 0
+    assert "windows_installer_payload_gate:fail" in result.stderr
+    assert "no appended payload and no bootstrap sidecar" in result.stderr

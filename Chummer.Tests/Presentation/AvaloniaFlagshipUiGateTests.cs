@@ -1780,8 +1780,8 @@ public sealed class AvaloniaFlagshipUiGateTests
                 harness,
                 "Translator",
                 GetImportRouteReviewStep("translator").RequiredDialogMarkers);
-            Assert.AreEqual("governed", DesktopDialogFieldValueParser.GetValue(harness.State.ActiveDialog!, "translatorLanePosture"));
-            Assert.AreEqual("governed", DesktopDialogFieldValueParser.GetValue(harness.State.ActiveDialog!, "translatorBridgePosture"));
+            Assert.AreEqual("reviewed", DesktopDialogFieldValueParser.GetValue(harness.State.ActiveDialog!, "translatorLanePosture"));
+            Assert.AreEqual("reviewed", DesktopDialogFieldValueParser.GetValue(harness.State.ActiveDialog!, "translatorBridgePosture"));
             harness.InvokeDialogAction("close");
             harness.WaitUntil(() =>
                 !string.Equals(

@@ -3048,6 +3048,11 @@ public class MigrationComplianceTests
         StringAssert.Contains(migrationLoopText, "bash scripts/e2e-ui.sh");
 
         StringAssert.Contains(playwrightScriptText, "[data-testid=\"startup-workbench\"]");
+        StringAssert.Contains(playwrightScriptText, "main.public-preview");
+        StringAssert.Contains(playwrightScriptText, "openPreviewWithRetry");
+        StringAssert.Contains(playwrightScriptText, "It is deliberately not the full desktop client.");
+        StringAssert.Contains(playwrightScriptText, "guided browser preview");
+        StringAssert.Contains(playwrightScriptText, "390, height: 844");
         StringAssert.Contains(playwrightScriptText, "[data-startup-command=\"new_character\"]");
         StringAssert.Contains(playwrightScriptText, "CHUMMER_UI_SAMPLE_FILE");
         StringAssert.Contains(playwrightScriptText, "BLUE.chum5");
@@ -3067,6 +3072,9 @@ public class MigrationComplianceTests
         StringAssert.Contains(playwrightScriptText, "expectPremiumDialogPosture");
         StringAssert.Contains(playwrightScriptText, "#summaryName");
         StringAssert.Contains(playwrightScriptText, "playwright UI flow completed");
+        StringAssert.Contains(uiE2eText, "blazor-preview-html");
+        StringAssert.Contains(uiE2eText, "Chummer Browser Preview");
+        StringAssert.Contains(uiE2eText, "Browser-safe shell preview");
 
         StringAssert.Contains(dockerComposeText, "dockerfile: chummer-presentation/Chummer.Blazor/Dockerfile");
         StringAssert.Contains(blazorDockerfileText, "COPY . .");

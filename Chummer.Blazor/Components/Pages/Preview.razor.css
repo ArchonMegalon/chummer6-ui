@@ -1,0 +1,109 @@
+.browser-preview-shell {
+    min-height: 100vh;
+    background: linear-gradient(180deg, #161922 0%, #0e1015 100%);
+    background-color: #0e1015;
+    color: #eef1f6;
+}
+
+.browser-preview-banner,
+.browser-preview-boundary,
+.browser-preview-frame {
+    width: min(1240px, calc(100% - 1rem));
+    margin: 0 auto;
+}
+
+.browser-preview-banner {
+    display: flex;
+    justify-content: space-between;
+    align-items: end;
+    gap: 1rem;
+    padding: 1rem 0 0.8rem;
+}
+
+.browser-preview-banner-copy h1,
+.browser-preview-banner-copy p,
+.browser-preview-banner-copy .browser-preview-kicker {
+    margin: 0;
+}
+
+.browser-preview-kicker {
+    color: #f4cf73;
+    text-transform: uppercase;
+    letter-spacing: 0.12em;
+    font-size: 0.76rem;
+    font-weight: 700;
+}
+
+.browser-preview-banner-copy {
+    display: grid;
+    gap: 0.45rem;
+}
+
+.browser-preview-banner-copy p {
+    max-width: 52rem;
+    color: rgba(238, 241, 246, 0.82);
+    line-height: 1.5;
+}
+
+.browser-preview-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.7rem;
+}
+
+.browser-preview-actions a {
+    color: #eef1f6;
+    text-decoration: none;
+    border: 1px solid rgba(244, 207, 115, 0.3);
+    border-radius: 999px;
+    padding: 0.65rem 0.95rem;
+    background: rgba(255, 255, 255, 0.03);
+}
+
+.browser-preview-boundary {
+    margin-bottom: 0.75rem;
+    padding: 0.85rem 1rem;
+    border: 1px solid rgba(244, 207, 115, 0.3);
+    border-radius: 0.9rem;
+    background: rgba(244, 207, 115, 0.08);
+    color: #f8ebbf;
+}
+
+.browser-preview-frame {
+    padding-bottom: 1rem;
+}
+
+.browser-preview-frame ::deep .desktop-shell,
+.browser-preview-frame ::deep .desktop-shell .panel,
+.browser-preview-frame ::deep .desktop-shell label,
+.browser-preview-frame ::deep .desktop-shell h3,
+.browser-preview-frame ::deep .desktop-shell p,
+.browser-preview-frame ::deep .desktop-shell span,
+.browser-preview-frame ::deep .desktop-shell li,
+.browser-preview-frame ::deep .desktop-shell dt,
+.browser-preview-frame ::deep .desktop-shell dd,
+.browser-preview-frame ::deep .desktop-shell strong {
+    color: #16202b;
+}
+
+.browser-preview-shell ::deep .desktop-dialog,
+.browser-preview-shell ::deep .desktop-dialog h2,
+.browser-preview-shell ::deep .desktop-dialog h3,
+.browser-preview-shell ::deep .desktop-dialog p,
+.browser-preview-shell ::deep .desktop-dialog label,
+.browser-preview-shell ::deep .desktop-dialog span,
+.browser-preview-shell ::deep .desktop-dialog li,
+.browser-preview-shell ::deep .desktop-dialog dt,
+.browser-preview-shell ::deep .desktop-dialog dd,
+.browser-preview-shell ::deep .desktop-dialog strong,
+.browser-preview-shell ::deep .dialog-body,
+.browser-preview-shell ::deep .dialog-label {
+    color: #16202b;
+}
+
+@media (max-width: 720px) {
+    .browser-preview-banner {
+        flex-direction: column;
+        align-items: start;
+    }
+}

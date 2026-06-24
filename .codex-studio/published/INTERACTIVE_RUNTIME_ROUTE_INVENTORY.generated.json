@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-06-23T20:22:29.4017513\u002B00:00",
+  "generatedAt": "2026-06-24T05:00:34.3119893\u002B00:00",
   "contractName": "chummer6-ui.interactive_runtime_route_inventory",
   "status": "pass",
   "summary": "Runtime route inventory captures recursive shell, popup, dialog, section, and ruleset-lane surfaces.",
@@ -60,7 +60,7 @@
         "Settings",
         "Special",
         "Start",
-        "Time: 2026-06-23 20:21:58Z",
+        "Time: 2026-06-24 05:00:20Z",
         "Tools",
         "Total",
         "Windows",
@@ -2770,7 +2770,7 @@
                                                       {
                                                         "name": "TimeStateText",
                                                         "controlType": "TextBlock",
-                                                        "text": "Time: 2026-06-23 20:21:58Z",
+                                                        "text": "Time: 2026-06-24 05:00:20Z",
                                                         "toolTip": "",
                                                         "isVisible": true,
                                                         "children": []
@@ -2892,7 +2892,7 @@
                                     "name": "StatusStripControl",
                                     "controlType": "StatusStripControl",
                                     "text": "",
-                                    "toolTip": "Character: none | Service: online | Time: 2026-06-23 20:21:58Z | Ruleset: Shadowrun 5 .chum5 | Workflows: 5 defs / 6 surfaces | Prefs: 100%/classic/en-us",
+                                    "toolTip": "Character: none | Service: online | Time: 2026-06-24 05:00:20Z | Ruleset: Shadowrun 5 .chum5 | Workflows: 5 defs / 6 surfaces | Prefs: 100%/classic/en-us",
                                     "isVisible": false,
                                     "children": []
                                   }
@@ -2946,7 +2946,7 @@
         "Settings",
         "Special",
         "Start",
-        "Time: 2026-06-23 20:21:54Z",
+        "Time: 2026-06-24 05:00:15Z",
         "Tools",
         "Total",
         "Windows",
@@ -5016,7 +5016,7 @@
                                                       {
                                                         "name": "TimeStateText",
                                                         "controlType": "TextBlock",
-                                                        "text": "Time: 2026-06-23 20:21:54Z",
+                                                        "text": "Time: 2026-06-24 05:00:15Z",
                                                         "toolTip": "",
                                                         "isVisible": true,
                                                         "children": []
@@ -5138,7 +5138,7 @@
                                     "name": "StatusStripControl",
                                     "controlType": "StatusStripControl",
                                     "text": "",
-                                    "toolTip": "Character: none | Service: online | Time: 2026-06-23 20:21:54Z | Ruleset: Shadowrun 5 .chum5 | Workflows: 5 defs / 6 surfaces | Prefs: 100%/classic/en-us",
+                                    "toolTip": "Character: none | Service: online | Time: 2026-06-24 05:00:15Z | Ruleset: Shadowrun 5 .chum5 | Workflows: 5 defs / 6 surfaces | Prefs: 100%/classic/en-us",
                                     "isVisible": false,
                                     "children": []
                                   }
@@ -11259,7 +11259,7 @@
         "Settings",
         "Special",
         "Start",
-        "Time: 2026-06-23 20:21:50Z",
+        "Time: 2026-06-24 05:00:12Z",
         "Tools",
         "Total",
         "Windows",
@@ -13329,7 +13329,7 @@
                                                       {
                                                         "name": "TimeStateText",
                                                         "controlType": "TextBlock",
-                                                        "text": "Time: 2026-06-23 20:21:50Z",
+                                                        "text": "Time: 2026-06-24 05:00:12Z",
                                                         "toolTip": "",
                                                         "isVisible": true,
                                                         "children": []
@@ -13451,7 +13451,7 @@
                                     "name": "StatusStripControl",
                                     "controlType": "StatusStripControl",
                                     "text": "",
-                                    "toolTip": "Character: none | Service: online | Time: 2026-06-23 20:21:50Z | Ruleset: Shadowrun 5 .chum5 | Workflows: 5 defs / 6 surfaces | Prefs: 100%/classic/en-us",
+                                    "toolTip": "Character: none | Service: online | Time: 2026-06-24 05:00:12Z | Ruleset: Shadowrun 5 .chum5 | Workflows: 5 defs / 6 surfaces | Prefs: 100%/classic/en-us",
                                     "isVisible": false,
                                     "children": []
                                   }
@@ -13556,7 +13556,7 @@
         "Start",
         "SumtoTen",
         "Technomancer",
-        "Time: 2026-06-23 20:22:14Z",
+        "Time: 2026-06-24 05:00:27Z",
         "Tools",
         "Total",
         "Vehicles",
@@ -18485,7 +18485,7 @@
                                             "name": "CoachSidecarControl",
                                             "controlType": "CoachSidecarControl",
                                             "text": "",
-                                            "toolTip": "Status: unloaded\nPrompt policy: Policy not loaded yet\nBudget: Budget not loaded yet\nWorkspace: aa8dd4376fde4102ba187b4af99ae3e7\nRuntime: No runtime fingerprint yet\nfile:///coach/%3FrouteType=coach\u0026workspaceId=aa8dd4376fde4102ba187b4af99ae3e7\nOpen Coach in your browser, or copy the link if you need to hand it off.\nError: disabled",
+                                            "toolTip": "Status: unloaded\nPrompt policy: Policy not loaded yet\nBudget: Budget not loaded yet\nWorkspace: cb2bab02571744a9b9be3c90e49ffdbe\nRuntime: No runtime fingerprint yet\nfile:///coach/%3FrouteType=coach\u0026workspaceId=cb2bab02571744a9b9be3c90e49ffdbe\nOpen Coach in your browser, or copy the link if you need to hand it off.\nError: disabled",
                                             "isVisible": true,
                                             "children": []
                                           }
@@ -18574,7 +18574,7 @@
                                                       {
                                                         "name": "TimeStateText",
                                                         "controlType": "TextBlock",
-                                                        "text": "Time: 2026-06-23 20:22:14Z",
+                                                        "text": "Time: 2026-06-24 05:00:27Z",
                                                         "toolTip": "",
                                                         "isVisible": true,
                                                         "children": []
@@ -18696,7 +18696,7 @@
                                     "name": "StatusStripControl",
                                     "controlType": "StatusStripControl",
                                     "text": "",
-                                    "toolTip": "Character: loaded | Service: online | Time: 2026-06-23 20:22:14Z | Ruleset: Shadowrun 5 .chum5 | Workflows: 5 defs / 6 surfaces | Prefs: 100%/classic/en-us",
+                                    "toolTip": "Character: loaded | Service: online | Time: 2026-06-24 05:00:27Z | Ruleset: Shadowrun 5 .chum5 | Workflows: 5 defs / 6 surfaces | Prefs: 100%/classic/en-us",
                                     "isVisible": false,
                                     "children": []
                                   }
@@ -18752,7 +18752,7 @@
         "Settings",
         "Special",
         "Start",
-        "Time: 2026-06-23 20:22:21Z",
+        "Time: 2026-06-24 05:00:30Z",
         "Tools",
         "Total",
         "Windows",
@@ -21468,7 +21468,7 @@
                                                       {
                                                         "name": "TimeStateText",
                                                         "controlType": "TextBlock",
-                                                        "text": "Time: 2026-06-23 20:22:21Z",
+                                                        "text": "Time: 2026-06-24 05:00:30Z",
                                                         "toolTip": "",
                                                         "isVisible": true,
                                                         "children": []
@@ -21590,7 +21590,7 @@
                                     "name": "StatusStripControl",
                                     "controlType": "StatusStripControl",
                                     "text": "",
-                                    "toolTip": "Character: none | Service: online | Time: 2026-06-23 20:22:21Z | Ruleset: Shadowrun 4 .chum4 | Workflows: 5 defs / 6 surfaces | Prefs: 100%/classic/en-us",
+                                    "toolTip": "Character: none | Service: online | Time: 2026-06-24 05:00:30Z | Ruleset: Shadowrun 4 .chum4 | Workflows: 5 defs / 6 surfaces | Prefs: 100%/classic/en-us",
                                     "isVisible": false,
                                     "children": []
                                   }
@@ -21646,7 +21646,7 @@
         "Settings",
         "Special",
         "Start",
-        "Time: 2026-06-23 20:22:21Z",
+        "Time: 2026-06-24 05:00:30Z",
         "Tools",
         "Total",
         "Windows",
@@ -24362,7 +24362,7 @@
                                                       {
                                                         "name": "TimeStateText",
                                                         "controlType": "TextBlock",
-                                                        "text": "Time: 2026-06-23 20:22:21Z",
+                                                        "text": "Time: 2026-06-24 05:00:30Z",
                                                         "toolTip": "",
                                                         "isVisible": true,
                                                         "children": []
@@ -24484,7 +24484,7 @@
                                     "name": "StatusStripControl",
                                     "controlType": "StatusStripControl",
                                     "text": "",
-                                    "toolTip": "Character: none | Service: online | Time: 2026-06-23 20:22:21Z | Ruleset: Shadowrun 5 .chum5 | Workflows: 5 defs / 6 surfaces | Prefs: 100%/classic/en-us",
+                                    "toolTip": "Character: none | Service: online | Time: 2026-06-24 05:00:30Z | Ruleset: Shadowrun 5 .chum5 | Workflows: 5 defs / 6 surfaces | Prefs: 100%/classic/en-us",
                                     "isVisible": false,
                                     "children": []
                                   }
@@ -24540,7 +24540,7 @@
         "Settings",
         "Special",
         "Start",
-        "Time: 2026-06-23 20:22:22Z",
+        "Time: 2026-06-24 05:00:30Z",
         "Tools",
         "Total",
         "Windows",
@@ -27256,7 +27256,7 @@
                                                       {
                                                         "name": "TimeStateText",
                                                         "controlType": "TextBlock",
-                                                        "text": "Time: 2026-06-23 20:22:22Z",
+                                                        "text": "Time: 2026-06-24 05:00:30Z",
                                                         "toolTip": "",
                                                         "isVisible": true,
                                                         "children": []
@@ -27378,7 +27378,7 @@
                                     "name": "StatusStripControl",
                                     "controlType": "StatusStripControl",
                                     "text": "",
-                                    "toolTip": "Character: none | Service: online | Time: 2026-06-23 20:22:22Z | Ruleset: Shadowrun 6 .chum6 | Workflows: 5 defs / 6 surfaces | Prefs: 100%/classic/en-us",
+                                    "toolTip": "Character: none | Service: online | Time: 2026-06-24 05:00:30Z | Ruleset: Shadowrun 6 .chum6 | Workflows: 5 defs / 6 surfaces | Prefs: 100%/classic/en-us",
                                     "isVisible": false,
                                     "children": []
                                   }
@@ -27483,7 +27483,7 @@
         "Start",
         "SumtoTen",
         "Technomancer",
-        "Time: 2026-06-23 20:22:10Z",
+        "Time: 2026-06-24 05:00:26Z",
         "Tools",
         "Total",
         "Vehicles",
@@ -32412,7 +32412,7 @@
                                             "name": "CoachSidecarControl",
                                             "controlType": "CoachSidecarControl",
                                             "text": "",
-                                            "toolTip": "Status: unloaded\nPrompt policy: Policy not loaded yet\nBudget: Budget not loaded yet\nWorkspace: aa8dd4376fde4102ba187b4af99ae3e7\nRuntime: No runtime fingerprint yet\nfile:///coach/%3FrouteType=coach\u0026workspaceId=aa8dd4376fde4102ba187b4af99ae3e7\nOpen Coach in your browser, or copy the link if you need to hand it off.\nError: disabled",
+                                            "toolTip": "Status: unloaded\nPrompt policy: Policy not loaded yet\nBudget: Budget not loaded yet\nWorkspace: cb2bab02571744a9b9be3c90e49ffdbe\nRuntime: No runtime fingerprint yet\nfile:///coach/%3FrouteType=coach\u0026workspaceId=cb2bab02571744a9b9be3c90e49ffdbe\nOpen Coach in your browser, or copy the link if you need to hand it off.\nError: disabled",
                                             "isVisible": true,
                                             "children": []
                                           }
@@ -32501,7 +32501,7 @@
                                                       {
                                                         "name": "TimeStateText",
                                                         "controlType": "TextBlock",
-                                                        "text": "Time: 2026-06-23 20:22:10Z",
+                                                        "text": "Time: 2026-06-24 05:00:26Z",
                                                         "toolTip": "",
                                                         "isVisible": true,
                                                         "children": []
@@ -32623,7 +32623,7 @@
                                     "name": "StatusStripControl",
                                     "controlType": "StatusStripControl",
                                     "text": "",
-                                    "toolTip": "Character: loaded | Service: online | Time: 2026-06-23 20:22:10Z | Ruleset: Shadowrun 5 .chum5 | Workflows: 5 defs / 6 surfaces | Prefs: 100%/classic/en-us",
+                                    "toolTip": "Character: loaded | Service: online | Time: 2026-06-24 05:00:26Z | Ruleset: Shadowrun 5 .chum5 | Workflows: 5 defs / 6 surfaces | Prefs: 100%/classic/en-us",
                                     "isVisible": false,
                                     "children": []
                                   }
@@ -33675,7 +33675,7 @@
         "Settings",
         "Special",
         "Start",
-        "Time: 2026-06-23 20:22:20Z",
+        "Time: 2026-06-24 05:00:30Z",
         "Tools",
         "Total",
         "Windows",
@@ -36391,7 +36391,7 @@
                                                       {
                                                         "name": "TimeStateText",
                                                         "controlType": "TextBlock",
-                                                        "text": "Time: 2026-06-23 20:22:20Z",
+                                                        "text": "Time: 2026-06-24 05:00:30Z",
                                                         "toolTip": "",
                                                         "isVisible": true,
                                                         "children": []
@@ -36513,7 +36513,7 @@
                                     "name": "StatusStripControl",
                                     "controlType": "StatusStripControl",
                                     "text": "",
-                                    "toolTip": "Character: none | Service: online | Time: 2026-06-23 20:22:20Z | Ruleset: Shadowrun 5 .chum5 | Workflows: 5 defs / 6 surfaces | Prefs: 100%/classic/en-us",
+                                    "toolTip": "Character: none | Service: online | Time: 2026-06-24 05:00:30Z | Ruleset: Shadowrun 5 .chum5 | Workflows: 5 defs / 6 surfaces | Prefs: 100%/classic/en-us",
                                     "isVisible": false,
                                     "children": []
                                   }
@@ -36618,7 +36618,7 @@
         "Start",
         "SumtoTen",
         "Technomancer",
-        "Time: 2026-06-23 20:22:10Z",
+        "Time: 2026-06-24 05:00:26Z",
         "Tools",
         "Total",
         "Vehicles",
@@ -41547,7 +41547,7 @@
                                             "name": "CoachSidecarControl",
                                             "controlType": "CoachSidecarControl",
                                             "text": "",
-                                            "toolTip": "Status: unloaded\nPrompt policy: Policy not loaded yet\nBudget: Budget not loaded yet\nWorkspace: aa8dd4376fde4102ba187b4af99ae3e7\nRuntime: No runtime fingerprint yet\nfile:///coach/%3FrouteType=coach\u0026workspaceId=aa8dd4376fde4102ba187b4af99ae3e7\nOpen Coach in your browser, or copy the link if you need to hand it off.\nError: disabled",
+                                            "toolTip": "Status: unloaded\nPrompt policy: Policy not loaded yet\nBudget: Budget not loaded yet\nWorkspace: cb2bab02571744a9b9be3c90e49ffdbe\nRuntime: No runtime fingerprint yet\nfile:///coach/%3FrouteType=coach\u0026workspaceId=cb2bab02571744a9b9be3c90e49ffdbe\nOpen Coach in your browser, or copy the link if you need to hand it off.\nError: disabled",
                                             "isVisible": true,
                                             "children": []
                                           }
@@ -41636,7 +41636,7 @@
                                                       {
                                                         "name": "TimeStateText",
                                                         "controlType": "TextBlock",
-                                                        "text": "Time: 2026-06-23 20:22:10Z",
+                                                        "text": "Time: 2026-06-24 05:00:26Z",
                                                         "toolTip": "",
                                                         "isVisible": true,
                                                         "children": []
@@ -41758,7 +41758,7 @@
                                     "name": "StatusStripControl",
                                     "controlType": "StatusStripControl",
                                     "text": "",
-                                    "toolTip": "Character: loaded | Service: online | Time: 2026-06-23 20:22:10Z | Ruleset: Shadowrun 5 .chum5 | Workflows: 5 defs / 6 surfaces | Prefs: 100%/classic/en-us",
+                                    "toolTip": "Character: loaded | Service: online | Time: 2026-06-24 05:00:26Z | Ruleset: Shadowrun 5 .chum5 | Workflows: 5 defs / 6 surfaces | Prefs: 100%/classic/en-us",
                                     "isVisible": false,
                                     "children": []
                                   }
@@ -41812,7 +41812,7 @@
         "Settings",
         "Special",
         "Start",
-        "Time: 2026-06-23 20:21:49Z",
+        "Time: 2026-06-24 05:00:12Z",
         "Tools",
         "Total",
         "Windows",
@@ -43882,7 +43882,7 @@
                                                       {
                                                         "name": "TimeStateText",
                                                         "controlType": "TextBlock",
-                                                        "text": "Time: 2026-06-23 20:21:49Z",
+                                                        "text": "Time: 2026-06-24 05:00:12Z",
                                                         "toolTip": "",
                                                         "isVisible": true,
                                                         "children": []
@@ -44004,7 +44004,7 @@
                                     "name": "StatusStripControl",
                                     "controlType": "StatusStripControl",
                                     "text": "",
-                                    "toolTip": "Character: none | Service: online | Time: 2026-06-23 20:21:49Z | Ruleset: Shadowrun 5 .chum5 | Workflows: 5 defs / 6 surfaces | Prefs: 100%/classic/en-us",
+                                    "toolTip": "Character: none | Service: online | Time: 2026-06-24 05:00:12Z | Ruleset: Shadowrun 5 .chum5 | Workflows: 5 defs / 6 surfaces | Prefs: 100%/classic/en-us",
                                     "isVisible": false,
                                     "children": []
                                   }

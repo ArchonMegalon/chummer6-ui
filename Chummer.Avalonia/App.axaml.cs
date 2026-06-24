@@ -181,7 +181,6 @@ public partial class App : global::Avalonia.Application
                 StartupArguments);
             if (updateHandoffStarted)
             {
-                owner.Close();
                 return;
             }
         }

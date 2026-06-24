@@ -11,7 +11,7 @@ Give players a dramatic city-is-still-moving moment without breaking consent, au
 Remote reaction mini-games are short governed follow-up encounters that occur after a
 Table Pulse packet is emitted.
 
-They are:
+They stay:
 
 - opt-in or policy-allowed
 - receipt-backed
@@ -31,51 +31,31 @@ They are not:
 
 The player receives a short intelligence or courier card and chooses how aggressively to intercept, forward, or suppress it.
 
-Payoff:
-
-- rumor gain
-- heat shift
-- faction notice
+The payoff can be rumor gain, heat shift, and faction notice.
 
 ### Cover Story
 
 The player gets a social or public-facing cleanup card and must pick a cover approach.
 
-Payoff:
-
-- public fallout softening
-- reputation lane protection
-- possible contradiction receipt for later review
+The payoff can be public fallout softening, reputation lane protection, and possible contradiction receipt for later review.
 
 ### Scramble
 
 The player gets a time-sensitive logistics or support card.
 
-Payoff:
-
-- small resource preservation
-- standing-order reinforcement
-- opposition-clock movement
+The payoff can be small resource preservation, standing-order reinforcement, and opposition-clock movement.
 
 ### Temptation
 
 The player gets a morally gray opportunity card.
 
-Payoff:
-
-- faction favor
-- pressure increase
-- future story hook
+The payoff can be faction favor, pressure increase, and future story hook.
 
 ### Shadow Reply
 
 A player or faction representative sends back a coded answer to a pulse packet.
 
-Payoff:
-
-- role-path advancement
-- Passport identity flavor
-- follow-on rumor or order hook
+The payoff can be role-path advancement, Passport identity flavor, and follow-on rumor or order hook.
 
 ## Table Rules
 
@@ -104,36 +84,15 @@ They cannot:
 
 ### On Mobile / PWA
 
-A phone card should feel:
-
-- immediate
-- sharp
-- readable in under a minute
-
-A player should see:
-
-- why this arrived
-- what is at stake
-- how strong the consequence is
-- whether the GM must still approve fallout
+A phone card should feel immediate, sharp, and readable in under a minute. A player should see why this arrived, what is at stake, how strong the consequence is, and whether the GM must still approve fallout.
 
 ### In Player Action Cards
 
-The mini-game should appear as:
-
-- a live card
-- visible pressure and countdown
-- one strong dramatic choice and one safer choice
+The mini-game should appear as a live card, visible pressure and countdown, and one strong dramatic choice and one safer choice.
 
 ### In GM Cockpit
 
-The GM should see:
-
-- card source
-- recipient reasoning
-- chosen response
-- proposed consequence
-- proof chain
+The GM should see card source, recipient reasoning, chosen response, proposed consequence, and proof chain.
 
 ## Best-Case Pattern
 

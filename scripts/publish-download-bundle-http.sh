@@ -46,11 +46,23 @@ if [[ ! -f "$SCRIPT_DIR/verify-windows-installer-payloads.py" ]]; then
   exit 1
 fi
 
-python3 "$SCRIPT_DIR/verify-windows-installer-payloads.py" \
-  --files-dir "$BUNDLE_DIR/files" \
-  --manifest "$MANIFEST_PATH" \
-  --manifest "$CANONICAL_MANIFEST_PATH" \
-  --allow-empty
+windows_payload_gate_args=(
+  --files-dir "$BUNDLE_DIR/files"
+  --manifest "$MANIFEST_PATH"
+  --manifest "$CANONICAL_MANIFEST_PATH"
+)
+while IFS= read -r installer_path; do
+  [[ -n "$installer_path" ]] || continue
+  windows_payload_gate_args+=(--installer "$installer_path")
+done < <(find "$BUNDLE_DIR" -maxdepth 1 -type f -name 'chummer-*-win-*-installer.exe' | sort)
+while IFS= read -r installer_path; do
+  [[ -n "$installer_path" ]] || continue
+  windows_payload_gate_args+=(--installer "$installer_path")
+done < <(find "$BUNDLE_DIR/files" -maxdepth 1 -type f -name 'chummer-*-win-*-installer.exe' | sort)
+if [[ "${#windows_payload_gate_args[@]}" -eq 6 ]]; then
+  windows_payload_gate_args+=(--allow-empty)
+fi
+python3 "$SCRIPT_DIR/verify-windows-installer-payloads.py" "${windows_payload_gate_args[@]}"
 
 to_bool() {
   local value
