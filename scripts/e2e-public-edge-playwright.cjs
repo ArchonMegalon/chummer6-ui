@@ -36,6 +36,8 @@ const requiredWorkflowFamilyIds = [
   'promoted_career_entry_committed_execution',
   'promoted_career_log_continuity',
   'promoted_resumed_workspace',
+  'promoted_career_entry_edit_execution',
+  'promoted_career_entry_delete_execution',
   'promoted_recent_work_affordances',
   'promoted_restored_section_continuations',
   'promoted_restored_tab_landings',
@@ -505,6 +507,36 @@ async function auditCareerLogContinuitySurface(page) {
   };
 }
 
+async function auditCareerEntryEditSurface(page) {
+  const route = `${promotedRouteBase}?${promotedContinuationQuery}&tab=tab-calendar&control=edit_entry`;
+  await openPath(page, route, '.desktop-dialog');
+  const dialogText = await page.locator('.desktop-dialog').innerText();
+  expectTextIncludes(dialogText, 'Edit Entry', 'hosted career entry edit route');
+  expectTextIncludes(dialogText, 'Edit the selected entry in the same compact list/detail editor.', 'hosted career entry edit route');
+  expectTextIncludes(dialogText, 'Command Posture', 'hosted career entry edit route');
+  expectTextIncludes(dialogText, 'Entry Title', 'hosted career entry edit route');
+  return {
+    route,
+    assertion: 'career calendar edit dialog rendered compact list/detail editor with visible current-entry context',
+    status: 'pass',
+  };
+}
+
+async function auditCareerEntryDeleteSurface(page) {
+  const route = `${promotedRouteBase}?${promotedContinuationQuery}&tab=tab-calendar&control=delete_entry`;
+  await openPath(page, route, '.desktop-dialog');
+  const dialogText = await page.locator('.desktop-dialog').innerText();
+  expectTextIncludes(dialogText, 'Remove Current Entry', 'hosted career entry delete route');
+  expectTextIncludes(dialogText, 'Remove Current Entry from the active list?', 'hosted career entry delete route');
+  expectTextIncludes(dialogText, 'Removal Scope', 'hosted career entry delete route');
+  expectTextIncludes(dialogText, 'Recovery', 'hosted career entry delete route');
+  return {
+    route,
+    assertion: 'career calendar delete dialog rendered removal scope and recovery posture with current-list context',
+    status: 'pass',
+  };
+}
+
 async function auditResumedResultContinuation(page, route, expectedText) {
   await openPath(page, route, 'body');
   const bodyText = await page.locator('body').innerText();
@@ -597,6 +629,8 @@ async function auditAdvancedActionAffordances(page) {
   expectTextIncludes(bodyText, 'Add a spell for BLUE', 'hosted advanced action affordances');
   expectTextIncludes(bodyText, 'Add and keep career entry for BLUE', 'hosted advanced action affordances');
   expectTextIncludes(bodyText, 'Add career entry for BLUE', 'hosted advanced action affordances');
+  expectTextIncludes(bodyText, 'Edit career entry for BLUE', 'hosted advanced action affordances');
+  expectTextIncludes(bodyText, 'Remove career entry for BLUE', 'hosted advanced action affordances');
   return {
     route,
     assertion: 'advanced and career/support restored action affordances remain visible on promoted workbench route',
@@ -841,6 +875,18 @@ async function run() {
       route_lane: 'promoted_blazor_workbench',
       workflow_contract: 'career_log_section_continuity',
       checks: [await auditCareerLogContinuitySurface(page)],
+    });
+    receipt.workflow_families.push({
+      id: 'promoted_career_entry_edit_execution',
+      route_lane: 'promoted_blazor_workbench',
+      workflow_contract: 'career_calendar_edit_execution',
+      checks: [await auditCareerEntryEditSurface(page)],
+    });
+    receipt.workflow_families.push({
+      id: 'promoted_career_entry_delete_execution',
+      route_lane: 'promoted_blazor_workbench',
+      workflow_contract: 'career_calendar_delete_execution',
+      checks: [await auditCareerEntryDeleteSurface(page)],
     });
     receipt.workflow_families.push({
       id: 'promoted_resumed_workspace',

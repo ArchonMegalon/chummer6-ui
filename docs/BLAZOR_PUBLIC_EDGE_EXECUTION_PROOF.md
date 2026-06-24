@@ -135,6 +135,10 @@ The first acceptable hosted execution tier should prove these families:
 - staged career-log section continuity on the promoted workbench route:
   `/blazor/workbench?workspace=<promoted-workspace-id>&tab=tab-calendar`
   with visible career-log landing and add-entry posture so the support workflow family includes section resume before dialog execution
+- staged career-entry edit/delete execution on the promoted workbench route:
+  `/blazor/workbench?workspace=<promoted-workspace-id>&tab=tab-calendar&control=edit_entry`
+  `/blazor/workbench?workspace=<promoted-workspace-id>&tab=tab-calendar&control=delete_entry`
+  with visible compact edit posture, removal scope, and recovery context so the career log / support workflow family covers more than add-only utility behavior
 - resumed workbench load:
   `/blazor/workbench?workspace=<promoted-workspace-id>`
 - recent-work resume affordance visibility on the promoted workbench route:
@@ -178,7 +182,7 @@ These are the first promoted families because they map directly to the current C
 
 Later hosted tiers should expand to the other workflow families in `docs/BLAZOR_WEB_CLIENT_PARITY_GOAL.md`, especially startup/recent-work recovery, rules/origin flow, dense section-family editing, career/support utility editing, and cross-route continuity.
 
-The hosted Playwright runner is already staged to record `promoted_career_log_continuity` through the `tab-calendar` route, `promoted_career_entry_execution` through the `tab-calendar&control=create_entry` route, and `promoted_career_entry_committed_execution` through the matching `dialog_action=add` route. Those staged families are not yet part of the verifier-required set or the current published receipt until the live `chummer.run` proof is refreshed and promoted.
+The hosted Playwright runner is already staged to record `promoted_career_log_continuity` through the `tab-calendar` route, `promoted_career_entry_execution` through the `tab-calendar&control=create_entry` route, `promoted_career_entry_committed_execution` through the matching `dialog_action=add` route, and edit/delete coverage through `promoted_career_entry_edit_execution` plus `promoted_career_entry_delete_execution`. Those staged families are not yet part of the verifier-required set or the current published receipt until the live `chummer.run` proof is refreshed and promoted.
 
 ## Required browser-visible assertions
 

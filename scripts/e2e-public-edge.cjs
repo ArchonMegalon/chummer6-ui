@@ -315,6 +315,30 @@ const checks = [
       && hasBlazorBaseHref(text)
   },
   {
+    url: `${baseUrl}/blazor/workbench?workspace=ws-1&tab=tab-calendar&control=edit_entry`,
+    assert: (text, response) =>
+      /\/blazor\/workbench\?workspace=ws-1&tab=tab-calendar&control=edit_entry$/.test(response.url)
+      && hasBlazorBaseHref(text)
+  },
+  {
+    url: `${baseUrl}/blazor/workbench?workspace=ws-1&tab=tab-calendar&control=edit_entry&dialog_action=apply`,
+    assert: (text, response) =>
+      /\/blazor\/workbench\?workspace=ws-1&tab=tab-calendar&control=edit_entry&dialog_action=apply$/.test(response.url)
+      && hasBlazorBaseHref(text)
+  },
+  {
+    url: `${baseUrl}/blazor/workbench?workspace=ws-1&tab=tab-calendar&control=delete_entry`,
+    assert: (text, response) =>
+      /\/blazor\/workbench\?workspace=ws-1&tab=tab-calendar&control=delete_entry$/.test(response.url)
+      && hasBlazorBaseHref(text)
+  },
+  {
+    url: `${baseUrl}/blazor/workbench?workspace=ws-1&tab=tab-calendar&control=delete_entry&dialog_action=delete`,
+    assert: (text, response) =>
+      /\/blazor\/workbench\?workspace=ws-1&tab=tab-calendar&control=delete_entry&dialog_action=delete$/.test(response.url)
+      && hasBlazorBaseHref(text)
+  },
+  {
     url: `${baseUrl}/blazor/workbench?workspace=ws-1&tab=tab-technomancer&control=complex_form_add`,
     assert: (text, response) =>
       /\/blazor\/workbench\?workspace=ws-1&tab=tab-technomancer&control=complex_form_add$/.test(response.url)

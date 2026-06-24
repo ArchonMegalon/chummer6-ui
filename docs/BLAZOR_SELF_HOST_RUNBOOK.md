@@ -35,18 +35,22 @@ Expected public routes:
 10. `/blazor/workbench?workspace=ws-1&tab=tab-calendar`
 11. `/blazor/workbench?workspace=ws-1&tab=tab-calendar&control=create_entry`
 12. `/blazor/workbench?workspace=ws-1&tab=tab-calendar&control=create_entry&dialog_action=add`
-13. `/blazor/preview`
-14. `/blazor/preview?command=new_character`
-15. `/blazor/preview?command=new_character_origin`
-16. `/blazor/preview?command=open_character`
-17. `/blazor/preview?command=open_for_printing`
-18. `/blazor/preview?command=open_for_export`
-19. `/blazor/preview?fixture=blue&command=save_character`
-20. `/blazor/preview?fixture=blue&command=save_character_as`
-21. `/blazor/preview?fixture=blue&command=print_character`
-22. `/blazor/preview?fixture=blue&command=export_character&dialog_action=download`
-23. `/downloads/`
-24. `/downloads/releases.json`
+13. `/blazor/workbench?workspace=ws-1&tab=tab-calendar&control=edit_entry`
+14. `/blazor/workbench?workspace=ws-1&tab=tab-calendar&control=edit_entry&dialog_action=apply`
+15. `/blazor/workbench?workspace=ws-1&tab=tab-calendar&control=delete_entry`
+16. `/blazor/workbench?workspace=ws-1&tab=tab-calendar&control=delete_entry&dialog_action=delete`
+17. `/blazor/preview`
+18. `/blazor/preview?command=new_character`
+19. `/blazor/preview?command=new_character_origin`
+20. `/blazor/preview?command=open_character`
+21. `/blazor/preview?command=open_for_printing`
+22. `/blazor/preview?command=open_for_export`
+23. `/blazor/preview?fixture=blue&command=save_character`
+24. `/blazor/preview?fixture=blue&command=save_character_as`
+25. `/blazor/preview?fixture=blue&command=print_character`
+26. `/blazor/preview?fixture=blue&command=export_character&dialog_action=download`
+27. `/downloads/`
+28. `/downloads/releases.json`
 
 Route intent:
 
@@ -156,6 +160,10 @@ curl -fsS "http://127.0.0.1:${CHUMMER_PORTAL_PORT:-8091}/blazor/workbench?worksp
 curl -fsS "http://127.0.0.1:${CHUMMER_PORTAL_PORT:-8091}/blazor/workbench?workspace=ws-1&tab=tab-calendar"
 curl -fsS "http://127.0.0.1:${CHUMMER_PORTAL_PORT:-8091}/blazor/workbench?workspace=ws-1&tab=tab-calendar&control=create_entry"
 curl -fsS "http://127.0.0.1:${CHUMMER_PORTAL_PORT:-8091}/blazor/workbench?workspace=ws-1&tab=tab-calendar&control=create_entry&dialog_action=add"
+curl -fsS "http://127.0.0.1:${CHUMMER_PORTAL_PORT:-8091}/blazor/workbench?workspace=ws-1&tab=tab-calendar&control=edit_entry"
+curl -fsS "http://127.0.0.1:${CHUMMER_PORTAL_PORT:-8091}/blazor/workbench?workspace=ws-1&tab=tab-calendar&control=edit_entry&dialog_action=apply"
+curl -fsS "http://127.0.0.1:${CHUMMER_PORTAL_PORT:-8091}/blazor/workbench?workspace=ws-1&tab=tab-calendar&control=delete_entry"
+curl -fsS "http://127.0.0.1:${CHUMMER_PORTAL_PORT:-8091}/blazor/workbench?workspace=ws-1&tab=tab-calendar&control=delete_entry&dialog_action=delete"
 curl -fsS http://127.0.0.1:${CHUMMER_PORTAL_PORT:-8091}/blazor/preview
 curl -fsS "http://127.0.0.1:${CHUMMER_PORTAL_PORT:-8091}/blazor/preview?command=new_character"
 curl -fsS "http://127.0.0.1:${CHUMMER_PORTAL_PORT:-8091}/blazor/preview?command=new_character_origin"

@@ -440,6 +440,8 @@ async function auditPortalWorkspaceResumeRoute(page) {
   expectTextIncludes(bodyText, 'Continue BLUE on rules', 'portal workspace resume route');
   expectTextIncludes(bodyText, 'Continue BLUE on gear', 'portal workspace resume route');
   expectTextIncludes(bodyText, 'Resume BLUE on career log', 'portal workspace resume route');
+  expectTextIncludes(bodyText, 'Edit career entry for BLUE', 'portal workspace resume route');
+  expectTextIncludes(bodyText, 'Remove career entry for BLUE', 'portal workspace resume route');
   expectTextIncludes(bodyText, 'Continue BLUE on advanced', 'portal workspace resume route');
   expectTextIncludes(bodyText, 'Continue BLUE for download', 'portal workspace resume route');
   expectTextIncludes(bodyText, 'Continue BLUE for export', 'portal workspace resume route');
@@ -545,6 +547,48 @@ async function auditPortalRestoredCareerEntryAddCommitRoute(page) {
 
   const bodyText = await page.locator('body').innerText();
   expectTextIncludes(bodyText, "Entry 'New entry' added.", 'portal restored career entry commit route');
+}
+
+async function auditPortalRestoredCareerEntryEditRoute(page) {
+  await openPortalPreviewPath(
+    page,
+    '/blazor/preview?fixture=blue&tab=tab-create',
+    '[data-build-lab]'
+  );
+
+  await openPortalPreviewPath(
+    page,
+    '/blazor/workbench?workspace=ws-1&tab=tab-calendar&control=edit_entry',
+    '.desktop-dialog'
+  );
+
+  await expectDialogFits(page, 'edit career entry');
+
+  const dialogText = await page.locator('.desktop-dialog').innerText();
+  expectTextIncludes(dialogText, 'Edit Entry', 'portal restored career entry edit route');
+  expectTextIncludes(dialogText, 'Command Posture', 'portal restored career entry edit route');
+  expectTextIncludes(dialogText, 'Entry Title', 'portal restored career entry edit route');
+}
+
+async function auditPortalRestoredCareerEntryDeleteRoute(page) {
+  await openPortalPreviewPath(
+    page,
+    '/blazor/preview?fixture=blue&tab=tab-create',
+    '[data-build-lab]'
+  );
+
+  await openPortalPreviewPath(
+    page,
+    '/blazor/workbench?workspace=ws-1&tab=tab-calendar&control=delete_entry',
+    '.desktop-dialog'
+  );
+
+  await expectDialogFits(page, 'remove career entry');
+
+  const dialogText = await page.locator('.desktop-dialog').innerText();
+  expectTextIncludes(dialogText, 'Remove Current Entry', 'portal restored career entry delete route');
+  expectTextIncludes(dialogText, 'Removal Scope', 'portal restored career entry delete route');
+  expectTextIncludes(dialogText, 'Recovery', 'portal restored career entry delete route');
 }
 
 async function auditPortalRestoredComplexFormActionRoute(page) {
@@ -783,6 +827,14 @@ async function run() {
     const restoredCareerEntryActionPage = await browser.newPage({ viewport: { width: 1440, height: 960 } });
     await auditPortalRestoredCareerEntryActionRoute(restoredCareerEntryActionPage);
     await restoredCareerEntryActionPage.close();
+
+    const restoredCareerEntryEditPage = await browser.newPage({ viewport: { width: 1440, height: 960 } });
+    await auditPortalRestoredCareerEntryEditRoute(restoredCareerEntryEditPage);
+    await restoredCareerEntryEditPage.close();
+
+    const restoredCareerEntryDeletePage = await browser.newPage({ viewport: { width: 1440, height: 960 } });
+    await auditPortalRestoredCareerEntryDeleteRoute(restoredCareerEntryDeletePage);
+    await restoredCareerEntryDeletePage.close();
 
     const restoredComplexFormActionPage = await browser.newPage({ viewport: { width: 1440, height: 960 } });
     await auditPortalRestoredComplexFormActionRoute(restoredComplexFormActionPage);
