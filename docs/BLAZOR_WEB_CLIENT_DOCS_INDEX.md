@@ -140,6 +140,12 @@ Current docs already define the intended shipped posture and the evidence contra
 - `docs/examples/blazor-workbench-status-bar-staged-proof.receipt.example.json` shows the compact generated receipt shape for `BLAZOR_WORKBENCH_STATUS_BAR_STAGED_PROOF.generated.json`.
 - `docs/BLAZOR_WORKBENCH_INSPECTOR_RAIL_STAGED_PROOF.md` defines the source-staged promoted workbench inspector-rail posture contract. It is not runtime proof.
 - `docs/examples/blazor-workbench-inspector-rail-staged-proof.receipt.example.json` shows the compact generated receipt shape for `BLAZOR_WORKBENCH_INSPECTOR_RAIL_STAGED_PROOF.generated.json`.
+- `docs/BLAZOR_WORKBENCH_DIALOG_STACK_STAGED_PROOF.md` defines the source-staged promoted workbench dialog-stack posture contract. It is not runtime proof.
+- `docs/examples/blazor-workbench-dialog-stack-staged-proof.receipt.example.json` shows the compact generated receipt shape for `BLAZOR_WORKBENCH_DIALOG_STACK_STAGED_PROOF.generated.json`.
+- `docs/BLAZOR_WORKBENCH_CONTEXT_ACTIONS_STAGED_PROOF.md` defines the source-staged promoted workbench context-actions posture contract. It is not runtime proof.
+- `docs/examples/blazor-workbench-context-actions-staged-proof.receipt.example.json` shows the compact generated receipt shape for `BLAZOR_WORKBENCH_CONTEXT_ACTIONS_STAGED_PROOF.generated.json`.
+- `docs/BLAZOR_WORKBENCH_SEARCH_FILTER_STAGED_PROOF.md` defines the source-staged promoted workbench search/filter posture contract. It is not runtime proof.
+- `docs/examples/blazor-workbench-search-filter-staged-proof.receipt.example.json` shows the compact generated receipt shape for `BLAZOR_WORKBENCH_SEARCH_FILTER_STAGED_PROOF.generated.json`.
 
 ## Portal Installer Handoff
 

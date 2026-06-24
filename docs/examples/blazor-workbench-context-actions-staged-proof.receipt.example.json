@@ -1,0 +1,25 @@
+{
+  "contract_name": "chummer6-ui.blazor_workbench_context_actions_staged_proof",
+  "generated_at": "2026-06-24T00:00:00+00:00",
+  "status": "passed",
+  "proof_tier": "source_staged_no_browser_execution",
+  "route_lane": "promoted_blazor_workbench",
+  "expected_routes": [
+    "/blazor/workbench"
+  ],
+  "checks": [
+    {
+      "id": "product_workbench_context_actions",
+      "path": "Chummer.Blazor/Components/Pages/Preview.razor",
+      "status": "passed",
+      "required_token_count": 9,
+      "missing_tokens": []
+    }
+  ],
+  "failures": [],
+  "notes": [
+    "This receipt only proves that promoted workbench context-actions source, style, status, and docs agree.",
+    "It is not a substitute for hosted Playwright execution proof, Docker self-host proof, right-click menu proof, or selection-state runtime proof.",
+    "Do not use this receipt to claim right-click menu behavior, selection-state runtime behavior, or browser execution parity."
+  ]
+}

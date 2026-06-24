@@ -42,6 +42,9 @@ WORKBENCH_MENU_BAR_STAGED_PROOF = PUBLISHED / "BLAZOR_WORKBENCH_MENU_BAR_STAGED_
 WORKBENCH_WORKSPACE_TABS_STAGED_PROOF = PUBLISHED / "BLAZOR_WORKBENCH_WORKSPACE_TABS_STAGED_PROOF.generated.json"
 WORKBENCH_STATUS_BAR_STAGED_PROOF = PUBLISHED / "BLAZOR_WORKBENCH_STATUS_BAR_STAGED_PROOF.generated.json"
 WORKBENCH_INSPECTOR_RAIL_STAGED_PROOF = PUBLISHED / "BLAZOR_WORKBENCH_INSPECTOR_RAIL_STAGED_PROOF.generated.json"
+WORKBENCH_DIALOG_STACK_STAGED_PROOF = PUBLISHED / "BLAZOR_WORKBENCH_DIALOG_STACK_STAGED_PROOF.generated.json"
+WORKBENCH_CONTEXT_ACTIONS_STAGED_PROOF = PUBLISHED / "BLAZOR_WORKBENCH_CONTEXT_ACTIONS_STAGED_PROOF.generated.json"
+WORKBENCH_SEARCH_FILTER_STAGED_PROOF = PUBLISHED / "BLAZOR_WORKBENCH_SEARCH_FILTER_STAGED_PROOF.generated.json"
 LEGACY_CONTROL_COVERAGE_STAGED_PROOF = PUBLISHED / "BLAZOR_LEGACY_CONTROL_COVERAGE_STAGED_PROOF.generated.json"
 SOURCE_STAGED_PROOF_SET = PUBLISHED / "BLAZOR_SOURCE_STAGED_PROOF_SET.generated.json"
 PORTAL_INSTALLER_HANDOFF_STAGED_PROOF = PUBLISHED / "BLAZOR_PORTAL_INSTALLER_HANDOFF_STAGED_PROOF.generated.json"
@@ -133,6 +136,9 @@ def main() -> int:
     workbench_workspace_tabs_staged = load_json(WORKBENCH_WORKSPACE_TABS_STAGED_PROOF)
     workbench_status_bar_staged = load_json(WORKBENCH_STATUS_BAR_STAGED_PROOF)
     workbench_inspector_rail_staged = load_json(WORKBENCH_INSPECTOR_RAIL_STAGED_PROOF)
+    workbench_dialog_stack_staged = load_json(WORKBENCH_DIALOG_STACK_STAGED_PROOF)
+    workbench_context_actions_staged = load_json(WORKBENCH_CONTEXT_ACTIONS_STAGED_PROOF)
+    workbench_search_filter_staged = load_json(WORKBENCH_SEARCH_FILTER_STAGED_PROOF)
     legacy_control_coverage_staged = load_json(LEGACY_CONTROL_COVERAGE_STAGED_PROOF)
     source_staged_proof_set = load_json(SOURCE_STAGED_PROOF_SET)
     portal_installer_handoff_staged = load_json(PORTAL_INSTALLER_HANDOFF_STAGED_PROOF)
@@ -491,6 +497,36 @@ def main() -> int:
     print(f"workbench_inspector_rail_staged_source_checks={count_staged_source_checks(workbench_inspector_rail_staged)}")
     print(
         "workbench_inspector_rail_staged_note="
+        "source_alignment_only_not_browser_execution"
+    )
+    print(f"workbench_dialog_stack_staged_receipt={WORKBENCH_DIALOG_STACK_STAGED_PROOF}")
+    print(f"workbench_dialog_stack_staged_status={str(workbench_dialog_stack_staged.get('status') or '').strip() or 'not_generated'}")
+    print(f"workbench_dialog_stack_staged_contract={str(workbench_dialog_stack_staged.get('contract_name') or '').strip() or 'missing'}")
+    print(f"workbench_dialog_stack_staged_tier={str(workbench_dialog_stack_staged.get('proof_tier') or '').strip() or 'missing'}")
+    print(f"workbench_dialog_stack_staged_route_count={len(workbench_dialog_stack_staged.get('expected_routes') or [])}")
+    print(f"workbench_dialog_stack_staged_source_checks={count_staged_source_checks(workbench_dialog_stack_staged)}")
+    print(
+        "workbench_dialog_stack_staged_note="
+        "source_alignment_only_not_browser_execution"
+    )
+    print(f"workbench_context_actions_staged_receipt={WORKBENCH_CONTEXT_ACTIONS_STAGED_PROOF}")
+    print(f"workbench_context_actions_staged_status={str(workbench_context_actions_staged.get('status') or '').strip() or 'not_generated'}")
+    print(f"workbench_context_actions_staged_contract={str(workbench_context_actions_staged.get('contract_name') or '').strip() or 'missing'}")
+    print(f"workbench_context_actions_staged_tier={str(workbench_context_actions_staged.get('proof_tier') or '').strip() or 'missing'}")
+    print(f"workbench_context_actions_staged_route_count={len(workbench_context_actions_staged.get('expected_routes') or [])}")
+    print(f"workbench_context_actions_staged_source_checks={count_staged_source_checks(workbench_context_actions_staged)}")
+    print(
+        "workbench_context_actions_staged_note="
+        "source_alignment_only_not_browser_execution"
+    )
+    print(f"workbench_search_filter_staged_receipt={WORKBENCH_SEARCH_FILTER_STAGED_PROOF}")
+    print(f"workbench_search_filter_staged_status={str(workbench_search_filter_staged.get('status') or '').strip() or 'not_generated'}")
+    print(f"workbench_search_filter_staged_contract={str(workbench_search_filter_staged.get('contract_name') or '').strip() or 'missing'}")
+    print(f"workbench_search_filter_staged_tier={str(workbench_search_filter_staged.get('proof_tier') or '').strip() or 'missing'}")
+    print(f"workbench_search_filter_staged_route_count={len(workbench_search_filter_staged.get('expected_routes') or [])}")
+    print(f"workbench_search_filter_staged_source_checks={count_staged_source_checks(workbench_search_filter_staged)}")
+    print(
+        "workbench_search_filter_staged_note="
         "source_alignment_only_not_browser_execution"
     )
     print(f"legacy_control_coverage_staged_receipt={LEGACY_CONTROL_COVERAGE_STAGED_PROOF}")

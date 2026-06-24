@@ -54,6 +54,9 @@ The aggregate currently covers:
 - `workbench_workspace_tabs`
 - `workbench_status_bar`
 - `workbench_inspector_rail`
+- `workbench_dialog_stack`
+- `workbench_context_actions`
+- `workbench_search_filter`
 - `legacy_control_coverage`
 
 Each family must keep `proof_tier` set to:

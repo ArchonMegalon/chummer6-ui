@@ -684,7 +684,7 @@
                     <span>Active dialog</span>
                     <small>Open a compact edit/add workflow.</small>
                 </a>
-                <a role="listitem" href="/workbench?workspace=ws-1&tab=tab-contacts&control=contact_add&dialog_action=add" data-workbench-dialog-stack-action="committed-result">
+                <a role="listitem" href="@BuildPreviewHref("blue", tab: "tab-contacts", control: "contact_add", dialogAction: "add", useWorkbenchRoute: true)" data-workbench-dialog-stack-action="committed-result">
                     <span>Committed result</span>
                     <small>Review browser-visible action outcome.</small>
                 </a>
@@ -692,13 +692,81 @@
                     <span>Retry</span>
                     <small>Return to the last editable context.</small>
                 </a>
-                <a role="listitem" href="/workbench?workspace=ws-1" data-workbench-dialog-stack-action="cancel-back">
+                <a role="listitem" href="@BuildPreviewHref("blue", useWorkbenchRoute: true)" data-workbench-dialog-stack-action="cancel-back">
                     <span>Back to sheet</span>
                     <small>Close the detour safely.</small>
                 </a>
                 <a role="listitem" href="/contact" data-workbench-dialog-stack-action="support">
                     <span>Support</span>
                     <small>Escalate a broken dialog path.</small>
+                </a>
+            </div>
+        </section>
+
+        <section class="browser-workbench-context-actions" aria-label="Workbench context actions" data-workbench-context-actions="strip">
+            <div class="browser-workbench-context-actions-copy">
+                <span class="browser-preview-status-label">Context actions</span>
+                <strong>Keep selection actions visible without hidden right-click dependency.</strong>
+                <p>Add, edit, remove, duplicate, source lookup, and recovery lanes stay reachable for mouse, touch, and keyboard users.</p>
+            </div>
+            <div class="browser-workbench-context-actions-list" role="list" aria-label="Selection-sensitive workbench actions">
+                <a role="listitem" href="@BuildPreviewHref(tab: "tab-gear", control: "gear_add", useWorkbenchRoute: true)" data-workbench-context-actions-action="add">
+                    <span>Add</span>
+                    <small>Create from the selected sheet lane.</small>
+                </a>
+                <a role="listitem" href="@BuildPreviewHref(tab: "tab-gear", control: "gear_edit", useWorkbenchRoute: true)" data-workbench-context-actions-action="edit">
+                    <span>Edit</span>
+                    <small>Open the selected item safely.</small>
+                </a>
+                <a role="listitem" href="@BuildPreviewHref(tab: "tab-gear", control: "gear_delete", useWorkbenchRoute: true)" data-workbench-context-actions-action="remove">
+                    <span>Remove</span>
+                    <small>Show impact and recovery context.</small>
+                </a>
+                <a role="listitem" href="@BuildWorkbenchCommandHref("save_character_as")" data-workbench-context-actions-action="duplicate">
+                    <span>Duplicate</span>
+                    <small>Fork work through browser-safe output.</small>
+                </a>
+                <a role="listitem" href="@BuildPreviewHref(tab: "tab-rules", control: "show_source", useWorkbenchRoute: true)" data-workbench-context-actions-action="source">
+                    <span>Source</span>
+                    <small>Open rule/source lookup posture.</small>
+                </a>
+                <a role="listitem" href="@BuildPreviewHref("blue", useWorkbenchRoute: true)" data-workbench-context-actions-action="recover">
+                    <span>Recover</span>
+                    <small>Return to the active sheet context.</small>
+                </a>
+            </div>
+        </section>
+
+        <section class="browser-workbench-search-filter" aria-label="Workbench search and filter rail" data-workbench-search-filter="strip">
+            <div class="browser-workbench-search-filter-copy">
+                <span class="browser-preview-status-label">Search/filter</span>
+                <strong>Keep dense Chummer lists searchable from the workbench chrome.</strong>
+                <p>Gear, skills, qualities, roster, and source-heavy panes need visible filter lanes so users do not hunt through page-specific controls.</p>
+            </div>
+            <div class="browser-workbench-search-filter-actions" role="list" aria-label="Search and filter shortcuts">
+                <a role="listitem" href="@BuildPreviewHref(command: "character_roster", useWorkbenchRoute: true)" data-workbench-search-filter-action="roster-search">
+                    <span>Roster</span>
+                    <small>Find existing runners.</small>
+                </a>
+                <a role="listitem" href="@BuildWorkbenchLaneHref("tab-gear")" data-workbench-search-filter-action="gear-filter">
+                    <span>Gear</span>
+                    <small>Filter inventory and catalogs.</small>
+                </a>
+                <a role="listitem" href="@BuildWorkbenchLaneHref("tab-skills")" data-workbench-search-filter-action="skill-filter">
+                    <span>Skills</span>
+                    <small>Jump to active ratings and groups.</small>
+                </a>
+                <a role="listitem" href="@BuildPreviewHref(tab: "tab-qualities", control: "quality_add", useWorkbenchRoute: true)" data-workbench-search-filter-action="quality-filter">
+                    <span>Qualities</span>
+                    <small>Review qualities and categories.</small>
+                </a>
+                <a role="listitem" href="@BuildWorkbenchLaneHref("tab-rules")" data-workbench-search-filter-action="source-filter">
+                    <span>Sources</span>
+                    <small>Filter books, rules, and references.</small>
+                </a>
+                <a role="listitem" href="@BuildPreviewHref("blue", useWorkbenchRoute: true)" data-workbench-search-filter-action="clear-filter">
+                    <span>Clear</span>
+                    <small>Return to the unfiltered sheet.</small>
                 </a>
             </div>
         </section>
@@ -987,7 +1055,7 @@
             </p>
         </div>
         <DesktopShell DemoFixtureId="@Fixture"
-                      DemoWorkspaceId="@Workspace"
+                      DemoWorkspaceId="@ResolvedWorkspace"
                       DemoTabId="@Tab"
                       DemoStartupCommandId="@Command"
                       DemoUiControlId="@Control"
@@ -1011,6 +1079,9 @@
     [SupplyParameterFromQuery(Name = "workspace")]
     public string? Workspace { get; set; }
 
+    [SupplyParameterFromQuery(Name = "runner")]
+    public string? Runner { get; set; }
+
     [SupplyParameterFromQuery(Name = "tab")]
     public string? Tab { get; set; }
 
@@ -1024,6 +1095,7 @@
     public string? DialogAction { get; set; }
 
     private bool IsWorkbenchRoute => Navigation.Uri.Contains("/workbench", StringComparison.OrdinalIgnoreCase);
+    private string? ResolvedWorkspace => !string.IsNullOrWhiteSpace(Runner) ? Runner : Workspace;
     private IReadOnlyList<string> RecentWorkspaceIds => Presenter.State.Session.RecentWorkspaceIds.Select(static id => id.Value).ToArray();
     private IReadOnlyList<RecentWorkspaceLink> RecentWorkspaces => BuildRecentWorkspaceLinks();
     private RecentWorkspaceLink? PrimaryRecentWorkspace => RecentWorkspaces.FirstOrDefault();
@@ -1139,7 +1211,7 @@
 
         if (!string.IsNullOrWhiteSpace(workspace))
         {
-            query.Add($"workspace={Uri.EscapeDataString(workspace)}");
+            query.Add($"runner={Uri.EscapeDataString(workspace)}");
         }
 
         if (!string.IsNullOrWhiteSpace(tab))
