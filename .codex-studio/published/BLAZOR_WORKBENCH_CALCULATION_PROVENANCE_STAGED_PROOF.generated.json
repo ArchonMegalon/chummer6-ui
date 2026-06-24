@@ -1,6 +1,6 @@
 {
-  "contract_name": "chummer6-ui.blazor_workbench_hosting_privacy_staged_proof",
-  "generated_at": "2026-06-24T23:28:11.553856+00:00",
+  "contract_name": "chummer6-ui.blazor_workbench_calculation_provenance_staged_proof",
+  "generated_at": "2026-06-24T23:28:12.708543+00:00",
   "status": "passed",
   "proof_tier": "source_staged_no_browser_execution",
   "route_lane": "promoted_blazor_workbench",
@@ -9,14 +9,14 @@
   ],
   "checks": [
     {
-      "id": "product_workbench_hosting_privacy_strip",
+      "id": "product_workbench_calculation_provenance",
       "path": "Chummer.Blazor/Components/Pages/Preview.razor",
       "status": "passed",
-      "required_token_count": 8,
+      "required_token_count": 9,
       "missing_tokens": []
     },
     {
-      "id": "scoped_hosting_privacy_visual_design",
+      "id": "scoped_calculation_provenance_visual_design",
       "path": "Chummer.Blazor/Components/Pages/Preview.razor.css",
       "status": "passed",
       "required_token_count": 4,
@@ -46,8 +46,8 @@
   ],
   "failures": [],
   "notes": [
-    "This receipt only proves that promoted workbench hosting/privacy source, style, status, and docs agree.",
-    "It is not a substitute for hosted Playwright execution proof or Docker self-host proof.",
-    "Do not use this receipt to claim Docker runtime, hosted route availability, Rybbit service health, or analytics delivery."
+    "This receipt only proves that promoted workbench calculation-provenance source, style, status, and docs agree.",
+    "It is not a substitute for hosted Playwright execution proof, Docker self-host proof, calculation-engine proof, dependency-tracing proof, recalculation proof, or override proof.",
+    "Do not use this receipt to claim calculation-engine behavior, dependency tracing, recalculation, override handling, or browser execution parity."
   ]
 }

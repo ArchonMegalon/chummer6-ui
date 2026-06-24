@@ -303,6 +303,16 @@ REQUIRED_RECEIPTS = [
         "contract_name": "chummer6-ui.blazor_workbench_windowing_panes_staged_proof",
     },
     {
+        "id": "workbench_calculation_provenance",
+        "path": PUBLISHED / "BLAZOR_WORKBENCH_CALCULATION_PROVENANCE_STAGED_PROOF.generated.json",
+        "contract_name": "chummer6-ui.blazor_workbench_calculation_provenance_staged_proof",
+    },
+    {
+        "id": "workbench_lifecycle_calendar",
+        "path": PUBLISHED / "BLAZOR_WORKBENCH_LIFECYCLE_CALENDAR_STAGED_PROOF.generated.json",
+        "contract_name": "chummer6-ui.blazor_workbench_lifecycle_calendar_staged_proof",
+    },
+    {
         "id": "legacy_control_coverage",
         "path": PUBLISHED / "BLAZOR_LEGACY_CONTROL_COVERAGE_STAGED_PROOF.generated.json",
         "contract_name": "chummer6-ui.blazor_legacy_control_coverage_staged_proof",

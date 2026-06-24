@@ -83,6 +83,8 @@ The aggregate currently covers:
 - `workbench_print_layout`
 - `workbench_portrait_attachments`
 - `workbench_windowing_panes`
+- `workbench_calculation_provenance`
+- `workbench_lifecycle_calendar`
 - `legacy_control_coverage`
 
 Each family must keep `proof_tier` set to:

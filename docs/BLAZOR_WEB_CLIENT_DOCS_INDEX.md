@@ -198,6 +198,10 @@ Current docs already define the intended shipped posture and the evidence contra
 - `docs/examples/blazor-workbench-portrait-attachments-staged-proof.receipt.example.json` shows the compact generated receipt shape for `BLAZOR_WORKBENCH_PORTRAIT_ATTACHMENTS_STAGED_PROOF.generated.json`.
 - `docs/BLAZOR_WORKBENCH_WINDOWING_PANES_STAGED_PROOF.md` defines the source-staged promoted workbench windowing-panes posture contract. It is not runtime proof.
 - `docs/examples/blazor-workbench-windowing-panes-staged-proof.receipt.example.json` shows the compact generated receipt shape for `BLAZOR_WORKBENCH_WINDOWING_PANES_STAGED_PROOF.generated.json`.
+- `docs/BLAZOR_WORKBENCH_CALCULATION_PROVENANCE_STAGED_PROOF.md` defines the source-staged promoted workbench calculation-provenance posture contract. It is not runtime proof.
+- `docs/examples/blazor-workbench-calculation-provenance-staged-proof.receipt.example.json` shows the compact generated receipt shape for `BLAZOR_WORKBENCH_CALCULATION_PROVENANCE_STAGED_PROOF.generated.json`.
+- `docs/BLAZOR_WORKBENCH_LIFECYCLE_CALENDAR_STAGED_PROOF.md` defines the source-staged promoted workbench lifecycle-calendar posture contract. It is not runtime proof.
+- `docs/examples/blazor-workbench-lifecycle-calendar-staged-proof.receipt.example.json` shows the compact generated receipt shape for `BLAZOR_WORKBENCH_LIFECYCLE_CALENDAR_STAGED_PROOF.generated.json`.
 
 ## Portal Installer Handoff
 

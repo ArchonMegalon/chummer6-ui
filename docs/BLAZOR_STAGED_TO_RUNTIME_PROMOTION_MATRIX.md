@@ -94,6 +94,8 @@ These source receipts help manage breadth and safety but do not promote workflow
 - `BLAZOR_WORKBENCH_PRINT_LAYOUT_STAGED_PROOF.generated.json`
 - `BLAZOR_WORKBENCH_PORTRAIT_ATTACHMENTS_STAGED_PROOF.generated.json`
 - `BLAZOR_WORKBENCH_WINDOWING_PANES_STAGED_PROOF.generated.json`
+- `BLAZOR_WORKBENCH_CALCULATION_PROVENANCE_STAGED_PROOF.generated.json`
+- `BLAZOR_WORKBENCH_LIFECYCLE_CALENDAR_STAGED_PROOF.generated.json`
 
 ## Promotion Rule
 

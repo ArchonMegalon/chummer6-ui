@@ -179,6 +179,10 @@ The next staged browser-family slice after workbench print-layout is workbench p
 
 The next staged browser-family slice after workbench portrait-attachments is workbench windowing-panes posture for split view, pop-out, pinned inspector, focus mode, second screen, and restore layout actions. `scripts/ai/milestones/blazor-workbench-windowing-panes-staged-proof-check.sh` is its source-alignment check. It proves only that the promoted workbench exposes desktop-like pane/window affordances; it is not a hosted or Docker browser execution receipt.
 
+The next staged browser-family slice after workbench windowing-panes is workbench calculation-provenance posture for derived breakdown, modifier stack, rule source, stale values, manual override, and dependency path actions. `scripts/ai/milestones/blazor-workbench-calculation-provenance-staged-proof-check.sh` is its source-alignment check. It proves only that the promoted workbench exposes calculation-explainability affordances; it is not a hosted or Docker browser execution receipt.
+
+The next staged browser-family slice after workbench calculation-provenance is workbench lifecycle-calendar posture for downtime, lifestyle upkeep, subscriptions, reminders, recurring costs, and next session actions. `scripts/ai/milestones/blazor-workbench-lifecycle-calendar-staged-proof-check.sh` is its source-alignment check. It proves only that the promoted workbench exposes downtime/upkeep affordances; it is not a hosted or Docker browser execution receipt.
+
 `/scripts/ai/milestones/blazor-legacy-control-coverage-staged-proof-check.sh` is the source-level breadth guard over all known `LegacyUiControlCatalog` controls. It maps controls into hosted execution baseline coverage or staged source-alignment families; it is not a hosted or Docker browser execution receipt.
 
 `scripts/ai/milestones/blazor-source-staged-proof-set-check.sh` is the aggregate source-staged proof-set lane. It materializes the staged source receipts and summarizes their status, but it must stay outside release-readiness aggregation because it is not hosted or Docker browser execution evidence.

@@ -677,7 +677,7 @@
             <div class="browser-workbench-dialog-stack-copy">
                 <span class="browser-preview-status-label">Dialog stack</span>
                 <strong>Keep modal work and committed results visible.</strong>
-                <p>Desktop Chummer workflows move through dialogs; the web client should keep active dialog, retry, result, and support continuations within reach.</p>
+                <p>Active dialogs, retry paths, results, and support continuations stay close to the current task.</p>
             </div>
             <div class="browser-workbench-dialog-stack-actions" role="list" aria-label="Dialog and result continuations">
                 <a role="listitem" href="@BuildPreviewHref(tab: "tab-contacts", control: "contact_add", useWorkbenchRoute: true)" data-workbench-dialog-stack-action="active-dialog">
@@ -1639,6 +1639,74 @@
                 <a role="listitem" href="@BuildPreviewHref("blue", command: "restore_layout")" data-workbench-windowing-panes-action="restore_layout">
                     <span>Restore layout</span>
                     <small>Return panes to the last useful arrangement.</small>
+                </a>
+            </div>
+        </section>
+
+        <section class="browser-workbench-calculation-provenance" aria-label="Workbench calculation provenance lane" data-workbench-calculation-provenance="strip">
+            <div class="browser-workbench-calculation-provenance-copy">
+                <span class="browser-preview-status-label">Calculations</span>
+                <strong>Make derived values explain themselves.</strong>
+                <p>Derived stats, modifiers, source rules, stale values, overrides, and dependency paths stay close to the numbers they affect.</p>
+            </div>
+            <div class="browser-workbench-calculation-provenance-actions" role="list" aria-label="Calculation provenance shortcuts">
+                <a role="listitem" href="@BuildPreviewHref("blue", command: "derived_breakdown")" data-workbench-calculation-provenance-action="derived_breakdown">
+                    <span>Breakdown</span>
+                    <small>Show the inputs behind a derived value.</small>
+                </a>
+                <a role="listitem" href="@BuildPreviewHref("blue", command: "modifier_stack")" data-workbench-calculation-provenance-action="modifier_stack">
+                    <span>Modifier stack</span>
+                    <small>Expose bonuses, penalties, and conditions.</small>
+                </a>
+                <a role="listitem" href="@BuildPreviewHref("blue", command: "rule_source")" data-workbench-calculation-provenance-action="rule_source">
+                    <span>Rule source</span>
+                    <small>Link calculations back to source rules.</small>
+                </a>
+                <a role="listitem" href="@BuildPreviewHref("blue", command: "stale_values")" data-workbench-calculation-provenance-action="stale_values">
+                    <span>Stale values</span>
+                    <small>Surface values that need refresh attention.</small>
+                </a>
+                <a role="listitem" href="@BuildPreviewHref("blue", command: "manual_override")" data-workbench-calculation-provenance-action="manual_override">
+                    <span>Override</span>
+                    <small>Keep manual changes explicit and reviewable.</small>
+                </a>
+                <a role="listitem" href="@BuildPreviewHref("blue", command: "dependency_path")" data-workbench-calculation-provenance-action="dependency_path">
+                    <span>Dependency path</span>
+                    <small>Trace what will change before recalculation.</small>
+                </a>
+            </div>
+        </section>
+
+        <section class="browser-workbench-lifecycle-calendar" aria-label="Workbench lifecycle calendar lane" data-workbench-lifecycle-calendar="strip">
+            <div class="browser-workbench-lifecycle-calendar-copy">
+                <span class="browser-preview-status-label">Lifecycle</span>
+                <strong>Keep downtime and upkeep visible.</strong>
+                <p>Downtime, lifestyle upkeep, subscriptions, reminders, recurring costs, and next-session context stay near the active sheet.</p>
+            </div>
+            <div class="browser-workbench-lifecycle-calendar-actions" role="list" aria-label="Lifecycle calendar shortcuts">
+                <a role="listitem" href="@BuildPreviewHref("blue", command: "open_downtime")" data-workbench-lifecycle-calendar-action="downtime">
+                    <span>Downtime</span>
+                    <small>Track between-run character work.</small>
+                </a>
+                <a role="listitem" href="@BuildPreviewHref("blue", command: "lifestyle_upkeep")" data-workbench-lifecycle-calendar-action="lifestyle_upkeep">
+                    <span>Lifestyle upkeep</span>
+                    <small>Keep monthly costs and covers visible.</small>
+                </a>
+                <a role="listitem" href="@BuildPreviewHref("blue", command: "subscription_review")" data-workbench-lifecycle-calendar-action="subscriptions">
+                    <span>Subscriptions</span>
+                    <small>Review licenses, services, and recurring gear.</small>
+                </a>
+                <a role="listitem" href="@BuildPreviewHref("blue", command: "character_reminders")" data-workbench-lifecycle-calendar-action="reminders">
+                    <span>Reminders</span>
+                    <small>Surface upcoming upkeep and table tasks.</small>
+                </a>
+                <a role="listitem" href="@BuildPreviewHref("blue", command: "recurring_costs")" data-workbench-lifecycle-calendar-action="recurring_costs">
+                    <span>Recurring costs</span>
+                    <small>Keep predictable nuyen pressure explicit.</small>
+                </a>
+                <a role="listitem" href="@BuildPreviewHref("blue", command: "next_session")" data-workbench-lifecycle-calendar-action="next_session">
+                    <span>Next session</span>
+                    <small>Carry table context into the next run.</small>
                 </a>
             </div>
         </section>
