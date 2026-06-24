@@ -63,6 +63,9 @@ The aggregate currently covers:
 - `workbench_resource_meters`
 - `workbench_tree_tools`
 - `workbench_save_session`
+- `workbench_output_handoff`
+- `workbench_validation_queue`
+- `workbench_history_undo`
 - `legacy_control_coverage`
 
 Each family must keep `proof_tier` set to:

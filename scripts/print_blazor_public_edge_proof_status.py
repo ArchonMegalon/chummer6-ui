@@ -51,6 +51,9 @@ WORKBENCH_KEYBOARD_SHORTCUTS_STAGED_PROOF = PUBLISHED / "BLAZOR_WORKBENCH_KEYBOA
 WORKBENCH_RESOURCE_METERS_STAGED_PROOF = PUBLISHED / "BLAZOR_WORKBENCH_RESOURCE_METERS_STAGED_PROOF.generated.json"
 WORKBENCH_TREE_TOOLS_STAGED_PROOF = PUBLISHED / "BLAZOR_WORKBENCH_TREE_TOOLS_STAGED_PROOF.generated.json"
 WORKBENCH_SAVE_SESSION_STAGED_PROOF = PUBLISHED / "BLAZOR_WORKBENCH_SAVE_SESSION_STAGED_PROOF.generated.json"
+WORKBENCH_OUTPUT_HANDOFF_STAGED_PROOF = PUBLISHED / "BLAZOR_WORKBENCH_OUTPUT_HANDOFF_STAGED_PROOF.generated.json"
+WORKBENCH_VALIDATION_QUEUE_STAGED_PROOF = PUBLISHED / "BLAZOR_WORKBENCH_VALIDATION_QUEUE_STAGED_PROOF.generated.json"
+WORKBENCH_HISTORY_UNDO_STAGED_PROOF = PUBLISHED / "BLAZOR_WORKBENCH_HISTORY_UNDO_STAGED_PROOF.generated.json"
 LEGACY_CONTROL_COVERAGE_STAGED_PROOF = PUBLISHED / "BLAZOR_LEGACY_CONTROL_COVERAGE_STAGED_PROOF.generated.json"
 SOURCE_STAGED_PROOF_SET = PUBLISHED / "BLAZOR_SOURCE_STAGED_PROOF_SET.generated.json"
 PORTAL_INSTALLER_HANDOFF_STAGED_PROOF = PUBLISHED / "BLAZOR_PORTAL_INSTALLER_HANDOFF_STAGED_PROOF.generated.json"
@@ -151,6 +154,9 @@ def main() -> int:
     workbench_resource_meters_staged = load_json(WORKBENCH_RESOURCE_METERS_STAGED_PROOF)
     workbench_tree_tools_staged = load_json(WORKBENCH_TREE_TOOLS_STAGED_PROOF)
     workbench_save_session_staged = load_json(WORKBENCH_SAVE_SESSION_STAGED_PROOF)
+    workbench_output_handoff_staged = load_json(WORKBENCH_OUTPUT_HANDOFF_STAGED_PROOF)
+    workbench_validation_queue_staged = load_json(WORKBENCH_VALIDATION_QUEUE_STAGED_PROOF)
+    workbench_history_undo_staged = load_json(WORKBENCH_HISTORY_UNDO_STAGED_PROOF)
     legacy_control_coverage_staged = load_json(LEGACY_CONTROL_COVERAGE_STAGED_PROOF)
     source_staged_proof_set = load_json(SOURCE_STAGED_PROOF_SET)
     portal_installer_handoff_staged = load_json(PORTAL_INSTALLER_HANDOFF_STAGED_PROOF)
@@ -599,6 +605,36 @@ def main() -> int:
     print(f"workbench_save_session_staged_source_checks={count_staged_source_checks(workbench_save_session_staged)}")
     print(
         "workbench_save_session_staged_note="
+        "source_alignment_only_not_browser_execution"
+    )
+    print(f"workbench_output_handoff_staged_receipt={WORKBENCH_OUTPUT_HANDOFF_STAGED_PROOF}")
+    print(f"workbench_output_handoff_staged_status={str(workbench_output_handoff_staged.get('status') or '').strip() or 'not_generated'}")
+    print(f"workbench_output_handoff_staged_contract={str(workbench_output_handoff_staged.get('contract_name') or '').strip() or 'missing'}")
+    print(f"workbench_output_handoff_staged_tier={str(workbench_output_handoff_staged.get('proof_tier') or '').strip() or 'missing'}")
+    print(f"workbench_output_handoff_staged_route_count={len(workbench_output_handoff_staged.get('expected_routes') or [])}")
+    print(f"workbench_output_handoff_staged_source_checks={count_staged_source_checks(workbench_output_handoff_staged)}")
+    print(
+        "workbench_output_handoff_staged_note="
+        "source_alignment_only_not_browser_execution"
+    )
+    print(f"workbench_validation_queue_staged_receipt={WORKBENCH_VALIDATION_QUEUE_STAGED_PROOF}")
+    print(f"workbench_validation_queue_staged_status={str(workbench_validation_queue_staged.get('status') or '').strip() or 'not_generated'}")
+    print(f"workbench_validation_queue_staged_contract={str(workbench_validation_queue_staged.get('contract_name') or '').strip() or 'missing'}")
+    print(f"workbench_validation_queue_staged_tier={str(workbench_validation_queue_staged.get('proof_tier') or '').strip() or 'missing'}")
+    print(f"workbench_validation_queue_staged_route_count={len(workbench_validation_queue_staged.get('expected_routes') or [])}")
+    print(f"workbench_validation_queue_staged_source_checks={count_staged_source_checks(workbench_validation_queue_staged)}")
+    print(
+        "workbench_validation_queue_staged_note="
+        "source_alignment_only_not_browser_execution"
+    )
+    print(f"workbench_history_undo_staged_receipt={WORKBENCH_HISTORY_UNDO_STAGED_PROOF}")
+    print(f"workbench_history_undo_staged_status={str(workbench_history_undo_staged.get('status') or '').strip() or 'not_generated'}")
+    print(f"workbench_history_undo_staged_contract={str(workbench_history_undo_staged.get('contract_name') or '').strip() or 'missing'}")
+    print(f"workbench_history_undo_staged_tier={str(workbench_history_undo_staged.get('proof_tier') or '').strip() or 'missing'}")
+    print(f"workbench_history_undo_staged_route_count={len(workbench_history_undo_staged.get('expected_routes') or [])}")
+    print(f"workbench_history_undo_staged_source_checks={count_staged_source_checks(workbench_history_undo_staged)}")
+    print(
+        "workbench_history_undo_staged_note="
         "source_alignment_only_not_browser_execution"
     )
     print(f"legacy_control_coverage_staged_receipt={LEGACY_CONTROL_COVERAGE_STAGED_PROOF}")

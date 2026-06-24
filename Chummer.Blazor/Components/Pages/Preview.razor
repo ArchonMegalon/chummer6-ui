@@ -963,6 +963,108 @@
             </div>
         </section>
 
+        <section class="browser-workbench-output-handoff" aria-label="Workbench output and export handoff" data-workbench-output-handoff="strip">
+            <div class="browser-workbench-output-handoff-copy">
+                <span class="browser-preview-status-label">Output handoff</span>
+                <strong>Keep print, packet, and share paths explicit.</strong>
+                <p>Chummer makes output generation a visible workflow; the web workbench should keep PDF packets, print sheets, summaries, share links, audit queues, and download bundles near the active sheet.</p>
+            </div>
+            <div class="browser-workbench-output-handoff-actions" role="list" aria-label="Output and export handoff shortcuts">
+                <a role="listitem" href="@BuildPreviewHref("blue", command: "export_character")" data-workbench-output-handoff-action="pdf_packet">
+                    <span>PDF packet</span>
+                    <small>Prepare a table-ready character packet.</small>
+                </a>
+                <a role="listitem" href="@BuildPreviewHref("blue", command: "print_character")" data-workbench-output-handoff-action="print_sheet">
+                    <span>Print sheet</span>
+                    <small>Reserve a direct browser print path.</small>
+                </a>
+                <a role="listitem" href="@BuildWorkbenchLaneHref("tab-info")" data-workbench-output-handoff-action="html_summary">
+                    <span>HTML summary</span>
+                    <small>Expose lightweight web-readable output.</small>
+                </a>
+                <a role="listitem" href="@BuildPreviewHref("blue", command: "copy_share_link")" data-workbench-output-handoff-action="share_link">
+                    <span>Share link</span>
+                    <small>Prepare hosted handoff for players and GMs.</small>
+                </a>
+                <a role="listitem" href="@BuildWorkbenchLaneHref("tab-calendar")" data-workbench-output-handoff-action="audit_queue">
+                    <span>Audit queue</span>
+                    <small>Review recent warnings before export.</small>
+                </a>
+                <a role="listitem" href="@BuildPreviewHref("blue", command: "download_character_pack")" data-workbench-output-handoff-action="download_bundle">
+                    <span>Download bundle</span>
+                    <small>Keep self-hosted file handoff discoverable.</small>
+                </a>
+            </div>
+        </section>
+
+        <section class="browser-workbench-validation-queue" aria-label="Workbench validation and build readiness" data-workbench-validation-queue="strip">
+            <div class="browser-workbench-validation-queue-copy">
+                <span class="browser-preview-status-label">Build readiness</span>
+                <strong>Keep validation pressure visible before output.</strong>
+                <p>Chummer keeps rule issues, missing fields, cost checks, availability limits, final build gates, and next-fix navigation close to the sheet; the web workbench should make that readiness posture explicit.</p>
+            </div>
+            <div class="browser-workbench-validation-queue-actions" role="list" aria-label="Validation and build readiness shortcuts">
+                <a role="listitem" href="@BuildPreviewHref("blue", command: "validate_character")" data-workbench-validation-queue-action="rule_issues">
+                    <span>Rule issues</span>
+                    <small>Open the current validation posture.</small>
+                </a>
+                <a role="listitem" href="@BuildWorkbenchLaneHref("tab-info")" data-workbench-validation-queue-action="missing_fields">
+                    <span>Missing fields</span>
+                    <small>Return to identity and required metadata.</small>
+                </a>
+                <a role="listitem" href="@BuildWorkbenchLaneHref("tab-skills")" data-workbench-validation-queue-action="cost_checks">
+                    <span>Cost checks</span>
+                    <small>Review spend and progression pressure.</small>
+                </a>
+                <a role="listitem" href="@BuildWorkbenchLaneHref("tab-gear")" data-workbench-validation-queue-action="availability">
+                    <span>Availability</span>
+                    <small>Keep gear legality and limits visible.</small>
+                </a>
+                <a role="listitem" href="@BuildPreviewHref("blue", command: "finalize_character")" data-workbench-validation-queue-action="build_gate">
+                    <span>Build gate</span>
+                    <small>Reserve finalization readiness in the flow.</small>
+                </a>
+                <a role="listitem" href="@BuildPreviewHref("blue", command: "resolve_next_issue")" data-workbench-validation-queue-action="fix_next">
+                    <span>Fix next</span>
+                    <small>Jump to the next blocking issue.</small>
+                </a>
+            </div>
+        </section>
+
+        <section class="browser-workbench-history-undo" aria-label="Workbench history and undo lane" data-workbench-history-undo="strip">
+            <div class="browser-workbench-history-undo-copy">
+                <span class="browser-preview-status-label">History</span>
+                <strong>Make rollback and recovery visible.</strong>
+                <p>Desktop users expect undo, redo, snapshots, comparison, restore, conflict review, and recent-change context; the web workbench should reserve those recovery affordances near active editing.</p>
+            </div>
+            <div class="browser-workbench-history-undo-actions" role="list" aria-label="History and undo shortcuts">
+                <a role="listitem" href="@BuildPreviewHref("blue", command: "undo_change")" data-workbench-history-undo-action="undo">
+                    <span>Undo</span>
+                    <small>Return to the last local edit posture.</small>
+                </a>
+                <a role="listitem" href="@BuildPreviewHref("blue", command: "redo_change")" data-workbench-history-undo-action="redo">
+                    <span>Redo</span>
+                    <small>Reserve the forward recovery path.</small>
+                </a>
+                <a role="listitem" href="@BuildPreviewHref("blue", command: "create_snapshot")" data-workbench-history-undo-action="snapshot">
+                    <span>Snapshot</span>
+                    <small>Mark a recoverable character checkpoint.</small>
+                </a>
+                <a role="listitem" href="@BuildPreviewHref("blue", command: "compare_changes")" data-workbench-history-undo-action="compare">
+                    <span>Compare</span>
+                    <small>Review what changed before restoring.</small>
+                </a>
+                <a role="listitem" href="@BuildPreviewHref("blue", command: "restore_snapshot")" data-workbench-history-undo-action="restore">
+                    <span>Restore</span>
+                    <small>Keep recovery separate from normal save.</small>
+                </a>
+                <a role="listitem" href="@BuildPreviewHref("blue", command: "review_conflict")" data-workbench-history-undo-action="conflict">
+                    <span>Conflict</span>
+                    <small>Prepare hosted multi-session conflict review.</small>
+                </a>
+            </div>
+        </section>
+
         <section class="browser-preview-status-grid" aria-label="Workbench quick starts">
             <article class="browser-preview-status-card" data-workbench-entry-card="new-character">
                 <span class="browser-preview-status-label">Quick start</span>
