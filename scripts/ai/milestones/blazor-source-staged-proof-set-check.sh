@@ -58,5 +58,7 @@ python3 "$repo_root/scripts/materialize-blazor-workbench-navigation-deeplink-sta
 python3 "$repo_root/scripts/materialize-blazor-workbench-inline-editing-staged-proof.py"
 python3 "$repo_root/scripts/materialize-blazor-workbench-performance-virtualization-staged-proof.py"
 python3 "$repo_root/scripts/materialize-blazor-workbench-print-layout-staged-proof.py"
+python3 "$repo_root/scripts/materialize-blazor-workbench-portrait-attachments-staged-proof.py"
+python3 "$repo_root/scripts/materialize-blazor-workbench-windowing-panes-staged-proof.py"
 python3 "$repo_root/scripts/materialize-blazor-legacy-control-coverage-staged-proof.py"
 python3 "$repo_root/scripts/materialize-blazor-source-staged-proof-set.py"

@@ -1575,6 +1575,74 @@
             </div>
         </section>
 
+        <section class="browser-workbench-portrait-attachments" aria-label="Workbench portrait and attachments lane" data-workbench-portrait-attachments="strip">
+            <div class="browser-workbench-portrait-attachments-copy">
+                <span class="browser-preview-status-label">Portraits</span>
+                <strong>Keep character media and notes attached to the sheet.</strong>
+                <p>Portraits, token art, table notes, references, import, and cleanup stay close to the active runner without hiding storage risk.</p>
+            </div>
+            <div class="browser-workbench-portrait-attachments-actions" role="list" aria-label="Portrait and attachment shortcuts">
+                <a role="listitem" href="@BuildPreviewHref("blue", command: "set_character_portrait")" data-workbench-portrait-attachments-action="portrait">
+                    <span>Portrait</span>
+                    <small>Choose or review the runner image.</small>
+                </a>
+                <a role="listitem" href="@BuildPreviewHref("blue", command: "set_token_art")" data-workbench-portrait-attachments-action="token_art">
+                    <span>Token art</span>
+                    <small>Prepare table and VTT handoff art.</small>
+                </a>
+                <a role="listitem" href="@BuildPreviewHref("blue", command: "open_character_notes")" data-workbench-portrait-attachments-action="notes">
+                    <span>Notes</span>
+                    <small>Keep private and table-facing notes visible.</small>
+                </a>
+                <a role="listitem" href="@BuildPreviewHref("blue", command: "open_attachments")" data-workbench-portrait-attachments-action="attachments">
+                    <span>Attachments</span>
+                    <small>Review references linked to this sheet.</small>
+                </a>
+                <a role="listitem" href="@BuildPreviewHref("blue", command: "import_media")" data-workbench-portrait-attachments-action="import_media">
+                    <span>Import media</span>
+                    <small>Bring desktop assets forward deliberately.</small>
+                </a>
+                <a role="listitem" href="@BuildPreviewHref("blue", command: "cleanup_media")" data-workbench-portrait-attachments-action="cleanup">
+                    <span>Cleanup</span>
+                    <small>Surface stale attachment and storage cleanup.</small>
+                </a>
+            </div>
+        </section>
+
+        <section class="browser-workbench-windowing-panes" aria-label="Workbench windowing and pane management lane" data-workbench-windowing-panes="strip">
+            <div class="browser-workbench-windowing-panes-copy">
+                <span class="browser-preview-status-label">Windowing</span>
+                <strong>Keep panes easy to arrange.</strong>
+                <p>Split views, pop-out detail panes, pinned inspectors, focus mode, second-screen table views, and layout restore stay visible without adding another menu hunt.</p>
+            </div>
+            <div class="browser-workbench-windowing-panes-actions" role="list" aria-label="Windowing and pane management shortcuts">
+                <a role="listitem" href="@BuildPreviewHref("blue", command: "split_workbench_view")" data-workbench-windowing-panes-action="split_view">
+                    <span>Split view</span>
+                    <small>Place sheet and detail context side by side.</small>
+                </a>
+                <a role="listitem" href="@BuildPreviewHref("blue", command: "popout_detail_pane")" data-workbench-windowing-panes-action="popout">
+                    <span>Pop-out</span>
+                    <small>Reserve browser window handoff for dense panes.</small>
+                </a>
+                <a role="listitem" href="@BuildPreviewHref("blue", command: "pin_inspector")" data-workbench-windowing-panes-action="pinned_inspector">
+                    <span>Pin inspector</span>
+                    <small>Keep selected item context locked nearby.</small>
+                </a>
+                <a role="listitem" href="@BuildPreviewHref("blue", command: "focus_mode")" data-workbench-windowing-panes-action="focus_mode">
+                    <span>Focus mode</span>
+                    <small>Reduce chrome around a single workflow lane.</small>
+                </a>
+                <a role="listitem" href="@BuildPreviewHref("blue", command: "second_screen")" data-workbench-windowing-panes-action="second_screen">
+                    <span>Second screen</span>
+                    <small>Prepare player or table display routing.</small>
+                </a>
+                <a role="listitem" href="@BuildPreviewHref("blue", command: "restore_layout")" data-workbench-windowing-panes-action="restore_layout">
+                    <span>Restore layout</span>
+                    <small>Return panes to the last useful arrangement.</small>
+                </a>
+            </div>
+        </section>
+
         <section class="browser-preview-status-grid" aria-label="Workbench quick starts">
             <article class="browser-preview-status-card" data-workbench-entry-card="new-character">
                 <span class="browser-preview-status-label">Quick start</span>

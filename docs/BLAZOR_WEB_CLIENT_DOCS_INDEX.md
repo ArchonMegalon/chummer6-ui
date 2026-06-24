@@ -194,6 +194,10 @@ Current docs already define the intended shipped posture and the evidence contra
 - `docs/examples/blazor-workbench-performance-virtualization-staged-proof.receipt.example.json` shows the compact generated receipt shape for `BLAZOR_WORKBENCH_PERFORMANCE_VIRTUALIZATION_STAGED_PROOF.generated.json`.
 - `docs/BLAZOR_WORKBENCH_PRINT_LAYOUT_STAGED_PROOF.md` defines the source-staged promoted workbench print-layout posture contract. It is not runtime proof.
 - `docs/examples/blazor-workbench-print-layout-staged-proof.receipt.example.json` shows the compact generated receipt shape for `BLAZOR_WORKBENCH_PRINT_LAYOUT_STAGED_PROOF.generated.json`.
+- `docs/BLAZOR_WORKBENCH_PORTRAIT_ATTACHMENTS_STAGED_PROOF.md` defines the source-staged promoted workbench portrait-attachments posture contract. It is not runtime proof.
+- `docs/examples/blazor-workbench-portrait-attachments-staged-proof.receipt.example.json` shows the compact generated receipt shape for `BLAZOR_WORKBENCH_PORTRAIT_ATTACHMENTS_STAGED_PROOF.generated.json`.
+- `docs/BLAZOR_WORKBENCH_WINDOWING_PANES_STAGED_PROOF.md` defines the source-staged promoted workbench windowing-panes posture contract. It is not runtime proof.
+- `docs/examples/blazor-workbench-windowing-panes-staged-proof.receipt.example.json` shows the compact generated receipt shape for `BLAZOR_WORKBENCH_WINDOWING_PANES_STAGED_PROOF.generated.json`.
 
 ## Portal Installer Handoff
 

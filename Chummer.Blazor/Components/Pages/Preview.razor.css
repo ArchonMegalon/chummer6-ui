@@ -3315,6 +3315,148 @@
     line-height: 1.35;
 }
 
+.browser-workbench-portrait-attachments {
+    width: min(1240px, calc(100% - 1rem));
+    margin: 0 auto 0.85rem;
+    display: grid;
+    grid-template-columns: minmax(18rem, 0.88fr) minmax(0, 1.5fr);
+    gap: 0.75rem;
+    align-items: stretch;
+    padding: 0.8rem;
+    border: 1px solid rgba(198, 185, 154, 0.22);
+    border-radius: 1rem;
+    background:
+        linear-gradient(135deg, rgba(198, 185, 154, 0.09), rgba(137, 224, 179, 0.045)),
+        rgba(10, 12, 9, 0.95);
+}
+
+.browser-workbench-portrait-attachments-copy {
+    display: grid;
+    gap: 0.35rem;
+    align-content: center;
+}
+
+.browser-workbench-portrait-attachments-copy strong,
+.browser-workbench-portrait-attachments-copy p {
+    margin: 0;
+}
+
+.browser-workbench-portrait-attachments-copy strong {
+    color: #f4efe4;
+    font-size: 1rem;
+}
+
+.browser-workbench-portrait-attachments-copy p {
+    color: rgba(238, 241, 246, 0.72);
+    line-height: 1.42;
+}
+
+.browser-workbench-portrait-attachments-actions {
+    display: grid;
+    grid-template-columns: repeat(6, minmax(0, 1fr));
+    gap: 0.5rem;
+}
+
+.browser-workbench-portrait-attachments-actions a {
+    display: grid;
+    gap: 0.25rem;
+    min-height: 4.75rem;
+    padding: 0.72rem;
+    border: 1px solid rgba(198, 185, 154, 0.18);
+    border-radius: 0.85rem;
+    background: rgba(255, 255, 255, 0.042);
+    color: #f4efe4;
+    text-decoration: none;
+    transition: transform 150ms ease, border-color 150ms ease, background 150ms ease;
+}
+
+.browser-workbench-portrait-attachments-actions a:hover,
+.browser-workbench-portrait-attachments-actions a:focus-visible {
+    transform: translateY(-1px);
+    border-color: rgba(137, 224, 179, 0.5);
+    background: rgba(137, 224, 179, 0.09);
+}
+
+.browser-workbench-portrait-attachments-actions span {
+    font-weight: 850;
+}
+
+.browser-workbench-portrait-attachments-actions small {
+    color: rgba(238, 241, 246, 0.7);
+    line-height: 1.35;
+}
+
+.browser-workbench-windowing-panes {
+    width: min(1240px, calc(100% - 1rem));
+    margin: 0 auto 0.85rem;
+    display: grid;
+    grid-template-columns: minmax(18rem, 0.88fr) minmax(0, 1.5fr);
+    gap: 0.75rem;
+    align-items: stretch;
+    padding: 0.8rem;
+    border: 1px solid rgba(198, 185, 154, 0.22);
+    border-radius: 1rem;
+    background:
+        linear-gradient(135deg, rgba(198, 185, 154, 0.09), rgba(137, 224, 179, 0.045)),
+        rgba(10, 12, 9, 0.95);
+}
+
+.browser-workbench-windowing-panes-copy {
+    display: grid;
+    gap: 0.35rem;
+    align-content: center;
+}
+
+.browser-workbench-windowing-panes-copy strong,
+.browser-workbench-windowing-panes-copy p {
+    margin: 0;
+}
+
+.browser-workbench-windowing-panes-copy strong {
+    color: #f4efe4;
+    font-size: 1rem;
+}
+
+.browser-workbench-windowing-panes-copy p {
+    color: rgba(238, 241, 246, 0.72);
+    line-height: 1.42;
+}
+
+.browser-workbench-windowing-panes-actions {
+    display: grid;
+    grid-template-columns: repeat(6, minmax(0, 1fr));
+    gap: 0.5rem;
+}
+
+.browser-workbench-windowing-panes-actions a {
+    display: grid;
+    gap: 0.25rem;
+    min-height: 4.75rem;
+    padding: 0.72rem;
+    border: 1px solid rgba(198, 185, 154, 0.18);
+    border-radius: 0.85rem;
+    background: rgba(255, 255, 255, 0.042);
+    color: #f4efe4;
+    text-decoration: none;
+    transition: transform 150ms ease, border-color 150ms ease, background 150ms ease;
+}
+
+.browser-workbench-windowing-panes-actions a:hover,
+.browser-workbench-windowing-panes-actions a:focus-visible {
+    transform: translateY(-1px);
+    border-color: rgba(137, 224, 179, 0.5);
+    background: rgba(137, 224, 179, 0.09);
+}
+
+.browser-workbench-windowing-panes-actions span {
+    font-weight: 850;
+}
+
+.browser-workbench-windowing-panes-actions small {
+    color: rgba(238, 241, 246, 0.7);
+    line-height: 1.35;
+}
+
 .browser-preview-frame {
     padding-bottom: 1rem;
 }
@@ -3683,6 +3825,22 @@
     }
 
     .browser-workbench-print-layout-actions {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+
+    .browser-workbench-portrait-attachments {
+        grid-template-columns: 1fr;
+    }
+
+    .browser-workbench-portrait-attachments-actions {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+
+    .browser-workbench-windowing-panes {
+        grid-template-columns: 1fr;
+    }
+
+    .browser-workbench-windowing-panes-actions {
         grid-template-columns: repeat(2, minmax(0, 1fr));
     }
 }
