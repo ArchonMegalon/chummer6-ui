@@ -13,5 +13,6 @@ python3 "$repo_root/scripts/materialize-blazor-source-gear-utility-staged-proof.
 python3 "$repo_root/scripts/materialize-blazor-magic-cleanup-staged-proof.py"
 python3 "$repo_root/scripts/materialize-blazor-browser-output-handoff-staged-proof.py"
 python3 "$repo_root/scripts/materialize-blazor-workbench-portal-handoff-staged-proof.py"
+python3 "$repo_root/scripts/materialize-blazor-workbench-polish-staged-proof.py"
 python3 "$repo_root/scripts/materialize-blazor-legacy-control-coverage-staged-proof.py"
 python3 "$repo_root/scripts/materialize-blazor-source-staged-proof-set.py"

@@ -85,6 +85,8 @@ The next staged browser-family slice after magic cleanup is browser output hando
 
 The next staged browser-family slice after browser output handoff is workbench portal handoff posture for downloads, status, support, and account work. `scripts/ai/milestones/blazor-workbench-portal-handoff-staged-proof-check.sh` is its source-alignment check. It proves only that the promoted workbench exposes same-origin portal handoff affordances and route expectations; it is not a hosted or Docker browser execution receipt.
 
+The next staged browser-family slice after workbench portal handoff is workbench polish posture for the promoted desktop-style task dock. `scripts/ai/milestones/blazor-workbench-polish-staged-proof-check.sh` is its source-alignment check. It proves only that the promoted workbench exposes dense start, edit, output, and portal handoff shortcuts with scoped responsive styling; it is not a hosted or Docker browser execution receipt.
+
 `/scripts/ai/milestones/blazor-legacy-control-coverage-staged-proof-check.sh` is the source-level breadth guard over all known `LegacyUiControlCatalog` controls. It maps controls into hosted execution baseline coverage or staged source-alignment families; it is not a hosted or Docker browser execution receipt.
 
 `scripts/ai/milestones/blazor-source-staged-proof-set-check.sh` is the aggregate source-staged proof-set lane. It materializes the staged source receipts and summarizes their status, but it must stay outside release-readiness aggregation because it is not hosted or Docker browser execution evidence.

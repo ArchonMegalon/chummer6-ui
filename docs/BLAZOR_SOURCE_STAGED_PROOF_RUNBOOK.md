@@ -36,6 +36,7 @@ The aggregate currently covers:
 - `magic_cleanup`
 - `browser_output_handoff`
 - `workbench_portal_handoff`
+- `workbench_polish`
 - `legacy_control_coverage`
 
 Each family must keep `proof_tier` set to:

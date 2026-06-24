@@ -46,6 +46,8 @@ These source receipts help manage breadth and safety but do not promote workflow
 - `BLAZOR_DOCKER_SELF_HOST_OPERATOR_STAGED_PROOF.generated.json`
 - `BLAZOR_ACCOUNT_SUPPORT_HANDOFF_STAGED_PROOF.generated.json`
 - `BLAZOR_RUNTIME_PROOF_REFRESH_PLAN.generated.json`
+- `BLAZOR_WORKBENCH_PORTAL_HANDOFF_STAGED_PROOF.generated.json`
+- `BLAZOR_WORKBENCH_POLISH_STAGED_PROOF.generated.json`
 
 ## Promotion Rule
 

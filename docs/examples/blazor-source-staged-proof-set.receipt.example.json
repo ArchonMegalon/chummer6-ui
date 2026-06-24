@@ -4,8 +4,8 @@
   "status": "passed",
   "proof_tier": "source_staged_no_browser_execution",
   "route_lane": "promoted_blazor_workbench",
-  "required_receipt_count": 11,
-  "passed_receipt_count": 11,
+  "required_receipt_count": 12,
+  "passed_receipt_count": 12,
   "expected_route_count": 0,
   "source_check_count": 0,
   "required_receipts": [
@@ -42,6 +42,18 @@
       "proof_tier": "source_staged_no_browser_execution",
       "expected_route_count": 5,
       "source_check_count": 7,
+      "control_count": null,
+      "covered_control_count": null
+    },
+    {
+      "id": "workbench_polish",
+      "path": ".codex-studio/published/BLAZOR_WORKBENCH_POLISH_STAGED_PROOF.generated.json",
+      "expected_contract_name": "chummer6-ui.blazor_workbench_polish_staged_proof",
+      "contract_name": "chummer6-ui.blazor_workbench_polish_staged_proof",
+      "status": "passed",
+      "proof_tier": "source_staged_no_browser_execution",
+      "expected_route_count": 1,
+      "source_check_count": 5,
       "control_count": null,
       "covered_control_count": null
     }

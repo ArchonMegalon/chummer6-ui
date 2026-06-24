@@ -104,6 +104,8 @@ Current docs already define the intended shipped posture and the evidence contra
 - `docs/examples/blazor-browser-output-handoff-staged-proof.receipt.example.json` shows the compact generated receipt shape for `BLAZOR_BROWSER_OUTPUT_HANDOFF_STAGED_PROOF.generated.json`.
 - `docs/BLAZOR_WORKBENCH_PORTAL_HANDOFF_STAGED_PROOF.md` defines the source-staged workbench downloads/status/support/account handoff contract. It is not runtime proof.
 - `docs/examples/blazor-workbench-portal-handoff-staged-proof.receipt.example.json` shows the compact generated receipt shape for `BLAZOR_WORKBENCH_PORTAL_HANDOFF_STAGED_PROOF.generated.json`.
+- `docs/BLAZOR_WORKBENCH_POLISH_STAGED_PROOF.md` defines the source-staged promoted workbench polish contract for the desktop-style task dock. It is not runtime proof.
+- `docs/examples/blazor-workbench-polish-staged-proof.receipt.example.json` shows the compact generated receipt shape for `BLAZOR_WORKBENCH_POLISH_STAGED_PROOF.generated.json`.
 
 ## Portal Installer Handoff
 
