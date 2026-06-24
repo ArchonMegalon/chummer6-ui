@@ -374,6 +374,41 @@
             </div>
         </section>
 
+        <section class="browser-workbench-settings" aria-label="Workbench settings" data-workbench-settings="strip">
+            <div class="browser-workbench-settings-copy">
+                <span class="browser-preview-status-label">Settings</span>
+                <strong>Change setup without leaving the page.</strong>
+                <p>Open app settings, character defaults, ruleset choice, update status, or help from the workbench.</p>
+            </div>
+            <div class="browser-workbench-settings-actions">
+                <a href="@BuildPreviewHref(command: "global_settings", useWorkbenchRoute: true)"
+                   data-workbench-settings-action="global-settings">
+                    <span>App</span>
+                    <small>Language, UI, and defaults.</small>
+                </a>
+                <a href="@BuildPreviewHref(command: "character_settings", useWorkbenchRoute: true)"
+                   data-workbench-settings-action="character-settings">
+                    <span>Character</span>
+                    <small>Build, karma, nuyen, and notes.</small>
+                </a>
+                <a href="@BuildPreviewHref(command: "switch_ruleset", useWorkbenchRoute: true)"
+                   data-workbench-settings-action="ruleset-settings">
+                    <span>Ruleset</span>
+                    <small>Change edition preference.</small>
+                </a>
+                <a href="/status"
+                   data-workbench-settings-action="update-status">
+                    <span>Updates</span>
+                    <small>Check release status.</small>
+                </a>
+                <a href="@BuildPreviewHref(command: "report_bug", useWorkbenchRoute: true)"
+                   data-workbench-settings-action="support-settings">
+                    <span>Help</span>
+                    <small>Open support or report an issue.</small>
+                </a>
+            </div>
+        </section>
+
         <section class="browser-preview-status-grid" aria-label="Workbench quick starts">
             <article class="browser-preview-status-card" data-workbench-entry-card="new-character">
                 <span class="browser-preview-status-label">Quick start</span>

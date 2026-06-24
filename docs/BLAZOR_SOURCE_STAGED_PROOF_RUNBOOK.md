@@ -44,7 +44,8 @@ The aggregate currently covers:
 - `workbench_workflow_ledger`
 - `workbench_file_intake`
 - `workbench_rules_data`
-- `workbench_rules_data`
+- `workbench_settings`
+- `workbench_settings`
 - `legacy_control_coverage`
 
 Each family must keep `proof_tier` set to:

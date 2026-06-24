@@ -99,9 +99,9 @@ The next staged browser-family slice after workbench density is workbench workfl
 
 The next staged browser-family slice after workbench workflow-ledger is workbench file-intake posture for browser-safe open/import, Hero Lab import, XML editor, native file-system handoff, and support. `scripts/ai/milestones/blazor-workbench-file-intake-staged-proof-check.sh` is its source-alignment check. It proves only that the promoted workbench exposes file-intake affordances and shared import-dialog source alignment; it is not a hosted or Docker browser execution receipt.
 
-The next staged browser-family slice after workbench file-intake is workbench rules/data posture for rules review, ruleset switching, master index, XML/custom-data, and translator affordances. `scripts/ai/milestones/blazor-workbench-rules-data-staged-proof-check.sh` is its source-alignment check. It proves only that the promoted workbench exposes rules/data affordances and shared dialog source alignment; it is not a hosted or Docker browser execution receipt.
-
 The next staged browser-family slice after workbench file-intake is workbench rules/data posture for ruleset choice, sourcebook review, XML/custom data, and translation tools. `scripts/ai/milestones/blazor-workbench-rules-data-staged-proof-check.sh` is its source-alignment check. It proves only that the promoted workbench exposes rules/reference affordances and shared dialog source alignment; it is not a hosted or Docker browser execution receipt.
+
+The next staged browser-family slice after workbench rules/data is workbench settings posture for global settings, character settings, ruleset choice, update status, and support. `scripts/ai/milestones/blazor-workbench-settings-staged-proof-check.sh` is its source-alignment check. It proves only that the promoted workbench exposes settings affordances and shared dialog source alignment; it is not a hosted or Docker browser execution receipt.
 
 `/scripts/ai/milestones/blazor-legacy-control-coverage-staged-proof-check.sh` is the source-level breadth guard over all known `LegacyUiControlCatalog` controls. It maps controls into hosted execution baseline coverage or staged source-alignment families; it is not a hosted or Docker browser execution receipt.
 

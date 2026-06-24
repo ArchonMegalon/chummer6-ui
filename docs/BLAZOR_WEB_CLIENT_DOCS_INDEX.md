@@ -120,8 +120,10 @@ Current docs already define the intended shipped posture and the evidence contra
 - `docs/examples/blazor-workbench-file-intake-staged-proof.receipt.example.json` shows the compact generated receipt shape for `BLAZOR_WORKBENCH_FILE_INTAKE_STAGED_PROOF.generated.json`.
 - `docs/BLAZOR_WORKBENCH_RULES_DATA_STAGED_PROOF.md` defines the source-staged promoted workbench rules/data posture contract. It is not runtime proof.
 - `docs/examples/blazor-workbench-rules-data-staged-proof.receipt.example.json` shows the compact generated receipt shape for `BLAZOR_WORKBENCH_RULES_DATA_STAGED_PROOF.generated.json`.
-- `docs/BLAZOR_WORKBENCH_RULES_DATA_STAGED_PROOF.md` defines the source-staged promoted workbench rules/data posture contract. It is not runtime proof.
-- `docs/examples/blazor-workbench-rules-data-staged-proof.receipt.example.json` shows the compact generated receipt shape for `BLAZOR_WORKBENCH_RULES_DATA_STAGED_PROOF.generated.json`.
+- `docs/BLAZOR_WORKBENCH_SETTINGS_STAGED_PROOF.md` defines the source-staged promoted workbench settings/preferences posture contract. It is not runtime proof.
+- `docs/examples/blazor-workbench-settings-staged-proof.receipt.example.json` shows the compact generated receipt shape for `BLAZOR_WORKBENCH_SETTINGS_STAGED_PROOF.generated.json`.
+- `docs/BLAZOR_WORKBENCH_SETTINGS_STAGED_PROOF.md` defines the source-staged promoted workbench settings posture contract. It is not runtime proof.
+- `docs/examples/blazor-workbench-settings-staged-proof.receipt.example.json` shows the compact generated receipt shape for `BLAZOR_WORKBENCH_SETTINGS_STAGED_PROOF.generated.json`.
 
 ## Portal Installer Handoff
 
