@@ -1252,19 +1252,87 @@
                 </a>
                 <a role="listitem" href="@BuildPreviewHref("blue", command: "load_sample_runner")" data-workbench-first-run-action="sample_runner">
                     <span>Sample runner</span>
-                    <small>Open a guided example workspace.</small>
+                    <small>Open a guided example runner.</small>
                 </a>
                 <a role="listitem" href="@BuildPreviewHref("blue", command: "restore_last_session")" data-workbench-first-run-action="restore_session">
                     <span>Restore session</span>
-                    <small>Resume the last browser workspace posture.</small>
+                    <small>Resume the last browser session.</small>
                 </a>
                 <a role="listitem" href="@BuildPreviewHref("blue", command: "open_self_host_setup")" data-workbench-first-run-action="self_host_setup">
                     <span>Self-host setup</span>
-                    <small>Expose Docker operator setup from the workbench.</small>
+                    <small>Open local setup guidance.</small>
                 </a>
                 <a role="listitem" href="@BuildPreviewHref("blue", command: "open_web_docs")" data-workbench-first-run-action="docs">
                     <span>Docs</span>
                     <small>Link web-client help and parity notes.</small>
+                </a>
+            </div>
+        </section>
+
+        <section class="browser-workbench-pwa-install" aria-label="Workbench PWA install and update lane" data-workbench-pwa-install="strip">
+            <div class="browser-workbench-pwa-install-copy">
+                <span class="browser-preview-status-label">App install</span>
+                <strong>Make the browser client feel installable.</strong>
+                <p>Keep install, offline cache, updates, permissions, release channel, and reset controls close to the active runner.</p>
+            </div>
+            <div class="browser-workbench-pwa-install-actions" role="list" aria-label="PWA install and update shortcuts">
+                <a role="listitem" href="@BuildPreviewHref("blue", command: "install_web_app")" data-workbench-pwa-install-action="install_prompt">
+                    <span>Install app</span>
+                    <small>Reserve the browser install prompt path.</small>
+                </a>
+                <a role="listitem" href="@BuildPreviewHref("blue", command: "offline_cache_status")" data-workbench-pwa-install-action="offline_cache">
+                    <span>Offline cache</span>
+                    <small>Show cached workbench readiness.</small>
+                </a>
+                <a role="listitem" href="@BuildPreviewHref("blue", command: "apply_web_update")" data-workbench-pwa-install-action="update_available">
+                    <span>Update</span>
+                    <small>Keep web app refresh state explicit.</small>
+                </a>
+                <a role="listitem" href="@BuildPreviewHref("blue", command: "browser_permissions")" data-workbench-pwa-install-action="permissions">
+                    <span>Permissions</span>
+                    <small>Explain browser storage and file access.</small>
+                </a>
+                <a role="listitem" href="@BuildPreviewHref("blue", command: "release_channel")" data-workbench-pwa-install-action="release_channel">
+                    <span>Release channel</span>
+                    <small>Surface stable and preview channel posture.</small>
+                </a>
+                <a role="listitem" href="@BuildPreviewHref("blue", command: "reset_web_cache")" data-workbench-pwa-install-action="reset_cache">
+                    <span>Reset cache</span>
+                    <small>Keep recovery visible for hosted and self-hosted users.</small>
+                </a>
+            </div>
+        </section>
+
+        <section class="browser-workbench-docker-operator" aria-label="Workbench Docker self-host operator lane" data-workbench-docker-operator="strip">
+            <div class="browser-workbench-docker-operator-copy">
+                <span class="browser-preview-status-label">Self-host</span>
+                <strong>Keep Docker operations visible.</strong>
+                <p>Self-hosted users need container health, environment, volume mounts, backups, image updates, logs, and support bundles close to the web workbench so operating Chummer does not require guessing behind the container.</p>
+            </div>
+            <div class="browser-workbench-docker-operator-actions" role="list" aria-label="Docker self-host operator shortcuts">
+                <a role="listitem" href="@BuildPreviewHref("blue", command: "docker_container_health")" data-workbench-docker-operator-action="container_health">
+                    <span>Health</span>
+                    <small>Show container and service posture.</small>
+                </a>
+                <a role="listitem" href="@BuildPreviewHref("blue", command: "docker_env_check")" data-workbench-docker-operator-action="env_check">
+                    <span>Env check</span>
+                    <small>Expose required self-host settings.</small>
+                </a>
+                <a role="listitem" href="@BuildPreviewHref("blue", command: "docker_volume_mounts")" data-workbench-docker-operator-action="volume_mounts">
+                    <span>Volumes</span>
+                    <small>Keep data and config mounts visible.</small>
+                </a>
+                <a role="listitem" href="@BuildPreviewHref("blue", command: "docker_backup")" data-workbench-docker-operator-action="backup">
+                    <span>Backup</span>
+                    <small>Reserve operator backup posture.</small>
+                </a>
+                <a role="listitem" href="@BuildPreviewHref("blue", command: "docker_image_update")" data-workbench-docker-operator-action="image_update">
+                    <span>Update</span>
+                    <small>Surface image refresh and rollback context.</small>
+                </a>
+                <a role="listitem" href="@BuildPreviewHref("blue", command: "docker_support_bundle")" data-workbench-docker-operator-action="support_bundle">
+                    <span>Support bundle</span>
+                    <small>Package logs without exposing sheet data.</small>
                 </a>
             </div>
         </section>

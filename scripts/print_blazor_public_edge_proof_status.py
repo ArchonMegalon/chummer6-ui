@@ -60,6 +60,8 @@ WORKBENCH_CHARACTER_LIBRARY_STAGED_PROOF = PUBLISHED / "BLAZOR_WORKBENCH_CHARACT
 WORKBENCH_CAMPAIGN_SESSION_STAGED_PROOF = PUBLISHED / "BLAZOR_WORKBENCH_CAMPAIGN_SESSION_STAGED_PROOF.generated.json"
 WORKBENCH_OBSERVABILITY_PRIVACY_STAGED_PROOF = PUBLISHED / "BLAZOR_WORKBENCH_OBSERVABILITY_PRIVACY_STAGED_PROOF.generated.json"
 WORKBENCH_FIRST_RUN_STAGED_PROOF = PUBLISHED / "BLAZOR_WORKBENCH_FIRST_RUN_STAGED_PROOF.generated.json"
+WORKBENCH_PWA_INSTALL_STAGED_PROOF = PUBLISHED / "BLAZOR_WORKBENCH_PWA_INSTALL_STAGED_PROOF.generated.json"
+WORKBENCH_DOCKER_OPERATOR_STAGED_PROOF = PUBLISHED / "BLAZOR_WORKBENCH_DOCKER_OPERATOR_STAGED_PROOF.generated.json"
 LEGACY_CONTROL_COVERAGE_STAGED_PROOF = PUBLISHED / "BLAZOR_LEGACY_CONTROL_COVERAGE_STAGED_PROOF.generated.json"
 SOURCE_STAGED_PROOF_SET = PUBLISHED / "BLAZOR_SOURCE_STAGED_PROOF_SET.generated.json"
 PORTAL_INSTALLER_HANDOFF_STAGED_PROOF = PUBLISHED / "BLAZOR_PORTAL_INSTALLER_HANDOFF_STAGED_PROOF.generated.json"
@@ -169,6 +171,8 @@ def main() -> int:
     workbench_campaign_session_staged = load_json(WORKBENCH_CAMPAIGN_SESSION_STAGED_PROOF)
     workbench_observability_privacy_staged = load_json(WORKBENCH_OBSERVABILITY_PRIVACY_STAGED_PROOF)
     workbench_first_run_staged = load_json(WORKBENCH_FIRST_RUN_STAGED_PROOF)
+    workbench_pwa_install_staged = load_json(WORKBENCH_PWA_INSTALL_STAGED_PROOF)
+    workbench_docker_operator_staged = load_json(WORKBENCH_DOCKER_OPERATOR_STAGED_PROOF)
     legacy_control_coverage_staged = load_json(LEGACY_CONTROL_COVERAGE_STAGED_PROOF)
     source_staged_proof_set = load_json(SOURCE_STAGED_PROOF_SET)
     portal_installer_handoff_staged = load_json(PORTAL_INSTALLER_HANDOFF_STAGED_PROOF)
@@ -707,6 +711,26 @@ def main() -> int:
     print(f"workbench_first_run_staged_source_checks={count_staged_source_checks(workbench_first_run_staged)}")
     print(
         "workbench_first_run_staged_note="
+        "source_alignment_only_not_browser_execution"
+    )
+    print(f"workbench_pwa_install_staged_receipt={WORKBENCH_PWA_INSTALL_STAGED_PROOF}")
+    print(f"workbench_pwa_install_staged_status={str(workbench_pwa_install_staged.get('status') or '').strip() or 'not_generated'}")
+    print(f"workbench_pwa_install_staged_contract={str(workbench_pwa_install_staged.get('contract_name') or '').strip() or 'missing'}")
+    print(f"workbench_pwa_install_staged_tier={str(workbench_pwa_install_staged.get('proof_tier') or '').strip() or 'missing'}")
+    print(f"workbench_pwa_install_staged_route_count={len(workbench_pwa_install_staged.get('expected_routes') or [])}")
+    print(f"workbench_pwa_install_staged_source_checks={count_staged_source_checks(workbench_pwa_install_staged)}")
+    print(
+        "workbench_pwa_install_staged_note="
+        "source_alignment_only_not_browser_execution"
+    )
+    print(f"workbench_docker_operator_staged_receipt={WORKBENCH_DOCKER_OPERATOR_STAGED_PROOF}")
+    print(f"workbench_docker_operator_staged_status={str(workbench_docker_operator_staged.get('status') or '').strip() or 'not_generated'}")
+    print(f"workbench_docker_operator_staged_contract={str(workbench_docker_operator_staged.get('contract_name') or '').strip() or 'missing'}")
+    print(f"workbench_docker_operator_staged_tier={str(workbench_docker_operator_staged.get('proof_tier') or '').strip() or 'missing'}")
+    print(f"workbench_docker_operator_staged_route_count={len(workbench_docker_operator_staged.get('expected_routes') or [])}")
+    print(f"workbench_docker_operator_staged_source_checks={count_staged_source_checks(workbench_docker_operator_staged)}")
+    print(
+        "workbench_docker_operator_staged_note="
         "source_alignment_only_not_browser_execution"
     )
     print(f"legacy_control_coverage_staged_receipt={LEGACY_CONTROL_COVERAGE_STAGED_PROOF}")

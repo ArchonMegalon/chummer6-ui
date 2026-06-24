@@ -2613,11 +2613,11 @@
     gap: 0.75rem;
     align-items: stretch;
     padding: 0.8rem;
-    border: 1px solid rgba(255, 214, 102, 0.24);
+    border: 1px solid rgba(198, 185, 154, 0.22);
     border-radius: 1rem;
     background:
-        linear-gradient(135deg, rgba(255, 214, 102, 0.105), rgba(194, 219, 255, 0.055)),
-        rgba(14, 12, 7, 0.95);
+        linear-gradient(135deg, rgba(198, 185, 154, 0.095), rgba(137, 224, 179, 0.045)),
+        rgba(10, 12, 9, 0.95);
 }
 
 .browser-workbench-first-run-copy {
@@ -2632,12 +2632,12 @@
 }
 
 .browser-workbench-first-run-copy strong {
-    color: #fff7d9;
+    color: #f4efe4;
     font-size: 1rem;
 }
 
 .browser-workbench-first-run-copy p {
-    color: rgba(249, 241, 218, 0.74);
+    color: rgba(238, 241, 246, 0.72);
     line-height: 1.42;
 }
 
@@ -2652,10 +2652,10 @@
     gap: 0.25rem;
     min-height: 4.75rem;
     padding: 0.72rem;
-    border: 1px solid rgba(255, 214, 102, 0.2);
+    border: 1px solid rgba(198, 185, 154, 0.18);
     border-radius: 0.85rem;
     background: rgba(255, 255, 255, 0.042);
-    color: #fff7d9;
+    color: #f4efe4;
     text-decoration: none;
     transition: transform 150ms ease, border-color 150ms ease, background 150ms ease;
 }
@@ -2663,8 +2663,8 @@
 .browser-workbench-first-run-actions a:hover,
 .browser-workbench-first-run-actions a:focus-visible {
     transform: translateY(-1px);
-    border-color: rgba(255, 214, 102, 0.58);
-    background: rgba(255, 214, 102, 0.11);
+    border-color: rgba(198, 185, 154, 0.54);
+    background: rgba(198, 185, 154, 0.1);
 }
 
 .browser-workbench-first-run-actions span {
@@ -2672,7 +2672,149 @@
 }
 
 .browser-workbench-first-run-actions small {
-    color: rgba(249, 241, 218, 0.72);
+    color: rgba(238, 241, 246, 0.72);
+    line-height: 1.35;
+}
+
+.browser-workbench-pwa-install {
+    width: min(1240px, calc(100% - 1rem));
+    margin: 0 auto 0.85rem;
+    display: grid;
+    grid-template-columns: minmax(18rem, 0.86fr) minmax(0, 1.52fr);
+    gap: 0.75rem;
+    align-items: stretch;
+    padding: 0.8rem;
+    border: 1px solid rgba(137, 224, 179, 0.22);
+    border-radius: 1rem;
+    background:
+        linear-gradient(135deg, rgba(137, 224, 179, 0.085), rgba(198, 185, 154, 0.055)),
+        rgba(8, 13, 10, 0.95);
+}
+
+.browser-workbench-pwa-install-copy {
+    display: grid;
+    gap: 0.35rem;
+    align-content: center;
+}
+
+.browser-workbench-pwa-install-copy strong,
+.browser-workbench-pwa-install-copy p {
+    margin: 0;
+}
+
+.browser-workbench-pwa-install-copy strong {
+    color: #effff7;
+    font-size: 1rem;
+}
+
+.browser-workbench-pwa-install-copy p {
+    color: rgba(238, 241, 246, 0.72);
+    line-height: 1.42;
+}
+
+.browser-workbench-pwa-install-actions {
+    display: grid;
+    grid-template-columns: repeat(6, minmax(0, 1fr));
+    gap: 0.5rem;
+}
+
+.browser-workbench-pwa-install-actions a {
+    display: grid;
+    gap: 0.25rem;
+    min-height: 4.75rem;
+    padding: 0.72rem;
+    border: 1px solid rgba(137, 224, 179, 0.18);
+    border-radius: 0.85rem;
+    background: rgba(255, 255, 255, 0.042);
+    color: #ecfff7;
+    text-decoration: none;
+    transition: transform 150ms ease, border-color 150ms ease, background 150ms ease;
+}
+
+.browser-workbench-pwa-install-actions a:hover,
+.browser-workbench-pwa-install-actions a:focus-visible {
+    transform: translateY(-1px);
+    border-color: rgba(137, 224, 179, 0.54);
+    background: rgba(137, 224, 179, 0.1);
+}
+
+.browser-workbench-pwa-install-actions span {
+    font-weight: 850;
+}
+
+.browser-workbench-pwa-install-actions small {
+    color: rgba(238, 241, 246, 0.72);
+    line-height: 1.35;
+}
+
+.browser-workbench-docker-operator {
+    width: min(1240px, calc(100% - 1rem));
+    margin: 0 auto 0.85rem;
+    display: grid;
+    grid-template-columns: minmax(18rem, 0.88fr) minmax(0, 1.5fr);
+    gap: 0.75rem;
+    align-items: stretch;
+    padding: 0.8rem;
+    border: 1px solid rgba(135, 224, 166, 0.24);
+    border-radius: 1rem;
+    background:
+        linear-gradient(135deg, rgba(135, 224, 166, 0.105), rgba(113, 195, 255, 0.055)),
+        rgba(7, 14, 10, 0.95);
+}
+
+.browser-workbench-docker-operator-copy {
+    display: grid;
+    gap: 0.35rem;
+    align-content: center;
+}
+
+.browser-workbench-docker-operator-copy strong,
+.browser-workbench-docker-operator-copy p {
+    margin: 0;
+}
+
+.browser-workbench-docker-operator-copy strong {
+    color: #ecfff2;
+    font-size: 1rem;
+}
+
+.browser-workbench-docker-operator-copy p {
+    color: rgba(230, 248, 236, 0.74);
+    line-height: 1.42;
+}
+
+.browser-workbench-docker-operator-actions {
+    display: grid;
+    grid-template-columns: repeat(6, minmax(0, 1fr));
+    gap: 0.5rem;
+}
+
+.browser-workbench-docker-operator-actions a {
+    display: grid;
+    gap: 0.25rem;
+    min-height: 4.75rem;
+    padding: 0.72rem;
+    border: 1px solid rgba(135, 224, 166, 0.2);
+    border-radius: 0.85rem;
+    background: rgba(255, 255, 255, 0.042);
+    color: #ecfff2;
+    text-decoration: none;
+    transition: transform 150ms ease, border-color 150ms ease, background 150ms ease;
+}
+
+.browser-workbench-docker-operator-actions a:hover,
+.browser-workbench-docker-operator-actions a:focus-visible {
+    transform: translateY(-1px);
+    border-color: rgba(135, 224, 166, 0.58);
+    background: rgba(135, 224, 166, 0.11);
+}
+
+.browser-workbench-docker-operator-actions span {
+    font-weight: 850;
+}
+
+.browser-workbench-docker-operator-actions small {
+    color: rgba(230, 248, 236, 0.72);
     line-height: 1.35;
 }
 
@@ -2972,6 +3114,22 @@
     }
 
     .browser-workbench-first-run-actions {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+
+    .browser-workbench-pwa-install {
+        grid-template-columns: 1fr;
+    }
+
+    .browser-workbench-pwa-install-actions {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+
+    .browser-workbench-docker-operator {
+        grid-template-columns: 1fr;
+    }
+
+    .browser-workbench-docker-operator-actions {
         grid-template-columns: repeat(2, minmax(0, 1fr));
     }
 }

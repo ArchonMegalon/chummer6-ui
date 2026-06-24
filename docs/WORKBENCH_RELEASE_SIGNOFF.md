@@ -157,6 +157,10 @@ The next staged browser-family slice after workbench campaign-session is workben
 
 The next staged browser-family slice after workbench observability-privacy is workbench first-run posture for new runner, desktop import, sample runner, restore session, self-host setup, and docs actions. `scripts/ai/milestones/blazor-workbench-first-run-staged-proof-check.sh` is its source-alignment check. It proves only that the promoted workbench exposes onboarding affordances; it is not a hosted or Docker browser execution receipt.
 
+The next staged browser-family slice after workbench first-run is workbench PWA-install posture for install prompt, offline cache, update available, browser permissions, release channel, and reset cache actions. `scripts/ai/milestones/blazor-workbench-pwa-install-staged-proof-check.sh` is its source-alignment check. It proves only that the promoted workbench exposes install/update affordances; it is not a hosted or Docker browser execution receipt.
+
+The next staged browser-family slice after workbench PWA-install is workbench Docker-operator posture for container health, env check, volume mounts, backup, image update, and support bundle actions. `scripts/ai/milestones/blazor-workbench-docker-operator-staged-proof-check.sh` is its source-alignment check. It proves only that the promoted workbench exposes Docker self-host operator affordances; it is not a hosted or Docker browser execution receipt.
+
 `/scripts/ai/milestones/blazor-legacy-control-coverage-staged-proof-check.sh` is the source-level breadth guard over all known `LegacyUiControlCatalog` controls. It maps controls into hosted execution baseline coverage or staged source-alignment families; it is not a hosted or Docker browser execution receipt.
 
 `scripts/ai/milestones/blazor-source-staged-proof-set-check.sh` is the aggregate source-staged proof-set lane. It materializes the staged source receipts and summarizes their status, but it must stay outside release-readiness aggregation because it is not hosted or Docker browser execution evidence.

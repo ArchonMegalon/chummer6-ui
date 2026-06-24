@@ -72,6 +72,8 @@ The aggregate currently covers:
 - `workbench_campaign_session`
 - `workbench_observability_privacy`
 - `workbench_first_run`
+- `workbench_pwa_install`
+- `workbench_docker_operator`
 - `legacy_control_coverage`
 
 Each family must keep `proof_tier` set to:

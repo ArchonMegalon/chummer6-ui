@@ -248,6 +248,16 @@ REQUIRED_RECEIPTS = [
         "contract_name": "chummer6-ui.blazor_workbench_first_run_staged_proof",
     },
     {
+        "id": "workbench_pwa_install",
+        "path": PUBLISHED / "BLAZOR_WORKBENCH_PWA_INSTALL_STAGED_PROOF.generated.json",
+        "contract_name": "chummer6-ui.blazor_workbench_pwa_install_staged_proof",
+    },
+    {
+        "id": "workbench_docker_operator",
+        "path": PUBLISHED / "BLAZOR_WORKBENCH_DOCKER_OPERATOR_STAGED_PROOF.generated.json",
+        "contract_name": "chummer6-ui.blazor_workbench_docker_operator_staged_proof",
+    },
+    {
         "id": "legacy_control_coverage",
         "path": PUBLISHED / "BLAZOR_LEGACY_CONTROL_COVERAGE_STAGED_PROOF.generated.json",
         "contract_name": "chummer6-ui.blazor_legacy_control_coverage_staged_proof",

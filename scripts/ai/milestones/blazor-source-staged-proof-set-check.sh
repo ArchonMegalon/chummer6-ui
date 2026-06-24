@@ -49,5 +49,7 @@ python3 "$repo_root/scripts/materialize-blazor-workbench-character-library-stage
 python3 "$repo_root/scripts/materialize-blazor-workbench-campaign-session-staged-proof.py"
 python3 "$repo_root/scripts/materialize-blazor-workbench-observability-privacy-staged-proof.py"
 python3 "$repo_root/scripts/materialize-blazor-workbench-first-run-staged-proof.py"
+python3 "$repo_root/scripts/materialize-blazor-workbench-pwa-install-staged-proof.py"
+python3 "$repo_root/scripts/materialize-blazor-workbench-docker-operator-staged-proof.py"
 python3 "$repo_root/scripts/materialize-blazor-legacy-control-coverage-staged-proof.py"
 python3 "$repo_root/scripts/materialize-blazor-source-staged-proof-set.py"
