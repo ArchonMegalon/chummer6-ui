@@ -297,6 +297,24 @@ const checks = [
       && hasBlazorBaseHref(text)
   },
   {
+    url: `${baseUrl}/blazor/workbench?workspace=ws-1&tab=tab-calendar`,
+    assert: (text, response) =>
+      /\/blazor\/workbench\?workspace=ws-1&tab=tab-calendar$/.test(response.url)
+      && hasBlazorBaseHref(text)
+  },
+  {
+    url: `${baseUrl}/blazor/workbench?workspace=ws-1&tab=tab-calendar&control=create_entry`,
+    assert: (text, response) =>
+      /\/blazor\/workbench\?workspace=ws-1&tab=tab-calendar&control=create_entry$/.test(response.url)
+      && hasBlazorBaseHref(text)
+  },
+  {
+    url: `${baseUrl}/blazor/workbench?workspace=ws-1&tab=tab-calendar&control=create_entry&dialog_action=add`,
+    assert: (text, response) =>
+      /\/blazor\/workbench\?workspace=ws-1&tab=tab-calendar&control=create_entry&dialog_action=add$/.test(response.url)
+      && hasBlazorBaseHref(text)
+  },
+  {
     url: `${baseUrl}/blazor/workbench?workspace=ws-1&tab=tab-technomancer&control=complex_form_add`,
     assert: (text, response) =>
       /\/blazor\/workbench\?workspace=ws-1&tab=tab-technomancer&control=complex_form_add$/.test(response.url)

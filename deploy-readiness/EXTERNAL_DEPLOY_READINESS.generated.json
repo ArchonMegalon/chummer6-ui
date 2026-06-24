@@ -1,7 +1,7 @@
 {
   "completeModes": [],
   "configuredModes": [],
-  "generatedAt": "2026-06-03T05:27:30.454010Z",
+  "generatedAt": "2026-06-24T19:18:30.736469Z",
   "modes": [
     {
       "configured": false,
@@ -46,8 +46,8 @@
       ]
     }
   ],
-  "requireExternalDeploy": false,
+  "requireExternalDeploy": true,
   "schema": "chummer.desktop.external_deploy_readiness.v1",
-  "status": "not_configured",
+  "status": "blocked",
   "summary": "No complete external deploy path is configured; rolling GitHub Release publication remains the available public bundle path."
 }

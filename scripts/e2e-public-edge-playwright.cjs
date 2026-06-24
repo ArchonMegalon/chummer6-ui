@@ -34,6 +34,7 @@ const requiredWorkflowFamilyIds = [
   'promoted_contact_edit_execution',
   'promoted_career_entry_execution',
   'promoted_career_entry_committed_execution',
+  'promoted_career_log_continuity',
   'promoted_resumed_workspace',
   'promoted_recent_work_affordances',
   'promoted_restored_section_continuations',
@@ -491,6 +492,19 @@ async function auditCareerEntrySurface(page) {
   };
 }
 
+async function auditCareerLogContinuitySurface(page) {
+  const route = `${promotedRouteBase}?${promotedContinuationQuery}&tab=tab-calendar`;
+  await openPath(page, route, '.section-preview > h2');
+  const bodyText = await page.locator('body').innerText();
+  expectTextIncludes(bodyText, 'Career Log', 'hosted career log continuity route');
+  expectTextIncludes(bodyText, 'Add Entry', 'hosted career log continuity route');
+  return {
+    route,
+    assertion: 'career log continuation route landed on the calendar/support section with visible add-entry utility posture',
+    status: 'pass',
+  };
+}
+
 async function auditResumedResultContinuation(page, route, expectedText) {
   await openPath(page, route, 'body');
   const bodyText = await page.locator('body').innerText();
@@ -523,6 +537,7 @@ async function auditRestoredSectionContinuations(page) {
   expectTextIncludes(bodyText, 'Resume BLUE on profile', 'hosted restored section continuations');
   expectTextIncludes(bodyText, 'Resume BLUE on rules', 'hosted restored section continuations');
   expectTextIncludes(bodyText, 'Resume BLUE on gear', 'hosted restored section continuations');
+  expectTextIncludes(bodyText, 'Resume BLUE on career log', 'hosted restored section continuations');
   expectTextIncludes(bodyText, 'Resume BLUE on advanced', 'hosted restored section continuations');
   return {
     route,
@@ -820,6 +835,12 @@ async function run() {
           "Entry 'New entry' added.",
         ),
       ],
+    });
+    receipt.workflow_families.push({
+      id: 'promoted_career_log_continuity',
+      route_lane: 'promoted_blazor_workbench',
+      workflow_contract: 'career_log_section_continuity',
+      checks: [await auditCareerLogContinuitySurface(page)],
     });
     receipt.workflow_families.push({
       id: 'promoted_resumed_workspace',

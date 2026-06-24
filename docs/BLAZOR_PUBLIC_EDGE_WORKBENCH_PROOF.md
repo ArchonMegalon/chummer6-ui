@@ -58,12 +58,17 @@ The current hosted route-entry tier should cover these route families:
   `/blazor/workbench?workspace=ws-1&tab=tab-contacts&control=contact_add`
 - resumed committed-action route shape:
   `/blazor/workbench?workspace=ws-1&tab=tab-contacts&control=contact_add&dialog_action=add`
+- staged career/support route shapes:
+  `/blazor/workbench?workspace=ws-1&tab=tab-calendar`
+  `/blazor/workbench?workspace=ws-1&tab=tab-calendar&control=create_entry`
+  `/blazor/workbench?workspace=ws-1&tab=tab-calendar&control=create_entry&dialog_action=add`
 
 These route families establish that:
 
 - `/blazor/` resolves into the promoted browser lane
 - the promoted workbench route exists on the public edge
 - restored workspace, result, action, and committed-action route shapes are publicly accepted
+- staged career/support section, action, and committed-action route shapes are publicly accepted before they are promoted into hosted execution-proof required families
 
 Later hosted route-entry tiers may grow as the probe set expands, but the receipt must always stay honest about whether it is proving route posture or workflow execution.
 
@@ -114,6 +119,9 @@ Required receipt contract:
   `/blazor/workbench?workspace=ws-1&command=print_character`
   `/blazor/workbench?workspace=ws-1&tab=tab-contacts&control=contact_add`
   `/blazor/workbench?workspace=ws-1&tab=tab-contacts&control=contact_add&dialog_action=add`
+  `/blazor/workbench?workspace=ws-1&tab=tab-calendar`
+  `/blazor/workbench?workspace=ws-1&tab=tab-calendar&control=create_entry`
+  `/blazor/workbench?workspace=ws-1&tab=tab-calendar&control=create_entry&dialog_action=add`
 - route probe count must match the number of proof routes
 - route probe failures must be empty for a passing receipt
 

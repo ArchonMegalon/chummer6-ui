@@ -439,6 +439,7 @@ async function auditPortalWorkspaceResumeRoute(page) {
   expectTextIncludes(bodyText, 'Continue BLUE on profile', 'portal workspace resume route');
   expectTextIncludes(bodyText, 'Continue BLUE on rules', 'portal workspace resume route');
   expectTextIncludes(bodyText, 'Continue BLUE on gear', 'portal workspace resume route');
+  expectTextIncludes(bodyText, 'Resume BLUE on career log', 'portal workspace resume route');
   expectTextIncludes(bodyText, 'Continue BLUE on advanced', 'portal workspace resume route');
   expectTextIncludes(bodyText, 'Continue BLUE for download', 'portal workspace resume route');
   expectTextIncludes(bodyText, 'Continue BLUE for export', 'portal workspace resume route');
@@ -486,6 +487,64 @@ async function auditPortalRestoredContactAddCommitRoute(page) {
 
   const bodyText = await page.locator('body').innerText();
   expectTextIncludes(bodyText, 'Dr. Mercy', 'portal restored contact commit route');
+}
+
+async function auditPortalRestoredCareerLogRoute(page) {
+  await openPortalPreviewPath(
+    page,
+    '/blazor/preview?fixture=blue&tab=tab-create',
+    '[data-build-lab]'
+  );
+
+  await openPortalPreviewPath(
+    page,
+    '/blazor/workbench?workspace=ws-1&tab=tab-calendar',
+    '.section-preview > h2'
+  );
+
+  const bodyText = await page.locator('body').innerText();
+  expectTextIncludes(bodyText, 'Career Log', 'portal restored career log route');
+  expectTextIncludes(bodyText, 'Add Entry', 'portal restored career log route');
+}
+
+async function auditPortalRestoredCareerEntryActionRoute(page) {
+  await openPortalPreviewPath(
+    page,
+    '/blazor/preview?fixture=blue&tab=tab-create',
+    '[data-build-lab]'
+  );
+
+  await openPortalPreviewPath(
+    page,
+    '/blazor/workbench?workspace=ws-1&tab=tab-calendar&control=create_entry',
+    '.desktop-dialog'
+  );
+
+  await expectDialogFits(page, 'add career entry');
+
+  const dialogText = await page.locator('.desktop-dialog').innerText();
+  expectTextIncludes(dialogText, 'Add Entry', 'portal restored career entry action route');
+  expectTextIncludes(dialogText, 'Command Posture', 'portal restored career entry action route');
+  expectTextIncludes(dialogText, 'Entry Title', 'portal restored career entry action route');
+}
+
+async function auditPortalRestoredCareerEntryAddCommitRoute(page) {
+  await openPortalPreviewPath(
+    page,
+    '/blazor/preview?fixture=blue&tab=tab-create',
+    '[data-build-lab]'
+  );
+
+  await openPortalPreviewPath(
+    page,
+    '/blazor/workbench?workspace=ws-1&tab=tab-calendar&control=create_entry&dialog_action=add',
+    '#summaryName'
+  );
+
+  await page.waitForFunction(() => !document.querySelector('#dialogBackdrop'), { timeout: 15000 });
+
+  const bodyText = await page.locator('body').innerText();
+  expectTextIncludes(bodyText, "Entry 'New entry' added.", 'portal restored career entry commit route');
 }
 
 async function auditPortalRestoredComplexFormActionRoute(page) {
@@ -712,6 +771,18 @@ async function run() {
     const restoredContactActionPage = await browser.newPage({ viewport: { width: 1440, height: 960 } });
     await auditPortalRestoredContactActionRoute(restoredContactActionPage);
     await restoredContactActionPage.close();
+
+    const restoredCareerLogPage = await browser.newPage({ viewport: { width: 1440, height: 960 } });
+    await auditPortalRestoredCareerLogRoute(restoredCareerLogPage);
+    await restoredCareerLogPage.close();
+
+    const restoredCareerEntryCommitPage = await browser.newPage({ viewport: { width: 1440, height: 960 } });
+    await auditPortalRestoredCareerEntryAddCommitRoute(restoredCareerEntryCommitPage);
+    await restoredCareerEntryCommitPage.close();
+
+    const restoredCareerEntryActionPage = await browser.newPage({ viewport: { width: 1440, height: 960 } });
+    await auditPortalRestoredCareerEntryActionRoute(restoredCareerEntryActionPage);
+    await restoredCareerEntryActionPage.close();
 
     const restoredComplexFormActionPage = await browser.newPage({ viewport: { width: 1440, height: 960 } });
     await auditPortalRestoredComplexFormActionRoute(restoredComplexFormActionPage);
