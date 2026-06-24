@@ -38,6 +38,8 @@ const requiredWorkflowFamilyIds = [
   'promoted_resumed_workspace',
   'promoted_career_entry_edit_execution',
   'promoted_career_entry_delete_execution',
+  'promoted_career_entry_edit_committed_execution',
+  'promoted_career_entry_delete_committed_execution',
   'promoted_recent_work_affordances',
   'promoted_restored_section_continuations',
   'promoted_restored_tab_landings',
@@ -887,6 +889,30 @@ async function run() {
       route_lane: 'promoted_blazor_workbench',
       workflow_contract: 'career_calendar_delete_execution',
       checks: [await auditCareerEntryDeleteSurface(page)],
+    });
+    receipt.workflow_families.push({
+      id: 'promoted_career_entry_edit_committed_execution',
+      route_lane: 'promoted_blazor_workbench',
+      workflow_contract: 'career_calendar_edit_committed_visible_state',
+      checks: [
+        await auditAdvancedCommittedAction(
+          page,
+          `${promotedRouteBase}?${promotedContinuationQuery}&tab=tab-calendar&control=edit_entry&dialog_action=apply`,
+          "Entry renamed to 'Current Entry'.",
+        ),
+      ],
+    });
+    receipt.workflow_families.push({
+      id: 'promoted_career_entry_delete_committed_execution',
+      route_lane: 'promoted_blazor_workbench',
+      workflow_contract: 'career_calendar_delete_committed_visible_state',
+      checks: [
+        await auditAdvancedCommittedAction(
+          page,
+          `${promotedRouteBase}?${promotedContinuationQuery}&tab=tab-calendar&control=delete_entry&dialog_action=delete`,
+          "Entry 'Current Entry' removed.",
+        ),
+      ],
     });
     receipt.workflow_families.push({
       id: 'promoted_resumed_workspace',

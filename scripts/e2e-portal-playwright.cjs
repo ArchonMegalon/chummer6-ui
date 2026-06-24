@@ -591,6 +591,44 @@ async function auditPortalRestoredCareerEntryDeleteRoute(page) {
   expectTextIncludes(dialogText, 'Recovery', 'portal restored career entry delete route');
 }
 
+async function auditPortalRestoredCareerEntryEditCommitRoute(page) {
+  await openPortalPreviewPath(
+    page,
+    '/blazor/preview?fixture=blue&tab=tab-create',
+    '[data-build-lab]'
+  );
+
+  await openPortalPreviewPath(
+    page,
+    '/blazor/workbench?workspace=ws-1&tab=tab-calendar&control=edit_entry&dialog_action=apply',
+    '#summaryName'
+  );
+
+  await page.waitForFunction(() => !document.querySelector('#dialogBackdrop'), { timeout: 15000 });
+
+  const bodyText = await page.locator('body').innerText();
+  expectTextIncludes(bodyText, "Entry renamed to 'Current Entry'.", 'portal restored career entry edit commit route');
+}
+
+async function auditPortalRestoredCareerEntryDeleteCommitRoute(page) {
+  await openPortalPreviewPath(
+    page,
+    '/blazor/preview?fixture=blue&tab=tab-create',
+    '[data-build-lab]'
+  );
+
+  await openPortalPreviewPath(
+    page,
+    '/blazor/workbench?workspace=ws-1&tab=tab-calendar&control=delete_entry&dialog_action=delete',
+    '#summaryName'
+  );
+
+  await page.waitForFunction(() => !document.querySelector('#dialogBackdrop'), { timeout: 15000 });
+
+  const bodyText = await page.locator('body').innerText();
+  expectTextIncludes(bodyText, "Entry 'Current Entry' removed.", 'portal restored career entry delete commit route');
+}
+
 async function auditPortalRestoredComplexFormActionRoute(page) {
   await openPortalPreviewPath(
     page,
@@ -835,6 +873,14 @@ async function run() {
     const restoredCareerEntryDeletePage = await browser.newPage({ viewport: { width: 1440, height: 960 } });
     await auditPortalRestoredCareerEntryDeleteRoute(restoredCareerEntryDeletePage);
     await restoredCareerEntryDeletePage.close();
+
+    const restoredCareerEntryEditCommitPage = await browser.newPage({ viewport: { width: 1440, height: 960 } });
+    await auditPortalRestoredCareerEntryEditCommitRoute(restoredCareerEntryEditCommitPage);
+    await restoredCareerEntryEditCommitPage.close();
+
+    const restoredCareerEntryDeleteCommitPage = await browser.newPage({ viewport: { width: 1440, height: 960 } });
+    await auditPortalRestoredCareerEntryDeleteCommitRoute(restoredCareerEntryDeleteCommitPage);
+    await restoredCareerEntryDeleteCommitPage.close();
 
     const restoredComplexFormActionPage = await browser.newPage({ viewport: { width: 1440, height: 960 } });
     await auditPortalRestoredComplexFormActionRoute(restoredComplexFormActionPage);

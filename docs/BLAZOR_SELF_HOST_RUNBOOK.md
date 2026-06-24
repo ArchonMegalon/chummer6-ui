@@ -188,6 +188,8 @@ The Playwright lane is the current proof-backed way to confirm that the portal e
 
 When the full portal harness is used through `bash scripts/e2e-portal.sh`, the self-hosted browser proof receipt is written to `.codex-studio/published/BLAZOR_SELF_HOST_WORKBENCH_PROOF.generated.json`.
 
+The next receipt refresh is staged to declare the career/support route family in the receipt route list as well as exercising it through Playwright: `tab-calendar`, `create_entry`, `create_entry&dialog_action=add`, `edit_entry`, `edit_entry&dialog_action=apply`, `delete_entry`, and `delete_entry&dialog_action=delete`.
+
 ## Production posture notes
 
 1. Keep `/blazor/` behind `Chummer.Portal`; do not publish the raw Blazor service as the primary user entrypoint when you want parity with the hosted `chummer.run` model.

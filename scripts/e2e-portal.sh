@@ -291,6 +291,13 @@ self_host_payload = {
         "/blazor/",
         "/blazor/workbench",
         "/blazor/workbench?workspace=ws-1",
+        "/blazor/workbench?workspace=ws-1&tab=tab-calendar",
+        "/blazor/workbench?workspace=ws-1&tab=tab-calendar&control=create_entry",
+        "/blazor/workbench?workspace=ws-1&tab=tab-calendar&control=create_entry&dialog_action=add",
+        "/blazor/workbench?workspace=ws-1&tab=tab-calendar&control=edit_entry",
+        "/blazor/workbench?workspace=ws-1&tab=tab-calendar&control=edit_entry&dialog_action=apply",
+        "/blazor/workbench?workspace=ws-1&tab=tab-calendar&control=delete_entry",
+        "/blazor/workbench?workspace=ws-1&tab=tab-calendar&control=delete_entry&dialog_action=delete",
         "/blazor/preview",
         "/blazor/preview?fixture=blue&command=save_character_as",
         "/blazor/preview?fixture=blue&command=save_character",
@@ -332,7 +339,7 @@ self_host_payload = {
     ],
     "notes": [
         "Self-hosted browser proof is separate from public chummer.run promotion proof.",
-        "Portal-backed browser workbench proof must cover reload-safe /blazor routing, startup deep links, state-backed recent-work resume links, restored-session continuation lanes, restored-session result continuations, restored-session build-lab continuation, multiple restored-session action continuations, and multiple restored actions that commit visible state changes.",
+        "Portal-backed browser workbench proof must cover reload-safe /blazor routing, startup deep links, state-backed recent-work resume links, restored-session continuation lanes, restored-session result continuations, restored-session build-lab continuation, multiple restored-session action continuations, the career/support add/edit/delete lifecycle, and multiple restored actions that commit visible state changes.",
     ],
 }
 
