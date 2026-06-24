@@ -131,6 +131,10 @@ The next staged browser-family slice after workbench search/filter is workbench 
 
 The next staged browser-family slice after workbench layout-presets is workbench activity-feed posture for save event, validation warning, output event, hosted status, and support escape entries. `scripts/ai/milestones/blazor-workbench-activity-feed-staged-proof-check.sh` is its source-alignment check. It proves only that the promoted workbench exposes activity/history affordances; it is not a hosted or Docker browser execution receipt.
 
+The next staged browser-family slice after workbench activity-feed is workbench keyboard-shortcuts posture for command help, save/output, section jump, density toggle, and support escape affordances. `scripts/ai/milestones/blazor-workbench-keyboard-shortcuts-staged-proof-check.sh` is its source-alignment check. It proves only that the promoted workbench exposes keyboard-help affordances; it is not a hosted or Docker browser execution receipt.
+
+The next staged browser-family slice after workbench keyboard-shortcuts is workbench resource-meters posture for karma, nuyen, essence, limits, wounds, and lifestyle context. `scripts/ai/milestones/blazor-workbench-resource-meters-staged-proof-check.sh` is its source-alignment check. It proves only that the promoted workbench exposes resource-total affordances; it is not a hosted or Docker browser execution receipt.
+
 `/scripts/ai/milestones/blazor-legacy-control-coverage-staged-proof-check.sh` is the source-level breadth guard over all known `LegacyUiControlCatalog` controls. It maps controls into hosted execution baseline coverage or staged source-alignment families; it is not a hosted or Docker browser execution receipt.
 
 `scripts/ai/milestones/blazor-source-staged-proof-set-check.sh` is the aggregate source-staged proof-set lane. It materializes the staged source receipts and summarizes their status, but it must stay outside release-readiness aggregation because it is not hosted or Docker browser execution evidence.

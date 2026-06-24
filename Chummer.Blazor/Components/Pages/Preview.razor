@@ -831,6 +831,104 @@
             </div>
         </section>
 
+        <section class="browser-workbench-keyboard-shortcuts" aria-label="Workbench keyboard shortcuts" data-workbench-keyboard-shortcuts="strip">
+            <div class="browser-workbench-keyboard-shortcuts-copy">
+                <span class="browser-preview-status-label">Shortcuts</span>
+                <strong>Keep keyboard help and accelerator intent visible.</strong>
+                <p>Desktop-speed users should see command help, save/output shortcuts, section jumps, density controls, and support escape paths without guessing browser behavior.</p>
+            </div>
+            <div class="browser-workbench-keyboard-shortcuts-actions" role="list" aria-label="Keyboard shortcut and help affordances">
+                <a role="listitem" href="@BuildPreviewHref(command: "global_settings", useWorkbenchRoute: true)" data-workbench-keyboard-shortcuts-action="command-help">
+                    <span>Command help</span>
+                    <small>Review available workbench commands.</small>
+                </a>
+                <a role="listitem" href="@BuildWorkbenchCommandHref("save_character_as")" data-workbench-keyboard-shortcuts-action="save-output">
+                    <span>Save/output</span>
+                    <small>Keep output handoffs reachable.</small>
+                </a>
+                <a role="listitem" href="@BuildWorkbenchLaneHref("tab-skills")" data-workbench-keyboard-shortcuts-action="section-jump">
+                    <span>Section jump</span>
+                    <small>Move through dense sheet lanes.</small>
+                </a>
+                <a role="listitem" href="#workbench-density-compact" data-workbench-keyboard-shortcuts-action="density-toggle">
+                    <span>Density</span>
+                    <small>Switch layout posture quickly.</small>
+                </a>
+                <a role="listitem" href="/contact" data-workbench-keyboard-shortcuts-action="support-escape">
+                    <span>Support</span>
+                    <small>Escalate when keyboard flow breaks.</small>
+                </a>
+            </div>
+        </section>
+
+        <section class="browser-workbench-resource-meters" aria-label="Workbench resource meters" data-workbench-resource-meters="strip">
+            <div class="browser-workbench-resource-meters-copy">
+                <span class="browser-preview-status-label">Resource meters</span>
+                <strong>Keep core character totals close while editing.</strong>
+                <p>Karma, nuyen, essence, limits, wounds, and lifestyle posture should stay visible while browser users move through sheet sections.</p>
+            </div>
+            <div class="browser-workbench-resource-meters-actions" role="list" aria-label="Character resource meter shortcuts">
+                <a role="listitem" href="@BuildWorkbenchLaneHref("tab-create")" data-workbench-resource-meters-action="karma">
+                    <span>Karma</span>
+                    <small>Review build and advancement spend.</small>
+                </a>
+                <a role="listitem" href="@BuildWorkbenchLaneHref("tab-gear")" data-workbench-resource-meters-action="nuyen">
+                    <span>Nuyen</span>
+                    <small>Check costs and remaining budget.</small>
+                </a>
+                <a role="listitem" href="@BuildWorkbenchLaneHref("tab-cyberware")" data-workbench-resource-meters-action="essence">
+                    <span>Essence</span>
+                    <small>Review implant pressure.</small>
+                </a>
+                <a role="listitem" href="@BuildWorkbenchLaneHref("tab-info")" data-workbench-resource-meters-action="limits">
+                    <span>Limits</span>
+                    <small>Keep derived sheet totals nearby.</small>
+                </a>
+                <a role="listitem" href="@BuildWorkbenchLaneHref("tab-combat")" data-workbench-resource-meters-action="wounds">
+                    <span>Wounds</span>
+                    <small>Return to combat condition context.</small>
+                </a>
+                <a role="listitem" href="@BuildPreviewHref(tab: "tab-info", control: "identity_license_edit", useWorkbenchRoute: true)" data-workbench-resource-meters-action="lifestyle">
+                    <span>Lifestyle</span>
+                    <small>Review SIN/license and cover posture.</small>
+                </a>
+            </div>
+        </section>
+
+        <section class="browser-workbench-tree-tools" aria-label="Workbench tree and list tools" data-workbench-tree-tools="strip">
+            <div class="browser-workbench-tree-tools-copy">
+                <span class="browser-preview-status-label">Tree tools</span>
+                <strong>Keep dense tree and list actions visible.</strong>
+                <p>Desktop Chummer uses expandable trees, ordered lists, pinned selections, and sortable panes; the web client should expose those tools without hiding them behind flat cards.</p>
+            </div>
+            <div class="browser-workbench-tree-tools-actions" role="list" aria-label="Tree and list action shortcuts">
+                <a role="listitem" href="@BuildWorkbenchLaneHref("tab-gear")" data-workbench-tree-tools-action="expand">
+                    <span>Expand</span>
+                    <small>Open nested gear and detail lanes.</small>
+                </a>
+                <a role="listitem" href="@BuildWorkbenchLaneHref("tab-info")" data-workbench-tree-tools-action="collapse">
+                    <span>Collapse</span>
+                    <small>Return to a compact sheet view.</small>
+                </a>
+                <a role="listitem" href="@BuildWorkbenchLaneHref("tab-skills")" data-workbench-tree-tools-action="sort">
+                    <span>Sort</span>
+                    <small>Review ordered skill and list context.</small>
+                </a>
+                <a role="listitem" href="@BuildPreviewHref(tab: "tab-calendar", control: "move_up", useWorkbenchRoute: true)" data-workbench-tree-tools-action="reorder">
+                    <span>Reorder</span>
+                    <small>Keep move up/down utilities visible.</small>
+                </a>
+                <a role="listitem" href="@BuildWorkbenchLaneHref("tab-contacts")" data-workbench-tree-tools-action="pin">
+                    <span>Pin</span>
+                    <small>Keep selected contacts and context nearby.</small>
+                </a>
+                <a role="listitem" href="@BuildWorkbenchLaneHref("tab-gear")" data-workbench-tree-tools-action="selection">
+                    <span>Selection</span>
+                    <small>Return to selected item context.</small>
+                </a>
+            </div>
+        </section>
+
         <section class="browser-preview-status-grid" aria-label="Workbench quick starts">
             <article class="browser-preview-status-card" data-workbench-entry-card="new-character">
                 <span class="browser-preview-status-label">Quick start</span>

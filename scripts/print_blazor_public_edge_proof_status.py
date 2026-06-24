@@ -47,6 +47,8 @@ WORKBENCH_CONTEXT_ACTIONS_STAGED_PROOF = PUBLISHED / "BLAZOR_WORKBENCH_CONTEXT_A
 WORKBENCH_SEARCH_FILTER_STAGED_PROOF = PUBLISHED / "BLAZOR_WORKBENCH_SEARCH_FILTER_STAGED_PROOF.generated.json"
 WORKBENCH_LAYOUT_PRESETS_STAGED_PROOF = PUBLISHED / "BLAZOR_WORKBENCH_LAYOUT_PRESETS_STAGED_PROOF.generated.json"
 WORKBENCH_ACTIVITY_FEED_STAGED_PROOF = PUBLISHED / "BLAZOR_WORKBENCH_ACTIVITY_FEED_STAGED_PROOF.generated.json"
+WORKBENCH_KEYBOARD_SHORTCUTS_STAGED_PROOF = PUBLISHED / "BLAZOR_WORKBENCH_KEYBOARD_SHORTCUTS_STAGED_PROOF.generated.json"
+WORKBENCH_RESOURCE_METERS_STAGED_PROOF = PUBLISHED / "BLAZOR_WORKBENCH_RESOURCE_METERS_STAGED_PROOF.generated.json"
 LEGACY_CONTROL_COVERAGE_STAGED_PROOF = PUBLISHED / "BLAZOR_LEGACY_CONTROL_COVERAGE_STAGED_PROOF.generated.json"
 SOURCE_STAGED_PROOF_SET = PUBLISHED / "BLAZOR_SOURCE_STAGED_PROOF_SET.generated.json"
 PORTAL_INSTALLER_HANDOFF_STAGED_PROOF = PUBLISHED / "BLAZOR_PORTAL_INSTALLER_HANDOFF_STAGED_PROOF.generated.json"
@@ -143,6 +145,8 @@ def main() -> int:
     workbench_search_filter_staged = load_json(WORKBENCH_SEARCH_FILTER_STAGED_PROOF)
     workbench_layout_presets_staged = load_json(WORKBENCH_LAYOUT_PRESETS_STAGED_PROOF)
     workbench_activity_feed_staged = load_json(WORKBENCH_ACTIVITY_FEED_STAGED_PROOF)
+    workbench_keyboard_shortcuts_staged = load_json(WORKBENCH_KEYBOARD_SHORTCUTS_STAGED_PROOF)
+    workbench_resource_meters_staged = load_json(WORKBENCH_RESOURCE_METERS_STAGED_PROOF)
     legacy_control_coverage_staged = load_json(LEGACY_CONTROL_COVERAGE_STAGED_PROOF)
     source_staged_proof_set = load_json(SOURCE_STAGED_PROOF_SET)
     portal_installer_handoff_staged = load_json(PORTAL_INSTALLER_HANDOFF_STAGED_PROOF)
@@ -551,6 +555,26 @@ def main() -> int:
     print(f"workbench_activity_feed_staged_source_checks={count_staged_source_checks(workbench_activity_feed_staged)}")
     print(
         "workbench_activity_feed_staged_note="
+        "source_alignment_only_not_browser_execution"
+    )
+    print(f"workbench_keyboard_shortcuts_staged_receipt={WORKBENCH_KEYBOARD_SHORTCUTS_STAGED_PROOF}")
+    print(f"workbench_keyboard_shortcuts_staged_status={str(workbench_keyboard_shortcuts_staged.get('status') or '').strip() or 'not_generated'}")
+    print(f"workbench_keyboard_shortcuts_staged_contract={str(workbench_keyboard_shortcuts_staged.get('contract_name') or '').strip() or 'missing'}")
+    print(f"workbench_keyboard_shortcuts_staged_tier={str(workbench_keyboard_shortcuts_staged.get('proof_tier') or '').strip() or 'missing'}")
+    print(f"workbench_keyboard_shortcuts_staged_route_count={len(workbench_keyboard_shortcuts_staged.get('expected_routes') or [])}")
+    print(f"workbench_keyboard_shortcuts_staged_source_checks={count_staged_source_checks(workbench_keyboard_shortcuts_staged)}")
+    print(
+        "workbench_keyboard_shortcuts_staged_note="
+        "source_alignment_only_not_browser_execution"
+    )
+    print(f"workbench_resource_meters_staged_receipt={WORKBENCH_RESOURCE_METERS_STAGED_PROOF}")
+    print(f"workbench_resource_meters_staged_status={str(workbench_resource_meters_staged.get('status') or '').strip() or 'not_generated'}")
+    print(f"workbench_resource_meters_staged_contract={str(workbench_resource_meters_staged.get('contract_name') or '').strip() or 'missing'}")
+    print(f"workbench_resource_meters_staged_tier={str(workbench_resource_meters_staged.get('proof_tier') or '').strip() or 'missing'}")
+    print(f"workbench_resource_meters_staged_route_count={len(workbench_resource_meters_staged.get('expected_routes') or [])}")
+    print(f"workbench_resource_meters_staged_source_checks={count_staged_source_checks(workbench_resource_meters_staged)}")
+    print(
+        "workbench_resource_meters_staged_note="
         "source_alignment_only_not_browser_execution"
     )
     print(f"legacy_control_coverage_staged_receipt={LEGACY_CONTROL_COVERAGE_STAGED_PROOF}")

@@ -150,6 +150,10 @@ Current docs already define the intended shipped posture and the evidence contra
 - `docs/examples/blazor-workbench-layout-presets-staged-proof.receipt.example.json` shows the compact generated receipt shape for `BLAZOR_WORKBENCH_LAYOUT_PRESETS_STAGED_PROOF.generated.json`.
 - `docs/BLAZOR_WORKBENCH_ACTIVITY_FEED_STAGED_PROOF.md` defines the source-staged promoted workbench activity-feed posture contract. It is not runtime proof.
 - `docs/examples/blazor-workbench-activity-feed-staged-proof.receipt.example.json` shows the compact generated receipt shape for `BLAZOR_WORKBENCH_ACTIVITY_FEED_STAGED_PROOF.generated.json`.
+- `docs/BLAZOR_WORKBENCH_KEYBOARD_SHORTCUTS_STAGED_PROOF.md` defines the source-staged promoted workbench keyboard-shortcuts posture contract. It is not runtime proof.
+- `docs/examples/blazor-workbench-keyboard-shortcuts-staged-proof.receipt.example.json` shows the compact generated receipt shape for `BLAZOR_WORKBENCH_KEYBOARD_SHORTCUTS_STAGED_PROOF.generated.json`.
+- `docs/BLAZOR_WORKBENCH_RESOURCE_METERS_STAGED_PROOF.md` defines the source-staged promoted workbench resource-meters posture contract. It is not runtime proof.
+- `docs/examples/blazor-workbench-resource-meters-staged-proof.receipt.example.json` shows the compact generated receipt shape for `BLAZOR_WORKBENCH_RESOURCE_METERS_STAGED_PROOF.generated.json`.
 
 ## Portal Installer Handoff
 

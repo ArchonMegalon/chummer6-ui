@@ -1,22 +1,23 @@
 {
-  "contract_name": "chummer6-ui.blazor_workbench_polish_staged_proof",
-  "generated_at": "2026-06-24T22:18:35.660894+00:00",
+  "contract_name": "chummer6-ui.blazor_workbench_keyboard_shortcuts_staged_proof",
+  "generated_at": "2026-06-24T22:18:36.283374+00:00",
   "status": "passed",
   "proof_tier": "source_staged_no_browser_execution",
   "route_lane": "promoted_blazor_workbench",
   "expected_routes": [
-    "/blazor/workbench"
+    "/blazor/workbench",
+    "/contact"
   ],
   "checks": [
     {
-      "id": "product_workbench_task_dock",
+      "id": "product_workbench_keyboard_shortcuts",
       "path": "Chummer.Blazor/Components/Pages/Preview.razor",
       "status": "passed",
-      "required_token_count": 12,
+      "required_token_count": 8,
       "missing_tokens": []
     },
     {
-      "id": "scoped_visual_design",
+      "id": "scoped_keyboard_shortcuts_visual_design",
       "path": "Chummer.Blazor/Components/Pages/Preview.razor.css",
       "status": "passed",
       "required_token_count": 4,
@@ -46,8 +47,8 @@
   ],
   "failures": [],
   "notes": [
-    "This receipt only proves that promoted workbench polish source, style, status, and docs agree.",
-    "It is not a substitute for hosted Playwright execution proof or Docker self-host proof.",
-    "Do not use this receipt to claim desktop-equivalent browser workflow parity."
+    "This receipt only proves that promoted workbench keyboard-shortcuts source, style, status, and docs agree.",
+    "It is not a substitute for hosted Playwright execution proof, Docker self-host proof, key-event proof, or accelerator execution proof.",
+    "Do not use this receipt to claim key-event handling, accelerator execution, or browser execution parity."
   ]
 }
