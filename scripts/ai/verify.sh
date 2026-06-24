@@ -47,6 +47,12 @@ echo "[verify] checking desktop runtime resilience regression guard..."
 desktop_runtime_test_filter='FullyQualifiedName~DesktopCrashRuntimeTests|FullyQualifiedName~DesktopPreferenceRuntimeTests|FullyQualifiedName~DesktopStartupSmokeRuntimeTests|FullyQualifiedName~DesktopUpdateRuntimeTests|FullyQualifiedName~DesktopInstallLinkingRuntimeTests'
 bash scripts/ai/test.sh Chummer.Tests/Chummer.Tests.csproj --no-restore -v minimal -p:RunDesktopUpdateTestsOnly=true --filter "$desktop_runtime_test_filter"
 
+echo "[verify] checking windows installer payload gate syntax and regression tests..."
+bash -n scripts/publish-download-bundle.sh
+bash -n scripts/publish-download-bundle-http.sh
+bash -n scripts/publish-download-bundle-s3.sh
+python3 -m pytest -q tests/test_windows_installer_payload_gate.py
+
 if ! rg -n '<ChummerUseLocalCompatibilityTree Condition="'\''\$\(ChummerUseLocalCompatibilityTree\)'\'' == '\'''\''">false</ChummerUseLocalCompatibilityTree>' \
   Directory.Build.props >/dev/null; then
   echo "[verify] FAIL: the local compatibility tree must be opt-in instead of the ambient default."
@@ -216,6 +222,12 @@ unset CHUMMER_B13_TESTS_REQUIRED
 
 echo "[verify] checking B14 flagship UI release gate..."
 bash scripts/ai/milestones/b14-flagship-ui-release-gate.sh
+
+echo "[verify] checking hosted public-edge Blazor route-entry proof receipt guard..."
+bash scripts/ai/milestones/blazor-public-edge-workbench-proof-check.sh
+
+echo "[verify] checking hosted public-edge Blazor execution-proof receipt guard..."
+bash scripts/ai/milestones/blazor-public-edge-execution-proof-check.sh
 
 echo "[verify] checking classic dense workbench posture gate..."
 bash scripts/ai/milestones/classic-dense-workbench-posture-gate.sh

@@ -253,6 +253,19 @@ public sealed class DesktopInstallerParityComplianceTests
         StringAssert.Contains(publishS3Text, "--manifest \"$MANIFEST_SOURCE\"");
     }
 
+    [TestMethod]
+    public void Verify_entrypoint_runs_windows_installer_payload_gate_regressions()
+    {
+        string repoRoot = FindRepoRoot();
+        string verifyScriptText = File.ReadAllText(Path.Combine(repoRoot, "scripts", "ai", "verify.sh"));
+
+        StringAssert.Contains(verifyScriptText, "checking windows installer payload gate syntax and regression tests");
+        StringAssert.Contains(verifyScriptText, "bash -n scripts/publish-download-bundle.sh");
+        StringAssert.Contains(verifyScriptText, "bash -n scripts/publish-download-bundle-http.sh");
+        StringAssert.Contains(verifyScriptText, "bash -n scripts/publish-download-bundle-s3.sh");
+        StringAssert.Contains(verifyScriptText, "python3 -m pytest -q tests/test_windows_installer_payload_gate.py");
+    }
+
     private static string FindRepoRoot()
     {
         DirectoryInfo? current = new(AppContext.BaseDirectory);

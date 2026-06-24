@@ -167,6 +167,475 @@ public sealed class DesktopExecutableGateComplianceTests
         StringAssert.Contains(blockerMaterializerScriptText, "installAccessClass");
         StringAssert.Contains(blockerMaterializerScriptText, "account_required");
         StringAssert.Contains(blockerMaterializerScriptText, "route_probe[\"authChallengeAccepted\"]");
+        StringAssert.Contains(blockerMaterializerScriptText, "public_startup_workbench_command_routes");
+        StringAssert.Contains(blockerMaterializerScriptText, "public_advanced_action_routes");
+        StringAssert.Contains(blockerMaterializerScriptText, "public_advanced_committed_action_routes");
+        StringAssert.Contains(blockerMaterializerScriptText, "startup_command_route_shapes");
+        StringAssert.Contains(blockerMaterializerScriptText, "advanced_action_route_shapes");
+        StringAssert.Contains(blockerMaterializerScriptText, "advanced_committed_action_route_shapes");
+    }
+
+    [TestMethod]
+    public void Hosted_public_edge_workbench_proof_shape_contract_stays_aligned_across_verifier_docs_and_examples()
+    {
+        string repoRoot = FindRepoRoot();
+        string verifierPath = Path.Combine(repoRoot, "scripts", "verify_blazor_public_edge_workbench_proof.py");
+        string verifierText = File.ReadAllText(verifierPath);
+        string contractDocPath = Path.Combine(repoRoot, "docs", "BLAZOR_PUBLIC_EDGE_WORKBENCH_PROOF.md");
+        string contractDocText = File.ReadAllText(contractDocPath);
+        string coreExamplePath = Path.Combine(repoRoot, "docs", "examples", "blazor-public-edge-workbench-proof.receipt.example.json");
+        string coreExampleText = File.ReadAllText(coreExamplePath);
+        string expandedExamplePath = Path.Combine(repoRoot, "docs", "examples", "blazor-public-edge-workbench-proof.expanded.receipt.example.json");
+        string expandedExampleText = File.ReadAllText(expandedExamplePath);
+        string statusScriptPath = Path.Combine(repoRoot, "scripts", "print_blazor_public_edge_proof_status.py");
+        string statusScriptText = File.ReadAllText(statusScriptPath);
+
+        StringAssert.Contains(verifierText, "ALLOWED_PROOF_SHAPES = {\"core\", \"expanded\"}");
+        StringAssert.Contains(verifierText, "proof_shape='core' is inconsistent with expanded hosted route-entry markers, workflows, or routes");
+        StringAssert.Contains(verifierText, "proof_shape='expanded' requires the full expanded hosted route-entry marker/workflow/route set");
+        StringAssert.Contains(contractDocText, "`core` for the currently published minimal route family");
+        StringAssert.Contains(contractDocText, "`expanded` for the newer promoted startup-command and advanced-action route family");
+        StringAssert.Contains(contractDocText, "older receipts may omit this field");
+        StringAssert.Contains(coreExampleText, "\"proof_shape\": \"core\"");
+        StringAssert.Contains(expandedExampleText, "\"proof_shape\": \"expanded\"");
+        StringAssert.Contains(statusScriptText, "explicit_shape = str(route.get(\"proof_shape\") or \"\").strip()");
+    }
+
+    [TestMethod]
+    public void Hosted_public_edge_workbench_proof_shape_propagates_to_downstream_milestone_consumers()
+    {
+        string repoRoot = FindRepoRoot();
+        string m113Path = Path.Combine(repoRoot, "scripts", "ai", "milestones", "next90-m113-ui-gm-prep-roster-surface-check.sh");
+        string m113Text = File.ReadAllText(m113Path);
+        string m142Path = Path.Combine(repoRoot, "scripts", "ai", "milestones", "next90-m142-ui-direct-workflow-proof-check.sh");
+        string m142Text = File.ReadAllText(m142Path);
+        string goldGatePath = Path.Combine(repoRoot, "scripts", "ai", "milestones", "ui-gold-proof-depth-gate.sh");
+        string goldGateText = File.ReadAllText(goldGatePath);
+        string b14Path = Path.Combine(repoRoot, "scripts", "ai", "milestones", "b14-flagship-ui-release-gate.sh");
+        string b14Text = File.ReadAllText(b14Path);
+
+        StringAssert.Contains(m113Text, "public_edge_workbench_proof_shape = str(public_edge_workbench_proof.get(\"proof_shape\") or \"\").strip()");
+        StringAssert.Contains(m113Text, "\"public_edge_workbench_proof_shape_known\": public_edge_workbench_proof_shape in {\"core\", \"expanded\"}");
+        StringAssert.Contains(m113Text, "\"proofShape\": public_edge_workbench_proof_shape");
+
+        StringAssert.Contains(m142Text, "public_edge_workbench_proof_shape = str(public_edge_workbench_receipt.get(\"proof_shape\") or \"\").strip()");
+        StringAssert.Contains(m142Text, "\"public_edge_workbench_proof_shape_known\": public_edge_workbench_proof_shape in {\"core\", \"expanded\"}");
+        StringAssert.Contains(m142Text, "\"proofShape\": public_edge_workbench_proof_shape");
+
+        StringAssert.Contains(goldGateText, "def classify_workbench_proof_shape(payload: dict) -> str:");
+        StringAssert.Contains(goldGateText, "\"blazor_public_edge_workbench_proof_shape\"] = public_edge_workbench_proof_shape");
+        StringAssert.Contains(goldGateText, "\"hosted_route_entry_proof_shape\"] = public_edge_workbench_proof_shape");
+
+        StringAssert.Contains(b14Text, "\"proof_shape_known\": str(public_edge_workbench_receipt.get(\"proof_shape\") or \"\").strip() in {\"core\", \"expanded\"}");
+    }
+
+    [TestMethod]
+    public void Hosted_public_edge_workbench_proof_shape_stays_wired_through_materializer_status_and_docs_index()
+    {
+        string repoRoot = FindRepoRoot();
+        string materializerPath = Path.Combine(repoRoot, "scripts", "materialize-external-host-proof-blockers.py");
+        string materializerText = File.ReadAllText(materializerPath);
+        string statusPath = Path.Combine(repoRoot, "scripts", "print_blazor_public_edge_proof_status.py");
+        string statusText = File.ReadAllText(statusPath);
+        string docsIndexPath = Path.Combine(repoRoot, "docs", "BLAZOR_WEB_CLIENT_DOCS_INDEX.md");
+        string docsIndexText = File.ReadAllText(docsIndexPath);
+        string routeProofDocPath = Path.Combine(repoRoot, "docs", "BLAZOR_PUBLIC_EDGE_WORKBENCH_PROOF.md");
+        string routeProofDocText = File.ReadAllText(routeProofDocPath);
+
+        StringAssert.Contains(materializerText, "\"proof_shape\": \"expanded\"");
+        StringAssert.Contains(materializerText, "payload[\"browser_route_entry_proof_shape\"] = classify_route_entry_proof_shape(route_payload)");
+        StringAssert.Contains(statusText, "explicit_shape = str(route.get(\"proof_shape\") or \"\").strip()");
+        StringAssert.Contains(statusText, "blocker_route_entry_shape=");
+        StringAssert.Contains(docsIndexText, "blazor-public-edge-workbench-proof.expanded.receipt.example.json");
+        StringAssert.Contains(routeProofDocText, "expanded example receipt shape:");
+        StringAssert.Contains(routeProofDocText, "docs/examples/blazor-public-edge-workbench-proof.expanded.receipt.example.json");
+    }
+
+    [TestMethod]
+    public void Published_hosted_public_edge_workbench_receipt_stays_self_describing_and_contract_aligned()
+    {
+        string repoRoot = FindRepoRoot();
+        string publishedReceiptPath = Path.Combine(repoRoot, ".codex-studio", "published", "BLAZOR_PUBLIC_EDGE_WORKBENCH_PROOF.generated.json");
+        string publishedReceiptText = File.ReadAllText(publishedReceiptPath);
+        string routeProofDocPath = Path.Combine(repoRoot, "docs", "BLAZOR_PUBLIC_EDGE_WORKBENCH_PROOF.md");
+        string routeProofDocText = File.ReadAllText(routeProofDocPath);
+        string statusScriptPath = Path.Combine(repoRoot, "scripts", "print_blazor_public_edge_proof_status.py");
+        string statusScriptText = File.ReadAllText(statusScriptPath);
+
+        StringAssert.Contains(publishedReceiptText, "\"contract_name\": \"chummer6-ui.blazor_public_edge_workbench_proof\"");
+        StringAssert.Contains(publishedReceiptText, "\"proof_shape\": \"core\"");
+        StringAssert.Contains(publishedReceiptText, "\"route_probe_executed\": true");
+        StringAssert.Contains(publishedReceiptText, "\"route_probe_failures\": []");
+        StringAssert.Contains(routeProofDocText, ".codex-studio/published/BLAZOR_PUBLIC_EDGE_WORKBENCH_PROOF.generated.json");
+        StringAssert.Contains(statusScriptText, "route_proof_shape=");
+    }
+
+    [TestMethod]
+    public void Hosted_public_edge_workbench_route_family_inventory_stays_aligned_across_verifier_and_examples()
+    {
+        string repoRoot = FindRepoRoot();
+        string verifierPath = Path.Combine(repoRoot, "scripts", "verify_blazor_public_edge_workbench_proof.py");
+        string verifierText = File.ReadAllText(verifierPath);
+        string coreExamplePath = Path.Combine(repoRoot, "docs", "examples", "blazor-public-edge-workbench-proof.receipt.example.json");
+        string coreExampleText = File.ReadAllText(coreExamplePath);
+        string expandedExamplePath = Path.Combine(repoRoot, "docs", "examples", "blazor-public-edge-workbench-proof.expanded.receipt.example.json");
+        string expandedExampleText = File.ReadAllText(expandedExamplePath);
+
+        StringAssert.Contains(verifierText, "\"public_blazor_root_redirect\"");
+        StringAssert.Contains(verifierText, "\"public_blazor_health\"");
+        StringAssert.Contains(verifierText, "\"public_workbench_route\"");
+        StringAssert.Contains(verifierText, "\"public_workspace_restore_route\"");
+        StringAssert.Contains(verifierText, "\"public_startup_deep_link_route\"");
+        StringAssert.Contains(verifierText, "\"public_result_continuation_routes\"");
+        StringAssert.Contains(verifierText, "\"public_action_continuation_routes\"");
+        StringAssert.Contains(verifierText, "\"public_committed_action_route\"");
+        StringAssert.Contains(verifierText, "\"public_startup_workbench_command_routes\"");
+        StringAssert.Contains(verifierText, "\"public_advanced_action_routes\"");
+        StringAssert.Contains(verifierText, "\"public_advanced_committed_action_routes\"");
+
+        StringAssert.Contains(coreExampleText, "\"proof_shape\": \"core\"");
+        StringAssert.Contains(coreExampleText, "\"public_blazor_root_redirect\"");
+        StringAssert.Contains(coreExampleText, "\"public_blazor_health\"");
+        StringAssert.Contains(coreExampleText, "\"public_workbench_route\"");
+        StringAssert.Contains(coreExampleText, "\"public_workspace_restore_route\"");
+        StringAssert.Contains(coreExampleText, "\"public_startup_deep_link_route\"");
+        StringAssert.Contains(coreExampleText, "\"public_result_continuation_routes\"");
+        StringAssert.Contains(coreExampleText, "\"public_action_continuation_routes\"");
+        StringAssert.Contains(coreExampleText, "\"public_committed_action_route\"");
+        StringAssert.Contains(coreExampleText, "\"/blazor/workbench?workspace=ws-1&command=save_character_as\"");
+        StringAssert.Contains(coreExampleText, "\"/blazor/workbench?workspace=ws-1&tab=tab-contacts&control=contact_add&dialog_action=add\"");
+
+        StringAssert.Contains(expandedExampleText, "\"proof_shape\": \"expanded\"");
+        StringAssert.Contains(expandedExampleText, "\"public_startup_workbench_command_routes\"");
+        StringAssert.Contains(expandedExampleText, "\"public_advanced_action_routes\"");
+        StringAssert.Contains(expandedExampleText, "\"public_advanced_committed_action_routes\"");
+        StringAssert.Contains(expandedExampleText, "\"startup_command_route_shapes\"");
+        StringAssert.Contains(expandedExampleText, "\"advanced_action_route_shapes\"");
+        StringAssert.Contains(expandedExampleText, "\"advanced_committed_action_route_shapes\"");
+        StringAssert.Contains(expandedExampleText, "\"/blazor/workbench?command=new_character\"");
+        StringAssert.Contains(expandedExampleText, "\"/blazor/workbench?command=open_character\"");
+        StringAssert.Contains(expandedExampleText, "\"/blazor/workbench?command=open_for_printing\"");
+        StringAssert.Contains(expandedExampleText, "\"/blazor/workbench?command=open_for_export\"");
+        StringAssert.Contains(expandedExampleText, "\"/blazor/workbench?workspace=ws-1&tab=tab-technomancer&control=complex_form_add\"");
+        StringAssert.Contains(expandedExampleText, "\"/blazor/workbench?workspace=ws-1&tab=tab-technomancer&control=complex_form_add&dialog_action=add\"");
+    }
+
+    [TestMethod]
+    public void Hosted_public_edge_execution_proof_contract_stays_aligned_across_verifier_docs_example_and_placeholder()
+    {
+        string repoRoot = FindRepoRoot();
+        string verifierPath = Path.Combine(repoRoot, "scripts", "verify_blazor_public_edge_execution_proof.py");
+        string verifierText = File.ReadAllText(verifierPath);
+        string contractDocPath = Path.Combine(repoRoot, "docs", "BLAZOR_PUBLIC_EDGE_EXECUTION_PROOF.md");
+        string contractDocText = File.ReadAllText(contractDocPath);
+        string examplePath = Path.Combine(repoRoot, "docs", "examples", "blazor-public-edge-execution-proof.receipt.example.json");
+        string exampleText = File.ReadAllText(examplePath);
+        string placeholderPath = Path.Combine(repoRoot, ".codex-studio", "published", "BLAZOR_PUBLIC_EDGE_EXECUTION_PROOF.generated.json");
+        string placeholderText = File.ReadAllText(placeholderPath);
+        string statusScriptPath = Path.Combine(repoRoot, "scripts", "print_blazor_public_edge_proof_status.py");
+        string statusScriptText = File.ReadAllText(statusScriptPath);
+
+        StringAssert.Contains(verifierText, "EXPECTED_CONTRACT = \"chummer6-ui.blazor_public_edge_execution_proof\"");
+        StringAssert.Contains(verifierText, "EXPECTED_PROOF_TIER = \"hosted_promoted_route_execution\"");
+        StringAssert.Contains(verifierText, "EXPECTED_ROUTE_LANE = \"promoted_blazor_workbench\"");
+        StringAssert.Contains(verifierText, "EXPECTED_PROMOTED_ROUTE_BASE = \"/blazor/workbench\"");
+        StringAssert.Contains(verifierText, "\"promoted_advanced_committed_actions\"");
+
+        StringAssert.Contains(contractDocText, "`chummer6-ui.blazor_public_edge_execution_proof`");
+        StringAssert.Contains(contractDocText, "`hosted_promoted_route_execution`");
+        StringAssert.Contains(contractDocText, "`promoted_blazor_workbench`");
+        StringAssert.Contains(contractDocText, "docs/examples/blazor-public-edge-execution-proof.receipt.example.json");
+        StringAssert.Contains(contractDocText, ".codex-studio/published/BLAZOR_PUBLIC_EDGE_EXECUTION_PROOF.generated.json");
+        StringAssert.Contains(contractDocText, "Committed complex-form execution is now part of the promoted advanced committed-action lane.");
+
+        StringAssert.Contains(exampleText, "\"contract_name\": \"chummer6-ui.blazor_public_edge_execution_proof\"");
+        StringAssert.Contains(exampleText, "\"proof_tier\": \"hosted_promoted_route_execution\"");
+        StringAssert.Contains(exampleText, "\"route_lane\": \"promoted_blazor_workbench\"");
+        StringAssert.Contains(exampleText, "\"promoted_route_base\": \"/blazor/workbench\"");
+        StringAssert.Contains(exampleText, "\"promoted_advanced_committed_actions\"");
+
+        StringAssert.Contains(placeholderText, "\"contract_name\": \"chummer6-ui.blazor_public_edge_execution_proof\"");
+        StringAssert.Contains(placeholderText, "\"status\": \"not_run\"");
+        StringAssert.Contains(placeholderText, "\"proof_tier\": \"hosted_promoted_route_execution\"");
+        StringAssert.Contains(placeholderText, "\"route_lane\": \"promoted_blazor_workbench\"");
+        StringAssert.Contains(placeholderText, "\"promoted_route_base\": \"/blazor/workbench\"");
+        StringAssert.Contains(placeholderText, "Committed complex-form execution is now part of the promoted advanced committed-action lane.");
+
+        StringAssert.Contains(statusScriptText, "execution_proof_tier=");
+        StringAssert.Contains(statusScriptText, "execution_route_lane=");
+        StringAssert.Contains(statusScriptText, "execution_promoted_route_base=");
+        StringAssert.Contains(statusScriptText, "execution_workflow_family_ids=");
+    }
+
+    [TestMethod]
+    public void Hosted_public_edge_execution_proof_metadata_propagates_to_downstream_consumers()
+    {
+        string repoRoot = FindRepoRoot();
+        string uiGoldPath = Path.Combine(repoRoot, "scripts", "ai", "milestones", "ui-gold-proof-depth-gate.sh");
+        string uiGoldText = File.ReadAllText(uiGoldPath);
+        string releaseSignoffPath = Path.Combine(repoRoot, "docs", "WORKBENCH_RELEASE_SIGNOFF.md");
+        string releaseSignoffText = File.ReadAllText(releaseSignoffPath);
+        string docsIndexPath = Path.Combine(repoRoot, "docs", "BLAZOR_WEB_CLIENT_DOCS_INDEX.md");
+        string docsIndexText = File.ReadAllText(docsIndexPath);
+
+        StringAssert.Contains(uiGoldText, "\"blazor_public_edge_execution_proof_tier\": HOSTED_EXECUTION_PROOF_TIER");
+        StringAssert.Contains(uiGoldText, "\"blazor_public_edge_execution_route_lane\": HOSTED_EXECUTION_ROUTE_LANE");
+        StringAssert.Contains(uiGoldText, "\"blazor_public_edge_execution_promoted_route_base\": HOSTED_EXECUTION_ROUTE_BASE");
+        StringAssert.Contains(uiGoldText, "\"blazor_public_edge_execution_required_workflow_family_ids\": HOSTED_EXECUTION_REQUIRED_FAMILY_IDS");
+        StringAssert.Contains(uiGoldText, "\"hosted_execution_proof_tier\"] = HOSTED_EXECUTION_PROOF_TIER");
+        StringAssert.Contains(uiGoldText, "\"hosted_execution_route_lane\"] = HOSTED_EXECUTION_ROUTE_LANE");
+        StringAssert.Contains(uiGoldText, "\"hosted_execution_promoted_route_base\"] = HOSTED_EXECUTION_ROUTE_BASE");
+        StringAssert.Contains(uiGoldText, "\"hosted_execution_required_workflow_family_ids\"] = HOSTED_EXECUTION_REQUIRED_FAMILY_IDS");
+
+        StringAssert.Contains(releaseSignoffText, ".codex-studio/published/BLAZOR_PUBLIC_EDGE_EXECUTION_PROOF.generated.json");
+        StringAssert.Contains(releaseSignoffText, "with an explicit `not_run` status until a real hosted run succeeds");
+        StringAssert.Contains(releaseSignoffText, "Hosted `chummer.run` workflow execution proof is separately published as `.codex-studio/published/BLAZOR_PUBLIC_EDGE_EXECUTION_PROOF.generated.json`");
+
+        StringAssert.Contains(docsIndexText, "docs/examples/blazor-public-edge-execution-proof.receipt.example.json");
+        StringAssert.Contains(docsIndexText, ".codex-studio/published/BLAZOR_PUBLIC_EDGE_EXECUTION_PROOF.generated.json");
+    }
+
+    [TestMethod]
+    public void Verify_entrypoint_keeps_both_hosted_public_edge_blazor_proof_tiers_wired()
+    {
+        string repoRoot = FindRepoRoot();
+        string verifyPath = Path.Combine(repoRoot, "scripts", "ai", "verify.sh");
+        string verifyText = File.ReadAllText(verifyPath);
+        string statusScriptPath = Path.Combine(repoRoot, "scripts", "print_blazor_public_edge_proof_status.py");
+        string statusScriptText = File.ReadAllText(statusScriptPath);
+
+        StringAssert.Contains(verifyText, "checking hosted public-edge Blazor route-entry proof receipt guard");
+        StringAssert.Contains(verifyText, "bash scripts/ai/milestones/blazor-public-edge-workbench-proof-check.sh");
+        StringAssert.Contains(verifyText, "checking hosted public-edge Blazor execution-proof receipt guard");
+        StringAssert.Contains(verifyText, "bash scripts/ai/milestones/blazor-public-edge-execution-proof-check.sh");
+
+        StringAssert.Contains(statusScriptText, "route_proof_shape=");
+        StringAssert.Contains(statusScriptText, "execution_proof_tier=");
+        StringAssert.Contains(statusScriptText, "execution_route_lane=");
+        StringAssert.Contains(statusScriptText, "execution_promoted_route_base=");
+    }
+
+    [TestMethod]
+    public void Shared_public_edge_reporting_surfaces_keep_route_and_execution_tier_metadata_together()
+    {
+        string repoRoot = FindRepoRoot();
+        string statusScriptPath = Path.Combine(repoRoot, "scripts", "print_blazor_public_edge_proof_status.py");
+        string statusScriptText = File.ReadAllText(statusScriptPath);
+        string releaseSignoffPath = Path.Combine(repoRoot, "docs", "WORKBENCH_RELEASE_SIGNOFF.md");
+        string releaseSignoffText = File.ReadAllText(releaseSignoffPath);
+        string docsIndexPath = Path.Combine(repoRoot, "docs", "BLAZOR_WEB_CLIENT_DOCS_INDEX.md");
+        string docsIndexText = File.ReadAllText(docsIndexPath);
+
+        StringAssert.Contains(statusScriptText, "route_proof_shape=");
+        StringAssert.Contains(statusScriptText, "execution_proof_tier=");
+        StringAssert.Contains(statusScriptText, "execution_route_lane=");
+        StringAssert.Contains(statusScriptText, "execution_promoted_route_base=");
+        StringAssert.Contains(statusScriptText, "execution_workflow_family_ids=");
+
+        StringAssert.Contains(releaseSignoffText, "hosted `chummer.run` route-entry posture exists and is published as `.codex-studio/published/BLAZOR_PUBLIC_EDGE_WORKBENCH_PROOF.generated.json`");
+        StringAssert.Contains(releaseSignoffText, "hosted `chummer.run` workflow execution is a stricter proof tier, published separately as `.codex-studio/published/BLAZOR_PUBLIC_EDGE_EXECUTION_PROOF.generated.json`");
+
+        StringAssert.Contains(docsIndexText, "docs/BLAZOR_PUBLIC_EDGE_WORKBENCH_PROOF.md");
+        StringAssert.Contains(docsIndexText, "docs/BLAZOR_PUBLIC_EDGE_EXECUTION_PROOF.md");
+        StringAssert.Contains(docsIndexText, ".codex-studio/published/BLAZOR_PUBLIC_EDGE_WORKBENCH_PROOF.generated.json");
+        StringAssert.Contains(docsIndexText, ".codex-studio/published/BLAZOR_PUBLIC_EDGE_EXECUTION_PROOF.generated.json");
+    }
+
+    [TestMethod]
+    public void Shared_public_edge_status_surface_keeps_route_and_execution_blocker_summary_fields()
+    {
+        string repoRoot = FindRepoRoot();
+        string statusScriptPath = Path.Combine(repoRoot, "scripts", "print_blazor_public_edge_proof_status.py");
+        string statusScriptText = File.ReadAllText(statusScriptPath);
+        string blockerMaterializerPath = Path.Combine(repoRoot, "scripts", "materialize-external-host-proof-blockers.py");
+        string blockerMaterializerText = File.ReadAllText(blockerMaterializerPath);
+
+        StringAssert.Contains(statusScriptText, "route_proof_receipt=");
+        StringAssert.Contains(statusScriptText, "route_proof_shape=");
+        StringAssert.Contains(statusScriptText, "route_proof_marker_ids=");
+        StringAssert.Contains(statusScriptText, "route_workflow_shape_ids=");
+        StringAssert.Contains(statusScriptText, "execution_proof_receipt=");
+        StringAssert.Contains(statusScriptText, "execution_workflow_family_ids=");
+        StringAssert.Contains(statusScriptText, "blocker_route_entry_shape=");
+        StringAssert.Contains(statusScriptText, "blocker_execution_summary=");
+
+        StringAssert.Contains(blockerMaterializerText, "payload[\"browser_route_entry_proof_shape\"] = classify_route_entry_proof_shape(route_payload)");
+        StringAssert.Contains(blockerMaterializerText, "payload[\"browser_execution_proof_status\"] = execution_receipt_status");
+        StringAssert.Contains(blockerMaterializerText, "payload[\"browser_execution_proof_contract\"] = execution_receipt_contract");
+    }
+
+    [TestMethod]
+    public void Hosted_public_edge_execution_tooling_paths_stay_wired_across_docs_and_downstream_capture_surfaces()
+    {
+        string repoRoot = FindRepoRoot();
+        string executionDocPath = Path.Combine(repoRoot, "docs", "BLAZOR_PUBLIC_EDGE_EXECUTION_PROOF.md");
+        string executionDocText = File.ReadAllText(executionDocPath);
+        string docsIndexPath = Path.Combine(repoRoot, "docs", "BLAZOR_WEB_CLIENT_DOCS_INDEX.md");
+        string docsIndexText = File.ReadAllText(docsIndexPath);
+        string uiGoldPath = Path.Combine(repoRoot, "scripts", "ai", "milestones", "ui-gold-proof-depth-gate.sh");
+        string uiGoldText = File.ReadAllText(uiGoldPath);
+        string verifyPath = Path.Combine(repoRoot, "scripts", "ai", "verify.sh");
+        string verifyText = File.ReadAllText(verifyPath);
+
+        StringAssert.Contains(executionDocText, "`scripts/e2e-public-edge-playwright.cjs`");
+        StringAssert.Contains(executionDocText, "`scripts/e2e-public-edge-execution.sh`");
+        StringAssert.Contains(executionDocText, "`scripts/verify_blazor_public_edge_execution_proof.py`");
+        StringAssert.Contains(executionDocText, "`scripts/ai/milestones/blazor-public-edge-execution-proof-check.sh`");
+        StringAssert.Contains(executionDocText, "`scripts/print_blazor_public_edge_proof_status.py`");
+
+        StringAssert.Contains(docsIndexText, "scripts/verify_blazor_public_edge_execution_proof.py");
+        StringAssert.Contains(docsIndexText, "scripts/ai/milestones/blazor-public-edge-execution-proof-check.sh");
+        StringAssert.Contains(docsIndexText, "scripts/print_blazor_public_edge_proof_status.py");
+
+        StringAssert.Contains(uiGoldText, "\"blazor_public_edge_execution_runner\": str(repo / \"scripts\" / \"e2e-public-edge-execution.sh\")");
+        StringAssert.Contains(uiGoldText, "\"blazor_public_edge_execution_status_summary\": str(repo / \"scripts\" / \"print_blazor_public_edge_proof_status.py\")");
+        StringAssert.Contains(uiGoldText, "\"blazor_public_edge_execution_verifier\": str(repo / \"scripts\" / \"verify_blazor_public_edge_execution_proof.py\")");
+
+        StringAssert.Contains(verifyText, "bash scripts/ai/milestones/blazor-public-edge-execution-proof-check.sh");
+    }
+
+    [TestMethod]
+    public void Hosted_public_edge_proof_wrapper_scripts_keep_direct_verifier_bindings()
+    {
+        string repoRoot = FindRepoRoot();
+        string routeWrapperPath = Path.Combine(repoRoot, "scripts", "ai", "milestones", "blazor-public-edge-workbench-proof-check.sh");
+        string routeWrapperText = File.ReadAllText(routeWrapperPath);
+        string executionWrapperPath = Path.Combine(repoRoot, "scripts", "ai", "milestones", "blazor-public-edge-execution-proof-check.sh");
+        string executionWrapperText = File.ReadAllText(executionWrapperPath);
+        string routeDocPath = Path.Combine(repoRoot, "docs", "BLAZOR_PUBLIC_EDGE_WORKBENCH_PROOF.md");
+        string routeDocText = File.ReadAllText(routeDocPath);
+        string executionDocPath = Path.Combine(repoRoot, "docs", "BLAZOR_PUBLIC_EDGE_EXECUTION_PROOF.md");
+        string executionDocText = File.ReadAllText(executionDocPath);
+
+        StringAssert.Contains(routeWrapperText, "python3 \"$repo_root/scripts/verify_blazor_public_edge_workbench_proof.py\"");
+        StringAssert.Contains(executionWrapperText, "python3 \"$repo_root/scripts/verify_blazor_public_edge_execution_proof.py\"");
+
+        StringAssert.Contains(routeDocText, "`scripts/ai/milestones/blazor-public-edge-workbench-proof-check.sh`");
+        StringAssert.Contains(routeDocText, "`scripts/verify_blazor_public_edge_workbench_proof.py`");
+        StringAssert.Contains(executionDocText, "`scripts/ai/milestones/blazor-public-edge-execution-proof-check.sh`");
+        StringAssert.Contains(executionDocText, "`scripts/verify_blazor_public_edge_execution_proof.py`");
+    }
+
+    [TestMethod]
+    public void Hosted_public_edge_execution_required_workflow_family_inventory_stays_aligned_across_placeholder_verifier_and_downstream_consumers()
+    {
+        string repoRoot = FindRepoRoot();
+        string verifierPath = Path.Combine(repoRoot, "scripts", "verify_blazor_public_edge_execution_proof.py");
+        string verifierText = File.ReadAllText(verifierPath);
+        string placeholderPath = Path.Combine(repoRoot, ".codex-studio", "published", "BLAZOR_PUBLIC_EDGE_EXECUTION_PROOF.generated.json");
+        string placeholderText = File.ReadAllText(placeholderPath);
+        string uiGoldPath = Path.Combine(repoRoot, "scripts", "ai", "milestones", "ui-gold-proof-depth-gate.sh");
+        string uiGoldText = File.ReadAllText(uiGoldPath);
+
+        StringAssert.Contains(verifierText, "\"promoted_startup_command_executions\"");
+        StringAssert.Contains(verifierText, "\"promoted_resumed_workspace\"");
+        StringAssert.Contains(verifierText, "\"promoted_recent_work_affordances\"");
+        StringAssert.Contains(verifierText, "\"promoted_restored_section_continuations\"");
+        StringAssert.Contains(verifierText, "\"promoted_restored_tab_landings\"");
+        StringAssert.Contains(verifierText, "\"promoted_restored_section_content\"");
+        StringAssert.Contains(verifierText, "\"promoted_result_continuations\"");
+        StringAssert.Contains(verifierText, "\"promoted_action_continuations\"");
+        StringAssert.Contains(verifierText, "\"promoted_advanced_action_affordances\"");
+        StringAssert.Contains(verifierText, "\"promoted_advanced_action_executions\"");
+        StringAssert.Contains(verifierText, "\"promoted_committed_actions\"");
+        StringAssert.Contains(verifierText, "\"promoted_advanced_committed_actions\"");
+
+        StringAssert.Contains(placeholderText, "\"promoted_startup_command_executions\"");
+        StringAssert.Contains(placeholderText, "\"promoted_resumed_workspace\"");
+        StringAssert.Contains(placeholderText, "\"promoted_recent_work_affordances\"");
+        StringAssert.Contains(placeholderText, "\"promoted_restored_section_continuations\"");
+        StringAssert.Contains(placeholderText, "\"promoted_restored_tab_landings\"");
+        StringAssert.Contains(placeholderText, "\"promoted_restored_section_content\"");
+        StringAssert.Contains(placeholderText, "\"promoted_result_continuations\"");
+        StringAssert.Contains(placeholderText, "\"promoted_action_continuations\"");
+        StringAssert.Contains(placeholderText, "\"promoted_advanced_action_affordances\"");
+        StringAssert.Contains(placeholderText, "\"promoted_advanced_action_executions\"");
+        StringAssert.Contains(placeholderText, "\"promoted_committed_actions\"");
+        StringAssert.Contains(placeholderText, "\"promoted_advanced_committed_actions\"");
+
+        StringAssert.Contains(uiGoldText, "\"promoted_startup_command_executions\"");
+        StringAssert.Contains(uiGoldText, "\"promoted_resumed_workspace\"");
+        StringAssert.Contains(uiGoldText, "\"promoted_recent_work_affordances\"");
+        StringAssert.Contains(uiGoldText, "\"promoted_restored_section_continuations\"");
+        StringAssert.Contains(uiGoldText, "\"promoted_restored_tab_landings\"");
+        StringAssert.Contains(uiGoldText, "\"promoted_restored_section_content\"");
+        StringAssert.Contains(uiGoldText, "\"promoted_result_continuations\"");
+        StringAssert.Contains(uiGoldText, "\"promoted_action_continuations\"");
+        StringAssert.Contains(uiGoldText, "\"promoted_advanced_action_affordances\"");
+        StringAssert.Contains(uiGoldText, "\"promoted_advanced_action_executions\"");
+        StringAssert.Contains(uiGoldText, "\"promoted_committed_actions\"");
+        StringAssert.Contains(uiGoldText, "\"promoted_advanced_committed_actions\"");
+    }
+
+    [TestMethod]
+    public void Published_hosted_public_edge_route_and_execution_receipts_stay_explicitly_separate()
+    {
+        string repoRoot = FindRepoRoot();
+        string routeReceiptPath = Path.Combine(repoRoot, ".codex-studio", "published", "BLAZOR_PUBLIC_EDGE_WORKBENCH_PROOF.generated.json");
+        string routeReceiptText = File.ReadAllText(routeReceiptPath);
+        string executionReceiptPath = Path.Combine(repoRoot, ".codex-studio", "published", "BLAZOR_PUBLIC_EDGE_EXECUTION_PROOF.generated.json");
+        string executionReceiptText = File.ReadAllText(executionReceiptPath);
+        string executionDocPath = Path.Combine(repoRoot, "docs", "BLAZOR_PUBLIC_EDGE_EXECUTION_PROOF.md");
+        string executionDocText = File.ReadAllText(executionDocPath);
+        string releaseSignoffPath = Path.Combine(repoRoot, "docs", "WORKBENCH_RELEASE_SIGNOFF.md");
+        string releaseSignoffText = File.ReadAllText(releaseSignoffPath);
+
+        StringAssert.Contains(routeReceiptText, "\"contract_name\": \"chummer6-ui.blazor_public_edge_workbench_proof\"");
+        Assert.IsFalse(routeReceiptText.Contains("\"contract_name\": \"chummer6-ui.blazor_public_edge_execution_proof\"", StringComparison.Ordinal));
+        StringAssert.Contains(executionReceiptText, "\"contract_name\": \"chummer6-ui.blazor_public_edge_execution_proof\"");
+        Assert.IsFalse(executionReceiptText.Contains("\"contract_name\": \"chummer6-ui.blazor_public_edge_workbench_proof\"", StringComparison.Ordinal));
+        StringAssert.Contains(executionReceiptText, "\"status\": \"not_run\"");
+
+        StringAssert.Contains(executionDocText, "Route-entry proof lives in BLAZOR_PUBLIC_EDGE_WORKBENCH_PROOF.generated.json and is not equivalent to this execution-proof receipt.");
+        StringAssert.Contains(releaseSignoffText, "hosted `chummer.run` route-entry posture exists and is published as `.codex-studio/published/BLAZOR_PUBLIC_EDGE_WORKBENCH_PROOF.generated.json`");
+        StringAssert.Contains(releaseSignoffText, "hosted `chummer.run` workflow execution is a stricter proof tier, published separately as `.codex-studio/published/BLAZOR_PUBLIC_EDGE_EXECUTION_PROOF.generated.json`");
+    }
+
+    [TestMethod]
+    public void Browser_client_top_level_docs_keep_route_entry_and_execution_proof_contracts_visible()
+    {
+        string repoRoot = FindRepoRoot();
+        string docsIndexPath = Path.Combine(repoRoot, "docs", "BLAZOR_WEB_CLIENT_DOCS_INDEX.md");
+        string docsIndexText = File.ReadAllText(docsIndexPath);
+        string parityGoalPath = Path.Combine(repoRoot, "docs", "BLAZOR_WEB_CLIENT_PARITY_GOAL.md");
+        string parityGoalText = File.ReadAllText(parityGoalPath);
+        string selfHostRunbookPath = Path.Combine(repoRoot, "docs", "BLAZOR_SELF_HOST_RUNBOOK.md");
+        string selfHostRunbookText = File.ReadAllText(selfHostRunbookPath);
+
+        StringAssert.Contains(docsIndexText, "docs/BLAZOR_PUBLIC_EDGE_WORKBENCH_PROOF.md");
+        StringAssert.Contains(docsIndexText, "docs/BLAZOR_PUBLIC_EDGE_EXECUTION_PROOF.md");
+        StringAssert.Contains(docsIndexText, ".codex-studio/published/BLAZOR_PUBLIC_EDGE_WORKBENCH_PROOF.generated.json");
+        StringAssert.Contains(docsIndexText, ".codex-studio/published/BLAZOR_PUBLIC_EDGE_EXECUTION_PROOF.generated.json");
+
+        StringAssert.Contains(parityGoalText, "docs/BLAZOR_PUBLIC_EDGE_WORKBENCH_PROOF.md");
+        StringAssert.Contains(parityGoalText, "docs/BLAZOR_PUBLIC_EDGE_EXECUTION_PROOF.md");
+        StringAssert.Contains(parityGoalText, "The current hosted route-entry proof target for the public edge is defined in `docs/BLAZOR_PUBLIC_EDGE_WORKBENCH_PROOF.md`.");
+        StringAssert.Contains(parityGoalText, "The current hosted execution-proof target for the public edge is defined in `docs/BLAZOR_PUBLIC_EDGE_EXECUTION_PROOF.md`.");
+
+        StringAssert.Contains(selfHostRunbookText, "docs/BLAZOR_PUBLIC_EDGE_EXECUTION_PROOF.md");
+        StringAssert.Contains(selfHostRunbookText, "Use [BLAZOR_WEB_CLIENT_DOCS_INDEX.md]");
+    }
+
+    [TestMethod]
+    public void Browser_lane_release_docs_keep_self_host_route_entry_and_execution_proof_tiers_separate()
+    {
+        string repoRoot = FindRepoRoot();
+        string releaseSignoffPath = Path.Combine(repoRoot, "docs", "WORKBENCH_RELEASE_SIGNOFF.md");
+        string releaseSignoffText = File.ReadAllText(releaseSignoffPath);
+        string parityGoalPath = Path.Combine(repoRoot, "docs", "BLAZOR_WEB_CLIENT_PARITY_GOAL.md");
+        string parityGoalText = File.ReadAllText(parityGoalPath);
+
+        StringAssert.Contains(releaseSignoffText, ".codex-studio/published/BLAZOR_SELF_HOST_WORKBENCH_PROOF.generated.json");
+        StringAssert.Contains(releaseSignoffText, ".codex-studio/published/BLAZOR_PUBLIC_EDGE_WORKBENCH_PROOF.generated.json");
+        StringAssert.Contains(releaseSignoffText, ".codex-studio/published/BLAZOR_PUBLIC_EDGE_EXECUTION_PROOF.generated.json");
+        StringAssert.Contains(releaseSignoffText, "Release truth for the browser lane therefore splits into three separate statements:");
+        StringAssert.Contains(releaseSignoffText, "Until the hosted execution tier passes");
+
+        StringAssert.Contains(parityGoalText, "public hosted and Docker self-hosted lanes have separate proof so local success is not mistaken for `chummer.run` readiness");
+        StringAssert.Contains(parityGoalText, "a separate hosted execution-proof lane for `chummer.run` browser workflows, not only hosted route-entry posture");
+        StringAssert.Contains(parityGoalText, "separate self-host receipt proof for portal-backed `/blazor/workbench` and `/blazor/preview` routes under Docker");
+        StringAssert.Contains(parityGoalText, "separate hosted route-entry proof for the `https://chummer.run/blazor/` public edge");
+        StringAssert.Contains(parityGoalText, "a dedicated hosted execution-proof contract, runner scaffold, verifier, and published placeholder receipt");
     }
 
     [TestMethod]

@@ -23,7 +23,7 @@ public sealed class ApiSmokeScriptComplianceTests
         StringAssert.Contains(scriptText, "/api/workspaces");
         StringAssert.Contains(scriptText, "/auth/google/start?next=");
         StringAssert.Contains(scriptText, "redirect_uri=https%3A%2F%2Fchummer.run%2Fauth%2Fgoogle%2Fcallback");
-        StringAssert.DoesNotContain(scriptText, "/api/content/overlays");
+        Assert.IsFalse(scriptText.Contains("/api/content/overlays", StringComparison.Ordinal));
         StringAssert.Contains(scriptText, "public handoff and unauthenticated protections are green");
     }
 
@@ -45,9 +45,9 @@ public sealed class ApiSmokeScriptComplianceTests
         StringAssert.Contains(scriptText, "/api/workspaces/$workspace_id/print");
         StringAssert.Contains(scriptText, "/api/workspaces/$workspace_id");
         StringAssert.Contains(scriptText, "workspace live E2E completed");
-        StringAssert.DoesNotContain(scriptText, "/api/characters/summary");
-        StringAssert.DoesNotContain(scriptText, "/api/content/overlays");
-        StringAssert.DoesNotContain(scriptText, "/api/lifemodules/stages");
+        Assert.IsFalse(scriptText.Contains("/api/characters/summary", StringComparison.Ordinal));
+        Assert.IsFalse(scriptText.Contains("/api/content/overlays", StringComparison.Ordinal));
+        Assert.IsFalse(scriptText.Contains("/api/lifemodules/stages", StringComparison.Ordinal));
     }
 
     private static string FindRepoRoot()
