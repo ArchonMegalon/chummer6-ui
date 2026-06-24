@@ -267,9 +267,27 @@ const checks = [
       && hasBlazorBaseHref(text)
   },
   {
+    url: `${baseUrl}/blazor/workbench?workspace=ws-1&command=save_character`,
+    assert: (text, response) =>
+      /\/blazor\/workbench\?workspace=ws-1&command=save_character$/.test(response.url)
+      && hasBlazorBaseHref(text)
+  },
+  {
     url: `${baseUrl}/blazor/workbench?workspace=ws-1&command=save_character_as`,
     assert: (text, response) =>
       /\/blazor\/workbench\?workspace=ws-1&command=save_character_as$/.test(response.url)
+      && hasBlazorBaseHref(text)
+  },
+  {
+    url: `${baseUrl}/blazor/workbench?workspace=ws-1&command=save_character_as&dialog_action=download`,
+    assert: (text, response) =>
+      /\/blazor\/workbench\?workspace=ws-1&command=save_character_as&dialog_action=download$/.test(response.url)
+      && hasBlazorBaseHref(text)
+  },
+  {
+    url: `${baseUrl}/blazor/workbench?workspace=ws-1&command=export_character`,
+    assert: (text, response) =>
+      /\/blazor\/workbench\?workspace=ws-1&command=export_character$/.test(response.url)
       && hasBlazorBaseHref(text)
   },
   {

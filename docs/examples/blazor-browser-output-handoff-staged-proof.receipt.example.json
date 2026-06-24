@@ -1,0 +1,30 @@
+{
+  "contract_name": "chummer6-ui.blazor_browser_output_handoff_staged_proof",
+  "generated_at": "2026-06-24T00:00:00+00:00",
+  "status": "passed",
+  "proof_tier": "source_staged_no_browser_execution",
+  "route_lane": "promoted_blazor_workbench",
+  "expected_routes": [
+    "/blazor/workbench?workspace=ws-1&command=save_character",
+    "/blazor/workbench?workspace=ws-1&command=save_character_as",
+    "/blazor/workbench?workspace=ws-1&command=save_character_as&dialog_action=download",
+    "/blazor/workbench?workspace=ws-1&command=export_character",
+    "/blazor/workbench?workspace=ws-1&command=export_character&dialog_action=download",
+    "/blazor/workbench?workspace=ws-1&command=print_character"
+  ],
+  "checks": [
+    {
+      "id": "product_workbench_affordances",
+      "path": "Chummer.Blazor/Components/Pages/Preview.razor",
+      "status": "passed",
+      "required_token_count": 6,
+      "missing_tokens": []
+    }
+  ],
+  "failures": [],
+  "notes": [
+    "This receipt only proves that source, runner, metadata, and documentation staging agree.",
+    "It is not a substitute for hosted Playwright execution proof or Docker self-host proof.",
+    "Do not use this receipt to claim save, save-as, export, print, or download parity on chummer.run."
+  ]
+}

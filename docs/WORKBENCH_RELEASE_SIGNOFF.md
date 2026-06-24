@@ -81,6 +81,10 @@ The next staged browser-family slice after gear maintenance is source/gear utili
 
 The next staged browser-family slice after source/gear utilities is magic cleanup utility posture across restored magician and gear lanes. `scripts/ai/milestones/blazor-magic-cleanup-staged-proof-check.sh` is its source-alignment check. It proves only that magic add, spirit binding, magic source, and drug-removal routes are wired across product affordances, hosted/self-host route shapes, status utility, and docs; it is not a hosted or Docker browser execution receipt.
 
+The next staged browser-family slice after magic cleanup is browser output handoff posture across restored save, save-as, export, print, and download routes. `scripts/ai/milestones/blazor-browser-output-handoff-staged-proof-check.sh` is its source-alignment check. It proves only that browser output routes are wired across restored workbench affordances, hosted/self-host route shapes, status utility, and docs; it is not a hosted or Docker browser execution receipt.
+
+The next staged browser-family slice after browser output handoff is workbench portal handoff posture for downloads, status, support, and account work. `scripts/ai/milestones/blazor-workbench-portal-handoff-staged-proof-check.sh` is its source-alignment check. It proves only that the promoted workbench exposes same-origin portal handoff affordances and route expectations; it is not a hosted or Docker browser execution receipt.
+
 `/scripts/ai/milestones/blazor-legacy-control-coverage-staged-proof-check.sh` is the source-level breadth guard over all known `LegacyUiControlCatalog` controls. It maps controls into hosted execution baseline coverage or staged source-alignment families; it is not a hosted or Docker browser execution receipt.
 
 `scripts/ai/milestones/blazor-source-staged-proof-set-check.sh` is the aggregate source-staged proof-set lane. It materializes the staged source receipts and summarizes their status, but it must stay outside release-readiness aggregation because it is not hosted or Docker browser execution evidence.
@@ -144,6 +148,10 @@ The remaining UI debt is no longer missing shared-shell workbench capability or 
 
 `docs/BLAZOR_RUNTIME_PROOF_REFRESH_PLAN.md` defines the ordered runtime proof refresh path for promoting source-staged Blazor work into real Docker and hosted browser receipts. `scripts/ai/milestones/blazor-runtime-proof-refresh-plan-check.sh` verifies the plan and command sources exist, but does not execute runtime proof.
 
+`scripts/print_blazor_public_edge_proof_status.py` reports that plan as `runtime_proof_refresh_plan_*` source-plan evidence only. `docs/examples/blazor-runtime-proof-refresh-plan.receipt.example.json` shows the expected compact receipt shape.
+
 ### Staged-to-Runtime Promotion Matrix
 
 `docs/BLAZOR_STAGED_TO_RUNTIME_PROMOTION_MATRIX.md` maps each staged Blazor workflow family to the runtime receipts that must eventually prove it. `scripts/ai/milestones/blazor-staged-to-runtime-promotion-matrix-check.sh` verifies the matrix and hosted runner family IDs exist, but it does not execute runtime proof.
+
+`scripts/print_blazor_public_edge_proof_status.py` reports that matrix as `staged_to_runtime_promotion_matrix_*` source-plan evidence only. `docs/examples/blazor-staged-to-runtime-promotion-matrix.receipt.example.json` shows the expected compact receipt shape.

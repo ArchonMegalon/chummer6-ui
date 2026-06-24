@@ -33,6 +33,7 @@ The browser-lane aggregate may only be refreshed after the runtime receipts are 
 | `gear_maintenance` | `BLAZOR_GEAR_MAINTENANCE_STAGED_PROOF.generated.json` | `promoted_gear_maintenance_execution` | `/blazor/workbench` |
 | `source_gear_utility` | `BLAZOR_SOURCE_GEAR_UTILITY_STAGED_PROOF.generated.json` | `promoted_source_gear_utility_execution` | `/blazor/workbench` |
 | `magic_cleanup` | `BLAZOR_MAGIC_CLEANUP_STAGED_PROOF.generated.json` | `promoted_magic_cleanup_utility_execution` | `/blazor/workbench` |
+| `browser_output_handoff` | `BLAZOR_BROWSER_OUTPUT_HANDOFF_STAGED_PROOF.generated.json` | `promoted_result_continuations` | `/blazor/workbench` |
 
 ## Non-Promoting Source Guards
 
@@ -53,3 +54,11 @@ Do not describe a staged family as browser-proven until:
 - the hosted execution receipt includes the hosted workflow family, and
 - the Docker self-host receipt includes the matching route/workflow coverage, and
 - the aggregate browser-lane receipt is refreshed after those runtime receipts.
+
+## Status Summary
+
+`scripts/print_blazor_public_edge_proof_status.py` reports this matrix as `staged_to_runtime_promotion_matrix_*` when `.codex-studio/published/BLAZOR_STAGED_TO_RUNTIME_PROMOTION_MATRIX.generated.json` exists.
+
+That status output is still source-plan evidence only. It must not be read as Docker self-host proof, hosted public-edge execution proof, or browser-lane release readiness.
+
+Example receipt shape: `docs/examples/blazor-staged-to-runtime-promotion-matrix.receipt.example.json`.

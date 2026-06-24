@@ -34,6 +34,8 @@ The aggregate currently covers:
 - `gear_maintenance`
 - `source_gear_utility`
 - `magic_cleanup`
+- `browser_output_handoff`
+- `workbench_portal_handoff`
 - `legacy_control_coverage`
 
 Each family must keep `proof_tier` set to:

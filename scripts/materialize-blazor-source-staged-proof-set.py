@@ -58,6 +58,16 @@ REQUIRED_RECEIPTS = [
         "contract_name": "chummer6-ui.blazor_magic_cleanup_staged_proof",
     },
     {
+        "id": "browser_output_handoff",
+        "path": PUBLISHED / "BLAZOR_BROWSER_OUTPUT_HANDOFF_STAGED_PROOF.generated.json",
+        "contract_name": "chummer6-ui.blazor_browser_output_handoff_staged_proof",
+    },
+    {
+        "id": "workbench_portal_handoff",
+        "path": PUBLISHED / "BLAZOR_WORKBENCH_PORTAL_HANDOFF_STAGED_PROOF.generated.json",
+        "contract_name": "chummer6-ui.blazor_workbench_portal_handoff_staged_proof",
+    },
+    {
         "id": "legacy_control_coverage",
         "path": PUBLISHED / "BLAZOR_LEGACY_CONTROL_COVERAGE_STAGED_PROOF.generated.json",
         "contract_name": "chummer6-ui.blazor_legacy_control_coverage_staged_proof",

@@ -1,0 +1,29 @@
+{
+  "contract_name": "chummer6-ui.blazor_workbench_portal_handoff_staged_proof",
+  "generated_at": "2026-06-24T00:00:00+00:00",
+  "status": "passed",
+  "proof_tier": "source_staged_no_browser_execution",
+  "route_lane": "portal_backed_blazor_workbench_handoff",
+  "expected_routes": [
+    "/downloads/",
+    "/status",
+    "/contact",
+    "/account/work",
+    "/blazor/workbench"
+  ],
+  "checks": [
+    {
+      "id": "product_workbench_affordances",
+      "path": "Chummer.Blazor/Components/Pages/Preview.razor",
+      "status": "passed",
+      "required_token_count": 9,
+      "missing_tokens": []
+    }
+  ],
+  "failures": [],
+  "notes": [
+    "This receipt only proves that source, route-probe, and documentation staging agree.",
+    "It is not a substitute for hosted Playwright execution proof or Docker self-host proof.",
+    "Do not use this receipt to claim account, support, installer, or portal route runtime behavior."
+  ]
+}

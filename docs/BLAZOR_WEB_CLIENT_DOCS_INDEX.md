@@ -100,6 +100,10 @@ Current docs already define the intended shipped posture and the evidence contra
 
 - `docs/BLAZOR_SOURCE_STAGED_PROOF_RUNBOOK.md` documents the source-staged Blazor proof-set refresh path. This lane is source-alignment only and must remain separate from hosted execution proof, Docker self-host proof, and release-readiness aggregation.
 - `docs/examples/blazor-source-staged-proof-set.receipt.example.json` shows the aggregate receipt shape for `BLAZOR_SOURCE_STAGED_PROOF_SET.generated.json`.
+- `docs/BLAZOR_BROWSER_OUTPUT_HANDOFF_STAGED_PROOF.md` defines the source-staged browser save, save-as, export, print, and download handoff contract. It is not runtime proof.
+- `docs/examples/blazor-browser-output-handoff-staged-proof.receipt.example.json` shows the compact generated receipt shape for `BLAZOR_BROWSER_OUTPUT_HANDOFF_STAGED_PROOF.generated.json`.
+- `docs/BLAZOR_WORKBENCH_PORTAL_HANDOFF_STAGED_PROOF.md` defines the source-staged workbench downloads/status/support/account handoff contract. It is not runtime proof.
+- `docs/examples/blazor-workbench-portal-handoff-staged-proof.receipt.example.json` shows the compact generated receipt shape for `BLAZOR_WORKBENCH_PORTAL_HANDOFF_STAGED_PROOF.generated.json`.
 
 ## Portal Installer Handoff
 
@@ -116,7 +120,11 @@ Current docs already define the intended shipped posture and the evidence contra
 ## Runtime Proof Refresh Plan
 
 - `docs/BLAZOR_RUNTIME_PROOF_REFRESH_PLAN.md` defines the ordered runtime proof refresh path from source-staged Blazor work to Docker self-host proof, hosted route-entry proof, hosted execution proof, and browser-lane aggregate proof. It is a plan, not runtime proof.
+- `scripts/print_blazor_public_edge_proof_status.py` reports the runtime proof refresh plan separately as source-plan evidence only.
+- `docs/examples/blazor-runtime-proof-refresh-plan.receipt.example.json` shows the compact generated receipt shape for `BLAZOR_RUNTIME_PROOF_REFRESH_PLAN.generated.json`.
 
 ## Staged-to-Runtime Promotion Matrix
 
 - `docs/BLAZOR_STAGED_TO_RUNTIME_PROMOTION_MATRIX.md` maps source-staged browser workflow families to the Docker and hosted runtime receipts required before they can be promoted from staged breadth to browser-proven parity.
+- `scripts/print_blazor_public_edge_proof_status.py` reports the staged-to-runtime promotion matrix separately as source-plan evidence only.
+- `docs/examples/blazor-staged-to-runtime-promotion-matrix.receipt.example.json` shows the compact generated receipt shape for `BLAZOR_STAGED_TO_RUNTIME_PROMOTION_MATRIX.generated.json`.

@@ -128,6 +128,33 @@
             </article>
         </section>
 
+        <section class="browser-preview-status-grid" aria-label="Workbench portal handoff">
+            <article class="browser-preview-status-card" data-workbench-entry-card="portal-downloads">
+                <span class="browser-preview-status-label">Portal handoff</span>
+                <strong>Open desktop downloads</strong>
+                <p>Use the same portal origin to get native installers when a browser workflow needs desktop file-system integration.</p>
+                <a href="/downloads/">Open downloads</a>
+            </article>
+            <article class="browser-preview-status-card" data-workbench-entry-card="portal-status">
+                <span class="browser-preview-status-label">Release truth</span>
+                <strong>Check current release status</strong>
+                <p>Confirm the current hosted and installer posture before updating, reporting a problem, or switching clients.</p>
+                <a href="/status">Open status</a>
+            </article>
+            <article class="browser-preview-status-card" data-workbench-entry-card="portal-support">
+                <span class="browser-preview-status-label">Support</span>
+                <strong>Open product support</strong>
+                <p>Route browser-client issues through the portal support surface without breaking the workbench product shape.</p>
+                <a href="/contact">Open support</a>
+            </article>
+            <article class="browser-preview-status-card" data-workbench-entry-card="portal-account-work">
+                <span class="browser-preview-status-label">Account</span>
+                <strong>Continue account work</strong>
+                <p>Use authenticated account/work routes when public-edge owner context is required, while self-host keeps implicit owner posture separate.</p>
+                <a href="/account/work">Open account work</a>
+            </article>
+        </section>
+
         @if (RecentWorkspaceIds.Count > 0)
         {
             <section class="browser-preview-status-grid" aria-label="Workbench recent work">
@@ -173,6 +200,12 @@
                         <a href="@BuildPreviewHref(workspace: PrimaryRecentWorkspace.WorkspaceId, tab: "tab-calendar", control: "delete_entry", useWorkbenchRoute: true)">Remove career entry for @PrimaryRecentWorkspace.ShortLabel</a>
                         <a href="@BuildPreviewHref(workspace: PrimaryRecentWorkspace.WorkspaceId, tab: "tab-info", control: "open_notes", dialogAction: "save", useWorkbenchRoute: true)">Save runner notes for @PrimaryRecentWorkspace.ShortLabel</a>
                         <a href="@BuildPreviewHref(workspace: PrimaryRecentWorkspace.WorkspaceId, tab: "tab-info", control: "open_notes", useWorkbenchRoute: true)">Edit runner notes for @PrimaryRecentWorkspace.ShortLabel</a>
+                        <a href="@BuildPreviewHref(workspace: PrimaryRecentWorkspace.WorkspaceId, command: "save_character", useWorkbenchRoute: true)">Save @PrimaryRecentWorkspace.ShortLabel in browser</a>
+                        <a href="@BuildPreviewHref(workspace: PrimaryRecentWorkspace.WorkspaceId, command: "save_character_as", useWorkbenchRoute: true)">Prepare @PrimaryRecentWorkspace.ShortLabel browser download</a>
+                        <a href="@BuildPreviewHref(workspace: PrimaryRecentWorkspace.WorkspaceId, command: "save_character_as", dialogAction: "download", useWorkbenchRoute: true)">Download @PrimaryRecentWorkspace.ShortLabel from browser</a>
+                        <a href="@BuildPreviewHref(workspace: PrimaryRecentWorkspace.WorkspaceId, command: "export_character", useWorkbenchRoute: true)">Prepare @PrimaryRecentWorkspace.ShortLabel export package</a>
+                        <a href="@BuildPreviewHref(workspace: PrimaryRecentWorkspace.WorkspaceId, command: "export_character", dialogAction: "download", useWorkbenchRoute: true)">Download @PrimaryRecentWorkspace.ShortLabel export package</a>
+                        <a href="@BuildPreviewHref(workspace: PrimaryRecentWorkspace.WorkspaceId, command: "print_character", useWorkbenchRoute: true)">Prepare @PrimaryRecentWorkspace.ShortLabel print preview</a>
                         <a href="@BuildPreviewHref(workspace: PrimaryRecentWorkspace.WorkspaceId, tab: "tab-info", control: "identity_license_add", useWorkbenchRoute: true)">Add SIN/license for @PrimaryRecentWorkspace.ShortLabel</a>
                         <a href="@BuildPreviewHref(workspace: PrimaryRecentWorkspace.WorkspaceId, tab: "tab-info", control: "identity_license_edit", useWorkbenchRoute: true)">Edit SIN/license for @PrimaryRecentWorkspace.ShortLabel</a>
                         <a href="@BuildPreviewHref(workspace: PrimaryRecentWorkspace.WorkspaceId, tab: "tab-info", control: "identity_license_delete", useWorkbenchRoute: true)">Remove SIN/license for @PrimaryRecentWorkspace.ShortLabel</a>

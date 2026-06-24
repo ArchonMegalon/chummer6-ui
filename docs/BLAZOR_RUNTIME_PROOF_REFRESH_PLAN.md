@@ -126,3 +126,7 @@ python3 scripts/print_blazor_public_edge_proof_status.py
 ```
 
 The summary should show source-staged lanes separately from Docker, hosted route-entry, hosted execution, connected-runtime, analytics, and aggregate browser-lane proof.
+
+`scripts/print_blazor_public_edge_proof_status.py` also reports this plan as `runtime_proof_refresh_plan_*` when `.codex-studio/published/BLAZOR_RUNTIME_PROOF_REFRESH_PLAN.generated.json` exists. Those lines are source-plan visibility only and do not replace the Docker, hosted, or aggregate browser receipts.
+
+Example receipt shape: `docs/examples/blazor-runtime-proof-refresh-plan.receipt.example.json`.

@@ -22,11 +22,15 @@ MAGIC_SUPPORT_STAGED_PROOF = PUBLISHED / "BLAZOR_MAGIC_SUPPORT_STAGED_PROOF.gene
 GEAR_MAINTENANCE_STAGED_PROOF = PUBLISHED / "BLAZOR_GEAR_MAINTENANCE_STAGED_PROOF.generated.json"
 SOURCE_GEAR_UTILITY_STAGED_PROOF = PUBLISHED / "BLAZOR_SOURCE_GEAR_UTILITY_STAGED_PROOF.generated.json"
 MAGIC_CLEANUP_STAGED_PROOF = PUBLISHED / "BLAZOR_MAGIC_CLEANUP_STAGED_PROOF.generated.json"
+BROWSER_OUTPUT_HANDOFF_STAGED_PROOF = PUBLISHED / "BLAZOR_BROWSER_OUTPUT_HANDOFF_STAGED_PROOF.generated.json"
+WORKBENCH_PORTAL_HANDOFF_STAGED_PROOF = PUBLISHED / "BLAZOR_WORKBENCH_PORTAL_HANDOFF_STAGED_PROOF.generated.json"
 LEGACY_CONTROL_COVERAGE_STAGED_PROOF = PUBLISHED / "BLAZOR_LEGACY_CONTROL_COVERAGE_STAGED_PROOF.generated.json"
 SOURCE_STAGED_PROOF_SET = PUBLISHED / "BLAZOR_SOURCE_STAGED_PROOF_SET.generated.json"
 PORTAL_INSTALLER_HANDOFF_STAGED_PROOF = PUBLISHED / "BLAZOR_PORTAL_INSTALLER_HANDOFF_STAGED_PROOF.generated.json"
 DOCKER_SELF_HOST_OPERATOR_STAGED_PROOF = PUBLISHED / "BLAZOR_DOCKER_SELF_HOST_OPERATOR_STAGED_PROOF.generated.json"
 ACCOUNT_SUPPORT_HANDOFF_STAGED_PROOF = PUBLISHED / "BLAZOR_ACCOUNT_SUPPORT_HANDOFF_STAGED_PROOF.generated.json"
+RUNTIME_PROOF_REFRESH_PLAN = PUBLISHED / "BLAZOR_RUNTIME_PROOF_REFRESH_PLAN.generated.json"
+STAGED_TO_RUNTIME_PROMOTION_MATRIX = PUBLISHED / "BLAZOR_STAGED_TO_RUNTIME_PROMOTION_MATRIX.generated.json"
 BLOCKERS = PUBLISHED / "UI_EXTERNAL_HOST_PROOF_BLOCKERS.generated.json"
 EXPANDED_ROUTE_PROOF_MARKERS = {
     "public_startup_workbench_command_routes",
@@ -91,11 +95,15 @@ def main() -> int:
     gear_maintenance_staged = load_json(GEAR_MAINTENANCE_STAGED_PROOF)
     source_gear_utility_staged = load_json(SOURCE_GEAR_UTILITY_STAGED_PROOF)
     magic_cleanup_staged = load_json(MAGIC_CLEANUP_STAGED_PROOF)
+    browser_output_handoff_staged = load_json(BROWSER_OUTPUT_HANDOFF_STAGED_PROOF)
+    workbench_portal_handoff_staged = load_json(WORKBENCH_PORTAL_HANDOFF_STAGED_PROOF)
     legacy_control_coverage_staged = load_json(LEGACY_CONTROL_COVERAGE_STAGED_PROOF)
     source_staged_proof_set = load_json(SOURCE_STAGED_PROOF_SET)
     portal_installer_handoff_staged = load_json(PORTAL_INSTALLER_HANDOFF_STAGED_PROOF)
     docker_self_host_operator_staged = load_json(DOCKER_SELF_HOST_OPERATOR_STAGED_PROOF)
     account_support_handoff_staged = load_json(ACCOUNT_SUPPORT_HANDOFF_STAGED_PROOF)
+    runtime_proof_refresh_plan = load_json(RUNTIME_PROOF_REFRESH_PLAN)
+    staged_to_runtime_promotion_matrix = load_json(STAGED_TO_RUNTIME_PROMOTION_MATRIX)
     blockers = load_json(BLOCKERS)
 
     print("Blazor public-edge proof status")
@@ -249,6 +257,26 @@ def main() -> int:
         "magic_cleanup_staged_note="
         "source_alignment_only_not_browser_execution"
     )
+    print(f"browser_output_handoff_staged_receipt={BROWSER_OUTPUT_HANDOFF_STAGED_PROOF}")
+    print(f"browser_output_handoff_staged_status={str(browser_output_handoff_staged.get('status') or '').strip() or 'not_generated'}")
+    print(f"browser_output_handoff_staged_contract={str(browser_output_handoff_staged.get('contract_name') or '').strip() or 'missing'}")
+    print(f"browser_output_handoff_staged_tier={str(browser_output_handoff_staged.get('proof_tier') or '').strip() or 'missing'}")
+    print(f"browser_output_handoff_staged_route_count={len(browser_output_handoff_staged.get('expected_routes') or [])}")
+    print(f"browser_output_handoff_staged_source_checks={count_staged_source_checks(browser_output_handoff_staged)}")
+    print(
+        "browser_output_handoff_staged_note="
+        "source_alignment_only_not_browser_execution"
+    )
+    print(f"workbench_portal_handoff_staged_receipt={WORKBENCH_PORTAL_HANDOFF_STAGED_PROOF}")
+    print(f"workbench_portal_handoff_staged_status={str(workbench_portal_handoff_staged.get('status') or '').strip() or 'not_generated'}")
+    print(f"workbench_portal_handoff_staged_contract={str(workbench_portal_handoff_staged.get('contract_name') or '').strip() or 'missing'}")
+    print(f"workbench_portal_handoff_staged_tier={str(workbench_portal_handoff_staged.get('proof_tier') or '').strip() or 'missing'}")
+    print(f"workbench_portal_handoff_staged_route_count={len(workbench_portal_handoff_staged.get('expected_routes') or [])}")
+    print(f"workbench_portal_handoff_staged_source_checks={count_staged_source_checks(workbench_portal_handoff_staged)}")
+    print(
+        "workbench_portal_handoff_staged_note="
+        "source_alignment_only_not_browser_execution"
+    )
     print(f"legacy_control_coverage_staged_receipt={LEGACY_CONTROL_COVERAGE_STAGED_PROOF}")
     print(f"legacy_control_coverage_staged_status={str(legacy_control_coverage_staged.get('status') or '').strip() or 'not_generated'}")
     print(f"legacy_control_coverage_staged_contract={str(legacy_control_coverage_staged.get('contract_name') or '').strip() or 'missing'}")
@@ -296,6 +324,26 @@ def main() -> int:
     print(
         "account_support_handoff_staged_note="
         "source_alignment_only_not_auth_or_support_runtime"
+    )
+    print(f"runtime_proof_refresh_plan_receipt={RUNTIME_PROOF_REFRESH_PLAN}")
+    print(f"runtime_proof_refresh_plan_status={str(runtime_proof_refresh_plan.get('status') or '').strip() or 'not_generated'}")
+    print(f"runtime_proof_refresh_plan_contract={str(runtime_proof_refresh_plan.get('contract_name') or '').strip() or 'missing'}")
+    print(f"runtime_proof_refresh_plan_tier={str(runtime_proof_refresh_plan.get('proof_tier') or '').strip() or 'missing'}")
+    print(f"runtime_proof_refresh_plan_scope={str(runtime_proof_refresh_plan.get('scope') or '').strip() or 'missing'}")
+    print(f"runtime_proof_refresh_plan_command_source_count={len(runtime_proof_refresh_plan.get('command_sources') or [])}")
+    print(f"runtime_proof_refresh_plan_documentation_source_count={len(runtime_proof_refresh_plan.get('documentation_sources') or [])}")
+    print(
+        "runtime_proof_refresh_plan_note="
+        "source_plan_only_not_browser_execution"
+    )
+    print(f"staged_to_runtime_promotion_matrix_receipt={STAGED_TO_RUNTIME_PROMOTION_MATRIX}")
+    print(f"staged_to_runtime_promotion_matrix_status={str(staged_to_runtime_promotion_matrix.get('status') or '').strip() or 'not_generated'}")
+    print(f"staged_to_runtime_promotion_matrix_contract={str(staged_to_runtime_promotion_matrix.get('contract_name') or '').strip() or 'missing'}")
+    print(f"staged_to_runtime_promotion_matrix_tier={str(staged_to_runtime_promotion_matrix.get('proof_tier') or '').strip() or 'missing'}")
+    print(f"staged_to_runtime_promotion_matrix_family_count={staged_to_runtime_promotion_matrix.get('promotion_family_count', 'unknown')}")
+    print(
+        "staged_to_runtime_promotion_matrix_note="
+        "source_plan_only_not_browser_execution"
     )
     print(f"blocker_receipt={BLOCKERS}")
     print(f"blocker_status={str(blockers.get('status') or '').strip() or 'missing'}")

@@ -67,6 +67,11 @@ PROMOTION_ROWS = [
         "source_receipt": "BLAZOR_MAGIC_CLEANUP_STAGED_PROOF.generated.json",
         "hosted_family_ids": ["promoted_magic_cleanup_utility_execution"],
     },
+    {
+        "id": "browser_output_handoff",
+        "source_receipt": "BLAZOR_BROWSER_OUTPUT_HANDOFF_STAGED_PROOF.generated.json",
+        "hosted_family_ids": ["promoted_result_continuations"],
+    },
 ]
 
 REQUIRED_RUNTIME_RECEIPTS = [

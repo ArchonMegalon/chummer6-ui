@@ -1,63 +1,51 @@
 {
-  "contract_name": "chummer6-ui.blazor_magic_support_staged_proof",
-  "generated_at": "2026-06-24T20:45:08.811024+00:00",
+  "contract_name": "chummer6-ui.blazor_browser_output_handoff_staged_proof",
+  "generated_at": "2026-06-24T20:45:08.921942+00:00",
   "status": "passed",
   "proof_tier": "source_staged_no_browser_execution",
   "route_lane": "promoted_blazor_workbench",
   "expected_routes": [
-    "/blazor/workbench?workspace=ws-1&tab=tab-adept&control=adept_power_add",
-    "/blazor/workbench?workspace=ws-1&tab=tab-magician&control=spirit_add",
-    "/blazor/workbench?workspace=ws-1&tab=tab-critter&control=critter_power_add",
-    "/blazor/workbench?workspace=ws-1&tab=tab-technomancer&control=matrix_program_add"
+    "/blazor/workbench?workspace=ws-1&command=save_character",
+    "/blazor/workbench?workspace=ws-1&command=save_character_as",
+    "/blazor/workbench?workspace=ws-1&command=save_character_as&dialog_action=download",
+    "/blazor/workbench?workspace=ws-1&command=export_character",
+    "/blazor/workbench?workspace=ws-1&command=export_character&dialog_action=download",
+    "/blazor/workbench?workspace=ws-1&command=print_character"
   ],
   "checks": [
     {
       "id": "product_workbench_affordances",
       "path": "Chummer.Blazor/Components/Pages/Preview.razor",
       "status": "passed",
-      "required_token_count": 4,
-      "missing_tokens": []
-    },
-    {
-      "id": "shared_control_catalog",
-      "path": "Chummer.Presentation/Overview/LegacyUiControlCatalog.cs",
-      "status": "passed",
-      "required_token_count": 4,
-      "missing_tokens": []
-    },
-    {
-      "id": "desktop_shaped_dialogs",
-      "path": "Chummer.Presentation/Overview/DesktopDialogFactory.cs",
-      "status": "passed",
-      "required_token_count": 8,
+      "required_token_count": 6,
       "missing_tokens": []
     },
     {
       "id": "hosted_route_entry_probe",
       "path": "scripts/e2e-public-edge.cjs",
       "status": "passed",
-      "required_token_count": 4,
+      "required_token_count": 6,
       "missing_tokens": []
     },
     {
       "id": "hosted_execution_runner",
       "path": "scripts/e2e-public-edge-playwright.cjs",
       "status": "passed",
-      "required_token_count": 6,
+      "required_token_count": 5,
       "missing_tokens": []
     },
     {
       "id": "self_host_playwright_runner",
       "path": "scripts/e2e-portal-playwright.cjs",
       "status": "passed",
-      "required_token_count": 5,
+      "required_token_count": 2,
       "missing_tokens": []
     },
     {
       "id": "self_host_receipt_metadata",
       "path": "scripts/e2e-portal.sh",
       "status": "passed",
-      "required_token_count": 4,
+      "required_token_count": 6,
       "missing_tokens": []
     },
     {
@@ -86,6 +74,6 @@
   "notes": [
     "This receipt only proves that source, runner, metadata, and documentation staging agree.",
     "It is not a substitute for hosted Playwright execution proof or Docker self-host proof.",
-    "Do not use this receipt to claim magic/resonance workflow parity on chummer.run."
+    "Do not use this receipt to claim save, save-as, export, print, or download parity on chummer.run."
   ]
 }
