@@ -66,6 +66,9 @@ The aggregate currently covers:
 - `workbench_output_handoff`
 - `workbench_validation_queue`
 - `workbench_history_undo`
+- `workbench_sync_presence`
+- `workbench_data_packs`
+- `workbench_character_library`
 - `legacy_control_coverage`
 
 Each family must keep `proof_tier` set to:

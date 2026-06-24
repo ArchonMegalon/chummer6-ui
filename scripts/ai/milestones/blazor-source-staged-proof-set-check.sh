@@ -43,5 +43,8 @@ python3 "$repo_root/scripts/materialize-blazor-workbench-save-session-staged-pro
 python3 "$repo_root/scripts/materialize-blazor-workbench-output-handoff-staged-proof.py"
 python3 "$repo_root/scripts/materialize-blazor-workbench-validation-queue-staged-proof.py"
 python3 "$repo_root/scripts/materialize-blazor-workbench-history-undo-staged-proof.py"
+python3 "$repo_root/scripts/materialize-blazor-workbench-sync-presence-staged-proof.py"
+python3 "$repo_root/scripts/materialize-blazor-workbench-data-packs-staged-proof.py"
+python3 "$repo_root/scripts/materialize-blazor-workbench-character-library-staged-proof.py"
 python3 "$repo_root/scripts/materialize-blazor-legacy-control-coverage-staged-proof.py"
 python3 "$repo_root/scripts/materialize-blazor-source-staged-proof-set.py"

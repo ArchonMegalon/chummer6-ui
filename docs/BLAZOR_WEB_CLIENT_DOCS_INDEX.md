@@ -164,6 +164,12 @@ Current docs already define the intended shipped posture and the evidence contra
 - `docs/examples/blazor-workbench-validation-queue-staged-proof.receipt.example.json` shows the compact generated receipt shape for `BLAZOR_WORKBENCH_VALIDATION_QUEUE_STAGED_PROOF.generated.json`.
 - `docs/BLAZOR_WORKBENCH_HISTORY_UNDO_STAGED_PROOF.md` defines the source-staged promoted workbench history-undo posture contract. It is not runtime proof.
 - `docs/examples/blazor-workbench-history-undo-staged-proof.receipt.example.json` shows the compact generated receipt shape for `BLAZOR_WORKBENCH_HISTORY_UNDO_STAGED_PROOF.generated.json`.
+- `docs/BLAZOR_WORKBENCH_SYNC_PRESENCE_STAGED_PROOF.md` defines the source-staged promoted workbench sync-presence posture contract. It is not runtime proof.
+- `docs/examples/blazor-workbench-sync-presence-staged-proof.receipt.example.json` shows the compact generated receipt shape for `BLAZOR_WORKBENCH_SYNC_PRESENCE_STAGED_PROOF.generated.json`.
+- `docs/BLAZOR_WORKBENCH_DATA_PACKS_STAGED_PROOF.md` defines the source-staged promoted workbench data-packs posture contract. It is not runtime proof.
+- `docs/examples/blazor-workbench-data-packs-staged-proof.receipt.example.json` shows the compact generated receipt shape for `BLAZOR_WORKBENCH_DATA_PACKS_STAGED_PROOF.generated.json`.
+- `docs/BLAZOR_WORKBENCH_CHARACTER_LIBRARY_STAGED_PROOF.md` defines the source-staged promoted workbench character-library posture contract. It is not runtime proof.
+- `docs/examples/blazor-workbench-character-library-staged-proof.receipt.example.json` shows the compact generated receipt shape for `BLAZOR_WORKBENCH_CHARACTER_LIBRARY_STAGED_PROOF.generated.json`.
 
 ## Portal Installer Handoff
 

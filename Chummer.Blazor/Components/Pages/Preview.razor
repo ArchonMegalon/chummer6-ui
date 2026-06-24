@@ -1065,6 +1065,108 @@
             </div>
         </section>
 
+        <section class="browser-workbench-sync-presence" aria-label="Workbench sync and presence lane" data-workbench-sync-presence="strip">
+            <div class="browser-workbench-sync-presence-copy">
+                <span class="browser-preview-status-label">Sync</span>
+                <strong>Show hosted and self-hosted session state.</strong>
+                <p>Keep connection, offline cache, sync queue, presence, conflict, and handoff cues visible so hosted and local use stays calm.</p>
+            </div>
+            <div class="browser-workbench-sync-presence-actions" role="list" aria-label="Sync and presence shortcuts">
+                <a role="listitem" href="@BuildPreviewHref("blue", command: "check_connection")" data-workbench-sync-presence-action="connection">
+                    <span>Connection</span>
+                    <small>Show the current hosted session posture.</small>
+                </a>
+                <a role="listitem" href="@BuildPreviewHref("blue", command: "enable_offline_mode")" data-workbench-sync-presence-action="offline">
+                    <span>Offline</span>
+                    <small>Reserve offline-mode cues for self-hosters.</small>
+                </a>
+                <a role="listitem" href="@BuildPreviewHref("blue", command: "open_local_cache")" data-workbench-sync-presence-action="local_cache">
+                    <span>Local cache</span>
+                    <small>Keep browser storage posture discoverable.</small>
+                </a>
+                <a role="listitem" href="@BuildPreviewHref("blue", command: "open_sync_queue")" data-workbench-sync-presence-action="sync_queue">
+                    <span>Sync queue</span>
+                    <small>Surface pending upload and retry context.</small>
+                </a>
+                <a role="listitem" href="@BuildWorkbenchLaneHref("tab-contacts")" data-workbench-sync-presence-action="presence">
+                    <span>Presence</span>
+                    <small>Prepare table and GM co-viewing state.</small>
+                </a>
+                <a role="listitem" href="@BuildPreviewHref("blue", command: "handoff_session")" data-workbench-sync-presence-action="handoff">
+                    <span>Handoff</span>
+                    <small>Move between hosted and local workflows.</small>
+                </a>
+            </div>
+        </section>
+
+        <section class="browser-workbench-data-packs" aria-label="Workbench rules and data-pack lane" data-workbench-data-packs="strip">
+            <div class="browser-workbench-data-packs-copy">
+                <span class="browser-preview-status-label">Rules data</span>
+                <strong>Expose sourcebook and data-pack posture.</strong>
+                <p>Desktop Chummer depends on visible source selection, errata, custom data, update packs, validation scope, and data-folder context; the web workbench should keep those rule-data decisions near the active sheet.</p>
+            </div>
+            <div class="browser-workbench-data-packs-actions" role="list" aria-label="Rules and data-pack shortcuts">
+                <a role="listitem" href="@BuildPreviewHref("blue", command: "open_sourcebooks")" data-workbench-data-packs-action="sourcebooks">
+                    <span>Sourcebooks</span>
+                    <small>Review the active book selection posture.</small>
+                </a>
+                <a role="listitem" href="@BuildPreviewHref("blue", command: "open_errata")" data-workbench-data-packs-action="errata">
+                    <span>Errata</span>
+                    <small>Reserve visible rules-update context.</small>
+                </a>
+                <a role="listitem" href="@BuildPreviewHref("blue", command: "open_custom_data")" data-workbench-data-packs-action="custom_data">
+                    <span>Custom data</span>
+                    <small>Keep homebrew and local packs discoverable.</small>
+                </a>
+                <a role="listitem" href="@BuildPreviewHref("blue", command: "update_data_packs")" data-workbench-data-packs-action="update_pack">
+                    <span>Update pack</span>
+                    <small>Show data refresh as an operator action.</small>
+                </a>
+                <a role="listitem" href="@BuildPreviewHref("blue", command: "validate_data_scope")" data-workbench-data-packs-action="validation_scope">
+                    <span>Validation scope</span>
+                    <small>Connect rules data to build readiness.</small>
+                </a>
+                <a role="listitem" href="@BuildPreviewHref("blue", command: "open_data_folder")" data-workbench-data-packs-action="data_folder">
+                    <span>Data folder</span>
+                    <small>Keep local and self-host paths visible.</small>
+                </a>
+            </div>
+        </section>
+
+        <section class="browser-workbench-character-library" aria-label="Workbench character library lane" data-workbench-character-library="strip">
+            <div class="browser-workbench-character-library-copy">
+                <span class="browser-preview-status-label">Library</span>
+                <strong>Keep character library workflow visible.</strong>
+                <p>Desktop Chummer starts from open, recent, pinned, cloned, archived, imported, and compared characters; the web workbench should keep that library posture close to the active sheet.</p>
+            </div>
+            <div class="browser-workbench-character-library-actions" role="list" aria-label="Character library shortcuts">
+                <a role="listitem" href="@BuildPreviewHref("blue", command: "open_character")" data-workbench-character-library-action="open">
+                    <span>Open</span>
+                    <small>Return to the primary character picker.</small>
+                </a>
+                <a role="listitem" href="@BuildPreviewHref("blue", command: "open_recent")" data-workbench-character-library-action="recent">
+                    <span>Recent</span>
+                    <small>Keep recent runners one click away.</small>
+                </a>
+                <a role="listitem" href="@BuildPreviewHref("blue", command: "pin_character")" data-workbench-character-library-action="pin">
+                    <span>Pin</span>
+                    <small>Reserve a stable campaign roster.</small>
+                </a>
+                <a role="listitem" href="@BuildPreviewHref("blue", command: "clone_character")" data-workbench-character-library-action="clone">
+                    <span>Clone</span>
+                    <small>Start variants without losing the original.</small>
+                </a>
+                <a role="listitem" href="@BuildPreviewHref("blue", command: "archive_character")" data-workbench-character-library-action="archive">
+                    <span>Archive</span>
+                    <small>Move inactive sheets out of daily view.</small>
+                </a>
+                <a role="listitem" href="@BuildPreviewHref("blue", command: "import_character")" data-workbench-character-library-action="import">
+                    <span>Import</span>
+                    <small>Bring desktop and self-hosted files forward.</small>
+                </a>
+            </div>
+        </section>
+
         <section class="browser-preview-status-grid" aria-label="Workbench quick starts">
             <article class="browser-preview-status-card" data-workbench-entry-card="new-character">
                 <span class="browser-preview-status-label">Quick start</span>

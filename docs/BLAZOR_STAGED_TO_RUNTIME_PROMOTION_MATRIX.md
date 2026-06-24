@@ -77,6 +77,9 @@ These source receipts help manage breadth and safety but do not promote workflow
 - `BLAZOR_WORKBENCH_OUTPUT_HANDOFF_STAGED_PROOF.generated.json`
 - `BLAZOR_WORKBENCH_VALIDATION_QUEUE_STAGED_PROOF.generated.json`
 - `BLAZOR_WORKBENCH_HISTORY_UNDO_STAGED_PROOF.generated.json`
+- `BLAZOR_WORKBENCH_SYNC_PRESENCE_STAGED_PROOF.generated.json`
+- `BLAZOR_WORKBENCH_DATA_PACKS_STAGED_PROOF.generated.json`
+- `BLAZOR_WORKBENCH_CHARACTER_LIBRARY_STAGED_PROOF.generated.json`
 
 ## Promotion Rule
 

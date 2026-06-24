@@ -1,0 +1,25 @@
+{
+  "contract_name": "chummer6-ui.blazor_workbench_character_library_staged_proof",
+  "generated_at": "2026-06-24T00:00:00+00:00",
+  "status": "passed",
+  "proof_tier": "source_staged_no_browser_execution",
+  "route_lane": "promoted_blazor_workbench",
+  "expected_routes": [
+    "/blazor/workbench"
+  ],
+  "checks": [
+    {
+      "id": "product_workbench_character_library",
+      "path": "Chummer.Blazor/Components/Pages/Preview.razor",
+      "status": "passed",
+      "required_token_count": 9,
+      "missing_tokens": []
+    }
+  ],
+  "failures": [],
+  "notes": [
+    "This receipt only proves that promoted workbench character-library source, style, status, and docs agree.",
+    "It is not a substitute for hosted Playwright execution proof, Docker self-host proof, file-open proof, library-persistence proof, clone proof, archive proof, or import proof.",
+    "Do not use this receipt to claim file-open, library persistence, clone, archive, import, or browser execution parity."
+  ]
+}
