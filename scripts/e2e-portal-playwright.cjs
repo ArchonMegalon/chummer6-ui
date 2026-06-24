@@ -199,7 +199,7 @@ async function auditPortalWorkbenchRoute(page) {
   const bodyText = await page.locator('body').innerText();
   expectTextIncludes(bodyText, 'shared workbench shell, running in the browser', 'portal workbench route');
   expectTextIncludes(bodyText, 'product-shaped browser workbench entrypoint', 'portal workbench route');
-  expectTextIncludes(bodyText, 'Open preview proof shelf', 'portal workbench route');
+  expectTextIncludes(bodyText, 'Open preview routes', 'portal workbench route');
   expectTextIncludes(bodyText, 'Start a new runner', 'portal workbench route');
   expectTextIncludes(bodyText, 'Import an existing runner', 'portal workbench route');
   expectTextIncludes(bodyText, 'Open Seeded Build Lab', 'portal workbench route');

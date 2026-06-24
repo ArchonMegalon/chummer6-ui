@@ -10,7 +10,7 @@ The web client should feel like another desktop client, not a disconnected proof
 
 The staged polish lane covers:
 
-- a Desktop-style task dock on the promoted workbench route
+- a compact task dock on the promoted workbench route
 - one-click shortcuts for new runner, open/import, Build Lab, gear, save/download, export, print, downloads, and support
 - scoped responsive styling for desktop and mobile browser use
 

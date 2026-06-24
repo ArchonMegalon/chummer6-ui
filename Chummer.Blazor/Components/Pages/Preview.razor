@@ -37,7 +37,7 @@
             <a href="/">Public home</a>
             @if (IsWorkbenchRoute)
             {
-                <a href="/preview">Proof routes</a>
+                <a href="/preview">Preview routes</a>
             }
             else
             {
@@ -94,16 +94,16 @@
                 <p>The shell below is the product-facing browser workbench route while broader parity work continues to mature.</p>
             </article>
             <article class="browser-preview-status-card">
-                <span class="browser-preview-status-label">Proof route</span>
-                <strong>Open detailed route and workflow proof on demand</strong>
-                <p>Use the preview route when you need the denser proof shelf for startup deep links, seeded workflows, and browser result-state receipts.</p>
-                <a href="/preview">Open preview proof shelf</a>
+                <span class="browser-preview-status-label">Preview</span>
+                <strong>Open detailed browser routes on demand</strong>
+                <p>Use the preview route when you need startup deep links, seeded workflows, and browser result-state checks.</p>
+                <a href="/preview">Open preview routes</a>
             </article>
         </section>
 
         <section class="browser-workbench-task-dock" aria-label="Promoted workbench task dock" data-workbench-polish="task-dock">
             <div class="browser-workbench-task-dock-copy">
-                <span class="browser-preview-status-label">Desktop-style task dock</span>
+                <span class="browser-preview-status-label">Task dock</span>
                 <strong>Keep the common Chummer jobs one click from the browser workbench.</strong>
                 <p>Start, edit, output, and portal handoff stay in one dense strip so the web client behaves like another desktop client instead of a detached page stack.</p>
             </div>
@@ -533,47 +533,47 @@
             </nav>
         </section>
 
-        <section class="browser-workbench-desktop-install" aria-label="Desktop and installer handoff" data-workbench-desktop-install="strip">
+        <section class="browser-workbench-desktop-install" aria-label="Desktop install options" data-workbench-desktop-install="strip">
             <div class="browser-workbench-desktop-install-copy">
-                <span class="browser-preview-status-label">Install handoff</span>
-                <strong>Move between browser and desktop without losing the Chummer workflow.</strong>
-                <p>Hosted workbench, desktop downloads, release status, self-host docs, account work, and support stay visible from the web client.</p>
+                <span class="browser-preview-status-label">Desktop</span>
+                <strong>Install or continue locally.</strong>
+                <p>Downloads, status, account, self-host notes, and support stay close.</p>
             </div>
             <div class="browser-workbench-desktop-install-actions">
                 <a href="/downloads/" data-workbench-desktop-install-action="downloads">
                     <span>Downloads</span>
-                    <small>Desktop installers and release shelf.</small>
+                    <small>Installer and packages.</small>
                 </a>
-                <a href="/downloads/releases.json" data-workbench-desktop-install-action="release-manifest">
-                    <span>Manifest</span>
-                    <small>Machine-readable release truth.</small>
+                <a href="/downloads/RELEASE_CHANNEL.generated.json" data-workbench-desktop-install-action="release-manifest">
+                    <span>Channel</span>
+                    <small>Current update file.</small>
                 </a>
                 <a href="/status" data-workbench-desktop-install-action="release-status">
                     <span>Status</span>
-                    <small>Hosted route and service posture.</small>
+                    <small>Service status.</small>
                 </a>
                 <a href="/account/work" data-workbench-desktop-install-action="account-work">
-                    <span>Account work</span>
-                    <small>Keep owner/work context nearby.</small>
+                    <span>Account</span>
+                    <small>Claim and link state.</small>
                 </a>
                 <a href="/docs/" data-workbench-desktop-install-action="self-host">
                     <span>Self-host</span>
-                    <small>Docker and operator runbooks.</small>
+                    <small>Run it yourself.</small>
                 </a>
                 <a href="/contact" data-workbench-desktop-install-action="support">
                     <span>Support</span>
-                    <small>Escalate install or browser blockers.</small>
+                    <small>Install help.</small>
                 </a>
             </div>
         </section>
 
-        <section class="browser-workbench-menu-bar" aria-label="Workbench desktop menu bar" data-workbench-menu-bar="strip">
+        <section class="browser-workbench-menu-bar" aria-label="Workbench menu rail" data-workbench-menu-bar="strip">
             <div class="browser-workbench-menu-bar-copy">
                 <span class="browser-preview-status-label">Menu rail</span>
-                <strong>Keep Chummer's desktop menu shape in the web client.</strong>
-                <p>File, build, view, character, tools, and help entry points stay visible instead of becoming hidden page-only actions.</p>
+                <strong>Keep the usual menus close.</strong>
+                <p>File, build, view, character, tools, and help stay visible.</p>
             </div>
-            <nav class="browser-workbench-menu-bar-actions" aria-label="Desktop-style workbench menu shortcuts">
+            <nav class="browser-workbench-menu-bar-actions" aria-label="Workbench menu shortcuts">
                 <a href="@BuildPreviewHref(command: "open_character", useWorkbenchRoute: true)" data-workbench-menu-bar-action="file">File</a>
                 <a href="@BuildWorkbenchLaneHref("tab-create")" data-workbench-menu-bar-action="build">Build</a>
                 <a href="#workbench-density-compact" data-workbench-menu-bar-action="view">View</a>
@@ -581,6 +581,126 @@
                 <a href="@BuildPreviewHref(command: "global_settings", useWorkbenchRoute: true)" data-workbench-menu-bar-action="tools">Tools</a>
                 <a href="/contact" data-workbench-menu-bar-action="help">Help</a>
             </nav>
+        </section>
+
+        <section class="browser-workbench-workspace-tabs" aria-label="Workbench runner tabs" data-workbench-workspace-tabs="strip">
+            <div class="browser-workbench-workspace-tabs-copy">
+                <span class="browser-preview-status-label">Runner tabs</span>
+                <strong>Keep active runner lanes visible.</strong>
+                <p>Active runner, build review, print/export, and recent import stay side by side.</p>
+            </div>
+            <div class="browser-workbench-workspace-tabs-actions" role="list" aria-label="Open runner and task lanes">
+                <a role="listitem" href="@BuildWorkbenchLaneHref("tab-info")" data-workbench-workspace-tabs-action="active-runner">
+                    <span>Active runner</span>
+                    <small>Return to the loaded sheet.</small>
+                </a>
+                <a role="listitem" href="@BuildWorkbenchLaneHref("tab-create")" data-workbench-workspace-tabs-action="build-lab">
+                    <span>Build lab</span>
+                    <small>Review creation and advancement.</small>
+                </a>
+                <a role="listitem" href="@BuildWorkbenchCommandHref("print_character")" data-workbench-workspace-tabs-action="print-export">
+                    <span>Print/export</span>
+                    <small>Keep output work close.</small>
+                </a>
+                <a role="listitem" href="@BuildPreviewHref(command: "open_character", useWorkbenchRoute: true)" data-workbench-workspace-tabs-action="recent-import">
+                    <span>Recent import</span>
+                    <small>Open another dossier.</small>
+                </a>
+            </div>
+        </section>
+
+        <section class="browser-workbench-status-bar" aria-label="Workbench status bar" data-workbench-status-bar="strip">
+            <div class="browser-workbench-status-bar-copy">
+                <span class="browser-preview-status-label">Status bar</span>
+                <strong>Keep save, rules, validation, session, and privacy state visible.</strong>
+                <p>A browser-hosted client still needs clear state cues so users know what is safe, current, and bounded before they continue.</p>
+            </div>
+            <div class="browser-workbench-status-bar-actions" role="list" aria-label="Current workbench state shortcuts">
+                <a role="listitem" href="@BuildWorkbenchCommandHref("save_character_as")" data-workbench-status-bar-action="save-state">
+                    <span>Save ready</span>
+                    <small>Open browser-safe save/download handoff.</small>
+                </a>
+                <a role="listitem" href="@BuildWorkbenchLaneHref("tab-rules")" data-workbench-status-bar-action="ruleset">
+                    <span>Ruleset</span>
+                    <small>Review active rules and sources.</small>
+                </a>
+                <a role="listitem" href="@BuildWorkbenchLaneHref("tab-create")" data-workbench-status-bar-action="validation">
+                    <span>Validation</span>
+                    <small>Return to build review context.</small>
+                </a>
+                <a role="listitem" href="/status" data-workbench-status-bar-action="session">
+                    <span>Session</span>
+                    <small>Check hosted and connected lanes.</small>
+                </a>
+                <a role="listitem" href="/status" data-workbench-status-bar-action="privacy">
+                    <span>Privacy</span>
+                    <small>Analytics remains metadata-only.</small>
+                </a>
+                <a role="listitem" href="/contact" data-workbench-status-bar-action="support">
+                    <span>Support</span>
+                    <small>Escalate a blocked workflow.</small>
+                </a>
+            </div>
+        </section>
+
+        <section class="browser-workbench-inspector-rail" aria-label="Workbench inspector rail" data-workbench-inspector-rail="strip">
+            <div class="browser-workbench-inspector-rail-copy">
+                <span class="browser-preview-status-label">Inspector rail</span>
+                <strong>Keep sheet context beside the active task.</strong>
+                <p>The desktop client keeps summary, checks, inventory, notes, and rules references close; the web workbench should keep that context one click away.</p>
+            </div>
+            <div class="browser-workbench-inspector-rail-actions" role="list" aria-label="Context inspector shortcuts">
+                <a role="listitem" href="@BuildWorkbenchLaneHref("tab-info")" data-workbench-inspector-rail-action="summary">
+                    <span>Summary</span>
+                    <small>Identity, metatype, and core sheet facts.</small>
+                </a>
+                <a role="listitem" href="@BuildWorkbenchLaneHref("tab-create")" data-workbench-inspector-rail-action="build-checks">
+                    <span>Build checks</span>
+                    <small>Karma, priority, and review state.</small>
+                </a>
+                <a role="listitem" href="@BuildWorkbenchLaneHref("tab-gear")" data-workbench-inspector-rail-action="inventory">
+                    <span>Inventory</span>
+                    <small>Gear, vehicles, and loadout context.</small>
+                </a>
+                <a role="listitem" href="@BuildPreviewHref(tab: "tab-info", control: "open_notes", useWorkbenchRoute: true)" data-workbench-inspector-rail-action="notes">
+                    <span>Notes</span>
+                    <small>Runner notes and recovery context.</small>
+                </a>
+                <a role="listitem" href="@BuildWorkbenchLaneHref("tab-rules")" data-workbench-inspector-rail-action="sources">
+                    <span>Sources</span>
+                    <small>Rules, books, and reference posture.</small>
+                </a>
+            </div>
+        </section>
+
+        <section class="browser-workbench-dialog-stack" aria-label="Workbench dialog stack" data-workbench-dialog-stack="strip">
+            <div class="browser-workbench-dialog-stack-copy">
+                <span class="browser-preview-status-label">Dialog stack</span>
+                <strong>Keep modal work and committed results visible.</strong>
+                <p>Desktop Chummer workflows move through dialogs; the web client should keep active dialog, retry, result, and support continuations within reach.</p>
+            </div>
+            <div class="browser-workbench-dialog-stack-actions" role="list" aria-label="Dialog and result continuations">
+                <a role="listitem" href="@BuildPreviewHref(tab: "tab-contacts", control: "contact_add", useWorkbenchRoute: true)" data-workbench-dialog-stack-action="active-dialog">
+                    <span>Active dialog</span>
+                    <small>Open a compact edit/add workflow.</small>
+                </a>
+                <a role="listitem" href="/workbench?workspace=ws-1&tab=tab-contacts&control=contact_add&dialog_action=add" data-workbench-dialog-stack-action="committed-result">
+                    <span>Committed result</span>
+                    <small>Review browser-visible action outcome.</small>
+                </a>
+                <a role="listitem" href="@BuildPreviewHref(tab: "tab-gear", control: "gear_edit", useWorkbenchRoute: true)" data-workbench-dialog-stack-action="retry">
+                    <span>Retry</span>
+                    <small>Return to the last editable context.</small>
+                </a>
+                <a role="listitem" href="/workbench?workspace=ws-1" data-workbench-dialog-stack-action="cancel-back">
+                    <span>Back to sheet</span>
+                    <small>Close the detour safely.</small>
+                </a>
+                <a role="listitem" href="/contact" data-workbench-dialog-stack-action="support">
+                    <span>Support</span>
+                    <small>Escalate a broken dialog path.</small>
+                </a>
+            </div>
         </section>
 
         <section class="browser-preview-status-grid" aria-label="Workbench quick starts">
@@ -951,7 +1071,7 @@
     private string ExportFlowHref => BuildWorkbenchCommandHref("export_character", "download");
     private string ExportFlowLabel => BuildWorkbenchCommandLabel("Open Export flow", "export");
     private string ExportFlowDescription => PrimaryRecentWorkspace is null
-        ? "Open the seeded export result path from the product route instead of jumping straight to the proof shelf."
+        ? "Open the seeded export result path from the product route instead of jumping to the preview route."
         : "Open the export result path for the most recent restored workspace so browser portability starts from the live session.";
     private string PrintFlowHref => BuildWorkbenchCommandHref("print_character");
     private string PrintFlowLabel => BuildWorkbenchCommandLabel("Open Print flow", "print");

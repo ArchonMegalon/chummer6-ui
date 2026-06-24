@@ -19,7 +19,7 @@ CHECKS = [
     {
         "id": "product_workbench_desktop_install",
         "path": "Chummer.Blazor/Components/Pages/Preview.razor",
-            "tokens": [
+        "tokens": [
             "Desktop install options",
             "data-workbench-desktop-install=\"strip\"",
             "Install or continue locally.",
@@ -114,7 +114,7 @@ def main() -> int:
         "expected_routes": [
             "/blazor/workbench",
             "/downloads/",
-            "/downloads/releases.json",
+            "/downloads/RELEASE_CHANNEL.generated.json",
             "/status",
             "/account/work",
             "/docs/",
@@ -123,7 +123,7 @@ def main() -> int:
         "checks": checks,
         "failures": failures,
         "notes": [
-            "This receipt only proves that promoted workbench desktop/install handoff source, style, status, and docs agree.",
+            "This receipt only proves that promoted workbench desktop install handoff source, style, status, and docs agree.",
             "It is not a substitute for hosted Playwright execution proof, Docker self-host proof, release download proof, or installer proof.",
             "Do not use this receipt to claim installer delivery, Docker runtime, account authorization, or browser execution parity.",
         ],

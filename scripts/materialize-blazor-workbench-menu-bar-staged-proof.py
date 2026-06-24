@@ -10,37 +10,34 @@ from pathlib import Path
 REPO_ROOT = Path(__file__).resolve().parents[1]
 OUTPUT_PATH = Path(
     os.environ.get(
-        "CHUMMER_BLAZOR_WORKBENCH_POLISH_STAGED_PROOF_PATH",
-        REPO_ROOT / ".codex-studio" / "published" / "BLAZOR_WORKBENCH_POLISH_STAGED_PROOF.generated.json",
+        "CHUMMER_BLAZOR_WORKBENCH_MENU_BAR_STAGED_PROOF_PATH",
+        REPO_ROOT / ".codex-studio" / "published" / "BLAZOR_WORKBENCH_MENU_BAR_STAGED_PROOF.generated.json",
     )
 )
 
 CHECKS = [
     {
-        "id": "product_workbench_task_dock",
+        "id": "product_workbench_menu_bar",
         "path": "Chummer.Blazor/Components/Pages/Preview.razor",
         "tokens": [
-            "Promoted workbench task dock",
-            "data-workbench-polish=\"task-dock\"",
-            "Task dock",
-            "data-workbench-dock-action=\"start-new\"",
-            "data-workbench-dock-action=\"open-existing\"",
-            "data-workbench-dock-action=\"build-lab\"",
-            "data-workbench-dock-action=\"gear\"",
-            "data-workbench-dock-action=\"save-as\"",
-            "data-workbench-dock-action=\"export\"",
-            "data-workbench-dock-action=\"print\"",
-            "data-workbench-dock-action=\"downloads\"",
-            "data-workbench-dock-action=\"support\"",
+            "Workbench menu rail",
+            "data-workbench-menu-bar=\"strip\"",
+            "Keep the usual menus close.",
+            "data-workbench-menu-bar-action=\"file\"",
+            "data-workbench-menu-bar-action=\"build\"",
+            "data-workbench-menu-bar-action=\"view\"",
+            "data-workbench-menu-bar-action=\"character\"",
+            "data-workbench-menu-bar-action=\"tools\"",
+            "data-workbench-menu-bar-action=\"help\"",
         ],
     },
     {
-        "id": "scoped_visual_design",
+        "id": "scoped_menu_bar_visual_design",
         "path": "Chummer.Blazor/Components/Pages/Preview.razor.css",
         "tokens": [
-            ".browser-workbench-task-dock",
-            ".browser-workbench-task-dock-copy",
-            ".browser-workbench-task-dock-actions",
+            ".browser-workbench-menu-bar",
+            ".browser-workbench-menu-bar-copy",
+            ".browser-workbench-menu-bar-actions",
             "@media (max-width: 720px)",
         ],
     },
@@ -48,8 +45,8 @@ CHECKS = [
         "id": "release_truth_docs",
         "path": "docs/WORKBENCH_RELEASE_SIGNOFF.md",
         "tokens": [
-            "workbench polish posture",
-            "blazor-workbench-polish-staged-proof-check.sh",
+            "workbench menu-bar posture",
+            "blazor-workbench-menu-bar-staged-proof-check.sh",
             "not a hosted or Docker browser execution receipt",
         ],
     },
@@ -57,18 +54,18 @@ CHECKS = [
         "id": "parity_goal_docs",
         "path": "docs/BLAZOR_WEB_CLIENT_PARITY_GOAL.md",
         "tokens": [
-            "staged hosted workbench polish posture",
-            "Task dock",
-            "start, edit, output, and portal handoff",
+            "staged hosted workbench menu-bar posture",
+            "file, build, view, character, tools, and help",
+            "not yet claiming keyboard accelerator or menu-command execution parity",
         ],
     },
     {
         "id": "status_utility_reporting",
         "path": "scripts/print_blazor_public_edge_proof_status.py",
         "tokens": [
-            "WORKBENCH_POLISH_STAGED_PROOF",
-            "workbench_polish_staged_status",
-            "workbench_polish_staged_source_checks",
+            "WORKBENCH_MENU_BAR_STAGED_PROOF",
+            "workbench_menu_bar_staged_status",
+            "workbench_menu_bar_staged_source_checks",
             "source_alignment_only_not_browser_execution",
         ],
     },
@@ -108,18 +105,18 @@ def main() -> int:
         )
 
     receipt = {
-        "contract_name": "chummer6-ui.blazor_workbench_polish_staged_proof",
+        "contract_name": "chummer6-ui.blazor_workbench_menu_bar_staged_proof",
         "generated_at": datetime.now(timezone.utc).isoformat(),
         "status": "failed" if failures else "passed",
         "proof_tier": "source_staged_no_browser_execution",
         "route_lane": "promoted_blazor_workbench",
-        "expected_routes": ["/blazor/workbench"],
+        "expected_routes": ["/blazor/workbench", "/contact"],
         "checks": checks,
         "failures": failures,
         "notes": [
-            "This receipt only proves that promoted workbench polish source, style, status, and docs agree.",
-            "It is not a substitute for hosted Playwright execution proof or Docker self-host proof.",
-            "Do not use this receipt to claim desktop-equivalent browser workflow parity.",
+            "This receipt only proves that promoted workbench menu-bar source, style, status, and docs agree.",
+            "It is not a substitute for hosted Playwright execution proof, Docker self-host proof, keyboard-event proof, or menu-command execution proof.",
+            "Do not use this receipt to claim keyboard accelerators, menu command execution, or browser execution parity.",
         ],
     }
 
@@ -130,7 +127,7 @@ def main() -> int:
         print("\n".join(failures))
         return 1
 
-    print(f"blazor_workbench_polish_staged_proof:ok {OUTPUT_PATH}")
+    print(f"blazor_workbench_menu_bar_staged_proof:ok {OUTPUT_PATH}")
     return 0
 
 

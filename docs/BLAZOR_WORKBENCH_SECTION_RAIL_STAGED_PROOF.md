@@ -2,7 +2,7 @@
 
 ## Purpose
 
-This source-staged proof keeps desktop-style character sheet navigation visible on the promoted Blazor workbench route.
+This source-staged proof keeps character sheet navigation visible on the promoted Blazor workbench route.
 
 The browser client should feel like another Chummer client head: dense sheet sections stay one click away instead of becoming disconnected web pages.
 

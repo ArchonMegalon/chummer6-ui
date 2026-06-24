@@ -61,6 +61,10 @@ These source receipts help manage breadth and safety but do not promote workflow
 - `BLAZOR_WORKBENCH_ACCESSIBILITY_STAGED_PROOF.generated.json`
 - `BLAZOR_WORKBENCH_SECTION_RAIL_STAGED_PROOF.generated.json`
 - `BLAZOR_WORKBENCH_DESKTOP_INSTALL_STAGED_PROOF.generated.json`
+- `BLAZOR_WORKBENCH_MENU_BAR_STAGED_PROOF.generated.json`
+- `BLAZOR_WORKBENCH_WORKSPACE_TABS_STAGED_PROOF.generated.json`
+- `BLAZOR_WORKBENCH_STATUS_BAR_STAGED_PROOF.generated.json`
+- `BLAZOR_WORKBENCH_INSPECTOR_RAIL_STAGED_PROOF.generated.json`
 
 ## Promotion Rule
 

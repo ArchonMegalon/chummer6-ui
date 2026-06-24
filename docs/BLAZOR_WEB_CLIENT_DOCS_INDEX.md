@@ -104,7 +104,7 @@ Current docs already define the intended shipped posture and the evidence contra
 - `docs/examples/blazor-browser-output-handoff-staged-proof.receipt.example.json` shows the compact generated receipt shape for `BLAZOR_BROWSER_OUTPUT_HANDOFF_STAGED_PROOF.generated.json`.
 - `docs/BLAZOR_WORKBENCH_PORTAL_HANDOFF_STAGED_PROOF.md` defines the source-staged workbench downloads/status/support/account handoff contract. It is not runtime proof.
 - `docs/examples/blazor-workbench-portal-handoff-staged-proof.receipt.example.json` shows the compact generated receipt shape for `BLAZOR_WORKBENCH_PORTAL_HANDOFF_STAGED_PROOF.generated.json`.
-- `docs/BLAZOR_WORKBENCH_POLISH_STAGED_PROOF.md` defines the source-staged promoted workbench polish contract for the desktop-style task dock. It is not runtime proof.
+- `docs/BLAZOR_WORKBENCH_POLISH_STAGED_PROOF.md` defines the source-staged promoted workbench polish contract for the task dock. It is not runtime proof.
 - `docs/examples/blazor-workbench-polish-staged-proof.receipt.example.json` shows the compact generated receipt shape for `BLAZOR_WORKBENCH_POLISH_STAGED_PROOF.generated.json`.
 - `docs/BLAZOR_WORKBENCH_RECOVERY_STAGED_PROOF.md` defines the source-staged promoted workbench session recovery contract. It is not runtime proof.
 - `docs/examples/blazor-workbench-recovery-staged-proof.receipt.example.json` shows the compact generated receipt shape for `BLAZOR_WORKBENCH_RECOVERY_STAGED_PROOF.generated.json`.
@@ -130,8 +130,16 @@ Current docs already define the intended shipped posture and the evidence contra
 - `docs/examples/blazor-workbench-accessibility-staged-proof.receipt.example.json` shows the compact generated receipt shape for `BLAZOR_WORKBENCH_ACCESSIBILITY_STAGED_PROOF.generated.json`.
 - `docs/BLAZOR_WORKBENCH_SECTION_RAIL_STAGED_PROOF.md` defines the source-staged promoted workbench section-rail posture contract. It is not runtime proof.
 - `docs/examples/blazor-workbench-section-rail-staged-proof.receipt.example.json` shows the compact generated receipt shape for `BLAZOR_WORKBENCH_SECTION_RAIL_STAGED_PROOF.generated.json`.
-- `docs/BLAZOR_WORKBENCH_DESKTOP_INSTALL_STAGED_PROOF.md` defines the source-staged promoted workbench desktop/install handoff contract. It is not runtime proof.
+- `docs/BLAZOR_WORKBENCH_DESKTOP_INSTALL_STAGED_PROOF.md` defines the source-staged promoted workbench desktop install handoff contract. It is not runtime proof.
 - `docs/examples/blazor-workbench-desktop-install-staged-proof.receipt.example.json` shows the compact generated receipt shape for `BLAZOR_WORKBENCH_DESKTOP_INSTALL_STAGED_PROOF.generated.json`.
+- `docs/BLAZOR_WORKBENCH_MENU_BAR_STAGED_PROOF.md` defines the source-staged promoted workbench desktop menu-bar posture contract. It is not runtime proof.
+- `docs/examples/blazor-workbench-menu-bar-staged-proof.receipt.example.json` shows the compact generated receipt shape for `BLAZOR_WORKBENCH_MENU_BAR_STAGED_PROOF.generated.json`.
+- `docs/BLAZOR_WORKBENCH_WORKSPACE_TABS_STAGED_PROOF.md` defines the source-staged promoted workbench workspace-tabs posture contract. It is not runtime proof.
+- `docs/examples/blazor-workbench-workspace-tabs-staged-proof.receipt.example.json` shows the compact generated receipt shape for `BLAZOR_WORKBENCH_WORKSPACE_TABS_STAGED_PROOF.generated.json`.
+- `docs/BLAZOR_WORKBENCH_STATUS_BAR_STAGED_PROOF.md` defines the source-staged promoted workbench status-bar posture contract. It is not runtime proof.
+- `docs/examples/blazor-workbench-status-bar-staged-proof.receipt.example.json` shows the compact generated receipt shape for `BLAZOR_WORKBENCH_STATUS_BAR_STAGED_PROOF.generated.json`.
+- `docs/BLAZOR_WORKBENCH_INSPECTOR_RAIL_STAGED_PROOF.md` defines the source-staged promoted workbench inspector-rail posture contract. It is not runtime proof.
+- `docs/examples/blazor-workbench-inspector-rail-staged-proof.receipt.example.json` shows the compact generated receipt shape for `BLAZOR_WORKBENCH_INSPECTOR_RAIL_STAGED_PROOF.generated.json`.
 
 ## Portal Installer Handoff
 

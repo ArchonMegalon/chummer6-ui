@@ -521,7 +521,7 @@ async function auditWorkbenchDesktopSurface(page) {
   const bodyText = await page.locator('body').innerText();
   expectTextIncludes(bodyText, "shared workbench shell, running in the browser", 'workbench desktop shell');
   expectTextIncludes(bodyText, 'product-shaped browser workbench entrypoint', 'workbench desktop shell');
-  expectTextIncludes(bodyText, 'Open preview proof shelf', 'workbench desktop shell');
+  expectTextIncludes(bodyText, 'Open preview routes', 'workbench desktop shell');
   expectTextIncludes(bodyText, 'Start a new runner', 'workbench desktop shell');
   expectTextIncludes(bodyText, 'Import an existing runner', 'workbench desktop shell');
   expectTextIncludes(bodyText, 'Continue PRV in build lab', 'workbench desktop shell');

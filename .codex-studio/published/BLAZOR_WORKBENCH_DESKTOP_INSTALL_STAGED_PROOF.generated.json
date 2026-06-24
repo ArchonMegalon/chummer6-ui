@@ -1,13 +1,13 @@
 {
   "contract_name": "chummer6-ui.blazor_workbench_desktop_install_staged_proof",
-  "generated_at": "2026-06-24T21:44:37.884720+00:00",
+  "generated_at": "2026-06-24T21:59:51.272980+00:00",
   "status": "passed",
   "proof_tier": "source_staged_no_browser_execution",
   "route_lane": "promoted_blazor_workbench",
   "expected_routes": [
     "/blazor/workbench",
     "/downloads/",
-    "/downloads/releases.json",
+    "/downloads/RELEASE_CHANNEL.generated.json",
     "/status",
     "/account/work",
     "/docs/",
@@ -52,7 +52,7 @@
   ],
   "failures": [],
   "notes": [
-    "This receipt only proves that promoted workbench desktop/install handoff source, style, status, and docs agree.",
+    "This receipt only proves that promoted workbench desktop install handoff source, style, status, and docs agree.",
     "It is not a substitute for hosted Playwright execution proof, Docker self-host proof, release download proof, or installer proof.",
     "Do not use this receipt to claim installer delivery, Docker runtime, account authorization, or browser execution parity."
   ]

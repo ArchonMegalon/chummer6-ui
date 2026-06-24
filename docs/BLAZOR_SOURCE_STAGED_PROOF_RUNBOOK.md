@@ -50,6 +50,10 @@ The aggregate currently covers:
 - `workbench_accessibility`
 - `workbench_section_rail`
 - `workbench_desktop_install`
+- `workbench_menu_bar`
+- `workbench_workspace_tabs`
+- `workbench_status_bar`
+- `workbench_inspector_rail`
 - `legacy_control_coverage`
 
 Each family must keep `proof_tier` set to:

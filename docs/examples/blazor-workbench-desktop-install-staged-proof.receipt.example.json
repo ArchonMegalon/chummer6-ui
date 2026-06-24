@@ -24,7 +24,7 @@
   ],
   "failures": [],
   "notes": [
-    "This receipt only proves that promoted workbench desktop/install handoff source, style, status, and docs agree.",
+    "This receipt only proves that promoted workbench desktop install handoff source, style, status, and docs agree.",
     "It is not a substitute for hosted Playwright execution proof, Docker self-host proof, release download proof, or installer proof.",
     "Do not use this receipt to claim installer delivery, Docker runtime, account authorization, or browser execution parity."
   ]

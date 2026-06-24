@@ -1,25 +1,27 @@
 {
-  "contract_name": "chummer6-ui.blazor_workbench_recovery_staged_proof",
-  "generated_at": "2026-06-24T21:59:50.932311+00:00",
+  "contract_name": "chummer6-ui.blazor_workbench_status_bar_staged_proof",
+  "generated_at": "2026-06-24T21:59:51.350145+00:00",
   "status": "passed",
   "proof_tier": "source_staged_no_browser_execution",
   "route_lane": "promoted_blazor_workbench",
   "expected_routes": [
-    "/blazor/workbench"
+    "/blazor/workbench",
+    "/status",
+    "/contact"
   ],
   "checks": [
     {
-      "id": "product_workbench_recovery_strip",
+      "id": "product_workbench_status_bar",
       "path": "Chummer.Blazor/Components/Pages/Preview.razor",
       "status": "passed",
-      "required_token_count": 11,
+      "required_token_count": 9,
       "missing_tokens": []
     },
     {
-      "id": "scoped_recovery_visual_design",
+      "id": "scoped_status_bar_visual_design",
       "path": "Chummer.Blazor/Components/Pages/Preview.razor.css",
       "status": "passed",
-      "required_token_count": 5,
+      "required_token_count": 4,
       "missing_tokens": []
     },
     {
@@ -46,8 +48,8 @@
   ],
   "failures": [],
   "notes": [
-    "This receipt only proves that promoted workbench recovery source, style, status, and docs agree.",
-    "It is not a substitute for hosted Playwright execution proof or Docker self-host proof.",
-    "Do not use this receipt to claim reload, restore, or session-continuity runtime behavior."
+    "This receipt only proves that promoted workbench status-bar source, style, status, and docs agree.",
+    "It is not a substitute for hosted Playwright execution proof, Docker self-host proof, save execution proof, validation proof, analytics delivery proof, or session runtime proof.",
+    "Do not use this receipt to claim save execution, validation execution, analytics delivery, session runtime, or browser execution parity."
   ]
 }
