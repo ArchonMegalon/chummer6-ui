@@ -1221,7 +1221,8 @@ sanitize_startup_smoke_dir() {
   local release_channel="${3:-}"
   local release_version="${4:-}"
   local downloads_dir="${5:-}"
-  python3 - "$source_dir" "$output_dir" "$release_channel" "$release_version" "$downloads_dir" <<'PY'
+  local display_downloads_dir="${6:-$downloads_dir}"
+  python3 - "$source_dir" "$output_dir" "$release_channel" "$release_version" "$downloads_dir" "$display_downloads_dir" <<'PY'
 from __future__ import annotations
 
 import json
@@ -1235,6 +1236,7 @@ output_dir = Path(sys.argv[2])
 release_channel = str(sys.argv[3]).strip()
 release_version = str(sys.argv[4]).strip()
 downloads_dir = Path(sys.argv[5]).resolve(strict=False) if str(sys.argv[5]).strip() else None
+display_downloads_dir = Path(sys.argv[6]).resolve(strict=False) if str(sys.argv[6]).strip() else downloads_dir
 
 output_dir.mkdir(parents=True, exist_ok=True)
 
@@ -1259,8 +1261,8 @@ for receipt_path in sorted(output_dir.glob("startup-smoke-*.receipt.json")):
         payload["artifactFileName"] = artifact_file_name
         payload["fileName"] = artifact_file_name
         payload["artifactRelativePath"] = f"files/{artifact_file_name}"
-        if downloads_dir is not None:
-            payload["artifactPath"] = str((downloads_dir / artifact_file_name).resolve(strict=False))
+        if display_downloads_dir is not None:
+            payload["artifactPath"] = str((display_downloads_dir / artifact_file_name).resolve(strict=False))
     receipt_path.write_text(json.dumps(payload, indent=2) + "\n", encoding="utf-8")
 PY
 }
@@ -1538,7 +1540,8 @@ if [[ -d "$STARTUP_SMOKE_DIR" ]] && find "$STARTUP_SMOKE_DIR" -maxdepth 1 -type 
     "$SANITIZED_STARTUP_SMOKE_DIR" \
     "$RELEASE_CHANNEL" \
     "$RELEASE_VERSION" \
-    "$DOWNLOADS_DIR"
+    "$DOWNLOADS_DIR" \
+    "$CANONICAL_FILES_DIR"
   STARTUP_SMOKE_DIR="$SANITIZED_STARTUP_SMOKE_DIR"
   rm -rf "$hydrated_startup_smoke_dir"
 fi
