@@ -1,6 +1,6 @@
 {
-  "contract_name": "chummer6-ui.blazor_workbench_polish_staged_proof",
-  "generated_at": "2026-06-24T20:59:29.137905+00:00",
+  "contract_name": "chummer6-ui.blazor_workbench_command_palette_staged_proof",
+  "generated_at": "2026-06-24T20:59:29.218415+00:00",
   "status": "passed",
   "proof_tier": "source_staged_no_browser_execution",
   "route_lane": "promoted_blazor_workbench",
@@ -9,17 +9,17 @@
   ],
   "checks": [
     {
-      "id": "product_workbench_task_dock",
+      "id": "product_workbench_command_palette",
       "path": "Chummer.Blazor/Components/Pages/Preview.razor",
       "status": "passed",
       "required_token_count": 12,
       "missing_tokens": []
     },
     {
-      "id": "scoped_visual_design",
+      "id": "scoped_command_palette_visual_design",
       "path": "Chummer.Blazor/Components/Pages/Preview.razor.css",
       "status": "passed",
-      "required_token_count": 4,
+      "required_token_count": 5,
       "missing_tokens": []
     },
     {
@@ -46,8 +46,8 @@
   ],
   "failures": [],
   "notes": [
-    "This receipt only proves that promoted workbench polish source, style, status, and docs agree.",
+    "This receipt only proves that promoted workbench command-palette source, style, status, and docs agree.",
     "It is not a substitute for hosted Playwright execution proof or Docker self-host proof.",
-    "Do not use this receipt to claim desktop-equivalent browser workflow parity."
+    "Do not use this receipt to claim actual keyboard-event handling or command execution runtime behavior."
   ]
 }

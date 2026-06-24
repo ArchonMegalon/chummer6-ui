@@ -25,6 +25,10 @@ MAGIC_CLEANUP_STAGED_PROOF = PUBLISHED / "BLAZOR_MAGIC_CLEANUP_STAGED_PROOF.gene
 BROWSER_OUTPUT_HANDOFF_STAGED_PROOF = PUBLISHED / "BLAZOR_BROWSER_OUTPUT_HANDOFF_STAGED_PROOF.generated.json"
 WORKBENCH_PORTAL_HANDOFF_STAGED_PROOF = PUBLISHED / "BLAZOR_WORKBENCH_PORTAL_HANDOFF_STAGED_PROOF.generated.json"
 WORKBENCH_POLISH_STAGED_PROOF = PUBLISHED / "BLAZOR_WORKBENCH_POLISH_STAGED_PROOF.generated.json"
+WORKBENCH_RECOVERY_STAGED_PROOF = PUBLISHED / "BLAZOR_WORKBENCH_RECOVERY_STAGED_PROOF.generated.json"
+WORKBENCH_HOSTING_PRIVACY_STAGED_PROOF = PUBLISHED / "BLAZOR_WORKBENCH_HOSTING_PRIVACY_STAGED_PROOF.generated.json"
+WORKBENCH_COMMAND_PALETTE_STAGED_PROOF = PUBLISHED / "BLAZOR_WORKBENCH_COMMAND_PALETTE_STAGED_PROOF.generated.json"
+WORKBENCH_DENSITY_STAGED_PROOF = PUBLISHED / "BLAZOR_WORKBENCH_DENSITY_STAGED_PROOF.generated.json"
 LEGACY_CONTROL_COVERAGE_STAGED_PROOF = PUBLISHED / "BLAZOR_LEGACY_CONTROL_COVERAGE_STAGED_PROOF.generated.json"
 SOURCE_STAGED_PROOF_SET = PUBLISHED / "BLAZOR_SOURCE_STAGED_PROOF_SET.generated.json"
 PORTAL_INSTALLER_HANDOFF_STAGED_PROOF = PUBLISHED / "BLAZOR_PORTAL_INSTALLER_HANDOFF_STAGED_PROOF.generated.json"
@@ -99,6 +103,10 @@ def main() -> int:
     browser_output_handoff_staged = load_json(BROWSER_OUTPUT_HANDOFF_STAGED_PROOF)
     workbench_portal_handoff_staged = load_json(WORKBENCH_PORTAL_HANDOFF_STAGED_PROOF)
     workbench_polish_staged = load_json(WORKBENCH_POLISH_STAGED_PROOF)
+    workbench_recovery_staged = load_json(WORKBENCH_RECOVERY_STAGED_PROOF)
+    workbench_hosting_privacy_staged = load_json(WORKBENCH_HOSTING_PRIVACY_STAGED_PROOF)
+    workbench_command_palette_staged = load_json(WORKBENCH_COMMAND_PALETTE_STAGED_PROOF)
+    workbench_density_staged = load_json(WORKBENCH_DENSITY_STAGED_PROOF)
     legacy_control_coverage_staged = load_json(LEGACY_CONTROL_COVERAGE_STAGED_PROOF)
     source_staged_proof_set = load_json(SOURCE_STAGED_PROOF_SET)
     portal_installer_handoff_staged = load_json(PORTAL_INSTALLER_HANDOFF_STAGED_PROOF)
@@ -287,6 +295,46 @@ def main() -> int:
     print(f"workbench_polish_staged_source_checks={count_staged_source_checks(workbench_polish_staged)}")
     print(
         "workbench_polish_staged_note="
+        "source_alignment_only_not_browser_execution"
+    )
+    print(f"workbench_recovery_staged_receipt={WORKBENCH_RECOVERY_STAGED_PROOF}")
+    print(f"workbench_recovery_staged_status={str(workbench_recovery_staged.get('status') or '').strip() or 'not_generated'}")
+    print(f"workbench_recovery_staged_contract={str(workbench_recovery_staged.get('contract_name') or '').strip() or 'missing'}")
+    print(f"workbench_recovery_staged_tier={str(workbench_recovery_staged.get('proof_tier') or '').strip() or 'missing'}")
+    print(f"workbench_recovery_staged_route_count={len(workbench_recovery_staged.get('expected_routes') or [])}")
+    print(f"workbench_recovery_staged_source_checks={count_staged_source_checks(workbench_recovery_staged)}")
+    print(
+        "workbench_recovery_staged_note="
+        "source_alignment_only_not_browser_execution"
+    )
+    print(f"workbench_hosting_privacy_staged_receipt={WORKBENCH_HOSTING_PRIVACY_STAGED_PROOF}")
+    print(f"workbench_hosting_privacy_staged_status={str(workbench_hosting_privacy_staged.get('status') or '').strip() or 'not_generated'}")
+    print(f"workbench_hosting_privacy_staged_contract={str(workbench_hosting_privacy_staged.get('contract_name') or '').strip() or 'missing'}")
+    print(f"workbench_hosting_privacy_staged_tier={str(workbench_hosting_privacy_staged.get('proof_tier') or '').strip() or 'missing'}")
+    print(f"workbench_hosting_privacy_staged_route_count={len(workbench_hosting_privacy_staged.get('expected_routes') or [])}")
+    print(f"workbench_hosting_privacy_staged_source_checks={count_staged_source_checks(workbench_hosting_privacy_staged)}")
+    print(
+        "workbench_hosting_privacy_staged_note="
+        "source_alignment_only_not_browser_execution"
+    )
+    print(f"workbench_command_palette_staged_receipt={WORKBENCH_COMMAND_PALETTE_STAGED_PROOF}")
+    print(f"workbench_command_palette_staged_status={str(workbench_command_palette_staged.get('status') or '').strip() or 'not_generated'}")
+    print(f"workbench_command_palette_staged_contract={str(workbench_command_palette_staged.get('contract_name') or '').strip() or 'missing'}")
+    print(f"workbench_command_palette_staged_tier={str(workbench_command_palette_staged.get('proof_tier') or '').strip() or 'missing'}")
+    print(f"workbench_command_palette_staged_route_count={len(workbench_command_palette_staged.get('expected_routes') or [])}")
+    print(f"workbench_command_palette_staged_source_checks={count_staged_source_checks(workbench_command_palette_staged)}")
+    print(
+        "workbench_command_palette_staged_note="
+        "source_alignment_only_not_browser_execution"
+    )
+    print(f"workbench_density_staged_receipt={WORKBENCH_DENSITY_STAGED_PROOF}")
+    print(f"workbench_density_staged_status={str(workbench_density_staged.get('status') or '').strip() or 'not_generated'}")
+    print(f"workbench_density_staged_contract={str(workbench_density_staged.get('contract_name') or '').strip() or 'missing'}")
+    print(f"workbench_density_staged_tier={str(workbench_density_staged.get('proof_tier') or '').strip() or 'missing'}")
+    print(f"workbench_density_staged_route_count={len(workbench_density_staged.get('expected_routes') or [])}")
+    print(f"workbench_density_staged_source_checks={count_staged_source_checks(workbench_density_staged)}")
+    print(
+        "workbench_density_staged_note="
         "source_alignment_only_not_browser_execution"
     )
     print(f"legacy_control_coverage_staged_receipt={LEGACY_CONTROL_COVERAGE_STAGED_PROOF}")

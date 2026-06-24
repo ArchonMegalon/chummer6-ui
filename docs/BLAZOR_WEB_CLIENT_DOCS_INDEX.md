@@ -106,6 +106,14 @@ Current docs already define the intended shipped posture and the evidence contra
 - `docs/examples/blazor-workbench-portal-handoff-staged-proof.receipt.example.json` shows the compact generated receipt shape for `BLAZOR_WORKBENCH_PORTAL_HANDOFF_STAGED_PROOF.generated.json`.
 - `docs/BLAZOR_WORKBENCH_POLISH_STAGED_PROOF.md` defines the source-staged promoted workbench polish contract for the desktop-style task dock. It is not runtime proof.
 - `docs/examples/blazor-workbench-polish-staged-proof.receipt.example.json` shows the compact generated receipt shape for `BLAZOR_WORKBENCH_POLISH_STAGED_PROOF.generated.json`.
+- `docs/BLAZOR_WORKBENCH_RECOVERY_STAGED_PROOF.md` defines the source-staged promoted workbench session recovery contract. It is not runtime proof.
+- `docs/examples/blazor-workbench-recovery-staged-proof.receipt.example.json` shows the compact generated receipt shape for `BLAZOR_WORKBENCH_RECOVERY_STAGED_PROOF.generated.json`.
+- `docs/BLAZOR_WORKBENCH_HOSTING_PRIVACY_STAGED_PROOF.md` defines the source-staged promoted workbench hosting and privacy posture contract. It is not runtime proof.
+- `docs/examples/blazor-workbench-hosting-privacy-staged-proof.receipt.example.json` shows the compact generated receipt shape for `BLAZOR_WORKBENCH_HOSTING_PRIVACY_STAGED_PROOF.generated.json`.
+- `docs/BLAZOR_WORKBENCH_COMMAND_PALETTE_STAGED_PROOF.md` defines the source-staged promoted workbench command-palette posture contract. It is not runtime proof.
+- `docs/examples/blazor-workbench-command-palette-staged-proof.receipt.example.json` shows the compact generated receipt shape for `BLAZOR_WORKBENCH_COMMAND_PALETTE_STAGED_PROOF.generated.json`.
+- `docs/BLAZOR_WORKBENCH_DENSITY_STAGED_PROOF.md` defines the source-staged promoted workbench density posture contract. It is not runtime proof.
+- `docs/examples/blazor-workbench-density-staged-proof.receipt.example.json` shows the compact generated receipt shape for `BLAZOR_WORKBENCH_DENSITY_STAGED_PROOF.generated.json`.
 
 ## Portal Installer Handoff
 

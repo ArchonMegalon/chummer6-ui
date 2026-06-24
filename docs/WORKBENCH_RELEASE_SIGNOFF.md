@@ -87,6 +87,14 @@ The next staged browser-family slice after browser output handoff is workbench p
 
 The next staged browser-family slice after workbench portal handoff is workbench polish posture for the promoted desktop-style task dock. `scripts/ai/milestones/blazor-workbench-polish-staged-proof-check.sh` is its source-alignment check. It proves only that the promoted workbench exposes dense start, edit, output, and portal handoff shortcuts with scoped responsive styling; it is not a hosted or Docker browser execution receipt.
 
+The next staged browser-family slice after workbench polish is workbench recovery posture for the promoted session recovery strip. `scripts/ai/milestones/blazor-workbench-recovery-staged-proof-check.sh` is its source-alignment check. It proves only that the promoted workbench exposes recent, Build Lab, profile, status, restored workspace, restored gear, and restored output affordances with scoped responsive styling; it is not a hosted or Docker browser execution receipt.
+
+The next staged browser-family slice after workbench recovery is workbench hosting/privacy posture for hosted route, Docker self-host, and analytics privacy copy. `scripts/ai/milestones/blazor-workbench-hosting-privacy-staged-proof-check.sh` is its source-alignment check. It proves only that the promoted workbench exposes hosted/self-host/Rybbit privacy posture with scoped responsive styling; it is not a hosted or Docker browser execution receipt.
+
+The next staged browser-family slice after workbench hosting/privacy is workbench command-palette posture for keyboard-style command discovery. `scripts/ai/milestones/blazor-workbench-command-palette-staged-proof-check.sh` is its source-alignment check. It proves only that the promoted workbench exposes keyboard-style hints and reload-safe workbench links for common commands; it is not a hosted or Docker browser execution receipt.
+
+The next staged browser-family slice after workbench command-palette is workbench density posture for compact desktop, comfortable review, and mobile-safe display options. `scripts/ai/milestones/blazor-workbench-density-staged-proof-check.sh` is its source-alignment check. It proves only that the promoted workbench exposes density posture controls with scoped responsive styling; it is not a hosted or Docker browser execution receipt.
+
 `/scripts/ai/milestones/blazor-legacy-control-coverage-staged-proof-check.sh` is the source-level breadth guard over all known `LegacyUiControlCatalog` controls. It maps controls into hosted execution baseline coverage or staged source-alignment families; it is not a hosted or Docker browser execution receipt.
 
 `scripts/ai/milestones/blazor-source-staged-proof-set-check.sh` is the aggregate source-staged proof-set lane. It materializes the staged source receipts and summarizes their status, but it must stay outside release-readiness aggregation because it is not hosted or Docker browser execution evidence.

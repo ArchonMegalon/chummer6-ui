@@ -37,6 +37,10 @@ The aggregate currently covers:
 - `browser_output_handoff`
 - `workbench_portal_handoff`
 - `workbench_polish`
+- `workbench_recovery`
+- `workbench_hosting_privacy`
+- `workbench_command_palette`
+- `workbench_density`
 - `legacy_control_coverage`
 
 Each family must keep `proof_tier` set to:

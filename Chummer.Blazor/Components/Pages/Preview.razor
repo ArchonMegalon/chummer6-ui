@@ -120,6 +120,150 @@
             </nav>
         </section>
 
+        <section class="browser-workbench-recovery-strip" aria-label="Workbench session recovery" data-workbench-recovery="strip">
+            <div class="browser-workbench-recovery-copy">
+                <span class="browser-preview-status-label">Session recovery</span>
+                <strong>Resume without restarting the job.</strong>
+                <p>Refresh, direct entry, and portal handoff should keep the browser client in the same work rhythm as desktop Chummer.</p>
+            </div>
+            <div class="browser-workbench-recovery-actions">
+                <a href="@ContinueRecentHref" data-workbench-recovery-action="continue-recent">@ContinueRecentLabel</a>
+                <a href="@BuildLabLaneHref" data-workbench-recovery-action="build-lab">@BuildLabLaneLabel</a>
+                <a href="@ProfileLaneHref" data-workbench-recovery-action="profile">Profile lane</a>
+                <a href="/status" data-workbench-recovery-action="status">Status fallback</a>
+            </div>
+            @if (PrimaryRecentWorkspace is not null)
+            {
+                <div class="browser-workbench-recovery-detail">
+                    <span data-workbench-recovery-workspace="@PrimaryRecentWorkspace.WorkspaceId">Restored workspace: @PrimaryRecentWorkspace.ShortLabel</span>
+                    <a href="@BuildPreviewHref(workspace: PrimaryRecentWorkspace.WorkspaceId, useWorkbenchRoute: true)"
+                       data-workbench-recovery-action="restore-workspace">
+                        Restore shell
+                    </a>
+                    <a href="@BuildPreviewHref(workspace: PrimaryRecentWorkspace.WorkspaceId, tab: "tab-gear", useWorkbenchRoute: true)"
+                       data-workbench-recovery-action="restore-gear">
+                        Restore gear
+                    </a>
+                    <a href="@BuildPreviewHref(workspace: PrimaryRecentWorkspace.WorkspaceId, command: "save_character_as", useWorkbenchRoute: true)"
+                       data-workbench-recovery-action="restore-output">
+                        Restore output
+                    </a>
+                </div>
+            }
+            else
+            {
+                <div class="browser-workbench-recovery-detail">
+                    <span data-workbench-recovery-empty="true">No restored workspace yet. Start, import, or open the seeded dossier to establish browser continuity.</span>
+                </div>
+            }
+        </section>
+
+        <section class="browser-workbench-hosting-strip" aria-label="Workbench hosting and privacy posture" data-workbench-hosting="strip">
+            <div class="browser-workbench-hosting-copy">
+                <span class="browser-preview-status-label">Hosting and privacy</span>
+                <strong>Same workbench, hosted or self-hosted.</strong>
+                <p>The browser client is meant to run on `chummer.run` and in Docker without changing the user workflow or quietly changing telemetry expectations.</p>
+            </div>
+            <div class="browser-workbench-hosting-cards">
+                <article data-workbench-hosting-card="public-edge">
+                    <span>Hosted route</span>
+                    <strong>/blazor/workbench</strong>
+                    <p>The promoted browser client stays behind the portal front door so downloads, support, status, and account handoff remain same-origin.</p>
+                </article>
+                <article data-workbench-hosting-card="docker-self-host">
+                    <span>Self-host</span>
+                    <strong>Docker portal profile</strong>
+                    <p>Self-hosted operators keep the same portal/API/Blazor shape, with owner context and analytics defaults controlled by environment.</p>
+                </article>
+                <article data-workbench-hosting-card="analytics-privacy">
+                    <span>Analytics</span>
+                    <strong>Rybbit is optional and metadata-only</strong>
+                    <p>Hosted analytics may use route/workflow metadata; self-host defaults stay off and must not send character, owner, workspace, XML, or dossier content.</p>
+                </article>
+            </div>
+        </section>
+
+        <section class="browser-workbench-command-palette" aria-label="Workbench command palette posture" data-workbench-command-palette="strip">
+            <div class="browser-workbench-command-copy">
+                <span class="browser-preview-status-label">Command palette</span>
+                <strong>Desktop habits, browser-safe commands.</strong>
+                <p>Keep common Chummer actions discoverable with keyboard-style hints while every command remains a reload-safe workbench link.</p>
+            </div>
+            <details open class="browser-workbench-command-panel" data-workbench-command-palette-panel="primary">
+                <summary>Quick command map</summary>
+                <div class="browser-workbench-command-list" role="list">
+                    <a href="/workbench?command=new_character"
+                       role="listitem"
+                       aria-keyshortcuts="Control+N"
+                       data-workbench-command-palette-action="new-character">
+                        <kbd>Ctrl</kbd><kbd>N</kbd><span>New runner</span>
+                    </a>
+                    <a href="/workbench?command=open_character"
+                       role="listitem"
+                       aria-keyshortcuts="Control+O"
+                       data-workbench-command-palette-action="open-character">
+                        <kbd>Ctrl</kbd><kbd>O</kbd><span>Open/import</span>
+                    </a>
+                    <a href="@BuildLabLaneHref"
+                       role="listitem"
+                       aria-keyshortcuts="Control+B"
+                       data-workbench-command-palette-action="build-lab">
+                        <kbd>Ctrl</kbd><kbd>B</kbd><span>Build Lab</span>
+                    </a>
+                    <a href="@GearLaneHref"
+                       role="listitem"
+                       aria-keyshortcuts="Control+G"
+                       data-workbench-command-palette-action="gear">
+                        <kbd>Ctrl</kbd><kbd>G</kbd><span>Gear</span>
+                    </a>
+                    <a href="@SaveAsFlowHref"
+                       role="listitem"
+                       aria-keyshortcuts="Control+S"
+                       data-workbench-command-palette-action="save-download">
+                        <kbd>Ctrl</kbd><kbd>S</kbd><span>Save/download</span>
+                    </a>
+                    <a href="@PrintFlowHref"
+                       role="listitem"
+                       aria-keyshortcuts="Control+P"
+                       data-workbench-command-palette-action="print">
+                        <kbd>Ctrl</kbd><kbd>P</kbd><span>Print</span>
+                    </a>
+                    <a href="/contact"
+                       role="listitem"
+                       aria-keyshortcuts="F1"
+                       data-workbench-command-palette-action="support">
+                        <kbd>F1</kbd><span>Support</span>
+                    </a>
+                </div>
+            </details>
+        </section>
+
+        <section class="browser-workbench-density-strip" aria-label="Workbench density posture" data-workbench-density="strip">
+            <div class="browser-workbench-density-copy">
+                <span class="browser-preview-status-label">Density posture</span>
+                <strong>Dense by default, readable when needed.</strong>
+                <p>Chummer web should start from compact desktop ergonomics, then expose comfortable and mobile-safe postures without changing the workflow model.</p>
+            </div>
+            <fieldset class="browser-workbench-density-options" data-workbench-density-panel="display">
+                <legend>Display density</legend>
+                <label for="workbench-density-compact" data-workbench-density-option="compact">
+                    <input id="workbench-density-compact" name="workbench-density" type="radio" checked="checked" />
+                    <span>Compact desktop</span>
+                    <small>Dense rows, short labels, maximum sheet context.</small>
+                </label>
+                <label for="workbench-density-comfortable" data-workbench-density-option="comfortable">
+                    <input id="workbench-density-comfortable" name="workbench-density" type="radio" />
+                    <span>Comfortable review</span>
+                    <small>More breathing room for rules, dialogs, and source review.</small>
+                </label>
+                <label for="workbench-density-mobile" data-workbench-density-option="mobile">
+                    <input id="workbench-density-mobile" name="workbench-density" type="radio" />
+                    <span>Mobile safe</span>
+                    <small>Single-column fallback while keeping the same commands.</small>
+                </label>
+            </fieldset>
+        </section>
+
         <section class="browser-preview-status-grid" aria-label="Workbench quick starts">
             <article class="browser-preview-status-card" data-workbench-entry-card="new-character">
                 <span class="browser-preview-status-label">Quick start</span>

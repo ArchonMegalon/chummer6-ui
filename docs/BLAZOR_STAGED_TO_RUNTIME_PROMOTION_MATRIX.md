@@ -48,6 +48,10 @@ These source receipts help manage breadth and safety but do not promote workflow
 - `BLAZOR_RUNTIME_PROOF_REFRESH_PLAN.generated.json`
 - `BLAZOR_WORKBENCH_PORTAL_HANDOFF_STAGED_PROOF.generated.json`
 - `BLAZOR_WORKBENCH_POLISH_STAGED_PROOF.generated.json`
+- `BLAZOR_WORKBENCH_RECOVERY_STAGED_PROOF.generated.json`
+- `BLAZOR_WORKBENCH_HOSTING_PRIVACY_STAGED_PROOF.generated.json`
+- `BLAZOR_WORKBENCH_COMMAND_PALETTE_STAGED_PROOF.generated.json`
+- `BLAZOR_WORKBENCH_DENSITY_STAGED_PROOF.generated.json`
 
 ## Promotion Rule
 
