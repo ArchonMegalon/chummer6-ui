@@ -25,6 +25,16 @@ if [[ ! -f "$SCRIPT_DIR/generate-releases-manifest.sh" ]]; then
   exit 1
 fi
 
+if [[ ! -f "$SCRIPT_DIR/verify-windows-installer-payloads.py" ]]; then
+  echo "Missing Windows installer payload gate: $SCRIPT_DIR/verify-windows-installer-payloads.py" >&2
+  exit 1
+fi
+
+python3 "$SCRIPT_DIR/verify-windows-installer-payloads.py" \
+  --files-dir "$FILES_SOURCE" \
+  --manifest "$MANIFEST_SOURCE" \
+  --allow-empty
+
 sync_source_dir="$(mktemp -d)"
 cleanup() {
   rm -rf "$sync_source_dir"

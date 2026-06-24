@@ -659,6 +659,33 @@ print(installer)
 PY
 }
 
+verify_windows_installer_payload_gate() {
+  local installer_path="$1"
+  local payload_path="${2:-}"
+  local -a gate_args=(
+    --installer "$installer_path"
+    --expected-launch "$LAUNCH_TARGET"
+    --heads-json-base64 "$heads_json_base64"
+  )
+
+  if [[ -n "$primary_relative_root" ]]; then
+    gate_args+=(--expected-entry "$primary_relative_root/$LAUNCH_TARGET")
+  else
+    gate_args+=(--expected-entry "$LAUNCH_TARGET")
+  fi
+
+  if [[ -n "$secondary_head_key" && -n "$secondary_launch_target" ]]; then
+    gate_args+=(--expected-launch "$secondary_launch_target")
+    gate_args+=(--expected-entry "$secondary_relative_root/$secondary_launch_target")
+  fi
+
+  if [[ -n "$payload_path" ]]; then
+    gate_args+=(--payload "$payload_path" --files-dir "$(dirname "$payload_path")")
+  fi
+
+  "$PYTHON_BIN" "$SCRIPT_DIR/verify-windows-installer-payloads.py" "${gate_args[@]}"
+}
+
 build_payload_tar_gz() {
   local target="$1"
   python3 - "$PUBLISH_DIR" "$target" <<'PY'
@@ -1096,8 +1123,10 @@ build_windows_installer() {
   "releaseVersion": "$VERSION"
 }
 EOF
+    verify_windows_installer_payload_gate "$DIST_DIR/$installer_name" "$DIST_DIR/files/$(basename "$payload_zip")"
   else
     append_payload_zip_to_windows_installer "$DIST_DIR/$installer_name" "$payload_zip"
+    verify_windows_installer_payload_gate "$DIST_DIR/$installer_name"
   fi
   rm -f "$payload_zip"
   if [[ -n "$stage_root" ]]; then

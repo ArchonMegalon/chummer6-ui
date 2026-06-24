@@ -227,6 +227,32 @@ public sealed class DesktopInstallerParityComplianceTests
         StringAssert.Contains(manifestGeneratorText, "\"payloadDownloadUrl\"");
     }
 
+    [TestMethod]
+    public void Windows_installer_publish_lanes_gate_bootstrap_payload_before_promotion()
+    {
+        string repoRoot = FindRepoRoot();
+        string gatePath = Path.Combine(repoRoot, "scripts", "verify-windows-installer-payloads.py");
+        string gateText = File.ReadAllText(gatePath);
+        string installerScriptText = File.ReadAllText(Path.Combine(repoRoot, "scripts", "build-desktop-installer.sh"));
+        string publishBundleText = File.ReadAllText(Path.Combine(repoRoot, "scripts", "publish-download-bundle.sh"));
+        string publishHttpText = File.ReadAllText(Path.Combine(repoRoot, "scripts", "publish-download-bundle-http.sh"));
+        string publishS3Text = File.ReadAllText(Path.Combine(repoRoot, "scripts", "publish-download-bundle-s3.sh"));
+
+        StringAssert.Contains(gateText, "APPENDED_PAYLOAD_MAGIC = b\"CHUMMER6PAYLOAD1\"");
+        StringAssert.Contains(gateText, "no appended payload and no bootstrap sidecar");
+        StringAssert.Contains(gateText, "payload zip is missing launch executable");
+        StringAssert.Contains(installerScriptText, "verify_windows_installer_payload_gate \"$DIST_DIR/$installer_name\"");
+        StringAssert.Contains(installerScriptText, "--heads-json-base64 \"$heads_json_base64\"");
+        StringAssert.Contains(installerScriptText, "--expected-entry \"$primary_relative_root/$LAUNCH_TARGET\"");
+        StringAssert.Contains(publishBundleText, "verify_windows_installer_payload_gate");
+        StringAssert.Contains(publishBundleText, "chummer-*-win-*-payload.zip)");
+        StringAssert.Contains(publishBundleText, "file_path.name.endswith(\"-payload.zip\")");
+        StringAssert.Contains(publishHttpText, "verify-windows-installer-payloads.py");
+        StringAssert.Contains(publishHttpText, "--manifest \"$CANONICAL_MANIFEST_PATH\"");
+        StringAssert.Contains(publishS3Text, "verify-windows-installer-payloads.py");
+        StringAssert.Contains(publishS3Text, "--manifest \"$MANIFEST_SOURCE\"");
+    }
+
     private static string FindRepoRoot()
     {
         DirectoryInfo? current = new(AppContext.BaseDirectory);
