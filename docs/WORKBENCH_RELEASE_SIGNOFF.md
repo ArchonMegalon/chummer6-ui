@@ -105,6 +105,10 @@ The next staged browser-family slice after workbench rules/data is workbench set
 
 The next staged browser-family slice after workbench settings is workbench diagnostics posture for runtime inspector, About, health, status, and preview tools. `scripts/ai/milestones/blazor-workbench-diagnostics-staged-proof-check.sh` is its source-alignment check. It proves only that the promoted workbench exposes diagnostics affordances and shared dialog source alignment; it is not a hosted or Docker browser execution receipt.
 
+The next staged browser-family slice after workbench diagnostics is workbench connected-runtime posture for play, session, coach, assistant, and status links. `scripts/ai/milestones/blazor-workbench-connected-runtime-staged-proof-check.sh` is its source-alignment check. It proves only that the promoted workbench exposes optional live-lane affordances and connected-runtime documentation boundaries; it is not a hosted or Docker browser execution receipt.
+
+The next staged browser-family slice after workbench connected-runtime is workbench accessibility posture for keyboard order, dialog fit, readable density, reduced motion, and help links. `scripts/ai/milestones/blazor-workbench-accessibility-staged-proof-check.sh` is its source-alignment check. It proves only that the promoted workbench exposes accessibility affordances and responsive source alignment; it is not a hosted or Docker browser execution receipt.
+
 `/scripts/ai/milestones/blazor-legacy-control-coverage-staged-proof-check.sh` is the source-level breadth guard over all known `LegacyUiControlCatalog` controls. It maps controls into hosted execution baseline coverage or staged source-alignment families; it is not a hosted or Docker browser execution receipt.
 
 `scripts/ai/milestones/blazor-source-staged-proof-set-check.sh` is the aggregate source-staged proof-set lane. It materializes the staged source receipts and summarizes their status, but it must stay outside release-readiness aggregation because it is not hosted or Docker browser execution evidence.

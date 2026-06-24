@@ -53,13 +53,13 @@ The adapter is limited to route/workflow metadata such as route family, command 
 
 ## Connected Runtime Posture
 
-- `scripts/materialize-blazor-connected-runtime-posture-proof.py`: proof materializer for optional session, coach, and AI forwarding posture
+- `scripts/materialize-blazor-connected-runtime-posture-proof.py`: proof materializer for optional session, coach, and assistant forwarding posture
 - `scripts/ai/milestones/blazor-connected-runtime-posture-check.sh`: milestone-style wrapper for connected-runtime posture proof
 - `.codex-studio/published/BLAZOR_CONNECTED_RUNTIME_POSTURE.generated.json`: published connected-runtime posture receipt
 
-Connected runtime proof is deliberately narrower than workflow parity. It proves that optional session, coach, and AI routes can remain behind the portal boundary and use the signed portal-owner forwarding seam when configured. It does not prove that every downstream connected-runtime workflow is complete.
+Connected runtime proof is deliberately narrower than workflow parity. It proves that optional session, coach, and assistant routes can remain behind the portal boundary and use the signed portal-owner forwarding seam when configured. It does not prove that every downstream connected-runtime workflow is complete.
 
-The browser workbench proof shelf also renders a connected-runtime posture card showing whether session, coach, and AI lanes are configured or off. The card must not expose proxy URLs or owner secrets.
+The browser workbench also renders a connected-runtime posture card showing whether session, coach, and assistant lanes are configured or off. The card must not expose proxy URLs or owner secrets.
 
 ## Route and Workflow Canon
 
@@ -124,6 +124,10 @@ Current docs already define the intended shipped posture and the evidence contra
 - `docs/examples/blazor-workbench-settings-staged-proof.receipt.example.json` shows the compact generated receipt shape for `BLAZOR_WORKBENCH_SETTINGS_STAGED_PROOF.generated.json`.
 - `docs/BLAZOR_WORKBENCH_DIAGNOSTICS_STAGED_PROOF.md` defines the source-staged promoted workbench diagnostics posture contract. It is not runtime proof.
 - `docs/examples/blazor-workbench-diagnostics-staged-proof.receipt.example.json` shows the compact generated receipt shape for `BLAZOR_WORKBENCH_DIAGNOSTICS_STAGED_PROOF.generated.json`.
+- `docs/BLAZOR_WORKBENCH_CONNECTED_RUNTIME_STAGED_PROOF.md` defines the source-staged promoted workbench connected-runtime posture contract. It is not runtime proof.
+- `docs/examples/blazor-workbench-connected-runtime-staged-proof.receipt.example.json` shows the compact generated receipt shape for `BLAZOR_WORKBENCH_CONNECTED_RUNTIME_STAGED_PROOF.generated.json`.
+- `docs/BLAZOR_WORKBENCH_ACCESSIBILITY_STAGED_PROOF.md` defines the source-staged promoted workbench accessibility posture contract. It is not runtime proof.
+- `docs/examples/blazor-workbench-accessibility-staged-proof.receipt.example.json` shows the compact generated receipt shape for `BLAZOR_WORKBENCH_ACCESSIBILITY_STAGED_PROOF.generated.json`.
 
 ## Portal Installer Handoff
 

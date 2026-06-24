@@ -839,6 +839,150 @@
     line-height: 1.35;
 }
 
+.browser-workbench-connected-runtime {
+    width: min(1240px, calc(100% - 1rem));
+    margin: 0 auto 0.85rem;
+    display: grid;
+    grid-template-columns: minmax(17rem, 0.72fr) minmax(0, 1.68fr);
+    gap: 0.8rem;
+    align-items: stretch;
+    padding: 0.85rem;
+    border: 1px solid rgba(137, 224, 179, 0.2);
+    border-radius: 1rem;
+    background:
+        linear-gradient(135deg, rgba(137, 224, 179, 0.08), rgba(244, 207, 115, 0.05)),
+        rgba(12, 15, 20, 0.92);
+}
+
+.browser-workbench-connected-runtime-copy {
+    display: grid;
+    gap: 0.35rem;
+    align-content: center;
+    padding: 0.55rem 0.65rem;
+    border-radius: 0.85rem;
+    background: rgba(0, 0, 0, 0.16);
+}
+
+.browser-workbench-connected-runtime-copy strong,
+.browser-workbench-connected-runtime-copy p {
+    margin: 0;
+}
+
+.browser-workbench-connected-runtime-copy strong {
+    color: #eaf7ee;
+    font-size: 1rem;
+}
+
+.browser-workbench-connected-runtime-copy p {
+    color: rgba(238, 241, 246, 0.78);
+    line-height: 1.45;
+}
+
+.browser-workbench-connected-runtime-actions {
+    display: grid;
+    grid-template-columns: repeat(5, minmax(0, 1fr));
+    gap: 0.55rem;
+}
+
+.browser-workbench-connected-runtime-actions a {
+    display: grid;
+    gap: 0.3rem;
+    min-height: 5rem;
+    padding: 0.7rem;
+    border: 1px solid rgba(238, 241, 246, 0.13);
+    border-radius: 0.8rem;
+    color: #eef1f6;
+    text-decoration: none;
+    background: rgba(255, 255, 255, 0.045);
+}
+
+.browser-workbench-connected-runtime-actions a:hover,
+.browser-workbench-connected-runtime-actions a:focus-visible {
+    border-color: rgba(244, 207, 115, 0.7);
+    background: rgba(137, 224, 179, 0.1);
+}
+
+.browser-workbench-connected-runtime-actions span {
+    font-weight: 900;
+}
+
+.browser-workbench-connected-runtime-actions small {
+    color: rgba(238, 241, 246, 0.72);
+    line-height: 1.35;
+}
+
+.browser-workbench-accessibility {
+    width: min(1240px, calc(100% - 1rem));
+    margin: 0 auto 0.85rem;
+    display: grid;
+    grid-template-columns: minmax(17rem, 0.72fr) minmax(0, 1.68fr);
+    gap: 0.8rem;
+    align-items: stretch;
+    padding: 0.85rem;
+    border: 1px solid rgba(244, 207, 115, 0.2);
+    border-radius: 1rem;
+    background:
+        linear-gradient(135deg, rgba(244, 207, 115, 0.08), rgba(137, 224, 179, 0.05)),
+        rgba(12, 15, 20, 0.92);
+}
+
+.browser-workbench-accessibility-copy {
+    display: grid;
+    gap: 0.35rem;
+    align-content: center;
+    padding: 0.55rem 0.65rem;
+    border-radius: 0.85rem;
+    background: rgba(0, 0, 0, 0.16);
+}
+
+.browser-workbench-accessibility-copy strong,
+.browser-workbench-accessibility-copy p {
+    margin: 0;
+}
+
+.browser-workbench-accessibility-copy strong {
+    color: #fff7d6;
+    font-size: 1rem;
+}
+
+.browser-workbench-accessibility-copy p {
+    color: rgba(238, 241, 246, 0.78);
+    line-height: 1.45;
+}
+
+.browser-workbench-accessibility-actions {
+    display: grid;
+    grid-template-columns: repeat(5, minmax(0, 1fr));
+    gap: 0.55rem;
+}
+
+.browser-workbench-accessibility-actions a {
+    display: grid;
+    gap: 0.3rem;
+    min-height: 5rem;
+    padding: 0.7rem;
+    border: 1px solid rgba(238, 241, 246, 0.13);
+    border-radius: 0.8rem;
+    color: #eef1f6;
+    text-decoration: none;
+    background: rgba(255, 255, 255, 0.045);
+}
+
+.browser-workbench-accessibility-actions a:hover,
+.browser-workbench-accessibility-actions a:focus-visible {
+    border-color: rgba(244, 207, 115, 0.7);
+    background: rgba(244, 207, 115, 0.1);
+}
+
+.browser-workbench-accessibility-actions span {
+    font-weight: 900;
+}
+
+.browser-workbench-accessibility-actions small {
+    color: rgba(238, 241, 246, 0.72);
+    line-height: 1.35;
+}
+
 .browser-preview-frame {
     padding-bottom: 1rem;
 }
@@ -933,6 +1077,16 @@
 
     .browser-workbench-diagnostics,
     .browser-workbench-diagnostics-actions {
+        grid-template-columns: 1fr;
+    }
+
+    .browser-workbench-connected-runtime,
+    .browser-workbench-connected-runtime-actions {
+        grid-template-columns: 1fr;
+    }
+
+    .browser-workbench-accessibility,
+    .browser-workbench-accessibility-actions {
         grid-template-columns: 1fr;
     }
 }

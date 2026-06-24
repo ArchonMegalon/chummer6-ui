@@ -444,6 +444,76 @@
             </div>
         </section>
 
+        <section class="browser-workbench-connected-runtime" aria-label="Workbench live lanes" data-workbench-connected-runtime="strip">
+            <div class="browser-workbench-connected-runtime-copy">
+                <span class="browser-preview-status-label">Live lanes</span>
+                <strong>Use connected tools when they are available.</strong>
+                <p>Play, session, coach, assistant, and status links stay close without changing the workbench.</p>
+            </div>
+            <div class="browser-workbench-connected-runtime-actions">
+                <a href="/play"
+                   data-workbench-connected-runtime-action="play-session">
+                    <span>Play</span>
+                    <small>Open the portal play shell.</small>
+                </a>
+                <a href="/session/"
+                   data-workbench-connected-runtime-action="session-runtime">
+                    <span>Session</span>
+                    <small>Use configured session forwarding.</small>
+                </a>
+                <a href="/coach/"
+                   data-workbench-connected-runtime-action="coach-runtime">
+                    <span>Coach</span>
+                    <small>Use configured coach handoff.</small>
+                </a>
+                <a href="@BuildPreviewHref(command: "auto_alice", useWorkbenchRoute: true)"
+                   data-workbench-connected-runtime-action="auto-alice">
+                    <span>Assistant</span>
+                    <small>Open the optional assistant lane.</small>
+                </a>
+                <a href="/status"
+                   data-workbench-connected-runtime-action="runtime-status">
+                    <span>Status</span>
+                    <small>Check configured/off posture.</small>
+                </a>
+            </div>
+        </section>
+
+        <section class="browser-workbench-accessibility" aria-label="Workbench accessibility" data-workbench-accessibility="strip">
+            <div class="browser-workbench-accessibility-copy">
+                <span class="browser-preview-status-label">Accessibility</span>
+                <strong>Desktop density without hidden controls.</strong>
+                <p>Keyboard order, dialog fit, readable density, reduced motion, and help links stay close.</p>
+            </div>
+            <div class="browser-workbench-accessibility-actions">
+                <a href="@BuildPreviewHref(command: "global_settings", useWorkbenchRoute: true)"
+                   data-workbench-accessibility-action="keyboard-order">
+                    <span>Keyboard</span>
+                    <small>Keep commands reachable.</small>
+                </a>
+                <a href="@BuildPreviewHref(command: "character_settings", useWorkbenchRoute: true)"
+                   data-workbench-accessibility-action="dialog-fit">
+                    <span>Dialog fit</span>
+                    <small>Keep dialogs inside the viewport.</small>
+                </a>
+                <a href="#workbench-density-compact"
+                   data-workbench-accessibility-action="density">
+                    <span>Density</span>
+                    <small>Use compact or comfortable layout.</small>
+                </a>
+                <a href="/status"
+                   data-workbench-accessibility-action="reduced-motion">
+                    <span>Motion</span>
+                    <small>Keep status readable without animation.</small>
+                </a>
+                <a href="/contact"
+                   data-workbench-accessibility-action="support">
+                    <span>Help</span>
+                    <small>Open support when a task breaks.</small>
+                </a>
+            </div>
+        </section>
+
         <section class="browser-preview-status-grid" aria-label="Workbench quick starts">
             <article class="browser-preview-status-card" data-workbench-entry-card="new-character">
                 <span class="browser-preview-status-label">Quick start</span>

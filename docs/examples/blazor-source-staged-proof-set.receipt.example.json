@@ -4,8 +4,8 @@
   "status": "passed",
   "proof_tier": "source_staged_no_browser_execution",
   "route_lane": "promoted_blazor_workbench",
-  "required_receipt_count": 21,
-  "passed_receipt_count": 21,
+  "required_receipt_count": 23,
+  "passed_receipt_count": 23,
   "expected_route_count": 0,
   "source_check_count": 0,
   "required_receipts": [
@@ -162,6 +162,30 @@
       "proof_tier": "source_staged_no_browser_execution",
       "expected_route_count": 4,
       "source_check_count": 6,
+      "control_count": null,
+      "covered_control_count": null
+    },
+    {
+      "id": "workbench_connected_runtime",
+      "path": ".codex-studio/published/BLAZOR_WORKBENCH_CONNECTED_RUNTIME_STAGED_PROOF.generated.json",
+      "expected_contract_name": "chummer6-ui.blazor_workbench_connected_runtime_staged_proof",
+      "contract_name": "chummer6-ui.blazor_workbench_connected_runtime_staged_proof",
+      "status": "passed",
+      "proof_tier": "source_staged_no_browser_execution",
+      "expected_route_count": 5,
+      "source_check_count": 6,
+      "control_count": null,
+      "covered_control_count": null
+    },
+    {
+      "id": "workbench_accessibility",
+      "path": ".codex-studio/published/BLAZOR_WORKBENCH_ACCESSIBILITY_STAGED_PROOF.generated.json",
+      "expected_contract_name": "chummer6-ui.blazor_workbench_accessibility_staged_proof",
+      "contract_name": "chummer6-ui.blazor_workbench_accessibility_staged_proof",
+      "status": "passed",
+      "proof_tier": "source_staged_no_browser_execution",
+      "expected_route_count": 3,
+      "source_check_count": 5,
       "control_count": null,
       "covered_control_count": null
     }

@@ -1,13 +1,13 @@
 {
   "contract_name": "chummer6-ui.blazor_source_staged_proof_set",
-  "generated_at": "2026-06-24T21:21:39.768366+00:00",
+  "generated_at": "2026-06-24T21:29:44.983724+00:00",
   "status": "passed",
   "proof_tier": "source_staged_no_browser_execution",
   "route_lane": "promoted_blazor_workbench",
-  "required_receipt_count": 21,
-  "passed_receipt_count": 21,
-  "expected_route_count": 59,
-  "source_check_count": 147,
+  "required_receipt_count": 23,
+  "passed_receipt_count": 23,
+  "expected_route_count": 67,
+  "source_check_count": 158,
   "required_receipts": [
     {
       "id": "career_support",
@@ -246,6 +246,30 @@
       "proof_tier": "source_staged_no_browser_execution",
       "expected_route_count": 4,
       "source_check_count": 6,
+      "control_count": null,
+      "covered_control_count": null
+    },
+    {
+      "id": "workbench_connected_runtime",
+      "path": "/docker/chummercomplete/chummer-presentation/.codex-studio/published/BLAZOR_WORKBENCH_CONNECTED_RUNTIME_STAGED_PROOF.generated.json",
+      "expected_contract_name": "chummer6-ui.blazor_workbench_connected_runtime_staged_proof",
+      "contract_name": "chummer6-ui.blazor_workbench_connected_runtime_staged_proof",
+      "status": "passed",
+      "proof_tier": "source_staged_no_browser_execution",
+      "expected_route_count": 5,
+      "source_check_count": 6,
+      "control_count": null,
+      "covered_control_count": null
+    },
+    {
+      "id": "workbench_accessibility",
+      "path": "/docker/chummercomplete/chummer-presentation/.codex-studio/published/BLAZOR_WORKBENCH_ACCESSIBILITY_STAGED_PROOF.generated.json",
+      "expected_contract_name": "chummer6-ui.blazor_workbench_accessibility_staged_proof",
+      "contract_name": "chummer6-ui.blazor_workbench_accessibility_staged_proof",
+      "status": "passed",
+      "proof_tier": "source_staged_no_browser_execution",
+      "expected_route_count": 3,
+      "source_check_count": 5,
       "control_count": null,
       "covered_control_count": null
     },
