@@ -449,6 +449,12 @@ async function auditPortalWorkspaceResumeRoute(page) {
   expectTextIncludes(bodyText, 'Add SIN/license for BLUE', 'portal workspace resume route');
   expectTextIncludes(bodyText, 'Edit SIN/license for BLUE', 'portal workspace resume route');
   expectTextIncludes(bodyText, 'Remove SIN/license for BLUE', 'portal workspace resume route');
+  expectTextIncludes(bodyText, 'Add armor for BLUE', 'portal workspace resume route');
+  expectTextIncludes(bodyText, 'Reload weapon for BLUE', 'portal workspace resume route');
+  expectTextIncludes(bodyText, 'Review damage track for BLUE', 'portal workspace resume route');
+  expectTextIncludes(bodyText, 'Specialize skill for BLUE', 'portal workspace resume route');
+  expectTextIncludes(bodyText, 'Remove skill for BLUE', 'portal workspace resume route');
+  expectTextIncludes(bodyText, 'Edit skill group for BLUE', 'portal workspace resume route');
   expectTextIncludes(bodyText, 'Continue BLUE on advanced', 'portal workspace resume route');
   expectTextIncludes(bodyText, 'Continue BLUE for download', 'portal workspace resume route');
   expectTextIncludes(bodyText, 'Continue BLUE for export', 'portal workspace resume route');
@@ -693,6 +699,46 @@ async function auditPortalRestoredCareerEntryReorderRoute(page, controlId, expec
   const dialogText = await page.locator('.desktop-dialog').innerText();
   expectTextIncludes(dialogText, expectedTitle, `portal restored career entry reorder route ${controlId}`);
   expectTextIncludes(dialogText, 'The reordered list stays visible in the same utility pane.', `portal restored career entry reorder route ${controlId}`);
+}
+
+async function auditPortalRestoredSkillMaintenanceRoute(page, controlId, expectedTitle, expectedMarker) {
+  await openPortalPreviewPath(
+    page,
+    '/blazor/preview?fixture=blue&tab=tab-create',
+    '[data-build-lab]'
+  );
+
+  await openPortalPreviewPath(
+    page,
+    `/blazor/workbench?workspace=ws-1&tab=tab-skills&control=${controlId}`,
+    '.desktop-dialog'
+  );
+
+  await expectDialogFits(page, expectedTitle.toLowerCase());
+
+  const dialogText = await page.locator('.desktop-dialog').innerText();
+  expectTextIncludes(dialogText, expectedTitle, `portal restored skill maintenance route ${controlId}`);
+  expectTextIncludes(dialogText, expectedMarker, `portal restored skill maintenance route ${controlId}`);
+}
+
+async function auditPortalRestoredCombatSupportRoute(page, controlId, expectedTitle, expectedMarker) {
+  await openPortalPreviewPath(
+    page,
+    '/blazor/preview?fixture=blue&tab=tab-create',
+    '[data-build-lab]'
+  );
+
+  await openPortalPreviewPath(
+    page,
+    `/blazor/workbench?workspace=ws-1&tab=tab-combat&control=${controlId}`,
+    '.desktop-dialog'
+  );
+
+  await expectDialogFits(page, expectedTitle.toLowerCase());
+
+  const dialogText = await page.locator('.desktop-dialog').innerText();
+  expectTextIncludes(dialogText, expectedTitle, `portal restored combat support route ${controlId}`);
+  expectTextIncludes(dialogText, expectedMarker, `portal restored combat support route ${controlId}`);
 }
 
 async function auditPortalRestoredIdentityLicenseRoute(page, controlId, expectedTitle, expectedMarker) {
@@ -984,6 +1030,30 @@ async function run() {
     const restoredCareerEntryMoveDownPage = await browser.newPage({ viewport: { width: 1440, height: 960 } });
     await auditPortalRestoredCareerEntryReorderRoute(restoredCareerEntryMoveDownPage, 'move_down', 'Move Entry Down');
     await restoredCareerEntryMoveDownPage.close();
+
+    const restoredSkillSpecializePage = await browser.newPage({ viewport: { width: 1440, height: 960 } });
+    await auditPortalRestoredSkillMaintenanceRoute(restoredSkillSpecializePage, 'skill_specialize', 'Specialization', 'Specialization');
+    await restoredSkillSpecializePage.close();
+
+    const restoredSkillRemovePage = await browser.newPage({ viewport: { width: 1440, height: 960 } });
+    await auditPortalRestoredSkillMaintenanceRoute(restoredSkillRemovePage, 'skill_remove', 'Remove Skill', 'Remove Perception');
+    await restoredSkillRemovePage.close();
+
+    const restoredSkillGroupPage = await browser.newPage({ viewport: { width: 1440, height: 960 } });
+    await auditPortalRestoredSkillMaintenanceRoute(restoredSkillGroupPage, 'skill_group', 'Skill Group', 'Group composition and current rating remain visible while editing.');
+    await restoredSkillGroupPage.close();
+
+    const restoredCombatArmorPage = await browser.newPage({ viewport: { width: 1440, height: 960 } });
+    await auditPortalRestoredCombatSupportRoute(restoredCombatArmorPage, 'combat_add_armor', 'Add Armor', 'Armor');
+    await restoredCombatArmorPage.close();
+
+    const restoredCombatReloadPage = await browser.newPage({ viewport: { width: 1440, height: 960 } });
+    await auditPortalRestoredCombatSupportRoute(restoredCombatReloadPage, 'combat_reload', 'Reload', 'Weapon and ammo selection remain visible while reloading.');
+    await restoredCombatReloadPage.close();
+
+    const restoredCombatDamageTrackPage = await browser.newPage({ viewport: { width: 1440, height: 960 } });
+    await auditPortalRestoredCombatSupportRoute(restoredCombatDamageTrackPage, 'combat_damage_track', 'Damage Track', 'Current track state remains visible before applying the damage step.');
+    await restoredCombatDamageTrackPage.close();
 
     const restoredIdentityLicenseAddPage = await browser.newPage({ viewport: { width: 1440, height: 960 } });
     await auditPortalRestoredIdentityLicenseRoute(restoredIdentityLicenseAddPage, 'identity_license_add', 'Add SIN / License', 'Legal Posture');

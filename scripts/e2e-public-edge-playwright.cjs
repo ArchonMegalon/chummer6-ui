@@ -16,7 +16,9 @@ const requiredWorkflowFamilyIds = [
   'promoted_origin_rules_continuity',
   'promoted_build_lab_continuity',
   'promoted_weapon_selection_execution',
+  'promoted_combat_support_execution',
   'promoted_skill_selection_execution',
+  'promoted_skill_maintenance_execution',
   'promoted_vehicle_selection_execution',
   'promoted_vehicle_mod_selection_execution',
   'promoted_quality_selection_execution',
@@ -689,6 +691,12 @@ async function auditAdvancedActionAffordances(page) {
   expectTextIncludes(bodyText, 'Add SIN/license for BLUE', 'hosted advanced action affordances');
   expectTextIncludes(bodyText, 'Edit SIN/license for BLUE', 'hosted advanced action affordances');
   expectTextIncludes(bodyText, 'Remove SIN/license for BLUE', 'hosted advanced action affordances');
+  expectTextIncludes(bodyText, 'Add armor for BLUE', 'hosted advanced action affordances');
+  expectTextIncludes(bodyText, 'Reload weapon for BLUE', 'hosted advanced action affordances');
+  expectTextIncludes(bodyText, 'Review damage track for BLUE', 'hosted advanced action affordances');
+  expectTextIncludes(bodyText, 'Specialize skill for BLUE', 'hosted advanced action affordances');
+  expectTextIncludes(bodyText, 'Remove skill for BLUE', 'hosted advanced action affordances');
+  expectTextIncludes(bodyText, 'Edit skill group for BLUE', 'hosted advanced action affordances');
   return {
     route,
     assertion: 'advanced and career/support restored action affordances remain visible on promoted workbench route',
@@ -1002,6 +1010,56 @@ async function run() {
       route_lane: 'promoted_blazor_workbench',
       workflow_contract: 'workspace_resume_continuity',
       checks: [await auditResumedWorkspace(page)],
+    });
+    receipt.workflow_families.push({
+      id: 'promoted_skill_maintenance_execution',
+      route_lane: 'promoted_blazor_workbench',
+      workflow_contract: 'skill_maintenance_utility_execution',
+      checks: [
+        await auditAdvancedActionExecution(
+          page,
+          `${promotedRouteBase}?${promotedContinuationQuery}&tab=tab-skills&control=skill_specialize`,
+          'Specialization',
+          'Specialization'
+        ),
+        await auditAdvancedActionExecution(
+          page,
+          `${promotedRouteBase}?${promotedContinuationQuery}&tab=tab-skills&control=skill_remove`,
+          'Remove Skill',
+          'Remove Perception'
+        ),
+        await auditAdvancedActionExecution(
+          page,
+          `${promotedRouteBase}?${promotedContinuationQuery}&tab=tab-skills&control=skill_group`,
+          'Skill Group',
+          'Group composition and current rating remain visible while editing.'
+        ),
+      ],
+    });
+    receipt.workflow_families.push({
+      id: 'promoted_combat_support_execution',
+      route_lane: 'promoted_blazor_workbench',
+      workflow_contract: 'combat_support_utility_execution',
+      checks: [
+        await auditAdvancedActionExecution(
+          page,
+          `${promotedRouteBase}?${promotedContinuationQuery}&tab=tab-combat&control=combat_add_armor`,
+          'Add Armor',
+          'Armor'
+        ),
+        await auditAdvancedActionExecution(
+          page,
+          `${promotedRouteBase}?${promotedContinuationQuery}&tab=tab-combat&control=combat_reload`,
+          'Reload',
+          'Weapon and ammo selection remain visible while reloading.'
+        ),
+        await auditAdvancedActionExecution(
+          page,
+          `${promotedRouteBase}?${promotedContinuationQuery}&tab=tab-combat&control=combat_damage_track`,
+          'Damage Track',
+          'Current track state remains visible before applying the damage step.'
+        ),
+      ],
     });
     receipt.workflow_families.push({
       id: 'promoted_identity_license_execution',

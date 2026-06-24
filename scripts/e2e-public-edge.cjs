@@ -410,7 +410,44 @@ const checks = [
     assert: (text, response) =>
       /\/blazor\/workbench\?workspace=ws-1&tab=tab-info&control=identity_license_delete$/.test(response.url)
       && hasBlazorBaseHref(text)
+  },
+  {
+    url: `${baseUrl}/blazor/workbench?workspace=ws-1&tab=tab-combat&control=combat_add_armor`,
+    assert: (text, response) =>
+      /\/blazor\/workbench\?workspace=ws-1&tab=tab-combat&control=combat_add_armor$/.test(response.url)
+      && hasBlazorBaseHref(text)
+  },
+  {
+    url: `${baseUrl}/blazor/workbench?workspace=ws-1&tab=tab-combat&control=combat_reload`,
+    assert: (text, response) =>
+      /\/blazor\/workbench\?workspace=ws-1&tab=tab-combat&control=combat_reload$/.test(response.url)
+      && hasBlazorBaseHref(text)
+  },
+  {
+    url: `${baseUrl}/blazor/workbench?workspace=ws-1&tab=tab-combat&control=combat_damage_track`,
+    assert: (text, response) =>
+      /\/blazor\/workbench\?workspace=ws-1&tab=tab-combat&control=combat_damage_track$/.test(response.url)
+      && hasBlazorBaseHref(text)
+  },
+  {
+    url: `${baseUrl}/blazor/workbench?workspace=ws-1&tab=tab-skills&control=skill_specialize`,
+    assert: (text, response) =>
+      /\/blazor\/workbench\?workspace=ws-1&tab=tab-skills&control=skill_specialize$/.test(response.url)
+      && hasBlazorBaseHref(text)
+  },
+  {
+    url: `${baseUrl}/blazor/workbench?workspace=ws-1&tab=tab-skills&control=skill_remove`,
+    assert: (text, response) =>
+      /\/blazor\/workbench\?workspace=ws-1&tab=tab-skills&control=skill_remove$/.test(response.url)
+      && hasBlazorBaseHref(text)
+  },
+  {
+    url: `${baseUrl}/blazor/workbench?workspace=ws-1&tab=tab-skills&control=skill_group`,
+    assert: (text, response) =>
+      /\/blazor\/workbench\?workspace=ws-1&tab=tab-skills&control=skill_group$/.test(response.url)
+      && hasBlazorBaseHref(text)
   }
+
 ];
 
 (async () => {

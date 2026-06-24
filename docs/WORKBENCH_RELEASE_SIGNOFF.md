@@ -67,7 +67,11 @@ The next browser-lane proof refresh is staged to add the career/support workflow
 
 `scripts/ai/milestones/blazor-career-support-staged-proof-check.sh` is the pre-refresh source-alignment check for that staged family. It only proves that the staged route family is wired consistently across source, runners, receipt metadata, status reporting, and docs; it is not a browser execution receipt and must not be treated as a release-passing workflow proof.
 
-The next staged utility family adds identity/SIN/license utility posture on the promoted Blazor workbench route. `scripts/ai/milestones/blazor-identity-license-staged-proof-check.sh` verifies source, runner, metadata, and documentation alignment for add, edit, and remove SIN/license routes. It is not a hosted or Docker browser execution receipt, and it must remain separate from the browser-lane proof set until hosted and self-host execution receipts are refreshed.
+The next staged browser-family slice after career/support is identity/SIN/license utility posture under restored `tab-info`. `scripts/ai/milestones/blazor-identity-license-staged-proof-check.sh` is its source-alignment check. It proves only that the workbench affordances, dedicated utility dialogs, hosted/self-host route shapes, status utility, and docs agree; it is not a hosted or Docker browser execution receipt.
+
+The next staged browser-family slice after identity/SIN/license is combat support utility posture under restored `tab-combat`. `scripts/ai/milestones/blazor-combat-support-staged-proof-check.sh` is its source-alignment check. It proves only that armor, reload, and damage-track routes are wired across product affordances, hosted/self-host route shapes, status utility, and docs; it is not a hosted or Docker browser execution receipt.
+
+The next staged browser-family slice after combat support is skill maintenance utility posture under restored `tab-skills`. `scripts/ai/milestones/blazor-skill-maintenance-staged-proof-check.sh` is its source-alignment check. It proves only that specialization, removal, and group-edit routes are wired across product affordances, hosted/self-host route shapes, status utility, and docs; it is not a hosted or Docker browser execution receipt.
 
 `scripts/print_blazor_public_edge_proof_status.py` reports that staged receipt separately as `career_support_staged_*` when present, with a source-alignment-only note. It must remain separate from the aggregate browser-lane proof set until hosted and self-host browser execution receipts are refreshed.
 

@@ -1,20 +1,20 @@
 {
-  "contract_name": "chummer6-ui.blazor_identity_license_staged_proof",
-  "generated_at": "2026-06-24T20:09:33.760712+00:00",
+  "contract_name": "chummer6-ui.blazor_skill_maintenance_staged_proof",
+  "generated_at": "2026-06-24T20:11:14.579184+00:00",
   "status": "passed",
   "proof_tier": "source_staged_no_browser_execution",
   "route_lane": "promoted_blazor_workbench",
   "expected_routes": [
-    "/blazor/workbench?workspace=ws-1&tab=tab-info&control=identity_license_add",
-    "/blazor/workbench?workspace=ws-1&tab=tab-info&control=identity_license_edit",
-    "/blazor/workbench?workspace=ws-1&tab=tab-info&control=identity_license_delete"
+    "/blazor/workbench?workspace=ws-1&tab=tab-skills&control=skill_specialize",
+    "/blazor/workbench?workspace=ws-1&tab=tab-skills&control=skill_remove",
+    "/blazor/workbench?workspace=ws-1&tab=tab-skills&control=skill_group"
   ],
   "checks": [
     {
       "id": "product_workbench_affordances",
       "path": "Chummer.Blazor/Components/Pages/Preview.razor",
       "status": "passed",
-      "required_token_count": 4,
+      "required_token_count": 3,
       "missing_tokens": []
     },
     {
@@ -28,7 +28,7 @@
       "id": "desktop_shaped_dialogs",
       "path": "Chummer.Presentation/Overview/DesktopDialogFactory.cs",
       "status": "passed",
-      "required_token_count": 10,
+      "required_token_count": 7,
       "missing_tokens": []
     },
     {
@@ -49,7 +49,7 @@
       "id": "self_host_playwright_runner",
       "path": "scripts/e2e-portal-playwright.cjs",
       "status": "passed",
-      "required_token_count": 8,
+      "required_token_count": 7,
       "missing_tokens": []
     },
     {
@@ -85,6 +85,6 @@
   "notes": [
     "This receipt only proves that source, runner, metadata, and documentation staging agree.",
     "It is not a substitute for hosted Playwright execution proof or Docker self-host proof.",
-    "Do not use this receipt to claim identity/SIN/license workflow parity or persistence parity on chummer.run."
+    "Do not use this receipt to claim skill maintenance workflow parity on chummer.run."
   ]
 }

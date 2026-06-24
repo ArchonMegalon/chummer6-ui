@@ -6484,7 +6484,7 @@ public sealed class DesktopDialogFactory : IDesktopDialogFactory
 
     private static IReadOnlyList<DesktopDialogField> BuildIdentityLicenseAddFields()
         => [
-            new DesktopDialogField("uiIdentityRecordType", "Record Type", "Fake SIN", "Fake SIN", VisualKind: DesktopDialogFieldVisualKinds.Select, LayoutSlot: DesktopDialogFieldLayoutSlots.Left, Options: [
+            new DesktopDialogField("uiIdentityRecordType", "Record Type", "Fake SIN", "Fake SIN", LayoutSlot: DesktopDialogFieldLayoutSlots.Left, Options: [
                 new DesktopDialogFieldOption("fake_sin", "Fake SIN"),
                 new DesktopDialogFieldOption("license", "License"),
                 new DesktopDialogFieldOption("lifestyle_identity", "Lifestyle Identity")

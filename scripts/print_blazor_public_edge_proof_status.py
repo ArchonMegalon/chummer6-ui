@@ -16,6 +16,8 @@ CONNECTED_RUNTIME_PROOF = PUBLISHED / "BLAZOR_CONNECTED_RUNTIME_POSTURE.generate
 AGGREGATE_PROOF_SET = PUBLISHED / "BLAZOR_BROWSER_LANE_PROOF_SET.generated.json"
 CAREER_SUPPORT_STAGED_PROOF = PUBLISHED / "BLAZOR_CAREER_SUPPORT_STAGED_PROOF.generated.json"
 IDENTITY_LICENSE_STAGED_PROOF = PUBLISHED / "BLAZOR_IDENTITY_LICENSE_STAGED_PROOF.generated.json"
+COMBAT_SUPPORT_STAGED_PROOF = PUBLISHED / "BLAZOR_COMBAT_SUPPORT_STAGED_PROOF.generated.json"
+SKILL_MAINTENANCE_STAGED_PROOF = PUBLISHED / "BLAZOR_SKILL_MAINTENANCE_STAGED_PROOF.generated.json"
 BLOCKERS = PUBLISHED / "UI_EXTERNAL_HOST_PROOF_BLOCKERS.generated.json"
 EXPANDED_ROUTE_PROOF_MARKERS = {
     "public_startup_workbench_command_routes",
@@ -74,6 +76,8 @@ def main() -> int:
     aggregate = load_json(AGGREGATE_PROOF_SET)
     career_support_staged = load_json(CAREER_SUPPORT_STAGED_PROOF)
     identity_license_staged = load_json(IDENTITY_LICENSE_STAGED_PROOF)
+    combat_support_staged = load_json(COMBAT_SUPPORT_STAGED_PROOF)
+    skill_maintenance_staged = load_json(SKILL_MAINTENANCE_STAGED_PROOF)
     blockers = load_json(BLOCKERS)
 
     print("Blazor public-edge proof status")
@@ -165,6 +169,26 @@ def main() -> int:
     print(f"identity_license_staged_source_checks={count_staged_source_checks(identity_license_staged)}")
     print(
         "identity_license_staged_note="
+        "source_alignment_only_not_browser_execution"
+    )
+    print(f"combat_support_staged_receipt={COMBAT_SUPPORT_STAGED_PROOF}")
+    print(f"combat_support_staged_status={str(combat_support_staged.get('status') or '').strip() or 'not_generated'}")
+    print(f"combat_support_staged_contract={str(combat_support_staged.get('contract_name') or '').strip() or 'missing'}")
+    print(f"combat_support_staged_tier={str(combat_support_staged.get('proof_tier') or '').strip() or 'missing'}")
+    print(f"combat_support_staged_route_count={len(combat_support_staged.get('expected_routes') or [])}")
+    print(f"combat_support_staged_source_checks={count_staged_source_checks(combat_support_staged)}")
+    print(
+        "combat_support_staged_note="
+        "source_alignment_only_not_browser_execution"
+    )
+    print(f"skill_maintenance_staged_receipt={SKILL_MAINTENANCE_STAGED_PROOF}")
+    print(f"skill_maintenance_staged_status={str(skill_maintenance_staged.get('status') or '').strip() or 'not_generated'}")
+    print(f"skill_maintenance_staged_contract={str(skill_maintenance_staged.get('contract_name') or '').strip() or 'missing'}")
+    print(f"skill_maintenance_staged_tier={str(skill_maintenance_staged.get('proof_tier') or '').strip() or 'missing'}")
+    print(f"skill_maintenance_staged_route_count={len(skill_maintenance_staged.get('expected_routes') or [])}")
+    print(f"skill_maintenance_staged_source_checks={count_staged_source_checks(skill_maintenance_staged)}")
+    print(
+        "skill_maintenance_staged_note="
         "source_alignment_only_not_browser_execution"
     )
     print(f"blocker_receipt={BLOCKERS}")

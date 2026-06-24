@@ -158,7 +158,9 @@ Current browser-backed proof now includes:
 - hosted origin/rules continuity posture for `new_character_origin` and restored `tab-rules`, with visible origin-wizard structure and rules-environment summary markers on the promoted workbench route
 - hosted build-lab continuity posture for restored `tab-create`, with visible planner, progression, and export/hand-off surfaces on the promoted workbench route
 - hosted weapon-selection posture for restored `tab-combat&control=combat_add_weapon`, with visible catalog/accessories/filter markers on the promoted workbench route
+- staged hosted combat-support posture for restored `tab-combat` utility controls `combat_add_armor`, `combat_reload`, and `combat_damage_track`, with the next hosted/self-host proof refresh set to assert armor selection, reload posture, damage-track review, and visible active-combat context without yet claiming full combat-state mutation parity
 - hosted skill-selection posture for restored `tab-skills&control=skill_add`, with visible linked-attribute/filter markers on the promoted workbench route
+- staged hosted skill-maintenance posture for restored `tab-skills` utility controls `skill_specialize`, `skill_remove`, and `skill_group`, with the next hosted/self-host proof refresh set to assert specialization, removal/recovery, group-composition, and current-rating context without yet claiming full skill-state mutation parity
 - hosted vehicle-selection posture for restored `tab-gear&control=vehicle_add`, with visible catalog, filters, and dense selection details on the promoted workbench route
 - hosted vehicle-mod-selection posture for restored `tab-gear&control=vehicle_mod_add`, with visible slot/availability/source detail markers on the promoted workbench route
 - hosted quality-selection posture for restored `tab-qualities&control=quality_add`, with visible category/karma/source/filter markers on the promoted workbench route
