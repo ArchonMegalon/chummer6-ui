@@ -27,6 +27,7 @@
     <MSTestAnalysisMode>None</MSTestAnalysisMode>
     <EnableMSTestRunner>true</EnableMSTestRunner>
     <TestingPlatformDotnetTestSupport>true</TestingPlatformDotnetTestSupport>
+    <GenerateRuntimeConfigurationFiles>true</GenerateRuntimeConfigurationFiles>
     <RunDesktopUpdateTestsOnly Condition="'$(RunDesktopUpdateTestsOnly)' == ''">false</RunDesktopUpdateTestsOnly>
 	<Configurations>Debug;Release;Debuggable Release</Configurations>
 	<AnalysisLevel>none</AnalysisLevel>
@@ -191,6 +192,7 @@
     <Compile Include="Presentation\DesktopHomeWindowStartupTests.cs" />
     <Compile Include="Presentation\DesktopLocalizationCatalogTests.cs" />
     <Compile Include="Presentation\DesktopThemeManagerTests.cs" />
+    <Compile Include="Presentation\DesktopWindowContrastTests.cs" />
     <Compile Include="Presentation\DesktopShortcutCatalogTests.cs" />
     <Compile Include="Presentation\DesktopDialogFactoryTests.cs" />
     <Compile Include="Presentation\TestContextLocator.cs" />
