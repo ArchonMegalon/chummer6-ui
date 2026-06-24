@@ -149,7 +149,7 @@ Current browser-backed proof now includes:
 - state-backed recent-work resume links on `/workbench`, plus explicit `/workbench?workspace={id}` restoration for shared-session continuity
 - restored-session build-lab continuation on `/workbench` that reopens the active workspace directly on the create/build lane
 - restored-session continuation lanes on `/workbench` that reopen the active workspace directly on profile, rules, gear, and advanced tabs
-- restored-session action continuations on `/workbench` that reopen the active workspace directly into multiple live editing action dialogs across workflow families
+- restored-session action continuations on `/workbench` that reopen the active workspace directly into multiple live editing action dialogs across workflow families, including a promoted career-entry continuation for the calendar/support utility lane
 - restored-session committed action continuations on `/workbench` that complete multiple resumed editing actions and leave visible state changes behind
 - restored-session committed complex-form continuation on `/workbench` so the advanced technomancer lane now matches the same committed-route posture already used by the other promoted advanced actions
 - restored-session result continuations on `/workbench` that reopen the active workspace directly into browser download/export/print flows
@@ -174,6 +174,7 @@ Current browser-backed proof now includes:
 - hosted vehicle-delete posture for restored `tab-gear&control=vehicle_delete`, with visible impact and recovery context on the promoted workbench route
 - hosted contact-delete posture for restored `tab-contacts&control=contact_remove`, with visible roster impact and recovery context on the promoted workbench route
 - hosted contact-edit posture for restored `tab-contacts&control=contact_edit`, with visible selected-contact details and in-place edit context on the promoted workbench route
+- staged hosted career-entry posture for restored `tab-calendar&control=create_entry` plus `dialog_action=add`, with the restored-actions card exposing both open and committed career/support utility lanes and the next hosted execution refresh set to assert the compact list/detail editor plus visible commit result
 - seeded runner continuity routes for Build Lab, Rules, Contacts, and Complex Forms
 - seeded browser result-state routes for `save_character`, `save_character_as`, `print_character`, and `export_character` plus `dialog_action=download`, proving browser-visible save/download/print/export outcomes instead of only dialog entry posture
 - separate self-host receipt proof for portal-backed `/blazor/workbench` and `/blazor/preview` routes under Docker

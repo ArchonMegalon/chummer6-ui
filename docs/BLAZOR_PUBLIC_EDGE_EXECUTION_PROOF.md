@@ -129,6 +129,9 @@ The first acceptable hosted execution tier should prove these families:
 - staged career-entry execution on the promoted workbench route:
   `/blazor/workbench?workspace=<promoted-workspace-id>&tab=tab-calendar&control=create_entry`
   with visible compact list/detail editor posture, command follow-through, entry title, and preserved list context so the next hosted proof refresh can widen into the career log / support workflow family
+- staged committed career-entry execution on the promoted workbench route:
+  `/blazor/workbench?workspace=<promoted-workspace-id>&tab=tab-calendar&control=create_entry&dialog_action=add`
+  with visible `Entry 'New entry' added.` follow-through so the career log / support workflow family proves commit-result posture rather than dialog entry alone
 - resumed workbench load:
   `/blazor/workbench?workspace=<promoted-workspace-id>`
 - recent-work resume affordance visibility on the promoted workbench route:
@@ -149,7 +152,7 @@ The first acceptable hosted execution tier should prove these families:
 - resumed action continuation:
   `/blazor/workbench?workspace=<promoted-workspace-id>&tab=tab-contacts&control=contact_add`
 - advanced restored action affordance visibility on the promoted workbench route:
-  visible complex-form/initiation/cyberware/spell continuation links for the restored workspace
+  visible complex-form/initiation/cyberware/spell continuation links plus the career-entry continuation link for the restored workspace
 - advanced action execution on the promoted workbench route:
   `/blazor/workbench?workspace=<promoted-workspace-id>&tab=tab-technomancer&control=complex_form_add`
   `/blazor/workbench?workspace=<promoted-workspace-id>&tab=tab-adept&control=initiation_add`
@@ -172,7 +175,7 @@ These are the first promoted families because they map directly to the current C
 
 Later hosted tiers should expand to the other workflow families in `docs/BLAZOR_WEB_CLIENT_PARITY_GOAL.md`, especially startup/recent-work recovery, rules/origin flow, dense section-family editing, career/support utility editing, and cross-route continuity.
 
-The hosted Playwright runner is already staged to record `promoted_career_entry_execution` through the `tab-calendar&control=create_entry` route. That staged family is not yet part of the verifier-required set or the current published receipt until the live `chummer.run` proof is refreshed and promoted.
+The hosted Playwright runner is already staged to record `promoted_career_entry_execution` through the `tab-calendar&control=create_entry` route and `promoted_career_entry_committed_execution` through the matching `dialog_action=add` route. Those staged families are not yet part of the verifier-required set or the current published receipt until the live `chummer.run` proof is refreshed and promoted.
 
 ## Required browser-visible assertions
 

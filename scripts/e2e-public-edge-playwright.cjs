@@ -33,6 +33,7 @@ const requiredWorkflowFamilyIds = [
   'promoted_contact_delete_execution',
   'promoted_contact_edit_execution',
   'promoted_career_entry_execution',
+  'promoted_career_entry_committed_execution',
   'promoted_resumed_workspace',
   'promoted_recent_work_affordances',
   'promoted_restored_section_continuations',
@@ -579,9 +580,11 @@ async function auditAdvancedActionAffordances(page) {
   expectTextIncludes(bodyText, 'Add initiation for BLUE', 'hosted advanced action affordances');
   expectTextIncludes(bodyText, 'Add cyberware for BLUE', 'hosted advanced action affordances');
   expectTextIncludes(bodyText, 'Add a spell for BLUE', 'hosted advanced action affordances');
+  expectTextIncludes(bodyText, 'Add and keep career entry for BLUE', 'hosted advanced action affordances');
+  expectTextIncludes(bodyText, 'Add career entry for BLUE', 'hosted advanced action affordances');
   return {
     route,
-    assertion: 'advanced restored action affordances remain visible on promoted workbench route',
+    assertion: 'advanced and career/support restored action affordances remain visible on promoted workbench route',
     status: 'pass',
   };
 }
@@ -805,6 +808,18 @@ async function run() {
       route_lane: 'promoted_blazor_workbench',
       workflow_contract: 'career_calendar_entry_execution',
       checks: [await auditCareerEntrySurface(page)],
+    });
+    receipt.workflow_families.push({
+      id: 'promoted_career_entry_committed_execution',
+      route_lane: 'promoted_blazor_workbench',
+      workflow_contract: 'career_calendar_committed_visible_state',
+      checks: [
+        await auditAdvancedCommittedAction(
+          page,
+          `${promotedRouteBase}?${promotedContinuationQuery}&tab=tab-calendar&control=create_entry&dialog_action=add`,
+          "Entry 'New entry' added.",
+        ),
+      ],
     });
     receipt.workflow_families.push({
       id: 'promoted_resumed_workspace',
