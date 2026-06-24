@@ -976,6 +976,44 @@
       <Setter Property="SelectionBrush" Value="{DynamicResource ChummerShellSelectionBrush}" />
       <Setter Property="SelectionForegroundBrush" Value="{DynamicResource TextControlSelectionForeground}" />
     </Style>
+    <Style Selector="NumericUpDown /template/ Button">
+      <Setter Property="Background" Value="{DynamicResource TextControlBackground}" />
+      <Setter Property="Foreground" Value="{DynamicResource TextControlForeground}" />
+      <Setter Property="BorderBrush" Value="{DynamicResource TextControlBorderBrush}" />
+      <Setter Property="BorderThickness" Value="1" />
+    </Style>
+    <Style Selector="NumericUpDown:pointerover /template/ Button">
+      <Setter Property="Background" Value="{DynamicResource TextControlBackgroundPointerOver}" />
+      <Setter Property="Foreground" Value="{DynamicResource TextControlForegroundPointerOver}" />
+      <Setter Property="BorderBrush" Value="{DynamicResource TextControlBorderBrushPointerOver}" />
+    </Style>
+    <Style Selector="NumericUpDown:focus /template/ Button">
+      <Setter Property="Background" Value="{DynamicResource TextControlBackgroundFocused}" />
+      <Setter Property="Foreground" Value="{DynamicResource TextControlForegroundFocused}" />
+      <Setter Property="BorderBrush" Value="{DynamicResource TextControlBorderBrushFocused}" />
+    </Style>
+    <Style Selector="NumericUpDown:disabled /template/ Button">
+      <Setter Property="Background" Value="{DynamicResource TextControlBackgroundDisabled}" />
+      <Setter Property="Foreground" Value="{DynamicResource TextControlForegroundDisabled}" />
+      <Setter Property="BorderBrush" Value="{DynamicResource TextControlBorderBrushDisabled}" />
+    </Style>
+    <Style Selector="ScrollBar">
+      <Setter Property="Background" Value="{DynamicResource ChummerShellSurfaceBrush}" />
+      <Setter Property="Foreground" Value="{DynamicResource ChummerShellForegroundBrush}" />
+    </Style>
+    <Style Selector="ScrollBar /template/ RepeatButton">
+      <Setter Property="Background" Value="{DynamicResource ChummerShellChromeBrush}" />
+      <Setter Property="Foreground" Value="{DynamicResource ChummerShellForegroundBrush}" />
+      <Setter Property="BorderBrush" Value="{DynamicResource ChummerShellBorderBrush}" />
+      <Setter Property="BorderThickness" Value="1" />
+    </Style>
+    <Style Selector="ScrollBar:pointerover /template/ RepeatButton">
+      <Setter Property="Background" Value="{DynamicResource ChummerShellSurfaceAltBrush}" />
+      <Setter Property="BorderBrush" Value="{DynamicResource ChummerShellActiveMenuBorderBrush}" />
+    </Style>
+    <Style Selector="ScrollBar /template/ Thumb">
+      <Setter Property="Background" Value="{DynamicResource ChummerShellMutedForegroundBrush}" />
+    </Style>
     <Style Selector="CheckBox">
       <Setter Property="Foreground" Value="{DynamicResource ChummerShellForegroundBrush}" />
     </Style>

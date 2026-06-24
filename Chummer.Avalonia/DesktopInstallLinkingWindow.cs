@@ -254,6 +254,7 @@ internal sealed class DesktopInstallLinkingWindow : Window
             Content = DesktopLocalizationCatalog.GetRequiredString("desktop.install_link.preference.visible_choice", _language),
             IsChecked = !_preferences.DisableAiFeatures
         };
+        DesktopShellTheme.ApplyShellRadioButtonTheme(_guidedToolsRadioButton);
         ToolTip.SetTip(
             _guidedToolsRadioButton,
             DesktopLocalizationCatalog.GetRequiredString("desktop.install_link.preference.tip", _language));
@@ -277,6 +278,7 @@ internal sealed class DesktopInstallLinkingWindow : Window
             Content = DesktopLocalizationCatalog.GetRequiredString("desktop.install_link.preference.hidden_choice", _language),
             IsChecked = _preferences.DisableAiFeatures
         };
+        DesktopShellTheme.ApplyShellRadioButtonTheme(_quietToolsRadioButton);
         ToolTip.SetTip(
             _quietToolsRadioButton,
             DesktopLocalizationCatalog.GetRequiredString("desktop.install_link.preference.tip", _language));

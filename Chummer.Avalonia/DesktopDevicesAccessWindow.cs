@@ -650,6 +650,7 @@ internal sealed class DesktopDevicesAccessWindow : Window
             Content = label,
             IsChecked = isChecked
         };
+        DesktopShellTheme.ApplyShellRadioButtonTheme(button);
         string tip = S("desktop.install_link.preference.tip");
         ToolTip.SetTip(button, tip);
         AutomationProperties.SetName(button, label);

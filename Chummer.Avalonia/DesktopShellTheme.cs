@@ -80,6 +80,14 @@ internal static class DesktopShellTheme
         numericUpDown.MinHeight = Math.Max(numericUpDown.MinHeight, 30d);
     }
 
+    public static void ApplyShellRadioButtonTheme(RadioButton radioButton)
+    {
+        ArgumentNullException.ThrowIfNull(radioButton);
+        radioButton.Foreground = ResolveThemeBrush("ChummerShellForegroundBrush", "#111827");
+        radioButton.Background = ResolveThemeBrush("ChummerShellSurfaceBrush", "#FBFCFE");
+        radioButton.Padding = new Thickness(8, 6);
+    }
+
     public static void ApplyShellListBoxTheme(ListBox listBox)
     {
         ArgumentNullException.ThrowIfNull(listBox);
@@ -94,7 +102,9 @@ internal static class DesktopShellTheme
     {
         ArgumentNullException.ThrowIfNull(treeView);
         treeView.Background = ResolveThemeBrush("ChummerShellSurfaceBrush", "#FBFCFE");
-        treeView.BorderThickness = new Thickness(0);
+        treeView.Foreground = ResolveThemeBrush("ChummerShellForegroundBrush", "#111827");
+        treeView.BorderBrush = ResolveThemeBrush("ChummerShellBorderBrush", "#B5C0CF");
+        treeView.BorderThickness = new Thickness(1);
         treeView.Padding = new Thickness(2);
     }
 

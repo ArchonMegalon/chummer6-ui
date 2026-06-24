@@ -11,6 +11,7 @@ using Avalonia.Styling;
 using Avalonia.Threading;
 using Avalonia.VisualTree;
 using Chummer.Avalonia;
+using Chummer.Campaign.Contracts;
 using Chummer.Desktop.Runtime;
 using Chummer.Presentation.Overview;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
@@ -42,6 +43,26 @@ public sealed class DesktopWindowContrastTests
         {
             using ThemeScope scope = ThemeScope.Dark(window);
             AssertVisibleInputControlContrast(window, "report issue window dark mode", minimumVisibleInputControls: 4);
+        });
+    }
+
+    [TestMethod]
+    public void Update_window_keeps_action_controls_readable_in_dark_mode()
+    {
+        WithStandaloneUpdateWindow(window =>
+        {
+            using ThemeScope scope = ThemeScope.Dark(window);
+            AssertVisibleButtonContrast(window, "update window dark mode", minimumVisibleButtons: 4);
+        });
+    }
+
+    [TestMethod]
+    public void Devices_access_window_keeps_action_controls_readable_in_dark_mode()
+    {
+        WithStandaloneDevicesAccessWindow(window =>
+        {
+            using ThemeScope scope = ThemeScope.Dark(window);
+            AssertVisibleButtonContrast(window, "devices access window dark mode", minimumVisibleButtons: 4);
         });
     }
 
@@ -184,6 +205,134 @@ public sealed class DesktopWindowContrastTests
             PromptReason: "fresh_install");
     }
 
+    private static void WithStandaloneUpdateWindow(Action<Window> assertion)
+    {
+        EnsureHeadlessPlatform();
+        Exception? lastFailure = null;
+        for (int attempt = 1; attempt <= HeadlessSessionAttempts; attempt++)
+        {
+            HeadlessUnitTestSession? session = null;
+            try
+            {
+                session = HeadlessUnitTestSession.StartNew(typeof(ContrastHeadlessAppBootstrap));
+                session.Dispatch(
+                        () =>
+                        {
+                            ConstructorInfo constructor = typeof(DesktopUpdateWindow).GetConstructor(
+                                BindingFlags.Instance | BindingFlags.NonPublic,
+                                binder: null,
+                                [
+                                    typeof(DesktopInstallLinkingState),
+                                    typeof(DesktopUpdateClientStatus),
+                                    typeof(DesktopPreferenceState)
+                                ],
+                                modifiers: null)
+                                ?? throw new AssertFailedException("DesktopUpdateWindow private constructor was not found.");
+
+                            Window window = (Window)constructor.Invoke(
+                                [
+                                    CreateInstallState(status: "guest"),
+                                    CreateUpdateStatus(),
+                                    DesktopPreferenceState.Default
+                                ]);
+
+                            window.Show();
+                            PumpUi();
+
+                            try
+                            {
+                                assertion(window);
+                            }
+                            finally
+                            {
+                                window.Close();
+                                PumpUi();
+                            }
+                        },
+                        CancellationToken.None)
+                    .GetAwaiter()
+                    .GetResult();
+                return;
+            }
+            catch (Exception ex) when (IsTransientHeadlessFailure(ex) && attempt < HeadlessSessionAttempts)
+            {
+                lastFailure = ex;
+            }
+            finally
+            {
+                session?.Dispose();
+            }
+        }
+
+        throw new AssertFailedException("Avalonia update-window headless session did not stabilize for contrast proof.", lastFailure);
+    }
+
+    private static void WithStandaloneDevicesAccessWindow(Action<Window> assertion)
+    {
+        EnsureHeadlessPlatform();
+        Exception? lastFailure = null;
+        for (int attempt = 1; attempt <= HeadlessSessionAttempts; attempt++)
+        {
+            HeadlessUnitTestSession? session = null;
+            try
+            {
+                session = HeadlessUnitTestSession.StartNew(typeof(ContrastHeadlessAppBootstrap));
+                session.Dispatch(
+                        () =>
+                        {
+                            ConstructorInfo constructor = typeof(DesktopDevicesAccessWindow).GetConstructor(
+                                BindingFlags.Instance | BindingFlags.NonPublic,
+                                binder: null,
+                                [
+                                    typeof(DesktopInstallLinkingState),
+                                    typeof(DesktopUpdateClientStatus),
+                                    typeof(DesktopPreferenceState),
+                                    typeof(DesktopInstallLinkingSummaryProjection),
+                                    typeof(AccountCampaignSummary)
+                                ],
+                                modifiers: null)
+                                ?? throw new AssertFailedException("DesktopDevicesAccessWindow private constructor was not found.");
+
+                            Window window = (Window)constructor.Invoke(
+                                [
+                                    CreateInstallState(status: "guest"),
+                                    CreateUpdateStatus(),
+                                    DesktopPreferenceState.Default,
+                                    DesktopInstallLinkingSummaryProjection.Empty,
+                                    null!
+                                ]);
+
+                            window.Show();
+                            PumpUi();
+
+                            try
+                            {
+                                assertion(window);
+                            }
+                            finally
+                            {
+                                window.Close();
+                                PumpUi();
+                            }
+                        },
+                        CancellationToken.None)
+                    .GetAwaiter()
+                    .GetResult();
+                return;
+            }
+            catch (Exception ex) when (IsTransientHeadlessFailure(ex) && attempt < HeadlessSessionAttempts)
+            {
+                lastFailure = ex;
+            }
+            finally
+            {
+                session?.Dispose();
+            }
+        }
+
+        throw new AssertFailedException("Avalonia devices-access headless session did not stabilize for contrast proof.", lastFailure);
+    }
+
     private static DesktopInstallLinkingState CreateInstallState(string status)
     {
         DateTimeOffset now = DateTimeOffset.UtcNow;
@@ -253,6 +402,26 @@ public sealed class DesktopWindowContrastTests
             Color background = ResolveSolidColor(backgroundBrush, control, "background", context);
             string controlName = string.IsNullOrWhiteSpace(control.Name) ? control.GetType().Name : control.Name!;
             AssertContrastAtLeast(foreground, background, 4.5d, $"{context} {controlName} non-hover text");
+        }
+    }
+
+    private static void AssertVisibleButtonContrast(Control root, string context, int minimumVisibleButtons)
+    {
+        Button[] buttons = root.GetVisualDescendants()
+            .OfType<Button>()
+            .Where(static control => control.IsVisible)
+            .ToArray();
+
+        Assert.IsTrue(
+            buttons.Length >= minimumVisibleButtons,
+            $"{context} should expose enough visible buttons for a meaningful non-hover readability check.");
+
+        foreach (Button button in buttons)
+        {
+            Color foreground = ResolveSolidColor(button.Foreground, button, "foreground", context);
+            Color background = ResolveSolidColor(button.Background, button, "background", context);
+            string controlName = string.IsNullOrWhiteSpace(button.Name) ? button.GetType().Name : button.Name!;
+            AssertContrastAtLeast(foreground, background, 4.5d, $"{context} {controlName} non-hover button text");
         }
     }
 
