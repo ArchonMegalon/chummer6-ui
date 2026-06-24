@@ -53,5 +53,8 @@ python3 "$repo_root/scripts/materialize-blazor-workbench-pwa-install-staged-proo
 python3 "$repo_root/scripts/materialize-blazor-workbench-docker-operator-staged-proof.py"
 python3 "$repo_root/scripts/materialize-blazor-workbench-security-access-staged-proof.py"
 python3 "$repo_root/scripts/materialize-blazor-workbench-notifications-jobs-staged-proof.py"
+python3 "$repo_root/scripts/materialize-blazor-workbench-touch-mobile-staged-proof.py"
+python3 "$repo_root/scripts/materialize-blazor-workbench-navigation-deeplink-staged-proof.py"
+python3 "$repo_root/scripts/materialize-blazor-workbench-inline-editing-staged-proof.py"
 python3 "$repo_root/scripts/materialize-blazor-legacy-control-coverage-staged-proof.py"
 python3 "$repo_root/scripts/materialize-blazor-source-staged-proof-set.py"

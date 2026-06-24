@@ -1405,6 +1405,108 @@
             </div>
         </section>
 
+        <section class="browser-workbench-touch-mobile" aria-label="Workbench touch and mobile ergonomics lane" data-workbench-touch-mobile="strip">
+            <div class="browser-workbench-touch-mobile-copy">
+                <span class="browser-preview-status-label">Touch</span>
+                <strong>Make dense sheets usable on touch screens.</strong>
+                <p>Touch mode, zoom, panel docking, compact actions, keyboard-safe layout, and pointer help keep phone, tablet, and trackpad use practical without adding another layer.</p>
+            </div>
+            <div class="browser-workbench-touch-mobile-actions" role="list" aria-label="Touch and mobile ergonomics shortcuts">
+                <a role="listitem" href="@BuildPreviewHref("blue", command: "toggle_touch_mode")" data-workbench-touch-mobile-action="touch_mode">
+                    <span>Touch mode</span>
+                    <small>Reserve larger hit targets for dense controls.</small>
+                </a>
+                <a role="listitem" href="@BuildPreviewHref("blue", command: "adjust_workspace_zoom")" data-workbench-touch-mobile-action="zoom">
+                    <span>Zoom</span>
+                    <small>Expose sheet scale without browser hunting.</small>
+                </a>
+                <a role="listitem" href="@BuildPreviewHref("blue", command: "dock_mobile_panels")" data-workbench-touch-mobile-action="panel_dock">
+                    <span>Panel dock</span>
+                    <small>Move inspector and tools into reachable lanes.</small>
+                </a>
+                <a role="listitem" href="@BuildPreviewHref("blue", command: "compact_mobile_actions")" data-workbench-touch-mobile-action="compact_actions">
+                    <span>Compact actions</span>
+                    <small>Keep common operations thumb reachable.</small>
+                </a>
+                <a role="listitem" href="@BuildPreviewHref("blue", command: "keyboard_safe_layout")" data-workbench-touch-mobile-action="keyboard_safe">
+                    <span>Keyboard safe</span>
+                    <small>Reserve space for mobile text entry.</small>
+                </a>
+                <a role="listitem" href="@BuildPreviewHref("blue", command: "pointer_help")" data-workbench-touch-mobile-action="pointer_help">
+                    <span>Pointer help</span>
+                    <small>Explain drag, long-press, and hover replacements.</small>
+                </a>
+            </div>
+        </section>
+
+        <section class="browser-workbench-navigation-deeplink" aria-label="Workbench navigation and deep-link lane" data-workbench-navigation-deeplink="strip">
+            <div class="browser-workbench-navigation-deeplink-copy">
+                <span class="browser-preview-status-label">Navigation</span>
+                <strong>Make links reopen the same place.</strong>
+                <p>Breadcrumbs, URL state, back and forward, copied routes, tab restore, and shared anchors keep dense character context intact during table handoff.</p>
+            </div>
+            <div class="browser-workbench-navigation-deeplink-actions" role="list" aria-label="Navigation and deep-link shortcuts">
+                <a role="listitem" href="@BuildPreviewHref("blue", command: "open_breadcrumbs")" data-workbench-navigation-deeplink-action="breadcrumbs">
+                    <span>Breadcrumbs</span>
+                    <small>Show the current path.</small>
+                </a>
+                <a role="listitem" href="@BuildPreviewHref("blue", command: "sync_url_state")" data-workbench-navigation-deeplink-action="url_state">
+                    <span>URL state</span>
+                    <small>Reserve shareable tab and panel state.</small>
+                </a>
+                <a role="listitem" href="@BuildPreviewHref("blue", command: "browser_history")" data-workbench-navigation-deeplink-action="history_nav">
+                    <span>Back/forward</span>
+                    <small>Keep browser history aligned with moves.</small>
+                </a>
+                <a role="listitem" href="@BuildPreviewHref("blue", command: "copy_route_link")" data-workbench-navigation-deeplink-action="copy_route">
+                    <span>Copy route</span>
+                    <small>Share exact sheet context with a table.</small>
+                </a>
+                <a role="listitem" href="@BuildPreviewHref("blue", command: "restore_route_tabs")" data-workbench-navigation-deeplink-action="tab_restore">
+                    <span>Tab restore</span>
+                    <small>Return to the last active sheet section.</small>
+                </a>
+                <a role="listitem" href="@BuildPreviewHref("blue", command: "open_shared_anchor")" data-workbench-navigation-deeplink-action="shared_anchor">
+                    <span>Shared anchor</span>
+                    <small>Open a GM or player deep link safely.</small>
+                </a>
+            </div>
+        </section>
+
+        <section class="browser-workbench-inline-editing" aria-label="Workbench inline editing lane" data-workbench-inline-editing="strip">
+            <div class="browser-workbench-inline-editing-copy">
+                <span class="browser-preview-status-label">Editing</span>
+                <strong>Keep dense field edits controlled.</strong>
+                <p>Dirty fields, numeric steppers, commit, revert, formula preview, and bulk apply stay close to the active sheet so fast edits remain reviewable.</p>
+            </div>
+            <div class="browser-workbench-inline-editing-actions" role="list" aria-label="Inline editing shortcuts">
+                <a role="listitem" href="@BuildPreviewHref("blue", command: "open_dirty_fields")" data-workbench-inline-editing-action="dirty_fields">
+                    <span>Dirty fields</span>
+                    <small>Show unsaved field-level changes.</small>
+                </a>
+                <a role="listitem" href="@BuildPreviewHref("blue", command: "numeric_steppers")" data-workbench-inline-editing-action="numeric_steppers">
+                    <span>Steppers</span>
+                    <small>Reserve precise +/- editing for dense values.</small>
+                </a>
+                <a role="listitem" href="@BuildPreviewHref("blue", command: "commit_edits")" data-workbench-inline-editing-action="commit">
+                    <span>Commit</span>
+                    <small>Apply a controlled edit group.</small>
+                </a>
+                <a role="listitem" href="@BuildPreviewHref("blue", command: "revert_edits")" data-workbench-inline-editing-action="revert">
+                    <span>Revert</span>
+                    <small>Return fields to their prior state.</small>
+                </a>
+                <a role="listitem" href="@BuildPreviewHref("blue", command: "preview_formula")" data-workbench-inline-editing-action="formula_preview">
+                    <span>Formula preview</span>
+                    <small>Show derived value impact before saving.</small>
+                </a>
+                <a role="listitem" href="@BuildPreviewHref("blue", command: "bulk_apply")" data-workbench-inline-editing-action="bulk_apply">
+                    <span>Bulk apply</span>
+                    <small>Keep repeated edits explicit and reviewable.</small>
+                </a>
+            </div>
+        </section>
+
         <section class="browser-preview-status-grid" aria-label="Workbench quick starts">
             <article class="browser-preview-status-card" data-workbench-entry-card="new-character">
                 <span class="browser-preview-status-label">Quick start</span>

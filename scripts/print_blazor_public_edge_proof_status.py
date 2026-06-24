@@ -64,6 +64,9 @@ WORKBENCH_PWA_INSTALL_STAGED_PROOF = PUBLISHED / "BLAZOR_WORKBENCH_PWA_INSTALL_S
 WORKBENCH_DOCKER_OPERATOR_STAGED_PROOF = PUBLISHED / "BLAZOR_WORKBENCH_DOCKER_OPERATOR_STAGED_PROOF.generated.json"
 WORKBENCH_SECURITY_ACCESS_STAGED_PROOF = PUBLISHED / "BLAZOR_WORKBENCH_SECURITY_ACCESS_STAGED_PROOF.generated.json"
 WORKBENCH_NOTIFICATIONS_JOBS_STAGED_PROOF = PUBLISHED / "BLAZOR_WORKBENCH_NOTIFICATIONS_JOBS_STAGED_PROOF.generated.json"
+WORKBENCH_TOUCH_MOBILE_STAGED_PROOF = PUBLISHED / "BLAZOR_WORKBENCH_TOUCH_MOBILE_STAGED_PROOF.generated.json"
+WORKBENCH_NAVIGATION_DEEPLINK_STAGED_PROOF = PUBLISHED / "BLAZOR_WORKBENCH_NAVIGATION_DEEPLINK_STAGED_PROOF.generated.json"
+WORKBENCH_INLINE_EDITING_STAGED_PROOF = PUBLISHED / "BLAZOR_WORKBENCH_INLINE_EDITING_STAGED_PROOF.generated.json"
 LEGACY_CONTROL_COVERAGE_STAGED_PROOF = PUBLISHED / "BLAZOR_LEGACY_CONTROL_COVERAGE_STAGED_PROOF.generated.json"
 SOURCE_STAGED_PROOF_SET = PUBLISHED / "BLAZOR_SOURCE_STAGED_PROOF_SET.generated.json"
 PORTAL_INSTALLER_HANDOFF_STAGED_PROOF = PUBLISHED / "BLAZOR_PORTAL_INSTALLER_HANDOFF_STAGED_PROOF.generated.json"
@@ -177,6 +180,9 @@ def main() -> int:
     workbench_docker_operator_staged = load_json(WORKBENCH_DOCKER_OPERATOR_STAGED_PROOF)
     workbench_security_access_staged = load_json(WORKBENCH_SECURITY_ACCESS_STAGED_PROOF)
     workbench_notifications_jobs_staged = load_json(WORKBENCH_NOTIFICATIONS_JOBS_STAGED_PROOF)
+    workbench_touch_mobile_staged = load_json(WORKBENCH_TOUCH_MOBILE_STAGED_PROOF)
+    workbench_navigation_deeplink_staged = load_json(WORKBENCH_NAVIGATION_DEEPLINK_STAGED_PROOF)
+    workbench_inline_editing_staged = load_json(WORKBENCH_INLINE_EDITING_STAGED_PROOF)
     legacy_control_coverage_staged = load_json(LEGACY_CONTROL_COVERAGE_STAGED_PROOF)
     source_staged_proof_set = load_json(SOURCE_STAGED_PROOF_SET)
     portal_installer_handoff_staged = load_json(PORTAL_INSTALLER_HANDOFF_STAGED_PROOF)
@@ -755,6 +761,36 @@ def main() -> int:
     print(f"workbench_notifications_jobs_staged_source_checks={count_staged_source_checks(workbench_notifications_jobs_staged)}")
     print(
         "workbench_notifications_jobs_staged_note="
+        "source_alignment_only_not_browser_execution"
+    )
+    print(f"workbench_touch_mobile_staged_receipt={WORKBENCH_TOUCH_MOBILE_STAGED_PROOF}")
+    print(f"workbench_touch_mobile_staged_status={str(workbench_touch_mobile_staged.get('status') or '').strip() or 'not_generated'}")
+    print(f"workbench_touch_mobile_staged_contract={str(workbench_touch_mobile_staged.get('contract_name') or '').strip() or 'missing'}")
+    print(f"workbench_touch_mobile_staged_tier={str(workbench_touch_mobile_staged.get('proof_tier') or '').strip() or 'missing'}")
+    print(f"workbench_touch_mobile_staged_route_count={len(workbench_touch_mobile_staged.get('expected_routes') or [])}")
+    print(f"workbench_touch_mobile_staged_source_checks={count_staged_source_checks(workbench_touch_mobile_staged)}")
+    print(
+        "workbench_touch_mobile_staged_note="
+        "source_alignment_only_not_browser_execution"
+    )
+    print(f"workbench_navigation_deeplink_staged_receipt={WORKBENCH_NAVIGATION_DEEPLINK_STAGED_PROOF}")
+    print(f"workbench_navigation_deeplink_staged_status={str(workbench_navigation_deeplink_staged.get('status') or '').strip() or 'not_generated'}")
+    print(f"workbench_navigation_deeplink_staged_contract={str(workbench_navigation_deeplink_staged.get('contract_name') or '').strip() or 'missing'}")
+    print(f"workbench_navigation_deeplink_staged_tier={str(workbench_navigation_deeplink_staged.get('proof_tier') or '').strip() or 'missing'}")
+    print(f"workbench_navigation_deeplink_staged_route_count={len(workbench_navigation_deeplink_staged.get('expected_routes') or [])}")
+    print(f"workbench_navigation_deeplink_staged_source_checks={count_staged_source_checks(workbench_navigation_deeplink_staged)}")
+    print(
+        "workbench_navigation_deeplink_staged_note="
+        "source_alignment_only_not_browser_execution"
+    )
+    print(f"workbench_inline_editing_staged_receipt={WORKBENCH_INLINE_EDITING_STAGED_PROOF}")
+    print(f"workbench_inline_editing_staged_status={str(workbench_inline_editing_staged.get('status') or '').strip() or 'not_generated'}")
+    print(f"workbench_inline_editing_staged_contract={str(workbench_inline_editing_staged.get('contract_name') or '').strip() or 'missing'}")
+    print(f"workbench_inline_editing_staged_tier={str(workbench_inline_editing_staged.get('proof_tier') or '').strip() or 'missing'}")
+    print(f"workbench_inline_editing_staged_route_count={len(workbench_inline_editing_staged.get('expected_routes') or [])}")
+    print(f"workbench_inline_editing_staged_source_checks={count_staged_source_checks(workbench_inline_editing_staged)}")
+    print(
+        "workbench_inline_editing_staged_note="
         "source_alignment_only_not_browser_execution"
     )
     print(f"legacy_control_coverage_staged_receipt={LEGACY_CONTROL_COVERAGE_STAGED_PROOF}")

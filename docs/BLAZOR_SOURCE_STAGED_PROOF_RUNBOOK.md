@@ -76,6 +76,9 @@ The aggregate currently covers:
 - `workbench_docker_operator`
 - `workbench_security_access`
 - `workbench_notifications_jobs`
+- `workbench_touch_mobile`
+- `workbench_navigation_deeplink`
+- `workbench_inline_editing`
 - `legacy_control_coverage`
 
 Each family must keep `proof_tier` set to:

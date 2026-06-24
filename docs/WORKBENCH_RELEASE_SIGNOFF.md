@@ -165,6 +165,12 @@ The next staged browser-family slice after workbench Docker-operator is workbenc
 
 The next staged browser-family slice after workbench security-access is workbench notifications-jobs posture for job queue, retry, dismiss, settings, history, and support actions. `scripts/ai/milestones/blazor-workbench-notifications-jobs-staged-proof-check.sh` is its source-alignment check. It proves only that the promoted workbench exposes async notification/job affordances; it is not a hosted or Docker browser execution receipt.
 
+The next staged browser-family slice after workbench notifications-jobs is workbench touch-mobile posture for touch mode, zoom, panel dock, compact actions, keyboard-safe layout, and pointer help actions. `scripts/ai/milestones/blazor-workbench-touch-mobile-staged-proof-check.sh` is its source-alignment check. It proves only that the promoted workbench exposes touch/mobile ergonomics affordances; it is not a hosted or Docker browser execution receipt.
+
+The next staged browser-family slice after workbench touch-mobile is workbench navigation-deeplink posture for breadcrumbs, URL state, back/forward, copy route, tab restore, and shared anchor actions. `scripts/ai/milestones/blazor-workbench-navigation-deeplink-staged-proof-check.sh` is its source-alignment check. It proves only that the promoted workbench exposes web navigation/deep-link affordances; it is not a hosted or Docker browser execution receipt.
+
+The next staged browser-family slice after workbench navigation-deeplink is workbench inline-editing posture for dirty fields, numeric steppers, commit, revert, formula preview, and bulk apply actions. `scripts/ai/milestones/blazor-workbench-inline-editing-staged-proof-check.sh` is its source-alignment check. It proves only that the promoted workbench exposes controlled inline-editing affordances; it is not a hosted or Docker browser execution receipt.
+
 `/scripts/ai/milestones/blazor-legacy-control-coverage-staged-proof-check.sh` is the source-level breadth guard over all known `LegacyUiControlCatalog` controls. It maps controls into hosted execution baseline coverage or staged source-alignment families; it is not a hosted or Docker browser execution receipt.
 
 `scripts/ai/milestones/blazor-source-staged-proof-set-check.sh` is the aggregate source-staged proof-set lane. It materializes the staged source receipts and summarizes their status, but it must stay outside release-readiness aggregation because it is not hosted or Docker browser execution evidence.

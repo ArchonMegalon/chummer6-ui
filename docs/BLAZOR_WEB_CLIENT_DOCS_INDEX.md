@@ -184,6 +184,12 @@ Current docs already define the intended shipped posture and the evidence contra
 - `docs/examples/blazor-workbench-security-access-staged-proof.receipt.example.json` shows the compact generated receipt shape for `BLAZOR_WORKBENCH_SECURITY_ACCESS_STAGED_PROOF.generated.json`.
 - `docs/BLAZOR_WORKBENCH_NOTIFICATIONS_JOBS_STAGED_PROOF.md` defines the source-staged promoted workbench notifications-jobs posture contract. It is not runtime proof.
 - `docs/examples/blazor-workbench-notifications-jobs-staged-proof.receipt.example.json` shows the compact generated receipt shape for `BLAZOR_WORKBENCH_NOTIFICATIONS_JOBS_STAGED_PROOF.generated.json`.
+- `docs/BLAZOR_WORKBENCH_TOUCH_MOBILE_STAGED_PROOF.md` defines the source-staged promoted workbench touch-mobile posture contract. It is not runtime proof.
+- `docs/examples/blazor-workbench-touch-mobile-staged-proof.receipt.example.json` shows the compact generated receipt shape for `BLAZOR_WORKBENCH_TOUCH_MOBILE_STAGED_PROOF.generated.json`.
+- `docs/BLAZOR_WORKBENCH_NAVIGATION_DEEPLINK_STAGED_PROOF.md` defines the source-staged promoted workbench navigation-deeplink posture contract. It is not runtime proof.
+- `docs/examples/blazor-workbench-navigation-deeplink-staged-proof.receipt.example.json` shows the compact generated receipt shape for `BLAZOR_WORKBENCH_NAVIGATION_DEEPLINK_STAGED_PROOF.generated.json`.
+- `docs/BLAZOR_WORKBENCH_INLINE_EDITING_STAGED_PROOF.md` defines the source-staged promoted workbench inline-editing posture contract. It is not runtime proof.
+- `docs/examples/blazor-workbench-inline-editing-staged-proof.receipt.example.json` shows the compact generated receipt shape for `BLAZOR_WORKBENCH_INLINE_EDITING_STAGED_PROOF.generated.json`.
 
 ## Portal Installer Handoff
 

@@ -339,7 +339,7 @@
 
 .browser-workbench-command-panel summary {
     cursor: pointer;
-    color: #ffa878;
+    color: #d8cba7;
     font-size: 0.78rem;
     font-weight: 900;
     letter-spacing: 0.1em;
@@ -2960,6 +2960,219 @@
     line-height: 1.35;
 }
 
+.browser-workbench-touch-mobile {
+    width: min(1240px, calc(100% - 1rem));
+    margin: 0 auto 0.85rem;
+    display: grid;
+    grid-template-columns: minmax(18rem, 0.88fr) minmax(0, 1.5fr);
+    gap: 0.75rem;
+    align-items: stretch;
+    padding: 0.8rem;
+    border: 1px solid rgba(198, 185, 154, 0.22);
+    border-radius: 1rem;
+    background:
+        linear-gradient(135deg, rgba(198, 185, 154, 0.09), rgba(137, 224, 179, 0.045)),
+        rgba(10, 12, 9, 0.95);
+}
+
+.browser-workbench-touch-mobile-copy {
+    display: grid;
+    gap: 0.35rem;
+    align-content: center;
+}
+
+.browser-workbench-touch-mobile-copy strong,
+.browser-workbench-touch-mobile-copy p {
+    margin: 0;
+}
+
+.browser-workbench-touch-mobile-copy strong {
+    color: #f4efe4;
+    font-size: 1rem;
+}
+
+.browser-workbench-touch-mobile-copy p {
+    color: rgba(238, 241, 246, 0.72);
+    line-height: 1.42;
+}
+
+.browser-workbench-touch-mobile-actions {
+    display: grid;
+    grid-template-columns: repeat(6, minmax(0, 1fr));
+    gap: 0.5rem;
+}
+
+.browser-workbench-touch-mobile-actions a {
+    display: grid;
+    gap: 0.25rem;
+    min-height: 4.75rem;
+    padding: 0.72rem;
+    border: 1px solid rgba(198, 185, 154, 0.18);
+    border-radius: 0.85rem;
+    background: rgba(255, 255, 255, 0.042);
+    color: #f4efe4;
+    text-decoration: none;
+    transition: transform 150ms ease, border-color 150ms ease, background 150ms ease;
+}
+
+.browser-workbench-touch-mobile-actions a:hover,
+.browser-workbench-touch-mobile-actions a:focus-visible {
+    transform: translateY(-1px);
+    border-color: rgba(137, 224, 179, 0.5);
+    background: rgba(137, 224, 179, 0.09);
+}
+
+.browser-workbench-touch-mobile-actions span {
+    font-weight: 850;
+}
+
+.browser-workbench-touch-mobile-actions small {
+    color: rgba(238, 241, 246, 0.7);
+    line-height: 1.35;
+}
+
+.browser-workbench-navigation-deeplink {
+    width: min(1240px, calc(100% - 1rem));
+    margin: 0 auto 0.85rem;
+    display: grid;
+    grid-template-columns: minmax(18rem, 0.88fr) minmax(0, 1.5fr);
+    gap: 0.75rem;
+    align-items: stretch;
+    padding: 0.8rem;
+    border: 1px solid rgba(198, 185, 154, 0.22);
+    border-radius: 1rem;
+    background:
+        linear-gradient(135deg, rgba(198, 185, 154, 0.09), rgba(137, 224, 179, 0.045)),
+        rgba(10, 12, 9, 0.95);
+}
+
+.browser-workbench-navigation-deeplink-copy {
+    display: grid;
+    gap: 0.35rem;
+    align-content: center;
+}
+
+.browser-workbench-navigation-deeplink-copy strong,
+.browser-workbench-navigation-deeplink-copy p {
+    margin: 0;
+}
+
+.browser-workbench-navigation-deeplink-copy strong {
+    color: #f4efe4;
+    font-size: 1rem;
+}
+
+.browser-workbench-navigation-deeplink-copy p {
+    color: rgba(238, 241, 246, 0.72);
+    line-height: 1.42;
+}
+
+.browser-workbench-navigation-deeplink-actions {
+    display: grid;
+    grid-template-columns: repeat(6, minmax(0, 1fr));
+    gap: 0.5rem;
+}
+
+.browser-workbench-navigation-deeplink-actions a {
+    display: grid;
+    gap: 0.25rem;
+    min-height: 4.75rem;
+    padding: 0.72rem;
+    border: 1px solid rgba(198, 185, 154, 0.18);
+    border-radius: 0.85rem;
+    background: rgba(255, 255, 255, 0.042);
+    color: #f4efe4;
+    text-decoration: none;
+    transition: transform 150ms ease, border-color 150ms ease, background 150ms ease;
+}
+
+.browser-workbench-navigation-deeplink-actions a:hover,
+.browser-workbench-navigation-deeplink-actions a:focus-visible {
+    transform: translateY(-1px);
+    border-color: rgba(137, 224, 179, 0.5);
+    background: rgba(137, 224, 179, 0.09);
+}
+
+.browser-workbench-navigation-deeplink-actions span {
+    font-weight: 850;
+}
+
+.browser-workbench-navigation-deeplink-actions small {
+    color: rgba(238, 241, 246, 0.7);
+    line-height: 1.35;
+}
+
+.browser-workbench-inline-editing {
+    width: min(1240px, calc(100% - 1rem));
+    margin: 0 auto 0.85rem;
+    display: grid;
+    grid-template-columns: minmax(18rem, 0.88fr) minmax(0, 1.5fr);
+    gap: 0.75rem;
+    align-items: stretch;
+    padding: 0.8rem;
+    border: 1px solid rgba(198, 185, 154, 0.22);
+    border-radius: 1rem;
+    background:
+        linear-gradient(135deg, rgba(198, 185, 154, 0.09), rgba(137, 224, 179, 0.045)),
+        rgba(10, 12, 9, 0.95);
+}
+
+.browser-workbench-inline-editing-copy {
+    display: grid;
+    gap: 0.35rem;
+    align-content: center;
+}
+
+.browser-workbench-inline-editing-copy strong,
+.browser-workbench-inline-editing-copy p {
+    margin: 0;
+}
+
+.browser-workbench-inline-editing-copy strong {
+    color: #f4efe4;
+    font-size: 1rem;
+}
+
+.browser-workbench-inline-editing-copy p {
+    color: rgba(238, 241, 246, 0.72);
+    line-height: 1.42;
+}
+
+.browser-workbench-inline-editing-actions {
+    display: grid;
+    grid-template-columns: repeat(6, minmax(0, 1fr));
+    gap: 0.5rem;
+}
+
+.browser-workbench-inline-editing-actions a {
+    display: grid;
+    gap: 0.25rem;
+    min-height: 4.75rem;
+    padding: 0.72rem;
+    border: 1px solid rgba(198, 185, 154, 0.18);
+    border-radius: 0.85rem;
+    background: rgba(255, 255, 255, 0.042);
+    color: #f4efe4;
+    text-decoration: none;
+    transition: transform 150ms ease, border-color 150ms ease, background 150ms ease;
+}
+
+.browser-workbench-inline-editing-actions a:hover,
+.browser-workbench-inline-editing-actions a:focus-visible {
+    transform: translateY(-1px);
+    border-color: rgba(137, 224, 179, 0.5);
+    background: rgba(137, 224, 179, 0.09);
+}
+
+.browser-workbench-inline-editing-actions span {
+    font-weight: 850;
+}
+
+.browser-workbench-inline-editing-actions small {
+    color: rgba(238, 241, 246, 0.7);
+    line-height: 1.35;
+}
+
 .browser-preview-frame {
     padding-bottom: 1rem;
 }
@@ -3288,6 +3501,30 @@
     }
 
     .browser-workbench-notifications-jobs-actions {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+
+    .browser-workbench-touch-mobile {
+        grid-template-columns: 1fr;
+    }
+
+    .browser-workbench-touch-mobile-actions {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+
+    .browser-workbench-navigation-deeplink {
+        grid-template-columns: 1fr;
+    }
+
+    .browser-workbench-navigation-deeplink-actions {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+
+    .browser-workbench-inline-editing {
+        grid-template-columns: 1fr;
+    }
+
+    .browser-workbench-inline-editing-actions {
         grid-template-columns: repeat(2, minmax(0, 1fr));
     }
 }
