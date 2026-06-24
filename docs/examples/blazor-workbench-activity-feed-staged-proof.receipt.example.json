@@ -1,0 +1,27 @@
+{
+  "contract_name": "chummer6-ui.blazor_workbench_activity_feed_staged_proof",
+  "generated_at": "2026-06-24T00:00:00+00:00",
+  "status": "passed",
+  "proof_tier": "source_staged_no_browser_execution",
+  "route_lane": "promoted_blazor_workbench",
+  "expected_routes": [
+    "/blazor/workbench",
+    "/status",
+    "/contact"
+  ],
+  "checks": [
+    {
+      "id": "product_workbench_activity_feed",
+      "path": "Chummer.Blazor/Components/Pages/Preview.razor",
+      "status": "passed",
+      "required_token_count": 8,
+      "missing_tokens": []
+    }
+  ],
+  "failures": [],
+  "notes": [
+    "This receipt only proves that promoted workbench activity-feed source, style, status, and docs agree.",
+    "It is not a substitute for hosted Playwright execution proof, Docker self-host proof, live event logging proof, or toast delivery proof.",
+    "Do not use this receipt to claim live event logging, toast delivery, or browser execution parity."
+  ]
+}

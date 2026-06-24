@@ -1,13 +1,13 @@
 {
   "contract_name": "chummer6-ui.blazor_source_staged_proof_set",
-  "generated_at": "2026-06-24T22:07:36.001425+00:00",
+  "generated_at": "2026-06-24T22:12:51.821468+00:00",
   "status": "passed",
   "proof_tier": "source_staged_no_browser_execution",
   "route_lane": "promoted_blazor_workbench",
-  "required_receipt_count": 32,
-  "passed_receipt_count": 32,
-  "expected_route_count": 86,
-  "source_check_count": 203,
+  "required_receipt_count": 34,
+  "passed_receipt_count": 34,
+  "expected_route_count": 90,
+  "source_check_count": 213,
   "required_receipts": [
     {
       "id": "career_support",
@@ -377,6 +377,30 @@
       "status": "passed",
       "proof_tier": "source_staged_no_browser_execution",
       "expected_route_count": 1,
+      "source_check_count": 5,
+      "control_count": null,
+      "covered_control_count": null
+    },
+    {
+      "id": "workbench_layout_presets",
+      "path": "/docker/chummercomplete/chummer-presentation/.codex-studio/published/BLAZOR_WORKBENCH_LAYOUT_PRESETS_STAGED_PROOF.generated.json",
+      "expected_contract_name": "chummer6-ui.blazor_workbench_layout_presets_staged_proof",
+      "contract_name": "chummer6-ui.blazor_workbench_layout_presets_staged_proof",
+      "status": "passed",
+      "proof_tier": "source_staged_no_browser_execution",
+      "expected_route_count": 1,
+      "source_check_count": 5,
+      "control_count": null,
+      "covered_control_count": null
+    },
+    {
+      "id": "workbench_activity_feed",
+      "path": "/docker/chummercomplete/chummer-presentation/.codex-studio/published/BLAZOR_WORKBENCH_ACTIVITY_FEED_STAGED_PROOF.generated.json",
+      "expected_contract_name": "chummer6-ui.blazor_workbench_activity_feed_staged_proof",
+      "contract_name": "chummer6-ui.blazor_workbench_activity_feed_staged_proof",
+      "status": "passed",
+      "proof_tier": "source_staged_no_browser_execution",
+      "expected_route_count": 3,
       "source_check_count": 5,
       "control_count": null,
       "covered_control_count": null

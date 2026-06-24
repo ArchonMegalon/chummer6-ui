@@ -771,6 +771,66 @@
             </div>
         </section>
 
+        <section class="browser-workbench-layout-presets" aria-label="Workbench layout presets" data-workbench-layout-presets="strip">
+            <div class="browser-workbench-layout-presets-copy">
+                <span class="browser-preview-status-label">Layout presets</span>
+                <strong>Switch between desktop-density and browser-safe work modes.</strong>
+                <p>Dense sheet, split review, output, mobile-safe, and focus layouts stay visible as web-client modes instead of hidden responsive accidents.</p>
+            </div>
+            <div class="browser-workbench-layout-presets-actions" role="list" aria-label="Workbench layout preset shortcuts">
+                <a role="listitem" href="@BuildPreviewHref("blue", useWorkbenchRoute: true)" data-workbench-layout-presets-action="dense-sheet">
+                    <span>Dense sheet</span>
+                    <small>Return to the full runner surface.</small>
+                </a>
+                <a role="listitem" href="@BuildWorkbenchLaneHref("tab-create")" data-workbench-layout-presets-action="split-review">
+                    <span>Split review</span>
+                    <small>Keep build checks beside the sheet.</small>
+                </a>
+                <a role="listitem" href="@BuildWorkbenchCommandHref("print_character")" data-workbench-layout-presets-action="output">
+                    <span>Output</span>
+                    <small>Prepare print and export work.</small>
+                </a>
+                <a role="listitem" href="#workbench-density-mobile" data-workbench-layout-presets-action="mobile-safe">
+                    <span>Mobile safe</span>
+                    <small>Use touch-friendly density.</small>
+                </a>
+                <a role="listitem" href="@BuildWorkbenchLaneHref("tab-gear")" data-workbench-layout-presets-action="focus-pane">
+                    <span>Focus pane</span>
+                    <small>Stay with one editing lane.</small>
+                </a>
+            </div>
+        </section>
+
+        <section class="browser-workbench-activity-feed" aria-label="Workbench activity feed" data-workbench-activity-feed="strip">
+            <div class="browser-workbench-activity-feed-copy">
+                <span class="browser-preview-status-label">Activity feed</span>
+                <strong>Keep warnings, output events, and recovery cues visible.</strong>
+                <p>Browser users need the same confidence as desktop users: recent saves, validation warnings, output handoffs, hosted status, and support escapes should stay easy to scan.</p>
+            </div>
+            <div class="browser-workbench-activity-feed-actions" role="list" aria-label="Recent workbench activity shortcuts">
+                <a role="listitem" href="@BuildWorkbenchCommandHref("save_character_as")" data-workbench-activity-feed-action="save-event">
+                    <span>Save event</span>
+                    <small>Review the browser-safe output handoff.</small>
+                </a>
+                <a role="listitem" href="@BuildWorkbenchLaneHref("tab-create")" data-workbench-activity-feed-action="validation-warning">
+                    <span>Validation</span>
+                    <small>Return to build warnings and checks.</small>
+                </a>
+                <a role="listitem" href="@BuildWorkbenchCommandHref("export_character")" data-workbench-activity-feed-action="output-event">
+                    <span>Output</span>
+                    <small>Continue export/download work.</small>
+                </a>
+                <a role="listitem" href="/status" data-workbench-activity-feed-action="hosted-status">
+                    <span>Status</span>
+                    <small>Check hosted and connected lanes.</small>
+                </a>
+                <a role="listitem" href="/contact" data-workbench-activity-feed-action="support-escape">
+                    <span>Support</span>
+                    <small>Escalate a stuck workflow.</small>
+                </a>
+            </div>
+        </section>
+
         <section class="browser-preview-status-grid" aria-label="Workbench quick starts">
             <article class="browser-preview-status-card" data-workbench-entry-card="new-character">
                 <span class="browser-preview-status-label">Quick start</span>

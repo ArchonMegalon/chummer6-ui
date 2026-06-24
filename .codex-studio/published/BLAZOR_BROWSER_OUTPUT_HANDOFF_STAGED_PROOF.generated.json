@@ -1,6 +1,6 @@
 {
   "contract_name": "chummer6-ui.blazor_browser_output_handoff_staged_proof",
-  "generated_at": "2026-06-24T22:07:35.352910+00:00",
+  "generated_at": "2026-06-24T22:12:51.101958+00:00",
   "status": "passed",
   "proof_tier": "source_staged_no_browser_execution",
   "route_lane": "promoted_blazor_workbench",

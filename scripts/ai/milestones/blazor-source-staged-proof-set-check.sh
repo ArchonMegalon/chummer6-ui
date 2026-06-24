@@ -34,5 +34,7 @@ python3 "$repo_root/scripts/materialize-blazor-workbench-inspector-rail-staged-p
 python3 "$repo_root/scripts/materialize-blazor-workbench-dialog-stack-staged-proof.py"
 python3 "$repo_root/scripts/materialize-blazor-workbench-context-actions-staged-proof.py"
 python3 "$repo_root/scripts/materialize-blazor-workbench-search-filter-staged-proof.py"
+python3 "$repo_root/scripts/materialize-blazor-workbench-layout-presets-staged-proof.py"
+python3 "$repo_root/scripts/materialize-blazor-workbench-activity-feed-staged-proof.py"
 python3 "$repo_root/scripts/materialize-blazor-legacy-control-coverage-staged-proof.py"
 python3 "$repo_root/scripts/materialize-blazor-source-staged-proof-set.py"

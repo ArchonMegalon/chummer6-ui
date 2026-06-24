@@ -1,0 +1,33 @@
+# Blazor Workbench Activity-Feed Staged Proof
+
+## Purpose
+
+This source-staged proof keeps recent activity and recovery cues visible on the promoted Blazor workbench route.
+
+The browser client should keep saves, validation warnings, output handoffs, hosted status, and support escapes easy to scan.
+
+## Source-Staged Scope
+
+The staged activity-feed lane covers:
+
+- an activity-feed rail on the promoted workbench route
+- save event, validation warning, output event, hosted status, and support escape shortcuts
+- scoped responsive styling for desktop and mobile browser use
+
+## Source Check
+
+```bash
+bash scripts/ai/milestones/blazor-workbench-activity-feed-staged-proof-check.sh
+```
+
+Expected receipt:
+
+```text
+.codex-studio/published/BLAZOR_WORKBENCH_ACTIVITY_FEED_STAGED_PROOF.generated.json
+```
+
+## Boundary
+
+This is source alignment only. It proves that promoted workbench activity-feed source, style, status reporting, and docs agree.
+
+It is not hosted browser execution proof, Docker self-host proof, live event logging proof, toast delivery proof, route-click proof, screenshot proof, or desktop-equivalent workflow parity.

@@ -1,6 +1,6 @@
 {
-  "contract_name": "chummer6-ui.blazor_workbench_settings_staged_proof",
-  "generated_at": "2026-06-24T22:12:51.369069+00:00",
+  "contract_name": "chummer6-ui.blazor_workbench_layout_presets_staged_proof",
+  "generated_at": "2026-06-24T22:12:51.728004+00:00",
   "status": "passed",
   "proof_tier": "source_staged_no_browser_execution",
   "route_lane": "promoted_blazor_workbench",
@@ -9,22 +9,15 @@
   ],
   "checks": [
     {
-      "id": "product_workbench_settings",
+      "id": "product_workbench_layout_presets",
       "path": "Chummer.Blazor/Components/Pages/Preview.razor",
       "status": "passed",
-      "required_token_count": 9,
+      "required_token_count": 8,
       "missing_tokens": []
     },
     {
-      "id": "scoped_settings_visual_design",
+      "id": "scoped_layout_presets_visual_design",
       "path": "Chummer.Blazor/Components/Pages/Preview.razor.css",
-      "status": "passed",
-      "required_token_count": 4,
-      "missing_tokens": []
-    },
-    {
-      "id": "desktop_settings_dialog_sources",
-      "path": "Chummer.Presentation/Overview/DesktopDialogFactory.cs",
       "status": "passed",
       "required_token_count": 4,
       "missing_tokens": []
@@ -53,8 +46,8 @@
   ],
   "failures": [],
   "notes": [
-    "This receipt only proves that promoted workbench settings source, style, status, and docs agree.",
-    "It is not a substitute for hosted Playwright execution proof or Docker self-host proof.",
-    "Do not use this receipt to claim persisted preference mutation, settings save, or runtime settings parity."
+    "This receipt only proves that promoted workbench layout-presets source, style, status, and docs agree.",
+    "It is not a substitute for hosted Playwright execution proof, Docker self-host proof, pane-resizing proof, or persisted-layout proof.",
+    "Do not use this receipt to claim pane resizing, persisted layout behavior, or browser execution parity."
   ]
 }
