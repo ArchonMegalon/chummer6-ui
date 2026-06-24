@@ -1903,11 +1903,11 @@
     gap: 0.75rem;
     align-items: stretch;
     padding: 0.8rem;
-    border: 1px solid rgba(113, 195, 255, 0.22);
+    border: 1px solid rgba(137, 224, 179, 0.22);
     border-radius: 1rem;
     background:
-        linear-gradient(135deg, rgba(113, 195, 255, 0.085), rgba(137, 224, 179, 0.055)),
-        rgba(8, 12, 15, 0.95);
+        linear-gradient(135deg, rgba(137, 224, 179, 0.085), rgba(244, 207, 115, 0.05)),
+        rgba(8, 14, 11, 0.95);
 }
 
 .browser-workbench-tree-tools-copy {
@@ -1922,7 +1922,7 @@
 }
 
 .browser-workbench-tree-tools-copy strong {
-    color: #eef8ff;
+    color: #effff7;
     font-size: 1rem;
 }
 
@@ -1942,10 +1942,10 @@
     gap: 0.25rem;
     min-height: 4.75rem;
     padding: 0.72rem;
-    border: 1px solid rgba(113, 195, 255, 0.18);
+    border: 1px solid rgba(137, 224, 179, 0.18);
     border-radius: 0.85rem;
     background: rgba(255, 255, 255, 0.04);
-    color: #eef8ff;
+    color: #ecfff7;
     text-decoration: none;
     transition: transform 150ms ease, border-color 150ms ease, background 150ms ease;
 }
@@ -1953,8 +1953,8 @@
 .browser-workbench-tree-tools-actions a:hover,
 .browser-workbench-tree-tools-actions a:focus-visible {
     transform: translateY(-1px);
-    border-color: rgba(113, 195, 255, 0.56);
-    background: rgba(113, 195, 255, 0.1);
+    border-color: rgba(137, 224, 179, 0.56);
+    background: rgba(137, 224, 179, 0.1);
 }
 
 .browser-workbench-tree-tools-actions span {
@@ -2174,6 +2174,14 @@
     }
 
     .browser-workbench-resource-meters-actions {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+
+    .browser-workbench-tree-tools {
+        grid-template-columns: 1fr;
+    }
+
+    .browser-workbench-tree-tools-actions {
         grid-template-columns: repeat(2, minmax(0, 1fr));
     }
 }

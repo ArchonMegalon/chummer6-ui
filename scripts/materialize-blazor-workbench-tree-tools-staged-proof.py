@@ -10,33 +10,34 @@ from pathlib import Path
 REPO_ROOT = Path(__file__).resolve().parents[1]
 OUTPUT_PATH = Path(
     os.environ.get(
-        "CHUMMER_BLAZOR_WORKBENCH_HOSTING_PRIVACY_STAGED_PROOF_PATH",
-        REPO_ROOT / ".codex-studio" / "published" / "BLAZOR_WORKBENCH_HOSTING_PRIVACY_STAGED_PROOF.generated.json",
+        "CHUMMER_BLAZOR_WORKBENCH_TREE_TOOLS_STAGED_PROOF_PATH",
+        REPO_ROOT / ".codex-studio" / "published" / "BLAZOR_WORKBENCH_TREE_TOOLS_STAGED_PROOF.generated.json",
     )
 )
 
 CHECKS = [
     {
-        "id": "product_workbench_hosting_privacy_strip",
+        "id": "product_workbench_tree_tools",
         "path": "Chummer.Blazor/Components/Pages/Preview.razor",
         "tokens": [
-            "Workbench hosting and privacy posture",
-            "data-workbench-hosting=\"strip\"",
-            "Hosting and privacy",
-            "data-workbench-hosting-card=\"public-edge\"",
-            "data-workbench-hosting-card=\"docker-self-host\"",
-            "data-workbench-hosting-card=\"analytics-privacy\"",
-            "Rybbit is optional and metadata-only",
-            "must not send character, owner, runner file, XML, or dossier content",
+            "Workbench tree and list tools",
+            "data-workbench-tree-tools=\"strip\"",
+            "Keep dense tree and list actions visible.",
+            "data-workbench-tree-tools-action=\"expand\"",
+            "data-workbench-tree-tools-action=\"collapse\"",
+            "data-workbench-tree-tools-action=\"sort\"",
+            "data-workbench-tree-tools-action=\"reorder\"",
+            "data-workbench-tree-tools-action=\"pin\"",
+            "data-workbench-tree-tools-action=\"selection\"",
         ],
     },
     {
-        "id": "scoped_hosting_privacy_visual_design",
+        "id": "scoped_tree_tools_visual_design",
         "path": "Chummer.Blazor/Components/Pages/Preview.razor.css",
         "tokens": [
-            ".browser-workbench-hosting-strip",
-            ".browser-workbench-hosting-copy",
-            ".browser-workbench-hosting-cards",
+            ".browser-workbench-tree-tools",
+            ".browser-workbench-tree-tools-copy",
+            ".browser-workbench-tree-tools-actions",
             "@media (max-width: 720px)",
         ],
     },
@@ -44,8 +45,8 @@ CHECKS = [
         "id": "release_truth_docs",
         "path": "docs/WORKBENCH_RELEASE_SIGNOFF.md",
         "tokens": [
-            "workbench hosting/privacy posture",
-            "blazor-workbench-hosting-privacy-staged-proof-check.sh",
+            "workbench tree-tools posture",
+            "blazor-workbench-tree-tools-staged-proof-check.sh",
             "not a hosted or Docker browser execution receipt",
         ],
     },
@@ -53,18 +54,18 @@ CHECKS = [
         "id": "parity_goal_docs",
         "path": "docs/BLAZOR_WEB_CLIENT_PARITY_GOAL.md",
         "tokens": [
-            "staged hosted workbench hosting/privacy posture",
-            "Rybbit is optional and metadata-only",
-            "hosted route, Docker self-host, and analytics privacy",
+            "staged hosted workbench tree-tools posture",
+            "expand, collapse, sort, reorder, pin, and selection",
+            "not yet claiming tree virtualization or list mutation parity",
         ],
     },
     {
         "id": "status_utility_reporting",
         "path": "scripts/print_blazor_public_edge_proof_status.py",
         "tokens": [
-            "WORKBENCH_HOSTING_PRIVACY_STAGED_PROOF",
-            "workbench_hosting_privacy_staged_status",
-            "workbench_hosting_privacy_staged_source_checks",
+            "WORKBENCH_TREE_TOOLS_STAGED_PROOF",
+            "workbench_tree_tools_staged_status",
+            "workbench_tree_tools_staged_source_checks",
             "source_alignment_only_not_browser_execution",
         ],
     },
@@ -104,7 +105,7 @@ def main() -> int:
         )
 
     receipt = {
-        "contract_name": "chummer6-ui.blazor_workbench_hosting_privacy_staged_proof",
+        "contract_name": "chummer6-ui.blazor_workbench_tree_tools_staged_proof",
         "generated_at": datetime.now(timezone.utc).isoformat(),
         "status": "failed" if failures else "passed",
         "proof_tier": "source_staged_no_browser_execution",
@@ -113,9 +114,9 @@ def main() -> int:
         "checks": checks,
         "failures": failures,
         "notes": [
-            "This receipt only proves that promoted workbench hosting/privacy source, style, status, and docs agree.",
-            "It is not a substitute for hosted Playwright execution proof or Docker self-host proof.",
-            "Do not use this receipt to claim Docker runtime, hosted route availability, Rybbit service health, or analytics delivery.",
+            "This receipt only proves that promoted workbench tree-tools source, style, status, and docs agree.",
+            "It is not a substitute for hosted Playwright execution proof, Docker self-host proof, tree virtualization proof, or list mutation proof.",
+            "Do not use this receipt to claim tree virtualization, list mutation, or browser execution parity.",
         ],
     }
 
@@ -126,7 +127,7 @@ def main() -> int:
         print("\n".join(failures))
         return 1
 
-    print(f"blazor_workbench_hosting_privacy_staged_proof:ok {OUTPUT_PATH}")
+    print(f"blazor_workbench_tree_tools_staged_proof:ok {OUTPUT_PATH}")
     return 0
 
 

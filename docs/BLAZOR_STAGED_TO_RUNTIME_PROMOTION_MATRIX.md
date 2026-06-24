@@ -72,6 +72,7 @@ These source receipts help manage breadth and safety but do not promote workflow
 - `BLAZOR_WORKBENCH_ACTIVITY_FEED_STAGED_PROOF.generated.json`
 - `BLAZOR_WORKBENCH_KEYBOARD_SHORTCUTS_STAGED_PROOF.generated.json`
 - `BLAZOR_WORKBENCH_RESOURCE_METERS_STAGED_PROOF.generated.json`
+- `BLAZOR_WORKBENCH_TREE_TOOLS_STAGED_PROOF.generated.json`
 
 ## Promotion Rule
 
