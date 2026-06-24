@@ -533,6 +533,56 @@
             </nav>
         </section>
 
+        <section class="browser-workbench-desktop-install" aria-label="Desktop and installer handoff" data-workbench-desktop-install="strip">
+            <div class="browser-workbench-desktop-install-copy">
+                <span class="browser-preview-status-label">Install handoff</span>
+                <strong>Move between browser and desktop without losing the Chummer workflow.</strong>
+                <p>Hosted workbench, desktop downloads, release status, self-host docs, account work, and support stay visible from the web client.</p>
+            </div>
+            <div class="browser-workbench-desktop-install-actions">
+                <a href="/downloads/" data-workbench-desktop-install-action="downloads">
+                    <span>Downloads</span>
+                    <small>Desktop installers and release shelf.</small>
+                </a>
+                <a href="/downloads/releases.json" data-workbench-desktop-install-action="release-manifest">
+                    <span>Manifest</span>
+                    <small>Machine-readable release truth.</small>
+                </a>
+                <a href="/status" data-workbench-desktop-install-action="release-status">
+                    <span>Status</span>
+                    <small>Hosted route and service posture.</small>
+                </a>
+                <a href="/account/work" data-workbench-desktop-install-action="account-work">
+                    <span>Account work</span>
+                    <small>Keep owner/work context nearby.</small>
+                </a>
+                <a href="/docs/" data-workbench-desktop-install-action="self-host">
+                    <span>Self-host</span>
+                    <small>Docker and operator runbooks.</small>
+                </a>
+                <a href="/contact" data-workbench-desktop-install-action="support">
+                    <span>Support</span>
+                    <small>Escalate install or browser blockers.</small>
+                </a>
+            </div>
+        </section>
+
+        <section class="browser-workbench-menu-bar" aria-label="Workbench desktop menu bar" data-workbench-menu-bar="strip">
+            <div class="browser-workbench-menu-bar-copy">
+                <span class="browser-preview-status-label">Menu rail</span>
+                <strong>Keep Chummer's desktop menu shape in the web client.</strong>
+                <p>File, build, view, character, tools, and help entry points stay visible instead of becoming hidden page-only actions.</p>
+            </div>
+            <nav class="browser-workbench-menu-bar-actions" aria-label="Desktop-style workbench menu shortcuts">
+                <a href="@BuildPreviewHref(command: "open_character", useWorkbenchRoute: true)" data-workbench-menu-bar-action="file">File</a>
+                <a href="@BuildWorkbenchLaneHref("tab-create")" data-workbench-menu-bar-action="build">Build</a>
+                <a href="#workbench-density-compact" data-workbench-menu-bar-action="view">View</a>
+                <a href="@BuildWorkbenchLaneHref("tab-info")" data-workbench-menu-bar-action="character">Character</a>
+                <a href="@BuildPreviewHref(command: "global_settings", useWorkbenchRoute: true)" data-workbench-menu-bar-action="tools">Tools</a>
+                <a href="/contact" data-workbench-menu-bar-action="help">Help</a>
+            </nav>
+        </section>
+
         <section class="browser-preview-status-grid" aria-label="Workbench quick starts">
             <article class="browser-preview-status-card" data-workbench-entry-card="new-character">
                 <span class="browser-preview-status-label">Quick start</span>

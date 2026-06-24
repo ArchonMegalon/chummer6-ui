@@ -130,6 +130,8 @@ Current docs already define the intended shipped posture and the evidence contra
 - `docs/examples/blazor-workbench-accessibility-staged-proof.receipt.example.json` shows the compact generated receipt shape for `BLAZOR_WORKBENCH_ACCESSIBILITY_STAGED_PROOF.generated.json`.
 - `docs/BLAZOR_WORKBENCH_SECTION_RAIL_STAGED_PROOF.md` defines the source-staged promoted workbench section-rail posture contract. It is not runtime proof.
 - `docs/examples/blazor-workbench-section-rail-staged-proof.receipt.example.json` shows the compact generated receipt shape for `BLAZOR_WORKBENCH_SECTION_RAIL_STAGED_PROOF.generated.json`.
+- `docs/BLAZOR_WORKBENCH_DESKTOP_INSTALL_STAGED_PROOF.md` defines the source-staged promoted workbench desktop/install handoff contract. It is not runtime proof.
+- `docs/examples/blazor-workbench-desktop-install-staged-proof.receipt.example.json` shows the compact generated receipt shape for `BLAZOR_WORKBENCH_DESKTOP_INSTALL_STAGED_PROOF.generated.json`.
 
 ## Portal Installer Handoff
 

@@ -49,6 +49,7 @@ The aggregate currently covers:
 - `workbench_connected_runtime`
 - `workbench_accessibility`
 - `workbench_section_rail`
+- `workbench_desktop_install`
 - `legacy_control_coverage`
 
 Each family must keep `proof_tier` set to:

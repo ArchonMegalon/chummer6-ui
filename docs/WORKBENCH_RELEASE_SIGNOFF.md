@@ -111,6 +111,8 @@ The next staged browser-family slice after workbench connected-runtime is workbe
 
 The next staged browser-family slice after workbench accessibility is workbench section-rail posture for desktop-style character sheet navigation. `scripts/ai/milestones/blazor-workbench-section-rail-staged-proof-check.sh` is its source-alignment check. It proves only that the promoted workbench exposes profile, build, skills, gear, combat, magic, matrix, contacts, and career sheet shortcuts; it is not a hosted or Docker browser execution receipt.
 
+The next staged browser-family slice after workbench section-rail is workbench desktop install handoff posture for browser-to-desktop continuity. `scripts/ai/milestones/blazor-workbench-desktop-install-staged-proof-check.sh` is its source-alignment check. It proves only that the promoted workbench exposes downloads, update channel, status, account, self-host notes, and support handoff affordances; it is not a hosted or Docker browser execution receipt.
+
 `/scripts/ai/milestones/blazor-legacy-control-coverage-staged-proof-check.sh` is the source-level breadth guard over all known `LegacyUiControlCatalog` controls. It maps controls into hosted execution baseline coverage or staged source-alignment families; it is not a hosted or Docker browser execution receipt.
 
 `scripts/ai/milestones/blazor-source-staged-proof-set-check.sh` is the aggregate source-staged proof-set lane. It materializes the staged source receipts and summarizes their status, but it must stay outside release-readiness aggregation because it is not hosted or Docker browser execution evidence.

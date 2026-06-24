@@ -26,5 +26,6 @@ python3 "$repo_root/scripts/materialize-blazor-workbench-diagnostics-staged-proo
 python3 "$repo_root/scripts/materialize-blazor-workbench-connected-runtime-staged-proof.py"
 python3 "$repo_root/scripts/materialize-blazor-workbench-accessibility-staged-proof.py"
 python3 "$repo_root/scripts/materialize-blazor-workbench-section-rail-staged-proof.py"
+python3 "$repo_root/scripts/materialize-blazor-workbench-desktop-install-staged-proof.py"
 python3 "$repo_root/scripts/materialize-blazor-legacy-control-coverage-staged-proof.py"
 python3 "$repo_root/scripts/materialize-blazor-source-staged-proof-set.py"
