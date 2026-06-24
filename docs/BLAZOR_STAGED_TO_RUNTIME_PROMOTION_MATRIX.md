@@ -25,14 +25,14 @@ The browser-lane aggregate may only be refreshed after the runtime receipts are 
 
 | Staged family | Source-staged receipt | Hosted execution family | Required route lane |
 | --- | --- | --- | --- |
-| Career/support | `BLAZOR_CAREER_SUPPORT_STAGED_PROOF.generated.json` | `promoted_career_entry_execution`, `promoted_career_entry_committed_execution`, `promoted_career_log_continuity`, `promoted_career_entry_edit_execution`, `promoted_career_entry_delete_execution`, `promoted_career_entry_edit_committed_execution`, `promoted_career_entry_delete_committed_execution`, `promoted_runner_notes_execution`, `promoted_runner_notes_committed_execution`, `promoted_career_entry_reorder_execution` | `/blazor/workbench` |
-| Identity/SIN/license | `BLAZOR_IDENTITY_LICENSE_STAGED_PROOF.generated.json` | `promoted_identity_license_execution` | `/blazor/workbench` |
-| Combat support | `BLAZOR_COMBAT_SUPPORT_STAGED_PROOF.generated.json` | `promoted_combat_support_execution` | `/blazor/workbench` |
-| Skill maintenance | `BLAZOR_SKILL_MAINTENANCE_STAGED_PROOF.generated.json` | `promoted_skill_maintenance_execution` | `/blazor/workbench` |
-| Magic/resonance support | `BLAZOR_MAGIC_SUPPORT_STAGED_PROOF.generated.json` | `promoted_magic_support_execution` | `/blazor/workbench` |
-| Gear maintenance | `BLAZOR_GEAR_MAINTENANCE_STAGED_PROOF.generated.json` | `promoted_gear_maintenance_execution` | `/blazor/workbench` |
-| Source/gear utility | `BLAZOR_SOURCE_GEAR_UTILITY_STAGED_PROOF.generated.json` | `promoted_source_gear_utility_execution` | `/blazor/workbench` |
-| Magic cleanup | `BLAZOR_MAGIC_CLEANUP_STAGED_PROOF.generated.json` | `promoted_magic_cleanup_utility_execution` | `/blazor/workbench` |
+| `career_support` | `BLAZOR_CAREER_SUPPORT_STAGED_PROOF.generated.json` | `promoted_career_entry_execution`, `promoted_career_entry_committed_execution`, `promoted_career_log_continuity`, `promoted_career_entry_edit_execution`, `promoted_career_entry_delete_execution`, `promoted_career_entry_edit_committed_execution`, `promoted_career_entry_delete_committed_execution`, `promoted_runner_notes_execution`, `promoted_runner_notes_committed_execution`, `promoted_career_entry_reorder_execution` | `/blazor/workbench` |
+| `identity_license` | `BLAZOR_IDENTITY_LICENSE_STAGED_PROOF.generated.json` | `promoted_identity_license_execution` | `/blazor/workbench` |
+| `combat_support` | `BLAZOR_COMBAT_SUPPORT_STAGED_PROOF.generated.json` | `promoted_combat_support_execution` | `/blazor/workbench` |
+| `skill_maintenance` | `BLAZOR_SKILL_MAINTENANCE_STAGED_PROOF.generated.json` | `promoted_skill_maintenance_execution` | `/blazor/workbench` |
+| `magic_support` | `BLAZOR_MAGIC_SUPPORT_STAGED_PROOF.generated.json` | `promoted_magic_support_execution` | `/blazor/workbench` |
+| `gear_maintenance` | `BLAZOR_GEAR_MAINTENANCE_STAGED_PROOF.generated.json` | `promoted_gear_maintenance_execution` | `/blazor/workbench` |
+| `source_gear_utility` | `BLAZOR_SOURCE_GEAR_UTILITY_STAGED_PROOF.generated.json` | `promoted_source_gear_utility_execution` | `/blazor/workbench` |
+| `magic_cleanup` | `BLAZOR_MAGIC_CLEANUP_STAGED_PROOF.generated.json` | `promoted_magic_cleanup_utility_execution` | `/blazor/workbench` |
 
 ## Non-Promoting Source Guards
 

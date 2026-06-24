@@ -1,0 +1,158 @@
+{
+  "contract_name": "chummer6-ui.blazor_staged_to_runtime_promotion_matrix",
+  "generated_at": "2026-06-24T20:35:35.499328+00:00",
+  "status": "passed",
+  "proof_tier": "source_plan_no_browser_execution",
+  "route_lane": "promoted_blazor_workbench",
+  "promotion_family_count": 8,
+  "required_runtime_receipts": [
+    "BLAZOR_SELF_HOST_WORKBENCH_PROOF.generated.json",
+    "BLAZOR_PUBLIC_EDGE_EXECUTION_PROOF.generated.json",
+    "BLAZOR_BROWSER_LANE_PROOF_SET.generated.json"
+  ],
+  "promotion_rows": [
+    {
+      "id": "career_support",
+      "source_receipt": "BLAZOR_CAREER_SUPPORT_STAGED_PROOF.generated.json",
+      "hosted_family_ids": [
+        "promoted_career_log_continuity",
+        "promoted_career_entry_execution",
+        "promoted_career_entry_committed_execution",
+        "promoted_career_entry_edit_execution",
+        "promoted_career_entry_delete_execution",
+        "promoted_career_entry_edit_committed_execution",
+        "promoted_career_entry_delete_committed_execution",
+        "promoted_runner_notes_execution",
+        "promoted_runner_notes_committed_execution",
+        "promoted_career_entry_reorder_execution"
+      ],
+      "required_runtime_receipts": [
+        "BLAZOR_SELF_HOST_WORKBENCH_PROOF.generated.json",
+        "BLAZOR_PUBLIC_EDGE_EXECUTION_PROOF.generated.json",
+        "BLAZOR_BROWSER_LANE_PROOF_SET.generated.json"
+      ],
+      "hosted_runner_family_ids_present": true,
+      "hosted_missing_family_ids": [],
+      "source_receipt_present_in_docs": true,
+      "family_id_present_in_docs": true
+    },
+    {
+      "id": "identity_license",
+      "source_receipt": "BLAZOR_IDENTITY_LICENSE_STAGED_PROOF.generated.json",
+      "hosted_family_ids": [
+        "promoted_identity_license_execution"
+      ],
+      "required_runtime_receipts": [
+        "BLAZOR_SELF_HOST_WORKBENCH_PROOF.generated.json",
+        "BLAZOR_PUBLIC_EDGE_EXECUTION_PROOF.generated.json",
+        "BLAZOR_BROWSER_LANE_PROOF_SET.generated.json"
+      ],
+      "hosted_runner_family_ids_present": true,
+      "hosted_missing_family_ids": [],
+      "source_receipt_present_in_docs": true,
+      "family_id_present_in_docs": true
+    },
+    {
+      "id": "combat_support",
+      "source_receipt": "BLAZOR_COMBAT_SUPPORT_STAGED_PROOF.generated.json",
+      "hosted_family_ids": [
+        "promoted_combat_support_execution"
+      ],
+      "required_runtime_receipts": [
+        "BLAZOR_SELF_HOST_WORKBENCH_PROOF.generated.json",
+        "BLAZOR_PUBLIC_EDGE_EXECUTION_PROOF.generated.json",
+        "BLAZOR_BROWSER_LANE_PROOF_SET.generated.json"
+      ],
+      "hosted_runner_family_ids_present": true,
+      "hosted_missing_family_ids": [],
+      "source_receipt_present_in_docs": true,
+      "family_id_present_in_docs": true
+    },
+    {
+      "id": "skill_maintenance",
+      "source_receipt": "BLAZOR_SKILL_MAINTENANCE_STAGED_PROOF.generated.json",
+      "hosted_family_ids": [
+        "promoted_skill_maintenance_execution"
+      ],
+      "required_runtime_receipts": [
+        "BLAZOR_SELF_HOST_WORKBENCH_PROOF.generated.json",
+        "BLAZOR_PUBLIC_EDGE_EXECUTION_PROOF.generated.json",
+        "BLAZOR_BROWSER_LANE_PROOF_SET.generated.json"
+      ],
+      "hosted_runner_family_ids_present": true,
+      "hosted_missing_family_ids": [],
+      "source_receipt_present_in_docs": true,
+      "family_id_present_in_docs": true
+    },
+    {
+      "id": "magic_support",
+      "source_receipt": "BLAZOR_MAGIC_SUPPORT_STAGED_PROOF.generated.json",
+      "hosted_family_ids": [
+        "promoted_magic_support_execution"
+      ],
+      "required_runtime_receipts": [
+        "BLAZOR_SELF_HOST_WORKBENCH_PROOF.generated.json",
+        "BLAZOR_PUBLIC_EDGE_EXECUTION_PROOF.generated.json",
+        "BLAZOR_BROWSER_LANE_PROOF_SET.generated.json"
+      ],
+      "hosted_runner_family_ids_present": true,
+      "hosted_missing_family_ids": [],
+      "source_receipt_present_in_docs": true,
+      "family_id_present_in_docs": true
+    },
+    {
+      "id": "gear_maintenance",
+      "source_receipt": "BLAZOR_GEAR_MAINTENANCE_STAGED_PROOF.generated.json",
+      "hosted_family_ids": [
+        "promoted_gear_maintenance_execution"
+      ],
+      "required_runtime_receipts": [
+        "BLAZOR_SELF_HOST_WORKBENCH_PROOF.generated.json",
+        "BLAZOR_PUBLIC_EDGE_EXECUTION_PROOF.generated.json",
+        "BLAZOR_BROWSER_LANE_PROOF_SET.generated.json"
+      ],
+      "hosted_runner_family_ids_present": true,
+      "hosted_missing_family_ids": [],
+      "source_receipt_present_in_docs": true,
+      "family_id_present_in_docs": true
+    },
+    {
+      "id": "source_gear_utility",
+      "source_receipt": "BLAZOR_SOURCE_GEAR_UTILITY_STAGED_PROOF.generated.json",
+      "hosted_family_ids": [
+        "promoted_source_gear_utility_execution"
+      ],
+      "required_runtime_receipts": [
+        "BLAZOR_SELF_HOST_WORKBENCH_PROOF.generated.json",
+        "BLAZOR_PUBLIC_EDGE_EXECUTION_PROOF.generated.json",
+        "BLAZOR_BROWSER_LANE_PROOF_SET.generated.json"
+      ],
+      "hosted_runner_family_ids_present": true,
+      "hosted_missing_family_ids": [],
+      "source_receipt_present_in_docs": true,
+      "family_id_present_in_docs": true
+    },
+    {
+      "id": "magic_cleanup",
+      "source_receipt": "BLAZOR_MAGIC_CLEANUP_STAGED_PROOF.generated.json",
+      "hosted_family_ids": [
+        "promoted_magic_cleanup_utility_execution"
+      ],
+      "required_runtime_receipts": [
+        "BLAZOR_SELF_HOST_WORKBENCH_PROOF.generated.json",
+        "BLAZOR_PUBLIC_EDGE_EXECUTION_PROOF.generated.json",
+        "BLAZOR_BROWSER_LANE_PROOF_SET.generated.json"
+      ],
+      "hosted_runner_family_ids_present": true,
+      "hosted_missing_family_ids": [],
+      "source_receipt_present_in_docs": true,
+      "family_id_present_in_docs": true
+    }
+  ],
+  "failures": [],
+  "notes": [
+    "This matrix is source-level planning only.",
+    "It does not execute Docker self-host proof or hosted browser execution proof.",
+    "A family is not promoted until the runtime receipts are refreshed and passing."
+  ]
+}
