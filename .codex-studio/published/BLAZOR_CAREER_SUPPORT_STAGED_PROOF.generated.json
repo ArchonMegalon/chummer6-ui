@@ -1,6 +1,6 @@
 {
   "contract_name": "chummer6-ui.blazor_career_support_staged_proof",
-  "generated_at": "2026-06-24T19:29:57.733727+00:00",
+  "generated_at": "2026-06-24T20:34:40.087064+00:00",
   "status": "passed",
   "proof_tier": "source_staged_no_browser_execution",
   "route_lane": "promoted_blazor_workbench",
@@ -11,49 +11,53 @@
     "/blazor/workbench?workspace=ws-1&tab=tab-calendar&control=edit_entry",
     "/blazor/workbench?workspace=ws-1&tab=tab-calendar&control=edit_entry&dialog_action=apply",
     "/blazor/workbench?workspace=ws-1&tab=tab-calendar&control=delete_entry",
-    "/blazor/workbench?workspace=ws-1&tab=tab-calendar&control=delete_entry&dialog_action=delete"
+    "/blazor/workbench?workspace=ws-1&tab=tab-calendar&control=delete_entry&dialog_action=delete",
+    "/blazor/workbench?workspace=ws-1&tab=tab-info&control=open_notes",
+    "/blazor/workbench?workspace=ws-1&tab=tab-info&control=open_notes&dialog_action=save",
+    "/blazor/workbench?workspace=ws-1&tab=tab-calendar&control=move_up",
+    "/blazor/workbench?workspace=ws-1&tab=tab-calendar&control=move_down"
   ],
   "checks": [
     {
       "id": "product_workbench_affordances",
       "path": "Chummer.Blazor/Components/Pages/Preview.razor",
       "status": "passed",
-      "required_token_count": 7,
+      "required_token_count": 11,
       "missing_tokens": []
     },
     {
       "id": "hosted_route_entry_probe",
       "path": "scripts/e2e-public-edge.cjs",
       "status": "passed",
-      "required_token_count": 7,
+      "required_token_count": 11,
       "missing_tokens": []
     },
     {
       "id": "hosted_execution_runner",
       "path": "scripts/e2e-public-edge-playwright.cjs",
       "status": "passed",
-      "required_token_count": 10,
+      "required_token_count": 16,
       "missing_tokens": []
     },
     {
       "id": "self_host_playwright_runner",
       "path": "scripts/e2e-portal-playwright.cjs",
       "status": "passed",
-      "required_token_count": 10,
+      "required_token_count": 17,
       "missing_tokens": []
     },
     {
       "id": "self_host_receipt_metadata",
       "path": "scripts/e2e-portal.sh",
       "status": "passed",
-      "required_token_count": 7,
+      "required_token_count": 11,
       "missing_tokens": []
     },
     {
       "id": "operator_docs",
       "path": "docs/BLAZOR_SELF_HOST_RUNBOOK.md",
       "status": "passed",
-      "required_token_count": 7,
+      "required_token_count": 11,
       "missing_tokens": []
     },
     {
@@ -61,6 +65,13 @@
       "path": "docs/WORKBENCH_RELEASE_SIGNOFF.md",
       "status": "passed",
       "required_token_count": 2,
+      "missing_tokens": []
+    },
+    {
+      "id": "status_utility_reporting",
+      "path": "scripts/print_blazor_public_edge_proof_status.py",
+      "status": "passed",
+      "required_token_count": 4,
       "missing_tokens": []
     }
   ],

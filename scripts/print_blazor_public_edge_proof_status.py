@@ -22,6 +22,11 @@ MAGIC_SUPPORT_STAGED_PROOF = PUBLISHED / "BLAZOR_MAGIC_SUPPORT_STAGED_PROOF.gene
 GEAR_MAINTENANCE_STAGED_PROOF = PUBLISHED / "BLAZOR_GEAR_MAINTENANCE_STAGED_PROOF.generated.json"
 SOURCE_GEAR_UTILITY_STAGED_PROOF = PUBLISHED / "BLAZOR_SOURCE_GEAR_UTILITY_STAGED_PROOF.generated.json"
 MAGIC_CLEANUP_STAGED_PROOF = PUBLISHED / "BLAZOR_MAGIC_CLEANUP_STAGED_PROOF.generated.json"
+LEGACY_CONTROL_COVERAGE_STAGED_PROOF = PUBLISHED / "BLAZOR_LEGACY_CONTROL_COVERAGE_STAGED_PROOF.generated.json"
+SOURCE_STAGED_PROOF_SET = PUBLISHED / "BLAZOR_SOURCE_STAGED_PROOF_SET.generated.json"
+PORTAL_INSTALLER_HANDOFF_STAGED_PROOF = PUBLISHED / "BLAZOR_PORTAL_INSTALLER_HANDOFF_STAGED_PROOF.generated.json"
+DOCKER_SELF_HOST_OPERATOR_STAGED_PROOF = PUBLISHED / "BLAZOR_DOCKER_SELF_HOST_OPERATOR_STAGED_PROOF.generated.json"
+ACCOUNT_SUPPORT_HANDOFF_STAGED_PROOF = PUBLISHED / "BLAZOR_ACCOUNT_SUPPORT_HANDOFF_STAGED_PROOF.generated.json"
 BLOCKERS = PUBLISHED / "UI_EXTERNAL_HOST_PROOF_BLOCKERS.generated.json"
 EXPANDED_ROUTE_PROOF_MARKERS = {
     "public_startup_workbench_command_routes",
@@ -86,6 +91,11 @@ def main() -> int:
     gear_maintenance_staged = load_json(GEAR_MAINTENANCE_STAGED_PROOF)
     source_gear_utility_staged = load_json(SOURCE_GEAR_UTILITY_STAGED_PROOF)
     magic_cleanup_staged = load_json(MAGIC_CLEANUP_STAGED_PROOF)
+    legacy_control_coverage_staged = load_json(LEGACY_CONTROL_COVERAGE_STAGED_PROOF)
+    source_staged_proof_set = load_json(SOURCE_STAGED_PROOF_SET)
+    portal_installer_handoff_staged = load_json(PORTAL_INSTALLER_HANDOFF_STAGED_PROOF)
+    docker_self_host_operator_staged = load_json(DOCKER_SELF_HOST_OPERATOR_STAGED_PROOF)
+    account_support_handoff_staged = load_json(ACCOUNT_SUPPORT_HANDOFF_STAGED_PROOF)
     blockers = load_json(BLOCKERS)
 
     print("Blazor public-edge proof status")
@@ -238,6 +248,54 @@ def main() -> int:
     print(
         "magic_cleanup_staged_note="
         "source_alignment_only_not_browser_execution"
+    )
+    print(f"legacy_control_coverage_staged_receipt={LEGACY_CONTROL_COVERAGE_STAGED_PROOF}")
+    print(f"legacy_control_coverage_staged_status={str(legacy_control_coverage_staged.get('status') or '').strip() or 'not_generated'}")
+    print(f"legacy_control_coverage_staged_contract={str(legacy_control_coverage_staged.get('contract_name') or '').strip() or 'missing'}")
+    print(f"legacy_control_coverage_staged_tier={str(legacy_control_coverage_staged.get('proof_tier') or '').strip() or 'missing'}")
+    print(f"legacy_control_coverage_staged_control_count={legacy_control_coverage_staged.get('control_count', 'unknown')}")
+    print(f"legacy_control_coverage_staged_covered_count={legacy_control_coverage_staged.get('covered_control_count', 'unknown')}")
+    print(
+        "legacy_control_coverage_staged_note="
+        "source_alignment_only_not_browser_execution"
+    )
+    print(f"source_staged_proof_set_receipt={SOURCE_STAGED_PROOF_SET}")
+    print(f"source_staged_proof_set_status={str(source_staged_proof_set.get('status') or '').strip() or 'not_generated'}")
+    print(f"source_staged_proof_set_contract={str(source_staged_proof_set.get('contract_name') or '').strip() or 'missing'}")
+    print(f"source_staged_proof_set_tier={str(source_staged_proof_set.get('proof_tier') or '').strip() or 'missing'}")
+    print(f"source_staged_proof_set_required_receipts={source_staged_proof_set.get('required_receipt_count', 'unknown')}")
+    print(f"source_staged_proof_set_passed_receipts={source_staged_proof_set.get('passed_receipt_count', 'unknown')}")
+    print(f"source_staged_proof_set_expected_routes={source_staged_proof_set.get('expected_route_count', 'unknown')}")
+    print(
+        "source_staged_proof_set_note="
+        "aggregate_source_alignment_only_not_browser_execution"
+    )
+    print(f"portal_installer_handoff_staged_receipt={PORTAL_INSTALLER_HANDOFF_STAGED_PROOF}")
+    print(f"portal_installer_handoff_staged_status={str(portal_installer_handoff_staged.get('status') or '').strip() or 'not_generated'}")
+    print(f"portal_installer_handoff_staged_contract={str(portal_installer_handoff_staged.get('contract_name') or '').strip() or 'missing'}")
+    print(f"portal_installer_handoff_staged_tier={str(portal_installer_handoff_staged.get('proof_tier') or '').strip() or 'missing'}")
+    print(f"portal_installer_handoff_staged_route_count={len(portal_installer_handoff_staged.get('expected_routes') or [])}")
+    print(
+        "portal_installer_handoff_staged_note="
+        "source_alignment_only_not_browser_execution"
+    )
+    print(f"docker_self_host_operator_staged_receipt={DOCKER_SELF_HOST_OPERATOR_STAGED_PROOF}")
+    print(f"docker_self_host_operator_staged_status={str(docker_self_host_operator_staged.get('status') or '').strip() or 'not_generated'}")
+    print(f"docker_self_host_operator_staged_contract={str(docker_self_host_operator_staged.get('contract_name') or '').strip() or 'missing'}")
+    print(f"docker_self_host_operator_staged_tier={str(docker_self_host_operator_staged.get('proof_tier') or '').strip() or 'missing'}")
+    print(f"docker_self_host_operator_staged_service_count={len(docker_self_host_operator_staged.get('expected_services') or [])}")
+    print(
+        "docker_self_host_operator_staged_note="
+        "source_alignment_only_not_docker_runtime"
+    )
+    print(f"account_support_handoff_staged_receipt={ACCOUNT_SUPPORT_HANDOFF_STAGED_PROOF}")
+    print(f"account_support_handoff_staged_status={str(account_support_handoff_staged.get('status') or '').strip() or 'not_generated'}")
+    print(f"account_support_handoff_staged_contract={str(account_support_handoff_staged.get('contract_name') or '').strip() or 'missing'}")
+    print(f"account_support_handoff_staged_tier={str(account_support_handoff_staged.get('proof_tier') or '').strip() or 'missing'}")
+    print(f"account_support_handoff_staged_route_count={len(account_support_handoff_staged.get('expected_routes') or [])}")
+    print(
+        "account_support_handoff_staged_note="
+        "source_alignment_only_not_auth_or_support_runtime"
     )
     print(f"blocker_receipt={BLOCKERS}")
     print(f"blocker_status={str(blockers.get('status') or '').strip() or 'missing'}")

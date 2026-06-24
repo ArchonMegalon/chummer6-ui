@@ -1,0 +1,77 @@
+{
+  "contract_name": "chummer6-ui.blazor_runtime_proof_refresh_plan",
+  "generated_at": "2026-06-24T20:34:40.550490+00:00",
+  "status": "passed",
+  "proof_tier": "source_plan_no_browser_execution",
+  "scope": "ordered_refresh_plan_for_source_staged_to_runtime_browser_proof",
+  "command_sources": [
+    {
+      "path": "scripts/ai/milestones/blazor-source-staged-proof-set-check.sh",
+      "exists": true,
+      "executable": true
+    },
+    {
+      "path": "scripts/ai/milestones/blazor-source-staged-release-boundary-check.sh",
+      "exists": true,
+      "executable": true
+    },
+    {
+      "path": "scripts/ai/milestones/blazor-portal-installer-handoff-staged-proof-check.sh",
+      "exists": true,
+      "executable": true
+    },
+    {
+      "path": "scripts/ai/milestones/blazor-docker-self-host-operator-staged-proof-check.sh",
+      "exists": true,
+      "executable": true
+    },
+    {
+      "path": "scripts/ai/milestones/blazor-account-support-handoff-staged-proof-check.sh",
+      "exists": true,
+      "executable": true
+    },
+    {
+      "path": "scripts/e2e-portal.sh",
+      "exists": true,
+      "executable": true
+    },
+    {
+      "path": "scripts/e2e-public-edge.cjs",
+      "exists": true,
+      "executable": null
+    },
+    {
+      "path": "scripts/e2e-public-edge-playwright.cjs",
+      "exists": true,
+      "executable": null
+    },
+    {
+      "path": "scripts/ai/milestones/blazor-browser-lane-proof-set-check.sh",
+      "exists": true,
+      "executable": true
+    }
+  ],
+  "documentation_sources": [
+    {
+      "path": "docs/BLAZOR_RUNTIME_PROOF_REFRESH_PLAN.md",
+      "status": "passed",
+      "missing_tokens": []
+    },
+    {
+      "path": "docs/WORKBENCH_RELEASE_SIGNOFF.md",
+      "status": "passed",
+      "missing_tokens": []
+    },
+    {
+      "path": "docs/BLAZOR_WEB_CLIENT_DOCS_INDEX.md",
+      "status": "passed",
+      "missing_tokens": []
+    }
+  ],
+  "failures": [],
+  "notes": [
+    "This receipt proves only that the proof refresh plan is documented and command sources exist.",
+    "It does not execute Docker, hosted route-entry, hosted execution, or browser-lane aggregate proof.",
+    "Runtime proof remains owned by the receipts produced by those commands when explicitly run."
+  ]
+}

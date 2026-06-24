@@ -1,0 +1,56 @@
+{
+  "contract_name": "chummer6-ui.blazor_source_staged_release_boundary",
+  "generated_at": "2026-06-24T20:34:40.453363+00:00",
+  "status": "passed",
+  "proof_tier": "source_policy_no_browser_execution",
+  "scope": "staged_receipts_must_not_enter_release_readiness_aggregation",
+  "release_aggregation_sources": [
+    {
+      "path": "scripts/materialize-blazor-browser-lane-proof-set.py",
+      "status": "passed",
+      "forbidden_tokens": []
+    },
+    {
+      "path": "scripts/ai/milestones/blazor-browser-lane-proof-set-check.sh",
+      "status": "passed",
+      "forbidden_tokens": []
+    }
+  ],
+  "documentation_sources": [
+    {
+      "path": "docs/BLAZOR_SOURCE_STAGED_PROOF_RUNBOOK.md",
+      "status": "passed",
+      "missing_tokens": []
+    },
+    {
+      "path": "docs/WORKBENCH_RELEASE_SIGNOFF.md",
+      "status": "passed",
+      "missing_tokens": []
+    },
+    {
+      "path": "docs/BLAZOR_WEB_CLIENT_PARITY_GOAL.md",
+      "status": "passed",
+      "missing_tokens": []
+    }
+  ],
+  "forbidden_staged_tokens": [
+    "BLAZOR_SOURCE_STAGED_PROOF_SET",
+    "BLAZOR_SOURCE_STAGED_PROOF_SET.generated.json",
+    "BLAZOR_LEGACY_CONTROL_COVERAGE_STAGED_PROOF",
+    "BLAZOR_LEGACY_CONTROL_COVERAGE_STAGED_PROOF.generated.json",
+    "BLAZOR_CAREER_SUPPORT_STAGED_PROOF",
+    "BLAZOR_IDENTITY_LICENSE_STAGED_PROOF",
+    "BLAZOR_COMBAT_SUPPORT_STAGED_PROOF",
+    "BLAZOR_SKILL_MAINTENANCE_STAGED_PROOF",
+    "BLAZOR_MAGIC_SUPPORT_STAGED_PROOF",
+    "BLAZOR_GEAR_MAINTENANCE_STAGED_PROOF",
+    "BLAZOR_SOURCE_GEAR_UTILITY_STAGED_PROOF",
+    "BLAZOR_MAGIC_CLEANUP_STAGED_PROOF"
+  ],
+  "failures": [],
+  "notes": [
+    "This receipt is a source-policy guard only.",
+    "It does not execute hosted or Docker browser workflows.",
+    "Passing means staged proof receipts are not wired into release-readiness aggregation sources and docs retain the boundary language."
+  ]
+}

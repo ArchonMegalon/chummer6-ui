@@ -43,6 +43,10 @@ const checks = [
     assert: text => /<base href="[^"]*\/blazor\/"/i.test(text)
   },
   {
+    url: `${baseUrl}/blazor/workbench`,
+    assert: text => /<base href="[^"]*\/blazor\/"/i.test(text)
+  },
+  {
     url: `${baseUrl}/blazor/deep-link-check`,
     assert: text => /<base href="[^"]*\/blazor\/"/i.test(text)
   },
@@ -175,6 +179,35 @@ const checks = [
       text.includes('/downloads/releases.json') &&
       text.includes('fallback-link') &&
       (text.includes('No published desktop builds yet') || text.includes('self-hosted downloads are live'))
+  },
+  {
+    url: `${baseUrl}/downloads/install/avalonia-linux-x64-installer`,
+    redirect: 'manual',
+    acceptedStatuses: [301, 302, 303, 307, 308],
+    assert: (_text, response) => {
+      const location = response.headers.get('location') || '';
+      return [301, 302, 303, 307, 308].includes(response.status)
+        && (location.includes('/downloads/install/avalonia-linux-x64-installer')
+          || location.includes('/downloads/files/chummer-avalonia-linux-x64-installer.deb'));
+    }
+  },
+  {
+    url: `${baseUrl}/downloads/install/avalonia-win-x64-installer`,
+    redirect: 'manual',
+    acceptedStatuses: [301, 302, 303, 307, 308],
+    assert: (_text, response) => {
+      const location = response.headers.get('location') || '';
+      return [301, 302, 303, 307, 308].includes(response.status)
+        && (location.includes('/downloads/install/avalonia-win-x64-installer')
+          || location.includes('/downloads/files/chummer-avalonia-win-x64-installer.exe'));
+    }
+  },
+  {
+    url: `${baseUrl}/contact`,
+    assert: text =>
+      text.includes('Contact')
+      || text.includes('Open the right support case')
+      || text.includes('Product bug')
   }
 ];
 
@@ -183,7 +216,8 @@ const checks = [
     const response = await fetch(check.url, {
       method: check.method ?? 'GET',
       headers: check.headers,
-      body: check.body
+      body: check.body,
+      redirect: check.redirect
     });
     const body = await response.text();
     const acceptedStatuses = check.acceptedStatuses || [];

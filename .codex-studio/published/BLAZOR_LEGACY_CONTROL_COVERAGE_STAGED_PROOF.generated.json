@@ -1,0 +1,522 @@
+{
+  "contract_name": "chummer6-ui.blazor_legacy_control_coverage_staged_proof",
+  "generated_at": "2026-06-24T20:34:40.400063+00:00",
+  "status": "passed",
+  "proof_tier": "source_staged_no_browser_execution",
+  "route_lane": "promoted_blazor_workbench",
+  "control_count": 50,
+  "covered_control_count": 50,
+  "unclassified_controls": [],
+  "family_rows": [
+    {
+      "family_id": "career_support",
+      "staged_receipt": "BLAZOR_CAREER_SUPPORT_STAGED_PROOF.generated.json",
+      "controls": [
+        {
+          "control_id": "create_entry",
+          "coverage_kind": "source_staged_no_browser_execution",
+          "catalog_token_present": true,
+          "runner_source_token_present": true,
+          "docs_or_status_token_present": true,
+          "covered_by_source_alignment": true
+        },
+        {
+          "control_id": "edit_entry",
+          "coverage_kind": "source_staged_no_browser_execution",
+          "catalog_token_present": true,
+          "runner_source_token_present": true,
+          "docs_or_status_token_present": true,
+          "covered_by_source_alignment": true
+        },
+        {
+          "control_id": "delete_entry",
+          "coverage_kind": "source_staged_no_browser_execution",
+          "catalog_token_present": true,
+          "runner_source_token_present": true,
+          "docs_or_status_token_present": true,
+          "covered_by_source_alignment": true
+        },
+        {
+          "control_id": "open_notes",
+          "coverage_kind": "source_staged_no_browser_execution",
+          "catalog_token_present": true,
+          "runner_source_token_present": true,
+          "docs_or_status_token_present": true,
+          "covered_by_source_alignment": true
+        },
+        {
+          "control_id": "move_up",
+          "coverage_kind": "source_staged_no_browser_execution",
+          "catalog_token_present": true,
+          "runner_source_token_present": true,
+          "docs_or_status_token_present": true,
+          "covered_by_source_alignment": true
+        },
+        {
+          "control_id": "move_down",
+          "coverage_kind": "source_staged_no_browser_execution",
+          "catalog_token_present": true,
+          "runner_source_token_present": true,
+          "docs_or_status_token_present": true,
+          "covered_by_source_alignment": true
+        }
+      ],
+      "control_count": 6,
+      "covered_count": 6
+    },
+    {
+      "family_id": "identity_license",
+      "staged_receipt": "BLAZOR_IDENTITY_LICENSE_STAGED_PROOF.generated.json",
+      "controls": [
+        {
+          "control_id": "identity_license_add",
+          "coverage_kind": "source_staged_no_browser_execution",
+          "catalog_token_present": true,
+          "runner_source_token_present": true,
+          "docs_or_status_token_present": true,
+          "covered_by_source_alignment": true
+        },
+        {
+          "control_id": "identity_license_edit",
+          "coverage_kind": "source_staged_no_browser_execution",
+          "catalog_token_present": true,
+          "runner_source_token_present": true,
+          "docs_or_status_token_present": true,
+          "covered_by_source_alignment": true
+        },
+        {
+          "control_id": "identity_license_delete",
+          "coverage_kind": "source_staged_no_browser_execution",
+          "catalog_token_present": true,
+          "runner_source_token_present": true,
+          "docs_or_status_token_present": true,
+          "covered_by_source_alignment": true
+        }
+      ],
+      "control_count": 3,
+      "covered_count": 3
+    },
+    {
+      "family_id": "source_gear_utility",
+      "staged_receipt": "BLAZOR_SOURCE_GEAR_UTILITY_STAGED_PROOF.generated.json",
+      "controls": [
+        {
+          "control_id": "toggle_free_paid",
+          "coverage_kind": "source_staged_no_browser_execution",
+          "catalog_token_present": true,
+          "runner_source_token_present": true,
+          "docs_or_status_token_present": true,
+          "covered_by_source_alignment": true
+        },
+        {
+          "control_id": "show_source",
+          "coverage_kind": "source_staged_no_browser_execution",
+          "catalog_token_present": true,
+          "runner_source_token_present": true,
+          "docs_or_status_token_present": true,
+          "covered_by_source_alignment": true
+        },
+        {
+          "control_id": "gear_mount",
+          "coverage_kind": "source_staged_no_browser_execution",
+          "catalog_token_present": true,
+          "runner_source_token_present": true,
+          "docs_or_status_token_present": true,
+          "covered_by_source_alignment": true
+        },
+        {
+          "control_id": "gear_source",
+          "coverage_kind": "source_staged_no_browser_execution",
+          "catalog_token_present": true,
+          "runner_source_token_present": true,
+          "docs_or_status_token_present": true,
+          "covered_by_source_alignment": true
+        }
+      ],
+      "control_count": 4,
+      "covered_count": 4
+    },
+    {
+      "family_id": "gear_maintenance",
+      "staged_receipt": "BLAZOR_GEAR_MAINTENANCE_STAGED_PROOF.generated.json",
+      "controls": [
+        {
+          "control_id": "gear_add",
+          "coverage_kind": "source_staged_no_browser_execution",
+          "catalog_token_present": true,
+          "runner_source_token_present": true,
+          "docs_or_status_token_present": true,
+          "covered_by_source_alignment": true
+        },
+        {
+          "control_id": "gear_edit",
+          "coverage_kind": "source_staged_no_browser_execution",
+          "catalog_token_present": true,
+          "runner_source_token_present": true,
+          "docs_or_status_token_present": true,
+          "covered_by_source_alignment": true
+        },
+        {
+          "control_id": "gear_delete",
+          "coverage_kind": "source_staged_no_browser_execution",
+          "catalog_token_present": true,
+          "runner_source_token_present": true,
+          "docs_or_status_token_present": true,
+          "covered_by_source_alignment": true
+        }
+      ],
+      "control_count": 3,
+      "covered_count": 3
+    },
+    {
+      "family_id": "cyberware",
+      "staged_receipt": null,
+      "controls": [
+        {
+          "control_id": "cyberware_add",
+          "coverage_kind": "hosted_execution_baseline_or_staged_refresh",
+          "catalog_token_present": true,
+          "runner_source_token_present": true,
+          "docs_or_status_token_present": true,
+          "covered_by_source_alignment": true
+        },
+        {
+          "control_id": "cyberware_edit",
+          "coverage_kind": "hosted_execution_baseline_or_staged_refresh",
+          "catalog_token_present": true,
+          "runner_source_token_present": true,
+          "docs_or_status_token_present": true,
+          "covered_by_source_alignment": true
+        },
+        {
+          "control_id": "cyberware_delete",
+          "coverage_kind": "hosted_execution_baseline_or_staged_refresh",
+          "catalog_token_present": true,
+          "runner_source_token_present": true,
+          "docs_or_status_token_present": true,
+          "covered_by_source_alignment": true
+        }
+      ],
+      "control_count": 3,
+      "covered_count": 3
+    },
+    {
+      "family_id": "drug",
+      "staged_receipt": "BLAZOR_MAGIC_CLEANUP_STAGED_PROOF.generated.json",
+      "controls": [
+        {
+          "control_id": "drug_add",
+          "coverage_kind": "hosted_execution_baseline_or_staged_refresh",
+          "catalog_token_present": true,
+          "runner_source_token_present": true,
+          "docs_or_status_token_present": true,
+          "covered_by_source_alignment": true
+        },
+        {
+          "control_id": "drug_delete",
+          "coverage_kind": "source_staged_no_browser_execution",
+          "catalog_token_present": true,
+          "runner_source_token_present": true,
+          "docs_or_status_token_present": true,
+          "covered_by_source_alignment": true
+        }
+      ],
+      "control_count": 2,
+      "covered_count": 2
+    },
+    {
+      "family_id": "magic_cleanup",
+      "staged_receipt": "BLAZOR_MAGIC_CLEANUP_STAGED_PROOF.generated.json",
+      "controls": [
+        {
+          "control_id": "magic_add",
+          "coverage_kind": "source_staged_no_browser_execution",
+          "catalog_token_present": true,
+          "runner_source_token_present": true,
+          "docs_or_status_token_present": true,
+          "covered_by_source_alignment": true
+        },
+        {
+          "control_id": "magic_delete",
+          "coverage_kind": "hosted_execution_baseline_or_staged_refresh",
+          "catalog_token_present": true,
+          "runner_source_token_present": true,
+          "docs_or_status_token_present": true,
+          "covered_by_source_alignment": true
+        },
+        {
+          "control_id": "magic_bind",
+          "coverage_kind": "source_staged_no_browser_execution",
+          "catalog_token_present": true,
+          "runner_source_token_present": true,
+          "docs_or_status_token_present": true,
+          "covered_by_source_alignment": true
+        },
+        {
+          "control_id": "magic_source",
+          "coverage_kind": "source_staged_no_browser_execution",
+          "catalog_token_present": true,
+          "runner_source_token_present": true,
+          "docs_or_status_token_present": true,
+          "covered_by_source_alignment": true
+        }
+      ],
+      "control_count": 4,
+      "covered_count": 4
+    },
+    {
+      "family_id": "magic_support",
+      "staged_receipt": "BLAZOR_MAGIC_SUPPORT_STAGED_PROOF.generated.json",
+      "controls": [
+        {
+          "control_id": "spell_add",
+          "coverage_kind": "hosted_execution_baseline_or_staged_refresh",
+          "catalog_token_present": true,
+          "runner_source_token_present": true,
+          "docs_or_status_token_present": true,
+          "covered_by_source_alignment": true
+        },
+        {
+          "control_id": "adept_power_add",
+          "coverage_kind": "source_staged_no_browser_execution",
+          "catalog_token_present": true,
+          "runner_source_token_present": true,
+          "docs_or_status_token_present": true,
+          "covered_by_source_alignment": true
+        },
+        {
+          "control_id": "complex_form_add",
+          "coverage_kind": "hosted_execution_baseline_or_staged_refresh",
+          "catalog_token_present": true,
+          "runner_source_token_present": true,
+          "docs_or_status_token_present": true,
+          "covered_by_source_alignment": true
+        },
+        {
+          "control_id": "initiation_add",
+          "coverage_kind": "hosted_execution_baseline_or_staged_refresh",
+          "catalog_token_present": true,
+          "runner_source_token_present": true,
+          "docs_or_status_token_present": true,
+          "covered_by_source_alignment": true
+        },
+        {
+          "control_id": "spirit_add",
+          "coverage_kind": "source_staged_no_browser_execution",
+          "catalog_token_present": true,
+          "runner_source_token_present": true,
+          "docs_or_status_token_present": true,
+          "covered_by_source_alignment": true
+        },
+        {
+          "control_id": "critter_power_add",
+          "coverage_kind": "source_staged_no_browser_execution",
+          "catalog_token_present": true,
+          "runner_source_token_present": true,
+          "docs_or_status_token_present": true,
+          "covered_by_source_alignment": true
+        },
+        {
+          "control_id": "matrix_program_add",
+          "coverage_kind": "source_staged_no_browser_execution",
+          "catalog_token_present": true,
+          "runner_source_token_present": true,
+          "docs_or_status_token_present": true,
+          "covered_by_source_alignment": true
+        }
+      ],
+      "control_count": 7,
+      "covered_count": 7
+    },
+    {
+      "family_id": "skill_maintenance",
+      "staged_receipt": "BLAZOR_SKILL_MAINTENANCE_STAGED_PROOF.generated.json",
+      "controls": [
+        {
+          "control_id": "skill_add",
+          "coverage_kind": "hosted_execution_baseline_or_staged_refresh",
+          "catalog_token_present": true,
+          "runner_source_token_present": true,
+          "docs_or_status_token_present": true,
+          "covered_by_source_alignment": true
+        },
+        {
+          "control_id": "skill_specialize",
+          "coverage_kind": "source_staged_no_browser_execution",
+          "catalog_token_present": true,
+          "runner_source_token_present": true,
+          "docs_or_status_token_present": true,
+          "covered_by_source_alignment": true
+        },
+        {
+          "control_id": "skill_remove",
+          "coverage_kind": "source_staged_no_browser_execution",
+          "catalog_token_present": true,
+          "runner_source_token_present": true,
+          "docs_or_status_token_present": true,
+          "covered_by_source_alignment": true
+        },
+        {
+          "control_id": "skill_group",
+          "coverage_kind": "source_staged_no_browser_execution",
+          "catalog_token_present": true,
+          "runner_source_token_present": true,
+          "docs_or_status_token_present": true,
+          "covered_by_source_alignment": true
+        }
+      ],
+      "control_count": 4,
+      "covered_count": 4
+    },
+    {
+      "family_id": "combat_support",
+      "staged_receipt": "BLAZOR_COMBAT_SUPPORT_STAGED_PROOF.generated.json",
+      "controls": [
+        {
+          "control_id": "combat_add_weapon",
+          "coverage_kind": "hosted_execution_baseline_or_staged_refresh",
+          "catalog_token_present": true,
+          "runner_source_token_present": true,
+          "docs_or_status_token_present": true,
+          "covered_by_source_alignment": true
+        },
+        {
+          "control_id": "combat_add_armor",
+          "coverage_kind": "source_staged_no_browser_execution",
+          "catalog_token_present": true,
+          "runner_source_token_present": true,
+          "docs_or_status_token_present": true,
+          "covered_by_source_alignment": true
+        },
+        {
+          "control_id": "combat_reload",
+          "coverage_kind": "source_staged_no_browser_execution",
+          "catalog_token_present": true,
+          "runner_source_token_present": true,
+          "docs_or_status_token_present": true,
+          "covered_by_source_alignment": true
+        },
+        {
+          "control_id": "combat_damage_track",
+          "coverage_kind": "source_staged_no_browser_execution",
+          "catalog_token_present": true,
+          "runner_source_token_present": true,
+          "docs_or_status_token_present": true,
+          "covered_by_source_alignment": true
+        }
+      ],
+      "control_count": 4,
+      "covered_count": 4
+    },
+    {
+      "family_id": "vehicle",
+      "staged_receipt": null,
+      "controls": [
+        {
+          "control_id": "vehicle_add",
+          "coverage_kind": "hosted_execution_baseline_or_staged_refresh",
+          "catalog_token_present": true,
+          "runner_source_token_present": true,
+          "docs_or_status_token_present": true,
+          "covered_by_source_alignment": true
+        },
+        {
+          "control_id": "vehicle_edit",
+          "coverage_kind": "hosted_execution_baseline_or_staged_refresh",
+          "catalog_token_present": true,
+          "runner_source_token_present": true,
+          "docs_or_status_token_present": true,
+          "covered_by_source_alignment": true
+        },
+        {
+          "control_id": "vehicle_delete",
+          "coverage_kind": "hosted_execution_baseline_or_staged_refresh",
+          "catalog_token_present": true,
+          "runner_source_token_present": true,
+          "docs_or_status_token_present": true,
+          "covered_by_source_alignment": true
+        },
+        {
+          "control_id": "vehicle_mod_add",
+          "coverage_kind": "hosted_execution_baseline_or_staged_refresh",
+          "catalog_token_present": true,
+          "runner_source_token_present": true,
+          "docs_or_status_token_present": true,
+          "covered_by_source_alignment": true
+        }
+      ],
+      "control_count": 4,
+      "covered_count": 4
+    },
+    {
+      "family_id": "contacts",
+      "staged_receipt": null,
+      "controls": [
+        {
+          "control_id": "contact_add",
+          "coverage_kind": "hosted_execution_baseline_or_staged_refresh",
+          "catalog_token_present": true,
+          "runner_source_token_present": true,
+          "docs_or_status_token_present": true,
+          "covered_by_source_alignment": true
+        },
+        {
+          "control_id": "contact_edit",
+          "coverage_kind": "hosted_execution_baseline_or_staged_refresh",
+          "catalog_token_present": true,
+          "runner_source_token_present": true,
+          "docs_or_status_token_present": true,
+          "covered_by_source_alignment": true
+        },
+        {
+          "control_id": "contact_remove",
+          "coverage_kind": "hosted_execution_baseline_or_staged_refresh",
+          "catalog_token_present": true,
+          "runner_source_token_present": true,
+          "docs_or_status_token_present": true,
+          "covered_by_source_alignment": true
+        },
+        {
+          "control_id": "contact_connection",
+          "coverage_kind": "hosted_execution_baseline_or_staged_refresh",
+          "catalog_token_present": true,
+          "runner_source_token_present": true,
+          "docs_or_status_token_present": true,
+          "covered_by_source_alignment": true
+        }
+      ],
+      "control_count": 4,
+      "covered_count": 4
+    },
+    {
+      "family_id": "qualities",
+      "staged_receipt": null,
+      "controls": [
+        {
+          "control_id": "quality_add",
+          "coverage_kind": "hosted_execution_baseline_or_staged_refresh",
+          "catalog_token_present": true,
+          "runner_source_token_present": true,
+          "docs_or_status_token_present": true,
+          "covered_by_source_alignment": true
+        },
+        {
+          "control_id": "quality_delete",
+          "coverage_kind": "hosted_execution_baseline_or_staged_refresh",
+          "catalog_token_present": true,
+          "runner_source_token_present": true,
+          "docs_or_status_token_present": true,
+          "covered_by_source_alignment": true
+        }
+      ],
+      "control_count": 2,
+      "covered_count": 2
+    }
+  ],
+  "failures": [],
+  "notes": [
+    "This receipt is a source-level coverage guard for known legacy UI control IDs.",
+    "It combines hosted execution baseline controls with source-staged route families.",
+    "It is not browser execution evidence and must not be treated as a release-passing proof."
+  ]
+}

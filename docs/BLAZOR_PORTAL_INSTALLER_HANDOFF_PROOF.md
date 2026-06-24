@@ -1,0 +1,52 @@
+# Blazor Portal Installer Handoff Proof
+
+## Purpose
+
+This document defines the source-staged proof contract for browser-to-portal handoff from the promoted Blazor workbench.
+
+The web client should behave like another Chummer desktop client in the browser, which includes clean exits to install/update/support surfaces when a browser workflow needs desktop help or account recovery.
+
+## Source-Staged Scope
+
+The staged handoff lane covers source alignment for these portal routes and surfaces:
+
+- `/downloads/`
+- `/downloads/releases.json`
+- `/downloads/install/avalonia-linux-x64-installer`
+- `/downloads/install/avalonia-win-x64-installer`
+- `/contact`
+- `/status`
+- `/blazor/workbench`
+- `/blazor/`
+
+## Required UX Contract
+
+The Blazor browser lane must keep these ideas true:
+
+- `/blazor/` resolves into the product-shaped browser workbench.
+- The browser workbench remains the primary user workflow, not a preview page.
+- Desktop install/download handoff remains same-origin through `Chummer.Portal`.
+- Installer claim routes may require login, but must preserve the intended next URL.
+- `/downloads/` must explain current platform posture honestly.
+- `/status` must state current release availability.
+- `/contact` must route users into support without leaving the product shape.
+
+## Source-Staged Receipt
+
+The source-staged receipt is:
+
+```text
+.codex-studio/published/BLAZOR_PORTAL_INSTALLER_HANDOFF_STAGED_PROOF.generated.json
+```
+
+Materialize it with:
+
+```bash
+bash scripts/ai/milestones/blazor-portal-installer-handoff-staged-proof-check.sh
+```
+
+## Boundary
+
+This proof is source-only. It confirms route expectations are present in scripts and docs, but it does not prove the portal is running or that installer routes work at runtime.
+
+Runtime claims still require the local portal proof and hosted public-edge proof receipts.

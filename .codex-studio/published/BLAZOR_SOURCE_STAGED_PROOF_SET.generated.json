@@ -1,0 +1,127 @@
+{
+  "contract_name": "chummer6-ui.blazor_source_staged_proof_set",
+  "generated_at": "2026-06-24T20:34:40.425359+00:00",
+  "status": "passed",
+  "proof_tier": "source_staged_no_browser_execution",
+  "route_lane": "promoted_blazor_workbench",
+  "required_receipt_count": 9,
+  "passed_receipt_count": 9,
+  "expected_route_count": 35,
+  "source_check_count": 78,
+  "required_receipts": [
+    {
+      "id": "career_support",
+      "path": "/docker/chummercomplete/chummer-presentation/.codex-studio/published/BLAZOR_CAREER_SUPPORT_STAGED_PROOF.generated.json",
+      "expected_contract_name": "chummer6-ui.blazor_career_support_staged_proof",
+      "contract_name": "chummer6-ui.blazor_career_support_staged_proof",
+      "status": "passed",
+      "proof_tier": "source_staged_no_browser_execution",
+      "expected_route_count": 11,
+      "source_check_count": 8,
+      "control_count": null,
+      "covered_control_count": null
+    },
+    {
+      "id": "identity_license",
+      "path": "/docker/chummercomplete/chummer-presentation/.codex-studio/published/BLAZOR_IDENTITY_LICENSE_STAGED_PROOF.generated.json",
+      "expected_contract_name": "chummer6-ui.blazor_identity_license_staged_proof",
+      "contract_name": "chummer6-ui.blazor_identity_license_staged_proof",
+      "status": "passed",
+      "proof_tier": "source_staged_no_browser_execution",
+      "expected_route_count": 3,
+      "source_check_count": 10,
+      "control_count": null,
+      "covered_control_count": null
+    },
+    {
+      "id": "combat_support",
+      "path": "/docker/chummercomplete/chummer-presentation/.codex-studio/published/BLAZOR_COMBAT_SUPPORT_STAGED_PROOF.generated.json",
+      "expected_contract_name": "chummer6-ui.blazor_combat_support_staged_proof",
+      "contract_name": "chummer6-ui.blazor_combat_support_staged_proof",
+      "status": "passed",
+      "proof_tier": "source_staged_no_browser_execution",
+      "expected_route_count": 3,
+      "source_check_count": 10,
+      "control_count": null,
+      "covered_control_count": null
+    },
+    {
+      "id": "skill_maintenance",
+      "path": "/docker/chummercomplete/chummer-presentation/.codex-studio/published/BLAZOR_SKILL_MAINTENANCE_STAGED_PROOF.generated.json",
+      "expected_contract_name": "chummer6-ui.blazor_skill_maintenance_staged_proof",
+      "contract_name": "chummer6-ui.blazor_skill_maintenance_staged_proof",
+      "status": "passed",
+      "proof_tier": "source_staged_no_browser_execution",
+      "expected_route_count": 3,
+      "source_check_count": 10,
+      "control_count": null,
+      "covered_control_count": null
+    },
+    {
+      "id": "magic_support",
+      "path": "/docker/chummercomplete/chummer-presentation/.codex-studio/published/BLAZOR_MAGIC_SUPPORT_STAGED_PROOF.generated.json",
+      "expected_contract_name": "chummer6-ui.blazor_magic_support_staged_proof",
+      "contract_name": "chummer6-ui.blazor_magic_support_staged_proof",
+      "status": "passed",
+      "proof_tier": "source_staged_no_browser_execution",
+      "expected_route_count": 4,
+      "source_check_count": 10,
+      "control_count": null,
+      "covered_control_count": null
+    },
+    {
+      "id": "gear_maintenance",
+      "path": "/docker/chummercomplete/chummer-presentation/.codex-studio/published/BLAZOR_GEAR_MAINTENANCE_STAGED_PROOF.generated.json",
+      "expected_contract_name": "chummer6-ui.blazor_gear_maintenance_staged_proof",
+      "contract_name": "chummer6-ui.blazor_gear_maintenance_staged_proof",
+      "status": "passed",
+      "proof_tier": "source_staged_no_browser_execution",
+      "expected_route_count": 3,
+      "source_check_count": 10,
+      "control_count": null,
+      "covered_control_count": null
+    },
+    {
+      "id": "source_gear_utility",
+      "path": "/docker/chummercomplete/chummer-presentation/.codex-studio/published/BLAZOR_SOURCE_GEAR_UTILITY_STAGED_PROOF.generated.json",
+      "expected_contract_name": "chummer6-ui.blazor_source_gear_utility_staged_proof",
+      "contract_name": "chummer6-ui.blazor_source_gear_utility_staged_proof",
+      "status": "passed",
+      "proof_tier": "source_staged_no_browser_execution",
+      "expected_route_count": 4,
+      "source_check_count": 10,
+      "control_count": null,
+      "covered_control_count": null
+    },
+    {
+      "id": "magic_cleanup",
+      "path": "/docker/chummercomplete/chummer-presentation/.codex-studio/published/BLAZOR_MAGIC_CLEANUP_STAGED_PROOF.generated.json",
+      "expected_contract_name": "chummer6-ui.blazor_magic_cleanup_staged_proof",
+      "contract_name": "chummer6-ui.blazor_magic_cleanup_staged_proof",
+      "status": "passed",
+      "proof_tier": "source_staged_no_browser_execution",
+      "expected_route_count": 4,
+      "source_check_count": 10,
+      "control_count": null,
+      "covered_control_count": null
+    },
+    {
+      "id": "legacy_control_coverage",
+      "path": "/docker/chummercomplete/chummer-presentation/.codex-studio/published/BLAZOR_LEGACY_CONTROL_COVERAGE_STAGED_PROOF.generated.json",
+      "expected_contract_name": "chummer6-ui.blazor_legacy_control_coverage_staged_proof",
+      "contract_name": "chummer6-ui.blazor_legacy_control_coverage_staged_proof",
+      "status": "passed",
+      "proof_tier": "source_staged_no_browser_execution",
+      "expected_route_count": 0,
+      "source_check_count": 0,
+      "control_count": 50,
+      "covered_control_count": 50
+    }
+  ],
+  "failures": [],
+  "notes": [
+    "This aggregate only summarizes source-staged receipts.",
+    "It is not a hosted Playwright execution receipt and is not Docker self-host browser execution evidence.",
+    "Keep this aggregate separate from BLAZOR_BROWSER_LANE_PROOF_SET.generated.json release readiness."
+  ]
+}

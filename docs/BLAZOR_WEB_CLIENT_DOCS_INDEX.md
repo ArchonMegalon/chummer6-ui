@@ -95,3 +95,28 @@ The next hosted and self-host proof refresh is staged to add the career/support 
 The documentation set is ahead of full proof completion by design.
 
 Current docs already define the intended shipped posture and the evidence contract. The remaining work is to expand browser-specific proof and receipts until the hosted and self-hosted lanes both support the same release claim.
+
+## Source-Staged Proof Set
+
+- `docs/BLAZOR_SOURCE_STAGED_PROOF_RUNBOOK.md` documents the source-staged Blazor proof-set refresh path. This lane is source-alignment only and must remain separate from hosted execution proof, Docker self-host proof, and release-readiness aggregation.
+- `docs/examples/blazor-source-staged-proof-set.receipt.example.json` shows the aggregate receipt shape for `BLAZOR_SOURCE_STAGED_PROOF_SET.generated.json`.
+
+## Portal Installer Handoff
+
+- `docs/BLAZOR_PORTAL_INSTALLER_HANDOFF_PROOF.md` defines the source-staged browser-to-portal download/install/support handoff contract. It is not runtime proof.
+
+## Docker Self-Host Operator Contract
+
+- `docs/BLAZOR_DOCKER_SELF_HOST_OPERATOR_PROOF.md` defines the source-staged self-hosted Docker operator contract for the portal-backed Blazor browser client. It is source alignment only, not Docker runtime proof.
+
+## Account and Support Handoff
+
+- `docs/BLAZOR_ACCOUNT_SUPPORT_HANDOFF_PROOF.md` defines the source-staged account/support/status handoff contract for the portal-backed Blazor browser client. It is not authentication, authorization, owner-propagation, or support-submission runtime proof.
+
+## Runtime Proof Refresh Plan
+
+- `docs/BLAZOR_RUNTIME_PROOF_REFRESH_PLAN.md` defines the ordered runtime proof refresh path from source-staged Blazor work to Docker self-host proof, hosted route-entry proof, hosted execution proof, and browser-lane aggregate proof. It is a plan, not runtime proof.
+
+## Staged-to-Runtime Promotion Matrix
+
+- `docs/BLAZOR_STAGED_TO_RUNTIME_PROMOTION_MATRIX.md` maps source-staged browser workflow families to the Docker and hosted runtime receipts required before they can be promoted from staged breadth to browser-proven parity.

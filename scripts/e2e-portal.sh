@@ -259,6 +259,7 @@ local_payload = {
     "notes": [
         "Desktop campaign workspace keeps GM prep packets and roster movement as first-class successor surfaces.",
         "next90-m113-ui-gm-prep-roster-surface anchors the desktop workspace proof shelf for GM prep and roster movement.",
+        "Portal account/support handoff expects signed owner propagation enabled when the owner shared key is configured.",
     ],
 }
 

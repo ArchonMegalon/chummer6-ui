@@ -81,6 +81,10 @@ The next staged browser-family slice after gear maintenance is source/gear utili
 
 The next staged browser-family slice after source/gear utilities is magic cleanup utility posture across restored magician and gear lanes. `scripts/ai/milestones/blazor-magic-cleanup-staged-proof-check.sh` is its source-alignment check. It proves only that magic add, spirit binding, magic source, and drug-removal routes are wired across product affordances, hosted/self-host route shapes, status utility, and docs; it is not a hosted or Docker browser execution receipt.
 
+`/scripts/ai/milestones/blazor-legacy-control-coverage-staged-proof-check.sh` is the source-level breadth guard over all known `LegacyUiControlCatalog` controls. It maps controls into hosted execution baseline coverage or staged source-alignment families; it is not a hosted or Docker browser execution receipt.
+
+`scripts/ai/milestones/blazor-source-staged-proof-set-check.sh` is the aggregate source-staged proof-set lane. It materializes the staged source receipts and summarizes their status, but it must stay outside release-readiness aggregation because it is not hosted or Docker browser execution evidence.
+
 `scripts/print_blazor_public_edge_proof_status.py` reports that staged receipt separately as `career_support_staged_*` when present, with a source-alignment-only note. It must remain separate from the aggregate browser-lane proof set until hosted and self-host browser execution receipts are refreshed.
 
 For the hard Linux desktop exit gate, `scripts/materialize-linux-desktop-exit-gate.sh` is the canonical executable lane. It must build the Linux Avalonia binary, package the primary `.deb` plus fallback archive, install and purge the primary `.deb` inside an isolated dpkg root while running startup smoke from the installed path, run startup smoke against the fallback archive, run the desktop runtime unit-test suite, and publish `.codex-studio/published/UI_LINUX_DESKTOP_EXIT_GATE.generated.json`.
@@ -115,3 +119,31 @@ Hosted `chummer.run` workflow execution proof is separately published as `.codex
 ## Exit statement
 
 The remaining UI debt is no longer missing shared-shell workbench capability or missing ruleset-specific shell adaptation proof. It is compatibility-cargo cleanup and future feature growth, both of which sit outside the current `E0`/`F0` closure bar.
+
+### Source-Staged Blazor Proof Runbook
+
+`docs/BLAZOR_SOURCE_STAGED_PROOF_RUNBOOK.md` is the operator guide for refreshing source-staged Blazor proof receipts. It is useful before hosted and Docker browser proof refreshes, but it is not release evidence by itself and must not be included in browser release-readiness aggregation.
+
+### Source-Staged Release Boundary Guard
+
+`scripts/ai/milestones/blazor-source-staged-release-boundary-check.sh` verifies that source-staged Blazor receipts are not wired into browser release-readiness aggregation and that the docs preserve the boundary language. It is a source-policy guard only, not browser execution evidence.
+
+### Portal Installer Handoff Source Contract
+
+`docs/BLAZOR_PORTAL_INSTALLER_HANDOFF_PROOF.md` defines the source-staged browser-to-portal installer/download/support handoff contract. It is useful for keeping route expectations aligned, but it is not runtime proof and must not replace local portal, hosted route-entry, or hosted execution receipts.
+
+### Docker Self-Host Operator Source Contract
+
+`docs/BLAZOR_DOCKER_SELF_HOST_OPERATOR_PROOF.md` defines the source-staged Docker self-host operator contract for the portal-backed Blazor workbench. It is source alignment only and must not replace `BLAZOR_SELF_HOST_WORKBENCH_PROOF.generated.json` from `scripts/e2e-portal.sh`.
+
+### Account and Support Handoff Source Contract
+
+`docs/BLAZOR_ACCOUNT_SUPPORT_HANDOFF_PROOF.md` defines the source-staged account/support/status handoff contract for the portal-backed Blazor workbench. It is route and documentation alignment only, not authentication or support runtime proof.
+
+### Blazor Runtime Proof Refresh Plan
+
+`docs/BLAZOR_RUNTIME_PROOF_REFRESH_PLAN.md` defines the ordered runtime proof refresh path for promoting source-staged Blazor work into real Docker and hosted browser receipts. `scripts/ai/milestones/blazor-runtime-proof-refresh-plan-check.sh` verifies the plan and command sources exist, but does not execute runtime proof.
+
+### Staged-to-Runtime Promotion Matrix
+
+`docs/BLAZOR_STAGED_TO_RUNTIME_PROMOTION_MATRIX.md` maps each staged Blazor workflow family to the runtime receipts that must eventually prove it. `scripts/ai/milestones/blazor-staged-to-runtime-promotion-matrix-check.sh` verifies the matrix and hosted runner family IDs exist, but it does not execute runtime proof.

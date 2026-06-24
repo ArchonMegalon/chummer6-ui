@@ -1,0 +1,55 @@
+# Blazor Staged-to-Runtime Promotion Matrix
+
+## Purpose
+
+This matrix maps source-staged Blazor browser work to the runtime evidence that must eventually prove it.
+
+A staged family is not complete because a source receipt exists. A staged family becomes runtime-promoted only when the matching Docker self-host proof and hosted public-edge execution proof are refreshed and passing with that family represented.
+
+## Runtime Receipts Required For Promotion
+
+Every staged family needs both runtime lanes refreshed:
+
+```text
+.codex-studio/published/BLAZOR_SELF_HOST_WORKBENCH_PROOF.generated.json
+.codex-studio/published/BLAZOR_PUBLIC_EDGE_EXECUTION_PROOF.generated.json
+```
+
+The browser-lane aggregate may only be refreshed after the runtime receipts are current:
+
+```text
+.codex-studio/published/BLAZOR_BROWSER_LANE_PROOF_SET.generated.json
+```
+
+## Promotion Matrix
+
+| Staged family | Source-staged receipt | Hosted execution family | Required route lane |
+| --- | --- | --- | --- |
+| Career/support | `BLAZOR_CAREER_SUPPORT_STAGED_PROOF.generated.json` | `promoted_career_entry_execution`, `promoted_career_entry_committed_execution`, `promoted_career_log_continuity`, `promoted_career_entry_edit_execution`, `promoted_career_entry_delete_execution`, `promoted_career_entry_edit_committed_execution`, `promoted_career_entry_delete_committed_execution`, `promoted_runner_notes_execution`, `promoted_runner_notes_committed_execution`, `promoted_career_entry_reorder_execution` | `/blazor/workbench` |
+| Identity/SIN/license | `BLAZOR_IDENTITY_LICENSE_STAGED_PROOF.generated.json` | `promoted_identity_license_execution` | `/blazor/workbench` |
+| Combat support | `BLAZOR_COMBAT_SUPPORT_STAGED_PROOF.generated.json` | `promoted_combat_support_execution` | `/blazor/workbench` |
+| Skill maintenance | `BLAZOR_SKILL_MAINTENANCE_STAGED_PROOF.generated.json` | `promoted_skill_maintenance_execution` | `/blazor/workbench` |
+| Magic/resonance support | `BLAZOR_MAGIC_SUPPORT_STAGED_PROOF.generated.json` | `promoted_magic_support_execution` | `/blazor/workbench` |
+| Gear maintenance | `BLAZOR_GEAR_MAINTENANCE_STAGED_PROOF.generated.json` | `promoted_gear_maintenance_execution` | `/blazor/workbench` |
+| Source/gear utility | `BLAZOR_SOURCE_GEAR_UTILITY_STAGED_PROOF.generated.json` | `promoted_source_gear_utility_execution` | `/blazor/workbench` |
+| Magic cleanup | `BLAZOR_MAGIC_CLEANUP_STAGED_PROOF.generated.json` | `promoted_magic_cleanup_utility_execution` | `/blazor/workbench` |
+
+## Non-Promoting Source Guards
+
+These source receipts help manage breadth and safety but do not promote workflow parity:
+
+- `BLAZOR_LEGACY_CONTROL_COVERAGE_STAGED_PROOF.generated.json`
+- `BLAZOR_SOURCE_STAGED_PROOF_SET.generated.json`
+- `BLAZOR_SOURCE_STAGED_RELEASE_BOUNDARY.generated.json`
+- `BLAZOR_PORTAL_INSTALLER_HANDOFF_STAGED_PROOF.generated.json`
+- `BLAZOR_DOCKER_SELF_HOST_OPERATOR_STAGED_PROOF.generated.json`
+- `BLAZOR_ACCOUNT_SUPPORT_HANDOFF_STAGED_PROOF.generated.json`
+- `BLAZOR_RUNTIME_PROOF_REFRESH_PLAN.generated.json`
+
+## Promotion Rule
+
+Do not describe a staged family as browser-proven until:
+
+- the hosted execution receipt includes the hosted workflow family, and
+- the Docker self-host receipt includes the matching route/workflow coverage, and
+- the aggregate browser-lane receipt is refreshed after those runtime receipts.

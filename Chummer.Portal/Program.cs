@@ -111,6 +111,17 @@ app.MapGet(downloadsHomeRoute, async context =>
     context.Response.ContentType = "text/html; charset=utf-8";
     await context.Response.WriteAsync(BuildDownloadsHtml(options)).ConfigureAwait(false);
 });
+app.MapGet($"{downloadsHomeRoute}/install/{{artifactId}}", (string artifactId) => ResolveInstallHandoff(artifactId, options));
+
+app.MapGet("/contact", () =>
+{
+    if (!string.IsNullOrWhiteSpace(options.RunUrl) && Uri.TryCreate(options.RunUrl, UriKind.Absolute, out Uri? runUri))
+    {
+        return Results.Redirect(new Uri(runUri, "/contact").ToString());
+    }
+
+    return Results.Content(BuildContactHtml(), "text/html; charset=utf-8");
+});
 
 app.MapGet("/docs", async context =>
 {
@@ -454,6 +465,63 @@ static string BuildDownloadsHtml(PortalOptions options)
 """;
 }
 
+static IResult ResolveInstallHandoff(string artifactId, PortalOptions options)
+{
+    string normalizedArtifactId = artifactId.Trim();
+    if (string.IsNullOrWhiteSpace(normalizedArtifactId))
+    {
+        return Results.BadRequest("Installer artifact is required.");
+    }
+
+    string expectedPublicInstallRoute = $"{RouteRootFromPublicPath(options.DownloadsUrl)}/install/{normalizedArtifactId}";
+    ReleaseManifestSummary summary = ReadReleaseManifest(options.ReleasesFile);
+    ReleaseDownloadSummary? download = summary.Downloads.FirstOrDefault(item =>
+        string.Equals(item.ArtifactId, normalizedArtifactId, StringComparison.OrdinalIgnoreCase)
+        || string.Equals(item.PublicInstallRoute, expectedPublicInstallRoute, StringComparison.OrdinalIgnoreCase));
+
+    string? target = download?.Url;
+    if (IsHttpUrl(target))
+    {
+        return Results.Redirect(target!);
+    }
+
+    if (IsHttpUrl(options.DownloadsFallbackUrl))
+    {
+        return Results.Redirect(options.DownloadsFallbackUrl!);
+    }
+
+    return Results.NotFound("Installer handoff is not available in this self-hosted portal.");
+}
+
+static string BuildContactHtml()
+{
+    return """
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Chummer Contact</title>
+  <style>
+    body { font-family: "Segoe UI", sans-serif; margin: 0; background: #0d1117; color: #f3efe4; }
+    main { max-width: 760px; margin: 0 auto; padding: 2rem 1rem 3rem; }
+    .panel { border: 1px solid rgba(214,169,74,.28); background: rgba(15,18,25,.88); border-radius: 18px; padding: 1.25rem; }
+    a { color: #f4cf73; }
+  </style>
+</head>
+<body>
+<main>
+  <section class="panel">
+    <h1>Contact</h1>
+    <p>This self-hosted portal does not have a hosted support upstream configured.</p>
+    <p>Use the public Chummer contact page when this portal is connected to chummer.run.</p>
+  </section>
+</main>
+</body>
+</html>
+""";
+}
+
 static string SanitizeRedirect(string? next)
 {
     if (string.IsNullOrWhiteSpace(next) || !next.StartsWith('/'))
@@ -534,6 +602,12 @@ static string BuildPublicUrl(string? basePath, string relativePath)
     string normalizedBase = NormalizePublicPath(basePath, "/");
     return $"{normalizedBase}{relativePath.TrimStart('/')}";
 }
+
+static bool IsHttpUrl(string? value)
+    => !string.IsNullOrWhiteSpace(value)
+       && Uri.TryCreate(value, UriKind.Absolute, out Uri? uri)
+       && (string.Equals(uri.Scheme, Uri.UriSchemeHttps, StringComparison.OrdinalIgnoreCase)
+           || string.Equals(uri.Scheme, Uri.UriSchemeHttp, StringComparison.OrdinalIgnoreCase));
 
 static string BuildCatchallPattern(string? publicPath)
 {
@@ -647,7 +721,9 @@ static ReleaseManifestSummary ReadReleaseManifest(string releasesFile)
             downloads.Add(new ReleaseDownloadSummary(
                 item["label"]?.GetValue<string>() ?? item["fileName"]?.GetValue<string>() ?? "artifact",
                 item["platform"]?.GetValue<string>() ?? "unknown",
-                item["url"]?.GetValue<string>() ?? "#"));
+                item["url"]?.GetValue<string>() ?? "#",
+                item["artifactId"]?.GetValue<string>() ?? item["id"]?.GetValue<string>() ?? "",
+                item["publicInstallRoute"]?.GetValue<string>() ?? ""));
         }
 
         return new ReleaseManifestSummary(status, version, downloads);
@@ -735,4 +811,4 @@ sealed record PortalOptions(
 }
 
 sealed record ReleaseManifestSummary(string Status, string Version, IReadOnlyList<ReleaseDownloadSummary> Downloads);
-sealed record ReleaseDownloadSummary(string Label, string Platform, string Url);
+sealed record ReleaseDownloadSummary(string Label, string Platform, string Url, string ArtifactId, string PublicInstallRoute);

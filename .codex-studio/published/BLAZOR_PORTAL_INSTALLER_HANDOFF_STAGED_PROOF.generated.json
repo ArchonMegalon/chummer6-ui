@@ -1,0 +1,67 @@
+{
+  "contract_name": "chummer6-ui.blazor_portal_installer_handoff_staged_proof",
+  "generated_at": "2026-06-24T20:34:40.057331+00:00",
+  "status": "passed",
+  "proof_tier": "source_staged_no_browser_execution",
+  "route_lane": "portal_backed_blazor_workbench_handoff",
+  "expected_routes": [
+    "/downloads/",
+    "/downloads/releases.json",
+    "/downloads/install/avalonia-linux-x64-installer",
+    "/downloads/install/avalonia-win-x64-installer",
+    "/contact",
+    "/status",
+    "/blazor/",
+    "/blazor/workbench"
+  ],
+  "checks": [
+    {
+      "id": "hosted_public_edge_route_probe",
+      "path": "scripts/e2e-public-edge.cjs",
+      "status": "passed",
+      "required_token_count": 10,
+      "missing_tokens": []
+    },
+    {
+      "id": "self_host_portal_route_probe",
+      "path": "scripts/e2e-portal.cjs",
+      "status": "passed",
+      "required_token_count": 8,
+      "missing_tokens": []
+    },
+    {
+      "id": "self_host_release_receipt_metadata",
+      "path": "scripts/e2e-portal.sh",
+      "status": "passed",
+      "required_token_count": 4,
+      "missing_tokens": []
+    },
+    {
+      "id": "portal_handoff_docs",
+      "path": "docs/BLAZOR_PORTAL_INSTALLER_HANDOFF_PROOF.md",
+      "status": "passed",
+      "required_token_count": 11,
+      "missing_tokens": []
+    },
+    {
+      "id": "self_host_runbook",
+      "path": "docs/BLAZOR_SELF_HOST_RUNBOOK.md",
+      "status": "passed",
+      "required_token_count": 3,
+      "missing_tokens": []
+    },
+    {
+      "id": "release_signoff_boundary",
+      "path": "docs/WORKBENCH_RELEASE_SIGNOFF.md",
+      "status": "passed",
+      "required_token_count": 3,
+      "missing_tokens": []
+    }
+  ],
+  "failures": [],
+  "notes": [
+    "This proof is source alignment only for Blazor-to-portal installer/download/support handoff.",
+    "It does not prove the portal is running or routes execute at runtime.",
+    "Runtime evidence remains owned by local portal proof, hosted route-entry proof, and hosted execution proof receipts."
+  ]
+}

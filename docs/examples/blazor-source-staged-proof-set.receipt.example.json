@@ -1,0 +1,31 @@
+{
+  "contract_name": "chummer6-ui.blazor_source_staged_proof_set",
+  "generated_at": "2026-06-24T00:00:00+00:00",
+  "status": "passed",
+  "proof_tier": "source_staged_no_browser_execution",
+  "route_lane": "promoted_blazor_workbench",
+  "required_receipt_count": 9,
+  "passed_receipt_count": 9,
+  "expected_route_count": 0,
+  "source_check_count": 0,
+  "required_receipts": [
+    {
+      "id": "career_support",
+      "path": ".codex-studio/published/BLAZOR_CAREER_SUPPORT_STAGED_PROOF.generated.json",
+      "expected_contract_name": "chummer6-ui.blazor_career_support_staged_proof",
+      "contract_name": "chummer6-ui.blazor_career_support_staged_proof",
+      "status": "passed",
+      "proof_tier": "source_staged_no_browser_execution",
+      "expected_route_count": 11,
+      "source_check_count": 8,
+      "control_count": null,
+      "covered_control_count": null
+    }
+  ],
+  "failures": [],
+  "notes": [
+    "This aggregate only summarizes source-staged receipts.",
+    "It is not a hosted Playwright execution receipt and is not Docker self-host browser execution evidence.",
+    "Keep this aggregate separate from BLAZOR_BROWSER_LANE_PROOF_SET.generated.json release readiness."
+  ]
+}

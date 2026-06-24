@@ -7,6 +7,10 @@ const baseUrl = (process.env.CHUMMER_PORTAL_BASE_URL || 'http://127.0.0.1:8091')
 const expectedImplicitOwner = process.env.CHUMMER_PORTAL_EXPECTED_IMPLICIT_OWNER || 'local@self-host';
 const navWaitUntil = process.env.CHUMMER_UI_NAV_WAIT_UNTIL || 'commit';
 const navTimeoutMs = Number(process.env.CHUMMER_UI_NAV_TIMEOUT_MS || '15000');
+const stagedCareerReorderRoutes = [
+  '/blazor/workbench?workspace=ws-1&tab=tab-calendar&control=move_up',
+  '/blazor/workbench?workspace=ws-1&tab=tab-calendar&control=move_down'
+];
 
 function expectTextIncludes(actual, expected, context) {
   const haystack = (actual || '').toLowerCase();
