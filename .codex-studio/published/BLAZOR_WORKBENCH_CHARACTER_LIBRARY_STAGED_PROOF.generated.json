@@ -1,6 +1,6 @@
 {
-  "contract_name": "chummer6-ui.blazor_workbench_resource_meters_staged_proof",
-  "generated_at": "2026-06-24T22:46:36.637336+00:00",
+  "contract_name": "chummer6-ui.blazor_workbench_character_library_staged_proof",
+  "generated_at": "2026-06-24T22:46:36.827533+00:00",
   "status": "passed",
   "proof_tier": "source_staged_no_browser_execution",
   "route_lane": "promoted_blazor_workbench",
@@ -9,14 +9,14 @@
   ],
   "checks": [
     {
-      "id": "product_workbench_resource_meters",
+      "id": "product_workbench_character_library",
       "path": "Chummer.Blazor/Components/Pages/Preview.razor",
       "status": "passed",
       "required_token_count": 9,
       "missing_tokens": []
     },
     {
-      "id": "scoped_resource_meters_visual_design",
+      "id": "scoped_character_library_visual_design",
       "path": "Chummer.Blazor/Components/Pages/Preview.razor.css",
       "status": "passed",
       "required_token_count": 4,
@@ -46,8 +46,8 @@
   ],
   "failures": [],
   "notes": [
-    "This receipt only proves that promoted workbench resource-meters source, style, status, and docs agree.",
-    "It is not a substitute for hosted Playwright execution proof, Docker self-host proof, live character-total calculation proof, or derived-stat runtime proof.",
-    "Do not use this receipt to claim live character totals, derived-stat calculation, or browser execution parity."
+    "This receipt only proves that promoted workbench character-library source, style, status, and docs agree.",
+    "It is not a substitute for hosted Playwright execution proof, Docker self-host proof, file-open proof, library-persistence proof, clone proof, archive proof, or import proof.",
+    "Do not use this receipt to claim file-open, library persistence, clone, archive, import, or browser execution parity."
   ]
 }
