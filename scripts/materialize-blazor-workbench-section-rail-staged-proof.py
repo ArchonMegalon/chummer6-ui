@@ -10,36 +10,39 @@ from pathlib import Path
 REPO_ROOT = Path(__file__).resolve().parents[1]
 OUTPUT_PATH = Path(
     os.environ.get(
-        "CHUMMER_BLAZOR_WORKBENCH_DENSITY_STAGED_PROOF_PATH",
-        REPO_ROOT / ".codex-studio" / "published" / "BLAZOR_WORKBENCH_DENSITY_STAGED_PROOF.generated.json",
+        "CHUMMER_BLAZOR_WORKBENCH_SECTION_RAIL_STAGED_PROOF_PATH",
+        REPO_ROOT / ".codex-studio" / "published" / "BLAZOR_WORKBENCH_SECTION_RAIL_STAGED_PROOF.generated.json",
     )
 )
 
 CHECKS = [
     {
-        "id": "product_workbench_density_strip",
+        "id": "product_workbench_section_rail",
         "path": "Chummer.Blazor/Components/Pages/Preview.razor",
-        "tokens": [
-            "Workbench density posture",
-            "data-workbench-density=\"strip\"",
-            "Density posture",
-            "data-workbench-density-panel=\"display\"",
-            "data-workbench-density-option=\"compact\"",
-            "data-workbench-density-option=\"comfortable\"",
-            "data-workbench-density-option=\"mobile\"",
-            "Compact desktop",
-            "Comfortable review",
-            "Mobile safe",
+            "tokens": [
+                "Workbench sheet section rail",
+                "data-workbench-section-rail=\"strip\"",
+                "Move straight to a section.",
+                "BuildWorkbenchLaneHref(\"tab-info\")",
+                "BuildWorkbenchLaneHref(\"tab-calendar\")",
+                "data-workbench-section-rail-action=\"profile\"",
+                "data-workbench-section-rail-action=\"build\"",
+                "data-workbench-section-rail-action=\"skills\"",
+            "data-workbench-section-rail-action=\"gear\"",
+            "data-workbench-section-rail-action=\"combat\"",
+            "data-workbench-section-rail-action=\"magic\"",
+            "data-workbench-section-rail-action=\"matrix\"",
+            "data-workbench-section-rail-action=\"contacts\"",
+            "data-workbench-section-rail-action=\"career\"",
         ],
     },
     {
-        "id": "scoped_density_visual_design",
+        "id": "scoped_section_rail_visual_design",
         "path": "Chummer.Blazor/Components/Pages/Preview.razor.css",
         "tokens": [
-            ".browser-workbench-density-strip",
-            ".browser-workbench-density-copy",
-            ".browser-workbench-density-options",
-            "accent-color: #89e0b3",
+            ".browser-workbench-section-rail",
+            ".browser-workbench-section-rail-copy",
+            ".browser-workbench-section-rail-actions",
             "@media (max-width: 720px)",
         ],
     },
@@ -47,8 +50,8 @@ CHECKS = [
         "id": "release_truth_docs",
         "path": "docs/WORKBENCH_RELEASE_SIGNOFF.md",
         "tokens": [
-            "workbench density posture",
-            "blazor-workbench-density-staged-proof-check.sh",
+            "workbench section-rail posture",
+            "blazor-workbench-section-rail-staged-proof-check.sh",
             "not a hosted or Docker browser execution receipt",
         ],
     },
@@ -56,18 +59,18 @@ CHECKS = [
         "id": "parity_goal_docs",
         "path": "docs/BLAZOR_WEB_CLIENT_PARITY_GOAL.md",
         "tokens": [
-            "staged hosted workbench density posture",
-            "Compact desktop",
-            "comfortable and mobile-safe postures",
+            "staged hosted workbench section-rail posture",
+            "profile, build, skills, gear, combat, magic, matrix, contacts, and career",
+            "not yet claiming section rendering or browser execution parity",
         ],
     },
     {
         "id": "status_utility_reporting",
         "path": "scripts/print_blazor_public_edge_proof_status.py",
         "tokens": [
-            "WORKBENCH_DENSITY_STAGED_PROOF",
-            "workbench_density_staged_status",
-            "workbench_density_staged_source_checks",
+            "WORKBENCH_SECTION_RAIL_STAGED_PROOF",
+            "workbench_section_rail_staged_status",
+            "workbench_section_rail_staged_source_checks",
             "source_alignment_only_not_browser_execution",
         ],
     },
@@ -107,7 +110,7 @@ def main() -> int:
         )
 
     receipt = {
-        "contract_name": "chummer6-ui.blazor_workbench_density_staged_proof",
+        "contract_name": "chummer6-ui.blazor_workbench_section_rail_staged_proof",
         "generated_at": datetime.now(timezone.utc).isoformat(),
         "status": "failed" if failures else "passed",
         "proof_tier": "source_staged_no_browser_execution",
@@ -116,9 +119,9 @@ def main() -> int:
         "checks": checks,
         "failures": failures,
         "notes": [
-            "This receipt only proves that promoted workbench density source, style, status, and docs agree.",
-            "It is not a substitute for hosted Playwright execution proof or Docker self-host proof.",
-            "Do not use this receipt to claim persisted density preferences or runtime layout behavior.",
+            "This receipt only proves that promoted workbench section-rail source, style, status, and docs agree.",
+            "It is not a substitute for hosted Playwright execution proof, Docker self-host proof, or section rendering proof.",
+            "Do not use this receipt to claim section rendering, state restoration, or browser execution parity.",
         ],
     }
 
@@ -129,7 +132,7 @@ def main() -> int:
         print("\n".join(failures))
         return 1
 
-    print(f"blazor_workbench_density_staged_proof:ok {OUTPUT_PATH}")
+    print(f"blazor_workbench_section_rail_staged_proof:ok {OUTPUT_PATH}")
     return 0
 
 

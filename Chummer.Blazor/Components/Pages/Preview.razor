@@ -514,6 +514,25 @@
             </div>
         </section>
 
+        <section class="browser-workbench-section-rail" aria-label="Workbench sheet section rail" data-workbench-section-rail="strip">
+            <div class="browser-workbench-section-rail-copy">
+                <span class="browser-preview-status-label">Sheet rail</span>
+                <strong>Move straight to a section.</strong>
+                <p>Profile, build, skills, gear, combat, magic, matrix, contacts, and career stay close.</p>
+            </div>
+            <nav class="browser-workbench-section-rail-actions" aria-label="Character sheet section shortcuts">
+                <a href="@BuildWorkbenchLaneHref("tab-info")" data-workbench-section-rail-action="profile">Profile</a>
+                <a href="@BuildWorkbenchLaneHref("tab-create")" data-workbench-section-rail-action="build">Build</a>
+                <a href="@BuildWorkbenchLaneHref("tab-skills")" data-workbench-section-rail-action="skills">Skills</a>
+                <a href="@BuildWorkbenchLaneHref("tab-gear")" data-workbench-section-rail-action="gear">Gear</a>
+                <a href="@BuildWorkbenchLaneHref("tab-combat")" data-workbench-section-rail-action="combat">Combat</a>
+                <a href="@BuildWorkbenchLaneHref("tab-magician")" data-workbench-section-rail-action="magic">Magic</a>
+                <a href="@BuildWorkbenchLaneHref("tab-technomancer")" data-workbench-section-rail-action="matrix">Matrix</a>
+                <a href="@BuildWorkbenchLaneHref("tab-contacts")" data-workbench-section-rail-action="contacts">Contacts</a>
+                <a href="@BuildWorkbenchLaneHref("tab-calendar")" data-workbench-section-rail-action="career">Career</a>
+            </nav>
+        </section>
+
         <section class="browser-preview-status-grid" aria-label="Workbench quick starts">
             <article class="browser-preview-status-card" data-workbench-entry-card="new-character">
                 <span class="browser-preview-status-label">Quick start</span>

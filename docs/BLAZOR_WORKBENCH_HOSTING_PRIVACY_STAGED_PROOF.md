@@ -12,6 +12,7 @@ The staged hosting/privacy lane covers:
 
 - hosted route posture for `/blazor/workbench`
 - Docker self-host posture through the portal/API/Blazor shape
+- hosted `chummer.run` Rybbit enablement posture with explicit telemetry limits
 - Rybbit is optional and metadata-only analytics copy
 - explicit privacy limits for character, owner, workspace, XML, and dossier content
 - scoped responsive styling for desktop and mobile browser use

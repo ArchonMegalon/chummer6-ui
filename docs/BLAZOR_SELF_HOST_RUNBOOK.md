@@ -110,6 +110,8 @@ Optional analytics inputs:
 4. `CHUMMER_RYBBIT_SCRIPT_URL` should point at your hosted or self-hosted Rybbit script, for example `https://analytics.example.com/api/script.js`.
 5. `CHUMMER_RYBBIT_BASE_URL` may be used instead of `CHUMMER_RYBBIT_SCRIPT_URL`; the Blazor shell resolves it to `/api/script.js`.
 
+Hosted `chummer.run` may run with `CHUMMER_ANALYTICS_PROVIDER=rybbit` for product telemetry, but self-host Docker installs should remain `none` unless the operator intentionally configures a Rybbit endpoint.
+
 The analytics adapter is intentionally limited to sanitized product metadata. It emits route family, command id, tab id, control id, dialog action id, and boolean fixture/workspace presence. It does not emit character names, aliases, owner ids, workspace ids, file names, document contents, XML, payloads, hashes, or generated dossier text. Keep session replay disabled for Chummer sites because the browser surface can contain user-authored character data.
 
 Start from [self-hosted-browser-workbench.env.example](/docker/chummercomplete/chummer-presentation/docs/examples/self-hosted-browser-workbench.env.example) and override only what your environment actually needs.

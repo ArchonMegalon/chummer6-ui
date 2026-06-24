@@ -80,7 +80,7 @@
     border: 1px solid rgba(244, 207, 115, 0.28);
     border-radius: 1rem;
     background:
-        linear-gradient(135deg, rgba(244, 207, 115, 0.15), rgba(107, 181, 255, 0.08)),
+        linear-gradient(135deg, rgba(244, 207, 115, 0.15), rgba(137, 224, 179, 0.08)),
         rgba(13, 16, 22, 0.88);
     box-shadow: 0 22px 70px rgba(0, 0, 0, 0.28);
 }
@@ -146,10 +146,10 @@
     gap: 0.75rem;
     align-items: stretch;
     padding: 0.8rem;
-    border: 1px solid rgba(107, 181, 255, 0.28);
+    border: 1px solid rgba(137, 224, 179, 0.24);
     border-radius: 1rem;
     background:
-        radial-gradient(circle at top left, rgba(107, 181, 255, 0.17), transparent 34rem),
+        radial-gradient(circle at top left, rgba(137, 224, 179, 0.12), transparent 34rem),
         rgba(14, 18, 25, 0.86);
 }
 
@@ -165,7 +165,7 @@
 }
 
 .browser-workbench-recovery-copy strong {
-    color: #dcecff;
+    color: #e9f8d9;
     font-size: 1rem;
 }
 
@@ -199,12 +199,12 @@
     justify-content: center;
     min-height: 2.6rem;
     padding: 0.55rem 0.75rem;
-    border: 1px solid rgba(107, 181, 255, 0.32);
+    border: 1px solid rgba(137, 224, 179, 0.3);
     border-radius: 999px;
     color: #eef1f6;
     text-decoration: none;
     font-weight: 800;
-    background: rgba(107, 181, 255, 0.09);
+    background: rgba(137, 224, 179, 0.08);
 }
 
 .browser-workbench-recovery-actions a:hover,
@@ -299,10 +299,10 @@
     gap: 0.8rem;
     align-items: stretch;
     padding: 0.85rem;
-    border: 1px solid rgba(255, 168, 120, 0.28);
+    border: 1px solid rgba(244, 207, 115, 0.24);
     border-radius: 1rem;
     background:
-        radial-gradient(circle at 20% 0%, rgba(255, 168, 120, 0.17), transparent 28rem),
+        radial-gradient(circle at 20% 0%, rgba(244, 207, 115, 0.12), transparent 28rem),
         linear-gradient(135deg, rgba(23, 17, 15, 0.94), rgba(13, 16, 22, 0.9));
 }
 
@@ -360,7 +360,7 @@
     gap: 0.25rem;
     align-items: center;
     padding: 0.55rem;
-    border: 1px solid rgba(255, 168, 120, 0.25);
+    border: 1px solid rgba(244, 207, 115, 0.24);
     border-radius: 0.75rem;
     color: #eef1f6;
     text-decoration: none;
@@ -370,7 +370,7 @@
 .browser-workbench-command-list a:hover,
 .browser-workbench-command-list a:focus-visible {
     border-color: rgba(244, 207, 115, 0.7);
-    background: rgba(255, 168, 120, 0.13);
+    background: rgba(244, 207, 115, 0.12);
 }
 
 .browser-workbench-command-list kbd {
@@ -396,10 +396,10 @@
     gap: 0.8rem;
     align-items: stretch;
     padding: 0.85rem;
-    border: 1px solid rgba(190, 167, 255, 0.28);
+    border: 1px solid rgba(137, 224, 179, 0.24);
     border-radius: 1rem;
     background:
-        radial-gradient(circle at 0% 100%, rgba(190, 167, 255, 0.15), transparent 28rem),
+        radial-gradient(circle at 0% 100%, rgba(137, 224, 179, 0.12), transparent 28rem),
         linear-gradient(135deg, rgba(19, 17, 28, 0.94), rgba(13, 16, 22, 0.9));
 }
 
@@ -418,7 +418,7 @@
 }
 
 .browser-workbench-density-copy strong {
-    color: #e8ddff;
+    color: #e9f8d9;
     font-size: 1rem;
 }
 
@@ -441,7 +441,7 @@
 
 .browser-workbench-density-options legend {
     padding: 0 0.35rem;
-    color: #bea7ff;
+    color: #f4cf73;
     font-size: 0.78rem;
     font-weight: 900;
     letter-spacing: 0.1em;
@@ -454,7 +454,7 @@
     gap: 0.25rem 0.55rem;
     align-items: start;
     padding: 0.7rem;
-    border: 1px solid rgba(190, 167, 255, 0.22);
+    border: 1px solid rgba(137, 224, 179, 0.22);
     border-radius: 0.8rem;
     color: #eef1f6;
     background: rgba(255, 255, 255, 0.045);
@@ -462,7 +462,7 @@
 
 .browser-workbench-density-options input {
     margin-top: 0.15rem;
-    accent-color: #bea7ff;
+    accent-color: #89e0b3;
 }
 
 .browser-workbench-density-options span {
@@ -983,6 +983,72 @@
     line-height: 1.35;
 }
 
+.browser-workbench-section-rail {
+    width: min(1240px, calc(100% - 1rem));
+    margin: 0 auto 0.85rem;
+    display: grid;
+    grid-template-columns: minmax(17rem, 0.72fr) minmax(0, 1.68fr);
+    gap: 0.8rem;
+    align-items: stretch;
+    padding: 0.85rem;
+    border: 1px solid rgba(244, 207, 115, 0.25);
+    border-radius: 1rem;
+    background:
+        linear-gradient(135deg, rgba(244, 207, 115, 0.09), rgba(137, 224, 179, 0.06)),
+        rgba(12, 15, 20, 0.92);
+}
+
+.browser-workbench-section-rail-copy {
+    display: grid;
+    gap: 0.35rem;
+    align-content: center;
+    padding: 0.55rem 0.65rem;
+    border-radius: 0.85rem;
+    background: rgba(0, 0, 0, 0.16);
+}
+
+.browser-workbench-section-rail-copy strong,
+.browser-workbench-section-rail-copy p {
+    margin: 0;
+}
+
+.browser-workbench-section-rail-copy strong {
+    color: #fff7d6;
+    font-size: 1rem;
+}
+
+.browser-workbench-section-rail-copy p {
+    color: rgba(238, 241, 246, 0.78);
+    line-height: 1.45;
+}
+
+.browser-workbench-section-rail-actions {
+    display: grid;
+    grid-template-columns: repeat(9, minmax(0, 1fr));
+    gap: 0.45rem;
+}
+
+.browser-workbench-section-rail-actions a {
+    min-height: 3.25rem;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0.55rem;
+    border: 1px solid rgba(238, 241, 246, 0.13);
+    border-radius: 0.75rem;
+    color: #eef1f6;
+    text-align: center;
+    text-decoration: none;
+    font-weight: 900;
+    background: rgba(255, 255, 255, 0.045);
+}
+
+.browser-workbench-section-rail-actions a:hover,
+.browser-workbench-section-rail-actions a:focus-visible {
+    border-color: rgba(244, 207, 115, 0.7);
+    background: rgba(244, 207, 115, 0.12);
+}
+
 .browser-preview-frame {
     padding-bottom: 1rem;
 }
@@ -1088,5 +1154,13 @@
     .browser-workbench-accessibility,
     .browser-workbench-accessibility-actions {
         grid-template-columns: 1fr;
+    }
+
+    .browser-workbench-section-rail {
+        grid-template-columns: 1fr;
+    }
+
+    .browser-workbench-section-rail-actions {
+        grid-template-columns: repeat(3, minmax(0, 1fr));
     }
 }

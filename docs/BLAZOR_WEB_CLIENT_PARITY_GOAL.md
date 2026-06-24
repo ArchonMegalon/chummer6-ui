@@ -189,6 +189,7 @@ Current browser-backed proof now includes:
 - staged hosted workbench diagnostics posture for runtime inspector, About, health, status, and preview tools, keeping diagnostics reachable from the promoted route while not yet claiming runtime health, build validity, or diagnostics execution parity
 - staged hosted workbench connected-runtime posture for play, session, coach, assistant, and status links, keeping optional live lanes reachable from the promoted route while not yet claiming connected-runtime execution, signed owner forwarding, or downstream service health
 - staged hosted workbench accessibility posture for keyboard order, dialog fit, readable density, reduced motion, and help links, keeping access affordances visible on the promoted route while not yet claiming screen-reader, keyboard-event, screenshot, or browser accessibility validation
+- staged hosted workbench section-rail posture for profile, build, skills, gear, combat, magic, matrix, contacts, and career shortcuts, keeping sheet-scale navigation visible on the promoted route while not yet claiming section rendering or browser execution parity
 - source-level legacy UI-control coverage guard for all known `LegacyUiControlCatalog` IDs, mapping each control into hosted execution baseline evidence or a staged source-alignment family before any future browser proof refresh claims breadth
 - aggregate source-staged proof set for the staged browser workflow families, deliberately separate from hosted execution proof and Docker self-host proof so staged breadth cannot be mistaken for runtime parity
 - hosted contact-connection posture for restored `tab-contacts&control=contact_connection`, with visible selected-contact summary context and compact edit controls on the promoted workbench route
@@ -213,6 +214,17 @@ The remaining gap is breadth, not direction: the promoted hosted `/blazor/workbe
 This is a target state, not a completed claim.
 
 Current release language may still identify Avalonia as the native flagship desktop head and Blazor Desktop as a fallback desktop package. That does not conflict with this goal. The new goal is to raise the browser-hosted `Chummer.Blazor` client to a first-class web client with its own proof, hosted route, and Docker self-hosting story.
+
+## Target Product Contract
+
+The browser client target is not a preview page and not a reduced companion portal. It is the web-delivered Chummer client head:
+
+- `https://chummer.run/blazor/workbench` is the hosted public product route.
+- Docker self-hosting must expose the same portal-backed `/blazor/workbench` workflow shape, with local operator configuration instead of hosted defaults.
+- Avalonia remains the native desktop head, but browser parity means users can perform the same practical Chummer workflow in the web client unless a browser-specific boundary is explicitly called out.
+- Rybbit may be enabled on hosted `chummer.run` for sanitized product telemetry; self-host Docker installs stay default-off and operator-controlled.
+- Analytics must stay metadata-only: route family, command, tab, control, dialog action, and coarse workspace/fixture presence are allowed, while character data, owner identifiers, workspace identifiers, XML, files, payloads, hashes, and dossier content are excluded.
+- Release language must distinguish source-staged affordance breadth from hosted execution proof, Docker self-host proof, and parity-ledger evidence.
 
 The immediate Chummer6 design direction is therefore:
 

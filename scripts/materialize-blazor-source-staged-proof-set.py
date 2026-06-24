@@ -128,6 +128,11 @@ REQUIRED_RECEIPTS = [
         "contract_name": "chummer6-ui.blazor_workbench_accessibility_staged_proof",
     },
     {
+        "id": "workbench_section_rail",
+        "path": PUBLISHED / "BLAZOR_WORKBENCH_SECTION_RAIL_STAGED_PROOF.generated.json",
+        "contract_name": "chummer6-ui.blazor_workbench_section_rail_staged_proof",
+    },
+    {
         "id": "legacy_control_coverage",
         "path": PUBLISHED / "BLAZOR_LEGACY_CONTROL_COVERAGE_STAGED_PROOF.generated.json",
         "contract_name": "chummer6-ui.blazor_legacy_control_coverage_staged_proof",

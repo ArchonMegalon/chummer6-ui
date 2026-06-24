@@ -1,6 +1,6 @@
 {
-  "contract_name": "chummer6-ui.blazor_workbench_rules_data_staged_proof",
-  "generated_at": "2026-06-24T21:37:34.982891+00:00",
+  "contract_name": "chummer6-ui.blazor_workbench_section_rail_staged_proof",
+  "generated_at": "2026-06-24T21:37:35.132239+00:00",
   "status": "passed",
   "proof_tier": "source_staged_no_browser_execution",
   "route_lane": "promoted_blazor_workbench",
@@ -9,22 +9,15 @@
   ],
   "checks": [
     {
-      "id": "product_workbench_rules_data",
+      "id": "product_workbench_section_rail",
       "path": "Chummer.Blazor/Components/Pages/Preview.razor",
       "status": "passed",
-      "required_token_count": 10,
+      "required_token_count": 14,
       "missing_tokens": []
     },
     {
-      "id": "scoped_rules_data_visual_design",
+      "id": "scoped_section_rail_visual_design",
       "path": "Chummer.Blazor/Components/Pages/Preview.razor.css",
-      "status": "passed",
-      "required_token_count": 4,
-      "missing_tokens": []
-    },
-    {
-      "id": "desktop_rules_data_dialog_sources",
-      "path": "Chummer.Presentation/Overview/DesktopDialogFactory.cs",
       "status": "passed",
       "required_token_count": 4,
       "missing_tokens": []
@@ -53,8 +46,8 @@
   ],
   "failures": [],
   "notes": [
-    "This receipt only proves that promoted workbench rules/data source, style, status, and docs agree.",
-    "It is not a substitute for hosted Playwright execution proof or Docker self-host proof.",
-    "Do not use this receipt to claim ruleset mutation, sourcebook runtime, XML mutation, or localization runtime parity."
+    "This receipt only proves that promoted workbench section-rail source, style, status, and docs agree.",
+    "It is not a substitute for hosted Playwright execution proof, Docker self-host proof, or section rendering proof.",
+    "Do not use this receipt to claim section rendering, state restoration, or browser execution parity."
   ]
 }
