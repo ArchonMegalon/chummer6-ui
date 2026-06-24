@@ -180,6 +180,10 @@ Current docs already define the intended shipped posture and the evidence contra
 - `docs/examples/blazor-workbench-pwa-install-staged-proof.receipt.example.json` shows the compact generated receipt shape for `BLAZOR_WORKBENCH_PWA_INSTALL_STAGED_PROOF.generated.json`.
 - `docs/BLAZOR_WORKBENCH_DOCKER_OPERATOR_STAGED_PROOF.md` defines the source-staged promoted workbench Docker-operator posture contract. It is not runtime proof.
 - `docs/examples/blazor-workbench-docker-operator-staged-proof.receipt.example.json` shows the compact generated receipt shape for `BLAZOR_WORKBENCH_DOCKER_OPERATOR_STAGED_PROOF.generated.json`.
+- `docs/BLAZOR_WORKBENCH_SECURITY_ACCESS_STAGED_PROOF.md` defines the source-staged promoted workbench security-access posture contract. It is not runtime proof.
+- `docs/examples/blazor-workbench-security-access-staged-proof.receipt.example.json` shows the compact generated receipt shape for `BLAZOR_WORKBENCH_SECURITY_ACCESS_STAGED_PROOF.generated.json`.
+- `docs/BLAZOR_WORKBENCH_NOTIFICATIONS_JOBS_STAGED_PROOF.md` defines the source-staged promoted workbench notifications-jobs posture contract. It is not runtime proof.
+- `docs/examples/blazor-workbench-notifications-jobs-staged-proof.receipt.example.json` shows the compact generated receipt shape for `BLAZOR_WORKBENCH_NOTIFICATIONS_JOBS_STAGED_PROOF.generated.json`.
 
 ## Portal Installer Handoff
 

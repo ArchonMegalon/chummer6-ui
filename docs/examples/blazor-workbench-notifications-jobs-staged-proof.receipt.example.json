@@ -1,0 +1,25 @@
+{
+  "contract_name": "chummer6-ui.blazor_workbench_notifications_jobs_staged_proof",
+  "generated_at": "2026-06-24T00:00:00+00:00",
+  "status": "passed",
+  "proof_tier": "source_staged_no_browser_execution",
+  "route_lane": "promoted_blazor_workbench",
+  "expected_routes": [
+    "/blazor/workbench"
+  ],
+  "checks": [
+    {
+      "id": "product_workbench_notifications_jobs",
+      "path": "Chummer.Blazor/Components/Pages/Preview.razor",
+      "status": "passed",
+      "required_token_count": 9,
+      "missing_tokens": []
+    }
+  ],
+  "failures": [],
+  "notes": [
+    "This receipt only proves that promoted workbench notifications-jobs source, style, status, and docs agree.",
+    "It is not a substitute for hosted Playwright execution proof, Docker self-host proof, toast-delivery proof, queue-execution proof, retry proof, or background-worker proof.",
+    "Do not use this receipt to claim toast delivery, queue execution, retry behavior, background workers, or browser execution parity."
+  ]
+}

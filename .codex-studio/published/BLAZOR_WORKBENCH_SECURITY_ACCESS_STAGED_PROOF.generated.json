@@ -1,6 +1,6 @@
 {
-  "contract_name": "chummer6-ui.blazor_workbench_pwa_install_staged_proof",
-  "generated_at": "2026-06-24T23:02:57.133713+00:00",
+  "contract_name": "chummer6-ui.blazor_workbench_security_access_staged_proof",
+  "generated_at": "2026-06-24T23:02:57.208785+00:00",
   "status": "passed",
   "proof_tier": "source_staged_no_browser_execution",
   "route_lane": "promoted_blazor_workbench",
@@ -9,14 +9,14 @@
   ],
   "checks": [
     {
-      "id": "product_workbench_pwa_install",
+      "id": "product_workbench_security_access",
       "path": "Chummer.Blazor/Components/Pages/Preview.razor",
       "status": "passed",
       "required_token_count": 9,
       "missing_tokens": []
     },
     {
-      "id": "scoped_pwa_install_visual_design",
+      "id": "scoped_security_access_visual_design",
       "path": "Chummer.Blazor/Components/Pages/Preview.razor.css",
       "status": "passed",
       "required_token_count": 4,
@@ -46,8 +46,8 @@
   ],
   "failures": [],
   "notes": [
-    "This receipt only proves that promoted workbench PWA-install source, style, status, and docs agree.",
-    "It is not a substitute for hosted Playwright execution proof, Docker self-host proof, service-worker proof, install-prompt proof, cache-update proof, or browser-permission proof.",
-    "Do not use this receipt to claim service-worker, install prompt, cache update, browser permission, or browser execution parity."
+    "This receipt only proves that promoted workbench security-access source, style, status, and docs agree.",
+    "It is not a substitute for hosted Playwright execution proof, Docker self-host proof, authentication proof, RBAC proof, session-expiry proof, key-rotation proof, or audit-log proof.",
+    "Do not use this receipt to claim authentication, RBAC, session expiry, key rotation, audit logging, or browser execution parity."
   ]
 }

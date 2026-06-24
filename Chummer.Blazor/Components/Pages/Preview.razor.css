@@ -2758,7 +2758,7 @@
     border: 1px solid rgba(135, 224, 166, 0.24);
     border-radius: 1rem;
     background:
-        linear-gradient(135deg, rgba(135, 224, 166, 0.105), rgba(113, 195, 255, 0.055)),
+        linear-gradient(135deg, rgba(135, 224, 166, 0.09), rgba(198, 185, 154, 0.045)),
         rgba(7, 14, 10, 0.95);
 }
 
@@ -2815,6 +2815,148 @@
 
 .browser-workbench-docker-operator-actions small {
     color: rgba(230, 248, 236, 0.72);
+    line-height: 1.35;
+}
+
+.browser-workbench-security-access {
+    width: min(1240px, calc(100% - 1rem));
+    margin: 0 auto 0.85rem;
+    display: grid;
+    grid-template-columns: minmax(18rem, 0.88fr) minmax(0, 1.5fr);
+    gap: 0.75rem;
+    align-items: stretch;
+    padding: 0.8rem;
+    border: 1px solid rgba(198, 185, 154, 0.22);
+    border-radius: 1rem;
+    background:
+        linear-gradient(135deg, rgba(198, 185, 154, 0.09), rgba(137, 224, 179, 0.045)),
+        rgba(10, 12, 9, 0.95);
+}
+
+.browser-workbench-security-access-copy {
+    display: grid;
+    gap: 0.35rem;
+    align-content: center;
+}
+
+.browser-workbench-security-access-copy strong,
+.browser-workbench-security-access-copy p {
+    margin: 0;
+}
+
+.browser-workbench-security-access-copy strong {
+    color: #f4efe4;
+    font-size: 1rem;
+}
+
+.browser-workbench-security-access-copy p {
+    color: rgba(238, 241, 246, 0.72);
+    line-height: 1.42;
+}
+
+.browser-workbench-security-access-actions {
+    display: grid;
+    grid-template-columns: repeat(6, minmax(0, 1fr));
+    gap: 0.5rem;
+}
+
+.browser-workbench-security-access-actions a {
+    display: grid;
+    gap: 0.25rem;
+    min-height: 4.75rem;
+    padding: 0.72rem;
+    border: 1px solid rgba(198, 185, 154, 0.18);
+    border-radius: 0.85rem;
+    background: rgba(255, 255, 255, 0.042);
+    color: #f4efe4;
+    text-decoration: none;
+    transition: transform 150ms ease, border-color 150ms ease, background 150ms ease;
+}
+
+.browser-workbench-security-access-actions a:hover,
+.browser-workbench-security-access-actions a:focus-visible {
+    transform: translateY(-1px);
+    border-color: rgba(198, 185, 154, 0.54);
+    background: rgba(198, 185, 154, 0.1);
+}
+
+.browser-workbench-security-access-actions span {
+    font-weight: 850;
+}
+
+.browser-workbench-security-access-actions small {
+    color: rgba(238, 241, 246, 0.72);
+    line-height: 1.35;
+}
+
+.browser-workbench-notifications-jobs {
+    width: min(1240px, calc(100% - 1rem));
+    margin: 0 auto 0.85rem;
+    display: grid;
+    grid-template-columns: minmax(18rem, 0.88fr) minmax(0, 1.5fr);
+    gap: 0.75rem;
+    align-items: stretch;
+    padding: 0.8rem;
+    border: 1px solid rgba(255, 187, 120, 0.24);
+    border-radius: 1rem;
+    background:
+        linear-gradient(135deg, rgba(255, 187, 120, 0.105), rgba(255, 128, 150, 0.055)),
+        rgba(14, 11, 8, 0.95);
+}
+
+.browser-workbench-notifications-jobs-copy {
+    display: grid;
+    gap: 0.35rem;
+    align-content: center;
+}
+
+.browser-workbench-notifications-jobs-copy strong,
+.browser-workbench-notifications-jobs-copy p {
+    margin: 0;
+}
+
+.browser-workbench-notifications-jobs-copy strong {
+    color: #fff2e6;
+    font-size: 1rem;
+}
+
+.browser-workbench-notifications-jobs-copy p {
+    color: rgba(249, 236, 224, 0.74);
+    line-height: 1.42;
+}
+
+.browser-workbench-notifications-jobs-actions {
+    display: grid;
+    grid-template-columns: repeat(6, minmax(0, 1fr));
+    gap: 0.5rem;
+}
+
+.browser-workbench-notifications-jobs-actions a {
+    display: grid;
+    gap: 0.25rem;
+    min-height: 4.75rem;
+    padding: 0.72rem;
+    border: 1px solid rgba(255, 187, 120, 0.2);
+    border-radius: 0.85rem;
+    background: rgba(255, 255, 255, 0.042);
+    color: #fff2e6;
+    text-decoration: none;
+    transition: transform 150ms ease, border-color 150ms ease, background 150ms ease;
+}
+
+.browser-workbench-notifications-jobs-actions a:hover,
+.browser-workbench-notifications-jobs-actions a:focus-visible {
+    transform: translateY(-1px);
+    border-color: rgba(255, 187, 120, 0.58);
+    background: rgba(255, 187, 120, 0.11);
+}
+
+.browser-workbench-notifications-jobs-actions span {
+    font-weight: 850;
+}
+
+.browser-workbench-notifications-jobs-actions small {
+    color: rgba(249, 236, 224, 0.72);
     line-height: 1.35;
 }
 
@@ -3130,6 +3272,22 @@
     }
 
     .browser-workbench-docker-operator-actions {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+
+    .browser-workbench-security-access {
+        grid-template-columns: 1fr;
+    }
+
+    .browser-workbench-security-access-actions {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+
+    .browser-workbench-notifications-jobs {
+        grid-template-columns: 1fr;
+    }
+
+    .browser-workbench-notifications-jobs-actions {
         grid-template-columns: repeat(2, minmax(0, 1fr));
     }
 }

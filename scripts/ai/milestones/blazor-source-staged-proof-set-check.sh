@@ -51,5 +51,7 @@ python3 "$repo_root/scripts/materialize-blazor-workbench-observability-privacy-s
 python3 "$repo_root/scripts/materialize-blazor-workbench-first-run-staged-proof.py"
 python3 "$repo_root/scripts/materialize-blazor-workbench-pwa-install-staged-proof.py"
 python3 "$repo_root/scripts/materialize-blazor-workbench-docker-operator-staged-proof.py"
+python3 "$repo_root/scripts/materialize-blazor-workbench-security-access-staged-proof.py"
+python3 "$repo_root/scripts/materialize-blazor-workbench-notifications-jobs-staged-proof.py"
 python3 "$repo_root/scripts/materialize-blazor-legacy-control-coverage-staged-proof.py"
 python3 "$repo_root/scripts/materialize-blazor-source-staged-proof-set.py"

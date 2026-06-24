@@ -74,6 +74,8 @@ The aggregate currently covers:
 - `workbench_first_run`
 - `workbench_pwa_install`
 - `workbench_docker_operator`
+- `workbench_security_access`
+- `workbench_notifications_jobs`
 - `legacy_control_coverage`
 
 Each family must keep `proof_tier` set to:
