@@ -1,6 +1,6 @@
 {
   "contract_name": "chummer6-ui.blazor_workbench_keyboard_shortcuts_staged_proof",
-  "generated_at": "2026-06-24T23:12:00.202000+00:00",
+  "generated_at": "2026-06-24T23:18:01.439064+00:00",
   "status": "passed",
   "proof_tier": "source_staged_no_browser_execution",
   "route_lane": "promoted_blazor_workbench",

@@ -56,5 +56,7 @@ python3 "$repo_root/scripts/materialize-blazor-workbench-notifications-jobs-stag
 python3 "$repo_root/scripts/materialize-blazor-workbench-touch-mobile-staged-proof.py"
 python3 "$repo_root/scripts/materialize-blazor-workbench-navigation-deeplink-staged-proof.py"
 python3 "$repo_root/scripts/materialize-blazor-workbench-inline-editing-staged-proof.py"
+python3 "$repo_root/scripts/materialize-blazor-workbench-performance-virtualization-staged-proof.py"
+python3 "$repo_root/scripts/materialize-blazor-workbench-print-layout-staged-proof.py"
 python3 "$repo_root/scripts/materialize-blazor-legacy-control-coverage-staged-proof.py"
 python3 "$repo_root/scripts/materialize-blazor-source-staged-proof-set.py"

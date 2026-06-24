@@ -67,6 +67,8 @@ WORKBENCH_NOTIFICATIONS_JOBS_STAGED_PROOF = PUBLISHED / "BLAZOR_WORKBENCH_NOTIFI
 WORKBENCH_TOUCH_MOBILE_STAGED_PROOF = PUBLISHED / "BLAZOR_WORKBENCH_TOUCH_MOBILE_STAGED_PROOF.generated.json"
 WORKBENCH_NAVIGATION_DEEPLINK_STAGED_PROOF = PUBLISHED / "BLAZOR_WORKBENCH_NAVIGATION_DEEPLINK_STAGED_PROOF.generated.json"
 WORKBENCH_INLINE_EDITING_STAGED_PROOF = PUBLISHED / "BLAZOR_WORKBENCH_INLINE_EDITING_STAGED_PROOF.generated.json"
+WORKBENCH_PERFORMANCE_VIRTUALIZATION_STAGED_PROOF = PUBLISHED / "BLAZOR_WORKBENCH_PERFORMANCE_VIRTUALIZATION_STAGED_PROOF.generated.json"
+WORKBENCH_PRINT_LAYOUT_STAGED_PROOF = PUBLISHED / "BLAZOR_WORKBENCH_PRINT_LAYOUT_STAGED_PROOF.generated.json"
 LEGACY_CONTROL_COVERAGE_STAGED_PROOF = PUBLISHED / "BLAZOR_LEGACY_CONTROL_COVERAGE_STAGED_PROOF.generated.json"
 SOURCE_STAGED_PROOF_SET = PUBLISHED / "BLAZOR_SOURCE_STAGED_PROOF_SET.generated.json"
 PORTAL_INSTALLER_HANDOFF_STAGED_PROOF = PUBLISHED / "BLAZOR_PORTAL_INSTALLER_HANDOFF_STAGED_PROOF.generated.json"
@@ -183,6 +185,8 @@ def main() -> int:
     workbench_touch_mobile_staged = load_json(WORKBENCH_TOUCH_MOBILE_STAGED_PROOF)
     workbench_navigation_deeplink_staged = load_json(WORKBENCH_NAVIGATION_DEEPLINK_STAGED_PROOF)
     workbench_inline_editing_staged = load_json(WORKBENCH_INLINE_EDITING_STAGED_PROOF)
+    workbench_performance_virtualization_staged = load_json(WORKBENCH_PERFORMANCE_VIRTUALIZATION_STAGED_PROOF)
+    workbench_print_layout_staged = load_json(WORKBENCH_PRINT_LAYOUT_STAGED_PROOF)
     legacy_control_coverage_staged = load_json(LEGACY_CONTROL_COVERAGE_STAGED_PROOF)
     source_staged_proof_set = load_json(SOURCE_STAGED_PROOF_SET)
     portal_installer_handoff_staged = load_json(PORTAL_INSTALLER_HANDOFF_STAGED_PROOF)
@@ -791,6 +795,26 @@ def main() -> int:
     print(f"workbench_inline_editing_staged_source_checks={count_staged_source_checks(workbench_inline_editing_staged)}")
     print(
         "workbench_inline_editing_staged_note="
+        "source_alignment_only_not_browser_execution"
+    )
+    print(f"workbench_performance_virtualization_staged_receipt={WORKBENCH_PERFORMANCE_VIRTUALIZATION_STAGED_PROOF}")
+    print(f"workbench_performance_virtualization_staged_status={str(workbench_performance_virtualization_staged.get('status') or '').strip() or 'not_generated'}")
+    print(f"workbench_performance_virtualization_staged_contract={str(workbench_performance_virtualization_staged.get('contract_name') or '').strip() or 'missing'}")
+    print(f"workbench_performance_virtualization_staged_tier={str(workbench_performance_virtualization_staged.get('proof_tier') or '').strip() or 'missing'}")
+    print(f"workbench_performance_virtualization_staged_route_count={len(workbench_performance_virtualization_staged.get('expected_routes') or [])}")
+    print(f"workbench_performance_virtualization_staged_source_checks={count_staged_source_checks(workbench_performance_virtualization_staged)}")
+    print(
+        "workbench_performance_virtualization_staged_note="
+        "source_alignment_only_not_browser_execution"
+    )
+    print(f"workbench_print_layout_staged_receipt={WORKBENCH_PRINT_LAYOUT_STAGED_PROOF}")
+    print(f"workbench_print_layout_staged_status={str(workbench_print_layout_staged.get('status') or '').strip() or 'not_generated'}")
+    print(f"workbench_print_layout_staged_contract={str(workbench_print_layout_staged.get('contract_name') or '').strip() or 'missing'}")
+    print(f"workbench_print_layout_staged_tier={str(workbench_print_layout_staged.get('proof_tier') or '').strip() or 'missing'}")
+    print(f"workbench_print_layout_staged_route_count={len(workbench_print_layout_staged.get('expected_routes') or [])}")
+    print(f"workbench_print_layout_staged_source_checks={count_staged_source_checks(workbench_print_layout_staged)}")
+    print(
+        "workbench_print_layout_staged_note="
         "source_alignment_only_not_browser_execution"
     )
     print(f"legacy_control_coverage_staged_receipt={LEGACY_CONTROL_COVERAGE_STAGED_PROOF}")

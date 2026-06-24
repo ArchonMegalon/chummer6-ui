@@ -90,6 +90,8 @@ These source receipts help manage breadth and safety but do not promote workflow
 - `BLAZOR_WORKBENCH_TOUCH_MOBILE_STAGED_PROOF.generated.json`
 - `BLAZOR_WORKBENCH_NAVIGATION_DEEPLINK_STAGED_PROOF.generated.json`
 - `BLAZOR_WORKBENCH_INLINE_EDITING_STAGED_PROOF.generated.json`
+- `BLAZOR_WORKBENCH_PERFORMANCE_VIRTUALIZATION_STAGED_PROOF.generated.json`
+- `BLAZOR_WORKBENCH_PRINT_LAYOUT_STAGED_PROOF.generated.json`
 
 ## Promotion Rule
 

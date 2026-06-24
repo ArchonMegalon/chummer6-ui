@@ -283,6 +283,16 @@ REQUIRED_RECEIPTS = [
         "contract_name": "chummer6-ui.blazor_workbench_inline_editing_staged_proof",
     },
     {
+        "id": "workbench_performance_virtualization",
+        "path": PUBLISHED / "BLAZOR_WORKBENCH_PERFORMANCE_VIRTUALIZATION_STAGED_PROOF.generated.json",
+        "contract_name": "chummer6-ui.blazor_workbench_performance_virtualization_staged_proof",
+    },
+    {
+        "id": "workbench_print_layout",
+        "path": PUBLISHED / "BLAZOR_WORKBENCH_PRINT_LAYOUT_STAGED_PROOF.generated.json",
+        "contract_name": "chummer6-ui.blazor_workbench_print_layout_staged_proof",
+    },
+    {
         "id": "legacy_control_coverage",
         "path": PUBLISHED / "BLAZOR_LEGACY_CONTROL_COVERAGE_STAGED_PROOF.generated.json",
         "contract_name": "chummer6-ui.blazor_legacy_control_coverage_staged_proof",

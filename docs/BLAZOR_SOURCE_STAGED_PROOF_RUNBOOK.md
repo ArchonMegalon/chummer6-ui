@@ -79,6 +79,8 @@ The aggregate currently covers:
 - `workbench_touch_mobile`
 - `workbench_navigation_deeplink`
 - `workbench_inline_editing`
+- `workbench_performance_virtualization`
+- `workbench_print_layout`
 - `legacy_control_coverage`
 
 Each family must keep `proof_tier` set to:

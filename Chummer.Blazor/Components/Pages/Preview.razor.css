@@ -3173,6 +3173,148 @@
     line-height: 1.35;
 }
 
+.browser-workbench-performance-virtualization {
+    width: min(1240px, calc(100% - 1rem));
+    margin: 0 auto 0.85rem;
+    display: grid;
+    grid-template-columns: minmax(18rem, 0.88fr) minmax(0, 1.5fr);
+    gap: 0.75rem;
+    align-items: stretch;
+    padding: 0.8rem;
+    border: 1px solid rgba(198, 185, 154, 0.22);
+    border-radius: 1rem;
+    background:
+        linear-gradient(135deg, rgba(198, 185, 154, 0.09), rgba(137, 224, 179, 0.045)),
+        rgba(10, 12, 9, 0.95);
+}
+
+.browser-workbench-performance-virtualization-copy {
+    display: grid;
+    gap: 0.35rem;
+    align-content: center;
+}
+
+.browser-workbench-performance-virtualization-copy strong,
+.browser-workbench-performance-virtualization-copy p {
+    margin: 0;
+}
+
+.browser-workbench-performance-virtualization-copy strong {
+    color: #f4efe4;
+    font-size: 1rem;
+}
+
+.browser-workbench-performance-virtualization-copy p {
+    color: rgba(238, 241, 246, 0.72);
+    line-height: 1.42;
+}
+
+.browser-workbench-performance-virtualization-actions {
+    display: grid;
+    grid-template-columns: repeat(6, minmax(0, 1fr));
+    gap: 0.5rem;
+}
+
+.browser-workbench-performance-virtualization-actions a {
+    display: grid;
+    gap: 0.25rem;
+    min-height: 4.75rem;
+    padding: 0.72rem;
+    border: 1px solid rgba(198, 185, 154, 0.18);
+    border-radius: 0.85rem;
+    background: rgba(255, 255, 255, 0.042);
+    color: #f4efe4;
+    text-decoration: none;
+    transition: transform 150ms ease, border-color 150ms ease, background 150ms ease;
+}
+
+.browser-workbench-performance-virtualization-actions a:hover,
+.browser-workbench-performance-virtualization-actions a:focus-visible {
+    transform: translateY(-1px);
+    border-color: rgba(137, 224, 179, 0.5);
+    background: rgba(137, 224, 179, 0.09);
+}
+
+.browser-workbench-performance-virtualization-actions span {
+    font-weight: 850;
+}
+
+.browser-workbench-performance-virtualization-actions small {
+    color: rgba(238, 241, 246, 0.7);
+    line-height: 1.35;
+}
+
+.browser-workbench-print-layout {
+    width: min(1240px, calc(100% - 1rem));
+    margin: 0 auto 0.85rem;
+    display: grid;
+    grid-template-columns: minmax(18rem, 0.88fr) minmax(0, 1.5fr);
+    gap: 0.75rem;
+    align-items: stretch;
+    padding: 0.8rem;
+    border: 1px solid rgba(198, 185, 154, 0.22);
+    border-radius: 1rem;
+    background:
+        linear-gradient(135deg, rgba(198, 185, 154, 0.09), rgba(137, 224, 179, 0.045)),
+        rgba(10, 12, 9, 0.95);
+}
+
+.browser-workbench-print-layout-copy {
+    display: grid;
+    gap: 0.35rem;
+    align-content: center;
+}
+
+.browser-workbench-print-layout-copy strong,
+.browser-workbench-print-layout-copy p {
+    margin: 0;
+}
+
+.browser-workbench-print-layout-copy strong {
+    color: #f4efe4;
+    font-size: 1rem;
+}
+
+.browser-workbench-print-layout-copy p {
+    color: rgba(238, 241, 246, 0.72);
+    line-height: 1.42;
+}
+
+.browser-workbench-print-layout-actions {
+    display: grid;
+    grid-template-columns: repeat(6, minmax(0, 1fr));
+    gap: 0.5rem;
+}
+
+.browser-workbench-print-layout-actions a {
+    display: grid;
+    gap: 0.25rem;
+    min-height: 4.75rem;
+    padding: 0.72rem;
+    border: 1px solid rgba(198, 185, 154, 0.18);
+    border-radius: 0.85rem;
+    background: rgba(255, 255, 255, 0.042);
+    color: #f4efe4;
+    text-decoration: none;
+    transition: transform 150ms ease, border-color 150ms ease, background 150ms ease;
+}
+
+.browser-workbench-print-layout-actions a:hover,
+.browser-workbench-print-layout-actions a:focus-visible {
+    transform: translateY(-1px);
+    border-color: rgba(137, 224, 179, 0.5);
+    background: rgba(137, 224, 179, 0.09);
+}
+
+.browser-workbench-print-layout-actions span {
+    font-weight: 850;
+}
+
+.browser-workbench-print-layout-actions small {
+    color: rgba(238, 241, 246, 0.7);
+    line-height: 1.35;
+}
+
 .browser-preview-frame {
     padding-bottom: 1rem;
 }
@@ -3525,6 +3667,22 @@
     }
 
     .browser-workbench-inline-editing-actions {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+
+    .browser-workbench-performance-virtualization {
+        grid-template-columns: 1fr;
+    }
+
+    .browser-workbench-performance-virtualization-actions {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+
+    .browser-workbench-print-layout {
+        grid-template-columns: 1fr;
+    }
+
+    .browser-workbench-print-layout-actions {
         grid-template-columns: repeat(2, minmax(0, 1fr));
     }
 }

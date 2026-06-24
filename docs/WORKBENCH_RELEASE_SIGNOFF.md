@@ -171,6 +171,10 @@ The next staged browser-family slice after workbench touch-mobile is workbench n
 
 The next staged browser-family slice after workbench navigation-deeplink is workbench inline-editing posture for dirty fields, numeric steppers, commit, revert, formula preview, and bulk apply actions. `scripts/ai/milestones/blazor-workbench-inline-editing-staged-proof-check.sh` is its source-alignment check. It proves only that the promoted workbench exposes controlled inline-editing affordances; it is not a hosted or Docker browser execution receipt.
 
+The next staged browser-family slice after workbench inline-editing is workbench performance-virtualization posture for lazy sections, virtual lists, render budget, memory posture, degraded mode, and profiler actions. `scripts/ai/milestones/blazor-workbench-performance-virtualization-staged-proof-check.sh` is its source-alignment check. It proves only that the promoted workbench exposes large-sheet performance affordances; it is not a hosted or Docker browser execution receipt.
+
+The next staged browser-family slice after workbench performance-virtualization is workbench print-layout posture for sheet template, paper size, theme, sections, preview, and export profile actions. `scripts/ai/milestones/blazor-workbench-print-layout-staged-proof-check.sh` is its source-alignment check. It proves only that the promoted workbench exposes sheet output profile affordances; it is not a hosted or Docker browser execution receipt.
+
 `/scripts/ai/milestones/blazor-legacy-control-coverage-staged-proof-check.sh` is the source-level breadth guard over all known `LegacyUiControlCatalog` controls. It maps controls into hosted execution baseline coverage or staged source-alignment families; it is not a hosted or Docker browser execution receipt.
 
 `scripts/ai/milestones/blazor-source-staged-proof-set-check.sh` is the aggregate source-staged proof-set lane. It materializes the staged source receipts and summarizes their status, but it must stay outside release-readiness aggregation because it is not hosted or Docker browser execution evidence.

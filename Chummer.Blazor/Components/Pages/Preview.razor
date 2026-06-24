@@ -1507,6 +1507,74 @@
             </div>
         </section>
 
+        <section class="browser-workbench-performance-virtualization" aria-label="Workbench performance and virtualization lane" data-workbench-performance-virtualization="strip">
+            <div class="browser-workbench-performance-virtualization-copy">
+                <span class="browser-preview-status-label">Performance</span>
+                <strong>Keep large sheets responsive.</strong>
+                <p>Lazy sections, virtual lists, render budgets, memory posture, degraded mode, and profiling cues keep heavy characters usable without hiding slowdown.</p>
+            </div>
+            <div class="browser-workbench-performance-virtualization-actions" role="list" aria-label="Performance and virtualization shortcuts">
+                <a role="listitem" href="@BuildPreviewHref("blue", command: "lazy_sections")" data-workbench-performance-virtualization-action="lazy_sections">
+                    <span>Lazy sections</span>
+                    <small>Reserve staged loading for dense panes.</small>
+                </a>
+                <a role="listitem" href="@BuildPreviewHref("blue", command: "virtual_lists")" data-workbench-performance-virtualization-action="virtual_lists">
+                    <span>Virtual lists</span>
+                    <small>Keep long gear and spell lists scalable.</small>
+                </a>
+                <a role="listitem" href="@BuildPreviewHref("blue", command: "render_budget")" data-workbench-performance-virtualization-action="render_budget">
+                    <span>Render budget</span>
+                    <small>Show when the sheet is near browser limits.</small>
+                </a>
+                <a role="listitem" href="@BuildPreviewHref("blue", command: "memory_posture")" data-workbench-performance-virtualization-action="memory_posture">
+                    <span>Memory</span>
+                    <small>Expose large-sheet memory posture.</small>
+                </a>
+                <a role="listitem" href="@BuildPreviewHref("blue", command: "degraded_mode")" data-workbench-performance-virtualization-action="degraded_mode">
+                    <span>Degraded mode</span>
+                    <small>Keep a safe fallback for heavy sheets.</small>
+                </a>
+                <a role="listitem" href="@BuildPreviewHref("blue", command: "render_profiler")" data-workbench-performance-virtualization-action="profiler">
+                    <span>Profiler</span>
+                    <small>Surface operator diagnostics without user data.</small>
+                </a>
+            </div>
+        </section>
+
+        <section class="browser-workbench-print-layout" aria-label="Workbench print and layout profiles lane" data-workbench-print-layout="strip">
+            <div class="browser-workbench-print-layout-copy">
+                <span class="browser-preview-status-label">Print layout</span>
+                <strong>Keep sheet output profiles visible.</strong>
+                <p>Sheet template, paper size, theme, sections, preview, and export profile stay near output handoff so table packets remain predictable.</p>
+            </div>
+            <div class="browser-workbench-print-layout-actions" role="list" aria-label="Print and layout profile shortcuts">
+                <a role="listitem" href="@BuildPreviewHref("blue", command: "sheet_template")" data-workbench-print-layout-action="sheet_template">
+                    <span>Template</span>
+                    <small>Select the character sheet layout family.</small>
+                </a>
+                <a role="listitem" href="@BuildPreviewHref("blue", command: "paper_size")" data-workbench-print-layout-action="paper_size">
+                    <span>Paper size</span>
+                    <small>Reserve Letter, A4, and table packet posture.</small>
+                </a>
+                <a role="listitem" href="@BuildPreviewHref("blue", command: "print_theme")" data-workbench-print-layout-action="theme">
+                    <span>Theme</span>
+                    <small>Expose printer-safe and screen themes.</small>
+                </a>
+                <a role="listitem" href="@BuildPreviewHref("blue", command: "included_sections")" data-workbench-print-layout-action="sections">
+                    <span>Sections</span>
+                    <small>Choose what goes into the packet.</small>
+                </a>
+                <a role="listitem" href="@BuildPreviewHref("blue", command: "print_preview")" data-workbench-print-layout-action="preview">
+                    <span>Preview</span>
+                    <small>Inspect layout before printing or export.</small>
+                </a>
+                <a role="listitem" href="@BuildPreviewHref("blue", command: "export_profile")" data-workbench-print-layout-action="export_profile">
+                    <span>Export profile</span>
+                    <small>Save repeatable table output settings.</small>
+                </a>
+            </div>
+        </section>
+
         <section class="browser-preview-status-grid" aria-label="Workbench quick starts">
             <article class="browser-preview-status-card" data-workbench-entry-card="new-character">
                 <span class="browser-preview-status-label">Quick start</span>
