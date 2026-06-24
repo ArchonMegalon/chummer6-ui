@@ -67,6 +67,8 @@ The next browser-lane proof refresh is staged to add the career/support workflow
 
 `scripts/ai/milestones/blazor-career-support-staged-proof-check.sh` is the pre-refresh source-alignment check for that staged family. It only proves that the staged route family is wired consistently across source, runners, receipt metadata, status reporting, and docs; it is not a browser execution receipt and must not be treated as a release-passing workflow proof.
 
+The next staged utility family adds identity/SIN/license utility posture on the promoted Blazor workbench route. `scripts/ai/milestones/blazor-identity-license-staged-proof-check.sh` verifies source, runner, metadata, and documentation alignment for add, edit, and remove SIN/license routes. It is not a hosted or Docker browser execution receipt, and it must remain separate from the browser-lane proof set until hosted and self-host execution receipts are refreshed.
+
 `scripts/print_blazor_public_edge_proof_status.py` reports that staged receipt separately as `career_support_staged_*` when present, with a source-alignment-only note. It must remain separate from the aggregate browser-lane proof set until hosted and self-host browser execution receipts are refreshed.
 
 For the hard Linux desktop exit gate, `scripts/materialize-linux-desktop-exit-gate.sh` is the canonical executable lane. It must build the Linux Avalonia binary, package the primary `.deb` plus fallback archive, install and purge the primary `.deb` inside an isolated dpkg root while running startup smoke from the installed path, run startup smoke against the fallback archive, run the desktop runtime unit-test suite, and publish `.codex-studio/published/UI_LINUX_DESKTOP_EXIT_GATE.generated.json`.

@@ -392,6 +392,24 @@ const checks = [
       /\/status\/?$/.test(response.url)
       && text.includes('Current release')
       && text.includes('Open downloads')
+  },
+  {
+    url: `${baseUrl}/blazor/workbench?workspace=ws-1&tab=tab-info&control=identity_license_add`,
+    assert: (text, response) =>
+      /\/blazor\/workbench\?workspace=ws-1&tab=tab-info&control=identity_license_add$/.test(response.url)
+      && hasBlazorBaseHref(text)
+  },
+  {
+    url: `${baseUrl}/blazor/workbench?workspace=ws-1&tab=tab-info&control=identity_license_edit`,
+    assert: (text, response) =>
+      /\/blazor\/workbench\?workspace=ws-1&tab=tab-info&control=identity_license_edit$/.test(response.url)
+      && hasBlazorBaseHref(text)
+  },
+  {
+    url: `${baseUrl}/blazor/workbench?workspace=ws-1&tab=tab-info&control=identity_license_delete`,
+    assert: (text, response) =>
+      /\/blazor\/workbench\?workspace=ws-1&tab=tab-info&control=identity_license_delete$/.test(response.url)
+      && hasBlazorBaseHref(text)
   }
 ];
 

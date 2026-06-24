@@ -15,6 +15,7 @@ ANALYTICS_PROOF = PUBLISHED / "BLAZOR_ANALYTICS_POSTURE.generated.json"
 CONNECTED_RUNTIME_PROOF = PUBLISHED / "BLAZOR_CONNECTED_RUNTIME_POSTURE.generated.json"
 AGGREGATE_PROOF_SET = PUBLISHED / "BLAZOR_BROWSER_LANE_PROOF_SET.generated.json"
 CAREER_SUPPORT_STAGED_PROOF = PUBLISHED / "BLAZOR_CAREER_SUPPORT_STAGED_PROOF.generated.json"
+IDENTITY_LICENSE_STAGED_PROOF = PUBLISHED / "BLAZOR_IDENTITY_LICENSE_STAGED_PROOF.generated.json"
 BLOCKERS = PUBLISHED / "UI_EXTERNAL_HOST_PROOF_BLOCKERS.generated.json"
 EXPANDED_ROUTE_PROOF_MARKERS = {
     "public_startup_workbench_command_routes",
@@ -72,6 +73,7 @@ def main() -> int:
     connected_runtime = load_json(CONNECTED_RUNTIME_PROOF)
     aggregate = load_json(AGGREGATE_PROOF_SET)
     career_support_staged = load_json(CAREER_SUPPORT_STAGED_PROOF)
+    identity_license_staged = load_json(IDENTITY_LICENSE_STAGED_PROOF)
     blockers = load_json(BLOCKERS)
 
     print("Blazor public-edge proof status")
@@ -153,6 +155,16 @@ def main() -> int:
     print(f"career_support_staged_source_checks={count_staged_source_checks(career_support_staged)}")
     print(
         "career_support_staged_note="
+        "source_alignment_only_not_browser_execution"
+    )
+    print(f"identity_license_staged_receipt={IDENTITY_LICENSE_STAGED_PROOF}")
+    print(f"identity_license_staged_status={str(identity_license_staged.get('status') or '').strip() or 'not_generated'}")
+    print(f"identity_license_staged_contract={str(identity_license_staged.get('contract_name') or '').strip() or 'missing'}")
+    print(f"identity_license_staged_tier={str(identity_license_staged.get('proof_tier') or '').strip() or 'missing'}")
+    print(f"identity_license_staged_route_count={len(identity_license_staged.get('expected_routes') or [])}")
+    print(f"identity_license_staged_source_checks={count_staged_source_checks(identity_license_staged)}")
+    print(
+        "identity_license_staged_note="
         "source_alignment_only_not_browser_execution"
     )
     print(f"blocker_receipt={BLOCKERS}")

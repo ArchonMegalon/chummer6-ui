@@ -43,6 +43,7 @@ const requiredWorkflowFamilyIds = [
   'promoted_runner_notes_execution',
   'promoted_runner_notes_committed_execution',
   'promoted_career_entry_reorder_execution',
+  'promoted_identity_license_execution',
   'promoted_recent_work_affordances',
   'promoted_restored_section_continuations',
   'promoted_restored_tab_landings',
@@ -570,6 +571,21 @@ async function auditCareerEntryReorderSurface(page, controlId, expectedTitle) {
   };
 }
 
+async function auditIdentityLicenseSurface(page, controlId, expectedTitle, expectedSummary, expectedMarker) {
+  const route = `${promotedRouteBase}?${promotedContinuationQuery}&tab=tab-info&control=${controlId}`;
+  await openPath(page, route, '.desktop-dialog');
+  const dialogText = await page.locator('.desktop-dialog').innerText();
+  expectTextIncludes(dialogText, expectedTitle, `hosted identity/license route ${route}`);
+  expectTextIncludes(dialogText, expectedSummary, `hosted identity/license route ${route}`);
+  expectTextIncludes(dialogText, expectedMarker, `hosted identity/license route ${route}`);
+  expectTextIncludes(dialogText, 'lifestyle', `hosted identity/license route ${route}`);
+  return {
+    route,
+    assertion: `${expectedTitle} dialog rendered identity, SIN/license, source, and lifestyle-cover context`,
+    status: 'pass',
+  };
+}
+
 async function auditResumedResultContinuation(page, route, expectedText) {
   await openPath(page, route, 'body');
   const bodyText = await page.locator('body').innerText();
@@ -670,6 +686,9 @@ async function auditAdvancedActionAffordances(page) {
   expectTextIncludes(bodyText, 'Edit runner notes for BLUE', 'hosted advanced action affordances');
   expectTextIncludes(bodyText, 'Move career entry up for BLUE', 'hosted advanced action affordances');
   expectTextIncludes(bodyText, 'Move career entry down for BLUE', 'hosted advanced action affordances');
+  expectTextIncludes(bodyText, 'Add SIN/license for BLUE', 'hosted advanced action affordances');
+  expectTextIncludes(bodyText, 'Edit SIN/license for BLUE', 'hosted advanced action affordances');
+  expectTextIncludes(bodyText, 'Remove SIN/license for BLUE', 'hosted advanced action affordances');
   return {
     route,
     assertion: 'advanced and career/support restored action affordances remain visible on promoted workbench route',
@@ -983,6 +1002,34 @@ async function run() {
       route_lane: 'promoted_blazor_workbench',
       workflow_contract: 'workspace_resume_continuity',
       checks: [await auditResumedWorkspace(page)],
+    });
+    receipt.workflow_families.push({
+      id: 'promoted_identity_license_execution',
+      route_lane: 'promoted_blazor_workbench',
+      workflow_contract: 'identity_sin_license_utility_execution',
+      checks: [
+        await auditIdentityLicenseSurface(
+          page,
+          'identity_license_add',
+          'Add SIN / License',
+          'Create a browser-safe identity, SIN, or license record while keeping rating, source, and legal posture visible.',
+          'Legal Posture'
+        ),
+        await auditIdentityLicenseSurface(
+          page,
+          'identity_license_edit',
+          'Edit SIN / License',
+          'Review the selected identity record while keeping attached licenses and source posture visible.',
+          'Attached Context'
+        ),
+        await auditIdentityLicenseSurface(
+          page,
+          'identity_license_delete',
+          'Remove SIN / License',
+          'Remove the selected identity record only after the attached license and recovery context stays visible.',
+          'Removal Impact'
+        ),
+      ],
     });
     receipt.workflow_families.push({
       id: 'promoted_recent_work_affordances',

@@ -446,6 +446,9 @@ async function auditPortalWorkspaceResumeRoute(page) {
   expectTextIncludes(bodyText, 'Edit runner notes for BLUE', 'portal workspace resume route');
   expectTextIncludes(bodyText, 'Move career entry up for BLUE', 'portal workspace resume route');
   expectTextIncludes(bodyText, 'Move career entry down for BLUE', 'portal workspace resume route');
+  expectTextIncludes(bodyText, 'Add SIN/license for BLUE', 'portal workspace resume route');
+  expectTextIncludes(bodyText, 'Edit SIN/license for BLUE', 'portal workspace resume route');
+  expectTextIncludes(bodyText, 'Remove SIN/license for BLUE', 'portal workspace resume route');
   expectTextIncludes(bodyText, 'Continue BLUE on advanced', 'portal workspace resume route');
   expectTextIncludes(bodyText, 'Continue BLUE for download', 'portal workspace resume route');
   expectTextIncludes(bodyText, 'Continue BLUE for export', 'portal workspace resume route');
@@ -690,6 +693,27 @@ async function auditPortalRestoredCareerEntryReorderRoute(page, controlId, expec
   const dialogText = await page.locator('.desktop-dialog').innerText();
   expectTextIncludes(dialogText, expectedTitle, `portal restored career entry reorder route ${controlId}`);
   expectTextIncludes(dialogText, 'The reordered list stays visible in the same utility pane.', `portal restored career entry reorder route ${controlId}`);
+}
+
+async function auditPortalRestoredIdentityLicenseRoute(page, controlId, expectedTitle, expectedMarker) {
+  await openPortalPreviewPath(
+    page,
+    '/blazor/preview?fixture=blue&tab=tab-create',
+    '[data-build-lab]'
+  );
+
+  await openPortalPreviewPath(
+    page,
+    `/blazor/workbench?workspace=ws-1&tab=tab-info&control=${controlId}`,
+    '.desktop-dialog'
+  );
+
+  await expectDialogFits(page, expectedTitle.toLowerCase());
+
+  const dialogText = await page.locator('.desktop-dialog').innerText();
+  expectTextIncludes(dialogText, expectedTitle, `portal restored identity/license route ${controlId}`);
+  expectTextIncludes(dialogText, expectedMarker, `portal restored identity/license route ${controlId}`);
+  expectTextIncludes(dialogText, 'lifestyle', `portal restored identity/license route ${controlId}`);
 }
 
 async function auditPortalRestoredComplexFormActionRoute(page) {
@@ -960,6 +984,18 @@ async function run() {
     const restoredCareerEntryMoveDownPage = await browser.newPage({ viewport: { width: 1440, height: 960 } });
     await auditPortalRestoredCareerEntryReorderRoute(restoredCareerEntryMoveDownPage, 'move_down', 'Move Entry Down');
     await restoredCareerEntryMoveDownPage.close();
+
+    const restoredIdentityLicenseAddPage = await browser.newPage({ viewport: { width: 1440, height: 960 } });
+    await auditPortalRestoredIdentityLicenseRoute(restoredIdentityLicenseAddPage, 'identity_license_add', 'Add SIN / License', 'Legal Posture');
+    await restoredIdentityLicenseAddPage.close();
+
+    const restoredIdentityLicenseEditPage = await browser.newPage({ viewport: { width: 1440, height: 960 } });
+    await auditPortalRestoredIdentityLicenseRoute(restoredIdentityLicenseEditPage, 'identity_license_edit', 'Edit SIN / License', 'Attached Context');
+    await restoredIdentityLicenseEditPage.close();
+
+    const restoredIdentityLicenseDeletePage = await browser.newPage({ viewport: { width: 1440, height: 960 } });
+    await auditPortalRestoredIdentityLicenseRoute(restoredIdentityLicenseDeletePage, 'identity_license_delete', 'Remove SIN / License', 'Removal Impact');
+    await restoredIdentityLicenseDeletePage.close();
 
     const restoredComplexFormActionPage = await browser.newPage({ viewport: { width: 1440, height: 960 } });
     await auditPortalRestoredComplexFormActionRoute(restoredComplexFormActionPage);

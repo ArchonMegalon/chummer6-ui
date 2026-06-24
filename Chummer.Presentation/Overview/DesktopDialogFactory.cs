@@ -6451,9 +6451,71 @@ public sealed class DesktopDialogFactory : IDesktopDialogFactory
                     new DesktopDialogAction("delete", "Remove First Impression", true),
                     new DesktopDialogAction("cancel", "Cancel")
                 ]),
+            "identity_license_add" => new DesktopDialogState(
+                "dialog.ui.identity_license_add",
+                "Add SIN / License",
+                "Create a browser-safe identity, SIN, or license record while keeping rating, source, and legal posture visible.",
+                BuildIdentityLicenseAddFields(),
+                [
+                    new DesktopDialogAction("add", "Add SIN / License", true),
+                    new DesktopDialogAction("cancel", "Cancel")
+                ]),
+            "identity_license_edit" => new DesktopDialogState(
+                "dialog.ui.identity_license_edit",
+                "Edit SIN / License",
+                "Review the selected identity record while keeping attached licenses and source posture visible.",
+                BuildIdentityLicenseEditFields(),
+                [
+                    new DesktopDialogAction("apply", "Apply", true),
+                    new DesktopDialogAction("cancel", "Cancel")
+                ]),
+            "identity_license_delete" => new DesktopDialogState(
+                "dialog.ui.identity_license_delete",
+                "Remove SIN / License",
+                "Remove the selected identity record only after the attached license and recovery context stays visible.",
+                BuildIdentityLicenseDeleteFields(),
+                [
+                    new DesktopDialogAction("delete", "Remove SIN / License", true),
+                    new DesktopDialogAction("cancel", "Cancel")
+                ]),
             _ => throw new InvalidOperationException($"Known legacy UI control '{controlId}' is missing a dedicated dialog mapping.")
         });
     }
+
+    private static IReadOnlyList<DesktopDialogField> BuildIdentityLicenseAddFields()
+        => [
+            new DesktopDialogField("uiIdentityRecordType", "Record Type", "Fake SIN", "Fake SIN", VisualKind: DesktopDialogFieldVisualKinds.Select, LayoutSlot: DesktopDialogFieldLayoutSlots.Left, Options: [
+                new DesktopDialogFieldOption("fake_sin", "Fake SIN"),
+                new DesktopDialogFieldOption("license", "License"),
+                new DesktopDialogFieldOption("lifestyle_identity", "Lifestyle Identity")
+            ]),
+            new DesktopDialogField("uiIdentityName", "Identity / License Name", "Taylor Mercer", "Taylor Mercer", LayoutSlot: DesktopDialogFieldLayoutSlots.Left),
+            new DesktopDialogField("uiIdentityRating", "Rating", "4", "4", LayoutSlot: DesktopDialogFieldLayoutSlots.Left),
+            new DesktopDialogField("uiIdentityAttachment", "Attached License", "Concealed Carry Permit", "Concealed Carry Permit", LayoutSlot: DesktopDialogFieldLayoutSlots.Left),
+            new DesktopDialogField("uiIdentityCost", "Cost", "¥10,000", "¥10,000", LayoutSlot: DesktopDialogFieldLayoutSlots.Right),
+            new DesktopDialogField("uiIdentitySource", "Source", "Core Rulebook p. 367", "Core Rulebook p. 367", IsReadOnly: true, LayoutSlot: DesktopDialogFieldLayoutSlots.Right),
+            new DesktopDialogField("uiIdentityPosture", "Legal Posture", BuildGridValue(("SIN", "rating-bound"), ("License", "attached"), ("Lifestyle", "optional cover"), ("Browser save", "explicit result continuation")), "SIN | rating-bound", IsReadOnly: true, IsMultiline: true, VisualKind: DesktopDialogFieldVisualKinds.Grid, LayoutSlot: DesktopDialogFieldLayoutSlots.Right),
+            new DesktopDialogField("uiIdentityNotes", "Notes", "Identity, fake SIN, attached license, and lifestyle-cover context stay in one compact utility pane so the browser route mirrors the desktop side workflow.", "Identity, fake SIN, attached license, and lifestyle-cover context stay in one compact utility pane so the browser route mirrors the desktop side workflow.", IsReadOnly: true, IsMultiline: true, VisualKind: DesktopDialogFieldVisualKinds.Snippet)
+        ];
+
+    private static IReadOnlyList<DesktopDialogField> BuildIdentityLicenseEditFields()
+        => [
+            new DesktopDialogField("uiIdentityCurrentList", "Current Identity Records", "Taylor Mercer - Fake SIN R4" + Environment.NewLine + "> Concealed Carry Permit R4" + Environment.NewLine + "Middle Lifestyle cover", "Taylor Mercer - Fake SIN R4", IsReadOnly: true, IsMultiline: true, VisualKind: DesktopDialogFieldVisualKinds.List, LayoutSlot: DesktopDialogFieldLayoutSlots.Left),
+            new DesktopDialogField("uiIdentitySelected", "Selected Record", "Concealed Carry Permit", "Concealed Carry Permit", LayoutSlot: DesktopDialogFieldLayoutSlots.Left),
+            new DesktopDialogField("uiIdentitySelectedRating", "Rating", "4", "4", LayoutSlot: DesktopDialogFieldLayoutSlots.Left),
+            new DesktopDialogField("uiIdentitySelectedSource", "Source", "Core Rulebook p. 367", "Core Rulebook p. 367", IsReadOnly: true, LayoutSlot: DesktopDialogFieldLayoutSlots.Right),
+            new DesktopDialogField("uiIdentityAttachedContext", "Attached Context", BuildGridValue(("Parent SIN", "Taylor Mercer R4"), ("Lifestyle", "Middle cover"), ("Linked gear", "commlink + permits"), ("Warnings", "rating mismatch check pending")), "Parent SIN | Taylor Mercer R4", IsReadOnly: true, IsMultiline: true, VisualKind: DesktopDialogFieldVisualKinds.Grid, LayoutSlot: DesktopDialogFieldLayoutSlots.Right),
+            new DesktopDialogField("uiIdentityEditNotes", "Notes", "Editing keeps the identity stack, attached license, lifestyle cover, and source reference visible before applying browser-side changes.", "Editing keeps the identity stack, attached license, lifestyle cover, and source reference visible before applying browser-side changes.", IsReadOnly: true, IsMultiline: true, VisualKind: DesktopDialogFieldVisualKinds.Snippet)
+        ];
+
+    private static IReadOnlyList<DesktopDialogField> BuildIdentityLicenseDeleteFields()
+        => [
+            new DesktopDialogField("uiIdentityDeleteList", "Current Identity Records", "Taylor Mercer - Fake SIN R4" + Environment.NewLine + "> Concealed Carry Permit R4" + Environment.NewLine + "Middle Lifestyle cover", "Taylor Mercer - Fake SIN R4", IsReadOnly: true, IsMultiline: true, VisualKind: DesktopDialogFieldVisualKinds.List, LayoutSlot: DesktopDialogFieldLayoutSlots.Left),
+            new DesktopDialogField("uiIdentityDeleteTarget", "Selected Record", "Concealed Carry Permit", "Concealed Carry Permit", IsReadOnly: true, LayoutSlot: DesktopDialogFieldLayoutSlots.Left),
+            new DesktopDialogField("uiIdentityDeleteImpact", "Removal Impact", BuildGridValue(("Attached SIN", "kept"), ("License", "removed"), ("Lifestyle", "unchanged"), ("Recovery", "re-add from identity utility")), "Attached SIN | kept", IsReadOnly: true, IsMultiline: true, VisualKind: DesktopDialogFieldVisualKinds.Grid, LayoutSlot: DesktopDialogFieldLayoutSlots.Right),
+            new DesktopDialogField("uiIdentityDeleteRecovery", "Recovery", "Return to profile" + Environment.NewLine + "Re-open Add SIN / License" + Environment.NewLine + "Review lifestyle cover", "Return to profile", IsReadOnly: true, IsMultiline: true, VisualKind: DesktopDialogFieldVisualKinds.List, LayoutSlot: DesktopDialogFieldLayoutSlots.Right),
+            new DesktopDialogField("uiIdentityDeleteNotes", "Notes", "Delete posture is explicit because identity records affect legality, lifestyle cover, and attached permits in the desktop workflow.", "Delete posture is explicit because identity records affect legality, lifestyle cover, and attached permits in the desktop workflow.", IsReadOnly: true, IsMultiline: true, VisualKind: DesktopDialogFieldVisualKinds.Snippet)
+        ];
 
     private static DesktopDialogState CreateGenericUiControlDialog(string controlId)
     {
