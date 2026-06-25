@@ -2706,6 +2706,14 @@ input[type="radio"] {
     text-transform: uppercase;
 }
 
+.dialog-roster-line.is-keyboard-source::after {
+    content: "keyboard source";
+}
+
+.dialog-roster-line.is-mouse-source::after {
+    content: "mouse source";
+}
+
 .dialog-roster-line:focus-visible {
     outline: 2px solid rgba(86, 117, 74, 0.72);
     outline-offset: 2px;

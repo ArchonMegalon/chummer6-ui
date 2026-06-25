@@ -840,7 +840,12 @@
         string draggable = IsRosterDraggableLine(field, line) ? " is-draggable" : string.Empty;
         string dropTarget = IsRosterDropTargetLine(field, line) ? " is-drop-target" : string.Empty;
         string dragSource = string.Equals(RosterActiveSourceLine, line, StringComparison.Ordinal) ? " is-drag-source" : string.Empty;
-        return $"dialog-roster-line dialog-roster-line--{kind}{selected}{draggable}{dropTarget}{dragSource}";
+        string sourceMode = string.Equals(_rosterKeyboardSourceLine, line, StringComparison.Ordinal)
+            ? " is-keyboard-source"
+            : string.Equals(_rosterMouseDragSourceLine, line, StringComparison.Ordinal)
+                ? " is-mouse-source"
+                : string.Empty;
+        return $"dialog-roster-line dialog-roster-line--{kind}{selected}{draggable}{dropTarget}{dragSource}{sourceMode}";
     }
 
     private static string BuildRosterHierarchyLineTitle(DesktopDialogField field, string line)
@@ -924,9 +929,17 @@
     private string BuildRosterKeyboardStatus()
         => string.IsNullOrWhiteSpace(RosterActiveSourceLine)
             ? string.Empty
-            : $"Keyboard source selected: {RosterActiveSourceLine.Trim()}. Press Enter or Space on a folder to drop, or Escape to clear.";
+            : $"{RosterActiveSourceMode} source selected: {RosterActiveSourceLine.Trim()}. {RosterActiveSourceInstruction}";
 
     private string? RosterActiveSourceLine => _rosterKeyboardSourceLine ?? _rosterMouseDragSourceLine;
+
+    private string RosterActiveSourceMode => !string.IsNullOrWhiteSpace(_rosterKeyboardSourceLine)
+        ? "Keyboard"
+        : "Mouse";
+
+    private string RosterActiveSourceInstruction => !string.IsNullOrWhiteSpace(_rosterKeyboardSourceLine)
+        ? "Press Enter or Space on a folder to drop, or Escape to clear."
+        : "Drop on a folder to move or nest, or release outside a folder to cancel.";
 
     private static IReadOnlyList<string> SplitVisualLines(string value)
     {
