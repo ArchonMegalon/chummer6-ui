@@ -42,9 +42,15 @@
       "status": "passed"
     },
     {
+      "id": "downloads_install_state_guidance",
+      "path": "Chummer.Portal/Program.cs",
+      "required_token_count": 5,
+      "status": "passed"
+    },
+    {
       "id": "portal_handoff_docs",
       "path": "docs/BLAZOR_PORTAL_INSTALLER_HANDOFF_PROOF.md",
-      "required_token_count": 14,
+      "required_token_count": 15,
       "status": "passed"
     }
   ],
