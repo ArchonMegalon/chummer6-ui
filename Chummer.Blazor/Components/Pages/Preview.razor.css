@@ -8118,3 +8118,47 @@
 .browser-preview-shell:is(.classic-promoted-app, .classic-compat-app) .classic-menu-flyout a[data-chummer-shortcut][aria-current="page"]::after {
     color: inherit;
 }
+
+.browser-preview-shell:is(.classic-promoted-app, .classic-compat-app) .classic-roster-tree[data-roster-selected-node]:not([data-roster-selected-node="none"]) {
+    box-shadow: inset 0 0 0 1px rgba(49, 95, 147, .38);
+}
+
+.browser-preview-shell:is(.classic-promoted-app, .classic-compat-app) .classic-chummer-shell[data-roster-selected-node]:not([data-roster-selected-node="none"]) .classic-chummer-status span:first-child {
+    background: linear-gradient(180deg, #e8f0f8 0%, #c5d8ea 100%);
+}
+
+.browser-preview-shell:is(.classic-promoted-app, .classic-compat-app) .classic-chummer-shell[data-dossier-state="unsaved"] .classic-chummer-status span:nth-child(2) {
+    background: linear-gradient(180deg, #f7ead4 0%, #d9bd83 100%);
+}
+
+.browser-preview-shell:is(.classic-promoted-app, .classic-compat-app) .classic-chummer-shell[data-dossier-state="saved"] .classic-chummer-status span:nth-child(2) {
+    background: linear-gradient(180deg, #e7f0df 0%, #b8d2a3 100%);
+}
+
+.browser-preview-shell:is(.classic-promoted-app, .classic-compat-app) .classic-chummer-shell[data-dossier-state="saving"] .classic-chummer-status span:nth-child(2) {
+    background: linear-gradient(180deg, #e8f0f8 0%, #b9d0e7 100%);
+}
+
+.browser-preview-shell:is(.classic-promoted-app, .classic-compat-app) .classic-chummer-shell[data-dossier-state="error"] .classic-chummer-status span:nth-child(2) {
+    background: linear-gradient(180deg, #f1d8d2 0%, #c98578 100%);
+}
+
+.browser-preview-shell:is(.classic-promoted-app, .classic-compat-app) .classic-chummer-shell[data-validation-state="valid"] .classic-chummer-status span:nth-child(4) {
+    background: linear-gradient(180deg, #e7f0df 0%, #b8d2a3 100%);
+}
+
+.browser-preview-shell:is(.classic-promoted-app, .classic-compat-app) .classic-chummer-shell[data-validation-state="review-required"] .classic-chummer-status span:nth-child(4),
+.browser-preview-shell:is(.classic-promoted-app, .classic-compat-app) .classic-chummer-shell[data-validation-state="warning"] .classic-chummer-status span:nth-child(4) {
+    background: linear-gradient(180deg, #f7ead4 0%, #d9bd83 100%);
+}
+
+.browser-preview-shell:is(.classic-promoted-app, .classic-compat-app) .classic-chummer-shell[data-validation-state="error"] .classic-chummer-status span:nth-child(4) {
+    background: linear-gradient(180deg, #f1d8d2 0%, #c98578 100%);
+}
+
+.browser-preview-shell:is(.classic-promoted-app, .classic-compat-app) .classic-chummer-shell[data-ruleset="sr5"] .classic-chummer-status span:nth-child(3) em::after {
+    content: " active";
+    color: #4f463b;
+    font-size: .58rem;
+    font-weight: 900;
+}

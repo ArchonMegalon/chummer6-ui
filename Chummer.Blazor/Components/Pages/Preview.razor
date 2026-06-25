@@ -68,7 +68,7 @@
 
     @if (IsAppRoute || IsWorkbenchRoute)
     {
-        <section class="classic-chummer-shell" aria-label="Chummer Online classic desktop shell" data-chummer-classic-shell="true" data-active-workflow="@ActiveWorkflowDataKey" data-route-family="@RouteFamilyDataKey" data-route-segment="@RouteSegmentDataKey" data-command="@CommandDataKey" data-tab="@TabDataKey" data-workspace="@WorkspaceDataKey" data-active-runner="@ActiveRunnerDataKey">
+        <section class="classic-chummer-shell" aria-label="Chummer Online classic desktop shell" data-chummer-classic-shell="true" data-active-workflow="@ActiveWorkflowDataKey" data-route-family="@RouteFamilyDataKey" data-route-segment="@RouteSegmentDataKey" data-command="@CommandDataKey" data-tab="@TabDataKey" data-workspace="@WorkspaceDataKey" data-active-runner="@ActiveRunnerDataKey" data-roster-selected-node="@SelectedRosterNodeDataKey" data-dossier-state="@DossierStateDataKey" data-dossier-storage="@DossierStorageDataKey" data-ruleset="@RulesetDataKey" data-validation-state="@ValidationStateDataKey" data-privacy-mode="@PrivacyModeDataKey" data-analytics-scope="@AnalyticsScopeDataKey">
             <header class="classic-chummer-titlebar" aria-label="Chummer Online window title">
                 <div class="classic-chummer-titlebar-title">Chummer Online - @(PrimaryRecentWorkspace?.ShortLabel ?? "Sample Runner") - @ActiveWorkflowStatus</div>
                 <div class="classic-window-controls" aria-hidden="true"><span>_</span><span>[]</span><span>X</span></div>
@@ -153,7 +153,7 @@
                         <button type="button" data-roster-command="show-inbox" data-roster-shortcut="Ctrl+I" aria-keyshortcuts="Control+I" aria-controls="classic-roster-tree">Inbox</button>
                     </div>
                     <p id="classic-roster-hint" class="classic-roster-hint">Drag runners or folders to organize this roster.</p>
-                    <ul id="classic-roster-tree" class="classic-roster-tree" role="tree" aria-label="Custom character roster tree" aria-describedby="classic-roster-hint" data-roster-tree="custom-directories" data-roster-schema-version="1" data-roster-storage-scope="workspace" data-roster-persistence-key="chummer-online-roster-tree" data-roster-reorder-mode="nested">
+                    <ul id="classic-roster-tree" class="classic-roster-tree" role="tree" aria-label="Custom character roster tree" aria-describedby="classic-roster-hint" data-roster-tree="custom-directories" data-roster-selected-node="@SelectedRosterNodeDataKey" data-roster-schema-version="1" data-roster-storage-scope="workspace" data-roster-persistence-key="chummer-online-roster-tree" data-roster-reorder-mode="nested">
                         <li role="treeitem" aria-expanded="true" aria-level="1" data-tree-kind="folder" data-roster-accepts-children="true" data-roster-draggable-kind="folder" draggable="true" data-roster-node-id="folder-active-table" data-roster-parent-id="root" data-roster-order="10" data-roster-drop-zone="active-table">
                             Active Table
                             <ul role="group">
@@ -2781,15 +2781,41 @@
     private string TabDataKey => NormalizeShellDataToken(Tab);
     private string WorkspaceDataKey => NormalizeShellDataToken(PrimaryRecentWorkspace?.WorkspaceId ?? Workspace);
     private string ActiveRunnerDataKey => NormalizeShellDataToken(PrimaryRecentWorkspace?.ShortLabel);
+    private string SelectedRosterNodeDataKey => IsCharacterRosterCommand ? "runner-active" : "none";
+    private string DossierStateDataKey => "unsaved";
+    private string DossierStorageDataKey => "local";
+    private string RulesetDataKey => "sr5";
+    private string ValidationStateDataKey => "review-required";
+    private string PrivacyModeDataKey => "local-first";
+    private string AnalyticsScopeDataKey => "route-workflow-only";
     private static string NormalizeShellDataToken(string? value)
-        => string.IsNullOrWhiteSpace(value)
-            ? "none"
-            : value.Trim()
-                .Replace('_', '-')
-                .Replace(' ', '-')
-                .Replace('/', '-')
-                .Replace('\\', '-')
-                .ToLowerInvariant();
+    {
+        if (string.IsNullOrWhiteSpace(value))
+        {
+            return "none";
+        }
+
+        string normalized = new(
+            value.Trim()
+                .ToLowerInvariant()
+                .Select(character => char.IsLetterOrDigit(character) ? character : '-')
+                .ToArray());
+
+        while (normalized.Contains("--", StringComparison.Ordinal))
+        {
+            normalized = normalized.Replace("--", "-", StringComparison.Ordinal);
+        }
+
+        normalized = normalized.Trim('-');
+        if (normalized.Length > ShellDataTokenMaxLength)
+        {
+            normalized = normalized[..ShellDataTokenMaxLength].Trim('-');
+        }
+
+        return string.IsNullOrWhiteSpace(normalized) ? "none" : normalized;
+    }
+
+    private const int ShellDataTokenMaxLength = 80;
     private bool IsRouteSegment(string routeSegment)
     {
         string path = new Uri(Navigation.Uri).AbsolutePath.TrimEnd('/');
