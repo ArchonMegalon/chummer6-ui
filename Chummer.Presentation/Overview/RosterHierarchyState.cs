@@ -1,3 +1,5 @@
+using System.Text.Json;
+
 namespace Chummer.Presentation.Overview;
 
 public sealed record RosterHierarchyState(
@@ -55,4 +57,62 @@ public static class RosterHierarchyMoveKinds
 public static class RosterHierarchyDeletePolicies
 {
     public const string MoveChildrenToInboxFirst = "move_children_to_inbox_first";
+}
+
+public static class RosterHierarchyStateJson
+{
+    public static string Serialize(RosterHierarchyState state)
+    {
+        ArgumentNullException.ThrowIfNull(state);
+
+        return JsonSerializer.Serialize(state);
+    }
+
+    public static string Normalize(string? hierarchyJson)
+    {
+        if (!TryDeserialize(hierarchyJson, out RosterHierarchyState? state) || state is null)
+            return string.Empty;
+
+        return Serialize(state);
+    }
+
+    public static bool TryDeserialize(string? hierarchyJson, out RosterHierarchyState? state)
+    {
+        state = null;
+        if (string.IsNullOrWhiteSpace(hierarchyJson))
+            return false;
+
+        try
+        {
+            RosterHierarchyState? candidate = JsonSerializer.Deserialize<RosterHierarchyState>(hierarchyJson);
+            if (!IsUsable(candidate))
+                return false;
+
+            state = candidate;
+            return true;
+        }
+        catch (JsonException)
+        {
+            return false;
+        }
+    }
+
+    private static bool IsUsable(RosterHierarchyState? state)
+    {
+        if (state is not { Folders.Count: > 0, Items.Count: > 0 })
+            return false;
+
+        HashSet<string> folderIds = state.Folders
+            .Select(folder => folder.Id)
+            .Where(id => !string.IsNullOrWhiteSpace(id))
+            .ToHashSet(StringComparer.Ordinal);
+        if (folderIds.Count != state.Folders.Count)
+            return false;
+
+        return state.Folders.All(folder =>
+                string.IsNullOrWhiteSpace(folder.ParentFolderId) || folderIds.Contains(folder.ParentFolderId))
+            && state.Items.All(item =>
+                !string.IsNullOrWhiteSpace(item.Id)
+                && (string.IsNullOrWhiteSpace(item.FolderId) || folderIds.Contains(item.FolderId)));
+    }
 }

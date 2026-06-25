@@ -80,6 +80,44 @@ public sealed class DesktopPreferenceRuntimeTests
     }
 
     [TestMethod]
+    public void RosterHierarchyStateJson_normalizes_valid_tree_and_rejects_invalid_links()
+    {
+        RosterHierarchyState state = new(
+            new[]
+            {
+                new RosterHierarchyFolderState("inbox", "Inbox", null, 0, IsSystemFolder: true),
+                new RosterHierarchyFolderState("active", "Active runners", "inbox", 1)
+            },
+            new[]
+            {
+                new RosterHierarchyItemState("runner-1", "Kestrel", RosterHierarchyItemKinds.Workspace, "active", WorkspaceId: "workspace-1")
+            },
+            new RosterHierarchyPolicyState(
+                SupportsNestedFolders: true,
+                AllowsWatchedFileLinks: true,
+                MovesFilesOnlyAfterConfirmation: true,
+                DeleteFolderPolicy: RosterHierarchyDeletePolicies.MoveChildrenToInboxFirst,
+                ConflictPolicy: "manual"));
+
+        string normalized = RosterHierarchyStateJson.Normalize(RosterHierarchyStateJson.Serialize(state));
+
+        Assert.IsFalse(string.IsNullOrWhiteSpace(normalized));
+        Assert.IsTrue(RosterHierarchyStateJson.TryDeserialize(normalized, out RosterHierarchyState? parsed));
+        Assert.IsNotNull(parsed);
+        Assert.AreEqual("runner-1", parsed!.Items[0].Id);
+
+        RosterHierarchyState invalid = state with
+        {
+            Items = new[]
+            {
+                state.Items[0] with { FolderId = "missing-folder" }
+            }
+        };
+
+        Assert.AreEqual(string.Empty, RosterHierarchyStateJson.Normalize(RosterHierarchyStateJson.Serialize(invalid)));
+    }
+
+    [TestMethod]
     public void GetCurrentLanguage_prefers_explicit_override()
     {
         try
