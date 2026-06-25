@@ -7,11 +7,11 @@
   },
   "public_videos": [
     {
-      "title": "Chummer6 flagship promo",
-      "url": "https://chummer.run/media/promo/chummer6-flagship-promo.mp4",
-      "local_path": "/docker/chummercomplete/chummer.run-services/Chummer.Run.Api/wwwroot/media/promo/chummer6-flagship-promo.mp4",
-      "caption_url": "https://chummer.run/media/promo/chummer6-flagship-promo.vtt",
-      "note": "Quick overview with narration."
+      "title": "Chummer6 overview promo",
+      "url": "https://chummer.run/media/promo/every-wonder-horizon-promo.mp4",
+      "local_path": "/docker/chummercomplete/chummer.run-services/Chummer.Run.Api/wwwroot/media/promo/every-wonder-horizon-promo.mp4",
+      "caption_url": "https://chummer.run/media/promo/every-wonder-horizon-promo.vtt",
+      "note": "Horizon overview with clean narration."
     },
     {
       "title": "TABLE PULSE 90-second deep dive",

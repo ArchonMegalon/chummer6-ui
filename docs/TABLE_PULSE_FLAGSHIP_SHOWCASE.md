@@ -61,7 +61,7 @@ Origin Dossier and ALICE bring a user-first lane into the stack: approved canon,
 
 ## Watch The Scenes
 
-- [Chummer6 flagship promo](https://chummer.run/media/promo/chummer6-flagship-promo.mp4) - Quick overview with narration. [Captions](https://chummer.run/media/promo/chummer6-flagship-promo.vtt).
+- [Chummer6 overview promo](https://chummer.run/media/promo/every-wonder-horizon-promo.mp4) - Horizon overview with clean narration. [Captions](https://chummer.run/media/promo/every-wonder-horizon-promo.vtt).
 - [TABLE PULSE 90-second deep dive](https://chummer.run/media/horizons/table-pulse-90s-deepdive.mp4) - Deep dive with narration. [Captions](https://chummer.run/media/horizons/table-pulse-90s-deepdive.vtt).
 - [ALICE 90-second deep dive](https://chummer.run/media/horizons/alice-90s-deepdive.mp4) - Deep dive with narration. [Captions](https://chummer.run/media/horizons/alice-90s-deepdive.vtt).
 - [Chummer6 product threads promo](https://chummer.run/media/promo/all-horizons-90s-magicfit-promo.mp4) - Product-thread overview with updated narration. [Captions](https://chummer.run/media/promo/all-horizons-90s-magicfit-promo.vtt).
