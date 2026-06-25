@@ -20,9 +20,9 @@ CHECKS = [
         "id": "product_workbench_search_filter",
         "path": "Chummer.Blazor/Components/Pages/Preview.razor",
         "tokens": [
-            "Workbench search and filter rail",
+            "Browser-client search and filter rail",
             "data-workbench-search-filter=\"strip\"",
-            "Keep dense Chummer lists searchable from the workbench chrome.",
+            "Keep dense Chummer lists searchable from the browser-client chrome.",
             "data-workbench-search-filter-action=\"roster-search\"",
             "data-workbench-search-filter-action=\"gear-filter\"",
             "data-workbench-search-filter-action=\"skill-filter\"",

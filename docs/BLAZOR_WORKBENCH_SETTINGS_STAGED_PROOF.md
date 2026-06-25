@@ -4,7 +4,7 @@
 
 This source-staged proof keeps global settings, character settings, ruleset choice, update posture, and support preferences visible on the user-facing Chummer Online route and proof-compatible Blazor workbench route.
 
-Desktop Chummer users expect preferences to be reachable without leaving the workbench. The browser client should preserve that workflow slot while staying honest about which settings are only surfaced versus persisted at runtime.
+Desktop Chummer users expect preferences to be reachable without leaving their active character workspace. The browser client should preserve that workflow slot while staying honest about which settings are only surfaced versus persisted at runtime.
 
 ## Source-Staged Scope
 

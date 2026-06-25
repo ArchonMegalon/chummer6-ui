@@ -19,7 +19,7 @@ CHECKS = [
         "id": "product_workbench_navigation_deeplink",
         "path": "Chummer.Blazor/Components/Pages/Preview.razor",
         "tokens": [
-            "Workbench navigation and deep-link lane",
+            "Browser-client navigation and deep-link lane",
             "data-workbench-navigation-deeplink=\"strip\"",
             "Make links reopen the same place.",
             "data-workbench-navigation-deeplink-action=\"breadcrumbs\"",

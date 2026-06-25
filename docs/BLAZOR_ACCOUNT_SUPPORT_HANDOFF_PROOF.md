@@ -2,7 +2,7 @@
 
 ## Purpose
 
-This document defines the source-staged proof contract for account, owner-context, and support handoff from Chummer Online and the promoted Blazor browser workbench.
+This document defines the source-staged proof contract for account, owner-context, and support handoff from Chummer Online and the promoted Blazor browser client.
 
 The browser client should behave like another Chummer desktop client, so account recovery, support, status, help, and work-continuation routes must stay part of the same portal product shape instead of forcing users into disconnected pages.
 
