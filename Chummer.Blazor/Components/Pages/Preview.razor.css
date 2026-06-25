@@ -8162,3 +8162,63 @@
     font-size: .58rem;
     font-weight: 900;
 }
+
+.browser-preview-shell:is(.classic-promoted-app, .classic-compat-app) .classic-chummer-shell[data-privacy-mode="local-first"] .classic-chummer-status span:nth-child(5) {
+    background: linear-gradient(180deg, #e7f0df 0%, #b8d2a3 100%);
+}
+
+.browser-preview-shell:is(.classic-promoted-app, .classic-compat-app) .classic-chummer-shell[data-privacy-mode="cloud-sync"] .classic-chummer-status span:nth-child(5) {
+    background: linear-gradient(180deg, #e8f0f8 0%, #b9d0e7 100%);
+}
+
+.browser-preview-shell:is(.classic-promoted-app, .classic-compat-app) .classic-chummer-shell[data-analytics-scope="route-workflow-only"] .classic-chummer-status span:nth-child(5) em::after {
+    content: " telemetry-safe";
+    color: #4f463b;
+    font-size: .58rem;
+    font-weight: 900;
+}
+
+.browser-preview-shell:is(.classic-promoted-app, .classic-compat-app) .classic-chummer-shell[data-hosting-mode="hosted-or-self-hosted"] .classic-chummer-status span:nth-child(6) {
+    background: linear-gradient(180deg, #e8f0f8 0%, #b9d0e7 100%);
+}
+
+.browser-preview-shell:is(.classic-promoted-app, .classic-compat-app) .classic-chummer-shell[data-deployment-target="chummer-run"] .classic-chummer-status span:nth-child(6) em::after {
+    content: " hosted";
+    color: #4f463b;
+    font-size: .58rem;
+    font-weight: 900;
+}
+
+.browser-preview-shell:is(.classic-promoted-app, .classic-compat-app) .classic-chummer-shell[data-deployment-target="compatibility"] .classic-chummer-status span:nth-child(6) em::after {
+    content: " compat";
+    color: #4f463b;
+    font-size: .58rem;
+    font-weight: 900;
+}
+
+.browser-preview-shell:is(.classic-promoted-app, .classic-compat-app) .classic-chummer-shell[data-self-hostable="true"][data-container-target="docker"] .classic-chummer-status span:nth-child(6) strong::after {
+    content: " Docker";
+    color: #1c4169;
+    font-size: .56rem;
+    font-weight: 900;
+}
+
+.browser-preview-shell:is(.classic-promoted-app, .classic-compat-app) .classic-chummer-shell[data-route-surface="public-app"] .classic-chummer-titlebar-title::after {
+    content: " public";
+    margin-left: .35rem;
+    color: rgba(255, 250, 240, .82);
+    font-size: .58rem;
+    font-weight: 900;
+    letter-spacing: .06em;
+    text-transform: uppercase;
+}
+
+.browser-preview-shell:is(.classic-promoted-app, .classic-compat-app) .classic-chummer-shell[data-route-surface="compatibility"] .classic-chummer-titlebar-title::after {
+    content: " compatibility";
+    margin-left: .35rem;
+    color: rgba(255, 250, 240, .82);
+    font-size: .58rem;
+    font-weight: 900;
+    letter-spacing: .06em;
+    text-transform: uppercase;
+}

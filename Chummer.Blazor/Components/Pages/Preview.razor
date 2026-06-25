@@ -68,7 +68,7 @@
 
     @if (IsAppRoute || IsWorkbenchRoute)
     {
-        <section class="classic-chummer-shell" aria-label="Chummer Online classic desktop shell" data-chummer-classic-shell="true" data-active-workflow="@ActiveWorkflowDataKey" data-route-family="@RouteFamilyDataKey" data-route-segment="@RouteSegmentDataKey" data-command="@CommandDataKey" data-tab="@TabDataKey" data-workspace="@WorkspaceDataKey" data-active-runner="@ActiveRunnerDataKey" data-roster-selected-node="@SelectedRosterNodeDataKey" data-dossier-state="@DossierStateDataKey" data-dossier-storage="@DossierStorageDataKey" data-ruleset="@RulesetDataKey" data-validation-state="@ValidationStateDataKey" data-privacy-mode="@PrivacyModeDataKey" data-analytics-scope="@AnalyticsScopeDataKey">
+        <section class="classic-chummer-shell" aria-label="Chummer Online classic desktop shell" data-chummer-classic-shell="true" data-active-workflow="@ActiveWorkflowDataKey" data-route-family="@RouteFamilyDataKey" data-route-segment="@RouteSegmentDataKey" data-route-surface="@RouteSurfaceDataKey" data-command="@CommandDataKey" data-tab="@TabDataKey" data-workspace="@WorkspaceDataKey" data-active-runner="@ActiveRunnerDataKey" data-roster-selected-node="@SelectedRosterNodeDataKey" data-dossier-state="@DossierStateDataKey" data-dossier-storage="@DossierStorageDataKey" data-ruleset="@RulesetDataKey" data-validation-state="@ValidationStateDataKey" data-privacy-mode="@PrivacyModeDataKey" data-analytics-scope="@AnalyticsScopeDataKey" data-hosting-mode="@HostingModeDataKey" data-deployment-target="@DeploymentTargetDataKey" data-self-hostable="@SelfHostableDataKey" data-container-target="@ContainerTargetDataKey">
             <header class="classic-chummer-titlebar" aria-label="Chummer Online window title">
                 <div class="classic-chummer-titlebar-title">Chummer Online - @(PrimaryRecentWorkspace?.ShortLabel ?? "Sample Runner") - @ActiveWorkflowStatus</div>
                 <div class="classic-window-controls" aria-hidden="true"><span>_</span><span>[]</span><span>X</span></div>
@@ -2777,6 +2777,7 @@
             : IsWorkbenchRoute
                 ? WorkbenchRouteSegment
                 : PreviewRouteSegment;
+    private string RouteSurfaceDataKey => IsAppRoute ? "public-app" : IsWorkbenchRoute ? "compatibility" : "preview-tools";
     private string CommandDataKey => NormalizeShellDataToken(Command);
     private string TabDataKey => NormalizeShellDataToken(Tab);
     private string WorkspaceDataKey => NormalizeShellDataToken(PrimaryRecentWorkspace?.WorkspaceId ?? Workspace);
@@ -2788,6 +2789,10 @@
     private string ValidationStateDataKey => "review-required";
     private string PrivacyModeDataKey => "local-first";
     private string AnalyticsScopeDataKey => "route-workflow-only";
+    private string HostingModeDataKey => "hosted-or-self-hosted";
+    private string DeploymentTargetDataKey => IsAppRoute ? "chummer-run" : "compatibility";
+    private string SelfHostableDataKey => "true";
+    private string ContainerTargetDataKey => "docker";
     private static string NormalizeShellDataToken(string? value)
     {
         if (string.IsNullOrWhiteSpace(value))
