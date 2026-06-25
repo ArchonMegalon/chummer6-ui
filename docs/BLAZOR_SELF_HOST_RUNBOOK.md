@@ -112,7 +112,7 @@ Optional analytics inputs:
 
 Hosted `chummer.run` may run with `CHUMMER_ANALYTICS_PROVIDER=rybbit` for product telemetry, but self-host Docker installs should remain `none` unless the operator intentionally configures a Rybbit endpoint.
 
-The analytics adapter is intentionally limited to sanitized product metadata. It emits route family, command id, tab id, control id, dialog action id, and boolean fixture/workspace presence. It does not emit character names, aliases, owner ids, workspace ids, file names, document contents, XML, payloads, hashes, or generated dossier text. Keep session replay disabled for Chummer sites because the browser surface can contain user-authored character data.
+The Blazor `/health` endpoint reports non-secret analytics policy fields: `selfHostDefault`, `hostedPublicEdge`, and `sensitiveDataPolicy`. The analytics adapter is intentionally limited to sanitized product metadata. It emits route family, command id, tab id, control id, dialog action id, and boolean fixture/workspace presence. It does not emit character names, aliases, owner ids, workspace ids, file names, document contents, XML, payloads, hashes, or generated dossier text. Keep session replay disabled for Chummer sites because the browser surface can contain user-authored character data.
 
 Start from [self-hosted-browser-workbench.env.example](/docker/chummercomplete/chummer-presentation/docs/examples/self-hosted-browser-workbench.env.example) and override only what your environment actually needs.
 

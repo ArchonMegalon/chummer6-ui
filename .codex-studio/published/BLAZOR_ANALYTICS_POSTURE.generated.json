@@ -21,6 +21,11 @@
       "passed": true
     },
     {
+      "evidence": "Chummer.Blazor /health reports non-secret analytics policy posture for operators.",
+      "id": "blazor_health_reports_non_secret_analytics_policy",
+      "passed": true
+    },
+    {
       "evidence": "docker-compose.public-edge.yml maps hosted Rybbit configuration into the public Blazor container.",
       "id": "hosted_chummer_run_public_blazor_enables_rybbit",
       "passed": true
@@ -52,7 +57,7 @@
     }
   ],
   "contract_name": "chummer6-ui.blazor_analytics_posture",
-  "generated_at": "2026-06-24T18:47:58.321354+00:00",
+  "generated_at": "2026-06-25T01:31:05.481025+00:00",
   "health_url": "https://chummer.run/blazor/health",
   "hosted_public_edge": "rybbit-enabled-when-site-id-configured",
   "live_url": "https://chummer.run/blazor/",

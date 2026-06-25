@@ -26,7 +26,7 @@
     {
       "id": "self_host_portal_route_probe",
       "path": "scripts/e2e-portal.cjs",
-      "required_token_count": 10,
+      "required_token_count": 14,
       "status": "passed"
     },
     {
@@ -38,13 +38,13 @@
     {
       "id": "portal_known_install_route_resolver",
       "path": "Chummer.Portal/Program.cs",
-      "required_token_count": 5,
+      "required_token_count": 11,
       "status": "passed"
     },
     {
       "id": "downloads_install_state_guidance",
       "path": "Chummer.Portal/Program.cs",
-      "required_token_count": 5,
+      "required_token_count": 7,
       "status": "passed"
     },
     {
@@ -56,7 +56,7 @@
   ],
   "boundary_notes": [
     "Source-staged portal installer handoff only; this is not hosted browser execution proof.",
-    "Blazor desktop compatibility installer routes are tracked as handoff routes, not as promoted native-head installer proof; known unpublished routes return to the downloads shelf with installState=proof_required.",
+    "Blazor desktop compatibility installer routes are tracked as handoff routes, not as promoted native-head installer proof; known unpublished routes return to the downloads shelf with a URL-encoded next route and installState=proof_required. Route probes decode the redirect Location before checking the preserved route. They also assert the rendered proof-required downloads panel and browser-workbench recovery action. The proof-required panel includes an Open browser workbench recovery action. The action is derived from the configured Blazor public path. The downloads shelf also lists compatibility handoff routes with install posture metadata. That list is limited to proof-required fallback routes not already represented by published artifacts.",
     "Runtime promotion requires refreshed local portal, hosted route-entry, hosted execution, and Docker self-host receipts."
   ],
   "failures": []

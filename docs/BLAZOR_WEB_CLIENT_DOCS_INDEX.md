@@ -84,6 +84,8 @@ Hosted `chummer.run` may enable the Rybbit adapter for the Blazor web client, bu
 
 The adapter is limited to route/workflow metadata such as route family, command id, tab id, control id, dialog action id, and boolean fixture/workspace presence. It must not emit character names, aliases, owner ids, workspace ids, file names, document contents, XML, payloads, hashes, or generated dossier text.
 
+The Blazor health endpoint exposes the non-secret posture fields `selfHostDefault`, `hostedPublicEdge`, and `sensitiveDataPolicy` so operators can confirm analytics defaults without exposing credentials.
+
 ## Connected Runtime Posture
 
 - `scripts/materialize-blazor-connected-runtime-posture-proof.py`: proof materializer for optional session, coach, and assistant forwarding posture

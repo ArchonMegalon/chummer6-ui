@@ -1,6 +1,6 @@
 {
   "contract_name": "chummer6-ui.blazor_portal_installer_handoff_staged_proof",
-  "generated_at": "2026-06-25T01:24:41.392440+00:00",
+  "generated_at": "2026-06-25T01:31:05.358440+00:00",
   "status": "passed",
   "proof_tier": "source_staged_no_browser_execution",
   "route_lane": "portal_backed_blazor_workbench_handoff",
@@ -21,14 +21,14 @@
       "id": "hosted_public_edge_route_probe",
       "path": "scripts/e2e-public-edge.cjs",
       "status": "passed",
-      "required_token_count": 12,
+      "required_token_count": 16,
       "missing_tokens": []
     },
     {
       "id": "self_host_portal_route_probe",
       "path": "scripts/e2e-portal.cjs",
       "status": "passed",
-      "required_token_count": 10,
+      "required_token_count": 14,
       "missing_tokens": []
     },
     {
@@ -42,14 +42,14 @@
       "id": "portal_known_install_route_resolver",
       "path": "Chummer.Portal/Program.cs",
       "status": "passed",
-      "required_token_count": 5,
+      "required_token_count": 7,
       "missing_tokens": []
     },
     {
       "id": "downloads_install_state_guidance",
       "path": "Chummer.Portal/Program.cs",
       "status": "passed",
-      "required_token_count": 5,
+      "required_token_count": 7,
       "missing_tokens": []
     },
     {

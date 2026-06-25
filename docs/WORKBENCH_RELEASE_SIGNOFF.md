@@ -58,7 +58,7 @@ Release truth for the browser lane therefore splits into three separate statemen
 - Docker self-host browser workbench proof exists and is published as `.codex-studio/published/BLAZOR_SELF_HOST_WORKBENCH_PROOF.generated.json`
 - hosted `chummer.run` route-entry posture exists and is published as `.codex-studio/published/BLAZOR_PUBLIC_EDGE_WORKBENCH_PROOF.generated.json`
 - hosted `chummer.run` workflow execution is a stricter proof tier, published separately as `.codex-studio/published/BLAZOR_PUBLIC_EDGE_EXECUTION_PROOF.generated.json`, and it now passes for the promoted `/blazor/workbench` browser workflow lane
-- hosted/self-host browser analytics posture is published separately as `.codex-studio/published/BLAZOR_ANALYTICS_POSTURE.generated.json`; it only proves optional Rybbit wiring and privacy boundaries, not workflow parity
+- hosted/self-host browser analytics posture is published separately as `.codex-studio/published/BLAZOR_ANALYTICS_POSTURE.generated.json`; it only proves optional Rybbit wiring and privacy boundaries, not workflow parity, and the Blazor `/health` endpoint exposes non-secret self-host default, hosted edge, and sensitive-data policy fields
 - optional connected-runtime portal forwarding posture is published separately as `.codex-studio/published/BLAZOR_CONNECTED_RUNTIME_POSTURE.generated.json`; it proves session/coach/AI routing boundary and signed owner forwarding, not full workflow parity
 
 Hosted execution proof passing removes the old "route posture only" limit for the promoted browser lane, but it still does not by itself prove full browser/Desktop parity breadth outside the workflow families covered by the hosted execution contract and the broader parity ledger.

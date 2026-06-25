@@ -119,9 +119,11 @@ const checks = [
     redirect: 'manual',
     assert: (_text, response) => {
       const location = response.headers.get('location') || '';
+      const decodedLocation = decodeURIComponent(location);
       return [301, 302, 303, 307, 308].includes(response.status)
-        && location.includes('/login?next=')
-        && decodeURIComponent(location).includes('/downloads/install/blazor-desktop-linux-x64-installer');
+        && decodedLocation.includes('/downloads/install/blazor-desktop-linux-x64-installer')
+        && (location.includes('/login?next=')
+          || decodedLocation.includes('installState=proof_required'));
     }
   },
   {
@@ -129,10 +131,19 @@ const checks = [
     redirect: 'manual',
     assert: (_text, response) => {
       const location = response.headers.get('location') || '';
+      const decodedLocation = decodeURIComponent(location);
       return [301, 302, 303, 307, 308].includes(response.status)
-        && location.includes('/login?next=')
-        && decodeURIComponent(location).includes('/downloads/install/blazor-desktop-win-x64-installer');
+        && decodedLocation.includes('/downloads/install/blazor-desktop-win-x64-installer')
+        && (location.includes('/login?next=')
+          || decodedLocation.includes('installState=proof_required'));
     }
+  },
+  {
+    url: `${baseUrl}/downloads/?next=%2Fdownloads%2Finstall%2Fblazor-desktop-linux-x64-installer&installState=proof_required`,
+    assert: text =>
+      text.includes('data-install-state="proof_required"')
+      && text.includes('Open browser workbench instead')
+      && text.includes('data-install-state-action="open-browser-workbench"')
   },
   {
     url: `${baseUrl}/play`,

@@ -424,7 +424,7 @@ static string BuildDownloadsHtml(HttpContext context, PortalOptions options)
         : $"Fallback guidance: this edge is redirecting to {WebUtility.HtmlEncode(options.DownloadsFallbackUrl)}.";
     string installState = context.Request.Query["installState"].ToString();
     string nextInstallRoute = context.Request.Query["next"].ToString();
-    string installStatePanel = BuildDownloadsInstallStatePanel(installState, nextInstallRoute);
+    string installStatePanel = BuildDownloadsInstallStatePanel(options, installState, nextInstallRoute);
     string artifactLines = string.Join(
         Environment.NewLine,
         summary.Downloads.Select(download =>
@@ -432,6 +432,20 @@ static string BuildDownloadsHtml(HttpContext context, PortalOptions options)
     if (string.IsNullOrWhiteSpace(artifactLines))
     {
         artifactLines = "<li>No published artifacts are listed in releases.json.</li>";
+    }
+    string compatibilityRouteLines = string.Join(
+        Environment.NewLine,
+        summary.InstallRoutes
+            .Where(route => !summary.Downloads.Any(download =>
+                string.Equals(download.PublicInstallRoute, route.PublicInstallRoute, StringComparison.OrdinalIgnoreCase)))
+            .Where(route =>
+                string.Equals(route.InstallPosture, "proof_capture_required", StringComparison.OrdinalIgnoreCase)
+                || string.Equals(route.PromotionState, "proof_required", StringComparison.OrdinalIgnoreCase))
+            .Select(route =>
+                $"""<li data-install-route-posture="{WebUtility.HtmlEncode(route.InstallPosture)}"><code>{WebUtility.HtmlEncode(route.PublicInstallRoute)}</code> <span>{WebUtility.HtmlEncode(route.InstallPosture)}</span></li>"""));
+    if (string.IsNullOrWhiteSpace(compatibilityRouteLines))
+    {
+        compatibilityRouteLines = "<li>No compatibility handoff routes are listed in releases.json.</li>";
     }
 
     return $$"""
@@ -446,6 +460,7 @@ static string BuildDownloadsHtml(HttpContext context, PortalOptions options)
     main { max-width: 900px; margin: 0 auto; padding: 2rem 1rem 3rem; }
     .panel { border: 1px solid rgba(214,169,74,.28); background: rgba(15,18,25,.88); border-radius: 18px; padding: 1.25rem; }
     .install-state { border: 1px solid rgba(244,207,115,.45); background: rgba(244,207,115,.12); border-radius: .85rem; padding: .85rem; }
+    .install-state a { display: inline-block; margin-top: .5rem; font-weight: 700; }
     a { color: #f4cf73; }
     code { background: rgba(255,255,255,.08); padding: .15rem .35rem; border-radius: .35rem; }
   </style>
@@ -463,6 +478,11 @@ static string BuildDownloadsHtml(HttpContext context, PortalOptions options)
     <ul>
       {{artifactLines}}
     </ul>
+    <h2>Compatibility handoff routes</h2>
+    <p>Known fallback install routes stay visible here, but they are not installable until matching artifact and startup proof exists.</p>
+    <ul>
+      {{compatibilityRouteLines}}
+    </ul>
   </section>
 </main>
 </body>
@@ -470,7 +490,7 @@ static string BuildDownloadsHtml(HttpContext context, PortalOptions options)
 """;
 }
 
-static string BuildDownloadsInstallStatePanel(string installState, string nextInstallRoute)
+static string BuildDownloadsInstallStatePanel(PortalOptions options, string installState, string nextInstallRoute)
 {
     if (!string.Equals(installState, "proof_required", StringComparison.OrdinalIgnoreCase))
     {
@@ -480,7 +500,8 @@ static string BuildDownloadsInstallStatePanel(string installState, string nextIn
     string routeLabel = string.IsNullOrWhiteSpace(nextInstallRoute)
         ? "the requested installer route"
         : WebUtility.HtmlEncode(nextInstallRoute);
-    return $"""<p class="install-state" data-install-state="proof_required">{routeLabel} is a known compatibility handoff, but installer proof is still required before this route can publish artifact bytes.</p>""";
+    string workbenchUrl = WebUtility.HtmlEncode(BuildPublicUrl(options.BlazorUrl, "workbench"));
+    return $"""<p class="install-state" data-install-state="proof_required">{routeLabel} is a known compatibility handoff, but installer proof is still required before this route can publish artifact bytes.<br /><a href="{workbenchUrl}" data-install-state-action="open-browser-workbench">Open browser workbench instead</a></p>""";
 }
 
 static IResult ResolveInstallHandoff(string artifactId, PortalOptions options)
@@ -508,7 +529,9 @@ static IResult ResolveInstallHandoff(string artifactId, PortalOptions options)
     if (knownInstallRoute is not null)
     {
         string downloadsHomeRoute = RouteRootFromPublicPath(options.DownloadsUrl);
-        return Results.Redirect($"{downloadsHomeRoute}/?next={expectedPublicInstallRoute}&installState={knownInstallRoute.InstallPosture}");
+        string encodedNextRoute = Uri.EscapeDataString(expectedPublicInstallRoute);
+        string encodedInstallState = Uri.EscapeDataString(knownInstallRoute.InstallPosture);
+        return Results.Redirect($"{downloadsHomeRoute}/?next={encodedNextRoute}&installState={encodedInstallState}");
     }
 
     if (IsHttpUrl(options.DownloadsFallbackUrl))
