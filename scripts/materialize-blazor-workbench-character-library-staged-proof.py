@@ -75,7 +75,8 @@ CHECKS = [
         "id": "release_truth_docs",
         "path": "docs/WORKBENCH_RELEASE_SIGNOFF.md",
         "tokens": [
-            "workbench Character Roster posture",
+            "workbench Character Roster dossier-management posture",
+            "Character Roster dossier-management affordances",
             "blazor-workbench-character-library-staged-proof-check.sh",
             "not a hosted or Docker browser execution receipt",
         ],
@@ -84,7 +85,8 @@ CHECKS = [
         "id": "parity_goal_docs",
         "path": "docs/BLAZOR_WEB_CLIENT_PARITY_GOAL.md",
         "tokens": [
-            "staged hosted workbench character-roster posture",
+            "staged hosted workbench Character Roster dossier-management posture",
+            "desktop-like Character Roster dossier management",
             "open, recent, pin, clone, archive, import, and help",
             "not yet claiming file-open, roster persistence, clone, archive, import, or portal help runtime parity",
         ],

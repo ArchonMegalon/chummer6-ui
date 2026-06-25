@@ -1,18 +1,19 @@
 {
   "contract_name": "chummer6-ui.blazor_workbench_character_library_staged_proof",
-  "generated_at": "2026-06-25T04:43:34.778476+00:00",
+  "generated_at": "2026-06-25T16:49:59.372642+00:00",
   "status": "passed",
   "proof_tier": "source_staged_no_browser_execution",
   "route_lane": "promoted_blazor_workbench",
   "expected_routes": [
-    "/blazor/workbench"
+    "/blazor/workbench",
+    "/help"
   ],
   "checks": [
     {
       "id": "product_workbench_character_library",
       "path": "Chummer.Blazor/Components/Pages/Preview.razor",
       "status": "passed",
-      "required_token_count": 9,
+      "required_token_count": 28,
       "missing_tokens": []
     },
     {
@@ -23,17 +24,24 @@
       "missing_tokens": []
     },
     {
+      "id": "proof_contract_docs",
+      "path": "docs/BLAZOR_WORKBENCH_CHARACTER_LIBRARY_STAGED_PROOF.md",
+      "status": "passed",
+      "required_token_count": 6,
+      "missing_tokens": []
+    },
+    {
       "id": "release_truth_docs",
       "path": "docs/WORKBENCH_RELEASE_SIGNOFF.md",
       "status": "passed",
-      "required_token_count": 3,
+      "required_token_count": 4,
       "missing_tokens": []
     },
     {
       "id": "parity_goal_docs",
       "path": "docs/BLAZOR_WEB_CLIENT_PARITY_GOAL.md",
       "status": "passed",
-      "required_token_count": 3,
+      "required_token_count": 4,
       "missing_tokens": []
     },
     {
@@ -46,8 +54,8 @@
   ],
   "failures": [],
   "notes": [
-    "This receipt only proves that promoted workbench character-library source, style, status, and docs agree.",
-    "It is not a substitute for hosted Playwright execution proof, Docker self-host proof, file-open proof, library-persistence proof, clone proof, archive proof, or import proof.",
-    "Do not use this receipt to claim file-open, library persistence, clone, archive, import, or browser execution parity."
+    "This receipt only proves that Chummer Online and /blazor/workbench compatibility route Character Roster source, style, status, and docs agree.",
+    "It is not a substitute for hosted Playwright execution proof, Docker self-host proof, file-open proof, roster-persistence proof, clone proof, archive proof, import proof, or portal help runtime proof.",
+    "Do not use this receipt to claim file-open, roster persistence, clone, archive, import, portal help runtime, or browser execution parity."
   ]
 }

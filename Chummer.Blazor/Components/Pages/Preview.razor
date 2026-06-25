@@ -1275,36 +1275,36 @@
         <section class="browser-workbench-campaign-session" aria-label="Browser-client campaign and session lane" data-workbench-campaign-session="strip">
             <div class="browser-workbench-campaign-session-copy">
                 <span class="browser-preview-status-label">Campaign</span>
-                <strong>Keep table workflow beside the sheet.</strong>
-                <p>Keep roster, GM review, notes, rewards, sharing, and run handoff visible next to the active runner.</p>
+                <strong>Keep table workflow beside the active dossier.</strong>
+                <p>Keep campaign roster, GM review, session notes, rewards, table sharing, and run handoff visible next to the active runner dossier.</p>
             </div>
             <div class="browser-workbench-campaign-session-actions" role="list" aria-label="Campaign and session shortcuts">
                 <a role="listitem" href="@BuildPreviewHref(SeededWorkspaceId, command: OpenCampaignRosterCommand)" data-workbench-campaign-session-action="roster">
-                    <span>Roster</span>
-                    <small>Open the current campaign runner list.</small>
+                    <span>Campaign Roster</span>
+                    <small>Open the table's runner dossier list.</small>
                 </a>
                 <a role="listitem" href="@BuildPreviewHref(SeededWorkspaceId, command: RequestGmReviewCommand)" data-workbench-campaign-session-action="gm_review">
                     <span>GM review</span>
-                    <small>Reserve approval and audit handoff.</small>
+                    <small>Reserve dossier approval and audit handoff.</small>
                 </a>
                 <a role="listitem" href="@BuildPreviewHref(SeededWorkspaceId, command: OpenSessionNotesCommand)" data-workbench-campaign-session-action="session_notes">
                     <span>Session notes</span>
-                    <small>Keep table context near the character.</small>
+                    <small>Keep table context near the active dossier.</small>
                 </a>
                 <a role="listitem" href="@BuildPreviewHref(SeededWorkspaceId, command: ApplyRewardsCommand)" data-workbench-campaign-session-action="rewards">
                     <span>Rewards</span>
-                    <small>Expose karma and nuyen award posture.</small>
+                    <small>Expose karma and nuyen awards beside the dossier.</small>
                 </a>
                 <a role="listitem" href="@BuildPreviewHref(SeededWorkspaceId, command: ShareToTableCommand)" data-workbench-campaign-session-action="table_share">
                     <span>Table share</span>
-                    <small>Prepare player and GM co-view links.</small>
+                    <small>Prepare player and GM dossier co-view links.</small>
                 </a>
                 <a role="listitem" href="@BuildPreviewHref(SeededWorkspaceId, command: HandoffToRunCommand)" data-workbench-campaign-session-action="run_handoff">
                     <span>Run handoff</span>
-                    <small>Move from build work into live play.</small>
+                    <small>Move the runner dossier from build work into live play.</small>
                 </a>
                 <a role="listitem" href="@StatusHref" data-workbench-campaign-session-action="help">
-                    <span>Help</span>
+                    <span>Setup help</span>
                     <small>Recover campaign and table handoff setup.</small>
                 </a>
             </div>
