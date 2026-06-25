@@ -8296,3 +8296,39 @@
     font-size: .56rem;
     font-weight: 900;
 }
+
+.browser-preview-shell:is(.classic-promoted-app, .classic-compat-app) .classic-chummer-shell[data-control]:not([data-control="none"]) .classic-chummer-status span:nth-child(6)::after {
+    content: " control";
+    color: #1c4169;
+    font-size: .56rem;
+    font-weight: 900;
+}
+
+.browser-preview-shell:is(.classic-promoted-app, .classic-compat-app) .classic-chummer-shell[data-fixture]:not([data-fixture="none"]) .classic-chummer-status span:nth-child(6) strong::after {
+    content: " fixture";
+    color: #1c4169;
+    font-size: .56rem;
+    font-weight: 900;
+}
+
+.browser-preview-shell:is(.classic-promoted-app, .classic-compat-app) .classic-chummer-shell[data-legacy-runner]:not([data-legacy-runner="none"]) .classic-chummer-status span:nth-child(6) em::after {
+    content: " legacy-runner";
+    color: #1c4169;
+    font-size: .56rem;
+    font-weight: 900;
+}
+
+.browser-preview-shell:is(.classic-promoted-app, .classic-compat-app) .classic-chummer-shell[data-owner-state="local-preview"] .classic-chummer-status span:first-child em::after {
+    content: " local-owner";
+    color: #4f463b;
+    font-size: .56rem;
+    font-weight: 900;
+}
+
+.browser-preview-shell:is(.classic-promoted-app, .classic-compat-app) .classic-chummer-shell[data-owner-state="authenticated"] .classic-chummer-status span:first-child {
+    background: linear-gradient(180deg, #e7f0df 0%, #b8d2a3 100%);
+}
+
+.browser-preview-shell:is(.classic-promoted-app, .classic-compat-app) .classic-chummer-shell[data-owner-state="anonymous"] .classic-chummer-status span:first-child {
+    background: linear-gradient(180deg, #f7ead4 0%, #d9bd83 100%);
+}

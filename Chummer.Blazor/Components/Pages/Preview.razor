@@ -68,7 +68,7 @@
 
     @if (IsAppRoute || IsWorkbenchRoute)
     {
-        <section class="classic-chummer-shell" aria-label="Chummer Online classic desktop shell" data-chummer-classic-shell="true" data-active-workflow="@ActiveWorkflowDataKey" data-output-workflow="@OutputWorkflowDataKey" data-output-state="@OutputStateDataKey" data-output-target="@OutputTargetDataKey" data-route-family="@RouteFamilyDataKey" data-route-segment="@RouteSegmentDataKey" data-route-surface="@RouteSurfaceDataKey" data-canonical-route="@CanonicalRouteDataKey" data-route-alias="@RouteAliasDataKey" data-command="@CommandDataKey" data-tab="@TabDataKey" data-workspace="@WorkspaceDataKey" data-active-runner="@ActiveRunnerDataKey" data-roster-selected-node="@SelectedRosterNodeDataKey" data-dossier-state="@DossierStateDataKey" data-dossier-storage="@DossierStorageDataKey" data-ruleset="@RulesetDataKey" data-validation-state="@ValidationStateDataKey" data-privacy-mode="@PrivacyModeDataKey" data-analytics-scope="@AnalyticsScopeDataKey" data-hosting-mode="@HostingModeDataKey" data-deployment-target="@DeploymentTargetDataKey" data-self-hostable="@SelfHostableDataKey" data-container-target="@ContainerTargetDataKey" data-auth-gate="@AuthGateDataKey" data-session-state="@SessionStateDataKey" data-login-target="@LoginTargetDataKey" data-auth-return-policy="@AuthReturnPolicyDataKey">
+        <section class="classic-chummer-shell" aria-label="Chummer Online classic desktop shell" data-chummer-classic-shell="true" data-active-workflow="@ActiveWorkflowDataKey" data-output-workflow="@OutputWorkflowDataKey" data-output-state="@OutputStateDataKey" data-output-target="@OutputTargetDataKey" data-route-family="@RouteFamilyDataKey" data-route-segment="@RouteSegmentDataKey" data-route-surface="@RouteSurfaceDataKey" data-canonical-route="@CanonicalRouteDataKey" data-route-alias="@RouteAliasDataKey" data-command="@CommandDataKey" data-tab="@TabDataKey" data-workspace="@WorkspaceDataKey" data-active-runner="@ActiveRunnerDataKey" data-roster-selected-node="@SelectedRosterNodeDataKey" data-dossier-state="@DossierStateDataKey" data-dossier-storage="@DossierStorageDataKey" data-ruleset="@RulesetDataKey" data-validation-state="@ValidationStateDataKey" data-privacy-mode="@PrivacyModeDataKey" data-analytics-scope="@AnalyticsScopeDataKey" data-hosting-mode="@HostingModeDataKey" data-deployment-target="@DeploymentTargetDataKey" data-self-hostable="@SelfHostableDataKey" data-container-target="@ContainerTargetDataKey" data-auth-gate="@AuthGateDataKey" data-session-state="@SessionStateDataKey" data-login-target="@LoginTargetDataKey" data-auth-return-policy="@AuthReturnPolicyDataKey" data-fixture="@FixtureDataKey" data-legacy-runner="@LegacyRunnerDataKey" data-control="@ControlDataKey" data-dialog-action="@DialogActionDataKey">
             <header class="classic-chummer-titlebar" aria-label="Chummer Online window title">
                 <div class="classic-chummer-titlebar-title">Chummer Online - @(PrimaryRecentWorkspace?.ShortLabel ?? "Sample Runner") - @ActiveWorkflowStatus</div>
                 <div class="classic-window-controls" aria-hidden="true"><span>_</span><span>[]</span><span>X</span></div>
@@ -2815,6 +2815,8 @@
     private string ContainerTargetDataKey => "docker";
     private string AuthGateDataKey => IsAppRoute ? "login-if-anonymous" : "none";
     private string SessionStateDataKey => "local-preview";
+    private string OwnerScopeDataKey => IsAppRoute ? "user" : "local";
+    private string OwnerStateDataKey => "local-preview";
     private string LoginTargetDataKey => IsAppRoute ? "login" : "none";
     private string AuthReturnPolicyDataKey => IsAppRoute ? "preserve-route-and-query" : "none";
     private string OutputWorkflowDataKey => IsSaveWorkflow
@@ -2832,6 +2834,9 @@
             : IsExportWorkflow
                 ? "download-package"
                 : "none";
+    private string FixtureDataKey => NormalizeShellDataToken(Fixture);
+    private string LegacyRunnerDataKey => NormalizeShellDataToken(Runner);
+    private string ControlDataKey => NormalizeShellDataToken(Control);
     private string DialogActionDataKey => NormalizeShellDataToken(DialogAction);
     private static string NormalizeShellDataToken(string? value)
     {
