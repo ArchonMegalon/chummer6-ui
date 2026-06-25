@@ -742,7 +742,7 @@ public sealed class DesktopUpdateRuntimeTests
                   "fileName": "chummer-avalonia-{{identity.Platform}}-{{identity.Arch}}-primary.zip",
                   "downloadUrl": "{{firstPayloadPath.Replace("\\", "/")}}",
                   "sizeBytes": 8,
-                  "sha256": "sha256:wrong"
+                  "sha256": "{{new string('0', 64)}}"
                 },
                 {
                   "artifactId": "avalonia-{{identity.Platform}}-{{identity.Arch}}",
@@ -753,7 +753,7 @@ public sealed class DesktopUpdateRuntimeTests
                   "fileName": "chummer-avalonia-{{identity.Platform}}-{{identity.Arch}}-secondary.zip",
                   "downloadUrl": "{{secondPayloadPath.Replace("\\", "/")}}",
                   "sizeBytes": 15,
-                  "sha256": "sha256:wrong"
+                  "sha256": "{{new string('0', 64)}}"
                 }
               ]
             }
@@ -1824,6 +1824,116 @@ public sealed class DesktopUpdateRuntimeTests
         }
 
         StringAssert.Contains(ex.InnerException?.Message ?? ex.Message, "protocol-relative URL", StringComparison.Ordinal);
+    }
+
+    [TestMethod]
+    public async Task StageInstallerBootstrapPayloadIfNeededAsync_rejects_cross_origin_payload()
+    {
+        DesktopUpdateArtifact installerArtifact = new(
+            ArtifactId: "avalonia-win-x64-installer",
+            HeadId: "avalonia",
+            Platform: "windows",
+            Arch: "x64",
+            Kind: "installer",
+            FileName: "chummer-avalonia-win-x64-installer.exe",
+            DownloadUrl: "https://chummer.run/downloads/files/chummer-avalonia-win-x64-installer.exe",
+            UpdateFeedUrl: null,
+            Sha256: new string('a', 64),
+            SizeBytes: 42,
+            InstallerMode: "bootstrap",
+            PayloadFileName: "chummer-avalonia-win-x64-payload.zip",
+            PayloadDownloadUrl: "https://evil.example.invalid/chummer-avalonia-win-x64-payload.zip",
+            PayloadSha256: new string('b', 64),
+            PayloadSizeBytes: 42);
+        DesktopUpdateChannelManifest manifest = new(
+            ChannelId: "stable",
+            Version: "run-20260624-090000",
+            Status: "published",
+            PublishedAt: DateTimeOffset.UtcNow,
+            Artifacts: [installerArtifact],
+            DesktopSurfaceRefs: [],
+            RolloutState: null,
+            RolloutReason: null,
+            SupportabilityState: null,
+            SupportabilitySummary: null,
+            KnownIssueSummary: null,
+            FixAvailabilitySummary: null,
+            ProofStatus: null,
+            ProofGeneratedAt: null,
+            SourceUri: new Uri("https://chummer.run/downloads/RELEASE_CHANNEL.generated.json"));
+
+        try
+        {
+            await InvokePrivateStaticTask(
+                "StageInstallerBootstrapPayloadIfNeededAsync",
+                manifest.SourceUri,
+                manifest,
+                installerArtifact,
+                Path.Combine(Path.GetTempPath(), "chummer-avalonia-win-x64-installer.exe"),
+                null,
+                CancellationToken.None).ConfigureAwait(false);
+            Assert.Fail("Expected cross-origin bootstrap payload URLs to be rejected.");
+            return;
+        }
+        catch (InvalidOperationException ex)
+        {
+            StringAssert.Contains(ex.Message, "same origin as manifest", StringComparison.Ordinal);
+        }
+    }
+
+    [TestMethod]
+    public async Task StageInstallerBootstrapPayloadIfNeededAsync_rejects_non_loopback_http_payload()
+    {
+        DesktopUpdateArtifact installerArtifact = new(
+            ArtifactId: "avalonia-win-x64-installer",
+            HeadId: "avalonia",
+            Platform: "windows",
+            Arch: "x64",
+            Kind: "installer",
+            FileName: "chummer-avalonia-win-x64-installer.exe",
+            DownloadUrl: "https://chummer.run/downloads/files/chummer-avalonia-win-x64-installer.exe",
+            UpdateFeedUrl: null,
+            Sha256: new string('a', 64),
+            SizeBytes: 42,
+            InstallerMode: "bootstrap",
+            PayloadFileName: "chummer-avalonia-win-x64-payload.zip",
+            PayloadDownloadUrl: "http://chummer.run/downloads/files/chummer-avalonia-win-x64-payload.zip",
+            PayloadSha256: new string('b', 64),
+            PayloadSizeBytes: 42);
+        DesktopUpdateChannelManifest manifest = new(
+            ChannelId: "stable",
+            Version: "run-20260624-090000",
+            Status: "published",
+            PublishedAt: DateTimeOffset.UtcNow,
+            Artifacts: [installerArtifact],
+            DesktopSurfaceRefs: [],
+            RolloutState: null,
+            RolloutReason: null,
+            SupportabilityState: null,
+            SupportabilitySummary: null,
+            KnownIssueSummary: null,
+            FixAvailabilitySummary: null,
+            ProofStatus: null,
+            ProofGeneratedAt: null,
+            SourceUri: new Uri("https://chummer.run/downloads/RELEASE_CHANNEL.generated.json"));
+
+        try
+        {
+            await InvokePrivateStaticTask(
+                "StageInstallerBootstrapPayloadIfNeededAsync",
+                manifest.SourceUri,
+                manifest,
+                installerArtifact,
+                Path.Combine(Path.GetTempPath(), "chummer-avalonia-win-x64-installer.exe"),
+                null,
+                CancellationToken.None).ConfigureAwait(false);
+            Assert.Fail("Expected non-loopback HTTP bootstrap payload URLs to be rejected.");
+            return;
+        }
+        catch (InvalidOperationException ex)
+        {
+            StringAssert.Contains(ex.Message, "must use HTTPS", StringComparison.Ordinal);
+        }
     }
 
     [TestMethod]
