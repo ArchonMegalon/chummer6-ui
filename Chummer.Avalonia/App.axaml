@@ -550,9 +550,17 @@
       <Setter Property="CornerRadius" Value="6" />
       <Setter Property="Background" Value="Transparent" />
     </Style>
+    <Style Selector="ListBoxItem /template/ Border">
+      <Setter Property="Background" Value="Transparent" />
+      <Setter Property="BorderBrush" Value="{DynamicResource ChummerShellBorderBrush}" />
+    </Style>
     <Style Selector="ListBoxItem:pointerover">
       <Setter Property="BorderBrush" Value="{DynamicResource ChummerShellActiveMenuBorderBrush}" />
       <Setter Property="Background" Value="{DynamicResource ChummerShellChromeSubtleBrush}" />
+    </Style>
+    <Style Selector="ListBoxItem:pointerover /template/ Border">
+      <Setter Property="Background" Value="{DynamicResource ChummerShellChromeSubtleBrush}" />
+      <Setter Property="BorderBrush" Value="{DynamicResource ChummerShellActiveMenuBorderBrush}" />
     </Style>
     <Style Selector="ListBoxItem:selected">
       <Setter Property="Background" Value="{DynamicResource ChummerShellSelectionBrush}" />
@@ -670,25 +678,49 @@
       <Setter Property="Foreground" Value="{DynamicResource ComboBoxItemForeground}" />
       <Setter Property="Background" Value="{DynamicResource ComboBoxItemBackground}" />
     </Style>
+    <Style Selector="ComboBoxItem /template/ Border">
+      <Setter Property="Background" Value="{DynamicResource ComboBoxItemBackground}" />
+      <Setter Property="BorderBrush" Value="{DynamicResource ComboBoxDropDownBorderBrush}" />
+    </Style>
     <Style Selector="ComboBoxItem:pointerover">
       <Setter Property="Background" Value="{DynamicResource ComboBoxItemBackgroundPointerOver}" />
       <Setter Property="Foreground" Value="{DynamicResource ComboBoxItemForegroundPointerOver}" />
+    </Style>
+    <Style Selector="ComboBoxItem:pointerover /template/ Border">
+      <Setter Property="Background" Value="{DynamicResource ComboBoxItemBackgroundPointerOver}" />
+      <Setter Property="BorderBrush" Value="{DynamicResource ComboBoxBorderBrushPointerOver}" />
     </Style>
     <Style Selector="ComboBoxItem:pressed">
       <Setter Property="Background" Value="{DynamicResource ComboBoxItemBackgroundPressed}" />
       <Setter Property="Foreground" Value="{DynamicResource ComboBoxItemForegroundPressed}" />
     </Style>
+    <Style Selector="ComboBoxItem:pressed /template/ Border">
+      <Setter Property="Background" Value="{DynamicResource ComboBoxItemBackgroundPressed}" />
+      <Setter Property="BorderBrush" Value="{DynamicResource ComboBoxBorderBrushPressed}" />
+    </Style>
     <Style Selector="ComboBoxItem:selected">
       <Setter Property="Background" Value="{DynamicResource ComboBoxItemBackgroundSelected}" />
       <Setter Property="Foreground" Value="{DynamicResource ComboBoxItemForegroundSelected}" />
+    </Style>
+    <Style Selector="ComboBoxItem:selected /template/ Border">
+      <Setter Property="Background" Value="{DynamicResource ComboBoxItemBackgroundSelected}" />
+      <Setter Property="BorderBrush" Value="{DynamicResource ComboBoxBorderBrushPressed}" />
     </Style>
     <Style Selector="ComboBoxItem:selected:pointerover">
       <Setter Property="Background" Value="{DynamicResource ComboBoxItemBackgroundSelected}" />
       <Setter Property="Foreground" Value="{DynamicResource ComboBoxItemForegroundSelected}" />
     </Style>
+    <Style Selector="ComboBoxItem:selected:pointerover /template/ Border">
+      <Setter Property="Background" Value="{DynamicResource ComboBoxItemBackgroundSelected}" />
+      <Setter Property="BorderBrush" Value="{DynamicResource ComboBoxBorderBrushPressed}" />
+    </Style>
     <Style Selector="ComboBoxItem:disabled">
       <Setter Property="Background" Value="{DynamicResource ComboBoxItemBackgroundDisabled}" />
       <Setter Property="Foreground" Value="{DynamicResource ComboBoxItemForegroundDisabled}" />
+    </Style>
+    <Style Selector="ComboBoxItem:disabled /template/ Border">
+      <Setter Property="Background" Value="{DynamicResource ComboBoxItemBackgroundDisabled}" />
+      <Setter Property="BorderBrush" Value="{DynamicResource ComboBoxBorderBrushDisabled}" />
     </Style>
     <Style Selector="ComboBoxItem TextBlock">
       <Setter Property="Foreground" Value="{DynamicResource ComboBoxItemForeground}" />
