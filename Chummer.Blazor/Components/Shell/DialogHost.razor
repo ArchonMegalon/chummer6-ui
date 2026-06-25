@@ -357,7 +357,7 @@
                                                  aria-label="@BuildRosterHierarchyContainerLabel(field)"
                                                  aria-orientation="@BuildRosterHierarchyContainerOrientation(field)"
                                                  data-roster-drag-root="@IsRosterHierarchyField(field)">
-                                                @if (IsRosterHierarchyField(field) && !string.IsNullOrWhiteSpace(_rosterDragSourceLine))
+                                                @if (IsRosterHierarchyField(field) && !string.IsNullOrWhiteSpace(RosterActiveSourceLine))
                                                 {
                                                     <div id="dialogRosterKeyboardStatus" class="dialog-roster-keyboard-status" role="status" aria-live="polite" aria-atomic="true">@BuildRosterKeyboardStatus()</div>
                                                 }
@@ -375,6 +375,7 @@
                                                          aria-keyshortcuts="@BuildRosterHierarchyLineKeyShortcuts(field, item)"
                                                          tabindex="@BuildRosterHierarchyLineTabIndex(field, item)"
                                                          @ondragstart="() => StartRosterDrag(field, item)"
+                                                         @ondragend="ClearRosterDragSource"
                                                          @ondragover:preventDefault="@IsRosterDropTargetLine(field, item)"
                                                          @ondrop="() => DropRosterLineAsync(field, item)"
                                                          @onkeydown="args => HandleRosterLineKeyDownAsync(field, item, args)"
@@ -510,7 +511,8 @@
     [Parameter]
     public EventCallback<DialogRosterDropIntent> RosterDropRequested { get; set; }
 
-    private string? _rosterDragSourceLine;
+    private string? _rosterMouseDragSourceLine;
+    private string? _rosterKeyboardSourceLine;
 
     private ElementReference _dialogRoot;
     private string? _focusedDialogId;
@@ -746,28 +748,35 @@
         if (!IsRosterDraggableLine(field, line))
             return;
 
-        _rosterDragSourceLine = line;
+        _rosterMouseDragSourceLine = line;
+    }
+
+    private void ClearRosterDragSource()
+    {
+        _rosterMouseDragSourceLine = null;
     }
 
     private async Task DropRosterLineAsync(DesktopDialogField field, string line)
     {
-        if (!IsRosterDropTargetLine(field, line) || string.IsNullOrWhiteSpace(_rosterDragSourceLine))
+        string? sourceLine = RosterActiveSourceLine;
+        if (!IsRosterDropTargetLine(field, line) || string.IsNullOrWhiteSpace(sourceLine))
             return;
 
         string targetFolder = ExtractRosterFolderName(line);
         if (string.IsNullOrWhiteSpace(targetFolder))
             return;
 
-        string sourceFolder = IsRosterDropTargetLine(field, _rosterDragSourceLine)
-            ? ExtractRosterFolderName(_rosterDragSourceLine)
+        string sourceFolder = IsRosterDropTargetLine(field, sourceLine)
+            ? ExtractRosterFolderName(sourceLine)
             : string.Empty;
         await RosterDropRequested.InvokeAsync(new DialogRosterDropIntent(
-            _rosterDragSourceLine,
+            sourceLine,
             line,
             targetFolder,
             string.IsNullOrWhiteSpace(sourceFolder) ? "move_runner_to_group" : "reorder_roster_tree",
             sourceFolder));
-        _rosterDragSourceLine = null;
+        _rosterMouseDragSourceLine = null;
+        _rosterKeyboardSourceLine = null;
     }
 
     private async Task HandleRosterLineKeyDownAsync(
@@ -780,7 +789,7 @@
 
         if (string.Equals(args.Key, "Escape", StringComparison.Ordinal))
         {
-            _rosterDragSourceLine = null;
+            _rosterKeyboardSourceLine = null;
             return;
         }
 
@@ -789,14 +798,14 @@
             && !string.Equals(args.Code, "Space", StringComparison.Ordinal))
             return;
 
-        if (IsRosterDropTargetLine(field, line) && !string.IsNullOrWhiteSpace(_rosterDragSourceLine))
+        if (IsRosterDropTargetLine(field, line) && !string.IsNullOrWhiteSpace(RosterActiveSourceLine))
         {
             await DropRosterLineAsync(field, line);
             return;
         }
 
         if (IsRosterDraggableLine(field, line))
-            StartRosterDrag(field, line);
+            _rosterKeyboardSourceLine = line;
     }
 
     private static bool IsRosterDropTargetLine(DesktopDialogField field, string line)
@@ -830,7 +839,7 @@
         string selected = trimmed.Contains("* ", StringComparison.Ordinal) ? " is-selected" : string.Empty;
         string draggable = IsRosterDraggableLine(field, line) ? " is-draggable" : string.Empty;
         string dropTarget = IsRosterDropTargetLine(field, line) ? " is-drop-target" : string.Empty;
-        string dragSource = string.Equals(_rosterDragSourceLine, line, StringComparison.Ordinal) ? " is-drag-source" : string.Empty;
+        string dragSource = string.Equals(RosterActiveSourceLine, line, StringComparison.Ordinal) ? " is-drag-source" : string.Empty;
         return $"dialog-roster-line dialog-roster-line--{kind}{selected}{draggable}{dropTarget}{dragSource}";
     }
 
@@ -860,7 +869,7 @@
         => IsRosterDraggableLine(field, line) || IsRosterDropTargetLine(field, line);
 
     private string? BuildRosterHierarchyLineDescriptionId(DesktopDialogField field, string line)
-        => !string.IsNullOrWhiteSpace(_rosterDragSourceLine)
+        => !string.IsNullOrWhiteSpace(RosterActiveSourceLine)
            && (IsRosterDraggableLine(field, line) || IsRosterDropTargetLine(field, line))
             ? "dialogRosterKeyboardStatus"
             : null;
@@ -904,7 +913,7 @@
             return null;
 
         return line.TrimStart().Contains("* ", StringComparison.Ordinal)
-            || string.Equals(_rosterDragSourceLine, line, StringComparison.Ordinal)
+            || string.Equals(RosterActiveSourceLine, line, StringComparison.Ordinal)
             ? "true"
             : "false";
     }
@@ -913,9 +922,11 @@
         => IsRosterDropTargetLine(field, line) ? "true" : null;
 
     private string BuildRosterKeyboardStatus()
-        => string.IsNullOrWhiteSpace(_rosterDragSourceLine)
+        => string.IsNullOrWhiteSpace(RosterActiveSourceLine)
             ? string.Empty
-            : $"Keyboard source selected: {_rosterDragSourceLine.Trim()}. Press Enter or Space on a folder to drop, or Escape to clear.";
+            : $"Keyboard source selected: {RosterActiveSourceLine.Trim()}. Press Enter or Space on a folder to drop, or Escape to clear.";
+
+    private string? RosterActiveSourceLine => _rosterKeyboardSourceLine ?? _rosterMouseDragSourceLine;
 
     private static IReadOnlyList<string> SplitVisualLines(string value)
     {

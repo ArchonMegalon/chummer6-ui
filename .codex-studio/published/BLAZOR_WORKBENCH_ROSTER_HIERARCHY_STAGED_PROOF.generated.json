@@ -1,6 +1,6 @@
 {
   "contract_name": "chummer6-ui.blazor_workbench_roster_hierarchy_staged_proof",
-  "generated_at": "2026-06-25T01:00:13.284634+00:00",
+  "generated_at": "2026-06-25T01:02:57.728776+00:00",
   "status": "passed",
   "proof_tier": "source_staged_no_browser_execution",
   "route_lane": "promoted_blazor_workbench",
@@ -47,7 +47,7 @@
       "id": "blazor_dialog_markup",
       "path": "Chummer.Blazor/Components/Shell/DialogHost.razor",
       "status": "passed",
-      "required_token_count": 47,
+      "required_token_count": 51,
       "missing_tokens": []
     },
     {
