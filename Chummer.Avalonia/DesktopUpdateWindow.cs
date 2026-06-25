@@ -10,14 +10,14 @@ namespace Chummer.Avalonia;
 
 internal sealed class DesktopUpdateWindow : Window
 {
-    private static readonly IBrush WindowBackgroundBrush = Brush("#050B16");
-    private static readonly IBrush SurfaceBrush = Brush("#111827");
-    private static readonly IBrush SurfaceAltBrush = Brush("#0F172A");
-    private static readonly IBrush AccentSurfaceBrush = Brush("#172554");
-    private static readonly IBrush LocalBorderBrush = Brush("#334155");
-    private static readonly IBrush AccentBorderBrush = Brush("#90C39A");
-    private static readonly IBrush ForegroundBrush = Brush("#E5E7EB");
-    private static readonly IBrush MutedForegroundBrush = Brush("#D8E1EC");
+    private static IBrush WindowBackgroundBrush => DesktopShellTheme.ResolveThemeBrush("ChummerShellWindowBackgroundBrush", "#050B16");
+    private static IBrush SurfaceBrush => DesktopShellTheme.ResolveThemeBrush("ChummerShellSurfaceBrush", "#111827");
+    private static IBrush SurfaceAltBrush => DesktopShellTheme.ResolveThemeBrush("ChummerShellSurfaceAltBrush", "#0F172A");
+    private static IBrush AccentSurfaceBrush => DesktopShellTheme.ResolveThemeBrush("ChummerShellChromeAccentBrush", "#172554");
+    private static IBrush LocalBorderBrush => DesktopShellTheme.ResolveThemeBrush("ChummerShellBorderBrush", "#334155");
+    private static IBrush AccentBorderBrush => DesktopShellTheme.ResolveThemeBrush("ChummerShellActiveMenuBorderBrush", "#90C39A");
+    private static IBrush ForegroundBrush => DesktopShellTheme.ResolveThemeBrush("ChummerShellForegroundBrush", "#E5E7EB");
+    private static IBrush MutedForegroundBrush => DesktopShellTheme.ResolveThemeBrush("ChummerShellMutedForegroundBrush", "#D8E1EC");
 
     private DesktopInstallLinkingState _installState;
     private DesktopUpdateClientStatus _updateStatus;
@@ -506,7 +506,4 @@ internal sealed class DesktopUpdateWindow : Window
 
     private string F(string key, params object[] values)
         => DesktopLocalizationCatalog.GetRequiredFormattedString(key, _preferences.Language, values);
-
-    private static SolidColorBrush Brush(string hex)
-        => new(Color.Parse(hex));
 }

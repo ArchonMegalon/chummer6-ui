@@ -1022,6 +1022,15 @@ public sealed class DesktopThemeManagerTests
 
         StringAssert.Contains(updateSource, "This copy is not attached to a working update source yet.");
         StringAssert.Contains(updateSource, "Something about updates needs review before you treat this copy as current.");
+        StringAssert.Contains(updateSource, "DesktopShellTheme.ResolveThemeBrush(\"ChummerShellWindowBackgroundBrush\"");
+        StringAssert.Contains(updateSource, "DesktopShellTheme.ResolveThemeBrush(\"ChummerShellSurfaceBrush\"");
+        StringAssert.Contains(updateSource, "DesktopShellTheme.ResolveThemeBrush(\"ChummerShellForegroundBrush\"");
+        Assert.IsFalse(
+            updateSource.Contains("private static readonly IBrush", StringComparison.Ordinal),
+            "The update status window must not freeze a private brush palette outside the shell theme.");
+        Assert.IsFalse(
+            updateSource.Contains("Brush(\"#", StringComparison.Ordinal),
+            "The update status window should use shared shell theme tokens with fallbacks, not local fixed brushes.");
         StringAssert.Contains(supportCaseSource, "Tracked case preview.");
         StringAssert.Contains(supportCaseSource, "Use account support to record final confirmation");
         StringAssert.Contains(supportCaseSource, "System details stay visible while this case still needs attention.");
