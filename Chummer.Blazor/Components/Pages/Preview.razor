@@ -2378,7 +2378,7 @@
             query.Add($"dialog_action={Uri.EscapeDataString(dialogAction)}");
         }
 
-        string route = useWorkbenchRoute ? "/workbench" : "/preview";
+        string route = useWorkbenchRoute ? "/blazor/workbench" : "/preview";
         return query.Count == 0
             ? route
             : $"{route}?{string.Join("&", query)}";
