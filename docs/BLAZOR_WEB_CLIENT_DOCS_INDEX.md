@@ -253,6 +253,7 @@ Current docs already define the intended shipped posture and the evidence contra
 ## Portal Installer Handoff
 
 - `docs/BLAZOR_PORTAL_INSTALLER_HANDOFF_PROOF.md` defines the source-staged browser-to-portal download/install/support handoff contract. It includes Avalonia installer handoff and Blazor desktop compatibility installer handoff routes. It is not runtime proof.
+- `docs/examples/blazor-portal-installer-handoff-staged-proof.receipt.example.json` shows the compact generated receipt shape for `BLAZOR_PORTAL_INSTALLER_HANDOFF_STAGED_PROOF.generated.json`.
 
 ## Docker Self-Host Operator Contract
 

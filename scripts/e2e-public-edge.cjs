@@ -115,6 +115,26 @@ const checks = [
     }
   },
   {
+    url: `${baseUrl}/downloads/install/blazor-desktop-linux-x64-installer`,
+    redirect: 'manual',
+    assert: (_text, response) => {
+      const location = response.headers.get('location') || '';
+      return [301, 302, 303, 307, 308].includes(response.status)
+        && location.includes('/login?next=')
+        && decodeURIComponent(location).includes('/downloads/install/blazor-desktop-linux-x64-installer');
+    }
+  },
+  {
+    url: `${baseUrl}/downloads/install/blazor-desktop-win-x64-installer`,
+    redirect: 'manual',
+    assert: (_text, response) => {
+      const location = response.headers.get('location') || '';
+      return [301, 302, 303, 307, 308].includes(response.status)
+        && location.includes('/login?next=')
+        && decodeURIComponent(location).includes('/downloads/install/blazor-desktop-win-x64-installer');
+    }
+  },
+  {
     url: `${baseUrl}/play`,
     assert: text =>
       text.includes('Player entry')

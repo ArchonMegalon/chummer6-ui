@@ -237,8 +237,10 @@ local_payload = {
         "gm_prep_packets:desktop",
         "roster_movement:desktop",
     ],
-    "proof_routes": [
+        "proof_routes": [
         "/downloads/install/avalonia-linux-x64-installer",
+        "/downloads/install/blazor-desktop-linux-x64-installer",
+        "/downloads/install/blazor-desktop-win-x64-installer",
         "/home/access",
         "/home/work",
         "/account/work",

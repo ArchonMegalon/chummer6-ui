@@ -234,7 +234,7 @@ The remaining UI debt is no longer missing shared-shell workbench capability or 
 
 ### Portal Installer Handoff Source Contract
 
-`docs/BLAZOR_PORTAL_INSTALLER_HANDOFF_PROOF.md` defines the source-staged browser-to-portal installer/download/support handoff contract. It is useful for keeping route expectations aligned, but it is not runtime proof and must not replace local portal, hosted route-entry, or hosted execution receipts.
+`docs/BLAZOR_PORTAL_INSTALLER_HANDOFF_PROOF.md` defines the source-staged browser-to-portal installer/download/support handoff contract. It is useful for keeping route expectations aligned, but it is not runtime proof and must not replace local portal, hosted route-entry, or hosted execution receipts. It now tracks the Blazor desktop compatibility installer routes alongside Avalonia handoff routes while keeping them source-staged only.
 
 ### Docker Self-Host Operator Source Contract
 

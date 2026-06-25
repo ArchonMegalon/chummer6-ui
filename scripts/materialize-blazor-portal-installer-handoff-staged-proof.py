@@ -76,11 +76,23 @@ CHECKS = [
         ],
     },
     {
+        "id": "portal_known_install_route_resolver",
+        "path": "Chummer.Portal/Program.cs",
+        "tokens": [
+            "ReleaseInstallRouteSummary",
+            "CollectInstallRoutes",
+            "publicInstallRoute",
+            "installState={knownInstallRoute.InstallPosture}",
+            "proof_required",
+        ],
+    },
+    {
         "id": "portal_handoff_docs",
         "path": "docs/BLAZOR_PORTAL_INSTALLER_HANDOFF_PROOF.md",
         "tokens": EXPECTED_ROUTES + [
             "source-only",
             "same-origin through `Chummer.Portal`",
+            "`installState=proof_required`",
             "Runtime claims still require the local portal proof and hosted public-edge proof receipts.",
         ],
     },

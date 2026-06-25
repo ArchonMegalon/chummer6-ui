@@ -54,7 +54,7 @@ Expected receipts:
 .codex-studio/published/BLAZOR_ACCOUNT_SUPPORT_HANDOFF_STAGED_PROOF.generated.json
 ```
 
-These confirm source contracts for portal/download/install/account/support handoff. They are not runtime proof.
+These confirm source contracts for portal/download/install/account/support handoff. They are not runtime proof. The portal installer handoff receipt explicitly includes the Blazor desktop compatibility installer routes `/downloads/install/blazor-desktop-linux-x64-installer` and `/downloads/install/blazor-desktop-win-x64-installer`, but that remains source-staged route coverage rather than promoted installer runtime proof.
 
 ### 4. Docker Self-Host Runtime Proof
 
