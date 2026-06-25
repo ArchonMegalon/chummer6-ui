@@ -68,6 +68,9 @@ const checks = [
       && text.includes('Download the current Windows installer.')
       && text.includes('Download the current Linux DEB package.')
       && text.includes('macOS is guided setup only today.')
+      && text.includes('data-download-action="download-artifact"')
+      && text.includes('data-download-install-route=')
+      && text.includes('data-download-raw-url=')
   },
   {
     url: `${baseUrl}/downloads/`,

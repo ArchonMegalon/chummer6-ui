@@ -428,10 +428,10 @@ static string BuildDownloadsHtml(HttpContext context, PortalOptions options)
     string artifactLines = string.Join(
         Environment.NewLine,
         summary.Downloads.Select(download =>
-            $"""<li><a href="{WebUtility.HtmlEncode(download.Url)}">{WebUtility.HtmlEncode(download.Label)}</a> <span>({WebUtility.HtmlEncode(download.Platform)})</span></li>"""));
+            $"""<li data-download-artifact="{WebUtility.HtmlEncode(download.ArtifactId)}" data-download-platform="{WebUtility.HtmlEncode(download.Platform)}" data-download-raw-url="{WebUtility.HtmlEncode(download.Url)}" data-download-install-route="{WebUtility.HtmlEncode(string.IsNullOrWhiteSpace(download.PublicInstallRoute) ? "raw-url" : download.PublicInstallRoute)}" data-download-link-mode="raw-url"><a href="{WebUtility.HtmlEncode(download.Url)}" data-download-action="download-artifact">{WebUtility.HtmlEncode(download.Label)}</a> <span data-download-platform-label>{WebUtility.HtmlEncode(download.Platform)}</span> <span data-download-artifact-label>{WebUtility.HtmlEncode(string.IsNullOrWhiteSpace(download.ArtifactId) ? "artifact id pending" : download.ArtifactId)}</span> <span data-download-link-mode-label>direct download</span></li>"""));
     if (string.IsNullOrWhiteSpace(artifactLines))
     {
-        artifactLines = "<li>No published artifacts are listed in releases.json.</li>";
+        artifactLines = """<li data-download-empty="true">No published artifacts are listed in releases.json.</li>""";
     }
     List<ReleaseInstallRouteSummary> compatibilityRoutes = summary.InstallRoutes
         .Where(route => !summary.Downloads.Any(download =>
@@ -478,7 +478,9 @@ static string BuildDownloadsHtml(HttpContext context, PortalOptions options)
     {{installStatePanel}}
     <p><a href="{{releasesJsonUrl}}">Raw releases.json</a></p>
     <p id="fallback-link">{{fallbackText}}</p>
-    <ul>
+    <h2 id="published-download-artifacts">Published artifacts</h2>
+    <p data-download-count="{{summary.Downloads.Count}}">Published artifacts: <code>{{summary.Downloads.Count}}</code></p>
+    <ul data-download-list="published-artifacts" aria-labelledby="published-download-artifacts">
       {{artifactLines}}
     </ul>
     <h2 id="compatibility-handoff-routes">Compatibility handoff routes</h2>

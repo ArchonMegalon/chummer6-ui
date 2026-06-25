@@ -44,7 +44,7 @@
     {
       "id": "downloads_install_state_guidance",
       "path": "Chummer.Portal/Program.cs",
-      "required_token_count": 7,
+      "required_token_count": 50,
       "status": "passed"
     },
     {
@@ -56,7 +56,7 @@
   ],
   "boundary_notes": [
     "Source-staged portal installer handoff only; this is not hosted browser execution proof.",
-    "Blazor desktop compatibility installer routes are tracked as handoff routes, not as promoted native-head installer proof; known unpublished routes return to the downloads shelf with a URL-encoded next route and installState=proof_required. Route probes decode the redirect Location before checking the preserved route. They also assert the rendered proof-required downloads panel and browser-workbench recovery action. The proof-required panel includes an Open browser workbench recovery action. The action is derived from the configured Blazor public path. The downloads shelf also lists compatibility handoff routes with install posture metadata. The row also includes promotion-state metadata. The route itself links into the guarded proof-required installer route. Rows also expose artifact-pending state when no artifact id exists. The list has a stable compatibility-handoff data marker and ARIA label reference. It also has a distinct compatibility-routes style marker. The list exposes a data-backed compatibility route count. The empty state has a stable data marker. That list is limited to proof-required fallback routes not already represented by published artifacts.",
+    "Blazor desktop compatibility installer routes are tracked as handoff routes, not as promoted native-head installer proof; known unpublished routes return to the downloads shelf with a URL-encoded next route and installState=proof_required. Route probes decode the redirect Location before checking the preserved route. They also assert the rendered proof-required downloads panel and browser-workbench recovery action. The proof-required panel includes an Open browser workbench recovery action. The action is derived from the configured Blazor public path. Published artifact rows keep direct artifact download links. The published artifacts list has a stable data marker and ARIA label reference. It also exposes a data-backed published artifact count. The empty state has a stable data marker. They preserve the raw manifest URL as row metadata. Artifact id is also visible as row text. Platform is also exposed as row metadata. Platform is also exposed as a stable visible label. They also expose the selected install handoff route as row metadata. Link mode is also exposed as row metadata. Link mode is visible as direct download text. Route probes assert the rendered published-download handoff metadata. The downloads shelf also lists compatibility handoff routes with install posture metadata. The row also includes promotion-state metadata. The route itself links into the guarded proof-required installer route. Rows also expose artifact-pending state when no artifact id exists. The list has a stable compatibility-handoff data marker and ARIA label reference. It also has a distinct compatibility-routes style marker. The list exposes a data-backed compatibility route count. The empty state has a stable data marker. That list is limited to proof-required fallback routes not already represented by published artifacts.",
     "Runtime promotion requires refreshed local portal, hosted route-entry, hosted execution, and Docker self-host receipts."
   ],
   "failures": []

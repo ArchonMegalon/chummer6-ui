@@ -178,6 +178,9 @@ const checks = [
       text.includes('Desktop Downloads') &&
       text.includes('/downloads/releases.json') &&
       text.includes('fallback-link') &&
+      text.includes('data-download-action="download-artifact"') &&
+      text.includes('data-download-install-route=') &&
+      text.includes('data-download-raw-url=') &&
       (text.includes('No published desktop builds yet') || text.includes('self-hosted downloads are live'))
   },
   {
