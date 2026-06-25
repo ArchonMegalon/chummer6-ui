@@ -8253,3 +8253,46 @@
     letter-spacing: .06em;
     text-transform: uppercase;
 }
+
+.browser-preview-shell:is(.classic-promoted-app, .classic-compat-app) .classic-chummer-shell[data-output-state="requested"] .classic-chummer-status span:nth-child(2)::after {
+    content: " output";
+    color: #1c4169;
+    font-size: .56rem;
+    font-weight: 900;
+}
+
+.browser-preview-shell:is(.classic-promoted-app, .classic-compat-app) .classic-chummer-shell[data-output-state="ready"] .classic-chummer-status span:nth-child(2) {
+    background: linear-gradient(180deg, #e7f0df 0%, #b8d2a3 100%);
+}
+
+.browser-preview-shell:is(.classic-promoted-app, .classic-compat-app) .classic-chummer-shell[data-output-state="error"] .classic-chummer-status span:nth-child(2) {
+    background: linear-gradient(180deg, #f1d8d2 0%, #c98578 100%);
+}
+
+.browser-preview-shell:is(.classic-promoted-app, .classic-compat-app) .classic-chummer-shell[data-output-target="local-dossier"] .classic-chummer-status span:nth-child(2) em::after {
+    content: " local";
+    color: #4f463b;
+    font-size: .58rem;
+    font-weight: 900;
+}
+
+.browser-preview-shell:is(.classic-promoted-app, .classic-compat-app) .classic-chummer-shell[data-output-target="print-view"] .classic-chummer-status span:nth-child(2) em::after {
+    content: " print";
+    color: #4f463b;
+    font-size: .58rem;
+    font-weight: 900;
+}
+
+.browser-preview-shell:is(.classic-promoted-app, .classic-compat-app) .classic-chummer-shell[data-output-target="download-package"] .classic-chummer-status span:nth-child(2) em::after {
+    content: " download";
+    color: #4f463b;
+    font-size: .58rem;
+    font-weight: 900;
+}
+
+.browser-preview-shell:is(.classic-promoted-app, .classic-compat-app) .classic-chummer-shell[data-dialog-action]:not([data-dialog-action="none"]) .classic-chummer-status span:nth-child(2) strong::after {
+    content: " dialog";
+    color: #1c4169;
+    font-size: .56rem;
+    font-weight: 900;
+}
