@@ -4,7 +4,7 @@
 
 This source-staged proof keeps core character resource-total affordances visible on the user-facing Chummer Online route and /blazor/workbench compatibility route.
 
-The browser client should keep karma, nuyen, essence, limits, wounds, and lifestyle context close while users move through dense sheet sections.
+The browser client should keep karma, nuyen, essence, limits, wounds, and lifestyle context close while users move through dense dossier sections.
 
 ## Source-Staged Scope
 

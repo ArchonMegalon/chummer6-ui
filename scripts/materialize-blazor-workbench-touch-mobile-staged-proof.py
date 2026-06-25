@@ -21,7 +21,7 @@ CHECKS = [
         "tokens": [
             "Browser-client touch and mobile ergonomics lane",
             "data-workbench-touch-mobile=\"strip\"",
-            "Make dense sheets usable on touch screens.",
+            "Make dense dossiers usable on touch screens.",
             "private const string ToggleTouchModeCommand = \"toggle_touch_mode\"",
             "private const string AdjustWorkspaceZoomCommand = \"adjust_workspace_zoom\"",
             "private const string DockMobilePanelsCommand = \"dock_mobile_panels\"",

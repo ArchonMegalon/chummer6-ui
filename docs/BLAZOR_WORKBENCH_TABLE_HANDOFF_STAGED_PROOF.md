@@ -4,7 +4,7 @@
 
 This source-staged proof keeps table handoff affordances visible on the user-facing Chummer Online route and /blazor/workbench compatibility route.
 
-The browser client should expose GM packet, initiative card, condition tracker, public handout, private notes, table export, and same-origin help posture so play-session output stays close to the sheet.
+The browser client should expose GM packet, initiative card, condition tracker, public handout, private notes, table export, and same-origin help posture so play-session output stays close to the dossier.
 
 ## Source-Staged Scope
 

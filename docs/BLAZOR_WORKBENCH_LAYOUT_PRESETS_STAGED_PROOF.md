@@ -4,14 +4,14 @@
 
 This source-staged proof keeps browser-safe layout mode affordances visible on the user-facing Chummer Online route and /blazor/workbench compatibility route.
 
-The browser client should expose dense sheet, split review, output, mobile-safe, focus-pane, and help modes as intentional client states rather than accidental responsive behavior.
+The browser client should expose dense dossier, split review, output, mobile-safe, focus-pane, and help modes as intentional client states rather than accidental responsive behavior.
 
 ## Source-Staged Scope
 
 The staged layout-presets lane covers:
 
 - a layout-presets rail on the user-facing Chummer Online route and /blazor/workbench compatibility route
-- dense sheet, split review, output, mobile safe, focus pane, and help shortcuts
+- dense dossier, split review, output, mobile safe, focus pane, and help shortcuts
 - scoped responsive styling for desktop and mobile browser use
 
 ## Source Check

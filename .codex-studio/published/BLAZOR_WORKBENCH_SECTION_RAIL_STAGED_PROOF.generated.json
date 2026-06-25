@@ -1,6 +1,6 @@
 {
   "contract_name": "chummer6-ui.blazor_workbench_section_rail_staged_proof",
-  "generated_at": "2026-06-25T04:43:34.241038+00:00",
+  "generated_at": "2026-06-25T16:54:50.864957+00:00",
   "status": "passed",
   "proof_tier": "source_staged_no_browser_execution",
   "route_lane": "promoted_blazor_workbench",
@@ -12,7 +12,7 @@
       "id": "product_workbench_section_rail",
       "path": "Chummer.Blazor/Components/Pages/Preview.razor",
       "status": "passed",
-      "required_token_count": 14,
+      "required_token_count": 16,
       "missing_tokens": []
     },
     {
@@ -46,7 +46,7 @@
   ],
   "failures": [],
   "notes": [
-    "This receipt only proves that promoted workbench section-rail source, style, status, and docs agree.",
+    "This receipt only proves that Chummer Online and /blazor/workbench compatibility route section-rail source, style, status, and docs agree.",
     "It is not a substitute for hosted Playwright execution proof, Docker self-host proof, or section rendering proof.",
     "Do not use this receipt to claim section rendering, state restoration, or browser execution parity."
   ]

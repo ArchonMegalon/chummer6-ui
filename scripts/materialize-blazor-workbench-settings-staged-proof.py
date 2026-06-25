@@ -69,7 +69,7 @@ CHECKS = [
         "path": "docs/BLAZOR_WEB_CLIENT_PARITY_GOAL.md",
         "tokens": [
             "staged hosted workbench settings posture",
-            "global settings, character settings, ruleset choice, update status, support handoff, and help",
+            "global settings, dossier settings, ruleset choice, update status, support handoff, and help",
             "not yet claiming persisted preference mutation, runtime settings parity, or portal help runtime parity",
         ],
     },

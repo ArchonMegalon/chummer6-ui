@@ -2,7 +2,7 @@
 
 ## Purpose
 
-This source-staged proof keeps global settings, character settings, ruleset choice, update posture, and support preferences visible on the user-facing Chummer Online route and /blazor/workbench compatibility route.
+This source-staged proof keeps global settings, dossier settings, ruleset choice, update posture, and support preferences visible on the user-facing Chummer Online route and /blazor/workbench compatibility route.
 
 Desktop Chummer users expect preferences to be reachable without leaving their active character workspace. The browser client should preserve that workflow slot while staying honest about which settings are only surfaced versus persisted at runtime.
 
@@ -11,7 +11,7 @@ Desktop Chummer users expect preferences to be reachable without leaving their a
 The staged settings lane covers:
 
 - a settings strip on the user-facing Chummer Online route and /blazor/workbench compatibility route
-- global settings, character settings, ruleset, update status, support settings, and same-origin help affordances
+- global settings, dossier settings, ruleset, update status, support settings, and same-origin help affordances
 - source alignment with the shared desktop-shaped settings dialogs
 - scoped responsive styling for desktop and mobile browser use
 

@@ -22,7 +22,7 @@ CHECKS = [
         "tokens": [
             "Browser-client inspector rail",
             "data-workbench-inspector-rail=\"strip\"",
-            "Keep sheet context beside the active task.",
+            "Keep dossier context beside the active task.",
             "data-workbench-inspector-rail-action=\"summary\"",
             "data-workbench-inspector-rail-action=\"build-checks\"",
             "data-workbench-inspector-rail-action=\"inventory\"",

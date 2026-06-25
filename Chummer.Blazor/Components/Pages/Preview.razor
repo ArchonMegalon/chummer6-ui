@@ -275,7 +275,7 @@
                 <label for="workbench-density-compact" data-workbench-density-option="compact">
                     <input id="workbench-density-compact" name="workbench-density" type="radio" checked="checked" />
                     <span>Compact desktop</span>
-                    <small>Dense rows, short labels, maximum sheet context.</small>
+                    <small>Dense rows, short labels, maximum dossier context.</small>
                 </label>
                 <label for="workbench-density-comfortable" data-workbench-density-option="comfortable">
                     <input id="workbench-density-comfortable" name="workbench-density" type="radio" />
@@ -555,13 +555,13 @@
             </div>
         </section>
 
-        <section class="browser-workbench-section-rail" aria-label="Browser-client sheet section rail" data-workbench-section-rail="strip">
+        <section class="browser-workbench-section-rail" aria-label="Browser-client dossier section rail" data-workbench-section-rail="strip">
             <div class="browser-workbench-section-rail-copy">
                 <span class="browser-preview-status-label">Sheet rail</span>
                 <strong>Move straight to a section.</strong>
                 <p>Profile, build, skills, gear, combat, magic, matrix, contacts, and career stay close.</p>
             </div>
-            <nav class="browser-workbench-section-rail-actions" aria-label="Character sheet section shortcuts">
+            <nav class="browser-workbench-section-rail-actions" aria-label="Dossier section shortcuts">
                 <a href="@BuildWorkbenchLaneHref(ProfileTabId)" data-workbench-section-rail-action="profile">Profile</a>
                 <a href="@BuildWorkbenchLaneHref(BuildTabId)" data-workbench-section-rail-action="build">Build</a>
                 <a href="@BuildWorkbenchLaneHref(SkillsTabId)" data-workbench-section-rail-action="skills">Skills</a>
@@ -695,7 +695,7 @@
         <section class="browser-workbench-inspector-rail" aria-label="Browser-client inspector rail" data-workbench-inspector-rail="strip">
             <div class="browser-workbench-inspector-rail-copy">
                 <span class="browser-preview-status-label">Inspector rail</span>
-                <strong>Keep sheet context beside the active task.</strong>
+                <strong>Keep dossier context beside the active task.</strong>
                 <p>The desktop client keeps summary, checks, inventory, notes, and rules references close; the browser client should keep that context one click away.</p>
             </div>
             <div class="browser-workbench-inspector-rail-actions" role="list" aria-label="Context inspector shortcuts">
@@ -789,7 +789,7 @@
                 </a>
                 <a role="listitem" href="@BuildPreviewHref(SeededWorkspaceId, useWorkbenchRoute: true)" data-workbench-context-actions-action="recover">
                     <span>Recover</span>
-                    <small>Return to the active sheet context.</small>
+                    <small>Return to the active dossier context.</small>
                 </a>
             </div>
         </section>
@@ -845,7 +845,7 @@
                 </a>
                 <a role="listitem" href="@BuildWorkbenchLaneHref(BuildTabId)" data-workbench-layout-presets-action="split-review">
                     <span>Split review</span>
-                    <small>Keep build checks beside the sheet.</small>
+                    <small>Keep build checks beside the dossier.</small>
                 </a>
                 <a role="listitem" href="@BuildWorkbenchCommandHref(PrintCharacterCommand)" data-workbench-layout-presets-action="output">
                     <span>Output</span>
@@ -938,7 +938,7 @@
             <div class="browser-workbench-resource-meters-copy">
                 <span class="browser-preview-status-label">Resource meters</span>
                 <strong>Keep core character totals close while editing.</strong>
-                <p>Karma, nuyen, essence, limits, wounds, and lifestyle posture should stay visible while browser users move through sheet sections.</p>
+                <p>Karma, nuyen, essence, limits, wounds, and lifestyle posture should stay visible while browser users move through dossier sections.</p>
             </div>
             <div class="browser-workbench-resource-meters-actions" role="list" aria-label="Character resource meter shortcuts">
                 <a role="listitem" href="@BuildWorkbenchLaneHref(BuildTabId)" data-workbench-resource-meters-action="karma">
@@ -1048,7 +1048,7 @@
             <div class="browser-workbench-output-handoff-copy">
                 <span class="browser-preview-status-label">Output handoff</span>
                 <strong>Keep print, packet, and share paths explicit.</strong>
-                <p>Chummer makes output generation a visible workflow; the browser client should keep PDF packets, print sheets, summaries, share links, audit queues, help, and download bundles near the active sheet.</p>
+                <p>Chummer makes output generation a visible workflow; the browser client should keep PDF packets, printable dossiers, summaries, share links, audit queues, help, and download bundles near the active dossier.</p>
             </div>
             <div class="browser-workbench-output-handoff-actions" role="list" aria-label="Output and export handoff shortcuts">
                 <a role="listitem" href="@BuildPreviewHref(SeededWorkspaceId, command: ExportCharacterCommand)" data-workbench-output-handoff-action="pdf_packet">
@@ -1086,7 +1086,7 @@
             <div class="browser-workbench-validation-queue-copy">
                 <span class="browser-preview-status-label">Build readiness</span>
                 <strong>Keep validation pressure visible before output.</strong>
-                <p>Chummer keeps rule issues, missing fields, cost checks, availability limits, final build gates, help, and next-fix navigation close to the sheet; the browser client should make that readiness posture explicit.</p>
+                <p>Chummer keeps rule issues, missing fields, cost checks, availability limits, final build gates, help, and next-fix navigation close to the dossier; the browser client should make that readiness posture explicit.</p>
             </div>
             <div class="browser-workbench-validation-queue-actions" role="list" aria-label="Validation and build readiness shortcuts">
                 <a role="listitem" href="@BuildPreviewHref(SeededWorkspaceId, command: ValidateCharacterCommand)" data-workbench-validation-queue-action="rule_issues">
@@ -1200,7 +1200,7 @@
             <div class="browser-workbench-data-packs-copy">
                 <span class="browser-preview-status-label">Rules data</span>
                 <strong>Expose sourcebook and data-pack posture.</strong>
-                <p>Desktop Chummer depends on visible source selection, errata, custom data, update packs, validation scope, and data-folder context; the browser client should keep those rule-data decisions near the active sheet.</p>
+                <p>Desktop Chummer depends on visible source selection, errata, custom data, update packs, validation scope, and data-folder context; the browser client should keep those rule-data decisions near the active dossier.</p>
             </div>
             <div class="browser-workbench-data-packs-actions" role="list" aria-label="Rules and data-pack shortcuts">
                 <a role="listitem" href="@BuildPreviewHref(SeededWorkspaceId, command: OpenSourcebooksCommand)" data-workbench-data-packs-action="sourcebooks">
@@ -1238,7 +1238,7 @@
             <div class="browser-workbench-character-library-copy">
                 <span class="browser-preview-status-label">Roster</span>
                 <strong>Keep Character Roster workflow visible.</strong>
-                <p>Desktop Chummer starts from open, recent, pinned, cloned, archived, imported, and compared dossiers; the browser client should keep that roster posture close to the active sheet.</p>
+                <p>Desktop Chummer starts from open, recent, pinned, cloned, archived, imported, and compared dossiers; the browser client should keep that roster posture close to the active dossier.</p>
             </div>
             <div class="browser-workbench-character-library-actions" role="list" aria-label="Character Roster shortcuts">
                 <a role="listitem" href="@BuildPreviewHref(SeededWorkspaceId, command: OpenCharacterCommand)" data-workbench-character-library-action="open">
@@ -1259,7 +1259,7 @@
                 </a>
                 <a role="listitem" href="@BuildPreviewHref(SeededWorkspaceId, command: ArchiveCharacterCommand)" data-workbench-character-library-action="archive">
                     <span>Archive</span>
-                    <small>Move inactive sheets out of daily view.</small>
+                    <small>Move inactive dossiers out of daily view.</small>
                 </a>
                 <a role="listitem" href="@BuildPreviewHref(SeededWorkspaceId, command: ImportCharacterCommand)" data-workbench-character-library-action="import">
                     <span>Import</span>
@@ -1846,7 +1846,7 @@
             <div class="browser-workbench-lifecycle-calendar-copy">
                 <span class="browser-preview-status-label">Lifecycle</span>
                 <strong>Keep downtime and upkeep visible.</strong>
-                <p>Downtime, lifestyle upkeep, subscriptions, reminders, recurring costs, and next-session context stay near the active sheet.</p>
+                <p>Downtime, lifestyle upkeep, subscriptions, reminders, recurring costs, and next-session context stay near the active dossier.</p>
             </div>
             <div class="browser-workbench-lifecycle-calendar-actions" role="list" aria-label="Lifecycle calendar shortcuts">
                 <a role="listitem" href="@BuildPreviewHref(SeededWorkspaceId, command: OpenDowntimeCommand)" data-workbench-lifecycle-calendar-action="downtime">
@@ -1884,7 +1884,7 @@
             <div class="browser-workbench-progression-ledger-copy">
                 <span class="browser-preview-status-label">Progression</span>
                 <strong>Keep advancement easy to review.</strong>
-                <p>Karma, nuyen, purchases, reputation, and carryover stay close to the active sheet before anything changes.</p>
+                <p>Karma, nuyen, purchases, reputation, and carryover stay close to the active dossier before anything changes.</p>
             </div>
             <div class="browser-workbench-progression-ledger-actions" role="list" aria-label="Progression ledger shortcuts">
                 <a role="listitem" href="@BuildPreviewHref(SeededWorkspaceId, command: KarmaSpendLedgerCommand)" data-workbench-progression-ledger-action="karma_spend">
@@ -1959,7 +1959,7 @@
             <div class="browser-workbench-restore-checkpoint-copy">
                 <span class="browser-preview-status-label">Restore</span>
                 <strong>Keep recovery close to risky edits.</strong>
-                <p>Autosaves, named checkpoints, backups, previews, rollback, and retention stay visible while the sheet changes.</p>
+                <p>Autosaves, named checkpoints, backups, previews, rollback, and retention stay visible while the dossier changes.</p>
             </div>
             <div class="browser-workbench-restore-checkpoint-actions" role="list" aria-label="Restore checkpoint actions">
                 <a href="@BuildPreviewHref(SeededWorkspaceId, command: CheckpointAutosaveCommand)" role="listitem" data-workbench-restore-checkpoint-action="autosave">Autosave</a>
@@ -1977,7 +1977,7 @@
             <div class="browser-workbench-offline-cache-copy">
                 <span class="browser-preview-status-label">Offline</span>
                 <strong>Keep network trouble visible.</strong>
-                <p>Cache status, queued edits, reconnect review, local export, stale data, and sync health stay close to the sheet.</p>
+                <p>Cache status, queued edits, reconnect review, local export, stale data, and sync health stay close to the dossier.</p>
             </div>
             <div class="browser-workbench-offline-cache-actions" role="list" aria-label="Offline cache actions">
                 <a href="@BuildPreviewHref(SeededWorkspaceId, command: OfflineCacheStatusWorkbenchCommand)" role="listitem" data-workbench-offline-cache-action="cache-status">Cache status</a>
@@ -2013,7 +2013,7 @@
             <div class="browser-workbench-share-export-privacy-copy">
                 <span class="browser-preview-status-label">Share</span>
                 <strong>Keep handoff deliberate.</strong>
-                <p>Redaction, scope, expiry, revocation, history, and local-only export choices stay visible before output leaves the sheet.</p>
+                <p>Redaction, scope, expiry, revocation, history, and local-only export choices stay visible before output leaves the dossier.</p>
             </div>
             <div class="browser-workbench-share-export-privacy-actions" role="list" aria-label="Share export privacy actions">
                 <a href="@BuildPreviewHref(SeededWorkspaceId, command: ShareRedactionCommand)" role="listitem" data-workbench-share-export-privacy-action="redaction-profile">Redaction</a>
@@ -2031,7 +2031,7 @@
             <div class="browser-workbench-table-handoff-copy">
                 <span class="browser-preview-status-label">Table</span>
                 <strong>Package the runner for play.</strong>
-                <p>GM packet, initiative card, condition tracker, public handout, private notes, and table export stay close to the sheet.</p>
+                <p>GM packet, initiative card, condition tracker, public handout, private notes, and table export stay close to the dossier.</p>
             </div>
             <div class="browser-workbench-table-handoff-actions" role="list" aria-label="Table handoff actions">
                 <a href="@BuildPreviewHref(SeededWorkspaceId, command: TableGmPacketCommand)" role="listitem" data-workbench-table-handoff-action="gm-packet">GM packet</a>
@@ -2049,7 +2049,7 @@
             <div class="browser-workbench-rules-citation-copy">
                 <span class="browser-preview-status-label">Rules</span>
                 <strong>Keep rule context near exports.</strong>
-                <p>Source packet, citation scope, errata note, table summary, dispute notes, and rule export stay close to the sheet.</p>
+                <p>Source packet, citation scope, errata note, table summary, dispute notes, and rule export stay close to the dossier.</p>
             </div>
             <div class="browser-workbench-rules-citation-actions" role="list" aria-label="Rules citation actions">
                 <a href="@BuildPreviewHref(SeededWorkspaceId, command: RulesSourcePacketCommand)" role="listitem" data-workbench-rules-citation-action="source-packet">Source packet</a>
@@ -2067,7 +2067,7 @@
             <div class="browser-workbench-localization-terminology-copy">
                 <span class="browser-preview-status-label">Language</span>
                 <strong>Use the table's own terms.</strong>
-                <p>Language, units, dates, currency, table terms, and source titles stay adjustable without cluttering the sheet.</p>
+                <p>Language, units, dates, currency, table terms, and source titles stay adjustable without cluttering the dossier.</p>
             </div>
             <div class="browser-workbench-localization-terminology-actions" role="list" aria-label="Localization terminology actions">
                 <a href="@BuildPreviewHref(SeededWorkspaceId, command: SettingsLanguageCommand)" role="listitem" data-workbench-localization-terminology-action="language">Language</a>

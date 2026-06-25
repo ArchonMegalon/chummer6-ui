@@ -2,7 +2,7 @@
 
 ## Purpose
 
-This source-staged proof keeps sheet output and print-layout profile affordances visible on the user-facing Chummer Online route and /blazor/workbench compatibility route.
+This source-staged proof keeps dossier output and print-layout profile affordances visible on the user-facing Chummer Online route and /blazor/workbench compatibility route.
 
 The browser client should expose dossier template, paper size, theme, sections, preview, export profile, and same-origin help posture so table output remains deliberate and repeatable.
 

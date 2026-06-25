@@ -1,6 +1,6 @@
 {
   "contract_name": "chummer6-ui.blazor_workbench_inspector_rail_staged_proof",
-  "generated_at": "2026-06-25T04:43:34.374783+00:00",
+  "generated_at": "2026-06-25T16:54:50.901228+00:00",
   "status": "passed",
   "proof_tier": "source_staged_no_browser_execution",
   "route_lane": "promoted_blazor_workbench",
@@ -46,7 +46,7 @@
   ],
   "failures": [],
   "notes": [
-    "This receipt only proves that promoted workbench inspector-rail source, style, status, and docs agree.",
+    "This receipt only proves that Chummer Online and /blazor/workbench compatibility route inspector-rail source, style, status, and docs agree.",
     "It is not a substitute for hosted Playwright execution proof, Docker self-host proof, live inspector state proof, or split-pane persistence proof.",
     "Do not use this receipt to claim live inspector state, split-pane persistence, or browser execution parity."
   ]

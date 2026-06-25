@@ -4,7 +4,7 @@
 
 This source-staged proof keeps desktop-like pane and windowing affordances visible on the user-facing Chummer Online route and /blazor/workbench compatibility route.
 
-The browser client should expose split view, pop-out detail panes, pinned inspectors, focus mode, second-screen table views, layout restore, and same-origin help posture near dense sheet workflows.
+The browser client should expose split view, pop-out detail panes, pinned inspectors, focus mode, second-screen table views, layout restore, and same-origin help posture near dense dossier workflows.
 
 ## Source-Staged Scope
 

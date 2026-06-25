@@ -58,7 +58,7 @@ CHECKS = [
         "path": "docs/BLAZOR_WEB_CLIENT_PARITY_GOAL.md",
         "tokens": [
             "staged hosted workbench layout-presets posture",
-            "dense sheet, split review, output, mobile safe, focus pane, and help",
+            "dense dossier, split review, output, mobile safe, focus pane, and help",
             "not yet claiming pane resizing, portal help runtime, or persisted layout parity",
         ],
     },

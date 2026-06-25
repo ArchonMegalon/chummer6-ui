@@ -554,7 +554,7 @@ CHECKS = [
             "startup command links for roster/new/import/origin flows derive from local command constants",
             "`character_roster`, `new_character`, `open_character`, or `new_character_origin` command strings",
             "output command links for save/save-as/export/print flows derive from local command constants",
-            "setup and rules command links for XML editor, ruleset, global settings, and character settings derive from local command constants",
+            "setup and rules command links for XML editor, ruleset, global settings, and dossier settings derive from local command constants",
             "final amber/mint/blue Chummer Online color pass",
             "warm gold, mint, and blue accents",
             "app and compatibility route do not read as a default preview page",

@@ -18,7 +18,7 @@ The staged polish lane covers:
 - one-click shortcuts for Character Roster, new runner, open/import, Build Lab, gear, save/download, export, print, downloads, and support
 - startup command links for roster/new/import/origin flows derive from local command constants, so the visible task dock and proof cards do not scatter the `character_roster`, `new_character`, `open_character`, or `new_character_origin` command strings
 - output command links for save/save-as/export/print flows derive from local command constants, so the task dock, recovery links, and proof cards stay aligned on `save_character`, `save_character_as`, `export_character`, and `print_character`
-- setup and rules command links for XML editor, ruleset switching, global settings, and character settings derive from local command constants instead of repeated command literals
+- setup and rules command links for XML editor, ruleset switching, global settings, and dossier settings derive from local command constants instead of repeated command literals
 - scoped responsive styling for desktop and mobile browser use
 - a polished Chummer Online command-deck treatment with clear hierarchy, strong focus/hover affordances, reduced-motion safety, and a cohesive slate/amber/mint/blue browser-client palette
 - a final amber/mint/blue Chummer Online color pass that strengthens the ambient shell, banner, route labels, primary actions, and focus rings without changing the route model
