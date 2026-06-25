@@ -6784,3 +6784,355 @@
 .browser-preview-shell.classic-promoted-app .classic-chummer-inspector {
     overflow: auto;
 }
+
+/* Toolstrip groups: compact desktop button clusters with small icon slots. */
+.classic-toolstrip-group {
+    display: inline-flex;
+    gap: .12rem;
+    padding-right: .35rem;
+    margin-right: .22rem;
+    border-right: 1px solid #9a9184;
+}
+
+.classic-toolstrip-group:last-child {
+    border-right: 0;
+}
+
+.classic-chummer-toolstrip a {
+    gap: .25rem;
+    min-width: 4.2rem;
+    justify-content: flex-start;
+}
+
+.classic-tool-icon {
+    display: inline-grid;
+    place-items: center;
+    width: 1rem;
+    height: 1rem;
+    border: 1px solid #7b756b;
+    background: linear-gradient(180deg, #fff 0, #c8d9e4 100%);
+    color: #102332;
+    font-size: .62rem;
+    font-weight: 800;
+    line-height: 1;
+    box-shadow: inset 0 1px 0 rgba(255,255,255,.85);
+}
+
+.classic-chummer-toolstrip a:hover .classic-tool-icon,
+.classic-chummer-toolstrip a:focus-visible .classic-tool-icon {
+    border-color: #315f7c;
+    background: #315f7c;
+    color: #fff;
+}
+
+/* Classic menu flyouts: expose Chummer-like command grouping instead of web nav tabs. */
+.classic-menu-item {
+    position: relative;
+}
+
+.classic-menu-item > a {
+    display: inline-flex;
+}
+
+.classic-menu-flyout {
+    position: absolute;
+    z-index: 30;
+    top: calc(100% - 1px);
+    left: 0;
+    display: none;
+    min-width: 10rem;
+    padding: .15rem;
+    border: 1px solid #3f3a33;
+    background: #eee9df;
+    box-shadow: 2px 3px 0 rgba(0,0,0,.22);
+}
+
+.classic-menu-item:hover .classic-menu-flyout,
+.classic-menu-item:focus-within .classic-menu-flyout {
+    display: grid;
+}
+
+.classic-menu-flyout a {
+    min-height: 1.35rem;
+    border: 0;
+    border-radius: 0;
+    background: transparent;
+    box-shadow: none;
+    color: #1f1d1a;
+    padding: .12rem .45rem;
+    font-size: .74rem;
+    font-weight: 500;
+    text-align: left;
+}
+
+.classic-menu-flyout a:hover,
+.classic-menu-flyout a:focus-visible {
+    background: #315f7c;
+    color: #fff;
+    outline: 0;
+}
+
+/* Desktop-style splitters between roster, dossier, and inspector panes. */
+.classic-chummer-roster,
+.classic-chummer-dossier {
+    position: relative;
+}
+
+.classic-chummer-roster::after,
+.classic-chummer-dossier::after {
+    content: "";
+    position: absolute;
+    top: 0;
+    right: -3px;
+    bottom: 0;
+    width: 5px;
+    border-left: 1px solid #f8f5ee;
+    border-right: 1px solid #7b756b;
+    background: repeating-linear-gradient(
+        180deg,
+        #c5bcae 0,
+        #c5bcae 4px,
+        #aca294 4px,
+        #aca294 8px
+    );
+    cursor: col-resize;
+    z-index: 2;
+}
+
+.classic-chummer-dossier::after {
+    right: -4px;
+}
+
+@media (max-width: 960px) {
+    .classic-chummer-dossier::after {
+        content: none;
+        display: none;
+    }
+}
+
+@media (max-width: 760px) {
+    .classic-chummer-roster::after {
+        content: none;
+        display: none;
+    }
+}
+
+.browser-preview-shell.classic-promoted-app .classic-chummer-status {
+    grid-template-columns: repeat(6, minmax(0, auto));
+    justify-content: stretch;
+    gap: 0;
+    padding: 0;
+    border-top: 1px solid #8d8478;
+    background: linear-gradient(180deg, #d9d1c4 0%, #bdb3a5 100%);
+    color: #2b2723;
+    font-size: .68rem;
+    line-height: 1;
+}
+
+.browser-preview-shell.classic-promoted-app .classic-chummer-status span {
+    display: grid;
+    grid-template-columns: auto auto;
+    align-items: center;
+    gap: .28rem;
+    min-height: 1.35rem;
+    padding: .18rem .45rem;
+    border-right: 1px solid #918779;
+    box-shadow: inset 1px 1px 0 rgba(255, 255, 255, .55);
+    white-space: nowrap;
+}
+
+.browser-preview-shell.classic-promoted-app .classic-chummer-status strong {
+    font-size: .66rem;
+    font-weight: 800;
+    letter-spacing: .04em;
+    text-transform: uppercase;
+}
+
+.browser-preview-shell.classic-promoted-app .classic-chummer-status em {
+    color: #5b5348;
+    font-size: .66rem;
+    font-style: normal;
+}
+
+@media (max-width: 760px) {
+    .browser-preview-shell.classic-promoted-app .classic-chummer-status {
+        grid-template-columns: 1fr 1fr;
+    }
+
+    .browser-preview-shell.classic-promoted-app .classic-chummer-status span {
+        justify-content: space-between;
+    }
+}
+
+/* Classic Chummer5A dossier correction: dense form/table surface, not web cards. */
+.browser-preview-shell.classic-promoted-app .classic-chummer-dossier {
+    background: #b9b0a3;
+    border-left: 1px solid #786f64;
+    border-right: 1px solid #786f64;
+    box-shadow: inset 1px 1px 0 rgba(255, 255, 255, .58), inset -1px -1px 0 rgba(61, 52, 43, .28);
+}
+
+.browser-preview-shell.classic-promoted-app .classic-dossier-tabs {
+    align-items: end;
+    gap: 0;
+    padding: .28rem .42rem 0;
+    border-bottom: 1px solid #746b60;
+    background: linear-gradient(180deg, #d2c8ba 0%, #b7ad9f 100%);
+}
+
+.browser-preview-shell.classic-promoted-app .classic-dossier-tab {
+    min-height: 1.55rem;
+    margin-right: -1px;
+    padding: .28rem .72rem .22rem;
+    border: 1px solid #7d7367;
+    border-bottom: 0;
+    border-radius: 2px 2px 0 0;
+    background: linear-gradient(180deg, #c9c0b3 0%, #a99f92 100%);
+    color: #302a24;
+    font-size: .72rem;
+    font-weight: 800;
+    letter-spacing: .02em;
+    text-transform: none;
+    box-shadow: inset 1px 1px 0 rgba(255, 255, 255, .55);
+}
+
+.browser-preview-shell.classic-promoted-app .classic-dossier-tab:first-child {
+    position: relative;
+    z-index: 2;
+    background: linear-gradient(180deg, #f0eadf 0%, #d7cec1 100%);
+    color: #17130f;
+    min-height: 1.72rem;
+    margin-bottom: -1px;
+}
+
+.browser-preview-shell.classic-promoted-app .classic-dossier-body {
+    padding: .48rem;
+    background: #d7cec1;
+    border-top: 1px solid #f6f0e7;
+}
+
+.browser-preview-shell.classic-promoted-app .classic-dossier-section-list {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0;
+    margin: 0 0 .45rem;
+    padding: .18rem;
+    border: 1px solid #877d71;
+    background: #c3b8aa;
+    box-shadow: inset 1px 1px 0 rgba(255, 255, 255, .52);
+}
+
+.browser-preview-shell.classic-promoted-app .classic-dossier-section-list a {
+    padding: .22rem .52rem;
+    border-right: 1px solid #8d8378;
+    color: #26211c;
+    font-size: .69rem;
+    font-weight: 800;
+    text-decoration: none;
+}
+
+.browser-preview-shell.classic-promoted-app .classic-dossier-section-list a:first-child {
+    background: #efe7dc;
+    outline: 1px solid #6f655a;
+}
+
+.browser-preview-shell.classic-promoted-app .classic-dossier-grid {
+    gap: .42rem;
+}
+
+.browser-preview-shell.classic-promoted-app .classic-dossier-group {
+    border: 1px solid #7e7468;
+    background: #e8dfd3;
+    box-shadow: inset 1px 1px 0 rgba(255, 255, 255, .7), 1px 1px 0 rgba(69, 58, 48, .22);
+}
+
+.browser-preview-shell.classic-promoted-app .classic-dossier-group h3 {
+    margin: 0;
+    padding: .24rem .42rem;
+    border-bottom: 1px solid #80766a;
+    background: linear-gradient(180deg, #b4ab9f 0%, #92887b 100%);
+    color: #120f0c;
+    font-size: .68rem;
+    font-weight: 900;
+    letter-spacing: .04em;
+    text-transform: uppercase;
+}
+
+.browser-preview-shell.classic-promoted-app .classic-dossier-group dl,
+.browser-preview-shell.classic-promoted-app .classic-dossier-group ul {
+    margin: 0;
+    padding: .22rem .3rem .3rem;
+}
+
+.browser-preview-shell.classic-promoted-app .classic-dossier-group dl {
+    display: grid;
+    grid-template-columns: minmax(6.5rem, .7fr) minmax(0, 1fr);
+    gap: 0;
+}
+
+.browser-preview-shell.classic-promoted-app .classic-dossier-group dt,
+.browser-preview-shell.classic-promoted-app .classic-dossier-group dd,
+.browser-preview-shell.classic-promoted-app .classic-dossier-group li {
+    min-height: 1.38rem;
+    padding: .22rem .3rem;
+    border-bottom: 1px solid #c9bfb2;
+    color: #211c17;
+    font-size: .71rem;
+}
+
+.browser-preview-shell.classic-promoted-app .classic-dossier-group dt {
+    background: #d2c8ba;
+    color: #4b4238;
+    font-weight: 800;
+}
+
+.browser-preview-shell.classic-promoted-app .classic-dossier-group dd {
+    margin: 0;
+    background: #f2eadf;
+    border-left: 1px solid #c2b7aa;
+    font-weight: 700;
+}
+
+.browser-preview-shell.classic-promoted-app .classic-dossier-group li {
+    display: grid;
+    grid-template-columns: 1fr auto;
+    gap: .5rem;
+    background: #f2eadf;
+    list-style: none;
+}
+
+.browser-preview-shell.classic-promoted-app .classic-dossier-group li::after {
+    content: "OK";
+    color: #4f463b;
+    font-size: .62rem;
+    font-weight: 900;
+}
+
+.browser-preview-shell.classic-promoted-app .classic-dossier-actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: .35rem;
+    margin-top: .45rem;
+    padding: .34rem;
+    border: 1px solid #82786d;
+    background: #c6bbad;
+    box-shadow: inset 1px 1px 0 rgba(255, 255, 255, .52);
+}
+
+.browser-preview-shell.classic-promoted-app .classic-dossier-actions a {
+    min-width: 7.5rem;
+    padding: .32rem .7rem;
+    border: 1px solid #6d6257;
+    background: linear-gradient(180deg, #f0eadf 0%, #bfb4a6 100%);
+    color: #1b1713;
+    font-size: .7rem;
+    font-weight: 900;
+    text-align: center;
+    text-decoration: none;
+    box-shadow: inset 1px 1px 0 rgba(255, 255, 255, .8), 1px 1px 0 rgba(57, 48, 40, .22);
+}
+
+.browser-preview-shell.classic-promoted-app .classic-dossier-actions a:active {
+    background: linear-gradient(180deg, #b7ad9f 0%, #e8dfd3 100%);
+    box-shadow: inset 1px 1px 0 rgba(57, 48, 40, .28);
+}

@@ -77,7 +77,7 @@
                 <a href="@BuildLabLaneHref">Edit</a>
                 <a href="@BuildPreviewHref(SeededWorkspaceId, tab: ProfileTabId, useWorkbenchRoute: true)">View</a>
                 <a href="@ChummerOnlineRosterHref">Runner</a>
-                <a href="@BuildPreviewHref(command: "global_settings", useWorkbenchRoute: true)">Tools</a>
+                <a href="@GlobalSettingsHref">Tools</a>
                 <a href="@HelpHref">Help</a>
             </nav>
 
@@ -206,11 +206,13 @@
             </div>
 
             <footer class="classic-chummer-status" aria-label="Classic Chummer status">
-                <span>Ready</span>
-                <span>Rules: SR5</span>
-                <span>Local dossier state</span>
-                <span>Chummer Online</span>
-            </footer>
+                    <span><strong>Ready</strong><em>Local</em></span>
+                    <span><strong>Dirty</strong><em>Unsaved dossier</em></span>
+                    <span><strong>Rules</strong><em>SR5</em></span>
+                    <span><strong>Checks</strong><em>Review required</em></span>
+                    <span><strong>Privacy</strong><em>Local-first</em></span>
+                    <span><strong>Route</strong><em>Chummer Online</em></span>
+                </footer>
         </section>
     }
 
@@ -2687,6 +2689,7 @@
     private string StartupCommandLabel => string.IsNullOrWhiteSpace(Command)
         ? "none"
         : Command;
+    private string GlobalSettingsHref => BuildPreviewHref(command: "global_settings", useWorkbenchRoute: true);
     private string ChummerOnlineRosterHref => IsWorkbenchRoute
         ? BuildPreviewHref(command: CharacterRosterCommand, useWorkbenchRoute: true)
         : ChummerOnlineRosterAppHref;
