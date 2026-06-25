@@ -55,18 +55,37 @@
     window.chummerAnalytics = window.chummerAnalytics || {};
     (function(analytics) {
         const maxQueueLength = 20;
+        const eventPrefix = 'chummer_';
+        const browserRouteEventName = 'browser_route';
+        const propertyHostClass = 'host_class';
+        const propertyAnalyticsScope = 'analytics_scope';
+        const propertySessionReplay = 'session_replay';
+        const propertyAutocapture = 'autocapture';
+        const propertyRouteFamily = 'route_family';
+        const propertyCommandId = 'command_id';
+        const propertyTabId = 'tab_id';
+        const propertyControlId = 'control_id';
+        const propertyDialogActionId = 'dialog_action_id';
+        const propertyHasWorkspace = 'has_workspace';
+        const propertyHasFixture = 'has_fixture';
+        const queryCommand = 'command';
+        const queryTab = 'tab';
+        const queryControl = 'control';
+        const queryDialogAction = 'dialog_action';
+        const queryWorkspace = 'workspace';
+        const queryFixture = 'fixture';
         const allowedPropertyKeys = new Set([
-            'host_class',
-            'analytics_scope',
-            'session_replay',
-            'autocapture',
-            'route_family',
-            'command_id',
-            'tab_id',
-            'control_id',
-            'dialog_action_id',
-            'has_workspace',
-            'has_fixture'
+            propertyHostClass,
+            propertyAnalyticsScope,
+            propertySessionReplay,
+            propertyAutocapture,
+            propertyRouteFamily,
+            propertyCommandId,
+            propertyTabId,
+            propertyControlId,
+            propertyDialogActionId,
+            propertyHasWorkspace,
+            propertyHasFixture
         ]);
         const forbiddenPropertyPattern = /(alias|character|content|document|email|file|hash|name|owner|payload|workspace|xml)/i;
         const safeTokenPattern = /^[a-z0-9_.:-]{1,80}$/i;
@@ -79,6 +98,14 @@
         const routeFamilyDownloads = 'downloads';
         const routeFamilyDocs = 'docs';
         const routeFamilyOther = 'other';
+        const pathBlazor = '/blazor';
+        const pathBlazorSlash = '/blazor/';
+        const pathApp = '/app';
+        const pathWorkbench = '/workbench';
+        const pathPreview = '/preview';
+        const pathShowcase = '/showcase';
+        const pathDownloads = '/downloads';
+        const pathDocs = '/docs';
         let lastRouteKey = '';
 
         analytics._queue = analytics._queue || [];
@@ -151,7 +178,7 @@
 
             const payload = sanitizeProperties(properties);
             if (window.rybbit && typeof window.rybbit.event === 'function') {
-                window.rybbit.event(`chummer_${safeEventName}`, payload);
+                window.rybbit.event(`${eventPrefix}${safeEventName}`, payload);
                 return;
             }
 
@@ -167,7 +194,7 @@
 
             const queued = analytics._queue.splice(0, analytics._queue.length);
             for (const [eventName, payload] of queued) {
-                window.rybbit.event(`chummer_${eventName}`, payload);
+                window.rybbit.event(`${eventPrefix}${eventName}`, payload);
             }
         }
 
@@ -177,30 +204,30 @@
             const query = url.searchParams;
             let routeFamily = routeFamilyOther;
 
-            if (path.endsWith('/blazor') || path.endsWith('/blazor/') || path.endsWith('/app') || path.endsWith('/workbench')) {
+            if (path.endsWith(pathBlazor) || path.endsWith(pathBlazorSlash) || path.endsWith(pathApp) || path.endsWith(pathWorkbench)) {
                 routeFamily = routeFamilyChummerApp;
-            } else if (path.endsWith('/preview')) {
+            } else if (path.endsWith(pathPreview)) {
                 routeFamily = routeFamilyPreview;
-            } else if (path.endsWith('/showcase')) {
+            } else if (path.endsWith(pathShowcase)) {
                 routeFamily = routeFamilyShowcase;
-            } else if (path.includes('/downloads')) {
+            } else if (path.includes(pathDownloads)) {
                 routeFamily = routeFamilyDownloads;
-            } else if (path.includes('/docs')) {
+            } else if (path.includes(pathDocs)) {
                 routeFamily = routeFamilyDocs;
             }
 
             return {
-                host_class: 'blazor',
-                analytics_scope: analyticsScope,
-                session_replay: sessionReplayPolicy,
-                autocapture: autocapturePolicy,
-                route_family: routeFamily,
-                command_id: safeToken(query.get('command')),
-                tab_id: safeToken(query.get('tab')),
-                control_id: safeToken(query.get('control')),
-                dialog_action_id: safeToken(query.get('dialog_action')),
-                has_workspace: query.has('workspace'),
-                has_fixture: query.has('fixture')
+                [propertyHostClass]: 'blazor',
+                [propertyAnalyticsScope]: analyticsScope,
+                [propertySessionReplay]: sessionReplayPolicy,
+                [propertyAutocapture]: autocapturePolicy,
+                [propertyRouteFamily]: routeFamily,
+                [propertyCommandId]: safeToken(query.get(queryCommand)),
+                [propertyTabId]: safeToken(query.get(queryTab)),
+                [propertyControlId]: safeToken(query.get(queryControl)),
+                [propertyDialogActionId]: safeToken(query.get(queryDialogAction)),
+                [propertyHasWorkspace]: query.has(queryWorkspace),
+                [propertyHasFixture]: query.has(queryFixture)
             };
         }
 
@@ -212,7 +239,7 @@
             }
 
             lastRouteKey = routeKey;
-            dispatch('browser_route', properties);
+            dispatch(browserRouteEventName, properties);
         }
 
         function scheduleRouteTracking() {
