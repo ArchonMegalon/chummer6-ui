@@ -20,8 +20,9 @@ CHECKS = [
         "id": "product_workbench_hosting_privacy_strip",
         "path": "Chummer.Blazor/Components/Pages/Preview.razor",
         "tokens": [
-            "Workbench hosting and privacy posture",
+            "HostingPostureAriaLabel",
             "Chummer Online hosting and privacy posture",
+            "Compatibility route hosting and privacy posture",
             "data-workbench-hosting=\"strip\"",
             "Hosting and privacy",
             "HostedRouteLabel",
@@ -33,7 +34,7 @@ CHECKS = [
             "Rybbit is optional and metadata-only",
             "CHUMMER_ANALYTICS_PROVIDER=none",
             "self-host defaults stay off unless the operator opts into Rybbit",
-            "must not send character, owner, runner file, XML, or dossier content",
+            "must not send dossier metadata, owner identifiers, dossier files, XML, or dossier content",
         ],
     },
     {

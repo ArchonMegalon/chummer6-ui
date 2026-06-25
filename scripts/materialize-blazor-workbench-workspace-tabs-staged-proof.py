@@ -22,7 +22,7 @@ CHECKS = [
         "tokens": [
             "Browser-client runner tabs",
             "data-workbench-workspace-tabs=\"strip\"",
-            "Keep active runner lanes visible.",
+            "Keep active dossier lanes visible.",
             "data-workbench-workspace-tabs-action=\"active-runner\"",
             "data-workbench-workspace-tabs-action=\"build-lab\"",
             "data-workbench-workspace-tabs-action=\"print-export\"",
@@ -53,7 +53,7 @@ CHECKS = [
         "path": "docs/BLAZOR_WEB_CLIENT_PARITY_GOAL.md",
         "tokens": [
             "staged hosted workbench workspace-tabs posture",
-            "active runner, build lab, print/export, and recent import",
+            "active dossier, Build Lab, print/export, and recent import",
             "not yet claiming multi-document state or tab persistence parity",
         ],
     },

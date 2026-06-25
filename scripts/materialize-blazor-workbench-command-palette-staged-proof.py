@@ -65,7 +65,7 @@ CHECKS = [
         "tokens": [
             "staged hosted workbench command-palette posture",
             "keyboard-style hints",
-            "reload-safe workbench links",
+            "reload-safe browser-client links",
             "same-origin help",
         ],
     },

@@ -1,6 +1,6 @@
 {
   "contract_name": "chummer6-ui.blazor_workbench_workspace_tabs_staged_proof",
-  "generated_at": "2026-06-25T04:43:34.323265+00:00",
+  "generated_at": "2026-06-25T17:03:39.651952+00:00",
   "status": "passed",
   "proof_tier": "source_staged_no_browser_execution",
   "route_lane": "promoted_blazor_workbench",
@@ -46,7 +46,7 @@
   ],
   "failures": [],
   "notes": [
-    "This receipt only proves that promoted workbench workspace-tabs source, style, status, and docs agree.",
+    "This receipt only proves that Chummer Online and /blazor/workbench compatibility route workspace-tabs source, style, status, and docs agree.",
     "It is not a substitute for hosted Playwright execution proof, Docker self-host proof, multi-document state proof, or tab-persistence proof.",
     "Do not use this receipt to claim multi-document state, tab persistence, or browser execution parity."
   ]

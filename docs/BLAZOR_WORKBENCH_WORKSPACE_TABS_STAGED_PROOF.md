@@ -11,7 +11,7 @@ The browser client should preserve the feel of active Chummer work by keeping lo
 The staged workspace-tabs lane covers:
 
 - a workspace tab strip on the user-facing Chummer Online route and /blazor/workbench compatibility route
-- active runner, build lab, print/export, and recent import shortcuts
+- active dossier, Build Lab, print/export, and recent import shortcuts
 - scoped responsive styling for desktop and mobile browser use
 
 ## Source Check

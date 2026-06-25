@@ -127,7 +127,7 @@
                 <a href="@ChummerOnlineRosterHref" data-workbench-dock-action="character-roster">Character Roster</a>
                 <a href="@BuildPreviewHref(command: NewCharacterCommand, useWorkbenchRoute: true)" data-workbench-dock-action="start-new">New runner</a>
                 <a href="@BuildPreviewHref(command: OpenCharacterCommand, useWorkbenchRoute: true)" data-workbench-dock-action="open-existing">Open/import</a>
-                <a href="@BuildLabLaneHref" data-workbench-dock-action="build-lab">Build lab</a>
+                <a href="@BuildLabLaneHref" data-workbench-dock-action="build-lab">Build Lab</a>
                 <a href="@GearLaneHref" data-workbench-dock-action="gear">Gear</a>
                 <a href="@SaveAsFlowHref" data-workbench-dock-action="save-as">Save/download</a>
                 <a href="@ExportFlowHref" data-workbench-dock-action="export">Export</a>
@@ -198,7 +198,7 @@
                 <article data-workbench-hosting-card="analytics-privacy">
                     <span>Analytics</span>
                     <strong>Rybbit is optional and metadata-only</strong>
-                    <p>Hosted analytics may use route/workflow metadata; self-host defaults stay off unless the operator opts into Rybbit and must not send character, owner, runner file, XML, or dossier content.</p>
+                    <p>Hosted analytics may use route/workflow metadata; self-host defaults stay off unless the operator opts into Rybbit and must not send dossier metadata, owner identifiers, dossier files, XML, or dossier content.</p>
                 </article>
             </div>
         </section>
@@ -299,7 +299,7 @@
             <div class="browser-workbench-ledger-grid">
                 <article data-workbench-ledger-row="startup">
                     <span>Startup</span>
-                    <strong>New runners, open files, origins, and lists</strong>
+                    <strong>New runners, open dossiers, origins, and lists</strong>
                     <p>Common entry points stay in the browser and survive a reload.</p>
                 </article>
                 <article data-workbench-ledger-row="editing">
@@ -631,16 +631,16 @@
         <section class="browser-workbench-workspace-tabs" aria-label="Browser-client runner tabs" data-workbench-workspace-tabs="strip">
             <div class="browser-workbench-workspace-tabs-copy">
                 <span class="browser-preview-status-label">Runner tabs</span>
-                <strong>Keep active runner lanes visible.</strong>
+                <strong>Keep active dossier lanes visible.</strong>
                 <p>Active runner, build review, print/export, and recent import stay side by side.</p>
             </div>
-            <div class="browser-workbench-workspace-tabs-actions" role="list" aria-label="Open runner and task lanes">
+            <div class="browser-workbench-workspace-tabs-actions" role="list" aria-label="Open dossier and task lanes">
                 <a role="listitem" href="@BuildWorkbenchLaneHref(ProfileTabId)" data-workbench-workspace-tabs-action="active-runner">
                     <span>Active runner</span>
                     <small>Return to the loaded sheet.</small>
                 </a>
                 <a role="listitem" href="@BuildWorkbenchLaneHref(BuildTabId)" data-workbench-workspace-tabs-action="build-lab">
-                    <span>Build lab</span>
+                    <span>Build Lab</span>
                     <small>Review creation and advancement.</small>
                 </a>
                 <a role="listitem" href="@BuildWorkbenchCommandHref(PrintCharacterCommand)" data-workbench-workspace-tabs-action="print-export">
@@ -803,7 +803,7 @@
             <div class="browser-workbench-search-filter-actions" role="list" aria-label="Search and filter shortcuts">
                 <a role="listitem" href="@BuildPreviewHref(command: CharacterRosterCommand, useWorkbenchRoute: true)" data-workbench-search-filter-action="roster-search">
                     <span>Character Roster</span>
-                    <small>Find, group, and organize existing runners.</small>
+                    <small>Find, group, and organize existing dossiers.</small>
                 </a>
                 <a role="listitem" href="@BuildWorkbenchLaneHref(GearTabId)" data-workbench-search-filter-action="gear-filter">
                     <span>Gear</span>
@@ -917,7 +917,7 @@
                 </a>
                 <a role="listitem" href="@BuildWorkbenchLaneHref(SkillsTabId)" data-workbench-keyboard-shortcuts-action="section-jump">
                     <span>Section jump</span>
-                    <small>Move through dense sheet lanes.</small>
+                    <small>Move through dense dossier lanes.</small>
                 </a>
                 <a role="listitem" href="#workbench-density-compact" data-workbench-keyboard-shortcuts-action="density-toggle">
                     <span>Density</span>
@@ -1276,12 +1276,12 @@
             <div class="browser-workbench-campaign-session-copy">
                 <span class="browser-preview-status-label">Campaign</span>
                 <strong>Keep table workflow beside the active dossier.</strong>
-                <p>Keep campaign roster, GM review, session notes, rewards, table sharing, and run handoff visible next to the active runner dossier.</p>
+                <p>Keep campaign roster, GM review, session notes, rewards, table sharing, and run handoff visible next to the active dossier.</p>
             </div>
             <div class="browser-workbench-campaign-session-actions" role="list" aria-label="Campaign and session shortcuts">
                 <a role="listitem" href="@BuildPreviewHref(SeededWorkspaceId, command: OpenCampaignRosterCommand)" data-workbench-campaign-session-action="roster">
                     <span>Campaign Roster</span>
-                    <small>Open the table's runner dossier list.</small>
+                    <small>Open the table's dossier list.</small>
                 </a>
                 <a role="listitem" href="@BuildPreviewHref(SeededWorkspaceId, command: RequestGmReviewCommand)" data-workbench-campaign-session-action="gm_review">
                     <span>GM review</span>
@@ -1390,7 +1390,7 @@
             <div class="browser-workbench-pwa-install-copy">
                 <span class="browser-preview-status-label">App install</span>
                 <strong>Make the browser client feel installable.</strong>
-                <p>Keep install, offline cache, updates, permissions, release channel, and reset controls close to the active runner.</p>
+                <p>Keep install, offline cache, updates, permissions, release channel, and reset controls close to the active dossier.</p>
             </div>
             <div class="browser-workbench-pwa-install-actions" role="list" aria-label="PWA install and update shortcuts">
                 <a role="listitem" href="@BuildPreviewHref(SeededWorkspaceId, command: InstallWebAppCommand)" data-workbench-pwa-install-action="install_prompt">
@@ -1541,7 +1541,7 @@
         <section class="browser-workbench-touch-mobile" aria-label="Browser-client touch and mobile ergonomics lane" data-workbench-touch-mobile="strip">
             <div class="browser-workbench-touch-mobile-copy">
                 <span class="browser-preview-status-label">Touch</span>
-                <strong>Make dense sheets usable on touch screens.</strong>
+                <strong>Make dense dossiers usable on touch screens.</strong>
                 <p>Touch mode, zoom, panel docking, compact actions, keyboard-safe layout, and pointer help keep phone, tablet, and trackpad use practical without adding another layer.</p>
             </div>
             <div class="browser-workbench-touch-mobile-actions" role="list" aria-label="Touch and mobile ergonomics shortcuts">
@@ -1732,7 +1732,7 @@
             <div class="browser-workbench-portrait-attachments-copy">
                 <span class="browser-preview-status-label">Portraits</span>
                 <strong>Keep runner media and notes attached to the dossier.</strong>
-                <p>Portraits, token art, table notes, references, import, and cleanup stay close to the active runner without hiding storage risk.</p>
+                <p>Portraits, token art, table notes, references, import, and cleanup stay close to the active dossier without hiding storage risk.</p>
             </div>
             <div class="browser-workbench-portrait-attachments-actions" role="list" aria-label="Portrait and attachment shortcuts">
                 <a role="listitem" href="@BuildPreviewHref(SeededWorkspaceId, command: SetCharacterPortraitCommand)" data-workbench-portrait-attachments-action="portrait">
@@ -1922,7 +1922,7 @@
         <section class="browser-workbench-import-reconcile-strip" aria-label="Browser-client import and reconcile posture" data-workbench-import-reconcile="strip">
             <div class="browser-workbench-import-reconcile-copy">
                 <span class="browser-preview-status-label">Import</span>
-                <strong>Bring existing runners across carefully.</strong>
+                <strong>Bring existing dossiers across carefully.</strong>
                 <p>Files, career state, custom data, attachments, and conflicts stay visible before anything is accepted.</p>
             </div>
             <div class="browser-workbench-import-reconcile-actions" role="list" aria-label="Import reconcile actions">
@@ -2124,7 +2124,7 @@
             </article>
             <article class="browser-preview-status-card" data-workbench-entry-card="open-character">
                 <span class="browser-preview-status-label">Quick start</span>
-                <strong>Import an existing runner</strong>
+                <strong>Import an existing dossier</strong>
                 <p>Open the shared browser import flow for an existing Chummer dossier.</p>
                 <a href="@BuildPreviewHref(command: OpenCharacterCommand, useWorkbenchRoute: true)">Open Character</a>
             </article>
@@ -2219,8 +2219,8 @@
                         <a href="@BuildPreviewHref(workspace: PrimaryRecentWorkspace.WorkspaceId, tab: CareerTabId, control: EditEntryControlId, useWorkbenchRoute: true)">Edit career entry for @PrimaryRecentWorkspace.ShortLabel</a>
                         <a href="@BuildPreviewHref(workspace: PrimaryRecentWorkspace.WorkspaceId, tab: CareerTabId, control: DeleteEntryControlId, dialogAction: DeleteDialogAction, useWorkbenchRoute: true)">Remove and keep career entry result for @PrimaryRecentWorkspace.ShortLabel</a>
                         <a href="@BuildPreviewHref(workspace: PrimaryRecentWorkspace.WorkspaceId, tab: CareerTabId, control: DeleteEntryControlId, useWorkbenchRoute: true)">Remove career entry for @PrimaryRecentWorkspace.ShortLabel</a>
-                        <a href="@BuildPreviewHref(workspace: PrimaryRecentWorkspace.WorkspaceId, tab: ProfileTabId, control: OpenNotesControlId, dialogAction: SaveDialogAction, useWorkbenchRoute: true)">Save runner notes for @PrimaryRecentWorkspace.ShortLabel</a>
-                        <a href="@BuildPreviewHref(workspace: PrimaryRecentWorkspace.WorkspaceId, tab: ProfileTabId, control: OpenNotesControlId, useWorkbenchRoute: true)">Edit runner notes for @PrimaryRecentWorkspace.ShortLabel</a>
+                        <a href="@BuildPreviewHref(workspace: PrimaryRecentWorkspace.WorkspaceId, tab: ProfileTabId, control: OpenNotesControlId, dialogAction: SaveDialogAction, useWorkbenchRoute: true)">Save dossier notes for @PrimaryRecentWorkspace.ShortLabel</a>
+                        <a href="@BuildPreviewHref(workspace: PrimaryRecentWorkspace.WorkspaceId, tab: ProfileTabId, control: OpenNotesControlId, useWorkbenchRoute: true)">Edit dossier notes for @PrimaryRecentWorkspace.ShortLabel</a>
                         <a href="@BuildPreviewHref(workspace: PrimaryRecentWorkspace.WorkspaceId, command: SaveCharacterCommand, useWorkbenchRoute: true)">Save @PrimaryRecentWorkspace.ShortLabel in browser</a>
                         <a href="@BuildPreviewHref(workspace: PrimaryRecentWorkspace.WorkspaceId, command: SaveCharacterAsCommand, useWorkbenchRoute: true)">Prepare @PrimaryRecentWorkspace.ShortLabel browser download</a>
                         <a href="@BuildPreviewHref(workspace: PrimaryRecentWorkspace.WorkspaceId, command: SaveCharacterAsCommand, dialogAction: DownloadDialogAction, useWorkbenchRoute: true)">Download @PrimaryRecentWorkspace.ShortLabel from browser</a>
@@ -2481,12 +2481,12 @@
     private string RouteGuidanceTitle => IsAppRoute
         ? "Use this route as the browser client entrypoint"
         : IsWorkbenchRoute
-            ? "Use this route for saved workbench links"
+            ? "Use this route for saved compatibility links"
             : "Use this route for preview and result-state tools";
     private string RouteGuidanceSummary => IsAppRoute
         ? "The shell below is the user-facing Chummer Online route: open, organize, resume, build, and export runners without proof-route language in the main path."
         : IsWorkbenchRoute
-            ? "The shell below keeps older workbench bookmarks and shared links working while the main browser client remains Chummer Online at /blazor/app."
+            ? "The shell below keeps older compatibility bookmarks and shared links working while the main browser client remains Chummer Online at /blazor/app."
             : "The shell below keeps preview tools, startup deep links, and browser result-state checks separate from the user-facing Chummer Online route.";
     private string TaskDockTitle => IsAppRoute
         ? "Keep the common Chummer jobs one click from the web app."
@@ -2527,8 +2527,8 @@
         ? "Deep-links Chummer Online into the same shared new-character command so startup workflow proof does not depend on manual clicking."
         : "Deep-links the browser client into the same shared new-character command so startup workflow proof does not depend on manual clicking.";
     private string ImportProofSummary => IsAppRoute
-        ? "Deep-links Chummer Online into the shared import dialog so existing-runner intake is proven from the same route model as desktop startup commands."
-        : "Deep-links the browser client into the shared import dialog so existing-runner intake is proven from the same route model as desktop startup commands.";
+        ? "Deep-links Chummer Online into the shared import dialog so existing-dossier intake is proven from the same route model as desktop startup commands."
+        : "Deep-links the browser client into the shared import dialog so existing-dossier intake is proven from the same route model as desktop startup commands.";
     private string OriginDossierSummary => IsAppRoute
         ? "Deep-links Chummer Online into the same origin-dossier wizard used by the shared startup flow."
         : "Deep-links the browser client into the same origin-dossier wizard used by the shared startup flow.";
@@ -2543,7 +2543,7 @@
         : ChummerOnlineRosterAppHref;
     private static string ChummerOnlineRosterAppHref => $"{AppRouteQueryPrefix}{CharacterRosterCommand}";
     private string RouteOpenSummary => IsCharacterRosterCommand
-        ? "Chummer Online is opening directly into the character roster so runners can be grouped, moved, resumed, or organized without stopping at a generic landing shell."
+        ? "Chummer Online is opening directly into the Character Roster so dossiers can be grouped, moved, resumed, or organized without stopping at a generic landing shell."
         : "Use the shell below to verify navigation, startup posture, and active browser workflow routes.";
     private const string NewCharacterCommand = "new_character";
     private const string OpenCharacterCommand = "open_character";
@@ -2854,7 +2854,7 @@
     private string BuildLabLaneHref => BuildWorkbenchLaneHref(BuildTabId);
     private string BuildLabLaneLabel => PrimaryRecentWorkspace is null
         ? "Open Seeded Build Lab"
-        : $"Continue {PrimaryRecentWorkspace.ShortLabel} in build lab";
+        : $"Continue {PrimaryRecentWorkspace.ShortLabel} in Build Lab";
     private string BuildLabLaneDescription => PrimaryRecentWorkspace is null
         ? "Jump into the seeded SR5 runner workbench when you want a real browser session immediately."
         : "Open the most recent restored runner on its build lane so browser continuation starts from the live shared session instead of a seeded-only runner.";

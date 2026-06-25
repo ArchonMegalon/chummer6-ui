@@ -248,7 +248,7 @@ public sealed class DesktopDialogFactory : IDesktopDialogFactory
             "character_roster" => new DesktopDialogState(
                 "dialog.character_roster",
                 "Character Roster",
-                "Group runners into your own folders, drag characters or custom directories through the tree, and keep selected-runner details close without moving watched files until explicitly confirmed.",
+                "Group runners into your own folders, drag dossiers or custom directories through the tree, and keep selected-runner details close without moving watched files until explicitly confirmed.",
                 BuildRosterFields(name, alias, workspace, currentWorkspace, openWorkspaces, preferences),
                 BuildRosterActions(name, alias, workspace, currentWorkspace, openWorkspaces, preferences)),
             "data_exporter" => new DesktopDialogState(

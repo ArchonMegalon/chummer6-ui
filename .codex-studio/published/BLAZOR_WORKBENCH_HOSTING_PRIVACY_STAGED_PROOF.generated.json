@@ -1,10 +1,11 @@
 {
   "contract_name": "chummer6-ui.blazor_workbench_hosting_privacy_staged_proof",
-  "generated_at": "2026-06-25T04:43:33.964304+00:00",
+  "generated_at": "2026-06-25T17:03:39.564684+00:00",
   "status": "passed",
   "proof_tier": "source_staged_no_browser_execution",
   "route_lane": "promoted_blazor_workbench",
   "expected_routes": [
+    "/blazor/app",
     "/blazor/workbench"
   ],
   "checks": [
@@ -12,7 +13,7 @@
       "id": "product_workbench_hosting_privacy_strip",
       "path": "Chummer.Blazor/Components/Pages/Preview.razor",
       "status": "passed",
-      "required_token_count": 10,
+      "required_token_count": 15,
       "missing_tokens": []
     },
     {
@@ -33,7 +34,7 @@
       "id": "contract_doc",
       "path": "docs/BLAZOR_WORKBENCH_HOSTING_PRIVACY_STAGED_PROOF.md",
       "status": "passed",
-      "required_token_count": 3,
+      "required_token_count": 4,
       "missing_tokens": []
     },
     {
@@ -60,7 +61,7 @@
   ],
   "failures": [],
   "notes": [
-    "This receipt only proves that promoted workbench hosting/privacy source, style, status, and docs agree, including the self-host default-off Rybbit boundary.",
+    "This receipt only proves that Chummer Online and /blazor/workbench compatibility route hosting/privacy source, style, status, and docs agree, including the self-host default-off Rybbit boundary.",
     "It is not a substitute for hosted Playwright execution proof or Docker self-host proof.",
     "Do not use this receipt to claim Docker runtime, hosted route availability, Rybbit service health, or analytics delivery."
   ]

@@ -15,7 +15,7 @@ The staged hosting/privacy lane covers:
 - hosted `chummer.run` Rybbit enablement posture with explicit telemetry limits
 - Rybbit is optional and metadata-only analytics copy
 - self-host default-off analytics copy, including `CHUMMER_ANALYTICS_PROVIDER=none`
-- explicit privacy limits for character, owner, workspace, XML, and dossier content
+- explicit privacy limits for dossier metadata/content, owner identifiers, workspace identifiers, XML, files, payloads, and hashes
 - scoped responsive styling for desktop and mobile browser use
 - status reporting note `source_alignment_only_default_off_rybbit_not_browser_execution`
 

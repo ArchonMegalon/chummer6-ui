@@ -21,7 +21,7 @@ CHECKS = [
         "tokens": [
             "Browser-client import and reconcile posture",
             "data-workbench-import-reconcile=\"strip\"",
-            "Bring existing runners across carefully.",
+            "Bring existing dossiers across carefully.",
             "data-workbench-import-reconcile-action=\"select-file\"",
             "data-workbench-import-reconcile-action=\"parse-summary\"",
             "data-workbench-import-reconcile-action=\"rules-map\"",
