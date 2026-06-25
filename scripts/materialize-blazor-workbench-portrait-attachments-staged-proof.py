@@ -21,7 +21,7 @@ CHECKS = [
         "tokens": [
             "Browser-client portrait and attachments lane",
             "data-workbench-portrait-attachments=\"strip\"",
-            "Keep character media and notes attached to the sheet.",
+            "Keep runner media and notes attached to the dossier.",
             "data-workbench-portrait-attachments-action=\"portrait\"",
             "data-workbench-portrait-attachments-action=\"token_art\"",
             "data-workbench-portrait-attachments-action=\"notes\"",

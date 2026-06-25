@@ -21,7 +21,7 @@ CHECKS = [
         "tokens": [
             "Browser-client performance and virtualization lane",
             "data-workbench-performance-virtualization=\"strip\"",
-            "Keep large sheets responsive.",
+            "Keep large dossiers responsive.",
             "data-workbench-performance-virtualization-action=\"lazy_sections\"",
             "data-workbench-performance-virtualization-action=\"virtual_lists\"",
             "data-workbench-performance-virtualization-action=\"render_budget\"",

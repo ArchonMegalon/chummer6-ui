@@ -1580,7 +1580,7 @@
             <div class="browser-workbench-navigation-deeplink-copy">
                 <span class="browser-preview-status-label">Navigation</span>
                 <strong>Make links reopen the same place.</strong>
-                <p>Breadcrumbs, URL state, back and forward, copied routes, tab restore, and shared anchors keep dense character context intact during table handoff.</p>
+                <p>Breadcrumbs, URL state, back and forward, copied routes, tab restore, and shared anchors keep active dossier context intact during table handoff.</p>
             </div>
             <div class="browser-workbench-navigation-deeplink-actions" role="list" aria-label="Navigation and deep-link shortcuts">
                 <a role="listitem" href="@BuildPreviewHref(SeededWorkspaceId, command: OpenBreadcrumbsCommand)" data-workbench-navigation-deeplink-action="breadcrumbs">
@@ -1597,11 +1597,11 @@
                 </a>
                 <a role="listitem" href="@BuildPreviewHref(SeededWorkspaceId, command: CopyRouteLinkCommand)" data-workbench-navigation-deeplink-action="copy_route">
                     <span>Copy route</span>
-                    <small>Share exact sheet context with a table.</small>
+                    <small>Share exact dossier context with a table.</small>
                 </a>
                 <a role="listitem" href="@BuildPreviewHref(SeededWorkspaceId, command: RestoreRouteTabsCommand)" data-workbench-navigation-deeplink-action="tab_restore">
                     <span>Tab restore</span>
-                    <small>Return to the last active sheet section.</small>
+                    <small>Return to the last active dossier section.</small>
                 </a>
                 <a role="listitem" href="@BuildPreviewHref(SeededWorkspaceId, command: OpenSharedAnchorCommand)" data-workbench-navigation-deeplink-action="shared_anchor">
                     <span>Shared anchor</span>
@@ -1618,7 +1618,7 @@
             <div class="browser-workbench-inline-editing-copy">
                 <span class="browser-preview-status-label">Editing</span>
                 <strong>Keep dense field edits controlled.</strong>
-                <p>Dirty fields, numeric steppers, commit, revert, formula preview, and bulk apply stay close to the active sheet so fast edits remain reviewable.</p>
+                <p>Dirty fields, numeric steppers, commit, revert, formula preview, and bulk apply stay close to the active dossier so fast edits remain reviewable.</p>
             </div>
             <div class="browser-workbench-inline-editing-actions" role="list" aria-label="Inline editing shortcuts">
                 <a role="listitem" href="@BuildPreviewHref(SeededWorkspaceId, command: OpenDirtyFieldsCommand)" data-workbench-inline-editing-action="dirty_fields">
@@ -1655,8 +1655,8 @@
         <section class="browser-workbench-performance-virtualization" aria-label="Browser-client performance and virtualization lane" data-workbench-performance-virtualization="strip">
             <div class="browser-workbench-performance-virtualization-copy">
                 <span class="browser-preview-status-label">Performance</span>
-                <strong>Keep large sheets responsive.</strong>
-                <p>Lazy sections, virtual lists, render budgets, memory posture, degraded mode, and profiling cues keep heavy characters usable without hiding slowdown.</p>
+                <strong>Keep large dossiers responsive.</strong>
+                <p>Lazy sections, virtual lists, render budgets, memory posture, degraded mode, and profiling cues keep heavy dossiers usable without hiding slowdown.</p>
             </div>
             <div class="browser-workbench-performance-virtualization-actions" role="list" aria-label="Performance and virtualization shortcuts">
                 <a role="listitem" href="@BuildPreviewHref(SeededWorkspaceId, command: LazySectionsCommand)" data-workbench-performance-virtualization-action="lazy_sections">
@@ -1669,15 +1669,15 @@
                 </a>
                 <a role="listitem" href="@BuildPreviewHref(SeededWorkspaceId, command: RenderBudgetCommand)" data-workbench-performance-virtualization-action="render_budget">
                     <span>Render budget</span>
-                    <small>Show when the sheet is near browser limits.</small>
+                    <small>Show when the dossier is near browser limits.</small>
                 </a>
                 <a role="listitem" href="@BuildPreviewHref(SeededWorkspaceId, command: MemoryPostureCommand)" data-workbench-performance-virtualization-action="memory_posture">
                     <span>Memory</span>
-                    <small>Expose large-sheet memory posture.</small>
+                    <small>Expose large-dossier memory posture.</small>
                 </a>
                 <a role="listitem" href="@BuildPreviewHref(SeededWorkspaceId, command: DegradedModeCommand)" data-workbench-performance-virtualization-action="degraded_mode">
                     <span>Degraded mode</span>
-                    <small>Keep a safe fallback for heavy sheets.</small>
+                    <small>Keep a safe fallback for heavy dossiers.</small>
                 </a>
                 <a role="listitem" href="@BuildPreviewHref(SeededWorkspaceId, command: RenderProfilerCommand)" data-workbench-performance-virtualization-action="profiler">
                     <span>Profiler</span>
@@ -1685,7 +1685,7 @@
                 </a>
                 <a role="listitem" href="@HelpHref" data-workbench-performance-virtualization-action="help">
                     <span>Help</span>
-                    <small>Recover large-sheet performance setup.</small>
+                    <small>Recover large-dossier performance setup.</small>
                 </a>
             </div>
         </section>
@@ -1693,13 +1693,13 @@
         <section class="browser-workbench-print-layout" aria-label="Browser-client print and layout profiles lane" data-workbench-print-layout="strip">
             <div class="browser-workbench-print-layout-copy">
                 <span class="browser-preview-status-label">Print layout</span>
-                <strong>Keep sheet output profiles visible.</strong>
-                <p>Sheet template, paper size, theme, sections, preview, and export profile stay near output handoff so table packets remain predictable.</p>
+                <strong>Keep dossier output profiles visible.</strong>
+                <p>Dossier template, paper size, theme, sections, preview, and export profile stay near output handoff so table packets remain predictable.</p>
             </div>
             <div class="browser-workbench-print-layout-actions" role="list" aria-label="Print and layout profile shortcuts">
                 <a role="listitem" href="@BuildPreviewHref(SeededWorkspaceId, command: SheetTemplateCommand)" data-workbench-print-layout-action="sheet_template">
                     <span>Template</span>
-                    <small>Select the character sheet layout family.</small>
+                    <small>Select the dossier layout family.</small>
                 </a>
                 <a role="listitem" href="@BuildPreviewHref(SeededWorkspaceId, command: PaperSizeCommand)" data-workbench-print-layout-action="paper_size">
                     <span>Paper size</span>
@@ -1731,7 +1731,7 @@
         <section class="browser-workbench-portrait-attachments" aria-label="Browser-client portrait and attachments lane" data-workbench-portrait-attachments="strip">
             <div class="browser-workbench-portrait-attachments-copy">
                 <span class="browser-preview-status-label">Portraits</span>
-                <strong>Keep character media and notes attached to the sheet.</strong>
+                <strong>Keep runner media and notes attached to the dossier.</strong>
                 <p>Portraits, token art, table notes, references, import, and cleanup stay close to the active runner without hiding storage risk.</p>
             </div>
             <div class="browser-workbench-portrait-attachments-actions" role="list" aria-label="Portrait and attachment shortcuts">
@@ -1749,7 +1749,7 @@
                 </a>
                 <a role="listitem" href="@BuildPreviewHref(SeededWorkspaceId, command: OpenAttachmentsCommand)" data-workbench-portrait-attachments-action="attachments">
                     <span>Attachments</span>
-                    <small>Review references linked to this sheet.</small>
+                    <small>Review references linked to this dossier.</small>
                 </a>
                 <a role="listitem" href="@BuildPreviewHref(SeededWorkspaceId, command: ImportMediaCommand)" data-workbench-portrait-attachments-action="import_media">
                     <span>Import media</span>

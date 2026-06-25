@@ -21,7 +21,7 @@ CHECKS = [
         "tokens": [
             "Browser-client print and layout profiles lane",
             "data-workbench-print-layout=\"strip\"",
-            "Keep sheet output profiles visible.",
+            "Keep dossier output profiles visible.",
             "data-workbench-print-layout-action=\"sheet_template\"",
             "data-workbench-print-layout-action=\"paper_size\"",
             "data-workbench-print-layout-action=\"theme\"",
@@ -69,7 +69,7 @@ CHECKS = [
         "path": "docs/BLAZOR_WEB_CLIENT_PARITY_GOAL.md",
         "tokens": [
             "staged hosted workbench print-layout posture",
-            "sheet template, paper size, theme, sections, preview, export profile, and help",
+            "dossier template, paper size, theme, sections, preview, export profile, and help",
             "not yet claiming print CSS, PDF rendering, paper layout, export-profile, or portal help runtime parity",
         ],
     },

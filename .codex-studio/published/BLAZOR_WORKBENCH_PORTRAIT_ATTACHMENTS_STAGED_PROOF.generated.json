@@ -1,18 +1,19 @@
 {
   "contract_name": "chummer6-ui.blazor_workbench_portrait_attachments_staged_proof",
-  "generated_at": "2026-06-25T04:43:35.151847+00:00",
+  "generated_at": "2026-06-25T16:51:59.349947+00:00",
   "status": "passed",
   "proof_tier": "source_staged_no_browser_execution",
   "route_lane": "promoted_blazor_workbench",
   "expected_routes": [
-    "/blazor/workbench"
+    "/blazor/workbench",
+    "/help"
   ],
   "checks": [
     {
       "id": "product_workbench_portrait_attachments",
       "path": "Chummer.Blazor/Components/Pages/Preview.razor",
       "status": "passed",
-      "required_token_count": 9,
+      "required_token_count": 24,
       "missing_tokens": []
     },
     {
@@ -46,8 +47,8 @@
   ],
   "failures": [],
   "notes": [
-    "This receipt only proves that promoted workbench portrait-attachments source, style, status, and docs agree.",
-    "It is not a substitute for hosted Playwright execution proof, Docker self-host proof, file-upload proof, storage-persistence proof, thumbnail-generation proof, or attachment-cleanup proof.",
-    "Do not use this receipt to claim file upload, storage persistence, thumbnail generation, attachment cleanup, or browser execution parity."
+    "This receipt only proves that Chummer Online and /blazor/workbench compatibility route portrait-attachments source, style, status, and docs agree.",
+    "It is not a substitute for hosted Playwright execution proof, Docker self-host proof, file-upload proof, storage-persistence proof, thumbnail-generation proof, attachment-cleanup proof, or portal help runtime proof.",
+    "Do not use this receipt to claim file upload, storage persistence, thumbnail generation, attachment cleanup, portal help runtime, or browser execution parity."
   ]
 }
