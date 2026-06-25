@@ -102,7 +102,7 @@ def main() -> int:
         "checks": evaluated_checks,
         "failures": failures,
         "notes": [
-            "This receipt only proves that Chummer App and proof-compatible workbench localization and terminology source, style, status, and docs agree.",
+            "This receipt only proves that Chummer Online and proof-compatible workbench localization and terminology source, style, status, and docs agree.",
             "It is not a substitute for hosted browser execution, translation coverage, formatter execution, localized source-title lookup, persisted locale settings, export localization parity, or portal help runtime proof.",
             "Do not use this receipt to claim complete localization, persistence, portal help runtime behavior, or browser execution parity.",
         ],

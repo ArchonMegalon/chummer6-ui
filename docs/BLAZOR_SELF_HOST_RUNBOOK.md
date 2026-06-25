@@ -1,4 +1,4 @@
-# Chummer App Self-Host Runbook
+# Chummer Online Self-Host Runbook
 
 Purpose: run `Chummer.Blazor` as the browser-hosted desktop-equivalent workbench behind `Chummer.Portal`, with the same route and owner-propagation posture expected from `chummer.run`.
 
@@ -16,7 +16,7 @@ Documentation map:
 The self-hosted browser stack is the `portal` Docker profile in [docker-compose.yml](../docker-compose.yml):
 
 1. `chummer-api` owns character/application state APIs.
-2. `chummer-blazor-portal` serves Chummer App on clean `/app` and `/blazor/`, with `/blazor/app` as the hosted app path, `/blazor/home` as the product/orientation route, and `/blazor/workbench` retained for explicit workbench/proof compatibility.
+2. `chummer-blazor-portal` serves Chummer Online on clean `/app` and `/blazor/`, with `/blazor/app` as the hosted app path, `/blazor/home` as the product/orientation route, and `/blazor/workbench` retained for explicit workbench/proof compatibility.
 3. `chummer-hub-web-portal` serves the supporting hub surface on `/hub/`.
 4. `chummer-avalonia-browser` remains available on `/avalonia/` as a compatibility/browser-hosted lane.
 5. `chummer-portal` is the public edge, owner context boundary, downloads shelf, and reverse proxy.
@@ -60,7 +60,7 @@ Expected public routes:
 
 Route intent:
 
-1. `/app` is the clean public Chummer App route, `/blazor/` and `/blazor/app` are hosted Blazor entry routes, `/blazor/home` is the explicit product/orientation page, and `/blazor/workbench*` remains the explicit proof-compatible compatibility route family for the same promoted browser client.
+1. `/app` is the clean public Chummer Online route, `/blazor/` and `/blazor/app` are hosted Blazor entry routes, `/blazor/home` is the explicit product/orientation page, and `/blazor/workbench*` remains the explicit proof-compatible compatibility route family for the same promoted browser client.
 2. `/blazor/preview*` is retained as proof/supporting evidence and should not be treated as the primary user entrypoint.
 
 ## Minimum environment contract
@@ -114,7 +114,7 @@ Optional analytics inputs:
 
 Hosted `chummer.run` may run with `CHUMMER_ANALYTICS_PROVIDER=rybbit` for product telemetry, but self-host Docker installs should remain `none` unless the operator intentionally configures a Rybbit endpoint.
 
-The Blazor `/health` endpoint reports non-secret analytics policy fields: `selfHostDefault`, `hostedPublicEdge`, `sensitiveDataPolicy`, `sessionReplayPolicy`, and `autocapturePolicy`. The analytics adapter is intentionally limited to sanitized product metadata. It emits route family, command id, tab id, control id, dialog action id, boolean fixture/workspace presence, and explicit `route-workflow-metadata-only`, `session_replay=disabled`, and `autocapture=disabled` posture fields. It does not emit character names, aliases, owner ids, workspace ids, file names, document contents, XML, payloads, hashes, or generated dossier text. Keep session replay disabled and autocapture disabled for Chummer sites because the browser surface can contain user-authored character data.
+The Blazor `/health` endpoint reports non-secret analytics policy fields: `selfHostDefault`, `hostedPublicEdge`, `sensitiveDataPolicy`, `sessionReplayPolicy`, `autocapturePolicy`, `allowedMetadataFields`, and `excludedDataClasses`. The analytics adapter is intentionally limited to sanitized product metadata and the browser bridge enforces a positive allowlist before dispatch. It emits host class, analytics scope, session replay/autocapture posture, route family, command id, tab id, control id, dialog action id, and boolean fixture/workspace presence. It does not emit character names, aliases, owner ids, workspace ids, file names, document contents, XML, payloads, hashes, or generated dossier text. Keep session replay disabled and autocapture disabled for Chummer sites because the browser surface can contain user-authored character data.
 
 Start from [self-hosted-browser-workbench.env.example](examples/self-hosted-browser-workbench.env.example) and override only what your environment actually needs.
 
@@ -139,7 +139,7 @@ A healthy self-hosted stack should satisfy these operator checks:
 
 1. `chummer-portal` is the only public entrypoint users need.
 2. Browser reloads under `/blazor/` keep working because the Blazor path base stays `/blazor`.
-3. `/blazor/` resolves into `/blazor/app`, so the default browser-head entry is Chummer App instead of a proof-named workbench route.
+3. `/blazor/` resolves into `/blazor/app`, so the default browser-head entry is Chummer Online instead of a proof-named workbench route.
 4. `/blazor/workbench` remains directly addressable when operators or docs want the explicit workbench path.
 5. `/blazor/workbench?workspace=ws-1` can restore a seeded browser session from shared state, and the workbench route exposes state-backed recent-work resume links, restored-session build-lab/section continuation lanes, restored-session result continuations, multiple restored-session action continuations, and multiple restored actions that commit visible state changes instead of stopping at dialog launch.
 6. Startup commands can be deep-linked directly:
@@ -151,7 +151,7 @@ A healthy self-hosted stack should satisfy these operator checks:
 10. Seeded browser result states remain available as explicit proof lanes:
    `fixture=blue&command=save_character`, `fixture=blue&command=save_character_as`, `fixture=blue&command=print_character`, and `fixture=blue&command=export_character&dialog_action=download` must land on a browser-visible result surface that proves save/download/print/export dispatch actually occurred.
 
-The portal root, downloads shelf, docs explorer, status, help, and contact recovery pages are also part of the product surface. They should keep the same polished Chummer App slate/amber/mint/blue visual language as clean `/app` and hosted `/blazor/app`, including restrained ambient glow, deep ink/surface contrast, warm gold primary calls to action, and mint focus/recovery affordances, so Docker self-host users do not experience support or installer recovery as a separate generic portal. The portal root route rail should remain labelled as `Chummer browser routes` with explicit hover/focus affordances and reduced-motion handling; help cards plus help, contact, and status exits should remain labelled recovery rails with pill-style keyboard-focus treatment, explicit hover/focus affordances, and reduced-motion guards.
+The portal root, downloads shelf, docs explorer, status, help, and contact recovery pages are also part of the product surface. They should keep the same polished Chummer Online slate/amber/mint/blue visual language as clean `/app` and hosted `/blazor/app`, including restrained ambient glow, deep ink/surface contrast, warm gold primary calls to action, and mint focus/recovery affordances, so Docker self-host users do not experience support or installer recovery as a separate generic portal. The portal root route rail should remain labelled as `Chummer browser routes` with explicit hover/focus affordances and reduced-motion handling; help cards plus help, contact, and status exits should remain labelled recovery rails with pill-style keyboard-focus treatment, explicit hover/focus affordances, and reduced-motion guards.
 
 ## Quick smoke commands
 
@@ -211,7 +211,7 @@ The next receipt refresh is staged to declare the career/support route family in
 1. Keep `/blazor/` behind `Chummer.Portal`; do not publish the raw Blazor service as the primary user entrypoint when you want parity with the hosted `chummer.run` model.
 2. Mount real downloads storage into `chummer-portal` when the shelf is part of the same self-hosted installation.
 3. Use `CHUMMER_PORTAL_DOWNLOADS_FALLBACK_URL` only when you intentionally want the portal to advertise an external shelf.
-4. Treat `/app` as the product-shaped Chummer App entrypoint, `/blazor/app` as the hosted app path, `/blazor/home` as the product/orientation page, `/blazor/workbench` as the explicit proof-compatible workbench route, and `/blazor/preview` as a proof surface while browser parity continues to mature.
+4. Treat `/app` as the product-shaped Chummer Online entrypoint, `/blazor/app` as the hosted app path, `/blazor/home` as the product/orientation page, `/blazor/workbench` as the explicit proof-compatible workbench route, and `/blazor/preview` as a proof surface while browser parity continues to mature.
 5. If you wire session/coach/AI lanes, keep them proxied through `chummer-portal` so the browser and operator surface share one authority boundary.
 
 ## Failure signatures
@@ -220,7 +220,7 @@ The next receipt refresh is staged to declare the career/support route family in
    `CHUMMER_BLAZOR_PATH_BASE` or `CHUMMER_PORTAL_BLAZOR_URL` is misaligned.
 2. `/downloads/` renders but has no artifacts:
    inspect the downloads storage mount and `CHUMMER_PORTAL_RELEASES_FILE`.
-3. Chummer App loads without expected owner/session copy:
+3. Chummer Online loads without expected owner/session copy:
    inspect `CHUMMER_PORTAL_IMPLICIT_OWNER`, `CHUMMER_PORTAL_OWNER_SHARED_KEY`, and any session proxy configuration.
 4. Portal root works but `/blazor/` does not:
    inspect `CHUMMER_PORTAL_BLAZOR_PROXY_URL` and `chummer-blazor-portal` container health.

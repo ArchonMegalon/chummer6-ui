@@ -19,7 +19,7 @@
   ],
   "failures": [],
   "notes": [
-    "This receipt only proves that Chummer App and proof-compatible workbench session-locking source, style, status, and docs agree.",
+    "This receipt only proves that Chummer Online and proof-compatible workbench session-locking source, style, status, and docs agree.",
     "It is not a substitute for hosted browser execution, lock acquisition, takeover mutation, cross-tab arbitration, stale lock cleanup, conflict persistence parity, or portal help runtime proof.",
     "Do not use this receipt to claim complete session locking, persistence, portal help runtime behavior, or browser execution parity."
   ]

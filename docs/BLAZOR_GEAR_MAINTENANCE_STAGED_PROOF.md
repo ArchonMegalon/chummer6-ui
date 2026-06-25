@@ -2,7 +2,7 @@
 
 ## Purpose
 
-This staged proof keeps the Chummer App and proof-compatible Blazor workbench source aligned around gear maintenance utility posture under restored `tab-gear`.
+This staged proof keeps the Chummer Online and proof-compatible Blazor workbench source aligned around gear maintenance utility posture under restored `tab-gear`.
 
 It covers browser-visible utility routes for `gear_add`, `gear_edit`, and `gear_delete`, including desktop-shaped Add Gear, Edit Gear, and Remove Gear dialog posture with visible catalog, edit context, removal/recovery, and inventory-list posture.
 

@@ -123,7 +123,7 @@ def main() -> int:
         "checks": checks,
         "failures": failures,
         "notes": [
-            "This receipt only proves that public Chummer App/workbench connected-runtime source, style, status, and docs agree.",
+            "This receipt only proves that public Chummer Online/workbench connected-runtime source, style, status, and docs agree.",
             "It is not a substitute for hosted Playwright execution proof, Docker self-host proof, or connected-runtime posture proof.",
             "Do not use this receipt to claim connected-runtime execution, signed owner forwarding, or downstream service health.",
         ],

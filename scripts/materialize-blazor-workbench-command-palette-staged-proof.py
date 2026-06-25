@@ -122,7 +122,7 @@ def main() -> int:
         "checks": checks,
         "failures": failures,
         "notes": [
-            "This receipt only proves that Chummer App and proof-compatible workbench command-palette source, style, status, and docs agree, including the same-origin /help command.",
+            "This receipt only proves that Chummer Online and proof-compatible workbench command-palette source, style, status, and docs agree, including the same-origin /help command.",
             "It is not a substitute for hosted Playwright execution proof or Docker self-host proof.",
             "Do not use this receipt to claim actual keyboard-event handling, portal help runtime behavior, or command execution runtime behavior.",
         ],

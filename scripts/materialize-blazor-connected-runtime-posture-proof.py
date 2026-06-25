@@ -152,9 +152,9 @@ def main() -> int:
                 "signed-owner boundary",
             ],
         ),
-        f"Live hosted Chummer App HTML at {live_url} renders the connected-runtime posture card."
+        f"Live hosted Chummer Online HTML at {live_url} renders the connected-runtime posture card."
         if live_html is not None
-        else f"Live hosted Chummer App HTML at {live_url} could not be read: {live_error}",
+        else f"Live hosted Chummer Online HTML at {live_url} could not be read: {live_error}",
     )
 
     add_check(

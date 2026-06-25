@@ -2,7 +2,7 @@
 
 ## Purpose
 
-This staged proof keeps the Chummer App and proof-compatible Blazor workbench source aligned around skill maintenance utility posture under restored `tab-skills`.
+This staged proof keeps the Chummer Online and proof-compatible Blazor workbench source aligned around skill maintenance utility posture under restored `tab-skills`.
 
 It covers browser-visible utility routes for `skill_specialize`, `skill_remove`, and `skill_group`, including desktop-shaped Specialization, Remove Skill, and Skill Group dialogs with visible specialization, removal/recovery, group-composition, and current-rating context.
 

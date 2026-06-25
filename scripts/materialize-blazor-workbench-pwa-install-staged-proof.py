@@ -102,7 +102,7 @@ def main() -> int:
         "checks": evaluated_checks,
         "failures": failures,
         "notes": [
-            "This receipt only proves that Chummer App and proof-compatible workbench PWA-install source, style, status, and docs agree.",
+            "This receipt only proves that Chummer Online and proof-compatible workbench PWA-install source, style, status, and docs agree.",
             "It is not a substitute for hosted Playwright execution proof, Docker self-host proof, service-worker proof, install-prompt proof, cache-update proof, browser-permission proof, or portal help runtime proof.",
             "Do not use this receipt to claim service-worker, install prompt, cache update, browser permission, portal help runtime, or browser execution parity.",
         ],

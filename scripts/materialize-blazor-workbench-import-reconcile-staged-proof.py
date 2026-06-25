@@ -102,7 +102,7 @@ def main() -> int:
         "checks": evaluated_checks,
         "failures": failures,
         "notes": [
-            "This receipt only proves that Chummer App and proof-compatible workbench import/reconcile source, style, status, and docs agree.",
+            "This receipt only proves that Chummer Online and proof-compatible workbench import/reconcile source, style, status, and docs agree.",
             "It is not a substitute for hosted browser execution, import parsing, conflict resolution, save, migration parity, or portal help runtime proof.",
             "Do not use this receipt to claim complete import, reconciliation, persistence, portal help runtime behavior, or browser execution parity.",
         ],

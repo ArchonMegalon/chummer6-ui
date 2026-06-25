@@ -19,7 +19,7 @@
   ],
   "failures": [],
   "notes": [
-    "This receipt only proves that Chummer App and proof-compatible workbench sync-presence source, style, status, and docs agree.",
+    "This receipt only proves that Chummer Online and proof-compatible workbench sync-presence source, style, status, and docs agree.",
     "It is not a substitute for hosted Playwright execution proof, Docker self-host proof, network sync proof, offline-cache proof, portal help runtime, or multi-user presence proof.",
     "Do not use this receipt to claim network sync, offline-cache, portal help runtime, multi-user presence, handoff, or browser execution parity."
   ]

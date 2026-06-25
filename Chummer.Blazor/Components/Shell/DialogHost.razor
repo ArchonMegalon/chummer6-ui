@@ -753,21 +753,37 @@
     }
 
 
+    private const string RosterFieldPrefix = "roster";
+    private const string RosterTreeFieldId = "rosterTree";
+    private const string RosterCustomFoldersFieldId = "rosterCustomFolders";
+    private const string RosterMoveTargetsFieldId = "rosterMoveTargets";
+    private const string RosterDragDropGuideFieldId = "rosterDragDropGuide";
+    private const string RosterHierarchyPolicyFieldId = "rosterHierarchyPolicy";
+    private const string RosterHierarchyStatusFieldId = "rosterHierarchyStatus";
+    private const string RosterSystemFolderScope = "system";
+    private const string RosterCustomFolderScope = "custom";
+    private const string RosterNoFolderScope = "none";
+    private const string RosterFolderScopeSeparator = " · ";
+    private const string RosterMoveRunnerToGroupCommand = "move_runner_to_group";
+    private const string RosterReorderTreeCommand = "reorder_roster_tree";
+    private static readonly string RosterSystemFolderMarker = $"{RosterFolderScopeSeparator}{RosterSystemFolderScope}";
+    private static readonly string RosterCustomFolderMarker = $"{RosterFolderScopeSeparator}{RosterCustomFolderScope}";
+
     private static bool IsRosterHierarchyField(DesktopDialogField field)
-        => field.Id.StartsWith("roster", StringComparison.Ordinal)
-            && (string.Equals(field.Id, "rosterTree", StringComparison.Ordinal)
-                || string.Equals(field.Id, "rosterCustomFolders", StringComparison.Ordinal)
-                || string.Equals(field.Id, "rosterMoveTargets", StringComparison.Ordinal)
-                || string.Equals(field.Id, "rosterDragDropGuide", StringComparison.Ordinal)
-                || string.Equals(field.Id, "rosterHierarchyPolicy", StringComparison.Ordinal)
-                || string.Equals(field.Id, "rosterHierarchyStatus", StringComparison.Ordinal));
+        => field.Id.StartsWith(RosterFieldPrefix, StringComparison.Ordinal)
+            && (string.Equals(field.Id, RosterTreeFieldId, StringComparison.Ordinal)
+                || string.Equals(field.Id, RosterCustomFoldersFieldId, StringComparison.Ordinal)
+                || string.Equals(field.Id, RosterMoveTargetsFieldId, StringComparison.Ordinal)
+                || string.Equals(field.Id, RosterDragDropGuideFieldId, StringComparison.Ordinal)
+                || string.Equals(field.Id, RosterHierarchyPolicyFieldId, StringComparison.Ordinal)
+                || string.Equals(field.Id, RosterHierarchyStatusFieldId, StringComparison.Ordinal));
 
     private static bool IsRosterDraggableLine(DesktopDialogField field, string line)
         => IsRosterHierarchyField(field)
             && !string.IsNullOrWhiteSpace(line)
             && !line.TrimStart().StartsWith("[", StringComparison.Ordinal)
-            && !(string.Equals(field.Id, "rosterCustomFolders", StringComparison.Ordinal)
-                && line.Contains(" · system", StringComparison.OrdinalIgnoreCase))
+            && !(string.Equals(field.Id, RosterCustomFoldersFieldId, StringComparison.Ordinal)
+                && line.Contains(RosterSystemFolderMarker, StringComparison.OrdinalIgnoreCase))
             && !line.Contains("no watched files", StringComparison.OrdinalIgnoreCase)
             && !line.Contains("no saved runners", StringComparison.OrdinalIgnoreCase)
             && !line.Contains("empty", StringComparison.OrdinalIgnoreCase);
@@ -802,7 +818,7 @@
             sourceLine,
             line,
             targetFolder,
-            string.IsNullOrWhiteSpace(sourceFolder) ? "move_runner_to_group" : "reorder_roster_tree",
+            string.IsNullOrWhiteSpace(sourceFolder) ? RosterMoveRunnerToGroupCommand : RosterReorderTreeCommand,
             sourceFolder,
             ExtractRosterFolderName(sourceLine),
             BuildRosterHierarchyLineKind(field, sourceLine),
@@ -843,18 +859,18 @@
 
     private static bool IsRosterDropTargetLine(DesktopDialogField field, string line)
         => IsRosterHierarchyField(field)
-            && string.Equals(field.Id, "rosterCustomFolders", StringComparison.Ordinal)
+            && string.Equals(field.Id, RosterCustomFoldersFieldId, StringComparison.Ordinal)
             && !string.IsNullOrWhiteSpace(line)
             && !line.TrimStart().StartsWith("[", StringComparison.Ordinal)
-            && (line.Contains(" · system", StringComparison.OrdinalIgnoreCase)
-                || line.Contains(" · custom", StringComparison.OrdinalIgnoreCase));
+            && (line.Contains(RosterSystemFolderMarker, StringComparison.OrdinalIgnoreCase)
+                || line.Contains(RosterCustomFolderMarker, StringComparison.OrdinalIgnoreCase));
 
     private static string ExtractRosterFolderName(string line)
     {
         string cleaned = line.Trim()
             .TrimStart('├', '└', '─', '│', ' ', '*', '-')
             .Trim();
-        int suffixIndex = cleaned.IndexOf(" · ", StringComparison.Ordinal);
+        int suffixIndex = cleaned.IndexOf(RosterFolderScopeSeparator, StringComparison.Ordinal);
         return suffixIndex > 0 ? cleaned[..suffixIndex].Trim() : cleaned;
     }
 
@@ -889,9 +905,9 @@
         string trimmed = line.TrimStart();
         if (trimmed.StartsWith("[", StringComparison.Ordinal))
             return "heading";
-        if (string.Equals(field.Id, "rosterCustomFolders", StringComparison.Ordinal)
-            && (line.Contains(" · system", StringComparison.OrdinalIgnoreCase)
-                || line.Contains(" · custom", StringComparison.OrdinalIgnoreCase)))
+        if (string.Equals(field.Id, RosterCustomFoldersFieldId, StringComparison.Ordinal)
+            && (line.Contains(RosterSystemFolderMarker, StringComparison.OrdinalIgnoreCase)
+                || line.Contains(RosterCustomFolderMarker, StringComparison.OrdinalIgnoreCase)))
             return "directory";
         if (line.Contains(" · watched_file", StringComparison.OrdinalIgnoreCase))
             return "watched-file";
@@ -903,13 +919,13 @@
     private static string BuildRosterHierarchyFolderScope(DesktopDialogField field, string line)
     {
         if (!IsRosterHierarchyField(field)
-            || !string.Equals(field.Id, "rosterCustomFolders", StringComparison.Ordinal))
-            return "none";
-        if (line.Contains(" · system", StringComparison.OrdinalIgnoreCase))
-            return "system";
-        if (line.Contains(" · custom", StringComparison.OrdinalIgnoreCase))
-            return "custom";
-        return "none";
+            || !string.Equals(field.Id, RosterCustomFoldersFieldId, StringComparison.Ordinal))
+            return RosterNoFolderScope;
+        if (line.Contains(RosterSystemFolderMarker, StringComparison.OrdinalIgnoreCase))
+            return RosterSystemFolderScope;
+        if (line.Contains(RosterCustomFolderMarker, StringComparison.OrdinalIgnoreCase))
+            return RosterCustomFolderScope;
+        return RosterNoFolderScope;
     }
 
     private static string BuildRosterHierarchySourceItem(DesktopDialogField field, string line)
@@ -922,9 +938,9 @@
         if (!IsRosterDropTargetLine(field, line))
             return string.Empty;
 
-        return string.Equals(BuildRosterHierarchyFolderScope(field, RosterActiveSourceLine ?? string.Empty), "custom", StringComparison.Ordinal)
-            ? "reorder_roster_tree"
-            : "move_runner_to_group";
+        return string.Equals(BuildRosterHierarchyFolderScope(field, RosterActiveSourceLine ?? string.Empty), RosterCustomFolderScope, StringComparison.Ordinal)
+            ? RosterReorderTreeCommand
+            : RosterMoveRunnerToGroupCommand;
     }
 
     private static string BuildRosterHierarchyAcceptedDropKinds(DesktopDialogField field, string line)
@@ -990,17 +1006,17 @@
         => IsRosterHierarchyField(field) ? "vertical" : null;
 
     private static string BuildRosterHierarchyToolbarTitle(DesktopDialogField field)
-        => string.Equals(field.Id, "rosterCustomFolders", StringComparison.Ordinal)
+        => string.Equals(field.Id, RosterCustomFoldersFieldId, StringComparison.Ordinal)
             ? "Character library tree"
             : "Roster organization";
 
     private static string BuildRosterHierarchyToolbarSummary(DesktopDialogField field)
-        => string.Equals(field.Id, "rosterCustomFolders", StringComparison.Ordinal)
+        => string.Equals(field.Id, RosterCustomFoldersFieldId, StringComparison.Ordinal)
             ? "Create your own folder hierarchy, then drag runners or custom folders onto any directory. Keyboard users can select a row with Enter or Space and drop it on a directory."
             : "This roster view keeps groups, folders, move targets, and hierarchy policy visible before the app commits library changes.";
 
     private static bool IsRosterKeyboardStatusHost(DesktopDialogField field)
-        => string.Equals(field.Id, "rosterCustomFolders", StringComparison.Ordinal);
+        => string.Equals(field.Id, RosterCustomFoldersFieldId, StringComparison.Ordinal);
 
     private static string BuildRosterHierarchyLineRole(DesktopDialogField field, string line)
         => IsRosterHierarchyField(field) && !line.TrimStart().StartsWith("[", StringComparison.Ordinal)

@@ -102,7 +102,7 @@ def main() -> int:
         "checks": evaluated_checks,
         "failures": failures,
         "notes": [
-            "This receipt only proves that Chummer App and proof-compatible workbench character-library source, style, status, and docs agree.",
+            "This receipt only proves that Chummer Online and proof-compatible workbench character-library source, style, status, and docs agree.",
             "It is not a substitute for hosted Playwright execution proof, Docker self-host proof, file-open proof, library-persistence proof, clone proof, archive proof, import proof, or portal help runtime proof.",
             "Do not use this receipt to claim file-open, library persistence, clone, archive, import, portal help runtime, or browser execution parity.",
         ],

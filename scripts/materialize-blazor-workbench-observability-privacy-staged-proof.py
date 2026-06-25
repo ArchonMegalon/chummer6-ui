@@ -102,7 +102,7 @@ def main() -> int:
         "checks": evaluated_checks,
         "failures": failures,
         "notes": [
-            "This receipt only proves that Chummer App and proof-compatible workbench observability-privacy source, style, status, and docs agree.",
+            "This receipt only proves that Chummer Online and proof-compatible workbench observability-privacy source, style, status, and docs agree.",
             "It is not a substitute for hosted Playwright execution proof, Docker self-host proof, Rybbit deployment proof, analytics event-delivery proof, consent-persistence proof, telemetry runtime proof, or portal help runtime proof.",
             "Do not use this receipt to claim Rybbit deployment, analytics event delivery, consent persistence, telemetry runtime, portal help runtime, or browser execution parity.",
         ],

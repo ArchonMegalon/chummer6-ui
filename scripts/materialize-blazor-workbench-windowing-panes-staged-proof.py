@@ -102,7 +102,7 @@ def main() -> int:
         "checks": evaluated_checks,
         "failures": failures,
         "notes": [
-            "This receipt only proves that Chummer App and proof-compatible workbench windowing-panes source, style, status, and docs agree.",
+            "This receipt only proves that Chummer Online and proof-compatible workbench windowing-panes source, style, status, and docs agree.",
             "It is not a substitute for hosted Playwright execution proof, Docker self-host proof, multi-window proof, focus-handling proof, second-screen proof, layout-persistence proof, or portal help runtime proof.",
             "Do not use this receipt to claim multi-window behavior, focus handling, second-screen routing, layout persistence, portal help runtime, or browser execution parity.",
         ],

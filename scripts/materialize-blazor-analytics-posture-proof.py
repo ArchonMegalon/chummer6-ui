@@ -108,6 +108,9 @@ def main() -> int:
             app_razor,
             [
                 "window.chummerAnalytics",
+                "allowedPropertyKeys",
+                "'host_class'",
+                "'analytics_scope'",
                 "browser_route",
                 "analytics_scope",
                 "session_replay",
@@ -123,7 +126,7 @@ def main() -> int:
                 "has_fixture",
             ],
         ),
-        "The Blazor shell event bridge emits route/workflow metadata and explicit no-replay/no-autocapture posture instead of character payloads.",
+        "The Blazor shell event bridge emits only allowlisted route/workflow metadata and explicit no-replay/no-autocapture posture instead of character payloads.",
     )
 
     add_check(
@@ -176,10 +179,19 @@ def main() -> int:
                 "SensitiveDataPolicy: \"route-and-workflow-metadata-only\"",
                 "SessionReplayPolicy: \"disabled\"",
                 "AutocapturePolicy: \"disabled\"",
+                "AllowedMetadataFields:",
+                "ExcludedDataClasses:",
+                "\"route_family\"",
+                "\"command_id\"",
+                "\"dialog_action_id\"",
+                "\"owner_ids\"",
+                "\"workspace_ids\"",
+                "\"xml\"",
+                "\"dossier_content\"",
                 "sealed record AnalyticsHealth",
             ],
         ),
-        "Chummer.Blazor /health reports non-secret analytics policy posture, including no-replay/no-autocapture policy, for operators.",
+        "Chummer.Blazor /health reports non-secret analytics policy posture, including no-replay/no-autocapture policy and explicit metadata allowlist/data exclusion classes, for operators.",
     )
 
     add_check(

@@ -2,7 +2,7 @@
 
 ## Purpose
 
-This source-staged proof keeps selection-style context actions visible on the user-facing Chummer App route and proof-compatible Blazor workbench route.
+This source-staged proof keeps selection-style context actions visible on the user-facing Chummer Online route and proof-compatible Blazor workbench route.
 
 The browser client should not depend on hidden right-click behavior for common Chummer actions. Add, edit, remove, duplicate, source lookup, help, and recovery lanes should remain visible for mouse, touch, and keyboard users.
 
@@ -10,7 +10,7 @@ The browser client should not depend on hidden right-click behavior for common C
 
 The staged context-actions lane covers:
 
-- a context-action rail on the user-facing Chummer App route and proof-compatible workbench route
+- a context-action rail on the user-facing Chummer Online route and proof-compatible workbench route
 - add, edit, remove, duplicate, source lookup, help, and recover shortcuts
 - scoped responsive styling for desktop and mobile browser use
 
@@ -28,6 +28,6 @@ Expected receipt:
 
 ## Boundary
 
-This is source alignment only. It proves that Chummer App and proof-compatible workbench context-actions source, style, status reporting, and docs agree.
+This is source alignment only. It proves that Chummer Online and proof-compatible workbench context-actions source, style, status reporting, and docs agree.
 
 It is not hosted browser execution proof, Docker self-host proof, right-click menu proof, portal-help-runtime proof, selection-state runtime proof, route-click proof, screenshot proof, or desktop-equivalent workflow parity.

@@ -102,7 +102,7 @@ def main() -> int:
         "checks": evaluated_checks,
         "failures": failures,
         "notes": [
-            "This receipt only proves that Chummer App and proof-compatible workbench share/export privacy source, style, status, and docs agree.",
+            "This receipt only proves that Chummer Online and proof-compatible workbench share/export privacy source, style, status, and docs agree.",
             "It is not a substitute for hosted browser execution, share-token issuance, redaction execution, revocation persistence, history storage, export-policy enforcement parity, or portal help runtime proof.",
             "Do not use this receipt to claim complete private sharing, persistence, portal help runtime behavior, or browser execution parity.",
         ],

@@ -102,7 +102,7 @@ def main() -> int:
         "checks": evaluated_checks,
         "failures": failures,
         "notes": [
-            "This receipt only proves that Chummer App and proof-compatible workbench table-handoff source, style, status, and docs agree.",
+            "This receipt only proves that Chummer Online and proof-compatible workbench table-handoff source, style, status, and docs agree.",
             "It is not a substitute for hosted browser execution, packet generation, initiative-card rendering, condition export, handout filtering, private-note partitioning, table export parity, or portal help runtime proof.",
             "Do not use this receipt to claim complete table handoff, persistence, portal help runtime behavior, or browser execution parity.",
         ],

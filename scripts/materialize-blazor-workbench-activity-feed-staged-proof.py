@@ -115,7 +115,7 @@ def main() -> int:
         "checks": checks,
         "failures": failures,
         "notes": [
-            "This receipt only proves that Chummer App and proof-compatible workbench activity-feed source, style, status, and docs agree.",
+            "This receipt only proves that Chummer Online and proof-compatible workbench activity-feed source, style, status, and docs agree.",
             "It is not a substitute for hosted Playwright execution proof, Docker self-host proof, live event logging proof, portal help runtime, or toast delivery proof.",
             "Do not use this receipt to claim live event logging, portal help runtime, toast delivery, or browser execution parity.",
         ],

@@ -112,7 +112,7 @@ def main() -> int:
         "checks": checks,
         "failures": failures,
         "notes": [
-            "This receipt only proves that Chummer App and proof-compatible workbench workspace-tabs source, style, status, and docs agree.",
+            "This receipt only proves that Chummer Online and proof-compatible workbench workspace-tabs source, style, status, and docs agree.",
             "It is not a substitute for hosted Playwright execution proof, Docker self-host proof, multi-document state proof, or tab-persistence proof.",
             "Do not use this receipt to claim multi-document state, tab persistence, or browser execution parity.",
         ],

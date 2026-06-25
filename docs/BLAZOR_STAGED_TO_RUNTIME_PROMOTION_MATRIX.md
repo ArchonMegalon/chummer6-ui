@@ -126,7 +126,7 @@ These source receipts help manage breadth and safety but do not promote workflow
 - `BLAZOR_RUNNER_INTELLIGENCE_STAGED_PROOF.generated.json`
 - `BLAZOR_RUNNER_INTELLIGENCE_CALCULATION_PROOF.generated.json`
 
-`BLAZOR_PORTAL_INSTALLER_HANDOFF_STAGED_PROOF.generated.json` is a portal-boundary guard for `/downloads/`, `/status`, `/contact`, `/help`, installer handoff, compatibility-route fallback, and Chummer App recovery. It is reported by the public-edge status utility as `portal_installer_handoff_staged_*`, but it is not a Chummer App and proof-compatible workbench workflow family and cannot promote installer availability without refreshed portal runtime evidence.
+`BLAZOR_PORTAL_INSTALLER_HANDOFF_STAGED_PROOF.generated.json` is a portal-boundary guard for `/downloads/`, `/status`, `/contact`, `/help`, installer handoff, compatibility-route fallback, and Chummer Online recovery. It is reported by the public-edge status utility as `portal_installer_handoff_staged_*`, but it is not a Chummer Online and proof-compatible workbench workflow family and cannot promote installer availability without refreshed portal runtime evidence.
 
 ## Promotion Rule
 

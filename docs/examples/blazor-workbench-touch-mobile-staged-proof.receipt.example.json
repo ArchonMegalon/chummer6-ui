@@ -19,7 +19,7 @@
   ],
   "failures": [],
   "notes": [
-    "This receipt only proves that Chummer App and proof-compatible workbench touch-mobile source, style, status, and docs agree.",
+    "This receipt only proves that Chummer Online and proof-compatible workbench touch-mobile source, style, status, and docs agree.",
     "It is not a substitute for hosted Playwright execution proof, Docker self-host proof, touch-gesture proof, viewport proof, virtual-keyboard proof, mobile browser proof, or portal help runtime proof.",
     "Do not use this receipt to claim touch gestures, viewport behavior, virtual keyboard handling, mobile browser execution, portal help runtime, or browser execution parity."
   ]

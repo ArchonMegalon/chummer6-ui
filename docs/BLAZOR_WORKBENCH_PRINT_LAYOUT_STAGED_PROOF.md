@@ -2,7 +2,7 @@
 
 ## Purpose
 
-This source-staged proof keeps sheet output and print-layout profile affordances visible on the user-facing Chummer App route and proof-compatible Blazor workbench route.
+This source-staged proof keeps sheet output and print-layout profile affordances visible on the user-facing Chummer Online route and proof-compatible Blazor workbench route.
 
 The browser client should expose sheet template, paper size, theme, sections, preview, export profile, and same-origin help posture so table output remains deliberate and repeatable.
 
@@ -10,7 +10,7 @@ The browser client should expose sheet template, paper size, theme, sections, pr
 
 The staged print-layout lane covers:
 
-- a print/layout profile strip on the user-facing Chummer App route and proof-compatible workbench route
+- a print/layout profile strip on the user-facing Chummer Online route and proof-compatible workbench route
 - sheet template, paper size, theme, sections, preview, export profile, and same-origin help shortcuts
 - scoped responsive styling for desktop and mobile browser use
 
@@ -28,6 +28,6 @@ Expected receipt:
 
 ## Boundary
 
-This is source alignment only. It proves that Chummer App and proof-compatible workbench print-layout source, style, status reporting, and docs agree.
+This is source alignment only. It proves that Chummer Online and proof-compatible workbench print-layout source, style, status reporting, and docs agree.
 
 It is not hosted browser execution proof, Docker self-host proof, print-CSS proof, PDF-rendering proof, paper-layout proof, export-profile proof, portal help runtime proof, route-click proof, screenshot proof, or desktop-equivalent workflow parity.

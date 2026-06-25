@@ -32,7 +32,7 @@ Expected Blazor path base:
 /blazor
 ```
 
-Expected public Chummer App route:
+Expected public Chummer Online route:
 
 ```text
 /blazor/app
@@ -55,7 +55,7 @@ Expected explicit proof-compatible compatibility route:
 Self-host users must be able to identify:
 
 - which compose profile starts the portal-backed browser client
-- which public URL exposes Chummer App
+- which public URL exposes Chummer Online
 - which explicit workbench route remains available for proof-compatible workflows
 - which services are part of the portal edge
 - where downloads/install handoff lives

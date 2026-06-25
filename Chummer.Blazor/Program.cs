@@ -118,7 +118,34 @@ static AnalyticsHealth BuildAnalyticsHealth(IConfiguration configuration)
         HostedPublicEdge: "rybbit-enabled-when-site-id-configured",
         SensitiveDataPolicy: "route-and-workflow-metadata-only",
         SessionReplayPolicy: "disabled",
-        AutocapturePolicy: "disabled");
+        AutocapturePolicy: "disabled",
+        AllowedMetadataFields:
+        [
+            "host_class",
+            "analytics_scope",
+            "session_replay",
+            "autocapture",
+            "route_family",
+            "command_id",
+            "tab_id",
+            "control_id",
+            "dialog_action_id",
+            "has_workspace",
+            "has_fixture"
+        ],
+        ExcludedDataClasses:
+        [
+            "character_names",
+            "aliases",
+            "owner_ids",
+            "workspace_ids",
+            "file_names",
+            "document_contents",
+            "xml",
+            "payloads",
+            "hashes",
+            "dossier_content"
+        ]);
 }
 
 sealed record AnalyticsHealth(
@@ -131,4 +158,6 @@ sealed record AnalyticsHealth(
     string HostedPublicEdge,
     string SensitiveDataPolicy,
     string SessionReplayPolicy,
-    string AutocapturePolicy);
+    string AutocapturePolicy,
+    IReadOnlyList<string> AllowedMetadataFields,
+    IReadOnlyList<string> ExcludedDataClasses);

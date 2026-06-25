@@ -2,9 +2,9 @@
 
 ## Purpose
 
-This source-staged proof keeps Chummer App and proof-compatible Blazor workbench connected to portal-owned downloads, status, support, help, and account work routes.
+This source-staged proof keeps Chummer Online and proof-compatible Blazor workbench connected to portal-owned downloads, status, support, help, and account work routes.
 
-The browser client should behave like another desktop client in the web: a user can continue the core Chummer App/workbench task, then move to install/update/support/account surfaces through the same product origin when needed.
+The browser client should behave like another desktop client in the web: a user can continue the core Chummer Online/workbench task, then move to install/update/support/account surfaces through the same product origin when needed.
 
 ## Expected Routes
 
@@ -21,7 +21,7 @@ The browser client should behave like another desktop client in the web: a user 
 
 ## Required UX Contract
 
-Chummer App and proof-compatible workbench must expose visible same-origin handoff affordances for:
+Chummer Online and proof-compatible workbench must expose visible same-origin handoff affordances for:
 
 - desktop installer/download handoff
 - current release/status truth
@@ -29,7 +29,7 @@ Chummer App and proof-compatible workbench must expose visible same-origin hando
 - portal help and recovery guidance
 - account/work continuation when authenticated owner context is required
 
-These cards do not prove account, support, installer, or portal runtime behavior. They keep Chummer App product-shaped while runtime evidence remains owned by the local portal and hosted proof receipts.
+These cards do not prove account, support, installer, or portal runtime behavior. They keep Chummer Online product-shaped while runtime evidence remains owned by the local portal and hosted proof receipts.
 
 ## Source Check
 

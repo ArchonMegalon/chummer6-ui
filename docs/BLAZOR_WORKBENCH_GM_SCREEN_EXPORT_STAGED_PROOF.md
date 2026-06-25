@@ -2,7 +2,7 @@
 
 ## Purpose
 
-This staged proof keeps the Chummer App and proof-compatible Blazor workbench source aligned around GM-screen export posture.
+This staged proof keeps the Chummer Online and proof-compatible Blazor workbench source aligned around GM-screen export posture.
 
 The staged GM-screen export lane covers:
 
@@ -28,6 +28,6 @@ The command writes:
 
 ## Boundary
 
-This is source alignment only. It proves that Chummer App and proof-compatible workbench GM-screen export source, style, status reporting, and docs agree.
+This is source alignment only. It proves that Chummer Online and proof-compatible workbench GM-screen export source, style, status reporting, and docs agree.
 
 It is not hosted browser execution proof, Docker self-host proof, GM-screen rendering proof, player-view routing proof, initiative sync proof, export-bundle proof, or portal help runtime proof.

@@ -19,7 +19,7 @@
   ],
   "failures": [],
   "notes": [
-    "This receipt only proves that Chummer App and proof-compatible workbench navigation-deeplink source, style, status, and docs agree.",
+    "This receipt only proves that Chummer Online and proof-compatible workbench navigation-deeplink source, style, status, and docs agree.",
     "It is not a substitute for hosted Playwright execution proof, Docker self-host proof, router-state proof, browser-history proof, route-copy proof, deep-link restore proof, or portal help runtime proof.",
     "Do not use this receipt to claim router state, browser history, route copy, deep-link restore, portal help runtime, or browser execution parity."
   ]

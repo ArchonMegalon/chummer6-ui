@@ -14,7 +14,7 @@
 <main class="public-preview">
     <header class="public-hero">
         <nav class="public-nav" aria-label="Primary">
-            <a class="brand-lockup" href="home">
+            <a class="brand-lockup" href="@HomeRoute">
                 <span class="brand-mark">CH</span>
                 <span class="brand-copy">
                     <strong>Chummer</strong>
@@ -189,6 +189,7 @@
     }
 
     private const string AppRoute = "app";
+    private const string HomeRoute = "home";
     private const string PublicAppRoute = "/app";
     private const string CharacterRosterCommand = "character_roster";
     private static string RosterRoute => $"{AppRoute}?command={CharacterRosterCommand}";

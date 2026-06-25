@@ -197,7 +197,7 @@ def main() -> int:
         "BLAZOR_PORTAL_INSTALLER_HANDOFF_STAGED_PROOF.generated.json",
         "portal-boundary guard",
         "portal_installer_handoff_staged_*",
-        "not a Chummer App and proof-compatible workbench workflow family",
+        "not a Chummer Online and proof-compatible workbench workflow family",
         "cannot promote installer availability without refreshed portal runtime evidence",
     ]
     docs_index_tokens = [

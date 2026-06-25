@@ -19,7 +19,7 @@
   ],
   "failures": [],
   "notes": [
-    "This receipt only proves that Chummer App and proof-compatible workbench Docker-operator source, style, status, and docs agree.",
+    "This receipt only proves that Chummer Online and proof-compatible workbench Docker-operator source, style, status, and docs agree.",
     "It is not a substitute for hosted Playwright execution proof, Docker self-host proof, live container-inspection proof, env-validation proof, backup proof, image-update proof, log-bundle proof, or portal help runtime proof.",
     "Do not use this receipt to claim live container inspection, env validation, backup, image update, log bundle, portal help runtime, or browser execution parity."
   ]

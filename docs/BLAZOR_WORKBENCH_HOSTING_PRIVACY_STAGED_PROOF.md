@@ -2,7 +2,7 @@
 
 ## Purpose
 
-This source-staged proof keeps the Chummer App and proof-compatible Blazor workbench hosting and privacy posture visible in the product UI.
+This source-staged proof keeps the Chummer Online and proof-compatible Blazor workbench hosting and privacy posture visible in the product UI.
 
 The browser client should be understandable as both hosted `chummer.run` software and self-hostable Docker software. Users should also see the analytics boundary where they work, not only in operator docs.
 
@@ -33,6 +33,6 @@ Expected receipt:
 
 ## Boundary
 
-This is source alignment only. It proves that Chummer App and proof-compatible workbench hosting/privacy source, style, status reporting, and docs agree, including the default-off Rybbit boundary for self-hosted deployments.
+This is source alignment only. It proves that Chummer Online and proof-compatible workbench hosting/privacy source, style, status reporting, and docs agree, including the default-off Rybbit boundary for self-hosted deployments.
 
 It is not hosted browser execution proof, Docker self-host proof, Rybbit service-health proof, analytics delivery proof, screenshot proof, or desktop-equivalent workflow parity.

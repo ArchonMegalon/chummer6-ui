@@ -2,7 +2,7 @@
 
 ## Purpose
 
-This staged proof keeps the Chummer App and proof-compatible Blazor workbench source aligned around the import/reconcile workflow needed to make the web client feel like another Chummer desktop client for existing runners.
+This staged proof keeps the Chummer Online and proof-compatible Blazor workbench source aligned around the import/reconcile workflow needed to make the web client feel like another Chummer desktop client for existing runners.
 
 It covers visible source posture for file selection, parse summary, rules mapping, custom data review, conflict review, commit-import, and same-origin help affordances on `/blazor/workbench`.
 

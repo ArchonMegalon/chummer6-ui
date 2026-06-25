@@ -102,7 +102,7 @@ def main() -> int:
         "checks": evaluated_checks,
         "failures": failures,
         "notes": [
-            "This receipt only proves that Chummer App and proof-compatible workbench GM-screen export source, style, status, and docs agree.",
+            "This receipt only proves that Chummer Online and proof-compatible workbench GM-screen export source, style, status, and docs agree.",
             "It is not a substitute for hosted Playwright execution proof, Docker self-host proof, GM-screen rendering proof, player-view routing proof, initiative sync proof, export-bundle proof, or portal help runtime proof.",
             "Do not use this receipt to claim GM-screen rendering, player-view routing, initiative sync, export-bundle behavior, portal help runtime behavior, or browser execution parity.",
         ],

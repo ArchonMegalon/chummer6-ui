@@ -2,7 +2,7 @@
 
 ## Purpose
 
-This staged proof is a source-level breadth guard for known legacy UI control IDs on the Chummer App and proof-compatible Blazor workbench lanes.
+This staged proof is a source-level breadth guard for known legacy UI control IDs on the Chummer Online and proof-compatible Blazor workbench lanes.
 
 It maps `LegacyUiControlCatalog` controls into hosted execution baseline coverage or staged source-alignment families so the browser-client parity work can see which Avalonia-era control actions already have a browser route/proof posture and which controls remain unclassified.
 

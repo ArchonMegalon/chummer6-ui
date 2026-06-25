@@ -2,7 +2,7 @@
 
 ## Purpose
 
-This staged proof keeps the Chummer App and proof-compatible Blazor workbench source aligned around identity/SIN/license utility posture under restored `tab-info`.
+This staged proof keeps the Chummer Online and proof-compatible Blazor workbench source aligned around identity/SIN/license utility posture under restored `tab-info`.
 
 It covers browser-visible add, edit, and remove utility dialogs for `identity_license_add`, `identity_license_edit`, and `identity_license_delete`, including desktop-shaped fields for Legal Posture, Attached Context, Removal Impact, source/rating details, recovery context, and lifestyle-cover context.
 

@@ -114,7 +114,7 @@ def main() -> int:
         "checks": checks,
         "failures": failures,
         "notes": [
-            "This receipt only proves that Chummer App and proof-compatible workbench accessibility source, style, status, and docs agree.",
+            "This receipt only proves that Chummer Online and proof-compatible workbench accessibility source, style, status, and docs agree.",
             "It is not a substitute for hosted Playwright execution proof, Docker self-host proof, or accessibility validation.",
             "Do not use this receipt to claim screen-reader behavior, keyboard-event handling, screenshot parity, or browser accessibility signoff.",
         ],

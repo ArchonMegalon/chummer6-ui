@@ -2,7 +2,7 @@
 
 ## Purpose
 
-This staged proof keeps the Chummer App and proof-compatible Blazor workbench source aligned around combat support utility posture under restored `tab-combat`.
+This staged proof keeps the Chummer Online and proof-compatible Blazor workbench source aligned around combat support utility posture under restored `tab-combat`.
 
 It covers browser-visible utility routes for `combat_add_armor`, `combat_reload`, and `combat_damage_track`, including desktop-shaped Add Armor, Reload, and Damage Track dialogs with visible armor selection, weapon/ammo reload context, damage-track review, and active-combat context.
 

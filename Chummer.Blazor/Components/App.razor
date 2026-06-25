@@ -55,6 +55,19 @@
     window.chummerAnalytics = window.chummerAnalytics || {};
     (function(analytics) {
         const maxQueueLength = 20;
+        const allowedPropertyKeys = new Set([
+            'host_class',
+            'analytics_scope',
+            'session_replay',
+            'autocapture',
+            'route_family',
+            'command_id',
+            'tab_id',
+            'control_id',
+            'dialog_action_id',
+            'has_workspace',
+            'has_fixture'
+        ]);
         const forbiddenPropertyPattern = /(alias|character|content|document|email|file|hash|name|owner|payload|workspace|xml)/i;
         const safeTokenPattern = /^[a-z0-9_.:-]{1,80}$/i;
         const analyticsScope = 'route-workflow-metadata-only';
@@ -80,7 +93,7 @@
                 .replace(/[^a-z0-9_]/g, '_')
                 .slice(0, 64);
 
-            if (!normalized || forbiddenPropertyPattern.test(normalized)) {
+            if (!normalized || !allowedPropertyKeys.has(normalized) || forbiddenPropertyPattern.test(normalized)) {
                 return null;
             }
 

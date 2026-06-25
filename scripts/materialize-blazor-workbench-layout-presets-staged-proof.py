@@ -115,7 +115,7 @@ def main() -> int:
         "checks": checks,
         "failures": failures,
         "notes": [
-            "This receipt only proves that Chummer App and proof-compatible workbench layout-presets source, style, status, and docs agree.",
+            "This receipt only proves that Chummer Online and proof-compatible workbench layout-presets source, style, status, and docs agree.",
             "It is not a substitute for hosted Playwright execution proof, Docker self-host proof, pane-resizing proof, portal help runtime, or persisted-layout proof.",
             "Do not use this receipt to claim pane resizing, portal help runtime, persisted layout behavior, or browser execution parity.",
         ],

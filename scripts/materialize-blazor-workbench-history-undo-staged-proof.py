@@ -102,7 +102,7 @@ def main() -> int:
         "checks": evaluated_checks,
         "failures": failures,
         "notes": [
-            "This receipt only proves that Chummer App and proof-compatible workbench history-undo source, style, status, and docs agree.",
+            "This receipt only proves that Chummer Online and proof-compatible workbench history-undo source, style, status, and docs agree.",
             "It is not a substitute for hosted Playwright execution proof, Docker self-host proof, rollback execution proof, diff proof, portal help runtime, or conflict-resolution proof.",
             "Do not use this receipt to claim actual rollback, diff, portal help runtime, conflict resolution, persistence, or browser execution parity.",
         ],

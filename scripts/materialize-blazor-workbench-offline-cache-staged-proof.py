@@ -102,7 +102,7 @@ def main() -> int:
         "checks": evaluated_checks,
         "failures": failures,
         "notes": [
-            "This receipt only proves that Chummer App and proof-compatible workbench offline/cache source, style, status, and docs agree.",
+            "This receipt only proves that Chummer Online and proof-compatible workbench offline/cache source, style, status, and docs agree.",
             "It is not a substitute for hosted browser execution, service-worker caching, queued mutation persistence, reconnect execution, offline export generation, sync reconciliation parity, or portal help runtime proof.",
             "Do not use this receipt to claim complete offline support, persistence, portal help runtime behavior, or browser execution parity.",
         ],

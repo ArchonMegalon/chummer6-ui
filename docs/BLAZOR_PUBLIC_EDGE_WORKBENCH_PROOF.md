@@ -46,9 +46,9 @@ The current hosted route-entry tier should cover these route families:
   `/blazor/health`
 - public orientation route:
   `/blazor/home`
-- clean public Chummer App route:
+- clean public Chummer Online route:
   `/app`
-- hosted Chummer App path:
+- hosted Chummer Online path:
   `/blazor/app`
 - canonical proof-compatible route:
   `/blazor/workbench`
@@ -80,7 +80,7 @@ The current hosted route-entry tier should cover these route families:
 These route families establish that:
 
 - `/blazor/` resolves into the promoted browser lane
-- `/app` exposes the promoted browser client through the clean public Chummer App name
+- `/app` exposes the promoted browser client through the clean public Chummer Online name
 - `/blazor/app` remains the hosted Blazor app path for the same promoted browser client
 - `/blazor/home` exposes the product/orientation page without becoming the primary workflow route
 - the canonical proof-compatible route exists on the public edge

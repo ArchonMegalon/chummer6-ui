@@ -358,7 +358,7 @@ static string BuildPortalHomeHtml(HttpContext context, PortalOptions options)
     string apiAiLink = "/api/ai/";
     string appUrl = PortalRoutes.PublicApp;
     string appRosterUrl = PortalRoutes.PublicAppRoster;
-    string appHomeUrl = BuildPublicUrl(options.BlazorUrl, "home");
+    string appHomeUrl = BuildBlazorHomeUrl(options);
 
     return $$"""
 <!DOCTYPE html>
@@ -555,7 +555,7 @@ static string BuildDownloadsHtml(HttpContext context, PortalOptions options)
       <p data-self-host-docker-command="docker compose --profile portal up -d">Run <code>docker compose --profile portal up -d</code> to serve the portal, Chummer Online, and downloads shelf from one local edge.</p>
       <ul>
         <li data-self-host-release-manifest="{{WebUtility.HtmlEncode(releasesJsonUrl)}}">Mount releases.json into the downloads volume before claiming installer availability.</li>
-        <li data-self-host-browser-app="{{WebUtility.HtmlEncode(PortalRoutes.BlazorApp)}}">Use /blazor/app when installer proof is pending.</li>
+        <li data-self-host-browser-app="{{WebUtility.HtmlEncode(PortalRoutes.PublicAppRoster)}}">Use /app?command=character_roster when installer proof is pending so users land in the Chummer Online roster workflow instead of an implementation route.</li>
         <li data-self-host-installer-boundary="proof-required">Proof-required compatibility routes stay visible, but they do not publish artifact bytes until the release manifest and installer proof agree.</li>
       </ul>
     </section>
@@ -637,7 +637,7 @@ static string BuildContactHtml(PortalOptions options)
 {
     string appUrl = WebUtility.HtmlEncode(PortalRoutes.PublicApp);
     string appRosterUrl = WebUtility.HtmlEncode(PortalRoutes.PublicAppRoster);
-    string appHomeUrl = WebUtility.HtmlEncode(BuildPublicUrl(options.BlazorUrl, "home"));
+    string appHomeUrl = WebUtility.HtmlEncode(BuildBlazorHomeUrl(options));
 
     return $$"""
 <!DOCTYPE html>
@@ -686,7 +686,7 @@ static string BuildHelpHtml(PortalOptions options)
 {
     string appUrl = WebUtility.HtmlEncode(PortalRoutes.PublicApp);
     string appRosterUrl = WebUtility.HtmlEncode(PortalRoutes.PublicAppRoster);
-    string appHomeUrl = WebUtility.HtmlEncode(BuildPublicUrl(options.BlazorUrl, "home"));
+    string appHomeUrl = WebUtility.HtmlEncode(BuildBlazorHomeUrl(options));
     string downloadsUrl = WebUtility.HtmlEncode(options.DownloadsUrl);
 
     return $$"""
@@ -741,7 +741,7 @@ static string BuildStatusHtml(PortalOptions options)
     string downloadsUrl = WebUtility.HtmlEncode(options.DownloadsUrl);
     string appUrl = WebUtility.HtmlEncode(PortalRoutes.PublicApp);
     string appRosterUrl = WebUtility.HtmlEncode(PortalRoutes.PublicAppRoster);
-    string appHomeUrl = WebUtility.HtmlEncode(BuildPublicUrl(options.BlazorUrl, "home"));
+    string appHomeUrl = WebUtility.HtmlEncode(BuildBlazorHomeUrl(options));
     string docsUrl = "/docs/";
 
     return $$"""
@@ -805,7 +805,7 @@ static string SanitizeRedirect(string? next)
 static string BuildDocsHtml(PortalOptions options)
 {
     string appRosterUrl = WebUtility.HtmlEncode(PortalRoutes.PublicAppRoster);
-    string appHomeUrl = WebUtility.HtmlEncode(BuildPublicUrl(options.BlazorUrl, "home"));
+    string appHomeUrl = WebUtility.HtmlEncode(BuildBlazorHomeUrl(options));
 
     return $$"""
 <!DOCTYPE html>
@@ -902,11 +902,11 @@ async function bootDocs() {
       const contactMarker = route === '/contact' ? ' data-openapi-support-handoff-route="true"' : '';
       const helpMarker = route === '/help' ? ' data-openapi-help-handoff-route="true"' : '';
       const blazorAppMarker = route === '{{PortalRoutes.PublicApp}}' || route === '{{PortalRoutes.BlazorApp}}' ? ' data-openapi-chummer-app-route="true"' : '';
-      const blazorHomeMarker = route === '/blazor/home' ? ' data-openapi-chummer-home-route="true"' : '';
+      const blazorHomeMarker = route === '{{PortalRoutes.BlazorHome}}' ? ' data-openapi-chummer-home-route="true"' : '';
       const blazorEntryMarker = route === '/blazor/' ? ' data-openapi-blazor-entry-route="true"' : '';
       const routeFamily = route === '{{PortalRoutes.PublicApp}}' || route === '{{PortalRoutes.BlazorApp}}'
         ? 'Chummer Online'
-        : route === '/blazor/home'
+        : route === '{{PortalRoutes.BlazorHome}}'
           ? 'Chummer overview'
           : route === '/blazor/'
             ? 'Stable browser entry'
@@ -1014,7 +1014,7 @@ static object BuildOpenApiDocument()
                     summary = "Open the clean public Chummer Online route alias"
                 }
             },
-            ["/blazor/home"] = new
+            [PortalRoutes.BlazorHome] = new
             {
                 get = new
                 {
@@ -1103,6 +1103,9 @@ static string BuildPublicAppRedirectUrl(PortalOptions options, HttpContext conte
 static string BuildBlazorAppUrl(PortalOptions options)
     => BuildPublicUrl(options.BlazorUrl, PortalRoutes.BlazorAppSegment);
 
+static string BuildBlazorHomeUrl(PortalOptions options)
+    => BuildPublicUrl(options.BlazorUrl, PortalRoutes.BlazorHomeSegment);
+
 static ReleaseManifestSummary ReadReleaseManifest(string releasesFile)
 {
     if (!File.Exists(releasesFile))
@@ -1181,7 +1184,9 @@ static class PortalRoutes
     public const string PublicApp = "/app";
     public const string PublicAppSlash = "/app/";
     public const string BlazorApp = "/blazor/app";
+    public const string BlazorHome = "/blazor/home";
     public const string BlazorAppSegment = "app";
+    public const string BlazorHomeSegment = "home";
     public const string CharacterRosterCommand = "character_roster";
     public static string PublicAppRoster => $"{PublicApp}?command={CharacterRosterCommand}";
 }

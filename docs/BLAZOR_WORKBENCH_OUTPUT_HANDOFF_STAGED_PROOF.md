@@ -2,7 +2,7 @@
 
 ## Purpose
 
-This source-staged proof keeps output and export handoff affordances visible on the user-facing Chummer App route and proof-compatible Blazor workbench route.
+This source-staged proof keeps output and export handoff affordances visible on the user-facing Chummer Online route and proof-compatible Blazor workbench route.
 
 The browser client should preserve desktop Chummer's expectation that generated packets, print sheets, web summaries, share links, audit queues, help, and download bundles are explicit workflow destinations rather than hidden afterthoughts.
 
@@ -10,7 +10,7 @@ The browser client should preserve desktop Chummer's expectation that generated 
 
 The staged output-handoff lane covers:
 
-- an output/export lifecycle strip on the user-facing Chummer App route and proof-compatible workbench route
+- an output/export lifecycle strip on the user-facing Chummer Online route and proof-compatible workbench route
 - PDF packet, print sheet, HTML summary, share link, audit queue, help, and download bundle shortcuts
 - scoped responsive styling for desktop and mobile browser use
 
@@ -28,6 +28,6 @@ Expected receipt:
 
 ## Boundary
 
-This is source alignment only. It proves that Chummer App and proof-compatible workbench output-handoff source, style, status reporting, and docs agree.
+This is source alignment only. It proves that Chummer Online and proof-compatible workbench output-handoff source, style, status reporting, and docs agree.
 
 It is not hosted browser execution proof, Docker self-host proof, print execution proof, PDF generation proof, share-link proof, portal-help-runtime proof, download proof, route-click proof, screenshot proof, or desktop-equivalent workflow parity.

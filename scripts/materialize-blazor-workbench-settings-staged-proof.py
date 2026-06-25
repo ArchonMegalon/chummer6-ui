@@ -126,7 +126,7 @@ def main() -> int:
         "checks": checks,
         "failures": failures,
         "notes": [
-            "This receipt only proves that Chummer App and proof-compatible workbench settings source, style, status, and docs agree, including the same-origin /help settings action.",
+            "This receipt only proves that Chummer Online and proof-compatible workbench settings source, style, status, and docs agree, including the same-origin /help settings action.",
             "It is not a substitute for hosted Playwright execution proof or Docker self-host proof.",
             "Do not use this receipt to claim persisted preference mutation, settings save, runtime settings parity, or portal help runtime behavior.",
         ],

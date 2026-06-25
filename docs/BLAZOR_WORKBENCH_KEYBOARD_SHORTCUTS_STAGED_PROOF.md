@@ -2,7 +2,7 @@
 
 ## Purpose
 
-This source-staged proof keeps keyboard help and accelerator intent visible on the user-facing Chummer App route and proof-compatible Blazor workbench route.
+This source-staged proof keeps keyboard help and accelerator intent visible on the user-facing Chummer Online route and proof-compatible Blazor workbench route.
 
 The browser client should support desktop-speed users by making command help, save/output, section jump, density toggle, portal help, and support escape affordances visible before any browser key-event parity is claimed.
 
@@ -10,7 +10,7 @@ The browser client should support desktop-speed users by making command help, sa
 
 The staged keyboard-shortcuts lane covers:
 
-- a keyboard-shortcuts rail on the user-facing Chummer App route and proof-compatible workbench route
+- a keyboard-shortcuts rail on the user-facing Chummer Online route and proof-compatible workbench route
 - command help, save/output, section jump, density toggle, help, and support escape shortcuts
 - scoped responsive styling for desktop and mobile browser use
 
@@ -28,6 +28,6 @@ Expected receipt:
 
 ## Boundary
 
-This is source alignment only. It proves that Chummer App and proof-compatible workbench keyboard-shortcuts source, style, status reporting, and docs agree.
+This is source alignment only. It proves that Chummer Online and proof-compatible workbench keyboard-shortcuts source, style, status reporting, and docs agree.
 
 It is not hosted browser execution proof, Docker self-host proof, key-event proof, portal-help-runtime proof, accelerator-execution proof, route-click proof, screenshot proof, or desktop-equivalent workflow parity.

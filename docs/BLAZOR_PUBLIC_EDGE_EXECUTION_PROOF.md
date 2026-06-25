@@ -4,7 +4,7 @@ Purpose: define the minimum acceptable evidence for claiming that the browser-ho
 
 This document is the hosted execution-proof contract for the promoted Chummer6 browser client route. It sits under the broader design and parity spec in `docs/BLAZOR_WEB_CLIENT_PARITY_GOAL.md`.
 
-Public product navigation should use the friendly Chummer App alias `/app`, while `/blazor/app` remains the hosted Blazor app path. This execution tier intentionally keeps `/blazor/workbench` as its canonical proof base so historical receipts, workflow-family route checks, screenshots, and verifier contracts remain stable while the public UI can avoid exposing workbench language.
+Public product navigation should use the friendly Chummer Online alias `/app`, while `/blazor/app` remains the hosted Blazor app path. This execution tier intentionally keeps `/blazor/workbench` as its canonical proof base so historical receipts, workflow-family route checks, screenshots, and verifier contracts remain stable while the public UI can avoid exposing workbench language.
 
 Documentation map:
 
@@ -19,7 +19,7 @@ Documentation map:
 The current hosted route-entry receipt, `BLAZOR_PUBLIC_EDGE_WORKBENCH_PROOF.generated.json`, proves:
 
 - `/blazor/` resolves into `/blazor/app`
-- `/app` serves the same promoted browser client through the clean public Chummer App name
+- `/app` serves the same promoted browser client through the clean public Chummer Online name
 - `/blazor/app` remains the hosted Blazor app path for that client
 - hosted workbench route shapes stay stable
 - hosted resume/result/action route shapes are accepted
@@ -325,7 +325,7 @@ Current truth:
 - hosted route-entry posture is already published separately
 - hosted route-entry posture is now verifier-backed and wired into the main repo verification path
 - hosted execution proof is scaffolded, verifier-backed, wired into downstream receipts, and now published as a passing hosted run whose verifier now rejects empty workflow-family labels and requires explicit per-family route/assertion/status checks
-- the passing hosted execution receipt proves the canonical `/blazor/workbench` browser workflow lane on `chummer.run`, while `/app` remains the clean user-facing Chummer App alias and `/blazor/app` remains the hosted app path; it still does not by itself prove every remaining browser/Desktop parity family
+- the passing hosted execution receipt proves the canonical `/blazor/workbench` browser workflow lane on `chummer.run`, while `/app` remains the clean user-facing Chummer Online alias and `/blazor/app` remains the hosted app path; it still does not by itself prove every remaining browser/Desktop parity family
 
 ## Scaffold invocation
 

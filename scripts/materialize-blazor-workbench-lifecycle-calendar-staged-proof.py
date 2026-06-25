@@ -102,7 +102,7 @@ def main() -> int:
         "checks": evaluated_checks,
         "failures": failures,
         "notes": [
-            "This receipt only proves that Chummer App and proof-compatible workbench lifecycle-calendar source, style, status, and docs agree.",
+            "This receipt only proves that Chummer Online and proof-compatible workbench lifecycle-calendar source, style, status, and docs agree.",
             "It is not a substitute for hosted Playwright execution proof, Docker self-host proof, scheduling proof, reminder-delivery proof, recurring-cost mutation proof, session-calendar proof, or portal help runtime proof.",
             "Do not use this receipt to claim scheduling, reminder delivery, recurring cost mutation, session calendar behavior, portal help runtime behavior, or browser execution parity.",
         ],
