@@ -86,4 +86,76 @@ public sealed class DesktopUpdateManifestParserTests
         Assert.AreEqual("0123abcd", artifact.Sha256);
         Assert.AreEqual(size, artifact.SizeBytes);
     }
+
+    [TestMethod]
+    public void Parse_compatibility_manifest_rejects_bootstrap_payload_without_valid_download_metadata()
+    {
+        const string json = """
+            {
+              "channel": "public_stable",
+              "version": "run-test",
+              "downloads": [
+                {
+                  "id": "avalonia-win-x64-installer",
+                  "head": "avalonia",
+                  "platformId": "windows-x64",
+                  "arch": "x64",
+                  "kind": "installer",
+                  "fileName": "chummer-avalonia-win-x64-installer.exe",
+                  "url": "https://chummer.run/downloads/files/chummer-avalonia-win-x64-installer.exe",
+                  "sha256": "2f4ad755491b86e3a4ae0fb3251b0c863552ec4f0ae29049cedb7973bc372a4f",
+                  "sizeBytes": 51856809,
+                  "installerMode": "bootstrap",
+                  "payloadFileName": "chummer-avalonia-win-x64-payload.zip",
+                  "payloadDownloadUrl": "http://chummer.run/downloads/files/chummer-avalonia-win-x64-payload.zip",
+                  "payloadSha256": "not-a-sha",
+                  "payloadSizeBytes": 47152146
+                }
+              ]
+            }
+            """;
+
+        InvalidOperationException ex = Assert.ThrowsExactly<InvalidOperationException>(() =>
+            DesktopUpdateManifestParser.Parse(
+                json,
+                new Uri("https://chummer.run/downloads/releases.json")));
+
+        StringAssert.Contains(ex.Message, "payloadDownloadUrl must be an absolute HTTPS URL");
+    }
+
+    [TestMethod]
+    public void Parse_canonical_manifest_rejects_bootstrap_payload_url_file_name_mismatch()
+    {
+        const string json = """
+            {
+              "channelId": "public_stable",
+              "version": "run-test",
+              "artifacts": [
+                {
+                  "artifactId": "avalonia-win-x64-installer",
+                  "head": "avalonia",
+                  "platform": "windows",
+                  "arch": "x64",
+                  "kind": "installer",
+                  "fileName": "chummer-avalonia-win-x64-installer.exe",
+                  "downloadUrl": "https://chummer.run/downloads/files/chummer-avalonia-win-x64-installer.exe",
+                  "sha256": "2f4ad755491b86e3a4ae0fb3251b0c863552ec4f0ae29049cedb7973bc372a4f",
+                  "sizeBytes": 51856809,
+                  "installerMode": "bootstrap",
+                  "payloadFileName": "chummer-avalonia-win-x64-payload.zip",
+                  "payloadDownloadUrl": "https://chummer.run/downloads/files/not-the-payload.zip",
+                  "payloadSha256": "00d34c7514b9e44bd315c3d9914547d0c750865ddf5bffaf3e17f861648fe4b7",
+                  "payloadSizeBytes": 47152146
+                }
+              ]
+            }
+            """;
+
+        InvalidOperationException ex = Assert.ThrowsExactly<InvalidOperationException>(() =>
+            DesktopUpdateManifestParser.Parse(
+                json,
+                new Uri("https://chummer.run/downloads/RELEASE_CHANNEL.generated.json")));
+
+        StringAssert.Contains(ex.Message, "payloadDownloadUrl file name must match payloadFileName");
+    }
 }

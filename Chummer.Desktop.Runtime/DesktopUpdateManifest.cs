@@ -225,7 +225,7 @@ public static class DesktopUpdateManifestParser
                 continue;
             }
 
-            artifacts.Add(new DesktopUpdateArtifact(
+            var artifact = new DesktopUpdateArtifact(
                 ArtifactId: string.IsNullOrWhiteSpace(artifactId) ? fileName : artifactId,
                 HeadId: headId,
                 Platform: platform,
@@ -240,7 +240,9 @@ public static class DesktopUpdateManifestParser
                 PayloadFileName: GetOptionalString(element, "payloadFileName"),
                 PayloadDownloadUrl: GetOptionalString(element, "payloadDownloadUrl"),
                 PayloadSha256: NormalizeSha256(GetOptionalString(element, "payloadSha256")),
-                PayloadSizeBytes: GetOptionalLong(element, "payloadSizeBytes")));
+                PayloadSizeBytes: GetOptionalLong(element, "payloadSizeBytes"));
+            ValidateBootstrapPayloadMetadata(artifact);
+            artifacts.Add(artifact);
         }
 
         return new DesktopUpdateChannelManifest(
@@ -289,7 +291,7 @@ public static class DesktopUpdateManifestParser
                 ? ArtifactKind(match.Groups["ext"].Value.ToLowerInvariant(), match.Groups["installer"].Success)
                 : "artifact");
 
-            artifacts.Add(new DesktopUpdateArtifact(
+            var artifact = new DesktopUpdateArtifact(
                 ArtifactId: GetOptionalString(element, "id") ?? fileName,
                 HeadId: headId,
                 Platform: platform,
@@ -304,7 +306,9 @@ public static class DesktopUpdateManifestParser
                 PayloadFileName: GetOptionalString(element, "payloadFileName"),
                 PayloadDownloadUrl: GetOptionalString(element, "payloadDownloadUrl"),
                 PayloadSha256: NormalizeSha256(GetOptionalString(element, "payloadSha256")),
-                PayloadSizeBytes: GetOptionalLong(element, "payloadSizeBytes")));
+                PayloadSizeBytes: GetOptionalLong(element, "payloadSizeBytes"));
+            ValidateBootstrapPayloadMetadata(artifact);
+            artifacts.Add(artifact);
         }
 
         return new DesktopUpdateChannelManifest(
@@ -427,6 +431,52 @@ public static class DesktopUpdateManifestParser
             _ => "artifact"
         };
     }
+
+    private static void ValidateBootstrapPayloadMetadata(DesktopUpdateArtifact artifact)
+    {
+        if (!string.Equals(artifact.InstallerMode, "bootstrap", StringComparison.OrdinalIgnoreCase))
+        {
+            return;
+        }
+
+        if (string.IsNullOrWhiteSpace(artifact.PayloadFileName))
+        {
+            throw new InvalidOperationException($"{artifact.ArtifactId}: bootstrap installer manifest is missing payloadFileName.");
+        }
+
+        if (string.IsNullOrWhiteSpace(artifact.PayloadDownloadUrl))
+        {
+            throw new InvalidOperationException($"{artifact.ArtifactId}: bootstrap installer manifest is missing payloadDownloadUrl.");
+        }
+
+        if (!Uri.TryCreate(artifact.PayloadDownloadUrl, UriKind.Absolute, out Uri? payloadUri)
+            || payloadUri.Scheme != Uri.UriSchemeHttps)
+        {
+            throw new InvalidOperationException($"{artifact.ArtifactId}: bootstrap installer payloadDownloadUrl must be an absolute HTTPS URL.");
+        }
+
+        string payloadUrlFileName = Path.GetFileName(payloadUri.LocalPath);
+        if (!string.Equals(payloadUrlFileName, artifact.PayloadFileName, StringComparison.OrdinalIgnoreCase))
+        {
+            throw new InvalidOperationException($"{artifact.ArtifactId}: bootstrap installer payloadDownloadUrl file name must match payloadFileName.");
+        }
+
+        if (string.IsNullOrWhiteSpace(artifact.PayloadSha256) || !IsSha256Hex(artifact.PayloadSha256))
+        {
+            throw new InvalidOperationException($"{artifact.ArtifactId}: bootstrap installer manifest is missing a valid payloadSha256.");
+        }
+
+        if (artifact.PayloadSizeBytes is null or <= 0)
+        {
+            throw new InvalidOperationException($"{artifact.ArtifactId}: bootstrap installer manifest is missing payloadSizeBytes.");
+        }
+    }
+
+    private static bool IsSha256Hex(string value)
+        => value.Length == 64 && value.All(static character =>
+            (character >= '0' && character <= '9')
+            || (character >= 'a' && character <= 'f')
+            || (character >= 'A' && character <= 'F'));
 
     private static string? GetOptionalString(JsonElement element, string propertyName)
     {
