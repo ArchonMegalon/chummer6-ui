@@ -447,7 +447,7 @@ public sealed class DesktopUpdateRuntimeTests
                   "fileName": "chummer-avalonia-{{identity.Platform}}-{{identity.Arch}}.zip",
                   "downloadUrl": "{{payloadPath.Replace("\\", "/")}}",
                   "sizeBytes": 12,
-                  "sha256": "sha256:badbadsum"
+                  "sha256": "sha256:bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"
                 }
               ]
             }

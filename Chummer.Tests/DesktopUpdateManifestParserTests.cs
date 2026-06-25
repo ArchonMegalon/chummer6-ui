@@ -88,7 +88,7 @@ public sealed class DesktopUpdateManifestParserTests
     }
 
     [TestMethod]
-    public void Parse_manifest_does_not_preserve_invalid_sha256_metadata()
+    public void Parse_manifest_rejects_invalid_sha256_metadata()
     {
         const string json = """
             {
@@ -111,11 +111,13 @@ public sealed class DesktopUpdateManifestParserTests
             }
             """;
 
-        DesktopUpdateChannelManifest manifest = DesktopUpdateManifestParser.Parse(
-            json,
-            new Uri("https://chummer.run/downloads/manifest.json"));
+        InvalidOperationException ex = Assert.ThrowsExactly<InvalidOperationException>(() =>
+            DesktopUpdateManifestParser.Parse(
+                json,
+                new Uri("https://chummer.run/downloads/manifest.json")));
 
-        Assert.IsNull(manifest.Artifacts[0].Sha256);
+        StringAssert.Contains(ex.Message, "invalid sha256");
+        StringAssert.Contains(ex.Message, "64-character SHA-256");
     }
 
     [TestMethod]
@@ -139,7 +141,7 @@ public sealed class DesktopUpdateManifestParserTests
                   "installerMode": "bootstrap",
                   "payloadFileName": "chummer-avalonia-win-x64-payload.zip",
                   "payloadDownloadUrl": "http://chummer.run/downloads/files/chummer-avalonia-win-x64-payload.zip",
-                  "payloadSha256": "not-a-sha",
+                  "payloadSha256": "00d34c7514b9e44bd315c3d9914547d0c750865ddf5bffaf3e17f861648fe4b7",
                   "payloadSizeBytes": 47152146
                 }
               ]

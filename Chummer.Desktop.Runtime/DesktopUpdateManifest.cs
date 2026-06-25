@@ -218,7 +218,7 @@ public static class DesktopUpdateManifestParser
             string fileName = GetOptionalString(element, "fileName") ?? Path.GetFileName(GetOptionalString(element, "downloadUrl") ?? string.Empty);
             string downloadUrl = GetOptionalString(element, "downloadUrl") ?? string.Empty;
             string? updateFeedUrl = GetOptionalString(element, "updateFeedUrl");
-            string? sha256 = NormalizeSha256(GetOptionalString(element, "sha256"));
+            string? sha256 = NormalizeSha256(GetOptionalString(element, "sha256"), "sha256", artifactId);
             long? sizeBytes = GetOptionalLong(element, "sizeBytes");
             if (string.IsNullOrWhiteSpace(fileName) || string.IsNullOrWhiteSpace(downloadUrl))
             {
@@ -239,7 +239,7 @@ public static class DesktopUpdateManifestParser
                 InstallerMode: GetOptionalString(element, "installerMode"),
                 PayloadFileName: GetOptionalString(element, "payloadFileName"),
                 PayloadDownloadUrl: GetOptionalString(element, "payloadDownloadUrl"),
-                PayloadSha256: NormalizeSha256(GetOptionalString(element, "payloadSha256")),
+                PayloadSha256: NormalizeSha256(GetOptionalString(element, "payloadSha256"), "payloadSha256", artifactId),
                 PayloadSizeBytes: GetOptionalLong(element, "payloadSizeBytes"));
             ValidateBootstrapPayloadMetadata(artifact, sourceUri);
             artifacts.Add(artifact);
@@ -290,9 +290,10 @@ public static class DesktopUpdateManifestParser
             string kind = GetOptionalString(element, "kind") ?? GetOptionalString(element, "flavor") ?? (match.Success
                 ? ArtifactKind(match.Groups["ext"].Value.ToLowerInvariant(), match.Groups["installer"].Success)
                 : "artifact");
+            string artifactId = GetOptionalString(element, "id") ?? fileName;
 
             var artifact = new DesktopUpdateArtifact(
-                ArtifactId: GetOptionalString(element, "id") ?? fileName,
+                ArtifactId: artifactId,
                 HeadId: headId,
                 Platform: platform,
                 Arch: arch,
@@ -300,12 +301,12 @@ public static class DesktopUpdateManifestParser
                 FileName: fileName,
                 DownloadUrl: rawUrl,
                 UpdateFeedUrl: null,
-                Sha256: NormalizeSha256(GetOptionalString(element, "sha256")),
+                Sha256: NormalizeSha256(GetOptionalString(element, "sha256"), "sha256", artifactId),
                 SizeBytes: GetOptionalLong(element, "sizeBytes"),
                 InstallerMode: GetOptionalString(element, "installerMode"),
                 PayloadFileName: GetOptionalString(element, "payloadFileName"),
                 PayloadDownloadUrl: GetOptionalString(element, "payloadDownloadUrl"),
-                PayloadSha256: NormalizeSha256(GetOptionalString(element, "payloadSha256")),
+                PayloadSha256: NormalizeSha256(GetOptionalString(element, "payloadSha256"), "payloadSha256", artifactId),
                 PayloadSizeBytes: GetOptionalLong(element, "payloadSizeBytes"));
             ValidateBootstrapPayloadMetadata(artifact, sourceUri);
             artifacts.Add(artifact);
@@ -550,7 +551,7 @@ public static class DesktopUpdateManifestParser
         };
     }
 
-    private static string? NormalizeSha256(string? rawSha256)
+    private static string? NormalizeSha256(string? rawSha256, string propertyName, string artifactId)
     {
         if (string.IsNullOrWhiteSpace(rawSha256))
         {
@@ -563,8 +564,12 @@ public static class DesktopUpdateManifestParser
             normalized = normalized["sha256:".Length..];
         }
 
-        return IsSha256Hex(normalized)
-            ? normalized.ToLowerInvariant()
-            : null;
+        if (!IsSha256Hex(normalized))
+        {
+            string artifactLabel = string.IsNullOrWhiteSpace(artifactId) ? "artifact" : artifactId.Trim();
+            throw new InvalidOperationException($"{artifactLabel}: desktop update manifest contains an invalid {propertyName}. Expected a 64-character SHA-256 hex value.");
+        }
+
+        return normalized.ToLowerInvariant();
     }
 }
