@@ -249,8 +249,8 @@ if ! grep -q "_framework/blazor.web.js" <<<"$ui_html"; then
   exit 1
 fi
 
-if ! grep -q "Preview Chummer App workflows without changing the public route." <<<"$ui_preview_html"; then
-  echo "Chummer App preview marker not found in /preview page response." >&2
+if ! grep -q "Preview Chummer Online workflows without changing the public route." <<<"$ui_preview_html"; then
+  echo "Chummer Online preview marker not found in /preview page response." >&2
   exit 1
 fi
 

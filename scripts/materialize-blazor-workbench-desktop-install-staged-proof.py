@@ -68,7 +68,7 @@ CHECKS = [
         "tokens": [
             "workbench desktop install handoff posture",
             "blazor-workbench-desktop-install-staged-proof-check.sh",
-            "native installer progress chrome stays aligned to the Chummer App slate/amber/mint visual family",
+            "native installer progress chrome stays aligned to the Chummer Online slate/amber/mint visual family",
             "not a hosted or Docker browser execution receipt",
         ],
     },
@@ -87,7 +87,7 @@ CHECKS = [
         "id": "docs_index_contract",
         "path": "docs/BLAZOR_WEB_CLIENT_DOCS_INDEX.md",
         "tokens": [
-            "source-staged Chummer App and proof-compatible workbench desktop install handoff contract",
+            "source-staged Chummer Online and proof-compatible workbench desktop install handoff contract",
             "native desktop installer progress chrome",
             "amber accent bar, deep slate shell, mint progress fill, warm ink metadata, and amber hint text",
             "native installer high-contrast system-color fallback",
@@ -168,7 +168,7 @@ def main() -> int:
         "checks": checks,
         "failures": failures,
         "notes": [
-            "This receipt only proves that Chummer App and proof-compatible workbench desktop install handoff source, style, status, and docs agree.",
+            "This receipt only proves that Chummer Online and proof-compatible workbench desktop install handoff source, style, status, and docs agree.",
             "The status utility reports native installer amber/slate/mint chrome and high-contrast fallback as source alignment only.",
             "It is not a substitute for hosted Playwright execution proof, Docker self-host proof, release download proof, portal help runtime, or installer proof.",
             "Do not use this receipt to claim installer delivery, Docker runtime, portal help runtime, account authorization, or browser execution parity.",

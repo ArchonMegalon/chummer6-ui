@@ -415,7 +415,7 @@ SOURCE_CONTRACT_CHECKS = [
             "source_contract_checks.docs_index_route_roles",
             "chummer_app_proof_compatible_workbench_preview_tools",
             "native installer amber/slate/mint progress chrome and high-contrast fallback source alignment",
-            "compatibility-route `/blazor/workbench` task-dock and slate/amber/mint/blue Chummer App theme-layer contract",
+            "compatibility-route `/blazor/workbench` task-dock and slate/amber/mint/blue Chummer Online theme-layer contract",
         ],
     },
     {

@@ -5021,7 +5021,7 @@
     }
 }
 
-/* Chummer App theme refinement: deep slate, neon mint, antique gold. */
+/* Chummer Online theme refinement: deep slate, neon mint, antique gold. */
 :root {
   --chummer-void: #07110f;
   --chummer-ink: #0d1b18;
@@ -5206,7 +5206,7 @@
   box-shadow: 0 18px 48px rgba(25, 222, 150, 0.14);
 }
 
-/* Chummer App theme polish: make the web client read as premium app shell, not a default preview page. */
+/* Chummer Online theme polish: make the web client read as premium app shell, not a default preview page. */
 .browser-preview-shell {
     --app-ink: #fff8e8;
     --app-muted: rgba(255, 248, 232, 0.75);
@@ -5262,7 +5262,7 @@
         rgba(255, 255, 255, 0.065);
 }
 
-/* Final Chummer App visual theme layer: unified slate, gold, and mint across every app/workbench strip. */
+/* Final Chummer Online visual theme layer: unified slate, gold, and mint across every app/workbench strip. */
 .browser-preview-shell {
     --app-ink: #fff8e8;
     --app-muted: rgba(255, 248, 232, 0.74);
@@ -5516,7 +5516,7 @@
     }
 }
 
-/* Final Chummer App theme pass: keep the web client dark, readable, and deliberately branded. */
+/* Final Chummer Online theme pass: keep the web client dark, readable, and deliberately branded. */
 .browser-preview-shell {
     --app-ink: #fff7e3;
     --app-muted: rgba(255, 247, 227, 0.76);
@@ -5682,7 +5682,7 @@
     }
 }
 
-/* Final Chummer App motion pass: give the command deck a deliberate reveal without fighting reduced-motion users. */
+/* Final Chummer Online motion pass: give the command deck a deliberate reveal without fighting reduced-motion users. */
 @keyframes chummer-command-deck-reveal {
     from {
         opacity: 0;

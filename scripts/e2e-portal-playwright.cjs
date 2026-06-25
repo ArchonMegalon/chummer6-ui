@@ -184,7 +184,7 @@ async function auditPortalWorkbenchDesktop(page) {
   await expectNoVisibleClipping(page, '[data-testid="startup-workbench"]', 'portal desktop startup workbench');
 
   const bodyText = await page.locator('body').innerText();
-  expectTextIncludes(bodyText, 'Preview Chummer App workflows without changing the public route.', 'portal desktop preview');
+  expectTextIncludes(bodyText, 'Preview Chummer Online workflows without changing the public route.', 'portal desktop preview');
   expectTextIncludes(bodyText, 'Preview route tools', 'portal desktop preview');
   expectTextIncludes(bodyText, 'Compatibility route', 'portal desktop preview');
   expectTextIncludes(bodyText, 'implicit owner session posture', 'portal desktop preview');
@@ -197,7 +197,7 @@ async function auditPortalWorkbenchRoute(page) {
   await expectVisibleSelector(page, '[data-testid="startup-workbench"]', 'portal workbench startup shell');
 
   const bodyText = await page.locator('body').innerText();
-  expectTextIncludes(bodyText, 'Chummer App compatibility shell, running in the browser.', 'portal workbench route');
+  expectTextIncludes(bodyText, 'Chummer Online compatibility shell, running in the browser.', 'portal workbench route');
   expectTextIncludes(bodyText, 'older workbench and proof links alive', 'portal workbench route');
   expectTextIncludes(bodyText, 'Preview tools', 'portal workbench route');
   expectTextIncludes(bodyText, 'Start a new runner', 'portal workbench route');

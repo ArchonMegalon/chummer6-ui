@@ -159,7 +159,7 @@ const checks = [
       && text.includes('data-openapi-chummer-app-route="true"')
       && text.includes('data-openapi-chummer-home-route="true"')
       && text.includes('data-openapi-blazor-entry-route="true"')
-      && text.includes('Chummer App')
+      && text.includes('Chummer Online')
       && text.includes('Chummer overview')
       && text.includes('Stable browser entry')
       && text.includes('endpoint-summary')

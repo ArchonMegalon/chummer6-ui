@@ -472,7 +472,7 @@
     }
 }
 
-/* Chummer App home theme refinement: match the app shell without flattening the hero. */
+/* Chummer Online home theme refinement: match the app shell without flattening the hero. */
 :root {
   --home-void: #07110f;
   --home-panel: rgba(15, 32, 28, 0.84);

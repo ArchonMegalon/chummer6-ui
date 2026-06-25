@@ -504,7 +504,7 @@ async function auditPreviewDesktopSurface(page) {
   await expectVisibleSelector(page, '[data-startup-command="new_character"]', 'new character startup command');
 
   const bodyText = await page.locator('body').innerText();
-  expectTextIncludes(bodyText, 'Preview Chummer App workflows without changing the public route.', 'preview desktop shell');
+  expectTextIncludes(bodyText, 'Preview Chummer Online workflows without changing the public route.', 'preview desktop shell');
   expectTextIncludes(bodyText, 'Preview route tools', 'preview desktop shell');
   expectTextIncludes(bodyText, 'Compatibility route', 'preview desktop shell');
   expectTextIncludes(bodyText, 'Browser-owned here:', 'preview desktop shell');
@@ -523,7 +523,7 @@ async function auditWorkbenchDesktopSurface(page) {
   await expectVisibleSelector(page, '[data-testid="startup-primary-actions"]', 'workbench startup primary actions');
 
   const bodyText = await page.locator('body').innerText();
-  expectTextIncludes(bodyText, 'Chummer App compatibility shell, running in the browser.', 'workbench desktop shell');
+  expectTextIncludes(bodyText, 'Chummer Online compatibility shell, running in the browser.', 'workbench desktop shell');
   expectTextIncludes(bodyText, 'older workbench and proof links alive', 'workbench desktop shell');
   expectTextIncludes(bodyText, 'Preview tools', 'workbench desktop shell');
   expectTextIncludes(bodyText, 'Start a new runner', 'workbench desktop shell');
