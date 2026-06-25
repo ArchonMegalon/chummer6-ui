@@ -2642,6 +2642,16 @@ input[type="radio"] {
     padding: 0.22rem 0.42rem;
 }
 
+.dialog-roster-keyboard-hint {
+    border: 1px dashed rgba(95, 107, 87, 0.22);
+    border-radius: 0.35rem;
+    background: rgba(255, 255, 255, 0.52);
+    color: #4d5a42;
+    font-size: 0.7rem;
+    font-weight: 650;
+    padding: 0.2rem 0.42rem;
+}
+
 .dialog-roster-line--root {
     color: #27301f;
     background: rgba(198, 185, 154, 0.16);
