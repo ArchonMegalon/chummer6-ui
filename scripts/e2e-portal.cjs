@@ -180,7 +180,11 @@ const checks = [
       text.includes('fallback-link') &&
       text.includes('data-download-action="download-artifact"') &&
       text.includes('data-download-install-route=') &&
-      text.includes('data-download-raw-url=') &&
+      text.includes('data-download-raw-url=')
+      && text.includes('data-download-link-mode="raw-url"')
+      && text.includes('data-download-platform=')
+      && text.includes('data-download-platform-label')
+      && text.includes('direct download') &&
       (text.includes('No published desktop builds yet') || text.includes('self-hosted downloads are live'))
   },
   {
