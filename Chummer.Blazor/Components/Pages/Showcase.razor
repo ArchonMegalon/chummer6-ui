@@ -1170,7 +1170,7 @@
                 new GeneratedAssetMetadataField("coachOperator", "Operator", "shadowfeed-dispatch"),
                 new GeneratedAssetMetadataField("coachModel", "Model", "gpt-5.3-codex"),
                 new GeneratedAssetMetadataField("shadowfeedDispatchChannel", "Dispatch Channel", "shadowfeed.ops"),
-                new GeneratedAssetMetadataField("shadowfeedDispatchReceipt", "Dispatch Receipt", "pending"),
+                new GeneratedAssetMetadataField("shadowfeedDispatchReceipt", "Dispatch Status", "pending"),
                 new GeneratedAssetMetadataField("shadowfeedReviewQueue", "Review Queue", "shadowfeed.review"),
                 new GeneratedAssetMetadataField("shadowfeedReviewer", "Reviewer", "unassigned"),
                 new GeneratedAssetMetadataField("dispatchContext", "Dispatch Context", "Pass 2"),
@@ -1443,7 +1443,7 @@
                 ReviewState = "dispatched",
                 Metadata = ReplaceMetadataValues(
                     asset.Metadata,
-                    ("shadowfeedDispatchReceipt", "Dispatch Receipt", "dispatch:queued"),
+                    ("shadowfeedDispatchReceipt", "Dispatch Status", "dispatch:queued"),
                     ("shadowfeedReviewer", "Reviewer", "pending-review"),
                     ("dispatchContext", "Dispatch Context", currentSessionContext))
             },
@@ -1461,7 +1461,7 @@
                 ReviewState = "dispatched",
                 Metadata = ReplaceMetadataValues(
                     asset.Metadata,
-                    ("shadowfeedDispatchReceipt", "Dispatch Receipt", "dispatch:refreshed"),
+                    ("shadowfeedDispatchReceipt", "Dispatch Status", "dispatch:refreshed"),
                     ("dispatchContext", "Dispatch Context", currentSessionContext))
             },
             GeneratedAssetActionKinds.Approve => asset with
@@ -1503,7 +1503,7 @@
         return asset with
         {
             ReviewState = $"stale:{context}",
-            Metadata = ReplaceMetadataValue(asset.Metadata, "shadowfeedDispatchReceipt", "Dispatch Receipt", $"invalidated:{context}")
+            Metadata = ReplaceMetadataValue(asset.Metadata, "shadowfeedDispatchReceipt", "Dispatch Status", $"invalidated:{context}")
         };
     }
 

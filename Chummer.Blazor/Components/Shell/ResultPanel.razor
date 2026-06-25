@@ -11,16 +11,16 @@
     @if (string.Equals(State.LastCommandId, SaveCharacterCommandId, StringComparison.Ordinal) && State.HasSavedWorkspace)
     {
         <aside class="trust-receipt" data-result-dispatch="save">
-            <strong>Browser save dispatch</strong>
+            <strong>Saved in this browser</strong>
             <p class="hint"><strong>Dossier:</strong> @(State.WorkspaceId?.Value ?? "none")</p>
-            <p class="hint"><strong>Saved posture:</strong> persisted dossier state is marked saved and ready for continuity.</p>
+            <p class="hint"><strong>Status:</strong> This dossier is saved and ready to reopen.</p>
             <p class="hint"><strong>Command:</strong> @State.LastCommandId</p>
         </aside>
     }
     @if (State.PendingDownload is { } pendingDownload)
     {
         <aside class="trust-receipt" data-result-dispatch="download">
-            <strong>Browser download dispatch</strong>
+            <strong>Download ready</strong>
             <p class="hint"><strong>File:</strong> @pendingDownload.FileName</p>
             <p class="hint"><strong>Format:</strong> @pendingDownload.Format</p>
             <p class="hint"><strong>Length:</strong> @pendingDownload.DocumentLength bytes</p>
@@ -29,7 +29,7 @@
     @if (State.PendingPrint is { } pendingPrint)
     {
         <aside class="trust-receipt" data-result-dispatch="print">
-            <strong>Browser print dispatch</strong>
+            <strong>Print file ready</strong>
             <p class="hint"><strong>Title:</strong> @pendingPrint.Title</p>
             <p class="hint"><strong>File:</strong> @pendingPrint.FileName</p>
             <p class="hint"><strong>Type:</strong> @pendingPrint.MimeType</p>
@@ -39,7 +39,7 @@
     @if (State.PendingExport is { } pendingExport)
     {
         <aside class="trust-receipt" data-result-dispatch="export">
-            <strong>Browser export dispatch</strong>
+            <strong>Export ready</strong>
             <p class="hint"><strong>File:</strong> @pendingExport.FileName</p>
             <p class="hint"><strong>Format:</strong> @pendingExport.Format</p>
             <p class="hint"><strong>Length:</strong> @pendingExport.DocumentLength bytes</p>

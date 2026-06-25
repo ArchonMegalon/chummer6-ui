@@ -1,6 +1,6 @@
 {
   "contract_name": "chummer6-ui.blazor_browser_output_handoff_staged_proof",
-  "generated_at": "2026-06-25T04:43:33.858945+00:00",
+  "generated_at": "2026-06-25T17:27:56.476689+00:00",
   "status": "passed",
   "proof_tier": "source_staged_no_browser_execution",
   "route_lane": "promoted_blazor_workbench",
@@ -18,6 +18,20 @@
       "path": "Chummer.Blazor/Components/Pages/Preview.razor",
       "status": "passed",
       "required_token_count": 6,
+      "missing_tokens": []
+    },
+    {
+      "id": "result_panel_browser_output_receipts",
+      "path": "Chummer.Blazor/Components/Shell/ResultPanel.razor",
+      "status": "passed",
+      "required_token_count": 17,
+      "missing_tokens": []
+    },
+    {
+      "id": "dialog_trust_receipt_dossier_copy",
+      "path": "Chummer.Blazor/Components/Shell/DialogTrustReceiptText.cs",
+      "status": "passed",
+      "required_token_count": 4,
       "missing_tokens": []
     },
     {

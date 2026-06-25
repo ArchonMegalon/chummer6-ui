@@ -338,7 +338,7 @@ async function auditPortalSeededPrintResult(page) {
 
   const bodyText = await page.locator('body').innerText();
   expectTextIncludes(bodyText, 'Print preview prepared:', 'portal seeded print result');
-  expectTextIncludes(bodyText, 'Browser print dispatch', 'portal seeded print result');
+  expectTextIncludes(bodyText, 'Print file ready', 'portal seeded print result');
   expectTextIncludes(bodyText, 'Troy Simmons', 'portal seeded print result');
 }
 
@@ -352,7 +352,7 @@ async function auditPortalSeededExportResult(page) {
   await expectVisibleSelector(page, '[data-result-trust-receipt]', 'portal seeded export trust receipt');
   const bodyText = await page.locator('body').innerText();
   expectTextIncludes(bodyText, 'Portable export ready:', 'portal seeded export result');
-  expectTextIncludes(bodyText, 'Browser export dispatch', 'portal seeded export result');
+  expectTextIncludes(bodyText, 'Export ready', 'portal seeded export result');
   expectTextIncludes(bodyText, 'Last portable export', 'portal seeded export result');
 }
 
@@ -365,7 +365,7 @@ async function auditPortalSeededSaveResult(page) {
 
   const bodyText = await page.locator('body').innerText();
   expectTextIncludes(bodyText, 'Workspace saved.', 'portal seeded save result');
-  expectTextIncludes(bodyText, 'Browser save dispatch', 'portal seeded save result');
+  expectTextIncludes(bodyText, 'Saved in this browser', 'portal seeded save result');
   expectTextIncludes(bodyText, 'save_character', 'portal seeded save result');
 }
 
@@ -378,7 +378,7 @@ async function auditPortalSeededSaveAsResult(page) {
 
   const bodyText = await page.locator('body').innerText();
   expectTextIncludes(bodyText, 'Download prepared:', 'portal seeded save-as result');
-  expectTextIncludes(bodyText, 'Browser download dispatch', 'portal seeded save-as result');
+  expectTextIncludes(bodyText, 'Download ready', 'portal seeded save-as result');
 }
 
 async function auditPortalWorkbenchMobile(page) {

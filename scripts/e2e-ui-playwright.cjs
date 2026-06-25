@@ -659,7 +659,7 @@ async function auditPreviewSeededPrintResultDeepLink(page) {
 
   const bodyText = await page.locator('body').innerText();
   expectTextIncludes(bodyText, 'Print preview prepared:', 'preview seeded print result');
-  expectTextIncludes(bodyText, 'Browser print dispatch', 'preview seeded print result');
+  expectTextIncludes(bodyText, 'Print file ready', 'preview seeded print result');
   expectTextIncludes(bodyText, 'Troy Simmons', 'preview seeded print result');
 
   if (!page.url().includes('/preview?fixture=blue&command=print_character')) {
@@ -674,7 +674,7 @@ async function auditPreviewSeededExportResultDeepLink(page) {
 
   const bodyText = await page.locator('body').innerText();
   expectTextIncludes(bodyText, 'Portable export ready:', 'preview seeded export result');
-  expectTextIncludes(bodyText, 'Browser export dispatch', 'preview seeded export result');
+  expectTextIncludes(bodyText, 'Export ready', 'preview seeded export result');
   expectTextIncludes(bodyText, 'Last portable export', 'preview seeded export result');
   expectTextIncludes(bodyText, 'Import review', 'preview seeded export result');
 
@@ -689,7 +689,7 @@ async function auditPreviewSeededSaveResultDeepLink(page) {
 
   const bodyText = await page.locator('body').innerText();
   expectTextIncludes(bodyText, 'Workspace saved.', 'preview seeded save result');
-  expectTextIncludes(bodyText, 'Browser save dispatch', 'preview seeded save result');
+  expectTextIncludes(bodyText, 'Saved in this browser', 'preview seeded save result');
   expectTextIncludes(bodyText, 'save_character', 'preview seeded save result');
 
   if (!page.url().includes('/preview?fixture=blue&command=save_character')) {
@@ -703,7 +703,7 @@ async function auditPreviewSeededSaveAsResultDeepLink(page) {
 
   const bodyText = await page.locator('body').innerText();
   expectTextIncludes(bodyText, 'Download prepared:', 'preview seeded save-as result');
-  expectTextIncludes(bodyText, 'Browser download dispatch', 'preview seeded save-as result');
+  expectTextIncludes(bodyText, 'Download ready', 'preview seeded save-as result');
 
   if (!page.url().includes('/preview?fixture=blue&command=save_character_as')) {
     throw new Error(`Expected preview seeded save-as result route to stay on /preview?fixture=blue&command=save_character_as, got '${page.url()}'.`);

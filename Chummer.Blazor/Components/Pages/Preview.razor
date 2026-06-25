@@ -299,7 +299,7 @@
             <div class="browser-workbench-ledger-grid">
                 <article data-workbench-ledger-row="startup">
                     <span>Startup</span>
-                    <strong>New runners, open dossiers, origins, and lists</strong>
+                    <strong>New runner, open dossiers, origins, and lists</strong>
                     <p>Common entry points stay in the browser and survive a reload.</p>
                 </article>
                 <article data-workbench-ledger-row="editing">
@@ -2120,13 +2120,13 @@
                 <span class="browser-preview-status-label">Quick start</span>
                 <strong>Start a new runner</strong>
                 <p>@NewCharacterEntrySummary</p>
-                <a href="@BuildPreviewHref(command: NewCharacterCommand, useWorkbenchRoute: true)">Open New Character</a>
+                <a href="@BuildPreviewHref(command: NewCharacterCommand, useWorkbenchRoute: true)">New runner</a>
             </article>
             <article class="browser-preview-status-card" data-workbench-entry-card="open-character">
                 <span class="browser-preview-status-label">Quick start</span>
                 <strong>Import an existing dossier</strong>
                 <p>Open the shared browser import flow for an existing Chummer dossier.</p>
-                <a href="@BuildPreviewHref(command: OpenCharacterCommand, useWorkbenchRoute: true)">Open Character</a>
+                <a href="@BuildPreviewHref(command: OpenCharacterCommand, useWorkbenchRoute: true)">Open Dossier</a>
             </article>
             <article class="browser-preview-status-card" data-workbench-entry-card="seeded-build-lab">
                 <span class="browser-preview-status-label">Guided start</span>
@@ -2326,82 +2326,82 @@
     {
     <section class="browser-preview-status-grid" aria-label="Verified workflow entries">
         <article class="browser-preview-status-card" data-preview-proof-card="build-lab">
-            <span class="browser-preview-status-label">Browser proof</span>
+            <span class="browser-preview-status-label">Browser check</span>
             <strong>Seed Build Lab with a real SR5 runner</strong>
-            <p>Loads the published browser shell with the `BLUE` fixture and lands on the live `Create` tab so Build Lab can be verified in-place.</p>
-            <a href="@BuildPreviewHref(SeededWorkspaceId, BuildTabId)">Open Build Lab proof</a>
+            <p>Loads the published browser shell with the `BLUE` fixture and lands on the live `Create` tab.</p>
+            <a href="@BuildPreviewHref(SeededWorkspaceId, BuildTabId)">Open Build Lab</a>
         </article>
         <article class="browser-preview-status-card" data-preview-proof-card="rules">
-            <span class="browser-preview-status-label">Rules proof</span>
+            <span class="browser-preview-status-label">Rules check</span>
             <strong>Open the same seeded runner on Rules</strong>
             <p>Uses the same deterministic runner import but pivots to the rules-facing tab for browser continuity checks.</p>
-            <a href="@BuildPreviewHref(SeededWorkspaceId, RulesTabId)">Open Rules proof</a>
+            <a href="@BuildPreviewHref(SeededWorkspaceId, RulesTabId)">Open Rules</a>
         </article>
         <article class="browser-preview-status-card" data-preview-proof-card="technomancer">
-            <span class="browser-preview-status-label">Advanced proof</span>
+            <span class="browser-preview-status-label">Advanced check</span>
             <strong>Open Complex Forms in the browser</strong>
-            <p>Drives the seeded runner into the `Technomancer` lane so advanced build sections can be verified with live section rendering and add actions.</p>
-            <a href="@BuildPreviewHref(SeededWorkspaceId, MatrixTabId)">Open Complex Forms proof</a>
+            <p>Drives the seeded runner into the `Technomancer` lane with live section rendering and add actions.</p>
+            <a href="@BuildPreviewHref(SeededWorkspaceId, MatrixTabId)">Open Complex Forms</a>
         </article>
         <article class="browser-preview-status-card" data-preview-proof-card="contacts">
-            <span class="browser-preview-status-label">Continuity proof</span>
+            <span class="browser-preview-status-label">Continuity check</span>
             <strong>Keep dossier context on Contacts</strong>
-            <p>Verifies that a seeded browser runner can move past startup into a living continuation tab instead of stopping at marketing copy.</p>
-            <a href="@BuildPreviewHref(SeededWorkspaceId, ContactsTabId)">Open Contacts proof</a>
+            <p>Moves a seeded browser runner past startup into a living continuation tab.</p>
+            <a href="@BuildPreviewHref(SeededWorkspaceId, ContactsTabId)">Open Contacts</a>
         </article>
         <article class="browser-preview-status-card" data-preview-proof-card="new-character">
-            <span class="browser-preview-status-label">Startup proof</span>
-            <strong>Open New Character directly in the browser</strong>
+            <span class="browser-preview-status-label">Startup check</span>
+            <strong>Start a new runner directly in the browser</strong>
             <p>@NewCharacterProofSummary</p>
-            <a href="@BuildPreviewHref(command: NewCharacterCommand)">Open New Character proof</a>
+            <a href="@BuildPreviewHref(command: NewCharacterCommand)">New runner</a>
         </article>
         <article class="browser-preview-status-card" data-preview-proof-card="open-character">
-            <span class="browser-preview-status-label">Import proof</span>
-            <strong>Open Character import directly in the browser</strong>
+            <span class="browser-preview-status-label">Import check</span>
+            <strong>Open Dossier import directly in the browser</strong>
             <p>@ImportProofSummary</p>
-            <a href="@BuildPreviewHref(command: OpenCharacterCommand)">Open Character proof</a>
+            <a href="@BuildPreviewHref(command: OpenCharacterCommand)">Open Dossier</a>
         </article>
         <article class="browser-preview-status-card" data-preview-proof-card="open-for-printing">
-            <span class="browser-preview-status-label">Print proof</span>
+            <span class="browser-preview-status-label">Print check</span>
             <strong>Open print staging directly in the browser</strong>
-            <p>Uses the shared print-intake dialog so browser proof covers the same imported-document staging entry used before print workflows continue.</p>
-            <a href="@BuildPreviewHref(command: OpenForPrintingCommand)">Open for Printing proof</a>
+            <p>Uses the shared print-intake dialog before print workflows continue.</p>
+            <a href="@BuildPreviewHref(command: OpenForPrintingCommand)">Open for Printing</a>
         </article>
         <article class="browser-preview-status-card" data-preview-proof-card="open-for-export">
-            <span class="browser-preview-status-label">Export proof</span>
+            <span class="browser-preview-status-label">Export check</span>
             <strong>Open export staging directly in the browser</strong>
-            <p>Uses the shared export-intake dialog so browser proof covers imported-document staging before export workflows continue.</p>
-            <a href="@BuildPreviewHref(command: OpenForExportCommand)">Open for Export proof</a>
+            <p>Uses the shared export-intake dialog before export workflows continue.</p>
+            <a href="@BuildPreviewHref(command: OpenForExportCommand)">Open for Export</a>
         </article>
         <article class="browser-preview-status-card" data-preview-proof-card="print-character-result">
-            <span class="browser-preview-status-label">Result proof</span>
+            <span class="browser-preview-status-label">Result check</span>
             <strong>Prepare a seeded print preview in the browser</strong>
-            <p>Loads the published `BLUE` runner and executes the shared print command so the browser shell shows a real print dispatch state instead of just an entry dialog.</p>
-            <a href="@BuildPreviewHref(SeededWorkspaceId, command: PrintCharacterCommand)">Open Print Result proof</a>
+            <p>Loads the published `BLUE` runner and prepares a real print file instead of just opening an entry dialog.</p>
+            <a href="@BuildPreviewHref(SeededWorkspaceId, command: PrintCharacterCommand)">Open Print Result</a>
         </article>
         <article class="browser-preview-status-card" data-preview-proof-card="export-character-result">
-            <span class="browser-preview-status-label">Result proof</span>
+            <span class="browser-preview-status-label">Result check</span>
             <strong>Prepare a seeded export in the browser</strong>
-            <p>Loads the published `BLUE` runner and executes the shared export command plus its download action so the browser shell shows a real export receipt and portability handoff.</p>
-            <a href="@BuildPreviewHref(SeededWorkspaceId, command: ExportCharacterCommand, dialogAction: DownloadDialogAction)">Open Export Result proof</a>
+            <p>Loads the published `BLUE` runner and prepares a real export plus download action.</p>
+            <a href="@BuildPreviewHref(SeededWorkspaceId, command: ExportCharacterCommand, dialogAction: DownloadDialogAction)">Open Export Result</a>
         </article>
         <article class="browser-preview-status-card" data-preview-proof-card="save-character-result">
-            <span class="browser-preview-status-label">Result proof</span>
+            <span class="browser-preview-status-label">Result check</span>
             <strong>Save a seeded runner in the browser</strong>
-            <p>Loads the published `BLUE` runner and executes the shared save command so the browser shell shows a real saved-state result instead of only toolstrip posture.</p>
-            <a href="@BuildPreviewHref(SeededWorkspaceId, command: SaveCharacterCommand)">Open Save Result proof</a>
+            <p>Loads the published `BLUE` runner and saves it through the shared command.</p>
+            <a href="@BuildPreviewHref(SeededWorkspaceId, command: SaveCharacterCommand)">Open Save Result</a>
         </article>
         <article class="browser-preview-status-card" data-preview-proof-card="save-character-as-result">
-            <span class="browser-preview-status-label">Result proof</span>
+            <span class="browser-preview-status-label">Result check</span>
             <strong>Prepare a seeded download in the browser</strong>
-            <p>Loads the published `BLUE` runner and executes the shared save-as command so the browser shell shows a real browser download handoff instead of only a toolbar affordance.</p>
-            <a href="@BuildPreviewHref(SeededWorkspaceId, command: SaveCharacterAsCommand)">Open Save As Result proof</a>
+            <p>Loads the published `BLUE` runner and prepares the download through the shared save-as command.</p>
+            <a href="@BuildPreviewHref(SeededWorkspaceId, command: SaveCharacterAsCommand)">Open Save As Result</a>
         </article>
         <article class="browser-preview-status-card" data-preview-proof-card="origin-dossier">
-            <span class="browser-preview-status-label">Story proof</span>
+            <span class="browser-preview-status-label">Story check</span>
             <strong>Open Origin Dossier directly in the browser</strong>
             <p>@OriginDossierSummary</p>
-            <a href="@BuildPreviewHref(command: NewCharacterOriginCommand)">Open Origin Dossier proof</a>
+            <a href="@BuildPreviewHref(command: NewCharacterOriginCommand)">Open Origin Dossier</a>
         </article>
     </section>
     }

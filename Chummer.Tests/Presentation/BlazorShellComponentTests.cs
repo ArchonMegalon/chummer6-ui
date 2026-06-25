@@ -1350,7 +1350,7 @@ public sealed class BlazorShellComponentTests
                         new GeneratedAssetMetadataField("coachOperator", "Operator", "shadowfeed-dispatch"),
                         new GeneratedAssetMetadataField("coachModel", "Model", "gpt-5.3-codex"),
                         new GeneratedAssetMetadataField("shadowfeedDispatchChannel", "Dispatch Channel", "shadowfeed.ops"),
-                        new GeneratedAssetMetadataField("shadowfeedDispatchReceipt", "Dispatch Receipt", "pending"),
+                        new GeneratedAssetMetadataField("shadowfeedDispatchReceipt", "Dispatch Status", "pending"),
                         new GeneratedAssetMetadataField("shadowfeedReviewQueue", "Review Queue", "shadowfeed.review"),
                         new GeneratedAssetMetadataField("shadowfeedReviewer", "Reviewer", "unassigned")
                     ],
