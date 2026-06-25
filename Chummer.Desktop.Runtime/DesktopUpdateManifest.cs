@@ -241,7 +241,7 @@ public static class DesktopUpdateManifestParser
                 PayloadDownloadUrl: GetOptionalString(element, "payloadDownloadUrl"),
                 PayloadSha256: NormalizeSha256(GetOptionalString(element, "payloadSha256")),
                 PayloadSizeBytes: GetOptionalLong(element, "payloadSizeBytes"));
-            ValidateBootstrapPayloadMetadata(artifact);
+            ValidateBootstrapPayloadMetadata(artifact, sourceUri);
             artifacts.Add(artifact);
         }
 
@@ -307,7 +307,7 @@ public static class DesktopUpdateManifestParser
                 PayloadDownloadUrl: GetOptionalString(element, "payloadDownloadUrl"),
                 PayloadSha256: NormalizeSha256(GetOptionalString(element, "payloadSha256")),
                 PayloadSizeBytes: GetOptionalLong(element, "payloadSizeBytes"));
-            ValidateBootstrapPayloadMetadata(artifact);
+            ValidateBootstrapPayloadMetadata(artifact, sourceUri);
             artifacts.Add(artifact);
         }
 
@@ -432,7 +432,7 @@ public static class DesktopUpdateManifestParser
         };
     }
 
-    private static void ValidateBootstrapPayloadMetadata(DesktopUpdateArtifact artifact)
+    private static void ValidateBootstrapPayloadMetadata(DesktopUpdateArtifact artifact, Uri sourceUri)
     {
         if (!string.Equals(artifact.InstallerMode, "bootstrap", StringComparison.OrdinalIgnoreCase))
         {
@@ -449,13 +449,21 @@ public static class DesktopUpdateManifestParser
             throw new InvalidOperationException($"{artifact.ArtifactId}: bootstrap installer manifest is missing payloadDownloadUrl.");
         }
 
-        if (!Uri.TryCreate(artifact.PayloadDownloadUrl, UriKind.Absolute, out Uri? payloadUri)
-            || payloadUri.Scheme != Uri.UriSchemeHttps)
+        string payloadDownloadUrl = artifact.PayloadDownloadUrl.Trim();
+        bool payloadIsAbsolute = Uri.TryCreate(payloadDownloadUrl, UriKind.Absolute, out Uri? payloadUri);
+        bool trustedLocalPayload = sourceUri.IsFile
+            && (!payloadIsAbsolute
+                || payloadUri!.IsFile
+                || Path.IsPathRooted(payloadDownloadUrl));
+        if (!trustedLocalPayload
+            && (!payloadIsAbsolute || payloadUri!.Scheme != Uri.UriSchemeHttps))
         {
             throw new InvalidOperationException($"{artifact.ArtifactId}: bootstrap installer payloadDownloadUrl must be an absolute HTTPS URL.");
         }
 
-        string payloadUrlFileName = Path.GetFileName(payloadUri.LocalPath);
+        string payloadUrlFileName = payloadIsAbsolute
+            ? Path.GetFileName(payloadUri!.LocalPath)
+            : Path.GetFileName(payloadDownloadUrl.Replace('\\', '/'));
         if (!string.Equals(payloadUrlFileName, artifact.PayloadFileName, StringComparison.OrdinalIgnoreCase))
         {
             throw new InvalidOperationException($"{artifact.ArtifactId}: bootstrap installer payloadDownloadUrl file name must match payloadFileName.");

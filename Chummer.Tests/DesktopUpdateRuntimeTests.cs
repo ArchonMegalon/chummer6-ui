@@ -808,7 +808,7 @@ public sealed class DesktopUpdateRuntimeTests
     public async Task CheckAndScheduleStartupUpdateAsync_bootstrap_installer_handoff_stages_payload_and_sidecar()
     {
         DesktopUpdatePlatformIdentity identity = DesktopUpdatePlatformIdentity.Current();
-        string version = $"run-20260624-{Guid.NewGuid():N}".Substring(0, 23);
+        string version = $"run-20991231-{Guid.NewGuid():N}".Substring(0, 23);
         string tempRoot = Path.Combine(Path.GetTempPath(), $"desktop-update-bootstrap-handoff-{Guid.NewGuid():N}");
         Directory.CreateDirectory(tempRoot);
         string installerSourcePath = Path.Combine(tempRoot, "chummer-avalonia-linux-x64-installer.deb");
@@ -887,7 +887,7 @@ public sealed class DesktopUpdateRuntimeTests
                 [],
                 CancellationToken.None).ConfigureAwait(false);
 
-            Assert.IsTrue(result.ExitRequested);
+            Assert.IsTrue(result.ExitRequested, $"{result.Reason}: {result.Message}");
             Assert.AreEqual("apply_scheduled", result.Reason);
 
             string statePath = stateRootScope.StatePathForHead("avalonia");
@@ -1761,7 +1761,38 @@ public sealed class DesktopUpdateRuntimeTests
             ex = caught;
         }
 
-        StringAssert.Contains(ex.InnerException?.Message ?? ex.Message, "same host as manifest", StringComparison.Ordinal);
+        StringAssert.Contains(ex.InnerException?.Message ?? ex.Message, "same origin as manifest", StringComparison.Ordinal);
+    }
+
+    [TestMethod]
+    public void Resolve_artifact_uri_rejects_same_host_different_port_remote_artifact()
+    {
+        Uri manifestUri = new("https://chummer.run/downloads/RELEASE_CHANNEL.generated.json");
+        DesktopUpdateArtifact artifact = new(
+            "installer",
+            "avalonia",
+            "linux",
+            "x64",
+            "installer",
+            "chummer-avalonia-linux-x64-installer.deb",
+            "https://chummer.run:444/downloads/files/chummer-avalonia-linux-x64-installer.deb",
+            null,
+            new string('a', 64),
+            42);
+
+        System.Reflection.TargetInvocationException ex;
+        try
+        {
+            _ = InvokePrivateStatic<Uri>("ResolveArtifactUri", manifestUri, artifact);
+            Assert.Fail("Expected same-host, different-port remote artifacts to be rejected.");
+            return;
+        }
+        catch (System.Reflection.TargetInvocationException caught)
+        {
+            ex = caught;
+        }
+
+        StringAssert.Contains(ex.InnerException?.Message ?? ex.Message, "same origin as manifest", StringComparison.Ordinal);
     }
 
     [TestMethod]

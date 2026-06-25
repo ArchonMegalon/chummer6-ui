@@ -1326,12 +1326,17 @@ public static class DesktopUpdateRuntime
 
         if (!manifestUri.IsFile
             && !manifestUri.IsLoopback
-            && !string.Equals(manifestUri.Host, artifactUri.Host, StringComparison.OrdinalIgnoreCase))
+            && !IsSameRemoteOrigin(manifestUri, artifactUri))
         {
             throw new InvalidOperationException(
-                $"Desktop update artifact '{artifactUri}' must stay on the same host as manifest '{manifestUri}'.");
+                $"Desktop update artifact '{artifactUri}' must stay on the same origin as manifest '{manifestUri}'.");
         }
     }
+
+    private static bool IsSameRemoteOrigin(Uri left, Uri right)
+        => string.Equals(left.Scheme, right.Scheme, StringComparison.OrdinalIgnoreCase)
+            && string.Equals(left.Host, right.Host, StringComparison.OrdinalIgnoreCase)
+            && left.Port == right.Port;
 
     private static Uri ResolveLocalArtifactUri(Uri manifestUri, string rawUrl)
     {
