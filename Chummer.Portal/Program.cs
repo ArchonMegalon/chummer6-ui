@@ -433,19 +433,20 @@ static string BuildDownloadsHtml(HttpContext context, PortalOptions options)
     {
         artifactLines = "<li>No published artifacts are listed in releases.json.</li>";
     }
+    List<ReleaseInstallRouteSummary> compatibilityRoutes = summary.InstallRoutes
+        .Where(route => !summary.Downloads.Any(download =>
+            string.Equals(download.PublicInstallRoute, route.PublicInstallRoute, StringComparison.OrdinalIgnoreCase)))
+        .Where(route =>
+            string.Equals(route.InstallPosture, "proof_capture_required", StringComparison.OrdinalIgnoreCase)
+            || string.Equals(route.PromotionState, "proof_required", StringComparison.OrdinalIgnoreCase))
+        .ToList();
     string compatibilityRouteLines = string.Join(
         Environment.NewLine,
-        summary.InstallRoutes
-            .Where(route => !summary.Downloads.Any(download =>
-                string.Equals(download.PublicInstallRoute, route.PublicInstallRoute, StringComparison.OrdinalIgnoreCase)))
-            .Where(route =>
-                string.Equals(route.InstallPosture, "proof_capture_required", StringComparison.OrdinalIgnoreCase)
-                || string.Equals(route.PromotionState, "proof_required", StringComparison.OrdinalIgnoreCase))
-            .Select(route =>
-                $"""<li data-install-route-posture="{WebUtility.HtmlEncode(route.InstallPosture)}"><code>{WebUtility.HtmlEncode(route.PublicInstallRoute)}</code> <span>{WebUtility.HtmlEncode(route.InstallPosture)}</span></li>"""));
+        compatibilityRoutes.Select(route =>
+            $"""<li data-install-route-posture="{WebUtility.HtmlEncode(route.InstallPosture)}" data-install-route-promotion="{WebUtility.HtmlEncode(route.PromotionState)}" data-install-route-artifact="{WebUtility.HtmlEncode(string.IsNullOrWhiteSpace(route.ArtifactId) ? "artifact-pending" : route.ArtifactId)}"><a href="{WebUtility.HtmlEncode(route.PublicInstallRoute)}" data-install-route-action="open-proof-required-route"><code>{WebUtility.HtmlEncode(route.PublicInstallRoute)}</code></a> <span>{WebUtility.HtmlEncode(route.InstallPosture)}</span> <span>{WebUtility.HtmlEncode(route.PromotionState)}</span> <span>{WebUtility.HtmlEncode(string.IsNullOrWhiteSpace(route.ArtifactId) ? "artifact pending" : route.ArtifactId)}</span></li>"""));
     if (string.IsNullOrWhiteSpace(compatibilityRouteLines))
     {
-        compatibilityRouteLines = "<li>No compatibility handoff routes are listed in releases.json.</li>";
+        compatibilityRouteLines = """<li data-install-route-empty="true">No compatibility handoff routes are listed in releases.json.</li>""";
     }
 
     return $$"""
@@ -461,6 +462,8 @@ static string BuildDownloadsHtml(HttpContext context, PortalOptions options)
     .panel { border: 1px solid rgba(214,169,74,.28); background: rgba(15,18,25,.88); border-radius: 18px; padding: 1.25rem; }
     .install-state { border: 1px solid rgba(244,207,115,.45); background: rgba(244,207,115,.12); border-radius: .85rem; padding: .85rem; }
     .install-state a { display: inline-block; margin-top: .5rem; font-weight: 700; }
+    .compatibility-routes { border-top: 1px solid rgba(244,207,115,.24); margin-top: 1rem; padding-top: 1rem; }
+    .compatibility-routes li { margin: .45rem 0; }
     a { color: #f4cf73; }
     code { background: rgba(255,255,255,.08); padding: .15rem .35rem; border-radius: .35rem; }
   </style>
@@ -478,9 +481,10 @@ static string BuildDownloadsHtml(HttpContext context, PortalOptions options)
     <ul>
       {{artifactLines}}
     </ul>
-    <h2>Compatibility handoff routes</h2>
+    <h2 id="compatibility-handoff-routes">Compatibility handoff routes</h2>
+    <p data-install-route-count="{{compatibilityRoutes.Count}}">Compatibility routes: <code>{{compatibilityRoutes.Count}}</code></p>
     <p>Known fallback install routes stay visible here, but they are not installable until matching artifact and startup proof exists.</p>
-    <ul>
+    <ul class="compatibility-routes" data-install-route-list="compatibility-handoff" aria-labelledby="compatibility-handoff-routes">
       {{compatibilityRouteLines}}
     </ul>
   </section>
