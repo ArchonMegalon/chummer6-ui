@@ -42,6 +42,7 @@ def _write_bundle_manifest(
     *,
     installer_name: str,
     installer_sha256: str = "installer-sha-placeholder",
+    installer_size_bytes: int = 1,
     payload_name: str = "",
     payload_sha256: str = "",
     payload_size_bytes: int = 0,
@@ -58,7 +59,7 @@ def _write_bundle_manifest(
                 "fileName": installer_name,
                 "url": f"https://example.invalid/downloads/files/{installer_name}",
                 "sha256": installer_sha256,
-                "sizeBytes": 1,
+                "sizeBytes": installer_size_bytes,
                 "kind": "installer",
                 "platform": "windows",
                 "installerMode": installer_mode,
@@ -476,3 +477,92 @@ def test_publish_download_bundle_fails_when_root_installer_has_no_matching_paylo
     assert result.returncode != 0
     assert "windows_installer_payload_gate:fail" in result.stderr
     assert "no appended payload and no bootstrap sidecar" in result.stderr
+
+
+def test_publish_download_bundle_promotes_bootstrap_payload_zip_with_installer(tmp_path: Path) -> None:
+    bundle_dir = tmp_path / "bundle"
+    files_dir = bundle_dir / "files"
+    files_dir.mkdir(parents=True)
+    installer_path = files_dir / "chummer-avalonia-win-x64-installer.exe"
+    payload_path = files_dir / "chummer-avalonia-win-x64-payload.zip"
+    payload_bytes = _write_bootstrap_payload(payload_path)
+    payload_sha256 = hashlib.sha256(payload_bytes).hexdigest()
+    payload_url = f"https://example.invalid/downloads/files/{payload_path.name}"
+    _write_bootstrap_installer(
+        installer_path,
+        payload_download_url=payload_url,
+        payload_sha256=payload_sha256,
+        payload_size_bytes=len(payload_bytes),
+    )
+    installer_sha256 = hashlib.sha256(installer_path.read_bytes()).hexdigest()
+    payload_sidecar = files_dir / "chummer-avalonia-win-x64-payload.zip.json"
+    payload_sidecar.write_text(
+        json.dumps(
+            {
+                "contractName": "chummer6-ui.windows_bootstrap_payload",
+                "fileName": payload_path.name,
+                "downloadUrl": payload_url,
+                "sha256": payload_sha256,
+                "sizeBytes": len(payload_bytes),
+                "installerFileName": installer_path.name,
+                "releaseVersion": "run-test",
+            },
+            indent=2,
+        )
+        + "\n",
+        encoding="utf-8",
+    )
+    _write_bundle_manifest(
+        bundle_dir / "releases.json",
+        installer_name=installer_path.name,
+        installer_sha256=installer_sha256,
+        installer_size_bytes=installer_path.stat().st_size,
+        payload_name=payload_path.name,
+        payload_sha256=payload_sha256,
+        payload_size_bytes=len(payload_bytes),
+    )
+    startup_smoke_dir = bundle_dir / "startup-smoke"
+    startup_smoke_dir.mkdir()
+    (startup_smoke_dir / "startup-smoke-avalonia-win-x64.receipt.json").write_text(
+        json.dumps(
+            {
+                "status": "pass",
+                "headId": "avalonia",
+                "platform": "windows",
+                "arch": "x64",
+                "rid": "win-x64",
+                "readyCheckpoint": "pre_ui_event_loop",
+                "hostClass": "wine64-linux-x64-container",
+                "operatingSystem": "Microsoft Windows 10.0.19043",
+                "artifactDigest": f"sha256:{installer_sha256}",
+                "artifactSha256": installer_sha256,
+                "artifactFileName": installer_path.name,
+                "fileName": installer_path.name,
+                "artifactRelativePath": f"files/{installer_path.name}",
+                "recordedAtUtc": "2026-06-24T00:00:00Z",
+            },
+            indent=2,
+        )
+        + "\n",
+        encoding="utf-8",
+    )
+
+    deploy_dir = tmp_path / "deploy"
+    result = subprocess.run(
+        ["bash", str(PUBLISH_SCRIPT), str(bundle_dir), str(deploy_dir)],
+        cwd=REPO_ROOT,
+        env={
+            "PATH": "/usr/bin:/bin",
+            "CHUMMER_PUBLIC_EDGE_DOWNLOADS_SYNC_MIRRORS": "false",
+            "CHUMMER_RELEASE_REQUIRE_COMPLETE_DESKTOP_COVERAGE": "0",
+            "CHUMMER_PUBLIC_SKIP_STARTUP_SMOKE_FILTER": "true",
+        },
+        text=True,
+        capture_output=True,
+        check=False,
+    )
+
+    assert result.returncode == 0, result.stderr
+    assert (deploy_dir / "files" / installer_path.name).is_file()
+    assert (deploy_dir / "files" / payload_path.name).is_file()
+    assert (deploy_dir / "files" / payload_sidecar.name).is_file()
