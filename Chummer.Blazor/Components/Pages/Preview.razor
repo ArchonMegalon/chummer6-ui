@@ -77,18 +77,18 @@
                 <div class="classic-menu-item">
                     <a href="@BuildPreviewHref(command: NewCharacterCommand, useWorkbenchRoute: true)">File</a>
                     <div class="classic-menu-flyout" role="menu">
-                        <a href="@BuildPreviewHref(command: NewCharacterCommand, useWorkbenchRoute: true)" role="menuitem">New runner</a>
-                        <a href="@BuildPreviewHref(command: OpenCharacterCommand, useWorkbenchRoute: true)" role="menuitem">Open dossier</a>
-                        <a href="@SaveAsFlowHref" role="menuitem">Save as</a>
-                        <a href="@PrintFlowHref" role="menuitem">Print</a>
-                        <a href="@ExportFlowHref" role="menuitem">Export</a>
+                        <a href="@BuildPreviewHref(command: NewCharacterCommand, useWorkbenchRoute: true)" role="menuitem" data-chummer-shortcut="Ctrl+N" aria-keyshortcuts="Control+N">New runner</a>
+                        <a href="@BuildPreviewHref(command: OpenCharacterCommand, useWorkbenchRoute: true)" role="menuitem" data-chummer-shortcut="Ctrl+O" aria-keyshortcuts="Control+O">Open dossier</a>
+                        <a href="@SaveAsFlowHref" role="menuitem" data-chummer-shortcut="Ctrl+Shift+S" aria-keyshortcuts="Control+Shift+S">Save as</a>
+                        <a href="@PrintFlowHref" role="menuitem" data-chummer-shortcut="Ctrl+P" aria-keyshortcuts="Control+P">Print</a>
+                        <a href="@ExportFlowHref" role="menuitem" data-chummer-shortcut="Ctrl+E" aria-keyshortcuts="Control+E">Export</a>
                     </div>
                 </div>
                 <div class="classic-menu-item">
                     <a href="@BuildLabLaneHref">Edit</a>
                     <div class="classic-menu-flyout" role="menu">
-                        <a href="@BuildLabLaneHref" role="menuitem" aria-current="@(IsBuildLabWorkflow ? "page" : null)">Build Lab</a>
-                        <a href="@GearLaneHref" role="menuitem" aria-current="@(IsGearWorkflow ? "page" : null)">Gear</a>
+                        <a href="@BuildLabLaneHref" role="menuitem" aria-current="@(IsBuildLabWorkflow ? "page" : null)" data-chummer-shortcut="Ctrl+B" aria-keyshortcuts="Control+B">Build Lab</a>
+                        <a href="@GearLaneHref" role="menuitem" aria-current="@(IsGearWorkflow ? "page" : null)" data-chummer-shortcut="Ctrl+G" aria-keyshortcuts="Control+G">Gear</a>
                         <a href="@BuildPreviewHref(SeededWorkspaceId, tab: ProfileTabId, useWorkbenchRoute: true)" role="menuitem">Profile</a>
                     </div>
                 </div>
@@ -103,7 +103,7 @@
                 <div class="classic-menu-item">
                     <a href="@ChummerOnlineRosterHref">Runner</a>
                     <div class="classic-menu-flyout" role="menu">
-                        <a href="@ChummerOnlineRosterHref" role="menuitem" aria-current="@(IsCharacterRosterCommand ? "page" : null)">Character Roster</a>
+                        <a href="@ChummerOnlineRosterHref" role="menuitem" aria-current="@(IsCharacterRosterCommand ? "page" : null)" data-chummer-shortcut="Ctrl+R" aria-keyshortcuts="Control+R">Character Roster</a>
                         <a href="@ContinueRecentHref" role="menuitem">Continue runner</a>
                         <a href="@BuildPreviewHref(command: OpenCharacterCommand, useWorkbenchRoute: true)" role="menuitem">Import dossier XML</a>
                     </div>
@@ -111,7 +111,7 @@
                 <div class="classic-menu-item">
                     <a href="@GlobalSettingsHref">Tools</a>
                     <div class="classic-menu-flyout" role="menu">
-                        <a href="@GlobalSettingsHref" role="menuitem">Options</a>
+                        <a href="@GlobalSettingsHref" role="menuitem" data-chummer-shortcut="Ctrl+," aria-keyshortcuts="Control+,">Options</a>
                         <a href="@StatusHref" role="menuitem">Status</a>
                         <a href="@DownloadsHref" role="menuitem">Desktop installers</a>
                     </div>
@@ -119,7 +119,7 @@
                 <div class="classic-menu-item">
                     <a href="@HelpHref">Help</a>
                     <div class="classic-menu-flyout" role="menu">
-                        <a href="@HelpHref" role="menuitem">Help</a>
+                        <a href="@HelpHref" role="menuitem" data-chummer-shortcut="F1" aria-keyshortcuts="F1">Help</a>
                         <a href="@DocsHref" role="menuitem">Docs</a>
                         <a href="@ContactHref" role="menuitem">Support</a>
                     </div>
@@ -128,18 +128,18 @@
 
             <nav class="classic-chummer-toolstrip" aria-label="Classic Chummer toolstrip">
                 <div class="classic-toolstrip-group" aria-label="File actions">
-                    <a class="classic-tool-icon" href="@BuildPreviewHref(command: NewCharacterCommand, useWorkbenchRoute: true)" data-classic-toolstrip-action="new-runner" title="New runner">N</a>
-                    <a class="classic-tool-icon" href="@BuildPreviewHref(command: OpenCharacterCommand, useWorkbenchRoute: true)" data-classic-toolstrip-action="open-dossier" title="Open dossier">O</a>
-                    <a class="classic-tool-icon" href="@SaveAsFlowHref" data-classic-toolstrip-action="save-dossier" title="Save dossier">S</a>
+                    <a class="classic-tool-icon" href="@BuildPreviewHref(command: NewCharacterCommand, useWorkbenchRoute: true)" data-classic-toolstrip-action="new-runner" data-chummer-shortcut="Ctrl+N" aria-keyshortcuts="Control+N" title="New runner">N</a>
+                    <a class="classic-tool-icon" href="@BuildPreviewHref(command: OpenCharacterCommand, useWorkbenchRoute: true)" data-classic-toolstrip-action="open-dossier" data-chummer-shortcut="Ctrl+O" aria-keyshortcuts="Control+O" title="Open dossier">O</a>
+                    <a class="classic-tool-icon" href="@SaveAsFlowHref" data-classic-toolstrip-action="save-dossier" data-chummer-shortcut="Ctrl+S" aria-keyshortcuts="Control+S" title="Save dossier">S</a>
                 </div>
                 <div class="classic-toolstrip-group" aria-label="Output actions">
-                    <a class="classic-tool-icon" href="@PrintFlowHref" data-classic-toolstrip-action="print-dossier" title="Print">P</a>
-                    <a class="classic-tool-icon" href="@ExportFlowHref" data-classic-toolstrip-action="export-dossier" title="Export">E</a>
+                    <a class="classic-tool-icon" href="@PrintFlowHref" data-classic-toolstrip-action="print-dossier" data-chummer-shortcut="Ctrl+P" aria-keyshortcuts="Control+P" title="Print">P</a>
+                    <a class="classic-tool-icon" href="@ExportFlowHref" data-classic-toolstrip-action="export-dossier" data-chummer-shortcut="Ctrl+E" aria-keyshortcuts="Control+E" title="Export">E</a>
                 </div>
                 <div class="classic-toolstrip-group" aria-label="Dossier actions">
-                    <a class="classic-tool-icon" href="@ChummerOnlineRosterHref" data-classic-toolstrip-action="character-roster" title="Character Roster" aria-current="@(IsCharacterRosterCommand ? "page" : null)">R</a>
-                    <a class="classic-tool-icon" href="@BuildLabLaneHref" data-classic-toolstrip-action="build-lab" title="Build Lab" aria-current="@(IsBuildLabWorkflow ? "page" : null)">B</a>
-                    <a class="classic-tool-icon" href="@GearLaneHref" data-classic-toolstrip-action="gear" title="Gear" aria-current="@(IsGearWorkflow ? "page" : null)">G</a>
+                    <a class="classic-tool-icon" href="@ChummerOnlineRosterHref" data-classic-toolstrip-action="character-roster" data-chummer-shortcut="Ctrl+R" aria-keyshortcuts="Control+R" title="Character Roster" aria-current="@(IsCharacterRosterCommand ? "page" : null)">R</a>
+                    <a class="classic-tool-icon" href="@BuildLabLaneHref" data-classic-toolstrip-action="build-lab" data-chummer-shortcut="Ctrl+B" aria-keyshortcuts="Control+B" title="Build Lab" aria-current="@(IsBuildLabWorkflow ? "page" : null)">B</a>
+                    <a class="classic-tool-icon" href="@GearLaneHref" data-classic-toolstrip-action="gear" data-chummer-shortcut="Ctrl+G" aria-keyshortcuts="Control+G" title="Gear" aria-current="@(IsGearWorkflow ? "page" : null)">G</a>
                 </div>
             </nav>
 
@@ -147,10 +147,10 @@
                 <aside class="classic-chummer-roster @(IsCharacterRosterCommand ? "is-roster-command" : string.Empty)" aria-label="Character Roster">
                     <h2>Character Roster</h2>
                     <div class="classic-roster-toolbar" role="toolbar" aria-label="Roster organization tools" data-roster-toolbar="custom-directories">
-                        <button type="button" data-roster-command="new-folder" aria-controls="classic-roster-tree">New folder</button>
-                        <button type="button" data-roster-command="move-selection" aria-controls="classic-roster-tree">Move</button>
-                        <button type="button" data-roster-command="rename-selection" aria-controls="classic-roster-tree">Rename</button>
-                        <button type="button" data-roster-command="show-inbox" aria-controls="classic-roster-tree">Inbox</button>
+                        <button type="button" data-roster-command="new-folder" data-roster-shortcut="Ctrl+Shift+N" aria-keyshortcuts="Control+Shift+N" aria-controls="classic-roster-tree">New folder</button>
+                        <button type="button" data-roster-command="move-selection" data-roster-shortcut="Ctrl+M" aria-keyshortcuts="Control+M" aria-controls="classic-roster-tree">Move</button>
+                        <button type="button" data-roster-command="rename-selection" data-roster-shortcut="F2" aria-keyshortcuts="F2" aria-controls="classic-roster-tree">Rename</button>
+                        <button type="button" data-roster-command="show-inbox" data-roster-shortcut="Ctrl+I" aria-keyshortcuts="Control+I" aria-controls="classic-roster-tree">Inbox</button>
                     </div>
                     <p id="classic-roster-hint" class="classic-roster-hint">Drag runners or folders to organize this roster.</p>
                     <ul id="classic-roster-tree" class="classic-roster-tree" role="tree" aria-label="Custom character roster tree" aria-describedby="classic-roster-hint" data-roster-tree="custom-directories" data-roster-schema-version="1" data-roster-storage-scope="workspace" data-roster-persistence-key="chummer-online-roster-tree" data-roster-reorder-mode="nested">
@@ -2782,7 +2782,14 @@
     private string WorkspaceDataKey => NormalizeShellDataToken(PrimaryRecentWorkspace?.WorkspaceId ?? Workspace);
     private string ActiveRunnerDataKey => NormalizeShellDataToken(PrimaryRecentWorkspace?.ShortLabel);
     private static string NormalizeShellDataToken(string? value)
-        => string.IsNullOrWhiteSpace(value) ? "none" : value.Trim().Replace('_', '-').ToLowerInvariant();
+        => string.IsNullOrWhiteSpace(value)
+            ? "none"
+            : value.Trim()
+                .Replace('_', '-')
+                .Replace(' ', '-')
+                .Replace('/', '-')
+                .Replace('\\', '-')
+                .ToLowerInvariant();
     private bool IsRouteSegment(string routeSegment)
     {
         string path = new Uri(Navigation.Uri).AbsolutePath.TrimEnd('/');

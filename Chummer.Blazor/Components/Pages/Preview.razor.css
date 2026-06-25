@@ -8060,3 +8060,61 @@
     letter-spacing: .04em;
     text-transform: uppercase;
 }
+
+.browser-preview-shell:is(.classic-promoted-app, .classic-compat-app) .classic-roster-toolbar [data-roster-shortcut]::before {
+    content: attr(data-roster-shortcut);
+    display: block;
+    color: #5d5449;
+    font-size: .5rem;
+    font-weight: 900;
+    letter-spacing: .03em;
+    line-height: 1;
+}
+
+.browser-preview-shell:is(.classic-promoted-app, .classic-compat-app) .classic-roster-toolbar [data-roster-shortcut]:hover::before,
+.browser-preview-shell:is(.classic-promoted-app, .classic-compat-app) .classic-roster-toolbar [data-roster-shortcut]:focus-visible::before {
+    color: #1c4169;
+}
+
+.browser-preview-shell:is(.classic-promoted-app, .classic-compat-app) .classic-tool-icon[data-chummer-shortcut] {
+    position: relative;
+}
+
+.browser-preview-shell:is(.classic-promoted-app, .classic-compat-app) .classic-tool-icon[data-chummer-shortcut]::after {
+    content: attr(data-chummer-shortcut);
+    position: absolute;
+    left: 50%;
+    top: 100%;
+    transform: translateX(-50%);
+    margin-top: 2px;
+    padding: .08rem .18rem;
+    border: 1px solid #6d6257;
+    background: #f2eadf;
+    color: #302a24;
+    font-size: .5rem;
+    font-weight: 900;
+    white-space: nowrap;
+    opacity: 0;
+    pointer-events: none;
+    z-index: 45;
+}
+
+.browser-preview-shell:is(.classic-promoted-app, .classic-compat-app) .classic-tool-icon[data-chummer-shortcut]:hover::after,
+.browser-preview-shell:is(.classic-promoted-app, .classic-compat-app) .classic-tool-icon[data-chummer-shortcut]:focus-visible::after {
+    opacity: 1;
+}
+
+.browser-preview-shell:is(.classic-promoted-app, .classic-compat-app) .classic-menu-flyout a[data-chummer-shortcut]::after {
+    content: attr(data-chummer-shortcut);
+    justify-self: end;
+    color: #5b5248;
+    font-size: .56rem;
+    font-weight: 900;
+    letter-spacing: .03em;
+}
+
+.browser-preview-shell:is(.classic-promoted-app, .classic-compat-app) .classic-menu-flyout a[data-chummer-shortcut]:hover::after,
+.browser-preview-shell:is(.classic-promoted-app, .classic-compat-app) .classic-menu-flyout a[data-chummer-shortcut]:focus-visible::after,
+.browser-preview-shell:is(.classic-promoted-app, .classic-compat-app) .classic-menu-flyout a[data-chummer-shortcut][aria-current="page"]::after {
+    color: inherit;
+}
