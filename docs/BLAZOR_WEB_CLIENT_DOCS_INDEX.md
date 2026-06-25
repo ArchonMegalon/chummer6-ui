@@ -112,10 +112,10 @@ The goal is straightforward: `Chummer.Blazor` should ship as a polished web clie
 
 ## Self-Host and Operator Documents
 
-- `docs/BLAZOR_SELF_HOST_RUNBOOK.md`: canonical Docker and operator runbook for Chummer Online and the browser workbench lane
+- `docs/BLAZOR_SELF_HOST_RUNBOOK.md`: canonical Docker and operator runbook for Chummer Online and the browser-client lane
 - `docs/examples/self-hosted-browser-workbench.env.example`: baseline environment defaults for self-hosted portal/API/browser deployments
 - `docs/DESKTOP_RELEASE_PIPELINE.md`: release pipeline notes that still need to stay aligned with the promoted browser route model
-- `.codex-studio/published/BLAZOR_SELF_HOST_WORKBENCH_PROOF.generated.json`: published Docker self-host browser workbench receipt included in the combined browser-lane proof status summary
+- `.codex-studio/published/BLAZOR_SELF_HOST_WORKBENCH_PROOF.generated.json`: published Docker self-host browser-client receipt included in the combined browser-lane proof status summary
 
 ## Analytics and Privacy Posture
 
@@ -140,7 +140,7 @@ Runner Intelligence cohort/privacy surfaces should render sensitive-field policy
 
 Connected runtime proof is deliberately narrower than workflow parity. It proves that optional session, coach, and assistant routes can remain behind the portal boundary and use the signed portal-owner forwarding seam when configured. It does not prove that every downstream connected-runtime workflow is complete.
 
-The browser workbench also renders a connected-runtime posture card showing whether session, coach, and assistant lanes are configured or off. The card must not expose proxy URLs or owner secrets.
+The browser client also renders a connected-runtime posture card showing whether session, coach, and assistant lanes are configured or off. The card must not expose proxy URLs or owner secrets.
 
 ## Route and Workflow Canon
 

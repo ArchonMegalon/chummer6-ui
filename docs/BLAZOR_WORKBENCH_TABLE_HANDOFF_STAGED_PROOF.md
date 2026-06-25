@@ -2,7 +2,7 @@
 
 ## Purpose
 
-This source-staged proof keeps table handoff affordances visible on the user-facing Chummer Online route and proof-compatible Blazor workbench route.
+This source-staged proof keeps table handoff affordances visible on the user-facing Chummer Online route and proof-compatible /blazor/workbench compatibility route.
 
 The browser client should expose GM packet, initiative card, condition tracker, public handout, private notes, table export, and same-origin help posture so play-session output stays close to the sheet.
 
@@ -10,7 +10,7 @@ The browser client should expose GM packet, initiative card, condition tracker, 
 
 The staged table-handoff lane covers:
 
-- a table strip on the user-facing Chummer Online route and proof-compatible workbench route
+- a table strip on the user-facing Chummer Online route and proof-compatible compatibility route
 - GM-packet, initiative-card, condition-tracker, public-handout, private-notes, table-export, and same-origin help shortcuts
 - scoped responsive styling for desktop and mobile browser use
 

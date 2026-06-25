@@ -2,7 +2,7 @@
 
 ## Purpose
 
-This source-staged proof keeps rules and data-pack management affordances visible on the user-facing Chummer Online route and proof-compatible Blazor workbench route.
+This source-staged proof keeps rules and data-pack management affordances visible on the user-facing Chummer Online route and proof-compatible /blazor/workbench compatibility route.
 
 The browser client should preserve desktop Chummer's expectation that sourcebooks, errata, custom data, update packs, validation scope, help, and data-folder context are visible near the active character workspace.
 
@@ -10,7 +10,7 @@ The browser client should preserve desktop Chummer's expectation that sourcebook
 
 The staged data-packs lane covers:
 
-- a rules/data-pack strip on the user-facing Chummer Online route and proof-compatible workbench route
+- a rules/data-pack strip on the user-facing Chummer Online route and proof-compatible compatibility route
 - sourcebooks, errata, custom data, update pack, validation scope, same-origin help, and data folder shortcuts
 - scoped responsive styling for desktop and mobile browser use
 

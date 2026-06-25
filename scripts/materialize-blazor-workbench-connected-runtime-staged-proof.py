@@ -20,7 +20,7 @@ CHECKS = [
         "id": "product_workbench_connected_runtime",
         "path": "Chummer.Blazor/Components/Pages/Preview.razor",
         "tokens": [
-            "Workbench live lanes",
+            "Browser-client live lanes",
             "data-workbench-connected-runtime=\"strip\"",
             "Live lanes",
             "Use connected tools when they are available.",

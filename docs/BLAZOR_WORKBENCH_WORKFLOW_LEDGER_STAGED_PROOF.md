@@ -2,7 +2,7 @@
 
 ## Purpose
 
-This source-staged proof keeps the Chummer Online and proof-compatible Blazor workbench workflow summary tied to the browser-client parity goal.
+This source-staged proof keeps the Chummer Online and proof-compatible /blazor/workbench compatibility-route workflow summary tied to the browser-client parity goal.
 
 The web client should be transparent about what it can do and when desktop is still the better tool. Capability and handoff boundaries should be visible in the client instead of being discoverable only in release docs.
 
@@ -10,7 +10,7 @@ The web client should be transparent about what it can do and when desktop is st
 
 The staged workflow-ledger lane covers:
 
-- a workflow summary strip on the user-facing Chummer Online route and proof-compatible workbench route
+- a workflow summary strip on the user-facing Chummer Online route and proof-compatible compatibility route
 - visible rows for startup, editing, output, recovery, portal handoff, and desktop-only boundaries
 - explicit wording that some desktop-only actions still open Chummer desktop
 - scoped responsive styling for desktop and mobile browser use

@@ -2,7 +2,7 @@
 
 ## Purpose
 
-This source-staged proof keeps restore and checkpoint affordances visible on the user-facing Chummer Online route and proof-compatible Blazor workbench route.
+This source-staged proof keeps restore and checkpoint affordances visible on the user-facing Chummer Online route and proof-compatible /blazor/workbench compatibility route.
 
 The browser client should expose autosave, named checkpoint, backup, preview, rollback, retention, and same-origin help posture so recovery stays close to risky edits.
 
@@ -10,7 +10,7 @@ The browser client should expose autosave, named checkpoint, backup, preview, ro
 
 The staged restore/checkpoint lane covers:
 
-- a restore strip on the user-facing Chummer Online route and proof-compatible workbench route
+- a restore strip on the user-facing Chummer Online route and proof-compatible compatibility route
 - autosave, named-checkpoint, backup, preview, rollback, retention, and same-origin help shortcuts
 - scoped responsive styling for desktop and mobile browser use
 

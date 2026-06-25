@@ -2,7 +2,7 @@
 
 ## Purpose
 
-This source-staged proof keeps compare and merge affordances visible on the user-facing Chummer Online route and proof-compatible Blazor workbench route.
+This source-staged proof keeps compare and merge affordances visible on the user-facing Chummer Online route and proof-compatible /blazor/workbench compatibility route.
 
 The browser client should expose diff view, conflict choice, source trace, dry run, apply, rollback, and same-origin help posture so imported changes remain reviewable before they affect a runner.
 
@@ -10,7 +10,7 @@ The browser client should expose diff view, conflict choice, source trace, dry r
 
 The staged compare/merge lane covers:
 
-- a compare strip on the user-facing Chummer Online route and proof-compatible workbench route
+- a compare strip on the user-facing Chummer Online route and proof-compatible compatibility route
 - diff-view, conflict-choice, source-trace, dry-run, apply, rollback, and same-origin help shortcuts
 - scoped responsive styling for desktop and mobile browser use
 

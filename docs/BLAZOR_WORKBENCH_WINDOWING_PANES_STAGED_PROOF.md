@@ -2,7 +2,7 @@
 
 ## Purpose
 
-This source-staged proof keeps desktop-like pane and windowing affordances visible on the user-facing Chummer Online route and proof-compatible Blazor workbench route.
+This source-staged proof keeps desktop-like pane and windowing affordances visible on the user-facing Chummer Online route and proof-compatible /blazor/workbench compatibility route.
 
 The browser client should expose split view, pop-out detail panes, pinned inspectors, focus mode, second-screen table views, layout restore, and same-origin help posture near dense sheet workflows.
 
@@ -10,7 +10,7 @@ The browser client should expose split view, pop-out detail panes, pinned inspec
 
 The staged windowing-panes lane covers:
 
-- a windowing/pane management strip on the user-facing Chummer Online route and proof-compatible workbench route
+- a windowing/pane management strip on the user-facing Chummer Online route and proof-compatible compatibility route
 - split view, pop-out, pinned inspector, focus mode, second screen, restore layout, and same-origin help shortcuts
 - scoped responsive styling for desktop and mobile browser use
 

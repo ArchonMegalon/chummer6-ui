@@ -20,7 +20,7 @@ CHECKS = [
         "id": "product_workbench_layout_presets",
         "path": "Chummer.Blazor/Components/Pages/Preview.razor",
         "tokens": [
-            "Workbench layout presets",
+            "Browser-client layout presets",
             "data-workbench-layout-presets=\"strip\"",
             "Switch between desktop-density and browser-safe work modes.",
             "data-workbench-layout-presets-action=\"dense-sheet\"",

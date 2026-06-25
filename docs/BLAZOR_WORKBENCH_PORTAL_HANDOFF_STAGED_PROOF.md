@@ -2,7 +2,7 @@
 
 ## Purpose
 
-This source-staged proof keeps Chummer Online and proof-compatible Blazor workbench connected to portal-owned downloads, status, support, help, and account work routes.
+This source-staged proof keeps Chummer Online and its proof-compatible /blazor/workbench compatibility route connected to portal-owned downloads, status, support, help, and account work routes.
 
 The browser client should behave like another desktop client in the web: a user can continue the core Chummer Online/workbench task, then move to install/update/support/account surfaces through the same product origin when needed.
 

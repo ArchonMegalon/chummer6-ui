@@ -2,7 +2,7 @@
 
 ## Purpose
 
-This source-staged proof keeps hosted and self-hosted session-state affordances visible on the user-facing Chummer Online route and proof-compatible Blazor workbench route.
+This source-staged proof keeps hosted and self-hosted session-state affordances visible on the user-facing Chummer Online route and proof-compatible /blazor/workbench compatibility route.
 
 The browser client should preserve desktop-client confidence by showing connection, offline, local cache, sync queue, presence, help, and handoff cues near the active character workspace for both Chummer Run and Docker self-hosted operators.
 
@@ -10,7 +10,7 @@ The browser client should preserve desktop-client confidence by showing connecti
 
 The staged sync-presence lane covers:
 
-- a hosted/self-hosted session strip on the user-facing Chummer Online route and proof-compatible workbench route
+- a hosted/self-hosted session strip on the user-facing Chummer Online route and proof-compatible compatibility route
 - connection, offline, local cache, sync queue, presence, help, and handoff shortcuts
 - scoped responsive styling for desktop and mobile browser use
 

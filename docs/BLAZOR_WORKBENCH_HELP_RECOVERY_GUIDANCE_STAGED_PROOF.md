@@ -2,7 +2,7 @@
 
 ## Purpose
 
-This staged proof keeps the Chummer Online and proof-compatible Blazor workbench source aligned around contextual help and guided recovery posture for browser workflows.
+This staged proof keeps Chummer Online and its proof-compatible /blazor/workbench compatibility route source aligned around contextual help and guided recovery posture for browser workflows.
 
 It covers visible source posture for context help, shortcut hints, error explanations, recovery suggestions, the same-origin `/help` portal handoff, docs links, and support handoff affordances on `/blazor/workbench`.
 

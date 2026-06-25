@@ -2,7 +2,7 @@
 
 ## Purpose
 
-This source-staged proof keeps side-context affordances visible on the user-facing Chummer Online route and proof-compatible Blazor workbench route.
+This source-staged proof keeps side-context affordances visible on the user-facing Chummer Online route and proof-compatible /blazor/workbench compatibility route.
 
 The browser client should keep summary, build checks, inventory, notes, and sources close to the active task instead of forcing users into disconnected web-page detours.
 
@@ -10,7 +10,7 @@ The browser client should keep summary, build checks, inventory, notes, and sour
 
 The staged inspector-rail lane covers:
 
-- an inspector rail on the user-facing Chummer Online route and proof-compatible workbench route
+- an inspector rail on the user-facing Chummer Online route and proof-compatible compatibility route
 - summary, build checks, inventory, notes, and sources shortcuts
 - scoped responsive styling for desktop and mobile browser use
 

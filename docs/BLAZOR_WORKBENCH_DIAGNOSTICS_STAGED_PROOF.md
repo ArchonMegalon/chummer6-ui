@@ -2,7 +2,7 @@
 
 ## Purpose
 
-This source-staged proof keeps runtime diagnostics, About, health, release status, and preview tools visible on the user-facing Chummer Online route and proof-compatible Blazor workbench route.
+This source-staged proof keeps runtime diagnostics, About, health, release status, and preview tools visible on the user-facing Chummer Online route and proof-compatible /blazor/workbench compatibility route.
 
 A browser desktop client should let users understand what build, route, and runtime posture they are using without reading operator-only documents.
 
@@ -10,7 +10,7 @@ A browser desktop client should let users understand what build, route, and runt
 
 The staged diagnostics lane covers:
 
-- a diagnostics strip on the user-facing Chummer Online route and proof-compatible workbench route
+- a diagnostics strip on the user-facing Chummer Online route and proof-compatible compatibility route
 - runtime inspector, About, Blazor health, release status, preview-tool, and same-origin help affordances
 - source alignment with shared desktop-shaped diagnostics dialogs
 - scoped responsive styling for desktop and mobile browser use

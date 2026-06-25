@@ -4,7 +4,7 @@
 
 This plan describes how to promote the staged Blazor browser work into real runtime evidence.
 
-The current staged source lanes widen the browser workbench contract, but source-staged receipts are not enough to claim browser/Desktop parity. Runtime promotion requires refreshing Docker self-host proof, hosted route-entry proof, hosted execution proof, and the browser-lane aggregate after the source stage is aligned. Source-staged receipts hand off into the runtime refresh preflight but do not become runtime evidence.
+The current staged source lanes widen the browser-client contract, but source-staged receipts are not enough to claim browser/Desktop parity. Runtime promotion requires refreshing Docker self-host proof, hosted route-entry proof, hosted execution proof, and the browser-lane aggregate after the source stage is aligned. Source-staged receipts hand off into the runtime refresh preflight but do not become runtime evidence.
 
 ## Order of Operations
 
@@ -92,7 +92,7 @@ The status summary exposes this lane separately as `portal_installer_handoff_sta
 
 The Docker self-host operator source contract also records the default-off Rybbit analytics boundary. `CHUMMER_ANALYTICS_PROVIDER=none` remains the sanitized self-host default, and Rybbit is only part of the runtime path when the operator explicitly configures the provider and site variables before refreshing Docker self-host proof.
 
-The status summary exposes that operator lane separately as `docker_self_host_operator_staged_status`, `docker_self_host_operator_staged_service_count`, `docker_self_host_operator_staged_source_checks`, and `docker_self_host_operator_staged_note=source_alignment_only_default_off_rybbit_not_docker_runtime`. Those lines confirm source wiring and default-off analytics posture only; they do not start Docker or prove the browser workbench renders.
+The status summary exposes that operator lane separately as `docker_self_host_operator_staged_status`, `docker_self_host_operator_staged_service_count`, `docker_self_host_operator_staged_source_checks`, and `docker_self_host_operator_staged_note=source_alignment_only_default_off_rybbit_not_docker_runtime`. Those lines confirm source wiring and default-off analytics posture only; they do not start Docker or prove the browser client renders.
 
 The workbench hosting/privacy staged lane exposes the user-facing hosted/self-host privacy posture separately as `workbench_hosting_privacy_staged_status`, `workbench_hosting_privacy_staged_route_count`, `workbench_hosting_privacy_staged_source_checks`, and `workbench_hosting_privacy_staged_note=source_alignment_only_default_off_rybbit_not_browser_execution`. Those lines confirm source wiring for the default-off Rybbit privacy copy plus explicit no session replay and no autocapture posture only; they do not prove Rybbit delivery, hosted route execution, Docker browser execution, session-replay delivery, or autocapture behavior. This source visibility does not prove Rybbit delivery, hosted route execution, Docker browser execution, session-replay delivery, or autocapture behavior.
 

@@ -20,7 +20,7 @@ CHECKS = [
         "id": "product_workbench_inspector_rail",
         "path": "Chummer.Blazor/Components/Pages/Preview.razor",
         "tokens": [
-            "Workbench inspector rail",
+            "Browser-client inspector rail",
             "data-workbench-inspector-rail=\"strip\"",
             "Keep sheet context beside the active task.",
             "data-workbench-inspector-rail-action=\"summary\"",

@@ -2,7 +2,7 @@
 
 ## Purpose
 
-This source-staged proof keeps runner and task tabs visible on the user-facing Chummer Online route and proof-compatible Blazor workbench route.
+This source-staged proof keeps runner and task tabs visible on the user-facing Chummer Online route and proof-compatible /blazor/workbench compatibility route.
 
 The browser client should preserve the feel of active Chummer work by keeping loaded runner, build, output, and import lanes side by side instead of making every task feel like a disconnected web page.
 
@@ -10,7 +10,7 @@ The browser client should preserve the feel of active Chummer work by keeping lo
 
 The staged workspace-tabs lane covers:
 
-- a workspace tab strip on the user-facing Chummer Online route and proof-compatible workbench route
+- a workspace tab strip on the user-facing Chummer Online route and proof-compatible compatibility route
 - active runner, build lab, print/export, and recent import shortcuts
 - scoped responsive styling for desktop and mobile browser use
 

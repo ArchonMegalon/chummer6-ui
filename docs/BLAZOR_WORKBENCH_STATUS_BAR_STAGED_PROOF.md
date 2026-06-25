@@ -2,7 +2,7 @@
 
 ## Purpose
 
-This source-staged proof keeps current-state cues visible on the user-facing Chummer Online route and proof-compatible Blazor workbench route.
+This source-staged proof keeps current-state cues visible on the user-facing Chummer Online route and proof-compatible /blazor/workbench compatibility route.
 
 The browser client should expose save, rules, validation, session, privacy, help, and support state affordances near the active work area so users understand what is current, safe, recoverable, and bounded.
 
@@ -10,7 +10,7 @@ The browser client should expose save, rules, validation, session, privacy, help
 
 The staged status-bar lane covers:
 
-- a status bar on the user-facing Chummer Online route and proof-compatible workbench route
+- a status bar on the user-facing Chummer Online route and proof-compatible compatibility route
 - save, rules, validation, session, privacy, help, and support shortcuts
 - scoped responsive styling for desktop and mobile browser use
 

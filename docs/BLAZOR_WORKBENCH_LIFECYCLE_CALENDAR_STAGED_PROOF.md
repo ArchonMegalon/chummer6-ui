@@ -2,7 +2,7 @@
 
 ## Purpose
 
-This source-staged proof keeps downtime, upkeep, and between-session lifecycle affordances visible on the user-facing Chummer Online route and proof-compatible Blazor workbench route.
+This source-staged proof keeps downtime, upkeep, and between-session lifecycle affordances visible on the user-facing Chummer Online route and proof-compatible /blazor/workbench compatibility route.
 
 The browser client should expose downtime, lifestyle upkeep, subscriptions, reminders, recurring costs, next-session posture, and same-origin help recovery so Chummer characters remain useful across sessions.
 
@@ -10,7 +10,7 @@ The browser client should expose downtime, lifestyle upkeep, subscriptions, remi
 
 The staged lifecycle-calendar lane covers:
 
-- a lifecycle calendar strip on the user-facing Chummer Online route and proof-compatible workbench route
+- a lifecycle calendar strip on the user-facing Chummer Online route and proof-compatible compatibility route
 - downtime, lifestyle upkeep, subscriptions, reminders, recurring costs, next session, and same-origin help shortcuts
 - scoped responsive styling for desktop and mobile browser use
 

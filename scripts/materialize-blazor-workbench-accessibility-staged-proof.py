@@ -20,7 +20,7 @@ CHECKS = [
         "id": "product_workbench_accessibility",
         "path": "Chummer.Blazor/Components/Pages/Preview.razor",
         "tokens": [
-            "Workbench accessibility",
+            "Browser-client accessibility",
             "data-workbench-accessibility=\"strip\"",
             "Desktop density without hidden controls.",
             "Keyboard order, dialog fit, readable density, reduced motion, and help links",

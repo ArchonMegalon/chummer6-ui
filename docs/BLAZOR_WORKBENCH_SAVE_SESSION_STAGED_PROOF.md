@@ -2,7 +2,7 @@
 
 ## Purpose
 
-This source-staged proof keeps save and session lifecycle affordances visible on the user-facing Chummer Online route and proof-compatible Blazor workbench route.
+This source-staged proof keeps save and session lifecycle affordances visible on the user-facing Chummer Online route and proof-compatible /blazor/workbench compatibility route.
 
 The browser client should preserve desktop Chummer's user expectation that save state, Save As handoff, autosave cues, dirty-state warnings, recovery, help, and export paths are available near the active character workspace.
 
@@ -10,7 +10,7 @@ The browser client should preserve desktop Chummer's user expectation that save 
 
 The staged save-session lane covers:
 
-- a save/session lifecycle strip on the user-facing Chummer Online route and proof-compatible workbench route
+- a save/session lifecycle strip on the user-facing Chummer Online route and proof-compatible compatibility route
 - save, Save As, autosave, dirty state, recovery, help, and export shortcuts
 - scoped responsive styling for desktop and mobile browser use
 

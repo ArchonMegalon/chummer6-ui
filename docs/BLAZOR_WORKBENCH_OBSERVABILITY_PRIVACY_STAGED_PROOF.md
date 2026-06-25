@@ -2,7 +2,7 @@
 
 ## Purpose
 
-This source-staged proof keeps privacy-aware observability and analytics affordances visible on the user-facing Chummer Online route and proof-compatible Blazor workbench route.
+This source-staged proof keeps privacy-aware observability and analytics affordances visible on the user-facing Chummer Online route and proof-compatible /blazor/workbench compatibility route.
 
 The browser client should make Chummer Run analytics posture explicit by surfacing consent, Rybbit status, route events, error traces, privacy logs, self-host telemetry controls, and help near the active character workspace.
 
@@ -10,7 +10,7 @@ The browser client should make Chummer Run analytics posture explicit by surfaci
 
 The staged observability-privacy lane covers:
 
-- an observability/privacy strip on the user-facing Chummer Online route and proof-compatible workbench route
+- an observability/privacy strip on the user-facing Chummer Online route and proof-compatible compatibility route
 - consent, Rybbit status, route events, error traces, privacy log, self-host telemetry toggle, and same-origin help shortcuts
 - scoped responsive styling for desktop and mobile browser use
 

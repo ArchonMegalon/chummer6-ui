@@ -2,7 +2,7 @@
 
 ## Purpose
 
-This source-staged proof keeps dense-list search and filter affordances visible on the user-facing Chummer Online route and proof-compatible Blazor workbench route.
+This source-staged proof keeps dense-list search and filter affordances visible on the user-facing Chummer Online route and proof-compatible /blazor/workbench compatibility route.
 
 The browser client should make roster, gear, skills, qualities, and source-heavy panes easy to reach, filter, and recover without making users hunt through page-specific controls.
 
@@ -10,7 +10,7 @@ The browser client should make roster, gear, skills, qualities, and source-heavy
 
 The staged search/filter lane covers:
 
-- a search/filter rail on the user-facing Chummer Online route and proof-compatible workbench route
+- a search/filter rail on the user-facing Chummer Online route and proof-compatible compatibility route
 - roster, gear, skills, qualities, sources, help, and clear-filter shortcuts
 - scoped responsive styling for desktop and mobile browser use
 

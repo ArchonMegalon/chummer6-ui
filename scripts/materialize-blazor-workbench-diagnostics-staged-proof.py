@@ -20,7 +20,7 @@ CHECKS = [
         "id": "product_workbench_diagnostics",
         "path": "Chummer.Blazor/Components/Pages/Preview.razor",
         "tokens": [
-            "Workbench diagnostics",
+            "Browser-client diagnostics",
             "data-workbench-diagnostics=\"strip\"",
             "Check the app when something feels off.",
             "Open runtime details, About, health, release status, or preview tools",

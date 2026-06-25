@@ -20,7 +20,7 @@ CHECKS = [
         "id": "product_workbench_rules_data",
         "path": "Chummer.Blazor/Components/Pages/Preview.razor",
         "tokens": [
-            "Workbench rules",
+            "Browser-client rules",
             "data-workbench-rules-data=\"strip\"",
             "Rules",
             "data-workbench-rules-data-action=\"rules-review\"",

@@ -2,7 +2,7 @@
 
 ## Purpose
 
-This source-staged proof keeps character sheet navigation visible on the user-facing Chummer Online route and proof-compatible Blazor workbench route.
+This source-staged proof keeps character sheet navigation visible on the user-facing Chummer Online route and proof-compatible /blazor/workbench compatibility route.
 
 The browser client should feel like another Chummer client head: dense sheet sections stay one click away instead of becoming disconnected web pages.
 
@@ -10,7 +10,7 @@ The browser client should feel like another Chummer client head: dense sheet sec
 
 The staged section-rail lane covers:
 
-- a sheet-section rail on the user-facing Chummer Online route and proof-compatible workbench route
+- a sheet-section rail on the user-facing Chummer Online route and proof-compatible compatibility route
 - profile, build, skills, gear, combat, magic, matrix, contacts, and career shortcuts
 - scoped responsive styling for desktop and mobile browser use
 

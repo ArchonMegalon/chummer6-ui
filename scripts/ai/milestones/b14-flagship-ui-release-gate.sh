@@ -1299,7 +1299,7 @@ if missing_dense_builder_route_local_evidence_suffixes:
     )
 if not all(public_edge_workbench_receipt_checks.values()):
     blocking_findings.append(
-        "Hosted public-edge browser workbench proof is missing required route-entry markers."
+        "Hosted public-edge browser-client proof is missing required route-entry markers."
     )
 if not all(browser_lane_proof_set_checks.values()):
     blocking_findings.append(

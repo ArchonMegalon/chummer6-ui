@@ -20,7 +20,7 @@ CHECKS = [
         "id": "product_workbench_context_actions",
         "path": "Chummer.Blazor/Components/Pages/Preview.razor",
         "tokens": [
-            "Workbench context actions",
+            "Browser-client context actions",
             "data-workbench-context-actions=\"strip\"",
             "Keep selection actions visible without hidden right-click dependency.",
             "data-workbench-context-actions-action=\"add\"",

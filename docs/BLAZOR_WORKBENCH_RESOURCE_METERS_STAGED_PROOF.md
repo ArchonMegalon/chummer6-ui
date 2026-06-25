@@ -2,7 +2,7 @@
 
 ## Purpose
 
-This source-staged proof keeps core character resource-total affordances visible on the user-facing Chummer Online route and proof-compatible Blazor workbench route.
+This source-staged proof keeps core character resource-total affordances visible on the user-facing Chummer Online route and proof-compatible /blazor/workbench compatibility route.
 
 The browser client should keep karma, nuyen, essence, limits, wounds, and lifestyle context close while users move through dense sheet sections.
 
@@ -10,7 +10,7 @@ The browser client should keep karma, nuyen, essence, limits, wounds, and lifest
 
 The staged resource-meters lane covers:
 
-- a resource-meters rail on the user-facing Chummer Online route and proof-compatible workbench route
+- a resource-meters rail on the user-facing Chummer Online route and proof-compatible compatibility route
 - karma, nuyen, essence, limits, wounds, and lifestyle shortcuts
 - scoped responsive styling for desktop and mobile browser use
 

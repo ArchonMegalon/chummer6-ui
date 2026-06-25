@@ -134,7 +134,7 @@ def main() -> int:
                 "When enabled, forwarding stays behind the portal signed-owner boundary.",
             ],
         ),
-        "The browser workbench proof shelf renders a visible connected-runtime posture card without exposing proxy URLs.",
+        "The browser-client proof shelf renders a visible connected-runtime posture card without exposing proxy URLs.",
     )
 
     add_check(

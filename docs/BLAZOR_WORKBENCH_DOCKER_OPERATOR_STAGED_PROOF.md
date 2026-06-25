@@ -2,7 +2,7 @@
 
 ## Purpose
 
-This source-staged proof keeps Docker self-host operator affordances visible on the user-facing Chummer Online route and proof-compatible Blazor workbench route.
+This source-staged proof keeps Docker self-host operator affordances visible on the user-facing Chummer Online route and proof-compatible /blazor/workbench compatibility route.
 
 The browser client should help self-hosted operators understand container health, environment, volume mounts, backups, image updates, logs, support bundle posture, and same-origin help without leaving the web workbench.
 
@@ -10,7 +10,7 @@ The browser client should help self-hosted operators understand container health
 
 The staged Docker-operator lane covers:
 
-- a Docker self-host operator strip on the user-facing Chummer Online route and proof-compatible workbench route
+- a Docker self-host operator strip on the user-facing Chummer Online route and proof-compatible compatibility route
 - container health, env check, volume mounts, backup, image update, support bundle, and same-origin help shortcuts
 - scoped responsive styling for desktop and mobile browser use
 

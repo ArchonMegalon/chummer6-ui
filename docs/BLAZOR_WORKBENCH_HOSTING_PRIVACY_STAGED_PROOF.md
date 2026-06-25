@@ -2,7 +2,7 @@
 
 ## Purpose
 
-This source-staged proof keeps the Chummer Online and proof-compatible Blazor workbench hosting and privacy posture visible in the product UI.
+This source-staged proof keeps the Chummer Online and proof-compatible /blazor/workbench compatibility-route hosting and privacy posture visible in the product UI.
 
 The browser client should be understandable as both hosted `chummer.run` software and self-hostable Docker software. Users should also see the analytics boundary where they work, not only in operator docs.
 

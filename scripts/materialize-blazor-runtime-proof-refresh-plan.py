@@ -49,7 +49,7 @@ REQUIRED_DOC_TOKENS = {
         "docker_self_host_operator_staged_service_count",
         "docker_self_host_operator_staged_source_checks",
         "docker_self_host_operator_staged_note=source_alignment_only_default_off_rybbit_not_docker_runtime",
-        "they do not start Docker or prove the browser workbench renders",
+        "they do not start Docker or prove the browser client renders",
         "workbench_hosting_privacy_staged_note=source_alignment_only_default_off_rybbit_not_browser_execution",
         "does not prove Rybbit delivery, hosted route execution, Docker browser execution, session-replay delivery, or autocapture behavior",
         "Docker Self-Host Runtime Proof",
@@ -506,7 +506,7 @@ def main() -> int:
                 "docker_self_host_operator_staged_source_checks",
                 "docker_self_host_operator_staged_note=source_alignment_only_default_off_rybbit_not_docker_runtime",
             ],
-            "boundary": "Does not start Docker or prove the browser workbench renders.",
+            "boundary": "Does not start Docker or prove the browser client renders.",
         },
         "workbench_roster_hierarchy_status_visibility": {
             "source_only": True,

@@ -2,7 +2,7 @@
 
 ## Purpose
 
-This source-staged proof keeps rules and reference shortcuts visible on the user-facing Chummer Online route and proof-compatible Blazor workbench route.
+This source-staged proof keeps rules and reference shortcuts visible on the user-facing Chummer Online route and proof-compatible /blazor/workbench compatibility route.
 
 The web client should keep ruleset choice, source review, XML/custom data, and language tools close to runner work without claiming native parity before runtime evidence exists.
 
@@ -10,7 +10,7 @@ The web client should keep ruleset choice, source review, XML/custom data, and l
 
 The staged rules/data lane covers:
 
-- a rules strip on the user-facing Chummer Online route and proof-compatible workbench route
+- a rules strip on the user-facing Chummer Online route and proof-compatible compatibility route
 - rules review, ruleset, master index, XML/custom-data, language, and same-origin help affordances
 - source alignment with the shared desktop-shaped rules and data dialogs
 - scoped responsive styling for desktop and mobile browser use

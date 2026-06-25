@@ -2,7 +2,7 @@
 
 ## Purpose
 
-This source-staged proof keeps the Chummer Online and proof-compatible Blazor workbench density posture tied to the browser-client parity goal.
+This source-staged proof keeps the Chummer Online and proof-compatible /blazor/workbench compatibility-route density posture tied to the browser-client parity goal.
 
 Chummer is a dense desktop application. The browser client should start from compact desktop ergonomics, then make comfortable and mobile-safe postures visible without implying a different workflow model.
 
@@ -10,7 +10,7 @@ Chummer is a dense desktop application. The browser client should start from com
 
 The staged density lane covers:
 
-- a density posture strip on the user-facing Chummer Online route and proof-compatible workbench route
+- a density posture strip on the user-facing Chummer Online route and proof-compatible compatibility route
 - visible Compact desktop, Comfortable review, and Mobile safe options
 - scoped responsive styling for desktop and mobile browser use
 

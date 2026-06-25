@@ -2,7 +2,7 @@
 
 ## Purpose
 
-This source-staged proof keeps campaign and live-session handoff affordances visible on the user-facing Chummer Online route and proof-compatible Blazor workbench route.
+This source-staged proof keeps campaign and live-session handoff affordances visible on the user-facing Chummer Online route and proof-compatible /blazor/workbench compatibility route.
 
 The browser client should preserve desktop-client confidence by keeping campaign roster, GM review, session notes, rewards, table share, run handoff, and help context near the active character workspace for Chummer Run users.
 
@@ -10,7 +10,7 @@ The browser client should preserve desktop-client confidence by keeping campaign
 
 The staged campaign-session lane covers:
 
-- a campaign/session strip on the user-facing Chummer Online route and proof-compatible workbench route
+- a campaign/session strip on the user-facing Chummer Online route and proof-compatible compatibility route
 - roster, GM review, session notes, rewards, table share, run handoff, and same-origin help shortcuts
 - scoped responsive styling for desktop and mobile browser use
 

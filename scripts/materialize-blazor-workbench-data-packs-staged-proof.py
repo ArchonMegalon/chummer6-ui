@@ -19,7 +19,7 @@ CHECKS = [
         "id": "product_workbench_data_packs",
         "path": "Chummer.Blazor/Components/Pages/Preview.razor",
         "tokens": [
-            "Workbench rules and data-pack lane",
+            "Browser-client rules and data-pack lane",
             "data-workbench-data-packs=\"strip\"",
             "Expose sourcebook and data-pack posture.",
             "data-workbench-data-packs-action=\"sourcebooks\"",

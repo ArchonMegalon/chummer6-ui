@@ -108,6 +108,6 @@ This keeps the Docker self-host operator posture discoverable from the top-level
 
 ## Boundary
 
-The staged operator proof does not start Docker, probe routes, or prove the browser workbench renders. It only proves the source contract, docs, and expected command wiring are present.
+The staged operator proof does not start Docker, probe routes, or prove the browser client renders. It only proves the source contract, docs, and expected command wiring are present.
 
 Use the staged proof before refreshing Docker runtime proof; never use it instead of `BLAZOR_SELF_HOST_WORKBENCH_PROOF.generated.json`.

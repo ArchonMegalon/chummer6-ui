@@ -2,7 +2,7 @@
 
 ## Purpose
 
-This source-staged proof keeps history, undo, and recovery affordances visible on the user-facing Chummer Online route and proof-compatible Blazor workbench route.
+This source-staged proof keeps history, undo, and recovery affordances visible on the user-facing Chummer Online route and proof-compatible /blazor/workbench compatibility route.
 
 The browser client should preserve desktop Chummer's expectation that undo, redo, snapshots, comparison, restore, help, conflict review, and recent-change context stay close to the active character workspace.
 
@@ -10,7 +10,7 @@ The browser client should preserve desktop Chummer's expectation that undo, redo
 
 The staged history-undo lane covers:
 
-- a history/recovery strip on the user-facing Chummer Online route and proof-compatible workbench route
+- a history/recovery strip on the user-facing Chummer Online route and proof-compatible compatibility route
 - undo, redo, snapshot, compare, restore, help, and conflict review shortcuts
 - scoped responsive styling for desktop and mobile browser use
 

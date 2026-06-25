@@ -20,7 +20,7 @@ CHECKS = [
         "id": "product_workbench_settings",
         "path": "Chummer.Blazor/Components/Pages/Preview.razor",
         "tokens": [
-            "Workbench settings",
+            "Browser-client settings",
             "data-workbench-settings=\"strip\"",
             "Change setup without leaving the page.",
             "Open app settings, character defaults, ruleset choice, update status",

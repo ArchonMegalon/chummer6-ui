@@ -2,7 +2,7 @@
 
 ## Purpose
 
-This source-staged proof keeps desktop-style dialog and result continuations visible on the user-facing Chummer Online route and proof-compatible Blazor workbench route.
+This source-staged proof keeps desktop-style dialog and result continuations visible on the user-facing Chummer Online route and proof-compatible /blazor/workbench compatibility route.
 
 The browser client should preserve dialog-heavy Chummer workflows by keeping active dialog, committed result, retry, back-to-sheet, help, and support continuations within reach.
 
@@ -10,7 +10,7 @@ The browser client should preserve dialog-heavy Chummer workflows by keeping act
 
 The staged dialog-stack lane covers:
 
-- a dialog-stack tray on the user-facing Chummer Online route and proof-compatible workbench route
+- a dialog-stack tray on the user-facing Chummer Online route and proof-compatible compatibility route
 - active dialog, committed result, retry, back-to-sheet, help, and support shortcuts
 - scoped responsive styling for desktop and mobile browser use
 

@@ -2,7 +2,7 @@
 
 ## Purpose
 
-This source-staged proof keeps web navigation and deep-link affordances visible on the user-facing Chummer Online route and proof-compatible Blazor workbench route.
+This source-staged proof keeps web navigation and deep-link affordances visible on the user-facing Chummer Online route and proof-compatible /blazor/workbench compatibility route.
 
 The browser client should expose breadcrumbs, URL state, browser back/forward posture, copied routes, tab restore, shared anchors, and same-origin help so dense character context can survive navigation and table handoff.
 
@@ -10,7 +10,7 @@ The browser client should expose breadcrumbs, URL state, browser back/forward po
 
 The staged navigation-deeplink lane covers:
 
-- a navigation/deep-link strip on the user-facing Chummer Online route and proof-compatible workbench route
+- a navigation/deep-link strip on the user-facing Chummer Online route and proof-compatible compatibility route
 - breadcrumbs, URL state, back/forward, copy route, tab restore, shared anchor, and same-origin help shortcuts
 - scoped responsive styling for desktop and mobile browser use
 

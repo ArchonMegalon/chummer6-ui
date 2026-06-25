@@ -2,7 +2,7 @@
 
 ## Purpose
 
-This source-staged proof keeps derived-stat and modifier provenance affordances visible on the user-facing Chummer Online route and proof-compatible Blazor workbench route.
+This source-staged proof keeps derived-stat and modifier provenance affordances visible on the user-facing Chummer Online route and proof-compatible /blazor/workbench compatibility route.
 
 The browser client should expose derived breakdowns, modifier stacks, rule sources, stale values, manual overrides, dependency paths, and same-origin help so dense Chummer calculations remain explainable.
 
@@ -10,7 +10,7 @@ The browser client should expose derived breakdowns, modifier stacks, rule sourc
 
 The staged calculation-provenance lane covers:
 
-- a calculation provenance strip on the user-facing Chummer Online route and proof-compatible workbench route
+- a calculation provenance strip on the user-facing Chummer Online route and proof-compatible compatibility route
 - derived breakdown, modifier stack, rule source, stale values, manual override, dependency path, and same-origin help shortcuts
 - scoped responsive styling for desktop and mobile browser use
 

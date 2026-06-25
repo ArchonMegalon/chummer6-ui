@@ -19,7 +19,7 @@ CHECKS = [
         "id": "product_workbench_rules_citation",
         "path": "Chummer.Blazor/Components/Pages/Preview.razor",
         "tokens": [
-            "Workbench rules citation posture",
+            "Browser-client rules citation posture",
             "data-workbench-rules-citation=\"strip\"",
             "Keep rule context near exports.",
             "data-workbench-rules-citation-action=\"source-packet\"",

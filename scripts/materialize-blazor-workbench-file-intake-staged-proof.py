@@ -20,7 +20,7 @@ CHECKS = [
         "id": "product_workbench_file_intake",
         "path": "Chummer.Blazor/Components/Pages/Preview.razor",
         "tokens": [
-            "Workbench files",
+            "Browser-client files",
             "data-workbench-file-intake=\"strip\"",
             "Files",
             "data-workbench-file-intake-action=\"open-character\"",

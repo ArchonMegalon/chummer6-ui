@@ -2,7 +2,7 @@
 
 ## Purpose
 
-This source-staged proof keeps optional session, coach, play, and assistant lanes visible on the public Chummer Online route and the proof-compatible Blazor workbench route.
+This source-staged proof keeps optional session, coach, play, and assistant lanes visible on the public Chummer Online route and the proof-compatible /blazor/workbench compatibility route.
 
 The browser client should expose connected runtime handoff as portal-shaped optional capability, not as an implicit guarantee that downstream services are configured or healthy.
 

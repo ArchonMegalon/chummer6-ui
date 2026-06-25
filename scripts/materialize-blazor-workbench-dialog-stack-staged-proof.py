@@ -20,7 +20,7 @@ CHECKS = [
         "id": "product_workbench_dialog_stack",
         "path": "Chummer.Blazor/Components/Pages/Preview.razor",
         "tokens": [
-            "Workbench dialog stack",
+            "Browser-client dialog stack",
             "data-workbench-dialog-stack=\"strip\"",
             "Keep modal work and committed results visible.",
             "data-workbench-dialog-stack-action=\"active-dialog\"",

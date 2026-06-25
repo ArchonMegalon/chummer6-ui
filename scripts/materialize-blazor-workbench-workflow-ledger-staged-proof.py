@@ -20,7 +20,7 @@ CHECKS = [
         "id": "product_workbench_workflow_ledger",
         "path": "Chummer.Blazor/Components/Pages/Preview.razor",
         "tokens": [
-            "Workbench workflow summary",
+            "Browser-client workflow summary",
             "data-workbench-workflow-ledger=\"strip\"",
             "Workbench",
             "See what opens here.",

@@ -2,7 +2,7 @@
 
 ## Purpose
 
-This source-staged proof keeps advancement accounting affordances visible on the user-facing Chummer Online route and proof-compatible Blazor workbench route.
+This source-staged proof keeps advancement accounting affordances visible on the user-facing Chummer Online route and proof-compatible /blazor/workbench compatibility route.
 
 The browser client should expose karma spends, nuyen ledger, purchase queue, reputation, carryover, audit trail, and same-origin help posture so progression stays reviewable before mutating character state.
 
@@ -10,7 +10,7 @@ The browser client should expose karma spends, nuyen ledger, purchase queue, rep
 
 The staged progression-ledger lane covers:
 
-- a progression ledger strip on the user-facing Chummer Online route and proof-compatible workbench route
+- a progression ledger strip on the user-facing Chummer Online route and proof-compatible compatibility route
 - karma spend, nuyen ledger, purchase queue, reputation, carryover, audit trail, and same-origin help shortcuts
 - scoped responsive styling for desktop and mobile browser use
 

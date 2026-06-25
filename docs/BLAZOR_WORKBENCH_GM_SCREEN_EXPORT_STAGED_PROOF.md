@@ -2,7 +2,7 @@
 
 ## Purpose
 
-This staged proof keeps the Chummer Online and proof-compatible Blazor workbench source aligned around GM-screen export posture.
+This staged proof keeps Chummer Online and its proof-compatible /blazor/workbench compatibility route source aligned around GM-screen export posture.
 
 The staged GM-screen export lane covers:
 

@@ -20,7 +20,7 @@ CHECKS = [
         "id": "product_workbench_status_bar",
         "path": "Chummer.Blazor/Components/Pages/Preview.razor",
         "tokens": [
-            "Workbench status bar",
+            "Browser-client status bar",
             "data-workbench-status-bar=\"strip\"",
             "Keep save, rules, validation, session, privacy, and help state visible.",
             "data-workbench-status-bar-action=\"save-state\"",

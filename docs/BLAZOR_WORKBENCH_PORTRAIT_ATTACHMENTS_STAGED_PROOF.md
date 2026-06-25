@@ -2,7 +2,7 @@
 
 ## Purpose
 
-This source-staged proof keeps character portrait, token art, notes, and reference attachment affordances visible on the user-facing Chummer Online route and proof-compatible Blazor workbench route.
+This source-staged proof keeps character portrait, token art, notes, and reference attachment affordances visible on the user-facing Chummer Online route and proof-compatible /blazor/workbench compatibility route.
 
 The browser client should expose portrait, token art, notes, attachments, import media, cleanup, and same-origin help posture while making browser storage risk explicit.
 
@@ -10,7 +10,7 @@ The browser client should expose portrait, token art, notes, attachments, import
 
 The staged portrait-attachments lane covers:
 
-- a portrait/attachments strip on the user-facing Chummer Online route and proof-compatible workbench route
+- a portrait/attachments strip on the user-facing Chummer Online route and proof-compatible compatibility route
 - portrait, token art, notes, attachments, import media, cleanup, and same-origin help shortcuts
 - scoped responsive styling for desktop and mobile browser use
 

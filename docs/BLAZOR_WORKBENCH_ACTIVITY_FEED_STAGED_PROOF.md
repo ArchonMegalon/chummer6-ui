@@ -2,7 +2,7 @@
 
 ## Purpose
 
-This source-staged proof keeps recent activity and recovery cues visible on the user-facing Chummer Online route and proof-compatible Blazor workbench route.
+This source-staged proof keeps recent activity and recovery cues visible on the user-facing Chummer Online route and proof-compatible /blazor/workbench compatibility route.
 
 The browser client should keep saves, validation warnings, output handoffs, hosted status, help, and support escapes easy to scan.
 
@@ -10,7 +10,7 @@ The browser client should keep saves, validation warnings, output handoffs, host
 
 The staged activity-feed lane covers:
 
-- an activity-feed rail on the user-facing Chummer Online route and proof-compatible workbench route
+- an activity-feed rail on the user-facing Chummer Online route and proof-compatible compatibility route
 - save event, validation warning, output event, hosted status, help, and support escape shortcuts
 - scoped responsive styling for desktop and mobile browser use
 

@@ -2,7 +2,7 @@
 
 ## Purpose
 
-This source-staged proof keeps browser file-intake posture visible on the user-facing Chummer Online route and proof-compatible Blazor workbench route.
+This source-staged proof keeps browser file-intake posture visible on the user-facing Chummer Online route and proof-compatible /blazor/workbench compatibility route.
 
 Avalonia can use native file dialogs directly. The web client needs browser-safe open/import, Hero Lab import, XML editor, support, and native desktop handoff paths without pretending that browser file access is identical to native desktop file access.
 
@@ -10,7 +10,7 @@ Avalonia can use native file dialogs directly. The web client needs browser-safe
 
 The staged file-intake lane covers:
 
-- a file-intake strip on the user-facing Chummer Online route and proof-compatible workbench route
+- a file-intake strip on the user-facing Chummer Online route and proof-compatible compatibility route
 - open/import, Hero Lab import, XML editor, desktop installer handoff, and support affordances
 - source alignment with the shared desktop-shaped import dialogs
 - scoped responsive styling for desktop and mobile browser use

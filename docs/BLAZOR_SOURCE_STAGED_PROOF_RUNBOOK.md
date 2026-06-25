@@ -2,7 +2,7 @@
 
 ## Purpose
 
-This runbook covers the source-staged Blazor proof set for the user-facing Chummer Online route, the proof-compatible browser workbench route, and the preview tools/result-state route.
+This runbook covers the source-staged Blazor proof set for the user-facing Chummer Online route, the proof-compatible /blazor/workbench compatibility route, and the preview tools/result-state route.
 
 `/app` remains the clean public browser client path, `/blazor/app` remains the hosted app path, `/blazor/workbench` remains the proof-compatible route, and `/blazor/preview` remains the preview tools/result-state route.
 

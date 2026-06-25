@@ -20,7 +20,7 @@ CHECKS = [
         "id": "product_workbench_workspace_tabs",
         "path": "Chummer.Blazor/Components/Pages/Preview.razor",
         "tokens": [
-            "Workbench runner tabs",
+            "Browser-client runner tabs",
             "data-workbench-workspace-tabs=\"strip\"",
             "Keep active runner lanes visible.",
             "data-workbench-workspace-tabs-action=\"active-runner\"",

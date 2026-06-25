@@ -20,7 +20,7 @@ CHECKS = [
         "id": "product_workbench_section_rail",
         "path": "Chummer.Blazor/Components/Pages/Preview.razor",
             "tokens": [
-                "Workbench sheet section rail",
+                "Browser-client sheet section rail",
                 "data-workbench-section-rail=\"strip\"",
                 "Move straight to a section.",
                 "BuildWorkbenchLaneHref(\"tab-info\")",

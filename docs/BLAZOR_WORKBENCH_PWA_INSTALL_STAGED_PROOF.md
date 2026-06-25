@@ -2,7 +2,7 @@
 
 ## Purpose
 
-This source-staged proof keeps web app install and update affordances visible on the user-facing Chummer Online route and proof-compatible Blazor workbench route.
+This source-staged proof keeps web app install and update affordances visible on the user-facing Chummer Online route and proof-compatible /blazor/workbench compatibility route.
 
 The browser client should feel like an installable desktop-class app by surfacing install prompt, offline cache, update available, browser permissions, release channel, reset cache, and help posture near the active character workspace.
 
@@ -10,7 +10,7 @@ The browser client should feel like an installable desktop-class app by surfacin
 
 The staged PWA-install lane covers:
 
-- a PWA install/update strip on the user-facing Chummer Online route and proof-compatible workbench route
+- a PWA install/update strip on the user-facing Chummer Online route and proof-compatible compatibility route
 - install prompt, offline cache, update available, permissions, release channel, reset cache, and same-origin help shortcuts
 - scoped responsive styling for desktop and mobile browser use
 

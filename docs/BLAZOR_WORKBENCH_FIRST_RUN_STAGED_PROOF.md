@@ -2,7 +2,7 @@
 
 ## Purpose
 
-This source-staged proof keeps first-run onboarding affordances visible on the user-facing Chummer Online route and proof-compatible Blazor workbench route.
+This source-staged proof keeps first-run onboarding affordances visible on the user-facing Chummer Online route and proof-compatible /blazor/workbench compatibility route.
 
 The browser client should help users start with a new runner, import desktop files, try a sample runner, restore the last session, configure Docker self-hosting, open web-client docs, and recover through same-origin help without depending on hidden menu discovery.
 
@@ -10,7 +10,7 @@ The browser client should help users start with a new runner, import desktop fil
 
 The staged first-run lane covers:
 
-- a first-run onboarding strip on the user-facing Chummer Online route and proof-compatible workbench route
+- a first-run onboarding strip on the user-facing Chummer Online route and proof-compatible compatibility route
 - new runner, desktop import, sample runner, restore session, self-host setup, docs, and same-origin help shortcuts
 - scoped responsive styling for desktop and mobile browser use
 

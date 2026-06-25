@@ -2,7 +2,7 @@
 
 ## Purpose
 
-This source-staged proof keeps large-sheet performance and virtualization affordances visible on the user-facing Chummer Online route and proof-compatible Blazor workbench route.
+This source-staged proof keeps large-sheet performance and virtualization affordances visible on the user-facing Chummer Online route and proof-compatible /blazor/workbench compatibility route.
 
 The browser client should expose lazy sections, virtual lists, render budget, memory posture, degraded mode, profiler cues, and same-origin help so dense Chummer sheets can scale toward desktop-class workloads.
 
@@ -10,7 +10,7 @@ The browser client should expose lazy sections, virtual lists, render budget, me
 
 The staged performance-virtualization lane covers:
 
-- a performance/virtualization strip on the user-facing Chummer Online route and proof-compatible workbench route
+- a performance/virtualization strip on the user-facing Chummer Online route and proof-compatible compatibility route
 - lazy sections, virtual lists, render budget, memory posture, degraded mode, profiler, and same-origin help shortcuts
 - scoped responsive styling for desktop and mobile browser use
 

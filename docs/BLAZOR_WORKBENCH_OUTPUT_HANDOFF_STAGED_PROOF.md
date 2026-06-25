@@ -2,7 +2,7 @@
 
 ## Purpose
 
-This source-staged proof keeps output and export handoff affordances visible on the user-facing Chummer Online route and proof-compatible Blazor workbench route.
+This source-staged proof keeps output and export handoff affordances visible on the user-facing Chummer Online route and proof-compatible /blazor/workbench compatibility route.
 
 The browser client should preserve desktop Chummer's expectation that generated packets, print sheets, web summaries, share links, audit queues, help, and download bundles are explicit workflow destinations rather than hidden afterthoughts.
 
@@ -10,7 +10,7 @@ The browser client should preserve desktop Chummer's expectation that generated 
 
 The staged output-handoff lane covers:
 
-- an output/export lifecycle strip on the user-facing Chummer Online route and proof-compatible workbench route
+- an output/export lifecycle strip on the user-facing Chummer Online route and proof-compatible compatibility route
 - PDF packet, print sheet, HTML summary, share link, audit queue, help, and download bundle shortcuts
 - scoped responsive styling for desktop and mobile browser use
 

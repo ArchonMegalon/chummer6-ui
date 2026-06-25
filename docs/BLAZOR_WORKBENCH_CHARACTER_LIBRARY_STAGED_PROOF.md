@@ -2,7 +2,7 @@
 
 ## Purpose
 
-This source-staged proof keeps character library and recent-file management affordances visible on the user-facing Chummer Online route and proof-compatible Blazor workbench route.
+This source-staged proof keeps character library and recent-file management affordances visible on the user-facing Chummer Online route and proof-compatible /blazor/workbench compatibility route.
 
 The browser client should preserve desktop Chummer's expectation that open, recent, pinned, cloned, archived, imported, and help-guided character library recovery stay close to the active workspace.
 
@@ -10,7 +10,7 @@ The browser client should preserve desktop Chummer's expectation that open, rece
 
 The staged character-library lane covers:
 
-- a character library strip on the user-facing Chummer Online route and proof-compatible workbench route
+- a character library strip on the user-facing Chummer Online route and proof-compatible compatibility route
 - open, recent, pin, clone, archive, import, and same-origin help shortcuts
 - scoped responsive styling for desktop and mobile browser use
 

@@ -20,7 +20,7 @@ CHECKS = [
         "id": "product_workbench_menu_bar",
         "path": "Chummer.Blazor/Components/Pages/Preview.razor",
         "tokens": [
-            "Workbench menu rail",
+            "Browser-client menu rail",
             "data-workbench-menu-bar=\"strip\"",
             "Keep the usual menus close.",
             "data-workbench-menu-bar-action=\"file\"",

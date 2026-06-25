@@ -2,7 +2,7 @@
 
 ## Purpose
 
-This source-staged proof keeps controlled inline-editing affordances visible on the user-facing Chummer Online route and proof-compatible Blazor workbench route.
+This source-staged proof keeps controlled inline-editing affordances visible on the user-facing Chummer Online route and proof-compatible /blazor/workbench compatibility route.
 
 The browser client should expose dirty fields, numeric steppers, commit, revert, formula preview, bulk apply, and same-origin help posture so dense Chummer edits remain explicit and reviewable.
 
@@ -10,7 +10,7 @@ The browser client should expose dirty fields, numeric steppers, commit, revert,
 
 The staged inline-editing lane covers:
 
-- an inline-editing strip on the user-facing Chummer Online route and proof-compatible workbench route
+- an inline-editing strip on the user-facing Chummer Online route and proof-compatible compatibility route
 - dirty fields, numeric steppers, commit, revert, formula preview, bulk apply, and same-origin help shortcuts
 - scoped responsive styling for desktop and mobile browser use
 

@@ -2,7 +2,7 @@
 
 ## Purpose
 
-This source-staged proof keeps hosted security and access-control affordances visible on the user-facing Chummer Online route and proof-compatible Blazor workbench route.
+This source-staged proof keeps hosted security and access-control affordances visible on the user-facing Chummer Online route and proof-compatible /blazor/workbench compatibility route.
 
 The browser client should make sign-in, workspace lock, player/GM roles, session expiry, key rotation, access audit, and help posture visible near hosted character state.
 
@@ -10,7 +10,7 @@ The browser client should make sign-in, workspace lock, player/GM roles, session
 
 The staged security-access lane covers:
 
-- a hosted security/access strip on the user-facing Chummer Online route and proof-compatible workbench route
+- a hosted security/access strip on the user-facing Chummer Online route and proof-compatible compatibility route
 - sign-in, workspace lock, roles, session expiry, key rotation, access audit, and same-origin help shortcuts
 - scoped responsive styling for desktop and mobile browser use
 

@@ -2,7 +2,7 @@
 
 ## Purpose
 
-This staged proof keeps the Chummer Online and proof-compatible Blazor workbench source aligned around rule/source citation posture for browser output and table handoff workflows.
+This staged proof keeps Chummer Online and its proof-compatible /blazor/workbench compatibility route source aligned around rule/source citation posture for browser output and table handoff workflows.
 
 It covers visible source posture for source packet, citation scope, errata note, table summary, dispute trail, audit export, and same-origin help affordances on `/blazor/workbench`.
 

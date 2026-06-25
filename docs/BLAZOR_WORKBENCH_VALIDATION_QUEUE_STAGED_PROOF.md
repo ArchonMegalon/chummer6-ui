@@ -2,7 +2,7 @@
 
 ## Purpose
 
-This source-staged proof keeps validation and build-readiness affordances visible on the user-facing Chummer Online route and proof-compatible Blazor workbench route.
+This source-staged proof keeps validation and build-readiness affordances visible on the user-facing Chummer Online route and proof-compatible /blazor/workbench compatibility route.
 
 The browser client should preserve Chummer's expectation that rule issues, missing required fields, cost checks, availability limits, final build gates, help, and next-fix navigation stay close to the active character sheet.
 
@@ -10,7 +10,7 @@ The browser client should preserve Chummer's expectation that rule issues, missi
 
 The staged validation-queue lane covers:
 
-- a validation/build-readiness strip on the user-facing Chummer Online route and proof-compatible workbench route
+- a validation/build-readiness strip on the user-facing Chummer Online route and proof-compatible compatibility route
 - rule issues, missing fields, cost checks, availability, build gate, help, and fix-next shortcuts
 - scoped responsive styling for desktop and mobile browser use
 
