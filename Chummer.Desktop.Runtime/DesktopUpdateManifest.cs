@@ -563,6 +563,8 @@ public static class DesktopUpdateManifestParser
             normalized = normalized["sha256:".Length..];
         }
 
-        return normalized;
+        return IsSha256Hex(normalized)
+            ? normalized.ToLowerInvariant()
+            : null;
     }
 }

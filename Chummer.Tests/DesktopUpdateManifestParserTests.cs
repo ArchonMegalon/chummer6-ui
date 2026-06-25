@@ -55,7 +55,7 @@ public sealed class DesktopUpdateManifestParserTests
     [TestMethod]
     public void Parse_manifest_parses_size_bytes_and_sha256_with_prefix()
     {
-        const string sha = "sha256:0123abcd";
+        const string sha = "sha256:00d34c7514b9e44bd315c3d9914547d0c750865ddf5bffaf3e17f861648fe4b7";
         const long size = 12345;
         string json = $$"""
             {
@@ -83,8 +83,39 @@ public sealed class DesktopUpdateManifestParserTests
             new Uri("http://127.0.0.1:8091/downloads/manifest.json"));
 
         DesktopUpdateArtifact artifact = manifest.Artifacts[0];
-        Assert.AreEqual("0123abcd", artifact.Sha256);
+        Assert.AreEqual("00d34c7514b9e44bd315c3d9914547d0c750865ddf5bffaf3e17f861648fe4b7", artifact.Sha256);
         Assert.AreEqual(size, artifact.SizeBytes);
+    }
+
+    [TestMethod]
+    public void Parse_manifest_does_not_preserve_invalid_sha256_metadata()
+    {
+        const string json = """
+            {
+              "channel": "preview",
+              "version": "6.0.2-preview.2",
+              "status": "published",
+              "artifacts": [
+                {
+                  "artifactId": "avalonia-linux-x64-archive",
+                  "head": "avalonia",
+                  "platform": "linux",
+                  "arch": "x64",
+                  "kind": "archive",
+                  "fileName": "chummer-avalonia-linux-x64.tar.gz",
+                  "downloadUrl": "/downloads/files/chummer-avalonia-linux-x64.tar.gz",
+                  "sha256": "sha256:0123abcd",
+                  "sizeBytes": 12345
+                }
+              ]
+            }
+            """;
+
+        DesktopUpdateChannelManifest manifest = DesktopUpdateManifestParser.Parse(
+            json,
+            new Uri("https://chummer.run/downloads/manifest.json"));
+
+        Assert.IsNull(manifest.Artifacts[0].Sha256);
     }
 
     [TestMethod]
