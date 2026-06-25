@@ -20,13 +20,13 @@
     {
       "id": "hosted_public_edge_route_probe",
       "path": "scripts/e2e-public-edge.cjs",
-      "required_token_count": 16,
+      "required_token_count": 23,
       "status": "passed"
     },
     {
       "id": "self_host_portal_route_probe",
       "path": "scripts/e2e-portal.cjs",
-      "required_token_count": 18,
+      "required_token_count": 21,
       "status": "passed"
     },
     {

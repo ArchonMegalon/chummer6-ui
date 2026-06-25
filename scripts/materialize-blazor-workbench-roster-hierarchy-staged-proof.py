@@ -241,6 +241,15 @@ CHECKS = [
             "source_alignment_only_not_browser_execution",
         ],
     },
+    {
+        "id": "docs_index_contract_link",
+        "path": "docs/BLAZOR_WEB_CLIENT_DOCS_INDEX.md",
+        "tokens": [
+            "docs/BLAZOR_WORKBENCH_ROSTER_HIERARCHY_STAGED_PROOF.md",
+            "custom roster folders, nested hierarchy, drag/drop move intent",
+            "runtime boundary language",
+        ],
+    },
 ]
 
 

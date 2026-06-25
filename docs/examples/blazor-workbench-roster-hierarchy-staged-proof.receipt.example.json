@@ -16,46 +16,81 @@
       "missing_tokens": []
     },
     {
-      "id": "dialog_factory",
-      "path": "Chummer.Presentation/Overview/DesktopDialogFactory.cs",
-      "needle": "rosterCustomFolders",
-      "found": true
+      "id": "presentation_roster_hierarchy_preferences",
+      "path": "Chummer.Presentation/Overview/DesktopPreferenceState.cs",
+      "status": "passed",
+      "required_token_count": 2,
+      "missing_tokens": []
     },
     {
-      "id": "dialog_factory",
-      "path": "Chummer.Presentation/Overview/DesktopDialogFactory.cs",
-      "needle": "move_runner_to_group",
-      "found": true
+      "id": "presentation_roster_hierarchy_preference_normalization",
+      "path": "Chummer.Presentation/Overview/DesktopPreferenceStateRuntime.cs",
+      "status": "passed",
+      "required_token_count": 2,
+      "missing_tokens": []
     },
     {
-      "id": "dialog_coordinator",
+      "id": "presentation_character_roster_hierarchy",
+      "path": "Chummer.Presentation/Overview/DesktopDialogFactory.cs",
+      "status": "passed",
+      "required_token_count": 29,
+      "missing_tokens": []
+    },
+    {
+      "id": "presentation_roster_command_dispatch",
       "path": "Chummer.Presentation/Overview/DialogCoordinator.cs",
-      "needle": "create_roster_group",
-      "found": true
+      "status": "passed",
+      "required_token_count": 23,
+      "missing_tokens": []
     },
     {
-      "id": "blazor_dialog_host",
+      "id": "blazor_dialog_markup",
       "path": "Chummer.Blazor/Components/Shell/DialogHost.razor",
-      "needle": "data-roster-hierarchy-field",
-      "found": true
+      "status": "passed",
+      "required_token_count": 65,
+      "missing_tokens": []
     },
     {
-      "id": "blazor_css",
+      "id": "blazor_roster_drag_drop_shell_bridge",
+      "path": "Chummer.Blazor/Components/Layout/DesktopShell.Dialogs.cs",
+      "status": "passed",
+      "required_token_count": 7,
+      "missing_tokens": []
+    },
+    {
+      "id": "blazor_dialog_style",
       "path": "Chummer.Blazor/wwwroot/app.css",
-      "needle": ".dialog-field--roster-hierarchy",
-      "found": true
+      "status": "passed",
+      "required_token_count": 12,
+      "missing_tokens": []
     },
     {
-      "id": "parity_docs",
+      "id": "release_truth_docs",
+      "path": "docs/WORKBENCH_RELEASE_SIGNOFF.md",
+      "status": "passed",
+      "required_token_count": 4,
+      "missing_tokens": []
+    },
+    {
+      "id": "parity_goal_docs",
       "path": "docs/BLAZOR_WEB_CLIENT_PARITY_GOAL.md",
-      "needle": "character roster custom hierarchy posture",
-      "found": true
+      "status": "passed",
+      "required_token_count": 6,
+      "missing_tokens": []
     },
     {
-      "id": "status_utility",
+      "id": "status_utility_reporting",
       "path": "scripts/print_blazor_public_edge_proof_status.py",
-      "needle": "workbench_roster_hierarchy_staged_status",
-      "found": true
+      "status": "passed",
+      "required_token_count": 4,
+      "missing_tokens": []
+    },
+    {
+      "id": "docs_index_contract_link",
+      "path": "docs/BLAZOR_WEB_CLIENT_DOCS_INDEX.md",
+      "status": "passed",
+      "required_token_count": 3,
+      "missing_tokens": []
     }
   ],
   "boundary_notes": [

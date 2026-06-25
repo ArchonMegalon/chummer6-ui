@@ -1,6 +1,6 @@
 {
   "contract_name": "chummer6-ui.blazor_portal_installer_handoff_staged_proof",
-  "generated_at": "2026-06-25T01:46:35.830186+00:00",
+  "generated_at": "2026-06-25T01:54:23.207715+00:00",
   "status": "passed",
   "proof_tier": "source_staged_no_browser_execution",
   "route_lane": "portal_backed_blazor_workbench_handoff",
@@ -21,14 +21,14 @@
       "id": "hosted_public_edge_route_probe",
       "path": "scripts/e2e-public-edge.cjs",
       "status": "passed",
-      "required_token_count": 16,
+      "required_token_count": 23,
       "missing_tokens": []
     },
     {
       "id": "self_host_portal_route_probe",
       "path": "scripts/e2e-portal.cjs",
       "status": "passed",
-      "required_token_count": 14,
+      "required_token_count": 21,
       "missing_tokens": []
     },
     {

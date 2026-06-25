@@ -62,6 +62,7 @@ The goal is straightforward: `Chummer.Blazor` should ship as a polished web clie
 - `docs/examples/blazor-workbench-help-recovery-guidance-staged-proof.receipt.example.json`: example receipt shape for the help/recovery guidance source-alignment proof
 - `scripts/materialize-blazor-workbench-roster-hierarchy-staged-proof.py`: source-structural staged proof materializer for character roster custom hierarchy posture
 - `scripts/ai/milestones/blazor-workbench-roster-hierarchy-staged-proof-check.sh`: milestone-style wrapper for the roster hierarchy source-alignment check
+- `docs/BLAZOR_WORKBENCH_ROSTER_HIERARCHY_STAGED_PROOF.md`: source-staged contract for custom roster folders, nested hierarchy, drag/drop move intent, keyboard-accessible row handling, non-destructive metadata staging, and runtime boundary language
 - `docs/examples/blazor-workbench-roster-hierarchy-staged-proof.receipt.example.json`: example receipt shape for the roster hierarchy source-alignment proof
 - `.codex-studio/published/BLAZOR_BROWSER_LANE_PROOF_SET.generated.json`: published aggregate browser-lane proof-set receipt
 - `.codex-studio/published/BLAZOR_PUBLIC_EDGE_EXECUTION_PROOF.generated.json`: published hosted execution-proof receipt

@@ -1,6 +1,6 @@
 {
   "contract_name": "chummer6-ui.blazor_workbench_roster_hierarchy_staged_proof",
-  "generated_at": "2026-06-25T01:19:32.073521+00:00",
+  "generated_at": "2026-06-25T01:54:23.247884+00:00",
   "status": "passed",
   "proof_tier": "source_staged_no_browser_execution",
   "route_lane": "promoted_blazor_workbench",
@@ -83,6 +83,13 @@
       "path": "scripts/print_blazor_public_edge_proof_status.py",
       "status": "passed",
       "required_token_count": 4,
+      "missing_tokens": []
+    },
+    {
+      "id": "docs_index_contract_link",
+      "path": "docs/BLAZOR_WEB_CLIENT_DOCS_INDEX.md",
+      "status": "passed",
+      "required_token_count": 3,
       "missing_tokens": []
     }
   ],
