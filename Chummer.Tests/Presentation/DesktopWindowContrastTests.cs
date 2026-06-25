@@ -100,6 +100,16 @@ public sealed class DesktopWindowContrastTests
         });
     }
 
+    [TestMethod]
+    public void Shell_theme_helpers_keep_idle_input_controls_readable_in_dark_mode()
+    {
+        WithStandaloneShellInputThemeWindow(window =>
+        {
+            using ThemeScope scope = ThemeScope.Dark(window);
+            AssertVisibleInputControlContrast(window, "shell theme helper dark mode", minimumVisibleInputControls: 4);
+        });
+    }
+
     private static void EnsureHeadlessPlatform()
     {
         lock (HeadlessInitLock)
@@ -415,6 +425,89 @@ public sealed class DesktopWindowContrastTests
         }
 
         throw new AssertFailedException($"Avalonia dialog {dialog.Id} headless session did not stabilize for contrast proof.", lastFailure);
+    }
+
+    private static void WithStandaloneShellInputThemeWindow(Action<Window> assertion)
+    {
+        EnsureHeadlessPlatform();
+        Exception? lastFailure = null;
+        for (int attempt = 1; attempt <= HeadlessSessionAttempts; attempt++)
+        {
+            HeadlessUnitTestSession? session = null;
+            try
+            {
+                session = HeadlessUnitTestSession.StartNew(typeof(ContrastHeadlessAppBootstrap));
+                session.Dispatch(
+                        () =>
+                        {
+                            TextBox textBox = new() { Name = "ShellThemeTextBox", Text = "Runner note" };
+                            DesktopShellTheme.ApplyShellTextInputTheme(textBox);
+                            ComboBox comboBox = new()
+                            {
+                                Name = "ShellThemeComboBox",
+                                ItemsSource = new[] { "Street samurai", "Mage" },
+                                SelectedIndex = 0
+                            };
+                            DesktopShellTheme.ApplyShellComboBoxTheme(comboBox);
+                            ListBox listBox = new()
+                            {
+                                Name = "ShellThemeListBox",
+                                ItemsSource = new[] { "Ares Predator", "Armor jacket" },
+                                SelectedIndex = 0
+                            };
+                            DesktopShellTheme.ApplyShellListBoxTheme(listBox);
+                            NumericUpDown numericUpDown = new()
+                            {
+                                Name = "ShellThemeNumericUpDown",
+                                Value = 3
+                            };
+                            DesktopShellTheme.ApplyShellNumericUpDownTheme(numericUpDown);
+
+                            Window window = new()
+                            {
+                                Width = 520,
+                                Height = 320,
+                                Content = DesktopShellTheme.CreateWindowSurface(new StackPanel
+                                {
+                                    Spacing = 8,
+                                    Children =
+                                    {
+                                        textBox,
+                                        comboBox,
+                                        listBox,
+                                        numericUpDown
+                                    }
+                                })
+                            };
+                            window.Show();
+                            PumpUi();
+
+                            try
+                            {
+                                assertion(window);
+                            }
+                            finally
+                            {
+                                window.Close();
+                                PumpUi();
+                            }
+                        },
+                        CancellationToken.None)
+                    .GetAwaiter()
+                    .GetResult();
+                return;
+            }
+            catch (Exception ex) when (IsTransientHeadlessFailure(ex) && attempt < HeadlessSessionAttempts)
+            {
+                lastFailure = ex;
+            }
+            finally
+            {
+                session?.Dispose();
+            }
+        }
+
+        throw new AssertFailedException("Avalonia shell input theme headless session did not stabilize for contrast proof.", lastFailure);
     }
 
     private static DesktopInstallLinkingState CreateInstallState(string status)
