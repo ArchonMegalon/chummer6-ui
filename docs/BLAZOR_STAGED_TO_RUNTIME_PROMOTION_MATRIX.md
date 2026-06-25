@@ -35,6 +35,20 @@ The browser-lane aggregate may only be refreshed after the runtime receipts are 
 | `magic_cleanup` | `BLAZOR_MAGIC_CLEANUP_STAGED_PROOF.generated.json` | `promoted_magic_cleanup_utility_execution` | `/blazor/workbench` |
 | `browser_output_handoff` | `BLAZOR_BROWSER_OUTPUT_HANDOFF_STAGED_PROOF.generated.json` | `promoted_result_continuations` | `/blazor/workbench` |
 
+## Planned Promotion Matrix
+
+These families have source-staged coverage and promotion requirements, but their hosted execution family IDs are intentionally not yet part of the public-edge required workflow set. They are not runtime-promoted until Docker self-host proof, hosted public-edge execution proof, and browser-lane aggregate proof are refreshed with matching workflow execution.
+
+| Planned family | Source/source-calculation receipts | Planned hosted execution families | Required runtime work |
+| --- | --- | --- | --- |
+| `runner_intelligence` | `BLAZOR_RUNNER_INTELLIGENCE_STAGED_PROOF.generated.json`, `BLAZOR_RUNNER_INTELLIGENCE_CALCULATION_PROOF.generated.json` | `promoted_runner_benchmark_execution`, `promoted_runner_what_if_execution`, `promoted_runner_cohort_privacy_execution` | hosted public-edge execution for runner_benchmark, runner_what_if, and runner_cohort_privacy; Docker self-host execution with local-only cohort mode; authoritative rules-engine calculation fixtures for spell/drug/gear what-if results; hosted cohort aggregation opt-in proof before any hosted percentile cohort claim |
+
+Runner Intelligence promotion blockers:
+
+- source-calculation proof is not authoritative SR rules-engine validation
+- source-staged route metadata is not browser execution
+- hosted cohort aggregation and Docker local benchmark persistence are not proven
+
 ## Non-Promoting Source Guards
 
 These source receipts help manage breadth and safety but do not promote workflow parity:
@@ -109,6 +123,10 @@ These source receipts help manage breadth and safety but do not promote workflow
 - `BLAZOR_WORKBENCH_HELP_RECOVERY_GUIDANCE_STAGED_PROOF.generated.json`
 - `BLAZOR_WORKBENCH_GM_SCREEN_EXPORT_STAGED_PROOF.generated.json`
 - `BLAZOR_WORKBENCH_ROSTER_HIERARCHY_STAGED_PROOF.generated.json`
+- `BLAZOR_RUNNER_INTELLIGENCE_STAGED_PROOF.generated.json`
+- `BLAZOR_RUNNER_INTELLIGENCE_CALCULATION_PROOF.generated.json`
+
+`BLAZOR_PORTAL_INSTALLER_HANDOFF_STAGED_PROOF.generated.json` is a portal-boundary guard for `/downloads/`, `/status`, `/contact`, `/help`, installer handoff, compatibility-route fallback, and Chummer App recovery. It is reported by the public-edge status utility as `portal_installer_handoff_staged_*`, but it is not a Chummer App and proof-compatible workbench workflow family and cannot promote installer availability without refreshed portal runtime evidence.
 
 ## Promotion Rule
 
@@ -117,6 +135,8 @@ Do not describe a staged family as browser-proven until:
 - the hosted execution receipt includes the hosted workflow family, and
 - the Docker self-host receipt includes the matching route/workflow coverage, and
 - the aggregate browser-lane receipt is refreshed after those runtime receipts.
+
+Do not describe a planned promotion family as runtime-promoted until its planned hosted execution families have been moved into the hosted execution runner and the required runtime receipts are refreshed after that change.
 
 ## Status Summary
 

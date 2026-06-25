@@ -28,6 +28,8 @@ CHECKS = [
             "data-workbench-notifications-jobs-action=\"settings\"",
             "data-workbench-notifications-jobs-action=\"history\"",
             "data-workbench-notifications-jobs-action=\"support\"",
+            "data-workbench-notifications-jobs-action=\"help\"",
+            "/help",
         ],
     },
     {
@@ -54,8 +56,8 @@ CHECKS = [
         "path": "docs/BLAZOR_WEB_CLIENT_PARITY_GOAL.md",
         "tokens": [
             "staged hosted workbench notifications-jobs posture",
-            "job queue, retry, dismiss, settings, history, and support",
-            "not yet claiming toast delivery, queue execution, retry, or background-worker parity",
+            "job queue, retry, dismiss, settings, history, support, and help",
+            "not yet claiming toast delivery, queue execution, retry, background-worker, or portal help runtime parity",
         ],
     },
     {
@@ -96,13 +98,13 @@ def main() -> int:
         "status": "failed" if failures else "passed",
         "proof_tier": "source_staged_no_browser_execution",
         "route_lane": "promoted_blazor_workbench",
-        "expected_routes": ["/blazor/workbench"],
+        "expected_routes": ["/blazor/workbench", "/help"],
         "checks": evaluated_checks,
         "failures": failures,
         "notes": [
-            "This receipt only proves that promoted workbench notifications-jobs source, style, status, and docs agree.",
-            "It is not a substitute for hosted Playwright execution proof, Docker self-host proof, toast-delivery proof, queue-execution proof, retry proof, or background-worker proof.",
-            "Do not use this receipt to claim toast delivery, queue execution, retry behavior, background workers, or browser execution parity.",
+            "This receipt only proves that Chummer App and proof-compatible workbench notifications-jobs source, style, status, and docs agree.",
+            "It is not a substitute for hosted Playwright execution proof, Docker self-host proof, toast-delivery proof, queue-execution proof, retry proof, background-worker proof, or portal help runtime proof.",
+            "Do not use this receipt to claim toast delivery, queue execution, retry behavior, background workers, portal help runtime, or browser execution parity.",
         ],
     }
 

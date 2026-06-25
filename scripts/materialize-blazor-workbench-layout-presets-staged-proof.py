@@ -28,6 +28,8 @@ CHECKS = [
             "data-workbench-layout-presets-action=\"output\"",
             "data-workbench-layout-presets-action=\"mobile-safe\"",
             "data-workbench-layout-presets-action=\"focus-pane\"",
+            "data-workbench-layout-presets-action=\"help\"",
+            "/help",
         ],
     },
     {
@@ -54,8 +56,8 @@ CHECKS = [
         "path": "docs/BLAZOR_WEB_CLIENT_PARITY_GOAL.md",
         "tokens": [
             "staged hosted workbench layout-presets posture",
-            "dense sheet, split review, output, mobile safe, and focus pane",
-            "not yet claiming pane resizing or persisted layout parity",
+            "dense sheet, split review, output, mobile safe, focus pane, and help",
+            "not yet claiming pane resizing, portal help runtime, or persisted layout parity",
         ],
     },
     {
@@ -109,13 +111,13 @@ def main() -> int:
         "status": "failed" if failures else "passed",
         "proof_tier": "source_staged_no_browser_execution",
         "route_lane": "promoted_blazor_workbench",
-        "expected_routes": ["/blazor/workbench"],
+        "expected_routes": ["/blazor/workbench", "/help"],
         "checks": checks,
         "failures": failures,
         "notes": [
-            "This receipt only proves that promoted workbench layout-presets source, style, status, and docs agree.",
-            "It is not a substitute for hosted Playwright execution proof, Docker self-host proof, pane-resizing proof, or persisted-layout proof.",
-            "Do not use this receipt to claim pane resizing, persisted layout behavior, or browser execution parity.",
+            "This receipt only proves that Chummer App and proof-compatible workbench layout-presets source, style, status, and docs agree.",
+            "It is not a substitute for hosted Playwright execution proof, Docker self-host proof, pane-resizing proof, portal help runtime, or persisted-layout proof.",
+            "Do not use this receipt to claim pane resizing, portal help runtime, persisted layout behavior, or browser execution parity.",
         ],
     }
 

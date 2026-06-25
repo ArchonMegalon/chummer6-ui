@@ -5,12 +5,14 @@ import json
 from pathlib import Path
 
 
-REPO_ROOT = Path("/docker/chummercomplete/chummer-presentation")
+REPO_ROOT = Path(__file__).resolve().parents[1]
 RECEIPT_PATH = REPO_ROOT / ".codex-studio" / "published" / "BLAZOR_PUBLIC_EDGE_WORKBENCH_PROOF.generated.json"
 EXPECTED_CONTRACT = "chummer6-ui.blazor_public_edge_workbench_proof"
 ALLOWED_STATUSES = {"not_run", "pass", "passed", "ready"}
 REQUIRED_ROUTE_PROOF_MARKERS = {
+    "public_chummer_app_route",
     "public_blazor_root_redirect",
+    "public_blazor_home_roster_entry",
     "public_blazor_health",
     "public_workbench_route",
     "public_workspace_restore_route",
@@ -40,7 +42,10 @@ EXPANDED_WORKFLOW_PROOFS = {
 }
 REQUIRED_PROOF_ROUTES = {
     "/blazor/",
+    "/app",
     "/blazor/health",
+    "/blazor/home",
+    "/blazor/app",
     "/blazor/workbench",
     "/blazor/workbench?workspace=ws-1",
     "/blazor/preview?command=new_character",
@@ -59,6 +64,9 @@ EXPANDED_PROOF_ROUTES = {
     "/blazor/workbench?workspace=ws-1&tab=tab-technomancer&control=complex_form_add&dialog_action=add",
 }
 ALLOWED_PROOF_SHAPES = {"core", "expanded"}
+REQUIRED_ROUTE_MODEL_NOTE = (
+    "Public product navigation remains /app, /blazor/app is the hosted app path, /blazor/home carries the roster-first route entry, and /blazor/workbench is the canonical proof-compatible route base."
+)
 
 
 def load_json(path: Path) -> dict:
@@ -102,6 +110,7 @@ def main() -> int:
         route_probes = payload.get("route_probes")
         route_probe_failures = payload.get("route_probe_failures")
         route_probe_count = payload.get("route_probe_count")
+        notes = payload.get("notes")
 
         if runtime_required is not True:
             reasons.append("passing hosted route-entry receipt must set runtime_required=true")
@@ -177,6 +186,11 @@ def main() -> int:
                 )
         else:
             reasons.append("passing hosted route-entry receipt must include integer route_probe_count")
+
+        if not isinstance(notes, list) or REQUIRED_ROUTE_MODEL_NOTE not in {str(note).strip() for note in notes}:
+            reasons.append(
+                "passing hosted route-entry receipt must state the /blazor/app public route and /blazor/workbench proof-base boundary"
+            )
 
         expanded_declared = (
             EXPANDED_ROUTE_PROOF_MARKERS.issubset(route_marker_ids)

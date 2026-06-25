@@ -1,6 +1,6 @@
 {
   "contract_name": "chummer6-ui.blazor_workbench_roster_hierarchy_staged_proof",
-  "generated_at": "2026-06-25T01:55:46.687500+00:00",
+  "generated_at": "2026-06-25T04:43:35.649433+00:00",
   "status": "passed",
   "proof_tier": "source_staged_no_browser_execution",
   "route_lane": "promoted_blazor_workbench",
@@ -33,7 +33,7 @@
       "id": "presentation_character_roster_hierarchy",
       "path": "Chummer.Presentation/Overview/DesktopDialogFactory.cs",
       "status": "passed",
-      "required_token_count": 29,
+      "required_token_count": 34,
       "missing_tokens": []
     },
     {
@@ -47,7 +47,7 @@
       "id": "blazor_dialog_markup",
       "path": "Chummer.Blazor/Components/Shell/DialogHost.razor",
       "status": "passed",
-      "required_token_count": 65,
+      "required_token_count": 69,
       "missing_tokens": []
     },
     {
@@ -61,21 +61,21 @@
       "id": "blazor_dialog_style",
       "path": "Chummer.Blazor/wwwroot/app.css",
       "status": "passed",
-      "required_token_count": 12,
+      "required_token_count": 13,
       "missing_tokens": []
     },
     {
       "id": "release_truth_docs",
       "path": "docs/WORKBENCH_RELEASE_SIGNOFF.md",
       "status": "passed",
-      "required_token_count": 4,
+      "required_token_count": 5,
       "missing_tokens": []
     },
     {
       "id": "parity_goal_docs",
       "path": "docs/BLAZOR_WEB_CLIENT_PARITY_GOAL.md",
       "status": "passed",
-      "required_token_count": 6,
+      "required_token_count": 7,
       "missing_tokens": []
     },
     {
@@ -89,21 +89,21 @@
       "id": "docs_index_contract_link",
       "path": "docs/BLAZOR_WEB_CLIENT_DOCS_INDEX.md",
       "status": "passed",
-      "required_token_count": 3,
+      "required_token_count": 5,
       "missing_tokens": []
     },
     {
       "id": "contract_doc_index_requirement",
       "path": "docs/BLAZOR_WORKBENCH_ROSTER_HIERARCHY_STAGED_PROOF.md",
       "status": "passed",
-      "required_token_count": 3,
+      "required_token_count": 4,
       "missing_tokens": []
     }
   ],
   "failures": [],
   "notes": [
-    "This receipt only proves that the character roster hierarchy source, styling, status, and docs agree.",
-    "It is not a substitute for hosted browser execution, drag/drop mutation, durable layout persistence, filesystem moves, folder deletion, watched-file relocation, or external RosterHierarchyState storage.",
+    "This receipt only proves that the character roster directory hierarchy source, styling, status, and docs agree.",
+    "It is not a substitute for hosted browser execution, drag/drop mutation, durable layout persistence, filesystem moves, directory deletion, watched-file relocation, or external RosterHierarchyState storage.",
     "Do not use this receipt to claim complete roster persistence or browser execution parity."
   ]
 }

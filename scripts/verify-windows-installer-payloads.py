@@ -13,6 +13,7 @@ from dataclasses import dataclass
 from io import BytesIO
 from pathlib import Path
 from typing import Any
+from urllib.parse import urlparse
 
 
 APPENDED_PAYLOAD_MAGIC = b"CHUMMER6PAYLOAD1"
@@ -27,6 +28,7 @@ DEFAULT_LAUNCH_EXECUTABLES = {
 @dataclass(frozen=True)
 class ManifestRow:
     file_name: str
+    download_url: str
     payload_file_name: str
     payload_download_url: str
     payload_sha256: str
@@ -103,6 +105,7 @@ def read_manifest_rows(manifest_paths: list[Path]) -> dict[str, ManifestRow]:
                     continue
                 rows[file_name] = ManifestRow(
                     file_name=file_name,
+                    download_url=str(item.get("downloadUrl") or item.get("url") or "").strip(),
                     payload_file_name=str(item.get("payloadFileName") or "").strip(),
                     payload_download_url=str(item.get("payloadDownloadUrl") or "").strip(),
                     payload_sha256=str(item.get("payloadSha256") or "").strip().lower(),
@@ -117,7 +120,10 @@ def resolve_file_name(item: dict[str, Any]) -> str:
     if file_name:
         return file_name
     raw_url = str(item.get("downloadUrl") or item.get("url") or "").strip()
-    return Path(raw_url).name if raw_url else ""
+    if not raw_url:
+        return ""
+    parsed = urlparse(raw_url)
+    return Path(parsed.path or raw_url).name
 
 
 def try_int(value: Any) -> int | None:
@@ -127,6 +133,32 @@ def try_int(value: Any) -> int | None:
         return int(value)
     except (TypeError, ValueError):
         return None
+
+
+def is_sha256_hex(value: str) -> bool:
+    return len(value) == 64 and all(character in "0123456789abcdefABCDEF" for character in value)
+
+
+def url_file_name(value: str) -> str:
+    parsed = urlparse(value)
+    return Path(parsed.path).name if parsed.path else ""
+
+
+def is_absolute_https_url(value: str) -> bool:
+    parsed = urlparse(value)
+    return parsed.scheme.lower() == "https" and bool(parsed.netloc)
+
+
+def same_origin(left: str, right: str) -> bool:
+    left_uri = urlparse(left)
+    right_uri = urlparse(right)
+    return (
+        left_uri.scheme.lower(),
+        left_uri.netloc.lower(),
+    ) == (
+        right_uri.scheme.lower(),
+        right_uri.netloc.lower(),
+    )
 
 
 def find_installers(files_dir: Path | None, explicit_installers: list[Path]) -> list[Path]:
@@ -201,6 +233,27 @@ def validate_manifest_payload_metadata(candidate: PayloadCandidate, manifest_row
     if manifest_row is None:
         return []
     failures: list[str] = []
+    if manifest_row.installer_mode == "bootstrap":
+        expected_name = expected_payload_name(manifest_row.file_name)
+        if not manifest_row.payload_file_name:
+            failures.append("manifest says installerMode=bootstrap but payloadFileName is missing")
+        elif expected_name and manifest_row.payload_file_name != expected_name:
+            failures.append(
+                f"manifest payloadFileName {manifest_row.payload_file_name} does not match expected {expected_name}"
+            )
+        if not manifest_row.payload_download_url:
+            failures.append("manifest says installerMode=bootstrap but payloadDownloadUrl is missing")
+        elif not is_absolute_https_url(manifest_row.payload_download_url):
+            failures.append("manifest payloadDownloadUrl must be an absolute HTTPS URL")
+        elif manifest_row.payload_file_name and url_file_name(manifest_row.payload_download_url) != manifest_row.payload_file_name:
+            failures.append("manifest payloadDownloadUrl file name must match payloadFileName")
+        if manifest_row.download_url and is_absolute_https_url(manifest_row.download_url) and is_absolute_https_url(manifest_row.payload_download_url):
+            if not same_origin(manifest_row.download_url, manifest_row.payload_download_url):
+                failures.append("manifest payloadDownloadUrl must use the same origin as the installer downloadUrl")
+        if not manifest_row.payload_sha256 or not is_sha256_hex(manifest_row.payload_sha256):
+            failures.append("manifest bootstrap payloadSha256 must be a 64-character hex digest")
+        if manifest_row.payload_size_bytes is None or manifest_row.payload_size_bytes <= 0:
+            failures.append("manifest bootstrap payloadSizeBytes must be greater than zero")
     if manifest_row.installer_mode == "bootstrap" and candidate.mode != "bootstrap":
         failures.append("manifest says installerMode=bootstrap but the payload was not a sidecar payload")
     if manifest_row.installer_mode == "bundled" and candidate.mode != "bundled":
@@ -217,6 +270,26 @@ def validate_manifest_payload_metadata(candidate: PayloadCandidate, manifest_row
             failures.append(
                 f"manifest payloadSizeBytes {manifest_row.payload_size_bytes} does not match sidecar size {len(candidate.data)}"
             )
+    return failures
+
+
+def validate_bootstrap_installer_metadata(installer_path: Path, candidate: PayloadCandidate, manifest_row: ManifestRow | None) -> list[str]:
+    if candidate.mode != "bootstrap" or manifest_row is None or manifest_row.installer_mode != "bootstrap":
+        return []
+
+    if not manifest_row.payload_download_url or not manifest_row.payload_sha256 or manifest_row.payload_size_bytes is None:
+        return []
+
+    installer_bytes = installer_path.read_bytes()
+    required_values = {
+        "payloadDownloadUrl": manifest_row.payload_download_url,
+        "payloadSha256": manifest_row.payload_sha256,
+        "payloadSizeBytes": str(manifest_row.payload_size_bytes),
+    }
+    failures: list[str] = []
+    for label, value in required_values.items():
+        if value.encode("utf-8") not in installer_bytes:
+            failures.append(f"bootstrap installer does not contain embedded {label} metadata")
     return failures
 
 
@@ -341,6 +414,7 @@ def verify_installer(
     expected_launches: list[str],
     expected_entries: list[str],
     require_sample: bool,
+    require_embedded_bootstrap_metadata: bool,
 ) -> list[str]:
     failures: list[str] = []
     if not installer_path.is_file():
@@ -360,6 +434,8 @@ def verify_installer(
 
     failures.extend(validate_manifest_payload_metadata(candidate, manifest_row))
     failures.extend(validate_bootstrap_sidecar_metadata(installer_path, candidate, manifest_row))
+    if require_embedded_bootstrap_metadata:
+        failures.extend(validate_bootstrap_installer_metadata(installer_path, candidate, manifest_row))
     failures.extend(
         validate_zip_payload(
             installer_path.name,
@@ -384,6 +460,11 @@ def main() -> int:
     parser.add_argument("--expected-entry", action="append", default=[], help="Exact zip entry expected in the payload zip.")
     parser.add_argument("--heads-json-base64", default="", help="Installer heads JSON metadata used to derive exact payload entries.")
     parser.add_argument("--require-sample", action="store_true", help="Require the legacy Soma sample character in the payload.")
+    parser.add_argument(
+        "--require-embedded-bootstrap-metadata",
+        action="store_true",
+        help="Require bootstrap installers to contain the manifest payload URL, SHA-256, and size metadata.",
+    )
     parser.add_argument("--allow-empty", action="store_true", help="Pass when no Windows installers are present.")
     args = parser.parse_args()
 
@@ -400,6 +481,10 @@ def main() -> int:
     expected_entries = [normalize_zip_name(entry) for entry in args.expected_entry]
     expected_entries.extend(parse_heads_json_base64(args.heads_json_base64))
     require_sample = args.require_sample or is_truthy(os.environ.get("CHUMMER_WINDOWS_INSTALLER_REQUIRE_SAMPLE_PAYLOAD"))
+    require_embedded_bootstrap_metadata = (
+        args.require_embedded_bootstrap_metadata
+        or is_truthy(os.environ.get("CHUMMER_WINDOWS_INSTALLER_REQUIRE_EMBEDDED_BOOTSTRAP_METADATA"))
+    )
     failures: list[str] = []
     for installer_path in installers:
         manifest_row = manifest_rows.get(installer_path.name)
@@ -412,6 +497,7 @@ def main() -> int:
                 [str(item).strip() for item in args.expected_launch if str(item).strip()],
                 expected_entries,
                 require_sample,
+                require_embedded_bootstrap_metadata,
             )
         )
 

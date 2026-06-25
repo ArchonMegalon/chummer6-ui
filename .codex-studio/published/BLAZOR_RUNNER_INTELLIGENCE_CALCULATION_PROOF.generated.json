@@ -1,0 +1,71 @@
+{
+  "contract_name": "chummer6-ui.blazor_runner_intelligence_calculation_proof",
+  "generated_at": "2026-06-25T04:43:33.740617+00:00",
+  "status": "passed",
+  "proof_tier": "source_calculation_no_browser_execution",
+  "calculation_lane": "shared_runner_intelligence",
+  "checks": [
+    {
+      "id": "shared_calculator_contract",
+      "path": "Chummer.Presentation/RunnerIntelligence/RunnerIntelligenceCalculator.cs",
+      "status": "passed",
+      "required_token_count": 10,
+      "missing_tokens": []
+    },
+    {
+      "id": "increase_initiative_sample_semantics",
+      "path": "Chummer.Presentation/RunnerIntelligence/RunnerIntelligenceSampleFactory.cs",
+      "status": "passed",
+      "required_token_count": 8,
+      "missing_tokens": []
+    },
+    {
+      "id": "blazor_consumption_path",
+      "path": "Chummer.Blazor/Components/Pages/Preview.razor",
+      "status": "passed",
+      "required_token_count": 5,
+      "missing_tokens": []
+    },
+    {
+      "id": "avalonia_consumption_path",
+      "path": "Chummer.Desktop.Runtime/RunnerIntelligence/DesktopRunnerIntelligenceBridge.cs",
+      "status": "passed",
+      "required_token_count": 5,
+      "missing_tokens": []
+    },
+    {
+      "id": "contract_doc",
+      "path": "docs/BLAZOR_RUNNER_INTELLIGENCE_CALCULATION_PROOF.md",
+      "status": "passed",
+      "required_token_count": 4,
+      "missing_tokens": []
+    },
+    {
+      "id": "docs_index_link",
+      "path": "docs/BLAZOR_WEB_CLIENT_DOCS_INDEX.md",
+      "status": "passed",
+      "required_token_count": 3,
+      "missing_tokens": []
+    },
+    {
+      "id": "example_receipt_shape",
+      "path": "docs/examples/blazor-runner-intelligence-calculation-proof.receipt.example.json",
+      "status": "passed",
+      "required_token_count": 4,
+      "missing_tokens": []
+    },
+    {
+      "id": "status_utility_reporting",
+      "path": "scripts/print_blazor_public_edge_proof_status.py",
+      "status": "passed",
+      "required_token_count": 4,
+      "missing_tokens": []
+    }
+  ],
+  "failures": [],
+  "notes": [
+    "This receipt proves only that the shared Runner Intelligence calculation seam and sample semantics are source-aligned.",
+    "It verifies final severity after resistance is the modeled risk path for the Increase Initiative sample.",
+    "It is not authoritative SR rules-engine validation, hosted browser execution proof, Docker execution proof, or hosted cohort aggregation proof."
+  ]
+}

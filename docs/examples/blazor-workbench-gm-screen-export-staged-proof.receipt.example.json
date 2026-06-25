@@ -5,7 +5,8 @@
   "proof_tier": "source_staged_no_browser_execution",
   "route_lane": "promoted_blazor_workbench",
   "expected_routes": [
-    "/blazor/workbench"
+    "/blazor/workbench",
+    "/help"
   ],
   "checks": [
     {
@@ -41,7 +42,7 @@
   ],
   "boundary_notes": [
     "Source-staged GM-screen export posture only; this is not hosted browser execution proof.",
-    "Does not prove Docker self-host browser execution, GM-screen rendering, player-view routing, initiative sync, scene-note persistence, or export-bundle generation.",
+    "Does not prove Docker self-host browser execution, GM-screen rendering, player-view routing, initiative sync, scene-note persistence, export-bundle generation, or portal help runtime behavior.",
     "Runtime promotion requires refreshed hosted public-edge and Docker self-host receipts."
   ],
   "failures": []

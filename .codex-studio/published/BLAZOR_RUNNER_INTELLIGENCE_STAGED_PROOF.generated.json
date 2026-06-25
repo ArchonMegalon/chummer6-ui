@@ -1,0 +1,160 @@
+{
+  "contract_name": "chummer6-ui.blazor_runner_intelligence_staged_proof",
+  "generated_at": "2026-06-25T04:43:33.770417+00:00",
+  "status": "passed",
+  "proof_tier": "source_staged_no_browser_execution",
+  "route_lane": "promoted_blazor_workbench",
+  "expected_routes": [
+    "/blazor/workbench?workspace=ws-1&tab=tab-stats&control=runner_benchmark",
+    "/blazor/workbench?workspace=ws-1&tab=tab-stats&control=runner_what_if",
+    "/blazor/workbench?workspace=ws-1&tab=tab-stats&control=runner_cohort_privacy"
+  ],
+  "checks": [
+    {
+      "id": "product_workbench_affordances",
+      "path": "Chummer.Blazor/Components/Pages/Preview.razor",
+      "status": "passed",
+      "required_token_count": 12,
+      "missing_tokens": []
+    },
+    {
+      "id": "shared_control_catalog",
+      "path": "Chummer.Presentation/Overview/LegacyUiControlCatalog.cs",
+      "status": "passed",
+      "required_token_count": 3,
+      "missing_tokens": []
+    },
+    {
+      "id": "shared_reusable_calculator",
+      "path": "Chummer.Presentation/RunnerIntelligence/RunnerIntelligenceCalculator.cs",
+      "status": "passed",
+      "required_token_count": 9,
+      "missing_tokens": []
+    },
+    {
+      "id": "shared_increase_initiative_fixture",
+      "path": "Chummer.Presentation/RunnerIntelligence/RunnerIntelligenceSampleFactory.cs",
+      "status": "passed",
+      "required_token_count": 9,
+      "missing_tokens": []
+    },
+    {
+      "id": "avalonia_reuse_bridge",
+      "path": "Chummer.Desktop.Runtime/RunnerIntelligence/DesktopRunnerIntelligenceBridge.cs",
+      "status": "passed",
+      "required_token_count": 6,
+      "missing_tokens": []
+    },
+    {
+      "id": "blazor_di_registration",
+      "path": "Chummer.Blazor/RunnerIntelligence/BlazorRunnerIntelligenceServiceCollectionExtensions.cs",
+      "status": "passed",
+      "required_token_count": 5,
+      "missing_tokens": []
+    },
+    {
+      "id": "blazor_preview_service",
+      "path": "Chummer.Blazor/RunnerIntelligence/BlazorRunnerIntelligencePreviewService.cs",
+      "status": "passed",
+      "required_token_count": 4,
+      "missing_tokens": []
+    },
+    {
+      "id": "blazor_program_registration",
+      "path": "Chummer.Blazor/Program.cs",
+      "status": "passed",
+      "required_token_count": 2,
+      "missing_tokens": []
+    },
+    {
+      "id": "avalonia_di_registration",
+      "path": "Chummer.Desktop.Runtime/RunnerIntelligence/DesktopRunnerIntelligenceServiceCollectionExtensions.cs",
+      "status": "passed",
+      "required_token_count": 4,
+      "missing_tokens": []
+    },
+    {
+      "id": "desktop_shaped_dialogs",
+      "path": "Chummer.Presentation/Overview/DesktopDialogFactory.cs",
+      "status": "passed",
+      "required_token_count": 8,
+      "missing_tokens": []
+    },
+    {
+      "id": "hosted_route_entry_probe",
+      "path": "scripts/e2e-public-edge.cjs",
+      "status": "passed",
+      "required_token_count": 3,
+      "missing_tokens": []
+    },
+    {
+      "id": "self_host_receipt_metadata",
+      "path": "scripts/e2e-portal.sh",
+      "status": "passed",
+      "required_token_count": 3,
+      "missing_tokens": []
+    },
+    {
+      "id": "release_truth_docs",
+      "path": "docs/WORKBENCH_RELEASE_SIGNOFF.md",
+      "status": "passed",
+      "required_token_count": 3,
+      "missing_tokens": []
+    },
+    {
+      "id": "parity_goal_docs",
+      "path": "docs/BLAZOR_WEB_CLIENT_PARITY_GOAL.md",
+      "status": "passed",
+      "required_token_count": 5,
+      "missing_tokens": []
+    },
+    {
+      "id": "contract_doc",
+      "path": "docs/BLAZOR_RUNNER_INTELLIGENCE_STAGED_PROOF.md",
+      "status": "passed",
+      "required_token_count": 6,
+      "missing_tokens": []
+    },
+    {
+      "id": "docs_index_contract_link",
+      "path": "docs/BLAZOR_WEB_CLIENT_DOCS_INDEX.md",
+      "status": "passed",
+      "required_token_count": 9,
+      "missing_tokens": []
+    },
+    {
+      "id": "example_receipt_shape",
+      "path": "docs/examples/blazor-runner-intelligence-staged-proof.receipt.example.json",
+      "status": "passed",
+      "required_token_count": 6,
+      "missing_tokens": []
+    },
+    {
+      "id": "calculation_proof_contract",
+      "path": "docs/BLAZOR_RUNNER_INTELLIGENCE_CALCULATION_PROOF.md",
+      "status": "passed",
+      "required_token_count": 5,
+      "missing_tokens": []
+    },
+    {
+      "id": "status_utility_reporting",
+      "path": "scripts/print_blazor_public_edge_proof_status.py",
+      "status": "passed",
+      "required_token_count": 6,
+      "missing_tokens": []
+    },
+    {
+      "id": "source_staged_aggregate_registration",
+      "path": "scripts/materialize-blazor-source-staged-proof-set.py",
+      "status": "passed",
+      "required_token_count": 3,
+      "missing_tokens": []
+    }
+  ],
+  "failures": [],
+  "notes": [
+    "This receipt only proves that source, route metadata, and documentation staging agree.",
+    "It is not statistical-engine proof or browser execution proof.",
+    "Do not use this receipt to claim Runner Intelligence percentile or what-if calculation parity on chummer.run."
+  ]
+}

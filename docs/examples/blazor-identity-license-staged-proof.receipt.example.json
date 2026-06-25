@@ -1,0 +1,34 @@
+{
+  "contract_name": "chummer6-ui.blazor_identity_license_staged_proof",
+  "generated_at": "2026-06-24T00:00:00+00:00",
+  "status": "passed",
+  "proof_tier": "source_staged_no_browser_execution",
+  "route_lane": "promoted_blazor_workbench",
+  "expected_routes": [
+    "/blazor/workbench?workspace=ws-1&tab=tab-info&control=identity_license_add",
+    "/blazor/workbench?workspace=ws-1&tab=tab-info&control=identity_license_edit",
+    "/blazor/workbench?workspace=ws-1&tab=tab-info&control=identity_license_delete"
+  ],
+  "checks": [
+    {
+      "id": "product_workbench_affordances",
+      "path": "Chummer.Blazor/Components/Pages/Preview.razor",
+      "status": "passed",
+      "required_token_count": 4,
+      "missing_tokens": []
+    },
+    {
+      "id": "desktop_shaped_dialogs",
+      "path": "Chummer.Presentation/Overview/DesktopDialogFactory.cs",
+      "status": "passed",
+      "required_token_count": 10,
+      "missing_tokens": []
+    }
+  ],
+  "failures": [],
+  "notes": [
+    "This receipt only proves that source, runner, metadata, and documentation staging agree.",
+    "It is not a substitute for hosted Playwright execution proof or Docker self-host proof.",
+    "Do not use this receipt to claim identity/SIN/license workflow parity or persistence parity on chummer.run."
+  ]
+}

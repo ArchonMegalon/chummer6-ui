@@ -27,6 +27,8 @@ CHECKS = [
             "data-workbench-data-packs-action=\"custom_data\"",
             "data-workbench-data-packs-action=\"update_pack\"",
             "data-workbench-data-packs-action=\"validation_scope\"",
+            "data-workbench-data-packs-action=\"help\"",
+            "/help",
             "data-workbench-data-packs-action=\"data_folder\"",
         ],
     },
@@ -54,8 +56,8 @@ CHECKS = [
         "path": "docs/BLAZOR_WEB_CLIENT_PARITY_GOAL.md",
         "tokens": [
             "staged hosted workbench data-packs posture",
-            "sourcebooks, errata, custom data, update packs, validation scope, and data-folder context",
-            "not yet claiming live sourcebook loading, custom data import, or data-update parity",
+            "sourcebooks, errata, custom data, update packs, validation scope, help, and data-folder context",
+            "not yet claiming live sourcebook loading, custom data import, data-update, or portal help runtime parity",
         ],
     },
     {
@@ -96,13 +98,13 @@ def main() -> int:
         "status": "failed" if failures else "passed",
         "proof_tier": "source_staged_no_browser_execution",
         "route_lane": "promoted_blazor_workbench",
-        "expected_routes": ["/blazor/workbench"],
+        "expected_routes": ["/blazor/workbench", "/help"],
         "checks": evaluated_checks,
         "failures": failures,
         "notes": [
-            "This receipt only proves that promoted workbench data-packs source, style, status, and docs agree.",
-            "It is not a substitute for hosted Playwright execution proof, Docker self-host proof, live sourcebook-loading proof, custom-data import proof, or data-update proof.",
-            "Do not use this receipt to claim live sourcebook loading, custom data import, data update, or browser execution parity.",
+            "This receipt only proves that Chummer App and proof-compatible workbench data-packs source, style, status, and docs agree.",
+            "It is not a substitute for hosted Playwright execution proof, Docker self-host proof, live sourcebook-loading proof, custom-data import proof, data-update proof, or portal help runtime proof.",
+            "Do not use this receipt to claim live sourcebook loading, custom data import, data update, portal help runtime, or browser execution parity.",
         ],
     }
 

@@ -2,8 +2,11 @@
 set -euo pipefail
 
 CHUMMER_API_KEY="${CHUMMER_API_KEY:-}"
+SCRIPT_DIR="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)"
+REPO_ROOT="$(cd -- "${SCRIPT_DIR}/.." && pwd)"
+WORKSPACE_ROOT="$(cd -- "${REPO_ROOT}/.." && pwd)"
 PORTAL_PLAYWRIGHT_TIMEOUT_SECONDS="${CHUMMER_PORTAL_E2E_TIMEOUT_SECONDS:-240}"
-PORTAL_EDGE_COMPOSE_FILE="${CHUMMER_PORTAL_EDGE_COMPOSE_FILE:-/docker/chummercomplete/chummer-presentation/docker-compose.yml}"
+PORTAL_EDGE_COMPOSE_FILE="${CHUMMER_PORTAL_EDGE_COMPOSE_FILE:-${REPO_ROOT}/docker-compose.yml}"
 PORTAL_COMPOSE_PROFILE="${CHUMMER_PORTAL_COMPOSE_PROFILE:-portal}"
 PORTAL_EDGE_SERVICES="${CHUMMER_PORTAL_EDGE_SERVICES:-chummer-api chummer-blazor-portal chummer-hub-web-portal chummer-avalonia-browser chummer-portal}"
 PORTAL_BASE_URL="${CHUMMER_PORTAL_BASE_URL:-http://127.0.0.1:${CHUMMER_PORTAL_PORT:-8091}}"
@@ -12,9 +15,9 @@ PORTAL_SELF_HOST_WORKBENCH_PROOF_PATH="${CHUMMER_PORTAL_SELF_HOST_WORKBENCH_PROO
 NEXT90_M113_RECEIPT_PATH="${CHUMMER_NEXT90_M113_RECEIPT_PATH:-.codex-studio/published/NEXT90_M113_UI_GM_PREP_ROSTER_SURFACE.generated.json}"
 PORTAL_SKIP_EDGE_REBUILD="${CHUMMER_PORTAL_E2E_SKIP_EDGE_REBUILD:-0}"
 PORTAL_RUNTIME_REQUIRED="${CHUMMER_PORTAL_E2E_REQUIRE_RUNTIME:-1}"
-PORTAL_PLAYWRIGHT_SCRIPT="${CHUMMER_PORTAL_PLAYWRIGHT_SCRIPT:-/docker/chummercomplete/chummer-presentation/scripts/e2e-portal-playwright.cjs}"
-PORTAL_ROUTE_PROBE_SCRIPT="${CHUMMER_PORTAL_ROUTE_PROBE_SCRIPT:-/docker/chummercomplete/chummer-presentation/scripts/e2e-portal.cjs}"
-PORTAL_PLAYWRIGHT_COMPOSE_FILE="${CHUMMER_PORTAL_PLAYWRIGHT_COMPOSE_FILE:-/docker/chummercomplete/chummer-presentation/docker-compose.yml}"
+PORTAL_PLAYWRIGHT_SCRIPT="${CHUMMER_PORTAL_PLAYWRIGHT_SCRIPT:-${REPO_ROOT}/scripts/e2e-portal-playwright.cjs}"
+PORTAL_ROUTE_PROBE_SCRIPT="${CHUMMER_PORTAL_ROUTE_PROBE_SCRIPT:-${REPO_ROOT}/scripts/e2e-portal.cjs}"
+PORTAL_PLAYWRIGHT_COMPOSE_FILE="${CHUMMER_PORTAL_PLAYWRIGHT_COMPOSE_FILE:-${REPO_ROOT}/docker-compose.yml}"
 if [[ -n "${CHUMMER_PORTAL_PLAYWRIGHT:-}" ]]; then
   RUN_PORTAL_PLAYWRIGHT="$CHUMMER_PORTAL_PLAYWRIGHT"
 elif [[ "${CI:-}" == "true" || "${GITHUB_ACTIONS:-}" == "true" ]]; then
@@ -46,10 +49,16 @@ detect_local_playwright() {
   if [[ -n "${NODE_PATH:-}" ]]; then
     candidates+=("$NODE_PATH")
   fi
+  if [[ -n "${CHUMMER_PLAYWRIGHT_NODE_PATH:-}" ]]; then
+    candidates+=("$CHUMMER_PLAYWRIGHT_NODE_PATH")
+  fi
+  if [[ -n "${CHUMMER_PLAYWRIGHT_ROOT:-}" ]]; then
+    candidates+=("$CHUMMER_PLAYWRIGHT_ROOT/node_modules")
+  fi
   candidates+=(
-    "/docker/chummercomplete/chummer.run-services/node_modules"
-    "/docker/chummercomplete/node_modules"
-    "/docker/chummercomplete/chummer-presentation/scripts/node_modules"
+    "${WORKSPACE_ROOT}/chummer.run-services/node_modules"
+    "${WORKSPACE_ROOT}/node_modules"
+    "${REPO_ROOT}/scripts/node_modules"
   )
 
   local candidate
@@ -246,6 +255,8 @@ local_payload = {
         "/account/work",
         "/account/support",
         "/contact",
+        "/status",
+        "/help",
     ],
     "receipts": [
         {
@@ -292,6 +303,8 @@ self_host_payload = {
     "proof_routes": [
         "/",
         "/blazor/",
+        "/blazor/home",
+        "/blazor/app",
         "/blazor/workbench",
         "/blazor/workbench?workspace=ws-1",
         "/blazor/workbench?workspace=ws-1&command=save_character",
@@ -327,6 +340,9 @@ self_host_payload = {
         "/blazor/workbench?workspace=ws-1&tab=tab-gear&control=gear_add",
         "/blazor/workbench?workspace=ws-1&tab=tab-gear&control=gear_edit",
         "/blazor/workbench?workspace=ws-1&tab=tab-gear&control=gear_delete",
+        "/blazor/workbench?workspace=ws-1&tab=tab-stats&control=runner_benchmark",
+        "/blazor/workbench?workspace=ws-1&tab=tab-stats&control=runner_what_if",
+        "/blazor/workbench?workspace=ws-1&tab=tab-stats&control=runner_cohort_privacy",
         "/blazor/workbench?workspace=ws-1&tab=tab-info&control=show_source",
         "/blazor/workbench?workspace=ws-1&tab=tab-gear&control=gear_source",
         "/blazor/workbench?workspace=ws-1&tab=tab-gear&control=gear_mount",
@@ -347,6 +363,13 @@ self_host_payload = {
         "/blazor/preview?command=new_character_origin",
         "/downloads/",
         "/downloads/releases.json",
+        "/downloads/install/avalonia-linux-x64-installer",
+        "/downloads/install/avalonia-win-x64-installer",
+        "/downloads/install/blazor-desktop-linux-x64-installer",
+        "/downloads/install/blazor-desktop-win-x64-installer",
+        "/contact",
+        "/status",
+        "/help",
     ],
     "workflow_proofs": [
         "startup_workbench",

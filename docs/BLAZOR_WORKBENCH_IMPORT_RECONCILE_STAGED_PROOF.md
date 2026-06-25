@@ -2,9 +2,9 @@
 
 ## Purpose
 
-This staged proof keeps the promoted Blazor workbench source aligned around the import/reconcile workflow needed to make the web client feel like another Chummer desktop client for existing runners.
+This staged proof keeps the Chummer App and proof-compatible Blazor workbench source aligned around the import/reconcile workflow needed to make the web client feel like another Chummer desktop client for existing runners.
 
-It covers visible source posture for file selection, parse summary, rules mapping, custom data review, conflict review, and commit-import affordances on `/blazor/workbench`.
+It covers visible source posture for file selection, parse summary, rules mapping, custom data review, conflict review, commit-import, and same-origin help affordances on `/blazor/workbench`.
 
 ## Canonical Command
 
@@ -20,6 +20,6 @@ The command writes:
 
 ## Boundary
 
-This is source-staged alignment only. It does not prove hosted browser execution, Docker self-host execution, file upload, XML parsing, data migration, conflict resolution, or import persistence.
+This is source-staged alignment only. It does not prove hosted browser execution, Docker self-host execution, file upload, XML parsing, data migration, conflict resolution, import persistence, or portal help runtime behavior.
 
 Runtime promotion requires refreshed hosted public-edge execution proof and Docker self-host proof.

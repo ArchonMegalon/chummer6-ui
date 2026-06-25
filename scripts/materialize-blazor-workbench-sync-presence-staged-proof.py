@@ -27,6 +27,8 @@ CHECKS = [
             "data-workbench-sync-presence-action=\"local_cache\"",
             "data-workbench-sync-presence-action=\"sync_queue\"",
             "data-workbench-sync-presence-action=\"presence\"",
+            "data-workbench-sync-presence-action=\"help\"",
+            "/help",
             "data-workbench-sync-presence-action=\"handoff\"",
         ],
     },
@@ -54,8 +56,8 @@ CHECKS = [
         "path": "docs/BLAZOR_WEB_CLIENT_PARITY_GOAL.md",
         "tokens": [
             "staged hosted workbench sync-presence posture",
-            "connection, offline, local cache, sync queue, presence, and handoff",
-            "not yet claiming network sync, offline-cache, or multi-user presence parity",
+            "connection, offline, local cache, sync queue, presence, help, and handoff",
+            "not yet claiming network sync, offline-cache, portal help runtime, or multi-user presence parity",
         ],
     },
     {
@@ -96,13 +98,13 @@ def main() -> int:
         "status": "failed" if failures else "passed",
         "proof_tier": "source_staged_no_browser_execution",
         "route_lane": "promoted_blazor_workbench",
-        "expected_routes": ["/blazor/workbench"],
+        "expected_routes": ["/blazor/workbench", "/help"],
         "checks": evaluated_checks,
         "failures": failures,
         "notes": [
-            "This receipt only proves that promoted workbench sync-presence source, style, status, and docs agree.",
-            "It is not a substitute for hosted Playwright execution proof, Docker self-host proof, network sync proof, offline-cache proof, or multi-user presence proof.",
-            "Do not use this receipt to claim network sync, offline-cache, multi-user presence, handoff, or browser execution parity.",
+            "This receipt only proves that Chummer App and proof-compatible workbench sync-presence source, style, status, and docs agree.",
+            "It is not a substitute for hosted Playwright execution proof, Docker self-host proof, network sync proof, offline-cache proof, portal help runtime, or multi-user presence proof.",
+            "Do not use this receipt to claim network sync, offline-cache, portal help runtime, multi-user presence, handoff, or browser execution parity.",
         ],
     }
 

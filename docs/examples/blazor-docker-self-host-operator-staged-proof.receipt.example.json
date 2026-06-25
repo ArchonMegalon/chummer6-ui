@@ -1,0 +1,105 @@
+{
+  "contract_name": "chummer6-ui.blazor_docker_self_host_operator_staged_proof",
+  "generated_at": "2026-06-24T00:00:00+00:00",
+  "status": "passed",
+  "proof_tier": "source_staged_no_docker_runtime",
+  "route_lane": "portal_backed_blazor_workbench_self_host",
+  "expected_services": [
+    "chummer-api",
+    "chummer-blazor-portal",
+    "chummer-hub-web-portal",
+    "chummer-avalonia-browser",
+    "chummer-portal"
+  ],
+  "expected_path_base": "/blazor",
+  "expected_home_route": "/blazor/home",
+  "expected_app_route": "/blazor/app",
+  "expected_workbench_route": "/blazor/workbench",
+  "runtime_proof_receipt": ".codex-studio/published/BLAZOR_SELF_HOST_WORKBENCH_PROOF.generated.json",
+  "checks": [
+    {
+      "id": "portal_e2e_runtime_script",
+      "path": "scripts/e2e-portal.sh",
+      "status": "passed",
+      "required_token_count": 6,
+      "missing_tokens": []
+    },
+    {
+      "id": "docker_compose_portal_profile",
+      "path": "docker-compose.yml",
+      "status": "passed",
+      "required_token_count": 11,
+      "missing_tokens": []
+    },
+    {
+      "id": "blazor_root_redirect_is_path_base_aware",
+      "path": "Chummer.Blazor/Program.cs",
+      "status": "passed",
+      "required_token_count": 2,
+      "missing_tokens": []
+    },
+    {
+      "id": "self_host_runbook",
+      "path": "docs/BLAZOR_SELF_HOST_RUNBOOK.md",
+      "status": "passed",
+      "required_token_count": 5,
+      "missing_tokens": []
+    },
+    {
+      "id": "operator_contract_doc",
+      "path": "docs/BLAZOR_DOCKER_SELF_HOST_OPERATOR_PROOF.md",
+      "status": "passed",
+      "required_token_count": 19,
+      "missing_tokens": []
+    },
+    {
+      "id": "status_reporting",
+      "path": "scripts/print_blazor_public_edge_proof_status.py",
+      "status": "passed",
+      "required_token_count": 4,
+      "missing_tokens": []
+    },
+    {
+      "id": "docs_index",
+      "path": "docs/BLAZOR_WEB_CLIENT_DOCS_INDEX.md",
+      "status": "passed",
+      "required_token_count": 7,
+      "missing_tokens": []
+    },
+    {
+      "id": "release_signoff_visibility",
+      "path": "docs/WORKBENCH_RELEASE_SIGNOFF.md",
+      "status": "passed",
+      "required_token_count": 6,
+      "missing_tokens": []
+    },
+    {
+      "id": "source_staged_runbook_visibility",
+      "path": "docs/BLAZOR_SOURCE_STAGED_PROOF_RUNBOOK.md",
+      "status": "passed",
+      "required_token_count": 7,
+      "missing_tokens": []
+    },
+    {
+      "id": "self_host_env_example_analytics_boundary",
+      "path": "docs/examples/self-hosted-browser-workbench.env.example",
+      "status": "passed",
+      "required_token_count": 7,
+      "missing_tokens": []
+    },
+    {
+      "id": "example_receipt_shape",
+      "path": "docs/examples/blazor-docker-self-host-operator-staged-proof.receipt.example.json",
+      "status": "passed",
+      "required_token_count": 8,
+      "missing_tokens": []
+    }
+  ],
+  "failures": [],
+  "notes": [
+    "This proof is source alignment only for Docker self-host operator posture.",
+    "Self-host Rybbit analytics remains default-off unless the operator explicitly configures the Rybbit provider and site variables, with session replay and autocapture disabled for Chummer surfaces.",
+    "It does not start Docker, probe routes, or prove browser rendering.",
+    "Runtime evidence remains BLAZOR_SELF_HOST_WORKBENCH_PROOF.generated.json from scripts/e2e-portal.sh."
+  ]
+}

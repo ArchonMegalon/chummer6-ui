@@ -682,6 +682,9 @@ verify_windows_installer_payload_gate() {
   if [[ -n "$payload_path" ]]; then
     gate_args+=(--payload "$payload_path" --files-dir "$(dirname "$payload_path")")
   fi
+  if [[ "$installer_mode" == "bootstrap" ]]; then
+    gate_args+=(--require-embedded-bootstrap-metadata)
+  fi
 
   "$PYTHON_BIN" "$SCRIPT_DIR/verify-windows-installer-payloads.py" "${gate_args[@]}"
 }
@@ -1079,7 +1082,7 @@ build_windows_installer() {
     -p:PublishSingleFile=true \
     -p:GenerateRuntimeConfigurationFiles=true \
     -p:PublishTrimmed=false \
-    -p:EnableCompressionInSingleFile=true \
+    -p:EnableCompressionInSingleFile=false \
     -p:IncludeNativeLibrariesForSelfExtract=true \
     -p:ChummerInstallerPayloadRequired=false \
     -p:ChummerInstallerEmbedPayload=false \

@@ -68,13 +68,47 @@ const checks = [
       && text.includes('Download the current Windows installer.')
       && text.includes('Download the current Linux DEB package.')
       && text.includes('macOS is guided setup only today.')
+      && text.includes('data-download-panel="desktop-downloads"')
+      && text.includes('--portal-gold: #ffd46f')
+      && text.includes('--portal-mint: #8ff0bc') &&
+      text.includes('body::before') &&
+      text.includes('background-size: 4.25rem 4.25rem') &&
+      text.includes('@keyframes portal-surface-reveal') &&
+      text.includes('animation: portal-surface-reveal .38s cubic-bezier(.2,.78,.2,1) both')
+      && text.includes('desktop-downloads-title')
+      && text.includes('aria-labelledby="desktop-downloads-title"')
+      && text.includes('aria-describedby="fallback-link"')
       && text.includes('data-download-action="download-artifact"')
+      && text.includes('data-download-manifest-link')
+      && text.includes('Open raw releases manifest JSON')
+      && text.includes('data-download-status=')
+      && text.includes('data-download-version=')
+      && text.includes('data-download-artifact-summary=')
       && text.includes('data-download-install-route=')
       && text.includes('data-download-raw-url=')
       && text.includes('data-download-link-mode="raw-url"')
       && text.includes('data-download-platform=')
       && text.includes('data-download-platform-label')
+      && text.includes('published-download-description')
+      && text.includes('data-download-description')
+      && text.includes('aria-describedby="published-download-description"')
       && text.includes('direct download')
+      && text.includes('aria-label=')
+      && text.includes('data-install-route-public-route=')
+      && text.includes('data-install-route-link-mode="proof-required"')
+      && text.includes('proof-required handoff')
+      && text.includes('data-install-route-posture-label')
+      && text.includes('data-install-route-promotion-label')
+      && text.includes('data-install-route-artifact-label')
+      && text.includes('compatibility-handoff-description')
+      && text.includes('data-install-route-description')
+      && text.includes('aria-describedby="compatibility-handoff-description"')
+      && text.includes('data-self-host-downloads-panel="docker-operator"')
+      && text.includes('self-host-downloads-title')
+      && text.includes('data-self-host-docker-command="docker compose --profile portal up -d"')
+      && text.includes('data-self-host-release-manifest=')
+      && text.includes('data-self-host-browser-app=')
+      && text.includes('data-self-host-installer-boundary="proof-required"')
   },
   {
     url: `${baseUrl}/downloads/`,
@@ -95,6 +129,83 @@ const checks = [
         && Array.isArray(payload?.downloads)
         && payload.downloads.length > 0;
     }
+  },
+  {
+    url: `${baseUrl}/openapi/v1.json`,
+    assert: text => {
+      const payload = JSON.parse(text);
+      return typeof payload?.openapi === 'string'
+        && payload.openapi.length > 0
+        && typeof payload?.paths?.['/help'] === 'object'
+        && typeof payload?.paths?.['/app'] === 'object'
+        && typeof payload?.paths?.['/contact'] === 'object'
+        && typeof payload?.paths?.['/status'] === 'object'
+        && typeof payload?.paths?.['/blazor/app'] === 'object'
+        && typeof payload?.paths?.['/blazor/home'] === 'object'
+        && typeof payload?.paths?.['/blazor/'] === 'object'
+        && typeof payload?.paths?.['/downloads/'] === 'object'
+        && typeof payload?.paths?.['/downloads/releases.json'] === 'object'
+        && typeof payload?.paths?.['/downloads/install/{artifactId}'] === 'object';
+    }
+  },
+  {
+    url: `${baseUrl}/docs/docs.js`,
+    assert: text =>
+      text.includes('data-openapi-download-route="true"')
+      && text.includes('data-openapi-installer-handoff-route="true"')
+      && text.includes('data-openapi-release-status-route="true"')
+      && text.includes('data-openapi-support-handoff-route="true"')
+      && text.includes('data-openapi-help-handoff-route="true"')
+      && text.includes('data-openapi-chummer-app-route="true"')
+      && text.includes('data-openapi-chummer-home-route="true"')
+      && text.includes('data-openapi-blazor-entry-route="true"')
+      && text.includes('Chummer App')
+      && text.includes('Chummer overview')
+      && text.includes('Stable browser entry')
+      && text.includes('endpoint-summary')
+      && text.includes('escapeHtml')
+      && text.includes('/downloads/install/{artifactId}')
+  },
+  {
+    url: `${baseUrl}/docs/`,
+    assert: text =>
+      text.includes('data-docs-panel="operator-openapi-explorer"')
+      && text.includes('data-docs-shortcuts="operator-recovery"')
+      && text.includes('aria-describedby="docs-shortcuts-description"')
+      && text.includes('data-docs-shortcuts-description')
+      && text.includes('data-docs-summary="openapi-load-state"')
+      && text.includes('role="status"')
+      && text.includes('aria-live="polite"')
+      && text.includes('data-docs-endpoints="openapi-route-list"')
+      && text.includes('role="list"')
+      && text.includes('aria-label="Documented portal routes"')
+      && text.includes('data-docs-endpoint-card="openapi-route"')
+      && text.includes('data-docs-endpoint-route')
+      && text.includes('data-docs-endpoint-family')
+      && text.includes('data-docs-endpoint-methods')
+      && text.includes('data-docs-endpoint-summary')
+      && text.includes('role="listitem"')
+      && text.includes('data-docs-action="open-chummer-app"')
+      && text.includes('/app?command=character_roster')
+      && text.includes('data-docs-action="open-chummer-home"')
+      && text.includes('data-docs-action="open-downloads"')
+      && text.includes('data-docs-action="open-status"')
+      && text.includes('data-docs-action="open-help"')
+      && text.includes('data-docs-action="open-contact"')
+      && text.includes('--portal-gold: #ffd46f')
+      && text.includes('--portal-mint: #8ff0bc') &&
+      text.includes('body::before') &&
+      text.includes('background-size: 4.25rem 4.25rem') &&
+      text.includes('@keyframes portal-surface-reveal') &&
+      text.includes('animation: portal-surface-reveal .38s cubic-bezier(.2,.78,.2,1) both')
+      && text.includes('data-docs-action="open-openapi-json"')
+  },
+  {
+    url: `${baseUrl}/help`,
+    assert: text =>
+      (text.includes('data-portal-help-panel="handoff-guide"')
+        && text.includes('aria-label="Help recovery actions"'))
+      || text.includes('Open the right support case')
   },
   {
     url: `${baseUrl}/downloads/install/avalonia-linux-x64-installer`,
@@ -149,8 +260,12 @@ const checks = [
     url: `${baseUrl}/downloads/?next=%2Fdownloads%2Finstall%2Fblazor-desktop-linux-x64-installer&installState=proof_required`,
     assert: text =>
       text.includes('data-install-state="proof_required"')
-      && text.includes('Open browser workbench instead')
-      && text.includes('data-install-state-action="open-browser-workbench"')
+      && text.includes('data-install-next-route=')
+      && text.includes('/downloads/install/blazor-desktop-linux-x64-installer')
+      && text.includes('role="status"')
+      && text.includes('aria-live="polite"')
+      && text.includes('Open Chummer Online instead')
+      && text.includes('data-install-state-action="open-browser-app"')
   },
   {
     url: `${baseUrl}/play`,
@@ -168,6 +283,17 @@ const checks = [
       && text.includes('The build, platforms, and current state in one place.')
       && text.includes('Updated 2026-06-24.')
       && text.includes('Available now')
+      && text.includes('aria-label="Status recovery actions"')
+      && text.includes('data-portal-status-panel="release-availability"')
+      && text.includes('--portal-gold: #ffd46f')
+      && text.includes('--portal-mint: #8ff0bc') &&
+      text.includes('body::before') &&
+      text.includes('background-size: 4.25rem 4.25rem') &&
+      text.includes('@keyframes portal-surface-reveal') &&
+      text.includes('animation: portal-surface-reveal .38s cubic-bezier(.2,.78,.2,1) both')
+      && text.includes('data-portal-status-boundary="source-manifest-backed"')
+      && text.includes('data-portal-status-action="open-downloads"')
+      && text.includes('data-portal-status-action="open-help"')
   },
   {
     url: `${baseUrl}/ledger`,
@@ -181,6 +307,18 @@ const checks = [
     assert: text =>
       text.includes('Open the right support case')
       && text.includes('Product bug')
+      || (text.includes('data-portal-contact-panel="support-handoff"')
+        && text.includes('data-portal-contact-scenarios="installer-account-app"')
+        && text.includes('--portal-gold: #ffd46f')
+        && text.includes('--portal-mint: #8ff0bc') &&
+      text.includes('body::before') &&
+      text.includes('background-size: 4.25rem 4.25rem') &&
+      text.includes('@keyframes portal-surface-reveal') &&
+      text.includes('animation: portal-surface-reveal .38s cubic-bezier(.2,.78,.2,1) both')
+        && text.includes('aria-label="Contact recovery actions"')
+        && text.includes('data-portal-contact-action="open-status"')
+        && text.includes('data-portal-contact-action="open-downloads"')
+        && text.includes('data-portal-contact-action="open-help"'))
   },
   {
     url: `${baseUrl}/now`,
@@ -229,9 +367,26 @@ const checks = [
   {
     url: `${baseUrl}/blazor/`,
     assert: (text, response) =>
-      /\/blazor\/?$/.test(response.url)
-      && text.includes('Published browser surface')
-      && text.includes('Launch browser workbench')
+      /\/blazor\/app\/?$/.test(response.url)
+      && text.includes('Explore Chummer Online')
+      && hasBlazorBaseHref(text)
+  },
+  {
+    url: `${baseUrl}/app`,
+    assert: (text, response) =>
+      /\/blazor\/app\/?$/.test(response.url)
+      && hasBlazorBaseHref(text)
+  },
+  {
+    url: `${baseUrl}/blazor/home`,
+    assert: (text, response) =>
+      /\/blazor\/home\/?$/.test(response.url)
+      && text.includes('Chummer Online, the browser client for real runner work.')
+      && text.includes('Explore Chummer Online')
+      && text.includes('data-home-hero-action="explore-chummer-online"')
+      && text.includes('href="app?command=character_roster"')
+      && text.includes('Roster entry:')
+      && text.includes('/app?command=character_roster')
       && hasBlazorBaseHref(text)
   },
   {
@@ -240,6 +395,12 @@ const checks = [
       const payload = JSON.parse(text);
       return payload?.pathBase === '/blazor' && payload?.ok === true;
     }
+  },
+  {
+    url: `${baseUrl}/blazor/app`,
+    assert: (text, response) =>
+      /\/blazor\/app\/?$/.test(response.url)
+      && hasBlazorBaseHref(text)
   },
   {
     url: `${baseUrl}/blazor/workbench`,
@@ -545,6 +706,24 @@ const checks = [
     url: `${baseUrl}/blazor/workbench?workspace=ws-1&tab=tab-gear&control=gear_delete`,
     assert: (text, response) =>
       /\/blazor\/workbench\?workspace=ws-1&tab=tab-gear&control=gear_delete$/.test(response.url)
+      && hasBlazorBaseHref(text)
+  },
+  {
+    url: `${baseUrl}/blazor/workbench?workspace=ws-1&tab=tab-stats&control=runner_benchmark`,
+    assert: (text, response) =>
+      /\/blazor\/workbench\?workspace=ws-1&tab=tab-stats&control=runner_benchmark$/.test(response.url)
+      && hasBlazorBaseHref(text)
+  },
+  {
+    url: `${baseUrl}/blazor/workbench?workspace=ws-1&tab=tab-stats&control=runner_what_if`,
+    assert: (text, response) =>
+      /\/blazor\/workbench\?workspace=ws-1&tab=tab-stats&control=runner_what_if$/.test(response.url)
+      && hasBlazorBaseHref(text)
+  },
+  {
+    url: `${baseUrl}/blazor/workbench?workspace=ws-1&tab=tab-stats&control=runner_cohort_privacy`,
+    assert: (text, response) =>
+      /\/blazor\/workbench\?workspace=ws-1&tab=tab-stats&control=runner_cohort_privacy$/.test(response.url)
       && hasBlazorBaseHref(text)
   }
 ,

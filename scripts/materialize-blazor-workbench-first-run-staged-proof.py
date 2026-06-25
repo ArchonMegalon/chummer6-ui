@@ -28,6 +28,8 @@ CHECKS = [
             "data-workbench-first-run-action=\"restore_session\"",
             "data-workbench-first-run-action=\"self_host_setup\"",
             "data-workbench-first-run-action=\"docs\"",
+            "data-workbench-first-run-action=\"help\"",
+            "/help",
         ],
     },
     {
@@ -54,8 +56,8 @@ CHECKS = [
         "path": "docs/BLAZOR_WEB_CLIENT_PARITY_GOAL.md",
         "tokens": [
             "staged hosted workbench first-run posture",
-            "new runner, desktop import, sample runner, restore session, self-host setup, and docs",
-            "not yet claiming setup persistence, migration, import, or Docker installer execution parity",
+            "new runner, desktop import, sample runner, restore session, self-host setup, docs, and help",
+            "not yet claiming setup persistence, migration, import, Docker installer execution, or portal help runtime parity",
         ],
     },
     {
@@ -96,13 +98,13 @@ def main() -> int:
         "status": "failed" if failures else "passed",
         "proof_tier": "source_staged_no_browser_execution",
         "route_lane": "promoted_blazor_workbench",
-        "expected_routes": ["/blazor/workbench"],
+        "expected_routes": ["/blazor/workbench", "/help"],
         "checks": evaluated_checks,
         "failures": failures,
         "notes": [
-            "This receipt only proves that promoted workbench first-run source, style, status, and docs agree.",
-            "It is not a substitute for hosted Playwright execution proof, Docker self-host proof, setup persistence proof, migration proof, desktop import proof, or Docker installer execution proof.",
-            "Do not use this receipt to claim setup persistence, migration, import, Docker installer execution, or browser execution parity.",
+            "This receipt only proves that Chummer App and proof-compatible workbench first-run source, style, status, and docs agree.",
+            "It is not a substitute for hosted Playwright execution proof, Docker self-host proof, setup persistence proof, migration proof, desktop import proof, Docker installer execution proof, or portal help runtime proof.",
+            "Do not use this receipt to claim setup persistence, migration, import, Docker installer execution, portal help runtime, or browser execution parity.",
         ],
     }
 

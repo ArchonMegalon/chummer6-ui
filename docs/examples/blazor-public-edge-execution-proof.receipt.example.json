@@ -47,37 +47,37 @@
       "checks": [
         {
           "route": "/blazor/workbench?command=new_character",
-          "assertion": "startup command surface 'New Character' rendered from promoted workbench route",
+          "assertion": "startup command surface 'New Character' rendered from canonical proof-compatible route",
           "status": "pass"
         },
         {
           "route": "/blazor/workbench?command=new_character_origin",
-          "assertion": "startup command surface 'Origin Dossier' rendered from promoted workbench route",
+          "assertion": "startup command surface 'Origin Dossier' rendered from canonical proof-compatible route",
           "status": "pass"
         },
         {
           "route": "/blazor/workbench?command=character_roster",
-          "assertion": "startup command surface 'Character Roster' rendered from promoted workbench route",
+          "assertion": "startup command surface 'Character Roster' rendered from canonical proof-compatible route",
           "status": "pass"
         },
         {
           "route": "/blazor/workbench?command=master_index",
-          "assertion": "startup command surface 'Master Index' rendered from promoted workbench route",
+          "assertion": "startup command surface 'Master Index' rendered from canonical proof-compatible route",
           "status": "pass"
         },
         {
           "route": "/blazor/workbench?command=open_character",
-          "assertion": "startup command surface 'Open Character' rendered from promoted workbench route",
+          "assertion": "startup command surface 'Open Character' rendered from canonical proof-compatible route",
           "status": "pass"
         },
         {
           "route": "/blazor/workbench?command=open_for_printing",
-          "assertion": "startup command surface 'Open for Printing' rendered from promoted workbench route",
+          "assertion": "startup command surface 'Open for Printing' rendered from canonical proof-compatible route",
           "status": "pass"
         },
         {
           "route": "/blazor/workbench?command=open_for_export",
-          "assertion": "startup command surface 'Open for Export' rendered from promoted workbench route",
+          "assertion": "startup command surface 'Open for Export' rendered from canonical proof-compatible route",
           "status": "pass"
         }
       ]
@@ -339,7 +339,7 @@
       "checks": [
         {
           "route": "/blazor/workbench?workspace=<promoted-workspace-id>",
-          "assertion": "recent restored workspace affordance remains visible on promoted workbench route",
+          "assertion": "recent restored workspace affordance remains visible on canonical proof-compatible route",
           "status": "pass"
         }
       ]
@@ -351,7 +351,7 @@
       "checks": [
         {
           "route": "/blazor/workbench?workspace=<promoted-workspace-id>",
-          "assertion": "restored section continuation affordances remain visible on promoted workbench route",
+          "assertion": "restored section continuation affordances remain visible on canonical proof-compatible route",
           "status": "pass"
         }
       ]
@@ -363,22 +363,22 @@
       "checks": [
         {
           "route": "/blazor/workbench?workspace=<promoted-workspace-id>&tab=tab-info",
-          "assertion": "restored route landed with active tab 'tab-info' on promoted workbench route",
+          "assertion": "restored route landed with active tab 'tab-info' on canonical proof-compatible route",
           "status": "pass"
         },
         {
           "route": "/blazor/workbench?workspace=<promoted-workspace-id>&tab=tab-rules",
-          "assertion": "restored route landed with active tab 'tab-rules' on promoted workbench route",
+          "assertion": "restored route landed with active tab 'tab-rules' on canonical proof-compatible route",
           "status": "pass"
         },
         {
           "route": "/blazor/workbench?workspace=<promoted-workspace-id>&tab=tab-gear",
-          "assertion": "restored route landed with active tab 'tab-gear' on promoted workbench route",
+          "assertion": "restored route landed with active tab 'tab-gear' on canonical proof-compatible route",
           "status": "pass"
         },
         {
           "route": "/blazor/workbench?workspace=<promoted-workspace-id>&tab=tab-technomancer",
-          "assertion": "restored route landed with active tab 'tab-technomancer' on promoted workbench route",
+          "assertion": "restored route landed with active tab 'tab-technomancer' on canonical proof-compatible route",
           "status": "pass"
         }
       ]
@@ -451,7 +451,7 @@
       "checks": [
         {
           "route": "/blazor/workbench?workspace=<promoted-workspace-id>",
-          "assertion": "advanced restored action affordances remain visible on promoted workbench route",
+          "assertion": "advanced restored action affordances remain visible on canonical proof-compatible route",
           "status": "pass"
         }
       ]

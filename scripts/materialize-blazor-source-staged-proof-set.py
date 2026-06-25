@@ -48,6 +48,11 @@ REQUIRED_RECEIPTS = [
         "contract_name": "chummer6-ui.blazor_gear_maintenance_staged_proof",
     },
     {
+        "id": "runner_intelligence",
+        "path": PUBLISHED / "BLAZOR_RUNNER_INTELLIGENCE_STAGED_PROOF.generated.json",
+        "contract_name": "chummer6-ui.blazor_runner_intelligence_staged_proof",
+    },
+    {
         "id": "source_gear_utility",
         "path": PUBLISHED / "BLAZOR_SOURCE_GEAR_UTILITY_STAGED_PROOF.generated.json",
         "contract_name": "chummer6-ui.blazor_source_gear_utility_staged_proof",
@@ -384,6 +389,51 @@ REQUIRED_RECEIPTS = [
     },
 ]
 
+SOURCE_CALCULATION_RECEIPTS = [
+    {
+        "id": "runner_intelligence_calculation",
+        "path": PUBLISHED / "BLAZOR_RUNNER_INTELLIGENCE_CALCULATION_PROOF.generated.json",
+        "contract_name": "chummer6-ui.blazor_runner_intelligence_calculation_proof",
+        "proof_tier": "source_calculation_no_browser_execution",
+    },
+]
+
+SOURCE_CONTRACT_CHECKS = [
+    {
+        "id": "runbook_route_roles",
+        "path": REPO_ROOT / "docs" / "BLAZOR_SOURCE_STAGED_PROOF_RUNBOOK.md",
+        "tokens": [
+            "/app remains the clean public browser client path.",
+            "/blazor/app remains the hosted app path.",
+            "/blazor/workbench remains the proof-compatible route.",
+            "/blazor/preview remains the preview tools/result-state route.",
+            "source_contract_check_count",
+            "non-receipt source contract checks",
+            "source_staged_proof_set_route_lane",
+            "source_staged_proof_set_source_contract_checks",
+            "aggregate_source_alignment_only_not_browser_execution_route_role_source_contracts",
+            "source_contract_checks.docs_index_route_roles",
+            "chummer_app_proof_compatible_workbench_preview_tools",
+            "native installer amber/slate/mint progress chrome and high-contrast fallback source alignment",
+            "compatibility-route `/blazor/workbench` task-dock and slate/amber/mint/blue Chummer App theme-layer contract",
+        ],
+    },
+    {
+        "id": "docs_index_route_roles",
+        "path": REPO_ROOT / "docs" / "BLAZOR_WEB_CLIENT_DOCS_INDEX.md",
+        "tokens": [
+            "route roles for `/app`, `/blazor/app`, `/blazor/workbench`, and `/blazor/preview`",
+            "chummer_app_proof_compatible_workbench_preview_tools",
+            "source_contract_check_count",
+            "non-receipt source contract checks",
+            "source_staged_proof_set_route_lane",
+            "source_staged_proof_set_source_contract_checks",
+            "source_contract_checks.runbook_route_roles",
+            "source_contract_checks.docs_index_route_roles",
+        ],
+    },
+]
+
 
 def load_json(path: Path) -> dict:
     if not path.is_file():
@@ -395,12 +445,40 @@ def load_json(path: Path) -> dict:
     return loaded if isinstance(loaded, dict) else {"_invalid_json": True}
 
 
+def read_text(path: Path) -> str:
+    try:
+        return path.read_text(encoding="utf-8-sig")
+    except FileNotFoundError:
+        return ""
+
+
 def main() -> int:
     rows = []
+    calculation_rows = []
     failures = []
     passed_count = 0
+    calculation_passed_count = 0
     expected_route_count = 0
     source_check_count = 0
+    source_calculation_check_count = 0
+    source_contract_rows = []
+
+    for check in SOURCE_CONTRACT_CHECKS:
+        text = read_text(check["path"])
+        missing_tokens = [token for token in check["tokens"] if token not in text]
+        if not text:
+            failures.append(f"{check['id']}: missing {check['path']}")
+        elif missing_tokens:
+            failures.append(f"{check['id']}: missing {', '.join(missing_tokens)}")
+        source_contract_rows.append(
+            {
+                "id": check["id"],
+                "path": str(check["path"]),
+                "status": "failed" if not text or missing_tokens else "passed",
+                "required_token_count": len(check["tokens"]),
+                "missing_tokens": missing_tokens,
+            }
+        )
 
     for receipt in REQUIRED_RECEIPTS:
         path = receipt["path"]
@@ -445,20 +523,69 @@ def main() -> int:
             }
         )
 
+    for receipt in SOURCE_CALCULATION_RECEIPTS:
+        path = receipt["path"]
+        payload = load_json(path)
+        status = str(payload.get("status") or "missing").strip().lower() if payload else "missing"
+        contract_name = str(payload.get("contract_name") or "").strip()
+        proof_tier = str(payload.get("proof_tier") or "").strip()
+        expected_contract = receipt["contract_name"]
+        expected_tier = receipt["proof_tier"]
+        checks = payload.get("checks") or []
+        checks_count = len(checks) if isinstance(checks, list) else 0
+
+        if not payload:
+            failures.append(f"{receipt['id']}: missing {path}")
+        elif payload.get("_invalid_json"):
+            failures.append(f"{receipt['id']}: invalid JSON at {path}")
+        elif contract_name != expected_contract:
+            failures.append(f"{receipt['id']}: contract mismatch {contract_name or 'missing'}")
+        elif status != "passed":
+            failures.append(f"{receipt['id']}: status {status or 'missing'}")
+        elif proof_tier != expected_tier:
+            failures.append(f"{receipt['id']}: proof_tier {proof_tier or 'missing'}")
+        else:
+            calculation_passed_count += 1
+
+        source_calculation_check_count += checks_count
+        calculation_rows.append(
+            {
+                "id": receipt["id"],
+                "path": str(path),
+                "expected_contract_name": expected_contract,
+                "contract_name": contract_name or "missing",
+                "status": status or "missing",
+                "proof_tier": proof_tier or "missing",
+                "source_calculation_check_count": checks_count,
+            }
+        )
+
     payload = {
         "contract_name": "chummer6-ui.blazor_source_staged_proof_set",
         "generated_at": datetime.now(timezone.utc).isoformat(),
         "status": "failed" if failures else "passed",
         "proof_tier": "source_staged_no_browser_execution",
-        "route_lane": "promoted_blazor_workbench",
+        "route_lane": "chummer_app_proof_compatible_workbench_preview_tools",
         "required_receipt_count": len(REQUIRED_RECEIPTS),
         "passed_receipt_count": passed_count,
+        "source_calculation_receipt_count": len(SOURCE_CALCULATION_RECEIPTS),
+        "source_calculation_passed_count": calculation_passed_count,
         "expected_route_count": expected_route_count,
         "source_check_count": source_check_count,
+        "source_calculation_check_count": source_calculation_check_count,
+        "source_contract_check_count": len(source_contract_rows),
+        "source_contract_checks": source_contract_rows,
         "required_receipts": rows,
+        "source_calculation_receipts": calculation_rows,
         "failures": failures,
         "notes": [
-            "This aggregate only summarizes source-staged receipts.",
+            "This aggregate summarizes source-staged receipts plus explicitly separated source-calculation receipts.",
+            "/app remains the clean public browser client path.",
+            "/blazor/app remains the hosted app path.",
+            "/blazor/workbench remains the proof-compatible route.",
+            "/blazor/preview remains the preview tools and result-state route.",
+            "source_contract_check_count summarizes non-receipt source contract checks such as route-role documentation.",
+            "Source-calculation receipts are not authoritative SR rules-engine validation and are not browser execution evidence.",
             "It is not a hosted Playwright execution receipt and is not Docker self-host browser execution evidence.",
             "Keep this aggregate separate from BLAZOR_BROWSER_LANE_PROOF_SET.generated.json release readiness.",
         ],

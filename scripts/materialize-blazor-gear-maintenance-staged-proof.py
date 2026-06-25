@@ -110,6 +110,38 @@ CHECKS = [
         ],
     },
     {
+        "id": "contract_doc",
+        "path": "docs/BLAZOR_GEAR_MAINTENANCE_STAGED_PROOF.md",
+        "tokens": [
+            "gear maintenance utility posture",
+            "restored `tab-gear`",
+            "gear_add",
+            "gear_edit",
+            "gear_delete",
+            "gear_maintenance_staged_note=source_alignment_only_not_browser_execution",
+            "not browser execution proof",
+        ],
+    },
+    {
+        "id": "docs_index_contract_link",
+        "path": "docs/BLAZOR_WEB_CLIENT_DOCS_INDEX.md",
+        "tokens": [
+            "docs/BLAZOR_GEAR_MAINTENANCE_STAGED_PROOF.md",
+            "scripts/materialize-blazor-gear-maintenance-staged-proof.py",
+            "docs/examples/blazor-gear-maintenance-staged-proof.receipt.example.json",
+        ],
+    },
+    {
+        "id": "example_receipt_shape",
+        "path": "docs/examples/blazor-gear-maintenance-staged-proof.receipt.example.json",
+        "tokens": [
+            '"contract_name": "chummer6-ui.blazor_gear_maintenance_staged_proof"',
+            '"proof_tier": "source_staged_no_browser_execution"',
+            "gear_add",
+            "Do not use this receipt to claim gear workflow parity on chummer.run.",
+        ],
+    },
+    {
         "id": "status_utility_reporting",
         "path": "scripts/print_blazor_public_edge_proof_status.py",
         "tokens": [

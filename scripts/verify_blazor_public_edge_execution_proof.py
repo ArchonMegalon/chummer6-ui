@@ -5,7 +5,7 @@ import json
 from pathlib import Path
 
 
-REPO_ROOT = Path("/docker/chummercomplete/chummer-presentation")
+REPO_ROOT = Path(__file__).resolve().parents[1]
 RECEIPT_PATH = REPO_ROOT / ".codex-studio" / "published" / "BLAZOR_PUBLIC_EDGE_EXECUTION_PROOF.generated.json"
 EXPECTED_CONTRACT = "chummer6-ui.blazor_public_edge_execution_proof"
 ALLOWED_STATUSES = {"not_run", "pass", "passed", "ready"}
@@ -142,7 +142,7 @@ def main() -> int:
                     elif not route.startswith(f"{EXPECTED_PROMOTED_ROUTE_BASE}?") and route != EXPECTED_PROMOTED_ROUTE_BASE:
                         reasons.append(
                             "workflow family "
-                            f"{workflow_id!r} check #{index} route must stay on the promoted workbench lane; got {route!r}"
+                            f"{workflow_id!r} check #{index} route must stay on the canonical proof-compatible lane; got {route!r}"
                         )
 
                     if not assertion:

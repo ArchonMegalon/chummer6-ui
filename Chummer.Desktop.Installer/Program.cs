@@ -1635,7 +1635,7 @@ internal static class Program
         {
             Dock = DockStyle.Top,
             Height = 3,
-            BackColor = Color.FromArgb(57, 196, 156)
+            BackColor = Color.FromArgb(143, 240, 188)
         };
 
         Label stateLabel = new()
@@ -1717,7 +1717,7 @@ internal static class Program
             DialogResult = DialogResult.Yes,
             Margin = new Padding(8, 0, 0, 0),
             Padding = new Padding(14, 0, 14, 2),
-            BackColor = Color.FromArgb(57, 196, 156),
+            BackColor = Color.FromArgb(143, 240, 188),
             ForeColor = Color.FromArgb(8, 13, 20),
             FlatStyle = FlatStyle.Flat,
             AutoEllipsis = true,
@@ -2398,8 +2398,8 @@ internal static class Program
             Text = $"{displayName} Installer - Installing";
             Name = "ChummerInstallerProgressDialog";
             AccessibleName = $"{displayName} installer progress";
-            BackColor = Color.FromArgb(9, 13, 20);
-            ForeColor = Color.White;
+            BackColor = Color.FromArgb(8, 11, 13);
+            ForeColor = Color.FromArgb(255, 247, 227);
             Font = new Font("Segoe UI", 7.75F, FontStyle.Regular, GraphicsUnit.Point);
             DoubleBuffered = true;
 
@@ -2407,21 +2407,21 @@ internal static class Program
             {
                 Dock = DockStyle.Top,
                 Height = 3,
-                BackColor = Color.FromArgb(57, 196, 156)
+                BackColor = Color.FromArgb(255, 212, 111)
             };
 
             Panel surface = new()
             {
                 Dock = DockStyle.Fill,
                 Padding = InstallerSurfacePadding,
-                BackColor = Color.FromArgb(14, 19, 28)
+                BackColor = Color.FromArgb(16, 22, 26)
             };
 
             Panel glyphTile = new()
             {
                 Size = new Size(56, 56),
                 Location = new Point(0, 0),
-                BackColor = Color.FromArgb(22, 28, 40)
+                BackColor = Color.FromArgb(25, 32, 38)
             };
 
             PictureBox appGlyph = new()
@@ -2446,7 +2446,7 @@ internal static class Program
                 AutoSize = false,
                 Text = "INSTALLER",
                 Font = new Font("Segoe UI Semibold", 6.75F, FontStyle.Bold, GraphicsUnit.Point),
-                ForeColor = Color.FromArgb(116, 223, 193),
+                ForeColor = Color.FromArgb(143, 240, 188),
                 Dock = DockStyle.Top,
                 Height = 16,
                 TextAlign = ContentAlignment.BottomLeft,
@@ -2458,7 +2458,7 @@ internal static class Program
                 AutoSize = false,
                 Text = displayName,
                 Font = new Font("Segoe UI Semibold", 10F, FontStyle.Bold, GraphicsUnit.Point),
-                ForeColor = Color.White,
+                ForeColor = Color.FromArgb(255, 243, 207),
                 Dock = DockStyle.Top,
                 Height = 44,
                 TextAlign = ContentAlignment.BottomLeft,
@@ -2472,7 +2472,7 @@ internal static class Program
                 AutoSize = false,
                 Text = "Shortcuts and first launch are prepared automatically.",
                 Font = new Font("Segoe UI", 7.5F, FontStyle.Regular, GraphicsUnit.Point),
-                ForeColor = Color.FromArgb(207, 216, 230),
+                ForeColor = Color.FromArgb(255, 247, 227),
                 Dock = DockStyle.Top,
                 Height = 40,
                 TextAlign = ContentAlignment.MiddleLeft,
@@ -2486,7 +2486,7 @@ internal static class Program
                 AutoSize = false,
                 Text = "Preparing installer",
                 Font = new Font("Segoe UI", 7.5F, FontStyle.Regular, GraphicsUnit.Point),
-                ForeColor = Color.White,
+                ForeColor = Color.FromArgb(255, 247, 227),
                 Dock = DockStyle.Top,
                 Height = 44,
                 TextAlign = ContentAlignment.MiddleLeft,
@@ -2499,7 +2499,7 @@ internal static class Program
             {
                 Dock = DockStyle.Top,
                 Height = 12,
-                BackColor = Color.FromArgb(33, 42, 58),
+                BackColor = Color.FromArgb(25, 32, 38),
                 Margin = new Padding(0, 0, 0, 8)
             };
 
@@ -2507,7 +2507,7 @@ internal static class Program
             {
                 Dock = DockStyle.Left,
                 Width = 0,
-                BackColor = Color.FromArgb(57, 196, 156)
+                BackColor = Color.FromArgb(143, 240, 188)
             };
             _progressTrack.Controls.Add(_progressFill);
 
@@ -2523,7 +2523,7 @@ internal static class Program
                 AutoSize = false,
                 Text = "Elapsed: 0s",
                 Font = new Font("Segoe UI", 7.25F, FontStyle.Regular, GraphicsUnit.Point),
-                ForeColor = Color.FromArgb(178, 190, 208),
+                ForeColor = Color.FromArgb(255, 247, 227),
                 Dock = DockStyle.Left,
                 Width = 160,
                 Height = 22,
@@ -2535,7 +2535,7 @@ internal static class Program
                 AutoSize = false,
                 Text = "Preparing…",
                 Font = new Font("Segoe UI", 7.25F, FontStyle.Regular, GraphicsUnit.Point),
-                ForeColor = Color.FromArgb(178, 190, 208),
+                ForeColor = Color.FromArgb(255, 247, 227),
                 Dock = DockStyle.Right,
                 Width = 96,
                 Height = 22,
@@ -2550,7 +2550,7 @@ internal static class Program
                 AutoSize = false,
                 Text = "This may take a few minutes on slower systems.",
                 Font = new Font("Segoe UI", 7.25F, FontStyle.Regular, GraphicsUnit.Point),
-                ForeColor = Color.FromArgb(146, 160, 180),
+                ForeColor = Color.FromArgb(255, 212, 111),
                 Dock = DockStyle.Top,
                 Height = 26,
                 TextAlign = ContentAlignment.MiddleLeft,
@@ -2588,6 +2588,24 @@ internal static class Program
             surface.Controls.Add(body);
             Controls.Add(surface);
             Controls.Add(accentBar);
+
+            if (SystemInformation.HighContrast)
+            {
+                BackColor = SystemColors.Window;
+                ForeColor = SystemColors.WindowText;
+                surface.BackColor = SystemColors.Window;
+                glyphTile.BackColor = SystemColors.Control;
+                accentBar.BackColor = SystemColors.Highlight;
+                eyebrowLabel.ForeColor = SystemColors.Highlight;
+                titleLabel.ForeColor = SystemColors.WindowText;
+                copyLabel.ForeColor = SystemColors.WindowText;
+                _statusLabel.ForeColor = SystemColors.WindowText;
+                _progressTrack.BackColor = SystemColors.ControlDark;
+                _progressFill.BackColor = SystemColors.Highlight;
+                _elapsedLabel.ForeColor = SystemColors.WindowText;
+                _progressValueLabel.ForeColor = SystemColors.WindowText;
+                hintLabel.ForeColor = SystemColors.WindowText;
+            }
         }
 
         public void CloseSafely()

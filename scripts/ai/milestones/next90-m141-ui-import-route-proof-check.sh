@@ -3,10 +3,11 @@ set -euo pipefail
 
 repo_root="$(cd "$(dirname "${BASH_SOURCE[0]}")/../../.." && pwd)"
 cd "$repo_root"
+workspace_root="$(cd "$repo_root/.." && pwd)"
 
-registry_path="${CHUMMER_NEXT90_REGISTRY_PATH:-/docker/chummercomplete/chummer-design/products/chummer/NEXT_90_DAY_PRODUCT_ADVANCE_REGISTRY.yaml}"
-queue_path="${CHUMMER_NEXT90_QUEUE_PATH:-/docker/fleet/.codex-studio/published/NEXT_90_DAY_QUEUE_STAGING.generated.yaml}"
-design_queue_path="${CHUMMER_NEXT90_DESIGN_QUEUE_PATH:-/docker/chummercomplete/chummer-design/products/chummer/NEXT_90_DAY_QUEUE_STAGING.generated.yaml}"
+registry_path="${CHUMMER_NEXT90_REGISTRY_PATH:-$workspace_root/chummer-design/products/chummer/NEXT_90_DAY_PRODUCT_ADVANCE_REGISTRY.yaml}"
+queue_path="${CHUMMER_NEXT90_QUEUE_PATH:-$workspace_root/fleet/.codex-studio/published/NEXT_90_DAY_QUEUE_STAGING.generated.yaml}"
+design_queue_path="${CHUMMER_NEXT90_DESIGN_QUEUE_PATH:-$workspace_root/chummer-design/products/chummer/NEXT_90_DAY_QUEUE_STAGING.generated.yaml}"
 receipt_path="${CHUMMER_VETERAN_TASK_TIME_EVIDENCE_GATE_PATH:-$repo_root/.codex-studio/published/VETERAN_TASK_TIME_EVIDENCE_GATE.generated.json}"
 milestone_receipt_path="${CHUMMER_NEXT90_M141_UI_RECEIPT_PATH:-$repo_root/.codex-studio/published/NEXT90_M141_UI_IMPORT_ROUTE_PROOF.generated.json}"
 
@@ -44,7 +45,7 @@ EXPECTED_SURFACES = [
 ]
 EXPECTED_DIRECT_PROOF_COMMAND = "bash scripts/ai/milestones/next90-m141-ui-import-route-proof-check.sh"
 EXPECTED_TARGETED_TEST_COMMAND = 'dotnet test --project Chummer.Tests/Chummer.Tests.csproj --filter "Next90M141UiImportRouteProofGuardTests|DesktopDialogFactoryTests|CharacterOverviewPresenterTests|DualHeadAcceptanceTests|AvaloniaFlagshipUiGateTests" --no-restore'
-EXPECTED_DESIGN_QUEUE_PATH = "/docker/chummercomplete/chummer-design/products/chummer/NEXT_90_DAY_QUEUE_STAGING.generated.yaml"
+EXPECTED_DESIGN_QUEUE_PATH = str(design_queue_path)
 EXPECTED_SCREENSHOTS = [
     "38-translator-dialog-light.png",
     "39-xml-editor-dialog-light.png",

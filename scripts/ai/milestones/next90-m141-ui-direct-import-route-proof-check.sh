@@ -2,7 +2,8 @@
 set -euo pipefail
 
 repo_root_physical="$(cd "$(dirname "${BASH_SOURCE[0]}")/../../.." && pwd -P)"
-repo_root_alias_candidate="${CHUMMER_UI_REPO_ROOT_ALIAS:-/docker/chummercomplete/chummer6-ui}"
+workspace_root="$(cd "$repo_root_physical/.." && pwd -P)"
+repo_root_alias_candidate="${CHUMMER_UI_REPO_ROOT_ALIAS:-$workspace_root/chummer6-ui}"
 repo_root="$repo_root_physical"
 if [[ -n "$repo_root_alias_candidate" && -d "$repo_root_alias_candidate" ]]; then
   alias_physical="$(cd "$repo_root_alias_candidate" && pwd -P)"
@@ -16,7 +17,7 @@ registry_path="${CHUMMER_NEXT90_REGISTRY_PATH:-$repo_root/.codex-design/product/
 queue_path="${CHUMMER_NEXT90_QUEUE_PATH:-$repo_root/.codex-design/product/NEXT_90_DAY_QUEUE_STAGING.generated.yaml}"
 design_queue_path="${CHUMMER_NEXT90_DESIGN_QUEUE_PATH:-$repo_root/.codex-design/product/NEXT_90_DAY_QUEUE_STAGING.generated.yaml}"
 receipt_path="${CHUMMER_NEXT90_M141_UI_RECEIPT_PATH:-$repo_root/.codex-studio/published/NEXT90_M141_UI_DIRECT_IMPORT_ROUTE_PROOF.generated.json}"
-flagship_frontier_root="${CHUMMER_FLAGSHIP_FRONTIER_ROOT:-/docker/fleet/.codex-studio/published/full-product-frontiers}"
+flagship_frontier_root="${CHUMMER_FLAGSHIP_FRONTIER_ROOT:-$workspace_root/fleet/.codex-studio/published/full-product-frontiers}"
 flagship_frontier_id="${CHUMMER_FLAGSHIP_FRONTIER_ID:-1922169755}"
 default_flagship_frontier_path="$(
   python3 - <<'PY' "$flagship_frontier_root" "$flagship_frontier_id"
@@ -484,7 +485,7 @@ def design_queue_path_matches_expected(path: Path) -> bool:
     expected_candidates = {
         normalize_space(EXPECTED_DESIGN_QUEUE_PATH),
         normalize_space(str(repo_root / ".codex-design/product/NEXT_90_DAY_QUEUE_STAGING.generated.yaml")),
-        normalize_space("/docker/chummercomplete/chummer-design/products/chummer/NEXT_90_DAY_QUEUE_STAGING.generated.yaml"),
+        normalize_space(str(repo_root.parent / "chummer-design" / "products" / "chummer" / "NEXT_90_DAY_QUEUE_STAGING.generated.yaml")),
     }
     try:
         expected_candidates.add(normalize_space(str(path.resolve())))

@@ -28,6 +28,8 @@ CHECKS = [
             "data-workbench-context-actions-action=\"remove\"",
             "data-workbench-context-actions-action=\"duplicate\"",
             "data-workbench-context-actions-action=\"source\"",
+            "data-workbench-context-actions-action=\"help\"",
+            "/help",
             "data-workbench-context-actions-action=\"recover\"",
         ],
     },
@@ -55,8 +57,8 @@ CHECKS = [
         "path": "docs/BLAZOR_WEB_CLIENT_PARITY_GOAL.md",
         "tokens": [
             "staged hosted workbench context-actions posture",
-            "add, edit, remove, duplicate, source lookup, and recover",
-            "not yet claiming right-click menu or selection-state runtime parity",
+            "add, edit, remove, duplicate, source lookup, help, and recover",
+            "not yet claiming right-click menu, portal help runtime, or selection-state runtime parity",
         ],
     },
     {
@@ -110,13 +112,13 @@ def main() -> int:
         "status": "failed" if failures else "passed",
         "proof_tier": "source_staged_no_browser_execution",
         "route_lane": "promoted_blazor_workbench",
-        "expected_routes": ["/blazor/workbench"],
+        "expected_routes": ["/blazor/workbench", "/help"],
         "checks": checks,
         "failures": failures,
         "notes": [
-            "This receipt only proves that promoted workbench context-actions source, style, status, and docs agree.",
-            "It is not a substitute for hosted Playwright execution proof, Docker self-host proof, right-click menu proof, or selection-state runtime proof.",
-            "Do not use this receipt to claim right-click menu behavior, selection-state runtime behavior, or browser execution parity.",
+            "This receipt only proves that Chummer App and proof-compatible workbench context-actions source, style, status, and docs agree.",
+            "It is not a substitute for hosted Playwright execution proof, Docker self-host proof, right-click menu proof, portal help runtime, or selection-state runtime proof.",
+            "Do not use this receipt to claim right-click menu behavior, portal help runtime, selection-state runtime behavior, or browser execution parity.",
         ],
     }
 

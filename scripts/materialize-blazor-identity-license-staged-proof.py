@@ -115,6 +115,38 @@ CHECKS = [
         ],
     },
     {
+        "id": "contract_doc",
+        "path": "docs/BLAZOR_IDENTITY_LICENSE_STAGED_PROOF.md",
+        "tokens": [
+            "identity/SIN/license utility posture",
+            "restored `tab-info`",
+            "identity_license_add",
+            "Legal Posture",
+            "lifestyle-cover context",
+            "identity_license_staged_note=source_alignment_only_not_browser_execution",
+            "not browser execution proof",
+        ],
+    },
+    {
+        "id": "docs_index_contract_link",
+        "path": "docs/BLAZOR_WEB_CLIENT_DOCS_INDEX.md",
+        "tokens": [
+            "docs/BLAZOR_IDENTITY_LICENSE_STAGED_PROOF.md",
+            "scripts/materialize-blazor-identity-license-staged-proof.py",
+            "docs/examples/blazor-identity-license-staged-proof.receipt.example.json",
+        ],
+    },
+    {
+        "id": "example_receipt_shape",
+        "path": "docs/examples/blazor-identity-license-staged-proof.receipt.example.json",
+        "tokens": [
+            '"contract_name": "chummer6-ui.blazor_identity_license_staged_proof"',
+            '"proof_tier": "source_staged_no_browser_execution"',
+            "identity_license_add",
+            "Do not use this receipt to claim identity/SIN/license workflow parity or persistence parity on chummer.run.",
+        ],
+    },
+    {
         "id": "status_utility_reporting",
         "path": "scripts/print_blazor_public_edge_proof_status.py",
         "tokens": [

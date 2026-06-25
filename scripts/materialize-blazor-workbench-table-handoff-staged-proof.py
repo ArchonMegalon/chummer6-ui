@@ -28,6 +28,8 @@ CHECKS = [
             "data-workbench-table-handoff-action=\"public-handout\"",
             "data-workbench-table-handoff-action=\"private-notes\"",
             "data-workbench-table-handoff-action=\"table-export\"",
+            "data-workbench-table-handoff-action=\"help\"",
+            "href=\"/help\"",
         ],
     },
     {
@@ -54,8 +56,8 @@ CHECKS = [
         "path": "docs/BLAZOR_WEB_CLIENT_PARITY_GOAL.md",
         "tokens": [
             "staged hosted workbench table-handoff posture",
-            "GM packet, initiative card, condition tracker, public handout, private notes, and table export",
-            "not yet claiming packet generation, live GM sharing, condition synchronization, handout publication, or table export persistence parity",
+            "GM packet, initiative card, condition tracker, public handout, private notes, table export, and help",
+            "not yet claiming packet generation, live GM sharing, condition synchronization, handout publication, table export persistence parity, or portal help runtime parity",
         ],
     },
     {
@@ -96,13 +98,13 @@ def main() -> int:
         "status": "failed" if failures else "passed",
         "proof_tier": "source_staged_no_browser_execution",
         "route_lane": "promoted_blazor_workbench",
-        "expected_routes": ["/blazor/workbench"],
+        "expected_routes": ["/blazor/workbench", "/help"],
         "checks": evaluated_checks,
         "failures": failures,
         "notes": [
-            "This receipt only proves that promoted workbench table-handoff source, style, status, and docs agree.",
-            "It is not a substitute for hosted browser execution, packet generation, initiative-card rendering, condition export, handout filtering, private-note partitioning, or table export parity.",
-            "Do not use this receipt to claim complete table handoff, persistence, or browser execution parity.",
+            "This receipt only proves that Chummer App and proof-compatible workbench table-handoff source, style, status, and docs agree.",
+            "It is not a substitute for hosted browser execution, packet generation, initiative-card rendering, condition export, handout filtering, private-note partitioning, table export parity, or portal help runtime proof.",
+            "Do not use this receipt to claim complete table handoff, persistence, portal help runtime behavior, or browser execution parity.",
         ],
     }
 

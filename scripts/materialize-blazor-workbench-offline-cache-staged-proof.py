@@ -28,6 +28,8 @@ CHECKS = [
             "data-workbench-offline-cache-action=\"local-export\"",
             "data-workbench-offline-cache-action=\"stale-data\"",
             "data-workbench-offline-cache-action=\"sync-health\"",
+            "data-workbench-offline-cache-action=\"help\"",
+            "href=\"/help\"",
         ],
     },
     {
@@ -54,8 +56,8 @@ CHECKS = [
         "path": "docs/BLAZOR_WEB_CLIENT_PARITY_GOAL.md",
         "tokens": [
             "staged hosted workbench offline/cache posture",
-            "cache status, queued edits, reconnect, local export, stale data, and sync health",
-            "not yet claiming service-worker caching, queued mutation persistence, reconnect execution, offline export generation, or sync reconciliation parity",
+            "cache status, queued edits, reconnect, local export, stale data, sync health, and help",
+            "not yet claiming service-worker caching, queued mutation persistence, reconnect execution, offline export generation, sync reconciliation parity, or portal help runtime parity",
         ],
     },
     {
@@ -96,13 +98,13 @@ def main() -> int:
         "status": "failed" if failures else "passed",
         "proof_tier": "source_staged_no_browser_execution",
         "route_lane": "promoted_blazor_workbench",
-        "expected_routes": ["/blazor/workbench"],
+        "expected_routes": ["/blazor/workbench", "/help"],
         "checks": evaluated_checks,
         "failures": failures,
         "notes": [
-            "This receipt only proves that promoted workbench offline/cache source, style, status, and docs agree.",
-            "It is not a substitute for hosted browser execution, service-worker caching, queued mutation persistence, reconnect execution, offline export generation, or sync reconciliation parity.",
-            "Do not use this receipt to claim complete offline support, persistence, or browser execution parity.",
+            "This receipt only proves that Chummer App and proof-compatible workbench offline/cache source, style, status, and docs agree.",
+            "It is not a substitute for hosted browser execution, service-worker caching, queued mutation persistence, reconnect execution, offline export generation, sync reconciliation parity, or portal help runtime proof.",
+            "Do not use this receipt to claim complete offline support, persistence, portal help runtime behavior, or browser execution parity.",
         ],
     }
 

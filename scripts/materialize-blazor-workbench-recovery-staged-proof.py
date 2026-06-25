@@ -117,7 +117,7 @@ def main() -> int:
         "checks": checks,
         "failures": failures,
         "notes": [
-            "This receipt only proves that promoted workbench recovery source, style, status, and docs agree.",
+            "This receipt only proves that Chummer App and proof-compatible workbench recovery source, style, status, and docs agree.",
             "It is not a substitute for hosted Playwright execution proof or Docker self-host proof.",
             "Do not use this receipt to claim reload, restore, or session-continuity runtime behavior.",
         ],

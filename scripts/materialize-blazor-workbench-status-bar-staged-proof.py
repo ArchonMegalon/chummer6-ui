@@ -22,12 +22,14 @@ CHECKS = [
         "tokens": [
             "Workbench status bar",
             "data-workbench-status-bar=\"strip\"",
-            "Keep save, rules, validation, session, and privacy state visible.",
+            "Keep save, rules, validation, session, privacy, and help state visible.",
             "data-workbench-status-bar-action=\"save-state\"",
             "data-workbench-status-bar-action=\"ruleset\"",
             "data-workbench-status-bar-action=\"validation\"",
             "data-workbench-status-bar-action=\"session\"",
             "data-workbench-status-bar-action=\"privacy\"",
+            "data-workbench-status-bar-action=\"help\"",
+            "/help",
             "data-workbench-status-bar-action=\"support\"",
         ],
     },
@@ -55,8 +57,8 @@ CHECKS = [
         "path": "docs/BLAZOR_WEB_CLIENT_PARITY_GOAL.md",
         "tokens": [
             "staged hosted workbench status-bar posture",
-            "save, rules, validation, session, privacy, and support",
-            "not yet claiming save execution, validation execution, analytics delivery, or session runtime parity",
+            "save, rules, validation, session, privacy, help, and support",
+            "not yet claiming save execution, validation execution, analytics delivery, portal help runtime, or session runtime parity",
         ],
     },
     {
@@ -110,13 +112,13 @@ def main() -> int:
         "status": "failed" if failures else "passed",
         "proof_tier": "source_staged_no_browser_execution",
         "route_lane": "promoted_blazor_workbench",
-        "expected_routes": ["/blazor/workbench", "/status", "/contact"],
+        "expected_routes": ["/blazor/workbench", "/status", "/help", "/contact"],
         "checks": checks,
         "failures": failures,
         "notes": [
-            "This receipt only proves that promoted workbench status-bar source, style, status, and docs agree.",
-            "It is not a substitute for hosted Playwright execution proof, Docker self-host proof, save execution proof, validation proof, analytics delivery proof, or session runtime proof.",
-            "Do not use this receipt to claim save execution, validation execution, analytics delivery, session runtime, or browser execution parity.",
+            "This receipt only proves that Chummer App and proof-compatible workbench status-bar source, style, status, and docs agree.",
+            "It is not a substitute for hosted Playwright execution proof, Docker self-host proof, save execution proof, validation proof, analytics delivery proof, portal help runtime, or session runtime proof.",
+            "Do not use this receipt to claim save execution, validation execution, analytics delivery, portal help runtime, session runtime, or browser execution parity.",
         ],
     }
 

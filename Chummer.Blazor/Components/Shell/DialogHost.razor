@@ -352,6 +352,19 @@
                                         }
                                         else if (string.Equals(field.VisualKind, DesktopDialogFieldVisualKinds.Tree, StringComparison.Ordinal))
                                         {
+                                            @if (IsRosterHierarchyField(field))
+                                            {
+                                                <div class="dialog-roster-toolbar"
+                                                     data-roster-hierarchy-toolbar="@field.Id">
+                                                    <div>
+                                                        <strong>@BuildRosterHierarchyToolbarTitle(field)</strong>
+                                                        <p>@BuildRosterHierarchyToolbarSummary(field)</p>
+                                                    </div>
+                                                    <span class="dialog-roster-mode" data-roster-hierarchy-mode="@RosterActiveSourceMode">
+                                                        @(string.IsNullOrWhiteSpace(RosterActiveSourceLine) ? "Ready to organize" : "Move pending")
+                                                    </span>
+                                                </div>
+                                            }
                                             <div class="dialog-roster-tree"
                                                  role="@BuildRosterHierarchyContainerRole(field)"
                                                  aria-label="@BuildRosterHierarchyContainerLabel(field)"
@@ -359,7 +372,7 @@
                                                  data-roster-drag-root="@IsRosterHierarchyField(field)">
                                                 @if (IsRosterKeyboardStatusHost(field))
                                                 {
-                                                    <div id="@RosterKeyboardHintId" class="dialog-roster-keyboard-hint" role="note">Keyboard: Enter or Space selects a source row, Enter or Space on a folder drops it, Escape clears the source.</div>
+                                                    <div id="@RosterKeyboardHintId" class="dialog-roster-keyboard-hint" role="note">Keyboard: Enter or Space selects a source row, Enter or Space on a directory drops it, Escape clears the source.</div>
                                                 }
                                                 @if (IsRosterKeyboardStatusHost(field) && !string.IsNullOrWhiteSpace(RosterActiveSourceLine))
                                                 {
@@ -383,6 +396,11 @@
                                                          @ondragover:preventDefault="@IsRosterDropTargetLine(field, item)"
                                                          @ondrop="() => DropRosterLineAsync(field, item)"
                                                          @onkeydown="args => HandleRosterLineKeyDownAsync(field, item, args)"
+                                                         data-roster-line-kind="@BuildRosterHierarchyLineKind(field, item)"
+                                                         data-roster-folder-scope="@BuildRosterHierarchyFolderScope(field, item)"
+                                                         data-roster-source-item="@BuildRosterHierarchySourceItem(field, item)"
+                                                         data-roster-drop-action="@BuildRosterHierarchyDropAction(field, item)"
+                                                         data-roster-accepts-drop-kinds="@BuildRosterHierarchyAcceptedDropKinds(field, item)"
                                                          data-roster-tree-line="@item">
                                                         @item
                                                     </div>
@@ -394,7 +412,13 @@
                                             <div class="dialog-roster-list" data-roster-guide="@IsRosterHierarchyField(field)">
                                                 @foreach (string item in SplitVisualLines(field.Value))
                                                 {
-                                                    <div class="@BuildRosterHierarchyLineClass(field, item)" data-roster-list-line="@item">@item</div>
+                                                    <div class="@BuildRosterHierarchyLineClass(field, item)"
+                                                         data-roster-line-kind="@BuildRosterHierarchyLineKind(field, item)"
+                                                         data-roster-folder-scope="@BuildRosterHierarchyFolderScope(field, item)"
+                                                         data-roster-source-item="@BuildRosterHierarchySourceItem(field, item)"
+                                                         data-roster-drop-action="@BuildRosterHierarchyDropAction(field, item)"
+                                                         data-roster-accepts-drop-kinds="@BuildRosterHierarchyAcceptedDropKinds(field, item)"
+                                                         data-roster-list-line="@item">@item</div>
                                                 }
                                             </div>
                                         }
@@ -742,6 +766,8 @@
         => IsRosterHierarchyField(field)
             && !string.IsNullOrWhiteSpace(line)
             && !line.TrimStart().StartsWith("[", StringComparison.Ordinal)
+            && !(string.Equals(field.Id, "rosterCustomFolders", StringComparison.Ordinal)
+                && line.Contains(" · system", StringComparison.OrdinalIgnoreCase))
             && !line.Contains("no watched files", StringComparison.OrdinalIgnoreCase)
             && !line.Contains("no saved runners", StringComparison.OrdinalIgnoreCase)
             && !line.Contains("empty", StringComparison.OrdinalIgnoreCase);
@@ -777,7 +803,11 @@
             line,
             targetFolder,
             string.IsNullOrWhiteSpace(sourceFolder) ? "move_runner_to_group" : "reorder_roster_tree",
-            sourceFolder));
+            sourceFolder,
+            ExtractRosterFolderName(sourceLine),
+            BuildRosterHierarchyLineKind(field, sourceLine),
+            BuildRosterHierarchyFolderScope(field, sourceLine),
+            BuildRosterHierarchyFolderScope(field, line)));
         _rosterMouseDragSourceLine = null;
         _rosterKeyboardSourceLine = null;
     }
@@ -851,16 +881,67 @@
         return $"dialog-roster-line dialog-roster-line--{kind}{selected}{draggable}{dropTarget}{dragSource}{sourceMode}";
     }
 
+    private static string BuildRosterHierarchyLineKind(DesktopDialogField field, string line)
+    {
+        if (!IsRosterHierarchyField(field) || string.IsNullOrWhiteSpace(line))
+            return "presentation";
+
+        string trimmed = line.TrimStart();
+        if (trimmed.StartsWith("[", StringComparison.Ordinal))
+            return "heading";
+        if (string.Equals(field.Id, "rosterCustomFolders", StringComparison.Ordinal)
+            && (line.Contains(" · system", StringComparison.OrdinalIgnoreCase)
+                || line.Contains(" · custom", StringComparison.OrdinalIgnoreCase)))
+            return "directory";
+        if (line.Contains(" · watched_file", StringComparison.OrdinalIgnoreCase))
+            return "watched-file";
+        if (line.Contains(" · folder_shortcut", StringComparison.OrdinalIgnoreCase))
+            return "folder-shortcut";
+        return "runner";
+    }
+
+    private static string BuildRosterHierarchyFolderScope(DesktopDialogField field, string line)
+    {
+        if (!IsRosterHierarchyField(field)
+            || !string.Equals(field.Id, "rosterCustomFolders", StringComparison.Ordinal))
+            return "none";
+        if (line.Contains(" · system", StringComparison.OrdinalIgnoreCase))
+            return "system";
+        if (line.Contains(" · custom", StringComparison.OrdinalIgnoreCase))
+            return "custom";
+        return "none";
+    }
+
+    private static string BuildRosterHierarchySourceItem(DesktopDialogField field, string line)
+        => IsRosterHierarchyField(field) && IsRosterDraggableLine(field, line)
+            ? ExtractRosterFolderName(line)
+            : string.Empty;
+
+    private string BuildRosterHierarchyDropAction(DesktopDialogField field, string line)
+    {
+        if (!IsRosterDropTargetLine(field, line))
+            return string.Empty;
+
+        return string.Equals(BuildRosterHierarchyFolderScope(field, RosterActiveSourceLine ?? string.Empty), "custom", StringComparison.Ordinal)
+            ? "reorder_roster_tree"
+            : "move_runner_to_group";
+    }
+
+    private static string BuildRosterHierarchyAcceptedDropKinds(DesktopDialogField field, string line)
+        => IsRosterDropTargetLine(field, line)
+            ? "runner watched-file folder-shortcut custom-directory"
+            : string.Empty;
+
     private static string BuildRosterHierarchyLineTitle(DesktopDialogField field, string line)
     {
         if (!IsRosterHierarchyField(field))
             return string.Empty;
 
         if (IsRosterDropTargetLine(field, line))
-            return "Drop a runner/link row here to move it into this virtual folder, or drop a custom folder here to nest it. Keyboard: Enter/Space drops the selected source here.";
+            return "Drop a runner/link row here to move it into this roster directory, or drop a custom directory here to nest it. Keyboard: Enter/Space drops the selected source here.";
 
         if (IsRosterDraggableLine(field, line))
-            return "Drag this roster row to a folder. Keyboard: Enter/Space selects this source; Escape clears it. Moves are virtual metadata only until explicitly committed.";
+            return "Drag this roster row to a directory. Keyboard: Enter/Space selects this source; Escape clears it. Moves are virtual metadata only until explicitly committed.";
 
         return "Roster hierarchy row.";
     }
@@ -907,6 +988,16 @@
 
     private static string? BuildRosterHierarchyContainerOrientation(DesktopDialogField field)
         => IsRosterHierarchyField(field) ? "vertical" : null;
+
+    private static string BuildRosterHierarchyToolbarTitle(DesktopDialogField field)
+        => string.Equals(field.Id, "rosterCustomFolders", StringComparison.Ordinal)
+            ? "Character library tree"
+            : "Roster organization";
+
+    private static string BuildRosterHierarchyToolbarSummary(DesktopDialogField field)
+        => string.Equals(field.Id, "rosterCustomFolders", StringComparison.Ordinal)
+            ? "Create your own folder hierarchy, then drag runners or custom folders onto any directory. Keyboard users can select a row with Enter or Space and drop it on a directory."
+            : "This roster view keeps groups, folders, move targets, and hierarchy policy visible before the app commits library changes.";
 
     private static bool IsRosterKeyboardStatusHost(DesktopDialogField field)
         => string.Equals(field.Id, "rosterCustomFolders", StringComparison.Ordinal);
@@ -961,8 +1052,8 @@
         : "Mouse";
 
     private string RosterActiveSourceInstruction => !string.IsNullOrWhiteSpace(_rosterKeyboardSourceLine)
-        ? "Press Enter or Space on a folder to drop, or Escape to clear."
-        : "Drop on a folder to move or nest, or release outside a folder to cancel.";
+        ? "Press Enter or Space on a directory to drop, or Escape to clear."
+        : "Drop on a directory to move or nest, or release outside a directory to cancel.";
 
     private static IReadOnlyList<string> SplitVisualLines(string value)
     {

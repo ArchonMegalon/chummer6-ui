@@ -7,7 +7,7 @@ from pathlib import Path
 from typing import Any
 
 
-REPO_ROOT = Path("/docker/chummercomplete/chummer-presentation")
+REPO_ROOT = Path(__file__).resolve().parents[1]
 PUBLISHED = REPO_ROOT / ".codex-studio" / "published"
 OUTPUT_PATH = PUBLISHED / "BLAZOR_BROWSER_LANE_PROOF_SET.generated.json"
 CONTRACT_NAME = "chummer6-ui.blazor_browser_lane_proof_set"
@@ -38,7 +38,7 @@ REQUIRED_RECEIPTS = [
         },
         "minimum_lengths": {
             "proof_routes": 10,
-            "route_proof_markers": 8,
+            "route_proof_markers": 10,
             "workflow_proofs": 7,
         },
     },
@@ -65,6 +65,8 @@ REQUIRED_RECEIPTS = [
             "self_host_default": "analytics-disabled",
             "hosted_public_edge": "rybbit-enabled-when-site-id-configured",
             "sensitive_data_policy": "route-and-workflow-metadata-only",
+            "session_replay_policy": "disabled",
+            "autocapture_policy": "disabled",
         },
         "minimum_lengths": {
             "checks": 8,
@@ -95,6 +97,37 @@ REQUIRED_RECEIPTS = [
         },
         "minimum_lengths": {},
     },
+    {
+        "id": "source_staged_release_boundary",
+        "path": PUBLISHED / "BLAZOR_SOURCE_STAGED_RELEASE_BOUNDARY.generated.json",
+        "contract_name": "chummer6-ui.blazor_source_staged_release_boundary",
+        "allowed_statuses": {"passed"},
+        "required_fields": {
+            "proof_tier": "source_policy_no_browser_execution",
+            "scope": "staged_and_source_plan_receipts_must_not_enter_release_readiness_aggregation",
+        },
+        "minimum_lengths": {
+            "documentation_sources": 6,
+            "status_reporting_sources": 1,
+        },
+    },
+]
+
+EXAMPLE_RECEIPT_PATH = REPO_ROOT / "docs" / "examples" / "blazor-browser-lane-proof-set.receipt.example.json"
+EXAMPLE_RECEIPT_TOKENS = [
+    '"contract_name": "chummer6-ui.blazor_browser_lane_proof_set"',
+    '"scope": "aggregate-browser-lane-proof-set-not-full-desktop-parity"',
+    '"id": "hosted_route_entry"',
+    '"minimum": 10',
+    '"id": "analytics_posture"',
+    '"field:session_replay_policy"',
+    '"field:autocapture_policy"',
+    '"id": "source_staged_release_boundary"',
+    '"contract_name": "chummer6-ui.blazor_source_staged_release_boundary"',
+    '"scope": "staged_and_source_plan_receipts_must_not_enter_release_readiness_aggregation"',
+    '"MIG-106 through MIG-109"',
+    '"The source_staged_release_boundary receipt is required as source-policy evidence only; it does not execute hosted or Docker browser workflows."',
+    '"MIG-106 through MIG-109 remain open until refreshed hosted route-entry, hosted execution, Docker self-host, analytics posture, connected-runtime, source-boundary, and aggregate browser-lane receipts prove the browser-client release claim."',
 ]
 
 
@@ -189,15 +222,39 @@ def evaluate_receipt(spec: dict[str, Any]) -> dict[str, Any]:
 
 def main() -> int:
     receipt_results = [evaluate_receipt(spec) for spec in REQUIRED_RECEIPTS]
-    status = "passed" if all(bool(result["passed"]) for result in receipt_results) else "failed"
+    try:
+        example_text = EXAMPLE_RECEIPT_PATH.read_text(encoding="utf-8")
+        missing_example_tokens = [
+            token for token in EXAMPLE_RECEIPT_TOKENS if token not in example_text
+        ]
+    except FileNotFoundError:
+        missing_example_tokens = [f"missing example receipt: {EXAMPLE_RECEIPT_PATH}"]
+
+    source_checks = [
+        {
+        "id": "example_receipt_shape",
+        "path": str(EXAMPLE_RECEIPT_PATH),
+        "status": "passed" if not missing_example_tokens else "failed",
+        "passed": not missing_example_tokens,
+        "missing_tokens": missing_example_tokens,
+        }
+    ]
+    status = "passed" if all(bool(result["passed"]) for result in receipt_results + source_checks) else "failed"
     payload = {
         "contract_name": CONTRACT_NAME,
         "status": status,
         "generated_at": datetime.now(timezone.utc).isoformat(),
         "required_receipt_count": len(REQUIRED_RECEIPTS),
         "passed_receipt_count": sum(1 for result in receipt_results if bool(result["passed"])),
+        "source_check_count": len(source_checks),
+        "passed_source_check_count": sum(1 for result in source_checks if bool(result["passed"])),
         "receipts": receipt_results,
+        "source_checks": source_checks,
         "scope": "aggregate-browser-lane-proof-set-not-full-desktop-parity",
+        "notes": [
+            "The source_staged_release_boundary receipt is required as source-policy evidence only; it does not execute hosted or Docker browser workflows.",
+            "MIG-106 through MIG-109 remain open until refreshed hosted route-entry, hosted execution, Docker self-host, analytics posture, connected-runtime, source-boundary, and aggregate browser-lane receipts prove the browser-client release claim.",
+        ],
     }
 
     OUTPUT_PATH.parent.mkdir(parents=True, exist_ok=True)

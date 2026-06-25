@@ -365,6 +365,8 @@ def main() -> int:
         reasons.append("PUBLIC_SURFACE_QA_TARGETS.generated.json must include blazor_public_edge_execution_route_lane=promoted_blazor_workbench.")
     if str(capture_evidence.get("blazor_public_edge_execution_promoted_route_base") or "").strip() != "/blazor/workbench":
         reasons.append("PUBLIC_SURFACE_QA_TARGETS.generated.json must include blazor_public_edge_execution_promoted_route_base=/blazor/workbench.")
+    if str(capture_evidence.get("blazor_public_chummer_app_route") or "").strip() != "/app":
+        reasons.append("PUBLIC_SURFACE_QA_TARGETS.generated.json must include blazor_public_chummer_app_route=/app.")
     required_family_ids = capture_evidence.get("blazor_public_edge_execution_required_workflow_family_ids")
     if required_family_ids != [
         "promoted_startup_command_executions",

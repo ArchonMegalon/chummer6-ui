@@ -8,7 +8,7 @@ from datetime import UTC, datetime
 from pathlib import Path
 
 
-ROOT = Path("/docker/chummercomplete/chummer-presentation")
+ROOT = Path(__file__).resolve().parents[1]
 FORMS_ROOT = ROOT / "Chummer"
 CONTRACTS_ROOT = ROOT / ".codex-design" / "classic-formports"
 PUBLISHED = ROOT / ".codex-studio" / "published"

@@ -9,10 +9,11 @@ from datetime import datetime, timezone
 from pathlib import Path
 
 
-REPO_ROOT = Path("/docker/chummercomplete/chummer-presentation")
+REPO_ROOT = Path(__file__).resolve().parents[1]
 OUTPUT_PATH = REPO_ROOT / ".codex-studio" / "published" / "BLAZOR_CONNECTED_RUNTIME_POSTURE.generated.json"
 CONTRACT_NAME = "chummer6-ui.blazor_connected_runtime_posture"
-DEFAULT_LIVE_URL = "https://chummer.run/blazor/workbench"
+DEFAULT_LIVE_URL = "https://chummer.run/blazor/app"
+PROOF_COMPATIBLE_ROUTE = "/blazor/workbench"
 
 
 def read_text(path: Path) -> str:
@@ -151,9 +152,9 @@ def main() -> int:
                 "signed-owner boundary",
             ],
         ),
-        f"Live hosted workbench HTML at {live_url} renders the connected-runtime posture card."
+        f"Live hosted Chummer App HTML at {live_url} renders the connected-runtime posture card."
         if live_html is not None
-        else f"Live hosted workbench HTML at {live_url} could not be read: {live_error}",
+        else f"Live hosted Chummer App HTML at {live_url} could not be read: {live_error}",
     )
 
     add_check(
@@ -231,6 +232,8 @@ def main() -> int:
         "generated_at": datetime.now(timezone.utc).isoformat(),
         "checks": checks,
         "live_url": live_url,
+        "public_app_route": "/blazor/app",
+        "proof_compatible_route": PROOF_COMPATIBLE_ROUTE,
         "connected_runtime_routes": [
             "/session/",
             "/coach/",

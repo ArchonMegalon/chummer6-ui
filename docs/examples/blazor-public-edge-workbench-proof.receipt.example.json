@@ -8,7 +8,9 @@
   "route_probe_executed": true,
   "portal_route_probe_script": "scripts/e2e-public-edge.cjs",
   "route_proof_markers": [
+    "public_chummer_app_route",
     "public_blazor_root_redirect",
+    "public_blazor_home_roster_entry",
     "public_blazor_health",
     "public_workbench_route",
     "public_workspace_restore_route",
@@ -18,8 +20,11 @@
     "public_committed_action_route"
   ],
   "proof_routes": [
+    "/app",
     "/blazor/",
     "/blazor/health",
+    "/blazor/home",
+    "/blazor/app",
     "/blazor/workbench",
     "/blazor/workbench?workspace=ws-1",
     "/blazor/preview?command=new_character",
@@ -38,9 +43,17 @@
     "action_continuation_route_shapes",
     "committed_action_route_shape"
   ],
-  "route_probe_count": 10,
+  "route_probe_count": 13,
   "route_probe_failures": [],
   "route_probes": [
+    {
+      "checked": true,
+      "url": "https://chummer.run/app",
+      "http_status": 200,
+      "ok": true,
+      "error": "",
+      "route": "/app"
+    },
     {
       "checked": true,
       "url": "https://chummer.run/blazor/",
@@ -56,6 +69,22 @@
       "ok": true,
       "error": "",
       "route": "/blazor/health"
+    },
+    {
+      "checked": true,
+      "url": "https://chummer.run/blazor/home",
+      "http_status": 200,
+      "ok": true,
+      "error": "",
+      "route": "/blazor/home"
+    },
+    {
+      "checked": true,
+      "url": "https://chummer.run/blazor/app",
+      "http_status": 200,
+      "ok": true,
+      "error": "",
+      "route": "/blazor/app"
     },
     {
       "checked": true,
@@ -122,9 +151,10 @@
       "route": "/blazor/workbench?workspace=ws-1&tab=tab-contacts&control=contact_add&dialog_action=add"
     }
   ],
-  "source_receipt": "/docker/chummercomplete/chummer-presentation/.codex-studio/published/UI_EXTERNAL_HOST_PROOF_BLOCKERS.generated.json",
+  "source_receipt": ".codex-studio/published/UI_EXTERNAL_HOST_PROOF_BLOCKERS.generated.json",
   "notes": [
     "Hosted public-edge browser proof is distinct from the Docker self-host workbench receipt.",
+    "Public product navigation remains /app, /blazor/app is the hosted app path, /blazor/home carries the roster-first route entry, and /blazor/workbench is the canonical proof-compatible route base.",
     "This receipt proves hosted /blazor route-entry posture and route health, not full browser workflow execution."
   ]
 }

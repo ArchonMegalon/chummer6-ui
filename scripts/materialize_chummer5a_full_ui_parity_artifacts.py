@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 import json
+import os
 from datetime import datetime, timezone
 from pathlib import Path
 from textwrap import wrap
@@ -13,8 +14,18 @@ from PIL import Image, ImageDraw, ImageFont
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
 WORKSPACE_ROOT = REPO_ROOT.parent
-DESIGN_ROOT = Path("/docker/chummercomplete/chummer-design/products/chummer")
-FLEET_ORACLE_ROOT = Path("/docker/fleet/docs/chummer5a-oracle")
+DESIGN_ROOT = Path(
+    os.environ.get(
+        "CHUMMER_DESIGN_PRODUCT_ROOT",
+        WORKSPACE_ROOT / "chummer-design" / "products" / "chummer",
+    )
+)
+FLEET_ORACLE_ROOT = Path(
+    os.environ.get(
+        "CHUMMER5A_ORACLE_ROOT",
+        WORKSPACE_ROOT / "fleet" / "docs" / "chummer5a-oracle",
+    )
+)
 PUBLISHED_ROOT = REPO_ROOT / ".codex-studio" / "published"
 SCREENSHOT_DIR = PUBLISHED_ROOT / "ui-flagship-release-gate-screenshots"
 CONTACT_SHEET_DIR = PUBLISHED_ROOT / "chummer5a-side-by-side-contact-sheets"

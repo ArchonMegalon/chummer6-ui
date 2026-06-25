@@ -28,6 +28,8 @@ CHECKS = [
             "data-workbench-windowing-panes-action=\"focus_mode\"",
             "data-workbench-windowing-panes-action=\"second_screen\"",
             "data-workbench-windowing-panes-action=\"restore_layout\"",
+            "data-workbench-windowing-panes-action=\"help\"",
+            "/help",
         ],
     },
     {
@@ -54,8 +56,8 @@ CHECKS = [
         "path": "docs/BLAZOR_WEB_CLIENT_PARITY_GOAL.md",
         "tokens": [
             "staged hosted workbench windowing-panes posture",
-            "split view, pop-out, pinned inspector, focus mode, second screen, and restore layout",
-            "not yet claiming multi-window, focus handling, second-screen routing, or layout persistence parity",
+            "split view, pop-out, pinned inspector, focus mode, second screen, restore layout, and help",
+            "not yet claiming multi-window, focus handling, second-screen routing, layout persistence, or portal help runtime parity",
         ],
     },
     {
@@ -96,13 +98,13 @@ def main() -> int:
         "status": "failed" if failures else "passed",
         "proof_tier": "source_staged_no_browser_execution",
         "route_lane": "promoted_blazor_workbench",
-        "expected_routes": ["/blazor/workbench"],
+        "expected_routes": ["/blazor/workbench", "/help"],
         "checks": evaluated_checks,
         "failures": failures,
         "notes": [
-            "This receipt only proves that promoted workbench windowing-panes source, style, status, and docs agree.",
-            "It is not a substitute for hosted Playwright execution proof, Docker self-host proof, multi-window proof, focus-handling proof, second-screen proof, or layout-persistence proof.",
-            "Do not use this receipt to claim multi-window behavior, focus handling, second-screen routing, layout persistence, or browser execution parity.",
+            "This receipt only proves that Chummer App and proof-compatible workbench windowing-panes source, style, status, and docs agree.",
+            "It is not a substitute for hosted Playwright execution proof, Docker self-host proof, multi-window proof, focus-handling proof, second-screen proof, layout-persistence proof, or portal help runtime proof.",
+            "Do not use this receipt to claim multi-window behavior, focus handling, second-screen routing, layout persistence, portal help runtime, or browser execution parity.",
         ],
     }
 

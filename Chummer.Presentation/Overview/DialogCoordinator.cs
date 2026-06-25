@@ -2465,7 +2465,7 @@ public sealed class DialogCoordinator : IDialogCoordinator
         {
             using JsonDocument document = JsonDocument.Parse(snapshotJson);
             return document.RootElement.TryGetProperty("Hierarchy", out JsonElement hierarchy)
-                ? hierarchy.GetRawText()
+                ? RosterHierarchyStateJson.Normalize(hierarchy.GetRawText())
                 : string.Empty;
         }
         catch (JsonException)
@@ -2517,7 +2517,7 @@ public sealed class DialogCoordinator : IDialogCoordinator
                 return;
         }
 
-        string nextHierarchyJson = JsonSerializer.Serialize(nextHierarchy);
+        string nextHierarchyJson = RosterHierarchyStateJson.Serialize(nextHierarchy);
         DesktopPreferenceState nextPreferences = context.State.Preferences with
         {
             RosterHierarchyJson = nextHierarchyJson
@@ -2543,17 +2543,9 @@ public sealed class DialogCoordinator : IDialogCoordinator
         if (string.IsNullOrWhiteSpace(hierarchyJson))
             return null;
 
-        try
-        {
-            RosterHierarchyState? hierarchy = JsonSerializer.Deserialize<RosterHierarchyState>(hierarchyJson);
-            return hierarchy is { Folders.Count: > 0, Items.Count: > 0 }
-                ? hierarchy
-                : null;
-        }
-        catch (JsonException)
-        {
-            return null;
-        }
+        return RosterHierarchyStateJson.TryDeserialize(hierarchyJson, out RosterHierarchyState? hierarchy)
+            ? hierarchy
+            : null;
     }
 
     private static RosterHierarchyState CreateRosterFolder(

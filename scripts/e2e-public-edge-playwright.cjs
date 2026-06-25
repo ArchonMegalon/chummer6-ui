@@ -154,7 +154,7 @@ async function auditStartupCommandExecution(page, route, expectedText) {
   expectTextIncludes(bodyText, expectedText, `hosted startup command route ${route}`);
   return {
     route,
-    assertion: `startup command surface '${expectedText}' rendered from promoted workbench route`,
+    assertion: `startup command surface '${expectedText}' rendered from canonical proof-compatible route`,
     status: 'pass',
   };
 }
@@ -612,7 +612,7 @@ async function auditRecentWorkAffordances(page) {
   expectTextIncludes(recentHref || '', '/workbench?workspace=', 'hosted recent work affordances');
   return {
     route,
-    assertion: 'recent restored workspace affordance remains visible on promoted workbench route',
+    assertion: 'recent restored workspace affordance remains visible on canonical proof-compatible route',
     status: 'pass',
   };
 }
@@ -628,7 +628,7 @@ async function auditRestoredSectionContinuations(page) {
   expectTextIncludes(bodyText, 'Resume BLUE on advanced', 'hosted restored section continuations');
   return {
     route,
-    assertion: 'restored section continuation affordances remain visible on promoted workbench route',
+    assertion: 'restored section continuation affordances remain visible on canonical proof-compatible route',
     status: 'pass',
   };
 }
@@ -645,7 +645,7 @@ async function auditRestoredTabLanding(page, route, tabId) {
   expectTextIncludes(sectionHeading || '', expectedHeadings[tabId] || tabId, `hosted restored tab landing ${route}`);
   return {
     route,
-    assertion: `restored route landed on '${expectedHeadings[tabId] || tabId}' section for promoted workbench route`,
+    assertion: `restored route landed on '${expectedHeadings[tabId] || tabId}' section for canonical proof-compatible route`,
     status: 'pass',
   };
 }
@@ -718,7 +718,7 @@ async function auditAdvancedActionAffordances(page) {
   expectTextIncludes(bodyText, 'Remove drug for BLUE', 'hosted advanced action affordances');
   return {
     route,
-    assertion: 'advanced and career/support restored action affordances remain visible on promoted workbench route',
+    assertion: 'advanced and career/support restored action affordances remain visible on canonical proof-compatible route',
     status: 'pass',
   };
 }

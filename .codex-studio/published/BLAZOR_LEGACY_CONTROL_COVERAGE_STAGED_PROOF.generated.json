@@ -1,11 +1,11 @@
 {
   "contract_name": "chummer6-ui.blazor_legacy_control_coverage_staged_proof",
-  "generated_at": "2026-06-25T01:19:32.103779+00:00",
+  "generated_at": "2026-06-25T04:43:35.682610+00:00",
   "status": "passed",
   "proof_tier": "source_staged_no_browser_execution",
   "route_lane": "promoted_blazor_workbench",
-  "control_count": 50,
-  "covered_control_count": 50,
+  "control_count": 53,
+  "covered_control_count": 53,
   "unclassified_controls": [],
   "family_rows": [
     {
@@ -158,6 +158,38 @@
         },
         {
           "control_id": "gear_delete",
+          "coverage_kind": "source_staged_no_browser_execution",
+          "catalog_token_present": true,
+          "runner_source_token_present": true,
+          "docs_or_status_token_present": true,
+          "covered_by_source_alignment": true
+        }
+      ],
+      "control_count": 3,
+      "covered_count": 3
+    },
+    {
+      "family_id": "runner_intelligence",
+      "staged_receipt": "BLAZOR_RUNNER_INTELLIGENCE_STAGED_PROOF.generated.json",
+      "controls": [
+        {
+          "control_id": "runner_benchmark",
+          "coverage_kind": "source_staged_no_browser_execution",
+          "catalog_token_present": true,
+          "runner_source_token_present": true,
+          "docs_or_status_token_present": true,
+          "covered_by_source_alignment": true
+        },
+        {
+          "control_id": "runner_what_if",
+          "coverage_kind": "source_staged_no_browser_execution",
+          "catalog_token_present": true,
+          "runner_source_token_present": true,
+          "docs_or_status_token_present": true,
+          "covered_by_source_alignment": true
+        },
+        {
+          "control_id": "runner_cohort_privacy",
           "coverage_kind": "source_staged_no_browser_execution",
           "catalog_token_present": true,
           "runner_source_token_present": true,
@@ -511,6 +543,23 @@
       ],
       "control_count": 2,
       "covered_count": 2
+    }
+  ],
+  "documentation_sources": [
+    {
+      "path": "docs/BLAZOR_LEGACY_CONTROL_COVERAGE_STAGED_PROOF.md",
+      "status": "passed",
+      "missing_tokens": []
+    },
+    {
+      "path": "docs/BLAZOR_WEB_CLIENT_DOCS_INDEX.md",
+      "status": "passed",
+      "missing_tokens": []
+    },
+    {
+      "path": "docs/examples/blazor-legacy-control-coverage-staged-proof.receipt.example.json",
+      "status": "passed",
+      "missing_tokens": []
     }
   ],
   "failures": [],

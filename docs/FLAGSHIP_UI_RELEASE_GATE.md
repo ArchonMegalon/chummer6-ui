@@ -54,6 +54,8 @@ That lane:
 - acquires `.codex-studio/locks/b14-flagship-ui-release-gate.lock` and stages screenshots in per-run temp directories before publishing, so concurrent runs cannot wipe in-flight screenshot evidence
 - publishes screenshot evidence under `.codex-studio/published/ui-flagship-release-gate-screenshots/`
 - fail-closes on `scripts/verify_chummer5a_human_parity_screenshot_matrix.py` so every required screenshot token must exist and pass before release truth can claim premium desktop parity
+- uses `CHUMMER_DESIGN_PRODUCT_ROOT` for `scripts/ai/verify_chummer5a_human_parity.py` and `scripts/materialize_chummer5a_full_ui_parity_artifacts.py` when the Chummer5A design product data is not checked out in the default sibling workspace layout
+- uses `CHUMMER5A_ORACLE_ROOT` for `scripts/materialize_chummer5a_full_ui_parity_artifacts.py` when the Chummer5A oracle docs are not checked out in the default sibling workspace layout
 - publishes `.codex-studio/published/UI_FLAGSHIP_RELEASE_GATE.generated.json`
 
 ## Why this gate exists

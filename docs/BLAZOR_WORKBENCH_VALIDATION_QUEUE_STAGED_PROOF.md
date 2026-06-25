@@ -2,16 +2,16 @@
 
 ## Purpose
 
-This source-staged proof keeps validation and build-readiness affordances visible on the promoted Blazor workbench route.
+This source-staged proof keeps validation and build-readiness affordances visible on the user-facing Chummer App route and proof-compatible Blazor workbench route.
 
-The browser client should preserve Chummer's expectation that rule issues, missing required fields, cost checks, availability limits, final build gates, and next-fix navigation stay close to the active character sheet.
+The browser client should preserve Chummer's expectation that rule issues, missing required fields, cost checks, availability limits, final build gates, help, and next-fix navigation stay close to the active character sheet.
 
 ## Source-Staged Scope
 
 The staged validation-queue lane covers:
 
-- a validation/build-readiness strip on the promoted workbench route
-- rule issues, missing fields, cost checks, availability, build gate, and fix-next shortcuts
+- a validation/build-readiness strip on the user-facing Chummer App route and proof-compatible workbench route
+- rule issues, missing fields, cost checks, availability, build gate, help, and fix-next shortcuts
 - scoped responsive styling for desktop and mobile browser use
 
 ## Source Check
@@ -28,6 +28,6 @@ Expected receipt:
 
 ## Boundary
 
-This is source alignment only. It proves that promoted workbench validation-queue source, style, status reporting, and docs agree.
+This is source alignment only. It proves that Chummer App and proof-compatible workbench validation-queue source, style, status reporting, and docs agree.
 
-It is not hosted browser execution proof, Docker self-host proof, rules-engine execution proof, validation-result proof, build-finalization proof, route-click proof, screenshot proof, or desktop-equivalent workflow parity.
+It is not hosted browser execution proof, Docker self-host proof, rules-engine execution proof, portal-help-runtime proof, validation-result proof, build-finalization proof, route-click proof, screenshot proof, or desktop-equivalent workflow parity.

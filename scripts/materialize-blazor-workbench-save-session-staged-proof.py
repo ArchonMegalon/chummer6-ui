@@ -27,6 +27,8 @@ CHECKS = [
             "data-workbench-save-session-action=\"autosave\"",
             "data-workbench-save-session-action=\"dirty_state\"",
             "data-workbench-save-session-action=\"recovery\"",
+            "data-workbench-save-session-action=\"help\"",
+            "/help",
             "data-workbench-save-session-action=\"export\"",
         ],
     },
@@ -54,8 +56,8 @@ CHECKS = [
         "path": "docs/BLAZOR_WEB_CLIENT_PARITY_GOAL.md",
         "tokens": [
             "staged hosted workbench save-session posture",
-            "save, Save As, autosave, dirty state, recovery, and export",
-            "not yet claiming persisted browser mutation or file-write parity",
+            "save, Save As, autosave, dirty state, recovery, help, and export",
+            "not yet claiming persisted browser mutation, portal help runtime, or file-write parity",
         ],
     },
     {
@@ -96,13 +98,13 @@ def main() -> int:
         "status": "failed" if failures else "passed",
         "proof_tier": "source_staged_no_browser_execution",
         "route_lane": "promoted_blazor_workbench",
-        "expected_routes": ["/blazor/workbench"],
+        "expected_routes": ["/blazor/workbench", "/help"],
         "checks": evaluated_checks,
         "failures": failures,
         "notes": [
-            "This receipt only proves that promoted workbench save-session source, style, status, and docs agree.",
-            "It is not a substitute for hosted Playwright execution proof, Docker self-host proof, autosave execution proof, or browser file-write proof.",
-            "Do not use this receipt to claim persisted browser mutation, file-write, autosave execution, or browser execution parity.",
+            "This receipt only proves that Chummer App and proof-compatible workbench save-session source, style, status, and docs agree.",
+            "It is not a substitute for hosted Playwright execution proof, Docker self-host proof, autosave execution proof, portal help runtime, or browser file-write proof.",
+            "Do not use this receipt to claim persisted browser mutation, portal help runtime, file-write, autosave execution, or browser execution parity.",
         ],
     }
 

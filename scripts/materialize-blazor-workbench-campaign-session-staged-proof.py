@@ -28,6 +28,8 @@ CHECKS = [
             "data-workbench-campaign-session-action=\"rewards\"",
             "data-workbench-campaign-session-action=\"table_share\"",
             "data-workbench-campaign-session-action=\"run_handoff\"",
+            "data-workbench-campaign-session-action=\"help\"",
+            "/help",
         ],
     },
     {
@@ -54,8 +56,8 @@ CHECKS = [
         "path": "docs/BLAZOR_WEB_CLIENT_PARITY_GOAL.md",
         "tokens": [
             "staged hosted workbench campaign-session posture",
-            "roster, GM review, session notes, rewards, table share, and run handoff",
-            "not yet claiming campaign persistence, GM approval, reward mutation, or table-share parity",
+            "roster, GM review, session notes, rewards, table share, run handoff, and help",
+            "not yet claiming campaign persistence, GM approval, reward mutation, table-share, or portal help runtime parity",
         ],
     },
     {
@@ -96,13 +98,13 @@ def main() -> int:
         "status": "failed" if failures else "passed",
         "proof_tier": "source_staged_no_browser_execution",
         "route_lane": "promoted_blazor_workbench",
-        "expected_routes": ["/blazor/workbench"],
+        "expected_routes": ["/blazor/workbench", "/help"],
         "checks": evaluated_checks,
         "failures": failures,
         "notes": [
-            "This receipt only proves that promoted workbench campaign-session source, style, status, and docs agree.",
-            "It is not a substitute for hosted Playwright execution proof, Docker self-host proof, campaign-persistence proof, GM-approval proof, reward-mutation proof, or table-share proof.",
-            "Do not use this receipt to claim campaign persistence, GM approval, reward mutation, table share, run handoff, or browser execution parity.",
+            "This receipt only proves that Chummer App and proof-compatible workbench campaign-session source, style, status, and docs agree.",
+            "It is not a substitute for hosted Playwright execution proof, Docker self-host proof, campaign-persistence proof, GM-approval proof, reward-mutation proof, table-share proof, or portal help runtime proof.",
+            "Do not use this receipt to claim campaign persistence, GM approval, reward mutation, table share, run handoff, portal help runtime, or browser execution parity.",
         ],
     }
 

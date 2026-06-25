@@ -8,7 +8,10 @@
     "/downloads/",
     "/status",
     "/contact",
+    "/help",
     "/account/work",
+    "/blazor/home",
+    "/blazor/app",
     "/blazor/workbench"
   ],
   "checks": [
@@ -16,7 +19,7 @@
       "id": "product_workbench_affordances",
       "path": "Chummer.Blazor/Components/Pages/Preview.razor",
       "status": "passed",
-      "required_token_count": 9,
+      "required_token_count": 13,
       "missing_tokens": []
     }
   ],
@@ -24,6 +27,6 @@
   "notes": [
     "This receipt only proves that source, route-probe, and documentation staging agree.",
     "It is not a substitute for hosted Playwright execution proof or Docker self-host proof.",
-    "Do not use this receipt to claim account, support, installer, or portal route runtime behavior."
+    "Do not use this receipt to claim account, support, help, installer, or portal route runtime behavior."
   ]
 }

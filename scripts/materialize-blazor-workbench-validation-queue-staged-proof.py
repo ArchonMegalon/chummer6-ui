@@ -27,6 +27,8 @@ CHECKS = [
             "data-workbench-validation-queue-action=\"cost_checks\"",
             "data-workbench-validation-queue-action=\"availability\"",
             "data-workbench-validation-queue-action=\"build_gate\"",
+            "data-workbench-validation-queue-action=\"help\"",
+            "/help",
             "data-workbench-validation-queue-action=\"fix_next\"",
         ],
     },
@@ -54,8 +56,8 @@ CHECKS = [
         "path": "docs/BLAZOR_WEB_CLIENT_PARITY_GOAL.md",
         "tokens": [
             "staged hosted workbench validation-queue posture",
-            "rule issues, missing fields, cost checks, availability limits, build gate, and fix-next navigation",
-            "not yet claiming rules-engine execution or validation-result parity",
+            "rule issues, missing fields, cost checks, availability limits, build gate, help, and fix-next navigation",
+            "not yet claiming rules-engine execution, portal help runtime, or validation-result parity",
         ],
     },
     {
@@ -96,13 +98,13 @@ def main() -> int:
         "status": "failed" if failures else "passed",
         "proof_tier": "source_staged_no_browser_execution",
         "route_lane": "promoted_blazor_workbench",
-        "expected_routes": ["/blazor/workbench"],
+        "expected_routes": ["/blazor/workbench", "/help"],
         "checks": evaluated_checks,
         "failures": failures,
         "notes": [
-            "This receipt only proves that promoted workbench validation-queue source, style, status, and docs agree.",
-            "It is not a substitute for hosted Playwright execution proof, Docker self-host proof, rules-engine execution proof, or validation-result proof.",
-            "Do not use this receipt to claim rules-engine execution, validation-result, build-finalization, or browser execution parity.",
+            "This receipt only proves that Chummer App and proof-compatible workbench validation-queue source, style, status, and docs agree.",
+            "It is not a substitute for hosted Playwright execution proof, Docker self-host proof, rules-engine execution proof, portal help runtime, or validation-result proof.",
+            "Do not use this receipt to claim rules-engine execution, portal help runtime, validation-result, build-finalization, or browser execution parity.",
         ],
     }
 

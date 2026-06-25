@@ -1,49 +1,65 @@
 @namespace Chummer.Blazor.Components.Pages
 @page "/preview"
+@page "/app"
 @page "/workbench"
 @layout Chummer.Blazor.Components.Layout.NoLayout
 @using Microsoft.AspNetCore.Components
 @using Microsoft.Extensions.Configuration
 @using Chummer.Blazor.Components.Layout
+@using Chummer.Blazor.RunnerIntelligence
 @using Chummer.Presentation.Overview
+@using Chummer.Presentation.RunnerIntelligence
 @implements IDisposable
+@inject BlazorRunnerIntelligencePreviewService RunnerIntelligencePreviewService
 
-<PageTitle>Chummer Browser Workbench</PageTitle>
+<PageTitle>@PageTitleText</PageTitle>
 
 <main class="browser-preview-shell">
     <header class="browser-preview-banner">
         <div class="browser-preview-banner-copy">
-            @if (IsWorkbenchRoute)
+            @if (IsAppRoute)
             {
-                <p class="browser-preview-kicker">Browser workbench</p>
-                <h1>Chummer's shared workbench shell, running in the browser.</h1>
+                <p class="browser-preview-kicker">Chummer Online</p>
+                <h1>Explore Chummer Online.</h1>
                 <p>
-                    This is the product-shaped browser workbench entrypoint: the same shared shell, navigation, and workflow contracts,
-                    presented as a real web client surface instead of a proof-only lane.
+                    This is the web client entrypoint: open, organize, build, review, export, and resume runners through the shared Chummer shell without exposing proof-route language.
+                </p>
+            }
+            else if (IsWorkbenchRoute)
+            {
+                <p class="browser-preview-kicker">Compatibility route</p>
+                <h1>Chummer Online compatibility shell, running in the browser.</h1>
+                <p>
+                    This route keeps older workbench and proof links alive. The user-facing product route is Chummer Online at <code>/blazor/app</code>.
                 </p>
             }
             else
             {
-                <p class="browser-preview-kicker">Live browser workbench</p>
-                <h1>Chummer's shared workbench shell, running in the browser.</h1>
+                <p class="browser-preview-kicker">Preview route tools</p>
+                <h1>Preview Chummer Online workflows without changing the public route.</h1>
                 <p>
-                    This route runs the browser-facing Chummer shell with the same shared navigation and workflow contracts used elsewhere in the product.
-                    The desktop client still owns native install and file-heavy operations, but this surface is more than a guided mock.
+                    This route is for startup deep links, seeded workflows, and browser result-state checks. Use Chummer Online for the normal user workflow.
                 </p>
             }
         </div>
 
-        <nav class="browser-preview-actions" aria-label="Workbench navigation">
-            <a href="/">Public home</a>
-            @if (IsWorkbenchRoute)
+        <nav class="browser-preview-actions" aria-label="@RouteNavigationLabel">
+            <a href="home">Public home</a>
+            @if (IsAppRoute)
             {
-                <a href="/preview">Preview routes</a>
+                <a href="preview">Preview tools</a>
+            }
+            else if (IsWorkbenchRoute)
+            {
+                <a href="app">Chummer Online</a>
+                <a href="preview">Preview tools</a>
             }
             else
             {
-                <a href="/workbench">Workbench route</a>
+                <a href="app">Chummer Online</a>
+                <a href="workbench">Compatibility route</a>
             }
-            <a href="/showcase">Showcase</a>
+            <a href="showcase">Showcase</a>
             <a href="/downloads/">Downloads</a>
             <a href="/docs/">Docs</a>
         </nav>
@@ -58,7 +74,7 @@
         </div>
     </section>
 
-    <section class="browser-preview-status-grid" aria-label="Workbench status">
+    <section class="browser-preview-status-grid" aria-label="@RouteStatusLabel">
         <article class="browser-preview-status-card">
             <span class="browser-preview-status-label">Deployment</span>
             <strong>Published self-hosted Docker surface</strong>
@@ -85,29 +101,29 @@
         </article>
     </section>
 
-    @if (IsWorkbenchRoute)
+    @if (IsAppRoute || IsWorkbenchRoute)
     {
-        <section class="browser-preview-status-grid" aria-label="Workbench route guidance">
+        <section class="browser-preview-status-grid" aria-label="@RouteGuidanceLabel">
             <article class="browser-preview-status-card">
-                <span class="browser-preview-status-label">Product route</span>
-                <strong>Use this route as the browser client entrypoint</strong>
-                <p>The shell below is the product-facing browser workbench route while broader parity work continues to mature.</p>
+                <span class="browser-preview-status-label">@RouteKindLabel</span>
+                <strong>@RouteGuidanceTitle</strong>
+                <p>@RouteGuidanceSummary</p>
             </article>
             <article class="browser-preview-status-card">
                 <span class="browser-preview-status-label">Preview</span>
                 <strong>Open detailed browser routes on demand</strong>
                 <p>Use the preview route when you need startup deep links, seeded workflows, and browser result-state checks.</p>
-                <a href="/preview">Open preview routes</a>
+                <a href="preview">Open preview tools</a>
             </article>
         </section>
 
-        <section class="browser-workbench-task-dock" aria-label="Promoted workbench task dock" data-workbench-polish="task-dock">
+        <section class="browser-workbench-task-dock" aria-label="@TaskDockAriaLabel" data-workbench-polish="task-dock">
             <div class="browser-workbench-task-dock-copy">
                 <span class="browser-preview-status-label">Task dock</span>
-                <strong>Keep the common Chummer jobs one click from the browser workbench.</strong>
+                <strong>@TaskDockTitle</strong>
                 <p>Start, edit, output, and portal handoff stay in one dense strip.</p>
             </div>
-            <nav class="browser-workbench-task-dock-actions" aria-label="Workbench task shortcuts">
+            <nav class="browser-workbench-task-dock-actions" aria-label="@TaskShortcutAriaLabel">
                 <a href="@BuildPreviewHref(command: "new_character", useWorkbenchRoute: true)" data-workbench-dock-action="start-new">New runner</a>
                 <a href="@BuildPreviewHref(command: "open_character", useWorkbenchRoute: true)" data-workbench-dock-action="open-existing">Open/import</a>
                 <a href="@BuildLabLaneHref" data-workbench-dock-action="build-lab">Build lab</a>
@@ -120,7 +136,7 @@
             </nav>
         </section>
 
-        <section class="browser-workbench-recovery-strip" aria-label="Workbench session recovery" data-workbench-recovery="strip">
+        <section class="browser-workbench-recovery-strip" aria-label="@SessionRecoveryAriaLabel" data-workbench-recovery="strip">
             <div class="browser-workbench-recovery-copy">
                 <span class="browser-preview-status-label">Session recovery</span>
                 <strong>Resume without restarting the job.</strong>
@@ -158,36 +174,36 @@
             }
         </section>
 
-        <section class="browser-workbench-hosting-strip" aria-label="Workbench hosting and privacy posture" data-workbench-hosting="strip">
+        <section class="browser-workbench-hosting-strip" aria-label="@HostingPostureAriaLabel" data-workbench-hosting="strip">
             <div class="browser-workbench-hosting-copy">
                 <span class="browser-preview-status-label">Hosting and privacy</span>
-                <strong>Same workbench, hosted or self-hosted.</strong>
+                <strong>@HostingTitle</strong>
                 <p>The browser client is meant to run on `chummer.run` and in Docker without changing the user workflow or quietly changing telemetry expectations.</p>
             </div>
             <div class="browser-workbench-hosting-cards">
                 <article data-workbench-hosting-card="public-edge">
                     <span>Hosted route</span>
-                    <strong>/blazor/workbench</strong>
+                    <strong>@HostedRouteLabel</strong>
                     <p>The promoted browser client stays behind the portal front door so downloads, support, status, and account handoff remain same-origin.</p>
                 </article>
                 <article data-workbench-hosting-card="docker-self-host">
                     <span>Self-host</span>
                     <strong>Docker portal profile</strong>
-                    <p>Self-hosted operators keep the same portal/API/Blazor shape, with owner context and analytics defaults controlled by environment.</p>
+                    <p>Self-hosted operators keep the same portal/API/Blazor shape, with owner context and analytics defaults controlled by environment; the sanitized default is CHUMMER_ANALYTICS_PROVIDER=none.</p>
                 </article>
                 <article data-workbench-hosting-card="analytics-privacy">
                     <span>Analytics</span>
                     <strong>Rybbit is optional and metadata-only</strong>
-                    <p>Hosted analytics may use route/workflow metadata; self-host defaults stay off and must not send character, owner, runner file, XML, or dossier content.</p>
+                    <p>Hosted analytics may use route/workflow metadata; self-host defaults stay off unless the operator opts into Rybbit and must not send character, owner, runner file, XML, or dossier content.</p>
                 </article>
             </div>
         </section>
 
-        <section class="browser-workbench-command-palette" aria-label="Workbench command palette posture" data-workbench-command-palette="strip">
+        <section class="browser-workbench-command-palette" aria-label="@CommandPaletteAriaLabel" data-workbench-command-palette="strip">
             <div class="browser-workbench-command-copy">
                 <span class="browser-preview-status-label">Command palette</span>
                 <strong>Chummer habits, browser-safe commands.</strong>
-                <p>Keep common Chummer actions discoverable with keyboard-style hints while every command remains a reload-safe workbench link.</p>
+                <p>@CommandPaletteSummary</p>
             </div>
             <details open class="browser-workbench-command-panel" data-workbench-command-palette-panel="primary">
                 <summary>Quick command map</summary>
@@ -234,11 +250,17 @@
                        data-workbench-command-palette-action="support">
                         <kbd>F1</kbd><span>Support</span>
                     </a>
+                    <a href="/help"
+                       role="listitem"
+                       aria-keyshortcuts="Shift+F1"
+                       data-workbench-command-palette-action="help">
+                        <kbd>Shift</kbd><kbd>F1</kbd><span>Help</span>
+                    </a>
                 </div>
             </details>
         </section>
 
-        <section class="browser-workbench-density-strip" aria-label="Workbench density posture" data-workbench-density="strip">
+        <section class="browser-workbench-density-strip" aria-label="@DensityAriaLabel" data-workbench-density="strip">
             <div class="browser-workbench-density-copy">
                 <span class="browser-preview-status-label">Density posture</span>
                 <strong>Dense by default, readable when needed.</strong>
@@ -266,7 +288,7 @@
 
         <section class="browser-workbench-workflow-ledger" aria-label="Workbench workflow summary" data-workbench-workflow-ledger="strip">
             <div class="browser-workbench-ledger-copy">
-                <span class="browser-preview-status-label">Workbench</span>
+                <span class="browser-preview-status-label">@WorkflowLedgerLabel</span>
                 <strong>See what opens here.</strong>
                 <p>A compact map of the browser client, with clear handoffs when desktop is still the better tool.</p>
             </div>
@@ -343,7 +365,7 @@
             <div class="browser-workbench-rules-data-copy">
                 <span class="browser-preview-status-label">Rules</span>
                 <strong>Check rules and references.</strong>
-                <p>Open ruleset, source, XML, or language tools without leaving the workbench.</p>
+                <p>@RulesDataSummary</p>
             </div>
             <div class="browser-workbench-rules-data-actions">
                 <a href="@RulesLaneHref"
@@ -371,6 +393,11 @@
                     <span>Language</span>
                     <small>Check translations.</small>
                 </a>
+                <a href="/help"
+                   data-workbench-rules-data-action="help">
+                    <span>Help</span>
+                    <small>Recover rules and data setup.</small>
+                </a>
             </div>
         </section>
 
@@ -378,7 +405,7 @@
             <div class="browser-workbench-settings-copy">
                 <span class="browser-preview-status-label">Settings</span>
                 <strong>Change setup without leaving the page.</strong>
-                <p>Open app settings, character defaults, ruleset choice, update status, or help from the workbench.</p>
+                <p>@SettingsSummary</p>
             </div>
             <div class="browser-workbench-settings-actions">
                 <a href="@BuildPreviewHref(command: "global_settings", useWorkbenchRoute: true)"
@@ -403,8 +430,13 @@
                 </a>
                 <a href="@BuildPreviewHref(command: "report_bug", useWorkbenchRoute: true)"
                    data-workbench-settings-action="support-settings">
-                    <span>Help</span>
+                    <span>Support</span>
                     <small>Open support or report an issue.</small>
+                </a>
+                <a href="/help"
+                   data-workbench-settings-action="help">
+                    <span>Help</span>
+                    <small>Recover settings and setup guidance.</small>
                 </a>
             </div>
         </section>
@@ -413,7 +445,7 @@
             <div class="browser-workbench-diagnostics-copy">
                 <span class="browser-preview-status-label">Diagnostics</span>
                 <strong>Check the app when something feels off.</strong>
-                <p>Open runtime details, About, health, release status, or preview tools from the workbench.</p>
+                <p>@DiagnosticsSummary</p>
             </div>
             <div class="browser-workbench-diagnostics-actions">
                 <a href="@BuildPreviewHref(command: OverviewCommandPolicy.RuntimeInspectorCommandId, useWorkbenchRoute: true)"
@@ -426,7 +458,7 @@
                     <span>About</span>
                     <small>Review client identity.</small>
                 </a>
-                <a href="/blazor/health"
+                <a href="health"
                    data-workbench-diagnostics-action="health">
                     <span>Health</span>
                     <small>Check the browser service.</small>
@@ -436,10 +468,15 @@
                     <span>Status</span>
                     <small>Read release status.</small>
                 </a>
-                <a href="/preview"
+                <a href="preview"
                    data-workbench-diagnostics-action="proof-shelf">
                     <span>Preview</span>
                     <small>Open preview tools.</small>
+                </a>
+                <a href="/help"
+                   data-workbench-diagnostics-action="help">
+                    <span>Help</span>
+                    <small>Recover diagnostics and status guidance.</small>
                 </a>
             </div>
         </section>
@@ -448,7 +485,7 @@
             <div class="browser-workbench-connected-runtime-copy">
                 <span class="browser-preview-status-label">Live lanes</span>
                 <strong>Use connected tools when they are available.</strong>
-                <p>Play, session, coach, assistant, and status links stay close without changing the workbench.</p>
+                <p>@ConnectedRuntimeSummaryText</p>
             </div>
             <div class="browser-workbench-connected-runtime-actions">
                 <a href="/play"
@@ -537,7 +574,7 @@
             <div class="browser-workbench-desktop-install-copy">
                 <span class="browser-preview-status-label">Desktop</span>
                 <strong>Install or continue locally.</strong>
-                <p>Downloads, status, account, self-host notes, and support stay close.</p>
+                <p>Downloads, status, account, self-host notes, help, and support stay close.</p>
             </div>
             <div class="browser-workbench-desktop-install-actions">
                 <a href="/downloads/" data-workbench-desktop-install-action="downloads">
@@ -560,6 +597,10 @@
                     <span>Self-host</span>
                     <small>Run it yourself.</small>
                 </a>
+                <a href="/help" data-workbench-desktop-install-action="help">
+                    <span>Help</span>
+                    <small>Recover a stuck flow.</small>
+                </a>
                 <a href="/contact" data-workbench-desktop-install-action="support">
                     <span>Support</span>
                     <small>Install help.</small>
@@ -579,7 +620,7 @@
                 <a href="#workbench-density-compact" data-workbench-menu-bar-action="view">View</a>
                 <a href="@BuildWorkbenchLaneHref("tab-info")" data-workbench-menu-bar-action="character">Character</a>
                 <a href="@BuildPreviewHref(command: "global_settings", useWorkbenchRoute: true)" data-workbench-menu-bar-action="tools">Tools</a>
-                <a href="/contact" data-workbench-menu-bar-action="help">Help</a>
+                <a href="/help" data-workbench-menu-bar-action="help">Help</a>
             </nav>
         </section>
 
@@ -612,8 +653,8 @@
         <section class="browser-workbench-status-bar" aria-label="Workbench status bar" data-workbench-status-bar="strip">
             <div class="browser-workbench-status-bar-copy">
                 <span class="browser-preview-status-label">Status bar</span>
-                <strong>Keep save, rules, validation, session, and privacy state visible.</strong>
-                <p>A browser-hosted client still needs clear state cues so users know what is safe, current, and bounded before they continue.</p>
+                <strong>Keep save, rules, validation, session, privacy, and help state visible.</strong>
+                <p>A browser-hosted client still needs clear state cues so users know what is safe, current, recoverable, and bounded before they continue.</p>
             </div>
             <div class="browser-workbench-status-bar-actions" role="list" aria-label="Current workbench state shortcuts">
                 <a role="listitem" href="@BuildWorkbenchCommandHref("save_character_as")" data-workbench-status-bar-action="save-state">
@@ -635,6 +676,10 @@
                 <a role="listitem" href="/status" data-workbench-status-bar-action="privacy">
                     <span>Privacy</span>
                     <small>Analytics remains metadata-only.</small>
+                </a>
+                <a role="listitem" href="/help" data-workbench-status-bar-action="help">
+                    <span>Help</span>
+                    <small>Recover a blocked workflow.</small>
                 </a>
                 <a role="listitem" href="/contact" data-workbench-status-bar-action="support">
                     <span>Support</span>
@@ -677,7 +722,7 @@
             <div class="browser-workbench-dialog-stack-copy">
                 <span class="browser-preview-status-label">Dialog stack</span>
                 <strong>Keep modal work and committed results visible.</strong>
-                <p>Active dialogs, retry paths, results, and support continuations stay close to the current task.</p>
+                <p>Active dialogs, retry paths, results, help, and support continuations stay close to the current task.</p>
             </div>
             <div class="browser-workbench-dialog-stack-actions" role="list" aria-label="Dialog and result continuations">
                 <a role="listitem" href="@BuildPreviewHref(tab: "tab-contacts", control: "contact_add", useWorkbenchRoute: true)" data-workbench-dialog-stack-action="active-dialog">
@@ -696,6 +741,10 @@
                     <span>Back to sheet</span>
                     <small>Close the detour safely.</small>
                 </a>
+                <a role="listitem" href="/help" data-workbench-dialog-stack-action="help">
+                    <span>Help</span>
+                    <small>Recover a stuck dialog path.</small>
+                </a>
                 <a role="listitem" href="/contact" data-workbench-dialog-stack-action="support">
                     <span>Support</span>
                     <small>Escalate a broken dialog path.</small>
@@ -707,7 +756,7 @@
             <div class="browser-workbench-context-actions-copy">
                 <span class="browser-preview-status-label">Context actions</span>
                 <strong>Keep selection actions visible without hidden right-click dependency.</strong>
-                <p>Add, edit, remove, duplicate, source lookup, and recovery lanes stay reachable for mouse, touch, and keyboard users.</p>
+                <p>Add, edit, remove, duplicate, source lookup, help, and recovery lanes stay reachable for mouse, touch, and keyboard users.</p>
             </div>
             <div class="browser-workbench-context-actions-list" role="list" aria-label="Selection-sensitive workbench actions">
                 <a role="listitem" href="@BuildPreviewHref(tab: "tab-gear", control: "gear_add", useWorkbenchRoute: true)" data-workbench-context-actions-action="add">
@@ -730,6 +779,10 @@
                     <span>Source</span>
                     <small>Open rule/source lookup posture.</small>
                 </a>
+                <a role="listitem" href="/help" data-workbench-context-actions-action="help">
+                    <span>Help</span>
+                    <small>Get guidance for the selected action.</small>
+                </a>
                 <a role="listitem" href="@BuildPreviewHref("blue", useWorkbenchRoute: true)" data-workbench-context-actions-action="recover">
                     <span>Recover</span>
                     <small>Return to the active sheet context.</small>
@@ -741,12 +794,12 @@
             <div class="browser-workbench-search-filter-copy">
                 <span class="browser-preview-status-label">Search/filter</span>
                 <strong>Keep dense Chummer lists searchable from the workbench chrome.</strong>
-                <p>Gear, skills, qualities, roster, and source-heavy panes need visible filter lanes so users do not hunt through page-specific controls.</p>
+                <p>Gear, skills, qualities, Character Library, and source-heavy panes need visible filter and help lanes so users do not hunt through page-specific controls.</p>
             </div>
             <div class="browser-workbench-search-filter-actions" role="list" aria-label="Search and filter shortcuts">
                 <a role="listitem" href="@BuildPreviewHref(command: "character_roster", useWorkbenchRoute: true)" data-workbench-search-filter-action="roster-search">
-                    <span>Roster</span>
-                    <small>Find existing runners.</small>
+                    <span>Character Library</span>
+                    <small>Find, group, and organize existing runners.</small>
                 </a>
                 <a role="listitem" href="@BuildWorkbenchLaneHref("tab-gear")" data-workbench-search-filter-action="gear-filter">
                     <span>Gear</span>
@@ -764,6 +817,10 @@
                     <span>Sources</span>
                     <small>Filter books, rules, and references.</small>
                 </a>
+                <a role="listitem" href="/help" data-workbench-search-filter-action="help">
+                    <span>Help</span>
+                    <small>Recover a confusing filter state.</small>
+                </a>
                 <a role="listitem" href="@BuildPreviewHref("blue", useWorkbenchRoute: true)" data-workbench-search-filter-action="clear-filter">
                     <span>Clear</span>
                     <small>Return to the unfiltered sheet.</small>
@@ -775,7 +832,7 @@
             <div class="browser-workbench-layout-presets-copy">
                 <span class="browser-preview-status-label">Layout presets</span>
                 <strong>Switch between desktop-density and browser-safe work modes.</strong>
-                <p>Dense sheet, split review, output, mobile-safe, and focus layouts stay visible as web-client modes instead of hidden responsive accidents.</p>
+                <p>Dense sheet, split review, output, mobile-safe, focus, and help layouts stay visible as web-client modes instead of hidden responsive accidents.</p>
             </div>
             <div class="browser-workbench-layout-presets-actions" role="list" aria-label="Workbench layout preset shortcuts">
                 <a role="listitem" href="@BuildPreviewHref("blue", useWorkbenchRoute: true)" data-workbench-layout-presets-action="dense-sheet">
@@ -798,6 +855,10 @@
                     <span>Focus pane</span>
                     <small>Stay with one editing lane.</small>
                 </a>
+                <a role="listitem" href="/help" data-workbench-layout-presets-action="help">
+                    <span>Help</span>
+                    <small>Recover a confusing layout.</small>
+                </a>
             </div>
         </section>
 
@@ -805,7 +866,7 @@
             <div class="browser-workbench-activity-feed-copy">
                 <span class="browser-preview-status-label">Activity feed</span>
                 <strong>Keep warnings, output events, and recovery cues visible.</strong>
-                <p>Browser users need the same confidence as desktop users: recent saves, validation warnings, output handoffs, hosted status, and support escapes should stay easy to scan.</p>
+                <p>Browser users need the same confidence as desktop users: recent saves, validation warnings, output handoffs, hosted status, help, and support escapes should stay easy to scan.</p>
             </div>
             <div class="browser-workbench-activity-feed-actions" role="list" aria-label="Recent workbench activity shortcuts">
                 <a role="listitem" href="@BuildWorkbenchCommandHref("save_character_as")" data-workbench-activity-feed-action="save-event">
@@ -824,6 +885,10 @@
                     <span>Status</span>
                     <small>Check hosted and connected lanes.</small>
                 </a>
+                <a role="listitem" href="/help" data-workbench-activity-feed-action="help">
+                    <span>Help</span>
+                    <small>Recover from recent warnings.</small>
+                </a>
                 <a role="listitem" href="/contact" data-workbench-activity-feed-action="support-escape">
                     <span>Support</span>
                     <small>Escalate a stuck workflow.</small>
@@ -835,7 +900,7 @@
             <div class="browser-workbench-keyboard-shortcuts-copy">
                 <span class="browser-preview-status-label">Shortcuts</span>
                 <strong>Keep keyboard help and accelerator intent visible.</strong>
-                <p>Desktop-speed users should see command help, save/output shortcuts, section jumps, density controls, and support escape paths without guessing browser behavior.</p>
+                <p>Desktop-speed users should see command help, save/output shortcuts, section jumps, density controls, portal help, and support escape paths without guessing browser behavior.</p>
             </div>
             <div class="browser-workbench-keyboard-shortcuts-actions" role="list" aria-label="Keyboard shortcut and help affordances">
                 <a role="listitem" href="@BuildPreviewHref(command: "global_settings", useWorkbenchRoute: true)" data-workbench-keyboard-shortcuts-action="command-help">
@@ -853,6 +918,10 @@
                 <a role="listitem" href="#workbench-density-compact" data-workbench-keyboard-shortcuts-action="density-toggle">
                     <span>Density</span>
                     <small>Switch layout posture quickly.</small>
+                </a>
+                <a role="listitem" href="/help" data-workbench-keyboard-shortcuts-action="help">
+                    <span>Help</span>
+                    <small>Review browser keyboard guidance.</small>
                 </a>
                 <a role="listitem" href="/contact" data-workbench-keyboard-shortcuts-action="support-escape">
                     <span>Support</span>
@@ -899,7 +968,7 @@
             <div class="browser-workbench-tree-tools-copy">
                 <span class="browser-preview-status-label">Tree tools</span>
                 <strong>Keep dense tree and list actions visible.</strong>
-                <p>Chummer's dense lists use expandable trees, ordered lists, pinned selections, and sortable panes; the web client should keep those tools in reach.</p>
+                <p>Chummer's dense lists use expandable trees, ordered lists, pinned selections, sortable panes, and help guidance; the web client should keep those tools in reach.</p>
             </div>
             <div class="browser-workbench-tree-tools-actions" role="list" aria-label="Tree and list action shortcuts">
                 <a role="listitem" href="@BuildWorkbenchLaneHref("tab-gear")" data-workbench-tree-tools-action="expand">
@@ -922,6 +991,10 @@
                     <span>Pin</span>
                     <small>Keep selected contacts and context nearby.</small>
                 </a>
+                <a role="listitem" href="/help" data-workbench-tree-tools-action="help">
+                    <span>Help</span>
+                    <small>Recover dense tree/list context.</small>
+                </a>
                 <a role="listitem" href="@BuildWorkbenchLaneHref("tab-gear")" data-workbench-tree-tools-action="selection">
                     <span>Selection</span>
                     <small>Return to selected item context.</small>
@@ -933,7 +1006,7 @@
             <div class="browser-workbench-save-session-copy">
                 <span class="browser-preview-status-label">Save state</span>
                 <strong>Make browser saves feel like desktop Chummer.</strong>
-                <p>Desktop users expect explicit save state, Save As handoff, autosave cues, dirty-state warnings, recovery, and export paths; the web workbench keeps those lifecycle actions in reach.</p>
+                <p>Desktop users expect explicit save state, Save As handoff, autosave cues, dirty-state warnings, recovery, help, and export paths; the web workbench keeps those lifecycle actions in reach.</p>
             </div>
             <div class="browser-workbench-save-session-actions" role="list" aria-label="Save and session lifecycle shortcuts">
                 <a role="listitem" href="@BuildPreviewHref("blue", command: "save_character")" data-workbench-save-session-action="save">
@@ -956,6 +1029,10 @@
                     <span>Recovery</span>
                     <small>Keep recent session restoration discoverable.</small>
                 </a>
+                <a role="listitem" href="/help" data-workbench-save-session-action="help">
+                    <span>Help</span>
+                    <small>Recover a save/session issue.</small>
+                </a>
                 <a role="listitem" href="@BuildPreviewHref("blue", command: "export_character")" data-workbench-save-session-action="export">
                     <span>Export</span>
                     <small>Separate output handoff from ordinary saves.</small>
@@ -967,7 +1044,7 @@
             <div class="browser-workbench-output-handoff-copy">
                 <span class="browser-preview-status-label">Output handoff</span>
                 <strong>Keep print, packet, and share paths explicit.</strong>
-                <p>Chummer makes output generation a visible workflow; the web workbench should keep PDF packets, print sheets, summaries, share links, audit queues, and download bundles near the active sheet.</p>
+                <p>Chummer makes output generation a visible workflow; the web workbench should keep PDF packets, print sheets, summaries, share links, audit queues, help, and download bundles near the active sheet.</p>
             </div>
             <div class="browser-workbench-output-handoff-actions" role="list" aria-label="Output and export handoff shortcuts">
                 <a role="listitem" href="@BuildPreviewHref("blue", command: "export_character")" data-workbench-output-handoff-action="pdf_packet">
@@ -990,6 +1067,10 @@
                     <span>Audit queue</span>
                     <small>Review recent warnings before export.</small>
                 </a>
+                <a role="listitem" href="/help" data-workbench-output-handoff-action="help">
+                    <span>Help</span>
+                    <small>Recover an output handoff.</small>
+                </a>
                 <a role="listitem" href="@BuildPreviewHref("blue", command: "download_character_pack")" data-workbench-output-handoff-action="download_bundle">
                     <span>Download bundle</span>
                     <small>Keep self-hosted file handoff discoverable.</small>
@@ -1001,7 +1082,7 @@
             <div class="browser-workbench-validation-queue-copy">
                 <span class="browser-preview-status-label">Build readiness</span>
                 <strong>Keep validation pressure visible before output.</strong>
-                <p>Chummer keeps rule issues, missing fields, cost checks, availability limits, final build gates, and next-fix navigation close to the sheet; the web workbench should make that readiness posture explicit.</p>
+                <p>Chummer keeps rule issues, missing fields, cost checks, availability limits, final build gates, help, and next-fix navigation close to the sheet; the web workbench should make that readiness posture explicit.</p>
             </div>
             <div class="browser-workbench-validation-queue-actions" role="list" aria-label="Validation and build readiness shortcuts">
                 <a role="listitem" href="@BuildPreviewHref("blue", command: "validate_character")" data-workbench-validation-queue-action="rule_issues">
@@ -1024,6 +1105,10 @@
                     <span>Build gate</span>
                     <small>Reserve finalization readiness in the flow.</small>
                 </a>
+                <a role="listitem" href="/help" data-workbench-validation-queue-action="help">
+                    <span>Help</span>
+                    <small>Review validation guidance.</small>
+                </a>
                 <a role="listitem" href="@BuildPreviewHref("blue", command: "resolve_next_issue")" data-workbench-validation-queue-action="fix_next">
                     <span>Fix next</span>
                     <small>Jump to the next blocking issue.</small>
@@ -1035,7 +1120,7 @@
             <div class="browser-workbench-history-undo-copy">
                 <span class="browser-preview-status-label">History</span>
                 <strong>Make rollback and recovery visible.</strong>
-                <p>Desktop users expect undo, redo, snapshots, comparison, restore, conflict review, and recent-change context; the web workbench should reserve those recovery affordances near active editing.</p>
+                <p>Desktop users expect undo, redo, snapshots, comparison, restore, conflict review, help, and recent-change context; the web workbench should reserve those recovery affordances near active editing.</p>
             </div>
             <div class="browser-workbench-history-undo-actions" role="list" aria-label="History and undo shortcuts">
                 <a role="listitem" href="@BuildPreviewHref("blue", command: "undo_change")" data-workbench-history-undo-action="undo">
@@ -1058,6 +1143,10 @@
                     <span>Restore</span>
                     <small>Keep recovery separate from normal save.</small>
                 </a>
+                <a role="listitem" href="/help" data-workbench-history-undo-action="help">
+                    <span>Help</span>
+                    <small>Recover rollback context safely.</small>
+                </a>
                 <a role="listitem" href="@BuildPreviewHref("blue", command: "review_conflict")" data-workbench-history-undo-action="conflict">
                     <span>Conflict</span>
                     <small>Prepare hosted multi-session conflict review.</small>
@@ -1069,7 +1158,7 @@
             <div class="browser-workbench-sync-presence-copy">
                 <span class="browser-preview-status-label">Sync</span>
                 <strong>Show hosted and self-hosted session state.</strong>
-                <p>Keep connection, offline cache, sync queue, presence, conflict, and handoff cues visible so hosted and local use stays calm.</p>
+                <p>Keep connection, offline cache, sync queue, presence, conflict, help, and handoff cues visible so hosted and local use stays calm.</p>
             </div>
             <div class="browser-workbench-sync-presence-actions" role="list" aria-label="Sync and presence shortcuts">
                 <a role="listitem" href="@BuildPreviewHref("blue", command: "check_connection")" data-workbench-sync-presence-action="connection">
@@ -1091,6 +1180,10 @@
                 <a role="listitem" href="@BuildWorkbenchLaneHref("tab-contacts")" data-workbench-sync-presence-action="presence">
                     <span>Presence</span>
                     <small>Prepare table and GM co-viewing state.</small>
+                </a>
+                <a role="listitem" href="/help" data-workbench-sync-presence-action="help">
+                    <span>Help</span>
+                    <small>Recover sync or offline state.</small>
                 </a>
                 <a role="listitem" href="@BuildPreviewHref("blue", command: "handoff_session")" data-workbench-sync-presence-action="handoff">
                     <span>Handoff</span>
@@ -1125,6 +1218,10 @@
                 <a role="listitem" href="@BuildPreviewHref("blue", command: "validate_data_scope")" data-workbench-data-packs-action="validation_scope">
                     <span>Validation scope</span>
                     <small>Connect rules data to build readiness.</small>
+                </a>
+                <a role="listitem" href="/help" data-workbench-data-packs-action="help">
+                    <span>Help</span>
+                    <small>Recover rules/data-pack setup.</small>
                 </a>
                 <a role="listitem" href="@BuildPreviewHref("blue", command: "open_data_folder")" data-workbench-data-packs-action="data_folder">
                     <span>Data folder</span>
@@ -1164,6 +1261,10 @@
                     <span>Import</span>
                     <small>Bring desktop and self-hosted files forward.</small>
                 </a>
+                <a role="listitem" href="/help" data-workbench-character-library-action="help">
+                    <span>Help</span>
+                    <small>Recover library and import setup.</small>
+                </a>
             </div>
         </section>
 
@@ -1197,6 +1298,10 @@
                 <a role="listitem" href="@BuildPreviewHref("blue", command: "handoff_to_run")" data-workbench-campaign-session-action="run_handoff">
                     <span>Run handoff</span>
                     <small>Move from build work into live play.</small>
+                </a>
+                <a role="listitem" href="/help" data-workbench-campaign-session-action="help">
+                    <span>Help</span>
+                    <small>Recover campaign and table handoff setup.</small>
                 </a>
             </div>
         </section>
@@ -1232,6 +1337,10 @@
                     <span>Self-host toggle</span>
                     <small>Keep Docker analytics controls explicit.</small>
                 </a>
+                <a role="listitem" href="/help" data-workbench-observability-privacy-action="help">
+                    <span>Help</span>
+                    <small>Explain analytics and privacy choices.</small>
+                </a>
             </div>
         </section>
 
@@ -1265,6 +1374,10 @@
                 <a role="listitem" href="@BuildPreviewHref("blue", command: "open_web_docs")" data-workbench-first-run-action="docs">
                     <span>Docs</span>
                     <small>Link web-client help and parity notes.</small>
+                </a>
+                <a role="listitem" href="/help" data-workbench-first-run-action="help">
+                    <span>Help</span>
+                    <small>Recover onboarding and setup steps.</small>
                 </a>
             </div>
         </section>
@@ -1300,6 +1413,10 @@
                     <span>Reset cache</span>
                     <small>Keep recovery visible for hosted and self-hosted users.</small>
                 </a>
+                <a role="listitem" href="/help" data-workbench-pwa-install-action="help">
+                    <span>Help</span>
+                    <small>Recover install, cache, and permissions setup.</small>
+                </a>
             </div>
         </section>
 
@@ -1333,6 +1450,10 @@
                 <a role="listitem" href="@BuildPreviewHref("blue", command: "docker_support_bundle")" data-workbench-docker-operator-action="support_bundle">
                     <span>Support bundle</span>
                     <small>Package logs without exposing sheet data.</small>
+                </a>
+                <a role="listitem" href="/help" data-workbench-docker-operator-action="help">
+                    <span>Help</span>
+                    <small>Recover Docker self-host operations.</small>
                 </a>
             </div>
         </section>
@@ -1368,6 +1489,10 @@
                     <span>Access audit</span>
                     <small>Review who touched hosted character state.</small>
                 </a>
+                <a role="listitem" href="/help" data-workbench-security-access-action="help">
+                    <span>Help</span>
+                    <small>Recover sign-in and access setup.</small>
+                </a>
             </div>
         </section>
 
@@ -1401,6 +1526,10 @@
                 <a role="listitem" href="@BuildPreviewHref("blue", command: "open_support_notifications")" data-workbench-notifications-jobs-action="support">
                     <span>Support</span>
                     <small>Connect failures to support-bundle posture.</small>
+                </a>
+                <a role="listitem" href="/help" data-workbench-notifications-jobs-action="help">
+                    <span>Help</span>
+                    <small>Recover failed async work.</small>
                 </a>
             </div>
         </section>
@@ -1436,6 +1565,10 @@
                     <span>Pointer help</span>
                     <small>Explain drag, long-press, and hover replacements.</small>
                 </a>
+                <a role="listitem" href="/help" data-workbench-touch-mobile-action="help">
+                    <span>Help</span>
+                    <small>Recover touch and mobile setup.</small>
+                </a>
             </div>
         </section>
 
@@ -1469,6 +1602,10 @@
                 <a role="listitem" href="@BuildPreviewHref("blue", command: "open_shared_anchor")" data-workbench-navigation-deeplink-action="shared_anchor">
                     <span>Shared anchor</span>
                     <small>Open a GM or player deep link safely.</small>
+                </a>
+                <a role="listitem" href="/help" data-workbench-navigation-deeplink-action="help">
+                    <span>Help</span>
+                    <small>Recover route and deep-link setup.</small>
                 </a>
             </div>
         </section>
@@ -1504,6 +1641,10 @@
                     <span>Bulk apply</span>
                     <small>Keep repeated edits explicit and reviewable.</small>
                 </a>
+                <a role="listitem" href="/help" data-workbench-inline-editing-action="help">
+                    <span>Help</span>
+                    <small>Recover commit, revert, and formula edits.</small>
+                </a>
             </div>
         </section>
 
@@ -1537,6 +1678,10 @@
                 <a role="listitem" href="@BuildPreviewHref("blue", command: "render_profiler")" data-workbench-performance-virtualization-action="profiler">
                     <span>Profiler</span>
                     <small>Surface operator diagnostics without user data.</small>
+                </a>
+                <a role="listitem" href="/help" data-workbench-performance-virtualization-action="help">
+                    <span>Help</span>
+                    <small>Recover large-sheet performance setup.</small>
                 </a>
             </div>
         </section>
@@ -1572,6 +1717,10 @@
                     <span>Export profile</span>
                     <small>Save repeatable table output settings.</small>
                 </a>
+                <a role="listitem" href="/help" data-workbench-print-layout-action="help">
+                    <span>Help</span>
+                    <small>Recover print and export layout setup.</small>
+                </a>
             </div>
         </section>
 
@@ -1605,6 +1754,10 @@
                 <a role="listitem" href="@BuildPreviewHref("blue", command: "cleanup_media")" data-workbench-portrait-attachments-action="cleanup">
                     <span>Cleanup</span>
                     <small>Surface stale attachment and storage cleanup.</small>
+                </a>
+                <a role="listitem" href="/help" data-workbench-portrait-attachments-action="help">
+                    <span>Help</span>
+                    <small>Recover media and attachment setup.</small>
                 </a>
             </div>
         </section>
@@ -1640,6 +1793,10 @@
                     <span>Restore layout</span>
                     <small>Return panes to the last useful arrangement.</small>
                 </a>
+                <a role="listitem" href="/help" data-workbench-windowing-panes-action="help">
+                    <span>Help</span>
+                    <small>Recover pane and window layout setup.</small>
+                </a>
             </div>
         </section>
 
@@ -1673,6 +1830,10 @@
                 <a role="listitem" href="@BuildPreviewHref("blue", command: "dependency_path")" data-workbench-calculation-provenance-action="dependency_path">
                     <span>Dependency path</span>
                     <small>Trace what will change before recalculation.</small>
+                </a>
+                <a role="listitem" href="/help" data-workbench-calculation-provenance-action="help">
+                    <span>Help</span>
+                    <small>Recover calculation explanation setup.</small>
                 </a>
             </div>
         </section>
@@ -1708,6 +1869,10 @@
                     <span>Next session</span>
                     <small>Carry table context into the next run.</small>
                 </a>
+                <a role="listitem" href="/help" data-workbench-lifecycle-calendar-action="help">
+                    <span>Help</span>
+                    <small>Recover downtime and upkeep setup.</small>
+                </a>
             </div>
         </section>
 
@@ -1742,6 +1907,10 @@
                     <span>History</span>
                     <small>See what changed and when.</small>
                 </a>
+                <a role="listitem" href="/help" data-workbench-progression-ledger-action="help">
+                    <span>Help</span>
+                    <small>Recover advancement accounting setup.</small>
+                </a>
             </div>
         </section>
 
@@ -1759,6 +1928,7 @@
                 <a href="@BuildPreviewHref("blue", command: "import_custom_data")" role="listitem" data-workbench-import-reconcile-action="custom-data">Custom data</a>
                 <a href="@BuildPreviewHref("blue", command: "import_conflicts")" role="listitem" data-workbench-import-reconcile-action="conflicts">Conflicts</a>
                 <a href="@BuildPreviewHref("blue", command: "import_commit")" role="listitem" data-workbench-import-reconcile-action="commit-import">Accept</a>
+                <a href="/help" role="listitem" data-workbench-import-reconcile-action="help">Help</a>
             </div>
         </section>
 
@@ -1776,6 +1946,7 @@
                 <a href="@BuildPreviewHref("blue", command: "merge_dry_run")" role="listitem" data-workbench-compare-merge-action="dry-run">Dry run</a>
                 <a href="@BuildPreviewHref("blue", command: "merge_apply")" role="listitem" data-workbench-compare-merge-action="apply-merge">Apply</a>
                 <a href="@BuildPreviewHref("blue", command: "merge_rollback_plan")" role="listitem" data-workbench-compare-merge-action="rollback-plan">Rollback</a>
+                <a href="/help" role="listitem" data-workbench-compare-merge-action="help">Help</a>
             </div>
         </section>
 
@@ -1793,6 +1964,7 @@
                 <a href="@BuildPreviewHref("blue", command: "checkpoint_restore_preview")" role="listitem" data-workbench-restore-checkpoint-action="restore-preview">Preview</a>
                 <a href="@BuildPreviewHref("blue", command: "checkpoint_rollback")" role="listitem" data-workbench-restore-checkpoint-action="rollback">Rollback</a>
                 <a href="@BuildPreviewHref("blue", command: "checkpoint_retention")" role="listitem" data-workbench-restore-checkpoint-action="retention">Retention</a>
+                <a href="/help" role="listitem" data-workbench-restore-checkpoint-action="help">Help</a>
             </div>
         </section>
 
@@ -1810,6 +1982,7 @@
                 <a href="@BuildPreviewHref("blue", command: "offline_local_export")" role="listitem" data-workbench-offline-cache-action="local-export">Local export</a>
                 <a href="@BuildPreviewHref("blue", command: "offline_stale_data")" role="listitem" data-workbench-offline-cache-action="stale-data">Stale data</a>
                 <a href="@BuildPreviewHref("blue", command: "offline_sync_health")" role="listitem" data-workbench-offline-cache-action="sync-health">Sync health</a>
+                <a href="/help" role="listitem" data-workbench-offline-cache-action="help">Help</a>
             </div>
         </section>
 
@@ -1827,6 +2000,7 @@
                 <a href="@BuildPreviewHref("blue", command: "session_stale")" role="listitem" data-workbench-session-locking-action="stale-session">Stale</a>
                 <a href="@BuildPreviewHref("blue", command: "session_conflict_owner")" role="listitem" data-workbench-session-locking-action="conflict-owner">Conflict owner</a>
                 <a href="@BuildPreviewHref("blue", command: "session_takeover_review")" role="listitem" data-workbench-session-locking-action="takeover-review">Takeover</a>
+                <a href="/help" role="listitem" data-workbench-session-locking-action="help">Help</a>
             </div>
         </section>
 
@@ -1844,6 +2018,7 @@
                 <a href="@BuildPreviewHref("blue", command: "share_revoke")" role="listitem" data-workbench-share-export-privacy-action="revoke">Revoke</a>
                 <a href="@BuildPreviewHref("blue", command: "share_history")" role="listitem" data-workbench-share-export-privacy-action="audit-history">History</a>
                 <a href="@BuildPreviewHref("blue", command: "share_local_only")" role="listitem" data-workbench-share-export-privacy-action="local-only">Local only</a>
+                <a href="/help" role="listitem" data-workbench-share-export-privacy-action="help">Help</a>
             </div>
         </section>
 
@@ -1861,6 +2036,7 @@
                 <a href="@BuildPreviewHref("blue", command: "table_public_handout")" role="listitem" data-workbench-table-handoff-action="public-handout">Handout</a>
                 <a href="@BuildPreviewHref("blue", command: "table_private_notes")" role="listitem" data-workbench-table-handoff-action="private-notes">Private notes</a>
                 <a href="@BuildPreviewHref("blue", command: "table_export")" role="listitem" data-workbench-table-handoff-action="table-export">Export</a>
+                <a href="/help" role="listitem" data-workbench-table-handoff-action="help">Help</a>
             </div>
         </section>
 
@@ -1878,6 +2054,7 @@
                 <a href="@BuildPreviewHref("blue", command: "rules_table_summary")" role="listitem" data-workbench-rules-citation-action="table-summary">Summary</a>
                 <a href="@BuildPreviewHref("blue", command: "rules_dispute_notes")" role="listitem" data-workbench-rules-citation-action="dispute-trail">Dispute notes</a>
                 <a href="@BuildPreviewHref("blue", command: "rules_export")" role="listitem" data-workbench-rules-citation-action="audit-export">Export</a>
+                <a href="/help" role="listitem" data-workbench-rules-citation-action="help">Help</a>
             </div>
         </section>
 
@@ -1895,6 +2072,7 @@
                 <a href="@BuildPreviewHref("blue", command: "settings_currency")" role="listitem" data-workbench-localization-terminology-action="currency">Currency</a>
                 <a href="@BuildPreviewHref("blue", command: "settings_table_terms")" role="listitem" data-workbench-localization-terminology-action="table-terms">Table terms</a>
                 <a href="@BuildPreviewHref("blue", command: "settings_source_titles")" role="listitem" data-workbench-localization-terminology-action="source-titles">Source titles</a>
+                <a href="/help" role="listitem" data-workbench-localization-terminology-action="help">Help</a>
             </div>
         </section>
 
@@ -1903,13 +2081,14 @@
             <div class="browser-workbench-help-recovery-guidance-copy">
                 <span class="browser-preview-status-label">Help</span>
                 <strong>Explain the next useful move.</strong>
-                <p>Context help, shortcuts, error notes, recovery steps, docs, and support stay close when a flow gets stuck.</p>
+                <p>Context help, shortcuts, error notes, recovery steps, portal help, docs, and support stay close when a flow gets stuck.</p>
             </div>
             <div class="browser-workbench-help-recovery-guidance-actions" role="list" aria-label="Help recovery guidance actions">
                 <a href="@BuildPreviewHref("blue", command: "help_context")" role="listitem" data-workbench-help-recovery-guidance-action="context-help">Context help</a>
                 <a href="@BuildPreviewHref("blue", command: "help_shortcuts")" role="listitem" data-workbench-help-recovery-guidance-action="shortcut-hints">Shortcuts</a>
                 <a href="@BuildPreviewHref("blue", command: "help_errors")" role="listitem" data-workbench-help-recovery-guidance-action="error-explain">Errors</a>
                 <a href="@BuildPreviewHref("blue", command: "help_recovery")" role="listitem" data-workbench-help-recovery-guidance-action="recovery-suggest">Recovery</a>
+                <a href="/help" role="listitem" data-workbench-help-recovery-guidance-action="portal-help">Portal help</a>
                 <a href="/docs/" role="listitem" data-workbench-help-recovery-guidance-action="docs-link">Docs</a>
                 <a href="/contact" role="listitem" data-workbench-help-recovery-guidance-action="support-handoff">Support</a>
             </div>
@@ -1927,6 +2106,7 @@
                 <a href="@BuildPreviewHref("blue", command: "gm_condition_rail")" role="listitem" data-workbench-gm-screen-export-action="condition-rail">Conditions</a>
                 <a href="@BuildPreviewHref("blue", command: "gm_scene_notes")" role="listitem" data-workbench-gm-screen-export-action="scene-notes">Scene notes</a>
                 <a href="@BuildPreviewHref("blue", command: "gm_export_bundle")" role="listitem" data-workbench-gm-screen-export-action="export-bundle">Export bundle</a>
+                <a href="/help" role="listitem" data-workbench-gm-screen-export-action="help">Help</a>
             </div>
         </section>
 
@@ -1935,7 +2115,7 @@
             <article class="browser-preview-status-card" data-workbench-entry-card="new-character">
                 <span class="browser-preview-status-label">Quick start</span>
                 <strong>Start a new runner</strong>
-                <p>Launch the shared new-character flow directly from the browser workbench route.</p>
+                <p>@NewCharacterEntrySummary</p>
                 <a href="@BuildPreviewHref(command: "new_character", useWorkbenchRoute: true)">Open New Character</a>
             </article>
             <article class="browser-preview-status-card" data-workbench-entry-card="open-character">
@@ -1974,8 +2154,14 @@
             <article class="browser-preview-status-card" data-workbench-entry-card="portal-support">
                 <span class="browser-preview-status-label">Support</span>
                 <strong>Open product support</strong>
-                <p>Route browser-client issues through the portal support surface without breaking the workbench product shape.</p>
+                <p>@PortalSupportSummary</p>
                 <a href="/contact">Open support</a>
+            </article>
+            <article class="browser-preview-status-card" data-workbench-entry-card="portal-help">
+                <span class="browser-preview-status-label">Help</span>
+                <strong>Open portal help</strong>
+                <p>Use same-origin help to recover a stuck browser workflow, find downloads, check status, or reach support.</p>
+                <a href="/help">Open help</a>
             </article>
             <article class="browser-preview-status-card" data-workbench-entry-card="portal-account-work">
                 <span class="browser-preview-status-label">Account</span>
@@ -2052,6 +2238,17 @@
                         <a href="@BuildPreviewHref(workspace: PrimaryRecentWorkspace.WorkspaceId, tab: "tab-gear", control: "gear_add", useWorkbenchRoute: true)">Add gear for @PrimaryRecentWorkspace.ShortLabel</a>
                         <a href="@BuildPreviewHref(workspace: PrimaryRecentWorkspace.WorkspaceId, tab: "tab-gear", control: "gear_edit", useWorkbenchRoute: true)">Edit gear for @PrimaryRecentWorkspace.ShortLabel</a>
                         <a href="@BuildPreviewHref(workspace: PrimaryRecentWorkspace.WorkspaceId, tab: "tab-gear", control: "gear_delete", useWorkbenchRoute: true)">Remove gear for @PrimaryRecentWorkspace.ShortLabel</a>
+                        <a href="@BuildPreviewHref(workspace: PrimaryRecentWorkspace.WorkspaceId, tab: "tab-stats", control: "runner_benchmark", useWorkbenchRoute: true)">Open Runner Intelligence benchmarks for @PrimaryRecentWorkspace.ShortLabel</a>
+                        <a href="@BuildPreviewHref(workspace: PrimaryRecentWorkspace.WorkspaceId, tab: "tab-stats", control: "runner_what_if", useWorkbenchRoute: true)">Model Increase Initiative and inventory what-if stack for @PrimaryRecentWorkspace.ShortLabel</a>
+                        <a href="@BuildPreviewHref(workspace: PrimaryRecentWorkspace.WorkspaceId, tab: "tab-stats", control: "runner_cohort_privacy", useWorkbenchRoute: true)">Review Runner Intelligence privacy cohorts for @PrimaryRecentWorkspace.ShortLabel</a>
+                        @{
+                            RunnerIntelligenceReport runnerIntelligencePreview = RunnerIntelligencePreviewService.BuildIncreaseInitiativePreview();
+                            RunnerWhatIfResult runnerIntelligenceWhatIf = runnerIntelligencePreview.WhatIfCards[0];
+                        }
+                        <span data-runner-intelligence-shared-calculator="Chummer.Presentation.RunnerIntelligence">Shared Runner Intelligence calculator backs Blazor and Avalonia reports for @runnerIntelligencePreview.CohortLabel.</span>
+                        <span data-runner-intelligence-sample="increase_initiative_force_6">@runnerIntelligenceWhatIf.Label sample models final severity after resistance with Jazz inventory synergy.</span>
+                        <span data-runner-intelligence-risk-percent="@runnerIntelligenceWhatIf.Risk.ChanceAtOrBelowThresholdPercent">@runnerIntelligenceWhatIf.Risk.ChanceAtOrBelowThresholdPercent.ToString("0.#")% chance of taking no more than @runnerIntelligenceWhatIf.Risk.Threshold Stun.</span>
+                        <span data-runner-intelligence-percentile-delta="@runnerIntelligenceWhatIf.PercentileDelta">Initiative percentile delta: @runnerIntelligenceWhatIf.PercentileDelta.ToString("+0.#;-0.#;0") points.</span>
                         <a href="@BuildPreviewHref(workspace: PrimaryRecentWorkspace.WorkspaceId, tab: "tab-info", control: "show_source", useWorkbenchRoute: true)">Show source for @PrimaryRecentWorkspace.ShortLabel</a>
                         <a href="@BuildPreviewHref(workspace: PrimaryRecentWorkspace.WorkspaceId, tab: "tab-gear", control: "gear_source", useWorkbenchRoute: true)">Show gear source for @PrimaryRecentWorkspace.ShortLabel</a>
                         <a href="@BuildPreviewHref(workspace: PrimaryRecentWorkspace.WorkspaceId, tab: "tab-gear", control: "gear_mount", useWorkbenchRoute: true)">Mount gear for @PrimaryRecentWorkspace.ShortLabel</a>
@@ -2150,13 +2347,13 @@
         <article class="browser-preview-status-card" data-preview-proof-card="new-character">
             <span class="browser-preview-status-label">Startup proof</span>
             <strong>Open New Character directly in the browser</strong>
-            <p>Deep-links the browser workbench into the same shared new-character command so startup workflow proof does not depend on manual clicking.</p>
+            <p>@NewCharacterProofSummary</p>
             <a href="@BuildPreviewHref(command: "new_character")">Open New Character proof</a>
         </article>
         <article class="browser-preview-status-card" data-preview-proof-card="open-character">
             <span class="browser-preview-status-label">Import proof</span>
             <strong>Open Character import directly in the browser</strong>
-            <p>Deep-links the browser workbench into the shared import dialog so existing-runner intake is proven from the same route model as desktop startup commands.</p>
+            <p>@ImportProofSummary</p>
             <a href="@BuildPreviewHref(command: "open_character")">Open Character proof</a>
         </article>
         <article class="browser-preview-status-card" data-preview-proof-card="open-for-printing">
@@ -2198,7 +2395,7 @@
         <article class="browser-preview-status-card" data-preview-proof-card="origin-dossier">
             <span class="browser-preview-status-label">Story proof</span>
             <strong>Open Origin Dossier directly in the browser</strong>
-            <p>Deep-links the browser workbench into the same origin-dossier wizard used by the shared startup flow.</p>
+            <p>@OriginDossierSummary</p>
             <a href="@BuildPreviewHref(command: "new_character_origin")">Open Origin Dossier proof</a>
         </article>
     </section>
@@ -2208,10 +2405,10 @@
         <div class="browser-preview-frame-header">
             <div>
                 <p class="browser-preview-frame-kicker">Workbench shell</p>
-                <h2>Open the browser-facing Chummer workbench</h2>
+                <h2>@RouteOpenTitle</h2>
             </div>
-            <p>
-                Use the shell below to verify navigation, startup posture, and active browser workflow routes.
+            <p data-chummer-app-startup-command="@StartupCommandLabel">
+                @RouteOpenSummary
             </p>
         </div>
         <DesktopShell DemoFixtureId="@Fixture"
@@ -2254,7 +2451,77 @@
     [SupplyParameterFromQuery(Name = "dialog_action")]
     public string? DialogAction { get; set; }
 
+    private bool IsAppRoute => Navigation.Uri.Contains("/app", StringComparison.OrdinalIgnoreCase);
     private bool IsWorkbenchRoute => Navigation.Uri.Contains("/workbench", StringComparison.OrdinalIgnoreCase);
+    private string PageTitleText => IsAppRoute ? "Chummer Online" : IsWorkbenchRoute ? "Chummer Online Compatibility Route" : "Chummer Online Preview Tools";
+    private string RouteNavigationLabel => IsAppRoute ? "Chummer Online navigation" : "Workbench navigation";
+    private string RouteStatusLabel => IsAppRoute ? "Chummer Online status" : IsWorkbenchRoute ? "Compatibility route status" : "Preview tools status";
+    private string RouteGuidanceLabel => IsAppRoute ? "Chummer Online route guidance" : IsWorkbenchRoute ? "Compatibility route guidance" : "Preview tools guidance";
+    private string RouteKindLabel => IsAppRoute ? "Chummer Online" : IsWorkbenchRoute ? "Compatibility route" : "Preview tools";
+    private string RouteGuidanceTitle => IsAppRoute
+        ? "Use this route as the browser client entrypoint"
+        : IsWorkbenchRoute
+            ? "Use this route for saved workbench links"
+            : "Use this route for preview and result-state tools";
+    private string RouteGuidanceSummary => IsAppRoute
+        ? "The shell below is the user-facing Chummer Online route: open, organize, resume, build, and export runners without proof-route language in the main path."
+        : IsWorkbenchRoute
+            ? "The shell below keeps older workbench bookmarks and shared links working while the main browser client remains Chummer Online at /blazor/app."
+            : "The shell below keeps preview tools, startup deep links, and browser result-state checks separate from the user-facing Chummer Online route.";
+    private string TaskDockTitle => IsAppRoute
+        ? "Keep the common Chummer jobs one click from the web app."
+        : "Keep the common Chummer jobs one click from the compatibility route.";
+    private string TaskDockAriaLabel => IsAppRoute ? "Chummer Online task dock" : "Compatibility route task dock";
+    private string TaskShortcutAriaLabel => IsAppRoute ? "Chummer Online task shortcuts" : "Compatibility route task shortcuts";
+    private string SessionRecoveryAriaLabel => IsAppRoute ? "Chummer Online session recovery" : "Compatibility route session recovery";
+    private string HostingPostureAriaLabel => IsAppRoute ? "Chummer Online hosting and privacy posture" : "Compatibility route hosting and privacy posture";
+    private string CommandPaletteAriaLabel => IsAppRoute ? "Chummer Online command palette posture" : "Compatibility route command palette posture";
+    private string DensityAriaLabel => IsAppRoute ? "Chummer Online density posture" : "Workbench density posture";
+    private string HostedRouteLabel => IsAppRoute ? "/blazor/app" : "/blazor/workbench";
+    private string HostingTitle => IsAppRoute
+        ? "Chummer Online, hosted or self-hosted."
+        : "Same workbench, hosted or self-hosted.";
+    private string CommandPaletteSummary => IsAppRoute
+        ? "Keep common Chummer actions discoverable with keyboard-style hints while every command remains a reload-safe Chummer Online link."
+        : "Keep common Chummer actions discoverable with keyboard-style hints while every command remains a reload-safe workbench link.";
+    private string WorkflowLedgerLabel => IsAppRoute ? "Chummer Online" : "Workbench";
+    private string RulesDataSummary => IsAppRoute
+        ? "Open ruleset, source, XML, or language tools without leaving Chummer Online."
+        : "Open ruleset, source, XML, or language tools without leaving the workbench.";
+    private string SettingsSummary => IsAppRoute
+        ? "Open app settings, character defaults, ruleset choice, update status, or help from Chummer Online."
+        : "Open app settings, character defaults, ruleset choice, update status, or help from the workbench.";
+    private string DiagnosticsSummary => IsAppRoute
+        ? "Open runtime details, About, health, release status, or preview tools from Chummer Online."
+        : "Open runtime details, About, health, release status, or preview tools from the workbench.";
+    private string ConnectedRuntimeSummaryText => IsAppRoute
+        ? "Play, session, coach, assistant, and status links stay close without changing the Chummer Online route."
+        : "Play, session, coach, assistant, and status links stay close without changing the workbench.";
+    private string NewCharacterEntrySummary => IsAppRoute
+        ? "Launch the shared new-character flow directly from Chummer Online."
+        : "Launch the shared new-character flow directly from the browser workbench route.";
+    private string PortalSupportSummary => IsAppRoute
+        ? "Route browser-client issues through the portal support surface without breaking the Chummer Online product shape."
+        : "Route browser-client issues through the portal support surface without breaking the workbench product shape.";
+    private string NewCharacterProofSummary => IsAppRoute
+        ? "Deep-links Chummer Online into the same shared new-character command so startup workflow proof does not depend on manual clicking."
+        : "Deep-links the browser workbench into the same shared new-character command so startup workflow proof does not depend on manual clicking.";
+    private string ImportProofSummary => IsAppRoute
+        ? "Deep-links Chummer Online into the shared import dialog so existing-runner intake is proven from the same route model as desktop startup commands."
+        : "Deep-links the browser workbench into the shared import dialog so existing-runner intake is proven from the same route model as desktop startup commands.";
+    private string OriginDossierSummary => IsAppRoute
+        ? "Deep-links Chummer Online into the same origin-dossier wizard used by the shared startup flow."
+        : "Deep-links the browser workbench into the same origin-dossier wizard used by the shared startup flow.";
+    private string RouteOpenTitle => IsAppRoute
+        ? "Open Chummer Online"
+        : "Open the browser-facing Chummer workbench";
+    private string StartupCommandLabel => string.IsNullOrWhiteSpace(Command)
+        ? "none"
+        : Command;
+    private string RouteOpenSummary => IsCharacterRosterCommand
+        ? "Chummer Online is opening directly into the character roster so runners can be grouped, moved, resumed, or organized without stopping at a generic landing shell."
+        : "Use the shell below to verify navigation, startup posture, and active browser workflow routes.";
+    private bool IsCharacterRosterCommand => string.Equals(Command, "character_roster", StringComparison.OrdinalIgnoreCase);
     private string? ResolvedWorkspace => !string.IsNullOrWhiteSpace(Runner) ? Runner : Workspace;
     private IReadOnlyList<string> RecentWorkspaceIds => Presenter.State.Session.RecentWorkspaceIds.Select(static id => id.Value).ToArray();
     private IReadOnlyList<RecentWorkspaceLink> RecentWorkspaces => BuildRecentWorkspaceLinks();
@@ -2361,7 +2628,7 @@
             .ToArray();
     }
 
-    private static string BuildPreviewHref(string? fixture = null, string? workspace = null, string? tab = null, string? command = null, string? control = null, string? dialogAction = null, bool useWorkbenchRoute = false)
+    private string BuildPreviewHref(string? fixture = null, string? workspace = null, string? tab = null, string? command = null, string? control = null, string? dialogAction = null, bool useWorkbenchRoute = false)
     {
         List<string> query = [];
         if (!string.IsNullOrWhiteSpace(fixture))
@@ -2394,7 +2661,8 @@
             query.Add($"dialog_action={Uri.EscapeDataString(dialogAction)}");
         }
 
-        string route = useWorkbenchRoute ? "/blazor/workbench" : "/preview";
+        // Keep these as path-base-safe relative hrefs; public route contracts remain /blazor/* at the portal edge.
+        string route = useWorkbenchRoute ? (IsAppRoute ? "app" : "workbench") : "preview";
         return query.Count == 0
             ? route
             : $"{route}?{string.Join("&", query)}";

@@ -4,6 +4,8 @@ Purpose: define the minimum acceptable evidence for claiming that the browser-ho
 
 This document is the hosted execution-proof contract for the promoted Chummer6 browser client route. It sits under the broader design and parity spec in `docs/BLAZOR_WEB_CLIENT_PARITY_GOAL.md`.
 
+Public product navigation should use the friendly Chummer App alias `/app`, while `/blazor/app` remains the hosted Blazor app path. This execution tier intentionally keeps `/blazor/workbench` as its canonical proof base so historical receipts, workflow-family route checks, screenshots, and verifier contracts remain stable while the public UI can avoid exposing workbench language.
+
 Documentation map:
 
 - `docs/BLAZOR_WEB_CLIENT_DOCS_INDEX.md` is the top-level browser-client docs index
@@ -14,9 +16,11 @@ Documentation map:
 
 ## What this proof is for
 
-The current hosted receipt, `BLAZOR_PUBLIC_EDGE_WORKBENCH_PROOF.generated.json`, proves:
+The current hosted route-entry receipt, `BLAZOR_PUBLIC_EDGE_WORKBENCH_PROOF.generated.json`, proves:
 
-- `/blazor/` resolves into `/blazor/workbench`
+- `/blazor/` resolves into `/blazor/app`
+- `/app` serves the same promoted browser client through the clean public Chummer App name
+- `/blazor/app` remains the hosted Blazor app path for that client
 - hosted workbench route shapes stay stable
 - hosted resume/result/action route shapes are accepted
 - the public edge serves the browser shell under the expected path base
@@ -29,7 +33,7 @@ Can the public `chummer.run` browser client actually execute resumed user workfl
 
 More precisely:
 
-Can the promoted `/blazor/workbench` route preserve Chummer6 browser workflow continuity on the real hosted edge, instead of only proving that the route shape exists?
+Can the canonical `/blazor/workbench` proof-compatible route preserve Chummer6 browser workflow continuity on the real hosted edge, instead of only proving that the route shape exists?
 
 The route-entry tier is now a verifier-backed contract rather than a loose published artifact:
 
@@ -59,110 +63,110 @@ The proof bar is design-driven, not just transport-driven. The hosted lane shoul
 
 The first acceptable hosted execution tier should prove these families:
 
-- startup command execution on the promoted workbench route:
+- startup command execution through the canonical proof-compatible route:
   `/blazor/workbench?command=new_character`
   `/blazor/workbench?command=open_character`
   `/blazor/workbench?command=open_for_printing`
   `/blazor/workbench?command=open_for_export`
-- dense startup utility execution on the promoted workbench route:
+- dense startup utility execution through the canonical proof-compatible route:
   `/blazor/workbench?command=character_roster`
   `/blazor/workbench?command=master_index`
   with browser-visible utility markers beyond the dialog title so hosted proof covers dense roster/reference posture instead of only command entry
-- origin and rules continuity on the promoted workbench route:
+- origin and rules continuity through the canonical proof-compatible route:
   `/blazor/workbench?command=new_character_origin`
   `/blazor/workbench?workspace=<promoted-workspace-id>&tab=tab-rules`
   with browser-visible origin-wizard structure and visible rules-environment continuity markers beyond simple tab selection
-- build-lab runner continuity on the promoted workbench route:
+- build-lab runner continuity through the canonical proof-compatible route:
   `/blazor/workbench?workspace=<promoted-workspace-id>&tab=tab-create`
   with visible planner, progression, and export/hand-off surfaces so hosted proof covers a denser seeded runner workflow lane
-- combat-lane weapon selection execution on the promoted workbench route:
+- combat-lane weapon selection execution through the canonical proof-compatible route:
   `/blazor/workbench?workspace=<promoted-workspace-id>&tab=tab-combat&control=combat_add_weapon`
   with visible weapon catalog, accessories, and filter context so hosted proof covers a dense combat utility family as well
-- skills-lane skill selection execution on the promoted workbench route:
+- skills-lane skill selection execution through the canonical proof-compatible route:
   `/blazor/workbench?workspace=<promoted-workspace-id>&tab=tab-skills&control=skill_add`
   with visible skill catalog, linked-attribute context, and filter posture so hosted proof covers a dense skills utility family as well
-- gear-lane vehicle selection execution on the promoted workbench route:
+- gear-lane vehicle selection execution through the canonical proof-compatible route:
   `/blazor/workbench?workspace=<promoted-workspace-id>&tab=tab-gear&control=vehicle_add`
   with visible catalog, filters, and selection details so hosted proof covers a dense runner-sheet editing utility rather than only startup or resumed-tab posture
-- gear-lane vehicle-mod selection execution on the promoted workbench route:
+- gear-lane vehicle-mod selection execution through the canonical proof-compatible route:
   `/blazor/workbench?workspace=<promoted-workspace-id>&tab=tab-gear&control=vehicle_mod_add`
   with visible mod catalog plus slot/availability/source detail so hosted proof covers a second dense utility family within the vehicle workflow lane
-- qualities-lane quality selection execution on the promoted workbench route:
+- qualities-lane quality selection execution through the canonical proof-compatible route:
   `/blazor/workbench?workspace=<promoted-workspace-id>&tab=tab-qualities&control=quality_add`
   with visible category, karma, source, and filter context so hosted proof covers a dense non-gear utility family as well
-- qualities-lane quality delete execution on the promoted workbench route:
+- qualities-lane quality delete execution through the canonical proof-compatible route:
   `/blazor/workbench?workspace=<promoted-workspace-id>&tab=tab-qualities&control=quality_delete`
   with visible karma impact and recovery context so hosted proof covers delete/recovery posture on the qualities lane as well
-- magic-lane spell selection execution on the promoted workbench route:
+- magic-lane spell selection execution through the canonical proof-compatible route:
   `/blazor/workbench?workspace=<promoted-workspace-id>&tab=tab-magician&control=spell_add`
   with visible spell catalog plus drain/source/category context so hosted proof covers a dense magic utility family as well
-- magic-lane delete execution on the promoted workbench route:
+- magic-lane delete execution through the canonical proof-compatible route:
   `/blazor/workbench?workspace=<promoted-workspace-id>&tab=tab-magician&control=magic_delete`
   with visible drain-impact and recovery context so hosted proof covers delete/recovery posture on the magic lane as well
-- cyberware-lane selection execution on the promoted workbench route:
+- cyberware-lane selection execution through the canonical proof-compatible route:
   `/blazor/workbench?workspace=<promoted-workspace-id>&tab=tab-cyberware&control=cyberware_add`
   with visible catalog plus essence/cost/source/filter context so hosted proof covers a dense cyberware utility family as well
-- cyberware-lane edit execution on the promoted workbench route:
+- cyberware-lane edit execution through the canonical proof-compatible route:
   `/blazor/workbench?workspace=<promoted-workspace-id>&tab=tab-cyberware&control=cyberware_edit`
   with visible installed-ware context plus live recalculation posture so hosted proof covers in-place cyberware editing as well
-- cyberware-lane delete execution on the promoted workbench route:
+- cyberware-lane delete execution through the canonical proof-compatible route:
   `/blazor/workbench?workspace=<promoted-workspace-id>&tab=tab-cyberware&control=cyberware_delete`
   with visible installed-ware removal impact and recovery context so hosted proof covers delete/recovery posture on the cyberware lane as well
-- gear-lane drug selection execution on the promoted workbench route:
+- gear-lane drug selection execution through the canonical proof-compatible route:
   `/blazor/workbench?workspace=<promoted-workspace-id>&tab=tab-gear&control=drug_add`
   with visible catalog plus crash/speed/source details so hosted proof covers another dense classic utility family on the runner sheet
-- contacts-lane connection edit execution on the promoted workbench route:
+- contacts-lane connection edit execution through the canonical proof-compatible route:
   `/blazor/workbench?workspace=<promoted-workspace-id>&tab=tab-contacts&control=contact_connection`
   with visible selected-contact summary context plus compact connection/loyalty edit controls so hosted proof covers a non-add edit utility family
-- gear-lane vehicle edit execution on the promoted workbench route:
+- gear-lane vehicle edit execution through the canonical proof-compatible route:
   `/blazor/workbench?workspace=<promoted-workspace-id>&tab=tab-gear&control=vehicle_edit`
   with visible selected-item context, live summary, and garage navigation state so hosted proof covers an edit-in-place runner-sheet utility family
-- gear-lane vehicle delete execution on the promoted workbench route:
+- gear-lane vehicle delete execution through the canonical proof-compatible route:
   `/blazor/workbench?workspace=<promoted-workspace-id>&tab=tab-gear&control=vehicle_delete`
   with visible removal impact and recovery context so hosted proof covers delete/recovery posture instead of only add/edit flows
-- contacts-lane contact delete execution on the promoted workbench route:
+- contacts-lane contact delete execution through the canonical proof-compatible route:
   `/blazor/workbench?workspace=<promoted-workspace-id>&tab=tab-contacts&control=contact_remove`
   with visible roster impact and recovery context so hosted proof covers delete/recovery posture outside the gear lane as well
-- contacts-lane contact edit execution on the promoted workbench route:
+- contacts-lane contact edit execution through the canonical proof-compatible route:
   `/blazor/workbench?workspace=<promoted-workspace-id>&tab=tab-contacts&control=contact_edit`
   with visible selected-contact details and edit context so hosted proof covers dense in-place editing on the contacts lane as well
-- staged career-entry execution on the promoted workbench route:
+- staged career-entry execution through the canonical proof-compatible route:
   `/blazor/workbench?workspace=<promoted-workspace-id>&tab=tab-calendar&control=create_entry`
   with visible compact list/detail editor posture, command follow-through, entry title, and preserved list context so the next hosted proof refresh can widen into the career log / support workflow family
-- staged committed career-entry execution on the promoted workbench route:
+- staged committed career-entry execution through the canonical proof-compatible route:
   `/blazor/workbench?workspace=<promoted-workspace-id>&tab=tab-calendar&control=create_entry&dialog_action=add`
   with visible `Entry 'New entry' added.` follow-through so the career log / support workflow family proves commit-result posture rather than dialog entry alone
-- staged career-log section continuity on the promoted workbench route:
+- staged career-log section continuity through the canonical proof-compatible route:
   `/blazor/workbench?workspace=<promoted-workspace-id>&tab=tab-calendar`
   with visible career-log landing and add-entry posture so the support workflow family includes section resume before dialog execution
-- staged career-entry edit/delete execution on the promoted workbench route:
+- staged career-entry edit/delete execution through the canonical proof-compatible route:
   `/blazor/workbench?workspace=<promoted-workspace-id>&tab=tab-calendar&control=edit_entry`
   `/blazor/workbench?workspace=<promoted-workspace-id>&tab=tab-calendar&control=delete_entry`
   with visible compact edit posture, removal scope, and recovery context so the career log / support workflow family covers more than add-only utility behavior
-- staged committed career-entry edit/delete execution on the promoted workbench route:
+- staged committed career-entry edit/delete execution through the canonical proof-compatible route:
   `/blazor/workbench?workspace=<promoted-workspace-id>&tab=tab-calendar&control=edit_entry&dialog_action=apply`
   `/blazor/workbench?workspace=<promoted-workspace-id>&tab=tab-calendar&control=delete_entry&dialog_action=delete`
   with visible `Entry renamed to 'Current Entry'.` and `Entry 'Current Entry' removed.` follow-through so edit/remove route continuations prove the same post-action result posture as add-entry
-- staged runner-notes execution on the promoted workbench route:
+- staged runner-notes execution through the canonical proof-compatible route:
   `/blazor/workbench?workspace=<promoted-workspace-id>&tab=tab-info&control=open_notes`
   `/blazor/workbench?workspace=<promoted-workspace-id>&tab=tab-info&control=open_notes&dialog_action=save`
   with visible compact notes editor posture and `Notes saved.` follow-through so the support workflow family includes runner notes, not only calendar entries
-- staged career-entry reorder execution on the promoted workbench route:
+- staged career-entry reorder execution through the canonical proof-compatible route:
   `/blazor/workbench?workspace=<promoted-workspace-id>&tab=tab-calendar&control=move_up`
   `/blazor/workbench?workspace=<promoted-workspace-id>&tab=tab-calendar&control=move_down`
   with visible compact reorder utility posture so the support workflow family includes classic list operations beyond add/edit/delete
 - resumed workbench load:
   `/blazor/workbench?workspace=<promoted-workspace-id>`
-- recent-work resume affordance visibility on the promoted workbench route:
+- recent-work resume affordance visibility through the canonical proof-compatible route:
   visible `Resume BLUE` recent-work links sourced from restored session state
-- restored section continuation affordance visibility on the promoted workbench route:
+- restored section continuation affordance visibility through the canonical proof-compatible route:
   visible profile/rules/gear/career-log/advanced continuation links for the restored workspace
-- restored tab landing execution on the promoted workbench route:
+- restored tab landing execution through the canonical proof-compatible route:
   `/blazor/workbench?workspace=<promoted-workspace-id>&tab=tab-info`
   `/blazor/workbench?workspace=<promoted-workspace-id>&tab=tab-rules`
   `/blazor/workbench?workspace=<promoted-workspace-id>&tab=tab-gear`
   `/blazor/workbench?workspace=<promoted-workspace-id>&tab=tab-technomancer`
-- restored section-surface content on the promoted workbench route:
+- restored section-surface content through the canonical proof-compatible route:
   visible section/action markers for profile, rules, inventory, and complex-forms surfaces after those restored tab routes land
 - resumed result continuation:
   `/blazor/workbench?workspace=<promoted-workspace-id>&command=save_character_as`
@@ -170,16 +174,16 @@ The first acceptable hosted execution tier should prove these families:
   `/blazor/workbench?workspace=<promoted-workspace-id>&command=print_character`
 - resumed action continuation:
   `/blazor/workbench?workspace=<promoted-workspace-id>&tab=tab-contacts&control=contact_add`
-- advanced restored action affordance visibility on the promoted workbench route:
+- advanced restored action affordance visibility through the canonical proof-compatible route:
   visible complex-form/initiation/cyberware/spell continuation links plus the career-entry continuation link for the restored workspace
-- advanced action execution on the promoted workbench route:
+- advanced action execution through the canonical proof-compatible route:
   `/blazor/workbench?workspace=<promoted-workspace-id>&tab=tab-technomancer&control=complex_form_add`
   `/blazor/workbench?workspace=<promoted-workspace-id>&tab=tab-adept&control=initiation_add`
   `/blazor/workbench?workspace=<promoted-workspace-id>&tab=tab-cyberware&control=cyberware_add`
   `/blazor/workbench?workspace=<promoted-workspace-id>&tab=tab-magician&control=spell_add`
 - resumed committed action:
   `/blazor/workbench?workspace=<promoted-workspace-id>&tab=tab-contacts&control=contact_add&dialog_action=add`
-- advanced committed actions on the promoted workbench route:
+- advanced committed actions through the canonical proof-compatible route:
   `/blazor/workbench?workspace=<promoted-workspace-id>&tab=tab-technomancer&control=complex_form_add&dialog_action=add`
   `/blazor/workbench?workspace=<promoted-workspace-id>&tab=tab-adept&control=initiation_add&dialog_action=add`
   `/blazor/workbench?workspace=<promoted-workspace-id>&tab=tab-cyberware&control=cyberware_add&dialog_action=add`
@@ -207,7 +211,7 @@ The hosted lane must assert browser-visible evidence such as:
 - action continuation opens the intended dialog surface
 - committed action leaves visible state behind after the dialog action completes
 
-The assertions should be tied to the promoted workbench route, not to proof-only route posture. If an assertion succeeds only because `/blazor/preview` still exposes a proof control, that does not satisfy this contract.
+The assertions should be tied to the canonical proof-compatible route, not to proof-only route posture. `/app` and `/blazor/app` are expected to serve the same promoted client for users, but hosted execution receipts continue to prove workflow families through `/blazor/workbench` until a future proof migration deliberately changes the canonical execution base. If an assertion succeeds only because `/blazor/preview` still exposes a proof control, that does not satisfy this contract.
 
 Examples of acceptable visible assertions:
 
@@ -234,8 +238,10 @@ Recommended receipt shape:
   `hosted_promoted_route_execution`
 - route lane:
   `promoted_blazor_workbench`
-- promoted route base:
+- proof-compatible route base:
   `/blazor/workbench`
+- user-facing route alias:
+  `/blazor/app`
 - target host:
   `https://chummer.run`
 - required workflow family ids:
@@ -280,7 +286,7 @@ Recommended receipt shape:
 - at least one passing `checks[]` entry for every required workflow family
 - screenshot or capture references where available
 - explicit distinction from `BLAZOR_PUBLIC_EDGE_WORKBENCH_PROOF.generated.json`
-- explicit indication that the exercised route family belongs to the promoted `/blazor/workbench` browser-client lane
+- explicit indication that the exercised route family belongs to the canonical `/blazor/workbench` browser-client execution lane while public product navigation remains `/app` and `/blazor/app` remains the hosted app path
 
 Current scaffold paths:
 
@@ -309,7 +315,7 @@ Current published receipt state:
   `hosted_promoted_route_execution`
 - route lane:
   `promoted_blazor_workbench`
-- promoted route base:
+- proof-compatible route base:
   `/blazor/workbench`
 
 That published receipt exists so downstream artifacts can reference a real hosted execution-proof result without conflating hosted execution with self-host route proof.
@@ -319,7 +325,7 @@ Current truth:
 - hosted route-entry posture is already published separately
 - hosted route-entry posture is now verifier-backed and wired into the main repo verification path
 - hosted execution proof is scaffolded, verifier-backed, wired into downstream receipts, and now published as a passing hosted run whose verifier now rejects empty workflow-family labels and requires explicit per-family route/assertion/status checks
-- the passing hosted execution receipt proves the promoted `/blazor/workbench` browser workflow lane on `chummer.run`, but it still does not by itself prove every remaining browser/Desktop parity family
+- the passing hosted execution receipt proves the canonical `/blazor/workbench` browser workflow lane on `chummer.run`, while `/app` remains the clean user-facing Chummer App alias and `/blazor/app` remains the hosted app path; it still does not by itself prove every remaining browser/Desktop parity family
 
 ## Scaffold invocation
 
@@ -394,5 +400,5 @@ It may not say:
 
 - hosted resumed workflows are executed end-to-end
 - hosted browser parity matches the self-host execution lane
-- `chummer.run` has browser workflow proof equivalent to the self-host workbench lane
+- `chummer.run` has browser workflow proof equivalent to the self-host proof-compatible browser lane
 - the promoted Chummer6 browser client is public-edge parity-complete

@@ -113,7 +113,7 @@ def main() -> int:
         "checks": checks,
         "failures": failures,
         "notes": [
-            "This receipt only proves that promoted workbench inspector-rail source, style, status, and docs agree.",
+            "This receipt only proves that Chummer App and proof-compatible workbench inspector-rail source, style, status, and docs agree.",
             "It is not a substitute for hosted Playwright execution proof, Docker self-host proof, live inspector state proof, or split-pane persistence proof.",
             "Do not use this receipt to claim live inspector state, split-pane persistence, or browser execution parity.",
         ],

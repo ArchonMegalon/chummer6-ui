@@ -5,21 +5,22 @@
   "proof_tier": "source_staged_no_browser_execution",
   "route_lane": "promoted_blazor_workbench",
   "expected_routes": [
-    "/blazor/workbench"
+    "/blazor/workbench",
+    "/help"
   ],
   "checks": [
     {
       "id": "product_workbench_compare_merge",
       "path": "Chummer.Blazor/Components/Pages/Preview.razor",
       "status": "passed",
-      "required_token_count": 9,
+      "required_token_count": 11,
       "missing_tokens": []
     }
   ],
   "failures": [],
   "notes": [
-    "This receipt only proves that promoted workbench compare/merge source, style, status, and docs agree.",
-    "It is not a substitute for hosted browser execution, diff execution, conflict resolution, merge application, or rollback parity.",
-    "Do not use this receipt to claim complete import merge, persistence, or browser execution parity."
+    "This receipt only proves that Chummer App and proof-compatible workbench compare/merge source, style, status, and docs agree.",
+    "It is not a substitute for hosted browser execution, diff execution, conflict resolution, merge application, rollback parity, or portal help runtime proof.",
+    "Do not use this receipt to claim complete import merge, persistence, portal help runtime behavior, or browser execution parity."
   ]
 }

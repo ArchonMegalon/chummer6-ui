@@ -28,6 +28,8 @@ CHECKS = [
             "data-workbench-navigation-deeplink-action=\"copy_route\"",
             "data-workbench-navigation-deeplink-action=\"tab_restore\"",
             "data-workbench-navigation-deeplink-action=\"shared_anchor\"",
+            "data-workbench-navigation-deeplink-action=\"help\"",
+            "/help",
         ],
     },
     {
@@ -54,8 +56,8 @@ CHECKS = [
         "path": "docs/BLAZOR_WEB_CLIENT_PARITY_GOAL.md",
         "tokens": [
             "staged hosted workbench navigation-deeplink posture",
-            "breadcrumbs, URL state, back/forward, copy route, tab restore, and shared anchor",
-            "not yet claiming router-state, browser-history, route-copy, or deep-link restore parity",
+            "breadcrumbs, URL state, back/forward, copy route, tab restore, shared anchor, and help",
+            "not yet claiming router-state, browser-history, route-copy, deep-link restore, or portal help runtime parity",
         ],
     },
     {
@@ -96,13 +98,13 @@ def main() -> int:
         "status": "failed" if failures else "passed",
         "proof_tier": "source_staged_no_browser_execution",
         "route_lane": "promoted_blazor_workbench",
-        "expected_routes": ["/blazor/workbench"],
+        "expected_routes": ["/blazor/workbench", "/help"],
         "checks": evaluated_checks,
         "failures": failures,
         "notes": [
-            "This receipt only proves that promoted workbench navigation-deeplink source, style, status, and docs agree.",
-            "It is not a substitute for hosted Playwright execution proof, Docker self-host proof, router-state proof, browser-history proof, route-copy proof, or deep-link restore proof.",
-            "Do not use this receipt to claim router state, browser history, route copy, deep-link restore, or browser execution parity.",
+            "This receipt only proves that Chummer App and proof-compatible workbench navigation-deeplink source, style, status, and docs agree.",
+            "It is not a substitute for hosted Playwright execution proof, Docker self-host proof, router-state proof, browser-history proof, route-copy proof, deep-link restore proof, or portal help runtime proof.",
+            "Do not use this receipt to claim router state, browser history, route copy, deep-link restore, portal help runtime, or browser execution parity.",
         ],
     }
 

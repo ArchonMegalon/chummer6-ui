@@ -1,0 +1,48 @@
+{
+  "contract_name": "chummer6-ui.blazor_legacy_control_coverage_staged_proof",
+  "generated_at": "2026-06-24T00:00:00+00:00",
+  "status": "passed",
+  "proof_tier": "source_staged_no_browser_execution",
+  "route_lane": "promoted_blazor_workbench",
+  "control_count": 54,
+  "covered_control_count": 54,
+  "unclassified_controls": [],
+  "family_rows": [
+    {
+      "family_id": "career_support",
+      "staged_receipt": "BLAZOR_CAREER_SUPPORT_STAGED_PROOF.generated.json",
+      "control_count": 6,
+      "covered_count": 6
+    },
+    {
+      "family_id": "combat_support",
+      "staged_receipt": "BLAZOR_COMBAT_SUPPORT_STAGED_PROOF.generated.json",
+      "control_count": 4,
+      "covered_count": 4
+    },
+    {
+      "family_id": "runner_intelligence",
+      "staged_receipt": "BLAZOR_RUNNER_INTELLIGENCE_STAGED_PROOF.generated.json",
+      "control_count": 3,
+      "covered_count": 3
+    }
+  ],
+  "documentation_sources": [
+    {
+      "path": "docs/BLAZOR_LEGACY_CONTROL_COVERAGE_STAGED_PROOF.md",
+      "status": "passed",
+      "missing_tokens": []
+    },
+    {
+      "path": "docs/BLAZOR_WEB_CLIENT_DOCS_INDEX.md",
+      "status": "passed",
+      "missing_tokens": []
+    }
+  ],
+  "failures": [],
+  "notes": [
+    "This receipt is a source-level coverage guard for known legacy UI control IDs.",
+    "It combines hosted execution baseline controls with source-staged route families.",
+    "It is not browser execution evidence and must not be treated as a release-passing proof."
+  ]
+}

@@ -1,6 +1,6 @@
 # Blazor Public-Edge Workbench Route Proof
 
-Purpose: define the minimum acceptable evidence for claiming that the browser-hosted `Chummer.Blazor` workbench on `https://chummer.run/blazor/` is publicly reachable under the promoted route model with stable route-entry posture.
+Purpose: define the minimum acceptable evidence for claiming that the browser-hosted `Chummer.Blazor` workbench on `https://chummer.run/blazor/` is publicly reachable under the proof-compatible route model with stable route-entry posture.
 
 This document is the hosted route-entry proof contract for the promoted Chummer6 browser client route. It is intentionally narrower than the hosted execution-proof contract in `docs/BLAZOR_PUBLIC_EDGE_EXECUTION_PROOF.md`.
 
@@ -20,9 +20,9 @@ Does the public `chummer.run` edge expose the promoted browser-client route fami
 
 More precisely:
 
-Can the public edge serve the browser shell, preserve the promoted `/blazor/workbench` route family, and accept the current resume/result/action route shapes without claiming full browser workflow execution?
+Can the public edge serve the browser shell, preserve the clean public `/app` route, hosted `/blazor/app` route, `/blazor/home` roster-first orientation route with the visible `Roster entry: /app?command=character_roster` pill, and proof-compatible `/blazor/workbench` route family, and accept the current resume/result/action route shapes without claiming full browser workflow execution?
 
-This proof tier does not claim that the hosted browser client completed a real user workflow. It only claims that the public route family exists, is reachable, and preserves the expected promoted route shapes.
+This proof tier does not claim that the hosted browser client completed a real user workflow. It only claims that the public and proof-compatible route family exists, is reachable, and preserves the expected route shapes.
 
 ## Evidence bar
 
@@ -44,7 +44,13 @@ The current hosted route-entry tier should cover these route families:
 - public entry and health:
   `/blazor/`
   `/blazor/health`
-- promoted workbench route:
+- public orientation route:
+  `/blazor/home`
+- clean public Chummer App route:
+  `/app`
+- hosted Chummer App path:
+  `/blazor/app`
+- canonical proof-compatible route:
   `/blazor/workbench`
 - restored workspace route shape:
   `/blazor/workbench?workspace=ws-1`
@@ -74,7 +80,10 @@ The current hosted route-entry tier should cover these route families:
 These route families establish that:
 
 - `/blazor/` resolves into the promoted browser lane
-- the promoted workbench route exists on the public edge
+- `/app` exposes the promoted browser client through the clean public Chummer App name
+- `/blazor/app` remains the hosted Blazor app path for the same promoted browser client
+- `/blazor/home` exposes the product/orientation page without becoming the primary workflow route
+- the canonical proof-compatible route exists on the public edge
 - restored workspace, result, action, and committed-action route shapes are publicly accepted
 - staged career/support section, action, and committed-action route shapes are publicly accepted before they are promoted into hosted execution-proof required families
 
@@ -101,6 +110,7 @@ Required receipt contract:
   `route_probe_executed=true` when probes actually ran
 - route-proof markers:
   `public_blazor_root_redirect`
+  `public_blazor_home_roster_entry`
   `public_blazor_health`
   `public_workbench_route`
   `public_workspace_restore_route`
@@ -118,7 +128,9 @@ Required receipt contract:
   `committed_action_route_shape`
 - required proof routes:
   `/blazor/`
+  `/app`
   `/blazor/health`
+  `/blazor/app`
   `/blazor/workbench`
   `/blazor/workbench?workspace=ws-1`
   `/blazor/preview?command=new_character`
@@ -140,6 +152,7 @@ Required receipt contract:
   `/blazor/workbench?workspace=ws-1&tab=tab-calendar&control=move_down`
 - route probe count must match the number of proof routes
 - route probe failures must be empty for a passing receipt
+- notes must include `Public product navigation remains /app, /blazor/app is the hosted app path, /blazor/home carries the roster-first route entry, and /blazor/workbench is the canonical proof-compatible route base.`
 
 ## Current verifier and wrapper
 

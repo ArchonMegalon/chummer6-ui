@@ -28,6 +28,8 @@ CHECKS = [
             "data-workbench-touch-mobile-action=\"compact_actions\"",
             "data-workbench-touch-mobile-action=\"keyboard_safe\"",
             "data-workbench-touch-mobile-action=\"pointer_help\"",
+            "data-workbench-touch-mobile-action=\"help\"",
+            "/help",
         ],
     },
     {
@@ -54,8 +56,8 @@ CHECKS = [
         "path": "docs/BLAZOR_WEB_CLIENT_PARITY_GOAL.md",
         "tokens": [
             "staged hosted workbench touch-mobile posture",
-            "touch mode, zoom, panel dock, compact actions, keyboard-safe layout, and pointer help",
-            "not yet claiming touch gesture, viewport, virtual-keyboard, or mobile browser parity",
+            "touch mode, zoom, panel dock, compact actions, keyboard-safe layout, pointer help, and help",
+            "not yet claiming touch gesture, viewport, virtual-keyboard, mobile browser, or portal help runtime parity",
         ],
     },
     {
@@ -96,13 +98,13 @@ def main() -> int:
         "status": "failed" if failures else "passed",
         "proof_tier": "source_staged_no_browser_execution",
         "route_lane": "promoted_blazor_workbench",
-        "expected_routes": ["/blazor/workbench"],
+        "expected_routes": ["/blazor/workbench", "/help"],
         "checks": evaluated_checks,
         "failures": failures,
         "notes": [
-            "This receipt only proves that promoted workbench touch-mobile source, style, status, and docs agree.",
-            "It is not a substitute for hosted Playwright execution proof, Docker self-host proof, touch-gesture proof, viewport proof, virtual-keyboard proof, or mobile browser proof.",
-            "Do not use this receipt to claim touch gestures, viewport behavior, virtual keyboard handling, mobile browser execution, or browser execution parity.",
+            "This receipt only proves that Chummer App and proof-compatible workbench touch-mobile source, style, status, and docs agree.",
+            "It is not a substitute for hosted Playwright execution proof, Docker self-host proof, touch-gesture proof, viewport proof, virtual-keyboard proof, mobile browser proof, or portal help runtime proof.",
+            "Do not use this receipt to claim touch gestures, viewport behavior, virtual keyboard handling, mobile browser execution, portal help runtime, or browser execution parity.",
         ],
     }
 

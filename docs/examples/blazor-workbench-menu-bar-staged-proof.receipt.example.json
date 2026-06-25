@@ -6,21 +6,21 @@
   "route_lane": "promoted_blazor_workbench",
   "expected_routes": [
     "/blazor/workbench",
-    "/contact"
+    "/help"
   ],
   "checks": [
     {
       "id": "product_workbench_menu_bar",
       "path": "Chummer.Blazor/Components/Pages/Preview.razor",
       "status": "passed",
-      "required_token_count": 9,
+      "required_token_count": 10,
       "missing_tokens": []
     }
   ],
   "failures": [],
   "notes": [
-    "This receipt only proves that promoted workbench menu-bar source, style, status, and docs agree.",
-    "It is not a substitute for hosted Playwright execution proof, Docker self-host proof, keyboard-event proof, or menu-command execution proof.",
-    "Do not use this receipt to claim keyboard accelerators, menu command execution, or browser execution parity."
+    "This receipt only proves that Chummer App and proof-compatible workbench menu-bar source, style, status, and docs agree, including the same-origin Help menu handoff.",
+    "It is not a substitute for hosted Playwright execution proof, Docker self-host proof, keyboard-event proof, portal help runtime, or menu-command execution proof.",
+    "Do not use this receipt to claim keyboard accelerators, menu command execution, portal help runtime, or browser execution parity."
   ]
 }

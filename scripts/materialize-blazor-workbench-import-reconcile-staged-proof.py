@@ -28,6 +28,8 @@ CHECKS = [
             "data-workbench-import-reconcile-action=\"custom-data\"",
             "data-workbench-import-reconcile-action=\"conflicts\"",
             "data-workbench-import-reconcile-action=\"commit-import\"",
+            "data-workbench-import-reconcile-action=\"help\"",
+            "href=\"/help\"",
         ],
     },
     {
@@ -54,8 +56,8 @@ CHECKS = [
         "path": "docs/BLAZOR_WEB_CLIENT_PARITY_GOAL.md",
         "tokens": [
             "staged hosted workbench import/reconcile posture",
-            "file selection, parse summary, rules mapping, custom data, conflict review, and final acceptance",
-            "not yet claiming file upload, XML parsing, migration, conflict resolution, or import persistence parity",
+            "file selection, parse summary, rules mapping, custom data, conflict review, final acceptance, and help",
+            "not yet claiming file upload, XML parsing, migration, conflict resolution, import persistence parity, or portal help runtime parity",
         ],
     },
     {
@@ -96,13 +98,13 @@ def main() -> int:
         "status": "failed" if failures else "passed",
         "proof_tier": "source_staged_no_browser_execution",
         "route_lane": "promoted_blazor_workbench",
-        "expected_routes": ["/blazor/workbench"],
+        "expected_routes": ["/blazor/workbench", "/help"],
         "checks": evaluated_checks,
         "failures": failures,
         "notes": [
-            "This receipt only proves that promoted workbench import/reconcile source, style, status, and docs agree.",
-            "It is not a substitute for hosted browser execution, import parsing, conflict resolution, save, or migration parity.",
-            "Do not use this receipt to claim complete import, reconciliation, persistence, or browser execution parity.",
+            "This receipt only proves that Chummer App and proof-compatible workbench import/reconcile source, style, status, and docs agree.",
+            "It is not a substitute for hosted browser execution, import parsing, conflict resolution, save, migration parity, or portal help runtime proof.",
+            "Do not use this receipt to claim complete import, reconciliation, persistence, portal help runtime behavior, or browser execution parity.",
         ],
     }
 

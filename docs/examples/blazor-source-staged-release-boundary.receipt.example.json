@@ -1,0 +1,93 @@
+{
+  "contract_name": "chummer6-ui.blazor_source_staged_release_boundary",
+  "generated_at": "2026-06-24T00:00:00+00:00",
+  "status": "passed",
+  "proof_tier": "source_policy_no_browser_execution",
+  "scope": "staged_and_source_plan_receipts_must_not_enter_release_readiness_aggregation",
+  "release_aggregation_sources": [
+    {
+      "path": "scripts/materialize-blazor-browser-lane-proof-set.py",
+      "status": "passed",
+      "forbidden_tokens": []
+    },
+    {
+      "path": "scripts/ai/milestones/blazor-browser-lane-proof-set-check.sh",
+      "status": "passed",
+      "forbidden_tokens": []
+    }
+  ],
+  "documentation_sources": [
+    {
+      "path": "docs/BLAZOR_SOURCE_STAGED_PROOF_RUNBOOK.md",
+      "status": "passed",
+      "missing_tokens": []
+    },
+    {
+      "path": "docs/WORKBENCH_RELEASE_SIGNOFF.md",
+      "status": "passed",
+      "missing_tokens": []
+    },
+    {
+      "path": "docs/BLAZOR_WEB_CLIENT_PARITY_GOAL.md",
+      "status": "passed",
+      "missing_tokens": []
+    },
+    {
+      "path": "docs/MIGRATION_BACKLOG.md",
+      "status": "passed",
+      "missing_tokens": []
+    },
+    {
+      "path": "docs/BLAZOR_RUNTIME_PROOF_REFRESH_PLAN.md",
+      "status": "passed",
+      "missing_tokens": []
+    },
+    {
+      "path": "docs/BLAZOR_WEB_CLIENT_DOCS_INDEX.md",
+      "status": "passed",
+      "missing_tokens": []
+    }
+  ],
+  "status_reporting_sources": [
+    {
+      "path": "scripts/print_blazor_public_edge_proof_status.py",
+      "status": "passed",
+      "missing_tokens": []
+    }
+  ],
+  "forbidden_staged_tokens": "(full generated list omitted from compact example)",
+  "forbidden_staged_token_examples": [
+    "BLAZOR_SOURCE_STAGED_PROOF_SET",
+    "BLAZOR_SOURCE_STAGED_PROOF_SET.generated.json",
+    "BLAZOR_RUNTIME_PROOF_REFRESH_PLAN",
+    "BLAZOR_RUNTIME_PROOF_REFRESH_PLAN.generated.json",
+    "BLAZOR_RUNNER_INTELLIGENCE_CALCULATION_PROOF",
+    "BLAZOR_RUNNER_INTELLIGENCE_CALCULATION_PROOF.generated.json",
+    "BLAZOR_DOCKER_SELF_HOST_OPERATOR_STAGED_PROOF",
+    "BLAZOR_DOCKER_SELF_HOST_OPERATOR_STAGED_PROOF.generated.json"
+  ],
+  "failures": [],
+  "notes": [
+    "This receipt is a source-policy guard only.",
+    "It does not execute hosted or Docker browser workflows.",
+    "Docker self-host operator staged receipts are source-only and must stay out of release-readiness aggregation.",
+    "Runtime refresh plan receipts are source-plan only and must stay out of release-readiness aggregation.",
+    "Runner Intelligence calculation receipts are source-calculation only and must stay out of release-readiness aggregation.",
+    "The migration backlog keeps MIG-106 through MIG-109 open until refreshed hosted route-entry, hosted execution, Docker self-host, analytics posture, connected-runtime, source-boundary, and aggregate browser-lane receipts prove the browser-client release claim.",
+    "The docs index links the migration backlog browser-client release evidence boundary so staged proof readers can see MIG-106 through MIG-109 remain open until refreshed runtime proof exists.",
+    "The runtime refresh plan keeps the migration backlog boundary aligned so MIG-106 through MIG-109 remain open until refreshed runtime proof exists.",
+    "The runtime refresh plan documents aggregate_note_count, aggregate_source_boundary_policy_note, and aggregate_migration_boundary_note so operators can see whether regenerated aggregate receipts carry the source-policy-only and MIG-open notes before treating aggregate readiness as release evidence.",
+    "Release signoff states that BLAZOR_SOURCE_STAGED_RELEASE_BOUNDARY.generated.json may be required by the aggregate browser-lane proof set only as source-policy input, not hosted workflow execution, Docker workflow execution, parity breadth, or polished-product proof.",
+    "Generated aggregate browser-lane receipts carry notes that source_staged_release_boundary is source-policy evidence only and that MIG-106 through MIG-109 remain open until refreshed hosted route-entry, hosted execution, Docker self-host, analytics posture, connected-runtime, source-boundary, and aggregate browser-lane receipts prove the browser-client release claim.",
+    "Release signoff requires operators to check aggregate_note_count, aggregate_source_boundary_policy_note, and aggregate_migration_boundary_note before interpreting aggregate browser-lane readiness.",
+    "The runtime refresh plan documents portable proof-tooling preflight for CHUMMER_PUBLIC_EDGE_COMPOSE_PATH, CHUMMER_DESIGN_PRODUCT_ROOT, CHUMMER5A_ORACLE_ROOT, CHUMMER5A_REPO_PATH, CHUMMER5A_PARITY_LAB_ROOT, CHUMMER_PLAYWRIGHT_NODE_PATH, and CHUMMER_PLAYWRIGHT_ROOT while keeping the chummer-presentation repository root script-relative.",
+    "CHUMMER5A_REPO_PATH is the canonical local filesystem path override; path-like CHUMMER5A_REPO_URL values remain compatibility-only and URL-shaped values are not treated as filesystem paths.",
+    "chummer5aRepoPathSource=cli_argument is emitted only when --chummer5a-repo is actually present, not merely when the resolved path differs from the default.",
+    "Hosted execution proof discovers Playwright through NODE_PATH, CHUMMER_PLAYWRIGHT_NODE_PATH, CHUMMER_PLAYWRIGHT_ROOT/node_modules, sibling chummer.run-services/node_modules, sibling node_modules, then scripts/node_modules instead of hardcoding /docker/chummercomplete.",
+    "Docker self-host portal proof derives compose, route-probe, and Playwright script defaults from the script-relative chummer-presentation repo root and uses the same workspace-relative Playwright lookup including CHUMMER_PLAYWRIGHT_NODE_PATH and CHUMMER_PLAYWRIGHT_ROOT.",
+    "The forbidden_staged_tokens field name is retained for compatibility but includes source-plan and source-calculation receipt tokens.",
+    "Example shape is documented at docs/examples/blazor-source-staged-release-boundary.receipt.example.json.",
+    "Passing means staged proof, source-plan, and source-calculation receipts are not wired into release-readiness aggregation sources and docs retain the boundary language.",
+    "The public edge status utility reports the boundary receipt as source-policy evidence only."
+  ]
+}

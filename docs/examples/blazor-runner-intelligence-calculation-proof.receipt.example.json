@@ -1,0 +1,14 @@
+{
+  "contract_name": "chummer6-ui.blazor_runner_intelligence_calculation_proof",
+  "generated_at": "2026-06-24T00:00:00+00:00",
+  "status": "passed",
+  "proof_tier": "source_calculation_no_browser_execution",
+  "calculation_lane": "shared_runner_intelligence",
+  "checks": [],
+  "failures": [],
+  "notes": [
+    "This receipt proves only that the shared Runner Intelligence calculation seam and sample semantics are source-aligned.",
+    "It verifies final severity after resistance is the modeled risk path for the Increase Initiative sample.",
+    "It is not authoritative SR rules-engine validation, hosted browser execution proof, Docker execution proof, or hosted cohort aggregation proof."
+  ]
+}

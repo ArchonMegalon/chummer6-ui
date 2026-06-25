@@ -17,10 +17,10 @@
             <section class="startup-workbench" data-testid="startup-workbench">
                 <header class="startup-workbench-header">
                     <div>
-                        <h3>Continue Your Workbench</h3>
-                        <p class="note">Start a fresh dossier, reopen a saved runner, or jump straight into classic utilities without leaving the desktop client.</p>
+                        <h3>Continue Chummer Online</h3>
+                        <p class="note">Start a fresh dossier, reopen a saved runner, or jump straight into classic utilities from the browser client.</p>
                     </div>
-                    <p class="startup-workbench-posture note">File remains the primary route. Character Roster and Master Index stay first-class from first paint.</p>
+                    <p class="startup-workbench-posture note">The character roster remains the primary route. Character Library and Master Index stay first-class from first paint.</p>
                 </header>
 
                 <div class="startup-workbench-grid">
@@ -57,7 +57,7 @@
                                             disabled="@(!LoadWorkspaceRequested.HasDelegate || State.IsBusy)"
                                             @onclick="() => LoadWorkspaceRequested.InvokeAsync(workspaceId.Value)">
                                         <strong>@workspaceId.Value</strong>
-                                        <span>Restore this desktop workspace continuation.</span>
+                                        <span>Restore this Chummer Online dossier continuation.</span>
                                     </button>
                                 }
                             </div>
@@ -68,7 +68,7 @@
                 @if (GetStartupSupportCommands().Count > 0)
                 {
                     <section class="startup-workbench-card startup-workbench-card--support" data-testid="startup-support-actions">
-                        <h4>Desktop Utilities</h4>
+                        <h4>Chummer Utilities</h4>
                         <div class="startup-command-list">
                             @foreach (AppCommandDefinition command in GetStartupSupportCommands())
                             {
@@ -87,7 +87,7 @@
         }
         else
         {
-            <p class="note">Select a tab to render a workspace section.</p>
+            <p class="note">Select a tab to render a character section.</p>
         }
     }
     else if ((string.Equals(State.LastCommandId, "save_character", StringComparison.Ordinal)
@@ -1195,7 +1195,7 @@
         JsonObject? root = TryGetClassicSectionRoot();
         string? previewSection = root is not null ? ReadScalar(root, "section") : null;
         string sectionId = string.IsNullOrWhiteSpace(State.ActiveSectionId)
-            ? previewSection ?? "workbench"
+            ? previewSection ?? "chummer"
             : State.ActiveSectionId;
 
         return sectionId.Trim().ToLowerInvariant() switch
@@ -1366,7 +1366,7 @@
     {
         if (string.IsNullOrWhiteSpace(sectionName))
         {
-            return "Workbench";
+            return "Chummer";
         }
 
         string normalized = sectionName.Replace('-', ' ').Replace('_', ' ').Trim();

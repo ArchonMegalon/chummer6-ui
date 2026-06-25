@@ -28,6 +28,8 @@ CHECKS = [
             "data-workbench-calculation-provenance-action=\"stale_values\"",
             "data-workbench-calculation-provenance-action=\"manual_override\"",
             "data-workbench-calculation-provenance-action=\"dependency_path\"",
+            "data-workbench-calculation-provenance-action=\"help\"",
+            "/help",
         ],
     },
     {
@@ -54,8 +56,8 @@ CHECKS = [
         "path": "docs/BLAZOR_WEB_CLIENT_PARITY_GOAL.md",
         "tokens": [
             "staged hosted workbench calculation-provenance posture",
-            "derived breakdown, modifier stack, rule source, stale values, manual override, and dependency path",
-            "not yet claiming calculation-engine, dependency tracing, recalculation, or override parity",
+            "derived breakdown, modifier stack, rule source, stale values, manual override, dependency path, and help",
+            "not yet claiming calculation-engine, dependency tracing, recalculation, override, or portal help runtime parity",
         ],
     },
     {
@@ -96,13 +98,13 @@ def main() -> int:
         "status": "failed" if failures else "passed",
         "proof_tier": "source_staged_no_browser_execution",
         "route_lane": "promoted_blazor_workbench",
-        "expected_routes": ["/blazor/workbench"],
+        "expected_routes": ["/blazor/workbench", "/help"],
         "checks": evaluated_checks,
         "failures": failures,
         "notes": [
-            "This receipt only proves that promoted workbench calculation-provenance source, style, status, and docs agree.",
-            "It is not a substitute for hosted Playwright execution proof, Docker self-host proof, calculation-engine proof, dependency-tracing proof, recalculation proof, or override proof.",
-            "Do not use this receipt to claim calculation-engine behavior, dependency tracing, recalculation, override handling, or browser execution parity.",
+            "This receipt only proves that Chummer App and proof-compatible workbench calculation-provenance source, style, status, and docs agree.",
+            "It is not a substitute for hosted Playwright execution proof, Docker self-host proof, calculation-engine proof, dependency-tracing proof, recalculation proof, override proof, or portal help runtime proof.",
+            "Do not use this receipt to claim calculation-engine behavior, dependency tracing, recalculation, override handling, portal help runtime, or browser execution parity.",
         ],
     }
 

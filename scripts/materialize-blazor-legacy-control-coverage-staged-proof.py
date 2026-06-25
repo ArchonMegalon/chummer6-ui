@@ -40,6 +40,11 @@ CONTROL_FAMILIES = {
         "gear_edit",
         "gear_delete",
     ],
+    "runner_intelligence": [
+        "runner_benchmark",
+        "runner_what_if",
+        "runner_cohort_privacy",
+    ],
     "cyberware": [
         "cyberware_add",
         "cyberware_edit",
@@ -123,6 +128,7 @@ SOURCE_STAGED_FAMILIES = {
     "identity_license": "BLAZOR_IDENTITY_LICENSE_STAGED_PROOF.generated.json",
     "source_gear_utility": "BLAZOR_SOURCE_GEAR_UTILITY_STAGED_PROOF.generated.json",
     "gear_maintenance": "BLAZOR_GEAR_MAINTENANCE_STAGED_PROOF.generated.json",
+    "runner_intelligence": "BLAZOR_RUNNER_INTELLIGENCE_STAGED_PROOF.generated.json",
     "drug": "BLAZOR_MAGIC_CLEANUP_STAGED_PROOF.generated.json",
     "magic_cleanup": "BLAZOR_MAGIC_CLEANUP_STAGED_PROOF.generated.json",
     "magic_support": "BLAZOR_MAGIC_SUPPORT_STAGED_PROOF.generated.json",
@@ -142,7 +148,39 @@ SOURCE_FILES = [
     "docs/BLAZOR_WEB_CLIENT_PARITY_GOAL.md",
     "docs/MIGRATION_BACKLOG.md",
     "docs/WORKBENCH_RELEASE_SIGNOFF.md",
+    "docs/BLAZOR_LEGACY_CONTROL_COVERAGE_STAGED_PROOF.md",
+    "docs/BLAZOR_WEB_CLIENT_DOCS_INDEX.md",
+    "docs/examples/blazor-legacy-control-coverage-staged-proof.receipt.example.json",
 ]
+
+REQUIRED_DOC_TOKENS = {
+    "docs/BLAZOR_LEGACY_CONTROL_COVERAGE_STAGED_PROOF.md": [
+        "source-level breadth guard for known legacy UI control IDs",
+        "hosted execution baseline coverage or staged source-alignment families",
+        "legacy_control_coverage_staged_control_count",
+        "legacy_control_coverage_staged_covered_count",
+        "source_alignment_only_not_browser_execution",
+        "not browser execution evidence",
+        "runner_benchmark",
+        "runner_what_if",
+        "runner_cohort_privacy",
+        "BLAZOR_RUNNER_INTELLIGENCE_STAGED_PROOF.generated.json",
+    ],
+    "docs/BLAZOR_WEB_CLIENT_DOCS_INDEX.md": [
+        "docs/BLAZOR_LEGACY_CONTROL_COVERAGE_STAGED_PROOF.md",
+        "scripts/materialize-blazor-legacy-control-coverage-staged-proof.py",
+        "docs/examples/blazor-legacy-control-coverage-staged-proof.receipt.example.json",
+    ],
+    "docs/examples/blazor-legacy-control-coverage-staged-proof.receipt.example.json": [
+        '"contract_name": "chummer6-ui.blazor_legacy_control_coverage_staged_proof"',
+        '"proof_tier": "source_staged_no_browser_execution"',
+        '"control_count"',
+        '"covered_control_count"',
+        "runner_intelligence",
+        "BLAZOR_RUNNER_INTELLIGENCE_STAGED_PROOF.generated.json",
+        "It is not browser execution evidence and must not be treated as a release-passing proof.",
+    ],
+}
 
 
 def read_text(relative_path: str) -> str:
@@ -187,6 +225,20 @@ def main() -> int:
             "docs/WORKBENCH_RELEASE_SIGNOFF.md",
         ]
     )
+
+    doc_rows = []
+    for relative_path, tokens in REQUIRED_DOC_TOKENS.items():
+        text = source_texts.get(relative_path, "")
+        missing_tokens = [token for token in tokens if token not in text]
+        if missing_tokens:
+            failures.append(f"{relative_path}: missing {', '.join(missing_tokens)}")
+        doc_rows.append(
+            {
+                "path": relative_path,
+                "status": "failed" if missing_tokens else "passed",
+                "missing_tokens": missing_tokens,
+            }
+        )
 
     family_rows = []
     covered_count = 0
@@ -246,6 +298,7 @@ def main() -> int:
         "covered_control_count": covered_count,
         "unclassified_controls": unclassified_controls,
         "family_rows": family_rows,
+        "documentation_sources": doc_rows,
         "failures": failures,
         "notes": [
             "This receipt is a source-level coverage guard for known legacy UI control IDs.",

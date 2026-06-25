@@ -3,8 +3,9 @@
   "generated_at": "2026-06-24T00:00:00+00:00",
   "status": "passed",
   "proof_tier": "source_staged_no_browser_execution",
-  "route_lane": "promoted_blazor_workbench",
+  "route_lane": "chummer_app_and_proof_compatible_blazor_workbench",
   "expected_routes": [
+    "/blazor/app",
     "/blazor/workbench"
   ],
   "checks": [
@@ -12,20 +13,70 @@
       "id": "product_workbench_task_dock",
       "path": "Chummer.Blazor/Components/Pages/Preview.razor",
       "status": "passed",
-      "required_token_count": 12,
+      "required_token_count": 35,
       "missing_tokens": []
     },
     {
       "id": "scoped_visual_design",
       "path": "Chummer.Blazor/Components/Pages/Preview.razor.css",
       "status": "passed",
-      "required_token_count": 4,
+      "required_token_count": 69,
+      "missing_tokens": []
+    },
+    {
+      "id": "status_strip_route_chrome",
+      "path": "Chummer.Blazor/Components/Shell/StatusStrip.razor",
+      "status": "passed",
+      "required_token_count": 11,
+      "missing_tokens": []
+    },
+    {
+      "id": "status_strip_route_chrome_style",
+      "path": "Chummer.Blazor/wwwroot/app.css",
+      "status": "passed",
+      "required_token_count": 8,
+      "missing_tokens": []
+    },
+    {
+      "id": "release_truth_docs",
+      "path": "docs/WORKBENCH_RELEASE_SIGNOFF.md",
+      "status": "passed",
+      "required_token_count": 8,
+      "missing_tokens": []
+    },
+    {
+      "id": "proof_contract_docs",
+      "path": "docs/BLAZOR_WORKBENCH_POLISH_STAGED_PROOF.md",
+      "status": "passed",
+      "required_token_count": 28,
+      "missing_tokens": []
+    },
+    {
+      "id": "parity_goal_docs",
+      "path": "docs/BLAZOR_WEB_CLIENT_PARITY_GOAL.md",
+      "status": "passed",
+      "required_token_count": 15,
+      "missing_tokens": []
+    },
+    {
+      "id": "docs_index_contract",
+      "path": "docs/BLAZOR_WEB_CLIENT_DOCS_INDEX.md",
+      "status": "passed",
+      "required_token_count": 17,
+      "missing_tokens": []
+    },
+    {
+      "id": "status_utility_reporting",
+      "path": "scripts/print_blazor_public_edge_proof_status.py",
+      "status": "passed",
+      "required_token_count": 5,
       "missing_tokens": []
     }
   ],
   "failures": [],
   "notes": [
-    "This receipt only proves that promoted workbench polish source, style, status, and docs agree.",
+    "This receipt only proves that Chummer App and compatibility-route polish source, style, status, and docs agree.",
+    "The status utility reports this as app theme, primary startup, mobile posture, portal navigation, and reduced-motion-safe command-deck motion source alignment.",
     "It is not a substitute for hosted Playwright execution proof or Docker self-host proof.",
     "Do not use this receipt to claim desktop-equivalent browser workflow parity."
   ]

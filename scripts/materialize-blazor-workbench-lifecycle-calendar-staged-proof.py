@@ -28,6 +28,8 @@ CHECKS = [
             "data-workbench-lifecycle-calendar-action=\"reminders\"",
             "data-workbench-lifecycle-calendar-action=\"recurring_costs\"",
             "data-workbench-lifecycle-calendar-action=\"next_session\"",
+            "data-workbench-lifecycle-calendar-action=\"help\"",
+            "href=\"/help\"",
         ],
     },
     {
@@ -54,8 +56,8 @@ CHECKS = [
         "path": "docs/BLAZOR_WEB_CLIENT_PARITY_GOAL.md",
         "tokens": [
             "staged hosted workbench lifecycle-calendar posture",
-            "downtime, lifestyle upkeep, subscriptions, reminders, recurring costs, and next session",
-            "not yet claiming scheduling, reminder delivery, recurring cost mutation, or session calendar parity",
+            "downtime, lifestyle upkeep, subscriptions, reminders, recurring costs, next session, and help",
+            "not yet claiming scheduling, reminder delivery, recurring cost mutation, session calendar parity, or portal help runtime parity",
         ],
     },
     {
@@ -96,13 +98,13 @@ def main() -> int:
         "status": "failed" if failures else "passed",
         "proof_tier": "source_staged_no_browser_execution",
         "route_lane": "promoted_blazor_workbench",
-        "expected_routes": ["/blazor/workbench"],
+        "expected_routes": ["/blazor/workbench", "/help"],
         "checks": evaluated_checks,
         "failures": failures,
         "notes": [
-            "This receipt only proves that promoted workbench lifecycle-calendar source, style, status, and docs agree.",
-            "It is not a substitute for hosted Playwright execution proof, Docker self-host proof, scheduling proof, reminder-delivery proof, recurring-cost mutation proof, or session-calendar proof.",
-            "Do not use this receipt to claim scheduling, reminder delivery, recurring cost mutation, session calendar behavior, or browser execution parity.",
+            "This receipt only proves that Chummer App and proof-compatible workbench lifecycle-calendar source, style, status, and docs agree.",
+            "It is not a substitute for hosted Playwright execution proof, Docker self-host proof, scheduling proof, reminder-delivery proof, recurring-cost mutation proof, session-calendar proof, or portal help runtime proof.",
+            "Do not use this receipt to claim scheduling, reminder delivery, recurring cost mutation, session calendar behavior, portal help runtime behavior, or browser execution parity.",
         ],
     }
 

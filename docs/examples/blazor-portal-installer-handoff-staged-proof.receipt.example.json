@@ -13,51 +13,153 @@
     "/downloads/install/blazor-desktop-win-x64-installer",
     "/contact",
     "/status",
+    "/help",
+    "/app",
     "/blazor/",
+    "/blazor/home",
+    "/blazor/app",
     "/blazor/workbench"
   ],
   "checks": [
     {
       "id": "hosted_public_edge_route_probe",
       "path": "scripts/e2e-public-edge.cjs",
-      "required_token_count": 23,
-      "status": "passed"
+      "status": "passed",
+      "required_token_count": 131,
+      "missing_tokens": []
     },
     {
       "id": "self_host_portal_route_probe",
       "path": "scripts/e2e-portal.cjs",
-      "required_token_count": 21,
-      "status": "passed"
+      "status": "passed",
+      "required_token_count": 147,
+      "missing_tokens": []
     },
     {
       "id": "self_host_release_receipt_metadata",
       "path": "scripts/e2e-portal.sh",
-      "required_token_count": 6,
-      "status": "passed"
+      "status": "passed",
+      "required_token_count": 11,
+      "missing_tokens": []
+    },
+    {
+      "id": "portal_openapi_download_routes",
+      "path": "Chummer.Portal/Program.cs",
+      "status": "passed",
+      "required_token_count": 83,
+      "missing_tokens": []
+    },
+    {
+      "id": "portal_home_chummer_app_routes",
+      "path": "Chummer.Portal/Program.cs",
+      "status": "passed",
+      "required_token_count": 22,
+      "missing_tokens": []
+    },
+    {
+      "id": "portal_status_surface",
+      "path": "Chummer.Portal/Program.cs",
+      "status": "passed",
+      "required_token_count": 22,
+      "missing_tokens": []
+    },
+    {
+      "id": "portal_contact_surface",
+      "path": "Chummer.Portal/Program.cs",
+      "status": "passed",
+      "required_token_count": 21,
+      "missing_tokens": []
+    },
+    {
+      "id": "portal_help_surface",
+      "path": "Chummer.Portal/Program.cs",
+      "status": "passed",
+      "required_token_count": 18,
+      "missing_tokens": []
     },
     {
       "id": "portal_known_install_route_resolver",
       "path": "Chummer.Portal/Program.cs",
-      "required_token_count": 11,
-      "status": "passed"
+      "status": "passed",
+      "required_token_count": 7,
+      "missing_tokens": []
     },
     {
       "id": "downloads_install_state_guidance",
       "path": "Chummer.Portal/Program.cs",
-      "required_token_count": 50,
-      "status": "passed"
+      "status": "passed",
+      "required_token_count": 104,
+      "missing_tokens": []
     },
     {
       "id": "portal_handoff_docs",
       "path": "docs/BLAZOR_PORTAL_INSTALLER_HANDOFF_PROOF.md",
+      "status": "passed",
+      "required_token_count": 76,
+      "missing_tokens": []
+    },
+    {
+      "id": "docs_index_contract_link",
+      "path": "docs/BLAZOR_WEB_CLIENT_DOCS_INDEX.md",
+      "status": "passed",
+      "required_token_count": 44,
+      "missing_tokens": []
+    },
+    {
+      "id": "source_staged_runbook_boundary",
+      "path": "docs/BLAZOR_SOURCE_STAGED_PROOF_RUNBOOK.md",
+      "status": "passed",
+      "required_token_count": 9,
+      "missing_tokens": []
+    },
+    {
+      "id": "contract_doc_index_requirement",
+      "path": "docs/BLAZOR_PORTAL_INSTALLER_HANDOFF_PROOF.md",
+      "status": "passed",
+      "required_token_count": 3,
+      "missing_tokens": []
+    },
+    {
+      "id": "self_host_runbook",
+      "path": "docs/BLAZOR_SELF_HOST_RUNBOOK.md",
+      "status": "passed",
       "required_token_count": 15,
-      "status": "passed"
+      "missing_tokens": []
+    },
+    {
+      "id": "release_signoff_boundary",
+      "path": "docs/WORKBENCH_RELEASE_SIGNOFF.md",
+      "status": "passed",
+      "required_token_count": 16,
+      "missing_tokens": []
+    },
+    {
+      "id": "parity_goal_portal_recovery_visual_contract",
+      "path": "docs/BLAZOR_WEB_CLIENT_PARITY_GOAL.md",
+      "status": "passed",
+      "required_token_count": 14,
+      "missing_tokens": []
+    },
+    {
+      "id": "status_utility_reporting",
+      "path": "scripts/print_blazor_public_edge_proof_status.py",
+      "status": "passed",
+      "required_token_count": 10,
+      "missing_tokens": []
+    },
+    {
+      "id": "example_receipt_shape",
+      "path": "docs/examples/blazor-portal-installer-handoff-staged-proof.receipt.example.json",
+      "status": "passed",
+      "required_token_count": 8,
+      "missing_tokens": []
     }
   ],
-  "boundary_notes": [
+  "failures": [],
+  "notes": [
     "Source-staged portal installer handoff only; this is not hosted browser execution proof.",
-    "Blazor desktop compatibility installer routes are tracked as handoff routes, not as promoted native-head installer proof; known unpublished routes return to the downloads shelf with a URL-encoded next route and installState=proof_required. Route probes decode the redirect Location before checking the preserved route. They also assert the rendered proof-required downloads panel and browser-workbench recovery action. The proof-required panel includes an Open browser workbench recovery action. The action is derived from the configured Blazor public path. Published artifact rows keep direct artifact download links. The published artifacts list has a stable data marker and ARIA label reference. It also exposes a data-backed published artifact count. The empty state has a stable data marker. They preserve the raw manifest URL as row metadata. Artifact id is also visible as row text. Platform is also exposed as row metadata. Platform is also exposed as a stable visible label. They also expose the selected install handoff route as row metadata. Link mode is also exposed as row metadata. Link mode is visible as direct download text. Route probes assert the rendered published-download direct-link, visible direct-download text, platform, and handoff metadata. The downloads shelf also lists compatibility handoff routes with install posture metadata. The row also includes promotion-state metadata. The route itself links into the guarded proof-required installer route. Rows also expose artifact-pending state when no artifact id exists. The list has a stable compatibility-handoff data marker and ARIA label reference. It also has a distinct compatibility-routes style marker. The list exposes a data-backed compatibility route count. The empty state has a stable data marker. That list is limited to proof-required fallback routes not already represented by published artifacts.",
+    "Portal visual continuity is source alignment only for Chummer App amber/mint/blue palette, polished deep ink/surface contrast, restrained ambient glow, Chummer browser routes rail user-facing labels and hover/focus affordances, shared ambient grid texture, mobile-softened grid density, high-contrast portal action affordances, and reduced-motion-safe portal panel reveal, downloads/docs cards, help cards, labelled recovery rails, focus affordances, and reduced-motion guards.",
+    "Blazor desktop compatibility installer routes are tracked as handoff routes, not as promoted native-head installer proof; known unpublished routes return to the downloads shelf with a URL-encoded next route and installState=proof_required. Route probes request the absolute `${baseUrl}/downloads/?next=%2Fdownloads%2Finstall%2Fblazor-desktop-linux-x64-installer&installState=proof_required` URL for direct proof-required guidance. Route probes decode the redirect Location before checking the preserved route. They also assert the rendered proof-required downloads panel and Chummer App recovery action. The proof-required panel includes an Open Chummer App recovery action. The action is derived from the configured Blazor public path. Published artifact rows keep direct artifact download links. The self-host operator lane exposes Docker setup, release-manifest, browser-app, proof-required boundary markers, and same-origin docs explorer download-route markers without claiming installer availability. The published artifacts list has a stable data marker and ARIA label reference. It also exposes a data-backed published artifact count. The empty state has a stable data marker. They preserve the raw manifest URL as row metadata. Artifact id is also visible as row text. Platform is also exposed as row metadata. Platform is also exposed as a stable visible label. They also expose the selected install handoff route as row metadata. Link mode is also exposed as row metadata. Link mode is visible as direct download text. Route probes assert the rendered published-download direct-link, visible direct-download text, platform, and handoff metadata. The downloads shelf also lists compatibility handoff routes with install posture metadata. The row also includes promotion-state metadata. The route itself links into the guarded proof-required installer route. Rows also expose artifact-pending state when no artifact id exists. The list has a stable compatibility-handoff data marker and ARIA label reference. It also has a distinct compatibility-routes style marker. The list exposes a data-backed compatibility route count. The empty state has a stable data marker. That list is limited to proof-required fallback routes not already represented by published artifacts.",
     "Runtime promotion requires refreshed local portal, hosted route-entry, hosted execution, and Docker self-host receipts."
-  ],
-  "failures": []
+  ]
 }

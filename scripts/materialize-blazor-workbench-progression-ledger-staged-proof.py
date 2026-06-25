@@ -28,6 +28,8 @@ CHECKS = [
             "data-workbench-progression-ledger-action=\"reputation\"",
             "data-workbench-progression-ledger-action=\"carryover\"",
             "data-workbench-progression-ledger-action=\"audit_trail\"",
+            "data-workbench-progression-ledger-action=\"help\"",
+            "href=\"/help\"",
         ],
     },
     {
@@ -54,8 +56,8 @@ CHECKS = [
         "path": "docs/BLAZOR_WEB_CLIENT_PARITY_GOAL.md",
         "tokens": [
             "staged hosted workbench progression-ledger posture",
-            "karma spend, nuyen ledger, purchase queue, reputation, carryover, and audit trail",
-            "not yet claiming ledger mutation, purchase execution, reputation mutation, or accounting parity",
+            "karma spend, nuyen ledger, purchase queue, reputation, carryover, audit trail, and help",
+            "not yet claiming ledger mutation, purchase execution, reputation mutation, accounting parity, or portal help runtime parity",
         ],
     },
     {
@@ -96,13 +98,13 @@ def main() -> int:
         "status": "failed" if failures else "passed",
         "proof_tier": "source_staged_no_browser_execution",
         "route_lane": "promoted_blazor_workbench",
-        "expected_routes": ["/blazor/workbench"],
+        "expected_routes": ["/blazor/workbench", "/help"],
         "checks": evaluated_checks,
         "failures": failures,
         "notes": [
-            "This receipt only proves that promoted workbench progression-ledger source, style, status, and docs agree.",
-            "It is not a substitute for hosted Playwright execution proof, Docker self-host proof, ledger-mutation proof, purchase-execution proof, reputation-mutation proof, or accounting proof.",
-            "Do not use this receipt to claim ledger mutation, purchase execution, reputation mutation, accounting, or browser execution parity.",
+            "This receipt only proves that Chummer App and proof-compatible workbench progression-ledger source, style, status, and docs agree.",
+            "It is not a substitute for hosted Playwright execution proof, Docker self-host proof, ledger-mutation proof, purchase-execution proof, reputation-mutation proof, accounting proof, or portal help runtime proof.",
+            "Do not use this receipt to claim ledger mutation, purchase execution, reputation mutation, accounting, portal help runtime behavior, or browser execution parity.",
         ],
     }
 

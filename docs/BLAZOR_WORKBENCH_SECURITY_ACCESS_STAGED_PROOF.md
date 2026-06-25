@@ -2,16 +2,16 @@
 
 ## Purpose
 
-This source-staged proof keeps hosted security and access-control affordances visible on the promoted Blazor workbench route.
+This source-staged proof keeps hosted security and access-control affordances visible on the user-facing Chummer App route and proof-compatible Blazor workbench route.
 
-The browser client should make sign-in, workspace lock, player/GM roles, session expiry, key rotation, and access audit posture visible near hosted character state.
+The browser client should make sign-in, workspace lock, player/GM roles, session expiry, key rotation, access audit, and help posture visible near hosted character state.
 
 ## Source-Staged Scope
 
 The staged security-access lane covers:
 
-- a hosted security/access strip on the promoted workbench route
-- sign-in, workspace lock, roles, session expiry, key rotation, and access audit shortcuts
+- a hosted security/access strip on the user-facing Chummer App route and proof-compatible workbench route
+- sign-in, workspace lock, roles, session expiry, key rotation, access audit, and same-origin help shortcuts
 - scoped responsive styling for desktop and mobile browser use
 
 ## Source Check
@@ -28,6 +28,6 @@ Expected receipt:
 
 ## Boundary
 
-This is source alignment only. It proves that promoted workbench security-access source, style, status reporting, and docs agree.
+This is source alignment only. It proves that Chummer App and proof-compatible workbench security-access source, style, status reporting, and docs agree.
 
-It is not hosted browser execution proof, Docker self-host proof, authentication proof, RBAC proof, session-expiry proof, key-rotation proof, audit-log proof, route-click proof, screenshot proof, or desktop-equivalent workflow parity.
+It is not hosted browser execution proof, Docker self-host proof, authentication proof, RBAC proof, session-expiry proof, key-rotation proof, audit-log proof, portal help runtime proof, route-click proof, screenshot proof, or desktop-equivalent workflow parity.

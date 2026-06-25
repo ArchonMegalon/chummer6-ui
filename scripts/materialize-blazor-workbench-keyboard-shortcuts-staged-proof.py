@@ -27,6 +27,8 @@ CHECKS = [
             "data-workbench-keyboard-shortcuts-action=\"save-output\"",
             "data-workbench-keyboard-shortcuts-action=\"section-jump\"",
             "data-workbench-keyboard-shortcuts-action=\"density-toggle\"",
+            "data-workbench-keyboard-shortcuts-action=\"help\"",
+            "/help",
             "data-workbench-keyboard-shortcuts-action=\"support-escape\"",
         ],
     },
@@ -54,8 +56,8 @@ CHECKS = [
         "path": "docs/BLAZOR_WEB_CLIENT_PARITY_GOAL.md",
         "tokens": [
             "staged hosted workbench keyboard-shortcuts posture",
-            "command help, save/output, section jump, density toggle, and support escape",
-            "not yet claiming key-event handling or accelerator execution parity",
+            "command help, save/output, section jump, density toggle, help, and support escape",
+            "not yet claiming key-event handling, portal help runtime, or accelerator execution parity",
         ],
     },
     {
@@ -109,13 +111,13 @@ def main() -> int:
         "status": "failed" if failures else "passed",
         "proof_tier": "source_staged_no_browser_execution",
         "route_lane": "promoted_blazor_workbench",
-        "expected_routes": ["/blazor/workbench", "/contact"],
+        "expected_routes": ["/blazor/workbench", "/help", "/contact"],
         "checks": checks,
         "failures": failures,
         "notes": [
-            "This receipt only proves that promoted workbench keyboard-shortcuts source, style, status, and docs agree.",
-            "It is not a substitute for hosted Playwright execution proof, Docker self-host proof, key-event proof, or accelerator execution proof.",
-            "Do not use this receipt to claim key-event handling, accelerator execution, or browser execution parity.",
+            "This receipt only proves that Chummer App and proof-compatible workbench keyboard-shortcuts source, style, status, and docs agree.",
+            "It is not a substitute for hosted Playwright execution proof, Docker self-host proof, key-event proof, portal help runtime, or accelerator execution proof.",
+            "Do not use this receipt to claim key-event handling, portal help runtime, accelerator execution, or browser execution parity.",
         ],
     }
 

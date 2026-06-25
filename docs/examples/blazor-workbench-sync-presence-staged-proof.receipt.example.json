@@ -5,21 +5,22 @@
   "proof_tier": "source_staged_no_browser_execution",
   "route_lane": "promoted_blazor_workbench",
   "expected_routes": [
-    "/blazor/workbench"
+    "/blazor/workbench",
+    "/help"
   ],
   "checks": [
     {
       "id": "product_workbench_sync_presence",
       "path": "Chummer.Blazor/Components/Pages/Preview.razor",
       "status": "passed",
-      "required_token_count": 9,
+      "required_token_count": 11,
       "missing_tokens": []
     }
   ],
   "failures": [],
   "notes": [
-    "This receipt only proves that promoted workbench sync-presence source, style, status, and docs agree.",
-    "It is not a substitute for hosted Playwright execution proof, Docker self-host proof, network sync proof, offline-cache proof, or multi-user presence proof.",
-    "Do not use this receipt to claim network sync, offline-cache, multi-user presence, handoff, or browser execution parity."
+    "This receipt only proves that Chummer App and proof-compatible workbench sync-presence source, style, status, and docs agree.",
+    "It is not a substitute for hosted Playwright execution proof, Docker self-host proof, network sync proof, offline-cache proof, portal help runtime, or multi-user presence proof.",
+    "Do not use this receipt to claim network sync, offline-cache, portal help runtime, multi-user presence, handoff, or browser execution parity."
   ]
 }

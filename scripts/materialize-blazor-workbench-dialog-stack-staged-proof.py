@@ -27,6 +27,8 @@ CHECKS = [
             "data-workbench-dialog-stack-action=\"committed-result\"",
             "data-workbench-dialog-stack-action=\"retry\"",
             "data-workbench-dialog-stack-action=\"cancel-back\"",
+            "data-workbench-dialog-stack-action=\"help\"",
+            "/help",
             "data-workbench-dialog-stack-action=\"support\"",
         ],
     },
@@ -54,8 +56,8 @@ CHECKS = [
         "path": "docs/BLAZOR_WEB_CLIENT_PARITY_GOAL.md",
         "tokens": [
             "staged hosted workbench dialog-stack posture",
-            "active dialog, committed result, retry, back-to-sheet, and support",
-            "not yet claiming modal execution or committed-action runtime parity",
+            "active dialog, committed result, retry, back-to-sheet, help, and support",
+            "not yet claiming modal execution, portal help runtime, or committed-action runtime parity",
         ],
     },
     {
@@ -109,13 +111,13 @@ def main() -> int:
         "status": "failed" if failures else "passed",
         "proof_tier": "source_staged_no_browser_execution",
         "route_lane": "promoted_blazor_workbench",
-        "expected_routes": ["/blazor/workbench", "/contact"],
+        "expected_routes": ["/blazor/workbench", "/help", "/contact"],
         "checks": checks,
         "failures": failures,
         "notes": [
-            "This receipt only proves that promoted workbench dialog-stack source, style, status, and docs agree.",
-            "It is not a substitute for hosted Playwright execution proof, Docker self-host proof, modal execution proof, or committed-action runtime proof.",
-            "Do not use this receipt to claim modal execution, committed-action runtime behavior, or browser execution parity.",
+            "This receipt only proves that Chummer App and proof-compatible workbench dialog-stack source, style, status, and docs agree.",
+            "It is not a substitute for hosted Playwright execution proof, Docker self-host proof, modal execution proof, portal help runtime, or committed-action runtime proof.",
+            "Do not use this receipt to claim modal execution, portal help runtime, committed-action runtime behavior, or browser execution parity.",
         ],
     }
 

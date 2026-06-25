@@ -5,21 +5,22 @@
   "proof_tier": "source_staged_no_browser_execution",
   "route_lane": "promoted_blazor_workbench",
   "expected_routes": [
-    "/blazor/workbench"
+    "/blazor/workbench",
+    "/help"
   ],
   "checks": [
     {
       "id": "product_workbench_layout_presets",
       "path": "Chummer.Blazor/Components/Pages/Preview.razor",
       "status": "passed",
-      "required_token_count": 8,
+      "required_token_count": 10,
       "missing_tokens": []
     }
   ],
   "failures": [],
   "notes": [
-    "This receipt only proves that promoted workbench layout-presets source, style, status, and docs agree.",
-    "It is not a substitute for hosted Playwright execution proof, Docker self-host proof, pane-resizing proof, or persisted-layout proof.",
-    "Do not use this receipt to claim pane resizing, persisted layout behavior, or browser execution parity."
+    "This receipt only proves that Chummer App and proof-compatible workbench layout-presets source, style, status, and docs agree.",
+    "It is not a substitute for hosted Playwright execution proof, Docker self-host proof, pane-resizing proof, portal help runtime, or persisted-layout proof.",
+    "Do not use this receipt to claim pane resizing, portal help runtime, persisted layout behavior, or browser execution parity."
   ]
 }

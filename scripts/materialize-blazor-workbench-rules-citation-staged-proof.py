@@ -28,6 +28,8 @@ CHECKS = [
             "data-workbench-rules-citation-action=\"table-summary\"",
             "data-workbench-rules-citation-action=\"dispute-trail\"",
             "data-workbench-rules-citation-action=\"audit-export\"",
+            "data-workbench-rules-citation-action=\"help\"",
+            "href=\"/help\"",
         ],
     },
     {
@@ -54,8 +56,8 @@ CHECKS = [
         "path": "docs/BLAZOR_WEB_CLIENT_PARITY_GOAL.md",
         "tokens": [
             "staged hosted workbench rules-citation posture",
-            "source packet, citation scope, errata note, table summary, dispute trail, and audit export",
-            "not yet claiming citation generation, source lookup, errata resolution, dispute persistence, or audit export generation parity",
+            "source packet, citation scope, errata note, table summary, dispute trail, audit export, and help",
+            "not yet claiming citation generation, source lookup, errata resolution, dispute persistence, audit export generation parity, or portal help runtime parity",
         ],
     },
     {
@@ -96,13 +98,13 @@ def main() -> int:
         "status": "failed" if failures else "passed",
         "proof_tier": "source_staged_no_browser_execution",
         "route_lane": "promoted_blazor_workbench",
-        "expected_routes": ["/blazor/workbench"],
+        "expected_routes": ["/blazor/workbench", "/help"],
         "checks": evaluated_checks,
         "failures": failures,
         "notes": [
-            "This receipt only proves that promoted workbench rules-citation source, style, status, and docs agree.",
-            "It is not a substitute for hosted browser execution, citation generation, source lookup, errata resolution, dispute persistence, or audit export generation parity.",
-            "Do not use this receipt to claim complete rules citation, persistence, or browser execution parity.",
+            "This receipt only proves that Chummer App and proof-compatible workbench rules-citation source, style, status, and docs agree.",
+            "It is not a substitute for hosted browser execution, citation generation, source lookup, errata resolution, dispute persistence, audit export generation parity, or portal help runtime proof.",
+            "Do not use this receipt to claim complete rules citation, persistence, portal help runtime behavior, or browser execution parity.",
         ],
     }
 

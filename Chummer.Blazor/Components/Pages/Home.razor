@@ -1,5 +1,7 @@
 @namespace Chummer.Blazor.Components.Pages
 @page "/"
+@page "/home"
+@inject NavigationManager Navigation
 @using Microsoft.AspNetCore.Components
 
 @using Chummer.Blazor.Components.Shared
@@ -7,48 +9,48 @@
 @using Chummer.Presentation.Explain
 @using Chummer.Presentation.Overview
 
-<PageTitle>Chummer Browser Workbench</PageTitle>
+<PageTitle>Chummer Online</PageTitle>
 
 <main class="public-preview">
     <header class="public-hero">
         <nav class="public-nav" aria-label="Primary">
-            <a class="brand-lockup" href="/">
+            <a class="brand-lockup" href="home">
                 <span class="brand-mark">CH</span>
                 <span class="brand-copy">
                     <strong>Chummer</strong>
-                    <span>Browser workbench</span>
+                    <span>Chummer Online</span>
                 </span>
             </a>
 
             <div class="public-nav-links">
                 <a href="#tour">Tour</a>
                 <a href="#boundaries">Boundaries</a>
-                <a href="#proof">Proof</a>
+                <a href="#trust">Trust</a>
                 <a href="/downloads/">Downloads</a>
                 <a href="/docs/">Docs</a>
-                <a class="nav-cta" href="/workbench">Open Workbench</a>
+                <a class="nav-cta" href="@AppRoute">Open Chummer Online</a>
             </div>
         </nav>
 
         <section class="hero-grid">
             <div class="hero-copy">
-                <p class="hero-kicker">Published browser surface</p>
-                <h1>Chummer's public browser workbench, grounded in the real product.</h1>
+                <p class="hero-kicker">Published browser client</p>
+                <h1>Chummer Online, the browser client for real runner work.</h1>
                 <p class="hero-summary">
-                    This surface is the public landing lane for the self-hosted Chummer portal: browser workbench, rules guidance,
+                    This surface is the public landing lane for the self-hosted Chummer portal: Chummer Online, rules guidance,
                     campaign-safe review, and Docker-backed evaluation. Character workflows are live in the browser where parity is
                     actually implemented; native install and file-heavy paths stay with the desktop client.
                 </p>
 
                 <div class="hero-actions">
-                    <a class="primary-link" href="/workbench">Launch browser workbench</a>
-                    <a class="secondary-link" href="/showcase">Inspect shared components</a>
+                    <a class="primary-link" href="@RosterRoute" data-home-hero-action="explore-chummer-online">Explore Chummer Online</a>
+                    <a class="secondary-link" href="#tour">See web client tour</a>
                 </div>
 
                 <dl class="hero-facts">
                     <div>
                         <dt>Live now</dt>
-                        <dd>Self-hosted portal, responsive workbench chrome, implicit owner session, and browser-safe workflow rails.</dd>
+                        <dd>Self-hosted portal, responsive app chrome, implicit owner session, and browser-safe workflow rails.</dd>
                     </div>
                     <div>
                         <dt>Desktop stays primary for</dt>
@@ -62,7 +64,7 @@
             </div>
 
             <aside class="hero-panel" aria-label="Preview promise">
-                <p class="eyebrow">Browser workbench promise</p>
+                <p class="eyebrow">Chummer Online promise</p>
                 <ul class="promise-list">
                     <li>Self-hosted Docker deployment with one published front door.</li>
                     <li>Implicit owner sign-in propagated across the browser-facing stack.</li>
@@ -70,9 +72,8 @@
                 </ul>
                 <div class="route-pills">
                     <span>Public root: <code>/</code></span>
-                    <span>Workbench: <code>/workbench</code></span>
-                    <span>Proof route: <code>/preview</code></span>
-                    <span>Component showcase: <code>/showcase</code></span>
+                    <span>Roster entry: <code>@PublicRosterRoute</code></span>
+                    <span>App route: <code>@PublicAppRoute</code></span>
                     <span>Self-host docs: <code>/docs</code></span>
                 </div>
             </aside>
@@ -82,23 +83,23 @@
     <section id="tour" class="content-band">
         <div class="band-heading">
             <p class="section-kicker">Why this exists</p>
-            <h2>Use the browser to evaluate Chummer's real shell, not a disconnected marketing mock.</h2>
+            <h2>Use the browser to open Chummer's real app shell, not a disconnected marketing mock.</h2>
             <p>
-                The browser workbench is for orientation, product pitch, guided workflows, and self-hosted evaluation.
+                Chummer Online is for orientation, product pitch, guided workflows, and self-hosted evaluation.
                 It is allowed to be ambitious, but it is not allowed to lie about parity.
             </p>
         </div>
 
         <div class="tour-grid">
             <article class="tour-card">
-                <h3>Live browser workbench</h3>
-                <p>Open the same shared shell stack that drives the browser-facing workbench, with responsive navigation and active workflows.</p>
-                <a href="/workbench">Open the browser workbench</a>
+                <h3>Live Chummer Online</h3>
+                <p>Open the same shared shell stack that drives the browser client, with responsive navigation and active workflows.</p>
+                <a href="@AppRoute">Open Chummer Online</a>
             </article>
             <article class="tour-card">
                 <h3>Structured proof rails</h3>
                 <p>Inspect build handoff, rule explainability, publication posture, and review surfaces backed by the real presentation contracts.</p>
-                <a href="#proof">Jump to proof section</a>
+                <a href="#trust">Jump to trust section</a>
             </article>
             <article class="tour-card">
                 <h3>Self-hosted deployment path</h3>
@@ -106,9 +107,9 @@
                 <a href="/docs/">Open self-host docs</a>
             </article>
             <article class="tour-card">
-                <h3>Component-level audit path</h3>
-                <p>Use the showcase route when you need denser shared-component samples instead of the public-facing pitch.</p>
-                <a href="/showcase">Open showcase</a>
+                <h3>Shared UI library</h3>
+                <p>Open reusable panels and shared component samples when you need to inspect how the browser client is assembled.</p>
+                <a href="showcase">Open showcase</a>
             </article>
         </div>
     </section>
@@ -116,7 +117,7 @@
     <section id="boundaries" class="content-band content-band-boundary">
         <div class="band-heading">
             <p class="section-kicker">Clear boundaries</p>
-            <h2>What the browser workbench owns today, and what still belongs to the native desktop client.</h2>
+            <h2>What Chummer App owns today, and what still belongs to the native desktop client.</h2>
         </div>
 
         <div class="boundary-grid">
@@ -125,7 +126,7 @@
                 <ul>
                     <li>Portal entry, navigation, and self-hosted orientation</li>
                     <li>Rules guidance, build-path explanation, and campaign-safe review</li>
-                    <li>Shared-shell workbench flows and browser-ready workflow continuations</li>
+                    <li>Shared-shell Chummer App flows and browser-ready workflow continuations</li>
                     <li>Public links into docs, downloads, hub, and deeper product surfaces</li>
                 </ul>
             </article>
@@ -142,9 +143,9 @@
         </div>
     </section>
 
-    <section id="proof" class="content-band">
+    <section id="trust" class="content-band">
         <div class="band-heading">
-            <p class="section-kicker">Product proof</p>
+            <p class="section-kicker">Product trust</p>
             <h2>Real browser product rails, not placeholder marketing panels.</h2>
             <p>
                 These samples stay grounded in the same presentation contracts used elsewhere in the Chummer UI work,
@@ -161,13 +162,38 @@
     </section>
 
     <footer class="public-footer">
-        <p>Chummer browser workbench: published, self-hostable, responsive, and explicit about where the desktop client still owns the workflow.</p>
+        <p>Chummer Online: published, self-hostable, responsive, and explicit about where the desktop client still owns the workflow.</p>
     </footer>
 </main>
 
 <section hidden data-testid="desktop-shell-route-anchor">
     Desktop shell route anchor.
 </section>
+
+@code {
+    private bool IsRootRoute
+    {
+        get
+        {
+            string path = new Uri(Navigation.Uri).AbsolutePath.TrimEnd('/');
+            return path.EndsWith("/blazor", StringComparison.OrdinalIgnoreCase) || path.Length == 0;
+        }
+    }
+
+    protected override void OnInitialized()
+    {
+        if (IsRootRoute)
+        {
+            Navigation.NavigateTo(AppRoute, replace: true);
+        }
+    }
+
+    private const string AppRoute = "app";
+    private const string PublicAppRoute = "/app";
+    private const string CharacterRosterCommand = "character_roster";
+    private static string RosterRoute => $"{AppRoute}?command={CharacterRosterCommand}";
+    private static string PublicRosterRoute => $"/{RosterRoute}";
+}
 
 <section hidden aria-hidden="true" data-testid="flagship-media-sample-anchor">
     <img src="/media/portraits/contact-portrait-revision.png" alt="" data-asset-id="asset-portraits-01" />

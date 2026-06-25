@@ -247,8 +247,8 @@ public sealed class DesktopDialogFactory : IDesktopDialogFactory
                 BuildMasterIndexActions(masterIndex)),
             "character_roster" => new DesktopDialogState(
                 "dialog.character_roster",
-                "Character Roster",
-                "Open runners on the left, keep the selected runner summary on the right, and keep background plus notes compact underneath like the legacy roster utility.",
+                "Character Library",
+                "Group runners into your own folders, drag characters or custom directories through the tree, and keep selected-runner details close without moving watched files until explicitly confirmed.",
                 BuildRosterFields(name, alias, workspace, currentWorkspace, openWorkspaces, preferences),
                 BuildRosterActions(name, alias, workspace, currentWorkspace, openWorkspaces, preferences)),
             "data_exporter" => new DesktopDialogState(
@@ -3062,7 +3062,7 @@ public sealed class DesktopDialogFactory : IDesktopDialogFactory
 
         actions.Add(new DesktopDialogAction(
             "open_roster_folder",
-            watchFolderConfigured ? (watchFolderExists ? "Open Roster Folder" : "Create Roster Folder") : "Configure Roster Folder"));
+            watchFolderConfigured ? (watchFolderExists ? "Open Library Folder" : "Create Library Folder") : "Configure Library Folder"));
 
         actions.Add(new DesktopDialogAction(
             "refresh_watch_folder",
@@ -3070,10 +3070,10 @@ public sealed class DesktopDialogFactory : IDesktopDialogFactory
                 ? (watchFolderExists ? "Refresh Watch Folder" : "Create and Refresh Watch Folder")
                 : "Scan Watch Folder Now"));
 
-        actions.Add(new DesktopDialogAction("create_roster_group", "Create Roster Folder"));
-        actions.Add(new DesktopDialogAction("rename_roster_group", "Rename Roster Folder"));
-        actions.Add(new DesktopDialogAction("delete_roster_group", "Delete Roster Folder"));
-        actions.Add(new DesktopDialogAction("move_runner_to_group", "Move Runner to Folder"));
+        actions.Add(new DesktopDialogAction("create_roster_group", "Create Library Directory"));
+        actions.Add(new DesktopDialogAction("rename_roster_group", "Rename Library Directory"));
+        actions.Add(new DesktopDialogAction("delete_roster_group", "Delete Library Directory"));
+        actions.Add(new DesktopDialogAction("move_runner_to_group", "Move Runner to Directory"));
         actions.Add(new DesktopDialogAction("reorder_roster_tree", "Reorder Character Tree"));
         actions.Add(new DesktopDialogAction("reset_roster_hierarchy", "Reset Character Layout"));
 
@@ -3162,28 +3162,28 @@ public sealed class DesktopDialogFactory : IDesktopDialogFactory
             : $"[Open Characters]{Environment.NewLine}{string.Join(Environment.NewLine, ordered.Select(candidate => $"└─ {(selectedRunner is not null && string.Equals(candidate.Id.Value, selectedRunner.Id.Value, StringComparison.Ordinal) ? "*" : "-")} {candidate.Alias} · {candidate.Name} [{(RulesetDefaults.NormalizeOptional(candidate.RulesetId) ?? candidate.RulesetId)}]"))}{Environment.NewLine}[Watch Folder]{Environment.NewLine}{watchFolderTree}";
         string customRosterFolders = BuildCustomRosterFolderPreview(ordered, watchedFiles, selectedRunner, selectedWatchedFile, alias, name);
         string rosterMoveTargets = BuildGridValue(
-            ("Drop Target", selectedRunner is null ? "New folder or watched file" : $"{selectedRunner.Alias} folder"),
-            ("Default Folder", selectedRunner?.HasSavedWorkspace == true ? "Saved runners" : "Inbox / unsaved"),
-            ("Tree Scope", watchFolderConfigured ? "Open runners + watched files + user folders" : "Open runners + user folders"),
+            ("Drop Target", selectedRunner is null ? "New directory or watched file" : $"{selectedRunner.Alias} directory"),
+            ("Default Directory", selectedRunner?.HasSavedWorkspace == true ? "Saved runners" : "Inbox / unsaved"),
+            ("Tree Scope", watchFolderConfigured ? "Open runners + watched files + user hierarchy" : "Open runners + user hierarchy"),
             ("Ordering", "manual sibling order with recent-open fallback"),
             ("Persistence", "character tree metadata, not filesystem move until confirmed"),
             ("Conflict Rule", "drag creates preview; explicit Move Runner commits"));
         string rosterDragDropGuide =
-            "Drag runner onto folder: preview move" + Environment.NewLine +
-            "Drag folder onto folder: nest folder" + Environment.NewLine +
+            "Drag runner onto directory: preview move" + Environment.NewLine +
+            "Drag directory onto directory: nest directory" + Environment.NewLine +
             "Drag between siblings: reorder within parent" + Environment.NewLine +
-            "Keyboard: Enter/Space selects source, Enter/Space on folder drops, Escape clears source" + Environment.NewLine +
+            "Keyboard: Enter/Space selects source, Enter/Space on directory drops, Escape clears source" + Environment.NewLine +
             "Drop onto Watch Folder file: link watched file" + Environment.NewLine +
             "Hold modifier while dropping: copy shortcut instead of move" + Environment.NewLine +
             "Undo last move: restore previous tree path";
         string rosterHierarchyPolicy = BuildGridValue(
-            ("User Folders", "custom arbitrary depth"),
-            ("Character Placement", "one primary folder, optional pinned aliases later"),
-            ("Watched Files", "can appear under virtual folders without moving disk files"),
+            ("User Directories", "custom arbitrary depth"),
+            ("Character Placement", "one primary directory in the user's hierarchy, optional pinned aliases later"),
+            ("Watched Files", "can appear under custom library directories without moving disk files"),
             ("Filesystem Moves", "separate confirmation step"),
             ("Self-host Sync", "layout metadata follows owner and runner scope"),
-            ("Safe Delete", "delete custom folder moves runner/link items to Inbox and reparents child folders"),
-            ("Cycle Guard", "folder drops cannot target their own descendants"),
+            ("Safe Delete", "delete custom directory moves runner/link items to Inbox and reparents child directories"),
+            ("Cycle Guard", "directory drops cannot target their own descendants"),
             ("Drag Source", "dragged row wins before selected-runner fallback"));
         string selectedRunnerSummary = selectedRunner is null
             ? BuildGridValue(
@@ -3237,23 +3237,23 @@ public sealed class DesktopDialogFactory : IDesktopDialogFactory
             ("Selected Updated", selectedWatchFileInfo is null ? "n/a" : $"{selectedWatchFileInfo.LastWriteTimeUtc:yyyy-MM-dd HH:mm} UTC"),
             ("Selected Bytes", selectedWatchFileInfo?.Length.ToString(CultureInfo.InvariantCulture) ?? "n/a"),
             ("Portrait Match", portraitMatchSource),
-            ("Scan Posture", !watchFolderConfigured ? "configure a roster folder first" : watchFolderExists ? "folder contents surfaced in roster tree" : "folder missing on disk"));
+            ("Scan Posture", !watchFolderConfigured ? "configure a library folder first" : watchFolderExists ? "folder contents surfaced in library tree" : "folder missing on disk"));
         string runnerCommands =
             "Open selected runner" + Environment.NewLine +
             "Save selected runner" + Environment.NewLine +
-            "Create custom character folder" + Environment.NewLine +
-            "Move selected runner to folder" + Environment.NewLine +
-            "Rename selected folder" + Environment.NewLine +
-            "Undo last roster move" + Environment.NewLine +
-            (selectedRunner?.HasSavedWorkspace == true ? "Open saved runner location" : "Save runner to roster folder");
+            "Create custom library directory" + Environment.NewLine +
+            "Move selected runner to directory" + Environment.NewLine +
+            "Rename selected directory" + Environment.NewLine +
+            "Undo last library move" + Environment.NewLine +
+            (selectedRunner?.HasSavedWorkspace == true ? "Open saved runner location" : "Save runner to library folder");
         string watchFolderCommands = watchFolderConfigured
             ? watchFolderExists
-                ? "Open roster folder" + Environment.NewLine +
+                ? "Open library folder" + Environment.NewLine +
                   "Refresh watched file list" + Environment.NewLine +
                   "Open selected watched runner" + Environment.NewLine +
                   (portraitInfo is not null ? "Open matched portrait" : "Open portrait slot")
-                : "Open roster folder" + Environment.NewLine +
-                  "Create roster folder" + Environment.NewLine +
+                : "Open library folder" + Environment.NewLine +
+                  "Create library folder" + Environment.NewLine +
                   "Refresh watched file list"
             : "Configure watch folder" + Environment.NewLine +
               "Scan watch folder now" + Environment.NewLine +
@@ -3299,11 +3299,11 @@ public sealed class DesktopDialogFactory : IDesktopDialogFactory
             new DesktopDialogField("rosterSnapshot", "Snapshot", rosterSnapshot, rosterSnapshot, IsReadOnly: true, LayoutSlot: DesktopDialogFieldLayoutSlots.Hidden),
             new DesktopDialogField("rosterHierarchySource", "Roster Hierarchy Source", rosterHierarchySource, rosterHierarchySource, IsReadOnly: true, LayoutSlot: DesktopDialogFieldLayoutSlots.Hidden),
             new DesktopDialogField("rosterTree", "Characters", rosterTree, rosterTree, IsReadOnly: true, IsMultiline: true, VisualKind: DesktopDialogFieldVisualKinds.Tree, LayoutSlot: DesktopDialogFieldLayoutSlots.Left),
-            new DesktopDialogField("rosterFolderName", "Folder Name", string.Empty, "New folder name or rename label", LayoutSlot: DesktopDialogFieldLayoutSlots.Left),
-            new DesktopDialogField("rosterTargetFolder", "Target Folder", string.Empty, "Choose a folder or type a folder id/name for nesting and moves", LayoutSlot: DesktopDialogFieldLayoutSlots.Left, Options: rosterTargetFolderOptions),
-            new DesktopDialogField("rosterSourceFolder", "Source Folder", string.Empty, "Choose a custom folder or type a folder id/name for rename, delete, and nesting", LayoutSlot: DesktopDialogFieldLayoutSlots.Left, Options: rosterSourceFolderOptions),
+            new DesktopDialogField("rosterFolderName", "Directory Name", string.Empty, "New custom library directory name or rename label", LayoutSlot: DesktopDialogFieldLayoutSlots.Left),
+            new DesktopDialogField("rosterTargetFolder", "Target Directory", string.Empty, "Choose a directory or type a directory id/name for nesting and moves", LayoutSlot: DesktopDialogFieldLayoutSlots.Left, Options: rosterTargetFolderOptions),
+            new DesktopDialogField("rosterSourceFolder", "Source Directory", string.Empty, "Choose a custom directory or type a directory id/name for rename, delete, and nesting", LayoutSlot: DesktopDialogFieldLayoutSlots.Left, Options: rosterSourceFolderOptions),
             new DesktopDialogField("rosterSourceItem", "Source Item", string.Empty, "Dragged runner or watched-file row", LayoutSlot: DesktopDialogFieldLayoutSlots.Hidden),
-            new DesktopDialogField("rosterCustomFolders", "Custom Folders", customRosterFolders, customRosterFolders, IsReadOnly: true, IsMultiline: true, VisualKind: DesktopDialogFieldVisualKinds.Tree, LayoutSlot: DesktopDialogFieldLayoutSlots.Left),
+            new DesktopDialogField("rosterCustomFolders", "Custom Directories", customRosterFolders, customRosterFolders, IsReadOnly: true, IsMultiline: true, VisualKind: DesktopDialogFieldVisualKinds.Tree, LayoutSlot: DesktopDialogFieldLayoutSlots.Left),
             new DesktopDialogField("rosterMoveTargets", "Move Targets", rosterMoveTargets, rosterMoveTargets, IsReadOnly: true, IsMultiline: true, VisualKind: DesktopDialogFieldVisualKinds.Grid),
             new DesktopDialogField("rosterDragDropGuide", "Drag / Drop", rosterDragDropGuide, rosterDragDropGuide, IsReadOnly: true, IsMultiline: true, VisualKind: DesktopDialogFieldVisualKinds.List),
             new DesktopDialogField("rosterHierarchyPolicy", "Hierarchy Policy", rosterHierarchyPolicy, rosterHierarchyPolicy, IsReadOnly: true, IsMultiline: true, VisualKind: DesktopDialogFieldVisualKinds.Grid),
@@ -3317,7 +3317,7 @@ public sealed class DesktopDialogFactory : IDesktopDialogFactory
             new DesktopDialogField("rosterSelectedRunnerStatus", "Runner Status", selectedRunnerStatus, selectedRunnerStatus, IsReadOnly: true, IsMultiline: true, VisualKind: DesktopDialogFieldVisualKinds.Snippet),
             new DesktopDialogField("rosterSelectedRunnerBackground", "Background / Concept", selectedRunnerBackground, selectedRunnerBackground, IsReadOnly: true, IsMultiline: true, VisualKind: DesktopDialogFieldVisualKinds.Snippet),
             new DesktopDialogField("rosterSelectedRunnerNotes", "Bio / Concept / Notes", selectedRunnerNotes, selectedRunnerNotes, IsReadOnly: true, IsMultiline: true, VisualKind: DesktopDialogFieldVisualKinds.Snippet),
-            new DesktopDialogField("rosterEntries", "Roster Entries", rosterEntries, rosterEntries, IsReadOnly: true, IsMultiline: true, VisualKind: DesktopDialogFieldVisualKinds.List)
+            new DesktopDialogField("rosterEntries", "Library Entries", rosterEntries, rosterEntries, IsReadOnly: true, IsMultiline: true, VisualKind: DesktopDialogFieldVisualKinds.List)
         ];
     }
 
@@ -3514,8 +3514,7 @@ public sealed class DesktopDialogFactory : IDesktopDialogFactory
 
         try
         {
-            RosterHierarchyState? hierarchy = JsonSerializer.Deserialize<RosterHierarchyState>(stagedHierarchyJson);
-            return hierarchy is { Folders.Count: > 0, Items.Count: > 0 }
+            return RosterHierarchyStateJson.TryDeserialize(stagedHierarchyJson, out RosterHierarchyState? hierarchy)
                 ? hierarchy
                 : null;
         }
@@ -3566,8 +3565,8 @@ public sealed class DesktopDialogFactory : IDesktopDialogFactory
             : $"{hierarchy.PendingMove.MoveKind}: {hierarchy.PendingMove.ItemId} -> {hierarchy.PendingMove.TargetFolderId ?? "root"}";
         return BuildGridValue(
             ("Source", hierarchySource),
-            ("Custom Folders", customFolderCount.ToString(CultureInfo.InvariantCulture)),
-            ("System Folders", systemFolderCount.ToString(CultureInfo.InvariantCulture)),
+            ("Custom Directories", customFolderCount.ToString(CultureInfo.InvariantCulture)),
+            ("System Directories", systemFolderCount.ToString(CultureInfo.InvariantCulture)),
             ("Runner Items", workspaceItemCount.ToString(CultureInfo.InvariantCulture)),
             ("Watched Links", watchedItemCount.ToString(CultureInfo.InvariantCulture)),
             ("Pending Move", pendingMove),
@@ -6445,6 +6444,39 @@ public sealed class DesktopDialogFactory : IDesktopDialogFactory
                     new DesktopDialogAction("delete", "Remove Armor Jacket", true),
                     new DesktopDialogAction("cancel", "Cancel")
                 ]),
+            "runner_benchmark" => new DesktopDialogState(
+                "dialog.ui.runner_benchmark",
+                "Runner Intelligence",
+                "Compare this runner against privacy-safe cohorts and local roster benchmarks before changing the sheet.",
+                [
+                    BuildUtilitySectionsField("uiRunnerBenchmarkSections", "Edge", "Exposure", "Delta"),
+                    new DesktopDialogField("uiRunnerBenchmarkInitiative", "Initiative Percentile", "Top 3% of comparable runners", "Top 3%", IsReadOnly: true),
+                    new DesktopDialogField("uiRunnerBenchmarkDefense", "Defense Pool", "Top 14% for street samurai cohort", "Top 14%", IsReadOnly: true),
+                    new DesktopDialogField("uiRunnerBenchmarkSoak", "Soak Pool", "Above campaign median", "Above median", IsReadOnly: true)
+                ],
+                [new DesktopDialogAction("close", "Close", true)]),
+            "runner_what_if" => new DesktopDialogState(
+                "dialog.ui.runner_what_if",
+                "Runner Intelligence What-If",
+                "Model spells, drugs, gear, and sustained effects without mutating the runner until the user applies a real workflow.",
+                [
+                    BuildUtilitySectionsField("uiRunnerWhatIfSections", "Spell", "Inventory", "Risk"),
+                    new DesktopDialogField("uiRunnerWhatIfSpell", "Spell", "Increase Initiative Force 6", "Increase Initiative Force 6"),
+                    new DesktopDialogField("uiRunnerWhatIfDrain", "Drain/Stun Risk", "87% chance of taking no more than 1 Stun", "87% <= 1 Stun", IsReadOnly: true),
+                    new DesktopDialogField("uiRunnerWhatIfInventory", "Inventory Synergy", "Jazz from inventory can raise Initiative percentile with addiction/crash warning", "Jazz available", IsReadOnly: true)
+                ],
+                [new DesktopDialogAction("close", "Close", true)]),
+            "runner_cohort_privacy" => new DesktopDialogState(
+                "dialog.ui.runner_cohort_privacy",
+                "Runner Intelligence Privacy",
+                "Opt-in anonymized benchmark cohorts stay separate from private character, owner, workspace, XML, notes, and dossier content.",
+                [
+                    BuildUtilitySectionsField("uiRunnerPrivacySections", "Hosted", "Self-Host", "Excluded"),
+                    new DesktopDialogField("uiRunnerPrivacyHosted", "Hosted Cohorts", "Opt-in anonymized benchmark cohorts", "Opt-in only", IsReadOnly: true),
+                    new DesktopDialogField("uiRunnerPrivacyDocker", "Docker Self-Host", "Local roster and campaign benchmark pool only by default", "Local-only default", IsReadOnly: true),
+                    new DesktopDialogField("uiRunnerPrivacyExcluded", "Excluded Data", "Names, aliases, owner ids, workspace ids, files, XML, notes, and dossier text", "Private sheet data excluded", IsReadOnly: true)
+                ],
+                [new DesktopDialogAction("close", "Close", true)]),
             "gear_mount" => new DesktopDialogState(
                 "dialog.ui.gear_mount",
                 "Mount Gear",

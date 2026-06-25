@@ -1,0 +1,71 @@
+{
+  "contract_name": "chummer6-ui.blazor_account_support_handoff_staged_proof",
+  "generated_at": "2026-06-24T00:00:00+00:00",
+  "status": "passed",
+  "proof_tier": "source_staged_no_auth_or_support_runtime",
+  "route_lane": "portal_backed_blazor_account_support_handoff",
+  "expected_routes": [
+    "/hub",
+    "/hub/",
+    "/contact",
+    "/status",
+    "/help",
+    "/home/access",
+    "/home/work",
+    "/account/work",
+    "/account/support",
+    "/blazor/home",
+    "/blazor/app",
+    "/blazor/workbench"
+  ],
+  "checks": [
+    {
+      "id": "hosted_public_edge_account_support_routes",
+      "path": "scripts/e2e-public-edge.cjs",
+      "status": "passed",
+      "required_token_count": 8,
+      "missing_tokens": []
+    },
+    {
+      "id": "self_host_portal_account_support_routes",
+      "path": "scripts/e2e-portal.sh",
+      "status": "passed",
+      "required_token_count": 7,
+      "missing_tokens": []
+    },
+    {
+      "id": "portal_playwright_account_context",
+      "path": "scripts/e2e-portal-playwright.cjs",
+      "status": "passed",
+      "required_token_count": 3,
+      "missing_tokens": []
+    },
+    {
+      "id": "account_support_contract_doc",
+      "path": "docs/BLAZOR_ACCOUNT_SUPPORT_HANDOFF_PROOF.md",
+      "status": "passed",
+      "required_token_count": 16,
+      "missing_tokens": []
+    },
+    {
+      "id": "web_client_parity_goal",
+      "path": "docs/BLAZOR_WEB_CLIENT_PARITY_GOAL.md",
+      "status": "passed",
+      "required_token_count": 3,
+      "missing_tokens": []
+    },
+    {
+      "id": "release_signoff_boundary",
+      "path": "docs/WORKBENCH_RELEASE_SIGNOFF.md",
+      "status": "passed",
+      "required_token_count": 3,
+      "missing_tokens": []
+    }
+  ],
+  "failures": [],
+  "notes": [
+    "This proof is source alignment only for account/support/help handoff posture.",
+    "It does not prove authentication, authorization, owner propagation, portal help runtime, or support submission runtime behavior.",
+    "Runtime evidence remains owned by local portal proof, hosted route-entry proof, hosted execution proof, and connected-runtime posture receipts."
+  ]
+}

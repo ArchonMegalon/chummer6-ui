@@ -13,23 +13,21 @@ from typing import Any
 
 
 UTC = dt.timezone.utc
+REPO_ROOT = Path(__file__).resolve().parents[1]
 CONTRACT_NAME = "chummer6-ui.external_host_proof_blockers"
 PUBLIC_EDGE_BROWSER_CONTRACT_NAME = "chummer6-ui.blazor_public_edge_workbench_proof"
-PUBLIC_EDGE_BROWSER_CONTRACT_DOC_PATH = Path(
-    "/docker/chummercomplete/chummer-presentation/docs/BLAZOR_PUBLIC_EDGE_WORKBENCH_PROOF.md"
-)
-PUBLIC_EDGE_BROWSER_STATUS_SUMMARY_PATH = Path(
-    "/docker/chummercomplete/chummer-presentation/scripts/print_blazor_public_edge_proof_status.py"
-)
-PUBLIC_EDGE_BROWSER_VERIFIER_PATH = Path(
-    "/docker/chummercomplete/chummer-presentation/scripts/verify_blazor_public_edge_workbench_proof.py"
-)
-PUBLIC_EDGE_BROWSER_VERIFIER_WRAPPER_PATH = Path(
-    "/docker/chummercomplete/chummer-presentation/scripts/ai/milestones/blazor-public-edge-workbench-proof-check.sh"
+PUBLIC_EDGE_BROWSER_CONTRACT_DOC_PATH = REPO_ROOT / "docs" / "BLAZOR_PUBLIC_EDGE_WORKBENCH_PROOF.md"
+PUBLIC_EDGE_BROWSER_STATUS_SUMMARY_PATH = REPO_ROOT / "scripts" / "print_blazor_public_edge_proof_status.py"
+PUBLIC_EDGE_BROWSER_VERIFIER_PATH = REPO_ROOT / "scripts" / "verify_blazor_public_edge_workbench_proof.py"
+PUBLIC_EDGE_BROWSER_VERIFIER_WRAPPER_PATH = (
+    REPO_ROOT / "scripts" / "ai" / "milestones" / "blazor-public-edge-workbench-proof-check.sh"
 )
 DEFAULT_BROWSER_ROUTES = [
+    "/app",
     "/blazor/",
     "/blazor/health",
+    "/blazor/home",
+    "/blazor/app",
     "/blazor/workbench",
     "/blazor/workbench?workspace=ws-1",
     "/blazor/workbench?command=new_character_origin",
@@ -548,7 +546,9 @@ def main() -> int:
             "route_probe_executed": not args.skip_public_route_check,
             "portal_route_probe_script": "scripts/e2e-public-edge.cjs",
             "route_proof_markers": [
+                "public_chummer_app_route",
                 "public_blazor_root_redirect",
+                "public_blazor_home_roster_entry",
                 "public_blazor_health",
                 "public_workbench_route",
                 "public_workspace_restore_route",
@@ -579,6 +579,7 @@ def main() -> int:
             "source_receipt": str(args.output.resolve()),
             "notes": [
                 "Hosted public-edge browser proof is distinct from the Docker self-host workbench receipt.",
+                "Public product navigation remains /app, /blazor/app is the hosted app path, /blazor/home carries the roster-first route entry, and /blazor/workbench is the canonical proof-compatible route base.",
                 "This receipt currently proves hosted /blazor route-entry posture and route health, not full browser workflow execution.",
             ],
         }
@@ -586,10 +587,10 @@ def main() -> int:
         args.browser_proof_output.write_text(json.dumps(browser_payload, indent=2) + "\n", encoding="utf-8")
 
     execution_receipt_path = args.output.parent / "BLAZOR_PUBLIC_EDGE_EXECUTION_PROOF.generated.json"
-    execution_runner_path = Path("/docker/chummercomplete/chummer-presentation/scripts/e2e-public-edge-execution.sh")
-    execution_status_summary_path = Path("/docker/chummercomplete/chummer-presentation/scripts/print_blazor_public_edge_proof_status.py")
-    execution_verifier_path = Path("/docker/chummercomplete/chummer-presentation/scripts/verify_blazor_public_edge_execution_proof.py")
-    execution_contract_doc_path = Path("/docker/chummercomplete/chummer-presentation/docs/BLAZOR_PUBLIC_EDGE_EXECUTION_PROOF.md")
+    execution_runner_path = REPO_ROOT / "scripts" / "e2e-public-edge-execution.sh"
+    execution_status_summary_path = REPO_ROOT / "scripts" / "print_blazor_public_edge_proof_status.py"
+    execution_verifier_path = REPO_ROOT / "scripts" / "verify_blazor_public_edge_execution_proof.py"
+    execution_contract_doc_path = REPO_ROOT / "docs" / "BLAZOR_PUBLIC_EDGE_EXECUTION_PROOF.md"
     execution_receipt_status = ""
     execution_receipt_contract = ""
     execution_receipt_error = ""

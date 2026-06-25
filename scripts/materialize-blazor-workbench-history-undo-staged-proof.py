@@ -27,6 +27,8 @@ CHECKS = [
             "data-workbench-history-undo-action=\"snapshot\"",
             "data-workbench-history-undo-action=\"compare\"",
             "data-workbench-history-undo-action=\"restore\"",
+            "data-workbench-history-undo-action=\"help\"",
+            "/help",
             "data-workbench-history-undo-action=\"conflict\"",
         ],
     },
@@ -54,8 +56,8 @@ CHECKS = [
         "path": "docs/BLAZOR_WEB_CLIENT_PARITY_GOAL.md",
         "tokens": [
             "staged hosted workbench history-undo posture",
-            "undo, redo, snapshot, compare, restore, and conflict review",
-            "not yet claiming actual rollback, diff, or conflict-resolution parity",
+            "undo, redo, snapshot, compare, restore, help, and conflict review",
+            "not yet claiming actual rollback, diff, portal help runtime, or conflict-resolution parity",
         ],
     },
     {
@@ -96,13 +98,13 @@ def main() -> int:
         "status": "failed" if failures else "passed",
         "proof_tier": "source_staged_no_browser_execution",
         "route_lane": "promoted_blazor_workbench",
-        "expected_routes": ["/blazor/workbench"],
+        "expected_routes": ["/blazor/workbench", "/help"],
         "checks": evaluated_checks,
         "failures": failures,
         "notes": [
-            "This receipt only proves that promoted workbench history-undo source, style, status, and docs agree.",
-            "It is not a substitute for hosted Playwright execution proof, Docker self-host proof, rollback execution proof, diff proof, or conflict-resolution proof.",
-            "Do not use this receipt to claim actual rollback, diff, conflict resolution, persistence, or browser execution parity.",
+            "This receipt only proves that Chummer App and proof-compatible workbench history-undo source, style, status, and docs agree.",
+            "It is not a substitute for hosted Playwright execution proof, Docker self-host proof, rollback execution proof, diff proof, portal help runtime, or conflict-resolution proof.",
+            "Do not use this receipt to claim actual rollback, diff, portal help runtime, conflict resolution, persistence, or browser execution parity.",
         ],
     }
 

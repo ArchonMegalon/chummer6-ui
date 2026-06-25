@@ -2,16 +2,16 @@
 
 ## Purpose
 
-This source-staged proof keeps dense-list search and filter affordances visible on the promoted Blazor workbench route.
+This source-staged proof keeps dense-list search and filter affordances visible on the user-facing Chummer App route and proof-compatible Blazor workbench route.
 
-The browser client should make roster, gear, skills, qualities, and source-heavy panes easy to reach and filter without making users hunt through page-specific controls.
+The browser client should make roster, gear, skills, qualities, and source-heavy panes easy to reach, filter, and recover without making users hunt through page-specific controls.
 
 ## Source-Staged Scope
 
 The staged search/filter lane covers:
 
-- a search/filter rail on the promoted workbench route
-- roster, gear, skills, qualities, sources, and clear-filter shortcuts
+- a search/filter rail on the user-facing Chummer App route and proof-compatible workbench route
+- roster, gear, skills, qualities, sources, help, and clear-filter shortcuts
 - scoped responsive styling for desktop and mobile browser use
 
 ## Source Check
@@ -28,6 +28,6 @@ Expected receipt:
 
 ## Boundary
 
-This is source alignment only. It proves that promoted workbench search/filter source, style, status reporting, and docs agree.
+This is source alignment only. It proves that Chummer App and proof-compatible workbench search/filter source, style, status reporting, and docs agree.
 
-It is not hosted browser execution proof, Docker self-host proof, live search-indexing proof, filter-execution proof, route-click proof, screenshot proof, or desktop-equivalent workflow parity.
+It is not hosted browser execution proof, Docker self-host proof, live search-indexing proof, portal-help-runtime proof, filter-execution proof, route-click proof, screenshot proof, or desktop-equivalent workflow parity.

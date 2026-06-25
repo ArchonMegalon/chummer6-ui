@@ -33,15 +33,7 @@ public static class DesktopPreferenceStateRuntime
         };
 
     private static string NormalizeRosterHierarchyJson(string? hierarchyJson)
-    {
-        if (string.IsNullOrWhiteSpace(hierarchyJson))
-            return string.Empty;
-
-        string trimmed = hierarchyJson.Trim();
-        return trimmed.StartsWith("{", StringComparison.Ordinal) && trimmed.EndsWith("}", StringComparison.Ordinal)
-            ? trimmed
-            : string.Empty;
-    }
+        => RosterHierarchyStateJson.Normalize(hierarchyJson);
 
     public static string NormalizeUpdateMode(string? updateMode, bool fallbackCheckForUpdatesOnLaunch = true)
     {

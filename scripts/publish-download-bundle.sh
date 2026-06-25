@@ -52,7 +52,7 @@ verify_windows_installer_payload_gate() {
     exit 1
   fi
 
-  local -a gate_args=(--files-dir "$FILES_SOURCE")
+  local -a gate_args=(--files-dir "$FILES_SOURCE" --require-embedded-bootstrap-metadata)
   local -a installer_candidates=()
   [[ -f "$MANIFEST_SOURCE" ]] && gate_args+=(--manifest "$MANIFEST_SOURCE")
   while IFS= read -r installer_path; do

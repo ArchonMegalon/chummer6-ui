@@ -765,15 +765,9 @@ public sealed class DesktopThemeManagerTests
             "TextBox must have one canonical base style so hover/focus fixes are not split across duplicate selectors.");
         StringAssert.Contains(shellTheme, "textBox.Classes.Add(\"shell-input\");");
         StringAssert.Contains(shellTheme, "comboBox.Classes.Add(\"shell-combo\");");
-        Assert.IsFalse(
-            shellTheme.Contains("comboBox.Background = ResolveThemeBrush(", StringComparison.Ordinal),
-            "ComboBox colors must stay in dynamic styles so hover, focus, and OS theme changes cannot be overridden by local values.");
-        Assert.IsFalse(
-            shellTheme.Contains("comboBox.Foreground = ResolveThemeBrush(", StringComparison.Ordinal),
-            "ComboBox foreground must stay in dynamic styles so selected and hover text remains readable.");
-        Assert.IsFalse(
-            shellTheme.Contains("comboBox.BorderBrush = ResolveThemeBrush(", StringComparison.Ordinal),
-            "ComboBox border states must stay in dynamic styles.");
+        StringAssert.Contains(shellTheme, "comboBox.Background = ResolveThemeBrush(\"ComboBoxBackground\", \"#FBFCFE\");");
+        StringAssert.Contains(shellTheme, "comboBox.Foreground = ResolveThemeBrush(\"ComboBoxForeground\", \"#111827\");");
+        StringAssert.Contains(shellTheme, "comboBox.BorderBrush = ResolveThemeBrush(\"ComboBoxBorderBrush\", \"#B5C0CF\");");
 
         foreach (string selector in new[]
                  {
@@ -1498,12 +1492,12 @@ public sealed class DesktopThemeManagerTests
         StringAssert.Contains(appTheme, "<Style Selector=\"MenuItem:pointerover TextBlock\">");
         StringAssert.Contains(appTheme, "<Style Selector=\"MenuItem:selected TextBlock\">");
         StringAssert.Contains(appTheme, "<Style Selector=\"MenuItem.menu-root.active-menu TextBlock\">");
-        Assert.IsFalse(
-            shellTheme.Contains("textBox.Background = ResolveThemeBrush(", StringComparison.Ordinal),
-            "TextBox colors must stay in dynamic styles so hover, focus, and OS theme changes cannot be overridden by local values.");
-        Assert.IsFalse(
-            shellTheme.Contains("textBox.Foreground = ResolveThemeBrush(", StringComparison.Ordinal),
-            "TextBox foreground must stay in dynamic styles so text remains readable before and after hover.");
+        StringAssert.Contains(shellTheme, "textBox.Background = ResolveThemeBrush(\"TextControlBackground\", \"#FFFFFF\");");
+        StringAssert.Contains(shellTheme, "textBox.Foreground = ResolveThemeBrush(\"TextControlForeground\", \"#111111\");");
+        StringAssert.Contains(shellTheme, "textBox.BorderBrush = ResolveThemeBrush(\"TextControlBorderBrush\", \"#B5C0CF\");");
+        StringAssert.Contains(shellTheme, "textBox.CaretBrush = ResolveThemeBrush(\"TextControlCaretBrush\", \"#111111\");");
+        StringAssert.Contains(shellTheme, "textBox.SelectionBrush = ResolveThemeBrush(\"ChummerShellSelectionBrush\", \"#2C5FB8\");");
+        StringAssert.Contains(shellTheme, "textBox.SelectionForegroundBrush = ResolveThemeBrush(\"TextControlSelectionForeground\", \"#FFFFFF\");");
         StringAssert.Contains(shellTheme, "ApplyShellTreeViewTheme(TreeView treeView)");
         StringAssert.Contains(shellTheme, "treeView.Background = ResolveThemeBrush(\"ChummerShellSurfaceBrush\", \"#FBFCFE\");");
         StringAssert.Contains(desktopDialogSource, "DesktopShellTheme.ApplyShellTreeViewTheme(treeView);");
@@ -1516,15 +1510,9 @@ public sealed class DesktopThemeManagerTests
         StringAssert.Contains(appTheme, "<Style Selector=\"NumericUpDown:pointerover /template/ TextBox\">");
         StringAssert.Contains(appTheme, "<Style Selector=\"NumericUpDown:focus /template/ TextBox\">");
         StringAssert.Contains(appTheme, "<Style Selector=\"NumericUpDown:disabled /template/ TextBox\">");
-        Assert.IsFalse(
-            shellTheme.Contains("numericUpDown.Background = ResolveThemeBrush(", StringComparison.Ordinal),
-            "NumericUpDown colors must stay in dynamic styles so the embedded input cannot drift from the active theme.");
-        Assert.IsFalse(
-            shellTheme.Contains("numericUpDown.Foreground = ResolveThemeBrush(", StringComparison.Ordinal),
-            "NumericUpDown foreground must stay in dynamic styles.");
-        Assert.IsFalse(
-            shellTheme.Contains("numericUpDown.BorderBrush = ResolveThemeBrush(", StringComparison.Ordinal),
-            "NumericUpDown border states must stay in dynamic styles.");
+        StringAssert.Contains(shellTheme, "numericUpDown.Background = ResolveThemeBrush(\"TextControlBackground\", \"#FFFFFF\");");
+        StringAssert.Contains(shellTheme, "numericUpDown.Foreground = ResolveThemeBrush(\"TextControlForeground\", \"#111111\");");
+        StringAssert.Contains(shellTheme, "numericUpDown.BorderBrush = ResolveThemeBrush(\"TextControlBorderBrush\", \"#B5C0CF\");");
         AssertSelectorAfter(
             appTheme,
             "<Style Selector=\"ListBoxItem:pointerover TextBlock.shell-option-label\">",

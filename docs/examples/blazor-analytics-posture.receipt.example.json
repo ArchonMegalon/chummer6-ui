@@ -1,0 +1,37 @@
+{
+  "contract_name": "chummer6-ui.blazor_analytics_posture",
+  "status": "passed",
+  "generated_at": "2026-06-24T00:00:00+00:00",
+  "live_url": "https://chummer.run/blazor/",
+  "health_url": "https://chummer.run/blazor/health",
+  "public_app_route": "/blazor/app",
+  "public_app_route_family": "chummer_app",
+  "proof_compatible_route": "/blazor/workbench",
+  "self_host_default": "analytics-disabled",
+  "hosted_public_edge": "rybbit-enabled-when-site-id-configured",
+  "sensitive_data_policy": "route-and-workflow-metadata-only",
+  "session_replay_policy": "disabled",
+  "autocapture_policy": "disabled",
+  "checks": [
+    {
+      "id": "blazor_shell_loads_rybbit_only_from_config",
+      "passed": true,
+      "evidence": "Chummer.Blazor/Components/App.razor conditionally renders the Rybbit script from configuration with explicit no-replay/no-autocapture metadata."
+    },
+    {
+      "id": "analytics_event_bridge_uses_sanitized_route_metadata",
+      "passed": true,
+      "evidence": "The Blazor shell event bridge emits route/workflow metadata and explicit no-replay/no-autocapture posture instead of character payloads."
+    },
+    {
+      "id": "analytics_sensitive_property_denylist_present",
+      "passed": true,
+      "evidence": "The client-side analytics bridge rejects sensitive property keys before dispatch."
+    },
+    {
+      "id": "blazor_health_reports_non_secret_analytics_policy",
+      "passed": true,
+      "evidence": "Chummer.Blazor /health reports non-secret analytics policy posture, including no-replay/no-autocapture policy, for operators."
+    }
+  ]
+}

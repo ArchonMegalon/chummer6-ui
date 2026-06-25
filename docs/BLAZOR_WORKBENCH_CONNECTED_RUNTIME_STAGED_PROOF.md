@@ -2,7 +2,7 @@
 
 ## Purpose
 
-This source-staged proof keeps optional session, coach, play, and assistant lanes visible on the promoted Blazor workbench route.
+This source-staged proof keeps optional session, coach, play, and assistant lanes visible on the public Chummer App route and the proof-compatible Blazor workbench route.
 
 The browser client should expose connected runtime handoff as portal-shaped optional capability, not as an implicit guarantee that downstream services are configured or healthy.
 
@@ -10,7 +10,7 @@ The browser client should expose connected runtime handoff as portal-shaped opti
 
 The staged connected-runtime lane covers:
 
-- a connected-runtime strip on the promoted workbench route
+- a connected-runtime strip on clean public `/app`, hosted `/blazor/app`, and proof-compatible `/blazor/workbench` routes
 - play, session runtime, coach runtime, assistant, and runtime status affordances
 - source alignment with the connected-runtime documentation boundary
 - scoped responsive styling for desktop and mobile browser use
@@ -29,6 +29,6 @@ Expected receipt:
 
 ## Boundary
 
-This is source alignment only. It proves that promoted workbench connected-runtime source, style, status reporting, and docs agree.
+This is source alignment only. It proves that promoted Chummer App/workbench connected-runtime source, style, status reporting, and docs agree.
 
 It is not hosted browser execution proof, Docker self-host proof, connected-runtime posture proof, signed owner forwarding proof, downstream service-health proof, screenshot proof, or desktop-equivalent workflow parity.

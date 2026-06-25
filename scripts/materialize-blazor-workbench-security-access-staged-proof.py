@@ -28,6 +28,8 @@ CHECKS = [
             "data-workbench-security-access-action=\"session_expiry\"",
             "data-workbench-security-access-action=\"key_rotation\"",
             "data-workbench-security-access-action=\"access_audit\"",
+            "data-workbench-security-access-action=\"help\"",
+            "/help",
         ],
     },
     {
@@ -54,8 +56,8 @@ CHECKS = [
         "path": "docs/BLAZOR_WEB_CLIENT_PARITY_GOAL.md",
         "tokens": [
             "staged hosted workbench security-access posture",
-            "sign-in, workspace lock, roles, session expiry, key rotation, and access audit",
-            "not yet claiming authentication, RBAC, session expiry, key rotation, or audit-log parity",
+            "sign-in, workspace lock, roles, session expiry, key rotation, access audit, and help",
+            "not yet claiming authentication, RBAC, session expiry, key rotation, audit-log, or portal help runtime parity",
         ],
     },
     {
@@ -96,13 +98,13 @@ def main() -> int:
         "status": "failed" if failures else "passed",
         "proof_tier": "source_staged_no_browser_execution",
         "route_lane": "promoted_blazor_workbench",
-        "expected_routes": ["/blazor/workbench"],
+        "expected_routes": ["/blazor/workbench", "/help"],
         "checks": evaluated_checks,
         "failures": failures,
         "notes": [
-            "This receipt only proves that promoted workbench security-access source, style, status, and docs agree.",
-            "It is not a substitute for hosted Playwright execution proof, Docker self-host proof, authentication proof, RBAC proof, session-expiry proof, key-rotation proof, or audit-log proof.",
-            "Do not use this receipt to claim authentication, RBAC, session expiry, key rotation, audit logging, or browser execution parity.",
+            "This receipt only proves that Chummer App and proof-compatible workbench security-access source, style, status, and docs agree.",
+            "It is not a substitute for hosted Playwright execution proof, Docker self-host proof, authentication proof, RBAC proof, session-expiry proof, key-rotation proof, audit-log proof, or portal help runtime proof.",
+            "Do not use this receipt to claim authentication, RBAC, session expiry, key rotation, audit logging, portal help runtime, or browser execution parity.",
         ],
     }
 

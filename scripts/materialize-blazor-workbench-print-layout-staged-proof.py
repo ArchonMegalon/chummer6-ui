@@ -28,6 +28,8 @@ CHECKS = [
             "data-workbench-print-layout-action=\"sections\"",
             "data-workbench-print-layout-action=\"preview\"",
             "data-workbench-print-layout-action=\"export_profile\"",
+            "data-workbench-print-layout-action=\"help\"",
+            "/help",
         ],
     },
     {
@@ -54,8 +56,8 @@ CHECKS = [
         "path": "docs/BLAZOR_WEB_CLIENT_PARITY_GOAL.md",
         "tokens": [
             "staged hosted workbench print-layout posture",
-            "sheet template, paper size, theme, sections, preview, and export profile",
-            "not yet claiming print CSS, PDF rendering, paper layout, or export-profile parity",
+            "sheet template, paper size, theme, sections, preview, export profile, and help",
+            "not yet claiming print CSS, PDF rendering, paper layout, export-profile, or portal help runtime parity",
         ],
     },
     {
@@ -96,13 +98,13 @@ def main() -> int:
         "status": "failed" if failures else "passed",
         "proof_tier": "source_staged_no_browser_execution",
         "route_lane": "promoted_blazor_workbench",
-        "expected_routes": ["/blazor/workbench"],
+        "expected_routes": ["/blazor/workbench", "/help"],
         "checks": evaluated_checks,
         "failures": failures,
         "notes": [
-            "This receipt only proves that promoted workbench print-layout source, style, status, and docs agree.",
-            "It is not a substitute for hosted Playwright execution proof, Docker self-host proof, print-CSS proof, PDF-rendering proof, paper-layout proof, or export-profile proof.",
-            "Do not use this receipt to claim print CSS, PDF rendering, paper layout, export profile behavior, or browser execution parity.",
+            "This receipt only proves that Chummer App and proof-compatible workbench print-layout source, style, status, and docs agree.",
+            "It is not a substitute for hosted Playwright execution proof, Docker self-host proof, print-CSS proof, PDF-rendering proof, paper-layout proof, export-profile proof, or portal help runtime proof.",
+            "Do not use this receipt to claim print CSS, PDF rendering, paper layout, export profile behavior, portal help runtime, or browser execution parity.",
         ],
     }
 

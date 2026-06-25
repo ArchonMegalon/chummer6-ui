@@ -32,7 +32,19 @@ Expected Blazor path base:
 /blazor
 ```
 
-Expected public workbench route:
+Expected public Chummer App route:
+
+```text
+/blazor/app
+```
+
+Expected product/orientation route:
+
+```text
+/blazor/home
+```
+
+Expected explicit proof-compatible compatibility route:
 
 ```text
 /blazor/workbench
@@ -43,12 +55,22 @@ Expected public workbench route:
 Self-host users must be able to identify:
 
 - which compose profile starts the portal-backed browser client
-- which public URL exposes the browser workbench
+- which public URL exposes Chummer App
+- which explicit workbench route remains available for proof-compatible workflows
 - which services are part of the portal edge
 - where downloads/install handoff lives
+- how optional Rybbit analytics is configured as default-off self-host telemetry
 - which proof command exercises the local portal lane
 - which generated receipt is Docker self-host runtime evidence
 - which staged receipts are source-only and not runtime evidence
+
+## Optional Analytics Boundary
+
+Self-host analytics is operator controlled and default-off. The sanitized environment example keeps `CHUMMER_ANALYTICS_PROVIDER=none` and only enables Rybbit when an operator explicitly sets `CHUMMER_ANALYTICS_PROVIDER=rybbit`, `CHUMMER_RYBBIT_SITE_ID`, and either `CHUMMER_RYBBIT_SCRIPT_URL` or `CHUMMER_RYBBIT_BASE_URL`.
+
+Self-host Rybbit analytics remains default-off unless the operator explicitly configures the Rybbit provider and site variables, with session replay and autocapture disabled for Chummer surfaces.
+
+The Docker profile passes the Rybbit variables into the Blazor service so hosted and self-host deployments use the same browser client code path without requiring analytics for rendering.
 
 ## Canonical Runtime Proof Command
 
@@ -77,6 +99,12 @@ It writes:
 ```text
 .codex-studio/published/BLAZOR_DOCKER_SELF_HOST_OPERATOR_STAGED_PROOF.generated.json
 ```
+
+## Documentation Index Requirement
+
+The staged proof also checks `docs/BLAZOR_WEB_CLIENT_DOCS_INDEX.md` for this contract document and the compact example receipt at `docs/examples/blazor-docker-self-host-operator-staged-proof.receipt.example.json`.
+
+This keeps the Docker self-host operator posture discoverable from the top-level Blazor/web-client docs map without treating the staged receipt as Docker runtime proof.
 
 ## Boundary
 

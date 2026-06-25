@@ -28,6 +28,8 @@ CHECKS = [
             "data-workbench-performance-virtualization-action=\"memory_posture\"",
             "data-workbench-performance-virtualization-action=\"degraded_mode\"",
             "data-workbench-performance-virtualization-action=\"profiler\"",
+            "data-workbench-performance-virtualization-action=\"help\"",
+            "/help",
         ],
     },
     {
@@ -54,8 +56,8 @@ CHECKS = [
         "path": "docs/BLAZOR_WEB_CLIENT_PARITY_GOAL.md",
         "tokens": [
             "staged hosted workbench performance-virtualization posture",
-            "lazy sections, virtual lists, render budget, memory posture, degraded mode, and profiler",
-            "not yet claiming virtualized rendering, lazy loading, memory control, or profiler parity",
+            "lazy sections, virtual lists, render budget, memory posture, degraded mode, profiler, and help",
+            "not yet claiming virtualized rendering, lazy loading, memory control, profiler, or portal help runtime parity",
         ],
     },
     {
@@ -96,13 +98,13 @@ def main() -> int:
         "status": "failed" if failures else "passed",
         "proof_tier": "source_staged_no_browser_execution",
         "route_lane": "promoted_blazor_workbench",
-        "expected_routes": ["/blazor/workbench"],
+        "expected_routes": ["/blazor/workbench", "/help"],
         "checks": evaluated_checks,
         "failures": failures,
         "notes": [
-            "This receipt only proves that promoted workbench performance-virtualization source, style, status, and docs agree.",
-            "It is not a substitute for hosted Playwright execution proof, Docker self-host proof, virtualized-rendering proof, lazy-loading proof, memory-control proof, or profiler proof.",
-            "Do not use this receipt to claim virtualized rendering, lazy loading, memory control, profiler behavior, or browser execution parity.",
+            "This receipt only proves that Chummer App and proof-compatible workbench performance-virtualization source, style, status, and docs agree.",
+            "It is not a substitute for hosted Playwright execution proof, Docker self-host proof, virtualized-rendering proof, lazy-loading proof, memory-control proof, profiler proof, or portal help runtime proof.",
+            "Do not use this receipt to claim virtualized rendering, lazy loading, memory control, profiler behavior, portal help runtime, or browser execution parity.",
         ],
     }
 

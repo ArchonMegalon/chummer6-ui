@@ -2,7 +2,7 @@
 
 Purpose: publish desktop artifacts to a self-hosted downloads surface and verify that `/downloads/releases.json` serves non-empty artifacts.
 
-For the full browser workbench stack that serves `Chummer.Blazor` behind `Chummer.Portal`, use [BLAZOR_SELF_HOST_RUNBOOK.md](/docker/chummercomplete/chummer-presentation/docs/BLAZOR_SELF_HOST_RUNBOOK.md). This downloads runbook stays focused on the release shelf itself.
+For the full browser-client stack that serves `Chummer.Blazor` behind `Chummer.Portal`, use [BLAZOR_SELF_HOST_RUNBOOK.md](BLAZOR_SELF_HOST_RUNBOOK.md). This downloads runbook stays focused on the release shelf itself.
 
 Registry note:
 `/downloads/releases.json` is now a compatibility projection.

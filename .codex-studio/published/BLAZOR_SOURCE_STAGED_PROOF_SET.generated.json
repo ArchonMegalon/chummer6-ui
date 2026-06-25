@@ -1,13 +1,16 @@
 {
   "contract_name": "chummer6-ui.blazor_source_staged_proof_set",
-  "generated_at": "2026-06-25T01:19:32.135409+00:00",
+  "generated_at": "2026-06-25T04:43:35.718328+00:00",
   "status": "passed",
   "proof_tier": "source_staged_no_browser_execution",
   "route_lane": "promoted_blazor_workbench",
-  "required_receipt_count": 73,
-  "passed_receipt_count": 73,
-  "expected_route_count": 130,
-  "source_check_count": 414,
+  "required_receipt_count": 74,
+  "passed_receipt_count": 74,
+  "source_calculation_receipt_count": 1,
+  "source_calculation_passed_count": 1,
+  "expected_route_count": 133,
+  "source_check_count": 455,
+  "source_calculation_check_count": 8,
   "required_receipts": [
     {
       "id": "career_support",
@@ -17,7 +20,7 @@
       "status": "passed",
       "proof_tier": "source_staged_no_browser_execution",
       "expected_route_count": 11,
-      "source_check_count": 8,
+      "source_check_count": 10,
       "control_count": null,
       "covered_control_count": null
     },
@@ -29,7 +32,7 @@
       "status": "passed",
       "proof_tier": "source_staged_no_browser_execution",
       "expected_route_count": 3,
-      "source_check_count": 10,
+      "source_check_count": 13,
       "control_count": null,
       "covered_control_count": null
     },
@@ -41,7 +44,7 @@
       "status": "passed",
       "proof_tier": "source_staged_no_browser_execution",
       "expected_route_count": 3,
-      "source_check_count": 10,
+      "source_check_count": 13,
       "control_count": null,
       "covered_control_count": null
     },
@@ -53,7 +56,7 @@
       "status": "passed",
       "proof_tier": "source_staged_no_browser_execution",
       "expected_route_count": 3,
-      "source_check_count": 10,
+      "source_check_count": 13,
       "control_count": null,
       "covered_control_count": null
     },
@@ -65,7 +68,7 @@
       "status": "passed",
       "proof_tier": "source_staged_no_browser_execution",
       "expected_route_count": 4,
-      "source_check_count": 10,
+      "source_check_count": 13,
       "control_count": null,
       "covered_control_count": null
     },
@@ -77,7 +80,19 @@
       "status": "passed",
       "proof_tier": "source_staged_no_browser_execution",
       "expected_route_count": 3,
-      "source_check_count": 10,
+      "source_check_count": 13,
+      "control_count": null,
+      "covered_control_count": null
+    },
+    {
+      "id": "runner_intelligence",
+      "path": "/docker/chummercomplete/chummer-presentation/.codex-studio/published/BLAZOR_RUNNER_INTELLIGENCE_STAGED_PROOF.generated.json",
+      "expected_contract_name": "chummer6-ui.blazor_runner_intelligence_staged_proof",
+      "contract_name": "chummer6-ui.blazor_runner_intelligence_staged_proof",
+      "status": "passed",
+      "proof_tier": "source_staged_no_browser_execution",
+      "expected_route_count": 3,
+      "source_check_count": 20,
       "control_count": null,
       "covered_control_count": null
     },
@@ -161,7 +176,7 @@
       "status": "passed",
       "proof_tier": "source_staged_no_browser_execution",
       "expected_route_count": 1,
-      "source_check_count": 5,
+      "source_check_count": 7,
       "control_count": null,
       "covered_control_count": null
     },
@@ -869,7 +884,7 @@
       "status": "passed",
       "proof_tier": "source_staged_no_browser_execution",
       "expected_route_count": 1,
-      "source_check_count": 11,
+      "source_check_count": 13,
       "control_count": null,
       "covered_control_count": null
     },
@@ -882,13 +897,25 @@
       "proof_tier": "source_staged_no_browser_execution",
       "expected_route_count": 0,
       "source_check_count": 0,
-      "control_count": 50,
-      "covered_control_count": 50
+      "control_count": 53,
+      "covered_control_count": 53
+    }
+  ],
+  "source_calculation_receipts": [
+    {
+      "id": "runner_intelligence_calculation",
+      "path": "/docker/chummercomplete/chummer-presentation/.codex-studio/published/BLAZOR_RUNNER_INTELLIGENCE_CALCULATION_PROOF.generated.json",
+      "expected_contract_name": "chummer6-ui.blazor_runner_intelligence_calculation_proof",
+      "contract_name": "chummer6-ui.blazor_runner_intelligence_calculation_proof",
+      "status": "passed",
+      "proof_tier": "source_calculation_no_browser_execution",
+      "source_calculation_check_count": 8
     }
   ],
   "failures": [],
   "notes": [
-    "This aggregate only summarizes source-staged receipts.",
+    "This aggregate summarizes source-staged receipts plus explicitly separated source-calculation receipts.",
+    "Source-calculation receipts are not authoritative SR rules-engine validation and are not browser execution evidence.",
     "It is not a hosted Playwright execution receipt and is not Docker self-host browser execution evidence.",
     "Keep this aggregate separate from BLAZOR_BROWSER_LANE_PROOF_SET.generated.json release readiness."
   ]

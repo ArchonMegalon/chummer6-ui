@@ -7,12 +7,18 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <base href="@BuildBaseHref()" />
-    <title>Chummer Browser Workbench</title>
+    <title>Chummer Online</title>
     <link rel="stylesheet" href="Chummer.Blazor.styles.css" />
     <link rel="stylesheet" href="app.css" />
     @if (BuildRybbitAnalyticsOptions() is { } rybbitAnalytics)
     {
-        <script src="@rybbitAnalytics.ScriptUrl" async data-site-id="@rybbitAnalytics.SiteId"></script>
+        <script src="@rybbitAnalytics.ScriptUrl"
+                async
+                data-site-id="@rybbitAnalytics.SiteId"
+                data-chummer-analytics-provider="rybbit"
+                data-chummer-analytics-scope="route-workflow-metadata-only"
+                data-chummer-session-replay="disabled"
+                data-chummer-autocapture="disabled"></script>
     }
 </head>
 <body>
@@ -51,6 +57,9 @@
         const maxQueueLength = 20;
         const forbiddenPropertyPattern = /(alias|character|content|document|email|file|hash|name|owner|payload|workspace|xml)/i;
         const safeTokenPattern = /^[a-z0-9_.:-]{1,80}$/i;
+        const analyticsScope = 'route-workflow-metadata-only';
+        const sessionReplayPolicy = 'disabled';
+        const autocapturePolicy = 'disabled';
         let lastRouteKey = '';
 
         analytics._queue = analytics._queue || [];
@@ -149,8 +158,8 @@
             const query = url.searchParams;
             let routeFamily = 'other';
 
-            if (path.endsWith('/blazor') || path.endsWith('/blazor/') || path.endsWith('/workbench')) {
-                routeFamily = 'workbench';
+            if (path.endsWith('/blazor') || path.endsWith('/blazor/') || path.endsWith('/app') || path.endsWith('/workbench')) {
+                routeFamily = 'chummer_app';
             } else if (path.endsWith('/preview')) {
                 routeFamily = 'preview';
             } else if (path.endsWith('/showcase')) {
@@ -163,6 +172,9 @@
 
             return {
                 host_class: 'blazor',
+                analytics_scope: analyticsScope,
+                session_replay: sessionReplayPolicy,
+                autocapture: autocapturePolicy,
                 route_family: routeFamily,
                 command_id: safeToken(query.get('command')),
                 tab_id: safeToken(query.get('tab')),

@@ -11,13 +11,13 @@ Prove that a user can launch the desktop, create a runner with pointer-driven in
 Use:
 
 ```bash
-bash /docker/chummercomplete/chummer-presentation/scripts/run-desktop-mouse-first-journey-matrix.sh
+bash scripts/run-desktop-mouse-first-journey-matrix.sh
 ```
 
 This script publishes the Avalonia desktop for `linux-x64`, runs the live binary under `xvfb` when needed, and writes receipts under:
 
 ```text
-/docker/chummercomplete/chummer-presentation/dist/mouse-first-journey-matrix
+dist/mouse-first-journey-matrix
 ```
 
 ## OODA loop

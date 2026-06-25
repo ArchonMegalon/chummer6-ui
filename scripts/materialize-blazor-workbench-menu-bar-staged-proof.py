@@ -29,6 +29,7 @@ CHECKS = [
             "data-workbench-menu-bar-action=\"character\"",
             "data-workbench-menu-bar-action=\"tools\"",
             "data-workbench-menu-bar-action=\"help\"",
+            "/help",
         ],
     },
     {
@@ -110,13 +111,13 @@ def main() -> int:
         "status": "failed" if failures else "passed",
         "proof_tier": "source_staged_no_browser_execution",
         "route_lane": "promoted_blazor_workbench",
-        "expected_routes": ["/blazor/workbench", "/contact"],
+        "expected_routes": ["/blazor/workbench", "/help"],
         "checks": checks,
         "failures": failures,
         "notes": [
-            "This receipt only proves that promoted workbench menu-bar source, style, status, and docs agree.",
-            "It is not a substitute for hosted Playwright execution proof, Docker self-host proof, keyboard-event proof, or menu-command execution proof.",
-            "Do not use this receipt to claim keyboard accelerators, menu command execution, or browser execution parity.",
+            "This receipt only proves that Chummer App and proof-compatible workbench menu-bar source, style, status, and docs agree, including the same-origin Help menu handoff.",
+            "It is not a substitute for hosted Playwright execution proof, Docker self-host proof, keyboard-event proof, portal help runtime, or menu-command execution proof.",
+            "Do not use this receipt to claim keyboard accelerators, menu command execution, portal help runtime, or browser execution parity.",
         ],
     }
 

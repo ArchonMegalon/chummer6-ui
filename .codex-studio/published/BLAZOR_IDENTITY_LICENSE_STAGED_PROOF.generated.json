@@ -1,6 +1,6 @@
 {
   "contract_name": "chummer6-ui.blazor_identity_license_staged_proof",
-  "generated_at": "2026-06-25T01:19:30.285410+00:00",
+  "generated_at": "2026-06-25T04:43:33.576331+00:00",
   "status": "passed",
   "proof_tier": "source_staged_no_browser_execution",
   "route_lane": "promoted_blazor_workbench",
@@ -69,6 +69,27 @@
     {
       "id": "parity_goal_docs",
       "path": "docs/BLAZOR_WEB_CLIENT_PARITY_GOAL.md",
+      "status": "passed",
+      "required_token_count": 4,
+      "missing_tokens": []
+    },
+    {
+      "id": "contract_doc",
+      "path": "docs/BLAZOR_IDENTITY_LICENSE_STAGED_PROOF.md",
+      "status": "passed",
+      "required_token_count": 7,
+      "missing_tokens": []
+    },
+    {
+      "id": "docs_index_contract_link",
+      "path": "docs/BLAZOR_WEB_CLIENT_DOCS_INDEX.md",
+      "status": "passed",
+      "required_token_count": 3,
+      "missing_tokens": []
+    },
+    {
+      "id": "example_receipt_shape",
+      "path": "docs/examples/blazor-identity-license-staged-proof.receipt.example.json",
       "status": "passed",
       "required_token_count": 4,
       "missing_tokens": []

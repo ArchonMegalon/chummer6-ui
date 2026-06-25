@@ -17,11 +17,51 @@ import yaml
 
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
-DEFAULT_CHUMMER5A_REPO = Path(os.environ.get("CHUMMER5A_REPO_URL", "/docker/chummer5a"))
+WORKSPACE_ROOT = REPO_ROOT.parent
+
+
+def default_chummer5a_repo_path() -> Path:
+    path_override = os.environ.get("CHUMMER5A_REPO_PATH")
+    if path_override:
+        return Path(path_override)
+
+    legacy_override = os.environ.get("CHUMMER5A_REPO_URL")
+    if legacy_override and "://" not in legacy_override:
+        return Path(legacy_override)
+
+    return WORKSPACE_ROOT / "chummer5a"
+
+
+def default_chummer5a_repo_source() -> str:
+    if os.environ.get("CHUMMER5A_REPO_PATH"):
+        return "CHUMMER5A_REPO_PATH"
+
+    legacy_override = os.environ.get("CHUMMER5A_REPO_URL")
+    if legacy_override and "://" not in legacy_override:
+        return "CHUMMER5A_REPO_URL_legacy_path"
+
+    if legacy_override:
+        return "sibling_default_ignored_url_shaped_CHUMMER5A_REPO_URL"
+
+    return "sibling_default"
+
+
+def chummer5a_repo_arg_provided() -> bool:
+    return any(arg == "--chummer5a-repo" or arg.startswith("--chummer5a-repo=") for arg in sys.argv[1:])
+
+
+DEFAULT_CHUMMER5A_REPO = default_chummer5a_repo_path()
+DEFAULT_CHUMMER5A_REPO_SOURCE = default_chummer5a_repo_source()
 DEFAULT_CHUMMER5A_REF = os.environ.get("CHUMMER5A_REF", "HEAD")
-DEFAULT_FIXTURE_INVENTORY = Path("/docker/EA/docs/chummer5a_parity_lab/import_export_fixture_inventory.yaml")
-DEFAULT_ORACLE_BASELINES = Path("/docker/EA/docs/chummer5a_parity_lab/oracle_baselines.yaml")
-DEFAULT_WORKFLOW_PACK = Path("/docker/EA/docs/chummer5a_parity_lab/veteran_workflow_pack.yaml")
+DEFAULT_PARITY_LAB_ROOT = Path(
+    os.environ.get(
+        "CHUMMER5A_PARITY_LAB_ROOT",
+        WORKSPACE_ROOT / "EA" / "docs" / "chummer5a_parity_lab",
+    )
+)
+DEFAULT_FIXTURE_INVENTORY = DEFAULT_PARITY_LAB_ROOT / "import_export_fixture_inventory.yaml"
+DEFAULT_ORACLE_BASELINES = DEFAULT_PARITY_LAB_ROOT / "oracle_baselines.yaml"
+DEFAULT_WORKFLOW_PACK = DEFAULT_PARITY_LAB_ROOT / "veteran_workflow_pack.yaml"
 DEFAULT_SCREENSHOT_EVIDENCE = REPO_ROOT / ".codex-studio" / "published" / "ui-flagship-release-gate-screenshots" / "SCREENSHOT_CONTROL_EVIDENCE.generated.json"
 DEFAULT_VISUAL_GATE = REPO_ROOT / ".codex-studio" / "published" / "DESKTOP_VISUAL_FAMILIARITY_EXIT_GATE.generated.json"
 DEFAULT_FLAGSHIP_GATE = REPO_ROOT / ".codex-studio" / "published" / "UI_FLAGSHIP_RELEASE_GATE.generated.json"
@@ -1454,6 +1494,8 @@ def run_gate(args: argparse.Namespace) -> int:
         "resolution": args.resolution,
         "scale": args.scale,
         "chummer5aRepo": str(chummer5a_repo),
+        "chummer5aRepoDefaultSource": DEFAULT_CHUMMER5A_REPO_SOURCE,
+        "chummer5aRepoPathSource": "cli_argument" if chummer5a_repo_arg_provided() else DEFAULT_CHUMMER5A_REPO_SOURCE,
         "chummer5aRef": args.chummer5a_ref,
         "chummer5aCommit": chummer5a_commit,
         "selectedFixtures": [

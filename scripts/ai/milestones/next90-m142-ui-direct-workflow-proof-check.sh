@@ -3,10 +3,11 @@ set -euo pipefail
 
 repo_root="$(cd "$(dirname "${BASH_SOURCE[0]}")/../../.." && pwd)"
 cd "$repo_root"
+workspace_root="$(cd "$repo_root/.." && pwd)"
 
-registry_path="${CHUMMER_NEXT90_REGISTRY_PATH:-/docker/chummercomplete/chummer-design/products/chummer/NEXT_90_DAY_PRODUCT_ADVANCE_REGISTRY.yaml}"
-queue_path="${CHUMMER_NEXT90_QUEUE_PATH:-/docker/fleet/.codex-studio/published/NEXT_90_DAY_QUEUE_STAGING.generated.yaml}"
-design_queue_path="${CHUMMER_NEXT90_DESIGN_QUEUE_PATH:-/docker/chummercomplete/chummer-design/products/chummer/NEXT_90_DAY_QUEUE_STAGING.generated.yaml}"
+registry_path="${CHUMMER_NEXT90_REGISTRY_PATH:-$workspace_root/chummer-design/products/chummer/NEXT_90_DAY_PRODUCT_ADVANCE_REGISTRY.yaml}"
+queue_path="${CHUMMER_NEXT90_QUEUE_PATH:-$workspace_root/fleet/.codex-studio/published/NEXT_90_DAY_QUEUE_STAGING.generated.yaml}"
+design_queue_path="${CHUMMER_NEXT90_DESIGN_QUEUE_PATH:-$workspace_root/chummer-design/products/chummer/NEXT_90_DAY_QUEUE_STAGING.generated.yaml}"
 receipt_path="${CHUMMER_NEXT90_M142_UI_RECEIPT_PATH:-$repo_root/.codex-studio/published/NEXT90_M142_UI_DIRECT_WORKFLOW_PROOF.generated.json}"
 
 mkdir -p "$(dirname "$receipt_path")"
@@ -141,7 +142,7 @@ EXPECTED_FAMILY_REQUIREMENTS = {
     },
 }
 DISALLOWED_FAMILY_TOKENS = [
-    "/docker/chummercomplete/chummer-core-engine/docs/NEXT90_M142_DENSE_WORKBENCH_RECEIPTS.md",
+    str(repo_root.parent / "chummer-core-engine" / "docs" / "NEXT90_M142_DENSE_WORKBENCH_RECEIPTS.md"),
 ]
 SOURCE_MARKERS = {
     "scripts/ai/milestones/chummer5a-screenshot-review-gate.sh": [

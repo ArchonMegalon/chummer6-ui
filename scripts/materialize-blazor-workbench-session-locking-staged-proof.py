@@ -28,6 +28,8 @@ CHECKS = [
             "data-workbench-session-locking-action=\"stale-session\"",
             "data-workbench-session-locking-action=\"conflict-owner\"",
             "data-workbench-session-locking-action=\"takeover-review\"",
+            "data-workbench-session-locking-action=\"help\"",
+            "href=\"/help\"",
         ],
     },
     {
@@ -54,8 +56,8 @@ CHECKS = [
         "path": "docs/BLAZOR_WEB_CLIENT_PARITY_GOAL.md",
         "tokens": [
             "staged hosted workbench session-locking posture",
-            "lock status, owner handoff, read-only fallback, stale recovery, conflict owner, and takeover",
-            "not yet claiming lock acquisition, takeover mutation, cross-tab arbitration, stale lock cleanup, or conflict persistence parity",
+            "lock status, owner handoff, read-only fallback, stale recovery, conflict owner, takeover, and help",
+            "not yet claiming lock acquisition, takeover mutation, cross-tab arbitration, stale lock cleanup, conflict persistence parity, or portal help runtime parity",
         ],
     },
     {
@@ -96,13 +98,13 @@ def main() -> int:
         "status": "failed" if failures else "passed",
         "proof_tier": "source_staged_no_browser_execution",
         "route_lane": "promoted_blazor_workbench",
-        "expected_routes": ["/blazor/workbench"],
+        "expected_routes": ["/blazor/workbench", "/help"],
         "checks": evaluated_checks,
         "failures": failures,
         "notes": [
-            "This receipt only proves that promoted workbench session-locking source, style, status, and docs agree.",
-            "It is not a substitute for hosted browser execution, lock acquisition, takeover mutation, cross-tab arbitration, stale lock cleanup, or conflict persistence parity.",
-            "Do not use this receipt to claim complete session locking, persistence, or browser execution parity.",
+            "This receipt only proves that Chummer App and proof-compatible workbench session-locking source, style, status, and docs agree.",
+            "It is not a substitute for hosted browser execution, lock acquisition, takeover mutation, cross-tab arbitration, stale lock cleanup, conflict persistence parity, or portal help runtime proof.",
+            "Do not use this receipt to claim complete session locking, persistence, portal help runtime behavior, or browser execution parity.",
         ],
     }
 

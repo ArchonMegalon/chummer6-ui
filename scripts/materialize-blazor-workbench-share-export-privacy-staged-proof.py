@@ -28,6 +28,8 @@ CHECKS = [
             "data-workbench-share-export-privacy-action=\"revoke\"",
             "data-workbench-share-export-privacy-action=\"audit-history\"",
             "data-workbench-share-export-privacy-action=\"local-only\"",
+            "data-workbench-share-export-privacy-action=\"help\"",
+            "href=\"/help\"",
         ],
     },
     {
@@ -54,8 +56,8 @@ CHECKS = [
         "path": "docs/BLAZOR_WEB_CLIENT_PARITY_GOAL.md",
         "tokens": [
             "staged hosted workbench share/export privacy posture",
-            "redaction, scope, expiry, revocation, history, and local-only export",
-            "not yet claiming share-token issuance, redaction execution, revocation persistence, history storage, or export-policy enforcement parity",
+            "redaction, scope, expiry, revocation, history, local-only export, and help",
+            "not yet claiming share-token issuance, redaction execution, revocation persistence, history storage, export-policy enforcement parity, or portal help runtime parity",
         ],
     },
     {
@@ -96,13 +98,13 @@ def main() -> int:
         "status": "failed" if failures else "passed",
         "proof_tier": "source_staged_no_browser_execution",
         "route_lane": "promoted_blazor_workbench",
-        "expected_routes": ["/blazor/workbench"],
+        "expected_routes": ["/blazor/workbench", "/help"],
         "checks": evaluated_checks,
         "failures": failures,
         "notes": [
-            "This receipt only proves that promoted workbench share/export privacy source, style, status, and docs agree.",
-            "It is not a substitute for hosted browser execution, share-token issuance, redaction execution, revocation persistence, history storage, or export-policy enforcement parity.",
-            "Do not use this receipt to claim complete private sharing, persistence, or browser execution parity.",
+            "This receipt only proves that Chummer App and proof-compatible workbench share/export privacy source, style, status, and docs agree.",
+            "It is not a substitute for hosted browser execution, share-token issuance, redaction execution, revocation persistence, history storage, export-policy enforcement parity, or portal help runtime proof.",
+            "Do not use this receipt to claim complete private sharing, persistence, portal help runtime behavior, or browser execution parity.",
         ],
     }
 

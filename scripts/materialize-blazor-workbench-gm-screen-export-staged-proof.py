@@ -28,6 +28,8 @@ CHECKS = [
             "data-workbench-gm-screen-export-action=\"condition-rail\"",
             "data-workbench-gm-screen-export-action=\"scene-notes\"",
             "data-workbench-gm-screen-export-action=\"export-bundle\"",
+            "data-workbench-gm-screen-export-action=\"help\"",
+            "href=\"/help\"",
         ],
     },
     {
@@ -54,8 +56,8 @@ CHECKS = [
         "path": "docs/BLAZOR_WEB_CLIENT_PARITY_GOAL.md",
         "tokens": [
             "staged hosted workbench GM-screen export posture",
-            "Cards, player view, initiative, conditions, notes, and export bundle",
-            "not yet claiming GM-screen rendering, player-view routing, initiative sync, or export-bundle parity",
+            "Cards, player view, initiative, conditions, notes, export bundle, and help",
+            "not yet claiming GM-screen rendering, player-view routing, initiative sync, export-bundle parity, or portal help runtime parity",
         ],
     },
     {
@@ -96,13 +98,13 @@ def main() -> int:
         "status": "failed" if failures else "passed",
         "proof_tier": "source_staged_no_browser_execution",
         "route_lane": "promoted_blazor_workbench",
-        "expected_routes": ["/blazor/workbench"],
+        "expected_routes": ["/blazor/workbench", "/help"],
         "checks": evaluated_checks,
         "failures": failures,
         "notes": [
-            "This receipt only proves that promoted workbench GM-screen export source, style, status, and docs agree.",
-            "It is not a substitute for hosted Playwright execution proof, Docker self-host proof, GM-screen rendering proof, player-view routing proof, initiative sync proof, or export-bundle proof.",
-            "Do not use this receipt to claim GM-screen rendering, player-view routing, initiative sync, export-bundle behavior, or browser execution parity.",
+            "This receipt only proves that Chummer App and proof-compatible workbench GM-screen export source, style, status, and docs agree.",
+            "It is not a substitute for hosted Playwright execution proof, Docker self-host proof, GM-screen rendering proof, player-view routing proof, initiative sync proof, export-bundle proof, or portal help runtime proof.",
+            "Do not use this receipt to claim GM-screen rendering, player-view routing, initiative sync, export-bundle behavior, portal help runtime behavior, or browser execution parity.",
         ],
     }
 

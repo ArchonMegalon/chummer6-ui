@@ -28,6 +28,8 @@ CHECKS = [
             "data-workbench-inline-editing-action=\"revert\"",
             "data-workbench-inline-editing-action=\"formula_preview\"",
             "data-workbench-inline-editing-action=\"bulk_apply\"",
+            "data-workbench-inline-editing-action=\"help\"",
+            "/help",
         ],
     },
     {
@@ -54,8 +56,8 @@ CHECKS = [
         "path": "docs/BLAZOR_WEB_CLIENT_PARITY_GOAL.md",
         "tokens": [
             "staged hosted workbench inline-editing posture",
-            "dirty fields, numeric steppers, commit, revert, formula preview, and bulk apply",
-            "not yet claiming field mutation, edit persistence, formula evaluation, or bulk mutation parity",
+            "dirty fields, numeric steppers, commit, revert, formula preview, bulk apply, and help",
+            "not yet claiming field mutation, edit persistence, formula evaluation, bulk mutation, or portal help runtime parity",
         ],
     },
     {
@@ -96,13 +98,13 @@ def main() -> int:
         "status": "failed" if failures else "passed",
         "proof_tier": "source_staged_no_browser_execution",
         "route_lane": "promoted_blazor_workbench",
-        "expected_routes": ["/blazor/workbench"],
+        "expected_routes": ["/blazor/workbench", "/help"],
         "checks": evaluated_checks,
         "failures": failures,
         "notes": [
-            "This receipt only proves that promoted workbench inline-editing source, style, status, and docs agree.",
-            "It is not a substitute for hosted Playwright execution proof, Docker self-host proof, field-mutation proof, edit-persistence proof, formula-evaluation proof, or bulk-mutation proof.",
-            "Do not use this receipt to claim field mutation, edit persistence, formula evaluation, bulk mutation, or browser execution parity.",
+            "This receipt only proves that Chummer App and proof-compatible workbench inline-editing source, style, status, and docs agree.",
+            "It is not a substitute for hosted Playwright execution proof, Docker self-host proof, field-mutation proof, edit-persistence proof, formula-evaluation proof, bulk-mutation proof, or portal help runtime proof.",
+            "Do not use this receipt to claim field mutation, edit persistence, formula evaluation, bulk mutation, portal help runtime, or browser execution parity.",
         ],
     }
 

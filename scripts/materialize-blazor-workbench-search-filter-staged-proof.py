@@ -28,6 +28,8 @@ CHECKS = [
             "data-workbench-search-filter-action=\"skill-filter\"",
             "data-workbench-search-filter-action=\"quality-filter\"",
             "data-workbench-search-filter-action=\"source-filter\"",
+            "data-workbench-search-filter-action=\"help\"",
+            "/help",
             "data-workbench-search-filter-action=\"clear-filter\"",
         ],
     },
@@ -55,8 +57,8 @@ CHECKS = [
         "path": "docs/BLAZOR_WEB_CLIENT_PARITY_GOAL.md",
         "tokens": [
             "staged hosted workbench search/filter posture",
-            "roster, gear, skills, qualities, sources, and clear filter",
-            "not yet claiming live search indexing or filter execution parity",
+            "roster, gear, skills, qualities, sources, help, and clear filter",
+            "not yet claiming live search indexing, portal help runtime, or filter execution parity",
         ],
     },
     {
@@ -110,13 +112,13 @@ def main() -> int:
         "status": "failed" if failures else "passed",
         "proof_tier": "source_staged_no_browser_execution",
         "route_lane": "promoted_blazor_workbench",
-        "expected_routes": ["/blazor/workbench"],
+        "expected_routes": ["/blazor/workbench", "/help"],
         "checks": checks,
         "failures": failures,
         "notes": [
-            "This receipt only proves that promoted workbench search/filter source, style, status, and docs agree.",
-            "It is not a substitute for hosted Playwright execution proof, Docker self-host proof, live search indexing proof, or filter execution proof.",
-            "Do not use this receipt to claim live search indexing, filter execution, or browser execution parity.",
+            "This receipt only proves that Chummer App and proof-compatible workbench search/filter source, style, status, and docs agree.",
+            "It is not a substitute for hosted Playwright execution proof, Docker self-host proof, live search indexing proof, portal help runtime, or filter execution proof.",
+            "Do not use this receipt to claim live search indexing, portal help runtime, filter execution, or browser execution parity.",
         ],
     }
 

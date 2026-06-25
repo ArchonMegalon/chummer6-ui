@@ -5,14 +5,15 @@
   "proof_tier": "source_staged_no_browser_execution",
   "route_lane": "promoted_blazor_workbench",
   "expected_routes": [
-    "/blazor/workbench"
+    "/blazor/workbench",
+    "/help"
   ],
   "checks": [
     {
       "id": "product_workbench_settings",
       "path": "Chummer.Blazor/Components/Pages/Preview.razor",
       "status": "passed",
-      "required_token_count": 9,
+      "required_token_count": 11,
       "missing_tokens": []
     },
     {
@@ -25,8 +26,8 @@
   ],
   "failures": [],
   "notes": [
-    "This receipt only proves that promoted workbench settings source, style, status, and docs agree.",
+    "This receipt only proves that Chummer App and proof-compatible workbench settings source, style, status, and docs agree, including the same-origin /help settings action.",
     "It is not a substitute for hosted Playwright execution proof or Docker self-host proof.",
-    "Do not use this receipt to claim persisted preference mutation, settings save, or runtime settings parity."
+    "Do not use this receipt to claim persisted preference mutation, settings save, runtime settings parity, or portal help runtime behavior."
   ]
 }

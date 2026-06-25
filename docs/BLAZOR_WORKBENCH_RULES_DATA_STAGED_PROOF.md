@@ -2,7 +2,7 @@
 
 ## Purpose
 
-This source-staged proof keeps rules and reference shortcuts visible on the promoted Blazor workbench route.
+This source-staged proof keeps rules and reference shortcuts visible on the user-facing Chummer App route and proof-compatible Blazor workbench route.
 
 The web client should keep ruleset choice, source review, XML/custom data, and language tools close to runner work without claiming native parity before runtime evidence exists.
 
@@ -10,8 +10,8 @@ The web client should keep ruleset choice, source review, XML/custom data, and l
 
 The staged rules/data lane covers:
 
-- a rules strip on the promoted workbench route
-- rules review, ruleset, master index, XML/custom-data, and language affordances
+- a rules strip on the user-facing Chummer App route and proof-compatible workbench route
+- rules review, ruleset, master index, XML/custom-data, language, and same-origin help affordances
 - source alignment with the shared desktop-shaped rules and data dialogs
 - scoped responsive styling for desktop and mobile browser use
 
@@ -29,6 +29,6 @@ Expected receipt:
 
 ## Boundary
 
-This is source alignment only. It proves that promoted workbench rules/data source, style, status reporting, shared dialog source, and docs agree.
+This is source alignment only. It proves that Chummer App and proof-compatible workbench rules/data source, style, status reporting, shared dialog source, and docs agree.
 
-It is not hosted browser execution proof, Docker self-host proof, ruleset mutation proof, sourcebook runtime proof, XML mutation proof, localization runtime proof, screenshot proof, or desktop-equivalent workflow parity.
+It is not hosted browser execution proof, Docker self-host proof, ruleset mutation proof, sourcebook runtime proof, XML mutation proof, localization runtime proof, portal help runtime proof, screenshot proof, or desktop-equivalent workflow parity.

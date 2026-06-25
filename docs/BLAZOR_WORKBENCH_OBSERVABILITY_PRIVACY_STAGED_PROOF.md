@@ -2,16 +2,16 @@
 
 ## Purpose
 
-This source-staged proof keeps privacy-aware observability and analytics affordances visible on the promoted Blazor workbench route.
+This source-staged proof keeps privacy-aware observability and analytics affordances visible on the user-facing Chummer App route and proof-compatible Blazor workbench route.
 
-The browser client should make Chummer Run analytics posture explicit by surfacing consent, Rybbit status, route events, error traces, privacy logs, and self-host telemetry controls near the active character workspace.
+The browser client should make Chummer Run analytics posture explicit by surfacing consent, Rybbit status, route events, error traces, privacy logs, self-host telemetry controls, and help near the active character workspace.
 
 ## Source-Staged Scope
 
 The staged observability-privacy lane covers:
 
-- an observability/privacy strip on the promoted workbench route
-- consent, Rybbit status, route events, error traces, privacy log, and self-host telemetry toggle shortcuts
+- an observability/privacy strip on the user-facing Chummer App route and proof-compatible workbench route
+- consent, Rybbit status, route events, error traces, privacy log, self-host telemetry toggle, and same-origin help shortcuts
 - scoped responsive styling for desktop and mobile browser use
 
 ## Source Check
@@ -28,6 +28,6 @@ Expected receipt:
 
 ## Boundary
 
-This is source alignment only. It proves that promoted workbench observability-privacy source, style, status reporting, and docs agree.
+This is source alignment only. It proves that Chummer App and proof-compatible workbench observability-privacy source, style, status reporting, and docs agree.
 
-It is not hosted browser execution proof, Docker self-host proof, Rybbit deployment proof, analytics event-delivery proof, consent-persistence proof, telemetry runtime proof, route-click proof, screenshot proof, or desktop-equivalent workflow parity.
+It is not hosted browser execution proof, Docker self-host proof, Rybbit deployment proof, analytics event-delivery proof, consent-persistence proof, telemetry runtime proof, portal help runtime proof, route-click proof, screenshot proof, or desktop-equivalent workflow parity.

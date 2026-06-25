@@ -28,6 +28,8 @@ CHECKS = [
             "data-workbench-tree-tools-action=\"sort\"",
             "data-workbench-tree-tools-action=\"reorder\"",
             "data-workbench-tree-tools-action=\"pin\"",
+            "data-workbench-tree-tools-action=\"help\"",
+            "/help",
             "data-workbench-tree-tools-action=\"selection\"",
         ],
     },
@@ -55,8 +57,8 @@ CHECKS = [
         "path": "docs/BLAZOR_WEB_CLIENT_PARITY_GOAL.md",
         "tokens": [
             "staged hosted workbench tree-tools posture",
-            "expand, collapse, sort, reorder, pin, and selection",
-            "not yet claiming tree virtualization or list mutation parity",
+            "expand, collapse, sort, reorder, pin, help, and selection",
+            "not yet claiming tree virtualization, portal help runtime, or list mutation parity",
         ],
     },
     {
@@ -110,13 +112,13 @@ def main() -> int:
         "status": "failed" if failures else "passed",
         "proof_tier": "source_staged_no_browser_execution",
         "route_lane": "promoted_blazor_workbench",
-        "expected_routes": ["/blazor/workbench"],
+        "expected_routes": ["/blazor/workbench", "/help"],
         "checks": checks,
         "failures": failures,
         "notes": [
-            "This receipt only proves that promoted workbench tree-tools source, style, status, and docs agree.",
-            "It is not a substitute for hosted Playwright execution proof, Docker self-host proof, tree virtualization proof, or list mutation proof.",
-            "Do not use this receipt to claim tree virtualization, list mutation, or browser execution parity.",
+            "This receipt only proves that Chummer App and proof-compatible workbench tree-tools source, style, status, and docs agree.",
+            "It is not a substitute for hosted Playwright execution proof, Docker self-host proof, tree virtualization proof, portal help runtime, or list mutation proof.",
+            "Do not use this receipt to claim tree virtualization, portal help runtime, list mutation, or browser execution parity.",
         ],
     }
 

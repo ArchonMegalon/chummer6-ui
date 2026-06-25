@@ -20,10 +20,13 @@ EXPECTED_ROUTES = [
     "/hub/",
     "/contact",
     "/status",
+    "/help",
     "/home/access",
     "/home/work",
     "/account/work",
     "/account/support",
+    "/blazor/home",
+    "/blazor/app",
     "/blazor/workbench",
 ]
 
@@ -36,6 +39,7 @@ CHECKS = [
             "/hub/",
             "/contact",
             "/status",
+            "/help",
             "Sign in",
             "Product bug",
             "Current release",
@@ -50,6 +54,7 @@ CHECKS = [
             "/account/work",
             "/account/support",
             "/contact",
+            "/help",
             "signed owner propagation enabled",
         ],
     },
@@ -68,6 +73,7 @@ CHECKS = [
         "tokens": EXPECTED_ROUTES + [
             "source-only",
             "same-origin through `Chummer.Portal`",
+            "explicit proof-compatible compatibility route for the same promoted browser client",
             "must not be treated as authentication or authorization runtime proof",
         ],
     },
@@ -134,7 +140,7 @@ def main() -> int:
         "failures": failures,
         "notes": [
             "This proof is source alignment only for account/support handoff posture.",
-            "It does not prove authentication, authorization, owner propagation, or support submission runtime behavior.",
+            "It does not prove authentication, authorization, owner propagation, portal help runtime, or support submission runtime behavior.",
             "Runtime evidence remains owned by local portal proof, hosted route-entry proof, hosted execution proof, and connected-runtime posture receipts.",
         ],
     }

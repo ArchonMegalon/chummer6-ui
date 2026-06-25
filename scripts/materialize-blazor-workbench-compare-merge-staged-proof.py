@@ -28,6 +28,8 @@ CHECKS = [
             "data-workbench-compare-merge-action=\"dry-run\"",
             "data-workbench-compare-merge-action=\"apply-merge\"",
             "data-workbench-compare-merge-action=\"rollback-plan\"",
+            "data-workbench-compare-merge-action=\"help\"",
+            "href=\"/help\"",
         ],
     },
     {
@@ -54,8 +56,8 @@ CHECKS = [
         "path": "docs/BLAZOR_WEB_CLIENT_PARITY_GOAL.md",
         "tokens": [
             "staged hosted workbench compare/merge posture",
-            "diff view, conflict choice, source trace, dry run, apply, and rollback",
-            "not yet claiming diff execution, conflict resolution, source tracing, merge application, or rollback parity",
+            "diff view, conflict choice, source trace, dry run, apply, rollback, and help",
+            "not yet claiming diff execution, conflict resolution, source tracing, merge application, rollback parity, or portal help runtime parity",
         ],
     },
     {
@@ -96,13 +98,13 @@ def main() -> int:
         "status": "failed" if failures else "passed",
         "proof_tier": "source_staged_no_browser_execution",
         "route_lane": "promoted_blazor_workbench",
-        "expected_routes": ["/blazor/workbench"],
+        "expected_routes": ["/blazor/workbench", "/help"],
         "checks": evaluated_checks,
         "failures": failures,
         "notes": [
-            "This receipt only proves that promoted workbench compare/merge source, style, status, and docs agree.",
-            "It is not a substitute for hosted browser execution, diff execution, conflict resolution, merge application, or rollback parity.",
-            "Do not use this receipt to claim complete import merge, persistence, or browser execution parity.",
+            "This receipt only proves that Chummer App and proof-compatible workbench compare/merge source, style, status, and docs agree.",
+            "It is not a substitute for hosted browser execution, diff execution, conflict resolution, merge application, rollback parity, or portal help runtime proof.",
+            "Do not use this receipt to claim complete import merge, persistence, portal help runtime behavior, or browser execution parity.",
         ],
     }
 

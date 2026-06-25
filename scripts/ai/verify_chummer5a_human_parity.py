@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 import json
+import os
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
@@ -10,7 +11,13 @@ import yaml
 
 
 REPO_ROOT = Path(__file__).resolve().parents[2]
-DESIGN_ROOT = Path("/docker/chummercomplete/chummer-design/products/chummer")
+WORKSPACE_ROOT = REPO_ROOT.parent
+DESIGN_ROOT = Path(
+    os.environ.get(
+        "CHUMMER_DESIGN_PRODUCT_ROOT",
+        WORKSPACE_ROOT / "chummer-design" / "products" / "chummer",
+    )
+)
 PUBLISHED_ROOT = REPO_ROOT / ".codex-studio" / "published"
 MATRIX_PATH = DESIGN_ROOT / "CHUMMER5A_HUMAN_PARITY_ACCEPTANCE_MATRIX.yaml"
 UI_AUDIT_PATH = PUBLISHED_ROOT / "CHUMMER5A_UI_ELEMENT_PARITY_AUDIT.generated.json"
@@ -43,10 +50,13 @@ def now_iso() -> str:
 
 
 def rel(path: Path) -> str:
-    raw = str(path)
-    if raw.startswith("/docker/chummercomplete/"):
-        return raw.replace("/docker/chummercomplete/", "", 1)
-    return raw.replace("/docker/chummercomplete/chummer-presentation/", "", 1)
+    resolved = path.resolve()
+    for root in (REPO_ROOT, WORKSPACE_ROOT):
+        try:
+            return str(resolved.relative_to(root))
+        except ValueError:
+            continue
+    return str(path)
 
 
 def load_json(path: Path) -> dict[str, Any]:

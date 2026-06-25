@@ -5,7 +5,7 @@ import json
 from pathlib import Path
 
 
-REPO_ROOT = Path("/docker/chummercomplete/chummer-presentation")
+REPO_ROOT = Path(__file__).resolve().parents[1]
 PUBLISHED = REPO_ROOT / ".codex-studio" / "published"
 
 ROUTE_PROOF = PUBLISHED / "BLAZOR_PUBLIC_EDGE_WORKBENCH_PROOF.generated.json"
@@ -20,6 +20,8 @@ COMBAT_SUPPORT_STAGED_PROOF = PUBLISHED / "BLAZOR_COMBAT_SUPPORT_STAGED_PROOF.ge
 SKILL_MAINTENANCE_STAGED_PROOF = PUBLISHED / "BLAZOR_SKILL_MAINTENANCE_STAGED_PROOF.generated.json"
 MAGIC_SUPPORT_STAGED_PROOF = PUBLISHED / "BLAZOR_MAGIC_SUPPORT_STAGED_PROOF.generated.json"
 GEAR_MAINTENANCE_STAGED_PROOF = PUBLISHED / "BLAZOR_GEAR_MAINTENANCE_STAGED_PROOF.generated.json"
+RUNNER_INTELLIGENCE_STAGED_PROOF = PUBLISHED / "BLAZOR_RUNNER_INTELLIGENCE_STAGED_PROOF.generated.json"
+RUNNER_INTELLIGENCE_CALCULATION_PROOF = PUBLISHED / "BLAZOR_RUNNER_INTELLIGENCE_CALCULATION_PROOF.generated.json"
 SOURCE_GEAR_UTILITY_STAGED_PROOF = PUBLISHED / "BLAZOR_SOURCE_GEAR_UTILITY_STAGED_PROOF.generated.json"
 MAGIC_CLEANUP_STAGED_PROOF = PUBLISHED / "BLAZOR_MAGIC_CLEANUP_STAGED_PROOF.generated.json"
 BROWSER_OUTPUT_HANDOFF_STAGED_PROOF = PUBLISHED / "BLAZOR_BROWSER_OUTPUT_HANDOFF_STAGED_PROOF.generated.json"
@@ -88,6 +90,7 @@ WORKBENCH_GM_SCREEN_EXPORT_STAGED_PROOF = PUBLISHED / "BLAZOR_WORKBENCH_GM_SCREE
 WORKBENCH_ROSTER_HIERARCHY_STAGED_PROOF = PUBLISHED / "BLAZOR_WORKBENCH_ROSTER_HIERARCHY_STAGED_PROOF.generated.json"
 LEGACY_CONTROL_COVERAGE_STAGED_PROOF = PUBLISHED / "BLAZOR_LEGACY_CONTROL_COVERAGE_STAGED_PROOF.generated.json"
 SOURCE_STAGED_PROOF_SET = PUBLISHED / "BLAZOR_SOURCE_STAGED_PROOF_SET.generated.json"
+SOURCE_STAGED_RELEASE_BOUNDARY = PUBLISHED / "BLAZOR_SOURCE_STAGED_RELEASE_BOUNDARY.generated.json"
 PORTAL_INSTALLER_HANDOFF_STAGED_PROOF = PUBLISHED / "BLAZOR_PORTAL_INSTALLER_HANDOFF_STAGED_PROOF.generated.json"
 DOCKER_SELF_HOST_OPERATOR_STAGED_PROOF = PUBLISHED / "BLAZOR_DOCKER_SELF_HOST_OPERATOR_STAGED_PROOF.generated.json"
 ACCOUNT_SUPPORT_HANDOFF_STAGED_PROOF = PUBLISHED / "BLAZOR_ACCOUNT_SUPPORT_HANDOFF_STAGED_PROOF.generated.json"
@@ -155,6 +158,8 @@ def main() -> int:
     skill_maintenance_staged = load_json(SKILL_MAINTENANCE_STAGED_PROOF)
     magic_support_staged = load_json(MAGIC_SUPPORT_STAGED_PROOF)
     gear_maintenance_staged = load_json(GEAR_MAINTENANCE_STAGED_PROOF)
+    runner_intelligence_staged = load_json(RUNNER_INTELLIGENCE_STAGED_PROOF)
+    runner_intelligence_calculation = load_json(RUNNER_INTELLIGENCE_CALCULATION_PROOF)
     source_gear_utility_staged = load_json(SOURCE_GEAR_UTILITY_STAGED_PROOF)
     magic_cleanup_staged = load_json(MAGIC_CLEANUP_STAGED_PROOF)
     browser_output_handoff_staged = load_json(BROWSER_OUTPUT_HANDOFF_STAGED_PROOF)
@@ -223,6 +228,7 @@ def main() -> int:
     workbench_roster_hierarchy_staged = load_json(WORKBENCH_ROSTER_HIERARCHY_STAGED_PROOF)
     legacy_control_coverage_staged = load_json(LEGACY_CONTROL_COVERAGE_STAGED_PROOF)
     source_staged_proof_set = load_json(SOURCE_STAGED_PROOF_SET)
+    source_staged_release_boundary = load_json(SOURCE_STAGED_RELEASE_BOUNDARY)
     portal_installer_handoff_staged = load_json(PORTAL_INSTALLER_HANDOFF_STAGED_PROOF)
     docker_self_host_operator_staged = load_json(DOCKER_SELF_HOST_OPERATOR_STAGED_PROOF)
     account_support_handoff_staged = load_json(ACCOUNT_SUPPORT_HANDOFF_STAGED_PROOF)
@@ -243,6 +249,13 @@ def main() -> int:
         "route_proof_marker_ids="
         + ",".join(str(item).strip() for item in (route.get("route_proof_markers") or []) if str(item).strip())
     )
+    route_marker_ids = {
+        str(item).strip()
+        for item in (route.get("route_proof_markers") or [])
+        if str(item).strip()
+    }
+    print(f"route_public_chummer_app={str('public_chummer_app_route' in route_marker_ids).lower()}")
+    print(f"route_public_blazor_home_roster_entry={str('public_blazor_home_roster_entry' in route_marker_ids).lower()}")
     print(f"workflow_shape_markers={len(route.get('workflow_proofs') or [])}")
     print(
         "route_workflow_shape_ids="
@@ -289,6 +302,8 @@ def main() -> int:
     print(f"analytics_self_host_default={str(analytics.get('self_host_default') or '').strip() or 'missing'}")
     print(f"analytics_hosted_public_edge={str(analytics.get('hosted_public_edge') or '').strip() or 'missing'}")
     print(f"analytics_sensitive_data_policy={str(analytics.get('sensitive_data_policy') or '').strip() or 'missing'}")
+    print(f"analytics_session_replay_policy={str(analytics.get('session_replay_policy') or '').strip() or 'missing'}")
+    print(f"analytics_autocapture_policy={str(analytics.get('autocapture_policy') or '').strip() or 'missing'}")
     print(f"connected_runtime_proof_receipt={CONNECTED_RUNTIME_PROOF}")
     print(f"connected_runtime_proof_status={str(connected_runtime.get('status') or '').strip() or 'missing'}")
     print(f"connected_runtime_proof_contract={str(connected_runtime.get('contract_name') or '').strip() or 'missing'}")
@@ -300,7 +315,23 @@ def main() -> int:
     print(f"aggregate_proof_set_contract={str(aggregate.get('contract_name') or '').strip() or 'missing'}")
     print(f"aggregate_required_receipts={aggregate.get('required_receipt_count', 'unknown')}")
     print(f"aggregate_passed_receipts={aggregate.get('passed_receipt_count', 'unknown')}")
+    print(f"aggregate_source_checks={aggregate.get('source_check_count', 'unknown')}")
+    print(f"aggregate_passed_source_checks={aggregate.get('passed_source_check_count', 'unknown')}")
     print(f"aggregate_scope={str(aggregate.get('scope') or '').strip() or 'missing'}")
+    aggregate_notes = [
+        str(item).strip()
+        for item in (aggregate.get("notes") or [])
+        if str(item).strip()
+    ]
+    print(f"aggregate_note_count={len(aggregate_notes)}")
+    print(
+        "aggregate_source_boundary_policy_note="
+        + str(any("source_staged_release_boundary" in note and "source-policy evidence only" in note for note in aggregate_notes)).lower()
+    )
+    print(
+        "aggregate_migration_boundary_note="
+        + str(any("MIG-106 through MIG-109 remain open" in note for note in aggregate_notes)).lower()
+    )
     print(f"career_support_staged_receipt={CAREER_SUPPORT_STAGED_PROOF}")
     print(f"career_support_staged_status={str(career_support_staged.get('status') or '').strip() or 'not_generated'}")
     print(f"career_support_staged_contract={str(career_support_staged.get('contract_name') or '').strip() or 'missing'}")
@@ -361,6 +392,24 @@ def main() -> int:
         "gear_maintenance_staged_note="
         "source_alignment_only_not_browser_execution"
     )
+    print(f"runner_intelligence_staged_receipt={RUNNER_INTELLIGENCE_STAGED_PROOF}")
+    print(f"runner_intelligence_staged_status={str(runner_intelligence_staged.get('status') or '').strip() or 'not_generated'}")
+    print(f"runner_intelligence_staged_contract={str(runner_intelligence_staged.get('contract_name') or '').strip() or 'missing'}")
+    print(f"runner_intelligence_staged_tier={str(runner_intelligence_staged.get('proof_tier') or '').strip() or 'missing'}")
+    print(f"runner_intelligence_staged_route_count={len(runner_intelligence_staged.get('expected_routes') or [])}")
+    print(f"runner_intelligence_staged_source_checks={count_staged_source_checks(runner_intelligence_staged)}")
+    print(
+        "runner_intelligence_staged_note="
+        "source_alignment_only_not_statistical_engine_or_browser_execution"
+    )
+    print(f"runner_intelligence_calculation_receipt={RUNNER_INTELLIGENCE_CALCULATION_PROOF}")
+    print(f"runner_intelligence_calculation_status={str(runner_intelligence_calculation.get('status') or '').strip() or 'not_generated'}")
+    print(f"runner_intelligence_calculation_contract={str(runner_intelligence_calculation.get('contract_name') or '').strip() or 'missing'}")
+    print(f"runner_intelligence_calculation_tier={str(runner_intelligence_calculation.get('proof_tier') or '').strip() or 'missing'}")
+    print(
+        "runner_intelligence_calculation_note="
+        "shared_calculation_source_only_not_rules_engine_or_browser_execution"
+    )
     print(f"source_gear_utility_staged_receipt={SOURCE_GEAR_UTILITY_STAGED_PROOF}")
     print(f"source_gear_utility_staged_status={str(source_gear_utility_staged.get('status') or '').strip() or 'not_generated'}")
     print(f"source_gear_utility_staged_contract={str(source_gear_utility_staged.get('contract_name') or '').strip() or 'missing'}")
@@ -409,7 +458,7 @@ def main() -> int:
     print(f"workbench_polish_staged_source_checks={count_staged_source_checks(workbench_polish_staged)}")
     print(
         "workbench_polish_staged_note="
-        "source_alignment_only_not_browser_execution"
+        "source_alignment_only_not_browser_execution_chummer_app_theme_primary_startup_mobile_portal_nav_motion"
     )
     print(f"workbench_recovery_staged_receipt={WORKBENCH_RECOVERY_STAGED_PROOF}")
     print(f"workbench_recovery_staged_status={str(workbench_recovery_staged.get('status') or '').strip() or 'not_generated'}")
@@ -429,7 +478,7 @@ def main() -> int:
     print(f"workbench_hosting_privacy_staged_source_checks={count_staged_source_checks(workbench_hosting_privacy_staged)}")
     print(
         "workbench_hosting_privacy_staged_note="
-        "source_alignment_only_not_browser_execution"
+        "source_alignment_only_default_off_rybbit_not_browser_execution"
     )
     print(f"workbench_command_palette_staged_receipt={WORKBENCH_COMMAND_PALETTE_STAGED_PROOF}")
     print(f"workbench_command_palette_staged_status={str(workbench_command_palette_staged.get('status') or '').strip() or 'not_generated'}")
@@ -539,7 +588,7 @@ def main() -> int:
     print(f"workbench_desktop_install_staged_source_checks={count_staged_source_checks(workbench_desktop_install_staged)}")
     print(
         "workbench_desktop_install_staged_note="
-        "source_alignment_only_not_browser_execution"
+        "source_alignment_only_not_browser_execution_native_installer_amber_slate_mint_chrome_high_contrast_fallback"
     )
     print(f"workbench_menu_bar_staged_receipt={WORKBENCH_MENU_BAR_STAGED_PROOF}")
     print(f"workbench_menu_bar_staged_status={str(workbench_menu_bar_staged.get('status') or '').strip() or 'not_generated'}")
@@ -1015,11 +1064,18 @@ def main() -> int:
     print(f"workbench_roster_hierarchy_staged_status={str(workbench_roster_hierarchy_staged.get('status') or '').strip() or 'not_generated'}")
     print(f"workbench_roster_hierarchy_staged_contract={str(workbench_roster_hierarchy_staged.get('contract_name') or '').strip() or 'missing'}")
     print(f"workbench_roster_hierarchy_staged_tier={str(workbench_roster_hierarchy_staged.get('proof_tier') or '').strip() or 'missing'}")
+    workbench_roster_hierarchy_routes = [
+        str(route).strip()
+        for route in (workbench_roster_hierarchy_staged.get("expected_routes") or [])
+    ]
+    print(f"workbench_roster_hierarchy_staged_route_lane={str(workbench_roster_hierarchy_staged.get('route_lane') or '').strip() or 'missing'}")
     print(f"workbench_roster_hierarchy_staged_route_count={len(workbench_roster_hierarchy_staged.get('expected_routes') or [])}")
+    print(f"workbench_roster_hierarchy_staged_chummer_app_route={str('/blazor/app?command=character_roster' in workbench_roster_hierarchy_routes).lower()}")
+    print(f"workbench_roster_hierarchy_staged_workbench_compat_route={str('/blazor/workbench?command=character_roster' in workbench_roster_hierarchy_routes).lower()}")
     print(f"workbench_roster_hierarchy_staged_source_checks={count_staged_source_checks(workbench_roster_hierarchy_staged)}")
     print(
         "workbench_roster_hierarchy_staged_note="
-        "source_alignment_only_not_drag_drop_execution_or_filesystem_mutation_proof"
+        "source_alignment_only_roster_directories_not_drag_drop_execution_or_filesystem_mutation_proof"
     )
     print(f"legacy_control_coverage_staged_receipt={LEGACY_CONTROL_COVERAGE_STAGED_PROOF}")
     print(f"legacy_control_coverage_staged_status={str(legacy_control_coverage_staged.get('status') or '').strip() or 'not_generated'}")
@@ -1038,27 +1094,44 @@ def main() -> int:
     print(f"source_staged_proof_set_required_receipts={source_staged_proof_set.get('required_receipt_count', 'unknown')}")
     print(f"source_staged_proof_set_passed_receipts={source_staged_proof_set.get('passed_receipt_count', 'unknown')}")
     print(f"source_staged_proof_set_expected_routes={source_staged_proof_set.get('expected_route_count', 'unknown')}")
+    print(f"source_staged_proof_set_route_lane={str(source_staged_proof_set.get('route_lane') or '').strip() or 'missing'}")
+    print(f"source_staged_proof_set_source_contract_checks={source_staged_proof_set.get('source_contract_check_count', 'unknown')}")
     print(
         "source_staged_proof_set_note="
-        "aggregate_source_alignment_only_not_browser_execution"
+        "aggregate_source_alignment_only_not_browser_execution_route_role_source_contracts"
     )
+    print(f"source_staged_release_boundary_receipt={SOURCE_STAGED_RELEASE_BOUNDARY}")
+    print(f"source_staged_release_boundary_status={str(source_staged_release_boundary.get('status') or '').strip() or 'not_generated'}")
+    print(f"source_staged_release_boundary_contract={str(source_staged_release_boundary.get('contract_name') or '').strip() or 'missing'}")
+    print(f"source_staged_release_boundary_tier={str(source_staged_release_boundary.get('proof_tier') or '').strip() or 'missing'}")
+    print(f"source_staged_release_boundary_scope={str(source_staged_release_boundary.get('scope') or '').strip() or 'missing'}")
+    print(f"source_staged_release_boundary_forbidden_token_count={len(source_staged_release_boundary.get('forbidden_staged_tokens') or [])}")
+    print(f"source_staged_release_boundary_release_aggregation_source_count={len(source_staged_release_boundary.get('release_aggregation_sources') or [])}")
+    print(f"source_staged_release_boundary_documentation_source_count={len(source_staged_release_boundary.get('documentation_sources') or [])}")
+    print("source_staged_release_boundary_note=source_policy_staged_and_source_plan_receipts_not_release_evidence")
     print(f"portal_installer_handoff_staged_receipt={PORTAL_INSTALLER_HANDOFF_STAGED_PROOF}")
     print(f"portal_installer_handoff_staged_status={str(portal_installer_handoff_staged.get('status') or '').strip() or 'not_generated'}")
     print(f"portal_installer_handoff_staged_contract={str(portal_installer_handoff_staged.get('contract_name') or '').strip() or 'missing'}")
     print(f"portal_installer_handoff_staged_tier={str(portal_installer_handoff_staged.get('proof_tier') or '').strip() or 'missing'}")
     print(f"portal_installer_handoff_staged_route_count={len(portal_installer_handoff_staged.get('expected_routes') or [])}")
+    print(f"portal_installer_handoff_staged_source_checks={count_staged_source_checks(portal_installer_handoff_staged)}")
     print(
         "portal_installer_handoff_staged_note="
-        "source_alignment_only_not_browser_execution"
+        "source_alignment_only_raw_artifacts_and_proof_required_handoffs_not_browser_execution"
+    )
+    print(
+        "portal_installer_handoff_staged_visual_contract="
+        "source_alignment_only_chummer_app_amber_mint_blue_palette_shared_grid_mobile_softened_high_contrast_motion_user_facing_route_rail_downloads_docs_cards_and_labelled_recovery_rails_not_runtime_visual_proof"
     )
     print(f"docker_self_host_operator_staged_receipt={DOCKER_SELF_HOST_OPERATOR_STAGED_PROOF}")
     print(f"docker_self_host_operator_staged_status={str(docker_self_host_operator_staged.get('status') or '').strip() or 'not_generated'}")
     print(f"docker_self_host_operator_staged_contract={str(docker_self_host_operator_staged.get('contract_name') or '').strip() or 'missing'}")
     print(f"docker_self_host_operator_staged_tier={str(docker_self_host_operator_staged.get('proof_tier') or '').strip() or 'missing'}")
     print(f"docker_self_host_operator_staged_service_count={len(docker_self_host_operator_staged.get('expected_services') or [])}")
+    print(f"docker_self_host_operator_staged_source_checks={count_staged_source_checks(docker_self_host_operator_staged)}")
     print(
         "docker_self_host_operator_staged_note="
-        "source_alignment_only_not_docker_runtime"
+        "source_alignment_only_default_off_rybbit_not_docker_runtime"
     )
     print(f"account_support_handoff_staged_receipt={ACCOUNT_SUPPORT_HANDOFF_STAGED_PROOF}")
     print(f"account_support_handoff_staged_status={str(account_support_handoff_staged.get('status') or '').strip() or 'not_generated'}")
@@ -1076,9 +1149,51 @@ def main() -> int:
     print(f"runtime_proof_refresh_plan_scope={str(runtime_proof_refresh_plan.get('scope') or '').strip() or 'missing'}")
     print(f"runtime_proof_refresh_plan_command_source_count={len(runtime_proof_refresh_plan.get('command_sources') or [])}")
     print(f"runtime_proof_refresh_plan_documentation_source_count={len(runtime_proof_refresh_plan.get('documentation_sources') or [])}")
+    career_support_visibility = runtime_proof_refresh_plan.get("career_support_status_visibility")
+    identity_license_visibility = runtime_proof_refresh_plan.get("identity_license_status_visibility")
+    combat_support_visibility = runtime_proof_refresh_plan.get("combat_support_status_visibility")
+    skill_maintenance_visibility = runtime_proof_refresh_plan.get("skill_maintenance_status_visibility")
+    magic_support_visibility = runtime_proof_refresh_plan.get("magic_support_status_visibility")
+    gear_maintenance_visibility = runtime_proof_refresh_plan.get("gear_maintenance_status_visibility")
+    runner_intelligence_visibility = runtime_proof_refresh_plan.get("runner_intelligence_status_visibility")
+    runner_intelligence_calculation_visibility = runtime_proof_refresh_plan.get("runner_intelligence_calculation_status_visibility")
+    portal_installer_visibility = runtime_proof_refresh_plan.get("portal_installer_handoff_status_visibility")
+    workbench_hosting_privacy_visibility = runtime_proof_refresh_plan.get("workbench_hosting_privacy_status_visibility")
+    docker_self_host_operator_visibility = runtime_proof_refresh_plan.get("docker_self_host_operator_status_visibility")
+    workbench_roster_hierarchy_visibility = runtime_proof_refresh_plan.get("workbench_roster_hierarchy_status_visibility")
+    legacy_control_coverage_visibility = runtime_proof_refresh_plan.get("legacy_control_coverage_status_visibility")
+    source_staged_release_boundary_visibility = runtime_proof_refresh_plan.get("source_staged_release_boundary_status_visibility")
+    print(f"runtime_proof_refresh_plan_career_support_status_visibility={str(isinstance(career_support_visibility, dict)).lower()}")
+    print(f"runtime_proof_refresh_plan_career_support_status_line_count={len(career_support_visibility.get('status_lines') or []) if isinstance(career_support_visibility, dict) else 0}")
+    print(f"runtime_proof_refresh_plan_identity_license_status_visibility={str(isinstance(identity_license_visibility, dict)).lower()}")
+    print(f"runtime_proof_refresh_plan_identity_license_status_line_count={len(identity_license_visibility.get('status_lines') or []) if isinstance(identity_license_visibility, dict) else 0}")
+    print(f"runtime_proof_refresh_plan_combat_support_status_visibility={str(isinstance(combat_support_visibility, dict)).lower()}")
+    print(f"runtime_proof_refresh_plan_combat_support_status_line_count={len(combat_support_visibility.get('status_lines') or []) if isinstance(combat_support_visibility, dict) else 0}")
+    print(f"runtime_proof_refresh_plan_skill_maintenance_status_visibility={str(isinstance(skill_maintenance_visibility, dict)).lower()}")
+    print(f"runtime_proof_refresh_plan_skill_maintenance_status_line_count={len(skill_maintenance_visibility.get('status_lines') or []) if isinstance(skill_maintenance_visibility, dict) else 0}")
+    print(f"runtime_proof_refresh_plan_magic_support_status_visibility={str(isinstance(magic_support_visibility, dict)).lower()}")
+    print(f"runtime_proof_refresh_plan_magic_support_status_line_count={len(magic_support_visibility.get('status_lines') or []) if isinstance(magic_support_visibility, dict) else 0}")
+    print(f"runtime_proof_refresh_plan_gear_maintenance_status_visibility={str(isinstance(gear_maintenance_visibility, dict)).lower()}")
+    print(f"runtime_proof_refresh_plan_gear_maintenance_status_line_count={len(gear_maintenance_visibility.get('status_lines') or []) if isinstance(gear_maintenance_visibility, dict) else 0}")
+    print(f"runtime_proof_refresh_plan_runner_intelligence_status_visibility={str(isinstance(runner_intelligence_visibility, dict)).lower()}")
+    print(f"runtime_proof_refresh_plan_runner_intelligence_status_line_count={len(runner_intelligence_visibility.get('status_lines') or []) if isinstance(runner_intelligence_visibility, dict) else 0}")
+    print(f"runtime_proof_refresh_plan_runner_intelligence_calculation_status_visibility={str(isinstance(runner_intelligence_calculation_visibility, dict)).lower()}")
+    print(f"runtime_proof_refresh_plan_runner_intelligence_calculation_status_line_count={len(runner_intelligence_calculation_visibility.get('status_lines') or []) if isinstance(runner_intelligence_calculation_visibility, dict) else 0}")
+    print(f"runtime_proof_refresh_plan_portal_installer_handoff_status_visibility={str(isinstance(portal_installer_visibility, dict)).lower()}")
+    print(f"runtime_proof_refresh_plan_portal_installer_handoff_status_line_count={len(portal_installer_visibility.get('status_lines') or []) if isinstance(portal_installer_visibility, dict) else 0}")
+    print(f"runtime_proof_refresh_plan_workbench_hosting_privacy_status_visibility={str(isinstance(workbench_hosting_privacy_visibility, dict)).lower()}")
+    print(f"runtime_proof_refresh_plan_workbench_hosting_privacy_status_line_count={len(workbench_hosting_privacy_visibility.get('status_lines') or []) if isinstance(workbench_hosting_privacy_visibility, dict) else 0}")
+    print(f"runtime_proof_refresh_plan_docker_self_host_operator_status_visibility={str(isinstance(docker_self_host_operator_visibility, dict)).lower()}")
+    print(f"runtime_proof_refresh_plan_docker_self_host_operator_status_line_count={len(docker_self_host_operator_visibility.get('status_lines') or []) if isinstance(docker_self_host_operator_visibility, dict) else 0}")
+    print(f"runtime_proof_refresh_plan_workbench_roster_hierarchy_status_visibility={str(isinstance(workbench_roster_hierarchy_visibility, dict)).lower()}")
+    print(f"runtime_proof_refresh_plan_workbench_roster_hierarchy_status_line_count={len(workbench_roster_hierarchy_visibility.get('status_lines') or []) if isinstance(workbench_roster_hierarchy_visibility, dict) else 0}")
+    print(f"runtime_proof_refresh_plan_legacy_control_coverage_status_visibility={str(isinstance(legacy_control_coverage_visibility, dict)).lower()}")
+    print(f"runtime_proof_refresh_plan_legacy_control_coverage_status_line_count={len(legacy_control_coverage_visibility.get('status_lines') or []) if isinstance(legacy_control_coverage_visibility, dict) else 0}")
+    print(f"runtime_proof_refresh_plan_source_staged_release_boundary_status_visibility={str(isinstance(source_staged_release_boundary_visibility, dict)).lower()}")
+    print(f"runtime_proof_refresh_plan_source_staged_release_boundary_status_line_count={len(source_staged_release_boundary_visibility.get('status_lines') or []) if isinstance(source_staged_release_boundary_visibility, dict) else 0}")
     print(
         "runtime_proof_refresh_plan_note="
-        "source_plan_only_not_browser_execution"
+        "source_plan_only_with_visibility_blocks_not_browser_execution"
     )
     print(f"staged_to_runtime_promotion_matrix_receipt={STAGED_TO_RUNTIME_PROMOTION_MATRIX}")
     print(f"staged_to_runtime_promotion_matrix_status={str(staged_to_runtime_promotion_matrix.get('status') or '').strip() or 'not_generated'}")

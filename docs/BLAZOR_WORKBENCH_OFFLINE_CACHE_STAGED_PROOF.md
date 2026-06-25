@@ -2,9 +2,9 @@
 
 ## Purpose
 
-This staged proof keeps the promoted Blazor workbench source aligned around offline/cache continuity posture for browser editing.
+This staged proof keeps the Chummer App and proof-compatible Blazor workbench source aligned around offline/cache continuity posture for browser editing.
 
-It covers visible source posture for cache status, queued edits, reconnect review, local export, stale data, and sync health affordances on `/blazor/workbench`.
+It covers visible source posture for cache status, queued edits, reconnect review, local export, stale data, sync health, and same-origin help affordances on `/blazor/workbench`.
 
 ## Canonical Command
 
@@ -20,6 +20,6 @@ The command writes:
 
 ## Boundary
 
-This is source-staged alignment only. It does not prove hosted browser execution, Docker self-host execution, service-worker caching, queued mutation persistence, reconnect execution, offline export generation, or sync reconciliation.
+This is source-staged alignment only. It does not prove hosted browser execution, Docker self-host execution, service-worker caching, queued mutation persistence, reconnect execution, offline export generation, sync reconciliation, or portal help runtime behavior.
 
 Runtime promotion requires refreshed hosted public-edge execution proof and Docker self-host proof.

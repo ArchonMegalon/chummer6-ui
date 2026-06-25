@@ -33,6 +33,7 @@ fi
 windows_payload_gate_args=(
   --files-dir "$FILES_SOURCE"
   --manifest "$MANIFEST_SOURCE"
+  --require-embedded-bootstrap-metadata
 )
 while IFS= read -r installer_path; do
   [[ -n "$installer_path" ]] || continue

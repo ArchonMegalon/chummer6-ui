@@ -28,6 +28,8 @@ CHECKS = [
             "data-workbench-observability-privacy-action=\"error_traces\"",
             "data-workbench-observability-privacy-action=\"privacy_log\"",
             "data-workbench-observability-privacy-action=\"self_host_toggle\"",
+            "data-workbench-observability-privacy-action=\"help\"",
+            "/help",
         ],
     },
     {
@@ -54,8 +56,8 @@ CHECKS = [
         "path": "docs/BLAZOR_WEB_CLIENT_PARITY_GOAL.md",
         "tokens": [
             "staged hosted workbench observability-privacy posture",
-            "consent, Rybbit status, route events, error traces, privacy log, and self-host telemetry toggle",
-            "not yet claiming Rybbit deployment, event delivery, consent persistence, or telemetry runtime parity",
+            "consent, Rybbit status, route events, error traces, privacy log, self-host telemetry toggle, and help",
+            "not yet claiming Rybbit deployment, event delivery, consent persistence, telemetry runtime, or portal help runtime parity",
         ],
     },
     {
@@ -96,13 +98,13 @@ def main() -> int:
         "status": "failed" if failures else "passed",
         "proof_tier": "source_staged_no_browser_execution",
         "route_lane": "promoted_blazor_workbench",
-        "expected_routes": ["/blazor/workbench"],
+        "expected_routes": ["/blazor/workbench", "/help"],
         "checks": evaluated_checks,
         "failures": failures,
         "notes": [
-            "This receipt only proves that promoted workbench observability-privacy source, style, status, and docs agree.",
-            "It is not a substitute for hosted Playwright execution proof, Docker self-host proof, Rybbit deployment proof, analytics event-delivery proof, consent-persistence proof, or telemetry runtime proof.",
-            "Do not use this receipt to claim Rybbit deployment, analytics event delivery, consent persistence, telemetry runtime, or browser execution parity.",
+            "This receipt only proves that Chummer App and proof-compatible workbench observability-privacy source, style, status, and docs agree.",
+            "It is not a substitute for hosted Playwright execution proof, Docker self-host proof, Rybbit deployment proof, analytics event-delivery proof, consent-persistence proof, telemetry runtime proof, or portal help runtime proof.",
+            "Do not use this receipt to claim Rybbit deployment, analytics event delivery, consent persistence, telemetry runtime, portal help runtime, or browser execution parity.",
         ],
     }
 

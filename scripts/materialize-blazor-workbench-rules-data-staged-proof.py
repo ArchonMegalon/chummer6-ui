@@ -28,6 +28,8 @@ CHECKS = [
             "data-workbench-rules-data-action=\"master-index\"",
             "data-workbench-rules-data-action=\"xml-editor\"",
             "data-workbench-rules-data-action=\"translator\"",
+            "data-workbench-rules-data-action=\"help\"",
+            "href=\"/help\"",
             "Check rules and references.",
             "Open ruleset, source, XML, or language tools",
         ],
@@ -66,8 +68,8 @@ CHECKS = [
         "path": "docs/BLAZOR_WEB_CLIENT_PARITY_GOAL.md",
         "tokens": [
             "staged hosted workbench rules/data posture",
-            "ruleset choice, sourcebook review, XML/custom data",
-            "not yet claiming ruleset mutation, sourcebook runtime, XML mutation, or localization runtime parity",
+            "ruleset choice, sourcebook review, XML/custom data, translation tools, and help",
+            "not yet claiming ruleset mutation, sourcebook runtime, XML mutation, localization runtime parity, or portal help runtime parity",
         ],
     },
     {
@@ -121,13 +123,13 @@ def main() -> int:
         "status": "failed" if failures else "passed",
         "proof_tier": "source_staged_no_browser_execution",
         "route_lane": "promoted_blazor_workbench",
-        "expected_routes": ["/blazor/workbench"],
+        "expected_routes": ["/blazor/workbench", "/help"],
         "checks": checks,
         "failures": failures,
         "notes": [
-            "This receipt only proves that promoted workbench rules/data source, style, status, and docs agree.",
+            "This receipt only proves that Chummer App and proof-compatible workbench rules/data source, style, status, and docs agree, including the same-origin /help rules/data action.",
             "It is not a substitute for hosted Playwright execution proof or Docker self-host proof.",
-            "Do not use this receipt to claim ruleset mutation, sourcebook runtime, XML mutation, or localization runtime parity.",
+            "Do not use this receipt to claim ruleset mutation, sourcebook runtime, XML mutation, localization runtime parity, or portal help runtime behavior.",
         ],
     }
 

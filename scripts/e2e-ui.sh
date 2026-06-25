@@ -226,7 +226,7 @@ unset wait_status
 
 api_health=$(curl_with_key "$API_URL/api/health" "api-health")
 ui_health=$(curl_with_key "$UI_URL/health" "blazor-health")
-ui_html=$(curl_with_key "$UI_URL/" "blazor-root-html")
+ui_html=$(curl_with_key "$UI_URL/app" "blazor-app-html")
 ui_preview_html=$(curl_with_key "$UI_URL/preview" "blazor-preview-html")
 
 if ! grep -q '"ok":true' <<<"$api_health"; then
@@ -239,8 +239,8 @@ if ! grep -q '"head":"blazor"' <<<"$ui_health"; then
   exit 1
 fi
 
-if ! grep -q "Chummer Browser Workbench" <<<"$ui_html"; then
-  echo "Public browser workbench marker not found in root page response." >&2
+if ! grep -q "Chummer Online, the browser client for real runner work." <<<"$ui_html"; then
+  echo "Chummer Online marker not found in root page response." >&2
   exit 1
 fi
 
@@ -249,8 +249,8 @@ if ! grep -q "_framework/blazor.web.js" <<<"$ui_html"; then
   exit 1
 fi
 
-if ! grep -q "shared workbench shell, running in the browser" <<<"$ui_preview_html"; then
-  echo "Browser workbench marker not found in /preview page response." >&2
+if ! grep -q "Preview Chummer App workflows without changing the public route." <<<"$ui_preview_html"; then
+  echo "Chummer App preview marker not found in /preview page response." >&2
   exit 1
 fi
 

@@ -74,6 +74,32 @@ PROMOTION_ROWS = [
     },
 ]
 
+PLANNED_PROMOTION_ROWS = [
+    {
+        "id": "runner_intelligence",
+        "source_receipts": [
+            "BLAZOR_RUNNER_INTELLIGENCE_STAGED_PROOF.generated.json",
+            "BLAZOR_RUNNER_INTELLIGENCE_CALCULATION_PROOF.generated.json",
+        ],
+        "planned_hosted_family_ids": [
+            "promoted_runner_benchmark_execution",
+            "promoted_runner_what_if_execution",
+            "promoted_runner_cohort_privacy_execution",
+        ],
+        "required_runtime_work": [
+            "hosted public-edge execution for runner_benchmark, runner_what_if, and runner_cohort_privacy",
+            "Docker self-host execution with local-only cohort mode",
+            "authoritative rules-engine calculation fixtures for spell/drug/gear what-if results",
+            "hosted cohort aggregation opt-in proof before any hosted percentile cohort claim",
+        ],
+        "promotion_blockers": [
+            "source-calculation proof is not authoritative SR rules-engine validation",
+            "source-staged route metadata is not browser execution",
+            "hosted cohort aggregation and Docker local benchmark persistence are not proven",
+        ],
+    },
+]
+
 REQUIRED_RUNTIME_RECEIPTS = [
     "BLAZOR_SELF_HOST_WORKBENCH_PROOF.generated.json",
     "BLAZOR_PUBLIC_EDGE_EXECUTION_PROOF.generated.json",
@@ -85,6 +111,7 @@ CHECK_SOURCES = {
     "self_host_runner": "scripts/e2e-portal-playwright.cjs",
     "self_host_metadata": "scripts/e2e-portal.sh",
     "docs": "docs/BLAZOR_STAGED_TO_RUNTIME_PROMOTION_MATRIX.md",
+    "docs_index": "docs/BLAZOR_WEB_CLIENT_DOCS_INDEX.md",
 }
 
 
@@ -124,10 +151,71 @@ def main() -> int:
             }
         )
 
+    planned_rows = []
+    for row in PLANNED_PROMOTION_ROWS:
+        missing_source_receipts = [receipt for receipt in row["source_receipts"] if receipt not in source_texts["docs"]]
+        family_missing_from_docs = row["id"] not in source_texts["docs"]
+        missing_planned_families = [
+            family for family in row["planned_hosted_family_ids"] if family not in source_texts["docs"]
+        ]
+        missing_runtime_work = [
+            item for item in row["required_runtime_work"] if item not in source_texts["docs"]
+        ]
+        missing_blockers = [
+            item for item in row["promotion_blockers"] if item not in source_texts["docs"]
+        ]
+        if missing_source_receipts:
+            failures.append(f"{row['id']}: docs missing planned source receipts {', '.join(missing_source_receipts)}")
+        if family_missing_from_docs:
+            failures.append(f"{row['id']}: docs missing planned family id")
+        if missing_planned_families:
+            failures.append(f"{row['id']}: docs missing planned hosted family ids {', '.join(missing_planned_families)}")
+        if missing_runtime_work:
+            failures.append(f"{row['id']}: docs missing required runtime work {', '.join(missing_runtime_work)}")
+        if missing_blockers:
+            failures.append(f"{row['id']}: docs missing promotion blockers {', '.join(missing_blockers)}")
+        planned_rows.append(
+            {
+                **row,
+                "required_runtime_receipts": REQUIRED_RUNTIME_RECEIPTS,
+                "source_receipts_present_in_docs": not missing_source_receipts,
+                "family_id_present_in_docs": not family_missing_from_docs,
+                "planned_hosted_family_ids_present_in_docs": not missing_planned_families,
+                "required_runtime_work_present_in_docs": not missing_runtime_work,
+                "promotion_blockers_present_in_docs": not missing_blockers,
+                "hosted_runner_family_ids_present": False,
+                "promotion_state": "planned_not_runtime_promoted",
+            }
+        )
+
     docs_text = source_texts["docs"]
     for receipt in REQUIRED_RUNTIME_RECEIPTS:
         if receipt not in docs_text:
             failures.append(f"docs missing required runtime receipt {receipt}")
+
+    non_promoting_tokens = [
+        "BLAZOR_PORTAL_INSTALLER_HANDOFF_STAGED_PROOF.generated.json",
+        "portal-boundary guard",
+        "portal_installer_handoff_staged_*",
+        "not a Chummer App and proof-compatible workbench workflow family",
+        "cannot promote installer availability without refreshed portal runtime evidence",
+    ]
+    docs_index_tokens = [
+        "scripts/materialize-blazor-staged-to-runtime-promotion-matrix.py",
+        "keeps non-promoting portal-boundary guards out of workbench workflow promotion",
+    ]
+    missing_non_promoting_tokens = [token for token in non_promoting_tokens if token not in docs_text]
+    if missing_non_promoting_tokens:
+        failures.append(
+            "docs missing non-promoting portal installer boundary tokens "
+            + ", ".join(missing_non_promoting_tokens)
+        )
+    missing_docs_index_tokens = [token for token in docs_index_tokens if token not in source_texts["docs_index"]]
+    if missing_docs_index_tokens:
+        failures.append(
+            "docs index missing promotion matrix materializer tokens "
+            + ", ".join(missing_docs_index_tokens)
+        )
 
     payload = {
         "contract_name": "chummer6-ui.blazor_staged_to_runtime_promotion_matrix",
@@ -136,13 +224,21 @@ def main() -> int:
         "proof_tier": "source_plan_no_browser_execution",
         "route_lane": "promoted_blazor_workbench",
         "promotion_family_count": len(PROMOTION_ROWS),
+        "planned_promotion_family_count": len(PLANNED_PROMOTION_ROWS),
         "required_runtime_receipts": REQUIRED_RUNTIME_RECEIPTS,
+        "non_promoting_boundary_tokens_present": not missing_non_promoting_tokens,
+        "non_promoting_boundary_receipts": [
+            "BLAZOR_PORTAL_INSTALLER_HANDOFF_STAGED_PROOF.generated.json",
+        ],
         "promotion_rows": rows,
+        "planned_promotion_rows": planned_rows,
         "failures": failures,
         "notes": [
             "This matrix is source-level planning only.",
             "It does not execute Docker self-host proof or hosted browser execution proof.",
             "A family is not promoted until the runtime receipts are refreshed and passing.",
+            "Planned promotion rows name runtime work that is intentionally not added to required hosted execution families yet.",
+            "Portal installer handoff is a non-promoting portal-boundary guard; it does not promote installer availability without refreshed portal runtime evidence.",
         ],
     }
 

@@ -119,7 +119,7 @@ def main() -> int:
         "checks": checks,
         "failures": failures,
         "notes": [
-            "This receipt only proves that promoted workbench section-rail source, style, status, and docs agree.",
+            "This receipt only proves that Chummer App and proof-compatible workbench section-rail source, style, status, and docs agree.",
             "It is not a substitute for hosted Playwright execution proof, Docker self-host proof, or section rendering proof.",
             "Do not use this receipt to claim section rendering, state restoration, or browser execution parity.",
         ],

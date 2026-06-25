@@ -29,6 +29,8 @@ CHECKS = [
             "data-workbench-diagnostics-action=\"health\"",
             "data-workbench-diagnostics-action=\"status\"",
             "data-workbench-diagnostics-action=\"proof-shelf\"",
+            "data-workbench-diagnostics-action=\"help\"",
+            "href=\"/help\"",
         ],
     },
     {
@@ -63,8 +65,8 @@ CHECKS = [
         "path": "docs/BLAZOR_WEB_CLIENT_PARITY_GOAL.md",
         "tokens": [
             "staged hosted workbench diagnostics posture",
-            "runtime inspector, About, health, status, and preview tools",
-            "not yet claiming runtime health, build validity, or diagnostics execution parity",
+            "runtime inspector, About, health, status, preview tools, and help",
+            "not yet claiming runtime health, build validity, diagnostics execution parity, or portal help runtime parity",
         ],
     },
     {
@@ -118,13 +120,13 @@ def main() -> int:
         "status": "failed" if failures else "passed",
         "proof_tier": "source_staged_no_browser_execution",
         "route_lane": "promoted_blazor_workbench",
-        "expected_routes": ["/blazor/workbench", "/blazor/health", "/status", "/blazor/preview"],
+        "expected_routes": ["/blazor/workbench", "/blazor/health", "/status", "/blazor/preview", "/help"],
         "checks": checks,
         "failures": failures,
         "notes": [
-            "This receipt only proves that promoted workbench diagnostics source, style, status, and docs agree.",
+            "This receipt only proves that Chummer App and proof-compatible workbench diagnostics source, style, status, and docs agree, including the same-origin /help diagnostics action.",
             "It is not a substitute for hosted Playwright execution proof or Docker self-host proof.",
-            "Do not use this receipt to claim runtime health, build validity, diagnostics execution, or hosted proof readiness.",
+            "Do not use this receipt to claim runtime health, build validity, diagnostics execution, portal help runtime behavior, or hosted proof readiness.",
         ],
     }
 

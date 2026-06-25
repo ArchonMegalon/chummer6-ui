@@ -5,7 +5,8 @@
   "proof_tier": "source_staged_no_browser_execution",
   "route_lane": "promoted_blazor_workbench",
   "expected_routes": [
-    "/blazor/workbench"
+    "/blazor/workbench",
+    "/help"
   ],
   "checks": [
     {
@@ -41,7 +42,7 @@
   ],
   "boundary_notes": [
     "Source-staged import/reconcile posture only; this is not hosted browser execution proof.",
-    "Does not prove Docker self-host browser execution, file upload, XML parsing, data migration, conflict resolution, or import persistence.",
+    "Does not prove Docker self-host browser execution, file upload, XML parsing, data migration, conflict resolution, import persistence, or portal help runtime behavior.",
     "Runtime promotion requires refreshed hosted public-edge and Docker self-host receipts."
   ],
   "failures": []

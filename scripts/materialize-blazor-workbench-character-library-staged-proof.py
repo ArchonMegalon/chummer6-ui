@@ -28,6 +28,8 @@ CHECKS = [
             "data-workbench-character-library-action=\"clone\"",
             "data-workbench-character-library-action=\"archive\"",
             "data-workbench-character-library-action=\"import\"",
+            "data-workbench-character-library-action=\"help\"",
+            "/help",
         ],
     },
     {
@@ -54,8 +56,8 @@ CHECKS = [
         "path": "docs/BLAZOR_WEB_CLIENT_PARITY_GOAL.md",
         "tokens": [
             "staged hosted workbench character-library posture",
-            "open, recent, pin, clone, archive, and import",
-            "not yet claiming file-open, library persistence, clone, archive, or import parity",
+            "open, recent, pin, clone, archive, import, and help",
+            "not yet claiming file-open, library persistence, clone, archive, import, or portal help runtime parity",
         ],
     },
     {
@@ -96,13 +98,13 @@ def main() -> int:
         "status": "failed" if failures else "passed",
         "proof_tier": "source_staged_no_browser_execution",
         "route_lane": "promoted_blazor_workbench",
-        "expected_routes": ["/blazor/workbench"],
+        "expected_routes": ["/blazor/workbench", "/help"],
         "checks": evaluated_checks,
         "failures": failures,
         "notes": [
-            "This receipt only proves that promoted workbench character-library source, style, status, and docs agree.",
-            "It is not a substitute for hosted Playwright execution proof, Docker self-host proof, file-open proof, library-persistence proof, clone proof, archive proof, or import proof.",
-            "Do not use this receipt to claim file-open, library persistence, clone, archive, import, or browser execution parity.",
+            "This receipt only proves that Chummer App and proof-compatible workbench character-library source, style, status, and docs agree.",
+            "It is not a substitute for hosted Playwright execution proof, Docker self-host proof, file-open proof, library-persistence proof, clone proof, archive proof, import proof, or portal help runtime proof.",
+            "Do not use this receipt to claim file-open, library persistence, clone, archive, import, portal help runtime, or browser execution parity.",
         ],
     }
 

@@ -2662,6 +2662,62 @@ input[type="radio"] {
     background: rgba(255, 255, 255, 0.62);
 }
 
+.dialog-roster-line[data-roster-line-kind="directory"] {
+    font-weight: 760;
+}
+
+.dialog-roster-line[data-roster-folder-scope="system"] {
+    color: #516046;
+    background:
+        linear-gradient(90deg, rgba(118, 174, 202, 0.12), rgba(255, 255, 255, 0.64)),
+        rgba(255, 255, 255, 0.58);
+}
+
+.dialog-roster-line[data-roster-folder-scope="system"]::before {
+    content: "bucket";
+    margin-right: 0.42rem;
+    border: 1px solid rgba(118, 174, 202, 0.32);
+    border-radius: 999px;
+    padding: 0.05rem 0.34rem;
+    color: #365469;
+    font-family: var(--ui-kit-sans-font);
+    font-size: 0.58rem;
+    font-weight: 850;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+}
+
+.dialog-roster-line[data-roster-folder-scope="custom"] {
+    color: #2f3f2f;
+    background:
+        linear-gradient(90deg, rgba(143, 240, 188, 0.18), rgba(255, 212, 111, 0.12)),
+        rgba(255, 255, 255, 0.72);
+}
+
+.dialog-roster-line[data-roster-folder-scope="custom"]::before {
+    content: "folder";
+    margin-right: 0.42rem;
+    border: 1px solid rgba(143, 240, 188, 0.46);
+    border-radius: 999px;
+    padding: 0.05rem 0.34rem;
+    color: #2f6042;
+    font-family: var(--ui-kit-sans-font);
+    font-size: 0.58rem;
+    font-weight: 850;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+}
+
+.dialog-roster-line[data-roster-line-kind="runner"] {
+    color: #26311f;
+}
+
+.dialog-roster-line[data-roster-line-kind="watched-file"],
+.dialog-roster-line[data-roster-line-kind="folder-shortcut"] {
+    color: #495569;
+    font-style: italic;
+}
+
 .dialog-roster-line.is-draggable {
     cursor: grab;
     border-color: rgba(95, 107, 87, 0.18);
@@ -2683,7 +2739,7 @@ input[type="radio"] {
 }
 
 .dialog-roster-line.is-drop-target::after {
-    content: "drop";
+    content: "drop directory";
     margin-left: auto;
     border: 1px solid rgba(95, 107, 87, 0.28);
     border-radius: 999px;
@@ -2732,4 +2788,335 @@ input[type="radio"] {
 .dialog-roster-line.is-selected {
     border-color: rgba(95, 107, 87, 0.55);
     background: rgba(137, 224, 179, 0.13);
+}
+
+/* Character roster hierarchy: app-grade organization inside the classic dialog shell. */
+.dialog-field--roster-hierarchy {
+    gap: 0.35rem;
+}
+
+.dialog-visual--roster-hierarchy {
+    display: grid;
+    gap: 0.45rem;
+    padding: 0.55rem;
+    border: 1px solid rgba(105, 240, 182, 0.28);
+    background:
+        radial-gradient(circle at 12% 0%, rgba(105, 240, 182, 0.14), transparent 18rem),
+        linear-gradient(145deg, rgba(15, 32, 28, 0.94), rgba(8, 17, 15, 0.82));
+    color: #f3f0df;
+    box-shadow: inset 0 1px 0 rgba(255, 247, 215, 0.08), 0 18px 42px rgba(0, 0, 0, 0.24);
+}
+
+.dialog-roster-toolbar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.75rem;
+    padding: 0.55rem 0.65rem;
+    border: 1px solid rgba(240, 199, 102, 0.24);
+    background: linear-gradient(135deg, rgba(105, 240, 182, 0.14), rgba(240, 199, 102, 0.12));
+}
+
+.dialog-roster-toolbar strong {
+    display: block;
+    color: #fff7d7;
+    font-size: 0.95rem;
+    letter-spacing: 0.02em;
+}
+
+.dialog-roster-toolbar p {
+    max-width: 58rem;
+    margin: 0.18rem 0 0;
+    color: #aebdb3;
+    line-height: 1.35;
+}
+
+.dialog-roster-mode {
+    flex: 0 0 auto;
+    border: 1px solid rgba(105, 240, 182, 0.36);
+    border-radius: 999px;
+    padding: 0.22rem 0.55rem;
+    background: rgba(105, 240, 182, 0.12);
+    color: #dcffe8;
+    font-weight: 700;
+    white-space: nowrap;
+}
+
+.dialog-roster-tree,
+.dialog-roster-list {
+    display: grid;
+    gap: 0.22rem;
+    padding: 0.35rem;
+    border: 1px solid rgba(169, 225, 190, 0.2);
+    background: rgba(5, 12, 10, 0.48);
+    max-height: min(34rem, 58vh);
+    overflow: auto;
+}
+
+.dialog-roster-keyboard-hint,
+.dialog-roster-keyboard-status {
+    padding: 0.4rem 0.5rem;
+    border: 1px solid rgba(240, 199, 102, 0.22);
+    background: rgba(240, 199, 102, 0.09);
+    color: #f3f0df;
+    line-height: 1.35;
+}
+
+.dialog-roster-keyboard-status {
+    border-color: rgba(105, 240, 182, 0.34);
+    background: rgba(105, 240, 182, 0.12);
+    color: #dcffe8;
+}
+
+.dialog-roster-line {
+    position: relative;
+    min-height: 1.9rem;
+    padding: 0.32rem 0.5rem 0.32rem 1.75rem;
+    border: 1px solid transparent;
+    background: rgba(255, 255, 255, 0.035);
+    color: #f3f0df;
+    line-height: 1.25;
+    white-space: pre-wrap;
+}
+
+.dialog-roster-line::before {
+    position: absolute;
+    left: 0.52rem;
+    top: 0.32rem;
+    color: #f0c766;
+    content: "-";
+}
+
+.dialog-roster-line--root {
+    border-color: rgba(240, 199, 102, 0.26);
+    background: rgba(240, 199, 102, 0.1);
+    color: #fff7d7;
+    font-weight: 700;
+}
+
+.dialog-roster-line--root::before {
+    content: "#";
+}
+
+.dialog-roster-line--branch::before,
+.dialog-roster-line.is-drop-target::before {
+    content: ">";
+    color: #69f0b6;
+}
+
+.dialog-roster-line--leaf::before {
+    content: "*";
+}
+
+.dialog-roster-line.is-draggable {
+    cursor: grab;
+}
+
+.dialog-roster-line.is-draggable:active {
+    cursor: grabbing;
+}
+
+.dialog-roster-line.is-drop-target {
+    border-color: rgba(105, 240, 182, 0.32);
+    background: linear-gradient(135deg, rgba(105, 240, 182, 0.13), rgba(255, 255, 255, 0.035));
+}
+
+.dialog-roster-line.is-selected,
+.dialog-roster-line.is-drag-source,
+.dialog-roster-line.is-keyboard-source,
+.dialog-roster-line.is-mouse-source {
+    border-color: rgba(240, 199, 102, 0.62);
+    background: linear-gradient(135deg, rgba(240, 199, 102, 0.22), rgba(105, 240, 182, 0.1));
+    box-shadow: 0 0 0 2px rgba(240, 199, 102, 0.14);
+}
+
+.dialog-roster-line:focus-visible {
+    outline: 3px solid rgba(240, 199, 102, 0.76);
+    outline-offset: 2px;
+    border-color: rgba(240, 199, 102, 0.68);
+}
+
+@media (max-width: 760px) {
+    .dialog-roster-toolbar {
+        align-items: stretch;
+        flex-direction: column;
+    }
+
+    .dialog-roster-mode {
+        align-self: flex-start;
+    }
+}
+
+/* Chummer web app theme polish: richer desktop chrome without losing classic-client affordances. */
+:root {
+    --chummer-theme-void: #090b0f;
+    --chummer-theme-slate: #0b1117;
+    --chummer-theme-panel: #121922;
+    --chummer-theme-paper: #fff8e8;
+    --chummer-theme-gold: #ffd46f;
+    --chummer-theme-gold-deep: #b9812f;
+    --chummer-theme-mint: #8ff0bc;
+    --chummer-theme-cyan: #76aeca;
+    --chummer-theme-line: rgba(255, 212, 111, 0.26);
+    --ui-kit-shell-surface: #cfc8b8;
+    --ui-kit-shell-surface-muted: #e5dfd0;
+    --ui-kit-shell-surface-emphasis: #fbf6e8;
+    --ui-kit-shell-border: #7e7565;
+    --ui-kit-shell-border-strong: #4d473d;
+    --ui-kit-button-surface: #efe5cf;
+    --ui-kit-focus-ring: #2c6f80;
+}
+
+.app-frame {
+    background:
+        radial-gradient(circle at 88% 8%, rgba(244, 207, 115, 0.22), transparent 28%),
+        radial-gradient(circle at 12% 18%, rgba(110, 165, 200, 0.18), transparent 32%),
+        linear-gradient(180deg, #151b24 0%, #242a31 17%, #d8d0bf 17.2%, #ede7d8 100%);
+}
+
+.app-chrome {
+    background:
+        linear-gradient(90deg, rgba(137, 224, 179, 0.08), transparent 34%, rgba(244, 207, 115, 0.1)),
+        linear-gradient(180deg, #151c27 0%, #0a0d12 100%);
+    border-bottom: 1px solid rgba(244, 207, 115, 0.38);
+    box-shadow: 0 16px 40px rgba(0, 0, 0, 0.28);
+    color: var(--chummer-theme-paper);
+}
+
+.app-title {
+    color: #fff7df;
+    text-shadow: 0 0 18px rgba(244, 207, 115, 0.18);
+}
+
+.app-subtitle {
+    color: rgba(244, 239, 228, 0.66);
+}
+
+.menu-bar.classic-menu-bar,
+.tool-strip.classic-tool-strip {
+    background:
+        linear-gradient(180deg, rgba(255, 250, 235, 0.84), rgba(206, 195, 171, 0.92)),
+        var(--ui-kit-shell-surface);
+    border-color: rgba(77, 71, 61, 0.75);
+}
+
+.menu-btn.active,
+.tool-btn.selected,
+.mdi-doc.active {
+    border-color: #1f5f6d;
+    background:
+        linear-gradient(180deg, rgba(137, 224, 179, 0.24), rgba(255, 255, 255, 0.72));
+    color: #0b1718;
+}
+
+.dialog-visual--roster-hierarchy,
+.dialog-roster-toolbar,
+.dialog-roster-tree {
+    border-color: rgba(255, 212, 111, 0.34);
+    background:
+        radial-gradient(circle at 92% 8%, rgba(255, 212, 111, 0.16), transparent 34%),
+        radial-gradient(circle at 0% 100%, rgba(143, 240, 188, 0.08), transparent 38%),
+        linear-gradient(135deg, rgba(8, 11, 16, 0.96), rgba(18, 25, 34, 0.92));
+    color: var(--chummer-theme-paper);
+    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.08), 0 18px 44px rgba(0, 0, 0, 0.28);
+}
+
+.dialog-roster-toolbar strong,
+.dialog-roster-line strong {
+    color: #fff1bd;
+}
+
+.dialog-roster-mode {
+    border-color: rgba(143, 240, 188, 0.46);
+    background:
+        linear-gradient(135deg, rgba(143, 240, 188, 0.18), rgba(255, 212, 111, 0.08)),
+        rgba(8, 11, 16, 0.52);
+    color: #d9ffe9;
+}
+
+.dialog-roster-mode[data-roster-hierarchy-mode="keyboard"],
+.dialog-roster-mode[data-roster-hierarchy-mode="mouse"] {
+    border-color: rgba(255, 212, 111, 0.62);
+    background:
+        linear-gradient(135deg, rgba(255, 212, 111, 0.22), rgba(143, 240, 188, 0.12)),
+        rgba(8, 11, 16, 0.62);
+    color: #fff4c8;
+    box-shadow: 0 0 0 3px rgba(255, 212, 111, 0.12);
+}
+
+.dialog-roster-line:focus-visible,
+.dialog-roster-line[data-drop-target="true"] {
+    outline: 2px solid rgba(143, 240, 188, 0.72);
+    outline-offset: 2px;
+    background: rgba(143, 240, 188, 0.12);
+}
+
+.dialog-roster-line.is-drop-target {
+    border-color: rgba(143, 240, 188, 0.52);
+    background:
+        linear-gradient(135deg, rgba(143, 240, 188, 0.16), rgba(255, 212, 111, 0.07)),
+        rgba(255, 255, 255, 0.04);
+    box-shadow: 0 0 0 3px rgba(143, 240, 188, 0.16);
+}
+
+.dialog-roster-line.is-selected,
+.dialog-roster-line.is-drag-source,
+.dialog-roster-line.is-keyboard-source,
+.dialog-roster-line.is-mouse-source {
+    border-color: rgba(255, 212, 111, 0.66);
+    background:
+        linear-gradient(135deg, rgba(255, 212, 111, 0.22), rgba(143, 240, 188, 0.1)),
+        rgba(255, 255, 255, 0.04);
+    box-shadow: 0 0 0 3px rgba(255, 212, 111, 0.13);
+}
+
+.dialog-roster-keyboard-status {
+    border-color: rgba(143, 240, 188, 0.46);
+    background:
+        linear-gradient(135deg, rgba(143, 240, 188, 0.16), rgba(118, 174, 202, 0.1)),
+        rgba(8, 11, 16, 0.62);
+    color: #e2ffed;
+}
+
+.dialog-roster-keyboard-status::before {
+    content: "roster pending organization changes";
+    display: inline-flex;
+    margin-right: 0.45rem;
+    color: #ffd46f;
+    font-weight: 850;
+    letter-spacing: 0.02em;
+}
+
+/* Route-aware status strip chrome: keep route role visible inside the desktop client frame. */
+.classic-status-strip [data-status-route-family] {
+    display: inline-flex;
+    align-items: center;
+    min-height: 1.35rem;
+    padding: 0.12rem 0.5rem;
+    border: 1px solid rgba(255, 212, 111, 0.36);
+    border-radius: 999px;
+    background:
+        linear-gradient(135deg, rgba(255, 212, 111, 0.14), rgba(143, 240, 188, 0.08)),
+        rgba(8, 11, 16, 0.42);
+    color: #fff4c8;
+    font-weight: 750;
+    letter-spacing: 0.02em;
+}
+
+.classic-status-strip [data-status-route-family="chummer_app"] {
+    border-color: rgba(143, 240, 188, 0.48);
+    color: #e2ffed;
+}
+
+.classic-status-strip [data-status-route-family="workbench_compat"] {
+    border-color: rgba(118, 174, 202, 0.48);
+    color: #d8efff;
+}
+
+@media (prefers-contrast: more) {
+    .classic-status-strip [data-status-route-family] {
+        border-color: #fff8e8;
+        background: #06090c;
+        color: #fff8e8;
+    }
 }

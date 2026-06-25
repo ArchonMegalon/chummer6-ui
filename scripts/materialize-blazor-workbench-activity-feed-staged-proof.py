@@ -27,6 +27,8 @@ CHECKS = [
             "data-workbench-activity-feed-action=\"validation-warning\"",
             "data-workbench-activity-feed-action=\"output-event\"",
             "data-workbench-activity-feed-action=\"hosted-status\"",
+            "data-workbench-activity-feed-action=\"help\"",
+            "/help",
             "data-workbench-activity-feed-action=\"support-escape\"",
         ],
     },
@@ -54,8 +56,8 @@ CHECKS = [
         "path": "docs/BLAZOR_WEB_CLIENT_PARITY_GOAL.md",
         "tokens": [
             "staged hosted workbench activity-feed posture",
-            "save event, validation warning, output event, hosted status, and support escape",
-            "not yet claiming live event logging or toast delivery parity",
+            "save event, validation warning, output event, hosted status, help, and support escape",
+            "not yet claiming live event logging, portal help runtime, or toast delivery parity",
         ],
     },
     {
@@ -109,13 +111,13 @@ def main() -> int:
         "status": "failed" if failures else "passed",
         "proof_tier": "source_staged_no_browser_execution",
         "route_lane": "promoted_blazor_workbench",
-        "expected_routes": ["/blazor/workbench", "/status", "/contact"],
+        "expected_routes": ["/blazor/workbench", "/status", "/help", "/contact"],
         "checks": checks,
         "failures": failures,
         "notes": [
-            "This receipt only proves that promoted workbench activity-feed source, style, status, and docs agree.",
-            "It is not a substitute for hosted Playwright execution proof, Docker self-host proof, live event logging proof, or toast delivery proof.",
-            "Do not use this receipt to claim live event logging, toast delivery, or browser execution parity.",
+            "This receipt only proves that Chummer App and proof-compatible workbench activity-feed source, style, status, and docs agree.",
+            "It is not a substitute for hosted Playwright execution proof, Docker self-host proof, live event logging proof, portal help runtime, or toast delivery proof.",
+            "Do not use this receipt to claim live event logging, portal help runtime, toast delivery, or browser execution parity.",
         ],
     }
 

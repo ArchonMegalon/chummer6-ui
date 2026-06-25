@@ -21,12 +21,18 @@ CHECKS = [
         "path": "Chummer.Blazor/Components/Pages/Preview.razor",
         "tokens": [
             "Workbench hosting and privacy posture",
+            "Chummer App hosting and privacy posture",
             "data-workbench-hosting=\"strip\"",
             "Hosting and privacy",
+            "HostedRouteLabel",
+            "/blazor/app",
+            "/blazor/workbench",
             "data-workbench-hosting-card=\"public-edge\"",
             "data-workbench-hosting-card=\"docker-self-host\"",
             "data-workbench-hosting-card=\"analytics-privacy\"",
             "Rybbit is optional and metadata-only",
+            "CHUMMER_ANALYTICS_PROVIDER=none",
+            "self-host defaults stay off unless the operator opts into Rybbit",
             "must not send character, owner, runner file, XML, or dossier content",
         ],
     },
@@ -46,7 +52,18 @@ CHECKS = [
         "tokens": [
             "workbench hosting/privacy posture",
             "blazor-workbench-hosting-privacy-staged-proof-check.sh",
+            "self-host default-off Rybbit boundary",
             "not a hosted or Docker browser execution receipt",
+        ],
+    },
+    {
+        "id": "contract_doc",
+        "path": "docs/BLAZOR_WORKBENCH_HOSTING_PRIVACY_STAGED_PROOF.md",
+        "tokens": [
+            "hosted route posture for clean public `/app`, hosted `/blazor/app`, and proof-compatible `/blazor/workbench`",
+            "self-host default-off analytics copy, including `CHUMMER_ANALYTICS_PROVIDER=none`",
+            "status reporting note `source_alignment_only_default_off_rybbit_not_browser_execution`",
+            "default-off Rybbit boundary for self-hosted deployments",
         ],
     },
     {
@@ -55,7 +72,16 @@ CHECKS = [
         "tokens": [
             "staged hosted workbench hosting/privacy posture",
             "Rybbit is optional and metadata-only",
+            "CHUMMER_ANALYTICS_PROVIDER=none",
             "hosted route, Docker self-host, and analytics privacy",
+        ],
+    },
+    {
+        "id": "docs_index_visibility",
+        "path": "docs/BLAZOR_WEB_CLIENT_DOCS_INDEX.md",
+        "tokens": [
+            "Hosted `chummer.run` may enable the Rybbit adapter for the Blazor web client",
+            "self-hosted Docker defaults keep analytics disabled with `CHUMMER_ANALYTICS_PROVIDER=none`",
         ],
     },
     {
@@ -65,7 +91,7 @@ CHECKS = [
             "WORKBENCH_HOSTING_PRIVACY_STAGED_PROOF",
             "workbench_hosting_privacy_staged_status",
             "workbench_hosting_privacy_staged_source_checks",
-            "source_alignment_only_not_browser_execution",
+            "source_alignment_only_default_off_rybbit_not_browser_execution",
         ],
     },
 ]
@@ -109,11 +135,11 @@ def main() -> int:
         "status": "failed" if failures else "passed",
         "proof_tier": "source_staged_no_browser_execution",
         "route_lane": "promoted_blazor_workbench",
-        "expected_routes": ["/blazor/workbench"],
+        "expected_routes": ["/blazor/app", "/blazor/workbench"],
         "checks": checks,
         "failures": failures,
         "notes": [
-            "This receipt only proves that promoted workbench hosting/privacy source, style, status, and docs agree.",
+            "This receipt only proves that Chummer App and proof-compatible workbench hosting/privacy source, style, status, and docs agree, including the self-host default-off Rybbit boundary.",
             "It is not a substitute for hosted Playwright execution proof or Docker self-host proof.",
             "Do not use this receipt to claim Docker runtime, hosted route availability, Rybbit service health, or analytics delivery.",
         ],

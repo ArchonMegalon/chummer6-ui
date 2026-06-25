@@ -13,4 +13,8 @@ public readonly record struct DialogRosterDropIntent(
     string TargetLine,
     string TargetFolder,
     string ActionId,
-    string SourceFolder = "");
+    string SourceFolder = "",
+    string SourceItem = "",
+    string SourceKind = "",
+    string SourceFolderScope = "",
+    string TargetFolderScope = "");

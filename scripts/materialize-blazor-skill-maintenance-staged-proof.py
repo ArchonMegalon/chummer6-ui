@@ -110,6 +110,38 @@ CHECKS = [
         ],
     },
     {
+        "id": "contract_doc",
+        "path": "docs/BLAZOR_SKILL_MAINTENANCE_STAGED_PROOF.md",
+        "tokens": [
+            "skill maintenance utility posture",
+            "restored `tab-skills`",
+            "skill_specialize",
+            "skill_remove",
+            "skill_group",
+            "skill_maintenance_staged_note=source_alignment_only_not_browser_execution",
+            "not browser execution proof",
+        ],
+    },
+    {
+        "id": "docs_index_contract_link",
+        "path": "docs/BLAZOR_WEB_CLIENT_DOCS_INDEX.md",
+        "tokens": [
+            "docs/BLAZOR_SKILL_MAINTENANCE_STAGED_PROOF.md",
+            "scripts/materialize-blazor-skill-maintenance-staged-proof.py",
+            "docs/examples/blazor-skill-maintenance-staged-proof.receipt.example.json",
+        ],
+    },
+    {
+        "id": "example_receipt_shape",
+        "path": "docs/examples/blazor-skill-maintenance-staged-proof.receipt.example.json",
+        "tokens": [
+            '"contract_name": "chummer6-ui.blazor_skill_maintenance_staged_proof"',
+            '"proof_tier": "source_staged_no_browser_execution"',
+            "skill_specialize",
+            "Do not use this receipt to claim skill maintenance workflow parity on chummer.run.",
+        ],
+    },
+    {
         "id": "status_utility_reporting",
         "path": "scripts/print_blazor_public_edge_proof_status.py",
         "tokens": [

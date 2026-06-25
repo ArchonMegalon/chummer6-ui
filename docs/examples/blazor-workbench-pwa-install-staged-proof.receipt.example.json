@@ -5,21 +5,22 @@
   "proof_tier": "source_staged_no_browser_execution",
   "route_lane": "promoted_blazor_workbench",
   "expected_routes": [
-    "/blazor/workbench"
+    "/blazor/workbench",
+    "/help"
   ],
   "checks": [
     {
       "id": "product_workbench_pwa_install",
       "path": "Chummer.Blazor/Components/Pages/Preview.razor",
       "status": "passed",
-      "required_token_count": 9,
+      "required_token_count": 11,
       "missing_tokens": []
     }
   ],
   "failures": [],
   "notes": [
-    "This receipt only proves that promoted workbench PWA-install source, style, status, and docs agree.",
-    "It is not a substitute for hosted Playwright execution proof, Docker self-host proof, service-worker proof, install-prompt proof, cache-update proof, or browser-permission proof.",
-    "Do not use this receipt to claim service-worker, install prompt, cache update, browser permission, or browser execution parity."
+    "This receipt only proves that Chummer App and proof-compatible workbench PWA-install source, style, status, and docs agree.",
+    "It is not a substitute for hosted Playwright execution proof, Docker self-host proof, service-worker proof, install-prompt proof, cache-update proof, browser-permission proof, or portal help runtime proof.",
+    "Do not use this receipt to claim service-worker, install prompt, cache update, browser permission, portal help runtime, or browser execution parity."
   ]
 }

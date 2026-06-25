@@ -278,7 +278,7 @@ async function openRootWithRetry(page) {
   let lastError = null;
   for (let attempt = 1; attempt <= ROOT_NAV_RETRY_ATTEMPTS; attempt += 1) {
     try {
-      await page.goto(`${UI_URL}/`, { waitUntil: NAVIGATION_WAIT_UNTIL, timeout: ROOT_NAV_TIMEOUT_MS });
+      await page.goto(`${UI_URL}/home`, { waitUntil: NAVIGATION_WAIT_UNTIL, timeout: ROOT_NAV_TIMEOUT_MS });
       return;
     } catch (error) {
       lastError = error;
@@ -291,7 +291,7 @@ async function openRootWithRetry(page) {
     }
   }
 
-  throw lastError || new Error(`Unable to open ${UI_URL}/`);
+  throw lastError || new Error(`Unable to open ${UI_URL}/home`);
 }
 
 async function openPreviewWithRetry(page) {
@@ -478,14 +478,18 @@ async function auditPublicRootSurface(page) {
 
   await expectVisibleSelector(page, '.public-nav', 'public preview navigation');
   await expectVisibleSelector(page, '.hero-actions .primary-link', 'public preview primary CTA');
+  await expectVisibleSelector(page, '[data-home-hero-action="explore-chummer-online"]', 'public preview roster CTA');
+  await expectVisibleSelector(page, '[href="app?command=character_roster"][data-home-hero-action="explore-chummer-online"]', 'public preview roster CTA target');
   await expectVisibleSelector(page, '#boundaries', 'boundary section');
-  await expectVisibleSelector(page, '#proof', 'proof section');
+  await expectVisibleSelector(page, '#trust', 'trust section');
 
   const bodyText = await page.locator('body').innerText();
-  expectTextIncludes(bodyText, "public browser workbench, grounded in the real product", 'public preview root');
-  expectTextIncludes(bodyText, 'Character workflows are live in the browser where parity is actually implemented', 'public preview root');
-  expectTextIncludes(bodyText, 'Launch browser workbench', 'public preview root');
-  expectTextIncludes(bodyText, 'Open the browser workbench', 'public preview root');
+  expectTextIncludes(bodyText, "Chummer Online, the browser client for real runner work.", 'public preview root');
+  expectTextIncludes(bodyText, 'Chummer Online, rules guidance', 'public preview root');
+  expectTextIncludes(bodyText, 'Explore Chummer Online', 'public preview root');
+  expectTextIncludes(bodyText, 'Roster entry:', 'public preview root');
+  expectTextIncludes(bodyText, '/app?command=character_roster', 'public preview root');
+  expectTextIncludes(bodyText, 'Open Chummer Online', 'public preview root');
   await expectPremiumSurfaceQuality(page, 'public preview root', 'main.public-preview');
 }
 
@@ -500,9 +504,9 @@ async function auditPreviewDesktopSurface(page) {
   await expectVisibleSelector(page, '[data-startup-command="new_character"]', 'new character startup command');
 
   const bodyText = await page.locator('body').innerText();
-  expectTextIncludes(bodyText, "shared workbench shell, running in the browser", 'preview desktop shell');
-  expectTextIncludes(bodyText, 'Live browser workbench', 'preview desktop shell');
-  expectTextIncludes(bodyText, 'Workbench route', 'preview desktop shell');
+  expectTextIncludes(bodyText, 'Preview Chummer App workflows without changing the public route.', 'preview desktop shell');
+  expectTextIncludes(bodyText, 'Preview route tools', 'preview desktop shell');
+  expectTextIncludes(bodyText, 'Compatibility route', 'preview desktop shell');
   expectTextIncludes(bodyText, 'Browser-owned here:', 'preview desktop shell');
   expectTextIncludes(bodyText, 'Published self-hosted Docker surface', 'preview desktop shell');
   expectTextIncludes(bodyText, 'New Character', 'preview desktop shell');
@@ -519,9 +523,9 @@ async function auditWorkbenchDesktopSurface(page) {
   await expectVisibleSelector(page, '[data-testid="startup-primary-actions"]', 'workbench startup primary actions');
 
   const bodyText = await page.locator('body').innerText();
-  expectTextIncludes(bodyText, "shared workbench shell, running in the browser", 'workbench desktop shell');
-  expectTextIncludes(bodyText, 'product-shaped browser workbench entrypoint', 'workbench desktop shell');
-  expectTextIncludes(bodyText, 'Open preview routes', 'workbench desktop shell');
+  expectTextIncludes(bodyText, 'Chummer App compatibility shell, running in the browser.', 'workbench desktop shell');
+  expectTextIncludes(bodyText, 'older workbench and proof links alive', 'workbench desktop shell');
+  expectTextIncludes(bodyText, 'Preview tools', 'workbench desktop shell');
   expectTextIncludes(bodyText, 'Start a new runner', 'workbench desktop shell');
   expectTextIncludes(bodyText, 'Import an existing runner', 'workbench desktop shell');
   expectTextIncludes(bodyText, 'Continue PRV in build lab', 'workbench desktop shell');

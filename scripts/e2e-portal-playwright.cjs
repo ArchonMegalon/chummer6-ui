@@ -39,8 +39,8 @@ async function openPortalWorkbench(page) {
 async function openPortalBlazorRoot(page) {
   await page.goto(`${baseUrl}/blazor/`, { waitUntil: navWaitUntil, timeout: navTimeoutMs });
   await page.waitForSelector('[data-testid="startup-workbench"]', { timeout: 15000 });
-  if (!page.url().includes('/blazor/workbench')) {
-    throw new Error(`Expected portal /blazor/ root to resolve to /blazor/workbench, got '${page.url()}'.`);
+  if (!page.url().includes('/blazor/app')) {
+    throw new Error(`Expected portal /blazor/ root to resolve to /blazor/app, got '${page.url()}'.`);
   }
 }
 
@@ -60,7 +60,7 @@ async function auditPortalHome(page) {
   expectTextIncludes(bodyText, 'implicit self-host sign-in', 'portal home');
   expectTextIncludes(bodyText, expectedImplicitOwner, 'portal home');
   expectTextIncludes(bodyText, 'signed owner propagation enabled', 'portal home');
-  await expectVisibleSelector(page, 'a.cta[href="/blazor/workbench"]', 'portal home workbench CTA');
+  await expectVisibleSelector(page, 'a.cta[href="/app?command=character_roster"][data-portal-home-action="explore-chummer-online"]', 'portal home Chummer Online roster CTA');
 }
 
 async function expectVisibleSelector(page, selector, context) {
@@ -184,9 +184,9 @@ async function auditPortalWorkbenchDesktop(page) {
   await expectNoVisibleClipping(page, '[data-testid="startup-workbench"]', 'portal desktop startup workbench');
 
   const bodyText = await page.locator('body').innerText();
-  expectTextIncludes(bodyText, 'shared workbench shell, running in the browser', 'portal desktop preview');
-  expectTextIncludes(bodyText, 'Live browser workbench', 'portal desktop preview');
-  expectTextIncludes(bodyText, 'Workbench route', 'portal desktop preview');
+  expectTextIncludes(bodyText, 'Preview Chummer App workflows without changing the public route.', 'portal desktop preview');
+  expectTextIncludes(bodyText, 'Preview route tools', 'portal desktop preview');
+  expectTextIncludes(bodyText, 'Compatibility route', 'portal desktop preview');
   expectTextIncludes(bodyText, 'implicit owner session posture', 'portal desktop preview');
   expectTextIncludes(bodyText, 'Origin Dossier', 'portal desktop preview');
 }
@@ -197,9 +197,9 @@ async function auditPortalWorkbenchRoute(page) {
   await expectVisibleSelector(page, '[data-testid="startup-workbench"]', 'portal workbench startup shell');
 
   const bodyText = await page.locator('body').innerText();
-  expectTextIncludes(bodyText, 'shared workbench shell, running in the browser', 'portal workbench route');
-  expectTextIncludes(bodyText, 'product-shaped browser workbench entrypoint', 'portal workbench route');
-  expectTextIncludes(bodyText, 'Open preview routes', 'portal workbench route');
+  expectTextIncludes(bodyText, 'Chummer App compatibility shell, running in the browser.', 'portal workbench route');
+  expectTextIncludes(bodyText, 'older workbench and proof links alive', 'portal workbench route');
+  expectTextIncludes(bodyText, 'Preview tools', 'portal workbench route');
   expectTextIncludes(bodyText, 'Start a new runner', 'portal workbench route');
   expectTextIncludes(bodyText, 'Import an existing runner', 'portal workbench route');
   expectTextIncludes(bodyText, 'Open Seeded Build Lab', 'portal workbench route');
@@ -226,12 +226,12 @@ async function auditPortalWorkbenchRoute(page) {
   expectTextIncludes(bodyText, 'Published self-hosted Docker surface', 'portal workbench route');
 }
 
-async function auditPortalBlazorRootResolvesToWorkbench(page) {
+async function auditPortalBlazorRootResolvesToApp(page) {
   await openPortalBlazorRoot(page);
-  await expectVisibleSelector(page, '.browser-preview-boundary', 'portal blazor root workbench boundary');
+  await expectVisibleSelector(page, '.browser-preview-boundary', 'portal blazor root app boundary');
 
   const bodyText = await page.locator('body').innerText();
-  expectTextIncludes(bodyText, 'product-shaped browser workbench entrypoint', 'portal blazor root route');
+  expectTextIncludes(bodyText, 'Explore Chummer Online', 'portal blazor root route');
   expectTextIncludes(bodyText, 'Start a new runner', 'portal blazor root route');
 }
 
@@ -1015,7 +1015,7 @@ async function run() {
     await desktopWorkbenchRoutePage.close();
 
     const desktopBlazorRootPage = await browser.newPage({ viewport: { width: 1440, height: 960 } });
-    await auditPortalBlazorRootResolvesToWorkbench(desktopBlazorRootPage);
+    await auditPortalBlazorRootResolvesToApp(desktopBlazorRootPage);
     await desktopBlazorRootPage.close();
 
     const desktopOriginPage = await browser.newPage({ viewport: { width: 1440, height: 960 } });

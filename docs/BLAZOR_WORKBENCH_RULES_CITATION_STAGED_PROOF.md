@@ -2,9 +2,9 @@
 
 ## Purpose
 
-This staged proof keeps the promoted Blazor workbench source aligned around rule/source citation posture for browser output and table handoff workflows.
+This staged proof keeps the Chummer App and proof-compatible Blazor workbench source aligned around rule/source citation posture for browser output and table handoff workflows.
 
-It covers visible source posture for source packet, citation scope, errata note, table summary, dispute trail, and audit export affordances on `/blazor/workbench`.
+It covers visible source posture for source packet, citation scope, errata note, table summary, dispute trail, audit export, and same-origin help affordances on `/blazor/workbench`.
 
 ## Canonical Command
 
@@ -20,6 +20,6 @@ The command writes:
 
 ## Boundary
 
-This is source-staged alignment only. It does not prove hosted browser execution, Docker self-host execution, citation generation, source lookup, errata resolution, dispute persistence, or audit export generation.
+This is source-staged alignment only. It does not prove hosted browser execution, Docker self-host execution, citation generation, source lookup, errata resolution, dispute persistence, audit export generation, or portal help runtime behavior.
 
 Runtime promotion requires refreshed hosted public-edge execution proof and Docker self-host proof.

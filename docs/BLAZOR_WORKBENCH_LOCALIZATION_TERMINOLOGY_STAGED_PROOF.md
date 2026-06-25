@@ -2,9 +2,9 @@
 
 ## Purpose
 
-This staged proof keeps the promoted Blazor workbench source aligned around localization and table terminology posture for hosted and self-hosted browser use.
+This staged proof keeps the Chummer App and proof-compatible Blazor workbench source aligned around localization and table terminology posture for hosted and self-hosted browser use.
 
-It covers visible source posture for language, units, date format, currency, table terms, and source-title affordances on `/blazor/workbench`.
+It covers visible source posture for language, units, date format, currency, table terms, source-title, and same-origin help affordances on `/blazor/workbench`.
 
 ## Canonical Command
 
@@ -20,6 +20,6 @@ The command writes:
 
 ## Boundary
 
-This is source-staged alignment only. It does not prove hosted browser execution, Docker self-host execution, translation coverage, formatter execution, localized source-title lookup, persisted locale settings, or export localization.
+This is source-staged alignment only. It does not prove hosted browser execution, Docker self-host execution, translation coverage, formatter execution, localized source-title lookup, persisted locale settings, export localization, or portal help runtime behavior.
 
 Runtime promotion requires refreshed hosted public-edge execution proof and Docker self-host proof.

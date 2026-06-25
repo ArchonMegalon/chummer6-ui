@@ -111,6 +111,38 @@ CHECKS = [
         ],
     },
     {
+        "id": "contract_doc",
+        "path": "docs/BLAZOR_COMBAT_SUPPORT_STAGED_PROOF.md",
+        "tokens": [
+            "combat support utility posture",
+            "restored `tab-combat`",
+            "combat_add_armor",
+            "combat_reload",
+            "combat_damage_track",
+            "combat_support_staged_note=source_alignment_only_not_browser_execution",
+            "not browser execution proof",
+        ],
+    },
+    {
+        "id": "docs_index_contract_link",
+        "path": "docs/BLAZOR_WEB_CLIENT_DOCS_INDEX.md",
+        "tokens": [
+            "docs/BLAZOR_COMBAT_SUPPORT_STAGED_PROOF.md",
+            "scripts/materialize-blazor-combat-support-staged-proof.py",
+            "docs/examples/blazor-combat-support-staged-proof.receipt.example.json",
+        ],
+    },
+    {
+        "id": "example_receipt_shape",
+        "path": "docs/examples/blazor-combat-support-staged-proof.receipt.example.json",
+        "tokens": [
+            '"contract_name": "chummer6-ui.blazor_combat_support_staged_proof"',
+            '"proof_tier": "source_staged_no_browser_execution"',
+            "combat_add_armor",
+            "Do not use this receipt to claim combat workflow parity on chummer.run.",
+        ],
+    },
+    {
         "id": "status_utility_reporting",
         "path": "scripts/print_blazor_public_edge_proof_status.py",
         "tokens": [

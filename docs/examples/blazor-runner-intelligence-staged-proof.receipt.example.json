@@ -1,0 +1,21 @@
+{
+  "contract_name": "chummer6-ui.blazor_runner_intelligence_staged_proof",
+  "generated_at": "2026-06-24T00:00:00+00:00",
+  "status": "passed",
+  "proof_tier": "source_staged_no_browser_execution",
+  "route_lane": "promoted_blazor_workbench",
+  "expected_routes": [
+    "/blazor/workbench?workspace=ws-1&tab=tab-stats&control=runner_benchmark",
+    "/blazor/workbench?workspace=ws-1&tab=tab-stats&control=runner_what_if",
+    "/blazor/workbench?workspace=ws-1&tab=tab-stats&control=runner_cohort_privacy"
+  ],
+  "checks": [],
+  "failures": [],
+  "notes": [
+    "This receipt only proves that source, shared calculator, route metadata, and documentation staging agree.",
+    "The shared Increase Initiative sample models final severity after resistance, not raw low-hit probability.",
+    "The Blazor preview renders source-visible risk-percent and percentile-delta markers from RunnerIntelligenceReport output.",
+    "It is not statistical-engine proof or browser execution proof.",
+    "Do not use this receipt to claim Runner Intelligence percentile or what-if calculation parity on chummer.run."
+  ]
+}

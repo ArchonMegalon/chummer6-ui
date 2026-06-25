@@ -11,6 +11,7 @@ python3 - <<'PY' "$repo_root" "$receipt_path"
 from __future__ import annotations
 
 import json
+import os
 import re
 import sys
 from datetime import datetime, timezone
@@ -20,7 +21,12 @@ from typing import Any
 
 repo_root = Path(sys.argv[1])
 receipt_path = Path(sys.argv[2])
-design_root = Path("/docker/chummercomplete/chummer-design/products/chummer")
+design_root = Path(
+    os.environ.get(
+        "CHUMMER_DESIGN_PRODUCT_ROOT",
+        str(repo_root.parent / "chummer-design" / "products" / "chummer"),
+    )
+)
 
 
 def now_iso() -> str:

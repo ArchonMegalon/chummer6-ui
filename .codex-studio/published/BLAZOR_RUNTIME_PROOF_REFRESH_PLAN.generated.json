@@ -1,10 +1,15 @@
 {
   "contract_name": "chummer6-ui.blazor_runtime_proof_refresh_plan",
-  "generated_at": "2026-06-24T20:34:40.550490+00:00",
+  "generated_at": "2026-06-25T04:43:29.466082+00:00",
   "status": "passed",
   "proof_tier": "source_plan_no_browser_execution",
   "scope": "ordered_refresh_plan_for_source_staged_to_runtime_browser_proof",
   "command_sources": [
+    {
+      "path": "scripts/ai/milestones/blazor-runtime-proof-refresh-plan-check.sh",
+      "exists": true,
+      "executable": true
+    },
     {
       "path": "scripts/ai/milestones/blazor-source-staged-proof-set-check.sh",
       "exists": true,
@@ -63,7 +68,32 @@
       "missing_tokens": []
     },
     {
+      "path": "docs/BLAZOR_SOURCE_STAGED_PROOF_RUNBOOK.md",
+      "status": "passed",
+      "missing_tokens": []
+    },
+    {
+      "path": "scripts/verify-blazor-source-staged-proof-release-boundary.py",
+      "status": "passed",
+      "missing_tokens": []
+    },
+    {
+      "path": "docs/examples/blazor-source-staged-release-boundary.receipt.example.json",
+      "status": "passed",
+      "missing_tokens": []
+    },
+    {
       "path": "docs/BLAZOR_WEB_CLIENT_DOCS_INDEX.md",
+      "status": "passed",
+      "missing_tokens": []
+    },
+    {
+      "path": "scripts/print_blazor_public_edge_proof_status.py",
+      "status": "passed",
+      "missing_tokens": []
+    },
+    {
+      "path": "docs/examples/blazor-runtime-proof-refresh-plan.receipt.example.json",
       "status": "passed",
       "missing_tokens": []
     }
@@ -71,7 +101,164 @@
   "failures": [],
   "notes": [
     "This receipt proves only that the proof refresh plan is documented and command sources exist.",
+    "The runtime refresh plan preflight wrapper is source-plan validation only and does not execute runtime proof.",
+    "Source-staged receipts hand off into the runtime refresh preflight but do not become runtime evidence.",
+    "Runtime refresh plan receipts are source-plan only and must stay out of release-readiness aggregation.",
     "It does not execute Docker, hosted route-entry, hosted execution, or browser-lane aggregate proof.",
-    "Runtime proof remains owned by the receipts produced by those commands when explicitly run."
-  ]
+    "Runtime proof remains owned by the receipts produced by those commands when explicitly run.",
+    "Status output uses source_plan_only_with_visibility_blocks_not_browser_execution for the runtime refresh plan summary.",
+    "Career/support status lines are source-plan visibility only and do not prove hosted execution, Docker execution, dialog action execution, persistence, or committed browser mutations.",
+    "Identity/SIN/license status lines are source-plan visibility only and do not prove hosted execution, Docker execution, dialog action execution, legal identity mutation, or persistence.",
+    "Combat support status lines are source-plan visibility only and do not prove hosted execution, Docker execution, combat-state mutation, reload mutation, damage-track mutation, or rules-engine calculations.",
+    "Skill maintenance status lines are source-plan visibility only and do not prove hosted execution, Docker execution, skill-state mutation, specialization persistence, group-edit mutation, or rules-engine calculations.",
+    "Magic/resonance support status lines are source-plan visibility only and do not prove hosted execution, Docker execution, magic/resonance mutation, spirit creation, Matrix program mutation, or rules-engine calculations.",
+    "Workbench hosting/privacy status lines are source-plan visibility only and do not prove Rybbit delivery or browser execution.",
+    "Portal installer handoff status lines are source-plan visibility only and do not prove installer or portal runtime behavior.",
+    "Workbench roster hierarchy status lines are source-plan visibility only and do not prove drag/drop execution, durable persistence, filesystem moves, or browser runtime parity.",
+    "Legacy control coverage status lines are source-plan visibility only and do not prove hosted execution, Docker execution, dialog action execution, persistence, or mutation paths.",
+    "Source-staged release-boundary status lines are source-plan visibility only and do not make source-policy receipts release evidence.",
+    "Docker self-host refresh keeps Rybbit default-off unless the operator explicitly configures provider and site variables.",
+    "The docs index links the runtime refresh materializer and states the plan receipt does not execute Docker, hosted route-entry, hosted execution, or browser-lane aggregate proof."
+  ],
+  "career_support_status_visibility": {
+    "source_only": true,
+    "status_lines": [
+      "career_support_staged_status",
+      "career_support_staged_route_count",
+      "career_support_staged_source_checks",
+      "career_support_staged_note=source_alignment_only_not_browser_execution"
+    ],
+    "boundary": "Does not prove hosted execution, Docker execution, dialog action execution, persistence, or committed browser mutations."
+  },
+  "identity_license_status_visibility": {
+    "source_only": true,
+    "status_lines": [
+      "identity_license_staged_status",
+      "identity_license_staged_route_count",
+      "identity_license_staged_source_checks",
+      "identity_license_staged_note=source_alignment_only_not_browser_execution"
+    ],
+    "boundary": "Does not prove hosted execution, Docker execution, dialog action execution, legal identity mutation, or persistence."
+  },
+  "combat_support_status_visibility": {
+    "source_only": true,
+    "status_lines": [
+      "combat_support_staged_status",
+      "combat_support_staged_route_count",
+      "combat_support_staged_source_checks",
+      "combat_support_staged_note=source_alignment_only_not_browser_execution"
+    ],
+    "boundary": "Does not prove hosted execution, Docker execution, combat-state mutation, reload mutation, damage-track mutation, or rules-engine calculations."
+  },
+  "skill_maintenance_status_visibility": {
+    "source_only": true,
+    "status_lines": [
+      "skill_maintenance_staged_status",
+      "skill_maintenance_staged_route_count",
+      "skill_maintenance_staged_source_checks",
+      "skill_maintenance_staged_note=source_alignment_only_not_browser_execution"
+    ],
+    "boundary": "Does not prove hosted execution, Docker execution, skill-state mutation, specialization persistence, group-edit mutation, or rules-engine calculations."
+  },
+  "magic_support_status_visibility": {
+    "source_only": true,
+    "status_lines": [
+      "magic_support_staged_status",
+      "magic_support_staged_route_count",
+      "magic_support_staged_source_checks",
+      "magic_support_staged_note=source_alignment_only_not_browser_execution"
+    ],
+    "boundary": "Does not prove hosted execution, Docker execution, magic/resonance mutation, spirit creation, Matrix program mutation, or rules-engine calculations."
+  },
+  "gear_maintenance_status_visibility": {
+    "source_only": true,
+    "status_lines": [
+      "gear_maintenance_staged_status",
+      "gear_maintenance_staged_route_count",
+      "gear_maintenance_staged_source_checks",
+      "gear_maintenance_staged_note=source_alignment_only_not_browser_execution"
+    ],
+    "boundary": "Does not prove hosted execution, Docker execution, gear-state mutation, inventory persistence, pricing, availability, or rules-engine calculations."
+  },
+  "runner_intelligence_status_visibility": {
+    "source_only": true,
+    "status_lines": [
+      "runner_intelligence_staged_status",
+      "runner_intelligence_staged_route_count",
+      "runner_intelligence_staged_source_checks",
+      "runner_intelligence_staged_note=source_alignment_only_not_statistical_engine_or_browser_execution"
+    ],
+    "boundary": "Does not prove statistical-engine execution, hosted execution, Docker execution, percentile calculations, what-if spell/drug/gear calculations, hosted cohort aggregation, or rules-engine calculations."
+  },
+  "runner_intelligence_calculation_status_visibility": {
+    "source_only": true,
+    "status_lines": [
+      "runner_intelligence_calculation_status",
+      "runner_intelligence_calculation_tier",
+      "runner_intelligence_calculation_note=shared_calculation_source_only_not_rules_engine_or_browser_execution"
+    ],
+    "boundary": "Does not prove authoritative SR rules-engine validation, hosted execution, Docker execution, hosted cohort aggregation, or browser runtime parity."
+  },
+  "portal_installer_handoff_status_visibility": {
+    "source_only": true,
+    "status_lines": [
+      "portal_installer_handoff_staged_status",
+      "portal_installer_handoff_staged_route_count",
+      "portal_installer_handoff_staged_source_checks",
+      "portal_installer_handoff_staged_note=source_alignment_only_raw_artifacts_and_proof_required_handoffs_not_browser_execution"
+    ],
+    "boundary": "Does not prove installer availability, portal runtime behavior, hosted execution, or Docker self-host execution."
+  },
+  "workbench_hosting_privacy_status_visibility": {
+    "source_only": true,
+    "status_lines": [
+      "workbench_hosting_privacy_staged_status",
+      "workbench_hosting_privacy_staged_route_count",
+      "workbench_hosting_privacy_staged_source_checks",
+      "workbench_hosting_privacy_staged_note=source_alignment_only_default_off_rybbit_not_browser_execution"
+    ],
+    "boundary": "Does not prove Rybbit delivery, hosted route execution, or Docker browser execution."
+  },
+  "docker_self_host_operator_status_visibility": {
+    "source_only": true,
+    "status_lines": [
+      "docker_self_host_operator_staged_status",
+      "docker_self_host_operator_staged_service_count",
+      "docker_self_host_operator_staged_source_checks",
+      "docker_self_host_operator_staged_note=source_alignment_only_default_off_rybbit_not_docker_runtime"
+    ],
+    "boundary": "Does not start Docker or prove the browser workbench renders."
+  },
+  "workbench_roster_hierarchy_status_visibility": {
+    "source_only": true,
+    "status_lines": [
+      "workbench_roster_hierarchy_staged_status",
+      "workbench_roster_hierarchy_staged_route_count",
+      "workbench_roster_hierarchy_staged_source_checks",
+      "workbench_roster_hierarchy_staged_note=source_alignment_only_roster_directories_not_drag_drop_execution_or_filesystem_mutation_proof"
+    ],
+    "boundary": "Does not prove drag/drop execution, durable persistence, filesystem moves, or browser runtime parity."
+  },
+  "legacy_control_coverage_status_visibility": {
+    "source_only": true,
+    "status_lines": [
+      "legacy_control_coverage_staged_status",
+      "legacy_control_coverage_staged_control_count",
+      "legacy_control_coverage_staged_covered_count",
+      "legacy_control_coverage_staged_note=source_alignment_only_not_browser_execution"
+    ],
+    "boundary": "Does not prove hosted execution, Docker execution, dialog action execution, persistence, or mutation paths."
+  },
+  "source_staged_release_boundary_status_visibility": {
+    "source_only": true,
+    "status_lines": [
+      "source_staged_release_boundary_status",
+      "source_staged_release_boundary_scope",
+      "source_staged_release_boundary_forbidden_token_count",
+      "source_staged_release_boundary_release_aggregation_source_count",
+      "source_staged_release_boundary_documentation_source_count",
+      "source_staged_release_boundary_note=source_policy_staged_and_source_plan_receipts_not_release_evidence"
+    ],
+    "boundary": "Does not make staged proof or source-plan receipts release evidence."
+  }
 }

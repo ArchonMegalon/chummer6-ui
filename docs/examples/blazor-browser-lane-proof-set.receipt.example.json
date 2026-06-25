@@ -1,0 +1,75 @@
+{
+  "contract_name": "chummer6-ui.blazor_browser_lane_proof_set",
+  "status": "passed",
+  "generated_at": "2026-06-24T00:00:00+00:00",
+  "required_receipt_count": 7,
+  "passed_receipt_count": 7,
+  "source_check_count": 1,
+  "passed_source_check_count": 1,
+  "scope": "aggregate-browser-lane-proof-set-not-full-desktop-parity",
+  "receipts": [
+    {
+      "id": "source_staged_release_boundary",
+      "status": "passed",
+      "passed": true,
+      "checks": [
+        {
+          "id": "contract_name",
+          "passed": true,
+          "expected": "chummer6-ui.blazor_source_staged_release_boundary",
+          "actual": "chummer6-ui.blazor_source_staged_release_boundary"
+        },
+        {
+          "id": "field:scope",
+          "passed": true,
+          "expected": "staged_and_source_plan_receipts_must_not_enter_release_readiness_aggregation",
+          "actual": "staged_and_source_plan_receipts_must_not_enter_release_readiness_aggregation"
+        }
+      ]
+    },
+    {
+      "id": "hosted_route_entry",
+      "status": "passed",
+      "passed": true,
+      "checks": [
+        {
+          "id": "minimum_length:route_proof_markers",
+          "passed": true,
+          "minimum": 10,
+          "actual": 10
+        }
+      ]
+    },
+    {
+      "id": "analytics_posture",
+      "status": "passed",
+      "passed": true,
+      "checks": [
+        {
+          "id": "field:session_replay_policy",
+          "passed": true,
+          "expected": "disabled",
+          "actual": "disabled"
+        },
+        {
+          "id": "field:autocapture_policy",
+          "passed": true,
+          "expected": "disabled",
+          "actual": "disabled"
+        }
+      ]
+    }
+  ],
+  "source_checks": [
+    {
+      "id": "example_receipt_shape",
+      "status": "passed",
+      "passed": true,
+      "missing_tokens": []
+    }
+  ],
+  "notes": [
+    "The source_staged_release_boundary receipt is required as source-policy evidence only; it does not execute hosted or Docker browser workflows.",
+    "MIG-106 through MIG-109 remain open until refreshed hosted route-entry, hosted execution, Docker self-host, analytics posture, connected-runtime, source-boundary, and aggregate browser-lane receipts prove the browser-client release claim."
+  ]
+}

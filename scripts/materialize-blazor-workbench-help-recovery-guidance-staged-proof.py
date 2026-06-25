@@ -26,6 +26,8 @@ CHECKS = [
             "data-workbench-help-recovery-guidance-action=\"shortcut-hints\"",
             "data-workbench-help-recovery-guidance-action=\"error-explain\"",
             "data-workbench-help-recovery-guidance-action=\"recovery-suggest\"",
+            "data-workbench-help-recovery-guidance-action=\"portal-help\"",
+            "/help",
             "data-workbench-help-recovery-guidance-action=\"docs-link\"",
             "data-workbench-help-recovery-guidance-action=\"support-handoff\"",
         ],
@@ -54,8 +56,8 @@ CHECKS = [
         "path": "docs/BLAZOR_WEB_CLIENT_PARITY_GOAL.md",
         "tokens": [
             "staged hosted workbench help/recovery guidance posture",
-            "context help, shortcut hints, error explanations, recovery suggestions, docs links, and support handoff affordances",
-            "not yet claiming contextual help resolution, keyboard shortcut execution, support-ticket creation, docs search, or error remediation parity",
+            "context help, shortcut hints, error explanations, recovery suggestions, same-origin portal help, docs links, and support handoff affordances",
+            "not yet claiming contextual help resolution, keyboard shortcut execution, portal help runtime, support-ticket creation, docs search, or error remediation parity",
         ],
     },
     {
@@ -96,12 +98,12 @@ def main() -> int:
         "status": "failed" if failures else "passed",
         "proof_tier": "source_staged_no_browser_execution",
         "route_lane": "promoted_blazor_workbench",
-        "expected_routes": ["/blazor/workbench"],
+        "expected_routes": ["/blazor/workbench", "/help"],
         "checks": evaluated_checks,
         "failures": failures,
         "notes": [
-            "This receipt only proves that promoted workbench help and recovery source, style, status, and docs agree.",
-            "It is not a substitute for hosted browser execution, contextual help resolution, keyboard shortcut execution, support-ticket creation, docs search, or error remediation parity.",
+            "This receipt only proves that Chummer App and proof-compatible workbench help and recovery source, style, status, and docs agree, including the same-origin /help handoff action.",
+            "It is not a substitute for hosted browser execution, contextual help resolution, keyboard shortcut execution, portal help runtime, support-ticket creation, docs search, or error remediation parity.",
             "Do not use this receipt to claim complete help, support, or browser execution parity.",
         ],
     }

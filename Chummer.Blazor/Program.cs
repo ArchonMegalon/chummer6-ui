@@ -1,5 +1,6 @@
 using Chummer.Blazor;
 using Chummer.Blazor.Components;
+using Chummer.Blazor.RunnerIntelligence;
 using Chummer.Blazor.Services;
 using Chummer.Desktop.Runtime;
 using Chummer.Presentation;
@@ -32,6 +33,7 @@ builder.Services.AddScoped<ICharacterOverviewPresenter, CharacterOverviewPresent
 builder.Services.AddScoped<IShellPresenter, ShellPresenter>();
 builder.Services.AddScoped<ICommandAvailabilityEvaluator, DefaultCommandAvailabilityEvaluator>();
 builder.Services.AddScoped<IShellSurfaceResolver, ShellSurfaceResolver>();
+builder.Services.AddBlazorRunnerIntelligence();
 
 WebApplication app = builder.Build();
 
@@ -41,6 +43,9 @@ if (pathBase.HasValue)
 }
 
 app.UseAntiforgery();
+
+string appEntryRoute = pathBase.HasValue ? $"{pathBase.Value}/app" : "/app";
+app.MapGet("/", () => Results.Redirect(appEntryRoute));
 
 app.MapGet("/health", () => Results.Ok(new
 {
@@ -111,7 +116,9 @@ static AnalyticsHealth BuildAnalyticsHealth(IConfiguration configuration)
         BaseUrlConfigured: baseUrlConfigured,
         SelfHostDefault: "analytics-disabled",
         HostedPublicEdge: "rybbit-enabled-when-site-id-configured",
-        SensitiveDataPolicy: "route-and-workflow-metadata-only");
+        SensitiveDataPolicy: "route-and-workflow-metadata-only",
+        SessionReplayPolicy: "disabled",
+        AutocapturePolicy: "disabled");
 }
 
 sealed record AnalyticsHealth(
@@ -122,4 +129,6 @@ sealed record AnalyticsHealth(
     bool BaseUrlConfigured,
     string SelfHostDefault,
     string HostedPublicEdge,
-    string SensitiveDataPolicy);
+    string SensitiveDataPolicy,
+    string SessionReplayPolicy,
+    string AutocapturePolicy);

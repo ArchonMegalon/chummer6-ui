@@ -6,6 +6,7 @@
   "route_lane": "promoted_blazor_workbench",
   "expected_routes": [
     "/blazor/workbench",
+    "/help",
     "/contact"
   ],
   "checks": [
@@ -13,14 +14,14 @@
       "id": "product_workbench_dialog_stack",
       "path": "Chummer.Blazor/Components/Pages/Preview.razor",
       "status": "passed",
-      "required_token_count": 8,
+      "required_token_count": 10,
       "missing_tokens": []
     }
   ],
   "failures": [],
   "notes": [
-    "This receipt only proves that promoted workbench dialog-stack source, style, status, and docs agree.",
-    "It is not a substitute for hosted Playwright execution proof, Docker self-host proof, modal execution proof, or committed-action runtime proof.",
-    "Do not use this receipt to claim modal execution, committed-action runtime behavior, or browser execution parity."
+    "This receipt only proves that Chummer App and proof-compatible workbench dialog-stack source, style, status, and docs agree.",
+    "It is not a substitute for hosted Playwright execution proof, Docker self-host proof, modal execution proof, portal help runtime, or committed-action runtime proof.",
+    "Do not use this receipt to claim modal execution, portal help runtime, committed-action runtime behavior, or browser execution parity."
   ]
 }

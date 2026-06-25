@@ -3,8 +3,9 @@
   "generated_at": "2026-06-24T00:00:00+00:00",
   "status": "passed",
   "proof_tier": "source_staged_no_browser_execution",
-  "route_lane": "promoted_blazor_workbench",
+  "route_lane": "chummer_app_and_promoted_blazor_workbench",
   "expected_routes": [
+    "/blazor/app?command=character_roster",
     "/blazor/workbench?command=character_roster"
   ],
   "checks": [
@@ -12,7 +13,7 @@
       "id": "presentation_roster_hierarchy_contract",
       "path": "Chummer.Presentation/Overview/RosterHierarchyState.cs",
       "status": "passed",
-      "required_token_count": 6,
+      "required_token_count": 10,
       "missing_tokens": []
     },
     {
@@ -26,28 +27,49 @@
       "id": "presentation_roster_hierarchy_preference_normalization",
       "path": "Chummer.Presentation/Overview/DesktopPreferenceStateRuntime.cs",
       "status": "passed",
-      "required_token_count": 2,
+      "required_token_count": 3,
       "missing_tokens": []
     },
     {
       "id": "presentation_character_roster_hierarchy",
       "path": "Chummer.Presentation/Overview/DesktopDialogFactory.cs",
       "status": "passed",
-      "required_token_count": 29,
+      "required_token_count": 46,
       "missing_tokens": []
     },
     {
       "id": "presentation_roster_command_dispatch",
       "path": "Chummer.Presentation/Overview/DialogCoordinator.cs",
       "status": "passed",
-      "required_token_count": 23,
+      "required_token_count": 25,
       "missing_tokens": []
     },
     {
       "id": "blazor_dialog_markup",
       "path": "Chummer.Blazor/Components/Shell/DialogHost.razor",
       "status": "passed",
-      "required_token_count": 65,
+      "required_token_count": 77,
+      "missing_tokens": []
+    },
+    {
+      "id": "blazor_home_roster_entry",
+      "path": "Chummer.Blazor/Components/Pages/Home.razor",
+      "status": "passed",
+      "required_token_count": 6,
+      "missing_tokens": []
+    },
+    {
+      "id": "blazor_home_roster_entry_style",
+      "path": "Chummer.Blazor/Components/Pages/Home.razor.css",
+      "status": "passed",
+      "required_token_count": 8,
+      "missing_tokens": []
+    },
+    {
+      "id": "blazor_app_roster_startup_route",
+      "path": "Chummer.Blazor/Components/Pages/Preview.razor",
+      "status": "passed",
+      "required_token_count": 6,
       "missing_tokens": []
     },
     {
@@ -61,21 +83,21 @@
       "id": "blazor_dialog_style",
       "path": "Chummer.Blazor/wwwroot/app.css",
       "status": "passed",
-      "required_token_count": 12,
+      "required_token_count": 25,
       "missing_tokens": []
     },
     {
       "id": "release_truth_docs",
       "path": "docs/WORKBENCH_RELEASE_SIGNOFF.md",
       "status": "passed",
-      "required_token_count": 4,
+      "required_token_count": 11,
       "missing_tokens": []
     },
     {
       "id": "parity_goal_docs",
       "path": "docs/BLAZOR_WEB_CLIENT_PARITY_GOAL.md",
       "status": "passed",
-      "required_token_count": 6,
+      "required_token_count": 16,
       "missing_tokens": []
     },
     {
@@ -89,20 +111,21 @@
       "id": "docs_index_contract_link",
       "path": "docs/BLAZOR_WEB_CLIENT_DOCS_INDEX.md",
       "status": "passed",
-      "required_token_count": 3,
+      "required_token_count": 11,
       "missing_tokens": []
     },
     {
       "id": "contract_doc_index_requirement",
       "path": "docs/BLAZOR_WORKBENCH_ROSTER_HIERARCHY_STAGED_PROOF.md",
       "status": "passed",
-      "required_token_count": 3,
+      "required_token_count": 10,
       "missing_tokens": []
     }
   ],
   "boundary_notes": [
-    "Source-staged roster hierarchy posture only; this is not hosted browser execution proof.",
-    "Does not prove Docker self-host browser execution, drag/drop mutation, durable layout persistence, filesystem moves, folder deletion, watched-file relocation, or external RosterHierarchyState storage.",
+    "Source-staged roster directory hierarchy posture only; this is not hosted browser execution proof.",
+    "RosterHierarchyStateJson is the shared Avalonia/web normalization and validation seam for staged roster hierarchy metadata.",
+    "Does not prove Docker self-host browser execution, drag/drop mutation, durable layout persistence, filesystem moves, directory deletion, watched-file relocation, or external RosterHierarchyState storage.",
     "Runtime promotion requires refreshed hosted public-edge and Docker self-host receipts plus explicit drag/drop persistence implementation."
   ],
   "failures": []

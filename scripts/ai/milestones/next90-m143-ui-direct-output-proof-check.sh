@@ -3,10 +3,11 @@ set -euo pipefail
 
 repo_root="$(cd "$(dirname "${BASH_SOURCE[0]}")/../../.." && pwd)"
 cd "$repo_root"
+workspace_root="$(cd "$repo_root/.." && pwd)"
 
-registry_path="${CHUMMER_NEXT90_REGISTRY_PATH:-/docker/chummercomplete/chummer-design/products/chummer/NEXT_90_DAY_PRODUCT_ADVANCE_REGISTRY.yaml}"
-queue_path="${CHUMMER_NEXT90_QUEUE_PATH:-/docker/fleet/.codex-studio/published/NEXT_90_DAY_QUEUE_STAGING.generated.yaml}"
-design_queue_path="${CHUMMER_NEXT90_DESIGN_QUEUE_PATH:-/docker/chummercomplete/chummer-design/products/chummer/NEXT_90_DAY_QUEUE_STAGING.generated.yaml}"
+registry_path="${CHUMMER_NEXT90_REGISTRY_PATH:-$workspace_root/chummer-design/products/chummer/NEXT_90_DAY_PRODUCT_ADVANCE_REGISTRY.yaml}"
+queue_path="${CHUMMER_NEXT90_QUEUE_PATH:-$workspace_root/fleet/.codex-studio/published/NEXT_90_DAY_QUEUE_STAGING.generated.yaml}"
+design_queue_path="${CHUMMER_NEXT90_DESIGN_QUEUE_PATH:-$workspace_root/chummer-design/products/chummer/NEXT_90_DAY_QUEUE_STAGING.generated.yaml}"
 receipt_path="${CHUMMER_NEXT90_M143_UI_RECEIPT_PATH:-$repo_root/.codex-studio/published/NEXT90_M143_UI_DIRECT_OUTPUT_PROOF.generated.json}"
 
 mkdir -p "$(dirname "$receipt_path")"

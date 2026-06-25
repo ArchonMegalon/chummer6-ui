@@ -28,6 +28,8 @@ CHECKS = [
             "data-workbench-pwa-install-action=\"permissions\"",
             "data-workbench-pwa-install-action=\"release_channel\"",
             "data-workbench-pwa-install-action=\"reset_cache\"",
+            "data-workbench-pwa-install-action=\"help\"",
+            "/help",
         ],
     },
     {
@@ -54,8 +56,8 @@ CHECKS = [
         "path": "docs/BLAZOR_WEB_CLIENT_PARITY_GOAL.md",
         "tokens": [
             "staged hosted workbench PWA-install posture",
-            "install prompt, offline cache, update available, browser permissions, release channel, and reset cache",
-            "not yet claiming service-worker, install prompt, cache update, or browser permission parity",
+            "install prompt, offline cache, update available, browser permissions, release channel, reset cache, and help",
+            "not yet claiming service-worker, install prompt, cache update, browser permission, or portal help runtime parity",
         ],
     },
     {
@@ -96,13 +98,13 @@ def main() -> int:
         "status": "failed" if failures else "passed",
         "proof_tier": "source_staged_no_browser_execution",
         "route_lane": "promoted_blazor_workbench",
-        "expected_routes": ["/blazor/workbench"],
+        "expected_routes": ["/blazor/workbench", "/help"],
         "checks": evaluated_checks,
         "failures": failures,
         "notes": [
-            "This receipt only proves that promoted workbench PWA-install source, style, status, and docs agree.",
-            "It is not a substitute for hosted Playwright execution proof, Docker self-host proof, service-worker proof, install-prompt proof, cache-update proof, or browser-permission proof.",
-            "Do not use this receipt to claim service-worker, install prompt, cache update, browser permission, or browser execution parity.",
+            "This receipt only proves that Chummer App and proof-compatible workbench PWA-install source, style, status, and docs agree.",
+            "It is not a substitute for hosted Playwright execution proof, Docker self-host proof, service-worker proof, install-prompt proof, cache-update proof, browser-permission proof, or portal help runtime proof.",
+            "Do not use this receipt to claim service-worker, install prompt, cache update, browser permission, portal help runtime, or browser execution parity.",
         ],
     }
 

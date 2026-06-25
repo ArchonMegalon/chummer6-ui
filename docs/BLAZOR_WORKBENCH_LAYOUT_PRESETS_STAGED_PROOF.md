@@ -2,16 +2,16 @@
 
 ## Purpose
 
-This source-staged proof keeps browser-safe layout mode affordances visible on the promoted Blazor workbench route.
+This source-staged proof keeps browser-safe layout mode affordances visible on the user-facing Chummer App route and proof-compatible Blazor workbench route.
 
-The browser client should expose dense sheet, split review, output, mobile-safe, and focus-pane modes as intentional client states rather than accidental responsive behavior.
+The browser client should expose dense sheet, split review, output, mobile-safe, focus-pane, and help modes as intentional client states rather than accidental responsive behavior.
 
 ## Source-Staged Scope
 
 The staged layout-presets lane covers:
 
-- a layout-presets rail on the promoted workbench route
-- dense sheet, split review, output, mobile safe, and focus pane shortcuts
+- a layout-presets rail on the user-facing Chummer App route and proof-compatible workbench route
+- dense sheet, split review, output, mobile safe, focus pane, and help shortcuts
 - scoped responsive styling for desktop and mobile browser use
 
 ## Source Check
@@ -28,6 +28,6 @@ Expected receipt:
 
 ## Boundary
 
-This is source alignment only. It proves that promoted workbench layout-presets source, style, status reporting, and docs agree.
+This is source alignment only. It proves that Chummer App and proof-compatible workbench layout-presets source, style, status reporting, and docs agree.
 
-It is not hosted browser execution proof, Docker self-host proof, pane-resizing proof, persisted-layout proof, route-click proof, screenshot proof, or desktop-equivalent workflow parity.
+It is not hosted browser execution proof, Docker self-host proof, pane-resizing proof, portal-help-runtime proof, persisted-layout proof, route-click proof, screenshot proof, or desktop-equivalent workflow parity.

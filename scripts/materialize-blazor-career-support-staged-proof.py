@@ -116,6 +116,26 @@ CHECKS = [
         ],
     },
     {
+        "id": "contract_doc",
+        "path": "docs/BLAZOR_CAREER_SUPPORT_STAGED_PROOF.md",
+        "tokens": [
+            "career/support workflow family",
+            "restored `tab-calendar` section continuity",
+            "runner notes editing",
+            "career_support_staged_note=source_alignment_only_not_browser_execution",
+            "not browser execution proof",
+        ],
+    },
+    {
+        "id": "docs_index_contract_link",
+        "path": "docs/BLAZOR_WEB_CLIENT_DOCS_INDEX.md",
+        "tokens": [
+            "docs/BLAZOR_CAREER_SUPPORT_STAGED_PROOF.md",
+            "scripts/materialize-blazor-career-support-staged-proof.py",
+            "docs/examples/blazor-career-support-staged-proof.receipt.example.json",
+        ],
+    },
+    {
         "id": "status_utility_reporting",
         "path": "scripts/print_blazor_public_edge_proof_status.py",
         "tokens": [

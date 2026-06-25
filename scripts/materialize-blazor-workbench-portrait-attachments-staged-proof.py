@@ -28,6 +28,8 @@ CHECKS = [
             "data-workbench-portrait-attachments-action=\"attachments\"",
             "data-workbench-portrait-attachments-action=\"import_media\"",
             "data-workbench-portrait-attachments-action=\"cleanup\"",
+            "data-workbench-portrait-attachments-action=\"help\"",
+            "/help",
         ],
     },
     {
@@ -54,8 +56,8 @@ CHECKS = [
         "path": "docs/BLAZOR_WEB_CLIENT_PARITY_GOAL.md",
         "tokens": [
             "staged hosted workbench portrait-attachments posture",
-            "portrait, token art, notes, attachments, import media, and cleanup",
-            "not yet claiming file upload, storage persistence, thumbnail generation, or attachment cleanup parity",
+            "portrait, token art, notes, attachments, import media, cleanup, and help",
+            "not yet claiming file upload, storage persistence, thumbnail generation, attachment cleanup, or portal help runtime parity",
         ],
     },
     {
@@ -96,13 +98,13 @@ def main() -> int:
         "status": "failed" if failures else "passed",
         "proof_tier": "source_staged_no_browser_execution",
         "route_lane": "promoted_blazor_workbench",
-        "expected_routes": ["/blazor/workbench"],
+        "expected_routes": ["/blazor/workbench", "/help"],
         "checks": evaluated_checks,
         "failures": failures,
         "notes": [
-            "This receipt only proves that promoted workbench portrait-attachments source, style, status, and docs agree.",
-            "It is not a substitute for hosted Playwright execution proof, Docker self-host proof, file-upload proof, storage-persistence proof, thumbnail-generation proof, or attachment-cleanup proof.",
-            "Do not use this receipt to claim file upload, storage persistence, thumbnail generation, attachment cleanup, or browser execution parity.",
+            "This receipt only proves that Chummer App and proof-compatible workbench portrait-attachments source, style, status, and docs agree.",
+            "It is not a substitute for hosted Playwright execution proof, Docker self-host proof, file-upload proof, storage-persistence proof, thumbnail-generation proof, attachment-cleanup proof, or portal help runtime proof.",
+            "Do not use this receipt to claim file upload, storage persistence, thumbnail generation, attachment cleanup, portal help runtime, or browser execution parity.",
         ],
     }
 

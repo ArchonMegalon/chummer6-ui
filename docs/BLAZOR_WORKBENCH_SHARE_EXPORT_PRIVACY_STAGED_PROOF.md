@@ -2,9 +2,9 @@
 
 ## Purpose
 
-This staged proof keeps the promoted Blazor workbench source aligned around private share/export handoff posture for browser output workflows.
+This staged proof keeps the Chummer App and proof-compatible Blazor workbench source aligned around private share/export handoff posture for browser output workflows.
 
-It covers visible source posture for redaction profiles, share-link scope, expiry, revocation, audit history, and local-only export affordances on `/blazor/workbench`.
+It covers visible source posture for redaction profiles, share-link scope, expiry, revocation, audit history, local-only export, and same-origin help affordances on `/blazor/workbench`.
 
 ## Canonical Command
 
@@ -20,6 +20,6 @@ The command writes:
 
 ## Boundary
 
-This is source-staged alignment only. It does not prove hosted browser execution, Docker self-host execution, share-token issuance, redaction execution, revocation persistence, audit storage, or export-policy enforcement.
+This is source-staged alignment only. It does not prove hosted browser execution, Docker self-host execution, share-token issuance, redaction execution, revocation persistence, audit storage, export-policy enforcement, or portal help runtime behavior.
 
 Runtime promotion requires refreshed hosted public-edge execution proof and Docker self-host proof.

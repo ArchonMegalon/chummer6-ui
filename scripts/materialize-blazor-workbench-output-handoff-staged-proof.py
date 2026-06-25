@@ -27,6 +27,8 @@ CHECKS = [
             "data-workbench-output-handoff-action=\"html_summary\"",
             "data-workbench-output-handoff-action=\"share_link\"",
             "data-workbench-output-handoff-action=\"audit_queue\"",
+            "data-workbench-output-handoff-action=\"help\"",
+            "/help",
             "data-workbench-output-handoff-action=\"download_bundle\"",
         ],
     },
@@ -54,8 +56,8 @@ CHECKS = [
         "path": "docs/BLAZOR_WEB_CLIENT_PARITY_GOAL.md",
         "tokens": [
             "staged hosted workbench output-handoff posture",
-            "PDF packet, print sheet, HTML summary, share link, audit queue, and download bundle",
-            "not yet claiming print, PDF, share, or download execution parity",
+            "PDF packet, print sheet, HTML summary, share link, audit queue, help, and download bundle",
+            "not yet claiming print, PDF, share, portal help runtime, or download execution parity",
         ],
     },
     {
@@ -96,13 +98,13 @@ def main() -> int:
         "status": "failed" if failures else "passed",
         "proof_tier": "source_staged_no_browser_execution",
         "route_lane": "promoted_blazor_workbench",
-        "expected_routes": ["/blazor/workbench"],
+        "expected_routes": ["/blazor/workbench", "/help"],
         "checks": evaluated_checks,
         "failures": failures,
         "notes": [
-            "This receipt only proves that promoted workbench output-handoff source, style, status, and docs agree.",
-            "It is not a substitute for hosted Playwright execution proof, Docker self-host proof, print execution proof, PDF generation proof, share-link proof, or download proof.",
-            "Do not use this receipt to claim print, PDF, share, download, or browser execution parity.",
+            "This receipt only proves that Chummer App and proof-compatible workbench output-handoff source, style, status, and docs agree.",
+            "It is not a substitute for hosted Playwright execution proof, Docker self-host proof, print execution proof, PDF generation proof, share-link proof, portal help runtime, or download proof.",
+            "Do not use this receipt to claim print, PDF, share, portal help runtime, download, or browser execution parity.",
         ],
     }
 

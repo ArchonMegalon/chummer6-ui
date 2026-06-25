@@ -3,14 +3,17 @@ set -euo pipefail
 
 repo_root="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
 
-python3 - <<'PY'
+python3 - "$repo_root" <<'PY'
 from __future__ import annotations
 
 import datetime as dt
 import json
+import sys
 from pathlib import Path
 
-repo = Path("/docker/chummercomplete/chummer-presentation")
+repo = Path(sys.argv[1])
+workspace_root = repo.parent
+run_services_root = workspace_root / "chummer.run-services"
 published = repo / ".codex-studio" / "published"
 published.mkdir(parents=True, exist_ok=True)
 
@@ -19,6 +22,7 @@ HOSTED_EXECUTION_ALLOWED = {"not_run", "pass", "passed", "ready"}
 HOSTED_EXECUTION_PROOF_TIER = "hosted_promoted_route_execution"
 HOSTED_EXECUTION_ROUTE_LANE = "promoted_blazor_workbench"
 HOSTED_EXECUTION_ROUTE_BASE = "/blazor/workbench"
+PUBLIC_CHUMMER_APP_ROUTE = "/app"
 EXPANDED_ROUTE_PROOF_MARKERS = {
     "public_startup_workbench_command_routes",
     "public_advanced_action_routes",
@@ -147,11 +151,12 @@ public_targets.update(
             "blazor_public_edge_execution_proof_tier": HOSTED_EXECUTION_PROOF_TIER,
             "blazor_public_edge_execution_route_lane": HOSTED_EXECUTION_ROUTE_LANE,
             "blazor_public_edge_execution_promoted_route_base": HOSTED_EXECUTION_ROUTE_BASE,
+            "blazor_public_chummer_app_route": PUBLIC_CHUMMER_APP_ROUTE,
             "blazor_public_edge_execution_required_workflow_family_ids": HOSTED_EXECUTION_REQUIRED_FAMILY_IDS,
             "blazor_public_edge_workbench_proof": str(published / "BLAZOR_PUBLIC_EDGE_WORKBENCH_PROOF.generated.json"),
-            "public_ui_frame_integrity": "/docker/chummercomplete/chummer.run-services/tests/public/ui-frame-integrity.spec.ts",
-            "live_public_web_recrawl": "/docker/chummercomplete/chummer.run-services/.codex-studio/published/LIVE_PUBLIC_WEB_RECRAWL.generated.json",
-            "public_shell_clickability": "/docker/chummercomplete/chummer.run-services/.codex-studio/published/PUBLIC_SHELL_CLICKABILITY_GATE.generated.json",
+            "public_ui_frame_integrity": str(run_services_root / "tests" / "public" / "ui-frame-integrity.spec.ts"),
+            "live_public_web_recrawl": str(run_services_root / ".codex-studio" / "published" / "LIVE_PUBLIC_WEB_RECRAWL.generated.json"),
+            "public_shell_clickability": str(run_services_root / ".codex-studio" / "published" / "PUBLIC_SHELL_CLICKABILITY_GATE.generated.json"),
         },
     }
 )

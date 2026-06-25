@@ -111,6 +111,39 @@ CHECKS = [
         ],
     },
     {
+        "id": "contract_doc",
+        "path": "docs/BLAZOR_MAGIC_SUPPORT_STAGED_PROOF.md",
+        "tokens": [
+            "magic/resonance support utility posture",
+            "restored adept, magician, critter, and technomancer lanes",
+            "adept_power_add",
+            "spirit_add",
+            "critter_power_add",
+            "matrix_program_add",
+            "magic_support_staged_note=source_alignment_only_not_browser_execution",
+            "not browser execution proof",
+        ],
+    },
+    {
+        "id": "docs_index_contract_link",
+        "path": "docs/BLAZOR_WEB_CLIENT_DOCS_INDEX.md",
+        "tokens": [
+            "docs/BLAZOR_MAGIC_SUPPORT_STAGED_PROOF.md",
+            "scripts/materialize-blazor-magic-support-staged-proof.py",
+            "docs/examples/blazor-magic-support-staged-proof.receipt.example.json",
+        ],
+    },
+    {
+        "id": "example_receipt_shape",
+        "path": "docs/examples/blazor-magic-support-staged-proof.receipt.example.json",
+        "tokens": [
+            '"contract_name": "chummer6-ui.blazor_magic_support_staged_proof"',
+            '"proof_tier": "source_staged_no_browser_execution"',
+            "adept_power_add",
+            "Do not use this receipt to claim magic/resonance workflow parity on chummer.run.",
+        ],
+    },
+    {
         "id": "status_utility_reporting",
         "path": "scripts/print_blazor_public_edge_proof_status.py",
         "tokens": [

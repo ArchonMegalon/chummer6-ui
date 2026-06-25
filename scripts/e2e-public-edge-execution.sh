@@ -3,6 +3,7 @@ set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 REPO_ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"
+WORKSPACE_ROOT="$(cd "$REPO_ROOT/.." && pwd)"
 
 export CHUMMER_PORTAL_BASE_URL="${CHUMMER_PORTAL_BASE_URL:-https://chummer.run}"
 export CHUMMER_PUBLIC_EDGE_EXECUTION_PROOF_PATH="${CHUMMER_PUBLIC_EDGE_EXECUTION_PROOF_PATH:-$REPO_ROOT/.codex-studio/published/BLAZOR_PUBLIC_EDGE_EXECUTION_PROOF.generated.json}"
@@ -15,8 +16,10 @@ detect_local_playwright() {
   local candidate
   for candidate in \
     "${NODE_PATH:-}" \
-    "/docker/chummercomplete/chummer.run-services/node_modules" \
-    "/docker/chummercomplete/node_modules" \
+    "${CHUMMER_PLAYWRIGHT_NODE_PATH:-}" \
+    "${CHUMMER_PLAYWRIGHT_ROOT:+$CHUMMER_PLAYWRIGHT_ROOT/node_modules}" \
+    "$WORKSPACE_ROOT/chummer.run-services/node_modules" \
+    "$WORKSPACE_ROOT/node_modules" \
     "$SCRIPT_DIR/node_modules"
   do
     if [ -z "$candidate" ]; then

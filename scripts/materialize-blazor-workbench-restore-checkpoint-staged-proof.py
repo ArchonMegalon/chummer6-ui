@@ -28,6 +28,8 @@ CHECKS = [
             "data-workbench-restore-checkpoint-action=\"restore-preview\"",
             "data-workbench-restore-checkpoint-action=\"rollback\"",
             "data-workbench-restore-checkpoint-action=\"retention\"",
+            "data-workbench-restore-checkpoint-action=\"help\"",
+            "href=\"/help\"",
         ],
     },
     {
@@ -54,8 +56,8 @@ CHECKS = [
         "path": "docs/BLAZOR_WEB_CLIENT_PARITY_GOAL.md",
         "tokens": [
             "staged hosted workbench restore/checkpoint posture",
-            "autosave, named checkpoint, backup, preview, rollback, and retention",
-            "not yet claiming snapshot persistence, restore execution, backup generation, rollback mutation, or retention policy parity",
+            "autosave, named checkpoint, backup, preview, rollback, retention, and help",
+            "not yet claiming snapshot persistence, restore execution, backup generation, rollback mutation, retention policy parity, or portal help runtime parity",
         ],
     },
     {
@@ -96,13 +98,13 @@ def main() -> int:
         "status": "failed" if failures else "passed",
         "proof_tier": "source_staged_no_browser_execution",
         "route_lane": "promoted_blazor_workbench",
-        "expected_routes": ["/blazor/workbench"],
+        "expected_routes": ["/blazor/workbench", "/help"],
         "checks": evaluated_checks,
         "failures": failures,
         "notes": [
-            "This receipt only proves that promoted workbench restore/checkpoint source, style, status, and docs agree.",
-            "It is not a substitute for hosted browser execution, snapshot persistence, restore execution, backup generation, rollback mutation, or retention policy parity.",
-            "Do not use this receipt to claim complete recovery, persistence, or browser execution parity.",
+            "This receipt only proves that Chummer App and proof-compatible workbench restore/checkpoint source, style, status, and docs agree.",
+            "It is not a substitute for hosted browser execution, snapshot persistence, restore execution, backup generation, rollback mutation, retention policy parity, or portal help runtime proof.",
+            "Do not use this receipt to claim complete recovery, persistence, portal help runtime behavior, or browser execution parity.",
         ],
     }
 

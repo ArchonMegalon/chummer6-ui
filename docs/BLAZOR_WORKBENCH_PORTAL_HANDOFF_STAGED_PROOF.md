@@ -2,9 +2,9 @@
 
 ## Purpose
 
-This source-staged proof keeps the promoted Blazor workbench connected to portal-owned downloads, status, support, and account work routes.
+This source-staged proof keeps Chummer App and proof-compatible Blazor workbench connected to portal-owned downloads, status, support, help, and account work routes.
 
-The browser client should behave like another desktop client in the web: a user can continue the core workbench task, then move to install/update/support/account surfaces through the same product origin when needed.
+The browser client should behave like another desktop client in the web: a user can continue the core Chummer App/workbench task, then move to install/update/support/account surfaces through the same product origin when needed.
 
 ## Expected Routes
 
@@ -12,20 +12,24 @@ The browser client should behave like another desktop client in the web: a user 
 /downloads/
 /status
 /contact
+/help
 /account/work
+/blazor/home
+/blazor/app
 /blazor/workbench
 ```
 
 ## Required UX Contract
 
-The promoted workbench must expose visible same-origin handoff affordances for:
+Chummer App and proof-compatible workbench must expose visible same-origin handoff affordances for:
 
 - desktop installer/download handoff
 - current release/status truth
 - product support
+- portal help and recovery guidance
 - account/work continuation when authenticated owner context is required
 
-These cards do not prove account, support, installer, or portal runtime behavior. They keep the Blazor workbench product-shaped while runtime evidence remains owned by the local portal and hosted proof receipts.
+These cards do not prove account, support, installer, or portal runtime behavior. They keep Chummer App product-shaped while runtime evidence remains owned by the local portal and hosted proof receipts.
 
 ## Source Check
 
@@ -41,4 +45,4 @@ Expected receipt:
 
 ## Boundary
 
-This is source alignment only. It is not a hosted or Docker browser execution receipt, and it must not be used as authentication, support-submission, installer, or account-runtime proof.
+This is source alignment only. It is not a hosted or Docker browser execution receipt, and it must not be used as authentication, support-submission, help-runtime, installer, or account-runtime proof.

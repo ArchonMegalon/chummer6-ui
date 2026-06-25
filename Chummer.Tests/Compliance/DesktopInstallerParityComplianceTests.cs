@@ -65,6 +65,7 @@ public sealed class DesktopInstallerParityComplianceTests
         StringAssert.Contains(installerProjectText, "<_Parameter1>ChummerInstallerPayloadUrl</_Parameter1>");
         StringAssert.Contains(installerScriptText, "-p:ChummerInstallerIncludeSidecarPayload=false");
         StringAssert.Contains(installerScriptText, "CHUMMER_WINDOWS_INSTALLER_MODE:-bootstrap");
+        StringAssert.Contains(installerScriptText, "-p:EnableCompressionInSingleFile=false");
         StringAssert.Contains(installerScriptText, "-p:ChummerInstallerPayloadUrl=\"$bootstrap_payload_url\"");
         StringAssert.Contains(installerScriptText, "-p:ChummerInstallerPayloadSha256=\"$bootstrap_payload_sha256\"");
         StringAssert.Contains(installerScriptText, "-p:ChummerInstallerPayloadSizeBytes=\"$bootstrap_payload_size_bytes\"");
@@ -240,17 +241,23 @@ public sealed class DesktopInstallerParityComplianceTests
 
         StringAssert.Contains(gateText, "APPENDED_PAYLOAD_MAGIC = b\"CHUMMER6PAYLOAD1\"");
         StringAssert.Contains(gateText, "no appended payload and no bootstrap sidecar");
+        StringAssert.Contains(gateText, "--require-embedded-bootstrap-metadata");
+        StringAssert.Contains(gateText, "bootstrap installer does not contain embedded");
         StringAssert.Contains(gateText, "payload zip is missing launch executable");
         StringAssert.Contains(installerScriptText, "verify_windows_installer_payload_gate \"$DIST_DIR/$installer_name\"");
         StringAssert.Contains(installerScriptText, "--heads-json-base64 \"$heads_json_base64\"");
         StringAssert.Contains(installerScriptText, "--expected-entry \"$primary_relative_root/$LAUNCH_TARGET\"");
+        StringAssert.Contains(installerScriptText, "--require-embedded-bootstrap-metadata");
         StringAssert.Contains(publishBundleText, "verify_windows_installer_payload_gate");
+        StringAssert.Contains(publishBundleText, "--require-embedded-bootstrap-metadata");
         StringAssert.Contains(publishBundleText, "chummer-*-win-*-payload.zip)");
         StringAssert.Contains(publishBundleText, "file_path.name.endswith(\"-payload.zip\")");
         StringAssert.Contains(publishHttpText, "verify-windows-installer-payloads.py");
         StringAssert.Contains(publishHttpText, "--manifest \"$CANONICAL_MANIFEST_PATH\"");
+        StringAssert.Contains(publishHttpText, "--require-embedded-bootstrap-metadata");
         StringAssert.Contains(publishS3Text, "verify-windows-installer-payloads.py");
         StringAssert.Contains(publishS3Text, "--manifest \"$MANIFEST_SOURCE\"");
+        StringAssert.Contains(publishS3Text, "--require-embedded-bootstrap-metadata");
     }
 
     [TestMethod]

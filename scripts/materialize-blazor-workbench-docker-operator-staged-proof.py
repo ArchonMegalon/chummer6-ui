@@ -28,6 +28,8 @@ CHECKS = [
             "data-workbench-docker-operator-action=\"backup\"",
             "data-workbench-docker-operator-action=\"image_update\"",
             "data-workbench-docker-operator-action=\"support_bundle\"",
+            "data-workbench-docker-operator-action=\"help\"",
+            "/help",
         ],
     },
     {
@@ -54,8 +56,8 @@ CHECKS = [
         "path": "docs/BLAZOR_WEB_CLIENT_PARITY_GOAL.md",
         "tokens": [
             "staged hosted workbench Docker-operator posture",
-            "container health, env check, volume mounts, backup, image update, and support bundle",
-            "not yet claiming live container inspection, env validation, backup, image update, or log-bundle parity",
+            "container health, env check, volume mounts, backup, image update, support bundle, and help",
+            "not yet claiming live container inspection, env validation, backup, image update, log-bundle, or portal help runtime parity",
         ],
     },
     {
@@ -96,13 +98,13 @@ def main() -> int:
         "status": "failed" if failures else "passed",
         "proof_tier": "source_staged_no_browser_execution",
         "route_lane": "promoted_blazor_workbench",
-        "expected_routes": ["/blazor/workbench"],
+        "expected_routes": ["/blazor/workbench", "/help"],
         "checks": evaluated_checks,
         "failures": failures,
         "notes": [
-            "This receipt only proves that promoted workbench Docker-operator source, style, status, and docs agree.",
-            "It is not a substitute for hosted Playwright execution proof, Docker self-host proof, live container-inspection proof, env-validation proof, backup proof, image-update proof, or log-bundle proof.",
-            "Do not use this receipt to claim live container inspection, env validation, backup, image update, log bundle, or browser execution parity.",
+            "This receipt only proves that Chummer App and proof-compatible workbench Docker-operator source, style, status, and docs agree.",
+            "It is not a substitute for hosted Playwright execution proof, Docker self-host proof, live container-inspection proof, env-validation proof, backup proof, image-update proof, log-bundle proof, or portal help runtime proof.",
+            "Do not use this receipt to claim live container inspection, env validation, backup, image update, log bundle, portal help runtime, or browser execution parity.",
         ],
     }
 

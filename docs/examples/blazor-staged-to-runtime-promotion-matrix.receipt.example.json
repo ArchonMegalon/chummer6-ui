@@ -5,6 +5,7 @@
   "proof_tier": "source_plan_no_browser_execution",
   "route_lane": "promoted_blazor_workbench",
   "promotion_family_count": 9,
+  "planned_promotion_family_count": 1,
   "required_runtime_receipts": [
     "BLAZOR_SELF_HOST_WORKBENCH_PROOF.generated.json",
     "BLAZOR_PUBLIC_EDGE_EXECUTION_PROOF.generated.json",
@@ -37,10 +38,39 @@
       "family_id_present_in_docs": true
     }
   ],
+  "planned_promotion_rows": [
+    {
+      "id": "runner_intelligence",
+      "source_receipts": [
+        "BLAZOR_RUNNER_INTELLIGENCE_STAGED_PROOF.generated.json",
+        "BLAZOR_RUNNER_INTELLIGENCE_CALCULATION_PROOF.generated.json"
+      ],
+      "planned_hosted_family_ids": [
+        "promoted_runner_benchmark_execution",
+        "promoted_runner_what_if_execution",
+        "promoted_runner_cohort_privacy_execution"
+      ],
+      "required_runtime_receipts": [
+        "BLAZOR_SELF_HOST_WORKBENCH_PROOF.generated.json",
+        "BLAZOR_PUBLIC_EDGE_EXECUTION_PROOF.generated.json",
+        "BLAZOR_BROWSER_LANE_PROOF_SET.generated.json"
+      ],
+      "hosted_runner_family_ids_present": false,
+      "promotion_state": "planned_not_runtime_promoted"
+    }
+  ],
   "failures": [],
   "notes": [
     "This matrix is source-level planning only.",
     "It does not execute Docker self-host proof or hosted browser execution proof.",
-    "A family is not promoted until the runtime receipts are refreshed and passing."
-  ]
+    "A family is not promoted until the runtime receipts are refreshed and passing.",
+    "Planned promotion rows name runtime work that is intentionally not added to required hosted execution families yet.",
+    "Portal installer handoff is a non-promoting portal-boundary guard for downloads, status, contact, help, and installer handoff; it does not promote installer availability without refreshed portal runtime evidence.",
+    "The docs index links the staged-to-runtime materializer and keeps non-promoting portal-boundary guards out of workbench workflow promotion."
+  ],
+  "non_promoting_boundary_tokens_present": true,
+  "non_promoting_boundary_receipts": [
+    "BLAZOR_PORTAL_INSTALLER_HANDOFF_STAGED_PROOF.generated.json"
+  ],
+  "docs_index_materializer_link_present": true
 }

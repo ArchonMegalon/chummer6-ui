@@ -32,6 +32,9 @@ CHECKS = [
             "aria-keyshortcuts=\"Control+P\"",
             "aria-keyshortcuts=\"F1\"",
             "data-workbench-command-palette-action=\"support\"",
+            "aria-keyshortcuts=\"Shift+F1\"",
+            "data-workbench-command-palette-action=\"help\"",
+            "href=\"/help\"",
         ],
     },
     {
@@ -61,6 +64,7 @@ CHECKS = [
             "staged hosted workbench command-palette posture",
             "keyboard-style hints",
             "reload-safe workbench links",
+            "same-origin help",
         ],
     },
     {
@@ -114,13 +118,13 @@ def main() -> int:
         "status": "failed" if failures else "passed",
         "proof_tier": "source_staged_no_browser_execution",
         "route_lane": "promoted_blazor_workbench",
-        "expected_routes": ["/blazor/workbench"],
+        "expected_routes": ["/blazor/workbench", "/help"],
         "checks": checks,
         "failures": failures,
         "notes": [
-            "This receipt only proves that promoted workbench command-palette source, style, status, and docs agree.",
+            "This receipt only proves that Chummer App and proof-compatible workbench command-palette source, style, status, and docs agree, including the same-origin /help command.",
             "It is not a substitute for hosted Playwright execution proof or Docker self-host proof.",
-            "Do not use this receipt to claim actual keyboard-event handling or command execution runtime behavior.",
+            "Do not use this receipt to claim actual keyboard-event handling, portal help runtime behavior, or command execution runtime behavior.",
         ],
     }
 

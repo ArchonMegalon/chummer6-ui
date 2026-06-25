@@ -2,9 +2,9 @@
 
 ## Purpose
 
-This staged proof keeps the promoted Blazor workbench source aligned around contextual help and guided recovery posture for browser workflows.
+This staged proof keeps the Chummer App and proof-compatible Blazor workbench source aligned around contextual help and guided recovery posture for browser workflows.
 
-It covers visible source posture for context help, shortcut hints, error explanations, recovery suggestions, docs links, and support handoff affordances on `/blazor/workbench`.
+It covers visible source posture for context help, shortcut hints, error explanations, recovery suggestions, the same-origin `/help` portal handoff, docs links, and support handoff affordances on `/blazor/workbench`.
 
 ## Canonical Command
 
@@ -20,6 +20,6 @@ The command writes:
 
 ## Boundary
 
-This is source-staged alignment only. It does not prove hosted browser execution, Docker self-host execution, contextual help resolution, keyboard shortcut execution, support-ticket creation, docs search, or error remediation.
+This is source-staged alignment only. It does not prove hosted browser execution, Docker self-host execution, contextual help resolution, keyboard shortcut execution, portal help runtime, support-ticket creation, docs search, or error remediation.
 
 Runtime promotion requires refreshed hosted public-edge execution proof and Docker self-host proof.

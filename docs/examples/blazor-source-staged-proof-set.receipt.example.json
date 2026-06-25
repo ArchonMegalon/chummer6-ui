@@ -3,11 +3,28 @@
   "generated_at": "2026-06-24T00:00:00+00:00",
   "status": "passed",
   "proof_tier": "source_staged_no_browser_execution",
-  "route_lane": "promoted_blazor_workbench",
+  "route_lane": "chummer_app_proof_compatible_workbench_preview_tools",
   "required_receipt_count": 72,
   "passed_receipt_count": 72,
   "expected_route_count": 0,
   "source_check_count": 0,
+  "source_contract_check_count": 2,
+  "source_contract_checks": [
+    {
+      "id": "runbook_route_roles",
+      "path": "docs/BLAZOR_SOURCE_STAGED_PROOF_RUNBOOK.md",
+      "status": "passed",
+      "required_token_count": 13,
+      "missing_tokens": []
+    },
+    {
+      "id": "docs_index_route_roles",
+      "path": "docs/BLAZOR_WEB_CLIENT_DOCS_INDEX.md",
+      "status": "passed",
+      "required_token_count": 8,
+      "missing_tokens": []
+    }
+  ],
   "required_receipts": [
     {
       "id": "career_support",
@@ -52,8 +69,8 @@
       "contract_name": "chummer6-ui.blazor_workbench_polish_staged_proof",
       "status": "passed",
       "proof_tier": "source_staged_no_browser_execution",
-      "expected_route_count": 1,
-      "source_check_count": 5,
+      "expected_route_count": 2,
+      "source_check_count": 6,
       "control_count": null,
       "covered_control_count": null
     },
@@ -792,8 +809,30 @@
   ],
   "failures": [],
   "notes": [
-    "This aggregate only summarizes source-staged receipts.",
+    "This aggregate summarizes source-staged receipts plus explicitly separated source-calculation receipts.",
+    "/app remains the clean public browser client path.",
+    "/blazor/app remains the hosted app path.",
+    "/blazor/workbench remains the proof-compatible route.",
+    "/blazor/preview remains the preview tools and result-state route.",
+    "source_contract_check_count summarizes non-receipt source contract checks such as route-role documentation.",
+    "Runner Intelligence calculation proof stays separate from hosted Playwright, Docker self-host, hosted cohort aggregation, and release-readiness proof.",
+    "Source-calculation receipts are not authoritative SR rules-engine validation and are not browser execution evidence.",
+    "The workbench_hosting_privacy member includes the self-host default-off Rybbit boundary but remains source-staged only.",
     "It is not a hosted Playwright execution receipt and is not Docker self-host browser execution evidence.",
     "Keep this aggregate separate from BLAZOR_BROWSER_LANE_PROOF_SET.generated.json release readiness."
+  ],
+  "source_calculation_receipt_count": 1,
+  "source_calculation_passed_count": 1,
+  "source_calculation_check_count": 8,
+  "source_calculation_receipts": [
+    {
+      "id": "runner_intelligence_calculation",
+      "path": ".codex-studio/published/BLAZOR_RUNNER_INTELLIGENCE_CALCULATION_PROOF.generated.json",
+      "expected_contract_name": "chummer6-ui.blazor_runner_intelligence_calculation_proof",
+      "contract_name": "chummer6-ui.blazor_runner_intelligence_calculation_proof",
+      "status": "passed",
+      "proof_tier": "source_calculation_no_browser_execution",
+      "source_calculation_check_count": 8
+    }
   ]
 }

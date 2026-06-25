@@ -29,6 +29,8 @@ CHECKS = [
             "data-workbench-settings-action=\"ruleset-settings\"",
             "data-workbench-settings-action=\"update-status\"",
             "data-workbench-settings-action=\"support-settings\"",
+            "data-workbench-settings-action=\"help\"",
+            "href=\"/help\"",
         ],
     },
     {
@@ -65,8 +67,8 @@ CHECKS = [
         "path": "docs/BLAZOR_WEB_CLIENT_PARITY_GOAL.md",
         "tokens": [
             "staged hosted workbench settings posture",
-            "global settings, character settings, ruleset choice",
-            "not yet claiming persisted preference mutation or runtime settings parity",
+            "global settings, character settings, ruleset choice, update status, support handoff, and help",
+            "not yet claiming persisted preference mutation, runtime settings parity, or portal help runtime parity",
         ],
     },
     {
@@ -120,13 +122,13 @@ def main() -> int:
         "status": "failed" if failures else "passed",
         "proof_tier": "source_staged_no_browser_execution",
         "route_lane": "promoted_blazor_workbench",
-        "expected_routes": ["/blazor/workbench"],
+        "expected_routes": ["/blazor/workbench", "/help"],
         "checks": checks,
         "failures": failures,
         "notes": [
-            "This receipt only proves that promoted workbench settings source, style, status, and docs agree.",
+            "This receipt only proves that Chummer App and proof-compatible workbench settings source, style, status, and docs agree, including the same-origin /help settings action.",
             "It is not a substitute for hosted Playwright execution proof or Docker self-host proof.",
-            "Do not use this receipt to claim persisted preference mutation, settings save, or runtime settings parity.",
+            "Do not use this receipt to claim persisted preference mutation, settings save, runtime settings parity, or portal help runtime behavior.",
         ],
     }
 

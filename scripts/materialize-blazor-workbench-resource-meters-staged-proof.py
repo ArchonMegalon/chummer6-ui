@@ -114,7 +114,7 @@ def main() -> int:
         "checks": checks,
         "failures": failures,
         "notes": [
-            "This receipt only proves that promoted workbench resource-meters source, style, status, and docs agree.",
+            "This receipt only proves that Chummer App and proof-compatible workbench resource-meters source, style, status, and docs agree.",
             "It is not a substitute for hosted Playwright execution proof, Docker self-host proof, live character-total calculation proof, or derived-stat runtime proof.",
             "Do not use this receipt to claim live character totals, derived-stat calculation, or browser execution parity.",
         ],

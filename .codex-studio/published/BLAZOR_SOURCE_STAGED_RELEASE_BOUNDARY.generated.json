@@ -1,9 +1,9 @@
 {
   "contract_name": "chummer6-ui.blazor_source_staged_release_boundary",
-  "generated_at": "2026-06-25T01:55:46.731273+00:00",
+  "generated_at": "2026-06-25T04:43:29.501738+00:00",
   "status": "passed",
   "proof_tier": "source_policy_no_browser_execution",
-  "scope": "staged_receipts_must_not_enter_release_readiness_aggregation",
+  "scope": "staged_and_source_plan_receipts_must_not_enter_release_readiness_aggregation",
   "release_aggregation_sources": [
     {
       "path": "scripts/materialize-blazor-browser-lane-proof-set.py",
@@ -31,11 +31,34 @@
       "path": "docs/BLAZOR_WEB_CLIENT_PARITY_GOAL.md",
       "status": "passed",
       "missing_tokens": []
+    },
+    {
+      "path": "docs/BLAZOR_WEB_CLIENT_DOCS_INDEX.md",
+      "status": "passed",
+      "missing_tokens": []
+    },
+    {
+      "path": "docs/examples/blazor-source-staged-release-boundary.receipt.example.json",
+      "status": "passed",
+      "missing_tokens": []
+    }
+  ],
+  "status_reporting_sources": [
+    {
+      "path": "scripts/print_blazor_public_edge_proof_status.py",
+      "status": "passed",
+      "missing_tokens": []
     }
   ],
   "forbidden_staged_tokens": [
     "BLAZOR_SOURCE_STAGED_PROOF_SET",
     "BLAZOR_SOURCE_STAGED_PROOF_SET.generated.json",
+    "BLAZOR_RUNTIME_PROOF_REFRESH_PLAN",
+    "BLAZOR_RUNTIME_PROOF_REFRESH_PLAN.generated.json",
+    "BLAZOR_RUNNER_INTELLIGENCE_CALCULATION_PROOF",
+    "BLAZOR_RUNNER_INTELLIGENCE_CALCULATION_PROOF.generated.json",
+    "BLAZOR_DOCKER_SELF_HOST_OPERATOR_STAGED_PROOF",
+    "BLAZOR_DOCKER_SELF_HOST_OPERATOR_STAGED_PROOF.generated.json",
     "BLAZOR_WORKBENCH_IMPORT_RECONCILE_STAGED_PROOF",
     "BLAZOR_WORKBENCH_COMPARE_MERGE_STAGED_PROOF",
     "BLAZOR_WORKBENCH_RESTORE_CHECKPOINT_STAGED_PROOF",
@@ -111,10 +134,25 @@
     "BLAZOR_WORKBENCH_LIFECYCLE_CALENDAR_STAGED_PROOF",
     "BLAZOR_WORKBENCH_PROGRESSION_LEDGER_STAGED_PROOF"
   ],
+  "forbidden_staged_token_examples": [
+    "BLAZOR_SOURCE_STAGED_PROOF_SET",
+    "BLAZOR_SOURCE_STAGED_PROOF_SET.generated.json",
+    "BLAZOR_RUNTIME_PROOF_REFRESH_PLAN",
+    "BLAZOR_RUNTIME_PROOF_REFRESH_PLAN.generated.json",
+    "BLAZOR_RUNNER_INTELLIGENCE_CALCULATION_PROOF",
+    "BLAZOR_RUNNER_INTELLIGENCE_CALCULATION_PROOF.generated.json",
+    "BLAZOR_DOCKER_SELF_HOST_OPERATOR_STAGED_PROOF",
+    "BLAZOR_DOCKER_SELF_HOST_OPERATOR_STAGED_PROOF.generated.json"
+  ],
   "failures": [],
   "notes": [
     "This receipt is a source-policy guard only.",
     "It does not execute hosted or Docker browser workflows.",
-    "Passing means staged proof receipts are not wired into release-readiness aggregation sources and docs retain the boundary language."
+    "Docker self-host operator staged receipts are source-only and must stay out of release-readiness aggregation.",
+    "Runtime refresh plan receipts are source-plan only and must stay out of release-readiness aggregation.",
+    "The forbidden_staged_tokens field name is retained for compatibility but includes source-plan and source-calculation receipt tokens.",
+    "Example shape is documented at docs/examples/blazor-source-staged-release-boundary.receipt.example.json.",
+    "Passing means staged proof, source-plan, and source-calculation receipts are not wired into release-readiness aggregation sources and docs retain the boundary language.",
+    "The public edge status utility reports the boundary receipt as source-policy evidence only."
   ]
 }
