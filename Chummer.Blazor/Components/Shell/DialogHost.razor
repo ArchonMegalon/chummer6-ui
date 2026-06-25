@@ -356,9 +356,13 @@
                                                 {
                                                     <div class="@BuildRosterHierarchyLineClass(field, item)"
                                                          draggable="@IsRosterDraggableLine(field, item)"
+                                                         title="@BuildRosterHierarchyLineTitle(field, item)"
+                                                         aria-label="@BuildRosterHierarchyLineTitle(field, item)"
+                                                         tabindex="@BuildRosterHierarchyLineTabIndex(field, item)"
                                                          @ondragstart="() => StartRosterDrag(field, item)"
                                                          @ondragover:preventDefault="@IsRosterDropTargetLine(field, item)"
                                                          @ondrop="() => DropRosterLineAsync(field, item)"
+                                                         @onkeydown="args => HandleRosterLineKeyDownAsync(field, item, args)"
                                                          data-roster-tree-line="@item">
                                                         @item
                                                     </div>
@@ -710,7 +714,8 @@
                 || string.Equals(field.Id, "rosterCustomFolders", StringComparison.Ordinal)
                 || string.Equals(field.Id, "rosterMoveTargets", StringComparison.Ordinal)
                 || string.Equals(field.Id, "rosterDragDropGuide", StringComparison.Ordinal)
-                || string.Equals(field.Id, "rosterHierarchyPolicy", StringComparison.Ordinal));
+                || string.Equals(field.Id, "rosterHierarchyPolicy", StringComparison.Ordinal)
+                || string.Equals(field.Id, "rosterHierarchyStatus", StringComparison.Ordinal));
 
     private static bool IsRosterDraggableLine(DesktopDialogField field, string line)
         => IsRosterHierarchyField(field)
@@ -749,6 +754,35 @@
         _rosterDragSourceLine = null;
     }
 
+    private async Task HandleRosterLineKeyDownAsync(
+        DesktopDialogField field,
+        string line,
+        Microsoft.AspNetCore.Components.Web.KeyboardEventArgs args)
+    {
+        if (!IsRosterHierarchyField(field))
+            return;
+
+        if (string.Equals(args.Key, "Escape", StringComparison.Ordinal))
+        {
+            _rosterDragSourceLine = null;
+            return;
+        }
+
+        if (!string.Equals(args.Key, "Enter", StringComparison.Ordinal)
+            && !string.Equals(args.Key, " ", StringComparison.Ordinal)
+            && !string.Equals(args.Code, "Space", StringComparison.Ordinal))
+            return;
+
+        if (IsRosterDropTargetLine(field, line) && !string.IsNullOrWhiteSpace(_rosterDragSourceLine))
+        {
+            await DropRosterLineAsync(field, line);
+            return;
+        }
+
+        if (IsRosterDraggableLine(field, line))
+            StartRosterDrag(field, line);
+    }
+
     private static bool IsRosterDropTargetLine(DesktopDialogField field, string line)
         => IsRosterHierarchyField(field)
             && string.Equals(field.Id, "rosterCustomFolders", StringComparison.Ordinal)
@@ -766,7 +800,7 @@
         return suffixIndex > 0 ? cleaned[..suffixIndex].Trim() : cleaned;
     }
 
-    private static string BuildRosterHierarchyLineClass(DesktopDialogField field, string line)
+    private string BuildRosterHierarchyLineClass(DesktopDialogField field, string line)
     {
         if (!IsRosterHierarchyField(field))
             return "dialog-roster-line";
@@ -780,8 +814,26 @@
         string selected = trimmed.Contains("* ", StringComparison.Ordinal) ? " is-selected" : string.Empty;
         string draggable = IsRosterDraggableLine(field, line) ? " is-draggable" : string.Empty;
         string dropTarget = IsRosterDropTargetLine(field, line) ? " is-drop-target" : string.Empty;
-        return $"dialog-roster-line dialog-roster-line--{kind}{selected}{draggable}{dropTarget}";
+        string dragSource = string.Equals(_rosterDragSourceLine, line, StringComparison.Ordinal) ? " is-drag-source" : string.Empty;
+        return $"dialog-roster-line dialog-roster-line--{kind}{selected}{draggable}{dropTarget}{dragSource}";
     }
+
+    private static string BuildRosterHierarchyLineTitle(DesktopDialogField field, string line)
+    {
+        if (!IsRosterHierarchyField(field))
+            return string.Empty;
+
+        if (IsRosterDropTargetLine(field, line))
+            return "Drop a runner/link row here to move it into this virtual folder, or drop a custom folder here to nest it.";
+
+        if (IsRosterDraggableLine(field, line))
+            return "Drag this roster row to a folder. Moves are virtual metadata only until explicitly committed.";
+
+        return "Roster hierarchy row.";
+    }
+
+    private static string BuildRosterHierarchyLineTabIndex(DesktopDialogField field, string line)
+        => IsRosterDraggableLine(field, line) || IsRosterDropTargetLine(field, line) ? "0" : "-1";
 
     private static IReadOnlyList<string> SplitVisualLines(string value)
     {

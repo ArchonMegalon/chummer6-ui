@@ -2675,6 +2675,32 @@ input[type="radio"] {
     text-transform: uppercase;
 }
 
+.dialog-roster-line.is-drag-source {
+    border-color: rgba(86, 117, 74, 0.7);
+    background:
+        linear-gradient(90deg, rgba(95, 107, 87, 0.22), rgba(137, 224, 179, 0.2)),
+        rgba(255, 255, 255, 0.78);
+    box-shadow: 0 0 0 2px rgba(137, 224, 179, 0.2);
+}
+
+.dialog-roster-line.is-drag-source::after {
+    content: "source";
+    margin-left: auto;
+    border: 1px solid rgba(86, 117, 74, 0.36);
+    border-radius: 999px;
+    padding: 0.08rem 0.4rem;
+    color: #33412b;
+    font-size: 0.62rem;
+    font-weight: 800;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+}
+
+.dialog-roster-line:focus-visible {
+    outline: 2px solid rgba(86, 117, 74, 0.72);
+    outline-offset: 2px;
+}
+
 .dialog-roster-line.is-selected {
     border-color: rgba(95, 107, 87, 0.55);
     background: rgba(137, 224, 179, 0.13);

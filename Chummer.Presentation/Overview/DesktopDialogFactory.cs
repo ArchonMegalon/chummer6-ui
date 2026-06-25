@@ -3075,6 +3075,7 @@ public sealed class DesktopDialogFactory : IDesktopDialogFactory
         actions.Add(new DesktopDialogAction("delete_roster_group", "Delete Roster Folder"));
         actions.Add(new DesktopDialogAction("move_runner_to_group", "Move Runner to Folder"));
         actions.Add(new DesktopDialogAction("reorder_roster_tree", "Reorder Character Tree"));
+        actions.Add(new DesktopDialogAction("reset_roster_hierarchy", "Reset Character Layout"));
 
         if (hasPortrait)
         {
@@ -3180,7 +3181,9 @@ public sealed class DesktopDialogFactory : IDesktopDialogFactory
             ("Watched Files", "can appear under virtual folders without moving disk files"),
             ("Filesystem Moves", "separate confirmation step"),
             ("Self-host Sync", "layout metadata follows owner and runner scope"),
-            ("Safe Delete", "delete folder offers move children to Inbox first"));
+            ("Safe Delete", "delete custom folder moves runner/link items to Inbox and reparents child folders"),
+            ("Cycle Guard", "folder drops cannot target their own descendants"),
+            ("Drag Source", "dragged row wins before selected-runner fallback"));
         string selectedRunnerSummary = selectedRunner is null
             ? BuildGridValue(
                 ("Character Name", name),
@@ -3257,6 +3260,9 @@ public sealed class DesktopDialogFactory : IDesktopDialogFactory
         string mugshotStatus = portraitCandidate;
         RosterHierarchyState rosterHierarchy = BuildRosterHierarchyState(ordered, watchedFiles, selectedRunner, selectedWatchedFile, alias, name, preferences.RosterHierarchyJson, out string rosterHierarchySource);
         customRosterFolders = BuildCustomRosterFolderPreview(rosterHierarchy);
+        IReadOnlyList<DesktopDialogFieldOption> rosterTargetFolderOptions = BuildRosterFolderOptions(rosterHierarchy, IncludeSystemFolders: true);
+        IReadOnlyList<DesktopDialogFieldOption> rosterSourceFolderOptions = BuildRosterFolderOptions(rosterHierarchy, IncludeSystemFolders: false);
+        string rosterHierarchyStatus = BuildRosterHierarchyStatus(rosterHierarchy, rosterHierarchySource);
         rosterMoveTargets += Environment.NewLine + $"Source={rosterHierarchySource}";
         string rosterSnapshot = JsonSerializer.Serialize(
             new RosterDialogSnapshot(
@@ -3293,12 +3299,14 @@ public sealed class DesktopDialogFactory : IDesktopDialogFactory
             new DesktopDialogField("rosterHierarchySource", "Roster Hierarchy Source", rosterHierarchySource, rosterHierarchySource, IsReadOnly: true, LayoutSlot: DesktopDialogFieldLayoutSlots.Hidden),
             new DesktopDialogField("rosterTree", "Characters", rosterTree, rosterTree, IsReadOnly: true, IsMultiline: true, VisualKind: DesktopDialogFieldVisualKinds.Tree, LayoutSlot: DesktopDialogFieldLayoutSlots.Left),
             new DesktopDialogField("rosterFolderName", "Folder Name", string.Empty, "New folder name or rename label", LayoutSlot: DesktopDialogFieldLayoutSlots.Left),
-            new DesktopDialogField("rosterTargetFolder", "Target Folder", string.Empty, "Folder name or id for nesting and moves", LayoutSlot: DesktopDialogFieldLayoutSlots.Left),
-            new DesktopDialogField("rosterSourceFolder", "Source Folder", string.Empty, "Folder name or id being dragged", LayoutSlot: DesktopDialogFieldLayoutSlots.Hidden),
+            new DesktopDialogField("rosterTargetFolder", "Target Folder", string.Empty, "Choose a folder or type a folder id/name for nesting and moves", LayoutSlot: DesktopDialogFieldLayoutSlots.Left, Options: rosterTargetFolderOptions),
+            new DesktopDialogField("rosterSourceFolder", "Source Folder", string.Empty, "Choose a custom folder or type a folder id/name for rename, delete, and nesting", LayoutSlot: DesktopDialogFieldLayoutSlots.Left, Options: rosterSourceFolderOptions),
+            new DesktopDialogField("rosterSourceItem", "Source Item", string.Empty, "Dragged runner or watched-file row", LayoutSlot: DesktopDialogFieldLayoutSlots.Hidden),
             new DesktopDialogField("rosterCustomFolders", "Custom Folders", customRosterFolders, customRosterFolders, IsReadOnly: true, IsMultiline: true, VisualKind: DesktopDialogFieldVisualKinds.Tree, LayoutSlot: DesktopDialogFieldLayoutSlots.Left),
             new DesktopDialogField("rosterMoveTargets", "Move Targets", rosterMoveTargets, rosterMoveTargets, IsReadOnly: true, IsMultiline: true, VisualKind: DesktopDialogFieldVisualKinds.Grid),
             new DesktopDialogField("rosterDragDropGuide", "Drag / Drop", rosterDragDropGuide, rosterDragDropGuide, IsReadOnly: true, IsMultiline: true, VisualKind: DesktopDialogFieldVisualKinds.List),
             new DesktopDialogField("rosterHierarchyPolicy", "Hierarchy Policy", rosterHierarchyPolicy, rosterHierarchyPolicy, IsReadOnly: true, IsMultiline: true, VisualKind: DesktopDialogFieldVisualKinds.Grid),
+            new DesktopDialogField("rosterHierarchyStatus", "Hierarchy Status", rosterHierarchyStatus, rosterHierarchyStatus, IsReadOnly: true, IsMultiline: true, VisualKind: DesktopDialogFieldVisualKinds.Grid),
             new DesktopDialogField("rosterSelectionTrail", "Selection Trail", selectionTrail, selectionTrail, IsReadOnly: true, IsMultiline: true, VisualKind: DesktopDialogFieldVisualKinds.Grid),
             new DesktopDialogField("rosterMugshot", "Mugshot", mugshotStatus, "Runner Mugshot", IsReadOnly: true, IsMultiline: true, VisualKind: DesktopDialogFieldVisualKinds.Image, LayoutSlot: DesktopDialogFieldLayoutSlots.Right),
             new DesktopDialogField("rosterSelectedRunner", "Selected Runner", selectedRunnerSummary, selectedRunnerSummary, IsReadOnly: true, IsMultiline: true, VisualKind: DesktopDialogFieldVisualKinds.Grid, LayoutSlot: DesktopDialogFieldLayoutSlots.Right),
@@ -3528,6 +3536,40 @@ public sealed class DesktopDialogFactory : IDesktopDialogFactory
 
         AppendRosterFolderPreview(lines, childFolders, childItems, string.Empty, string.Empty);
         return string.Join(Environment.NewLine, lines);
+    }
+
+    private static IReadOnlyList<DesktopDialogFieldOption> BuildRosterFolderOptions(
+        RosterHierarchyState hierarchy,
+        bool IncludeSystemFolders)
+        => hierarchy.Folders
+            .Where(folder => IncludeSystemFolders || !folder.IsSystemFolder)
+            .OrderBy(folder => folder.IsSystemFolder ? 0 : 1)
+            .ThenBy(folder => folder.ParentFolderId ?? string.Empty, StringComparer.OrdinalIgnoreCase)
+            .ThenBy(folder => folder.SortOrder)
+            .ThenBy(folder => folder.Name, StringComparer.OrdinalIgnoreCase)
+            .Select(folder => new DesktopDialogFieldOption(
+                folder.Id,
+                folder.IsSystemFolder ? $"{folder.Name} · system" : $"{folder.Name} · custom"))
+            .ToArray();
+
+    private static string BuildRosterHierarchyStatus(
+        RosterHierarchyState hierarchy,
+        string hierarchySource)
+    {
+        int customFolderCount = hierarchy.Folders.Count(folder => !folder.IsSystemFolder);
+        int systemFolderCount = hierarchy.Folders.Count(folder => folder.IsSystemFolder);
+        int workspaceItemCount = hierarchy.Items.Count(item => string.Equals(item.Kind, RosterHierarchyItemKinds.Workspace, StringComparison.Ordinal));
+        int watchedItemCount = hierarchy.Items.Count(item => string.Equals(item.Kind, RosterHierarchyItemKinds.WatchedFile, StringComparison.Ordinal));
+        string pendingMove = hierarchy.PendingMove is null
+            ? "none"
+            : $"{hierarchy.PendingMove.MoveKind}: {hierarchy.PendingMove.ItemId} -> {hierarchy.PendingMove.TargetFolderId ?? "root"}";
+        return BuildGridValue(
+            ("Source", hierarchySource),
+            ("Custom Folders", customFolderCount.ToString(CultureInfo.InvariantCulture)),
+            ("System Folders", systemFolderCount.ToString(CultureInfo.InvariantCulture)),
+            ("Runner Items", workspaceItemCount.ToString(CultureInfo.InvariantCulture)),
+            ("Watched Links", watchedItemCount.ToString(CultureInfo.InvariantCulture)),
+            ("Pending Move", pendingMove));
     }
 
     private static void AppendRosterFolderPreview(

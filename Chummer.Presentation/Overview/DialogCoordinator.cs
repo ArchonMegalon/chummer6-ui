@@ -299,6 +299,9 @@ public sealed class DialogCoordinator : IDialogCoordinator
                 case "reorder_roster_tree":
                     StageCharacterRosterHierarchyMutation(dialog, context, RosterHierarchyMutationKind.ReorderTree);
                     return;
+                case "reset_roster_hierarchy":
+                    ResetCharacterRosterHierarchy(context);
+                    return;
                 case "open_portrait":
                     PublishCharacterRosterCommandNotice(dialog, context, "rosterPortraitPath", "No portrait slot is currently matched.", portraitPath => $"Portrait slot '{Path.GetFileName(portraitPath)}' surfaced in the roster view.");
                     return;
@@ -2486,6 +2489,7 @@ public sealed class DialogCoordinator : IDialogCoordinator
         string folderName = ReadDialogValue(dialog, "rosterFolderName", string.Empty).Trim();
         string targetFolder = ReadDialogValue(dialog, "rosterTargetFolder", string.Empty).Trim();
         string sourceFolder = ReadDialogValue(dialog, "rosterSourceFolder", string.Empty).Trim();
+        string sourceItem = ReadDialogValue(dialog, "rosterSourceItem", string.Empty).Trim();
         string selectedRunnerId = ReadDialogValue(dialog, "rosterSelectedRunnerId", string.Empty).Trim();
         string selectedRunnerAlias = ReadDialogValue(dialog, "rosterSelectedRunnerAlias", string.Empty).Trim();
         string notice;
@@ -2497,13 +2501,13 @@ public sealed class DialogCoordinator : IDialogCoordinator
                 nextHierarchy = CreateRosterFolder(hierarchy, folderName, targetFolder, out notice);
                 break;
             case RosterHierarchyMutationKind.RenameFolder:
-                nextHierarchy = RenameRosterFolder(hierarchy, folderName, targetFolder, out notice);
+                nextHierarchy = RenameRosterFolder(hierarchy, folderName, sourceFolder, targetFolder, out notice);
                 break;
             case RosterHierarchyMutationKind.DeleteFolder:
-                nextHierarchy = DeleteRosterFolder(hierarchy, targetFolder, out notice);
+                nextHierarchy = DeleteRosterFolder(hierarchy, sourceFolder, targetFolder, out notice);
                 break;
             case RosterHierarchyMutationKind.MoveRunner:
-                nextHierarchy = MoveRosterRunner(hierarchy, selectedRunnerId, selectedRunnerAlias, targetFolder, out notice);
+                nextHierarchy = MoveRosterRunner(hierarchy, selectedRunnerId, selectedRunnerAlias, sourceItem, targetFolder, out notice);
                 break;
             case RosterHierarchyMutationKind.ReorderTree:
                 nextHierarchy = ReorderRosterTree(hierarchy, sourceFolder, targetFolder, out notice);
@@ -2519,6 +2523,18 @@ public sealed class DialogCoordinator : IDialogCoordinator
             RosterHierarchyJson = nextHierarchyJson
         };
         PublishCharacterRosterDialog(context, nextPreferences, $"{notice} Roster hierarchy metadata staged in preferences.");
+    }
+
+    private static void ResetCharacterRosterHierarchy(DialogCoordinationContext context)
+    {
+        DesktopPreferenceState nextPreferences = context.State.Preferences with
+        {
+            RosterHierarchyJson = string.Empty
+        };
+        PublishCharacterRosterDialog(
+            context,
+            nextPreferences,
+            "Roster layout reset to generated grouping. Custom folder metadata was cleared; character files were not moved.");
     }
 
     private static RosterHierarchyState? TryReadRosterHierarchyState(DesktopDialogState dialog)
@@ -2566,10 +2582,12 @@ public sealed class DialogCoordinator : IDialogCoordinator
     private static RosterHierarchyState RenameRosterFolder(
         RosterHierarchyState hierarchy,
         string folderName,
+        string sourceFolder,
         string targetFolder,
         out string notice)
     {
-        string? folderId = ResolveRosterFolderId(hierarchy, targetFolder)
+        string? folderId = ResolveRosterFolderId(hierarchy, sourceFolder)
+            ?? ResolveRosterFolderId(hierarchy, targetFolder)
             ?? hierarchy.Folders.FirstOrDefault(folder => !folder.IsSystemFolder)?.Id;
         if (string.IsNullOrWhiteSpace(folderId))
             return CreateRosterFolder(hierarchy, folderName, targetFolder, out notice);
@@ -2592,10 +2610,12 @@ public sealed class DialogCoordinator : IDialogCoordinator
 
     private static RosterHierarchyState DeleteRosterFolder(
         RosterHierarchyState hierarchy,
+        string sourceFolder,
         string targetFolder,
         out string notice)
     {
-        string? folderId = ResolveRosterFolderId(hierarchy, targetFolder)
+        string? folderId = ResolveRosterFolderId(hierarchy, sourceFolder)
+            ?? ResolveRosterFolderId(hierarchy, targetFolder)
             ?? hierarchy.Folders.FirstOrDefault(folder => !folder.IsSystemFolder)?.Id;
         if (string.IsNullOrWhiteSpace(folderId))
         {
@@ -2642,21 +2662,24 @@ public sealed class DialogCoordinator : IDialogCoordinator
         RosterHierarchyState hierarchy,
         string selectedRunnerId,
         string selectedRunnerAlias,
+        string sourceItem,
         string targetFolder,
         out string notice)
     {
-        if (string.IsNullOrWhiteSpace(selectedRunnerId))
+        if (string.IsNullOrWhiteSpace(selectedRunnerId) && string.IsNullOrWhiteSpace(sourceItem))
         {
             notice = "No selected runner is available to move.";
             return hierarchy;
         }
 
-        RosterHierarchyItemState? item = hierarchy.Items.FirstOrDefault(candidate =>
-            string.Equals(candidate.WorkspaceId, selectedRunnerId, StringComparison.Ordinal)
-            || string.Equals(candidate.Id, selectedRunnerId, StringComparison.Ordinal));
+        RosterHierarchyItemState? item = ResolveRosterSourceItem(hierarchy, sourceItem)
+            ?? hierarchy.Items.FirstOrDefault(candidate =>
+                string.Equals(candidate.WorkspaceId, selectedRunnerId, StringComparison.Ordinal)
+                || string.Equals(candidate.Id, selectedRunnerId, StringComparison.Ordinal));
         if (item is null)
         {
-            notice = $"Selected roster runner '{selectedRunnerId}' is not present in the hierarchy metadata.";
+            string missingItem = string.IsNullOrWhiteSpace(sourceItem) ? selectedRunnerId : sourceItem;
+            notice = $"Selected roster item '{missingItem}' is not present in the hierarchy metadata.";
             return hierarchy;
         }
 
@@ -2679,6 +2702,46 @@ public sealed class DialogCoordinator : IDialogCoordinator
             Items = hierarchy.Items.Select(candidate => string.Equals(candidate.Id, item.Id, StringComparison.Ordinal) ? candidate with { FolderId = targetFolderId, SortOrder = sortOrder } : candidate).ToArray(),
             PendingMove = pendingMove
         };
+    }
+
+    private static RosterHierarchyItemState? ResolveRosterSourceItem(
+        RosterHierarchyState hierarchy,
+        string sourceItem)
+    {
+        if (string.IsNullOrWhiteSpace(sourceItem))
+            return null;
+
+        string label = ExtractRosterLineLabel(sourceItem);
+        return hierarchy.Items.FirstOrDefault(candidate =>
+            string.Equals(candidate.Id, sourceItem, StringComparison.OrdinalIgnoreCase)
+            || string.Equals(candidate.WorkspaceId, sourceItem, StringComparison.OrdinalIgnoreCase)
+            || string.Equals(candidate.WatchedFile, sourceItem, StringComparison.OrdinalIgnoreCase)
+            || string.Equals(candidate.Label, sourceItem, StringComparison.OrdinalIgnoreCase)
+            || string.Equals(candidate.Label, label, StringComparison.OrdinalIgnoreCase)
+            || (!string.IsNullOrWhiteSpace(candidate.WatchedFile) && string.Equals(candidate.WatchedFile, label, StringComparison.OrdinalIgnoreCase)));
+    }
+
+    private static string ExtractRosterLineLabel(string line)
+    {
+        string cleaned = line.Trim()
+            .TrimStart('├', '└', '─', '│', ' ', '*', '-')
+            .Trim();
+        int rulesetIndex = cleaned.LastIndexOf(" [", StringComparison.Ordinal);
+        if (rulesetIndex > 0 && cleaned.EndsWith("]", StringComparison.Ordinal))
+            cleaned = cleaned[..rulesetIndex].Trim();
+
+        foreach (string visualKindSuffix in new[]
+        {
+            $" · {RosterHierarchyItemKinds.Workspace}",
+            $" · {RosterHierarchyItemKinds.WatchedFile}",
+            $" · {RosterHierarchyItemKinds.FolderShortcut}"
+        })
+        {
+            if (cleaned.EndsWith(visualKindSuffix, StringComparison.OrdinalIgnoreCase))
+                return cleaned[..^visualKindSuffix.Length].Trim();
+        }
+
+        return cleaned;
     }
 
     private static RosterHierarchyState ReorderRosterTree(
