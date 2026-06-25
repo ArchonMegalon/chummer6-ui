@@ -359,7 +359,7 @@
                                                  data-roster-drag-root="@IsRosterHierarchyField(field)">
                                                 @if (IsRosterHierarchyField(field) && !string.IsNullOrWhiteSpace(_rosterDragSourceLine))
                                                 {
-                                                    <div id="dialogRosterKeyboardStatus" class="dialog-roster-keyboard-status" aria-live="polite">@BuildRosterKeyboardStatus()</div>
+                                                    <div id="dialogRosterKeyboardStatus" class="dialog-roster-keyboard-status" role="status" aria-live="polite" aria-atomic="true">@BuildRosterKeyboardStatus()</div>
                                                 }
                                                 @foreach (string item in SplitVisualLines(field.Value))
                                                 {
@@ -371,11 +371,14 @@
                                                          role="@BuildRosterHierarchyLineRole(field, item)"
                                                          aria-level="@BuildRosterHierarchyLineLevel(field, item)"
                                                          aria-selected="@BuildRosterHierarchyLineSelected(field, item)"
+                                                         aria-expanded="@BuildRosterHierarchyLineExpanded(field, item)"
+                                                         aria-keyshortcuts="@BuildRosterHierarchyLineKeyShortcuts(field, item)"
                                                          tabindex="@BuildRosterHierarchyLineTabIndex(field, item)"
                                                          @ondragstart="() => StartRosterDrag(field, item)"
                                                          @ondragover:preventDefault="@IsRosterDropTargetLine(field, item)"
                                                          @ondrop="() => DropRosterLineAsync(field, item)"
                                                          @onkeydown="args => HandleRosterLineKeyDownAsync(field, item, args)"
+                                                         @onkeydown:preventDefault="@ShouldPreventRosterLineKeyDefault(field, item)"
                                                          data-roster-tree-line="@item">
                                                         @item
                                                     </div>
@@ -848,6 +851,14 @@
     private static string BuildRosterHierarchyLineTabIndex(DesktopDialogField field, string line)
         => IsRosterDraggableLine(field, line) || IsRosterDropTargetLine(field, line) ? "0" : "-1";
 
+    private static string? BuildRosterHierarchyLineKeyShortcuts(DesktopDialogField field, string line)
+        => IsRosterDraggableLine(field, line) || IsRosterDropTargetLine(field, line)
+            ? "Enter Space Escape"
+            : null;
+
+    private static bool ShouldPreventRosterLineKeyDefault(DesktopDialogField field, string line)
+        => IsRosterDraggableLine(field, line) || IsRosterDropTargetLine(field, line);
+
     private string? BuildRosterHierarchyLineDescriptionId(DesktopDialogField field, string line)
         => !string.IsNullOrWhiteSpace(_rosterDragSourceLine)
            && (IsRosterDraggableLine(field, line) || IsRosterDropTargetLine(field, line))
@@ -897,6 +908,9 @@
             ? "true"
             : "false";
     }
+
+    private static string? BuildRosterHierarchyLineExpanded(DesktopDialogField field, string line)
+        => IsRosterDropTargetLine(field, line) ? "true" : null;
 
     private string BuildRosterKeyboardStatus()
         => string.IsNullOrWhiteSpace(_rosterDragSourceLine)

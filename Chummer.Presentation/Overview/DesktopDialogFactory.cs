@@ -3570,7 +3570,8 @@ public sealed class DesktopDialogFactory : IDesktopDialogFactory
             ("System Folders", systemFolderCount.ToString(CultureInfo.InvariantCulture)),
             ("Runner Items", workspaceItemCount.ToString(CultureInfo.InvariantCulture)),
             ("Watched Links", watchedItemCount.ToString(CultureInfo.InvariantCulture)),
-            ("Pending Move", pendingMove));
+            ("Pending Move", pendingMove),
+            ("Keyboard", "Enter/Space select or drop; Escape clears source"));
     }
 
     private static void AppendRosterFolderPreview(
