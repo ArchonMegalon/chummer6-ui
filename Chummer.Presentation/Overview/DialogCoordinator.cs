@@ -2635,7 +2635,7 @@ public sealed class DialogCoordinator : IDialogCoordinator
             .ToArray();
         int movedItemCount = hierarchy.Items.Count(item => string.Equals(item.FolderId, folderId, StringComparison.Ordinal));
         int reparentedFolderCount = hierarchy.Folders.Count(candidate => string.Equals(candidate.ParentFolderId, folderId, StringComparison.Ordinal));
-        notice = $"Deleted roster folder '{folder.Name}'. Moved {movedItemCount} runner/link item(s) to Inbox and reparented {reparentedFolderCount} child folder(s).";
+        notice = $"Deleted roster folder '{folder.Name}'. Moved {movedItemCount} runner/link item(s) to {RosterHierarchyMetadata.InboxFolderName} and reparented {reparentedFolderCount} child folder(s).";
         return hierarchy with
         {
             Folders = folders,

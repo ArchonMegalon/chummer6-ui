@@ -866,7 +866,7 @@ static string BuildDocsHtml(PortalOptions options)
 
 static string BuildDocsScript()
 {
-    return 893842"""
+    return """
 function escapeHtml(value) {
   return String(value)
     .replaceAll('&', '&amp;')
@@ -1053,7 +1053,7 @@ static object BuildOpenApiDocument()
             {
                 get = new
                 {
-                    summary = "Read browser workbench health"
+                    summary = "Read Chummer Online browser-client health"
                 }
             },
             ["/hub/health"] = new

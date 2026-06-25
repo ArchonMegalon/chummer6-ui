@@ -46,6 +46,23 @@ public static class RosterHierarchyItemKinds
     public const string FolderShortcut = "folder_shortcut";
 }
 
+public static class RosterHierarchyMetadata
+{
+    public const int FormatVersion = 1;
+    public const string GeneratedSource = "generated";
+    public const string StagedPreferenceSource = "staged_preference";
+    public const string ActiveTableFolderId = "active-table";
+    public const string ActiveTableFolderName = "Active Table";
+    public const string SavedRunnersFolderId = "saved-runners";
+    public const string SavedRunnersFolderName = "Saved Runners";
+    public const string InboxFolderId = "inbox";
+    public const string InboxFolderName = "Inbox";
+    public const string WatchLinksFolderId = "watch-links";
+    public const string WatchLinksFolderName = "Watch Folder Links";
+    public const string UserDirectoriesLabel = "User Directories";
+    public const string SystemDirectoriesLabel = "System Directories";
+}
+
 public static class RosterHierarchyMoveKinds
 {
     public const string Move = "move";
