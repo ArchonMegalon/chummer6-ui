@@ -2632,6 +2632,16 @@ input[type="radio"] {
     white-space: pre-wrap;
 }
 
+.dialog-roster-keyboard-status {
+    border: 1px solid rgba(86, 117, 74, 0.24);
+    border-radius: 0.35rem;
+    background: rgba(137, 224, 179, 0.14);
+    color: #33412b;
+    font-size: 0.72rem;
+    font-weight: 700;
+    padding: 0.22rem 0.42rem;
+}
+
 .dialog-roster-line--root {
     color: #27301f;
     background: rgba(198, 185, 154, 0.16);

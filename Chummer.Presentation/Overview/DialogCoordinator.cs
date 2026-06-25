@@ -2570,8 +2570,8 @@ public sealed class DialogCoordinator : IDialogCoordinator
         int sortOrder = hierarchy.Folders.Where(folder => string.Equals(folder.ParentFolderId, parentFolderId, StringComparison.Ordinal)).Select(folder => folder.SortOrder).DefaultIfEmpty(-1).Max() + 1;
         RosterHierarchyFolderState folder = new(id, name, parentFolderId, sortOrder);
         notice = parentFolderId is null
-            ? $"Created character folder '{name}'."
-            : $"Created character folder '{name}' under '{ResolveRosterFolderName(hierarchy, parentFolderId)}'.";
+            ? $"Created roster folder '{name}'."
+            : $"Created roster folder '{name}' under '{ResolveRosterFolderName(hierarchy, parentFolderId)}'.";
         return hierarchy with
         {
             Folders = hierarchy.Folders.Concat([folder]).ToArray(),
@@ -2781,7 +2781,7 @@ public sealed class DialogCoordinator : IDialogCoordinator
                 .Max() + 1;
             notice = target is null
                 ? $"Moved character folder '{source.Name}' to the hierarchy root."
-                : $"Nested character folder '{source.Name}' under '{target.Name}'.";
+                : $"Nested roster folder '{source.Name}' under '{target.Name}'.";
             return hierarchy with
             {
                 Folders = hierarchy.Folders.Select(folder => string.Equals(folder.Id, sourceFolderId, StringComparison.Ordinal) ? folder with { ParentFolderId = targetFolderId, SortOrder = sortOrder } : folder).ToArray(),

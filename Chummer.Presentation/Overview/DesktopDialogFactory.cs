@@ -3172,6 +3172,7 @@ public sealed class DesktopDialogFactory : IDesktopDialogFactory
             "Drag runner onto folder: preview move" + Environment.NewLine +
             "Drag folder onto folder: nest folder" + Environment.NewLine +
             "Drag between siblings: reorder within parent" + Environment.NewLine +
+            "Keyboard: Enter/Space selects source, Enter/Space on folder drops, Escape clears source" + Environment.NewLine +
             "Drop onto Watch Folder file: link watched file" + Environment.NewLine +
             "Hold modifier while dropping: copy shortcut instead of move" + Environment.NewLine +
             "Undo last move: restore previous tree path";

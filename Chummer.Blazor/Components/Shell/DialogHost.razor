@@ -1,4 +1,5 @@
 @namespace Chummer.Blazor.Components.Shell
+@using System.Globalization
 @using System.IO
 @using Chummer.Presentation.UiKit
 @using Chummer.Presentation.Overview
@@ -351,13 +352,25 @@
                                         }
                                         else if (string.Equals(field.VisualKind, DesktopDialogFieldVisualKinds.Tree, StringComparison.Ordinal))
                                         {
-                                            <div class="dialog-roster-tree" data-roster-drag-root="@IsRosterHierarchyField(field)">
+                                            <div class="dialog-roster-tree"
+                                                 role="@BuildRosterHierarchyContainerRole(field)"
+                                                 aria-label="@BuildRosterHierarchyContainerLabel(field)"
+                                                 aria-orientation="@BuildRosterHierarchyContainerOrientation(field)"
+                                                 data-roster-drag-root="@IsRosterHierarchyField(field)">
+                                                @if (IsRosterHierarchyField(field) && !string.IsNullOrWhiteSpace(_rosterDragSourceLine))
+                                                {
+                                                    <div id="dialogRosterKeyboardStatus" class="dialog-roster-keyboard-status" aria-live="polite">@BuildRosterKeyboardStatus()</div>
+                                                }
                                                 @foreach (string item in SplitVisualLines(field.Value))
                                                 {
                                                     <div class="@BuildRosterHierarchyLineClass(field, item)"
                                                          draggable="@IsRosterDraggableLine(field, item)"
                                                          title="@BuildRosterHierarchyLineTitle(field, item)"
                                                          aria-label="@BuildRosterHierarchyLineTitle(field, item)"
+                                                         aria-describedby="@BuildRosterHierarchyLineDescriptionId(field, item)"
+                                                         role="@BuildRosterHierarchyLineRole(field, item)"
+                                                         aria-level="@BuildRosterHierarchyLineLevel(field, item)"
+                                                         aria-selected="@BuildRosterHierarchyLineSelected(field, item)"
                                                          tabindex="@BuildRosterHierarchyLineTabIndex(field, item)"
                                                          @ondragstart="() => StartRosterDrag(field, item)"
                                                          @ondragover:preventDefault="@IsRosterDropTargetLine(field, item)"
@@ -824,16 +837,71 @@
             return string.Empty;
 
         if (IsRosterDropTargetLine(field, line))
-            return "Drop a runner/link row here to move it into this virtual folder, or drop a custom folder here to nest it.";
+            return "Drop a runner/link row here to move it into this virtual folder, or drop a custom folder here to nest it. Keyboard: Enter/Space drops the selected source here.";
 
         if (IsRosterDraggableLine(field, line))
-            return "Drag this roster row to a folder. Moves are virtual metadata only until explicitly committed.";
+            return "Drag this roster row to a folder. Keyboard: Enter/Space selects this source; Escape clears it. Moves are virtual metadata only until explicitly committed.";
 
         return "Roster hierarchy row.";
     }
 
     private static string BuildRosterHierarchyLineTabIndex(DesktopDialogField field, string line)
         => IsRosterDraggableLine(field, line) || IsRosterDropTargetLine(field, line) ? "0" : "-1";
+
+    private string? BuildRosterHierarchyLineDescriptionId(DesktopDialogField field, string line)
+        => !string.IsNullOrWhiteSpace(_rosterDragSourceLine)
+           && (IsRosterDraggableLine(field, line) || IsRosterDropTargetLine(field, line))
+            ? "dialogRosterKeyboardStatus"
+            : null;
+
+    private static string BuildRosterHierarchyContainerRole(DesktopDialogField field)
+        => IsRosterHierarchyField(field) ? "tree" : "group";
+
+    private static string? BuildRosterHierarchyContainerLabel(DesktopDialogField field)
+        => IsRosterHierarchyField(field) ? field.Label : null;
+
+    private static string? BuildRosterHierarchyContainerOrientation(DesktopDialogField field)
+        => IsRosterHierarchyField(field) ? "vertical" : null;
+
+    private static string BuildRosterHierarchyLineRole(DesktopDialogField field, string line)
+        => IsRosterHierarchyField(field) && !line.TrimStart().StartsWith("[", StringComparison.Ordinal)
+            ? "treeitem"
+            : "presentation";
+
+    private static string? BuildRosterHierarchyLineLevel(DesktopDialogField field, string line)
+    {
+        if (!IsRosterHierarchyField(field) || line.TrimStart().StartsWith("[", StringComparison.Ordinal))
+            return null;
+
+        int level = 1;
+        for (int index = 0; index < line.Length; index++)
+        {
+            char character = line[index];
+            if (character is '│' or ' ')
+                continue;
+
+            level += index / 3;
+            break;
+        }
+
+        return level.ToString(CultureInfo.InvariantCulture);
+    }
+
+    private string? BuildRosterHierarchyLineSelected(DesktopDialogField field, string line)
+    {
+        if (!IsRosterHierarchyField(field) || line.TrimStart().StartsWith("[", StringComparison.Ordinal))
+            return null;
+
+        return line.TrimStart().Contains("* ", StringComparison.Ordinal)
+            || string.Equals(_rosterDragSourceLine, line, StringComparison.Ordinal)
+            ? "true"
+            : "false";
+    }
+
+    private string BuildRosterKeyboardStatus()
+        => string.IsNullOrWhiteSpace(_rosterDragSourceLine)
+            ? string.Empty
+            : $"Keyboard source selected: {_rosterDragSourceLine.Trim()}. Press Enter or Space on a folder to drop, or Escape to clear.";
 
     private static IReadOnlyList<string> SplitVisualLines(string value)
     {
