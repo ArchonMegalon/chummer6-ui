@@ -12,6 +12,7 @@ using Avalonia.Styling;
 using Avalonia.Threading;
 using Avalonia.VisualTree;
 using Chummer.Avalonia;
+using Chummer.Avalonia.Controls;
 using Chummer.Campaign.Contracts;
 using Chummer.Desktop.Runtime;
 using Chummer.Contracts.Rulesets;
@@ -108,6 +109,25 @@ public sealed class DesktopWindowContrastTests
             using ThemeScope scope = ThemeScope.Dark(window);
             AssertVisibleInputControlContrast(window, "shell theme helper dark mode", minimumVisibleInputControls: 4);
             AssertVisibleSelectedListItemContrast(window, "shell theme helper dark mode", minimumSelectedItems: 1);
+        });
+    }
+
+    [TestMethod]
+    public void Character_create_attributes_port_keeps_attribute_list_readable_in_dark_mode()
+    {
+        WithStandaloneCharacterCreateClassicPort(window =>
+        {
+            using ThemeScope scope = ThemeScope.Dark(window);
+            ListBox attributesList = window.GetVisualDescendants()
+                .OfType<ListBox>()
+                .Single(listBox => string.Equals(listBox.Name, "CreateAttributesList", StringComparison.Ordinal));
+
+            Assert.IsTrue(attributesList.IsVisible, "The character-create Attributes list must be visible for dark-mode contrast proof.");
+            Assert.IsTrue(attributesList.ItemCount >= 4, "The character-create Attributes list must contain enough attribute rows for a meaningful proof.");
+            attributesList.SelectedIndex = 0;
+            PumpUi();
+            AssertVisibleInputControlContrast(window, "character-create attributes dark mode", minimumVisibleInputControls: 1);
+            AssertVisibleSelectedListItemContrast(window, "character-create attributes dark mode", minimumSelectedItems: 1);
         });
     }
 
@@ -509,6 +529,88 @@ public sealed class DesktopWindowContrastTests
         }
 
         throw new AssertFailedException("Avalonia shell input theme headless session did not stabilize for contrast proof.", lastFailure);
+    }
+
+    private static void WithStandaloneCharacterCreateClassicPort(Action<Window> assertion)
+    {
+        EnsureHeadlessPlatform();
+        Exception? lastFailure = null;
+        for (int attempt = 1; attempt <= HeadlessSessionAttempts; attempt++)
+        {
+            HeadlessUnitTestSession? session = null;
+            try
+            {
+                session = HeadlessUnitTestSession.StartNew(typeof(ContrastHeadlessAppBootstrap));
+                session.Dispatch(
+                        () =>
+                        {
+                            CharacterCreateClassicPort port = new()
+                            {
+                                Width = 760,
+                                Height = 520
+                            };
+                            string previewJson = """
+                                {
+                                  "ruleset": "sr5",
+                                  "buildMethod": "Priority",
+                                  "metatype": "Human",
+                                  "attributes": [
+                                    { "name": "Body", "baseValue": 3 },
+                                    { "name": "Agility", "baseValue": 5 },
+                                    { "name": "Reaction", "baseValue": 4 },
+                                    { "name": "Logic", "baseValue": 3 }
+                                  ]
+                                }
+                                """;
+                            ClassicFormPortDocument document = ClassicFormPortDocument.CreateFromPreview(previewJson, "character_create");
+                            port.SetState(new ClassicFormPortState(
+                                SurfaceId: "character_create",
+                                RuntimeSectionId: "character_create",
+                                ActiveTabId: "Attributes",
+                                ActiveActionId: null,
+                                Notice: "Ready.",
+                                PreviewJson: previewJson,
+                                Rows: [],
+                                QuickActions: [],
+                                NavigationTabs: [],
+                                SectionActions: [],
+                                Document: document));
+
+                            Window window = new()
+                            {
+                                Width = 820,
+                                Height = 580,
+                                Content = DesktopShellTheme.CreateWindowSurface(port)
+                            };
+                            window.Show();
+                            PumpUi();
+
+                            try
+                            {
+                                assertion(window);
+                            }
+                            finally
+                            {
+                                window.Close();
+                                PumpUi();
+                            }
+                        },
+                        CancellationToken.None)
+                    .GetAwaiter()
+                    .GetResult();
+                return;
+            }
+            catch (Exception ex) when (IsTransientHeadlessFailure(ex) && attempt < HeadlessSessionAttempts)
+            {
+                lastFailure = ex;
+            }
+            finally
+            {
+                session?.Dispose();
+            }
+        }
+
+        throw new AssertFailedException("Avalonia character-create port headless session did not stabilize for contrast proof.", lastFailure);
     }
 
     private static DesktopInstallLinkingState CreateInstallState(string status)
