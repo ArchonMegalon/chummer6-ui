@@ -7,3 +7,9 @@ public readonly record struct DialogFieldInputChange(
 public readonly record struct DialogFieldCheckboxChange(
     string FieldId,
     bool Value);
+
+public readonly record struct DialogRosterDropIntent(
+    string SourceLine,
+    string TargetLine,
+    string TargetFolder,
+    string ActionId);

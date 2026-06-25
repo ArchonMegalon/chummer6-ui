@@ -3255,6 +3255,7 @@ public sealed class DesktopDialogFactory : IDesktopDialogFactory
               "Open imported runner";
         string mugshotStatus = portraitCandidate;
         RosterHierarchyState rosterHierarchy = BuildRosterHierarchyState(ordered, watchedFiles, selectedRunner, selectedWatchedFile, alias, name, preferences.RosterHierarchyJson, out string rosterHierarchySource);
+        customRosterFolders = BuildCustomRosterFolderPreview(rosterHierarchy);
         rosterMoveTargets += Environment.NewLine + $"Source={rosterHierarchySource}";
         string rosterSnapshot = JsonSerializer.Serialize(
             new RosterDialogSnapshot(
@@ -3290,6 +3291,8 @@ public sealed class DesktopDialogFactory : IDesktopDialogFactory
             new DesktopDialogField("rosterSnapshot", "Snapshot", rosterSnapshot, rosterSnapshot, IsReadOnly: true, LayoutSlot: DesktopDialogFieldLayoutSlots.Hidden),
             new DesktopDialogField("rosterHierarchySource", "Roster Hierarchy Source", rosterHierarchySource, rosterHierarchySource, IsReadOnly: true, LayoutSlot: DesktopDialogFieldLayoutSlots.Hidden),
             new DesktopDialogField("rosterTree", "Characters", rosterTree, rosterTree, IsReadOnly: true, IsMultiline: true, VisualKind: DesktopDialogFieldVisualKinds.Tree, LayoutSlot: DesktopDialogFieldLayoutSlots.Left),
+            new DesktopDialogField("rosterFolderName", "Folder Name", string.Empty, "New folder name or rename label", LayoutSlot: DesktopDialogFieldLayoutSlots.Left),
+            new DesktopDialogField("rosterTargetFolder", "Target Folder", string.Empty, "Folder name or id for nesting and moves", LayoutSlot: DesktopDialogFieldLayoutSlots.Left),
             new DesktopDialogField("rosterCustomFolders", "Custom Folders", customRosterFolders, customRosterFolders, IsReadOnly: true, IsMultiline: true, VisualKind: DesktopDialogFieldVisualKinds.Tree, LayoutSlot: DesktopDialogFieldLayoutSlots.Left),
             new DesktopDialogField("rosterMoveTargets", "Move Targets", rosterMoveTargets, rosterMoveTargets, IsReadOnly: true, IsMultiline: true, VisualKind: DesktopDialogFieldVisualKinds.Grid),
             new DesktopDialogField("rosterDragDropGuide", "Drag / Drop", rosterDragDropGuide, rosterDragDropGuide, IsReadOnly: true, IsMultiline: true, VisualKind: DesktopDialogFieldVisualKinds.List),
@@ -3508,6 +3511,46 @@ public sealed class DesktopDialogFactory : IDesktopDialogFactory
         catch (JsonException)
         {
             return null;
+        }
+    }
+
+    private static string BuildCustomRosterFolderPreview(RosterHierarchyState hierarchy)
+    {
+        List<string> lines = ["[Custom Roster]"];
+        IReadOnlyDictionary<string, List<RosterHierarchyFolderState>> childFolders = hierarchy.Folders
+            .GroupBy(folder => folder.ParentFolderId ?? string.Empty)
+            .ToDictionary(group => group.Key, group => group.OrderBy(folder => folder.SortOrder).ThenBy(folder => folder.Name, StringComparer.OrdinalIgnoreCase).ToList(), StringComparer.Ordinal);
+        IReadOnlyDictionary<string, List<RosterHierarchyItemState>> childItems = hierarchy.Items
+            .GroupBy(item => item.FolderId ?? string.Empty)
+            .ToDictionary(group => group.Key, group => group.OrderBy(item => item.SortOrder).ThenBy(item => item.Label, StringComparer.OrdinalIgnoreCase).ToList(), StringComparer.Ordinal);
+
+        AppendRosterFolderPreview(lines, childFolders, childItems, string.Empty, string.Empty);
+        return string.Join(Environment.NewLine, lines);
+    }
+
+    private static void AppendRosterFolderPreview(
+        List<string> lines,
+        IReadOnlyDictionary<string, List<RosterHierarchyFolderState>> childFolders,
+        IReadOnlyDictionary<string, List<RosterHierarchyItemState>> childItems,
+        string parentFolderId,
+        string indent)
+    {
+        if (childFolders.TryGetValue(parentFolderId, out List<RosterHierarchyFolderState>? folders))
+        {
+            foreach (RosterHierarchyFolderState folder in folders)
+            {
+                lines.Add($"{indent}├─ {folder.Name}{(folder.IsSystemFolder ? " · system" : " · custom")}");
+                AppendRosterFolderPreview(lines, childFolders, childItems, folder.Id, indent + "│  ");
+            }
+        }
+
+        if (!string.IsNullOrWhiteSpace(parentFolderId)
+            && childItems.TryGetValue(parentFolderId, out List<RosterHierarchyItemState>? items))
+        {
+            foreach (RosterHierarchyItemState item in items.Take(12))
+            {
+                lines.Add($"{indent}└─ {item.Label} · {item.Kind}");
+            }
         }
     }
 

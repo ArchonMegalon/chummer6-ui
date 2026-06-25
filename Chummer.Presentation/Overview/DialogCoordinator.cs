@@ -285,16 +285,16 @@ public sealed class DialogCoordinator : IDialogCoordinator
                     OpenCharacterRosterFolder(dialog, context);
                     return;
                 case "create_roster_group":
-                    PublishCharacterRosterHierarchyNotice(dialog, context, "rosterMoveTargets", "Create a character folder from the Custom Folders pane first.", moveTargets => $"Character folder creation staged. {FlattenDialogValue(moveTargets)}");
+                    StageCharacterRosterHierarchyMutation(dialog, context, RosterHierarchyMutationKind.CreateFolder);
                     return;
                 case "rename_roster_group":
-                    PublishCharacterRosterHierarchyNotice(dialog, context, "rosterCustomFolders", "No custom character folder is selected yet.", folders => $"Character folder rename staged from the custom hierarchy. {FirstDialogLine(folders)}");
+                    StageCharacterRosterHierarchyMutation(dialog, context, RosterHierarchyMutationKind.RenameFolder);
                     return;
                 case "move_runner_to_group":
-                    PublishCharacterRosterHierarchyNotice(dialog, context, "rosterSelectedRunnerAlias", "No selected runner is available to move.", runnerAlias => $"Runner '{runnerAlias}' move staged. Drop target remains virtual until the user confirms the roster move.");
+                    StageCharacterRosterHierarchyMutation(dialog, context, RosterHierarchyMutationKind.MoveRunner);
                     return;
                 case "reorder_roster_tree":
-                    PublishCharacterRosterHierarchyNotice(dialog, context, "rosterDragDropGuide", "No roster hierarchy is available to reorder yet.", guide => $"Roster reorder staged. {FirstDialogLine(guide)}");
+                    StageCharacterRosterHierarchyMutation(dialog, context, RosterHierarchyMutationKind.ReorderTree);
                     return;
                 case "open_portrait":
                     PublishCharacterRosterCommandNotice(dialog, context, "rosterPortraitPath", "No portrait slot is currently matched.", portraitPath => $"Portrait slot '{Path.GetFileName(portraitPath)}' surfaced in the roster view.");
@@ -2466,6 +2466,264 @@ public sealed class DialogCoordinator : IDialogCoordinator
         {
             return string.Empty;
         }
+    }
+
+    private static void StageCharacterRosterHierarchyMutation(
+        DesktopDialogState dialog,
+        DialogCoordinationContext context,
+        RosterHierarchyMutationKind mutationKind)
+    {
+        RosterHierarchyState? hierarchy = TryReadRosterHierarchyState(dialog);
+        if (hierarchy is null)
+        {
+            PublishCharacterRosterDialog(context, "Roster hierarchy metadata is not available yet. Refresh the roster and try again.");
+            return;
+        }
+
+        string folderName = ReadDialogValue(dialog, "rosterFolderName", string.Empty).Trim();
+        string targetFolder = ReadDialogValue(dialog, "rosterTargetFolder", string.Empty).Trim();
+        string selectedRunnerId = ReadDialogValue(dialog, "rosterSelectedRunnerId", string.Empty).Trim();
+        string selectedRunnerAlias = ReadDialogValue(dialog, "rosterSelectedRunnerAlias", string.Empty).Trim();
+        string notice;
+        RosterHierarchyState nextHierarchy;
+
+        switch (mutationKind)
+        {
+            case RosterHierarchyMutationKind.CreateFolder:
+                nextHierarchy = CreateRosterFolder(hierarchy, folderName, targetFolder, out notice);
+                break;
+            case RosterHierarchyMutationKind.RenameFolder:
+                nextHierarchy = RenameRosterFolder(hierarchy, folderName, targetFolder, out notice);
+                break;
+            case RosterHierarchyMutationKind.MoveRunner:
+                nextHierarchy = MoveRosterRunner(hierarchy, selectedRunnerId, selectedRunnerAlias, targetFolder, out notice);
+                break;
+            case RosterHierarchyMutationKind.ReorderTree:
+                nextHierarchy = ReorderRosterTree(hierarchy, out notice);
+                break;
+            default:
+                PublishCharacterRosterDialog(context, "Roster hierarchy action is not supported.");
+                return;
+        }
+
+        string nextHierarchyJson = JsonSerializer.Serialize(nextHierarchy);
+        DesktopPreferenceState nextPreferences = context.State.Preferences with
+        {
+            RosterHierarchyJson = nextHierarchyJson
+        };
+        PublishCharacterRosterDialog(context, nextPreferences, $"{notice} Roster hierarchy metadata staged in preferences.");
+    }
+
+    private static RosterHierarchyState? TryReadRosterHierarchyState(DesktopDialogState dialog)
+    {
+        string hierarchyJson = TryExtractRosterHierarchyJson(dialog);
+        if (string.IsNullOrWhiteSpace(hierarchyJson))
+            return null;
+
+        try
+        {
+            RosterHierarchyState? hierarchy = JsonSerializer.Deserialize<RosterHierarchyState>(hierarchyJson);
+            return hierarchy is { Folders.Count: > 0, Items.Count: > 0 }
+                ? hierarchy
+                : null;
+        }
+        catch (JsonException)
+        {
+            return null;
+        }
+    }
+
+    private static RosterHierarchyState CreateRosterFolder(
+        RosterHierarchyState hierarchy,
+        string folderName,
+        string targetFolder,
+        out string notice)
+    {
+        string name = string.IsNullOrWhiteSpace(folderName)
+            ? $"Character Folder {hierarchy.Folders.Count(folder => !folder.IsSystemFolder) + 1}"
+            : folderName;
+        string? parentFolderId = ResolveRosterFolderId(hierarchy, targetFolder);
+        string id = CreateRosterFolderId(name, hierarchy.Folders.Select(folder => folder.Id));
+        int sortOrder = hierarchy.Folders.Where(folder => string.Equals(folder.ParentFolderId, parentFolderId, StringComparison.Ordinal)).Select(folder => folder.SortOrder).DefaultIfEmpty(-1).Max() + 1;
+        RosterHierarchyFolderState folder = new(id, name, parentFolderId, sortOrder);
+        notice = parentFolderId is null
+            ? $"Created character folder '{name}'."
+            : $"Created character folder '{name}' under '{ResolveRosterFolderName(hierarchy, parentFolderId)}'.";
+        return hierarchy with
+        {
+            Folders = hierarchy.Folders.Concat([folder]).ToArray(),
+            PendingMove = null
+        };
+    }
+
+    private static RosterHierarchyState RenameRosterFolder(
+        RosterHierarchyState hierarchy,
+        string folderName,
+        string targetFolder,
+        out string notice)
+    {
+        string? folderId = ResolveRosterFolderId(hierarchy, targetFolder)
+            ?? hierarchy.Folders.FirstOrDefault(folder => !folder.IsSystemFolder)?.Id;
+        if (string.IsNullOrWhiteSpace(folderId))
+            return CreateRosterFolder(hierarchy, folderName, targetFolder, out notice);
+
+        RosterHierarchyFolderState folder = hierarchy.Folders.First(candidate => string.Equals(candidate.Id, folderId, StringComparison.Ordinal));
+        if (folder.IsSystemFolder)
+        {
+            notice = $"System folder '{folder.Name}' cannot be renamed; create a custom character folder instead.";
+            return hierarchy;
+        }
+
+        string name = string.IsNullOrWhiteSpace(folderName) ? $"{folder.Name} Renamed" : folderName;
+        notice = $"Renamed character folder '{folder.Name}' to '{name}'.";
+        return hierarchy with
+        {
+            Folders = hierarchy.Folders.Select(candidate => string.Equals(candidate.Id, folderId, StringComparison.Ordinal) ? candidate with { Name = name } : candidate).ToArray(),
+            PendingMove = null
+        };
+    }
+
+    private static RosterHierarchyState MoveRosterRunner(
+        RosterHierarchyState hierarchy,
+        string selectedRunnerId,
+        string selectedRunnerAlias,
+        string targetFolder,
+        out string notice)
+    {
+        if (string.IsNullOrWhiteSpace(selectedRunnerId))
+        {
+            notice = "No selected runner is available to move.";
+            return hierarchy;
+        }
+
+        RosterHierarchyItemState? item = hierarchy.Items.FirstOrDefault(candidate =>
+            string.Equals(candidate.WorkspaceId, selectedRunnerId, StringComparison.Ordinal)
+            || string.Equals(candidate.Id, selectedRunnerId, StringComparison.Ordinal));
+        if (item is null)
+        {
+            notice = $"Selected roster runner '{selectedRunnerId}' is not present in the hierarchy metadata.";
+            return hierarchy;
+        }
+
+        string? targetFolderId = ResolveRosterFolderId(hierarchy, targetFolder)
+            ?? hierarchy.Folders.FirstOrDefault(folder => !folder.IsSystemFolder)?.Id
+            ?? "saved-runners";
+        string? sourceFolderId = item.FolderId;
+        int sortOrder = hierarchy.Items.Where(candidate => string.Equals(candidate.FolderId, targetFolderId, StringComparison.Ordinal)).Select(candidate => candidate.SortOrder).DefaultIfEmpty(-1).Max() + 1;
+        RosterHierarchyMoveIntentState pendingMove = new(
+            item.Id,
+            sourceFolderId,
+            targetFolderId,
+            sortOrder,
+            RosterHierarchyMoveKinds.Move,
+            RequiresFilesystemConfirmation: false);
+        string label = string.IsNullOrWhiteSpace(selectedRunnerAlias) ? item.Label : selectedRunnerAlias;
+        notice = $"Moved runner '{label}' into '{ResolveRosterFolderName(hierarchy, targetFolderId)}' as character tree metadata.";
+        return hierarchy with
+        {
+            Items = hierarchy.Items.Select(candidate => string.Equals(candidate.Id, item.Id, StringComparison.Ordinal) ? candidate with { FolderId = targetFolderId, SortOrder = sortOrder } : candidate).ToArray(),
+            PendingMove = pendingMove
+        };
+    }
+
+    private static RosterHierarchyState ReorderRosterTree(
+        RosterHierarchyState hierarchy,
+        out string notice)
+    {
+        RosterHierarchyFolderState[] folders = hierarchy.Folders
+            .OrderBy(folder => folder.IsSystemFolder ? 0 : 1)
+            .ThenBy(folder => folder.ParentFolderId ?? string.Empty, StringComparer.OrdinalIgnoreCase)
+            .ThenBy(folder => folder.Name, StringComparer.OrdinalIgnoreCase)
+            .Select((folder, index) => folder with { SortOrder = index })
+            .ToArray();
+        RosterHierarchyItemState[] items = hierarchy.Items
+            .OrderBy(item => item.FolderId ?? string.Empty, StringComparer.OrdinalIgnoreCase)
+            .ThenBy(item => item.Label, StringComparer.OrdinalIgnoreCase)
+            .Select((item, index) => item with { SortOrder = index })
+            .ToArray();
+        notice = "Reordered character tree metadata by folder and runner label.";
+        return hierarchy with
+        {
+            Folders = folders,
+            Items = items,
+            PendingMove = null
+        };
+    }
+
+    private static string? ResolveRosterFolderId(RosterHierarchyState hierarchy, string folderNameOrId)
+    {
+        if (string.IsNullOrWhiteSpace(folderNameOrId))
+            return null;
+
+        RosterHierarchyFolderState? folder = hierarchy.Folders.FirstOrDefault(candidate =>
+            string.Equals(candidate.Id, folderNameOrId, StringComparison.OrdinalIgnoreCase)
+            || string.Equals(candidate.Name, folderNameOrId, StringComparison.OrdinalIgnoreCase));
+        return folder?.Id;
+    }
+
+    private static string ResolveRosterFolderName(RosterHierarchyState hierarchy, string? folderId)
+        => hierarchy.Folders.FirstOrDefault(folder => string.Equals(folder.Id, folderId, StringComparison.Ordinal))?.Name
+            ?? folderId
+            ?? "root";
+
+    private static string CreateRosterFolderId(string folderName, IEnumerable<string> existingIds)
+    {
+        HashSet<string> used = existingIds.ToHashSet(StringComparer.OrdinalIgnoreCase);
+        StringBuilder builder = new();
+        foreach (char character in folderName.Trim().ToLowerInvariant())
+        {
+            if (char.IsLetterOrDigit(character))
+                builder.Append(character);
+            else if (builder.Length > 0 && builder[^1] != '-')
+                builder.Append('-');
+        }
+
+        string baseId = builder.ToString().Trim('-');
+        if (string.IsNullOrWhiteSpace(baseId))
+            baseId = "character-folder";
+
+        string id = baseId;
+        int suffix = 2;
+        while (used.Contains(id))
+        {
+            id = $"{baseId}-{suffix}";
+            suffix++;
+        }
+
+        return id;
+    }
+
+    private static void PublishCharacterRosterDialog(
+        DialogCoordinationContext context,
+        DesktopPreferenceState preferences,
+        string notice)
+    {
+        DesktopDialogFactory dialogFactory = new();
+        CharacterOverviewState state = context.GetState();
+        DesktopDialogState rosterDialog = dialogFactory.CreateCommandDialog(
+            "character_roster",
+            state.Profile,
+            preferences,
+            state.ActiveSectionJson,
+            state.WorkspaceId,
+            ResolveContextRulesetId(state),
+            openWorkspaces: state.OpenWorkspaces);
+
+        context.Publish(state with
+        {
+            ActiveDialog = rosterDialog,
+            Error = null,
+            Preferences = preferences,
+            Notice = notice
+        });
+    }
+
+    private enum RosterHierarchyMutationKind
+    {
+        CreateFolder,
+        RenameFolder,
+        MoveRunner,
+        ReorderTree
     }
 
     private static string FirstDialogLine(string value)

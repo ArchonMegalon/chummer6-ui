@@ -1,6 +1,6 @@
 {
   "contract_name": "chummer6-ui.blazor_workbench_roster_hierarchy_staged_proof",
-  "generated_at": "2026-06-25T00:18:26.767553+00:00",
+  "generated_at": "2026-06-25T00:25:21.473269+00:00",
   "status": "passed",
   "proof_tier": "source_staged_no_browser_execution",
   "route_lane": "promoted_blazor_workbench",
@@ -33,14 +33,14 @@
       "id": "presentation_character_roster_hierarchy",
       "path": "Chummer.Presentation/Overview/DesktopDialogFactory.cs",
       "status": "passed",
-      "required_token_count": 10,
+      "required_token_count": 14,
       "missing_tokens": []
     },
     {
       "id": "presentation_roster_command_dispatch",
       "path": "Chummer.Presentation/Overview/DialogCoordinator.cs",
       "status": "passed",
-      "required_token_count": 6,
+      "required_token_count": 10,
       "missing_tokens": []
     },
     {
@@ -61,14 +61,14 @@
       "id": "release_truth_docs",
       "path": "docs/WORKBENCH_RELEASE_SIGNOFF.md",
       "status": "passed",
-      "required_token_count": 3,
+      "required_token_count": 4,
       "missing_tokens": []
     },
     {
       "id": "parity_goal_docs",
       "path": "docs/BLAZOR_WEB_CLIENT_PARITY_GOAL.md",
       "status": "passed",
-      "required_token_count": 3,
+      "required_token_count": 5,
       "missing_tokens": []
     },
     {

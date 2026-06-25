@@ -29,6 +29,16 @@ public partial class DesktopShell
         return _bridge.UpdateDialogFieldAsync(change.FieldId, change.Value ? "true" : "false", CancellationToken.None);
     }
 
+    private async Task OnDialogRosterDropAsync(DialogRosterDropIntent intent)
+    {
+        if (_bridge is null)
+            return;
+
+        await _bridge.UpdateDialogFieldAsync("rosterTargetFolder", intent.TargetFolder, CancellationToken.None);
+        await _bridge.ExecuteDialogActionAsync(intent.ActionId, CancellationToken.None);
+        await SyncShellWorkspaceContextAsync();
+    }
+
     private async Task CloseDialogAsync()
     {
         if (_bridge is null)

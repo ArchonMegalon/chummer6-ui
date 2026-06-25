@@ -4,7 +4,7 @@
 
 This staged proof keeps the promoted Blazor workbench source aligned around custom character roster hierarchy posture.
 
-It covers visible source posture for user-created virtual folders, nested groups, drag/drop move intent, explicit roster move actions, watched-file virtual links, browser markup/styling for roster hierarchy rows, the shared `RosterHierarchyState` contract, and `RosterHierarchyJson` preference staging, staged metadata reuse, plus hidden global-settings carriage on `/blazor/workbench?command=character_roster`.
+It covers visible source posture for user-created virtual folders, nested groups, drag/drop move intent, explicit roster move actions, watched-file virtual links, browser markup/styling for roster hierarchy rows, editable folder/target fields, non-destructive metadata mutation for create/rename/move/reorder actions, the shared `RosterHierarchyState` contract, `RosterHierarchyJson` preference staging, staged metadata reuse, `rosterHierarchySource` disclosure for generated versus staged preference metadata, plus hidden global-settings carriage on `/blazor/workbench?command=character_roster`.
 
 ## Canonical Command
 
@@ -20,6 +20,6 @@ The command writes:
 
 ## Boundary
 
-This is source-staged alignment only. It does not prove hosted browser execution, Docker self-host execution, drag/drop mutation, durable layout persistence, filesystem moves, folder deletion, watched-file relocation, or external `RosterHierarchyState` storage.
+This is source-staged alignment only. It does not prove hosted browser execution, Docker self-host execution, browser drag/drop event mutation, filesystem moves, folder deletion, watched-file relocation, or external `RosterHierarchyState` storage beyond preference-carried layout metadata.
 
 Runtime promotion requires refreshed hosted public-edge execution proof and Docker self-host proof plus explicit drag/drop persistence implementation.

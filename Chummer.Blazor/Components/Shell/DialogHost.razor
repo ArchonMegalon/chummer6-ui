@@ -356,6 +356,9 @@
                                                 {
                                                     <div class="@BuildRosterHierarchyLineClass(field, item)"
                                                          draggable="@IsRosterDraggableLine(field, item)"
+                                                         @ondragstart="() => StartRosterDrag(field, item)"
+                                                         @ondragover:preventDefault="@IsRosterDropTargetLine(field, item)"
+                                                         @ondrop="() => DropRosterLineAsync(field, item)"
                                                          data-roster-tree-line="@item">
                                                         @item
                                                     </div>
@@ -483,6 +486,11 @@
 
     [Parameter]
     public EventCallback<DialogFieldCheckboxChange> FieldCheckboxRequested { get; set; }
+
+    [Parameter]
+    public EventCallback<DialogRosterDropIntent> RosterDropRequested { get; set; }
+
+    private string? _rosterDragSourceLine;
 
     private ElementReference _dialogRoot;
     private string? _focusedDialogId;
@@ -711,6 +719,48 @@
             && !line.Contains("no watched files", StringComparison.OrdinalIgnoreCase)
             && !line.Contains("no saved runners", StringComparison.OrdinalIgnoreCase)
             && !line.Contains("empty", StringComparison.OrdinalIgnoreCase);
+
+    private void StartRosterDrag(DesktopDialogField field, string line)
+    {
+        if (!IsRosterDraggableLine(field, line))
+            return;
+
+        _rosterDragSourceLine = line;
+    }
+
+    private async Task DropRosterLineAsync(DesktopDialogField field, string line)
+    {
+        if (!IsRosterDropTargetLine(field, line) || string.IsNullOrWhiteSpace(_rosterDragSourceLine))
+            return;
+
+        string targetFolder = ExtractRosterFolderName(line);
+        if (string.IsNullOrWhiteSpace(targetFolder))
+            return;
+
+        await RosterDropRequested.InvokeAsync(new DialogRosterDropIntent(
+            _rosterDragSourceLine,
+            line,
+            targetFolder,
+            "move_runner_to_group"));
+        _rosterDragSourceLine = null;
+    }
+
+    private static bool IsRosterDropTargetLine(DesktopDialogField field, string line)
+        => IsRosterHierarchyField(field)
+            && string.Equals(field.Id, "rosterCustomFolders", StringComparison.Ordinal)
+            && !string.IsNullOrWhiteSpace(line)
+            && !line.TrimStart().StartsWith("[", StringComparison.Ordinal)
+            && (line.Contains(" · system", StringComparison.OrdinalIgnoreCase)
+                || line.Contains(" · custom", StringComparison.OrdinalIgnoreCase));
+
+    private static string ExtractRosterFolderName(string line)
+    {
+        string cleaned = line.Trim()
+            .TrimStart('├', '└', '─', '│', ' ', '*', '-')
+            .Trim();
+        int suffixIndex = cleaned.IndexOf(" · ", StringComparison.Ordinal);
+        return suffixIndex > 0 ? cleaned[..suffixIndex].Trim() : cleaned;
+    }
 
     private static string BuildRosterHierarchyLineClass(DesktopDialogField field, string line)
     {
