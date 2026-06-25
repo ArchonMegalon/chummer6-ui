@@ -18,6 +18,10 @@ The command writes:
 .codex-studio/published/BLAZOR_WORKBENCH_ROSTER_HIERARCHY_STAGED_PROOF.generated.json
 ```
 
+## Documentation Index Requirement
+
+The staged proof also checks `docs/BLAZOR_WEB_CLIENT_DOCS_INDEX.md` for this contract document. Roster hierarchy is part of the browser-client parity story, so the contract must stay discoverable from the top-level Blazor/web-client docs map alongside the materializer, milestone wrapper, and example receipt.
+
 ## Boundary
 
 This is source-staged alignment only. It does not prove hosted browser execution, Docker self-host execution, complete drag/drop UX coverage for every source item type, filesystem moves, folder deletion, watched-file relocation, or external `RosterHierarchyState` storage beyond preference-carried layout metadata.

@@ -91,6 +91,13 @@
       "status": "passed",
       "required_token_count": 3,
       "missing_tokens": []
+    },
+    {
+      "id": "contract_doc_index_requirement",
+      "path": "docs/BLAZOR_WORKBENCH_ROSTER_HIERARCHY_STAGED_PROOF.md",
+      "status": "passed",
+      "required_token_count": 3,
+      "missing_tokens": []
     }
   ],
   "boundary_notes": [

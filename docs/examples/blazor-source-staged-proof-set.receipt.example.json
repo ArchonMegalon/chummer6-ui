@@ -785,7 +785,7 @@
       "status": "passed",
       "proof_tier": "source_staged_no_browser_execution",
       "expected_route_count": 1,
-      "source_check_count": 8,
+      "source_check_count": 13,
       "control_count": null,
       "covered_control_count": null
     }

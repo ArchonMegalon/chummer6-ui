@@ -250,6 +250,15 @@ CHECKS = [
             "runtime boundary language",
         ],
     },
+    {
+        "id": "contract_doc_index_requirement",
+        "path": "docs/BLAZOR_WORKBENCH_ROSTER_HIERARCHY_STAGED_PROOF.md",
+        "tokens": [
+            "Documentation Index Requirement",
+            "docs/BLAZOR_WEB_CLIENT_DOCS_INDEX.md",
+            "top-level Blazor/web-client docs map",
+        ],
+    },
 ]
 
 
