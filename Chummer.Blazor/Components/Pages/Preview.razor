@@ -68,7 +68,7 @@
 
     @if (IsAppRoute || IsWorkbenchRoute)
     {
-        <section class="classic-chummer-shell" aria-label="Chummer Online classic desktop shell" data-chummer-classic-shell="true" data-active-workflow="@ActiveWorkflowDataKey" data-route-family="@RouteFamilyDataKey" data-route-segment="@RouteSegmentDataKey" data-route-surface="@RouteSurfaceDataKey" data-command="@CommandDataKey" data-tab="@TabDataKey" data-workspace="@WorkspaceDataKey" data-active-runner="@ActiveRunnerDataKey" data-roster-selected-node="@SelectedRosterNodeDataKey" data-dossier-state="@DossierStateDataKey" data-dossier-storage="@DossierStorageDataKey" data-ruleset="@RulesetDataKey" data-validation-state="@ValidationStateDataKey" data-privacy-mode="@PrivacyModeDataKey" data-analytics-scope="@AnalyticsScopeDataKey" data-hosting-mode="@HostingModeDataKey" data-deployment-target="@DeploymentTargetDataKey" data-self-hostable="@SelfHostableDataKey" data-container-target="@ContainerTargetDataKey">
+        <section class="classic-chummer-shell" aria-label="Chummer Online classic desktop shell" data-chummer-classic-shell="true" data-active-workflow="@ActiveWorkflowDataKey" data-route-family="@RouteFamilyDataKey" data-route-segment="@RouteSegmentDataKey" data-route-surface="@RouteSurfaceDataKey" data-canonical-route="@CanonicalRouteDataKey" data-route-alias="@RouteAliasDataKey" data-command="@CommandDataKey" data-tab="@TabDataKey" data-workspace="@WorkspaceDataKey" data-active-runner="@ActiveRunnerDataKey" data-roster-selected-node="@SelectedRosterNodeDataKey" data-dossier-state="@DossierStateDataKey" data-dossier-storage="@DossierStorageDataKey" data-ruleset="@RulesetDataKey" data-validation-state="@ValidationStateDataKey" data-privacy-mode="@PrivacyModeDataKey" data-analytics-scope="@AnalyticsScopeDataKey" data-hosting-mode="@HostingModeDataKey" data-deployment-target="@DeploymentTargetDataKey" data-self-hostable="@SelfHostableDataKey" data-container-target="@ContainerTargetDataKey" data-auth-gate="@AuthGateDataKey" data-session-state="@SessionStateDataKey" data-login-target="@LoginTargetDataKey" data-auth-return-policy="@AuthReturnPolicyDataKey">
             <header class="classic-chummer-titlebar" aria-label="Chummer Online window title">
                 <div class="classic-chummer-titlebar-title">Chummer Online - @(PrimaryRecentWorkspace?.ShortLabel ?? "Sample Runner") - @ActiveWorkflowStatus</div>
                 <div class="classic-window-controls" aria-hidden="true"><span>_</span><span>[]</span><span>X</span></div>
@@ -79,9 +79,9 @@
                     <div class="classic-menu-flyout" role="menu">
                         <a href="@BuildPreviewHref(command: NewCharacterCommand, useWorkbenchRoute: true)" role="menuitem" data-chummer-shortcut="Ctrl+N" aria-keyshortcuts="Control+N">New runner</a>
                         <a href="@BuildPreviewHref(command: OpenCharacterCommand, useWorkbenchRoute: true)" role="menuitem" data-chummer-shortcut="Ctrl+O" aria-keyshortcuts="Control+O">Open dossier</a>
-                        <a href="@SaveAsFlowHref" role="menuitem" data-chummer-shortcut="Ctrl+Shift+S" aria-keyshortcuts="Control+Shift+S">Save as</a>
-                        <a href="@PrintFlowHref" role="menuitem" data-chummer-shortcut="Ctrl+P" aria-keyshortcuts="Control+P">Print</a>
-                        <a href="@ExportFlowHref" role="menuitem" data-chummer-shortcut="Ctrl+E" aria-keyshortcuts="Control+E">Export</a>
+                        <a href="@SaveAsFlowHref" role="menuitem" aria-current="@(IsSaveWorkflow ? "page" : null)" data-chummer-shortcut="Ctrl+Shift+S" aria-keyshortcuts="Control+Shift+S">Save as</a>
+                        <a href="@PrintFlowHref" role="menuitem" aria-current="@(IsPrintWorkflow ? "page" : null)" data-chummer-shortcut="Ctrl+P" aria-keyshortcuts="Control+P">Print</a>
+                        <a href="@ExportFlowHref" role="menuitem" aria-current="@(IsExportWorkflow ? "page" : null)" data-chummer-shortcut="Ctrl+E" aria-keyshortcuts="Control+E">Export</a>
                     </div>
                 </div>
                 <div class="classic-menu-item">
@@ -130,11 +130,11 @@
                 <div class="classic-toolstrip-group" aria-label="File actions">
                     <a class="classic-tool-icon" href="@BuildPreviewHref(command: NewCharacterCommand, useWorkbenchRoute: true)" data-classic-toolstrip-action="new-runner" data-chummer-shortcut="Ctrl+N" aria-keyshortcuts="Control+N" title="New runner">N</a>
                     <a class="classic-tool-icon" href="@BuildPreviewHref(command: OpenCharacterCommand, useWorkbenchRoute: true)" data-classic-toolstrip-action="open-dossier" data-chummer-shortcut="Ctrl+O" aria-keyshortcuts="Control+O" title="Open dossier">O</a>
-                    <a class="classic-tool-icon" href="@SaveAsFlowHref" data-classic-toolstrip-action="save-dossier" data-chummer-shortcut="Ctrl+S" aria-keyshortcuts="Control+S" title="Save dossier">S</a>
+                    <a class="classic-tool-icon" href="@SaveAsFlowHref" data-classic-toolstrip-action="save-dossier" data-chummer-shortcut="Ctrl+S" aria-keyshortcuts="Control+S" title="Save dossier" aria-current="@(IsSaveWorkflow ? "page" : null)">S</a>
                 </div>
                 <div class="classic-toolstrip-group" aria-label="Output actions">
-                    <a class="classic-tool-icon" href="@PrintFlowHref" data-classic-toolstrip-action="print-dossier" data-chummer-shortcut="Ctrl+P" aria-keyshortcuts="Control+P" title="Print">P</a>
-                    <a class="classic-tool-icon" href="@ExportFlowHref" data-classic-toolstrip-action="export-dossier" data-chummer-shortcut="Ctrl+E" aria-keyshortcuts="Control+E" title="Export">E</a>
+                    <a class="classic-tool-icon" href="@PrintFlowHref" data-classic-toolstrip-action="print-dossier" data-chummer-shortcut="Ctrl+P" aria-keyshortcuts="Control+P" title="Print" aria-current="@(IsPrintWorkflow ? "page" : null)">P</a>
+                    <a class="classic-tool-icon" href="@ExportFlowHref" data-classic-toolstrip-action="export-dossier" data-chummer-shortcut="Ctrl+E" aria-keyshortcuts="Control+E" title="Export" aria-current="@(IsExportWorkflow ? "page" : null)">E</a>
                 </div>
                 <div class="classic-toolstrip-group" aria-label="Dossier actions">
                     <a class="classic-tool-icon" href="@ChummerOnlineRosterHref" data-classic-toolstrip-action="character-roster" data-chummer-shortcut="Ctrl+R" aria-keyshortcuts="Control+R" title="Character Roster" aria-current="@(IsCharacterRosterCommand ? "page" : null)">R</a>
@@ -2717,6 +2717,12 @@
     private bool IsOnlineAliasRoute => IsRouteSegment(OnlineRouteSegment);
     private bool IsWorkbenchRoute => IsRouteSegment(WorkbenchRouteSegment);
     private bool IsCharacterRosterCommand => string.Equals(Command, CharacterRosterCommand, StringComparison.OrdinalIgnoreCase);
+    private bool IsSaveWorkflow => string.Equals(Command, SaveCharacterCommand, StringComparison.OrdinalIgnoreCase)
+        || string.Equals(Command, SaveCharacterAsCommand, StringComparison.OrdinalIgnoreCase);
+    private bool IsPrintWorkflow => string.Equals(Command, PrintCharacterCommand, StringComparison.OrdinalIgnoreCase)
+        || string.Equals(Command, OpenForPrintingCommand, StringComparison.OrdinalIgnoreCase);
+    private bool IsExportWorkflow => string.Equals(Command, ExportCharacterCommand, StringComparison.OrdinalIgnoreCase)
+        || string.Equals(Command, OpenForExportCommand, StringComparison.OrdinalIgnoreCase);
     private bool IsProfileWorkflow => string.Equals(Tab, ProfileTabId, StringComparison.OrdinalIgnoreCase);
     private bool IsBuildLabWorkflow => string.Equals(Tab, BuildTabId, StringComparison.OrdinalIgnoreCase);
     private bool IsGearWorkflow => string.Equals(Tab, GearTabId, StringComparison.OrdinalIgnoreCase);
@@ -2727,6 +2733,12 @@
     private bool IsCareerWorkflow => string.Equals(Tab, CareerTabId, StringComparison.OrdinalIgnoreCase);
     private string ActiveWorkflowStatus => IsCharacterRosterCommand
         ? "Character Roster"
+        : IsSaveWorkflow
+            ? "Save"
+            : IsPrintWorkflow
+                ? "Print"
+                : IsExportWorkflow
+                    ? "Export"
         : IsProfileWorkflow
             ? "Profile"
         : IsBuildLabWorkflow
@@ -2746,6 +2758,12 @@
                                     : "Dossier";
     private string ActiveWorkflowDataKey => IsCharacterRosterCommand
         ? "character-roster"
+        : IsSaveWorkflow
+            ? "save"
+            : IsPrintWorkflow
+                ? "print"
+                : IsExportWorkflow
+                    ? "export"
         : IsProfileWorkflow
             ? "profile"
             : IsBuildLabWorkflow
@@ -2778,6 +2796,8 @@
                 ? WorkbenchRouteSegment
                 : PreviewRouteSegment;
     private string RouteSurfaceDataKey => IsAppRoute ? "public-app" : IsWorkbenchRoute ? "compatibility" : "preview-tools";
+    private string CanonicalRouteDataKey => IsAppRoute ? AppRouteSegment : RouteSegmentDataKey;
+    private string RouteAliasDataKey => IsOnlineAliasRoute ? OnlineRouteSegment : "none";
     private string CommandDataKey => NormalizeShellDataToken(Command);
     private string TabDataKey => NormalizeShellDataToken(Tab);
     private string WorkspaceDataKey => NormalizeShellDataToken(PrimaryRecentWorkspace?.WorkspaceId ?? Workspace);
@@ -2793,6 +2813,10 @@
     private string DeploymentTargetDataKey => IsAppRoute ? "chummer-run" : "compatibility";
     private string SelfHostableDataKey => "true";
     private string ContainerTargetDataKey => "docker";
+    private string AuthGateDataKey => IsAppRoute ? "login-if-anonymous" : "none";
+    private string SessionStateDataKey => "local-preview";
+    private string LoginTargetDataKey => IsAppRoute ? "login" : "none";
+    private string AuthReturnPolicyDataKey => IsAppRoute ? "preserve-route-and-query" : "none";
     private static string NormalizeShellDataToken(string? value)
     {
         if (string.IsNullOrWhiteSpace(value))

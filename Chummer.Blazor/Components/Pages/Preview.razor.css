@@ -8222,3 +8222,34 @@
     letter-spacing: .06em;
     text-transform: uppercase;
 }
+
+.browser-preview-shell:is(.classic-promoted-app, .classic-compat-app) .classic-chummer-shell[data-auth-gate="login-if-anonymous"] .classic-chummer-status span:first-child::after {
+    content: " auth-ready";
+    color: #4f463b;
+    font-size: .58rem;
+    font-weight: 900;
+}
+
+.browser-preview-shell:is(.classic-promoted-app, .classic-compat-app) .classic-chummer-shell[data-session-state="authenticated"] .classic-chummer-status span:first-child {
+    background: linear-gradient(180deg, #e7f0df 0%, #b8d2a3 100%);
+}
+
+.browser-preview-shell:is(.classic-promoted-app, .classic-compat-app) .classic-chummer-shell[data-session-state="anonymous"] .classic-chummer-status span:first-child {
+    background: linear-gradient(180deg, #f7ead4 0%, #d9bd83 100%);
+}
+
+.browser-preview-shell:is(.classic-promoted-app, .classic-compat-app) .classic-chummer-shell[data-auth-return-policy="preserve-route-and-query"] .classic-chummer-status span:first-child strong::after {
+    content: " return";
+    color: #1c4169;
+    font-size: .56rem;
+    font-weight: 900;
+}
+
+.browser-preview-shell:is(.classic-promoted-app, .classic-compat-app) .classic-chummer-shell[data-route-alias="online"] .classic-chummer-titlebar-title::before {
+    content: "alias ";
+    color: rgba(255, 250, 240, .74);
+    font-size: .58rem;
+    font-weight: 900;
+    letter-spacing: .06em;
+    text-transform: uppercase;
+}
