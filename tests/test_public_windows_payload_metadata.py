@@ -1,11 +1,14 @@
 from __future__ import annotations
 
 import json
+import subprocess
 from pathlib import Path
 
 
 RUN_SERVICES_DOWNLOADS = Path("/docker/chummercomplete/chummer.run-services/Chummer.Portal/downloads")
+PRESENTATION_DOWNLOADS = Path("/docker/chummercomplete/chummer-presentation/Chummer.Portal/downloads")
 PRESENTATION_GENERATOR = Path("/docker/chummercomplete/chummer-presentation/scripts/generate-releases-manifest.sh")
+PRESENTATION_PAYLOAD_GATE = Path("/docker/chummercomplete/chummer-presentation/scripts/verify-windows-installer-payloads.py")
 
 
 def test_manifest_generator_enriches_windows_payload_metadata_for_artifacts_and_downloads() -> None:
@@ -41,3 +44,23 @@ def test_public_downloads_tree_contains_windows_payload_sidecar_metadata() -> No
     assert isinstance(payload["sha256"], str) and len(payload["sha256"]) == 64
     assert int(payload["sizeBytes"]) > 0
 
+
+def test_presentation_portal_downloads_tree_passes_windows_payload_gate() -> None:
+    result = subprocess.run(
+        [
+            "python3",
+            str(PRESENTATION_PAYLOAD_GATE),
+            "--files-dir",
+            str(PRESENTATION_DOWNLOADS / "files"),
+            "--manifest",
+            str(PRESENTATION_DOWNLOADS / "releases.json"),
+            "--manifest",
+            str(PRESENTATION_DOWNLOADS / "RELEASE_CHANNEL.generated.json"),
+        ],
+        text=True,
+        capture_output=True,
+        check=False,
+    )
+
+    assert result.returncode == 0, result.stderr
+    assert "windows_installer_payload_gate:ok checked=1" in result.stdout

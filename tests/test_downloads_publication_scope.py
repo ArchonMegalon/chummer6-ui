@@ -89,3 +89,14 @@ def test_publish_script_materializes_publication_scope_receipt() -> None:
     assert "materialize-downloads-publication-scope.py" in text
     assert "Updated local downloads shelf" in text
     assert "through verified external downloads lane" in text
+
+
+def test_publish_script_keeps_windows_bootstrap_payload_metadata_with_payload() -> None:
+    text = PUBLISH_SCRIPT_PATH.read_text(encoding="utf-8")
+
+    assert "chummer-*-win-*-payload.zip.json" in text
+    assert "chummer-avalonia-*-payload.zip.json" in text
+    assert "chummer-blazor-desktop-*-payload.zip.json" in text
+    assert "chummer-6-*-payload.zip.json" in text
+    assert 'payload_metadata_name = payload_name + ".json"' in text
+    assert "promoted artifact missing from bundle source" in text
