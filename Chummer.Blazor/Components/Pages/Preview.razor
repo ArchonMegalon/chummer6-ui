@@ -790,10 +790,10 @@
             </div>
         </section>
 
-        <section class="browser-workbench-search-filter" aria-label="Workbench search and filter rail" data-workbench-search-filter="strip">
+        <section class="browser-workbench-search-filter" aria-label="Browser-client search and filter rail" data-workbench-search-filter="strip">
             <div class="browser-workbench-search-filter-copy">
                 <span class="browser-preview-status-label">Search/filter</span>
-                <strong>Keep dense Chummer lists searchable from the workbench chrome.</strong>
+                <strong>Keep dense Chummer lists searchable from the browser-client chrome.</strong>
                 <p>Gear, skills, qualities, Character Library, and source-heavy panes need visible filter and help lanes so users do not hunt through page-specific controls.</p>
             </div>
             <div class="browser-workbench-search-filter-actions" role="list" aria-label="Search and filter shortcuts">
@@ -1572,7 +1572,7 @@
             </div>
         </section>
 
-        <section class="browser-workbench-navigation-deeplink" aria-label="Workbench navigation and deep-link lane" data-workbench-navigation-deeplink="strip">
+        <section class="browser-workbench-navigation-deeplink" aria-label="Browser-client navigation and deep-link lane" data-workbench-navigation-deeplink="strip">
             <div class="browser-workbench-navigation-deeplink-copy">
                 <span class="browser-preview-status-label">Navigation</span>
                 <strong>Make links reopen the same place.</strong>
@@ -2461,7 +2461,7 @@
     private bool IsAppRoute => Navigation.Uri.Contains(AppRouteMarker, StringComparison.OrdinalIgnoreCase);
     private bool IsWorkbenchRoute => Navigation.Uri.Contains(WorkbenchRouteMarker, StringComparison.OrdinalIgnoreCase);
     private string PageTitleText => IsAppRoute ? "Chummer Online" : IsWorkbenchRoute ? "Chummer Online Compatibility Route" : "Chummer Online Preview Tools";
-    private string RouteNavigationLabel => IsAppRoute ? "Chummer Online navigation" : "Workbench navigation";
+    private string RouteNavigationLabel => IsAppRoute ? "Chummer Online navigation" : IsWorkbenchRoute ? "Compatibility route navigation" : "Preview tools navigation";
     private string RouteStatusLabel => IsAppRoute ? "Chummer Online status" : IsWorkbenchRoute ? "Compatibility route status" : "Preview tools status";
     private string RouteGuidanceLabel => IsAppRoute ? "Chummer Online route guidance" : IsWorkbenchRoute ? "Compatibility route guidance" : "Preview tools guidance";
     private string RouteKindLabel => IsAppRoute ? "Chummer Online" : IsWorkbenchRoute ? "Compatibility route" : "Preview tools";
@@ -2483,7 +2483,7 @@
     private string SessionRecoveryAriaLabel => IsAppRoute ? "Chummer Online session recovery" : "Compatibility route session recovery";
     private string HostingPostureAriaLabel => IsAppRoute ? "Chummer Online hosting and privacy posture" : "Compatibility route hosting and privacy posture";
     private string CommandPaletteAriaLabel => IsAppRoute ? "Chummer Online command palette posture" : "Compatibility route command palette posture";
-    private string DensityAriaLabel => IsAppRoute ? "Chummer Online density posture" : "Workbench density posture";
+    private string DensityAriaLabel => IsAppRoute ? "Chummer Online density posture" : IsWorkbenchRoute ? "Compatibility route density posture" : "Preview tools density posture";
     private string HostedRouteLabel => IsAppRoute ? HostedAppRoute : HostedWorkbenchRoute;
     private string HostingTitle => IsAppRoute
         ? "Chummer Online, hosted or self-hosted."
@@ -2491,34 +2491,34 @@
     private string CommandPaletteSummary => IsAppRoute
         ? "Keep common Chummer actions discoverable with keyboard-style hints while every command remains a reload-safe Chummer Online link."
         : "Keep common Chummer actions discoverable with keyboard-style hints while every command remains a reload-safe workbench link.";
-    private string WorkflowLedgerLabel => IsAppRoute ? "Chummer Online" : "Workbench";
+    private string WorkflowLedgerLabel => IsAppRoute ? "Chummer Online" : IsWorkbenchRoute ? "Compatibility route" : "Preview tools";
     private string RulesDataSummary => IsAppRoute
         ? "Open ruleset, source, XML, or language tools without leaving Chummer Online."
-        : "Open ruleset, source, XML, or language tools without leaving the workbench.";
+        : "Open ruleset, source, XML, or language tools without leaving the browser client.";
     private string SettingsSummary => IsAppRoute
         ? "Open app settings, character defaults, ruleset choice, update status, or help from Chummer Online."
-        : "Open app settings, character defaults, ruleset choice, update status, or help from the workbench.";
+        : "Open app settings, character defaults, ruleset choice, update status, or help from the browser client.";
     private string DiagnosticsSummary => IsAppRoute
         ? "Open runtime details, About, health, release status, or preview tools from Chummer Online."
-        : "Open runtime details, About, health, release status, or preview tools from the workbench.";
+        : "Open runtime details, About, health, release status, or preview tools from the browser client.";
     private string ConnectedRuntimeSummaryText => IsAppRoute
         ? "Play, session, coach, assistant, and status links stay close without changing the Chummer Online route."
-        : "Play, session, coach, assistant, and status links stay close without changing the workbench.";
+        : "Play, session, coach, assistant, and status links stay close without changing the browser client.";
     private string NewCharacterEntrySummary => IsAppRoute
         ? "Launch the shared new-character flow directly from Chummer Online."
-        : "Launch the shared new-character flow directly from the browser workbench route.";
+        : "Launch the shared new-character flow directly from the browser client route.";
     private string PortalSupportSummary => IsAppRoute
         ? "Route browser-client issues through the portal support surface without breaking the Chummer Online product shape."
-        : "Route browser-client issues through the portal support surface without breaking the workbench product shape.";
+        : "Route browser-client issues through the portal support surface without breaking the Chummer Online product shape.";
     private string NewCharacterProofSummary => IsAppRoute
         ? "Deep-links Chummer Online into the same shared new-character command so startup workflow proof does not depend on manual clicking."
-        : "Deep-links the browser workbench into the same shared new-character command so startup workflow proof does not depend on manual clicking.";
+        : "Deep-links the browser client into the same shared new-character command so startup workflow proof does not depend on manual clicking.";
     private string ImportProofSummary => IsAppRoute
         ? "Deep-links Chummer Online into the shared import dialog so existing-runner intake is proven from the same route model as desktop startup commands."
-        : "Deep-links the browser workbench into the shared import dialog so existing-runner intake is proven from the same route model as desktop startup commands.";
+        : "Deep-links the browser client into the shared import dialog so existing-runner intake is proven from the same route model as desktop startup commands.";
     private string OriginDossierSummary => IsAppRoute
         ? "Deep-links Chummer Online into the same origin-dossier wizard used by the shared startup flow."
-        : "Deep-links the browser workbench into the same origin-dossier wizard used by the shared startup flow.";
+        : "Deep-links the browser client into the same origin-dossier wizard used by the shared startup flow.";
     private string RouteOpenTitle => IsAppRoute
         ? "Open Chummer Online"
         : "Open the browser-facing Chummer workbench";
@@ -2552,7 +2552,7 @@
         ? "Continue Seeded Dossier"
         : $"Continue {PrimaryRecentWorkspace.ShortLabel} on contacts";
     private string ContinueRecentDescription => PrimaryRecentWorkspace is null
-        ? "Open a live seeded continuation tab so the browser workbench can behave like an already-opened desktop session."
+        ? "Open a live seeded continuation tab so the browser client can behave like an already-opened desktop session."
         : "Open the most recent restored runner directly on its contacts lane so browser continuity follows shared session state instead of a seeded-only demo.";
     private string BuildLabLaneHref => BuildWorkbenchLaneHref("tab-create");
     private string BuildLabLaneLabel => PrimaryRecentWorkspace is null
@@ -2574,7 +2574,7 @@
     private string GearLaneHref => BuildWorkbenchLaneHref("tab-gear");
     private string GearLaneLabel => BuildWorkbenchLaneLabel("Open Gear lane", "gear");
     private string GearLaneDescription => PrimaryRecentWorkspace is null
-        ? "Jump into the seeded loadout lane when you want equipment, carry choices, and gear context without restarting the workbench."
+        ? "Jump into the seeded loadout lane when you want equipment, carry choices, and gear context without restarting the browser client."
         : "Open the most recent restored runner on its gear lane so equipment and carry context come from shared session state instead of a seeded-only runner.";
     private string AdvancedLaneHref => BuildWorkbenchLaneHref("tab-technomancer");
     private string AdvancedLaneLabel => BuildWorkbenchLaneLabel("Open Advanced lane", "advanced");
@@ -2594,7 +2594,7 @@
     private string PrintFlowHref => BuildWorkbenchCommandHref(PrintCharacterCommand);
     private string PrintFlowLabel => BuildWorkbenchCommandLabel("Open Print flow", "print");
     private string PrintFlowDescription => PrimaryRecentWorkspace is null
-        ? "Open the seeded print result path directly from the browser workbench when you need a browser-safe print continuation."
+        ? "Open the seeded print result path directly from the browser client when you need a browser-safe print continuation."
         : "Open the print result path for the most recent restored runner so browser print continuation follows the live session.";
     private bool IsAnyConnectedRuntimeLaneConfigured
         => IsConfigured(Configuration["CHUMMER_PORTAL_SESSION_PROXY_URL"])
