@@ -501,8 +501,14 @@
       <Setter Property="Foreground" Value="{DynamicResource ChummerShellSelectionForegroundBrush}" />
       <Setter Property="Background" Value="{DynamicResource ChummerShellSelectionBrush}" />
     </Style>
+    <Style Selector="TreeViewItem:selected /template/ Border">
+      <Setter Property="Background" Value="{DynamicResource ChummerShellSelectionBrush}" />
+    </Style>
     <Style Selector="TreeViewItem:selected:pointerover">
       <Setter Property="Foreground" Value="{DynamicResource ChummerShellSelectionForegroundBrush}" />
+      <Setter Property="Background" Value="{DynamicResource ChummerShellSelectionBrush}" />
+    </Style>
+    <Style Selector="TreeViewItem:selected:pointerover /template/ Border">
       <Setter Property="Background" Value="{DynamicResource ChummerShellSelectionBrush}" />
     </Style>
     <Style Selector="TreeViewItem TextBlock">
@@ -553,9 +559,17 @@
       <Setter Property="Foreground" Value="{DynamicResource ChummerShellSelectionForegroundBrush}" />
       <Setter Property="BorderBrush" Value="{DynamicResource ChummerShellActiveMenuBorderBrush}" />
     </Style>
+    <Style Selector="ListBoxItem:selected /template/ Border">
+      <Setter Property="Background" Value="{DynamicResource ChummerShellSelectionBrush}" />
+      <Setter Property="BorderBrush" Value="{DynamicResource ChummerShellActiveMenuBorderBrush}" />
+    </Style>
     <Style Selector="ListBoxItem:selected:pointerover">
       <Setter Property="Background" Value="{DynamicResource ChummerShellSelectionBrush}" />
       <Setter Property="Foreground" Value="{DynamicResource ChummerShellSelectionForegroundBrush}" />
+      <Setter Property="BorderBrush" Value="{DynamicResource ChummerShellActiveMenuBorderBrush}" />
+    </Style>
+    <Style Selector="ListBoxItem:selected:pointerover /template/ Border">
+      <Setter Property="Background" Value="{DynamicResource ChummerShellSelectionBrush}" />
       <Setter Property="BorderBrush" Value="{DynamicResource ChummerShellActiveMenuBorderBrush}" />
     </Style>
     <Style Selector="ListBoxItem TextBlock">

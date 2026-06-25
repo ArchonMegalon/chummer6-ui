@@ -107,6 +107,7 @@ public sealed class DesktopWindowContrastTests
         {
             using ThemeScope scope = ThemeScope.Dark(window);
             AssertVisibleInputControlContrast(window, "shell theme helper dark mode", minimumVisibleInputControls: 4);
+            AssertVisibleSelectedListItemContrast(window, "shell theme helper dark mode", minimumSelectedItems: 1);
         });
     }
 
@@ -579,6 +580,26 @@ public sealed class DesktopWindowContrastTests
             Color background = ResolveBackgroundColor(backgroundBrush, control, context);
             string controlName = string.IsNullOrWhiteSpace(control.Name) ? control.GetType().Name : control.Name!;
             AssertContrastAtLeast(foreground, background, 4.5d, $"{context} {controlName} non-hover text");
+        }
+    }
+
+    private static void AssertVisibleSelectedListItemContrast(Control root, string context, int minimumSelectedItems)
+    {
+        ListBoxItem[] selectedItems = root.GetVisualDescendants()
+            .OfType<ListBoxItem>()
+            .Where(static item => item.IsVisible && item.IsSelected)
+            .ToArray();
+
+        Assert.IsTrue(
+            selectedItems.Length >= minimumSelectedItems,
+            $"{context} should expose enough selected list items for a meaningful dark-mode readability check.");
+
+        foreach (ListBoxItem item in selectedItems)
+        {
+            Color foreground = ResolveSolidColor(item.Foreground, item, "foreground", context);
+            Color background = ResolveBackgroundColor(item.Background, item, context);
+            string controlName = string.IsNullOrWhiteSpace(item.Name) ? item.GetType().Name : item.Name!;
+            AssertContrastAtLeast(foreground, background, 4.5d, $"{context} {controlName} selected list item text");
         }
     }
 
