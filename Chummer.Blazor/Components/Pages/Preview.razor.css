@@ -7136,3 +7136,927 @@
     background: linear-gradient(180deg, #b7ad9f 0%, #e8dfd3 100%);
     box-shadow: inset 1px 1px 0 rgba(57, 48, 40, .28);
 }
+
+/* Classic Chummer5A roster correction: explorer tree, not web navigation. */
+.browser-preview-shell.classic-promoted-app .classic-chummer-roster {
+    background: #c8bdae;
+    border-right: 1px solid #6f665b;
+    box-shadow: inset 1px 1px 0 rgba(255, 255, 255, .58), inset -1px 0 0 rgba(58, 48, 39, .22);
+}
+
+.browser-preview-shell.classic-promoted-app .classic-chummer-roster h2 {
+    margin: 0;
+    padding: .28rem .44rem;
+    border-bottom: 1px solid #746b60;
+    background: linear-gradient(180deg, #a99f92 0%, #82786c 100%);
+    color: #11100e;
+    font-size: .72rem;
+    font-weight: 900;
+    letter-spacing: .04em;
+    text-transform: uppercase;
+    text-shadow: 0 1px 0 rgba(255, 255, 255, .28);
+}
+
+.browser-preview-shell.classic-promoted-app .classic-roster-toolbar {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 1px;
+    padding: .22rem;
+    border-bottom: 1px solid #877d71;
+    background: #b5aa9c;
+}
+
+.browser-preview-shell.classic-promoted-app .classic-roster-toolbar button {
+    min-height: 1.45rem;
+    padding: .18rem .22rem;
+    border: 1px solid #675d52;
+    border-radius: 0;
+    background: linear-gradient(180deg, #ebe4d9 0%, #b9aea0 100%);
+    color: #1f1a15;
+    font-size: .62rem;
+    font-weight: 900;
+    line-height: 1.05;
+    box-shadow: inset 1px 1px 0 rgba(255, 255, 255, .78);
+}
+
+.browser-preview-shell.classic-promoted-app .classic-roster-toolbar button:active {
+    background: linear-gradient(180deg, #aaa092 0%, #e8dfd3 100%);
+    box-shadow: inset 1px 1px 0 rgba(55, 45, 37, .3);
+}
+
+.browser-preview-shell.classic-promoted-app .classic-roster-hint {
+    margin: 0;
+    padding: .26rem .42rem;
+    border-bottom: 1px solid #94897b;
+    background: #d8cec0;
+    color: #584f44;
+    font-size: .64rem;
+    line-height: 1.2;
+}
+
+.browser-preview-shell.classic-promoted-app .classic-roster-tree {
+    margin: 0;
+    padding: .18rem .12rem .35rem;
+    border: 1px solid #897f73;
+    border-left: 0;
+    border-right: 0;
+    background: #eee6db;
+    color: #181410;
+    font-size: .7rem;
+    min-height: 22rem;
+    overflow: auto;
+}
+
+.browser-preview-shell.classic-promoted-app .classic-roster-tree ul {
+    margin: 0;
+    padding-left: .82rem;
+    border-left: 1px dotted #9a9084;
+}
+
+.browser-preview-shell.classic-promoted-app .classic-roster-tree li {
+    position: relative;
+    min-height: 1.25rem;
+    margin: 0;
+    padding: .16rem .24rem .16rem .38rem;
+    border: 1px solid transparent;
+    list-style: none;
+    white-space: nowrap;
+}
+
+.browser-preview-shell.classic-promoted-app .classic-roster-tree li::before {
+    position: absolute;
+    left: .08rem;
+    top: .28rem;
+    width: .58rem;
+    color: #50483e;
+    font-size: .62rem;
+    font-weight: 900;
+    text-align: center;
+}
+
+.browser-preview-shell.classic-promoted-app .classic-roster-tree li[data-tree-kind="folder"]::before,
+.browser-preview-shell.classic-promoted-app .classic-roster-tree li:has(> ul)::before {
+    content: ">";
+}
+
+.browser-preview-shell.classic-promoted-app .classic-roster-tree li[data-tree-kind="runner"]::before,
+.browser-preview-shell.classic-promoted-app .classic-roster-tree li:not(:has(> ul))::before {
+    content: "[]";
+    letter-spacing: -.08em;
+}
+
+.browser-preview-shell.classic-promoted-app .classic-roster-tree li:hover {
+    border-color: #aaa094;
+    background: #ddd4c8;
+}
+
+.browser-preview-shell.classic-promoted-app .classic-roster-tree li[aria-selected="true"],
+.browser-preview-shell.classic-promoted-app .classic-roster-tree .is-selected {
+    border-color: #264f7f;
+    background: linear-gradient(180deg, #4e79aa 0%, #2f5f95 100%);
+    color: #fffdf8;
+    font-weight: 900;
+    text-shadow: 0 1px 0 rgba(0, 0, 0, .45);
+}
+
+.browser-preview-shell.classic-promoted-app .classic-roster-tree li[aria-selected="true"]::before,
+.browser-preview-shell.classic-promoted-app .classic-roster-tree .is-selected::before {
+    color: #fffdf8;
+}
+
+.browser-preview-shell.classic-promoted-app .classic-roster-tree li[draggable="true"] {
+    cursor: grab;
+}
+
+.browser-preview-shell.classic-promoted-app .classic-roster-tree li[draggable="true"]:active {
+    cursor: grabbing;
+}
+
+/* Classic Chummer5A inspector correction: properties/checks pane, not a web sidebar. */
+.browser-preview-shell.classic-promoted-app .classic-chummer-inspector {
+    background: #c5baac;
+    border-left: 1px solid #6e6459;
+    box-shadow: inset 1px 1px 0 rgba(255, 255, 255, .52), inset 1px 0 0 rgba(255, 255, 255, .28);
+    color: #1d1814;
+}
+
+.browser-preview-shell.classic-promoted-app .classic-chummer-inspector h2,
+.browser-preview-shell.classic-promoted-app .classic-chummer-inspector h3 {
+    margin: 0;
+    padding: .28rem .44rem;
+    border-top: 1px solid rgba(255, 255, 255, .42);
+    border-bottom: 1px solid #756b60;
+    background: linear-gradient(180deg, #aaa093 0%, #83786d 100%);
+    color: #11100e;
+    font-size: .68rem;
+    font-weight: 900;
+    letter-spacing: .045em;
+    text-transform: uppercase;
+    text-shadow: 0 1px 0 rgba(255, 255, 255, .24);
+}
+
+.browser-preview-shell.classic-promoted-app .classic-chummer-inspector h2:first-child {
+    border-top: 0;
+}
+
+.browser-preview-shell.classic-promoted-app .classic-chummer-inspector dl {
+    display: grid;
+    grid-template-columns: minmax(4.8rem, .72fr) minmax(0, 1fr);
+    margin: 0;
+    padding: .28rem;
+    gap: 0;
+    background: #e5dccf;
+    border-bottom: 1px solid #8f8478;
+}
+
+.browser-preview-shell.classic-promoted-app .classic-chummer-inspector dt,
+.browser-preview-shell.classic-promoted-app .classic-chummer-inspector dd {
+    min-height: 1.34rem;
+    padding: .22rem .28rem;
+    border-bottom: 1px solid #c3b8aa;
+    font-size: .68rem;
+}
+
+.browser-preview-shell.classic-promoted-app .classic-chummer-inspector dt {
+    background: #d0c5b8;
+    color: #4a4137;
+    font-weight: 900;
+}
+
+.browser-preview-shell.classic-promoted-app .classic-chummer-inspector dd {
+    margin: 0;
+    border-left: 1px solid #b7ac9e;
+    background: #f3ebdf;
+    color: #201b16;
+    font-weight: 800;
+    text-align: right;
+}
+
+.browser-preview-shell.classic-promoted-app .classic-chummer-inspector ul {
+    margin: 0;
+    padding: .3rem;
+    background: #e5dccf;
+}
+
+.browser-preview-shell.classic-promoted-app .classic-chummer-inspector li {
+    position: relative;
+    min-height: 1.42rem;
+    margin: 0 0 .18rem;
+    padding: .24rem .34rem .24rem 1.35rem;
+    border: 1px solid #a09486;
+    background: #f1e9de;
+    color: #27211b;
+    font-size: .68rem;
+    font-weight: 800;
+    list-style: none;
+    box-shadow: inset 1px 1px 0 rgba(255, 255, 255, .68);
+}
+
+.browser-preview-shell.classic-promoted-app .classic-chummer-inspector li::before {
+    content: "!";
+    position: absolute;
+    left: .34rem;
+    top: .24rem;
+    width: .62rem;
+    height: .62rem;
+    border: 1px solid #806a31;
+    background: #d7b94e;
+    color: #20180a;
+    font-size: .52rem;
+    font-weight: 900;
+    line-height: .62rem;
+    text-align: center;
+}
+
+.browser-preview-shell.classic-promoted-app .classic-chummer-inspector li:first-child::before {
+    content: "i";
+    border-color: #486780;
+    background: #89a8c0;
+}
+
+.browser-preview-shell.classic-promoted-app .classic-chummer-inspector li:last-child::before {
+    content: "?";
+    border-color: #6c6c6c;
+    background: #c8c1b7;
+}
+
+/* Classic Chummer5A top chrome correction: WinForms-style menu and toolbar. */
+.browser-preview-shell.classic-promoted-app .classic-chummer-titlebar {
+    min-height: 1.65rem;
+    padding: .16rem .28rem .16rem .45rem;
+    border: 1px solid #28384a;
+    border-bottom-color: #111a25;
+    background: linear-gradient(90deg, #243b59 0%, #476b91 54%, #8ba6bf 100%);
+    color: #fffaf0;
+    font-size: .74rem;
+    font-weight: 900;
+    letter-spacing: .01em;
+    text-shadow: 0 1px 0 rgba(0, 0, 0, .55);
+}
+
+.browser-preview-shell.classic-promoted-app .classic-chummer-titlebar::before {
+    content: "C";
+    display: inline-grid;
+    place-items: center;
+    width: .95rem;
+    height: .95rem;
+    margin-right: .38rem;
+    border: 1px solid rgba(255, 255, 255, .55);
+    background: #182535;
+    color: #f3efe5;
+    font-size: .58rem;
+    font-weight: 900;
+    box-shadow: inset 1px 1px 0 rgba(255, 255, 255, .28);
+}
+
+.browser-preview-shell.classic-promoted-app .classic-window-controls {
+    display: flex;
+    gap: 2px;
+    margin-left: auto;
+}
+
+.browser-preview-shell.classic-promoted-app .classic-window-controls span {
+    display: grid;
+    place-items: center;
+    width: 1.24rem;
+    height: 1.02rem;
+    border: 1px solid #39485a;
+    background: linear-gradient(180deg, #dbe5ef 0%, #8fa1b4 100%);
+    color: #101820;
+    font-size: .62rem;
+    font-weight: 900;
+    line-height: 1;
+    text-shadow: none;
+    box-shadow: inset 1px 1px 0 rgba(255, 255, 255, .78);
+}
+
+.browser-preview-shell.classic-promoted-app .classic-window-controls span:last-child {
+    background: linear-gradient(180deg, #d9b1a7 0%, #9f4f45 100%);
+    color: #fff7f1;
+    border-color: #6f342e;
+}
+
+.browser-preview-shell.classic-promoted-app .classic-chummer-menu {
+    min-height: 1.48rem;
+    padding: 0 .22rem;
+    border-left: 1px solid #83796c;
+    border-right: 1px solid #83796c;
+    border-bottom: 1px solid #7b7166;
+    background: linear-gradient(180deg, #ece5da 0%, #c5baac 100%);
+    box-shadow: inset 0 1px 0 rgba(255, 255, 255, .72);
+}
+
+.browser-preview-shell.classic-promoted-app .classic-menu-item > button,
+.browser-preview-shell.classic-promoted-app .classic-menu-item > a {
+    min-height: 1.42rem;
+    padding: .18rem .62rem;
+    border: 1px solid transparent;
+    border-radius: 0;
+    background: transparent;
+    color: #201b16;
+    font-size: .68rem;
+    font-weight: 800;
+    text-decoration: none;
+}
+
+.browser-preview-shell.classic-promoted-app .classic-menu-item:hover > button,
+.browser-preview-shell.classic-promoted-app .classic-menu-item:focus-within > button,
+.browser-preview-shell.classic-promoted-app .classic-menu-item:hover > a,
+.browser-preview-shell.classic-promoted-app .classic-menu-item:focus-within > a {
+    border-color: #6f879f;
+    background: linear-gradient(180deg, #d8e6f3 0%, #a6bfd8 100%);
+    color: #101820;
+}
+
+.browser-preview-shell.classic-promoted-app .classic-menu-flyout {
+    min-width: 12rem;
+    padding: .16rem;
+    border: 1px solid #5f554a;
+    background: #eee6db;
+    box-shadow: 3px 3px 0 rgba(42, 35, 28, .35);
+}
+
+.browser-preview-shell.classic-promoted-app .classic-menu-flyout a {
+    display: grid;
+    grid-template-columns: 1.25rem 1fr auto;
+    gap: .38rem;
+    min-height: 1.42rem;
+    padding: .2rem .42rem;
+    border: 1px solid transparent;
+    color: #1c1712;
+    font-size: .68rem;
+    font-weight: 750;
+    text-decoration: none;
+}
+
+.browser-preview-shell.classic-promoted-app .classic-menu-flyout a::before {
+    content: "";
+    width: .84rem;
+    height: .84rem;
+    align-self: center;
+    border: 1px solid #8f8477;
+    background: linear-gradient(180deg, #f5eee4 0%, #c4b8aa 100%);
+    box-shadow: inset 1px 1px 0 rgba(255, 255, 255, .7);
+}
+
+.browser-preview-shell.classic-promoted-app .classic-menu-flyout a:hover,
+.browser-preview-shell.classic-promoted-app .classic-menu-flyout a:focus-visible {
+    border-color: #2d5e94;
+    background: linear-gradient(180deg, #6090c1 0%, #315f93 100%);
+    color: #fffdf8;
+    outline: none;
+}
+
+.browser-preview-shell.classic-promoted-app .classic-chummer-toolstrip {
+    min-height: 2.35rem;
+    padding: .24rem .34rem;
+    border-left: 1px solid #83796c;
+    border-right: 1px solid #83796c;
+    border-bottom: 1px solid #746a5f;
+    background: linear-gradient(180deg, #d8cec1 0%, #b8ad9f 100%);
+    box-shadow: inset 0 1px 0 rgba(255, 255, 255, .68);
+}
+
+.browser-preview-shell.classic-promoted-app .classic-toolstrip-group {
+    display: flex;
+    align-items: center;
+    gap: .18rem;
+    margin-right: .28rem;
+    padding: .18rem .34rem .18rem .22rem;
+    border: 1px solid #94897b;
+    border-top-color: #f4eee4;
+    border-left-color: #f4eee4;
+    background: #c7bcad;
+    box-shadow: inset -1px -1px 0 rgba(62, 52, 43, .2);
+}
+
+.browser-preview-shell.classic-promoted-app .classic-toolstrip-group::after {
+    content: "";
+    width: 1px;
+    height: 1.42rem;
+    margin-left: .18rem;
+    background: #8a8074;
+    box-shadow: 1px 0 0 rgba(255, 255, 255, .55);
+}
+
+.browser-preview-shell.classic-promoted-app .classic-tool-icon {
+    display: grid;
+    place-items: center;
+    width: 1.55rem;
+    height: 1.48rem;
+    border: 1px solid #6b6055;
+    background: linear-gradient(180deg, #f4ede3 0%, #bbb0a2 100%);
+    color: #1d1814;
+    font-size: .62rem;
+    font-weight: 900;
+    text-decoration: none;
+    box-shadow: inset 1px 1px 0 rgba(255, 255, 255, .82), 1px 1px 0 rgba(55, 45, 37, .18);
+}
+
+.browser-preview-shell.classic-promoted-app .classic-tool-icon:hover,
+.browser-preview-shell.classic-promoted-app .classic-tool-icon:focus-visible {
+    border-color: #2d5e94;
+    background: linear-gradient(180deg, #dcebf8 0%, #93b1ce 100%);
+    outline: none;
+}
+
+.browser-preview-shell.classic-promoted-app .classic-tool-icon:active {
+    background: linear-gradient(180deg, #aaa092 0%, #eee6dc 100%);
+    box-shadow: inset 1px 1px 0 rgba(52, 43, 36, .32);
+}
+
+.browser-preview-shell.classic-promoted-app .classic-menu-item {
+    position: relative;
+    display: inline-flex;
+    align-items: stretch;
+}
+
+.browser-preview-shell.classic-promoted-app .classic-menu-item > .classic-menu-flyout {
+    position: absolute;
+    left: 0;
+    top: 100%;
+    z-index: 40;
+    display: none;
+}
+
+.browser-preview-shell.classic-promoted-app .classic-menu-item:hover > .classic-menu-flyout,
+.browser-preview-shell.classic-promoted-app .classic-menu-item:focus-within > .classic-menu-flyout {
+    display: grid;
+}
+
+.browser-preview-shell.classic-promoted-app .classic-chummer-menu,
+.browser-preview-shell.classic-compat-app .classic-chummer-menu {
+    overflow: visible;
+}
+
+.browser-preview-shell.classic-promoted-app .classic-chummer-toolstrip {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+}
+
+.browser-preview-shell.classic-promoted-app .classic-roster-tree a {
+    color: inherit;
+    text-decoration: none;
+}
+
+.browser-preview-shell.classic-promoted-app .classic-roster-tree a:hover,
+.browser-preview-shell.classic-promoted-app .classic-roster-tree a:focus-visible {
+    text-decoration: underline;
+    outline: none;
+}
+
+.browser-preview-shell.classic-promoted-app .classic-dossier-group dl > div {
+    display: contents;
+}
+
+.browser-preview-shell.classic-promoted-app .classic-dossier-group dl > div:hover dt,
+.browser-preview-shell.classic-promoted-app .classic-dossier-group dl > div:hover dd {
+    background-color: #e0d6c9;
+}
+
+.browser-preview-shell.classic-promoted-app .classic-dossier-group dl > div:hover dd {
+    background-color: #fff6ea;
+}
+
+.browser-preview-shell.classic-promoted-app .classic-chummer-dossier > header {
+    display: grid;
+    grid-template-columns: auto minmax(0, 1fr) auto;
+    align-items: center;
+    gap: .5rem;
+    min-height: 1.8rem;
+    padding: .24rem .48rem;
+    border-bottom: 1px solid #73695e;
+    background: linear-gradient(180deg, #e6ded2 0%, #c4b9aa 100%);
+    box-shadow: inset 1px 1px 0 rgba(255, 255, 255, .72);
+    color: #1d1814;
+}
+
+.browser-preview-shell.classic-promoted-app .classic-chummer-dossier > header span {
+    padding: .12rem .34rem;
+    border: 1px solid #8d8275;
+    background: #d5cbbd;
+    color: #4d443a;
+    font-size: .65rem;
+    font-weight: 900;
+    letter-spacing: .05em;
+    text-transform: uppercase;
+}
+
+.browser-preview-shell.classic-promoted-app .classic-chummer-dossier > header strong {
+    overflow: hidden;
+    color: #18130f;
+    font-size: .78rem;
+    font-weight: 900;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.browser-preview-shell.classic-promoted-app .classic-chummer-dossier > header::after {
+    content: "Local dossier | Unsaved | SR5";
+    justify-self: end;
+    padding: .12rem .34rem;
+    border: 1px solid #8f8477;
+    background: #eee6db;
+    color: #4b4238;
+    font-size: .64rem;
+    font-weight: 800;
+    white-space: nowrap;
+    box-shadow: inset 1px 1px 0 rgba(255, 255, 255, .62);
+}
+
+@media (max-width: 760px) {
+    .browser-preview-shell.classic-promoted-app .classic-chummer-dossier > header {
+        grid-template-columns: 1fr;
+        align-items: start;
+    }
+
+    .browser-preview-shell.classic-promoted-app .classic-chummer-dossier > header::after {
+        justify-self: stretch;
+    }
+}
+
+/* Classic Chummer5A app frame correction: one contained desktop window, not a web section. */
+.browser-preview-shell.classic-promoted-app {
+    min-height: 100vh;
+    padding: .65rem;
+    background:
+        linear-gradient(135deg, rgba(42, 53, 61, .24) 0 25%, transparent 25% 50%, rgba(42, 53, 61, .18) 50% 75%, transparent 75%) 0 0 / 18px 18px,
+        linear-gradient(180deg, #6f7d86 0%, #404a51 100%);
+}
+
+.browser-preview-shell.classic-promoted-app .classic-chummer-shell {
+    display: grid;
+    grid-template-rows: auto auto auto minmax(0, 1fr) auto;
+    width: min(100%, 1180px);
+    min-height: calc(100vh - 1.3rem);
+    margin: 0 auto;
+    border: 1px solid #172230;
+    background: #b9afa2;
+    box-shadow:
+        0 18px 38px rgba(12, 16, 20, .42),
+        inset 1px 1px 0 rgba(255, 255, 255, .58),
+        inset -1px -1px 0 rgba(25, 21, 17, .35);
+}
+
+.browser-preview-shell.classic-promoted-app .classic-chummer-workspace {
+    min-height: 0;
+    border-left: 1px solid #83796c;
+    border-right: 1px solid #83796c;
+    background: #b8ad9f;
+    overflow: hidden;
+}
+
+.browser-preview-shell.classic-promoted-app .classic-chummer-roster,
+.browser-preview-shell.classic-promoted-app .classic-chummer-dossier,
+.browser-preview-shell.classic-promoted-app .classic-chummer-inspector {
+    min-height: 0;
+    overflow: auto;
+}
+
+.browser-preview-shell.classic-promoted-app .classic-chummer-roster::-webkit-scrollbar,
+.browser-preview-shell.classic-promoted-app .classic-chummer-dossier::-webkit-scrollbar,
+.browser-preview-shell.classic-promoted-app .classic-chummer-inspector::-webkit-scrollbar,
+.browser-preview-shell.classic-promoted-app .classic-roster-tree::-webkit-scrollbar {
+    width: 14px;
+    height: 14px;
+}
+
+.browser-preview-shell.classic-promoted-app .classic-chummer-roster::-webkit-scrollbar-track,
+.browser-preview-shell.classic-promoted-app .classic-chummer-dossier::-webkit-scrollbar-track,
+.browser-preview-shell.classic-promoted-app .classic-chummer-inspector::-webkit-scrollbar-track,
+.browser-preview-shell.classic-promoted-app .classic-roster-tree::-webkit-scrollbar-track {
+    border: 1px solid #7c7267;
+    background: #c4b9ab;
+}
+
+.browser-preview-shell.classic-promoted-app .classic-chummer-roster::-webkit-scrollbar-thumb,
+.browser-preview-shell.classic-promoted-app .classic-chummer-dossier::-webkit-scrollbar-thumb,
+.browser-preview-shell.classic-promoted-app .classic-chummer-inspector::-webkit-scrollbar-thumb,
+.browser-preview-shell.classic-promoted-app .classic-roster-tree::-webkit-scrollbar-thumb {
+    border: 1px solid #655b50;
+    background: linear-gradient(180deg, #ede5d9 0%, #a99e91 100%);
+    box-shadow: inset 1px 1px 0 rgba(255, 255, 255, .74);
+}
+
+@media (max-width: 980px) {
+    .browser-preview-shell.classic-promoted-app {
+        padding: .35rem;
+    }
+
+    .browser-preview-shell.classic-promoted-app .classic-chummer-shell {
+        min-height: calc(100vh - .7rem);
+    }
+}
+
+/* Promoted app route must open as the desktop client, not as a preview/proof page. */
+.browser-preview-shell.classic-promoted-app > .browser-preview-banner {
+    display: none !important;
+}
+
+.browser-preview-shell.classic-promoted-app > .classic-chummer-shell {
+    grid-row: 1;
+}
+
+.browser-preview-shell.classic-promoted-app > :not(.classic-chummer-shell) {
+    display: none !important;
+}
+
+.browser-preview-shell.classic-promoted-app > .classic-chummer-shell ~ * {
+    display: none !important;
+}
+
+/* Classic Chummer5A promoted-app control baseline. */
+.browser-preview-shell.classic-promoted-app,
+.browser-preview-shell.classic-promoted-app button,
+.browser-preview-shell.classic-promoted-app input,
+.browser-preview-shell.classic-promoted-app select,
+.browser-preview-shell.classic-promoted-app textarea {
+    font-family: Tahoma, Verdana, "Segoe UI", sans-serif;
+}
+
+.browser-preview-shell.classic-promoted-app a {
+    color: inherit;
+}
+
+.browser-preview-shell.classic-promoted-app button,
+.browser-preview-shell.classic-promoted-app .classic-tool-icon,
+.browser-preview-shell.classic-promoted-app .classic-dossier-actions a,
+.browser-preview-shell.classic-promoted-app .classic-menu-item > a,
+.browser-preview-shell.classic-promoted-app .classic-menu-flyout a,
+.browser-preview-shell.classic-promoted-app .classic-dossier-tab,
+.browser-preview-shell.classic-promoted-app .classic-dossier-section-list a {
+    cursor: default;
+    user-select: none;
+    -webkit-user-select: none;
+}
+
+.browser-preview-shell.classic-promoted-app a:focus-visible,
+.browser-preview-shell.classic-promoted-app button:focus-visible {
+    outline: 1px dotted #111;
+    outline-offset: -3px;
+}
+
+.browser-preview-shell.classic-promoted-app button::-moz-focus-inner {
+    border: 0;
+}
+
+.browser-preview-shell.classic-promoted-app .classic-chummer-shell * {
+    box-sizing: border-box;
+}
+
+.browser-preview-shell.classic-promoted-app .classic-chummer-shell ::selection {
+    background: #315f93;
+    color: #fffdf8;
+}
+
+.browser-preview-shell.classic-promoted-app .classic-chummer-shell [aria-disabled="true"],
+.browser-preview-shell.classic-promoted-app .classic-chummer-shell .is-disabled {
+    color: #7a7167 !important;
+    text-shadow: 1px 1px 0 rgba(255, 255, 255, .52);
+    pointer-events: none;
+}
+
+.browser-preview-shell.classic-promoted-app .classic-chummer-shell [aria-disabled="true"]::before,
+.browser-preview-shell.classic-promoted-app .classic-chummer-shell .is-disabled::before {
+    opacity: .45;
+}
+
+/* Shared classic shell baseline for promoted app and compatibility routes. */
+.browser-preview-shell:is(.classic-promoted-app, .classic-compat-app) .classic-chummer-shell {
+    color: #1d1814;
+    font-family: Tahoma, Verdana, "Segoe UI", sans-serif;
+}
+
+.browser-preview-shell:is(.classic-promoted-app, .classic-compat-app) .classic-chummer-shell *,
+.browser-preview-shell:is(.classic-promoted-app, .classic-compat-app) .classic-chummer-shell *::before,
+.browser-preview-shell:is(.classic-promoted-app, .classic-compat-app) .classic-chummer-shell *::after {
+    box-sizing: border-box;
+}
+
+.browser-preview-shell:is(.classic-promoted-app, .classic-compat-app) .classic-chummer-shell a {
+    color: inherit;
+}
+
+.browser-preview-shell:is(.classic-promoted-app, .classic-compat-app) .classic-chummer-shell a:focus-visible,
+.browser-preview-shell:is(.classic-promoted-app, .classic-compat-app) .classic-chummer-shell button:focus-visible {
+    outline: 1px dotted #111;
+    outline-offset: -3px;
+}
+
+.browser-preview-shell:is(.classic-promoted-app, .classic-compat-app) .classic-window-controls {
+    display: flex;
+    gap: 2px;
+    margin-left: auto;
+}
+
+.browser-preview-shell:is(.classic-promoted-app, .classic-compat-app) .classic-menu-item {
+    position: relative;
+    display: inline-flex;
+    align-items: stretch;
+}
+
+.browser-preview-shell:is(.classic-promoted-app, .classic-compat-app) .classic-menu-item > .classic-menu-flyout {
+    position: absolute;
+    left: 0;
+    top: 100%;
+    z-index: 40;
+    display: none;
+}
+
+.browser-preview-shell:is(.classic-promoted-app, .classic-compat-app) .classic-menu-item:hover > .classic-menu-flyout,
+.browser-preview-shell:is(.classic-promoted-app, .classic-compat-app) .classic-menu-item:focus-within > .classic-menu-flyout {
+    display: grid;
+}
+
+.browser-preview-shell:is(.classic-promoted-app, .classic-compat-app) .classic-chummer-toolstrip {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+}
+
+.browser-preview-shell:is(.classic-promoted-app, .classic-compat-app) .classic-roster-tree a {
+    color: inherit;
+    text-decoration: none;
+}
+
+.browser-preview-shell:is(.classic-promoted-app, .classic-compat-app) .classic-dossier-group dl > div {
+    display: contents;
+}
+
+.browser-preview-shell:is(.classic-promoted-app, .classic-compat-app) .classic-roster-tree [data-roster-drop-zone] {
+    outline-offset: -2px;
+}
+
+.browser-preview-shell:is(.classic-promoted-app, .classic-compat-app) .classic-roster-tree [data-roster-drop-zone]:hover {
+    outline: 1px dotted #315f93;
+}
+
+.browser-preview-shell:is(.classic-promoted-app, .classic-compat-app) .classic-roster-tree [aria-expanded="true"]::before {
+    content: "v";
+}
+
+.browser-preview-shell:is(.classic-promoted-app, .classic-compat-app) .classic-roster-tree [aria-expanded="false"]::before {
+    content: ">";
+}
+
+.browser-preview-shell:is(.classic-promoted-app, .classic-compat-app) .classic-roster-toolbar [data-roster-command] {
+    position: relative;
+}
+
+.browser-preview-shell:is(.classic-promoted-app, .classic-compat-app) .classic-roster-toolbar [data-roster-command][aria-pressed="true"] {
+    background: linear-gradient(180deg, #aaa092 0%, #e8dfd3 100%);
+    box-shadow: inset 1px 1px 0 rgba(55, 45, 37, .32);
+}
+
+.browser-preview-shell:is(.classic-promoted-app, .classic-compat-app) .classic-roster-toolbar [data-roster-command][aria-busy="true"]::after {
+    content: "...";
+    position: absolute;
+    right: .18rem;
+    bottom: .08rem;
+    color: #4b4238;
+    font-size: .55rem;
+    font-weight: 900;
+}
+
+.browser-preview-shell:is(.classic-promoted-app, .classic-compat-app) .classic-chummer-roster.is-roster-command {
+    box-shadow:
+        inset 0 0 0 2px #315f93,
+        inset 1px 1px 0 rgba(255, 255, 255, .58),
+        inset -1px 0 0 rgba(58, 48, 39, .22);
+}
+
+.browser-preview-shell:is(.classic-promoted-app, .classic-compat-app) .classic-chummer-roster.is-roster-command h2::after {
+    content: "Active";
+    float: right;
+    padding: .05rem .26rem;
+    border: 1px solid #244f7e;
+    background: #e6f0fa;
+    color: #1c4169;
+    font-size: .55rem;
+    font-weight: 900;
+    letter-spacing: .04em;
+}
+
+.browser-preview-shell:is(.classic-promoted-app, .classic-compat-app) .classic-menu-flyout a[aria-current="page"],
+.browser-preview-shell:is(.classic-promoted-app, .classic-compat-app) .classic-tool-icon[aria-current="page"] {
+    border-color: #244f7e;
+    background: linear-gradient(180deg, #dcebf8 0%, #7fa1c3 100%);
+    color: #10263d;
+    box-shadow: inset 1px 1px 0 rgba(255, 255, 255, .82), inset -1px -1px 0 rgba(36, 79, 126, .35);
+}
+
+.browser-preview-shell:is(.classic-promoted-app, .classic-compat-app) .classic-menu-flyout a[aria-current="page"]::after {
+    content: "current";
+    justify-self: end;
+    color: inherit;
+    font-size: .56rem;
+    font-weight: 900;
+    letter-spacing: .04em;
+    text-transform: uppercase;
+}
+
+.browser-preview-shell:is(.classic-promoted-app, .classic-compat-app) .classic-dossier-tab[aria-current="page"] {
+    position: relative;
+    z-index: 3;
+    margin-bottom: -1px;
+    min-height: 1.72rem;
+    border-color: #5f554a;
+    border-bottom-color: #d7cec1;
+    background: linear-gradient(180deg, #f0eadf 0%, #d7cec1 100%);
+    color: #17130f;
+    box-shadow: inset 1px 1px 0 rgba(255, 255, 255, .72);
+}
+
+.browser-preview-shell:is(.classic-promoted-app, .classic-compat-app) .classic-dossier-section-list a[aria-current="page"] {
+    background: #efe7dc;
+    color: #17130f;
+    outline: 1px solid #6f655a;
+    position: relative;
+    z-index: 1;
+}
+
+.browser-preview-shell:is(.classic-promoted-app, .classic-compat-app) .classic-dossier-section-list a[aria-current="page"]::after {
+    content: "";
+    position: absolute;
+    left: .35rem;
+    right: .35rem;
+    bottom: .08rem;
+    border-bottom: 2px solid #315f93;
+}
+
+.browser-preview-shell:is(.classic-promoted-app, .classic-compat-app) .classic-roster-tree [data-roster-node-id] {
+    --roster-node-indent-guide: #b0a699;
+}
+
+.browser-preview-shell:is(.classic-promoted-app, .classic-compat-app) .classic-roster-tree [draggable="true"][data-roster-node-id]::after {
+    content: "move";
+    float: right;
+    color: #6d6358;
+    font-size: .55rem;
+    font-weight: 900;
+    letter-spacing: .04em;
+    opacity: 0;
+    text-transform: uppercase;
+}
+
+.browser-preview-shell:is(.classic-promoted-app, .classic-compat-app) .classic-roster-tree [draggable="true"][data-roster-node-id]:hover::after {
+    opacity: 1;
+}
+
+.browser-preview-shell:is(.classic-promoted-app, .classic-compat-app) .classic-roster-tree [data-roster-order] {
+    counter-increment: roster-row;
+}
+
+.browser-preview-shell:is(.classic-promoted-app, .classic-compat-app) .classic-roster-tree [data-roster-order]:focus-within {
+    outline: 1px dotted #111;
+    outline-offset: -2px;
+}
+
+.browser-preview-shell:is(.classic-promoted-app, .classic-compat-app) .classic-roster-tree [data-roster-accepts-children="true"] {
+    --roster-drop-color: #315f93;
+}
+
+.browser-preview-shell:is(.classic-promoted-app, .classic-compat-app) .classic-roster-tree [data-roster-accepts-children="true"][data-drop-state="candidate"],
+.browser-preview-shell:is(.classic-promoted-app, .classic-compat-app) .classic-roster-tree [data-roster-accepts-children="true"].is-drop-candidate {
+    outline: 1px dashed var(--roster-drop-color);
+    background: #e4edf5;
+}
+
+.browser-preview-shell:is(.classic-promoted-app, .classic-compat-app) .classic-roster-tree [data-roster-accepts-children="true"][data-drop-state="blocked"],
+.browser-preview-shell:is(.classic-promoted-app, .classic-compat-app) .classic-roster-tree [data-roster-accepts-children="true"].is-drop-blocked {
+    outline: 1px dashed #8a3d32;
+    background: #ead9d4;
+}
+
+.browser-preview-shell:is(.classic-promoted-app, .classic-compat-app) .classic-roster-tree [data-roster-draggable-kind="runner"][aria-grabbed="true"] {
+    opacity: .72;
+    outline: 1px dotted #244f7e;
+}
+
+.browser-preview-shell:is(.classic-promoted-app, .classic-compat-app) .classic-roster-tree [data-roster-draggable-kind="folder"][aria-grabbed="true"] {
+    opacity: .78;
+    outline: 1px dotted #244f7e;
+}
+
+.browser-preview-shell:is(.classic-promoted-app, .classic-compat-app) .classic-roster-tree [draggable="true"][data-roster-draggable-kind="folder"]::after {
+    content: "move folder";
+}
+
+.browser-preview-shell:is(.classic-promoted-app, .classic-compat-app) .classic-roster-tree[data-roster-reorder-mode="nested"] {
+    border-bottom-color: #6f665b;
+}
+
+.browser-preview-shell:is(.classic-promoted-app, .classic-compat-app) .classic-roster-tree[data-roster-schema-version]::after {
+    content: "Custom directory layout";
+    display: block;
+    margin: .35rem .18rem 0;
+    padding: .18rem .28rem;
+    border: 1px solid #9a9084;
+    background: #d8cec0;
+    color: #5b5248;
+    font-size: .58rem;
+    font-weight: 900;
+    letter-spacing: .04em;
+    text-transform: uppercase;
+}

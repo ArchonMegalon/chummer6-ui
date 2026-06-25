@@ -106,6 +106,7 @@
         const pathBlazor = '/blazor';
         const pathBlazorSlash = '/blazor/';
         const pathApp = '/app';
+        const pathOnline = '/online';
         const pathWorkbench = '/workbench';
         const pathPreview = '/preview';
         const pathShowcase = '/showcase';
@@ -217,7 +218,7 @@
             const query = url.searchParams;
             let routeFamily = routeFamilyOther;
 
-            if (path.endsWith(pathBlazor) || path.endsWith(pathBlazorSlash) || path.endsWith(pathApp) || path.endsWith(pathWorkbench)) {
+            if (path.endsWith(pathBlazor) || path.endsWith(pathBlazorSlash) || path.endsWith(pathApp) || path.endsWith(pathOnline) || path.endsWith(pathWorkbench)) {
                 routeFamily = routeFamilyChummerApp;
             } else if (path.endsWith(pathPreview)) {
                 routeFamily = routeFamilyPreview;

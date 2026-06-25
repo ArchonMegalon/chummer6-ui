@@ -1,6 +1,7 @@
 @namespace Chummer.Blazor.Components.Pages
 @page "/preview"
 @page "/app"
+@page "/online"
 @page "/workbench"
 @layout Chummer.Blazor.Components.Layout.NoLayout
 @using Microsoft.AspNetCore.Components
@@ -67,37 +68,127 @@
 
     @if (IsAppRoute || IsWorkbenchRoute)
     {
-        <section class="classic-chummer-shell" aria-label="Chummer Online classic desktop shell" data-chummer-classic-shell="true">
+        <section class="classic-chummer-shell" aria-label="Chummer Online classic desktop shell" data-chummer-classic-shell="true" data-active-workflow="@ActiveWorkflowDataKey" data-route-family="@RouteFamilyDataKey" data-route-segment="@RouteSegmentDataKey" data-command="@CommandDataKey" data-tab="@TabDataKey" data-workspace="@WorkspaceDataKey" data-active-runner="@ActiveRunnerDataKey">
             <header class="classic-chummer-titlebar" aria-label="Chummer Online window title">
-                <div class="classic-chummer-titlebar-title">Chummer Online - @(PrimaryRecentWorkspace?.ShortLabel ?? "Sample Runner")</div>
-                <div class="classic-chummer-titlebar-controls" aria-hidden="true"><span>_</span><span>[]</span><span>X</span></div>
+                <div class="classic-chummer-titlebar-title">Chummer Online - @(PrimaryRecentWorkspace?.ShortLabel ?? "Sample Runner") - @ActiveWorkflowStatus</div>
+                <div class="classic-window-controls" aria-hidden="true"><span>_</span><span>[]</span><span>X</span></div>
             </header>
             <nav class="classic-chummer-menu" aria-label="Classic Chummer menu">
-                <a href="@BuildPreviewHref(command: NewCharacterCommand, useWorkbenchRoute: true)">File</a>
-                <a href="@BuildLabLaneHref">Edit</a>
-                <a href="@BuildPreviewHref(SeededWorkspaceId, tab: ProfileTabId, useWorkbenchRoute: true)">View</a>
-                <a href="@ChummerOnlineRosterHref">Runner</a>
-                <a href="@GlobalSettingsHref">Tools</a>
-                <a href="@HelpHref">Help</a>
+                <div class="classic-menu-item">
+                    <a href="@BuildPreviewHref(command: NewCharacterCommand, useWorkbenchRoute: true)">File</a>
+                    <div class="classic-menu-flyout" role="menu">
+                        <a href="@BuildPreviewHref(command: NewCharacterCommand, useWorkbenchRoute: true)" role="menuitem">New runner</a>
+                        <a href="@BuildPreviewHref(command: OpenCharacterCommand, useWorkbenchRoute: true)" role="menuitem">Open dossier</a>
+                        <a href="@SaveAsFlowHref" role="menuitem">Save as</a>
+                        <a href="@PrintFlowHref" role="menuitem">Print</a>
+                        <a href="@ExportFlowHref" role="menuitem">Export</a>
+                    </div>
+                </div>
+                <div class="classic-menu-item">
+                    <a href="@BuildLabLaneHref">Edit</a>
+                    <div class="classic-menu-flyout" role="menu">
+                        <a href="@BuildLabLaneHref" role="menuitem" aria-current="@(IsBuildLabWorkflow ? "page" : null)">Build Lab</a>
+                        <a href="@GearLaneHref" role="menuitem" aria-current="@(IsGearWorkflow ? "page" : null)">Gear</a>
+                        <a href="@BuildPreviewHref(SeededWorkspaceId, tab: ProfileTabId, useWorkbenchRoute: true)" role="menuitem">Profile</a>
+                    </div>
+                </div>
+                <div class="classic-menu-item">
+                    <a href="@BuildPreviewHref(SeededWorkspaceId, tab: ProfileTabId, useWorkbenchRoute: true)">View</a>
+                    <div class="classic-menu-flyout" role="menu">
+                        <a href="@BuildPreviewHref(SeededWorkspaceId, tab: ProfileTabId, useWorkbenchRoute: true)" role="menuitem">Profile</a>
+                        <a href="@BuildPreviewHref(SeededWorkspaceId, tab: RulesTabId, useWorkbenchRoute: true)" role="menuitem">Rules</a>
+                        <a href="@BuildPreviewHref(SeededWorkspaceId, tab: ContactsTabId, useWorkbenchRoute: true)" role="menuitem">Contacts</a>
+                    </div>
+                </div>
+                <div class="classic-menu-item">
+                    <a href="@ChummerOnlineRosterHref">Runner</a>
+                    <div class="classic-menu-flyout" role="menu">
+                        <a href="@ChummerOnlineRosterHref" role="menuitem" aria-current="@(IsCharacterRosterCommand ? "page" : null)">Character Roster</a>
+                        <a href="@ContinueRecentHref" role="menuitem">Continue runner</a>
+                        <a href="@BuildPreviewHref(command: OpenCharacterCommand, useWorkbenchRoute: true)" role="menuitem">Import dossier XML</a>
+                    </div>
+                </div>
+                <div class="classic-menu-item">
+                    <a href="@GlobalSettingsHref">Tools</a>
+                    <div class="classic-menu-flyout" role="menu">
+                        <a href="@GlobalSettingsHref" role="menuitem">Options</a>
+                        <a href="@StatusHref" role="menuitem">Status</a>
+                        <a href="@DownloadsHref" role="menuitem">Desktop installers</a>
+                    </div>
+                </div>
+                <div class="classic-menu-item">
+                    <a href="@HelpHref">Help</a>
+                    <div class="classic-menu-flyout" role="menu">
+                        <a href="@HelpHref" role="menuitem">Help</a>
+                        <a href="@DocsHref" role="menuitem">Docs</a>
+                        <a href="@ContactHref" role="menuitem">Support</a>
+                    </div>
+                </div>
             </nav>
 
             <nav class="classic-chummer-toolstrip" aria-label="Classic Chummer toolstrip">
-                <a href="@BuildPreviewHref(command: NewCharacterCommand, useWorkbenchRoute: true)" data-classic-toolstrip-action="new-runner">New runner</a>
-                <a href="@BuildPreviewHref(command: OpenCharacterCommand, useWorkbenchRoute: true)" data-classic-toolstrip-action="open-dossier">Open Dossier</a>
-                <a href="@SaveAsFlowHref" data-classic-toolstrip-action="save-dossier">Save</a>
-                <a href="@PrintFlowHref" data-classic-toolstrip-action="print-dossier">Print</a>
-                <a href="@ExportFlowHref" data-classic-toolstrip-action="export-dossier">Export</a>
-                <a href="@ChummerOnlineRosterHref" data-classic-toolstrip-action="character-roster">Character Roster</a>
-                <a href="@BuildLabLaneHref" data-classic-toolstrip-action="build-lab">Build Lab</a>
+                <div class="classic-toolstrip-group" aria-label="File actions">
+                    <a class="classic-tool-icon" href="@BuildPreviewHref(command: NewCharacterCommand, useWorkbenchRoute: true)" data-classic-toolstrip-action="new-runner" title="New runner">N</a>
+                    <a class="classic-tool-icon" href="@BuildPreviewHref(command: OpenCharacterCommand, useWorkbenchRoute: true)" data-classic-toolstrip-action="open-dossier" title="Open dossier">O</a>
+                    <a class="classic-tool-icon" href="@SaveAsFlowHref" data-classic-toolstrip-action="save-dossier" title="Save dossier">S</a>
+                </div>
+                <div class="classic-toolstrip-group" aria-label="Output actions">
+                    <a class="classic-tool-icon" href="@PrintFlowHref" data-classic-toolstrip-action="print-dossier" title="Print">P</a>
+                    <a class="classic-tool-icon" href="@ExportFlowHref" data-classic-toolstrip-action="export-dossier" title="Export">E</a>
+                </div>
+                <div class="classic-toolstrip-group" aria-label="Dossier actions">
+                    <a class="classic-tool-icon" href="@ChummerOnlineRosterHref" data-classic-toolstrip-action="character-roster" title="Character Roster" aria-current="@(IsCharacterRosterCommand ? "page" : null)">R</a>
+                    <a class="classic-tool-icon" href="@BuildLabLaneHref" data-classic-toolstrip-action="build-lab" title="Build Lab" aria-current="@(IsBuildLabWorkflow ? "page" : null)">B</a>
+                    <a class="classic-tool-icon" href="@GearLaneHref" data-classic-toolstrip-action="gear" title="Gear" aria-current="@(IsGearWorkflow ? "page" : null)">G</a>
+                </div>
             </nav>
 
             <div class="classic-chummer-workspace">
-                <aside class="classic-chummer-roster" aria-label="Character Roster">
+                <aside class="classic-chummer-roster @(IsCharacterRosterCommand ? "is-roster-command" : string.Empty)" aria-label="Character Roster">
                     <h2>Character Roster</h2>
-                    <a class="classic-roster-primary" href="@ChummerOnlineRosterHref">Open roster</a>
-                    <a href="@ContinueRecentHref">@ContinueRecentLabel</a>
-                    <a href="@BuildPreviewHref(SeededWorkspaceId, useWorkbenchRoute: true)">Sample runner dossier</a>
-                    <a href="@BuildPreviewHref(command: OpenCharacterCommand, useWorkbenchRoute: true)">Import dossier XML</a>
+                    <div class="classic-roster-toolbar" role="toolbar" aria-label="Roster organization tools" data-roster-toolbar="custom-directories">
+                        <button type="button" data-roster-command="new-folder" aria-controls="classic-roster-tree">New folder</button>
+                        <button type="button" data-roster-command="move-selection" aria-controls="classic-roster-tree">Move</button>
+                        <button type="button" data-roster-command="rename-selection" aria-controls="classic-roster-tree">Rename</button>
+                        <button type="button" data-roster-command="show-inbox" aria-controls="classic-roster-tree">Inbox</button>
+                    </div>
+                    <p id="classic-roster-hint" class="classic-roster-hint">Drag runners or folders to organize this roster.</p>
+                    <ul id="classic-roster-tree" class="classic-roster-tree" role="tree" aria-label="Custom character roster tree" aria-describedby="classic-roster-hint" data-roster-tree="custom-directories" data-roster-schema-version="1" data-roster-storage-scope="workspace" data-roster-persistence-key="chummer-online-roster-tree" data-roster-reorder-mode="nested">
+                        <li role="treeitem" aria-expanded="true" aria-level="1" data-tree-kind="folder" data-roster-accepts-children="true" data-roster-draggable-kind="folder" draggable="true" data-roster-node-id="folder-active-table" data-roster-parent-id="root" data-roster-order="10" data-roster-drop-zone="active-table">
+                            Active Table
+                            <ul role="group">
+                                <li role="treeitem" aria-level="2" data-tree-kind="runner" data-roster-draggable-kind="runner" draggable="true" aria-selected="true" data-roster-node="active-runner" data-roster-node-id="runner-active" data-roster-parent-id="folder-active-table" data-roster-order="10">
+                                    <a href="@ContinueRecentHref">@ContinueRecentLabel</a>
+                                </li>
+                                <li role="treeitem" aria-level="2" data-tree-kind="runner" data-roster-draggable-kind="runner" draggable="true" data-roster-node="sample-runner" data-roster-node-id="runner-sample" data-roster-parent-id="folder-active-table" data-roster-order="20">
+                                    <a href="@BuildPreviewHref(SeededWorkspaceId, useWorkbenchRoute: true)">Sample runner dossier</a>
+                                </li>
+                            </ul>
+                        </li>
+                        <li role="treeitem" aria-expanded="true" aria-level="1" data-tree-kind="folder" data-roster-accepts-children="true" data-roster-draggable-kind="folder" draggable="true" data-roster-node-id="folder-saved-runners" data-roster-parent-id="root" data-roster-order="20" data-roster-drop-zone="saved-runners">
+                            Saved Runners
+                            <ul role="group">
+                                <li role="treeitem" aria-level="2" data-tree-kind="runner" data-roster-draggable-kind="runner" draggable="true" data-roster-node="import-dossier" data-roster-node-id="runner-import-dossier" data-roster-parent-id="folder-saved-runners" data-roster-order="10">
+                                    <a href="@BuildPreviewHref(command: OpenCharacterCommand, useWorkbenchRoute: true)">Import dossier XML</a>
+                                </li>
+                            </ul>
+                        </li>
+                        <li role="treeitem" aria-expanded="true" aria-level="1" data-tree-kind="folder" data-roster-accepts-children="true" data-roster-draggable-kind="folder" draggable="true" data-roster-node-id="folder-inbox" data-roster-parent-id="root" data-roster-order="30" data-roster-drop-zone="inbox">
+                            Inbox
+                            <ul role="group">
+                                <li role="treeitem" aria-level="2" data-tree-kind="runner" data-roster-draggable-kind="runner" draggable="true" data-roster-node="unsorted-local" data-roster-node-id="runner-unsorted-local" data-roster-parent-id="folder-inbox" data-roster-order="10">
+                                    <a href="@ChummerOnlineRosterHref">Unsorted local dossier</a>
+                                </li>
+                            </ul>
+                        </li>
+                        <li role="treeitem" aria-expanded="true" aria-level="1" data-tree-kind="folder" data-roster-accepts-children="true" data-roster-draggable-kind="folder" draggable="true" data-roster-node-id="folder-user-directories" data-roster-parent-id="root" data-roster-order="40" data-roster-drop-zone="user-directories">
+                            User Directories
+                            <ul role="group">
+                                <li role="treeitem" aria-expanded="false" aria-level="2" data-tree-kind="folder" data-roster-accepts-children="true" data-roster-draggable-kind="folder" draggable="true" data-roster-node-id="folder-street-campaign" data-roster-parent-id="folder-user-directories" data-roster-order="10" data-roster-drop-zone="street-campaign">Street Campaign</li>
+                                <li role="treeitem" aria-expanded="false" aria-level="2" data-tree-kind="folder" data-roster-accepts-children="true" data-roster-draggable-kind="folder" draggable="true" data-roster-node-id="folder-missions-backup" data-roster-parent-id="folder-user-directories" data-roster-order="20" data-roster-drop-zone="missions-backup">Missions Backup</li>
+                            </ul>
+                        </li>
+                    </ul>
                 </aside>
 
                 <section class="classic-chummer-dossier" aria-label="Active dossier workspace">
@@ -105,25 +196,26 @@
                         <span>Active dossier</span>
                         <strong>@(PrimaryRecentWorkspace?.ShortLabel ?? "Sample Runner")</strong>
                     </header>
-                    <nav class="classic-chummer-tabs" aria-label="Dossier sections">
-                        <a href="@BuildPreviewHref(SeededWorkspaceId, tab: ProfileTabId, useWorkbenchRoute: true)">Profile</a>
-                        <a href="@BuildLabLaneHref">Build</a>
-                        <a href="@GearLaneHref">Gear</a>
-                        <a href="@BuildPreviewHref(SeededWorkspaceId, tab: CombatTabId, useWorkbenchRoute: true)">Combat</a>
-                        <a href="@BuildPreviewHref(SeededWorkspaceId, tab: MagicTabId, useWorkbenchRoute: true)">Magic</a>
-                        <a href="@BuildPreviewHref(SeededWorkspaceId, tab: MatrixTabId, useWorkbenchRoute: true)">Matrix</a>
-                        <a href="@BuildPreviewHref(SeededWorkspaceId, tab: ContactsTabId, useWorkbenchRoute: true)">Contacts</a>
+                    <nav class="classic-dossier-tabs" aria-label="Dossier sections">
+                        <a class="classic-dossier-tab" href="@BuildPreviewHref(SeededWorkspaceId, tab: ProfileTabId, useWorkbenchRoute: true)" aria-current="@(IsProfileWorkflow ? "page" : null)">Profile</a>
+                        <a class="classic-dossier-tab" href="@BuildLabLaneHref" aria-current="@(IsBuildLabWorkflow ? "page" : null)">Build</a>
+                        <a class="classic-dossier-tab" href="@GearLaneHref" aria-current="@(IsGearWorkflow ? "page" : null)">Gear</a>
+                        <a class="classic-dossier-tab" href="@BuildPreviewHref(SeededWorkspaceId, tab: CombatTabId, useWorkbenchRoute: true)" aria-current="@(IsCombatWorkflow ? "page" : null)">Combat</a>
+                        <a class="classic-dossier-tab" href="@BuildPreviewHref(SeededWorkspaceId, tab: MagicTabId, useWorkbenchRoute: true)" aria-current="@(IsMagicWorkflow ? "page" : null)">Magic</a>
+                        <a class="classic-dossier-tab" href="@BuildPreviewHref(SeededWorkspaceId, tab: MatrixTabId, useWorkbenchRoute: true)" aria-current="@(IsMatrixWorkflow ? "page" : null)">Matrix</a>
+                        <a class="classic-dossier-tab" href="@BuildPreviewHref(SeededWorkspaceId, tab: ContactsTabId, useWorkbenchRoute: true)" aria-current="@(IsContactsWorkflow ? "page" : null)">Contacts</a>
+                        <a class="classic-dossier-tab" href="@BuildPreviewHref(SeededWorkspaceId, tab: CareerTabId, useWorkbenchRoute: true)" aria-current="@(IsCareerWorkflow ? "page" : null)">Career</a>
                     </nav>
                     <div class="classic-chummer-dossier-body">
                         <nav class="classic-dossier-section-list" aria-label="Classic dossier section list">
-                            <a href="(SeededWorkspaceId, tab: ProfileTabId, useWorkbenchRoute: true)" class="active">Common</a>
-                            <a href="">Build</a>
-                            <a href="">Gear</a>
-                            <a href="(SeededWorkspaceId, tab: CombatTabId, useWorkbenchRoute: true)">Combat</a>
-                            <a href="(SeededWorkspaceId, tab: MagicTabId, useWorkbenchRoute: true)">Magic</a>
-                            <a href="(SeededWorkspaceId, tab: MatrixTabId, useWorkbenchRoute: true)">Matrix</a>
-                            <a href="(SeededWorkspaceId, tab: ContactsTabId, useWorkbenchRoute: true)">Contacts</a>
-                            <a href="(SeededWorkspaceId, tab: CareerTabId, useWorkbenchRoute: true)">Career</a>
+                            <a href="@BuildPreviewHref(SeededWorkspaceId, tab: ProfileTabId, useWorkbenchRoute: true)" aria-current="@(IsProfileWorkflow ? "page" : null)">Common</a>
+                            <a href="@BuildLabLaneHref" aria-current="@(IsBuildLabWorkflow ? "page" : null)">Build</a>
+                            <a href="@GearLaneHref" aria-current="@(IsGearWorkflow ? "page" : null)">Gear</a>
+                            <a href="@BuildPreviewHref(SeededWorkspaceId, tab: CombatTabId, useWorkbenchRoute: true)" aria-current="@(IsCombatWorkflow ? "page" : null)">Combat</a>
+                            <a href="@BuildPreviewHref(SeededWorkspaceId, tab: MagicTabId, useWorkbenchRoute: true)" aria-current="@(IsMagicWorkflow ? "page" : null)">Magic</a>
+                            <a href="@BuildPreviewHref(SeededWorkspaceId, tab: MatrixTabId, useWorkbenchRoute: true)" aria-current="@(IsMatrixWorkflow ? "page" : null)">Matrix</a>
+                            <a href="@BuildPreviewHref(SeededWorkspaceId, tab: ContactsTabId, useWorkbenchRoute: true)" aria-current="@(IsContactsWorkflow ? "page" : null)">Contacts</a>
+                            <a href="@BuildPreviewHref(SeededWorkspaceId, tab: CareerTabId, useWorkbenchRoute: true)" aria-current="@(IsCareerWorkflow ? "page" : null)">Career</a>
                         </nav>
                         <div class="classic-dossier-grid">
                             <section class="classic-dossier-group" aria-label="Runner identity">
@@ -211,7 +303,7 @@
                     <span><strong>Rules</strong><em>SR5</em></span>
                     <span><strong>Checks</strong><em>Review required</em></span>
                     <span><strong>Privacy</strong><em>Local-first</em></span>
-                    <span><strong>Route</strong><em>Chummer Online</em></span>
+                    <span><strong>Workflow</strong><em>@ActiveWorkflowStatus</em></span>
                 </footer>
         </section>
     }
@@ -2615,16 +2707,88 @@
     private const string ControlQueryName = "control";
     private const string DialogActionQueryName = "dialog_action";
     private const string AppRouteSegment = "app";
+    private const string OnlineRouteSegment = "online";
     private const string AppRouteQueryPrefix = $"{AppRouteSegment}?{CommandQueryName}=";
     private const string WorkbenchRouteSegment = "workbench";
     private const string PreviewRouteSegment = "preview";
     private const string HostedAppRoute = "/blazor/app";
     private const string HostedWorkbenchRoute = "/blazor/workbench";
-    private static string AppRouteMarker => $"/{AppRouteSegment}";
-    private static string WorkbenchRouteMarker => $"/{WorkbenchRouteSegment}";
-    private bool IsAppRoute => Navigation.Uri.Contains(AppRouteMarker, StringComparison.OrdinalIgnoreCase);
-    private bool IsWorkbenchRoute => Navigation.Uri.Contains(WorkbenchRouteMarker, StringComparison.OrdinalIgnoreCase);
-    private string PageTitleText => IsAppRoute ? "Chummer Online" : IsWorkbenchRoute ? "Chummer Online Compatibility Route" : "Chummer Online Preview Tools";
+    private bool IsAppRoute => IsRouteSegment(AppRouteSegment) || IsRouteSegment(OnlineRouteSegment);
+    private bool IsOnlineAliasRoute => IsRouteSegment(OnlineRouteSegment);
+    private bool IsWorkbenchRoute => IsRouteSegment(WorkbenchRouteSegment);
+    private bool IsCharacterRosterCommand => string.Equals(Command, CharacterRosterCommand, StringComparison.OrdinalIgnoreCase);
+    private bool IsProfileWorkflow => string.Equals(Tab, ProfileTabId, StringComparison.OrdinalIgnoreCase);
+    private bool IsBuildLabWorkflow => string.Equals(Tab, BuildTabId, StringComparison.OrdinalIgnoreCase);
+    private bool IsGearWorkflow => string.Equals(Tab, GearTabId, StringComparison.OrdinalIgnoreCase);
+    private bool IsCombatWorkflow => string.Equals(Tab, CombatTabId, StringComparison.OrdinalIgnoreCase);
+    private bool IsMagicWorkflow => string.Equals(Tab, MagicTabId, StringComparison.OrdinalIgnoreCase);
+    private bool IsMatrixWorkflow => string.Equals(Tab, MatrixTabId, StringComparison.OrdinalIgnoreCase);
+    private bool IsContactsWorkflow => string.Equals(Tab, ContactsTabId, StringComparison.OrdinalIgnoreCase);
+    private bool IsCareerWorkflow => string.Equals(Tab, CareerTabId, StringComparison.OrdinalIgnoreCase);
+    private string ActiveWorkflowStatus => IsCharacterRosterCommand
+        ? "Character Roster"
+        : IsProfileWorkflow
+            ? "Profile"
+        : IsBuildLabWorkflow
+            ? "Build Lab"
+            : IsGearWorkflow
+                ? "Gear"
+                : IsCombatWorkflow
+                    ? "Combat"
+                    : IsMagicWorkflow
+                        ? "Magic"
+                        : IsMatrixWorkflow
+                            ? "Matrix"
+                            : IsContactsWorkflow
+                                ? "Contacts"
+                                : IsCareerWorkflow
+                                    ? "Career"
+                                    : "Dossier";
+    private string ActiveWorkflowDataKey => IsCharacterRosterCommand
+        ? "character-roster"
+        : IsProfileWorkflow
+            ? "profile"
+            : IsBuildLabWorkflow
+                ? "build-lab"
+                : IsGearWorkflow
+                    ? "gear"
+                    : IsCombatWorkflow
+                        ? "combat"
+                        : IsMagicWorkflow
+                            ? "magic"
+                            : IsMatrixWorkflow
+                                ? "matrix"
+                                : IsContactsWorkflow
+                                    ? "contacts"
+                                    : IsCareerWorkflow
+                                        ? "career"
+                                        : "dossier";
+    private string RouteFamilyDataKey => IsOnlineAliasRoute
+        ? "online-alias"
+        : IsAppRoute
+            ? "app"
+            : IsWorkbenchRoute
+                ? "compatibility"
+                : "preview";
+    private string RouteSegmentDataKey => IsOnlineAliasRoute
+        ? OnlineRouteSegment
+        : IsAppRoute
+            ? AppRouteSegment
+            : IsWorkbenchRoute
+                ? WorkbenchRouteSegment
+                : PreviewRouteSegment;
+    private string CommandDataKey => NormalizeShellDataToken(Command);
+    private string TabDataKey => NormalizeShellDataToken(Tab);
+    private string WorkspaceDataKey => NormalizeShellDataToken(PrimaryRecentWorkspace?.WorkspaceId ?? Workspace);
+    private string ActiveRunnerDataKey => NormalizeShellDataToken(PrimaryRecentWorkspace?.ShortLabel);
+    private static string NormalizeShellDataToken(string? value)
+        => string.IsNullOrWhiteSpace(value) ? "none" : value.Trim().Replace('_', '-').ToLowerInvariant();
+    private bool IsRouteSegment(string routeSegment)
+    {
+        string path = new Uri(Navigation.Uri).AbsolutePath.TrimEnd('/');
+        return path.EndsWith($"/{routeSegment}", StringComparison.OrdinalIgnoreCase);
+    }
+    private string PageTitleText => IsAppRoute ? $"Chummer Online - {ActiveWorkflowStatus}" : IsWorkbenchRoute ? "Chummer Online Compatibility Route" : "Chummer Online Preview Tools";
     private string RouteNavigationLabel => IsAppRoute ? "Chummer Online navigation" : IsWorkbenchRoute ? "Compatibility route navigation" : "Preview tools navigation";
     private string RouteStatusLabel => IsAppRoute ? "Chummer Online status" : IsWorkbenchRoute ? "Compatibility route status" : "Preview tools status";
     private string RouteGuidanceLabel => IsAppRoute ? "Chummer Online route guidance" : IsWorkbenchRoute ? "Compatibility route guidance" : "Preview tools guidance";
@@ -2989,7 +3153,6 @@
     private const string SwitchRulesetCommand = "switch_ruleset";
     private const string GlobalSettingsCommand = "global_settings";
     private const string CharacterSettingsCommand = "character_settings";
-    private bool IsCharacterRosterCommand => string.Equals(Command, CharacterRosterCommand, StringComparison.OrdinalIgnoreCase);
     private string? ResolvedWorkspace => !string.IsNullOrWhiteSpace(Workspace) ? Workspace : Runner;
     private IReadOnlyList<string> RecentWorkspaceIds => Presenter.State.Session.RecentWorkspaceIds.Select(static id => id.Value).ToArray();
     private IReadOnlyList<RecentWorkspaceLink> RecentWorkspaces => BuildRecentWorkspaceLinks();
