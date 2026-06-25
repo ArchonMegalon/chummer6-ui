@@ -56,6 +56,8 @@ def test_presentation_portal_downloads_tree_passes_windows_payload_gate() -> Non
             str(PRESENTATION_DOWNLOADS / "releases.json"),
             "--manifest",
             str(PRESENTATION_DOWNLOADS / "RELEASE_CHANNEL.generated.json"),
+            "--require-embedded-bootstrap-metadata",
+            "--require-manifest-row",
         ],
         text=True,
         capture_output=True,
