@@ -415,12 +415,15 @@ def verify_installer(
     expected_entries: list[str],
     require_sample: bool,
     require_embedded_bootstrap_metadata: bool,
+    require_manifest_row: bool,
 ) -> list[str]:
     failures: list[str] = []
     if not installer_path.is_file():
         return [f"installer does not exist: {installer_path}"]
     if installer_path.stat().st_size <= FOOTER_LENGTH:
         return [f"installer is too small to contain a payload-aware executable: {installer_path}"]
+    if require_manifest_row and manifest_row is None:
+        return [f"{installer_path.name}: Windows installer is missing from the supplied release manifest"]
 
     candidate = read_appended_payload(installer_path)
     if candidate is None:
@@ -465,6 +468,11 @@ def main() -> int:
         action="store_true",
         help="Require bootstrap installers to contain the manifest payload URL, SHA-256, and size metadata.",
     )
+    parser.add_argument(
+        "--require-manifest-row",
+        action="store_true",
+        help="Require every checked Windows installer to have a matching row in one supplied release manifest.",
+    )
     parser.add_argument("--allow-empty", action="store_true", help="Pass when no Windows installers are present.")
     args = parser.parse_args()
 
@@ -498,6 +506,7 @@ def main() -> int:
                 expected_entries,
                 require_sample,
                 require_embedded_bootstrap_metadata,
+                args.require_manifest_row,
             )
         )
 

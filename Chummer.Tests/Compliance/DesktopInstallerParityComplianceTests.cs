@@ -242,6 +242,8 @@ public sealed class DesktopInstallerParityComplianceTests
         StringAssert.Contains(gateText, "APPENDED_PAYLOAD_MAGIC = b\"CHUMMER6PAYLOAD1\"");
         StringAssert.Contains(gateText, "no appended payload and no bootstrap sidecar");
         StringAssert.Contains(gateText, "--require-embedded-bootstrap-metadata");
+        StringAssert.Contains(gateText, "--require-manifest-row");
+        StringAssert.Contains(gateText, "Windows installer is missing from the supplied release manifest");
         StringAssert.Contains(gateText, "bootstrap installer does not contain embedded");
         StringAssert.Contains(gateText, "payload zip is missing launch executable");
         StringAssert.Contains(installerScriptText, "verify_windows_installer_payload_gate \"$DIST_DIR/$installer_name\"");
@@ -250,14 +252,17 @@ public sealed class DesktopInstallerParityComplianceTests
         StringAssert.Contains(installerScriptText, "--require-embedded-bootstrap-metadata");
         StringAssert.Contains(publishBundleText, "verify_windows_installer_payload_gate");
         StringAssert.Contains(publishBundleText, "--require-embedded-bootstrap-metadata");
+        StringAssert.Contains(publishBundleText, "--require-manifest-row");
         StringAssert.Contains(publishBundleText, "chummer-*-win-*-payload.zip)");
         StringAssert.Contains(publishBundleText, "file_path.name.endswith(\"-payload.zip\")");
         StringAssert.Contains(publishHttpText, "verify-windows-installer-payloads.py");
         StringAssert.Contains(publishHttpText, "--manifest \"$CANONICAL_MANIFEST_PATH\"");
         StringAssert.Contains(publishHttpText, "--require-embedded-bootstrap-metadata");
+        StringAssert.Contains(publishHttpText, "--require-manifest-row");
         StringAssert.Contains(publishS3Text, "verify-windows-installer-payloads.py");
         StringAssert.Contains(publishS3Text, "--manifest \"$MANIFEST_SOURCE\"");
         StringAssert.Contains(publishS3Text, "--require-embedded-bootstrap-metadata");
+        StringAssert.Contains(publishS3Text, "--require-manifest-row");
     }
 
     [TestMethod]
@@ -270,7 +275,8 @@ public sealed class DesktopInstallerParityComplianceTests
         StringAssert.Contains(verifyScriptText, "bash -n scripts/publish-download-bundle.sh");
         StringAssert.Contains(verifyScriptText, "bash -n scripts/publish-download-bundle-http.sh");
         StringAssert.Contains(verifyScriptText, "bash -n scripts/publish-download-bundle-s3.sh");
-        StringAssert.Contains(verifyScriptText, "python3 -m pytest -q tests/test_windows_installer_payload_gate.py");
+        StringAssert.Contains(verifyScriptText, "python3 -m pytest -q");
+        StringAssert.Contains(verifyScriptText, "tests/test_windows_installer_payload_gate.py");
     }
 
     private static string FindRepoRoot()
