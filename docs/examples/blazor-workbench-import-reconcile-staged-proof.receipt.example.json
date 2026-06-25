@@ -11,7 +11,7 @@
     {
       "id": "product_ui",
       "path": "Chummer.Blazor/Components/Pages/Preview.razor",
-      "needle": "data-workbench-import-reconcile="strip"",
+      "needle": "data-workbench-import-reconcile=\"strip\"",
       "found": true
     },
     {

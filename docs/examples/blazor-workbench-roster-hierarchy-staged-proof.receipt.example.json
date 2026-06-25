@@ -1,0 +1,60 @@
+{
+  "contract_name": "chummer6-ui.blazor_workbench_roster_hierarchy_staged_proof",
+  "generated_at": "2026-06-24T00:00:00+00:00",
+  "status": "passed",
+  "proof_tier": "source_staged_no_browser_execution",
+  "route_lane": "promoted_blazor_workbench",
+  "expected_routes": [
+    "/blazor/workbench?command=character_roster"
+  ],
+  "checks": [
+    {
+      "id": "dialog_factory",
+      "path": "Chummer.Presentation/Overview/DesktopDialogFactory.cs",
+      "needle": "rosterCustomFolders",
+      "found": true
+    },
+    {
+      "id": "dialog_factory",
+      "path": "Chummer.Presentation/Overview/DesktopDialogFactory.cs",
+      "needle": "move_runner_to_group",
+      "found": true
+    },
+    {
+      "id": "dialog_coordinator",
+      "path": "Chummer.Presentation/Overview/DialogCoordinator.cs",
+      "needle": "create_roster_group",
+      "found": true
+    },
+    {
+      "id": "blazor_dialog_host",
+      "path": "Chummer.Blazor/Components/Shell/DialogHost.razor",
+      "needle": "data-roster-hierarchy-field",
+      "found": true
+    },
+    {
+      "id": "blazor_css",
+      "path": "Chummer.Blazor/wwwroot/app.css",
+      "needle": ".dialog-field--roster-hierarchy",
+      "found": true
+    },
+    {
+      "id": "parity_docs",
+      "path": "docs/BLAZOR_WEB_CLIENT_PARITY_GOAL.md",
+      "needle": "character roster custom hierarchy posture",
+      "found": true
+    },
+    {
+      "id": "status_utility",
+      "path": "scripts/print_blazor_public_edge_proof_status.py",
+      "needle": "workbench_roster_hierarchy_staged_status",
+      "found": true
+    }
+  ],
+  "boundary_notes": [
+    "Source-staged roster hierarchy posture only; this is not hosted browser execution proof.",
+    "Does not prove Docker self-host browser execution, drag/drop mutation, layout persistence, filesystem moves, folder deletion, or watched-file relocation.",
+    "Runtime promotion requires refreshed hosted public-edge and Docker self-host receipts plus explicit drag/drop persistence implementation."
+  ],
+  "failures": []
+}

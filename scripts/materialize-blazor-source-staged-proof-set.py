@@ -338,6 +338,41 @@ REQUIRED_RECEIPTS = [
         "contract_name": "chummer6-ui.blazor_workbench_offline_cache_staged_proof",
     },
     {
+        "id": "workbench_session_locking",
+        "path": PUBLISHED / "BLAZOR_WORKBENCH_SESSION_LOCKING_STAGED_PROOF.generated.json",
+        "contract_name": "chummer6-ui.blazor_workbench_session_locking_staged_proof",
+    },
+    {
+        "id": "workbench_share_export_privacy",
+        "path": PUBLISHED / "BLAZOR_WORKBENCH_SHARE_EXPORT_PRIVACY_STAGED_PROOF.generated.json",
+        "contract_name": "chummer6-ui.blazor_workbench_share_export_privacy_staged_proof",
+    },
+    {
+        "id": "workbench_table_handoff",
+        "path": PUBLISHED / "BLAZOR_WORKBENCH_TABLE_HANDOFF_STAGED_PROOF.generated.json",
+        "contract_name": "chummer6-ui.blazor_workbench_table_handoff_staged_proof",
+    },
+    {
+        "id": "workbench_rules_citation",
+        "path": PUBLISHED / "BLAZOR_WORKBENCH_RULES_CITATION_STAGED_PROOF.generated.json",
+        "contract_name": "chummer6-ui.blazor_workbench_rules_citation_staged_proof",
+    },
+    {
+        "id": "workbench_localization_terminology",
+        "path": PUBLISHED / "BLAZOR_WORKBENCH_LOCALIZATION_TERMINOLOGY_STAGED_PROOF.generated.json",
+        "contract_name": "chummer6-ui.blazor_workbench_localization_terminology_staged_proof",
+    },
+    {
+        "id": "workbench_help_recovery_guidance",
+        "path": PUBLISHED / "BLAZOR_WORKBENCH_HELP_RECOVERY_GUIDANCE_STAGED_PROOF.generated.json",
+        "contract_name": "chummer6-ui.blazor_workbench_help_recovery_guidance_staged_proof",
+    },
+    {
+        "id": "workbench_roster_hierarchy",
+        "path": PUBLISHED / "BLAZOR_WORKBENCH_ROSTER_HIERARCHY_STAGED_PROOF.generated.json",
+        "contract_name": "chummer6-ui.blazor_workbench_roster_hierarchy_staged_proof",
+    },
+    {
         "id": "legacy_control_coverage",
         "path": PUBLISHED / "BLAZOR_LEGACY_CONTROL_COVERAGE_STAGED_PROOF.generated.json",
         "contract_name": "chummer6-ui.blazor_legacy_control_coverage_staged_proof",

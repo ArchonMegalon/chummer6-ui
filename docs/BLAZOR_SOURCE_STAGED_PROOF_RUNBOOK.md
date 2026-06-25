@@ -90,6 +90,13 @@ The aggregate currently covers:
 - `workbench_compare_merge`
 - `workbench_restore_checkpoint`
 - `workbench_offline_cache`
+- `workbench_session_locking`
+- `workbench_share_export_privacy`
+- `workbench_table_handoff`
+- `workbench_rules_citation`
+- `workbench_localization_terminology`
+- `workbench_help_recovery_guidance`
+- `workbench_roster_hierarchy`
 - `legacy_control_coverage`
 
 Each family must keep `proof_tier` set to:

@@ -1,0 +1,25 @@
+{
+  "contract_name": "chummer6-ui.blazor_workbench_session_locking_staged_proof",
+  "generated_at": "2026-06-24T00:00:00+00:00",
+  "status": "passed",
+  "proof_tier": "source_staged_no_browser_execution",
+  "route_lane": "promoted_blazor_workbench",
+  "expected_routes": [
+    "/blazor/workbench"
+  ],
+  "checks": [
+    {
+      "id": "product_workbench_session_locking",
+      "path": "Chummer.Blazor/Components/Pages/Preview.razor",
+      "status": "passed",
+      "required_token_count": 9,
+      "missing_tokens": []
+    }
+  ],
+  "failures": [],
+  "notes": [
+    "This receipt only proves that promoted workbench session-locking source, style, status, and docs agree.",
+    "It is not a substitute for hosted browser execution, lock acquisition, takeover mutation, cross-tab arbitration, stale lock cleanup, or conflict persistence parity.",
+    "Do not use this receipt to claim complete session locking, persistence, or browser execution parity."
+  ]
+}

@@ -78,6 +78,13 @@ WORKBENCH_IMPORT_RECONCILE_STAGED_PROOF = PUBLISHED / "BLAZOR_WORKBENCH_IMPORT_R
 WORKBENCH_COMPARE_MERGE_STAGED_PROOF = PUBLISHED / "BLAZOR_WORKBENCH_COMPARE_MERGE_STAGED_PROOF.generated.json"
 WORKBENCH_RESTORE_CHECKPOINT_STAGED_PROOF = PUBLISHED / "BLAZOR_WORKBENCH_RESTORE_CHECKPOINT_STAGED_PROOF.generated.json"
 WORKBENCH_OFFLINE_CACHE_STAGED_PROOF = PUBLISHED / "BLAZOR_WORKBENCH_OFFLINE_CACHE_STAGED_PROOF.generated.json"
+WORKBENCH_SESSION_LOCKING_STAGED_PROOF = PUBLISHED / "BLAZOR_WORKBENCH_SESSION_LOCKING_STAGED_PROOF.generated.json"
+WORKBENCH_SHARE_EXPORT_PRIVACY_STAGED_PROOF = PUBLISHED / "BLAZOR_WORKBENCH_SHARE_EXPORT_PRIVACY_STAGED_PROOF.generated.json"
+WORKBENCH_TABLE_HANDOFF_STAGED_PROOF = PUBLISHED / "BLAZOR_WORKBENCH_TABLE_HANDOFF_STAGED_PROOF.generated.json"
+WORKBENCH_RULES_CITATION_STAGED_PROOF = PUBLISHED / "BLAZOR_WORKBENCH_RULES_CITATION_STAGED_PROOF.generated.json"
+WORKBENCH_LOCALIZATION_TERMINOLOGY_STAGED_PROOF = PUBLISHED / "BLAZOR_WORKBENCH_LOCALIZATION_TERMINOLOGY_STAGED_PROOF.generated.json"
+WORKBENCH_HELP_RECOVERY_GUIDANCE_STAGED_PROOF = PUBLISHED / "BLAZOR_WORKBENCH_HELP_RECOVERY_GUIDANCE_STAGED_PROOF.generated.json"
+WORKBENCH_ROSTER_HIERARCHY_STAGED_PROOF = PUBLISHED / "BLAZOR_WORKBENCH_ROSTER_HIERARCHY_STAGED_PROOF.generated.json"
 LEGACY_CONTROL_COVERAGE_STAGED_PROOF = PUBLISHED / "BLAZOR_LEGACY_CONTROL_COVERAGE_STAGED_PROOF.generated.json"
 SOURCE_STAGED_PROOF_SET = PUBLISHED / "BLAZOR_SOURCE_STAGED_PROOF_SET.generated.json"
 PORTAL_INSTALLER_HANDOFF_STAGED_PROOF = PUBLISHED / "BLAZOR_PORTAL_INSTALLER_HANDOFF_STAGED_PROOF.generated.json"
@@ -205,6 +212,13 @@ def main() -> int:
     workbench_compare_merge_staged = load_json(WORKBENCH_COMPARE_MERGE_STAGED_PROOF)
     workbench_restore_checkpoint_staged = load_json(WORKBENCH_RESTORE_CHECKPOINT_STAGED_PROOF)
     workbench_offline_cache_staged = load_json(WORKBENCH_OFFLINE_CACHE_STAGED_PROOF)
+    workbench_session_locking_staged = load_json(WORKBENCH_SESSION_LOCKING_STAGED_PROOF)
+    workbench_share_export_privacy_staged = load_json(WORKBENCH_SHARE_EXPORT_PRIVACY_STAGED_PROOF)
+    workbench_table_handoff_staged = load_json(WORKBENCH_TABLE_HANDOFF_STAGED_PROOF)
+    workbench_rules_citation_staged = load_json(WORKBENCH_RULES_CITATION_STAGED_PROOF)
+    workbench_localization_terminology_staged = load_json(WORKBENCH_LOCALIZATION_TERMINOLOGY_STAGED_PROOF)
+    workbench_help_recovery_guidance_staged = load_json(WORKBENCH_HELP_RECOVERY_GUIDANCE_STAGED_PROOF)
+    workbench_roster_hierarchy_staged = load_json(WORKBENCH_ROSTER_HIERARCHY_STAGED_PROOF)
     legacy_control_coverage_staged = load_json(LEGACY_CONTROL_COVERAGE_STAGED_PROOF)
     source_staged_proof_set = load_json(SOURCE_STAGED_PROOF_SET)
     portal_installer_handoff_staged = load_json(PORTAL_INSTALLER_HANDOFF_STAGED_PROOF)
@@ -923,7 +937,77 @@ def main() -> int:
     print(f"workbench_offline_cache_staged_source_checks={count_staged_source_checks(workbench_offline_cache_staged)}")
     print(
         "workbench_offline_cache_staged_note="
-        "source_alignment_only_not_service_worker_or_offline_execution_proof"
+        "source_alignment_only_not_browser_execution"
+    )
+    print(f"workbench_session_locking_staged_receipt={WORKBENCH_SESSION_LOCKING_STAGED_PROOF}")
+    print(f"workbench_session_locking_staged_status={str(workbench_session_locking_staged.get('status') or '').strip() or 'not_generated'}")
+    print(f"workbench_session_locking_staged_contract={str(workbench_session_locking_staged.get('contract_name') or '').strip() or 'missing'}")
+    print(f"workbench_session_locking_staged_tier={str(workbench_session_locking_staged.get('proof_tier') or '').strip() or 'missing'}")
+    print(f"workbench_session_locking_staged_route_count={len(workbench_session_locking_staged.get('expected_routes') or [])}")
+    print(f"workbench_session_locking_staged_source_checks={count_staged_source_checks(workbench_session_locking_staged)}")
+    print(
+        "workbench_session_locking_staged_note="
+        "source_alignment_only_not_browser_execution"
+    )
+    print(f"workbench_share_export_privacy_staged_receipt={WORKBENCH_SHARE_EXPORT_PRIVACY_STAGED_PROOF}")
+    print(f"workbench_share_export_privacy_staged_status={str(workbench_share_export_privacy_staged.get('status') or '').strip() or 'not_generated'}")
+    print(f"workbench_share_export_privacy_staged_contract={str(workbench_share_export_privacy_staged.get('contract_name') or '').strip() or 'missing'}")
+    print(f"workbench_share_export_privacy_staged_tier={str(workbench_share_export_privacy_staged.get('proof_tier') or '').strip() or 'missing'}")
+    print(f"workbench_share_export_privacy_staged_route_count={len(workbench_share_export_privacy_staged.get('expected_routes') or [])}")
+    print(f"workbench_share_export_privacy_staged_source_checks={count_staged_source_checks(workbench_share_export_privacy_staged)}")
+    print(
+        "workbench_share_export_privacy_staged_note="
+        "source_alignment_only_not_browser_execution"
+    )
+    print(f"workbench_table_handoff_staged_receipt={WORKBENCH_TABLE_HANDOFF_STAGED_PROOF}")
+    print(f"workbench_table_handoff_staged_status={str(workbench_table_handoff_staged.get('status') or '').strip() or 'not_generated'}")
+    print(f"workbench_table_handoff_staged_contract={str(workbench_table_handoff_staged.get('contract_name') or '').strip() or 'missing'}")
+    print(f"workbench_table_handoff_staged_tier={str(workbench_table_handoff_staged.get('proof_tier') or '').strip() or 'missing'}")
+    print(f"workbench_table_handoff_staged_route_count={len(workbench_table_handoff_staged.get('expected_routes') or [])}")
+    print(f"workbench_table_handoff_staged_source_checks={count_staged_source_checks(workbench_table_handoff_staged)}")
+    print(
+        "workbench_table_handoff_staged_note="
+        "source_alignment_only_not_browser_execution"
+    )
+    print(f"workbench_rules_citation_staged_receipt={WORKBENCH_RULES_CITATION_STAGED_PROOF}")
+    print(f"workbench_rules_citation_staged_status={str(workbench_rules_citation_staged.get('status') or '').strip() or 'not_generated'}")
+    print(f"workbench_rules_citation_staged_contract={str(workbench_rules_citation_staged.get('contract_name') or '').strip() or 'missing'}")
+    print(f"workbench_rules_citation_staged_tier={str(workbench_rules_citation_staged.get('proof_tier') or '').strip() or 'missing'}")
+    print(f"workbench_rules_citation_staged_route_count={len(workbench_rules_citation_staged.get('expected_routes') or [])}")
+    print(f"workbench_rules_citation_staged_source_checks={count_staged_source_checks(workbench_rules_citation_staged)}")
+    print(
+        "workbench_rules_citation_staged_note="
+        "source_alignment_only_not_browser_execution"
+    )
+    print(f"workbench_localization_terminology_staged_receipt={WORKBENCH_LOCALIZATION_TERMINOLOGY_STAGED_PROOF}")
+    print(f"workbench_localization_terminology_staged_status={str(workbench_localization_terminology_staged.get('status') or '').strip() or 'not_generated'}")
+    print(f"workbench_localization_terminology_staged_contract={str(workbench_localization_terminology_staged.get('contract_name') or '').strip() or 'missing'}")
+    print(f"workbench_localization_terminology_staged_tier={str(workbench_localization_terminology_staged.get('proof_tier') or '').strip() or 'missing'}")
+    print(f"workbench_localization_terminology_staged_route_count={len(workbench_localization_terminology_staged.get('expected_routes') or [])}")
+    print(f"workbench_localization_terminology_staged_source_checks={count_staged_source_checks(workbench_localization_terminology_staged)}")
+    print(
+        "workbench_localization_terminology_staged_note="
+        "source_alignment_only_not_translation_or_formatter_execution_proof"
+    )
+    print(f"workbench_help_recovery_guidance_staged_receipt={WORKBENCH_HELP_RECOVERY_GUIDANCE_STAGED_PROOF}")
+    print(f"workbench_help_recovery_guidance_staged_status={str(workbench_help_recovery_guidance_staged.get('status') or '').strip() or 'not_generated'}")
+    print(f"workbench_help_recovery_guidance_staged_contract={str(workbench_help_recovery_guidance_staged.get('contract_name') or '').strip() or 'missing'}")
+    print(f"workbench_help_recovery_guidance_staged_tier={str(workbench_help_recovery_guidance_staged.get('proof_tier') or '').strip() or 'missing'}")
+    print(f"workbench_help_recovery_guidance_staged_route_count={len(workbench_help_recovery_guidance_staged.get('expected_routes') or [])}")
+    print(f"workbench_help_recovery_guidance_staged_source_checks={count_staged_source_checks(workbench_help_recovery_guidance_staged)}")
+    print(
+        "workbench_help_recovery_guidance_staged_note="
+        "source_alignment_only_not_context_help_or_support_execution_proof"
+    )
+    print(f"workbench_roster_hierarchy_staged_receipt={WORKBENCH_ROSTER_HIERARCHY_STAGED_PROOF}")
+    print(f"workbench_roster_hierarchy_staged_status={str(workbench_roster_hierarchy_staged.get('status') or '').strip() or 'not_generated'}")
+    print(f"workbench_roster_hierarchy_staged_contract={str(workbench_roster_hierarchy_staged.get('contract_name') or '').strip() or 'missing'}")
+    print(f"workbench_roster_hierarchy_staged_tier={str(workbench_roster_hierarchy_staged.get('proof_tier') or '').strip() or 'missing'}")
+    print(f"workbench_roster_hierarchy_staged_route_count={len(workbench_roster_hierarchy_staged.get('expected_routes') or [])}")
+    print(f"workbench_roster_hierarchy_staged_source_checks={count_staged_source_checks(workbench_roster_hierarchy_staged)}")
+    print(
+        "workbench_roster_hierarchy_staged_note="
+        "source_alignment_only_not_drag_drop_execution_or_filesystem_mutation_proof"
     )
     print(f"legacy_control_coverage_staged_receipt={LEGACY_CONTROL_COVERAGE_STAGED_PROOF}")
     print(f"legacy_control_coverage_staged_status={str(legacy_control_coverage_staged.get('status') or '').strip() or 'not_generated'}")

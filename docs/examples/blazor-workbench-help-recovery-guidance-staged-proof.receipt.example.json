@@ -1,0 +1,48 @@
+{
+  "contract_name": "chummer6-ui.blazor_workbench_help_recovery_guidance_staged_proof",
+  "generated_at": "2026-06-24T00:00:00+00:00",
+  "status": "passed",
+  "proof_tier": "source_staged_no_browser_execution",
+  "route_lane": "promoted_blazor_workbench",
+  "expected_routes": [
+    "/blazor/workbench"
+  ],
+  "checks": [
+    {
+      "id": "product_ui",
+      "path": "Chummer.Blazor/Components/Pages/Preview.razor",
+      "needle": "data-workbench-help-recovery-guidance=\"strip\"",
+      "found": true
+    },
+    {
+      "id": "scoped_css",
+      "path": "Chummer.Blazor/Components/Pages/Preview.razor.css",
+      "needle": ".browser-workbench-help-recovery-guidance-strip",
+      "found": true
+    },
+    {
+      "id": "release_docs",
+      "path": "docs/WORKBENCH_RELEASE_SIGNOFF.md",
+      "needle": "workbench help/recovery guidance posture",
+      "found": true
+    },
+    {
+      "id": "parity_docs",
+      "path": "docs/BLAZOR_WEB_CLIENT_PARITY_GOAL.md",
+      "needle": "staged hosted workbench help/recovery guidance posture",
+      "found": true
+    },
+    {
+      "id": "status_utility",
+      "path": "scripts/print_blazor_public_edge_proof_status.py",
+      "needle": "workbench_help_recovery_guidance_staged_status",
+      "found": true
+    }
+  ],
+  "boundary_notes": [
+    "Source-staged help/recovery guidance posture only; this is not hosted browser execution proof.",
+    "Does not prove Docker self-host browser execution, contextual help resolution, keyboard shortcut execution, support-ticket creation, docs search, or error remediation.",
+    "Runtime promotion requires refreshed hosted public-edge and Docker self-host receipts."
+  ],
+  "failures": []
+}

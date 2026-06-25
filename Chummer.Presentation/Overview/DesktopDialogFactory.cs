@@ -3069,6 +3069,11 @@ public sealed class DesktopDialogFactory : IDesktopDialogFactory
                 ? (watchFolderExists ? "Refresh Watch Folder" : "Create and Refresh Watch Folder")
                 : "Scan Watch Folder Now"));
 
+        actions.Add(new DesktopDialogAction("create_roster_group", "Create Character Folder"));
+        actions.Add(new DesktopDialogAction("rename_roster_group", "Rename Character Folder"));
+        actions.Add(new DesktopDialogAction("move_runner_to_group", "Move Runner to Folder"));
+        actions.Add(new DesktopDialogAction("reorder_roster_tree", "Reorder Character Tree"));
+
         if (hasPortrait)
         {
             actions.Add(new DesktopDialogAction("open_portrait", $"Open Portrait {Path.GetFileName(portraitCandidate)}"));
@@ -3152,6 +3157,28 @@ public sealed class DesktopDialogFactory : IDesktopDialogFactory
         string rosterTree = ordered.Length == 0
             ? $"[Open Characters]{Environment.NewLine}└─ {alias} · {name}{Environment.NewLine}[Watch Folder]{Environment.NewLine}{watchFolderTree}"
             : $"[Open Characters]{Environment.NewLine}{string.Join(Environment.NewLine, ordered.Select(candidate => $"└─ {(selectedRunner is not null && string.Equals(candidate.Id.Value, selectedRunner.Id.Value, StringComparison.Ordinal) ? "*" : "-")} {candidate.Alias} · {candidate.Name} [{(RulesetDefaults.NormalizeOptional(candidate.RulesetId) ?? candidate.RulesetId)}]"))}{Environment.NewLine}[Watch Folder]{Environment.NewLine}{watchFolderTree}";
+        string customRosterFolders = BuildCustomRosterFolderPreview(ordered, watchedFiles, selectedRunner, selectedWatchedFile, alias, name);
+        string rosterMoveTargets = BuildGridValue(
+            ("Drop Target", selectedRunner is null ? "New folder or watched file" : $"{selectedRunner.Alias} folder"),
+            ("Default Folder", selectedRunner?.HasSavedWorkspace == true ? "Saved runners" : "Inbox / unsaved"),
+            ("Tree Scope", watchFolderConfigured ? "Open runners + watched files + user folders" : "Open runners + user folders"),
+            ("Ordering", "manual sibling order with recent-open fallback"),
+            ("Persistence", "character tree metadata, not filesystem move until confirmed"),
+            ("Conflict Rule", "drag creates preview; explicit Move Runner commits"));
+        string rosterDragDropGuide =
+            "Drag runner onto folder: preview move" + Environment.NewLine +
+            "Drag folder onto folder: nest folder" + Environment.NewLine +
+            "Drag between siblings: reorder within parent" + Environment.NewLine +
+            "Drop onto Watch Folder file: link watched file" + Environment.NewLine +
+            "Hold modifier while dropping: copy shortcut instead of move" + Environment.NewLine +
+            "Undo last move: restore previous tree path";
+        string rosterHierarchyPolicy = BuildGridValue(
+            ("User Folders", "custom arbitrary depth"),
+            ("Character Placement", "one primary folder, optional pinned aliases later"),
+            ("Watched Files", "can appear under virtual folders without moving disk files"),
+            ("Filesystem Moves", "separate confirmation step"),
+            ("Self-host Sync", "layout metadata follows owner and runner scope"),
+            ("Safe Delete", "delete folder offers move children to Inbox first"));
         string selectedRunnerSummary = selectedRunner is null
             ? BuildGridValue(
                 ("Character Name", name),
@@ -3208,6 +3235,10 @@ public sealed class DesktopDialogFactory : IDesktopDialogFactory
         string runnerCommands =
             "Open selected runner" + Environment.NewLine +
             "Save selected runner" + Environment.NewLine +
+            "Create custom character folder" + Environment.NewLine +
+            "Move selected runner to folder" + Environment.NewLine +
+            "Rename selected folder" + Environment.NewLine +
+            "Undo last roster move" + Environment.NewLine +
             (selectedRunner?.HasSavedWorkspace == true ? "Open saved runner location" : "Save runner to roster folder");
         string watchFolderCommands = watchFolderConfigured
             ? watchFolderExists
@@ -3222,6 +3253,7 @@ public sealed class DesktopDialogFactory : IDesktopDialogFactory
               "Scan watch folder now" + Environment.NewLine +
               "Open imported runner";
         string mugshotStatus = portraitCandidate;
+        RosterHierarchyState rosterHierarchy = BuildRosterHierarchyState(ordered, watchedFiles, selectedRunner, selectedWatchedFile, alias, name);
         string rosterSnapshot = JsonSerializer.Serialize(
             new RosterDialogSnapshot(
                 alias,
@@ -3234,7 +3266,8 @@ public sealed class DesktopDialogFactory : IDesktopDialogFactory
                     candidate.LastOpenedUtc,
                     candidate.RulesetId,
                     candidate.HasSavedWorkspace)).ToArray(),
-                watchedFiles));
+                watchedFiles,
+                rosterHierarchy));
 
         return
         [
@@ -3253,6 +3286,10 @@ public sealed class DesktopDialogFactory : IDesktopDialogFactory
             new DesktopDialogField("rosterPortraitPath", "Portrait Path", portraitCandidate, portraitCandidate, IsReadOnly: true, LayoutSlot: DesktopDialogFieldLayoutSlots.Hidden),
             new DesktopDialogField("rosterSnapshot", "Snapshot", rosterSnapshot, rosterSnapshot, IsReadOnly: true, LayoutSlot: DesktopDialogFieldLayoutSlots.Hidden),
             new DesktopDialogField("rosterTree", "Characters", rosterTree, rosterTree, IsReadOnly: true, IsMultiline: true, VisualKind: DesktopDialogFieldVisualKinds.Tree, LayoutSlot: DesktopDialogFieldLayoutSlots.Left),
+            new DesktopDialogField("rosterCustomFolders", "Custom Folders", customRosterFolders, customRosterFolders, IsReadOnly: true, IsMultiline: true, VisualKind: DesktopDialogFieldVisualKinds.Tree, LayoutSlot: DesktopDialogFieldLayoutSlots.Left),
+            new DesktopDialogField("rosterMoveTargets", "Move Targets", rosterMoveTargets, rosterMoveTargets, IsReadOnly: true, IsMultiline: true, VisualKind: DesktopDialogFieldVisualKinds.Grid),
+            new DesktopDialogField("rosterDragDropGuide", "Drag / Drop", rosterDragDropGuide, rosterDragDropGuide, IsReadOnly: true, IsMultiline: true, VisualKind: DesktopDialogFieldVisualKinds.List),
+            new DesktopDialogField("rosterHierarchyPolicy", "Hierarchy Policy", rosterHierarchyPolicy, rosterHierarchyPolicy, IsReadOnly: true, IsMultiline: true, VisualKind: DesktopDialogFieldVisualKinds.Grid),
             new DesktopDialogField("rosterSelectionTrail", "Selection Trail", selectionTrail, selectionTrail, IsReadOnly: true, IsMultiline: true, VisualKind: DesktopDialogFieldVisualKinds.Grid),
             new DesktopDialogField("rosterMugshot", "Mugshot", mugshotStatus, "Runner Mugshot", IsReadOnly: true, IsMultiline: true, VisualKind: DesktopDialogFieldVisualKinds.Image, LayoutSlot: DesktopDialogFieldLayoutSlots.Right),
             new DesktopDialogField("rosterSelectedRunner", "Selected Runner", selectedRunnerSummary, selectedRunnerSummary, IsReadOnly: true, IsMultiline: true, VisualKind: DesktopDialogFieldVisualKinds.Grid, LayoutSlot: DesktopDialogFieldLayoutSlots.Right),
@@ -3357,6 +3394,136 @@ public sealed class DesktopDialogFactory : IDesktopDialogFactory
 
         string normalized = new string(sanitized).Trim('-');
         return string.IsNullOrWhiteSpace(normalized) ? "active-runner" : normalized;
+    }
+
+
+
+    private static RosterHierarchyState BuildRosterHierarchyState(
+        IReadOnlyList<OpenWorkspaceState> ordered,
+        IReadOnlyList<string> watchedFiles,
+        OpenWorkspaceState? selectedRunner,
+        string? selectedWatchedFile,
+        string alias,
+        string name)
+    {
+        RosterHierarchyFolderState[] folders =
+        [
+            new("active-table", "Active Table", null, 0, IsSystemFolder: true),
+            new("saved-runners", "Saved Runners", null, 1, IsSystemFolder: true),
+            new("inbox", "Inbox / Needs Filing", null, 2, IsSystemFolder: true),
+            new("watch-links", "Watch Folder Links", null, 3, IsSystemFolder: true)
+        ];
+
+        List<RosterHierarchyItemState> items = [];
+        int sortOrder = 0;
+        foreach (OpenWorkspaceState candidate in ordered)
+        {
+            string folderId = selectedRunner is not null && string.Equals(candidate.Id.Value, selectedRunner.Id.Value, StringComparison.Ordinal)
+                ? "active-table"
+                : candidate.HasSavedWorkspace
+                    ? "saved-runners"
+                    : "inbox";
+            items.Add(new RosterHierarchyItemState(
+                candidate.Id.Value,
+                $"{candidate.Alias} · {candidate.Name}",
+                RosterHierarchyItemKinds.Workspace,
+                folderId,
+                WorkspaceId: candidate.Id.Value,
+                SortOrder: sortOrder++));
+        }
+
+        if (items.Count == 0)
+        {
+            items.Add(new RosterHierarchyItemState(
+                "draft-active-runner",
+                $"{alias} · {name}",
+                RosterHierarchyItemKinds.Workspace,
+                "active-table",
+                SortOrder: sortOrder++));
+        }
+
+        foreach (string watchedFile in watchedFiles.Take(12))
+        {
+            items.Add(new RosterHierarchyItemState(
+                $"watch:{watchedFile}",
+                watchedFile,
+                RosterHierarchyItemKinds.WatchedFile,
+                "watch-links",
+                WatchedFile: watchedFile,
+                SortOrder: sortOrder++));
+        }
+
+        string? selectedItemId = selectedRunner?.Id.Value
+            ?? (!string.IsNullOrWhiteSpace(selectedWatchedFile) ? $"watch:{selectedWatchedFile}" : items.FirstOrDefault()?.Id);
+        RosterHierarchyMoveIntentState? pendingMove = string.IsNullOrWhiteSpace(selectedItemId)
+            ? null
+            : new RosterHierarchyMoveIntentState(
+                selectedItemId,
+                items.FirstOrDefault(item => string.Equals(item.Id, selectedItemId, StringComparison.Ordinal))?.FolderId,
+                selectedRunner?.HasSavedWorkspace == true ? "saved-runners" : "inbox",
+                null,
+                RosterHierarchyMoveKinds.Move,
+                RequiresFilesystemConfirmation: false);
+
+        return new RosterHierarchyState(
+            folders,
+            items,
+            new RosterHierarchyPolicyState(
+                SupportsNestedFolders: true,
+                AllowsWatchedFileLinks: true,
+                MovesFilesOnlyAfterConfirmation: true,
+                DeleteFolderPolicy: "move_children_to_inbox_first",
+                ConflictPolicy: "stage_preview_before_commit"),
+            pendingMove);
+    }
+
+    private static string BuildCustomRosterFolderPreview(
+        IReadOnlyList<OpenWorkspaceState> ordered,
+        IReadOnlyList<string> watchedFiles,
+        OpenWorkspaceState? selectedRunner,
+        string? selectedWatchedFile,
+        string alias,
+        string name)
+    {
+        static string Label(OpenWorkspaceState candidate, OpenWorkspaceState? selected)
+        {
+            string marker = selected is not null && string.Equals(candidate.Id.Value, selected.Id.Value, StringComparison.Ordinal) ? "* " : string.Empty;
+            string saveState = candidate.HasSavedWorkspace ? "saved" : "unsaved";
+            return $"{marker}{candidate.Alias} · {candidate.Name} · {saveState}";
+        }
+
+        string[] active = ordered
+            .Where(candidate => selectedRunner is not null && string.Equals(candidate.Id.Value, selectedRunner.Id.Value, StringComparison.Ordinal))
+            .Select(candidate => $"   └─ {Label(candidate, selectedRunner)}")
+            .DefaultIfEmpty($"   └─ {alias} · {name} · draft")
+            .ToArray();
+        string[] saved = ordered
+            .Where(candidate => candidate.HasSavedWorkspace && (selectedRunner is null || !string.Equals(candidate.Id.Value, selectedRunner.Id.Value, StringComparison.Ordinal)))
+            .Take(4)
+            .Select(candidate => $"   ├─ {Label(candidate, selectedRunner)}")
+            .DefaultIfEmpty("   └─ no saved runners yet")
+            .ToArray();
+        string[] inbox = ordered
+            .Where(candidate => !candidate.HasSavedWorkspace && (selectedRunner is null || !string.Equals(candidate.Id.Value, selectedRunner.Id.Value, StringComparison.Ordinal)))
+            .Take(4)
+            .Select(candidate => $"   ├─ {Label(candidate, selectedRunner)}")
+            .DefaultIfEmpty("   └─ empty")
+            .ToArray();
+        string[] watched = watchedFiles
+            .Take(5)
+            .Select(file => $"   ├─ {(string.Equals(file, selectedWatchedFile, StringComparison.OrdinalIgnoreCase) ? "* " : string.Empty)}{file}")
+            .DefaultIfEmpty("   └─ no watched files linked")
+            .ToArray();
+
+        return "[Custom Roster]" + Environment.NewLine +
+               "├─ Active Table" + Environment.NewLine +
+               string.Join(Environment.NewLine, active) + Environment.NewLine +
+               "├─ Saved Runners" + Environment.NewLine +
+               string.Join(Environment.NewLine, saved) + Environment.NewLine +
+               "├─ Inbox / Needs Filing" + Environment.NewLine +
+               string.Join(Environment.NewLine, inbox) + Environment.NewLine +
+               "└─ Watch Folder Links" + Environment.NewLine +
+               string.Join(Environment.NewLine, watched);
     }
 
     private static string[] BuildRosterWatchFileHints(
@@ -7320,7 +7487,8 @@ public sealed class DesktopDialogFactory : IDesktopDialogFactory
         string FallbackName,
         string FallbackWorkspace,
         IReadOnlyList<RosterDialogWorkspaceSnapshot> Workspaces,
-        IReadOnlyList<string> WatchedFiles);
+        IReadOnlyList<string> WatchedFiles,
+        RosterHierarchyState Hierarchy);
 
     private sealed record RosterDialogWorkspaceSnapshot(
         string Id,

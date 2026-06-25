@@ -42,6 +42,27 @@ The goal is straightforward: `Chummer.Blazor` should ship as a polished web clie
 - `scripts/materialize-blazor-workbench-offline-cache-staged-proof.py`: source-structural staged proof materializer for offline/cache workbench posture
 - `scripts/ai/milestones/blazor-workbench-offline-cache-staged-proof-check.sh`: milestone-style wrapper for the offline/cache source-alignment check
 - `docs/examples/blazor-workbench-offline-cache-staged-proof.receipt.example.json`: example receipt shape for the offline/cache source-alignment proof
+- `scripts/materialize-blazor-workbench-session-locking-staged-proof.py`: source-structural staged proof materializer for session-locking workbench posture
+- `scripts/ai/milestones/blazor-workbench-session-locking-staged-proof-check.sh`: milestone-style wrapper for the session-locking source-alignment check
+- `docs/examples/blazor-workbench-session-locking-staged-proof.receipt.example.json`: example receipt shape for the session-locking source-alignment proof
+- `scripts/materialize-blazor-workbench-share-export-privacy-staged-proof.py`: source-structural staged proof materializer for share/export privacy workbench posture
+- `scripts/ai/milestones/blazor-workbench-share-export-privacy-staged-proof-check.sh`: milestone-style wrapper for the share/export privacy source-alignment check
+- `docs/examples/blazor-workbench-share-export-privacy-staged-proof.receipt.example.json`: example receipt shape for the share/export privacy source-alignment proof
+- `scripts/materialize-blazor-workbench-table-handoff-staged-proof.py`: source-structural staged proof materializer for table-handoff workbench posture
+- `scripts/ai/milestones/blazor-workbench-table-handoff-staged-proof-check.sh`: milestone-style wrapper for the table-handoff source-alignment check
+- `docs/examples/blazor-workbench-table-handoff-staged-proof.receipt.example.json`: example receipt shape for the table-handoff source-alignment proof
+- `scripts/materialize-blazor-workbench-rules-citation-staged-proof.py`: source-structural staged proof materializer for rules-citation workbench posture
+- `scripts/ai/milestones/blazor-workbench-rules-citation-staged-proof-check.sh`: milestone-style wrapper for the rules-citation source-alignment check
+- `docs/examples/blazor-workbench-rules-citation-staged-proof.receipt.example.json`: example receipt shape for the rules-citation source-alignment proof
+- `scripts/materialize-blazor-workbench-localization-terminology-staged-proof.py`: source-structural staged proof materializer for localization/terminology workbench posture
+- `scripts/ai/milestones/blazor-workbench-localization-terminology-staged-proof-check.sh`: milestone-style wrapper for the localization/terminology source-alignment check
+- `docs/examples/blazor-workbench-localization-terminology-staged-proof.receipt.example.json`: example receipt shape for the localization/terminology source-alignment proof
+- `scripts/materialize-blazor-workbench-help-recovery-guidance-staged-proof.py`: source-structural staged proof materializer for help/recovery guidance workbench posture
+- `scripts/ai/milestones/blazor-workbench-help-recovery-guidance-staged-proof-check.sh`: milestone-style wrapper for the help/recovery guidance source-alignment check
+- `docs/examples/blazor-workbench-help-recovery-guidance-staged-proof.receipt.example.json`: example receipt shape for the help/recovery guidance source-alignment proof
+- `scripts/materialize-blazor-workbench-roster-hierarchy-staged-proof.py`: source-structural staged proof materializer for character roster custom hierarchy posture
+- `scripts/ai/milestones/blazor-workbench-roster-hierarchy-staged-proof-check.sh`: milestone-style wrapper for the roster hierarchy source-alignment check
+- `docs/examples/blazor-workbench-roster-hierarchy-staged-proof.receipt.example.json`: example receipt shape for the roster hierarchy source-alignment proof
 - `.codex-studio/published/BLAZOR_BROWSER_LANE_PROOF_SET.generated.json`: published aggregate browser-lane proof-set receipt
 - `.codex-studio/published/BLAZOR_PUBLIC_EDGE_EXECUTION_PROOF.generated.json`: published hosted execution-proof receipt
 - `.codex-studio/published/BLAZOR_PUBLIC_EDGE_WORKBENCH_PROOF.generated.json`: published hosted route-entry/workbench proof receipt

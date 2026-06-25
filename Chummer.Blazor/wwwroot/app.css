@@ -2595,3 +2595,66 @@ input[type="radio"] {
         grid-template-columns: 1fr;
     }
 }
+
+.dialog-field--roster-hierarchy .dialog-label::after {
+    content: " preview";
+    margin-left: 0.35rem;
+    color: #5f6b57;
+    font-size: 0.72rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+}
+
+.dialog-visual--roster-hierarchy {
+    border: 1px solid rgba(95, 107, 87, 0.28);
+    border-radius: 0.45rem;
+    background:
+        linear-gradient(135deg, rgba(198, 185, 154, 0.13), rgba(255, 255, 255, 0.72)),
+        var(--ui-kit-shell-surface-muted);
+    padding: 0.45rem;
+}
+
+.dialog-roster-tree,
+.dialog-roster-list {
+    display: grid;
+    gap: 0.18rem;
+    font-family: var(--ui-kit-mono-font);
+}
+
+.dialog-roster-line {
+    min-height: 1.65rem;
+    display: flex;
+    align-items: center;
+    padding: 0.18rem 0.35rem;
+    border: 1px solid transparent;
+    border-radius: 0.35rem;
+    white-space: pre-wrap;
+}
+
+.dialog-roster-line--root {
+    color: #27301f;
+    background: rgba(198, 185, 154, 0.16);
+    font-weight: 800;
+}
+
+.dialog-roster-line--branch {
+    background: rgba(255, 255, 255, 0.62);
+}
+
+.dialog-roster-line.is-draggable {
+    cursor: grab;
+    border-color: rgba(95, 107, 87, 0.18);
+}
+
+.dialog-roster-line.is-draggable::before {
+    content: "⋮⋮";
+    margin-right: 0.45rem;
+    color: #5f6b57;
+    letter-spacing: -0.12em;
+}
+
+.dialog-roster-line.is-selected {
+    border-color: rgba(95, 107, 87, 0.55);
+    background: rgba(137, 224, 179, 0.13);
+}

@@ -284,6 +284,18 @@ public sealed class DialogCoordinator : IDialogCoordinator
                 case "open_roster_folder":
                     OpenCharacterRosterFolder(dialog, context);
                     return;
+                case "create_roster_group":
+                    PublishCharacterRosterCommandNotice(dialog, context, "rosterMoveTargets", "Create a character folder from the Custom Folders pane first.", moveTargets => $"Character folder creation staged. {FlattenDialogValue(moveTargets)}");
+                    return;
+                case "rename_roster_group":
+                    PublishCharacterRosterCommandNotice(dialog, context, "rosterCustomFolders", "No custom character folder is selected yet.", folders => $"Character folder rename staged from the custom hierarchy. {FirstDialogLine(folders)}");
+                    return;
+                case "move_runner_to_group":
+                    PublishCharacterRosterCommandNotice(dialog, context, "rosterSelectedRunnerAlias", "No selected runner is available to move.", runnerAlias => $"Runner '{runnerAlias}' move staged. Drop target remains virtual until the user confirms the roster move.");
+                    return;
+                case "reorder_roster_tree":
+                    PublishCharacterRosterCommandNotice(dialog, context, "rosterDragDropGuide", "No roster hierarchy is available to reorder yet.", guide => $"Roster reorder staged. {FirstDialogLine(guide)}");
+                    return;
                 case "open_portrait":
                     PublishCharacterRosterCommandNotice(dialog, context, "rosterPortraitPath", "No portrait slot is currently matched.", portraitPath => $"Portrait slot '{Path.GetFileName(portraitPath)}' surfaced in the roster view.");
                     return;
@@ -2410,6 +2422,19 @@ public sealed class DialogCoordinator : IDialogCoordinator
             .Concat(state.Commands.Select(command => RulesetDefaults.NormalizeOptional(command.RulesetId)))
             .Concat(state.NavigationTabs.Select(tab => RulesetDefaults.NormalizeOptional(tab.RulesetId)))
             .FirstOrDefault(rulesetId => !string.IsNullOrWhiteSpace(rulesetId));
+    }
+
+
+    private static string FirstDialogLine(string value)
+    {
+        string[] lines = value.Replace("\r", string.Empty).Split('\n', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
+        return lines.FirstOrDefault() ?? value.Trim();
+    }
+
+    private static string FlattenDialogValue(string value)
+    {
+        string[] lines = value.Replace("\r", string.Empty).Split('\n', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
+        return string.Join("; ", lines.Take(3));
     }
 
     private static string ReadDialogValue(

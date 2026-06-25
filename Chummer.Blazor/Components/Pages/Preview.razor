@@ -108,8 +108,8 @@
                 <p>Start, edit, output, and portal handoff stay in one dense strip.</p>
             </div>
             <nav class="browser-workbench-task-dock-actions" aria-label="Workbench task shortcuts">
-                <a href="/workbench?command=new_character" data-workbench-dock-action="start-new">New runner</a>
-                <a href="/workbench?command=open_character" data-workbench-dock-action="open-existing">Open/import</a>
+                <a href="@BuildPreviewHref(command: "new_character", useWorkbenchRoute: true)" data-workbench-dock-action="start-new">New runner</a>
+                <a href="@BuildPreviewHref(command: "open_character", useWorkbenchRoute: true)" data-workbench-dock-action="open-existing">Open/import</a>
                 <a href="@BuildLabLaneHref" data-workbench-dock-action="build-lab">Build lab</a>
                 <a href="@GearLaneHref" data-workbench-dock-action="gear">Gear</a>
                 <a href="@SaveAsFlowHref" data-workbench-dock-action="save-as">Save/download</a>
@@ -186,19 +186,19 @@
         <section class="browser-workbench-command-palette" aria-label="Workbench command palette posture" data-workbench-command-palette="strip">
             <div class="browser-workbench-command-copy">
                 <span class="browser-preview-status-label">Command palette</span>
-                <strong>Desktop habits, browser-safe commands.</strong>
+                <strong>Chummer habits, browser-safe commands.</strong>
                 <p>Keep common Chummer actions discoverable with keyboard-style hints while every command remains a reload-safe workbench link.</p>
             </div>
             <details open class="browser-workbench-command-panel" data-workbench-command-palette-panel="primary">
                 <summary>Quick command map</summary>
                 <div class="browser-workbench-command-list" role="list">
-                    <a href="/workbench?command=new_character"
+                    <a href="@BuildPreviewHref(command: "new_character", useWorkbenchRoute: true)"
                        role="listitem"
                        aria-keyshortcuts="Control+N"
                        data-workbench-command-palette-action="new-character">
                         <kbd>Ctrl</kbd><kbd>N</kbd><span>New runner</span>
                     </a>
-                    <a href="/workbench?command=open_character"
+                    <a href="@BuildPreviewHref(command: "open_character", useWorkbenchRoute: true)"
                        role="listitem"
                        aria-keyshortcuts="Control+O"
                        data-workbench-command-palette-action="open-character">
@@ -1799,17 +1799,119 @@
 
         <section class="browser-workbench-offline-cache-strip" aria-label="Workbench offline cache posture" data-workbench-offline-cache="strip">
             <div class="browser-workbench-offline-cache-copy">
-                <span class="browser-preview-status-label">Offline cache</span>
-                <strong>Keep the browser workbench useful when the network gets rough.</strong>
-                <p>Cache status, queued edits, reconnect review, local export fallback, stale-data warnings, and sync health keep web Chummer from feeling more fragile than desktop.</p>
+                <span class="browser-preview-status-label">Offline</span>
+                <strong>Keep network trouble visible.</strong>
+                <p>Cache status, queued edits, reconnect review, local export, stale data, and sync health stay close to the sheet.</p>
             </div>
             <div class="browser-workbench-offline-cache-actions" role="list" aria-label="Offline cache actions">
-                <a href="/workbench?command=open_character&offline=cache-status" role="listitem" data-workbench-offline-cache-action="cache-status">Cache status</a>
-                <a href="/workbench?command=save_character&offline=queued-edits" role="listitem" data-workbench-offline-cache-action="queued-edits">Queued edits</a>
-                <a href="/workbench?command=open_character&offline=reconnect-review" role="listitem" data-workbench-offline-cache-action="reconnect-review">Reconnect review</a>
-                <a href="/workbench?command=export_character&offline=local-export" role="listitem" data-workbench-offline-cache-action="local-export">Local export</a>
-                <a href="/workbench?command=open_character&offline=stale-data" role="listitem" data-workbench-offline-cache-action="stale-data">Stale data</a>
-                <a href="/workbench?command=open_character&offline=sync-health" role="listitem" data-workbench-offline-cache-action="sync-health">Sync health</a>
+                <a href="@BuildPreviewHref("blue", command: "offline_cache_status")" role="listitem" data-workbench-offline-cache-action="cache-status">Cache status</a>
+                <a href="@BuildPreviewHref("blue", command: "offline_queued_edits")" role="listitem" data-workbench-offline-cache-action="queued-edits">Queued edits</a>
+                <a href="@BuildPreviewHref("blue", command: "offline_reconnect_review")" role="listitem" data-workbench-offline-cache-action="reconnect-review">Reconnect</a>
+                <a href="@BuildPreviewHref("blue", command: "offline_local_export")" role="listitem" data-workbench-offline-cache-action="local-export">Local export</a>
+                <a href="@BuildPreviewHref("blue", command: "offline_stale_data")" role="listitem" data-workbench-offline-cache-action="stale-data">Stale data</a>
+                <a href="@BuildPreviewHref("blue", command: "offline_sync_health")" role="listitem" data-workbench-offline-cache-action="sync-health">Sync health</a>
+            </div>
+        </section>
+
+
+        <section class="browser-workbench-session-locking-strip" aria-label="Workbench session locking posture" data-workbench-session-locking="strip">
+            <div class="browser-workbench-session-locking-copy">
+                <span class="browser-preview-status-label">Session</span>
+                <strong>Make edit ownership visible.</strong>
+                <p>Lock status, owner handoff, read-only fallback, stale recovery, conflict owner, and takeover review stay clear across tabs.</p>
+            </div>
+            <div class="browser-workbench-session-locking-actions" role="list" aria-label="Session locking actions">
+                <a href="@BuildPreviewHref("blue", command: "session_lock_status")" role="listitem" data-workbench-session-locking-action="lock-status">Lock status</a>
+                <a href="@BuildPreviewHref("blue", command: "session_owner_handoff")" role="listitem" data-workbench-session-locking-action="owner-handoff">Owner handoff</a>
+                <a href="@BuildPreviewHref("blue", command: "session_read_only")" role="listitem" data-workbench-session-locking-action="read-only">Read-only</a>
+                <a href="@BuildPreviewHref("blue", command: "session_stale")" role="listitem" data-workbench-session-locking-action="stale-session">Stale</a>
+                <a href="@BuildPreviewHref("blue", command: "session_conflict_owner")" role="listitem" data-workbench-session-locking-action="conflict-owner">Conflict owner</a>
+                <a href="@BuildPreviewHref("blue", command: "session_takeover_review")" role="listitem" data-workbench-session-locking-action="takeover-review">Takeover</a>
+            </div>
+        </section>
+
+
+        <section class="browser-workbench-share-export-privacy-strip" aria-label="Workbench share and export privacy posture" data-workbench-share-export-privacy="strip">
+            <div class="browser-workbench-share-export-privacy-copy">
+                <span class="browser-preview-status-label">Share</span>
+                <strong>Keep handoff deliberate.</strong>
+                <p>Redaction, scope, expiry, revocation, history, and local-only export choices stay visible before output leaves the sheet.</p>
+            </div>
+            <div class="browser-workbench-share-export-privacy-actions" role="list" aria-label="Share export privacy actions">
+                <a href="@BuildPreviewHref("blue", command: "share_redaction")" role="listitem" data-workbench-share-export-privacy-action="redaction-profile">Redaction</a>
+                <a href="@BuildPreviewHref("blue", command: "share_scope")" role="listitem" data-workbench-share-export-privacy-action="share-scope">Scope</a>
+                <a href="@BuildPreviewHref("blue", command: "share_expiry")" role="listitem" data-workbench-share-export-privacy-action="expiry">Expiry</a>
+                <a href="@BuildPreviewHref("blue", command: "share_revoke")" role="listitem" data-workbench-share-export-privacy-action="revoke">Revoke</a>
+                <a href="@BuildPreviewHref("blue", command: "share_history")" role="listitem" data-workbench-share-export-privacy-action="audit-history">History</a>
+                <a href="@BuildPreviewHref("blue", command: "share_local_only")" role="listitem" data-workbench-share-export-privacy-action="local-only">Local only</a>
+            </div>
+        </section>
+
+
+        <section class="browser-workbench-table-handoff-strip" aria-label="Workbench table handoff posture" data-workbench-table-handoff="strip">
+            <div class="browser-workbench-table-handoff-copy">
+                <span class="browser-preview-status-label">Table</span>
+                <strong>Package the runner for play.</strong>
+                <p>GM packet, initiative card, condition tracker, public handout, private notes, and table export stay close to the sheet.</p>
+            </div>
+            <div class="browser-workbench-table-handoff-actions" role="list" aria-label="Table handoff actions">
+                <a href="@BuildPreviewHref("blue", command: "table_gm_packet")" role="listitem" data-workbench-table-handoff-action="gm-packet">GM packet</a>
+                <a href="@BuildPreviewHref("blue", command: "table_initiative_card")" role="listitem" data-workbench-table-handoff-action="initiative-card">Initiative</a>
+                <a href="@BuildPreviewHref("blue", command: "table_condition_tracker")" role="listitem" data-workbench-table-handoff-action="condition-tracker">Condition</a>
+                <a href="@BuildPreviewHref("blue", command: "table_public_handout")" role="listitem" data-workbench-table-handoff-action="public-handout">Handout</a>
+                <a href="@BuildPreviewHref("blue", command: "table_private_notes")" role="listitem" data-workbench-table-handoff-action="private-notes">Private notes</a>
+                <a href="@BuildPreviewHref("blue", command: "table_export")" role="listitem" data-workbench-table-handoff-action="table-export">Export</a>
+            </div>
+        </section>
+
+
+        <section class="browser-workbench-rules-citation-strip" aria-label="Workbench rules citation posture" data-workbench-rules-citation="strip">
+            <div class="browser-workbench-rules-citation-copy">
+                <span class="browser-preview-status-label">Rules</span>
+                <strong>Keep rule context near exports.</strong>
+                <p>Source packet, citation scope, errata note, table summary, dispute notes, and rule export stay close to the sheet.</p>
+            </div>
+            <div class="browser-workbench-rules-citation-actions" role="list" aria-label="Rules citation actions">
+                <a href="@BuildPreviewHref("blue", command: "rules_source_packet")" role="listitem" data-workbench-rules-citation-action="source-packet">Source packet</a>
+                <a href="@BuildPreviewHref("blue", command: "rules_citation_scope")" role="listitem" data-workbench-rules-citation-action="citation-scope">Citation scope</a>
+                <a href="@BuildPreviewHref("blue", command: "rules_errata_note")" role="listitem" data-workbench-rules-citation-action="errata-note">Errata</a>
+                <a href="@BuildPreviewHref("blue", command: "rules_table_summary")" role="listitem" data-workbench-rules-citation-action="table-summary">Summary</a>
+                <a href="@BuildPreviewHref("blue", command: "rules_dispute_notes")" role="listitem" data-workbench-rules-citation-action="dispute-trail">Dispute notes</a>
+                <a href="@BuildPreviewHref("blue", command: "rules_export")" role="listitem" data-workbench-rules-citation-action="audit-export">Export</a>
+            </div>
+        </section>
+
+
+        <section class="browser-workbench-localization-terminology-strip" aria-label="Workbench localization and terminology posture" data-workbench-localization-terminology="strip">
+            <div class="browser-workbench-localization-terminology-copy">
+                <span class="browser-preview-status-label">Language</span>
+                <strong>Use the table's own terms.</strong>
+                <p>Language, units, dates, currency, table terms, and source titles stay adjustable without cluttering the sheet.</p>
+            </div>
+            <div class="browser-workbench-localization-terminology-actions" role="list" aria-label="Localization terminology actions">
+                <a href="@BuildPreviewHref("blue", command: "settings_language")" role="listitem" data-workbench-localization-terminology-action="language">Language</a>
+                <a href="@BuildPreviewHref("blue", command: "settings_units")" role="listitem" data-workbench-localization-terminology-action="units">Units</a>
+                <a href="@BuildPreviewHref("blue", command: "settings_date_format")" role="listitem" data-workbench-localization-terminology-action="date-format">Date format</a>
+                <a href="@BuildPreviewHref("blue", command: "settings_currency")" role="listitem" data-workbench-localization-terminology-action="currency">Currency</a>
+                <a href="@BuildPreviewHref("blue", command: "settings_table_terms")" role="listitem" data-workbench-localization-terminology-action="table-terms">Table terms</a>
+                <a href="@BuildPreviewHref("blue", command: "settings_source_titles")" role="listitem" data-workbench-localization-terminology-action="source-titles">Source titles</a>
+            </div>
+        </section>
+
+
+        <section class="browser-workbench-help-recovery-guidance-strip" aria-label="Workbench help and recovery guidance posture" data-workbench-help-recovery-guidance="strip">
+            <div class="browser-workbench-help-recovery-guidance-copy">
+                <span class="browser-preview-status-label">Help</span>
+                <strong>Explain the next useful move.</strong>
+                <p>Context help, shortcuts, error notes, recovery steps, docs, and support stay close when a flow gets stuck.</p>
+            </div>
+            <div class="browser-workbench-help-recovery-guidance-actions" role="list" aria-label="Help recovery guidance actions">
+                <a href="@BuildPreviewHref("blue", command: "help_context")" role="listitem" data-workbench-help-recovery-guidance-action="context-help">Context help</a>
+                <a href="@BuildPreviewHref("blue", command: "help_shortcuts")" role="listitem" data-workbench-help-recovery-guidance-action="shortcut-hints">Shortcuts</a>
+                <a href="@BuildPreviewHref("blue", command: "help_errors")" role="listitem" data-workbench-help-recovery-guidance-action="error-explain">Errors</a>
+                <a href="@BuildPreviewHref("blue", command: "help_recovery")" role="listitem" data-workbench-help-recovery-guidance-action="recovery-suggest">Recovery</a>
+                <a href="/docs/" role="listitem" data-workbench-help-recovery-guidance-action="docs-link">Docs</a>
+                <a href="/contact" role="listitem" data-workbench-help-recovery-guidance-action="support-handoff">Support</a>
             </div>
         </section>
 
@@ -1818,13 +1920,13 @@
                 <span class="browser-preview-status-label">Quick start</span>
                 <strong>Start a new runner</strong>
                 <p>Launch the shared new-character flow directly from the browser workbench route.</p>
-                <a href="/workbench?command=new_character">Open New Character</a>
+                <a href="@BuildPreviewHref(command: "new_character", useWorkbenchRoute: true)">Open New Character</a>
             </article>
             <article class="browser-preview-status-card" data-workbench-entry-card="open-character">
                 <span class="browser-preview-status-label">Quick start</span>
                 <strong>Import an existing runner</strong>
                 <p>Open the shared browser import flow for an existing Chummer dossier.</p>
-                <a href="/workbench?command=open_character">Open Character</a>
+                <a href="@BuildPreviewHref(command: "open_character", useWorkbenchRoute: true)">Open Character</a>
             </article>
             <article class="browser-preview-status-card" data-workbench-entry-card="seeded-build-lab">
                 <span class="browser-preview-status-label">Guided start</span>
