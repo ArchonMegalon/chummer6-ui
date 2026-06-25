@@ -29,7 +29,7 @@ The Blazor browser lane must keep these ideas true:
 - The browser workbench remains the primary user workflow, not a preview page.
 - Desktop install/download handoff remains same-origin through `Chummer.Portal`.
 - Blazor desktop compatibility installer routes remain visible in the same handoff contract even when Avalonia is the promoted native head.
-- Known compatibility routes without promoted artifact bytes return users to `/downloads/` with `installState=proof_required` instead of pretending the installer is published.
+- Known compatibility routes without promoted artifact bytes return users to `/downloads/` with `installState=proof_required` instead of pretending the installer is published. The downloads shelf renders that state as visible installer-proof guidance tied to the requested `next` route.
 - Installer claim routes may require login, but must preserve the intended next URL.
 - `/downloads/` must explain current platform posture honestly.
 - `/status` must state current release availability.

@@ -1,6 +1,6 @@
 {
   "contract_name": "chummer6-ui.blazor_portal_installer_handoff_staged_proof",
-  "generated_at": "2026-06-25T01:23:05.242191+00:00",
+  "generated_at": "2026-06-25T01:24:41.392440+00:00",
   "status": "passed",
   "proof_tier": "source_staged_no_browser_execution",
   "route_lane": "portal_backed_blazor_workbench_handoff",
@@ -40,6 +40,13 @@
     },
     {
       "id": "portal_known_install_route_resolver",
+      "path": "Chummer.Portal/Program.cs",
+      "status": "passed",
+      "required_token_count": 5,
+      "missing_tokens": []
+    },
+    {
+      "id": "downloads_install_state_guidance",
       "path": "Chummer.Portal/Program.cs",
       "status": "passed",
       "required_token_count": 5,

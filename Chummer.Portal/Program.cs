@@ -109,7 +109,7 @@ app.MapGet(blazorHomeRoute, () => Results.Redirect($"{options.BlazorUrl}workbenc
 app.MapGet(downloadsHomeRoute, async context =>
 {
     context.Response.ContentType = "text/html; charset=utf-8";
-    await context.Response.WriteAsync(BuildDownloadsHtml(options)).ConfigureAwait(false);
+    await context.Response.WriteAsync(BuildDownloadsHtml(context, options)).ConfigureAwait(false);
 });
 app.MapGet($"{downloadsHomeRoute}/install/{{artifactId}}", (string artifactId) => ResolveInstallHandoff(artifactId, options));
 
@@ -413,7 +413,7 @@ static string BuildPortalHomeHtml(HttpContext context, PortalOptions options)
 """;
 }
 
-static string BuildDownloadsHtml(PortalOptions options)
+static string BuildDownloadsHtml(HttpContext context, PortalOptions options)
 {
     ReleaseManifestSummary summary = ReadReleaseManifest(options.ReleasesFile);
     string releasesJsonUrl = BuildPublicUrl(options.DownloadsUrl, "releases.json");
@@ -422,6 +422,9 @@ static string BuildDownloadsHtml(PortalOptions options)
             ? "Fallback guidance: self-hosted downloads are live; if you need an alternate lane, use the published desktop install routes in releases.json."
             : "No published desktop builds yet and no fallback lane is configured."
         : $"Fallback guidance: this edge is redirecting to {WebUtility.HtmlEncode(options.DownloadsFallbackUrl)}.";
+    string installState = context.Request.Query["installState"].ToString();
+    string nextInstallRoute = context.Request.Query["next"].ToString();
+    string installStatePanel = BuildDownloadsInstallStatePanel(installState, nextInstallRoute);
     string artifactLines = string.Join(
         Environment.NewLine,
         summary.Downloads.Select(download =>
@@ -442,6 +445,7 @@ static string BuildDownloadsHtml(PortalOptions options)
     body { font-family: "Segoe UI", sans-serif; margin: 0; background: #0d1117; color: #f3efe4; }
     main { max-width: 900px; margin: 0 auto; padding: 2rem 1rem 3rem; }
     .panel { border: 1px solid rgba(214,169,74,.28); background: rgba(15,18,25,.88); border-radius: 18px; padding: 1.25rem; }
+    .install-state { border: 1px solid rgba(244,207,115,.45); background: rgba(244,207,115,.12); border-radius: .85rem; padding: .85rem; }
     a { color: #f4cf73; }
     code { background: rgba(255,255,255,.08); padding: .15rem .35rem; border-radius: .35rem; }
   </style>
@@ -453,6 +457,7 @@ static string BuildDownloadsHtml(PortalOptions options)
     <p>Status: <code>{{WebUtility.HtmlEncode(summary.Status)}}</code></p>
     <p>Version: <code>{{WebUtility.HtmlEncode(summary.Version)}}</code></p>
     <p>Artifacts: <code>{{summary.Downloads.Count}}</code></p>
+    {{installStatePanel}}
     <p><a href="{{releasesJsonUrl}}">Raw releases.json</a></p>
     <p id="fallback-link">{{fallbackText}}</p>
     <ul>
@@ -463,6 +468,19 @@ static string BuildDownloadsHtml(PortalOptions options)
 </body>
 </html>
 """;
+}
+
+static string BuildDownloadsInstallStatePanel(string installState, string nextInstallRoute)
+{
+    if (!string.Equals(installState, "proof_required", StringComparison.OrdinalIgnoreCase))
+    {
+        return string.Empty;
+    }
+
+    string routeLabel = string.IsNullOrWhiteSpace(nextInstallRoute)
+        ? "the requested installer route"
+        : WebUtility.HtmlEncode(nextInstallRoute);
+    return $"""<p class="install-state" data-install-state="proof_required">{routeLabel} is a known compatibility handoff, but installer proof is still required before this route can publish artifact bytes.</p>""";
 }
 
 static IResult ResolveInstallHandoff(string artifactId, PortalOptions options)

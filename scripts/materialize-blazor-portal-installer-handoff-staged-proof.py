@@ -87,6 +87,17 @@ CHECKS = [
         ],
     },
     {
+        "id": "downloads_install_state_guidance",
+        "path": "Chummer.Portal/Program.cs",
+        "tokens": [
+            "BuildDownloadsInstallStatePanel",
+            "data-install-state=\"proof_required\"",
+            "installer proof is still required",
+            "context.Request.Query[\"installState\"]",
+            "context.Request.Query[\"next\"]",
+        ],
+    },
+    {
         "id": "portal_handoff_docs",
         "path": "docs/BLAZOR_PORTAL_INSTALLER_HANDOFF_PROOF.md",
         "tokens": EXPECTED_ROUTES + [
