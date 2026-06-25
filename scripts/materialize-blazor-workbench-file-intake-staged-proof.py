@@ -67,7 +67,7 @@ CHECKS = [
             "Dossier import setup",
             "data-import-trust-receipt",
             "BuildImportTrustReceiptSections",
-            "excludes raw character XML until the user accepts import",
+            "excludes raw dossier XML until the user accepts import",
         ],
     },
     {

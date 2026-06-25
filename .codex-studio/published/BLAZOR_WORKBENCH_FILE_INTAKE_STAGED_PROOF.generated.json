@@ -1,6 +1,6 @@
 {
   "contract_name": "chummer6-ui.blazor_workbench_file_intake_staged_proof",
-  "generated_at": "2026-06-25T04:43:34.073857+00:00",
+  "generated_at": "2026-06-25T17:07:35.022848+00:00",
   "status": "passed",
   "proof_tier": "source_staged_no_browser_execution",
   "route_lane": "promoted_blazor_workbench",
@@ -12,7 +12,7 @@
       "id": "product_workbench_file_intake",
       "path": "Chummer.Blazor/Components/Pages/Preview.razor",
       "status": "passed",
-      "required_token_count": 11,
+      "required_token_count": 17,
       "missing_tokens": []
     },
     {
@@ -27,6 +27,20 @@
       "path": "Chummer.Presentation/Overview/DesktopDialogFactory.cs",
       "status": "passed",
       "required_token_count": 3,
+      "missing_tokens": []
+    },
+    {
+      "id": "blazor_import_panel_dossier_review_copy",
+      "path": "Chummer.Blazor/Components/Shell/ImportPanel.razor",
+      "status": "passed",
+      "required_token_count": 6,
+      "missing_tokens": []
+    },
+    {
+      "id": "ruleset_import_dossier_copy",
+      "path": "Chummer.Presentation/Rulesets/RulesetUiDirectiveCatalog.cs",
+      "status": "passed",
+      "required_token_count": 8,
       "missing_tokens": []
     },
     {
@@ -53,7 +67,7 @@
   ],
   "failures": [],
   "notes": [
-    "This receipt only proves that promoted workbench file-intake source, style, status, and docs agree.",
+    "This receipt only proves that Chummer Online and /blazor/workbench compatibility route file-intake source, style, status, and docs agree.",
     "It is not a substitute for hosted Playwright execution proof or Docker self-host proof.",
     "Do not use this receipt to claim file picker, import execution, XML mutation, or native file-system parity."
   ]
