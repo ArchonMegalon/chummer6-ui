@@ -357,7 +357,11 @@
                                                  aria-label="@BuildRosterHierarchyContainerLabel(field)"
                                                  aria-orientation="@BuildRosterHierarchyContainerOrientation(field)"
                                                  data-roster-drag-root="@IsRosterHierarchyField(field)">
-                                                @if (IsRosterHierarchyField(field) && !string.IsNullOrWhiteSpace(RosterActiveSourceLine))
+                                                @if (IsRosterKeyboardStatusHost(field))
+                                                {
+                                                    <div id="dialogRosterKeyboardHint" class="dialog-roster-keyboard-hint" role="note">Keyboard: Enter or Space selects a source row, Enter or Space on a folder drops it, Escape clears the source.</div>
+                                                }
+                                                @if (IsRosterKeyboardStatusHost(field) && !string.IsNullOrWhiteSpace(RosterActiveSourceLine))
                                                 {
                                                     <div id="dialogRosterKeyboardStatus" class="dialog-roster-keyboard-status" role="status" aria-live="polite" aria-atomic="true">@BuildRosterKeyboardStatus()</div>
                                                 }
@@ -379,7 +383,6 @@
                                                          @ondragover:preventDefault="@IsRosterDropTargetLine(field, item)"
                                                          @ondrop="() => DropRosterLineAsync(field, item)"
                                                          @onkeydown="args => HandleRosterLineKeyDownAsync(field, item, args)"
-                                                         @onkeydown:preventDefault="@ShouldPreventRosterLineKeyDefault(field, item)"
                                                          data-roster-tree-line="@item">
                                                         @item
                                                     </div>
@@ -870,13 +873,11 @@
             ? "Enter Space Escape"
             : null;
 
-    private static bool ShouldPreventRosterLineKeyDefault(DesktopDialogField field, string line)
-        => IsRosterDraggableLine(field, line) || IsRosterDropTargetLine(field, line);
-
     private string? BuildRosterHierarchyLineDescriptionId(DesktopDialogField field, string line)
-        => !string.IsNullOrWhiteSpace(RosterActiveSourceLine)
-           && (IsRosterDraggableLine(field, line) || IsRosterDropTargetLine(field, line))
-            ? "dialogRosterKeyboardStatus"
+        => IsRosterDraggableLine(field, line) || IsRosterDropTargetLine(field, line)
+            ? string.IsNullOrWhiteSpace(RosterActiveSourceLine)
+                ? "dialogRosterKeyboardHint"
+                : "dialogRosterKeyboardHint dialogRosterKeyboardStatus"
             : null;
 
     private static string BuildRosterHierarchyContainerRole(DesktopDialogField field)
@@ -887,6 +888,9 @@
 
     private static string? BuildRosterHierarchyContainerOrientation(DesktopDialogField field)
         => IsRosterHierarchyField(field) ? "vertical" : null;
+
+    private static bool IsRosterKeyboardStatusHost(DesktopDialogField field)
+        => string.Equals(field.Id, "rosterCustomFolders", StringComparison.Ordinal);
 
     private static string BuildRosterHierarchyLineRole(DesktopDialogField field, string line)
         => IsRosterHierarchyField(field) && !line.TrimStart().StartsWith("[", StringComparison.Ordinal)
