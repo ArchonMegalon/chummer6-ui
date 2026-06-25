@@ -12,7 +12,7 @@
       "id": "presentation_roster_hierarchy_contract",
       "path": "Chummer.Presentation/Overview/RosterHierarchyState.cs",
       "status": "passed",
-      "required_token_count": 8,
+      "required_token_count": 6,
       "missing_tokens": []
     },
     {
