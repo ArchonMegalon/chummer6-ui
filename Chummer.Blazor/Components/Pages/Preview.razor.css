@@ -8399,3 +8399,31 @@
     font-size: .56rem;
     font-weight: 900;
 }
+
+.browser-preview-shell:is(.classic-promoted-app, .classic-compat-app) .classic-chummer-shell[data-recommendation-inputs="spells-inventory-drugs-gear-qualities"] .classic-chummer-status span:nth-child(4) strong::after {
+    content: " inputs";
+    color: #1c4169;
+    font-size: .56rem;
+    font-weight: 900;
+}
+
+.browser-preview-shell:is(.classic-promoted-app, .classic-compat-app) .classic-chummer-shell[data-risk-model="damage-threshold-probability"] .classic-chummer-status span:nth-child(4) em::after {
+    content: " risk-model";
+    color: #4f463b;
+    font-size: .56rem;
+    font-weight: 900;
+}
+
+.browser-preview-shell:is(.classic-promoted-app, .classic-compat-app) .classic-chummer-shell[data-calculation-boundary="shared-engine-only"] .classic-chummer-status span:nth-child(4) strong::before {
+    content: "Core ";
+    color: #1c4169;
+    font-size: .56rem;
+    font-weight: 900;
+}
+
+.browser-preview-shell:is(.classic-promoted-app, .classic-compat-app) .classic-chummer-shell[data-result-consumer="blazor-renders-shared-results"] .classic-chummer-status span:nth-child(4) em::before {
+    content: "render-only ";
+    color: #4f463b;
+    font-size: .56rem;
+    font-weight: 900;
+}
