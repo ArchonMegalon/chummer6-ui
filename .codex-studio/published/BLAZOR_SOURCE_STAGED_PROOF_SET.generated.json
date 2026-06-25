@@ -1,13 +1,13 @@
 {
   "contract_name": "chummer6-ui.blazor_source_staged_proof_set",
-  "generated_at": "2026-06-25T00:07:44.860895+00:00",
+  "generated_at": "2026-06-25T00:13:34.231011+00:00",
   "status": "passed",
   "proof_tier": "source_staged_no_browser_execution",
   "route_lane": "promoted_blazor_workbench",
   "required_receipt_count": 72,
   "passed_receipt_count": 72,
   "expected_route_count": 129,
-  "source_check_count": 405,
+  "source_check_count": 408,
   "required_receipts": [
     {
       "id": "career_support",
@@ -857,7 +857,7 @@
       "status": "passed",
       "proof_tier": "source_staged_no_browser_execution",
       "expected_route_count": 1,
-      "source_check_count": 7,
+      "source_check_count": 10,
       "control_count": null,
       "covered_control_count": null
     },

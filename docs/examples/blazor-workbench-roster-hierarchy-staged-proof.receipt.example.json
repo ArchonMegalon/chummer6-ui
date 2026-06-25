@@ -9,6 +9,13 @@
   ],
   "checks": [
     {
+      "id": "presentation_roster_hierarchy_contract",
+      "path": "Chummer.Presentation/Overview/RosterHierarchyState.cs",
+      "status": "passed",
+      "required_token_count": 8,
+      "missing_tokens": []
+    },
+    {
       "id": "dialog_factory",
       "path": "Chummer.Presentation/Overview/DesktopDialogFactory.cs",
       "needle": "rosterCustomFolders",
@@ -53,7 +60,7 @@
   ],
   "boundary_notes": [
     "Source-staged roster hierarchy posture only; this is not hosted browser execution proof.",
-    "Does not prove Docker self-host browser execution, drag/drop mutation, layout persistence, filesystem moves, folder deletion, or watched-file relocation.",
+    "Does not prove Docker self-host browser execution, drag/drop mutation, durable layout persistence, filesystem moves, folder deletion, watched-file relocation, or external RosterHierarchyState storage.",
     "Runtime promotion requires refreshed hosted public-edge and Docker self-host receipts plus explicit drag/drop persistence implementation."
   ],
   "failures": []

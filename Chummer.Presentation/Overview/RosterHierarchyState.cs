@@ -51,3 +51,8 @@ public static class RosterHierarchyMoveKinds
     public const string LinkWatchedFile = "link_watched_file";
     public const string CopyShortcut = "copy_shortcut";
 }
+
+public static class RosterHierarchyDeletePolicies
+{
+    public const string MoveChildrenToInboxFirst = "move_children_to_inbox_first";
+}

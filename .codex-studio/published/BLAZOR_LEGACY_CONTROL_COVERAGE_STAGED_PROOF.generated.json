@@ -1,6 +1,6 @@
 {
   "contract_name": "chummer6-ui.blazor_legacy_control_coverage_staged_proof",
-  "generated_at": "2026-06-25T00:07:44.835097+00:00",
+  "generated_at": "2026-06-25T00:13:34.202162+00:00",
   "status": "passed",
   "proof_tier": "source_staged_no_browser_execution",
   "route_lane": "promoted_blazor_workbench",

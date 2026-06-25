@@ -17,7 +17,7 @@
       "status": "passed",
       "proof_tier": "source_staged_no_browser_execution",
       "expected_route_count": 11,
-      "source_check_count": 8,
+      "source_check_count": 10,
       "control_count": null,
       "covered_control_count": null
     },
@@ -773,7 +773,7 @@
       "status": "passed",
       "proof_tier": "source_staged_no_browser_execution",
       "expected_route_count": 1,
-      "source_check_count": 7,
+      "source_check_count": 8,
       "control_count": null,
       "covered_control_count": null
     }

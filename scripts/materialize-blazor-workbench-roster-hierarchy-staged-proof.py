@@ -16,6 +16,34 @@ OUTPUT_PATH = Path(
 
 CHECKS = [
     {
+        "id": "presentation_roster_hierarchy_contract",
+        "path": "Chummer.Presentation/Overview/RosterHierarchyState.cs",
+        "tokens": [
+            "RosterHierarchyState",
+            "RosterHierarchyFolderState",
+            "RosterHierarchyMoveIntentState",
+            "MovesFilesOnlyAfterConfirmation",
+            "RosterHierarchyDeletePolicies",
+            "move_children_to_inbox_first",
+        ],
+    },
+    {
+        "id": "presentation_roster_hierarchy_preferences",
+        "path": "Chummer.Presentation/Overview/DesktopPreferenceState.cs",
+        "tokens": [
+            "RosterHierarchyJson",
+            "string RosterHierarchyJson = \"\"",
+        ],
+    },
+    {
+        "id": "presentation_roster_hierarchy_preference_normalization",
+        "path": "Chummer.Presentation/Overview/DesktopPreferenceStateRuntime.cs",
+        "tokens": [
+            "RosterHierarchyJson = NormalizeRosterHierarchyJson",
+            "NormalizeRosterHierarchyJson",
+        ],
+    },
+    {
         "id": "presentation_character_roster_hierarchy",
         "path": "Chummer.Presentation/Overview/DesktopDialogFactory.cs",
         "tokens": [
@@ -25,6 +53,8 @@ CHECKS = [
             "Reorder Character Tree",
             "Drag runner onto folder: preview move",
             "layout metadata follows owner and runner scope",
+            "globalRosterHierarchyJson",
+            "RosterHierarchyJson = DesktopDialogFieldValueParser.GetValue",
         ],
     },
     {
@@ -36,6 +66,7 @@ CHECKS = [
             "move_runner_to_group",
             "reorder_roster_tree",
             "Character folder creation staged.",
+            "RosterHierarchyJson",
         ],
     },
     {
@@ -122,7 +153,7 @@ def main() -> int:
         "failures": failures,
         "notes": [
             "This receipt only proves that the character roster hierarchy source, styling, status, and docs agree.",
-            "It is not a substitute for hosted browser execution, drag/drop mutation, layout persistence, filesystem moves, folder deletion, or watched-file relocation.",
+            "It is not a substitute for hosted browser execution, drag/drop mutation, durable layout persistence, filesystem moves, folder deletion, watched-file relocation, or external RosterHierarchyState storage.",
             "Do not use this receipt to claim complete roster persistence or browser execution parity.",
         ],
     }

@@ -285,16 +285,16 @@ public sealed class DialogCoordinator : IDialogCoordinator
                     OpenCharacterRosterFolder(dialog, context);
                     return;
                 case "create_roster_group":
-                    PublishCharacterRosterCommandNotice(dialog, context, "rosterMoveTargets", "Create a character folder from the Custom Folders pane first.", moveTargets => $"Character folder creation staged. {FlattenDialogValue(moveTargets)}");
+                    PublishCharacterRosterHierarchyNotice(dialog, context, "rosterMoveTargets", "Create a character folder from the Custom Folders pane first.", moveTargets => $"Character folder creation staged. {FlattenDialogValue(moveTargets)}");
                     return;
                 case "rename_roster_group":
-                    PublishCharacterRosterCommandNotice(dialog, context, "rosterCustomFolders", "No custom character folder is selected yet.", folders => $"Character folder rename staged from the custom hierarchy. {FirstDialogLine(folders)}");
+                    PublishCharacterRosterHierarchyNotice(dialog, context, "rosterCustomFolders", "No custom character folder is selected yet.", folders => $"Character folder rename staged from the custom hierarchy. {FirstDialogLine(folders)}");
                     return;
                 case "move_runner_to_group":
-                    PublishCharacterRosterCommandNotice(dialog, context, "rosterSelectedRunnerAlias", "No selected runner is available to move.", runnerAlias => $"Runner '{runnerAlias}' move staged. Drop target remains virtual until the user confirms the roster move.");
+                    PublishCharacterRosterHierarchyNotice(dialog, context, "rosterSelectedRunnerAlias", "No selected runner is available to move.", runnerAlias => $"Runner '{runnerAlias}' move staged. Drop target remains virtual until the user confirms the roster move.");
                     return;
                 case "reorder_roster_tree":
-                    PublishCharacterRosterCommandNotice(dialog, context, "rosterDragDropGuide", "No roster hierarchy is available to reorder yet.", guide => $"Roster reorder staged. {FirstDialogLine(guide)}");
+                    PublishCharacterRosterHierarchyNotice(dialog, context, "rosterDragDropGuide", "No roster hierarchy is available to reorder yet.", guide => $"Roster reorder staged. {FirstDialogLine(guide)}");
                     return;
                 case "open_portrait":
                     PublishCharacterRosterCommandNotice(dialog, context, "rosterPortraitPath", "No portrait slot is currently matched.", portraitPath => $"Portrait slot '{Path.GetFileName(portraitPath)}' surfaced in the roster view.");
@@ -2424,6 +2424,49 @@ public sealed class DialogCoordinator : IDialogCoordinator
             .FirstOrDefault(rulesetId => !string.IsNullOrWhiteSpace(rulesetId));
     }
 
+
+
+    private static void PublishCharacterRosterHierarchyNotice(
+        DesktopDialogState dialog,
+        DialogCoordinationContext context,
+        string fieldId,
+        string missingMessage,
+        Func<string, string> noticeFactory)
+    {
+        string hierarchyJson = TryExtractRosterHierarchyJson(dialog);
+        string value = ReadDialogValue(dialog, fieldId, string.Empty);
+        string notice = string.IsNullOrWhiteSpace(value) ? missingMessage : noticeFactory(value);
+        context.Publish(context.State with
+        {
+            Error = null,
+            Preferences = context.State.Preferences with
+            {
+                RosterHierarchyJson = hierarchyJson
+            },
+            Notice = string.IsNullOrWhiteSpace(hierarchyJson)
+                ? notice
+                : $"{notice} Roster hierarchy metadata staged in preferences."
+        });
+    }
+
+    private static string TryExtractRosterHierarchyJson(DesktopDialogState dialog)
+    {
+        string snapshotJson = ReadDialogValue(dialog, "rosterSnapshot", string.Empty);
+        if (string.IsNullOrWhiteSpace(snapshotJson))
+            return string.Empty;
+
+        try
+        {
+            using JsonDocument document = JsonDocument.Parse(snapshotJson);
+            return document.RootElement.TryGetProperty("Hierarchy", out JsonElement hierarchy)
+                ? hierarchy.GetRawText()
+                : string.Empty;
+        }
+        catch (JsonException)
+        {
+            return string.Empty;
+        }
+    }
 
     private static string FirstDialogLine(string value)
     {

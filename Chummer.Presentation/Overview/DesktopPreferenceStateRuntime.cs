@@ -27,9 +27,21 @@ public static class DesktopPreferenceStateRuntime
             UpdateMode = NormalizeUpdateMode(state.UpdateMode, state.CheckForUpdatesOnLaunch),
             CheckForUpdatesOnLaunch = NormalizeUpdateMode(state.UpdateMode, state.CheckForUpdatesOnLaunch) != "off",
             CharacterRosterPath = string.IsNullOrWhiteSpace(state.CharacterRosterPath) ? DesktopPreferenceState.Default.CharacterRosterPath : state.CharacterRosterPath.Trim(),
+            RosterHierarchyJson = NormalizeRosterHierarchyJson(state.RosterHierarchyJson),
             PdfViewerPath = string.IsNullOrWhiteSpace(state.PdfViewerPath) ? DesktopPreferenceState.Default.PdfViewerPath : state.PdfViewerPath.Trim(),
             VisibleChromePolicy = string.IsNullOrWhiteSpace(state.VisibleChromePolicy) ? DesktopPreferenceState.Default.VisibleChromePolicy : state.VisibleChromePolicy.Trim()
         };
+
+    private static string NormalizeRosterHierarchyJson(string? hierarchyJson)
+    {
+        if (string.IsNullOrWhiteSpace(hierarchyJson))
+            return string.Empty;
+
+        string trimmed = hierarchyJson.Trim();
+        return trimmed.StartsWith("{", StringComparison.Ordinal) && trimmed.EndsWith("}", StringComparison.Ordinal)
+            ? trimmed
+            : string.Empty;
+    }
 
     public static string NormalizeUpdateMode(string? updateMode, bool fallbackCheckForUpdatesOnLaunch = true)
     {
