@@ -2482,6 +2482,7 @@ public sealed class DialogCoordinator : IDialogCoordinator
 
         string folderName = ReadDialogValue(dialog, "rosterFolderName", string.Empty).Trim();
         string targetFolder = ReadDialogValue(dialog, "rosterTargetFolder", string.Empty).Trim();
+        string sourceFolder = ReadDialogValue(dialog, "rosterSourceFolder", string.Empty).Trim();
         string selectedRunnerId = ReadDialogValue(dialog, "rosterSelectedRunnerId", string.Empty).Trim();
         string selectedRunnerAlias = ReadDialogValue(dialog, "rosterSelectedRunnerAlias", string.Empty).Trim();
         string notice;
@@ -2499,7 +2500,7 @@ public sealed class DialogCoordinator : IDialogCoordinator
                 nextHierarchy = MoveRosterRunner(hierarchy, selectedRunnerId, selectedRunnerAlias, targetFolder, out notice);
                 break;
             case RosterHierarchyMutationKind.ReorderTree:
-                nextHierarchy = ReorderRosterTree(hierarchy, out notice);
+                nextHierarchy = ReorderRosterTree(hierarchy, sourceFolder, targetFolder, out notice);
                 break;
             default:
                 PublishCharacterRosterDialog(context, "Roster hierarchy action is not supported.");
@@ -2628,8 +2629,49 @@ public sealed class DialogCoordinator : IDialogCoordinator
 
     private static RosterHierarchyState ReorderRosterTree(
         RosterHierarchyState hierarchy,
+        string sourceFolder,
+        string targetFolder,
         out string notice)
     {
+        string? sourceFolderId = ResolveRosterFolderId(hierarchy, sourceFolder);
+        string? targetFolderId = ResolveRosterFolderId(hierarchy, targetFolder);
+        if (!string.IsNullOrWhiteSpace(sourceFolderId) && !string.Equals(sourceFolderId, targetFolderId, StringComparison.Ordinal))
+        {
+            RosterHierarchyFolderState? source = hierarchy.Folders.FirstOrDefault(folder => string.Equals(folder.Id, sourceFolderId, StringComparison.Ordinal));
+            RosterHierarchyFolderState? target = hierarchy.Folders.FirstOrDefault(folder => string.Equals(folder.Id, targetFolderId, StringComparison.Ordinal));
+            if (source is null)
+            {
+                notice = $"Source folder '{sourceFolder}' is not present in the roster hierarchy.";
+                return hierarchy;
+            }
+
+            if (source.IsSystemFolder)
+            {
+                notice = $"System folder '{source.Name}' cannot be nested under another folder.";
+                return hierarchy;
+            }
+
+            int sortOrder = hierarchy.Folders
+                .Where(folder => string.Equals(folder.ParentFolderId, targetFolderId, StringComparison.Ordinal))
+                .Select(folder => folder.SortOrder)
+                .DefaultIfEmpty(-1)
+                .Max() + 1;
+            notice = target is null
+                ? $"Moved roster folder '{source.Name}' to the hierarchy root."
+                : $"Nested roster folder '{source.Name}' under '{target.Name}'.";
+            return hierarchy with
+            {
+                Folders = hierarchy.Folders.Select(folder => string.Equals(folder.Id, sourceFolderId, StringComparison.Ordinal) ? folder with { ParentFolderId = targetFolderId, SortOrder = sortOrder } : folder).ToArray(),
+                PendingMove = new RosterHierarchyMoveIntentState(
+                    source.Id,
+                    source.ParentFolderId,
+                    targetFolderId,
+                    sortOrder,
+                    RosterHierarchyMoveKinds.Reorder,
+                    RequiresFilesystemConfirmation: false)
+            };
+        }
+
         RosterHierarchyFolderState[] folders = hierarchy.Folders
             .OrderBy(folder => folder.IsSystemFolder ? 0 : 1)
             .ThenBy(folder => folder.ParentFolderId ?? string.Empty, StringComparer.OrdinalIgnoreCase)

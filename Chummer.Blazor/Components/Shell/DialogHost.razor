@@ -737,11 +737,15 @@
         if (string.IsNullOrWhiteSpace(targetFolder))
             return;
 
+        string sourceFolder = IsRosterDropTargetLine(field, _rosterDragSourceLine)
+            ? ExtractRosterFolderName(_rosterDragSourceLine)
+            : string.Empty;
         await RosterDropRequested.InvokeAsync(new DialogRosterDropIntent(
             _rosterDragSourceLine,
             line,
             targetFolder,
-            "move_runner_to_group"));
+            string.IsNullOrWhiteSpace(sourceFolder) ? "move_runner_to_group" : "reorder_roster_tree",
+            sourceFolder));
         _rosterDragSourceLine = null;
     }
 
@@ -775,7 +779,8 @@
                 : "leaf";
         string selected = trimmed.Contains("* ", StringComparison.Ordinal) ? " is-selected" : string.Empty;
         string draggable = IsRosterDraggableLine(field, line) ? " is-draggable" : string.Empty;
-        return $"dialog-roster-line dialog-roster-line--{kind}{selected}{draggable}";
+        string dropTarget = IsRosterDropTargetLine(field, line) ? " is-drop-target" : string.Empty;
+        return $"dialog-roster-line dialog-roster-line--{kind}{selected}{draggable}{dropTarget}";
     }
 
     private static IReadOnlyList<string> SplitVisualLines(string value)

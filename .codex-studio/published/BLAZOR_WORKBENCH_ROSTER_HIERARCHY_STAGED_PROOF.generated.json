@@ -1,6 +1,6 @@
 {
   "contract_name": "chummer6-ui.blazor_workbench_roster_hierarchy_staged_proof",
-  "generated_at": "2026-06-25T00:25:21.473269+00:00",
+  "generated_at": "2026-06-25T00:28:49.932370+00:00",
   "status": "passed",
   "proof_tier": "source_staged_no_browser_execution",
   "route_lane": "promoted_blazor_workbench",
@@ -47,14 +47,21 @@
       "id": "blazor_dialog_markup",
       "path": "Chummer.Blazor/Components/Shell/DialogHost.razor",
       "status": "passed",
-      "required_token_count": 6,
+      "required_token_count": 12,
+      "missing_tokens": []
+    },
+    {
+      "id": "blazor_roster_drag_drop_shell_bridge",
+      "path": "Chummer.Blazor/Components/Layout/DesktopShell.Dialogs.cs",
+      "status": "passed",
+      "required_token_count": 4,
       "missing_tokens": []
     },
     {
       "id": "blazor_dialog_style",
       "path": "Chummer.Blazor/wwwroot/app.css",
       "status": "passed",
-      "required_token_count": 5,
+      "required_token_count": 6,
       "missing_tokens": []
     },
     {
@@ -68,7 +75,7 @@
       "id": "parity_goal_docs",
       "path": "docs/BLAZOR_WEB_CLIENT_PARITY_GOAL.md",
       "status": "passed",
-      "required_token_count": 5,
+      "required_token_count": 6,
       "missing_tokens": []
     },
     {

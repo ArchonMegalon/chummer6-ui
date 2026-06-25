@@ -34,6 +34,8 @@ public partial class DesktopShell
         if (_bridge is null)
             return;
 
+        if (!string.IsNullOrWhiteSpace(intent.SourceFolder))
+            await _bridge.UpdateDialogFieldAsync("rosterSourceFolder", intent.SourceFolder, CancellationToken.None);
         await _bridge.UpdateDialogFieldAsync("rosterTargetFolder", intent.TargetFolder, CancellationToken.None);
         await _bridge.ExecuteDialogActionAsync(intent.ActionId, CancellationToken.None);
         await SyncShellWorkspaceContextAsync();

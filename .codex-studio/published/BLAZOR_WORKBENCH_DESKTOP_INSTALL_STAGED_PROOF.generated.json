@@ -1,6 +1,6 @@
 {
   "contract_name": "chummer6-ui.blazor_workbench_desktop_install_staged_proof",
-  "generated_at": "2026-06-25T00:25:19.563378+00:00",
+  "generated_at": "2026-06-25T00:28:47.618711+00:00",
   "status": "passed",
   "proof_tier": "source_staged_no_browser_execution",
   "route_lane": "promoted_blazor_workbench",
