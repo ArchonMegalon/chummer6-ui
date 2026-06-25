@@ -3070,8 +3070,9 @@ public sealed class DesktopDialogFactory : IDesktopDialogFactory
                 ? (watchFolderExists ? "Refresh Watch Folder" : "Create and Refresh Watch Folder")
                 : "Scan Watch Folder Now"));
 
-        actions.Add(new DesktopDialogAction("create_roster_group", "Create Character Folder"));
-        actions.Add(new DesktopDialogAction("rename_roster_group", "Rename Character Folder"));
+        actions.Add(new DesktopDialogAction("create_roster_group", "Create Roster Folder"));
+        actions.Add(new DesktopDialogAction("rename_roster_group", "Rename Roster Folder"));
+        actions.Add(new DesktopDialogAction("delete_roster_group", "Delete Roster Folder"));
         actions.Add(new DesktopDialogAction("move_runner_to_group", "Move Runner to Folder"));
         actions.Add(new DesktopDialogAction("reorder_roster_tree", "Reorder Character Tree"));
 

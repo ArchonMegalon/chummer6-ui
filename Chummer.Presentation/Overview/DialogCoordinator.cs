@@ -290,6 +290,9 @@ public sealed class DialogCoordinator : IDialogCoordinator
                 case "rename_roster_group":
                     StageCharacterRosterHierarchyMutation(dialog, context, RosterHierarchyMutationKind.RenameFolder);
                     return;
+                case "delete_roster_group":
+                    StageCharacterRosterHierarchyMutation(dialog, context, RosterHierarchyMutationKind.DeleteFolder);
+                    return;
                 case "move_runner_to_group":
                     StageCharacterRosterHierarchyMutation(dialog, context, RosterHierarchyMutationKind.MoveRunner);
                     return;
@@ -2496,6 +2499,9 @@ public sealed class DialogCoordinator : IDialogCoordinator
             case RosterHierarchyMutationKind.RenameFolder:
                 nextHierarchy = RenameRosterFolder(hierarchy, folderName, targetFolder, out notice);
                 break;
+            case RosterHierarchyMutationKind.DeleteFolder:
+                nextHierarchy = DeleteRosterFolder(hierarchy, targetFolder, out notice);
+                break;
             case RosterHierarchyMutationKind.MoveRunner:
                 nextHierarchy = MoveRosterRunner(hierarchy, selectedRunnerId, selectedRunnerAlias, targetFolder, out notice);
                 break;
@@ -2584,6 +2590,54 @@ public sealed class DialogCoordinator : IDialogCoordinator
         };
     }
 
+    private static RosterHierarchyState DeleteRosterFolder(
+        RosterHierarchyState hierarchy,
+        string targetFolder,
+        out string notice)
+    {
+        string? folderId = ResolveRosterFolderId(hierarchy, targetFolder)
+            ?? hierarchy.Folders.FirstOrDefault(folder => !folder.IsSystemFolder)?.Id;
+        if (string.IsNullOrWhiteSpace(folderId))
+        {
+            notice = "No custom roster folder is available to delete.";
+            return hierarchy;
+        }
+
+        RosterHierarchyFolderState folder = hierarchy.Folders.First(candidate => string.Equals(candidate.Id, folderId, StringComparison.Ordinal));
+        if (folder.IsSystemFolder)
+        {
+            notice = $"System folder '{folder.Name}' cannot be deleted.";
+            return hierarchy;
+        }
+
+        RosterHierarchyItemState[] items = hierarchy.Items
+            .Select(item => string.Equals(item.FolderId, folderId, StringComparison.Ordinal)
+                ? item with { FolderId = "inbox" }
+                : item)
+            .ToArray();
+        RosterHierarchyFolderState[] folders = hierarchy.Folders
+            .Where(candidate => !string.Equals(candidate.Id, folderId, StringComparison.Ordinal))
+            .Select(candidate => string.Equals(candidate.ParentFolderId, folderId, StringComparison.Ordinal)
+                ? candidate with { ParentFolderId = folder.ParentFolderId }
+                : candidate)
+            .ToArray();
+        int movedItemCount = hierarchy.Items.Count(item => string.Equals(item.FolderId, folderId, StringComparison.Ordinal));
+        int reparentedFolderCount = hierarchy.Folders.Count(candidate => string.Equals(candidate.ParentFolderId, folderId, StringComparison.Ordinal));
+        notice = $"Deleted roster folder '{folder.Name}'. Moved {movedItemCount} runner/link item(s) to Inbox and reparented {reparentedFolderCount} child folder(s).";
+        return hierarchy with
+        {
+            Folders = folders,
+            Items = items,
+            PendingMove = new RosterHierarchyMoveIntentState(
+                folder.Id,
+                folder.ParentFolderId,
+                "inbox",
+                null,
+                RosterHierarchyMoveKinds.Reorder,
+                RequiresFilesystemConfirmation: false)
+        };
+    }
+
     private static RosterHierarchyState MoveRosterRunner(
         RosterHierarchyState hierarchy,
         string selectedRunnerId,
@@ -2651,14 +2705,20 @@ public sealed class DialogCoordinator : IDialogCoordinator
                 return hierarchy;
             }
 
+            if (IsRosterFolderDescendant(hierarchy, targetFolderId, sourceFolderId))
+            {
+                notice = $"Character folder '{source.Name}' cannot be nested under one of its own child folders.";
+                return hierarchy;
+            }
+
             int sortOrder = hierarchy.Folders
                 .Where(folder => string.Equals(folder.ParentFolderId, targetFolderId, StringComparison.Ordinal))
                 .Select(folder => folder.SortOrder)
                 .DefaultIfEmpty(-1)
                 .Max() + 1;
             notice = target is null
-                ? $"Moved roster folder '{source.Name}' to the hierarchy root."
-                : $"Nested roster folder '{source.Name}' under '{target.Name}'.";
+                ? $"Moved character folder '{source.Name}' to the hierarchy root."
+                : $"Nested character folder '{source.Name}' under '{target.Name}'.";
             return hierarchy with
             {
                 Folders = hierarchy.Folders.Select(folder => string.Equals(folder.Id, sourceFolderId, StringComparison.Ordinal) ? folder with { ParentFolderId = targetFolderId, SortOrder = sortOrder } : folder).ToArray(),
@@ -2690,6 +2750,26 @@ public sealed class DialogCoordinator : IDialogCoordinator
             Items = items,
             PendingMove = null
         };
+    }
+
+    private static bool IsRosterFolderDescendant(
+        RosterHierarchyState hierarchy,
+        string? candidateFolderId,
+        string sourceFolderId)
+    {
+        string? currentFolderId = candidateFolderId;
+        HashSet<string> visited = [];
+        while (!string.IsNullOrWhiteSpace(currentFolderId) && visited.Add(currentFolderId))
+        {
+            if (string.Equals(currentFolderId, sourceFolderId, StringComparison.Ordinal))
+                return true;
+
+            currentFolderId = hierarchy.Folders
+                .FirstOrDefault(folder => string.Equals(folder.Id, currentFolderId, StringComparison.Ordinal))
+                ?.ParentFolderId;
+        }
+
+        return false;
     }
 
     private static string? ResolveRosterFolderId(RosterHierarchyState hierarchy, string folderNameOrId)
@@ -2764,6 +2844,7 @@ public sealed class DialogCoordinator : IDialogCoordinator
     {
         CreateFolder,
         RenameFolder,
+        DeleteFolder,
         MoveRunner,
         ReorderTree
     }

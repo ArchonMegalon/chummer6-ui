@@ -1,6 +1,6 @@
 {
   "contract_name": "chummer6-ui.blazor_workbench_docker_operator_staged_proof",
-  "generated_at": "2026-06-25T00:28:48.947517+00:00",
+  "generated_at": "2026-06-25T00:34:08.632549+00:00",
   "status": "passed",
   "proof_tier": "source_staged_no_browser_execution",
   "route_lane": "promoted_blazor_workbench",

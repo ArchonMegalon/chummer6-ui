@@ -1,6 +1,6 @@
 {
   "contract_name": "chummer6-ui.blazor_workbench_roster_hierarchy_staged_proof",
-  "generated_at": "2026-06-25T00:28:49.932370+00:00",
+  "generated_at": "2026-06-25T00:34:09.320377+00:00",
   "status": "passed",
   "proof_tier": "source_staged_no_browser_execution",
   "route_lane": "promoted_blazor_workbench",
@@ -33,28 +33,28 @@
       "id": "presentation_character_roster_hierarchy",
       "path": "Chummer.Presentation/Overview/DesktopDialogFactory.cs",
       "status": "passed",
-      "required_token_count": 14,
+      "required_token_count": 15,
       "missing_tokens": []
     },
     {
       "id": "presentation_roster_command_dispatch",
       "path": "Chummer.Presentation/Overview/DialogCoordinator.cs",
       "status": "passed",
-      "required_token_count": 10,
+      "required_token_count": 13,
       "missing_tokens": []
     },
     {
       "id": "blazor_dialog_markup",
       "path": "Chummer.Blazor/Components/Shell/DialogHost.razor",
       "status": "passed",
-      "required_token_count": 12,
+      "required_token_count": 13,
       "missing_tokens": []
     },
     {
       "id": "blazor_roster_drag_drop_shell_bridge",
       "path": "Chummer.Blazor/Components/Layout/DesktopShell.Dialogs.cs",
       "status": "passed",
-      "required_token_count": 4,
+      "required_token_count": 6,
       "missing_tokens": []
     },
     {
