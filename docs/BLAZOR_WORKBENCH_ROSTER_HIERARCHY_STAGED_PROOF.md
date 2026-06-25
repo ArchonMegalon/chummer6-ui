@@ -4,7 +4,7 @@
 
 This staged proof keeps the promoted Blazor workbench source aligned around custom character roster hierarchy posture.
 
-It covers visible source posture for user-created virtual folders, nested groups, drag/drop move intent, explicit roster move actions, watched-file virtual links, browser markup/styling for roster hierarchy rows, the shared `RosterHierarchyState` contract, and `RosterHierarchyJson` preference staging plus hidden global-settings carriage on `/blazor/workbench?command=character_roster`.
+It covers visible source posture for user-created virtual folders, nested groups, drag/drop move intent, explicit roster move actions, watched-file virtual links, browser markup/styling for roster hierarchy rows, the shared `RosterHierarchyState` contract, and `RosterHierarchyJson` preference staging, staged metadata reuse, plus hidden global-settings carriage on `/blazor/workbench?command=character_roster`.
 
 ## Canonical Command
 

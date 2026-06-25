@@ -3254,7 +3254,8 @@ public sealed class DesktopDialogFactory : IDesktopDialogFactory
               "Scan watch folder now" + Environment.NewLine +
               "Open imported runner";
         string mugshotStatus = portraitCandidate;
-        RosterHierarchyState rosterHierarchy = BuildRosterHierarchyState(ordered, watchedFiles, selectedRunner, selectedWatchedFile, alias, name);
+        RosterHierarchyState rosterHierarchy = BuildRosterHierarchyState(ordered, watchedFiles, selectedRunner, selectedWatchedFile, alias, name, preferences.RosterHierarchyJson, out string rosterHierarchySource);
+        rosterMoveTargets += Environment.NewLine + $"Source={rosterHierarchySource}";
         string rosterSnapshot = JsonSerializer.Serialize(
             new RosterDialogSnapshot(
                 alias,
@@ -3268,7 +3269,8 @@ public sealed class DesktopDialogFactory : IDesktopDialogFactory
                     candidate.RulesetId,
                     candidate.HasSavedWorkspace)).ToArray(),
                 watchedFiles,
-                rosterHierarchy));
+                rosterHierarchy,
+                rosterHierarchySource));
 
         return
         [
@@ -3286,6 +3288,7 @@ public sealed class DesktopDialogFactory : IDesktopDialogFactory
             new DesktopDialogField("rosterSelectedWatchFile", "Selected Watch File", selectedWatchedFile ?? string.Empty, string.Empty, IsReadOnly: true, LayoutSlot: DesktopDialogFieldLayoutSlots.Hidden),
             new DesktopDialogField("rosterPortraitPath", "Portrait Path", portraitCandidate, portraitCandidate, IsReadOnly: true, LayoutSlot: DesktopDialogFieldLayoutSlots.Hidden),
             new DesktopDialogField("rosterSnapshot", "Snapshot", rosterSnapshot, rosterSnapshot, IsReadOnly: true, LayoutSlot: DesktopDialogFieldLayoutSlots.Hidden),
+            new DesktopDialogField("rosterHierarchySource", "Roster Hierarchy Source", rosterHierarchySource, rosterHierarchySource, IsReadOnly: true, LayoutSlot: DesktopDialogFieldLayoutSlots.Hidden),
             new DesktopDialogField("rosterTree", "Characters", rosterTree, rosterTree, IsReadOnly: true, IsMultiline: true, VisualKind: DesktopDialogFieldVisualKinds.Tree, LayoutSlot: DesktopDialogFieldLayoutSlots.Left),
             new DesktopDialogField("rosterCustomFolders", "Custom Folders", customRosterFolders, customRosterFolders, IsReadOnly: true, IsMultiline: true, VisualKind: DesktopDialogFieldVisualKinds.Tree, LayoutSlot: DesktopDialogFieldLayoutSlots.Left),
             new DesktopDialogField("rosterMoveTargets", "Move Targets", rosterMoveTargets, rosterMoveTargets, IsReadOnly: true, IsMultiline: true, VisualKind: DesktopDialogFieldVisualKinds.Grid),
@@ -3405,8 +3408,19 @@ public sealed class DesktopDialogFactory : IDesktopDialogFactory
         OpenWorkspaceState? selectedRunner,
         string? selectedWatchedFile,
         string alias,
-        string name)
+        string name,
+        string? stagedHierarchyJson,
+        out string hierarchySource)
     {
+        RosterHierarchyState? stagedHierarchy = TryDeserializeRosterHierarchyState(stagedHierarchyJson);
+        if (stagedHierarchy is not null)
+        {
+            hierarchySource = "staged preference metadata";
+            return stagedHierarchy;
+        }
+
+        hierarchySource = "generated from open runners and watch folder";
+
         RosterHierarchyFolderState[] folders =
         [
             new("active-table", "Active Table", null, 0, IsSystemFolder: true),
@@ -3476,6 +3490,25 @@ public sealed class DesktopDialogFactory : IDesktopDialogFactory
                 DeleteFolderPolicy: RosterHierarchyDeletePolicies.MoveChildrenToInboxFirst,
                 ConflictPolicy: "stage_preview_before_commit"),
             pendingMove);
+    }
+
+
+    private static RosterHierarchyState? TryDeserializeRosterHierarchyState(string? stagedHierarchyJson)
+    {
+        if (string.IsNullOrWhiteSpace(stagedHierarchyJson))
+            return null;
+
+        try
+        {
+            RosterHierarchyState? hierarchy = JsonSerializer.Deserialize<RosterHierarchyState>(stagedHierarchyJson);
+            return hierarchy is { Folders.Count: > 0, Items.Count: > 0 }
+                ? hierarchy
+                : null;
+        }
+        catch (JsonException)
+        {
+            return null;
+        }
     }
 
     private static string BuildCustomRosterFolderPreview(
@@ -7498,7 +7531,8 @@ public sealed class DesktopDialogFactory : IDesktopDialogFactory
         string FallbackWorkspace,
         IReadOnlyList<RosterDialogWorkspaceSnapshot> Workspaces,
         IReadOnlyList<string> WatchedFiles,
-        RosterHierarchyState Hierarchy);
+        RosterHierarchyState Hierarchy,
+        string HierarchySource);
 
     private sealed record RosterDialogWorkspaceSnapshot(
         string Id,

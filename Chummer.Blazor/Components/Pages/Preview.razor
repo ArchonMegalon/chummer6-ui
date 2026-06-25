@@ -2244,7 +2244,7 @@
     private IReadOnlyList<RecentWorkspaceLink> RecentWorkspaces => BuildRecentWorkspaceLinks();
     private RecentWorkspaceLink? PrimaryRecentWorkspace => RecentWorkspaces.FirstOrDefault();
     private string ContinueRecentHref => PrimaryRecentWorkspace is null
-        ? "/workbench?fixture=blue&tab=tab-contacts"
+        ? BuildPreviewHref("blue", tab: "tab-contacts", useWorkbenchRoute: true)
         : BuildPreviewHref(workspace: PrimaryRecentWorkspace.WorkspaceId, tab: "tab-contacts", useWorkbenchRoute: true);
     private string ContinueRecentLabel => PrimaryRecentWorkspace is null
         ? "Continue Seeded Dossier"
