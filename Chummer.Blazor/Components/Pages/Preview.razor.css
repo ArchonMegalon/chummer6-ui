@@ -8332,3 +8332,70 @@
 .browser-preview-shell:is(.classic-promoted-app, .classic-compat-app) .classic-chummer-shell[data-owner-state="anonymous"] .classic-chummer-status span:first-child {
     background: linear-gradient(180deg, #f7ead4 0%, #d9bd83 100%);
 }
+
+.browser-preview-shell:is(.classic-promoted-app, .classic-compat-app) .classic-chummer-shell[data-client-kind="web-desktop"] .classic-chummer-status span:nth-child(6) strong::before {
+    content: "Web ";
+    color: #1c4169;
+    font-size: .56rem;
+    font-weight: 900;
+}
+
+.browser-preview-shell:is(.classic-promoted-app, .classic-compat-app) .classic-chummer-shell[data-parity-target="desktop-client"] .classic-chummer-status span:nth-child(6) em::before {
+    content: "desktop-parity ";
+    color: #4f463b;
+    font-size: .56rem;
+    font-weight: 900;
+}
+
+.browser-preview-shell:is(.classic-promoted-app, .classic-compat-app) .classic-chummer-shell[data-calculation-owner="shared-chummer-core"] .classic-chummer-status span:nth-child(4) strong::after {
+    content: " shared";
+    color: #1c4169;
+    font-size: .56rem;
+    font-weight: 900;
+}
+
+.browser-preview-shell:is(.classic-promoted-app, .classic-compat-app) .classic-chummer-shell[data-statistics-runtime="reusable-by-avalonia"] .classic-chummer-status span:nth-child(4) em::after {
+    content: " avalonia-ready";
+    color: #4f463b;
+    font-size: .56rem;
+    font-weight: 900;
+}
+
+.browser-preview-shell:is(.classic-promoted-app, .classic-compat-app) .classic-chummer-shell[data-character-statistics="enabled"] .classic-chummer-status span:nth-child(4) strong::before {
+    content: "Stats ";
+    color: #1c4169;
+    font-size: .56rem;
+    font-weight: 900;
+}
+
+.browser-preview-shell:is(.classic-promoted-app, .classic-compat-app) .classic-chummer-shell[data-statistics-scope="anonymized-build-comparisons"] .classic-chummer-status span:nth-child(4) em::before {
+    content: "anonymized ";
+    color: #4f463b;
+    font-size: .56rem;
+    font-weight: 900;
+}
+
+.browser-preview-shell:is(.classic-promoted-app, .classic-compat-app) .classic-chummer-shell[data-recommendation-mode="explainable-local-inputs"] .classic-chummer-status span:nth-child(4)::after {
+    content: " explainable";
+    color: #1c4169;
+    font-size: .56rem;
+    font-weight: 900;
+}
+
+.browser-preview-shell:is(.classic-promoted-app, .classic-compat-app) .classic-chummer-shell[data-statistics-result="pending-shared-calculation"] .classic-chummer-status span:nth-child(4)::before {
+    content: "pending-calc ";
+    color: #4f463b;
+    font-size: .56rem;
+    font-weight: 900;
+}
+
+.browser-preview-shell:is(.classic-promoted-app, .classic-compat-app) .classic-chummer-shell[data-percentile-band="top-3"] .classic-chummer-status span:nth-child(4) {
+    background: linear-gradient(180deg, #e7f0df 0%, #a8cf8e 100%);
+}
+
+.browser-preview-shell:is(.classic-promoted-app, .classic-compat-app) .classic-chummer-shell[data-recommendation-state="ready"] .classic-chummer-status span:nth-child(4)::after {
+    content: " recommendation-ready";
+    color: #1c4169;
+    font-size: .56rem;
+    font-weight: 900;
+}
