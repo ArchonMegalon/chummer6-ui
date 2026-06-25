@@ -766,6 +766,18 @@
       "covered_control_count": null
     },
     {
+      "id": "workbench_gm_screen_export",
+      "path": ".codex-studio/published/BLAZOR_WORKBENCH_GM_SCREEN_EXPORT_STAGED_PROOF.generated.json",
+      "expected_contract_name": "chummer6-ui.blazor_workbench_gm_screen_export_staged_proof",
+      "contract_name": "chummer6-ui.blazor_workbench_gm_screen_export_staged_proof",
+      "status": "passed",
+      "proof_tier": "source_staged_no_browser_execution",
+      "expected_route_count": 1,
+      "source_check_count": 5,
+      "control_count": null,
+      "covered_control_count": null
+    },
+    {
       "id": "workbench_roster_hierarchy",
       "path": ".codex-studio/published/BLAZOR_WORKBENCH_ROSTER_HIERARCHY_STAGED_PROOF.generated.json",
       "expected_contract_name": "chummer6-ui.blazor_workbench_roster_hierarchy_staged_proof",

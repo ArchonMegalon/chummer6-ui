@@ -368,6 +368,11 @@ REQUIRED_RECEIPTS = [
         "contract_name": "chummer6-ui.blazor_workbench_help_recovery_guidance_staged_proof",
     },
     {
+        "id": "workbench_gm_screen_export",
+        "path": PUBLISHED / "BLAZOR_WORKBENCH_GM_SCREEN_EXPORT_STAGED_PROOF.generated.json",
+        "contract_name": "chummer6-ui.blazor_workbench_gm_screen_export_staged_proof",
+    },
+    {
         "id": "workbench_roster_hierarchy",
         "path": PUBLISHED / "BLAZOR_WORKBENCH_ROSTER_HIERARCHY_STAGED_PROOF.generated.json",
         "contract_name": "chummer6-ui.blazor_workbench_roster_hierarchy_staged_proof",

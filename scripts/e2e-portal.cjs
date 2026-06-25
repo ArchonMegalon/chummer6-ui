@@ -192,7 +192,9 @@ const checks = [
     }
   },
   {
-    url: `${baseUrl}/downloads/install/avalonia-win-x64-installer`,
+    url: `${baseUrl}/downloads/install/avalonia-win-x64-installer
+/downloads/install/blazor-desktop-linux-x64-installer
+/downloads/install/blazor-desktop-win-x64-installer`,
     redirect: 'manual',
     acceptedStatuses: [301, 302, 303, 307, 308],
     assert: (_text, response) => {

@@ -237,10 +237,22 @@ Current docs already define the intended shipped posture and the evidence contra
 - `docs/examples/blazor-workbench-lifecycle-calendar-staged-proof.receipt.example.json` shows the compact generated receipt shape for `BLAZOR_WORKBENCH_LIFECYCLE_CALENDAR_STAGED_PROOF.generated.json`.
 - `docs/BLAZOR_WORKBENCH_PROGRESSION_LEDGER_STAGED_PROOF.md` defines the source-staged promoted workbench progression-ledger posture contract. It is not runtime proof.
 - `docs/examples/blazor-workbench-progression-ledger-staged-proof.receipt.example.json` shows the compact generated receipt shape for `BLAZOR_WORKBENCH_PROGRESSION_LEDGER_STAGED_PROOF.generated.json`.
+- `docs/BLAZOR_WORKBENCH_IMPORT_RECONCILE_STAGED_PROOF.md` defines the source-staged promoted workbench import/reconcile posture contract. It is not runtime proof.
+- `docs/BLAZOR_WORKBENCH_COMPARE_MERGE_STAGED_PROOF.md` defines the source-staged promoted workbench compare/merge posture contract. It is not runtime proof.
+- `docs/BLAZOR_WORKBENCH_RESTORE_CHECKPOINT_STAGED_PROOF.md` defines the source-staged promoted workbench restore/checkpoint posture contract. It is not runtime proof.
+- `docs/BLAZOR_WORKBENCH_OFFLINE_CACHE_STAGED_PROOF.md` defines the source-staged promoted workbench offline/cache posture contract. It is not runtime proof.
+- `docs/BLAZOR_WORKBENCH_SESSION_LOCKING_STAGED_PROOF.md` defines the source-staged promoted workbench session-locking posture contract. It is not runtime proof.
+- `docs/BLAZOR_WORKBENCH_SHARE_EXPORT_PRIVACY_STAGED_PROOF.md` defines the source-staged promoted workbench share/export privacy posture contract. It is not runtime proof.
+- `docs/BLAZOR_WORKBENCH_TABLE_HANDOFF_STAGED_PROOF.md` defines the source-staged promoted workbench table-handoff posture contract. It is not runtime proof.
+- `docs/BLAZOR_WORKBENCH_RULES_CITATION_STAGED_PROOF.md` defines the source-staged promoted workbench rules-citation posture contract. It is not runtime proof.
+- `docs/BLAZOR_WORKBENCH_LOCALIZATION_TERMINOLOGY_STAGED_PROOF.md` defines the source-staged promoted workbench localization/terminology posture contract. It is not runtime proof.
+- `docs/BLAZOR_WORKBENCH_HELP_RECOVERY_GUIDANCE_STAGED_PROOF.md` defines the source-staged promoted workbench help/recovery guidance posture contract. It is not runtime proof.
+- `docs/BLAZOR_WORKBENCH_GM_SCREEN_EXPORT_STAGED_PROOF.md` defines the source-staged promoted workbench GM-screen export posture contract. It is not runtime proof.
+- `docs/examples/blazor-workbench-gm-screen-export-staged-proof.receipt.example.json` shows the compact generated receipt shape for `BLAZOR_WORKBENCH_GM_SCREEN_EXPORT_STAGED_PROOF.generated.json`.
 
 ## Portal Installer Handoff
 
-- `docs/BLAZOR_PORTAL_INSTALLER_HANDOFF_PROOF.md` defines the source-staged browser-to-portal download/install/support handoff contract. It is not runtime proof.
+- `docs/BLAZOR_PORTAL_INSTALLER_HANDOFF_PROOF.md` defines the source-staged browser-to-portal download/install/support handoff contract. It includes Avalonia installer handoff and Blazor desktop compatibility installer handoff routes. It is not runtime proof.
 
 ## Docker Self-Host Operator Contract
 

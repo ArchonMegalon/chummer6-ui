@@ -107,6 +107,7 @@ These source receipts help manage breadth and safety but do not promote workflow
 - `BLAZOR_WORKBENCH_RULES_CITATION_STAGED_PROOF.generated.json`
 - `BLAZOR_WORKBENCH_LOCALIZATION_TERMINOLOGY_STAGED_PROOF.generated.json`
 - `BLAZOR_WORKBENCH_HELP_RECOVERY_GUIDANCE_STAGED_PROOF.generated.json`
+- `BLAZOR_WORKBENCH_GM_SCREEN_EXPORT_STAGED_PROOF.generated.json`
 - `BLAZOR_WORKBENCH_ROSTER_HIERARCHY_STAGED_PROOF.generated.json`
 
 ## Promotion Rule

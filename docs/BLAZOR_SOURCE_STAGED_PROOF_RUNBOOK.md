@@ -96,6 +96,7 @@ The aggregate currently covers:
 - `workbench_rules_citation`
 - `workbench_localization_terminology`
 - `workbench_help_recovery_guidance`
+- `workbench_gm_screen_export`
 - `workbench_roster_hierarchy`
 - `legacy_control_coverage`
 

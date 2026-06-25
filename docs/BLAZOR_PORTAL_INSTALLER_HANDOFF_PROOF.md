@@ -14,6 +14,8 @@ The staged handoff lane covers source alignment for these portal routes and surf
 - `/downloads/releases.json`
 - `/downloads/install/avalonia-linux-x64-installer`
 - `/downloads/install/avalonia-win-x64-installer`
+- `/downloads/install/blazor-desktop-linux-x64-installer`
+- `/downloads/install/blazor-desktop-win-x64-installer`
 - `/contact`
 - `/status`
 - `/blazor/workbench`
@@ -26,6 +28,7 @@ The Blazor browser lane must keep these ideas true:
 - `/blazor/` resolves into the product-shaped browser workbench.
 - The browser workbench remains the primary user workflow, not a preview page.
 - Desktop install/download handoff remains same-origin through `Chummer.Portal`.
+- Blazor desktop compatibility installer routes remain visible in the same handoff contract even when Avalonia is the promoted native head.
 - Installer claim routes may require login, but must preserve the intended next URL.
 - `/downloads/` must explain current platform posture honestly.
 - `/status` must state current release availability.

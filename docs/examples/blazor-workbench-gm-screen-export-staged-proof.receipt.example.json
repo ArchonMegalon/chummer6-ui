@@ -1,0 +1,48 @@
+{
+  "contract_name": "chummer6-ui.blazor_workbench_gm_screen_export_staged_proof",
+  "generated_at": "2026-06-24T00:00:00+00:00",
+  "status": "passed",
+  "proof_tier": "source_staged_no_browser_execution",
+  "route_lane": "promoted_blazor_workbench",
+  "expected_routes": [
+    "/blazor/workbench"
+  ],
+  "checks": [
+    {
+      "id": "product_ui",
+      "path": "Chummer.Blazor/Components/Pages/Preview.razor",
+      "needle": "data-workbench-gm-screen-export=\"strip\"",
+      "found": true
+    },
+    {
+      "id": "scoped_css",
+      "path": "Chummer.Blazor/Components/Pages/Preview.razor.css",
+      "needle": ".browser-workbench-gm-screen-export-strip",
+      "found": true
+    },
+    {
+      "id": "release_docs",
+      "path": "docs/WORKBENCH_RELEASE_SIGNOFF.md",
+      "needle": "workbench GM-screen export posture",
+      "found": true
+    },
+    {
+      "id": "parity_docs",
+      "path": "docs/BLAZOR_WEB_CLIENT_PARITY_GOAL.md",
+      "needle": "staged hosted workbench GM-screen export posture",
+      "found": true
+    },
+    {
+      "id": "status_utility",
+      "path": "scripts/print_blazor_public_edge_proof_status.py",
+      "needle": "workbench_gm_screen_export_staged_status",
+      "found": true
+    }
+  ],
+  "boundary_notes": [
+    "Source-staged GM-screen export posture only; this is not hosted browser execution proof.",
+    "Does not prove Docker self-host browser execution, GM-screen rendering, player-view routing, initiative sync, scene-note persistence, or export-bundle generation.",
+    "Runtime promotion requires refreshed hosted public-edge and Docker self-host receipts."
+  ],
+  "failures": []
+}

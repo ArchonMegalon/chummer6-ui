@@ -84,6 +84,7 @@ WORKBENCH_TABLE_HANDOFF_STAGED_PROOF = PUBLISHED / "BLAZOR_WORKBENCH_TABLE_HANDO
 WORKBENCH_RULES_CITATION_STAGED_PROOF = PUBLISHED / "BLAZOR_WORKBENCH_RULES_CITATION_STAGED_PROOF.generated.json"
 WORKBENCH_LOCALIZATION_TERMINOLOGY_STAGED_PROOF = PUBLISHED / "BLAZOR_WORKBENCH_LOCALIZATION_TERMINOLOGY_STAGED_PROOF.generated.json"
 WORKBENCH_HELP_RECOVERY_GUIDANCE_STAGED_PROOF = PUBLISHED / "BLAZOR_WORKBENCH_HELP_RECOVERY_GUIDANCE_STAGED_PROOF.generated.json"
+WORKBENCH_GM_SCREEN_EXPORT_STAGED_PROOF = PUBLISHED / "BLAZOR_WORKBENCH_GM_SCREEN_EXPORT_STAGED_PROOF.generated.json"
 WORKBENCH_ROSTER_HIERARCHY_STAGED_PROOF = PUBLISHED / "BLAZOR_WORKBENCH_ROSTER_HIERARCHY_STAGED_PROOF.generated.json"
 LEGACY_CONTROL_COVERAGE_STAGED_PROOF = PUBLISHED / "BLAZOR_LEGACY_CONTROL_COVERAGE_STAGED_PROOF.generated.json"
 SOURCE_STAGED_PROOF_SET = PUBLISHED / "BLAZOR_SOURCE_STAGED_PROOF_SET.generated.json"
@@ -218,6 +219,7 @@ def main() -> int:
     workbench_rules_citation_staged = load_json(WORKBENCH_RULES_CITATION_STAGED_PROOF)
     workbench_localization_terminology_staged = load_json(WORKBENCH_LOCALIZATION_TERMINOLOGY_STAGED_PROOF)
     workbench_help_recovery_guidance_staged = load_json(WORKBENCH_HELP_RECOVERY_GUIDANCE_STAGED_PROOF)
+    workbench_gm_screen_export_staged = load_json(WORKBENCH_GM_SCREEN_EXPORT_STAGED_PROOF)
     workbench_roster_hierarchy_staged = load_json(WORKBENCH_ROSTER_HIERARCHY_STAGED_PROOF)
     legacy_control_coverage_staged = load_json(LEGACY_CONTROL_COVERAGE_STAGED_PROOF)
     source_staged_proof_set = load_json(SOURCE_STAGED_PROOF_SET)
@@ -998,6 +1000,16 @@ def main() -> int:
     print(
         "workbench_help_recovery_guidance_staged_note="
         "source_alignment_only_not_context_help_or_support_execution_proof"
+    )
+    print(f"workbench_gm_screen_export_staged_receipt={WORKBENCH_GM_SCREEN_EXPORT_STAGED_PROOF}")
+    print(f"workbench_gm_screen_export_staged_status={str(workbench_gm_screen_export_staged.get('status') or '').strip() or 'not_generated'}")
+    print(f"workbench_gm_screen_export_staged_contract={str(workbench_gm_screen_export_staged.get('contract_name') or '').strip() or 'missing'}")
+    print(f"workbench_gm_screen_export_staged_tier={str(workbench_gm_screen_export_staged.get('proof_tier') or '').strip() or 'missing'}")
+    print(f"workbench_gm_screen_export_staged_route_count={len(workbench_gm_screen_export_staged.get('expected_routes') or [])}")
+    print(f"workbench_gm_screen_export_staged_source_checks={count_staged_source_checks(workbench_gm_screen_export_staged)}")
+    print(
+        "workbench_gm_screen_export_staged_note="
+        "source_alignment_only_not_gm_screen_or_export_execution_proof"
     )
     print(f"workbench_roster_hierarchy_staged_receipt={WORKBENCH_ROSTER_HIERARCHY_STAGED_PROOF}")
     print(f"workbench_roster_hierarchy_staged_status={str(workbench_roster_hierarchy_staged.get('status') or '').strip() or 'not_generated'}")

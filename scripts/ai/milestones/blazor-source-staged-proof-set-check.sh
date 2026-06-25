@@ -73,6 +73,7 @@ python3 "$repo_root/scripts/materialize-blazor-workbench-table-handoff-staged-pr
 python3 "$repo_root/scripts/materialize-blazor-workbench-rules-citation-staged-proof.py"
 python3 "$repo_root/scripts/materialize-blazor-workbench-localization-terminology-staged-proof.py"
 python3 "$repo_root/scripts/materialize-blazor-workbench-help-recovery-guidance-staged-proof.py"
+python3 "$repo_root/scripts/materialize-blazor-workbench-gm-screen-export-staged-proof.py"
 python3 "$repo_root/scripts/materialize-blazor-workbench-roster-hierarchy-staged-proof.py"
 python3 "$repo_root/scripts/materialize-blazor-legacy-control-coverage-staged-proof.py"
 python3 "$repo_root/scripts/materialize-blazor-source-staged-proof-set.py"
