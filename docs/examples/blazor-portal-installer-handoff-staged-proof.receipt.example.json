@@ -36,15 +36,21 @@
       "status": "passed"
     },
     {
+      "id": "portal_known_install_route_resolver",
+      "path": "Chummer.Portal/Program.cs",
+      "required_token_count": 5,
+      "status": "passed"
+    },
+    {
       "id": "portal_handoff_docs",
       "path": "docs/BLAZOR_PORTAL_INSTALLER_HANDOFF_PROOF.md",
-      "required_token_count": 13,
+      "required_token_count": 14,
       "status": "passed"
     }
   ],
   "boundary_notes": [
     "Source-staged portal installer handoff only; this is not hosted browser execution proof.",
-    "Blazor desktop compatibility installer routes are tracked as handoff routes, not as promoted native-head installer proof.",
+    "Blazor desktop compatibility installer routes are tracked as handoff routes, not as promoted native-head installer proof; known unpublished routes return to the downloads shelf with installState=proof_required.",
     "Runtime promotion requires refreshed local portal, hosted route-entry, hosted execution, and Docker self-host receipts."
   ],
   "failures": []

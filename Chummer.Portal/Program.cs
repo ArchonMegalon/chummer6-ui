@@ -485,6 +485,14 @@ static IResult ResolveInstallHandoff(string artifactId, PortalOptions options)
         return Results.Redirect(target!);
     }
 
+    ReleaseInstallRouteSummary? knownInstallRoute = summary.InstallRoutes.FirstOrDefault(item =>
+        string.Equals(item.PublicInstallRoute, expectedPublicInstallRoute, StringComparison.OrdinalIgnoreCase));
+    if (knownInstallRoute is not null)
+    {
+        string downloadsHomeRoute = RouteRootFromPublicPath(options.DownloadsUrl);
+        return Results.Redirect($"{downloadsHomeRoute}/?next={expectedPublicInstallRoute}&installState={knownInstallRoute.InstallPosture}");
+    }
+
     if (IsHttpUrl(options.DownloadsFallbackUrl))
     {
         return Results.Redirect(options.DownloadsFallbackUrl!);
@@ -702,7 +710,7 @@ static ReleaseManifestSummary ReadReleaseManifest(string releasesFile)
 {
     if (!File.Exists(releasesFile))
     {
-        return new ReleaseManifestSummary("manifest-missing", "unpublished", []);
+        return new ReleaseManifestSummary("manifest-missing", "unpublished", [], []);
     }
 
     try
@@ -726,11 +734,48 @@ static ReleaseManifestSummary ReadReleaseManifest(string releasesFile)
                 item["publicInstallRoute"]?.GetValue<string>() ?? ""));
         }
 
-        return new ReleaseManifestSummary(status, version, downloads);
+        List<ReleaseInstallRouteSummary> installRoutes = [];
+        CollectInstallRoutes(node, installRoutes);
+
+        return new ReleaseManifestSummary(status, version, downloads, installRoutes);
     }
     catch (JsonException)
     {
-        return new ReleaseManifestSummary("manifest-error", "unpublished", []);
+        return new ReleaseManifestSummary("manifest-error", "unpublished", [], []);
+    }
+}
+
+static void CollectInstallRoutes(JsonNode? node, List<ReleaseInstallRouteSummary> installRoutes)
+{
+    if (node is null)
+    {
+        return;
+    }
+
+    if (node is JsonObject jsonObject)
+    {
+        string publicInstallRoute = jsonObject["publicInstallRoute"]?.GetValue<string>() ?? "";
+        if (!string.IsNullOrWhiteSpace(publicInstallRoute)
+            && !installRoutes.Any(route => string.Equals(route.PublicInstallRoute, publicInstallRoute, StringComparison.OrdinalIgnoreCase)))
+        {
+            installRoutes.Add(new ReleaseInstallRouteSummary(
+                publicInstallRoute,
+                jsonObject["artifactId"]?.GetValue<string>() ?? "",
+                jsonObject["promotionState"]?.GetValue<string>() ?? "",
+                jsonObject["installPosture"]?.GetValue<string>() ?? "proof_required"));
+        }
+
+        foreach (KeyValuePair<string, JsonNode?> child in jsonObject)
+        {
+            CollectInstallRoutes(child.Value, installRoutes);
+        }
+    }
+    else if (node is JsonArray jsonArray)
+    {
+        foreach (JsonNode? child in jsonArray)
+        {
+            CollectInstallRoutes(child, installRoutes);
+        }
     }
 }
 
@@ -810,5 +855,10 @@ sealed record PortalOptions(
         => string.IsNullOrWhiteSpace(configured) ? null : configured.Trim();
 }
 
-sealed record ReleaseManifestSummary(string Status, string Version, IReadOnlyList<ReleaseDownloadSummary> Downloads);
+sealed record ReleaseManifestSummary(
+    string Status,
+    string Version,
+    IReadOnlyList<ReleaseDownloadSummary> Downloads,
+    IReadOnlyList<ReleaseInstallRouteSummary> InstallRoutes);
 sealed record ReleaseDownloadSummary(string Label, string Platform, string Url, string ArtifactId, string PublicInstallRoute);
+sealed record ReleaseInstallRouteSummary(string PublicInstallRoute, string ArtifactId, string PromotionState, string InstallPosture);
