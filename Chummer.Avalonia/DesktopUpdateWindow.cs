@@ -10,6 +10,15 @@ namespace Chummer.Avalonia;
 
 internal sealed class DesktopUpdateWindow : Window
 {
+    private static readonly IBrush WindowBackgroundBrush = Brush("#050B16");
+    private static readonly IBrush SurfaceBrush = Brush("#111827");
+    private static readonly IBrush SurfaceAltBrush = Brush("#0F172A");
+    private static readonly IBrush AccentSurfaceBrush = Brush("#172554");
+    private static readonly IBrush LocalBorderBrush = Brush("#334155");
+    private static readonly IBrush AccentBorderBrush = Brush("#90C39A");
+    private static readonly IBrush ForegroundBrush = Brush("#E5E7EB");
+    private static readonly IBrush MutedForegroundBrush = Brush("#D8E1EC");
+
     private DesktopInstallLinkingState _installState;
     private DesktopUpdateClientStatus _updateStatus;
     private readonly DesktopPreferenceState _preferences;
@@ -41,31 +50,33 @@ internal sealed class DesktopUpdateWindow : Window
         MinWidth = 680;
         MinHeight = 480;
         WindowStartupLocation = WindowStartupLocation.CenterOwner;
+        Background = WindowBackgroundBrush;
 
         _introText = new TextBlock
         {
             Text = BuildIntro(),
-            IsVisible = false,
-            TextWrapping = TextWrapping.Wrap
+            TextWrapping = TextWrapping.Wrap,
+            Foreground = ForegroundBrush
         };
 
         _statusText = new TextBlock
         {
             Text = BuildStatusText(),
-            IsVisible = false,
             TextWrapping = TextWrapping.Wrap,
-            Foreground = DesktopShellTheme.ResolveThemeBrush("ChummerShellMutedForegroundBrush", "#334155")
+            Foreground = MutedForegroundBrush
         };
 
         _statusBannerTitleText = new TextBlock
         {
             FontWeight = FontWeight.SemiBold,
-            TextWrapping = TextWrapping.Wrap
+            TextWrapping = TextWrapping.Wrap,
+            Foreground = ForegroundBrush
         };
 
         _statusBannerBodyText = new TextBlock
         {
-            TextWrapping = TextWrapping.Wrap
+            TextWrapping = TextWrapping.Wrap,
+            Foreground = MutedForegroundBrush
         };
 
         _statusBanner = DesktopShellTheme.CreateUtilityPanel(
@@ -84,22 +95,22 @@ internal sealed class DesktopUpdateWindow : Window
         _currentText = new TextBlock
         {
             Text = BuildCurrentBody(),
-            IsVisible = false,
-            TextWrapping = TextWrapping.Wrap
+            TextWrapping = TextWrapping.Wrap,
+            Foreground = ForegroundBrush
         };
 
         _followThroughText = new TextBlock
         {
             Text = BuildFollowThroughBody(),
-            IsVisible = false,
-            TextWrapping = TextWrapping.Wrap
+            TextWrapping = TextWrapping.Wrap,
+            Foreground = ForegroundBrush
         };
 
         _installText = new TextBlock
         {
             Text = BuildInstallBody(),
-            IsVisible = false,
-            TextWrapping = TextWrapping.Wrap
+            TextWrapping = TextWrapping.Wrap,
+            Foreground = ForegroundBrush
         };
 
         _currentActionsRow = CreateActionRow(CreateCurrentActions());
@@ -110,6 +121,7 @@ internal sealed class DesktopUpdateWindow : Window
         {
             Content = new Border
             {
+                Background = WindowBackgroundBrush,
                 Padding = new Thickness(16),
                 Child = new StackPanel
                 {
@@ -121,7 +133,8 @@ internal sealed class DesktopUpdateWindow : Window
                             Text = S("desktop.update.heading"),
                             FontSize = 22,
                             FontWeight = FontWeight.SemiBold,
-                            TextWrapping = TextWrapping.Wrap
+                            TextWrapping = TextWrapping.Wrap,
+                            Foreground = ForegroundBrush
                         },
                         _statusBanner,
                         _introText,
@@ -344,8 +357,8 @@ internal sealed class DesktopUpdateWindow : Window
                 _statusText.Text = S("desktop.update.apply_scheduled");
                 _statusBannerTitleText.Text = "Installing update";
                 _statusBannerBodyText.Text = "Chummer is closing this build, installing the staged update, and reopening on the newer build.";
-                _statusBanner.Background = DesktopShellTheme.ResolveThemeBrush("ChummerShellChromeAccentBrush", "#DEE8F6");
-                _statusBanner.BorderBrush = DesktopShellTheme.ResolveThemeBrush("ChummerShellActiveMenuBorderBrush", "#60A5FA");
+                _statusBanner.Background = AccentSurfaceBrush;
+                _statusBanner.BorderBrush = AccentBorderBrush;
                 await Task.Delay(1200).ConfigureAwait(true);
                 if (global::Avalonia.Application.Current?.ApplicationLifetime is IClassicDesktopStyleApplicationLifetime desktop)
                 {
@@ -419,41 +432,36 @@ internal sealed class DesktopUpdateWindow : Window
 
     private void ApplyStatusBanner()
     {
-        (string title, string body, string brushKey, string fallback) = _updateStatus.Status switch
+        (string title, string body, IBrush background) = _updateStatus.Status switch
         {
             "update_staged" => (
                 "Update staged",
                 "A newer build is already staged for this copy. Chummer should install it and reopen on the next step.",
-                "ChummerShellChromeAccentBrush",
-                "#DEE8F6"),
+                AccentSurfaceBrush),
             "update_available" => (
                 "Update available",
                 "A newer build is available for this copy. Check now or keep working and update when you are ready.",
-                "ChummerShellSelectionPanelBrush",
-                "#F8FAFC"),
+                SurfaceBrush),
             "attention_required" => (
                 "Needs attention",
                 "Something about updates needs review before you treat this copy as current.",
-                "ChummerShellSelectionPanelBrush",
-                "#F8FAFC"),
+                SurfaceBrush),
             "disabled" => (
                 "Updater disabled",
                 "This copy is not attached to a working update source yet.",
-                "ChummerShellSelectionPanelBrush",
-                "#F8FAFC"),
+                SurfaceBrush),
             _ => (
                 "Current build",
                 "This copy matches the latest known build for its current update setting.",
-                "ChummerShellSurfaceAltBrush",
-                "#F2F5FA")
+                SurfaceAltBrush)
         };
 
         _statusBannerTitleText.Text = title;
         _statusBannerBodyText.Text = body;
-        _statusBanner.Background = DesktopShellTheme.ResolveThemeBrush(brushKey, fallback);
+        _statusBanner.Background = background;
         _statusBanner.BorderBrush = string.Equals(_updateStatus.Status, "update_staged", StringComparison.Ordinal)
-            ? DesktopShellTheme.ResolveThemeBrush("ChummerShellActiveMenuBorderBrush", "#60A5FA")
-            : DesktopShellTheme.ResolveThemeBrush("ChummerShellBorderBrush", "#B5C0CF");
+            ? AccentBorderBrush
+            : LocalBorderBrush;
     }
 
     private static string FormatUpdateMode(string? updateMode)
@@ -466,7 +474,20 @@ internal sealed class DesktopUpdateWindow : Window
         };
 
     private static Border CreateSection(string title, Control body, Control? actionContent)
-        => DesktopShellTheme.CreateSection(title, body, actionContent, padding: 10, cornerRadius: 4);
+    {
+        Border section = DesktopShellTheme.CreateSection(title, body, actionContent, padding: 10, cornerRadius: 4);
+        section.Background = SurfaceBrush;
+        section.BorderBrush = LocalBorderBrush;
+        if (section.Child is StackPanel content)
+        {
+            foreach (TextBlock heading in content.Children.OfType<TextBlock>())
+            {
+                heading.Foreground = ForegroundBrush;
+            }
+        }
+
+        return section;
+    }
 
     private static WrapPanel CreateActionRow(IReadOnlyList<Button> actions)
         => DesktopShellTheme.CreateWrapActionRow(actions, new Thickness(0, 0, 6, 6));
@@ -485,4 +506,7 @@ internal sealed class DesktopUpdateWindow : Window
 
     private string F(string key, params object[] values)
         => DesktopLocalizationCatalog.GetRequiredFormattedString(key, _preferences.Language, values);
+
+    private static SolidColorBrush Brush(string hex)
+        => new(Color.Parse(hex));
 }

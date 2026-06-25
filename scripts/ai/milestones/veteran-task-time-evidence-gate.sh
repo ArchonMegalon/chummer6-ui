@@ -437,7 +437,7 @@ required_task_time_jobs = {
             "ExecuteCommandAsync_character_roster_opens_dialog_with_workspace_summary",
             "Character_roster_is_a_first_class_runtime_backed_workbench_route",
         ],
-        "proof": "Character roster is a runtime-backed Tools route with open-runner count, saved count, ruleset mix, active workspace, and roster entries.",
+        "proof": "Character roster is a runtime-backed Tools route with open-runner count, saved count, ruleset mix, active dossier, and roster entries.",
         "evidencePaths": [
             str(paths["desktop_dialog_factory_tests"]),
             str(paths["character_overview_presenter_tests"]),

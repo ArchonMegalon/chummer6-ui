@@ -21,7 +21,7 @@ CHECKS = [
         "tokens": [
             "Browser-client PWA install and update lane",
             "data-workbench-pwa-install=\"strip\"",
-            "Make the browser client feel installable.",
+            "Make Chummer Online feel installable.",
             "private const string InstallWebAppCommand = \"install_web_app\"",
             "private const string OfflineCacheStatusCommand = \"offline_cache_status\"",
             "private const string ApplyWebUpdateCommand = \"apply_web_update\"",

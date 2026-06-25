@@ -481,7 +481,7 @@ async function auditPortalWorkspaceResumeRoute(page) {
   expectTextIncludes(bodyText, 'Resume BLUE on profile', 'portal workspace resume route');
   expectTextIncludes(bodyText, 'Troy Simmons', 'portal workspace resume route');
   expectTextIncludes(bodyText, 'saved', 'portal workspace resume route');
-  await expectVisibleSelector(page, '[data-workbench-recent-workspace]', 'portal workspace resume link');
+  await expectVisibleSelector(page, '[data-workbench-recent-workspace]', 'portal dossier resume link');
 }
 
 async function auditPortalRestoredContactActionRoute(page) {

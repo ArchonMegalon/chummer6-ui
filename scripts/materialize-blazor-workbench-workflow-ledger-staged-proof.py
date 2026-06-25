@@ -60,7 +60,7 @@ CHECKS = [
         "path": "docs/BLAZOR_WEB_CLIENT_PARITY_GOAL.md",
         "tokens": [
             "staged hosted workbench workflow-ledger posture",
-            "browser-client capability and desktop handoff boundaries",
+            "Chummer Online capability and desktop handoff boundaries",
             "some desktop-only actions still open Chummer desktop",
         ],
     },

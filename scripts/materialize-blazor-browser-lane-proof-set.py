@@ -146,7 +146,7 @@ EXAMPLE_RECEIPT_TOKENS = [
     '"scope": "staged_and_source_plan_receipts_must_not_enter_release_readiness_aggregation"',
     '"MIG-106 through MIG-109"',
     '"The source_staged_release_boundary receipt is required as source-policy evidence only; it does not execute hosted or Docker browser workflows."',
-    '"MIG-106 through MIG-109 remain open until refreshed hosted route-entry, hosted execution, Docker self-host, analytics posture, connected-runtime, source-boundary, and aggregate browser-lane receipts prove the browser-client release claim."',
+    '"MIG-106 through MIG-109 remain open until refreshed hosted route-entry, hosted execution, Docker self-host, analytics posture, connected-runtime, source-boundary, and aggregate browser-lane receipts prove the Chummer Online release claim."',
 ]
 
 
@@ -287,7 +287,7 @@ def main() -> int:
         "scope": "aggregate-browser-lane-proof-set-not-full-desktop-parity",
         "notes": [
             "The source_staged_release_boundary receipt is required as source-policy evidence only; it does not execute hosted or Docker browser workflows.",
-            "MIG-106 through MIG-109 remain open until refreshed hosted route-entry, hosted execution, Docker self-host, analytics posture, connected-runtime, source-boundary, and aggregate browser-lane receipts prove the browser-client release claim.",
+            "MIG-106 through MIG-109 remain open until refreshed hosted route-entry, hosted execution, Docker self-host, analytics posture, connected-runtime, source-boundary, and aggregate browser-lane receipts prove the Chummer Online release claim.",
         ],
     }
 

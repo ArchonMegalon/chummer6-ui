@@ -399,7 +399,7 @@ self_host_payload = {
     ],
     "notes": [
         "Self-hosted browser proof is separate from public chummer.run promotion proof.",
-        "Portal-backed browser-client proof must cover reload-safe /blazor routing, startup deep links, state-backed recent-work resume links, restored-session continuation lanes, restored-session result continuations, restored-session build-lab continuation, multiple restored-session action continuations, the career/support add/edit/delete lifecycle, and multiple restored actions that commit visible state changes.",
+        "Portal-backed Chummer Online proof must cover reload-safe /blazor routing, startup deep links, state-backed recent-dossier resume links, restored-session continuation lanes, restored-session result continuations, restored-session build-lab continuation, multiple restored-session action continuations, the career/support add/edit/delete lifecycle, and multiple restored actions that commit visible state changes.",
     ],
 }
 

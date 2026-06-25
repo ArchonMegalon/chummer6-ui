@@ -4,7 +4,7 @@
 
 This source-staged proof keeps async notifications and background job affordances visible on the user-facing Chummer Online route and /blazor/workbench compatibility route.
 
-The browser client should make save, export, sync, import, validation, and support-bundle progress visible with retry, dismiss, notification settings, completion history, and same-origin help near the active character workspace.
+Chummer Online should make save, export, sync, import, validation, and support-bundle progress visible with retry, dismiss, notification settings, completion history, and same-origin help near the active dossier.
 
 ## Source-Staged Scope
 

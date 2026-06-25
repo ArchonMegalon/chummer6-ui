@@ -5206,7 +5206,7 @@
   box-shadow: 0 18px 48px rgba(25, 222, 150, 0.14);
 }
 
-/* Chummer Online theme polish: make the web client read as premium app shell, not a default preview page. */
+/* Chummer Online theme polish: make Chummer Online read as a premium app shell, not a default preview page. */
 .browser-preview-shell {
     --app-ink: #fff8e8;
     --app-muted: rgba(255, 248, 232, 0.75);
@@ -5520,7 +5520,7 @@
     }
 }
 
-/* Final Chummer Online theme pass: keep the web client dark, readable, and deliberately branded. */
+/* Final Chummer Online theme pass: keep Chummer Online dark, readable, and deliberately branded. */
 .browser-preview-shell {
     --app-ink: #fff7e3;
     --app-muted: rgba(255, 247, 227, 0.76);
@@ -5798,4 +5798,989 @@
         outline-color: #fff7e3;
         box-shadow: 0 0 0 5px rgba(255, 212, 111, 0.34);
     }
+}
+
+/* Chummer5A corrective layer: the promoted Chummer Online surface must read as a dense
+   desktop client, not a proof-gallery page. Keep route/proof selectors in source, but
+   visually prioritize the familiar menu/toolstrip/workspace/status shape. */
+.browser-preview-shell {
+    --classic-bg: #d7d0c3;
+    --classic-panel: #eee9df;
+    --classic-panel-raised: #f7f3ea;
+    --classic-border: #8f8779;
+    --classic-border-dark: #514b43;
+    --classic-ink: #1f1d1a;
+    --classic-muted: #5c554c;
+    --classic-accent: #315f7c;
+    --classic-accent-soft: #d9e7ef;
+    --classic-warn: #8a5d16;
+    color: var(--classic-ink);
+    background:
+        linear-gradient(180deg, #c9c1b3 0, #e6dfd3 5.5rem, #d7d0c3 100%);
+    font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+}
+
+.browser-preview-shell .route-boundary,
+.browser-preview-shell .command-deck,
+.browser-preview-shell .workflow-ledger,
+.browser-preview-shell .browser-workbench-task-dock,
+.browser-preview-shell .browser-workbench-recovery-strip,
+.browser-preview-shell .browser-workbench-navigation-strip,
+.browser-preview-shell .browser-workbench-command-deck,
+.browser-preview-shell .browser-workbench-hosting-strip,
+.browser-preview-shell section[class*="browser-workbench-"] {
+    border: 1px solid var(--classic-border);
+    border-radius: 3px;
+    background: var(--classic-panel);
+    box-shadow:
+        inset 0 1px 0 rgba(255, 255, 255, .72),
+        0 1px 0 rgba(0, 0, 0, .12);
+}
+
+.browser-preview-shell :is(.route-boundary, .command-deck, .workflow-ledger) {
+    margin-block: .35rem;
+    padding: .45rem .6rem;
+}
+
+.browser-preview-shell section[class*="browser-workbench-"] {
+    margin-block: .35rem;
+    padding: .55rem .65rem;
+}
+
+.browser-preview-shell section[class*="browser-workbench-"] :is(h2, h3, strong),
+.browser-preview-shell .command-deck strong,
+.browser-preview-shell .route-boundary strong {
+    color: var(--classic-ink);
+    font-size: .92rem;
+    letter-spacing: 0;
+    text-transform: none;
+}
+
+.browser-preview-shell section[class*="browser-workbench-"] :is(p, small),
+.browser-preview-shell .route-boundary :is(p, small),
+.browser-preview-shell .workflow-ledger :is(p, small) {
+    color: var(--classic-muted);
+    font-size: .78rem;
+    line-height: 1.35;
+}
+
+.browser-preview-shell :is(a, button, .mini-btn),
+.browser-preview-shell section[class*="browser-workbench-"] a {
+    border: 1px solid #7b756b;
+    border-radius: 2px;
+    background: linear-gradient(180deg, #fbfaf6 0, #d8d2c8 100%);
+    color: var(--classic-ink);
+    box-shadow: inset 0 1px 0 rgba(255, 255, 255, .9);
+    min-height: 1.7rem;
+    padding: .22rem .5rem;
+    font-size: .78rem;
+    font-weight: 600;
+    text-decoration: none;
+}
+
+.browser-preview-shell :is(a, button, .mini-btn):hover,
+.browser-preview-shell section[class*="browser-workbench-"] a:hover {
+    background: linear-gradient(180deg, #ffffff 0, #c8d9e4 100%);
+    border-color: var(--classic-accent);
+    color: #102332;
+}
+
+.browser-preview-shell :is(a, button, .mini-btn):focus-visible,
+.browser-preview-shell section[class*="browser-workbench-"] a:focus-visible {
+    outline: 2px solid var(--classic-accent);
+    outline-offset: 1px;
+}
+
+/* Keep the actual desktop-shaped lanes visible. Hide later source-staged proof rails from
+   the promoted visual flow so Chummer Online stops looking like a wall of random controls. */
+.browser-preview-shell section[class*="browser-workbench-"]:is(
+    .browser-workbench-import-reconcile-strip,
+    .browser-workbench-compare-merge-strip,
+    .browser-workbench-restore-checkpoint-strip,
+    .browser-workbench-offline-cache-strip,
+    .browser-workbench-session-locking-strip,
+    .browser-workbench-share-export-privacy-strip,
+    .browser-workbench-table-handoff-strip,
+    .browser-workbench-rules-citation-strip,
+    .browser-workbench-localization-terminology-strip,
+    .browser-workbench-help-recovery-guidance-strip,
+    .browser-workbench-gm-screen-export-strip
+) {
+    display: none;
+}
+
+.browser-preview-shell .browser-workbench-task-dock,
+.browser-preview-shell .browser-workbench-navigation-strip,
+.browser-preview-shell .browser-workbench-command-deck {
+    display: grid;
+    grid-template-columns: minmax(12rem, 1fr) auto;
+    align-items: center;
+    gap: .45rem .75rem;
+}
+
+.browser-preview-shell .browser-workbench-task-dock-actions,
+.browser-preview-shell .browser-workbench-navigation-actions,
+.browser-preview-shell .browser-workbench-command-actions,
+.browser-preview-shell section[class*="browser-workbench-"] [role="list"] {
+    display: flex;
+    flex-wrap: wrap;
+    gap: .25rem;
+    align-items: center;
+}
+
+.browser-preview-shell .browser-workbench-task-dock [data-workbench-dock-action="character-roster"],
+.browser-preview-shell .browser-workbench-task-dock [data-workbench-dock-action="start-new"],
+.browser-preview-shell .browser-workbench-task-dock [data-workbench-dock-action="open-existing"] {
+    background: linear-gradient(180deg, #eef7fb 0, #b8d0de 100%);
+    border-color: #426b84;
+    color: #102332;
+}
+
+.browser-preview-shell .browser-workbench-density-options,
+.browser-preview-shell .route-token,
+.browser-preview-shell .status-pill {
+    border-radius: 2px;
+    border: 1px solid var(--classic-border);
+    background: var(--classic-panel-raised);
+    color: var(--classic-ink);
+    box-shadow: inset 0 1px 0 rgba(255, 255, 255, .75);
+}
+
+.browser-preview-shell::before {
+    content: "Chummer Online";
+    display: block;
+    margin: .25rem 0 .35rem;
+    padding: .25rem .55rem;
+    border: 1px solid var(--classic-border-dark);
+    background: linear-gradient(180deg, #f2efe8 0, #bdb5a7 100%);
+    color: var(--classic-ink);
+    font-size: .82rem;
+    font-weight: 700;
+    box-shadow: inset 0 1px 0 rgba(255, 255, 255, .8);
+}
+
+@media (max-width: 760px) {
+    .browser-preview-shell .browser-workbench-task-dock,
+    .browser-preview-shell .browser-workbench-navigation-strip,
+    .browser-preview-shell .browser-workbench-command-deck {
+        grid-template-columns: 1fr;
+    }
+
+    .browser-preview-shell section[class*="browser-workbench-"] {
+        padding: .5rem;
+    }
+}
+
+/* Chummer5A corrective layer, pass 2: force a recognizable desktop-client frame.
+   This is intentionally stronger than theme polish: menu bar, toolstrip, work area,
+   and status strip must dominate over proof-gallery rails. */
+.browser-preview-shell {
+    max-width: 1280px;
+    margin-inline: auto;
+    padding: .35rem;
+    border: 1px solid #443f38;
+    box-shadow: 0 0 0 1px rgba(255,255,255,.45) inset, 0 16px 38px rgba(0,0,0,.22);
+}
+
+.browser-preview-shell::before {
+    content: "File   Edit   View   Runner   Tools   Help\A New runner  Open Dossier  Save  Print  Export  Character Roster  Build Lab";
+    white-space: pre-wrap;
+    line-height: 1.45;
+    margin: 0 0 .3rem;
+    padding: .2rem .45rem .3rem;
+    border: 1px solid #6c655b;
+    background:
+        linear-gradient(180deg, #f6f2ea 0, #d8d0c3 46%, #b9b0a1 47%, #ded8ce 100%);
+    color: #1f1d1a;
+    font-size: .78rem;
+    font-weight: 600;
+    text-shadow: 0 1px 0 rgba(255,255,255,.72);
+}
+
+.browser-preview-shell::after {
+    content: "Ready   |   Local dossier state   |   Rules: SR5   |   Chummer Online";
+    display: block;
+    margin-top: .35rem;
+    padding: .18rem .45rem;
+    border: 1px solid #6c655b;
+    background: linear-gradient(180deg, #e9e3d8 0, #c5bcae 100%);
+    color: #2a261f;
+    font-size: .72rem;
+    box-shadow: inset 0 1px 0 rgba(255,255,255,.75);
+}
+
+/* Treat the top operational blocks as a desktop workbench frame: navigation/list area,
+   active dossier work area, and status/ledger area. */
+.browser-preview-shell > :is(.route-boundary, .browser-workbench-task-dock, .browser-workbench-navigation-strip, .workflow-ledger, .command-deck) {
+    position: relative;
+}
+
+.browser-preview-shell .browser-workbench-task-dock {
+    grid-template-columns: 16rem minmax(0, 1fr);
+    min-height: 5.2rem;
+}
+
+.browser-preview-shell .browser-workbench-task-dock::before {
+    content: "Character Roster";
+    align-self: stretch;
+    display: flex;
+    align-items: flex-start;
+    padding: .35rem .45rem;
+    border: 1px solid #9a9184;
+    background:
+        linear-gradient(180deg, #f7f4ed 0, #e2dbcf 100%);
+    color: #1e1b17;
+    font-size: .78rem;
+    font-weight: 700;
+    box-shadow: inset 0 1px 0 rgba(255,255,255,.85);
+}
+
+.browser-preview-shell .browser-workbench-task-dock-copy,
+.browser-preview-shell .browser-workbench-task-dock-actions {
+    grid-column: 2;
+}
+
+.browser-preview-shell .browser-workbench-navigation-strip,
+.browser-preview-shell .browser-workbench-command-deck,
+.browser-preview-shell .workflow-ledger {
+    border-left: 4px solid #315f7c;
+}
+
+.browser-preview-shell .workflow-ledger {
+    max-height: 7.5rem;
+    overflow: auto;
+}
+
+/* Hide card-gallery affordances that make the app feel generated. Keep source and DOM
+   available, but keep promoted flow visually close to Chummer's compact desktop surface. */
+.browser-preview-shell :is(
+    .browser-workbench-hosting-strip,
+    .browser-workbench-recovery-strip,
+    .browser-workbench-density-strip,
+    .browser-workbench-workflow-ledger-strip,
+    .browser-workbench-file-intake-strip,
+    .browser-workbench-rules-data-strip,
+    .browser-workbench-settings-strip,
+    .browser-workbench-diagnostics-strip,
+    .browser-workbench-connected-runtime-strip,
+    .browser-workbench-accessibility-strip
+) {
+    display: none;
+}
+
+.browser-preview-shell .browser-preview-status-card,
+.browser-preview-shell .card,
+.browser-preview-shell .panel {
+    border-radius: 2px;
+    border-color: #8f8779;
+    background: #eee9df;
+    box-shadow: inset 0 1px 0 rgba(255,255,255,.75);
+}
+
+.browser-preview-shell :is(h1, h2, h3) {
+    color: #1f1d1a;
+    letter-spacing: 0;
+    text-transform: none;
+}
+
+.browser-preview-shell h1 {
+    font-size: 1.05rem;
+}
+
+.browser-preview-shell h2 {
+    font-size: .95rem;
+}
+
+.browser-preview-shell h3 {
+    font-size: .86rem;
+}
+
+@media (max-width: 760px) {
+    .browser-preview-shell::before {
+        content: "File  Runner  Tools  Help\A New  Open  Save  Roster";
+    }
+
+    .browser-preview-shell .browser-workbench-task-dock {
+        grid-template-columns: 1fr;
+    }
+
+    .browser-preview-shell .browser-workbench-task-dock-copy,
+    .browser-preview-shell .browser-workbench-task-dock-actions {
+        grid-column: auto;
+    }
+}
+
+/* Real classic shell DOM layer: this is the promoted Chummer Online frame. */
+.classic-chummer-shell {
+    margin: .35rem 0 .55rem;
+    border: 1px solid #3f3a33;
+    background: #d7d0c3;
+    color: #1f1d1a;
+    box-shadow: 0 0 0 1px rgba(255,255,255,.55) inset, 0 8px 20px rgba(0,0,0,.18);
+    font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+}
+
+.classic-chummer-menu {
+    display: flex;
+    gap: .15rem;
+    padding: .15rem .25rem;
+    border-bottom: 1px solid #8f8779;
+    background: linear-gradient(180deg, #f6f2ea 0, #d8d0c3 100%);
+}
+
+.classic-chummer-menu a {
+    border: 0;
+    background: transparent;
+    box-shadow: none;
+    min-height: 1.35rem;
+    padding: .12rem .55rem;
+    color: #1f1d1a;
+    font-size: .78rem;
+    font-weight: 500;
+}
+
+.classic-chummer-menu a:hover,
+.classic-chummer-menu a:focus-visible {
+    background: #315f7c;
+    color: #fff;
+    outline: 0;
+}
+
+.classic-chummer-toolstrip {
+    display: flex;
+    flex-wrap: wrap;
+    gap: .2rem;
+    padding: .25rem;
+    border-bottom: 1px solid #8f8779;
+    background: #ece7dc;
+}
+
+.classic-chummer-toolstrip a,
+.classic-chummer-dossier-actions a,
+.classic-chummer-roster a,
+.classic-chummer-tabs a {
+    display: inline-flex;
+    align-items: center;
+    min-height: 1.45rem;
+    border: 1px solid #7b756b;
+    border-radius: 2px;
+    background: linear-gradient(180deg, #fbfaf6 0, #d8d2c8 100%);
+    color: #1f1d1a;
+    padding: .15rem .45rem;
+    font-size: .76rem;
+    font-weight: 600;
+    text-decoration: none;
+    box-shadow: inset 0 1px 0 rgba(255,255,255,.85);
+}
+
+.classic-chummer-workspace {
+    display: grid;
+    grid-template-columns: 15rem minmax(0, 1fr);
+    min-height: 18rem;
+    border-bottom: 1px solid #8f8779;
+}
+
+.classic-chummer-roster {
+    padding: .35rem;
+    border-right: 1px solid #8f8779;
+    background: #c9c1b3;
+}
+
+.classic-chummer-roster h2 {
+    margin: 0 0 .3rem;
+    padding: .18rem .3rem;
+    border: 1px solid #8f8779;
+    background: #eee9df;
+    font-size: .82rem;
+}
+
+.classic-chummer-roster a {
+    display: flex;
+    justify-content: flex-start;
+    width: 100%;
+    margin-bottom: .22rem;
+    text-align: left;
+}
+
+.classic-chummer-roster .classic-roster-primary {
+    background: linear-gradient(180deg, #eaf4fa 0, #b8d0de 100%);
+    border-color: #426b84;
+}
+
+.classic-chummer-dossier {
+    display: grid;
+    grid-template-rows: auto auto 1fr;
+    min-width: 0;
+    background: #eee9df;
+}
+
+.classic-chummer-dossier > header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: .5rem;
+    padding: .28rem .45rem;
+    border-bottom: 1px solid #8f8779;
+    background: linear-gradient(180deg, #f7f3ea 0, #ddd5c8 100%);
+    font-size: .78rem;
+}
+
+.classic-chummer-dossier > header strong {
+    color: #102332;
+}
+
+.classic-chummer-tabs {
+    display: flex;
+    flex-wrap: wrap;
+    gap: .12rem;
+    padding: .22rem .3rem 0;
+    border-bottom: 1px solid #8f8779;
+    background: #d7d0c3;
+}
+
+.classic-chummer-tabs a {
+    border-bottom-left-radius: 0;
+    border-bottom-right-radius: 0;
+    margin-bottom: -1px;
+}
+
+.classic-chummer-dossier-body {
+    padding: .55rem;
+    background: #f4f0e8;
+    font-size: .82rem;
+    line-height: 1.4;
+}
+
+.classic-chummer-dossier-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: .25rem;
+    margin-top: .55rem;
+}
+
+.classic-chummer-status {
+    display: grid;
+    grid-template-columns: auto auto auto 1fr;
+    gap: .25rem;
+    padding: .18rem .25rem;
+    background: linear-gradient(180deg, #e9e3d8 0, #c5bcae 100%);
+    font-size: .72rem;
+}
+
+.classic-chummer-status span {
+    border: 1px solid #9a9184;
+    background: #eee9df;
+    padding: .08rem .35rem;
+    box-shadow: inset 0 1px 0 rgba(255,255,255,.8);
+}
+
+@media (max-width: 760px) {
+    .classic-chummer-workspace {
+        grid-template-columns: 1fr;
+    }
+
+    .classic-chummer-roster {
+        border-right: 0;
+        border-bottom: 1px solid #8f8779;
+    }
+
+    .classic-chummer-status {
+        grid-template-columns: 1fr 1fr;
+    }
+}
+
+/* Promoted /app route: start with the desktop-like Chummer shell, not the proof hero. */
+.browser-preview-shell.classic-promoted-app > .browser-preview-banner,
+.browser-preview-shell.classic-promoted-app > .browser-preview-boundary,
+.browser-preview-shell.classic-promoted-app > .browser-preview-status-grid {
+    display: none;
+}
+
+.browser-preview-shell.classic-promoted-app > .classic-chummer-shell {
+    margin-top: 0;
+}
+
+.browser-preview-shell.classic-promoted-app > :not(.classic-chummer-shell):not(.browser-preview-banner):not(.browser-preview-boundary):not(.browser-preview-status-grid) {
+    max-width: 100%;
+}
+
+/* Compatibility route keeps route context, but still leads with the classic shell treatment. */
+.browser-preview-shell.classic-compat-app > .browser-preview-status-grid {
+    margin-top: .35rem;
+}
+
+/* Preview route remains a proof/debug surface; only app/workbench get the desktop shell. */
+.browser-preview-shell.classic-preview-tools .classic-chummer-shell {
+    display: none;
+}
+
+/* Promoted /app hard stop: the user route is the classic Chummer shell, not the
+   source-staged proof gallery. Compatibility/preview routes can still expose proof rails. */
+.browser-preview-shell.classic-promoted-app::before,
+.browser-preview-shell.classic-promoted-app::after,
+.browser-preview-shell.classic-compat-app::before,
+.browser-preview-shell.classic-compat-app::after {
+    content: none;
+    display: none;
+}
+
+.browser-preview-shell.classic-promoted-app > .classic-chummer-shell ~ * {
+    display: none !important;
+}
+
+.browser-preview-shell.classic-promoted-app {
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+}
+
+.browser-preview-shell.classic-promoted-app > .classic-chummer-shell {
+    flex: 1 1 auto;
+    display: grid;
+    grid-template-rows: auto auto minmax(0, 1fr) auto;
+}
+
+.browser-preview-shell.classic-promoted-app .classic-chummer-workspace {
+    min-height: clamp(28rem, 72vh, 46rem);
+}
+
+/* Dense dossier workspace: compact form/list panels instead of landing-card prose. */
+.classic-dossier-grid {
+    display: grid;
+    grid-template-columns: minmax(13rem, 1fr) minmax(13rem, 1fr);
+    gap: .4rem;
+}
+
+.classic-dossier-group {
+    border: 1px solid #8f8779;
+    background: #eee9df;
+    box-shadow: inset 0 1px 0 rgba(255,255,255,.78);
+}
+
+.classic-dossier-group--wide {
+    grid-column: 1 / -1;
+}
+
+.classic-dossier-group h3 {
+    margin: 0;
+    padding: .18rem .35rem;
+    border-bottom: 1px solid #8f8779;
+    background: linear-gradient(180deg, #f7f3ea 0, #d7d0c3 100%);
+    color: #1f1d1a;
+    font-size: .76rem;
+    font-weight: 700;
+}
+
+.classic-dossier-group dl {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 0;
+    margin: 0;
+    padding: .25rem;
+}
+
+.classic-dossier-group dl div {
+    display: grid;
+    grid-template-columns: 4.2rem minmax(0, 1fr);
+    min-height: 1.35rem;
+    border: 1px solid #b3aa9c;
+    margin: -1px 0 0 -1px;
+    background: #f8f5ee;
+}
+
+.classic-dossier-group dt,
+.classic-dossier-group dd {
+    margin: 0;
+    padding: .12rem .25rem;
+    font-size: .74rem;
+}
+
+.classic-dossier-group dt {
+    background: #ddd6ca;
+    border-right: 1px solid #b3aa9c;
+    color: #3d372f;
+    font-weight: 700;
+}
+
+.classic-dossier-group dd {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    color: #1f1d1a;
+}
+
+.classic-dossier-lists {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: .3rem;
+    padding: .3rem;
+}
+
+.classic-dossier-lists ul {
+    min-height: 5.2rem;
+    margin: 0;
+    padding: .2rem .2rem .2rem 1.1rem;
+    border: 1px solid #b3aa9c;
+    background: #f8f5ee;
+    font-size: .74rem;
+}
+
+.classic-dossier-lists li:first-child {
+    margin-left: -.2rem;
+    list-style: none;
+    font-weight: 700;
+    color: #102332;
+}
+
+.classic-dossier-readiness {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: .25rem;
+    padding: .3rem;
+}
+
+.classic-dossier-readiness span {
+    border: 1px solid #b3aa9c;
+    background: #f8f5ee;
+    padding: .18rem .28rem;
+    font-size: .74rem;
+}
+
+@media (max-width: 760px) {
+    .classic-dossier-grid,
+    .classic-dossier-lists,
+    .classic-dossier-readiness {
+        grid-template-columns: 1fr;
+    }
+
+    .classic-dossier-group dl {
+        grid-template-columns: 1fr;
+    }
+}
+
+/* Character Roster should read as a Chummer tree, not loose action buttons. */
+.classic-roster-tree {
+    border: 1px solid #8f8779;
+    background: #f8f5ee;
+    font-size: .74rem;
+}
+
+.classic-roster-folder,
+.classic-roster-runner {
+    display: flex;
+    align-items: center;
+    min-height: 1.3rem;
+    border: 0;
+    border-bottom: 1px solid #d0c7ba;
+    border-radius: 0;
+    box-shadow: none;
+    margin: 0;
+    padding: .08rem .3rem;
+    background: transparent;
+    color: #1f1d1a;
+    text-decoration: none;
+}
+
+.classic-roster-folder {
+    font-weight: 700;
+    background: #e2dbcf;
+}
+
+.classic-roster-folder::before {
+    content: "v";
+    width: 1rem;
+    color: #3d372f;
+}
+
+.classic-roster-folder--muted::before {
+    content: ">";
+}
+
+.classic-roster-runner {
+    padding-left: 1.45rem;
+    font-weight: 500;
+}
+
+.classic-roster-runner::before {
+    content: "[]";
+    width: 1rem;
+    margin-left: -1rem;
+    color: #315f7c;
+}
+
+.classic-roster-runner--selected {
+    background: #315f7c;
+    color: #fff;
+}
+
+.classic-roster-runner--selected::before {
+    color: #fff;
+}
+
+.classic-roster-runner:hover,
+.classic-roster-runner:focus-visible {
+    background: #c8d9e4;
+    color: #102332;
+    outline: 1px dotted #102332;
+    outline-offset: -2px;
+}
+
+/* Classic right inspector: keep totals/checks beside the dossier like desktop Chummer. */
+.classic-chummer-workspace {
+    grid-template-columns: 15rem minmax(0, 1fr) 14rem;
+}
+
+.classic-chummer-inspector {
+    padding: .35rem;
+    border-left: 1px solid #8f8779;
+    background: #d0c8ba;
+    font-size: .74rem;
+}
+
+.classic-chummer-inspector h2,
+.classic-chummer-inspector h3 {
+    margin: 0 0 .28rem;
+    padding: .16rem .3rem;
+    border: 1px solid #8f8779;
+    background: #eee9df;
+    color: #1f1d1a;
+    font-size: .78rem;
+}
+
+.classic-chummer-inspector h3 {
+    margin-top: .45rem;
+}
+
+.classic-chummer-inspector dl {
+    margin: 0;
+    border: 1px solid #9f9588;
+    background: #f8f5ee;
+}
+
+.classic-chummer-inspector dl div {
+    display: grid;
+    grid-template-columns: 4.5rem minmax(0, 1fr);
+    border-bottom: 1px solid #d0c7ba;
+}
+
+.classic-chummer-inspector dl div:last-child {
+    border-bottom: 0;
+}
+
+.classic-chummer-inspector dt,
+.classic-chummer-inspector dd {
+    margin: 0;
+    padding: .12rem .25rem;
+}
+
+.classic-chummer-inspector dt {
+    background: #e2dbcf;
+    border-right: 1px solid #d0c7ba;
+    font-weight: 700;
+}
+
+.classic-chummer-inspector ul {
+    margin: 0;
+    padding: .25rem .25rem .25rem 1.05rem;
+    border: 1px solid #9f9588;
+    background: #f8f5ee;
+}
+
+.classic-chummer-inspector li {
+    margin-bottom: .18rem;
+}
+
+@media (max-width: 960px) {
+    .classic-chummer-workspace {
+        grid-template-columns: 13rem minmax(0, 1fr);
+    }
+
+    .classic-chummer-inspector {
+        grid-column: 1 / -1;
+        border-left: 0;
+        border-top: 1px solid #8f8779;
+    }
+}
+
+@media (max-width: 760px) {
+    .classic-chummer-workspace {
+        grid-template-columns: 1fr;
+    }
+}
+
+/* Roster hierarchy affordances: make custom folders and move intent visible. */
+.classic-roster-toolbar {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: .18rem;
+    margin-bottom: .25rem;
+}
+
+.classic-roster-toolbar button {
+    min-height: 1.35rem;
+    border: 1px solid #7b756b;
+    border-radius: 2px;
+    background: linear-gradient(180deg, #fbfaf6 0, #d8d2c8 100%);
+    color: #1f1d1a;
+    padding: .08rem .25rem;
+    font-size: .7rem;
+    font-weight: 600;
+    box-shadow: inset 0 1px 0 rgba(255,255,255,.85);
+}
+
+.classic-roster-toolbar button:hover,
+.classic-roster-toolbar button:focus-visible {
+    background: linear-gradient(180deg, #ffffff 0, #c8d9e4 100%);
+    border-color: #315f7c;
+    outline: 1px dotted #102332;
+    outline-offset: -2px;
+}
+
+.classic-roster-hint {
+    margin-bottom: .25rem;
+    border: 1px solid #b3aa9c;
+    background: #eee9df;
+    color: #5c554c;
+    padding: .15rem .25rem;
+    font-size: .68rem;
+    line-height: 1.25;
+}
+
+.classic-roster-tree {
+    min-height: 11rem;
+}
+
+.classic-roster-folder,
+.classic-roster-runner {
+    cursor: grab;
+}
+
+.classic-roster-folder--muted,
+.classic-roster-folder--muted + .classic-roster-runner {
+    color: #6c655b;
+}
+
+/* Dossier section list: Chummer-style left navigation inside the active workspace. */
+.classic-chummer-dossier-body {
+    display: grid;
+    grid-template-columns: 8.5rem minmax(0, 1fr);
+    gap: .45rem;
+    align-items: start;
+}
+
+.classic-dossier-section-list {
+    border: 1px solid #8f8779;
+    background: #d7d0c3;
+    font-size: .74rem;
+}
+
+.classic-dossier-section-list a {
+    display: block;
+    min-height: 1.3rem;
+    border: 0;
+    border-bottom: 1px solid #b3aa9c;
+    border-radius: 0;
+    background: #eee9df;
+    box-shadow: none;
+    color: #1f1d1a;
+    padding: .12rem .35rem;
+    text-decoration: none;
+    font-weight: 600;
+}
+
+.classic-dossier-section-list a.active,
+.classic-dossier-section-list a:hover,
+.classic-dossier-section-list a:focus-visible {
+    background: #315f7c;
+    color: #fff;
+    outline: 1px dotted #fff;
+    outline-offset: -2px;
+}
+
+.classic-dossier-grid,
+.classic-chummer-dossier-actions {
+    grid-column: 2;
+}
+
+@media (max-width: 760px) {
+    .classic-chummer-dossier-body {
+        grid-template-columns: 1fr;
+    }
+
+    .classic-dossier-grid,
+    .classic-chummer-dossier-actions {
+        grid-column: auto;
+    }
+
+    .classic-dossier-section-list {
+        display: flex;
+        overflow-x: auto;
+    }
+
+    .classic-dossier-section-list a {
+        white-space: nowrap;
+        border-bottom: 0;
+        border-right: 1px solid #b3aa9c;
+    }
+}
+
+/* Classic title bar: make Chummer Online feel like an app window, not a page section. */
+.classic-chummer-titlebar {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    align-items: center;
+    min-height: 1.65rem;
+    border-bottom: 1px solid #1d2830;
+    background: linear-gradient(180deg, #3f6f89 0, #24485f 100%);
+    color: #fff;
+    font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+    font-size: .78rem;
+    font-weight: 700;
+}
+
+.classic-chummer-titlebar-title {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    padding: .18rem .45rem;
+    text-shadow: 0 1px 0 rgba(0,0,0,.35);
+}
+
+.classic-chummer-titlebar-controls {
+    display: grid;
+    grid-auto-flow: column;
+    border-left: 1px solid rgba(255,255,255,.18);
+}
+
+.classic-chummer-titlebar-controls span {
+    display: grid;
+    place-items: center;
+    min-width: 1.7rem;
+    min-height: 1.55rem;
+    border-left: 1px solid rgba(0,0,0,.32);
+    background: rgba(255,255,255,.08);
+    color: #fff;
+    font-size: .68rem;
+}
+
+.classic-chummer-titlebar-controls span:last-child {
+    background: #7a2d2d;
+}
+
+.browser-preview-shell.classic-promoted-app {
+    padding: .2rem;
+    background: #bdb5a7;
+}
+
+.browser-preview-shell.classic-promoted-app .classic-chummer-shell {
+    min-height: calc(100vh - .4rem);
+}
+
+.browser-preview-shell.classic-promoted-app .classic-chummer-dossier-body {
+    overflow: auto;
+}
+
+.browser-preview-shell.classic-promoted-app .classic-chummer-roster,
+.browser-preview-shell.classic-promoted-app .classic-chummer-inspector {
+    overflow: auto;
 }

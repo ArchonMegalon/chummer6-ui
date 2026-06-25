@@ -4,7 +4,7 @@
 
 This source-staged proof keeps derived-stat and modifier provenance affordances visible on the user-facing Chummer Online route and /blazor/workbench compatibility route.
 
-The browser client should expose derived breakdowns, modifier stacks, rule sources, stale values, manual overrides, dependency paths, and same-origin help so dense Chummer calculations remain explainable.
+Chummer Online should expose derived breakdowns, modifier stacks, rule sources, stale values, manual overrides, dependency paths, and same-origin help so dense Chummer calculations remain explainable.
 
 ## Source-Staged Scope
 

@@ -4,7 +4,7 @@
 
 This source-staged proof keeps side-context affordances visible on the user-facing Chummer Online route and /blazor/workbench compatibility route.
 
-The browser client should keep summary, build checks, inventory, notes, and sources close to the active task instead of forcing users into disconnected web-page detours.
+Chummer Online should keep summary, build checks, inventory, notes, and sources close to the active task instead of forcing users into disconnected web-page detours.
 
 ## Source-Staged Scope
 

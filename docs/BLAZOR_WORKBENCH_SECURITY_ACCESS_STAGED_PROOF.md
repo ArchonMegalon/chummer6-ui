@@ -4,7 +4,7 @@
 
 This source-staged proof keeps hosted security and access-control affordances visible on the user-facing Chummer Online route and /blazor/workbench compatibility route.
 
-The browser client should make sign-in, workspace lock, player/GM roles, session expiry, key rotation, access audit, and help posture visible near hosted character state.
+Chummer Online should make sign-in, workspace lock, player/GM roles, session expiry, key rotation, access audit, and help posture visible near hosted dossier state.
 
 ## Source-Staged Scope
 

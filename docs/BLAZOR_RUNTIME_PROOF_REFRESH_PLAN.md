@@ -198,7 +198,7 @@ Example receipt shape: `docs/examples/blazor-runtime-proof-refresh-plan.receipt.
 Before the Blazor web client can be described as a polished web-delivered desktop client, the refresh sequence must clear these gates without collapsing them into one receipt:
 
 - keep `docs/WORKBENCH_RELEASE_SIGNOFF.md#extended-goal-release-blockers` aligned with this plan so release signoff keeps source-staged, source-plan, and source-calculation evidence out of hosted, Docker, aggregate, and polished-product claims
-- keep `docs/MIGRATION_BACKLOG.md#browser-client-release-evidence-boundary` aligned with this plan so `MIG-106` through `MIG-109` stay open until refreshed hosted route-entry, hosted execution, Docker self-host, analytics posture, connected-runtime, source-boundary, and aggregate browser-lane receipts prove the browser-client release claim
+- keep `docs/MIGRATION_BACKLOG.md#browser-client-release-evidence-boundary` aligned with this plan so `MIG-106` through `MIG-109` stay open until refreshed hosted route-entry, hosted execution, Docker self-host, analytics posture, connected-runtime, source-boundary, and aggregate browser-lane receipts prove the Chummer Online release claim
 - regenerate affected source-staged, source-plan, source-calculation, hosted runtime, Docker self-host, and aggregate browser-lane receipts after the `/app` route, Chummer Online marker, Rybbit privacy, portal handoff, and theme-contract source changes land
 - run source materializers before runtime claims so stale example receipts or source-token counts cannot hide drift
 - run hosted public-edge route-entry proof for clean `/app`, hosted `/blazor/app`, roster-first `/blazor/home`, `/blazor/health`, and proof-compatible `/blazor/workbench`

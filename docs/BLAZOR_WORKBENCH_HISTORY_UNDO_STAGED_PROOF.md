@@ -4,7 +4,7 @@
 
 This source-staged proof keeps history, undo, and recovery affordances visible on the user-facing Chummer Online route and /blazor/workbench compatibility route.
 
-The browser client should preserve desktop Chummer's expectation that undo, redo, snapshots, comparison, restore, help, conflict review, and recent-change context stay close to the active character workspace.
+Chummer Online should preserve desktop Chummer's expectation that undo, redo, snapshots, comparison, restore, help, conflict review, and recent-change context stay close to the active dossier.
 
 ## Source-Staged Scope
 

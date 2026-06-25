@@ -4,7 +4,7 @@
 
 This source-staged proof keeps downtime, upkeep, and between-session lifecycle affordances visible on the user-facing Chummer Online route and /blazor/workbench compatibility route.
 
-The browser client should expose downtime, lifestyle upkeep, subscriptions, reminders, recurring costs, next-session posture, and same-origin help recovery so Chummer characters remain useful across sessions.
+Chummer Online should expose downtime, lifestyle upkeep, subscriptions, reminders, recurring costs, next-session posture, and same-origin help recovery so Chummer runners remain useful across sessions.
 
 ## Source-Staged Scope
 

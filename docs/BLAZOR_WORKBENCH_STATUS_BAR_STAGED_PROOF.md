@@ -4,7 +4,7 @@
 
 This source-staged proof keeps current-state cues visible on the user-facing Chummer Online route and /blazor/workbench compatibility route.
 
-The browser client should expose save, rules, validation, session, privacy, help, and support state affordances near the active work area so users understand what is current, safe, recoverable, and bounded.
+Chummer Online should expose save, rules, validation, session, privacy, help, and support state affordances near the active work area so users understand what is current, safe, recoverable, and bounded.
 
 ## Source-Staged Scope
 

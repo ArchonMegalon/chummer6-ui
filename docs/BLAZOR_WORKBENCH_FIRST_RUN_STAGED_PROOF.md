@@ -4,7 +4,7 @@
 
 This source-staged proof keeps first-run onboarding affordances visible on the user-facing Chummer Online route and /blazor/workbench compatibility route.
 
-The browser client should help users start with a new runner, import desktop files, try a sample runner, restore the last session, configure Docker self-hosting, open web-client docs, and recover through same-origin help without depending on hidden menu discovery.
+Chummer Online should help users start with a new runner, import desktop files, try a sample runner, restore the last session, configure Docker self-hosting, open Chummer Online docs, and recover through same-origin help without depending on hidden menu discovery.
 
 ## Source-Staged Scope
 

@@ -4,7 +4,7 @@
 
 This source-staged proof keeps output and export handoff affordances visible on the user-facing Chummer Online route and /blazor/workbench compatibility route.
 
-The browser client should preserve desktop Chummer's expectation that generated packets, printable dossiers, web summaries, share links, audit queues, help, and download bundles are explicit workflow destinations rather than hidden afterthoughts.
+Chummer Online should preserve desktop Chummer's expectation that generated packets, printable dossiers, web summaries, share links, audit queues, help, and download bundles are explicit workflow destinations rather than hidden afterthoughts.
 
 ## Source-Staged Scope
 

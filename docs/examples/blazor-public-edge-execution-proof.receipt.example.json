@@ -47,7 +47,7 @@
       "checks": [
         {
           "route": "/blazor/workbench?command=new_character",
-          "assertion": "startup command surface 'New Character' rendered from canonical proof-compatible route",
+          "assertion": "startup command surface 'New runner' rendered from canonical proof-compatible route",
           "status": "pass"
         },
         {
@@ -67,7 +67,7 @@
         },
         {
           "route": "/blazor/workbench?command=open_character",
-          "assertion": "startup command surface 'Open Character' rendered from canonical proof-compatible route",
+          "assertion": "startup command surface 'Open Dossier' rendered from canonical proof-compatible route",
           "status": "pass"
         },
         {

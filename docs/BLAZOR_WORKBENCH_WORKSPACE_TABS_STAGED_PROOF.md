@@ -4,7 +4,7 @@
 
 This source-staged proof keeps runner and task tabs visible on the user-facing Chummer Online route and /blazor/workbench compatibility route.
 
-The browser client should preserve the feel of active Chummer work by keeping loaded runner, build, output, and import lanes side by side instead of making every task feel like a disconnected web page.
+Chummer Online should preserve the feel of active Chummer work by keeping loaded runner, build, output, and import lanes side by side instead of making every task feel like a disconnected web page.
 
 ## Source-Staged Scope
 

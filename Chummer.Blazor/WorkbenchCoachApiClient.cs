@@ -109,7 +109,7 @@ public sealed class WorkbenchCoachApiClient : IWorkbenchCoachApiClient
         }
         catch (Exception ex) when (ex is HttpRequestException or TaskCanceledException or JsonException)
         {
-            return WorkbenchCoachApiCallResult<T>.Failure(0, $"Coach request '{path}' failed in the browser client: {ex.Message}");
+            return WorkbenchCoachApiCallResult<T>.Failure(0, $"Coach request '{path}' failed in Chummer Online: {ex.Message}");
         }
     }
 

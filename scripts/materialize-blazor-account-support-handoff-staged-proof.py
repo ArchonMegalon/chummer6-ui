@@ -74,7 +74,7 @@ CHECKS = [
             "source-only",
             "promoted Chummer Online browser client",
             "same-origin through `Chummer.Portal`",
-            "/blazor/workbench compatibility route for the same promoted browser client",
+            "/blazor/workbench compatibility route for the same promoted Chummer Online client",
             "must not be treated as authentication or authorization runtime proof",
         ],
     },

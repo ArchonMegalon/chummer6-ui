@@ -82,8 +82,8 @@ The current hosted route-entry tier should cover these route families:
 These route families establish that:
 
 - `/blazor/` resolves into Chummer Online and immediately opens the roster-first `app?command=character_roster` browser workflow
-- `/app` exposes the promoted browser client through the clean public Chummer Online name
-- `/blazor/app` remains the hosted Blazor app path for the same promoted browser client
+- `/app` exposes the promoted Chummer Online client through the clean public Chummer Online name
+- `/blazor/app` remains the hosted Blazor app path for the same promoted Chummer Online client
 - `/blazor/home` exposes the product/orientation page without becoming the primary workflow route
 - the canonical proof-compatible route exists on the public edge
 - restored workspace, result, action, and committed-action route shapes are publicly accepted

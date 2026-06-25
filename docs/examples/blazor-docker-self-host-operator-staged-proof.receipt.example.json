@@ -99,7 +99,7 @@
   "notes": [
     "This proof is source alignment only for Docker self-host operator posture.",
     "Self-host Rybbit analytics remains default-off unless the operator explicitly configures the Rybbit provider and site variables, with session replay and autocapture disabled for Chummer surfaces.",
-    "Self-host browser analytics is metadata-only and allows boolean presence fields such as has_workspace and has_dossier while excluding workspace ids, dossier ids, XML, payloads, hashes, and generated dossier text.",
+    "Self-hosted Chummer Online analytics is metadata-only and allows boolean presence fields such as has_workspace and has_dossier while excluding workspace or dossier identifiers, XML, payloads, hashes, and generated dossier text.",
     "It does not start Docker, probe routes, or prove browser rendering.",
     "Runtime evidence remains BLAZOR_SELF_HOST_WORKBENCH_PROOF.generated.json from scripts/e2e-portal.sh."
   ]

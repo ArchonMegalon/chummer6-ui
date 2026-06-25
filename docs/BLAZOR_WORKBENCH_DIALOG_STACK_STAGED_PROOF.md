@@ -4,7 +4,7 @@
 
 This source-staged proof keeps desktop-style dialog and result continuations visible on the user-facing Chummer Online route and /blazor/workbench compatibility route.
 
-The browser client should preserve dialog-heavy Chummer workflows by keeping active dialog, committed result, retry, back-to-sheet, help, and support continuations within reach.
+Chummer Online should preserve dialog-heavy Chummer workflows by keeping active dialog, committed result, retry, back-to-sheet, help, and support continuations within reach.
 
 ## Source-Staged Scope
 

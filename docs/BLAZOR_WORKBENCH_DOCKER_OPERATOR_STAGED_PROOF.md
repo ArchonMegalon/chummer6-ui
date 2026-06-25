@@ -4,7 +4,7 @@
 
 This source-staged proof keeps Docker self-host operator affordances visible on the user-facing Chummer Online route and /blazor/workbench compatibility route.
 
-The browser client should help self-hosted operators understand container health, environment, volume mounts, backups, image updates, logs, support bundle posture, and same-origin help without leaving the browser client.
+Chummer Online should help self-hosted operators understand container health, environment, volume mounts, backups, image updates, logs, support bundle posture, and same-origin help without leaving the Chummer Online product shape.
 
 ## Source-Staged Scope
 

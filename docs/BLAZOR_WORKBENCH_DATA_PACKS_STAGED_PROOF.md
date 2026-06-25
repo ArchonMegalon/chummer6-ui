@@ -4,7 +4,7 @@
 
 This source-staged proof keeps rules and data-pack management affordances visible on the user-facing Chummer Online route and /blazor/workbench compatibility route.
 
-The browser client should preserve desktop Chummer's expectation that sourcebooks, errata, custom data, update packs, validation scope, help, and data-folder context are visible near the active character workspace.
+Chummer Online should preserve desktop Chummer's expectation that sourcebooks, errata, custom data, update packs, validation scope, help, and data-folder context are visible near the active dossier.
 
 ## Source-Staged Scope
 

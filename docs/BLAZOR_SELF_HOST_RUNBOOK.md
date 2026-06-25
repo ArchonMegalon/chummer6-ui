@@ -60,7 +60,7 @@ Expected public routes:
 
 Route intent:
 
-1. `/app` is the clean public Chummer Online route, `/blazor/` and `/blazor/app` are hosted Blazor entry routes, `/blazor/home` is the explicit product/orientation page, and `/blazor/workbench*` remains the explicit /blazor/workbench compatibility route family for the same promoted browser client.
+1. `/app` is the clean public Chummer Online route, `/blazor/` and `/blazor/app` are hosted Blazor entry routes, `/blazor/home` is the explicit product/orientation page, and `/blazor/workbench*` remains the explicit /blazor/workbench compatibility route family for the same promoted Chummer Online client.
 2. `/blazor/preview*` is retained as proof/supporting evidence and should not be treated as the primary user entrypoint.
 
 ## Minimum environment contract
@@ -114,7 +114,7 @@ Optional analytics inputs:
 
 Hosted `chummer.run` may run with `CHUMMER_ANALYTICS_PROVIDER=rybbit` for product telemetry, but self-host Docker installs should remain `none` unless the operator intentionally configures a Rybbit endpoint.
 
-The Blazor `/health` endpoint reports non-secret analytics policy fields: `selfHostDefault`, `hostedPublicEdge`, `sensitiveDataPolicy`, `sessionReplayPolicy`, `autocapturePolicy`, `allowedMetadataFields`, and `excludedDataClasses`. Its provider names, posture values, allowed metadata fields, and analytics-specific exclusions are named in source, while its shared character/statistics exclusions come from `RunnerIntelligencePrivacy.DefaultExcludedFields`. The analytics adapter is intentionally limited to sanitized product metadata and the browser bridge enforces a positive allowlist before dispatch. It emits host class, analytics scope, session replay/autocapture posture, route family, command id, tab id, control id, dialog action id, and boolean fixture/workspace/dossier presence. It does not emit character names, aliases, owner ids, workspace ids, dossier ids, file names, document contents, XML, payloads, hashes, or generated dossier text. Keep session replay disabled and autocapture disabled for Chummer sites because the browser surface can contain user-authored character data.
+The Blazor `/health` endpoint reports non-secret analytics policy fields: `selfHostDefault`, `hostedPublicEdge`, `sensitiveDataPolicy`, `sessionReplayPolicy`, `autocapturePolicy`, `allowedMetadataFields`, and `excludedDataClasses`. Its provider names, posture values, allowed metadata fields, and analytics-specific exclusions are named in source, while its shared character/statistics exclusions come from `RunnerIntelligencePrivacy.DefaultExcludedFields`. The analytics adapter is intentionally limited to sanitized product metadata and the browser bridge enforces a positive allowlist before dispatch. It emits host class, analytics scope, session replay/autocapture posture, route family, command id, tab id, control id, dialog action id, and boolean fixture/workspace/dossier presence. It does not emit runner names, aliases, owner identifiers, workspace or dossier identifiers, file names, document contents, XML, payloads, hashes, or generated dossier text. Keep session replay disabled and autocapture disabled for Chummer sites because the browser surface can contain user-authored dossier data.
 
 Start from [self-hosted-browser-workbench.env.example](examples/self-hosted-browser-workbench.env.example) and override only what your environment actually needs.
 
@@ -141,7 +141,7 @@ A healthy self-hosted stack should satisfy these operator checks:
 2. Browser reloads under `/blazor/` keep working because the Blazor path base stays `/blazor`.
 3. `/blazor/` resolves into `/blazor/app`, so the default browser-head entry is Chummer Online instead of a proof-named workbench route.
 4. `/blazor/workbench` remains directly addressable when operators or docs want the explicit workbench path.
-5. `/blazor/workbench?workspace=ws-1` can restore a seeded browser session from shared state, and the workbench route exposes state-backed recent-work resume links, restored-session build-lab/section continuation lanes, restored-session result continuations, multiple restored-session action continuations, and multiple restored actions that commit visible state changes instead of stopping at dialog launch.
+5. `/blazor/workbench?workspace=ws-1` can restore a seeded browser session from shared state, and the workbench route exposes state-backed recent-dossier resume links, restored-session build-lab/section continuation lanes, restored-session result continuations, multiple restored-session action continuations, and multiple restored actions that commit visible state changes instead of stopping at dialog launch.
 6. Startup commands can be deep-linked directly:
    `new_character`, `new_character_origin`, `open_character`, `open_for_printing`, and `open_for_export` must open from the URL, not only by clicking inside the shell.
 7. `/downloads/` and `/downloads/releases.json` stay aligned with the same portal edge users enter for the workbench.
@@ -200,7 +200,7 @@ CHUMMER_PORTAL_BASE_URL="http://127.0.0.1:${CHUMMER_PORTAL_PORT:-8091}" \
 node scripts/e2e-portal-playwright.cjs
 ```
 
-The Playwright lane is the current proof-backed way to confirm that the portal edge, `/blazor/` to `/blazor/app` entry behavior, startup workbench, state-backed recent-work resume links, restored-session build-lab/section/action continuation lanes, restored-session result continuations, multiple restored actions with visible committed state changes, dialog deep links, seeded browser workflows, and seeded save/download/print/export result states still work together.
+The Playwright lane is the current proof-backed way to confirm that the portal edge, `/blazor/` to `/blazor/app` entry behavior, startup Chummer Online shell, state-backed recent-dossier resume links, restored-session build-lab/section/action continuation lanes, restored-session result continuations, multiple restored actions with visible committed state changes, dialog deep links, seeded browser workflows, and seeded save/download/print/export result states still work together.
 
 When the full portal harness is used through `bash scripts/e2e-portal.sh`, the self-hosted browser proof receipt is written to `.codex-studio/published/BLAZOR_SELF_HOST_WORKBENCH_PROOF.generated.json`.
 

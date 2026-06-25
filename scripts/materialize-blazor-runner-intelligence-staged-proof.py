@@ -151,7 +151,7 @@ CHECKS = [
             "dialog.ui.runner_cohort_privacy",
             "Opt-in anonymized benchmark cohorts",
             "dossier id",
-            "dossier ids",
+            "dossier identifiers",
             "dossier text",
         ],
     },

@@ -4,7 +4,7 @@
 
 This staged proof turns the Chart LTD idea into a Blazor workbench implementation target named Runner Intelligence.
 
-Runner Intelligence is the character-statistics lane for percentile benchmarks, spell/drug/gear what-if stacks, inventory synergy, and risk-aware build advice. The intended product shape is practical rather than decorative: a runner should be able to see that Initiative is in the top percentile band, model Increase Initiative at a chosen Force, account for drain/stun probability, and include drugs or gear already in inventory without leaking private sheet data.
+Runner Intelligence is the character-statistics lane for percentile benchmarks, spell/drug/gear what-if stacks, inventory synergy, and risk-aware build advice. The intended product shape is practical rather than decorative: a runner should be able to see that Initiative is in the top percentile band, model Increase Initiative at a chosen Force, account for drain/stun probability, and include drugs or gear already in inventory without leaking private dossier data.
 
 ## Canonical Command
 

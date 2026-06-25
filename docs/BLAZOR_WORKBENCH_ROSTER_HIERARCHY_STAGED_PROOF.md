@@ -32,7 +32,7 @@ The command writes:
 
 ## Documentation Index Requirement
 
-The staged proof also checks `docs/BLAZOR_WEB_CLIENT_DOCS_INDEX.md` for this contract document. Roster hierarchy is part of the browser-client parity story, so the contract must stay discoverable from the top-level Blazor/web-client docs map alongside the materializer, milestone wrapper, and example receipt.
+The staged proof also checks `docs/BLAZOR_WEB_CLIENT_DOCS_INDEX.md` for this contract document. Roster hierarchy is part of the Chummer Online parity story, so the contract must stay discoverable from the top-level Blazor/Chummer Online docs map alongside the materializer, milestone wrapper, and example receipt.
 
 ## Boundary
 

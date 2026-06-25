@@ -4,7 +4,7 @@
 
 This source-staged proof keeps recent activity and recovery cues visible on the user-facing Chummer Online route and /blazor/workbench compatibility route.
 
-The browser client should keep saves, validation warnings, output handoffs, hosted status, help, and support escapes easy to scan.
+Chummer Online should keep saves, validation warnings, output handoffs, hosted status, help, and support escapes easy to scan.
 
 ## Source-Staged Scope
 

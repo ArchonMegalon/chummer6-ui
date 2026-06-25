@@ -404,7 +404,7 @@ SOURCE_CONTRACT_CHECKS = [
         "id": "runbook_route_roles",
         "path": REPO_ROOT / "docs" / "BLAZOR_SOURCE_STAGED_PROOF_RUNBOOK.md",
         "tokens": [
-            "/app remains the clean public browser client path.",
+            "/app remains the clean public Chummer Online route.",
             "/blazor/app remains the hosted app path.",
             "/blazor/workbench remains the proof-compatible route.",
             "/blazor/preview remains the preview tools/result-state route.",
@@ -583,7 +583,7 @@ def main() -> int:
         "failures": failures,
         "notes": [
             "This aggregate summarizes source-staged receipts plus explicitly separated source-calculation receipts.",
-            "/app remains the clean public browser client path.",
+            "/app remains the clean public Chummer Online route.",
             "/blazor/app remains the hosted app path.",
             "/blazor/workbench remains the proof-compatible route.",
             "/blazor/preview remains the preview tools and result-state route.",

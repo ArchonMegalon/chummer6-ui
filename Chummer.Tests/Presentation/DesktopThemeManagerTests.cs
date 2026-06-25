@@ -830,15 +830,18 @@ public sealed class DesktopThemeManagerTests
     }
 
     [TestMethod]
-    public void Avalonia_shell_tracks_os_theme_with_app_owned_light_and_dark_palettes()
+    public void Avalonia_shell_uses_dark_baseline_until_theme_switching_is_owned_end_to_end()
     {
         string repoRoot = TestContextLocator.ResolveChummerPresentationRepoRoot();
         string appTheme = File.ReadAllText(Path.Combine(repoRoot, "Chummer.Avalonia", "App.axaml"));
 
-        StringAssert.Contains(appTheme, "RequestedThemeVariant=\"Default\"");
+        StringAssert.Contains(appTheme, "RequestedThemeVariant=\"Dark\"");
         Assert.IsFalse(
             appTheme.Contains("RequestedThemeVariant=\"Light\"", StringComparison.Ordinal),
             "The app must not force a light shell on dark-mode operating systems.");
+        Assert.IsFalse(
+            appTheme.Contains("RequestedThemeVariant=\"Default\"", StringComparison.Ordinal),
+            "Default can mix OS dark-mode text with Chummer light backgrounds on Linux desktops.");
         StringAssert.Contains(appTheme, "<ResourceDictionary x:Key=\"Light\">");
         StringAssert.Contains(appTheme, "<ResourceDictionary x:Key=\"Dark\">");
     }
@@ -1137,7 +1140,7 @@ public sealed class DesktopThemeManagerTests
         StringAssert.Contains(projectorSource, "Explain focus: {buildMethodLabel} build");
         StringAssert.Contains(projectorSource, "Campaign rules cap this build");
         StringAssert.Contains(projectorSource, "current story path");
-        StringAssert.Contains(projectorSource, "for this workspace yet");
+        StringAssert.Contains(projectorSource, "for this dossier yet");
         Assert.IsFalse(projectorSource.Contains("buildLane", StringComparison.Ordinal));
         Assert.IsFalse(projectorSource.Contains("grounded {buildLane} lane", StringComparison.Ordinal));
         Assert.IsFalse(projectorSource.Contains("current dossier lane", StringComparison.OrdinalIgnoreCase));

@@ -4,7 +4,7 @@
 
 This source-staged proof keeps the Chummer Online and /blazor/workbench compatibility route hosting and privacy posture visible in the product UI.
 
-The browser client should be understandable as both hosted `chummer.run` software and self-hostable Docker software. Users should also see the analytics boundary where they work, not only in operator docs.
+Chummer Online should be understandable as both hosted `chummer.run` software and self-hostable Docker software. Users should also see the analytics boundary where they work, not only in operator docs.
 
 ## Source-Staged Scope
 
@@ -15,7 +15,7 @@ The staged hosting/privacy lane covers:
 - hosted `chummer.run` Rybbit enablement posture with explicit telemetry limits
 - Rybbit is optional and metadata-only analytics copy
 - self-host default-off analytics copy, including `CHUMMER_ANALYTICS_PROVIDER=none`
-- explicit privacy limits for dossier metadata/content, owner identifiers, workspace identifiers, XML, files, payloads, and hashes
+- explicit privacy limits for dossier metadata/content, owner identifiers, workspace or dossier identifiers, XML, files, payloads, and hashes
 - scoped responsive styling for desktop and mobile browser use
 - status reporting note `source_alignment_only_default_off_rybbit_not_browser_execution`
 

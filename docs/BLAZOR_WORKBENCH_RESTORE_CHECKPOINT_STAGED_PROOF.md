@@ -4,7 +4,7 @@
 
 This source-staged proof keeps restore and checkpoint affordances visible on the user-facing Chummer Online route and /blazor/workbench compatibility route.
 
-The browser client should expose autosave, named checkpoint, backup, preview, rollback, retention, and same-origin help posture so recovery stays close to risky edits.
+Chummer Online should expose autosave, named checkpoint, backup, preview, rollback, retention, and same-origin help posture so recovery stays close to risky edits.
 
 ## Source-Staged Scope
 

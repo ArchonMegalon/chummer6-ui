@@ -7,7 +7,7 @@ Last updated: 2026-04-17
 Drive Chummer6 desktop toward hard Chummer5a-style parity:
 
 - classic menu-first shell, not a dashboard
-- dense left rail and runner sheet posture
+- dense left rail and runner dossier posture
 - startup-safe commands visible and usable on first launch
 - Avalonia and Blazor kept in lockstep where the same shell affordance exists
 - release builds must ship the current pushed UI snapshot, not a stale head
@@ -84,7 +84,7 @@ git push origin HEAD:main
    - menu/toolstrip density
    - icon correctness
    - startup shell posture
-   - runner sheet spacing
+   - runner dossier spacing
 3. Keep release-train correctness tight so the next mac bootstrap pulls the just-pushed UI head.
 
 ## Resume after interruption

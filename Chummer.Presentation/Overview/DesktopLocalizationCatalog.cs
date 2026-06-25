@@ -205,7 +205,7 @@ public static class DesktopLocalizationCatalog
         ["desktop.dialog.translator.message"] = "Desktop language set to {0}. Restart Chummer to apply it everywhere.",
         ["desktop.dialog.translator.field.search"] = "Language Search",
         ["desktop.dialog.translator.field.search_placeholder"] = "filter languages",
-        ["desktop.dialog.character_settings.notice.updated"] = "Character settings updated.",
+        ["desktop.dialog.character_settings.notice.updated"] = "Dossier settings updated.",
         ["desktop.shell.notice.download_unavailable"] = "Notice: download requested but file save is unavailable on this platform.",
         ["desktop.shell.notice.download_cancelled"] = "Notice: download canceled.",
         ["desktop.shell.notice.download_completed"] = "Notice: downloaded {0}.",
@@ -888,7 +888,7 @@ public static class DesktopLocalizationCatalog
             localized["desktop.dialog.translator.message"] = "Desktopsprache auf {0} gesetzt. Starten Sie Chummer neu, um sie uberall anzuwenden.";
             localized["desktop.dialog.translator.field.search"] = "Language Search";
             localized["desktop.dialog.translator.field.search_placeholder"] = "filter languages";
-            localized["desktop.dialog.character_settings.notice.updated"] = "Character settings updated.";
+            localized["desktop.dialog.character_settings.notice.updated"] = "Dossier settings updated.";
 
         }
 
@@ -1328,7 +1328,7 @@ public static class DesktopLocalizationCatalog
             localized["desktop.dialog.translator.message"] = "Langue du desktop definie sur {0}. Redemarrez Chummer pour l'appliquer partout.";
             localized["desktop.dialog.translator.field.search"] = "Language Search";
             localized["desktop.dialog.translator.field.search_placeholder"] = "filter languages";
-            localized["desktop.dialog.character_settings.notice.updated"] = "Character settings updated.";
+            localized["desktop.dialog.character_settings.notice.updated"] = "Dossier settings updated.";
 
         }
 
@@ -1768,7 +1768,7 @@ public static class DesktopLocalizationCatalog
             localized["desktop.dialog.translator.message"] = "デスクトップ言語を {0} に設定しました。すべてに適用するには Chummer を再起動してください。";
             localized["desktop.dialog.translator.field.search"] = "Language Search";
             localized["desktop.dialog.translator.field.search_placeholder"] = "filter languages";
-            localized["desktop.dialog.character_settings.notice.updated"] = "Character settings updated.";
+            localized["desktop.dialog.character_settings.notice.updated"] = "Dossier settings updated.";
 
         }
 
@@ -2208,7 +2208,7 @@ public static class DesktopLocalizationCatalog
             localized["desktop.dialog.translator.message"] = "Idioma do desktop definido como {0}. Reinicie o Chummer para aplicar em todos os lugares.";
             localized["desktop.dialog.translator.field.search"] = "Language Search";
             localized["desktop.dialog.translator.field.search_placeholder"] = "filter languages";
-            localized["desktop.dialog.character_settings.notice.updated"] = "Character settings updated.";
+            localized["desktop.dialog.character_settings.notice.updated"] = "Dossier settings updated.";
 
         }
 
@@ -2648,7 +2648,7 @@ public static class DesktopLocalizationCatalog
             localized["desktop.dialog.translator.message"] = "桌面语言已设为 {0}。重启 Chummer 后将在所有位置应用。";
             localized["desktop.dialog.translator.field.search"] = "Language Search";
             localized["desktop.dialog.translator.field.search_placeholder"] = "filter languages";
-            localized["desktop.dialog.character_settings.notice.updated"] = "Character settings updated.";
+            localized["desktop.dialog.character_settings.notice.updated"] = "Dossier settings updated.";
 
         }
 

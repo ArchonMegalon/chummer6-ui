@@ -4,7 +4,7 @@
 
 This source-staged proof keeps Character Roster and recent-dossier management affordances visible on the user-facing Chummer Online route and /blazor/workbench compatibility route.
 
-The browser client should preserve desktop Chummer's expectation that open, recent, pinned, cloned, archived, imported, and help-guided Character Roster recovery stay close to the active dossier.
+Chummer Online should preserve desktop Chummer's expectation that open, recent, pinned, cloned, archived, imported, and help-guided Character Roster recovery stay close to the active dossier.
 
 ## Source-Staged Scope
 

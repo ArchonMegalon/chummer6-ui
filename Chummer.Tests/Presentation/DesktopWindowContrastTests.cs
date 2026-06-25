@@ -54,6 +54,7 @@ public sealed class DesktopWindowContrastTests
         WithStandaloneUpdateWindow(window =>
         {
             using ThemeScope scope = ThemeScope.Dark(window);
+            AssertVisibleTextBlockContrast(window, "update window dark mode", minimumVisibleTextBlocks: 8);
             AssertVisibleButtonContrast(window, "update window dark mode", minimumVisibleButtons: 4);
         });
     }
@@ -517,6 +518,27 @@ public sealed class DesktopWindowContrastTests
         }
 
         return true;
+    }
+
+    private static void AssertVisibleTextBlockContrast(Control root, string context, int minimumVisibleTextBlocks)
+    {
+        TextBlock[] textBlocks = root.GetVisualDescendants()
+            .OfType<TextBlock>()
+            .Where(static control => control.IsVisible)
+            .Where(static control => !string.IsNullOrWhiteSpace(control.Text))
+            .ToArray();
+
+        Assert.IsTrue(
+            textBlocks.Length >= minimumVisibleTextBlocks,
+            $"{context} should expose enough visible text for a meaningful non-hover readability check.");
+
+        foreach (TextBlock textBlock in textBlocks)
+        {
+            Color foreground = ResolveSolidColor(textBlock.Foreground, textBlock, "foreground", context);
+            Color background = ResolveBackgroundColor(textBlock.Background, textBlock, context);
+            string controlName = string.IsNullOrWhiteSpace(textBlock.Name) ? textBlock.Text!.Trim() : textBlock.Name!;
+            AssertContrastAtLeast(foreground, background, 4.5d, $"{context} {controlName} text");
+        }
     }
 
     private static Color ResolveSolidColor(IBrush? brush, Control control, string role, string context)

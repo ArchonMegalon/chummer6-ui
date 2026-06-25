@@ -4,7 +4,7 @@
 
 This source-staged proof keeps controlled inline-editing affordances visible on the user-facing Chummer Online route and /blazor/workbench compatibility route.
 
-The browser client should expose dirty fields, numeric steppers, commit, revert, formula preview, bulk apply, and same-origin help posture so dense Chummer edits remain explicit and reviewable.
+Chummer Online should expose dirty fields, numeric steppers, commit, revert, formula preview, bulk apply, and same-origin help posture so dense Chummer edits remain explicit and reviewable.
 
 ## Source-Staged Scope
 

@@ -6,7 +6,7 @@ This source-staged proof keeps the Chummer Online and compatibility route polish
 
 The web client should feel like another desktop client, not a disconnected proof page. The clean public `/app` route, hosted `/blazor/app` route, and proof-compatible `/blazor/workbench` route therefore need dense, obvious shortcuts for the common user jobs: start, edit, output, and portal handoff.
 
-The compatibility route must keep older workbench bookmarks and shared links working without taking over product language from Chummer Online. `/app` remains the public browser client path, `/blazor/app` remains the hosted app path, and `/blazor/preview` remains the preview tools and result-state route.
+The compatibility route must keep older workbench bookmarks and shared links working without taking over product language from Chummer Online. `/app` remains the clean public Chummer Online route, `/blazor/app` remains the hosted app path, and `/blazor/preview` remains the preview tools and result-state route.
 
 Internal workflow links in the Blazor shell are source-checked as path-base-safe relative hrefs, including top navigation, preview/app/workbench links, showcase, health, and route-builder output, so hosted `/blazor`, Docker self-host, and direct app hosting do not drift apart.
 

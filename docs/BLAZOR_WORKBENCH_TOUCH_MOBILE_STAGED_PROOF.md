@@ -4,7 +4,7 @@
 
 This source-staged proof keeps touch and mobile ergonomics affordances visible on the user-facing Chummer Online route and /blazor/workbench compatibility route.
 
-The browser client should expose touch mode, zoom, panel docking, compact actions, keyboard-safe layout, pointer help, and same-origin help so phone, tablet, and trackpad users can navigate dense Chummer workflows without another visible layer.
+Chummer Online should expose touch mode, zoom, panel docking, compact actions, keyboard-safe layout, pointer help, and same-origin help so phone, tablet, and trackpad users can navigate dense Chummer workflows without another visible layer.
 
 ## Source-Staged Scope
 

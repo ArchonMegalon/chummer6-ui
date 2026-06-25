@@ -12,7 +12,7 @@ The staged command-palette lane covers:
 
 - a command-palette strip on the user-facing Chummer Online route and /blazor/workbench compatibility route
 - keyboard-style hints for new runner, open/import, Build Lab, gear, save/download, print, support, and same-origin help
-- reload-safe browser-client links for every visible command
+- reload-safe Chummer Online links for every visible command
 - scoped responsive styling for desktop and mobile browser use
 
 ## Source Check

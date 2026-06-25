@@ -14,7 +14,7 @@
 
 <PageTitle>@PageTitleText</PageTitle>
 
-<main class="browser-preview-shell">
+<main class="browser-preview-shell @(IsAppRoute ? "classic-promoted-app" : IsWorkbenchRoute ? "classic-compat-app" : "classic-preview-tools")">
     <header class="browser-preview-banner">
         <div class="browser-preview-banner-copy">
             @if (IsAppRoute)
@@ -22,7 +22,7 @@
                 <p class="browser-preview-kicker">Chummer Online</p>
                 <h1>Explore Chummer Online.</h1>
                 <p>
-                    This is the web client entrypoint: open, organize, build, review, export, and resume runners through the shared Chummer shell without exposing proof-route language.
+                    This is the Chummer Online entrypoint: open, organize, build, review, export, and resume runners through the shared Chummer shell without exposing proof-route language.
                 </p>
             }
             else if (IsWorkbenchRoute)
@@ -64,6 +64,155 @@
             <a href="@DocsHref">Docs</a>
         </nav>
     </header>
+
+    @if (IsAppRoute || IsWorkbenchRoute)
+    {
+        <section class="classic-chummer-shell" aria-label="Chummer Online classic desktop shell" data-chummer-classic-shell="true">
+            <header class="classic-chummer-titlebar" aria-label="Chummer Online window title">
+                <div class="classic-chummer-titlebar-title">Chummer Online - @(PrimaryRecentWorkspace?.ShortLabel ?? "Sample Runner")</div>
+                <div class="classic-chummer-titlebar-controls" aria-hidden="true"><span>_</span><span>[]</span><span>X</span></div>
+            </header>
+            <nav class="classic-chummer-menu" aria-label="Classic Chummer menu">
+                <a href="@BuildPreviewHref(command: NewCharacterCommand, useWorkbenchRoute: true)">File</a>
+                <a href="@BuildLabLaneHref">Edit</a>
+                <a href="@BuildPreviewHref(SeededWorkspaceId, tab: ProfileTabId, useWorkbenchRoute: true)">View</a>
+                <a href="@ChummerOnlineRosterHref">Runner</a>
+                <a href="@BuildPreviewHref(command: "global_settings", useWorkbenchRoute: true)">Tools</a>
+                <a href="@HelpHref">Help</a>
+            </nav>
+
+            <nav class="classic-chummer-toolstrip" aria-label="Classic Chummer toolstrip">
+                <a href="@BuildPreviewHref(command: NewCharacterCommand, useWorkbenchRoute: true)" data-classic-toolstrip-action="new-runner">New runner</a>
+                <a href="@BuildPreviewHref(command: OpenCharacterCommand, useWorkbenchRoute: true)" data-classic-toolstrip-action="open-dossier">Open Dossier</a>
+                <a href="@SaveAsFlowHref" data-classic-toolstrip-action="save-dossier">Save</a>
+                <a href="@PrintFlowHref" data-classic-toolstrip-action="print-dossier">Print</a>
+                <a href="@ExportFlowHref" data-classic-toolstrip-action="export-dossier">Export</a>
+                <a href="@ChummerOnlineRosterHref" data-classic-toolstrip-action="character-roster">Character Roster</a>
+                <a href="@BuildLabLaneHref" data-classic-toolstrip-action="build-lab">Build Lab</a>
+            </nav>
+
+            <div class="classic-chummer-workspace">
+                <aside class="classic-chummer-roster" aria-label="Character Roster">
+                    <h2>Character Roster</h2>
+                    <a class="classic-roster-primary" href="@ChummerOnlineRosterHref">Open roster</a>
+                    <a href="@ContinueRecentHref">@ContinueRecentLabel</a>
+                    <a href="@BuildPreviewHref(SeededWorkspaceId, useWorkbenchRoute: true)">Sample runner dossier</a>
+                    <a href="@BuildPreviewHref(command: OpenCharacterCommand, useWorkbenchRoute: true)">Import dossier XML</a>
+                </aside>
+
+                <section class="classic-chummer-dossier" aria-label="Active dossier workspace">
+                    <header>
+                        <span>Active dossier</span>
+                        <strong>@(PrimaryRecentWorkspace?.ShortLabel ?? "Sample Runner")</strong>
+                    </header>
+                    <nav class="classic-chummer-tabs" aria-label="Dossier sections">
+                        <a href="@BuildPreviewHref(SeededWorkspaceId, tab: ProfileTabId, useWorkbenchRoute: true)">Profile</a>
+                        <a href="@BuildLabLaneHref">Build</a>
+                        <a href="@GearLaneHref">Gear</a>
+                        <a href="@BuildPreviewHref(SeededWorkspaceId, tab: CombatTabId, useWorkbenchRoute: true)">Combat</a>
+                        <a href="@BuildPreviewHref(SeededWorkspaceId, tab: MagicTabId, useWorkbenchRoute: true)">Magic</a>
+                        <a href="@BuildPreviewHref(SeededWorkspaceId, tab: MatrixTabId, useWorkbenchRoute: true)">Matrix</a>
+                        <a href="@BuildPreviewHref(SeededWorkspaceId, tab: ContactsTabId, useWorkbenchRoute: true)">Contacts</a>
+                    </nav>
+                    <div class="classic-chummer-dossier-body">
+                        <nav class="classic-dossier-section-list" aria-label="Classic dossier section list">
+                            <a href="(SeededWorkspaceId, tab: ProfileTabId, useWorkbenchRoute: true)" class="active">Common</a>
+                            <a href="">Build</a>
+                            <a href="">Gear</a>
+                            <a href="(SeededWorkspaceId, tab: CombatTabId, useWorkbenchRoute: true)">Combat</a>
+                            <a href="(SeededWorkspaceId, tab: MagicTabId, useWorkbenchRoute: true)">Magic</a>
+                            <a href="(SeededWorkspaceId, tab: MatrixTabId, useWorkbenchRoute: true)">Matrix</a>
+                            <a href="(SeededWorkspaceId, tab: ContactsTabId, useWorkbenchRoute: true)">Contacts</a>
+                            <a href="(SeededWorkspaceId, tab: CareerTabId, useWorkbenchRoute: true)">Career</a>
+                        </nav>
+                        <div class="classic-dossier-grid">
+                            <section class="classic-dossier-group" aria-label="Runner identity">
+                                <h3>Runner Identity</h3>
+                                <dl>
+                                    <div><dt>Name</dt><dd>@(PrimaryRecentWorkspace?.ShortLabel ?? "Sample Runner")</dd></div>
+                                    <div><dt>Alias</dt><dd>Street Samurai</dd></div>
+                                    <div><dt>Ruleset</dt><dd>SR5</dd></div>
+                                    <div><dt>Status</dt><dd>Unsaved local dossier</dd></div>
+                                </dl>
+                            </section>
+
+                            <section class="classic-dossier-group" aria-label="Core attributes">
+                                <h3>Core Attributes</h3>
+                                <dl>
+                                    <div><dt>BOD</dt><dd>4</dd></div>
+                                    <div><dt>AGI</dt><dd>6</dd></div>
+                                    <div><dt>REA</dt><dd>5</dd></div>
+                                    <div><dt>STR</dt><dd>3</dd></div>
+                                    <div><dt>CHA</dt><dd>2</dd></div>
+                                    <div><dt>INT</dt><dd>4</dd></div>
+                                    <div><dt>LOG</dt><dd>3</dd></div>
+                                    <div><dt>WIL</dt><dd>4</dd></div>
+                                </dl>
+                            </section>
+
+                            <section class="classic-dossier-group classic-dossier-group--wide" aria-label="Dossier lists">
+                                <h3>Build Lists</h3>
+                                <div class="classic-dossier-lists">
+                                    <ul>
+                                        <li>Qualities</li>
+                                        <li>Positive: Mentor Spirit</li>
+                                        <li>Negative: SINner</li>
+                                    </ul>
+                                    <ul>
+                                        <li>Gear</li>
+                                        <li>Ares Predator V</li>
+                                        <li>Armor Jacket</li>
+                                    </ul>
+                                    <ul>
+                                        <li>Contacts</li>
+                                        <li>Fixer · Loyalty 3</li>
+                                        <li>Street Doc · Connection 2</li>
+                                    </ul>
+                                </div>
+                            </section>
+
+                            <section class="classic-dossier-group classic-dossier-group--wide" aria-label="Readiness">
+                                <h3>Readiness</h3>
+                                <div class="classic-dossier-readiness">
+                                    <span>Build checks: review required</span>
+                                    <span>Save state: local changes</span>
+                                    <span>Output: print/export ready</span>
+                                </div>
+                            </section>
+                        </div>
+                        <div class="classic-chummer-dossier-actions">
+                            <a href="@BuildLabLaneHref">Continue Build Lab</a>
+                            <a href="@GearLaneHref">Open Gear</a>
+                            <a href="@SaveAsFlowHref">Save/download</a>
+                        </div>
+                    </div>
+                </section>
+
+                <aside class="classic-chummer-inspector" aria-label="Dossier inspector">
+                    <h2>Inspector</h2>
+                    <dl>
+                        <div><dt>Karma</dt><dd>12</dd></div>
+                        <div><dt>Nuyen</dt><dd>8,450 nuyen</dd></div>
+                        <div><dt>Essence</dt><dd>5.4</dd></div>
+                        <div><dt>Limits</dt><dd>Physical 7</dd></div>
+                    </dl>
+                    <h3>Build Checks</h3>
+                    <ul>
+                        <li>Review availability before export.</li>
+                        <li>Confirm lifestyle and licenses.</li>
+                        <li>Output profile ready.</li>
+                    </ul>
+                </aside>
+            </div>
+
+            <footer class="classic-chummer-status" aria-label="Classic Chummer status">
+                <span>Ready</span>
+                <span>Rules: SR5</span>
+                <span>Local dossier state</span>
+                <span>Chummer Online</span>
+            </footer>
+        </section>
+    }
 
     <section class="browser-preview-boundary" aria-label="Boundary notice">
         <div>
@@ -141,7 +290,7 @@
             <div class="browser-workbench-recovery-copy">
                 <span class="browser-preview-status-label">Session recovery</span>
                 <strong>Resume without restarting the job.</strong>
-                <p>Refresh, direct entry, and portal handoff should keep the browser client in the same work rhythm as desktop Chummer.</p>
+                <p>Refresh, direct entry, and portal handoff should keep Chummer Online in the same work rhythm as desktop Chummer.</p>
             </div>
             <div class="browser-workbench-recovery-actions">
                 <a href="@ContinueRecentHref" data-workbench-recovery-action="continue-recent">@ContinueRecentLabel</a>
@@ -182,13 +331,13 @@
             <div class="browser-workbench-hosting-copy">
                 <span class="browser-preview-status-label">Hosting and privacy</span>
                 <strong>@HostingTitle</strong>
-                <p>The browser client is meant to run on `chummer.run` and in Docker without changing the user workflow or quietly changing telemetry expectations.</p>
+                <p>Chummer Online is meant to run on `chummer.run` and in Docker without changing the user workflow or quietly changing telemetry expectations.</p>
             </div>
             <div class="browser-workbench-hosting-cards">
                 <article data-workbench-hosting-card="public-edge">
                     <span>Hosted route</span>
                     <strong>@HostedRouteLabel</strong>
-                    <p>The promoted browser client stays behind the portal front door so downloads, support, status, and account handoff remain same-origin.</p>
+                    <p>Chummer Online stays behind the portal front door so downloads, support, status, and account handoff remain same-origin.</p>
                 </article>
                 <article data-workbench-hosting-card="docker-self-host">
                     <span>Self-host</span>
@@ -294,7 +443,7 @@
             <div class="browser-workbench-ledger-copy">
                 <span class="browser-preview-status-label">@WorkflowLedgerLabel</span>
                 <strong>See what opens here.</strong>
-                <p>A compact map of the browser client, with clear handoffs when desktop is still the better tool.</p>
+                <p>A compact map of Chummer Online, with clear handoffs when desktop is still the better tool.</p>
             </div>
             <div class="browser-workbench-ledger-grid">
                 <article data-workbench-ledger-row="startup">
@@ -637,7 +786,7 @@
             <div class="browser-workbench-workspace-tabs-actions" role="list" aria-label="Open dossier and task lanes">
                 <a role="listitem" href="@BuildWorkbenchLaneHref(ProfileTabId)" data-workbench-workspace-tabs-action="active-runner">
                     <span>Active runner</span>
-                    <small>Return to the loaded sheet.</small>
+                    <small>Return to the loaded dossier.</small>
                 </a>
                 <a role="listitem" href="@BuildWorkbenchLaneHref(BuildTabId)" data-workbench-workspace-tabs-action="build-lab">
                     <span>Build Lab</span>
@@ -660,7 +809,7 @@
                 <strong>Keep save, rules, validation, session, privacy, and help state visible.</strong>
                 <p>A browser-hosted client still needs clear state cues so users know what is safe, current, recoverable, and bounded before they continue.</p>
             </div>
-            <div class="browser-workbench-status-bar-actions" role="list" aria-label="Current workbench state shortcuts">
+            <div class="browser-workbench-status-bar-actions" role="list" aria-label="Current dossier state shortcuts">
                 <a role="listitem" href="@BuildWorkbenchCommandHref(SaveCharacterAsCommand)" data-workbench-status-bar-action="save-state">
                     <span>Save ready</span>
                     <small>Open browser-safe dossier save/download handoff.</small>
@@ -696,12 +845,12 @@
             <div class="browser-workbench-inspector-rail-copy">
                 <span class="browser-preview-status-label">Inspector rail</span>
                 <strong>Keep dossier context beside the active task.</strong>
-                <p>The desktop client keeps summary, checks, inventory, notes, and rules references close; the browser client should keep that context one click away.</p>
+                <p>The desktop client keeps summary, checks, inventory, notes, and rules references close; Chummer Online should keep that context one click away.</p>
             </div>
             <div class="browser-workbench-inspector-rail-actions" role="list" aria-label="Context inspector shortcuts">
                 <a role="listitem" href="@BuildWorkbenchLaneHref(ProfileTabId)" data-workbench-inspector-rail-action="summary">
                     <span>Summary</span>
-                    <small>Identity, metatype, and core sheet facts.</small>
+                    <small>Identity, metatype, and core dossier facts.</small>
                 </a>
                 <a role="listitem" href="@BuildWorkbenchLaneHref(BuildTabId)" data-workbench-inspector-rail-action="build-checks">
                     <span>Build checks</span>
@@ -742,7 +891,7 @@
                     <small>Return to the last editable context.</small>
                 </a>
                 <a role="listitem" href="@BuildPreviewHref(SeededWorkspaceId, useWorkbenchRoute: true)" data-workbench-dialog-stack-action="cancel-back">
-                    <span>Back to sheet</span>
+                    <span>Back to dossier</span>
                     <small>Close the detour safely.</small>
                 </a>
                 <a role="listitem" href="@ContactHref" data-workbench-dialog-stack-action="help">
@@ -762,10 +911,10 @@
                 <strong>Keep selection actions visible without hidden right-click dependency.</strong>
                 <p>Add, edit, remove, duplicate, source lookup, help, and recovery lanes stay reachable for mouse, touch, and keyboard users.</p>
             </div>
-            <div class="browser-workbench-context-actions-list" role="list" aria-label="Selection-sensitive workbench actions">
+            <div class="browser-workbench-context-actions-list" role="list" aria-label="Selection-sensitive dossier actions">
                 <a role="listitem" href="@BuildPreviewHref(tab: GearTabId, control: GearAddControlId, useWorkbenchRoute: true)" data-workbench-context-actions-action="add">
                     <span>Add</span>
-                    <small>Create from the selected sheet lane.</small>
+                    <small>Create from the selected dossier lane.</small>
                 </a>
                 <a role="listitem" href="@BuildPreviewHref(tab: GearTabId, control: GearEditControlId, useWorkbenchRoute: true)" data-workbench-context-actions-action="edit">
                     <span>Edit</span>
@@ -797,7 +946,7 @@
         <section class="browser-workbench-search-filter" aria-label="Browser-client search and filter rail" data-workbench-search-filter="strip">
             <div class="browser-workbench-search-filter-copy">
                 <span class="browser-preview-status-label">Search/filter</span>
-                <strong>Keep dense Chummer lists searchable from the browser-client chrome.</strong>
+                <strong>Keep dense Chummer lists searchable from the Chummer Online chrome.</strong>
                 <p>Gear, skills, qualities, Character Roster, and source-heavy panes need visible filter and help lanes so users do not hunt through page-specific controls.</p>
             </div>
             <div class="browser-workbench-search-filter-actions" role="list" aria-label="Search and filter shortcuts">
@@ -827,7 +976,7 @@
                 </a>
                 <a role="listitem" href="@BuildPreviewHref(SeededWorkspaceId, useWorkbenchRoute: true)" data-workbench-search-filter-action="clear-filter">
                     <span>Clear</span>
-                    <small>Return to the unfiltered sheet.</small>
+                    <small>Return to the unfiltered dossier.</small>
                 </a>
             </div>
         </section>
@@ -836,11 +985,11 @@
             <div class="browser-workbench-layout-presets-copy">
                 <span class="browser-preview-status-label">Layout presets</span>
                 <strong>Switch between desktop-density and browser-safe work modes.</strong>
-                <p>Dense sheet, split review, output, mobile-safe, focus, and help layouts stay visible as web-client modes instead of hidden responsive accidents.</p>
+                <p>Dense dossier, split review, output, mobile-safe, focus, and help layouts stay visible as Chummer Online modes instead of hidden responsive accidents.</p>
             </div>
             <div class="browser-workbench-layout-presets-actions" role="list" aria-label="Browser-client layout preset shortcuts">
                 <a role="listitem" href="@BuildPreviewHref(SeededWorkspaceId, useWorkbenchRoute: true)" data-workbench-layout-presets-action="dense-sheet">
-                    <span>Dense sheet</span>
+                    <span>Dense dossier</span>
                     <small>Return to the full runner surface.</small>
                 </a>
                 <a role="listitem" href="@BuildWorkbenchLaneHref(BuildTabId)" data-workbench-layout-presets-action="split-review">
@@ -872,7 +1021,7 @@
                 <strong>Keep warnings, output events, and recovery cues visible.</strong>
                 <p>Browser users need the same confidence as desktop users: recent saves, validation warnings, output handoffs, hosted status, help, and support escapes should stay easy to scan.</p>
             </div>
-            <div class="browser-workbench-activity-feed-actions" role="list" aria-label="Recent workbench activity shortcuts">
+            <div class="browser-workbench-activity-feed-actions" role="list" aria-label="Recent Chummer Online activity shortcuts">
                 <a role="listitem" href="@BuildWorkbenchCommandHref(SaveCharacterAsCommand)" data-workbench-activity-feed-action="save-event">
                     <span>Save event</span>
                     <small>Review the browser-safe dossier output handoff.</small>
@@ -909,7 +1058,7 @@
             <div class="browser-workbench-keyboard-shortcuts-actions" role="list" aria-label="Keyboard shortcut and help affordances">
                 <a role="listitem" href="@BuildPreviewHref(command: GlobalSettingsCommand, useWorkbenchRoute: true)" data-workbench-keyboard-shortcuts-action="command-help">
                     <span>Command help</span>
-                    <small>Review available workbench commands.</small>
+                    <small>Review available Chummer Online commands.</small>
                 </a>
                 <a role="listitem" href="@BuildWorkbenchCommandHref(SaveCharacterAsCommand)" data-workbench-keyboard-shortcuts-action="save-output">
                     <span>Dossier save/output</span>
@@ -955,7 +1104,7 @@
                 </a>
                 <a role="listitem" href="@BuildWorkbenchLaneHref(ProfileTabId)" data-workbench-resource-meters-action="limits">
                     <span>Limits</span>
-                    <small>Keep derived sheet totals nearby.</small>
+                    <small>Keep derived dossier totals nearby.</small>
                 </a>
                 <a role="listitem" href="@BuildWorkbenchLaneHref(CombatTabId)" data-workbench-resource-meters-action="wounds">
                     <span>Wounds</span>
@@ -972,7 +1121,7 @@
             <div class="browser-workbench-tree-tools-copy">
                 <span class="browser-preview-status-label">Tree tools</span>
                 <strong>Keep dense tree and list actions visible.</strong>
-                <p>Chummer's dense lists use expandable trees, ordered lists, pinned selections, sortable panes, and help guidance; the web client should keep those tools in reach.</p>
+                <p>Chummer's dense lists use expandable trees, ordered lists, pinned selections, sortable panes, and help guidance; Chummer Online should keep those tools in reach.</p>
             </div>
             <div class="browser-workbench-tree-tools-actions" role="list" aria-label="Tree and list action shortcuts">
                 <a role="listitem" href="@BuildWorkbenchLaneHref(GearTabId)" data-workbench-tree-tools-action="expand">
@@ -981,7 +1130,7 @@
                 </a>
                 <a role="listitem" href="@BuildWorkbenchLaneHref(ProfileTabId)" data-workbench-tree-tools-action="collapse">
                     <span>Collapse</span>
-                    <small>Return to a compact sheet view.</small>
+                    <small>Return to a compact dossier view.</small>
                 </a>
                 <a role="listitem" href="@BuildWorkbenchLaneHref(SkillsTabId)" data-workbench-tree-tools-action="sort">
                     <span>Sort</span>
@@ -1010,7 +1159,7 @@
             <div class="browser-workbench-save-session-copy">
                 <span class="browser-preview-status-label">Save state</span>
                 <strong>Make browser dossier saves feel like desktop Chummer.</strong>
-                <p>Desktop users expect explicit dossier save state, Save Dossier As handoff, autosave cues, dirty-state warnings, recovery, help, and export paths; the browser client keeps those lifecycle actions in reach.</p>
+                <p>Desktop users expect explicit dossier save state, Save Dossier As handoff, autosave cues, dirty-state warnings, recovery, help, and export paths; Chummer Online keeps those lifecycle actions in reach.</p>
             </div>
             <div class="browser-workbench-save-session-actions" role="list" aria-label="Save and session lifecycle shortcuts">
                 <a role="listitem" href="@BuildPreviewHref(SeededWorkspaceId, command: SaveCharacterCommand)" data-workbench-save-session-action="save">
@@ -1048,7 +1197,7 @@
             <div class="browser-workbench-output-handoff-copy">
                 <span class="browser-preview-status-label">Output handoff</span>
                 <strong>Keep print, packet, and share paths explicit.</strong>
-                <p>Chummer makes output generation a visible workflow; the browser client should keep PDF packets, printable dossiers, summaries, share links, audit queues, help, and download bundles near the active dossier.</p>
+                <p>Chummer makes output generation a visible workflow; Chummer Online should keep PDF packets, printable dossiers, summaries, share links, audit queues, help, and download bundles near the active dossier.</p>
             </div>
             <div class="browser-workbench-output-handoff-actions" role="list" aria-label="Output and export handoff shortcuts">
                 <a role="listitem" href="@BuildPreviewHref(SeededWorkspaceId, command: ExportCharacterCommand)" data-workbench-output-handoff-action="pdf_packet">
@@ -1056,7 +1205,7 @@
                     <small>Prepare a table-ready dossier packet.</small>
                 </a>
                 <a role="listitem" href="@BuildPreviewHref(SeededWorkspaceId, command: PrintCharacterCommand)" data-workbench-output-handoff-action="print_sheet">
-                    <span>Print sheet</span>
+                    <span>Print dossier</span>
                     <small>Reserve a direct browser print path.</small>
                 </a>
                 <a role="listitem" href="@BuildWorkbenchLaneHref(ProfileTabId)" data-workbench-output-handoff-action="html_summary">
@@ -1086,7 +1235,7 @@
             <div class="browser-workbench-validation-queue-copy">
                 <span class="browser-preview-status-label">Build readiness</span>
                 <strong>Keep validation pressure visible before output.</strong>
-                <p>Chummer keeps rule issues, missing fields, cost checks, availability limits, final build gates, help, and next-fix navigation close to the dossier; the browser client should make that readiness posture explicit.</p>
+                <p>Chummer keeps rule issues, missing fields, cost checks, availability limits, final build gates, help, and next-fix navigation close to the dossier; Chummer Online should make that readiness posture explicit.</p>
             </div>
             <div class="browser-workbench-validation-queue-actions" role="list" aria-label="Validation and build readiness shortcuts">
                 <a role="listitem" href="@BuildPreviewHref(SeededWorkspaceId, command: ValidateCharacterCommand)" data-workbench-validation-queue-action="rule_issues">
@@ -1124,7 +1273,7 @@
             <div class="browser-workbench-history-undo-copy">
                 <span class="browser-preview-status-label">History</span>
                 <strong>Make rollback and recovery visible.</strong>
-                <p>Desktop users expect undo, redo, snapshots, comparison, restore, conflict review, help, and recent-change context; the browser client should reserve those recovery affordances near active editing.</p>
+                <p>Desktop users expect undo, redo, snapshots, comparison, restore, conflict review, help, and recent-change context; Chummer Online should reserve those recovery affordances near active editing.</p>
             </div>
             <div class="browser-workbench-history-undo-actions" role="list" aria-label="History and undo shortcuts">
                 <a role="listitem" href="@BuildPreviewHref(SeededWorkspaceId, command: UndoChangeCommand)" data-workbench-history-undo-action="undo">
@@ -1200,7 +1349,7 @@
             <div class="browser-workbench-data-packs-copy">
                 <span class="browser-preview-status-label">Rules data</span>
                 <strong>Expose sourcebook and data-pack posture.</strong>
-                <p>Desktop Chummer depends on visible source selection, errata, custom data, update packs, validation scope, and data-folder context; the browser client should keep those rule-data decisions near the active dossier.</p>
+                <p>Desktop Chummer depends on visible source selection, errata, custom data, update packs, validation scope, and data-folder context; Chummer Online should keep those rule-data decisions near the active dossier.</p>
             </div>
             <div class="browser-workbench-data-packs-actions" role="list" aria-label="Rules and data-pack shortcuts">
                 <a role="listitem" href="@BuildPreviewHref(SeededWorkspaceId, command: OpenSourcebooksCommand)" data-workbench-data-packs-action="sourcebooks">
@@ -1238,7 +1387,7 @@
             <div class="browser-workbench-character-library-copy">
                 <span class="browser-preview-status-label">Roster</span>
                 <strong>Keep Character Roster workflow visible.</strong>
-                <p>Desktop Chummer starts from open, recent, pinned, cloned, archived, imported, and compared dossiers; the browser client should keep that roster posture close to the active dossier.</p>
+                <p>Desktop Chummer starts from open, recent, pinned, cloned, archived, imported, and compared dossiers; Chummer Online should keep that roster posture close to the active dossier.</p>
             </div>
             <div class="browser-workbench-character-library-actions" role="list" aria-label="Character Roster shortcuts">
                 <a role="listitem" href="@BuildPreviewHref(SeededWorkspaceId, command: OpenCharacterCommand)" data-workbench-character-library-action="open">
@@ -1314,7 +1463,7 @@
             <div class="browser-workbench-observability-privacy-copy">
                 <span class="browser-preview-status-label">Observability</span>
                 <strong>Make analytics privacy explicit for Chummer Run.</strong>
-                <p>The hosted web client can be Rybbit-ready without hiding consent, route events, error traces, privacy logs, self-host toggles, or operator telemetry posture from users and admins.</p>
+                <p>Hosted Chummer Online can be Rybbit-ready without hiding consent, route events, error traces, privacy logs, self-host toggles, or operator telemetry posture from users and admins.</p>
             </div>
             <div class="browser-workbench-observability-privacy-actions" role="list" aria-label="Observability and privacy shortcuts">
                 <a role="listitem" href="@BuildPreviewHref(SeededWorkspaceId, command: AnalyticsConsentCommand)" data-workbench-observability-privacy-action="consent">
@@ -1331,7 +1480,7 @@
                 </a>
                 <a role="listitem" href="@BuildPreviewHref(SeededWorkspaceId, command: ErrorTraceReviewCommand)" data-workbench-observability-privacy-action="error_traces">
                     <span>Error traces</span>
-                    <small>Separate diagnostics from personal sheet data.</small>
+                    <small>Separate diagnostics from personal dossier data.</small>
                 </a>
                 <a role="listitem" href="@BuildPreviewHref(SeededWorkspaceId, command: PrivacyLogCommand)" data-workbench-observability-privacy-action="privacy_log">
                     <span>Privacy log</span>
@@ -1352,7 +1501,7 @@
             <div class="browser-workbench-first-run-copy">
                 <span class="browser-preview-status-label">First run</span>
                 <strong>Make web setup feel intentional.</strong>
-                <p>A polished browser client should help users start fresh, import desktop files, try a sample runner, restore a session, configure Docker self-hosting, and open docs without hunting through menus.</p>
+                <p>Chummer Online should help users start fresh, import desktop files, try a sample runner, restore a session, configure Docker self-hosting, and open docs without hunting through menus.</p>
             </div>
             <div class="browser-workbench-first-run-actions" role="list" aria-label="First-run onboarding shortcuts">
                 <a role="listitem" href="@BuildPreviewHref(SeededWorkspaceId, command: StartNewRunnerCommand)" data-workbench-first-run-action="new_runner">
@@ -1377,7 +1526,7 @@
                 </a>
                 <a role="listitem" href="@BuildPreviewHref(SeededWorkspaceId, command: OpenWebDocsCommand)" data-workbench-first-run-action="docs">
                     <span>Docs</span>
-                    <small>Link web-client help and parity notes.</small>
+                    <small>Link Chummer Online help and parity notes.</small>
                 </a>
                 <a role="listitem" href="@HelpHref" data-workbench-first-run-action="help">
                     <span>Help</span>
@@ -1389,7 +1538,7 @@
         <section class="browser-workbench-pwa-install" aria-label="Browser-client PWA install and update lane" data-workbench-pwa-install="strip">
             <div class="browser-workbench-pwa-install-copy">
                 <span class="browser-preview-status-label">App install</span>
-                <strong>Make the browser client feel installable.</strong>
+                <strong>Make Chummer Online feel installable.</strong>
                 <p>Keep install, offline cache, updates, permissions, release channel, and reset controls close to the active dossier.</p>
             </div>
             <div class="browser-workbench-pwa-install-actions" role="list" aria-label="PWA install and update shortcuts">
@@ -1399,7 +1548,7 @@
                 </a>
                 <a role="listitem" href="@BuildPreviewHref(SeededWorkspaceId, command: OfflineCacheStatusCommand)" data-workbench-pwa-install-action="offline_cache">
                     <span>Offline cache</span>
-                    <small>Show cached workbench readiness.</small>
+                    <small>Show cached Chummer Online readiness.</small>
                 </a>
                 <a role="listitem" href="@BuildPreviewHref(SeededWorkspaceId, command: ApplyWebUpdateCommand)" data-workbench-pwa-install-action="update_available">
                     <span>Update</span>
@@ -1428,7 +1577,7 @@
             <div class="browser-workbench-docker-operator-copy">
                 <span class="browser-preview-status-label">Self-host</span>
                 <strong>Keep Docker operations visible.</strong>
-                <p>Self-hosted users need container health, environment, volume mounts, backups, image updates, logs, and support bundles close to the browser client so operating Chummer does not require guessing behind the container.</p>
+                <p>Self-hosted users need container health, environment, volume mounts, backups, image updates, logs, and support bundles close to Chummer Online so operating Chummer does not require guessing behind the container.</p>
             </div>
             <div class="browser-workbench-docker-operator-actions" role="list" aria-label="Docker self-host operator shortcuts">
                 <a role="listitem" href="@BuildPreviewHref(SeededWorkspaceId, command: DockerContainerHealthCommand)" data-workbench-docker-operator-action="container_health">
@@ -1453,7 +1602,7 @@
                 </a>
                 <a role="listitem" href="@BuildPreviewHref(SeededWorkspaceId, command: DockerSupportBundleCommand)" data-workbench-docker-operator-action="support_bundle">
                     <span>Support bundle</span>
-                    <small>Package logs without exposing sheet data.</small>
+                    <small>Package logs without exposing dossier data.</small>
                 </a>
                 <a role="listitem" href="@DocsHref" data-workbench-docker-operator-action="help">
                     <span>Help</span>
@@ -1551,7 +1700,7 @@
                 </a>
                 <a role="listitem" href="@BuildPreviewHref(SeededWorkspaceId, command: AdjustWorkspaceZoomCommand)" data-workbench-touch-mobile-action="zoom">
                     <span>Zoom</span>
-                    <small>Expose sheet scale without browser hunting.</small>
+                    <small>Expose dossier scale without browser hunting.</small>
                 </a>
                 <a role="listitem" href="@BuildPreviewHref(SeededWorkspaceId, command: DockMobilePanelsCommand)" data-workbench-touch-mobile-action="panel_dock">
                     <span>Panel dock</span>
@@ -1775,7 +1924,7 @@
             <div class="browser-workbench-windowing-panes-actions" role="list" aria-label="Windowing and pane management shortcuts">
                 <a role="listitem" href="@BuildPreviewHref(SeededWorkspaceId, command: SplitWorkbenchViewCommand)" data-workbench-windowing-panes-action="split_view">
                     <span>Split view</span>
-                    <small>Place sheet and detail context side by side.</small>
+                    <small>Place dossier and detail context side by side.</small>
                 </a>
                 <a role="listitem" href="@BuildPreviewHref(SeededWorkspaceId, command: PopoutDetailPaneCommand)" data-workbench-windowing-panes-action="popout">
                     <span>Pop-out</span>
@@ -2479,14 +2628,14 @@
     private string RouteGuidanceLabel => IsAppRoute ? "Chummer Online route guidance" : IsWorkbenchRoute ? "Compatibility route guidance" : "Preview tools guidance";
     private string RouteKindLabel => IsAppRoute ? "Chummer Online" : IsWorkbenchRoute ? "Compatibility route" : "Preview tools";
     private string RouteGuidanceTitle => IsAppRoute
-        ? "Use this route as the browser client entrypoint"
+        ? "Use this route as the Chummer Online entrypoint"
         : IsWorkbenchRoute
             ? "Use this route for saved compatibility links"
             : "Use this route for preview and result-state tools";
     private string RouteGuidanceSummary => IsAppRoute
         ? "The shell below is the user-facing Chummer Online route: open, organize, resume, build, and export runners without proof-route language in the main path."
         : IsWorkbenchRoute
-            ? "The shell below keeps older compatibility bookmarks and shared links working while the main browser client remains Chummer Online at /blazor/app."
+            ? "The shell below keeps older compatibility bookmarks and shared links working while the main Chummer Online route remains available at /blazor/app."
             : "The shell below keeps preview tools, startup deep links, and browser result-state checks separate from the user-facing Chummer Online route.";
     private string TaskDockTitle => IsAppRoute
         ? "Keep the common Chummer jobs one click from the web app."
@@ -2500,41 +2649,41 @@
     private string HostedRouteLabel => IsAppRoute ? HostedAppRoute : HostedWorkbenchRoute;
     private string HostingTitle => IsAppRoute
         ? "Chummer Online, hosted or self-hosted."
-        : "Same workbench, hosted or self-hosted.";
+        : "Same Chummer Online app, hosted or self-hosted.";
     private string CommandPaletteSummary => IsAppRoute
         ? "Keep common Chummer actions discoverable with keyboard-style hints while every command remains a reload-safe Chummer Online link."
-        : "Keep common Chummer actions discoverable with keyboard-style hints while every command remains a reload-safe workbench link.";
+        : "Keep common Chummer actions discoverable with keyboard-style hints while every command remains a reload-safe Chummer Online link.";
     private string WorkflowLedgerLabel => IsAppRoute ? "Chummer Online" : IsWorkbenchRoute ? "Compatibility route" : "Preview tools";
     private string RulesDataSummary => IsAppRoute
         ? "Open ruleset, source, XML, or language tools without leaving Chummer Online."
-        : "Open ruleset, source, XML, or language tools without leaving the browser client.";
+        : "Open ruleset, source, XML, or language tools without leaving Chummer Online.";
     private string SettingsSummary => IsAppRoute
-        ? "Open app settings, character defaults, ruleset choice, update status, or help from Chummer Online."
-        : "Open app settings, character defaults, ruleset choice, update status, or help from the browser client.";
+        ? "Open app settings, runner defaults, ruleset choice, update status, or help from Chummer Online."
+        : "Open app settings, runner defaults, ruleset choice, update status, or help from Chummer Online.";
     private string DiagnosticsSummary => IsAppRoute
         ? "Open runtime details, About, health, release status, or preview tools from Chummer Online."
-        : "Open runtime details, About, health, release status, or preview tools from the browser client.";
+        : "Open runtime details, About, health, release status, or preview tools from Chummer Online.";
     private string ConnectedRuntimeSummaryText => IsAppRoute
         ? "Play, session, coach, assistant, and status links stay close without changing the Chummer Online route."
-        : "Play, session, coach, assistant, and status links stay close without changing the browser client.";
+        : "Play, session, coach, assistant, and status links stay close without changing Chummer Online.";
     private string NewCharacterEntrySummary => IsAppRoute
         ? "Launch the shared new-character flow directly from Chummer Online."
-        : "Launch the shared new-character flow directly from the browser client route.";
+        : "Launch the shared new-character flow directly from Chummer Online route.";
     private string PortalSupportSummary => IsAppRoute
-        ? "Route browser-client issues through the portal support surface without breaking the Chummer Online product shape."
-        : "Route browser-client issues through the portal support surface without breaking the Chummer Online product shape.";
+        ? "Route Chummer Online issues through the portal support surface without breaking the Chummer Online product shape."
+        : "Route Chummer Online issues through the portal support surface without breaking the Chummer Online product shape.";
     private string NewCharacterProofSummary => IsAppRoute
         ? "Deep-links Chummer Online into the same shared new-character command so startup workflow proof does not depend on manual clicking."
-        : "Deep-links the browser client into the same shared new-character command so startup workflow proof does not depend on manual clicking.";
+        : "Deep-links Chummer Online into the same shared new-character command so startup workflow proof does not depend on manual clicking.";
     private string ImportProofSummary => IsAppRoute
         ? "Deep-links Chummer Online into the shared import dialog so existing-dossier intake is proven from the same route model as desktop startup commands."
-        : "Deep-links the browser client into the shared import dialog so existing-dossier intake is proven from the same route model as desktop startup commands.";
+        : "Deep-links Chummer Online into the shared import dialog so existing-dossier intake is proven from the same route model as desktop startup commands.";
     private string OriginDossierSummary => IsAppRoute
         ? "Deep-links Chummer Online into the same origin-dossier wizard used by the shared startup flow."
-        : "Deep-links the browser client into the same origin-dossier wizard used by the shared startup flow.";
+        : "Deep-links Chummer Online into the same origin-dossier wizard used by the shared startup flow.";
     private string RouteOpenTitle => IsAppRoute
         ? "Open Chummer Online"
-        : "Open the browser-facing Chummer workbench";
+        : "Open Chummer Online";
     private string StartupCommandLabel => string.IsNullOrWhiteSpace(Command)
         ? "none"
         : Command;
@@ -2849,14 +2998,14 @@
         ? "Continue Seeded Dossier"
         : $"Continue {PrimaryRecentWorkspace.ShortLabel} on contacts";
     private string ContinueRecentDescription => PrimaryRecentWorkspace is null
-        ? "Open a live seeded continuation tab so the browser client can behave like an already-opened desktop session."
+        ? "Open a live seeded continuation tab so Chummer Online can behave like an already-opened desktop session."
         : "Open the most recent restored runner directly on its contacts lane so browser continuity follows shared session state instead of a seeded-only demo.";
     private string BuildLabLaneHref => BuildWorkbenchLaneHref(BuildTabId);
     private string BuildLabLaneLabel => PrimaryRecentWorkspace is null
         ? "Open Seeded Build Lab"
         : $"Continue {PrimaryRecentWorkspace.ShortLabel} in Build Lab";
     private string BuildLabLaneDescription => PrimaryRecentWorkspace is null
-        ? "Jump into the seeded SR5 runner workbench when you want a real browser session immediately."
+        ? "Jump into the seeded SR5 runner dossier when you want a real browser session immediately."
         : "Open the most recent restored runner on its build lane so browser continuation starts from the live shared session instead of a seeded-only runner.";
     private string ProfileLaneHref => BuildWorkbenchLaneHref(ProfileTabId);
     private string ProfileLaneLabel => BuildWorkbenchLaneLabel("Open Profile lane", "profile");
@@ -2871,7 +3020,7 @@
     private string GearLaneHref => BuildWorkbenchLaneHref(GearTabId);
     private string GearLaneLabel => BuildWorkbenchLaneLabel("Open Gear lane", "gear");
     private string GearLaneDescription => PrimaryRecentWorkspace is null
-        ? "Jump into the seeded loadout lane when you want equipment, carry choices, and gear context without restarting the browser client."
+        ? "Jump into the seeded loadout lane when you want equipment, carry choices, and gear context without restarting Chummer Online."
         : "Open the most recent restored runner on its gear lane so equipment and carry context come from shared session state instead of a seeded-only runner.";
     private string AdvancedLaneHref => BuildWorkbenchLaneHref(MatrixTabId);
     private string AdvancedLaneLabel => BuildWorkbenchLaneLabel("Open Advanced lane", "advanced");
@@ -2891,7 +3040,7 @@
     private string PrintFlowHref => BuildWorkbenchCommandHref(PrintCharacterCommand);
     private string PrintFlowLabel => BuildWorkbenchCommandLabel("Open Print flow", "print");
     private string PrintFlowDescription => PrimaryRecentWorkspace is null
-        ? "Open the seeded print result path directly from the browser client when you need a browser-safe print continuation."
+        ? "Open the seeded print result path directly from Chummer Online when you need a browser-safe print continuation."
         : "Open the print result path for the most recent restored runner so browser print continuation follows the live session.";
     private bool IsAnyConnectedRuntimeLaneConfigured
         => IsConfigured(Configuration[SessionProxyConfigKey])

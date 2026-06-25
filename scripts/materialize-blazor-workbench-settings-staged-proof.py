@@ -23,7 +23,7 @@ CHECKS = [
             "Browser-client settings",
             "data-workbench-settings=\"strip\"",
             "Change setup without leaving the page.",
-            "Open app settings, character defaults, ruleset choice, update status",
+            "Open app settings, runner defaults, ruleset choice, update status",
             "data-workbench-settings-action=\"global-settings\"",
             "data-workbench-settings-action=\"character-settings\"",
             "data-workbench-settings-action=\"ruleset-settings\"",

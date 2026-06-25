@@ -4,7 +4,7 @@
 
 This source-staged proof keeps selection-style context actions visible on the user-facing Chummer Online route and /blazor/workbench compatibility route.
 
-The browser client should not depend on hidden right-click behavior for common Chummer actions. Add, edit, remove, duplicate, source lookup, help, and recovery lanes should remain visible for mouse, touch, and keyboard users.
+Chummer Online should not depend on hidden right-click behavior for common Chummer actions. Add, edit, remove, duplicate, source lookup, help, and recovery lanes should remain visible for mouse, touch, and keyboard users.
 
 ## Source-Staged Scope
 

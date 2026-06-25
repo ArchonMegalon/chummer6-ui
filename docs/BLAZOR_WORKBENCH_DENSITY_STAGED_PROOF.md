@@ -4,7 +4,7 @@
 
 This source-staged proof keeps the Chummer Online and /blazor/workbench compatibility route density posture tied to the browser-client parity goal.
 
-Chummer is a dense desktop application. The browser client should start from compact desktop ergonomics, then make comfortable and mobile-safe postures visible without implying a different workflow model.
+Chummer is a dense desktop application. Chummer Online should start from compact desktop ergonomics, then make comfortable and mobile-safe postures visible without implying a different workflow model.
 
 ## Source-Staged Scope
 

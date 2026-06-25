@@ -4,7 +4,7 @@
 
 This source-staged proof keeps privacy-aware observability and analytics affordances visible on the user-facing Chummer Online route and /blazor/workbench compatibility route.
 
-The browser client should make Chummer Run analytics posture explicit by surfacing consent, Rybbit status, route events, error traces, privacy logs, self-host telemetry controls, and help near the active character workspace.
+Chummer Online should make Chummer Run analytics posture explicit by surfacing consent, Rybbit status, route events, error traces, privacy logs, self-host telemetry controls, and help near the active dossier.
 
 ## Source-Staged Scope
 

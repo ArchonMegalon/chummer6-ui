@@ -160,7 +160,7 @@ const checks = [
       && text.includes('data-openapi-chummer-home-route="true"')
       && text.includes('data-openapi-blazor-entry-route="true"')
       && text.includes('Chummer Online')
-      && text.includes('Chummer overview')
+      && text.includes('Chummer Online overview')
       && text.includes('Stable browser entry')
       && text.includes('endpoint-summary')
       && text.includes('escapeHtml')
@@ -264,7 +264,7 @@ const checks = [
       && text.includes('/downloads/install/blazor-desktop-linux-x64-installer')
       && text.includes('role="status"')
       && text.includes('aria-live="polite"')
-      && text.includes('Open Chummer Online instead')
+      && text.includes('Explore Chummer Online instead')
       && text.includes('data-install-state-action="open-browser-app"')
   },
   {
@@ -387,7 +387,7 @@ const checks = [
     url: `${baseUrl}/blazor/home`,
     assert: (text, response) =>
       /\/blazor\/home\/?$/.test(response.url)
-      && text.includes('Chummer Online, the browser client for real runner work.')
+      && text.includes('Chummer Online for real runner work.')
       && text.includes('Explore Chummer Online')
       && text.includes('data-home-hero-action="explore-chummer-online"')
       && text.includes('href="app?command=character_roster"')

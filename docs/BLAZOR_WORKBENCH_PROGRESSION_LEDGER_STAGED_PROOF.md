@@ -4,7 +4,7 @@
 
 This source-staged proof keeps advancement accounting affordances visible on the user-facing Chummer Online route and /blazor/workbench compatibility route.
 
-The browser client should expose karma spends, nuyen ledger, purchase queue, reputation, carryover, audit trail, and same-origin help posture so progression stays reviewable before mutating character state.
+Chummer Online should expose karma spends, nuyen ledger, purchase queue, reputation, carryover, audit trail, and same-origin help posture so progression stays reviewable before mutating runner state.
 
 ## Source-Staged Scope
 

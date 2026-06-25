@@ -395,12 +395,12 @@ static string BuildPortalHomeHtml(HttpContext context, PortalOptions options)
   <section class="hero">
     <p class="meta">Self-hosted Chummer edge</p>
     <h1>Explore Chummer Online, downloads, and support from one self-hosted edge.</h1>
-    <p class="meta">Start in the character roster, continue into the browser client, and keep owner-aware portal routing in one place when self-hosting is configured.</p>
+    <p class="meta">Start in the Character Roster, continue into Chummer Online, and keep owner-aware portal routing in one place when self-hosting is configured.</p>
     <a class="cta" href="{{appRosterUrl}}" data-portal-home-action="explore-chummer-online">Explore Chummer Online</a>
     <nav class="route-pills" aria-label="Chummer browser routes">
-      <a href="{{appRosterUrl}}" data-portal-home-route="chummer-app-roster">Open character roster</a>
+      <a href="{{appRosterUrl}}" data-portal-home-route="chummer-app-roster">Open Character Roster</a>
       <a href="{{appUrl}}" data-portal-home-route="chummer-app">Open Chummer Online</a>
-      <a href="{{appHomeUrl}}" data-portal-home-route="chummer-home">Open Chummer overview</a>
+      <a href="{{appHomeUrl}}" data-portal-home-route="chummer-home">Open Chummer Online overview</a>
       <a href="/downloads/" data-portal-home-route="downloads">Get desktop client</a>
     </nav>
   </section>
@@ -417,7 +417,7 @@ static string BuildPortalHomeHtml(HttpContext context, PortalOptions options)
       <h2>Browser client</h2>
       <p><a href="{{appRosterUrl}}">Explore Chummer Online</a></p>
       <p><a href="{{appUrl}}">Open Chummer Online</a></p>
-      <p><a href="{{appHomeUrl}}">Open product overview</a></p>
+      <p><a href="{{appHomeUrl}}">Open Chummer Online overview</a></p>
       <p><a href="{{options.BlazorUrl}}">/blazor/</a></p>
       <p><a href="{{options.HubUrl}}">/hub/</a></p>
       <p><a href="{{options.AvaloniaUrl}}">/avalonia/</a></p>
@@ -536,10 +536,10 @@ static string BuildDownloadsHtml(HttpContext context, PortalOptions options)
       <div>
         <p data-download-kicker="chummer-release-shelf">Chummer release shelf</p>
         <h1 id="desktop-downloads-title">Desktop Downloads</h1>
-        <p>Install native Chummer when you need desktop file-system behavior, or continue in Chummer Online when the browser client is the right lane.</p>
+        <p>Install native Chummer when you need desktop file-system behavior, or continue in Chummer Online when Chummer Online is the right lane.</p>
       </div>
       <nav class="download-actions" aria-label="Downloads handoff actions">
-        <a class="primary" href="{{appRosterUrl}}" data-download-action="open-chummer-app">Open Chummer Online</a>
+        <a class="primary" href="{{appRosterUrl}}" data-download-action="open-chummer-app">Explore Chummer Online</a>
         <a href="/status" data-download-action="open-status">Release status</a>
         <a href="/help" data-download-action="open-help">Help</a>
       </nav>
@@ -592,7 +592,7 @@ static string BuildDownloadsInstallStatePanel(PortalOptions options, string inst
     string nextRouteValue = string.IsNullOrWhiteSpace(nextInstallRoute)
         ? "requested-installer-route"
         : WebUtility.HtmlEncode(nextInstallRoute);
-    return $"""<p class="install-state" data-install-state="proof_required" data-install-next-route="{nextRouteValue}" role="status" aria-live="polite">{routeLabel} is a known compatibility handoff, but installer proof is still required before this route can publish artifact bytes.<br /><a href="{appRosterUrl}" data-install-state-action="open-browser-app">Open Chummer Online instead</a></p>""";
+    return $"""<p class="install-state" data-install-state="proof_required" data-install-next-route="{nextRouteValue}" role="status" aria-live="polite">{routeLabel} is a known compatibility handoff, but installer proof is still required before this route can publish artifact bytes.<br /><a href="{appRosterUrl}" data-install-state-action="open-browser-app">Explore Chummer Online instead</a></p>""";
 }
 
 static IResult ResolveInstallHandoff(string artifactId, PortalOptions options)
@@ -674,7 +674,7 @@ static string BuildContactHtml(PortalOptions options)
       <li data-portal-contact-scenario="account-recovery">Account, owner, or sign-in recovery</li>
       <li data-portal-contact-scenario="browser-app">Chummer Online workflow support</li>
     </ul>
-    <nav class="handoff-actions" aria-label="Contact recovery actions"><a href="{{appRosterUrl}}" data-portal-contact-action="open-chummer-app">Open Chummer Online</a><a href="{{appHomeUrl}}" data-portal-contact-action="open-chummer-home">Open Chummer Online overview</a><a href="/status" data-portal-contact-action="open-status">Open status</a><a href="/downloads/" data-portal-contact-action="open-downloads">Open downloads</a><a href="/help" data-portal-contact-action="open-help">Open help</a><a href="/docs/" data-portal-contact-action="open-docs">Open docs</a></nav>
+    <nav class="handoff-actions" aria-label="Contact recovery actions"><a href="{{appRosterUrl}}" data-portal-contact-action="open-chummer-app">Explore Chummer Online</a><a href="{{appHomeUrl}}" data-portal-contact-action="open-chummer-home">Open Chummer Online overview</a><a href="/status" data-portal-contact-action="open-status">Open status</a><a href="/downloads/" data-portal-contact-action="open-downloads">Open downloads</a><a href="/help" data-portal-contact-action="open-help">Open help</a><a href="/docs/" data-portal-contact-action="open-docs">Open docs</a></nav>
   </section>
 </main>
 </body>
@@ -719,7 +719,7 @@ static string BuildHelpHtml(PortalOptions options)
     <h1 id="portal-help-title">Help</h1>
     <p data-portal-help-context="self-host-first">Use this same-origin guide when Chummer Online, the installer shelf, account owner, or support path needs recovery.</p>
     <nav class="help-grid" aria-label="Help recovery actions">
-      <a class="help-card" href="{{appRosterUrl}}" data-portal-help-action="open-chummer-app">Open Chummer Online</a>
+      <a class="help-card" href="{{appRosterUrl}}" data-portal-help-action="open-chummer-app">Explore Chummer Online</a>
       <a class="help-card" href="{{appHomeUrl}}" data-portal-help-action="open-chummer-home">Open Chummer Online overview</a>
       <a class="help-card" href="{{downloadsUrl}}" data-portal-help-action="open-downloads">Open downloads and installers</a>
       <a class="help-card" href="/status" data-portal-help-action="open-status">Open release status</a>
@@ -784,7 +784,7 @@ static string BuildStatusHtml(PortalOptions options)
       <div class="status-card" data-portal-status-install-route-count="{{summary.InstallRoutes.Count}}">Install handoff routes: <code>{{summary.InstallRoutes.Count}}</code></div>
     </div>
     <p data-portal-status-boundary="source-manifest-backed">This status page is backed by the local releases.json manifest. It does not claim installer availability unless artifact rows are present.</p>
-    <nav class="handoff-actions" aria-label="Status recovery actions"><a href="{{downloadsUrl}}" data-portal-status-action="open-downloads">Open downloads</a><a href="{{appRosterUrl}}" data-portal-status-action="open-chummer-app">Open Chummer Online</a><a href="{{appHomeUrl}}" data-portal-status-action="open-chummer-home">Open Chummer Online overview</a><a href="/help" data-portal-status-action="open-help">Open help</a><a href="{{docsUrl}}" data-portal-status-action="open-docs">Open docs</a></nav>
+    <nav class="handoff-actions" aria-label="Status recovery actions"><a href="{{downloadsUrl}}" data-portal-status-action="open-downloads">Open downloads</a><a href="{{appRosterUrl}}" data-portal-status-action="open-chummer-app">Explore Chummer Online</a><a href="{{appHomeUrl}}" data-portal-status-action="open-chummer-home">Open Chummer Online overview</a><a href="/help" data-portal-status-action="open-help">Open help</a><a href="{{docsUrl}}" data-portal-status-action="open-docs">Open docs</a></nav>
   </section>
 </main>
 </body>
@@ -846,7 +846,7 @@ static string BuildDocsHtml(PortalOptions options)
     <p class="meta">This portal serves a local API contract snapshot without external CDNs. The explorer reads <code>/openapi/v1.json</code> from the same origin.</p>
     <p id="docs-shortcuts-description" class="meta" data-docs-shortcuts-description>Use these same-origin shortcuts to recover into Chummer Online, downloads, status, help, support, or the raw local contract.</p>
     <nav class="doc-actions" aria-label="Self-host operator shortcuts" aria-describedby="docs-shortcuts-description" data-docs-shortcuts="operator-recovery">
-      <a href="{{appRosterUrl}}" data-docs-action="open-chummer-app">Open Chummer Online</a>
+      <a href="{{appRosterUrl}}" data-docs-action="open-chummer-app">Explore Chummer Online</a>
       <a href="{{appHomeUrl}}" data-docs-action="open-chummer-home">Open Chummer Online overview</a>
       <a href="/downloads/" data-docs-action="open-downloads">Open downloads</a>
       <a href="/status" data-docs-action="open-status">Open status</a>
@@ -907,7 +907,7 @@ async function bootDocs() {
       const routeFamily = route === '{{PortalRoutes.PublicApp}}' || route === '{{PortalRoutes.BlazorApp}}'
         ? 'Chummer Online'
         : route === '{{PortalRoutes.BlazorHome}}'
-          ? 'Chummer overview'
+          ? 'Chummer Online overview'
           : route === '/blazor/'
             ? 'Stable browser entry'
             : isDownloadsRoute
@@ -1004,14 +1004,14 @@ static object BuildOpenApiDocument()
             {
                 get = new
                 {
-                    summary = "Open the user-facing Chummer Online browser client"
+                    summary = "Open the user-facing Chummer Online app"
                 }
             },
             [PortalRoutes.PublicApp] = new
             {
                 get = new
                 {
-                    summary = "Open the clean public Chummer Online route alias"
+                    summary = "Open Chummer Online through the clean public /app route"
                 }
             },
             [PortalRoutes.BlazorHome] = new
@@ -1053,7 +1053,7 @@ static object BuildOpenApiDocument()
             {
                 get = new
                 {
-                    summary = "Read Chummer Online browser-client health"
+                    summary = "Read Chummer Online app health"
                 }
             },
             ["/hub/health"] = new

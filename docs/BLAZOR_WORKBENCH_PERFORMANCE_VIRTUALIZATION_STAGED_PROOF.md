@@ -4,7 +4,7 @@
 
 This source-staged proof keeps large-dossier performance and virtualization affordances visible on the user-facing Chummer Online route and /blazor/workbench compatibility route.
 
-The browser client should expose lazy sections, virtual lists, render budget, memory posture, degraded mode, profiler cues, and same-origin help so dense Chummer sheets can scale toward desktop-class workloads.
+Chummer Online should expose lazy sections, virtual lists, render budget, memory posture, degraded mode, profiler cues, and same-origin help so dense Chummer dossiers can scale toward desktop-class workloads.
 
 ## Source-Staged Scope
 

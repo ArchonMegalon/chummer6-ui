@@ -43,7 +43,7 @@ internal static class StarterWorkspaceXmlFactory
         XDocument document = new(
             new XElement(
                 "character",
-                new XElement("name", string.IsNullOrWhiteSpace(name) ? "New Character" : name.Trim()),
+                new XElement("name", string.IsNullOrWhiteSpace(name) ? "New runner" : name.Trim()),
                 new XElement("alias", string.IsNullOrWhiteSpace(alias) ? "Runner" : alias.Trim()),
                 new XElement("playername", "Desktop User"),
                 new XElement("metatype", metatype),

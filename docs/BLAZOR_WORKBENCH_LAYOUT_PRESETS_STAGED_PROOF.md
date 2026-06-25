@@ -4,7 +4,7 @@
 
 This source-staged proof keeps browser-safe layout mode affordances visible on the user-facing Chummer Online route and /blazor/workbench compatibility route.
 
-The browser client should expose dense dossier, split review, output, mobile-safe, focus-pane, and help modes as intentional client states rather than accidental responsive behavior.
+Chummer Online should expose dense dossier, split review, output, mobile-safe, focus-pane, and help modes as intentional client states rather than accidental responsive behavior.
 
 ## Source-Staged Scope
 

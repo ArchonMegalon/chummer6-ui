@@ -4,7 +4,7 @@
 
 This source-staged proof keeps validation and build-readiness affordances visible on the user-facing Chummer Online route and /blazor/workbench compatibility route.
 
-The browser client should preserve Chummer's expectation that rule issues, missing required fields, cost checks, availability limits, final build gates, help, and next-fix navigation stay close to the active dossier.
+Chummer Online should preserve Chummer's expectation that rule issues, missing required fields, cost checks, availability limits, final build gates, help, and next-fix navigation stay close to the active dossier.
 
 ## Source-Staged Scope
 

@@ -239,7 +239,7 @@ if ! grep -q '"head":"blazor"' <<<"$ui_health"; then
   exit 1
 fi
 
-if ! grep -q "Chummer Online, the browser client for real runner work." <<<"$ui_html"; then
+if ! grep -q "Chummer Online for real runner work." <<<"$ui_html"; then
   echo "Chummer Online marker not found in root page response." >&2
   exit 1
 fi

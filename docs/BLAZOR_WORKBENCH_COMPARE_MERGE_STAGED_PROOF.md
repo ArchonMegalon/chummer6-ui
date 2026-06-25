@@ -4,7 +4,7 @@
 
 This source-staged proof keeps compare and merge affordances visible on the user-facing Chummer Online route and /blazor/workbench compatibility route.
 
-The browser client should expose diff view, conflict choice, source trace, dry run, apply, rollback, and same-origin help posture so imported changes remain reviewable before they affect a runner.
+Chummer Online should expose diff view, conflict choice, source trace, dry run, apply, rollback, and same-origin help posture so imported changes remain reviewable before they affect a runner.
 
 ## Source-Staged Scope
 

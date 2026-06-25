@@ -4,7 +4,7 @@
 
 This source-staged proof keeps Chummer Online and its /blazor/workbench compatibility route connected to portal-owned downloads, status, support, help, and account work routes.
 
-The browser client should behave like another desktop client in the web: a user can continue the core Chummer Online/workbench task, then move to install/update/support/account surfaces through the same product origin when needed.
+Chummer Online should behave like another desktop client in the web: a user can continue the core Chummer Online workflow, then move to install/update/support/account surfaces through the same product origin when needed.
 
 ## Expected Routes
 

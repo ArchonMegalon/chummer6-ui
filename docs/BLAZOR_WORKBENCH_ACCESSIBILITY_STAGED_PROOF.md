@@ -4,7 +4,7 @@
 
 This source-staged proof keeps accessibility posture visible on the user-facing Chummer Online route and /blazor/workbench compatibility route.
 
-The browser client should preserve Chummer's dense desktop workflow without hiding controls, trapping users in dialogs, or requiring animation-dependent context to continue work.
+Chummer Online should preserve Chummer's dense desktop workflow without hiding controls, trapping users in dialogs, or requiring animation-dependent context to continue work.
 
 ## Source-Staged Scope
 

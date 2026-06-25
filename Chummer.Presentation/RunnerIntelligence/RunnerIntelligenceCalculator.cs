@@ -283,10 +283,10 @@ public sealed record RunnerIntelligencePrivacy(
     bool SelfHostLocalOnly,
     IReadOnlyList<string> ExcludedFields)
 {
-    public const string CharacterNamesField = "character names";
+    public const string CharacterNamesField = "runner names";
     public const string AliasesField = "aliases";
-    public const string OwnerIdsField = "owner ids";
-    public const string WorkspaceIdsField = "workspace ids";
+    public const string OwnerIdsField = "owner identifiers";
+    public const string WorkspaceIdsField = "workspace identifiers";
     public const string FileNamesField = "file names";
     public const string DocumentContentsField = "document contents";
     public const string XmlField = "XML";

@@ -70,7 +70,7 @@ Self-host analytics is operator controlled and default-off. The sanitized enviro
 
 Self-host Rybbit analytics remains default-off unless the operator explicitly configures the Rybbit provider and site variables, with session replay and autocapture disabled for Chummer surfaces.
 
-When enabled, the browser adapter is metadata-only. The allowed route/workflow metadata includes route family, command id, tab id, control id, dialog action id, analytics policy markers, and boolean presence fields such as `has_workspace` and `has_dossier`. It must not emit character names, aliases, owner ids, workspace ids, dossier ids, file names, document contents, XML, payloads, hashes, or generated dossier text.
+When enabled, the browser adapter is metadata-only. The allowed route/workflow metadata includes route family, command id, tab id, control id, dialog action id, analytics policy markers, and boolean presence fields such as `has_workspace` and `has_dossier`. It must not emit runner names, aliases, owner identifiers, workspace or dossier identifiers, file names, document contents, XML, payloads, hashes, or generated dossier text.
 
 The Docker profile passes the Rybbit variables into the Blazor service so hosted and self-host deployments use the same browser client code path without requiring analytics for rendering.
 

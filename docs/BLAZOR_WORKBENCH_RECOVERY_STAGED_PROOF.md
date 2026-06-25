@@ -4,7 +4,7 @@
 
 This source-staged proof keeps the Chummer Online and /blazor/workbench compatibility route recovery posture tied to the browser-client parity goal.
 
-Desktop Chummer users expect to continue work after interruption. The browser client should make that same intent visible: continue recent work, reopen Build Lab/profile lanes, recover a restored workspace when present, and fall back to release/status truth without leaving the product shape.
+Desktop Chummer users expect to continue work after interruption. Chummer Online should make that same intent visible: continue recent work, reopen Build Lab/profile lanes, recover a restored workspace when present, and fall back to release/status truth without leaving the product shape.
 
 ## Source-Staged Scope
 

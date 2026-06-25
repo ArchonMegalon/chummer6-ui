@@ -22,7 +22,7 @@ CHECKS = [
         "tokens": [
             "Browser-client search and filter rail",
             "data-workbench-search-filter=\"strip\"",
-            "Keep dense Chummer lists searchable from the browser-client chrome.",
+            "Keep dense Chummer lists searchable from the Chummer Online chrome.",
             "data-workbench-search-filter-action=\"roster-search\"",
             "data-workbench-search-filter-action=\"gear-filter\"",
             "data-workbench-search-filter-action=\"skill-filter\"",

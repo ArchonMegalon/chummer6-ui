@@ -4,7 +4,7 @@
 
 This runbook covers the source-staged Blazor proof set for the user-facing Chummer Online route, the /blazor/workbench compatibility route, and the preview tools/result-state route.
 
-`/app` remains the clean public browser client path, `/blazor/app` remains the hosted app path, `/blazor/workbench` remains the proof-compatible route, and `/blazor/preview` remains the preview tools/result-state route.
+`/app` remains the clean public Chummer Online route, `/blazor/app` remains the hosted app path, `/blazor/workbench` remains the proof-compatible route, and `/blazor/preview` remains the preview tools/result-state route.
 
 The aggregate route lane is `chummer_app_proof_compatible_workbench_preview_tools`.
 
@@ -202,7 +202,7 @@ Expected preflight receipt:
 
 ## Adjacent Portal-Boundary Source Proofs
 
-Portal-boundary staged proofs such as `BLAZOR_PORTAL_INSTALLER_HANDOFF_STAGED_PROOF.generated.json` are useful for keeping download, installer, support, status, and help handoff contracts aligned with the browser-client story. They are intentionally not members of the Chummer Online and /blazor/workbench compatibility route source-staged proof set because they cover portal boundary behavior rather than a workbench workflow family.
+Portal-boundary staged proofs such as `BLAZOR_PORTAL_INSTALLER_HANDOFF_STAGED_PROOF.generated.json` are useful for keeping download, installer, support, status, and help handoff contracts aligned with the Chummer Online story. They are intentionally not members of the Chummer Online and /blazor/workbench compatibility route source-staged proof set because they cover portal boundary behavior rather than a workbench workflow family.
 
 Keep those receipts documented from `docs/BLAZOR_WEB_CLIENT_DOCS_INDEX.md`, and keep their runtime boundary explicit: they do not prove hosted execution, Docker self-host execution, or installer availability.
 
@@ -233,3 +233,7 @@ The compact example shape is tracked at `docs/examples/blazor-source-staged-rele
 The `forbidden_staged_tokens` field name is retained for compatibility but includes source-plan and source-calculation receipt tokens.
 
 The guard checks that source-staged, source-plan, and source-calculation receipt names are not referenced by browser release-readiness aggregation sources, that the docs still state the source-only boundary, and that the public-edge status utility reports `source_staged_release_boundary_*` lines as source-policy evidence. It is a source-policy guard, not browser execution evidence.
+
+## Product Language Boundary
+
+Source-staged proof names may keep `workbench`, `workspace`, and other legacy/internal taxonomy when they identify scripts, selectors, receipts, route aliases, or compatibility lanes. Rendered product copy should still follow the Blazor parity-goal naming contract: Chummer Online for the promoted browser product, Character Roster for the roster entry and hierarchy, runner for persona-facing copy, dossier for saved data and privacy boundaries, Build Lab for edit/build entry points, and compatibility route for `/blazor/workbench` behavior.

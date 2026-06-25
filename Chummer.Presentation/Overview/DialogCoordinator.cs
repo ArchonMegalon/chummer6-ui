@@ -102,7 +102,7 @@ public sealed class DialogCoordinator : IDialogCoordinator
             }
 
             string rulesetId = DesktopDialogFieldValueParser.GetValue(dialog, "newCharacterRulesetId") ?? RulesetDefaults.Sr5;
-            string name = DesktopDialogFieldValueParser.GetValue(dialog, "newCharacterName") ?? "New Character";
+            string name = DesktopDialogFieldValueParser.GetValue(dialog, "newCharacterName") ?? "New runner";
             string alias = DesktopDialogFieldValueParser.GetValue(dialog, "newCharacterAlias") ?? "Runner";
             context.Publish(context.State with
             {
@@ -154,7 +154,7 @@ public sealed class DialogCoordinator : IDialogCoordinator
 
             string rulesetId = RulesetDefaults.NormalizeOptional(DesktopDialogFieldValueParser.GetValue(dialog, "newCharacterWorkflowRulesetId")) ?? RulesetDefaults.Sr5;
             string buildMethod = DesktopDialogFieldValueParser.GetValue(dialog, "newCharacterWorkflowBuildMethod") ?? string.Empty;
-            string name = DesktopDialogFieldValueParser.GetValue(dialog, "newCharacterWorkflowName") ?? "New Character";
+            string name = DesktopDialogFieldValueParser.GetValue(dialog, "newCharacterWorkflowName") ?? "New runner";
             string alias = DesktopDialogFieldValueParser.GetValue(dialog, "newCharacterWorkflowAlias") ?? "Runner";
             bool houseRulesEnabled = DesktopDialogFieldValueParser.ParseBool(dialog, "newCharacterWorkflowHouseRulesEnabled", false);
             context.Publish(context.State with
@@ -916,7 +916,7 @@ public sealed class DialogCoordinator : IDialogCoordinator
         CancellationToken ct,
         string fieldId = "openCharacterXml",
         string rulesetFieldId = "importRulesetId",
-        string requiredError = "Character XML is required.",
+        string requiredError = "Dossier XML is required.",
         string successNotice = "Character imported.",
         Func<CancellationToken, Task>? afterImportAsync = null)
     {
@@ -1129,7 +1129,7 @@ public sealed class DialogCoordinator : IDialogCoordinator
     {
         string rulesetId = RulesetDefaults.NormalizeOptional(ReadDialogValue(dialog, "newCharacterRulesetId", RulesetDefaults.Sr5))
             ?? RulesetDefaults.Sr5;
-        string name = ReadDialogValue(dialog, "newCharacterName", "New Character").Trim();
+        string name = ReadDialogValue(dialog, "newCharacterName", "New runner").Trim();
         string alias = ReadDialogValue(dialog, "newCharacterAlias", "Runner").Trim();
         string buildMethod = ReadDialogValue(dialog, "newCharacterBuildMethod", "Priority").Trim();
         bool houseRulesEnabled = DesktopDialogFieldValueParser.ParseBool(
@@ -1165,7 +1165,7 @@ public sealed class DialogCoordinator : IDialogCoordinator
     {
         string rulesetId = RulesetDefaults.NormalizeOptional(ReadDialogValue(dialog, "newCharacterWorkflowRulesetId", RulesetDefaults.Sr5))
             ?? RulesetDefaults.Sr5;
-        string name = ReadDialogValue(dialog, "newCharacterWorkflowName", "New Character").Trim();
+        string name = ReadDialogValue(dialog, "newCharacterWorkflowName", "New runner").Trim();
         string alias = ReadDialogValue(dialog, "newCharacterWorkflowAlias", "Runner").Trim();
         string buildMethod = ReadDialogValue(dialog, "newCharacterWorkflowBuildMethod", "Priority").Trim();
         bool houseRulesEnabled = DesktopDialogFieldValueParser.ParseBool(
@@ -2534,7 +2534,7 @@ public sealed class DialogCoordinator : IDialogCoordinator
         PublishCharacterRosterDialog(
             context,
             nextPreferences,
-            "Roster layout reset to generated grouping. Custom folder metadata was cleared; character files were not moved.");
+            "Roster layout reset to generated grouping. Custom folder metadata was cleared; dossier files were not moved.");
     }
 
     private static RosterHierarchyState? TryReadRosterHierarchyState(DesktopDialogState dialog)

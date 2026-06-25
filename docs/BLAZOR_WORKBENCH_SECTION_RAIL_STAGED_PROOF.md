@@ -4,7 +4,7 @@
 
 This source-staged proof keeps dossier section navigation visible on the user-facing Chummer Online route and /blazor/workbench compatibility route.
 
-The browser client should feel like another Chummer client head: dense dossier sections stay one click away instead of becoming disconnected web pages.
+Chummer Online should feel like another Chummer client head: dense dossier sections stay one click away instead of becoming disconnected web pages.
 
 ## Source-Staged Scope
 

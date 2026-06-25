@@ -19,7 +19,7 @@ Documentation map:
 The current hosted route-entry receipt, `BLAZOR_PUBLIC_EDGE_WORKBENCH_PROOF.generated.json`, proves:
 
 - `/blazor/` resolves into `/blazor/app`
-- `/app` serves the same promoted browser client through the clean public Chummer Online name
+- `/app` serves the same promoted Chummer Online client through the clean public Chummer Online name
 - `/blazor/app` remains the hosted Blazor app path for that client
 - hosted workbench route shapes stay stable
 - hosted resume/result/action route shapes are accepted
@@ -87,7 +87,7 @@ The first acceptable hosted execution tier should prove these families:
   with visible skill catalog, linked-attribute context, and filter posture so hosted proof covers a dense skills utility family as well
 - gear-lane vehicle selection execution through the canonical proof-compatible route:
   `/blazor/workbench?workspace=<promoted-workspace-id>&tab=tab-gear&control=vehicle_add`
-  with visible catalog, filters, and selection details so hosted proof covers a dense runner-sheet editing utility rather than only startup or resumed-tab posture
+  with visible catalog, filters, and selection details so hosted proof covers a dense runner dossier editing utility rather than only startup or resumed-tab posture
 - gear-lane vehicle-mod selection execution through the canonical proof-compatible route:
   `/blazor/workbench?workspace=<promoted-workspace-id>&tab=tab-gear&control=vehicle_mod_add`
   with visible mod catalog plus slot/availability/source detail so hosted proof covers a second dense utility family within the vehicle workflow lane
@@ -114,7 +114,7 @@ The first acceptable hosted execution tier should prove these families:
   with visible installed-ware removal impact and recovery context so hosted proof covers delete/recovery posture on the cyberware lane as well
 - gear-lane drug selection execution through the canonical proof-compatible route:
   `/blazor/workbench?workspace=<promoted-workspace-id>&tab=tab-gear&control=drug_add`
-  with visible catalog plus crash/speed/source details so hosted proof covers another dense classic utility family on the runner sheet
+  with visible catalog plus crash/speed/source details so hosted proof covers another dense classic utility family on the runner dossier
 - contacts-lane connection edit execution through the canonical proof-compatible route:
   `/blazor/workbench?workspace=<promoted-workspace-id>&tab=tab-contacts&control=contact_connection`
   with visible selected-contact summary context plus compact connection/loyalty edit controls so hosted proof covers a non-add edit utility family
@@ -157,7 +157,7 @@ The first acceptable hosted execution tier should prove these families:
   with visible compact reorder utility posture so the support workflow family includes classic list operations beyond add/edit/delete
 - resumed workbench load:
   `/blazor/workbench?workspace=<promoted-workspace-id>`
-- recent-work resume affordance visibility through the canonical proof-compatible route:
+- recent-dossier resume affordance visibility through the canonical proof-compatible route:
   visible `Resume BLUE` recent-work links sourced from restored session state
   restored-workspace links must expose `data-workbench-route-query="workspace"` so hosted proof verifies the canonical query key instead of inferring it only from href text
 - restored section/action affordance groups must also expose `data-workbench-route-query="workspace"` so grouped continuation cards preserve the same canonical restored-workspace route contract
@@ -403,4 +403,4 @@ It may not say:
 - hosted resumed workflows are executed end-to-end
 - hosted browser parity matches the self-host execution lane
 - `chummer.run` has browser workflow proof equivalent to the self-host proof-compatible browser lane
-- the promoted Chummer6 browser client is public-edge parity-complete
+- Chummer Online is public-edge parity-complete

@@ -4,14 +4,14 @@
 
 This source-staged proof keeps familiar menu affordances visible on the user-facing Chummer Online route and /blazor/workbench compatibility route.
 
-The browser client should feel like another Chummer client head, so File, Build, View, Character, Tools, and a same-origin Help entry point should remain visible even before full browser keyboard/menu execution parity is proven.
+Chummer Online should feel like another Chummer client head, so File, Build, View, Runner, Tools, and a same-origin Help entry point should remain visible even before full browser keyboard/menu execution parity is proven.
 
 ## Source-Staged Scope
 
 The staged menu-bar lane covers:
 
 - a menu rail on the user-facing Chummer Online route and /blazor/workbench compatibility route
-- File, Build, View, Character, Tools, and same-origin Help shortcuts
+- File, Build, View, Runner, Tools, and same-origin Help shortcuts
 - scoped responsive styling for desktop and mobile browser use
 
 ## Source Check

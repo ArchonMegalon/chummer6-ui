@@ -360,7 +360,7 @@ internal static class DesktopAliceAssistant
             "qualities" => BuildPlan("qualities", "Qualities", AliceSupportMode.QuickAddApply),
             "create" or "metatype" or "priority" => BuildPlan("character_create", "Character Create", AliceSupportMode.GuidedBuildPlan, "new_character"),
             "settings" => BuildPlan("character_settings", "Character Settings", AliceSupportMode.SettingsHandoff, "character_settings"),
-            _ => BuildPlan("character_create", "New Character", AliceSupportMode.GuidedBuildPlan, "new_character")
+            _ => BuildPlan("character_create", "New runner", AliceSupportMode.GuidedBuildPlan, "new_character")
         };
     }
 
@@ -588,7 +588,7 @@ internal static class DesktopAliceAssistant
             summary,
             changeList,
             warningList,
-            string.Equals(plan.HandoffCommandId, "global_settings", StringComparison.Ordinal) ? "Open global settings" : "Open character settings",
+            string.Equals(plan.HandoffCommandId, "global_settings", StringComparison.Ordinal) ? "Open global settings" : "Open dossier settings",
             plan.HandoffCommandId,
             null,
             string.Empty);

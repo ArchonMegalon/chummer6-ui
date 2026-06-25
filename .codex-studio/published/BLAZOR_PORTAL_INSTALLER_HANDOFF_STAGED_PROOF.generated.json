@@ -1,7 +1,7 @@
 {
   "contract_name": "chummer6-ui.blazor_portal_installer_handoff_staged_proof",
-  "generated_at": "2026-06-25T01:54:23.207715+00:00",
-  "status": "passed",
+  "generated_at": "2026-06-25T17:34:26.992712+00:00",
+  "status": "failed",
   "proof_tier": "source_staged_no_browser_execution",
   "route_lane": "portal_backed_blazor_workbench_handoff",
   "expected_routes": [
@@ -13,29 +13,111 @@
     "/downloads/install/blazor-desktop-win-x64-installer",
     "/contact",
     "/status",
+    "/help",
+    "/app",
     "/blazor/",
+    "/blazor/home",
+    "/blazor/app",
     "/blazor/workbench"
   ],
   "checks": [
     {
       "id": "hosted_public_edge_route_probe",
       "path": "scripts/e2e-public-edge.cjs",
-      "status": "passed",
-      "required_token_count": 23,
-      "missing_tokens": []
+      "status": "failed",
+      "required_token_count": 99,
+      "missing_tokens": [
+        "data-download-fallback-guidance",
+        "data-self-host-browser-app=\"{{WebUtility.HtmlEncode(PortalRoutes.PublicAppRoster)}}\"",
+        "Use /app?command=character_roster when installer proof is pending"
+      ]
     },
     {
       "id": "self_host_portal_route_probe",
       "path": "scripts/e2e-portal.cjs",
-      "status": "passed",
-      "required_token_count": 21,
-      "missing_tokens": []
+      "status": "failed",
+      "required_token_count": 127,
+      "missing_tokens": [
+        "static class PortalRoutes",
+        "PublicAppRoster",
+        "PublicAppSlash",
+        "BlazorApp",
+        "BlazorHome",
+        "CharacterRosterCommand",
+        "BlazorHomeSegment",
+        "PublicAppRoster => $\"{PublicApp}?command={CharacterRosterCommand}\"",
+        "data-portal-status-action=\"open-chummer-home\"",
+        "data-portal-contact-action=\"open-chummer-app\"",
+        "data-portal-contact-action=\"open-chummer-home\""
+      ]
     },
     {
       "id": "self_host_release_receipt_metadata",
       "path": "scripts/e2e-portal.sh",
       "status": "passed",
-      "required_token_count": 6,
+      "required_token_count": 11,
+      "missing_tokens": []
+    },
+    {
+      "id": "portal_openapi_download_routes",
+      "path": "Chummer.Portal/Program.cs",
+      "status": "failed",
+      "required_token_count": 89,
+      "missing_tokens": [
+        "[\"/app\"]",
+        "[\"/blazor/app\"]",
+        "[\"/blazor/home\"]",
+        "linear-gradient(180deg,#192026 0%,#10161a 50%,#080b0d 100%)"
+      ]
+    },
+    {
+      "id": "portal_home_chummer_app_routes",
+      "path": "Chummer.Portal/Program.cs",
+      "status": "failed",
+      "required_token_count": 26,
+      "missing_tokens": [
+        "PortalRoutes.CharacterRosterCommand",
+        "aria-label=\"Chummer Online routes\"",
+        "Open Character Roster",
+        "BuildPublicUrl(options.BlazorUrl, \"home\")",
+        "Chummer Online routes"
+      ]
+    },
+    {
+      "id": "blazor_home_roster_first_root_redirect",
+      "path": "Chummer.Blazor/Components/Pages/Home.razor",
+      "status": "failed",
+      "required_token_count": 11,
+      "missing_tokens": [
+        "data-home-hero-action=\"explore-chummer-online\""
+      ]
+    },
+    {
+      "id": "portal_playwright_roster_first_cta",
+      "path": "scripts/e2e-portal-playwright.cjs",
+      "status": "passed",
+      "required_token_count": 3,
+      "missing_tokens": []
+    },
+    {
+      "id": "portal_help_surface",
+      "path": "Chummer.Portal/Program.cs",
+      "status": "passed",
+      "required_token_count": 18,
+      "missing_tokens": []
+    },
+    {
+      "id": "portal_status_surface",
+      "path": "Chummer.Portal/Program.cs",
+      "status": "passed",
+      "required_token_count": 21,
+      "missing_tokens": []
+    },
+    {
+      "id": "portal_contact_surface",
+      "path": "Chummer.Portal/Program.cs",
+      "status": "passed",
+      "required_token_count": 19,
       "missing_tokens": []
     },
     {
@@ -48,35 +130,115 @@
     {
       "id": "downloads_install_state_guidance",
       "path": "Chummer.Portal/Program.cs",
-      "status": "passed",
-      "required_token_count": 50,
-      "missing_tokens": []
+      "status": "failed",
+      "required_token_count": 104,
+      "missing_tokens": [
+        "outline: 3px solid rgba(137,224,179,.68)",
+        "app.MapGet(blazorHomeRoute, () => Results.Redirect(BuildPublicUrl(options.BlazorUrl, \"app\")))",
+        "app.MapGet($\"{blazorHomeRoute}/\", () => Results.Redirect(BuildPublicUrl(options.BlazorUrl, \"app\")))",
+        "BuildPublicUrl(options.BlazorUrl, \"app\")",
+        "class=\"compatibility routes\"",
+        ".compatibility routes"
+      ]
     },
     {
       "id": "portal_handoff_docs",
       "path": "docs/BLAZOR_PORTAL_INSTALLER_HANDOFF_PROOF.md",
+      "status": "failed",
+      "required_token_count": 79,
+      "missing_tokens": [
+        "Mount `releases.json` into the downloads volume before claiming installer availability.",
+        "`/status` must state current release availability.",
+        "visible route-family labels"
+      ]
+    },
+    {
+      "id": "docs_index_contract_link",
+      "path": "docs/BLAZOR_WEB_CLIENT_DOCS_INDEX.md",
+      "status": "failed",
+      "required_token_count": 41,
+      "missing_tokens": [
+        "help-card hover/focus affordances"
+      ]
+    },
+    {
+      "id": "source_staged_runbook_boundary",
+      "path": "docs/BLAZOR_SOURCE_STAGED_PROOF_RUNBOOK.md",
+      "status": "failed",
+      "required_token_count": 9,
+      "missing_tokens": [
+        "portal_installer_handoff_staged_visual_contract=source_alignment_only_chummer_app_amber_mint_blue_palette_shared_grid_mobile_softened_high_contrast_motion_user_facing_route_rail_downloads_docs_cards_and_labelled_recovery_rails_not_runtime_visual_proof"
+      ]
+    },
+    {
+      "id": "contract_doc_index_requirement",
+      "path": "docs/BLAZOR_PORTAL_INSTALLER_HANDOFF_PROOF.md",
       "status": "passed",
-      "required_token_count": 14,
+      "required_token_count": 3,
       "missing_tokens": []
     },
     {
       "id": "self_host_runbook",
       "path": "docs/BLAZOR_SELF_HOST_RUNBOOK.md",
-      "status": "passed",
-      "required_token_count": 3,
-      "missing_tokens": []
+      "status": "failed",
+      "required_token_count": 15,
+      "missing_tokens": [
+        "Chummer Online routes",
+        "Help cards plus help, contact, and status exits"
+      ]
     },
     {
       "id": "release_signoff_boundary",
       "path": "docs/WORKBENCH_RELEASE_SIGNOFF.md",
       "status": "passed",
-      "required_token_count": 3,
+      "required_token_count": 13,
       "missing_tokens": []
+    },
+    {
+      "id": "parity_goal_portal_recovery_visual_contract",
+      "path": "docs/BLAZOR_WEB_CLIENT_PARITY_GOAL.md",
+      "status": "failed",
+      "required_token_count": 14,
+      "missing_tokens": [
+        "Chummer Online routes"
+      ]
+    },
+    {
+      "id": "status_utility_reporting",
+      "path": "scripts/print_blazor_public_edge_proof_status.py",
+      "status": "passed",
+      "required_token_count": 10,
+      "missing_tokens": []
+    },
+    {
+      "id": "example_receipt_shape",
+      "path": "docs/examples/blazor-portal-installer-handoff-staged-proof.receipt.example.json",
+      "status": "failed",
+      "required_token_count": 8,
+      "missing_tokens": [
+        "Portal visual continuity is source alignment only for Chummer Online amber/mint/blue palette, polished deep ink/surface contrast, restrained ambient glow, Chummer Online routes rail user-facing labels and hover/focus affordances, shared ambient grid texture, mobile-softened grid density, high-contrast portal action affordances, and reduced-motion-safe portal panel reveal, downloads/docs cards, help cards, labelled recovery rails, focus affordances, and reduced-motion guards.",
+        "Runtime evidence remains owned by local portal proof, hosted route-entry proof, and hosted execution proof receipts."
+      ]
     }
   ],
-  "failures": [],
+  "failures": [
+    "scripts/e2e-public-edge.cjs: missing data-download-fallback-guidance, data-self-host-browser-app=\"{{WebUtility.HtmlEncode(PortalRoutes.PublicAppRoster)}}\", Use /app?command=character_roster when installer proof is pending",
+    "scripts/e2e-portal.cjs: missing static class PortalRoutes, PublicAppRoster, PublicAppSlash, BlazorApp, BlazorHome, CharacterRosterCommand, BlazorHomeSegment, PublicAppRoster => $\"{PublicApp}?command={CharacterRosterCommand}\", data-portal-status-action=\"open-chummer-home\", data-portal-contact-action=\"open-chummer-app\", data-portal-contact-action=\"open-chummer-home\"",
+    "Chummer.Portal/Program.cs: missing [\"/app\"], [\"/blazor/app\"], [\"/blazor/home\"], linear-gradient(180deg,#192026 0%,#10161a 50%,#080b0d 100%)",
+    "Chummer.Portal/Program.cs: missing PortalRoutes.CharacterRosterCommand, aria-label=\"Chummer Online routes\", Open Character Roster, BuildPublicUrl(options.BlazorUrl, \"home\"), Chummer Online routes",
+    "Chummer.Blazor/Components/Pages/Home.razor: missing data-home-hero-action=\"explore-chummer-online\"",
+    "Chummer.Portal/Program.cs: missing outline: 3px solid rgba(137,224,179,.68), app.MapGet(blazorHomeRoute, () => Results.Redirect(BuildPublicUrl(options.BlazorUrl, \"app\"))), app.MapGet($\"{blazorHomeRoute}/\", () => Results.Redirect(BuildPublicUrl(options.BlazorUrl, \"app\"))), BuildPublicUrl(options.BlazorUrl, \"app\"), class=\"compatibility routes\", .compatibility routes",
+    "docs/BLAZOR_PORTAL_INSTALLER_HANDOFF_PROOF.md: missing Mount `releases.json` into the downloads volume before claiming installer availability., `/status` must state current release availability., visible route-family labels",
+    "docs/BLAZOR_WEB_CLIENT_DOCS_INDEX.md: missing help-card hover/focus affordances",
+    "docs/BLAZOR_SOURCE_STAGED_PROOF_RUNBOOK.md: missing portal_installer_handoff_staged_visual_contract=source_alignment_only_chummer_app_amber_mint_blue_palette_shared_grid_mobile_softened_high_contrast_motion_user_facing_route_rail_downloads_docs_cards_and_labelled_recovery_rails_not_runtime_visual_proof",
+    "docs/BLAZOR_SELF_HOST_RUNBOOK.md: missing Chummer Online routes, Help cards plus help, contact, and status exits",
+    "docs/BLAZOR_WEB_CLIENT_PARITY_GOAL.md: missing Chummer Online routes",
+    "docs/examples/blazor-portal-installer-handoff-staged-proof.receipt.example.json: missing Portal visual continuity is source alignment only for Chummer Online amber/mint/blue palette, polished deep ink/surface contrast, restrained ambient glow, Chummer Online routes rail user-facing labels and hover/focus affordances, shared ambient grid texture, mobile-softened grid density, high-contrast portal action affordances, and reduced-motion-safe portal panel reveal, downloads/docs cards, help cards, labelled recovery rails, focus affordances, and reduced-motion guards., Runtime evidence remains owned by local portal proof, hosted route-entry proof, and hosted execution proof receipts."
+  ],
   "notes": [
     "This proof is source alignment only for Blazor-to-portal installer/download/support handoff.",
+    "Portal visual continuity is source alignment only for Chummer Online amber/mint/blue palette, polished deep ink/surface contrast, restrained ambient glow, Chummer Online routes rail user-facing labels and hover/focus affordances, shared ambient grid texture, mobile-softened grid density, high-contrast portal action affordances, and reduced-motion-safe portal panel reveal, downloads/docs cards, help cards, labelled recovery rails, focus affordances, and reduced-motion guards.",
+    "Route probes request the absolute `${baseUrl}/downloads/?next=%2Fdownloads%2Finstall%2Fblazor-desktop-linux-x64-installer&installState=proof_required` URL for direct proof-required guidance.",
     "It does not prove the portal is running or routes execute at runtime.",
     "Runtime evidence remains owned by local portal proof, hosted route-entry proof, and hosted execution proof receipts."
   ]

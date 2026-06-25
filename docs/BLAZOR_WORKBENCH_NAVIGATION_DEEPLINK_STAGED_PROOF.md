@@ -4,7 +4,7 @@
 
 This source-staged proof keeps web navigation and deep-link affordances visible on the user-facing Chummer Online route and /blazor/workbench compatibility route.
 
-The browser client should expose breadcrumbs, URL state, browser back/forward posture, copied routes, tab restore, shared anchors, and same-origin help so dense dossier context can survive navigation and table handoff.
+Chummer Online should expose breadcrumbs, URL state, browser back/forward posture, copied routes, tab restore, shared anchors, and same-origin help so dense dossier context can survive navigation and table handoff.
 
 ## Source-Staged Scope
 

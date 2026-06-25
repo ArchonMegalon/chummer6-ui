@@ -65,7 +65,7 @@ CHECKS = [
         "tokens": [
             "staged hosted workbench command-palette posture",
             "keyboard-style hints",
-            "reload-safe browser-client links",
+            "reload-safe Chummer Online links",
             "same-origin help",
         ],
     },

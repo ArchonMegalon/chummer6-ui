@@ -826,11 +826,11 @@ async function run() {
       route_lane: 'promoted_blazor_workbench',
       workflow_contract: 'startup_command_execution',
       checks: [
-        await auditStartupCommandExecution(page, `${promotedRouteBase}?command=new_character`, 'New Character'),
+        await auditStartupCommandExecution(page, `${promotedRouteBase}?command=new_character`, 'New runner'),
         await auditStartupCommandExecution(page, `${promotedRouteBase}?command=new_character_origin`, 'Origin Dossier'),
         await auditStartupCommandExecution(page, `${promotedRouteBase}?command=character_roster`, 'Character Roster'),
         await auditStartupCommandExecution(page, `${promotedRouteBase}?command=master_index`, 'Master Index'),
-        await auditStartupCommandExecution(page, `${promotedRouteBase}?command=open_character`, 'Open Character'),
+        await auditStartupCommandExecution(page, `${promotedRouteBase}?command=open_character`, 'Open Dossier'),
         await auditStartupCommandExecution(page, `${promotedRouteBase}?command=open_for_printing`, 'Open for Printing'),
         await auditStartupCommandExecution(page, `${promotedRouteBase}?command=open_for_export`, 'Open for Export'),
       ],
@@ -1325,7 +1325,7 @@ async function run() {
       workflow_contract: 'browser_result_continuations',
       checks: [
         await auditResumedResultContinuation(page, `${promotedRouteBase}?${promotedContinuationQuery}&command=save_character_as`, 'Download prepared:'),
-        await auditResumedResultContinuation(page, `${promotedRouteBase}?${promotedContinuationQuery}&command=export_character`, 'Export Character'),
+        await auditResumedResultContinuation(page, `${promotedRouteBase}?${promotedContinuationQuery}&command=export_character`, 'Export Dossier'),
         await auditResumedResultContinuation(page, `${promotedRouteBase}?${promotedContinuationQuery}&command=print_character`, 'Print preview prepared:'),
       ],
     });

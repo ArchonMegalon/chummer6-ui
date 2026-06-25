@@ -31,13 +31,13 @@ The intended shipped posture is:
 
 - `Chummer.Blazor` is the browser desktop client hosted on `chummer.run` behind `Chummer.Portal`.
 - `Chummer.Blazor` is self-hostable through Docker with the same portal/API/download/session/coach/AI routing model used by the public edge.
-- The web client shares the same user workflow vocabulary as Avalonia: startup, open/import, new character, ruleset choice, sheet editing, dense browse, dialogs, save/export/print, account/owner context, support, and recovery.
+- The web client shares the same user workflow vocabulary as Avalonia: startup, open/import, new runner, ruleset choice, dossier editing, dense browse, dialogs, save/export/print, account/owner context, support, and recovery.
 - The web client does not borrow Avalonia proof for public claims. Any claim that the web client is desktop-equivalent must be backed by browser-specific tests, screenshots, and route/runtime evidence.
 - Browser limitations are named honestly. If a native-only capability cannot exist in web form, the web client must provide the closest useful browser workflow and document the difference in release evidence.
 
 ## Chummer6 Design Canon for Web
 
-The browser client should preserve Chummer6 product character rather than collapsing into a generic web CRUD shell.
+Chummer Online should preserve Chummer6 product character rather than collapsing into a generic web CRUD shell.
 
 Required design traits:
 
@@ -56,11 +56,11 @@ The Chummer6 browser lane should present a clear route hierarchy:
 
 - `/app` is the clean public Chummer Online route on the portal edge and should redirect into the hosted Blazor app while preserving command query strings
 - `/blazor/` is the stable Blazor entry and should resolve into Chummer Online, not into a detached proof page or proof-named workbench route
-- `/blazor/app` is the hosted Blazor implementation path for the same promoted browser client, while public CTAs should use `/app` or relative `app` links instead of exposing internal workbench language
+- `/blazor/app` is the hosted Blazor implementation path for the same promoted Chummer Online client, while public CTAs should use `/app` or relative `app` links instead of exposing internal workbench language
 - when the promoted browser shell is entered through `/app` or `/blazor/app`, its own workflow links should remain on the app route and use path-base-safe relative hrefs inside Blazor so users stay in Chummer Online under hosted `/blazor`, Docker self-host, and direct app hosting; `/blazor/workbench` remains an explicit proof-compatible route, not the default label shown to users
 - portal-generated public CTAs should use `/app?command=character_roster`; Blazor-rendered internal links must use relative `app?command=character_roster`/`app` style hrefs so the same markup works under any path base
 - `/blazor/home` is the explicit orientation/landing page for product copy and self-host evaluation; `/blazor/` should remain the stable public entry that moves users into Chummer Online rather than exposing proof-route language
-- `/blazor/workbench` is the explicit proof-compatible route for the same promoted browser client
+- `/blazor/workbench` is the explicit proof-compatible route for the same promoted Chummer Online client
 - `/blazor/preview` is allowed to remain a denser proof shelf, but it is not the primary user promise
 - deep links under `/blazor/workbench` must be reload-safe and continuity-safe for startup commands, restored workspaces, section continuations, dialog/action continuations, and browser result continuations
 
@@ -86,7 +86,7 @@ The portal must provide:
 
 ## User Workflow Contract
 
-The browser client should feel like a desktop Chummer session delivered through the web:
+Chummer Online should feel like a desktop Chummer session delivered through the web:
 
 - launch into a workbench with practical first actions, not a feature teaser
 - create a new runner or resume a prior workspace from the same top-level product route
@@ -128,7 +128,7 @@ The workflow families that matter most for Chummer6 design completion are:
 
 - startup and recent-work recovery
 - runner creation and origin/rules selection
-- dense runner-sheet editing across the core section families
+- dense runner dossier editing across the core section families
 - dialog-driven add/edit/commit loops
 - browser result continuations for save, save as, export, print, and download
 - cross-route continuity between workbench, support, downloads, account, and optional coach/session surfaces
@@ -152,14 +152,14 @@ Required proof should include:
 Current browser-backed proof now includes:
 
 - a first-class `/blazor/workbench` compatibility route for the browser shell in addition to `/preview`
-- portal-backed `/app` public route and `/blazor/` landing that resolve into Chummer Online, with `/blazor/app` as the hosted app path, `/blazor/home` as the product/orientation page, and `/blazor/workbench` retained as the /blazor/workbench compatibility route for the same promoted browser client
-- state-backed recent-work resume links on `/blazor/workbench`, plus explicit `/blazor/workbench?workspace={id}` restoration for shared-session continuity
-- restored-session build-lab continuation on `/blazor/workbench` that reopens the active workspace directly on the create/build lane
-- restored-session continuation lanes on `/blazor/workbench` that reopen the active workspace directly on profile, rules, gear, and advanced tabs
-- restored-session action continuations on `/blazor/workbench` that reopen the active workspace directly into multiple live editing action dialogs across workflow families, including a promoted career-entry continuation for the calendar/support utility lane
+- portal-backed `/app` public route and `/blazor/` landing that resolve into Chummer Online, with `/blazor/app` as the hosted app path, `/blazor/home` as the product/orientation page, and `/blazor/workbench` retained as the /blazor/workbench compatibility route for the same promoted Chummer Online client
+- state-backed recent-dossier resume links on `/blazor/workbench`, plus explicit `/blazor/workbench?workspace={id}` restoration for shared-session continuity
+- restored-session build-lab continuation on `/blazor/workbench` that reopens the active dossier directly on the create/build lane
+- restored-session continuation lanes on `/blazor/workbench` that reopen the active dossier directly on profile, rules, gear, and advanced tabs
+- restored-session action continuations on `/blazor/workbench` that reopen the active dossier directly into multiple live editing action dialogs across workflow families, including a promoted career-entry continuation for the calendar/support utility lane
 - restored-session committed action continuations on `/blazor/workbench` that complete multiple resumed editing actions and leave visible state changes behind
 - restored-session committed complex-form continuation on `/blazor/workbench` so the advanced technomancer lane now matches the same committed-route posture already used by the other promoted advanced actions
-- restored-session result continuations on `/blazor/workbench` that reopen the active workspace directly into browser download/export/print flows
+- restored-session result continuations on `/blazor/workbench` that reopen the active dossier directly into browser download/export/print flows
 - startup deep links for `new_character`, `new_character_origin`, `character_roster`, `master_index`, `open_character`, `open_for_printing`, and `open_for_export`
 - hosted dense startup utility posture for `character_roster` and `master_index`, with browser-visible roster/reference layout markers beyond simple dialog-entry proof
 - hosted origin/rules continuity posture for `new_character_origin` and restored `tab-rules`, with visible origin-wizard structure and rules-environment summary markers through the canonical proof-compatible route
@@ -186,12 +186,12 @@ Current browser-backed proof now includes:
 - staged hosted browser output handoff posture for restored output commands `save_character`, `save_character_as`, `export_character`, and `print_character`, with the Chummer Online and /blazor/workbench compatibility route cards exposing browser-native save, download, export download, and print-preview continuations without yet claiming full save/export/print/download parity
 - staged hosted workbench portal handoff posture for `/downloads/`, `/status`, `/contact`, `/help`, and `/account/work`, with the Chummer Online and /blazor/workbench compatibility route exposing same-origin download, release-truth, support, help, and account/work cards without yet claiming portal, authentication, installer, help-runtime, or support-submission runtime parity
 - staged portal installer/support handoff posture keeps portal root, downloads, docs, help, status, and contact visually aligned with Chummer Online through the polished slate/amber/mint/blue palette, restrained ambient glow, deep ink/surface contrast, labelled help/contact/status recovery rails, pill-style keyboard focus, hover/focus affordances, and reduced-motion guards without yet claiming portal runtime, installer availability, hosted execution, or Docker self-host execution proof
-- staged hosted workbench polish posture for the Task dock and final slate/amber/mint/blue Chummer Online theme layer, including the refined final amber/mint/blue Chummer Online theme layer, keeping start, edit, output, and portal handoff shortcuts visible while preserving `/app` as the clean public browser-client route, `/blazor/app` as the hosted app path, `/blazor/workbench` as the proof-compatible route, and `/blazor/preview` as the preview tools/result-state route, with primary Character Roster, New runner, and Open/import actions, keyboard-visible primary startup focus, mobile touch-friendly startup actions, portal-handoff header nav treatment, keyboard-visible portal nav focus, cohesive app-shell background, card, action, hover, focus, density-control checked-state, route-token app chrome treatment, mobile route-token wrapping, keyboard-visible route-token focus, high-contrast route-token affordances, route-aware status strip chrome, route-state status pill styling, desktop left-edge section accents, mobile top-edge section accents, reduced-motion-safe command-deck reveal, and reduced-motion styling without yet claiming screenshot, accessibility, or runtime workflow parity
+- staged hosted workbench polish posture for the Task dock and final slate/amber/mint/blue Chummer Online theme layer, including the refined final amber/mint/blue Chummer Online theme layer, keeping start, edit, output, and portal handoff shortcuts visible while preserving `/app` as the clean public Chummer Online route, `/blazor/app` as the hosted app path, `/blazor/workbench` as the proof-compatible route, and `/blazor/preview` as the preview tools/result-state route, with primary Character Roster, New runner, and Open/import actions, keyboard-visible primary startup focus, mobile touch-friendly startup actions, portal-handoff header nav treatment, keyboard-visible portal nav focus, cohesive app-shell background, card, action, hover, focus, density-control checked-state, route-token app chrome treatment, mobile route-token wrapping, keyboard-visible route-token focus, high-contrast route-token affordances, route-aware status strip chrome, route-state status pill styling, desktop left-edge section accents, mobile top-edge section accents, reduced-motion-safe command-deck reveal, and reduced-motion styling without yet claiming screenshot, accessibility, or runtime workflow parity
 - staged hosted workbench recovery posture for the Session recovery strip, making refresh, direct entry, and portal handoff continuation visible through recent, Build Lab, profile, status, restored dossier, restored gear, and restored output affordances without yet claiming reload/session persistence runtime parity
-- staged hosted workbench hosting/privacy posture for hosted route, Docker self-host, and analytics privacy copy, including `CHUMMER_ANALYTICS_PROVIDER=none`, making Rybbit is optional and metadata-only visible on public Chummer Online and /blazor/workbench compatibility routes while naming dossier metadata/content, owner identifier, workspace identifier, XML, and file exclusions without yet claiming Docker runtime, hosted route availability, or analytics delivery
-- staged hosted workbench command-palette posture for keyboard-style hints, reload-safe browser-client links, and same-origin help, making common new, open, Build Lab, gear, save/download, print, support, and help commands discoverable without yet claiming actual keyboard-event handling, portal help runtime, or command execution runtime parity
+- staged hosted workbench hosting/privacy posture for hosted route, Docker self-host, and analytics privacy copy, including `CHUMMER_ANALYTICS_PROVIDER=none`, making Rybbit is optional and metadata-only visible on public Chummer Online and /blazor/workbench compatibility routes while naming dossier metadata/content, owner identifiers, workspace or dossier identifiers, XML, and file exclusions without yet claiming Docker runtime, hosted route availability, or analytics delivery
+- staged hosted workbench command-palette posture for keyboard-style hints, reload-safe Chummer Online links, and same-origin help, making common new, open, Build Lab, gear, save/download, print, support, and help commands discoverable without yet claiming actual keyboard-event handling, portal help runtime, or command execution runtime parity
 - staged hosted workbench density posture for Compact desktop, Comfortable review, and Mobile safe display options, making dense desktop ergonomics and comfortable and mobile-safe postures visible without yet claiming persisted preferences, runtime layout mutation, or screenshot parity
-- staged hosted workbench workflow-ledger posture for visible startup, editing, output, recovery, portal, and boundary rows, making browser-client capability and desktop handoff boundaries visible in the client and explicitly stating that some desktop-only actions still open Chummer desktop without yet claiming runtime capability or browser parity
+- staged hosted workbench workflow-ledger posture for visible startup, editing, output, recovery, portal, and boundary rows, making Chummer Online capability and desktop handoff boundaries visible in the client and explicitly stating that some desktop-only actions still open Chummer desktop without yet claiming runtime capability or browser parity
 - staged hosted workbench file-intake posture for browser-safe open/import, Hero Lab import, XML editor, native file-system handoff, and support paths, keeping file intake visible in the Chummer Online and /blazor/workbench compatibility routes without yet claiming file picker, import execution, XML mutation, or native file-system handoff parity
 - staged hosted workbench rules/data posture for ruleset choice, sourcebook review, XML/custom data, translation tools, and help, keeping rules and references visible in the Chummer Online and /blazor/workbench compatibility routes while not yet claiming ruleset mutation, sourcebook runtime, XML mutation, localization runtime parity, or portal help runtime parity
 - staged hosted workbench settings posture for global settings, dossier settings, ruleset choice, update status, support handoff, and help, keeping setup changes reachable from the Chummer Online and /blazor/workbench compatibility routes while not yet claiming persisted preference mutation, runtime settings parity, or portal help runtime parity
@@ -263,7 +263,7 @@ Current browser-backed proof now includes:
 - separate self-host receipt proof for portal-backed `/blazor/app`, proof-compatible `/blazor/workbench`, and `/blazor/preview` routes under Docker, with the next refresh staged to include the same career/support section, add/edit/delete action, runner-notes action, move up/down list utilities, and committed-result lane as the hosted proof runner
 - separate hosted route-entry proof for the `https://chummer.run/blazor/` public edge, including route shapes for restored result continuations, action continuations, committed action continuations, and staged career/support section/action routes
 - a dedicated hosted execution-proof contract, runner scaffold, verifier, and published passing receipt so `chummer.run` browser workflow execution is promoted with its own evidence instead of being conflated with self-host proof, including hosted startup-command execution for `new_character`, `new_character_origin`, `character_roster`, `master_index`, `open_character`, `open_for_printing`, and `open_for_export`
-- optional browser analytics posture proof for hosted `chummer.run` Rybbit instrumentation and self-host default-off behavior, published as `.codex-studio/published/BLAZOR_ANALYTICS_POSTURE.generated.json`, with `/blazor/app` classified as `chummer_app`, route/workflow metadata only, safe boolean presence fields such as `has_workspace` and `has_dossier`, explicit no session replay and no autocapture posture, and no dossier metadata, owner identifier, workspace id, dossier id, document, XML, payload, hash, or dossier content capture, plus non-secret `/health` policy fields for self-host default, hosted edge posture, sensitive-data policy, session replay policy, and autocapture policy
+- optional browser analytics posture proof for hosted `chummer.run` Rybbit instrumentation and self-host default-off behavior, published as `.codex-studio/published/BLAZOR_ANALYTICS_POSTURE.generated.json`, with `/blazor/app` classified as `chummer_app`, route/workflow metadata only, safe boolean presence fields such as `has_workspace` and `has_dossier`, explicit no session replay and no autocapture posture, and no dossier metadata, owner identifiers, workspace or dossier identifiers, documents, XML, payloads, hashes, or dossier content capture, plus non-secret `/health` policy fields for self-host default, hosted edge posture, sensitive-data policy, session replay policy, and autocapture policy
 - connected-runtime posture proof for optional session, coach, and assistant portal forwarding, published as `.codex-studio/published/BLAZOR_CONNECTED_RUNTIME_POSTURE.generated.json`, proving the signed portal-owner boundary and visible configured/off browser posture without claiming full downstream connected-runtime workflow parity
 
 The remaining gap is breadth, not direction: the promoted hosted browser client now has clean public `/app` route-entry posture, hosted `/blazor/app` path posture, and canonical `/blazor/workbench` hosted execution proof, but more Avalonia-equivalent workflows still need browser-specific proof before the web client can claim full desktop equivalence.
@@ -282,8 +282,23 @@ The browser client target is not a preview page and not a reduced companion port
 - Docker self-hosting must expose the same portal-backed `/app`, `/blazor/app`, `/blazor/home`, and `/blazor/workbench` workflow shape, with local operator configuration instead of hosted defaults.
 - Avalonia remains the native desktop head, but browser parity means users can perform the same practical Chummer workflow in the web client unless a browser-specific boundary is explicitly called out.
 - Rybbit may be enabled on hosted `chummer.run` for sanitized product telemetry; self-host Docker installs stay default-off and operator-controlled.
-- Analytics must stay metadata-only: route family, command, tab, control, dialog action, and coarse workspace/dossier/fixture presence are allowed, while dossier metadata/content, owner identifiers, workspace identifiers, dossier identifiers, XML, files, payloads, and hashes are excluded.
+- Analytics must stay metadata-only: route family, command, tab, control, dialog action, and coarse workspace/dossier/fixture presence are allowed, while dossier metadata/content, owner identifiers, workspace or dossier identifiers, XML, files, payloads, and hashes are excluded.
 - Release language must distinguish source-staged affordance breadth from hosted execution proof, Docker self-host proof, and parity-ledger evidence.
+
+### Product Language and Source Boundary Contract
+
+Hardcoded compatibility names are allowed when they protect old links, proof receipts, selectors, route aliases, query parameters, and command IDs. They must not leak into primary user-facing product language unless the text is explicitly documenting compatibility behavior.
+
+Visible product language should be specialized around the Chummer user workflow:
+
+- use Chummer Online for the promoted browser product and `/app` route
+- use Character Roster for the roster entry point, library organization, custom folders, and hierarchy workflow
+- use runner for persona-facing user copy
+- use dossier for saved file/data-object copy, import/export, privacy, and metadata boundaries
+- use Build Lab for build/edit workflow entry points
+- use compatibility route for `/blazor/workbench` when explaining old proof or bookmark behavior
+
+Generic wording is still appropriate for reusable architecture seams, shared Avalonia/Blazor presentation contracts, analytics allowlists, Docker/operator configuration, and proof taxonomy. In those cases the generic term should describe the abstraction rather than replace Chummer-specific product language on the surface.
 
 The immediate Chummer6 design direction is therefore:
 
@@ -303,7 +318,7 @@ The browser-client goal now explicitly includes the remaining proof and parity w
 - expand Avalonia-equivalent workflow breadth beyond visible staged affordances, especially mutation, persistence, import/export, rules validation, help/support runtime, installer handoff, and connected-runtime workflows
 - keep Runner Intelligence and character-statistics calculations reusable from Avalonia and Blazor through shared `Chummer.Presentation` seams, including percentile benchmarks, Increase Initiative Force 6 what-if modelling, inventory synergy, drain/stun risk, and privacy-safe cohort posture
 - keep Character Roster hierarchy work non-destructive by default, with custom folders, nested hierarchy, drag/drop intent, keyboard operation, system library buckets as drop targets only, staged metadata, cycle prevention, and shared Avalonia/web serialization
-- keep hosted Rybbit metadata-only and self-host default-off, with no session replay, no autocapture, and no dossier metadata/content, owner identifiers, workspace ids, dossier ids, XML, file, payload, or hash capture
+- keep hosted Rybbit metadata-only and self-host default-off, with no session replay, no autocapture, and no dossier metadata/content, owner identifiers, workspace or dossier identifiers, XML, files, payloads, or hashes
 - keep the slate/amber/mint/blue Chummer Online theme consistent across Blazor, portal recovery pages, downloads/install handoff, docs explorer, and native installer progress surfaces
 - keep source-staged receipts, source-plan receipts, source-calculation receipts, hosted runtime receipts, Docker self-host receipts, and release-readiness aggregation visibly separated so staged breadth cannot be mistaken for browser parity
 

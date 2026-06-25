@@ -4,7 +4,7 @@
 
 This source-staged proof keeps campaign and live-session handoff affordances visible on the user-facing Chummer Online route and /blazor/workbench compatibility route.
 
-The browser client should preserve desktop-client confidence by keeping campaign roster, GM review, session notes, rewards, table share, run handoff, and help context near the active character workspace for Chummer Run users.
+Chummer Online should preserve desktop-client confidence by keeping campaign roster, GM review, session notes, rewards, table share, run handoff, and help context near the active dossier for Chummer Run users.
 
 ## Source-Staged Scope
 

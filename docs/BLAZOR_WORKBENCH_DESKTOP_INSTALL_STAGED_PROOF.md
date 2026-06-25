@@ -4,7 +4,7 @@
 
 This source-staged proof keeps browser-to-desktop continuity visible on the user-facing Chummer Online route and /blazor/workbench compatibility route.
 
-The browser client should behave like another Chummer client head while still giving users clear paths to downloads, update status, Docker self-hosting, account state, help, and support.
+Chummer Online should behave like another Chummer client head while still giving users clear paths to downloads, update status, Docker self-hosting, account state, help, and support.
 
 ## Source-Staged Scope
 

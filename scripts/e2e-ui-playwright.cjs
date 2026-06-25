@@ -484,7 +484,7 @@ async function auditPublicRootSurface(page) {
   await expectVisibleSelector(page, '#trust', 'trust section');
 
   const bodyText = await page.locator('body').innerText();
-  expectTextIncludes(bodyText, "Chummer Online, the browser client for real runner work.", 'public preview root');
+  expectTextIncludes(bodyText, "Chummer Online for real runner work.", 'public preview root');
   expectTextIncludes(bodyText, 'Chummer Online, rules guidance', 'public preview root');
   expectTextIncludes(bodyText, 'Explore Chummer Online', 'public preview root');
   expectTextIncludes(bodyText, 'Roster entry:', 'public preview root');
@@ -509,7 +509,7 @@ async function auditPreviewDesktopSurface(page) {
   expectTextIncludes(bodyText, 'Compatibility route', 'preview desktop shell');
   expectTextIncludes(bodyText, 'Browser-owned here:', 'preview desktop shell');
   expectTextIncludes(bodyText, 'Published self-hosted Docker surface', 'preview desktop shell');
-  expectTextIncludes(bodyText, 'New Character', 'preview desktop shell');
+  expectTextIncludes(bodyText, 'New runner', 'preview desktop shell');
   expectTextIncludes(bodyText, 'Open', 'preview desktop shell');
   await expectPremiumSurfaceQuality(page, 'preview desktop shell');
 }
@@ -555,7 +555,7 @@ async function auditWorkbenchDesktopSurface(page) {
   await expectVisibleSelector(page, '[data-workbench-entry-card="seeded-build-lab"]', 'workbench seeded build lab entry card');
   await expectVisibleSelector(page, '[data-workbench-entry-card="continue-recent"]', 'workbench continue recent entry card');
   await expectVisibleSelector(page, '[data-workbench-entry-card="recent-work"]', 'workbench recent work entry card');
-  await expectVisibleSelector(page, '[data-workbench-recent-workspace="preview-ws"]', 'workbench recent workspace resume link');
+  await expectVisibleSelector(page, '[data-workbench-recent-workspace="preview-ws"]', 'workbench recent dossier resume link');
   await expectVisibleSelector(page, '[data-workbench-entry-card="restored-continuations"]', 'workbench restored continuations entry card');
   await expectVisibleSelector(page, '[data-workbench-entry-card="profile"]', 'workbench profile entry card');
   await expectVisibleSelector(page, '[data-workbench-entry-card="rules"]', 'workbench rules entry card');
@@ -1041,7 +1041,7 @@ async function auditWorkbenchWorkspaceResumeRoute(page, workspaceId, expectedNam
   expectTextIncludes(bodyText, `Resume ${expectedAlias} on profile`, 'workbench workspace resume route');
   expectTextIncludes(bodyText, expectedName, 'workbench workspace resume route');
   expectTextIncludes(bodyText, 'saved', 'workbench workspace resume route');
-  await expectVisibleSelector(page, `[data-workbench-recent-workspace="${workspaceId}"]`, 'workbench workspace resume link');
+  await expectVisibleSelector(page, `[data-workbench-recent-workspace="${workspaceId}"]`, 'workbench dossier resume link');
 
   if (!page.url().includes(`/workbench?workspace=${workspaceId}`)) {
     throw new Error(`Expected workbench workspace resume route to stay on /workbench?workspace=${workspaceId}, got '${page.url()}'.`);

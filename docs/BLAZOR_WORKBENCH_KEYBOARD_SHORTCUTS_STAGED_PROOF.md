@@ -4,7 +4,7 @@
 
 This source-staged proof keeps keyboard help and accelerator intent visible on the user-facing Chummer Online route and /blazor/workbench compatibility route.
 
-The browser client should support desktop-speed users by making command help, save/output, section jump, density toggle, portal help, and support escape affordances visible before any browser key-event parity is claimed.
+Chummer Online should support desktop-speed users by making command help, save/output, section jump, density toggle, portal help, and support escape affordances visible before any browser key-event parity is claimed.
 
 ## Source-Staged Scope
 

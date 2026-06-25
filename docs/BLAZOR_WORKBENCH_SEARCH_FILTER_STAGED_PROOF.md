@@ -4,7 +4,7 @@
 
 This source-staged proof keeps dense-list search and filter affordances visible on the user-facing Chummer Online route and /blazor/workbench compatibility route.
 
-The browser client should make roster, gear, skills, qualities, and source-heavy panes easy to reach, filter, and recover without making users hunt through page-specific controls.
+Chummer Online should make roster, gear, skills, qualities, and source-heavy panes easy to reach, filter, and recover without making users hunt through page-specific controls.
 
 ## Source-Staged Scope
 

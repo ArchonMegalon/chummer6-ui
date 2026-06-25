@@ -4,7 +4,7 @@
 
 This source-staged proof keeps hosted and self-hosted session-state affordances visible on the user-facing Chummer Online route and /blazor/workbench compatibility route.
 
-The browser client should preserve desktop-client confidence by showing connection, offline, local cache, sync queue, presence, help, and handoff cues near the active character workspace for both Chummer Run and Docker self-hosted operators.
+Chummer Online should preserve desktop-client confidence by showing connection, offline, local cache, sync queue, presence, help, and handoff cues near the active dossier for both Chummer Run and Docker self-hosted operators.
 
 ## Source-Staged Scope
 

@@ -4,7 +4,7 @@
 
 This source-staged proof keeps web app install and update affordances visible on the user-facing Chummer Online route and /blazor/workbench compatibility route.
 
-The browser client should feel like an installable desktop-class app by surfacing install prompt, offline cache, update available, browser permissions, release channel, reset cache, and help posture near the active character workspace.
+Chummer Online should feel like an installable desktop-class app by surfacing install prompt, offline cache, update available, browser permissions, release channel, reset cache, and help posture near the active dossier.
 
 ## Source-Staged Scope
 

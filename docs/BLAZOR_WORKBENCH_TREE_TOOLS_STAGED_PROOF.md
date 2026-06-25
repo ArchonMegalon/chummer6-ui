@@ -4,7 +4,7 @@
 
 This source-staged proof keeps dense tree and list affordances visible on the user-facing Chummer Online route and /blazor/workbench compatibility route.
 
-The browser client should expose expand, collapse, sort, reorder, pin, help, and selection actions close to the active character workspace instead of flattening desktop Chummer's tree/list workflow into disconnected cards.
+Chummer Online should expose expand, collapse, sort, reorder, pin, help, and selection actions close to the active dossier instead of flattening desktop Chummer's tree/list workflow into disconnected cards.
 
 ## Source-Staged Scope
 
