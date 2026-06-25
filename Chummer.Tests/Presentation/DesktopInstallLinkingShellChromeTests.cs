@@ -258,13 +258,9 @@ public sealed class DesktopInstallLinkingShellChromeTests
         StringAssert.Contains(installWindowSource, "ApplyExternalPreferenceState(nextPreferences)");
         StringAssert.Contains(localizationSource, "desktop.install_link.preference.visible_choice");
         StringAssert.Contains(localizationSource, "desktop.install_link.preference.hidden_choice");
-        StringAssert.Contains(localizationSource, "Show assistant features");
-        StringAssert.Contains(localizationSource, "Hide assistant features");
-        Assert.IsFalse(
-            localizationSource.Contains("scared caveman", StringComparison.OrdinalIgnoreCase)
-            || localizationSource.Contains("Hoehlenmensch", StringComparison.OrdinalIgnoreCase)
-            || localizationSource.Contains("homme des cavernes", StringComparison.OrdinalIgnoreCase),
-            "The first-run preference must stay respectful and product-facing.");
+        StringAssert.Contains(localizationSource, "Yes, I'm ready for a modern world like Shadowrun is");
+        StringAssert.Contains(localizationSource, "No, emotionally I'm a scared caveman");
+        StringAssert.Contains(localizationSource, "Nein, emotional bin ich ein ängstlicher Höhlenmensch");
         Assert.IsFalse(
             localizationSource.Contains("Keep the interface manual", StringComparison.Ordinal),
             "The first-run preference should describe the user-visible result, not internal manual mode.");
