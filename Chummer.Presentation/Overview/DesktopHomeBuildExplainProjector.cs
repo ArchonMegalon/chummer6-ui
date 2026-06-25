@@ -50,7 +50,7 @@ public static class DesktopHomeBuildExplainProjector
         {
             List<string> compatibilityReceipts =
             [
-                "Compatibility details: no current runtime fingerprint is attached yet, so campaign-safe build explanations still need the first claimed workspace."
+                "Compatibility details: no current runtime fingerprint is attached yet, so campaign-safe build explanations still need the first claimed dossier."
             ];
             compatibilityReceipts.AddRange(BuildBuildPathReceipts(leadBuildPath));
             compatibilityReceipts.AddRange(campaignReceipts);
@@ -58,7 +58,7 @@ public static class DesktopHomeBuildExplainProjector
             return Humanize(new DesktopHomeBuildExplainProjection(
                 RulesetId: resolvedRulesetId,
                 RulesetSpotlight: rulesetSpotlight,
-                "No workspace is pinned yet. Start with one dossier or import so Build Lab can compare grounded variants before the first living-dossier handoff.",
+                "No dossier is pinned yet. Start with one dossier or import so Build Lab can compare grounded variants before the first living-dossier handoff.",
                 leadBuildPath is null
                     ? campaignNextSafeAction
                         ?? "Create or import the first dossier before you trust this install to carry campaign continuity."
@@ -66,18 +66,18 @@ public static class DesktopHomeBuildExplainProjector
                         ?? $"Create or import the first dossier, then review the recommended {leadBuildPath.Suggestion.Title} build path before you trust this install to carry campaign continuity.",
                 leadBuildPath is null
                     ? campaignExplainFocus
-                        ?? "Claim the install and add one real workspace so build guidance, rules answers, and support all stay tied to the same character."
+                        ?? "Claim the install and add one real dossier so build guidance, rules answers, and support all stay tied to the same character."
                     : campaignExplainFocus
-                        ?? $"Claim the install, add one real workspace, and review the suggested {leadBuildPath.Suggestion.Title} path before you reopen campaign work.",
+                        ?? $"Claim the install, add one real dossier, and review the suggested {leadBuildPath.Suggestion.Title} path before you reopen campaign work.",
                 runtimeHealthSummary,
-                "No workspace return target is pinned yet.",
+                "No dossier return target is pinned yet.",
                 RulesetUiDirectiveCatalog.BuildUngroundedRulePosture(effectiveRulesetId),
                 compatibilityReceipts,
                 BuildBuildPathComparisons(buildPathCandidates),
                 new[]
                 {
                     "No build plan is loaded yet for this copy.",
-                    "Rules explanations become character-specific after you restore or create the first workspace."
+                    "Rules explanations become character-specific after you restore or create the first dossier."
                 }
                 .Concat(RulesetUiDirectiveCatalog.BuildBuildExplainWatchouts(effectiveRulesetId))
                 .Distinct(StringComparer.OrdinalIgnoreCase)
@@ -98,7 +98,7 @@ public static class DesktopHomeBuildExplainProjector
         {
             string[] fallbackWatchouts = new[]
             {
-                "Build Lab is falling back to workspace summary until the build and rules sections can be read again.",
+                "Build Lab is falling back to dossier summary until the build and rules sections can be read again.",
                 "Support answers are safer after the dossier reloads the current build and rules state."
             }
             .Concat(BuildRuntimeWatchouts(runtimeInspector))
@@ -111,7 +111,7 @@ public static class DesktopHomeBuildExplainProjector
                 $"Continue {displayName} on {leadWorkspace.RulesetId} and inspect explain traces before you export, publish, or reopen campaign work.",
                 ResolveRefreshAction(displayName, runtimeInspector)
                     ?? campaignNextSafeAction
-                    ?? $"Reopen {displayName} and refresh the build and rules sections so the next action is grounded in live dossier state instead of cached workspace summary only.",
+                    ?? $"Reopen {displayName} and refresh the build and rules sections so the next action is grounded in live dossier state instead of cached dossier summary only.",
                 campaignExplainFocus
                     ?? "Build Lab keeps variant tradeoffs, progression rails, and overlap risks visible before the next campaign-facing handoff, while Rules explanations stay tied to the claimed install, current channel, and support path.",
                 runtimeHealthSummary,
@@ -427,8 +427,8 @@ public static class DesktopHomeBuildExplainProjector
         List<string> receipts =
         [
             buildPathPreview is null
-                ? $"Build path option: {buildPathSuggestion.Title} is available for {string.Join(", ", buildPathSuggestion.Targets)} once a workspace is ready."
-                : $"Build path option: {buildPathSuggestion.Title} is {buildPathPreview.State} for this workspace on runtime {buildPathPreview.RuntimeFingerprint ?? "pending"}."
+                ? $"Build path option: {buildPathSuggestion.Title} is available for {string.Join(", ", buildPathSuggestion.Targets)} once a dossier is ready."
+                : $"Build path option: {buildPathSuggestion.Title} is {buildPathPreview.State} for this dossier on runtime {buildPathPreview.RuntimeFingerprint ?? "pending"}."
         ];
 
         string? firstChange = buildPathPreview?.ChangeSummaries.FirstOrDefault(summary => !string.IsNullOrWhiteSpace(summary));
@@ -475,7 +475,7 @@ public static class DesktopHomeBuildExplainProjector
                 string targetSummary = string.Join(", ", candidate.Suggestion.Targets);
                 if (candidate.Preview is null)
                 {
-                    return $"Build path compare: {candidate.Suggestion.Title} is available for {targetSummary}, but the first grounded workspace still needs to land before the handoff can be compared.";
+                    return $"Build path compare: {candidate.Suggestion.Title} is available for {targetSummary}, but the first grounded dossier still needs to land before the handoff can be compared.";
                 }
 
                 string headline = candidate.Preview.ChangeSummaries.FirstOrDefault(summary => !string.IsNullOrWhiteSpace(summary))
@@ -556,7 +556,7 @@ public static class DesktopHomeBuildExplainProjector
     {
         if (activeRuntime is null)
         {
-            return "Runtime health: no active runtime profile is loaded for this workspace yet.";
+            return "Runtime health: no active runtime profile is loaded for this dossier yet.";
         }
 
         string installState = string.IsNullOrWhiteSpace(activeRuntime.InstallState)
@@ -666,7 +666,7 @@ public static class DesktopHomeBuildExplainProjector
         List<string> receipts = [];
         if (runtimeInspector.CompatibilityDiagnostics.Count == 0)
         {
-            receipts.Add($"Compatibility note: fingerprint {runtimeFingerprint} is aligned with the current workspace and no runtime drift is active.");
+            receipts.Add($"Compatibility note: fingerprint {runtimeFingerprint} is aligned with the current dossier and no runtime drift is active.");
         }
 
         foreach (RuntimeLockCompatibilityDiagnostic diagnostic in runtimeInspector.CompatibilityDiagnostics)

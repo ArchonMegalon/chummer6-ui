@@ -255,6 +255,8 @@ def main() -> int:
         if str(item).strip()
     }
     print(f"route_public_chummer_app={str('public_chummer_app_route' in route_marker_ids).lower()}")
+    print(f"route_public_chummer_app_roster={str('public_chummer_app_roster_route' in route_marker_ids).lower()}")
+    print(f"route_public_blazor_root_redirect={str('public_blazor_root_redirect' in route_marker_ids).lower()}")
     print(f"route_public_blazor_home_roster_entry={str('public_blazor_home_roster_entry' in route_marker_ids).lower()}")
     print(f"workflow_shape_markers={len(route.get('workflow_proofs') or [])}")
     print(
@@ -771,6 +773,7 @@ def main() -> int:
         "source_alignment_only_not_browser_execution"
     )
     print(f"workbench_character_library_staged_receipt={WORKBENCH_CHARACTER_LIBRARY_STAGED_PROOF}")
+    print("workbench_character_library_staged_label=Character Roster")
     print(f"workbench_character_library_staged_status={str(workbench_character_library_staged.get('status') or '').strip() or 'not_generated'}")
     print(f"workbench_character_library_staged_contract={str(workbench_character_library_staged.get('contract_name') or '').strip() or 'missing'}")
     print(f"workbench_character_library_staged_tier={str(workbench_character_library_staged.get('proof_tier') or '').strip() or 'missing'}")

@@ -44,7 +44,7 @@ Expected product/orientation route:
 /blazor/home
 ```
 
-Expected explicit proof-compatible compatibility route:
+Expected explicit /blazor/workbench compatibility route:
 
 ```text
 /blazor/workbench
@@ -56,7 +56,7 @@ Self-host users must be able to identify:
 
 - which compose profile starts the portal-backed browser client
 - which public URL exposes Chummer Online
-- which explicit workbench route remains available for proof-compatible workflows
+- which explicit `/blazor/workbench` compatibility route remains available for proof-compatible workflows
 - which services are part of the portal edge
 - where downloads/install handoff lives
 - how optional Rybbit analytics is configured as default-off self-host telemetry
@@ -69,6 +69,8 @@ Self-host users must be able to identify:
 Self-host analytics is operator controlled and default-off. The sanitized environment example keeps `CHUMMER_ANALYTICS_PROVIDER=none` and only enables Rybbit when an operator explicitly sets `CHUMMER_ANALYTICS_PROVIDER=rybbit`, `CHUMMER_RYBBIT_SITE_ID`, and either `CHUMMER_RYBBIT_SCRIPT_URL` or `CHUMMER_RYBBIT_BASE_URL`.
 
 Self-host Rybbit analytics remains default-off unless the operator explicitly configures the Rybbit provider and site variables, with session replay and autocapture disabled for Chummer surfaces.
+
+When enabled, the browser adapter is metadata-only. The allowed route/workflow metadata includes route family, command id, tab id, control id, dialog action id, analytics policy markers, and boolean presence fields such as `has_workspace` and `has_dossier`. It must not emit character names, aliases, owner ids, workspace ids, dossier ids, file names, document contents, XML, payloads, hashes, or generated dossier text.
 
 The Docker profile passes the Rybbit variables into the Blazor service so hosted and self-host deployments use the same browser client code path without requiring analytics for rendering.
 

@@ -2,7 +2,7 @@
 
 ## Purpose
 
-This staged proof keeps the Chummer Online and proof-compatible Blazor workbench source aligned around the career/support workflow family.
+This staged proof keeps Chummer Online and /blazor/workbench sources aligned around the career/support workflow family.
 
 It covers restored `tab-calendar` section continuity, career entry add/edit/delete dialogs, committed add/edit/delete result continuations, runner notes editing and notes-save continuations, and classic move up/down list utilities on the promoted `/blazor/workbench` route.
 

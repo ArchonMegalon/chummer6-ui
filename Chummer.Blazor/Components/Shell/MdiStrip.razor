@@ -22,8 +22,8 @@
                     @($"{workspaceLabel}{(workspace.HasSavedWorkspace ? string.Empty : " *")}")
                 </button>
                 <button class="mdi-close"
-                        title="Close workspace"
-                        aria-label="Close workspace"
+                        title="@CloseDossierLabel"
+                        aria-label="@CloseDossierLabel"
                         disabled="@IsBusy"
                         @onclick="() => CloseWorkspaceAsync(workspace.Id.Value)">
                     x
@@ -34,6 +34,8 @@
 </div>
 
 @code {
+    private const string CloseDossierLabel = "Close dossier";
+
     [Parameter]
     public string? RulesetId { get; set; }
 

@@ -11,7 +11,7 @@ public sealed partial class CharacterOverviewPresenter
         {
             Publish(State with
             {
-                Error = "No workspace loaded."
+                Error = "No dossier loaded."
             });
             return;
         }
@@ -73,7 +73,7 @@ public sealed partial class CharacterOverviewPresenter
         {
             Publish(State with
             {
-                Error = "No workspace loaded."
+                Error = "No dossier loaded."
             });
             return;
         }
@@ -109,7 +109,7 @@ public sealed partial class CharacterOverviewPresenter
                 OpenWorkspaces = session.OpenWorkspaces,
                 WorkspaceId = currentWorkspace,
                 HasSavedWorkspace = true,
-                Notice = "Workspace saved.",
+                Notice = "Dossier saved.",
                 PendingDownload = null,
                 PendingExport = null,
                 PendingPrint = null
@@ -132,7 +132,7 @@ public sealed partial class CharacterOverviewPresenter
         {
             Publish(State with
             {
-                Error = "No workspace loaded."
+                Error = "No dossier loaded."
             });
             return;
         }
@@ -193,7 +193,7 @@ public sealed partial class CharacterOverviewPresenter
         {
             Publish(State with
             {
-                Error = "No workspace loaded."
+                Error = "No dossier loaded."
             });
             return;
         }
@@ -269,7 +269,7 @@ public sealed partial class CharacterOverviewPresenter
         {
             Publish(State with
             {
-                Error = "No workspace loaded."
+                Error = "No dossier loaded."
             });
             return;
         }

@@ -11,6 +11,10 @@ using Microsoft.AspNetCore.Hosting.StaticWebAssets;
 
 const string AnalyticsPayloadsExclusion = "payloads";
 const string AnalyticsHashesExclusion = "hashes";
+const string AnalyticsProviderConfigKey = "CHUMMER_ANALYTICS_PROVIDER";
+const string RybbitSiteIdConfigKey = "CHUMMER_RYBBIT_SITE_ID";
+const string RybbitScriptUrlConfigKey = "CHUMMER_RYBBIT_SCRIPT_URL";
+const string RybbitBaseUrlConfigKey = "CHUMMER_RYBBIT_BASE_URL";
 const string AnalyticsProviderNone = "none";
 const string AnalyticsProviderRybbit = "rybbit";
 const string AnalyticsSelfHostDefaultPolicy = "analytics-disabled";
@@ -27,6 +31,7 @@ const string AnalyticsTabIdField = "tab_id";
 const string AnalyticsControlIdField = "control_id";
 const string AnalyticsDialogActionIdField = "dialog_action_id";
 const string AnalyticsHasWorkspaceField = "has_workspace";
+const string AnalyticsHasDossierField = "has_dossier";
 const string AnalyticsHasFixtureField = "has_fixture";
 
 WebApplicationBuilder builder = WebApplication.CreateBuilder(args);
@@ -123,11 +128,11 @@ static Uri ResolveEngineBaseAddress(IConfiguration configuration)
 
 static AnalyticsHealth BuildAnalyticsHealth(IConfiguration configuration)
 {
-    string provider = (configuration["CHUMMER_ANALYTICS_PROVIDER"] ?? AnalyticsProviderNone).Trim();
+    string provider = (configuration[AnalyticsProviderConfigKey] ?? AnalyticsProviderNone).Trim();
     bool rybbitRequested = string.Equals(provider, AnalyticsProviderRybbit, StringComparison.OrdinalIgnoreCase);
-    bool siteIdConfigured = !string.IsNullOrWhiteSpace(configuration["CHUMMER_RYBBIT_SITE_ID"]);
-    bool scriptUrlConfigured = !string.IsNullOrWhiteSpace(configuration["CHUMMER_RYBBIT_SCRIPT_URL"]);
-    bool baseUrlConfigured = !string.IsNullOrWhiteSpace(configuration["CHUMMER_RYBBIT_BASE_URL"]);
+    bool siteIdConfigured = !string.IsNullOrWhiteSpace(configuration[RybbitSiteIdConfigKey]);
+    bool scriptUrlConfigured = !string.IsNullOrWhiteSpace(configuration[RybbitScriptUrlConfigKey]);
+    bool baseUrlConfigured = !string.IsNullOrWhiteSpace(configuration[RybbitBaseUrlConfigKey]);
 
     return new AnalyticsHealth(
         Provider: rybbitRequested ? AnalyticsProviderRybbit : AnalyticsProviderNone,
@@ -152,6 +157,7 @@ static AnalyticsHealth BuildAnalyticsHealth(IConfiguration configuration)
             AnalyticsControlIdField,
             AnalyticsDialogActionIdField,
             AnalyticsHasWorkspaceField,
+            AnalyticsHasDossierField,
             AnalyticsHasFixtureField
         ],
         ExcludedDataClasses: BuildAnalyticsExcludedDataClasses());

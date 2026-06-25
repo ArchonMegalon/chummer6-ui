@@ -20,7 +20,7 @@ CHECKS = [
         "id": "product_workbench_resource_meters",
         "path": "Chummer.Blazor/Components/Pages/Preview.razor",
         "tokens": [
-            "Workbench resource meters",
+            "Browser-client resource meters",
             "data-workbench-resource-meters=\"strip\"",
             "Keep core character totals close while editing.",
             "data-workbench-resource-meters-action=\"karma\"",
@@ -114,7 +114,7 @@ def main() -> int:
         "checks": checks,
         "failures": failures,
         "notes": [
-            "This receipt only proves that Chummer Online and proof-compatible workbench resource-meters source, style, status, and docs agree.",
+            "This receipt only proves that Chummer Online and /blazor/workbench compatibility route resource-meters source, style, status, and docs agree.",
             "It is not a substitute for hosted Playwright execution proof, Docker self-host proof, live character-total calculation proof, or derived-stat runtime proof.",
             "Do not use this receipt to claim live character totals, derived-stat calculation, or browser execution parity.",
         ],

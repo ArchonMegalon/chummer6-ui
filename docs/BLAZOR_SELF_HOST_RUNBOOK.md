@@ -60,7 +60,7 @@ Expected public routes:
 
 Route intent:
 
-1. `/app` is the clean public Chummer Online route, `/blazor/` and `/blazor/app` are hosted Blazor entry routes, `/blazor/home` is the explicit product/orientation page, and `/blazor/workbench*` remains the explicit proof-compatible compatibility route family for the same promoted browser client.
+1. `/app` is the clean public Chummer Online route, `/blazor/` and `/blazor/app` are hosted Blazor entry routes, `/blazor/home` is the explicit product/orientation page, and `/blazor/workbench*` remains the explicit /blazor/workbench compatibility route family for the same promoted browser client.
 2. `/blazor/preview*` is retained as proof/supporting evidence and should not be treated as the primary user entrypoint.
 
 ## Minimum environment contract
@@ -114,7 +114,7 @@ Optional analytics inputs:
 
 Hosted `chummer.run` may run with `CHUMMER_ANALYTICS_PROVIDER=rybbit` for product telemetry, but self-host Docker installs should remain `none` unless the operator intentionally configures a Rybbit endpoint.
 
-The Blazor `/health` endpoint reports non-secret analytics policy fields: `selfHostDefault`, `hostedPublicEdge`, `sensitiveDataPolicy`, `sessionReplayPolicy`, `autocapturePolicy`, `allowedMetadataFields`, and `excludedDataClasses`. Its provider names, posture values, allowed metadata fields, and analytics-specific exclusions are named in source, while its shared character/statistics exclusions come from `RunnerIntelligencePrivacy.DefaultExcludedFields`. The analytics adapter is intentionally limited to sanitized product metadata and the browser bridge enforces a positive allowlist before dispatch. It emits host class, analytics scope, session replay/autocapture posture, route family, command id, tab id, control id, dialog action id, and boolean fixture/workspace presence. It does not emit character names, aliases, owner ids, workspace ids, file names, document contents, XML, payloads, hashes, or generated dossier text. Keep session replay disabled and autocapture disabled for Chummer sites because the browser surface can contain user-authored character data.
+The Blazor `/health` endpoint reports non-secret analytics policy fields: `selfHostDefault`, `hostedPublicEdge`, `sensitiveDataPolicy`, `sessionReplayPolicy`, `autocapturePolicy`, `allowedMetadataFields`, and `excludedDataClasses`. Its provider names, posture values, allowed metadata fields, and analytics-specific exclusions are named in source, while its shared character/statistics exclusions come from `RunnerIntelligencePrivacy.DefaultExcludedFields`. The analytics adapter is intentionally limited to sanitized product metadata and the browser bridge enforces a positive allowlist before dispatch. It emits host class, analytics scope, session replay/autocapture posture, route family, command id, tab id, control id, dialog action id, and boolean fixture/workspace/dossier presence. It does not emit character names, aliases, owner ids, workspace ids, dossier ids, file names, document contents, XML, payloads, hashes, or generated dossier text. Keep session replay disabled and autocapture disabled for Chummer sites because the browser surface can contain user-authored character data.
 
 Start from [self-hosted-browser-workbench.env.example](examples/self-hosted-browser-workbench.env.example) and override only what your environment actually needs.
 
@@ -211,7 +211,7 @@ The next receipt refresh is staged to declare the career/support route family in
 1. Keep `/blazor/` behind `Chummer.Portal`; do not publish the raw Blazor service as the primary user entrypoint when you want parity with the hosted `chummer.run` model.
 2. Mount real downloads storage into `chummer-portal` when the shelf is part of the same self-hosted installation.
 3. Use `CHUMMER_PORTAL_DOWNLOADS_FALLBACK_URL` only when you intentionally want the portal to advertise an external shelf.
-4. Treat `/app` as the product-shaped Chummer Online entrypoint, `/blazor/app` as the hosted app path, `/blazor/home` as the product/orientation page, `/blazor/workbench` as the explicit proof-compatible workbench route, and `/blazor/preview` as a proof surface while browser parity continues to mature.
+4. Treat `/app` as the product-shaped Chummer Online entrypoint, `/blazor/app` as the hosted app path, `/blazor/home` as the product/orientation page, `/blazor/workbench` as the explicit /blazor/workbench compatibility route route, and `/blazor/preview` as a proof surface while browser parity continues to mature.
 5. If you wire session/coach/AI lanes, keep them proxied through `chummer-portal` so the browser and operator surface share one authority boundary.
 
 ## Failure signatures

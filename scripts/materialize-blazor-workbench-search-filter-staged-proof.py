@@ -29,7 +29,8 @@ CHECKS = [
             "data-workbench-search-filter-action=\"quality-filter\"",
             "data-workbench-search-filter-action=\"source-filter\"",
             "data-workbench-search-filter-action=\"help\"",
-            "/help",
+            "href=\"@HelpHref\"",
+            "private const string HelpHref = \"/help\"",
             "data-workbench-search-filter-action=\"clear-filter\"",
         ],
     },
@@ -116,7 +117,7 @@ def main() -> int:
         "checks": checks,
         "failures": failures,
         "notes": [
-            "This receipt only proves that Chummer Online and proof-compatible workbench search/filter source, style, status, and docs agree.",
+            "This receipt only proves that Chummer Online and /blazor/workbench compatibility route search/filter source, style, status, and docs agree.",
             "It is not a substitute for hosted Playwright execution proof, Docker self-host proof, live search indexing proof, portal help runtime, or filter execution proof.",
             "Do not use this receipt to claim live search indexing, portal help runtime, filter execution, or browser execution parity.",
         ],

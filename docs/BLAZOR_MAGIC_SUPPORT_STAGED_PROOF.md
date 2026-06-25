@@ -2,7 +2,7 @@
 
 ## Purpose
 
-This staged proof keeps the Chummer Online and proof-compatible Blazor workbench source aligned around magic/resonance support utility posture across restored adept, magician, critter, and technomancer lanes.
+This staged proof keeps Chummer Online and /blazor/workbench sources aligned around magic/resonance support utility posture across restored adept, magician, critter, and technomancer lanes.
 
 It covers browser-visible utility routes for `adept_power_add`, `spirit_add`, `critter_power_add`, and `matrix_program_add`, including desktop-shaped Power, Spirit, Critter, and Program dialog posture.
 

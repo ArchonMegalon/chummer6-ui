@@ -1,6 +1,6 @@
 {
   "contract_name": "chummer6-ui.blazor_public_edge_execution_proof",
-  "generated_at": "2026-06-24T17:29:10.578Z",
+  "generated_at": "2026-06-25T16:00:02.428Z",
   "status": "passed",
   "base_url": "https://chummer.run",
   "proof_tier": "hosted_promoted_route_execution",
@@ -12,23 +12,40 @@
     "promoted_origin_rules_continuity",
     "promoted_build_lab_continuity",
     "promoted_weapon_selection_execution",
+    "promoted_combat_support_execution",
     "promoted_skill_selection_execution",
+    "promoted_skill_maintenance_execution",
     "promoted_vehicle_selection_execution",
     "promoted_vehicle_mod_selection_execution",
     "promoted_quality_selection_execution",
     "promoted_quality_delete_execution",
     "promoted_spell_selection_execution",
+    "promoted_magic_support_execution",
     "promoted_magic_delete_execution",
     "promoted_cyberware_selection_execution",
     "promoted_cyberware_edit_execution",
     "promoted_cyberware_delete_execution",
     "promoted_drug_selection_execution",
+    "promoted_gear_maintenance_execution",
+    "promoted_source_gear_utility_execution",
+    "promoted_magic_cleanup_utility_execution",
     "promoted_contact_connection_execution",
     "promoted_vehicle_edit_execution",
     "promoted_vehicle_delete_execution",
     "promoted_contact_delete_execution",
     "promoted_contact_edit_execution",
+    "promoted_career_entry_execution",
+    "promoted_career_entry_committed_execution",
+    "promoted_career_log_continuity",
     "promoted_resumed_workspace",
+    "promoted_career_entry_edit_execution",
+    "promoted_career_entry_delete_execution",
+    "promoted_career_entry_edit_committed_execution",
+    "promoted_career_entry_delete_committed_execution",
+    "promoted_runner_notes_execution",
+    "promoted_runner_notes_committed_execution",
+    "promoted_career_entry_reorder_execution",
+    "promoted_identity_license_execution",
     "promoted_recent_work_affordances",
     "promoted_restored_section_continuations",
     "promoted_restored_tab_landings",
@@ -48,37 +65,37 @@
       "checks": [
         {
           "route": "/blazor/workbench?command=new_character",
-          "assertion": "startup command surface 'New Character' rendered from promoted workbench route",
+          "assertion": "startup command surface 'New Character' rendered from canonical proof-compatible route",
           "status": "pass"
         },
         {
           "route": "/blazor/workbench?command=new_character_origin",
-          "assertion": "startup command surface 'Origin Dossier' rendered from promoted workbench route",
+          "assertion": "startup command surface 'Origin Dossier' rendered from canonical proof-compatible route",
           "status": "pass"
         },
         {
           "route": "/blazor/workbench?command=character_roster",
-          "assertion": "startup command surface 'Character Roster' rendered from promoted workbench route",
+          "assertion": "startup command surface 'Character Roster' rendered from canonical proof-compatible route",
           "status": "pass"
         },
         {
           "route": "/blazor/workbench?command=master_index",
-          "assertion": "startup command surface 'Master Index' rendered from promoted workbench route",
+          "assertion": "startup command surface 'Master Index' rendered from canonical proof-compatible route",
           "status": "pass"
         },
         {
           "route": "/blazor/workbench?command=open_character",
-          "assertion": "startup command surface 'Open Character' rendered from promoted workbench route",
+          "assertion": "startup command surface 'Open Character' rendered from canonical proof-compatible route",
           "status": "pass"
         },
         {
           "route": "/blazor/workbench?command=open_for_printing",
-          "assertion": "startup command surface 'Open for Printing' rendered from promoted workbench route",
+          "assertion": "startup command surface 'Open for Printing' rendered from canonical proof-compatible route",
           "status": "pass"
         },
         {
           "route": "/blazor/workbench?command=open_for_export",
-          "assertion": "startup command surface 'Open for Export' rendered from promoted workbench route",
+          "assertion": "startup command surface 'Open for Export' rendered from canonical proof-compatible route",
           "status": "pass"
         }
       ]
@@ -334,6 +351,131 @@
       ]
     },
     {
+      "id": "promoted_career_entry_execution",
+      "route_lane": "promoted_blazor_workbench",
+      "workflow_contract": "career_calendar_entry_execution",
+      "checks": [
+        {
+          "route": "/blazor/workbench?fixture=blue&tab=tab-calendar&control=create_entry",
+          "assertion": "career calendar entry dialog rendered compact list/detail editor with visible command posture and list-context continuity",
+          "status": "pass"
+        }
+      ]
+    },
+    {
+      "id": "promoted_career_entry_committed_execution",
+      "route_lane": "promoted_blazor_workbench",
+      "workflow_contract": "career_calendar_committed_visible_state",
+      "checks": [
+        {
+          "route": "/blazor/workbench?fixture=blue&tab=tab-calendar&control=create_entry&dialog_action=add",
+          "assertion": "advanced committed action published visible notice 'Entry 'New entry' added.'",
+          "status": "pass"
+        }
+      ]
+    },
+    {
+      "id": "promoted_career_log_continuity",
+      "route_lane": "promoted_blazor_workbench",
+      "workflow_contract": "career_log_section_continuity",
+      "checks": [
+        {
+          "route": "/blazor/workbench?fixture=blue&tab=tab-calendar",
+          "assertion": "career log continuation route landed on the calendar/support section with visible add-entry utility posture",
+          "status": "pass"
+        }
+      ]
+    },
+    {
+      "id": "promoted_career_entry_edit_execution",
+      "route_lane": "promoted_blazor_workbench",
+      "workflow_contract": "career_calendar_edit_execution",
+      "checks": [
+        {
+          "route": "/blazor/workbench?fixture=blue&tab=tab-calendar&control=edit_entry",
+          "assertion": "career calendar edit dialog rendered compact list/detail editor with visible current-entry context",
+          "status": "pass"
+        }
+      ]
+    },
+    {
+      "id": "promoted_career_entry_delete_execution",
+      "route_lane": "promoted_blazor_workbench",
+      "workflow_contract": "career_calendar_delete_execution",
+      "checks": [
+        {
+          "route": "/blazor/workbench?fixture=blue&tab=tab-calendar&control=delete_entry",
+          "assertion": "career calendar delete dialog rendered removal scope and recovery posture with current-list context",
+          "status": "pass"
+        }
+      ]
+    },
+    {
+      "id": "promoted_career_entry_edit_committed_execution",
+      "route_lane": "promoted_blazor_workbench",
+      "workflow_contract": "career_calendar_edit_committed_visible_state",
+      "checks": [
+        {
+          "route": "/blazor/workbench?fixture=blue&tab=tab-calendar&control=edit_entry&dialog_action=apply",
+          "assertion": "advanced committed action published visible notice 'Entry renamed to 'Current Entry'.'",
+          "status": "pass"
+        }
+      ]
+    },
+    {
+      "id": "promoted_career_entry_delete_committed_execution",
+      "route_lane": "promoted_blazor_workbench",
+      "workflow_contract": "career_calendar_delete_committed_visible_state",
+      "checks": [
+        {
+          "route": "/blazor/workbench?fixture=blue&tab=tab-calendar&control=delete_entry&dialog_action=delete",
+          "assertion": "advanced committed action published visible notice 'Entry 'Current Entry' removed.'",
+          "status": "pass"
+        }
+      ]
+    },
+    {
+      "id": "promoted_runner_notes_execution",
+      "route_lane": "promoted_blazor_workbench",
+      "workflow_contract": "runner_notes_edit_execution",
+      "checks": [
+        {
+          "route": "/blazor/workbench?fixture=blue&tab=tab-info&control=open_notes",
+          "assertion": "runner notes dialog rendered compact notes editor with visible metadata/save context",
+          "status": "pass"
+        }
+      ]
+    },
+    {
+      "id": "promoted_runner_notes_committed_execution",
+      "route_lane": "promoted_blazor_workbench",
+      "workflow_contract": "runner_notes_committed_visible_state",
+      "checks": [
+        {
+          "route": "/blazor/workbench?fixture=blue&tab=tab-info&control=open_notes&dialog_action=save",
+          "assertion": "advanced committed action published visible notice 'Notes saved.'",
+          "status": "pass"
+        }
+      ]
+    },
+    {
+      "id": "promoted_career_entry_reorder_execution",
+      "route_lane": "promoted_blazor_workbench",
+      "workflow_contract": "career_calendar_reorder_execution",
+      "checks": [
+        {
+          "route": "/blazor/workbench?fixture=blue&tab=tab-calendar&control=move_up",
+          "assertion": "Move Entry Up dialog rendered compact list-reorder utility posture",
+          "status": "pass"
+        },
+        {
+          "route": "/blazor/workbench?fixture=blue&tab=tab-calendar&control=move_down",
+          "assertion": "Move Entry Down dialog rendered compact list-reorder utility posture",
+          "status": "pass"
+        }
+      ]
+    },
+    {
       "id": "promoted_resumed_workspace",
       "route_lane": "promoted_blazor_workbench",
       "workflow_contract": "workspace_resume_continuity",
@@ -346,13 +488,182 @@
       ]
     },
     {
+      "id": "promoted_magic_cleanup_utility_execution",
+      "route_lane": "promoted_blazor_workbench",
+      "workflow_contract": "magic_cleanup_utility_execution",
+      "checks": [
+        {
+          "route": "/blazor/workbench?fixture=blue&tab=tab-magician&control=magic_add",
+          "assertion": "advanced dialog 'Magic' rendered with expected browser-visible details",
+          "status": "pass"
+        },
+        {
+          "route": "/blazor/workbench?fixture=blue&tab=tab-magician&control=magic_bind",
+          "assertion": "advanced dialog 'Bind' rendered with expected browser-visible details",
+          "status": "pass"
+        },
+        {
+          "route": "/blazor/workbench?fixture=blue&tab=tab-magician&control=magic_source",
+          "assertion": "advanced dialog 'Source' rendered with expected browser-visible details",
+          "status": "pass"
+        },
+        {
+          "route": "/blazor/workbench?fixture=blue&tab=tab-gear&control=drug_delete",
+          "assertion": "advanced dialog 'Remove' rendered with expected browser-visible details",
+          "status": "pass"
+        }
+      ]
+    },
+    {
+      "id": "promoted_source_gear_utility_execution",
+      "route_lane": "promoted_blazor_workbench",
+      "workflow_contract": "source_gear_utility_execution",
+      "checks": [
+        {
+          "route": "/blazor/workbench?fixture=blue&tab=tab-info&control=show_source",
+          "assertion": "advanced dialog 'Source' rendered with expected browser-visible details",
+          "status": "pass"
+        },
+        {
+          "route": "/blazor/workbench?fixture=blue&tab=tab-gear&control=gear_source",
+          "assertion": "advanced dialog 'Source' rendered with expected browser-visible details",
+          "status": "pass"
+        },
+        {
+          "route": "/blazor/workbench?fixture=blue&tab=tab-gear&control=gear_mount",
+          "assertion": "advanced dialog 'Mount' rendered with expected browser-visible details",
+          "status": "pass"
+        },
+        {
+          "route": "/blazor/workbench?fixture=blue&tab=tab-gear&control=toggle_free_paid",
+          "assertion": "advanced dialog 'Pricing status' rendered with expected browser-visible details",
+          "status": "pass"
+        }
+      ]
+    },
+    {
+      "id": "promoted_gear_maintenance_execution",
+      "route_lane": "promoted_blazor_workbench",
+      "workflow_contract": "gear_maintenance_utility_execution",
+      "checks": [
+        {
+          "route": "/blazor/workbench?fixture=blue&tab=tab-gear&control=gear_add",
+          "assertion": "advanced dialog 'Add Gear' rendered with expected browser-visible details",
+          "status": "pass"
+        },
+        {
+          "route": "/blazor/workbench?fixture=blue&tab=tab-gear&control=gear_edit",
+          "assertion": "advanced dialog 'Edit Gear' rendered with expected browser-visible details",
+          "status": "pass"
+        },
+        {
+          "route": "/blazor/workbench?fixture=blue&tab=tab-gear&control=gear_delete",
+          "assertion": "advanced dialog 'Remove Armor Jacket' rendered with expected browser-visible details",
+          "status": "pass"
+        }
+      ]
+    },
+    {
+      "id": "promoted_magic_support_execution",
+      "route_lane": "promoted_blazor_workbench",
+      "workflow_contract": "magic_resonance_support_utility_execution",
+      "checks": [
+        {
+          "route": "/blazor/workbench?fixture=blue&tab=tab-adept&control=adept_power_add",
+          "assertion": "advanced dialog 'Power' rendered with expected browser-visible details",
+          "status": "pass"
+        },
+        {
+          "route": "/blazor/workbench?fixture=blue&tab=tab-magician&control=spirit_add",
+          "assertion": "advanced dialog 'Spirit' rendered with expected browser-visible details",
+          "status": "pass"
+        },
+        {
+          "route": "/blazor/workbench?fixture=blue&tab=tab-critter&control=critter_power_add",
+          "assertion": "advanced dialog 'Power' rendered with expected browser-visible details",
+          "status": "pass"
+        },
+        {
+          "route": "/blazor/workbench?fixture=blue&tab=tab-technomancer&control=matrix_program_add",
+          "assertion": "advanced dialog 'Program' rendered with expected browser-visible details",
+          "status": "pass"
+        }
+      ]
+    },
+    {
+      "id": "promoted_skill_maintenance_execution",
+      "route_lane": "promoted_blazor_workbench",
+      "workflow_contract": "skill_maintenance_utility_execution",
+      "checks": [
+        {
+          "route": "/blazor/workbench?fixture=blue&tab=tab-skills&control=skill_specialize",
+          "assertion": "advanced dialog 'Specialization' rendered with expected browser-visible details",
+          "status": "pass"
+        },
+        {
+          "route": "/blazor/workbench?fixture=blue&tab=tab-skills&control=skill_remove",
+          "assertion": "advanced dialog 'Remove Perception' rendered with expected browser-visible details",
+          "status": "pass"
+        },
+        {
+          "route": "/blazor/workbench?fixture=blue&tab=tab-skills&control=skill_group",
+          "assertion": "advanced dialog 'Skill Group' rendered with expected browser-visible details",
+          "status": "pass"
+        }
+      ]
+    },
+    {
+      "id": "promoted_combat_support_execution",
+      "route_lane": "promoted_blazor_workbench",
+      "workflow_contract": "combat_support_utility_execution",
+      "checks": [
+        {
+          "route": "/blazor/workbench?fixture=blue&tab=tab-combat&control=combat_add_armor",
+          "assertion": "advanced dialog 'Add Armor' rendered with expected browser-visible details",
+          "status": "pass"
+        },
+        {
+          "route": "/blazor/workbench?fixture=blue&tab=tab-combat&control=combat_reload",
+          "assertion": "advanced dialog 'Reload' rendered with expected browser-visible details",
+          "status": "pass"
+        },
+        {
+          "route": "/blazor/workbench?fixture=blue&tab=tab-combat&control=combat_damage_track",
+          "assertion": "advanced dialog 'Damage Track' rendered with expected browser-visible details",
+          "status": "pass"
+        }
+      ]
+    },
+    {
+      "id": "promoted_identity_license_execution",
+      "route_lane": "promoted_blazor_workbench",
+      "workflow_contract": "identity_sin_license_utility_execution",
+      "checks": [
+        {
+          "route": "/blazor/workbench?fixture=blue&tab=tab-info&control=identity_license_add",
+          "assertion": "Add SIN / License dialog rendered identity, SIN/license, source, and lifestyle-cover context",
+          "status": "pass"
+        },
+        {
+          "route": "/blazor/workbench?fixture=blue&tab=tab-info&control=identity_license_edit",
+          "assertion": "Edit SIN / License dialog rendered identity, SIN/license, source, and lifestyle-cover context",
+          "status": "pass"
+        },
+        {
+          "route": "/blazor/workbench?fixture=blue&tab=tab-info&control=identity_license_delete",
+          "assertion": "Remove SIN / License dialog rendered identity, SIN/license, source, and lifestyle-cover context",
+          "status": "pass"
+        }
+      ]
+    },
+    {
       "id": "promoted_recent_work_affordances",
       "route_lane": "promoted_blazor_workbench",
       "workflow_contract": "recent_work_resume_affordances",
       "checks": [
         {
           "route": "/blazor/workbench?fixture=blue",
-          "assertion": "recent restored workspace affordance remains visible on promoted workbench route",
+          "assertion": "recent restored workspace affordance remains visible with canonical workspace route-query marker",
           "status": "pass"
         }
       ]
@@ -364,7 +675,7 @@
       "checks": [
         {
           "route": "/blazor/workbench?fixture=blue",
-          "assertion": "restored section continuation affordances remain visible on promoted workbench route",
+          "assertion": "restored section continuation affordances remain visible with canonical workspace route-query marker",
           "status": "pass"
         }
       ]
@@ -376,22 +687,22 @@
       "checks": [
         {
           "route": "/blazor/workbench?fixture=blue&tab=tab-info",
-          "assertion": "restored route landed on 'Profile' section for promoted workbench route",
+          "assertion": "restored route landed on 'Profile' section for canonical proof-compatible route",
           "status": "pass"
         },
         {
           "route": "/blazor/workbench?fixture=blue&tab=tab-rules",
-          "assertion": "restored route landed on 'Rules' section for promoted workbench route",
+          "assertion": "restored route landed on 'Rules' section for canonical proof-compatible route",
           "status": "pass"
         },
         {
           "route": "/blazor/workbench?fixture=blue&tab=tab-gear",
-          "assertion": "restored route landed on 'Gear' section for promoted workbench route",
+          "assertion": "restored route landed on 'Gear' section for canonical proof-compatible route",
           "status": "pass"
         },
         {
           "route": "/blazor/workbench?fixture=blue&tab=tab-technomancer",
-          "assertion": "restored route landed on 'Complex Forms' section for promoted workbench route",
+          "assertion": "restored route landed on 'Complex Forms' section for canonical proof-compatible route",
           "status": "pass"
         }
       ]
@@ -464,7 +775,7 @@
       "checks": [
         {
           "route": "/blazor/workbench?fixture=blue",
-          "assertion": "advanced restored action affordances remain visible on promoted workbench route",
+          "assertion": "advanced and career/support restored action affordances remain visible with canonical workspace route-query marker",
           "status": "pass"
         }
       ]

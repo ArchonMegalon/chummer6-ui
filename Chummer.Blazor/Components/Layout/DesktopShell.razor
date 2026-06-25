@@ -85,6 +85,11 @@ else
                    SelectTabRequested="@SelectTabAsync"
                    InspectRuntimeRequested="@OpenRuntimeInspectorAsync" />
 
+    @if (!string.IsNullOrWhiteSpace(State.Notice))
+    {
+        <p class="shell-notice" role="status" data-shell-notice>@State.Notice</p>
+    }
+
     <div class="workspace-layout @(ShowLeftPane ? "workspace-layout--with-left-pane" : "workspace-layout--without-left-pane")">
         @if (ShowLeftPane)
         {

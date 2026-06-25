@@ -2,7 +2,7 @@
 
 ## Purpose
 
-This staged proof keeps Chummer Online and its proof-compatible /blazor/workbench compatibility route source aligned around localization and table terminology posture for hosted and self-hosted browser use.
+This staged proof keeps Chummer Online and /blazor/workbench sources aligned around localization and table terminology posture for hosted and self-hosted browser use.
 
 It covers visible source posture for language, units, date format, currency, table terms, source-title, and same-origin help affordances on `/blazor/workbench`.
 

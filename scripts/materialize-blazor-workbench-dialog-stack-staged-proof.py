@@ -28,7 +28,8 @@ CHECKS = [
             "data-workbench-dialog-stack-action=\"retry\"",
             "data-workbench-dialog-stack-action=\"cancel-back\"",
             "data-workbench-dialog-stack-action=\"help\"",
-            "/help",
+            "href=\"@HelpHref\"",
+            "private const string HelpHref = \"/help\"",
             "data-workbench-dialog-stack-action=\"support\"",
         ],
     },
@@ -115,7 +116,7 @@ def main() -> int:
         "checks": checks,
         "failures": failures,
         "notes": [
-            "This receipt only proves that Chummer Online and proof-compatible workbench dialog-stack source, style, status, and docs agree.",
+            "This receipt only proves that Chummer Online and /blazor/workbench compatibility route dialog-stack source, style, status, and docs agree.",
             "It is not a substitute for hosted Playwright execution proof, Docker self-host proof, modal execution proof, portal help runtime, or committed-action runtime proof.",
             "Do not use this receipt to claim modal execution, portal help runtime, committed-action runtime behavior, or browser execution parity.",
         ],

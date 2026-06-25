@@ -10,7 +10,7 @@
      aria-atomic="true"
      aria-label="@BuildStatusAnnouncement()">
     <span id="routeState" data-status-route-family="@BuildRouteFamily()">Route: @BuildRouteLabel()</span>
-    <span id="charState">Character: @(WorkspaceId is null ? "none" : "loaded")</span>
+    <span id="charState">Dossier: @(WorkspaceId is null ? "none" : "loaded")</span>
     <span id="serviceState">Service: @(string.IsNullOrWhiteSpace(Error) ? "online" : "error")</span>
     <span id="timeState">Time: @LastUiUtc</span>
     <span id="complianceState">@ComplianceState</span>
@@ -32,7 +32,7 @@
     private string BuildStatusAnnouncement()
     {
         return AccessibilityPrimitiveBoundary.BuildStatusAnnouncement(
-            characterState: $"Route: {BuildRouteLabel()} | Character: {(WorkspaceId is null ? "none" : "loaded")}",
+            characterState: $"Route: {BuildRouteLabel()} | Dossier: {(WorkspaceId is null ? "none" : "loaded")}",
             serviceState: $"Service: {(string.IsNullOrWhiteSpace(Error) ? "online" : "error")}",
             timeState: $"Time: {LastUiUtc}",
             complianceState: ComplianceState);
@@ -42,10 +42,10 @@
     {
         return BuildRouteFamily() switch
         {
-            "chummer_app" => "Chummer Online",
-            "home" => "Home",
-            "preview" => "Preview tools",
-            "workbench_compat" => "Chummer Online compatibility",
+            ChummerAppRouteFamily => "Chummer Online",
+            HomeRouteFamily => "Chummer Online overview",
+            PreviewRouteFamily => "Preview/support tools",
+            WorkbenchCompatibilityRouteFamily => "Chummer Online compatibility",
             _ => "Browser client"
         };
     }
@@ -53,17 +53,28 @@
     private string BuildRouteFamily()
     {
         string path = new Uri(Navigation.Uri).AbsolutePath.TrimEnd('/').ToLowerInvariant();
-        if (path.EndsWith("/app", StringComparison.Ordinal))
-            return "chummer_app";
-        if (path.EndsWith("/home", StringComparison.Ordinal))
-            return "home";
-        if (path.EndsWith("/preview", StringComparison.Ordinal))
-            return "preview";
-        if (path.EndsWith("/workbench", StringComparison.Ordinal))
-            return "workbench_compat";
-        if (path.EndsWith("/blazor", StringComparison.Ordinal) || path.Length == 0)
-            return "chummer_app";
-        return "browser_client";
+        if (path.EndsWith(AppPathSuffix, StringComparison.Ordinal))
+            return ChummerAppRouteFamily;
+        if (path.EndsWith(HomePathSuffix, StringComparison.Ordinal))
+            return HomeRouteFamily;
+        if (path.EndsWith(PreviewPathSuffix, StringComparison.Ordinal))
+            return PreviewRouteFamily;
+        if (path.EndsWith(WorkbenchPathSuffix, StringComparison.Ordinal))
+            return WorkbenchCompatibilityRouteFamily;
+        if (path.EndsWith(BlazorPathSuffix, StringComparison.Ordinal) || path.Length == 0)
+            return ChummerAppRouteFamily;
+        return BrowserClientRouteFamily;
     }
+
+    private const string ChummerAppRouteFamily = "chummer_app";
+    private const string HomeRouteFamily = "home";
+    private const string PreviewRouteFamily = "preview";
+    private const string WorkbenchCompatibilityRouteFamily = "workbench_compat";
+    private const string BrowserClientRouteFamily = "browser_client";
+    private const string AppPathSuffix = "/app";
+    private const string HomePathSuffix = "/home";
+    private const string PreviewPathSuffix = "/preview";
+    private const string WorkbenchPathSuffix = "/workbench";
+    private const string BlazorPathSuffix = "/blazor";
 
 }

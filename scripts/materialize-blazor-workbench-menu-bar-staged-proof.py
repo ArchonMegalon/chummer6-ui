@@ -29,7 +29,8 @@ CHECKS = [
             "data-workbench-menu-bar-action=\"character\"",
             "data-workbench-menu-bar-action=\"tools\"",
             "data-workbench-menu-bar-action=\"help\"",
-            "/help",
+            "href=\"@HelpHref\"",
+            "private const string HelpHref = \"/help\"",
         ],
     },
     {
@@ -115,7 +116,7 @@ def main() -> int:
         "checks": checks,
         "failures": failures,
         "notes": [
-            "This receipt only proves that Chummer Online and proof-compatible workbench menu-bar source, style, status, and docs agree, including the same-origin Help menu handoff.",
+            "This receipt only proves that Chummer Online and /blazor/workbench compatibility route menu-bar source, style, status, and docs agree, including the same-origin Help menu handoff.",
             "It is not a substitute for hosted Playwright execution proof, Docker self-host proof, keyboard-event proof, portal help runtime, or menu-command execution proof.",
             "Do not use this receipt to claim keyboard accelerators, menu command execution, portal help runtime, or browser execution parity.",
         ],

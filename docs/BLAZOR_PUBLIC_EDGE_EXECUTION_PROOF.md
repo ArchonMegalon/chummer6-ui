@@ -159,6 +159,8 @@ The first acceptable hosted execution tier should prove these families:
   `/blazor/workbench?workspace=<promoted-workspace-id>`
 - recent-work resume affordance visibility through the canonical proof-compatible route:
   visible `Resume BLUE` recent-work links sourced from restored session state
+  restored-workspace links must expose `data-workbench-route-query="workspace"` so hosted proof verifies the canonical query key instead of inferring it only from href text
+- restored section/action affordance groups must also expose `data-workbench-route-query="workspace"` so grouped continuation cards preserve the same canonical restored-workspace route contract
 - restored section continuation affordance visibility through the canonical proof-compatible route:
   visible profile/rules/gear/career-log/advanced continuation links for the restored workspace
 - restored tab landing execution through the canonical proof-compatible route:

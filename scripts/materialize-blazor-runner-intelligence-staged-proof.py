@@ -150,6 +150,9 @@ CHECKS = [
             "87% chance of taking no more than 1 Stun",
             "dialog.ui.runner_cohort_privacy",
             "Opt-in anonymized benchmark cohorts",
+            "dossier id",
+            "dossier ids",
+            "dossier text",
         ],
     },
     {

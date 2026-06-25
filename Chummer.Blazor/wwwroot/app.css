@@ -97,6 +97,16 @@ button:disabled {
     box-sizing: border-box;
 }
 
+.shell-notice {
+    margin: 0.15rem;
+    padding: 0.2rem 0.35rem;
+    border: 1px solid var(--ui-kit-shell-border);
+    background: var(--ui-kit-panel-surface);
+    color: #16202b;
+    font-size: 0.88rem;
+    font-weight: 600;
+}
+
 .menu-shell {
     position: relative;
     z-index: 20;

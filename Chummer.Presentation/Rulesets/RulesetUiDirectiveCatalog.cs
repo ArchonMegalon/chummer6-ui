@@ -37,21 +37,21 @@ public static class RulesetUiDirectiveCatalog
         PostureLabel: "cross-ruleset",
         FileExtension: "ruleset codecs",
         HomeSpotlight: "Select a ruleset before using build, rules, export, or release tools.",
-        ResumeLaneSummary: "Resume the current character after ruleset and runtime status are loaded.",
-        OpenWorkspaceLabel: "Open workspace",
+        ResumeLaneSummary: "Resume the current dossier after ruleset and runtime status are loaded.",
+        OpenWorkspaceLabel: "Open dossier",
         BuildFollowThroughLabel: "Open build details",
-        WorkspaceFollowThroughLabel: "Open character details",
+        WorkspaceFollowThroughLabel: "Open dossier details",
         NextActionPrefix: "Next step",
         DefaultSectionSummary: "Select or restore a ruleset before using rules, build, or export tools.",
         BuildLabSectionSummary: "Choose a ruleset to load the matching builder and browser.",
         RulesSectionSummary: "Choose a ruleset to load the matching rules diagnostics.",
-        UngroundedHomeSummary: "the first restored character still needs runtime status before build, rules, and export tools are ready.",
+        UngroundedHomeSummary: "the first restored dossier still needs runtime status before build, rules, and export tools are ready.",
         PinnedRuntimeHomeSummary: "runtime status is loaded; open a ruleset section to continue.",
-        GroundedHomeSummary: "shared shell selected; restore a ruleset-specific character to continue.",
+        GroundedHomeSummary: "shared shell selected; restore a ruleset-specific dossier to continue.",
         BuildExplainWatchouts:
         [
             "Pick a ruleset before using edition-specific tools.",
-            "Restore a character before running build, import, export, or print actions."
+            "Restore a dossier before running build, import, export, or print actions."
         ]);
 
     private static readonly RulesetUiDirective Sr4 = new(
@@ -186,9 +186,9 @@ public static class RulesetUiDirectiveCatalog
         return directive.RulesetId switch
         {
             RulesetDefaults.Sr4 => "SR4 Roster",
-            RulesetDefaults.Sr5 => "SR5 Characters",
+            RulesetDefaults.Sr5 => "SR5 Roster",
             RulesetDefaults.Sr6 => "SR6 Roster",
-            _ => "Open Characters"
+            _ => "Open Dossiers"
         };
     }
 
@@ -197,10 +197,10 @@ public static class RulesetUiDirectiveCatalog
         RulesetUiDirective directive = Resolve(rulesetId);
         return directive.RulesetId switch
         {
-            RulesetDefaults.Sr4 => "No open SR4 character",
-            RulesetDefaults.Sr5 => "No open SR5 character",
-            RulesetDefaults.Sr6 => "No open SR6 character",
-            _ => "No open character"
+            RulesetDefaults.Sr4 => "No open SR4 dossier",
+            RulesetDefaults.Sr5 => "No open SR5 dossier",
+            RulesetDefaults.Sr6 => "No open SR6 dossier",
+            _ => "No open dossier"
         };
     }
 
@@ -208,7 +208,7 @@ public static class RulesetUiDirectiveCatalog
     {
         RulesetUiDirective directive = Resolve(rulesetId);
         string saveState = hasSavedWorkspace ? "saved" : "unsaved";
-        return Clean($"{directive.DisplayName} {directive.PostureLabel} workspace {workspaceId} is {saveState}.");
+        return Clean($"{directive.DisplayName} {directive.PostureLabel} dossier {workspaceId} is {saveState}.");
     }
 
     public static string BuildNavigationTabsHeading(string? rulesetId)
@@ -252,10 +252,10 @@ public static class RulesetUiDirectiveCatalog
         RulesetUiDirective directive = Resolve(rulesetId);
         return directive.RulesetId switch
         {
-            RulesetDefaults.Sr4 => "Import SR4 Character File",
-            RulesetDefaults.Sr5 => "Import SR5 Character File",
-            RulesetDefaults.Sr6 => "Import SR6 Character File",
-            _ => "Import Character File"
+            RulesetDefaults.Sr4 => "Import SR4 Dossier File",
+            RulesetDefaults.Sr5 => "Import SR5 Dossier File",
+            RulesetDefaults.Sr6 => "Import SR6 Dossier File",
+            _ => "Import Dossier File"
         };
     }
 
@@ -286,10 +286,10 @@ public static class RulesetUiDirectiveCatalog
         RulesetUiDirective directive = Resolve(rulesetId);
         return directive.RulesetId switch
         {
-            RulesetDefaults.Sr4 => "(no SR4 character file selected)",
-            RulesetDefaults.Sr5 => "(no SR5 character file selected)",
-            RulesetDefaults.Sr6 => "(no SR6 character file selected)",
-            _ => "(none)"
+            RulesetDefaults.Sr4 => "(no SR4 dossier file selected)",
+            RulesetDefaults.Sr5 => "(no SR5 dossier file selected)",
+            RulesetDefaults.Sr6 => "(no SR6 dossier file selected)",
+            _ => "(no dossier file selected)"
         };
     }
 
@@ -298,10 +298,10 @@ public static class RulesetUiDirectiveCatalog
         RulesetUiDirective directive = Resolve(rulesetId);
         return directive.RulesetId switch
         {
-            RulesetDefaults.Sr4 => "SR4 Oracle Debug Import",
-            RulesetDefaults.Sr5 => "SR5 XML Import",
-            RulesetDefaults.Sr6 => "SR6 XML Import",
-            _ => "Raw XML Debug Import"
+            RulesetDefaults.Sr4 => "SR4 Dossier XML Review",
+            RulesetDefaults.Sr5 => "SR5 Dossier XML Review",
+            RulesetDefaults.Sr6 => "SR6 Dossier XML Review",
+            _ => "Raw Dossier XML Review"
         };
     }
 
@@ -310,10 +310,10 @@ public static class RulesetUiDirectiveCatalog
         RulesetUiDirective directive = Resolve(rulesetId);
         return directive.RulesetId switch
         {
-            RulesetDefaults.Sr4 => "Import SR4 Raw XML",
-            RulesetDefaults.Sr5 => "Import SR5 Raw XML",
-            RulesetDefaults.Sr6 => "Import SR6 Raw XML",
-            _ => "Import Raw XML"
+            RulesetDefaults.Sr4 => "Import SR4 Dossier XML",
+            RulesetDefaults.Sr5 => "Import SR5 Dossier XML",
+            RulesetDefaults.Sr6 => "Import SR6 Dossier XML",
+            _ => "Import Dossier XML"
         };
     }
 

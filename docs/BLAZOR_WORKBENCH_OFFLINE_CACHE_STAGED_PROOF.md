@@ -2,7 +2,7 @@
 
 ## Purpose
 
-This staged proof keeps Chummer Online and its proof-compatible /blazor/workbench compatibility route source aligned around offline/cache continuity posture for browser editing.
+This staged proof keeps Chummer Online and /blazor/workbench sources aligned around offline/cache continuity posture for browser editing.
 
 It covers visible source posture for cache status, queued edits, reconnect review, local export, stale data, sync health, and same-origin help affordances on `/blazor/workbench`.
 

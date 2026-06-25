@@ -139,7 +139,7 @@ def main() -> int:
         "checks": checks,
         "failures": failures,
         "notes": [
-            "This receipt only proves that Chummer Online and proof-compatible workbench hosting/privacy source, style, status, and docs agree, including the self-host default-off Rybbit boundary.",
+            "This receipt only proves that Chummer Online and /blazor/workbench compatibility route hosting/privacy source, style, status, and docs agree, including the self-host default-off Rybbit boundary.",
             "It is not a substitute for hosted Playwright execution proof or Docker self-host proof.",
             "Do not use this receipt to claim Docker runtime, hosted route availability, Rybbit service health, or analytics delivery.",
         ],

@@ -8,7 +8,7 @@
     <h2 class="visually-hidden" aria-hidden="true">@BuildOpenWorkspacesHeading()</h2>
     @if (OpenWorkspaces.Count == 0)
     {
-        <p class="hint">No open workspaces.</p>
+        <p class="hint">@NoOpenDossiersMessage</p>
     }
     else
     {
@@ -27,14 +27,15 @@
                 }
                 <div class="navigator-row">
                     <button class="command-button classic-navigator-button @(isActive ? "selected" : string.Empty)"
-                            title="@workspace.Id.Value"
+                            title="@BuildOpenDossierTitle(workspaceLabel)"
+                            aria-label="@BuildOpenDossierTitle(workspaceLabel)"
                             disabled="@IsBusy"
                             @onclick="() => OpenWorkspaceAsync(workspace.Id.Value)">
                         <span>@workspaceLabel</span>
                     </button>
                     <button class="mini-btn compact-close"
-                            aria-label="Close workspace"
-                            title="Close workspace"
+                            aria-label="@CloseDossierLabel"
+                            title="@CloseDossierLabel"
                             disabled="@IsBusy"
                             @onclick="() => CloseWorkspaceAsync(workspace.Id.Value)">
                         ×
@@ -46,6 +47,10 @@
 </section>
 
 @code {
+    private const string NoOpenDossiersMessage = "No open dossiers.";
+    private const string CloseDossierLabel = "Close dossier";
+    private const string OpenDossierLabelPrefix = "Open dossier";
+
     [Parameter]
     public IReadOnlyList<OpenWorkspaceState> OpenWorkspaces { get; set; } = [];
 
@@ -73,6 +78,9 @@
     {
         return CloseWorkspaceRequested.InvokeAsync(workspaceId);
     }
+
+    private static string BuildOpenDossierTitle(string workspaceLabel)
+        => $"{OpenDossierLabelPrefix}: {workspaceLabel}";
 
     private string BuildOpenWorkspacesHeading()
     {

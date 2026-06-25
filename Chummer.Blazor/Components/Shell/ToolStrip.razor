@@ -50,25 +50,38 @@
         if (index <= 0 || index >= Commands.Count)
             return false;
 
-        return string.Equals(Commands[index - 1].Id, "copy", StringComparison.Ordinal)
-            && string.Equals(Commands[index].Id, "new_character", StringComparison.Ordinal);
+        return string.Equals(Commands[index - 1].Id, CopyCommandId, StringComparison.Ordinal)
+            && string.Equals(Commands[index].Id, NewCharacterCommandId, StringComparison.Ordinal);
     }
 
     private static string FormatToolStripLabel(string commandId)
         => commandId switch
         {
-            "new_character" => "New",
-            "open_character" => "Open",
-            "save_character" => "Save",
-            "save_character_as" => "Save As",
-            "print_character" => "Print",
-            "copy" => "Copy",
-            "paste" => "Paste",
-            "close_window" => "Close",
-            "close_all" => "Close All",
-            "update" => "Update",
-            "global_settings" => "Options",
-            "report_bug" => "Bug",
+            NewCharacterCommandId => "New",
+            OpenCharacterCommandId => "Open",
+            SaveCharacterCommandId => "Save",
+            SaveCharacterAsCommandId => "Save As",
+            PrintCharacterCommandId => "Print",
+            CopyCommandId => "Copy",
+            PasteCommandId => "Paste",
+            CloseWindowCommandId => "Close",
+            CloseAllCommandId => "Close All",
+            UpdateCommandId => "Update",
+            GlobalSettingsCommandId => "Options",
+            ReportBugCommandId => "Bug",
             _ => ShellChromeBoundary.FormatCommandLabel(commandId)
         };
+
+    private const string NewCharacterCommandId = "new_character";
+    private const string OpenCharacterCommandId = "open_character";
+    private const string SaveCharacterCommandId = "save_character";
+    private const string SaveCharacterAsCommandId = "save_character_as";
+    private const string PrintCharacterCommandId = "print_character";
+    private const string CopyCommandId = "copy";
+    private const string PasteCommandId = "paste";
+    private const string CloseWindowCommandId = "close_window";
+    private const string CloseAllCommandId = "close_all";
+    private const string UpdateCommandId = "update";
+    private const string GlobalSettingsCommandId = "global_settings";
+    private const string ReportBugCommandId = "report_bug";
 }

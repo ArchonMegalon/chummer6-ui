@@ -2,7 +2,7 @@
 
 ## Purpose
 
-This source-staged proof keeps browser-to-desktop continuity visible on the user-facing Chummer Online route and proof-compatible /blazor/workbench compatibility route.
+This source-staged proof keeps browser-to-desktop continuity visible on the user-facing Chummer Online route and /blazor/workbench compatibility route.
 
 The browser client should behave like another Chummer client head while still giving users clear paths to downloads, update status, Docker self-hosting, account state, help, and support.
 
@@ -10,7 +10,7 @@ The browser client should behave like another Chummer client head while still gi
 
 The staged desktop install lane covers:
 
-- a desktop install strip on the user-facing Chummer Online route and proof-compatible compatibility route
+- a desktop install strip on the user-facing Chummer Online route and /blazor/workbench compatibility route
 - downloads, update channel, release status, account, self-host notes, help, and support shortcuts
 - scoped responsive styling for desktop and mobile browser use
 - native desktop installer progress chrome using an amber accent bar, deep slate shell, mint progress fill, warm ink metadata, and amber hint text so the downloaded installer still feels connected to the Chummer Online visual system
@@ -30,6 +30,6 @@ Expected receipt:
 
 ## Boundary
 
-This is source alignment only. It proves that Chummer Online and proof-compatible workbench desktop install handoff source, style, native installer progress chrome, status reporting, and docs agree.
+This is source alignment only. It proves that Chummer Online and /blazor/workbench compatibility route desktop install handoff source, style, native installer progress chrome, status reporting, and docs agree.
 
 It is not hosted browser execution proof, Docker self-host proof, native installer runtime proof, installer proof, release-download proof, account authorization proof, portal-help-runtime proof, support-submission proof, or desktop-equivalent workflow parity.

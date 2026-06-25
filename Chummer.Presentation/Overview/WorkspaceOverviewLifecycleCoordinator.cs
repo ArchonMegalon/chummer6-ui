@@ -74,7 +74,7 @@ public sealed class WorkspaceOverviewLifecycleCoordinator : IWorkspaceOverviewLi
         if (string.IsNullOrWhiteSpace(workspaceId.Value))
         {
             return Task.FromResult(new WorkspaceOverviewLifecycleResult(
-                currentState with { Error = "Workspace id is required." },
+                currentState with { Error = "Dossier id is required." },
                 CurrentWorkspaceId));
         }
 
@@ -85,7 +85,7 @@ public sealed class WorkspaceOverviewLifecycleCoordinator : IWorkspaceOverviewLi
                 currentState with
                 {
                     Error = null,
-                    Notice = $"Workspace '{workspaceId.Value}' is already active."
+                    Notice = $"Dossier '{workspaceId.Value}' is already active."
                 },
                 CurrentWorkspaceId));
         }
@@ -101,7 +101,7 @@ public sealed class WorkspaceOverviewLifecycleCoordinator : IWorkspaceOverviewLi
         if (string.IsNullOrWhiteSpace(workspaceId.Value))
         {
             return new WorkspaceOverviewLifecycleResult(
-                currentState with { Error = "Workspace id is required." },
+                currentState with { Error = "Dossier id is required." },
                 CurrentWorkspaceId);
         }
 
@@ -118,7 +118,7 @@ public sealed class WorkspaceOverviewLifecycleCoordinator : IWorkspaceOverviewLi
                 _workspaceShellStateFactory.CreateEmptyShellState(
                     currentState,
                     session,
-                    closed ? "Closed active workspace." : "Active workspace was already closed."),
+                    closed ? "Closed active dossier." : "Active dossier was already closed."),
                 CurrentWorkspaceId);
         }
 
@@ -135,8 +135,8 @@ public sealed class WorkspaceOverviewLifecycleCoordinator : IWorkspaceOverviewLi
                 State = switched.State with
                 {
                     Notice = closed
-                        ? $"Closed active workspace. Switched to '{nextWorkspace.Value}'."
-                        : $"Active workspace was already closed. Switched to '{nextWorkspace.Value}'."
+                        ? $"Closed active dossier. Switched to '{nextWorkspace.Value}'."
+                        : $"Active dossier was already closed. Switched to '{nextWorkspace.Value}'."
                 }
             };
         }
@@ -148,8 +148,8 @@ public sealed class WorkspaceOverviewLifecycleCoordinator : IWorkspaceOverviewLi
                 OpenWorkspaces = session.OpenWorkspaces,
                 Error = null,
                 Notice = closed
-                    ? $"Closed workspace '{workspaceId.Value}'."
-                    : $"Workspace '{workspaceId.Value}' was already closed."
+                    ? $"Closed dossier '{workspaceId.Value}'."
+                    : $"Dossier '{workspaceId.Value}' was already closed."
             },
             CurrentWorkspaceId);
     }

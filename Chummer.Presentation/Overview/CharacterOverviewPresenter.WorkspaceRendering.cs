@@ -16,7 +16,7 @@ public sealed partial class CharacterOverviewPresenter
 
         if (currentWorkspace is null)
         {
-            Publish(State with { Error = "No workspace loaded." });
+            Publish(State with { Error = "No dossier loaded." });
             return;
         }
 
@@ -75,7 +75,7 @@ public sealed partial class CharacterOverviewPresenter
         CharacterWorkspaceId? currentWorkspace = ResolveCurrentWorkspaceId();
         if (currentWorkspace is null)
         {
-            Publish(State with { Error = "No workspace loaded." });
+            Publish(State with { Error = "No dossier loaded." });
             return;
         }
 
@@ -122,7 +122,7 @@ public sealed partial class CharacterOverviewPresenter
         CharacterWorkspaceId? currentWorkspace = ResolveCurrentWorkspaceId();
         if (currentWorkspace is null)
         {
-            Publish(State with { Error = "No workspace loaded." });
+            Publish(State with { Error = "No dossier loaded." });
             return;
         }
 

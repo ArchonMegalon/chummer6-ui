@@ -20,7 +20,7 @@
                         <h3>Continue Chummer Online</h3>
                         <p class="note">Start a fresh dossier, reopen a saved runner, or jump straight into classic utilities from the browser client.</p>
                     </div>
-                    <p class="startup-workbench-posture note">The character roster remains the primary route. Character Library and Master Index stay first-class from first paint.</p>
+                    <p class="startup-workbench-posture note">The Character Roster remains the primary route. Character Roster and Master Index stay first-class from first paint.</p>
                 </header>
 
                 <div class="startup-workbench-grid">
@@ -44,7 +44,7 @@
                         <h4>Recent Dossiers</h4>
                         @if (State.Session.RecentWorkspaceIds.Count == 0)
                         {
-                            <p class="note">No recent dossiers yet. Use <strong>Open...</strong> to restore a workspace from disk.</p>
+                            <p class="note">No recent dossiers yet. Use <strong>Open Dossier...</strong> to restore a dossier from disk.</p>
                         }
                         else
                         {
@@ -87,10 +87,10 @@
         }
         else
         {
-            <p class="note">Select a tab to render a character section.</p>
+            <p class="note">Select a tab to render a dossier section.</p>
         }
     }
-    else if ((string.Equals(State.LastCommandId, "save_character", StringComparison.Ordinal)
+    else if ((string.Equals(State.LastCommandId, SaveCharacterCommandId, StringComparison.Ordinal)
             && State.HasSavedWorkspace
             && !string.IsNullOrWhiteSpace(State.Notice))
         || State.PendingDownload is not null
@@ -582,7 +582,7 @@
                  @onkeydown="OnBrowseKeyDown">
             <header class="browse-shell-header">
                 <div>
-                    <h3>@(browseWorkspace.DialogTitle ?? "Browse Workspace")</h3>
+                    <h3>@(browseWorkspace.DialogTitle ?? "Browse Dossier")</h3>
                     <p class="note">@browseWorkspace.QueryText</p>
                 </div>
                 <div class="browse-shell-meta">
@@ -1143,6 +1143,13 @@
     private static string BuildBuildBlockerSupport(BuildLabConceptIntakeState buildLab)
         => FirstNonBlank(buildLab.SupportClosureSummary, buildLab.ExplainEntryId is null ? "Support can use the visible blocker details." : $"Support can use explanation {buildLab.ExplainEntryId}.");
 
+    private const string SaveCharacterCommandId = "save_character";
+    private const string OpenCharacterCommandId = "open_character";
+    private const string NewCharacterCommandId = "new_character";
+    private const string NewCharacterOriginCommandId = "new_character_origin";
+    private const string CharacterRosterCommandId = "character_roster";
+    private const string MasterIndexCommandId = "master_index";
+
     private static string FirstNonBlank(params string?[] values)
         => values.FirstOrDefault(value => !string.IsNullOrWhiteSpace(value)) ?? string.Empty;
 
@@ -1160,11 +1167,11 @@
 
     private IReadOnlyList<AppCommandDefinition> GetStartupPrimaryCommands()
         => ResolveStartupCommands(
-            "open_character",
-            "new_character",
-            "new_character_origin",
-            "character_roster",
-            "master_index");
+            OpenCharacterCommandId,
+            NewCharacterCommandId,
+            NewCharacterOriginCommandId,
+            CharacterRosterCommandId,
+            MasterIndexCommandId);
 
     private IReadOnlyList<AppCommandDefinition> GetStartupSupportCommands()
         => ResolveStartupCommands(

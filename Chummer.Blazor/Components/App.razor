@@ -57,6 +57,9 @@
         const maxQueueLength = 20;
         const eventPrefix = 'chummer_';
         const browserRouteEventName = 'browser_route';
+        const hostClassBlazor = 'blazor';
+        const analyticsScopeRouteWorkflowMetadataOnly = 'route-workflow-metadata-only';
+        const analyticsDisabledPolicy = 'disabled';
         const propertyHostClass = 'host_class';
         const propertyAnalyticsScope = 'analytics_scope';
         const propertySessionReplay = 'session_replay';
@@ -67,6 +70,7 @@
         const propertyControlId = 'control_id';
         const propertyDialogActionId = 'dialog_action_id';
         const propertyHasWorkspace = 'has_workspace';
+        const propertyHasDossier = 'has_dossier';
         const propertyHasFixture = 'has_fixture';
         const queryCommand = 'command';
         const queryTab = 'tab';
@@ -85,13 +89,14 @@
             propertyControlId,
             propertyDialogActionId,
             propertyHasWorkspace,
+            propertyHasDossier,
             propertyHasFixture
         ]);
-        const forbiddenPropertyPattern = /(alias|character|content|document|email|file|hash|name|owner|payload|workspace|xml)/i;
+        const forbiddenPropertyPattern = /(alias|character|content|document|dossier|email|file|hash|name|owner|payload|workspace|xml)/i;
         const safeTokenPattern = /^[a-z0-9_.:-]{1,80}$/i;
-        const analyticsScope = 'route-workflow-metadata-only';
-        const sessionReplayPolicy = 'disabled';
-        const autocapturePolicy = 'disabled';
+        const analyticsScope = analyticsScopeRouteWorkflowMetadataOnly;
+        const sessionReplayPolicy = analyticsDisabledPolicy;
+        const autocapturePolicy = analyticsDisabledPolicy;
         const routeFamilyChummerApp = 'chummer_app';
         const routeFamilyPreview = 'preview';
         const routeFamilyShowcase = 'showcase';
@@ -225,7 +230,7 @@
             }
 
             return {
-                [propertyHostClass]: 'blazor',
+                [propertyHostClass]: hostClassBlazor,
                 [propertyAnalyticsScope]: analyticsScope,
                 [propertySessionReplay]: sessionReplayPolicy,
                 [propertyAutocapture]: autocapturePolicy,
@@ -235,6 +240,7 @@
                 [propertyControlId]: safeToken(query.get(queryControl)),
                 [propertyDialogActionId]: safeToken(query.get(queryDialogAction)),
                 [propertyHasWorkspace]: query.has(queryWorkspace),
+                [propertyHasDossier]: query.has(queryWorkspace),
                 [propertyHasFixture]: query.has(queryFixture)
             };
         }
@@ -380,10 +386,10 @@
 
     private RybbitAnalyticsOptions? BuildRybbitAnalyticsOptions()
     {
-        if (!string.Equals(Configuration["CHUMMER_ANALYTICS_PROVIDER"], "rybbit", StringComparison.OrdinalIgnoreCase))
+        if (!string.Equals(Configuration[AnalyticsProviderConfigKey], RybbitAnalyticsProvider, StringComparison.OrdinalIgnoreCase))
             return null;
 
-        string? siteId = NormalizeAnalyticsToken(Configuration["CHUMMER_RYBBIT_SITE_ID"]);
+        string? siteId = NormalizeAnalyticsToken(Configuration[RybbitSiteIdConfigKey]);
         if (siteId is null)
             return null;
 
@@ -393,17 +399,17 @@
 
     private string ResolveRybbitScriptUrl()
     {
-        string? configuredScriptUrl = NormalizeOptionalValue(Configuration["CHUMMER_RYBBIT_SCRIPT_URL"]);
+        string? configuredScriptUrl = NormalizeOptionalValue(Configuration[RybbitScriptUrlConfigKey]);
         if (configuredScriptUrl is not null && IsSafeScriptUrl(configuredScriptUrl))
             return configuredScriptUrl;
 
-        string? baseUrl = NormalizeOptionalValue(Configuration["CHUMMER_RYBBIT_BASE_URL"]);
+        string? baseUrl = NormalizeOptionalValue(Configuration[RybbitBaseUrlConfigKey]);
         if (baseUrl is not null && Uri.TryCreate(baseUrl, UriKind.Absolute, out Uri? uri))
         {
-            return new Uri(uri, "/api/script.js").ToString();
+            return new Uri(uri, RybbitScriptPath).ToString();
         }
 
-        return "https://app.rybbit.io/api/script.js";
+        return RybbitDefaultScriptUrl;
     }
 
     private static bool IsSafeScriptUrl(string value)
@@ -429,6 +435,14 @@
 
     private static string? NormalizeOptionalValue(string? value)
         => string.IsNullOrWhiteSpace(value) ? null : value.Trim();
+
+    private const string AnalyticsProviderConfigKey = "CHUMMER_ANALYTICS_PROVIDER";
+    private const string RybbitAnalyticsProvider = "rybbit";
+    private const string RybbitSiteIdConfigKey = "CHUMMER_RYBBIT_SITE_ID";
+    private const string RybbitScriptUrlConfigKey = "CHUMMER_RYBBIT_SCRIPT_URL";
+    private const string RybbitBaseUrlConfigKey = "CHUMMER_RYBBIT_BASE_URL";
+    private const string RybbitScriptPath = "/api/script.js";
+    private const string RybbitDefaultScriptUrl = "https://app.rybbit.io/api/script.js";
 
     private sealed record RybbitAnalyticsOptions(string ScriptUrl, string SiteId);
 }

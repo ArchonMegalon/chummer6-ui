@@ -448,6 +448,7 @@
     },
     {
       "id": "workbench_character_library",
+      "display_label": "Character Roster",
       "path": ".codex-studio/published/BLAZOR_WORKBENCH_CHARACTER_LIBRARY_STAGED_PROOF.generated.json",
       "expected_contract_name": "chummer6-ui.blazor_workbench_character_library_staged_proof",
       "contract_name": "chummer6-ui.blazor_workbench_character_library_staged_proof",

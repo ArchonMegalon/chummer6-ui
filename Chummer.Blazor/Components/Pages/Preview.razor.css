@@ -5434,6 +5434,7 @@
     box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.055);
 }
 
+.browser-preview-shell [data-workbench-dock-action="character-roster"],
 .browser-preview-shell [data-workbench-dock-action="start-new"],
 .browser-preview-shell [data-workbench-dock-action="open-existing"] {
     border-color: rgba(255, 217, 120, 0.56);
@@ -5444,6 +5445,8 @@
     box-shadow: 0 18px 52px rgba(255, 217, 120, 0.18), inset 0 1px 0 rgba(255, 255, 255, 0.42);
 }
 
+.browser-preview-shell [data-workbench-dock-action="character-roster"]:hover,
+.browser-preview-shell [data-workbench-dock-action="character-roster"]:focus-visible,
 .browser-preview-shell [data-workbench-dock-action="start-new"]:hover,
 .browser-preview-shell [data-workbench-dock-action="start-new"]:focus-visible,
 .browser-preview-shell [data-workbench-dock-action="open-existing"]:hover,
@@ -5452,6 +5455,7 @@
     box-shadow: 0 22px 62px rgba(143, 240, 188, 0.22), inset 0 1px 0 rgba(255, 255, 255, 0.48);
 }
 
+.browser-preview-shell [data-workbench-dock-action="character-roster"]:focus-visible,
 .browser-preview-shell [data-workbench-dock-action="start-new"]:focus-visible,
 .browser-preview-shell [data-workbench-dock-action="open-existing"]:focus-visible {
     outline-color: rgba(6, 17, 13, 0.86);
@@ -5642,6 +5646,7 @@
     box-shadow: 0 14px 34px rgba(0, 0, 0, 0.23);
 }
 
+.browser-workbench-task-dock [data-workbench-dock-action="character-roster"],
 .browser-workbench-task-dock [data-workbench-dock-action="start-new"],
 .browser-workbench-task-dock [data-workbench-dock-action="open-existing"] {
     color: #0d1510;
@@ -5650,6 +5655,8 @@
     box-shadow: 0 20px 46px rgba(0, 0, 0, 0.34), 0 0 0 1px rgba(255, 255, 255, 0.08) inset;
 }
 
+.browser-workbench-task-dock [data-workbench-dock-action="character-roster"]:hover,
+.browser-workbench-task-dock [data-workbench-dock-action="character-roster"]:focus-visible,
 .browser-workbench-task-dock [data-workbench-dock-action="start-new"]:hover,
 .browser-workbench-task-dock [data-workbench-dock-action="start-new"]:focus-visible,
 .browser-workbench-task-dock [data-workbench-dock-action="open-existing"]:hover,

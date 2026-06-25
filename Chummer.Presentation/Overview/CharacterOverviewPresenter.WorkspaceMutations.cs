@@ -27,14 +27,14 @@ public sealed partial class CharacterOverviewPresenter
         CharacterWorkspaceId? currentWorkspace = ResolveCurrentWorkspaceId();
         if (currentWorkspace is null)
         {
-            Publish(State with { Error = "No workspace loaded." });
+            Publish(State with { Error = "No dossier loaded." });
             return;
         }
 
         CommandResult<WorkspaceDownloadReceipt> download = await _client.DownloadAsync(currentWorkspace.Value, ct);
         if (!download.Success || download.Value is null)
         {
-            Publish(State with { Error = download.Error ?? "Workspace download failed." });
+            Publish(State with { Error = download.Error ?? "Dossier download failed." });
             return;
         }
 

@@ -37,6 +37,29 @@
           "passed": true,
           "minimum": 10,
           "actual": 10
+        },
+        {
+          "id": "required_list_items:route_proof_markers",
+          "passed": true,
+          "expected": [
+            "public_chummer_app_route",
+            "public_chummer_app_roster_route",
+            "public_blazor_root_redirect",
+            "public_blazor_home_roster_entry"
+          ],
+          "missing": []
+        },
+        {
+          "id": "required_list_items:proof_routes",
+          "passed": true,
+          "expected": [
+            "/app",
+            "/app?command=character_roster",
+            "/blazor/",
+            "/blazor/app",
+            "/blazor/workbench"
+          ],
+          "missing": []
         }
       ]
     },

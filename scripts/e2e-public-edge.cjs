@@ -367,7 +367,7 @@ const checks = [
   {
     url: `${baseUrl}/blazor/`,
     assert: (text, response) =>
-      /\/blazor\/app\/?$/.test(response.url)
+      /\/blazor\/app\/?\?command=character_roster$/.test(response.url)
       && text.includes('Explore Chummer Online')
       && hasBlazorBaseHref(text)
   },
@@ -375,6 +375,12 @@ const checks = [
     url: `${baseUrl}/app`,
     assert: (text, response) =>
       /\/blazor\/app\/?$/.test(response.url)
+      && hasBlazorBaseHref(text)
+  },
+  {
+    url: `${baseUrl}/app?command=character_roster`,
+    assert: (text, response) =>
+      /\/blazor\/app\/?\?command=character_roster$/.test(response.url)
       && hasBlazorBaseHref(text)
   },
   {

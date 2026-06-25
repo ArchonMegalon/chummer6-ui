@@ -84,7 +84,7 @@ public sealed class OverviewCommandDispatcher : IOverviewCommandDispatcher
             case "refresh_character":
                 if (context.CurrentWorkspace is null)
                 {
-                    context.Publish(context.State with { Error = "No workspace loaded." });
+                    context.Publish(context.State with { Error = "No dossier loaded." });
                     return;
                 }
 
@@ -119,7 +119,7 @@ public sealed class OverviewCommandDispatcher : IOverviewCommandDispatcher
                 return;
             case "close_all":
             case "restart":
-                await context.CloseAllAsync(ct, "Workspace reset complete.");
+                await context.CloseAllAsync(ct, "Dossier reset complete.");
                 return;
             case "close_window":
                 if (context.CurrentWorkspace is null)
@@ -127,7 +127,7 @@ public sealed class OverviewCommandDispatcher : IOverviewCommandDispatcher
                     context.Publish(context.State with
                     {
                         Error = null,
-                        Notice = "No open workspace to close."
+                        Notice = "No open dossier to close."
                     });
                     return;
                 }

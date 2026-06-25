@@ -2,7 +2,7 @@
 
 ## Purpose
 
-This runbook covers the source-staged Blazor proof set for the user-facing Chummer Online route, the proof-compatible /blazor/workbench compatibility route, and the preview tools/result-state route.
+This runbook covers the source-staged Blazor proof set for the user-facing Chummer Online route, the /blazor/workbench compatibility route, and the preview tools/result-state route.
 
 `/app` remains the clean public browser client path, `/blazor/app` remains the hosted app path, `/blazor/workbench` remains the proof-compatible route, and `/blazor/preview` remains the preview tools/result-state route.
 
@@ -62,11 +62,11 @@ The aggregate currently covers:
 - `workbench_workspace_tabs`
 - `workbench_status_bar`
 
-The `workbench_polish` member carries the clean public `/app`, hosted `/blazor/app`, and compatibility-route `/blazor/workbench` task-dock and slate/amber/mint/blue Chummer Online theme-layer contract. It remains source-staged only; it does not prove screenshot rendering, accessibility, hosted route execution, or Docker browser execution.
+The `workbench_polish` member carries the clean public `/app`, hosted `/blazor/app`, and compatibility route `/blazor/workbench` task-dock and slate/amber/mint/blue Chummer Online theme-layer contract. It remains source-staged only; it does not prove screenshot rendering, accessibility, hosted route execution, or Docker browser execution.
 
 The `workbench_desktop_install` member carries browser-to-desktop continuity plus native installer amber/slate/mint progress chrome and high-contrast fallback source alignment. It remains source-staged only; it does not prove installer runtime, release-download execution, hosted route execution, or Docker browser execution.
 
-The `workbench_hosting_privacy` member carries the Chummer Online and proof-compatible workbench UI copy and status-utility contract for hosted/self-host posture, including the self-host default-off Rybbit boundary. It remains source-staged only; it does not prove Rybbit delivery, hosted route execution, or Docker browser execution.
+The `workbench_hosting_privacy` member carries the Chummer Online and /blazor/workbench compatibility route UI copy and status-utility contract for hosted/self-host posture, including the self-host default-off Rybbit boundary. It remains source-staged only; it does not prove Rybbit delivery, hosted route execution, or Docker browser execution.
 - `workbench_inspector_rail`
 - `workbench_dialog_stack`
 - `workbench_context_actions`
@@ -82,7 +82,7 @@ The `workbench_hosting_privacy` member carries the Chummer Online and proof-comp
 - `workbench_history_undo`
 - `workbench_sync_presence`
 - `workbench_data_packs`
-- `workbench_character_library`
+- `workbench_character_library` (display label: Character Roster)
 - `workbench_campaign_session`
 - `workbench_observability_privacy`
 - `workbench_first_run`
@@ -126,7 +126,7 @@ source_staged_no_browser_execution
 
 The staged proof set proves only that source-level wiring agrees across:
 
-- Chummer Online and proof-compatible workbench affordances
+- Chummer Online and /blazor/workbench compatibility route affordances
 - hosted route-entry probe source
 - hosted Playwright runner source
 - Docker self-host Playwright runner source
@@ -202,7 +202,7 @@ Expected preflight receipt:
 
 ## Adjacent Portal-Boundary Source Proofs
 
-Portal-boundary staged proofs such as `BLAZOR_PORTAL_INSTALLER_HANDOFF_STAGED_PROOF.generated.json` are useful for keeping download, installer, support, status, and help handoff contracts aligned with the browser-client story. They are intentionally not members of the Chummer Online and proof-compatible workbench source-staged proof set because they cover portal boundary behavior rather than a workbench workflow family.
+Portal-boundary staged proofs such as `BLAZOR_PORTAL_INSTALLER_HANDOFF_STAGED_PROOF.generated.json` are useful for keeping download, installer, support, status, and help handoff contracts aligned with the browser-client story. They are intentionally not members of the Chummer Online and /blazor/workbench compatibility route source-staged proof set because they cover portal boundary behavior rather than a workbench workflow family.
 
 Keep those receipts documented from `docs/BLAZOR_WEB_CLIENT_DOCS_INDEX.md`, and keep their runtime boundary explicit: they do not prove hosted execution, Docker self-host execution, or installer availability.
 

@@ -12,14 +12,21 @@ namespace Chummer.Blazor.Components.Layout;
 
 public partial class DesktopShell : IDisposable
 {
+    private const string SaveCharacterCommandId = "save_character";
+    private const string PrintCharacterCommandId = "print_character";
+    private const string CopyCommandId = "copy";
+    private const string NewCharacterCommandId = "new_character";
+    private const string OpenCharacterCommandId = "open_character";
+    private const string CloseWindowCommandId = "close_window";
+
     private static readonly string[] PreferredToolStripCommandOrder =
     [
-        "save_character",
-        "print_character",
-        "copy",
-        "new_character",
-        "open_character",
-        "close_window"
+        SaveCharacterCommandId,
+        PrintCharacterCommandId,
+        CopyCommandId,
+        NewCharacterCommandId,
+        OpenCharacterCommandId,
+        CloseWindowCommandId
     ];
 
     private CharacterOverviewStateBridge? _bridge;

@@ -9,7 +9,8 @@ const baseUrl = (process.env.CHUMMER_PORTAL_BASE_URL || 'https://chummer.run').r
 const outputPath = process.env.CHUMMER_PUBLIC_EDGE_EXECUTION_PROOF_PATH
   || path.join(process.cwd(), '.codex-studio/published/BLAZOR_PUBLIC_EDGE_EXECUTION_PROOF.generated.json');
 const promotedRouteBase = '/blazor/workbench';
-let promotedContinuationQuery = 'workspace=ws-1';
+const traceRoutes = process.env.CHUMMER_PUBLIC_EDGE_E2E_TRACE === '1';
+let promotedContinuationQuery = 'runner=blue';
 const requiredWorkflowFamilyIds = [
   'promoted_startup_command_executions',
   'promoted_dense_tool_surfaces',
@@ -98,7 +99,10 @@ async function enrichRouteError(page, route, label, error) {
 
 async function openPath(page, route, waitSelector) {
   try {
-    await page.goto(`${baseUrl}${route}`, { waitUntil: 'networkidle', timeout: 45000 });
+    if (traceRoutes) {
+      process.stderr.write(`[chummer-public-edge-e2e] ${route}\n`);
+    }
+    await page.goto(`${baseUrl}${route}`, { waitUntil: 'domcontentloaded', timeout: 45000 });
     if (waitSelector) {
       await page.locator(waitSelector).waitFor({ state: 'visible', timeout: 45000 });
     }
@@ -109,19 +113,26 @@ async function openPath(page, route, waitSelector) {
 
 async function resolvePromotedContinuationQuery(page) {
   await openPath(page, promotedRouteBase, 'body');
-  const continuationHref = await page.evaluate(() => {
+  const findContinuationHref = async () => page.evaluate(() => {
     const anchors = Array.from(document.querySelectorAll('a[href]'));
     const hrefs = anchors
       .map(anchor => anchor.getAttribute('href'))
       .filter(href => typeof href === 'string');
-    return hrefs.find(href => href.includes('/workbench?workspace='))
-      || hrefs.find(href => href.includes('/workbench?fixture='))
+    return hrefs.find(href => href.includes('workbench?runner='))
+      || hrefs.find(href => href.includes('workbench?workspace='))
+      || hrefs.find(href => href.includes('workbench?fixture='))
       || null;
   });
+  const continuationHref = await findContinuationHref();
   if (!continuationHref) {
-    throw new Error('unable to resolve promoted continuation query from visible workspace or fixture links');
+    throw new Error('unable to resolve promoted continuation query from visible runner, workspace, or fixture links');
   }
   const continuationUrl = new URL(continuationHref, `${baseUrl}${promotedRouteBase}`);
+  const runnerId = continuationUrl.searchParams.get('runner');
+  if (runnerId) {
+    promotedContinuationQuery = `runner=${runnerId}`;
+    return promotedContinuationQuery;
+  }
   const workspaceId = continuationUrl.searchParams.get('workspace');
   if (workspaceId) {
     promotedContinuationQuery = `workspace=${workspaceId}`;
@@ -129,10 +140,20 @@ async function resolvePromotedContinuationQuery(page) {
   }
   const fixtureId = continuationUrl.searchParams.get('fixture');
   if (fixtureId) {
+    await openPath(page, `${promotedRouteBase}?fixture=${encodeURIComponent(fixtureId)}`, 'body');
+    const runnerHref = await findContinuationHref();
+    if (runnerHref) {
+      const runnerUrl = new URL(runnerHref, `${baseUrl}${promotedRouteBase}`);
+      const promotedRunnerId = runnerUrl.searchParams.get('runner');
+      if (promotedRunnerId) {
+        promotedContinuationQuery = `runner=${promotedRunnerId}`;
+        return promotedContinuationQuery;
+      }
+    }
     promotedContinuationQuery = `fixture=${fixtureId}`;
     return promotedContinuationQuery;
   }
-  throw new Error('unable to resolve promoted continuation query from visible workspace or fixture links');
+  throw new Error('unable to resolve promoted continuation query from visible runner, workspace, or fixture links');
 }
 
 async function auditResumedWorkspace(page) {
@@ -496,7 +517,7 @@ async function auditCareerEntrySurface(page) {
   const dialogText = await page.locator('.desktop-dialog').innerText();
   expectTextIncludes(dialogText, 'Add Entry', 'hosted career entry route');
   expectTextIncludes(dialogText, 'Add a new entry while keeping the compact list/detail editor visible.', 'hosted career entry route');
-  expectTextIncludes(dialogText, 'Command Posture', 'hosted career entry route');
+  expectTextIncludes(dialogText, 'Command status', 'hosted career entry route');
   expectTextIncludes(dialogText, 'Entry Title', 'hosted career entry route');
   expectTextIncludes(dialogText, 'Entry creation and editing stay compact and preserve list context.', 'hosted career entry route');
   return {
@@ -510,7 +531,7 @@ async function auditCareerLogContinuitySurface(page) {
   const route = `${promotedRouteBase}?${promotedContinuationQuery}&tab=tab-calendar`;
   await openPath(page, route, '.section-preview > h2');
   const bodyText = await page.locator('body').innerText();
-  expectTextIncludes(bodyText, 'Career Log', 'hosted career log continuity route');
+  expectTextIncludes(bodyText, 'Calendar', 'hosted career log continuity route');
   expectTextIncludes(bodyText, 'Add Entry', 'hosted career log continuity route');
   return {
     route,
@@ -525,7 +546,7 @@ async function auditCareerEntryEditSurface(page) {
   const dialogText = await page.locator('.desktop-dialog').innerText();
   expectTextIncludes(dialogText, 'Edit Entry', 'hosted career entry edit route');
   expectTextIncludes(dialogText, 'Edit the selected entry in the same compact list/detail editor.', 'hosted career entry edit route');
-  expectTextIncludes(dialogText, 'Command Posture', 'hosted career entry edit route');
+  expectTextIncludes(dialogText, 'Command status', 'hosted career entry edit route');
   expectTextIncludes(dialogText, 'Entry Title', 'hosted career entry edit route');
   return {
     route,
@@ -608,18 +629,32 @@ async function auditRecentWorkAffordances(page) {
   await openPath(page, route, '[data-workbench-recent-workspace]');
   const bodyText = await page.locator('body').innerText();
   expectTextIncludes(bodyText, 'Resume BLUE', 'hosted recent work affordances');
-  const recentHref = await page.locator('[data-workbench-recent-workspace]').first().getAttribute('href');
-  expectTextIncludes(recentHref || '', '/workbench?workspace=', 'hosted recent work affordances');
+  const recentWorkspaceLink = page.locator('[data-workbench-recent-workspace]').first();
+  const recentHref = await recentWorkspaceLink.getAttribute('href');
+  const recentRouteQuery = await recentWorkspaceLink.getAttribute('data-workbench-route-query');
+  if (!/(^|\/)workbench\?workspace=/.test(recentHref || '')) {
+    throw new Error(`hosted recent work affordances: expected workspace continuation href, got '${recentHref || ''}'`);
+  }
+  if (recentRouteQuery !== 'workspace') {
+    throw new Error(`hosted recent work route query marker: expected workspace route query, got '${recentRouteQuery || ''}'`);
+  }
   return {
     route,
-    assertion: 'recent restored workspace affordance remains visible on canonical proof-compatible route',
+    assertion: 'recent restored workspace affordance remains visible with canonical workspace route-query marker',
     status: 'pass',
   };
 }
 
+async function expectWorkspaceRouteQueryMarker(page, selector, context) {
+  const routeQuery = await page.locator(selector).first().getAttribute('data-workbench-route-query');
+  expectTextIncludes(routeQuery || '', 'workspace', context);
+}
+
 async function auditRestoredSectionContinuations(page) {
   const route = `${promotedRouteBase}?${promotedContinuationQuery}`;
-  await openPath(page, route, '[data-workbench-entry-card="restored-continuations"]');
+  const restoredContinuationsSelector = '[data-workbench-entry-card="restored-continuations"]';
+  await openPath(page, route, restoredContinuationsSelector);
+  await expectWorkspaceRouteQueryMarker(page, restoredContinuationsSelector, 'hosted restored section route query marker');
   const bodyText = await page.locator('body').innerText();
   expectTextIncludes(bodyText, 'Resume BLUE on profile', 'hosted restored section continuations');
   expectTextIncludes(bodyText, 'Resume BLUE on rules', 'hosted restored section continuations');
@@ -628,7 +663,7 @@ async function auditRestoredSectionContinuations(page) {
   expectTextIncludes(bodyText, 'Resume BLUE on advanced', 'hosted restored section continuations');
   return {
     route,
-    assertion: 'restored section continuation affordances remain visible on canonical proof-compatible route',
+    assertion: 'restored section continuation affordances remain visible with canonical workspace route-query marker',
     status: 'pass',
   };
 }
@@ -676,7 +711,9 @@ async function auditResumedAction(page) {
 
 async function auditAdvancedActionAffordances(page) {
   const route = `${promotedRouteBase}?${promotedContinuationQuery}`;
-  await openPath(page, route, '[data-workbench-entry-card="restored-actions"]');
+  const restoredActionsSelector = '[data-workbench-entry-card="restored-actions"]';
+  await openPath(page, route, restoredActionsSelector);
+  await expectWorkspaceRouteQueryMarker(page, restoredActionsSelector, 'hosted restored action route query marker');
   const bodyText = await page.locator('body').innerText();
   expectTextIncludes(bodyText, 'Add a complex form for BLUE', 'hosted advanced action affordances');
   expectTextIncludes(bodyText, 'Add initiation for BLUE', 'hosted advanced action affordances');
@@ -718,7 +755,7 @@ async function auditAdvancedActionAffordances(page) {
   expectTextIncludes(bodyText, 'Remove drug for BLUE', 'hosted advanced action affordances');
   return {
     route,
-    assertion: 'advanced and career/support restored action affordances remain visible on canonical proof-compatible route',
+    assertion: 'advanced and career/support restored action affordances remain visible with canonical workspace route-query marker',
     status: 'pass',
   };
 }
@@ -781,6 +818,8 @@ async function run() {
 
   try {
     const page = await browser.newPage({ viewport: { width: 1440, height: 960 } });
+    page.setDefaultTimeout(45000);
+    page.setDefaultNavigationTimeout(45000);
     await resolvePromotedContinuationQuery(page);
     receipt.workflow_families.push({
       id: 'promoted_startup_command_executions',
@@ -805,7 +844,7 @@ async function run() {
           page,
           `${promotedRouteBase}?command=character_roster`,
           'Character Roster',
-          'Open runners on the left, keep the selected runner summary on the right',
+          'Group runners into your own folders',
           'Runner Status',
           'Bio / Concept / Notes',
         ),
@@ -1087,8 +1126,8 @@ async function run() {
         await auditAdvancedActionExecution(
           page,
           `${promotedRouteBase}?${promotedContinuationQuery}&tab=tab-gear&control=toggle_free_paid`,
-          'Free',
-          'Free'
+          'Pricing status',
+          'Selected item pricing was toggled between free and paid.'
         ),
       ],
     });
@@ -1162,7 +1201,7 @@ async function run() {
         await auditAdvancedActionExecution(
           page,
           `${promotedRouteBase}?${promotedContinuationQuery}&tab=tab-skills&control=skill_remove`,
-          'Remove Skill',
+          'Remove Perception',
           'Remove Perception'
         ),
         await auditAdvancedActionExecution(
@@ -1207,14 +1246,14 @@ async function run() {
           page,
           'identity_license_add',
           'Add SIN / License',
-          'Create a browser-safe identity, SIN, or license record while keeping rating, source, and legal posture visible.',
-          'Legal Posture'
+          'Create a browser-safe identity, SIN, or license record while keeping rating, source, and legal status visible.',
+          'Legal status'
         ),
         await auditIdentityLicenseSurface(
           page,
           'identity_license_edit',
           'Edit SIN / License',
-          'Review the selected identity record while keeping attached licenses and source posture visible.',
+          'Review the selected identity record while keeping attached licenses and source status visible.',
           'Attached Context'
         ),
         await auditIdentityLicenseSurface(

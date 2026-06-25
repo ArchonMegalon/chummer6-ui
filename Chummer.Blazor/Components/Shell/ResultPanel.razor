@@ -8,12 +8,12 @@
     <h2>@BuildResultHeading()</h2>
     <p class="hint">@BuildResultPostureHint()</p>
     <p class="note" data-result-notice>@(State.Notice ?? BuildResultReadyNotice())</p>
-    @if (string.Equals(State.LastCommandId, "save_character", StringComparison.Ordinal) && State.HasSavedWorkspace)
+    @if (string.Equals(State.LastCommandId, SaveCharacterCommandId, StringComparison.Ordinal) && State.HasSavedWorkspace)
     {
         <aside class="trust-receipt" data-result-dispatch="save">
             <strong>Browser save dispatch</strong>
-            <p class="hint"><strong>Workspace:</strong> @(State.WorkspaceId?.Value ?? "none")</p>
-            <p class="hint"><strong>Saved posture:</strong> persisted workspace state is marked saved and ready for continuity.</p>
+            <p class="hint"><strong>Dossier:</strong> @(State.WorkspaceId?.Value ?? "none")</p>
+            <p class="hint"><strong>Saved posture:</strong> persisted dossier state is marked saved and ready for continuity.</p>
             <p class="hint"><strong>Command:</strong> @State.LastCommandId</p>
         </aside>
     }
@@ -95,6 +95,8 @@
 </section>
 
 @code {
+    private const string SaveCharacterCommandId = "save_character";
+
     private readonly record struct ImportResultReceiptSection(string Title, IReadOnlyList<string> Lines);
     private static readonly string[] CanonicalImportResultReceiptSectionTitles =
     [
@@ -145,7 +147,7 @@
 
     private static string BuildImportDiffBefore(WorkspacePortabilityReceipt receipt)
         => UndetectableHumanizerCopyAdapter.Humanize(string.IsNullOrWhiteSpace(receipt.ContextSummary)
-            ? $"Incoming {receipt.FormatId} payload before workspace merge."
+            ? $"Incoming {receipt.FormatId} payload before dossier merge."
             : receipt.ContextSummary);
 
     private static string BuildImportDiffAfter(WorkspacePortabilityReceipt receipt)
@@ -166,13 +168,13 @@
         => $"import target {receipt.FormatId}; before/after change is copy-safe and excludes raw payload or merge actions until the user accepts the next safe action.";
 
     private static string BuildImportSupportHandoffReceipt(WorkspacePortabilityReceipt receipt)
-        => $"support can use {BuildImportReceiptCorrelationKey(receipt)} with context, blocker, and explanation text without changing the local workspace.";
+        => $"support can use {BuildImportReceiptCorrelationKey(receipt)} with context, blocker, and explanation text without changing the local dossier.";
 
     private static string BuildImportEnvironmentTupleDiff(WorkspacePortabilityReceipt receipt)
-        => $"before workspace/current-source/support-local/{NormalizeImportPayloadToken(receipt)}; after {receipt.CompatibilityState}/{NormalizeImportReceiptInline(receipt.NextSafeAction)}; correlation {BuildImportReceiptCorrelationKey(receipt)}.";
+        => $"before dossier/current-source/support-local/{NormalizeImportPayloadToken(receipt)}; after {receipt.CompatibilityState}/{NormalizeImportReceiptInline(receipt.NextSafeAction)}; correlation {BuildImportReceiptCorrelationKey(receipt)}.";
 
     private static string BuildGroundedImportDiffBefore(WorkspacePortabilityReceipt receipt)
-        => $"current workspace, support status, and source toggles stay unchanged while {receipt.FormatId} is reviewed with payload {NormalizeImportPayloadToken(receipt)}.";
+        => $"current dossier, support status, and source toggles stay unchanged while {receipt.FormatId} is reviewed with payload {NormalizeImportPayloadToken(receipt)}.";
 
     private static string BuildGroundedImportDiffAfter(WorkspacePortabilityReceipt receipt)
         => $"accepted content remains {receipt.CompatibilityState}; next safe action {NormalizeImportReceiptInline(receipt.NextSafeAction)}; explanation {NormalizeImportReceiptInline(receipt.ProvenanceSummary)}.";
@@ -203,7 +205,7 @@
         => $"before {receipt.FormatId}/{NormalizeImportPayloadToken(receipt)}; after {receipt.CompatibilityState}/{NormalizeImportReceiptInline(receipt.NextSafeAction)}; blocker {BuildImportBlockerReceipt(receipt)}; details {NormalizeImportReceiptInline(receipt.ProvenanceSummary)}.";
 
     private static string BuildImportSupportDiagnosticsReceipt(WorkspacePortabilityReceipt receipt)
-        => $"support can use {BuildImportReceiptCorrelationKey(receipt)} with before/after environment details, blocker text, and explanation without changing local workspace state.";
+        => $"support can use {BuildImportReceiptCorrelationKey(receipt)} with before/after environment details, blocker text, and explanation without changing local dossier state.";
 
     private static string NormalizeImportPayloadToken(WorkspacePortabilityReceipt receipt)
         => string.IsNullOrWhiteSpace(receipt.PayloadSha256)

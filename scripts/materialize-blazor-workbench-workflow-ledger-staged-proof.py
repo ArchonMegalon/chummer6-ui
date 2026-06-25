@@ -28,6 +28,8 @@ CHECKS = [
             "data-workbench-ledger-row=\"startup\"",
             "data-workbench-ledger-row=\"editing\"",
             "data-workbench-ledger-row=\"output\"",
+            "Save, download, export, and print dossiers",
+            "Browser-safe dossier output is visible; native file work hands off cleanly.",
             "data-workbench-ledger-row=\"recovery\"",
             "data-workbench-ledger-row=\"portal\"",
             "data-workbench-ledger-row=\"proof\"",
@@ -117,7 +119,7 @@ def main() -> int:
         "checks": checks,
         "failures": failures,
         "notes": [
-            "This receipt only proves that Chummer Online and proof-compatible workbench workflow-ledger source, style, status, and docs agree.",
+            "This receipt only proves that Chummer Online and /blazor/workbench compatibility route workflow-ledger source, style, status, and docs agree.",
             "It is not a substitute for hosted Playwright execution proof or Docker self-host proof.",
             "Do not use this receipt to claim runtime capability, persistence, or browser parity.",
         ],

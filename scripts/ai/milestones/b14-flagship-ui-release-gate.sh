@@ -1190,6 +1190,8 @@ browser_lane_proof_set_checks = {
     == int(browser_lane_proof_set_receipt.get("passed_receipt_count") or -1),
 }
 public_edge_workbench_required_route_markers = [
+    "public_chummer_app_route",
+    "public_chummer_app_roster_route",
     "public_blazor_root_redirect",
     "public_blazor_health",
     "public_workbench_route",
@@ -1232,6 +1234,7 @@ public_edge_workbench_receipt_checks = {
         for marker in public_edge_workbench_required_workflow_markers
     ),
     "new_character_deep_link_present": "/blazor/preview?command=new_character" in json.dumps(public_edge_workbench_receipt),
+    "chummer_app_roster_route_present": "/app?command=character_roster" in json.dumps(public_edge_workbench_receipt),
     "workbench_route_present": "/blazor/workbench" in json.dumps(public_edge_workbench_receipt),
     "route_markers_present": all(
         marker in [str(item).strip() for item in public_edge_workbench_receipt.get("route_proof_markers") or []]

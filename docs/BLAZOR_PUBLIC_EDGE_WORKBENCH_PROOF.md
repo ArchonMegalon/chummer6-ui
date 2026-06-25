@@ -20,7 +20,7 @@ Does the public `chummer.run` edge expose the promoted browser-client route fami
 
 More precisely:
 
-Can the public edge serve the browser shell, preserve the clean public `/app` route, hosted `/blazor/app` route, `/blazor/home` roster-first orientation route with the visible `Roster entry: /app?command=character_roster` pill, and proof-compatible `/blazor/workbench` route family, and accept the current resume/result/action route shapes without claiming full browser workflow execution?
+Can the public edge serve the browser shell, preserve the clean public `/app` route, hosted `/blazor/app` route, roster-first `/blazor/` root redirect, `/blazor/home` orientation route with the visible `Roster entry: /app?command=character_roster` pill, and proof-compatible `/blazor/workbench` route family, and accept the current resume/result/action route shapes without claiming full browser workflow execution?
 
 This proof tier does not claim that the hosted browser client completed a real user workflow. It only claims that the public and proof-compatible route family exists, is reachable, and preserves the expected route shapes.
 
@@ -48,6 +48,8 @@ The current hosted route-entry tier should cover these route families:
   `/blazor/home`
 - clean public Chummer Online route:
   `/app`
+- clean public Chummer Online roster route:
+  `/app?command=character_roster`
 - hosted Chummer Online path:
   `/blazor/app`
 - canonical proof-compatible route:
@@ -79,7 +81,7 @@ The current hosted route-entry tier should cover these route families:
 
 These route families establish that:
 
-- `/blazor/` resolves into the promoted browser lane
+- `/blazor/` resolves into Chummer Online and immediately opens the roster-first `app?command=character_roster` browser workflow
 - `/app` exposes the promoted browser client through the clean public Chummer Online name
 - `/blazor/app` remains the hosted Blazor app path for the same promoted browser client
 - `/blazor/home` exposes the product/orientation page without becoming the primary workflow route
@@ -129,6 +131,7 @@ Required receipt contract:
 - required proof routes:
   `/blazor/`
   `/app`
+  `/app?command=character_roster`
   `/blazor/health`
   `/blazor/app`
   `/blazor/workbench`
@@ -152,7 +155,7 @@ Required receipt contract:
   `/blazor/workbench?workspace=ws-1&tab=tab-calendar&control=move_down`
 - route probe count must match the number of proof routes
 - route probe failures must be empty for a passing receipt
-- notes must include `Public product navigation remains /app, /blazor/app is the hosted app path, /blazor/home carries the roster-first route entry, and /blazor/workbench is the canonical proof-compatible route base.`
+- notes must include `Public product navigation remains /app, /blazor/ redirects into the roster-first app?command=character_roster browser workflow, /blazor/app is the hosted app path, /blazor/home carries the roster-first orientation entry, and /blazor/workbench is the canonical proof-compatible route base.`
 
 ## Current verifier and wrapper
 

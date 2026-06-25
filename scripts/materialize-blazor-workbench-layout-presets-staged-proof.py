@@ -26,10 +26,12 @@ CHECKS = [
             "data-workbench-layout-presets-action=\"dense-sheet\"",
             "data-workbench-layout-presets-action=\"split-review\"",
             "data-workbench-layout-presets-action=\"output\"",
+            "Prepare dossier print and export work.",
             "data-workbench-layout-presets-action=\"mobile-safe\"",
             "data-workbench-layout-presets-action=\"focus-pane\"",
             "data-workbench-layout-presets-action=\"help\"",
-            "/help",
+            "href=\"@HelpHref\"",
+            "private const string HelpHref = \"/help\"",
         ],
     },
     {
@@ -115,7 +117,7 @@ def main() -> int:
         "checks": checks,
         "failures": failures,
         "notes": [
-            "This receipt only proves that Chummer Online and proof-compatible workbench layout-presets source, style, status, and docs agree.",
+            "This receipt only proves that Chummer Online and /blazor/workbench compatibility route layout-presets source, style, status, and docs agree.",
             "It is not a substitute for hosted Playwright execution proof, Docker self-host proof, pane-resizing proof, portal help runtime, or persisted-layout proof.",
             "Do not use this receipt to claim pane resizing, portal help runtime, persisted layout behavior, or browser execution parity.",
         ],

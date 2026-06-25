@@ -26,11 +26,20 @@ CHECKS = [
             "Open runtime details, About, health, release status, or preview tools",
             "data-workbench-diagnostics-action=\"runtime-inspector\"",
             "data-workbench-diagnostics-action=\"about\"",
+            "private const string AboutCommand = \"about\"",
+            "command: AboutCommand",
             "data-workbench-diagnostics-action=\"health\"",
+            "href=\"@HealthHref\"",
+            "private const string HealthHref = \"health\"",
             "data-workbench-diagnostics-action=\"status\"",
+            "href=\"@StatusHref\"",
+            "private const string StatusHref = \"/status\"",
             "data-workbench-diagnostics-action=\"proof-shelf\"",
+            "href=\"@PreviewHref\"",
+            "private const string PreviewHref = \"preview\"",
             "data-workbench-diagnostics-action=\"help\"",
-            "href=\"/help\"",
+            "href=\"@HelpHref\"",
+            "private const string HelpHref = \"/help\"",
         ],
     },
     {
@@ -49,6 +58,26 @@ CHECKS = [
         "tokens": [
             "RuntimeInspectorCommandId",
             "about",
+        ],
+    },
+    {
+        "id": "runtime_inspector_dossier_copy",
+        "path": "Chummer.Blazor/Components/Shared/RuntimeInspectorPanel.razor",
+        "tokens": [
+            "Review the installed rules, compatibility notes, and service links for this dossier.",
+            "without changing the dossier.",
+            "BuildSupportProofDiffReceipt",
+            "BuildSupportHandoffReceipt",
+        ],
+    },
+    {
+        "id": "explain_trace_dossier_copy",
+        "path": "Chummer.Blazor/Components/Shared/ExplainTracePanel.razor",
+        "tokens": [
+            "BuildExplainDiffReceipt",
+            "without changing the dossier.",
+            "BuildExplainEnvironmentBefore",
+            "BuildExplainEnvironmentAfter",
         ],
     },
     {
@@ -124,7 +153,7 @@ def main() -> int:
         "checks": checks,
         "failures": failures,
         "notes": [
-            "This receipt only proves that Chummer Online and proof-compatible workbench diagnostics source, style, status, and docs agree, including the same-origin /help diagnostics action.",
+            "This receipt only proves that Chummer Online and /blazor/workbench compatibility route diagnostics source, style, status, and docs agree, including the same-origin /help diagnostics action.",
             "It is not a substitute for hosted Playwright execution proof or Docker self-host proof.",
             "Do not use this receipt to claim runtime health, build validity, diagnostics execution, portal help runtime behavior, or hosted proof readiness.",
         ],

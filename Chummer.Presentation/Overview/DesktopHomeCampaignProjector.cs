@@ -29,10 +29,10 @@ public static class DesktopHomeCampaignProjector
         if (summary is null && leadDigest is null)
         {
             return new DesktopHomeCampaignProjection(
-                UndetectableHumanizerCopyAdapter.Humanize("No signed-in campaign workspace is loaded yet. Claim this copy before you rely on restore, continuity, or support for this install."),
-                UndetectableHumanizerCopyAdapter.Humanize("Claim this copy, open your workspace, and refresh Home before you rely on campaign return or device restore."),
+                UndetectableHumanizerCopyAdapter.Humanize("No signed-in campaign dossier is loaded yet. Claim this copy before you rely on restore, continuity, or support for this install."),
+                UndetectableHumanizerCopyAdapter.Humanize("Claim this copy, open your dossier, and refresh Home before you rely on campaign return or device restore."),
                 UndetectableHumanizerCopyAdapter.Humanize("Restore: no account-backed dossiers, campaigns, or reconnectable files are loaded yet."),
-                UndetectableHumanizerCopyAdapter.Humanize("Device: this copy is local-only until account restore attaches it to your campaign workspace."),
+                UndetectableHumanizerCopyAdapter.Humanize("Device: this copy is local-only until account restore attaches it to your campaign dossier."),
                 UndetectableHumanizerCopyAdapter.Humanize("Support works best after this copy is claimed, because fixes and restore notes can target the exact install."),
                 LeadWorkspaceId: null,
                 ReadinessHighlights:
@@ -42,7 +42,7 @@ public static class DesktopHomeCampaignProjector
                 Watchouts:
                 [
                     "Campaign return remains guest-only until account restore data lands on this install.",
-                    "Support and fix notices become install-specific after this copy and the current campaign workspace line up."
+                    "Support and fix notices become install-specific after this copy and the current campaign dossier line up."
                 ]);
         }
 
@@ -52,7 +52,7 @@ public static class DesktopHomeCampaignProjector
                 UndetectableHumanizerCopyAdapter.Humanize($"Campaign: {leadDigest.ReturnSummary} {(serverPlane?.RunboardSummary ?? leadDigest.ActiveSceneSummary ?? string.Empty)} {serverPlane?.SessionReadinessSummary ?? string.Empty}".Trim()),
                 UndetectableHumanizerCopyAdapter.Humanize(string.IsNullOrWhiteSpace(serverPlane?.NextSafeAction) ? leadDigest.NextSafeAction : serverPlane.NextSafeAction),
                 serverPlane is null
-                    ? UndetectableHumanizerCopyAdapter.Humanize("Restore: the calmer workspace digest is present, but the full account-backed restore details still need a refresh.")
+                    ? UndetectableHumanizerCopyAdapter.Humanize("Restore: the calmer dossier digest is present, but the full account-backed restore details still need a refresh.")
                     : UndetectableHumanizerCopyAdapter.Humanize($"Restore: {serverPlane.RestoreSummary}"),
                 UndetectableHumanizerCopyAdapter.Humanize($"Claimed device: {leadDigest.DeviceRoleSummary}"),
                 UndetectableHumanizerCopyAdapter.Humanize(serverPlane is null || serverPlane.SupportHighlights.Count == 0
@@ -100,7 +100,7 @@ public static class DesktopHomeCampaignProjector
             .ToArray();
 
         string summaryLine = leadWorkspace is null
-            ? $"Campaign: {groundedSummary.Dossiers.Count} dossier(s), {groundedSummary.Campaigns.Count} campaign(s), and {groundedSummary.Runs.Count} runboard item(s) are attached to this account, but no current campaign workspace return target is pinned yet."
+            ? $"Campaign: {groundedSummary.Dossiers.Count} dossier(s), {groundedSummary.Campaigns.Count} campaign(s), and {groundedSummary.Runs.Count} runboard item(s) are attached to this account, but no current campaign dossier return target is pinned yet."
             : $"Campaign: {(leadDigest?.ReturnSummary ?? leadWorkspace.ReturnSummary)} {(leadDigest?.ActiveSceneSummary ?? leadWorkspace.ActiveSceneSummary) ?? string.Empty} {groundedSummary.Dossiers.Count} dossier(s), {groundedSummary.Campaigns.Count} campaign(s), and {groundedSummary.Runs.Count} runboard item(s) stay attached to the same account-backed continuity details.";
         if (!string.IsNullOrWhiteSpace(serverPlane?.SessionReadinessSummary))
         {
@@ -356,15 +356,15 @@ public static class DesktopHomeCampaignProjector
 
         if (leadWorkspace is not null)
         {
-            return $"Reopen {leadWorkspace.CampaignName} and continue the grounded campaign workspace from the latest continuity snapshot.";
+            return $"Reopen {leadWorkspace.CampaignName} and continue the grounded campaign dossier from the latest continuity snapshot.";
         }
 
         if (summary.Restore.RecentCampaigns.Count > 0)
         {
-            return "Open your workspace and restore the current campaign before you create another local-only workspace.";
+            return "Open your dossier and restore the current campaign before you create another local-only dossier.";
         }
 
-        return "Claim this copy and create one campaign workspace before you rely on return and restore.";
+        return "Claim this copy and create one campaign dossier before you rely on return and restore.";
     }
 
     private static IEnumerable<string> BuildFirstPlayableSessionHighlights(FirstPlayableSessionProjection? firstPlayableSession)
@@ -473,7 +473,7 @@ public static class DesktopHomeCampaignProjector
             return $"Support closure: {supportReuseHint}";
         }
 
-        return "Support closure: fixes, notices, and confirmation stay attached to the claimed install, current channel, and the campaign workspace you reopen from this home cockpit.";
+        return "Support closure: fixes, notices, and confirmation stay attached to the claimed install, current channel, and the campaign dossier you reopen from this home cockpit.";
     }
 
     private static string HumanizeValue(string? value, string fallback)

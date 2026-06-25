@@ -20,7 +20,7 @@ CHECKS = [
         "id": "product_workbench_tree_tools",
         "path": "Chummer.Blazor/Components/Pages/Preview.razor",
         "tokens": [
-            "Workbench tree and list tools",
+            "Browser-client tree and list tools",
             "data-workbench-tree-tools=\"strip\"",
             "Keep dense tree and list actions visible.",
             "data-workbench-tree-tools-action=\"expand\"",
@@ -29,7 +29,8 @@ CHECKS = [
             "data-workbench-tree-tools-action=\"reorder\"",
             "data-workbench-tree-tools-action=\"pin\"",
             "data-workbench-tree-tools-action=\"help\"",
-            "/help",
+            "href=\"@HelpHref\"",
+            "private const string HelpHref = \"/help\"",
             "data-workbench-tree-tools-action=\"selection\"",
         ],
     },
@@ -116,7 +117,7 @@ def main() -> int:
         "checks": checks,
         "failures": failures,
         "notes": [
-            "This receipt only proves that Chummer Online and proof-compatible workbench tree-tools source, style, status, and docs agree.",
+            "This receipt only proves that Chummer Online and /blazor/workbench compatibility route tree-tools source, style, status, and docs agree.",
             "It is not a substitute for hosted Playwright execution proof, Docker self-host proof, tree virtualization proof, portal help runtime, or list mutation proof.",
             "Do not use this receipt to claim tree virtualization, portal help runtime, list mutation, or browser execution parity.",
         ],

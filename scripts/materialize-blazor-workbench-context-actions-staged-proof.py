@@ -29,7 +29,8 @@ CHECKS = [
             "data-workbench-context-actions-action=\"duplicate\"",
             "data-workbench-context-actions-action=\"source\"",
             "data-workbench-context-actions-action=\"help\"",
-            "/help",
+            "href=\"@HelpHref\"",
+            "private const string HelpHref = \"/help\"",
             "data-workbench-context-actions-action=\"recover\"",
         ],
     },
@@ -116,7 +117,7 @@ def main() -> int:
         "checks": checks,
         "failures": failures,
         "notes": [
-            "This receipt only proves that Chummer Online and proof-compatible workbench context-actions source, style, status, and docs agree.",
+            "This receipt only proves that Chummer Online and /blazor/workbench compatibility route context-actions source, style, status, and docs agree.",
             "It is not a substitute for hosted Playwright execution proof, Docker self-host proof, right-click menu proof, portal help runtime, or selection-state runtime proof.",
             "Do not use this receipt to claim right-click menu behavior, portal help runtime, selection-state runtime behavior, or browser execution parity.",
         ],

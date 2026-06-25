@@ -11,6 +11,7 @@ EXPECTED_CONTRACT = "chummer6-ui.blazor_public_edge_workbench_proof"
 ALLOWED_STATUSES = {"not_run", "pass", "passed", "ready"}
 REQUIRED_ROUTE_PROOF_MARKERS = {
     "public_chummer_app_route",
+    "public_chummer_app_roster_route",
     "public_blazor_root_redirect",
     "public_blazor_home_roster_entry",
     "public_blazor_health",
@@ -43,6 +44,7 @@ EXPANDED_WORKFLOW_PROOFS = {
 REQUIRED_PROOF_ROUTES = {
     "/blazor/",
     "/app",
+    "/app?command=character_roster",
     "/blazor/health",
     "/blazor/home",
     "/blazor/app",
@@ -65,7 +67,7 @@ EXPANDED_PROOF_ROUTES = {
 }
 ALLOWED_PROOF_SHAPES = {"core", "expanded"}
 REQUIRED_ROUTE_MODEL_NOTE = (
-    "Public product navigation remains /app, /blazor/app is the hosted app path, /blazor/home carries the roster-first route entry, and /blazor/workbench is the canonical proof-compatible route base."
+    "Public product navigation remains /app, /blazor/ redirects into the roster-first app?command=character_roster browser workflow, /blazor/app is the hosted app path, /blazor/home carries the roster-first orientation entry, and /blazor/workbench is the canonical proof-compatible route base."
 )
 
 
@@ -189,7 +191,7 @@ def main() -> int:
 
         if not isinstance(notes, list) or REQUIRED_ROUTE_MODEL_NOTE not in {str(note).strip() for note in notes}:
             reasons.append(
-                "passing hosted route-entry receipt must state the /blazor/app public route and /blazor/workbench proof-base boundary"
+                "passing hosted route-entry receipt must state the roster-first /blazor/ redirect, /blazor/app hosted route, and /blazor/workbench proof-base boundary"
             )
 
         expanded_declared = (

@@ -46,13 +46,13 @@ public sealed partial class CharacterOverviewPresenter
         CharacterWorkspaceId? currentWorkspace = ResolveCurrentWorkspaceId();
         if (action is null)
         {
-            Publish(State with { Error = "Workspace action is required." });
+            Publish(State with { Error = "Dossier action is required." });
             return;
         }
 
         if (action.RequiresOpenCharacter && currentWorkspace is null)
         {
-            Publish(State with { Error = "No workspace loaded." });
+            Publish(State with { Error = "No dossier loaded." });
             return;
         }
 
@@ -91,7 +91,7 @@ public sealed partial class CharacterOverviewPresenter
                 });
                 return;
             default:
-                Publish(State with { Error = $"Unsupported workspace action kind '{action.Kind}'." });
+                Publish(State with { Error = $"Unsupported dossier action kind '{action.Kind}'." });
                 return;
         }
     }
@@ -107,7 +107,7 @@ public sealed partial class CharacterOverviewPresenter
 
         if (currentWorkspace is null)
         {
-            Publish(State with { Error = "No workspace loaded." });
+            Publish(State with { Error = "No dossier loaded." });
             return;
         }
 

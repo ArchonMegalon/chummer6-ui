@@ -13,7 +13,7 @@
 
 <main class="public-preview">
     <header class="public-hero">
-        <nav class="public-nav" aria-label="Primary">
+        <nav class="public-nav" aria-label="@PrimaryNavigationAriaLabel">
             <a class="brand-lockup" href="@HomeRoute">
                 <span class="brand-mark">CH</span>
                 <span class="brand-copy">
@@ -23,11 +23,11 @@
             </a>
 
             <div class="public-nav-links">
-                <a href="#tour">Tour</a>
-                <a href="#boundaries">Boundaries</a>
-                <a href="#trust">Trust</a>
-                <a href="/downloads/">Downloads</a>
-                <a href="/docs/">Docs</a>
+                <a href="@TourAnchor">Tour</a>
+                <a href="@BoundariesAnchor">Boundaries</a>
+                <a href="@TrustAnchor">Trust</a>
+                <a href="@DownloadsRoute">Downloads</a>
+                <a href="@DocsRoute">Docs</a>
                 <a class="nav-cta" href="@AppRoute">Open Chummer Online</a>
             </div>
         </nav>
@@ -43,8 +43,8 @@
                 </p>
 
                 <div class="hero-actions">
-                    <a class="primary-link" href="@RosterRoute" data-home-hero-action="explore-chummer-online">Explore Chummer Online</a>
-                    <a class="secondary-link" href="#tour">See web client tour</a>
+                    <a class="primary-link" href="@RosterRoute" data-home-hero-action="@ExploreChummerOnlineHeroAction">Explore Chummer Online</a>
+                    <a class="secondary-link" href="@TourAnchor">See web client tour</a>
                 </div>
 
                 <dl class="hero-facts">
@@ -63,7 +63,7 @@
                 </dl>
             </div>
 
-            <aside class="hero-panel" aria-label="Preview promise">
+            <aside class="hero-panel" aria-label="@PreviewPromiseAriaLabel">
                 <p class="eyebrow">Chummer Online promise</p>
                 <ul class="promise-list">
                     <li>Self-hosted Docker deployment with one published front door.</li>
@@ -71,16 +71,16 @@
                     <li>Browser parity claims only where the underlying workflow is genuinely live.</li>
                 </ul>
                 <div class="route-pills">
-                    <span>Public root: <code>/</code></span>
+                    <span>Public root: <code>@PublicRootRoute</code></span>
                     <span>Roster entry: <code>@PublicRosterRoute</code></span>
                     <span>App route: <code>@PublicAppRoute</code></span>
-                    <span>Self-host docs: <code>/docs</code></span>
+                    <span>Self-host docs: <code>@PublicDocsRoute</code></span>
                 </div>
             </aside>
         </section>
     </header>
 
-    <section id="tour" class="content-band">
+    <section id="@TourSectionId" class="content-band">
         <div class="band-heading">
             <p class="section-kicker">Why this exists</p>
             <h2>Use the browser to open Chummer's real app shell, not a disconnected marketing mock.</h2>
@@ -99,22 +99,22 @@
             <article class="tour-card">
                 <h3>Structured proof rails</h3>
                 <p>Inspect build handoff, rule explainability, publication posture, and review surfaces backed by the real presentation contracts.</p>
-                <a href="#trust">Jump to trust section</a>
+                <a href="@TrustAnchor">Jump to trust section</a>
             </article>
             <article class="tour-card">
                 <h3>Self-hosted deployment path</h3>
                 <p>Jump from the public surface into downloads and docs without leaving the browser-facing product story.</p>
-                <a href="/docs/">Open self-host docs</a>
+                <a href="@DocsRoute">Open self-host docs</a>
             </article>
             <article class="tour-card">
                 <h3>Shared UI library</h3>
                 <p>Open reusable panels and shared component samples when you need to inspect how the browser client is assembled.</p>
-                <a href="showcase">Open showcase</a>
+                <a href="@ShowcaseRoute">Open showcase</a>
             </article>
         </div>
     </section>
 
-    <section id="boundaries" class="content-band content-band-boundary">
+    <section id="@BoundariesSectionId" class="content-band content-band-boundary">
         <div class="band-heading">
             <p class="section-kicker">Clear boundaries</p>
             <h2>What Chummer Online owns today, and what still belongs to the native desktop client.</h2>
@@ -143,7 +143,7 @@
         </div>
     </section>
 
-    <section id="trust" class="content-band">
+    <section id="@TrustSectionId" class="content-band">
         <div class="band-heading">
             <p class="section-kicker">Product trust</p>
             <h2>Real browser product rails, not placeholder marketing panels.</h2>
@@ -166,7 +166,7 @@
     </footer>
 </main>
 
-<section hidden data-testid="desktop-shell-route-anchor">
+<section hidden data-testid="@DesktopShellRouteAnchorTestId">
     Desktop shell route anchor.
 </section>
 
@@ -184,27 +184,51 @@
     {
         if (IsRootRoute)
         {
-            Navigation.NavigateTo(AppRoute, replace: true);
+            Navigation.NavigateTo(RosterRoute, replace: true);
         }
     }
 
     private const string AppRoute = "app";
     private const string HomeRoute = "home";
+    private const string PublicRootRoute = "/";
     private const string PublicAppRoute = "/app";
+    private const string DownloadsRoute = "/downloads/";
+    private const string DocsRoute = "/docs/";
+    private const string PublicDocsRoute = "/docs";
+    private const string ShowcaseRoute = "showcase";
+    private const string ContactPortraitRevisionMediaPath = "/media/portraits/contact-portrait-revision.png";
+    private const string ContactPortraitCurrentMediaPath = "/media/portraits/contact-portrait-current.png";
+    private const string RouteRecapClipMediaPath = "/media/routes/route-recap-clip.mp4";
+    private const string DesktopShellRouteAnchorTestId = "desktop-shell-route-anchor";
+    private const string FlagshipMediaSampleAnchorTestId = "flagship-media-sample-anchor";
+    private const string CampaignSpineShowcaseAnchorTestId = "campaign-spine-showcase-anchor";
+    private const string ContactPortraitRevisionAssetId = "asset-portraits-01";
+    private const string ContactPortraitCurrentAssetId = "asset-dossier-01";
+    private const string RouteRecapClipAssetId = "asset-news-01";
+    private const string ExploreChummerOnlineHeroAction = "explore-chummer-online";
+    private const string PrimaryNavigationAriaLabel = "Primary";
+    private const string PreviewPromiseAriaLabel = "Preview promise";
+    private const string TourSectionId = "tour";
+    private const string BoundariesSectionId = "boundaries";
+    private const string TrustSectionId = "trust";
+    private const string RosterCommandQueryName = "command";
     private const string CharacterRosterCommand = "character_roster";
-    private static string RosterRoute => $"{AppRoute}?command={CharacterRosterCommand}";
+    private static string TourAnchor => $"#{TourSectionId}";
+    private static string BoundariesAnchor => $"#{BoundariesSectionId}";
+    private static string TrustAnchor => $"#{TrustSectionId}";
+    private static string RosterRoute => $"{AppRoute}?{RosterCommandQueryName}={CharacterRosterCommand}";
     private static string PublicRosterRoute => $"/{RosterRoute}";
 }
 
-<section hidden aria-hidden="true" data-testid="flagship-media-sample-anchor">
-    <img src="/media/portraits/contact-portrait-revision.png" alt="" data-asset-id="asset-portraits-01" />
-    <img src="/media/portraits/contact-portrait-current.png" alt="" data-asset-id="asset-dossier-01" />
-    <video src="/media/routes/route-recap-clip.mp4" data-asset-id="asset-news-01"></video>
+<section hidden aria-hidden="true" data-testid="@FlagshipMediaSampleAnchorTestId">
+    <img src="@ContactPortraitRevisionMediaPath" alt="" data-asset-id="@ContactPortraitRevisionAssetId" />
+    <img src="@ContactPortraitCurrentMediaPath" alt="" data-asset-id="@ContactPortraitCurrentAssetId" />
+    <video src="@RouteRecapClipMediaPath" data-asset-id="@RouteRecapClipAssetId"></video>
     <span>Social Operator build path</span>
     <span>build-path handoff</span>
 </section>
 
-<section hidden aria-hidden="true" data-testid="campaign-spine-showcase-anchor">
+<section hidden aria-hidden="true" data-testid="@CampaignSpineShowcaseAnchorTestId">
     <BuildLabHandoffPanel Projection="DefaultBuildLabHandoffProjection" />
     <RulesNavigatorPanel Projection="DefaultRulesNavigatorAnswerProjection" />
     <CreatorPublicationPanel Publication="DefaultCreatorPublicationProjection" />

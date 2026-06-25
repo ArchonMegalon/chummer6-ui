@@ -2,7 +2,7 @@
 
 ## Purpose
 
-This staged proof keeps Chummer Online and its proof-compatible /blazor/workbench compatibility route source aligned around private share/export handoff posture for browser output workflows.
+This staged proof keeps Chummer Online and /blazor/workbench sources aligned around private share/export handoff posture for browser output workflows.
 
 It covers visible source posture for redaction profiles, share-link scope, expiry, revocation, audit history, local-only export, and same-origin help affordances on `/blazor/workbench`.
 

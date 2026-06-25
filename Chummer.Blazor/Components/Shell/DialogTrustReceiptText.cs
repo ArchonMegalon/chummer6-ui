@@ -64,7 +64,7 @@ internal static class DialogTrustReceiptText
 
     public static string BuildImportDiffBefore(WorkspacePortabilityReceipt receipt)
         => UndetectableHumanizerCopyAdapter.Humanize(string.IsNullOrWhiteSpace(receipt.ContextSummary)
-            ? $"Incoming {receipt.FormatId} payload before workspace merge."
+            ? $"Incoming {receipt.FormatId} payload before dossier merge."
             : receipt.ContextSummary);
 
     public static string BuildImportDiffAfter(WorkspacePortabilityReceipt receipt)

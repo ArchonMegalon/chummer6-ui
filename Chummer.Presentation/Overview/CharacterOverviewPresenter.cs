@@ -106,7 +106,7 @@ public sealed partial class CharacterOverviewPresenter : ICharacterOverviewPrese
                 OpenWorkspaces = session.OpenWorkspaces,
                 Notice = session.OpenWorkspaces.Count == 0
                     ? State.Notice
-                    : $"Restored {session.OpenWorkspaces.Count} workspace(s)."
+                    : $"Restored {session.OpenWorkspaces.Count} dossier(s)."
             });
         }
         catch (Exception ex)

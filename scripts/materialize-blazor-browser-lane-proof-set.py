@@ -41,6 +41,21 @@ REQUIRED_RECEIPTS = [
             "route_proof_markers": 10,
             "workflow_proofs": 7,
         },
+        "required_list_items": {
+            "proof_routes": [
+                "/app",
+                "/app?command=character_roster",
+                "/blazor/",
+                "/blazor/app",
+                "/blazor/workbench",
+            ],
+            "route_proof_markers": [
+                "public_chummer_app_route",
+                "public_chummer_app_roster_route",
+                "public_blazor_root_redirect",
+                "public_blazor_home_roster_entry",
+            ],
+        },
     },
     {
         "id": "hosted_execution",
@@ -119,6 +134,10 @@ EXAMPLE_RECEIPT_TOKENS = [
     '"scope": "aggregate-browser-lane-proof-set-not-full-desktop-parity"',
     '"id": "hosted_route_entry"',
     '"minimum": 10',
+    '"id": "required_list_items:route_proof_markers"',
+    '"public_chummer_app_roster_route"',
+    '"id": "required_list_items:proof_routes"',
+    '"/app?command=character_roster"',
     '"id": "analytics_posture"',
     '"field:session_replay_policy"',
     '"field:autocapture_policy"',
@@ -208,6 +227,21 @@ def evaluate_receipt(spec: dict[str, Any]) -> dict[str, Any]:
                 "passed": actual_length >= minimum,
                 "minimum": minimum,
                 "actual": actual_length,
+            }
+        )
+
+    for field, expected_items in spec.get("required_list_items", {}).items():
+        actual = payload.get(field)
+        actual_items = {str(item).strip() for item in actual} if isinstance(actual, list) else set()
+        missing_items = [
+            item for item in expected_items if str(item).strip() not in actual_items
+        ]
+        checks.append(
+            {
+                "id": f"required_list_items:{field}",
+                "passed": not missing_items,
+                "expected": expected_items,
+                "missing": missing_items,
             }
         )
 

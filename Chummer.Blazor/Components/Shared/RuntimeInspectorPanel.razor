@@ -11,7 +11,7 @@
     <header class="panel-header">
         <div>
             <h2>Rules setup</h2>
-            <p class="meta">Review the installed rules, compatibility notes, and service links for this workspace.</p>
+            <p class="meta">Review the installed rules, compatibility notes, and service links for this dossier.</p>
         </div>
         @if (Projection is not null)
         {
@@ -555,7 +555,7 @@
         => $"Support can use {BuildSupportDiagnosticsCorrelationKey(projection)} with the before/after state and blocker without changing the active rules setup.";
 
     private static string BuildSupportProofDiffReceipt(RuntimeInspectorProjection projection)
-        => $"Current rules setup {projection.RuntimeLock.RuntimeFingerprint} remains active; support reviews release {BuildSupportProofReceipt(projection)} and required fingerprint {BuildRequiredFingerprintOrCurrent(projection)} without changing the workspace.";
+        => $"Current rules setup {projection.RuntimeLock.RuntimeFingerprint} remains active; support reviews release {BuildSupportProofReceipt(projection)} and required fingerprint {BuildRequiredFingerprintOrCurrent(projection)} without changing the dossier.";
 
     private static string BuildSupportEnvironmentTupleDiff(RuntimeInspectorProjection projection)
         => $"before {projection.TargetKind}/{projection.TargetId}/{projection.RuntimeLock.RulesetId}/{NormalizeSupportToken(projection.Install.State)}/{NormalizeSupportToken(projection.RuntimeLock.RuntimeFingerprint)}; after {NormalizeSupportToken(BuildPromotionStageOrFallback(projection))}/{NormalizeSupportToken(BuildPromotionChannelOrFallback(projection))}/{NormalizeSupportToken(BuildRequiredFingerprintOrCurrent(projection))}.";

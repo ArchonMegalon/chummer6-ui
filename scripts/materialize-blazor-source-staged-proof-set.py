@@ -234,6 +234,7 @@ REQUIRED_RECEIPTS = [
     },
     {
         "id": "workbench_character_library",
+        "display_label": "Character Roster",
         "path": PUBLISHED / "BLAZOR_WORKBENCH_CHARACTER_LIBRARY_STAGED_PROOF.generated.json",
         "contract_name": "chummer6-ui.blazor_workbench_character_library_staged_proof",
     },
@@ -415,7 +416,8 @@ SOURCE_CONTRACT_CHECKS = [
             "source_contract_checks.docs_index_route_roles",
             "chummer_app_proof_compatible_workbench_preview_tools",
             "native installer amber/slate/mint progress chrome and high-contrast fallback source alignment",
-            "compatibility-route `/blazor/workbench` task-dock and slate/amber/mint/blue Chummer Online theme-layer contract",
+            "compatibility route `/blazor/workbench` task-dock and slate/amber/mint/blue Chummer Online theme-layer contract",
+            "`workbench_character_library` (display label: Character Roster)",
         ],
     },
     {
@@ -511,6 +513,7 @@ def main() -> int:
         rows.append(
             {
                 "id": receipt["id"],
+                "display_label": receipt.get("display_label"),
                 "path": str(path),
                 "expected_contract_name": expected_contract,
                 "contract_name": contract_name or "missing",

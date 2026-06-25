@@ -547,6 +547,7 @@ def main() -> int:
             "portal_route_probe_script": "scripts/e2e-public-edge.cjs",
             "route_proof_markers": [
                 "public_chummer_app_route",
+                "public_chummer_app_roster_route",
                 "public_blazor_root_redirect",
                 "public_blazor_home_roster_entry",
                 "public_blazor_health",
@@ -579,7 +580,7 @@ def main() -> int:
             "source_receipt": str(args.output.resolve()),
             "notes": [
                 "Hosted public-edge browser proof is distinct from the Docker self-host workbench receipt.",
-                "Public product navigation remains /app, /blazor/app is the hosted app path, /blazor/home carries the roster-first route entry, and /blazor/workbench is the canonical proof-compatible route base.",
+                "Public product navigation remains /app, /blazor/ redirects into the roster-first app?command=character_roster browser workflow, /blazor/app is the hosted app path, /blazor/home carries the roster-first orientation entry, and /blazor/workbench is the canonical proof-compatible route base.",
                 "This receipt currently proves hosted /blazor route-entry posture and route health, not full browser workflow execution.",
             ],
         }

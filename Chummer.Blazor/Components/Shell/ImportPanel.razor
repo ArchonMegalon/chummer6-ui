@@ -11,10 +11,10 @@
     <InputFile OnChange="ImportFileRequested"
                accept="@BuildImportAcceptAttribute()"
                disabled="@IsBusy" />
-    <p class="hint">File: @(ImportedFileName ?? BuildImportFilePlaceholder())</p>
+    <p class="hint">Dossier file: @(ImportedFileName ?? BuildImportFilePlaceholder())</p>
     <aside class="trust-receipt" data-import-trust-receipt>
-        <strong>Import review</strong>
-        <p class="hint">Import setup</p>
+        <strong>Dossier import review</strong>
+        <p class="hint">Dossier import setup</p>
         @foreach (ImportTrustReceiptSection receiptSection in BuildImportTrustReceiptSections())
         {
             <section class="trust-receipt-section" data-import-trust-section="@NormalizeReceiptToken(receiptSection.Title)">
@@ -36,7 +36,7 @@
     {
         <section class="coach-card" data-import-explain-receipt>
             <div class="coach-card-header">
-                <h3>Import review</h3>
+                <h3>Dossier import review</h3>
                 <span class="badge">@activity.Receipt.CompatibilityState</span>
             </div>
             <dl class="facts compact">

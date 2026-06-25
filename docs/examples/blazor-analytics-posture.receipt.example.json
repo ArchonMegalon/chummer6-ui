@@ -12,6 +12,20 @@
   "sensitive_data_policy": "route-and-workflow-metadata-only",
   "session_replay_policy": "disabled",
   "autocapture_policy": "disabled",
+  "allowed_metadata_fields": [
+    "host_class",
+    "analytics_scope",
+    "session_replay",
+    "autocapture",
+    "route_family",
+    "command_id",
+    "tab_id",
+    "control_id",
+    "dialog_action_id",
+    "has_workspace",
+    "has_dossier",
+    "has_fixture"
+  ],
   "checks": [
     {
       "id": "blazor_shell_loads_rybbit_only_from_config",

@@ -2,7 +2,7 @@
 
 ## Purpose
 
-This staged proof keeps Chummer Online and its proof-compatible /blazor/workbench compatibility route source aligned around session-locking and edit-ownership posture for browser editing.
+This staged proof keeps Chummer Online and /blazor/workbench sources aligned around session-locking and edit-ownership posture for browser editing.
 
 It covers visible source posture for lock status, owner handoff, read-only fallback, stale-session recovery, conflict owner, takeover review, and same-origin help affordances on `/blazor/workbench`.
 

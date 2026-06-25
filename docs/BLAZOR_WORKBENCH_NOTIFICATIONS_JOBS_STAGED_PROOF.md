@@ -2,7 +2,7 @@
 
 ## Purpose
 
-This source-staged proof keeps async notifications and background job affordances visible on the user-facing Chummer Online route and proof-compatible /blazor/workbench compatibility route.
+This source-staged proof keeps async notifications and background job affordances visible on the user-facing Chummer Online route and /blazor/workbench compatibility route.
 
 The browser client should make save, export, sync, import, validation, and support-bundle progress visible with retry, dismiss, notification settings, completion history, and same-origin help near the active character workspace.
 
@@ -10,7 +10,7 @@ The browser client should make save, export, sync, import, validation, and suppo
 
 The staged notifications-jobs lane covers:
 
-- a notifications/background-jobs strip on the user-facing Chummer Online route and proof-compatible compatibility route
+- a notifications/background-jobs strip on the user-facing Chummer Online route and /blazor/workbench compatibility route
 - job queue, retry, dismiss, settings, history, support, and same-origin help shortcuts
 - scoped responsive styling for desktop and mobile browser use
 
@@ -28,6 +28,6 @@ Expected receipt:
 
 ## Boundary
 
-This is source alignment only. It proves that Chummer Online and proof-compatible workbench notifications-jobs source, style, status reporting, and docs agree.
+This is source alignment only. It proves that Chummer Online and /blazor/workbench compatibility route notifications-jobs source, style, status reporting, and docs agree.
 
 It is not hosted browser execution proof, Docker self-host proof, toast-delivery proof, queue-execution proof, retry proof, background-worker proof, portal help runtime proof, route-click proof, screenshot proof, or desktop-equivalent workflow parity.
