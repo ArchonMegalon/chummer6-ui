@@ -152,6 +152,21 @@ def main() -> int:
 
     add_check(
         checks,
+        "blazor_health_reports_non_secret_analytics_policy",
+        contains_all(
+            read_text(REPO_ROOT / "Chummer.Blazor" / "Program.cs"),
+            [
+                "SelfHostDefault: \"analytics-disabled\"",
+                "HostedPublicEdge: \"rybbit-enabled-when-site-id-configured\"",
+                "SensitiveDataPolicy: \"route-and-workflow-metadata-only\"",
+                "sealed record AnalyticsHealth",
+            ],
+        ),
+        "Chummer.Blazor /health reports non-secret analytics policy posture for operators.",
+    )
+
+    add_check(
+        checks,
         "hosted_chummer_run_public_blazor_enables_rybbit",
         contains_all(
             public_edge_compose,
@@ -223,6 +238,9 @@ def main() -> int:
                 "Rybbit",
                 "route/workflow metadata",
                 "must not emit character names",
+                "selfHostDefault",
+                "hostedPublicEdge",
+                "sensitiveDataPolicy",
             ],
         )
         and contains_all(
@@ -261,7 +279,10 @@ def main() -> int:
         isinstance(health_analytics, dict)
         and health_analytics.get("provider") == "rybbit"
         and health_analytics.get("enabled") is True
-        and health_analytics.get("siteIdConfigured") is True,
+        and health_analytics.get("siteIdConfigured") is True
+        and health_analytics.get("selfHostDefault") == "analytics-disabled"
+        and health_analytics.get("hostedPublicEdge") == "rybbit-enabled-when-site-id-configured"
+        and health_analytics.get("sensitiveDataPolicy") == "route-and-workflow-metadata-only",
         f"Live hosted Blazor health at {health_url} reports Rybbit enabled without exposing secret values."
         if health_payload
         else f"Live hosted Blazor health at {health_url} could not be read: {health_error}",

@@ -108,7 +108,10 @@ static AnalyticsHealth BuildAnalyticsHealth(IConfiguration configuration)
         Enabled: rybbitRequested && siteIdConfigured,
         SiteIdConfigured: siteIdConfigured,
         ScriptUrlConfigured: scriptUrlConfigured,
-        BaseUrlConfigured: baseUrlConfigured);
+        BaseUrlConfigured: baseUrlConfigured,
+        SelfHostDefault: "analytics-disabled",
+        HostedPublicEdge: "rybbit-enabled-when-site-id-configured",
+        SensitiveDataPolicy: "route-and-workflow-metadata-only");
 }
 
 sealed record AnalyticsHealth(
@@ -116,4 +119,7 @@ sealed record AnalyticsHealth(
     bool Enabled,
     bool SiteIdConfigured,
     bool ScriptUrlConfigured,
-    bool BaseUrlConfigured);
+    bool BaseUrlConfigured,
+    string SelfHostDefault,
+    string HostedPublicEdge,
+    string SensitiveDataPolicy);
