@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using Chummer.Presentation.RunnerIntelligence;
 
 namespace Chummer.Desktop.Runtime.RunnerIntelligence;
@@ -26,6 +27,18 @@ public sealed class DesktopRunnerIntelligenceBridge
     public RunnerIntelligenceReport Calculate(RunnerIntelligenceScenario scenario)
         => _calculator.Calculate(scenario);
 
+    public double CalculatePercentileRank(decimal value, IReadOnlyCollection<decimal> cohortValues)
+        => _calculator.CalculatePercentileRank(value, cohortValues);
+
+    public RunnerRiskEstimate CalculateRisk(RunnerRiskInput input)
+        => _calculator.CalculateRisk(input);
+
+    public RunnerIntelligenceScenario BuildIncreaseInitiativeScenario(
+        string runnerId = RunnerIntelligenceSampleFactory.DefaultRunnerId,
+        string ruleset = RunnerIntelligenceSampleFactory.DefaultRuleset,
+        string cohortLabel = RunnerIntelligenceSampleFactory.DefaultCohortLabel)
+        => _scenarioCatalog.BuildIncreaseInitiativeScenario(runnerId, ruleset, cohortLabel);
+
     public RunnerIntelligenceReport CalculateIncreaseInitiativeSample()
-        => _calculator.Calculate(_scenarioCatalog.BuildIncreaseInitiativeScenario());
+        => _calculator.Calculate(BuildIncreaseInitiativeScenario());
 }

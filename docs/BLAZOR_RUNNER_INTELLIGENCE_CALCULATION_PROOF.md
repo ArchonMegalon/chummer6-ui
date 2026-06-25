@@ -38,7 +38,11 @@ ChanceHitsAtOrAbove
 PercentileRank
 ```
 
-The shared sample fixture models `increase_initiative_force_6` with Jazz inventory synergy, incoming severity 6, threshold 1, and a 21-die resistance pool to represent the approximate 87% chance of taking no more than 1 Stun.
+The shared sample fixture models `increase_initiative_force_6` with Jazz inventory synergy, incoming severity 6, threshold 1, and a 21-die resistance pool to represent the staged 87.3% chance of taking no more than 1 Stun. That exact percentage is owned by `IncreaseInitiativeExpectedChanceAtOrBelowThresholdPercent`, not by UI prose. The rest of the sample semantics are exposed as reusable `RunnerIntelligenceSampleFactory` constants such as `DefaultRunnerId`, `DefaultRuleset`, `DefaultCohortLabel`, `IncreaseInitiativeScenarioId`, `JazzInventoryKey`, `IncreaseInitiativeStatDelta`, `IncreaseInitiativeResistancePool`, `IncreaseInitiativeRiskThreshold`, and `IncreaseInitiativeIncomingSeverity` so Avalonia and Blazor heads do not copy magic values.
+
+The Avalonia-facing `DesktopRunnerIntelligenceBridge` delegates report calculation, percentile ranking, risk estimation, and Increase Initiative scenario construction to the shared calculator/catalog so native panes can reuse the same service without depending on Blazor preview code.
+
+Runner Intelligence privacy exclusions are also owned by the shared model through `RunnerIntelligencePrivacy.DefaultExcludedFields` and named constants such as `CharacterNamesField`, `OwnerIdsField`, `WorkspaceIdsField`, and `DossierTextField`, so Blazor, Avalonia, hosted analytics copy, and self-host docs do not fork sensitive-field policy.
 
 ## Status Lines
 

@@ -283,22 +283,34 @@ public sealed record RunnerIntelligencePrivacy(
     bool SelfHostLocalOnly,
     IReadOnlyList<string> ExcludedFields)
 {
+    public const string CharacterNamesField = "character names";
+    public const string AliasesField = "aliases";
+    public const string OwnerIdsField = "owner ids";
+    public const string WorkspaceIdsField = "workspace ids";
+    public const string FileNamesField = "file names";
+    public const string DocumentContentsField = "document contents";
+    public const string XmlField = "XML";
+    public const string NotesField = "notes";
+    public const string DossierTextField = "dossier text";
+
+    public static IReadOnlyList<string> DefaultExcludedFields { get; } = new ReadOnlyCollection<string>(
+        new[]
+        {
+            CharacterNamesField,
+            AliasesField,
+            OwnerIdsField,
+            WorkspaceIdsField,
+            FileNamesField,
+            DocumentContentsField,
+            XmlField,
+            NotesField,
+            DossierTextField
+        });
+
     public static RunnerIntelligencePrivacy LocalOnly { get; } = new(
         false,
         true,
-        new ReadOnlyCollection<string>(
-            new[]
-            {
-                "character names",
-                "aliases",
-                "owner ids",
-                "workspace ids",
-                "file names",
-                "document contents",
-                "XML",
-                "notes",
-                "dossier text"
-            }));
+        DefaultExcludedFields);
 }
 
 public sealed record RunnerIntelligenceReport(

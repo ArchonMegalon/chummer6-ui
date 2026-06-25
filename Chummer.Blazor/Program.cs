@@ -5,8 +5,29 @@ using Chummer.Blazor.Services;
 using Chummer.Desktop.Runtime;
 using Chummer.Presentation;
 using Chummer.Presentation.Overview;
+using Chummer.Presentation.RunnerIntelligence;
 using Chummer.Presentation.Shell;
 using Microsoft.AspNetCore.Hosting.StaticWebAssets;
+
+const string AnalyticsPayloadsExclusion = "payloads";
+const string AnalyticsHashesExclusion = "hashes";
+const string AnalyticsProviderNone = "none";
+const string AnalyticsProviderRybbit = "rybbit";
+const string AnalyticsSelfHostDefaultPolicy = "analytics-disabled";
+const string AnalyticsHostedPublicEdgePolicy = "rybbit-enabled-when-site-id-configured";
+const string AnalyticsSensitiveDataPolicy = "route-and-workflow-metadata-only";
+const string AnalyticsDisabledPolicy = "disabled";
+const string AnalyticsHostClassField = "host_class";
+const string AnalyticsScopeField = "analytics_scope";
+const string AnalyticsSessionReplayField = "session_replay";
+const string AnalyticsAutocaptureField = "autocapture";
+const string AnalyticsRouteFamilyField = "route_family";
+const string AnalyticsCommandIdField = "command_id";
+const string AnalyticsTabIdField = "tab_id";
+const string AnalyticsControlIdField = "control_id";
+const string AnalyticsDialogActionIdField = "dialog_action_id";
+const string AnalyticsHasWorkspaceField = "has_workspace";
+const string AnalyticsHasFixtureField = "has_fixture";
 
 WebApplicationBuilder builder = WebApplication.CreateBuilder(args);
 StaticWebAssetsLoader.UseStaticWebAssets(builder.Environment, builder.Configuration);
@@ -102,50 +123,49 @@ static Uri ResolveEngineBaseAddress(IConfiguration configuration)
 
 static AnalyticsHealth BuildAnalyticsHealth(IConfiguration configuration)
 {
-    string provider = (configuration["CHUMMER_ANALYTICS_PROVIDER"] ?? "none").Trim();
-    bool rybbitRequested = string.Equals(provider, "rybbit", StringComparison.OrdinalIgnoreCase);
+    string provider = (configuration["CHUMMER_ANALYTICS_PROVIDER"] ?? AnalyticsProviderNone).Trim();
+    bool rybbitRequested = string.Equals(provider, AnalyticsProviderRybbit, StringComparison.OrdinalIgnoreCase);
     bool siteIdConfigured = !string.IsNullOrWhiteSpace(configuration["CHUMMER_RYBBIT_SITE_ID"]);
     bool scriptUrlConfigured = !string.IsNullOrWhiteSpace(configuration["CHUMMER_RYBBIT_SCRIPT_URL"]);
     bool baseUrlConfigured = !string.IsNullOrWhiteSpace(configuration["CHUMMER_RYBBIT_BASE_URL"]);
 
     return new AnalyticsHealth(
-        Provider: rybbitRequested ? "rybbit" : "none",
+        Provider: rybbitRequested ? AnalyticsProviderRybbit : AnalyticsProviderNone,
         Enabled: rybbitRequested && siteIdConfigured,
         SiteIdConfigured: siteIdConfigured,
         ScriptUrlConfigured: scriptUrlConfigured,
         BaseUrlConfigured: baseUrlConfigured,
-        SelfHostDefault: "analytics-disabled",
-        HostedPublicEdge: "rybbit-enabled-when-site-id-configured",
-        SensitiveDataPolicy: "route-and-workflow-metadata-only",
-        SessionReplayPolicy: "disabled",
-        AutocapturePolicy: "disabled",
+        SelfHostDefault: AnalyticsSelfHostDefaultPolicy,
+        HostedPublicEdge: AnalyticsHostedPublicEdgePolicy,
+        SensitiveDataPolicy: AnalyticsSensitiveDataPolicy,
+        SessionReplayPolicy: AnalyticsDisabledPolicy,
+        AutocapturePolicy: AnalyticsDisabledPolicy,
         AllowedMetadataFields:
         [
-            "host_class",
-            "analytics_scope",
-            "session_replay",
-            "autocapture",
-            "route_family",
-            "command_id",
-            "tab_id",
-            "control_id",
-            "dialog_action_id",
-            "has_workspace",
-            "has_fixture"
+            AnalyticsHostClassField,
+            AnalyticsScopeField,
+            AnalyticsSessionReplayField,
+            AnalyticsAutocaptureField,
+            AnalyticsRouteFamilyField,
+            AnalyticsCommandIdField,
+            AnalyticsTabIdField,
+            AnalyticsControlIdField,
+            AnalyticsDialogActionIdField,
+            AnalyticsHasWorkspaceField,
+            AnalyticsHasFixtureField
         ],
-        ExcludedDataClasses:
-        [
-            "character_names",
-            "aliases",
-            "owner_ids",
-            "workspace_ids",
-            "file_names",
-            "document_contents",
-            "xml",
-            "payloads",
-            "hashes",
-            "dossier_content"
-        ]);
+        ExcludedDataClasses: BuildAnalyticsExcludedDataClasses());
+}
+
+static IReadOnlyList<string> BuildAnalyticsExcludedDataClasses()
+{
+    var excluded = new List<string>(RunnerIntelligencePrivacy.DefaultExcludedFields)
+    {
+        AnalyticsPayloadsExclusion,
+        AnalyticsHashesExclusion
+    };
+
+    return excluded;
 }
 
 sealed record AnalyticsHealth(

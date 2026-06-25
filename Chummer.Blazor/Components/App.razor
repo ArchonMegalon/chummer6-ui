@@ -73,6 +73,12 @@
         const analyticsScope = 'route-workflow-metadata-only';
         const sessionReplayPolicy = 'disabled';
         const autocapturePolicy = 'disabled';
+        const routeFamilyChummerApp = 'chummer_app';
+        const routeFamilyPreview = 'preview';
+        const routeFamilyShowcase = 'showcase';
+        const routeFamilyDownloads = 'downloads';
+        const routeFamilyDocs = 'docs';
+        const routeFamilyOther = 'other';
         let lastRouteKey = '';
 
         analytics._queue = analytics._queue || [];
@@ -169,18 +175,18 @@
             const url = new URL(window.location.href);
             const path = url.pathname.toLowerCase();
             const query = url.searchParams;
-            let routeFamily = 'other';
+            let routeFamily = routeFamilyOther;
 
             if (path.endsWith('/blazor') || path.endsWith('/blazor/') || path.endsWith('/app') || path.endsWith('/workbench')) {
-                routeFamily = 'chummer_app';
+                routeFamily = routeFamilyChummerApp;
             } else if (path.endsWith('/preview')) {
-                routeFamily = 'preview';
+                routeFamily = routeFamilyPreview;
             } else if (path.endsWith('/showcase')) {
-                routeFamily = 'showcase';
+                routeFamily = routeFamilyShowcase;
             } else if (path.includes('/downloads')) {
-                routeFamily = 'downloads';
+                routeFamily = routeFamilyDownloads;
             } else if (path.includes('/docs')) {
-                routeFamily = 'docs';
+                routeFamily = routeFamilyDocs;
             }
 
             return {
