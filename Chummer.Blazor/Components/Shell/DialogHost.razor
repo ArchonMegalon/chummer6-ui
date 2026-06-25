@@ -359,11 +359,11 @@
                                                  data-roster-drag-root="@IsRosterHierarchyField(field)">
                                                 @if (IsRosterKeyboardStatusHost(field))
                                                 {
-                                                    <div id="dialogRosterKeyboardHint" class="dialog-roster-keyboard-hint" role="note">Keyboard: Enter or Space selects a source row, Enter or Space on a folder drops it, Escape clears the source.</div>
+                                                    <div id="@RosterKeyboardHintId" class="dialog-roster-keyboard-hint" role="note">Keyboard: Enter or Space selects a source row, Enter or Space on a folder drops it, Escape clears the source.</div>
                                                 }
                                                 @if (IsRosterKeyboardStatusHost(field) && !string.IsNullOrWhiteSpace(RosterActiveSourceLine))
                                                 {
-                                                    <div id="dialogRosterKeyboardStatus" class="dialog-roster-keyboard-status" role="status" aria-live="polite" aria-atomic="true">@BuildRosterKeyboardStatus()</div>
+                                                    <div id="@RosterKeyboardStatusId" class="dialog-roster-keyboard-status" role="status" aria-live="polite" aria-atomic="true">@BuildRosterKeyboardStatus()</div>
                                                 }
                                                 @foreach (string item in SplitVisualLines(field.Value))
                                                 {
@@ -873,11 +873,30 @@
             ? "Enter Space Escape"
             : null;
 
+    private string RosterKeyboardHintId => BuildRosterKeyboardDomId("roster-keyboard-hint");
+
+    private string RosterKeyboardStatusId => BuildRosterKeyboardDomId("roster-keyboard-status");
+
+    private string BuildRosterKeyboardDomId(string suffix)
+    {
+        string normalizedDialogId = NormalizeRosterDomId(Dialog?.Id ?? "dialog");
+        return $"dialog-{normalizedDialogId}-{suffix}";
+    }
+
+    private static string NormalizeRosterDomId(string value)
+    {
+        return value
+            .Replace('.', '-')
+            .Replace('_', '-')
+            .Replace(':', '-')
+            .Replace(' ', '-');
+    }
+
     private string? BuildRosterHierarchyLineDescriptionId(DesktopDialogField field, string line)
         => IsRosterDraggableLine(field, line) || IsRosterDropTargetLine(field, line)
             ? string.IsNullOrWhiteSpace(RosterActiveSourceLine)
-                ? "dialogRosterKeyboardHint"
-                : "dialogRosterKeyboardHint dialogRosterKeyboardStatus"
+                ? RosterKeyboardHintId
+                : $"{RosterKeyboardHintId} {RosterKeyboardStatusId}"
             : null;
 
     private static string BuildRosterHierarchyContainerRole(DesktopDialogField field)
