@@ -274,17 +274,33 @@ def validate_manifest_payload_metadata(candidate: PayloadCandidate, manifest_row
 
 
 def validate_bootstrap_installer_metadata(installer_path: Path, candidate: PayloadCandidate, manifest_row: ManifestRow | None) -> list[str]:
-    if candidate.mode != "bootstrap" or manifest_row is None or manifest_row.installer_mode != "bootstrap":
+    if candidate.mode != "bootstrap":
         return []
 
-    if not manifest_row.payload_download_url or not manifest_row.payload_sha256 or manifest_row.payload_size_bytes is None:
+    payload_download_url = manifest_row.payload_download_url if manifest_row is not None else ""
+    payload_sha256 = manifest_row.payload_sha256 if manifest_row is not None else ""
+    payload_size_bytes = manifest_row.payload_size_bytes if manifest_row is not None else None
+
+    if not payload_download_url or not payload_sha256 or payload_size_bytes is None:
+        sidecar_path = Path(candidate.source + ".json")
+        if sidecar_path.is_file():
+            try:
+                sidecar = json.loads(sidecar_path.read_text(encoding="utf-8-sig"))
+            except json.JSONDecodeError:
+                sidecar = {}
+            if isinstance(sidecar, dict):
+                payload_download_url = payload_download_url or str(sidecar.get("downloadUrl") or "").strip()
+                payload_sha256 = payload_sha256 or str(sidecar.get("sha256") or "").strip().lower()
+                payload_size_bytes = payload_size_bytes if payload_size_bytes is not None else try_int(sidecar.get("sizeBytes"))
+
+    if not payload_download_url or not payload_sha256 or payload_size_bytes is None:
         return []
 
     installer_bytes = installer_path.read_bytes()
     required_values = {
-        "payloadDownloadUrl": manifest_row.payload_download_url,
-        "payloadSha256": manifest_row.payload_sha256,
-        "payloadSizeBytes": str(manifest_row.payload_size_bytes),
+        "payloadDownloadUrl": payload_download_url,
+        "payloadSha256": payload_sha256,
+        "payloadSizeBytes": str(payload_size_bytes),
     }
     failures: list[str] = []
     for label, value in required_values.items():
@@ -325,6 +341,13 @@ def validate_bootstrap_sidecar_metadata(
         failures.append(
             f"bootstrap payload sidecar metadata installerFileName does not match installer: expected {installer_path.name}"
         )
+    download_url = str(payload.get("downloadUrl") or "").strip()
+    if not download_url:
+        failures.append("bootstrap payload sidecar metadata downloadUrl is missing")
+    elif not is_absolute_https_url(download_url):
+        failures.append("bootstrap payload sidecar metadata downloadUrl must be an absolute HTTPS URL")
+    elif url_file_name(download_url) != expected_file_name:
+        failures.append("bootstrap payload sidecar metadata downloadUrl file name must match payload fileName")
 
     observed_sha256 = sha256_bytes(candidate.data)
     if str(payload.get("sha256") or "").strip().lower() != observed_sha256:

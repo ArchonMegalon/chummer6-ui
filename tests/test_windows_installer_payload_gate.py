@@ -342,6 +342,91 @@ def test_windows_installer_verifier_rejects_bootstrap_installer_without_embedded
     assert "bootstrap installer does not contain embedded payloadDownloadUrl metadata" in result.stderr
 
 
+def test_windows_installer_verifier_uses_sidecar_as_embedded_metadata_truth_before_manifest_exists(tmp_path: Path) -> None:
+    files_dir = tmp_path / "files"
+    files_dir.mkdir()
+    installer_path = files_dir / "chummer-avalonia-win-x64-installer.exe"
+    installer_path.write_bytes(b"installer-stub" * 200)
+    payload_path = files_dir / "chummer-avalonia-win-x64-payload.zip"
+    payload_bytes = _write_bootstrap_payload(payload_path)
+    payload_sha256 = hashlib.sha256(payload_bytes).hexdigest()
+    payload_url = f"https://example.invalid/downloads/files/{payload_path.name}"
+    (files_dir / "chummer-avalonia-win-x64-payload.zip.json").write_text(
+        json.dumps(
+            {
+                "contractName": "chummer6-ui.windows_bootstrap_payload",
+                "fileName": payload_path.name,
+                "downloadUrl": payload_url,
+                "sha256": payload_sha256,
+                "sizeBytes": len(payload_bytes),
+                "installerFileName": installer_path.name,
+                "releaseVersion": "run-test",
+            },
+            indent=2,
+        )
+        + "\n",
+        encoding="utf-8",
+    )
+
+    result = subprocess.run(
+        [
+            "python3",
+            str(VERIFY_SCRIPT),
+            "--files-dir",
+            str(files_dir),
+            "--require-embedded-bootstrap-metadata",
+        ],
+        text=True,
+        capture_output=True,
+        check=False,
+    )
+
+    assert result.returncode != 0
+    assert "bootstrap installer does not contain embedded payloadDownloadUrl metadata" in result.stderr
+
+
+def test_windows_installer_verifier_rejects_bootstrap_sidecar_with_non_https_download_url_without_manifest(tmp_path: Path) -> None:
+    files_dir = tmp_path / "files"
+    files_dir.mkdir()
+    installer_path = files_dir / "chummer-avalonia-win-x64-installer.exe"
+    payload_path = files_dir / "chummer-avalonia-win-x64-payload.zip"
+    payload_bytes = _write_bootstrap_payload(payload_path)
+    payload_sha256 = hashlib.sha256(payload_bytes).hexdigest()
+    payload_url = f"http://example.invalid/downloads/files/{payload_path.name}"
+    _write_bootstrap_installer(
+        installer_path,
+        payload_download_url=payload_url,
+        payload_sha256=payload_sha256,
+        payload_size_bytes=len(payload_bytes),
+    )
+    (files_dir / "chummer-avalonia-win-x64-payload.zip.json").write_text(
+        json.dumps(
+            {
+                "contractName": "chummer6-ui.windows_bootstrap_payload",
+                "fileName": payload_path.name,
+                "downloadUrl": payload_url,
+                "sha256": payload_sha256,
+                "sizeBytes": len(payload_bytes),
+                "installerFileName": installer_path.name,
+                "releaseVersion": "run-test",
+            },
+            indent=2,
+        )
+        + "\n",
+        encoding="utf-8",
+    )
+
+    result = subprocess.run(
+        ["python3", str(VERIFY_SCRIPT), "--files-dir", str(files_dir)],
+        text=True,
+        capture_output=True,
+        check=False,
+    )
+
+    assert result.returncode != 0
+    assert "bootstrap payload sidecar metadata downloadUrl must be an absolute HTTPS URL" in result.stderr
+
+
 def test_windows_installer_verifier_rejects_bootstrap_manifest_with_bad_payload_url(tmp_path: Path) -> None:
     files_dir = tmp_path / "files"
     files_dir.mkdir()
