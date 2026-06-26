@@ -54,6 +54,7 @@ internal static class DesktopShellTheme
         }
 
         ClearInputBrushes(textBox);
+        ApplyTextControlResourceOverrides(textBox);
         ApplyInputBrushes(textBox);
         textBox.MinHeight = Math.Max(textBox.MinHeight, 30d);
         textBox.Padding = new Thickness(8, 4);
@@ -69,6 +70,7 @@ internal static class DesktopShellTheme
         }
 
         ClearTemplatedBrushes(comboBox);
+        ApplyComboBoxResourceOverrides(comboBox);
         ApplyComboBoxBrushes(comboBox);
         comboBox.MinHeight = Math.Max(comboBox.MinHeight, 30d);
         comboBox.Padding = new Thickness(8, 4);
@@ -83,6 +85,7 @@ internal static class DesktopShellTheme
         }
 
         ClearTemplatedBrushes(numericUpDown);
+        ApplyTextControlResourceOverrides(numericUpDown);
         ApplyInputBrushes(numericUpDown);
         numericUpDown.MinHeight = Math.Max(numericUpDown.MinHeight, 30d);
     }
@@ -99,6 +102,7 @@ internal static class DesktopShellTheme
     {
         ArgumentNullException.ThrowIfNull(listBox);
         ClearTemplatedBrushes(listBox);
+        ApplySelectableResourceOverrides(listBox);
         ApplyListBrushes(listBox);
         listBox.BorderThickness = new Thickness(1);
         listBox.Padding = new Thickness(2);
@@ -108,6 +112,7 @@ internal static class DesktopShellTheme
     {
         ArgumentNullException.ThrowIfNull(treeView);
         ClearTemplatedBrushes(treeView);
+        ApplySelectableResourceOverrides(treeView);
         ApplyListBrushes(treeView);
         treeView.BorderThickness = new Thickness(1);
         treeView.Padding = new Thickness(2);
@@ -277,11 +282,61 @@ internal static class DesktopShellTheme
         }
     }
 
+    private static void ApplyTextControlResourceOverrides(Control control)
+    {
+        SetLocalBrushResource(control, "TextControlBackground", "ChummerShellInputBackgroundBrush", "#162031");
+        SetLocalBrushResource(control, "TextControlBackgroundPointerOver", "ChummerShellInputBackgroundBrush", "#162031");
+        SetLocalBrushResource(control, "TextControlBackgroundFocused", "ChummerShellInputBackgroundBrush", "#162031");
+        SetLocalBrushResource(control, "TextControlBackgroundDisabled", "ChummerShellSurfaceBrush", "#111827");
+        SetLocalBrushResource(control, "TextControlForeground", "ChummerShellInputForegroundBrush", "#F8FAFC");
+        SetLocalBrushResource(control, "TextControlForegroundPointerOver", "ChummerShellInputForegroundBrush", "#F8FAFC");
+        SetLocalBrushResource(control, "TextControlForegroundFocused", "ChummerShellInputForegroundBrush", "#F8FAFC");
+        SetLocalBrushResource(control, "TextControlForegroundDisabled", "ChummerShellTextMutedBrush", "#94A3B8");
+        SetLocalBrushResource(control, "TextControlCaretBrush", "ChummerShellInputForegroundBrush", "#F8FAFC");
+        SetLocalBrushResource(control, "TextControlSelectionForeground", "ChummerShellSelectionForegroundBrush", "#F8FAFC");
+        SetLocalBrushResource(control, "TextControlBorderBrush", "ChummerShellBorderBrush", "#334155");
+        SetLocalBrushResource(control, "TextControlBorderBrushPointerOver", "ChummerShellActiveMenuBorderBrush", "#90C39A");
+        SetLocalBrushResource(control, "TextControlBorderBrushFocused", "ChummerShellActiveMenuBorderBrush", "#90C39A");
+        SetLocalBrushResource(control, "TextControlBorderBrushDisabled", "ChummerShellBorderBrush", "#334155");
+        SetLocalBrushResource(control, "TextControlPlaceholderForeground", "ChummerShellMutedForegroundBrush", "#D8E1EC");
+        SetLocalBrushResource(control, "TextControlPlaceholderForegroundPointerOver", "ChummerShellMutedForegroundBrush", "#D8E1EC");
+        SetLocalBrushResource(control, "TextControlPlaceholderForegroundFocused", "ChummerShellMutedForegroundBrush", "#D8E1EC");
+        SetLocalBrushResource(control, "TextControlPlaceholderForegroundDisabled", "ChummerShellTextMutedBrush", "#94A3B8");
+    }
+
     private static void ApplyComboBoxBrushes(TemplatedControl control)
     {
         control.Background = ResolveThemeBrush("ChummerShellInputBackgroundBrush", "#162031");
         control.Foreground = ResolveThemeBrush("ChummerShellInputForegroundBrush", "#F8FAFC");
         control.BorderBrush = ResolveThemeBrush("ComboBoxBorderBrush", "#334155");
+    }
+
+    private static void ApplyComboBoxResourceOverrides(Control control)
+    {
+        SetLocalBrushResource(control, "ComboBoxBackground", "ChummerShellInputBackgroundBrush", "#162031");
+        SetLocalBrushResource(control, "ComboBoxBackgroundPointerOver", "ChummerShellInputBackgroundBrush", "#162031");
+        SetLocalBrushResource(control, "ComboBoxBackgroundPressed", "ChummerShellInputBackgroundBrush", "#162031");
+        SetLocalBrushResource(control, "ComboBoxBackgroundDisabled", "ChummerShellSurfaceBrush", "#111827");
+        SetLocalBrushResource(control, "ComboBoxForeground", "ChummerShellInputForegroundBrush", "#F8FAFC");
+        SetLocalBrushResource(control, "ComboBoxForegroundPointerOver", "ChummerShellInputForegroundBrush", "#F8FAFC");
+        SetLocalBrushResource(control, "ComboBoxForegroundPressed", "ChummerShellInputForegroundBrush", "#F8FAFC");
+        SetLocalBrushResource(control, "ComboBoxForegroundDisabled", "ChummerShellTextMutedBrush", "#94A3B8");
+        SetLocalBrushResource(control, "ComboBoxBorderBrush", "ChummerShellBorderBrush", "#334155");
+        SetLocalBrushResource(control, "ComboBoxBorderBrushPointerOver", "ChummerShellActiveMenuBorderBrush", "#90C39A");
+        SetLocalBrushResource(control, "ComboBoxBorderBrushPressed", "ChummerShellActiveMenuBorderBrush", "#90C39A");
+        SetLocalBrushResource(control, "ComboBoxBorderBrushDisabled", "ChummerShellBorderBrush", "#334155");
+        SetLocalBrushResource(control, "ComboBoxDropDownBackground", "ChummerShellSurfaceBrush", "#111827");
+        SetLocalBrushResource(control, "ComboBoxDropDownBorderBrush", "ChummerShellBorderBrush", "#334155");
+        SetLocalBrushResource(control, "ComboBoxItemBackground", "ChummerShellSurfaceBrush", "#111827");
+        SetLocalBrushResource(control, "ComboBoxItemBackgroundPointerOver", "ChummerShellChromeSubtleBrush", "#111827");
+        SetLocalBrushResource(control, "ComboBoxItemBackgroundPressed", "ChummerShellChromeBrush", "#0F172A");
+        SetLocalBrushResource(control, "ComboBoxItemBackgroundSelected", "ChummerShellSelectionBrush", "#1D4ED8");
+        SetLocalBrushResource(control, "ComboBoxItemBackgroundDisabled", "ChummerShellSurfaceBrush", "#111827");
+        SetLocalBrushResource(control, "ComboBoxItemForeground", "ChummerShellForegroundBrush", "#E5E7EB");
+        SetLocalBrushResource(control, "ComboBoxItemForegroundPointerOver", "ChummerShellForegroundBrush", "#E5E7EB");
+        SetLocalBrushResource(control, "ComboBoxItemForegroundPressed", "ChummerShellForegroundBrush", "#E5E7EB");
+        SetLocalBrushResource(control, "ComboBoxItemForegroundSelected", "ChummerShellSelectionForegroundBrush", "#F8FAFC");
+        SetLocalBrushResource(control, "ComboBoxItemForegroundDisabled", "ChummerShellTextMutedBrush", "#94A3B8");
     }
 
     private static void ApplyListBrushes(TemplatedControl control)
@@ -290,6 +345,21 @@ internal static class DesktopShellTheme
         control.Foreground = ResolveThemeBrush("ChummerShellForegroundBrush", "#E5E7EB");
         control.BorderBrush = ResolveThemeBrush("ChummerShellBorderBrush", "#334155");
     }
+
+    private static void ApplySelectableResourceOverrides(Control control)
+    {
+        SetLocalBrushResource(control, "ChummerShellSurfaceBrush", "ChummerShellSurfaceBrush", "#111827");
+        SetLocalBrushResource(control, "ChummerShellForegroundBrush", "ChummerShellForegroundBrush", "#E5E7EB");
+        SetLocalBrushResource(control, "ChummerShellChromeSubtleBrush", "ChummerShellChromeSubtleBrush", "#111827");
+        SetLocalBrushResource(control, "ChummerShellSelectionBrush", "ChummerShellSelectionBrush", "#1D4ED8");
+        SetLocalBrushResource(control, "ChummerShellSelectionForegroundBrush", "ChummerShellSelectionForegroundBrush", "#F8FAFC");
+        SetLocalBrushResource(control, "ChummerShellTextMutedBrush", "ChummerShellTextMutedBrush", "#94A3B8");
+        SetLocalBrushResource(control, "ChummerShellBorderBrush", "ChummerShellBorderBrush", "#334155");
+        SetLocalBrushResource(control, "ChummerShellActiveMenuBorderBrush", "ChummerShellActiveMenuBorderBrush", "#90C39A");
+    }
+
+    private static void SetLocalBrushResource(Control control, string resourceKey, string themeResourceKey, string fallbackHex)
+        => control.Resources[resourceKey] = ResolveThemeBrush(themeResourceKey, fallbackHex);
 
     private static void ClearTemplatedBrushes(TemplatedControl control)
     {

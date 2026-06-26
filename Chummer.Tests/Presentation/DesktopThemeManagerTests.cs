@@ -767,6 +767,10 @@ public sealed class DesktopThemeManagerTests
         StringAssert.Contains(shellTheme, "comboBox.Classes.Add(\"shell-combo\");");
         StringAssert.Contains(shellTheme, "ClearInputBrushes(textBox);");
         StringAssert.Contains(shellTheme, "ClearTemplatedBrushes(comboBox);");
+        StringAssert.Contains(shellTheme, "ApplyTextControlResourceOverrides(textBox);");
+        StringAssert.Contains(shellTheme, "ApplyComboBoxResourceOverrides(comboBox);");
+        StringAssert.Contains(shellTheme, "ApplySelectableResourceOverrides(listBox);");
+        StringAssert.Contains(shellTheme, "ApplySelectableResourceOverrides(treeView);");
         StringAssert.Contains(shellTheme, "ApplyInputBrushes(textBox);");
         StringAssert.Contains(shellTheme, "ApplyComboBoxBrushes(comboBox);");
         StringAssert.Contains(shellTheme, "ApplyInputBrushes(numericUpDown);");
@@ -780,6 +784,12 @@ public sealed class DesktopThemeManagerTests
         StringAssert.Contains(shellTheme, "control.Foreground = ResolveThemeBrush(\"ChummerShellForegroundBrush\", \"#E5E7EB\");");
         StringAssert.Contains(shellTheme, "textBox.CaretBrush = ResolveThemeBrush(\"ChummerShellInputForegroundBrush\", \"#F8FAFC\");");
         StringAssert.Contains(shellTheme, "textBox.SelectionForegroundBrush = ResolveThemeBrush(\"ChummerShellSelectionForegroundBrush\", \"#F8FAFC\");");
+        StringAssert.Contains(shellTheme, "control.Resources[resourceKey] = ResolveThemeBrush(themeResourceKey, fallbackHex);");
+        StringAssert.Contains(shellTheme, "SetLocalBrushResource(control, \"ComboBoxItemBackground\", \"ChummerShellSurfaceBrush\", \"#111827\");");
+        StringAssert.Contains(shellTheme, "SetLocalBrushResource(control, \"ComboBoxItemForeground\", \"ChummerShellForegroundBrush\", \"#E5E7EB\");");
+        StringAssert.Contains(shellTheme, "SetLocalBrushResource(control, \"TextControlBackground\", \"ChummerShellInputBackgroundBrush\", \"#162031\");");
+        StringAssert.Contains(shellTheme, "SetLocalBrushResource(control, \"TextControlForeground\", \"ChummerShellInputForegroundBrush\", \"#F8FAFC\");");
+        StringAssert.Contains(shellTheme, "SetLocalBrushResource(control, \"ChummerShellSelectionForegroundBrush\", \"ChummerShellSelectionForegroundBrush\", \"#F8FAFC\");");
 
         foreach (string selector in new[]
                  {
