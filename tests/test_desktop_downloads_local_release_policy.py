@@ -60,12 +60,15 @@ def test_s3_publish_windows_payload_gate_allows_empty_only_before_installers_are
     assert "--allow-empty" in publisher
 
 
-def test_windows_bootstrap_build_fails_closed_until_native_builder_is_wired() -> None:
+def test_windows_bootstrap_build_is_measured_by_the_real_payload_gate() -> None:
     builder = (REPO_ROOT / "scripts" / "build-desktop-installer.sh").read_text(encoding="utf-8")
 
-    assert "Windows bootstrap installer build is blocked until the native bootstrap builder is wired." in builder
-    assert "The .NET WinForms installer is too large for bootstrap promotion" in builder
-    assert "Use CHUMMER_WINDOWS_INSTALLER_MODE=bundled for a local full installer" in builder
+    assert 'local installer_mode="${CHUMMER_WINDOWS_INSTALLER_MODE:-bootstrap}"' in builder
+    assert 'bootstrap_payload_url="${CHUMMER_WINDOWS_BOOTSTRAP_PAYLOAD_URL:-${downloads_prefix%/}/$(basename "$payload_zip")}"' in builder
+    assert 'verify_windows_installer_payload_gate "$DIST_DIR/$installer_name" "$DIST_DIR/files/$(basename "$payload_zip")"' in builder
+    assert "Windows bootstrap installer build is blocked until the native bootstrap builder is wired." not in builder
+    assert "The .NET WinForms installer is too large for bootstrap promotion" not in builder
+    assert "Use CHUMMER_WINDOWS_INSTALLER_MODE=bundled for a local full installer" not in builder
     assert "bundled|append|appended)" in builder
 
 
