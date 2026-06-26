@@ -5801,7 +5801,7 @@
 }
 
 /* Chummer5A corrective layer: the promoted Chummer Online surface must read as a dense
-   desktop client, not a proof-gallery page. Keep route/proof selectors in source, but
+   desktop client, not a diagnostic-gallery page. Keep route/diagnostic selectors in source, but
    visually prioritize the familiar menu/toolstrip/workspace/status shape. */
 .browser-preview-shell {
     --classic-bg: #d7d0c3;
@@ -5891,7 +5891,7 @@
     outline-offset: 1px;
 }
 
-/* Keep the actual desktop-shaped lanes visible. Hide later source-staged proof rails from
+/* Keep the actual desktop-shaped lanes visible. Hide later source-staged diagnostic rails from
    the promoted visual flow so Chummer Online stops looking like a wall of random controls. */
 .browser-preview-shell section[class*="browser-workbench-"]:is(
     .browser-workbench-import-reconcile-strip,
@@ -5973,7 +5973,7 @@
 
 /* Chummer5A corrective layer, pass 2: force a recognizable desktop-client frame.
    This is intentionally stronger than theme polish: menu bar, toolstrip, work area,
-   and status strip must dominate over proof-gallery rails. */
+   and status strip must dominate over diagnostic-gallery rails. */
 .browser-preview-shell {
     max-width: 1280px;
     margin-inline: auto;
@@ -6289,7 +6289,7 @@
     }
 }
 
-/* Promoted /app route: start with the desktop-like Chummer shell, not the proof hero. */
+/* Promoted /app route: start with the desktop-like Chummer shell, not the diagnostic hero. */
 .browser-preview-shell.classic-promoted-app > .browser-preview-banner,
 .browser-preview-shell.classic-promoted-app > .browser-preview-boundary,
 .browser-preview-shell.classic-promoted-app > .browser-preview-status-grid {
@@ -6309,13 +6309,13 @@
     margin-top: .35rem;
 }
 
-/* Preview route remains a proof/debug surface; only app/workbench get the desktop shell. */
+/* Preview route remains a diagnostic surface; only app/workbench get the desktop shell. */
 .browser-preview-shell.classic-preview-tools .classic-chummer-shell {
     display: none;
 }
 
 /* Promoted /app hard stop: the user route is the classic Chummer shell, not the
-   source-staged proof gallery. Compatibility/preview routes can still expose proof rails. */
+   source-staged diagnostic gallery. Compatibility/preview routes can still expose diagnostic rails. */
 .browser-preview-shell.classic-promoted-app::before,
 .browser-preview-shell.classic-promoted-app::after,
 .browser-preview-shell.classic-compat-app::before,
@@ -7749,7 +7749,7 @@
     }
 }
 
-/* Promoted app route must open as the desktop client, not as a preview/proof page. */
+/* Promoted app route must open as the desktop client, not as a preview or diagnostic page. */
 .browser-preview-shell.classic-promoted-app > .browser-preview-banner {
     display: none !important;
 }
@@ -8426,4 +8426,357 @@
     color: #4f463b;
     font-size: .56rem;
     font-weight: 900;
+}
+/* Chummer5A visual correction for promoted web-client routes.
+   `/app` and `/online` must read as the desktop client, not as preview or diagnostic tooling. */
+.browser-preview-shell.classic-promoted-app {
+    --classic-client-bg: #2f3539;
+    --classic-client-chrome: #d8dce0;
+    --classic-client-chrome-dark: #b8c0c7;
+    --classic-client-panel: #eceff2;
+    --classic-client-panel-2: #f7f8f9;
+    --classic-client-border: #7f8992;
+    --classic-client-border-soft: #aeb6bd;
+    --classic-client-text: #182027;
+    --classic-client-muted: #53616d;
+    --classic-client-blue: #3f6688;
+    --classic-client-blue-dark: #284a66;
+    --classic-client-selection: #c9dcec;
+    --classic-client-warning: #8a5a1f;
+    --classic-client-danger: #7d2e2a;
+    min-height: 100vh;
+    padding: 0;
+    background:
+        linear-gradient(135deg, rgba(255, 255, 255, .04), transparent 24rem),
+        linear-gradient(180deg, #40484e 0%, #252b30 100%);
+    color: var(--classic-client-text);
+}
+
+.browser-preview-shell.classic-promoted-app .classic-chummer-shell {
+    width: min(100vw, 100%);
+    min-height: 100vh;
+    margin: 0;
+    border: 0;
+    border-radius: 0;
+    background: var(--classic-client-chrome);
+    box-shadow: none;
+    font-family: "Segoe UI", "Tahoma", sans-serif;
+    letter-spacing: 0;
+}
+
+.browser-preview-shell.classic-promoted-app .classic-chummer-titlebar {
+    min-height: 28px;
+    padding: 4px 8px;
+    border-bottom: 1px solid #152536;
+    background:
+        linear-gradient(180deg, #557391 0%, #36546f 48%, #263f55 100%);
+    color: #f4f7fa;
+    font-size: 12px;
+    font-weight: 600;
+    text-shadow: 0 1px 0 rgba(0, 0, 0, .55);
+}
+
+.browser-preview-shell.classic-promoted-app .classic-window-controls {
+    gap: 3px;
+}
+
+.browser-preview-shell.classic-promoted-app .classic-window-controls button,
+.browser-preview-shell.classic-promoted-app .classic-window-control {
+    width: 30px;
+    height: 20px;
+    border: 1px solid rgba(0, 0, 0, .42);
+    border-radius: 2px;
+    background: linear-gradient(180deg, #eef2f5 0%, #aeb8c1 100%);
+    color: #102235;
+    font-size: 11px;
+    line-height: 1;
+}
+
+.browser-preview-shell.classic-promoted-app .classic-menu-bar {
+    min-height: 25px;
+    padding: 0 6px;
+    border-top: 1px solid rgba(255, 255, 255, .5);
+    border-bottom: 1px solid var(--classic-client-border);
+    background: linear-gradient(180deg, #f7f8f9 0%, #d7dde3 100%);
+    color: var(--classic-client-text);
+    font-size: 12px;
+}
+
+.browser-preview-shell.classic-promoted-app .classic-menu-item {
+    min-height: 24px;
+    padding: 4px 9px;
+    border: 1px solid transparent;
+    border-radius: 0;
+}
+
+.browser-preview-shell.classic-promoted-app .classic-menu-item:hover,
+.browser-preview-shell.classic-promoted-app .classic-menu-item:focus-within {
+    border-color: #7da5c8;
+    background: #dbeaf6;
+}
+
+.browser-preview-shell.classic-promoted-app .classic-menu-flyout {
+    border: 1px solid #6c7883;
+    border-radius: 0;
+    background: #f5f6f7;
+    box-shadow: 3px 4px 0 rgba(0, 0, 0, .22);
+    color: var(--classic-client-text);
+}
+
+.browser-preview-shell.classic-promoted-app .classic-toolstrip {
+    min-height: 39px;
+    padding: 5px 7px;
+    border-top: 1px solid #ffffff;
+    border-bottom: 1px solid var(--classic-client-border);
+    background:
+        linear-gradient(180deg, #eef1f4 0%, #cbd3da 100%);
+}
+
+.browser-preview-shell.classic-promoted-app .classic-toolstrip-group {
+    gap: 3px;
+    padding-right: 7px;
+    margin-right: 5px;
+    border-right: 1px solid #9ea8b0;
+    box-shadow: 1px 0 0 rgba(255, 255, 255, .75);
+}
+
+.browser-preview-shell.classic-promoted-app .classic-tool-icon,
+.browser-preview-shell.classic-promoted-app .classic-toolstrip button,
+.browser-preview-shell.classic-promoted-app .classic-roster-toolbar button,
+.browser-preview-shell.classic-promoted-app .classic-inspector button {
+    min-height: 27px;
+    border: 1px solid #7e8993;
+    border-radius: 2px;
+    background:
+        linear-gradient(180deg, #ffffff 0%, #d8dee4 55%, #c4ccd3 100%);
+    color: var(--classic-client-text);
+    font-size: 12px;
+    box-shadow:
+        inset 1px 1px 0 rgba(255, 255, 255, .9),
+        inset -1px -1px 0 rgba(70, 80, 90, .16);
+}
+
+.browser-preview-shell.classic-promoted-app .classic-tool-icon[aria-current="page"],
+.browser-preview-shell.classic-promoted-app .classic-toolstrip button[aria-current="page"],
+.browser-preview-shell.classic-promoted-app .classic-dossier-tab[aria-current="page"] {
+    border-color: #365f82;
+    background:
+        linear-gradient(180deg, #d9ebf8 0%, #a7c9e5 100%);
+    color: #102a40;
+}
+
+.browser-preview-shell.classic-promoted-app .classic-chummer-workspace {
+    display: grid;
+    grid-template-columns: minmax(230px, 18vw) minmax(520px, 1fr) minmax(260px, 21vw);
+    gap: 5px;
+    min-height: calc(100vh - 124px);
+    padding: 5px;
+    border-top: 1px solid rgba(255, 255, 255, .72);
+    background: var(--classic-client-bg);
+}
+
+.browser-preview-shell.classic-promoted-app .classic-chummer-roster,
+.browser-preview-shell.classic-promoted-app .classic-dossier-panel,
+.browser-preview-shell.classic-promoted-app .classic-inspector {
+    border: 1px solid #68747e;
+    border-radius: 0;
+    background: var(--classic-client-panel);
+    color: var(--classic-client-text);
+    box-shadow:
+        inset 1px 1px 0 rgba(255, 255, 255, .86),
+        inset -1px -1px 0 rgba(0, 0, 0, .12);
+}
+
+.browser-preview-shell.classic-promoted-app .classic-chummer-roster,
+.browser-preview-shell.classic-promoted-app .classic-inspector {
+    padding: 7px;
+}
+
+.browser-preview-shell.classic-promoted-app .classic-panel-title,
+.browser-preview-shell.classic-promoted-app .classic-roster-header,
+.browser-preview-shell.classic-promoted-app .classic-inspector-header,
+.browser-preview-shell.classic-promoted-app .classic-group-title {
+    margin: 0 0 6px;
+    padding: 4px 6px;
+    border: 1px solid #8996a1;
+    background: linear-gradient(180deg, #eef2f5 0%, #ccd5dd 100%);
+    color: #1d303f;
+    font-size: 12px;
+    font-weight: 700;
+    text-transform: none;
+}
+
+.browser-preview-shell.classic-promoted-app .classic-roster-toolbar {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 4px;
+    margin-bottom: 6px;
+    padding: 5px;
+    border: 1px solid var(--classic-client-border-soft);
+    background: #dde3e8;
+}
+
+.browser-preview-shell.classic-promoted-app .classic-roster-tree {
+    min-height: 420px;
+    padding: 5px;
+    border: 1px solid #8b969f;
+    background: #fbfcfd;
+    color: var(--classic-client-text);
+    font-size: 12px;
+    line-height: 1.35;
+}
+
+.browser-preview-shell.classic-promoted-app .classic-roster-node,
+.browser-preview-shell.classic-promoted-app .classic-roster-leaf,
+.browser-preview-shell.classic-promoted-app .classic-tree-node {
+    min-height: 22px;
+    margin: 1px 0;
+    padding: 2px 4px;
+    border: 1px solid transparent;
+    border-radius: 0;
+}
+
+.browser-preview-shell.classic-promoted-app .classic-roster-node[aria-selected="true"],
+.browser-preview-shell.classic-promoted-app .classic-roster-leaf[aria-selected="true"],
+.browser-preview-shell.classic-promoted-app .classic-tree-node[aria-selected="true"],
+.browser-preview-shell.classic-promoted-app .classic-roster-node:hover,
+.browser-preview-shell.classic-promoted-app .classic-roster-leaf:hover,
+.browser-preview-shell.classic-promoted-app .classic-tree-node:hover {
+    border-color: #7aa6cd;
+    background: var(--classic-client-selection);
+}
+
+.browser-preview-shell.classic-promoted-app .classic-dossier-panel {
+    display: flex;
+    min-width: 0;
+    flex-direction: column;
+    overflow: hidden;
+}
+
+.browser-preview-shell.classic-promoted-app .classic-dossier-tabs {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0;
+    padding: 6px 6px 0;
+    border-bottom: 1px solid #7b8791;
+    background: #c9d1d8;
+}
+
+.browser-preview-shell.classic-promoted-app .classic-dossier-tab {
+    min-height: 28px;
+    margin: 0 1px -1px 0;
+    padding: 6px 11px;
+    border: 1px solid #7b8791;
+    border-bottom-color: #7b8791;
+    border-radius: 3px 3px 0 0;
+    background: linear-gradient(180deg, #eef1f4 0%, #c4ccd4 100%);
+    color: #24323e;
+    font-size: 12px;
+    font-weight: 600;
+}
+
+.browser-preview-shell.classic-promoted-app .classic-dossier-tab[aria-current="page"] {
+    position: relative;
+    z-index: 1;
+    border-bottom-color: var(--classic-client-panel-2);
+    background: var(--classic-client-panel-2);
+}
+
+.browser-preview-shell.classic-promoted-app .classic-dossier-content,
+.browser-preview-shell.classic-promoted-app .classic-character-sheet,
+.browser-preview-shell.classic-promoted-app .classic-sheet-body {
+    flex: 1;
+    min-height: 0;
+    padding: 9px;
+    background: var(--classic-client-panel-2);
+    color: var(--classic-client-text);
+    overflow: auto;
+}
+
+.browser-preview-shell.classic-promoted-app .classic-field-grid,
+.browser-preview-shell.classic-promoted-app .classic-stat-grid,
+.browser-preview-shell.classic-promoted-app .classic-attribute-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(128px, 1fr));
+    gap: 6px;
+}
+
+.browser-preview-shell.classic-promoted-app .classic-field,
+.browser-preview-shell.classic-promoted-app .classic-stat-card,
+.browser-preview-shell.classic-promoted-app .classic-group-box,
+.browser-preview-shell.classic-promoted-app .classic-inspector-card {
+    border: 1px solid #9aa5ae;
+    border-radius: 0;
+    background: #ffffff;
+    color: var(--classic-client-text);
+    box-shadow: inset 1px 1px 0 rgba(255, 255, 255, .9);
+}
+
+.browser-preview-shell.classic-promoted-app .classic-field label,
+.browser-preview-shell.classic-promoted-app .classic-stat-label,
+.browser-preview-shell.classic-promoted-app .classic-inspector-label {
+    color: var(--classic-client-muted);
+    font-size: 11px;
+    font-weight: 600;
+}
+
+.browser-preview-shell.classic-promoted-app .classic-field input,
+.browser-preview-shell.classic-promoted-app .classic-field select,
+.browser-preview-shell.classic-promoted-app .classic-field textarea {
+    border: 1px solid #7f8992;
+    border-radius: 0;
+    background: #ffffff;
+    color: #111820;
+    font: 12px "Segoe UI", "Tahoma", sans-serif;
+}
+
+.browser-preview-shell.classic-promoted-app .classic-inspector {
+    font-size: 12px;
+    overflow: auto;
+}
+
+.browser-preview-shell.classic-promoted-app .classic-inspector-card {
+    margin-bottom: 7px;
+    padding: 7px;
+}
+
+.browser-preview-shell.classic-promoted-app .classic-statusbar {
+    display: flex;
+    min-height: 25px;
+    padding: 3px 5px;
+    border-top: 1px solid #7b8791;
+    background: linear-gradient(180deg, #dce2e7 0%, #bfc8d0 100%);
+    color: #1f2d38;
+    font-size: 11px;
+}
+
+.browser-preview-shell.classic-promoted-app .classic-status-cell {
+    min-height: 18px;
+    padding: 2px 7px;
+    border: 1px solid #8d98a1;
+    border-top-color: #ffffff;
+    border-left-color: #ffffff;
+    background: #d5dce2;
+    white-space: nowrap;
+}
+
+.browser-preview-shell.classic-promoted-app [class*="proof"],
+.browser-preview-shell.classic-promoted-app [class*="preview-card"],
+.browser-preview-shell.classic-promoted-app [class*="marketing"],
+.browser-preview-shell.classic-promoted-app [data-fixture],
+.browser-preview-shell.classic-promoted-app [data-control] {
+    box-shadow: none;
+}
+
+@media (max-width: 980px) {
+    .browser-preview-shell.classic-promoted-app .classic-chummer-workspace {
+        grid-template-columns: 1fr;
+        min-height: auto;
+    }
+
+    .browser-preview-shell.classic-promoted-app .classic-chummer-roster,
+    .browser-preview-shell.classic-promoted-app .classic-dossier-panel,
+    .browser-preview-shell.classic-promoted-app .classic-inspector {
+        min-height: 260px;
+    }
 }
