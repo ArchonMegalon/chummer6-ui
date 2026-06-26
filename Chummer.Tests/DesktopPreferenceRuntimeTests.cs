@@ -135,6 +135,18 @@ public sealed class DesktopPreferenceRuntimeTests
         };
 
         Assert.AreEqual(string.Empty, RosterHierarchyStateJson.Normalize(RosterHierarchyStateJson.Serialize(invalid)));
+
+        RosterHierarchyState cyclic = state with
+        {
+            Folders = new[]
+            {
+                state.Folders[0] with { ParentFolderId = "active" },
+                state.Folders[1]
+            }
+        };
+
+        Assert.IsFalse(RosterHierarchyStateJson.TryDeserialize(RosterHierarchyStateJson.Serialize(cyclic), out _));
+        Assert.AreEqual(string.Empty, RosterHierarchyStateJson.Normalize(RosterHierarchyStateJson.Serialize(cyclic)));
     }
 
     [TestMethod]

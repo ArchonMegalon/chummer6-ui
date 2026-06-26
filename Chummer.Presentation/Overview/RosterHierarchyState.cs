@@ -128,8 +128,37 @@ public static class RosterHierarchyStateJson
 
         return state.Folders.All(folder =>
                 string.IsNullOrWhiteSpace(folder.ParentFolderId) || folderIds.Contains(folder.ParentFolderId))
+            && !HasFolderCycle(state.Folders)
             && state.Items.All(item =>
                 !string.IsNullOrWhiteSpace(item.Id)
                 && (string.IsNullOrWhiteSpace(item.FolderId) || folderIds.Contains(item.FolderId)));
+    }
+
+    private static bool HasFolderCycle(IReadOnlyList<RosterHierarchyFolderState> folders)
+    {
+        Dictionary<string, string?> parents = folders.ToDictionary(
+            static folder => folder.Id,
+            static folder => string.IsNullOrWhiteSpace(folder.ParentFolderId) ? null : folder.ParentFolderId,
+            StringComparer.Ordinal);
+
+        foreach (var folder in folders)
+        {
+            HashSet<string> seen = new(StringComparer.Ordinal);
+            string? cursor = folder.Id;
+            while (!string.IsNullOrWhiteSpace(cursor))
+            {
+                if (!seen.Add(cursor))
+                {
+                    return true;
+                }
+
+                if (!parents.TryGetValue(cursor, out cursor))
+                {
+                    break;
+                }
+            }
+        }
+
+        return false;
     }
 }
