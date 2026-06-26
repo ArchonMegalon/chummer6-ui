@@ -1,6 +1,6 @@
 {
   "contract_name": "chummer6-ui.blazor_public_edge_workbench_proof",
-  "generated_at": "2026-06-24T16:10:51Z",
+  "generated_at": "2026-06-26T12:16:13Z",
   "status": "passed",
   "base_url": "https://chummer.run",
   "proof_shape": "expanded",
@@ -8,7 +8,10 @@
   "route_probe_executed": true,
   "portal_route_probe_script": "scripts/e2e-public-edge.cjs",
   "route_proof_markers": [
+    "public_chummer_app_route",
+    "public_chummer_app_roster_route",
     "public_blazor_root_redirect",
+    "public_blazor_home_roster_entry",
     "public_blazor_health",
     "public_workbench_route",
     "public_workspace_restore_route",
@@ -21,8 +24,12 @@
     "public_advanced_committed_action_routes"
   ],
   "proof_routes": [
+    "/app",
+    "/app?command=character_roster",
     "/blazor/",
     "/blazor/health",
+    "/blazor/home",
+    "/blazor/app",
     "/blazor/workbench",
     "/blazor/workbench?workspace=ws-1",
     "/blazor/workbench?command=new_character_origin",
@@ -30,7 +37,7 @@
     "/blazor/workbench?command=master_index",
     "/blazor/preview?command=new_character",
     "/blazor/workbench?workspace=ws-1&command=save_character_as",
-    "/blazor/workbench?workspace=ws-1&command=export_character",
+    "/blazor/workbench?workspace=ws-1&command=export_character&dialog_action=download",
     "/blazor/workbench?workspace=ws-1&command=print_character",
     "/blazor/workbench?workspace=ws-1&tab=tab-contacts&control=contact_add",
     "/blazor/workbench?workspace=ws-1&tab=tab-contacts&control=contact_add&dialog_action=add"
@@ -47,9 +54,25 @@
     "advanced_action_route_shapes",
     "advanced_committed_action_route_shapes"
   ],
-  "route_probe_count": 13,
+  "route_probe_count": 17,
   "route_probe_failures": [],
   "route_probes": [
+    {
+      "checked": true,
+      "url": "https://chummer.run/app",
+      "http_status": 200,
+      "ok": true,
+      "error": "",
+      "route": "/app"
+    },
+    {
+      "checked": true,
+      "url": "https://chummer.run/app?command=character_roster",
+      "http_status": 200,
+      "ok": true,
+      "error": "",
+      "route": "/app?command=character_roster"
+    },
     {
       "checked": true,
       "url": "https://chummer.run/blazor/",
@@ -65,6 +88,22 @@
       "ok": true,
       "error": "",
       "route": "/blazor/health"
+    },
+    {
+      "checked": true,
+      "url": "https://chummer.run/blazor/home",
+      "http_status": 200,
+      "ok": true,
+      "error": "",
+      "route": "/blazor/home"
+    },
+    {
+      "checked": true,
+      "url": "https://chummer.run/blazor/app",
+      "http_status": 200,
+      "ok": true,
+      "error": "",
+      "route": "/blazor/app"
     },
     {
       "checked": true,
@@ -124,11 +163,11 @@
     },
     {
       "checked": true,
-      "url": "https://chummer.run/blazor/workbench?workspace=ws-1&command=export_character",
+      "url": "https://chummer.run/blazor/workbench?workspace=ws-1&command=export_character&dialog_action=download",
       "http_status": 200,
       "ok": true,
       "error": "",
-      "route": "/blazor/workbench?workspace=ws-1&command=export_character"
+      "route": "/blazor/workbench?workspace=ws-1&command=export_character&dialog_action=download"
     },
     {
       "checked": true,
@@ -158,6 +197,7 @@
   "source_receipt": "/docker/chummercomplete/chummer-presentation/.codex-studio/published/UI_EXTERNAL_HOST_PROOF_BLOCKERS.generated.json",
   "notes": [
     "Hosted public-edge browser proof is distinct from the Docker self-host workbench receipt.",
+    "Public product navigation remains /app, /blazor/ redirects into the roster-first app?command=character_roster browser workflow, /blazor/app is the hosted app path, /blazor/home carries the roster-first orientation entry, and /blazor/workbench is the canonical proof-compatible route base.",
     "This receipt currently proves hosted /blazor route-entry posture and route health, not full browser workflow execution."
   ]
 }

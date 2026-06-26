@@ -1,20 +1,24 @@
 {
   "contract_name": "chummer6-ui.external_host_proof_blockers",
-  "generated_at": "2026-06-24T16:10:51Z",
-  "manifest_path": "/docker/chummercomplete/chummer-presentation/Docker/Downloads/RELEASE_CHANNEL.generated.json",
-  "downloads_dir": "/docker/chummercomplete/chummer-presentation/Docker/Downloads/files",
-  "startup_smoke_dir": "/docker/chummercomplete/chummer-presentation/Docker/Downloads/startup-smoke",
+  "generated_at": "2026-06-26T12:16:13Z",
+  "manifest_path": "/tmp/pytest-of-tibor/pytest-8034/test_publish_download_bundle_p0/deploy/RELEASE_CHANNEL.generated.json",
+  "downloads_dir": "/tmp/pytest-of-tibor/pytest-8034/test_publish_download_bundle_p0/deploy/files",
+  "startup_smoke_dir": "/tmp/pytest-of-tibor/pytest-8034/test_publish_download_bundle_p0/deploy/startup-smoke",
   "base_url": "https://chummer.run",
   "timeout_seconds": 10,
   "max_receipt_age_seconds": 604800,
-  "release_published_at": "2026-06-23T10:26:21Z",
+  "release_published_at": "2026-06-24T00:00:00Z",
   "status": "ready",
   "missing_required_platform_head_rid_tuples": [],
   "unresolved_hosts": [],
   "unresolved_tuples": [],
   "browser_workbench_routes": [
+    "/app",
+    "/app?command=character_roster",
     "/blazor/",
     "/blazor/health",
+    "/blazor/home",
+    "/blazor/app",
     "/blazor/workbench",
     "/blazor/workbench?workspace=ws-1",
     "/blazor/workbench?command=new_character_origin",
@@ -22,14 +26,30 @@
     "/blazor/workbench?command=master_index",
     "/blazor/preview?command=new_character",
     "/blazor/workbench?workspace=ws-1&command=save_character_as",
-    "/blazor/workbench?workspace=ws-1&command=export_character",
+    "/blazor/workbench?workspace=ws-1&command=export_character&dialog_action=download",
     "/blazor/workbench?workspace=ws-1&command=print_character",
     "/blazor/workbench?workspace=ws-1&tab=tab-contacts&control=contact_add",
     "/blazor/workbench?workspace=ws-1&tab=tab-contacts&control=contact_add&dialog_action=add"
   ],
-  "browser_route_probe_count": 13,
+  "browser_route_probe_count": 17,
   "browser_route_blocker_count": 0,
   "browser_route_probes": [
+    {
+      "checked": true,
+      "url": "https://chummer.run/app",
+      "http_status": 200,
+      "ok": true,
+      "error": "",
+      "route": "/app"
+    },
+    {
+      "checked": true,
+      "url": "https://chummer.run/app?command=character_roster",
+      "http_status": 200,
+      "ok": true,
+      "error": "",
+      "route": "/app?command=character_roster"
+    },
     {
       "checked": true,
       "url": "https://chummer.run/blazor/",
@@ -45,6 +65,22 @@
       "ok": true,
       "error": "",
       "route": "/blazor/health"
+    },
+    {
+      "checked": true,
+      "url": "https://chummer.run/blazor/home",
+      "http_status": 200,
+      "ok": true,
+      "error": "",
+      "route": "/blazor/home"
+    },
+    {
+      "checked": true,
+      "url": "https://chummer.run/blazor/app",
+      "http_status": 200,
+      "ok": true,
+      "error": "",
+      "route": "/blazor/app"
     },
     {
       "checked": true,
@@ -104,11 +140,11 @@
     },
     {
       "checked": true,
-      "url": "https://chummer.run/blazor/workbench?workspace=ws-1&command=export_character",
+      "url": "https://chummer.run/blazor/workbench?workspace=ws-1&command=export_character&dialog_action=download",
       "http_status": 200,
       "ok": true,
       "error": "",
-      "route": "/blazor/workbench?workspace=ws-1&command=export_character"
+      "route": "/blazor/workbench?workspace=ws-1&command=export_character&dialog_action=download"
     },
     {
       "checked": true,

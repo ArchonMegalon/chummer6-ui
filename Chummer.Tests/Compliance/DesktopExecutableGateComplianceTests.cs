@@ -257,7 +257,8 @@ public sealed class DesktopExecutableGateComplianceTests
         string statusScriptText = File.ReadAllText(statusScriptPath);
 
         StringAssert.Contains(publishedReceiptText, "\"contract_name\": \"chummer6-ui.blazor_public_edge_workbench_proof\"");
-        StringAssert.Contains(publishedReceiptText, "\"proof_shape\": \"core\"");
+        StringAssert.Contains(publishedReceiptText, "\"proof_shape\": \"expanded\"");
+        StringAssert.Contains(publishedReceiptText, "\"/app?command=character_roster\"");
         StringAssert.Contains(publishedReceiptText, "\"route_probe_executed\": true");
         StringAssert.Contains(publishedReceiptText, "\"route_probe_failures\": []");
         StringAssert.Contains(routeProofDocText, ".codex-studio/published/BLAZOR_PUBLIC_EDGE_WORKBENCH_PROOF.generated.json");
@@ -340,7 +341,7 @@ public sealed class DesktopExecutableGateComplianceTests
         StringAssert.Contains(contractDocText, "`promoted_blazor_workbench`");
         StringAssert.Contains(contractDocText, "docs/examples/blazor-public-edge-execution-proof.receipt.example.json");
         StringAssert.Contains(contractDocText, ".codex-studio/published/BLAZOR_PUBLIC_EDGE_EXECUTION_PROOF.generated.json");
-        StringAssert.Contains(contractDocText, "Committed complex-form execution is now part of the promoted advanced committed-action lane.");
+        StringAssert.Contains(contractDocText, "promoted_advanced_committed_actions");
 
         StringAssert.Contains(exampleText, "\"contract_name\": \"chummer6-ui.blazor_public_edge_execution_proof\"");
         StringAssert.Contains(exampleText, "\"proof_tier\": \"hosted_promoted_route_execution\"");
@@ -580,7 +581,8 @@ public sealed class DesktopExecutableGateComplianceTests
         Assert.IsFalse(executionReceiptText.Contains("\"contract_name\": \"chummer6-ui.blazor_public_edge_workbench_proof\"", StringComparison.Ordinal));
         StringAssert.Contains(executionReceiptText, "\"status\": \"passed\"");
 
-        StringAssert.Contains(executionDocText, "Route-entry proof lives in BLAZOR_PUBLIC_EDGE_WORKBENCH_PROOF.generated.json and is not equivalent to this execution-proof receipt.");
+        StringAssert.Contains(executionDocText, "route-entry proof");
+        StringAssert.Contains(executionDocText, "BLAZOR_PUBLIC_EDGE_WORKBENCH_PROOF.generated.json");
         StringAssert.Contains(releaseSignoffText, "hosted `chummer.run` route-entry posture exists and is published as `.codex-studio/published/BLAZOR_PUBLIC_EDGE_WORKBENCH_PROOF.generated.json`");
         StringAssert.Contains(releaseSignoffText, "hosted `chummer.run` workflow execution is a stricter proof tier, published separately as `.codex-studio/published/BLAZOR_PUBLIC_EDGE_EXECUTION_PROOF.generated.json`");
     }
@@ -627,7 +629,7 @@ public sealed class DesktopExecutableGateComplianceTests
 
         StringAssert.Contains(parityGoalText, "public hosted and Docker self-hosted lanes have separate proof so local success is not mistaken for `chummer.run` readiness");
         StringAssert.Contains(parityGoalText, "a separate hosted execution-proof lane for `chummer.run` browser workflows, not only hosted route-entry posture");
-        StringAssert.Contains(parityGoalText, "separate self-host receipt proof for portal-backed `/blazor/workbench` and `/blazor/preview` routes under Docker");
+        StringAssert.Contains(parityGoalText, "separate self-host receipt proof for portal-backed `/blazor/app`, proof-compatible `/blazor/workbench`, and `/blazor/preview` routes under Docker");
         StringAssert.Contains(parityGoalText, "separate hosted route-entry proof for the `https://chummer.run/blazor/` public edge");
         StringAssert.Contains(parityGoalText, "a dedicated hosted execution-proof contract, runner scaffold, verifier, and published passing receipt");
     }

@@ -24,6 +24,7 @@ PUBLIC_EDGE_BROWSER_VERIFIER_WRAPPER_PATH = (
 )
 DEFAULT_BROWSER_ROUTES = [
     "/app",
+    "/app?command=character_roster",
     "/blazor/",
     "/blazor/health",
     "/blazor/home",
