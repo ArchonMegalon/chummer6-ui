@@ -1,9 +1,9 @@
 {
-  "generatedAt": "2026-06-18T21:16:13.629264Z",
+  "generatedAt": "2026-06-26T17:09:48.891579Z",
   "contractName": "chummer6-ui.chummer5a_side_by_side_contact_sheets",
   "status": "pass",
   "summary": "Side-by-side review sheets pair the canonical Chummer5A oracle anchors with current Chummer6 screenshots for every required surface family.",
-  "parityLabCapturePack": "/docker/fleet/docs/chummer5a-oracle/parity_lab_capture_pack.yaml",
+  "parityLabCapturePack": "chummer-presentation/docs/chummer5a-oracle/parity_lab_capture_pack.yaml",
   "contactSheetDirectory": "chummer-presentation/.codex-studio/published/chummer5a-side-by-side-contact-sheets",
   "rowCount": 15,
   "rows": [

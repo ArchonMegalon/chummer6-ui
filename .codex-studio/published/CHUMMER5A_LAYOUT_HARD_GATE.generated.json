@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-06-24T17:28:30.727094Z",
+  "generatedAt": "2026-06-26T17:43:39.944987Z",
   "contract_name": "chummer6-ui.chummer5a_layout_hard_gate",
   "status": "pass",
   "summary": "Chummer5a shell-layout parity is wired as a hard release gate.",
@@ -56,7 +56,7 @@
       "Windows",
       "Help"
     ],
-    "blazorRoot": "/docker/chummercomplete/chummer6-ui/Chummer.Blazor",
+    "blazorRoot": "/docker/chummercomplete/chummer-presentation/Chummer.Blazor",
     "toolstripButtonPositions": {
       "SaveButton": 1219,
       "PrintButton": 1376,
@@ -89,11 +89,11 @@
       "SettingsButton"
     ],
     "blazorPreferredToolstripOrderPositions": {
-      "save_character": 475,
-      "print_character": 501,
-      "copy": 528,
-      "new_character": 544,
-      "open_character": 569
+      "save_character": 441,
+      "print_character": 510,
+      "copy": 570,
+      "new_character": 627,
+      "open_character": 694
     },
     "requiredTestName": "Chummer5a_layout_hard_gate_is_wired_into_release_proofs_and_classic_shell_markers",
     "mainWindowDefaultContentColumns": "0,*,0",

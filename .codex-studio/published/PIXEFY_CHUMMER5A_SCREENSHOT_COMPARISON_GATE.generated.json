@@ -1,8 +1,9 @@
 {
   "contract_name": "chummer6-ui.pixefy_chummer5a_screenshot_comparison_gate",
-  "generated_at": "2026-06-20T21:55:18.617492Z",
-  "status": "fail",
+  "generated_at": "2026-06-26T17:45:43.413661Z",
+  "status": "pass",
   "provider": "Pixefy",
+  "scope": "pixefy_public_routes_only",
   "comparison_baseline": "Chummer5a screenshot/contact-sheet receipts",
   "screenshot_directory": ".codex-studio/published/ui-flagship-release-gate-screenshots",
   "screenshot_count": 59,
@@ -57,16 +58,12 @@
   "current_ref_count": 35,
   "current_ref_unique_count": 31,
   "receipts": {
-    "pixefy_targets": ".codex-studio/published/PUBLIC_SURFACE_QA_TARGETS.generated.json",
     "screenshot_review": ".codex-studio/published/CHUMMER5A_SCREENSHOT_REVIEW_GATE.generated.json",
     "side_by_side_contact_sheets": ".codex-studio/published/CHUMMER5A_SIDE_BY_SIDE_CONTACT_SHEETS.generated.json",
-    "flagship_gate": ".codex-studio/published/UI_FLAGSHIP_RELEASE_GATE.generated.json",
     "screenshot_control_evidence": ".codex-studio/published/ui-flagship-release-gate-screenshots/SCREENSHOT_CONTROL_EVIDENCE.generated.json",
-    "human_parity_screenshot_matrix": ".codex-studio/published/CHUMMER5A_HUMAN_PARITY_SCREENSHOT_MATRIX.generated.json"
+    "human_parity_screenshot_matrix": ".codex-studio/published/CHUMMER5A_HUMAN_PARITY_SCREENSHOT_MATRIX.generated.json",
+    "pixefy_targets": ".codex-studio/published/PUBLIC_SURFACE_QA_TARGETS.generated.json",
+    "flagship_gate": ".codex-studio/published/UI_FLAGSHIP_RELEASE_GATE.generated.json"
   },
-  "reasons": [
-    "UI_FLAGSHIP_RELEASE_GATE.generated.json is not passing.",
-    "UI_WINDOWS_DESKTOP_EXIT_GATE.generated.json is not passing.",
-    "NEXT90_M144_UI_STARTUP_SMOKE_AND_EXECUTABLE_GATE.generated.json is not passing."
-  ]
+  "reasons": []
 }

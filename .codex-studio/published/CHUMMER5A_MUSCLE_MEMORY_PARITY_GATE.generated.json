@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-06-20T21:53:03.619670Z",
+  "generatedAt": "2026-06-26T17:42:32.979436Z",
   "contractName": "chummer6-ui.chummer5a_muscle_memory_parity_gate",
   "status": "pass",
   "summary": "Muscle-memory parity policy, full-scope design, detailed seed checks, and release wiring are all present.",
@@ -10,7 +10,7 @@
     "parityOraclePath": "/docker/chummercomplete/chummer-presentation/docs/PARITY_ORACLE.json",
     "designDocPath": "/docker/chummercomplete/chummer-presentation/docs/CHUMMER5A_MUSCLE_MEMORY_EXIT_TESTS.md",
     "inventoryReceiptPath": "/docker/chummercomplete/chummer-presentation/.codex-studio/published/CHUMMER5A_MUSCLE_MEMORY_INVENTORY.generated.json",
-    "pixefyComparisonReceiptPath": "/docker/chummercomplete/chummer-presentation/.codex-studio/published/PIXEFY_CHUMMER5A_SCREENSHOT_COMPARISON_GATE.generated.json",
+    "localScreenshotComparisonReceiptPath": "/docker/chummercomplete/chummer-presentation/.codex-studio/published/CHUMMER5A_LOCAL_SCREENSHOT_COMPARISON_GATE.generated.json",
     "workspaceActionCount": 47,
     "desktopControlCount": 70,
     "tabCount": 17,
@@ -19,9 +19,9 @@
     "runtimeMenuRootCount": 4,
     "runtimeDialogSurfaceCount": 71,
     "runtimeVisibleElementCount": 17037,
-    "pixefyComparisonScreenshotCount": 40,
-    "pixefyComparisonRequiredScreenshotCount": 21,
-    "pixefy_screenshot_directory": "/docker/chummercomplete/chummer-presentation/.codex-studio/published/ui-flagship-release-gate-screenshots",
+    "localScreenshotComparisonScreenshotCount": 59,
+    "localScreenshotComparisonRequiredScreenshotCount": 21,
+    "local_screenshot_directory": "/docker/chummercomplete/chummer-presentation/.codex-studio/published/ui-flagship-release-gate-screenshots",
     "detailedDialogResults": [
       {
         "dialogId": "gear_add",

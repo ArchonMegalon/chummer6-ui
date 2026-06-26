@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-06-18T21:16:13.630680Z",
+  "generatedAt": "2026-06-26T17:09:48.893413Z",
   "contractName": "chummer6-ui.chummer5a_legacy_ui_element_mapping_appendix",
   "status": "pass",
   "summary": "Legacy Chummer5A event hooks, dynamic elements, family mappings, and per-dialog human parity rows are exported together so family-level proof cannot substitute for element-level review.",
@@ -10,17 +10,17 @@
   },
   "legacyExtractionSummary": {
     "designerEventHookCount": 1755,
-    "runtimeEventHookCount": 339,
+    "runtimeEventHookCount": 343,
     "dynamicInteractiveElementCount": 765
   },
   "legacyDispositionSummary": {
-    "legacyElementDispositionCount": 2859,
+    "legacyElementDispositionCount": 2863,
     "missingLegacyElementDispositionCount": 0,
     "familyFallbackLegacyElementDispositionCount": 0
   },
   "dynamicElementSummary": {
     "legacyDynamicInteractiveElementCount": 765,
-    "currentDynamicInteractiveElementCount": 98,
+    "currentDynamicInteractiveElementCount": 110,
     "currentNamedAxamlInteractiveElementCount": 103
   },
   "familyRowCount": 29,
@@ -428,7 +428,7 @@
     {
       "family_id": "search_filter_category",
       "status": "pass",
-      "legacy_event_count": 421,
+      "legacy_event_count": 425,
       "legacy_dynamic_element_count": 61,
       "mapped_current_ids": [
         "ui:gear_add",
@@ -1743,7 +1743,7 @@
           "present_in_chummer6": "yes",
           "visual_parity": "yes",
           "behavioral_parity": "yes",
-          "reason": "Route-local dice and initiative proof cites the generated dice dialog parity, runboard initiative route, and deterministic core receipts directly.",
+          "reason": "Route-local dice and initiative proof cites the generated dice dialog parity, runboard initiative route, and current workflow receipts directly.",
           "test_refs": [
             "parity_audit::family:dice_initiative_and_table_utilities"
           ]
@@ -1757,7 +1757,7 @@
           "present_in_chummer6": "yes",
           "visual_parity": "yes",
           "behavioral_parity": "yes",
-          "reason": "Route-local contacts, lifestyles, and history proof cites section-host parity, current contacts and diary screenshots, and deterministic workflow-state receipts directly.",
+          "reason": "Route-local contacts, lifestyles, and history proof cites section-host parity, current contacts and diary screenshots, and current workflow-state receipts directly.",
           "test_refs": [
             "parity_audit::family:identity_contacts_lifestyles_history"
           ]

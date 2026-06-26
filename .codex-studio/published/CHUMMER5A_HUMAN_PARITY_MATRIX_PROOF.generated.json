@@ -1,7 +1,7 @@
 {
   "contract_name": "chummer6-ui.chummer5a_human_parity_matrix_proof",
   "status": "pass",
-  "generated_at": "2026-05-08T18:48:44.341451Z",
+  "generated_at": "2026-06-26T17:09:47.546838Z",
   "summary": "The Chummer5A human parity matrix is fully covered by passing family-level UI parity rows and mandatory screenshot-backed review jobs.",
   "matrix": {
     "path": "chummer-design/products/chummer/CHUMMER5A_HUMAN_PARITY_ACCEPTANCE_MATRIX.yaml",
@@ -19,7 +19,7 @@
     ]
   },
   "ui_audit_summary": {
-    "path": "chummer-presentation/.codex-studio/published/CHUMMER5A_UI_ELEMENT_PARITY_AUDIT.generated.json",
+    "path": ".codex-studio/published/CHUMMER5A_UI_ELEMENT_PARITY_AUDIT.generated.json",
     "total_elements": 84,
     "visual_yes_count": 84,
     "behavioral_yes_count": 84,
@@ -78,7 +78,7 @@
     }
   ],
   "screenshot_review": {
-    "path": "chummer-presentation/.codex-studio/published/CHUMMER5A_SCREENSHOT_REVIEW_GATE.generated.json",
+    "path": ".codex-studio/published/CHUMMER5A_SCREENSHOT_REVIEW_GATE.generated.json",
     "required_jobs": [
       "dense_builder",
       "master_index",
@@ -166,7 +166,7 @@
   "strict_failure_reasons": [],
   "evidence_sources": [
     "chummer-design/products/chummer/CHUMMER5A_HUMAN_PARITY_ACCEPTANCE_MATRIX.yaml",
-    "chummer-presentation/.codex-studio/published/CHUMMER5A_UI_ELEMENT_PARITY_AUDIT.generated.json",
-    "chummer-presentation/.codex-studio/published/CHUMMER5A_SCREENSHOT_REVIEW_GATE.generated.json"
+    ".codex-studio/published/CHUMMER5A_UI_ELEMENT_PARITY_AUDIT.generated.json",
+    ".codex-studio/published/CHUMMER5A_SCREENSHOT_REVIEW_GATE.generated.json"
   ]
 }

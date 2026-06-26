@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-06-24T11:53:40.498931Z",
+  "generatedAt": "2026-06-26T17:43:40.114960Z",
   "contractName": "chummer6-ui.chummer5a_screenshot_review_gate",
   "channelId": "public_stable",
   "channel": "public_stable",
@@ -32,7 +32,7 @@
     "reasons": [],
     "receiptStatuses": {
       "visualFamiliarityGate": "pass",
-      "flagshipGate": "fail"
+      "flagshipGate": "pass"
     },
     "skipFlagshipGateDependency": false,
     "flagshipGateRouteLocalOnly": false,
@@ -321,6 +321,7 @@
     "flagshipGateRouteLocalOnly": false,
     "flagshipGateExternalDesktopOnly": false,
     "desktopExecutableLocalBlockingFindings": [
+      "flagship UI release gate proof is stale (295894s old).",
       "Windows gate reason: Windows installer visual proof is missing; capture progress and completion screenshots on a Windows host."
     ],
     "reviewedJobs": [
