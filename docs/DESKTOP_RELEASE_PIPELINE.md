@@ -41,6 +41,20 @@ powershell -NoLogo -NoProfile -ExecutionPolicy Bypass -File .\scripts\capture-wi
 
 The script launches the promoted installer, captures progress and completion screenshots, hashes the images and installer bytes, and writes `.codex-studio\published\WINDOWS_INSTALLER_VISUAL_PROOF.generated.json`. The desktop release matrix may treat this as the only external host proof when local payload, digest, and update-handoff gates pass; it must still fail for missing payloads, mismatched hashes, or stale local release artifacts.
 
+## Windows bootstrap rule
+
+The public Windows row must not publish a large self-contained setup executable as `installerMode=bootstrap`.
+
+For the main downloads shelf, a Windows bootstrap installer must:
+
+* stay below the bootstrap size cap enforced by `scripts/verify-windows-installer-payloads.py`
+* embed the payload URL, SHA-256, and byte size in the installer binary
+* ship the matching `chummer-*-payload.zip` and `.json` sidecar
+* prove the payload zip contains the launch executable and bundled sample character
+* pass the Windows installer payload gate before promotion
+
+If the available Windows installer is still a bundled or self-contained setup, keep it off the recommended public shelf or publish it only through the supplemental proof route. Do not relabel it as a bootstrap installer to make the manifest pass.
+
 For the public shelf, Windows `win-x64` and Linux `linux-x64` are the rolling-release scope. Mainline builds resolve to `preview` automatically for that scope, and `public_stable` remains an explicit promotion step. macOS remains buildable and publishable as a bounded artifact lane, but it does not get to hold back the public Windows/Linux shelf when the current public promotion policy is Windows/Linux-only.
 
 Desktop heads may consume that canonical registry projection directly for self-update when `CHUMMER_DESKTOP_UPDATE_MANIFEST` points at `RELEASE_CHANNEL.generated.json` (or a compatible `/downloads/` base URL).
