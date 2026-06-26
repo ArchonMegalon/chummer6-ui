@@ -1047,7 +1047,6 @@ public static class DesktopUpdateRuntime
                 });
             }
 
-            TryDeleteDirectory(request.StageRoot);
             return 0;
         }
         catch (Exception ex)
