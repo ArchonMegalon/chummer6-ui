@@ -11,6 +11,17 @@ namespace Chummer.Tests.Presentation;
 public sealed class DesktopStartupUpdateWindowTests
 {
     [TestMethod]
+    public void Startup_update_progress_bar_uses_explicit_shell_progress_brushes()
+    {
+        string repoRoot = TestContextLocator.ResolveChummerPresentationRepoRoot();
+        string source = File.ReadAllText(Path.Combine(repoRoot, "Chummer.Avalonia", "DesktopStartupUpdateWindow.cs"));
+
+        StringAssert.Contains(source, "Name = \"StartupUpdateProgressBar\"");
+        StringAssert.Contains(source, "Background = DesktopShellTheme.ResolveThemeBrush(\"ChummerShellProgressTrackBrush\", \"#1E293B\")");
+        StringAssert.Contains(source, "Foreground = DesktopShellTheme.ResolveThemeBrush(\"ChummerShellProgressValueBrush\", \"#90C39A\")");
+    }
+
+    [TestMethod]
     public void BuildViewState_maps_progress_stage_to_visible_copy_and_determinate_progress()
     {
         DesktopStartupUpdateViewState state = DesktopStartupUpdateWindow.BuildViewState(

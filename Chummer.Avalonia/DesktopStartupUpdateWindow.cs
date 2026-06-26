@@ -61,11 +61,14 @@ internal sealed class DesktopStartupUpdateWindow : Window
 
         _progressBar = new ProgressBar
         {
+            Name = "StartupUpdateProgressBar",
             Minimum = 0,
             Maximum = 1000,
             IsIndeterminate = true,
             ShowProgressText = false,
-            Height = 8
+            Height = 8,
+            Background = DesktopShellTheme.ResolveThemeBrush("ChummerShellProgressTrackBrush", "#1E293B"),
+            Foreground = DesktopShellTheme.ResolveThemeBrush("ChummerShellProgressValueBrush", "#90C39A")
         };
 
         Content = new ScrollViewer
