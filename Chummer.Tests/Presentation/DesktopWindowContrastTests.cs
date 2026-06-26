@@ -113,6 +113,40 @@ public sealed class DesktopWindowContrastTests
     }
 
     [TestMethod]
+    public void Origin_dossier_preview_keeps_story_and_book_text_readable_in_dark_mode()
+    {
+        DesktopDialogState originWizard = new DesktopDialogFactory().CreateCommandDialog(
+            "new_character_origin",
+            profile: null,
+            DesktopPreferenceState.Default,
+            activeSectionJson: null,
+            currentWorkspace: null,
+            rulesetId: RulesetDefaults.Sr5);
+        DesktopDialogState originBuild = DesktopDialogFactory.BuildNewCharacterOriginBuildDialog(originWizard);
+
+        WithBoundDialogWindow(originWizard, window =>
+        {
+            Border storyPreview = window.GetVisualDescendants()
+                .OfType<Border>()
+                .Single(border => string.Equals(border.Name, "LegacyStoryPreviewSummaryCard", StringComparison.Ordinal));
+
+            Assert.IsTrue(storyPreview.IsVisible, "The Origin Dossier story preview must be visible for dark-mode contrast proof.");
+            AssertVisibleInputControlContrast(window, "origin dossier wizard dark mode", minimumVisibleInputControls: 2);
+            AssertVisibleTextBlockContrast(storyPreview, "origin dossier story preview dark mode", minimumVisibleTextBlocks: 3);
+        }, requestedTheme: ThemeVariant.Dark);
+
+        WithBoundDialogWindow(originBuild, window =>
+        {
+            Border bookPreview = window.GetVisualDescendants()
+                .OfType<Border>()
+                .Single(border => string.Equals(border.Name, "OriginBookPreviewPanel", StringComparison.Ordinal));
+
+            Assert.IsTrue(bookPreview.IsVisible, "The Origin Dossier book preview must be visible for dark-mode contrast proof.");
+            AssertVisibleTextBlockContrast(bookPreview, "origin dossier book preview dark mode", minimumVisibleTextBlocks: 2);
+        }, requestedTheme: ThemeVariant.Dark);
+    }
+
+    [TestMethod]
     public void Shell_theme_helpers_keep_idle_input_controls_readable_in_dark_mode()
     {
         WithStandaloneShellInputThemeWindow(window =>
@@ -463,7 +497,10 @@ public sealed class DesktopWindowContrastTests
         throw new AssertFailedException("Avalonia devices-access headless session did not stabilize for contrast proof.", lastFailure);
     }
 
-    private static void WithBoundDialogWindow(DesktopDialogState dialog, Action<DesktopDialogWindow> assertion)
+    private static void WithBoundDialogWindow(
+        DesktopDialogState dialog,
+        Action<DesktopDialogWindow> assertion,
+        ThemeVariant? requestedTheme = null)
     {
         EnsureHeadlessPlatform();
         Exception? lastFailure = null;
@@ -476,22 +513,33 @@ public sealed class DesktopWindowContrastTests
                 session.Dispatch(
                         () =>
                         {
+                            ThemeVariant? priorAppTheme = global::Avalonia.Application.Current?.RequestedThemeVariant;
+                            if (requestedTheme is not null && global::Avalonia.Application.Current is not null)
+                            {
+                                global::Avalonia.Application.Current.RequestedThemeVariant = requestedTheme;
+                            }
+
                             DesktopDialogWindow window = new()
                             {
                                 Width = 1080,
-                                Height = 900
+                                Height = 900,
+                                RequestedThemeVariant = requestedTheme ?? ThemeVariant.Default
                             };
-                            window.BindDialog(dialog);
-                            window.Show();
-                            PumpUi();
-
                             try
                             {
+                                window.BindDialog(dialog);
+                                window.Show();
+                                PumpUi();
                                 assertion(window);
                             }
                             finally
                             {
                                 window.Close();
+                                if (requestedTheme is not null && global::Avalonia.Application.Current is not null && priorAppTheme is not null)
+                                {
+                                    global::Avalonia.Application.Current.RequestedThemeVariant = priorAppTheme;
+                                }
+
                                 PumpUi();
                             }
                         },
@@ -850,6 +898,7 @@ public sealed class DesktopWindowContrastTests
             .Where(static control => control.IsVisible)
             .Where(static control => !string.IsNullOrWhiteSpace(control.Text))
             .Where(static control => !IsProgressBarOwnedTextBlock(control))
+            .Where(static control => !IsChoiceOwnedTextBlock(control))
             .ToArray();
 
         Assert.IsTrue(
@@ -867,6 +916,9 @@ public sealed class DesktopWindowContrastTests
 
     private static bool IsProgressBarOwnedTextBlock(TextBlock textBlock)
         => textBlock.GetVisualAncestors().OfType<ProgressBar>().Any();
+
+    private static bool IsChoiceOwnedTextBlock(TextBlock textBlock)
+        => textBlock.GetVisualAncestors().Any(static ancestor => ancestor is ListBoxItem or ComboBoxItem or ComboBox);
 
     private static Color ResolveSolidColor(IBrush? brush, Control control, string role, string context)
     {

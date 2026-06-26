@@ -2152,8 +2152,10 @@ public partial class DesktopDialogWindow : Window
 
     private static Border CreateLegacySummaryCard(string title, string summary, Control content)
     {
+        string normalizedTitle = title.Replace(" ", string.Empty, StringComparison.Ordinal);
         return new Border
         {
+            Name = $"Legacy{normalizedTitle}SummaryCard",
             Classes = { "shell-panel", "accent" },
             Padding = new Thickness(12),
             Child = new StackPanel
@@ -2163,11 +2165,13 @@ public partial class DesktopDialogWindow : Window
                 {
                     new TextBlock
                     {
+                        Name = $"Legacy{normalizedTitle}SummaryTitle",
                         Text = title,
                         Classes = { "shell-section-title" }
                     },
                     new TextBlock
                     {
+                        Name = $"Legacy{normalizedTitle}SummaryText",
                         Text = summary,
                         Classes = { "shell-caption" }
                     },
@@ -2758,6 +2762,7 @@ public partial class DesktopDialogWindow : Window
             TextBlock textBlock = new()
             {
                 Text = field.Value,
+                Foreground = ResolveThemeBrush("ChummerShellForegroundBrush", "#111827"),
                 TextWrapping = TextWrapping.Wrap
             };
             if (string.Equals(field.VisualKind, DesktopDialogFieldVisualKinds.Tree, StringComparison.Ordinal))
@@ -3026,6 +3031,7 @@ public partial class DesktopDialogWindow : Window
     {
         return new Border
         {
+            Name = "SnippetReadOnlyTextPanel",
             BorderThickness = new Thickness(1),
             BorderBrush = ResolveThemeBrush("ChummerShellBorderBrush", "#B5C0CF"),
             Background = ResolveThemeBrush("ChummerShellSurfaceBrush", "#FBFCFE"),
@@ -3033,6 +3039,7 @@ public partial class DesktopDialogWindow : Window
             Child = new TextBlock
             {
                 Text = value,
+                Foreground = ResolveThemeBrush("ChummerShellForegroundBrush", "#111827"),
                 TextWrapping = TextWrapping.Wrap
             }
         };
@@ -3051,9 +3058,11 @@ public partial class DesktopDialogWindow : Window
         };
         book.Children.Add(new TextBlock
         {
+            Name = "OriginBookPreviewTitleText",
             Text = title,
             FontSize = 18,
             FontWeight = FontWeight.SemiBold,
+            Foreground = ResolveThemeBrush("ChummerShellForegroundBrush", "#111827"),
             TextWrapping = TextWrapping.Wrap
         });
 
@@ -3061,7 +3070,9 @@ public partial class DesktopDialogWindow : Window
         {
             book.Children.Add(new TextBlock
             {
+                Name = "OriginBookPreviewBodyText",
                 Text = paragraph,
+                Foreground = ResolveThemeBrush("ChummerShellForegroundBrush", "#111827"),
                 TextWrapping = TextWrapping.Wrap,
                 LineHeight = 20
             });
@@ -3069,6 +3080,7 @@ public partial class DesktopDialogWindow : Window
 
         return new Border
         {
+            Name = "OriginBookPreviewPanel",
             BorderThickness = new Thickness(1),
             BorderBrush = ResolveThemeBrush("ChummerShellBorderBrush", "#B5C0CF"),
             Background = ResolveThemeBrush("ChummerShellSurfaceBrush", "#FBFCFE"),
@@ -3088,6 +3100,7 @@ public partial class DesktopDialogWindow : Window
     {
         return new Border
         {
+            Name = "StructuredReadOnlyTextPanel",
             BorderThickness = new Thickness(1),
             BorderBrush = ResolveThemeBrush("ChummerShellBorderBrush", "#B5C0CF"),
             Background = ResolveThemeBrush("ChummerShellSurfaceBrush", "#FBFCFE"),
