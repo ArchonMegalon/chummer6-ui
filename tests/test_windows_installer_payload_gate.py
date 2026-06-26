@@ -132,6 +132,67 @@ def test_windows_installer_verifier_accepts_bootstrap_payload(tmp_path: Path) ->
     assert "windows_installer_payload_gate:ok checked=1" in result.stdout
 
 
+def test_windows_installer_verifier_rejects_oversized_bootstrap_installer(tmp_path: Path) -> None:
+    files_dir = tmp_path / "files"
+    files_dir.mkdir()
+    installer_path = files_dir / "chummer-avalonia-win-x64-installer.exe"
+    payload_path = files_dir / "chummer-avalonia-win-x64-payload.zip"
+    payload_bytes = _write_bootstrap_payload(payload_path)
+    payload_sha256 = hashlib.sha256(payload_bytes).hexdigest()
+    payload_url = f"https://example.invalid/downloads/files/{payload_path.name}"
+    _write_bootstrap_installer(
+        installer_path,
+        payload_download_url=payload_url,
+        payload_sha256=payload_sha256,
+        payload_size_bytes=len(payload_bytes),
+    )
+    with installer_path.open("ab") as handle:
+        handle.truncate((15 * 1024 * 1024) + 1)
+    (files_dir / "chummer-avalonia-win-x64-payload.zip.json").write_text(
+        json.dumps(
+            {
+                "contractName": "chummer6-ui.windows_bootstrap_payload",
+                "fileName": payload_path.name,
+                "downloadUrl": payload_url,
+                "sha256": payload_sha256,
+                "sizeBytes": len(payload_bytes),
+                "installerFileName": installer_path.name,
+                "releaseVersion": "run-test",
+            },
+            indent=2,
+        )
+        + "\n",
+        encoding="utf-8",
+    )
+    manifest_path = tmp_path / "releases.json"
+    _write_bundle_manifest(
+        manifest_path,
+        installer_name=installer_path.name,
+        installer_size_bytes=installer_path.stat().st_size,
+        payload_name=payload_path.name,
+        payload_sha256=payload_sha256,
+        payload_size_bytes=len(payload_bytes),
+    )
+
+    result = subprocess.run(
+        [
+            "python3",
+            str(VERIFY_SCRIPT),
+            "--files-dir",
+            str(files_dir),
+            "--manifest",
+            str(manifest_path),
+            "--require-embedded-bootstrap-metadata",
+        ],
+        text=True,
+        capture_output=True,
+        check=False,
+    )
+
+    assert result.returncode != 0
+    assert "bootstrap installer is too large" in result.stderr
+
+
 def test_windows_installer_verifier_rejects_installer_without_manifest_row_when_required(tmp_path: Path) -> None:
     files_dir = tmp_path / "files"
     files_dir.mkdir()

@@ -18,6 +18,7 @@ from urllib.parse import urlparse
 
 APPENDED_PAYLOAD_MAGIC = b"CHUMMER6PAYLOAD1"
 FOOTER_LENGTH = len(APPENDED_PAYLOAD_MAGIC) + 8
+DEFAULT_MAX_BOOTSTRAP_INSTALLER_BYTES = 15 * 1024 * 1024
 
 DEFAULT_LAUNCH_EXECUTABLES = {
     "avalonia": "Chummer.Avalonia.exe",
@@ -133,6 +134,13 @@ def try_int(value: Any) -> int | None:
         return int(value)
     except (TypeError, ValueError):
         return None
+
+
+def max_bootstrap_installer_bytes() -> int:
+    configured = try_int(os.environ.get("CHUMMER_WINDOWS_BOOTSTRAP_MAX_INSTALLER_BYTES"))
+    if configured is not None and configured > 0:
+        return configured
+    return DEFAULT_MAX_BOOTSTRAP_INSTALLER_BYTES
 
 
 def is_sha256_hex(value: str) -> bool:
@@ -271,6 +279,20 @@ def validate_manifest_payload_metadata(candidate: PayloadCandidate, manifest_row
                 f"manifest payloadSizeBytes {manifest_row.payload_size_bytes} does not match sidecar size {len(candidate.data)}"
             )
     return failures
+
+
+def validate_bootstrap_installer_shape(installer_path: Path, candidate: PayloadCandidate) -> list[str]:
+    if candidate.mode != "bootstrap":
+        return []
+
+    installer_size = installer_path.stat().st_size
+    max_size = max_bootstrap_installer_bytes()
+    if installer_size > max_size:
+        return [
+            "bootstrap installer is too large: "
+            f"{installer_size} bytes exceeds the {max_size} byte limit"
+        ]
+    return []
 
 
 def validate_bootstrap_installer_metadata(installer_path: Path, candidate: PayloadCandidate, manifest_row: ManifestRow | None) -> list[str]:
@@ -460,6 +482,7 @@ def verify_installer(
 
     failures.extend(validate_manifest_payload_metadata(candidate, manifest_row))
     failures.extend(validate_bootstrap_sidecar_metadata(installer_path, candidate, manifest_row))
+    failures.extend(validate_bootstrap_installer_shape(installer_path, candidate))
     if require_embedded_bootstrap_metadata:
         failures.extend(validate_bootstrap_installer_metadata(installer_path, candidate, manifest_row))
     failures.extend(
