@@ -1115,7 +1115,7 @@ public sealed class DesktopThemeManagerTests
         StringAssert.Contains(desktopDialogSource, "CreateOriginSummaryStrip(");
         StringAssert.Contains(originSurfaceSource, "Classes = { \"shell-panel\" }");
         StringAssert.Contains(originSurfaceSource, "Classes = { \"shell-kicker\" }");
-        StringAssert.Contains(originSurfaceSource, "Foreground = ResolveThemeBrush(\"ChummerShellForegroundBrush\", \"#111827\")");
+        StringAssert.Contains(originSurfaceSource, "Foreground = ResolveThemeBrush(\"ChummerShellForegroundBrush\", \"#E5E7EB\")");
         StringAssert.Contains(desktopDialogSource, "newCharacterOriginGmConstraintPreset");
         StringAssert.Contains(originSurfaceSource, "OriginDossierStandaloneAdvancedStoryControlsExpander");
         StringAssert.Contains(originSurfaceSource, "Header = \"Advanced story controls\"");
@@ -1324,10 +1324,10 @@ public sealed class DesktopThemeManagerTests
 
         StringAssert.Contains(desktopDialogSource, "AddLabeledValueRow(rightFactsGrid, 1, \"Karma:\", new TextBlock { Text = runtimeState.MetatypeKarma });");
         StringAssert.Contains(desktopDialogSource, "AddLabeledValueRow(rightFactsGrid, 2, \"Special Attributes:\", new TextBlock { Text = runtimeState.SpecialAttributes });");
-        StringAssert.Contains(desktopDialogSource, "valueText.Foreground = ResolveThemeBrush(\"ChummerShellForegroundBrush\", \"#111827\");");
+        StringAssert.Contains(desktopDialogSource, "valueText.Foreground = ResolveThemeBrush(\"ChummerShellForegroundBrush\", \"#E5E7EB\");");
         StringAssert.Contains(desktopDialogSource, "valueText.FontWeight = FontWeight.SemiBold;");
         StringAssert.Contains(desktopDialogSource, "Text = attribute.Value,");
-        StringAssert.Contains(desktopDialogSource, "Foreground = ResolveThemeBrush(\"ChummerShellForegroundBrush\", \"#111827\"),");
+        StringAssert.Contains(desktopDialogSource, "Foreground = ResolveThemeBrush(\"ChummerShellForegroundBrush\", \"#E5E7EB\"),");
     }
 
     [TestMethod]

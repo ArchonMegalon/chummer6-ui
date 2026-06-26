@@ -1572,7 +1572,7 @@ public partial class DesktopDialogWindow : Window
                         new TextBlock
                         {
                             Text = string.IsNullOrWhiteSpace(value) ? "Pending" : value,
-                            Foreground = ResolveThemeBrush("ChummerShellForegroundBrush", "#111827"),
+                            Foreground = ResolveThemeBrush("ChummerShellForegroundBrush", "#E5E7EB"),
                             FontWeight = FontWeight.SemiBold,
                             TextWrapping = TextWrapping.Wrap
                         }
@@ -1771,7 +1771,7 @@ public partial class DesktopDialogWindow : Window
             TextBlock value = new()
             {
                 Text = attribute.Value,
-                Foreground = ResolveThemeBrush("ChummerShellForegroundBrush", "#111827"),
+                Foreground = ResolveThemeBrush("ChummerShellForegroundBrush", "#E5E7EB"),
                 FontWeight = FontWeight.SemiBold,
                 HorizontalAlignment = global::Avalonia.Layout.HorizontalAlignment.Left
             };
@@ -2762,7 +2762,7 @@ public partial class DesktopDialogWindow : Window
             TextBlock textBlock = new()
             {
                 Text = field.Value,
-                Foreground = ResolveThemeBrush("ChummerShellForegroundBrush", "#111827"),
+                Foreground = ResolveThemeBrush("ChummerShellForegroundBrush", "#E5E7EB"),
                 TextWrapping = TextWrapping.Wrap
             };
             if (string.Equals(field.VisualKind, DesktopDialogFieldVisualKinds.Tree, StringComparison.Ordinal))
@@ -3039,7 +3039,7 @@ public partial class DesktopDialogWindow : Window
             Child = new TextBlock
             {
                 Text = value,
-                Foreground = ResolveThemeBrush("ChummerShellForegroundBrush", "#111827"),
+                Foreground = ResolveThemeBrush("ChummerShellForegroundBrush", "#E5E7EB"),
                 TextWrapping = TextWrapping.Wrap
             }
         };
@@ -3062,7 +3062,7 @@ public partial class DesktopDialogWindow : Window
             Text = title,
             FontSize = 18,
             FontWeight = FontWeight.SemiBold,
-            Foreground = ResolveThemeBrush("ChummerShellForegroundBrush", "#111827"),
+            Foreground = ResolveThemeBrush("ChummerShellForegroundBrush", "#E5E7EB"),
             TextWrapping = TextWrapping.Wrap
         });
 
@@ -3072,7 +3072,7 @@ public partial class DesktopDialogWindow : Window
             {
                 Name = "OriginBookPreviewBodyText",
                 Text = paragraph,
-                Foreground = ResolveThemeBrush("ChummerShellForegroundBrush", "#111827"),
+                Foreground = ResolveThemeBrush("ChummerShellForegroundBrush", "#E5E7EB"),
                 TextWrapping = TextWrapping.Wrap,
                 LineHeight = 20
             });
@@ -3109,6 +3109,7 @@ public partial class DesktopDialogWindow : Window
             Child = new TextBlock
             {
                 Text = value,
+                Foreground = ResolveThemeBrush("ChummerShellForegroundBrush", "#E5E7EB"),
                 TextWrapping = TextWrapping.Wrap,
                 FontFamily = useMonospace ? new FontFamily("Consolas, Menlo, Monaco, monospace") : FontFamily.Default
             }
@@ -3300,7 +3301,7 @@ public partial class DesktopDialogWindow : Window
         {
             Text = label,
             FontWeight = FontWeight.SemiBold,
-            Foreground = ResolveThemeBrush("ChummerShellForegroundBrush", "#111827"),
+            Foreground = ResolveThemeBrush("ChummerShellForegroundBrush", "#E5E7EB"),
             VerticalAlignment = global::Avalonia.Layout.VerticalAlignment.Center
         };
         Grid.SetRow(labelText, rowIndex);
@@ -3310,7 +3311,7 @@ public partial class DesktopDialogWindow : Window
 
         if (valueControl is TextBlock valueText)
         {
-            valueText.Foreground = ResolveThemeBrush("ChummerShellForegroundBrush", "#111827");
+            valueText.Foreground = ResolveThemeBrush("ChummerShellForegroundBrush", "#E5E7EB");
             valueText.FontWeight = FontWeight.SemiBold;
             valueText.VerticalAlignment = global::Avalonia.Layout.VerticalAlignment.Center;
         }

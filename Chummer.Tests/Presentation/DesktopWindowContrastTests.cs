@@ -52,12 +52,15 @@ public sealed class DesktopWindowContrastTests
     [TestMethod]
     public void Update_window_keeps_action_controls_readable_in_dark_mode()
     {
-        WithStandaloneUpdateWindow(window =>
+        foreach (DesktopUpdateClientStatus updateStatus in CreateUpdateStatusMatrix())
         {
-            using ThemeScope scope = ThemeScope.Dark(window);
-            AssertVisibleTextBlockContrast(window, "update window dark mode", minimumVisibleTextBlocks: 8);
-            AssertVisibleButtonContrast(window, "update window dark mode", minimumVisibleButtons: 4);
-        });
+            WithStandaloneUpdateWindow(updateStatus, window =>
+            {
+                using ThemeScope scope = ThemeScope.Dark(window);
+                AssertVisibleTextBlockContrast(window, $"update window {updateStatus.Status} dark mode", minimumVisibleTextBlocks: 8);
+                AssertVisibleButtonContrast(window, $"update window {updateStatus.Status} dark mode", minimumVisibleButtons: 4);
+            });
+        }
     }
 
     [TestMethod]
@@ -317,7 +320,7 @@ public sealed class DesktopWindowContrastTests
             PromptReason: "fresh_install");
     }
 
-    private static void WithStandaloneUpdateWindow(Action<Window> assertion)
+    private static void WithStandaloneUpdateWindow(DesktopUpdateClientStatus updateStatus, Action<Window> assertion)
     {
         EnsureHeadlessPlatform();
         Exception? lastFailure = null;
@@ -344,7 +347,7 @@ public sealed class DesktopWindowContrastTests
                             Window window = (Window)constructor.Invoke(
                                 [
                                     CreateInstallState(status: "guest"),
-                                    CreateUpdateStatus(),
+                                    updateStatus,
                                     DesktopPreferenceState.Default
                                 ]);
 
@@ -748,7 +751,28 @@ public sealed class DesktopWindowContrastTests
             GrantToken: "grant-token");
     }
 
-    private static DesktopUpdateClientStatus CreateUpdateStatus()
+    private static DesktopUpdateClientStatus[] CreateUpdateStatusMatrix()
+    {
+        DateTimeOffset now = DateTimeOffset.UtcNow;
+        return
+        [
+            CreateUpdateStatus(),
+            CreateUpdateStatus(status: "update_staged", pendingUpdateVersion: "run-next", recommendedAction: "Restart Chummer to finish the update."),
+            CreateUpdateStatus(status: "update_available", lastManifestVersion: "run-next", recommendedAction: "Install when your table is between scenes."),
+            CreateUpdateStatus(status: "attention_required", lastError: "Could not reach the update source.", recommendedAction: "Open support if this keeps happening."),
+            CreateUpdateStatus(status: "disabled", updatesEnabled: false, updateMode: "off", lastCheckedAtUtc: now, recommendedAction: "Use Downloads when you want a newer build.")
+        ];
+    }
+
+    private static DesktopUpdateClientStatus CreateUpdateStatus(
+        string status = "current",
+        bool updatesEnabled = true,
+        string updateMode = "full",
+        string? lastManifestVersion = "run-test",
+        string? pendingUpdateVersion = null,
+        string? lastError = null,
+        string? recommendedAction = "Continue.",
+        DateTimeOffset? lastCheckedAtUtc = null)
     {
         DateTimeOffset now = DateTimeOffset.UtcNow;
         return new DesktopUpdateClientStatus(
@@ -757,15 +781,18 @@ public sealed class DesktopWindowContrastTests
             ChannelId: "stable",
             Platform: "linux",
             Arch: "x64",
-            UpdatesEnabled: true,
+            UpdatesEnabled: updatesEnabled,
             AutoApply: true,
             ManifestLocation: "/tmp/chummer-release.json",
-            LastCheckedAtUtc: now,
-            LastManifestVersion: "run-test",
+            LastCheckedAtUtc: lastCheckedAtUtc ?? now,
+            LastManifestVersion: lastManifestVersion,
             LastManifestPublishedAtUtc: now,
-            LastError: null,
-            Status: "current",
-            RecommendedAction: "Continue.");
+            LastError: lastError,
+            Status: status,
+            RecommendedAction: recommendedAction,
+            UpdateMode: updateMode,
+            PendingUpdateVersion: pendingUpdateVersion,
+            PendingUpdateChannelId: pendingUpdateVersion is null ? null : "stable");
     }
 
     private static void AssertVisibleInputControlContrast(Control root, string context, int minimumVisibleInputControls)
