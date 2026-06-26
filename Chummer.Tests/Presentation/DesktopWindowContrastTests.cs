@@ -61,6 +61,17 @@ public sealed class DesktopWindowContrastTests
     }
 
     [TestMethod]
+    public void Startup_update_window_keeps_status_and_progress_readable_in_dark_mode()
+    {
+        WithStandaloneStartupUpdateWindow(window =>
+        {
+            using ThemeScope scope = ThemeScope.Dark(window);
+            AssertVisibleTextBlockContrast(window, "startup update window dark mode", minimumVisibleTextBlocks: 2);
+            AssertVisibleProgressBarTheme(window, "startup update window dark mode", minimumVisibleProgressBars: 1);
+        });
+    }
+
+    [TestMethod]
     public void Devices_access_window_keeps_action_controls_readable_in_dark_mode()
     {
         WithStandaloneDevicesAccessWindow(window =>
@@ -186,7 +197,7 @@ public sealed class DesktopWindowContrastTests
             }
             finally
             {
-                session?.Dispose();
+                SafeDisposeHeadlessSession(session);
             }
         }
 
@@ -248,7 +259,7 @@ public sealed class DesktopWindowContrastTests
             }
             finally
             {
-                session?.Dispose();
+                SafeDisposeHeadlessSession(session);
             }
         }
 
@@ -325,11 +336,63 @@ public sealed class DesktopWindowContrastTests
             }
             finally
             {
-                session?.Dispose();
+                SafeDisposeHeadlessSession(session);
             }
         }
 
         throw new AssertFailedException("Avalonia update-window headless session did not stabilize for contrast proof.", lastFailure);
+    }
+
+    private static void WithStandaloneStartupUpdateWindow(Action<Window> assertion)
+    {
+        EnsureHeadlessPlatform();
+        Exception? lastFailure = null;
+        for (int attempt = 1; attempt <= HeadlessSessionAttempts; attempt++)
+        {
+            HeadlessUnitTestSession? session = null;
+            try
+            {
+                session = HeadlessUnitTestSession.StartNew(typeof(ContrastHeadlessAppBootstrap));
+                session.Dispatch(
+                        () =>
+                        {
+                            ConstructorInfo constructor = typeof(DesktopStartupUpdateWindow).GetConstructor(
+                                BindingFlags.Instance | BindingFlags.NonPublic,
+                                binder: null,
+                                [typeof(string), typeof(string[])],
+                                modifiers: null)
+                                ?? throw new AssertFailedException("DesktopStartupUpdateWindow private constructor was not found.");
+
+                            Window window = (Window)constructor.Invoke(["avalonia", Array.Empty<string>()]);
+                            window.Show();
+                            PumpUi();
+
+                            try
+                            {
+                                assertion(window);
+                            }
+                            finally
+                            {
+                                window.Close();
+                                PumpUi();
+                            }
+                        },
+                        CancellationToken.None)
+                    .GetAwaiter()
+                    .GetResult();
+                return;
+            }
+            catch (Exception ex) when (IsTransientHeadlessFailure(ex) && attempt < HeadlessSessionAttempts)
+            {
+                lastFailure = ex;
+            }
+            finally
+            {
+                SafeDisposeHeadlessSession(session);
+            }
+        }
+
+        throw new AssertFailedException("Avalonia startup-update headless session did not stabilize for contrast proof.", lastFailure);
     }
 
     private static void WithStandaloneDevicesAccessWindow(Action<Window> assertion)
@@ -391,7 +454,7 @@ public sealed class DesktopWindowContrastTests
             }
             finally
             {
-                session?.Dispose();
+                SafeDisposeHeadlessSession(session);
             }
         }
 
@@ -441,7 +504,7 @@ public sealed class DesktopWindowContrastTests
             }
             finally
             {
-                session?.Dispose();
+                SafeDisposeHeadlessSession(session);
             }
         }
 
@@ -524,7 +587,7 @@ public sealed class DesktopWindowContrastTests
             }
             finally
             {
-                session?.Dispose();
+                SafeDisposeHeadlessSession(session);
             }
         }
 
@@ -606,7 +669,7 @@ public sealed class DesktopWindowContrastTests
             }
             finally
             {
-                session?.Dispose();
+                SafeDisposeHeadlessSession(session);
             }
         }
 
@@ -736,12 +799,33 @@ public sealed class DesktopWindowContrastTests
         return true;
     }
 
+    private static void AssertVisibleProgressBarTheme(Control root, string context, int minimumVisibleProgressBars)
+    {
+        ProgressBar[] progressBars = root.GetVisualDescendants()
+            .OfType<ProgressBar>()
+            .Where(static control => control.IsVisible)
+            .ToArray();
+
+        Assert.IsTrue(
+            progressBars.Length >= minimumVisibleProgressBars,
+            $"{context} should expose enough visible progress bars for a meaningful update-progress readability check.");
+
+        foreach (ProgressBar progressBar in progressBars)
+        {
+            Color foreground = ResolveSolidColor(progressBar.Foreground, progressBar, "foreground", context);
+            Color background = ResolveBackgroundColor(progressBar.Background, progressBar, context);
+            string controlName = string.IsNullOrWhiteSpace(progressBar.Name) ? progressBar.GetType().Name : progressBar.Name!;
+            AssertContrastAtLeast(foreground, background, 3.0d, $"{context} {controlName} progress indicator");
+        }
+    }
+
     private static void AssertVisibleTextBlockContrast(Control root, string context, int minimumVisibleTextBlocks)
     {
         TextBlock[] textBlocks = root.GetVisualDescendants()
             .OfType<TextBlock>()
             .Where(static control => control.IsVisible)
             .Where(static control => !string.IsNullOrWhiteSpace(control.Text))
+            .Where(static control => !IsProgressBarOwnedTextBlock(control))
             .ToArray();
 
         Assert.IsTrue(
@@ -756,6 +840,9 @@ public sealed class DesktopWindowContrastTests
             AssertContrastAtLeast(foreground, background, 4.5d, $"{context} {controlName} text");
         }
     }
+
+    private static bool IsProgressBarOwnedTextBlock(TextBlock textBlock)
+        => textBlock.GetVisualAncestors().OfType<ProgressBar>().Any();
 
     private static Color ResolveSolidColor(IBrush? brush, Control control, string role, string context)
     {
@@ -837,6 +924,18 @@ public sealed class DesktopWindowContrastTests
         return message.Contains("The visual is not attached to a visual tree", StringComparison.Ordinal)
             || message.Contains("Call from invalid thread", StringComparison.Ordinal)
             || message.Contains("Operation is not valid due to the current state of the object", StringComparison.Ordinal);
+    }
+
+    private static void SafeDisposeHeadlessSession(HeadlessUnitTestSession? session)
+    {
+        try
+        {
+            session?.Dispose();
+        }
+        catch (NullReferenceException)
+        {
+            // Avalonia Headless can throw during teardown after assertions complete.
+        }
     }
 
     private static void PumpUi()

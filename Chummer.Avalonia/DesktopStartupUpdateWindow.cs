@@ -64,6 +64,7 @@ internal sealed class DesktopStartupUpdateWindow : Window
             Minimum = 0,
             Maximum = 1000,
             IsIndeterminate = true,
+            ShowProgressText = false,
             Height = 8
         };
 
