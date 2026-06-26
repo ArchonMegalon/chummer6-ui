@@ -21,7 +21,7 @@ public static class DesktopPreferenceRuntime
 
         string stateFilePath = GetStateFilePath(headId);
         DesktopPreferenceState normalized = DesktopPreferenceStateRuntime.Normalize(
-            LoadState(stateFilePath) ?? DesktopPreferenceState.Default);
+            LoadState(stateFilePath) ?? CreateDefaultState());
         SaveState(headId, normalized);
         return normalized;
     }
@@ -82,4 +82,15 @@ public static class DesktopPreferenceRuntime
             PreferencesRootDirectoryName,
             headId.Trim(),
             "state.json");
+
+    private static DesktopPreferenceState CreateDefaultState()
+    {
+        string analyticsDefault = (Environment.GetEnvironmentVariable("CHUMMER_DESKTOP_ANALYTICS_DEFAULT") ?? string.Empty)
+            .Trim()
+            .ToLowerInvariant()
+            .Replace("_", "-");
+        return analyticsDefault is "off" or "disabled" or "disable" or "opt-out"
+            ? DesktopPreferenceState.Default with { AnalyticsOptIn = false }
+            : DesktopPreferenceState.Default;
+    }
 }

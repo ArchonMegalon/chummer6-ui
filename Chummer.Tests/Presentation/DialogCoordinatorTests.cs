@@ -37,7 +37,7 @@ public class DialogCoordinatorTests
                     new DesktopDialogField("globalSheetLanguage", "Sheet Language", "fr-fr", "en-us"),
                     new DesktopDialogField("globalCompactMode", "Compact", "true", "false"),
                     new DesktopDialogField("globalHideMasterIndex", "Hide Master Index", "true", "false", InputType: "checkbox"),
-                    new DesktopDialogField("globalAnalyticsOptIn", "Share anonymous desktop usage", "true", "false", InputType: "checkbox"),
+                    new DesktopDialogField("globalAnalyticsOptOut", "Disable anonymous analytics", "true", "false", InputType: "checkbox"),
                     new DesktopDialogField("globalDisableAiFeatures", "Hide helper buttons", "true", "false", InputType: "checkbox")
                 ],
                 Actions:
@@ -62,12 +62,44 @@ public class DialogCoordinatorTests
         Assert.AreEqual("fr-fr", published.Preferences.SheetLanguage);
         Assert.IsTrue(published.Preferences.CompactMode);
         Assert.IsTrue(published.Preferences.HideMasterIndex);
-        Assert.IsTrue(published.Preferences.AnalyticsOptIn);
+        Assert.IsFalse(published.Preferences.AnalyticsOptIn);
         Assert.IsTrue(published.Preferences.DisableAiFeatures);
         StringAssert.Contains(published.Notice ?? string.Empty, "Chummer");
         Assert.IsFalse(
             (published.Notice ?? string.Empty).Contains("desktop head", StringComparison.OrdinalIgnoreCase),
             "The settings dialog should not expose internal desktop-head vocabulary.");
+    }
+
+    [TestMethod]
+    public async Task CoordinateAsync_save_global_settings_accepts_legacy_analytics_opt_in_field()
+    {
+        DialogCoordinator coordinator = new();
+        CharacterOverviewState published = CharacterOverviewState.Empty with
+        {
+            ActiveDialog = new DesktopDialogState(
+                Id: "dialog.global_settings",
+                Title: "Global Settings",
+                Message: null,
+                Fields:
+                [
+                    new DesktopDialogField("globalAnalyticsOptIn", "Share anonymous desktop usage", "false", "false", InputType: "checkbox")
+                ],
+                Actions:
+                [
+                    new DesktopDialogAction("save", "Save", true)
+                ])
+        };
+
+        DialogCoordinationContext context = new(
+            State: published,
+            Publish: state => published = state,
+            ImportAsync: static (_, _) => Task.CompletedTask,
+            UpdateMetadataAsync: static (_, _) => Task.CompletedTask,
+            GetState: () => published);
+
+        await coordinator.CoordinateAsync("save", context, CancellationToken.None);
+
+        Assert.IsFalse(published.Preferences.AnalyticsOptIn);
     }
 
     [TestMethod]

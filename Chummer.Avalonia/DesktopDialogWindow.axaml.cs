@@ -882,7 +882,7 @@ public partial class DesktopDialogWindow : Window
         DesktopDialogField preferNightlyField = FindRequiredField(fields, "globalPreferNightlyBuilds");
         DesktopDialogField rosterPathField = FindRequiredField(fields, "globalCharacterRosterPath");
         DesktopDialogField hideMasterIndexField = FindRequiredField(fields, "globalHideMasterIndex");
-        DesktopDialogField analyticsOptInField = FindRequiredField(fields, "globalAnalyticsOptIn");
+        DesktopDialogField analyticsOptOutField = FindRequiredField(fields, "globalAnalyticsOptOut");
 
         StackPanel shell = new()
         {
@@ -895,7 +895,7 @@ public partial class DesktopDialogWindow : Window
             CreateLegacySettingsPairRow(languageField, sheetLanguageField),
             CreateLegacySettingsPairRow(characterPriorityField, compactModeField),
             CreateLegacySettingsPairRow(updateModeField, preferNightlyField),
-            CreateLegacySettingsPairRow(hideMasterIndexField, analyticsOptInField),
+            CreateLegacySettingsPairRow(hideMasterIndexField, analyticsOptOutField),
             CreateLegacyRosterPathRow(rosterPathField)));
 
         shell.Children.Add(CreateLegacyHorizonWorkbenchPane());

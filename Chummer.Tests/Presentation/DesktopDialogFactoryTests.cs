@@ -58,6 +58,7 @@ public class DesktopDialogFactoryTests
         Assert.AreEqual("true", DesktopDialogFieldValueParser.GetValue(dialog, "globalCompactMode"));
         Assert.AreEqual("/Characters", DesktopDialogFieldValueParser.GetValue(dialog, "globalCharacterRosterPath"));
         Assert.AreEqual("true", DesktopDialogFieldValueParser.GetValue(dialog, "globalHideMasterIndex"));
+        Assert.AreEqual("false", DesktopDialogFieldValueParser.GetValue(dialog, "globalAnalyticsOptOut"));
         Assert.AreEqual("true", DesktopDialogFieldValueParser.GetValue(dialog, "globalDisableAiFeatures"));
         Assert.AreEqual("notify", DesktopDialogFieldValueParser.GetValue(dialog, "globalUpdateMode"));
         Assert.AreEqual("true", DesktopDialogFieldValueParser.GetValue(dialog, "globalPreferNightlyBuilds"));
@@ -78,6 +79,8 @@ public class DesktopDialogFactoryTests
             new[] { "Install updates and restart", "Tell me, do not install", "Do not check" },
             updateModeField.Options?.Select(option => option.Label).ToArray());
         Assert.AreEqual("checkbox", dialog.Fields.Single(field => string.Equals(field.Id, "globalPreferNightlyBuilds", StringComparison.Ordinal)).InputType);
+        Assert.AreEqual("checkbox", dialog.Fields.Single(field => string.Equals(field.Id, "globalAnalyticsOptOut", StringComparison.Ordinal)).InputType);
+        Assert.AreEqual("Disable anonymous analytics", dialog.Fields.Single(field => string.Equals(field.Id, "globalAnalyticsOptOut", StringComparison.Ordinal)).Label);
         Assert.AreEqual("checkbox", dialog.Fields.Single(field => string.Equals(field.Id, "globalDisableAiFeatures", StringComparison.Ordinal)).InputType);
         Assert.AreEqual(DesktopDialogFieldLayoutSlots.Hidden, dialog.Fields.Single(field => string.Equals(field.Id, "globalTheme", StringComparison.Ordinal)).LayoutSlot);
         Assert.AreEqual(DesktopDialogFieldLayoutSlots.Hidden, dialog.Fields.Single(field => string.Equals(field.Id, "globalUiScale", StringComparison.Ordinal)).LayoutSlot);
@@ -85,6 +88,7 @@ public class DesktopDialogFactoryTests
         Assert.AreEqual(DesktopDialogFieldLayoutSlots.Hidden, dialog.Fields.Single(field => string.Equals(field.Id, "globalCheckForUpdates", StringComparison.Ordinal)).LayoutSlot);
         Assert.AreEqual(DesktopDialogFieldLayoutSlots.Left, dialog.Fields.Single(field => string.Equals(field.Id, "globalUpdateMode", StringComparison.Ordinal)).LayoutSlot);
         Assert.AreEqual(DesktopDialogFieldLayoutSlots.Right, dialog.Fields.Single(field => string.Equals(field.Id, "globalHideMasterIndex", StringComparison.Ordinal)).LayoutSlot);
+        Assert.AreEqual(DesktopDialogFieldLayoutSlots.Left, dialog.Fields.Single(field => string.Equals(field.Id, "globalAnalyticsOptOut", StringComparison.Ordinal)).LayoutSlot);
         Assert.AreEqual(DesktopDialogFieldLayoutSlots.Right, dialog.Fields.Single(field => string.Equals(field.Id, "globalDisableAiFeatures", StringComparison.Ordinal)).LayoutSlot);
         Assert.IsFalse(dialog.Fields.Any(field => string.Equals(field.Id, "globalActivePane", StringComparison.Ordinal)));
         Assert.IsFalse(dialog.Fields.Any(field => string.Equals(field.Id, "globalVisibilityPolicy", StringComparison.Ordinal)));

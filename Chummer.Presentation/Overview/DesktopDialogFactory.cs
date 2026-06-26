@@ -2547,7 +2547,7 @@ public sealed class DesktopDialogFactory : IDesktopDialogFactory
             PdfViewerPath = DesktopDialogFieldValueParser.GetValue(dialog, "globalPdfViewerPath") ?? fallback.PdfViewerPath,
             VisibleChromePolicy = DesktopDialogFieldValueParser.GetValue(dialog, "globalVisibilityPolicy") ?? fallback.VisibleChromePolicy,
             HideMasterIndex = DesktopDialogFieldValueParser.ParseBool(dialog, "globalHideMasterIndex", fallback.HideMasterIndex),
-            AnalyticsOptIn = DesktopDialogFieldValueParser.ParseBool(dialog, "globalAnalyticsOptIn", fallback.AnalyticsOptIn),
+            AnalyticsOptIn = ParseGlobalAnalyticsOptIn(dialog, fallback),
             DisableAiFeatures = DesktopDialogFieldValueParser.ParseBool(dialog, "globalDisableAiFeatures", fallback.DisableAiFeatures)
         });
     }
@@ -3804,9 +3804,9 @@ public sealed class DesktopDialogFactory : IDesktopDialogFactory
                 InputType: "checkbox",
                 LayoutSlot: DesktopDialogFieldLayoutSlots.Right),
             new DesktopDialogField(
-                "globalAnalyticsOptIn",
-                "Share anonymous desktop usage",
-                preferences.AnalyticsOptIn ? "true" : "false",
+                "globalAnalyticsOptOut",
+                "Disable anonymous analytics",
+                preferences.AnalyticsOptIn ? "false" : "true",
                 "false",
                 InputType: "checkbox",
                 LayoutSlot: DesktopDialogFieldLayoutSlots.Left),
@@ -3828,6 +3828,17 @@ public sealed class DesktopDialogFactory : IDesktopDialogFactory
             new DesktopDialogFieldOption("dark-steel", "Dark Steel"),
             new DesktopDialogFieldOption("mint", "Mint")
         };
+
+    private static bool ParseGlobalAnalyticsOptIn(DesktopDialogState dialog, DesktopPreferenceState fallback)
+    {
+        string? optOut = DesktopDialogFieldValueParser.GetValue(dialog, "globalAnalyticsOptOut");
+        if (optOut is not null)
+        {
+            return !DesktopDialogFieldValueParser.ParseBool(dialog, "globalAnalyticsOptOut", !fallback.AnalyticsOptIn);
+        }
+
+        return DesktopDialogFieldValueParser.ParseBool(dialog, "globalAnalyticsOptIn", fallback.AnalyticsOptIn);
+    }
 
     private static IReadOnlyList<DesktopDialogFieldOption> BuildLanguageOptions()
         => DesktopLocalizationCatalog.ShippingLanguages

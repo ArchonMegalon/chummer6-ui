@@ -23,6 +23,26 @@ public sealed class DesktopPreferenceRuntimeTests
     }
 
     [TestMethod]
+    public void LoadOrCreateState_honors_source_build_analytics_off_default_when_missing()
+    {
+        using TestStateRootScope scope = new();
+        string? previous = Environment.GetEnvironmentVariable("CHUMMER_DESKTOP_ANALYTICS_DEFAULT");
+        try
+        {
+            Environment.SetEnvironmentVariable("CHUMMER_DESKTOP_ANALYTICS_DEFAULT", "off");
+
+            DesktopPreferenceState loaded = DesktopPreferenceRuntime.LoadOrCreateState("avalonia");
+
+            Assert.IsFalse(loaded.AnalyticsOptIn);
+            Assert.IsTrue(File.Exists(scope.GetPreferenceStatePath("avalonia")));
+        }
+        finally
+        {
+            Environment.SetEnvironmentVariable("CHUMMER_DESKTOP_ANALYTICS_DEFAULT", previous);
+        }
+    }
+
+    [TestMethod]
     public void TryLoadState_returns_false_without_creating_default_preferences_when_missing()
     {
         using TestStateRootScope scope = new();

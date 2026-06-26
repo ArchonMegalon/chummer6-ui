@@ -282,7 +282,7 @@ public partial class CommandDialogPaneControl : UserControl
         DialogFieldDisplayItem? preferNightlyField = FindOptionalField(fields, "globalPreferNightlyBuilds");
         DialogFieldDisplayItem? rosterPathField = FindOptionalField(fields, "globalCharacterRosterPath");
         DialogFieldDisplayItem? hideMasterIndexField = FindOptionalField(fields, "globalHideMasterIndex");
-        DialogFieldDisplayItem? analyticsOptInField = FindOptionalField(fields, "globalAnalyticsOptIn");
+        DialogFieldDisplayItem? analyticsOptOutField = FindOptionalField(fields, "globalAnalyticsOptOut");
 
         if (themeField is null
             || uiScaleField is null
@@ -294,7 +294,7 @@ public partial class CommandDialogPaneControl : UserControl
             || preferNightlyField is null
             || rosterPathField is null
             || hideMasterIndexField is null
-            || analyticsOptInField is null)
+            || analyticsOptOutField is null)
         {
             return false;
         }
@@ -303,7 +303,7 @@ public partial class CommandDialogPaneControl : UserControl
         DialogFieldsHost.Children.Add(CreateLegacySettingsPairRow(languageField, sheetLanguageField));
         DialogFieldsHost.Children.Add(CreateLegacySettingsPairRow(characterPriorityField, compactModeField));
         DialogFieldsHost.Children.Add(CreateLegacySettingsPairRow(updateModeField, preferNightlyField));
-        DialogFieldsHost.Children.Add(CreateLegacySettingsPairRow(hideMasterIndexField, analyticsOptInField));
+        DialogFieldsHost.Children.Add(CreateLegacySettingsPairRow(hideMasterIndexField, analyticsOptOutField));
         DialogFieldsHost.Children.Add(CreateStandaloneFieldRow(rosterPathField));
         return true;
     }
