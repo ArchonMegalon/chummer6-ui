@@ -7,6 +7,7 @@ using Chummer.Presentation;
 using Chummer.Presentation.Overview;
 using Chummer.Presentation.RunnerIntelligence;
 using Chummer.Presentation.Shell;
+using Microsoft.AspNetCore.DataProtection;
 using Microsoft.AspNetCore.Hosting.StaticWebAssets;
 
 const string AnalyticsPayloadsExclusion = "payloads";
@@ -33,10 +34,12 @@ const string AnalyticsDialogActionIdField = "dialog_action_id";
 const string AnalyticsHasWorkspaceField = "has_workspace";
 const string AnalyticsHasDossierField = "has_dossier";
 const string AnalyticsHasFixtureField = "has_fixture";
+const string DataProtectionKeysPathConfigKey = "CHUMMER_BLAZOR_DATA_PROTECTION_KEYS_PATH";
 
 WebApplicationBuilder builder = WebApplication.CreateBuilder(args);
 StaticWebAssetsLoader.UseStaticWebAssets(builder.Environment, builder.Configuration);
 PathString pathBase = NormalizePathBase(builder.Configuration["CHUMMER_BLAZOR_PATH_BASE"]);
+ConfigureDataProtection(builder.Services, builder.Configuration);
 
 builder.Services.AddRazorComponents()
     .AddInteractiveServerComponents();
@@ -124,6 +127,21 @@ static Uri ResolveEngineBaseAddress(IConfiguration configuration)
     }
 
     return uri;
+}
+
+static void ConfigureDataProtection(IServiceCollection services, IConfiguration configuration)
+{
+    string? configuredPath = configuration[DataProtectionKeysPathConfigKey];
+    if (string.IsNullOrWhiteSpace(configuredPath))
+    {
+        return;
+    }
+
+    DirectoryInfo keyDirectory = Directory.CreateDirectory(configuredPath.Trim());
+    services
+        .AddDataProtection()
+        .SetApplicationName("Chummer.Blazor")
+        .PersistKeysToFileSystem(keyDirectory);
 }
 
 static AnalyticsHealth BuildAnalyticsHealth(IConfiguration configuration)
