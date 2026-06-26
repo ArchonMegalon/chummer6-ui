@@ -44,7 +44,7 @@ while IFS= read -r installer_path; do
   [[ -n "$installer_path" ]] || continue
   windows_payload_gate_args+=(--installer "$installer_path")
 done < <(find "$FILES_SOURCE" -maxdepth 1 -type f -name 'chummer-*-win-*-installer.exe' | sort)
-if [[ "${#windows_payload_gate_args[@]}" -eq 5 ]]; then
+if [[ "${#windows_payload_gate_args[@]}" -eq 6 ]]; then
   windows_payload_gate_args+=(--allow-empty)
 fi
 python3 "$SCRIPT_DIR/verify-windows-installer-payloads.py" "${windows_payload_gate_args[@]}"

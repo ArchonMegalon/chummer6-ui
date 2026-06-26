@@ -5,6 +5,7 @@ import struct
 import subprocess
 import zipfile
 import hashlib
+from datetime import datetime, timezone
 from pathlib import Path
 
 
@@ -667,8 +668,59 @@ def test_publish_download_bundle_promotes_bootstrap_payload_zip_with_installer(t
         payload_sha256=payload_sha256,
         payload_size_bytes=len(payload_bytes),
     )
+    linux_path = files_dir / "chummer-avalonia-linux-x64-installer.deb"
+    linux_path.write_bytes(b"linux-installer-placeholder")
+    linux_sha256 = hashlib.sha256(linux_path.read_bytes()).hexdigest()
+    manifest_payload = json.loads((bundle_dir / "releases.json").read_text(encoding="utf-8"))
+    manifest_payload["downloads"].append(
+        {
+            "artifactId": "avalonia-linux-x64-installer",
+            "fileName": linux_path.name,
+            "url": f"https://example.invalid/downloads/files/{linux_path.name}",
+            "sha256": linux_sha256,
+            "sizeBytes": linux_path.stat().st_size,
+            "kind": "installer",
+            "platform": "linux",
+            "head": "avalonia",
+            "rid": "linux-x64",
+        }
+    )
+    (bundle_dir / "releases.json").write_text(json.dumps(manifest_payload, indent=2) + "\n", encoding="utf-8")
+    release_proof_path = tmp_path / "HUB_LOCAL_RELEASE_PROOF.generated.json"
+    release_proof_path.write_text(
+        json.dumps(
+            {
+                "contractName": "chummer6-hub.local_release_proof",
+                "status": "passed",
+                "generatedAt": datetime.now(timezone.utc).isoformat().replace("+00:00", "Z"),
+                "baseUrl": "https://example.invalid",
+                "journeysPassed": [
+                    "install_claim_restore_continue",
+                    "build_explain_publish",
+                    "campaign_session_recover_recap",
+                    "report_cluster_release_notify",
+                    "organize_community_and_close_loop",
+                ],
+                "proofRoutes": [
+                    "/downloads/install/avalonia-linux-x64-installer",
+                    "/home/access",
+                    "/home/work",
+                    "/account/access",
+                    "/account/work",
+                    "/account/support",
+                    "/contact",
+                    "/downloads",
+                    "/downloads/install/avalonia-win-x64-installer",
+                ],
+            },
+            indent=2,
+        )
+        + "\n",
+        encoding="utf-8",
+    )
     startup_smoke_dir = bundle_dir / "startup-smoke"
     startup_smoke_dir.mkdir()
+    recorded_at = datetime.now(timezone.utc).isoformat().replace("+00:00", "Z")
     (startup_smoke_dir / "startup-smoke-avalonia-win-x64.receipt.json").write_text(
         json.dumps(
             {
@@ -685,14 +737,36 @@ def test_publish_download_bundle_promotes_bootstrap_payload_zip_with_installer(t
                 "artifactFileName": installer_path.name,
                 "fileName": installer_path.name,
                 "artifactRelativePath": f"files/{installer_path.name}",
-                "recordedAtUtc": "2026-06-24T00:00:00Z",
+                "recordedAtUtc": recorded_at,
             },
             indent=2,
         )
         + "\n",
         encoding="utf-8",
     )
-
+    (startup_smoke_dir / "startup-smoke-avalonia-linux-x64.receipt.json").write_text(
+        json.dumps(
+            {
+                "status": "pass",
+                "headId": "avalonia",
+                "platform": "linux",
+                "arch": "x64",
+                "rid": "linux-x64",
+                "readyCheckpoint": "pre_ui_event_loop",
+                "hostClass": "linux-x64-container",
+                "operatingSystem": "Linux 6.0.0",
+                "artifactDigest": f"sha256:{linux_sha256}",
+                "artifactSha256": linux_sha256,
+                "artifactFileName": linux_path.name,
+                "fileName": linux_path.name,
+                "artifactRelativePath": f"files/{linux_path.name}",
+                "recordedAtUtc": recorded_at,
+            },
+            indent=2,
+        )
+        + "\n",
+        encoding="utf-8",
+    )
     deploy_dir = tmp_path / "deploy"
     result = subprocess.run(
         ["bash", str(PUBLISH_SCRIPT), str(bundle_dir), str(deploy_dir)],
@@ -702,6 +776,7 @@ def test_publish_download_bundle_promotes_bootstrap_payload_zip_with_installer(t
             "CHUMMER_PUBLIC_EDGE_DOWNLOADS_SYNC_MIRRORS": "false",
             "CHUMMER_RELEASE_REQUIRE_COMPLETE_DESKTOP_COVERAGE": "0",
             "CHUMMER_PUBLIC_SKIP_STARTUP_SMOKE_FILTER": "true",
+            "RELEASE_PROOF_PATH": str(release_proof_path),
         },
         text=True,
         capture_output=True,

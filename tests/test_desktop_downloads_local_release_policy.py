@@ -33,6 +33,18 @@ def test_latest_nightly_publish_preflights_windows_bootstrap_payload_metadata() 
     assert publisher.index('verify_latest_stage_windows_payload_gate "$latest_stage"') < publisher.index('echo "Publishing latest nightly stage: $latest_stage"')
 
 
+def test_s3_publish_windows_payload_gate_allows_empty_only_before_installers_are_added() -> None:
+    publisher = (REPO_ROOT / "scripts" / "publish-download-bundle-s3.sh").read_text(encoding="utf-8")
+
+    assert "windows_payload_gate_args=(" in publisher
+    assert "--files-dir \"$FILES_SOURCE\"" in publisher
+    assert "--manifest \"$MANIFEST_SOURCE\"" in publisher
+    assert "--require-embedded-bootstrap-metadata" in publisher
+    assert "--require-manifest-row" in publisher
+    assert 'if [[ "${#windows_payload_gate_args[@]}" -eq 6 ]]; then' in publisher
+    assert "--allow-empty" in publisher
+
+
 def test_windows_bootstrap_build_fails_closed_until_native_builder_is_wired() -> None:
     builder = (REPO_ROOT / "scripts" / "build-desktop-installer.sh").read_text(encoding="utf-8")
 
