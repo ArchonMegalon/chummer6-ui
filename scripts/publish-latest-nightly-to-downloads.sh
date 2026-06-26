@@ -24,6 +24,37 @@ to_bool() {
   [[ "$value" == "1" || "$value" == "true" || "$value" == "yes" || "$value" == "on" ]]
 }
 
+verify_latest_stage_windows_payload_gate() {
+  local stage_dir="$1"
+  local files_dir="$stage_dir/files"
+  local releases_manifest="$stage_dir/releases.json"
+  local release_channel_manifest="$stage_dir/RELEASE_CHANNEL.generated.json"
+  local -a gate_args=(
+    --files-dir "$files_dir"
+    --allow-empty
+    --require-embedded-bootstrap-metadata
+    --require-manifest-row
+  )
+
+  if [[ ! -f "$SCRIPT_DIR/verify-windows-installer-payloads.py" ]]; then
+    echo "Missing Windows installer payload gate: $SCRIPT_DIR/verify-windows-installer-payloads.py" >&2
+    exit 1
+  fi
+
+  if [[ ! -d "$files_dir" ]]; then
+    echo "Nightly stage is missing files directory: $files_dir" >&2
+    exit 1
+  fi
+
+  [[ -f "$releases_manifest" ]] && gate_args+=(--manifest "$releases_manifest")
+  [[ -f "$release_channel_manifest" ]] && gate_args+=(--manifest "$release_channel_manifest")
+
+  if ! python3 "$SCRIPT_DIR/verify-windows-installer-payloads.py" "${gate_args[@]}"; then
+    echo "Nightly stage failed Windows installer payload preflight. Build a fresh stage before publishing." >&2
+    exit 1
+  fi
+}
+
 publish_guard_result="$(
   python3 - "$DEPLOY_DIR/RELEASE_CHANNEL.generated.json" "$DAILY_PUBLISH_TIMEZONE" "$DAILY_PUBLISH_HOUR" "$FORCE_NIGHTLY_PUBLISH" <<'PY'
 import json
@@ -109,6 +140,8 @@ if [[ ! -f "$latest_stage/RELEASE_BUILD_HANDOFF.generated.json" ]]; then
   echo "Nightly stage is missing RELEASE_BUILD_HANDOFF.generated.json: $latest_stage" >&2
   exit 1
 fi
+
+verify_latest_stage_windows_payload_gate "$latest_stage"
 
 echo "Publishing latest nightly stage: $latest_stage"
 echo "Target downloads shelf: $DEPLOY_DIR"

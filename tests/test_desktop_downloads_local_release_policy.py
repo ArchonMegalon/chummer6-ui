@@ -21,6 +21,18 @@ def test_daily_publish_policy_is_documented_in_local_runbook() -> None:
     assert ("GitHub " + "Actions") not in runbook
 
 
+def test_latest_nightly_publish_preflights_windows_bootstrap_payload_metadata() -> None:
+    publisher = (REPO_ROOT / "scripts" / "publish-latest-nightly-to-downloads.sh").read_text(encoding="utf-8")
+
+    assert "verify_latest_stage_windows_payload_gate()" in publisher
+    assert "verify-windows-installer-payloads.py" in publisher
+    assert "--require-embedded-bootstrap-metadata" in publisher
+    assert "--require-manifest-row" in publisher
+    assert "--allow-empty" in publisher
+    assert "Nightly stage failed Windows installer payload preflight. Build a fresh stage before publishing." in publisher
+    assert publisher.index('verify_latest_stage_windows_payload_gate "$latest_stage"') < publisher.index('echo "Publishing latest nightly stage: $latest_stage"')
+
+
 def test_release_build_checks_are_owned_by_local_scripts() -> None:
     assert (REPO_ROOT / "scripts" / "materialize-linux-desktop-exit-gate.sh").is_file()
     assert (REPO_ROOT / "scripts" / "materialize-windows-desktop-exit-gate.sh").is_file()
