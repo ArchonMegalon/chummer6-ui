@@ -54,6 +54,7 @@ internal static class DesktopShellTheme
         }
 
         ClearInputBrushes(textBox);
+        ApplyInputBrushes(textBox);
         textBox.MinHeight = Math.Max(textBox.MinHeight, 30d);
         textBox.Padding = new Thickness(8, 4);
         ToolTip.SetTip(textBox, null);
@@ -68,6 +69,7 @@ internal static class DesktopShellTheme
         }
 
         ClearTemplatedBrushes(comboBox);
+        ApplyComboBoxBrushes(comboBox);
         comboBox.MinHeight = Math.Max(comboBox.MinHeight, 30d);
         comboBox.Padding = new Thickness(8, 4);
     }
@@ -81,6 +83,7 @@ internal static class DesktopShellTheme
         }
 
         ClearTemplatedBrushes(numericUpDown);
+        ApplyInputBrushes(numericUpDown);
         numericUpDown.MinHeight = Math.Max(numericUpDown.MinHeight, 30d);
     }
 
@@ -96,6 +99,7 @@ internal static class DesktopShellTheme
     {
         ArgumentNullException.ThrowIfNull(listBox);
         ClearTemplatedBrushes(listBox);
+        ApplyListBrushes(listBox);
         listBox.BorderThickness = new Thickness(1);
         listBox.Padding = new Thickness(2);
     }
@@ -104,6 +108,7 @@ internal static class DesktopShellTheme
     {
         ArgumentNullException.ThrowIfNull(treeView);
         ClearTemplatedBrushes(treeView);
+        ApplyListBrushes(treeView);
         treeView.BorderThickness = new Thickness(1);
         treeView.Padding = new Thickness(2);
     }
@@ -256,6 +261,34 @@ internal static class DesktopShellTheme
         textBox.ClearValue(TextBox.CaretBrushProperty);
         textBox.ClearValue(TextBox.SelectionBrushProperty);
         textBox.ClearValue(TextBox.SelectionForegroundBrushProperty);
+    }
+
+    private static void ApplyInputBrushes(TemplatedControl control)
+    {
+        control.Background = ResolveThemeBrush("ChummerShellInputBackgroundBrush", "#162031");
+        control.Foreground = ResolveThemeBrush("ChummerShellInputForegroundBrush", "#F8FAFC");
+        control.BorderBrush = ResolveThemeBrush("ChummerShellBorderBrush", "#334155");
+
+        if (control is TextBox textBox)
+        {
+            textBox.CaretBrush = ResolveThemeBrush("ChummerShellInputForegroundBrush", "#F8FAFC");
+            textBox.SelectionBrush = ResolveThemeBrush("ChummerShellSelectionBrush", "#1D4ED8");
+            textBox.SelectionForegroundBrush = ResolveThemeBrush("ChummerShellSelectionForegroundBrush", "#F8FAFC");
+        }
+    }
+
+    private static void ApplyComboBoxBrushes(TemplatedControl control)
+    {
+        control.Background = ResolveThemeBrush("ComboBoxBackground", "#111827");
+        control.Foreground = ResolveThemeBrush("ComboBoxForeground", "#E5E7EB");
+        control.BorderBrush = ResolveThemeBrush("ComboBoxBorderBrush", "#334155");
+    }
+
+    private static void ApplyListBrushes(TemplatedControl control)
+    {
+        control.Background = ResolveThemeBrush("ChummerShellSurfaceBrush", "#111827");
+        control.Foreground = ResolveThemeBrush("ChummerShellForegroundBrush", "#E5E7EB");
+        control.BorderBrush = ResolveThemeBrush("ChummerShellBorderBrush", "#334155");
     }
 
     private static void ClearTemplatedBrushes(TemplatedControl control)

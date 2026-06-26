@@ -767,6 +767,19 @@ public sealed class DesktopThemeManagerTests
         StringAssert.Contains(shellTheme, "comboBox.Classes.Add(\"shell-combo\");");
         StringAssert.Contains(shellTheme, "ClearInputBrushes(textBox);");
         StringAssert.Contains(shellTheme, "ClearTemplatedBrushes(comboBox);");
+        StringAssert.Contains(shellTheme, "ApplyInputBrushes(textBox);");
+        StringAssert.Contains(shellTheme, "ApplyComboBoxBrushes(comboBox);");
+        StringAssert.Contains(shellTheme, "ApplyInputBrushes(numericUpDown);");
+        StringAssert.Contains(shellTheme, "ApplyListBrushes(listBox);");
+        StringAssert.Contains(shellTheme, "ApplyListBrushes(treeView);");
+        StringAssert.Contains(shellTheme, "control.Background = ResolveThemeBrush(\"ChummerShellInputBackgroundBrush\", \"#162031\");");
+        StringAssert.Contains(shellTheme, "control.Foreground = ResolveThemeBrush(\"ChummerShellInputForegroundBrush\", \"#F8FAFC\");");
+        StringAssert.Contains(shellTheme, "control.Background = ResolveThemeBrush(\"ComboBoxBackground\", \"#111827\");");
+        StringAssert.Contains(shellTheme, "control.Foreground = ResolveThemeBrush(\"ComboBoxForeground\", \"#E5E7EB\");");
+        StringAssert.Contains(shellTheme, "control.Background = ResolveThemeBrush(\"ChummerShellSurfaceBrush\", \"#111827\");");
+        StringAssert.Contains(shellTheme, "control.Foreground = ResolveThemeBrush(\"ChummerShellForegroundBrush\", \"#E5E7EB\");");
+        StringAssert.Contains(shellTheme, "textBox.CaretBrush = ResolveThemeBrush(\"ChummerShellInputForegroundBrush\", \"#F8FAFC\");");
+        StringAssert.Contains(shellTheme, "textBox.SelectionForegroundBrush = ResolveThemeBrush(\"ChummerShellSelectionForegroundBrush\", \"#F8FAFC\");");
 
         foreach (string selector in new[]
                  {
