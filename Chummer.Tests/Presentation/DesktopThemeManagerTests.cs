@@ -765,9 +765,8 @@ public sealed class DesktopThemeManagerTests
             "TextBox must have one canonical base style so hover/focus fixes are not split across duplicate selectors.");
         StringAssert.Contains(shellTheme, "textBox.Classes.Add(\"shell-input\");");
         StringAssert.Contains(shellTheme, "comboBox.Classes.Add(\"shell-combo\");");
-        StringAssert.Contains(shellTheme, "comboBox.Background = ResolveThemeBrush(\"ComboBoxBackground\", \"#FBFCFE\");");
-        StringAssert.Contains(shellTheme, "comboBox.Foreground = ResolveThemeBrush(\"ComboBoxForeground\", \"#111827\");");
-        StringAssert.Contains(shellTheme, "comboBox.BorderBrush = ResolveThemeBrush(\"ComboBoxBorderBrush\", \"#B5C0CF\");");
+        StringAssert.Contains(shellTheme, "ClearInputBrushes(textBox);");
+        StringAssert.Contains(shellTheme, "ClearTemplatedBrushes(comboBox);");
 
         foreach (string selector in new[]
                  {
@@ -1512,14 +1511,9 @@ public sealed class DesktopThemeManagerTests
         StringAssert.Contains(appTheme, "<Style Selector=\"MenuItem:pointerover TextBlock\">");
         StringAssert.Contains(appTheme, "<Style Selector=\"MenuItem:selected TextBlock\">");
         StringAssert.Contains(appTheme, "<Style Selector=\"MenuItem.menu-root.active-menu TextBlock\">");
-        StringAssert.Contains(shellTheme, "textBox.Background = ResolveThemeBrush(\"TextControlBackground\", \"#FFFFFF\");");
-        StringAssert.Contains(shellTheme, "textBox.Foreground = ResolveThemeBrush(\"TextControlForeground\", \"#111111\");");
-        StringAssert.Contains(shellTheme, "textBox.BorderBrush = ResolveThemeBrush(\"TextControlBorderBrush\", \"#B5C0CF\");");
-        StringAssert.Contains(shellTheme, "textBox.CaretBrush = ResolveThemeBrush(\"TextControlCaretBrush\", \"#111111\");");
-        StringAssert.Contains(shellTheme, "textBox.SelectionBrush = ResolveThemeBrush(\"ChummerShellSelectionBrush\", \"#2C5FB8\");");
-        StringAssert.Contains(shellTheme, "textBox.SelectionForegroundBrush = ResolveThemeBrush(\"TextControlSelectionForeground\", \"#FFFFFF\");");
+        StringAssert.Contains(shellTheme, "ClearInputBrushes(textBox);");
         StringAssert.Contains(shellTheme, "ApplyShellTreeViewTheme(TreeView treeView)");
-        StringAssert.Contains(shellTheme, "treeView.Background = ResolveThemeBrush(\"ChummerShellSurfaceBrush\", \"#FBFCFE\");");
+        StringAssert.Contains(shellTheme, "ClearTemplatedBrushes(treeView);");
         StringAssert.Contains(desktopDialogSource, "DesktopShellTheme.ApplyShellTreeViewTheme(treeView);");
         StringAssert.Contains(classicPortSurface, "DesktopShellTheme.ApplyShellComboBoxTheme(comboBox);");
         StringAssert.Contains(shellTheme, "ApplyShellListBoxTheme(ListBox listBox)");
@@ -1530,9 +1524,7 @@ public sealed class DesktopThemeManagerTests
         StringAssert.Contains(appTheme, "<Style Selector=\"NumericUpDown:pointerover /template/ TextBox\">");
         StringAssert.Contains(appTheme, "<Style Selector=\"NumericUpDown:focus /template/ TextBox\">");
         StringAssert.Contains(appTheme, "<Style Selector=\"NumericUpDown:disabled /template/ TextBox\">");
-        StringAssert.Contains(shellTheme, "numericUpDown.Background = ResolveThemeBrush(\"TextControlBackground\", \"#FFFFFF\");");
-        StringAssert.Contains(shellTheme, "numericUpDown.Foreground = ResolveThemeBrush(\"TextControlForeground\", \"#111111\");");
-        StringAssert.Contains(shellTheme, "numericUpDown.BorderBrush = ResolveThemeBrush(\"TextControlBorderBrush\", \"#B5C0CF\");");
+        StringAssert.Contains(shellTheme, "ClearTemplatedBrushes(numericUpDown);");
         AssertSelectorAfter(
             appTheme,
             "<Style Selector=\"ListBoxItem:pointerover TextBlock.shell-option-label\">",

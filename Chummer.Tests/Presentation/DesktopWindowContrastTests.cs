@@ -120,6 +120,7 @@ public sealed class DesktopWindowContrastTests
             using ThemeScope scope = ThemeScope.Dark(window);
             AssertVisibleInputControlContrast(window, "shell theme helper dark mode", minimumVisibleInputControls: 4);
             AssertVisibleSelectedListItemContrast(window, "shell theme helper dark mode", minimumSelectedItems: 1);
+            AssertVisibleChoiceTextContrast(window, "shell theme helper dark mode", minimumVisibleChoiceTexts: 2);
         });
     }
 
@@ -139,6 +140,7 @@ public sealed class DesktopWindowContrastTests
             PumpUi();
             AssertVisibleInputControlContrast(window, "character-create attributes dark mode", minimumVisibleInputControls: 1);
             AssertVisibleSelectedListItemContrast(window, "character-create attributes dark mode", minimumSelectedItems: 1);
+            AssertVisibleChoiceTextContrast(window, "character-create attributes dark mode", minimumVisibleChoiceTexts: 4);
         });
     }
 
@@ -765,6 +767,28 @@ public sealed class DesktopWindowContrastTests
             Color background = ResolveBackgroundColor(item.Background, item, context);
             string controlName = string.IsNullOrWhiteSpace(item.Name) ? item.GetType().Name : item.Name!;
             AssertContrastAtLeast(foreground, background, 4.5d, $"{context} {controlName} selected list item text");
+        }
+    }
+
+    private static void AssertVisibleChoiceTextContrast(Control root, string context, int minimumVisibleChoiceTexts)
+    {
+        TextBlock[] choiceTexts = root.GetVisualDescendants()
+            .OfType<TextBlock>()
+            .Where(static textBlock => textBlock.IsVisible)
+            .Where(static textBlock => !string.IsNullOrWhiteSpace(textBlock.Text))
+            .Where(static textBlock => textBlock.GetVisualAncestors().Any(static ancestor => ancestor is ListBoxItem or ComboBoxItem))
+            .ToArray();
+
+        Assert.IsTrue(
+            choiceTexts.Length >= minimumVisibleChoiceTexts,
+            $"{context} should expose enough rendered choice text for a meaningful dark-mode readability check.");
+
+        foreach (TextBlock textBlock in choiceTexts)
+        {
+            Color foreground = ResolveSolidColor(textBlock.Foreground, textBlock, "foreground", context);
+            Color background = ResolveBackgroundColor(textBlock.Background, textBlock, context);
+            string controlName = string.IsNullOrWhiteSpace(textBlock.Name) ? textBlock.Text!.Trim() : textBlock.Name!;
+            AssertContrastAtLeast(foreground, background, 4.5d, $"{context} {controlName} rendered choice text");
         }
     }
 

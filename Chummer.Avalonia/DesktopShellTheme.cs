@@ -1,5 +1,6 @@
 using Avalonia;
 using Avalonia.Controls;
+using Avalonia.Controls.Primitives;
 using Avalonia.Layout;
 using Avalonia.Media;
 using Chummer.Presentation;
@@ -52,12 +53,7 @@ internal static class DesktopShellTheme
             textBox.Classes.Add("shell-input");
         }
 
-        textBox.Background = ResolveThemeBrush("TextControlBackground", "#FFFFFF");
-        textBox.Foreground = ResolveThemeBrush("TextControlForeground", "#111111");
-        textBox.BorderBrush = ResolveThemeBrush("TextControlBorderBrush", "#B5C0CF");
-        textBox.CaretBrush = ResolveThemeBrush("TextControlCaretBrush", "#111111");
-        textBox.SelectionBrush = ResolveThemeBrush("ChummerShellSelectionBrush", "#2C5FB8");
-        textBox.SelectionForegroundBrush = ResolveThemeBrush("TextControlSelectionForeground", "#FFFFFF");
+        ClearInputBrushes(textBox);
         textBox.MinHeight = Math.Max(textBox.MinHeight, 30d);
         textBox.Padding = new Thickness(8, 4);
         ToolTip.SetTip(textBox, null);
@@ -71,9 +67,7 @@ internal static class DesktopShellTheme
             comboBox.Classes.Add("shell-combo");
         }
 
-        comboBox.Background = ResolveThemeBrush("ComboBoxBackground", "#FBFCFE");
-        comboBox.Foreground = ResolveThemeBrush("ComboBoxForeground", "#111827");
-        comboBox.BorderBrush = ResolveThemeBrush("ComboBoxBorderBrush", "#B5C0CF");
+        ClearTemplatedBrushes(comboBox);
         comboBox.MinHeight = Math.Max(comboBox.MinHeight, 30d);
         comboBox.Padding = new Thickness(8, 4);
     }
@@ -86,9 +80,7 @@ internal static class DesktopShellTheme
             numericUpDown.Classes.Add("shell-numeric");
         }
 
-        numericUpDown.Background = ResolveThemeBrush("TextControlBackground", "#FFFFFF");
-        numericUpDown.Foreground = ResolveThemeBrush("TextControlForeground", "#111111");
-        numericUpDown.BorderBrush = ResolveThemeBrush("TextControlBorderBrush", "#B5C0CF");
+        ClearTemplatedBrushes(numericUpDown);
         numericUpDown.MinHeight = Math.Max(numericUpDown.MinHeight, 30d);
     }
 
@@ -103,9 +95,7 @@ internal static class DesktopShellTheme
     public static void ApplyShellListBoxTheme(ListBox listBox)
     {
         ArgumentNullException.ThrowIfNull(listBox);
-        listBox.Background = ResolveThemeBrush("ChummerShellSurfaceBrush", "#FBFCFE");
-        listBox.Foreground = ResolveThemeBrush("ChummerShellForegroundBrush", "#111827");
-        listBox.BorderBrush = ResolveThemeBrush("ChummerShellBorderBrush", "#B5C0CF");
+        ClearTemplatedBrushes(listBox);
         listBox.BorderThickness = new Thickness(1);
         listBox.Padding = new Thickness(2);
     }
@@ -113,9 +103,7 @@ internal static class DesktopShellTheme
     public static void ApplyShellTreeViewTheme(TreeView treeView)
     {
         ArgumentNullException.ThrowIfNull(treeView);
-        treeView.Background = ResolveThemeBrush("ChummerShellSurfaceBrush", "#FBFCFE");
-        treeView.Foreground = ResolveThemeBrush("ChummerShellForegroundBrush", "#111827");
-        treeView.BorderBrush = ResolveThemeBrush("ChummerShellBorderBrush", "#B5C0CF");
+        ClearTemplatedBrushes(treeView);
         treeView.BorderThickness = new Thickness(1);
         treeView.Padding = new Thickness(2);
     }
@@ -261,6 +249,21 @@ internal static class DesktopShellTheme
         => closeWindow && string.Equals(label, "Close", StringComparison.Ordinal)
             ? DesktopLocalizationCatalog.GetRequiredString("desktop.dialog.action.close")
             : label;
+
+    private static void ClearInputBrushes(TextBox textBox)
+    {
+        ClearTemplatedBrushes(textBox);
+        textBox.ClearValue(TextBox.CaretBrushProperty);
+        textBox.ClearValue(TextBox.SelectionBrushProperty);
+        textBox.ClearValue(TextBox.SelectionForegroundBrushProperty);
+    }
+
+    private static void ClearTemplatedBrushes(TemplatedControl control)
+    {
+        control.ClearValue(TemplatedControl.BackgroundProperty);
+        control.ClearValue(TemplatedControl.ForegroundProperty);
+        control.ClearValue(TemplatedControl.BorderBrushProperty);
+    }
 
     private static void AppendButtons(Panel panel, IReadOnlyList<Button> actions, Thickness? itemMargin)
     {
