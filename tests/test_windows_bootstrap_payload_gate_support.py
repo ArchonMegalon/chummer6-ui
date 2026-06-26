@@ -1,4 +1,6 @@
+import os
 from pathlib import Path
+import subprocess
 
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
@@ -42,3 +44,36 @@ def test_desktop_release_pipeline_documents_windows_visual_capture_without_githu
     assert "WINDOWS_INSTALLER_VISUAL_PROOF.generated.json" in doc
     assert "host-specific gate" in doc
     assert "GitHub Actions" not in doc
+
+
+def test_windows_bootstrap_build_fails_from_measured_size_gate_instead_of_hardcoded_policy(tmp_path: Path) -> None:
+    publish_dir = tmp_path / "publish"
+    dist_dir = tmp_path / "dist"
+    publish_dir.mkdir()
+    dist_dir.mkdir()
+    (publish_dir / "Chummer.Avalonia.exe").write_bytes(b"stub")
+
+    result = subprocess.run(
+        [
+            "bash",
+            str(REPO_ROOT / "scripts" / "build-desktop-installer.sh"),
+            str(publish_dir),
+            "avalonia",
+            "win-x64",
+            "Chummer.Avalonia.exe",
+            str(dist_dir),
+            "0.0.0.1",
+        ],
+        text=True,
+        capture_output=True,
+        check=False,
+        env={
+            **dict(os.environ),
+            "CHUMMER_WINDOWS_INSTALLER_MODE": "bootstrap",
+        },
+    )
+
+    assert result.returncode != 0
+    assert "bootstrap installer is too large:" in result.stderr
+    assert "Windows bootstrap installer proof failed." in result.stderr
+    assert "blocked until the native bootstrap builder is wired" not in result.stderr
