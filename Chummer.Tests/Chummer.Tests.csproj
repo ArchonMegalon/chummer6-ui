@@ -162,6 +162,7 @@
     <Compile Include="ShellOwnerScopeTests.cs" />
     <Compile Include="SettingsStoreTests.cs" />
     <Compile Include="DesktopInstallLinkingRuntimeTests.cs" />
+    <Compile Include="DesktopAnalyticsClientTests.cs" />
     <Compile Include="DesktopCrashRuntimeTests.cs" />
     <Compile Include="DesktopMouseFirstJourneyRuntimeTests.cs" />
     <Compile Include="DesktopRepoRootLocatorTests.cs" />
