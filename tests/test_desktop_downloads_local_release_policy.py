@@ -33,6 +33,21 @@ def test_latest_nightly_publish_preflights_windows_bootstrap_payload_metadata() 
     assert publisher.index('verify_latest_stage_windows_payload_gate "$latest_stage"') < publisher.index('echo "Publishing latest nightly stage: $latest_stage"')
 
 
+def test_latest_nightly_publish_requires_windows_installer_startup_smoke_before_promotion() -> None:
+    publisher = (REPO_ROOT / "scripts" / "publish-latest-nightly-to-downloads.sh").read_text(encoding="utf-8")
+
+    assert 'PUBLIC_SKIP_STARTUP_SMOKE_FILTER="${CHUMMER_PUBLIC_SKIP_STARTUP_SMOKE_FILTER:-false}"' in publisher
+    assert 'SKIP_STARTUP_SMOKE_HYDRATION="${CHUMMER_SKIP_STARTUP_SMOKE_HYDRATION:-0}"' in publisher
+    assert 'ALLOW_SKIPPED_STARTUP_SMOKE="${CHUMMER_ALLOW_SKIPPED_STARTUP_SMOKE:-0}"' in publisher
+    assert "verify_latest_stage_windows_startup_smoke_gate()" in publisher
+    assert "Windows installer startup-smoke receipt is missing" in publisher
+    assert "Windows installer startup-smoke receipt is not passing" in publisher
+    assert "Windows installer startup-smoke receipt artifactDigest mismatch" in publisher
+    assert "Nightly stage failed Windows installer startup smoke preflight. Build and smoke-test a fresh stage before publishing." in publisher
+    assert publisher.index('verify_latest_stage_windows_payload_gate "$latest_stage"') < publisher.index('verify_latest_stage_windows_startup_smoke_gate "$latest_stage"')
+    assert publisher.index('verify_latest_stage_windows_startup_smoke_gate "$latest_stage"') < publisher.index('echo "Publishing latest nightly stage: $latest_stage"')
+
+
 def test_s3_publish_windows_payload_gate_allows_empty_only_before_installers_are_added() -> None:
     publisher = (REPO_ROOT / "scripts" / "publish-download-bundle-s3.sh").read_text(encoding="utf-8")
 

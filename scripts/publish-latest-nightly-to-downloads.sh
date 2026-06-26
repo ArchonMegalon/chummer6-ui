@@ -8,11 +8,11 @@ WORKSPACE_ROOT="$(cd "$REPO_ROOT/.." && pwd)"
 STAGING_ROOT="${CHUMMER_STAGING_ROOT:-$WORKSPACE_ROOT/_staging}"
 DEPLOY_DIR="${1:-${CHUMMER_PORTAL_DOWNLOADS_DEPLOY_DIR:-$WORKSPACE_ROOT/chummer.run-services/Chummer.Portal/downloads}}"
 REDEPLOY_PUBLIC_EDGE="${CHUMMER_REDEPLOY_PUBLIC_EDGE_AFTER_NIGHTLY_PUBLISH:-true}"
-PUBLIC_SKIP_STARTUP_SMOKE_FILTER="${CHUMMER_PUBLIC_SKIP_STARTUP_SMOKE_FILTER:-true}"
+PUBLIC_SKIP_STARTUP_SMOKE_FILTER="${CHUMMER_PUBLIC_SKIP_STARTUP_SMOKE_FILTER:-false}"
 REQUIRE_COMPLETE_DESKTOP_COVERAGE="${CHUMMER_RELEASE_REQUIRE_COMPLETE_DESKTOP_COVERAGE:-0}"
 PROMOTE_PROOF_BACKED_QUARANTINED_INSTALLERS="${CHUMMER_PROMOTE_PROOF_BACKED_QUARANTINED_INSTALLERS:-0}"
-SKIP_STARTUP_SMOKE_HYDRATION="${CHUMMER_SKIP_STARTUP_SMOKE_HYDRATION:-1}"
-ALLOW_SKIPPED_STARTUP_SMOKE="${CHUMMER_ALLOW_SKIPPED_STARTUP_SMOKE:-1}"
+SKIP_STARTUP_SMOKE_HYDRATION="${CHUMMER_SKIP_STARTUP_SMOKE_HYDRATION:-0}"
+ALLOW_SKIPPED_STARTUP_SMOKE="${CHUMMER_ALLOW_SKIPPED_STARTUP_SMOKE:-0}"
 PUBLIC_RELEASE_CHANNEL="${CHUMMER_PUBLIC_DEFAULT_RELEASE_CHANNEL:-public_stable}"
 DAILY_PUBLISH_TIMEZONE="${CHUMMER_DAILY_NIGHTLY_PUBLISH_TIMEZONE:-Europe/Vienna}"
 DAILY_PUBLISH_HOUR="${CHUMMER_DAILY_NIGHTLY_PUBLISH_HOUR:-8}"
@@ -51,6 +51,91 @@ verify_latest_stage_windows_payload_gate() {
 
   if ! python3 "$SCRIPT_DIR/verify-windows-installer-payloads.py" "${gate_args[@]}"; then
     echo "Nightly stage failed Windows installer payload preflight. Build a fresh stage before publishing." >&2
+    exit 1
+  fi
+}
+
+verify_latest_stage_windows_startup_smoke_gate() {
+  local stage_dir="$1"
+  local files_dir="$stage_dir/files"
+  local release_channel_manifest="$stage_dir/RELEASE_CHANNEL.generated.json"
+  local startup_smoke_dir="$stage_dir/startup-smoke"
+
+  if [[ ! -f "$release_channel_manifest" ]]; then
+    echo "Nightly stage is missing release channel manifest: $release_channel_manifest" >&2
+    exit 1
+  fi
+
+  if ! python3 - "$release_channel_manifest" "$startup_smoke_dir" "$files_dir" <<'PY'
+import hashlib
+import json
+import sys
+from pathlib import Path
+from typing import Any
+
+PASSING_STATUSES = {"pass", "passed", "ready"}
+
+manifest_path = Path(sys.argv[1])
+startup_smoke_root = Path(sys.argv[2])
+files_root = Path(sys.argv[3])
+payload = json.loads(manifest_path.read_text(encoding="utf-8-sig"))
+errors: list[str] = []
+
+
+def norm(value: Any) -> str:
+    return str(value or "").strip().lower()
+
+
+for artifact in payload.get("artifacts") or []:
+    if not isinstance(artifact, dict):
+        continue
+    if norm(artifact.get("platform")) != "windows":
+        continue
+    if norm(artifact.get("kind")) not in {"installer", "msix"}:
+        continue
+    file_name = str(artifact.get("fileName") or "").strip()
+    if not file_name.endswith(("-installer.exe", ".msix")):
+        continue
+    head = norm(artifact.get("head"))
+    rid = norm(artifact.get("rid"))
+    if not head or not rid:
+        errors.append(f"Windows install artifact is missing head/rid: {artifact}")
+        continue
+    receipt_path = startup_smoke_root / f"startup-smoke-{head}-{rid}.receipt.json"
+    if not receipt_path.is_file():
+        errors.append(f"Windows installer startup-smoke receipt is missing: {receipt_path.name}")
+        continue
+    try:
+        receipt = json.loads(receipt_path.read_text(encoding="utf-8-sig"))
+    except Exception as exc:
+        errors.append(f"Windows installer startup-smoke receipt is unreadable: {receipt_path} ({exc})")
+        continue
+    status = norm(receipt.get("status"))
+    if status not in PASSING_STATUSES:
+        errors.append(f"Windows installer startup-smoke receipt is not passing: {receipt_path.name} status={status or 'missing'}")
+    if norm(receipt.get("readyCheckpoint")) != "pre_ui_event_loop":
+        errors.append(f"Windows installer startup-smoke receipt did not reach pre_ui_event_loop: {receipt_path.name}")
+    if norm(receipt.get("headId")) != head:
+        errors.append(f"Windows installer startup-smoke receipt headId mismatch: {receipt_path.name}")
+    if norm(receipt.get("rid")) != rid:
+        errors.append(f"Windows installer startup-smoke receipt rid mismatch: {receipt_path.name}")
+    if norm(receipt.get("platform")) != "windows":
+        errors.append(f"Windows installer startup-smoke receipt platform mismatch: {receipt_path.name}")
+    file_path = files_root / file_name
+    if not file_path.is_file():
+        errors.append(f"Windows installer file referenced by manifest is missing: {file_name}")
+        continue
+    expected_digest = "sha256:" + hashlib.sha256(file_path.read_bytes()).hexdigest()
+    if norm(receipt.get("artifactDigest")) != expected_digest:
+        errors.append(f"Windows installer startup-smoke receipt artifactDigest mismatch: {receipt_path.name}")
+
+if errors:
+    for error in errors:
+        print(error, file=sys.stderr)
+    raise SystemExit(1)
+PY
+  then
+    echo "Nightly stage failed Windows installer startup smoke preflight. Build and smoke-test a fresh stage before publishing." >&2
     exit 1
   fi
 }
@@ -142,6 +227,7 @@ if [[ ! -f "$latest_stage/RELEASE_BUILD_HANDOFF.generated.json" ]]; then
 fi
 
 verify_latest_stage_windows_payload_gate "$latest_stage"
+verify_latest_stage_windows_startup_smoke_gate "$latest_stage"
 
 echo "Publishing latest nightly stage: $latest_stage"
 echo "Target downloads shelf: $DEPLOY_DIR"
