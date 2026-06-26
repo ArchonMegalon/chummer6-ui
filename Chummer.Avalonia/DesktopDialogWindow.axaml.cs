@@ -1050,7 +1050,7 @@ public partial class DesktopDialogWindow : Window
         {
             BorderThickness = new Thickness(1),
             BorderBrush = ResolveThemeBrush("ChummerShellBorderBrush", "#B5C0CF"),
-            Background = ResolveThemeBrush("ChummerShellSurfaceAltBrush", "#F2F5FA"),
+            Background = ResolveThemeBrush("ChummerShellSurfaceAltBrush", "#020617"),
             CornerRadius = new CornerRadius(6),
             Padding = new Thickness(10),
             Child = card
@@ -1939,7 +1939,7 @@ public partial class DesktopDialogWindow : Window
                 {
                     BorderThickness = new Thickness(1),
                     BorderBrush = ResolveThemeBrush("ChummerShellBorderBrush", "#B5C0CF"),
-                    Background = ResolveThemeBrush("ChummerShellSurfaceBrush", "#FFFFFF"),
+                    Background = ResolveThemeBrush("ChummerShellSurfaceBrush", "#111827"),
                     CornerRadius = default,
                     Padding = new Thickness(8, 6),
                     Child = summaryText
@@ -2083,7 +2083,7 @@ public partial class DesktopDialogWindow : Window
         {
             BorderThickness = new Thickness(1),
             BorderBrush = ResolveThemeBrush("ChummerShellBorderBrush", "#B5C0CF"),
-            Background = ResolveThemeBrush("ChummerShellSurfaceBrush", "#FBFCFE"),
+            Background = ResolveThemeBrush("ChummerShellSurfaceBrush", "#111827"),
             Padding = new Thickness(6, 4),
             Child = new TextBlock
             {
@@ -2200,7 +2200,7 @@ public partial class DesktopDialogWindow : Window
     {
         return new Border
         {
-            Background = ResolveThemeBrush("ChummerShellSurfaceBrush", "#FFFFFF"),
+            Background = ResolveThemeBrush("ChummerShellSurfaceBrush", "#111827"),
             BorderBrush = ResolveThemeBrush("ChummerShellBorderStrongBrush", "#93A0B2"),
             BorderThickness = new Thickness(1),
             CornerRadius = new CornerRadius(6),
@@ -2774,7 +2774,7 @@ public partial class DesktopDialogWindow : Window
             {
                 BorderThickness = new Thickness(1),
                 BorderBrush = ResolveThemeBrush("ChummerShellBorderBrush", "#B5C0CF"),
-                Background = ResolveThemeBrush("ChummerShellSurfaceBrush", "#FBFCFE"),
+                Background = ResolveThemeBrush("ChummerShellSurfaceBrush", "#111827"),
                 Padding = new Thickness(6, 4),
                 MinHeight = string.Equals(field.VisualKind, DesktopDialogFieldVisualKinds.List, StringComparison.Ordinal)
                     || string.Equals(field.VisualKind, DesktopDialogFieldVisualKinds.Tree, StringComparison.Ordinal)
@@ -2827,7 +2827,7 @@ public partial class DesktopDialogWindow : Window
             {
                 BorderThickness = new Thickness(1),
                 BorderBrush = ResolveThemeBrush("ChummerShellBorderBrush", "#B5C0CF"),
-                Background = ResolveThemeBrush("ChummerShellSurfaceBrush", "#FBFCFE"),
+                Background = ResolveThemeBrush("ChummerShellSurfaceBrush", "#111827"),
                 Margin = new Thickness(0, 0, 4, 4),
                 Padding = new Thickness(8, 3),
                 Child = new TextBlock { Text = line }
@@ -2877,7 +2877,7 @@ public partial class DesktopDialogWindow : Window
         {
             BorderThickness = new Thickness(1),
             BorderBrush = ResolveThemeBrush("ChummerShellBorderBrush", "#B5C0CF"),
-            Background = ResolveThemeBrush("ChummerShellSurfaceBrush", "#FBFCFE"),
+            Background = ResolveThemeBrush("ChummerShellSurfaceBrush", "#111827"),
             MinHeight = 136,
             Child = previewControl
         });
@@ -2925,7 +2925,7 @@ public partial class DesktopDialogWindow : Window
         {
             BorderThickness = new Thickness(1),
             BorderBrush = ResolveThemeBrush("ChummerShellBorderBrush", "#B5C0CF"),
-            Background = ResolveThemeBrush("ChummerShellSurfaceBrush", "#FBFCFE"),
+            Background = ResolveThemeBrush("ChummerShellSurfaceBrush", "#111827"),
             MinHeight = 136,
             Child = previewControl
         };
@@ -2987,7 +2987,7 @@ public partial class DesktopDialogWindow : Window
         {
             BorderThickness = new Thickness(1),
             BorderBrush = ResolveThemeBrush("ChummerShellBorderBrush", "#B5C0CF"),
-            Background = ResolveThemeBrush("ChummerShellSurfaceBrush", "#FBFCFE"),
+            Background = ResolveThemeBrush("ChummerShellSurfaceBrush", "#111827"),
             Padding = new Thickness(6, 4),
             Child = rows
         };
@@ -3034,7 +3034,7 @@ public partial class DesktopDialogWindow : Window
             Name = "SnippetReadOnlyTextPanel",
             BorderThickness = new Thickness(1),
             BorderBrush = ResolveThemeBrush("ChummerShellBorderBrush", "#B5C0CF"),
-            Background = ResolveThemeBrush("ChummerShellSurfaceBrush", "#FBFCFE"),
+            Background = ResolveThemeBrush("ChummerShellSurfaceBrush", "#111827"),
             Padding = new Thickness(6, 4),
             Child = new TextBlock
             {
@@ -3083,7 +3083,7 @@ public partial class DesktopDialogWindow : Window
             Name = "OriginBookPreviewPanel",
             BorderThickness = new Thickness(1),
             BorderBrush = ResolveThemeBrush("ChummerShellBorderBrush", "#B5C0CF"),
-            Background = ResolveThemeBrush("ChummerShellSurfaceBrush", "#FBFCFE"),
+            Background = ResolveThemeBrush("ChummerShellSurfaceBrush", "#111827"),
             Padding = new Thickness(18, 14),
             MinHeight = 300,
             Child = new ScrollViewer
@@ -3103,7 +3103,7 @@ public partial class DesktopDialogWindow : Window
             Name = "StructuredReadOnlyTextPanel",
             BorderThickness = new Thickness(1),
             BorderBrush = ResolveThemeBrush("ChummerShellBorderBrush", "#B5C0CF"),
-            Background = ResolveThemeBrush("ChummerShellSurfaceBrush", "#FBFCFE"),
+            Background = ResolveThemeBrush("ChummerShellSurfaceBrush", "#111827"),
             Padding = new Thickness(6, 4),
             MinHeight = minHeight,
             Child = new TextBlock

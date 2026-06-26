@@ -1616,6 +1616,40 @@ public sealed class DesktopThemeManagerTests
         }
     }
 
+    [TestMethod]
+    public void Desktop_dialog_shell_surface_fallbacks_do_not_reintroduce_white_cards_in_dark_mode()
+    {
+        string repoRoot = TestContextLocator.ResolveChummerPresentationRepoRoot();
+        string desktopDialogSource = File.ReadAllText(Path.Combine(repoRoot, "Chummer.Avalonia", "DesktopDialogWindow.axaml.cs"));
+        Regex shellSurfaceFallback = new(
+            @"ResolveThemeBrush\(""ChummerShellSurface(?:Alt)?Brush"",\s*""(?<fallback>#[0-9A-Fa-f]{6})""\)",
+            RegexOptions.Compiled);
+        string[] forbiddenLightFallbacks =
+        [
+            "#FFFFFF",
+            "#FBFCFE",
+            "#F8FAFC",
+            "#F2F5FA",
+            "#F1F5F9",
+            "#EEF3F8",
+            "#EEF2F6"
+        ];
+
+        List<string> offenders = shellSurfaceFallback.Matches(desktopDialogSource)
+            .Cast<Match>()
+            .Where(match => forbiddenLightFallbacks.Contains(match.Groups["fallback"].Value, StringComparer.OrdinalIgnoreCase))
+            .Select(match => match.Groups["fallback"].Value)
+            .Distinct(StringComparer.OrdinalIgnoreCase)
+            .OrderBy(static item => item, StringComparer.OrdinalIgnoreCase)
+            .ToList();
+
+        Assert.AreEqual(
+            0,
+            offenders.Count,
+            "Desktop dialog shell surface fallbacks must be dark-safe because missing resources on KDE dark mode otherwise become pale cards with inherited light text. Offenders: "
+            + string.Join(", ", offenders));
+    }
+
     private static void AssertSelectorAfter(string source, string earlierSelector, string laterSelector, string message)
     {
         int earlierIndex = source.IndexOf(earlierSelector, StringComparison.Ordinal);
