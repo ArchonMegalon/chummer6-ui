@@ -279,8 +279,8 @@ internal static class DesktopShellTheme
 
     private static void ApplyComboBoxBrushes(TemplatedControl control)
     {
-        control.Background = ResolveThemeBrush("ComboBoxBackground", "#111827");
-        control.Foreground = ResolveThemeBrush("ComboBoxForeground", "#E5E7EB");
+        control.Background = ResolveThemeBrush("ChummerShellInputBackgroundBrush", "#162031");
+        control.Foreground = ResolveThemeBrush("ChummerShellInputForegroundBrush", "#F8FAFC");
         control.BorderBrush = ResolveThemeBrush("ComboBoxBorderBrush", "#334155");
     }
 
