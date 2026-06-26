@@ -502,6 +502,28 @@ def screenshot_path(row: Dict[str, Any]) -> str:
     ).strip()
 
 
+def resolve_visual_screenshot_file(
+    raw_path: str,
+    visual_proof_path: Path,
+    repo_root: Path,
+) -> tuple[List[str], Path | None]:
+    raw = str(raw_path or "").strip()
+    if not raw:
+        return ([], None)
+
+    path = Path(raw).expanduser()
+    candidate_paths: List[Path] = []
+    if path.is_absolute():
+        candidate_paths.append(path)
+    else:
+        candidate_paths.append(visual_proof_path.parent / path)
+        candidate_paths.append(repo_root / path)
+
+    deduped_candidates = list(dict.fromkeys(candidate_paths))
+    resolved = next((candidate for candidate in deduped_candidates if candidate.is_file()), None)
+    return ([str(candidate) for candidate in deduped_candidates], resolved)
+
+
 def nested_status(payload: Dict[str, Any], *keys: str) -> str:
     for key in keys:
         value = payload.get(key)
@@ -775,15 +797,52 @@ visual_screenshot_paths = {
     role: screenshot_path(row)
     for role, row in visual_screenshots.items()
 }
+visual_screenshot_candidate_paths: Dict[str, List[str]] = {}
+visual_screenshot_resolved_paths: Dict[str, str] = {}
+visual_screenshot_file_exists: Dict[str, bool] = {}
+visual_screenshot_actual_digests: Dict[str, str] = {}
+for role, raw_path in visual_screenshot_paths.items():
+    candidate_paths, resolved_path = resolve_visual_screenshot_file(
+        raw_path,
+        windows_installer_visual_proof_path,
+        repo_root,
+    )
+    visual_screenshot_candidate_paths[role] = candidate_paths
+    visual_screenshot_resolved_paths[role] = str(resolved_path) if resolved_path is not None else ""
+    visual_screenshot_file_exists[role] = resolved_path is not None and resolved_path.is_file()
+    visual_screenshot_actual_digests[role] = sha256_file(resolved_path) if resolved_path is not None and resolved_path.is_file() else ""
 visual_required_roles = ["progress", "completion"]
 visual_missing_roles = [
     role for role in visual_required_roles if role not in visual_screenshots
 ]
+visual_roles_missing_files = [
+    role
+    for role in visual_required_roles
+    if role in visual_screenshots and not visual_screenshot_file_exists.get(role)
+]
 visual_roles_missing_digests = [
     role for role in visual_required_roles if role in visual_screenshots and not visual_screenshot_digests.get(role)
 ]
+visual_roles_digest_mismatch = [
+    role
+    for role in visual_required_roles
+    if (
+        role in visual_screenshots
+        and visual_screenshot_file_exists.get(role)
+        and visual_screenshot_digests.get(role)
+        and visual_screenshot_actual_digests.get(role)
+        and visual_screenshot_digests.get(role) != visual_screenshot_actual_digests.get(role)
+    )
+]
 visual_unique_digest_count = len(
     {digest for digest in visual_screenshot_digests.values() if digest}
+)
+visual_actual_unique_digest_count = len(
+    {
+        digest
+        for role, digest in visual_screenshot_actual_digests.items()
+        if role in visual_required_roles and digest
+    }
 )
 visual_readability_status = nested_status(
     visual_proof_payload,
@@ -810,10 +869,17 @@ evidence["windows_installer_visual_proof_version"] = visual_proof_version
 evidence["windows_installer_visual_proof_artifact_digest"] = visual_proof_digest
 evidence["windows_installer_visual_required_roles"] = visual_required_roles
 evidence["windows_installer_visual_screenshot_paths"] = visual_screenshot_paths
+evidence["windows_installer_visual_screenshot_candidate_paths"] = visual_screenshot_candidate_paths
+evidence["windows_installer_visual_screenshot_resolved_paths"] = visual_screenshot_resolved_paths
+evidence["windows_installer_visual_screenshot_file_exists"] = visual_screenshot_file_exists
 evidence["windows_installer_visual_screenshot_digests"] = visual_screenshot_digests
+evidence["windows_installer_visual_screenshot_actual_digests"] = visual_screenshot_actual_digests
 evidence["windows_installer_visual_missing_roles"] = visual_missing_roles
+evidence["windows_installer_visual_roles_missing_files"] = visual_roles_missing_files
 evidence["windows_installer_visual_roles_missing_digests"] = visual_roles_missing_digests
+evidence["windows_installer_visual_roles_digest_mismatch"] = visual_roles_digest_mismatch
 evidence["windows_installer_visual_unique_digest_count"] = visual_unique_digest_count
+evidence["windows_installer_visual_actual_unique_digest_count"] = visual_actual_unique_digest_count
 evidence["windows_installer_visual_readability_status"] = visual_readability_status
 evidence["windows_installer_visual_contrast_status"] = visual_contrast_status
 evidence["windows_installer_visual_clipping_status"] = visual_clipping_status
@@ -849,17 +915,31 @@ if windows_installer_visual_proof_path.is_file() and visual_missing_roles:
         + ", ".join(visual_missing_roles)
         + "."
     )
+if windows_installer_visual_proof_path.is_file() and visual_roles_missing_files:
+    reasons.append(
+        "Windows installer visual proof screenshot files are missing for: "
+        + ", ".join(visual_roles_missing_files)
+        + "."
+    )
 if windows_installer_visual_proof_path.is_file() and visual_roles_missing_digests:
     reasons.append(
         "Windows installer visual proof screenshots are missing image digests for: "
         + ", ".join(visual_roles_missing_digests)
         + "."
     )
+if windows_installer_visual_proof_path.is_file() and visual_roles_digest_mismatch:
+    reasons.append(
+        "Windows installer visual proof screenshot digests do not match the referenced files for: "
+        + ", ".join(visual_roles_digest_mismatch)
+        + "."
+    )
 if (
     windows_installer_visual_proof_path.is_file()
     and not visual_missing_roles
+    and not visual_roles_missing_files
     and not visual_roles_missing_digests
-    and visual_unique_digest_count < len(visual_required_roles)
+    and not visual_roles_digest_mismatch
+    and visual_actual_unique_digest_count < len(visual_required_roles)
 ):
     reasons.append("Windows installer visual proof screenshots are not distinct across progress and completion.")
 for review_name, review_status in (
