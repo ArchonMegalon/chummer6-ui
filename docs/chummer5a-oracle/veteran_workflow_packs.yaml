@@ -1,0 +1,9 @@
+required_first_minute_tasks:
+  - id: reach_real_workbench
+    time_budget_seconds: 10
+  - id: locate_save_import_settings
+    time_budget_seconds: 15
+  - id: locate_master_index_and_roster
+    time_budget_seconds: 20
+  - id: recover_section_rhythm
+    time_budget_seconds: 20

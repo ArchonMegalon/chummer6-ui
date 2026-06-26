@@ -1,0 +1,13 @@
+screenshot_baselines:
+  - id: first_launch_workbench_or_restore
+    legacy_anchor: /docker/chummer5a/Chummer/Forms/ChummerMainForm.Designer.cs
+  - id: menu_file_open_save_import
+    legacy_anchor: /docker/chummer5a/Chummer/Forms/ChummerMainForm.Designer.cs
+  - id: menu_windows_help_liveness
+    legacy_anchor: /docker/chummer5a/Chummer/Forms/ChummerMainForm.Designer.cs
+  - id: menu_tools_settings_masterindex_roster
+    legacy_anchor: /docker/chummer5a/Chummer/Forms/ChummerMainForm.Designer.cs
+  - id: master_index_dense_reference_flow
+    legacy_anchor: /docker/chummer5a/Chummer/Forms/Utility Forms/MasterIndex.Designer.cs
+  - id: character_roster_multi_character_flow
+    legacy_anchor: /docker/chummer5a/Chummer/Forms/Utility Forms/CharacterRoster.Designer.cs

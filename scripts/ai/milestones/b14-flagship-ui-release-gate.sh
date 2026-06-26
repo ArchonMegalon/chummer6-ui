@@ -46,6 +46,12 @@ chummer5a_screenshot_review_receipt_path="$repo_root/.codex-studio/published/CHU
 classic_dense_workbench_receipt_path="$repo_root/.codex-studio/published/CLASSIC_DENSE_WORKBENCH_POSTURE_GATE.generated.json"
 chummer5a_legacy_ui_element_parity_receipt_path="$repo_root/.codex-studio/published/CHUMMER5A_LEGACY_UI_ELEMENT_PARITY.generated.json"
 chummer4_legacy_ui_element_parity_receipt_path="$repo_root/.codex-studio/published/CHUMMER4_LEGACY_UI_ELEMENT_PARITY.generated.json"
+default_chummer5a_oracle_root="/docker/fleet/docs/chummer5a-oracle"
+local_chummer5a_oracle_root="$repo_root/docs/chummer5a-oracle"
+if [[ ! -d "$default_chummer5a_oracle_root" ]]; then
+  default_chummer5a_oracle_root="$local_chummer5a_oracle_root"
+fi
+chummer5a_oracle_root="${CHUMMER5A_ORACLE_ROOT:-$default_chummer5a_oracle_root}"
 # family:dense_builder_and_career_workflows proof is anchored by
 # SECTION_HOST_RULESET_PARITY.generated.json,
 # CHUMMER5A_SCREENSHOT_REVIEW_GATE.generated.json,
@@ -823,7 +829,7 @@ fi
 echo "[b14] refreshing Chummer5a UI element parity audit..."
 CHUMMER_UI_PARITY_REPO_ROOT="$(realpath "$repo_root")" python3 "$ui_parity_audit_probe_path" >/dev/null
 
-python3 - <<'PY' "$sample_path" "$receipt_path" "$screenshot_dir" "$signoff_path" "$avalonia_gate_tests_path" "$dual_head_tests_path" "$blazor_shell_tests_path" "$desktop_update_runtime_tests_path" "$desktop_install_linking_runtime_tests_path" "$desktop_startup_smoke_runtime_tests_path" "$workflow_parity_receipt_path" "$sr4_workflow_parity_receipt_path" "$sr6_workflow_parity_receipt_path" "$sr6_ruleset_ui_sophistication_receipt_path" "$sr4_sr6_frontier_receipt_path" "$desktop_workflow_execution_receipt_path" "$localization_release_gate_receipt_path" "$interactive_control_inventory_receipt_path" "$startup_workbench_survival_receipt_path" "$design_mirror_completeness_receipt_path" "$design_authorized_parity_softening_receipt_path" "$release_channel_path" "$human_side_rule_authority_approval_path"
+CHUMMER5A_ORACLE_ROOT="$chummer5a_oracle_root" python3 - <<'PY' "$sample_path" "$receipt_path" "$screenshot_dir" "$signoff_path" "$avalonia_gate_tests_path" "$dual_head_tests_path" "$blazor_shell_tests_path" "$desktop_update_runtime_tests_path" "$desktop_install_linking_runtime_tests_path" "$desktop_startup_smoke_runtime_tests_path" "$workflow_parity_receipt_path" "$sr4_workflow_parity_receipt_path" "$sr6_workflow_parity_receipt_path" "$sr6_ruleset_ui_sophistication_receipt_path" "$sr4_sr6_frontier_receipt_path" "$desktop_workflow_execution_receipt_path" "$localization_release_gate_receipt_path" "$interactive_control_inventory_receipt_path" "$startup_workbench_survival_receipt_path" "$design_mirror_completeness_receipt_path" "$design_authorized_parity_softening_receipt_path" "$release_channel_path" "$human_side_rule_authority_approval_path"
 import json
 import os
 import sys
@@ -1073,9 +1079,10 @@ ui_element_behavioral_no_count = int(
     or 0
 )
 ui_element_coverage_gap_keys = list(ui_element_parity_audit_receipt.get("coverageGapKeys") or [])
+chummer5a_oracle_root = os.environ.get("CHUMMER5A_ORACLE_ROOT", "/docker/fleet/docs/chummer5a-oracle")
 
 dense_builder_route_local_evidence = [
-    "/docker/fleet/docs/chummer5a-oracle/veteran_workflow_packs.yaml",
+    os.path.join(chummer5a_oracle_root, "veteran_workflow_packs.yaml"),
     os.path.join(published_root, "SECTION_HOST_RULESET_PARITY.generated.json"),
     os.path.join(published_root, "RECURSIVE_UI_EVENT_EXIT_GATE.generated.json"),
     os.path.join(published_root, "CHUMMER5A_SCREENSHOT_REVIEW_GATE.generated.json"),

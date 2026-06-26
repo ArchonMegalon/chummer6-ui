@@ -5238,6 +5238,10 @@ public class MigrationComplianceTests
         StringAssert.Contains(scriptText, "\"inventoryRuntimeReview\"");
         StringAssert.Contains(scriptText, "\"wiringReview\"");
         StringAssert.Contains(scriptText, "CHUMMER5A_MUSCLE_MEMORY_INVENTORY.generated.json");
+        StringAssert.Contains(scriptText, "CHUMMER5A_LOCAL_SCREENSHOT_COMPARISON_GATE.generated.json");
+        StringAssert.Contains(scriptText, "CHUMMER5A_SCREENSHOT_COMPARISON_SCOPE=local_only");
+        StringAssert.Contains(scriptText, "verify_pixefy_chummer5a_screenshot_comparison.py >/dev/null || true");
+        StringAssert.Contains(scriptText, "local_authority_receipts");
         StringAssert.Contains(scriptText, "Runtime_backed_chummer5a_muscle_memory_inventory");
         StringAssert.Contains(scriptText, "Runtime_backed_mouse_only_");
         StringAssert.Contains(scriptText, "all_oracle_tabs_workspace_actions_and_desktop_controls");

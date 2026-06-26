@@ -20,12 +20,22 @@ DESIGN_ROOT = Path(
         WORKSPACE_ROOT / "chummer-design" / "products" / "chummer",
     )
 )
-FLEET_ORACLE_ROOT = Path(
-    os.environ.get(
-        "CHUMMER5A_ORACLE_ROOT",
-        WORKSPACE_ROOT / "fleet" / "docs" / "chummer5a-oracle",
-    )
-)
+DEFAULT_FLEET_ORACLE_ROOT = WORKSPACE_ROOT / "fleet" / "docs" / "chummer5a-oracle"
+LOCAL_ORACLE_ROOT = REPO_ROOT / "docs" / "chummer5a-oracle"
+
+
+def resolve_oracle_root() -> Path:
+    explicit = os.environ.get("CHUMMER5A_ORACLE_ROOT")
+    if explicit:
+        return Path(explicit)
+
+    if DEFAULT_FLEET_ORACLE_ROOT.exists():
+        return DEFAULT_FLEET_ORACLE_ROOT
+
+    return LOCAL_ORACLE_ROOT
+
+
+FLEET_ORACLE_ROOT = resolve_oracle_root()
 PUBLISHED_ROOT = REPO_ROOT / ".codex-studio" / "published"
 SCREENSHOT_DIR = PUBLISHED_ROOT / "ui-flagship-release-gate-screenshots"
 CONTACT_SHEET_DIR = PUBLISHED_ROOT / "chummer5a-side-by-side-contact-sheets"

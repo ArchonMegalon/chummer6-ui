@@ -224,6 +224,52 @@ public sealed class DesktopExecutableGateComplianceTests
     }
 
     [TestMethod]
+    public void Chummer5a_full_ui_parity_materializer_resolves_oracle_root_from_explicit_sibling_or_repo_local_sources()
+    {
+        string repoRoot = FindRepoRoot();
+        string materializerPath = Path.Combine(repoRoot, "scripts", "materialize_chummer5a_full_ui_parity_artifacts.py");
+        string materializerText = File.ReadAllText(materializerPath);
+
+        StringAssert.Contains(materializerText, "DEFAULT_FLEET_ORACLE_ROOT = WORKSPACE_ROOT / \"fleet\" / \"docs\" / \"chummer5a-oracle\"");
+        StringAssert.Contains(materializerText, "LOCAL_ORACLE_ROOT = REPO_ROOT / \"docs\" / \"chummer5a-oracle\"");
+        StringAssert.Contains(materializerText, "def resolve_oracle_root() -> Path:");
+        StringAssert.Contains(materializerText, "explicit = os.environ.get(\"CHUMMER5A_ORACLE_ROOT\")");
+        StringAssert.Contains(materializerText, "if explicit:");
+        StringAssert.Contains(materializerText, "if DEFAULT_FLEET_ORACLE_ROOT.exists():");
+        StringAssert.Contains(materializerText, "return LOCAL_ORACLE_ROOT");
+    }
+
+    [TestMethod]
+    public void Chummer5a_flagship_release_gate_uses_portable_oracle_root_for_dense_builder_route_local_evidence()
+    {
+        string repoRoot = FindRepoRoot();
+        string b14Path = Path.Combine(repoRoot, "scripts", "ai", "milestones", "b14-flagship-ui-release-gate.sh");
+        string b14Text = File.ReadAllText(b14Path);
+
+        StringAssert.Contains(b14Text, "default_chummer5a_oracle_root=\"/docker/fleet/docs/chummer5a-oracle\"");
+        StringAssert.Contains(b14Text, "local_chummer5a_oracle_root=\"$repo_root/docs/chummer5a-oracle\"");
+        StringAssert.Contains(b14Text, "chummer5a_oracle_root=\"${CHUMMER5A_ORACLE_ROOT:-$default_chummer5a_oracle_root}\"");
+        StringAssert.Contains(b14Text, "CHUMMER5A_ORACLE_ROOT=\"$chummer5a_oracle_root\" python3 - <<'PY'");
+        StringAssert.Contains(b14Text, "chummer5a_oracle_root = os.environ.get(\"CHUMMER5A_ORACLE_ROOT\", \"/docker/fleet/docs/chummer5a-oracle\")");
+        StringAssert.Contains(b14Text, "os.path.join(chummer5a_oracle_root, \"veteran_workflow_packs.yaml\")");
+    }
+
+    [TestMethod]
+    public void Chummer5a_screenshot_comparison_verifier_supports_local_only_receipts_for_muscle_memory_parity()
+    {
+        string repoRoot = FindRepoRoot();
+        string verifierPath = Path.Combine(repoRoot, "scripts", "verify_pixefy_chummer5a_screenshot_comparison.py");
+        string verifierText = File.ReadAllText(verifierPath);
+
+        StringAssert.Contains(verifierText, "CHUMMER5A_SCREENSHOT_COMPARISON_SCOPE");
+        StringAssert.Contains(verifierText, "LOCAL_ONLY_SCOPE = \"local_only\"");
+        StringAssert.Contains(verifierText, "CHUMMER5A_LOCAL_SCREENSHOT_COMPARISON_GATE.generated.json");
+        StringAssert.Contains(verifierText, "\"chummer6-ui.chummer5a_local_screenshot_comparison_gate\"");
+        StringAssert.Contains(verifierText, "\"provider\": \"local_authority_receipts\" if comparison_scope_is_local_only else \"Pixefy\"");
+        StringAssert.Contains(verifierText, "if not comparison_scope_is_local_only:");
+    }
+
+    [TestMethod]
     public void Hosted_public_edge_workbench_proof_shape_stays_wired_through_materializer_status_and_docs_index()
     {
         string repoRoot = FindRepoRoot();

@@ -40,11 +40,12 @@ public class DualHeadAcceptanceTests
         StringComparison.Ordinal);
     private static readonly RulesetShellCatalogResolverService ShellCatalogResolver =
         CreateShellCatalogResolver();
-    private static readonly Regex WorkspaceTokenRegex = new("(?<=Workspace:\\s)[A-Za-z0-9-]+", RegexOptions.Compiled);
+    private static readonly Regex WorkspaceTokenRegex = new("(?<=Workspace:\\s)[A-Za-z0-9-]+|(?<=Dossier:\\s)[A-Za-z0-9-]+", RegexOptions.Compiled);
     private static readonly Regex WorkspaceFileNameRegex = new("^[a-f0-9]{32}(?:-[a-f0-9]{4}){0,4}\\.(?:chum5|json)$", RegexOptions.Compiled | RegexOptions.IgnoreCase);
     private static readonly Regex WorkspaceFileTokenRegex = new("[a-f0-9]{32}(?:-[a-f0-9]{4}){0,4}\\.(?:chum5|json)", RegexOptions.Compiled | RegexOptions.IgnoreCase);
     private static readonly Regex RuntimeGeneratedAtRegex = new(@"Generated:\s\d{4}-\d{2}-\d{2}\s\d{2}:\d{2}:\d{2}Z", RegexOptions.Compiled);
     private static readonly Regex RosterOpenedAtRegex = new(@"opened \d{2}-\d{2} \d{2}:\d{2} UTC", RegexOptions.Compiled);
+    private static readonly Regex RosterPendingMoveTokenRegex = new(@"(?<=Pending Move \| move: )[A-Za-z0-9-]+", RegexOptions.Compiled);
     private static bool? _isRuntimeReachable;
     private static string _runtimeReachabilityFailure = "Chummer API runtime is not reachable.";
     private static readonly TimeSpan RuntimeProbeTimeout = TimeSpan.FromSeconds(2);
@@ -926,8 +927,8 @@ public class DualHeadAcceptanceTests
         Assert.AreEqual("Shared parity notes", blazorState.Preferences.CharacterNotes);
         Assert.IsNull(avaloniaState.ActiveDialog);
         Assert.IsNull(blazorState.ActiveDialog);
-        Assert.AreEqual("Character settings updated.", avaloniaState.Notice);
-        Assert.AreEqual("Character settings updated.", blazorState.Notice);
+        Assert.AreEqual("Dossier settings updated.", avaloniaState.Notice);
+        Assert.AreEqual("Dossier settings updated.", blazorState.Notice);
     }
 
     [TestMethod]
@@ -1508,6 +1509,9 @@ public class DualHeadAcceptanceTests
         if (string.Equals(fieldId, "rosterSelectedRunner", StringComparison.Ordinal))
             return Regex.Replace(value, "(?<=File Path \\| )[A-Za-z0-9-]+", "<workspace>", RegexOptions.CultureInvariant);
 
+        if (string.Equals(fieldId, "rosterHierarchyStatus", StringComparison.Ordinal))
+            return RosterPendingMoveTokenRegex.Replace(value, "<workspace>");
+
         if (string.Equals(fieldId, "dataExportPreview", StringComparison.Ordinal))
             return WorkspaceTokenRegex.Replace(value, "<workspace>");
 
@@ -1542,6 +1546,8 @@ public class DualHeadAcceptanceTests
                 if (child is JsonValue)
                 {
                     if (string.Equals(key, "Id", StringComparison.Ordinal)
+                        || string.Equals(key, "ItemId", StringComparison.Ordinal)
+                        || string.Equals(key, "WorkspaceId", StringComparison.Ordinal)
                         || string.Equals(key, "FallbackWorkspace", StringComparison.Ordinal))
                     {
                         obj[key] = "<workspace>";

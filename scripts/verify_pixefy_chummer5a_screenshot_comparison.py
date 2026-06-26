@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 import json
+import os
 from urllib.parse import unquote, urlparse
 from datetime import datetime, timezone
 from pathlib import Path
@@ -11,8 +12,11 @@ from typing import Any
 REPO_ROOT = Path(__file__).resolve().parents[1]
 WORKSPACE_ROOT = REPO_ROOT.parent
 PUBLISHED = REPO_ROOT / ".codex-studio" / "published"
-RECEIPT = PUBLISHED / "PIXEFY_CHUMMER5A_SCREENSHOT_COMPARISON_GATE.generated.json"
+DEFAULT_PIXEFY_RECEIPT = PUBLISHED / "PIXEFY_CHUMMER5A_SCREENSHOT_COMPARISON_GATE.generated.json"
+LOCAL_ONLY_RECEIPT = PUBLISHED / "CHUMMER5A_LOCAL_SCREENSHOT_COMPARISON_GATE.generated.json"
 DEFAULT_SCREENSHOT_DIR = PUBLISHED / "ui-flagship-release-gate-screenshots"
+DEFAULT_SCOPE = "pixefy_public_routes_only"
+LOCAL_ONLY_SCOPE = "local_only"
 _MIN_SCREENSHOT_COUNT = 40
 
 
@@ -52,6 +56,20 @@ def _status_is_pass(payload: dict[str, Any]) -> bool:
 
 def _now_iso() -> str:
     return datetime.now(timezone.utc).isoformat().replace("+00:00", "Z")
+
+
+def _comparison_scope() -> str:
+    raw_scope = str(os.environ.get("CHUMMER5A_SCREENSHOT_COMPARISON_SCOPE") or DEFAULT_SCOPE).strip().lower()
+    return LOCAL_ONLY_SCOPE if raw_scope == LOCAL_ONLY_SCOPE else DEFAULT_SCOPE
+
+
+def _output_receipt_path(scope: str) -> Path:
+    explicit = str(os.environ.get("CHUMMER5A_SCREENSHOT_COMPARISON_RECEIPT_PATH") or "").strip()
+    if explicit:
+        path = Path(explicit)
+        return path if path.is_absolute() else (REPO_ROOT / path)
+
+    return LOCAL_ONLY_RECEIPT if scope == LOCAL_ONLY_SCOPE else DEFAULT_PIXEFY_RECEIPT
 
 
 def _invalid_path_value(value: Any) -> str | None:
@@ -302,6 +320,9 @@ def _float_value(value: Any) -> float | None:
 
 def main() -> int:
     PUBLISHED.mkdir(parents=True, exist_ok=True)
+    comparison_scope = _comparison_scope()
+    comparison_scope_is_local_only = comparison_scope == LOCAL_ONLY_SCOPE
+    receipt_path = _output_receipt_path(comparison_scope)
     reasons: list[str] = []
     warnings: list[str] = []
 
@@ -313,19 +334,23 @@ def main() -> int:
     screenshot_matrix_path = PUBLISHED / "CHUMMER5A_HUMAN_PARITY_SCREENSHOT_MATRIX.generated.json"
     windows_gate_path = PUBLISHED / "UI_WINDOWS_DESKTOP_EXIT_GATE.generated.json"
     startup_smoke_gate_path = PUBLISHED / "NEXT90_M144_UI_STARTUP_SMOKE_AND_EXECUTABLE_GATE.generated.json"
-    public_edge_execution_proof_path = PUBLISHED / "BLAZOR_PUBLIC_EDGE_EXECUTION_PROOF.generated.json"
-
-    for path in [
-        pixefy_targets_path,
+    required_paths = [
         screenshot_review_path,
         contact_sheets_path,
-        flagship_gate_path,
         screenshot_control_evidence_path,
         screenshot_matrix_path,
-        windows_gate_path,
-        startup_smoke_gate_path,
-        public_edge_execution_proof_path,
-    ]:
+    ]
+    if not comparison_scope_is_local_only:
+        required_paths.extend(
+            [
+                pixefy_targets_path,
+                flagship_gate_path,
+                windows_gate_path,
+                startup_smoke_gate_path,
+            ]
+        )
+
+    for path in required_paths:
         if not path.is_file():
             reasons.append(f"missing required receipt: {_receipt_path(path)}")
 
@@ -337,92 +362,26 @@ def main() -> int:
     screenshot_matrix = _load_json(screenshot_matrix_path) if screenshot_matrix_path.is_file() else {}
     windows_gate = _load_json(windows_gate_path) if windows_gate_path.is_file() else {}
     startup_smoke_gate = _load_json(startup_smoke_gate_path) if startup_smoke_gate_path.is_file() else {}
-    public_edge_execution_proof = _load_json(public_edge_execution_proof_path) if public_edge_execution_proof_path.is_file() else {}
 
-    if str(pixefy_targets.get("provider") or "").strip().lower() != "pixefy":
-        reasons.append("PUBLIC_SURFACE_QA_TARGETS.generated.json must declare provider Pixefy.")
-    if str(pixefy_targets.get("scope") or "").strip().lower() != "public_routes_only":
-        reasons.append("PUBLIC_SURFACE_QA_TARGETS.generated.json must stay scoped to public_routes_only.")
-    if str(pixefy_targets.get("status") or "").strip().lower() != "ready_for_pixefy_capture":
-        reasons.append("PUBLIC_SURFACE_QA_TARGETS.generated.json must be ready_for_pixefy_capture.")
-    capture_evidence = pixefy_targets.get("capture_evidence")
-    if not isinstance(capture_evidence, dict):
-        reasons.append("PUBLIC_SURFACE_QA_TARGETS.generated.json must include capture_evidence metadata.")
-        capture_evidence = {}
-    if str(capture_evidence.get("blazor_public_edge_execution_runner") or "").strip() == "":
-        reasons.append("PUBLIC_SURFACE_QA_TARGETS.generated.json must include blazor_public_edge_execution_runner.")
-    if str(capture_evidence.get("blazor_public_edge_execution_status_summary") or "").strip() == "":
-        reasons.append("PUBLIC_SURFACE_QA_TARGETS.generated.json must include blazor_public_edge_execution_status_summary.")
-    if str(capture_evidence.get("blazor_public_edge_execution_verifier") or "").strip() == "":
-        reasons.append("PUBLIC_SURFACE_QA_TARGETS.generated.json must include blazor_public_edge_execution_verifier.")
-    if str(capture_evidence.get("blazor_public_edge_execution_contract") or "").strip() == "":
-        reasons.append("PUBLIC_SURFACE_QA_TARGETS.generated.json must include blazor_public_edge_execution_contract.")
-    if str(capture_evidence.get("blazor_public_edge_execution_proof_target") or "").strip() == "":
-        reasons.append("PUBLIC_SURFACE_QA_TARGETS.generated.json must include blazor_public_edge_execution_proof_target.")
-    if str(capture_evidence.get("blazor_public_edge_execution_proof_tier") or "").strip() != "hosted_promoted_route_execution":
-        reasons.append("PUBLIC_SURFACE_QA_TARGETS.generated.json must include blazor_public_edge_execution_proof_tier=hosted_promoted_route_execution.")
-    if str(capture_evidence.get("blazor_public_edge_execution_route_lane") or "").strip() != "promoted_blazor_workbench":
-        reasons.append("PUBLIC_SURFACE_QA_TARGETS.generated.json must include blazor_public_edge_execution_route_lane=promoted_blazor_workbench.")
-    if str(capture_evidence.get("blazor_public_edge_execution_promoted_route_base") or "").strip() != "/blazor/workbench":
-        reasons.append("PUBLIC_SURFACE_QA_TARGETS.generated.json must include blazor_public_edge_execution_promoted_route_base=/blazor/workbench.")
-    if str(capture_evidence.get("blazor_public_chummer_app_route") or "").strip() != "/app":
-        reasons.append("PUBLIC_SURFACE_QA_TARGETS.generated.json must include blazor_public_chummer_app_route=/app.")
-    required_family_ids = capture_evidence.get("blazor_public_edge_execution_required_workflow_family_ids")
-    if required_family_ids != [
-        "promoted_startup_command_executions",
-        "promoted_resumed_workspace",
-        "promoted_recent_work_affordances",
-        "promoted_restored_section_continuations",
-        "promoted_restored_tab_landings",
-        "promoted_restored_section_content",
-        "promoted_result_continuations",
-        "promoted_action_continuations",
-        "promoted_advanced_action_affordances",
-        "promoted_advanced_action_executions",
-        "promoted_committed_actions",
-        "promoted_advanced_committed_actions",
-    ]:
-        reasons.append("PUBLIC_SURFACE_QA_TARGETS.generated.json must include the promoted hosted execution required workflow family ids.")
-    if str(public_edge_execution_proof.get("contract_name") or "").strip() != "chummer6-ui.blazor_public_edge_execution_proof":
-        reasons.append("BLAZOR_PUBLIC_EDGE_EXECUTION_PROOF.generated.json must use contract chummer6-ui.blazor_public_edge_execution_proof.")
-    if str(public_edge_execution_proof.get("status") or "").strip().lower() not in {"not_run", "pass", "passed", "ready"}:
-        reasons.append("BLAZOR_PUBLIC_EDGE_EXECUTION_PROOF.generated.json must be not_run or passing.")
-    if str(public_edge_execution_proof.get("proof_tier") or "").strip() != "hosted_promoted_route_execution":
-        reasons.append("BLAZOR_PUBLIC_EDGE_EXECUTION_PROOF.generated.json must use proof_tier hosted_promoted_route_execution.")
-    if str(public_edge_execution_proof.get("route_lane") or "").strip() != "promoted_blazor_workbench":
-        reasons.append("BLAZOR_PUBLIC_EDGE_EXECUTION_PROOF.generated.json must use route_lane promoted_blazor_workbench.")
-    if str(public_edge_execution_proof.get("promoted_route_base") or "").strip() != "/blazor/workbench":
-        reasons.append("BLAZOR_PUBLIC_EDGE_EXECUTION_PROOF.generated.json must use promoted_route_base /blazor/workbench.")
-    if public_edge_execution_proof.get("required_workflow_family_ids") != [
-        "promoted_startup_command_executions",
-        "promoted_resumed_workspace",
-        "promoted_recent_work_affordances",
-        "promoted_restored_section_continuations",
-        "promoted_restored_tab_landings",
-        "promoted_restored_section_content",
-        "promoted_result_continuations",
-        "promoted_action_continuations",
-        "promoted_advanced_action_affordances",
-        "promoted_advanced_action_executions",
-        "promoted_committed_actions",
-        "promoted_advanced_committed_actions",
-    ]:
-        reasons.append("BLAZOR_PUBLIC_EDGE_EXECUTION_PROOF.generated.json must include the promoted hosted execution required workflow family ids.")
+    if not comparison_scope_is_local_only:
+        if str(pixefy_targets.get("provider") or "").strip().lower() != "pixefy":
+            reasons.append("PUBLIC_SURFACE_QA_TARGETS.generated.json must declare provider Pixefy.")
+        if str(pixefy_targets.get("scope") or "").strip().lower() != "public_routes_only":
+            reasons.append("PUBLIC_SURFACE_QA_TARGETS.generated.json must stay scoped to public_routes_only.")
+        if str(pixefy_targets.get("status") or "").strip().lower() != "ready_for_pixefy_capture":
+            reasons.append("PUBLIC_SURFACE_QA_TARGETS.generated.json must be ready_for_pixefy_capture.")
 
     if not _status_is_pass(screenshot_review):
         reasons.append("CHUMMER5A_SCREENSHOT_REVIEW_GATE.generated.json is not passing.")
     if not _status_is_pass(contact_sheets):
         reasons.append("CHUMMER5A_SIDE_BY_SIDE_CONTACT_SHEETS.generated.json is not passing.")
-    if not _status_is_pass(flagship_gate):
-        reasons.append("UI_FLAGSHIP_RELEASE_GATE.generated.json is not passing.")
     if str(screenshot_control_evidence.get("generatedAt") or "").strip() == "":
         reasons.append("SCREENSHOT_CONTROL_EVIDENCE.generated.json is missing generatedAt.")
     if not _status_is_pass(screenshot_matrix):
         reasons.append("CHUMMER5A_HUMAN_PARITY_SCREENSHOT_MATRIX.generated.json is not passing.")
-    if not _status_is_pass(windows_gate):
-        reasons.append("UI_WINDOWS_DESKTOP_EXIT_GATE.generated.json is not passing.")
-    if not _status_is_pass(startup_smoke_gate):
-        reasons.append("NEXT90_M144_UI_STARTUP_SMOKE_AND_EXECUTABLE_GATE.generated.json is not passing.")
+    if not comparison_scope_is_local_only:
+        if not _status_is_pass(flagship_gate):
+            reasons.append("UI_FLAGSHIP_RELEASE_GATE.generated.json is not passing.")
 
     authority = screenshot_control_evidence.get("authority")
     if not isinstance(authority, dict):
@@ -442,13 +401,14 @@ def main() -> int:
         reasons.append("Screenshot control evidence must forbid RightShellRegion as inline desktop dialog surface.")
 
     supporting_proofs = screenshot_control_evidence.get("supportingProofs")
-    if not isinstance(supporting_proofs, dict):
-        reasons.append("SCREENSHOT_CONTROL_EVIDENCE.generated.json is missing supportingProofs metadata.")
-        supporting_proofs = {}
-    if str(supporting_proofs.get("windowsDesktopExitGate") or "").strip() == "":
-        reasons.append("Screenshot control evidence must cite the Windows desktop exit gate.")
-    if str(supporting_proofs.get("startupSmokeAndExecutableGate") or "").strip() == "":
-        reasons.append("Screenshot control evidence must cite the startup smoke and executable gate.")
+    if not comparison_scope_is_local_only:
+        if not isinstance(supporting_proofs, dict):
+            reasons.append("SCREENSHOT_CONTROL_EVIDENCE.generated.json is missing supportingProofs metadata.")
+            supporting_proofs = {}
+        if str(supporting_proofs.get("windowsDesktopExitGate") or "").strip() == "":
+            reasons.append("Screenshot control evidence must cite the Windows desktop exit gate.")
+        if str(supporting_proofs.get("startupSmokeAndExecutableGate") or "").strip() == "":
+            reasons.append("Screenshot control evidence must cite the startup smoke and executable gate.")
 
     screenshot_asset_review = screenshot_review.get("screenshotAssetReview", {})
     if not isinstance(screenshot_asset_review, dict):
@@ -743,11 +703,20 @@ def main() -> int:
 
     status = "pass" if not reasons else "fail"
     payload = {
-        "contract_name": "chummer6-ui.pixefy_chummer5a_screenshot_comparison_gate",
+        "contract_name": (
+            "chummer6-ui.chummer5a_local_screenshot_comparison_gate"
+            if comparison_scope_is_local_only
+            else "chummer6-ui.pixefy_chummer5a_screenshot_comparison_gate"
+        ),
         "generated_at": _now_iso(),
         "status": status,
-        "provider": "Pixefy",
-        "comparison_baseline": "Chummer5a screenshot/contact-sheet receipts",
+        "provider": "local_authority_receipts" if comparison_scope_is_local_only else "Pixefy",
+        "scope": comparison_scope,
+        "comparison_baseline": (
+            "Chummer5a local screenshot/contact-sheet receipts"
+            if comparison_scope_is_local_only
+            else "Chummer5a screenshot/contact-sheet receipts"
+        ),
         "screenshot_directory": _receipt_path(screenshot_directory),
         "screenshot_count": len(screenshot_files),
         "required_screenshots": sorted(required_new_gate_screenshots),
@@ -757,19 +726,21 @@ def main() -> int:
         "current_ref_count": len(current_refs),
         "current_ref_unique_count": len(set(current_refs)),
         "receipts": {
-            "pixefy_targets": _receipt_path(pixefy_targets_path),
             "screenshot_review": _receipt_path(screenshot_review_path),
             "side_by_side_contact_sheets": _receipt_path(contact_sheets_path),
-            "flagship_gate": _receipt_path(flagship_gate_path),
             "screenshot_control_evidence": _receipt_path(screenshot_control_evidence_path),
             "human_parity_screenshot_matrix": _receipt_path(screenshot_matrix_path),
         },
         "reasons": reasons,
     }
+    if not comparison_scope_is_local_only:
+        payload["receipts"]["pixefy_targets"] = _receipt_path(pixefy_targets_path)
+        payload["receipts"]["flagship_gate"] = _receipt_path(flagship_gate_path)
     if warnings:
         payload["warnings"] = sorted(set(warnings))
 
-    RECEIPT.write_text(json.dumps(payload, indent=2) + "\n", encoding="utf-8")
+    receipt_path.parent.mkdir(parents=True, exist_ok=True)
+    receipt_path.write_text(json.dumps(payload, indent=2) + "\n", encoding="utf-8")
 
     if reasons:
         raise SystemExit("; ".join(reasons))

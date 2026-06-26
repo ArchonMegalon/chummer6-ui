@@ -2485,18 +2485,18 @@ public sealed class AvaloniaFlagshipUiGateTests
                 harness.ClickMenuCommand("open_character");
                 harness.WaitUntil(() =>
                     string.Equals(
-                        harness.FindControlOrDefault<TextBlock>("DialogTitleText")?.Text,
-                        "Open Character",
+                        harness.State.ActiveDialog?.Id,
+                        "dialog.open_character",
                         StringComparison.Ordinal));
                 AssertDialogContainsAll(
                     harness,
-                    "Open Character",
+                    "Open Dossier",
                     GetVeteranCertificationReviewStep("import").RequiredDialogMarkers);
                 harness.InvokeDialogAction("cancel");
                 harness.WaitUntil(() =>
                     !string.Equals(
-                        harness.FindControlOrDefault<TextBlock>("DialogTitleText")?.Text,
-                        "Open Character",
+                        harness.State.ActiveDialog?.Id,
+                        "dialog.open_character",
                         StringComparison.Ordinal));
             });
         }
@@ -9004,9 +9004,19 @@ public sealed class AvaloniaFlagshipUiGateTests
                     .OfType<CommandPaletteItem>()
                     .FirstOrDefault(item => string.Equals(item.Id, commandId, StringComparison.Ordinal))
                     ?? throw new AssertFailedException($"Command '{commandId}' was not found in the runtime command list.");
+                string? priorLastCommandId = State.LastCommandId;
+                string? priorDialogId = State.ActiveDialog?.Id;
                 commandsList.SelectedItem = null;
                 Pump();
                 commandsList.SelectedItem = command;
+                Pump();
+                if (!string.Equals(State.LastCommandId, priorLastCommandId, StringComparison.Ordinal)
+                    || !string.Equals(State.ActiveDialog?.Id, priorDialogId, StringComparison.Ordinal))
+                {
+                    return;
+                }
+
+                Presenter.ExecuteCommandAsync(commandId, CancellationToken.None).GetAwaiter().GetResult();
                 Pump();
                 return;
             }
