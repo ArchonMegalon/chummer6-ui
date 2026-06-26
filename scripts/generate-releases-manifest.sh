@@ -2035,6 +2035,37 @@ def prune_rows_to_manifest_artifacts(local_payload: dict) -> None:
             and normalized_token(row.get("artifactId") or row.get("id")) in artifact_ids
         ]
 
+def prune_release_proof_routes_to_manifest_artifacts(local_payload: dict) -> None:
+    artifact_ids = manifest_artifact_ids(local_payload)
+
+    def prune_routes(routes: object) -> list[str]:
+        if not isinstance(routes, list):
+            return []
+        pruned: list[str] = []
+        for raw_route in routes:
+            route = str(raw_route or "").strip()
+            if not route:
+                continue
+            if not route.startswith("/downloads/install/"):
+                pruned.append(route)
+                continue
+            artifact_id = normalized_token(route.removeprefix("/downloads/install/").split("/", 1)[0])
+            if artifact_id and artifact_id in artifact_ids:
+                pruned.append(route)
+        return pruned
+
+    release_proof = local_payload.get("releaseProof")
+    if isinstance(release_proof, dict):
+        if "proofRoutes" in release_proof:
+            release_proof["proofRoutes"] = prune_routes(release_proof.get("proofRoutes"))
+        if "proof_routes" in release_proof:
+            release_proof["proof_routes"] = prune_routes(release_proof.get("proof_routes"))
+
+    if "proofRoutes" in local_payload:
+        local_payload["proofRoutes"] = prune_routes(local_payload.get("proofRoutes"))
+    if "proof_routes" in local_payload:
+        local_payload["proof_routes"] = prune_routes(local_payload.get("proof_routes"))
+
 for raw_path in sys.argv[2:]:
     manifest_path = Path(raw_path).resolve()
     if not manifest_path.is_file():
@@ -2260,6 +2291,7 @@ for raw_path in sys.argv[2:]:
         payload.get("artifactPublicationBindings") or [],
     )
     prune_rows_to_manifest_artifacts(payload)
+    prune_release_proof_routes_to_manifest_artifacts(payload)
     payload["registryBoundaryCoverage"] = derive_verifier_owned_value(
         "expected_registry_boundary_coverage",
         payload.get("registryBoundaryCoverage") or {},
@@ -2283,6 +2315,7 @@ for raw_path in sys.argv[2:]:
         if callable(helper):
             payload[payload_key] = helper(payload)
     prune_rows_to_manifest_artifacts(payload)
+    prune_release_proof_routes_to_manifest_artifacts(payload)
     payload["registryBoundaryCoverage"] = derive_verifier_owned_value(
         "expected_registry_boundary_coverage",
         payload.get("registryBoundaryCoverage") or {},

@@ -33,6 +33,15 @@ def test_latest_nightly_publish_preflights_windows_bootstrap_payload_metadata() 
     assert publisher.index('verify_latest_stage_windows_payload_gate "$latest_stage"') < publisher.index('echo "Publishing latest nightly stage: $latest_stage"')
 
 
+def test_release_manifest_generation_prunes_install_proof_routes_to_published_artifacts() -> None:
+    generator = (REPO_ROOT / "scripts" / "generate-releases-manifest.sh").read_text(encoding="utf-8")
+
+    assert "prune_release_proof_routes_to_manifest_artifacts" in generator
+    assert 'route.startswith("/downloads/install/")' in generator
+    assert 'artifact_id in artifact_ids' in generator
+    assert 'release_proof["proofRoutes"] = prune_routes' in generator
+
+
 def test_release_build_checks_are_owned_by_local_scripts() -> None:
     assert (REPO_ROOT / "scripts" / "materialize-linux-desktop-exit-gate.sh").is_file()
     assert (REPO_ROOT / "scripts" / "materialize-windows-desktop-exit-gate.sh").is_file()
