@@ -1064,6 +1064,10 @@ build_windows_installer() {
       installer_mode="bootstrap"
       local downloads_prefix="${CHUMMER_PUBLIC_DOWNLOADS_PREFIX:-https://chummer.run/downloads/files}"
       bootstrap_payload_url="${CHUMMER_WINDOWS_BOOTSTRAP_PAYLOAD_URL:-${downloads_prefix%/}/$(basename "$payload_zip")}"
+      echo "Windows bootstrap installer build is blocked until the native bootstrap builder is wired." >&2
+      echo "The .NET WinForms installer is too large for bootstrap promotion and is blocked by the payload gate." >&2
+      echo "Use CHUMMER_WINDOWS_INSTALLER_MODE=bundled for a local full installer, or wire a native bootstrap builder before publishing." >&2
+      exit 1
       ;;
     bundled|append|appended)
       installer_mode="bundled"

@@ -33,6 +33,15 @@ def test_latest_nightly_publish_preflights_windows_bootstrap_payload_metadata() 
     assert publisher.index('verify_latest_stage_windows_payload_gate "$latest_stage"') < publisher.index('echo "Publishing latest nightly stage: $latest_stage"')
 
 
+def test_windows_bootstrap_build_fails_closed_until_native_builder_is_wired() -> None:
+    builder = (REPO_ROOT / "scripts" / "build-desktop-installer.sh").read_text(encoding="utf-8")
+
+    assert "Windows bootstrap installer build is blocked until the native bootstrap builder is wired." in builder
+    assert "The .NET WinForms installer is too large for bootstrap promotion" in builder
+    assert "Use CHUMMER_WINDOWS_INSTALLER_MODE=bundled for a local full installer" in builder
+    assert "bundled|append|appended)" in builder
+
+
 def test_release_manifest_generation_prunes_install_proof_routes_to_published_artifacts() -> None:
     generator = (REPO_ROOT / "scripts" / "generate-releases-manifest.sh").read_text(encoding="utf-8")
 
