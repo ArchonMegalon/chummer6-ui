@@ -129,7 +129,7 @@ public sealed class DesktopAliceWindowTests
         StringAssert.Contains(source, "Alternate voice");
         StringAssert.Contains(source, "Portrait style");
         StringAssert.Contains(source, "Video style");
-        StringAssert.Contains(source, "Soundmadeseen");
+        StringAssert.Contains(source, "Inkfluence");
         StringAssert.Contains(source, "Unmixr");
         StringAssert.Contains(source, "vidBoard");
         StringAssert.Contains(source, "EnsureOriginPortraitSet(");
