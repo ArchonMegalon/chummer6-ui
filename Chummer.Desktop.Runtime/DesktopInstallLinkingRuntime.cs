@@ -389,6 +389,22 @@ public static class DesktopInstallLinkingRuntime
     public static DesktopInstallLinkingState UnlinkInstall(string headId)
     {
         DesktopInstallLinkingState state = LoadOrCreateState(headId);
+        return ClearLinkedInstallState(state);
+    }
+
+    public static async Task<DesktopInstallLinkingState> UnlinkInstallAsync(string headId, CancellationToken cancellationToken)
+    {
+        DesktopInstallLinkingState state = LoadOrCreateState(headId);
+        if (IsClaimed(state))
+        {
+            await TryRevokeInstallGrantAsync(state, cancellationToken).ConfigureAwait(false);
+        }
+
+        return ClearLinkedInstallState(LoadOrCreateState(headId));
+    }
+
+    private static DesktopInstallLinkingState ClearLinkedInstallState(DesktopInstallLinkingState state)
+    {
         DateTimeOffset now = DateTimeOffset.UtcNow;
         DesktopInstallLinkingState unlinkedState = RefreshRuntimeMetadata(state, now) with
         {
@@ -1209,6 +1225,34 @@ public static class DesktopInstallLinkingRuntime
             };
             SaveState(failedState);
             return new DesktopInstallClaimResult(false, false, $"Install linking failed: {ex.Message}", failedState);
+        }
+    }
+
+    private static async Task TryRevokeInstallGrantAsync(
+        DesktopInstallLinkingState state,
+        CancellationToken cancellationToken)
+    {
+        if (string.IsNullOrWhiteSpace(state.GrantToken))
+        {
+            return;
+        }
+
+        try
+        {
+            RevokeInstallationGrantRequestDto request = new(
+                InstallationId: state.InstallationId,
+                AccessToken: state.GrantToken);
+
+            using HttpClient client = CreateApiHttpClient(TimeSpan.FromSeconds(10));
+            using StringContent content = new(
+                JsonSerializer.Serialize(request, JsonOptions),
+                Encoding.UTF8,
+                MediaTypeNames.Application.Json);
+            using HttpResponseMessage response = await client.PostAsync("api/v1/install-linking/grants/revoke", content, cancellationToken).ConfigureAwait(false);
+            _ = await response.Content.ReadAsStringAsync(cancellationToken).ConfigureAwait(false);
+        }
+        catch (Exception) when (!cancellationToken.IsCancellationRequested)
+        {
         }
     }
 

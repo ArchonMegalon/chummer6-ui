@@ -165,9 +165,12 @@ public sealed class DesktopInstallLinkingShellChromeTests
 
         StringAssert.Contains(windowSource, "desktop.install_link.button.unlink_copy");
         StringAssert.Contains(windowSource, "UnlinkCopyAsync");
-        StringAssert.Contains(windowSource, "DesktopInstallLinkingRuntime.UnlinkInstall(_state.HeadId)");
+        StringAssert.Contains(windowSource, "DesktopInstallLinkingRuntime.UnlinkInstallAsync(_state.HeadId");
         StringAssert.Contains(windowSource, "_unlinkButton.IsVisible = claimed;");
         StringAssert.Contains(runtimeSource, "public static DesktopInstallLinkingState UnlinkInstall(string headId)");
+        StringAssert.Contains(runtimeSource, "public static async Task<DesktopInstallLinkingState> UnlinkInstallAsync(string headId");
+        StringAssert.Contains(runtimeSource, "api/v1/install-linking/grants/revoke");
+        StringAssert.Contains(runtimeSource, "catch (Exception) when (!cancellationToken.IsCancellationRequested)");
         StringAssert.Contains(runtimeSource, "Status = GuestStatus");
         StringAssert.Contains(runtimeSource, "GrantToken = null");
         StringAssert.Contains(runtimeSource, "LinkedEmail = null");

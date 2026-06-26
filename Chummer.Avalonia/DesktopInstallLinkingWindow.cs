@@ -1017,15 +1017,14 @@ internal sealed class DesktopInstallLinkingWindow : Window
         return Task.CompletedTask;
     }
 
-    private Task UnlinkCopyAsync()
+    private async Task UnlinkCopyAsync()
     {
-        _state = DesktopInstallLinkingRuntime.UnlinkInstall(_state.HeadId);
+        _state = await DesktopInstallLinkingRuntime.UnlinkInstallAsync(_state.HeadId, CancellationToken.None);
         _browserFallbackVisible = false;
         _lastLoginUrl = null;
         RefreshSummary();
         RefreshActionState();
         SetStatus(DesktopLocalizationCatalog.GetRequiredString("desktop.install_link.status.unlinked_copy", _language));
-        return Task.CompletedTask;
     }
 
     private void ApplyGuidedFeaturePreference(bool disableAiFeatures)
