@@ -89,7 +89,19 @@ fi
 APP_KEY="${APP_KEY_OVERRIDE:-${RELEASE_PROMOTED_TUPLE[0]:-avalonia}}"
 RID="${RID_OVERRIDE:-${RELEASE_PROMOTED_TUPLE[1]:-win-x64}}"
 WINDOWS_INSTALLER_PATH="${CHUMMER_WINDOWS_INSTALLER_PATH:-}"
-WINDOWS_LOCAL_DESKTOP_FILES_ROOT="${CHUMMER_WINDOWS_LOCAL_DESKTOP_FILES_ROOT:-$REPO_ROOT/Docker/Downloads/files}"
+DEFAULT_WINDOWS_LOCAL_DESKTOP_FILES_ROOT="$REPO_ROOT/Docker/Downloads/files"
+RELEASE_CHANNEL_DIRECTORY="$(cd "$(dirname "$RELEASE_CHANNEL_PATH")" 2>/dev/null && pwd -P || true)"
+RELEASE_CHANNEL_FILES_ROOT_DEFAULT=""
+if [[ -n "$RELEASE_CHANNEL_DIRECTORY" ]]; then
+  RELEASE_CHANNEL_FILES_ROOT_DEFAULT="$RELEASE_CHANNEL_DIRECTORY/files"
+fi
+if [[ -n "${CHUMMER_WINDOWS_LOCAL_DESKTOP_FILES_ROOT:-}" ]]; then
+  WINDOWS_LOCAL_DESKTOP_FILES_ROOT="$CHUMMER_WINDOWS_LOCAL_DESKTOP_FILES_ROOT"
+elif [[ -n "$RELEASE_CHANNEL_FILES_ROOT_DEFAULT" && ( -d "$RELEASE_CHANNEL_FILES_ROOT_DEFAULT" || "$RELEASE_CHANNEL_PATH" != "$DEFAULT_RELEASE_CHANNEL_PATH" ) ]]; then
+  WINDOWS_LOCAL_DESKTOP_FILES_ROOT="$RELEASE_CHANNEL_FILES_ROOT_DEFAULT"
+else
+  WINDOWS_LOCAL_DESKTOP_FILES_ROOT="$DEFAULT_WINDOWS_LOCAL_DESKTOP_FILES_ROOT"
+fi
 UI_LOCAL_RELEASE_PROOF_PATH="${CHUMMER_UI_LOCAL_RELEASE_PROOF_PATH:-$REPO_ROOT/.codex-studio/published/UI_LOCAL_RELEASE_PROOF.generated.json}"
 BLAZOR_SELF_HOST_WORKBENCH_PROOF_PATH="${CHUMMER_BLAZOR_SELF_HOST_WORKBENCH_PROOF_PATH:-$REPO_ROOT/.codex-studio/published/BLAZOR_SELF_HOST_WORKBENCH_PROOF.generated.json}"
 BLAZOR_PUBLIC_EDGE_WORKBENCH_PROOF_PATH="${CHUMMER_BLAZOR_PUBLIC_EDGE_WORKBENCH_PROOF_PATH:-$REPO_ROOT/.codex-studio/published/BLAZOR_PUBLIC_EDGE_WORKBENCH_PROOF.generated.json}"
@@ -705,7 +717,7 @@ if windows_installer_path_override and installer_from_primary_shelf:
     evidence["windows_installer_override_ignored_for_promoted_shelf"] = True
 if not installer_from_primary_shelf:
     reasons.append(
-        "Promoted Windows installer was not resolved from the repo-local desktop shelf."
+        "Promoted Windows installer was not resolved from the release-aligned desktop shelf."
     )
 if installer_exists and path_uses_legacy_chummer5a_root(installer_path):
     reasons.append("Promoted Windows installer was resolved from legacy chummer5a shelf bytes.")

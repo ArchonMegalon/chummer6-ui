@@ -195,31 +195,34 @@ def _build_fixture(root: Path) -> dict[str, Path]:
     }
 
 
-def _run_gate(paths: dict[str, Path]) -> subprocess.CompletedProcess[str]:
+def _run_gate(paths: dict[str, Path], *, set_files_root_env: bool = True) -> subprocess.CompletedProcess[str]:
+    env = {
+        **os.environ,
+        "CHUMMER_WINDOWS_RELEASE_CHANNEL_PATH": str(paths["release_channel_path"]),
+        "CHUMMER_UI_LOCAL_RELEASE_PROOF_PATH": str(paths["local_release_path"]),
+        "CHUMMER_BLAZOR_SELF_HOST_WORKBENCH_PROOF_PATH": str(paths["self_host_path"]),
+        "CHUMMER_BLAZOR_PUBLIC_EDGE_WORKBENCH_PROOF_PATH": str(paths["public_edge_path"]),
+        "CHUMMER_BLAZOR_BROWSER_LANE_PROOF_SET_PATH": str(paths["browser_lane_path"]),
+        "CHUMMER_UI_FLAGSHIP_RELEASE_GATE_PATH": str(paths["flagship_gate_path"]),
+        "CHUMMER_DESKTOP_WORKFLOW_EXECUTION_GATE_PATH": str(paths["workflow_gate_path"]),
+        "CHUMMER_UI_WORKFLOW_PARITY_PATH": str(paths["ui_parity_path"]),
+        "CHUMMER_SR4_WORKFLOW_PARITY_PATH": str(paths["sr4_parity_path"]),
+        "CHUMMER_SR6_WORKFLOW_PARITY_PATH": str(paths["sr6_parity_path"]),
+        "CHUMMER_WINDOWS_INSTALLER_VISUAL_PROOF_PATH": str(paths["visual_proof_path"]),
+        "CHUMMER_UI_WINDOWS_DESKTOP_EXIT_GATE_PATH": str(paths["output_path"]),
+        "CHUMMER_WINDOWS_STARTUP_SMOKE_RECEIPT_PATH": str(paths["startup_smoke_path"]),
+        "CHUMMER_WINDOWS_DESKTOP_EXIT_GATE_APP_KEY": "avalonia",
+        "CHUMMER_WINDOWS_DESKTOP_EXIT_GATE_RID": "win-x64",
+    }
+    if set_files_root_env:
+        env["CHUMMER_WINDOWS_LOCAL_DESKTOP_FILES_ROOT"] = str(paths["files_dir"])
+
     return subprocess.run(
         ["bash", str(SCRIPT)],
         text=True,
         capture_output=True,
         check=False,
-        env={
-            **os.environ,
-            "CHUMMER_WINDOWS_RELEASE_CHANNEL_PATH": str(paths["release_channel_path"]),
-            "CHUMMER_WINDOWS_LOCAL_DESKTOP_FILES_ROOT": str(paths["files_dir"]),
-            "CHUMMER_UI_LOCAL_RELEASE_PROOF_PATH": str(paths["local_release_path"]),
-            "CHUMMER_BLAZOR_SELF_HOST_WORKBENCH_PROOF_PATH": str(paths["self_host_path"]),
-            "CHUMMER_BLAZOR_PUBLIC_EDGE_WORKBENCH_PROOF_PATH": str(paths["public_edge_path"]),
-            "CHUMMER_BLAZOR_BROWSER_LANE_PROOF_SET_PATH": str(paths["browser_lane_path"]),
-            "CHUMMER_UI_FLAGSHIP_RELEASE_GATE_PATH": str(paths["flagship_gate_path"]),
-            "CHUMMER_DESKTOP_WORKFLOW_EXECUTION_GATE_PATH": str(paths["workflow_gate_path"]),
-            "CHUMMER_UI_WORKFLOW_PARITY_PATH": str(paths["ui_parity_path"]),
-            "CHUMMER_SR4_WORKFLOW_PARITY_PATH": str(paths["sr4_parity_path"]),
-            "CHUMMER_SR6_WORKFLOW_PARITY_PATH": str(paths["sr6_parity_path"]),
-            "CHUMMER_WINDOWS_INSTALLER_VISUAL_PROOF_PATH": str(paths["visual_proof_path"]),
-            "CHUMMER_UI_WINDOWS_DESKTOP_EXIT_GATE_PATH": str(paths["output_path"]),
-            "CHUMMER_WINDOWS_STARTUP_SMOKE_RECEIPT_PATH": str(paths["startup_smoke_path"]),
-            "CHUMMER_WINDOWS_DESKTOP_EXIT_GATE_APP_KEY": "avalonia",
-            "CHUMMER_WINDOWS_DESKTOP_EXIT_GATE_RID": "win-x64",
-        },
+        env=env,
     )
 
 
@@ -286,3 +289,21 @@ def test_windows_desktop_exit_gate_rejects_visual_proof_with_missing_screenshot_
     assert receipt["status"] == "failed"
     assert receipt["checks"]["windows_installer_visual_roles_missing_files"] == ["completion"]
     assert receipt["checks"]["windows_installer_visual_screenshot_file_exists"]["completion"] is False
+
+
+def test_windows_desktop_exit_gate_defaults_to_release_aligned_files_shelf(tmp_path: Path) -> None:
+    paths = _build_fixture(tmp_path)
+    _write_visual_proof(
+        paths["visual_proof_path"],
+        _sha256_file(paths["installer_path"]),
+        paths["progress_screenshot_path"],
+        paths["completion_screenshot_path"],
+    )
+
+    result = _run_gate(paths, set_files_root_env=False)
+
+    assert result.returncode == 0, result.stderr
+    receipt = json.loads(paths["output_path"].read_text(encoding="utf-8"))
+    assert receipt["status"] == "passed"
+    assert receipt["checks"]["windows_installer_from_primary_shelf"] is True
+    assert Path(receipt["checks"]["windows_installer_primary_shelf_root"]) == paths["files_dir"]

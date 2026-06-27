@@ -105,3 +105,14 @@ def test_linux_desktop_exit_gate_reports_direct_host_build_failures_before_missi
     assert 'exec dotnet "$(basename "$test_assembly_path")" "$@"' in gate
     assert 'Promoted Linux installer file is missing from the release-aligned desktop shelf' in gate
     assert gate.index('desktop runtime test host build failed') < gate.index('desktop runtime test host is missing or not executable')
+
+
+def test_windows_desktop_exit_gate_prefers_release_aligned_shelf_before_repo_fallback() -> None:
+    gate = (REPO_ROOT / "scripts" / "materialize-windows-desktop-exit-gate.sh").read_text(encoding="utf-8")
+
+    assert 'DEFAULT_WINDOWS_LOCAL_DESKTOP_FILES_ROOT="$REPO_ROOT/Docker/Downloads/files"' in gate
+    assert 'RELEASE_CHANNEL_DIRECTORY="$(cd "$(dirname "$RELEASE_CHANNEL_PATH")" 2>/dev/null && pwd -P || true)"' in gate
+    assert 'RELEASE_CHANNEL_FILES_ROOT_DEFAULT="$RELEASE_CHANNEL_DIRECTORY/files"' in gate
+    assert 'WINDOWS_LOCAL_DESKTOP_FILES_ROOT="$CHUMMER_WINDOWS_LOCAL_DESKTOP_FILES_ROOT"' in gate
+    assert 'WINDOWS_LOCAL_DESKTOP_FILES_ROOT="$RELEASE_CHANNEL_FILES_ROOT_DEFAULT"' in gate
+    assert "Promoted Windows installer was not resolved from the release-aligned desktop shelf." in gate
