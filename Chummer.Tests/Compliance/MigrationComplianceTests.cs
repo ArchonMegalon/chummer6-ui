@@ -5608,12 +5608,14 @@ public class MigrationComplianceTests
         StringAssert.Contains(macosGateScriptText, "hub_registry_root_arg = str(sys.argv[9] or \"\").strip()");
         StringAssert.Contains(macosGateScriptText, "hub_registry_root / \".codex-studio\" / \"published\" / \"startup-smoke\"");
         StringAssert.Contains(macosGateScriptText, "hub_registry_root / \"Docker\" / \"Downloads\" / \"startup-smoke\"");
+        StringAssert.Contains(macosGateScriptText, "CHUMMER_MACOS_LOCAL_DESKTOP_FILES_ROOT");
+        StringAssert.Contains(macosGateScriptText, "RELEASE_CHANNEL_FILES_ROOT_DEFAULT=\"$RELEASE_CHANNEL_DIRECTORY/files\"");
         StringAssert.Contains(macosGateScriptText, "startup_smoke_receipt_arg,");
         StringAssert.Contains(macosGateScriptText, "installer_candidate_paths");
         StringAssert.Contains(macosGateScriptText, "installer_from_primary_shelf");
         StringAssert.Contains(macosGateScriptText, "host_supports_macos_smoke");
         StringAssert.Contains(macosGateScriptText, "host_supports_macos_startup_smoke");
-        StringAssert.Contains(macosGateScriptText, "Promoted macOS installer was not resolved from the repo-local desktop shelf");
+        StringAssert.Contains(macosGateScriptText, "Promoted macOS installer was not resolved from the release-aligned desktop shelf");
         StringAssert.Contains(macosGateScriptText, "Promoted macOS installer was resolved from legacy chummer5a shelf bytes");
         StringAssert.Contains(macosGateScriptText, "macOS startup smoke receipt was resolved from a legacy chummer5a path.");
         StringAssert.Contains(macosGateScriptText, "missing_macos_host_capability");
@@ -5758,7 +5760,9 @@ public class MigrationComplianceTests
         StringAssert.Contains(windowsGateScriptText, "startup-smoke-{expected_head}-{expected_rid}.receipt.json");
         StringAssert.Contains(windowsGateScriptText, "expected_rid.startswith(\"win-\")");
         StringAssert.Contains(windowsGateScriptText, "CHUMMER_WINDOWS_LOCAL_DESKTOP_FILES_ROOT");
-        StringAssert.Contains(windowsGateScriptText, "WINDOWS_LOCAL_DESKTOP_FILES_ROOT=\"${CHUMMER_WINDOWS_LOCAL_DESKTOP_FILES_ROOT:-$REPO_ROOT/Docker/Downloads/files}\"");
+        StringAssert.Contains(windowsGateScriptText, "RELEASE_CHANNEL_FILES_ROOT_DEFAULT=\"$RELEASE_CHANNEL_DIRECTORY/files\"");
+        StringAssert.Contains(windowsGateScriptText, "WINDOWS_LOCAL_DESKTOP_FILES_ROOT=\"$CHUMMER_WINDOWS_LOCAL_DESKTOP_FILES_ROOT\"");
+        StringAssert.Contains(windowsGateScriptText, "WINDOWS_LOCAL_DESKTOP_FILES_ROOT=\"$RELEASE_CHANNEL_FILES_ROOT_DEFAULT\"");
         StringAssert.Contains(windowsGateScriptText, "BLAZOR_SELF_HOST_WORKBENCH_PROOF_PATH=\"${CHUMMER_BLAZOR_SELF_HOST_WORKBENCH_PROOF_PATH:-$REPO_ROOT/.codex-studio/published/BLAZOR_SELF_HOST_WORKBENCH_PROOF.generated.json}\"");
         StringAssert.Contains(windowsGateScriptText, "primary_shelf_candidates = [");
         StringAssert.Contains(windowsGateScriptText, "installer_candidates = primary_shelf_candidates + override_candidates");
@@ -5767,7 +5771,7 @@ public class MigrationComplianceTests
         StringAssert.Contains(windowsGateScriptText, "windows_installer_from_primary_shelf");
         StringAssert.Contains(windowsGateScriptText, "host_supports_windows_smoke");
         StringAssert.Contains(windowsGateScriptText, "host_supports_windows_startup_smoke");
-        StringAssert.Contains(windowsGateScriptText, "Promoted Windows installer was not resolved from the repo-local desktop shelf.");
+        StringAssert.Contains(windowsGateScriptText, "Promoted Windows installer was not resolved from the release-aligned desktop shelf.");
         StringAssert.Contains(windowsGateScriptText, "Promoted Windows installer was resolved from legacy chummer5a shelf bytes.");
         StringAssert.Contains(windowsGateScriptText, "Windows startup smoke receipt was resolved from a legacy chummer5a path.");
         StringAssert.Contains(windowsGateScriptText, "missing_windows_host_capability");

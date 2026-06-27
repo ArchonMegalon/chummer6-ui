@@ -6,8 +6,29 @@ cd "$repo_root"
 
 release_channel_path="${CHUMMER_NEXT90_M144_RELEASE_CHANNEL_PATH:-$repo_root/Docker/Downloads/RELEASE_CHANNEL.generated.json}"
 receipt_path="${CHUMMER_NEXT90_M144_UI_RECEIPT_PATH:-$repo_root/.codex-studio/published/NEXT90_M144_UI_STARTUP_SMOKE_AND_EXECUTABLE_GATE.generated.json}"
-downloads_root="${CHUMMER_NEXT90_M144_DOWNLOADS_ROOT:-$repo_root/Docker/Downloads/files}"
-startup_smoke_dir="${CHUMMER_NEXT90_M144_STARTUP_SMOKE_DIR:-$repo_root/Docker/Downloads/startup-smoke}"
+default_downloads_root="$repo_root/Docker/Downloads/files"
+default_startup_smoke_dir="$repo_root/Docker/Downloads/startup-smoke"
+release_channel_directory="$(cd "$(dirname "$release_channel_path")" 2>/dev/null && pwd -P || true)"
+release_aligned_downloads_root=""
+release_aligned_startup_smoke_dir=""
+if [[ -n "$release_channel_directory" ]]; then
+  release_aligned_downloads_root="$release_channel_directory/files"
+  release_aligned_startup_smoke_dir="$release_channel_directory/startup-smoke"
+fi
+if [[ -n "${CHUMMER_NEXT90_M144_DOWNLOADS_ROOT:-}" ]]; then
+  downloads_root="$CHUMMER_NEXT90_M144_DOWNLOADS_ROOT"
+elif [[ -n "$release_aligned_downloads_root" && ( -d "$release_aligned_downloads_root" || "$release_channel_path" != "$repo_root/Docker/Downloads/RELEASE_CHANNEL.generated.json" ) ]]; then
+  downloads_root="$release_aligned_downloads_root"
+else
+  downloads_root="$default_downloads_root"
+fi
+if [[ -n "${CHUMMER_NEXT90_M144_STARTUP_SMOKE_DIR:-}" ]]; then
+  startup_smoke_dir="$CHUMMER_NEXT90_M144_STARTUP_SMOKE_DIR"
+elif [[ -n "$release_aligned_startup_smoke_dir" && ( -d "$release_aligned_startup_smoke_dir" || "$release_channel_path" != "$repo_root/Docker/Downloads/RELEASE_CHANNEL.generated.json" ) ]]; then
+  startup_smoke_dir="$release_aligned_startup_smoke_dir"
+else
+  startup_smoke_dir="$default_startup_smoke_dir"
+fi
 windows_gate_path="${CHUMMER_NEXT90_M144_WINDOWS_GATE_PATH:-$repo_root/.codex-studio/published/UI_WINDOWS_DESKTOP_EXIT_GATE.generated.json}"
 linux_gate_path="${CHUMMER_NEXT90_M144_LINUX_GATE_PATH:-$repo_root/.codex-studio/published/UI_LINUX_DESKTOP_EXIT_GATE.generated.json}"
 macos_gate_path="${CHUMMER_NEXT90_M144_MACOS_GATE_PATH:-$repo_root/.codex-studio/published/UI_MACOS_AVALONIA_OSX_ARM64_DESKTOP_EXIT_GATE.generated.json}"
@@ -341,7 +362,7 @@ for spec in platform_specs:
     if artifact_row is None:
         row_blockers.append(f"{tuple_id} is missing a promoted {platform} installer/media row in RELEASE_CHANNEL.generated.json.")
     if artifact_path is None:
-        row_blockers.append(f"{tuple_id} is missing a local artifact under Docker/Downloads/files.")
+        row_blockers.append(f"{tuple_id} is missing a local artifact under the release-aligned desktop shelf.")
     if not receipt_payload:
         row_blockers.append(f"{tuple_id} is missing startup smoke receipt {receipt_file}.")
     else:

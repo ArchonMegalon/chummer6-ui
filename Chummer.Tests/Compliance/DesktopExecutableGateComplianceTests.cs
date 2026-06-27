@@ -1905,8 +1905,8 @@ public sealed class DesktopExecutableGateComplianceTests
         StringAssert.Contains(macosScriptText, "REPO_ROOT_ALIAS_CANDIDATE=\"${CHUMMER_UI_REPO_ROOT_ALIAS:-/docker/chummercomplete/chummer6-ui}\"");
         StringAssert.Contains(macosScriptText, "REPO_ROOT_PHYSICAL=\"$(cd \"$SCRIPT_DIR/..\" && pwd -P)\"");
         StringAssert.Contains(macosScriptText, "REPO_ROOT=\"$(cd -L \"$REPO_ROOT_ALIAS_CANDIDATE\" && pwd -L)\"");
-        StringAssert.Contains(windowsScriptText, "Promoted Windows installer was not resolved from the repo-local desktop shelf.");
-        StringAssert.Contains(macosScriptText, "Promoted macOS installer was not resolved from the repo-local desktop shelf");
+        StringAssert.Contains(windowsScriptText, "Promoted Windows installer was not resolved from the release-aligned desktop shelf.");
+        StringAssert.Contains(macosScriptText, "Promoted macOS installer was not resolved from the release-aligned desktop shelf");
         StringAssert.Contains(windowsScriptText, "\"summary\": summary");
         StringAssert.Contains(macosScriptText, "\"summary\": summary");
         StringAssert.Contains(windowsScriptText, "Windows desktop exit gate failed:");

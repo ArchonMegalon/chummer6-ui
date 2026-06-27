@@ -109,11 +109,24 @@ PROOF_PATH="${CHUMMER_UI_MACOS_DESKTOP_EXIT_GATE_PATH:-$REPO_ROOT/.codex-studio/
 LAUNCH_TARGET="${CHUMMER_MACOS_DESKTOP_EXIT_GATE_LAUNCH_TARGET:-$DEFAULT_LAUNCH_TARGET}"
 STARTUP_SMOKE_RECEIPT_PATH="${CHUMMER_MACOS_STARTUP_SMOKE_RECEIPT_PATH:-}"
 INSTALLER_PATH="${CHUMMER_MACOS_INSTALLER_PATH:-}"
+DEFAULT_MACOS_LOCAL_DESKTOP_FILES_ROOT="$REPO_ROOT/Docker/Downloads/files"
+RELEASE_CHANNEL_DIRECTORY="$(cd "$(dirname "$RELEASE_CHANNEL_PATH")" 2>/dev/null && pwd -P || true)"
+RELEASE_CHANNEL_FILES_ROOT_DEFAULT=""
+if [[ -n "$RELEASE_CHANNEL_DIRECTORY" ]]; then
+  RELEASE_CHANNEL_FILES_ROOT_DEFAULT="$RELEASE_CHANNEL_DIRECTORY/files"
+fi
+if [[ -n "${CHUMMER_MACOS_LOCAL_DESKTOP_FILES_ROOT:-}" ]]; then
+  MACOS_LOCAL_DESKTOP_FILES_ROOT="$CHUMMER_MACOS_LOCAL_DESKTOP_FILES_ROOT"
+elif [[ -n "$RELEASE_CHANNEL_FILES_ROOT_DEFAULT" && ( -d "$RELEASE_CHANNEL_FILES_ROOT_DEFAULT" || "$RELEASE_CHANNEL_PATH" != "$DEFAULT_RELEASE_CHANNEL_PATH" ) ]]; then
+  MACOS_LOCAL_DESKTOP_FILES_ROOT="$RELEASE_CHANNEL_FILES_ROOT_DEFAULT"
+else
+  MACOS_LOCAL_DESKTOP_FILES_ROOT="$DEFAULT_MACOS_LOCAL_DESKTOP_FILES_ROOT"
+fi
 
 mkdir -p "$(dirname "$PROOF_PATH")"
 
 CURRENT_STAGE="promoted_installer_proof_integrity"
-python3 - "$PROOF_PATH" "$RELEASE_CHANNEL_PATH" "$APP_KEY" "$RID" "$LAUNCH_TARGET" "$STARTUP_SMOKE_RECEIPT_PATH" "$INSTALLER_PATH" "$REPO_ROOT" "$HUB_REGISTRY_ROOT" <<'PY'
+python3 - "$PROOF_PATH" "$RELEASE_CHANNEL_PATH" "$APP_KEY" "$RID" "$LAUNCH_TARGET" "$STARTUP_SMOKE_RECEIPT_PATH" "$INSTALLER_PATH" "$REPO_ROOT" "$HUB_REGISTRY_ROOT" "$MACOS_LOCAL_DESKTOP_FILES_ROOT" <<'PY'
 from __future__ import annotations
 
 import hashlib
@@ -335,6 +348,8 @@ repo_root = Path(sys.argv[8])
 workspace_root = repo_root.parent.resolve()
 hub_registry_root_arg = str(sys.argv[9] or "").strip()
 hub_registry_root = Path(hub_registry_root_arg).resolve() if hub_registry_root_arg else None
+macos_local_desktop_files_root_arg = str(sys.argv[10] or "").strip()
+macos_local_desktop_files_root = Path(macos_local_desktop_files_root_arg).resolve() if macos_local_desktop_files_root_arg else None
 host_os_name = platform.system().strip()
 host_os_normalized = normalize_token(host_os_name)
 host_supports_macos_smoke = bool(host_os_normalized == "darwin" and shutil.which("hdiutil"))
@@ -398,17 +413,18 @@ else:
     evidence["release_channel_macos_artifact"] = macos_artifact
     file_name = str(macos_artifact.get("fileName") or "").strip() or f"chummer-{app_key}-{rid}-installer.dmg"
 
-downloads_candidates = [
-    repo_root / "Docker" / "Downloads" / "files" / file_name,
-]
+downloads_candidates = []
+if macos_local_desktop_files_root is not None:
+    downloads_candidates.append(macos_local_desktop_files_root / file_name)
+downloads_candidates.append(repo_root / "Docker" / "Downloads" / "files" / file_name)
 downloads_candidates = list(dict.fromkeys(Path(os.path.abspath(str(candidate))) for candidate in downloads_candidates))
 installer_path = resolve_existing_path(installer_path_arg, downloads_candidates)
 artifact_exists = installer_path is not None
 artifact_size = installer_path.stat().st_size if installer_path else 0
 artifact_sha = sha256_file(installer_path) if installer_path else ""
 primary_shelf_root = (
-    Path(os.path.abspath(str(installer_path.parent)))
-    if installer_path is not None
+    Path(os.path.abspath(str(macos_local_desktop_files_root)))
+    if macos_local_desktop_files_root is not None
     else Path(os.path.abspath(str(repo_root / "Docker" / "Downloads" / "files")))
 )
 installer_from_primary_shelf = installer_path is not None and path_is_within(installer_path, primary_shelf_root)
@@ -425,7 +441,7 @@ evidence["artifact"] = {
 if not artifact_exists:
     reasons.append(f"Promoted macOS installer file is missing locally for {app_key} ({rid}).")
 elif not installer_path_arg and not installer_from_primary_shelf:
-    reasons.append(f"Promoted macOS installer was not resolved from the repo-local desktop shelf for {app_key} ({rid}).")
+    reasons.append(f"Promoted macOS installer was not resolved from the release-aligned desktop shelf for {app_key} ({rid}).")
 if installer_path is not None and path_uses_legacy_chummer5a_root(installer_path):
     reasons.append(f"Promoted macOS installer was resolved from legacy chummer5a shelf bytes for {app_key} ({rid}).")
 

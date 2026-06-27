@@ -270,7 +270,7 @@ if [[ "$skip_dependency_materialize" != "1" ]]; then
           "$linux_gate_tuple_path" \
           env \
           CHUMMER_LINUX_DESKTOP_EXIT_GATE_RELEASE_CHANNEL_PATH="$release_channel_path" \
-          CHUMMER_LINUX_DESKTOP_EXIT_GATE_LOCAL_DESKTOP_FILES_ROOT="${hub_published_files_root:-$repo_root/Docker/Downloads/files}" \
+          CHUMMER_LINUX_DESKTOP_EXIT_GATE_LOCAL_DESKTOP_FILES_ROOT="${hub_published_files_root:-}" \
           CHUMMER_LINUX_DESKTOP_EXIT_GATE_APP_KEY="$head" \
           CHUMMER_LINUX_DESKTOP_EXIT_GATE_RID="$rid" \
           CHUMMER_UI_LINUX_DESKTOP_EXIT_GATE_PATH="$linux_gate_tuple_path" \
@@ -293,7 +293,7 @@ if [[ "$skip_dependency_materialize" != "1" ]]; then
           "$windows_gate_tuple_path" \
           env \
           CHUMMER_WINDOWS_RELEASE_CHANNEL_PATH="$release_channel_path" \
-          CHUMMER_WINDOWS_LOCAL_DESKTOP_FILES_ROOT="${hub_published_files_root:-$repo_root/Docker/Downloads/files}" \
+          CHUMMER_WINDOWS_LOCAL_DESKTOP_FILES_ROOT="${hub_published_files_root:-}" \
           CHUMMER_WINDOWS_DESKTOP_EXIT_GATE_APP_KEY="$head" \
           CHUMMER_WINDOWS_DESKTOP_EXIT_GATE_RID="$rid" \
           CHUMMER_UI_WINDOWS_DESKTOP_EXIT_GATE_PATH="$windows_gate_tuple_path" \
@@ -311,7 +311,7 @@ if [[ "$skip_dependency_materialize" != "1" ]]; then
           "$macos_gate_tuple_path" \
           env \
           CHUMMER_MACOS_RELEASE_CHANNEL_PATH="$release_channel_path" \
-          CHUMMER_MACOS_INSTALLER_PATH="${hub_published_files_root:+$hub_published_files_root/chummer-$head-$rid-installer.dmg}" \
+          CHUMMER_MACOS_LOCAL_DESKTOP_FILES_ROOT="${hub_published_files_root:-}" \
           CHUMMER_MACOS_DESKTOP_EXIT_GATE_APP_KEY="$head" \
           CHUMMER_MACOS_DESKTOP_EXIT_GATE_RID="$rid" \
           CHUMMER_UI_MACOS_DESKTOP_EXIT_GATE_PATH="$macos_gate_tuple_path" \
@@ -1288,13 +1288,21 @@ def external_proof_expected_capture_commands(
     else:
         operating_system_token = "Linux"
     repo_root_value = str(globals().get("repo_root") or "/docker/chummercomplete/chummer6-ui")
-    installer_path = f"{repo_root_value}/Docker/Downloads/files/{installer_name}"
+    release_channel_path_value = globals().get("release_channel_path")
+    release_channel_root = (
+        release_channel_path_value.parent
+        if isinstance(release_channel_path_value, Path)
+        else Path(repo_root_value) / "Docker" / "Downloads"
+    )
+    release_aligned_files_root = release_channel_root / "files"
+    release_aligned_startup_smoke_root = release_channel_root / "startup-smoke"
+    installer_path = str(release_aligned_files_root / installer_name)
     expected_sha256 = normalize_token(expected_installer_sha256)
     preflight_download = ""
     if expected_sha256:
         preflight_download = (
             f"cd {repo_root_value} && "
-            f"mkdir -p {repo_root_value}/Docker/Downloads/files && "
+            f"mkdir -p {release_aligned_files_root} && "
             "python3 -c 'import hashlib, pathlib; "
             f"p=pathlib.Path('\"'\"'{installer_path}'\"'\"'); "
             f"expected='\"'\"'{expected_sha256}'\"'\"'; "
@@ -1360,7 +1368,7 @@ def external_proof_expected_capture_commands(
         f"{head_token} "
         f"{rid_token} "
         f"{infer_startup_smoke_launch_target(head_token, platform_token)} "
-        f"{repo_root_value}/Docker/Downloads/startup-smoke "
+        f"{release_aligned_startup_smoke_root} "
         f"{str(release_version or '').strip() or 'unknown'}"
     )
     refresh_manifest = (
@@ -1404,8 +1412,8 @@ def external_proof_capture_commands_semantically_match(
     host_token = normalize_token(required_host) or platform_token
     launch_target = infer_startup_smoke_launch_target(head_token, platform_token)
     install_route = f"/downloads/install/{head_token}-{rid_token}-installer"
-    installer_path_suffix = f"/Docker/Downloads/files/{installer_name}"
-    startup_smoke_suffix = "/Docker/Downloads/startup-smoke"
+    installer_path_suffix = f"/files/{installer_name}"
+    startup_smoke_suffix = "/startup-smoke"
     required_version_token = str(release_version or "").strip() or "unknown"
 
     roles: List[str] = []
