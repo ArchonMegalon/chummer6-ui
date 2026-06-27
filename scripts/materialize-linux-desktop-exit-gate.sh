@@ -161,7 +161,19 @@ PROOF_PATH="${CHUMMER_UI_LINUX_DESKTOP_EXIT_GATE_PATH:-$DEFAULT_PROOF_PATH}"
 PACKAGE_PLANE_LOCK_ROOT_DEFAULT="${CHUMMER_PACKAGE_PLANE_LOCK_ROOT:-$WORKSPACE_ROOT/.tmp/ai}"
 PACKAGE_PLANE_LOCK_PATH_DEFAULT="${CHUMMER_PACKAGE_PLANE_LOCK_FILE:-$PACKAGE_PLANE_LOCK_ROOT_DEFAULT/with-package-plane.lock}"
 BUILD_LOCK_PATH="${CHUMMER_LINUX_DESKTOP_EXIT_GATE_BUILD_LOCK_PATH:-$PACKAGE_PLANE_LOCK_PATH_DEFAULT}"
-LOCAL_DESKTOP_FILES_ROOT="${CHUMMER_LINUX_DESKTOP_EXIT_GATE_LOCAL_DESKTOP_FILES_ROOT:-$REPO_ROOT/Docker/Downloads/files}"
+DEFAULT_LOCAL_DESKTOP_FILES_ROOT="$REPO_ROOT/Docker/Downloads/files"
+RELEASE_CHANNEL_DIRECTORY="$(cd "$(dirname "$RELEASE_CHANNEL_PATH")" 2>/dev/null && pwd -P || true)"
+RELEASE_CHANNEL_FILES_ROOT_DEFAULT=""
+if [[ -n "$RELEASE_CHANNEL_DIRECTORY" ]]; then
+  RELEASE_CHANNEL_FILES_ROOT_DEFAULT="$RELEASE_CHANNEL_DIRECTORY/files"
+fi
+if [[ -n "${CHUMMER_LINUX_DESKTOP_EXIT_GATE_LOCAL_DESKTOP_FILES_ROOT:-}" ]]; then
+  LOCAL_DESKTOP_FILES_ROOT="$CHUMMER_LINUX_DESKTOP_EXIT_GATE_LOCAL_DESKTOP_FILES_ROOT"
+elif [[ -n "$RELEASE_CHANNEL_FILES_ROOT_DEFAULT" && ( -d "$RELEASE_CHANNEL_FILES_ROOT_DEFAULT" || "$RELEASE_CHANNEL_PATH" != "$DEFAULT_RELEASE_CHANNEL_PATH" ) ]]; then
+  LOCAL_DESKTOP_FILES_ROOT="$RELEASE_CHANNEL_FILES_ROOT_DEFAULT"
+else
+  LOCAL_DESKTOP_FILES_ROOT="$DEFAULT_LOCAL_DESKTOP_FILES_ROOT"
+fi
 if [[ -n "${CHUMMER_LINUX_DESKTOP_EXIT_GATE_USE_PROMOTED_INSTALLER:-}" ]]; then
   USE_PROMOTED_INSTALLER="${CHUMMER_LINUX_DESKTOP_EXIT_GATE_USE_PROMOTED_INSTALLER}"
 elif [[ -n "${CI:-}" ]]; then
@@ -177,6 +189,7 @@ FLAGSHIP_UI_SCREENSHOT_CONTROL_EVIDENCE_PATH="${CHUMMER_LINUX_DESKTOP_EXIT_GATE_
 SNAPSHOT_WRITABLE_STATE_ROOT="${CHUMMER_LINUX_DESKTOP_EXIT_GATE_WRITABLE_STATE_ROOT:-$WORKSPACE_ROOT/.tmp/ai/linux-desktop-exit-gate}"
 SNAPSHOT_NUGET_PACKAGES="${CHUMMER_LINUX_DESKTOP_EXIT_GATE_NUGET_PACKAGES:-$WORKSPACE_ROOT/.tmp/ai/nuget/packages}"
 SOURCE_SNAPSHOT_CLONE_MODE="${CHUMMER_LINUX_DESKTOP_EXIT_GATE_SOURCE_SNAPSHOT_CLONE_MODE:-copy}"
+KEEP_SOURCE_SNAPSHOT="${CHUMMER_LINUX_DESKTOP_EXIT_GATE_KEEP_SOURCE_SNAPSHOT:-0}"
 EXIT_GATE_ALLOW_INTERNAL_PUBLIC_WEB_HOSTS="${CHUMMER_LINUX_DESKTOP_EXIT_GATE_ALLOW_INTERNAL_PUBLIC_WEB_HOSTS:-0}"
 export CHUMMER_ALLOW_INTERNAL_PUBLIC_WEB_HOSTS="$EXIT_GATE_ALLOW_INTERNAL_PUBLIC_WEB_HOSTS"
 
@@ -2452,7 +2465,7 @@ announce_stage() {
 
 cleanup_snapshot() {
   set +e
-  if [[ -n "$SOURCE_SNAPSHOT_ROOT" && -d "$SOURCE_SNAPSHOT_ROOT" ]]; then
+  if [[ "$KEEP_SOURCE_SNAPSHOT" != "1" && -n "$SOURCE_SNAPSHOT_ROOT" && -d "$SOURCE_SNAPSHOT_ROOT" ]]; then
     rm -rf "$SOURCE_SNAPSHOT_ROOT" || true
   fi
   release_build_lock || true
@@ -2590,7 +2603,11 @@ PY
 
 run_runtime_test_host_direct() {
   local test_project_dir="$SOURCE_SNAPSHOT_ROOT/$(dirname "$TEST_PROJECT_PATH")"
+  local test_output_root="$test_project_dir/bin/Release"
   local test_host_path="$test_project_dir/bin/Release/$FRAMEWORK/${TEST_ASSEMBLY_NAME%.dll}"
+  local test_assembly_path="$test_project_dir/bin/Release/$FRAMEWORK/$TEST_ASSEMBLY_NAME"
+  local discovered_test_host_path=""
+  local discovered_test_assembly_path=""
   local -a build_args=(
     build
     "$SOURCE_SNAPSHOT_ROOT/$TEST_PROJECT_PATH"
@@ -2611,23 +2628,56 @@ run_runtime_test_host_direct() {
     host_args+=(--filter "$TEST_FILTER")
   fi
 
-  run_with_heartbeat "desktop runtime test host build" \
-    run_snapshot_command bash "$SOURCE_SNAPSHOT_ROOT/scripts/ai/with-package-plane.sh" "${build_args[@]}"
+  if ! run_with_heartbeat "desktop runtime test host build" \
+    run_snapshot_command bash "$SOURCE_SNAPSHOT_ROOT/scripts/ai/with-package-plane.sh" "${build_args[@]}"; then
+    echo "[linux-desktop-exit-gate] desktop runtime test host build failed" >&2
+    return 1
+  fi
+
+  if [[ ! -x "$test_host_path" && -d "$test_output_root" ]]; then
+    discovered_test_host_path="$(find "$test_output_root" -maxdepth 4 -type f -name "${TEST_ASSEMBLY_NAME%.dll}" -print 2>/dev/null | head -n 1 || true)"
+    if [[ -n "$discovered_test_host_path" ]]; then
+      test_host_path="$discovered_test_host_path"
+    fi
+  fi
+
+  if [[ ! -f "$test_assembly_path" && -d "$test_output_root" ]]; then
+    discovered_test_assembly_path="$(find "$test_output_root" -maxdepth 4 -type f -name "$TEST_ASSEMBLY_NAME" -print 2>/dev/null | head -n 1 || true)"
+    if [[ -n "$discovered_test_assembly_path" ]]; then
+      test_assembly_path="$discovered_test_assembly_path"
+    fi
+  fi
+
+  if [[ -x "$test_host_path" ]]; then
+    rm -f "$TEST_TRX_PATH"
+    run_with_heartbeat "desktop runtime test host" \
+      run_snapshot_command bash -lc '
+        set -euo pipefail
+        test_host_path="$1"
+        shift
+        cd "$(dirname "$test_host_path")"
+        exec "./$(basename "$test_host_path")" "$@"
+      ' _ "$test_host_path" "${host_args[@]}"
+    return
+  fi
+
+  if [[ -f "$test_assembly_path" ]]; then
+    rm -f "$TEST_TRX_PATH"
+    run_with_heartbeat "desktop runtime test host via dotnet" \
+      run_snapshot_command bash -lc '
+        set -euo pipefail
+        test_assembly_path="$1"
+        shift
+        cd "$(dirname "$test_assembly_path")"
+        exec dotnet "$(basename "$test_assembly_path")" "$@"
+      ' _ "$test_assembly_path" "${host_args[@]}"
+    return
+  fi
 
   if [[ ! -x "$test_host_path" ]]; then
     echo "[linux-desktop-exit-gate] desktop runtime test host is missing or not executable: $test_host_path" >&2
     return 1
   fi
-
-  rm -f "$TEST_TRX_PATH"
-  run_with_heartbeat "desktop runtime test host" \
-    run_snapshot_command bash -lc '
-      set -euo pipefail
-      test_host_path="$1"
-      shift
-      cd "$(dirname "$test_host_path")"
-      exec "./$(basename "$test_host_path")" "$@"
-    ' _ "$test_host_path" "${host_args[@]}"
 }
 
 run_runtime_test_wrapper_in_snapshot() {
@@ -3027,7 +3077,7 @@ if expected_artifact is not None:
     if not expected_file_name:
         reasons.append(f"Promoted Linux artifact fileName is missing for {app_key} ({rid}).")
     elif not shelf_path.is_file():
-        reasons.append(f"Promoted Linux installer file is missing from repo-local desktop shelf: {shelf_path}")
+        reasons.append(f"Promoted Linux installer file is missing from the release-aligned desktop shelf: {shelf_path}")
     else:
         if expected_size and shelf_path.stat().st_size != expected_size:
             reasons.append("Promoted Linux installer size does not match release-channel artifact size.")
@@ -3537,7 +3587,7 @@ else:
         promoted_shelf_artifact_path = local_desktop_files_root / expected_file_name if expected_file_name else pathlib.Path()
         if expected_file_name and not promoted_shelf_artifact_path.is_file():
             reasons.append(
-                f"Promoted Linux installer file is missing from repo-local desktop shelf: {promoted_shelf_artifact_path}"
+                f"Promoted Linux installer file is missing from the release-aligned desktop shelf: {promoted_shelf_artifact_path}"
             )
         elif expected_file_name:
             promoted_shelf_artifact_size = promoted_shelf_artifact_path.stat().st_size

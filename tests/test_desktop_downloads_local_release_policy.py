@@ -85,3 +85,23 @@ def test_release_build_checks_are_owned_by_local_scripts() -> None:
     assert (REPO_ROOT / "scripts" / "materialize-linux-desktop-exit-gate.sh").is_file()
     assert (REPO_ROOT / "scripts" / "materialize-windows-desktop-exit-gate.sh").is_file()
     assert (REPO_ROOT / "scripts" / "materialize_release_candidate_handoff.py").is_file()
+
+
+def test_linux_desktop_exit_gate_reports_direct_host_build_failures_before_missing_host_noise() -> None:
+    gate = (REPO_ROOT / "scripts" / "materialize-linux-desktop-exit-gate.sh").read_text(encoding="utf-8")
+
+    assert 'DEFAULT_LOCAL_DESKTOP_FILES_ROOT="$REPO_ROOT/Docker/Downloads/files"' in gate
+    assert 'RELEASE_CHANNEL_DIRECTORY="$(cd "$(dirname "$RELEASE_CHANNEL_PATH")" 2>/dev/null && pwd -P || true)"' in gate
+    assert 'RELEASE_CHANNEL_FILES_ROOT_DEFAULT="$RELEASE_CHANNEL_DIRECTORY/files"' in gate
+    assert 'LOCAL_DESKTOP_FILES_ROOT="$CHUMMER_LINUX_DESKTOP_EXIT_GATE_LOCAL_DESKTOP_FILES_ROOT"' in gate
+    assert 'LOCAL_DESKTOP_FILES_ROOT="$RELEASE_CHANNEL_FILES_ROOT_DEFAULT"' in gate
+    assert 'local test_output_root="$test_project_dir/bin/Release"' in gate
+    assert 'local test_assembly_path="$test_project_dir/bin/Release/$FRAMEWORK/$TEST_ASSEMBLY_NAME"' in gate
+    assert 'find "$test_output_root" -maxdepth 4 -type f -name "${TEST_ASSEMBLY_NAME%.dll}"' in gate
+    assert 'find "$test_output_root" -maxdepth 4 -type f -name "$TEST_ASSEMBLY_NAME"' in gate
+    assert 'KEEP_SOURCE_SNAPSHOT="${CHUMMER_LINUX_DESKTOP_EXIT_GATE_KEEP_SOURCE_SNAPSHOT:-0}"' in gate
+    assert '[linux-desktop-exit-gate] desktop runtime test host build failed' in gate
+    assert 'desktop runtime test host via dotnet' in gate
+    assert 'exec dotnet "$(basename "$test_assembly_path")" "$@"' in gate
+    assert 'Promoted Linux installer file is missing from the release-aligned desktop shelf' in gate
+    assert gate.index('desktop runtime test host build failed') < gate.index('desktop runtime test host is missing or not executable')
