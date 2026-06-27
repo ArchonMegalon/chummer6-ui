@@ -29,6 +29,10 @@ def test_windows_visual_proof_capture_script_writes_gate_compatible_receipt() ->
     script = (REPO_ROOT / "scripts" / "capture-windows-installer-visual-proof.ps1").read_text(encoding="utf-8")
     assert "chummer6-ui.windows_installer_visual_proof" in script
     assert "WINDOWS_INSTALLER_VISUAL_PROOF.generated.json" in script
+    assert "Resolve-DefaultReleaseChannelPath" in script
+    assert "Resolve-InstallerFileNameFromReleaseChannel" in script
+    assert 'Join-Path $releaseChannelDirectory "files"' in script
+    assert 'Join-Path $RepoRoot "..\\chummer.run-services\\Chummer.Portal\\downloads\\RELEASE_CHANNEL.generated.json"' in script
     assert "System.Windows.Forms.SystemInformation]::VirtualScreen" in script
     assert 'role = "progress"' in script
     assert 'role = "completion"' in script
@@ -42,6 +46,7 @@ def test_desktop_release_pipeline_documents_windows_visual_capture_without_githu
     doc = (REPO_ROOT / "docs" / "DESKTOP_RELEASE_PIPELINE.md").read_text(encoding="utf-8")
     assert "capture-windows-installer-visual-proof.ps1" in doc
     assert "WINDOWS_INSTALLER_VISUAL_PROOF.generated.json" in doc
+    assert "release-manifest shelf" in doc
     assert "host-specific gate" in doc
     assert "GitHub Actions" not in doc
 
@@ -74,6 +79,7 @@ def test_windows_bootstrap_build_fails_from_measured_size_gate_instead_of_hardco
     )
 
     assert result.returncode != 0
-    assert "bootstrap installer is too large:" in result.stderr
-    assert "Windows bootstrap installer proof failed." in result.stderr
-    assert "blocked until the native bootstrap builder is wired" not in result.stderr
+    combined_output = f"{result.stdout}\n{result.stderr}"
+    assert "bootstrap installer is too large:" in combined_output
+    assert "Windows bootstrap installer proof failed." in combined_output
+    assert "blocked until the native bootstrap builder is wired" not in combined_output

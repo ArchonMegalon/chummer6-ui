@@ -40,6 +40,67 @@ function Get-FirstJsonValue {
     return ""
 }
 
+function Resolve-DefaultReleaseChannelPath {
+    param([string]$RepoRoot)
+
+    $candidates = @(
+        (Join-Path $RepoRoot ".codex-studio\published\RELEASE_CHANNEL.generated.json"),
+        (Join-Path $RepoRoot "..\chummer.run-services\Chummer.Portal\downloads\RELEASE_CHANNEL.generated.json"),
+        (Join-Path $RepoRoot "..\chummer6-hub\Chummer.Portal\downloads\RELEASE_CHANNEL.generated.json"),
+        (Join-Path $RepoRoot "Docker\Downloads\RELEASE_CHANNEL.generated.json")
+    )
+
+    foreach ($candidate in $candidates) {
+        $resolved = [System.IO.Path]::GetFullPath($candidate)
+        if (Test-Path -LiteralPath $resolved -PathType Leaf) {
+            return $resolved
+        }
+    }
+
+    return [System.IO.Path]::GetFullPath((Join-Path $RepoRoot "Docker\Downloads\RELEASE_CHANNEL.generated.json"))
+}
+
+function Resolve-InstallerFileNameFromReleaseChannel {
+    param(
+        [object]$ReleaseChannel,
+        [string]$Head,
+        [string]$Rid
+    )
+
+    if ($null -eq $ReleaseChannel) {
+        return ""
+    }
+
+    $artifacts = $ReleaseChannel.PSObject.Properties["artifacts"]
+    if ($null -eq $artifacts -or $null -eq $artifacts.Value) {
+        return ""
+    }
+
+    foreach ($artifact in $artifacts.Value) {
+        if ($null -eq $artifact) {
+            continue
+        }
+
+        $artifactPlatform = (Get-FirstJsonValue $artifact @("platform")).ToLowerInvariant()
+        $artifactHead = (Get-FirstJsonValue $artifact @("head", "headId")).ToLowerInvariant()
+        $artifactRid = (Get-FirstJsonValue $artifact @("rid")).ToLowerInvariant()
+        if ([string]::IsNullOrWhiteSpace($artifactRid)) {
+            $artifactArch = (Get-FirstJsonValue $artifact @("arch")).ToLowerInvariant()
+            if ($artifactArch -eq "x64" -or $artifactArch -eq "arm64") {
+                $artifactRid = "win-$artifactArch"
+            }
+        }
+
+        if ($artifactPlatform -ne "windows" -or $artifactHead -ne $Head.ToLowerInvariant() -or $artifactRid -ne $Rid.ToLowerInvariant()) {
+            continue
+        }
+
+        return Get-FirstJsonValue $artifact @("fileName")
+    }
+
+    return ""
+}
+
 function Get-Sha256Lower {
     param([string]$PathValue)
     return (Get-FileHash -Algorithm SHA256 -Path $PathValue).Hash.ToLowerInvariant()
@@ -86,24 +147,20 @@ $scriptRoot = Split-Path -Parent $MyInvocation.MyCommand.Path
 $repoRoot = [System.IO.Path]::GetFullPath((Join-Path $scriptRoot ".."))
 
 if ([string]::IsNullOrWhiteSpace($InstallerPath)) {
-    $InstallerPath = Join-Path $repoRoot "Docker\Downloads\files\chummer-avalonia-win-x64-installer.exe"
+    $InstallerPath = ""
 }
 if ([string]::IsNullOrWhiteSpace($ReleaseChannelPath)) {
-    $ReleaseChannelPath = Join-Path $repoRoot "Docker\Downloads\RELEASE_CHANNEL.generated.json"
+    $ReleaseChannelPath = Resolve-DefaultReleaseChannelPath $repoRoot
 }
 if ([string]::IsNullOrWhiteSpace($OutputPath)) {
     $OutputPath = Join-Path $repoRoot ".codex-studio\published\WINDOWS_INSTALLER_VISUAL_PROOF.generated.json"
 }
 
-$installerFullPath = Resolve-FullPath $InstallerPath
 $releaseChannelFullPath = Resolve-FullPath $ReleaseChannelPath
 $outputFullPath = Resolve-FullPath $OutputPath
 $outputDirectory = Split-Path -Parent $outputFullPath
 $screenshotDirectory = Join-Path $outputDirectory "windows-installer-visual-proof"
 
-if (-not (Test-Path -LiteralPath $installerFullPath -PathType Leaf)) {
-    throw "Installer not found: $installerFullPath"
-}
 if (-not (Test-Path -LiteralPath $releaseChannelFullPath -PathType Leaf)) {
     throw "Release channel not found: $releaseChannelFullPath"
 }
@@ -112,6 +169,20 @@ New-Item -ItemType Directory -Force -Path $outputDirectory | Out-Null
 New-Item -ItemType Directory -Force -Path $screenshotDirectory | Out-Null
 
 $releaseChannel = Get-Content -LiteralPath $releaseChannelFullPath -Raw | ConvertFrom-Json
+$installerFileNameFromReleaseChannel = Resolve-InstallerFileNameFromReleaseChannel $releaseChannel $Head $Rid
+if ([string]::IsNullOrWhiteSpace($InstallerPath)) {
+    $releaseChannelDirectory = Split-Path -Parent $releaseChannelFullPath
+    $releaseFilesDirectory = Join-Path $releaseChannelDirectory "files"
+    $installerFileName = $installerFileNameFromReleaseChannel
+    if ([string]::IsNullOrWhiteSpace($installerFileName)) {
+        $installerFileName = "chummer-$Head-$Rid-installer.exe"
+    }
+    $InstallerPath = Join-Path $releaseFilesDirectory $installerFileName
+}
+$installerFullPath = Resolve-FullPath $InstallerPath
+if (-not (Test-Path -LiteralPath $installerFullPath -PathType Leaf)) {
+    throw "Installer not found: $installerFullPath"
+}
 $releaseVersion = Get-FirstJsonValue $releaseChannel @("releaseVersion", "version")
 $channelId = Get-FirstJsonValue $releaseChannel @("channelId", "channel")
 $installerSha256 = Get-Sha256Lower $installerFullPath

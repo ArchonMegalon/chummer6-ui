@@ -41,6 +41,8 @@ powershell -NoLogo -NoProfile -ExecutionPolicy Bypass -File .\scripts\capture-wi
 
 The script launches the promoted installer, captures progress and completion screenshots, hashes the images and installer bytes, and writes `.codex-studio\published\WINDOWS_INSTALLER_VISUAL_PROOF.generated.json`. The desktop release matrix may treat this as the only external host proof when local payload, digest, and update-handoff gates pass; it must still fail for missing payloads, mismatched hashes, or stale local release artifacts.
 
+When paths are omitted, the capture script now resolves the installer from the release-manifest shelf first: it prefers the current release-channel manifest and that manifest's sibling `files/` directory over the old repo-local `Docker\Downloads` fallback. That keeps the operator capture lane aligned with the same promoted bytes the exit gates verify.
+
 ## Windows bootstrap rule
 
 The public Windows row must not publish a large self-contained setup executable as `installerMode=bootstrap`.
