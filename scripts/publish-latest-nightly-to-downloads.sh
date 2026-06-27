@@ -209,7 +209,7 @@ esac
 latest_stage=""
 while IFS= read -r candidate; do
   latest_stage="$candidate"
-done < <(find "$STAGING_ROOT" -maxdepth 1 -mindepth 1 -type d -name 'nightly-run-*' | sort)
+done < <(find "$STAGING_ROOT" -maxdepth 1 -mindepth 1 \( -type d -o -type l \) -name 'nightly-run-*' | sort)
 
 if [[ -z "$latest_stage" ]]; then
   echo "No nightly stage found under $STAGING_ROOT" >&2
