@@ -4705,24 +4705,28 @@ internal sealed class DesktopAliceWindow : Window
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>{{Html(packet.Alias)}} Origin Story</title>
   <style>
-    :root { color-scheme: dark; --bg:#111111; --surface:#181818; --surface-2:#202020; --text:#f3efe6; --muted:#b9b1a2; --line:#312b24; --accent:#c69b6d; }
+    :root { color-scheme: light; --page:#efe8db; --surface:#fbf7ef; --surface-2:#f4eddf; --text:#211b15; --muted:#6d6052; --line:rgba(57,45,32,.14); --accent:#86623f; }
     * { box-sizing:border-box; }
-    body { margin:0; font-family:Inter, "Segoe UI", sans-serif; background:var(--bg); color:var(--text); }
-    .shell { max-width:900px; margin:0 auto; padding:32px 20px 56px; }
-    .hero, section { background:var(--surface); border:1px solid var(--line); border-radius:12px; padding:24px; }
-    .hero { margin-bottom:16px; }
-    .eyebrow { color:var(--accent); font-size:12px; text-transform:uppercase; letter-spacing:.08em; margin:0 0 10px; }
-    h1, h2 { margin:0 0 12px; font-weight:600; }
-    h1 { font-size:32px; line-height:1.1; }
-    h2 { font-size:16px; }
-    p, li { color:var(--text); line-height:1.6; }
+    body { margin:0; font-family:"Iowan Old Style", "Palatino Linotype", "Book Antiqua", Georgia, serif; background:var(--page); color:var(--text); }
+    .shell { max-width:920px; margin:0 auto; padding:28px 18px 56px; }
+    .hero, section { background:var(--surface); border:1px solid var(--line); border-radius:16px; padding:24px 26px; box-shadow:0 1px 0 rgba(57,45,32,.05); }
+    .hero { margin-bottom:14px; }
+    .eyebrow, .label { font-family:"Avenir Next", "Segoe UI", sans-serif; }
+    .eyebrow { color:var(--accent); font-size:12px; text-transform:uppercase; letter-spacing:.08em; margin:0 0 12px; }
+    h1, h2 { margin:0 0 12px; font-weight:600; color:var(--text); }
+    h1 { font-size:36px; line-height:1.08; letter-spacing:-0.01em; }
+    h2 { font-size:20px; line-height:1.2; }
+    p, li { color:var(--text); line-height:1.75; font-size:18px; }
+    .hero > p:last-of-type { max-width:42rem; }
+    .prose p { margin:0 0 1rem; }
     .meta { display:grid; grid-template-columns:repeat(auto-fit,minmax(180px,1fr)); gap:12px; margin-top:18px; }
-    .meta div { background:var(--surface-2); border-radius:10px; padding:12px; }
-    .label { display:block; color:var(--muted); font-size:12px; margin-bottom:4px; text-transform:uppercase; letter-spacing:.06em; }
+    .meta div { background:var(--surface-2); border-radius:12px; padding:13px 14px; min-height:84px; }
+    .label { display:block; color:var(--muted); font-size:11px; margin-bottom:6px; text-transform:uppercase; letter-spacing:.08em; }
+    .meta div, .meta span, .meta strong, .meta p { overflow-wrap:anywhere; }
     .muted { color:var(--muted); }
-    section { margin-top:16px; }
+    section { margin-top:14px; }
     ul { margin:0; padding-left:20px; }
-    .footer { margin-top:16px; color:var(--muted); font-size:13px; }
+    .footer { margin-top:16px; color:var(--muted); font-size:14px; }
     a { color:var(--accent); }
   </style>
 </head>
@@ -4748,7 +4752,7 @@ internal sealed class DesktopAliceWindow : Window
     {{constraintsBlock}}
     <section>
       <h2>Origin</h2>
-      {{Paragraphs(HumanCopy(draft.Prose))}}
+      <div class="prose">{{Paragraphs(HumanCopy(draft.Prose))}}</div>
     </section>
     <section>
       <h2>GM Hooks</h2>

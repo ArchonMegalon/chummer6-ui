@@ -695,6 +695,12 @@ public sealed class AvaloniaFlagshipUiGateTests
             StringAssert.Contains(presentationHtml, "Cinematic narration");
             StringAssert.Contains(presentationHtml, "Grounded dossier");
             StringAssert.Contains(presentationHtml, "Must be magically active");
+            StringAssert.Contains(presentationHtml, "color-scheme: light");
+            StringAssert.Contains(presentationHtml, "Palatino Linotype");
+            StringAssert.Contains(presentationHtml, "class=\"prose\"");
+            Assert.IsFalse(
+                presentationHtml.Contains("color-scheme: dark", StringComparison.Ordinal),
+                "Origin story presentation should stay on the explicit paper reading surface instead of falling back to the dark shell colors.");
             string myFirstBookPacket = File.ReadAllText(packetJsonPath);
             StringAssert.Contains(myFirstBookPacket, "\"creativeDirection\"");
             StringAssert.Contains(myFirstBookPacket, "\"primaryVoiceStyle\": \"Measured dossier\"");
