@@ -9,6 +9,8 @@
     --ui-kit-panel-surface: #ffffff;
     --ui-kit-button-surface: #f3f0e6;
     --ui-kit-focus-ring: #316ac5;
+    --ui-kit-ink: #111111;
+    --ui-kit-ink-strong: #111827;
     --ui-kit-muted: #505050;
 }
 
@@ -1605,12 +1607,12 @@ input[type="radio"] {
 
 .note {
     margin: 0.2rem 0;
-    color: #1f2937;
+    color: var(--ui-kit-ink);
 }
 
 .hint {
     margin: 0.15rem 0;
-    color: #505050;
+    color: var(--ui-kit-muted);
     font-size: 0.78rem;
 }
 
@@ -1669,7 +1671,7 @@ input[type="radio"] {
 
 .dialog-note {
     margin: 0;
-    color: #4b4b4b;
+    color: var(--ui-kit-muted);
 }
 
 .dialog-field {
@@ -1715,6 +1717,7 @@ input[type="radio"] {
 .dialog-label {
     font-weight: 600;
     line-height: 1.2;
+    color: var(--ui-kit-ink);
 }
 
 .dialog-body {
@@ -1736,6 +1739,25 @@ input[type="radio"] {
 
 .dialog-input {
     min-width: 0;
+    width: 100%;
+    box-sizing: border-box;
+    padding: 0.18rem 0.3rem;
+    border: 1px solid var(--ui-kit-shell-border);
+    background: var(--ui-kit-panel-surface);
+    color: var(--ui-kit-ink);
+}
+
+.dialog-input::placeholder {
+    color: var(--ui-kit-muted);
+}
+
+.dialog-input[readonly] {
+    background: var(--ui-kit-shell-surface-emphasis);
+}
+
+.dialog-input:focus {
+    outline: 1px solid var(--ui-kit-focus-ring);
+    outline-offset: 0;
 }
 
 .dialog-visual {
@@ -1784,6 +1806,7 @@ input[type="radio"] {
     margin: 0;
     white-space: pre-wrap;
     font-family: var(--ui-kit-mono-font);
+    color: inherit;
 }
 
 .dialog-tab-chip {
@@ -1869,6 +1892,10 @@ input[type="radio"] {
 .dialog-priority-listbox {
     min-width: 0;
     width: 100%;
+    box-sizing: border-box;
+    border: 1px solid var(--ui-kit-shell-border);
+    background: var(--ui-kit-panel-surface);
+    color: var(--ui-kit-ink);
 }
 
 .dialog-priority-listbox {
@@ -2459,12 +2486,22 @@ input[type="radio"] {
     gap: 0.55rem;
     padding: 0.7rem 0.8rem;
     border: 1px solid var(--ui-kit-shell-border-strong);
-    background: #f8f4ec;
+    background: var(--ui-kit-shell-surface-emphasis);
+    color: var(--ui-kit-ink);
 }
 
 .dialog-origin-panel h3,
 .dialog-origin-subpanel h4 {
     margin: 0;
+    color: var(--ui-kit-ink);
+}
+
+.dialog-origin-panel > header p,
+.dialog-origin-subpanel > header p,
+.dialog-origin-panel .dialog-note,
+.dialog-origin-subpanel .dialog-note {
+    margin: 0;
+    color: var(--ui-kit-muted);
 }
 
 .dialog-origin-story-grid,
@@ -2495,6 +2532,7 @@ input[type="radio"] {
 .dialog-origin-panel--advanced summary {
     cursor: pointer;
     font-weight: 700;
+    color: var(--ui-kit-ink);
 }
 
 .dialog-origin-summary-strip {
@@ -2507,27 +2545,59 @@ input[type="radio"] {
     display: grid;
     gap: 0.18rem;
     padding: 0.6rem 0.7rem;
-    border: 1px solid rgba(71, 85, 105, 0.16);
-    background: rgba(255, 255, 255, 0.78);
+    border: 1px solid var(--ui-kit-shell-border);
+    background: var(--ui-kit-panel-surface);
+    color: var(--ui-kit-ink);
+}
+
+.dialog-origin-summary-label {
+    width: fit-content;
+    padding: 0.12rem 0.42rem;
+    border: 1px solid var(--ui-kit-shell-border);
+    background: var(--ui-kit-shell-surface-emphasis);
+    color: var(--ui-kit-muted);
+    font-size: 0.7rem;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
 }
 
 .dialog-origin-summary-card strong {
     line-height: 1.4;
-    color: #111827;
+    color: var(--ui-kit-ink-strong);
 }
 
 .dialog-origin-preview,
 .dialog-origin-readonly {
-    border: 1px solid rgba(71, 85, 105, 0.18);
-    background: rgba(255, 255, 255, 0.84);
+    border: 1px solid var(--ui-kit-shell-border);
+    background: var(--ui-kit-panel-surface);
+    color: var(--ui-kit-ink);
     padding: 0.7rem 0.8rem;
     min-height: 7rem;
+    overflow-wrap: anywhere;
+}
+
+.dialog-origin-preview--book {
+    background: var(--ui-kit-shell-surface-emphasis);
+}
+
+.dialog-origin-preview :is(p, pre, strong, span, li, em),
+.dialog-origin-readonly :is(p, pre, strong, span, li, em) {
+    color: inherit;
 }
 
 .dialog-origin-preview--book p,
 .dialog-origin-readonly p {
     margin: 0 0 0.55rem;
     line-height: 1.55;
+    color: inherit;
+}
+
+.dialog-origin-preview .dialog-visual-pre,
+.dialog-origin-readonly .dialog-visual-pre {
+    margin: 0;
+    color: inherit;
+    background: transparent;
 }
 
 .dialog-origin-review-grid {
@@ -2975,6 +3045,8 @@ input[type="radio"] {
     --ui-kit-shell-border-strong: #4d473d;
     --ui-kit-button-surface: #efe5cf;
     --ui-kit-focus-ring: #2c6f80;
+    --ui-kit-ink: #111111;
+    --ui-kit-ink-strong: #111827;
 }
 
 .app-frame {

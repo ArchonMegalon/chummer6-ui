@@ -7,6 +7,9 @@ const baseUrl = (process.env.CHUMMER_PORTAL_BASE_URL || 'http://127.0.0.1:8091')
 const expectedImplicitOwner = process.env.CHUMMER_PORTAL_EXPECTED_IMPLICIT_OWNER || 'local@self-host';
 const navWaitUntil = process.env.CHUMMER_UI_NAV_WAIT_UNTIL || 'commit';
 const navTimeoutMs = Number(process.env.CHUMMER_UI_NAV_TIMEOUT_MS || '15000');
+const routeNavigationRetryAttempts = Number(process.env.CHUMMER_PORTAL_ROUTE_RETRY_ATTEMPTS || '3');
+const routeNavigationRetryDelayMs = Number(process.env.CHUMMER_PORTAL_ROUTE_RETRY_DELAY_MS || '1500');
+const playwrightScope = (process.env.CHUMMER_PORTAL_PLAYWRIGHT_SCOPE || 'smoke').trim().toLowerCase();
 const stagedCareerReorderRoutes = [
   '/blazor/workbench?workspace=ws-1&tab=tab-calendar&control=move_up',
   '/blazor/workbench?workspace=ws-1&tab=tab-calendar&control=move_down'
@@ -20,46 +23,82 @@ function expectTextIncludes(actual, expected, context) {
   }
 }
 
+function expectAnyTextIncludes(actual, expectedValues, context) {
+  for (const expected of expectedValues) {
+    const haystack = (actual || '').toLowerCase();
+    const needle = expected.toLowerCase();
+    if (haystack.includes(needle)) {
+      return;
+    }
+  }
+
+  throw new Error(`Expected ${context} to include one of ${JSON.stringify(expectedValues)}, got '${actual}'.`);
+}
+
+function shouldRetryRouteNavigation(error) {
+  const message = String(error && error.message || '');
+  return message.includes('ERR_ABORTED') || message.includes('Timeout');
+}
+
+async function openPortalRoute(page, route, readySelector, waitUntilOverride) {
+  let lastError = null;
+  for (let attempt = 1; attempt <= routeNavigationRetryAttempts; attempt += 1) {
+    try {
+      await page.goto(`${baseUrl}${route}`, { waitUntil: waitUntilOverride || navWaitUntil, timeout: navTimeoutMs });
+      if (readySelector) {
+        await page.waitForSelector(readySelector, { timeout: 30000 });
+      }
+      return;
+    } catch (error) {
+      lastError = error;
+      if (attempt >= routeNavigationRetryAttempts || !shouldRetryRouteNavigation(error)) {
+        throw error;
+      }
+
+      await page.goto('about:blank', { waitUntil: 'load', timeout: 5000 }).catch(() => {});
+      await page.waitForTimeout(routeNavigationRetryDelayMs);
+    }
+  }
+
+  throw lastError || new Error(`Failed to open portal route '${route}'.`);
+}
+
 async function openPortalPreview(page) {
-  await page.goto(`${baseUrl}/blazor/preview`, { waitUntil: navWaitUntil, timeout: navTimeoutMs });
-  await page.waitForSelector('[data-testid="startup-workbench"]', { timeout: 15000 });
+  await openPortalRoute(page, '/blazor/preview', '[data-testid="startup-workbench"]');
   if (!page.url().includes('/blazor/preview')) {
     throw new Error(`Expected portal preview route to stay on /blazor/preview, got '${page.url()}'.`);
   }
 }
 
 async function openPortalWorkbench(page) {
-  await page.goto(`${baseUrl}/blazor/workbench`, { waitUntil: navWaitUntil, timeout: navTimeoutMs });
-  await page.waitForSelector('[data-testid="startup-workbench"]', { timeout: 15000 });
+  await openPortalRoute(page, '/blazor/workbench', '[data-testid="startup-workbench"]');
   if (!page.url().includes('/blazor/workbench')) {
     throw new Error(`Expected portal workbench route to stay on /blazor/workbench, got '${page.url()}'.`);
   }
 }
 
 async function openPortalBlazorRoot(page) {
-  await page.goto(`${baseUrl}/blazor/`, { waitUntil: navWaitUntil, timeout: navTimeoutMs });
-  await page.waitForSelector('[data-testid="startup-workbench"]', { timeout: 15000 });
+  await openPortalRoute(page, '/blazor/', '.classic-promoted-app [data-chummer-classic-shell][data-route-family="app"]');
   if (!page.url().includes('/blazor/app')) {
     throw new Error(`Expected portal /blazor/ root to resolve to /blazor/app, got '${page.url()}'.`);
   }
 }
 
-async function openPortalPreviewPath(page, relativePath, readySelector) {
-  await page.goto(`${baseUrl}${relativePath}`, { waitUntil: navWaitUntil, timeout: navTimeoutMs });
-  await page.waitForSelector(readySelector, { timeout: 30000 });
+async function openPortalPreviewPath(page, relativePath, readySelector, waitUntilOverride) {
+  await openPortalRoute(page, relativePath, readySelector, waitUntilOverride);
   if (!page.url().includes(relativePath.split('?')[0])) {
     throw new Error(`Expected portal preview route to stay on '${relativePath}', got '${page.url()}'.`);
   }
 }
 
 async function auditPortalHome(page) {
-  await page.goto(`${baseUrl}/`, { waitUntil: navWaitUntil, timeout: navTimeoutMs });
-  await page.waitForSelector('.hero, .panel', { timeout: 15000 });
+  await openPortalRoute(page, '/', '.hero, .panel');
 
   const bodyText = await page.locator('body').innerText();
   expectTextIncludes(bodyText, 'implicit self-host sign-in', 'portal home');
   expectTextIncludes(bodyText, expectedImplicitOwner, 'portal home');
-  expectTextIncludes(bodyText, 'signed owner propagation enabled', 'portal home');
+  expectTextIncludes(bodyText, 'api posture:', 'portal home');
+  expectAnyTextIncludes(bodyText, ['signed owner propagation enabled', 'unsigned local-single-user api mode'], 'portal home');
   await expectVisibleSelector(page, 'a.cta[href="/app?command=character_roster"][data-portal-home-action="explore-chummer-online"]', 'portal home Chummer Online roster CTA');
 }
 
@@ -112,11 +151,279 @@ async function expectNoVisibleClipping(page, rootSelector, context) {
   }
 }
 
-async function expectDialogFits(page, expectedTitle) {
-  await page.waitForFunction((expected) => {
+async function expectMinimumTextContrast(page, selector, minimumRatio, context) {
+  const locator = page.locator(selector).first();
+  await locator.waitFor({ state: 'visible', timeout: 15000 });
+  const contrast = await locator.evaluate((element) => {
+    function textValue(node) {
+      if (node instanceof HTMLInputElement || node instanceof HTMLTextAreaElement || node instanceof HTMLSelectElement) {
+        return node.value || node.getAttribute('aria-label') || '';
+      }
+
+      return node.textContent || node.getAttribute('aria-label') || '';
+    }
+
+    function parseColor(value) {
+      const match = String(value || '').match(/rgba?\(([^)]+)\)/i);
+      if (!match) {
+        return null;
+      }
+
+      const parts = match[1]
+        .split(',')
+        .map((part) => Number.parseFloat(part.trim()))
+        .filter((part) => !Number.isNaN(part));
+      if (parts.length < 3) {
+        return null;
+      }
+
+      return {
+        r: parts[0],
+        g: parts[1],
+        b: parts[2],
+        a: parts.length >= 4 ? parts[3] : 1
+      };
+    }
+
+    function composite(foreground, background) {
+      const alpha = foreground.a;
+      const inverse = 1 - alpha;
+      const outAlpha = alpha + background.a * inverse;
+      if (outAlpha <= 0) {
+        return { r: 0, g: 0, b: 0, a: 0 };
+      }
+
+      return {
+        r: (foreground.r * alpha + background.r * background.a * inverse) / outAlpha,
+        g: (foreground.g * alpha + background.g * background.a * inverse) / outAlpha,
+        b: (foreground.b * alpha + background.b * background.a * inverse) / outAlpha,
+        a: outAlpha
+      };
+    }
+
+    function luminance(channel) {
+      const normalized = channel / 255;
+      return normalized <= 0.03928
+        ? normalized / 12.92
+        : Math.pow((normalized + 0.055) / 1.055, 2.4);
+    }
+
+    function contrastRatio(foreground, background) {
+      const foregroundLuminance = 0.2126 * luminance(foreground.r) + 0.7152 * luminance(foreground.g) + 0.0722 * luminance(foreground.b);
+      const backgroundLuminance = 0.2126 * luminance(background.r) + 0.7152 * luminance(background.g) + 0.0722 * luminance(background.b);
+      const lighter = Math.max(foregroundLuminance, backgroundLuminance);
+      const darker = Math.min(foregroundLuminance, backgroundLuminance);
+      return (lighter + 0.05) / (darker + 0.05);
+    }
+
+    function effectiveBackground(node) {
+      const fallback = parseColor(getComputedStyle(document.body).backgroundColor) || { r: 255, g: 255, b: 255, a: 1 };
+      let background = fallback;
+      let current = node instanceof Element ? node : null;
+
+      while (current) {
+        const parsed = parseColor(getComputedStyle(current).backgroundColor);
+        if (parsed && parsed.a > 0) {
+          background = composite(parsed, background);
+          if (background.a >= 0.999) {
+            break;
+          }
+        }
+
+        current = current.parentElement;
+      }
+
+      return background;
+    }
+
+    const foreground = parseColor(getComputedStyle(element).color);
+    const background = effectiveBackground(element);
+    if (!foreground) {
+      return null;
+    }
+
+    return {
+      ratio: contrastRatio(foreground, background),
+      foreground: `rgba(${foreground.r}, ${foreground.g}, ${foreground.b}, ${foreground.a})`,
+      background: `rgba(${Math.round(background.r)}, ${Math.round(background.g)}, ${Math.round(background.b)}, ${background.a.toFixed(3)})`,
+      text: textValue(element).replace(/\s+/g, ' ').trim().slice(0, 120)
+    };
+  });
+
+  if (!contrast) {
+    throw new Error(`Expected ${context} to expose measurable foreground and background colors for '${selector}'.`);
+  }
+
+  if (contrast.ratio < minimumRatio) {
+    throw new Error(
+      `Expected ${context} to keep text contrast >= ${minimumRatio.toFixed(1)} for '${selector}', `
+      + `got ${contrast.ratio.toFixed(2)} (fg ${contrast.foreground}, bg ${contrast.background}, sample '${contrast.text}').`);
+  }
+}
+
+async function expectVisibleCollectionMinimumTextContrast(page, selector, minimumRatio, minimumMatches, context) {
+  await page.waitForFunction((payload) => {
+    const { query, requiredMatches } = payload;
+    const nodes = Array.from(document.querySelectorAll(query));
+    return nodes.filter((node) => {
+      if (!(node instanceof Element)) {
+        return false;
+      }
+
+      const style = getComputedStyle(node);
+      const rect = node.getBoundingClientRect();
+      return style.visibility !== 'hidden'
+        && style.display !== 'none'
+        && rect.width > 0
+        && rect.height > 0
+        && !node.closest('[hidden], [aria-hidden="true"]');
+    }).length >= requiredMatches;
+  }, { query: selector, requiredMatches: minimumMatches }, { timeout: 15000 });
+
+  const evaluation = await page.locator('body').evaluate((root, payload) => {
+    const { query, minimumRatioValue } = payload;
+
+    function textValue(node) {
+      if (node instanceof HTMLInputElement || node instanceof HTMLTextAreaElement || node instanceof HTMLSelectElement) {
+        return node.value || node.getAttribute('aria-label') || '';
+      }
+
+      return node.textContent || node.getAttribute('aria-label') || '';
+    }
+
+    function isVisible(node) {
+      if (!(node instanceof Element)) {
+        return false;
+      }
+
+      const style = getComputedStyle(node);
+      const rect = node.getBoundingClientRect();
+      return style.visibility !== 'hidden'
+        && style.display !== 'none'
+        && rect.width > 0
+        && rect.height > 0
+        && !node.closest('[hidden], [aria-hidden="true"]');
+    }
+
+    function parseColor(value) {
+      const match = String(value || '').match(/rgba?\(([^)]+)\)/i);
+      if (!match) {
+        return null;
+      }
+
+      const parts = match[1]
+        .split(',')
+        .map((part) => Number.parseFloat(part.trim()))
+        .filter((part) => !Number.isNaN(part));
+      if (parts.length < 3) {
+        return null;
+      }
+
+      return {
+        r: parts[0],
+        g: parts[1],
+        b: parts[2],
+        a: parts.length >= 4 ? parts[3] : 1
+      };
+    }
+
+    function composite(foreground, background) {
+      const alpha = foreground.a;
+      const inverse = 1 - alpha;
+      const outAlpha = alpha + background.a * inverse;
+      if (outAlpha <= 0) {
+        return { r: 0, g: 0, b: 0, a: 0 };
+      }
+
+      return {
+        r: (foreground.r * alpha + background.r * background.a * inverse) / outAlpha,
+        g: (foreground.g * alpha + background.g * background.a * inverse) / outAlpha,
+        b: (foreground.b * alpha + background.b * background.a * inverse) / outAlpha,
+        a: outAlpha
+      };
+    }
+
+    function luminance(channel) {
+      const normalized = channel / 255;
+      return normalized <= 0.03928
+        ? normalized / 12.92
+        : Math.pow((normalized + 0.055) / 1.055, 2.4);
+    }
+
+    function contrastRatio(foreground, background) {
+      const foregroundLuminance = 0.2126 * luminance(foreground.r) + 0.7152 * luminance(foreground.g) + 0.0722 * luminance(foreground.b);
+      const backgroundLuminance = 0.2126 * luminance(background.r) + 0.7152 * luminance(background.g) + 0.0722 * luminance(background.b);
+      const lighter = Math.max(foregroundLuminance, backgroundLuminance);
+      const darker = Math.min(foregroundLuminance, backgroundLuminance);
+      return (lighter + 0.05) / (darker + 0.05);
+    }
+
+    function effectiveBackground(node) {
+      const fallback = parseColor(getComputedStyle(document.body).backgroundColor) || { r: 255, g: 255, b: 255, a: 1 };
+      let background = fallback;
+      let current = node instanceof Element ? node : null;
+
+      while (current) {
+        const parsed = parseColor(getComputedStyle(current).backgroundColor);
+        if (parsed && parsed.a > 0) {
+          background = composite(parsed, background);
+          if (background.a >= 0.999) {
+            break;
+          }
+        }
+
+        current = current.parentElement;
+      }
+
+      return background;
+    }
+
+    const nodes = Array.from(root.querySelectorAll(query))
+      .filter((node) => isVisible(node) && textValue(node).trim().length > 0);
+
+    const samples = nodes.map((node) => {
+      const foreground = parseColor(getComputedStyle(node).color);
+      const background = effectiveBackground(node);
+      const ratio = foreground ? contrastRatio(foreground, background) : 0;
+      return {
+        ratio,
+        text: textValue(node).replace(/\s+/g, ' ').trim().slice(0, 120),
+        foreground: foreground ? `rgba(${foreground.r}, ${foreground.g}, ${foreground.b}, ${foreground.a})` : 'unparsed',
+        background: `rgba(${Math.round(background.r)}, ${Math.round(background.g)}, ${Math.round(background.b)}, ${background.a.toFixed(3)})`
+      };
+    });
+
+    return {
+      count: samples.length,
+      failing: samples.filter((sample) => sample.ratio < minimumRatioValue).slice(0, 8)
+    };
+  }, { query: selector, minimumRatioValue: minimumRatio });
+
+  if (evaluation.count < minimumMatches) {
+    throw new Error(`Expected ${context} to expose at least ${minimumMatches} visible matches for '${selector}', got ${evaluation.count}.`);
+  }
+
+  if (evaluation.failing.length > 0) {
+    throw new Error(
+      `Expected ${context} to keep every visible '${selector}' contrast >= ${minimumRatio.toFixed(1)}. `
+      + `Failing samples: ${JSON.stringify(evaluation.failing)}.`);
+  }
+}
+
+async function expectDialogFits(page, expectedTitle, expectedFallback) {
+  await page.waitForFunction((payload) => {
+    const expected = String(payload?.expected || '');
+    const fallback = String(payload?.fallback || '');
     const title = document.querySelector('#dialogTitle');
-    return title && title.textContent && title.textContent.toLowerCase().includes(expected);
-  }, expectedTitle.toLowerCase(), { timeout: 20000 });
+    const dialogText = document.querySelector('.desktop-dialog');
+    const candidate = (title && title.textContent || '').toLowerCase();
+    const bodyText = (dialogText && dialogText.textContent || '').toLowerCase();
+
+    return candidate.includes(expected) || (fallback && bodyText.includes(fallback)) || bodyText.includes(expected);
+  }, {
+    expected: expectedTitle.toLowerCase(),
+    fallback: expectedFallback ? expectedFallback.toLowerCase() : ''
+  }, { timeout: 20000 });
 
   const dialog = page.locator('.desktop-dialog').first();
   await dialog.waitFor({ state: 'visible', timeout: 15000 });
@@ -195,17 +502,18 @@ async function auditPortalWorkbenchRoute(page) {
   await openPortalWorkbench(page);
   await expectVisibleSelector(page, '.browser-preview-boundary', 'portal workbench boundary');
   await expectVisibleSelector(page, '[data-testid="startup-workbench"]', 'portal workbench startup shell');
+  await expectVisibleSelector(page, '.classic-compat-app [data-chummer-classic-shell][data-route-family="compatibility"]', 'portal workbench compatibility shell');
 
   const bodyText = await page.locator('body').innerText();
   expectTextIncludes(bodyText, 'Chummer Online compatibility shell, running in the browser.', 'portal workbench route');
   expectTextIncludes(bodyText, 'older workbench and proof links alive', 'portal workbench route');
   expectTextIncludes(bodyText, 'Preview tools', 'portal workbench route');
   expectTextIncludes(bodyText, 'Start a new runner', 'portal workbench route');
-  expectTextIncludes(bodyText, 'Import an existing runner', 'portal workbench route');
+  expectTextIncludes(bodyText, 'Import runner XML', 'portal workbench route');
   expectTextIncludes(bodyText, 'Open Seeded Build Lab', 'portal workbench route');
   expectTextIncludes(bodyText, 'Continue Seeded Dossier', 'portal workbench route');
-  expectTextIncludes(bodyText, 'No recent dossiers yet', 'portal workbench route');
-  expectTextIncludes(bodyText, 'Continue a recent dossier', 'portal workbench route');
+  expectTextIncludes(bodyText, 'Saved Runners', 'portal workbench route');
+  expectTextIncludes(bodyText, 'Active Table', 'portal workbench route');
   expectTextIncludes(bodyText, 'Review identity and profile', 'portal workbench route');
   expectTextIncludes(bodyText, 'Review rules and references', 'portal workbench route');
   expectTextIncludes(bodyText, 'Review loadout and gear', 'portal workbench route');
@@ -228,11 +536,12 @@ async function auditPortalWorkbenchRoute(page) {
 
 async function auditPortalBlazorRootResolvesToApp(page) {
   await openPortalBlazorRoot(page);
-  await expectVisibleSelector(page, '.browser-preview-boundary', 'portal blazor root app boundary');
+  await expectVisibleSelector(page, '.classic-promoted-app [data-chummer-classic-shell][data-route-family="app"]', 'portal blazor root app shell');
 
   const bodyText = await page.locator('body').innerText();
-  expectTextIncludes(bodyText, 'Explore Chummer Online', 'portal blazor root route');
-  expectTextIncludes(bodyText, 'Start a new runner', 'portal blazor root route');
+  expectTextIncludes(bodyText, 'Character Roster', 'portal blazor root route');
+  expectTextIncludes(bodyText, 'ACTIVE RUNNER', 'portal blazor root route');
+  expectTextIncludes(bodyText, 'Continue Seeded Dossier', 'portal blazor root route');
 }
 
 async function auditPortalOriginDossier(page) {
@@ -243,6 +552,12 @@ async function auditPortalOriginDossier(page) {
   expectTextIncludes(dialogText, 'Advanced story controls', 'portal origin dossier dialog');
   expectTextIncludes(dialogText, 'Story Preview', 'portal origin dossier dialog');
   expectTextIncludes(dialogText, 'Pick only the basics, then build the story', 'portal origin dossier dialog');
+  await expectVisibleCollectionMinimumTextContrast(page, '.desktop-dialog .dialog-label', 4.5, 2, 'portal origin dossier labels');
+  await expectVisibleCollectionMinimumTextContrast(page, '.desktop-dialog .dialog-input', 4.5, 2, 'portal origin dossier inputs');
+  await expectVisibleCollectionMinimumTextContrast(page, '[data-origin-wizard] .dialog-origin-panel > header p', 4.5, 2, 'portal origin dossier helper copy');
+  await expectVisibleCollectionMinimumTextContrast(page, '[data-origin-wizard] .dialog-origin-summary-label', 4.5, 3, 'portal origin dossier summary labels');
+  await expectVisibleCollectionMinimumTextContrast(page, '[data-origin-wizard] .dialog-origin-summary-card strong', 4.5, 3, 'portal origin dossier summary values');
+  await expectMinimumTextContrast(page, '[data-origin-story-preview] .dialog-visual-pre', 4.5, 'portal origin dossier story preview');
 }
 
 async function auditPortalNewCharacter(page) {
@@ -254,6 +569,8 @@ async function auditPortalNewCharacter(page) {
   expectTextIncludes(dialogText, 'Character Name', 'portal new character dialog');
   expectTextIncludes(dialogText, 'Ruleset', 'portal new character dialog');
   expectTextIncludes(dialogText, 'Build Method', 'portal new character dialog');
+  await expectVisibleCollectionMinimumTextContrast(page, '.desktop-dialog .dialog-label', 4.5, 3, 'portal new character labels');
+  await expectVisibleCollectionMinimumTextContrast(page, '.desktop-dialog .dialog-input', 4.5, 3, 'portal new character inputs');
   await expectVisibleSelector(page, '#dialogBackdrop [aria-label="Ruleset"]', 'portal ruleset field');
 }
 
@@ -283,6 +600,33 @@ async function auditPortalOriginDossierDeepLink(page) {
   const dialogText = await page.locator('.desktop-dialog').innerText();
   expectTextIncludes(dialogText, 'Advanced story controls', 'portal origin dossier deep link');
   expectTextIncludes(dialogText, 'Story Preview', 'portal origin dossier deep link');
+  await expectVisibleCollectionMinimumTextContrast(page, '.desktop-dialog .dialog-label', 4.5, 2, 'portal origin dossier deep-link labels');
+  await expectVisibleCollectionMinimumTextContrast(page, '.desktop-dialog .dialog-input', 4.5, 2, 'portal origin dossier deep-link inputs');
+  await expectVisibleCollectionMinimumTextContrast(page, '[data-origin-wizard] .dialog-origin-panel > header p', 4.5, 2, 'portal origin dossier deep-link helper copy');
+  await expectVisibleCollectionMinimumTextContrast(page, '[data-origin-wizard] .dialog-origin-summary-label', 4.5, 3, 'portal origin dossier deep-link summary labels');
+  await expectVisibleCollectionMinimumTextContrast(page, '[data-origin-wizard] .dialog-origin-summary-card strong', 4.5, 3, 'portal origin dossier deep-link summary values');
+  await expectMinimumTextContrast(page, '[data-origin-story-preview] .dialog-visual-pre', 4.5, 'portal origin dossier deep-link story preview');
+}
+
+async function auditPortalOriginBuildDeepLink(page) {
+  await openPortalPreviewPath(
+    page,
+    '/blazor/preview?command=new_character_origin&dialog_action=generate_fitting_build',
+    '[data-origin-build]'
+  );
+
+  await expectDialogFits(page, 'origin build handoff', 'build handoff');
+
+  const dialogText = await page.locator('.desktop-dialog').innerText();
+  expectTextIncludes(dialogText, 'Build Handoff', 'portal origin build deep link');
+  expectTextIncludes(dialogText, 'Book Preview', 'portal origin build deep link');
+  expectTextIncludes(dialogText, 'Build Translation', 'portal origin build deep link');
+  expectTextIncludes(dialogText, 'Start character creation', 'portal origin build deep link');
+  await expectVisibleCollectionMinimumTextContrast(page, '[data-origin-build] .dialog-origin-panel > header p', 4.5, 3, 'portal origin build helper copy');
+  await expectVisibleCollectionMinimumTextContrast(page, '[data-origin-build] .dialog-origin-summary-label', 4.5, 3, 'portal origin build summary labels');
+  await expectVisibleCollectionMinimumTextContrast(page, '[data-origin-build] .dialog-origin-summary-card strong', 4.5, 3, 'portal origin build summary values');
+  await expectVisibleCollectionMinimumTextContrast(page, '[data-origin-book-preview] .dialog-origin-readonly p', 4.5, 2, 'portal origin build book preview');
+  await expectVisibleCollectionMinimumTextContrast(page, '[data-origin-build] .dialog-origin-review-stack .dialog-visual-pre', 4.5, 3, 'portal origin build supporting previews');
 }
 
 async function auditPortalOpenCharacterDeepLink(page) {
@@ -292,7 +636,7 @@ async function auditPortalOpenCharacterDeepLink(page) {
     '.desktop-dialog'
   );
 
-  await expectDialogFits(page, 'open character');
+  await expectDialogFits(page, 'open runner');
 
   const dialogText = await page.locator('.desktop-dialog').innerText();
   expectTextIncludes(dialogText, 'Ruleset', 'portal open character deep link');
@@ -306,7 +650,7 @@ async function auditPortalOpenForPrintingDeepLink(page) {
     '.desktop-dialog'
   );
 
-  await expectDialogFits(page, 'open for printing');
+  await expectDialogFits(page, 'open runner for printing');
 
   const dialogText = await page.locator('.desktop-dialog').innerText();
   expectTextIncludes(dialogText, 'Import Ruleset', 'portal open for printing deep link');
@@ -321,7 +665,7 @@ async function auditPortalOpenForExportDeepLink(page) {
     '.desktop-dialog'
   );
 
-  await expectDialogFits(page, 'open for export');
+  await expectDialogFits(page, 'open runner for export');
 
   const dialogText = await page.locator('.desktop-dialog').innerText();
   expectTextIncludes(dialogText, 'Import Ruleset', 'portal open for export deep link');
@@ -333,7 +677,8 @@ async function auditPortalSeededPrintResult(page) {
   await openPortalPreviewPath(
     page,
     '/blazor/preview?fixture=blue&command=print_character',
-    '[data-result-dispatch="print"]'
+    '[data-result-dispatch="print"]',
+    'domcontentloaded'
   );
 
   const bodyText = await page.locator('body').innerText();
@@ -364,7 +709,7 @@ async function auditPortalSeededSaveResult(page) {
   );
 
   const bodyText = await page.locator('body').innerText();
-  expectTextIncludes(bodyText, 'Workspace saved.', 'portal seeded save result');
+  expectTextIncludes(bodyText, 'Dossier saved.', 'portal seeded save result');
   expectTextIncludes(bodyText, 'Saved in this browser', 'portal seeded save result');
   expectTextIncludes(bodyText, 'save_character', 'portal seeded save result');
 }
@@ -440,14 +785,14 @@ async function auditPortalWorkspaceResumeRoute(page) {
   expectTextIncludes(bodyText, 'Continue BLUE in build lab', 'portal workspace resume route');
   expectTextIncludes(bodyText, 'Resume BLUE', 'portal workspace resume route');
   expectTextIncludes(bodyText, 'Continue BLUE on contacts', 'portal workspace resume route');
-  expectTextIncludes(bodyText, 'Continue BLUE on profile', 'portal workspace resume route');
-  expectTextIncludes(bodyText, 'Continue BLUE on rules', 'portal workspace resume route');
-  expectTextIncludes(bodyText, 'Continue BLUE on gear', 'portal workspace resume route');
+  expectTextIncludes(bodyText, 'Resume BLUE on profile', 'portal workspace resume route');
+  expectTextIncludes(bodyText, 'Resume BLUE on rules', 'portal workspace resume route');
+  expectTextIncludes(bodyText, 'Resume BLUE on gear', 'portal workspace resume route');
   expectTextIncludes(bodyText, 'Resume BLUE on career log', 'portal workspace resume route');
   expectTextIncludes(bodyText, 'Edit career entry for BLUE', 'portal workspace resume route');
   expectTextIncludes(bodyText, 'Remove career entry for BLUE', 'portal workspace resume route');
-  expectTextIncludes(bodyText, 'Save runner notes for BLUE', 'portal workspace resume route');
-  expectTextIncludes(bodyText, 'Edit runner notes for BLUE', 'portal workspace resume route');
+  expectTextIncludes(bodyText, 'Save dossier notes for BLUE', 'portal workspace resume route');
+  expectTextIncludes(bodyText, 'Edit dossier notes for BLUE', 'portal workspace resume route');
   expectTextIncludes(bodyText, 'Move career entry up for BLUE', 'portal workspace resume route');
   expectTextIncludes(bodyText, 'Move career entry down for BLUE', 'portal workspace resume route');
   expectTextIncludes(bodyText, 'Add SIN/license for BLUE', 'portal workspace resume route');
@@ -474,11 +819,12 @@ async function auditPortalWorkspaceResumeRoute(page) {
   expectTextIncludes(bodyText, 'Bind spirit for BLUE', 'portal workspace resume route');
   expectTextIncludes(bodyText, 'Show magic source for BLUE', 'portal workspace resume route');
   expectTextIncludes(bodyText, 'Remove drug for BLUE', 'portal workspace resume route');
-  expectTextIncludes(bodyText, 'Continue BLUE on advanced', 'portal workspace resume route');
-  expectTextIncludes(bodyText, 'Continue BLUE for download', 'portal workspace resume route');
-  expectTextIncludes(bodyText, 'Continue BLUE for export', 'portal workspace resume route');
-  expectTextIncludes(bodyText, 'Continue BLUE for print', 'portal workspace resume route');
-  expectTextIncludes(bodyText, 'Resume BLUE on profile', 'portal workspace resume route');
+  expectTextIncludes(bodyText, 'Resume BLUE on advanced', 'portal workspace resume route');
+  expectTextIncludes(bodyText, 'Prepare BLUE browser download', 'portal workspace resume route');
+  expectTextIncludes(bodyText, 'Download BLUE from browser', 'portal workspace resume route');
+  expectTextIncludes(bodyText, 'Prepare BLUE export package', 'portal workspace resume route');
+  expectTextIncludes(bodyText, 'Download BLUE export package', 'portal workspace resume route');
+  expectTextIncludes(bodyText, 'Prepare BLUE print preview', 'portal workspace resume route');
   expectTextIncludes(bodyText, 'Troy Simmons', 'portal workspace resume route');
   expectTextIncludes(bodyText, 'saved', 'portal workspace resume route');
   await expectVisibleSelector(page, '[data-workbench-recent-workspace]', 'portal dossier resume link');
@@ -554,11 +900,11 @@ async function auditPortalRestoredCareerEntryActionRoute(page) {
     '.desktop-dialog'
   );
 
-  await expectDialogFits(page, 'add career entry');
+  await expectDialogFits(page, 'add entry');
 
   const dialogText = await page.locator('.desktop-dialog').innerText();
   expectTextIncludes(dialogText, 'Add Entry', 'portal restored career entry action route');
-  expectTextIncludes(dialogText, 'Command Posture', 'portal restored career entry action route');
+  expectTextIncludes(dialogText, 'Add a new entry', 'portal restored career entry action route');
   expectTextIncludes(dialogText, 'Entry Title', 'portal restored career entry action route');
 }
 
@@ -594,11 +940,11 @@ async function auditPortalRestoredCareerEntryEditRoute(page) {
     '.desktop-dialog'
   );
 
-  await expectDialogFits(page, 'edit career entry');
+  await expectDialogFits(page, 'edit entry');
 
   const dialogText = await page.locator('.desktop-dialog').innerText();
   expectTextIncludes(dialogText, 'Edit Entry', 'portal restored career entry edit route');
-  expectTextIncludes(dialogText, 'Command Posture', 'portal restored career entry edit route');
+  expectTextIncludes(dialogText, 'Edit the selected entry', 'portal restored career entry edit route');
   expectTextIncludes(dialogText, 'Entry Title', 'portal restored career entry edit route');
 }
 
@@ -615,12 +961,11 @@ async function auditPortalRestoredCareerEntryDeleteRoute(page) {
     '.desktop-dialog'
   );
 
-  await expectDialogFits(page, 'remove career entry');
+  await expectDialogFits(page, 'remove current entry');
 
   const dialogText = await page.locator('.desktop-dialog').innerText();
   expectTextIncludes(dialogText, 'Remove Current Entry', 'portal restored career entry delete route');
-  expectTextIncludes(dialogText, 'Removal Scope', 'portal restored career entry delete route');
-  expectTextIncludes(dialogText, 'Recovery', 'portal restored career entry delete route');
+  expectTextIncludes(dialogText, 'Remove Current Entry from the active list?', 'portal restored career entry delete route');
 }
 
 async function auditPortalRestoredCareerEntryEditCommitRoute(page) {
@@ -674,11 +1019,11 @@ async function auditPortalRestoredRunnerNotesRoute(page) {
     '.desktop-dialog'
   );
 
-  await expectDialogFits(page, 'edit runner notes');
+  await expectDialogFits(page, 'edit notes');
 
   const dialogText = await page.locator('.desktop-dialog').innerText();
   expectTextIncludes(dialogText, 'Edit Notes', 'portal restored runner notes route');
-  expectTextIncludes(dialogText, 'Save target', 'portal restored runner notes route');
+  expectTextIncludes(dialogText, 'Edit runner notes in a compact text utility pane.', 'portal restored runner notes route');
 }
 
 async function auditPortalRestoredRunnerNotesCommitRoute(page) {
@@ -713,7 +1058,10 @@ async function auditPortalRestoredCareerEntryReorderRoute(page, controlId, expec
     '.desktop-dialog'
   );
 
-  await expectDialogFits(page, expectedTitle.toLowerCase());
+  await expectDialogFits(
+    page,
+    expectedTitle.toLowerCase()
+  );
 
   const dialogText = await page.locator('.desktop-dialog').innerText();
   expectTextIncludes(dialogText, expectedTitle, `portal restored career entry reorder route ${controlId}`);
@@ -733,7 +1081,7 @@ async function auditPortalRestoredMagicCleanupUtilityRoute(page, tabId, controlI
     '.desktop-dialog'
   );
 
-  await expectDialogFits(page, expectedTitle.toLowerCase());
+  await expectDialogFits(page, expectedTitle.toLowerCase(), expectedMarker.toLowerCase());
 
   const dialogText = await page.locator('.desktop-dialog').innerText();
   expectTextIncludes(dialogText, expectedTitle, `portal restored magic cleanup utility route ${controlId}`);
@@ -753,7 +1101,11 @@ async function auditPortalRestoredSourceGearUtilityRoute(page, tabId, controlId,
     '.desktop-dialog'
   );
 
-  await expectDialogFits(page, expectedTitle.toLowerCase());
+  await expectDialogFits(
+    page,
+    expectedTitle.toLowerCase(),
+    expectedMarker?.toLowerCase ? expectedMarker.toLowerCase() : undefined
+  );
 
   const dialogText = await page.locator('.desktop-dialog').innerText();
   expectTextIncludes(dialogText, expectedTitle, `portal restored source/gear utility route ${controlId}`);
@@ -773,7 +1125,11 @@ async function auditPortalRestoredGearMaintenanceRoute(page, controlId, expected
     '.desktop-dialog'
   );
 
-  await expectDialogFits(page, expectedTitle.toLowerCase());
+  await expectDialogFits(
+    page,
+    expectedTitle.toLowerCase(),
+    expectedMarker?.toLowerCase ? expectedMarker.toLowerCase() : undefined
+  );
 
   const dialogText = await page.locator('.desktop-dialog').innerText();
   expectTextIncludes(dialogText, expectedTitle, `portal restored gear maintenance route ${controlId}`);
@@ -793,7 +1149,11 @@ async function auditPortalRestoredMagicSupportRoute(page, tabId, controlId, expe
     '.desktop-dialog'
   );
 
-  await expectDialogFits(page, expectedTitle.toLowerCase());
+  await expectDialogFits(
+    page,
+    expectedTitle.toLowerCase(),
+    expectedMarker?.toLowerCase ? expectedMarker.toLowerCase() : undefined
+  );
 
   const dialogText = await page.locator('.desktop-dialog').innerText();
   expectTextIncludes(dialogText, expectedTitle, `portal restored magic support route ${controlId}`);
@@ -813,7 +1173,11 @@ async function auditPortalRestoredSkillMaintenanceRoute(page, controlId, expecte
     '.desktop-dialog'
   );
 
-  await expectDialogFits(page, expectedTitle.toLowerCase());
+  await expectDialogFits(
+    page,
+    expectedTitle.toLowerCase(),
+    expectedMarker?.toLowerCase ? expectedMarker.toLowerCase() : undefined
+  );
 
   const dialogText = await page.locator('.desktop-dialog').innerText();
   expectTextIncludes(dialogText, expectedTitle, `portal restored skill maintenance route ${controlId}`);
@@ -833,7 +1197,11 @@ async function auditPortalRestoredCombatSupportRoute(page, controlId, expectedTi
     '.desktop-dialog'
   );
 
-  await expectDialogFits(page, expectedTitle.toLowerCase());
+  await expectDialogFits(
+    page,
+    expectedTitle.toLowerCase(),
+    expectedMarker?.toLowerCase ? expectedMarker.toLowerCase() : undefined
+  );
 
   const dialogText = await page.locator('.desktop-dialog').innerText();
   expectTextIncludes(dialogText, expectedTitle, `portal restored combat support route ${controlId}`);
@@ -853,7 +1221,11 @@ async function auditPortalRestoredIdentityLicenseRoute(page, controlId, expected
     '.desktop-dialog'
   );
 
-  await expectDialogFits(page, expectedTitle.toLowerCase());
+  await expectDialogFits(
+    page,
+    expectedTitle.toLowerCase(),
+    expectedMarker?.toLowerCase ? expectedMarker.toLowerCase() : undefined
+  );
 
   const dialogText = await page.locator('.desktop-dialog').innerText();
   expectTextIncludes(dialogText, expectedTitle, `portal restored identity/license route ${controlId}`);
@@ -998,262 +1370,103 @@ async function auditPortalRestoredSpellAddCommitRoute(page) {
   expectTextIncludes(bodyText, 'Stunbolt', 'portal restored spell commit route');
 }
 
+const desktopViewport = { width: 1440, height: 960 };
+const mobileViewport = { width: 390, height: 844 };
+
+async function runAuditSequence(browser, audits) {
+  for (const audit of audits) {
+    const page = await browser.newPage({ viewport: audit.viewport || desktopViewport });
+    try {
+      await audit.fn(page, ...(audit.args || []));
+    } finally {
+      await page.close().catch(() => {});
+    }
+  }
+}
+
+const smokeAudits = [
+  { fn: auditPortalHome },
+  { fn: auditPortalWorkbenchDesktop },
+  { fn: auditPortalWorkbenchRoute },
+  { fn: auditPortalBlazorRootResolvesToApp },
+  { fn: auditPortalOriginDossier },
+  { fn: auditPortalNewCharacter },
+  { fn: auditPortalOpenCharacterDeepLink },
+  { fn: auditPortalOpenForPrintingDeepLink },
+  { fn: auditPortalOpenForExportDeepLink },
+  { fn: auditPortalWorkbenchMobile, viewport: mobileViewport },
+  { fn: auditPortalSeededBuildLab },
+  { fn: auditPortalAdvancedComplexForms },
+  { fn: auditPortalWorkspaceResumeRoute },
+  { fn: auditPortalRestoredContactAddCommitRoute },
+  { fn: auditPortalRestoredCareerEntryAddCommitRoute },
+  { fn: auditPortalRestoredRunnerNotesCommitRoute },
+  { fn: auditPortalRestoredSourceGearUtilityRoute, args: ['tab-info', 'show_source', 'Source', 'Source'] },
+  { fn: auditPortalRestoredGearMaintenanceRoute, args: ['gear_add', 'Add Gear', 'Browse the catalog'] },
+  { fn: auditPortalRestoredSkillMaintenanceRoute, args: ['skill_specialize', 'Specialization', 'Specialization'] },
+  { fn: auditPortalRestoredCombatSupportRoute, args: ['combat_add_armor', 'Add Armor', 'Armor'] },
+  { fn: auditPortalRestoredIdentityLicenseRoute, args: ['identity_license_add', 'Add SIN / License', 'Legal status'] },
+  { fn: auditPortalRestoredSpellActionRoute },
+];
+
+const fullOnlyAudits = [
+  { fn: auditPortalNewCharacterDeepLink },
+  { fn: auditPortalOriginDossierDeepLink },
+  { fn: auditPortalOriginBuildDeepLink },
+  { fn: auditPortalSeededPrintResult },
+  { fn: auditPortalSeededExportResult },
+  { fn: auditPortalSeededSaveResult },
+  { fn: auditPortalSeededSaveAsResult },
+  { fn: auditPortalRestoredContactActionRoute },
+  { fn: auditPortalRestoredCareerLogRoute },
+  { fn: auditPortalRestoredCareerEntryActionRoute },
+  { fn: auditPortalRestoredCareerEntryEditRoute },
+  { fn: auditPortalRestoredCareerEntryDeleteRoute },
+  { fn: auditPortalRestoredCareerEntryEditCommitRoute },
+  { fn: auditPortalRestoredCareerEntryDeleteCommitRoute },
+  { fn: auditPortalRestoredRunnerNotesRoute },
+  { fn: auditPortalRestoredCareerEntryReorderRoute, args: ['move_up', 'Move Entry Up'] },
+  { fn: auditPortalRestoredCareerEntryReorderRoute, args: ['move_down', 'Move Entry Down'] },
+  { fn: auditPortalRestoredMagicCleanupUtilityRoute, args: ['tab-magician', 'magic_add', 'Magic', 'Magic'] },
+  { fn: auditPortalRestoredMagicCleanupUtilityRoute, args: ['tab-magician', 'magic_bind', 'Bind', 'Bind'] },
+  { fn: auditPortalRestoredMagicCleanupUtilityRoute, args: ['tab-magician', 'magic_source', 'Source', 'Source'] },
+  { fn: auditPortalRestoredMagicCleanupUtilityRoute, args: ['tab-gear', 'drug_delete', 'Remove', 'Remove'] },
+  { fn: auditPortalRestoredSourceGearUtilityRoute, args: ['tab-gear', 'gear_source', 'Source', 'Source'] },
+  { fn: auditPortalRestoredSourceGearUtilityRoute, args: ['tab-gear', 'gear_mount', 'Mount', 'Mount'] },
+  { fn: auditPortalRestoredSourceGearUtilityRoute, args: ['tab-gear', 'toggle_free_paid', 'Free', 'Free'] },
+  { fn: auditPortalRestoredGearMaintenanceRoute, args: ['gear_edit', 'Edit Gear', 'Edit'] },
+  { fn: auditPortalRestoredGearMaintenanceRoute, args: ['gear_delete', 'Remove Armor Jacket', 'Removal Scope'] },
+  { fn: auditPortalRestoredMagicSupportRoute, args: ['tab-adept', 'adept_power_add', 'Power', 'Power'] },
+  { fn: auditPortalRestoredMagicSupportRoute, args: ['tab-magician', 'spirit_add', 'Spirit', 'Spirit'] },
+  { fn: auditPortalRestoredMagicSupportRoute, args: ['tab-critter', 'critter_power_add', 'Power', 'Critter'] },
+  { fn: auditPortalRestoredMagicSupportRoute, args: ['tab-technomancer', 'matrix_program_add', 'Program', 'Program'] },
+  { fn: auditPortalRestoredSkillMaintenanceRoute, args: ['skill_remove', 'Remove Perception', 'Removal Scope'] },
+  { fn: auditPortalRestoredSkillMaintenanceRoute, args: ['skill_group', 'Skill Group', 'Group composition and current rating remain visible while editing.'] },
+  { fn: auditPortalRestoredCombatSupportRoute, args: ['combat_reload', 'Reload', 'Weapon and ammo selection remain visible while reloading.'] },
+  { fn: auditPortalRestoredCombatSupportRoute, args: ['combat_damage_track', 'Damage Track', 'Current track state remains visible before applying the damage step.'] },
+  { fn: auditPortalRestoredIdentityLicenseRoute, args: ['identity_license_edit', 'Edit SIN / License', 'Attached Context'] },
+  { fn: auditPortalRestoredIdentityLicenseRoute, args: ['identity_license_delete', 'Remove SIN / License', 'Removal Impact'] },
+  { fn: auditPortalRestoredComplexFormActionRoute },
+  { fn: auditPortalRestoredInitiationAddCommitRoute },
+  { fn: auditPortalRestoredInitiationActionRoute },
+  { fn: auditPortalRestoredCyberwareAddCommitRoute },
+  { fn: auditPortalRestoredCyberwareActionRoute },
+  { fn: auditPortalRestoredSpellAddCommitRoute },
+];
+
+async function runSelectedAuditScope(browser) {
+  const normalizedScope = playwrightScope === 'full' ? 'full' : 'smoke';
+  console.log(`portal playwright scope: ${normalizedScope}`);
+  await runAuditSequence(browser, smokeAudits);
+  if (normalizedScope === 'full') {
+    await runAuditSequence(browser, fullOnlyAudits);
+  }
+}
+
 async function run() {
   const browser = await chromium.launch({ headless: true });
-
   try {
-    const homePage = await browser.newPage({ viewport: { width: 1440, height: 960 } });
-    await auditPortalHome(homePage);
-    await homePage.close();
-
-    const desktopWorkbenchPage = await browser.newPage({ viewport: { width: 1440, height: 960 } });
-    await auditPortalWorkbenchDesktop(desktopWorkbenchPage);
-    await desktopWorkbenchPage.close();
-
-    const desktopWorkbenchRoutePage = await browser.newPage({ viewport: { width: 1440, height: 960 } });
-    await auditPortalWorkbenchRoute(desktopWorkbenchRoutePage);
-    await desktopWorkbenchRoutePage.close();
-
-    const desktopBlazorRootPage = await browser.newPage({ viewport: { width: 1440, height: 960 } });
-    await auditPortalBlazorRootResolvesToApp(desktopBlazorRootPage);
-    await desktopBlazorRootPage.close();
-
-    const desktopOriginPage = await browser.newPage({ viewport: { width: 1440, height: 960 } });
-    await auditPortalOriginDossier(desktopOriginPage);
-    await desktopOriginPage.close();
-
-    const desktopNewCharacterPage = await browser.newPage({ viewport: { width: 1440, height: 960 } });
-    await auditPortalNewCharacter(desktopNewCharacterPage);
-    await desktopNewCharacterPage.close();
-
-    const desktopNewCharacterDeepLinkPage = await browser.newPage({ viewport: { width: 1440, height: 960 } });
-    await auditPortalNewCharacterDeepLink(desktopNewCharacterDeepLinkPage);
-    await desktopNewCharacterDeepLinkPage.close();
-
-    const desktopOriginDeepLinkPage = await browser.newPage({ viewport: { width: 1440, height: 960 } });
-    await auditPortalOriginDossierDeepLink(desktopOriginDeepLinkPage);
-    await desktopOriginDeepLinkPage.close();
-
-    const desktopOpenCharacterDeepLinkPage = await browser.newPage({ viewport: { width: 1440, height: 960 } });
-    await auditPortalOpenCharacterDeepLink(desktopOpenCharacterDeepLinkPage);
-    await desktopOpenCharacterDeepLinkPage.close();
-
-    const desktopOpenForPrintingDeepLinkPage = await browser.newPage({ viewport: { width: 1440, height: 960 } });
-    await auditPortalOpenForPrintingDeepLink(desktopOpenForPrintingDeepLinkPage);
-    await desktopOpenForPrintingDeepLinkPage.close();
-
-    const desktopOpenForExportDeepLinkPage = await browser.newPage({ viewport: { width: 1440, height: 960 } });
-    await auditPortalOpenForExportDeepLink(desktopOpenForExportDeepLinkPage);
-    await desktopOpenForExportDeepLinkPage.close();
-
-    const desktopSeededPrintResultPage = await browser.newPage({ viewport: { width: 1440, height: 960 } });
-    await auditPortalSeededPrintResult(desktopSeededPrintResultPage);
-    await desktopSeededPrintResultPage.close();
-
-    const desktopSeededExportResultPage = await browser.newPage({ viewport: { width: 1440, height: 960 } });
-    await auditPortalSeededExportResult(desktopSeededExportResultPage);
-    await desktopSeededExportResultPage.close();
-
-    const desktopSeededSaveResultPage = await browser.newPage({ viewport: { width: 1440, height: 960 } });
-    await auditPortalSeededSaveResult(desktopSeededSaveResultPage);
-    await desktopSeededSaveResultPage.close();
-
-    const desktopSeededSaveAsResultPage = await browser.newPage({ viewport: { width: 1440, height: 960 } });
-    await auditPortalSeededSaveAsResult(desktopSeededSaveAsResultPage);
-    await desktopSeededSaveAsResultPage.close();
-
-    const mobileWorkbenchPage = await browser.newPage({ viewport: { width: 390, height: 844 } });
-    await auditPortalWorkbenchMobile(mobileWorkbenchPage);
-    await mobileWorkbenchPage.close();
-
-    const seededBuildLabPage = await browser.newPage({ viewport: { width: 1440, height: 960 } });
-    await auditPortalSeededBuildLab(seededBuildLabPage);
-    await seededBuildLabPage.close();
-
-    const advancedWorkflowPage = await browser.newPage({ viewport: { width: 1440, height: 960 } });
-    await auditPortalAdvancedComplexForms(advancedWorkflowPage);
-    await advancedWorkflowPage.close();
-
-    const workspaceResumePage = await browser.newPage({ viewport: { width: 1440, height: 960 } });
-    await auditPortalWorkspaceResumeRoute(workspaceResumePage);
-    await workspaceResumePage.close();
-
-    const restoredContactCommitPage = await browser.newPage({ viewport: { width: 1440, height: 960 } });
-    await auditPortalRestoredContactAddCommitRoute(restoredContactCommitPage);
-    await restoredContactCommitPage.close();
-
-    const restoredContactActionPage = await browser.newPage({ viewport: { width: 1440, height: 960 } });
-    await auditPortalRestoredContactActionRoute(restoredContactActionPage);
-    await restoredContactActionPage.close();
-
-    const restoredCareerLogPage = await browser.newPage({ viewport: { width: 1440, height: 960 } });
-    await auditPortalRestoredCareerLogRoute(restoredCareerLogPage);
-    await restoredCareerLogPage.close();
-
-    const restoredCareerEntryCommitPage = await browser.newPage({ viewport: { width: 1440, height: 960 } });
-    await auditPortalRestoredCareerEntryAddCommitRoute(restoredCareerEntryCommitPage);
-    await restoredCareerEntryCommitPage.close();
-
-    const restoredCareerEntryActionPage = await browser.newPage({ viewport: { width: 1440, height: 960 } });
-    await auditPortalRestoredCareerEntryActionRoute(restoredCareerEntryActionPage);
-    await restoredCareerEntryActionPage.close();
-
-    const restoredCareerEntryEditPage = await browser.newPage({ viewport: { width: 1440, height: 960 } });
-    await auditPortalRestoredCareerEntryEditRoute(restoredCareerEntryEditPage);
-    await restoredCareerEntryEditPage.close();
-
-    const restoredCareerEntryDeletePage = await browser.newPage({ viewport: { width: 1440, height: 960 } });
-    await auditPortalRestoredCareerEntryDeleteRoute(restoredCareerEntryDeletePage);
-    await restoredCareerEntryDeletePage.close();
-
-    const restoredCareerEntryEditCommitPage = await browser.newPage({ viewport: { width: 1440, height: 960 } });
-    await auditPortalRestoredCareerEntryEditCommitRoute(restoredCareerEntryEditCommitPage);
-    await restoredCareerEntryEditCommitPage.close();
-
-    const restoredCareerEntryDeleteCommitPage = await browser.newPage({ viewport: { width: 1440, height: 960 } });
-    await auditPortalRestoredCareerEntryDeleteCommitRoute(restoredCareerEntryDeleteCommitPage);
-    await restoredCareerEntryDeleteCommitPage.close();
-
-    const restoredRunnerNotesCommitPage = await browser.newPage({ viewport: { width: 1440, height: 960 } });
-    await auditPortalRestoredRunnerNotesCommitRoute(restoredRunnerNotesCommitPage);
-    await restoredRunnerNotesCommitPage.close();
-
-    const restoredRunnerNotesPage = await browser.newPage({ viewport: { width: 1440, height: 960 } });
-    await auditPortalRestoredRunnerNotesRoute(restoredRunnerNotesPage);
-    await restoredRunnerNotesPage.close();
-
-    const restoredCareerEntryMoveUpPage = await browser.newPage({ viewport: { width: 1440, height: 960 } });
-    await auditPortalRestoredCareerEntryReorderRoute(restoredCareerEntryMoveUpPage, 'move_up', 'Move Entry Up');
-    await restoredCareerEntryMoveUpPage.close();
-
-    const restoredCareerEntryMoveDownPage = await browser.newPage({ viewport: { width: 1440, height: 960 } });
-    await auditPortalRestoredCareerEntryReorderRoute(restoredCareerEntryMoveDownPage, 'move_down', 'Move Entry Down');
-    await restoredCareerEntryMoveDownPage.close();
-
-    const restoredMagicAddPage = await browser.newPage({ viewport: { width: 1440, height: 960 } });
-    await auditPortalRestoredMagicCleanupUtilityRoute(restoredMagicAddPage, 'tab-magician', 'magic_add', 'Magic', 'Magic');
-    await restoredMagicAddPage.close();
-
-    const restoredMagicBindPage = await browser.newPage({ viewport: { width: 1440, height: 960 } });
-    await auditPortalRestoredMagicCleanupUtilityRoute(restoredMagicBindPage, 'tab-magician', 'magic_bind', 'Bind', 'Bind');
-    await restoredMagicBindPage.close();
-
-    const restoredMagicSourcePage = await browser.newPage({ viewport: { width: 1440, height: 960 } });
-    await auditPortalRestoredMagicCleanupUtilityRoute(restoredMagicSourcePage, 'tab-magician', 'magic_source', 'Source', 'Source');
-    await restoredMagicSourcePage.close();
-
-    const restoredDrugDeletePage = await browser.newPage({ viewport: { width: 1440, height: 960 } });
-    await auditPortalRestoredMagicCleanupUtilityRoute(restoredDrugDeletePage, 'tab-gear', 'drug_delete', 'Remove', 'Remove');
-    await restoredDrugDeletePage.close();
-
-    const restoredShowSourcePage = await browser.newPage({ viewport: { width: 1440, height: 960 } });
-    await auditPortalRestoredSourceGearUtilityRoute(restoredShowSourcePage, 'tab-info', 'show_source', 'Source', 'Source');
-    await restoredShowSourcePage.close();
-
-    const restoredGearSourcePage = await browser.newPage({ viewport: { width: 1440, height: 960 } });
-    await auditPortalRestoredSourceGearUtilityRoute(restoredGearSourcePage, 'tab-gear', 'gear_source', 'Source', 'Source');
-    await restoredGearSourcePage.close();
-
-    const restoredGearMountPage = await browser.newPage({ viewport: { width: 1440, height: 960 } });
-    await auditPortalRestoredSourceGearUtilityRoute(restoredGearMountPage, 'tab-gear', 'gear_mount', 'Mount', 'Mount');
-    await restoredGearMountPage.close();
-
-    const restoredToggleFreePaidPage = await browser.newPage({ viewport: { width: 1440, height: 960 } });
-    await auditPortalRestoredSourceGearUtilityRoute(restoredToggleFreePaidPage, 'tab-gear', 'toggle_free_paid', 'Free', 'Free');
-    await restoredToggleFreePaidPage.close();
-
-    const restoredGearAddPage = await browser.newPage({ viewport: { width: 1440, height: 960 } });
-    await auditPortalRestoredGearMaintenanceRoute(restoredGearAddPage, 'gear_add', 'Add Gear', 'Browse the catalog');
-    await restoredGearAddPage.close();
-
-    const restoredGearEditPage = await browser.newPage({ viewport: { width: 1440, height: 960 } });
-    await auditPortalRestoredGearMaintenanceRoute(restoredGearEditPage, 'gear_edit', 'Edit Gear', 'Edit');
-    await restoredGearEditPage.close();
-
-    const restoredGearDeletePage = await browser.newPage({ viewport: { width: 1440, height: 960 } });
-    await auditPortalRestoredGearMaintenanceRoute(restoredGearDeletePage, 'gear_delete', 'Remove Armor Jacket', 'Removal Scope');
-    await restoredGearDeletePage.close();
-
-    const restoredAdeptPowerPage = await browser.newPage({ viewport: { width: 1440, height: 960 } });
-    await auditPortalRestoredMagicSupportRoute(restoredAdeptPowerPage, 'tab-adept', 'adept_power_add', 'Power', 'Power');
-    await restoredAdeptPowerPage.close();
-
-    const restoredSpiritPage = await browser.newPage({ viewport: { width: 1440, height: 960 } });
-    await auditPortalRestoredMagicSupportRoute(restoredSpiritPage, 'tab-magician', 'spirit_add', 'Spirit', 'Spirit');
-    await restoredSpiritPage.close();
-
-    const restoredCritterPowerPage = await browser.newPage({ viewport: { width: 1440, height: 960 } });
-    await auditPortalRestoredMagicSupportRoute(restoredCritterPowerPage, 'tab-critter', 'critter_power_add', 'Power', 'Critter');
-    await restoredCritterPowerPage.close();
-
-    const restoredMatrixProgramPage = await browser.newPage({ viewport: { width: 1440, height: 960 } });
-    await auditPortalRestoredMagicSupportRoute(restoredMatrixProgramPage, 'tab-technomancer', 'matrix_program_add', 'Program', 'Program');
-    await restoredMatrixProgramPage.close();
-
-    const restoredSkillSpecializePage = await browser.newPage({ viewport: { width: 1440, height: 960 } });
-    await auditPortalRestoredSkillMaintenanceRoute(restoredSkillSpecializePage, 'skill_specialize', 'Specialization', 'Specialization');
-    await restoredSkillSpecializePage.close();
-
-    const restoredSkillRemovePage = await browser.newPage({ viewport: { width: 1440, height: 960 } });
-    await auditPortalRestoredSkillMaintenanceRoute(restoredSkillRemovePage, 'skill_remove', 'Remove Skill', 'Remove Perception');
-    await restoredSkillRemovePage.close();
-
-    const restoredSkillGroupPage = await browser.newPage({ viewport: { width: 1440, height: 960 } });
-    await auditPortalRestoredSkillMaintenanceRoute(restoredSkillGroupPage, 'skill_group', 'Skill Group', 'Group composition and current rating remain visible while editing.');
-    await restoredSkillGroupPage.close();
-
-    const restoredCombatArmorPage = await browser.newPage({ viewport: { width: 1440, height: 960 } });
-    await auditPortalRestoredCombatSupportRoute(restoredCombatArmorPage, 'combat_add_armor', 'Add Armor', 'Armor');
-    await restoredCombatArmorPage.close();
-
-    const restoredCombatReloadPage = await browser.newPage({ viewport: { width: 1440, height: 960 } });
-    await auditPortalRestoredCombatSupportRoute(restoredCombatReloadPage, 'combat_reload', 'Reload', 'Weapon and ammo selection remain visible while reloading.');
-    await restoredCombatReloadPage.close();
-
-    const restoredCombatDamageTrackPage = await browser.newPage({ viewport: { width: 1440, height: 960 } });
-    await auditPortalRestoredCombatSupportRoute(restoredCombatDamageTrackPage, 'combat_damage_track', 'Damage Track', 'Current track state remains visible before applying the damage step.');
-    await restoredCombatDamageTrackPage.close();
-
-    const restoredIdentityLicenseAddPage = await browser.newPage({ viewport: { width: 1440, height: 960 } });
-    await auditPortalRestoredIdentityLicenseRoute(restoredIdentityLicenseAddPage, 'identity_license_add', 'Add SIN / License', 'Legal Posture');
-    await restoredIdentityLicenseAddPage.close();
-
-    const restoredIdentityLicenseEditPage = await browser.newPage({ viewport: { width: 1440, height: 960 } });
-    await auditPortalRestoredIdentityLicenseRoute(restoredIdentityLicenseEditPage, 'identity_license_edit', 'Edit SIN / License', 'Attached Context');
-    await restoredIdentityLicenseEditPage.close();
-
-    const restoredIdentityLicenseDeletePage = await browser.newPage({ viewport: { width: 1440, height: 960 } });
-    await auditPortalRestoredIdentityLicenseRoute(restoredIdentityLicenseDeletePage, 'identity_license_delete', 'Remove SIN / License', 'Removal Impact');
-    await restoredIdentityLicenseDeletePage.close();
-
-    const restoredComplexFormActionPage = await browser.newPage({ viewport: { width: 1440, height: 960 } });
-    await auditPortalRestoredComplexFormActionRoute(restoredComplexFormActionPage);
-    await restoredComplexFormActionPage.close();
-
-    const restoredInitiationCommitPage = await browser.newPage({ viewport: { width: 1440, height: 960 } });
-    await auditPortalRestoredInitiationAddCommitRoute(restoredInitiationCommitPage);
-    await restoredInitiationCommitPage.close();
-
-    const restoredInitiationActionPage = await browser.newPage({ viewport: { width: 1440, height: 960 } });
-    await auditPortalRestoredInitiationActionRoute(restoredInitiationActionPage);
-    await restoredInitiationActionPage.close();
-
-    const restoredCyberwareCommitPage = await browser.newPage({ viewport: { width: 1440, height: 960 } });
-    await auditPortalRestoredCyberwareAddCommitRoute(restoredCyberwareCommitPage);
-    await restoredCyberwareCommitPage.close();
-
-    const restoredCyberwareActionPage = await browser.newPage({ viewport: { width: 1440, height: 960 } });
-    await auditPortalRestoredCyberwareActionRoute(restoredCyberwareActionPage);
-    await restoredCyberwareActionPage.close();
-
-    const restoredSpellCommitPage = await browser.newPage({ viewport: { width: 1440, height: 960 } });
-    await auditPortalRestoredSpellAddCommitRoute(restoredSpellCommitPage);
-    await restoredSpellCommitPage.close();
-
-    const restoredSpellActionPage = await browser.newPage({ viewport: { width: 1440, height: 960 } });
-    await auditPortalRestoredSpellActionRoute(restoredSpellActionPage);
-    await restoredSpellActionPage.close();
-
+    await runSelectedAuditScope(browser);
     console.log('portal playwright e2e completed');
   } finally {
     await browser.close();

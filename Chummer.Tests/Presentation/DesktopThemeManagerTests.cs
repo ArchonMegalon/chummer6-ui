@@ -616,9 +616,14 @@ public sealed class DesktopThemeManagerTests
         string runControlSource = File.ReadAllText(Path.Combine(repoRoot, "Chummer.Avalonia", "DesktopRunControlWindow.cs"));
 
         StringAssert.Contains(scaffoldSource, "DesktopShellTheme.ResolveThemeBrush(resourceKey, fallbackHex)");
-        StringAssert.Contains(scaffoldSource, "ResolveThemeBrush(\"ChummerShellSurfaceAltBrush\", \"#F2F5FA\")");
-        StringAssert.Contains(scaffoldSource, "ResolveThemeBrush(\"ChummerShellChromeAccentBrush\", \"#DEE8F6\")");
+        StringAssert.Contains(scaffoldSource, "DesktopShellTheme.ResolveWindowBackgroundBrush()");
+        StringAssert.Contains(scaffoldSource, "DesktopShellTheme.ResolveSurfaceAltBrush()");
+        StringAssert.Contains(scaffoldSource, "DesktopShellTheme.ResolveBorderBrush()");
+        StringAssert.Contains(scaffoldSource, "DesktopShellTheme.ResolveChromeAccentBrush()");
+        StringAssert.Contains(scaffoldSource, "DesktopShellTheme.ResolveInfoBrush()");
         StringAssert.Contains(scaffoldSource, "DesktopShellTheme.ApplyPrimaryButton(button);");
+        Assert.IsFalse(scaffoldSource.Contains("#F2F5FA", StringComparison.Ordinal));
+        Assert.IsFalse(scaffoldSource.Contains("#DEE8F6", StringComparison.Ordinal));
         Assert.IsFalse(scaffoldSource.Contains("#F7F4EC", StringComparison.Ordinal));
         Assert.IsFalse(scaffoldSource.Contains("#E6E2DA", StringComparison.Ordinal));
         Assert.IsFalse(scaffoldSource.Contains("#1C4A2D", StringComparison.Ordinal));
@@ -635,19 +640,24 @@ public sealed class DesktopThemeManagerTests
         string sectionHostSource = File.ReadAllText(Path.Combine(repoRoot, "Chummer.Avalonia", "Controls", "SectionHostControl.axaml.cs"));
         string classicSurfaceSource = File.ReadAllText(Path.Combine(repoRoot, "Chummer.Avalonia", "Controls", "ClassicFormPorts", "ClassicFormPortSurfaceControl.cs"));
 
-        StringAssert.Contains(trustPanelSource, "DesktopShellTheme.ResolveThemeBrush(\"ChummerShellSelectionPanelBrush\", \"#F8FAFC\")");
+        StringAssert.Contains(trustPanelSource, "DesktopShellTheme.ResolveSelectionPanelBrush()");
         StringAssert.Contains(trustPanelSource, "DesktopShellTheme.ResolveThemeBrush(\"ChummerShellWarningBrush\", \"#9A6700\")");
         StringAssert.Contains(explainLauncherSource, "DesktopShellTheme.ResolveThemeBrush(\"ChummerShellWarningBrush\", \"#9A6700\")");
-        StringAssert.Contains(explainLauncherSource, "DesktopShellTheme.ResolveThemeBrush(\"ChummerShellSelectionInsetBrush\", \"#F1F5F9\")");
+        StringAssert.Contains(explainLauncherSource, "DesktopShellTheme.ResolveSelectionInsetBrush()");
         StringAssert.Contains(sectionHostSource, "DesktopShellTheme.ResolveThemeBrush(\"ChummerShellWarningBrush\", \"#9A6700\")");
-        StringAssert.Contains(sectionHostSource, "DesktopShellTheme.ResolveThemeBrush(\"ChummerShellBorderBrush\", \"#B5C0CF\")");
-        StringAssert.Contains(classicSurfaceSource, "DesktopShellTheme.ResolveThemeBrush(\"ChummerShellBorderBrush\", \"#475569\")");
+        StringAssert.Contains(sectionHostSource, "DesktopShellTheme.ResolveForegroundBrush()");
+        StringAssert.Contains(sectionHostSource, "DesktopShellTheme.ResolveSurfaceBrush()");
+        StringAssert.Contains(sectionHostSource, "DesktopShellTheme.ResolveBorderBrush()");
+        StringAssert.Contains(classicSurfaceSource, "DesktopShellTheme.ResolveSurfaceBrush()");
+        StringAssert.Contains(classicSurfaceSource, "DesktopShellTheme.ResolveBorderBrush()");
         Assert.IsFalse(trustPanelSource.Contains("#FFF6E1", StringComparison.Ordinal));
         Assert.IsFalse(trustPanelSource.Contains("#D9B05F", StringComparison.Ordinal));
         Assert.IsFalse(explainLauncherSource.Contains("#D9B05F", StringComparison.Ordinal));
         Assert.IsFalse(sectionHostSource.Contains("#4F3C16", StringComparison.Ordinal));
         Assert.IsFalse(sectionHostSource.Contains("#FFF7F4EB", StringComparison.Ordinal));
+        Assert.IsFalse(sectionHostSource.Contains("#B5C0CF", StringComparison.Ordinal));
         Assert.IsFalse(classicSurfaceSource.Contains("#3f4b53", StringComparison.Ordinal));
+        Assert.IsFalse(classicSurfaceSource.Contains("#475569", StringComparison.Ordinal));
     }
 
     [TestMethod]
@@ -660,11 +670,11 @@ public sealed class DesktopThemeManagerTests
         string nexusPanSource = File.ReadAllText(Path.Combine(repoRoot, "Chummer.Avalonia", "DesktopNexusPanWindow.cs"));
         string runsiteSource = File.ReadAllText(Path.Combine(repoRoot, "Chummer.Avalonia", "DesktopRunsiteWindow.cs"));
 
-        StringAssert.Contains(aliceSource, "DesktopShellTheme.ResolveThemeBrush(\"ChummerShellBorderBrush\", \"#B5C0CF\")");
-        StringAssert.Contains(runbookPressSource, "DesktopShellTheme.ResolveThemeBrush(\"ChummerShellBorderBrush\", \"#B5C0CF\")");
-        StringAssert.Contains(creatorOsSource, "DesktopShellTheme.ResolveThemeBrush(\"ChummerShellBorderBrush\", \"#B5C0CF\")");
-        StringAssert.Contains(nexusPanSource, "DesktopShellTheme.ResolveThemeBrush(\"ChummerShellBorderBrush\", \"#B5C0CF\")");
-        StringAssert.Contains(runsiteSource, "DesktopShellTheme.ResolveThemeBrush(\"ChummerShellBorderBrush\", \"#B5C0CF\")");
+        StringAssert.Contains(aliceSource, "DesktopShellTheme.ResolveBorderBrush()");
+        StringAssert.Contains(runbookPressSource, "DesktopShellTheme.ResolveBorderBrush()");
+        StringAssert.Contains(creatorOsSource, "DesktopShellTheme.ResolveBorderBrush()");
+        StringAssert.Contains(nexusPanSource, "DesktopShellTheme.ResolveBorderBrush()");
+        StringAssert.Contains(runsiteSource, "DesktopShellTheme.ResolveBorderBrush()");
         Assert.IsFalse(aliceSource.Contains("#D3DCE5", StringComparison.Ordinal));
         Assert.IsFalse(runbookPressSource.Contains("#D3DCE5", StringComparison.Ordinal));
         Assert.IsFalse(creatorOsSource.Contains("#D3DCE5", StringComparison.Ordinal));
@@ -680,6 +690,12 @@ public sealed class DesktopThemeManagerTests
         string desktopDialogSource = File.ReadAllText(Path.Combine(repoRoot, "Chummer.Avalonia", "DesktopDialogWindow.axaml.cs"));
         string appTheme = File.ReadAllText(Path.Combine(repoRoot, "Chummer.Avalonia", "App.axaml"));
 
+        StringAssert.Contains(commandDialogSource, "Background = DesktopShellTheme.ResolveSelectionToolbarBrush(),");
+        StringAssert.Contains(commandDialogSource, "Background = DesktopShellTheme.ResolveSelectionPanelBrush(),");
+        StringAssert.Contains(commandDialogSource, "BorderBrush = DesktopShellTheme.ResolveBorderBrush(),");
+        StringAssert.Contains(desktopDialogSource, "Background = DesktopShellTheme.ResolveSelectionToolbarBrush(),");
+        StringAssert.Contains(desktopDialogSource, "Background = DesktopShellTheme.ResolveSelectionPanelBrush(),");
+        StringAssert.Contains(desktopDialogSource, "BorderBrush = DesktopShellTheme.ResolveBorderBrush(),");
         Assert.IsFalse(commandDialogSource.Contains("Background = ResolveThemeBrush(\"ChummerShellSelectionInsetBrush\", \"#F1F5F9\")", StringComparison.Ordinal));
         Assert.IsFalse(commandDialogSource.Contains("BorderBrush = ResolveThemeBrush(\"ChummerShellSelectionTitleBorderBrush\", \"#CBD5E1\")", StringComparison.Ordinal));
         Assert.IsFalse(desktopDialogSource.Contains("Background = ResolveThemeBrush(\"ChummerShellSelectionInsetBrush\", \"#F1F5F9\")", StringComparison.Ordinal));
@@ -699,8 +715,10 @@ public sealed class DesktopThemeManagerTests
         string commandDialogSource = File.ReadAllText(Path.Combine(repoRoot, "Chummer.Avalonia", "Controls", "CommandDialogPaneControl.axaml.cs"));
         string desktopDialogSource = File.ReadAllText(Path.Combine(repoRoot, "Chummer.Avalonia", "DesktopDialogWindow.axaml.cs"));
 
-        StringAssert.Contains(commandDialogSource, "ResolveThemeBrush(\"ChummerShellBorderBrush\", \"#B5C0CF\")");
-        StringAssert.Contains(desktopDialogSource, "ResolveThemeBrush(\"ChummerShellBorderBrush\", \"#B5C0CF\")");
+        StringAssert.Contains(commandDialogSource, "DesktopShellTheme.ResolveBorderBrush()");
+        StringAssert.Contains(commandDialogSource, "DesktopShellTheme.ResolveSurfaceBrush()");
+        StringAssert.Contains(desktopDialogSource, "DesktopShellTheme.ResolveBorderBrush()");
+        StringAssert.Contains(desktopDialogSource, "DesktopShellTheme.ResolveSurfaceBrush()");
         Assert.IsFalse(commandDialogSource.Contains("Brushes.Gray", StringComparison.Ordinal));
         Assert.IsFalse(commandDialogSource.Contains("#808080", StringComparison.Ordinal));
         Assert.IsFalse(desktopDialogSource.Contains("#808080", StringComparison.Ordinal));
@@ -735,14 +753,14 @@ public sealed class DesktopThemeManagerTests
         StringAssert.Contains(appTheme, "TextBlock.shell-option-meta");
         StringAssert.Contains(aliceSource, "DesktopShellTheme.ApplyShellListBoxTheme(conversationList);");
         StringAssert.Contains(aliceSource, "DesktopShellTheme.ApplyShellListBoxTheme(evidenceList);");
-        StringAssert.Contains(scaffoldSource, "Background = ResolveThemeBrush(\"ChummerShellWindowBackgroundBrush\", \"#E3EAF3\")");
+        StringAssert.Contains(scaffoldSource, "Background = DesktopShellTheme.ResolveWindowBackgroundBrush(),");
         StringAssert.Contains(localCoProcessorSource, "DesktopShellTheme.ApplyShellComboBoxTheme(detailModeCombo);");
         StringAssert.Contains(runnerPassportSource, "DesktopShellTheme.ApplyShellComboBoxTheme(detailModeCombo);");
         StringAssert.Contains(versionHistorySource, "DesktopShellTheme.ApplyShellTextInputTheme(historyBox);");
         StringAssert.Contains(desktopDialogSource, "ApplyShellListBoxTheme(listBox);");
         StringAssert.Contains(commandDialogSource, "DesktopShellTheme.ApplyShellListBoxTheme(listBox);");
         StringAssert.Contains(sectionHost, "Background=\"{DynamicResource ChummerShellSurfaceBrush}\"");
-        StringAssert.Contains(classicPortSurface, "Background = DesktopShellTheme.ResolveThemeBrush(\"ChummerShellSurfaceBrush\", \"#FBFCFE\")");
+        StringAssert.Contains(classicPortSurface, "Background = DesktopShellTheme.ResolveSurfaceBrush(),");
         StringAssert.Contains(classicPortSurface, "DesktopShellTheme.ApplyShellListBoxTheme(listBox);");
         StringAssert.Contains(classicPortSurface, "DesktopShellTheme.ApplyShellTreeViewTheme(treeView);");
         StringAssert.Contains(appTheme, "ChummerShellActiveMenuBorderBrush");
@@ -1052,9 +1070,9 @@ public sealed class DesktopThemeManagerTests
 
         StringAssert.Contains(updateSource, "This copy is not attached to a working update source yet.");
         StringAssert.Contains(updateSource, "Something about updates needs review before you treat this copy as current.");
-        StringAssert.Contains(updateSource, "DesktopShellTheme.ResolveThemeBrush(\"ChummerShellWindowBackgroundBrush\"");
-        StringAssert.Contains(updateSource, "DesktopShellTheme.ResolveThemeBrush(\"ChummerShellSurfaceBrush\"");
-        StringAssert.Contains(updateSource, "DesktopShellTheme.ResolveThemeBrush(\"ChummerShellForegroundBrush\"");
+        StringAssert.Contains(updateSource, "private static IBrush WindowBackgroundBrush => DesktopShellTheme.ResolveWindowBackgroundBrush();");
+        StringAssert.Contains(updateSource, "private static IBrush SurfaceBrush => DesktopShellTheme.ResolveSurfaceBrush();");
+        StringAssert.Contains(updateSource, "private static IBrush ForegroundBrush => DesktopShellTheme.ResolveForegroundBrush();");
         Assert.IsFalse(
             updateSource.Contains("private static readonly IBrush", StringComparison.Ordinal),
             "The update status window must not freeze a private brush palette outside the shell theme.");
@@ -1138,7 +1156,7 @@ public sealed class DesktopThemeManagerTests
         StringAssert.Contains(desktopDialogSource, "CreateOriginSummaryStrip(");
         StringAssert.Contains(originSurfaceSource, "Classes = { \"shell-panel\" }");
         StringAssert.Contains(originSurfaceSource, "Classes = { \"shell-kicker\" }");
-        StringAssert.Contains(originSurfaceSource, "Foreground = ResolveThemeBrush(\"ChummerShellForegroundBrush\", \"#E5E7EB\")");
+        StringAssert.Contains(originSurfaceSource, "Foreground = DesktopShellTheme.ResolveForegroundBrush()");
         StringAssert.Contains(desktopDialogSource, "newCharacterOriginGmConstraintPreset");
         StringAssert.Contains(originSurfaceSource, "OriginDossierStandaloneAdvancedStoryControlsExpander");
         StringAssert.Contains(originSurfaceSource, "Header = \"Advanced story controls\"");
@@ -1277,6 +1295,101 @@ public sealed class DesktopThemeManagerTests
     }
 
     [TestMethod]
+    public void Blazor_origin_story_preview_uses_shell_surface_tokens_instead_of_hardcoded_pale_cards()
+    {
+        string repoRoot = TestContextLocator.ResolveChummerPresentationRepoRoot();
+        string appCss = File.ReadAllText(Path.Combine(repoRoot, "Chummer.Blazor", "wwwroot", "app.css"));
+        int originStart = appCss.IndexOf(".dialog-origin-panel,", StringComparison.Ordinal);
+        int originEnd = appCss.IndexOf("@media (max-width: 1080px)", originStart, StringComparison.Ordinal);
+
+        Assert.IsTrue(originStart >= 0 && originEnd > originStart, "Origin Dossier browser styles must stay discoverable.");
+        string originCss = appCss[originStart..originEnd];
+
+        StringAssert.Contains(originCss, "background: var(--ui-kit-shell-surface-emphasis);");
+        StringAssert.Contains(originCss, "background: var(--ui-kit-panel-surface);");
+        StringAssert.Contains(originCss, ".dialog-origin-summary-label {");
+        StringAssert.Contains(originCss, ".dialog-origin-panel > header p,");
+        StringAssert.Contains(originCss, ".dialog-origin-panel .dialog-note,");
+        StringAssert.Contains(originCss, ".dialog-origin-preview :is(p, pre, strong, span, li, em),");
+        StringAssert.Contains(originCss, ".dialog-origin-preview .dialog-visual-pre,");
+        StringAssert.Contains(originCss, "color: var(--ui-kit-ink);");
+        StringAssert.Contains(originCss, "color: var(--ui-kit-ink-strong);");
+        StringAssert.Contains(originCss, "color: var(--ui-kit-muted);");
+        Assert.IsFalse(originCss.Contains("#f8f4ec", StringComparison.Ordinal));
+        Assert.IsFalse(originCss.Contains("rgba(255, 255, 255, 0.78)", StringComparison.Ordinal));
+        Assert.IsFalse(originCss.Contains("rgba(255, 255, 255, 0.84)", StringComparison.Ordinal));
+        Assert.IsFalse(originCss.Contains("color: #111111", StringComparison.Ordinal));
+        Assert.IsFalse(originCss.Contains("color: #111827", StringComparison.Ordinal));
+    }
+
+    [TestMethod]
+    public void Blazor_dialog_inputs_and_notes_keep_explicit_shell_contrast_tokens()
+    {
+        string repoRoot = TestContextLocator.ResolveChummerPresentationRepoRoot();
+        string appCss = File.ReadAllText(Path.Combine(repoRoot, "Chummer.Blazor", "wwwroot", "app.css"));
+        int blockStart = appCss.IndexOf(".note {", StringComparison.Ordinal);
+        int blockEnd = appCss.IndexOf(".dialog-tab-chip {", blockStart, StringComparison.Ordinal);
+
+        Assert.IsTrue(blockStart >= 0 && blockEnd > blockStart, "Shared browser dialog contrast styles must stay discoverable.");
+        string contrastCss = appCss[blockStart..blockEnd];
+
+        StringAssert.Contains(contrastCss, ".dialog-input {");
+        StringAssert.Contains(contrastCss, "background: var(--ui-kit-panel-surface);");
+        StringAssert.Contains(contrastCss, "border: 1px solid var(--ui-kit-shell-border);");
+        StringAssert.Contains(contrastCss, "color: var(--ui-kit-ink);");
+        StringAssert.Contains(contrastCss, ".dialog-input::placeholder {");
+        StringAssert.Contains(contrastCss, "color: var(--ui-kit-muted);");
+        StringAssert.Contains(contrastCss, ".dialog-input[readonly] {");
+        StringAssert.Contains(contrastCss, ".dialog-visual-pre {");
+        Assert.IsFalse(contrastCss.Contains("color: #4b4b4b", StringComparison.Ordinal));
+        Assert.IsFalse(contrastCss.Contains("color: #505050", StringComparison.Ordinal));
+    }
+
+    [TestMethod]
+    public void Browser_preview_shell_keeps_embedded_origin_dialogs_on_shared_contrast_tokens()
+    {
+        string repoRoot = TestContextLocator.ResolveChummerPresentationRepoRoot();
+        string previewCss = File.ReadAllText(Path.Combine(repoRoot, "Chummer.Blazor", "Components", "Pages", "Preview.razor.css"));
+        int blockStart = previewCss.IndexOf(".browser-preview-frame ::deep .desktop-shell,", StringComparison.Ordinal);
+        int blockEnd = previewCss.IndexOf("@media (max-width: 720px)", blockStart, StringComparison.Ordinal);
+
+        Assert.IsTrue(blockStart >= 0 && blockEnd > blockStart, "Browser preview shell contrast overrides must stay discoverable.");
+        string previewShellCss = previewCss[blockStart..blockEnd];
+
+        StringAssert.Contains(previewShellCss, ".browser-preview-frame ::deep .desktop-shell pre,");
+        StringAssert.Contains(previewShellCss, ".browser-preview-frame ::deep .dialog-visual-pre {");
+        StringAssert.Contains(previewShellCss, ".browser-preview-shell ::deep .desktop-dialog pre,");
+        StringAssert.Contains(previewShellCss, ".browser-preview-shell ::deep .dialog-origin-preview,");
+        StringAssert.Contains(previewShellCss, ".browser-preview-shell ::deep .dialog-origin-preview p,");
+        StringAssert.Contains(previewShellCss, ".browser-preview-shell ::deep .dialog-origin-preview--book {");
+        StringAssert.Contains(previewShellCss, ".browser-preview-shell ::deep .dialog-origin-panel > header p,");
+        StringAssert.Contains(previewShellCss, ".browser-preview-shell ::deep .dialog-origin-summary-card strong {");
+        StringAssert.Contains(previewShellCss, ".browser-preview-shell ::deep .dialog-origin-summary-label {");
+        StringAssert.Contains(previewShellCss, ".browser-preview-shell ::deep .dialog-note,");
+        StringAssert.Contains(previewShellCss, "background: var(--ui-kit-panel-surface);");
+        StringAssert.Contains(previewShellCss, "background: var(--ui-kit-shell-surface-emphasis);");
+        StringAssert.Contains(previewShellCss, "color: var(--ui-kit-ink);");
+        StringAssert.Contains(previewShellCss, "color: var(--ui-kit-ink-strong);");
+        StringAssert.Contains(previewShellCss, "color: var(--ui-kit-muted);");
+        Assert.IsFalse(previewShellCss.Contains("color: #16202b", StringComparison.Ordinal));
+    }
+
+    [TestMethod]
+    public void Browser_and_home_page_theme_layers_do_not_style_generic_hint_or_summary_classes()
+    {
+        string repoRoot = TestContextLocator.ResolveChummerPresentationRepoRoot();
+        string previewCss = File.ReadAllText(Path.Combine(repoRoot, "Chummer.Blazor", "Components", "Pages", "Preview.razor.css"));
+        string homeCss = File.ReadAllText(Path.Combine(repoRoot, "Chummer.Blazor", "Components", "Pages", "Home.razor.css"));
+
+        Assert.IsFalse(previewCss.Contains(".preview-page :is(p, .muted, .hint, .summary)", StringComparison.Ordinal));
+        Assert.IsFalse(homeCss.Contains(".home-page :is(p, .muted, .hint, .summary)", StringComparison.Ordinal));
+        Assert.IsFalse(homeCss.Contains(".chummer-home :is(p, .muted, .hint, .summary)", StringComparison.Ordinal));
+        StringAssert.Contains(previewCss, ".preview-page p {");
+        StringAssert.Contains(homeCss, ".home-page p,");
+        StringAssert.Contains(homeCss, ".chummer-home p {");
+    }
+
+    [TestMethod]
     public void Attribute_editor_keeps_clear_column_headers_visible()
     {
         string repoRoot = TestContextLocator.ResolveChummerPresentationRepoRoot();
@@ -1347,10 +1460,10 @@ public sealed class DesktopThemeManagerTests
 
         StringAssert.Contains(desktopDialogSource, "AddLabeledValueRow(rightFactsGrid, 1, \"Karma:\", new TextBlock { Text = runtimeState.MetatypeKarma });");
         StringAssert.Contains(desktopDialogSource, "AddLabeledValueRow(rightFactsGrid, 2, \"Special Attributes:\", new TextBlock { Text = runtimeState.SpecialAttributes });");
-        StringAssert.Contains(desktopDialogSource, "valueText.Foreground = ResolveThemeBrush(\"ChummerShellForegroundBrush\", \"#E5E7EB\");");
+        StringAssert.Contains(desktopDialogSource, "valueText.Foreground = DesktopShellTheme.ResolveForegroundBrush();");
         StringAssert.Contains(desktopDialogSource, "valueText.FontWeight = FontWeight.SemiBold;");
         StringAssert.Contains(desktopDialogSource, "Text = attribute.Value,");
-        StringAssert.Contains(desktopDialogSource, "Foreground = ResolveThemeBrush(\"ChummerShellForegroundBrush\", \"#E5E7EB\"),");
+        StringAssert.Contains(desktopDialogSource, "Foreground = DesktopShellTheme.ResolveForegroundBrush(),");
     }
 
     [TestMethod]
@@ -1643,10 +1756,28 @@ public sealed class DesktopThemeManagerTests
     public void Desktop_dialog_shell_surface_fallbacks_do_not_reintroduce_white_cards_in_dark_mode()
     {
         string repoRoot = TestContextLocator.ResolveChummerPresentationRepoRoot();
+        string shellThemeSource = File.ReadAllText(Path.Combine(repoRoot, "Chummer.Avalonia", "DesktopShellTheme.cs"));
         string desktopDialogSource = File.ReadAllText(Path.Combine(repoRoot, "Chummer.Avalonia", "DesktopDialogWindow.axaml.cs"));
-        Regex shellSurfaceFallback = new(
-            @"ResolveThemeBrush\(""ChummerShellSurface(?:Alt)?Brush"",\s*""(?<fallback>#[0-9A-Fa-f]{6})""\)",
-            RegexOptions.Compiled);
+
+        foreach (string marker in new[]
+                 {
+                     "public static IBrush ResolveWindowBackgroundBrush()",
+                     "=> ResolveThemeBrush(\"ChummerShellWindowBackgroundBrush\", \"#050B16\");",
+                     "public static IBrush ResolveSurfaceBrush()",
+                     "=> ResolveThemeBrush(\"ChummerShellSurfaceBrush\", \"#111827\");",
+                     "public static IBrush ResolveSurfaceAltBrush()",
+                     "=> ResolveThemeBrush(\"ChummerShellSurfaceAltBrush\", \"#020617\");",
+                     "public static IBrush ResolveSelectionToolbarBrush()",
+                     "=> ResolveThemeBrush(\"ChummerShellSelectionToolbarBrush\", \"#0B1220\");",
+                     "public static IBrush ResolveSelectionPanelBrush()",
+                     "=> ResolveThemeBrush(\"ChummerShellSelectionPanelBrush\", \"#111827\");",
+                     "public static IBrush ResolveSelectionInsetBrush()",
+                     "=> ResolveThemeBrush(\"ChummerShellSelectionInsetBrush\", \"#0F172A\");"
+                 })
+        {
+            StringAssert.Contains(shellThemeSource, marker);
+        }
+
         string[] forbiddenLightFallbacks =
         [
             "#FFFFFF",
@@ -1658,13 +1789,15 @@ public sealed class DesktopThemeManagerTests
             "#EEF2F6"
         ];
 
-        List<string> offenders = shellSurfaceFallback.Matches(desktopDialogSource)
-            .Cast<Match>()
-            .Where(match => forbiddenLightFallbacks.Contains(match.Groups["fallback"].Value, StringComparer.OrdinalIgnoreCase))
-            .Select(match => match.Groups["fallback"].Value)
+        List<string> offenders = forbiddenLightFallbacks
+            .Where(fallback => desktopDialogSource.Contains(fallback, StringComparison.OrdinalIgnoreCase))
             .Distinct(StringComparer.OrdinalIgnoreCase)
             .OrderBy(static item => item, StringComparer.OrdinalIgnoreCase)
             .ToList();
+
+        StringAssert.Contains(desktopDialogSource, "DesktopShellTheme.ResolveSelectionToolbarBrush()");
+        StringAssert.Contains(desktopDialogSource, "DesktopShellTheme.ResolveSelectionPanelBrush()");
+        StringAssert.Contains(desktopDialogSource, "DesktopShellTheme.ResolveSurfaceBrush()");
 
         Assert.AreEqual(
             0,

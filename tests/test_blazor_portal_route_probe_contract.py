@@ -1,0 +1,104 @@
+from pathlib import Path
+
+
+def test_portal_route_probe_uses_stable_handoff_markers_for_help_status_downloads_and_contact() -> None:
+    script = Path("scripts/e2e-portal.cjs").read_text(encoding="utf-8")
+
+    assert "function hasPortalChrome(text)" in script
+    assert "text.includes('data-portal-help-context=')" in script
+    assert "text.includes('data-portal-status-action=\"open-discord\"')" in script
+    assert "text.includes('data-download-action=\"open-status\"')" in script
+    assert "text.includes('data-install-route-action=\"open-proof-required-route\"')" in script
+    assert "text.includes('data-portal-contact-public-route=')" in script
+    assert "text.includes('data-portal-contact-action=\"open-discord\"')" in script
+
+
+def test_portal_route_probe_no_longer_depends_on_stale_copy_for_minimal_portal_surfaces() -> None:
+    script = Path("scripts/e2e-portal.cjs").read_text(encoding="utf-8")
+
+    assert "data-portal-help-context=\"self-host-first\"" not in script
+    assert "text.includes('Current release')" not in script
+    assert "text.includes('Desktop Downloads')" not in script
+    assert "text.includes('Explore Chummer Online instead')" not in script
+    assert "data-portal-contact-scenarios=\"installer-account-app\"" not in script
+
+
+def test_portal_playwright_contract_uses_runner_shell_language_instead_of_stale_dossier_copy() -> None:
+    script = Path("scripts/e2e-portal-playwright.cjs").read_text(encoding="utf-8")
+
+    assert "expectTextIncludes(bodyText, 'Import runner XML', 'portal workbench route');" in script
+    assert "expectTextIncludes(bodyText, 'Saved Runners', 'portal workbench route');" in script
+    assert "expectTextIncludes(bodyText, 'Active Table', 'portal workbench route');" in script
+    assert "expectTextIncludes(bodyText, 'ACTIVE RUNNER', 'portal blazor root route');" in script
+    assert "Import an existing dossier" not in script
+    assert "No recent dossiers yet" not in script
+    assert "Continue a recent dossier" not in script
+    assert "Active Dossier" not in script
+
+
+def test_portal_playwright_career_reorder_route_no_longer_references_missing_marker_variable() -> None:
+    script = Path("scripts/e2e-portal-playwright.cjs").read_text(encoding="utf-8")
+
+    assert "async function auditPortalRestoredCareerEntryReorderRoute(page, controlId, expectedTitle)" in script
+    function_block = script.split(
+        "async function auditPortalRestoredCareerEntryReorderRoute(page, controlId, expectedTitle) {",
+        1,
+    )[1].split("async function auditPortalRestoredMagicCleanupUtilityRoute", 1)[0]
+    assert "expectedMarker?.toLowerCase ? expectedMarker.toLowerCase() : undefined" not in function_block
+
+
+def test_portal_playwright_retries_transient_navigation_abortions_on_self_host_routes() -> None:
+    script = Path("scripts/e2e-portal-playwright.cjs").read_text(encoding="utf-8")
+
+    assert "const routeNavigationRetryAttempts = Number(process.env.CHUMMER_PORTAL_ROUTE_RETRY_ATTEMPTS || '3');" in script
+    assert "const routeNavigationRetryDelayMs = Number(process.env.CHUMMER_PORTAL_ROUTE_RETRY_DELAY_MS || '1500');" in script
+    assert "function shouldRetryRouteNavigation(error)" in script
+    assert "message.includes('ERR_ABORTED') || message.includes('Timeout')" in script
+    assert "async function openPortalRoute(page, route, readySelector, waitUntilOverride)" in script
+    assert "await page.goto('about:blank', { waitUntil: 'load', timeout: 5000 }).catch(() => {});" in script
+    assert "await page.waitForTimeout(routeNavigationRetryDelayMs);" in script
+
+
+def test_portal_playwright_supports_smoke_and_full_scopes_for_self_host_gating() -> None:
+    script = Path("scripts/e2e-portal-playwright.cjs").read_text(encoding="utf-8")
+
+    assert "const playwrightScope = (process.env.CHUMMER_PORTAL_PLAYWRIGHT_SCOPE || 'smoke').trim().toLowerCase();" in script
+    assert "const smokeAudits = [" in script
+    assert "const fullOnlyAudits = [" in script
+    assert "portal playwright scope: ${normalizedScope}" in script
+    assert "if (normalizedScope === 'full')" in script
+
+
+def test_portal_playwright_origin_dossier_audit_measures_story_preview_contrast() -> None:
+    script = Path("scripts/e2e-portal-playwright.cjs").read_text(encoding="utf-8")
+
+    assert "async function expectMinimumTextContrast(page, selector, minimumRatio, context)" in script
+    assert "async function expectVisibleCollectionMinimumTextContrast(page, selector, minimumRatio, minimumMatches, context)" in script
+    assert "async function expectDialogFits(page, expectedTitle, expectedFallback)" in script
+    assert "const expected = String(payload?.expected || '');" in script
+    assert "const fallback = String(payload?.fallback || '');" in script
+    assert "expected: expectedTitle.toLowerCase()," in script
+    assert "fallback: expectedFallback ? expectedFallback.toLowerCase() : ''" in script
+    assert "}, { query: selector, requiredMatches: minimumMatches }, { timeout: 15000 });" in script
+    assert "await expectMinimumTextContrast(page, '[data-origin-story-preview] .dialog-visual-pre', 4.5, 'portal origin dossier story preview');" in script
+    assert "await expectMinimumTextContrast(page, '[data-origin-story-preview] .dialog-visual-pre', 4.5, 'portal origin dossier deep-link story preview');" in script
+    assert "await expectVisibleCollectionMinimumTextContrast(page, '[data-origin-wizard] .dialog-origin-panel > header p', 4.5, 2, 'portal origin dossier helper copy');" in script
+    assert "await expectVisibleCollectionMinimumTextContrast(page, '[data-origin-wizard] .dialog-origin-summary-label', 4.5, 3, 'portal origin dossier summary labels');" in script
+    assert "await expectVisibleCollectionMinimumTextContrast(page, '[data-origin-wizard] .dialog-origin-summary-card strong', 4.5, 3, 'portal origin dossier summary values');" in script
+    assert "await expectVisibleCollectionMinimumTextContrast(page, '[data-origin-wizard] .dialog-origin-panel > header p', 4.5, 2, 'portal origin dossier deep-link helper copy');" in script
+    assert "await expectVisibleCollectionMinimumTextContrast(page, '[data-origin-wizard] .dialog-origin-summary-label', 4.5, 3, 'portal origin dossier deep-link summary labels');" in script
+    assert "await expectVisibleCollectionMinimumTextContrast(page, '[data-origin-wizard] .dialog-origin-summary-card strong', 4.5, 3, 'portal origin dossier deep-link summary values');" in script
+    assert "async function auditPortalOriginBuildDeepLink(page)" in script
+    assert "'/blazor/preview?command=new_character_origin&dialog_action=generate_fitting_build'" in script
+    assert "'[data-origin-build]'" in script
+    assert "await expectDialogFits(page, 'origin build handoff', 'build handoff');" in script
+    assert "await expectVisibleCollectionMinimumTextContrast(page, '[data-origin-build] .dialog-origin-panel > header p', 4.5, 3, 'portal origin build helper copy');" in script
+    assert "await expectVisibleCollectionMinimumTextContrast(page, '[data-origin-build] .dialog-origin-summary-label', 4.5, 3, 'portal origin build summary labels');" in script
+    assert "await expectVisibleCollectionMinimumTextContrast(page, '[data-origin-build] .dialog-origin-summary-card strong', 4.5, 3, 'portal origin build summary values');" in script
+    assert "await expectVisibleCollectionMinimumTextContrast(page, '[data-origin-book-preview] .dialog-origin-readonly p', 4.5, 2, 'portal origin build book preview');" in script
+    assert "await expectVisibleCollectionMinimumTextContrast(page, '[data-origin-build] .dialog-origin-review-stack .dialog-visual-pre', 4.5, 3, 'portal origin build supporting previews');" in script
+    assert "await expectVisibleCollectionMinimumTextContrast(page, '.desktop-dialog .dialog-label', 4.5, 2, 'portal origin dossier labels');" in script
+    assert "await expectVisibleCollectionMinimumTextContrast(page, '.desktop-dialog .dialog-input', 4.5, 2, 'portal origin dossier inputs');" in script
+    assert "await expectVisibleCollectionMinimumTextContrast(page, '.desktop-dialog .dialog-label', 4.5, 3, 'portal new character labels');" in script
+    assert "await expectVisibleCollectionMinimumTextContrast(page, '.desktop-dialog .dialog-input', 4.5, 3, 'portal new character inputs');" in script
+    assert "Expected ${context} to keep text contrast >=" in script

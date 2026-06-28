@@ -4487,27 +4487,88 @@
 .browser-preview-frame ::deep .desktop-shell label,
 .browser-preview-frame ::deep .desktop-shell h3,
 .browser-preview-frame ::deep .desktop-shell p,
+.browser-preview-frame ::deep .desktop-shell pre,
 .browser-preview-frame ::deep .desktop-shell span,
 .browser-preview-frame ::deep .desktop-shell li,
 .browser-preview-frame ::deep .desktop-shell dt,
 .browser-preview-frame ::deep .desktop-shell dd,
-.browser-preview-frame ::deep .desktop-shell strong {
-    color: #16202b;
+.browser-preview-frame ::deep .desktop-shell strong,
+.browser-preview-frame ::deep .dialog-visual-pre {
+    color: var(--ui-kit-ink);
 }
 
 .browser-preview-shell ::deep .desktop-dialog,
 .browser-preview-shell ::deep .desktop-dialog h2,
 .browser-preview-shell ::deep .desktop-dialog h3,
 .browser-preview-shell ::deep .desktop-dialog p,
+.browser-preview-shell ::deep .desktop-dialog pre,
 .browser-preview-shell ::deep .desktop-dialog label,
 .browser-preview-shell ::deep .desktop-dialog span,
 .browser-preview-shell ::deep .desktop-dialog li,
 .browser-preview-shell ::deep .desktop-dialog dt,
 .browser-preview-shell ::deep .desktop-dialog dd,
 .browser-preview-shell ::deep .desktop-dialog strong,
+.browser-preview-shell ::deep .dialog-visual-pre,
 .browser-preview-shell ::deep .dialog-body,
-.browser-preview-shell ::deep .dialog-label {
-    color: #16202b;
+.browser-preview-shell ::deep .dialog-label,
+.browser-preview-shell ::deep .dialog-origin-preview,
+.browser-preview-shell ::deep .dialog-origin-readonly {
+    color: var(--ui-kit-ink);
+}
+
+.browser-preview-shell ::deep .dialog-origin-panel,
+.browser-preview-shell ::deep .dialog-origin-subpanel,
+.browser-preview-shell ::deep .dialog-origin-summary-card,
+.browser-preview-shell ::deep .dialog-origin-preview,
+.browser-preview-shell ::deep .dialog-origin-readonly {
+    border-color: var(--ui-kit-shell-border);
+}
+
+.browser-preview-shell ::deep .dialog-origin-preview,
+.browser-preview-shell ::deep .dialog-origin-readonly {
+    background: var(--ui-kit-panel-surface);
+}
+
+.browser-preview-shell ::deep .dialog-origin-preview--book {
+    background: var(--ui-kit-shell-surface-emphasis);
+}
+
+.browser-preview-shell ::deep .dialog-origin-preview p,
+.browser-preview-shell ::deep .dialog-origin-readonly p,
+.browser-preview-shell ::deep .dialog-origin-preview pre,
+.browser-preview-shell ::deep .dialog-origin-readonly pre,
+.browser-preview-shell ::deep .dialog-origin-preview strong,
+.browser-preview-shell ::deep .dialog-origin-readonly strong,
+.browser-preview-shell ::deep .dialog-origin-preview span,
+.browser-preview-shell ::deep .dialog-origin-readonly span,
+.browser-preview-shell ::deep .dialog-origin-preview li,
+.browser-preview-shell ::deep .dialog-origin-readonly li,
+.browser-preview-shell ::deep .dialog-origin-preview em,
+.browser-preview-shell ::deep .dialog-origin-readonly em {
+    color: inherit;
+}
+
+.browser-preview-shell ::deep .dialog-origin-panel > header p,
+.browser-preview-shell ::deep .dialog-origin-subpanel > header p {
+    color: var(--ui-kit-muted);
+}
+
+.browser-preview-shell ::deep .dialog-note,
+.browser-preview-shell ::deep .hint,
+.browser-preview-shell ::deep .summary {
+    color: var(--ui-kit-muted);
+}
+
+.browser-preview-shell ::deep .dialog-origin-summary-card strong {
+    color: var(--ui-kit-ink-strong);
+}
+
+.browser-preview-shell ::deep .dialog-origin-summary-label {
+    border-color: var(--ui-kit-shell-border);
+    background: var(--ui-kit-shell-surface-emphasis);
+    color: var(--ui-kit-muted);
+    box-shadow: none;
+    letter-spacing: 0.08em;
 }
 
 @media (max-width: 720px) {
@@ -5081,7 +5142,7 @@
   letter-spacing: 0.12em;
 }
 
-.preview-page :is(p, .muted, .hint, .summary) {
+.preview-page p {
   color: var(--chummer-muted);
 }
 
@@ -5983,7 +6044,7 @@
 }
 
 .browser-preview-shell::before {
-    content: "File   Edit   View   Runner   Tools   Help\A New runner  Open Dossier  Save  Print  Export  Character Roster  Build Lab";
+    content: "File   Edit   View   Runner   Tools   Help\A New runner  Open Runner  Save  Print  Export  Character Roster  Build Lab";
     white-space: pre-wrap;
     line-height: 1.45;
     margin: 0 0 .3rem;
