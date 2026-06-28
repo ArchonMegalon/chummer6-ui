@@ -9,7 +9,7 @@
       "promotionStatus": "pass",
       "startupSmokeStatus": "pass",
       "startupSmokeReason": "",
-      "startupSmokeReceiptPath": "/tmp/tmp.P33jVzaZWW/startup-smoke-avalonia-linux-x64.receipt.json",
+      "startupSmokeReceiptPath": "/tmp/tmp.57pG2inNsI/startup-smoke-avalonia-linux-x64.receipt.json",
       "signingReceiptPath": "",
       "signingStatus": null,
       "notarizationStatus": null,
@@ -24,12 +24,12 @@
       "promotionStatus": "fail",
       "startupSmokeStatus": "pass",
       "startupSmokeReason": "",
-      "startupSmokeReceiptPath": "/tmp/tmp.P33jVzaZWW/startup-smoke-avalonia-win-x64.receipt.json",
+      "startupSmokeReceiptPath": "/tmp/tmp.57pG2inNsI/startup-smoke-avalonia-win-x64.receipt.json",
       "signingReceiptPath": "",
       "signingStatus": "fail",
       "notarizationStatus": null,
-      "artifactSha256": "5836ae868913c862266a18d091bae77953c67e9d7162b52040bf9cd22c881642",
-      "artifactSizeBytes": 891643,
+      "artifactSha256": "d9d25b2c93dbd4887590b52b03431c4aba3c5614dbc4b18ec2f282222067466c",
+      "artifactSizeBytes": 2794320,
       "kind": "installer"
     }
   ]

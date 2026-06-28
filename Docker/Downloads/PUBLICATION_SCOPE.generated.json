@@ -1,8 +1,8 @@
 {
-  "deployDir": "/docker/chummercomplete/chummer-presentation/Docker/Downloads",
+  "deployDir": "Docker/Downloads",
   "deployMode": false,
   "externalArtifactPublishVerified": false,
-  "generatedAt": "2026-06-27T15:53:03.811382Z",
+  "generatedAt": "2026-06-28T19:52:02.458869Z",
   "liveVerifyTarget": "",
   "promotedArtifactCount": 4,
   "releaseChannel": "public_stable",
