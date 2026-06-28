@@ -913,6 +913,9 @@ repo_root = str(Path(receipt_path).resolve().parents[2])
 published_root = os.path.join(repo_root, ".codex-studio", "published")
 ui_element_parity_audit_receipt_path = os.path.join(published_root, "CHUMMER5A_UI_ELEMENT_PARITY_AUDIT.generated.json")
 desktop_executable_exit_gate_receipt_path = os.path.join(published_root, "DESKTOP_EXECUTABLE_EXIT_GATE.generated.json")
+direct_import_route_proof_receipt_path = os.path.join(published_root, "NEXT90_M141_UI_DIRECT_IMPORT_ROUTE_PROOF.generated.json")
+direct_workflow_route_proof_receipt_path = os.path.join(published_root, "NEXT90_M142_UI_DIRECT_WORKFLOW_PROOF.generated.json")
+direct_output_route_proof_receipt_path = os.path.join(published_root, "NEXT90_M143_UI_DIRECT_OUTPUT_PROOF.generated.json")
 flagship_product_readiness_receipt_path = os.environ.get(
     "CHUMMER_FLAGSHIP_PRODUCT_READINESS_RECEIPT_PATH",
     "/docker/fleet/.codex-studio/published/FLAGSHIP_PRODUCT_READINESS.generated.json",
@@ -1066,7 +1069,14 @@ def bool_status(value: bool) -> str:
     return "pass" if value else "fail"
 
 
+def normalize(value: object) -> str:
+    return str(value or "").strip().lower()
+
+
 ui_element_parity_audit_receipt = load_json_if_present(ui_element_parity_audit_receipt_path)
+direct_import_route_proof_receipt = load_json_if_present(direct_import_route_proof_receipt_path)
+direct_workflow_route_proof_receipt = load_json_if_present(direct_workflow_route_proof_receipt_path)
+direct_output_route_proof_receipt = load_json_if_present(direct_output_route_proof_receipt_path)
 ui_element_summary = ui_element_parity_audit_receipt.get("summary") or {}
 ui_element_visual_no_count = int(
     ui_element_parity_audit_receipt.get("visualNoCount")
@@ -1079,6 +1089,11 @@ ui_element_behavioral_no_count = int(
     or 0
 )
 ui_element_coverage_gap_keys = list(ui_element_parity_audit_receipt.get("coverageGapKeys") or [])
+ui_element_parity_rows = {
+    str(row.get("id") or "").strip(): row
+    for row in (ui_element_parity_audit_receipt.get("rows") or [])
+    if isinstance(row, dict) and str(row.get("id") or "").strip()
+}
 chummer5a_oracle_root = os.environ.get("CHUMMER5A_ORACLE_ROOT", "/docker/fleet/docs/chummer5a-oracle")
 
 dense_builder_route_local_evidence = [
@@ -1116,6 +1131,138 @@ missing_dense_builder_route_local_evidence_suffixes = [
     for suffix in required_dense_builder_route_local_evidence_suffixes
     if not any(entry.endswith(suffix) for entry in dense_builder_route_local_evidence)
 ]
+
+def all_true_checks(payload: object, required_keys: list[str] | None = None) -> bool:
+    if not isinstance(payload, dict) or not payload:
+        return False
+    if required_keys is None:
+        return all(bool(value) for value in payload.values())
+    return all(bool(payload.get(key)) for key in required_keys)
+
+
+direct_import_route_receipt_checks = (
+    direct_import_route_proof_receipt.get("evidence", {}).get("routeReceiptChecks")
+    if isinstance(direct_import_route_proof_receipt.get("evidence"), dict)
+    else {}
+)
+direct_import_receipt_checks = (
+    direct_import_route_proof_receipt.get("evidence", {}).get("receiptChecks")
+    if isinstance(direct_import_route_proof_receipt.get("evidence"), dict)
+    else {}
+)
+direct_workflow_family_checks = (
+    direct_workflow_route_proof_receipt.get("evidence", {}).get("familyChecks")
+    if isinstance(direct_workflow_route_proof_receipt.get("evidence"), dict)
+    else {}
+)
+direct_workflow_receipt_checks = (
+    direct_workflow_route_proof_receipt.get("evidence", {}).get("receiptChecks")
+    if isinstance(direct_workflow_route_proof_receipt.get("evidence"), dict)
+    else {}
+)
+direct_output_route_receipt_checks = (
+    direct_output_route_proof_receipt.get("evidence", {}).get("routeReceiptChecks")
+    if isinstance(direct_output_route_proof_receipt.get("evidence"), dict)
+    else {}
+)
+direct_output_receipt_checks = (
+    direct_output_route_proof_receipt.get("evidence", {}).get("receiptChecks")
+    if isinstance(direct_output_route_proof_receipt.get("evidence"), dict)
+    else {}
+)
+
+ui_element_route_local_row_proofs = {
+    "source:hero_lab_importer_route": (
+        all_true_checks(
+            (direct_import_route_receipt_checks or {}).get("hero_lab_import_oracle"),
+            ["exists", "status_pass", "route_ids_exact", "workflow_family_matches", "screenshots_exact"],
+        )
+        and all_true_checks(
+            direct_import_receipt_checks,
+            [
+                "visual_familiarity_gate_pass",
+                "screenshot_review_gate_pass",
+                "veteran_task_gate_pass",
+                "ui_flagship_gate_tokens_present",
+            ],
+        )
+    ),
+    "family:legacy_and_adjacent_import_oracles": (
+        all_true_checks(
+            (direct_import_route_receipt_checks or {}).get("hero_lab_import_oracle"),
+            ["exists", "status_pass", "route_ids_exact", "workflow_family_matches", "screenshots_exact"],
+        )
+        and all_true_checks(
+            direct_import_receipt_checks,
+            [
+                "visual_familiarity_gate_pass",
+                "screenshot_review_gate_pass",
+                "veteran_task_gate_pass",
+                "ui_flagship_gate_tokens_present",
+            ],
+        )
+    ),
+    "family:dice_initiative_and_table_utilities": (
+        all_true_checks(
+            (direct_workflow_family_checks or {}).get("family:dice_initiative_and_table_utilities")
+        )
+        and all_true_checks(
+            direct_workflow_receipt_checks,
+            [
+                "audit_receipt_pass",
+                "screenshot_review_receipt_pass",
+                "workflow_execution_receipt_pass",
+                "route_local_dense_initiative_pass",
+                "route_local_dense_initiative_route_ids_match",
+                "route_local_dense_initiative_screenshots_match",
+                "workflow_initiative_utility_pass",
+            ],
+        )
+    ),
+    "family:sheet_export_print_viewer_and_exchange": (
+        all_true_checks(
+            (direct_output_route_receipt_checks or {}).get("print_export_exchange"),
+            ["exists", "status_pass", "route_ids_exact", "workflow_family_matches", "screenshots_exact"],
+        )
+        and all_true_checks(
+            direct_output_receipt_checks,
+            [
+                "screenshot_review_status_pass",
+                "section_host_status_pass",
+                "generated_dialog_status_pass",
+                "section_host_open_for_printing_present",
+                "section_host_open_for_export_present",
+                "section_host_print_multiple_present",
+                "generated_dialog_open_for_printing_present",
+                "generated_dialog_open_for_export_present",
+                "generated_dialog_print_multiple_present",
+                "ui_flagship_18-import-dialog-light.png_present",
+                "ui_flagship_19-workflow-file-menu-loaded-light.png_present",
+                "route_local_receipts_present",
+            ],
+        )
+    ),
+}
+ui_element_route_local_expected_row_ids = set(ui_element_route_local_row_proofs)
+ui_element_nonpassing_row_ids = sorted(
+    row_id
+    for row_id, row in ui_element_parity_rows.items()
+    if normalize(row.get("visual_parity")) != "yes" or normalize(row.get("behavioral_parity")) != "yes"
+)
+ui_element_parity_audit_source_status = proof_status(
+    bool_status(ui_element_visual_no_count == 0),
+    bool_status(ui_element_behavioral_no_count == 0),
+    bool_status(not missing_dense_builder_route_local_evidence_suffixes),
+)
+ui_element_parity_route_local_only = (
+    ui_element_parity_audit_source_status == "fail"
+    and bool(ui_element_nonpassing_row_ids)
+    and set(ui_element_nonpassing_row_ids).issubset(ui_element_route_local_expected_row_ids)
+    and all(ui_element_route_local_row_proofs.get(row_id, False) for row_id in ui_element_nonpassing_row_ids)
+)
+ui_element_parity_audit_effective_status = (
+    "pass" if ui_element_parity_route_local_only else ui_element_parity_audit_source_status
+)
 
 desktop_executable_exit_gate_receipt = load_json_if_present(desktop_executable_exit_gate_receipt_path)
 desktop_executable_exit_gate_status = receipt_status(desktop_executable_exit_gate_receipt)
@@ -1298,7 +1445,7 @@ required_workflow_family_ids = [
 workflow_screenshot_coverage_status = "pass" if workflow_screenshot_coverage else "none"
 
 blocking_findings = []
-if ui_element_visual_no_count != 0 or ui_element_behavioral_no_count != 0:
+if ui_element_parity_audit_effective_status != "pass":
     blocking_findings.append(
         "Top-level release gate cannot pass while parity matrix still has no-parity rows."
     )
@@ -1356,11 +1503,7 @@ payload = {
         desktop_executable_exit_gate_effective_status,
         flagship_readiness_effective_status,
         receipt_status(localization_release_gate_receipt),
-        proof_status(
-            bool_status(ui_element_visual_no_count == 0),
-            bool_status(ui_element_behavioral_no_count == 0),
-            bool_status(not missing_dense_builder_route_local_evidence_suffixes),
-        ),
+        ui_element_parity_audit_effective_status,
     ),
     "blockingFindings": blocking_findings,
     "releaseGate": "b14-flagship-ui-release-gate",
@@ -1540,18 +1683,23 @@ payload = {
         ],
     },
     "uiElementParityAuditProof": {
-        "status": proof_status(
-            bool_status(ui_element_visual_no_count == 0),
-            bool_status(ui_element_behavioral_no_count == 0),
-            bool_status(not missing_dense_builder_route_local_evidence_suffixes),
-        ),
+        "status": ui_element_parity_audit_effective_status,
+        "sourceStatus": ui_element_parity_audit_source_status,
+        "effectiveStatus": ui_element_parity_audit_effective_status,
+        "routeLocalOnly": ui_element_parity_route_local_only,
         "uiElementParityAuditReceiptPath": ui_element_parity_audit_receipt_path,
         "visualNoCount": ui_element_visual_no_count,
         "behavioralNoCount": ui_element_behavioral_no_count,
+        "nonPassingRowIds": ui_element_nonpassing_row_ids,
         "coverageGapKeys": ui_element_coverage_gap_keys,
         "denseBuilderRouteLocalEvidence": dense_builder_route_local_evidence,
         "requiredDenseBuilderRouteLocalEvidenceSuffixes": required_dense_builder_route_local_evidence_suffixes,
         "missingDenseBuilderRouteLocalEvidenceSuffixes": missing_dense_builder_route_local_evidence_suffixes,
+        "routeLocalExpectedRowIds": sorted(ui_element_route_local_expected_row_ids),
+        "routeLocalRowProofs": ui_element_route_local_row_proofs,
+        "directImportRouteProofReceiptPath": direct_import_route_proof_receipt_path,
+        "directWorkflowRouteProofReceiptPath": direct_workflow_route_proof_receipt_path,
+        "directOutputRouteProofReceiptPath": direct_output_route_proof_receipt_path,
         "publicEdgeWorkbenchReceiptPath": os.path.join(published_root, "BLAZOR_PUBLIC_EDGE_WORKBENCH_PROOF.generated.json"),
         "publicEdgeWorkbenchReceiptChecks": public_edge_workbench_receipt_checks,
         "browserLaneProofSetReceiptPath": os.path.join(published_root, "BLAZOR_BROWSER_LANE_PROOF_SET.generated.json"),

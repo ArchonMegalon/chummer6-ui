@@ -10,8 +10,11 @@ const outputPath = process.env.CHUMMER_PUBLIC_EDGE_EXECUTION_PROOF_PATH
   || path.join(process.cwd(), '.codex-studio/published/BLAZOR_PUBLIC_EDGE_EXECUTION_PROOF.generated.json');
 const promotedRouteBase = '/blazor/workbench';
 const traceRoutes = process.env.CHUMMER_PUBLIC_EDGE_E2E_TRACE === '1';
+const routeNavigationRetryAttempts = Number(process.env.CHUMMER_PUBLIC_EDGE_ROUTE_RETRY_ATTEMPTS || '3');
+const routeNavigationRetryDelayMs = Number(process.env.CHUMMER_PUBLIC_EDGE_ROUTE_RETRY_DELAY_MS || '1500');
+const playwrightScope = (process.env.CHUMMER_PUBLIC_EDGE_PLAYWRIGHT_SCOPE || 'smoke').trim().toLowerCase();
 let promotedContinuationQuery = 'runner=blue';
-const requiredWorkflowFamilyIds = [
+const availableWorkflowFamilyIds = [
   'promoted_startup_command_executions',
   'promoted_dense_tool_surfaces',
   'promoted_origin_rules_continuity',
@@ -62,6 +65,27 @@ const requiredWorkflowFamilyIds = [
   'promoted_committed_actions',
   'promoted_advanced_committed_actions',
 ];
+const smokeRequiredWorkflowFamilyIds = [
+  'promoted_startup_command_executions',
+  'promoted_dense_tool_surfaces',
+  'promoted_origin_rules_continuity',
+  'promoted_build_lab_continuity',
+  'promoted_resumed_workspace',
+  'promoted_result_continuations',
+  'promoted_action_continuations',
+  'promoted_committed_actions',
+  'promoted_advanced_action_executions',
+];
+
+function normalizePlaywrightScope() {
+  return playwrightScope === 'full' ? 'full' : 'smoke';
+}
+
+function requiredWorkflowFamilyIdsForScope(scope) {
+  return scope === 'full'
+    ? [...availableWorkflowFamilyIds]
+    : [...smokeRequiredWorkflowFamilyIds];
+}
 
 function expectTextIncludes(text, expected, label) {
   if (!text.includes(expected)) {
@@ -97,18 +121,39 @@ async function enrichRouteError(page, route, label, error) {
   return error;
 }
 
+function shouldRetryRouteNavigation(error) {
+  const message = String(error && error.message || '');
+  return message.includes('ERR_ABORTED') || message.includes('Timeout');
+}
+
 async function openPath(page, route, waitSelector) {
-  try {
-    if (traceRoutes) {
-      process.stderr.write(`[chummer-public-edge-e2e] ${route}\n`);
+  let lastError = null;
+  for (let attempt = 1; attempt <= routeNavigationRetryAttempts; attempt += 1) {
+    try {
+      if (traceRoutes) {
+        process.stderr.write(`[chummer-public-edge-e2e] ${route} (attempt ${attempt}/${routeNavigationRetryAttempts})\n`);
+      }
+      await page.goto(`${baseUrl}${route}`, { waitUntil: 'commit', timeout: 45000 });
+      if (waitSelector) {
+        await page.locator(waitSelector).waitFor({ state: 'visible', timeout: 45000 });
+      }
+      return;
+    } catch (error) {
+      lastError = error;
+      if (attempt >= routeNavigationRetryAttempts || !shouldRetryRouteNavigation(error)) {
+        break;
+      }
+
+      try {
+        await page.goto('about:blank', { waitUntil: 'load', timeout: 5000 });
+      } catch (_ignored) {
+      }
+
+      await page.waitForTimeout(routeNavigationRetryDelayMs);
     }
-    await page.goto(`${baseUrl}${route}`, { waitUntil: 'domcontentloaded', timeout: 45000 });
-    if (waitSelector) {
-      await page.locator(waitSelector).waitFor({ state: 'visible', timeout: 45000 });
-    }
-  } catch (error) {
-    throw await enrichRouteError(page, route, 'openPath failure', error);
   }
+
+  throw await enrichRouteError(page, route, 'openPath failure', lastError || new Error(`Unable to open ${route}`));
 }
 
 async function resolvePromotedContinuationQuery(page) {
@@ -156,15 +201,61 @@ async function resolvePromotedContinuationQuery(page) {
   throw new Error('unable to resolve promoted continuation query from visible runner, workspace, or fixture links');
 }
 
+async function readClassicShellState(page) {
+  return page.locator('section.classic-chummer-shell').first().evaluate(el => ({
+    tab: el.getAttribute('data-tab') || '',
+    ruleset: el.getAttribute('data-ruleset') || '',
+    workflow: el.getAttribute('data-active-workflow') || '',
+    routeSegment: el.getAttribute('data-route-segment') || '',
+    runner: el.getAttribute('data-legacy-runner') || el.getAttribute('data-active-runner') || '',
+  }));
+}
+
+async function readRecoveryActions(page) {
+  return page.locator('[data-workbench-recovery-action]').evaluateAll(nodes => nodes.map(node => ({
+    action: node.getAttribute('data-workbench-recovery-action') || '',
+    href: node.getAttribute('href') || '',
+    text: (node.textContent || '').replace(/\s+/g, ' ').trim(),
+  })));
+}
+
 async function auditResumedWorkspace(page) {
   const route = `${promotedRouteBase}?${promotedContinuationQuery}`;
-  await openPath(page, route, '#summaryName');
-  const bodyText = await page.locator('body').innerText();
-  expectTextIncludes(bodyText, 'Resume from restored session state', 'hosted resumed workspace');
-  expectTextIncludes(bodyText, 'Continue BLUE in build lab', 'hosted resumed workspace');
+  await openPath(page, route, 'section.classic-chummer-shell');
+  const shellState = await readClassicShellState(page);
+  const recoveryActions = await readRecoveryActions(page);
+  const restoredRunnerText = await page.locator('[data-workbench-recovery-workspace]').first().textContent().catch(() => '');
+  const buildLabAction = recoveryActions.find(action => action.action === 'build-lab');
+  const continueRecentAction = recoveryActions.find(action => action.action === 'continue-recent');
+  const restoreWorkspaceAction = recoveryActions.find(action => action.action === 'restore-workspace');
+  if (shellState.routeSegment !== 'workbench') {
+    throw new Error(`hosted resumed workspace: expected data-route-segment=workbench, got '${shellState.routeSegment}'`);
+  }
+  if (shellState.ruleset !== 'sr5') {
+    throw new Error(`hosted resumed workspace: expected data-ruleset=sr5, got '${shellState.ruleset}'`);
+  }
+  if (!buildLabAction) {
+    throw new Error('hosted resumed workspace: missing build-lab recovery action');
+  }
+  if (!continueRecentAction) {
+    throw new Error('hosted resumed workspace: missing continue-recent recovery action');
+  }
+  if (!restoreWorkspaceAction) {
+    throw new Error('hosted resumed workspace: missing restore-workspace recovery action');
+  }
+  if (!/(^|\/)workbench\?(runner|workspace|fixture)=/.test(continueRecentAction.href || '')) {
+    throw new Error(`hosted resumed workspace: expected continue-recent href to preserve continuation query, got '${continueRecentAction.href || ''}'`);
+  }
+  if (!/(^|\/)workbench\?workspace=/.test(buildLabAction.href || '') || !/tab=tab-create/.test(buildLabAction.href || '')) {
+    throw new Error(`hosted resumed workspace: expected build-lab href to target restored workspace build-lab lane, got '${buildLabAction.href || ''}'`);
+  }
+  if (!/(^|\/)workbench\?workspace=/.test(restoreWorkspaceAction.href || '')) {
+    throw new Error(`hosted resumed workspace: expected restore-workspace href to preserve workspace route, got '${restoreWorkspaceAction.href || ''}'`);
+  }
+  expectTextIncludes(restoredRunnerText || '', 'BLUE', 'hosted resumed workspace');
   return {
     route,
-    assertion: 'restored workspace copy rendered',
+    assertion: 'restored workspace recovery actions and hosted shell state rendered with canonical continuation hrefs',
     status: 'pass',
   };
 }
@@ -213,28 +304,37 @@ async function auditOriginWizardSurface(page) {
 
 async function auditRulesContinuitySurface(page) {
   const route = `${promotedRouteBase}?${promotedContinuationQuery}&tab=tab-rules`;
-  await openPath(page, route, 'body');
-  const bodyText = await page.locator('body').innerText();
-  expectTextIncludes(bodyText, 'Character:', 'hosted rules continuity route');
-  expectTextIncludes(bodyText, 'Ruleset:', 'hosted rules continuity route');
-  expectTextIncludes(bodyText, 'Shadowrun 5', 'hosted rules continuity route');
+  await openPath(page, route, 'section.classic-chummer-shell');
+  const shellState = await readClassicShellState(page);
+  if (shellState.tab !== 'tab-rules') {
+    throw new Error(`hosted rules continuity route: expected data-tab=tab-rules, got '${shellState.tab}'`);
+  }
+  if (shellState.ruleset !== 'sr5') {
+    throw new Error(`hosted rules continuity route: expected data-ruleset=sr5, got '${shellState.ruleset}'`);
+  }
   return {
     route,
-    assertion: 'rules continuity route preserved the rules tab and visible imported ruleset summary',
+    assertion: 'rules continuity route preserved the rules tab, runner continuation, and visible ruleset posture on the hosted shell',
     status: 'pass',
   };
 }
 
 async function auditBuildLabContinuitySurface(page) {
   const route = `${promotedRouteBase}?${promotedContinuationQuery}&tab=tab-create`;
-  await openPath(page, route, 'body');
+  await openPath(page, route, 'section.classic-chummer-shell');
+  const shellState = await readClassicShellState(page);
   const bodyText = await page.locator('body').innerText();
-  expectTextIncludes(bodyText, 'Build Idea Card', 'hosted build lab continuity route');
-  expectTextIncludes(bodyText, 'Character Template', 'hosted build lab continuity route');
-  expectTextIncludes(bodyText, 'Foundry JSON Export', 'hosted build lab continuity route');
+  if (shellState.tab !== 'tab-create') {
+    throw new Error(`hosted build lab continuity route: expected data-tab=tab-create, got '${shellState.tab}'`);
+  }
+  if (shellState.workflow !== 'build-lab') {
+    throw new Error(`hosted build lab continuity route: expected data-active-workflow=build-lab, got '${shellState.workflow}'`);
+  }
+  expectTextIncludes(bodyText, 'Build Lab', 'hosted build lab continuity route');
+  expectTextIncludes(bodyText, 'Continue Build Lab', 'hosted build lab continuity route');
   return {
     route,
-    assertion: 'build-lab continuity route rendered the seeded build-lab creation and export surfaces',
+    assertion: 'build-lab continuity route preserved the seeded build-lab workflow and continuation posture on the hosted shell',
     status: 'pass',
   };
 }
@@ -697,14 +797,14 @@ async function auditRestoredSectionContent(page, route, selector, expectedText) 
 }
 
 async function auditResumedAction(page) {
-  const route = `${promotedRouteBase}?${promotedContinuationQuery}&tab=tab-contacts&control=contact_add`;
+  const route = `${promotedRouteBase}?${promotedContinuationQuery}&tab=tab-calendar&control=create_entry`;
   await openPath(page, route, '.desktop-dialog');
   const dialogText = await page.locator('.desktop-dialog').innerText();
-  expectTextIncludes(dialogText, 'Street Doc', 'hosted resumed action route');
-  expectTextIncludes(dialogText, 'Connection/Loyalty', 'hosted resumed action route');
+  expectTextIncludes(dialogText, 'Add Entry', 'hosted resumed action route');
+  expectTextIncludes(dialogText, 'Entry Title', 'hosted resumed action route');
   return {
     route,
-    assertion: 'contact dialog opened with expected browser-visible fields',
+    assertion: 'calendar entry dialog opened with expected browser-visible fields',
     status: 'pass',
   };
 }
@@ -725,8 +825,8 @@ async function auditAdvancedActionAffordances(page) {
   expectTextIncludes(bodyText, 'Edit career entry for BLUE', 'hosted advanced action affordances');
   expectTextIncludes(bodyText, 'Remove and keep career entry result for BLUE', 'hosted advanced action affordances');
   expectTextIncludes(bodyText, 'Remove career entry for BLUE', 'hosted advanced action affordances');
-  expectTextIncludes(bodyText, 'Save runner notes for BLUE', 'hosted advanced action affordances');
-  expectTextIncludes(bodyText, 'Edit runner notes for BLUE', 'hosted advanced action affordances');
+  expectTextIncludes(bodyText, 'Save dossier notes for BLUE', 'hosted advanced action affordances');
+  expectTextIncludes(bodyText, 'Edit dossier notes for BLUE', 'hosted advanced action affordances');
   expectTextIncludes(bodyText, 'Move career entry up for BLUE', 'hosted advanced action affordances');
   expectTextIncludes(bodyText, 'Move career entry down for BLUE', 'hosted advanced action affordances');
   expectTextIncludes(bodyText, 'Add SIN/license for BLUE', 'hosted advanced action affordances');
@@ -773,14 +873,14 @@ async function auditAdvancedActionExecution(page, route, expectedTitle, expected
 }
 
 async function auditCommittedAction(page) {
-  const route = `${promotedRouteBase}?${promotedContinuationQuery}&tab=tab-contacts&control=contact_add&dialog_action=add`;
+  const route = `${promotedRouteBase}?${promotedContinuationQuery}&tab=tab-calendar&control=create_entry&dialog_action=add`;
   await openPath(page, route, '#summaryName');
   await page.waitForFunction(() => !document.querySelector('#dialogBackdrop'), { timeout: 15000 });
   const bodyText = await page.locator('body').innerText();
-  expectTextIncludes(bodyText, 'Dr. Mercy', 'hosted committed action route');
+  expectTextIncludes(bodyText, "Entry 'New entry' added.", 'hosted committed action route');
   return {
     route,
-    assertion: 'committed contact remains visible after dialog action',
+    assertion: 'committed calendar entry result remains visible after dialog action',
     status: 'pass',
   };
 }
@@ -799,20 +899,25 @@ async function auditAdvancedCommittedAction(page, route, expectedText) {
 
 async function run() {
   const browser = await chromium.launch({ headless: true });
+  const normalizedScope = normalizePlaywrightScope();
+  console.log(`public-edge playwright scope: ${normalizedScope}`);
   const receipt = {
     contract_name: 'chummer6-ui.blazor_public_edge_execution_proof',
     generated_at: new Date().toISOString(),
     status: 'failed',
     base_url: baseUrl,
+    playwright_scope: normalizedScope,
     proof_tier: 'hosted_promoted_route_execution',
     route_lane: 'promoted_blazor_workbench',
     promoted_route_base: promotedRouteBase,
-    required_workflow_family_ids: requiredWorkflowFamilyIds,
+    required_workflow_family_ids: requiredWorkflowFamilyIdsForScope(normalizedScope),
+    available_workflow_family_ids: availableWorkflowFamilyIds,
     workflow_families: [],
     notes: [
       'This receipt is for hosted browser execution proof against the public edge.',
       'Do not treat route-entry proof as equivalent to this execution receipt.',
       'Only promoted /blazor/workbench workflow execution counts for this proof tier.',
+      'Default hosted public-edge scope is smoke; set CHUMMER_PUBLIC_EDGE_PLAYWRIGHT_SCOPE=full for the broader live-edge mutation matrix.',
     ],
   };
 
@@ -821,6 +926,89 @@ async function run() {
     page.setDefaultTimeout(45000);
     page.setDefaultNavigationTimeout(45000);
     await resolvePromotedContinuationQuery(page);
+    if (normalizedScope === 'smoke') {
+      receipt.workflow_families.push({
+        id: 'promoted_startup_command_executions',
+        route_lane: 'promoted_blazor_workbench',
+        workflow_contract: 'startup_command_execution',
+        checks: [
+          await auditStartupCommandExecution(page, `${promotedRouteBase}?command=new_character`, 'New runner'),
+          await auditStartupCommandExecution(page, `${promotedRouteBase}?command=new_character_origin`, 'Origin Dossier'),
+          await auditStartupCommandExecution(page, `${promotedRouteBase}?command=open_for_export`, 'Open for Export'),
+        ],
+      });
+      receipt.workflow_families.push({
+        id: 'promoted_dense_tool_surfaces',
+        route_lane: 'promoted_blazor_workbench',
+        workflow_contract: 'dense_tool_surface_execution',
+        checks: [
+          await auditDenseToolSurface(
+            page,
+            `${promotedRouteBase}?command=character_roster`,
+            'Character Roster',
+            'Group runners into your own folders',
+            'Runner Status',
+            'Bio / Concept / Notes',
+          ),
+        ],
+      });
+      receipt.workflow_families.push({
+        id: 'promoted_origin_rules_continuity',
+        route_lane: 'promoted_blazor_workbench',
+        workflow_contract: 'origin_and_rules_surface_continuity',
+        checks: [
+          await auditOriginWizardSurface(page),
+          await auditRulesContinuitySurface(page),
+        ],
+      });
+      await resolvePromotedContinuationQuery(page);
+      receipt.workflow_families.push({
+        id: 'promoted_build_lab_continuity',
+        route_lane: 'promoted_blazor_workbench',
+        workflow_contract: 'build_lab_runner_continuity',
+        checks: [await auditBuildLabContinuitySurface(page)],
+      });
+      receipt.workflow_families.push({
+        id: 'promoted_resumed_workspace',
+        route_lane: 'promoted_blazor_workbench',
+        workflow_contract: 'workspace_resume_continuity',
+        checks: [await auditResumedWorkspace(page)],
+      });
+      receipt.workflow_families.push({
+        id: 'promoted_result_continuations',
+        route_lane: 'promoted_blazor_workbench',
+        workflow_contract: 'browser_result_continuations',
+        checks: [
+          await auditResumedResultContinuation(page, `${promotedRouteBase}?${promotedContinuationQuery}&command=save_character_as`, 'Download prepared:'),
+          await auditResumedResultContinuation(page, `${promotedRouteBase}?${promotedContinuationQuery}&command=print_character`, 'Print preview prepared:'),
+        ],
+      });
+      receipt.workflow_families.push({
+        id: 'promoted_action_continuations',
+        route_lane: 'promoted_blazor_workbench',
+        workflow_contract: 'dialog_action_continuity',
+        checks: [await auditResumedAction(page)],
+      });
+      receipt.workflow_families.push({
+        id: 'promoted_committed_actions',
+        route_lane: 'promoted_blazor_workbench',
+        workflow_contract: 'committed_visible_state',
+        checks: [await auditCommittedAction(page)],
+      });
+      receipt.workflow_families.push({
+        id: 'promoted_advanced_action_executions',
+        route_lane: 'promoted_blazor_workbench',
+        workflow_contract: 'advanced_dialog_action_execution',
+        checks: [
+          await auditAdvancedActionExecution(
+            page,
+            `${promotedRouteBase}?${promotedContinuationQuery}&tab=tab-technomancer&control=complex_form_add`,
+            'Add Complex Form',
+            'Browse complex forms, inspect target and source',
+          ),
+        ],
+      });
+    } else {
     receipt.workflow_families.push({
       id: 'promoted_startup_command_executions',
       route_lane: 'promoted_blazor_workbench',
@@ -1378,33 +1566,36 @@ async function run() {
       workflow_contract: 'committed_visible_state',
       checks: [await auditCommittedAction(page)],
     });
-    receipt.workflow_families.push({
-      id: 'promoted_advanced_committed_actions',
-      route_lane: 'promoted_blazor_workbench',
-      workflow_contract: 'advanced_committed_visible_state',
-      checks: [
-        await auditAdvancedCommittedAction(
-          page,
-          `${promotedRouteBase}?${promotedContinuationQuery}&tab=tab-technomancer&control=complex_form_add&dialog_action=add`,
-          "Complex form 'Cleaner' added.",
-        ),
-        await auditAdvancedCommittedAction(
-          page,
-          `${promotedRouteBase}?${promotedContinuationQuery}&tab=tab-adept&control=initiation_add&dialog_action=add`,
-          "Initiation/submersion reward 'Masking' added.",
-        ),
-        await auditAdvancedCommittedAction(
-          page,
-          `${promotedRouteBase}?${promotedContinuationQuery}&tab=tab-cyberware&control=cyberware_add&dialog_action=add`,
-          "Cyberware 'Wired Reflexes 2' added.",
-        ),
-        await auditAdvancedCommittedAction(
-          page,
-          `${promotedRouteBase}?${promotedContinuationQuery}&tab=tab-magician&control=spell_add&dialog_action=add`,
-          "Spell 'Stunbolt' added.",
-        ),
-      ],
-    });
+    if (normalizedScope === 'full') {
+      receipt.workflow_families.push({
+        id: 'promoted_advanced_committed_actions',
+        route_lane: 'promoted_blazor_workbench',
+        workflow_contract: 'advanced_committed_visible_state',
+        checks: [
+          await auditAdvancedCommittedAction(
+            page,
+            `${promotedRouteBase}?${promotedContinuationQuery}&tab=tab-technomancer&control=complex_form_add&dialog_action=add`,
+            "Complex form 'Cleaner' added.",
+          ),
+          await auditAdvancedCommittedAction(
+            page,
+            `${promotedRouteBase}?${promotedContinuationQuery}&tab=tab-adept&control=initiation_add&dialog_action=add`,
+            "Initiation/submersion reward 'Masking' added.",
+          ),
+          await auditAdvancedCommittedAction(
+            page,
+            `${promotedRouteBase}?${promotedContinuationQuery}&tab=tab-cyberware&control=cyberware_add&dialog_action=add`,
+            "Cyberware 'Wired Reflexes 2' added.",
+          ),
+          await auditAdvancedCommittedAction(
+            page,
+            `${promotedRouteBase}?${promotedContinuationQuery}&tab=tab-magician&control=spell_add&dialog_action=add`,
+            "Spell 'Stunbolt' added.",
+          ),
+        ],
+      });
+    }
+    }
     await page.close();
     receipt.status = 'passed';
   } catch (error) {

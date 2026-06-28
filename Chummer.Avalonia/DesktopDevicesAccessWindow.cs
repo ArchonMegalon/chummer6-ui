@@ -64,14 +64,14 @@ internal sealed class DesktopDevicesAccessWindow : Window
             Text = S("desktop.devices.status.current"),
             IsVisible = true,
             TextWrapping = TextWrapping.Wrap,
-            Foreground = DesktopShellTheme.ResolveThemeBrush("ChummerShellMutedForegroundBrush", "#334155")
+            Foreground = DesktopShellTheme.ResolveMutedForegroundBrush()
         };
 
         _guidedPreferenceStatusText = new TextBlock
         {
             Text = DesktopInstallLinkingWindow.BuildGuidedToolsPreferenceStatus(_preferences, _preferences.Language),
             TextWrapping = TextWrapping.Wrap,
-            Foreground = DesktopShellTheme.ResolveThemeBrush("ChummerShellMutedForegroundBrush", "#334155")
+            Foreground = DesktopShellTheme.ResolveMutedForegroundBrush()
         };
 
         _guidedToolsRadioButton = CreateGuidedFeatureRadioButton(
@@ -589,7 +589,7 @@ internal sealed class DesktopDevicesAccessWindow : Window
         {
             Text = description,
             TextWrapping = TextWrapping.Wrap,
-            Foreground = DesktopShellTheme.ResolveThemeBrush("ChummerShellMutedForegroundBrush", "#334155")
+            Foreground = DesktopShellTheme.ResolveMutedForegroundBrush()
         };
 
         return DesktopShellTheme.CreateSection(
@@ -625,7 +625,7 @@ internal sealed class DesktopDevicesAccessWindow : Window
                     {
                         Text = S("desktop.install_link.preference.summary"),
                         TextWrapping = TextWrapping.Wrap,
-                        Foreground = DesktopShellTheme.ResolveThemeBrush("ChummerShellMutedForegroundBrush", "#334155")
+                        Foreground = DesktopShellTheme.ResolveMutedForegroundBrush()
                     },
                     new StackPanel
                     {

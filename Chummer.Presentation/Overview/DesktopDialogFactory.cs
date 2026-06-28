@@ -57,7 +57,7 @@ public sealed class DesktopDialogFactory : IDesktopDialogFactory
         return new DesktopDialogState(
             Id: "dialog.workspace.metadata",
             Title: "Edit Metadata",
-            Message: "Apply runner profile metadata changes to the active dossier.",
+            Message: "Apply runner profile metadata changes to the active runner.",
             Fields:
             [
                 new DesktopDialogField("metadataName", "Name", profile?.Name ?? string.Empty, "Character Name"),
@@ -97,18 +97,18 @@ public sealed class DesktopDialogFactory : IDesktopDialogFactory
             OverviewCommandPolicy.RuntimeInspectorCommandId when runtimeInspector is not null => CreateRuntimeInspectorDialog(runtimeInspector),
             "open_character" => CreateOpenCharacterDialog(
                 "dialog.open_character",
-                "Open Dossier",
-                "Paste Chummer XML to import into a dossier.",
+                "Open Runner",
+                "Paste Chummer XML to open a runner.",
                 rulesetId),
             "open_for_printing" => CreateOpenCharacterDialog(
                 "dialog.open_for_printing",
-                "Open for Printing",
-                "Paste Chummer XML to stage print workflows.",
+                "Open Runner for Printing",
+                "Paste Chummer XML to stage runner print workflows.",
                 rulesetId),
             "open_for_export" => CreateOpenCharacterDialog(
                 "dialog.open_for_export",
-                "Open for Export",
-                "Paste Chummer XML to stage export workflows.",
+                "Open Runner for Export",
+                "Paste Chummer XML to stage runner export workflows.",
                 rulesetId),
             "new_character" => BuildNewCharacterDialog(preferences, rulesetId),
             "new_character_origin" => BuildNewCharacterOriginWizardDialog(
@@ -248,23 +248,23 @@ public sealed class DesktopDialogFactory : IDesktopDialogFactory
             "character_roster" => new DesktopDialogState(
                 "dialog.character_roster",
                 "Character Roster",
-                "Group runners into your own folders, drag dossiers or custom directories through the tree, and keep selected-runner details close without moving watched files until explicitly confirmed.",
+                "Group runners into your own folders, drag runners or custom directories through the tree, and keep selected-runner details close without moving watched files until explicitly confirmed.",
                 BuildRosterFields(name, alias, workspace, currentWorkspace, openWorkspaces, preferences),
                 BuildRosterActions(name, alias, workspace, currentWorkspace, openWorkspaces, preferences)),
             "data_exporter" => new DesktopDialogState(
                 "dialog.data_exporter",
                 "Data Exporter",
                 "Export pipeline is routed through API tool endpoints.",
-                [new DesktopDialogField("dataExportPreview", "Export Preview", $"Dossier: {workspace}", "{}", true, true)],
+                [new DesktopDialogField("dataExportPreview", "Export Preview", $"Runner: {workspace}", "{}", true, true)],
                 [
                     new DesktopDialogAction("download", "Download", true),
                     new DesktopDialogAction("close", "Close")
                 ]),
             "export_character" => new DesktopDialogState(
                 "dialog.export_character",
-                "Export Dossier",
-                "Export selected character bundle.",
-                [new DesktopDialogField("dataExportPreview", "Export Preview", $"Dossier: {workspace}", "{}", true, true)],
+                "Export Runner",
+                "Export the selected runner bundle.",
+                [new DesktopDialogField("dataExportPreview", "Export Preview", $"Runner: {workspace}", "{}", true, true)],
                 [
                     new DesktopDialogAction("download", "Download", true),
                     new DesktopDialogAction("close", "Close")
@@ -285,7 +285,7 @@ public sealed class DesktopDialogFactory : IDesktopDialogFactory
                 "Dual-head preview over shared presenter/API behavior path.",
                 [
                     new DesktopDialogField("runtime", "Runtime", "net10.0", "net10.0", IsReadOnly: true),
-                    new DesktopDialogField("workspace", "Dossier", workspace, workspace, IsReadOnly: true)
+                    new DesktopDialogField("workspace", "Runner", workspace, workspace, IsReadOnly: true)
                 ],
                 [new DesktopDialogAction("close", "Close", true)]),
             "hero_lab_importer" => new DesktopDialogState(
@@ -395,7 +395,7 @@ public sealed class DesktopDialogFactory : IDesktopDialogFactory
                 [new DesktopDialogAction("close", "Close", true)]),
             "print_character" => new DesktopDialogState(
                 "dialog.print_character",
-                "Print Dossier",
+                "Print Runner",
                 "Print preview is rendered by host/browser print facilities.",
                 BuildPrintUtilityFields("Current runner", "Print preview stays host-driven while sheet/export context remains visible."),
                 [new DesktopDialogAction("close", "Close", true)]),
@@ -493,8 +493,8 @@ public sealed class DesktopDialogFactory : IDesktopDialogFactory
     {
         const string defaultXml = "<character><name>Imported Runner</name></character>";
         string normalizedRulesetId = RulesetDefaults.NormalizeOptional(rulesetId) ?? RulesetDefaults.Sr5;
-        string importSource = "Paste dossier XML from a trusted local or reviewed export source.";
-        string reviewSummary = $"Review imported summary before applying a {normalizedRulesetId.ToUpperInvariant()} dossier mutation.";
+        string importSource = "Paste runner XML from a trusted local or reviewed export source.";
+        string reviewSummary = $"Review the imported summary before applying this {normalizedRulesetId.ToUpperInvariant()} runner import.";
 
         return new DesktopDialogState(
             Id: id,
@@ -523,7 +523,7 @@ public sealed class DesktopDialogFactory : IDesktopDialogFactory
                     IsReadOnly: true),
                 new DesktopDialogField(
                     Id: "openCharacterXml",
-                    Label: "Dossier XML",
+                    Label: "Runner XML",
                     Value: defaultXml,
                     Placeholder: defaultXml,
                     IsMultiline: true)
@@ -3145,7 +3145,7 @@ public sealed class DesktopDialogFactory : IDesktopDialogFactory
                 .Where(candidate => !string.IsNullOrWhiteSpace(candidate))
                 .Distinct(StringComparer.Ordinal));
         string rosterEntries = ordered.Length == 0
-            ? $"{alias} · {name} · {(string.IsNullOrWhiteSpace(workspace) ? "(no dossier)" : workspace)}"
+            ? $"{alias} · {name} · {(string.IsNullOrWhiteSpace(workspace) ? "(no runner)" : workspace)}"
             : string.Join(
                 Environment.NewLine,
                 ordered.Select(candidate =>
@@ -3158,8 +3158,8 @@ public sealed class DesktopDialogFactory : IDesktopDialogFactory
                     ? $"└─ {rosterPath}{Environment.NewLine}   ├─ watcher: FileSystemWatcher (subdirectories){Environment.NewLine}   └─ no runner files detected"
                     : $"└─ {rosterPath}{Environment.NewLine}   ├─ watcher: FileSystemWatcher (subdirectories){Environment.NewLine}{string.Join(Environment.NewLine, watchedFiles.Select((fileName, index) => $"{(index == watchedFiles.Length - 1 ? "   └─ " : "   ├─ ")}{(string.Equals(fileName, selectedWatchedFile, StringComparison.OrdinalIgnoreCase) ? "* " : string.Empty)}{fileName}"))}";
         string rosterTree = ordered.Length == 0
-            ? $"[Open Dossiers]{Environment.NewLine}└─ {alias} · {name}{Environment.NewLine}[Watch Folder]{Environment.NewLine}{watchFolderTree}"
-            : $"[Open Dossiers]{Environment.NewLine}{string.Join(Environment.NewLine, ordered.Select(candidate => $"└─ {(selectedRunner is not null && string.Equals(candidate.Id.Value, selectedRunner.Id.Value, StringComparison.Ordinal) ? "*" : "-")} {candidate.Alias} · {candidate.Name} [{(RulesetDefaults.NormalizeOptional(candidate.RulesetId) ?? candidate.RulesetId)}]"))}{Environment.NewLine}[Watch Folder]{Environment.NewLine}{watchFolderTree}";
+            ? $"[Open Runners]{Environment.NewLine}└─ {alias} · {name}{Environment.NewLine}[Watch Folder]{Environment.NewLine}{watchFolderTree}"
+            : $"[Open Runners]{Environment.NewLine}{string.Join(Environment.NewLine, ordered.Select(candidate => $"└─ {(selectedRunner is not null && string.Equals(candidate.Id.Value, selectedRunner.Id.Value, StringComparison.Ordinal) ? "*" : "-")} {candidate.Alias} · {candidate.Name} [{(RulesetDefaults.NormalizeOptional(candidate.RulesetId) ?? candidate.RulesetId)}]"))}{Environment.NewLine}[Watch Folder]{Environment.NewLine}{watchFolderTree}";
         string customRosterFolders = BuildCustomRosterFolderPreview(ordered, watchedFiles, selectedRunner, selectedWatchedFile, alias, name);
         string rosterMoveTargets = BuildGridValue(
             ("Drop Target", selectedRunner is null ? "New directory or watched file" : $"{selectedRunner.Alias} directory"),
@@ -3219,7 +3219,7 @@ public sealed class DesktopDialogFactory : IDesktopDialogFactory
         string selectionTrail = selectedRunner is null
             ? BuildGridValue(
                 ("Active Runner", $"{alias} · {name}"),
-                ("Save Posture", string.IsNullOrWhiteSpace(workspace) ? "not saved yet" : "dossier available"),
+                ("Save Posture", string.IsNullOrWhiteSpace(workspace) ? "not saved yet" : "runner available"),
                 ("Watch Folder", watchFolderConfigured ? rosterPath : "not configured"),
                 ("Watch File", selectedWatchedFile ?? "not matched"))
             : BuildGridValue(
@@ -3232,7 +3232,7 @@ public sealed class DesktopDialogFactory : IDesktopDialogFactory
             ("Watcher", !watchFolderConfigured ? "inactive" : watchFolderExists ? "FileSystemWatcher active" : "configured via global settings"),
             ("Include Subdirectories", watchFolderConfigured ? "Yes" : "n/a"),
             ("Watched Files", watchedCount.ToString(CultureInfo.InvariantCulture)),
-            ("Saved Dossiers", savedCount.ToString(CultureInfo.InvariantCulture)),
+            ("Saved Runners", savedCount.ToString(CultureInfo.InvariantCulture)),
             ("Selected Watch File", selectedWatchedFile ?? "not matched"),
             ("Selected Updated", selectedWatchFileInfo is null ? "n/a" : $"{selectedWatchFileInfo.LastWriteTimeUtc:yyyy-MM-dd HH:mm} UTC"),
             ("Selected Bytes", selectedWatchFileInfo?.Length.ToString(CultureInfo.InvariantCulture) ?? "n/a"),

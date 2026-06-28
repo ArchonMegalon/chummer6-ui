@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-06-24T18:00:13.7221553Z",
+  "generatedAt": "2026-06-28T07:45:46.4171624Z",
   "authority": {
     "visualBaseline": "Chummer5a",
     "releaseAuthorityPlatform": "windows",
@@ -16,85 +16,140 @@
   "workflowCoverage": [
     {
       "workflowFamilyId": "create-open-import-save-save-as-print-export",
-      "legacyBehaviorLineage": "File menu lineage",
+      "legacyBehaviorLineage": "Chummer4/Chummer5a File menu New/Open/Save/Save As/Print/Export handoff lineage.",
       "screenshotFiles": [
-        "04-loaded-runner-light.png",
-        "18-import-dialog-light.png"
-      ]
+        "19-workflow-file-menu-loaded-light.png",
+        "36-workflow-new-character-dialog-light.png",
+        "18-import-dialog-light.png",
+        "40-hero-lab-importer-dialog-light.png"
+      ],
+      "screenshotCount": 4
     },
     {
       "workflowFamilyId": "metatype-priorities-karma-entry",
-      "legacyBehaviorLineage": "Creation lineage",
+      "legacyBehaviorLineage": "Chummer4/Chummer5a character creation priority and karma journal lineage.",
       "screenshotFiles": [
         "15-creation-section-light.png",
-        "14-advancement-dialog-light.png"
-      ]
+        "11-diary-dialog-light.png",
+        "36-workflow-new-character-dialog-light.png"
+      ],
+      "screenshotCount": 3
     },
     {
       "workflowFamilyId": "attributes-skills-skill-groups-specializations-knowledge-languages",
-      "legacyBehaviorLineage": "Skills lineage",
+      "legacyBehaviorLineage": "Chummer4/Chummer5a Attributes and Skills tab edit-list lineage.",
       "screenshotFiles": [
-        "04-loaded-runner-light.png",
-        "07-loaded-runner-tabs-light.png"
-      ]
+        "15-creation-section-light.png",
+        "20-workflow-skills-section-light.png",
+        "21-workflow-skill-add-dialog-light.png"
+      ],
+      "screenshotCount": 3
     },
     {
       "workflowFamilyId": "qualities-contacts-identities-notes-calendar-expenses-lifestyles-sources",
-      "legacyBehaviorLineage": "Contacts lineage",
+      "legacyBehaviorLineage": "Chummer4/Chummer5a qualities, contacts, diary, notes, and source review lineage.",
       "screenshotFiles": [
         "10-contacts-section-light.png",
-        "11-diary-dialog-light.png"
-      ]
+        "22-workflow-qualities-section-light.png",
+        "23-workflow-quality-add-dialog-light.png",
+        "37-workflow-calendar-section-light.png"
+      ],
+      "screenshotCount": 4
     },
     {
       "workflowFamilyId": "armor-weapons-gear-vehicles-drones-mods-custom-items-locations-containers",
-      "legacyBehaviorLineage": "Gear lineage",
+      "legacyBehaviorLineage": "Chummer4/Chummer5a gear, armor, weapon, vehicle, drone, mod, and location list lineage.",
       "screenshotFiles": [
-        "04-loaded-runner-light.png",
-        "09-vehicles-section-light.png"
-      ]
+        "09-vehicles-section-light.png",
+        "24-workflow-gear-section-light.png",
+        "25-workflow-gear-add-dialog-light.png",
+        "26-workflow-weapons-section-light.png",
+        "27-workflow-weapon-add-dialog-light.png",
+        "28-workflow-armor-section-light.png",
+        "29-workflow-armor-add-dialog-light.png"
+      ],
+      "screenshotCount": 7
     },
     {
       "workflowFamilyId": "cyberware-bioware-modular-hierarchies-nested-plugins",
-      "legacyBehaviorLineage": "Cyberware lineage",
+      "legacyBehaviorLineage": "Chummer4/Chummer5a cyberware/bioware nested selection and plugin lineage.",
       "screenshotFiles": [
-        "05-dense-section-light.png",
-        "08-cyberware-dialog-light.png"
-      ]
+        "08-cyberware-dialog-light.png",
+        "30-workflow-cyberware-section-light.png"
+      ],
+      "screenshotCount": 2
     },
     {
       "workflowFamilyId": "magic-adept-resonance-sprites-spells-rituals-spirits-powers-metamagics-echoes-complex-forms",
-      "legacyBehaviorLineage": "Magic lineage",
+      "legacyBehaviorLineage": "Chummer4/Chummer5a magic, adept, resonance, initiation, and matrix form lineage.",
       "screenshotFiles": [
         "12-magic-dialog-light.png",
         "13-matrix-dialog-light.png",
-        "14-advancement-dialog-light.png"
-      ]
+        "14-advancement-dialog-light.png",
+        "31-workflow-powers-section-light.png",
+        "32-workflow-adept-power-dialog-light.png",
+        "33-workflow-complex-form-dialog-light.png"
+      ],
+      "screenshotCount": 6
     },
     {
       "workflowFamilyId": "improvements-explain-result-parity",
-      "legacyBehaviorLineage": "Validation lineage",
+      "legacyBehaviorLineage": "Chummer4/Chummer5a validation, explain, source, and applied-result review lineage.",
       "screenshotFiles": [
+        "14-advancement-dialog-light.png",
         "16-master-index-dialog-light.png",
-        "39-xml-editor-dialog-light.png"
-      ]
+        "34-workflow-validate-section-light.png",
+        "35-workflow-rules-section-light.png"
+      ],
+      "screenshotCount": 4
     },
     {
       "workflowFamilyId": "recovery-reload-migration-roundtrips",
-      "legacyBehaviorLineage": "Reload lineage",
+      "legacyBehaviorLineage": "Chummer4/Chummer5a open/import/reload/recovery roundtrip lineage.",
       "screenshotFiles": [
-        "01-initial-shell-light.png",
-        "04-loaded-runner-light.png"
-      ]
+        "04-loaded-runner-light.png",
+        "18-import-dialog-light.png",
+        "19-workflow-file-menu-loaded-light.png"
+      ],
+      "screenshotCount": 3
     },
     {
       "workflowFamilyId": "dense-workbench-affordances-search-add-edit-remove-preview-drill-in-compare",
-      "legacyBehaviorLineage": "Dense workbench lineage",
+      "legacyBehaviorLineage": "Chummer4/Chummer5a dense list, quick action, preview, drill-in, and compare workbench lineage.",
       "screenshotFiles": [
         "05-dense-section-light.png",
         "06-dense-section-dark.png",
-        "07-loaded-runner-tabs-light.png"
-      ]
+        "07-loaded-runner-tabs-light.png",
+        "24-workflow-gear-section-light.png",
+        "25-workflow-gear-add-dialog-light.png"
+      ],
+      "screenshotCount": 5
+    },
+    {
+      "workflowFamilyId": "native-horizons-surface-catalog",
+      "legacyBehaviorLineage": "Every first-class native horizon/workbench surface must stay screenshot-backed on the promoted desktop head.",
+      "screenshotFiles": [
+        "41-horizons-hub-light.png",
+        "42-horizon-karma-forge-light.png",
+        "43-horizon-alice-light.png",
+        "44-horizon-black-ledger-light.png",
+        "45-horizon-run-control-light.png",
+        "46-horizon-runsite-light.png",
+        "47-horizon-jackpoint-light.png",
+        "48-horizon-table-pulse-light.png",
+        "49-horizon-community-hub-light.png",
+        "50-horizon-nexus-pan-light.png",
+        "51-horizon-quicksilver-light.png",
+        "52-horizon-runner-passport-light.png",
+        "53-horizon-runbook-press-light.png",
+        "54-horizon-creator-os-light.png",
+        "55-horizon-local-co-processor-light.png",
+        "56-horizon-anarchy-light.png",
+        "57-horizon-ghostwire-light.png",
+        "58-horizon-ready-for-tonight-light.png",
+        "60-horizon-knowledge-fabric-light.png"
+      ],
+      "screenshotCount": 19
     }
   ],
   "entries": [
@@ -104,17 +159,11 @@
       "dialogTitle": "",
       "dialogMessage": "",
       "dialogFieldLabels": [],
-      "dialogFieldIds": [
-        "01-initial-shell-light_field"
-      ],
-      "dialogFieldControlIds": [
-        "01-initial-shell-light_control"
-      ],
+      "dialogFieldIds": [],
+      "dialogFieldControlIds": [],
       "dialogFieldInputValues": [],
       "dialogActionIds": [],
-      "dialogActionControlIds": [
-        "01-initial-shell-light_action"
-      ],
+      "dialogActionControlIds": [],
       "visibleNamedControlIds": [
         "CenterShellRegion",
         "CharacterRosterControl",
@@ -882,7 +931,7 @@
         {
           "Name": "StatusText",
           "ControlType": "TextBlock",
-          "Text": "ready \u00b7 none \u00b7 0 open \u00b7 unsaved \u00b7 none",
+          "Text": "ready \u00B7 none \u00B7 0 open \u00B7 unsaved \u00B7 none",
           "X": 34,
           "Y": 113,
           "Width": 198,
@@ -900,7 +949,7 @@
         {
           "Name": "TimeStateText",
           "ControlType": "TextBlock",
-          "Text": "Time: 2026-06-24 18:00:02Z",
+          "Text": "Time: 2026-06-28 07:45:36Z",
           "X": 466,
           "Y": 766,
           "Width": 152,
@@ -961,12 +1010,12 @@
         "Close",
         "ALICE",
         "Origin Dossier",
-        "ready \u00b7 none \u00b7 0 open \u00b7 unsaved \u00b7 none",
+        "ready \u00B7 none \u00B7 0 open \u00B7 unsaved \u00B7 none",
         "Characters",
         "Grouped by ruleset",
         "Character: none",
         "Service: online",
-        "Time: 2026-06-24 18:00:02Z",
+        "Time: 2026-06-28 07:45:36Z",
         "Ruleset: Shadowrun 5 .chum5 | Workflows: 0 defs / 0 surfaces | Prefs: 100%/classic/en-us"
       ],
       "visibleMenuCommandIds": [],
@@ -985,17 +1034,11 @@
       "dialogTitle": "",
       "dialogMessage": "",
       "dialogFieldLabels": [],
-      "dialogFieldIds": [
-        "02-menu-open-light_field"
-      ],
-      "dialogFieldControlIds": [
-        "02-menu-open-light_control"
-      ],
+      "dialogFieldIds": [],
+      "dialogFieldControlIds": [],
       "dialogFieldInputValues": [],
       "dialogActionIds": [],
-      "dialogActionControlIds": [
-        "02-menu-open-light_action"
-      ],
+      "dialogActionControlIds": [],
       "visibleNamedControlIds": [
         "CenterShellRegion",
         "CharacterRosterControl",
@@ -1261,7 +1304,7 @@
         {
           "Name": "NoticeText",
           "ControlType": "TextBlock",
-          "Text": "Menu 'file' opened.",
+          "Text": "Menu \u0027file\u0027 opened.",
           "X": 1153,
           "Y": 167,
           "Width": 107,
@@ -1783,7 +1826,7 @@
         {
           "Name": "StatusText",
           "ControlType": "TextBlock",
-          "Text": "ready \u00b7 none \u00b7 0 open \u00b7 unsaved \u00b7 none",
+          "Text": "ready \u00B7 none \u00B7 0 open \u00B7 unsaved \u00B7 none",
           "X": 34,
           "Y": 113,
           "Width": 198,
@@ -1801,7 +1844,7 @@
         {
           "Name": "TimeStateText",
           "ControlType": "TextBlock",
-          "Text": "Time: 2026-06-24 18:00:02Z",
+          "Text": "Time: 2026-06-28 07:45:37Z",
           "X": 466,
           "Y": 766,
           "Width": 152,
@@ -1862,13 +1905,13 @@
         "Close",
         "ALICE",
         "Origin Dossier",
-        "ready \u00b7 none \u00b7 0 open \u00b7 unsaved \u00b7 none",
+        "ready \u00B7 none \u00B7 0 open \u00B7 unsaved \u00B7 none",
         "Characters",
         "Grouped by ruleset",
-        "Menu 'file' opened.",
+        "Menu \u0027file\u0027 opened.",
         "Character: none",
         "Service: online",
-        "Time: 2026-06-24 18:00:02Z",
+        "Time: 2026-06-28 07:45:37Z",
         "Ruleset: Shadowrun 5 .chum5 | Workflows: 0 defs / 0 surfaces | Prefs: 100%/classic/en-us"
       ],
       "visibleMenuCommandIds": [
@@ -1897,17 +1940,11 @@
       "dialogTitle": "Global Settings",
       "dialogMessage": "",
       "dialogFieldLabels": [],
-      "dialogFieldIds": [
-        "Background"
-      ],
-      "dialogFieldControlIds": [
-        "Background"
-      ],
+      "dialogFieldIds": [],
+      "dialogFieldControlIds": [],
       "dialogFieldInputValues": [],
       "dialogActionIds": [],
-      "dialogActionControlIds": [
-        "Background"
-      ],
+      "dialogActionControlIds": [],
       "visibleNamedControlIds": [
         "Background",
         "CenterShellRegion",
@@ -2959,7 +2996,7 @@
         {
           "Name": "StatusText",
           "ControlType": "TextBlock",
-          "Text": "ready \u00b7 none \u00b7 0 open \u00b7 unsaved \u00b7 Global Settings",
+          "Text": "ready \u00B7 none \u00B7 0 open \u00B7 unsaved \u00B7 Global Settings",
           "X": 34,
           "Y": 113,
           "Width": 251,
@@ -2977,7 +3014,7 @@
         {
           "Name": "TimeStateText",
           "ControlType": "TextBlock",
-          "Text": "Time: 2026-06-24 18:00:03Z",
+          "Text": "Time: 2026-06-28 07:45:37Z",
           "X": 466,
           "Y": 766,
           "Width": 152,
@@ -3047,7 +3084,7 @@
         "Close",
         "ALICE",
         "Origin Dossier",
-        "ready \u00b7 none \u00b7 0 open \u00b7 unsaved \u00b7 Global Settings",
+        "ready \u00B7 none \u00B7 0 open \u00B7 unsaved \u00B7 Global Settings",
         "Characters",
         "Grouped by ruleset",
         "Global Settings Classic",
@@ -3061,7 +3098,7 @@
         "ClassicPortLineItem { Label = Status, Detail = No global settings are currently loaded. }",
         "Character: none",
         "Service: online",
-        "Time: 2026-06-24 18:00:03Z",
+        "Time: 2026-06-28 07:45:37Z",
         "Ruleset: Shadowrun 5 .chum5 | Workflows: 0 defs / 0 surfaces | Prefs: 100%/classic/en-us"
       ],
       "visibleMenuCommandIds": [],
@@ -3080,17 +3117,11 @@
       "dialogTitle": "",
       "dialogMessage": "",
       "dialogFieldLabels": [],
-      "dialogFieldIds": [
-        "04-loaded-runner-light_field"
-      ],
-      "dialogFieldControlIds": [
-        "04-loaded-runner-light_control"
-      ],
+      "dialogFieldIds": [],
+      "dialogFieldControlIds": [],
       "dialogFieldInputValues": [],
       "dialogActionIds": [],
-      "dialogActionControlIds": [
-        "04-loaded-runner-light_action"
-      ],
+      "dialogActionControlIds": [],
       "visibleNamedControlIds": [
         "CenterShellRegion",
         "CharacterRosterControl",
@@ -4553,7 +4584,7 @@
         {
           "Name": "StatusText",
           "ControlType": "TextBlock",
-          "Text": "ready \u00b7 Soma \u00b7 1 open \u00b7 unsaved \u00b7 Global Settings",
+          "Text": "ready \u00B7 Soma \u00B7 1 open \u00B7 unsaved \u00B7 Global Settings",
           "X": 34,
           "Y": 113,
           "Width": 253,
@@ -4571,7 +4602,7 @@
         {
           "Name": "TimeStateText",
           "ControlType": "TextBlock",
-          "Text": "Time: 2026-06-24 18:00:03Z",
+          "Text": "Time: 2026-06-28 07:45:37Z",
           "X": 466,
           "Y": 766,
           "Width": 152,
@@ -4641,10 +4672,10 @@
         "Close",
         "ALICE",
         "Origin Dossier",
-        "ready \u00b7 Soma \u00b7 1 open \u00b7 unsaved \u00b7 Global Settings",
+        "ready \u00B7 Soma \u00B7 1 open \u00B7 unsaved \u00B7 Global Settings",
         "Characters",
         "Grouped by ruleset",
-        "SR5 Characters",
+        "SR5 Roster",
         "1 character",
         "Runner",
         "Character Summary",
@@ -4696,7 +4727,7 @@
         "Add Cyberware",
         "Character: loaded",
         "Service: online",
-        "Time: 2026-06-24 18:00:03Z",
+        "Time: 2026-06-28 07:45:37Z",
         "Ruleset: Shadowrun 5 .chum5 | Workflows: 0 defs / 0 surfaces | Prefs: 100%/classic/en-us"
       ],
       "visibleMenuCommandIds": [],
@@ -4707,7 +4738,7 @@
         "SectionQuickAction_cyberware_add"
       ],
       "selectedListRowTexts": [],
-      "previewText": "Cyberware\nName: Soma\nMetatype: Human\nRuleset: sr5\nInitiative: 11 \\u002B 2d6\nArmor: 12\nEssence: 5.34\n\nBOD: 5\nAGI: 7\nREA: 6\nFirearms 1: Automatics 6\nStealth 1: Sneaking 5\nWeapons 1: Ares Alpha\nArmor 1: Armor Jacket\nCyberware 1: Wired Reflexes 2\nContact 1: Fixer (Loyalty 4 / Connection 5)\nRunner Goal: Ready for a flagship shell smoke pass\n\nPayload\n{\n  \"name\": \"Soma\",\n  \"ruleset\": \"sr5\",\n  \"metatype\": \"Human\",\n  \"priority\": \"Standard\",\n  \"role\": \"Street Sam\",\n  \"attributes\": {\n    \"Body\": 5,\n    \"Agility\": 7,\n    \"Reaction\": 6,\n    \"Strength\": 4,\n    \"Willpower\": 3,\n    \"Logic\": 3\n  },\n  \"combat\": {\n    \"initiative\": \"11 + 2d6\",\n    \"armor\": 12,\n    \"essence\": 5.34\n  }\n}",
+      "previewText": "Cyberware\nName: Soma\nMetatype: Human\nRuleset: sr5\nInitiative: 11 \\u002B 2d6\nArmor: 12\nEssence: 5.34\n\nBOD: 5\nAGI: 7\nREA: 6\nFirearms 1: Automatics 6\nStealth 1: Sneaking 5\nWeapons 1: Ares Alpha\nArmor 1: Armor Jacket\nCyberware 1: Wired Reflexes 2\nContact 1: Fixer (Loyalty 4 / Connection 5)\nRunner Goal: Ready for a flagship shell smoke pass\n\nPayload\n{\n  \u0022name\u0022: \u0022Soma\u0022,\n  \u0022ruleset\u0022: \u0022sr5\u0022,\n  \u0022metatype\u0022: \u0022Human\u0022,\n  \u0022priority\u0022: \u0022Standard\u0022,\n  \u0022role\u0022: \u0022Street Sam\u0022,\n  \u0022attributes\u0022: {\n    \u0022Body\u0022: 5,\n    \u0022Agility\u0022: 7,\n    \u0022Reaction\u0022: 6,\n    \u0022Strength\u0022: 4,\n    \u0022Willpower\u0022: 3,\n    \u0022Logic\u0022: 3\n  },\n  \u0022combat\u0022: {\n    \u0022initiative\u0022: \u002211 \u002B 2d6\u0022,\n    \u0022armor\u0022: 12,\n    \u0022essence\u0022: 5.34\n  }\n}",
       "rightShellVisible": false,
       "rightShellWidth": 0,
       "inlineCommandSurfaceVisible": false,
@@ -4719,17 +4750,11 @@
       "dialogTitle": "",
       "dialogMessage": "",
       "dialogFieldLabels": [],
-      "dialogFieldIds": [
-        "05-dense-section-light_field"
-      ],
-      "dialogFieldControlIds": [
-        "05-dense-section-light_control"
-      ],
+      "dialogFieldIds": [],
+      "dialogFieldControlIds": [],
       "dialogFieldInputValues": [],
       "dialogActionIds": [],
-      "dialogActionControlIds": [
-        "05-dense-section-light_action"
-      ],
+      "dialogActionControlIds": [],
       "visibleNamedControlIds": [
         "CenterShellRegion",
         "CharacterRosterControl",
@@ -6110,7 +6135,7 @@
         {
           "Name": "StatusText",
           "ControlType": "TextBlock",
-          "Text": "ready \u00b7 Soma \u00b7 1 open \u00b7 unsaved \u00b7 New Character",
+          "Text": "ready \u00B7 Soma \u00B7 1 open \u00B7 unsaved \u00B7 New Character",
           "X": 34,
           "Y": 113,
           "Width": 252,
@@ -6128,7 +6153,7 @@
         {
           "Name": "TimeStateText",
           "ControlType": "TextBlock",
-          "Text": "Time: 2026-06-24 18:00:04Z",
+          "Text": "Time: 2026-06-28 07:45:38Z",
           "X": 466,
           "Y": 766,
           "Width": 152,
@@ -6198,10 +6223,10 @@
         "Close",
         "ALICE",
         "Origin Dossier",
-        "ready \u00b7 Soma \u00b7 1 open \u00b7 unsaved \u00b7 New Character",
+        "ready \u00B7 Soma \u00B7 1 open \u00B7 unsaved \u00B7 New Character",
         "Characters",
         "Grouped by ruleset",
-        "SR5 Characters",
+        "SR5 Roster",
         "1 character",
         "Runner",
         "Character Summary",
@@ -6229,7 +6254,7 @@
         "Add Skill",
         "Character: loaded",
         "Service: online",
-        "Time: 2026-06-24 18:00:04Z",
+        "Time: 2026-06-28 07:45:38Z",
         "Ruleset: Shadowrun 5 .chum5 | Workflows: 0 defs / 0 surfaces | Prefs: 100%/classic/en-us"
       ],
       "visibleMenuCommandIds": [],
@@ -6242,7 +6267,7 @@
       "selectedListRowTexts": [
         "skills[0] = Automatics 6 (Assault Rifles)"
       ],
-      "previewText": "Skills\nSkill 1: Automatics 6 (Assault Rifles)\nSkill 2: Sneaking 5\n\nPayload\n{\n  \"section\": \"skills\",\n  \"skills\": [\n    { \"name\": \"Automatics\", \"rating\": 6, \"specialization\": \"Assault Rifles\" },\n    { \"name\": \"Sneaking\", \"rating\": 5 }\n  ]\n}",
+      "previewText": "Skills\nSkill 1: Automatics 6 (Assault Rifles)\nSkill 2: Sneaking 5\n\nPayload\n{\n  \u0022section\u0022: \u0022skills\u0022,\n  \u0022skills\u0022: [\n    { \u0022name\u0022: \u0022Automatics\u0022, \u0022rating\u0022: 6, \u0022specialization\u0022: \u0022Assault Rifles\u0022 },\n    { \u0022name\u0022: \u0022Sneaking\u0022, \u0022rating\u0022: 5 }\n  ]\n}",
       "rightShellVisible": false,
       "rightShellWidth": 0,
       "inlineCommandSurfaceVisible": false,
@@ -6254,17 +6279,11 @@
       "dialogTitle": "",
       "dialogMessage": "",
       "dialogFieldLabels": [],
-      "dialogFieldIds": [
-        "06-dense-section-dark_field"
-      ],
-      "dialogFieldControlIds": [
-        "06-dense-section-dark_control"
-      ],
+      "dialogFieldIds": [],
+      "dialogFieldControlIds": [],
       "dialogFieldInputValues": [],
       "dialogActionIds": [],
-      "dialogActionControlIds": [
-        "06-dense-section-dark_action"
-      ],
+      "dialogActionControlIds": [],
       "visibleNamedControlIds": [
         "CenterShellRegion",
         "CharacterRosterControl",
@@ -7519,7 +7538,7 @@
         {
           "Name": "SectionContextSummaryText",
           "ControlType": "TextBlock",
-          "Text": "1 visible entry  \u2022  Entry 1: Downtime recon \u00b7 +2 karma  \u2022  Actions: Add Entry",
+          "Text": "1 visible entry  \u2022  Entry 1: Downtime recon \u00B7 \u002B2 karma  \u2022  Actions: Add Entry",
           "X": 279,
           "Y": 265,
           "Width": 986,
@@ -7636,7 +7655,7 @@
         {
           "Name": "StatusText",
           "ControlType": "TextBlock",
-          "Text": "ready \u00b7 Soma \u00b7 1 open \u00b7 unsaved \u00b7 New Character",
+          "Text": "ready \u00B7 Soma \u00B7 1 open \u00B7 unsaved \u00B7 New Character",
           "X": 34,
           "Y": 113,
           "Width": 252,
@@ -7654,7 +7673,7 @@
         {
           "Name": "TimeStateText",
           "ControlType": "TextBlock",
-          "Text": "Time: 2026-06-24 18:00:07Z",
+          "Text": "Time: 2026-06-28 07:45:41Z",
           "X": 467,
           "Y": 766,
           "Width": 151,
@@ -7724,10 +7743,10 @@
         "Close",
         "ALICE",
         "Origin Dossier",
-        "ready \u00b7 Soma \u00b7 1 open \u00b7 unsaved \u00b7 New Character",
+        "ready \u00B7 Soma \u00B7 1 open \u00B7 unsaved \u00B7 New Character",
         "Characters",
         "Grouped by ruleset",
-        "SR5 Characters",
+        "SR5 Roster",
         "1 character",
         "Runner",
         "Character Summary",
@@ -7748,13 +7767,13 @@
         "Complex Forms",
         "Martial Arts",
         "Calendar",
-        "1 visible entry  \u2022  Entry 1: Downtime recon \u00b7 +2 karma  \u2022  Actions: Add Entry",
+        "1 visible entry  \u2022  Entry 1: Downtime recon \u00B7 \u002B2 karma  \u2022  Actions: Add Entry",
         "Entry 1",
-        "Downtime recon \u00b7 +2 karma",
+        "Downtime recon \u00B7 \u002B2 karma",
         "Add Entry",
         "Character: loaded",
         "Service: online",
-        "Time: 2026-06-24 18:00:07Z",
+        "Time: 2026-06-28 07:45:41Z",
         "Ruleset: Shadowrun 5 .chum5 | Workflows: 0 defs / 0 surfaces | Prefs: 100%/classic/en-us"
       ],
       "visibleMenuCommandIds": [],
@@ -7765,7 +7784,7 @@
         "SectionQuickAction_create_entry"
       ],
       "selectedListRowTexts": [],
-      "previewText": "Calendar\nEntry 1: Downtime recon \u00b7 +2 karma\n\nPayload\n{\n  \"section\": \"calendar\",\n  \"diary\": [\n    { \"title\": \"Downtime recon\", \"date\": \"2080-02-14\", \"karma\": 2 }\n  ]\n}",
+      "previewText": "Calendar\nEntry 1: Downtime recon \u00B7 \u002B2 karma\n\nPayload\n{\n  \u0022section\u0022: \u0022calendar\u0022,\n  \u0022diary\u0022: [\n    { \u0022title\u0022: \u0022Downtime recon\u0022, \u0022date\u0022: \u00222080-02-14\u0022, \u0022karma\u0022: 2 }\n  ]\n}",
       "rightShellVisible": false,
       "rightShellWidth": 0,
       "inlineCommandSurfaceVisible": false,
@@ -7777,17 +7796,11 @@
       "dialogTitle": "",
       "dialogMessage": "",
       "dialogFieldLabels": [],
-      "dialogFieldIds": [
-        "07-loaded-runner-tabs-light_field"
-      ],
-      "dialogFieldControlIds": [
-        "07-loaded-runner-tabs-light_control"
-      ],
+      "dialogFieldIds": [],
+      "dialogFieldControlIds": [],
       "dialogFieldInputValues": [],
       "dialogActionIds": [],
-      "dialogActionControlIds": [
-        "07-loaded-runner-tabs-light_action"
-      ],
+      "dialogActionControlIds": [],
       "visibleNamedControlIds": [
         "CenterShellRegion",
         "CharacterRosterControl",
@@ -9042,7 +9055,7 @@
         {
           "Name": "SectionContextSummaryText",
           "ControlType": "TextBlock",
-          "Text": "1 visible entry  \u2022  Entry 1: Downtime recon \u00b7 +2 karma  \u2022  Actions: Add Entry",
+          "Text": "1 visible entry  \u2022  Entry 1: Downtime recon \u00B7 \u002B2 karma  \u2022  Actions: Add Entry",
           "X": 279,
           "Y": 265,
           "Width": 986,
@@ -9159,7 +9172,7 @@
         {
           "Name": "StatusText",
           "ControlType": "TextBlock",
-          "Text": "ready \u00b7 Soma \u00b7 1 open \u00b7 unsaved \u00b7 New Character",
+          "Text": "ready \u00B7 Soma \u00B7 1 open \u00B7 unsaved \u00B7 New Character",
           "X": 34,
           "Y": 113,
           "Width": 252,
@@ -9177,7 +9190,7 @@
         {
           "Name": "TimeStateText",
           "ControlType": "TextBlock",
-          "Text": "Time: 2026-06-24 18:00:07Z",
+          "Text": "Time: 2026-06-28 07:45:41Z",
           "X": 467,
           "Y": 766,
           "Width": 151,
@@ -9247,10 +9260,10 @@
         "Close",
         "ALICE",
         "Origin Dossier",
-        "ready \u00b7 Soma \u00b7 1 open \u00b7 unsaved \u00b7 New Character",
+        "ready \u00B7 Soma \u00B7 1 open \u00B7 unsaved \u00B7 New Character",
         "Characters",
         "Grouped by ruleset",
-        "SR5 Characters",
+        "SR5 Roster",
         "1 character",
         "Runner",
         "Character Summary",
@@ -9271,13 +9284,13 @@
         "Complex Forms",
         "Martial Arts",
         "Calendar",
-        "1 visible entry  \u2022  Entry 1: Downtime recon \u00b7 +2 karma  \u2022  Actions: Add Entry",
+        "1 visible entry  \u2022  Entry 1: Downtime recon \u00B7 \u002B2 karma  \u2022  Actions: Add Entry",
         "Entry 1",
-        "Downtime recon \u00b7 +2 karma",
+        "Downtime recon \u00B7 \u002B2 karma",
         "Add Entry",
         "Character: loaded",
         "Service: online",
-        "Time: 2026-06-24 18:00:07Z",
+        "Time: 2026-06-28 07:45:41Z",
         "Ruleset: Shadowrun 5 .chum5 | Workflows: 0 defs / 0 surfaces | Prefs: 100%/classic/en-us"
       ],
       "visibleMenuCommandIds": [],
@@ -9288,7 +9301,7 @@
         "SectionQuickAction_create_entry"
       ],
       "selectedListRowTexts": [],
-      "previewText": "Calendar\nEntry 1: Downtime recon \u00b7 +2 karma\n\nPayload\n{\n  \"section\": \"calendar\",\n  \"diary\": [\n    { \"title\": \"Downtime recon\", \"date\": \"2080-02-14\", \"karma\": 2 }\n  ]\n}",
+      "previewText": "Calendar\nEntry 1: Downtime recon \u00B7 \u002B2 karma\n\nPayload\n{\n  \u0022section\u0022: \u0022calendar\u0022,\n  \u0022diary\u0022: [\n    { \u0022title\u0022: \u0022Downtime recon\u0022, \u0022date\u0022: \u00222080-02-14\u0022, \u0022karma\u0022: 2 }\n  ]\n}",
       "rightShellVisible": false,
       "rightShellWidth": 0,
       "inlineCommandSurfaceVisible": false,
@@ -9300,17 +9313,11 @@
       "dialogTitle": "Add Cyberware",
       "dialogMessage": "Search, filter, keep source/cost/essence details visible, and confirm the selected implant.",
       "dialogFieldLabels": [],
-      "dialogFieldIds": [
-        "SectionQuickAction_cyberware_add"
-      ],
-      "dialogFieldControlIds": [
-        "SectionQuickAction_cyberware_add"
-      ],
+      "dialogFieldIds": [],
+      "dialogFieldControlIds": [],
       "dialogFieldInputValues": [],
       "dialogActionIds": [],
-      "dialogActionControlIds": [
-        "SectionQuickAction_cyberware_add"
-      ],
+      "dialogActionControlIds": [],
       "visibleNamedControlIds": [
         "CenterShellRegion",
         "CharacterRosterControl",
@@ -10682,7 +10689,7 @@
         {
           "Name": "StatusText",
           "ControlType": "TextBlock",
-          "Text": "ready \u00b7 Soma \u00b7 1 open \u00b7 unsaved \u00b7 New Character",
+          "Text": "ready \u00B7 Soma \u00B7 1 open \u00B7 unsaved \u00B7 New Character",
           "X": 34,
           "Y": 113,
           "Width": 252,
@@ -10700,7 +10707,7 @@
         {
           "Name": "TimeStateText",
           "ControlType": "TextBlock",
-          "Text": "Time: 2026-06-24 18:00:07Z",
+          "Text": "Time: 2026-06-28 07:45:41Z",
           "X": 467,
           "Y": 766,
           "Width": 151,
@@ -10770,10 +10777,10 @@
         "Close",
         "ALICE",
         "Origin Dossier",
-        "ready \u00b7 Soma \u00b7 1 open \u00b7 unsaved \u00b7 New Character",
+        "ready \u00B7 Soma \u00B7 1 open \u00B7 unsaved \u00B7 New Character",
         "Characters",
         "Grouped by ruleset",
-        "SR5 Characters",
+        "SR5 Roster",
         "1 character",
         "Runner",
         "Character Summary",
@@ -10800,7 +10807,7 @@
         "Add Cyberware",
         "Character: loaded",
         "Service: online",
-        "Time: 2026-06-24 18:00:07Z",
+        "Time: 2026-06-28 07:45:41Z",
         "Ruleset: Shadowrun 5 .chum5 | Workflows: 0 defs / 0 surfaces | Prefs: 100%/classic/en-us"
       ],
       "visibleMenuCommandIds": [],
@@ -10811,7 +10818,7 @@
         "SectionQuickAction_cyberware_add"
       ],
       "selectedListRowTexts": [],
-      "previewText": "Cyberware\nRunner Goal: Ready for a flagship shell smoke pass\n\nPayload\n{\n  \"section\": \"profile\"\n}",
+      "previewText": "Cyberware\nRunner Goal: Ready for a flagship shell smoke pass\n\nPayload\n{\n  \u0022section\u0022: \u0022profile\u0022\n}",
       "rightShellVisible": false,
       "rightShellWidth": 0,
       "inlineCommandSurfaceVisible": false,
@@ -10823,17 +10830,11 @@
       "dialogTitle": "",
       "dialogMessage": "",
       "dialogFieldLabels": [],
-      "dialogFieldIds": [
-        "09-vehicles-section-light_field"
-      ],
-      "dialogFieldControlIds": [
-        "09-vehicles-section-light_control"
-      ],
+      "dialogFieldIds": [],
+      "dialogFieldControlIds": [],
       "dialogFieldInputValues": [],
       "dialogActionIds": [],
-      "dialogActionControlIds": [
-        "09-vehicles-section-light_action"
-      ],
+      "dialogActionControlIds": [],
       "visibleNamedControlIds": [
         "CenterShellRegion",
         "CharacterRosterControl",
@@ -10930,7 +10931,7 @@
           "Text": "Character: loaded",
           "X": 25,
           "Y": 765,
-          "Width": 313,
+          "Width": 314,
           "Height": 15
         },
         {
@@ -12088,7 +12089,7 @@
         {
           "Name": "SectionContextSummaryText",
           "ControlType": "TextBlock",
-          "Text": "1 visible entry  \u2022  Vehicle 1: Roadmaster \u00b7 Armor 16 / Handling 3  \u2022  Actions: Add Vehicle",
+          "Text": "1 visible entry  \u2022  Vehicle 1: Roadmaster \u00B7 Armor 16 / Handling 3  \u2022  Actions: Add Vehicle",
           "X": 279,
           "Y": 265,
           "Width": 986,
@@ -12170,7 +12171,7 @@
           "Name": "ServiceStateText",
           "ControlType": "TextBlock",
           "Text": "Service: online",
-          "X": 359,
+          "X": 360,
           "Y": 766,
           "Width": 77,
           "Height": 14
@@ -12205,7 +12206,7 @@
         {
           "Name": "StatusText",
           "ControlType": "TextBlock",
-          "Text": "ready \u00b7 Soma \u00b7 1 open \u00b7 unsaved \u00b7 New Character",
+          "Text": "ready \u00B7 Soma \u00B7 1 open \u00B7 unsaved \u00B7 New Character",
           "X": 34,
           "Y": 113,
           "Width": 252,
@@ -12223,10 +12224,10 @@
         {
           "Name": "TimeStateText",
           "ControlType": "TextBlock",
-          "Text": "Time: 2026-06-24 18:00:08Z",
-          "X": 466,
+          "Text": "Time: 2026-06-28 07:45:41Z",
+          "X": 467,
           "Y": 766,
-          "Width": 152,
+          "Width": 151,
           "Height": 14
         },
         {
@@ -12293,10 +12294,10 @@
         "Close",
         "ALICE",
         "Origin Dossier",
-        "ready \u00b7 Soma \u00b7 1 open \u00b7 unsaved \u00b7 New Character",
+        "ready \u00B7 Soma \u00B7 1 open \u00B7 unsaved \u00B7 New Character",
         "Characters",
         "Grouped by ruleset",
-        "SR5 Characters",
+        "SR5 Roster",
         "1 character",
         "Runner",
         "Character Summary",
@@ -12317,13 +12318,13 @@
         "Complex Forms",
         "Martial Arts",
         "Vehicles",
-        "1 visible entry  \u2022  Vehicle 1: Roadmaster \u00b7 Armor 16 / Handling 3  \u2022  Actions: Add Vehicle",
+        "1 visible entry  \u2022  Vehicle 1: Roadmaster \u00B7 Armor 16 / Handling 3  \u2022  Actions: Add Vehicle",
         "Vehicle 1",
-        "Roadmaster \u00b7 Armor 16 / Handling 3",
+        "Roadmaster \u00B7 Armor 16 / Handling 3",
         "Add Vehicle",
         "Character: loaded",
         "Service: online",
-        "Time: 2026-06-24 18:00:08Z",
+        "Time: 2026-06-28 07:45:41Z",
         "Ruleset: Shadowrun 5 .chum5 | Workflows: 0 defs / 0 surfaces | Prefs: 100%/classic/en-us"
       ],
       "visibleMenuCommandIds": [],
@@ -12334,9 +12335,9 @@
         "SectionQuickAction_vehicle_add"
       ],
       "selectedListRowTexts": [
-        "vehicles[0] = Roadmaster \u00b7 Armor 16 / Handling 3"
+        "vehicles[0] = Roadmaster \u00B7 Armor 16 / Handling 3"
       ],
-      "previewText": "Vehicles\nVehicle 1: Roadmaster \u00b7 Armor 16 / Handling 3\n\nPayload\n{\n  \"section\": \"vehicles\",\n  \"vehicles\": [\n    { \"name\": \"Roadmaster\", \"handling\": 3, \"armor\": 16 }\n  ]\n}",
+      "previewText": "Vehicles\nVehicle 1: Roadmaster \u00B7 Armor 16 / Handling 3\n\nPayload\n{\n  \u0022section\u0022: \u0022vehicles\u0022,\n  \u0022vehicles\u0022: [\n    { \u0022name\u0022: \u0022Roadmaster\u0022, \u0022handling\u0022: 3, \u0022armor\u0022: 16 }\n  ]\n}",
       "rightShellVisible": false,
       "rightShellWidth": 0,
       "inlineCommandSurfaceVisible": false,
@@ -12348,17 +12349,11 @@
       "dialogTitle": "",
       "dialogMessage": "",
       "dialogFieldLabels": [],
-      "dialogFieldIds": [
-        "10-contacts-section-light_field"
-      ],
-      "dialogFieldControlIds": [
-        "10-contacts-section-light_control"
-      ],
+      "dialogFieldIds": [],
+      "dialogFieldControlIds": [],
       "dialogFieldInputValues": [],
       "dialogActionIds": [],
-      "dialogActionControlIds": [
-        "10-contacts-section-light_action"
-      ],
+      "dialogActionControlIds": [],
       "visibleNamedControlIds": [
         "CenterShellRegion",
         "CharacterRosterControl",
@@ -12455,7 +12450,7 @@
           "Text": "Character: loaded",
           "X": 25,
           "Y": 765,
-          "Width": 313,
+          "Width": 314,
           "Height": 15
         },
         {
@@ -13695,7 +13690,7 @@
           "Name": "ServiceStateText",
           "ControlType": "TextBlock",
           "Text": "Service: online",
-          "X": 359,
+          "X": 360,
           "Y": 766,
           "Width": 77,
           "Height": 14
@@ -13730,7 +13725,7 @@
         {
           "Name": "StatusText",
           "ControlType": "TextBlock",
-          "Text": "ready \u00b7 Soma \u00b7 1 open \u00b7 unsaved \u00b7 New Character",
+          "Text": "ready \u00B7 Soma \u00B7 1 open \u00B7 unsaved \u00B7 New Character",
           "X": 34,
           "Y": 113,
           "Width": 252,
@@ -13748,10 +13743,10 @@
         {
           "Name": "TimeStateText",
           "ControlType": "TextBlock",
-          "Text": "Time: 2026-06-24 18:00:08Z",
-          "X": 466,
+          "Text": "Time: 2026-06-28 07:45:41Z",
+          "X": 467,
           "Y": 766,
-          "Width": 152,
+          "Width": 151,
           "Height": 14
         },
         {
@@ -13818,10 +13813,10 @@
         "Close",
         "ALICE",
         "Origin Dossier",
-        "ready \u00b7 Soma \u00b7 1 open \u00b7 unsaved \u00b7 New Character",
+        "ready \u00B7 Soma \u00B7 1 open \u00B7 unsaved \u00B7 New Character",
         "Characters",
         "Grouped by ruleset",
-        "SR5 Characters",
+        "SR5 Roster",
         "1 character",
         "Runner",
         "Character Summary",
@@ -13847,7 +13842,7 @@
         "Add Contact",
         "Character: loaded",
         "Service: online",
-        "Time: 2026-06-24 18:00:08Z",
+        "Time: 2026-06-28 07:45:41Z",
         "Ruleset: Shadowrun 5 .chum5 | Workflows: 0 defs / 0 surfaces | Prefs: 100%/classic/en-us"
       ],
       "visibleMenuCommandIds": [],
@@ -13860,7 +13855,7 @@
       "selectedListRowTexts": [
         "contacts[0] = Fixer (Loyalty 4 / Connection 5)"
       ],
-      "previewText": "Contacts\nContact 1: Fixer (Loyalty 4 / Connection 5)\n\nPayload\n{\n  \"section\": \"contacts\",\n  \"contacts\": [\n    { \"name\": \"Fixer\", \"role\": \"Broker\", \"location\": \"Seattle\", \"connection\": 5, \"loyalty\": 4 }\n  ]\n}",
+      "previewText": "Contacts\nContact 1: Fixer (Loyalty 4 / Connection 5)\n\nPayload\n{\n  \u0022section\u0022: \u0022contacts\u0022,\n  \u0022contacts\u0022: [\n    { \u0022name\u0022: \u0022Fixer\u0022, \u0022role\u0022: \u0022Broker\u0022, \u0022location\u0022: \u0022Seattle\u0022, \u0022connection\u0022: 5, \u0022loyalty\u0022: 4 }\n  ]\n}",
       "rightShellVisible": false,
       "rightShellWidth": 0,
       "inlineCommandSurfaceVisible": false,
@@ -13872,17 +13867,11 @@
       "dialogTitle": "Add Entry",
       "dialogMessage": "Add a new entry while keeping the compact list/detail editor visible.",
       "dialogFieldLabels": [],
-      "dialogFieldIds": [
-        "SectionQuickAction_create_entry"
-      ],
-      "dialogFieldControlIds": [
-        "SectionQuickAction_create_entry"
-      ],
+      "dialogFieldIds": [],
+      "dialogFieldControlIds": [],
       "dialogFieldInputValues": [],
       "dialogActionIds": [],
-      "dialogActionControlIds": [
-        "SectionQuickAction_create_entry"
-      ],
+      "dialogActionControlIds": [],
       "visibleNamedControlIds": [
         "CenterShellRegion",
         "CharacterRosterControl",
@@ -13979,7 +13968,7 @@
           "Text": "Character: loaded",
           "X": 25,
           "Y": 765,
-          "Width": 313,
+          "Width": 314,
           "Height": 15
         },
         {
@@ -15137,7 +15126,7 @@
         {
           "Name": "SectionContextSummaryText",
           "ControlType": "TextBlock",
-          "Text": "1 visible entry  \u2022  Entry 1: First extraction \u00b7 +2 karma  \u2022  Actions: Add Entry",
+          "Text": "1 visible entry  \u2022  Entry 1: First extraction \u00B7 \u002B2 karma  \u2022  Actions: Add Entry",
           "X": 279,
           "Y": 265,
           "Width": 986,
@@ -15219,7 +15208,7 @@
           "Name": "ServiceStateText",
           "ControlType": "TextBlock",
           "Text": "Service: online",
-          "X": 359,
+          "X": 360,
           "Y": 766,
           "Width": 77,
           "Height": 14
@@ -15254,7 +15243,7 @@
         {
           "Name": "StatusText",
           "ControlType": "TextBlock",
-          "Text": "ready \u00b7 Soma \u00b7 1 open \u00b7 unsaved \u00b7 New Character",
+          "Text": "ready \u00B7 Soma \u00B7 1 open \u00B7 unsaved \u00B7 New Character",
           "X": 34,
           "Y": 113,
           "Width": 252,
@@ -15272,10 +15261,10 @@
         {
           "Name": "TimeStateText",
           "ControlType": "TextBlock",
-          "Text": "Time: 2026-06-24 18:00:08Z",
-          "X": 466,
+          "Text": "Time: 2026-06-28 07:45:41Z",
+          "X": 467,
           "Y": 766,
-          "Width": 152,
+          "Width": 151,
           "Height": 14
         },
         {
@@ -15342,10 +15331,10 @@
         "Close",
         "ALICE",
         "Origin Dossier",
-        "ready \u00b7 Soma \u00b7 1 open \u00b7 unsaved \u00b7 New Character",
+        "ready \u00B7 Soma \u00B7 1 open \u00B7 unsaved \u00B7 New Character",
         "Characters",
         "Grouped by ruleset",
-        "SR5 Characters",
+        "SR5 Roster",
         "1 character",
         "Runner",
         "Character Summary",
@@ -15366,13 +15355,13 @@
         "Complex Forms",
         "Martial Arts",
         "Karma Journal",
-        "1 visible entry  \u2022  Entry 1: First extraction \u00b7 +2 karma  \u2022  Actions: Add Entry",
+        "1 visible entry  \u2022  Entry 1: First extraction \u00B7 \u002B2 karma  \u2022  Actions: Add Entry",
         "Entry 1",
-        "First extraction \u00b7 +2 karma",
+        "First extraction \u00B7 \u002B2 karma",
         "Add Entry",
         "Character: loaded",
         "Service: online",
-        "Time: 2026-06-24 18:00:08Z",
+        "Time: 2026-06-28 07:45:41Z",
         "Ruleset: Shadowrun 5 .chum5 | Workflows: 0 defs / 0 surfaces | Prefs: 100%/classic/en-us"
       ],
       "visibleMenuCommandIds": [],
@@ -15383,7 +15372,7 @@
         "SectionQuickAction_create_entry"
       ],
       "selectedListRowTexts": [],
-      "previewText": "Karma Journal\nEntry 1: First extraction \u00b7 +2 karma\n\nPayload\n{\n  \"section\": \"progress\",\n  \"diary\": [\n    { \"title\": \"First extraction\", \"karma\": 2 }\n  ]\n}",
+      "previewText": "Karma Journal\nEntry 1: First extraction \u00B7 \u002B2 karma\n\nPayload\n{\n  \u0022section\u0022: \u0022progress\u0022,\n  \u0022diary\u0022: [\n    { \u0022title\u0022: \u0022First extraction\u0022, \u0022karma\u0022: 2 }\n  ]\n}",
       "rightShellVisible": false,
       "rightShellWidth": 0,
       "inlineCommandSurfaceVisible": false,
@@ -15395,17 +15384,11 @@
       "dialogTitle": "Add Spell",
       "dialogMessage": "Search the spell list, inspect source and drain, then confirm the learned spell.",
       "dialogFieldLabels": [],
-      "dialogFieldIds": [
-        "SectionQuickAction_spell_add"
-      ],
-      "dialogFieldControlIds": [
-        "SectionQuickAction_spell_add"
-      ],
+      "dialogFieldIds": [],
+      "dialogFieldControlIds": [],
       "dialogFieldInputValues": [],
       "dialogActionIds": [],
-      "dialogActionControlIds": [
-        "SectionQuickAction_spell_add"
-      ],
+      "dialogActionControlIds": [],
       "visibleNamedControlIds": [
         "CenterShellRegion",
         "CharacterRosterControl",
@@ -16660,7 +16643,7 @@
         {
           "Name": "SectionContextSummaryText",
           "ControlType": "TextBlock",
-          "Text": "1 visible entry  \u2022  Spell 1: Stunbolt \u00b7 Combat  \u2022  Actions: Add Spell",
+          "Text": "1 visible entry  \u2022  Spell 1: Stunbolt \u00B7 Combat  \u2022  Actions: Add Spell",
           "X": 279,
           "Y": 265,
           "Width": 986,
@@ -16777,7 +16760,7 @@
         {
           "Name": "StatusText",
           "ControlType": "TextBlock",
-          "Text": "ready \u00b7 Soma \u00b7 1 open \u00b7 unsaved \u00b7 New Character",
+          "Text": "ready \u00B7 Soma \u00B7 1 open \u00B7 unsaved \u00B7 New Character",
           "X": 34,
           "Y": 113,
           "Width": 252,
@@ -16795,7 +16778,7 @@
         {
           "Name": "TimeStateText",
           "ControlType": "TextBlock",
-          "Text": "Time: 2026-06-24 18:00:08Z",
+          "Text": "Time: 2026-06-28 07:45:42Z",
           "X": 466,
           "Y": 766,
           "Width": 152,
@@ -16865,10 +16848,10 @@
         "Close",
         "ALICE",
         "Origin Dossier",
-        "ready \u00b7 Soma \u00b7 1 open \u00b7 unsaved \u00b7 New Character",
+        "ready \u00B7 Soma \u00B7 1 open \u00B7 unsaved \u00B7 New Character",
         "Characters",
         "Grouped by ruleset",
-        "SR5 Characters",
+        "SR5 Roster",
         "1 character",
         "Runner",
         "Character Summary",
@@ -16888,13 +16871,13 @@
         "Powers",
         "Complex Forms",
         "Martial Arts",
-        "1 visible entry  \u2022  Spell 1: Stunbolt \u00b7 Combat  \u2022  Actions: Add Spell",
+        "1 visible entry  \u2022  Spell 1: Stunbolt \u00B7 Combat  \u2022  Actions: Add Spell",
         "Spell 1",
-        "Stunbolt \u00b7 Combat",
+        "Stunbolt \u00B7 Combat",
         "Add Spell",
         "Character: loaded",
         "Service: online",
-        "Time: 2026-06-24 18:00:08Z",
+        "Time: 2026-06-28 07:45:42Z",
         "Ruleset: Shadowrun 5 .chum5 | Workflows: 0 defs / 0 surfaces | Prefs: 100%/classic/en-us"
       ],
       "visibleMenuCommandIds": [],
@@ -16905,7 +16888,7 @@
         "SectionQuickAction_spell_add"
       ],
       "selectedListRowTexts": [],
-      "previewText": "Spells\nSpell 1: Stunbolt \u00b7 Combat\n\nPayload\n{\n  \"section\": \"spells\",\n  \"spells\": [\n    { \"name\": \"Stunbolt\", \"category\": \"Combat\", \"drain\": \"F-3\" }\n  ]\n}",
+      "previewText": "Spells\nSpell 1: Stunbolt \u00B7 Combat\n\nPayload\n{\n  \u0022section\u0022: \u0022spells\u0022,\n  \u0022spells\u0022: [\n    { \u0022name\u0022: \u0022Stunbolt\u0022, \u0022category\u0022: \u0022Combat\u0022, \u0022drain\u0022: \u0022F-3\u0022 }\n  ]\n}",
       "rightShellVisible": false,
       "rightShellWidth": 0,
       "inlineCommandSurfaceVisible": false,
@@ -16917,17 +16900,11 @@
       "dialogTitle": "Add Program / Cyberdeck Item",
       "dialogMessage": "Browse matrix programs and cyberdeck items, inspect slot and source, then confirm the selected entry.",
       "dialogFieldLabels": [],
-      "dialogFieldIds": [
-        "SectionQuickAction_matrix_program_add"
-      ],
-      "dialogFieldControlIds": [
-        "SectionQuickAction_matrix_program_add"
-      ],
+      "dialogFieldIds": [],
+      "dialogFieldControlIds": [],
       "dialogFieldInputValues": [],
       "dialogActionIds": [],
-      "dialogActionControlIds": [
-        "SectionQuickAction_matrix_program_add"
-      ],
+      "dialogActionControlIds": [],
       "visibleNamedControlIds": [
         "CenterShellRegion",
         "CharacterRosterControl",
@@ -18299,7 +18276,7 @@
         {
           "Name": "StatusText",
           "ControlType": "TextBlock",
-          "Text": "ready \u00b7 Soma \u00b7 1 open \u00b7 unsaved \u00b7 New Character",
+          "Text": "ready \u00B7 Soma \u00B7 1 open \u00B7 unsaved \u00B7 New Character",
           "X": 34,
           "Y": 113,
           "Width": 252,
@@ -18317,7 +18294,7 @@
         {
           "Name": "TimeStateText",
           "ControlType": "TextBlock",
-          "Text": "Time: 2026-06-24 18:00:09Z",
+          "Text": "Time: 2026-06-28 07:45:42Z",
           "X": 466,
           "Y": 766,
           "Width": 152,
@@ -18387,10 +18364,10 @@
         "Close",
         "ALICE",
         "Origin Dossier",
-        "ready \u00b7 Soma \u00b7 1 open \u00b7 unsaved \u00b7 New Character",
+        "ready \u00B7 Soma \u00B7 1 open \u00B7 unsaved \u00B7 New Character",
         "Characters",
         "Grouped by ruleset",
-        "SR5 Characters",
+        "SR5 Roster",
         "1 character",
         "Runner",
         "Character Summary",
@@ -18417,7 +18394,7 @@
         "Add Program",
         "Character: loaded",
         "Service: online",
-        "Time: 2026-06-24 18:00:09Z",
+        "Time: 2026-06-28 07:45:42Z",
         "Ruleset: Shadowrun 5 .chum5 | Workflows: 0 defs / 0 surfaces | Prefs: 100%/classic/en-us"
       ],
       "visibleMenuCommandIds": [],
@@ -18428,7 +18405,7 @@
         "SectionQuickAction_matrix_program_add"
       ],
       "selectedListRowTexts": [],
-      "previewText": "Aiprograms\nRunner Goal: Ready for a flagship shell smoke pass\n\nPayload\n{\n  \"section\": \"profile\"\n}",
+      "previewText": "Aiprograms\nRunner Goal: Ready for a flagship shell smoke pass\n\nPayload\n{\n  \u0022section\u0022: \u0022profile\u0022\n}",
       "rightShellVisible": false,
       "rightShellWidth": 0,
       "inlineCommandSurfaceVisible": false,
@@ -18440,17 +18417,11 @@
       "dialogTitle": "Add Initiation / Submersion",
       "dialogMessage": "Choose the reward, keep grade and track visible, then confirm the initiation or submersion step.",
       "dialogFieldLabels": [],
-      "dialogFieldIds": [
-        "SectionQuickAction_initiation_add"
-      ],
-      "dialogFieldControlIds": [
-        "SectionQuickAction_initiation_add"
-      ],
+      "dialogFieldIds": [],
+      "dialogFieldControlIds": [],
       "dialogFieldInputValues": [],
       "dialogActionIds": [],
-      "dialogActionControlIds": [
-        "SectionQuickAction_initiation_add"
-      ],
+      "dialogActionControlIds": [],
       "visibleNamedControlIds": [
         "CenterShellRegion",
         "CharacterRosterControl",
@@ -19705,7 +19676,7 @@
         {
           "Name": "SectionContextSummaryText",
           "ControlType": "TextBlock",
-          "Text": "1 visible entry  \u2022  Initiation Grade 1: Grade 1 \u00b7 Metamagic  \u2022  Actions: Add Initiation",
+          "Text": "1 visible entry  \u2022  Initiation Grade 1: Grade 1 \u00B7 Metamagic  \u2022  Actions: Add Initiation",
           "X": 279,
           "Y": 265,
           "Width": 986,
@@ -19714,7 +19685,7 @@
         {
           "Name": "SectionContextTitleText",
           "ControlType": "TextBlock",
-          "Text": "Initiation & Submersion",
+          "Text": "Initiation \u0026 Submersion",
           "X": 279,
           "Y": 250,
           "Width": 986,
@@ -19822,7 +19793,7 @@
         {
           "Name": "StatusText",
           "ControlType": "TextBlock",
-          "Text": "ready \u00b7 Soma \u00b7 1 open \u00b7 unsaved \u00b7 New Character",
+          "Text": "ready \u00B7 Soma \u00B7 1 open \u00B7 unsaved \u00B7 New Character",
           "X": 34,
           "Y": 113,
           "Width": 252,
@@ -19840,7 +19811,7 @@
         {
           "Name": "TimeStateText",
           "ControlType": "TextBlock",
-          "Text": "Time: 2026-06-24 18:00:09Z",
+          "Text": "Time: 2026-06-28 07:45:42Z",
           "X": 466,
           "Y": 766,
           "Width": 152,
@@ -19910,10 +19881,10 @@
         "Close",
         "ALICE",
         "Origin Dossier",
-        "ready \u00b7 Soma \u00b7 1 open \u00b7 unsaved \u00b7 New Character",
+        "ready \u00B7 Soma \u00B7 1 open \u00B7 unsaved \u00B7 New Character",
         "Characters",
         "Grouped by ruleset",
-        "SR5 Characters",
+        "SR5 Roster",
         "1 character",
         "Runner",
         "Character Summary",
@@ -19933,14 +19904,14 @@
         "Powers",
         "Complex Forms",
         "Martial Arts",
-        "Initiation & Submersion",
-        "1 visible entry  \u2022  Initiation Grade 1: Grade 1 \u00b7 Metamagic  \u2022  Actions: Add Initiation",
+        "Initiation \u0026 Submersion",
+        "1 visible entry  \u2022  Initiation Grade 1: Grade 1 \u00B7 Metamagic  \u2022  Actions: Add Initiation",
         "Initiation Grade 1",
-        "Grade 1 \u00b7 Metamagic",
+        "Grade 1 \u00B7 Metamagic",
         "Add Initiation",
         "Character: loaded",
         "Service: online",
-        "Time: 2026-06-24 18:00:09Z",
+        "Time: 2026-06-28 07:45:42Z",
         "Ruleset: Shadowrun 5 .chum5 | Workflows: 0 defs / 0 surfaces | Prefs: 100%/classic/en-us"
       ],
       "visibleMenuCommandIds": [],
@@ -19951,7 +19922,7 @@
         "SectionQuickAction_initiation_add"
       ],
       "selectedListRowTexts": [],
-      "previewText": "Initiation & Submersion\nInitiation Grade 1: Grade 1 \u00b7 Metamagic\n\nPayload\n{\n  \"section\": \"initiationgrades\",\n  \"grades\": [\n    { \"grade\": 1, \"reward\": \"Metamagic\" }\n  ]\n}",
+      "previewText": "Initiation \u0026 Submersion\nInitiation Grade 1: Grade 1 \u00B7 Metamagic\n\nPayload\n{\n  \u0022section\u0022: \u0022initiationgrades\u0022,\n  \u0022grades\u0022: [\n    { \u0022grade\u0022: 1, \u0022reward\u0022: \u0022Metamagic\u0022 }\n  ]\n}",
       "rightShellVisible": false,
       "rightShellWidth": 0,
       "inlineCommandSurfaceVisible": false,
@@ -19963,17 +19934,11 @@
       "dialogTitle": "",
       "dialogMessage": "",
       "dialogFieldLabels": [],
-      "dialogFieldIds": [
-        "15-creation-section-light_field"
-      ],
-      "dialogFieldControlIds": [
-        "15-creation-section-light_control"
-      ],
+      "dialogFieldIds": [],
+      "dialogFieldControlIds": [],
       "dialogFieldInputValues": [],
       "dialogActionIds": [],
-      "dialogActionControlIds": [
-        "15-creation-section-light_action"
-      ],
+      "dialogActionControlIds": [],
       "visibleNamedControlIds": [
         "AttributeBaseEditor_AGI",
         "AttributeBaseEditor_AGI_Decrease",
@@ -20095,7 +20060,7 @@
         {
           "Name": "AttributeBaseEditor_AGI_Increase",
           "ControlType": "Button",
-          "Text": "+",
+          "Text": "\u002B",
           "X": 892,
           "Y": 344,
           "Width": 24,
@@ -20131,7 +20096,7 @@
         {
           "Name": "AttributeBaseEditor_BOD_Increase",
           "ControlType": "Button",
-          "Text": "+",
+          "Text": "\u002B",
           "X": 892,
           "Y": 309,
           "Width": 24,
@@ -20167,7 +20132,7 @@
         {
           "Name": "AttributeBaseEditor_REA_Increase",
           "ControlType": "Button",
-          "Text": "+",
+          "Text": "\u002B",
           "X": 892,
           "Y": 379,
           "Width": 24,
@@ -20203,7 +20168,7 @@
         {
           "Name": "AttributeKarmaEditor_AGI_Increase",
           "ControlType": "Button",
-          "Text": "+",
+          "Text": "\u002B",
           "X": 1028,
           "Y": 344,
           "Width": 24,
@@ -20239,7 +20204,7 @@
         {
           "Name": "AttributeKarmaEditor_BOD_Increase",
           "ControlType": "Button",
-          "Text": "+",
+          "Text": "\u002B",
           "X": 1028,
           "Y": 309,
           "Width": 24,
@@ -20275,7 +20240,7 @@
         {
           "Name": "AttributeKarmaEditor_REA_Increase",
           "ControlType": "Button",
-          "Text": "+",
+          "Text": "\u002B",
           "X": 1028,
           "Y": 379,
           "Width": 24,
@@ -21715,7 +21680,7 @@
         {
           "Name": "StatusText",
           "ControlType": "TextBlock",
-          "Text": "ready \u00b7 Soma \u00b7 1 open \u00b7 unsaved \u00b7 New Character",
+          "Text": "ready \u00B7 Soma \u00B7 1 open \u00B7 unsaved \u00B7 New Character",
           "X": 34,
           "Y": 113,
           "Width": 252,
@@ -21733,7 +21698,7 @@
         {
           "Name": "TimeStateText",
           "ControlType": "TextBlock",
-          "Text": "Time: 2026-06-24 18:00:09Z",
+          "Text": "Time: 2026-06-28 07:45:42Z",
           "X": 466,
           "Y": 766,
           "Width": 152,
@@ -21794,10 +21759,10 @@
         "Close",
         "ALICE",
         "Origin Dossier",
-        "ready \u00b7 Soma \u00b7 1 open \u00b7 unsaved \u00b7 New Character",
+        "ready \u00B7 Soma \u00B7 1 open \u00B7 unsaved \u00B7 New Character",
         "Characters",
         "Grouped by ruleset",
-        "SR5 Characters",
+        "SR5 Roster",
         "1 character",
         "Runner",
         "Character Summary",
@@ -21828,7 +21793,7 @@
         "1 / 6 (9)",
         "-",
         "3",
-        "+",
+        "\u002B",
         "1",
         "AGI",
         "5 (9)",
@@ -21838,7 +21803,7 @@
         "4",
         "Character: loaded",
         "Service: online",
-        "Time: 2026-06-24 18:00:09Z",
+        "Time: 2026-06-28 07:45:42Z",
         "Ruleset: Shadowrun 5 .chum5 | Workflows: 0 defs / 0 surfaces | Prefs: 100%/classic/en-us"
       ],
       "visibleMenuCommandIds": [],
@@ -21847,7 +21812,7 @@
       ],
       "visibleSectionQuickActionIds": [],
       "selectedListRowTexts": [],
-      "previewText": "Attributes\nAttribute 1: Body 4\nAttribute 2: Agility 5\nAttribute 3: Reaction 5\n\nPayload\n{\n  \"sectionId\": \"attributes\",\n  \"attributes\": [\n    {\n      \"name\": \"Body\",\n      \"baseValue\": 3,\n      \"karmaValue\": 1,\n      \"totalValue\": 4,\n      \"metatypeMin\": 1,\n      \"metatypeMax\": 6,\n      \"metatypeAugMax\": 9,\n      \"priorityMaximum\": 6,\n      \"karmaMaximum\": 5,\n      \"baseUnlocked\": true\n    },\n    {\n      \"name\": \"Agility\",\n      \"baseValue\": 5,\n      \"karmaValue\": 0,\n      \"totalValue\": 5,\n      \"metatypeMin\": 1,\n      \"metatypeMax\": 6,\n      \"metatypeAugMax\": 9,\n      \"priorityMaximum\": 6,\n      \"karmaMaximum\": 4,\n      \"baseUnlocked\": true\n    },\n    {\n      \"name\": \"Reaction\",\n      \"baseValue\": 4,\n      \"karmaValue\": 1,\n      \"totalValue\": 5,\n      \"metatypeMin\": 1,\n      \"metatypeMax\": 6,\n      \"metatypeAugMax\": 9,\n      \"priorityMaximum\": 6,\n      \"karmaMaximum\": 5,\n      \"baseUnlocked\": true\n    }\n  ]\n}",
+      "previewText": "Attributes\nAttribute 1: Body 4\nAttribute 2: Agility 5\nAttribute 3: Reaction 5\n\nPayload\n{\n  \u0022sectionId\u0022: \u0022attributes\u0022,\n  \u0022attributes\u0022: [\n    {\n      \u0022name\u0022: \u0022Body\u0022,\n      \u0022baseValue\u0022: 3,\n      \u0022karmaValue\u0022: 1,\n      \u0022totalValue\u0022: 4,\n      \u0022metatypeMin\u0022: 1,\n      \u0022metatypeMax\u0022: 6,\n      \u0022metatypeAugMax\u0022: 9,\n      \u0022priorityMaximum\u0022: 6,\n      \u0022karmaMaximum\u0022: 5,\n      \u0022baseUnlocked\u0022: true\n    },\n    {\n      \u0022name\u0022: \u0022Agility\u0022,\n      \u0022baseValue\u0022: 5,\n      \u0022karmaValue\u0022: 0,\n      \u0022totalValue\u0022: 5,\n      \u0022metatypeMin\u0022: 1,\n      \u0022metatypeMax\u0022: 6,\n      \u0022metatypeAugMax\u0022: 9,\n      \u0022priorityMaximum\u0022: 6,\n      \u0022karmaMaximum\u0022: 4,\n      \u0022baseUnlocked\u0022: true\n    },\n    {\n      \u0022name\u0022: \u0022Reaction\u0022,\n      \u0022baseValue\u0022: 4,\n      \u0022karmaValue\u0022: 1,\n      \u0022totalValue\u0022: 5,\n      \u0022metatypeMin\u0022: 1,\n      \u0022metatypeMax\u0022: 6,\n      \u0022metatypeAugMax\u0022: 9,\n      \u0022priorityMaximum\u0022: 6,\n      \u0022karmaMaximum\u0022: 5,\n      \u0022baseUnlocked\u0022: true\n    }\n  ]\n}",
       "rightShellVisible": false,
       "rightShellWidth": 0,
       "inlineCommandSurfaceVisible": false,
@@ -21859,17 +21824,11 @@
       "dialogTitle": "Master Index",
       "dialogMessage": "",
       "dialogFieldLabels": [],
-      "dialogFieldIds": [
-        "AttributeBaseEditor_AGI"
-      ],
-      "dialogFieldControlIds": [
-        "AttributeBaseEditor_AGI"
-      ],
+      "dialogFieldIds": [],
+      "dialogFieldControlIds": [],
       "dialogFieldInputValues": [],
       "dialogActionIds": [],
-      "dialogActionControlIds": [
-        "AttributeBaseEditor_AGI"
-      ],
+      "dialogActionControlIds": [],
       "visibleNamedControlIds": [
         "AttributeBaseEditor_AGI",
         "AttributeBaseEditor_AGI_Decrease",
@@ -21991,7 +21950,7 @@
         {
           "Name": "AttributeBaseEditor_AGI_Increase",
           "ControlType": "Button",
-          "Text": "+",
+          "Text": "\u002B",
           "X": 892,
           "Y": 344,
           "Width": 24,
@@ -22027,7 +21986,7 @@
         {
           "Name": "AttributeBaseEditor_BOD_Increase",
           "ControlType": "Button",
-          "Text": "+",
+          "Text": "\u002B",
           "X": 892,
           "Y": 309,
           "Width": 24,
@@ -22063,7 +22022,7 @@
         {
           "Name": "AttributeBaseEditor_REA_Increase",
           "ControlType": "Button",
-          "Text": "+",
+          "Text": "\u002B",
           "X": 892,
           "Y": 379,
           "Width": 24,
@@ -22099,7 +22058,7 @@
         {
           "Name": "AttributeKarmaEditor_AGI_Increase",
           "ControlType": "Button",
-          "Text": "+",
+          "Text": "\u002B",
           "X": 1028,
           "Y": 344,
           "Width": 24,
@@ -22135,7 +22094,7 @@
         {
           "Name": "AttributeKarmaEditor_BOD_Increase",
           "ControlType": "Button",
-          "Text": "+",
+          "Text": "\u002B",
           "X": 1028,
           "Y": 309,
           "Width": 24,
@@ -22171,7 +22130,7 @@
         {
           "Name": "AttributeKarmaEditor_REA_Increase",
           "ControlType": "Button",
-          "Text": "+",
+          "Text": "\u002B",
           "X": 1028,
           "Y": 379,
           "Width": 24,
@@ -22309,7 +22268,7 @@
           "Text": "Character: loaded",
           "X": 25,
           "Y": 765,
-          "Width": 315,
+          "Width": 312,
           "Height": 15
         },
         {
@@ -23576,7 +23535,7 @@
           "Name": "ServiceStateText",
           "ControlType": "TextBlock",
           "Text": "Service: online",
-          "X": 361,
+          "X": 358,
           "Y": 766,
           "Width": 77,
           "Height": 14
@@ -23611,7 +23570,7 @@
         {
           "Name": "StatusText",
           "ControlType": "TextBlock",
-          "Text": "ready \u00b7 Soma \u00b7 1 open \u00b7 unsaved \u00b7 Master Index",
+          "Text": "ready \u00B7 Soma \u00B7 1 open \u00B7 unsaved \u00B7 Master Index",
           "X": 34,
           "Y": 113,
           "Width": 242,
@@ -23629,10 +23588,10 @@
         {
           "Name": "TimeStateText",
           "ControlType": "TextBlock",
-          "Text": "Time: 2026-06-24 18:00:10Z",
-          "X": 468,
+          "Text": "Time: 2026-06-28 07:45:43Z",
+          "X": 465,
           "Y": 766,
-          "Width": 150,
+          "Width": 153,
           "Height": 14
         },
         {
@@ -23690,10 +23649,10 @@
         "Close",
         "ALICE",
         "Origin Dossier",
-        "ready \u00b7 Soma \u00b7 1 open \u00b7 unsaved \u00b7 Master Index",
+        "ready \u00B7 Soma \u00B7 1 open \u00B7 unsaved \u00B7 Master Index",
         "Characters",
         "Grouped by ruleset",
-        "SR5 Characters",
+        "SR5 Roster",
         "1 character",
         "Runner",
         "Character Summary",
@@ -23724,7 +23683,7 @@
         "1 / 6 (9)",
         "-",
         "3",
-        "+",
+        "\u002B",
         "1",
         "AGI",
         "5 (9)",
@@ -23734,7 +23693,7 @@
         "4",
         "Character: loaded",
         "Service: online",
-        "Time: 2026-06-24 18:00:10Z",
+        "Time: 2026-06-28 07:45:43Z",
         "Ruleset: Shadowrun 5 .chum5 | Workflows: 0 defs / 0 surfaces | Prefs: 100%/classic/en-us"
       ],
       "visibleMenuCommandIds": [],
@@ -23743,7 +23702,7 @@
       ],
       "visibleSectionQuickActionIds": [],
       "selectedListRowTexts": [],
-      "previewText": "Attributes\nAttribute 1: Body 4\nAttribute 2: Agility 5\nAttribute 3: Reaction 5\n\nPayload\n{\n  \"sectionId\": \"attributes\",\n  \"attributes\": [\n    {\n      \"name\": \"Body\",\n      \"baseValue\": 3,\n      \"karmaValue\": 1,\n      \"totalValue\": 4,\n      \"metatypeMin\": 1,\n      \"metatypeMax\": 6,\n      \"metatypeAugMax\": 9,\n      \"priorityMaximum\": 6,\n      \"karmaMaximum\": 5,\n      \"baseUnlocked\": true\n    },\n    {\n      \"name\": \"Agility\",\n      \"baseValue\": 5,\n      \"karmaValue\": 0,\n      \"totalValue\": 5,\n      \"metatypeMin\": 1,\n      \"metatypeMax\": 6,\n      \"metatypeAugMax\": 9,\n      \"priorityMaximum\": 6,\n      \"karmaMaximum\": 4,\n      \"baseUnlocked\": true\n    },\n    {\n      \"name\": \"Reaction\",\n      \"baseValue\": 4,\n      \"karmaValue\": 1,\n      \"totalValue\": 5,\n      \"metatypeMin\": 1,\n      \"metatypeMax\": 6,\n      \"metatypeAugMax\": 9,\n      \"priorityMaximum\": 6,\n      \"karmaMaximum\": 5,\n      \"baseUnlocked\": true\n    }\n  ]\n}",
+      "previewText": "Attributes\nAttribute 1: Body 4\nAttribute 2: Agility 5\nAttribute 3: Reaction 5\n\nPayload\n{\n  \u0022sectionId\u0022: \u0022attributes\u0022,\n  \u0022attributes\u0022: [\n    {\n      \u0022name\u0022: \u0022Body\u0022,\n      \u0022baseValue\u0022: 3,\n      \u0022karmaValue\u0022: 1,\n      \u0022totalValue\u0022: 4,\n      \u0022metatypeMin\u0022: 1,\n      \u0022metatypeMax\u0022: 6,\n      \u0022metatypeAugMax\u0022: 9,\n      \u0022priorityMaximum\u0022: 6,\n      \u0022karmaMaximum\u0022: 5,\n      \u0022baseUnlocked\u0022: true\n    },\n    {\n      \u0022name\u0022: \u0022Agility\u0022,\n      \u0022baseValue\u0022: 5,\n      \u0022karmaValue\u0022: 0,\n      \u0022totalValue\u0022: 5,\n      \u0022metatypeMin\u0022: 1,\n      \u0022metatypeMax\u0022: 6,\n      \u0022metatypeAugMax\u0022: 9,\n      \u0022priorityMaximum\u0022: 6,\n      \u0022karmaMaximum\u0022: 4,\n      \u0022baseUnlocked\u0022: true\n    },\n    {\n      \u0022name\u0022: \u0022Reaction\u0022,\n      \u0022baseValue\u0022: 4,\n      \u0022karmaValue\u0022: 1,\n      \u0022totalValue\u0022: 5,\n      \u0022metatypeMin\u0022: 1,\n      \u0022metatypeMax\u0022: 6,\n      \u0022metatypeAugMax\u0022: 9,\n      \u0022priorityMaximum\u0022: 6,\n      \u0022karmaMaximum\u0022: 5,\n      \u0022baseUnlocked\u0022: true\n    }\n  ]\n}",
       "rightShellVisible": false,
       "rightShellWidth": 0,
       "inlineCommandSurfaceVisible": false,
@@ -23755,17 +23714,11 @@
       "dialogTitle": "Character Roster",
       "dialogMessage": "",
       "dialogFieldLabels": [],
-      "dialogFieldIds": [
-        "AttributeBaseEditor_AGI"
-      ],
-      "dialogFieldControlIds": [
-        "AttributeBaseEditor_AGI"
-      ],
+      "dialogFieldIds": [],
+      "dialogFieldControlIds": [],
       "dialogFieldInputValues": [],
       "dialogActionIds": [],
-      "dialogActionControlIds": [
-        "AttributeBaseEditor_AGI"
-      ],
+      "dialogActionControlIds": [],
       "visibleNamedControlIds": [
         "AttributeBaseEditor_AGI",
         "AttributeBaseEditor_AGI_Decrease",
@@ -23887,7 +23840,7 @@
         {
           "Name": "AttributeBaseEditor_AGI_Increase",
           "ControlType": "Button",
-          "Text": "+",
+          "Text": "\u002B",
           "X": 892,
           "Y": 344,
           "Width": 24,
@@ -23923,7 +23876,7 @@
         {
           "Name": "AttributeBaseEditor_BOD_Increase",
           "ControlType": "Button",
-          "Text": "+",
+          "Text": "\u002B",
           "X": 892,
           "Y": 309,
           "Width": 24,
@@ -23959,7 +23912,7 @@
         {
           "Name": "AttributeBaseEditor_REA_Increase",
           "ControlType": "Button",
-          "Text": "+",
+          "Text": "\u002B",
           "X": 892,
           "Y": 379,
           "Width": 24,
@@ -23995,7 +23948,7 @@
         {
           "Name": "AttributeKarmaEditor_AGI_Increase",
           "ControlType": "Button",
-          "Text": "+",
+          "Text": "\u002B",
           "X": 1028,
           "Y": 344,
           "Width": 24,
@@ -24031,7 +23984,7 @@
         {
           "Name": "AttributeKarmaEditor_BOD_Increase",
           "ControlType": "Button",
-          "Text": "+",
+          "Text": "\u002B",
           "X": 1028,
           "Y": 309,
           "Width": 24,
@@ -24067,7 +24020,7 @@
         {
           "Name": "AttributeKarmaEditor_REA_Increase",
           "ControlType": "Button",
-          "Text": "+",
+          "Text": "\u002B",
           "X": 1028,
           "Y": 379,
           "Width": 24,
@@ -24205,7 +24158,7 @@
           "Text": "Character: loaded",
           "X": 25,
           "Y": 765,
-          "Width": 315,
+          "Width": 312,
           "Height": 15
         },
         {
@@ -25472,7 +25425,7 @@
           "Name": "ServiceStateText",
           "ControlType": "TextBlock",
           "Text": "Service: online",
-          "X": 361,
+          "X": 358,
           "Y": 766,
           "Width": 77,
           "Height": 14
@@ -25507,7 +25460,7 @@
         {
           "Name": "StatusText",
           "ControlType": "TextBlock",
-          "Text": "ready \u00b7 Soma \u00b7 1 open \u00b7 unsaved \u00b7 Character Roster",
+          "Text": "ready \u00B7 Soma \u00B7 1 open \u00B7 unsaved \u00B7 Character Roster",
           "X": 34,
           "Y": 113,
           "Width": 263,
@@ -25525,10 +25478,10 @@
         {
           "Name": "TimeStateText",
           "ControlType": "TextBlock",
-          "Text": "Time: 2026-06-24 18:00:10Z",
-          "X": 468,
+          "Text": "Time: 2026-06-28 07:45:43Z",
+          "X": 465,
           "Y": 766,
-          "Width": 150,
+          "Width": 153,
           "Height": 14
         },
         {
@@ -25586,10 +25539,10 @@
         "Close",
         "ALICE",
         "Origin Dossier",
-        "ready \u00b7 Soma \u00b7 1 open \u00b7 unsaved \u00b7 Character Roster",
+        "ready \u00B7 Soma \u00B7 1 open \u00B7 unsaved \u00B7 Character Roster",
         "Characters",
         "Grouped by ruleset",
-        "SR5 Characters",
+        "SR5 Roster",
         "1 character",
         "Runner",
         "Character Summary",
@@ -25620,7 +25573,7 @@
         "1 / 6 (9)",
         "-",
         "3",
-        "+",
+        "\u002B",
         "1",
         "AGI",
         "5 (9)",
@@ -25630,7 +25583,7 @@
         "4",
         "Character: loaded",
         "Service: online",
-        "Time: 2026-06-24 18:00:10Z",
+        "Time: 2026-06-28 07:45:43Z",
         "Ruleset: Shadowrun 5 .chum5 | Workflows: 0 defs / 0 surfaces | Prefs: 100%/classic/en-us"
       ],
       "visibleMenuCommandIds": [],
@@ -25639,7 +25592,7 @@
       ],
       "visibleSectionQuickActionIds": [],
       "selectedListRowTexts": [],
-      "previewText": "Attributes\nAttribute 1: Body 4\nAttribute 2: Agility 5\nAttribute 3: Reaction 5\n\nPayload\n{\n  \"sectionId\": \"attributes\",\n  \"attributes\": [\n    {\n      \"name\": \"Body\",\n      \"baseValue\": 3,\n      \"karmaValue\": 1,\n      \"totalValue\": 4,\n      \"metatypeMin\": 1,\n      \"metatypeMax\": 6,\n      \"metatypeAugMax\": 9,\n      \"priorityMaximum\": 6,\n      \"karmaMaximum\": 5,\n      \"baseUnlocked\": true\n    },\n    {\n      \"name\": \"Agility\",\n      \"baseValue\": 5,\n      \"karmaValue\": 0,\n      \"totalValue\": 5,\n      \"metatypeMin\": 1,\n      \"metatypeMax\": 6,\n      \"metatypeAugMax\": 9,\n      \"priorityMaximum\": 6,\n      \"karmaMaximum\": 4,\n      \"baseUnlocked\": true\n    },\n    {\n      \"name\": \"Reaction\",\n      \"baseValue\": 4,\n      \"karmaValue\": 1,\n      \"totalValue\": 5,\n      \"metatypeMin\": 1,\n      \"metatypeMax\": 6,\n      \"metatypeAugMax\": 9,\n      \"priorityMaximum\": 6,\n      \"karmaMaximum\": 5,\n      \"baseUnlocked\": true\n    }\n  ]\n}",
+      "previewText": "Attributes\nAttribute 1: Body 4\nAttribute 2: Agility 5\nAttribute 3: Reaction 5\n\nPayload\n{\n  \u0022sectionId\u0022: \u0022attributes\u0022,\n  \u0022attributes\u0022: [\n    {\n      \u0022name\u0022: \u0022Body\u0022,\n      \u0022baseValue\u0022: 3,\n      \u0022karmaValue\u0022: 1,\n      \u0022totalValue\u0022: 4,\n      \u0022metatypeMin\u0022: 1,\n      \u0022metatypeMax\u0022: 6,\n      \u0022metatypeAugMax\u0022: 9,\n      \u0022priorityMaximum\u0022: 6,\n      \u0022karmaMaximum\u0022: 5,\n      \u0022baseUnlocked\u0022: true\n    },\n    {\n      \u0022name\u0022: \u0022Agility\u0022,\n      \u0022baseValue\u0022: 5,\n      \u0022karmaValue\u0022: 0,\n      \u0022totalValue\u0022: 5,\n      \u0022metatypeMin\u0022: 1,\n      \u0022metatypeMax\u0022: 6,\n      \u0022metatypeAugMax\u0022: 9,\n      \u0022priorityMaximum\u0022: 6,\n      \u0022karmaMaximum\u0022: 4,\n      \u0022baseUnlocked\u0022: true\n    },\n    {\n      \u0022name\u0022: \u0022Reaction\u0022,\n      \u0022baseValue\u0022: 4,\n      \u0022karmaValue\u0022: 1,\n      \u0022totalValue\u0022: 5,\n      \u0022metatypeMin\u0022: 1,\n      \u0022metatypeMax\u0022: 6,\n      \u0022metatypeAugMax\u0022: 9,\n      \u0022priorityMaximum\u0022: 6,\n      \u0022karmaMaximum\u0022: 5,\n      \u0022baseUnlocked\u0022: true\n    }\n  ]\n}",
       "rightShellVisible": false,
       "rightShellWidth": 0,
       "inlineCommandSurfaceVisible": false,
@@ -25648,20 +25601,14 @@
     {
       "screenshot": "18-import-dialog-light.png",
       "theme": "Light",
-      "dialogTitle": "Open Character",
-      "dialogMessage": "Paste Chummer XML to import into a workspace.",
+      "dialogTitle": "Open Runner",
+      "dialogMessage": "Paste Chummer XML to open a runner.",
       "dialogFieldLabels": [],
-      "dialogFieldIds": [
-        "AttributeBaseEditor_AGI"
-      ],
-      "dialogFieldControlIds": [
-        "AttributeBaseEditor_AGI"
-      ],
+      "dialogFieldIds": [],
+      "dialogFieldControlIds": [],
       "dialogFieldInputValues": [],
       "dialogActionIds": [],
-      "dialogActionControlIds": [
-        "AttributeBaseEditor_AGI"
-      ],
+      "dialogActionControlIds": [],
       "visibleNamedControlIds": [
         "AttributeBaseEditor_AGI",
         "AttributeBaseEditor_AGI_Decrease",
@@ -25785,7 +25732,7 @@
         {
           "Name": "AttributeBaseEditor_AGI_Increase",
           "ControlType": "Button",
-          "Text": "+",
+          "Text": "\u002B",
           "X": 892,
           "Y": 344,
           "Width": 24,
@@ -25821,7 +25768,7 @@
         {
           "Name": "AttributeBaseEditor_BOD_Increase",
           "ControlType": "Button",
-          "Text": "+",
+          "Text": "\u002B",
           "X": 892,
           "Y": 309,
           "Width": 24,
@@ -25857,7 +25804,7 @@
         {
           "Name": "AttributeBaseEditor_REA_Increase",
           "ControlType": "Button",
-          "Text": "+",
+          "Text": "\u002B",
           "X": 892,
           "Y": 379,
           "Width": 24,
@@ -25893,7 +25840,7 @@
         {
           "Name": "AttributeKarmaEditor_AGI_Increase",
           "ControlType": "Button",
-          "Text": "+",
+          "Text": "\u002B",
           "X": 1028,
           "Y": 344,
           "Width": 24,
@@ -25929,7 +25876,7 @@
         {
           "Name": "AttributeKarmaEditor_BOD_Increase",
           "ControlType": "Button",
-          "Text": "+",
+          "Text": "\u002B",
           "X": 1028,
           "Y": 309,
           "Width": 24,
@@ -25965,7 +25912,7 @@
         {
           "Name": "AttributeKarmaEditor_REA_Increase",
           "ControlType": "Button",
-          "Text": "+",
+          "Text": "\u002B",
           "X": 1028,
           "Y": 379,
           "Width": 24,
@@ -26103,7 +26050,7 @@
           "Text": "Character: loaded",
           "X": 25,
           "Y": 765,
-          "Width": 315,
+          "Width": 312,
           "Height": 15
         },
         {
@@ -26316,7 +26263,7 @@
         {
           "Name": "NoticeText",
           "ControlType": "TextBlock",
-          "Text": "Menu 'file' opened.",
+          "Text": "Menu \u0027file\u0027 opened.",
           "X": 1153,
           "Y": 255,
           "Width": 107,
@@ -27388,7 +27335,7 @@
           "Name": "ServiceStateText",
           "ControlType": "TextBlock",
           "Text": "Service: online",
-          "X": 361,
+          "X": 358,
           "Y": 766,
           "Width": 77,
           "Height": 14
@@ -27423,7 +27370,7 @@
         {
           "Name": "StatusText",
           "ControlType": "TextBlock",
-          "Text": "ready \u00b7 Soma \u00b7 1 open \u00b7 unsaved \u00b7 Character Roster",
+          "Text": "ready \u00B7 Soma \u00B7 1 open \u00B7 unsaved \u00B7 Character Roster",
           "X": 34,
           "Y": 113,
           "Width": 263,
@@ -27441,10 +27388,10 @@
         {
           "Name": "TimeStateText",
           "ControlType": "TextBlock",
-          "Text": "Time: 2026-06-24 18:00:10Z",
-          "X": 468,
+          "Text": "Time: 2026-06-28 07:45:43Z",
+          "X": 465,
           "Y": 766,
-          "Width": 150,
+          "Width": 153,
           "Height": 14
         },
         {
@@ -27502,10 +27449,10 @@
         "Close",
         "ALICE",
         "Origin Dossier",
-        "ready \u00b7 Soma \u00b7 1 open \u00b7 unsaved \u00b7 Character Roster",
+        "ready \u00B7 Soma \u00B7 1 open \u00B7 unsaved \u00B7 Character Roster",
         "Characters",
         "Grouped by ruleset",
-        "SR5 Characters",
+        "SR5 Roster",
         "1 character",
         "Runner",
         "Character Summary",
@@ -27525,7 +27472,7 @@
         "Powers",
         "Complex Forms",
         "Martial Arts",
-        "Menu 'file' opened.",
+        "Menu \u0027file\u0027 opened.",
         "3 visible entries  \u2022  Attribute 1: Body 4",
         "Attribute",
         "Start",
@@ -27537,7 +27484,7 @@
         "1 / 6 (9)",
         "-",
         "3",
-        "+",
+        "\u002B",
         "1",
         "AGI",
         "5 (9)",
@@ -27547,7 +27494,7 @@
         "4",
         "Character: loaded",
         "Service: online",
-        "Time: 2026-06-24 18:00:10Z",
+        "Time: 2026-06-28 07:45:43Z",
         "Ruleset: Shadowrun 5 .chum5 | Workflows: 0 defs / 0 surfaces | Prefs: 100%/classic/en-us"
       ],
       "visibleMenuCommandIds": [
@@ -27566,7 +27513,7 @@
       ],
       "visibleSectionQuickActionIds": [],
       "selectedListRowTexts": [],
-      "previewText": "Attributes\nAttribute 1: Body 4\nAttribute 2: Agility 5\nAttribute 3: Reaction 5\n\nPayload\n{\n  \"sectionId\": \"attributes\",\n  \"attributes\": [\n    {\n      \"name\": \"Body\",\n      \"baseValue\": 3,\n      \"karmaValue\": 1,\n      \"totalValue\": 4,\n      \"metatypeMin\": 1,\n      \"metatypeMax\": 6,\n      \"metatypeAugMax\": 9,\n      \"priorityMaximum\": 6,\n      \"karmaMaximum\": 5,\n      \"baseUnlocked\": true\n    },\n    {\n      \"name\": \"Agility\",\n      \"baseValue\": 5,\n      \"karmaValue\": 0,\n      \"totalValue\": 5,\n      \"metatypeMin\": 1,\n      \"metatypeMax\": 6,\n      \"metatypeAugMax\": 9,\n      \"priorityMaximum\": 6,\n      \"karmaMaximum\": 4,\n      \"baseUnlocked\": true\n    },\n    {\n      \"name\": \"Reaction\",\n      \"baseValue\": 4,\n      \"karmaValue\": 1,\n      \"totalValue\": 5,\n      \"metatypeMin\": 1,\n      \"metatypeMax\": 6,\n      \"metatypeAugMax\": 9,\n      \"priorityMaximum\": 6,\n      \"karmaMaximum\": 5,\n      \"baseUnlocked\": true\n    }\n  ]\n}",
+      "previewText": "Attributes\nAttribute 1: Body 4\nAttribute 2: Agility 5\nAttribute 3: Reaction 5\n\nPayload\n{\n  \u0022sectionId\u0022: \u0022attributes\u0022,\n  \u0022attributes\u0022: [\n    {\n      \u0022name\u0022: \u0022Body\u0022,\n      \u0022baseValue\u0022: 3,\n      \u0022karmaValue\u0022: 1,\n      \u0022totalValue\u0022: 4,\n      \u0022metatypeMin\u0022: 1,\n      \u0022metatypeMax\u0022: 6,\n      \u0022metatypeAugMax\u0022: 9,\n      \u0022priorityMaximum\u0022: 6,\n      \u0022karmaMaximum\u0022: 5,\n      \u0022baseUnlocked\u0022: true\n    },\n    {\n      \u0022name\u0022: \u0022Agility\u0022,\n      \u0022baseValue\u0022: 5,\n      \u0022karmaValue\u0022: 0,\n      \u0022totalValue\u0022: 5,\n      \u0022metatypeMin\u0022: 1,\n      \u0022metatypeMax\u0022: 6,\n      \u0022metatypeAugMax\u0022: 9,\n      \u0022priorityMaximum\u0022: 6,\n      \u0022karmaMaximum\u0022: 4,\n      \u0022baseUnlocked\u0022: true\n    },\n    {\n      \u0022name\u0022: \u0022Reaction\u0022,\n      \u0022baseValue\u0022: 4,\n      \u0022karmaValue\u0022: 1,\n      \u0022totalValue\u0022: 5,\n      \u0022metatypeMin\u0022: 1,\n      \u0022metatypeMax\u0022: 6,\n      \u0022metatypeAugMax\u0022: 9,\n      \u0022priorityMaximum\u0022: 6,\n      \u0022karmaMaximum\u0022: 5,\n      \u0022baseUnlocked\u0022: true\n    }\n  ]\n}",
       "rightShellVisible": false,
       "rightShellWidth": 0,
       "inlineCommandSurfaceVisible": false,
@@ -27578,17 +27525,11 @@
       "dialogTitle": "",
       "dialogMessage": "",
       "dialogFieldLabels": [],
-      "dialogFieldIds": [
-        "19-workflow-file-menu-loaded-light_field"
-      ],
-      "dialogFieldControlIds": [
-        "19-workflow-file-menu-loaded-light_control"
-      ],
+      "dialogFieldIds": [],
+      "dialogFieldControlIds": [],
       "dialogFieldInputValues": [],
       "dialogActionIds": [],
-      "dialogActionControlIds": [
-        "19-workflow-file-menu-loaded-light_action"
-      ],
+      "dialogActionControlIds": [],
       "visibleNamedControlIds": [
         "CenterShellRegion",
         "CharacterRosterControl",
@@ -27937,7 +27878,7 @@
         {
           "Name": "NoticeText",
           "ControlType": "TextBlock",
-          "Text": "Menu 'file' opened.",
+          "Text": "Menu \u0027file\u0027 opened.",
           "X": 1153,
           "Y": 255,
           "Width": 107,
@@ -29071,7 +29012,7 @@
         {
           "Name": "StatusText",
           "ControlType": "TextBlock",
-          "Text": "ready \u00b7 Soma \u00b7 1 open \u00b7 unsaved \u00b7 Global Settings",
+          "Text": "ready \u00B7 Soma \u00B7 1 open \u00B7 unsaved \u00B7 Global Settings",
           "X": 34,
           "Y": 113,
           "Width": 253,
@@ -29089,7 +29030,7 @@
         {
           "Name": "TimeStateText",
           "ControlType": "TextBlock",
-          "Text": "Time: 2026-06-24 18:00:03Z",
+          "Text": "Time: 2026-06-28 07:45:37Z",
           "X": 466,
           "Y": 766,
           "Width": 152,
@@ -29159,10 +29100,10 @@
         "Close",
         "ALICE",
         "Origin Dossier",
-        "ready \u00b7 Soma \u00b7 1 open \u00b7 unsaved \u00b7 Global Settings",
+        "ready \u00B7 Soma \u00B7 1 open \u00B7 unsaved \u00B7 Global Settings",
         "Characters",
         "Grouped by ruleset",
-        "SR5 Characters",
+        "SR5 Roster",
         "1 character",
         "Runner",
         "Character Summary",
@@ -29182,7 +29123,7 @@
         "Powers",
         "Complex Forms",
         "Martial Arts",
-        "Menu 'file' opened.",
+        "Menu \u0027file\u0027 opened.",
         "Cyberware",
         "Human",
         "Street Sam",
@@ -29215,7 +29156,7 @@
         "Add Cyberware",
         "Character: loaded",
         "Service: online",
-        "Time: 2026-06-24 18:00:03Z",
+        "Time: 2026-06-28 07:45:37Z",
         "Ruleset: Shadowrun 5 .chum5 | Workflows: 0 defs / 0 surfaces | Prefs: 100%/classic/en-us"
       ],
       "visibleMenuCommandIds": [
@@ -29236,7 +29177,7 @@
         "SectionQuickAction_cyberware_add"
       ],
       "selectedListRowTexts": [],
-      "previewText": "Cyberware\nName: Soma\nMetatype: Human\nRuleset: sr5\nInitiative: 11 \\u002B 2d6\nArmor: 12\nEssence: 5.34\n\nBOD: 5\nAGI: 7\nREA: 6\nFirearms 1: Automatics 6\nStealth 1: Sneaking 5\nWeapons 1: Ares Alpha\nArmor 1: Armor Jacket\nCyberware 1: Wired Reflexes 2\nContact 1: Fixer (Loyalty 4 / Connection 5)\nRunner Goal: Ready for a flagship shell smoke pass\n\nPayload\n{\n  \"name\": \"Soma\",\n  \"ruleset\": \"sr5\",\n  \"metatype\": \"Human\",\n  \"priority\": \"Standard\",\n  \"role\": \"Street Sam\",\n  \"attributes\": {\n    \"Body\": 5,\n    \"Agility\": 7,\n    \"Reaction\": 6,\n    \"Strength\": 4,\n    \"Willpower\": 3,\n    \"Logic\": 3\n  },\n  \"combat\": {\n    \"initiative\": \"11 + 2d6\",\n    \"armor\": 12,\n    \"essence\": 5.34\n  }\n}",
+      "previewText": "Cyberware\nName: Soma\nMetatype: Human\nRuleset: sr5\nInitiative: 11 \\u002B 2d6\nArmor: 12\nEssence: 5.34\n\nBOD: 5\nAGI: 7\nREA: 6\nFirearms 1: Automatics 6\nStealth 1: Sneaking 5\nWeapons 1: Ares Alpha\nArmor 1: Armor Jacket\nCyberware 1: Wired Reflexes 2\nContact 1: Fixer (Loyalty 4 / Connection 5)\nRunner Goal: Ready for a flagship shell smoke pass\n\nPayload\n{\n  \u0022name\u0022: \u0022Soma\u0022,\n  \u0022ruleset\u0022: \u0022sr5\u0022,\n  \u0022metatype\u0022: \u0022Human\u0022,\n  \u0022priority\u0022: \u0022Standard\u0022,\n  \u0022role\u0022: \u0022Street Sam\u0022,\n  \u0022attributes\u0022: {\n    \u0022Body\u0022: 5,\n    \u0022Agility\u0022: 7,\n    \u0022Reaction\u0022: 6,\n    \u0022Strength\u0022: 4,\n    \u0022Willpower\u0022: 3,\n    \u0022Logic\u0022: 3\n  },\n  \u0022combat\u0022: {\n    \u0022initiative\u0022: \u002211 \u002B 2d6\u0022,\n    \u0022armor\u0022: 12,\n    \u0022essence\u0022: 5.34\n  }\n}",
       "rightShellVisible": false,
       "rightShellWidth": 0,
       "inlineCommandSurfaceVisible": false,
@@ -29248,17 +29189,11 @@
       "dialogTitle": "",
       "dialogMessage": "",
       "dialogFieldLabels": [],
-      "dialogFieldIds": [
-        "20-workflow-skills-section-light_field"
-      ],
-      "dialogFieldControlIds": [
-        "20-workflow-skills-section-light_control"
-      ],
+      "dialogFieldIds": [],
+      "dialogFieldControlIds": [],
       "dialogFieldInputValues": [],
       "dialogActionIds": [],
-      "dialogActionControlIds": [
-        "20-workflow-skills-section-light_action"
-      ],
+      "dialogActionControlIds": [],
       "visibleNamedControlIds": [
         "CenterShellRegion",
         "CharacterRosterControl",
@@ -30639,7 +30574,7 @@
         {
           "Name": "StatusText",
           "ControlType": "TextBlock",
-          "Text": "ready \u00b7 Soma \u00b7 1 open \u00b7 unsaved \u00b7 New Character",
+          "Text": "ready \u00B7 Soma \u00B7 1 open \u00B7 unsaved \u00B7 New Character",
           "X": 34,
           "Y": 113,
           "Width": 252,
@@ -30657,7 +30592,7 @@
         {
           "Name": "TimeStateText",
           "ControlType": "TextBlock",
-          "Text": "Time: 2026-06-24 18:00:04Z",
+          "Text": "Time: 2026-06-28 07:45:38Z",
           "X": 466,
           "Y": 766,
           "Width": 152,
@@ -30727,10 +30662,10 @@
         "Close",
         "ALICE",
         "Origin Dossier",
-        "ready \u00b7 Soma \u00b7 1 open \u00b7 unsaved \u00b7 New Character",
+        "ready \u00B7 Soma \u00B7 1 open \u00B7 unsaved \u00B7 New Character",
         "Characters",
         "Grouped by ruleset",
-        "SR5 Characters",
+        "SR5 Roster",
         "1 character",
         "Runner",
         "Character Summary",
@@ -30758,7 +30693,7 @@
         "Add Skill",
         "Character: loaded",
         "Service: online",
-        "Time: 2026-06-24 18:00:04Z",
+        "Time: 2026-06-28 07:45:38Z",
         "Ruleset: Shadowrun 5 .chum5 | Workflows: 0 defs / 0 surfaces | Prefs: 100%/classic/en-us"
       ],
       "visibleMenuCommandIds": [],
@@ -30771,7 +30706,7 @@
       "selectedListRowTexts": [
         "skills[0] = Automatics 6 (Assault Rifles)"
       ],
-      "previewText": "Skills\nSkill 1: Automatics 6 (Assault Rifles)\nSkill 2: Sneaking 5\n\nPayload\n{\n  \"section\": \"skills\",\n  \"skills\": [\n    { \"name\": \"Automatics\", \"rating\": 6, \"specialization\": \"Assault Rifles\" },\n    { \"name\": \"Sneaking\", \"rating\": 5 }\n  ]\n}",
+      "previewText": "Skills\nSkill 1: Automatics 6 (Assault Rifles)\nSkill 2: Sneaking 5\n\nPayload\n{\n  \u0022section\u0022: \u0022skills\u0022,\n  \u0022skills\u0022: [\n    { \u0022name\u0022: \u0022Automatics\u0022, \u0022rating\u0022: 6, \u0022specialization\u0022: \u0022Assault Rifles\u0022 },\n    { \u0022name\u0022: \u0022Sneaking\u0022, \u0022rating\u0022: 5 }\n  ]\n}",
       "rightShellVisible": false,
       "rightShellWidth": 0,
       "inlineCommandSurfaceVisible": false,
@@ -30783,17 +30718,11 @@
       "dialogTitle": "Add Skill",
       "dialogMessage": "Browse skills, inspect category and linked attribute, then confirm the selected skill.",
       "dialogFieldLabels": [],
-      "dialogFieldIds": [
-        "SectionQuickAction_skill_add"
-      ],
-      "dialogFieldControlIds": [
-        "SectionQuickAction_skill_add"
-      ],
+      "dialogFieldIds": [],
+      "dialogFieldControlIds": [],
       "dialogFieldInputValues": [],
       "dialogActionIds": [],
-      "dialogActionControlIds": [
-        "SectionQuickAction_skill_add"
-      ],
+      "dialogActionControlIds": [],
       "visibleNamedControlIds": [
         "CenterShellRegion",
         "CharacterRosterControl",
@@ -32174,7 +32103,7 @@
         {
           "Name": "StatusText",
           "ControlType": "TextBlock",
-          "Text": "ready \u00b7 Soma \u00b7 1 open \u00b7 unsaved \u00b7 New Character",
+          "Text": "ready \u00B7 Soma \u00B7 1 open \u00B7 unsaved \u00B7 New Character",
           "X": 34,
           "Y": 113,
           "Width": 252,
@@ -32192,7 +32121,7 @@
         {
           "Name": "TimeStateText",
           "ControlType": "TextBlock",
-          "Text": "Time: 2026-06-24 18:00:04Z",
+          "Text": "Time: 2026-06-28 07:45:38Z",
           "X": 466,
           "Y": 766,
           "Width": 152,
@@ -32262,10 +32191,10 @@
         "Close",
         "ALICE",
         "Origin Dossier",
-        "ready \u00b7 Soma \u00b7 1 open \u00b7 unsaved \u00b7 New Character",
+        "ready \u00B7 Soma \u00B7 1 open \u00B7 unsaved \u00B7 New Character",
         "Characters",
         "Grouped by ruleset",
-        "SR5 Characters",
+        "SR5 Roster",
         "1 character",
         "Runner",
         "Character Summary",
@@ -32293,7 +32222,7 @@
         "Add Skill",
         "Character: loaded",
         "Service: online",
-        "Time: 2026-06-24 18:00:04Z",
+        "Time: 2026-06-28 07:45:38Z",
         "Ruleset: Shadowrun 5 .chum5 | Workflows: 0 defs / 0 surfaces | Prefs: 100%/classic/en-us"
       ],
       "visibleMenuCommandIds": [],
@@ -32304,7 +32233,7 @@
         "SectionQuickAction_skill_add"
       ],
       "selectedListRowTexts": [],
-      "previewText": "Skills\nSkill 1: Automatics 6 (Assault Rifles)\nSkill 2: Sneaking 5\n\nPayload\n{\n  \"section\": \"skills\",\n  \"skills\": [\n    { \"name\": \"Automatics\", \"rating\": 6, \"specialization\": \"Assault Rifles\" },\n    { \"name\": \"Sneaking\", \"rating\": 5 }\n  ]\n}",
+      "previewText": "Skills\nSkill 1: Automatics 6 (Assault Rifles)\nSkill 2: Sneaking 5\n\nPayload\n{\n  \u0022section\u0022: \u0022skills\u0022,\n  \u0022skills\u0022: [\n    { \u0022name\u0022: \u0022Automatics\u0022, \u0022rating\u0022: 6, \u0022specialization\u0022: \u0022Assault Rifles\u0022 },\n    { \u0022name\u0022: \u0022Sneaking\u0022, \u0022rating\u0022: 5 }\n  ]\n}",
       "rightShellVisible": false,
       "rightShellWidth": 0,
       "inlineCommandSurfaceVisible": false,
@@ -32316,17 +32245,11 @@
       "dialogTitle": "",
       "dialogMessage": "",
       "dialogFieldLabels": [],
-      "dialogFieldIds": [
-        "22-workflow-qualities-section-light_field"
-      ],
-      "dialogFieldControlIds": [
-        "22-workflow-qualities-section-light_control"
-      ],
+      "dialogFieldIds": [],
+      "dialogFieldControlIds": [],
       "dialogFieldInputValues": [],
       "dialogActionIds": [],
-      "dialogActionControlIds": [
-        "22-workflow-qualities-section-light_action"
-      ],
+      "dialogActionControlIds": [],
       "visibleNamedControlIds": [
         "CenterShellRegion",
         "CharacterRosterControl",
@@ -33590,7 +33513,7 @@
         {
           "Name": "SectionContextSummaryText",
           "ControlType": "TextBlock",
-          "Text": "2 visible entries  \u2022  Quality 1: Ambidextrous \u00b7 4 karma  \u2022  Actions: Add Quality",
+          "Text": "2 visible entries  \u2022  Quality 1: Ambidextrous \u00B7 4 karma  \u2022  Actions: Add Quality",
           "X": 279,
           "Y": 265,
           "Width": 986,
@@ -33707,7 +33630,7 @@
         {
           "Name": "StatusText",
           "ControlType": "TextBlock",
-          "Text": "ready \u00b7 Soma \u00b7 1 open \u00b7 unsaved \u00b7 New Character",
+          "Text": "ready \u00B7 Soma \u00B7 1 open \u00B7 unsaved \u00B7 New Character",
           "X": 34,
           "Y": 113,
           "Width": 252,
@@ -33725,7 +33648,7 @@
         {
           "Name": "TimeStateText",
           "ControlType": "TextBlock",
-          "Text": "Time: 2026-06-24 18:00:04Z",
+          "Text": "Time: 2026-06-28 07:45:38Z",
           "X": 466,
           "Y": 766,
           "Width": 152,
@@ -33795,10 +33718,10 @@
         "Close",
         "ALICE",
         "Origin Dossier",
-        "ready \u00b7 Soma \u00b7 1 open \u00b7 unsaved \u00b7 New Character",
+        "ready \u00B7 Soma \u00B7 1 open \u00B7 unsaved \u00B7 New Character",
         "Characters",
         "Grouped by ruleset",
-        "SR5 Characters",
+        "SR5 Roster",
         "1 character",
         "Runner",
         "Character Summary",
@@ -33818,15 +33741,15 @@
         "Powers",
         "Complex Forms",
         "Martial Arts",
-        "2 visible entries  \u2022  Quality 1: Ambidextrous \u00b7 4 karma  \u2022  Actions: Add Quality",
+        "2 visible entries  \u2022  Quality 1: Ambidextrous \u00B7 4 karma  \u2022  Actions: Add Quality",
         "Quality 2",
-        "Distinctive Style \u00b7 -5 karma",
+        "Distinctive Style \u00B7 -5 karma",
         "Quality 1",
-        "Ambidextrous \u00b7 4 karma",
+        "Ambidextrous \u00B7 4 karma",
         "Add Quality",
         "Character: loaded",
         "Service: online",
-        "Time: 2026-06-24 18:00:04Z",
+        "Time: 2026-06-28 07:45:38Z",
         "Ruleset: Shadowrun 5 .chum5 | Workflows: 0 defs / 0 surfaces | Prefs: 100%/classic/en-us"
       ],
       "visibleMenuCommandIds": [],
@@ -33837,7 +33760,7 @@
         "SectionQuickAction_quality_add"
       ],
       "selectedListRowTexts": [],
-      "previewText": "Qualities\nQuality 1: Ambidextrous \u00b7 4 karma\nQuality 2: Distinctive Style \u00b7 -5 karma\n\nPayload\n{\n  \"section\": \"qualities\",\n  \"qualities\": [\n    { \"name\": \"Ambidextrous\", \"karma\": 4 },\n    { \"name\": \"Distinctive Style\", \"karma\": -5 }\n  ]\n}",
+      "previewText": "Qualities\nQuality 1: Ambidextrous \u00B7 4 karma\nQuality 2: Distinctive Style \u00B7 -5 karma\n\nPayload\n{\n  \u0022section\u0022: \u0022qualities\u0022,\n  \u0022qualities\u0022: [\n    { \u0022name\u0022: \u0022Ambidextrous\u0022, \u0022karma\u0022: 4 },\n    { \u0022name\u0022: \u0022Distinctive Style\u0022, \u0022karma\u0022: -5 }\n  ]\n}",
       "rightShellVisible": false,
       "rightShellWidth": 0,
       "inlineCommandSurfaceVisible": false,
@@ -33849,17 +33772,11 @@
       "dialogTitle": "Add Quality",
       "dialogMessage": "Browse qualities, inspect karma cost and source, then confirm the selected quality.",
       "dialogFieldLabels": [],
-      "dialogFieldIds": [
-        "SectionQuickAction_quality_add"
-      ],
-      "dialogFieldControlIds": [
-        "SectionQuickAction_quality_add"
-      ],
+      "dialogFieldIds": [],
+      "dialogFieldControlIds": [],
       "dialogFieldInputValues": [],
       "dialogActionIds": [],
-      "dialogActionControlIds": [
-        "SectionQuickAction_quality_add"
-      ],
+      "dialogActionControlIds": [],
       "visibleNamedControlIds": [
         "CenterShellRegion",
         "CharacterRosterControl",
@@ -35123,7 +35040,7 @@
         {
           "Name": "SectionContextSummaryText",
           "ControlType": "TextBlock",
-          "Text": "2 visible entries  \u2022  Quality 1: Ambidextrous \u00b7 4 karma  \u2022  Actions: Add Quality",
+          "Text": "2 visible entries  \u2022  Quality 1: Ambidextrous \u00B7 4 karma  \u2022  Actions: Add Quality",
           "X": 279,
           "Y": 265,
           "Width": 986,
@@ -35240,7 +35157,7 @@
         {
           "Name": "StatusText",
           "ControlType": "TextBlock",
-          "Text": "ready \u00b7 Soma \u00b7 1 open \u00b7 unsaved \u00b7 New Character",
+          "Text": "ready \u00B7 Soma \u00B7 1 open \u00B7 unsaved \u00B7 New Character",
           "X": 34,
           "Y": 113,
           "Width": 252,
@@ -35258,7 +35175,7 @@
         {
           "Name": "TimeStateText",
           "ControlType": "TextBlock",
-          "Text": "Time: 2026-06-24 18:00:04Z",
+          "Text": "Time: 2026-06-28 07:45:38Z",
           "X": 466,
           "Y": 766,
           "Width": 152,
@@ -35328,10 +35245,10 @@
         "Close",
         "ALICE",
         "Origin Dossier",
-        "ready \u00b7 Soma \u00b7 1 open \u00b7 unsaved \u00b7 New Character",
+        "ready \u00B7 Soma \u00B7 1 open \u00B7 unsaved \u00B7 New Character",
         "Characters",
         "Grouped by ruleset",
-        "SR5 Characters",
+        "SR5 Roster",
         "1 character",
         "Runner",
         "Character Summary",
@@ -35351,15 +35268,15 @@
         "Powers",
         "Complex Forms",
         "Martial Arts",
-        "2 visible entries  \u2022  Quality 1: Ambidextrous \u00b7 4 karma  \u2022  Actions: Add Quality",
+        "2 visible entries  \u2022  Quality 1: Ambidextrous \u00B7 4 karma  \u2022  Actions: Add Quality",
         "Quality 1",
-        "Ambidextrous \u00b7 4 karma",
+        "Ambidextrous \u00B7 4 karma",
         "Quality 2",
-        "Distinctive Style \u00b7 -5 karma",
+        "Distinctive Style \u00B7 -5 karma",
         "Add Quality",
         "Character: loaded",
         "Service: online",
-        "Time: 2026-06-24 18:00:04Z",
+        "Time: 2026-06-28 07:45:38Z",
         "Ruleset: Shadowrun 5 .chum5 | Workflows: 0 defs / 0 surfaces | Prefs: 100%/classic/en-us"
       ],
       "visibleMenuCommandIds": [],
@@ -35370,7 +35287,7 @@
         "SectionQuickAction_quality_add"
       ],
       "selectedListRowTexts": [],
-      "previewText": "Qualities\nQuality 1: Ambidextrous \u00b7 4 karma\nQuality 2: Distinctive Style \u00b7 -5 karma\n\nPayload\n{\n  \"section\": \"qualities\",\n  \"qualities\": [\n    { \"name\": \"Ambidextrous\", \"karma\": 4 },\n    { \"name\": \"Distinctive Style\", \"karma\": -5 }\n  ]\n}",
+      "previewText": "Qualities\nQuality 1: Ambidextrous \u00B7 4 karma\nQuality 2: Distinctive Style \u00B7 -5 karma\n\nPayload\n{\n  \u0022section\u0022: \u0022qualities\u0022,\n  \u0022qualities\u0022: [\n    { \u0022name\u0022: \u0022Ambidextrous\u0022, \u0022karma\u0022: 4 },\n    { \u0022name\u0022: \u0022Distinctive Style\u0022, \u0022karma\u0022: -5 }\n  ]\n}",
       "rightShellVisible": false,
       "rightShellWidth": 0,
       "inlineCommandSurfaceVisible": false,
@@ -35382,17 +35299,11 @@
       "dialogTitle": "",
       "dialogMessage": "",
       "dialogFieldLabels": [],
-      "dialogFieldIds": [
-        "24-workflow-gear-section-light_field"
-      ],
-      "dialogFieldControlIds": [
-        "24-workflow-gear-section-light_control"
-      ],
+      "dialogFieldIds": [],
+      "dialogFieldControlIds": [],
       "dialogFieldInputValues": [],
       "dialogActionIds": [],
-      "dialogActionControlIds": [
-        "24-workflow-gear-section-light_action"
-      ],
+      "dialogActionControlIds": [],
       "visibleNamedControlIds": [
         "CenterShellRegion",
         "CharacterRosterControl",
@@ -36744,7 +36655,7 @@
         {
           "Name": "SectionContextSummaryText",
           "ControlType": "TextBlock",
-          "Text": "2 visible entries  \u2022  Gear 1: Medkit 6 \u00b7 Backpack  \u2022  Actions: Add Gear  \u2022  Explain: gear.medkit.rating \u00b7 Source anchor: SR5 p. 447 \u00b7 Medkit \u00b7 Source launch: Open the bound local rulebook anchor from this desktop route. \u00b7 Stale state: Packet snapshot gear-medkit-v1 no longer matches current snapshot gear-medkit-v2. Refresh before trusting this value. \u00b7 Follow-up: If rating drops below 6, extended healing intervals lose the clinic-grade bonus.",
+          "Text": "2 visible entries  \u2022  Gear 1: Medkit 6 \u00B7 Backpack  \u2022  Actions: Add Gear  \u2022  Explain: gear.medkit.rating \u00B7 Source anchor: SR5 p. 447 \u00B7 Medkit \u00B7 Source launch: Open the bound local rulebook anchor from this desktop route. \u00B7 Stale state: Packet snapshot gear-medkit-v1 no longer matches current snapshot gear-medkit-v2. Refresh before trusting this value. \u00B7 Follow-up: If rating drops below 6, extended healing intervals lose the clinic-grade bonus.",
           "X": 279,
           "Y": 265,
           "Width": 986,
@@ -36870,7 +36781,7 @@
         {
           "Name": "StatusText",
           "ControlType": "TextBlock",
-          "Text": "ready \u00b7 Soma \u00b7 1 open \u00b7 unsaved \u00b7 New Character",
+          "Text": "ready \u00B7 Soma \u00B7 1 open \u00B7 unsaved \u00B7 New Character",
           "X": 34,
           "Y": 113,
           "Width": 252,
@@ -36888,7 +36799,7 @@
         {
           "Name": "TimeStateText",
           "ControlType": "TextBlock",
-          "Text": "Time: 2026-06-24 18:00:05Z",
+          "Text": "Time: 2026-06-28 07:45:39Z",
           "X": 466,
           "Y": 766,
           "Width": 152,
@@ -36958,10 +36869,10 @@
         "Close",
         "ALICE",
         "Origin Dossier",
-        "ready \u00b7 Soma \u00b7 1 open \u00b7 unsaved \u00b7 New Character",
+        "ready \u00B7 Soma \u00B7 1 open \u00B7 unsaved \u00B7 New Character",
         "Characters",
         "Grouped by ruleset",
-        "SR5 Characters",
+        "SR5 Roster",
         "1 character",
         "Runner",
         "Character Summary",
@@ -36982,22 +36893,22 @@
         "Complex Forms",
         "Martial Arts",
         "Gear",
-        "2 visible entries  \u2022  Gear 1: Medkit 6 \u00b7 Backpack  \u2022  Actions: Add Gear  \u2022  Explain: gear.medkit.rating \u00b7 Source anchor: SR5 p. 447 \u00b7 Medkit \u00b7 Source launch: Open the bound local rulebook anchor from this desktop route. \u00b7 Stale state: Packet snapshot gear-medkit-v1 no longer matches current snapshot gear-medkit-v2. Refresh before trusting this value. \u00b7 Follow-up: If rating drops below 6, extended healing intervals lose the clinic-grade bonus.",
+        "2 visible entries  \u2022  Gear 1: Medkit 6 \u00B7 Backpack  \u2022  Actions: Add Gear  \u2022  Explain: gear.medkit.rating \u00B7 Source anchor: SR5 p. 447 \u00B7 Medkit \u00B7 Source launch: Open the bound local rulebook anchor from this desktop route. \u00B7 Stale state: Packet snapshot gear-medkit-v1 no longer matches current snapshot gear-medkit-v2. Refresh before trusting this value. \u00B7 Follow-up: If rating drops below 6, extended healing intervals lose the clinic-grade bonus.",
         "2 visible loadout entries. Use Add Gear to extend the current loadout.",
         "2",
         "Unknown",
         "Add Gear",
         "Medkit",
-        "Rating 6 \u00b7 Backpack",
+        "Rating 6 \u00B7 Backpack",
         "Ammo: APDS",
-        "Qty 40 \u00b7 Duffel",
+        "Qty 40 \u00B7 Duffel",
         "Name: Medkit\nRating: 6\nLocation: Backpack",
         "Open Rule Environment Studio",
         "Open Source Anchor",
         "Review Bounded Follow-up",
         "Character: loaded",
         "Service: online",
-        "Time: 2026-06-24 18:00:05Z",
+        "Time: 2026-06-28 07:45:39Z",
         "Ruleset: Shadowrun 5 .chum5 | Workflows: 0 defs / 0 surfaces | Prefs: 100%/classic/en-us"
       ],
       "visibleMenuCommandIds": [],
@@ -37011,9 +36922,9 @@
         "SectionQuickAction_gear_add"
       ],
       "selectedListRowTexts": [
-        "GearWorkbenchItem { Label = Medkit, Summary = Rating 6 \u00b7 Backpack, Detail = Name: Medkit\nRating: 6\nLocation: Backpack }"
+        "GearWorkbenchItem { Label = Medkit, Summary = Rating 6 \u00B7 Backpack, Detail = Name: Medkit\nRating: 6\nLocation: Backpack }"
       ],
-      "previewText": "Gear\nGear 1: Medkit 6 \u00b7 Backpack\nGear 2: Ammo: APDS \u00d740 \u00b7 Duffel\n\nExplain drawer\nExplain packet: gear.medkit.rating\nSource anchor: SR5 p. 447 \u00b7 Medkit\nSource launch: Open the bound local rulebook anchor from this desktop route.\nStale state: Packet snapshot gear-medkit-v1 no longer matches current snapshot gear-medkit-v2. Refresh before trusting this value.\nFollow-up: If rating drops below 6, extended healing intervals lose the clinic-grade bonus.\n\nPayload\n{\n  \"section\": \"gear\",\n  \"gear\": [\n    { \"name\": \"Medkit\", \"rating\": 6, \"location\": \"Backpack\" },\n    { \"name\": \"Ammo: APDS\", \"quantity\": 40, \"location\": \"Duffel\" }\n  ],\n  \"explain\": {\n    \"packet_id\": \"gear.medkit.rating\",\n    \"source_anchors\": [\n      {\n        \"book\": \"SR5\",\n        \"page\": \"447\",\n        \"section\": \"Medkit\",\n        \"localPdfPath\": \"/tmp/rulebooks/sr5-medkit.pdf\"\n      }\n    ],\n    \"stale_if_snapshot_changes\": {\n      \"snapshot_ref\": \"gear-medkit-v1\",\n      \"current_snapshot_ref\": \"gear-medkit-v2\"\n    },\n    \"boundedFollowUpSummary\": \"If rating drops below 6, extended healing intervals lose the clinic-grade bonus.\"\n  }\n}",
+      "previewText": "Gear\nGear 1: Medkit 6 \u00B7 Backpack\nGear 2: Ammo: APDS \u00D740 \u00B7 Duffel\n\nExplain drawer\nExplain packet: gear.medkit.rating\nSource anchor: SR5 p. 447 \u00B7 Medkit\nSource launch: Open the bound local rulebook anchor from this desktop route.\nStale state: Packet snapshot gear-medkit-v1 no longer matches current snapshot gear-medkit-v2. Refresh before trusting this value.\nFollow-up: If rating drops below 6, extended healing intervals lose the clinic-grade bonus.\n\nPayload\n{\n  \u0022section\u0022: \u0022gear\u0022,\n  \u0022gear\u0022: [\n    { \u0022name\u0022: \u0022Medkit\u0022, \u0022rating\u0022: 6, \u0022location\u0022: \u0022Backpack\u0022 },\n    { \u0022name\u0022: \u0022Ammo: APDS\u0022, \u0022quantity\u0022: 40, \u0022location\u0022: \u0022Duffel\u0022 }\n  ],\n  \u0022explain\u0022: {\n    \u0022packet_id\u0022: \u0022gear.medkit.rating\u0022,\n    \u0022source_anchors\u0022: [\n      {\n        \u0022book\u0022: \u0022SR5\u0022,\n        \u0022page\u0022: \u0022447\u0022,\n        \u0022section\u0022: \u0022Medkit\u0022,\n        \u0022localPdfPath\u0022: \u0022/tmp/rulebooks/sr5-medkit.pdf\u0022\n      }\n    ],\n    \u0022stale_if_snapshot_changes\u0022: {\n      \u0022snapshot_ref\u0022: \u0022gear-medkit-v1\u0022,\n      \u0022current_snapshot_ref\u0022: \u0022gear-medkit-v2\u0022\n    },\n    \u0022boundedFollowUpSummary\u0022: \u0022If rating drops below 6, extended healing intervals lose the clinic-grade bonus.\u0022\n  }\n}",
       "rightShellVisible": false,
       "rightShellWidth": 0,
       "inlineCommandSurfaceVisible": false,
@@ -37025,17 +36936,11 @@
       "dialogTitle": "Add Gear",
       "dialogMessage": "Browse the catalog, inspect source and cost, then confirm the selected gear item.",
       "dialogFieldLabels": [],
-      "dialogFieldIds": [
-        "SectionQuickAction_explain_drawer.open_rule_environment_studio"
-      ],
-      "dialogFieldControlIds": [
-        "SectionQuickAction_explain_drawer.open_rule_environment_studio"
-      ],
+      "dialogFieldIds": [],
+      "dialogFieldControlIds": [],
       "dialogFieldInputValues": [],
       "dialogActionIds": [],
-      "dialogActionControlIds": [
-        "SectionQuickAction_explain_drawer.open_rule_environment_studio"
-      ],
+      "dialogActionControlIds": [],
       "visibleNamedControlIds": [
         "CenterShellRegion",
         "CharacterRosterControl",
@@ -38387,7 +38292,7 @@
         {
           "Name": "SectionContextSummaryText",
           "ControlType": "TextBlock",
-          "Text": "2 visible entries  \u2022  Gear 1: Medkit 6 \u00b7 Backpack  \u2022  Actions: Add Gear  \u2022  Explain: gear.medkit.rating \u00b7 Source anchor: SR5 p. 447 \u00b7 Medkit \u00b7 Source launch: Open the bound local rulebook anchor from this desktop route. \u00b7 Stale state: Packet snapshot gear-medkit-v1 no longer matches current snapshot gear-medkit-v2. Refresh before trusting this value. \u00b7 Follow-up: If rating drops below 6, extended healing intervals lose the clinic-grade bonus.",
+          "Text": "2 visible entries  \u2022  Gear 1: Medkit 6 \u00B7 Backpack  \u2022  Actions: Add Gear  \u2022  Explain: gear.medkit.rating \u00B7 Source anchor: SR5 p. 447 \u00B7 Medkit \u00B7 Source launch: Open the bound local rulebook anchor from this desktop route. \u00B7 Stale state: Packet snapshot gear-medkit-v1 no longer matches current snapshot gear-medkit-v2. Refresh before trusting this value. \u00B7 Follow-up: If rating drops below 6, extended healing intervals lose the clinic-grade bonus.",
           "X": 279,
           "Y": 265,
           "Width": 986,
@@ -38513,7 +38418,7 @@
         {
           "Name": "StatusText",
           "ControlType": "TextBlock",
-          "Text": "ready \u00b7 Soma \u00b7 1 open \u00b7 unsaved \u00b7 New Character",
+          "Text": "ready \u00B7 Soma \u00B7 1 open \u00B7 unsaved \u00B7 New Character",
           "X": 34,
           "Y": 113,
           "Width": 252,
@@ -38531,7 +38436,7 @@
         {
           "Name": "TimeStateText",
           "ControlType": "TextBlock",
-          "Text": "Time: 2026-06-24 18:00:05Z",
+          "Text": "Time: 2026-06-28 07:45:39Z",
           "X": 466,
           "Y": 766,
           "Width": 152,
@@ -38601,10 +38506,10 @@
         "Close",
         "ALICE",
         "Origin Dossier",
-        "ready \u00b7 Soma \u00b7 1 open \u00b7 unsaved \u00b7 New Character",
+        "ready \u00B7 Soma \u00B7 1 open \u00B7 unsaved \u00B7 New Character",
         "Characters",
         "Grouped by ruleset",
-        "SR5 Characters",
+        "SR5 Roster",
         "1 character",
         "Runner",
         "Character Summary",
@@ -38625,22 +38530,22 @@
         "Complex Forms",
         "Martial Arts",
         "Gear",
-        "2 visible entries  \u2022  Gear 1: Medkit 6 \u00b7 Backpack  \u2022  Actions: Add Gear  \u2022  Explain: gear.medkit.rating \u00b7 Source anchor: SR5 p. 447 \u00b7 Medkit \u00b7 Source launch: Open the bound local rulebook anchor from this desktop route. \u00b7 Stale state: Packet snapshot gear-medkit-v1 no longer matches current snapshot gear-medkit-v2. Refresh before trusting this value. \u00b7 Follow-up: If rating drops below 6, extended healing intervals lose the clinic-grade bonus.",
+        "2 visible entries  \u2022  Gear 1: Medkit 6 \u00B7 Backpack  \u2022  Actions: Add Gear  \u2022  Explain: gear.medkit.rating \u00B7 Source anchor: SR5 p. 447 \u00B7 Medkit \u00B7 Source launch: Open the bound local rulebook anchor from this desktop route. \u00B7 Stale state: Packet snapshot gear-medkit-v1 no longer matches current snapshot gear-medkit-v2. Refresh before trusting this value. \u00B7 Follow-up: If rating drops below 6, extended healing intervals lose the clinic-grade bonus.",
         "2 visible loadout entries. Use Add Gear to extend the current loadout.",
         "2",
         "Unknown",
         "Add Gear",
         "Ammo: APDS",
-        "Qty 40 \u00b7 Duffel",
+        "Qty 40 \u00B7 Duffel",
         "Medkit",
-        "Rating 6 \u00b7 Backpack",
+        "Rating 6 \u00B7 Backpack",
         "Name: Medkit\nRating: 6\nLocation: Backpack",
         "Open Rule Environment Studio",
         "Open Source Anchor",
         "Review Bounded Follow-up",
         "Character: loaded",
         "Service: online",
-        "Time: 2026-06-24 18:00:05Z",
+        "Time: 2026-06-28 07:45:39Z",
         "Ruleset: Shadowrun 5 .chum5 | Workflows: 0 defs / 0 surfaces | Prefs: 100%/classic/en-us"
       ],
       "visibleMenuCommandIds": [],
@@ -38654,9 +38559,9 @@
         "SectionQuickAction_gear_add"
       ],
       "selectedListRowTexts": [
-        "GearWorkbenchItem { Label = Medkit, Summary = Rating 6 \u00b7 Backpack, Detail = Name: Medkit\nRating: 6\nLocation: Backpack }"
+        "GearWorkbenchItem { Label = Medkit, Summary = Rating 6 \u00B7 Backpack, Detail = Name: Medkit\nRating: 6\nLocation: Backpack }"
       ],
-      "previewText": "Gear\nGear 1: Medkit 6 \u00b7 Backpack\nGear 2: Ammo: APDS \u00d740 \u00b7 Duffel\n\nExplain drawer\nExplain packet: gear.medkit.rating\nSource anchor: SR5 p. 447 \u00b7 Medkit\nSource launch: Open the bound local rulebook anchor from this desktop route.\nStale state: Packet snapshot gear-medkit-v1 no longer matches current snapshot gear-medkit-v2. Refresh before trusting this value.\nFollow-up: If rating drops below 6, extended healing intervals lose the clinic-grade bonus.\n\nPayload\n{\n  \"section\": \"gear\",\n  \"gear\": [\n    { \"name\": \"Medkit\", \"rating\": 6, \"location\": \"Backpack\" },\n    { \"name\": \"Ammo: APDS\", \"quantity\": 40, \"location\": \"Duffel\" }\n  ],\n  \"explain\": {\n    \"packet_id\": \"gear.medkit.rating\",\n    \"source_anchors\": [\n      {\n        \"book\": \"SR5\",\n        \"page\": \"447\",\n        \"section\": \"Medkit\",\n        \"localPdfPath\": \"/tmp/rulebooks/sr5-medkit.pdf\"\n      }\n    ],\n    \"stale_if_snapshot_changes\": {\n      \"snapshot_ref\": \"gear-medkit-v1\",\n      \"current_snapshot_ref\": \"gear-medkit-v2\"\n    },\n    \"boundedFollowUpSummary\": \"If rating drops below 6, extended healing intervals lose the clinic-grade bonus.\"\n  }\n}",
+      "previewText": "Gear\nGear 1: Medkit 6 \u00B7 Backpack\nGear 2: Ammo: APDS \u00D740 \u00B7 Duffel\n\nExplain drawer\nExplain packet: gear.medkit.rating\nSource anchor: SR5 p. 447 \u00B7 Medkit\nSource launch: Open the bound local rulebook anchor from this desktop route.\nStale state: Packet snapshot gear-medkit-v1 no longer matches current snapshot gear-medkit-v2. Refresh before trusting this value.\nFollow-up: If rating drops below 6, extended healing intervals lose the clinic-grade bonus.\n\nPayload\n{\n  \u0022section\u0022: \u0022gear\u0022,\n  \u0022gear\u0022: [\n    { \u0022name\u0022: \u0022Medkit\u0022, \u0022rating\u0022: 6, \u0022location\u0022: \u0022Backpack\u0022 },\n    { \u0022name\u0022: \u0022Ammo: APDS\u0022, \u0022quantity\u0022: 40, \u0022location\u0022: \u0022Duffel\u0022 }\n  ],\n  \u0022explain\u0022: {\n    \u0022packet_id\u0022: \u0022gear.medkit.rating\u0022,\n    \u0022source_anchors\u0022: [\n      {\n        \u0022book\u0022: \u0022SR5\u0022,\n        \u0022page\u0022: \u0022447\u0022,\n        \u0022section\u0022: \u0022Medkit\u0022,\n        \u0022localPdfPath\u0022: \u0022/tmp/rulebooks/sr5-medkit.pdf\u0022\n      }\n    ],\n    \u0022stale_if_snapshot_changes\u0022: {\n      \u0022snapshot_ref\u0022: \u0022gear-medkit-v1\u0022,\n      \u0022current_snapshot_ref\u0022: \u0022gear-medkit-v2\u0022\n    },\n    \u0022boundedFollowUpSummary\u0022: \u0022If rating drops below 6, extended healing intervals lose the clinic-grade bonus.\u0022\n  }\n}",
       "rightShellVisible": false,
       "rightShellWidth": 0,
       "inlineCommandSurfaceVisible": false,
@@ -38668,17 +38573,11 @@
       "dialogTitle": "",
       "dialogMessage": "",
       "dialogFieldLabels": [],
-      "dialogFieldIds": [
-        "26-workflow-weapons-section-light_field"
-      ],
-      "dialogFieldControlIds": [
-        "26-workflow-weapons-section-light_control"
-      ],
+      "dialogFieldIds": [],
+      "dialogFieldControlIds": [],
       "dialogFieldInputValues": [],
       "dialogActionIds": [],
-      "dialogActionControlIds": [
-        "26-workflow-weapons-section-light_action"
-      ],
+      "dialogActionControlIds": [],
       "visibleNamedControlIds": [
         "CenterShellRegion",
         "CharacterRosterControl",
@@ -39933,7 +39832,7 @@
         {
           "Name": "SectionContextSummaryText",
           "ControlType": "TextBlock",
-          "Text": "1 visible entry  \u2022  Weapon 1: Ares Alpha \u00b7 Dice Pool 14 / 42(c)  \u2022  Actions: Add Weapon",
+          "Text": "1 visible entry  \u2022  Weapon 1: Ares Alpha \u00B7 Dice Pool 14 / 42(c)  \u2022  Actions: Add Weapon",
           "X": 279,
           "Y": 265,
           "Width": 986,
@@ -40050,7 +39949,7 @@
         {
           "Name": "StatusText",
           "ControlType": "TextBlock",
-          "Text": "ready \u00b7 Soma \u00b7 1 open \u00b7 unsaved \u00b7 New Character",
+          "Text": "ready \u00B7 Soma \u00B7 1 open \u00B7 unsaved \u00B7 New Character",
           "X": 34,
           "Y": 113,
           "Width": 252,
@@ -40068,7 +39967,7 @@
         {
           "Name": "TimeStateText",
           "ControlType": "TextBlock",
-          "Text": "Time: 2026-06-24 18:00:05Z",
+          "Text": "Time: 2026-06-28 07:45:39Z",
           "X": 466,
           "Y": 766,
           "Width": 152,
@@ -40138,10 +40037,10 @@
         "Close",
         "ALICE",
         "Origin Dossier",
-        "ready \u00b7 Soma \u00b7 1 open \u00b7 unsaved \u00b7 New Character",
+        "ready \u00B7 Soma \u00B7 1 open \u00B7 unsaved \u00B7 New Character",
         "Characters",
         "Grouped by ruleset",
-        "SR5 Characters",
+        "SR5 Roster",
         "1 character",
         "Runner",
         "Character Summary",
@@ -40162,13 +40061,13 @@
         "Complex Forms",
         "Martial Arts",
         "Weapons",
-        "1 visible entry  \u2022  Weapon 1: Ares Alpha \u00b7 Dice Pool 14 / 42(c)  \u2022  Actions: Add Weapon",
+        "1 visible entry  \u2022  Weapon 1: Ares Alpha \u00B7 Dice Pool 14 / 42(c)  \u2022  Actions: Add Weapon",
         "Weapon 1",
-        "Ares Alpha \u00b7 Dice Pool 14 / 42(c)",
+        "Ares Alpha \u00B7 Dice Pool 14 / 42(c)",
         "Add Weapon",
         "Character: loaded",
         "Service: online",
-        "Time: 2026-06-24 18:00:05Z",
+        "Time: 2026-06-28 07:45:39Z",
         "Ruleset: Shadowrun 5 .chum5 | Workflows: 0 defs / 0 surfaces | Prefs: 100%/classic/en-us"
       ],
       "visibleMenuCommandIds": [],
@@ -40179,7 +40078,7 @@
         "SectionQuickAction_combat_add_weapon"
       ],
       "selectedListRowTexts": [],
-      "previewText": "Weapons\nWeapon 1: Ares Alpha \u00b7 Dice Pool 14 / 42(c)\n\nPayload\n{\n  \"section\": \"weapons\",\n  \"weapons\": [\n    { \"name\": \"Ares Alpha\", \"dicePool\": 14, \"ammo\": \"42(c)\" }\n  ]\n}",
+      "previewText": "Weapons\nWeapon 1: Ares Alpha \u00B7 Dice Pool 14 / 42(c)\n\nPayload\n{\n  \u0022section\u0022: \u0022weapons\u0022,\n  \u0022weapons\u0022: [\n    { \u0022name\u0022: \u0022Ares Alpha\u0022, \u0022dicePool\u0022: 14, \u0022ammo\u0022: \u002242(c)\u0022 }\n  ]\n}",
       "rightShellVisible": false,
       "rightShellWidth": 0,
       "inlineCommandSurfaceVisible": false,
@@ -40191,17 +40090,11 @@
       "dialogTitle": "Add Weapon",
       "dialogMessage": "Browse weapons, inspect combat stats and source, then confirm the selected weapon.",
       "dialogFieldLabels": [],
-      "dialogFieldIds": [
-        "SectionQuickAction_combat_add_weapon"
-      ],
-      "dialogFieldControlIds": [
-        "SectionQuickAction_combat_add_weapon"
-      ],
+      "dialogFieldIds": [],
+      "dialogFieldControlIds": [],
       "dialogFieldInputValues": [],
       "dialogActionIds": [],
-      "dialogActionControlIds": [
-        "SectionQuickAction_combat_add_weapon"
-      ],
+      "dialogActionControlIds": [],
       "visibleNamedControlIds": [
         "CenterShellRegion",
         "CharacterRosterControl",
@@ -41456,7 +41349,7 @@
         {
           "Name": "SectionContextSummaryText",
           "ControlType": "TextBlock",
-          "Text": "1 visible entry  \u2022  Weapon 1: Ares Alpha \u00b7 Dice Pool 14 / 42(c)  \u2022  Actions: Add Weapon",
+          "Text": "1 visible entry  \u2022  Weapon 1: Ares Alpha \u00B7 Dice Pool 14 / 42(c)  \u2022  Actions: Add Weapon",
           "X": 279,
           "Y": 265,
           "Width": 986,
@@ -41573,7 +41466,7 @@
         {
           "Name": "StatusText",
           "ControlType": "TextBlock",
-          "Text": "ready \u00b7 Soma \u00b7 1 open \u00b7 unsaved \u00b7 New Character",
+          "Text": "ready \u00B7 Soma \u00B7 1 open \u00B7 unsaved \u00B7 New Character",
           "X": 34,
           "Y": 113,
           "Width": 252,
@@ -41591,7 +41484,7 @@
         {
           "Name": "TimeStateText",
           "ControlType": "TextBlock",
-          "Text": "Time: 2026-06-24 18:00:05Z",
+          "Text": "Time: 2026-06-28 07:45:39Z",
           "X": 466,
           "Y": 766,
           "Width": 152,
@@ -41661,10 +41554,10 @@
         "Close",
         "ALICE",
         "Origin Dossier",
-        "ready \u00b7 Soma \u00b7 1 open \u00b7 unsaved \u00b7 New Character",
+        "ready \u00B7 Soma \u00B7 1 open \u00B7 unsaved \u00B7 New Character",
         "Characters",
         "Grouped by ruleset",
-        "SR5 Characters",
+        "SR5 Roster",
         "1 character",
         "Runner",
         "Character Summary",
@@ -41685,13 +41578,13 @@
         "Complex Forms",
         "Martial Arts",
         "Weapons",
-        "1 visible entry  \u2022  Weapon 1: Ares Alpha \u00b7 Dice Pool 14 / 42(c)  \u2022  Actions: Add Weapon",
+        "1 visible entry  \u2022  Weapon 1: Ares Alpha \u00B7 Dice Pool 14 / 42(c)  \u2022  Actions: Add Weapon",
         "Weapon 1",
-        "Ares Alpha \u00b7 Dice Pool 14 / 42(c)",
+        "Ares Alpha \u00B7 Dice Pool 14 / 42(c)",
         "Add Weapon",
         "Character: loaded",
         "Service: online",
-        "Time: 2026-06-24 18:00:05Z",
+        "Time: 2026-06-28 07:45:39Z",
         "Ruleset: Shadowrun 5 .chum5 | Workflows: 0 defs / 0 surfaces | Prefs: 100%/classic/en-us"
       ],
       "visibleMenuCommandIds": [],
@@ -41702,7 +41595,7 @@
         "SectionQuickAction_combat_add_weapon"
       ],
       "selectedListRowTexts": [],
-      "previewText": "Weapons\nWeapon 1: Ares Alpha \u00b7 Dice Pool 14 / 42(c)\n\nPayload\n{\n  \"section\": \"weapons\",\n  \"weapons\": [\n    { \"name\": \"Ares Alpha\", \"dicePool\": 14, \"ammo\": \"42(c)\" }\n  ]\n}",
+      "previewText": "Weapons\nWeapon 1: Ares Alpha \u00B7 Dice Pool 14 / 42(c)\n\nPayload\n{\n  \u0022section\u0022: \u0022weapons\u0022,\n  \u0022weapons\u0022: [\n    { \u0022name\u0022: \u0022Ares Alpha\u0022, \u0022dicePool\u0022: 14, \u0022ammo\u0022: \u002242(c)\u0022 }\n  ]\n}",
       "rightShellVisible": false,
       "rightShellWidth": 0,
       "inlineCommandSurfaceVisible": false,
@@ -41714,17 +41607,11 @@
       "dialogTitle": "",
       "dialogMessage": "",
       "dialogFieldLabels": [],
-      "dialogFieldIds": [
-        "28-workflow-armor-section-light_field"
-      ],
-      "dialogFieldControlIds": [
-        "28-workflow-armor-section-light_control"
-      ],
+      "dialogFieldIds": [],
+      "dialogFieldControlIds": [],
       "dialogFieldInputValues": [],
       "dialogActionIds": [],
-      "dialogActionControlIds": [
-        "28-workflow-armor-section-light_action"
-      ],
+      "dialogActionControlIds": [],
       "visibleNamedControlIds": [
         "CenterShellRegion",
         "CharacterRosterControl",
@@ -42979,7 +42866,7 @@
         {
           "Name": "SectionContextSummaryText",
           "ControlType": "TextBlock",
-          "Text": "1 visible entry  \u2022  Armor 1: Armor Jacket \u00b7 Armor 12 / Mods 1  \u2022  Actions: Add Armor",
+          "Text": "1 visible entry  \u2022  Armor 1: Armor Jacket \u00B7 Armor 12 / Mods 1  \u2022  Actions: Add Armor",
           "X": 279,
           "Y": 265,
           "Width": 986,
@@ -43096,7 +42983,7 @@
         {
           "Name": "StatusText",
           "ControlType": "TextBlock",
-          "Text": "ready \u00b7 Soma \u00b7 1 open \u00b7 unsaved \u00b7 New Character",
+          "Text": "ready \u00B7 Soma \u00B7 1 open \u00B7 unsaved \u00B7 New Character",
           "X": 34,
           "Y": 113,
           "Width": 252,
@@ -43114,7 +43001,7 @@
         {
           "Name": "TimeStateText",
           "ControlType": "TextBlock",
-          "Text": "Time: 2026-06-24 18:00:05Z",
+          "Text": "Time: 2026-06-28 07:45:39Z",
           "X": 466,
           "Y": 766,
           "Width": 152,
@@ -43184,10 +43071,10 @@
         "Close",
         "ALICE",
         "Origin Dossier",
-        "ready \u00b7 Soma \u00b7 1 open \u00b7 unsaved \u00b7 New Character",
+        "ready \u00B7 Soma \u00B7 1 open \u00B7 unsaved \u00B7 New Character",
         "Characters",
         "Grouped by ruleset",
-        "SR5 Characters",
+        "SR5 Roster",
         "1 character",
         "Runner",
         "Character Summary",
@@ -43208,13 +43095,13 @@
         "Complex Forms",
         "Martial Arts",
         "Armors",
-        "1 visible entry  \u2022  Armor 1: Armor Jacket \u00b7 Armor 12 / Mods 1  \u2022  Actions: Add Armor",
+        "1 visible entry  \u2022  Armor 1: Armor Jacket \u00B7 Armor 12 / Mods 1  \u2022  Actions: Add Armor",
         "Armor 1",
-        "Armor Jacket \u00b7 Armor 12 / Mods 1",
+        "Armor Jacket \u00B7 Armor 12 / Mods 1",
         "Add Armor",
         "Character: loaded",
         "Service: online",
-        "Time: 2026-06-24 18:00:05Z",
+        "Time: 2026-06-28 07:45:39Z",
         "Ruleset: Shadowrun 5 .chum5 | Workflows: 0 defs / 0 surfaces | Prefs: 100%/classic/en-us"
       ],
       "visibleMenuCommandIds": [],
@@ -43225,7 +43112,7 @@
         "SectionQuickAction_combat_add_armor"
       ],
       "selectedListRowTexts": [],
-      "previewText": "Armors\nArmor 1: Armor Jacket \u00b7 Armor 12 / Mods 1\n\nPayload\n{\n  \"section\": \"armors\",\n  \"armor\": [\n    { \"name\": \"Armor Jacket\", \"rating\": 12, \"mods\": 1 }\n  ]\n}",
+      "previewText": "Armors\nArmor 1: Armor Jacket \u00B7 Armor 12 / Mods 1\n\nPayload\n{\n  \u0022section\u0022: \u0022armors\u0022,\n  \u0022armor\u0022: [\n    { \u0022name\u0022: \u0022Armor Jacket\u0022, \u0022rating\u0022: 12, \u0022mods\u0022: 1 }\n  ]\n}",
       "rightShellVisible": false,
       "rightShellWidth": 0,
       "inlineCommandSurfaceVisible": false,
@@ -43237,17 +43124,11 @@
       "dialogTitle": "Add Armor",
       "dialogMessage": "Browse armor, inspect protection values and source, then confirm the selected armor.",
       "dialogFieldLabels": [],
-      "dialogFieldIds": [
-        "SectionQuickAction_combat_add_armor"
-      ],
-      "dialogFieldControlIds": [
-        "SectionQuickAction_combat_add_armor"
-      ],
+      "dialogFieldIds": [],
+      "dialogFieldControlIds": [],
       "dialogFieldInputValues": [],
       "dialogActionIds": [],
-      "dialogActionControlIds": [
-        "SectionQuickAction_combat_add_armor"
-      ],
+      "dialogActionControlIds": [],
       "visibleNamedControlIds": [
         "CenterShellRegion",
         "CharacterRosterControl",
@@ -44502,7 +44383,7 @@
         {
           "Name": "SectionContextSummaryText",
           "ControlType": "TextBlock",
-          "Text": "1 visible entry  \u2022  Armor 1: Armor Jacket \u00b7 Armor 12 / Mods 1  \u2022  Actions: Add Armor",
+          "Text": "1 visible entry  \u2022  Armor 1: Armor Jacket \u00B7 Armor 12 / Mods 1  \u2022  Actions: Add Armor",
           "X": 279,
           "Y": 265,
           "Width": 986,
@@ -44619,7 +44500,7 @@
         {
           "Name": "StatusText",
           "ControlType": "TextBlock",
-          "Text": "ready \u00b7 Soma \u00b7 1 open \u00b7 unsaved \u00b7 New Character",
+          "Text": "ready \u00B7 Soma \u00B7 1 open \u00B7 unsaved \u00B7 New Character",
           "X": 34,
           "Y": 113,
           "Width": 252,
@@ -44637,7 +44518,7 @@
         {
           "Name": "TimeStateText",
           "ControlType": "TextBlock",
-          "Text": "Time: 2026-06-24 18:00:06Z",
+          "Text": "Time: 2026-06-28 07:45:39Z",
           "X": 466,
           "Y": 766,
           "Width": 152,
@@ -44707,10 +44588,10 @@
         "Close",
         "ALICE",
         "Origin Dossier",
-        "ready \u00b7 Soma \u00b7 1 open \u00b7 unsaved \u00b7 New Character",
+        "ready \u00B7 Soma \u00B7 1 open \u00B7 unsaved \u00B7 New Character",
         "Characters",
         "Grouped by ruleset",
-        "SR5 Characters",
+        "SR5 Roster",
         "1 character",
         "Runner",
         "Character Summary",
@@ -44731,13 +44612,13 @@
         "Complex Forms",
         "Martial Arts",
         "Armors",
-        "1 visible entry  \u2022  Armor 1: Armor Jacket \u00b7 Armor 12 / Mods 1  \u2022  Actions: Add Armor",
+        "1 visible entry  \u2022  Armor 1: Armor Jacket \u00B7 Armor 12 / Mods 1  \u2022  Actions: Add Armor",
         "Armor 1",
-        "Armor Jacket \u00b7 Armor 12 / Mods 1",
+        "Armor Jacket \u00B7 Armor 12 / Mods 1",
         "Add Armor",
         "Character: loaded",
         "Service: online",
-        "Time: 2026-06-24 18:00:06Z",
+        "Time: 2026-06-28 07:45:39Z",
         "Ruleset: Shadowrun 5 .chum5 | Workflows: 0 defs / 0 surfaces | Prefs: 100%/classic/en-us"
       ],
       "visibleMenuCommandIds": [],
@@ -44748,7 +44629,7 @@
         "SectionQuickAction_combat_add_armor"
       ],
       "selectedListRowTexts": [],
-      "previewText": "Armors\nArmor 1: Armor Jacket \u00b7 Armor 12 / Mods 1\n\nPayload\n{\n  \"section\": \"armors\",\n  \"armor\": [\n    { \"name\": \"Armor Jacket\", \"rating\": 12, \"mods\": 1 }\n  ]\n}",
+      "previewText": "Armors\nArmor 1: Armor Jacket \u00B7 Armor 12 / Mods 1\n\nPayload\n{\n  \u0022section\u0022: \u0022armors\u0022,\n  \u0022armor\u0022: [\n    { \u0022name\u0022: \u0022Armor Jacket\u0022, \u0022rating\u0022: 12, \u0022mods\u0022: 1 }\n  ]\n}",
       "rightShellVisible": false,
       "rightShellWidth": 0,
       "inlineCommandSurfaceVisible": false,
@@ -44760,17 +44641,11 @@
       "dialogTitle": "",
       "dialogMessage": "",
       "dialogFieldLabels": [],
-      "dialogFieldIds": [
-        "30-workflow-cyberware-section-light_field"
-      ],
-      "dialogFieldControlIds": [
-        "30-workflow-cyberware-section-light_control"
-      ],
+      "dialogFieldIds": [],
+      "dialogFieldControlIds": [],
       "dialogFieldInputValues": [],
       "dialogActionIds": [],
-      "dialogActionControlIds": [
-        "30-workflow-cyberware-section-light_action"
-      ],
+      "dialogActionControlIds": [],
       "visibleNamedControlIds": [
         "CenterShellRegion",
         "CharacterRosterControl",
@@ -44867,7 +44742,7 @@
           "Text": "Character: loaded",
           "X": 25,
           "Y": 765,
-          "Width": 313,
+          "Width": 312,
           "Height": 15
         },
         {
@@ -46107,7 +45982,7 @@
           "Name": "ServiceStateText",
           "ControlType": "TextBlock",
           "Text": "Service: online",
-          "X": 359,
+          "X": 358,
           "Y": 766,
           "Width": 77,
           "Height": 14
@@ -46142,7 +46017,7 @@
         {
           "Name": "StatusText",
           "ControlType": "TextBlock",
-          "Text": "ready \u00b7 Soma \u00b7 1 open \u00b7 unsaved \u00b7 New Character",
+          "Text": "ready \u00B7 Soma \u00B7 1 open \u00B7 unsaved \u00B7 New Character",
           "X": 34,
           "Y": 113,
           "Width": 252,
@@ -46160,10 +46035,10 @@
         {
           "Name": "TimeStateText",
           "ControlType": "TextBlock",
-          "Text": "Time: 2026-06-24 18:00:06Z",
-          "X": 466,
+          "Text": "Time: 2026-06-28 07:45:40Z",
+          "X": 465,
           "Y": 766,
-          "Width": 152,
+          "Width": 153,
           "Height": 14
         },
         {
@@ -46230,10 +46105,10 @@
         "Close",
         "ALICE",
         "Origin Dossier",
-        "ready \u00b7 Soma \u00b7 1 open \u00b7 unsaved \u00b7 New Character",
+        "ready \u00B7 Soma \u00B7 1 open \u00B7 unsaved \u00B7 New Character",
         "Characters",
         "Grouped by ruleset",
-        "SR5 Characters",
+        "SR5 Roster",
         "1 character",
         "Runner",
         "Character Summary",
@@ -46260,7 +46135,7 @@
         "Add Cyberware",
         "Character: loaded",
         "Service: online",
-        "Time: 2026-06-24 18:00:06Z",
+        "Time: 2026-06-28 07:45:40Z",
         "Ruleset: Shadowrun 5 .chum5 | Workflows: 0 defs / 0 surfaces | Prefs: 100%/classic/en-us"
       ],
       "visibleMenuCommandIds": [],
@@ -46271,7 +46146,7 @@
         "SectionQuickAction_cyberware_add"
       ],
       "selectedListRowTexts": [],
-      "previewText": "Cyberware\nRunner Goal: Ready for a flagship shell smoke pass\n\nPayload\n{\n  \"section\": \"profile\"\n}",
+      "previewText": "Cyberware\nRunner Goal: Ready for a flagship shell smoke pass\n\nPayload\n{\n  \u0022section\u0022: \u0022profile\u0022\n}",
       "rightShellVisible": false,
       "rightShellWidth": 0,
       "inlineCommandSurfaceVisible": false,
@@ -46283,17 +46158,11 @@
       "dialogTitle": "",
       "dialogMessage": "",
       "dialogFieldLabels": [],
-      "dialogFieldIds": [
-        "31-workflow-powers-section-light_field"
-      ],
-      "dialogFieldControlIds": [
-        "31-workflow-powers-section-light_control"
-      ],
+      "dialogFieldIds": [],
+      "dialogFieldControlIds": [],
       "dialogFieldInputValues": [],
       "dialogActionIds": [],
-      "dialogActionControlIds": [
-        "31-workflow-powers-section-light_action"
-      ],
+      "dialogActionControlIds": [],
       "visibleNamedControlIds": [
         "CenterShellRegion",
         "CharacterRosterControl",
@@ -46390,7 +46259,7 @@
           "Text": "Character: loaded",
           "X": 25,
           "Y": 765,
-          "Width": 313,
+          "Width": 312,
           "Height": 15
         },
         {
@@ -47630,7 +47499,7 @@
           "Name": "ServiceStateText",
           "ControlType": "TextBlock",
           "Text": "Service: online",
-          "X": 359,
+          "X": 358,
           "Y": 766,
           "Width": 77,
           "Height": 14
@@ -47665,7 +47534,7 @@
         {
           "Name": "StatusText",
           "ControlType": "TextBlock",
-          "Text": "ready \u00b7 Soma \u00b7 1 open \u00b7 unsaved \u00b7 New Character",
+          "Text": "ready \u00B7 Soma \u00B7 1 open \u00B7 unsaved \u00B7 New Character",
           "X": 34,
           "Y": 113,
           "Width": 252,
@@ -47683,10 +47552,10 @@
         {
           "Name": "TimeStateText",
           "ControlType": "TextBlock",
-          "Text": "Time: 2026-06-24 18:00:06Z",
-          "X": 466,
+          "Text": "Time: 2026-06-28 07:45:40Z",
+          "X": 465,
           "Y": 766,
-          "Width": 152,
+          "Width": 153,
           "Height": 14
         },
         {
@@ -47753,10 +47622,10 @@
         "Close",
         "ALICE",
         "Origin Dossier",
-        "ready \u00b7 Soma \u00b7 1 open \u00b7 unsaved \u00b7 New Character",
+        "ready \u00B7 Soma \u00B7 1 open \u00B7 unsaved \u00B7 New Character",
         "Characters",
         "Grouped by ruleset",
-        "SR5 Characters",
+        "SR5 Roster",
         "1 character",
         "Runner",
         "Character Summary",
@@ -47782,7 +47651,7 @@
         "Add Adept Power",
         "Character: loaded",
         "Service: online",
-        "Time: 2026-06-24 18:00:06Z",
+        "Time: 2026-06-28 07:45:40Z",
         "Ruleset: Shadowrun 5 .chum5 | Workflows: 0 defs / 0 surfaces | Prefs: 100%/classic/en-us"
       ],
       "visibleMenuCommandIds": [],
@@ -47793,7 +47662,7 @@
         "SectionQuickAction_adept_power_add"
       ],
       "selectedListRowTexts": [],
-      "previewText": "Powers\nPower 1: Improved Reflexes 1\n\nPayload\n{\n  \"section\": \"powers\",\n  \"adeptPowers\": [\n    { \"name\": \"Improved Reflexes\", \"level\": 1, \"cost\": 1.5 }\n  ]\n}",
+      "previewText": "Powers\nPower 1: Improved Reflexes 1\n\nPayload\n{\n  \u0022section\u0022: \u0022powers\u0022,\n  \u0022adeptPowers\u0022: [\n    { \u0022name\u0022: \u0022Improved Reflexes\u0022, \u0022level\u0022: 1, \u0022cost\u0022: 1.5 }\n  ]\n}",
       "rightShellVisible": false,
       "rightShellWidth": 0,
       "inlineCommandSurfaceVisible": false,
@@ -47805,17 +47674,11 @@
       "dialogTitle": "Add Adept Power",
       "dialogMessage": "Search available adept powers, inspect PP cost and source, then confirm the selected power.",
       "dialogFieldLabels": [],
-      "dialogFieldIds": [
-        "SectionQuickAction_adept_power_add"
-      ],
-      "dialogFieldControlIds": [
-        "SectionQuickAction_adept_power_add"
-      ],
+      "dialogFieldIds": [],
+      "dialogFieldControlIds": [],
       "dialogFieldInputValues": [],
       "dialogActionIds": [],
-      "dialogActionControlIds": [
-        "SectionQuickAction_adept_power_add"
-      ],
+      "dialogActionControlIds": [],
       "visibleNamedControlIds": [
         "CenterShellRegion",
         "CharacterRosterControl",
@@ -47912,7 +47775,7 @@
           "Text": "Character: loaded",
           "X": 25,
           "Y": 765,
-          "Width": 313,
+          "Width": 312,
           "Height": 15
         },
         {
@@ -49152,7 +49015,7 @@
           "Name": "ServiceStateText",
           "ControlType": "TextBlock",
           "Text": "Service: online",
-          "X": 359,
+          "X": 358,
           "Y": 766,
           "Width": 77,
           "Height": 14
@@ -49187,7 +49050,7 @@
         {
           "Name": "StatusText",
           "ControlType": "TextBlock",
-          "Text": "ready \u00b7 Soma \u00b7 1 open \u00b7 unsaved \u00b7 New Character",
+          "Text": "ready \u00B7 Soma \u00B7 1 open \u00B7 unsaved \u00B7 New Character",
           "X": 34,
           "Y": 113,
           "Width": 252,
@@ -49205,10 +49068,10 @@
         {
           "Name": "TimeStateText",
           "ControlType": "TextBlock",
-          "Text": "Time: 2026-06-24 18:00:06Z",
-          "X": 466,
+          "Text": "Time: 2026-06-28 07:45:40Z",
+          "X": 465,
           "Y": 766,
-          "Width": 152,
+          "Width": 153,
           "Height": 14
         },
         {
@@ -49275,10 +49138,10 @@
         "Close",
         "ALICE",
         "Origin Dossier",
-        "ready \u00b7 Soma \u00b7 1 open \u00b7 unsaved \u00b7 New Character",
+        "ready \u00B7 Soma \u00B7 1 open \u00B7 unsaved \u00B7 New Character",
         "Characters",
         "Grouped by ruleset",
-        "SR5 Characters",
+        "SR5 Roster",
         "1 character",
         "Runner",
         "Character Summary",
@@ -49304,7 +49167,7 @@
         "Add Adept Power",
         "Character: loaded",
         "Service: online",
-        "Time: 2026-06-24 18:00:06Z",
+        "Time: 2026-06-28 07:45:40Z",
         "Ruleset: Shadowrun 5 .chum5 | Workflows: 0 defs / 0 surfaces | Prefs: 100%/classic/en-us"
       ],
       "visibleMenuCommandIds": [],
@@ -49315,7 +49178,7 @@
         "SectionQuickAction_adept_power_add"
       ],
       "selectedListRowTexts": [],
-      "previewText": "Powers\nPower 1: Improved Reflexes 1\n\nPayload\n{\n  \"section\": \"powers\",\n  \"adeptPowers\": [\n    { \"name\": \"Improved Reflexes\", \"level\": 1, \"cost\": 1.5 }\n  ]\n}",
+      "previewText": "Powers\nPower 1: Improved Reflexes 1\n\nPayload\n{\n  \u0022section\u0022: \u0022powers\u0022,\n  \u0022adeptPowers\u0022: [\n    { \u0022name\u0022: \u0022Improved Reflexes\u0022, \u0022level\u0022: 1, \u0022cost\u0022: 1.5 }\n  ]\n}",
       "rightShellVisible": false,
       "rightShellWidth": 0,
       "inlineCommandSurfaceVisible": false,
@@ -49327,17 +49190,11 @@
       "dialogTitle": "Add Complex Form",
       "dialogMessage": "Browse complex forms, inspect target and source, then confirm the selected form.",
       "dialogFieldLabels": [],
-      "dialogFieldIds": [
-        "SectionQuickAction_complex_form_add"
-      ],
-      "dialogFieldControlIds": [
-        "SectionQuickAction_complex_form_add"
-      ],
+      "dialogFieldIds": [],
+      "dialogFieldControlIds": [],
       "dialogFieldInputValues": [],
       "dialogActionIds": [],
-      "dialogActionControlIds": [
-        "SectionQuickAction_complex_form_add"
-      ],
+      "dialogActionControlIds": [],
       "visibleNamedControlIds": [
         "CenterShellRegion",
         "CharacterRosterControl",
@@ -49434,7 +49291,7 @@
           "Text": "Character: loaded",
           "X": 25,
           "Y": 765,
-          "Width": 313,
+          "Width": 312,
           "Height": 15
         },
         {
@@ -50683,7 +50540,7 @@
           "Name": "ServiceStateText",
           "ControlType": "TextBlock",
           "Text": "Service: online",
-          "X": 359,
+          "X": 358,
           "Y": 766,
           "Width": 77,
           "Height": 14
@@ -50718,7 +50575,7 @@
         {
           "Name": "StatusText",
           "ControlType": "TextBlock",
-          "Text": "ready \u00b7 Soma \u00b7 1 open \u00b7 unsaved \u00b7 New Character",
+          "Text": "ready \u00B7 Soma \u00B7 1 open \u00B7 unsaved \u00B7 New Character",
           "X": 34,
           "Y": 113,
           "Width": 252,
@@ -50736,10 +50593,10 @@
         {
           "Name": "TimeStateText",
           "ControlType": "TextBlock",
-          "Text": "Time: 2026-06-24 18:00:06Z",
-          "X": 466,
+          "Text": "Time: 2026-06-28 07:45:40Z",
+          "X": 465,
           "Y": 766,
-          "Width": 152,
+          "Width": 153,
           "Height": 14
         },
         {
@@ -50806,10 +50663,10 @@
         "Close",
         "ALICE",
         "Origin Dossier",
-        "ready \u00b7 Soma \u00b7 1 open \u00b7 unsaved \u00b7 New Character",
+        "ready \u00B7 Soma \u00B7 1 open \u00B7 unsaved \u00B7 New Character",
         "Characters",
         "Grouped by ruleset",
-        "SR5 Characters",
+        "SR5 Roster",
         "1 character",
         "Runner",
         "Character Summary",
@@ -50837,7 +50694,7 @@
         "Add Complex Form",
         "Character: loaded",
         "Service: online",
-        "Time: 2026-06-24 18:00:06Z",
+        "Time: 2026-06-28 07:45:40Z",
         "Ruleset: Shadowrun 5 .chum5 | Workflows: 0 defs / 0 surfaces | Prefs: 100%/classic/en-us"
       ],
       "visibleMenuCommandIds": [],
@@ -50848,7 +50705,7 @@
         "SectionQuickAction_complex_form_add"
       ],
       "selectedListRowTexts": [],
-      "previewText": "Complex Forms\nComplex Form 1: Cleaner 1\nProgram 1: Armor (Common)\n\nPayload\n{\n  \"section\": \"complexforms\",\n  \"complexForms\": [\n    { \"name\": \"Cleaner\", \"level\": 1 }\n  ],\n  \"matrixPrograms\": [\n    { \"name\": \"Armor\", \"slot\": \"Common\" }\n  ]\n}",
+      "previewText": "Complex Forms\nComplex Form 1: Cleaner 1\nProgram 1: Armor (Common)\n\nPayload\n{\n  \u0022section\u0022: \u0022complexforms\u0022,\n  \u0022complexForms\u0022: [\n    { \u0022name\u0022: \u0022Cleaner\u0022, \u0022level\u0022: 1 }\n  ],\n  \u0022matrixPrograms\u0022: [\n    { \u0022name\u0022: \u0022Armor\u0022, \u0022slot\u0022: \u0022Common\u0022 }\n  ]\n}",
       "rightShellVisible": false,
       "rightShellWidth": 0,
       "inlineCommandSurfaceVisible": false,
@@ -50860,17 +50717,11 @@
       "dialogTitle": "",
       "dialogMessage": "",
       "dialogFieldLabels": [],
-      "dialogFieldIds": [
-        "34-workflow-validate-section-light_field"
-      ],
-      "dialogFieldControlIds": [
-        "34-workflow-validate-section-light_control"
-      ],
+      "dialogFieldIds": [],
+      "dialogFieldControlIds": [],
       "dialogFieldInputValues": [],
       "dialogActionIds": [],
-      "dialogActionControlIds": [
-        "34-workflow-validate-section-light_action"
-      ],
+      "dialogActionControlIds": [],
       "visibleNamedControlIds": [
         "CenterShellRegion",
         "CharacterRosterControl",
@@ -50964,7 +50815,7 @@
           "Text": "Character: loaded",
           "X": 25,
           "Y": 765,
-          "Width": 314,
+          "Width": 312,
           "Height": 15
         },
         {
@@ -52168,7 +52019,7 @@
           "Name": "ServiceStateText",
           "ControlType": "TextBlock",
           "Text": "Service: online",
-          "X": 360,
+          "X": 358,
           "Y": 766,
           "Width": 77,
           "Height": 14
@@ -52203,7 +52054,7 @@
         {
           "Name": "StatusText",
           "ControlType": "TextBlock",
-          "Text": "ready \u00b7 Soma \u00b7 1 open \u00b7 unsaved \u00b7 New Character",
+          "Text": "ready \u00B7 Soma \u00B7 1 open \u00B7 unsaved \u00B7 New Character",
           "X": 34,
           "Y": 113,
           "Width": 252,
@@ -52221,10 +52072,10 @@
         {
           "Name": "TimeStateText",
           "ControlType": "TextBlock",
-          "Text": "Time: 2026-06-24 18:00:07Z",
-          "X": 467,
+          "Text": "Time: 2026-06-28 07:45:40Z",
+          "X": 465,
           "Y": 766,
-          "Width": 151,
+          "Width": 153,
           "Height": 14
         },
         {
@@ -52291,10 +52142,10 @@
         "Close",
         "ALICE",
         "Origin Dossier",
-        "ready \u00b7 Soma \u00b7 1 open \u00b7 unsaved \u00b7 New Character",
+        "ready \u00B7 Soma \u00B7 1 open \u00B7 unsaved \u00B7 New Character",
         "Characters",
         "Grouped by ruleset",
-        "SR5 Characters",
+        "SR5 Roster",
         "1 character",
         "Runner",
         "Character Summary",
@@ -52320,7 +52171,7 @@
         "Ready for a flagship shell smoke pass",
         "Character: loaded",
         "Service: online",
-        "Time: 2026-06-24 18:00:07Z",
+        "Time: 2026-06-28 07:45:40Z",
         "Ruleset: Shadowrun 5 .chum5 | Workflows: 0 defs / 0 surfaces | Prefs: 100%/classic/en-us"
       ],
       "visibleMenuCommandIds": [],
@@ -52329,7 +52180,7 @@
       ],
       "visibleSectionQuickActionIds": [],
       "selectedListRowTexts": [],
-      "previewText": "Validation\nRunner Goal: Ready for a flagship shell smoke pass\n\nPayload\n{\n  \"section\": \"profile\"\n}",
+      "previewText": "Validation\nRunner Goal: Ready for a flagship shell smoke pass\n\nPayload\n{\n  \u0022section\u0022: \u0022profile\u0022\n}",
       "rightShellVisible": false,
       "rightShellWidth": 0,
       "inlineCommandSurfaceVisible": false,
@@ -52341,17 +52192,11 @@
       "dialogTitle": "",
       "dialogMessage": "",
       "dialogFieldLabels": [],
-      "dialogFieldIds": [
-        "35-workflow-rules-section-light_field"
-      ],
-      "dialogFieldControlIds": [
-        "35-workflow-rules-section-light_control"
-      ],
+      "dialogFieldIds": [],
+      "dialogFieldControlIds": [],
       "dialogFieldInputValues": [],
       "dialogActionIds": [],
-      "dialogActionControlIds": [
-        "35-workflow-rules-section-light_action"
-      ],
+      "dialogActionControlIds": [],
       "visibleNamedControlIds": [
         "CenterShellRegion",
         "CharacterRosterControl",
@@ -52445,7 +52290,7 @@
           "Text": "Character: loaded",
           "X": 25,
           "Y": 765,
-          "Width": 314,
+          "Width": 312,
           "Height": 15
         },
         {
@@ -53649,7 +53494,7 @@
           "Name": "ServiceStateText",
           "ControlType": "TextBlock",
           "Text": "Service: online",
-          "X": 360,
+          "X": 358,
           "Y": 766,
           "Width": 77,
           "Height": 14
@@ -53684,7 +53529,7 @@
         {
           "Name": "StatusText",
           "ControlType": "TextBlock",
-          "Text": "ready \u00b7 Soma \u00b7 1 open \u00b7 unsaved \u00b7 New Character",
+          "Text": "ready \u00B7 Soma \u00B7 1 open \u00B7 unsaved \u00B7 New Character",
           "X": 34,
           "Y": 113,
           "Width": 252,
@@ -53702,10 +53547,10 @@
         {
           "Name": "TimeStateText",
           "ControlType": "TextBlock",
-          "Text": "Time: 2026-06-24 18:00:07Z",
-          "X": 467,
+          "Text": "Time: 2026-06-28 07:45:40Z",
+          "X": 465,
           "Y": 766,
-          "Width": 151,
+          "Width": 153,
           "Height": 14
         },
         {
@@ -53772,10 +53617,10 @@
         "Close",
         "ALICE",
         "Origin Dossier",
-        "ready \u00b7 Soma \u00b7 1 open \u00b7 unsaved \u00b7 New Character",
+        "ready \u00B7 Soma \u00B7 1 open \u00B7 unsaved \u00B7 New Character",
         "Characters",
         "Grouped by ruleset",
-        "SR5 Characters",
+        "SR5 Roster",
         "1 character",
         "Runner",
         "Character Summary",
@@ -53801,7 +53646,7 @@
         "Ready for a flagship shell smoke pass",
         "Character: loaded",
         "Service: online",
-        "Time: 2026-06-24 18:00:07Z",
+        "Time: 2026-06-28 07:45:40Z",
         "Ruleset: Shadowrun 5 .chum5 | Workflows: 0 defs / 0 surfaces | Prefs: 100%/classic/en-us"
       ],
       "visibleMenuCommandIds": [],
@@ -53810,7 +53655,7 @@
       ],
       "visibleSectionQuickActionIds": [],
       "selectedListRowTexts": [],
-      "previewText": "Sources\nRunner Goal: Ready for a flagship shell smoke pass\n\nPayload\n{\n  \"section\": \"profile\"\n}",
+      "previewText": "Sources\nRunner Goal: Ready for a flagship shell smoke pass\n\nPayload\n{\n  \u0022section\u0022: \u0022profile\u0022\n}",
       "rightShellVisible": false,
       "rightShellWidth": 0,
       "inlineCommandSurfaceVisible": false,
@@ -53822,17 +53667,11 @@
       "dialogTitle": "Select Build Method",
       "dialogMessage": "",
       "dialogFieldLabels": [],
-      "dialogFieldIds": [
-        "SectionQuickAction_cyberware_add"
-      ],
-      "dialogFieldControlIds": [
-        "SectionQuickAction_cyberware_add"
-      ],
+      "dialogFieldIds": [],
+      "dialogFieldControlIds": [],
       "dialogFieldInputValues": [],
       "dialogActionIds": [],
-      "dialogActionControlIds": [
-        "SectionQuickAction_cyberware_add"
-      ],
+      "dialogActionControlIds": [],
       "visibleNamedControlIds": [
         "CenterShellRegion",
         "CharacterRosterControl",
@@ -55295,7 +55134,7 @@
         {
           "Name": "StatusText",
           "ControlType": "TextBlock",
-          "Text": "ready \u00b7 Soma \u00b7 1 open \u00b7 unsaved \u00b7 New Character",
+          "Text": "ready \u00B7 Soma \u00B7 1 open \u00B7 unsaved \u00B7 New Character",
           "X": 34,
           "Y": 113,
           "Width": 252,
@@ -55313,7 +55152,7 @@
         {
           "Name": "TimeStateText",
           "ControlType": "TextBlock",
-          "Text": "Time: 2026-06-24 18:00:03Z",
+          "Text": "Time: 2026-06-28 07:45:38Z",
           "X": 466,
           "Y": 766,
           "Width": 152,
@@ -55383,10 +55222,10 @@
         "Close",
         "ALICE",
         "Origin Dossier",
-        "ready \u00b7 Soma \u00b7 1 open \u00b7 unsaved \u00b7 New Character",
+        "ready \u00B7 Soma \u00B7 1 open \u00B7 unsaved \u00B7 New Character",
         "Characters",
         "Grouped by ruleset",
-        "SR5 Characters",
+        "SR5 Roster",
         "1 character",
         "Runner",
         "Character Summary",
@@ -55438,7 +55277,7 @@
         "Add Cyberware",
         "Character: loaded",
         "Service: online",
-        "Time: 2026-06-24 18:00:03Z",
+        "Time: 2026-06-28 07:45:38Z",
         "Ruleset: Shadowrun 5 .chum5 | Workflows: 0 defs / 0 surfaces | Prefs: 100%/classic/en-us"
       ],
       "visibleMenuCommandIds": [],
@@ -55449,7 +55288,7 @@
         "SectionQuickAction_cyberware_add"
       ],
       "selectedListRowTexts": [],
-      "previewText": "Cyberware\nName: Soma\nMetatype: Human\nRuleset: sr5\nInitiative: 11 \\u002B 2d6\nArmor: 12\nEssence: 5.34\n\nBOD: 5\nAGI: 7\nREA: 6\nFirearms 1: Automatics 6\nStealth 1: Sneaking 5\nWeapons 1: Ares Alpha\nArmor 1: Armor Jacket\nCyberware 1: Wired Reflexes 2\nContact 1: Fixer (Loyalty 4 / Connection 5)\nRunner Goal: Ready for a flagship shell smoke pass\n\nPayload\n{\n  \"name\": \"Soma\",\n  \"ruleset\": \"sr5\",\n  \"metatype\": \"Human\",\n  \"priority\": \"Standard\",\n  \"role\": \"Street Sam\",\n  \"attributes\": {\n    \"Body\": 5,\n    \"Agility\": 7,\n    \"Reaction\": 6,\n    \"Strength\": 4,\n    \"Willpower\": 3,\n    \"Logic\": 3\n  },\n  \"combat\": {\n    \"initiative\": \"11 + 2d6\",\n    \"armor\": 12,\n    \"essence\": 5.34\n  }\n}",
+      "previewText": "Cyberware\nName: Soma\nMetatype: Human\nRuleset: sr5\nInitiative: 11 \\u002B 2d6\nArmor: 12\nEssence: 5.34\n\nBOD: 5\nAGI: 7\nREA: 6\nFirearms 1: Automatics 6\nStealth 1: Sneaking 5\nWeapons 1: Ares Alpha\nArmor 1: Armor Jacket\nCyberware 1: Wired Reflexes 2\nContact 1: Fixer (Loyalty 4 / Connection 5)\nRunner Goal: Ready for a flagship shell smoke pass\n\nPayload\n{\n  \u0022name\u0022: \u0022Soma\u0022,\n  \u0022ruleset\u0022: \u0022sr5\u0022,\n  \u0022metatype\u0022: \u0022Human\u0022,\n  \u0022priority\u0022: \u0022Standard\u0022,\n  \u0022role\u0022: \u0022Street Sam\u0022,\n  \u0022attributes\u0022: {\n    \u0022Body\u0022: 5,\n    \u0022Agility\u0022: 7,\n    \u0022Reaction\u0022: 6,\n    \u0022Strength\u0022: 4,\n    \u0022Willpower\u0022: 3,\n    \u0022Logic\u0022: 3\n  },\n  \u0022combat\u0022: {\n    \u0022initiative\u0022: \u002211 \u002B 2d6\u0022,\n    \u0022armor\u0022: 12,\n    \u0022essence\u0022: 5.34\n  }\n}",
       "rightShellVisible": false,
       "rightShellWidth": 0,
       "inlineCommandSurfaceVisible": false,
@@ -55461,17 +55300,11 @@
       "dialogTitle": "",
       "dialogMessage": "",
       "dialogFieldLabels": [],
-      "dialogFieldIds": [
-        "37-workflow-calendar-section-light_field"
-      ],
-      "dialogFieldControlIds": [
-        "37-workflow-calendar-section-light_control"
-      ],
+      "dialogFieldIds": [],
+      "dialogFieldControlIds": [],
       "dialogFieldInputValues": [],
       "dialogActionIds": [],
-      "dialogActionControlIds": [
-        "37-workflow-calendar-section-light_action"
-      ],
+      "dialogActionControlIds": [],
       "visibleNamedControlIds": [
         "CenterShellRegion",
         "CharacterRosterControl",
@@ -56726,7 +56559,7 @@
         {
           "Name": "SectionContextSummaryText",
           "ControlType": "TextBlock",
-          "Text": "1 visible entry  \u2022  Entry 1: Downtime recon \u00b7 +2 karma  \u2022  Actions: Add Entry",
+          "Text": "1 visible entry  \u2022  Entry 1: Downtime recon \u00B7 \u002B2 karma  \u2022  Actions: Add Entry",
           "X": 279,
           "Y": 265,
           "Width": 986,
@@ -56843,7 +56676,7 @@
         {
           "Name": "StatusText",
           "ControlType": "TextBlock",
-          "Text": "ready \u00b7 Soma \u00b7 1 open \u00b7 unsaved \u00b7 New Character",
+          "Text": "ready \u00B7 Soma \u00B7 1 open \u00B7 unsaved \u00B7 New Character",
           "X": 34,
           "Y": 113,
           "Width": 252,
@@ -56861,7 +56694,7 @@
         {
           "Name": "TimeStateText",
           "ControlType": "TextBlock",
-          "Text": "Time: 2026-06-24 18:00:07Z",
+          "Text": "Time: 2026-06-28 07:45:41Z",
           "X": 467,
           "Y": 766,
           "Width": 151,
@@ -56931,10 +56764,10 @@
         "Close",
         "ALICE",
         "Origin Dossier",
-        "ready \u00b7 Soma \u00b7 1 open \u00b7 unsaved \u00b7 New Character",
+        "ready \u00B7 Soma \u00B7 1 open \u00B7 unsaved \u00B7 New Character",
         "Characters",
         "Grouped by ruleset",
-        "SR5 Characters",
+        "SR5 Roster",
         "1 character",
         "Runner",
         "Character Summary",
@@ -56955,13 +56788,13 @@
         "Complex Forms",
         "Martial Arts",
         "Calendar",
-        "1 visible entry  \u2022  Entry 1: Downtime recon \u00b7 +2 karma  \u2022  Actions: Add Entry",
+        "1 visible entry  \u2022  Entry 1: Downtime recon \u00B7 \u002B2 karma  \u2022  Actions: Add Entry",
         "Entry 1",
-        "Downtime recon \u00b7 +2 karma",
+        "Downtime recon \u00B7 \u002B2 karma",
         "Add Entry",
         "Character: loaded",
         "Service: online",
-        "Time: 2026-06-24 18:00:07Z",
+        "Time: 2026-06-28 07:45:41Z",
         "Ruleset: Shadowrun 5 .chum5 | Workflows: 0 defs / 0 surfaces | Prefs: 100%/classic/en-us"
       ],
       "visibleMenuCommandIds": [],
@@ -56972,7 +56805,7 @@
         "SectionQuickAction_create_entry"
       ],
       "selectedListRowTexts": [],
-      "previewText": "Calendar\nEntry 1: Downtime recon \u00b7 +2 karma\n\nPayload\n{\n  \"section\": \"calendar\",\n  \"diary\": [\n    { \"title\": \"Downtime recon\", \"date\": \"2080-02-14\", \"karma\": 2 }\n  ]\n}",
+      "previewText": "Calendar\nEntry 1: Downtime recon \u00B7 \u002B2 karma\n\nPayload\n{\n  \u0022section\u0022: \u0022calendar\u0022,\n  \u0022diary\u0022: [\n    { \u0022title\u0022: \u0022Downtime recon\u0022, \u0022date\u0022: \u00222080-02-14\u0022, \u0022karma\u0022: 2 }\n  ]\n}",
       "rightShellVisible": false,
       "rightShellWidth": 0,
       "inlineCommandSurfaceVisible": false,
@@ -56984,17 +56817,11 @@
       "dialogTitle": "Translator",
       "dialogMessage": "Desktop language set to en-us, de-de, fr-fr, ja-jp, pt-br, zh-cn. Restart Chummer to apply it everywhere. Language search and enabled overlays remain visible.",
       "dialogFieldLabels": [],
-      "dialogFieldIds": [
-        "AttributeBaseEditor_AGI"
-      ],
-      "dialogFieldControlIds": [
-        "AttributeBaseEditor_AGI"
-      ],
+      "dialogFieldIds": [],
+      "dialogFieldControlIds": [],
       "dialogFieldInputValues": [],
       "dialogActionIds": [],
-      "dialogActionControlIds": [
-        "AttributeBaseEditor_AGI"
-      ],
+      "dialogActionControlIds": [],
       "visibleNamedControlIds": [
         "AttributeBaseEditor_AGI",
         "AttributeBaseEditor_AGI_Decrease",
@@ -57118,7 +56945,7 @@
         {
           "Name": "AttributeBaseEditor_AGI_Increase",
           "ControlType": "Button",
-          "Text": "+",
+          "Text": "\u002B",
           "X": 892,
           "Y": 344,
           "Width": 24,
@@ -57154,7 +56981,7 @@
         {
           "Name": "AttributeBaseEditor_BOD_Increase",
           "ControlType": "Button",
-          "Text": "+",
+          "Text": "\u002B",
           "X": 892,
           "Y": 309,
           "Width": 24,
@@ -57190,7 +57017,7 @@
         {
           "Name": "AttributeBaseEditor_REA_Increase",
           "ControlType": "Button",
-          "Text": "+",
+          "Text": "\u002B",
           "X": 892,
           "Y": 379,
           "Width": 24,
@@ -57226,7 +57053,7 @@
         {
           "Name": "AttributeKarmaEditor_AGI_Increase",
           "ControlType": "Button",
-          "Text": "+",
+          "Text": "\u002B",
           "X": 1028,
           "Y": 344,
           "Width": 24,
@@ -57262,7 +57089,7 @@
         {
           "Name": "AttributeKarmaEditor_BOD_Increase",
           "ControlType": "Button",
-          "Text": "+",
+          "Text": "\u002B",
           "X": 1028,
           "Y": 309,
           "Width": 24,
@@ -57298,7 +57125,7 @@
         {
           "Name": "AttributeKarmaEditor_REA_Increase",
           "ControlType": "Button",
-          "Text": "+",
+          "Text": "\u002B",
           "X": 1028,
           "Y": 379,
           "Width": 24,
@@ -57436,7 +57263,7 @@
           "Text": "Character: loaded",
           "X": 25,
           "Y": 765,
-          "Width": 317,
+          "Width": 312,
           "Height": 15
         },
         {
@@ -57649,7 +57476,7 @@
         {
           "Name": "NoticeText",
           "ControlType": "TextBlock",
-          "Text": "Menu 'file' opened.",
+          "Text": "Menu \u0027file\u0027 opened.",
           "X": 1153,
           "Y": 255,
           "Width": 107,
@@ -58721,7 +58548,7 @@
           "Name": "ServiceStateText",
           "ControlType": "TextBlock",
           "Text": "Service: online",
-          "X": 363,
+          "X": 358,
           "Y": 766,
           "Width": 77,
           "Height": 14
@@ -58756,7 +58583,7 @@
         {
           "Name": "StatusText",
           "ControlType": "TextBlock",
-          "Text": "ready \u00b7 Soma \u00b7 1 open \u00b7 unsaved \u00b7 Character Roster",
+          "Text": "ready \u00B7 Soma \u00B7 1 open \u00B7 unsaved \u00B7 Character Roster",
           "X": 34,
           "Y": 113,
           "Width": 263,
@@ -58774,10 +58601,10 @@
         {
           "Name": "TimeStateText",
           "ControlType": "TextBlock",
-          "Text": "Time: 2026-06-24 18:00:11Z",
-          "X": 470,
+          "Text": "Time: 2026-06-28 07:45:44Z",
+          "X": 465,
           "Y": 766,
-          "Width": 148,
+          "Width": 153,
           "Height": 14
         },
         {
@@ -58835,10 +58662,10 @@
         "Close",
         "ALICE",
         "Origin Dossier",
-        "ready \u00b7 Soma \u00b7 1 open \u00b7 unsaved \u00b7 Character Roster",
+        "ready \u00B7 Soma \u00B7 1 open \u00B7 unsaved \u00B7 Character Roster",
         "Characters",
         "Grouped by ruleset",
-        "SR5 Characters",
+        "SR5 Roster",
         "1 character",
         "Runner",
         "Character Summary",
@@ -58858,7 +58685,7 @@
         "Powers",
         "Complex Forms",
         "Martial Arts",
-        "Menu 'file' opened.",
+        "Menu \u0027file\u0027 opened.",
         "3 visible entries  \u2022  Attribute 1: Body 4",
         "Attribute",
         "Start",
@@ -58870,7 +58697,7 @@
         "1 / 6 (9)",
         "-",
         "3",
-        "+",
+        "\u002B",
         "1",
         "AGI",
         "5 (9)",
@@ -58880,7 +58707,7 @@
         "4",
         "Character: loaded",
         "Service: online",
-        "Time: 2026-06-24 18:00:11Z",
+        "Time: 2026-06-28 07:45:44Z",
         "Ruleset: Shadowrun 5 .chum5 | Workflows: 0 defs / 0 surfaces | Prefs: 100%/classic/en-us"
       ],
       "visibleMenuCommandIds": [
@@ -58899,7 +58726,7 @@
       ],
       "visibleSectionQuickActionIds": [],
       "selectedListRowTexts": [],
-      "previewText": "Attributes\nAttribute 1: Body 4\nAttribute 2: Agility 5\nAttribute 3: Reaction 5\n\nPayload\n{\n  \"sectionId\": \"attributes\",\n  \"attributes\": [\n    {\n      \"name\": \"Body\",\n      \"baseValue\": 3,\n      \"karmaValue\": 1,\n      \"totalValue\": 4,\n      \"metatypeMin\": 1,\n      \"metatypeMax\": 6,\n      \"metatypeAugMax\": 9,\n      \"priorityMaximum\": 6,\n      \"karmaMaximum\": 5,\n      \"baseUnlocked\": true\n    },\n    {\n      \"name\": \"Agility\",\n      \"baseValue\": 5,\n      \"karmaValue\": 0,\n      \"totalValue\": 5,\n      \"metatypeMin\": 1,\n      \"metatypeMax\": 6,\n      \"metatypeAugMax\": 9,\n      \"priorityMaximum\": 6,\n      \"karmaMaximum\": 4,\n      \"baseUnlocked\": true\n    },\n    {\n      \"name\": \"Reaction\",\n      \"baseValue\": 4,\n      \"karmaValue\": 1,\n      \"totalValue\": 5,\n      \"metatypeMin\": 1,\n      \"metatypeMax\": 6,\n      \"metatypeAugMax\": 9,\n      \"priorityMaximum\": 6,\n      \"karmaMaximum\": 5,\n      \"baseUnlocked\": true\n    }\n  ]\n}",
+      "previewText": "Attributes\nAttribute 1: Body 4\nAttribute 2: Agility 5\nAttribute 3: Reaction 5\n\nPayload\n{\n  \u0022sectionId\u0022: \u0022attributes\u0022,\n  \u0022attributes\u0022: [\n    {\n      \u0022name\u0022: \u0022Body\u0022,\n      \u0022baseValue\u0022: 3,\n      \u0022karmaValue\u0022: 1,\n      \u0022totalValue\u0022: 4,\n      \u0022metatypeMin\u0022: 1,\n      \u0022metatypeMax\u0022: 6,\n      \u0022metatypeAugMax\u0022: 9,\n      \u0022priorityMaximum\u0022: 6,\n      \u0022karmaMaximum\u0022: 5,\n      \u0022baseUnlocked\u0022: true\n    },\n    {\n      \u0022name\u0022: \u0022Agility\u0022,\n      \u0022baseValue\u0022: 5,\n      \u0022karmaValue\u0022: 0,\n      \u0022totalValue\u0022: 5,\n      \u0022metatypeMin\u0022: 1,\n      \u0022metatypeMax\u0022: 6,\n      \u0022metatypeAugMax\u0022: 9,\n      \u0022priorityMaximum\u0022: 6,\n      \u0022karmaMaximum\u0022: 4,\n      \u0022baseUnlocked\u0022: true\n    },\n    {\n      \u0022name\u0022: \u0022Reaction\u0022,\n      \u0022baseValue\u0022: 4,\n      \u0022karmaValue\u0022: 1,\n      \u0022totalValue\u0022: 5,\n      \u0022metatypeMin\u0022: 1,\n      \u0022metatypeMax\u0022: 6,\n      \u0022metatypeAugMax\u0022: 9,\n      \u0022priorityMaximum\u0022: 6,\n      \u0022karmaMaximum\u0022: 5,\n      \u0022baseUnlocked\u0022: true\n    }\n  ]\n}",
       "rightShellVisible": false,
       "rightShellWidth": 0,
       "inlineCommandSurfaceVisible": false,
@@ -58911,17 +58738,11 @@
       "dialogTitle": "XML Editor",
       "dialogMessage": "Edit and import stay file-first here. This preview shows XML bridge status and custom data status.",
       "dialogFieldLabels": [],
-      "dialogFieldIds": [
-        "AttributeBaseEditor_AGI"
-      ],
-      "dialogFieldControlIds": [
-        "AttributeBaseEditor_AGI"
-      ],
+      "dialogFieldIds": [],
+      "dialogFieldControlIds": [],
       "dialogFieldInputValues": [],
       "dialogActionIds": [],
-      "dialogActionControlIds": [
-        "AttributeBaseEditor_AGI"
-      ],
+      "dialogActionControlIds": [],
       "visibleNamedControlIds": [
         "AttributeBaseEditor_AGI",
         "AttributeBaseEditor_AGI_Decrease",
@@ -59045,7 +58866,7 @@
         {
           "Name": "AttributeBaseEditor_AGI_Increase",
           "ControlType": "Button",
-          "Text": "+",
+          "Text": "\u002B",
           "X": 892,
           "Y": 344,
           "Width": 24,
@@ -59081,7 +58902,7 @@
         {
           "Name": "AttributeBaseEditor_BOD_Increase",
           "ControlType": "Button",
-          "Text": "+",
+          "Text": "\u002B",
           "X": 892,
           "Y": 309,
           "Width": 24,
@@ -59117,7 +58938,7 @@
         {
           "Name": "AttributeBaseEditor_REA_Increase",
           "ControlType": "Button",
-          "Text": "+",
+          "Text": "\u002B",
           "X": 892,
           "Y": 379,
           "Width": 24,
@@ -59153,7 +58974,7 @@
         {
           "Name": "AttributeKarmaEditor_AGI_Increase",
           "ControlType": "Button",
-          "Text": "+",
+          "Text": "\u002B",
           "X": 1028,
           "Y": 344,
           "Width": 24,
@@ -59189,7 +59010,7 @@
         {
           "Name": "AttributeKarmaEditor_BOD_Increase",
           "ControlType": "Button",
-          "Text": "+",
+          "Text": "\u002B",
           "X": 1028,
           "Y": 309,
           "Width": 24,
@@ -59225,7 +59046,7 @@
         {
           "Name": "AttributeKarmaEditor_REA_Increase",
           "ControlType": "Button",
-          "Text": "+",
+          "Text": "\u002B",
           "X": 1028,
           "Y": 379,
           "Width": 24,
@@ -59363,7 +59184,7 @@
           "Text": "Character: loaded",
           "X": 25,
           "Y": 765,
-          "Width": 317,
+          "Width": 312,
           "Height": 15
         },
         {
@@ -59576,7 +59397,7 @@
         {
           "Name": "NoticeText",
           "ControlType": "TextBlock",
-          "Text": "Menu 'file' opened.",
+          "Text": "Menu \u0027file\u0027 opened.",
           "X": 1153,
           "Y": 255,
           "Width": 107,
@@ -60648,7 +60469,7 @@
           "Name": "ServiceStateText",
           "ControlType": "TextBlock",
           "Text": "Service: online",
-          "X": 363,
+          "X": 358,
           "Y": 766,
           "Width": 77,
           "Height": 14
@@ -60683,7 +60504,7 @@
         {
           "Name": "StatusText",
           "ControlType": "TextBlock",
-          "Text": "ready \u00b7 Soma \u00b7 1 open \u00b7 unsaved \u00b7 Character Roster",
+          "Text": "ready \u00B7 Soma \u00B7 1 open \u00B7 unsaved \u00B7 Character Roster",
           "X": 34,
           "Y": 113,
           "Width": 263,
@@ -60701,10 +60522,10 @@
         {
           "Name": "TimeStateText",
           "ControlType": "TextBlock",
-          "Text": "Time: 2026-06-24 18:00:11Z",
-          "X": 470,
+          "Text": "Time: 2026-06-28 07:45:44Z",
+          "X": 465,
           "Y": 766,
-          "Width": 148,
+          "Width": 153,
           "Height": 14
         },
         {
@@ -60762,10 +60583,10 @@
         "Close",
         "ALICE",
         "Origin Dossier",
-        "ready \u00b7 Soma \u00b7 1 open \u00b7 unsaved \u00b7 Character Roster",
+        "ready \u00B7 Soma \u00B7 1 open \u00B7 unsaved \u00B7 Character Roster",
         "Characters",
         "Grouped by ruleset",
-        "SR5 Characters",
+        "SR5 Roster",
         "1 character",
         "Runner",
         "Character Summary",
@@ -60785,7 +60606,7 @@
         "Powers",
         "Complex Forms",
         "Martial Arts",
-        "Menu 'file' opened.",
+        "Menu \u0027file\u0027 opened.",
         "3 visible entries  \u2022  Attribute 1: Body 4",
         "Attribute",
         "Start",
@@ -60797,7 +60618,7 @@
         "1 / 6 (9)",
         "-",
         "3",
-        "+",
+        "\u002B",
         "1",
         "AGI",
         "5 (9)",
@@ -60807,7 +60628,7 @@
         "4",
         "Character: loaded",
         "Service: online",
-        "Time: 2026-06-24 18:00:11Z",
+        "Time: 2026-06-28 07:45:44Z",
         "Ruleset: Shadowrun 5 .chum5 | Workflows: 0 defs / 0 surfaces | Prefs: 100%/classic/en-us"
       ],
       "visibleMenuCommandIds": [
@@ -60826,7 +60647,7 @@
       ],
       "visibleSectionQuickActionIds": [],
       "selectedListRowTexts": [],
-      "previewText": "Attributes\nAttribute 1: Body 4\nAttribute 2: Agility 5\nAttribute 3: Reaction 5\n\nPayload\n{\n  \"sectionId\": \"attributes\",\n  \"attributes\": [\n    {\n      \"name\": \"Body\",\n      \"baseValue\": 3,\n      \"karmaValue\": 1,\n      \"totalValue\": 4,\n      \"metatypeMin\": 1,\n      \"metatypeMax\": 6,\n      \"metatypeAugMax\": 9,\n      \"priorityMaximum\": 6,\n      \"karmaMaximum\": 5,\n      \"baseUnlocked\": true\n    },\n    {\n      \"name\": \"Agility\",\n      \"baseValue\": 5,\n      \"karmaValue\": 0,\n      \"totalValue\": 5,\n      \"metatypeMin\": 1,\n      \"metatypeMax\": 6,\n      \"metatypeAugMax\": 9,\n      \"priorityMaximum\": 6,\n      \"karmaMaximum\": 4,\n      \"baseUnlocked\": true\n    },\n    {\n      \"name\": \"Reaction\",\n      \"baseValue\": 4,\n      \"karmaValue\": 1,\n      \"totalValue\": 5,\n      \"metatypeMin\": 1,\n      \"metatypeMax\": 6,\n      \"metatypeAugMax\": 9,\n      \"priorityMaximum\": 6,\n      \"karmaMaximum\": 5,\n      \"baseUnlocked\": true\n    }\n  ]\n}",
+      "previewText": "Attributes\nAttribute 1: Body 4\nAttribute 2: Agility 5\nAttribute 3: Reaction 5\n\nPayload\n{\n  \u0022sectionId\u0022: \u0022attributes\u0022,\n  \u0022attributes\u0022: [\n    {\n      \u0022name\u0022: \u0022Body\u0022,\n      \u0022baseValue\u0022: 3,\n      \u0022karmaValue\u0022: 1,\n      \u0022totalValue\u0022: 4,\n      \u0022metatypeMin\u0022: 1,\n      \u0022metatypeMax\u0022: 6,\n      \u0022metatypeAugMax\u0022: 9,\n      \u0022priorityMaximum\u0022: 6,\n      \u0022karmaMaximum\u0022: 5,\n      \u0022baseUnlocked\u0022: true\n    },\n    {\n      \u0022name\u0022: \u0022Agility\u0022,\n      \u0022baseValue\u0022: 5,\n      \u0022karmaValue\u0022: 0,\n      \u0022totalValue\u0022: 5,\n      \u0022metatypeMin\u0022: 1,\n      \u0022metatypeMax\u0022: 6,\n      \u0022metatypeAugMax\u0022: 9,\n      \u0022priorityMaximum\u0022: 6,\n      \u0022karmaMaximum\u0022: 4,\n      \u0022baseUnlocked\u0022: true\n    },\n    {\n      \u0022name\u0022: \u0022Reaction\u0022,\n      \u0022baseValue\u0022: 4,\n      \u0022karmaValue\u0022: 1,\n      \u0022totalValue\u0022: 5,\n      \u0022metatypeMin\u0022: 1,\n      \u0022metatypeMax\u0022: 6,\n      \u0022metatypeAugMax\u0022: 9,\n      \u0022priorityMaximum\u0022: 6,\n      \u0022karmaMaximum\u0022: 5,\n      \u0022baseUnlocked\u0022: true\n    }\n  ]\n}",
       "rightShellVisible": false,
       "rightShellWidth": 0,
       "inlineCommandSurfaceVisible": false,
@@ -60838,17 +60659,11 @@
       "dialogTitle": "Hero Lab Importer",
       "dialogMessage": "Paste Hero Lab XML payload to import.",
       "dialogFieldLabels": [],
-      "dialogFieldIds": [
-        "AttributeBaseEditor_AGI"
-      ],
-      "dialogFieldControlIds": [
-        "AttributeBaseEditor_AGI"
-      ],
+      "dialogFieldIds": [],
+      "dialogFieldControlIds": [],
       "dialogFieldInputValues": [],
       "dialogActionIds": [],
-      "dialogActionControlIds": [
-        "AttributeBaseEditor_AGI"
-      ],
+      "dialogActionControlIds": [],
       "visibleNamedControlIds": [
         "AttributeBaseEditor_AGI",
         "AttributeBaseEditor_AGI_Decrease",
@@ -60972,7 +60787,7 @@
         {
           "Name": "AttributeBaseEditor_AGI_Increase",
           "ControlType": "Button",
-          "Text": "+",
+          "Text": "\u002B",
           "X": 892,
           "Y": 344,
           "Width": 24,
@@ -61008,7 +60823,7 @@
         {
           "Name": "AttributeBaseEditor_BOD_Increase",
           "ControlType": "Button",
-          "Text": "+",
+          "Text": "\u002B",
           "X": 892,
           "Y": 309,
           "Width": 24,
@@ -61044,7 +60859,7 @@
         {
           "Name": "AttributeBaseEditor_REA_Increase",
           "ControlType": "Button",
-          "Text": "+",
+          "Text": "\u002B",
           "X": 892,
           "Y": 379,
           "Width": 24,
@@ -61080,7 +60895,7 @@
         {
           "Name": "AttributeKarmaEditor_AGI_Increase",
           "ControlType": "Button",
-          "Text": "+",
+          "Text": "\u002B",
           "X": 1028,
           "Y": 344,
           "Width": 24,
@@ -61116,7 +60931,7 @@
         {
           "Name": "AttributeKarmaEditor_BOD_Increase",
           "ControlType": "Button",
-          "Text": "+",
+          "Text": "\u002B",
           "X": 1028,
           "Y": 309,
           "Width": 24,
@@ -61152,7 +60967,7 @@
         {
           "Name": "AttributeKarmaEditor_REA_Increase",
           "ControlType": "Button",
-          "Text": "+",
+          "Text": "\u002B",
           "X": 1028,
           "Y": 379,
           "Width": 24,
@@ -61290,7 +61105,7 @@
           "Text": "Character: loaded",
           "X": 25,
           "Y": 765,
-          "Width": 317,
+          "Width": 312,
           "Height": 15
         },
         {
@@ -61503,7 +61318,7 @@
         {
           "Name": "NoticeText",
           "ControlType": "TextBlock",
-          "Text": "Menu 'file' opened.",
+          "Text": "Menu \u0027file\u0027 opened.",
           "X": 1153,
           "Y": 255,
           "Width": 107,
@@ -62575,7 +62390,7 @@
           "Name": "ServiceStateText",
           "ControlType": "TextBlock",
           "Text": "Service: online",
-          "X": 363,
+          "X": 358,
           "Y": 766,
           "Width": 77,
           "Height": 14
@@ -62610,7 +62425,7 @@
         {
           "Name": "StatusText",
           "ControlType": "TextBlock",
-          "Text": "ready \u00b7 Soma \u00b7 1 open \u00b7 unsaved \u00b7 Character Roster",
+          "Text": "ready \u00B7 Soma \u00B7 1 open \u00B7 unsaved \u00B7 Character Roster",
           "X": 34,
           "Y": 113,
           "Width": 263,
@@ -62628,10 +62443,10 @@
         {
           "Name": "TimeStateText",
           "ControlType": "TextBlock",
-          "Text": "Time: 2026-06-24 18:00:11Z",
-          "X": 470,
+          "Text": "Time: 2026-06-28 07:45:44Z",
+          "X": 465,
           "Y": 766,
-          "Width": 148,
+          "Width": 153,
           "Height": 14
         },
         {
@@ -62689,10 +62504,10 @@
         "Close",
         "ALICE",
         "Origin Dossier",
-        "ready \u00b7 Soma \u00b7 1 open \u00b7 unsaved \u00b7 Character Roster",
+        "ready \u00B7 Soma \u00B7 1 open \u00B7 unsaved \u00B7 Character Roster",
         "Characters",
         "Grouped by ruleset",
-        "SR5 Characters",
+        "SR5 Roster",
         "1 character",
         "Runner",
         "Character Summary",
@@ -62712,7 +62527,7 @@
         "Powers",
         "Complex Forms",
         "Martial Arts",
-        "Menu 'file' opened.",
+        "Menu \u0027file\u0027 opened.",
         "3 visible entries  \u2022  Attribute 1: Body 4",
         "Attribute",
         "Start",
@@ -62724,7 +62539,7 @@
         "1 / 6 (9)",
         "-",
         "3",
-        "+",
+        "\u002B",
         "1",
         "AGI",
         "5 (9)",
@@ -62734,7 +62549,7 @@
         "4",
         "Character: loaded",
         "Service: online",
-        "Time: 2026-06-24 18:00:11Z",
+        "Time: 2026-06-28 07:45:44Z",
         "Ruleset: Shadowrun 5 .chum5 | Workflows: 0 defs / 0 surfaces | Prefs: 100%/classic/en-us"
       ],
       "visibleMenuCommandIds": [
@@ -62753,7 +62568,7 @@
       ],
       "visibleSectionQuickActionIds": [],
       "selectedListRowTexts": [],
-      "previewText": "Attributes\nAttribute 1: Body 4\nAttribute 2: Agility 5\nAttribute 3: Reaction 5\n\nPayload\n{\n  \"sectionId\": \"attributes\",\n  \"attributes\": [\n    {\n      \"name\": \"Body\",\n      \"baseValue\": 3,\n      \"karmaValue\": 1,\n      \"totalValue\": 4,\n      \"metatypeMin\": 1,\n      \"metatypeMax\": 6,\n      \"metatypeAugMax\": 9,\n      \"priorityMaximum\": 6,\n      \"karmaMaximum\": 5,\n      \"baseUnlocked\": true\n    },\n    {\n      \"name\": \"Agility\",\n      \"baseValue\": 5,\n      \"karmaValue\": 0,\n      \"totalValue\": 5,\n      \"metatypeMin\": 1,\n      \"metatypeMax\": 6,\n      \"metatypeAugMax\": 9,\n      \"priorityMaximum\": 6,\n      \"karmaMaximum\": 4,\n      \"baseUnlocked\": true\n    },\n    {\n      \"name\": \"Reaction\",\n      \"baseValue\": 4,\n      \"karmaValue\": 1,\n      \"totalValue\": 5,\n      \"metatypeMin\": 1,\n      \"metatypeMax\": 6,\n      \"metatypeAugMax\": 9,\n      \"priorityMaximum\": 6,\n      \"karmaMaximum\": 5,\n      \"baseUnlocked\": true\n    }\n  ]\n}",
+      "previewText": "Attributes\nAttribute 1: Body 4\nAttribute 2: Agility 5\nAttribute 3: Reaction 5\n\nPayload\n{\n  \u0022sectionId\u0022: \u0022attributes\u0022,\n  \u0022attributes\u0022: [\n    {\n      \u0022name\u0022: \u0022Body\u0022,\n      \u0022baseValue\u0022: 3,\n      \u0022karmaValue\u0022: 1,\n      \u0022totalValue\u0022: 4,\n      \u0022metatypeMin\u0022: 1,\n      \u0022metatypeMax\u0022: 6,\n      \u0022metatypeAugMax\u0022: 9,\n      \u0022priorityMaximum\u0022: 6,\n      \u0022karmaMaximum\u0022: 5,\n      \u0022baseUnlocked\u0022: true\n    },\n    {\n      \u0022name\u0022: \u0022Agility\u0022,\n      \u0022baseValue\u0022: 5,\n      \u0022karmaValue\u0022: 0,\n      \u0022totalValue\u0022: 5,\n      \u0022metatypeMin\u0022: 1,\n      \u0022metatypeMax\u0022: 6,\n      \u0022metatypeAugMax\u0022: 9,\n      \u0022priorityMaximum\u0022: 6,\n      \u0022karmaMaximum\u0022: 4,\n      \u0022baseUnlocked\u0022: true\n    },\n    {\n      \u0022name\u0022: \u0022Reaction\u0022,\n      \u0022baseValue\u0022: 4,\n      \u0022karmaValue\u0022: 1,\n      \u0022totalValue\u0022: 5,\n      \u0022metatypeMin\u0022: 1,\n      \u0022metatypeMax\u0022: 6,\n      \u0022metatypeAugMax\u0022: 9,\n      \u0022priorityMaximum\u0022: 6,\n      \u0022karmaMaximum\u0022: 5,\n      \u0022baseUnlocked\u0022: true\n    }\n  ]\n}",
       "rightShellVisible": false,
       "rightShellWidth": 0,
       "inlineCommandSurfaceVisible": false,
@@ -62765,17 +62580,11 @@
       "dialogTitle": "Tools",
       "dialogMessage": "",
       "dialogFieldLabels": [],
-      "dialogFieldIds": [
-        "Background"
-      ],
-      "dialogFieldControlIds": [
-        "Background"
-      ],
+      "dialogFieldIds": [],
+      "dialogFieldControlIds": [],
       "dialogFieldInputValues": [],
       "dialogActionIds": [],
-      "dialogActionControlIds": [
-        "Background"
-      ],
+      "dialogActionControlIds": [],
       "visibleNamedControlIds": [
         "Background",
         "ContentPresenter",
@@ -62956,7 +62765,7 @@
         {
           "Name": "HorizonsNativeDevices_nexus_pan",
           "ControlType": "Button",
-          "Text": "Open devices & access",
+          "Text": "Open devices \u0026 access",
           "X": 324,
           "Y": 526,
           "Width": 165,
@@ -64578,7 +64387,7 @@
         "Keep continuity, workspace recovery, and devices/access on adjacent native paths before widening into public continuity routes.",
         "Access and continuity: Campaigns 0 | Workspaces 0",
         "Open workspace desk",
-        "Open devices & access",
+        "Open devices \u0026 access",
         "Open public continuity",
         "Open support path",
         "Ready for Tonight",
@@ -64670,17 +64479,11 @@
       "dialogTitle": "Karma Forge",
       "dialogMessage": "",
       "dialogFieldLabels": [],
-      "dialogFieldIds": [
-        "Background"
-      ],
-      "dialogFieldControlIds": [
-        "Background"
-      ],
+      "dialogFieldIds": [],
+      "dialogFieldControlIds": [],
       "dialogFieldInputValues": [],
       "dialogActionIds": [],
-      "dialogActionControlIds": [
-        "Background"
-      ],
+      "dialogActionControlIds": [],
       "visibleNamedControlIds": [
         "Background",
         "ContentPresenter",
@@ -65192,17 +64995,11 @@
       "dialogTitle": "Alice",
       "dialogMessage": "",
       "dialogFieldLabels": [],
-      "dialogFieldIds": [
-        "AliceAccountHandoffsCard"
-      ],
-      "dialogFieldControlIds": [
-        "AliceAccountHandoffsCard"
-      ],
+      "dialogFieldIds": [],
+      "dialogFieldControlIds": [],
       "dialogFieldInputValues": [],
       "dialogActionIds": [],
-      "dialogActionControlIds": [
-        "AliceAccountHandoffsCard"
-      ],
+      "dialogActionControlIds": [],
       "visibleNamedControlIds": [
         "AliceAccountHandoffsCard",
         "AliceAskButton",
@@ -65310,7 +65107,7 @@
         {
           "Name": "AliceAssistantAnswerText",
           "ControlType": "TextBlock",
-          "Text": "Try: \u201cBuild a complete SR4 BP troll decker from scratch.\u201d",
+          "Text": "Try: \u201CBuild a complete SR4 BP troll decker from scratch.\u201D",
           "X": 40,
           "Y": 935,
           "Width": 860,
@@ -66162,15 +65959,15 @@
         "Build continuity",
         "Blank-state build start",
         "Alice can draft a complete runner from the current settings even when no workspace is open.",
-        "Alice \u00b7 Build copilot ready",
+        "Alice \u00B7 Build copilot ready",
         "Ask for the next move, a comparison, or a complete scratch build from the current desktop settings.",
-        "Next: Build a complete SR4 BP troll decker from scratch. \u00b7 Build a street samurai from scratch with standard legality. \u00b7 Explain legality, qualities, ware, and first purchases.",
+        "Next: Build a complete SR4 BP troll decker from scratch. \u00B7 Build a street samurai from scratch with standard legality. \u00B7 Explain legality, qualities, ware, and first purchases.",
         "Build a complete SR4 BP troll decker from scratch.",
         "Build a street samurai from scratch with standard legality.",
         "Explain legality, qualities, ware, and first purchases.",
         "Ask Alice about the current build, rules tradeoffs, or what to add next.",
         "Ask about the next build move; Alice can draft a complete runner from the current settings even when no workspace is open.",
-        "Try: \u201cBuild a complete SR4 BP troll decker from scratch.\u201d",
+        "Try: \u201CBuild a complete SR4 BP troll decker from scratch.\u201D",
         "Ruleset context is not pinned yet.",
         "Draft from scratch",
         "Open account workspace",
@@ -66208,17 +66005,11 @@
       "dialogTitle": "Black Ledger",
       "dialogMessage": "",
       "dialogFieldLabels": [],
-      "dialogFieldIds": [
-        "BlackLedgerBadgeCampaigns"
-      ],
-      "dialogFieldControlIds": [
-        "BlackLedgerBadgeCampaigns"
-      ],
+      "dialogFieldIds": [],
+      "dialogFieldControlIds": [],
       "dialogFieldInputValues": [],
       "dialogActionIds": [],
-      "dialogActionControlIds": [
-        "BlackLedgerBadgeCampaigns"
-      ],
+      "dialogActionControlIds": [],
       "visibleNamedControlIds": [
         "BlackLedgerBadgeCampaigns",
         "BlackLedgerBadgeContext",
@@ -66483,17 +66274,11 @@
       "dialogTitle": "Run Control",
       "dialogMessage": "",
       "dialogFieldLabels": [],
-      "dialogFieldIds": [
-        "Background"
-      ],
-      "dialogFieldControlIds": [
-        "Background"
-      ],
+      "dialogFieldIds": [],
+      "dialogFieldControlIds": [],
       "dialogFieldInputValues": [],
       "dialogActionIds": [],
-      "dialogActionControlIds": [
-        "Background"
-      ],
+      "dialogActionControlIds": [],
       "visibleNamedControlIds": [
         "Background",
         "ContentPresenter",
@@ -66966,17 +66751,11 @@
       "dialogTitle": "Runsite",
       "dialogMessage": "",
       "dialogFieldLabels": [],
-      "dialogFieldIds": [
-        "PART_ContentPresenter"
-      ],
-      "dialogFieldControlIds": [
-        "PART_ContentPresenter"
-      ],
+      "dialogFieldIds": [],
+      "dialogFieldControlIds": [],
       "dialogFieldInputValues": [],
       "dialogActionIds": [],
-      "dialogActionControlIds": [
-        "PART_ContentPresenter"
-      ],
+      "dialogActionControlIds": [],
       "visibleNamedControlIds": [
         "PART_ContentPresenter",
         "PART_TransparencyFallback",
@@ -67183,17 +66962,11 @@
       "dialogTitle": "Jackpoint",
       "dialogMessage": "",
       "dialogFieldLabels": [],
-      "dialogFieldIds": [
-        "JackpointBadgeCampaigns"
-      ],
-      "dialogFieldControlIds": [
-        "JackpointBadgeCampaigns"
-      ],
+      "dialogFieldIds": [],
+      "dialogFieldControlIds": [],
       "dialogFieldInputValues": [],
       "dialogActionIds": [],
-      "dialogActionControlIds": [
-        "JackpointBadgeCampaigns"
-      ],
+      "dialogActionControlIds": [],
       "visibleNamedControlIds": [
         "JackpointBadgeCampaigns",
         "JackpointBadgeDossiers",
@@ -67378,17 +67151,11 @@
       "dialogTitle": "Table Pulse",
       "dialogMessage": "",
       "dialogFieldLabels": [],
-      "dialogFieldIds": [
-        "PART_ContentPresenter"
-      ],
-      "dialogFieldControlIds": [
-        "PART_ContentPresenter"
-      ],
+      "dialogFieldIds": [],
+      "dialogFieldControlIds": [],
       "dialogFieldInputValues": [],
       "dialogActionIds": [],
-      "dialogActionControlIds": [
-        "PART_ContentPresenter"
-      ],
+      "dialogActionControlIds": [],
       "visibleNamedControlIds": [
         "PART_ContentPresenter",
         "PART_TransparencyFallback",
@@ -67574,17 +67341,11 @@
       "dialogTitle": "Community Hub",
       "dialogMessage": "",
       "dialogFieldLabels": [],
-      "dialogFieldIds": [
-        "CommunityHubBadgeCampaigns"
-      ],
-      "dialogFieldControlIds": [
-        "CommunityHubBadgeCampaigns"
-      ],
+      "dialogFieldIds": [],
+      "dialogFieldControlIds": [],
       "dialogFieldInputValues": [],
       "dialogActionIds": [],
-      "dialogActionControlIds": [
-        "CommunityHubBadgeCampaigns"
-      ],
+      "dialogActionControlIds": [],
       "visibleNamedControlIds": [
         "CommunityHubBadgeCampaigns",
         "CommunityHubBadgeOperations",
@@ -67758,17 +67519,11 @@
       "dialogTitle": "NEXUS-PAN",
       "dialogMessage": "",
       "dialogFieldLabels": [],
-      "dialogFieldIds": [
-        "NexusPanBadgeCampaigns"
-      ],
-      "dialogFieldControlIds": [
-        "NexusPanBadgeCampaigns"
-      ],
+      "dialogFieldIds": [],
+      "dialogFieldControlIds": [],
       "dialogFieldInputValues": [],
       "dialogActionIds": [],
-      "dialogActionControlIds": [
-        "NexusPanBadgeCampaigns"
-      ],
+      "dialogActionControlIds": [],
       "visibleNamedControlIds": [
         "NexusPanBadgeCampaigns",
         "NexusPanBadgeContext",
@@ -68092,17 +67847,11 @@
       "dialogTitle": "Quicksilver",
       "dialogMessage": "",
       "dialogFieldLabels": [],
-      "dialogFieldIds": [
-        "Background"
-      ],
-      "dialogFieldControlIds": [
-        "Background"
-      ],
+      "dialogFieldIds": [],
+      "dialogFieldControlIds": [],
       "dialogFieldInputValues": [],
       "dialogActionIds": [],
-      "dialogActionControlIds": [
-        "Background"
-      ],
+      "dialogActionControlIds": [],
       "visibleNamedControlIds": [
         "Background",
         "ContentPresenter",
@@ -68354,17 +68103,11 @@
       "dialogTitle": "Runner Passport",
       "dialogMessage": "",
       "dialogFieldLabels": [],
-      "dialogFieldIds": [
-        "PART_ContentPresenter"
-      ],
-      "dialogFieldControlIds": [
-        "PART_ContentPresenter"
-      ],
+      "dialogFieldIds": [],
+      "dialogFieldControlIds": [],
       "dialogFieldInputValues": [],
       "dialogActionIds": [],
-      "dialogActionControlIds": [
-        "PART_ContentPresenter"
-      ],
+      "dialogActionControlIds": [],
       "visibleNamedControlIds": [
         "PART_ContentPresenter",
         "PART_TransparencyFallback",
@@ -68537,17 +68280,11 @@
       "dialogTitle": "Runbook Press",
       "dialogMessage": "",
       "dialogFieldLabels": [],
-      "dialogFieldIds": [
-        "PART_ContentPresenter"
-      ],
-      "dialogFieldControlIds": [
-        "PART_ContentPresenter"
-      ],
+      "dialogFieldIds": [],
+      "dialogFieldControlIds": [],
       "dialogFieldInputValues": [],
       "dialogActionIds": [],
-      "dialogActionControlIds": [
-        "PART_ContentPresenter"
-      ],
+      "dialogActionControlIds": [],
       "visibleNamedControlIds": [
         "PART_ContentPresenter",
         "PART_LineDownButton",
@@ -68871,17 +68608,11 @@
       "dialogTitle": "Creator OS",
       "dialogMessage": "",
       "dialogFieldLabels": [],
-      "dialogFieldIds": [
-        "CreatorOsBadgeCampaigns"
-      ],
-      "dialogFieldControlIds": [
-        "CreatorOsBadgeCampaigns"
-      ],
+      "dialogFieldIds": [],
+      "dialogFieldControlIds": [],
       "dialogFieldInputValues": [],
       "dialogActionIds": [],
-      "dialogActionControlIds": [
-        "CreatorOsBadgeCampaigns"
-      ],
+      "dialogActionControlIds": [],
       "visibleNamedControlIds": [
         "CreatorOsBadgeCampaigns",
         "CreatorOsBadgeDossiers",
@@ -69217,17 +68948,11 @@
       "dialogTitle": "Local Co-Processor",
       "dialogMessage": "",
       "dialogFieldLabels": [],
-      "dialogFieldIds": [
-        "LocalCoProcessorBadgeHandoffs"
-      ],
-      "dialogFieldControlIds": [
-        "LocalCoProcessorBadgeHandoffs"
-      ],
+      "dialogFieldIds": [],
+      "dialogFieldControlIds": [],
       "dialogFieldInputValues": [],
       "dialogActionIds": [],
-      "dialogActionControlIds": [
-        "LocalCoProcessorBadgeHandoffs"
-      ],
+      "dialogActionControlIds": [],
       "visibleNamedControlIds": [
         "LocalCoProcessorBadgeHandoffs",
         "LocalCoProcessorBadgeRules",
@@ -69401,17 +69126,11 @@
       "dialogTitle": "Anarchy",
       "dialogMessage": "",
       "dialogFieldLabels": [],
-      "dialogFieldIds": [
-        "AnarchyBadgeDossiers"
-      ],
-      "dialogFieldControlIds": [
-        "AnarchyBadgeDossiers"
-      ],
+      "dialogFieldIds": [],
+      "dialogFieldControlIds": [],
       "dialogFieldInputValues": [],
       "dialogActionIds": [],
-      "dialogActionControlIds": [
-        "AnarchyBadgeDossiers"
-      ],
+      "dialogActionControlIds": [],
       "visibleNamedControlIds": [
         "AnarchyBadgeDossiers",
         "AnarchyBadgeRuns",
@@ -69584,17 +69303,11 @@
       "dialogTitle": "Ghostwire",
       "dialogMessage": "",
       "dialogFieldLabels": [],
-      "dialogFieldIds": [
-        "GhostwireBadgeRuns"
-      ],
-      "dialogFieldControlIds": [
-        "GhostwireBadgeRuns"
-      ],
+      "dialogFieldIds": [],
+      "dialogFieldControlIds": [],
       "dialogFieldInputValues": [],
       "dialogActionIds": [],
-      "dialogActionControlIds": [
-        "GhostwireBadgeRuns"
-      ],
+      "dialogActionControlIds": [],
       "visibleNamedControlIds": [
         "GhostwireBadgeRuns",
         "GhostwireBadgeWorkspaces",
@@ -69767,17 +69480,11 @@
       "dialogTitle": "Ready for Tonight",
       "dialogMessage": "",
       "dialogFieldLabels": [],
-      "dialogFieldIds": [
-        "PART_ContentPresenter"
-      ],
-      "dialogFieldControlIds": [
-        "PART_ContentPresenter"
-      ],
+      "dialogFieldIds": [],
+      "dialogFieldControlIds": [],
       "dialogFieldInputValues": [],
       "dialogActionIds": [],
-      "dialogActionControlIds": [
-        "PART_ContentPresenter"
-      ],
+      "dialogActionControlIds": [],
       "visibleNamedControlIds": [
         "PART_ContentPresenter",
         "PART_TransparencyFallback",
@@ -69925,7 +69632,7 @@
       ],
       "visibleTextSamples": [
         "Ready for Tonight",
-        "Ready for Tonight keeps the shortest honest route into tonight's run visible from the desktop: status, blockers, next step, and mobile-safe return.",
+        "Ready for Tonight keeps the shortest honest route into tonight\u0027s run visible from the desktop: status, blockers, next step, and mobile-safe return.",
         "Tonight decision",
         "Keep the current run, workspace return path, and next safe action visible before you open the browser.",
         "Runs: 0",
@@ -69962,17 +69669,11 @@
       "dialogTitle": "Knowledge Fabric",
       "dialogMessage": "",
       "dialogFieldLabels": [],
-      "dialogFieldIds": [
-        "KnowledgeFabricBadgeCampaigns"
-      ],
-      "dialogFieldControlIds": [
-        "KnowledgeFabricBadgeCampaigns"
-      ],
+      "dialogFieldIds": [],
+      "dialogFieldControlIds": [],
       "dialogFieldInputValues": [],
       "dialogActionIds": [],
-      "dialogActionControlIds": [
-        "KnowledgeFabricBadgeCampaigns"
-      ],
+      "dialogActionControlIds": [],
       "visibleNamedControlIds": [
         "KnowledgeFabricBadgeCampaigns",
         "KnowledgeFabricBadgeRules",

@@ -60,7 +60,7 @@ internal sealed class DesktopReportIssueWindow : Window
             Text = S("desktop.report.status.ready"),
             IsVisible = true,
             TextWrapping = TextWrapping.Wrap,
-            Foreground = DesktopShellTheme.ResolveThemeBrush("ChummerShellMutedForegroundBrush", "#334155")
+            Foreground = DesktopShellTheme.ResolveMutedForegroundBrush()
         };
 
         _contextText = new TextBlock
@@ -68,7 +68,7 @@ internal sealed class DesktopReportIssueWindow : Window
             Text = BuildContextBody(),
             IsVisible = true,
             TextWrapping = TextWrapping.Wrap,
-            Foreground = DesktopShellTheme.ResolveThemeBrush("ChummerShellMutedForegroundBrush", "#334155")
+            Foreground = DesktopShellTheme.ResolveMutedForegroundBrush()
         };
 
         _bugTitleBox = CreateInputBox(S("desktop.report.bug.title_watermark"), S("desktop.report.bug.title_label"), ReportBugTitleBoxName);
@@ -93,7 +93,7 @@ internal sealed class DesktopReportIssueWindow : Window
                             FontSize = 22,
                             FontWeight = FontWeight.SemiBold,
                             TextWrapping = TextWrapping.Wrap,
-                            Foreground = DesktopShellTheme.ResolveThemeBrush("ChummerShellForegroundBrush", "#0f172a")
+                            Foreground = DesktopShellTheme.ResolveForegroundBrush()
                         },
                         CreateIntroText(S("desktop.report.intro")),
                         CreateIntroText(S("desktop.report.private_split")),
@@ -187,7 +187,7 @@ internal sealed class DesktopReportIssueWindow : Window
             Text = label,
             FontWeight = FontWeight.SemiBold,
             TextWrapping = TextWrapping.Wrap,
-            Foreground = DesktopShellTheme.ResolveThemeBrush("ChummerShellForegroundBrush", "#0f172a")
+            Foreground = DesktopShellTheme.ResolveForegroundBrush()
         };
         AutomationProperties.SetName(labelBlock, label);
         AutomationProperties.SetHelpText(labelBlock, hint);
@@ -198,7 +198,7 @@ internal sealed class DesktopReportIssueWindow : Window
             Text = hint,
             TextWrapping = TextWrapping.Wrap,
             Classes = { "shell-caption" },
-            Foreground = DesktopShellTheme.ResolveThemeBrush("ChummerShellMutedForegroundBrush", "#334155")
+            Foreground = DesktopShellTheme.ResolveMutedForegroundBrush()
         };
         AutomationProperties.SetName(hintBlock, $"{label} hint");
         AutomationProperties.SetHelpText(hintBlock, hint);
@@ -233,7 +233,7 @@ internal sealed class DesktopReportIssueWindow : Window
         {
             Text = text,
             TextWrapping = TextWrapping.Wrap,
-            Foreground = DesktopShellTheme.ResolveThemeBrush("ChummerShellMutedForegroundBrush", "#334155")
+            Foreground = DesktopShellTheme.ResolveMutedForegroundBrush()
         };
 
     private string BuildContextBody()

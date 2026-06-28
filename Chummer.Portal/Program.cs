@@ -105,15 +105,14 @@ app.MapGet("/", async context =>
 
 string blazorHomeRoute = RouteRootFromPublicPath(options.BlazorUrl);
 app.MapGet(blazorHomeRoute, () => Results.Redirect(BuildBlazorAppUrl(options)));
-app.MapGet($"{blazorHomeRoute}/", () => Results.Redirect(BuildBlazorAppUrl(options)));
 app.MapGet(PortalRoutes.PublicApp, (HttpContext context) => Results.Redirect(BuildPublicAppRedirectUrl(options, context)));
-app.MapGet(PortalRoutes.PublicAppSlash, (HttpContext context) => Results.Redirect(BuildPublicAppRedirectUrl(options, context)));
 
 app.MapGet(downloadsHomeRoute, async context =>
 {
     context.Response.ContentType = "text/html; charset=utf-8";
     await context.Response.WriteAsync(BuildDownloadsHtml(context, options)).ConfigureAwait(false);
 });
+app.MapGet($"{downloadsHomeRoute}/get/{{artifactId}}", (string artifactId) => ResolveDownloadDispatch(artifactId, options));
 app.MapGet($"{downloadsHomeRoute}/install/{{artifactId}}", (string artifactId) => ResolveInstallHandoff(artifactId, options));
 
 app.MapGet("/contact", () =>
@@ -455,11 +454,10 @@ static string BuildDownloadsHtml(HttpContext context, PortalOptions options)
 {
     ReleaseManifestSummary summary = ReadReleaseManifest(options.ReleasesFile);
     string releasesJsonUrl = BuildPublicUrl(options.DownloadsUrl, "releases.json");
-    string appUrl = WebUtility.HtmlEncode(PortalRoutes.PublicApp);
     string appRosterUrl = WebUtility.HtmlEncode(PortalRoutes.PublicAppRoster);
     string fallbackText = string.IsNullOrWhiteSpace(options.DownloadsFallbackUrl)
         ? summary.Downloads.Count > 0
-            ? "Fallback guidance: self-hosted downloads are live; if you need an alternate lane, use the published desktop install routes in releases.json."
+            ? "If you need a different route, use one of the published install links below."
             : "No published desktop builds yet and no fallback lane is configured."
         : $"Fallback guidance: this edge is redirecting to {WebUtility.HtmlEncode(options.DownloadsFallbackUrl)}.";
     string installState = context.Request.Query["installState"].ToString();
@@ -468,10 +466,24 @@ static string BuildDownloadsHtml(HttpContext context, PortalOptions options)
     string artifactLines = string.Join(
         Environment.NewLine,
         summary.Downloads.Select(download =>
-            $"""<li data-download-artifact="{WebUtility.HtmlEncode(download.ArtifactId)}" data-download-platform="{WebUtility.HtmlEncode(download.Platform)}" data-download-raw-url="{WebUtility.HtmlEncode(download.Url)}" data-download-install-route="{WebUtility.HtmlEncode(string.IsNullOrWhiteSpace(download.PublicInstallRoute) ? "raw-url" : download.PublicInstallRoute)}" data-download-link-mode="raw-url"><a href="{WebUtility.HtmlEncode(download.Url)}" data-download-action="download-artifact" aria-label="{WebUtility.HtmlEncode($"{download.Label} for {download.Platform} direct download")}">{WebUtility.HtmlEncode(download.Label)}</a> <span data-download-platform-label>{WebUtility.HtmlEncode(download.Platform)}</span> <span data-download-artifact-label>{WebUtility.HtmlEncode(string.IsNullOrWhiteSpace(download.ArtifactId) ? "artifact id pending" : download.ArtifactId)}</span> <span data-download-link-mode-label>direct download</span></li>"""));
+        {
+            (string href, string linkMode) = ResolvePortalDownloadLink(download, options);
+            string dispatchUrl = string.IsNullOrWhiteSpace(download.ArtifactId)
+                ? string.Empty
+                : BuildDownloadDispatchRoute(options, download.ArtifactId);
+            string modeLabel = linkMode switch
+            {
+                "self-host-dispatch" => "local download",
+                "raw-url" => "direct download",
+                "install-route" => "install handoff",
+                _ => "unavailable"
+            };
+
+            return $"""<li data-download-artifact="{WebUtility.HtmlEncode(download.ArtifactId)}" data-download-platform="{WebUtility.HtmlEncode(download.Platform)}" data-download-raw-url="{WebUtility.HtmlEncode(download.Url)}" data-download-dispatch-url="{WebUtility.HtmlEncode(dispatchUrl)}" data-download-install-route="{WebUtility.HtmlEncode(string.IsNullOrWhiteSpace(download.PublicInstallRoute) ? "raw-url" : download.PublicInstallRoute)}" data-download-link-mode="{WebUtility.HtmlEncode(linkMode)}"><a href="{WebUtility.HtmlEncode(href)}" data-download-action="download-artifact" aria-label="{WebUtility.HtmlEncode($"{download.Label} for {download.Platform} {modeLabel}")}">{WebUtility.HtmlEncode(download.Label)}</a> <span data-download-platform-label>{WebUtility.HtmlEncode(download.Platform)}</span> <span data-download-artifact-label>{WebUtility.HtmlEncode(string.IsNullOrWhiteSpace(download.ArtifactId) ? "artifact id pending" : download.ArtifactId)}</span> <span data-download-link-mode-label>{WebUtility.HtmlEncode(modeLabel)}</span></li>""";
+        }));
     if (string.IsNullOrWhiteSpace(artifactLines))
     {
-        artifactLines = """<li data-download-empty="true">No published artifacts are listed in releases.json.</li>""";
+        artifactLines = """<li data-download-empty="true">No published artifacts are listed in the current release manifest.</li>""";
     }
     List<ReleaseInstallRouteSummary> compatibilityRoutes = summary.InstallRoutes
         .Where(route => !summary.Downloads.Any(download =>
@@ -515,9 +527,14 @@ static string BuildDownloadsHtml(HttpContext context, PortalOptions options)
     .download-actions a:focus-visible, .install-state a:focus-visible, [data-download-list] a:focus-visible, .compatibility-routes a:focus-visible { outline: 3px solid rgba(255,212,111,.72); outline-offset: 3px; }
     .install-state { border: 1px solid rgba(244,207,115,.45); background: linear-gradient(135deg,rgba(244,207,115,.16),rgba(137,224,179,.08)); border-radius: 1rem; padding: .95rem; }
     .install-state a { margin-top: .5rem; }
-    .self-host-operator { border: 1px solid rgba(137,224,179,.34); background: linear-gradient(135deg,rgba(84,132,181,.12),rgba(137,224,179,.08)); border-radius: 1rem; margin: 1rem 0; padding: .95rem; }
-    .self-host-operator ul { margin: .5rem 0 0; padding-left: 1.2rem; }
-    .compatibility-routes { border-top: 1px solid rgba(244,207,115,.24); margin-top: 1rem; padding-top: 1rem; }
+    .download-meta, .download-subtle { color: var(--portal-muted); }
+    .download-meta { display: flex; flex-wrap: wrap; gap: .85rem; margin: 0 0 1rem; font-size: .95rem; }
+    .secondary-block { margin-top: 1rem; border: 1px solid rgba(137,224,179,.28); border-radius: 1rem; background: linear-gradient(135deg,rgba(84,132,181,.1),rgba(137,224,179,.06)); }
+    .secondary-block summary { cursor: pointer; list-style: none; padding: .85rem .95rem; font-weight: 800; }
+    .secondary-block summary::-webkit-details-marker { display: none; }
+    .secondary-block > div { padding: 0 .95rem .95rem; }
+    .secondary-block ul { margin: .5rem 0 0; padding-left: 1.2rem; }
+    .compatibility-routes { margin-top: .75rem; }
     [data-download-list], .compatibility-routes { display: grid; gap: .55rem; padding-left: 0; list-style: none; }
     [data-download-list] li, .compatibility-routes li { padding: .75rem; border: 1px solid rgba(169,225,190,.18); border-radius: 1rem; background: linear-gradient(145deg,var(--portal-panel),rgba(8,17,15,.76)); box-shadow: 0 18px 52px rgba(0,0,0,.28); transition: border-color .16s ease, box-shadow .16s ease; }
     [data-download-list] li:focus-within, .compatibility-routes li:focus-within { border-color: rgba(255,212,111,.46); box-shadow: 0 20px 58px rgba(0,0,0,.32), 0 0 0 3px rgba(255,212,111,.14); }
@@ -534,43 +551,50 @@ static string BuildDownloadsHtml(HttpContext context, PortalOptions options)
   <section class="panel" data-download-panel="desktop-downloads" aria-labelledby="desktop-downloads-title" aria-describedby="fallback-link">
     <div class="download-hero">
       <div>
-        <p data-download-kicker="chummer-release-shelf">Chummer release shelf</p>
-        <h1 id="desktop-downloads-title">Desktop Downloads</h1>
-        <p>Install native Chummer when you need desktop file-system behavior, or continue in Chummer Online when Chummer Online is the right lane.</p>
+        <p data-download-kicker="chummer-release-shelf">Desktop or browser</p>
+        <h1 id="desktop-downloads-title">Downloads</h1>
+        <p>Use the desktop app when you need local files. Otherwise keep moving in Chummer Online.</p>
       </div>
       <nav class="download-actions" aria-label="Downloads handoff actions">
-        <a class="primary" href="{{appRosterUrl}}" data-download-action="open-chummer-app">Explore Chummer Online</a>
-        <a href="/status" data-download-action="open-status">Release status</a>
+        <a class="primary" href="{{appRosterUrl}}" data-download-action="open-chummer-app">Open Chummer Online</a>
+        <a href="/status" data-download-action="open-status">Status</a>
         <a href="/help" data-download-action="open-help">Help</a>
       </nav>
     </div>
-    <p data-download-status="{{WebUtility.HtmlEncode(summary.Status)}}">Status: <code>{{WebUtility.HtmlEncode(summary.Status)}}</code></p>
-    <p data-download-version="{{WebUtility.HtmlEncode(summary.Version)}}">Version: <code>{{WebUtility.HtmlEncode(summary.Version)}}</code></p>
-    <p data-download-artifact-summary="{{summary.Downloads.Count}}">Artifacts: <code>{{summary.Downloads.Count}}</code></p>
+    <div class="download-meta" aria-label="Current desktop release summary">
+      <span data-download-version="{{WebUtility.HtmlEncode(summary.Version)}}">Build <code>{{WebUtility.HtmlEncode(summary.Version)}}</code></span>
+      <span data-download-status="{{WebUtility.HtmlEncode(summary.Status)}}">State <code>{{WebUtility.HtmlEncode(summary.Status)}}</code></span>
+      <span data-download-artifact-summary="{{summary.Downloads.Count}}">{{summary.Downloads.Count}} download{{(summary.Downloads.Count == 1 ? string.Empty : "s")}}</span>
+    </div>
     {{installStatePanel}}
-    <p><a href="{{releasesJsonUrl}}" data-download-manifest-link aria-label="Open raw releases manifest JSON">Raw releases.json</a></p>
-    <p id="fallback-link" data-download-fallback-guidance>{{fallbackText}}</p>
-    <section class="self-host-operator" data-self-host-downloads-panel="docker-operator" aria-labelledby="self-host-downloads-title">
-      <h2 id="self-host-downloads-title">Self-host operator lane</h2>
-      <p data-self-host-docker-command="docker compose --profile portal up -d">Run <code>docker compose --profile portal up -d</code> to serve the portal, Chummer Online, and downloads shelf from one local edge.</p>
-      <ul>
-        <li data-self-host-release-manifest="{{WebUtility.HtmlEncode(releasesJsonUrl)}}">Mount releases.json into the downloads volume before claiming installer availability.</li>
-        <li data-self-host-browser-app="{{WebUtility.HtmlEncode(PortalRoutes.PublicAppRoster)}}">Use /app?command=character_roster when installer proof is pending so users land in the Chummer Online roster workflow instead of an implementation route.</li>
-        <li data-self-host-installer-boundary="proof-required">Proof-required compatibility routes stay visible, but they do not publish artifact bytes until the release manifest and installer proof agree.</li>
-      </ul>
-    </section>
-    <h2 id="published-download-artifacts">Published artifacts</h2>
-    <p data-download-count="{{summary.Downloads.Count}}">Published artifacts: <code>{{summary.Downloads.Count}}</code></p>
-    <p id="published-download-description" data-download-description>Published artifacts are direct raw downloads from releases.json and do not require installer claim handoff.</p>
+    <p id="fallback-link" class="download-subtle" data-download-fallback-guidance>{{fallbackText}}</p>
+    <h2 id="published-download-artifacts">Available now</h2>
+    <p id="published-download-description" class="download-subtle" data-download-description>These downloads come from the current release manifest.</p>
     <ul data-download-list="published-artifacts" aria-labelledby="published-download-artifacts" aria-describedby="published-download-description">
       {{artifactLines}}
     </ul>
-    <h2 id="compatibility-handoff-routes">Compatibility handoff routes</h2>
-    <p data-install-route-count="{{compatibilityRoutes.Count}}">Compatibility routes: <code>{{compatibilityRoutes.Count}}</code></p>
-    <p id="compatibility-handoff-description" data-install-route-description>Known fallback install routes stay visible here, but they are not installable until matching artifact and startup proof exists.</p>
-    <ul class="compatibility-routes" data-install-route-list="compatibility-handoff" aria-labelledby="compatibility-handoff-routes" aria-describedby="compatibility-handoff-description">
-      {{compatibilityRouteLines}}
-    </ul>
+    <details class="secondary-block" data-self-host-downloads-panel="docker-operator">
+      <summary id="self-host-downloads-title">Self-host notes</summary>
+      <div>
+        <p data-self-host-docker-command="docker compose --profile portal up -d">Run <code>docker compose --profile portal up -d</code> when you want to serve this portal and its downloads from one local edge.</p>
+        <ul>
+          <li data-self-host-release-manifest="{{WebUtility.HtmlEncode(releasesJsonUrl)}}">Mount <code>releases.json</code> and <code>RELEASE_CHANNEL.generated.json</code> before claiming installer availability.</li>
+          <li data-self-host-browser-app="{{WebUtility.HtmlEncode(PortalRoutes.PublicAppRoster)}}">Use /app?command=character_roster when installer proof is still pending.</li>
+          <li data-self-host-installer-boundary="proof-required">Proof-required routes stay visible, but they do not serve installer bytes until the manifest and proof agree.</li>
+        </ul>
+        <p><a href="{{releasesJsonUrl}}" data-download-manifest-link aria-label="Open raw releases manifest JSON">Release data</a></p>
+      </div>
+    </details>
+    <details class="secondary-block">
+      <summary id="compatibility-handoff-routes">Other install routes</summary>
+      <div>
+        <p id="compatibility-handoff-description" class="download-subtle" data-install-route-description>Known fallback routes that still need proof.</p>
+        <p class="download-subtle" data-install-route-count="{{compatibilityRoutes.Count}}">{{compatibilityRoutes.Count}} route{{(compatibilityRoutes.Count == 1 ? string.Empty : "s")}} waiting for proof</p>
+        <ul class="compatibility-routes" data-install-route-list="compatibility-handoff" aria-labelledby="compatibility-handoff-routes" aria-describedby="compatibility-handoff-description">
+          {{compatibilityRouteLines}}
+        </ul>
+      </div>
+    </details>
   </section>
 </main>
 </body>
@@ -592,7 +616,7 @@ static string BuildDownloadsInstallStatePanel(PortalOptions options, string inst
     string nextRouteValue = string.IsNullOrWhiteSpace(nextInstallRoute)
         ? "requested-installer-route"
         : WebUtility.HtmlEncode(nextInstallRoute);
-    return $"""<p class="install-state" data-install-state="proof_required" data-install-next-route="{nextRouteValue}" role="status" aria-live="polite">{routeLabel} is a known compatibility handoff, but installer proof is still required before this route can publish artifact bytes.<br /><a href="{appRosterUrl}" data-install-state-action="open-browser-app">Explore Chummer Online instead</a></p>""";
+    return $"""<p class="install-state" data-install-state="proof_required" data-install-next-route="{nextRouteValue}" role="status" aria-live="polite">{routeLabel} is known, but it is not live yet because installer proof is still missing.<br /><a href="{appRosterUrl}" data-install-state-action="open-browser-app">Open Chummer Online instead</a></p>""";
 }
 
 static IResult ResolveInstallHandoff(string artifactId, PortalOptions options)
@@ -605,9 +629,12 @@ static IResult ResolveInstallHandoff(string artifactId, PortalOptions options)
 
     string expectedPublicInstallRoute = $"{RouteRootFromPublicPath(options.DownloadsUrl)}/install/{normalizedArtifactId}";
     ReleaseManifestSummary summary = ReadReleaseManifest(options.ReleasesFile);
-    ReleaseDownloadSummary? download = summary.Downloads.FirstOrDefault(item =>
-        string.Equals(item.ArtifactId, normalizedArtifactId, StringComparison.OrdinalIgnoreCase)
-        || string.Equals(item.PublicInstallRoute, expectedPublicInstallRoute, StringComparison.OrdinalIgnoreCase));
+    ReleaseDownloadSummary? download = FindDownloadSummary(summary, normalizedArtifactId, expectedPublicInstallRoute);
+
+    if (download is not null && IsOpenPublicDownload(download))
+    {
+        return Results.Redirect(BuildDownloadDispatchRoute(options, normalizedArtifactId));
+    }
 
     string? target = download?.Url;
     if (IsHttpUrl(target))
@@ -633,11 +660,143 @@ static IResult ResolveInstallHandoff(string artifactId, PortalOptions options)
     return Results.NotFound("Installer handoff is not available in this self-hosted portal.");
 }
 
+static IResult ResolveDownloadDispatch(string artifactId, PortalOptions options)
+{
+    string normalizedArtifactId = artifactId.Trim();
+    if (string.IsNullOrWhiteSpace(normalizedArtifactId))
+    {
+        return Results.BadRequest("Installer artifact is required.");
+    }
+
+    string expectedPublicInstallRoute = $"{RouteRootFromPublicPath(options.DownloadsUrl)}/install/{normalizedArtifactId}";
+    ReleaseManifestSummary summary = ReadReleaseManifest(options.ReleasesFile);
+    ReleaseDownloadSummary? download = FindDownloadSummary(summary, normalizedArtifactId, expectedPublicInstallRoute);
+    if (download is null)
+    {
+        return Results.NotFound("Published artifact is not available in this self-hosted portal.");
+    }
+
+    string? localFilePath = TryResolveLocalDownloadFilePath(download, options);
+    if (!string.IsNullOrWhiteSpace(localFilePath))
+    {
+        string fileName = string.IsNullOrWhiteSpace(download.FileName)
+            ? Path.GetFileName(localFilePath)
+            : download.FileName;
+        return Results.File(localFilePath, "application/octet-stream", fileName, enableRangeProcessing: true);
+    }
+
+    if (IsHttpUrl(download.Url))
+    {
+        return Results.Redirect(download.Url);
+    }
+
+    return Results.NotFound("Published artifact bytes are not available in this self-hosted portal.");
+}
+
+static (string Href, string LinkMode) ResolvePortalDownloadLink(ReleaseDownloadSummary download, PortalOptions options)
+{
+    if (IsOpenPublicDownload(download)
+        && !string.IsNullOrWhiteSpace(download.ArtifactId)
+        && TryResolveLocalDownloadFilePath(download, options) is not null)
+    {
+        return (BuildDownloadDispatchRoute(options, download.ArtifactId), "self-host-dispatch");
+    }
+
+    if (IsHttpUrl(download.Url))
+    {
+        return (download.Url, "raw-url");
+    }
+
+    if (!string.IsNullOrWhiteSpace(download.PublicInstallRoute))
+    {
+        return (download.PublicInstallRoute, "install-route");
+    }
+
+    return ("#", "unavailable");
+}
+
+static ReleaseDownloadSummary? FindDownloadSummary(
+    ReleaseManifestSummary summary,
+    string artifactId,
+    string expectedPublicInstallRoute)
+    => summary.Downloads.FirstOrDefault(item =>
+        string.Equals(item.ArtifactId, artifactId, StringComparison.OrdinalIgnoreCase)
+        || string.Equals(item.PublicInstallRoute, expectedPublicInstallRoute, StringComparison.OrdinalIgnoreCase));
+
+static bool IsOpenPublicDownload(ReleaseDownloadSummary download)
+    => string.Equals(download.InstallAccessClass, "open_public", StringComparison.OrdinalIgnoreCase);
+
+static string BuildDownloadDispatchRoute(PortalOptions options, string artifactId)
+    => $"{RouteRootFromPublicPath(options.DownloadsUrl)}/get/{Uri.EscapeDataString(artifactId)}";
+
+static string? TryResolveLocalDownloadFilePath(ReleaseDownloadSummary download, PortalOptions options)
+{
+    string downloadsRoot = Path.GetFullPath(options.DownloadsDirectory);
+    StringComparison pathComparison = OperatingSystem.IsWindows()
+        ? StringComparison.OrdinalIgnoreCase
+        : StringComparison.Ordinal;
+
+    foreach (string relativePath in EnumerateLocalDownloadRelativePaths(download, options))
+    {
+        string candidatePath = Path.GetFullPath(Path.Combine(
+            downloadsRoot,
+            relativePath.Replace('/', Path.DirectorySeparatorChar)));
+
+        if (!candidatePath.StartsWith($"{downloadsRoot}{Path.DirectorySeparatorChar}", pathComparison))
+        {
+            continue;
+        }
+
+        if (File.Exists(candidatePath))
+        {
+            return candidatePath;
+        }
+    }
+
+    return null;
+}
+
+static IEnumerable<string> EnumerateLocalDownloadRelativePaths(ReleaseDownloadSummary download, PortalOptions options)
+{
+    HashSet<string> yielded = new(StringComparer.OrdinalIgnoreCase);
+    string downloadsRoot = RouteRootFromPublicPath(options.DownloadsUrl);
+
+    if (Uri.TryCreate(download.Url, UriKind.Absolute, out Uri? absoluteUri))
+    {
+        string absolutePath = Uri.UnescapeDataString(absoluteUri.AbsolutePath);
+        string prefix = $"{downloadsRoot}/";
+        if (absolutePath.StartsWith(prefix, StringComparison.OrdinalIgnoreCase))
+        {
+            string relativePath = absolutePath[prefix.Length..];
+            if (!string.IsNullOrWhiteSpace(relativePath) && yielded.Add(relativePath))
+            {
+                yield return relativePath;
+            }
+        }
+    }
+    else if (!string.IsNullOrWhiteSpace(download.Url))
+    {
+        string normalizedUrl = download.Url.TrimStart('/');
+        if (yielded.Add(normalizedUrl))
+        {
+            yield return normalizedUrl;
+        }
+    }
+
+    if (!string.IsNullOrWhiteSpace(download.FileName))
+    {
+        string fileNamePath = $"files/{download.FileName}";
+        if (yielded.Add(fileNamePath))
+        {
+            yield return fileNamePath;
+        }
+    }
+}
+
 static string BuildContactHtml(PortalOptions options)
 {
-    string appUrl = WebUtility.HtmlEncode(PortalRoutes.PublicApp);
     string appRosterUrl = WebUtility.HtmlEncode(PortalRoutes.PublicAppRoster);
-    string appHomeUrl = WebUtility.HtmlEncode(BuildBlazorHomeUrl(options));
+    string discordUrl = WebUtility.HtmlEncode(PortalRoutes.CommunityDiscord);
 
     return $$"""
 <!DOCTYPE html>
@@ -667,14 +826,9 @@ static string BuildContactHtml(PortalOptions options)
 <main>
   <section class="panel" data-portal-contact-panel="support-handoff" aria-labelledby="portal-contact-title">
     <h1 id="portal-contact-title">Contact</h1>
-    <p data-portal-contact-context="self-host-fallback">This self-hosted portal does not have a hosted support upstream configured.</p>
-    <p data-portal-contact-public-route="chummer.run/contact">Use the public Chummer contact page when this portal is connected to chummer.run.</p>
-    <ul data-portal-contact-scenarios="installer-account-app">
-      <li data-portal-contact-scenario="installer-proof">Installer proof or download availability question</li>
-      <li data-portal-contact-scenario="account-recovery">Account, owner, or sign-in recovery</li>
-      <li data-portal-contact-scenario="browser-app">Chummer Online workflow support</li>
-    </ul>
-    <nav class="handoff-actions" aria-label="Contact recovery actions"><a href="{{appRosterUrl}}" data-portal-contact-action="open-chummer-app">Explore Chummer Online</a><a href="{{appHomeUrl}}" data-portal-contact-action="open-chummer-home">Open Chummer Online overview</a><a href="/status" data-portal-contact-action="open-status">Open status</a><a href="/downloads/" data-portal-contact-action="open-downloads">Open downloads</a><a href="/help" data-portal-contact-action="open-help">Open help</a><a href="/docs/" data-portal-contact-action="open-docs">Open docs</a></nav>
+    <p data-portal-contact-context="discord-first">The fastest human route is the Chummer Discord.</p>
+    <p data-portal-contact-public-route="discord-community">If you are stuck on install, access, or account linking, start with downloads or help and then use Discord if you still need a person.</p>
+    <nav class="handoff-actions" aria-label="Contact recovery actions"><a href="{{discordUrl}}" data-portal-contact-action="open-discord">Open Discord</a><a href="/downloads/" data-portal-contact-action="open-downloads">Open downloads</a><a href="/help" data-portal-contact-action="open-help">Open help</a><a href="/status" data-portal-contact-action="open-status">Open status</a><a href="{{appRosterUrl}}" data-portal-contact-action="open-chummer-app">Open Chummer Online</a></nav>
   </section>
 </main>
 </body>
@@ -684,10 +838,9 @@ static string BuildContactHtml(PortalOptions options)
 
 static string BuildHelpHtml(PortalOptions options)
 {
-    string appUrl = WebUtility.HtmlEncode(PortalRoutes.PublicApp);
     string appRosterUrl = WebUtility.HtmlEncode(PortalRoutes.PublicAppRoster);
-    string appHomeUrl = WebUtility.HtmlEncode(BuildBlazorHomeUrl(options));
     string downloadsUrl = WebUtility.HtmlEncode(options.DownloadsUrl);
+    string discordUrl = WebUtility.HtmlEncode(PortalRoutes.CommunityDiscord);
 
     return $$"""
 <!DOCTYPE html>
@@ -717,16 +870,16 @@ static string BuildHelpHtml(PortalOptions options)
 <main>
   <section class="panel" data-portal-help-panel="handoff-guide" aria-labelledby="portal-help-title">
     <h1 id="portal-help-title">Help</h1>
-    <p data-portal-help-context="self-host-first">Use this same-origin guide when Chummer Online, the installer shelf, account owner, or support path needs recovery.</p>
+    <p data-portal-help-context="shortest-path-first">Pick the shortest path.</p>
     <nav class="help-grid" aria-label="Help recovery actions">
-      <a class="help-card" href="{{appRosterUrl}}" data-portal-help-action="open-chummer-app">Explore Chummer Online</a>
-      <a class="help-card" href="{{appHomeUrl}}" data-portal-help-action="open-chummer-home">Open Chummer Online overview</a>
-      <a class="help-card" href="{{downloadsUrl}}" data-portal-help-action="open-downloads">Open downloads and installers</a>
-      <a class="help-card" href="/status" data-portal-help-action="open-status">Open release status</a>
-      <a class="help-card" href="/contact" data-portal-help-action="open-contact">Open support contact</a>
-      <a class="help-card" href="/docs/" data-portal-help-action="open-docs">Open local docs</a>
+      <a class="help-card" href="{{downloadsUrl}}" data-portal-help-action="open-downloads">Downloads and install</a>
+      <a class="help-card" href="{{appRosterUrl}}" data-portal-help-action="open-chummer-app">Open Chummer Online</a>
+      <a class="help-card" href="/status" data-portal-help-action="open-status">Current status</a>
+      <a class="help-card" href="{{discordUrl}}" data-portal-help-action="open-discord">Community Discord</a>
+      <a class="help-card" href="/contact" data-portal-help-action="open-contact">Contact</a>
+      <a class="help-card" href="/docs/" data-portal-help-action="open-docs">Local docs</a>
     </nav>
-    <p data-portal-help-boundary="source-guidance-only">This help page is same-origin navigation guidance; it is not runtime proof for the linked workflows.</p>
+    <p data-portal-help-boundary="source-guidance-only">Need technical detail? Open the local docs.</p>
   </section>
 </main>
 </body>
@@ -739,10 +892,8 @@ static string BuildStatusHtml(PortalOptions options)
     ReleaseManifestSummary summary = ReadReleaseManifest(options.ReleasesFile);
     string availability = summary.Downloads.Count > 0 ? "Available now" : "Not published yet";
     string downloadsUrl = WebUtility.HtmlEncode(options.DownloadsUrl);
-    string appUrl = WebUtility.HtmlEncode(PortalRoutes.PublicApp);
     string appRosterUrl = WebUtility.HtmlEncode(PortalRoutes.PublicAppRoster);
-    string appHomeUrl = WebUtility.HtmlEncode(BuildBlazorHomeUrl(options));
-    string docsUrl = "/docs/";
+    string discordUrl = WebUtility.HtmlEncode(PortalRoutes.CommunityDiscord);
 
     return $$"""
 <!DOCTYPE html>
@@ -761,6 +912,8 @@ static string BuildStatusHtml(PortalOptions options)
     .panel { animation: portal-surface-reveal .38s cubic-bezier(.2,.78,.2,1) both; }
     .status-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: .75rem; margin: 1rem 0; }
     .status-card { border: 1px solid rgba(143,240,188,.26); border-radius: 16px; padding: .85rem; background: linear-gradient(135deg,rgba(118,174,202,.14),rgba(143,240,188,.06)), rgba(255,255,255,.045); }
+    .status-card strong { display: block; margin-bottom: .35rem; }
+    .status-meta { color: var(--portal-muted); }
     .handoff-actions { display: flex; flex-wrap: wrap; gap: .55rem; margin-top: 1rem; }
     .handoff-actions a { display: inline-flex; align-items: center; min-height: 2.35rem; padding: .45rem .75rem; border: 1px solid rgba(143,240,188,.34); border-radius: 999px; color: var(--portal-ink); text-decoration: none; background: linear-gradient(135deg,rgba(118,174,202,.16),rgba(143,240,188,.07)), rgba(255,255,255,.035); transition: transform .16s ease, border-color .16s ease, box-shadow .16s ease; }
     .handoff-actions a:hover, .handoff-actions a:focus-visible { transform: translateY(-1px); border-color: rgba(143,240,188,.58); box-shadow: 0 0 0 3px rgba(143,240,188,.18); }
@@ -774,17 +927,17 @@ static string BuildStatusHtml(PortalOptions options)
 <body>
 <main>
   <section class="panel" data-portal-status-panel="release-availability" aria-labelledby="portal-status-title">
-    <h1 id="portal-status-title">Current release</h1>
-    <p>The build, platforms, and current state in one place.</p>
+    <h1 id="portal-status-title">Status</h1>
+    <p>The current build and whether downloads are live.</p>
     <div class="status-grid">
-      <div class="status-card" data-portal-status-availability="{{WebUtility.HtmlEncode(availability)}}"><strong>{{availability}}</strong></div>
-      <div class="status-card" data-portal-status-release-status="{{WebUtility.HtmlEncode(summary.Status)}}">Release status: <code>{{WebUtility.HtmlEncode(summary.Status)}}</code></div>
-      <div class="status-card" data-portal-status-version="{{WebUtility.HtmlEncode(summary.Version)}}">Version: <code>{{WebUtility.HtmlEncode(summary.Version)}}</code></div>
-      <div class="status-card" data-portal-status-artifact-count="{{summary.Downloads.Count}}">Published artifacts: <code>{{summary.Downloads.Count}}</code></div>
-      <div class="status-card" data-portal-status-install-route-count="{{summary.InstallRoutes.Count}}">Install handoff routes: <code>{{summary.InstallRoutes.Count}}</code></div>
+      <div class="status-card" data-portal-status-version="{{WebUtility.HtmlEncode(summary.Version)}}"><strong>Build</strong><code>{{WebUtility.HtmlEncode(summary.Version)}}</code></div>
+      <div class="status-card" data-portal-status-availability="{{WebUtility.HtmlEncode(availability)}}"><strong>Downloads</strong>{{availability}}</div>
+      <div class="status-card" data-portal-status-release-status="{{WebUtility.HtmlEncode(summary.Status)}}"><strong>State</strong><code>{{WebUtility.HtmlEncode(summary.Status)}}</code></div>
     </div>
-    <p data-portal-status-boundary="source-manifest-backed">This status page is backed by the local releases.json manifest. It does not claim installer availability unless artifact rows are present.</p>
-    <nav class="handoff-actions" aria-label="Status recovery actions"><a href="{{downloadsUrl}}" data-portal-status-action="open-downloads">Open downloads</a><a href="{{appRosterUrl}}" data-portal-status-action="open-chummer-app">Explore Chummer Online</a><a href="{{appHomeUrl}}" data-portal-status-action="open-chummer-home">Open Chummer Online overview</a><a href="/help" data-portal-status-action="open-help">Open help</a><a href="{{docsUrl}}" data-portal-status-action="open-docs">Open docs</a></nav>
+    <p class="status-meta" data-portal-status-artifact-count="{{summary.Downloads.Count}}">Published files: <code>{{summary.Downloads.Count}}</code></p>
+    <p class="status-meta" data-portal-status-install-route-count="{{summary.InstallRoutes.Count}}">Install routes: <code>{{summary.InstallRoutes.Count}}</code></p>
+    <p class="status-meta" data-portal-status-boundary="source-manifest-backed">This page reads directly from the local release manifest.</p>
+    <nav class="handoff-actions" aria-label="Status recovery actions"><a href="{{downloadsUrl}}" data-portal-status-action="open-downloads">Open downloads</a><a href="/help" data-portal-status-action="open-help">Open help</a><a href="{{discordUrl}}" data-portal-status-action="open-discord">Open Discord</a><a href="{{appRosterUrl}}" data-portal-status-action="open-chummer-app">Open Chummer Online</a></nav>
   </section>
 </main>
 </body>
@@ -1108,79 +1261,12 @@ static string BuildBlazorHomeUrl(PortalOptions options)
 
 static ReleaseManifestSummary ReadReleaseManifest(string releasesFile)
 {
-    if (!File.Exists(releasesFile))
-    {
-        return new ReleaseManifestSummary("manifest-missing", "unpublished", [], []);
-    }
-
-    try
-    {
-        JsonNode? node = JsonNode.Parse(File.ReadAllText(releasesFile, Encoding.UTF8));
-        string status = node?["status"]?.GetValue<string>() ?? "manifest-error";
-        string version = node?["version"]?.GetValue<string>() ?? "unpublished";
-        List<ReleaseDownloadSummary> downloads = [];
-        foreach (JsonNode? item in node?["downloads"]?.AsArray() ?? [])
-        {
-            if (item is null)
-            {
-                continue;
-            }
-
-            downloads.Add(new ReleaseDownloadSummary(
-                item["label"]?.GetValue<string>() ?? item["fileName"]?.GetValue<string>() ?? "artifact",
-                item["platform"]?.GetValue<string>() ?? "unknown",
-                item["url"]?.GetValue<string>() ?? "#",
-                item["artifactId"]?.GetValue<string>() ?? item["id"]?.GetValue<string>() ?? "",
-                item["publicInstallRoute"]?.GetValue<string>() ?? ""));
-        }
-
-        List<ReleaseInstallRouteSummary> installRoutes = [];
-        CollectInstallRoutes(node, installRoutes);
-
-        return new ReleaseManifestSummary(status, version, downloads, installRoutes);
-    }
-    catch (JsonException)
-    {
-        return new ReleaseManifestSummary("manifest-error", "unpublished", [], []);
-    }
-}
-
-static void CollectInstallRoutes(JsonNode? node, List<ReleaseInstallRouteSummary> installRoutes)
-{
-    if (node is null)
-    {
-        return;
-    }
-
-    if (node is JsonObject jsonObject)
-    {
-        string publicInstallRoute = jsonObject["publicInstallRoute"]?.GetValue<string>() ?? "";
-        if (!string.IsNullOrWhiteSpace(publicInstallRoute)
-            && !installRoutes.Any(route => string.Equals(route.PublicInstallRoute, publicInstallRoute, StringComparison.OrdinalIgnoreCase)))
-        {
-            installRoutes.Add(new ReleaseInstallRouteSummary(
-                publicInstallRoute,
-                jsonObject["artifactId"]?.GetValue<string>() ?? "",
-                jsonObject["promotionState"]?.GetValue<string>() ?? "",
-                jsonObject["installPosture"]?.GetValue<string>() ?? "proof_required"));
-        }
-
-        foreach (KeyValuePair<string, JsonNode?> child in jsonObject)
-        {
-            CollectInstallRoutes(child.Value, installRoutes);
-        }
-    }
-    else if (node is JsonArray jsonArray)
-    {
-        foreach (JsonNode? child in jsonArray)
-        {
-            CollectInstallRoutes(child, installRoutes);
-        }
-    }
+    return PortalReleaseManifestReader.Read(releasesFile);
 }
 
 static class PortalRoutes
 {
+    public const string CommunityDiscord = "https://discord.gg/mJB7st9";
     public const string PublicApp = "/app";
     public const string PublicAppSlash = "/app/";
     public const string BlazorApp = "/blazor/app";
@@ -1266,11 +1352,3 @@ sealed record PortalOptions(
     private static string? NormalizeOptionalValue(string? configured)
         => string.IsNullOrWhiteSpace(configured) ? null : configured.Trim();
 }
-
-sealed record ReleaseManifestSummary(
-    string Status,
-    string Version,
-    IReadOnlyList<ReleaseDownloadSummary> Downloads,
-    IReadOnlyList<ReleaseInstallRouteSummary> InstallRoutes);
-sealed record ReleaseDownloadSummary(string Label, string Platform, string Url, string ArtifactId, string PublicInstallRoute);
-sealed record ReleaseInstallRouteSummary(string PublicInstallRoute, string ArtifactId, string PromotionState, string InstallPosture);

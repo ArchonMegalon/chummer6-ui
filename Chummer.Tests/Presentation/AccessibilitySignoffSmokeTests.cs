@@ -743,7 +743,7 @@ public sealed class AccessibilitySignoffSmokeTests
         RequireContains(projection.RulesetSpotlight, "SR5 opens to the main character editor");
         RequireContains(projection.ExplainFocus, "claim this copy");
         RequireContains(projection.RuntimeHealthSummary, "no active runtime profile");
-        RequireContains(projection.ReturnTarget, "No workspace return target");
+        RequireContains(projection.ReturnTarget, "No dossier return target");
         RequireContains(projection.RulePosture, "Shadowrun 5");
         RequireContains(projection.RulePosture, ".chum5");
         RequireContains(string.Join("\n", projection.CompatibilityReceipts), "no current runtime fingerprint");
@@ -1141,6 +1141,8 @@ public sealed class AccessibilitySignoffSmokeTests
         RequireContains(source, "desktop.update.section.follow_through");
         RequireContains(source, "desktop.update.section.install");
         RequireContains(source, "desktop.update.button.check_now");
+        RequireContains(source, "desktop.update.button.open_pending_installer");
+        RequireContains(source, "desktop.update.button.copy_install_command");
         RequireContains(source, "desktop.update.button.refresh");
         RequireContains(source, "desktop.update.checking");
         RequireContains(source, "desktop.update.checked");
@@ -1149,6 +1151,10 @@ public sealed class AccessibilitySignoffSmokeTests
         RequireContains(source, "DesktopSupportWindow.ShowAsync(this, _installState.HeadId)");
         RequireContains(source, "DesktopReportIssueWindow.ShowAsync(this, _installState.HeadId)");
         RequireContains(source, "DesktopInstallLinkingRuntime.TryOpenSupportPortalForUpdate");
+        RequireContains(source, "DesktopUpdateRuntime.TryOpenPendingInstaller(_installState.HeadId)");
+        RequireContains(source, "DesktopUpdateRuntime.TryBuildPendingInstallerManualCommand(_installState.HeadId, out string command)");
+        RequireContains(source, "A downloaded package is already waiting on this copy. Copy the install command here when you are ready.");
+        RequireContains(source, "Manual install stays local: this downloaded package is ready, and the terminal command is available from here.");
         RequireContains(source, "DesktopInstallLinkingRuntime.TryOpenDownloadsPortal()");
         RequireContains(source, "new ScrollViewer");
 
@@ -1755,7 +1761,7 @@ public sealed class AccessibilitySignoffSmokeTests
         RequireContains(importPanelSource, "Before import environment diff");
         RequireContains(importPanelSource, "After review environment diff");
         RequireContains(importPanelSource, "Receipt scope: import target {ruleset}");
-        RequireContains(importPanelSource, "excludes raw character XML until the user accepts import");
+        RequireContains(importPanelSource, "excludes raw runner XML until the user accepts import");
         RequireContains(importPanelSource, "Import staged artifact receipt:");
         RequireContains(importPanelSource, "Import artifact diff receipt:");
         RequireContains(importPanelSource, "Import diagnostics receipt:");
@@ -1896,8 +1902,8 @@ public sealed class AccessibilitySignoffSmokeTests
         RequireContains(importPanelSource, "data-import-trust-receipt");
         RequireContains(importPanelSource, "BuildImportTrustReceiptSections()");
         RequireContains(importPanelSource, "DesktopTrustReceiptComposer.BuildImportReviewSections(");
-        RequireContains(importPanelSource, "Import review");
-        RequireContains(importPanelSource, "Import setup");
+        RequireContains(importPanelSource, "Runner import review");
+        RequireContains(importPanelSource, "Runner import setup");
         RequireContains(importPanelSource, "UndetectableHumanizerCopyAdapter.Humanize");
         RequireContains(importPanelSource, "Grounded explain receipt");
         RequireContains(importPanelSource, "Before import environment diff");
@@ -2116,7 +2122,7 @@ public sealed class AccessibilitySignoffSmokeTests
         RequireContains(source, "ContinueUnlinkedAsync");
         RequireContains(source, "UnlinkCopyAsync");
         RequireContains(source, "DesktopInstallLinkingRuntime.MarkPromptDismissed(_state.HeadId)");
-        RequireContains(source, "DesktopInstallLinkingRuntime.UnlinkInstall(_state.HeadId)");
+        RequireContains(source, "DesktopInstallLinkingRuntime.UnlinkInstallAsync(_state.HeadId, CancellationToken.None)");
         RequireDoesNotContain(source, "desktopLifetime.Shutdown();");
         RequireDoesNotContain(source, "e.Cancel = true;");
         RequireDoesNotContain(source, "ContinueAsGuestAsync");

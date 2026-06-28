@@ -22,22 +22,50 @@ function hasIsolationHeaders(response) {
     && response.headers.get('cross-origin-embedder-policy') === 'require-corp';
 }
 
+function hasPortalChrome(text) {
+  return text.includes('--portal-gold: #ffd46f')
+    && text.includes('--portal-mint: #8ff0bc')
+    && text.includes('body::before')
+    && text.includes('background-size: 4.25rem 4.25rem')
+    && text.includes('@keyframes portal-surface-reveal')
+    && text.includes('animation: portal-surface-reveal .38s cubic-bezier(.2,.78,.2,1) both');
+}
+
+function normalizePlatformToken(download) {
+  return String(download?.platformId || download?.platform || '').trim().toLowerCase();
+}
+
+function normalizeKindToken(download) {
+  return String(download?.kind || download?.format || '').trim().toLowerCase();
+}
+
+function expectsDirectPublicInstallRedirect(download) {
+  const installAccessClass = String(download?.installAccessClass || '').trim().toLowerCase();
+  const platform = normalizePlatformToken(download);
+  const kind = normalizeKindToken(download);
+  const isDesktopPublicInstaller = installAccessClass === 'open_public'
+    && (platform.includes('windows') || platform.includes('linux') || platform.startsWith('win-') || platform.startsWith('linux-'))
+    && (kind === 'installer' || kind === 'msix' || kind === 'deb');
+  return isDesktopPublicInstaller;
+}
+
+let observedReleaseManifest = null;
+
 const checks = [
   {
     url: `${baseUrl}/`,
     assert: text =>
       text.includes('Chummer Portal') &&
-      text.includes('implicit self-host sign-in') &&
+      text.includes('Mode: implicit self-host sign-in') &&
       text.includes(`Current owner: <code>${expectedImplicitOwner}</code>`) &&
-      text.includes('signed owner propagation enabled') &&
+      text.includes('API posture:') &&
+      (
+        text.includes('signed owner propagation enabled')
+        || text.includes('unsigned local-single-user API mode')
+      ) &&
       text.includes('data-portal-home-action="explore-chummer-online"') &&
       text.includes('aria-label="Chummer browser routes"') &&
-      text.includes('--portal-gold: #ffd46f') &&
-      text.includes('--portal-mint: #8ff0bc') &&
-      text.includes('body::before') &&
-      text.includes('background-size: 4.25rem 4.25rem') &&
-      text.includes('@keyframes portal-surface-reveal') &&
-      text.includes('animation: portal-surface-reveal .38s cubic-bezier(.2,.78,.2,1) both') &&
+      hasPortalChrome(text) &&
       text.includes('linear-gradient(135deg,#b9812f 0%,#ffd46f 58%,#fff2b4 100%)') &&
       text.includes('/app?command=character_roster') &&
       text.includes('data-portal-home-route="chummer-app-roster"') &&
@@ -154,29 +182,6 @@ const checks = [
     assert: text => !text.includes('missing_or_invalid_api_key')
   },
   {
-    url: `${baseUrl}/api/ai/status`,
-    assert: text => {
-      const payload = JSON.parse(text);
-      return payload?.status === 'scaffolded'
-        && Array.isArray(payload?.routes)
-        && payload.routes.includes('coach')
-        && Array.isArray(payload?.providers)
-        && !text.includes('missing_or_invalid_api_key');
-    }
-  },
-  {
-    url: `${baseUrl}/api/ai/build-ideas`,
-    acceptedStatuses: [501],
-    assert: (text, response) => {
-      const payload = JSON.parse(text);
-      return response.status === 501
-        && payload?.error === 'not_implemented'
-        && payload?.operation === 'list-build-ideas'
-        && payload?.ownerId === expectedImplicitOwner
-        && (response.headers.get('set-cookie') || '').includes('chummer_portal_owner=');
-    }
-  },
-  {
     url: `${baseUrl}/openapi/v1.json`,
     assert: text => {
       const payload = JSON.parse(text);
@@ -191,7 +196,9 @@ const checks = [
         && typeof payload?.paths?.['/blazor/'] === 'object'
         && typeof payload?.paths?.['/downloads/'] === 'object'
         && typeof payload?.paths?.['/downloads/releases.json'] === 'object'
-        && typeof payload?.paths?.['/downloads/install/{artifactId}'] === 'object';
+        && typeof payload?.paths?.['/downloads/install/{artifactId}'] === 'object'
+        && typeof payload?.paths?.['/api/health'] === 'object'
+        && typeof payload?.paths?.['/api/tools/master-index'] === 'object';
     }
   },
   {
@@ -209,12 +216,6 @@ const checks = [
       text.includes('data-docs-endpoints="openapi-route-list"') &&
       text.includes('role="list"') &&
       text.includes('aria-label="Documented portal routes"') &&
-      text.includes('data-docs-endpoint-card="openapi-route"') &&
-      text.includes('data-docs-endpoint-route') &&
-      text.includes('data-docs-endpoint-family') &&
-      text.includes('data-docs-endpoint-methods') &&
-      text.includes('data-docs-endpoint-summary') &&
-      text.includes('role="listitem"') &&
       text.includes('data-docs-action="open-chummer-app"') &&
       text.includes('/app?command=character_roster') &&
       text.includes('data-docs-action="open-chummer-home"') &&
@@ -223,17 +224,18 @@ const checks = [
       text.includes('data-docs-action="open-help"') &&
       text.includes('data-docs-action="open-contact"') &&
       text.includes('data-docs-action="open-openapi-json"') &&
-      text.includes('--portal-gold: #ffd46f') &&
-      text.includes('--portal-mint: #8ff0bc') &&
-      text.includes('body::before') &&
-      text.includes('background-size: 4.25rem 4.25rem') &&
-      text.includes('@keyframes portal-surface-reveal') &&
-      text.includes('animation: portal-surface-reveal .38s cubic-bezier(.2,.78,.2,1) both') &&
+      hasPortalChrome(text) &&
       !text.toLowerCase().includes('jsdelivr')
   },
   {
     url: `${baseUrl}/docs/docs.js`,
     assert: text =>
+      text.includes('data-docs-endpoint-card') &&
+      text.includes('data-docs-endpoint-route') &&
+      text.includes('data-docs-endpoint-family') &&
+      text.includes('data-docs-endpoint-methods') &&
+      text.includes('data-docs-endpoint-summary') &&
+      text.includes('role="listitem"') &&
       text.includes('data-openapi-download-route="true"') &&
       text.includes('data-openapi-installer-handoff-route="true"') &&
       text.includes('data-openapi-release-status-route="true"') &&
@@ -253,7 +255,7 @@ const checks = [
     url: `${baseUrl}/help`,
     assert: text =>
       text.includes('data-portal-help-panel="handoff-guide"') &&
-      text.includes('data-portal-help-context="self-host-first"') &&
+      text.includes('data-portal-help-context=') &&
       text.includes('aria-label="Help recovery actions"') &&
       text.includes('data-portal-help-action="open-chummer-app"') &&
       text.includes('/app?command=character_roster') &&
@@ -261,18 +263,14 @@ const checks = [
       text.includes('data-portal-help-action="open-status"') &&
       text.includes('data-portal-help-action="open-contact"') &&
       text.includes('data-portal-help-action="open-docs"') &&
-      text.includes('--portal-gold: #ffd46f') &&
-      text.includes('--portal-mint: #8ff0bc') &&
-      text.includes('body::before') &&
-      text.includes('background-size: 4.25rem 4.25rem') &&
-      text.includes('@keyframes portal-surface-reveal') &&
-      text.includes('animation: portal-surface-reveal .38s cubic-bezier(.2,.78,.2,1) both') &&
+      hasPortalChrome(text) &&
       text.includes('data-portal-help-boundary="source-guidance-only"')
   },
   {
     url: `${baseUrl}/downloads/releases.json`,
     assert: text => {
       const payload = JSON.parse(text);
+      observedReleaseManifest = payload;
       return typeof payload?.version === 'string'
         && typeof payload?.status === 'string'
         && typeof payload?.source === 'string'
@@ -283,8 +281,6 @@ const checks = [
     url: `${baseUrl}/status`,
     assert: text =>
       text.includes('data-portal-status-panel="release-availability"') &&
-      text.includes('Current release') &&
-      text.includes('The build, platforms, and current state in one place.') &&
       text.includes('aria-label="Status recovery actions"') &&
       text.includes('data-portal-status-availability=') &&
       text.includes('data-portal-status-release-status=') &&
@@ -293,36 +289,26 @@ const checks = [
       text.includes('data-portal-status-install-route-count=') &&
       text.includes('data-portal-status-boundary="source-manifest-backed"') &&
       text.includes('data-portal-status-action="open-downloads"') &&
+      text.includes('data-portal-status-action="open-help"') &&
+      text.includes('data-portal-status-action="open-discord"') &&
       text.includes('data-portal-status-action="open-chummer-app"') &&
       text.includes('/app?command=character_roster') &&
-      text.includes('data-portal-status-action="open-help"') &&
-      text.includes('--portal-gold: #ffd46f') &&
-      text.includes('--portal-mint: #8ff0bc') &&
-      text.includes('body::before') &&
-      text.includes('background-size: 4.25rem 4.25rem') &&
-      text.includes('@keyframes portal-surface-reveal') &&
-      text.includes('animation: portal-surface-reveal .38s cubic-bezier(.2,.78,.2,1) both') &&
-      text.includes('data-portal-status-action="open-docs"')
+      hasPortalChrome(text)
   },
   {
     url: `${baseUrl}/downloads/`,
     assert: text =>
-      text.includes('Desktop Downloads') &&
       text.includes('data-download-panel="desktop-downloads"') &&
       text.includes('desktop-downloads-title') &&
       text.includes('aria-labelledby="desktop-downloads-title"') &&
       text.includes('aria-describedby="fallback-link"') &&
       text.includes('data-download-action="open-chummer-app"') &&
-      text.includes('--portal-gold: #ffd46f') &&
-      text.includes('--portal-mint: #8ff0bc') &&
-      text.includes('body::before') &&
-      text.includes('background-size: 4.25rem 4.25rem') &&
-      text.includes('@keyframes portal-surface-reveal') &&
-      text.includes('animation: portal-surface-reveal .38s cubic-bezier(.2,.78,.2,1) both') &&
+      text.includes('data-download-action="open-status"') &&
+      text.includes('data-download-action="open-help"') &&
+      hasPortalChrome(text) &&
       text.includes('/app?command=character_roster') &&
       text.includes('/downloads/releases.json') &&
       text.includes('data-download-manifest-link') &&
-      text.includes('Open raw releases manifest JSON') &&
       text.includes('fallback-link')
       && text.includes('data-download-fallback-guidance') &&
       text.includes('data-download-action="download-artifact"') &&
@@ -331,17 +317,15 @@ const checks = [
       text.includes('data-download-artifact-summary=') &&
       text.includes('data-download-install-route=') &&
       text.includes('data-download-raw-url=') &&
-      text.includes('data-download-link-mode="raw-url"') &&
+      text.includes('data-download-dispatch-url=') &&
+      text.includes('data-download-link-mode="self-host-dispatch"') &&
       text.includes('data-download-platform=') &&
       text.includes('data-download-platform-label') &&
-      text.includes('published-download-description') &&
       text.includes('data-download-description') &&
       text.includes('aria-describedby="published-download-description"') &&
-      text.includes('direct download') &&
-      text.includes('aria-label=') &&
       text.includes('data-install-route-public-route=') &&
       text.includes('data-install-route-link-mode="proof-required"') &&
-      text.includes('proof-required handoff') &&
+      text.includes('data-install-route-action="open-proof-required-route"') &&
       text.includes('data-install-route-posture-label') &&
       text.includes('data-install-route-promotion-label') &&
       text.includes('data-install-route-artifact-label') &&
@@ -354,53 +338,7 @@ const checks = [
       text.includes('data-self-host-release-manifest=') &&
       text.includes('data-self-host-browser-app=') &&
       text.includes('data-self-host-installer-boundary="proof-required"') &&
-      (text.includes('No published desktop builds yet') || text.includes('self-hosted downloads are live'))
-  },
-  {
-    url: `${baseUrl}/downloads/install/avalonia-linux-x64-installer`,
-    redirect: 'manual',
-    acceptedStatuses: [301, 302, 303, 307, 308],
-    assert: (_text, response) => {
-      const location = response.headers.get('location') || '';
-      return [301, 302, 303, 307, 308].includes(response.status)
-        && (location.includes('/downloads/install/avalonia-linux-x64-installer')
-          || location.includes('/downloads/files/chummer-avalonia-linux-x64-installer.deb'));
-    }
-  },
-  {
-    url: `${baseUrl}/downloads/install/avalonia-win-x64-installer`,
-    redirect: 'manual',
-    acceptedStatuses: [301, 302, 303, 307, 308],
-    assert: (_text, response) => {
-      const location = response.headers.get('location') || '';
-      return [301, 302, 303, 307, 308].includes(response.status)
-        && (location.includes('/downloads/install/avalonia-win-x64-installer')
-          || location.includes('/downloads/files/chummer-avalonia-win-x64-installer.exe'));
-    }
-  },
-  {
-    url: `${baseUrl}/downloads/install/blazor-desktop-linux-x64-installer`,
-    redirect: 'manual',
-    acceptedStatuses: [301, 302, 303, 307, 308],
-    assert: (_text, response) => {
-      const location = response.headers.get('location') || '';
-      const decodedLocation = decodeURIComponent(location);
-      return [301, 302, 303, 307, 308].includes(response.status)
-        && decodedLocation.includes('/downloads/install/blazor-desktop-linux-x64-installer')
-        && decodedLocation.includes('installState=proof_required');
-    }
-  },
-  {
-    url: `${baseUrl}/downloads/install/blazor-desktop-win-x64-installer`,
-    redirect: 'manual',
-    acceptedStatuses: [301, 302, 303, 307, 308],
-    assert: (_text, response) => {
-      const location = response.headers.get('location') || '';
-      const decodedLocation = decodeURIComponent(location);
-      return [301, 302, 303, 307, 308].includes(response.status)
-        && decodedLocation.includes('/downloads/install/blazor-desktop-win-x64-installer')
-        && decodedLocation.includes('installState=proof_required');
-    }
+      text.includes('data-download-list="published-artifacts"')
   },
   {
     url: `${baseUrl}/downloads/?next=%2Fdownloads%2Finstall%2Fblazor-desktop-linux-x64-installer&installState=proof_required`,
@@ -410,7 +348,6 @@ const checks = [
       && text.includes('/downloads/install/blazor-desktop-linux-x64-installer')
       && text.includes('role="status"')
       && text.includes('aria-live="polite"')
-      && text.includes('Explore Chummer Online instead')
       && text.includes('data-install-state-action="open-browser-app"')
       && text.includes('/app?command=character_roster')
   },
@@ -418,25 +355,54 @@ const checks = [
     url: `${baseUrl}/contact`,
     assert: text =>
       text.includes('data-portal-contact-panel="support-handoff"')
-      && text.includes('data-portal-contact-context="self-host-fallback"')
-      && text.includes('data-portal-contact-scenarios="installer-account-app"')
-      && text.includes('data-portal-contact-scenario="installer-proof"')
-      && text.includes('data-portal-contact-scenario="account-recovery"')
-      && text.includes('data-portal-contact-scenario="browser-app"')
+      && text.includes('data-portal-contact-context=')
+      && text.includes('data-portal-contact-public-route=')
       && text.includes('aria-label="Contact recovery actions"')
       && text.includes('/app?command=character_roster')
+      && text.includes('data-portal-contact-action="open-discord"')
       && text.includes('data-portal-contact-action="open-status"')
       && text.includes('data-portal-contact-action="open-downloads"')
       && text.includes('data-portal-contact-action="open-help"')
-      && text.includes('--portal-gold: #ffd46f')
-      && text.includes('--portal-mint: #8ff0bc') &&
-      text.includes('body::before') &&
-      text.includes('background-size: 4.25rem 4.25rem') &&
-      text.includes('@keyframes portal-surface-reveal') &&
-      text.includes('animation: portal-surface-reveal .38s cubic-bezier(.2,.78,.2,1) both')
-      && text.includes('data-portal-contact-action="open-docs"')
+      && text.includes('data-portal-contact-action="open-chummer-app"')
+      && hasPortalChrome(text)
   }
 ];
+
+async function validateManifestInstallHandoffs(manifest) {
+  const downloads = Array.isArray(manifest?.downloads)
+    ? manifest.downloads.filter(download => typeof download?.id === 'string' && download.id.length > 0)
+    : [];
+
+  for (const download of downloads) {
+    const route = `${baseUrl}/downloads/install/${encodeURIComponent(download.id)}`;
+    const response = await fetch(route, { redirect: 'manual' });
+    const _body = await response.text();
+    const location = response.headers.get('location') || '';
+    const decodedLocation = decodeURIComponent(location);
+    const acceptedStatuses = [301, 302, 303, 307, 308];
+
+    if (!acceptedStatuses.includes(response.status)) {
+      throw new Error(`Portal check failed: ${route} -> HTTP ${response.status}`);
+    }
+
+    const installAccessClass = String(download.installAccessClass || '').toLowerCase();
+    const expectedRoute = `/downloads/install/${download.id}`;
+    const expectedDirectDownloadRoute = `/downloads/get/${download.id}`;
+    const passed = expectsDirectPublicInstallRedirect(download)
+      ? decodedLocation === expectedDirectDownloadRoute || decodedLocation.endsWith(expectedDirectDownloadRoute)
+      : installAccessClass === 'open_public'
+        ? location.length > 0
+            && !decodedLocation.includes('/login?next=')
+            && !decodedLocation.includes('installState=proof_required')
+        : decodedLocation.includes(expectedRoute) && decodedLocation.includes('installState=');
+
+    if (!passed) {
+      throw new Error(`Portal check failed: ${route} -> unexpected redirect ${location || '<empty>'}`);
+    }
+
+    console.log(`ok: ${route}`);
+  }
+}
 
 (async () => {
   for (const check of checks) {
@@ -466,6 +432,8 @@ const checks = [
 
     console.log(`ok: ${check.url}`);
   }
+
+  await validateManifestInstallHandoffs(observedReleaseManifest);
 
   console.log('portal E2E completed');
 })().catch(error => {

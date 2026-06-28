@@ -219,6 +219,7 @@ public sealed class DesktopExecutableGateComplianceTests
         StringAssert.Contains(goldGateText, "def classify_workbench_proof_shape(payload: dict) -> str:");
         StringAssert.Contains(goldGateText, "\"blazor_public_edge_workbench_proof_shape\"] = public_edge_workbench_proof_shape");
         StringAssert.Contains(goldGateText, "\"hosted_route_entry_proof_shape\"] = public_edge_workbench_proof_shape");
+        StringAssert.Contains(goldGateText, "repo_root=\"$(cd \"$(dirname \"${BASH_SOURCE[0]}\")/../../..\" && pwd)\"");
 
         StringAssert.Contains(b14Text, "\"proof_shape_known\": str(public_edge_workbench_receipt.get(\"proof_shape\") or \"\").strip() in {\"core\", \"expanded\"}");
     }
@@ -533,6 +534,37 @@ public sealed class DesktopExecutableGateComplianceTests
         StringAssert.Contains(uiGoldText, "\"blazor_public_edge_execution_verifier\": str(repo / \"scripts\" / \"verify_blazor_public_edge_execution_proof.py\")");
 
         StringAssert.Contains(verifyText, "bash scripts/ai/milestones/blazor-public-edge-execution-proof-check.sh");
+    }
+
+    [TestMethod]
+    public void Hosted_public_edge_execution_runner_retries_transient_browser_navigation_abortions()
+    {
+        string repoRoot = FindRepoRoot();
+        string runnerPath = Path.Combine(repoRoot, "scripts", "e2e-public-edge-playwright.cjs");
+        string runnerText = File.ReadAllText(runnerPath);
+
+        StringAssert.Contains(runnerText, "const routeNavigationRetryAttempts = Number(process.env.CHUMMER_PUBLIC_EDGE_ROUTE_RETRY_ATTEMPTS || '3');");
+        StringAssert.Contains(runnerText, "const routeNavigationRetryDelayMs = Number(process.env.CHUMMER_PUBLIC_EDGE_ROUTE_RETRY_DELAY_MS || '1500');");
+        StringAssert.Contains(runnerText, "function shouldRetryRouteNavigation(error)");
+        StringAssert.Contains(runnerText, "message.includes('ERR_ABORTED') || message.includes('Timeout')");
+        StringAssert.Contains(runnerText, "await page.goto('about:blank', { waitUntil: 'load', timeout: 5000 });");
+        StringAssert.Contains(runnerText, "await page.waitForTimeout(routeNavigationRetryDelayMs);");
+        StringAssert.Contains(runnerText, "waitUntil: 'commit'");
+    }
+
+    [TestMethod]
+    public void Hosted_public_edge_execution_runner_uses_recovery_route_markers_instead_of_hidden_visual_strip_copy()
+    {
+        string repoRoot = FindRepoRoot();
+        string runnerPath = Path.Combine(repoRoot, "scripts", "e2e-public-edge-playwright.cjs");
+        string runnerText = File.ReadAllText(runnerPath);
+
+        StringAssert.Contains(runnerText, "async function readRecoveryActions(page)");
+        StringAssert.Contains(runnerText, "[data-workbench-recovery-action]");
+        StringAssert.Contains(runnerText, "[data-workbench-recovery-workspace]");
+        StringAssert.Contains(runnerText, "missing build-lab recovery action");
+        StringAssert.Contains(runnerText, "expected build-lab href to target restored workspace build-lab lane");
+        StringAssert.Contains(runnerText, "missing restore-workspace recovery action");
     }
 
     [TestMethod]

@@ -1,12 +1,12 @@
 {
-  "generatedAt": "2026-06-24T17:51:35Z",
+  "generatedAt": "2026-06-27T18:41:15Z",
   "status": "pass",
   "unresolved": [],
   "contract_name": "chummer6-ui.next90_m141_ui_direct_import_route_proof",
   "channelId": "public_stable",
   "channel": "public_stable",
-  "releaseVersion": "run-20260623-102621",
-  "version": "run-20260623-102621",
+  "releaseVersion": "run-20260627-005402",
+  "version": "run-20260627-005402",
   "evidence": {
     "packageId": "next90-m141-ui-capture-direct-screenshot-and-runtime-proof-for-translator-xml-amendment",
     "title": "Capture direct screenshot and runtime proof for translator, XML amendment editor, Hero Lab importer, and adjacent import-oracle routes.",
@@ -69,16 +69,16 @@
     },
     "flagshipFrontierId": 1922169755,
     "flagshipFrontierChecks": {
-      "frontier_artifact_present": true,
+      "frontier_artifact_present": false,
       "frontier_artifact_path_under_root": true,
       "frontier_artifact_uses_shard_generated_yaml": true,
-      "frontier_id_present": true,
-      "queue_package_present": true,
-      "title_present": true,
-      "owned_surface_present": true,
-      "allowed_paths_exact": true,
+      "frontier_id_present": false,
+      "queue_package_present": false,
+      "title_present": false,
+      "owned_surface_present": false,
+      "allowed_paths_exact": false,
       "repo_local_completion_ready": false,
-      "flagship_product_frontier_active": true,
+      "flagship_product_frontier_active": false,
       "worker_safe": true
     },
     "sourceChecks": {
@@ -148,8 +148,8 @@
       "screenshotReviewGate": "/docker/chummercomplete/chummer6-ui/.codex-studio/published/CHUMMER5A_SCREENSHOT_REVIEW_GATE.generated.json",
       "veteranTaskTimeGate": "/docker/chummercomplete/chummer6-ui/.codex-studio/published/VETERAN_TASK_TIME_EVIDENCE_GATE.generated.json",
       "uiFlagshipReleaseGate": "/docker/chummercomplete/chummer6-ui/.codex-studio/published/UI_FLAGSHIP_RELEASE_GATE.generated.json",
-      "releaseChannel": "/docker/chummercomplete/chummer-hub-registry/.codex-studio/published/RELEASE_CHANNEL.generated.json",
-      "flagshipFrontier": "/docker/fleet/.codex-studio/published/FULL_PRODUCT_FRONTIER.generated.yaml"
+      "releaseChannel": "/docker/chummercomplete/chummer6-ui/.tmp/verify-release-channel/RELEASE_CHANNEL.generated.json",
+      "flagshipFrontier": "/docker/chummercomplete/fleet/.codex-studio/published/full-product-frontiers/shard-1.generated.yaml"
     },
     "receiptChecks": {
       "release_channel_is_not_preview": true,

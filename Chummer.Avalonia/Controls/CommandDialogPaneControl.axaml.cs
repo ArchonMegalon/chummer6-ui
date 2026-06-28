@@ -455,8 +455,8 @@ public partial class CommandDialogPaneControl : UserControl
         return new Border
         {
             BorderThickness = new Thickness(1),
-            BorderBrush = ResolveThemeBrush("ChummerShellBorderBrush", "#B7C4D5"),
-            Background = ResolveThemeBrush("ChummerShellSelectionToolbarBrush", "#EEF2F6"),
+            BorderBrush = DesktopShellTheme.ResolveBorderBrush(),
+            Background = DesktopShellTheme.ResolveSelectionToolbarBrush(),
             CornerRadius = default,
             Padding = new Thickness(6, 5),
             Child = body
@@ -477,8 +477,8 @@ public partial class CommandDialogPaneControl : UserControl
         return new Border
         {
             BorderThickness = new Thickness(1),
-            BorderBrush = ResolveThemeBrush("ChummerShellBorderBrush", "#B7C4D5"),
-            Background = ResolveThemeBrush("ChummerShellSelectionPanelBrush", "#F8FAFC"),
+            BorderBrush = DesktopShellTheme.ResolveBorderBrush(),
+            Background = DesktopShellTheme.ResolveSelectionPanelBrush(),
             CornerRadius = default,
             Padding = new Thickness(6, 5),
             MinHeight = minHeight,
@@ -490,7 +490,7 @@ public partial class CommandDialogPaneControl : UserControl
     {
         return new Border
         {
-            BorderBrush = ResolveThemeBrush("ChummerShellBorderBrush", "#B5C0CF"),
+            BorderBrush = DesktopShellTheme.ResolveBorderBrush(),
             BorderThickness = new Thickness(0, 0, 0, 1),
             Padding = new Thickness(0, 0, 0, 4),
             Child = new TextBlock
@@ -643,7 +643,7 @@ public partial class CommandDialogPaneControl : UserControl
         {
             Text = count.ToString(CultureInfo.InvariantCulture),
             FontSize = 12,
-            Foreground = ResolveThemeBrush("ChummerShellTextMutedBrush", "#53657D"),
+            Foreground = DesktopShellTheme.ResolveTextMutedBrush(),
             VerticalAlignment = global::Avalonia.Layout.VerticalAlignment.Center
         };
 
@@ -654,7 +654,7 @@ public partial class CommandDialogPaneControl : UserControl
 
         return new Border
         {
-            BorderBrush = ResolveThemeBrush("ChummerShellBorderBrush", "#B5C0CF"),
+            BorderBrush = DesktopShellTheme.ResolveBorderBrush(),
             BorderThickness = new Thickness(0, 0, 0, 1),
             Padding = new Thickness(0, 0, 0, 4),
             Child = header
@@ -1098,8 +1098,8 @@ public partial class CommandDialogPaneControl : UserControl
             Border panel = new()
             {
                 BorderThickness = new Thickness(1),
-                BorderBrush = ResolveThemeBrush("ChummerShellBorderBrush", "#B5C0CF"),
-                Background = ResolveThemeBrush("ChummerShellSurfaceBrush", "#FBFCFE"),
+                BorderBrush = DesktopShellTheme.ResolveBorderBrush(),
+                Background = DesktopShellTheme.ResolveSurfaceBrush(),
                 Padding = new Thickness(6, 4),
                 MinHeight = string.Equals(field.VisualKind, DesktopDialogFieldVisualKinds.List, StringComparison.Ordinal)
                     || string.Equals(field.VisualKind, DesktopDialogFieldVisualKinds.Tree, StringComparison.Ordinal)
@@ -1183,8 +1183,8 @@ public partial class CommandDialogPaneControl : UserControl
             tabs.Children.Add(new Border
             {
                 BorderThickness = new Thickness(1),
-                BorderBrush = ResolveThemeBrush("ChummerShellBorderBrush", "#B5C0CF"),
-                Background = ResolveThemeBrush("ChummerShellSurfaceBrush", "#FBFCFE"),
+                BorderBrush = DesktopShellTheme.ResolveBorderBrush(),
+                Background = DesktopShellTheme.ResolveSurfaceBrush(),
                 Margin = new Thickness(0, 0, 4, 4),
                 Padding = new Thickness(8, 3),
                 Child = new TextBlock { Text = line }
@@ -1233,8 +1233,8 @@ public partial class CommandDialogPaneControl : UserControl
         panel.Children.Add(new Border
         {
             BorderThickness = new Thickness(1),
-            BorderBrush = ResolveThemeBrush("ChummerShellBorderBrush", "#B5C0CF"),
-            Background = ResolveThemeBrush("ChummerShellSurfaceBrush", "#FBFCFE"),
+            BorderBrush = DesktopShellTheme.ResolveBorderBrush(),
+            Background = DesktopShellTheme.ResolveSurfaceBrush(),
             MinHeight = 136,
             Child = previewControl
         });
@@ -1302,8 +1302,8 @@ public partial class CommandDialogPaneControl : UserControl
         return new Border
         {
             BorderThickness = new Thickness(1),
-            BorderBrush = ResolveThemeBrush("ChummerShellBorderBrush", "#B5C0CF"),
-            Background = ResolveThemeBrush("ChummerShellSurfaceBrush", "#FBFCFE"),
+            BorderBrush = DesktopShellTheme.ResolveBorderBrush(),
+            Background = DesktopShellTheme.ResolveSurfaceBrush(),
             Padding = new Thickness(6, 4),
             Child = rows
         };
@@ -1314,8 +1314,8 @@ public partial class CommandDialogPaneControl : UserControl
         return new Border
         {
             BorderThickness = new Thickness(1),
-            BorderBrush = ResolveThemeBrush("ChummerShellBorderBrush", "#B5C0CF"),
-            Background = ResolveThemeBrush("ChummerShellSurfaceBrush", "#FBFCFE"),
+            BorderBrush = DesktopShellTheme.ResolveBorderBrush(),
+            Background = DesktopShellTheme.ResolveSurfaceBrush(),
             Padding = new Thickness(6, 4),
             Child = new TextBlock
             {
@@ -1330,8 +1330,8 @@ public partial class CommandDialogPaneControl : UserControl
         return new Border
         {
             BorderThickness = new Thickness(1),
-            BorderBrush = ResolveThemeBrush("ChummerShellBorderBrush", "#B5C0CF"),
-            Background = ResolveThemeBrush("ChummerShellSurfaceBrush", "#FBFCFE"),
+            BorderBrush = DesktopShellTheme.ResolveBorderBrush(),
+            Background = DesktopShellTheme.ResolveSurfaceBrush(),
             Padding = new Thickness(6, 4),
             MinHeight = minHeight,
             Child = new TextBlock

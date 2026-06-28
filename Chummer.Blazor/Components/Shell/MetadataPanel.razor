@@ -1,29 +1,29 @@
 @namespace Chummer.Blazor.Components.Shell
 <section class="panel metadata">
-    <h2>@DossierMetadataHeading</h2>
+    <h2>@RunnerMetadataHeading</h2>
     <div class="summary-grid">
         <label>Name <input value="@MetadataName" @oninput="OnMetadataNameChanged" /></label>
         <label>Alias <input value="@MetadataAlias" @oninput="OnMetadataAliasChanged" /></label>
-        <label>@DossierIdLabel <input value="@(State.WorkspaceId?.Value ?? string.Empty)" readonly /></label>
+        <label>@RunnerIdLabel <input value="@(State.WorkspaceId?.Value ?? string.Empty)" readonly /></label>
         <label class="wide">Notes <textarea rows="3" @oninput="OnMetadataNotesChanged">@MetadataNotes</textarea></label>
     </div>
     <div class="actions">
-        <button @onclick="UpdateMetadataRequested" disabled="@(State.IsBusy || State.WorkspaceId is null)">@UpdateDossierMetadataLabel</button>
-        <button @onclick="SaveRequested" disabled="@(State.IsBusy || State.WorkspaceId is null)">@SaveDossierLabel</button>
-        <button @onclick="LoadWorkspaceRequested" disabled="@State.IsBusy || string.IsNullOrWhiteSpace(LoadWorkspaceId)">@LoadDossierLabel</button>
+        <button @onclick="UpdateMetadataRequested" disabled="@(State.IsBusy || State.WorkspaceId is null)">@UpdateRunnerMetadataLabel</button>
+        <button @onclick="SaveRequested" disabled="@(State.IsBusy || State.WorkspaceId is null)">@SaveRunnerLabel</button>
+        <button @onclick="LoadWorkspaceRequested" disabled="@State.IsBusy || string.IsNullOrWhiteSpace(LoadWorkspaceId)">@LoadRunnerLabel</button>
     </div>
     <div class="inline-fields">
-        <input value="@LoadWorkspaceId" placeholder="@DossierIdPlaceholder" @oninput="OnLoadWorkspaceIdChanged" />
+        <input value="@LoadWorkspaceId" placeholder="@RunnerIdPlaceholder" @oninput="OnLoadWorkspaceIdChanged" />
     </div>
 </section>
 
 @code {
-    private const string DossierIdLabel = "Dossier ID";
-    private const string DossierMetadataHeading = "Dossier Metadata";
-    private const string UpdateDossierMetadataLabel = "Update Dossier Metadata";
-    private const string SaveDossierLabel = "Save Dossier";
-    private const string LoadDossierLabel = "Load Dossier";
-    private const string DossierIdPlaceholder = "Dossier id";
+    private const string RunnerIdLabel = "Runner ID";
+    private const string RunnerMetadataHeading = "Runner Metadata";
+    private const string UpdateRunnerMetadataLabel = "Update Runner Metadata";
+    private const string SaveRunnerLabel = "Save Runner";
+    private const string LoadRunnerLabel = "Load Runner";
+    private const string RunnerIdPlaceholder = "Runner id";
 
     [Parameter]
     public CharacterOverviewState State { get; set; } = CharacterOverviewState.Empty;

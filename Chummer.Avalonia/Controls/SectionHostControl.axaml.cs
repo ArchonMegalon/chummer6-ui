@@ -302,7 +302,7 @@ public partial class SectionHostControl : UserControl
 
     private Control CreateAttributeParityRow(AttributeParityRowState row)
     {
-        IBrush rowForeground = DesktopShellTheme.ResolveThemeBrush("ChummerShellForegroundBrush", "#111827");
+        IBrush rowForeground = DesktopShellTheme.ResolveForegroundBrush();
         Grid grid = new()
         {
             Name = $"AttributeParityRow_{ShortAttributeLabel(row.AttributeName)}",
@@ -499,9 +499,9 @@ public partial class SectionHostControl : UserControl
         out Action<int> setValue)
     {
         int current = Math.Clamp(value, minimum, maximum);
-        IBrush foreground = DesktopShellTheme.ResolveThemeBrush("ChummerShellForegroundBrush", "#111827");
-        IBrush surface = DesktopShellTheme.ResolveThemeBrush("ChummerShellSurfaceBrush", "#FFFFFF");
-        IBrush border = DesktopShellTheme.ResolveThemeBrush("ChummerShellBorderBrush", "#CBD5E1");
+        IBrush foreground = DesktopShellTheme.ResolveForegroundBrush();
+        IBrush surface = DesktopShellTheme.ResolveSurfaceBrush();
+        IBrush border = DesktopShellTheme.ResolveBorderBrush();
         Grid stepper = new()
         {
             Name = name,
@@ -2338,10 +2338,10 @@ public partial class SectionHostControl : UserControl
             Padding = emphasizeValue ? new Thickness(3d, 2d) : new Thickness(4d, 3d),
             MinWidth = emphasizeValue ? 38d : 76d,
             MinHeight = emphasizeValue ? 28d : 32d,
-            Background = DesktopShellTheme.ResolveThemeBrush(
-                emphasizeValue ? "ChummerShellSelectionToolbarBrush" : "ChummerShellSelectionPanelBrush",
-                emphasizeValue ? "#EEF2F6" : "#F8FAFC"),
-            BorderBrush = DesktopShellTheme.ResolveThemeBrush("ChummerShellBorderBrush", "#B5C0CF"),
+            Background = emphasizeValue
+                ? DesktopShellTheme.ResolveSelectionToolbarBrush()
+                : DesktopShellTheme.ResolveSelectionPanelBrush(),
+            BorderBrush = DesktopShellTheme.ResolveBorderBrush(),
             BorderThickness = new Thickness(1d)
         };
 

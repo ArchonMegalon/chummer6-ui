@@ -2490,7 +2490,7 @@ public sealed class AvaloniaFlagshipUiGateTests
                         StringComparison.Ordinal));
                 AssertDialogContainsAll(
                     harness,
-                    "Open Dossier",
+                    "Open Runner",
                     GetVeteranCertificationReviewStep("import").RequiredDialogMarkers);
                 harness.InvokeDialogAction("cancel");
                 harness.WaitUntil(() =>
@@ -4652,76 +4652,66 @@ public sealed class AvaloniaFlagshipUiGateTests
     [TestMethod]
     public void Runtime_backed_file_menu_preserves_working_open_save_import_routes()
     {
-        WithHarness(harness =>
+        Func<global::Avalonia.Platform.Storage.IStorageProvider, string, CancellationToken, Task<DesktopImportFileResult>>? originalImportOverride =
+            MainWindowDesktopFileCoordinator.OpenImportFileOverride;
+        List<string> pickerTitles = [];
+
+        try
         {
-            harness.WaitForReady();
+            MainWindowDesktopFileCoordinator.OpenImportFileOverride =
+                (_, title, _) =>
+                {
+                    pickerTitles.Add(title);
+                    return Task.FromResult(
+                        new DesktopImportFileResult(
+                            DesktopFileOperationOutcome.Cancelled,
+                            Payload: null,
+                            SourceLabel: null));
+                };
 
-            OpenMenuUntilCommandVisible(harness, "FileMenuButton", "open_character");
-            Assert.IsTrue(IsCommandVisibleInCommandList(harness, "open_for_printing"));
-            Assert.IsTrue(IsCommandVisibleInCommandList(harness, "open_for_export"));
+            WithRuntimeHarness(harness =>
+            {
+                harness.WaitForReady();
 
-            harness.Presenter.ExecuteCommandAsync("open_for_printing", CancellationToken.None).GetAwaiter().GetResult();
-            harness.WaitUntil(() =>
-                string.Equals(
-                    harness.FindControlOrDefault<TextBlock>("DialogTitleText")?.Text,
-                    "Open for Printing",
-                    StringComparison.Ordinal));
-            AssertDialogContainsAll(
-                harness,
-                "Open for Printing",
-                "Import Ruleset",
-                "Import Source",
-                "Review imported summary");
-            harness.InvokeDialogAction("cancel");
-            harness.WaitUntil(() =>
-                !string.Equals(
-                    harness.FindControlOrDefault<TextBlock>("DialogTitleText")?.Text,
-                    "Open for Printing",
-                    StringComparison.Ordinal));
-            harness.WaitUntil(() => !harness.State.IsBusy && harness.FindControl<MenuItem>("FileMenuButton").IsEnabled);
+                OpenMenuUntilCommandVisible(harness, "FileMenuButton", "open_character");
+                Assert.IsTrue(IsCommandVisibleInCommandList(harness, "open_for_printing"));
+                Assert.IsTrue(IsCommandVisibleInCommandList(harness, "open_for_export"));
 
-            OpenMenuUntilCommandVisible(harness, "FileMenuButton", "open_for_export");
-            harness.Presenter.ExecuteCommandAsync("open_for_export", CancellationToken.None).GetAwaiter().GetResult();
-            harness.WaitUntil(() =>
-                string.Equals(
-                    harness.FindControlOrDefault<TextBlock>("DialogTitleText")?.Text,
-                    "Open for Export",
-                    StringComparison.Ordinal));
-            AssertDialogContainsAll(
-                harness,
-                "Open for Export",
-                "Import Ruleset",
-                "Import Source",
-                "Review imported summary");
-            harness.InvokeDialogAction("cancel");
-            harness.WaitUntil(() =>
-                !string.Equals(
-                    harness.FindControlOrDefault<TextBlock>("DialogTitleText")?.Text,
-                    "Open for Export",
-                    StringComparison.Ordinal));
-            harness.WaitUntil(() => !harness.State.IsBusy && harness.FindControl<MenuItem>("FileMenuButton").IsEnabled);
+                ExecuteRuntimeHostMenuCommand(harness, "open_for_printing");
+                harness.WaitUntil(
+                    () => pickerTitles.Count >= 1
+                        && harness.Window.PeekDialogWindowForTesting() is null,
+                    context: "cancelled print-import picker must return to the runtime-backed shell");
 
-            OpenMenuUntilCommandVisible(harness, "FileMenuButton", "open_character");
-            harness.Presenter.ExecuteCommandAsync("open_character", CancellationToken.None).GetAwaiter().GetResult();
-            harness.WaitUntil(() =>
-                string.Equals(
-                    harness.FindControlOrDefault<TextBlock>("DialogTitleText")?.Text,
-                    "Open Character",
-                    StringComparison.Ordinal));
-            AssertDialogContainsAll(
-                harness,
-                "Open Character",
-                "Import Ruleset",
-                "Import Source",
-                "Review imported summary");
-            harness.InvokeDialogAction("cancel");
-            harness.WaitUntil(() =>
-                !string.Equals(
-                    harness.FindControlOrDefault<TextBlock>("DialogTitleText")?.Text,
-                    "Open Character",
-                    StringComparison.Ordinal));
-            harness.WaitUntil(() => !harness.State.IsBusy && harness.FindControl<MenuItem>("FileMenuButton").IsEnabled);
-        });
+                OpenMenuUntilCommandVisible(harness, "FileMenuButton", "open_for_export");
+                ExecuteRuntimeHostMenuCommand(harness, "open_for_export");
+                harness.WaitUntil(
+                    () => pickerTitles.Count >= 2
+                        && harness.Window.PeekDialogWindowForTesting() is null,
+                    context: "cancelled export-import picker must return to the runtime-backed shell");
+
+                OpenMenuUntilCommandVisible(harness, "FileMenuButton", "open_character");
+                ExecuteRuntimeHostMenuCommand(harness, "open_character");
+                harness.WaitUntil(
+                    () => pickerTitles.Count >= 3
+                        && harness.Window.PeekDialogWindowForTesting() is null,
+                    context: "cancelled open-character picker must return to the runtime-backed shell");
+            });
+        }
+        finally
+        {
+            MainWindowDesktopFileCoordinator.OpenImportFileOverride = originalImportOverride;
+        }
+
+        CollectionAssert.AreEqual(
+            new[]
+            {
+                "Open Character for Printing",
+                "Open Character for Export",
+                "Open Character File",
+            },
+            pickerTitles.ToArray(),
+            "Runtime-backed file routes must invoke the native picker lane with the expected titles.");
     }
 
     [TestMethod]
@@ -7251,6 +7241,20 @@ public sealed class AvaloniaFlagshipUiGateTests
         harness.Click(menuButtonName);
         harness.WaitUntil(() => IsAnyCommandVisibleInCommandList(harness));
         harness.ClickMenuCommand(commandId);
+    }
+
+    private static void ExecuteRuntimeHostMenuCommand(RuntimeFlagshipUiHarness harness, string commandId)
+    {
+        MethodInfo? method = typeof(MainWindow).GetMethod(
+            "TryHandleHostCommandAsync",
+            BindingFlags.Instance | BindingFlags.NonPublic);
+        Assert.IsNotNull(method, "MainWindow must expose the runtime host-command handler.");
+
+        Task<bool>? task = method!.Invoke(harness.Window, [commandId]) as Task<bool>;
+        Assert.IsNotNull(task, $"Runtime host-command handler did not return a task for '{commandId}'.");
+        bool handled = task!.GetAwaiter().GetResult();
+        Assert.IsTrue(handled, $"Runtime host-command handler must claim '{commandId}'.");
+        harness.AdvanceFrames(6);
     }
 
     private static string ResolveSourceFile(params string[] segments)

@@ -134,6 +134,7 @@ public sealed class CatalogOnlyRulesetShellCatalogResolverTests
 
     private static readonly string[] ExpectedTabIds =
     [
+        "tab-create",
         "tab-info",
         "tab-attributes",
         "tab-skills",
@@ -159,6 +160,7 @@ public sealed class CatalogOnlyRulesetShellCatalogResolverTests
 
     private static readonly TabActionExpectation[] ExpectedTabActionInventory =
     [
+        new("tab-create", ["tab-create.build-lab"]),
         new("tab-info", ["tab-info.summary", "tab-info.validate", "tab-info.profile", "tab-info.rules", "tab-info.attributes"]),
         new("tab-skills", ["tab-skills.skills"]),
         new("tab-qualities", ["tab-qualities.qualities"]),

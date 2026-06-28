@@ -30,8 +30,10 @@ def test_windows_visual_proof_capture_script_writes_gate_compatible_receipt() ->
     assert "chummer6-ui.windows_installer_visual_proof" in script
     assert "WINDOWS_INSTALLER_VISUAL_PROOF.generated.json" in script
     assert "Resolve-DefaultReleaseChannelPath" in script
+    assert 'Join-Path $RepoRoot ".tmp\\verify-release-channel\\RELEASE_CHANNEL.generated.json"' in script
     assert "Resolve-InstallerFileNameFromReleaseChannel" in script
     assert 'Join-Path $releaseChannelDirectory "files"' in script
+    assert 'Join-Path $outputDirectory "windows-installer-visual-proof"' in script
     assert 'Join-Path $RepoRoot "..\\chummer.run-services\\Chummer.Portal\\downloads\\RELEASE_CHANNEL.generated.json"' in script
     assert "System.Windows.Forms.SystemInformation]::VirtualScreen" in script
     assert 'role = "progress"' in script
@@ -46,9 +48,24 @@ def test_desktop_release_pipeline_documents_windows_visual_capture_without_githu
     doc = (REPO_ROOT / "docs" / "DESKTOP_RELEASE_PIPELINE.md").read_text(encoding="utf-8")
     assert "capture-windows-installer-visual-proof.ps1" in doc
     assert "WINDOWS_INSTALLER_VISUAL_PROOF.generated.json" in doc
+    assert ".tmp\\verify-release-channel\\RELEASE_CHANNEL.generated.json" in doc
+    assert "windows-installer-visual-proof" in doc
     assert "release-manifest shelf" in doc
     assert "host-specific gate" in doc
     assert "GitHub Actions" not in doc
+
+
+def test_native_windows_bootstrap_builder_stages_pinned_windows_curl_helper() -> None:
+    script = (REPO_ROOT / "scripts" / "build-native-windows-bootstrap-installer.sh").read_text(encoding="utf-8")
+    assert "CHUMMER_WINDOWS_CURL_URL" in script
+    assert "CHUMMER_WINDOWS_CURL_SHA256" in script
+    assert 'mkdir -p "$STAGE_DIR/curl"' in script
+    assert 'curl -L --fail --retry 5 --retry-delay 2 -o "$tmpdir/curl-win64.zip"' in script
+    assert 'sha256sum -c -' in script
+    assert '7z e -aoa -o/work/curl "$tmpdir/curl-win64.zip"' in script
+    assert '"*/bin/curl.exe"' in script
+    assert '"*/bin/libcurl-x64.dll"' in script
+    assert '"*/bin/curl-ca-bundle.crt"' in script
 
 
 def test_windows_bootstrap_build_fails_from_measured_size_gate_instead_of_hardcoded_policy(tmp_path: Path) -> None:
@@ -78,8 +95,16 @@ def test_windows_bootstrap_build_fails_from_measured_size_gate_instead_of_hardco
         },
     )
 
-    assert result.returncode != 0
+    assert result.returncode == 0, f"{result.stdout}\n{result.stderr}"
+    installer_path = dist_dir / "chummer-avalonia-win-x64-installer.exe"
+    payload_path = dist_dir / "files" / "chummer-avalonia-win-x64-payload.zip"
+    payload_sidecar_path = dist_dir / "files" / "chummer-avalonia-win-x64-payload.zip.json"
+
+    assert installer_path.is_file()
+    assert payload_path.is_file()
+    assert payload_sidecar_path.is_file()
+    assert installer_path.stat().st_size < 15 * 1024 * 1024
+
     combined_output = f"{result.stdout}\n{result.stderr}"
-    assert "bootstrap installer is too large:" in combined_output
-    assert "Windows bootstrap installer proof failed." in combined_output
+    assert "built installer" in combined_output
     assert "blocked until the native bootstrap builder is wired" not in combined_output

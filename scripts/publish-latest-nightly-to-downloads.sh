@@ -17,11 +17,97 @@ PUBLIC_RELEASE_CHANNEL="${CHUMMER_PUBLIC_DEFAULT_RELEASE_CHANNEL:-public_stable}
 DAILY_PUBLISH_TIMEZONE="${CHUMMER_DAILY_NIGHTLY_PUBLISH_TIMEZONE:-Europe/Vienna}"
 DAILY_PUBLISH_HOUR="${CHUMMER_DAILY_NIGHTLY_PUBLISH_HOUR:-8}"
 FORCE_NIGHTLY_PUBLISH="${CHUMMER_FORCE_NIGHTLY_PUBLISH:-0}"
+PUBLIC_EDGE_VERIFY_BASE_URL="${CHUMMER_PUBLIC_EDGE_VERIFY_BASE_URL:-http://127.0.0.1:${CHUMMER_PUBLIC_EDGE_PORT:-8091}}"
+PUBLIC_EDGE_VERIFY_HOST="${CHUMMER_PUBLIC_EDGE_VERIFY_HOST:-chummer.run}"
+PUBLIC_EDGE_VERIFY_PROTO="${CHUMMER_PUBLIC_EDGE_VERIFY_PROTO:-https}"
 
 to_bool() {
   local value
   value="$(echo "${1:-}" | tr '[:upper:]' '[:lower:]')"
   [[ "$value" == "1" || "$value" == "true" || "$value" == "yes" || "$value" == "on" ]]
+}
+
+refresh_release_build_handoff() {
+  local stage_dir="$1"
+  local handoff_script="${CHUMMER_RELEASE_BUILD_HANDOFF_SCRIPT_PATH:-$SCRIPT_DIR/materialize_release_candidate_handoff.py}"
+
+  if [[ ! -f "$handoff_script" ]]; then
+    echo "Missing release build handoff materializer: $handoff_script" >&2
+    exit 1
+  fi
+
+  if ! python3 "$handoff_script" "$stage_dir" >/dev/null; then
+    echo "Failed to refresh release build handoff for nightly stage: $stage_dir" >&2
+    exit 1
+  fi
+
+  if [[ ! -f "$stage_dir/RELEASE_BUILD_HANDOFF.generated.json" ]]; then
+    echo "Nightly stage is missing RELEASE_BUILD_HANDOFF.generated.json after refresh: $stage_dir" >&2
+    exit 1
+  fi
+}
+
+emit_windows_visual_proof_handoff_guidance() {
+  local stage_dir="$1"
+  python3 - "$stage_dir" <<'PY' || true
+from __future__ import annotations
+
+import json
+import sys
+from pathlib import Path
+
+
+def load_json(path: Path) -> dict:
+    try:
+        payload = json.loads(path.read_text(encoding="utf-8-sig"))
+    except Exception:
+        return {}
+    return payload if isinstance(payload, dict) else {}
+
+
+def normalize(value: object) -> str:
+    return str(value or "").strip()
+
+
+stage_dir = Path(sys.argv[1])
+handoff_payload = {}
+handoff_path = None
+
+direct_path = stage_dir / "WINDOWS_INSTALLER_VISUAL_PROOF_HANDOFF.generated.json"
+if direct_path.is_file():
+    handoff_payload = load_json(direct_path)
+    handoff_path = direct_path
+
+if not handoff_payload:
+    release_handoff_path = stage_dir / "RELEASE_BUILD_HANDOFF.generated.json"
+    if release_handoff_path.is_file():
+        release_handoff = load_json(release_handoff_path)
+        candidate = release_handoff.get("windows_visual_proof_handoff")
+        if isinstance(candidate, dict):
+            handoff_payload = candidate
+            candidate_path = normalize(candidate.get("json_path"))
+            if candidate_path:
+                handoff_path = Path(candidate_path)
+
+if not handoff_payload:
+    raise SystemExit(0)
+
+status = normalize(handoff_payload.get("status"))
+summary = normalize(handoff_payload.get("summary"))
+next_actions = handoff_payload.get("next_actions") if isinstance(handoff_payload.get("next_actions"), list) else []
+json_path = normalize(handoff_payload.get("json_path")) or str(handoff_path or "")
+
+if json_path:
+    print(f"Windows visual proof handoff: {json_path}", file=sys.stderr)
+if status:
+    print(f"Windows visual proof status: {status}", file=sys.stderr)
+if summary:
+    print(f"Windows visual proof summary: {summary}", file=sys.stderr)
+if next_actions:
+    first_action = normalize(next_actions[0])
+    if first_action:
+        print(f"Windows visual proof next action: {first_action}", file=sys.stderr)
+PY
 }
 
 verify_latest_stage_windows_payload_gate() {
@@ -58,6 +144,7 @@ verify_latest_stage_windows_payload_gate() {
 verify_latest_stage_windows_startup_smoke_gate() {
   local stage_dir="$1"
   local files_dir="$stage_dir/files"
+  local releases_manifest="$stage_dir/releases.json"
   local release_channel_manifest="$stage_dir/RELEASE_CHANNEL.generated.json"
   local startup_smoke_dir="$stage_dir/startup-smoke"
 
@@ -66,68 +153,131 @@ verify_latest_stage_windows_startup_smoke_gate() {
     exit 1
   fi
 
-  if ! python3 - "$release_channel_manifest" "$startup_smoke_dir" "$files_dir" <<'PY'
-import hashlib
+  if ! python3 "$SCRIPT_DIR/verify-windows-bootstrap-startup-smoke.py" \
+    --release-channel "$release_channel_manifest" \
+    --downloads-manifest "$releases_manifest" \
+    --startup-smoke-dir "$startup_smoke_dir" \
+    --files-dir "$files_dir"
+  then
+    echo "Nightly stage failed Windows installer startup smoke preflight. Build and smoke-test a fresh stage before publishing." >&2
+    exit 1
+  fi
+}
+
+verify_latest_stage_windows_exit_gate() {
+  local stage_dir="$1"
+  local files_dir="$stage_dir/files"
+  local release_channel_manifest="$stage_dir/RELEASE_CHANNEL.generated.json"
+  local visual_proof_path="${CHUMMER_WINDOWS_INSTALLER_VISUAL_PROOF_PATH:-$stage_dir/WINDOWS_INSTALLER_VISUAL_PROOF.generated.json}"
+  local gate_output
+  gate_output="$(mktemp)"
+
+  if [[ ! -f "$SCRIPT_DIR/materialize-windows-desktop-exit-gate.sh" ]]; then
+    echo "Missing Windows desktop exit gate: $SCRIPT_DIR/materialize-windows-desktop-exit-gate.sh" >&2
+    rm -f "$gate_output"
+    exit 1
+  fi
+
+  if ! CHUMMER_WINDOWS_RELEASE_CHANNEL_PATH="$release_channel_manifest" \
+    CHUMMER_WINDOWS_LOCAL_DESKTOP_FILES_ROOT="$files_dir" \
+    CHUMMER_WINDOWS_INSTALLER_VISUAL_PROOF_PATH="$visual_proof_path" \
+    CHUMMER_UI_WINDOWS_DESKTOP_EXIT_GATE_PATH="$gate_output" \
+    bash "$SCRIPT_DIR/materialize-windows-desktop-exit-gate.sh" >/dev/null
+  then
+    rm -f "$gate_output"
+    emit_windows_visual_proof_handoff_guidance "$stage_dir"
+    echo "Nightly stage failed Windows desktop exit gate preflight. Use the Windows visual proof handoff above before publishing." >&2
+    exit 1
+  fi
+
+  rm -f "$gate_output"
+}
+
+verify_public_edge_open_public_install_routes() {
+  local manifest_path="$1"
+  local base_url="$2"
+  local public_host="$3"
+  local forwarded_proto="$4"
+
+  if [[ ! -f "$manifest_path" ]]; then
+    echo "Published downloads shelf is missing canonical manifest for install-route verification: $manifest_path" >&2
+    exit 1
+  fi
+
+  if ! python3 - "$manifest_path" "$base_url" "$public_host" "$forwarded_proto" <<'PY'
 import json
 import sys
+import urllib.error
+import urllib.request
 from pathlib import Path
-from typing import Any
-
-PASSING_STATUSES = {"pass", "passed", "ready"}
+from urllib.parse import unquote
 
 manifest_path = Path(sys.argv[1])
-startup_smoke_root = Path(sys.argv[2])
-files_root = Path(sys.argv[3])
+base_url = sys.argv[2].rstrip("/")
+public_host = sys.argv[3].strip()
+forwarded_proto = sys.argv[4].strip()
+
 payload = json.loads(manifest_path.read_text(encoding="utf-8-sig"))
-errors: list[str] = []
+downloads = []
+for key in ("downloads", "artifacts"):
+    downloads.extend(
+        item for item in payload.get(key) or []
+        if isinstance(item, dict) and str(item.get("artifactId") or item.get("id") or "").strip()
+    )
 
-
-def norm(value: Any) -> str:
+def norm(value):
     return str(value or "").strip().lower()
 
+def is_public_desktop_installer(download):
+    install_access_class = norm(download.get("installAccessClass"))
+    platform = norm(download.get("platformId") or download.get("platform"))
+    kind = norm(download.get("kind") or download.get("format"))
+    return (
+        install_access_class == "open_public"
+        and ("windows" in platform or "linux" in platform or platform.startswith("win-") or platform.startswith("linux-"))
+        and kind in {"installer", "msix", "deb"}
+    )
 
-for artifact in payload.get("artifacts") or []:
-    if not isinstance(artifact, dict):
+class NoRedirectHandler(urllib.request.HTTPRedirectHandler):
+    def redirect_request(self, req, fp, code, msg, headers, newurl):
+        return None
+
+opener = urllib.request.build_opener(NoRedirectHandler)
+errors = []
+
+for download in downloads:
+    if not is_public_desktop_installer(download):
         continue
-    if norm(artifact.get("platform")) != "windows":
-        continue
-    if norm(artifact.get("kind")) not in {"installer", "msix"}:
-        continue
-    file_name = str(artifact.get("fileName") or "").strip()
-    if not file_name.endswith(("-installer.exe", ".msix")):
-        continue
-    head = norm(artifact.get("head"))
-    rid = norm(artifact.get("rid"))
-    if not head or not rid:
-        errors.append(f"Windows install artifact is missing head/rid: {artifact}")
-        continue
-    receipt_path = startup_smoke_root / f"startup-smoke-{head}-{rid}.receipt.json"
-    if not receipt_path.is_file():
-        errors.append(f"Windows installer startup-smoke receipt is missing: {receipt_path.name}")
-        continue
+    artifact_id = str(download.get("artifactId") or download.get("id") or "").strip()
+    route = f"/downloads/install/{artifact_id}"
+    expected_location = f"/downloads/get/{artifact_id}"
+    headers = {}
+    if public_host:
+        headers["Host"] = public_host
+    if forwarded_proto:
+        headers["X-Forwarded-Proto"] = forwarded_proto
+    request = urllib.request.Request(f"{base_url}{route}", method="HEAD", headers=headers)
     try:
-        receipt = json.loads(receipt_path.read_text(encoding="utf-8-sig"))
+        response = opener.open(request)
+        status = getattr(response, "status", None) or response.getcode()
+        location = response.headers.get("Location", "")
+    except urllib.error.HTTPError as exc:
+        status = exc.code
+        location = exc.headers.get("Location", "")
     except Exception as exc:
-        errors.append(f"Windows installer startup-smoke receipt is unreadable: {receipt_path} ({exc})")
+        errors.append(f"{route}: request failed ({exc})")
         continue
-    status = norm(receipt.get("status"))
-    if status not in PASSING_STATUSES:
-        errors.append(f"Windows installer startup-smoke receipt is not passing: {receipt_path.name} status={status or 'missing'}")
-    if norm(receipt.get("readyCheckpoint")) != "pre_ui_event_loop":
-        errors.append(f"Windows installer startup-smoke receipt did not reach pre_ui_event_loop: {receipt_path.name}")
-    if norm(receipt.get("headId")) != head:
-        errors.append(f"Windows installer startup-smoke receipt headId mismatch: {receipt_path.name}")
-    if norm(receipt.get("rid")) != rid:
-        errors.append(f"Windows installer startup-smoke receipt rid mismatch: {receipt_path.name}")
-    if norm(receipt.get("platform")) != "windows":
-        errors.append(f"Windows installer startup-smoke receipt platform mismatch: {receipt_path.name}")
-    file_path = files_root / file_name
-    if not file_path.is_file():
-        errors.append(f"Windows installer file referenced by manifest is missing: {file_name}")
+
+    decoded_location = unquote(location or "")
+    if status not in {301, 302, 303, 307, 308}:
+        errors.append(f"{route}: expected redirect status, got {status}")
         continue
-    expected_digest = "sha256:" + hashlib.sha256(file_path.read_bytes()).hexdigest()
-    if norm(receipt.get("artifactDigest")) != expected_digest:
-        errors.append(f"Windows installer startup-smoke receipt artifactDigest mismatch: {receipt_path.name}")
+    if decoded_location != expected_location and not decoded_location.endswith(expected_location):
+        errors.append(f"{route}: expected redirect to {expected_location}, got {location or '<empty>'}")
+        continue
+    if "/login?next=" in decoded_location:
+        errors.append(f"{route}: redirected back to login instead of direct public download")
+        continue
 
 if errors:
     for error in errors:
@@ -135,7 +285,7 @@ if errors:
     raise SystemExit(1)
 PY
   then
-    echo "Nightly stage failed Windows installer startup smoke preflight. Build and smoke-test a fresh stage before publishing." >&2
+    echo "Published downloads shelf failed open-public installer route verification." >&2
     exit 1
   fi
 }
@@ -221,13 +371,11 @@ if [[ ! -f "$latest_stage/RELEASE_CHANNEL.generated.json" ]]; then
   exit 1
 fi
 
-if [[ ! -f "$latest_stage/RELEASE_BUILD_HANDOFF.generated.json" ]]; then
-  echo "Nightly stage is missing RELEASE_BUILD_HANDOFF.generated.json: $latest_stage" >&2
-  exit 1
-fi
+refresh_release_build_handoff "$latest_stage"
 
 verify_latest_stage_windows_payload_gate "$latest_stage"
 verify_latest_stage_windows_startup_smoke_gate "$latest_stage"
+verify_latest_stage_windows_exit_gate "$latest_stage"
 
 echo "Publishing latest nightly stage: $latest_stage"
 echo "Target downloads shelf: $DEPLOY_DIR"
@@ -261,6 +409,11 @@ if to_bool "$REDEPLOY_PUBLIC_EDGE" && [[ "$DEPLOY_DIR" == "$WORKSPACE_ROOT/chumm
     cd "$WORKSPACE_ROOT/chummer.run-services"
     docker compose -f docker-compose.public-edge.yml up -d
   )
+  verify_public_edge_open_public_install_routes \
+    "$DEPLOY_DIR/RELEASE_CHANNEL.generated.json" \
+    "$PUBLIC_EDGE_VERIFY_BASE_URL" \
+    "$PUBLIC_EDGE_VERIFY_HOST" \
+    "$PUBLIC_EDGE_VERIFY_PROTO"
 fi
 
 python3 - "$DEPLOY_DIR/RELEASE_CHANNEL.generated.json" "$expected_version" <<'PY'

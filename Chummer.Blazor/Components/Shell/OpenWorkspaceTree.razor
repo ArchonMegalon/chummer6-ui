@@ -8,7 +8,7 @@
     <h2 class="visually-hidden" aria-hidden="true">@BuildOpenWorkspacesHeading()</h2>
     @if (OpenWorkspaces.Count == 0)
     {
-        <p class="hint">@NoOpenDossiersMessage</p>
+        <p class="hint">@NoOpenRunnersMessage</p>
     }
     else
     {
@@ -27,15 +27,15 @@
                 }
                 <div class="navigator-row">
                     <button class="command-button classic-navigator-button @(isActive ? "selected" : string.Empty)"
-                            title="@BuildOpenDossierTitle(workspaceLabel)"
-                            aria-label="@BuildOpenDossierTitle(workspaceLabel)"
+                            title="@BuildOpenRunnerTitle(workspaceLabel)"
+                            aria-label="@BuildOpenRunnerTitle(workspaceLabel)"
                             disabled="@IsBusy"
                             @onclick="() => OpenWorkspaceAsync(workspace.Id.Value)">
                         <span>@workspaceLabel</span>
                     </button>
                     <button class="mini-btn compact-close"
-                            aria-label="@CloseDossierLabel"
-                            title="@CloseDossierLabel"
+                            aria-label="@CloseRunnerLabel"
+                            title="@CloseRunnerLabel"
                             disabled="@IsBusy"
                             @onclick="() => CloseWorkspaceAsync(workspace.Id.Value)">
                         ×
@@ -47,9 +47,9 @@
 </section>
 
 @code {
-    private const string NoOpenDossiersMessage = "No open dossiers.";
-    private const string CloseDossierLabel = "Close dossier";
-    private const string OpenDossierLabelPrefix = "Open dossier";
+    private const string NoOpenRunnersMessage = "No open runners.";
+    private const string CloseRunnerLabel = "Close runner";
+    private const string OpenRunnerLabelPrefix = "Open runner";
 
     [Parameter]
     public IReadOnlyList<OpenWorkspaceState> OpenWorkspaces { get; set; } = [];
@@ -79,8 +79,8 @@
         return CloseWorkspaceRequested.InvokeAsync(workspaceId);
     }
 
-    private static string BuildOpenDossierTitle(string workspaceLabel)
-        => $"{OpenDossierLabelPrefix}: {workspaceLabel}";
+    private static string BuildOpenRunnerTitle(string workspaceLabel)
+        => $"{OpenRunnerLabelPrefix}: {workspaceLabel}";
 
     private string BuildOpenWorkspacesHeading()
     {

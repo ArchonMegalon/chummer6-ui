@@ -1374,10 +1374,15 @@ const desktopViewport = { width: 1440, height: 960 };
 const mobileViewport = { width: 390, height: 844 };
 
 async function runAuditSequence(browser, audits) {
-  for (const audit of audits) {
+  for (let index = 0; index < audits.length; index += 1) {
+    const audit = audits[index];
+    const auditLabel = audit.label
+      || `${audit.fn.name}${audit.args && audit.args.length > 0 ? `(${audit.args.join(', ')})` : ''}`;
+    console.log(`[${index + 1}/${audits.length}] start ${auditLabel}`);
     const page = await browser.newPage({ viewport: audit.viewport || desktopViewport });
     try {
       await audit.fn(page, ...(audit.args || []));
+      console.log(`[${index + 1}/${audits.length}] done ${auditLabel}`);
     } finally {
       await page.close().catch(() => {});
     }

@@ -18,7 +18,7 @@
                 <header class="startup-workbench-header">
                     <div>
                         <h3>Continue Chummer Online</h3>
-                        <p class="note">Start a fresh dossier, reopen a saved dossier, or jump straight into classic utilities from Chummer Online.</p>
+                        <p class="note">Start a fresh runner, reopen a saved runner, or jump straight into classic utilities from Chummer Online.</p>
                     </div>
                     <p class="startup-workbench-posture note">The Character Roster remains the primary route. Character Roster and Master Index stay first-class from first paint.</p>
                 </header>
@@ -41,10 +41,10 @@
                     </section>
 
                     <section class="startup-workbench-card" data-testid="startup-recent-workspaces">
-                        <h4>Recent Dossiers</h4>
+                        <h4>Recent Runners</h4>
                         @if (State.Session.RecentWorkspaceIds.Count == 0)
                         {
-                            <p class="note">No recent dossiers yet. Use <strong>Open Dossier...</strong> to restore a dossier from disk.</p>
+                            <p class="note">No recent runners yet. Use <strong>Open Runner...</strong> to restore a runner from disk.</p>
                         }
                         else
                         {
@@ -57,7 +57,7 @@
                                             disabled="@(!LoadWorkspaceRequested.HasDelegate || State.IsBusy)"
                                             @onclick="() => LoadWorkspaceRequested.InvokeAsync(workspaceId.Value)">
                                         <strong>@workspaceId.Value</strong>
-                                        <span>Restore this Chummer Online dossier continuation.</span>
+                                        <span>Restore this Chummer Online runner continuation.</span>
                                     </button>
                                 }
                             </div>
@@ -87,7 +87,7 @@
         }
         else
         {
-            <p class="note">Select a tab to render a dossier section.</p>
+            <p class="note">Select a tab to render a runner section.</p>
         }
     }
     else if ((string.Equals(State.LastCommandId, SaveCharacterCommandId, StringComparison.Ordinal)

@@ -71,6 +71,8 @@ EXPECTED_COMMAND_IDS = [
     "copy",
     "paste",
     "dice_roller",
+    "auto_alice",
+    "new_character_origin",
     "global_settings",
     "character_settings",
     "update",
@@ -98,6 +100,7 @@ EXPECTED_COMMAND_IDS = [
 ]
 
 EXPECTED_TAB_IDS = [
+    "tab-create",
     "tab-info",
     "tab-attributes",
     "tab-skills",
@@ -113,6 +116,7 @@ EXPECTED_TAB_IDS = [
 ]
 
 EXPECTED_WORKSPACE_ACTION_IDS = [
+    "tab-create.build-lab",
     "tab-info.summary",
     "tab-info.validate",
     "tab-info.profile",
@@ -140,6 +144,7 @@ EXPECTED_WORKSPACE_ACTION_IDS = [
 ]
 
 EXPECTED_ACTIONS_BY_TAB = {
+    "tab-create": ["tab-create.build-lab"],
     "tab-info": [
         "tab-info.summary",
         "tab-info.validate",
@@ -344,7 +349,14 @@ if unknown_quick_action_controls:
     add_failure("Section quick actions reference controls outside the legacy dialog catalog.", section_inventory_failures)
 
 shell_catalog_text = texts.get("shell_catalog", "")
-command_ids_found = re.findall(r'Command\("([^"]+)"', shell_catalog_text)
+command_id_tokens = re.findall(r'Command\(([^,]+),', shell_catalog_text)
+command_ids_found: list[str] = []
+for token in command_id_tokens:
+    normalized_token = token.strip()
+    if normalized_token.startswith('"') and normalized_token.endswith('"'):
+        command_ids_found.append(normalized_token[1:-1])
+    elif normalized_token == "DesktopAliceAssistant.CommandId":
+        command_ids_found.append("auto_alice")
 tab_ids_found = re.findall(r'Tab\("([^"]+)"', shell_catalog_text)
 workspace_action_matches = re.findall(r'Action\("([^"]+)",\s*"[^"]+",\s*"([^"]+)",', shell_catalog_text)
 workspace_action_ids_found = [action_id for action_id, _tab_id in workspace_action_matches]
@@ -409,7 +421,7 @@ attribute_parity_markers = {
     "named_karma_editor": ('$"AttributeKarmaEditor_{ShortAttributeLabel(row.AttributeName)}"', section_host_code_text),
     "base_stepper_delayed_commit": ('_ = ScheduleCommitAsync("base", row.BaseValue, () => pendingBaseValue, baseCommitCancellation.Token);', section_host_code_text),
     "karma_stepper_delayed_commit": ('_ = ScheduleCommitAsync("karma", row.KarmaValue, () => pendingKarmaValue, karmaCommitCancellation.Token);', section_host_code_text),
-    "value_margin_before_buttons": ("Margin = new Thickness(8d, 0d)", section_host_code_text),
+    "value_margin_before_buttons": ("Margin = new Thickness(4d, 0d)", section_host_code_text),
     "delayed_commit": ("ScheduleCommitAsync(", section_host_code_text),
     "attribute_edit_request_dispatch": ('new AttributeEditRequest(row.AttributeName, bucket, value)', section_host_code_text),
 }
@@ -437,7 +449,7 @@ interactive_surface_contracts = {
         "Button increment = CreateAttributeStepperButton",
         "decrement.Click += (_, _) => ApplyValue(current - 1, emit: true);",
         "increment.Click += (_, _) => ApplyValue(current + 1, emit: true);",
-        "Margin = new Thickness(8d, 0d)",
+        "Margin = new Thickness(4d, 0d)",
     ],
     "quick_action_buttons": [
         "CreateQuickActionButton(",

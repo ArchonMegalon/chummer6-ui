@@ -1,12 +1,9 @@
 {
-  "generatedAt": "2026-06-24T15:41:11.321045Z",
+  "generatedAt": "2026-06-27T16:09:05.381482Z",
   "contract_name": "chummer6-ui.sr4_workflow_family_execution_receipt",
-  "status": "fail",
-  "summary": "SR4 workflow-family execution evidence is incomplete for improvements-explain-result-parity.",
-  "reasons": [
-    "Audit tests did not pass in executed TRX results: Legacy_ui_controls_keep_recursive_parity=Failed, Menu_dialog_workflows_keep_recursive_parity=Failed",
-    "dotnet test execution failed (exit 2):   duration: 14s 614ms"
-  ],
+  "status": "pass",
+  "summary": "SR4 workflow-family execution evidence is explicitly grounded for improvements-explain-result-parity.",
+  "reasons": [],
   "evidence": {
     "edition": "sr4",
     "familyId": "improvements-explain-result-parity",
@@ -56,8 +53,8 @@
         "Avalonia_and_Blazor_tab_selection_loads_same_workspace_section": "/docker/chummercomplete/chummer-presentation/.codex-studio/out/workflow-family-parity/executed/sr4/27-Avalonia_and_Blazor_tab_selection_loads_same_workspace_section.trx",
         "Menu_click_surfaces_visible_command_choices_in_shell": "/docker/chummercomplete/chummer-presentation/.codex-studio/out/workflow-family-parity/executed/sr4/28-Menu_click_surfaces_visible_command_choices_in_shell.trx"
       },
-      "exitCode": 2,
-      "attemptCount": 2,
+      "exitCode": 0,
+      "attemptCount": 1,
       "maxAttempts": 2
     },
     "apiProbe": {
@@ -80,16 +77,11 @@
     },
     "external_blocker": "",
     "matchedPassedTests": [
-      "Avalonia_and_Blazor_workspace_action_summary_matches"
+      "Avalonia_and_Blazor_workspace_action_summary_matches",
+      "Menu_dialog_workflows_keep_recursive_parity",
+      "Legacy_ui_controls_keep_recursive_parity"
     ],
     "missingAuditTests": [],
-    "failedAuditTests": {
-      "Menu_dialog_workflows_keep_recursive_parity": [
-        "Failed"
-      ],
-      "Legacy_ui_controls_keep_recursive_parity": [
-        "Failed"
-      ]
-    }
+    "failedAuditTests": {}
   }
 }

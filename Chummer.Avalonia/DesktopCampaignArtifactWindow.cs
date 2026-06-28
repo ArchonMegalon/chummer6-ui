@@ -67,7 +67,7 @@ internal sealed class DesktopCampaignArtifactWindow : Window
         {
             Text = BuildStatus(),
             TextWrapping = TextWrapping.Wrap,
-            Foreground = DesktopShellTheme.ResolveThemeBrush("ChummerShellMutedForegroundBrush", "#334155"),
+            Foreground = DesktopShellTheme.ResolveMutedForegroundBrush(),
             IsVisible = false
         };
 

@@ -193,7 +193,7 @@ internal sealed class DesktopExplainCompanionWindow : Window
             Border sectionBorder = new()
             {
                 BorderBrush = DesktopShellTheme.ResolveThemeBrush("ChummerShellWarningBrush", "#9A6700"),
-                Background = DesktopShellTheme.ResolveThemeBrush("ChummerShellSelectionInsetBrush", "#F1F5F9"),
+                Background = DesktopShellTheme.ResolveSelectionInsetBrush(),
                 BorderThickness = new Thickness(1),
                 CornerRadius = new CornerRadius(6),
                 Padding = new Thickness(10),

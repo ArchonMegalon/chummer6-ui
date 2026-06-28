@@ -4,10 +4,14 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Threading;
+using System.Threading.Tasks;
 using Bunit;
+using Chummer.Blazor;
 using Chummer.Blazor.Components.Pages;
 using Chummer.Blazor.Components.Shared;
 using Chummer.Blazor.Components.Shell;
+using Chummer.Blazor.RunnerIntelligence;
 using Chummer.Contracts.Characters;
 using Chummer.Contracts.Content;
 using Chummer.Contracts.Journal;
@@ -15,8 +19,13 @@ using Chummer.Contracts.Presentation;
 using Chummer.Contracts.Rulesets;
 using Chummer.Contracts.Workspaces;
 using Chummer.Presentation.Overview;
+using Chummer.Presentation.RunnerIntelligence;
 using Chummer.Presentation.Shell;
+using Chummer.Rulesets.Sr5;
+using Microsoft.AspNetCore.Components;
 using Microsoft.AspNetCore.Components.Web;
+using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using BunitContext = Bunit.BunitContext;
 
@@ -25,6 +34,18 @@ namespace Chummer.Tests.Presentation;
 [TestClass]
 public sealed class BlazorShellComponentTests
 {
+    private static BunitContext CreateContext()
+    {
+        BunitContext context = new();
+        context.JSInterop.SetupVoid("chummerDialogs.revealActiveDialog");
+        context.Services.AddSingleton<IConfiguration>(
+            new ConfigurationBuilder().AddInMemoryCollection().Build());
+        context.Services.AddSingleton<IRunnerIntelligenceCalculator, RunnerIntelligenceCalculator>();
+        context.Services.AddSingleton<IRunnerIntelligenceScenarioCatalog, RunnerIntelligenceScenarioCatalog>();
+        context.Services.AddSingleton<BlazorRunnerIntelligencePreviewService>();
+        return context;
+    }
+
     [TestMethod]
     public void MenuBar_renders_open_menu_items_and_applies_enablement_state()
     {
@@ -38,7 +59,7 @@ public sealed class BlazorShellComponentTests
             new AppCommandDefinition("close_character", "command.close", "file", true, true, RulesetDefaults.Sr5)
         ];
 
-        using var context = new BunitContext();
+        using var context = CreateContext();
         IRenderedComponent<MenuBar> cut = context.Render<MenuBar>(parameters => parameters
             .Add(component => component.MenuRoots, menuRoots)
             .Add(component => component.OpenMenuId, "file")
@@ -69,7 +90,7 @@ public sealed class BlazorShellComponentTests
         string? toggledMenuId = null;
         string? executedCommandId = null;
 
-        using var context = new BunitContext();
+        using var context = CreateContext();
         IRenderedComponent<MenuBar> cut = context.Render<MenuBar>(parameters => parameters
             .Add(component => component.MenuRoots,
             [
@@ -99,7 +120,7 @@ public sealed class BlazorShellComponentTests
     {
         string? executedCommandId = null;
 
-        using var context = new BunitContext();
+        using var context = CreateContext();
         IRenderedComponent<ToolStrip> cut = context.Render<ToolStrip>(parameters => parameters
             .Add(component => component.Commands,
             [
@@ -127,7 +148,7 @@ public sealed class BlazorShellComponentTests
     [TestMethod]
     public void ToolStrip_renders_classic_group_divider_between_copy_and_new()
     {
-        using var context = new BunitContext();
+        using var context = CreateContext();
         IRenderedComponent<ToolStrip> cut = context.Render<ToolStrip>(parameters => parameters
             .Add(component => component.Commands,
             [
@@ -143,6 +164,25 @@ public sealed class BlazorShellComponentTests
     }
 
     [TestMethod]
+    public void Preview_menu_links_execute_shared_shell_commands_without_query_roundtrip()
+    {
+        using var context = CreateContext();
+        FakeCharacterOverviewPresenter presenter = RegisterPreviewShellServices(context);
+        NavigationManager navigation = context.Services.GetRequiredService<NavigationManager>();
+        navigation.NavigateTo("/workbench");
+
+        IRenderedComponent<Preview> cut = context.Render<Preview>();
+
+        cut.Find("nav.classic-chummer-menu a[role='menuitem'][data-browser-shell-command='new_character']").Click();
+        Assert.AreEqual("new_character", presenter.ExecutedCommandId);
+        StringAssert.EndsWith(navigation.Uri, "/workbench");
+
+        cut.Find("nav.classic-chummer-menu a[role='menuitem'][data-browser-shell-command='open_character']").Click();
+        Assert.AreEqual("open_character", presenter.ExecutedCommandId);
+        StringAssert.EndsWith(navigation.Uri, "/workbench");
+    }
+
+    [TestMethod]
     public void MdiStrip_shows_unsaved_marker_for_workspace_without_save_receipt()
     {
         CharacterWorkspaceId ws1 = new("ws-1");
@@ -150,7 +190,7 @@ public sealed class BlazorShellComponentTests
         OpenWorkspaceState dirtyWorkspace = new(ws1, "Ares Runner", "AR", DateTimeOffset.UtcNow, RulesetDefaults.Sr5, HasSavedWorkspace: false);
         OpenWorkspaceState savedWorkspace = new(ws2, "Neo Runner", "NR", DateTimeOffset.UtcNow.AddMinutes(-1), RulesetDefaults.Sr5, HasSavedWorkspace: true);
 
-        using var context = new BunitContext();
+        using var context = CreateContext();
         IRenderedComponent<MdiStrip> cut = context.Render<MdiStrip>(parameters => parameters
             .Add(component => component.OpenWorkspaces, [dirtyWorkspace, savedWorkspace])
             .Add(component => component.ActiveWorkspaceId, ws1)
@@ -167,13 +207,13 @@ public sealed class BlazorShellComponentTests
     [TestMethod]
     public void MdiStrip_uses_ruleset_specific_empty_state_when_no_workspace_is_open()
     {
-        using var context = new BunitContext();
+        using var context = CreateContext();
         IRenderedComponent<MdiStrip> cut = context.Render<MdiStrip>(parameters => parameters
             .Add(component => component.OpenWorkspaces, Array.Empty<OpenWorkspaceState>())
             .Add(component => component.RulesetId, RulesetDefaults.Sr6)
             .Add(component => component.IsBusy, false));
 
-        StringAssert.Contains(cut.Markup, "No open SR6 character");
+        StringAssert.Contains(cut.Markup, "No open SR6 runner");
     }
 
     [TestMethod]
@@ -223,7 +263,7 @@ public sealed class BlazorShellComponentTests
         IReadOnlyList<WorkspaceSurfaceActionDefinition> workspaceActions = [summaryAction];
         IReadOnlyList<WorkflowSurfaceActionBinding> workflowSurfaceActions = [summarySurface];
 
-        using var context = new BunitContext();
+        using var context = CreateContext();
         IRenderedComponent<WorkspaceLeftPane> cut = context.Render<WorkspaceLeftPane>(parameters => parameters
             .Add(component => component.State, state)
             .Add(component => component.OpenWorkspaces, openWorkspaces)
@@ -242,7 +282,7 @@ public sealed class BlazorShellComponentTests
 
         StringAssert.Contains(cut.Markup, "SR5 Editor Actions");
         StringAssert.Contains(cut.Markup, "SR5 Editor Flows");
-        StringAssert.Contains(cut.Markup, "SR5 Characters");
+        StringAssert.Contains(cut.Markup, "SR5 Roster");
         StringAssert.Contains(cut.Markup, "Ares Runner (AR) · Shadowrun 5 · main editor");
         StringAssert.Contains(cut.Markup, "Character Summary");
         Assert.AreEqual("tab-info", cut.Find("button[data-nav-tab='tab-info']").Id);
@@ -281,7 +321,7 @@ public sealed class BlazorShellComponentTests
             RegionId: ShellRegionIds.SectionPane,
             LayoutToken: WorkflowLayoutTokens.CareerWorkbench);
 
-        using var context = new BunitContext();
+        using var context = CreateContext();
         IRenderedComponent<WorkspaceLeftPane> cut = context.Render<WorkspaceLeftPane>(parameters => parameters
             .Add(component => component.State, CharacterOverviewState.Empty)
             .Add(component => component.OpenWorkspaces, Array.Empty<OpenWorkspaceState>())
@@ -372,7 +412,7 @@ public sealed class BlazorShellComponentTests
                 WarningCount: 0)
         };
 
-        using var context = new BunitContext();
+        using var context = CreateContext();
         IRenderedComponent<SummaryHeader> cut = context.Render<SummaryHeader>(parameters => parameters
             .Add(component => component.State, state)
             .Add(component => component.ShellSurface, shellSurface)
@@ -400,7 +440,7 @@ public sealed class BlazorShellComponentTests
         string? openedWorkspaceId = null;
         string? closedWorkspaceId = null;
 
-        using var context = new BunitContext();
+        using var context = CreateContext();
         IRenderedComponent<OpenWorkspaceTree> cut = context.Render<OpenWorkspaceTree>(parameters => parameters
             .Add(component => component.OpenWorkspaces, [openWorkspace])
             .Add(component => component.ActiveWorkspaceId, workspaceId)
@@ -416,17 +456,19 @@ public sealed class BlazorShellComponentTests
         StringAssert.Contains(cut.Find(".navigator").ClassName, "classic-navigator");
         StringAssert.Contains(cut.Find(".navigator .command-button").ClassName, "classic-navigator-button");
         StringAssert.Contains(cut.Find(".navigator .command-button").ClassName, "selected");
-        StringAssert.Contains(cut.Markup, "SR5 Characters");
+        StringAssert.Contains(cut.Markup, "SR5 Roster");
         StringAssert.Contains(cut.Markup, "Shadowrun 5");
         StringAssert.Contains(cut.Markup, "main editor");
-        Assert.AreEqual("ws-1", cut.Find(".navigator .command-button").GetAttribute("title"));
-        Assert.AreEqual(0, cut.FindAll(".navigator .command-button .hint").Count, "Classic dossier rows must not print workspace ids into the visible left rail.");
+        string openDossierTitle = cut.Find(".navigator .command-button").GetAttribute("title") ?? string.Empty;
+        StringAssert.Contains(openDossierTitle, "Open runner: Ares Runner (AR)");
+        StringAssert.Contains(openDossierTitle, "Shadowrun 5");
+        Assert.AreEqual(0, cut.FindAll(".navigator .command-button .hint").Count, "Classic runner rows must not print workspace ids into the visible left rail.");
     }
 
     [TestMethod]
     public void ImportPanel_renders_ruleset_specific_copy_and_accepts_all_native_formats()
     {
-        using var context = new BunitContext();
+        using var context = CreateContext();
         IRenderedComponent<ImportPanel> cut = context.Render<ImportPanel>(parameters => parameters
             .Add(component => component.RulesetId, RulesetDefaults.Sr4)
             .Add(component => component.IsBusy, false)
@@ -450,12 +492,12 @@ public sealed class BlazorShellComponentTests
                             Summary: "Street Magic source toggle changed during import.")
                     ]))));
 
-        StringAssert.Contains(cut.Markup, "Import SR4 Character File");
+        StringAssert.Contains(cut.Markup, "Import SR4 Runner File");
         StringAssert.Contains(cut.Markup, "Primary format: .chum4 with XML fallback.");
-        StringAssert.Contains(cut.Markup, "(no SR4 character file selected)");
-        StringAssert.Contains(cut.Markup, "SR4 Oracle Debug Import");
-        StringAssert.Contains(cut.Markup, "Import review");
-        StringAssert.Contains(cut.Markup, "Import setup");
+        StringAssert.Contains(cut.Markup, "(no SR4 runner file selected)");
+        StringAssert.Contains(cut.Markup, "SR4 Runner XML Review");
+        StringAssert.Contains(cut.Markup, "Runner import review");
+        StringAssert.Contains(cut.Markup, "Runner import setup");
         StringAssert.Contains(cut.Markup, "Import landed with a reviewed record.");
         StringAssert.Contains(cut.Markup, "Rules setup");
         StringAssert.Contains(cut.Markup, "chummer.portable-dossier.v1; compatible-with-warnings; inspect-only; payload abcdef1234567890.");
@@ -473,7 +515,7 @@ public sealed class BlazorShellComponentTests
         Assert.IsFalse(cut.Markup.Contains("environment diff", StringComparison.OrdinalIgnoreCase));
         Assert.IsNotNull(cut.Find("[data-import-explain-receipt]"));
         Assert.AreEqual(".chum4,.chum5,.chum6,.xml,text/xml,application/xml", cut.Find("input[type='file']").GetAttribute("accept"));
-        Assert.AreEqual("Import SR4 Raw XML", cut.Find("details button").TextContent.Trim());
+        Assert.AreEqual("Import SR4 Runner XML", cut.Find("details button").TextContent.Trim());
     }
 
     [TestMethod]
@@ -481,7 +523,7 @@ public sealed class BlazorShellComponentTests
     {
         CharacterOverviewState state = CharacterOverviewState.Empty;
 
-        using var context = new BunitContext();
+        using var context = CreateContext();
         IRenderedComponent<CommandPanel> commandCut = context.Render<CommandPanel>(parameters => parameters
             .Add(component => component.RulesetId, RulesetDefaults.Sr6)
             .Add(component => component.State, state)
@@ -528,7 +570,7 @@ public sealed class BlazorShellComponentTests
                     ]))
         };
 
-        using var context = new BunitContext();
+        using var context = CreateContext();
         IRenderedComponent<ResultPanel> cut = context.Render<ResultPanel>(parameters => parameters
             .Add(component => component.RulesetId, RulesetDefaults.Sr5)
             .Add(component => component.State, state));
@@ -543,11 +585,11 @@ public sealed class BlazorShellComponentTests
     [TestMethod]
     public void SectionPane_switches_between_placeholder_and_section_payload()
     {
-        using var context = new BunitContext();
+        using var context = CreateContext();
         IRenderedComponent<SectionPane> emptyCut = context.Render<SectionPane>(parameters => parameters
             .Add(component => component.State, CharacterOverviewState.Empty));
 
-        StringAssert.Contains(emptyCut.Markup, "Select a tab to render a workspace section");
+        StringAssert.Contains(emptyCut.Markup, "Select a tab to render a runner section");
 
         CharacterOverviewState sectionState = CharacterOverviewState.Empty with
         {
@@ -567,7 +609,7 @@ public sealed class BlazorShellComponentTests
     [TestMethod]
     public void SectionPane_renders_quality_quick_action_and_invokes_ui_control()
     {
-        using var context = new BunitContext();
+        using var context = CreateContext();
 
         CharacterWorkspaceId workspaceId = new("ws-quality");
         OpenWorkspaceState openWorkspace = new(workspaceId, "Quality Runner", "QR", DateTimeOffset.UtcNow, RulesetDefaults.Sr4);
@@ -596,7 +638,7 @@ public sealed class BlazorShellComponentTests
     [TestMethod]
     public void SectionPane_renders_startup_workbench_with_first_class_restore_and_utility_actions()
     {
-        using var context = new BunitContext();
+        using var context = CreateContext();
 
         string? executedCommandId = null;
         string? loadedWorkspaceId = null;
@@ -625,7 +667,7 @@ public sealed class BlazorShellComponentTests
             .Add(component => component.ExecuteCommandRequested, (Action<string>)(commandId => executedCommandId = commandId))
             .Add(component => component.LoadWorkspaceRequested, (Action<string>)(workspaceId => loadedWorkspaceId = workspaceId)));
 
-        StringAssert.Contains(cut.Markup, "Continue Your Workbench");
+        StringAssert.Contains(cut.Markup, "Continue Chummer Online");
         StringAssert.Contains(cut.Markup, "Origin Dossier");
         StringAssert.Contains(cut.Markup, "Character Roster");
         StringAssert.Contains(cut.Markup, "Master Index");
@@ -645,7 +687,7 @@ public sealed class BlazorShellComponentTests
         DesktopDialogState originWizard = DesktopDialogFactory.BuildNewCharacterOriginWizardDialog(RulesetDefaults.Sr4, "Nova", "Cipher");
         DesktopDialogState originBuild = DesktopDialogFactory.BuildNewCharacterOriginBuildDialog(originWizard);
 
-        using var context = new BunitContext();
+        using var context = CreateContext();
 
         IRenderedComponent<DialogHost> wizardCut = context.Render<DialogHost>(parameters => parameters
             .Add(component => component.Dialog, originWizard));
@@ -668,7 +710,7 @@ public sealed class BlazorShellComponentTests
     [TestMethod]
     public void SectionPane_formats_named_context_for_collection_sections()
     {
-        using var context = new BunitContext();
+        using var context = CreateContext();
         CharacterOverviewState sectionState = CharacterOverviewState.Empty with
         {
             ActiveSectionId = "vehicles",
@@ -689,7 +731,7 @@ public sealed class BlazorShellComponentTests
     [TestMethod]
     public void SectionPane_renders_browse_projection_with_saved_filters_and_keyboard_navigation()
     {
-        using var context = new BunitContext();
+        using var context = CreateContext();
         CharacterOverviewState browseState = CharacterOverviewState.Empty with
         {
             ActiveSectionId = "browse",
@@ -787,7 +829,7 @@ public sealed class BlazorShellComponentTests
     [TestMethod]
     public void SectionPane_renders_build_lab_projection_from_contract_payload()
     {
-        using var context = new BunitContext();
+        using var context = CreateContext();
         CharacterOverviewState buildLabState = CharacterOverviewState.Empty with
         {
             ActiveSectionId = "build-lab",
@@ -1034,7 +1076,7 @@ public sealed class BlazorShellComponentTests
     [TestMethod]
     public void GmBoardFeed_renders_tactical_cards_instead_of_generic_feed()
     {
-        using var context = new BunitContext();
+        using var context = CreateContext();
         IRenderedComponent<GmBoardFeed> cut = context.Render<GmBoardFeed>(parameters => parameters
             .Add(component => component.InterruptionBudget, 55)
             .Add(component => component.CurrentSessionContext, "Pass 2")
@@ -1086,7 +1128,7 @@ public sealed class BlazorShellComponentTests
     [TestMethod]
     public void GmBoardFeed_renders_stale_banners_and_refresh_actions_after_context_shift()
     {
-        using var context = new BunitContext();
+        using var context = CreateContext();
         IRenderedComponent<GmBoardFeed> cut = context.Render<GmBoardFeed>(parameters => parameters
             .Add(component => component.InterruptionBudget, 55)
             .Add(component => component.CurrentSessionContext, "Scene break")
@@ -1138,7 +1180,7 @@ public sealed class BlazorShellComponentTests
         int? mutedMinutes = null;
         string? autonomyLevel = null;
 
-        using var context = new BunitContext();
+        using var context = CreateContext();
         IRenderedComponent<GmBoardFeed> cut = context.Render<GmBoardFeed>(parameters => parameters
             .Add(component => component.InterruptionBudget, 40)
             .Add(component => component.CurrentSessionContext, "Pass 2")
@@ -1195,7 +1237,7 @@ public sealed class BlazorShellComponentTests
     [TestMethod]
     public void BlazorHome_updates_gm_ops_surface_for_autonomy_pin_and_snooze_controls()
     {
-        using var context = new BunitContext();
+        using var context = CreateContext();
         IRenderedComponent<Showcase> cut = context.Render<Showcase>();
 
         Assert.IsFalse(cut.Markup.Contains("Narrative reveal window", StringComparison.Ordinal));
@@ -1227,7 +1269,7 @@ public sealed class BlazorShellComponentTests
     [TestMethod]
     public void BlazorHome_invalidates_spider_cards_when_session_context_shifts_and_refreshes_them()
     {
-        using var context = new BunitContext();
+        using var context = CreateContext();
         IRenderedComponent<Showcase> cut = context.Render<Showcase>();
 
         cut.Find("[data-gm-board-context='Scene break']").Click();
@@ -1255,7 +1297,7 @@ public sealed class BlazorShellComponentTests
         GeneratedAssetActionRequest? lastRequest = null;
         string? selectedAssetId = null;
 
-        using var context = new BunitContext();
+        using var context = CreateContext();
         IRenderedComponent<GeneratedAssetReviewPanel> cut = context.Render<GeneratedAssetReviewPanel>(parameters => parameters
             .Add(component => component.Assets,
             [
@@ -1488,7 +1530,7 @@ public sealed class BlazorShellComponentTests
                     StartsAtUtc: new DateTimeOffset(2026, 03, 11, 12, 0, 0, TimeSpan.Zero))
             ]);
 
-        using var context = new BunitContext();
+        using var context = CreateContext();
         IRenderedComponent<CampaignJournalPanel> cut = context.Render<CampaignJournalPanel>(parameters => parameters
             .Add(component => component.Projection, projection));
 
@@ -1505,7 +1547,7 @@ public sealed class BlazorShellComponentTests
     [TestMethod]
     public void BlazorHome_renders_explicit_downtime_planner_calendar_and_schedule_views()
     {
-        using var context = new BunitContext();
+        using var context = CreateContext();
         IRenderedComponent<Showcase> cut = context.Render<Showcase>();
 
         Assert.IsNotNull(cut.Find("[data-journal-downtime-planner]"));
@@ -1519,7 +1561,7 @@ public sealed class BlazorShellComponentTests
     [TestMethod]
     public void RuntimeInspectorPanel_renders_rule_profile_and_rulepack_diagnostics_surfaces()
     {
-        using var context = new BunitContext();
+        using var context = CreateContext();
         IRenderedComponent<RuntimeInspectorPanel> cut = context.Render<RuntimeInspectorPanel>(parameters => parameters
             .Add(component => component.Projection, new RuntimeInspectorProjection(
                 TargetKind: RuntimeInspectorTargetKinds.RuntimeLock,
@@ -1655,7 +1697,7 @@ public sealed class BlazorShellComponentTests
             ]);
         ContactRelationshipGraphState? graph = ContactRelationshipGraphProjector.FromContacts(contacts);
 
-        using var context = new BunitContext();
+        using var context = CreateContext();
         IRenderedComponent<ContactNetworkPanel> cut = context.Render<ContactNetworkPanel>(parameters => parameters
             .Add(component => component.Graph, graph));
 
@@ -1673,7 +1715,7 @@ public sealed class BlazorShellComponentTests
     [TestMethod]
     public void BlazorHome_renders_contact_relationship_graph_rails()
     {
-        using var context = new BunitContext();
+        using var context = CreateContext();
         IRenderedComponent<Showcase> cut = context.Render<Showcase>();
 
         Assert.IsNotNull(cut.Find("[data-contact-graph-nodes]"));
@@ -1730,7 +1772,7 @@ public sealed class BlazorShellComponentTests
             HasDraftPolicies: true,
             HasApprovedPolicies: true);
 
-        using var context = new BunitContext();
+        using var context = CreateContext();
         IRenderedComponent<NpcPersonaStudioPanel> cut = context.Render<NpcPersonaStudioPanel>(parameters => parameters
             .Add(component => component.Projection, projection));
 
@@ -1747,7 +1789,7 @@ public sealed class BlazorShellComponentTests
     [TestMethod]
     public void BlazorHome_renders_npc_persona_studio_rails()
     {
-        using var context = new BunitContext();
+        using var context = CreateContext();
         IRenderedComponent<Home> cut = context.Render<Home>();
 
         Assert.IsNotNull(cut.Find("[data-npc-persona-selection]"));
@@ -1761,7 +1803,7 @@ public sealed class BlazorShellComponentTests
     [TestMethod]
     public void BlazorHome_updates_generated_asset_workflow_for_attach_approve_and_archive()
     {
-        using var context = new BunitContext();
+        using var context = CreateContext();
         IRenderedComponent<Showcase> cut = context.Render<Showcase>();
 
         Assert.HasCount(2, cut.FindAll("[data-generated-asset-compare-slot]"));
@@ -1794,7 +1836,7 @@ public sealed class BlazorShellComponentTests
     [TestMethod]
     public void BlazorHome_invalidates_shadowfeed_dispatch_after_context_shift_and_allows_refresh()
     {
-        using var context = new BunitContext();
+        using var context = CreateContext();
         IRenderedComponent<Showcase> cut = context.Render<Showcase>();
 
         cut.Find("[data-generated-asset-tab='asset-news-01']").Click();
@@ -1819,7 +1861,7 @@ public sealed class BlazorShellComponentTests
     [TestMethod]
     public void BlazorHome_marks_portrait_candidate_as_canonical_through_shared_action_rail()
     {
-        using var context = new BunitContext();
+        using var context = CreateContext();
         IRenderedComponent<Showcase> cut = context.Render<Showcase>();
 
         cut.Find("[data-generated-asset-tab='asset-portraits-01']").Click();
@@ -1875,7 +1917,7 @@ public sealed class BlazorShellComponentTests
         string? executedActionId = null;
         int closeCount = 0;
 
-        using var context = new BunitContext();
+        using var context = CreateContext();
         IRenderedComponent<DialogHost> cut = context.Render<DialogHost>(parameters => parameters
             .Add(component => component.Dialog, dialog)
             .Add(component => component.CloseRequested, (Action)(() => closeCount++))
@@ -1939,7 +1981,7 @@ public sealed class BlazorShellComponentTests
     [TestMethod]
     public void DialogHost_renders_nothing_without_dialog_state()
     {
-        using var context = new BunitContext();
+        using var context = CreateContext();
         IRenderedComponent<DialogHost> cut = context.Render<DialogHost>(parameters => parameters
             .Add(component => component.Dialog, (DesktopDialogState?)null));
 
@@ -1966,7 +2008,7 @@ public sealed class BlazorShellComponentTests
                 new DesktopDialogAction("continue", "Continue", true)
             ]);
 
-        using var context = new BunitContext();
+        using var context = CreateContext();
         IRenderedComponent<DialogHost> cut = context.Render<DialogHost>(parameters => parameters
             .Add(component => component.Dialog, dialog));
 
@@ -2006,7 +2048,7 @@ public sealed class BlazorShellComponentTests
                     new DesktopDialogAction("close", "Close", true)
                 ]);
 
-            using var context = new BunitContext();
+            using var context = CreateContext();
             IRenderedComponent<DialogHost> cut = context.Render<DialogHost>(parameters => parameters
                 .Add(component => component.Dialog, dialog));
 
@@ -2126,7 +2168,7 @@ public sealed class BlazorShellComponentTests
 
         List<DialogFieldInputChange> inputChanges = [];
 
-        using var context = new BunitContext();
+        using var context = CreateContext();
         IRenderedComponent<DialogHost> cut = context.Render<DialogHost>(parameters => parameters
             .Add(component => component.Dialog, dialog)
             .Add(component => component.FieldInputRequested, (Action<DialogFieldInputChange>)(change => inputChanges.Add(change))));
@@ -2170,7 +2212,7 @@ public sealed class BlazorShellComponentTests
     [TestMethod]
     public void StatusStrip_announces_status_via_shared_live_region_semantics()
     {
-        using var context = new BunitContext();
+        using var context = CreateContext();
         IRenderedComponent<StatusStrip> cut = context.Render<StatusStrip>(parameters => parameters
             .Add(component => component.LastUiUtc, "2026-03-10 12:00:00Z")
             .Add(component => component.Error, "offline")
@@ -2182,5 +2224,88 @@ public sealed class BlazorShellComponentTests
         Assert.AreEqual("true", region.GetAttribute("aria-atomic"));
         StringAssert.Contains(region.GetAttribute("aria-label"), "Service: error");
         StringAssert.Contains(region.GetAttribute("aria-label"), "Ruleset: sr5");
+    }
+
+    private static FakeCharacterOverviewPresenter RegisterPreviewShellServices(BunitContext context)
+    {
+        CharacterWorkspaceId workspaceId = new("preview-ws");
+        OpenWorkspaceState openWorkspace = new(
+            Id: workspaceId,
+            Name: "Preview Runner",
+            Alias: "PRV",
+            LastOpenedUtc: DateTimeOffset.UtcNow,
+            RulesetId: RulesetDefaults.Sr5,
+            HasSavedWorkspace: true);
+        WorkspaceSessionState session = new(
+            ActiveWorkspaceId: workspaceId,
+            OpenWorkspaces: [openWorkspace],
+            RecentWorkspaceIds: [workspaceId]);
+        CharacterOverviewState overviewState = CharacterOverviewState.Empty with
+        {
+            Session = session,
+            OpenWorkspaces = [openWorkspace],
+            WorkspaceId = workspaceId
+        };
+
+        AppCommandDefinition menuRoot = new("file", "menu.file", "menu", false, true, RulesetDefaults.Sr5);
+        NavigationTabDefinition infoTab = new("tab-info", "Info", "profile", "character", true, true, RulesetDefaults.Sr5);
+        ShellWorkspaceState shellWorkspace = new(
+            Id: workspaceId,
+            Name: openWorkspace.Name,
+            Alias: openWorkspace.Alias,
+            LastOpenedUtc: openWorkspace.LastOpenedUtc,
+            RulesetId: openWorkspace.RulesetId);
+        ShellState shellState = ShellState.Empty with
+        {
+            ActiveWorkspaceId = workspaceId,
+            OpenWorkspaces = [shellWorkspace],
+            ActiveRulesetId = RulesetDefaults.Sr5,
+            Commands = [menuRoot],
+            MenuRoots = [menuRoot],
+            NavigationTabs = [infoTab],
+            ActiveTabId = infoTab.Id
+        };
+
+        FakeCharacterOverviewPresenter presenter = new();
+        presenter.Publish(overviewState);
+
+        context.Services.AddSingleton<ICharacterOverviewPresenter>(presenter);
+        context.Services.AddSingleton<IShellPresenter>(new StaticShellPresenter(shellState));
+        context.Services.AddSingleton<ICommandAvailabilityEvaluator, DefaultCommandAvailabilityEvaluator>();
+        context.Services.AddSingleton<IWorkbenchCoachApiClient>(FakeWorkbenchCoachApiClient.CreateDefault());
+        context.Services.AddSingleton<IRulesetPlugin, Sr5RulesetPlugin>();
+        context.Services.AddSingleton<IRulesetPluginRegistry, RulesetPluginRegistry>();
+        context.Services.AddSingleton<IRulesetShellCatalogResolver, RulesetShellCatalogResolverService>();
+        context.Services.AddSingleton<IShellSurfaceResolver, ShellSurfaceResolver>();
+        return presenter;
+    }
+
+    private sealed class StaticShellPresenter : IShellPresenter
+    {
+        public StaticShellPresenter(ShellState state)
+        {
+            State = state;
+        }
+
+        public ShellState State { get; private set; }
+
+        public event EventHandler? StateChanged;
+
+        public Task InitializeAsync(CancellationToken ct) => Task.CompletedTask;
+
+        public Task ExecuteCommandAsync(string commandId, CancellationToken ct) => Task.CompletedTask;
+
+        public Task SelectTabAsync(string tabId, CancellationToken ct) => Task.CompletedTask;
+
+        public Task ToggleMenuAsync(string menuId, CancellationToken ct) => Task.CompletedTask;
+
+        public Task SetPreferredRulesetAsync(string rulesetId, CancellationToken ct) => Task.CompletedTask;
+
+        public Task SyncWorkspaceContextAsync(CharacterWorkspaceId? activeWorkspaceId, CancellationToken ct)
+        {
+            State = State with { ActiveWorkspaceId = activeWorkspaceId };
+            StateChanged?.Invoke(this, EventArgs.Empty);
+            return Task.CompletedTask;
+        }
     }
 }

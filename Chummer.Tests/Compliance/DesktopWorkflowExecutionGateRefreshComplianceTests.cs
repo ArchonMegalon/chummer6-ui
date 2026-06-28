@@ -222,6 +222,26 @@ public sealed class DesktopWorkflowExecutionGateRefreshComplianceTests
     }
 
     [TestMethod]
+    public void Flagship_release_gate_tracks_effective_route_local_parity_closure_for_known_direct_proof_rows()
+    {
+        string repoRoot = FindRepoRoot();
+        string scriptPath = Path.Combine(repoRoot, "scripts", "ai", "milestones", "b14-flagship-ui-release-gate.sh");
+        string scriptText = File.ReadAllText(scriptPath);
+
+        StringAssert.Contains(scriptText, "NEXT90_M141_UI_DIRECT_IMPORT_ROUTE_PROOF.generated.json");
+        StringAssert.Contains(scriptText, "NEXT90_M142_UI_DIRECT_WORKFLOW_PROOF.generated.json");
+        StringAssert.Contains(scriptText, "NEXT90_M143_UI_DIRECT_OUTPUT_PROOF.generated.json");
+        StringAssert.Contains(scriptText, "ui_element_route_local_row_proofs");
+        StringAssert.Contains(scriptText, "\"source:hero_lab_importer_route\"");
+        StringAssert.Contains(scriptText, "\"family:dice_initiative_and_table_utilities\"");
+        StringAssert.Contains(scriptText, "\"family:legacy_and_adjacent_import_oracles\"");
+        StringAssert.Contains(scriptText, "\"family:sheet_export_print_viewer_and_exchange\"");
+        StringAssert.Contains(scriptText, "\"sourceStatus\": ui_element_parity_audit_source_status");
+        StringAssert.Contains(scriptText, "\"routeLocalOnly\": ui_element_parity_route_local_only");
+        StringAssert.Contains(scriptText, "\"routeLocalRowProofs\": ui_element_route_local_row_proofs");
+    }
+
+    [TestMethod]
     public void Workflow_execution_gate_treats_missing_status_values_as_not_ready_instead_of_crashing()
     {
         string repoRoot = FindRepoRoot();

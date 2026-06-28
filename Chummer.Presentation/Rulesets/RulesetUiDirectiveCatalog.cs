@@ -37,21 +37,21 @@ public static class RulesetUiDirectiveCatalog
         PostureLabel: "cross-ruleset",
         FileExtension: "ruleset codecs",
         HomeSpotlight: "Select a ruleset before using build, rules, export, or release tools.",
-        ResumeLaneSummary: "Resume the current dossier after ruleset and runtime status are loaded.",
-        OpenWorkspaceLabel: "Open dossier",
+        ResumeLaneSummary: "Resume the current runner after ruleset and runtime status are loaded.",
+        OpenWorkspaceLabel: "Open runner",
         BuildFollowThroughLabel: "Open build details",
-        WorkspaceFollowThroughLabel: "Open dossier details",
+        WorkspaceFollowThroughLabel: "Open runner details",
         NextActionPrefix: "Next step",
         DefaultSectionSummary: "Select or restore a ruleset before using rules, build, or export tools.",
         BuildLabSectionSummary: "Choose a ruleset to load the matching builder and browser.",
         RulesSectionSummary: "Choose a ruleset to load the matching rules diagnostics.",
-        UngroundedHomeSummary: "the first restored dossier still needs runtime status before build, rules, and export tools are ready.",
+        UngroundedHomeSummary: "the first restored runner still needs runtime status before build, rules, and export tools are ready.",
         PinnedRuntimeHomeSummary: "runtime status is loaded; open a ruleset section to continue.",
-        GroundedHomeSummary: "shared shell selected; restore a ruleset-specific dossier to continue.",
+        GroundedHomeSummary: "shared shell selected; restore a ruleset-specific runner to continue.",
         BuildExplainWatchouts:
         [
             "Pick a ruleset before using edition-specific tools.",
-            "Restore a dossier before running build, import, export, or print actions."
+            "Restore a runner before running build, import, export, or print actions."
         ]);
 
     private static readonly RulesetUiDirective Sr4 = new(
@@ -188,7 +188,7 @@ public static class RulesetUiDirectiveCatalog
             RulesetDefaults.Sr4 => "SR4 Roster",
             RulesetDefaults.Sr5 => "SR5 Roster",
             RulesetDefaults.Sr6 => "SR6 Roster",
-            _ => "Open Dossiers"
+            _ => "Open Runners"
         };
     }
 
@@ -197,10 +197,10 @@ public static class RulesetUiDirectiveCatalog
         RulesetUiDirective directive = Resolve(rulesetId);
         return directive.RulesetId switch
         {
-            RulesetDefaults.Sr4 => "No open SR4 dossier",
-            RulesetDefaults.Sr5 => "No open SR5 dossier",
-            RulesetDefaults.Sr6 => "No open SR6 dossier",
-            _ => "No open dossier"
+            RulesetDefaults.Sr4 => "No open SR4 runner",
+            RulesetDefaults.Sr5 => "No open SR5 runner",
+            RulesetDefaults.Sr6 => "No open SR6 runner",
+            _ => "No open runner"
         };
     }
 
@@ -208,7 +208,7 @@ public static class RulesetUiDirectiveCatalog
     {
         RulesetUiDirective directive = Resolve(rulesetId);
         string saveState = hasSavedWorkspace ? "saved" : "unsaved";
-        return Clean($"{directive.DisplayName} {directive.PostureLabel} dossier {workspaceId} is {saveState}.");
+        return Clean($"{directive.DisplayName} {directive.PostureLabel} runner {workspaceId} is {saveState}.");
     }
 
     public static string BuildNavigationTabsHeading(string? rulesetId)
@@ -252,10 +252,10 @@ public static class RulesetUiDirectiveCatalog
         RulesetUiDirective directive = Resolve(rulesetId);
         return directive.RulesetId switch
         {
-            RulesetDefaults.Sr4 => "Import SR4 Dossier File",
-            RulesetDefaults.Sr5 => "Import SR5 Dossier File",
-            RulesetDefaults.Sr6 => "Import SR6 Dossier File",
-            _ => "Import Dossier File"
+            RulesetDefaults.Sr4 => "Import SR4 Runner File",
+            RulesetDefaults.Sr5 => "Import SR5 Runner File",
+            RulesetDefaults.Sr6 => "Import SR6 Runner File",
+            _ => "Import Runner File"
         };
     }
 
@@ -286,10 +286,10 @@ public static class RulesetUiDirectiveCatalog
         RulesetUiDirective directive = Resolve(rulesetId);
         return directive.RulesetId switch
         {
-            RulesetDefaults.Sr4 => "(no SR4 dossier file selected)",
-            RulesetDefaults.Sr5 => "(no SR5 dossier file selected)",
-            RulesetDefaults.Sr6 => "(no SR6 dossier file selected)",
-            _ => "(no dossier file selected)"
+            RulesetDefaults.Sr4 => "(no SR4 runner file selected)",
+            RulesetDefaults.Sr5 => "(no SR5 runner file selected)",
+            RulesetDefaults.Sr6 => "(no SR6 runner file selected)",
+            _ => "(no runner file selected)"
         };
     }
 
@@ -298,10 +298,10 @@ public static class RulesetUiDirectiveCatalog
         RulesetUiDirective directive = Resolve(rulesetId);
         return directive.RulesetId switch
         {
-            RulesetDefaults.Sr4 => "SR4 Dossier XML Review",
-            RulesetDefaults.Sr5 => "SR5 Dossier XML Review",
-            RulesetDefaults.Sr6 => "SR6 Dossier XML Review",
-            _ => "Raw Dossier XML Review"
+            RulesetDefaults.Sr4 => "SR4 Runner XML Review",
+            RulesetDefaults.Sr5 => "SR5 Runner XML Review",
+            RulesetDefaults.Sr6 => "SR6 Runner XML Review",
+            _ => "Raw Runner XML Review"
         };
     }
 
@@ -310,10 +310,10 @@ public static class RulesetUiDirectiveCatalog
         RulesetUiDirective directive = Resolve(rulesetId);
         return directive.RulesetId switch
         {
-            RulesetDefaults.Sr4 => "Import SR4 Dossier XML",
-            RulesetDefaults.Sr5 => "Import SR5 Dossier XML",
-            RulesetDefaults.Sr6 => "Import SR6 Dossier XML",
-            _ => "Import Dossier XML"
+            RulesetDefaults.Sr4 => "Import SR4 Runner XML",
+            RulesetDefaults.Sr5 => "Import SR5 Runner XML",
+            RulesetDefaults.Sr6 => "Import SR6 Runner XML",
+            _ => "Import Runner XML"
         };
     }
 

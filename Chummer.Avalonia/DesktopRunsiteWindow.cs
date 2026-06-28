@@ -265,7 +265,7 @@ internal sealed class DesktopRunsiteWindow : Window
                 new Border
                 {
                     Name = "RunsiteSelectedWorkspaceCard",
-                    BorderBrush = DesktopShellTheme.ResolveThemeBrush("ChummerShellBorderBrush", "#B5C0CF"),
+                    BorderBrush = DesktopShellTheme.ResolveBorderBrush(),
                     BorderThickness = new Thickness(1),
                     CornerRadius = new CornerRadius(4),
                     Padding = new Thickness(10),

@@ -916,7 +916,7 @@ public sealed class DialogCoordinator : IDialogCoordinator
         CancellationToken ct,
         string fieldId = "openCharacterXml",
         string rulesetFieldId = "importRulesetId",
-        string requiredError = "Dossier XML is required.",
+        string requiredError = "Runner XML is required.",
         string successNotice = "Character imported.",
         Func<CancellationToken, Task>? afterImportAsync = null)
     {
@@ -2534,7 +2534,7 @@ public sealed class DialogCoordinator : IDialogCoordinator
         PublishCharacterRosterDialog(
             context,
             nextPreferences,
-            "Roster layout reset to generated grouping. Custom folder metadata was cleared; dossier files were not moved.");
+            "Roster layout reset to generated grouping. Custom folder metadata was cleared; runner files were not moved.");
     }
 
     private static RosterHierarchyState? TryReadRosterHierarchyState(DesktopDialogState dialog)

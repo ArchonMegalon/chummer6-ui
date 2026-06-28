@@ -7,7 +7,7 @@ from pathlib import Path
 from typing import Any, Callable
 
 
-REPO_ROOT = Path(__file__).resolve().parents[1]
+REPO_ROOT = Path(__file__).absolute().parents[1]
 PUBLISHED = REPO_ROOT / ".codex-studio" / "published"
 PASS_STATUSES = {"pass", "passed", "ready"}
 

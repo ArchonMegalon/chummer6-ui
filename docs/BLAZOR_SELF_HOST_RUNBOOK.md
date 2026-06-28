@@ -1,4 +1,4 @@
-# Chummer Online Self-Host Runbook
+# Browser Workbench Self-Host Runbook
 
 Purpose: run `Chummer.Blazor` as the browser-hosted desktop-equivalent workbench behind `Chummer.Portal`, with the same route and owner-propagation posture expected from `chummer.run`.
 
@@ -60,7 +60,7 @@ Expected public routes:
 
 Route intent:
 
-1. `/app` is the clean public Chummer Online route, `/blazor/` and `/blazor/app` are hosted Blazor entry routes, `/blazor/home` is the explicit product/orientation page, and `/blazor/workbench*` remains the explicit /blazor/workbench compatibility route family for the same promoted Chummer Online client.
+1. `/app` is the clean public Chummer Online route, `/blazor/` and `/blazor/app` are hosted Blazor entry routes, `/blazor/home` is the explicit product/orientation page, and the proof-compatible browser workbench lane resolves into `/blazor/workbench`.
 2. `/blazor/preview*` is retained as proof/supporting evidence and should not be treated as the primary user entrypoint.
 
 ## Minimum environment contract

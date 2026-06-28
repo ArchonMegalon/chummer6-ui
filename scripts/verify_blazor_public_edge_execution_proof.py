@@ -12,7 +12,8 @@ ALLOWED_STATUSES = {"not_run", "pass", "passed", "ready"}
 EXPECTED_PROOF_TIER = "hosted_promoted_route_execution"
 EXPECTED_ROUTE_LANE = "promoted_blazor_workbench"
 EXPECTED_PROMOTED_ROUTE_BASE = "/blazor/workbench"
-REQUIRED_WORKFLOW_FAMILY_IDS = {
+SUPPORTED_PLAYWRIGHT_SCOPES = {"smoke", "full"}
+AVAILABLE_WORKFLOW_FAMILY_IDS = {
     "promoted_startup_command_executions",
     "promoted_dense_tool_surfaces",
     "promoted_origin_rules_continuity",
@@ -46,11 +47,31 @@ REQUIRED_WORKFLOW_FAMILY_IDS = {
     "promoted_committed_actions",
     "promoted_advanced_committed_actions",
 }
+FULL_ONLY_WORKFLOW_FAMILY_IDS = {
+    "promoted_advanced_committed_actions",
+}
+SMOKE_REQUIRED_WORKFLOW_FAMILY_IDS = {
+    "promoted_startup_command_executions",
+    "promoted_dense_tool_surfaces",
+    "promoted_origin_rules_continuity",
+    "promoted_build_lab_continuity",
+    "promoted_resumed_workspace",
+    "promoted_result_continuations",
+    "promoted_action_continuations",
+    "promoted_committed_actions",
+    "promoted_advanced_action_executions",
+}
 ALLOWED_CHECK_STATUSES = {"pass", "passed", "ready"}
 
 
 def load_json(path: Path) -> dict:
     return json.loads(path.read_text(encoding="utf-8-sig"))
+
+
+def required_workflow_family_ids_for_scope(scope: str) -> set[str]:
+    if scope == "full":
+        return set(AVAILABLE_WORKFLOW_FAMILY_IDS)
+    return set(SMOKE_REQUIRED_WORKFLOW_FAMILY_IDS)
 
 
 def main() -> int:
@@ -67,6 +88,18 @@ def main() -> int:
     proof_tier = str(payload.get("proof_tier") or "").strip()
     route_lane = str(payload.get("route_lane") or "").strip()
     promoted_route_base = str(payload.get("promoted_route_base") or "").strip()
+    playwright_scope = str(payload.get("playwright_scope") or "").strip().lower()
+    required_workflow_family_ids = {
+        str(item).strip()
+        for item in (payload.get("required_workflow_family_ids") or [])
+        if str(item).strip()
+    }
+    available_workflow_family_ids = {
+        str(item).strip()
+        for item in (payload.get("available_workflow_family_ids") or [])
+        if str(item).strip()
+    }
+    expected_required_workflow_family_ids = required_workflow_family_ids_for_scope(playwright_scope)
 
     if contract != EXPECTED_CONTRACT:
         reasons.append(
@@ -90,6 +123,20 @@ def main() -> int:
         reasons.append(
             "promoted_route_base mismatch: "
             f"expected {EXPECTED_PROMOTED_ROUTE_BASE!r}, got {promoted_route_base!r}"
+        )
+    if playwright_scope not in SUPPORTED_PLAYWRIGHT_SCOPES:
+        reasons.append(
+            f"playwright_scope must be one of {sorted(SUPPORTED_PLAYWRIGHT_SCOPES)!r}, got {playwright_scope!r}"
+        )
+    elif required_workflow_family_ids != expected_required_workflow_family_ids:
+        reasons.append(
+            "required_workflow_family_ids mismatch for scope "
+            f"{playwright_scope!r}: expected {sorted(expected_required_workflow_family_ids)!r}, got {sorted(required_workflow_family_ids)!r}"
+        )
+    if available_workflow_family_ids and available_workflow_family_ids != AVAILABLE_WORKFLOW_FAMILY_IDS:
+        reasons.append(
+            "available_workflow_family_ids mismatch: expected "
+            f"{sorted(AVAILABLE_WORKFLOW_FAMILY_IDS)!r}, got {sorted(available_workflow_family_ids)!r}"
         )
 
     if status in {"pass", "passed", "ready"}:
@@ -156,10 +203,11 @@ def main() -> int:
                             f"{workflow_id!r} check #{index} status must be one of {sorted(ALLOWED_CHECK_STATUSES)!r}, got {check_status!r}"
                         )
 
-            missing_workflows = sorted(REQUIRED_WORKFLOW_FAMILY_IDS - workflow_ids)
+            missing_workflows = sorted(expected_required_workflow_family_ids - workflow_ids)
             if missing_workflows:
                 reasons.append(
-                    "passing hosted execution receipt is missing required workflow families: "
+                    "passing hosted execution receipt is missing required workflow families for "
+                    f"scope {playwright_scope!r}: "
                     + ", ".join(missing_workflows)
                 )
 

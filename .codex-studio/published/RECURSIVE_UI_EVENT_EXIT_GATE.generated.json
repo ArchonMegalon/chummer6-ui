@@ -1,17 +1,17 @@
 {
-  "generatedAt": "2026-06-20T21:40:35Z",
+  "generatedAt": "2026-06-27T11:03:56Z",
   "contract_name": "chummer6-ui.recursive_ui_event_exit_gate",
   "status": "pass",
   "summary": "Recursive UI event exit gate verifies route recursion, screenshot proof, and Chummer5a parity landmarks.",
   "reasons": [],
   "evidence": {
-    "runtimeRouteInventoryPath": "/docker/chummercomplete/chummer-presentation/.codex-studio/published/INTERACTIVE_RUNTIME_ROUTE_INVENTORY.generated.json",
-    "interactiveControlInventoryPath": "/docker/chummercomplete/chummer-presentation/.codex-studio/published/INTERACTIVE_CONTROL_INVENTORY.generated.json",
-    "uiElementParityAuditPath": "/docker/chummercomplete/chummer-presentation/.codex-studio/published/CHUMMER5A_UI_ELEMENT_PARITY_AUDIT.generated.json",
-    "screenshotEvidencePath": "/docker/chummercomplete/chummer-presentation/.codex-studio/published/ui-flagship-release-gate-screenshots/SCREENSHOT_CONTROL_EVIDENCE.generated.json",
-    "workflowParityPath": "/docker/chummercomplete/chummer-presentation/.codex-studio/published/CHUMMER5A_DESKTOP_WORKFLOW_PARITY.generated.json",
+    "runtimeRouteInventoryPath": "/docker/chummercomplete/chummer6-ui/.codex-studio/published/INTERACTIVE_RUNTIME_ROUTE_INVENTORY.generated.json",
+    "interactiveControlInventoryPath": "/docker/chummercomplete/chummer6-ui/.codex-studio/published/INTERACTIVE_CONTROL_INVENTORY.generated.json",
+    "uiElementParityAuditPath": "/docker/chummercomplete/chummer6-ui/.codex-studio/published/CHUMMER5A_UI_ELEMENT_PARITY_AUDIT.generated.json",
+    "screenshotEvidencePath": "/docker/chummercomplete/chummer6-ui/.codex-studio/published/ui-flagship-release-gate-screenshots/SCREENSHOT_CONTROL_EVIDENCE.generated.json",
+    "workflowParityPath": "/docker/chummercomplete/chummer6-ui/.codex-studio/published/CHUMMER5A_DESKTOP_WORKFLOW_PARITY.generated.json",
     "routeCount": 14,
-    "workflowFamilyCount": 11,
+    "workflowFamilyCount": 10,
     "branchChecks": {
       "dialog-global-settings": {
         "screenshots_present": true,

@@ -216,11 +216,15 @@ public sealed class DesktopInstallerParityComplianceTests
         StringAssert.Contains(startupWindowText, "Chummer will open automatically if this copy is already current.");
         Assert.IsFalse(startupWindowText.Contains("Height = 220", StringComparison.Ordinal));
         Assert.IsFalse(startupWindowText.Contains("CanResize = false", StringComparison.Ordinal));
-        StringAssert.Contains(startupWindowText, "A macOS update is ready. Open Downloads to install it manually; this copy will stay usable.");
+        StringAssert.Contains(startupWindowText, "A macOS update is ready. Open Update Status to install it manually; this copy will stay usable.");
         StringAssert.Contains(runtimeText, "public sealed record DesktopUpdateProgressUpdate");
         StringAssert.Contains(runtimeText, "IProgress<DesktopUpdateProgressUpdate>? progress");
         StringAssert.Contains(runtimeText, "OperatingSystem.IsMacOS()");
         StringAssert.Contains(runtimeText, "macos_manual_install_required");
+        StringAssert.Contains(runtimeText, "PendingInstallerPath");
+        StringAssert.Contains(runtimeText, "TryOpenPendingInstaller");
+        StringAssert.Contains(runtimeText, "TryBuildPendingInstallerManualCommand");
+        StringAssert.Contains(runtimeText, "sudo dpkg -i");
         StringAssert.Contains(publishBundleText, "payloadFileName");
         StringAssert.Contains(publishBundleText, "payloadDownloadUrl");
         StringAssert.Contains(manifestGeneratorText, "\"installerMode\": \"bootstrap\"");

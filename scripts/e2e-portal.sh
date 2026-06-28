@@ -5,16 +5,30 @@ CHUMMER_API_KEY="${CHUMMER_API_KEY:-}"
 SCRIPT_DIR="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)"
 REPO_ROOT="$(cd -- "${SCRIPT_DIR}/.." && pwd)"
 WORKSPACE_ROOT="$(cd -- "${REPO_ROOT}/.." && pwd)"
-PORTAL_PLAYWRIGHT_TIMEOUT_SECONDS="${CHUMMER_PORTAL_E2E_TIMEOUT_SECONDS:-240}"
 PORTAL_EDGE_COMPOSE_FILE="${CHUMMER_PORTAL_EDGE_COMPOSE_FILE:-${REPO_ROOT}/docker-compose.yml}"
 PORTAL_COMPOSE_PROFILE="${CHUMMER_PORTAL_COMPOSE_PROFILE:-portal}"
 PORTAL_EDGE_SERVICES="${CHUMMER_PORTAL_EDGE_SERVICES:-chummer-api chummer-blazor-portal chummer-hub-web-portal chummer-avalonia-browser chummer-portal}"
-PORTAL_BASE_URL="${CHUMMER_PORTAL_BASE_URL:-http://127.0.0.1:${CHUMMER_PORTAL_PORT:-8091}}"
+DEFAULT_PORTAL_PORT="${CHUMMER_PORTAL_PORT:-8091}"
+PORTAL_BASE_URL_EXPLICIT=0
+PORTAL_PORT_EXPLICIT=0
+if [[ -n "${CHUMMER_PORTAL_BASE_URL:-}" ]]; then
+  PORTAL_BASE_URL_EXPLICIT=1
+fi
+if [[ -n "${CHUMMER_PORTAL_PORT:-}" ]]; then
+  PORTAL_PORT_EXPLICIT=1
+fi
+PORTAL_BASE_URL=""
 PORTAL_LOCAL_PROOF_PATH="${CHUMMER_PORTAL_LOCAL_PROOF_PATH:-.codex-studio/published/UI_LOCAL_RELEASE_PROOF.generated.json}"
 PORTAL_SELF_HOST_WORKBENCH_PROOF_PATH="${CHUMMER_PORTAL_SELF_HOST_WORKBENCH_PROOF_PATH:-.codex-studio/published/BLAZOR_SELF_HOST_WORKBENCH_PROOF.generated.json}"
 NEXT90_M113_RECEIPT_PATH="${CHUMMER_NEXT90_M113_RECEIPT_PATH:-.codex-studio/published/NEXT90_M113_UI_GM_PREP_ROSTER_SURFACE.generated.json}"
 PORTAL_SKIP_EDGE_REBUILD="${CHUMMER_PORTAL_E2E_SKIP_EDGE_REBUILD:-0}"
 PORTAL_RUNTIME_REQUIRED="${CHUMMER_PORTAL_E2E_REQUIRE_RUNTIME:-1}"
+PORTAL_PLAYWRIGHT_SCOPE="${CHUMMER_PORTAL_PLAYWRIGHT_SCOPE:-smoke}"
+DEFAULT_PORTAL_PLAYWRIGHT_TIMEOUT_SECONDS="420"
+if [[ "$PORTAL_PLAYWRIGHT_SCOPE" == "full" ]]; then
+  DEFAULT_PORTAL_PLAYWRIGHT_TIMEOUT_SECONDS="900"
+fi
+PORTAL_PLAYWRIGHT_TIMEOUT_SECONDS="${CHUMMER_PORTAL_E2E_TIMEOUT_SECONDS:-$DEFAULT_PORTAL_PLAYWRIGHT_TIMEOUT_SECONDS}"
 PORTAL_PLAYWRIGHT_SCRIPT="${CHUMMER_PORTAL_PLAYWRIGHT_SCRIPT:-${REPO_ROOT}/scripts/e2e-portal-playwright.cjs}"
 PORTAL_ROUTE_PROBE_SCRIPT="${CHUMMER_PORTAL_ROUTE_PROBE_SCRIPT:-${REPO_ROOT}/scripts/e2e-portal.cjs}"
 PORTAL_PLAYWRIGHT_COMPOSE_FILE="${CHUMMER_PORTAL_PLAYWRIGHT_COMPOSE_FILE:-${REPO_ROOT}/docker-compose.yml}"
@@ -38,6 +52,62 @@ read -r -a PORTAL_COMPOSE_SERVICES <<< "$PORTAL_EDGE_SERVICES"
 is_docker_permission_error_text() {
   local source_file="$1"
   grep -Eqi "permission denied while trying to connect to the Docker daemon socket|operation not permitted|got permission denied while trying to connect to the docker daemon socket" "$source_file"
+}
+
+is_local_tcp_port_available() {
+  local port="$1"
+  python3 - "$port" <<'PY'
+import socket
+import sys
+
+port = int(sys.argv[1])
+sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+try:
+    sock.bind(("127.0.0.1", port))
+except OSError:
+    sys.exit(1)
+finally:
+    sock.close()
+PY
+}
+
+select_available_local_port() {
+  local starting_port="$1"
+  local max_attempts="${2:-32}"
+  local candidate_port="$starting_port"
+  local attempt
+  for ((attempt = 1; attempt <= max_attempts; attempt++)); do
+    if is_local_tcp_port_available "$candidate_port"; then
+      printf '%s\n' "$candidate_port"
+      return 0
+    fi
+    candidate_port=$((candidate_port + 1))
+  done
+
+  echo "could not find a free self-host portal port after ${max_attempts} attempts starting at ${starting_port}" >&2
+  return 1
+}
+
+resolve_portal_binding() {
+  local skip_rebuild=0
+  if [[ "$PORTAL_SKIP_EDGE_REBUILD" == "1" || "$PORTAL_SKIP_EDGE_REBUILD" == "true" || "$PORTAL_SKIP_EDGE_REBUILD" == "TRUE" ]]; then
+    skip_rebuild=1
+  fi
+
+  if [[ "$skip_rebuild" -eq 0 && "$PORTAL_BASE_URL_EXPLICIT" -eq 0 && "$PORTAL_PORT_EXPLICIT" -eq 0 ]]; then
+    local selected_port
+    selected_port="$(select_available_local_port "$DEFAULT_PORTAL_PORT")"
+    export CHUMMER_PORTAL_PORT="$selected_port"
+    if [[ "$selected_port" != "$DEFAULT_PORTAL_PORT" ]]; then
+      echo "auto-selected free self-host portal port ${selected_port} because default ${DEFAULT_PORTAL_PORT} is already in use"
+    fi
+  elif [[ "$skip_rebuild" -eq 0 && "$PORTAL_PORT_EXPLICIT" -eq 1 ]] && ! is_local_tcp_port_available "${CHUMMER_PORTAL_PORT}"; then
+    echo "requested self-host portal port ${CHUMMER_PORTAL_PORT} is already in use; choose another CHUMMER_PORTAL_PORT or leave it unset for automatic selection" >&2
+    exit 2
+  fi
+
+  PORTAL_BASE_URL="${CHUMMER_PORTAL_BASE_URL:-http://127.0.0.1:${CHUMMER_PORTAL_PORT:-$DEFAULT_PORTAL_PORT}}"
 }
 
 detect_local_playwright() {
@@ -94,6 +164,8 @@ wait_for_portal_url() {
 if [[ -n "$CHUMMER_API_KEY" ]]; then
   export CHUMMER_API_KEY
 fi
+
+resolve_portal_binding
 
 if [[ "$RUN_PORTAL_PLAYWRIGHT" != "1" ]] \
   && [[ "$PORTAL_RUNTIME_REQUIRED" == "1" || "$PORTAL_RUNTIME_REQUIRED" == "true" || "$PORTAL_RUNTIME_REQUIRED" == "TRUE" ]]; then
@@ -168,6 +240,7 @@ if [[ "$RUN_PORTAL_PLAYWRIGHT" == "1" ]]; then
     set +e
     NODE_PATH="$LOCAL_PLAYWRIGHT_NODE_PATH" \
       CHUMMER_PORTAL_BASE_URL="$PORTAL_BASE_URL" \
+      CHUMMER_PORTAL_PLAYWRIGHT_SCOPE="$PORTAL_PLAYWRIGHT_SCOPE" \
       timeout "${PORTAL_PLAYWRIGHT_TIMEOUT_SECONDS}"s node "$PORTAL_PLAYWRIGHT_SCRIPT"
     portal_playwright_status=$?
     set -e
@@ -181,6 +254,7 @@ if [[ "$RUN_PORTAL_PLAYWRIGHT" == "1" ]]; then
     timeout "${PORTAL_PLAYWRIGHT_TIMEOUT_SECONDS}"s \
       docker compose -f "$PORTAL_PLAYWRIGHT_COMPOSE_FILE" --profile test run --build --rm -T \
       -e CHUMMER_PORTAL_BASE_URL="$PORTAL_BASE_URL" \
+      -e CHUMMER_PORTAL_PLAYWRIGHT_SCOPE="$PORTAL_PLAYWRIGHT_SCOPE" \
       chummer-playwright node /work/scripts/e2e-portal-playwright.cjs \
       2>&1 | tee "$portal_playwright_log"
     portal_playwright_status=${PIPESTATUS[0]}
@@ -204,14 +278,17 @@ fi
 
 mkdir -p "$(dirname "$PORTAL_LOCAL_PROOF_PATH")"
 mkdir -p "$(dirname "$PORTAL_SELF_HOST_WORKBENCH_PROOF_PATH")"
-python3 - "$PORTAL_LOCAL_PROOF_PATH" "$PORTAL_SELF_HOST_WORKBENCH_PROOF_PATH" "$PORTAL_BASE_URL" "$PORTAL_PLAYWRIGHT_TIMEOUT_SECONDS" "$RUN_PORTAL_PLAYWRIGHT" "$PORTAL_EDGE_COMPOSE_FILE" "$PORTAL_SKIP_EDGE_REBUILD" "$NEXT90_M113_RECEIPT_PATH" "$PORTAL_RUNTIME_REQUIRED" <<'PY'
+python3 - "$PORTAL_LOCAL_PROOF_PATH" "$PORTAL_SELF_HOST_WORKBENCH_PROOF_PATH" "$PORTAL_BASE_URL" "$PORTAL_PLAYWRIGHT_TIMEOUT_SECONDS" "$RUN_PORTAL_PLAYWRIGHT" "$PORTAL_EDGE_COMPOSE_FILE" "$PORTAL_SKIP_EDGE_REBUILD" "$NEXT90_M113_RECEIPT_PATH" "$PORTAL_RUNTIME_REQUIRED" "$PORTAL_PLAYWRIGHT_SCOPE" <<'PY'
 import datetime as dt
 import json
 import sys
 from pathlib import Path
 
-local_out_path, self_host_out_path, base_url, timeout_seconds, run_portal_playwright, compose_file, skip_edge_rebuild, next90_m113_receipt_path, runtime_required = sys.argv[1:]
+local_out_path, self_host_out_path, base_url, timeout_seconds, run_portal_playwright, compose_file, skip_edge_rebuild, next90_m113_receipt_path, runtime_required, playwright_scope = sys.argv[1:]
 route_probe_executed = run_portal_playwright == "1"
+playwright_scope = (playwright_scope or "smoke").strip().lower()
+if playwright_scope not in {"smoke", "full"}:
+    playwright_scope = "smoke"
 receipt_path = Path(next90_m113_receipt_path)
 receipt_status = "missing"
 receipt_package_id = ""
@@ -232,6 +309,7 @@ local_payload = {
     "base_url": base_url,
     "compose_file": compose_file,
     "playwright_timeout_seconds": int(timeout_seconds),
+    "playwright_scope": playwright_scope,
     "edge_rebuild_skipped": skip_edge_rebuild.lower() in {"1", "true"},
     "runtime_required": runtime_required.lower() in {"1", "true"},
     "route_probe_executed": route_probe_executed,
@@ -283,6 +361,7 @@ self_host_payload = {
     "base_url": base_url,
     "compose_file": compose_file,
     "playwright_timeout_seconds": int(timeout_seconds),
+    "playwright_scope": playwright_scope,
     "edge_rebuild_skipped": skip_edge_rebuild.lower() in {"1", "true"},
     "runtime_required": runtime_required.lower() in {"1", "true"},
     "route_probe_executed": route_probe_executed,
@@ -306,61 +385,22 @@ self_host_payload = {
         "/blazor/home",
         "/blazor/app",
         "/blazor/workbench",
-        "/blazor/workbench?workspace=ws-1",
-        "/blazor/workbench?workspace=ws-1&command=save_character",
-        "/blazor/workbench?workspace=ws-1&command=save_character_as",
-        "/blazor/workbench?workspace=ws-1&command=save_character_as&dialog_action=download",
-        "/blazor/workbench?workspace=ws-1&command=export_character",
-        "/blazor/workbench?workspace=ws-1&command=export_character&dialog_action=download",
-        "/blazor/workbench?workspace=ws-1&command=print_character",
-        "/blazor/workbench?workspace=ws-1&tab=tab-calendar",
-        "/blazor/workbench?workspace=ws-1&tab=tab-calendar&control=create_entry",
-        "/blazor/workbench?workspace=ws-1&tab=tab-calendar&control=create_entry&dialog_action=add",
-        "/blazor/workbench?workspace=ws-1&tab=tab-calendar&control=edit_entry",
-        "/blazor/workbench?workspace=ws-1&tab=tab-calendar&control=edit_entry&dialog_action=apply",
-        "/blazor/workbench?workspace=ws-1&tab=tab-calendar&control=delete_entry",
-        "/blazor/workbench?workspace=ws-1&tab=tab-calendar&control=delete_entry&dialog_action=delete",
-        "/blazor/workbench?workspace=ws-1&tab=tab-info&control=open_notes",
-        "/blazor/workbench?workspace=ws-1&tab=tab-info&control=open_notes&dialog_action=save",
-        "/blazor/workbench?workspace=ws-1&tab=tab-calendar&control=move_up",
-        "/blazor/workbench?workspace=ws-1&tab=tab-calendar&control=move_down",
-        "/blazor/workbench?workspace=ws-1&tab=tab-info&control=identity_license_add",
-        "/blazor/workbench?workspace=ws-1&tab=tab-info&control=identity_license_edit",
-        "/blazor/workbench?workspace=ws-1&tab=tab-info&control=identity_license_delete",
-        "/blazor/workbench?workspace=ws-1&tab=tab-combat&control=combat_add_armor",
-        "/blazor/workbench?workspace=ws-1&tab=tab-combat&control=combat_reload",
-        "/blazor/workbench?workspace=ws-1&tab=tab-combat&control=combat_damage_track",
-        "/blazor/workbench?workspace=ws-1&tab=tab-skills&control=skill_specialize",
-        "/blazor/workbench?workspace=ws-1&tab=tab-skills&control=skill_remove",
-        "/blazor/workbench?workspace=ws-1&tab=tab-skills&control=skill_group",
-        "/blazor/workbench?workspace=ws-1&tab=tab-adept&control=adept_power_add",
-        "/blazor/workbench?workspace=ws-1&tab=tab-magician&control=spirit_add",
-        "/blazor/workbench?workspace=ws-1&tab=tab-critter&control=critter_power_add",
-        "/blazor/workbench?workspace=ws-1&tab=tab-technomancer&control=matrix_program_add",
-        "/blazor/workbench?workspace=ws-1&tab=tab-gear&control=gear_add",
-        "/blazor/workbench?workspace=ws-1&tab=tab-gear&control=gear_edit",
-        "/blazor/workbench?workspace=ws-1&tab=tab-gear&control=gear_delete",
-        "/blazor/workbench?workspace=ws-1&tab=tab-stats&control=runner_benchmark",
-        "/blazor/workbench?workspace=ws-1&tab=tab-stats&control=runner_what_if",
-        "/blazor/workbench?workspace=ws-1&tab=tab-stats&control=runner_cohort_privacy",
-        "/blazor/workbench?workspace=ws-1&tab=tab-info&control=show_source",
-        "/blazor/workbench?workspace=ws-1&tab=tab-gear&control=gear_source",
-        "/blazor/workbench?workspace=ws-1&tab=tab-gear&control=gear_mount",
-        "/blazor/workbench?workspace=ws-1&tab=tab-gear&control=toggle_free_paid",
-        "/blazor/workbench?workspace=ws-1&tab=tab-magician&control=magic_add",
-        "/blazor/workbench?workspace=ws-1&tab=tab-magician&control=magic_bind",
-        "/blazor/workbench?workspace=ws-1&tab=tab-magician&control=magic_source",
-        "/blazor/workbench?workspace=ws-1&tab=tab-gear&control=drug_delete",
         "/blazor/preview",
-        "/blazor/preview?fixture=blue&command=save_character_as",
-        "/blazor/preview?fixture=blue&command=save_character",
-        "/blazor/preview?fixture=blue&command=print_character",
-        "/blazor/preview?fixture=blue&command=export_character&dialog_action=download",
+        "/blazor/preview?command=new_character",
+        "/blazor/preview?command=new_character_origin",
         "/blazor/preview?command=open_character",
         "/blazor/preview?command=open_for_printing",
         "/blazor/preview?command=open_for_export",
-        "/blazor/preview?command=new_character",
-        "/blazor/preview?command=new_character_origin",
+        "/blazor/preview?fixture=blue&tab=tab-create",
+        "/blazor/workbench?workspace=ws-1&tab=tab-contacts&control=contact_add&dialog_action=add",
+        "/blazor/workbench?workspace=ws-1&tab=tab-calendar&control=create_entry&dialog_action=add",
+        "/blazor/workbench?workspace=ws-1&tab=tab-info&control=open_notes&dialog_action=save",
+        "/blazor/workbench?workspace=ws-1&tab=tab-info&control=identity_license_add",
+        "/blazor/workbench?workspace=ws-1&tab=tab-combat&control=combat_add_armor",
+        "/blazor/workbench?workspace=ws-1&tab=tab-skills&control=skill_specialize",
+        "/blazor/workbench?workspace=ws-1&tab=tab-gear&control=gear_add",
+        "/blazor/workbench?workspace=ws-1&tab=tab-info&control=show_source",
+        "/blazor/workbench?workspace=ws-1&tab=tab-magician&control=spell_add",
         "/downloads/",
         "/downloads/releases.json",
         "/downloads/install/avalonia-linux-x64-installer",
@@ -370,7 +410,51 @@ self_host_payload = {
         "/contact",
         "/status",
         "/help",
-    ],
+    ] + ([
+        "/blazor/workbench?workspace=ws-1",
+        "/blazor/workbench?workspace=ws-1&command=save_character",
+        "/blazor/workbench?workspace=ws-1&command=save_character_as",
+        "/blazor/workbench?workspace=ws-1&command=save_character_as&dialog_action=download",
+        "/blazor/workbench?workspace=ws-1&command=export_character",
+        "/blazor/workbench?workspace=ws-1&command=export_character&dialog_action=download",
+        "/blazor/workbench?workspace=ws-1&command=print_character",
+        "/blazor/workbench?workspace=ws-1&tab=tab-calendar",
+        "/blazor/workbench?workspace=ws-1&tab=tab-calendar&control=create_entry",
+        "/blazor/workbench?workspace=ws-1&tab=tab-calendar&control=edit_entry",
+        "/blazor/workbench?workspace=ws-1&tab=tab-calendar&control=edit_entry&dialog_action=apply",
+        "/blazor/workbench?workspace=ws-1&tab=tab-calendar&control=delete_entry",
+        "/blazor/workbench?workspace=ws-1&tab=tab-calendar&control=delete_entry&dialog_action=delete",
+        "/blazor/workbench?workspace=ws-1&tab=tab-calendar&control=move_up",
+        "/blazor/workbench?workspace=ws-1&tab=tab-calendar&control=move_down",
+        "/blazor/workbench?workspace=ws-1&tab=tab-info&control=open_notes",
+        "/blazor/workbench?workspace=ws-1&tab=tab-info&control=identity_license_edit",
+        "/blazor/workbench?workspace=ws-1&tab=tab-info&control=identity_license_delete",
+        "/blazor/workbench?workspace=ws-1&tab=tab-combat&control=combat_reload",
+        "/blazor/workbench?workspace=ws-1&tab=tab-combat&control=combat_damage_track",
+        "/blazor/workbench?workspace=ws-1&tab=tab-skills&control=skill_remove",
+        "/blazor/workbench?workspace=ws-1&tab=tab-skills&control=skill_group",
+        "/blazor/workbench?workspace=ws-1&tab=tab-adept&control=adept_power_add",
+        "/blazor/workbench?workspace=ws-1&tab=tab-magician&control=spirit_add",
+        "/blazor/workbench?workspace=ws-1&tab=tab-critter&control=critter_power_add",
+        "/blazor/workbench?workspace=ws-1&tab=tab-technomancer&control=matrix_program_add",
+        "/blazor/workbench?workspace=ws-1&tab=tab-gear&control=gear_edit",
+        "/blazor/workbench?workspace=ws-1&tab=tab-gear&control=gear_delete",
+        "/blazor/workbench?workspace=ws-1&tab=tab-stats&control=runner_benchmark",
+        "/blazor/workbench?workspace=ws-1&tab=tab-stats&control=runner_what_if",
+        "/blazor/workbench?workspace=ws-1&tab=tab-stats&control=runner_cohort_privacy",
+        "/blazor/workbench?workspace=ws-1&tab=tab-gear&control=gear_source",
+        "/blazor/workbench?workspace=ws-1&tab=tab-gear&control=gear_mount",
+        "/blazor/workbench?workspace=ws-1&tab=tab-gear&control=toggle_free_paid",
+        "/blazor/workbench?workspace=ws-1&tab=tab-magician&control=magic_add",
+        "/blazor/workbench?workspace=ws-1&tab=tab-magician&control=magic_bind",
+        "/blazor/workbench?workspace=ws-1&tab=tab-magician&control=magic_source",
+        "/blazor/workbench?workspace=ws-1&tab=tab-gear&control=drug_delete",
+        "/blazor/preview?fixture=blue&command=save_character_as",
+        "/blazor/preview?fixture=blue&command=save_character",
+        "/blazor/preview?fixture=blue&command=print_character",
+        "/blazor/preview?fixture=blue&command=export_character",
+        "/blazor/preview?fixture=blue&command=export_character&dialog_action=download",
+    ] if playwright_scope == "full" else []),
     "workflow_proofs": [
         "startup_workbench",
         "blazor_root_redirect",
@@ -378,28 +462,60 @@ self_host_payload = {
         "workspace_resume_route",
         "recent_work_resume_card",
         "restored_continuation_lanes",
-        "restored_result_continuations",
         "restored_build_lab_continuation",
-        "restored_contact_action_continuation",
-        "restored_advanced_action_continuation",
-        "restored_committed_action_continuations",
         "mobile_workbench",
         "open_character_deep_link",
         "open_for_printing_deep_link",
         "open_for_export_deep_link",
-        "new_character_deep_link",
-        "origin_dossier_deep_link",
-        "seeded_save_as_result",
-        "seeded_save_result",
-        "seeded_print_result",
-        "seeded_export_result",
+        "new_character_dialog",
+        "origin_dossier_dialog",
         "seeded_build_lab",
         "advanced_complex_forms",
+        "restored_contact_add_commit_route",
+        "restored_career_entry_add_commit_route",
+        "restored_runner_notes_commit_route",
+        "restored_source_gear_utility_route",
+        "restored_gear_add_route",
+        "restored_skill_specialize_route",
+        "restored_combat_add_armor_route",
+        "restored_identity_license_add_route",
+        "restored_spell_action_route",
         "downloads_manifest",
-    ],
+    ] + ([
+        "new_character_deep_link",
+        "origin_dossier_deep_link",
+        "restored_result_continuations",
+        "restored_contact_action_continuation",
+        "restored_advanced_action_continuation",
+        "restored_committed_action_continuations",
+        "seeded_print_result",
+        "seeded_export_result",
+        "seeded_save_result",
+        "seeded_save_as_result",
+        "restored_contact_action_continuation",
+        "restored_career_log",
+        "restored_career_entry_edit_route",
+        "restored_career_entry_delete_route",
+        "restored_career_entry_edit_commit_route",
+        "restored_career_entry_delete_commit_route",
+        "restored_runner_notes_route",
+        "restored_career_entry_reorder_route",
+        "restored_magic_cleanup_utilities",
+        "restored_source_gear_utilities",
+        "restored_gear_edit_delete",
+        "restored_magic_support_families",
+        "restored_skill_remove_group",
+        "restored_combat_reload_damage_track",
+        "restored_identity_license_edit_delete",
+        "restored_complex_form_action",
+        "restored_initiation_routes",
+        "restored_cyberware_routes",
+        "restored_spell_commit_route",
+    ] if playwright_scope == "full" else []),
     "notes": [
         "Self-hosted browser proof is separate from public chummer.run promotion proof.",
         "Portal-backed Chummer Online proof must cover reload-safe /blazor routing, startup deep links, state-backed recent-dossier resume links, restored-session continuation lanes, restored-session result continuations, restored-session build-lab continuation, multiple restored-session action continuations, the career/support add/edit/delete lifecycle, and multiple restored actions that commit visible state changes.",
+        "Default self-host gate scope is smoke for deterministic release gating; set CHUMMER_PORTAL_PLAYWRIGHT_SCOPE=full for the broader browser matrix.",
     ],
 }
 

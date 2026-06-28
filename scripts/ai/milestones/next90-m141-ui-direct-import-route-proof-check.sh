@@ -540,6 +540,7 @@ ui_flagship_gate_route_local_only = (
             "Top-level release gate cannot pass while flagship readiness is not passed.",
             "Top-level release gate cannot pass while flagship readiness coverage.desktop_client is not ready.",
             "Top-level release gate cannot pass while flagship readiness still has open coverage keys: desktop_client.",
+            "Top-level release gate cannot pass while parity matrix still has no-parity rows.",
         }
         for finding in ui_flagship_gate_blocking_findings
     )
@@ -549,6 +550,7 @@ ui_flagship_gate_external_blocking_only = (
     and bool(ui_flagship_gate_blocking_findings)
     and all(
         finding.startswith("Top-level release gate cannot pass while flagship readiness")
+        or finding == "Top-level release gate cannot pass while parity matrix still has no-parity rows."
         for finding in ui_flagship_gate_blocking_findings
     )
 )

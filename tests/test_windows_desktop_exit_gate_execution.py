@@ -44,15 +44,23 @@ def _write_bootstrap_payload(payload_path: Path) -> None:
 
 
 def _write_visual_screenshots(root: Path) -> tuple[Path, Path]:
-    progress_path = root / "published" / "windows-installer-progress.png"
-    completion_path = root / "published" / "windows-installer-completion.png"
+    progress_path = root / "published" / "windows-installer-visual-proof" / "windows-installer-progress.png"
+    completion_path = root / "published" / "windows-installer-visual-proof" / "windows-installer-completion.png"
     progress_path.parent.mkdir(parents=True, exist_ok=True)
     progress_path.write_bytes(b"progress-image")
     completion_path.write_bytes(b"completion-image")
     return progress_path, completion_path
 
 
-def _write_release_channel(path: Path, installer_name: str, installer_sha: str, installer_size: int) -> None:
+def _write_release_channel(
+    path: Path,
+    installer_name: str,
+    installer_sha: str,
+    installer_size: int,
+    payload_name: str,
+    payload_sha: str,
+    payload_size: int,
+) -> None:
     _write_json(
         path,
         {
@@ -71,6 +79,10 @@ def _write_release_channel(path: Path, installer_name: str, installer_sha: str, 
                     "downloadUrl": f"https://chummer.run/downloads/files/{installer_name}",
                     "sha256": installer_sha,
                     "sizeBytes": installer_size,
+                    "installerMode": "bootstrap",
+                    "payloadFileName": payload_name,
+                    "payloadSha256": payload_sha,
+                    "payloadSizeBytes": payload_size,
                     "channelId": "preview",
                     "version": "run-test-0.0.0.1",
                     "releaseVersion": "run-test-0.0.0.1",
@@ -80,7 +92,31 @@ def _write_release_channel(path: Path, installer_name: str, installer_sha: str, 
     )
 
 
-def _write_startup_smoke_receipt(path: Path, installer_sha: str) -> None:
+def _write_linux_only_release_channel(path: Path) -> None:
+    _write_json(
+        path,
+        {
+            "status": "published",
+            "channelId": "preview",
+            "version": "run-test-0.0.0.1",
+            "desktopTupleCoverage": {
+                "requiredDesktopPlatforms": ["linux"],
+                "requiredDesktopHeads": ["avalonia"],
+                "requiredDesktopPlatformHeadRidTuples": ["avalonia:linux-x64:linux"],
+                "externalProofRequests": [],
+            },
+            "artifacts": [],
+        },
+    )
+
+
+def _write_startup_smoke_receipt(
+    path: Path,
+    installer_sha: str,
+    payload_name: str,
+    payload_sha: str,
+    payload_size: int,
+) -> None:
     _write_json(
         path,
         {
@@ -95,8 +131,33 @@ def _write_startup_smoke_receipt(path: Path, installer_sha: str) -> None:
             "version": "run-test-0.0.0.1",
             "hostClass": "win32-x64",
             "operatingSystem": "Windows 11",
+            "bootstrapPayloadAcquisitionMode": "download",
+            "bootstrapPayloadFileName": payload_name,
+            "bootstrapPayloadSha256": payload_sha,
+            "bootstrapPayloadSizeBytes": payload_size,
             "completedAtUtc": _now_iso(),
         },
+    )
+
+
+def _write_startup_smoke_progress_log(path: Path, payload_file_name: str) -> None:
+    path.parent.mkdir(parents=True, exist_ok=True)
+    path.write_text(
+        "\n".join(
+            [
+                "# Chummer installer trace",
+                "Bootstrap temp root: C:\\Users\\tibor\\AppData\\Local\\Temp\\Chummer6\\installer-temp",
+                f"Payload download target: C:\\Users\\tibor\\AppData\\Local\\Temp\\Chummer6\\installer-temp\\{payload_file_name}",
+                "Downloading application files",
+                "Payload download completed with bundled curl",
+                "Verifying payload size",
+                "Verifying payload checksum",
+                "Extracting application files",
+                "Install complete",
+            ]
+        )
+        + "\n",
+        encoding="utf-8",
     )
 
 
@@ -145,9 +206,12 @@ def _build_fixture(root: Path) -> dict[str, Path]:
     installer_path.write_bytes(b"windows-installer-stub" * 256)
     _write_bootstrap_payload(payload_path)
     installer_sha = _sha256_file(installer_path)
+    payload_sha = _sha256_file(payload_path)
+    payload_size = payload_path.stat().st_size
 
     release_channel_path = root / "downloads" / "RELEASE_CHANNEL.generated.json"
     startup_smoke_path = root / "startup-smoke" / "startup-smoke-avalonia-win-x64.receipt.json"
+    startup_smoke_progress_log_path = root / "startup-smoke" / "windows-installer-progress-avalonia-win-x64.log"
     local_release_path = root / "published" / "UI_LOCAL_RELEASE_PROOF.generated.json"
     self_host_path = root / "published" / "BLAZOR_SELF_HOST_WORKBENCH_PROOF.generated.json"
     public_edge_path = root / "published" / "BLAZOR_PUBLIC_EDGE_WORKBENCH_PROOF.generated.json"
@@ -161,8 +225,23 @@ def _build_fixture(root: Path) -> dict[str, Path]:
     output_path = root / "published" / "UI_WINDOWS_DESKTOP_EXIT_GATE.generated.json"
     progress_screenshot_path, completion_screenshot_path = _write_visual_screenshots(root)
 
-    _write_release_channel(release_channel_path, installer_path.name, installer_sha, installer_path.stat().st_size)
-    _write_startup_smoke_receipt(startup_smoke_path, installer_sha)
+    _write_release_channel(
+        release_channel_path,
+        installer_path.name,
+        installer_sha,
+        installer_path.stat().st_size,
+        payload_path.name,
+        payload_sha,
+        payload_size,
+    )
+    _write_startup_smoke_receipt(
+        startup_smoke_path,
+        installer_sha,
+        payload_path.name,
+        payload_sha,
+        payload_size,
+    )
+    _write_startup_smoke_progress_log(startup_smoke_progress_log_path, payload_path.name)
     _write_support_receipt(local_release_path, "chummer6-ui.local_release_proof")
     _write_support_receipt(self_host_path, "chummer6-ui.blazor_self_host_workbench_proof")
     _write_support_receipt(public_edge_path, "chummer6-ui.blazor_public_edge_workbench_proof", status="ready")
@@ -179,6 +258,7 @@ def _build_fixture(root: Path) -> dict[str, Path]:
         "payload_path": payload_path,
         "release_channel_path": release_channel_path,
         "startup_smoke_path": startup_smoke_path,
+        "startup_smoke_progress_log_path": startup_smoke_progress_log_path,
         "local_release_path": local_release_path,
         "self_host_path": self_host_path,
         "public_edge_path": public_edge_path,
@@ -235,7 +315,10 @@ def test_windows_desktop_exit_gate_fails_cleanly_when_visual_proof_is_missing(tm
     assert "Windows installer visual proof is missing" in result.stderr
     receipt = json.loads(paths["output_path"].read_text(encoding="utf-8"))
     assert receipt["status"] == "failed"
+    assert receipt["blockingMode"] == "external_only"
+    assert receipt["blocking_mode"] == "external_only"
     assert receipt["checks"]["windows_installer_visual_proof_found"] is False
+    assert receipt["checks"]["windows_visual_proof_external_blocker"] == "missing_windows_visual_proof_capture"
     assert "Windows installer visual proof is missing; capture progress and completion screenshots on a Windows host." in receipt["reasons"]
     assert receipt["checks"]["bootstrap_payload_exists"] is True
     assert receipt["checks"]["bootstrap_payload_sample_marker_present"] is True
@@ -266,9 +349,47 @@ def test_windows_desktop_exit_gate_passes_with_valid_visual_proof_and_bootstrap_
         "completion": True,
     }
     assert receipt["checks"]["startup_smoke_status"] == "pass"
+    assert receipt["checks"]["startup_smoke_progress_log_found"] is True
+    assert receipt["checks"]["startup_smoke_bootstrap_temp_root_contract_ok"] is True
+    assert receipt["checks"]["startup_smoke_payload_target_root_level"] is False
     assert receipt["checks"]["bootstrap_payload_exists"] is True
     assert receipt["checks"]["bootstrap_payload_sample_marker_present"] is True
     assert receipt["checks"]["ui_local_release_status"] == "passed"
+
+
+def test_windows_desktop_exit_gate_rejects_bootstrap_progress_log_with_root_level_payload_target(tmp_path: Path) -> None:
+    paths = _build_fixture(tmp_path)
+    _write_visual_proof(
+        paths["visual_proof_path"],
+        _sha256_file(paths["installer_path"]),
+        paths["progress_screenshot_path"],
+        paths["completion_screenshot_path"],
+    )
+    paths["startup_smoke_progress_log_path"].write_text(
+        "\n".join(
+            [
+                "# Chummer installer trace",
+                "Bootstrap temp root: C:\\Users\\tibor\\AppData\\Local\\Temp\\Chummer6\\installer-temp",
+                "Payload download target: \\chummer-avalonia-win-x64-payload.zip",
+                "Downloading application files",
+                "Payload download completed with bundled curl",
+                "Verifying payload size",
+                "Verifying payload checksum",
+                "Extracting application files",
+                "Install complete",
+            ]
+        )
+        + "\n",
+        encoding="utf-8",
+    )
+
+    result = _run_gate(paths)
+
+    assert result.returncode != 0
+    assert "Windows bootstrap startup smoke progress log captured a root-level payload target." in result.stderr
+    receipt = json.loads(paths["output_path"].read_text(encoding="utf-8"))
+    assert receipt["status"] == "failed"
+    assert receipt["checks"]["startup_smoke_payload_target_root_level"] is True
 
 
 def test_windows_desktop_exit_gate_rejects_visual_proof_with_missing_screenshot_file(tmp_path: Path) -> None:
@@ -305,5 +426,29 @@ def test_windows_desktop_exit_gate_defaults_to_release_aligned_files_shelf(tmp_p
     assert result.returncode == 0, result.stderr
     receipt = json.loads(paths["output_path"].read_text(encoding="utf-8"))
     assert receipt["status"] == "passed"
+    assert receipt["blockingMode"] == "none"
+    assert receipt["blocking_mode"] == "none"
     assert receipt["checks"]["windows_installer_from_primary_shelf"] is True
     assert Path(receipt["checks"]["windows_installer_primary_shelf_root"]) == paths["files_dir"]
+
+
+def test_windows_desktop_exit_gate_passes_as_not_required_when_release_channel_is_linux_only(tmp_path: Path) -> None:
+    paths = _build_fixture(tmp_path)
+    _write_linux_only_release_channel(paths["release_channel_path"])
+    if paths["visual_proof_path"].exists():
+        paths["visual_proof_path"].unlink()
+    if paths["startup_smoke_path"].exists():
+        paths["startup_smoke_path"].unlink()
+
+    result = _run_gate(paths)
+
+    assert result.returncode == 0, result.stderr
+    assert "not required for current release channel" in result.stdout
+    receipt = json.loads(paths["output_path"].read_text(encoding="utf-8"))
+    assert receipt["status"] == "passed"
+    assert receipt["summary"] == "Windows desktop exit gate is not required for this release channel."
+    assert receipt["blockingMode"] == "none"
+    assert receipt["blocking_mode"] == "none"
+    assert receipt["checks"]["windows_platform_required_for_release_channel"] is False
+    assert receipt["checks"]["windows_installer_not_required_for_release_channel"] is True
+    assert receipt["checks"]["windows_installer_visual_proof_found"] is False

@@ -534,8 +534,8 @@ public partial class DesktopDialogWindow : Window
         return new Border
         {
             BorderThickness = new Thickness(1),
-            BorderBrush = ResolveThemeBrush("ChummerShellBorderBrush", "#B7C4D5"),
-            Background = ResolveThemeBrush("ChummerShellSelectionToolbarBrush", "#EEF2F6"),
+            BorderBrush = DesktopShellTheme.ResolveBorderBrush(),
+            Background = DesktopShellTheme.ResolveSelectionToolbarBrush(),
             CornerRadius = default,
             Padding = new Thickness(6, 5),
             Child = body
@@ -556,8 +556,8 @@ public partial class DesktopDialogWindow : Window
         return new Border
         {
             BorderThickness = new Thickness(1),
-            BorderBrush = ResolveThemeBrush("ChummerShellBorderBrush", "#B7C4D5"),
-            Background = ResolveThemeBrush("ChummerShellSelectionPanelBrush", "#F8FAFC"),
+            BorderBrush = DesktopShellTheme.ResolveBorderBrush(),
+            Background = DesktopShellTheme.ResolveSelectionPanelBrush(),
             CornerRadius = default,
             Padding = new Thickness(6, 5),
             MinHeight = minHeight,
@@ -569,7 +569,7 @@ public partial class DesktopDialogWindow : Window
     {
         return new Border
         {
-            BorderBrush = ResolveThemeBrush("ChummerShellBorderBrush", "#B5C0CF"),
+            BorderBrush = DesktopShellTheme.ResolveBorderBrush(),
             BorderThickness = new Thickness(0, 0, 0, 1),
             Padding = new Thickness(0, 0, 0, 4),
             Child = new TextBlock
@@ -598,7 +598,7 @@ public partial class DesktopDialogWindow : Window
         {
             Text = count.ToString(CultureInfo.InvariantCulture),
             FontSize = 12,
-            Foreground = ResolveThemeBrush("ChummerShellTextMutedBrush", "#53657D"),
+            Foreground = DesktopShellTheme.ResolveTextMutedBrush(),
             VerticalAlignment = global::Avalonia.Layout.VerticalAlignment.Center
         };
 
@@ -609,7 +609,7 @@ public partial class DesktopDialogWindow : Window
 
         return new Border
         {
-            BorderBrush = ResolveThemeBrush("ChummerShellBorderBrush", "#B5C0CF"),
+            BorderBrush = DesktopShellTheme.ResolveBorderBrush(),
             BorderThickness = new Thickness(0, 0, 0, 1),
             Padding = new Thickness(0, 0, 0, 4),
             Child = header
@@ -1049,7 +1049,7 @@ public partial class DesktopDialogWindow : Window
         return new Border
         {
             BorderThickness = new Thickness(1),
-            BorderBrush = ResolveThemeBrush("ChummerShellBorderBrush", "#B5C0CF"),
+            BorderBrush = DesktopShellTheme.ResolveBorderBrush(),
             Background = ResolveThemeBrush("ChummerShellSurfaceAltBrush", "#020617"),
             CornerRadius = new CornerRadius(6),
             Padding = new Thickness(10),
@@ -1572,7 +1572,7 @@ public partial class DesktopDialogWindow : Window
                         new TextBlock
                         {
                             Text = string.IsNullOrWhiteSpace(value) ? "Pending" : value,
-                            Foreground = ResolveThemeBrush("ChummerShellForegroundBrush", "#E5E7EB"),
+                            Foreground = DesktopShellTheme.ResolveForegroundBrush(),
                             FontWeight = FontWeight.SemiBold,
                             TextWrapping = TextWrapping.Wrap
                         }
@@ -1771,7 +1771,7 @@ public partial class DesktopDialogWindow : Window
             TextBlock value = new()
             {
                 Text = attribute.Value,
-                Foreground = ResolveThemeBrush("ChummerShellForegroundBrush", "#E5E7EB"),
+                Foreground = DesktopShellTheme.ResolveForegroundBrush(),
                 FontWeight = FontWeight.SemiBold,
                 HorizontalAlignment = global::Avalonia.Layout.HorizontalAlignment.Left
             };
@@ -1938,8 +1938,8 @@ public partial class DesktopDialogWindow : Window
                 new Border
                 {
                     BorderThickness = new Thickness(1),
-                    BorderBrush = ResolveThemeBrush("ChummerShellBorderBrush", "#B5C0CF"),
-                    Background = ResolveThemeBrush("ChummerShellSurfaceBrush", "#111827"),
+                    BorderBrush = DesktopShellTheme.ResolveBorderBrush(),
+                    Background = DesktopShellTheme.ResolveSurfaceBrush(),
                     CornerRadius = default,
                     Padding = new Thickness(8, 6),
                     Child = summaryText
@@ -2082,8 +2082,8 @@ public partial class DesktopDialogWindow : Window
         Border resultsSummaryBorder = new()
         {
             BorderThickness = new Thickness(1),
-            BorderBrush = ResolveThemeBrush("ChummerShellBorderBrush", "#B5C0CF"),
-            Background = ResolveThemeBrush("ChummerShellSurfaceBrush", "#111827"),
+            BorderBrush = DesktopShellTheme.ResolveBorderBrush(),
+            Background = DesktopShellTheme.ResolveSurfaceBrush(),
             Padding = new Thickness(6, 4),
             Child = new TextBlock
             {
@@ -2200,7 +2200,7 @@ public partial class DesktopDialogWindow : Window
     {
         return new Border
         {
-            Background = ResolveThemeBrush("ChummerShellSurfaceBrush", "#111827"),
+            Background = DesktopShellTheme.ResolveSurfaceBrush(),
             BorderBrush = ResolveThemeBrush("ChummerShellBorderStrongBrush", "#93A0B2"),
             BorderThickness = new Thickness(1),
             CornerRadius = new CornerRadius(6),
@@ -2762,7 +2762,7 @@ public partial class DesktopDialogWindow : Window
             TextBlock textBlock = new()
             {
                 Text = field.Value,
-                Foreground = ResolveThemeBrush("ChummerShellForegroundBrush", "#E5E7EB"),
+                Foreground = DesktopShellTheme.ResolveForegroundBrush(),
                 TextWrapping = TextWrapping.Wrap
             };
             if (string.Equals(field.VisualKind, DesktopDialogFieldVisualKinds.Tree, StringComparison.Ordinal))
@@ -2773,8 +2773,8 @@ public partial class DesktopDialogWindow : Window
             Border panel = new()
             {
                 BorderThickness = new Thickness(1),
-                BorderBrush = ResolveThemeBrush("ChummerShellBorderBrush", "#B5C0CF"),
-                Background = ResolveThemeBrush("ChummerShellSurfaceBrush", "#111827"),
+                BorderBrush = DesktopShellTheme.ResolveBorderBrush(),
+                Background = DesktopShellTheme.ResolveSurfaceBrush(),
                 Padding = new Thickness(6, 4),
                 MinHeight = string.Equals(field.VisualKind, DesktopDialogFieldVisualKinds.List, StringComparison.Ordinal)
                     || string.Equals(field.VisualKind, DesktopDialogFieldVisualKinds.Tree, StringComparison.Ordinal)
@@ -2826,8 +2826,8 @@ public partial class DesktopDialogWindow : Window
             tabs.Children.Add(new Border
             {
                 BorderThickness = new Thickness(1),
-                BorderBrush = ResolveThemeBrush("ChummerShellBorderBrush", "#B5C0CF"),
-                Background = ResolveThemeBrush("ChummerShellSurfaceBrush", "#111827"),
+                BorderBrush = DesktopShellTheme.ResolveBorderBrush(),
+                Background = DesktopShellTheme.ResolveSurfaceBrush(),
                 Margin = new Thickness(0, 0, 4, 4),
                 Padding = new Thickness(8, 3),
                 Child = new TextBlock { Text = line }
@@ -2876,8 +2876,8 @@ public partial class DesktopDialogWindow : Window
         panel.Children.Add(new Border
         {
             BorderThickness = new Thickness(1),
-            BorderBrush = ResolveThemeBrush("ChummerShellBorderBrush", "#B5C0CF"),
-            Background = ResolveThemeBrush("ChummerShellSurfaceBrush", "#111827"),
+            BorderBrush = DesktopShellTheme.ResolveBorderBrush(),
+            Background = DesktopShellTheme.ResolveSurfaceBrush(),
             MinHeight = 136,
             Child = previewControl
         });
@@ -2924,8 +2924,8 @@ public partial class DesktopDialogWindow : Window
         return new Border
         {
             BorderThickness = new Thickness(1),
-            BorderBrush = ResolveThemeBrush("ChummerShellBorderBrush", "#B5C0CF"),
-            Background = ResolveThemeBrush("ChummerShellSurfaceBrush", "#111827"),
+            BorderBrush = DesktopShellTheme.ResolveBorderBrush(),
+            Background = DesktopShellTheme.ResolveSurfaceBrush(),
             MinHeight = 136,
             Child = previewControl
         };
@@ -2986,8 +2986,8 @@ public partial class DesktopDialogWindow : Window
         return new Border
         {
             BorderThickness = new Thickness(1),
-            BorderBrush = ResolveThemeBrush("ChummerShellBorderBrush", "#B5C0CF"),
-            Background = ResolveThemeBrush("ChummerShellSurfaceBrush", "#111827"),
+            BorderBrush = DesktopShellTheme.ResolveBorderBrush(),
+            Background = DesktopShellTheme.ResolveSurfaceBrush(),
             Padding = new Thickness(6, 4),
             Child = rows
         };
@@ -3033,13 +3033,13 @@ public partial class DesktopDialogWindow : Window
         {
             Name = "SnippetReadOnlyTextPanel",
             BorderThickness = new Thickness(1),
-            BorderBrush = ResolveThemeBrush("ChummerShellBorderBrush", "#B5C0CF"),
-            Background = ResolveThemeBrush("ChummerShellSurfaceBrush", "#111827"),
+            BorderBrush = DesktopShellTheme.ResolveBorderBrush(),
+            Background = DesktopShellTheme.ResolveSurfaceBrush(),
             Padding = new Thickness(6, 4),
             Child = new TextBlock
             {
                 Text = value,
-                Foreground = ResolveThemeBrush("ChummerShellForegroundBrush", "#E5E7EB"),
+                Foreground = DesktopShellTheme.ResolveForegroundBrush(),
                 TextWrapping = TextWrapping.Wrap
             }
         };
@@ -3062,7 +3062,7 @@ public partial class DesktopDialogWindow : Window
             Text = title,
             FontSize = 18,
             FontWeight = FontWeight.SemiBold,
-            Foreground = ResolveThemeBrush("ChummerShellForegroundBrush", "#E5E7EB"),
+            Foreground = DesktopShellTheme.ResolveForegroundBrush(),
             TextWrapping = TextWrapping.Wrap
         });
 
@@ -3072,7 +3072,7 @@ public partial class DesktopDialogWindow : Window
             {
                 Name = "OriginBookPreviewBodyText",
                 Text = paragraph,
-                Foreground = ResolveThemeBrush("ChummerShellForegroundBrush", "#E5E7EB"),
+                Foreground = DesktopShellTheme.ResolveForegroundBrush(),
                 TextWrapping = TextWrapping.Wrap,
                 LineHeight = 20
             });
@@ -3082,8 +3082,8 @@ public partial class DesktopDialogWindow : Window
         {
             Name = "OriginBookPreviewPanel",
             BorderThickness = new Thickness(1),
-            BorderBrush = ResolveThemeBrush("ChummerShellBorderBrush", "#B5C0CF"),
-            Background = ResolveThemeBrush("ChummerShellSurfaceBrush", "#111827"),
+            BorderBrush = DesktopShellTheme.ResolveBorderBrush(),
+            Background = DesktopShellTheme.ResolveSurfaceBrush(),
             Padding = new Thickness(18, 14),
             MinHeight = 300,
             Child = new ScrollViewer
@@ -3102,14 +3102,14 @@ public partial class DesktopDialogWindow : Window
         {
             Name = "StructuredReadOnlyTextPanel",
             BorderThickness = new Thickness(1),
-            BorderBrush = ResolveThemeBrush("ChummerShellBorderBrush", "#B5C0CF"),
-            Background = ResolveThemeBrush("ChummerShellSurfaceBrush", "#111827"),
+            BorderBrush = DesktopShellTheme.ResolveBorderBrush(),
+            Background = DesktopShellTheme.ResolveSurfaceBrush(),
             Padding = new Thickness(6, 4),
             MinHeight = minHeight,
             Child = new TextBlock
             {
                 Text = value,
-                Foreground = ResolveThemeBrush("ChummerShellForegroundBrush", "#E5E7EB"),
+                Foreground = DesktopShellTheme.ResolveForegroundBrush(),
                 TextWrapping = TextWrapping.Wrap,
                 FontFamily = useMonospace ? new FontFamily("Consolas, Menlo, Monaco, monospace") : FontFamily.Default
             }
@@ -3301,7 +3301,7 @@ public partial class DesktopDialogWindow : Window
         {
             Text = label,
             FontWeight = FontWeight.SemiBold,
-            Foreground = ResolveThemeBrush("ChummerShellForegroundBrush", "#E5E7EB"),
+            Foreground = DesktopShellTheme.ResolveForegroundBrush(),
             VerticalAlignment = global::Avalonia.Layout.VerticalAlignment.Center
         };
         Grid.SetRow(labelText, rowIndex);
@@ -3311,7 +3311,7 @@ public partial class DesktopDialogWindow : Window
 
         if (valueControl is TextBlock valueText)
         {
-            valueText.Foreground = ResolveThemeBrush("ChummerShellForegroundBrush", "#E5E7EB");
+            valueText.Foreground = DesktopShellTheme.ResolveForegroundBrush();
             valueText.FontWeight = FontWeight.SemiBold;
             valueText.VerticalAlignment = global::Avalonia.Layout.VerticalAlignment.Center;
         }

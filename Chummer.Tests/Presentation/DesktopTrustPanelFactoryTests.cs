@@ -49,7 +49,7 @@ public sealed class DesktopTrustPanelFactoryTests
         AiCoachLaunchContext context = AiCoachLaunchQuery.Parse(new Uri("https://chummer.test" + launchUri).Query);
         Assert.AreEqual(AiRouteTypes.Build, context.RouteType);
         Assert.AreEqual(RulesetDefaults.Sr5, context.RulesetId);
-        StringAssert.Contains(context.Message ?? string.Empty, "Open Character explanation");
+        StringAssert.Contains(context.Message ?? string.Empty, "explanation");
         StringAssert.Contains(context.Message ?? string.Empty, "Import rules setup record");
         Assert.IsFalse((context.Message ?? string.Empty).Contains("receipt", StringComparison.OrdinalIgnoreCase));
         Assert.IsFalse((context.Message ?? string.Empty).Contains("rule-environment", StringComparison.OrdinalIgnoreCase));

@@ -54,7 +54,7 @@ internal sealed class DesktopCrashRecoveryWindow : Window
                 : S("desktop.crash.status.current"),
             IsVisible = false,
             TextWrapping = TextWrapping.Wrap,
-            Foreground = DesktopShellTheme.ResolveThemeBrush("ChummerShellMutedForegroundBrush", "#334155")
+            Foreground = DesktopShellTheme.ResolveMutedForegroundBrush()
         };
 
         _recoveryTrustPanelHost = new ContentControl

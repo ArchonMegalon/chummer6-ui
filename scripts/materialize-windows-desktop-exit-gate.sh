@@ -120,6 +120,7 @@ from __future__ import annotations
 
 import hashlib
 import json
+import ntpath
 import os
 import platform
 import shutil
@@ -153,6 +154,12 @@ def load_json(path: Path) -> Dict[str, Any]:
     return loaded if isinstance(loaded, dict) else {}
 
 
+def load_text(path: Path) -> str:
+    if not path.is_file():
+        return ""
+    return path.read_text(encoding="utf-8-sig", errors="replace")
+
+
 def sha256_file(path: Path) -> str:
     hasher = hashlib.sha256()
     with path.open("rb") as handle:
@@ -172,6 +179,14 @@ def read_status(path: Path, expected_contract: str | None = None) -> str:
 
 def normalize_token(value: Any) -> str:
     return str(value or "").strip().lower()
+
+
+def extract_prefixed_line(text: str, prefix: str) -> str:
+    for raw_line in text.splitlines():
+        line = raw_line.strip()
+        if line.startswith(prefix):
+            return line[len(prefix) :].strip()
+    return ""
 
 
 def expected_host_class_platform_token(platform: str) -> str:
@@ -571,7 +586,14 @@ expected_head_override = normalize_token(sys.argv[17])
 expected_rid_override = normalize_token(sys.argv[18])
 host_os_name = platform.system().strip()
 host_os_normalized = normalize_token(host_os_name)
-host_supports_windows_smoke = bool(os.name == "nt" or shutil.which("cygpath"))
+host_supports_windows_smoke = bool(
+    os.name == "nt"
+    or shutil.which("wine")
+    or shutil.which("wine64")
+    or shutil.which("powershell.exe")
+    or shutil.which("pwsh")
+    or shutil.which("cygpath")
+)
 
 reasons: List[str] = []
 evidence: Dict[str, Any] = {
@@ -614,6 +636,15 @@ external_proof_requests = (
     desktop_tuple_coverage.get("externalProofRequests")
     if isinstance(desktop_tuple_coverage, dict)
     and isinstance(desktop_tuple_coverage.get("externalProofRequests"), list)
+    else []
+)
+required_desktop_platforms = (
+    [
+        normalize_token(item)
+        for item in (desktop_tuple_coverage.get("requiredDesktopPlatforms") or [])
+        if normalize_token(item)
+    ]
+    if isinstance(desktop_tuple_coverage, dict)
     else []
 )
 expected_head = expected_head_override or "avalonia"
@@ -667,6 +698,60 @@ if windows_artifact is None:
         }
         evidence["release_channel_windows_external_proof_request"] = fallback_external_request
 
+windows_platform_required = (
+    "windows" in required_desktop_platforms
+    or windows_artifact is not None
+    or bool(windows_installer_path_override)
+)
+evidence["release_channel_required_desktop_platforms"] = required_desktop_platforms
+evidence["windows_platform_required_for_release_channel"] = windows_platform_required
+
+if not windows_platform_required:
+    payload = {
+        "contract_name": "chummer6-ui.windows_desktop_exit_gate",
+        "generated_at": now_iso(),
+        "channelId": release_channel_id,
+        "releaseVersion": release_channel_version,
+        "status": "passed" if release_channel_status == "published" and release_channel_version else "failed",
+        "blockingMode": "none" if release_channel_status == "published" and release_channel_version else "mixed_or_local",
+        "blocking_mode": "none" if release_channel_status == "published" and release_channel_version else "mixed_or_local",
+        "reason": (
+            "windows desktop exit gate is not required for this release channel"
+            if release_channel_status == "published" and release_channel_version
+            else "windows desktop exit gate checks failed"
+        ),
+        "summary": (
+            "Windows desktop exit gate is not required for this release channel."
+            if release_channel_status == "published" and release_channel_version
+            else "Windows desktop exit gate failed: release channel is not published or is missing version."
+        ),
+        "reasons": (
+            []
+            if release_channel_status == "published" and release_channel_version
+            else reasons
+        ),
+        "head": {
+            "app_key": expected_head,
+            "platform": "windows",
+            "rid": expected_rid,
+            "version": release_channel_version,
+            "channelId": release_channel_id,
+        },
+        "checks": {
+            **evidence,
+            "windows_installer_visual_proof_found": False,
+            "startup_smoke_receipt_found": False,
+            "startup_smoke_external_blocker": "",
+            "windows_installer_not_required_for_release_channel": True,
+        },
+    }
+    proof_path.write_text(json.dumps(payload, indent=2) + "\n", encoding="utf-8")
+    if payload["status"] == "passed":
+        print("[windows-exit-gate] PASS not required for current release channel")
+        raise SystemExit(0)
+    print("[windows-exit-gate] FAIL release channel basics invalid", file=sys.stderr)
+    raise SystemExit(1)
+
 if windows_artifact is None:
     reasons.append(
         f"Release channel does not publish a promoted Windows install medium artifact for {expected_head} ({expected_rid})."
@@ -674,6 +759,10 @@ if windows_artifact is None:
     artifact_file_name = ""
     artifact_size = 0
     artifact_sha = ""
+    artifact_installer_mode = ""
+    artifact_payload_file_name = ""
+    artifact_payload_sha256 = ""
+    artifact_payload_size_bytes = 0
 else:
     expected_head = normalize_token(windows_artifact.get("head")) or expected_head
     expected_rid = artifact_rid(windows_artifact) or expected_rid
@@ -682,6 +771,10 @@ else:
     artifact_file_name = str(windows_artifact.get("fileName") or "").strip()
     artifact_size = int(windows_artifact.get("sizeBytes") or 0)
     artifact_sha = str(windows_artifact.get("sha256") or "").strip().lower()
+    artifact_installer_mode = normalize_token(windows_artifact.get("installerMode"))
+    artifact_payload_file_name = str(windows_artifact.get("payloadFileName") or "").strip()
+    artifact_payload_sha256 = normalize_token(windows_artifact.get("payloadSha256"))
+    artifact_payload_size_bytes = int(windows_artifact.get("payloadSizeBytes") or 0)
 
 default_file_name = artifact_file_name or f"chummer-{expected_head}-{expected_rid}-installer.exe"
 primary_shelf_root = Path(os.path.abspath(str(windows_local_desktop_files_root)))
@@ -710,6 +803,14 @@ evidence["expected_windows_rid"] = expected_rid
 evidence["expected_windows_arch"] = expected_arch
 if artifact_file_name:
     evidence["expected_windows_file_name"] = artifact_file_name
+if artifact_installer_mode:
+    evidence["expected_windows_installer_mode"] = artifact_installer_mode
+if artifact_payload_file_name:
+    evidence["expected_windows_payload_file_name"] = artifact_payload_file_name
+if artifact_payload_sha256:
+    evidence["expected_windows_payload_sha256"] = artifact_payload_sha256
+if artifact_payload_size_bytes:
+    evidence["expected_windows_payload_size_bytes"] = artifact_payload_size_bytes
 installer_from_primary_shelf = path_is_within(installer_path, primary_shelf_root)
 evidence["windows_installer_primary_shelf_root"] = str(primary_shelf_root)
 evidence["windows_installer_from_primary_shelf"] = installer_from_primary_shelf
@@ -895,6 +996,12 @@ evidence["windows_installer_visual_actual_unique_digest_count"] = visual_actual_
 evidence["windows_installer_visual_readability_status"] = visual_readability_status
 evidence["windows_installer_visual_contrast_status"] = visual_contrast_status
 evidence["windows_installer_visual_clipping_status"] = visual_clipping_status
+windows_visual_proof_external_blocker = (
+    "missing_windows_visual_proof_capture"
+    if not windows_installer_visual_proof_path.is_file()
+    else ""
+)
+evidence["windows_visual_proof_external_blocker"] = windows_visual_proof_external_blocker
 
 if not windows_installer_visual_proof_path.is_file():
     reasons.append(
@@ -995,6 +1102,38 @@ startup_smoke_payload = load_json(startup_smoke_receipt_path)
 evidence["startup_smoke_receipt_path"] = str(startup_smoke_receipt_path)
 evidence["startup_smoke_receipt_candidates"] = [str(path) for path in startup_smoke_candidates]
 evidence["startup_smoke_receipt_found"] = startup_smoke_receipt_path.is_file()
+startup_smoke_progress_log_override = os.environ.get("CHUMMER_WINDOWS_STARTUP_SMOKE_PROGRESS_LOG_PATH", "").strip()
+startup_smoke_progress_log_name = f"windows-installer-progress-{expected_head}-{expected_rid}.log"
+if startup_smoke_progress_log_override:
+    startup_smoke_progress_log_path = Path(startup_smoke_progress_log_override).resolve()
+    startup_smoke_progress_log_candidates = [startup_smoke_progress_log_path]
+else:
+    startup_smoke_progress_log_candidates = []
+    if startup_smoke_receipt_path.parent:
+        startup_smoke_progress_log_candidates.append(startup_smoke_receipt_path.parent / startup_smoke_progress_log_name)
+    startup_smoke_progress_log_candidates.extend(
+        [
+            repo_root / "Docker" / "Downloads" / "startup-smoke" / startup_smoke_progress_log_name,
+            release_channel_path.parent / "startup-smoke" / startup_smoke_progress_log_name,
+            release_channel_path.parent.parent / "startup-smoke" / startup_smoke_progress_log_name,
+            proof_path.parent / "startup-smoke" / startup_smoke_progress_log_name,
+            repo_root / ".codex-studio" / "published" / "startup-smoke" / startup_smoke_progress_log_name,
+        ]
+    )
+    if hub_registry_root is not None:
+        startup_smoke_progress_log_candidates.extend(
+            [
+                hub_registry_root / ".codex-studio" / "published" / "startup-smoke" / startup_smoke_progress_log_name,
+                hub_registry_root / "Docker" / "Downloads" / "startup-smoke" / startup_smoke_progress_log_name,
+            ]
+        )
+    startup_smoke_progress_log_path = next(
+        (candidate for candidate in startup_smoke_progress_log_candidates if candidate.is_file()),
+        startup_smoke_progress_log_candidates[0],
+    )
+evidence["startup_smoke_progress_log_path"] = str(startup_smoke_progress_log_path)
+evidence["startup_smoke_progress_log_candidates"] = [str(path) for path in startup_smoke_progress_log_candidates]
+evidence["startup_smoke_progress_log_found"] = startup_smoke_progress_log_path.is_file()
 startup_smoke_incompatible_host_skip = (
     startup_smoke_receipt_path.is_file()
     and startup_smoke_is_incompatible_host_skip(startup_smoke_payload)
@@ -1046,6 +1185,54 @@ if startup_smoke_receipt_path.is_file() and path_uses_legacy_chummer5a_root(star
 
 startup_smoke_checkpoint = normalize_token(startup_smoke_payload.get("readyCheckpoint"))
 evidence["startup_smoke_ready_checkpoint"] = startup_smoke_checkpoint
+startup_smoke_bootstrap_payload_mode = normalize_token(startup_smoke_payload.get("bootstrapPayloadAcquisitionMode"))
+startup_smoke_bootstrap_payload_file_name = str(startup_smoke_payload.get("bootstrapPayloadFileName") or "").strip()
+startup_smoke_bootstrap_payload_sha256 = normalize_token(startup_smoke_payload.get("bootstrapPayloadSha256"))
+startup_smoke_bootstrap_payload_size_bytes = startup_smoke_payload.get("bootstrapPayloadSizeBytes") or 0
+evidence["startup_smoke_bootstrap_payload_acquisition_mode"] = startup_smoke_bootstrap_payload_mode
+evidence["startup_smoke_bootstrap_payload_file_name"] = startup_smoke_bootstrap_payload_file_name
+evidence["startup_smoke_bootstrap_payload_sha256"] = startup_smoke_bootstrap_payload_sha256
+evidence["startup_smoke_bootstrap_payload_size_bytes"] = startup_smoke_bootstrap_payload_size_bytes
+startup_smoke_progress_log_text = load_text(startup_smoke_progress_log_path)
+startup_smoke_progress_required_markers = [
+    "Bootstrap temp root:",
+    "Payload download target:",
+    "Downloading application files",
+    "Verifying payload size",
+    "Verifying payload checksum",
+    "Extracting application files",
+    "Install complete",
+]
+startup_smoke_progress_markers_missing = [
+    marker for marker in startup_smoke_progress_required_markers if marker not in startup_smoke_progress_log_text
+]
+startup_smoke_bootstrap_temp_root = extract_prefixed_line(
+    startup_smoke_progress_log_text,
+    "Bootstrap temp root:",
+)
+startup_smoke_payload_target = extract_prefixed_line(
+    startup_smoke_progress_log_text,
+    "Payload download target:",
+)
+startup_smoke_bootstrap_temp_root_normalized = startup_smoke_bootstrap_temp_root.replace("/", "\\").lower()
+startup_smoke_payload_target_normalized = startup_smoke_payload_target.replace("/", "\\").lower()
+startup_smoke_bootstrap_temp_root_contract_ok = startup_smoke_bootstrap_temp_root_normalized.endswith(
+    "\\chummer6\\installer-temp"
+)
+startup_smoke_payload_target_root_level = startup_smoke_payload_target_normalized.startswith("\\")
+startup_smoke_payload_target_uses_bootstrap_root = bool(
+    startup_smoke_bootstrap_temp_root_normalized
+    and startup_smoke_payload_target_normalized
+    and startup_smoke_payload_target_normalized.startswith(startup_smoke_bootstrap_temp_root_normalized + "\\")
+)
+startup_smoke_payload_target_file_name = ntpath.basename(startup_smoke_payload_target_normalized)
+evidence["startup_smoke_progress_log_markers_missing"] = startup_smoke_progress_markers_missing
+evidence["startup_smoke_bootstrap_temp_root"] = startup_smoke_bootstrap_temp_root
+evidence["startup_smoke_payload_download_target"] = startup_smoke_payload_target
+evidence["startup_smoke_bootstrap_temp_root_contract_ok"] = startup_smoke_bootstrap_temp_root_contract_ok
+evidence["startup_smoke_payload_target_root_level"] = startup_smoke_payload_target_root_level
+evidence["startup_smoke_payload_target_uses_bootstrap_root"] = startup_smoke_payload_target_uses_bootstrap_root
+evidence["startup_smoke_payload_target_file_name"] = startup_smoke_payload_target_file_name
 if (
     startup_smoke_receipt_path.is_file()
     and not startup_smoke_incompatible_host_skip
@@ -1122,6 +1309,83 @@ if startup_smoke_receipt_path.is_file() and not startup_smoke_rid:
     reasons.append("Windows startup smoke receipt rid is missing.")
 if startup_smoke_receipt_path.is_file() and startup_smoke_rid and startup_smoke_rid != expected_rid:
     reasons.append(f"Windows startup smoke receipt rid does not match promoted RID {expected_rid}.")
+if (
+    startup_smoke_receipt_path.is_file()
+    and artifact_installer_mode == "bootstrap"
+    and not startup_smoke_progress_log_path.is_file()
+):
+    reasons.append("Windows bootstrap startup smoke progress log is missing for promoted installer bytes.")
+if (
+    startup_smoke_receipt_path.is_file()
+    and artifact_installer_mode == "bootstrap"
+    and startup_smoke_progress_log_path.is_file()
+    and startup_smoke_progress_markers_missing
+):
+    reasons.append(
+        "Windows bootstrap startup smoke progress log is missing required markers: "
+        + ", ".join(startup_smoke_progress_markers_missing)
+        + "."
+    )
+if (
+    startup_smoke_receipt_path.is_file()
+    and artifact_installer_mode == "bootstrap"
+    and startup_smoke_progress_log_path.is_file()
+    and not startup_smoke_bootstrap_temp_root_contract_ok
+):
+    reasons.append("Windows bootstrap startup smoke progress log does not prove the Chummer6 installer-temp workspace contract.")
+if (
+    startup_smoke_receipt_path.is_file()
+    and artifact_installer_mode == "bootstrap"
+    and startup_smoke_progress_log_path.is_file()
+    and startup_smoke_payload_target_root_level
+):
+    reasons.append("Windows bootstrap startup smoke progress log captured a root-level payload target.")
+if (
+    startup_smoke_receipt_path.is_file()
+    and artifact_installer_mode == "bootstrap"
+    and startup_smoke_progress_log_path.is_file()
+    and startup_smoke_payload_target
+    and not startup_smoke_payload_target_root_level
+    and not startup_smoke_payload_target_uses_bootstrap_root
+):
+    reasons.append("Windows bootstrap startup smoke progress log payload target is outside the bootstrap temp root.")
+if (
+    startup_smoke_receipt_path.is_file()
+    and artifact_installer_mode == "bootstrap"
+    and artifact_payload_file_name
+    and startup_smoke_progress_log_path.is_file()
+    and startup_smoke_payload_target_file_name
+    and startup_smoke_payload_target_file_name != artifact_payload_file_name.lower()
+):
+    reasons.append("Windows bootstrap startup smoke progress log payload target file name does not match release-channel metadata.")
+if (
+    startup_smoke_receipt_path.is_file()
+    and artifact_installer_mode == "bootstrap"
+    and not startup_smoke_incompatible_host_skip
+    and startup_smoke_bootstrap_payload_mode != "download"
+):
+    reasons.append("Windows startup smoke receipt did not exercise bootstrap payload download mode.")
+if (
+    startup_smoke_receipt_path.is_file()
+    and artifact_installer_mode == "bootstrap"
+    and artifact_payload_file_name
+    and startup_smoke_bootstrap_payload_file_name != artifact_payload_file_name
+):
+    reasons.append("Windows startup smoke receipt bootstrap payload file name does not match release-channel metadata.")
+if (
+    startup_smoke_receipt_path.is_file()
+    and artifact_installer_mode == "bootstrap"
+    and artifact_payload_sha256
+    and startup_smoke_bootstrap_payload_sha256 != artifact_payload_sha256
+):
+    reasons.append("Windows startup smoke receipt bootstrap payload SHA-256 does not match release-channel metadata.")
+if (
+    startup_smoke_receipt_path.is_file()
+    and artifact_installer_mode == "bootstrap"
+    and artifact_payload_size_bytes > 0
+    and int(startup_smoke_bootstrap_payload_size_bytes or 0) != artifact_payload_size_bytes
+):
+    reasons.append("Windows startup smoke receipt bootstrap payload size does not match release-channel metadata.")
 if (
     startup_smoke_receipt_path.is_file()
     and release_channel_id
@@ -1301,6 +1565,24 @@ if (
 ):
     reasons.append("SR6 desktop workflow parity proof is missing or not passed.")
 
+external_only_reason_checks = []
+if "Windows installer visual proof is missing; capture progress and completion screenshots on a Windows host." in reasons:
+    external_only_reason_checks.append(
+        windows_visual_proof_external_blocker == "missing_windows_visual_proof_capture"
+    )
+if "SR4 desktop workflow parity proof is missing or not passed." in reasons:
+    external_only_reason_checks.append(sr4_workflow_parity_external_only)
+if "SR6 desktop workflow parity proof is missing or not passed." in reasons:
+    external_only_reason_checks.append(sr6_workflow_parity_external_only)
+
+blocking_mode = (
+    "none"
+    if not reasons
+    else "external_only"
+    if external_only_reason_checks and all(external_only_reason_checks) and len(external_only_reason_checks) == len(reasons)
+    else "mixed_or_local"
+)
+
 status = "passed" if not reasons else "failed"
 summary = (
     "Windows desktop exit gate passed with an explicit incompatible-host startup-smoke boundary."
@@ -1327,6 +1609,8 @@ payload = {
         "launch_target": launch_target,
     },
     "summary": summary,
+    "blockingMode": blocking_mode,
+    "blocking_mode": blocking_mode,
     "checks": evidence,
     "reasons": reasons,
 }

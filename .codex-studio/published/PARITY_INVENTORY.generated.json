@@ -1,18 +1,37 @@
 {
   "closure_evidence": {
-    "blazor_public_edge_execution_proof": "/docker/chummercomplete/chummer-presentation/.codex-studio/published/BLAZOR_PUBLIC_EDGE_EXECUTION_PROOF.generated.json",
-    "layout_hard_gate": "/docker/chummercomplete/chummer-presentation/.codex-studio/published/CHUMMER5A_LAYOUT_HARD_GATE.generated.json",
-    "sr4_sr6_frontier": "/docker/chummercomplete/chummer-presentation/.codex-studio/published/SR4_SR6_DESKTOP_PARITY_FRONTIER.generated.json",
-    "sr4_workflow": "/docker/chummercomplete/chummer-presentation/.codex-studio/published/SR4_DESKTOP_WORKFLOW_PARITY.generated.json",
-    "sr6_workflow": "/docker/chummercomplete/chummer-presentation/.codex-studio/published/SR6_DESKTOP_WORKFLOW_PARITY.generated.json",
-    "ui_element_parity": "/docker/chummercomplete/chummer-presentation/.codex-studio/published/CHUMMER5A_UI_ELEMENT_PARITY_AUDIT.generated.json",
-    "user_journey": "/docker/chummercomplete/chummer-presentation/.codex-studio/published/USER_JOURNEY_TESTER_AUDIT.generated.json",
-    "visual_familiarity": "/docker/chummercomplete/chummer-presentation/.codex-studio/published/DESKTOP_VISUAL_FAMILIARITY_EXIT_GATE.generated.json",
-    "workflow_execution": "/docker/chummercomplete/chummer-presentation/.codex-studio/published/DESKTOP_WORKFLOW_EXECUTION_GATE.generated.json"
+    "blazor_public_edge_execution_proof": "/docker/chummercomplete/chummer6-ui/.codex-studio/published/BLAZOR_PUBLIC_EDGE_EXECUTION_PROOF.generated.json",
+    "blazor_public_edge_workbench_proof": "/docker/chummercomplete/chummer6-ui/.codex-studio/published/BLAZOR_PUBLIC_EDGE_WORKBENCH_PROOF.generated.json",
+    "layout_hard_gate": "/docker/chummercomplete/chummer6-ui/.codex-studio/published/CHUMMER5A_LAYOUT_HARD_GATE.generated.json",
+    "sr4_sr6_frontier": "/docker/chummercomplete/chummer6-ui/.codex-studio/published/SR4_SR6_DESKTOP_PARITY_FRONTIER.generated.json",
+    "sr4_workflow": "/docker/chummercomplete/chummer6-ui/.codex-studio/published/SR4_DESKTOP_WORKFLOW_PARITY.generated.json",
+    "sr6_workflow": "/docker/chummercomplete/chummer6-ui/.codex-studio/published/SR6_DESKTOP_WORKFLOW_PARITY.generated.json",
+    "ui_element_parity": "/docker/chummercomplete/chummer6-ui/.codex-studio/published/CHUMMER5A_UI_ELEMENT_PARITY_AUDIT.generated.json",
+    "user_journey": "/docker/chummercomplete/chummer6-ui/.codex-studio/published/USER_JOURNEY_TESTER_AUDIT.generated.json",
+    "visual_familiarity": "/docker/chummercomplete/chummer6-ui/.codex-studio/published/DESKTOP_VISUAL_FAMILIARITY_EXIT_GATE.generated.json",
+    "workflow_execution": "/docker/chummercomplete/chummer6-ui/.codex-studio/published/DESKTOP_WORKFLOW_EXECUTION_GATE.generated.json"
   },
   "contract_name": "REAL_CHUMMER_CLASSIC_PARITY_SEED_INVENTORY",
-  "generated_at": "2026-06-20T21:55:18Z",
+  "generated_at": "2026-06-27T10:59:21Z",
+  "hosted_execution_promoted_route_base": "/blazor/workbench",
   "hosted_execution_proof_status": "passed",
+  "hosted_execution_proof_tier": "hosted_promoted_route_execution",
+  "hosted_execution_required_workflow_family_ids": [
+    "promoted_startup_command_executions",
+    "promoted_resumed_workspace",
+    "promoted_recent_work_affordances",
+    "promoted_restored_section_continuations",
+    "promoted_restored_tab_landings",
+    "promoted_restored_section_content",
+    "promoted_result_continuations",
+    "promoted_action_continuations",
+    "promoted_advanced_action_affordances",
+    "promoted_advanced_action_executions",
+    "promoted_committed_actions",
+    "promoted_advanced_committed_actions"
+  ],
+  "hosted_execution_route_lane": "promoted_blazor_workbench",
+  "hosted_route_entry_proof_shape": "expanded",
   "items": [
     {
       "category": "baseline_surface",

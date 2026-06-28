@@ -64,7 +64,7 @@ public sealed class PublicPreviewSurfaceTests
         StringAssert.Contains(cut.Markup, "/preview?fixture=blue&amp;tab=tab-technomancer");
         StringAssert.Contains(cut.Markup, "/preview?fixture=blue&amp;tab=tab-contacts");
         StringAssert.Contains(cut.Markup, "New runner");
-        StringAssert.Contains(cut.Markup, "Open Dossier");
+        StringAssert.Contains(cut.Markup, "Open Runner");
         StringAssert.Contains(cut.Markup, "Open for Printing");
         StringAssert.Contains(cut.Markup, "Open for Export");
         StringAssert.Contains(cut.Markup, "Open Print Result");
@@ -130,7 +130,7 @@ public sealed class PublicPreviewSurfaceTests
         StringAssert.Contains(cut.Markup, "Add cyberware for PRV");
         StringAssert.Contains(cut.Markup, "Add and keep spell for PRV");
         StringAssert.Contains(cut.Markup, "Add a spell for PRV");
-        StringAssert.Contains(cut.Markup, "Continue a recent dossier");
+        StringAssert.Contains(cut.Markup, "Continue a recent runner");
         StringAssert.Contains(cut.Markup, "Continue PRV on contacts");
         StringAssert.Contains(cut.Markup, "Continue PRV on profile");
         StringAssert.Contains(cut.Markup, "Continue PRV on rules");

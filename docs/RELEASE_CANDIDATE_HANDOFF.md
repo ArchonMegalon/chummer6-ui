@@ -38,6 +38,8 @@ The handoff records:
 4. missing required platforms from release-channel coverage
 5. concrete remaining blockers
 6. next operator actions
+7. when present, the stage-local Windows visual-proof handoff packet for the exact staged installer bytes
+8. a refreshed stage-local Windows exit-gate receipt, materialized against that same stage manifest, files shelf, and stage-local `WINDOWS_INSTALLER_VISUAL_PROOF.generated.json` target
 
 ## Promotion rule
 
@@ -48,3 +50,5 @@ Do not promote the bundle to `public_stable` if the handoff still shows:
 3. startup-smoke receipts that are only `skipped` for a required installer tuple
 
 In that state, the bundle is a valid release-build handoff, not a promotable stable release.
+
+If the handoff includes `windows_visual_proof_handoff.status: ready_for_windows_host`, the staged Windows bytes are locally verified and blocked only by the missing Windows screenshots. Use the emitted `WINDOWS_INSTALLER_VISUAL_PROOF_HANDOFF.generated.{json,md}` packet from the same stage directory to drive the real Windows capture step. Do not substitute repo-default downloads paths at that point; the packet is already pinned to the exact staged manifest, installer, payload, and startup-smoke receipt.

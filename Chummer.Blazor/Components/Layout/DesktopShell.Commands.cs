@@ -7,6 +7,11 @@ namespace Chummer.Blazor.Components.Layout;
 
 public partial class DesktopShell
 {
+    public Task ExecuteCommandFromSurfaceAsync(string commandId)
+    {
+        return ExecuteCommandAsync(commandId);
+    }
+
     private IEnumerable<AppCommandDefinition> MenuCommands(string menuId)
     {
         return _shellSurfaceState.Commands

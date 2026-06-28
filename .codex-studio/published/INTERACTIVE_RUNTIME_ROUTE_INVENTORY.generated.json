@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-06-24T17:59:51.3735716\u002B00:00",
+  "generatedAt": "2026-06-28T07:45:25.5076845\u002B00:00",
   "contractName": "chummer6-ui.interactive_runtime_route_inventory",
   "status": "pass",
   "summary": "Runtime route inventory captures recursive shell, popup, dialog, section, and ruleset-lane surfaces.",
@@ -60,7 +60,7 @@
         "Settings",
         "Special",
         "Start",
-        "Time: 2026-06-24 17:59:49Z",
+        "Time: 2026-06-28 07:45:24Z",
         "Tools",
         "Total",
         "Windows",
@@ -2770,7 +2770,7 @@
                                                       {
                                                         "name": "TimeStateText",
                                                         "controlType": "TextBlock",
-                                                        "text": "Time: 2026-06-24 17:59:49Z",
+                                                        "text": "Time: 2026-06-28 07:45:24Z",
                                                         "toolTip": "",
                                                         "isVisible": true,
                                                         "children": []
@@ -2892,7 +2892,7 @@
                                     "name": "StatusStripControl",
                                     "controlType": "StatusStripControl",
                                     "text": "",
-                                    "toolTip": "Character: none | Service: online | Time: 2026-06-24 17:59:49Z | Ruleset: Shadowrun 5 .chum5 | Workflows: 5 defs / 6 surfaces | Prefs: 100%/classic/en-us",
+                                    "toolTip": "Character: none | Service: online | Time: 2026-06-28 07:45:24Z | Ruleset: Shadowrun 5 .chum5 | Workflows: 5 defs / 6 surfaces | Prefs: 100%/classic/en-us",
                                     "isVisible": false,
                                     "children": []
                                   }
@@ -2946,7 +2946,7 @@
         "Settings",
         "Special",
         "Start",
-        "Time: 2026-06-24 17:59:49Z",
+        "Time: 2026-06-28 07:45:23Z",
         "Tools",
         "Total",
         "Windows",
@@ -5016,7 +5016,7 @@
                                                       {
                                                         "name": "TimeStateText",
                                                         "controlType": "TextBlock",
-                                                        "text": "Time: 2026-06-24 17:59:49Z",
+                                                        "text": "Time: 2026-06-28 07:45:23Z",
                                                         "toolTip": "",
                                                         "isVisible": true,
                                                         "children": []
@@ -5138,7 +5138,7 @@
                                     "name": "StatusStripControl",
                                     "controlType": "StatusStripControl",
                                     "text": "",
-                                    "toolTip": "Character: none | Service: online | Time: 2026-06-24 17:59:49Z | Ruleset: Shadowrun 5 .chum5 | Workflows: 5 defs / 6 surfaces | Prefs: 100%/classic/en-us",
+                                    "toolTip": "Character: none | Service: online | Time: 2026-06-28 07:45:23Z | Ruleset: Shadowrun 5 .chum5 | Workflows: 5 defs / 6 surfaces | Prefs: 100%/classic/en-us",
                                     "isVisible": false,
                                     "children": []
                                   }
@@ -5381,7 +5381,7 @@
                                                         "isVisible": true,
                                                         "children": [
                                                           {
-                                                            "name": "",
+                                                            "name": "LegacyPriorityAllocationSummaryCard",
                                                             "controlType": "Border",
                                                             "text": "",
                                                             "toolTip": "",
@@ -5395,7 +5395,7 @@
                                                                 "isVisible": true,
                                                                 "children": [
                                                                   {
-                                                                    "name": "",
+                                                                    "name": "LegacyPriorityAllocationSummaryTitle",
                                                                     "controlType": "TextBlock",
                                                                     "text": "Priority Allocation",
                                                                     "toolTip": "",
@@ -5403,7 +5403,7 @@
                                                                     "children": []
                                                                   },
                                                                   {
-                                                                    "name": "",
+                                                                    "name": "LegacyPriorityAllocationSummaryText",
                                                                     "controlType": "TextBlock",
                                                                     "text": "Assign the five priority lanes, then confirm the metatype and choice-dependent follow-through.",
                                                                     "toolTip": "",
@@ -6522,7 +6522,7 @@
                                                             "isVisible": true,
                                                             "children": [
                                                               {
-                                                                "name": "",
+                                                                "name": "LegacyBrowseMetatypesSummaryCard",
                                                                 "controlType": "Border",
                                                                 "text": "",
                                                                 "toolTip": "",
@@ -6536,7 +6536,7 @@
                                                                     "isVisible": true,
                                                                     "children": [
                                                                       {
-                                                                        "name": "",
+                                                                        "name": "LegacyBrowseMetatypesSummaryTitle",
                                                                         "controlType": "TextBlock",
                                                                         "text": "Browse Metatypes",
                                                                         "toolTip": "",
@@ -6544,7 +6544,7 @@
                                                                         "children": []
                                                                       },
                                                                       {
-                                                                        "name": "",
+                                                                        "name": "LegacyBrowseMetatypesSummaryText",
                                                                         "controlType": "TextBlock",
                                                                         "text": "Use category first, then choose the concrete metatype from the list.",
                                                                         "toolTip": "",
@@ -6900,7 +6900,7 @@
                                                             "isVisible": true,
                                                             "children": [
                                                               {
-                                                                "name": "",
+                                                                "name": "LegacySelectionDetailSummaryCard",
                                                                 "controlType": "Border",
                                                                 "text": "",
                                                                 "toolTip": "",
@@ -6914,7 +6914,7 @@
                                                                     "isVisible": true,
                                                                     "children": [
                                                                       {
-                                                                        "name": "",
+                                                                        "name": "LegacySelectionDetailSummaryTitle",
                                                                         "controlType": "TextBlock",
                                                                         "text": "Selection Detail",
                                                                         "toolTip": "",
@@ -6922,7 +6922,7 @@
                                                                         "children": []
                                                                       },
                                                                       {
-                                                                        "name": "",
+                                                                        "name": "LegacySelectionDetailSummaryText",
                                                                         "controlType": "TextBlock",
                                                                         "text": "Review karma cost, special attributes, source, and inherited qualities before confirming.",
                                                                         "toolTip": "",
@@ -7457,7 +7457,7 @@
                                                         "isVisible": true,
                                                         "children": [
                                                           {
-                                                            "name": "",
+                                                            "name": "LegacyChoiceFollow-ThroughSummaryCard",
                                                             "controlType": "Border",
                                                             "text": "",
                                                             "toolTip": "",
@@ -7471,7 +7471,7 @@
                                                                 "isVisible": true,
                                                                 "children": [
                                                                   {
-                                                                    "name": "",
+                                                                    "name": "LegacyChoiceFollow-ThroughSummaryTitle",
                                                                     "controlType": "TextBlock",
                                                                     "text": "Choice Follow-Through",
                                                                     "toolTip": "",
@@ -7479,7 +7479,7 @@
                                                                     "children": []
                                                                   },
                                                                   {
-                                                                    "name": "",
+                                                                    "name": "LegacyChoiceFollow-ThroughSummaryText",
                                                                     "controlType": "TextBlock",
                                                                     "text": "Complete the skill choices unlocked by the selected priorities.",
                                                                     "toolTip": "",
@@ -8414,7 +8414,7 @@
                                                         "isVisible": true,
                                                         "children": [
                                                           {
-                                                            "name": "",
+                                                            "name": "LegacyPriorityAllocationSummaryCard",
                                                             "controlType": "Border",
                                                             "text": "",
                                                             "toolTip": "",
@@ -8428,7 +8428,7 @@
                                                                 "isVisible": true,
                                                                 "children": [
                                                                   {
-                                                                    "name": "",
+                                                                    "name": "LegacyPriorityAllocationSummaryTitle",
                                                                     "controlType": "TextBlock",
                                                                     "text": "Priority Allocation",
                                                                     "toolTip": "",
@@ -8436,7 +8436,7 @@
                                                                     "children": []
                                                                   },
                                                                   {
-                                                                    "name": "",
+                                                                    "name": "LegacyPriorityAllocationSummaryText",
                                                                     "controlType": "TextBlock",
                                                                     "text": "Assign the five priority lanes, then confirm the metatype and choice-dependent follow-through.",
                                                                     "toolTip": "",
@@ -9555,7 +9555,7 @@
                                                             "isVisible": true,
                                                             "children": [
                                                               {
-                                                                "name": "",
+                                                                "name": "LegacyBrowseMetatypesSummaryCard",
                                                                 "controlType": "Border",
                                                                 "text": "",
                                                                 "toolTip": "",
@@ -9569,7 +9569,7 @@
                                                                     "isVisible": true,
                                                                     "children": [
                                                                       {
-                                                                        "name": "",
+                                                                        "name": "LegacyBrowseMetatypesSummaryTitle",
                                                                         "controlType": "TextBlock",
                                                                         "text": "Browse Metatypes",
                                                                         "toolTip": "",
@@ -9577,7 +9577,7 @@
                                                                         "children": []
                                                                       },
                                                                       {
-                                                                        "name": "",
+                                                                        "name": "LegacyBrowseMetatypesSummaryText",
                                                                         "controlType": "TextBlock",
                                                                         "text": "Use category first, then choose the concrete metatype from the list.",
                                                                         "toolTip": "",
@@ -9933,7 +9933,7 @@
                                                             "isVisible": true,
                                                             "children": [
                                                               {
-                                                                "name": "",
+                                                                "name": "LegacySelectionDetailSummaryCard",
                                                                 "controlType": "Border",
                                                                 "text": "",
                                                                 "toolTip": "",
@@ -9947,7 +9947,7 @@
                                                                     "isVisible": true,
                                                                     "children": [
                                                                       {
-                                                                        "name": "",
+                                                                        "name": "LegacySelectionDetailSummaryTitle",
                                                                         "controlType": "TextBlock",
                                                                         "text": "Selection Detail",
                                                                         "toolTip": "",
@@ -9955,7 +9955,7 @@
                                                                         "children": []
                                                                       },
                                                                       {
-                                                                        "name": "",
+                                                                        "name": "LegacySelectionDetailSummaryText",
                                                                         "controlType": "TextBlock",
                                                                         "text": "Review karma cost, special attributes, source, and inherited qualities before confirming.",
                                                                         "toolTip": "",
@@ -10490,7 +10490,7 @@
                                                         "isVisible": true,
                                                         "children": [
                                                           {
-                                                            "name": "",
+                                                            "name": "LegacyChoiceFollow-ThroughSummaryCard",
                                                             "controlType": "Border",
                                                             "text": "",
                                                             "toolTip": "",
@@ -10504,7 +10504,7 @@
                                                                 "isVisible": true,
                                                                 "children": [
                                                                   {
-                                                                    "name": "",
+                                                                    "name": "LegacyChoiceFollow-ThroughSummaryTitle",
                                                                     "controlType": "TextBlock",
                                                                     "text": "Choice Follow-Through",
                                                                     "toolTip": "",
@@ -10512,7 +10512,7 @@
                                                                     "children": []
                                                                   },
                                                                   {
-                                                                    "name": "",
+                                                                    "name": "LegacyChoiceFollow-ThroughSummaryText",
                                                                     "controlType": "TextBlock",
                                                                     "text": "Complete the skill choices unlocked by the selected priorities.",
                                                                     "toolTip": "",
@@ -11259,7 +11259,7 @@
         "Settings",
         "Special",
         "Start",
-        "Time: 2026-06-24 17:59:49Z",
+        "Time: 2026-06-28 07:45:23Z",
         "Tools",
         "Total",
         "Windows",
@@ -13329,7 +13329,7 @@
                                                       {
                                                         "name": "TimeStateText",
                                                         "controlType": "TextBlock",
-                                                        "text": "Time: 2026-06-24 17:59:49Z",
+                                                        "text": "Time: 2026-06-28 07:45:23Z",
                                                         "toolTip": "",
                                                         "isVisible": true,
                                                         "children": []
@@ -13451,7 +13451,7 @@
                                     "name": "StatusStripControl",
                                     "controlType": "StatusStripControl",
                                     "text": "",
-                                    "toolTip": "Character: none | Service: online | Time: 2026-06-24 17:59:49Z | Ruleset: Shadowrun 5 .chum5 | Workflows: 5 defs / 6 surfaces | Prefs: 100%/classic/en-us",
+                                    "toolTip": "Character: none | Service: online | Time: 2026-06-28 07:45:23Z | Ruleset: Shadowrun 5 .chum5 | Workflows: 5 defs / 6 surfaces | Prefs: 100%/classic/en-us",
                                     "isVisible": false,
                                     "children": []
                                   }
@@ -13544,7 +13544,7 @@
         "Ruleset: Shadowrun 5 .chum5 | Workflows: 5 defs / 6 surfaces | Prefs: 100%/classic/en-us",
         "Runner",
         "SR5",
-        "SR5 Characters",
+        "SR5 Roster",
         "Save",
         "Service: online",
         "Settings",
@@ -13556,7 +13556,7 @@
         "Start",
         "SumtoTen",
         "Technomancer",
-        "Time: 2026-06-24 17:59:50Z",
+        "Time: 2026-06-28 07:45:24Z",
         "Tools",
         "Total",
         "Vehicles",
@@ -13566,7 +13566,7 @@
       ],
       "visibleCommandIds": [],
       "navigatorRootLabels": [
-        "SR5 Characters"
+        "SR5 Roster"
       ],
       "inventory": {
         "name": "",
@@ -14980,7 +14980,7 @@
                                                                                                                       {
                                                                                                                         "name": "",
                                                                                                                         "controlType": "TextBlock",
-                                                                                                                        "text": "SR5 Characters",
+                                                                                                                        "text": "SR5 Roster",
                                                                                                                         "toolTip": "",
                                                                                                                         "isVisible": true,
                                                                                                                         "children": []
@@ -18485,7 +18485,7 @@
                                             "name": "CoachSidecarControl",
                                             "controlType": "CoachSidecarControl",
                                             "text": "",
-                                            "toolTip": "Status: unloaded\nPrompt policy: Policy not loaded yet\nBudget: Budget not loaded yet\nWorkspace: 7560344230ac485cbf77280deb9a049b\nRuntime: No runtime fingerprint yet\nfile:///coach/%3FrouteType=coach\u0026workspaceId=7560344230ac485cbf77280deb9a049b\nOpen Coach in your browser, or copy the link if you need to hand it off.\nError: disabled",
+                                            "toolTip": "Status: unloaded\nPrompt policy: Policy not loaded yet\nBudget: Budget not loaded yet\nWorkspace: 176bc97787124a9293dd13d46ef420f4\nRuntime: No runtime fingerprint yet\nfile:///coach/%3FrouteType=coach\u0026workspaceId=176bc97787124a9293dd13d46ef420f4\nOpen Coach in your browser, or copy the link if you need to hand it off.\nError: disabled",
                                             "isVisible": true,
                                             "children": []
                                           }
@@ -18574,7 +18574,7 @@
                                                       {
                                                         "name": "TimeStateText",
                                                         "controlType": "TextBlock",
-                                                        "text": "Time: 2026-06-24 17:59:50Z",
+                                                        "text": "Time: 2026-06-28 07:45:24Z",
                                                         "toolTip": "",
                                                         "isVisible": true,
                                                         "children": []
@@ -18696,7 +18696,7 @@
                                     "name": "StatusStripControl",
                                     "controlType": "StatusStripControl",
                                     "text": "",
-                                    "toolTip": "Character: loaded | Service: online | Time: 2026-06-24 17:59:50Z | Ruleset: Shadowrun 5 .chum5 | Workflows: 5 defs / 6 surfaces | Prefs: 100%/classic/en-us",
+                                    "toolTip": "Character: loaded | Service: online | Time: 2026-06-28 07:45:24Z | Ruleset: Shadowrun 5 .chum5 | Workflows: 5 defs / 6 surfaces | Prefs: 100%/classic/en-us",
                                     "isVisible": false,
                                     "children": []
                                   }
@@ -18752,7 +18752,7 @@
         "Settings",
         "Special",
         "Start",
-        "Time: 2026-06-24 17:59:50Z",
+        "Time: 2026-06-28 07:45:25Z",
         "Tools",
         "Total",
         "Windows",
@@ -21468,7 +21468,7 @@
                                                       {
                                                         "name": "TimeStateText",
                                                         "controlType": "TextBlock",
-                                                        "text": "Time: 2026-06-24 17:59:50Z",
+                                                        "text": "Time: 2026-06-28 07:45:25Z",
                                                         "toolTip": "",
                                                         "isVisible": true,
                                                         "children": []
@@ -21590,7 +21590,7 @@
                                     "name": "StatusStripControl",
                                     "controlType": "StatusStripControl",
                                     "text": "",
-                                    "toolTip": "Character: none | Service: online | Time: 2026-06-24 17:59:50Z | Ruleset: Shadowrun 4 .chum4 | Workflows: 5 defs / 6 surfaces | Prefs: 100%/classic/en-us",
+                                    "toolTip": "Character: none | Service: online | Time: 2026-06-28 07:45:25Z | Ruleset: Shadowrun 4 .chum4 | Workflows: 5 defs / 6 surfaces | Prefs: 100%/classic/en-us",
                                     "isVisible": false,
                                     "children": []
                                   }
@@ -21646,7 +21646,7 @@
         "Settings",
         "Special",
         "Start",
-        "Time: 2026-06-24 17:59:50Z",
+        "Time: 2026-06-28 07:45:25Z",
         "Tools",
         "Total",
         "Windows",
@@ -24362,7 +24362,7 @@
                                                       {
                                                         "name": "TimeStateText",
                                                         "controlType": "TextBlock",
-                                                        "text": "Time: 2026-06-24 17:59:50Z",
+                                                        "text": "Time: 2026-06-28 07:45:25Z",
                                                         "toolTip": "",
                                                         "isVisible": true,
                                                         "children": []
@@ -24484,7 +24484,7 @@
                                     "name": "StatusStripControl",
                                     "controlType": "StatusStripControl",
                                     "text": "",
-                                    "toolTip": "Character: none | Service: online | Time: 2026-06-24 17:59:50Z | Ruleset: Shadowrun 5 .chum5 | Workflows: 5 defs / 6 surfaces | Prefs: 100%/classic/en-us",
+                                    "toolTip": "Character: none | Service: online | Time: 2026-06-28 07:45:25Z | Ruleset: Shadowrun 5 .chum5 | Workflows: 5 defs / 6 surfaces | Prefs: 100%/classic/en-us",
                                     "isVisible": false,
                                     "children": []
                                   }
@@ -24540,7 +24540,7 @@
         "Settings",
         "Special",
         "Start",
-        "Time: 2026-06-24 17:59:50Z",
+        "Time: 2026-06-28 07:45:25Z",
         "Tools",
         "Total",
         "Windows",
@@ -27256,7 +27256,7 @@
                                                       {
                                                         "name": "TimeStateText",
                                                         "controlType": "TextBlock",
-                                                        "text": "Time: 2026-06-24 17:59:50Z",
+                                                        "text": "Time: 2026-06-28 07:45:25Z",
                                                         "toolTip": "",
                                                         "isVisible": true,
                                                         "children": []
@@ -27378,7 +27378,7 @@
                                     "name": "StatusStripControl",
                                     "controlType": "StatusStripControl",
                                     "text": "",
-                                    "toolTip": "Character: none | Service: online | Time: 2026-06-24 17:59:50Z | Ruleset: Shadowrun 6 .chum6 | Workflows: 5 defs / 6 surfaces | Prefs: 100%/classic/en-us",
+                                    "toolTip": "Character: none | Service: online | Time: 2026-06-28 07:45:25Z | Ruleset: Shadowrun 6 .chum6 | Workflows: 5 defs / 6 surfaces | Prefs: 100%/classic/en-us",
                                     "isVisible": false,
                                     "children": []
                                   }
@@ -27471,7 +27471,7 @@
         "Ruleset: Shadowrun 5 .chum5 | Workflows: 5 defs / 6 surfaces | Prefs: 100%/classic/en-us",
         "Runner",
         "SR5",
-        "SR5 Characters",
+        "SR5 Roster",
         "Save",
         "Service: online",
         "Settings",
@@ -27483,7 +27483,7 @@
         "Start",
         "SumtoTen",
         "Technomancer",
-        "Time: 2026-06-24 17:59:50Z",
+        "Time: 2026-06-28 07:45:24Z",
         "Tools",
         "Total",
         "Vehicles",
@@ -27493,7 +27493,7 @@
       ],
       "visibleCommandIds": [],
       "navigatorRootLabels": [
-        "SR5 Characters"
+        "SR5 Roster"
       ],
       "inventory": {
         "name": "",
@@ -28907,7 +28907,7 @@
                                                                                                                       {
                                                                                                                         "name": "",
                                                                                                                         "controlType": "TextBlock",
-                                                                                                                        "text": "SR5 Characters",
+                                                                                                                        "text": "SR5 Roster",
                                                                                                                         "toolTip": "",
                                                                                                                         "isVisible": true,
                                                                                                                         "children": []
@@ -32412,7 +32412,7 @@
                                             "name": "CoachSidecarControl",
                                             "controlType": "CoachSidecarControl",
                                             "text": "",
-                                            "toolTip": "Status: unloaded\nPrompt policy: Policy not loaded yet\nBudget: Budget not loaded yet\nWorkspace: 7560344230ac485cbf77280deb9a049b\nRuntime: No runtime fingerprint yet\nfile:///coach/%3FrouteType=coach\u0026workspaceId=7560344230ac485cbf77280deb9a049b\nOpen Coach in your browser, or copy the link if you need to hand it off.\nError: disabled",
+                                            "toolTip": "Status: unloaded\nPrompt policy: Policy not loaded yet\nBudget: Budget not loaded yet\nWorkspace: 176bc97787124a9293dd13d46ef420f4\nRuntime: No runtime fingerprint yet\nfile:///coach/%3FrouteType=coach\u0026workspaceId=176bc97787124a9293dd13d46ef420f4\nOpen Coach in your browser, or copy the link if you need to hand it off.\nError: disabled",
                                             "isVisible": true,
                                             "children": []
                                           }
@@ -32501,7 +32501,7 @@
                                                       {
                                                         "name": "TimeStateText",
                                                         "controlType": "TextBlock",
-                                                        "text": "Time: 2026-06-24 17:59:50Z",
+                                                        "text": "Time: 2026-06-28 07:45:24Z",
                                                         "toolTip": "",
                                                         "isVisible": true,
                                                         "children": []
@@ -32623,7 +32623,7 @@
                                     "name": "StatusStripControl",
                                     "controlType": "StatusStripControl",
                                     "text": "",
-                                    "toolTip": "Character: loaded | Service: online | Time: 2026-06-24 17:59:50Z | Ruleset: Shadowrun 5 .chum5 | Workflows: 5 defs / 6 surfaces | Prefs: 100%/classic/en-us",
+                                    "toolTip": "Character: loaded | Service: online | Time: 2026-06-28 07:45:24Z | Ruleset: Shadowrun 5 .chum5 | Workflows: 5 defs / 6 surfaces | Prefs: 100%/classic/en-us",
                                     "isVisible": false,
                                     "children": []
                                   }
@@ -33652,7 +33652,7 @@
         "Character: none",
         "Characters",
         "Close",
-        "Closed active workspace.",
+        "Closed active runner.",
         "Copy",
         "Edit",
         "File",
@@ -33675,7 +33675,7 @@
         "Settings",
         "Special",
         "Start",
-        "Time: 2026-06-24 17:59:50Z",
+        "Time: 2026-06-28 07:45:25Z",
         "Tools",
         "Total",
         "Windows",
@@ -35409,7 +35409,7 @@
                                                                               {
                                                                                 "name": "NoticeText",
                                                                                 "controlType": "TextBlock",
-                                                                                "text": "Closed active workspace.",
+                                                                                "text": "Closed active runner.",
                                                                                 "toolTip": "",
                                                                                 "isVisible": true,
                                                                                 "children": []
@@ -36391,7 +36391,7 @@
                                                       {
                                                         "name": "TimeStateText",
                                                         "controlType": "TextBlock",
-                                                        "text": "Time: 2026-06-24 17:59:50Z",
+                                                        "text": "Time: 2026-06-28 07:45:25Z",
                                                         "toolTip": "",
                                                         "isVisible": true,
                                                         "children": []
@@ -36513,7 +36513,7 @@
                                     "name": "StatusStripControl",
                                     "controlType": "StatusStripControl",
                                     "text": "",
-                                    "toolTip": "Character: none | Service: online | Time: 2026-06-24 17:59:50Z | Ruleset: Shadowrun 5 .chum5 | Workflows: 5 defs / 6 surfaces | Prefs: 100%/classic/en-us",
+                                    "toolTip": "Character: none | Service: online | Time: 2026-06-28 07:45:25Z | Ruleset: Shadowrun 5 .chum5 | Workflows: 5 defs / 6 surfaces | Prefs: 100%/classic/en-us",
                                     "isVisible": false,
                                     "children": []
                                   }
@@ -36606,7 +36606,7 @@
         "Ruleset: Shadowrun 5 .chum5 | Workflows: 5 defs / 6 surfaces | Prefs: 100%/classic/en-us",
         "Runner",
         "SR5",
-        "SR5 Characters",
+        "SR5 Roster",
         "Save",
         "Service: online",
         "Settings",
@@ -36618,7 +36618,7 @@
         "Start",
         "SumtoTen",
         "Technomancer",
-        "Time: 2026-06-24 17:59:50Z",
+        "Time: 2026-06-28 07:45:24Z",
         "Tools",
         "Total",
         "Vehicles",
@@ -36628,7 +36628,7 @@
       ],
       "visibleCommandIds": [],
       "navigatorRootLabels": [
-        "SR5 Characters"
+        "SR5 Roster"
       ],
       "inventory": {
         "name": "",
@@ -38042,7 +38042,7 @@
                                                                                                                       {
                                                                                                                         "name": "",
                                                                                                                         "controlType": "TextBlock",
-                                                                                                                        "text": "SR5 Characters",
+                                                                                                                        "text": "SR5 Roster",
                                                                                                                         "toolTip": "",
                                                                                                                         "isVisible": true,
                                                                                                                         "children": []
@@ -41547,7 +41547,7 @@
                                             "name": "CoachSidecarControl",
                                             "controlType": "CoachSidecarControl",
                                             "text": "",
-                                            "toolTip": "Status: unloaded\nPrompt policy: Policy not loaded yet\nBudget: Budget not loaded yet\nWorkspace: 7560344230ac485cbf77280deb9a049b\nRuntime: No runtime fingerprint yet\nfile:///coach/%3FrouteType=coach\u0026workspaceId=7560344230ac485cbf77280deb9a049b\nOpen Coach in your browser, or copy the link if you need to hand it off.\nError: disabled",
+                                            "toolTip": "Status: unloaded\nPrompt policy: Policy not loaded yet\nBudget: Budget not loaded yet\nWorkspace: 176bc97787124a9293dd13d46ef420f4\nRuntime: No runtime fingerprint yet\nfile:///coach/%3FrouteType=coach\u0026workspaceId=176bc97787124a9293dd13d46ef420f4\nOpen Coach in your browser, or copy the link if you need to hand it off.\nError: disabled",
                                             "isVisible": true,
                                             "children": []
                                           }
@@ -41636,7 +41636,7 @@
                                                       {
                                                         "name": "TimeStateText",
                                                         "controlType": "TextBlock",
-                                                        "text": "Time: 2026-06-24 17:59:50Z",
+                                                        "text": "Time: 2026-06-28 07:45:24Z",
                                                         "toolTip": "",
                                                         "isVisible": true,
                                                         "children": []
@@ -41758,7 +41758,7 @@
                                     "name": "StatusStripControl",
                                     "controlType": "StatusStripControl",
                                     "text": "",
-                                    "toolTip": "Character: loaded | Service: online | Time: 2026-06-24 17:59:50Z | Ruleset: Shadowrun 5 .chum5 | Workflows: 5 defs / 6 surfaces | Prefs: 100%/classic/en-us",
+                                    "toolTip": "Character: loaded | Service: online | Time: 2026-06-28 07:45:24Z | Ruleset: Shadowrun 5 .chum5 | Workflows: 5 defs / 6 surfaces | Prefs: 100%/classic/en-us",
                                     "isVisible": false,
                                     "children": []
                                   }
@@ -41812,7 +41812,7 @@
         "Settings",
         "Special",
         "Start",
-        "Time: 2026-06-24 17:59:49Z",
+        "Time: 2026-06-28 07:45:23Z",
         "Tools",
         "Total",
         "Windows",
@@ -43882,7 +43882,7 @@
                                                       {
                                                         "name": "TimeStateText",
                                                         "controlType": "TextBlock",
-                                                        "text": "Time: 2026-06-24 17:59:49Z",
+                                                        "text": "Time: 2026-06-28 07:45:23Z",
                                                         "toolTip": "",
                                                         "isVisible": true,
                                                         "children": []
@@ -44004,7 +44004,7 @@
                                     "name": "StatusStripControl",
                                     "controlType": "StatusStripControl",
                                     "text": "",
-                                    "toolTip": "Character: none | Service: online | Time: 2026-06-24 17:59:49Z | Ruleset: Shadowrun 5 .chum5 | Workflows: 5 defs / 6 surfaces | Prefs: 100%/classic/en-us",
+                                    "toolTip": "Character: none | Service: online | Time: 2026-06-28 07:45:23Z | Ruleset: Shadowrun 5 .chum5 | Workflows: 5 defs / 6 surfaces | Prefs: 100%/classic/en-us",
                                     "isVisible": false,
                                     "children": []
                                   }

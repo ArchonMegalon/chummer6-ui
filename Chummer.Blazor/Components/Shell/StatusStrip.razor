@@ -10,7 +10,7 @@
      aria-atomic="true"
      aria-label="@BuildStatusAnnouncement()">
     <span id="routeState" data-status-route-family="@BuildRouteFamily()">Route: @BuildRouteLabel()</span>
-    <span id="charState">Dossier: @(WorkspaceId is null ? "none" : "loaded")</span>
+    <span id="charState">Runner: @(WorkspaceId is null ? "none" : "loaded")</span>
     <span id="serviceState">Service: @(string.IsNullOrWhiteSpace(Error) ? "online" : "error")</span>
     <span id="timeState">Time: @LastUiUtc</span>
     <span id="complianceState">@ComplianceState</span>
@@ -32,7 +32,7 @@
     private string BuildStatusAnnouncement()
     {
         return AccessibilityPrimitiveBoundary.BuildStatusAnnouncement(
-            characterState: $"Route: {BuildRouteLabel()} | Dossier: {(WorkspaceId is null ? "none" : "loaded")}",
+            characterState: $"Route: {BuildRouteLabel()} | Runner: {(WorkspaceId is null ? "none" : "loaded")}",
             serviceState: $"Service: {(string.IsNullOrWhiteSpace(Error) ? "online" : "error")}",
             timeState: $"Time: {LastUiUtc}",
             complianceState: ComplianceState);

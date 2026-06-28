@@ -24,6 +24,7 @@ PROMOTE_PROOF_BACKED_QUARANTINED_INSTALLERS="${CHUMMER_PROMOTE_PROOF_BACKED_QUAR
 UI_LOCALIZATION_RELEASE_GATE_PATH="${CHUMMER_UI_LOCALIZATION_RELEASE_GATE_PATH:-$REPO_ROOT/.codex-studio/published/UI_LOCALIZATION_RELEASE_GATE.generated.json}"
 EXTERNAL_HOST_PROOF_BLOCKERS_PATH="${CHUMMER_UI_EXTERNAL_HOST_PROOF_BLOCKERS_PATH:-$REPO_ROOT/.codex-studio/published/UI_EXTERNAL_HOST_PROOF_BLOCKERS.generated.json}"
 PUBLIC_EDGE_WORKBENCH_PROOF_PATH="${CHUMMER_BLAZOR_PUBLIC_EDGE_WORKBENCH_PROOF_PATH:-$REPO_ROOT/.codex-studio/published/BLAZOR_PUBLIC_EDGE_WORKBENCH_PROOF.generated.json}"
+GENERATE_EXTERNAL_HOST_PROOF_BLOCKERS="${CHUMMER_GENERATE_EXTERNAL_HOST_PROOF_BLOCKERS:-1}"
 CANONICAL_MANIFEST_PATH="${CANONICAL_MANIFEST_PATH:-$(dirname "$MANIFEST_PATH")/RELEASE_CHANNEL.generated.json}"
 PORTAL_CANONICAL_MANIFEST_PATH="${PORTAL_CANONICAL_MANIFEST_PATH:-$(dirname "$PORTAL_MANIFEST_PATH")/RELEASE_CHANNEL.generated.json}"
 PROMOTION_EVIDENCE_PATH="${PROMOTION_EVIDENCE_PATH:-$(dirname "$MANIFEST_PATH")/release-evidence/public-promotion.json}"
@@ -2336,19 +2337,23 @@ if [[ -n "$STARTUP_SMOKE_DIR" && -d "$STARTUP_SMOKE_DIR" ]]; then
     fi
   fi
 fi
-python3 "$SCRIPT_DIR/materialize-external-host-proof-blockers.py" \
-  --manifest "$CANONICAL_MANIFEST_PATH" \
-  --downloads-dir "$DOWNLOADS_DIR" \
-  --startup-smoke-dir "$STARTUP_SMOKE_DIR" \
-  --display-manifest "$CANONICAL_MANIFEST_PATH" \
-  --display-downloads-dir "$CANONICAL_FILES_DIR" \
-  --display-startup-smoke-dir "$(dirname "$CANONICAL_MANIFEST_PATH")/startup-smoke" \
-  --output "$EXTERNAL_HOST_PROOF_BLOCKERS_PATH" \
-  --browser-proof-output "$PUBLIC_EDGE_WORKBENCH_PROOF_PATH" \
-  --base-url "${CHUMMER_EXTERNAL_PROOF_BASE_URL:-https://chummer.run}" \
-  --timeout-seconds "${CHUMMER_EXTERNAL_PROOF_ROUTE_TIMEOUT_SECONDS:-10}" \
-  --max-receipt-age-seconds "${CHUMMER_EXTERNAL_PROOF_MAX_RECEIPT_AGE_SECONDS:-604800}" \
-  >/dev/null
+if to_bool "$GENERATE_EXTERNAL_HOST_PROOF_BLOCKERS"; then
+  python3 "$SCRIPT_DIR/materialize-external-host-proof-blockers.py" \
+    --manifest "$CANONICAL_MANIFEST_PATH" \
+    --downloads-dir "$DOWNLOADS_DIR" \
+    --startup-smoke-dir "$STARTUP_SMOKE_DIR" \
+    --display-manifest "$CANONICAL_MANIFEST_PATH" \
+    --display-downloads-dir "$CANONICAL_FILES_DIR" \
+    --display-startup-smoke-dir "$(dirname "$CANONICAL_MANIFEST_PATH")/startup-smoke" \
+    --output "$EXTERNAL_HOST_PROOF_BLOCKERS_PATH" \
+    --browser-proof-output "$PUBLIC_EDGE_WORKBENCH_PROOF_PATH" \
+    --base-url "${CHUMMER_EXTERNAL_PROOF_BASE_URL:-https://chummer.run}" \
+    --timeout-seconds "${CHUMMER_EXTERNAL_PROOF_ROUTE_TIMEOUT_SECONDS:-10}" \
+    --max-receipt-age-seconds "${CHUMMER_EXTERNAL_PROOF_MAX_RECEIPT_AGE_SECONDS:-604800}" \
+    >/dev/null
+else
+  echo "skipped external host proof blocker materialization"
+fi
 verify_args=()
 readarray -t promoted_file_names < <(python3 - "$CANONICAL_MANIFEST_PATH" <<'PY'
 import json

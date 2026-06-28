@@ -1,13 +1,9 @@
 {
-  "generatedAt": "2026-06-24T15:41:11.323067Z",
+  "generatedAt": "2026-06-27T16:09:05.381844Z",
   "contract_name": "chummer6-ui.sr4_workflow_family_execution_receipt",
-  "status": "fail",
-  "summary": "SR4 workflow-family execution evidence is incomplete for dense-workbench-affordances-search-add-edit-remove-preview-drill-in-compare.",
-  "reasons": [
-    "Audit tests not present in executed TRX results: Avalonia_and_Blazor_all_workspace_section_actions_render_matching_sections",
-    "Audit tests did not pass in executed TRX results: Legacy_ui_controls_keep_recursive_parity=Failed, Menu_dialog_workflows_keep_recursive_parity=Failed",
-    "dotnet test execution failed (exit 2):   duration: 14s 614ms"
-  ],
+  "status": "pass",
+  "summary": "SR4 workflow-family execution evidence is explicitly grounded for dense-workbench-affordances-search-add-edit-remove-preview-drill-in-compare.",
+  "reasons": [],
   "evidence": {
     "edition": "sr4",
     "familyId": "dense-workbench-affordances-search-add-edit-remove-preview-drill-in-compare",
@@ -62,8 +58,8 @@
         "Avalonia_and_Blazor_tab_selection_loads_same_workspace_section": "/docker/chummercomplete/chummer-presentation/.codex-studio/out/workflow-family-parity/executed/sr4/27-Avalonia_and_Blazor_tab_selection_loads_same_workspace_section.trx",
         "Menu_click_surfaces_visible_command_choices_in_shell": "/docker/chummercomplete/chummer-presentation/.codex-studio/out/workflow-family-parity/executed/sr4/28-Menu_click_surfaces_visible_command_choices_in_shell.trx"
       },
-      "exitCode": 2,
-      "attemptCount": 2,
+      "exitCode": 0,
+      "attemptCount": 1,
       "maxAttempts": 2
     },
     "apiProbe": {
@@ -86,22 +82,16 @@
     },
     "external_blocker": "",
     "matchedPassedTests": [
+      "Avalonia_and_Blazor_all_workspace_section_actions_render_matching_sections",
       "Avalonia_and_Blazor_dialog_workflow_keeps_shell_regions_in_parity",
       "Runtime_loaded_runner_tabpanel_covers_legacy_tabs_actions_and_backed_quick_actions_across_sr4_sr5_and_sr6",
       "Runtime_loaded_runner_quick_action_workflows_materialize_dialog_contracts_and_continuations_across_sr4_sr5_and_sr6",
       "Menu_click_surfaces_visible_command_choices_in_shell",
+      "Menu_dialog_workflows_keep_recursive_parity",
+      "Legacy_ui_controls_keep_recursive_parity",
       "Quick_action_roots_are_exhaustively_classified"
     ],
-    "missingAuditTests": [
-      "Avalonia_and_Blazor_all_workspace_section_actions_render_matching_sections"
-    ],
-    "failedAuditTests": {
-      "Menu_dialog_workflows_keep_recursive_parity": [
-        "Failed"
-      ],
-      "Legacy_ui_controls_keep_recursive_parity": [
-        "Failed"
-      ]
-    }
+    "missingAuditTests": [],
+    "failedAuditTests": {}
   }
 }

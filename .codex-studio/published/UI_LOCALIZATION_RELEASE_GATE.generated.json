@@ -1,6 +1,6 @@
 {
   "contract_name": "chummer6-ui.localization_release_gate",
-  "generated_at": "2026-06-24T17:42:15Z",
+  "generated_at": "2026-06-27T11:26:34Z",
   "status": "pass",
   "shipping_locales": [
     "en-us",
@@ -10,7 +10,7 @@
     "pt-br",
     "zh-cn"
   ],
-  "default_key_count": 433,
+  "default_key_count": 438,
   "release_seed_keys": [
     "desktop.shell.menu.file",
     "desktop.shell.tool.update_status",
@@ -31,15 +31,15 @@
       "  failed: 0",
       "  succeeded: 1",
       "  skipped: 0",
-      "  duration: 447ms"
+      "  duration: 320ms"
     ]
   },
   "locale_summary": [
     {
       "locale": "en-us",
-      "override_count": 433,
-      "minimum_override_count": 433,
-      "default_key_count": 433,
+      "override_count": 438,
+      "minimum_override_count": 438,
+      "default_key_count": 438,
       "untranslated_key_count": 0,
       "missing_release_seed_keys": [],
       "legacy_xml_present": true,
@@ -47,9 +47,9 @@
     },
     {
       "locale": "de-de",
-      "override_count": 433,
+      "override_count": 438,
       "minimum_override_count": 40,
-      "default_key_count": 433,
+      "default_key_count": 438,
       "untranslated_key_count": 0,
       "missing_release_seed_keys": [],
       "legacy_xml_present": true,
@@ -57,9 +57,9 @@
     },
     {
       "locale": "fr-fr",
-      "override_count": 433,
+      "override_count": 438,
       "minimum_override_count": 40,
-      "default_key_count": 433,
+      "default_key_count": 438,
       "untranslated_key_count": 0,
       "missing_release_seed_keys": [],
       "legacy_xml_present": true,
@@ -67,9 +67,9 @@
     },
     {
       "locale": "ja-jp",
-      "override_count": 433,
+      "override_count": 438,
       "minimum_override_count": 40,
-      "default_key_count": 433,
+      "default_key_count": 438,
       "untranslated_key_count": 0,
       "missing_release_seed_keys": [],
       "legacy_xml_present": true,
@@ -77,9 +77,9 @@
     },
     {
       "locale": "pt-br",
-      "override_count": 433,
+      "override_count": 438,
       "minimum_override_count": 40,
-      "default_key_count": 433,
+      "default_key_count": 438,
       "untranslated_key_count": 0,
       "missing_release_seed_keys": [],
       "legacy_xml_present": true,
@@ -87,9 +87,9 @@
     },
     {
       "locale": "zh-cn",
-      "override_count": 433,
+      "override_count": 438,
       "minimum_override_count": 40,
-      "default_key_count": 433,
+      "default_key_count": 438,
       "untranslated_key_count": 0,
       "missing_release_seed_keys": [],
       "legacy_xml_present": true,
@@ -99,12 +99,12 @@
   "legacy_language_root": "/docker/chummercomplete/chummer-presentation/Chummer/lang",
   "local_release_proof": {
     "contract_name": "chummer6-ui.local_release_proof",
-    "generated_at": "2026-06-19T07:19:35Z",
+    "generated_at": "2026-06-24T18:33:16Z",
     "status": "passed",
-    "base_url": "http://127.0.0.1:8091",
-    "compose_file": "/docker/chummercomplete/chummer.run-services/docker-compose.public-edge.yml",
+    "base_url": "http://127.0.0.1:18091",
+    "compose_file": "/docker/chummercomplete/chummer-presentation/docker-compose.yml",
     "playwright_timeout_seconds": 240,
-    "edge_rebuild_skipped": true,
+    "edge_rebuild_skipped": false,
     "runtime_required": true,
     "route_probe_executed": true,
     "journeys_passed": [
@@ -128,7 +128,7 @@
     ],
     "receipts": [
       {
-        "path": "/tmp/m113-proof-1362c16b176042d3a3557533cea5eace/NEXT90_M113_UI_GM_PREP_ROSTER_SURFACE.generated.json",
+        "path": "/docker/chummercomplete/chummer-presentation/.codex-studio/published/NEXT90_M113_UI_GM_PREP_ROSTER_SURFACE.generated.json",
         "package_id": "next90-m113-ui-gm-prep-roster-surface",
         "status": "pass",
         "surface_routes": [
@@ -367,8 +367,8 @@
     },
     "install_update_support": {
       "status": "pass",
-      "matched_default_key_count": 264,
-      "required_key_count": 264,
+      "matched_default_key_count": 269,
+      "required_key_count": 269,
       "required_keys": [
         "desktop.crash.button.copy_summary",
         "desktop.crash.button.keep_local_only",
@@ -613,6 +613,8 @@
         "desktop.support_case.title",
         "desktop.update.apply_scheduled",
         "desktop.update.button.check_now",
+        "desktop.update.button.copy_install_command",
+        "desktop.update.button.open_pending_installer",
         "desktop.update.button.refresh",
         "desktop.update.checked",
         "desktop.update.checking",
@@ -632,6 +634,9 @@
         "desktop.update.section.current",
         "desktop.update.section.follow_through",
         "desktop.update.section.install",
+        "desktop.update.status.clipboard_unavailable",
+        "desktop.update.status.install_command_copied",
+        "desktop.update.status.install_command_unavailable",
         "desktop.update.title",
         "desktop.update.updates_enabled"
       ],

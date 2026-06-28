@@ -666,7 +666,7 @@ public static class DesktopHomeBuildExplainProjector
         List<string> receipts = [];
         if (runtimeInspector.CompatibilityDiagnostics.Count == 0)
         {
-            receipts.Add($"Compatibility note: fingerprint {runtimeFingerprint} is aligned with the current dossier and no runtime drift is active.");
+            receipts.Add($"Compatibility note: fingerprint {runtimeFingerprint} is aligned with the current runner and no runtime drift is active.");
         }
 
         foreach (RuntimeLockCompatibilityDiagnostic diagnostic in runtimeInspector.CompatibilityDiagnostics)

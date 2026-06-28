@@ -29,10 +29,10 @@ public static class DesktopHomeCampaignProjector
         if (summary is null && leadDigest is null)
         {
             return new DesktopHomeCampaignProjection(
-                UndetectableHumanizerCopyAdapter.Humanize("No signed-in campaign dossier is loaded yet. Claim this copy before you rely on restore, continuity, or support for this install."),
-                UndetectableHumanizerCopyAdapter.Humanize("Claim this copy, open your dossier, and refresh Home before you rely on campaign return or device restore."),
-                UndetectableHumanizerCopyAdapter.Humanize("Restore: no account-backed dossiers, campaigns, or reconnectable files are loaded yet."),
-                UndetectableHumanizerCopyAdapter.Humanize("Device: this copy is local-only until account restore attaches it to your campaign dossier."),
+                UndetectableHumanizerCopyAdapter.Humanize("No signed-in campaign is loaded yet. Claim this copy before you rely on restore, continuity, or support for this install."),
+                UndetectableHumanizerCopyAdapter.Humanize("Claim this copy, open your runner, and refresh Home before you rely on campaign return or device restore."),
+                UndetectableHumanizerCopyAdapter.Humanize("Restore: no account-backed runners, campaigns, or reconnectable files are loaded yet."),
+                UndetectableHumanizerCopyAdapter.Humanize("Device: this copy is local-only until account restore attaches it to your campaign."),
                 UndetectableHumanizerCopyAdapter.Humanize("Support works best after this copy is claimed, because fixes and restore notes can target the exact install."),
                 LeadWorkspaceId: null,
                 ReadinessHighlights:
@@ -42,7 +42,7 @@ public static class DesktopHomeCampaignProjector
                 Watchouts:
                 [
                     "Campaign return remains guest-only until account restore data lands on this install.",
-                    "Support and fix notices become install-specific after this copy and the current campaign dossier line up."
+                    "Support and fix notices become install-specific after this copy and the current campaign line up."
                 ]);
         }
 
@@ -52,7 +52,7 @@ public static class DesktopHomeCampaignProjector
                 UndetectableHumanizerCopyAdapter.Humanize($"Campaign: {leadDigest.ReturnSummary} {(serverPlane?.RunboardSummary ?? leadDigest.ActiveSceneSummary ?? string.Empty)} {serverPlane?.SessionReadinessSummary ?? string.Empty}".Trim()),
                 UndetectableHumanizerCopyAdapter.Humanize(string.IsNullOrWhiteSpace(serverPlane?.NextSafeAction) ? leadDigest.NextSafeAction : serverPlane.NextSafeAction),
                 serverPlane is null
-                    ? UndetectableHumanizerCopyAdapter.Humanize("Restore: the calmer dossier digest is present, but the full account-backed restore details still need a refresh.")
+                    ? UndetectableHumanizerCopyAdapter.Humanize("Restore: the calmer campaign digest is present, but the full account-backed restore details still need a refresh.")
                     : UndetectableHumanizerCopyAdapter.Humanize($"Restore: {serverPlane.RestoreSummary}"),
                 UndetectableHumanizerCopyAdapter.Humanize($"Claimed device: {leadDigest.DeviceRoleSummary}"),
                 UndetectableHumanizerCopyAdapter.Humanize(serverPlane is null || serverPlane.SupportHighlights.Count == 0
@@ -100,8 +100,8 @@ public static class DesktopHomeCampaignProjector
             .ToArray();
 
         string summaryLine = leadWorkspace is null
-            ? $"Campaign: {groundedSummary.Dossiers.Count} dossier(s), {groundedSummary.Campaigns.Count} campaign(s), and {groundedSummary.Runs.Count} runboard item(s) are attached to this account, but no current campaign dossier return target is pinned yet."
-            : $"Campaign: {(leadDigest?.ReturnSummary ?? leadWorkspace.ReturnSummary)} {(leadDigest?.ActiveSceneSummary ?? leadWorkspace.ActiveSceneSummary) ?? string.Empty} {groundedSummary.Dossiers.Count} dossier(s), {groundedSummary.Campaigns.Count} campaign(s), and {groundedSummary.Runs.Count} runboard item(s) stay attached to the same account-backed continuity details.";
+            ? $"Campaign: {groundedSummary.Dossiers.Count} runner(s), {groundedSummary.Campaigns.Count} campaign(s), and {groundedSummary.Runs.Count} runboard item(s) are attached to this account, but no current campaign return target is pinned yet."
+            : $"Campaign: {(leadDigest?.ReturnSummary ?? leadWorkspace.ReturnSummary)} {(leadDigest?.ActiveSceneSummary ?? leadWorkspace.ActiveSceneSummary) ?? string.Empty} {groundedSummary.Dossiers.Count} runner(s), {groundedSummary.Campaigns.Count} campaign(s), and {groundedSummary.Runs.Count} runboard item(s) stay attached to the same account-backed continuity details.";
         if (!string.IsNullOrWhiteSpace(serverPlane?.SessionReadinessSummary))
         {
             summaryLine = $"{summaryLine} {serverPlane.SessionReadinessSummary}".Trim();
@@ -356,15 +356,15 @@ public static class DesktopHomeCampaignProjector
 
         if (leadWorkspace is not null)
         {
-            return $"Reopen {leadWorkspace.CampaignName} and continue the grounded campaign dossier from the latest continuity snapshot.";
+            return $"Reopen {leadWorkspace.CampaignName} and continue the campaign from the latest continuity snapshot.";
         }
 
         if (summary.Restore.RecentCampaigns.Count > 0)
         {
-            return "Open your dossier and restore the current campaign before you create another local-only dossier.";
+            return "Open your runner and restore the current campaign before you create another local-only runner.";
         }
 
-        return "Claim this copy and create one campaign dossier before you rely on return and restore.";
+        return "Claim this copy and create one campaign before you rely on return and restore.";
     }
 
     private static IEnumerable<string> BuildFirstPlayableSessionHighlights(FirstPlayableSessionProjection? firstPlayableSession)
@@ -456,7 +456,7 @@ public static class DesktopHomeCampaignProjector
         => $"{DescribePrefetchInventory(restore)} are staged for offline use across {restore.ClaimedDevices.Count} claimed device(s), updated at {restore.GeneratedAtUtc.ToUniversalTime():yyyy-MM-dd HH:mm} UTC.";
 
     private static string DescribePrefetchInventory(WorkspaceRestoreProjection restore)
-        => $"{restore.RecentDossiers.Count} recent dossier(s), {restore.RecentCampaigns.Count} recent campaign(s), {restore.RecentRuleEnvironments.Count} rule environment(s), and {restore.RecentArtifacts.Count} reconnectable item(s)";
+        => $"{restore.RecentDossiers.Count} recent runner(s), {restore.RecentCampaigns.Count} recent campaign(s), {restore.RecentRuleEnvironments.Count} rule environment(s), and {restore.RecentArtifacts.Count} reconnectable item(s)";
 
     private static string ResolveSupportClosureSummary(
         BuildLabHandoffProjection? leadHandoff,
@@ -473,7 +473,7 @@ public static class DesktopHomeCampaignProjector
             return $"Support closure: {supportReuseHint}";
         }
 
-        return "Support closure: fixes, notices, and confirmation stay attached to the claimed install, current channel, and the campaign dossier you reopen from this home cockpit.";
+        return "Support closure: fixes, notices, and confirmation stay attached to the claimed install, current channel, and the campaign you reopen from this home cockpit.";
     }
 
     private static string HumanizeValue(string? value, string fallback)

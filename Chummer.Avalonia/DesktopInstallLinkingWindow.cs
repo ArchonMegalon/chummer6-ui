@@ -86,7 +86,7 @@ internal sealed class DesktopInstallLinkingWindow : Window
         _statusText = new TextBlock
         {
             IsVisible = false,
-            Foreground = DesktopShellTheme.ResolveThemeBrush("ChummerShellMutedForegroundBrush", "#334155"),
+            Foreground = DesktopShellTheme.ResolveMutedForegroundBrush(),
             TextWrapping = TextWrapping.Wrap
         };
 
@@ -210,12 +210,12 @@ internal sealed class DesktopInstallLinkingWindow : Window
         _browserFallbackSummaryText = new TextBlock
         {
             TextWrapping = TextWrapping.Wrap,
-            Foreground = DesktopShellTheme.ResolveThemeBrush("ChummerShellMutedForegroundBrush", "#334155")
+            Foreground = DesktopShellTheme.ResolveMutedForegroundBrush()
         };
         _browserFallbackDetailText = new TextBlock
         {
             TextWrapping = TextWrapping.Wrap,
-            Foreground = DesktopShellTheme.ResolveThemeBrush("ChummerShellMutedForegroundBrush", "#334155")
+            Foreground = DesktopShellTheme.ResolveMutedForegroundBrush()
         };
         _browserFallbackUrlLabelText = new TextBlock
         {
@@ -225,7 +225,7 @@ internal sealed class DesktopInstallLinkingWindow : Window
         _browserFallbackUrlText = new TextBlock
         {
             TextWrapping = TextWrapping.Wrap,
-            Foreground = DesktopShellTheme.ResolveThemeBrush("ChummerShellForegroundBrush", "#0f172a")
+            Foreground = DesktopShellTheme.ResolveForegroundBrush()
         };
         _browserFallbackPanel = DesktopShellTheme.CreateUtilityPanel(
             new StackPanel
@@ -244,7 +244,7 @@ internal sealed class DesktopInstallLinkingWindow : Window
         _guidedPreferenceStatusText = new TextBlock
         {
             Text = BuildGuidedToolsPreferenceStatus(_preferences, _language),
-            Foreground = DesktopShellTheme.ResolveThemeBrush("ChummerShellMutedForegroundBrush", "#334155"),
+            Foreground = DesktopShellTheme.ResolveMutedForegroundBrush(),
             TextWrapping = TextWrapping.Wrap
         };
         _guidedToolsRadioButton = new RadioButton
@@ -684,7 +684,7 @@ internal sealed class DesktopInstallLinkingWindow : Window
                     new TextBlock
                     {
                         Text = DesktopLocalizationCatalog.GetRequiredString("desktop.install_link.preference.summary", _language),
-                        Foreground = DesktopShellTheme.ResolveThemeBrush("ChummerShellMutedForegroundBrush", "#334155"),
+                        Foreground = DesktopShellTheme.ResolveMutedForegroundBrush(),
                         TextWrapping = TextWrapping.Wrap
                     },
                     new StackPanel

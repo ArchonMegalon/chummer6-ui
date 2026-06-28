@@ -233,7 +233,7 @@ internal sealed class DesktopCreatorOsWindow : Window
             details.Children.Add(entryList);
             details.Children.Add(new Border
             {
-                BorderBrush = DesktopShellTheme.ResolveThemeBrush("ChummerShellBorderBrush", "#B5C0CF"),
+                BorderBrush = DesktopShellTheme.ResolveBorderBrush(),
                 BorderThickness = new Thickness(1),
                 CornerRadius = new CornerRadius(4),
                 Padding = new Thickness(10),

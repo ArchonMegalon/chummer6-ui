@@ -1,11 +1,9 @@
 {
-  "generatedAt": "2026-06-24T15:41:12.903332Z",
+  "generatedAt": "2026-06-27T16:09:05.474550Z",
   "contract_name": "chummer6-ui.sr4_workflow_family_parity_receipt",
-  "status": "fail",
-  "summary": "SR4 workflow-family parity evidence is incomplete for cyberware-bioware-modular-hierarchies-nested-plugins.",
-  "reasons": [
-    "Verification receipts are missing or not passing: /docker/chummercomplete/chummer-presentation/.codex-studio/published/workflow-family-parity/sr4/cyberware-bioware-modular-hierarchies-nested-plugins.generated.json (fail)"
-  ],
+  "status": "pass",
+  "summary": "SR4 workflow-family parity evidence is explicitly grounded for cyberware-bioware-modular-hierarchies-nested-plugins.",
+  "reasons": [],
   "evidence": {
     "edition": "sr4",
     "familyId": "cyberware-bioware-modular-hierarchies-nested-plugins",
@@ -24,10 +22,10 @@
       "sourceRepoPath": "/docker/fleet/repos/chummer4",
       "sourceRepoHead": "fe9a0c0e67be86785ccce1be041d098f3b5cfa71"
     },
-    "verificationReceipts": [],
-    "verificationFailures": [
-      "/docker/chummercomplete/chummer-presentation/.codex-studio/published/workflow-family-parity/sr4/cyberware-bioware-modular-hierarchies-nested-plugins.generated.json (fail)"
+    "verificationReceipts": [
+      "/docker/chummercomplete/chummer-presentation/.codex-studio/published/workflow-family-parity/sr4/cyberware-bioware-modular-hierarchies-nested-plugins.generated.json"
     ],
+    "verificationFailures": [],
     "verificationExternalBlockers": []
   }
 }

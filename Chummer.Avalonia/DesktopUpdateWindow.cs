@@ -10,14 +10,14 @@ namespace Chummer.Avalonia;
 
 internal sealed class DesktopUpdateWindow : Window
 {
-    private static IBrush WindowBackgroundBrush => DesktopShellTheme.ResolveThemeBrush("ChummerShellWindowBackgroundBrush", "#050B16");
-    private static IBrush SurfaceBrush => DesktopShellTheme.ResolveThemeBrush("ChummerShellSurfaceBrush", "#111827");
-    private static IBrush SurfaceAltBrush => DesktopShellTheme.ResolveThemeBrush("ChummerShellSurfaceAltBrush", "#0F172A");
+    private static IBrush WindowBackgroundBrush => DesktopShellTheme.ResolveWindowBackgroundBrush();
+    private static IBrush SurfaceBrush => DesktopShellTheme.ResolveSurfaceBrush();
+    private static IBrush SurfaceAltBrush => DesktopShellTheme.ResolveSurfaceAltBrush();
     private static IBrush AccentSurfaceBrush => DesktopShellTheme.ResolveThemeBrush("ChummerShellChromeAccentBrush", "#172554");
-    private static IBrush LocalBorderBrush => DesktopShellTheme.ResolveThemeBrush("ChummerShellBorderBrush", "#334155");
+    private static IBrush LocalBorderBrush => DesktopShellTheme.ResolveBorderBrush();
     private static IBrush AccentBorderBrush => DesktopShellTheme.ResolveThemeBrush("ChummerShellActiveMenuBorderBrush", "#90C39A");
-    private static IBrush ForegroundBrush => DesktopShellTheme.ResolveThemeBrush("ChummerShellForegroundBrush", "#E5E7EB");
-    private static IBrush MutedForegroundBrush => DesktopShellTheme.ResolveThemeBrush("ChummerShellMutedForegroundBrush", "#D8E1EC");
+    private static IBrush ForegroundBrush => DesktopShellTheme.ResolveForegroundBrush();
+    private static IBrush MutedForegroundBrush => DesktopShellTheme.ResolveMutedForegroundBrush();
 
     private DesktopInstallLinkingState _installState;
     private DesktopUpdateClientStatus _updateStatus;
@@ -263,6 +263,11 @@ internal sealed class DesktopUpdateWindow : Window
             lines.Add(S("desktop.update.no_pending_update"));
         }
 
+        if (!string.IsNullOrWhiteSpace(_updateStatus.PendingInstallerPath))
+        {
+            lines.Add(BuildPendingInstallerFollowThroughLine());
+        }
+
         if (_updateStatus.LastUpdateLaunchAttemptAtUtc is not null)
         {
             lines.Add(F(
@@ -300,6 +305,11 @@ internal sealed class DesktopUpdateWindow : Window
             lines.Add($"Linking issue: {_installState.LastClaimError}");
         }
 
+        if (!string.IsNullOrWhiteSpace(_updateStatus.PendingInstallerPath))
+        {
+            lines.Add(BuildPendingInstallerInstallLine());
+        }
+
         return string.Join("\n", lines);
     }
 
@@ -325,6 +335,15 @@ internal sealed class DesktopUpdateWindow : Window
                 ? CreateButton(S("desktop.home.button.open_devices_access"), OpenDevicesAccessWindowAsync, isPrimary: true)
                 : CreateButton(DesktopDevicesAccessWindow.BuildInstallLinkEntryButtonLabel(_installState, _preferences.Language), OpenInstallLinkingAsync, isPrimary: true)
         ];
+        if (CanOpenPendingInstaller())
+        {
+            actions.Add(CreateButton(S("desktop.update.button.open_pending_installer"), OpenPendingInstaller));
+        }
+        else if (CanCopyPendingInstallerCommand())
+        {
+            actions.Add(CreateButton(S("desktop.update.button.copy_install_command"), CopyPendingInstallerCommandAsync));
+        }
+
         actions.Add(CreateButton(
             DesktopLocalizationCatalog.GetRequiredString("desktop.install_link.button.open_downloads", _preferences.Language),
             static () => DesktopInstallLinkingRuntime.TryOpenDownloadsPortal()));
@@ -408,6 +427,70 @@ internal sealed class DesktopUpdateWindow : Window
 
     private bool OpenInstallSupport()
         => DesktopInstallLinkingRuntime.TryOpenSupportPortalForInstall(_installState);
+
+    private bool CanOpenPendingInstaller()
+        => string.Equals(_updateStatus.Platform, "macos", StringComparison.OrdinalIgnoreCase)
+            && !string.IsNullOrWhiteSpace(_updateStatus.PendingInstallerPath);
+
+    private bool OpenPendingInstaller()
+        => DesktopUpdateRuntime.TryOpenPendingInstaller(_installState.HeadId);
+
+    private bool CanCopyPendingInstallerCommand()
+        => string.Equals(_updateStatus.Platform, "linux", StringComparison.OrdinalIgnoreCase)
+            && !string.IsNullOrWhiteSpace(_updateStatus.PendingInstallerPath);
+
+    private async Task CopyPendingInstallerCommandAsync()
+    {
+        if (!DesktopUpdateRuntime.TryBuildPendingInstallerManualCommand(_installState.HeadId, out string command)
+            || string.IsNullOrWhiteSpace(command))
+        {
+            _statusText.Text = S("desktop.update.status.install_command_unavailable");
+            return;
+        }
+
+        if (Clipboard is null)
+        {
+            _statusText.Text = S("desktop.update.status.clipboard_unavailable");
+            return;
+        }
+
+        await Clipboard.SetTextAsync(command);
+        _statusText.Text = S("desktop.update.status.install_command_copied");
+    }
+
+    private string BuildPendingInstallerFollowThroughLine()
+    {
+        if (string.Equals(_updateStatus.Platform, "macos", StringComparison.OrdinalIgnoreCase))
+        {
+            return "A downloaded installer is already waiting on this copy.";
+        }
+
+        if (string.Equals(_updateStatus.Platform, "linux", StringComparison.OrdinalIgnoreCase))
+        {
+            return CanCopyPendingInstallerCommand()
+                ? "A downloaded package is already waiting on this copy. Copy the install command here when you are ready."
+                : "A downloaded package is already waiting on this copy.";
+        }
+
+        return "A downloaded installer is already waiting on this copy.";
+    }
+
+    private string BuildPendingInstallerInstallLine()
+    {
+        if (string.Equals(_updateStatus.Platform, "macos", StringComparison.OrdinalIgnoreCase))
+        {
+            return "Manual install stays local: this downloaded installer can be reopened from here.";
+        }
+
+        if (string.Equals(_updateStatus.Platform, "linux", StringComparison.OrdinalIgnoreCase))
+        {
+            return CanCopyPendingInstallerCommand()
+                ? "Manual install stays local: this downloaded package is ready, and the terminal command is available from here."
+                : "Manual install stays local: this downloaded package is ready on this copy.";
+        }
+
+        return "A downloaded installer is ready on this copy.";
+    }
 
     private Task RefreshUpdateStateAsync()
     {

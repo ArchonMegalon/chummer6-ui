@@ -63,7 +63,7 @@ def normalize_verifier_owned_fields(payload: dict, verifier_module, generated_at
 
 
 def main() -> int:
-    repo_root = Path(__file__).resolve().parents[1]
+    repo_root = Path(__file__).absolute().parents[1]
     registry_root = (repo_root / "scripts" / "resolve-hub-registry-root.sh").resolve()
     resolved_registry_root = subprocess.run(
         ["bash", str(registry_root)],

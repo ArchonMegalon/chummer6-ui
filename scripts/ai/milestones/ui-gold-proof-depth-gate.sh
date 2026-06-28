@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-repo_root="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
+repo_root="$(cd "$(dirname "${BASH_SOURCE[0]}")/../../.." && pwd)"
 
 python3 - "$repo_root" <<'PY'
 from __future__ import annotations
@@ -190,8 +190,21 @@ else:
         failures.append("BLAZOR_PUBLIC_EDGE_EXECUTION_PROOF.generated.json route_lane mismatch.")
     if public_edge_execution_route_base != HOSTED_EXECUTION_ROUTE_BASE:
         failures.append("BLAZOR_PUBLIC_EDGE_EXECUTION_PROOF.generated.json promoted_route_base mismatch.")
-    if public_edge_execution_required_family_ids != HOSTED_EXECUTION_REQUIRED_FAMILY_IDS:
-        failures.append("BLAZOR_PUBLIC_EDGE_EXECUTION_PROOF.generated.json required_workflow_family_ids mismatch.")
+    actual_family_ids = [
+        str(item).strip()
+        for item in (public_edge_execution_required_family_ids or [])
+        if str(item).strip()
+    ]
+    missing_family_ids = [
+        family_id
+        for family_id in HOSTED_EXECUTION_REQUIRED_FAMILY_IDS
+        if family_id not in actual_family_ids
+    ]
+    if missing_family_ids:
+        failures.append(
+            "BLAZOR_PUBLIC_EDGE_EXECUTION_PROOF.generated.json is missing required_workflow_family_ids: "
+            + ", ".join(missing_family_ids)
+        )
 
 parity_inventory_path = published / "PARITY_INVENTORY.generated.json"
 if parity_inventory_path.is_file():

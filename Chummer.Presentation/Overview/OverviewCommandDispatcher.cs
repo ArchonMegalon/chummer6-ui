@@ -127,7 +127,7 @@ public sealed class OverviewCommandDispatcher : IOverviewCommandDispatcher
                     context.Publish(context.State with
                     {
                         Error = null,
-                        Notice = "No open dossier to close."
+                        Notice = "No open runner to close."
                     });
                     return;
                 }

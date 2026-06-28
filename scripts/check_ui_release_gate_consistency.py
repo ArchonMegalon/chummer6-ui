@@ -5,7 +5,7 @@ import json
 from pathlib import Path
 
 
-REPO_ROOT = Path(__file__).resolve().parents[1]
+REPO_ROOT = Path(__file__).absolute().parents[1]
 PUBLISHED = REPO_ROOT / ".codex-studio" / "published"
 FLAGSHIP_GATE = PUBLISHED / "UI_FLAGSHIP_RELEASE_GATE.generated.json"
 

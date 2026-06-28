@@ -98,6 +98,13 @@ reason_text = "\n".join(reasons).lower()
 external_blocker = str(checks.get("startup_smoke_external_blocker") or "").strip()
 if external_blocker:
     raise SystemExit(0)
+visual_proof_external_blocker = str(
+    checks.get("windows_visual_proof_external_blocker")
+    or checks.get("visual_proof_external_blocker")
+    or ""
+).strip()
+if visual_proof_external_blocker:
+    raise SystemExit(0)
 
 external_markers = (
     "requires a windows-capable host",
@@ -106,6 +113,8 @@ external_markers = (
     "current host cannot run promoted windows installer smoke",
     "current host cannot run promoted macos installer smoke",
     "current host cannot run promoted linux installer smoke",
+    "windows installer visual proof is missing; capture progress and completion screenshots on a windows host",
+    "windows installer visual proof must be captured on a windows host before promotion can pass",
 )
 raise SystemExit(0 if any(marker in reason_text for marker in external_markers) else 1)
 PY
@@ -549,6 +558,14 @@ def infer_external_blockers_from_reasons(platform: str, reasons: List[str]) -> L
         if platform_token == "windows":
             if "requires a windows-capable host" in reason_token or "missing_windows_host_capability" in reason_token:
                 inferred.append("missing_windows_host_capability")
+            if (
+                "windows installer visual proof is missing; capture progress and completion screenshots on a windows host"
+                in reason_token
+                or "windows installer visual proof must be captured on a windows host before promotion can pass"
+                in reason_token
+                or "missing_windows_visual_proof_capture" in reason_token
+            ):
+                inferred.append("missing_windows_visual_proof_capture")
         elif platform_token == "macos":
             if "requires a macos host" in reason_token or "missing_macos_host_capability" in reason_token:
                 inferred.append("missing_macos_host_capability")
@@ -566,6 +583,7 @@ EXTERNAL_REASON_MARKERS = (
     "current host cannot run promoted macos installer smoke",
     "current host cannot run promoted linux installer smoke",
     "windows installer visual proof is missing; capture progress and completion screenshots on a windows host",
+    "windows installer visual proof must be captured on a windows host before promotion can pass",
     "requires a chummer-api host exposing /api/workspaces and /api/shell/bootstrap",
     "require a chummer-api host exposing /api/workspaces and /api/shell/bootstrap",
     "desktop downloads shelf contains installer artifact(s) not promoted in release-channel truth",
@@ -2209,8 +2227,12 @@ def validate_windows_gate(
     gate_evidence["startup_smoke_receipt_path"] = checks_startup_smoke_receipt_path
     host_supports_windows_startup_smoke = bool(gate_checks.get("host_supports_windows_startup_smoke"))
     startup_smoke_external_blocker = normalize_token(gate_checks.get("startup_smoke_external_blocker"))
+    windows_visual_proof_external_blocker = normalize_token(
+        gate_checks.get("windows_visual_proof_external_blocker")
+    )
     gate_evidence["host_supports_windows_startup_smoke"] = host_supports_windows_startup_smoke
     gate_evidence["startup_smoke_external_blocker"] = startup_smoke_external_blocker
+    gate_evidence["windows_visual_proof_external_blocker"] = windows_visual_proof_external_blocker
     validate_receipt_freshness(
         "windows desktop exit gate proof",
         gate_payload,
@@ -2273,15 +2295,25 @@ def validate_windows_gate(
         reasons.append("Windows desktop exit gate receipt releaseVersion/version does not match release channel version.")
     windows_gate_external_only = (
         not status_ok(gate_status)
-        and not host_supports_windows_startup_smoke
-        and startup_smoke_external_blocker == "missing_windows_host_capability"
+        and (
+            (
+                not host_supports_windows_startup_smoke
+                and startup_smoke_external_blocker == "missing_windows_host_capability"
+            )
+            or windows_visual_proof_external_blocker == "missing_windows_visual_proof_capture"
+        )
     )
     gate_evidence["windows_gate_external_only"] = windows_gate_external_only
     if not status_ok(gate_status):
         if windows_gate_external_only:
-            reasons.append(
-                "Windows desktop exit gate requires a Windows-capable host; current host cannot run promoted Windows installer smoke."
-            )
+            if windows_visual_proof_external_blocker == "missing_windows_visual_proof_capture":
+                reasons.append(
+                    "Windows installer visual proof must be captured on a Windows host before promotion can pass."
+                )
+            else:
+                reasons.append(
+                    "Windows desktop exit gate requires a Windows-capable host; current host cannot run promoted Windows installer smoke."
+                )
         else:
             reasons.append("Windows desktop exit gate is missing or not passing.")
     for gate_reason in gate_reasons:
@@ -2296,6 +2328,14 @@ def validate_windows_gate(
         rid=expected_rid,
         blocker=startup_smoke_external_blocker,
         source="windows_gate",
+    )
+    register_external_blocker(
+        evidence,
+        platform="windows",
+        head=expected_head,
+        rid=expected_rid,
+        blocker=windows_visual_proof_external_blocker,
+        source="windows_visual_proof",
     )
     for inferred_blocker in infer_external_blockers_from_reasons("windows", gate_reasons):
         register_external_blocker(

@@ -63,7 +63,7 @@ internal sealed class DesktopCampaignWorkspaceWindow : Window
             Text = BuildStatus(),
             IsVisible = false,
             TextWrapping = TextWrapping.Wrap,
-            Foreground = DesktopShellTheme.ResolveThemeBrush("ChummerShellMutedForegroundBrush", "#334155")
+            Foreground = DesktopShellTheme.ResolveMutedForegroundBrush()
         };
 
         _readinessText = new TextBlock

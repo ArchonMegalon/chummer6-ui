@@ -121,7 +121,7 @@ public sealed class DesktopStartupUpdateWindowTests
             "The newest build is paused. This copy will keep running.",
             DesktopStartupUpdateWindow.BuildAttentionMessage("rollout_blocked"));
         Assert.AreEqual(
-            "A macOS update is ready. Open Downloads to install it manually; this copy will stay usable.",
+            "A macOS update is ready. Open Update Status to install it manually; this copy will stay usable.",
             DesktopStartupUpdateWindow.BuildAttentionMessage("macos_manual_install_required"));
         Assert.AreEqual(
             "This copy will keep running.",

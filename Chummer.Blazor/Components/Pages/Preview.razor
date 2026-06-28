@@ -5,6 +5,7 @@
 @page "/workbench"
 @layout Chummer.Blazor.Components.Layout.NoLayout
 @using Microsoft.AspNetCore.Components
+@using Microsoft.AspNetCore.Components.Web
 @using Microsoft.Extensions.Configuration
 @using Chummer.Blazor.Components.Layout
 @using Chummer.Blazor.RunnerIntelligence
@@ -77,8 +78,20 @@
                 <div class="classic-menu-item">
                     <a href="@BuildPreviewHref(command: NewCharacterCommand, useWorkbenchRoute: true)">File</a>
                     <div class="classic-menu-flyout" role="menu">
-                        <a href="@BuildPreviewHref(command: NewCharacterCommand, useWorkbenchRoute: true)" role="menuitem" data-chummer-shortcut="Ctrl+N" aria-keyshortcuts="Control+N">New runner</a>
-                        <a href="@BuildPreviewHref(command: OpenCharacterCommand, useWorkbenchRoute: true)" role="menuitem" data-chummer-shortcut="Ctrl+O" aria-keyshortcuts="Control+O">Open dossier</a>
+                        <a href="@BuildPreviewHref(command: NewCharacterCommand, useWorkbenchRoute: true)"
+                           role="menuitem"
+                           data-browser-shell-command="@NewCharacterCommand"
+                           data-chummer-shortcut="Ctrl+N"
+                           aria-keyshortcuts="Control+N"
+                           @onclick="() => OpenShellCommandFromSurfaceAsync(NewCharacterCommand)"
+                           @onclick:preventDefault="true">New runner</a>
+                        <a href="@BuildPreviewHref(command: OpenCharacterCommand, useWorkbenchRoute: true)"
+                           role="menuitem"
+                           data-browser-shell-command="@OpenCharacterCommand"
+                           data-chummer-shortcut="Ctrl+O"
+                           aria-keyshortcuts="Control+O"
+                           @onclick="() => OpenShellCommandFromSurfaceAsync(OpenCharacterCommand)"
+                           @onclick:preventDefault="true">Open runner</a>
                         <a href="@SaveAsFlowHref" role="menuitem" aria-current="@(IsSaveWorkflow ? "page" : null)" data-chummer-shortcut="Ctrl+Shift+S" aria-keyshortcuts="Control+Shift+S">Save as</a>
                         <a href="@PrintFlowHref" role="menuitem" aria-current="@(IsPrintWorkflow ? "page" : null)" data-chummer-shortcut="Ctrl+P" aria-keyshortcuts="Control+P">Print</a>
                         <a href="@ExportFlowHref" role="menuitem" aria-current="@(IsExportWorkflow ? "page" : null)" data-chummer-shortcut="Ctrl+E" aria-keyshortcuts="Control+E">Export</a>
@@ -105,7 +118,11 @@
                     <div class="classic-menu-flyout" role="menu">
                         <a href="@ChummerOnlineRosterHref" role="menuitem" aria-current="@(IsCharacterRosterCommand ? "page" : null)" data-chummer-shortcut="Ctrl+R" aria-keyshortcuts="Control+R">Character Roster</a>
                         <a href="@ContinueRecentHref" role="menuitem">Continue runner</a>
-                        <a href="@BuildPreviewHref(command: OpenCharacterCommand, useWorkbenchRoute: true)" role="menuitem">Import dossier XML</a>
+                        <a href="@BuildPreviewHref(command: OpenCharacterCommand, useWorkbenchRoute: true)"
+                           role="menuitem"
+                           data-browser-shell-command="@OpenCharacterCommand"
+                           @onclick="() => OpenShellCommandFromSurfaceAsync(OpenCharacterCommand)"
+                           @onclick:preventDefault="true">Import runner XML</a>
                     </div>
                 </div>
                 <div class="classic-menu-item">
@@ -128,8 +145,24 @@
 
             <nav class="classic-chummer-toolstrip" aria-label="Classic Chummer toolstrip">
                 <div class="classic-toolstrip-group" aria-label="File actions">
-                    <a class="classic-tool-icon" href="@BuildPreviewHref(command: NewCharacterCommand, useWorkbenchRoute: true)" data-classic-toolstrip-action="new-runner" data-chummer-shortcut="Ctrl+N" aria-keyshortcuts="Control+N" title="New runner">N</a>
-                    <a class="classic-tool-icon" href="@BuildPreviewHref(command: OpenCharacterCommand, useWorkbenchRoute: true)" data-classic-toolstrip-action="open-dossier" data-chummer-shortcut="Ctrl+O" aria-keyshortcuts="Control+O" title="Open dossier">O</a>
+                    <a class="classic-tool-icon"
+                       href="@BuildPreviewHref(command: NewCharacterCommand, useWorkbenchRoute: true)"
+                       data-browser-shell-command="@NewCharacterCommand"
+                       data-classic-toolstrip-action="new-runner"
+                       data-chummer-shortcut="Ctrl+N"
+                       aria-keyshortcuts="Control+N"
+                       title="New runner"
+                       @onclick="() => OpenShellCommandFromSurfaceAsync(NewCharacterCommand)"
+                       @onclick:preventDefault="true">N</a>
+                    <a class="classic-tool-icon"
+                       href="@BuildPreviewHref(command: OpenCharacterCommand, useWorkbenchRoute: true)"
+                       data-browser-shell-command="@OpenCharacterCommand"
+                       data-classic-toolstrip-action="open-dossier"
+                       data-chummer-shortcut="Ctrl+O"
+                       aria-keyshortcuts="Control+O"
+                       title="Open runner"
+                       @onclick="() => OpenShellCommandFromSurfaceAsync(OpenCharacterCommand)"
+                       @onclick:preventDefault="true">O</a>
                     <a class="classic-tool-icon" href="@SaveAsFlowHref" data-classic-toolstrip-action="save-dossier" data-chummer-shortcut="Ctrl+S" aria-keyshortcuts="Control+S" title="Save dossier" aria-current="@(IsSaveWorkflow ? "page" : null)">S</a>
                 </div>
                 <div class="classic-toolstrip-group" aria-label="Output actions">
@@ -161,7 +194,7 @@
                                     <a href="@ContinueRecentHref">@ContinueRecentLabel</a>
                                 </li>
                                 <li role="treeitem" aria-level="2" data-tree-kind="runner" data-roster-draggable-kind="runner" draggable="true" data-roster-node="sample-runner" data-roster-node-id="runner-sample" data-roster-parent-id="folder-active-table" data-roster-order="20">
-                                    <a href="@BuildPreviewHref(SeededWorkspaceId, useWorkbenchRoute: true)">Sample runner dossier</a>
+                                    <a href="@BuildPreviewHref(SeededWorkspaceId, useWorkbenchRoute: true)">Sample runner</a>
                                 </li>
                             </ul>
                         </li>
@@ -169,7 +202,10 @@
                             Saved Runners
                             <ul role="group">
                                 <li role="treeitem" aria-level="2" data-tree-kind="runner" data-roster-draggable-kind="runner" draggable="true" data-roster-node="import-dossier" data-roster-node-id="runner-import-dossier" data-roster-parent-id="folder-saved-runners" data-roster-order="10">
-                                    <a href="@BuildPreviewHref(command: OpenCharacterCommand, useWorkbenchRoute: true)">Import dossier XML</a>
+                                    <a href="@BuildPreviewHref(command: OpenCharacterCommand, useWorkbenchRoute: true)"
+                                       data-browser-shell-command="@OpenCharacterCommand"
+                                       @onclick="() => OpenShellCommandFromSurfaceAsync(OpenCharacterCommand)"
+                                       @onclick:preventDefault="true">Import runner XML</a>
                                 </li>
                             </ul>
                         </li>
@@ -177,7 +213,7 @@
                             Inbox
                             <ul role="group">
                                 <li role="treeitem" aria-level="2" data-tree-kind="runner" data-roster-draggable-kind="runner" draggable="true" data-roster-node="unsorted-local" data-roster-node-id="runner-unsorted-local" data-roster-parent-id="folder-inbox" data-roster-order="10">
-                                    <a href="@ChummerOnlineRosterHref">Unsorted local dossier</a>
+                                    <a href="@ChummerOnlineRosterHref">Unsorted local runner</a>
                                 </li>
                             </ul>
                         </li>
@@ -191,12 +227,12 @@
                     </ul>
                 </aside>
 
-                <section class="classic-chummer-dossier" aria-label="Active dossier workspace">
+                <section class="classic-chummer-dossier" aria-label="Active runner workspace">
                     <header>
-                        <span>Active dossier</span>
+                        <span>Active runner</span>
                         <strong>@(PrimaryRecentWorkspace?.ShortLabel ?? "Sample Runner")</strong>
                     </header>
-                    <nav class="classic-dossier-tabs" aria-label="Dossier sections">
+                    <nav class="classic-dossier-tabs" aria-label="Runner sections">
                         <a class="classic-dossier-tab" href="@BuildPreviewHref(SeededWorkspaceId, tab: ProfileTabId, useWorkbenchRoute: true)" aria-current="@(IsProfileWorkflow ? "page" : null)">Profile</a>
                         <a class="classic-dossier-tab" href="@BuildLabLaneHref" aria-current="@(IsBuildLabWorkflow ? "page" : null)">Build</a>
                         <a class="classic-dossier-tab" href="@GearLaneHref" aria-current="@(IsGearWorkflow ? "page" : null)">Gear</a>
@@ -207,7 +243,7 @@
                         <a class="classic-dossier-tab" href="@BuildPreviewHref(SeededWorkspaceId, tab: CareerTabId, useWorkbenchRoute: true)" aria-current="@(IsCareerWorkflow ? "page" : null)">Career</a>
                     </nav>
                     <div class="classic-chummer-dossier-body">
-                        <nav class="classic-dossier-section-list" aria-label="Classic dossier section list">
+                        <nav class="classic-dossier-section-list" aria-label="Classic runner section list">
                             <a href="@BuildPreviewHref(SeededWorkspaceId, tab: ProfileTabId, useWorkbenchRoute: true)" aria-current="@(IsProfileWorkflow ? "page" : null)">Common</a>
                             <a href="@BuildLabLaneHref" aria-current="@(IsBuildLabWorkflow ? "page" : null)">Build</a>
                             <a href="@GearLaneHref" aria-current="@(IsGearWorkflow ? "page" : null)">Gear</a>
@@ -224,7 +260,7 @@
                                     <div><dt>Name</dt><dd>@(PrimaryRecentWorkspace?.ShortLabel ?? "Sample Runner")</dd></div>
                                     <div><dt>Alias</dt><dd>Street Samurai</dd></div>
                                     <div><dt>Ruleset</dt><dd>SR5</dd></div>
-                                    <div><dt>Status</dt><dd>Unsaved local dossier</dd></div>
+                                    <div><dt>Status</dt><dd>Unsaved local runner</dd></div>
                                 </dl>
                             </section>
 
@@ -242,7 +278,7 @@
                                 </dl>
                             </section>
 
-                            <section class="classic-dossier-group classic-dossier-group--wide" aria-label="Dossier lists">
+                            <section class="classic-dossier-group classic-dossier-group--wide" aria-label="Runner lists">
                                 <h3>Build Lists</h3>
                                 <div class="classic-dossier-lists">
                                     <ul>
@@ -280,7 +316,7 @@
                     </div>
                 </section>
 
-                <aside class="classic-chummer-inspector" aria-label="Dossier inspector">
+                <aside class="classic-chummer-inspector" aria-label="Runner inspector">
                     <h2>Inspector</h2>
                     <dl>
                         <div><dt>Karma</dt><dd>12</dd></div>
@@ -299,7 +335,7 @@
 
             <footer class="classic-chummer-status" aria-label="Classic Chummer status">
                     <span><strong>Ready</strong><em>Local</em></span>
-                    <span><strong>Dirty</strong><em>Unsaved dossier</em></span>
+                    <span><strong>Dirty</strong><em>Unsaved runner</em></span>
                     <span><strong>Rules</strong><em>SR5</em></span>
                     <span><strong>Checks</strong><em>Review required</em></span>
                     <span><strong>Privacy</strong><em>Local-first</em></span>
@@ -368,8 +404,16 @@
             </div>
             <nav class="browser-workbench-task-dock-actions" aria-label="@TaskShortcutAriaLabel">
                 <a href="@ChummerOnlineRosterHref" data-workbench-dock-action="character-roster">Character Roster</a>
-                <a href="@BuildPreviewHref(command: NewCharacterCommand, useWorkbenchRoute: true)" data-workbench-dock-action="start-new">New runner</a>
-                <a href="@BuildPreviewHref(command: OpenCharacterCommand, useWorkbenchRoute: true)" data-workbench-dock-action="open-existing">Open/import</a>
+                <a href="@BuildPreviewHref(command: NewCharacterCommand, useWorkbenchRoute: true)"
+                   data-browser-shell-command="@NewCharacterCommand"
+                   data-workbench-dock-action="start-new"
+                   @onclick="() => OpenShellCommandFromSurfaceAsync(NewCharacterCommand)"
+                   @onclick:preventDefault="true">New runner</a>
+                <a href="@BuildPreviewHref(command: OpenCharacterCommand, useWorkbenchRoute: true)"
+                   data-browser-shell-command="@OpenCharacterCommand"
+                   data-workbench-dock-action="open-existing"
+                   @onclick="() => OpenShellCommandFromSurfaceAsync(OpenCharacterCommand)"
+                   @onclick:preventDefault="true">Open/import</a>
                 <a href="@BuildLabLaneHref" data-workbench-dock-action="build-lab">Build Lab</a>
                 <a href="@GearLaneHref" data-workbench-dock-action="gear">Gear</a>
                 <a href="@SaveAsFlowHref" data-workbench-dock-action="save-as">Save/download</a>
@@ -416,7 +460,7 @@
             else
             {
                 <div class="browser-workbench-recovery-detail">
-                    <span data-workbench-recovery-empty="true">No restored runner yet. Start, import, or open the seeded dossier to establish browser continuity.</span>
+                    <span data-workbench-recovery-empty="true">No restored runner yet. Start, import, or open the seeded sample runner to establish browser continuity.</span>
                 </div>
             }
         </section>
@@ -441,7 +485,7 @@
                 <article data-workbench-hosting-card="analytics-privacy">
                     <span>Analytics</span>
                     <strong>Rybbit is optional and metadata-only</strong>
-                    <p>Hosted analytics may use route/workflow metadata; self-host defaults stay off unless the operator opts into Rybbit and must not send dossier metadata, owner identifiers, dossier files, XML, or dossier content.</p>
+                    <p>Hosted analytics may use route/workflow metadata; self-host defaults stay off unless the operator opts into Rybbit and must not send runner metadata, owner identifiers, runner files, XML, or runner content.</p>
                 </article>
             </div>
         </section>
@@ -456,14 +500,20 @@
                 <summary>Quick command map</summary>
                 <div class="browser-workbench-command-list" role="list">
                     <a href="@BuildPreviewHref(command: NewCharacterCommand, useWorkbenchRoute: true)"
+                       data-browser-shell-command="@NewCharacterCommand"
                        role="listitem"
                        aria-keyshortcuts="Control+N"
+                       @onclick="() => OpenShellCommandFromSurfaceAsync(NewCharacterCommand)"
+                       @onclick:preventDefault="true"
                        data-workbench-command-palette-action="new-character">
                         <kbd>Ctrl</kbd><kbd>N</kbd><span>New runner</span>
                     </a>
                     <a href="@BuildPreviewHref(command: OpenCharacterCommand, useWorkbenchRoute: true)"
+                       data-browser-shell-command="@OpenCharacterCommand"
                        role="listitem"
                        aria-keyshortcuts="Control+O"
+                       @onclick="() => OpenShellCommandFromSurfaceAsync(OpenCharacterCommand)"
+                       @onclick:preventDefault="true"
                        data-workbench-command-palette-action="open-character">
                         <kbd>Ctrl</kbd><kbd>O</kbd><span>Open/import</span>
                     </a>
@@ -483,13 +533,13 @@
                        role="listitem"
                        aria-keyshortcuts="Control+S"
                        data-workbench-command-palette-action="save-download">
-                        <kbd>Ctrl</kbd><kbd>S</kbd><span>Save Dossier</span>
+                        <kbd>Ctrl</kbd><kbd>S</kbd><span>Save Runner</span>
                     </a>
                     <a href="@PrintFlowHref"
                        role="listitem"
                        aria-keyshortcuts="Control+P"
                        data-workbench-command-palette-action="print">
-                        <kbd>Ctrl</kbd><kbd>P</kbd><span>Print Dossier</span>
+                        <kbd>Ctrl</kbd><kbd>P</kbd><span>Print Runner</span>
                     </a>
                     <a href="@ContactHref"
                        role="listitem"
@@ -518,7 +568,7 @@
                 <label for="workbench-density-compact" data-workbench-density-option="compact">
                     <input id="workbench-density-compact" name="workbench-density" type="radio" checked="checked" />
                     <span>Compact desktop</span>
-                    <small>Dense rows, short labels, maximum dossier context.</small>
+                    <small>Dense rows, short labels, maximum runner context.</small>
                 </label>
                 <label for="workbench-density-comfortable" data-workbench-density-option="comfortable">
                     <input id="workbench-density-comfortable" name="workbench-density" type="radio" />
@@ -542,7 +592,7 @@
             <div class="browser-workbench-ledger-grid">
                 <article data-workbench-ledger-row="startup">
                     <span>Startup</span>
-                    <strong>New runner, open dossiers, origins, and lists</strong>
+                    <strong>New runner, open runners, origins, and lists</strong>
                     <p>Common entry points stay in the browser and survive a reload.</p>
                 </article>
                 <article data-workbench-ledger-row="editing">
@@ -577,13 +627,16 @@
             <div class="browser-workbench-file-intake-copy">
                 <span class="browser-preview-status-label">Files</span>
                 <strong>Open or import a dossier.</strong>
-                <p>Review dossier XML in the browser, keep Hero Lab and XML tools nearby, or use desktop when native file dialogs matter.</p>
+                <p>Review runner XML in the browser, keep Hero Lab and XML tools nearby, or use desktop when native file dialogs matter.</p>
             </div>
             <div class="browser-workbench-file-intake-actions">
                 <a href="@BuildPreviewHref(command: OpenCharacterCommand, useWorkbenchRoute: true)"
-                   data-workbench-file-intake-action="open-character">
+                   data-browser-shell-command="@OpenCharacterCommand"
+                   data-workbench-file-intake-action="open-character"
+                   @onclick="() => OpenShellCommandFromSurfaceAsync(OpenCharacterCommand)"
+                   @onclick:preventDefault="true">
                     <span>Open</span>
-                    <small>Paste or stage Chummer dossier XML.</small>
+                    <small>Paste or stage Chummer runner XML.</small>
                 </a>
                 <a href="@BuildPreviewHref(command: HeroLabImporterCommand, useWorkbenchRoute: true)"
                    data-workbench-file-intake-action="hero-lab">
@@ -603,7 +656,7 @@
                 <a href="@ContactHref"
                    data-workbench-file-intake-action="support">
                     <span>Help</span>
-                    <small>Get help with dossier files or installs.</small>
+                    <small>Get help with runner files or installs.</small>
                 </a>
             </div>
         </section>
@@ -874,13 +927,13 @@
         <section class="browser-workbench-workspace-tabs" aria-label="Browser-client runner tabs" data-workbench-workspace-tabs="strip">
             <div class="browser-workbench-workspace-tabs-copy">
                 <span class="browser-preview-status-label">Runner tabs</span>
-                <strong>Keep active dossier lanes visible.</strong>
+                <strong>Keep active runner lanes visible.</strong>
                 <p>Active runner, build review, print/export, and recent import stay side by side.</p>
             </div>
-            <div class="browser-workbench-workspace-tabs-actions" role="list" aria-label="Open dossier and task lanes">
+            <div class="browser-workbench-workspace-tabs-actions" role="list" aria-label="Open runner and task lanes">
                 <a role="listitem" href="@BuildWorkbenchLaneHref(ProfileTabId)" data-workbench-workspace-tabs-action="active-runner">
                     <span>Active runner</span>
-                    <small>Return to the loaded dossier.</small>
+                    <small>Return to the loaded runner.</small>
                 </a>
                 <a role="listitem" href="@BuildWorkbenchLaneHref(BuildTabId)" data-workbench-workspace-tabs-action="build-lab">
                     <span>Build Lab</span>
@@ -890,9 +943,14 @@
                     <span>Print/export</span>
                     <small>Keep output work close.</small>
                 </a>
-                <a role="listitem" href="@BuildPreviewHref(command: OpenCharacterCommand, useWorkbenchRoute: true)" data-workbench-workspace-tabs-action="recent-import">
+                <a role="listitem"
+                   href="@BuildPreviewHref(command: OpenCharacterCommand, useWorkbenchRoute: true)"
+                   data-browser-shell-command="@OpenCharacterCommand"
+                   data-workbench-workspace-tabs-action="recent-import"
+                   @onclick="() => OpenShellCommandFromSurfaceAsync(OpenCharacterCommand)"
+                   @onclick:preventDefault="true">
                     <span>Recent import</span>
-                    <small>Open another dossier.</small>
+                    <small>Open another runner.</small>
                 </a>
             </div>
         </section>
@@ -903,10 +961,10 @@
                 <strong>Keep save, rules, validation, session, privacy, and help state visible.</strong>
                 <p>A browser-hosted client still needs clear state cues so users know what is safe, current, recoverable, and bounded before they continue.</p>
             </div>
-            <div class="browser-workbench-status-bar-actions" role="list" aria-label="Current dossier state shortcuts">
+            <div class="browser-workbench-status-bar-actions" role="list" aria-label="Current runner state shortcuts">
                 <a role="listitem" href="@BuildWorkbenchCommandHref(SaveCharacterAsCommand)" data-workbench-status-bar-action="save-state">
                     <span>Save ready</span>
-                    <small>Open browser-safe dossier save/download handoff.</small>
+                    <small>Open browser-safe runner save/download handoff.</small>
                 </a>
                 <a role="listitem" href="@BuildWorkbenchLaneHref(RulesTabId)" data-workbench-status-bar-action="ruleset">
                     <span>Ruleset</span>
@@ -938,13 +996,13 @@
         <section class="browser-workbench-inspector-rail" aria-label="Browser-client inspector rail" data-workbench-inspector-rail="strip">
             <div class="browser-workbench-inspector-rail-copy">
                 <span class="browser-preview-status-label">Inspector rail</span>
-                <strong>Keep dossier context beside the active task.</strong>
+                <strong>Keep runner context beside the active task.</strong>
                 <p>The desktop client keeps summary, checks, inventory, notes, and rules references close; Chummer Online should keep that context one click away.</p>
             </div>
             <div class="browser-workbench-inspector-rail-actions" role="list" aria-label="Context inspector shortcuts">
                 <a role="listitem" href="@BuildWorkbenchLaneHref(ProfileTabId)" data-workbench-inspector-rail-action="summary">
                     <span>Summary</span>
-                    <small>Identity, metatype, and core dossier facts.</small>
+                    <small>Identity, metatype, and core runner facts.</small>
                 </a>
                 <a role="listitem" href="@BuildWorkbenchLaneHref(BuildTabId)" data-workbench-inspector-rail-action="build-checks">
                     <span>Build checks</span>
@@ -985,7 +1043,7 @@
                     <small>Return to the last editable context.</small>
                 </a>
                 <a role="listitem" href="@BuildPreviewHref(SeededWorkspaceId, useWorkbenchRoute: true)" data-workbench-dialog-stack-action="cancel-back">
-                    <span>Back to dossier</span>
+                    <span>Back to runner</span>
                     <small>Close the detour safely.</small>
                 </a>
                 <a role="listitem" href="@ContactHref" data-workbench-dialog-stack-action="help">
@@ -1005,10 +1063,10 @@
                 <strong>Keep selection actions visible without hidden right-click dependency.</strong>
                 <p>Add, edit, remove, duplicate, source lookup, help, and recovery lanes stay reachable for mouse, touch, and keyboard users.</p>
             </div>
-            <div class="browser-workbench-context-actions-list" role="list" aria-label="Selection-sensitive dossier actions">
+            <div class="browser-workbench-context-actions-list" role="list" aria-label="Selection-sensitive runner actions">
                 <a role="listitem" href="@BuildPreviewHref(tab: GearTabId, control: GearAddControlId, useWorkbenchRoute: true)" data-workbench-context-actions-action="add">
                     <span>Add</span>
-                    <small>Create from the selected dossier lane.</small>
+                    <small>Create from the selected runner lane.</small>
                 </a>
                 <a role="listitem" href="@BuildPreviewHref(tab: GearTabId, control: GearEditControlId, useWorkbenchRoute: true)" data-workbench-context-actions-action="edit">
                     <span>Edit</span>
@@ -1032,7 +1090,7 @@
                 </a>
                 <a role="listitem" href="@BuildPreviewHref(SeededWorkspaceId, useWorkbenchRoute: true)" data-workbench-context-actions-action="recover">
                     <span>Recover</span>
-                    <small>Return to the active dossier context.</small>
+                    <small>Return to the active runner context.</small>
                 </a>
             </div>
         </section>
@@ -1046,7 +1104,7 @@
             <div class="browser-workbench-search-filter-actions" role="list" aria-label="Search and filter shortcuts">
                 <a role="listitem" href="@BuildPreviewHref(command: CharacterRosterCommand, useWorkbenchRoute: true)" data-workbench-search-filter-action="roster-search">
                     <span>Character Roster</span>
-                    <small>Find, group, and organize existing dossiers.</small>
+                    <small>Find, group, and organize existing runners.</small>
                 </a>
                 <a role="listitem" href="@BuildWorkbenchLaneHref(GearTabId)" data-workbench-search-filter-action="gear-filter">
                     <span>Gear</span>
@@ -1070,7 +1128,7 @@
                 </a>
                 <a role="listitem" href="@BuildPreviewHref(SeededWorkspaceId, useWorkbenchRoute: true)" data-workbench-search-filter-action="clear-filter">
                     <span>Clear</span>
-                    <small>Return to the unfiltered dossier.</small>
+                    <small>Return to the unfiltered runner.</small>
                 </a>
             </div>
         </section>
@@ -1079,20 +1137,20 @@
             <div class="browser-workbench-layout-presets-copy">
                 <span class="browser-preview-status-label">Layout presets</span>
                 <strong>Switch between desktop-density and browser-safe work modes.</strong>
-                <p>Dense dossier, split review, output, mobile-safe, focus, and help layouts stay visible as Chummer Online modes instead of hidden responsive accidents.</p>
+                <p>Dense runner, split review, output, mobile-safe, focus, and help layouts stay visible as Chummer Online modes instead of hidden responsive accidents.</p>
             </div>
             <div class="browser-workbench-layout-presets-actions" role="list" aria-label="Browser-client layout preset shortcuts">
                 <a role="listitem" href="@BuildPreviewHref(SeededWorkspaceId, useWorkbenchRoute: true)" data-workbench-layout-presets-action="dense-sheet">
-                    <span>Dense dossier</span>
+                    <span>Dense runner</span>
                     <small>Return to the full runner surface.</small>
                 </a>
                 <a role="listitem" href="@BuildWorkbenchLaneHref(BuildTabId)" data-workbench-layout-presets-action="split-review">
                     <span>Split review</span>
-                    <small>Keep build checks beside the dossier.</small>
+                    <small>Keep build checks beside the runner.</small>
                 </a>
                 <a role="listitem" href="@BuildWorkbenchCommandHref(PrintCharacterCommand)" data-workbench-layout-presets-action="output">
                     <span>Output</span>
-                    <small>Prepare dossier print and export work.</small>
+                    <small>Prepare runner print and export work.</small>
                 </a>
                 <a role="listitem" href="#workbench-density-mobile" data-workbench-layout-presets-action="mobile-safe">
                     <span>Mobile safe</span>
@@ -1118,7 +1176,7 @@
             <div class="browser-workbench-activity-feed-actions" role="list" aria-label="Recent Chummer Online activity shortcuts">
                 <a role="listitem" href="@BuildWorkbenchCommandHref(SaveCharacterAsCommand)" data-workbench-activity-feed-action="save-event">
                     <span>Save event</span>
-                    <small>Review the browser-safe dossier output handoff.</small>
+                    <small>Review the browser-safe runner output handoff.</small>
                 </a>
                 <a role="listitem" href="@BuildWorkbenchLaneHref(BuildTabId)" data-workbench-activity-feed-action="validation-warning">
                     <span>Validation</span>
@@ -1126,7 +1184,7 @@
                 </a>
                 <a role="listitem" href="@BuildWorkbenchCommandHref(ExportCharacterCommand)" data-workbench-activity-feed-action="output-event">
                     <span>Output</span>
-                    <small>Continue dossier export/download work.</small>
+                    <small>Continue runner export/download work.</small>
                 </a>
                 <a role="listitem" href="@StatusHref" data-workbench-activity-feed-action="hosted-status">
                     <span>Status</span>
@@ -1147,7 +1205,7 @@
             <div class="browser-workbench-keyboard-shortcuts-copy">
                 <span class="browser-preview-status-label">Shortcuts</span>
                 <strong>Keep keyboard help and accelerator intent visible.</strong>
-                <p>Desktop-speed users should see command help, dossier save/output shortcuts, section jumps, density controls, portal help, and support escape paths without guessing browser behavior.</p>
+                <p>Desktop-speed users should see command help, runner save/output shortcuts, section jumps, density controls, portal help, and support escape paths without guessing browser behavior.</p>
             </div>
             <div class="browser-workbench-keyboard-shortcuts-actions" role="list" aria-label="Keyboard shortcut and help affordances">
                 <a role="listitem" href="@BuildPreviewHref(command: GlobalSettingsCommand, useWorkbenchRoute: true)" data-workbench-keyboard-shortcuts-action="command-help">
@@ -1198,7 +1256,7 @@
                 </a>
                 <a role="listitem" href="@BuildWorkbenchLaneHref(ProfileTabId)" data-workbench-resource-meters-action="limits">
                     <span>Limits</span>
-                    <small>Keep derived dossier totals nearby.</small>
+                    <small>Keep derived runner totals nearby.</small>
                 </a>
                 <a role="listitem" href="@BuildWorkbenchLaneHref(CombatTabId)" data-workbench-resource-meters-action="wounds">
                     <span>Wounds</span>
@@ -1224,7 +1282,7 @@
                 </a>
                 <a role="listitem" href="@BuildWorkbenchLaneHref(ProfileTabId)" data-workbench-tree-tools-action="collapse">
                     <span>Collapse</span>
-                    <small>Return to a compact dossier view.</small>
+                    <small>Return to a compact runner view.</small>
                 </a>
                 <a role="listitem" href="@BuildWorkbenchLaneHref(SkillsTabId)" data-workbench-tree-tools-action="sort">
                     <span>Sort</span>
@@ -1252,17 +1310,17 @@
         <section class="browser-workbench-save-session" aria-label="Browser-client save and session lifecycle" data-workbench-save-session="strip">
             <div class="browser-workbench-save-session-copy">
                 <span class="browser-preview-status-label">Save state</span>
-                <strong>Make browser dossier saves feel like desktop Chummer.</strong>
-                <p>Desktop users expect explicit dossier save state, Save Dossier As handoff, autosave cues, dirty-state warnings, recovery, help, and export paths; Chummer Online keeps those lifecycle actions in reach.</p>
+                <strong>Make browser runner saves feel like desktop Chummer.</strong>
+                <p>Desktop users expect explicit runner save state, Save Runner As handoff, autosave cues, dirty-state warnings, recovery, help, and export paths; Chummer Online keeps those lifecycle actions in reach.</p>
             </div>
             <div class="browser-workbench-save-session-actions" role="list" aria-label="Save and session lifecycle shortcuts">
                 <a role="listitem" href="@BuildPreviewHref(SeededWorkspaceId, command: SaveCharacterCommand)" data-workbench-save-session-action="save">
-                    <span>Save Dossier</span>
-                    <small>Return to the primary dossier save command posture.</small>
+                    <span>Save Runner</span>
+                    <small>Return to the primary runner save command posture.</small>
                 </a>
                 <a role="listitem" href="@BuildPreviewHref(SeededWorkspaceId, command: SaveCharacterAsCommand)" data-workbench-save-session-action="save_as">
-                    <span>Save Dossier As</span>
-                    <small>Keep dossier file handoff visible for browser users.</small>
+                    <span>Save Runner As</span>
+                    <small>Keep runner file handoff visible for browser users.</small>
                 </a>
                 <a role="listitem" href="@BuildPreviewHref(tab: CareerTabId, control: RefreshControlId, useWorkbenchRoute: true)" data-workbench-save-session-action="autosave">
                     <span>Autosave</span>
@@ -1281,8 +1339,8 @@
                     <small>Recover a save/session issue.</small>
                 </a>
                 <a role="listitem" href="@BuildPreviewHref(SeededWorkspaceId, command: ExportCharacterCommand)" data-workbench-save-session-action="export">
-                    <span>Export Dossier</span>
-                    <small>Separate dossier output handoff from ordinary saves.</small>
+                    <span>Export Runner</span>
+                    <small>Separate runner output handoff from ordinary saves.</small>
                 </a>
             </div>
         </section>
@@ -1485,7 +1543,7 @@
             </div>
             <div class="browser-workbench-character-library-actions" role="list" aria-label="Character Roster shortcuts">
                 <a role="listitem" href="@BuildPreviewHref(SeededWorkspaceId, command: OpenCharacterCommand)" data-workbench-character-library-action="open">
-                    <span>Open Dossier</span>
+                    <span>Open Runner</span>
                     <small>Return to the primary Character Roster picker.</small>
                 </a>
                 <a role="listitem" href="@BuildPreviewHref(SeededWorkspaceId, command: OpenRecentCommand)" data-workbench-character-library-action="recent">
@@ -1502,15 +1560,15 @@
                 </a>
                 <a role="listitem" href="@BuildPreviewHref(SeededWorkspaceId, command: ArchiveCharacterCommand)" data-workbench-character-library-action="archive">
                     <span>Archive</span>
-                    <small>Move inactive dossiers out of daily view.</small>
+                    <small>Move inactive runners out of daily view.</small>
                 </a>
                 <a role="listitem" href="@BuildPreviewHref(SeededWorkspaceId, command: ImportCharacterCommand)" data-workbench-character-library-action="import">
                     <span>Import</span>
-                    <small>Bring desktop and self-hosted dossier files forward.</small>
+                    <small>Bring desktop and self-hosted runner files forward.</small>
                 </a>
                 <a role="listitem" href="@HelpHref" data-workbench-character-library-action="help">
                     <span>Help</span>
-                    <small>Recover Character Roster and dossier import setup.</small>
+                    <small>Recover Character Roster and runner import setup.</small>
                 </a>
             </div>
         </section>
@@ -1518,33 +1576,33 @@
         <section class="browser-workbench-campaign-session" aria-label="Browser-client campaign and session lane" data-workbench-campaign-session="strip">
             <div class="browser-workbench-campaign-session-copy">
                 <span class="browser-preview-status-label">Campaign</span>
-                <strong>Keep table workflow beside the active dossier.</strong>
-                <p>Keep campaign roster, GM review, session notes, rewards, table sharing, and run handoff visible next to the active dossier.</p>
+                <strong>Keep table workflow beside the active runner.</strong>
+                <p>Keep campaign roster, GM review, session notes, rewards, table sharing, and run handoff visible next to the active runner.</p>
             </div>
             <div class="browser-workbench-campaign-session-actions" role="list" aria-label="Campaign and session shortcuts">
                 <a role="listitem" href="@BuildPreviewHref(SeededWorkspaceId, command: OpenCampaignRosterCommand)" data-workbench-campaign-session-action="roster">
                     <span>Campaign Roster</span>
-                    <small>Open the table's dossier list.</small>
+                    <small>Open the table's runner list.</small>
                 </a>
                 <a role="listitem" href="@BuildPreviewHref(SeededWorkspaceId, command: RequestGmReviewCommand)" data-workbench-campaign-session-action="gm_review">
                     <span>GM review</span>
-                    <small>Reserve dossier approval and audit handoff.</small>
+                    <small>Reserve runner approval and audit handoff.</small>
                 </a>
                 <a role="listitem" href="@BuildPreviewHref(SeededWorkspaceId, command: OpenSessionNotesCommand)" data-workbench-campaign-session-action="session_notes">
                     <span>Session notes</span>
-                    <small>Keep table context near the active dossier.</small>
+                    <small>Keep table context near the active runner.</small>
                 </a>
                 <a role="listitem" href="@BuildPreviewHref(SeededWorkspaceId, command: ApplyRewardsCommand)" data-workbench-campaign-session-action="rewards">
                     <span>Rewards</span>
-                    <small>Expose karma and nuyen awards beside the dossier.</small>
+                    <small>Expose karma and nuyen awards beside the runner.</small>
                 </a>
                 <a role="listitem" href="@BuildPreviewHref(SeededWorkspaceId, command: ShareToTableCommand)" data-workbench-campaign-session-action="table_share">
                     <span>Table share</span>
-                    <small>Prepare player and GM dossier co-view links.</small>
+                    <small>Prepare player and GM runner co-view links.</small>
                 </a>
                 <a role="listitem" href="@BuildPreviewHref(SeededWorkspaceId, command: HandoffToRunCommand)" data-workbench-campaign-session-action="run_handoff">
                     <span>Run handoff</span>
-                    <small>Move the runner dossier from build work into live play.</small>
+                    <small>Move the runner from build work into live play.</small>
                 </a>
                 <a role="listitem" href="@StatusHref" data-workbench-campaign-session-action="help">
                     <span>Setup help</span>
@@ -2165,7 +2223,7 @@
         <section class="browser-workbench-import-reconcile-strip" aria-label="Browser-client import and reconcile posture" data-workbench-import-reconcile="strip">
             <div class="browser-workbench-import-reconcile-copy">
                 <span class="browser-preview-status-label">Import</span>
-                <strong>Bring existing dossiers across carefully.</strong>
+                <strong>Bring existing runners across carefully.</strong>
                 <p>Files, career state, custom data, attachments, and conflicts stay visible before anything is accepted.</p>
             </div>
             <div class="browser-workbench-import-reconcile-actions" role="list" aria-label="Import reconcile actions">
@@ -2363,13 +2421,19 @@
                 <span class="browser-preview-status-label">Quick start</span>
                 <strong>Start a new runner</strong>
                 <p>@NewCharacterEntrySummary</p>
-                <a href="@BuildPreviewHref(command: NewCharacterCommand, useWorkbenchRoute: true)">New runner</a>
+                <a href="@BuildPreviewHref(command: NewCharacterCommand, useWorkbenchRoute: true)"
+                   data-browser-shell-command="@NewCharacterCommand"
+                   @onclick="() => OpenShellCommandFromSurfaceAsync(NewCharacterCommand)"
+                   @onclick:preventDefault="true">New runner</a>
             </article>
             <article class="browser-preview-status-card" data-workbench-entry-card="open-character">
                 <span class="browser-preview-status-label">Quick start</span>
-                <strong>Import an existing dossier</strong>
-                <p>Open the shared browser import flow for an existing Chummer dossier.</p>
-                <a href="@BuildPreviewHref(command: OpenCharacterCommand, useWorkbenchRoute: true)">Open Dossier</a>
+                <strong>Import an existing runner</strong>
+                <p>Open the shared browser import flow for an existing Chummer runner.</p>
+                <a href="@BuildPreviewHref(command: OpenCharacterCommand, useWorkbenchRoute: true)"
+                   data-browser-shell-command="@OpenCharacterCommand"
+                   @onclick="() => OpenShellCommandFromSurfaceAsync(OpenCharacterCommand)"
+                   @onclick:preventDefault="true">Open Runner</a>
             </article>
             <article class="browser-preview-status-card" data-workbench-entry-card="seeded-build-lab">
                 <span class="browser-preview-status-label">Guided start</span>
@@ -2379,7 +2443,7 @@
             </article>
             <article class="browser-preview-status-card" data-workbench-entry-card="continue-recent">
                 <span class="browser-preview-status-label">Continue work</span>
-                <strong>Continue a recent dossier</strong>
+                <strong>Continue a recent runner</strong>
                 <p>@ContinueRecentDescription</p>
                 <a href="@ContinueRecentHref">@ContinueRecentLabel</a>
             </article>
@@ -2588,7 +2652,7 @@
         </article>
         <article class="browser-preview-status-card" data-preview-proof-card="contacts">
             <span class="browser-preview-status-label">Continuity check</span>
-            <strong>Keep dossier context on Contacts</strong>
+            <strong>Keep runner context on Contacts</strong>
             <p>Moves a seeded browser runner past startup into a living continuation tab.</p>
             <a href="@BuildPreviewHref(SeededWorkspaceId, ContactsTabId)">Open Contacts</a>
         </article>
@@ -2600,9 +2664,9 @@
         </article>
         <article class="browser-preview-status-card" data-preview-proof-card="open-character">
             <span class="browser-preview-status-label">Import check</span>
-            <strong>Open Dossier import directly in the browser</strong>
+            <strong>Open Runner import directly in the browser</strong>
             <p>@ImportProofSummary</p>
-            <a href="@BuildPreviewHref(command: OpenCharacterCommand)">Open Dossier</a>
+            <a href="@BuildPreviewHref(command: OpenCharacterCommand)">Open Runner</a>
         </article>
         <article class="browser-preview-status-card" data-preview-proof-card="open-for-printing">
             <span class="browser-preview-status-label">Print check</span>
@@ -2659,7 +2723,8 @@
                 @RouteOpenSummary
             </p>
         </div>
-        <DesktopShell DemoFixtureId="@Fixture"
+        <DesktopShell @ref="_desktopShell"
+                      DemoFixtureId="@Fixture"
                       DemoWorkspaceId="@ResolvedWorkspace"
                       DemoTabId="@Tab"
                       DemoStartupCommandId="@Command"
@@ -2677,6 +2742,8 @@
 
     [Inject]
     public ICharacterOverviewPresenter Presenter { get; set; } = default!;
+
+    private DesktopShell? _desktopShell;
 
     [SupplyParameterFromQuery(Name = FixtureQueryName)]
     public string? Fixture { get; set; }
@@ -3268,7 +3335,7 @@
         ? "Open Seeded Build Lab"
         : $"Continue {PrimaryRecentWorkspace.ShortLabel} in Build Lab";
     private string BuildLabLaneDescription => PrimaryRecentWorkspace is null
-        ? "Jump into the seeded SR5 runner dossier when you want a real browser session immediately."
+        ? "Jump into the seeded SR5 runner when you want a real browser session immediately."
         : "Open the most recent restored runner on its build lane so browser continuation starts from the live shared session instead of a seeded-only runner.";
     private string ProfileLaneHref => BuildWorkbenchLaneHref(ProfileTabId);
     private string ProfileLaneLabel => BuildWorkbenchLaneLabel("Open Profile lane", "profile");
@@ -3332,6 +3399,24 @@
     private void OnPresenterStateChanged(object? sender, EventArgs e)
     {
         _ = InvokeAsync(StateHasChanged);
+    }
+
+    private async Task OpenShellCommandFromSurfaceAsync(string commandId)
+    {
+        string fallbackHref = BuildPreviewHref(command: commandId, useWorkbenchRoute: true);
+        if (!IsAppRoute && !IsWorkbenchRoute)
+        {
+            Navigation.NavigateTo(fallbackHref);
+            return;
+        }
+
+        if (_desktopShell is null)
+        {
+            Navigation.NavigateTo(fallbackHref);
+            return;
+        }
+
+        await _desktopShell.ExecuteCommandFromSurfaceAsync(commandId);
     }
 
     private IReadOnlyList<RecentWorkspaceLink> BuildRecentWorkspaceLinks()

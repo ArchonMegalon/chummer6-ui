@@ -78,7 +78,7 @@ internal sealed class DesktopStartupUpdateWindow : Window
             Content = new Border
             {
                 Padding = new Thickness(24),
-                Background = DesktopShellTheme.ResolveThemeBrush("ChummerShellSurfaceBrush", "#111827"),
+                Background = DesktopShellTheme.ResolveSurfaceBrush(),
                 Child = new StackPanel
                 {
                     Spacing = 14,
@@ -213,7 +213,7 @@ internal sealed class DesktopStartupUpdateWindow : Window
         {
             "auto_apply_disabled" => "A newer build is available. Open Devices & Access when you want to update.",
             "notify_only" => "A newer build is available. Open Devices & Access when you want to update.",
-            "macos_manual_install_required" => "A macOS update is ready. Open Downloads to install it manually; this copy will stay usable.",
+            "macos_manual_install_required" => "A macOS update is ready. Open Update Status to install it manually; this copy will stay usable.",
             "manifest_load_failed" => "Chummer could not reach the update list. This copy will keep running.",
             "update_schedule_failed" => "The update could not be prepared. This copy will keep running.",
             "rollout_blocked" => "The newest build is paused. This copy will keep running.",

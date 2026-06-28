@@ -17,7 +17,9 @@ def test_desktop_executable_exit_gate_materializer_exposes_external_blocking_mod
     assert "Desktop executable exit gate is blocked only by external execution constraints." in text
     assert '"external_only"' in text
     assert '"mixed_or_local"' in text
+    assert "missing_windows_visual_proof_capture" in text
     assert "windows installer visual proof is missing; capture progress and completion screenshots on a windows host" in text
+    assert "windows installer visual proof must be captured on a windows host before promotion can pass" in text
 
 
 def test_shared_verify_lane_checks_desktop_executable_exit_gate_blocking_aliases() -> None:

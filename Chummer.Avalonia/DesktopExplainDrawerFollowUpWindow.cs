@@ -29,7 +29,7 @@ internal sealed class DesktopExplainDrawerFollowUpWindow : Window
             Text = "Follow-up stays text-first, packet-backed, and scoped to the current desktop snapshot.",
             IsVisible = false,
             TextWrapping = TextWrapping.Wrap,
-            Foreground = DesktopShellTheme.ResolveThemeBrush("ChummerShellMutedForegroundBrush", "#334155")
+            Foreground = DesktopShellTheme.ResolveMutedForegroundBrush()
         };
 
         Content = new ScrollViewer

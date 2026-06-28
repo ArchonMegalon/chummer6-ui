@@ -15,10 +15,46 @@ internal static class DesktopShellTheme
             ? brush
             : new SolidColorBrush(Color.Parse(fallbackHex));
 
+    public static IBrush ResolveWindowBackgroundBrush()
+        => ResolveThemeBrush("ChummerShellWindowBackgroundBrush", "#050B16");
+
+    public static IBrush ResolveForegroundBrush()
+        => ResolveThemeBrush("ChummerShellForegroundBrush", "#E5E7EB");
+
+    public static IBrush ResolveMutedForegroundBrush()
+        => ResolveThemeBrush("ChummerShellMutedForegroundBrush", "#D8E1EC");
+
+    public static IBrush ResolveTextMutedBrush()
+        => ResolveThemeBrush("ChummerShellTextMutedBrush", "#94A3B8");
+
+    public static IBrush ResolveBorderBrush()
+        => ResolveThemeBrush("ChummerShellBorderBrush", "#334155");
+
+    public static IBrush ResolveSurfaceBrush()
+        => ResolveThemeBrush("ChummerShellSurfaceBrush", "#111827");
+
+    public static IBrush ResolveSurfaceAltBrush()
+        => ResolveThemeBrush("ChummerShellSurfaceAltBrush", "#020617");
+
+    public static IBrush ResolveSelectionToolbarBrush()
+        => ResolveThemeBrush("ChummerShellSelectionToolbarBrush", "#0B1220");
+
+    public static IBrush ResolveSelectionPanelBrush()
+        => ResolveThemeBrush("ChummerShellSelectionPanelBrush", "#111827");
+
+    public static IBrush ResolveSelectionInsetBrush()
+        => ResolveThemeBrush("ChummerShellSelectionInsetBrush", "#0F172A");
+
+    public static IBrush ResolveChromeAccentBrush()
+        => ResolveThemeBrush("ChummerShellChromeAccentBrush", "#172554");
+
+    public static IBrush ResolveInfoBrush()
+        => ResolveThemeBrush("ChummerShellInfoBrush", "#60A5FA");
+
     public static Border CreateWindowSurface(Control child, double padding = 16)
         => new()
         {
-            Background = ResolveThemeBrush("ChummerShellWindowBackgroundBrush", "#E3EAF3"),
+            Background = ResolveWindowBackgroundBrush(),
             Padding = new Thickness(padding),
             Child = child
         };
@@ -26,8 +62,8 @@ internal static class DesktopShellTheme
     public static Border CreateUtilityPanel(Control child, double padding = 10, double cornerRadius = 8)
         => new()
         {
-            Background = ResolveThemeBrush("ChummerShellSurfaceAltBrush", "#F2F5FA"),
-            BorderBrush = ResolveThemeBrush("ChummerShellBorderBrush", "#B5C0CF"),
+            Background = ResolveSurfaceAltBrush(),
+            BorderBrush = ResolveBorderBrush(),
             BorderThickness = new Thickness(1),
             CornerRadius = new CornerRadius(cornerRadius),
             Padding = new Thickness(padding),
@@ -93,8 +129,8 @@ internal static class DesktopShellTheme
     public static void ApplyShellRadioButtonTheme(RadioButton radioButton)
     {
         ArgumentNullException.ThrowIfNull(radioButton);
-        radioButton.Foreground = ResolveThemeBrush("ChummerShellForegroundBrush", "#111827");
-        radioButton.Background = ResolveThemeBrush("ChummerShellSurfaceBrush", "#FBFCFE");
+        radioButton.Foreground = ResolveForegroundBrush();
+        radioButton.Background = ResolveSurfaceBrush();
         radioButton.Padding = new Thickness(8, 6);
     }
 
@@ -121,8 +157,8 @@ internal static class DesktopShellTheme
     public static void ApplyShellReadOnlyPanelTheme(Border panel)
     {
         ArgumentNullException.ThrowIfNull(panel);
-        panel.Background = ResolveThemeBrush("ChummerShellSurfaceBrush", "#FBFCFE");
-        panel.BorderBrush = ResolveThemeBrush("ChummerShellBorderBrush", "#B5C0CF");
+        panel.Background = ResolveSurfaceBrush();
+        panel.BorderBrush = ResolveBorderBrush();
     }
 
     public static TextBlock CreateComboBoxOptionText(string text, TextWrapping wrapping = TextWrapping.NoWrap)

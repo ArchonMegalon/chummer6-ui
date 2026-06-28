@@ -61,7 +61,7 @@ internal sealed class DesktopSupportCaseWindow : Window
             Text = BuildStatus(),
             IsVisible = false,
             TextWrapping = TextWrapping.Wrap,
-            Foreground = DesktopShellTheme.ResolveThemeBrush("ChummerShellMutedForegroundBrush", "#334155")
+            Foreground = DesktopShellTheme.ResolveMutedForegroundBrush()
         };
 
         _summaryText = new TextBlock

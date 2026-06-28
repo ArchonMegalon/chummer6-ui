@@ -16,6 +16,7 @@ python3 scripts/materialize_release_candidate_handoff.py <stageDir>
 ```
 
 That produces `RELEASE_BUILD_HANDOFF.generated.{json,md}` beside the staged bundle and makes the remaining promotion blockers explicit.
+When the only remaining Windows blocker is host capture, that same handoff now also materializes `WINDOWS_INSTALLER_VISUAL_PROOF_HANDOFF.generated.{json,md}` for the exact staged shelf so the Windows operator can capture proof against the right bytes.
 
 ## Prerequisites
 

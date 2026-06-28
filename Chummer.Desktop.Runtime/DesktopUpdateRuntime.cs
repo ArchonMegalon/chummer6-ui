@@ -60,6 +60,7 @@ public sealed record DesktopUpdateClientStatus(
     string? DesktopSurfaceRationale = null,
     string? PendingUpdateVersion = null,
     string? PendingUpdateChannelId = null,
+    string? PendingInstallerPath = null,
     DateTimeOffset? LastUpdateLaunchAttemptAtUtc = null,
     DateTimeOffset? RollbackWindowStartedAtUtc = null,
     DateTimeOffset? RollbackWindowExpiresAtUtc = null,
@@ -81,6 +82,10 @@ public static class DesktopUpdateRuntime
     private const string UpdateRootDirectoryName = "desktop-update";
     private const string UpdateProcessPathOverrideEnvironmentVariable = "CHUMMER_DESKTOP_UPDATE_PROCESS_PATH_OVERRIDE";
     private const string DefaultPublicManifestRelativePath = "/downloads/RELEASE_CHANNEL.generated.json";
+    private const string WindowsInstallerPayloadPathEnvironmentVariable = "CHUMMER_INSTALLER_PAYLOAD_PATH";
+    private const string WindowsInstallerPayloadUrlEnvironmentVariable = "CHUMMER_INSTALLER_PAYLOAD_URL";
+    private const string WindowsInstallerPayloadSha256EnvironmentVariable = "CHUMMER_INSTALLER_PAYLOAD_SHA256";
+    private const string WindowsInstallerPayloadSizeBytesEnvironmentVariable = "CHUMMER_INSTALLER_PAYLOAD_SIZE_BYTES";
     private const int ManifestLoadRetryCount = 3;
     private const int ArtifactDownloadRetryCount = 3;
     private const int StartupManifestBackoffMinutes = 2;
@@ -161,6 +166,7 @@ public static class DesktopUpdateRuntime
         string channelId = string.IsNullOrWhiteSpace(state?.ChannelId)
             ? releaseMetadata.ChannelId
             : state!.ChannelId;
+        string? pendingInstallerPath = ResolvePendingInstallerPath(state?.PendingInstallerPath);
 
         string status;
         string recommendedAction;
@@ -174,7 +180,7 @@ public static class DesktopUpdateRuntime
         else if (!string.IsNullOrWhiteSpace(state?.LastError))
         {
             status = "attention_required";
-            recommendedAction = "Review the last update error or open support before continuing.";
+            recommendedAction = BuildFailureAttentionAction(state, pendingInstallerPath);
         }
         else if (!string.IsNullOrWhiteSpace(state?.PendingUpdateVersion))
         {
@@ -239,11 +245,58 @@ public static class DesktopUpdateRuntime
                 DesktopSurfaceRationale: state?.LastDesktopSurfaceRationale,
                 PendingUpdateVersion: state?.PendingUpdateVersion,
                 PendingUpdateChannelId: state?.PendingUpdateChannelId,
+                PendingInstallerPath: pendingInstallerPath,
                 LastUpdateLaunchAttemptAtUtc: state?.LastUpdateLaunchAttemptAtUtc,
                 RollbackWindowStartedAtUtc: state?.RollbackWindowStartedAtUtc,
                 RollbackWindowExpiresAtUtc: state?.RollbackWindowExpiresAtUtc,
                 LastManifestChannelId: state?.LastManifestChannelId,
                 UpdateMode: configuration.Mode);
+    }
+
+    public static bool TryOpenPendingInstaller(string headId)
+    {
+        ArgumentException.ThrowIfNullOrWhiteSpace(headId);
+
+        DesktopUpdatePlatformIdentity identity = DesktopUpdatePlatformIdentity.Current();
+        DesktopUpdatePaths paths = DesktopUpdatePaths.Create(headId, identity);
+        DesktopUpdateState? state = DesktopUpdateStateStore.Load(paths.StateFilePath);
+        string? pendingInstallerPath = ResolvePendingInstallerPath(state?.PendingInstallerPath);
+        if (string.IsNullOrWhiteSpace(pendingInstallerPath))
+        {
+            return false;
+        }
+
+        if (OperatingSystem.IsMacOS())
+        {
+            return TryStartCommand("open", pendingInstallerPath);
+        }
+
+        return false;
+    }
+
+    public static bool TryBuildPendingInstallerManualCommand(string headId, out string command)
+    {
+        ArgumentException.ThrowIfNullOrWhiteSpace(headId);
+
+        DesktopUpdatePlatformIdentity identity = DesktopUpdatePlatformIdentity.Current();
+        DesktopUpdatePaths paths = DesktopUpdatePaths.Create(headId, identity);
+        DesktopUpdateState? state = DesktopUpdateStateStore.Load(paths.StateFilePath);
+        string? pendingInstallerPath = ResolvePendingInstallerPath(state?.PendingInstallerPath);
+        if (string.IsNullOrWhiteSpace(pendingInstallerPath))
+        {
+            command = string.Empty;
+            return false;
+        }
+
+        if (string.Equals(identity.Platform, "linux", StringComparison.OrdinalIgnoreCase)
+            && pendingInstallerPath.EndsWith(".deb", StringComparison.OrdinalIgnoreCase))
+        {
+            command = $"sudo dpkg -i {QuoteShellArgument(pendingInstallerPath)}";
+            return true;
+        }
+
+        command = string.Empty;
+        return false;
     }
 
     private static bool RequiresReleaseAttention(DesktopUpdateState? state)
@@ -291,6 +344,45 @@ public static class DesktopUpdateRuntime
         }
 
         return "Open Downloads and Support before relying on this release.";
+    }
+
+    private static string BuildFailureAttentionAction(DesktopUpdateState? state, string? pendingInstallerPath)
+    {
+        if (state is not null
+            && string.Equals(state.LastFailureReason, "macos_manual_install_required", StringComparison.OrdinalIgnoreCase))
+        {
+            return string.IsNullOrWhiteSpace(pendingInstallerPath)
+                ? "A macOS installer is waiting. Open Downloads, then install it before continuing."
+                : "A macOS installer is downloaded for this copy. Open it from Update Status before continuing.";
+        }
+
+        if (state is not null
+            && string.Equals(state.LastFailureReason, "installer_launch_failed", StringComparison.OrdinalIgnoreCase)
+            && !string.IsNullOrWhiteSpace(pendingInstallerPath)
+            && pendingInstallerPath.EndsWith(".deb", StringComparison.OrdinalIgnoreCase))
+        {
+            return "A Linux package is already downloaded for this copy. Copy the install command from Update Status, run it in a terminal, then reopen Chummer.";
+        }
+
+        return "Review the last update error or open support before continuing.";
+    }
+
+    private static string? ResolvePendingInstallerPath(string? rawPath)
+    {
+        if (string.IsNullOrWhiteSpace(rawPath))
+        {
+            return null;
+        }
+
+        try
+        {
+            string normalizedPath = Path.GetFullPath(rawPath);
+            return File.Exists(normalizedPath) ? normalizedPath : null;
+        }
+        catch
+        {
+            return null;
+        }
     }
 
     private static IReadOnlyList<DesktopUpdateArtifact> SelectCompatibleArtifacts(
@@ -517,6 +609,7 @@ public static class DesktopUpdateRuntime
                 PendingUpdateVersion = null,
                 PendingUpdateChannelId = null,
                 PendingUpdatePreparedAtUtc = null,
+                PendingInstallerPath = null,
                 LastUpdateLaunchAttemptAtUtc = now
             };
             DesktopUpdateStateStore.Save(paths.StateFilePath, state);
@@ -606,6 +699,7 @@ public static class DesktopUpdateRuntime
                 PendingUpdateVersion = null,
                 PendingUpdateChannelId = null,
                 PendingUpdatePreparedAtUtc = null,
+                PendingInstallerPath = null,
                 LastUpdateLaunchAttemptAtUtc = state.LastUpdateLaunchAttemptAtUtc
             };
 
@@ -804,19 +898,20 @@ public static class DesktopUpdateRuntime
                         {
                             DesktopUpdateStateStore.Save(paths.StateFilePath, updatedState with
                             {
-                                LastError = "A macOS update is available, but automatic installer handoff is disabled for unsigned or quarantined installer images. Open Downloads to install it manually.",
+                                LastError = "A macOS update is available, but automatic installer handoff is disabled for unsigned or quarantined installer images. Open Update Status to install it manually.",
                                 LastFailureReason = "macos_manual_install_required",
                                 LastFailureAtUtc = now,
                                 RetryAttempt = 0,
                                 NextRetryAtUtc = null,
                                 PendingUpdateVersion = manifest.Version,
                                 PendingUpdateChannelId = manifest.ChannelId,
-                                PendingUpdatePreparedAtUtc = DateTimeOffset.UtcNow
+                                PendingUpdatePreparedAtUtc = DateTimeOffset.UtcNow,
+                                PendingInstallerPath = downloadedArtifactPath
                             });
                             progress?.Report(new DesktopUpdateProgressUpdate("manual", "A macOS update is ready. Manual install is required."));
                             return DesktopUpdateStartupResult.Continue(
                                 "macos_manual_install_required",
-                                "A macOS update is ready. Open Downloads to install it manually; this copy will stay usable.");
+                                "A macOS update is ready. Open Update Status to install it manually; this copy will stay usable.");
                         }
 
                         progress?.Report(new DesktopUpdateProgressUpdate("staging", "Preparing the installer handoff"));
@@ -859,6 +954,7 @@ public static class DesktopUpdateRuntime
                         PendingUpdateVersion = manifest.Version,
                         PendingUpdateChannelId = manifest.ChannelId,
                         PendingUpdatePreparedAtUtc = scheduledAt,
+                        PendingInstallerPath = downloadedArtifactPath,
                         LastUpdateLaunchAttemptAtUtc = null,
                         RollbackWindowStartedAtUtc = scheduledAt,
                         RollbackWindowExpiresAtUtc = rollbackWindowExpiresAt
@@ -996,6 +1092,7 @@ public static class DesktopUpdateRuntime
                 PendingUpdateVersion = null,
                 PendingUpdateChannelId = null,
                 PendingUpdatePreparedAtUtc = null,
+                PendingInstallerPath = null,
                 LastUpdateLaunchAttemptAtUtc = now,
                 RollbackWindowStartedAtUtc = priorState?.RollbackWindowStartedAtUtc,
                 RollbackWindowExpiresAtUtc = priorState?.RollbackWindowExpiresAtUtc
@@ -1028,7 +1125,10 @@ public static class DesktopUpdateRuntime
         try
         {
             await WaitForProcessExitAsync(request.ParentProcessId, ct).ConfigureAwait(false);
-            LaunchInstaller(request.InstallerPath, request.HeadId, request.RelaunchArgs);
+            DesktopBootstrapPayloadHandoff? payloadHandoff = OperatingSystem.IsWindows()
+                ? TryLoadWindowsBootstrapPayloadHandoff(request.InstallerPath)
+                : null;
+            LaunchInstaller(request.InstallerPath, request.HeadId, request.RelaunchArgs, payloadHandoff);
 
             DesktopUpdateState? priorState = DesktopUpdateStateStore.Load(request.StateFilePath);
             if (priorState is not null)
@@ -1043,7 +1143,8 @@ public static class DesktopUpdateRuntime
                     LastUpdateLaunchAttemptAtUtc = now,
                     PendingUpdateVersion = null,
                     PendingUpdateChannelId = null,
-                    PendingUpdatePreparedAtUtc = null
+                    PendingUpdatePreparedAtUtc = null,
+                    PendingInstallerPath = null
                 });
             }
 
@@ -1657,6 +1758,80 @@ public static class DesktopUpdateRuntime
             Encoding.UTF8);
     }
 
+    private static DesktopBootstrapPayloadHandoff? TryLoadWindowsBootstrapPayloadHandoff(string installerPath)
+    {
+        string installerDirectory = Path.GetDirectoryName(installerPath) ?? string.Empty;
+        if (string.IsNullOrWhiteSpace(installerDirectory) || !Directory.Exists(installerDirectory))
+        {
+            return null;
+        }
+
+        string installerFileName = Path.GetFileName(installerPath);
+        foreach (string sidecarPath in Directory.GetFiles(installerDirectory, "*.json", SearchOption.TopDirectoryOnly))
+        {
+            try
+            {
+                using JsonDocument document = JsonDocument.Parse(File.ReadAllText(sidecarPath, Encoding.UTF8));
+                JsonElement root = document.RootElement;
+                if (root.ValueKind != JsonValueKind.Object)
+                {
+                    continue;
+                }
+
+                string contractName = GetOptionalJsonString(root, "contractName");
+                if (!string.Equals(contractName, "chummer6-ui.windows_bootstrap_payload", StringComparison.Ordinal))
+                {
+                    continue;
+                }
+
+                string sidecarInstallerFileName = GetOptionalJsonString(root, "installerFileName");
+                if (!string.Equals(sidecarInstallerFileName, installerFileName, StringComparison.OrdinalIgnoreCase))
+                {
+                    continue;
+                }
+
+                string payloadFileName = GetOptionalJsonString(root, "fileName");
+                if (string.IsNullOrWhiteSpace(payloadFileName))
+                {
+                    continue;
+                }
+
+                string normalizedPayloadFileName = Path.GetFileName(payloadFileName);
+                if (!string.Equals(normalizedPayloadFileName, payloadFileName, StringComparison.Ordinal))
+                {
+                    continue;
+                }
+
+                string payloadPath = Path.Combine(installerDirectory, normalizedPayloadFileName);
+                if (!File.Exists(payloadPath))
+                {
+                    continue;
+                }
+
+                string payloadSha256 = NormalizeSha256(GetOptionalJsonString(root, "sha256"));
+                if (string.IsNullOrWhiteSpace(payloadSha256))
+                {
+                    continue;
+                }
+
+                long? payloadSizeBytes = GetOptionalJsonInt64(root, "sizeBytes");
+                if (payloadSizeBytes is null or <= 0)
+                {
+                    continue;
+                }
+
+                string payloadDownloadUrl = GetOptionalJsonString(root, "downloadUrl");
+                return new DesktopBootstrapPayloadHandoff(payloadPath, payloadDownloadUrl, payloadSha256, payloadSizeBytes.Value);
+            }
+            catch
+            {
+                continue;
+            }
+        }
+
+        return null;
+    }
+
     internal static string BuildAttentionMessageForUpdateScheduleFailure(string? failureDetail)
     {
         const string prefix = "The update could not be prepared. This copy will keep running.";
@@ -1917,7 +2092,11 @@ public static class DesktopUpdateRuntime
         CopyDirectory(sourceDirectory, installDirectory);
     }
 
-    private static void LaunchInstaller(string installerPath, string headId, IReadOnlyList<string> relaunchArgs)
+    private static void LaunchInstaller(
+        string installerPath,
+        string headId,
+        IReadOnlyList<string> relaunchArgs,
+        DesktopBootstrapPayloadHandoff? payloadHandoff = null)
     {
         if (!File.Exists(installerPath))
         {
@@ -1926,20 +2105,19 @@ public static class DesktopUpdateRuntime
 
         if (OperatingSystem.IsWindows())
         {
-            List<string> args = ["--auto-update"];
-            if (!string.IsNullOrWhiteSpace(headId))
-            {
-                args.Add("--launch-head");
-                args.Add(headId);
-            }
-
-            foreach (string arg in relaunchArgs)
-            {
-                args.Add("--relaunch-arg");
-                args.Add(arg);
-            }
-
-            StartDetachedProcess(installerPath, args);
+            IReadOnlyList<string> args = BuildWindowsInstallerArguments(
+                headId,
+                relaunchArgs,
+                payloadHandoff?.PayloadPath,
+                payloadHandoff?.DownloadUrl,
+                payloadHandoff?.Sha256,
+                payloadHandoff?.SizeBytes);
+            IReadOnlyDictionary<string, string>? environment = BuildWindowsInstallerEnvironment(
+                payloadHandoff?.PayloadPath,
+                payloadHandoff?.DownloadUrl,
+                payloadHandoff?.Sha256,
+                payloadHandoff?.SizeBytes);
+            StartDetachedProcess(installerPath, args, environment);
             return;
         }
 
@@ -1969,19 +2147,120 @@ public static class DesktopUpdateRuntime
         throw new InvalidOperationException($"Desktop installer launch is not supported on this platform for '{installerPath}'.");
     }
 
-    private static void StartDetachedProcess(string path, IReadOnlyList<string>? args = null)
+    private static IReadOnlyList<string> BuildWindowsInstallerArguments(
+        string headId,
+        IReadOnlyList<string> relaunchArgs,
+        string? payloadPath = null,
+        string? payloadDownloadUrl = null,
+        string? payloadSha256 = null,
+        long? payloadSizeBytes = null)
+    {
+        List<string> args = ["--auto-update"];
+        if (!string.IsNullOrWhiteSpace(headId))
+        {
+            args.Add("--launch-head");
+            args.Add(headId);
+        }
+
+        if (!string.IsNullOrWhiteSpace(payloadPath))
+        {
+            args.Add("--payload-path");
+            args.Add(payloadPath);
+        }
+
+        if (!string.IsNullOrWhiteSpace(payloadDownloadUrl))
+        {
+            args.Add("--payload-url");
+            args.Add(payloadDownloadUrl);
+        }
+
+        string normalizedSha256 = NormalizeSha256(payloadSha256 ?? string.Empty);
+        if (!string.IsNullOrWhiteSpace(normalizedSha256))
+        {
+            args.Add("--payload-sha256");
+            args.Add(normalizedSha256);
+        }
+
+        if (payloadSizeBytes is > 0)
+        {
+            args.Add("--payload-size-bytes");
+            args.Add(payloadSizeBytes.Value.ToString(System.Globalization.CultureInfo.InvariantCulture));
+        }
+
+        foreach (string arg in relaunchArgs)
+        {
+            args.Add("--relaunch-arg");
+            args.Add(arg);
+        }
+
+        return args;
+    }
+
+    private static IReadOnlyDictionary<string, string>? BuildWindowsInstallerEnvironment(
+        string? payloadPath = null,
+        string? payloadDownloadUrl = null,
+        string? payloadSha256 = null,
+        long? payloadSizeBytes = null)
+    {
+        bool hasLocalPayload = !string.IsNullOrWhiteSpace(payloadPath) && File.Exists(payloadPath);
+        bool hasPayloadMetadata = !string.IsNullOrWhiteSpace(payloadDownloadUrl)
+            || !string.IsNullOrWhiteSpace(payloadSha256)
+            || payloadSizeBytes is > 0;
+        if (!hasLocalPayload && !hasPayloadMetadata)
+        {
+            return null;
+        }
+
+        Dictionary<string, string> environment = new(StringComparer.Ordinal);
+
+        if (hasLocalPayload)
+        {
+            environment[WindowsInstallerPayloadPathEnvironmentVariable] = payloadPath!;
+        }
+
+        if (!string.IsNullOrWhiteSpace(payloadDownloadUrl))
+        {
+            environment[WindowsInstallerPayloadUrlEnvironmentVariable] = payloadDownloadUrl;
+        }
+
+        string normalizedSha256 = NormalizeSha256(payloadSha256 ?? string.Empty);
+        if (!string.IsNullOrWhiteSpace(normalizedSha256))
+        {
+            environment[WindowsInstallerPayloadSha256EnvironmentVariable] = normalizedSha256;
+        }
+
+        if (payloadSizeBytes is > 0)
+        {
+            environment[WindowsInstallerPayloadSizeBytesEnvironmentVariable] = payloadSizeBytes.Value.ToString(System.Globalization.CultureInfo.InvariantCulture);
+        }
+
+        return environment;
+    }
+
+    private static void StartDetachedProcess(
+        string path,
+        IReadOnlyList<string>? args = null,
+        IReadOnlyDictionary<string, string>? environment = null)
     {
         ProcessStartInfo startInfo = new()
         {
             FileName = path,
             WorkingDirectory = Path.GetDirectoryName(path) ?? Environment.CurrentDirectory,
-            UseShellExecute = true
+            UseShellExecute = environment is null || environment.Count == 0
         };
         if (args is not null)
         {
             foreach (string arg in args)
             {
                 startInfo.ArgumentList.Add(arg);
+            }
+        }
+
+        if (environment is not null)
+        {
+            foreach ((string key, string value) in environment)
+            {
+                startInfo.Environment[key] = value;
             }
         }
 
@@ -2645,6 +2924,7 @@ public static class DesktopUpdateRuntime
         string? PendingUpdateVersion = null,
         string? PendingUpdateChannelId = null,
         DateTimeOffset? PendingUpdatePreparedAtUtc = null,
+        string? PendingInstallerPath = null,
         DateTimeOffset? LastUpdateLaunchAttemptAtUtc = null,
         DateTimeOffset? RollbackWindowStartedAtUtc = null,
         DateTimeOffset? RollbackWindowExpiresAtUtc = null,
@@ -2708,6 +2988,12 @@ public static class DesktopUpdateRuntime
         string HeadId,
         IReadOnlyList<string> RelaunchArgs);
 
+    private sealed record DesktopBootstrapPayloadHandoff(
+        string PayloadPath,
+        string DownloadUrl,
+        string Sha256,
+        long SizeBytes);
+
     private sealed record DesktopUpdateCommandSpec(
         string FileName,
         IReadOnlyList<string> Arguments);
@@ -2732,4 +3018,43 @@ public static class DesktopUpdateRuntime
         string? ChannelId,
         string? HeadId,
         string[]? RelaunchArgs);
+
+    private static string GetOptionalJsonString(JsonElement root, string propertyName)
+    {
+        foreach (JsonProperty property in root.EnumerateObject())
+        {
+            if (string.Equals(property.Name, propertyName, StringComparison.OrdinalIgnoreCase))
+            {
+                return property.Value.ValueKind == JsonValueKind.Null ? string.Empty : property.Value.GetString() ?? string.Empty;
+            }
+        }
+
+        return string.Empty;
+    }
+
+    private static long? GetOptionalJsonInt64(JsonElement root, string propertyName)
+    {
+        foreach (JsonProperty property in root.EnumerateObject())
+        {
+            if (!string.Equals(property.Name, propertyName, StringComparison.OrdinalIgnoreCase))
+            {
+                continue;
+            }
+
+            if (property.Value.ValueKind == JsonValueKind.Number && property.Value.TryGetInt64(out long numeric))
+            {
+                return numeric;
+            }
+
+            if (property.Value.ValueKind == JsonValueKind.String
+                && long.TryParse(property.Value.GetString(), System.Globalization.NumberStyles.Integer, System.Globalization.CultureInfo.InvariantCulture, out long parsed))
+            {
+                return parsed;
+            }
+
+            return null;
+        }
+
+        return null;
+    }
 }

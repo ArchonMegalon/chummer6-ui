@@ -1,12 +1,9 @@
 {
-  "generatedAt": "2026-06-24T12:39:47.097922Z",
+  "generatedAt": "2026-06-27T16:13:03.630944Z",
   "contract_name": "chummer6-ui.sr6_workflow_family_execution_receipt",
-  "status": "fail",
-  "summary": "SR6 workflow-family execution evidence is incomplete for armor-weapons-gear-vehicles-drones-mods-custom-items-locations-containers.",
-  "reasons": [
-    "Audit tests not present in executed TRX results: Avalonia_and_Blazor_dialog_and_import_commands_expose_matching_dialog_contracts, Avalonia_and_Blazor_gear_family_workspace_actions_render_matching_sections, Avalonia_and_Blazor_combat_and_cyberware_workspace_actions_render_matching_sections, Runtime_loaded_runner_quick_action_workflows_materialize_dialog_contracts_and_continuations_across_sr4_sr5_and_sr6, Vehicles_and_drones_builder_preserves_familiar_browse_detail_confirm_rhythm, Legacy_ui_controls_keep_recursive_parity, Quick_action_roots_are_exhaustively_classified",
-    "dotnet test execution failed (exit 1): Get projects properties with MSBuild didn't execute properly with exit code: 1."
-  ],
+  "status": "pass",
+  "summary": "SR6 workflow-family execution evidence is explicitly grounded for armor-weapons-gear-vehicles-drones-mods-custom-items-locations-containers.",
+  "reasons": [],
   "evidence": {
     "edition": "sr6",
     "familyId": "armor-weapons-gear-vehicles-drones-mods-custom-items-locations-containers",
@@ -65,8 +62,8 @@
         "Avalonia_and_Blazor_tab_selection_loads_same_workspace_section": "/docker/chummercomplete/chummer-presentation/.codex-studio/out/workflow-family-parity/executed/sr6/27-Avalonia_and_Blazor_tab_selection_loads_same_workspace_section.trx",
         "Menu_click_surfaces_visible_command_choices_in_shell": "/docker/chummercomplete/chummer-presentation/.codex-studio/out/workflow-family-parity/executed/sr6/28-Menu_click_surfaces_visible_command_choices_in_shell.trx"
       },
-      "exitCode": 1,
-      "attemptCount": 2,
+      "exitCode": 0,
+      "attemptCount": 1,
       "maxAttempts": 2
     },
     "apiProbe": {
@@ -88,8 +85,7 @@
       "warmed": true
     },
     "external_blocker": "",
-    "matchedPassedTests": [],
-    "missingAuditTests": [
+    "matchedPassedTests": [
       "Avalonia_and_Blazor_dialog_and_import_commands_expose_matching_dialog_contracts",
       "Avalonia_and_Blazor_gear_family_workspace_actions_render_matching_sections",
       "Avalonia_and_Blazor_combat_and_cyberware_workspace_actions_render_matching_sections",
@@ -98,6 +94,7 @@
       "Legacy_ui_controls_keep_recursive_parity",
       "Quick_action_roots_are_exhaustively_classified"
     ],
+    "missingAuditTests": [],
     "failedAuditTests": {}
   }
 }

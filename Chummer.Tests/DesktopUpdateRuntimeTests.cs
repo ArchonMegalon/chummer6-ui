@@ -22,6 +22,10 @@ public sealed class DesktopUpdateRuntimeTests
     private const string UpdateAutoApplyEnvironmentVariable = "CHUMMER_DESKTOP_UPDATE_AUTO_APPLY";
     private const string StateRootEnvironmentVariable = "CHUMMER_DESKTOP_STATE_ROOT";
     private const string UpdateProcessPathOverrideEnvironmentVariable = "CHUMMER_DESKTOP_UPDATE_PROCESS_PATH_OVERRIDE";
+    private const string InstallerPayloadPathEnvironmentVariable = "CHUMMER_INSTALLER_PAYLOAD_PATH";
+    private const string InstallerPayloadUrlEnvironmentVariable = "CHUMMER_INSTALLER_PAYLOAD_URL";
+    private const string InstallerPayloadSha256EnvironmentVariable = "CHUMMER_INSTALLER_PAYLOAD_SHA256";
+    private const string InstallerPayloadSizeBytesEnvironmentVariable = "CHUMMER_INSTALLER_PAYLOAD_SIZE_BYTES";
 
     [TestMethod]
     public void DesktopSurfacePostureText_uses_plain_user_language()
@@ -907,6 +911,8 @@ public sealed class DesktopUpdateRuntimeTests
             string stagedPayloadSidecarPath = stagedPayloadPath + ".json";
             string requestPath = Path.Combine(stageDirectory, "installer-request.json");
 
+            Assert.AreEqual(stagedInstallerPath, GetStringProperty(state.RootElement, "pendingInstallerPath"));
+
             Assert.IsTrue(File.Exists(stagedInstallerPath));
             Assert.IsTrue(File.Exists(stagedPayloadPath));
             Assert.IsTrue(File.Exists(stagedPayloadSidecarPath));
@@ -1108,6 +1114,153 @@ public sealed class DesktopUpdateRuntimeTests
         Assert.AreEqual("update_staged", status.Status);
         Assert.AreEqual("run-20260618-061500", status.PendingUpdateVersion);
         StringAssert.Contains(status.RecommendedAction, "installing it in place", StringComparison.OrdinalIgnoreCase);
+    }
+
+    [TestMethod]
+    public void GetCurrentStatus_surfaces_downloaded_manual_macos_installer()
+    {
+        using TestStateRootScope stateRootScope = new();
+        using TestEnvironmentScope envScope = new(new Dictionary<string, string?>()
+        {
+            [ManifestEnvironmentVariable] = "/tmp/promoted",
+            [UpdateEnabledEnvironmentVariable] = "true",
+            [UpdateAutoApplyEnvironmentVariable] = "true",
+            [StateRootEnvironmentVariable] = stateRootScope.Root
+        });
+
+        string installerPath = Path.Combine(stateRootScope.Root, "downloads", "chummer-avalonia-osx-arm64-installer.dmg");
+        Directory.CreateDirectory(Path.GetDirectoryName(installerPath)!);
+        File.WriteAllText(installerPath, "installer");
+
+        string statePath = stateRootScope.StatePathForHead("avalonia");
+        Directory.CreateDirectory(Path.GetDirectoryName(statePath)!);
+        File.WriteAllText(
+            statePath,
+            $$"""
+            {
+              "HeadId": "avalonia",
+              "Platform": "macos",
+              "Arch": "arm64",
+              "InstalledVersion": "run-20260617-110751",
+              "ChannelId": "preview",
+              "LastCheckedAt": "2026-06-18T06:00:00Z",
+              "LastManifestVersion": "run-20260618-061500",
+              "LastManifestPublishedAt": "2026-06-18T06:15:00Z",
+              "LastError": "A macOS update is available, but automatic installer handoff is disabled for unsigned or quarantined installer images. Open Update Status to install it manually.",
+              "LastFailureReason": "macos_manual_install_required",
+              "PendingUpdateVersion": "run-20260618-061500",
+              "PendingUpdateChannelId": "preview",
+              "PendingUpdatePreparedAtUtc": "2026-06-18T06:16:00Z",
+              "PendingInstallerPath": "{{installerPath.Replace("\\", "\\\\")}}"
+            }
+            """);
+
+        DesktopUpdateClientStatus status = DesktopUpdateRuntime.GetCurrentStatus("avalonia");
+
+        Assert.AreEqual("attention_required", status.Status);
+        Assert.AreEqual(installerPath, status.PendingInstallerPath);
+        StringAssert.Contains(status.RecommendedAction, "Open it from Update Status", StringComparison.Ordinal);
+    }
+
+    [TestMethod]
+    public void TryBuildPendingInstallerManualCommand_returns_linux_recovery_command()
+    {
+        using TestStateRootScope stateRootScope = new();
+        using TestEnvironmentScope envScope = new(new Dictionary<string, string?>()
+        {
+            [ManifestEnvironmentVariable] = "/tmp/promoted",
+            [UpdateEnabledEnvironmentVariable] = "true",
+            [UpdateAutoApplyEnvironmentVariable] = "true",
+            [StateRootEnvironmentVariable] = stateRootScope.Root
+        });
+
+        string installerPath = Path.Combine(stateRootScope.Root, "downloads", "runner's build.deb");
+        Directory.CreateDirectory(Path.GetDirectoryName(installerPath)!);
+        File.WriteAllText(installerPath, "installer");
+
+        string statePath = stateRootScope.StatePathForHead("avalonia");
+        Directory.CreateDirectory(Path.GetDirectoryName(statePath)!);
+        File.WriteAllText(
+            statePath,
+            $$"""
+            {
+              "HeadId": "avalonia",
+              "Platform": "linux",
+              "Arch": "x64",
+              "InstalledVersion": "run-20260617-110751",
+              "ChannelId": "preview",
+              "LastCheckedAt": "2026-06-18T06:00:00Z",
+              "LastManifestVersion": "run-20260618-061500",
+              "LastManifestPublishedAt": "2026-06-18T06:15:00Z",
+              "LastError": "Could not apply Linux .deb update automatically.",
+              "LastFailureReason": "installer_launch_failed",
+              "PendingUpdateVersion": "run-20260618-061500",
+              "PendingUpdateChannelId": "preview",
+              "PendingUpdatePreparedAtUtc": "2026-06-18T06:16:00Z",
+              "PendingInstallerPath": "{{installerPath.Replace("\\", "\\\\")}}"
+            }
+            """);
+
+        bool built = DesktopUpdateRuntime.TryBuildPendingInstallerManualCommand("avalonia", out string command);
+
+        if (OperatingSystem.IsLinux())
+        {
+            Assert.IsTrue(built);
+            string quotedInstallerPath = InvokePrivateStatic<string>("QuoteShellArgument", installerPath);
+            Assert.AreEqual($"sudo dpkg -i {quotedInstallerPath}", command);
+        }
+        else
+        {
+            Assert.IsFalse(built);
+            Assert.AreEqual(string.Empty, command);
+        }
+    }
+
+    [TestMethod]
+    public void GetCurrentStatus_specializes_linux_manual_recovery_action_when_package_is_already_downloaded()
+    {
+        using TestStateRootScope stateRootScope = new();
+        using TestEnvironmentScope envScope = new(new Dictionary<string, string?>()
+        {
+            [ManifestEnvironmentVariable] = "/tmp/promoted",
+            [UpdateEnabledEnvironmentVariable] = "true",
+            [UpdateAutoApplyEnvironmentVariable] = "true",
+            [StateRootEnvironmentVariable] = stateRootScope.Root
+        });
+
+        string installerPath = Path.Combine(stateRootScope.Root, "downloads", "runner's build.deb");
+        Directory.CreateDirectory(Path.GetDirectoryName(installerPath)!);
+        File.WriteAllText(installerPath, "installer");
+
+        string statePath = stateRootScope.StatePathForHead("avalonia");
+        Directory.CreateDirectory(Path.GetDirectoryName(statePath)!);
+        File.WriteAllText(
+            statePath,
+            $$"""
+            {
+              "HeadId": "avalonia",
+              "Platform": "linux",
+              "Arch": "x64",
+              "InstalledVersion": "run-20260617-110751",
+              "ChannelId": "preview",
+              "LastCheckedAt": "2026-06-18T06:00:00Z",
+              "LastManifestVersion": "run-20260618-061500",
+              "LastManifestPublishedAt": "2026-06-18T06:15:00Z",
+              "LastError": "Could not apply Linux .deb update automatically.",
+              "LastFailureReason": "installer_launch_failed",
+              "PendingUpdateVersion": "run-20260618-061500",
+              "PendingUpdateChannelId": "preview",
+              "PendingUpdatePreparedAtUtc": "2026-06-18T06:16:00Z",
+              "PendingInstallerPath": "{{installerPath.Replace("\\", "\\\\")}}"
+            }
+            """);
+
+        DesktopUpdateClientStatus status = DesktopUpdateRuntime.GetCurrentStatus("avalonia");
+
+        Assert.AreEqual("attention_required", status.Status);
+        Assert.AreEqual(installerPath, status.PendingInstallerPath);
+        StringAssert.Contains(status.RecommendedAction, "Copy the install command from Update Status", StringComparison.Ordinal);
+        StringAssert.Contains(status.RecommendedAction, "reopen Chummer", StringComparison.Ordinal);
     }
 
     [TestMethod]
@@ -1321,6 +1474,7 @@ public sealed class DesktopUpdateRuntimeTests
             Assert.IsNull(GetDateTimeProperty(state.RootElement, "lastFailureAtUtc"));
             Assert.IsNull(GetStringProperty(state.RootElement, "pendingUpdateVersion"));
             Assert.IsNull(GetStringProperty(state.RootElement, "pendingUpdateChannelId"));
+            Assert.IsNull(GetStringProperty(state.RootElement, "pendingInstallerPath"));
             Assert.IsNotNull(GetDateTimeProperty(state.RootElement, "lastUpdateLaunchAttemptAtUtc"));
             Assert.IsFalse(Directory.Exists(stageDirectory));
             Assert.IsFalse(File.Exists(helperPath));
@@ -1656,6 +1810,158 @@ public sealed class DesktopUpdateRuntimeTests
                 Directory.Delete(tempRoot, recursive: true);
             }
         }
+    }
+
+    [TestMethod]
+    public void TryLoadWindowsBootstrapPayloadHandoff_resolves_matching_sidecar_from_installer_directory()
+    {
+        string tempRoot = Path.Combine(Path.GetTempPath(), $"desktop-update-bootstrap-handoff-{Guid.NewGuid():N}");
+        Directory.CreateDirectory(tempRoot);
+        string installerPath = Path.Combine(tempRoot, "chummer-avalonia-win-x64-installer.exe");
+        string payloadPath = Path.Combine(tempRoot, "chummer-avalonia-win-x64-payload.zip");
+        string payloadSha256 = new string('a', 64);
+        File.WriteAllText(installerPath, "installer");
+        File.WriteAllText(payloadPath, "payload");
+        File.WriteAllText(
+            payloadPath + ".json",
+            """
+            {
+              "contractName": "chummer6-ui.windows_bootstrap_payload",
+              "fileName": "chummer-avalonia-win-x64-payload.zip",
+              "downloadUrl": "https://chummer.run/downloads/files/chummer-avalonia-win-x64-payload.zip",
+              "sha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+              "sizeBytes": 7,
+              "installerFileName": "chummer-avalonia-win-x64-installer.exe",
+              "releaseVersion": "run-20260627-090000"
+            }
+            """);
+
+        try
+        {
+            object? handoff = InvokePrivateStatic<object?>("TryLoadWindowsBootstrapPayloadHandoff", installerPath);
+
+            Assert.IsNotNull(handoff);
+            Assert.AreEqual(payloadPath, GetPrivateProperty<string>(handoff, "PayloadPath"));
+            Assert.AreEqual("https://chummer.run/downloads/files/chummer-avalonia-win-x64-payload.zip", GetPrivateProperty<string>(handoff, "DownloadUrl"));
+            Assert.AreEqual(payloadSha256, GetPrivateProperty<string>(handoff, "Sha256"));
+            Assert.AreEqual(7L, GetPrivateProperty<long>(handoff, "SizeBytes"));
+        }
+        finally
+        {
+            if (Directory.Exists(tempRoot))
+            {
+                Directory.Delete(tempRoot, recursive: true);
+            }
+        }
+    }
+
+    [TestMethod]
+    public void BuildWindowsInstallerArguments_preserves_only_launch_and_relaunch_contract()
+    {
+        string tempRoot = Path.Combine(Path.GetTempPath(), $"desktop-update-bootstrap-args-{Guid.NewGuid():N}");
+        Directory.CreateDirectory(tempRoot);
+
+        try
+        {
+            IReadOnlyList<string> args = InvokePrivateStatic<IReadOnlyList<string>>(
+                "BuildWindowsInstallerArguments",
+                "avalonia",
+                new[] { "--restore-last", "--from-update-test" },
+                null,
+                null,
+                null,
+                null);
+
+            CollectionAssert.AreEqual(
+                new[]
+                {
+                    "--auto-update",
+                    "--launch-head",
+                    "avalonia",
+                    "--relaunch-arg",
+                    "--restore-last",
+                    "--relaunch-arg",
+                    "--from-update-test"
+                },
+                new List<string>(args).ToArray());
+        }
+        finally
+        {
+            if (Directory.Exists(tempRoot))
+            {
+                Directory.Delete(tempRoot, recursive: true);
+            }
+        }
+    }
+
+    [TestMethod]
+    public void BuildWindowsInstallerEnvironment_includes_local_bootstrap_payload_handoff()
+    {
+        string tempRoot = Path.Combine(Path.GetTempPath(), $"desktop-update-bootstrap-env-{Guid.NewGuid():N}");
+        Directory.CreateDirectory(tempRoot);
+        string payloadPath = Path.Combine(tempRoot, "chummer-avalonia-win-x64-payload.zip");
+        File.WriteAllText(payloadPath, "payload");
+
+        try
+        {
+            IReadOnlyDictionary<string, string>? environment = InvokePrivateStatic<IReadOnlyDictionary<string, string>?>(
+                "BuildWindowsInstallerEnvironment",
+                payloadPath,
+                "https://chummer.run/downloads/files/chummer-avalonia-win-x64-payload.zip",
+                "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+                7L);
+
+            Assert.IsNotNull(environment);
+            Assert.AreEqual(payloadPath, environment[InstallerPayloadPathEnvironmentVariable]);
+            Assert.AreEqual(
+                "https://chummer.run/downloads/files/chummer-avalonia-win-x64-payload.zip",
+                environment[InstallerPayloadUrlEnvironmentVariable]);
+            Assert.AreEqual(
+                "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+                environment[InstallerPayloadSha256EnvironmentVariable]);
+            Assert.AreEqual("7", environment[InstallerPayloadSizeBytesEnvironmentVariable]);
+        }
+        finally
+        {
+            if (Directory.Exists(tempRoot))
+            {
+                Directory.Delete(tempRoot, recursive: true);
+            }
+        }
+    }
+
+    [TestMethod]
+    public void BuildWindowsInstallerArguments_include_payload_handoff_contract_when_present()
+    {
+        IReadOnlyList<string> args = InvokePrivateStatic<IReadOnlyList<string>>(
+            "BuildWindowsInstallerArguments",
+            "avalonia",
+            new[] { "--restore-last", "--from-update-test" },
+            @"C:\Users\runner\AppData\Local\Temp\chummer-avalonia-win-x64-payload.zip",
+            "https://chummer.run/downloads/files/chummer-avalonia-win-x64-payload.zip",
+            "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+            47152146L);
+
+        CollectionAssert.AreEqual(
+            new[]
+            {
+                "--auto-update",
+                "--launch-head",
+                "avalonia",
+                "--payload-path",
+                @"C:\Users\runner\AppData\Local\Temp\chummer-avalonia-win-x64-payload.zip",
+                "--payload-url",
+                "https://chummer.run/downloads/files/chummer-avalonia-win-x64-payload.zip",
+                "--payload-sha256",
+                "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+                "--payload-size-bytes",
+                "47152146",
+                "--relaunch-arg",
+                "--restore-last",
+                "--relaunch-arg",
+                "--from-update-test"
+            },
+            new List<string>(args).ToArray());
     }
 
     [TestMethod]

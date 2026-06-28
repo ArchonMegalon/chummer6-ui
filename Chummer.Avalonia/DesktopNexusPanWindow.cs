@@ -228,7 +228,7 @@ internal sealed class DesktopNexusPanWindow : Window
             details.Children.Add(workspaceList);
             details.Children.Add(new Border
             {
-                BorderBrush = DesktopShellTheme.ResolveThemeBrush("ChummerShellBorderBrush", "#B5C0CF"),
+                BorderBrush = DesktopShellTheme.ResolveBorderBrush(),
                 BorderThickness = new Thickness(1),
                 CornerRadius = new CornerRadius(4),
                 Padding = new Thickness(10),

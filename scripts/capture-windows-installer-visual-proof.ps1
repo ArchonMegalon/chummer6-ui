@@ -44,10 +44,12 @@ function Resolve-DefaultReleaseChannelPath {
     param([string]$RepoRoot)
 
     $candidates = @(
+        (Join-Path $RepoRoot ".tmp\verify-release-channel\RELEASE_CHANNEL.generated.json"),
+        (Join-Path $RepoRoot "Docker\Downloads\RELEASE_CHANNEL.generated.json"),
+        (Join-Path $RepoRoot "Chummer.Portal\downloads\RELEASE_CHANNEL.generated.json"),
         (Join-Path $RepoRoot ".codex-studio\published\RELEASE_CHANNEL.generated.json"),
         (Join-Path $RepoRoot "..\chummer.run-services\Chummer.Portal\downloads\RELEASE_CHANNEL.generated.json"),
-        (Join-Path $RepoRoot "..\chummer6-hub\Chummer.Portal\downloads\RELEASE_CHANNEL.generated.json"),
-        (Join-Path $RepoRoot "Docker\Downloads\RELEASE_CHANNEL.generated.json")
+        (Join-Path $RepoRoot "..\chummer6-hub\Chummer.Portal\downloads\RELEASE_CHANNEL.generated.json")
     )
 
     foreach ($candidate in $candidates) {

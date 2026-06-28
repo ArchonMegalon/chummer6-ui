@@ -1,6 +1,6 @@
 {
   "contract_name": "chummer6-ui.blazor_portal_installer_handoff_staged_proof",
-  "generated_at": "2026-06-25T17:34:26.992712+00:00",
+  "generated_at": "2026-06-27T05:07:21.854703+00:00",
   "status": "failed",
   "proof_tier": "source_staged_no_browser_execution",
   "route_lane": "portal_backed_blazor_workbench_handoff",
@@ -78,7 +78,6 @@
       "missing_tokens": [
         "PortalRoutes.CharacterRosterCommand",
         "aria-label=\"Chummer Online routes\"",
-        "Open Character Roster",
         "BuildPublicUrl(options.BlazorUrl, \"home\")",
         "Chummer Online routes"
       ]
@@ -124,7 +123,14 @@
       "id": "portal_known_install_route_resolver",
       "path": "Chummer.Portal/Program.cs",
       "status": "passed",
-      "required_token_count": 7,
+      "required_token_count": 5,
+      "missing_tokens": []
+    },
+    {
+      "id": "portal_release_manifest_reader",
+      "path": "Chummer.Portal/PortalReleaseManifestReader.cs",
+      "status": "passed",
+      "required_token_count": 5,
       "missing_tokens": []
     },
     {
@@ -144,13 +150,9 @@
     {
       "id": "portal_handoff_docs",
       "path": "docs/BLAZOR_PORTAL_INSTALLER_HANDOFF_PROOF.md",
-      "status": "failed",
-      "required_token_count": 79,
-      "missing_tokens": [
-        "Mount `releases.json` into the downloads volume before claiming installer availability.",
-        "`/status` must state current release availability.",
-        "visible route-family labels"
-      ]
+      "status": "passed",
+      "required_token_count": 80,
+      "missing_tokens": []
     },
     {
       "id": "docs_index_contract_link",
@@ -225,10 +227,9 @@
     "scripts/e2e-public-edge.cjs: missing data-download-fallback-guidance, data-self-host-browser-app=\"{{WebUtility.HtmlEncode(PortalRoutes.PublicAppRoster)}}\", Use /app?command=character_roster when installer proof is pending",
     "scripts/e2e-portal.cjs: missing static class PortalRoutes, PublicAppRoster, PublicAppSlash, BlazorApp, BlazorHome, CharacterRosterCommand, BlazorHomeSegment, PublicAppRoster => $\"{PublicApp}?command={CharacterRosterCommand}\", data-portal-status-action=\"open-chummer-home\", data-portal-contact-action=\"open-chummer-app\", data-portal-contact-action=\"open-chummer-home\"",
     "Chummer.Portal/Program.cs: missing [\"/app\"], [\"/blazor/app\"], [\"/blazor/home\"], linear-gradient(180deg,#192026 0%,#10161a 50%,#080b0d 100%)",
-    "Chummer.Portal/Program.cs: missing PortalRoutes.CharacterRosterCommand, aria-label=\"Chummer Online routes\", Open Character Roster, BuildPublicUrl(options.BlazorUrl, \"home\"), Chummer Online routes",
+    "Chummer.Portal/Program.cs: missing PortalRoutes.CharacterRosterCommand, aria-label=\"Chummer Online routes\", BuildPublicUrl(options.BlazorUrl, \"home\"), Chummer Online routes",
     "Chummer.Blazor/Components/Pages/Home.razor: missing data-home-hero-action=\"explore-chummer-online\"",
     "Chummer.Portal/Program.cs: missing outline: 3px solid rgba(137,224,179,.68), app.MapGet(blazorHomeRoute, () => Results.Redirect(BuildPublicUrl(options.BlazorUrl, \"app\"))), app.MapGet($\"{blazorHomeRoute}/\", () => Results.Redirect(BuildPublicUrl(options.BlazorUrl, \"app\"))), BuildPublicUrl(options.BlazorUrl, \"app\"), class=\"compatibility routes\", .compatibility routes",
-    "docs/BLAZOR_PORTAL_INSTALLER_HANDOFF_PROOF.md: missing Mount `releases.json` into the downloads volume before claiming installer availability., `/status` must state current release availability., visible route-family labels",
     "docs/BLAZOR_WEB_CLIENT_DOCS_INDEX.md: missing help-card hover/focus affordances",
     "docs/BLAZOR_SOURCE_STAGED_PROOF_RUNBOOK.md: missing portal_installer_handoff_staged_visual_contract=source_alignment_only_chummer_app_amber_mint_blue_palette_shared_grid_mobile_softened_high_contrast_motion_user_facing_route_rail_downloads_docs_cards_and_labelled_recovery_rails_not_runtime_visual_proof",
     "docs/BLAZOR_SELF_HOST_RUNBOOK.md: missing Chummer Online routes, Help cards plus help, contact, and status exits",

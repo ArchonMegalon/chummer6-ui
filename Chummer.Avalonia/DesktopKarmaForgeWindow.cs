@@ -301,9 +301,9 @@ internal sealed class DesktopKarmaForgeWindow : Window
         return new Border
         {
             Name = name,
-            BorderBrush = DesktopShellTheme.ResolveThemeBrush("ChummerShellBorderBrush", "#B5C0CF"),
+            BorderBrush = DesktopShellTheme.ResolveBorderBrush(),
             BorderThickness = new Thickness(1),
-            Background = DesktopShellTheme.ResolveThemeBrush("ChummerShellSurfaceAltBrush", "#F2F5FA"),
+            Background = DesktopShellTheme.ResolveSurfaceAltBrush(),
             CornerRadius = new CornerRadius(6),
             Padding = new Thickness(12),
             Child = stack

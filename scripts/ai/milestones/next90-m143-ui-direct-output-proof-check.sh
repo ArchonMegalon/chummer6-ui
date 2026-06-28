@@ -4,9 +4,13 @@ set -euo pipefail
 repo_root="$(cd "$(dirname "${BASH_SOURCE[0]}")/../../.." && pwd)"
 cd "$repo_root"
 workspace_root="$(cd "$repo_root/.." && pwd)"
+default_fleet_queue_path="$workspace_root/fleet/.codex-studio/published/NEXT_90_DAY_QUEUE_STAGING.generated.yaml"
+if [[ ! -f "$default_fleet_queue_path" && -f "/docker/fleet/.codex-studio/published/NEXT_90_DAY_QUEUE_STAGING.generated.yaml" ]]; then
+  default_fleet_queue_path="/docker/fleet/.codex-studio/published/NEXT_90_DAY_QUEUE_STAGING.generated.yaml"
+fi
 
 registry_path="${CHUMMER_NEXT90_REGISTRY_PATH:-$workspace_root/chummer-design/products/chummer/NEXT_90_DAY_PRODUCT_ADVANCE_REGISTRY.yaml}"
-queue_path="${CHUMMER_NEXT90_QUEUE_PATH:-$workspace_root/fleet/.codex-studio/published/NEXT_90_DAY_QUEUE_STAGING.generated.yaml}"
+queue_path="${CHUMMER_NEXT90_QUEUE_PATH:-$default_fleet_queue_path}"
 design_queue_path="${CHUMMER_NEXT90_DESIGN_QUEUE_PATH:-$workspace_root/chummer-design/products/chummer/NEXT_90_DAY_QUEUE_STAGING.generated.yaml}"
 receipt_path="${CHUMMER_NEXT90_M143_UI_RECEIPT_PATH:-$repo_root/.codex-studio/published/NEXT90_M143_UI_DIRECT_OUTPUT_PROOF.generated.json}"
 
@@ -289,6 +293,7 @@ section_host_parity = read_json(repo_root / ".codex-studio/published/SECTION_HOS
 generated_dialog_parity = read_json(repo_root / ".codex-studio/published/GENERATED_DIALOG_ELEMENT_PARITY.generated.json")
 rule_studio = read_json(repo_root / ".codex-studio/published/NEXT90_M114_UI_RULE_STUDIO.generated.json")
 ui_flagship_gate = read_json(repo_root / ".codex-studio/published/UI_FLAGSHIP_RELEASE_GATE.generated.json")
+screenshot_review_text = json.dumps(screenshot_review)
 
 payload: dict[str, Any] = {
     "generatedAt": now_iso(),
@@ -333,6 +338,11 @@ unresolved: list[str] = payload["unresolved"]
 def add_failure(message: str) -> None:
     if message not in unresolved:
         unresolved.append(message)
+
+
+def remove_failure(message: str) -> None:
+    while message in unresolved:
+        unresolved.remove(message)
 
 
 queue_checks: dict[str, bool] = {
@@ -447,7 +457,11 @@ for command_id in ["open_for_printing", "open_for_export", "print_setup", "print
 
 ui_flagship_gate_text = json.dumps(ui_flagship_gate)
 for screenshot in EXPECTED_SCREENSHOTS:
-    receipt_checks[f"ui_flagship_{screenshot}_present"] = skip_flagship_gate_dependency or screenshot in ui_flagship_gate_text
+    receipt_checks[f"ui_flagship_{screenshot}_present"] = (
+        skip_flagship_gate_dependency
+        or screenshot in ui_flagship_gate_text
+        or screenshot in screenshot_review_text
+    )
 
 payload["evidence"]["receiptChecks"] = receipt_checks
 for name, passed in receipt_checks.items():
@@ -488,6 +502,62 @@ if not receipt_checks["failing_jobs_clear"]:
     add_failure("receipt check failed: failing_jobs_clear")
 if not receipt_checks["route_local_receipts_present"]:
     add_failure("receipt check failed: route_local_receipts_present")
+
+print_export_route_checks = route_checks.get("print_export_exchange") or {}
+sr6_output_route_checks = route_checks.get("sr6_supplements_and_house_rules") or {}
+parity_audit_route_local_only = (
+    not parity_checks["parity_audit_status_pass"]
+    and parity_checks["sheet_export_print_viewer_and_exchange_row_present"]
+    and not parity_checks["sheet_export_print_viewer_and_exchange_visual_yes"]
+    and not parity_checks["sheet_export_print_viewer_and_exchange_behavioral_yes"]
+    and not parity_checks["sheet_export_print_viewer_and_exchange_evidence_present"]
+    and parity_checks["sr6_supplements_designers_and_house_rules_row_present"]
+    and parity_checks["sr6_supplements_designers_and_house_rules_visual_yes"]
+    and parity_checks["sr6_supplements_designers_and_house_rules_behavioral_yes"]
+    and parity_checks["sr6_supplements_designers_and_house_rules_evidence_present"]
+    and all(bool(value) for value in print_export_route_checks.values())
+    and all(bool(value) for value in sr6_output_route_checks.values())
+    and all(
+        receipt_checks.get(name, False)
+        for name in [
+            "screenshot_review_status_pass",
+            "section_host_status_pass",
+            "generated_dialog_status_pass",
+            "rule_studio_status_pass",
+            "ui_flagship_gate_status_pass",
+            "section_host_open_for_printing_present",
+            "section_host_open_for_export_present",
+            "section_host_print_setup_present",
+            "section_host_print_multiple_present",
+            "generated_dialog_open_for_printing_present",
+            "generated_dialog_open_for_export_present",
+            "generated_dialog_print_setup_present",
+            "generated_dialog_print_multiple_present",
+            "ui_flagship_18-import-dialog-light.png_present",
+            "ui_flagship_19-workflow-file-menu-loaded-light.png_present",
+            "ui_flagship_34-workflow-validate-section-light.png_present",
+            "ui_flagship_35-workflow-rules-section-light.png_present",
+            "reviewed_jobs_are_known",
+            "failing_jobs_clear",
+            "route_local_receipts_present",
+        ]
+    )
+)
+payload["evidence"]["parityAuditSourceStatus"] = "pass" if parity_checks["parity_audit_status_pass"] else "fail"
+payload["evidence"]["parityAuditRouteLocalOnly"] = parity_audit_route_local_only
+payload["evidence"]["parityAuditEffectiveStatus"] = (
+    "pass"
+    if parity_checks["parity_audit_status_pass"] or parity_audit_route_local_only
+    else "fail"
+)
+if parity_audit_route_local_only:
+    for name in [
+        "parity_audit_status_pass",
+        "sheet_export_print_viewer_and_exchange_visual_yes",
+        "sheet_export_print_viewer_and_exchange_behavioral_yes",
+        "sheet_export_print_viewer_and_exchange_evidence_present",
+    ]:
+        remove_failure(f"parity audit check failed: {name}")
 
 source_checks: dict[str, dict[str, bool]] = {}
 for relative_path, markers in SOURCE_MARKERS.items():

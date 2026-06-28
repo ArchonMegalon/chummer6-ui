@@ -262,7 +262,7 @@ internal sealed class DesktopBlackLedgerWindow : Window
                 new Border
                 {
                     Name = "BlackLedgerSelectedWorkspaceCard",
-                    BorderBrush = DesktopShellTheme.ResolveThemeBrush("ChummerShellBorderBrush", "#B5C0CF"),
+                    BorderBrush = DesktopShellTheme.ResolveBorderBrush(),
                     BorderThickness = new Thickness(1),
                     CornerRadius = new CornerRadius(4),
                     Padding = new Thickness(10),
@@ -325,9 +325,9 @@ internal sealed class DesktopBlackLedgerWindow : Window
         return new Border
         {
             Name = name,
-            BorderBrush = DesktopShellTheme.ResolveThemeBrush("ChummerShellBorderBrush", "#B5C0CF"),
+            BorderBrush = DesktopShellTheme.ResolveBorderBrush(),
             BorderThickness = new Thickness(1),
-            Background = DesktopShellTheme.ResolveThemeBrush("ChummerShellSurfaceAltBrush", "#F2F5FA"),
+            Background = DesktopShellTheme.ResolveSurfaceAltBrush(),
             CornerRadius = new CornerRadius(6),
             Padding = new Thickness(12),
             Child = stack

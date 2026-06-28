@@ -24,6 +24,92 @@ to_bool() {
   [[ "$value" == "1" || "$value" == "true" || "$value" == "yes" || "$value" == "on" ]]
 }
 
+refresh_release_build_handoff() {
+  local bundle_dir="$1"
+  local handoff_script="${CHUMMER_RELEASE_BUILD_HANDOFF_SCRIPT_PATH:-$SCRIPT_DIR/materialize_release_candidate_handoff.py}"
+
+  if [[ ! -f "$bundle_dir/RELEASE_CHANNEL.generated.json" ]]; then
+    return 0
+  fi
+
+  if [[ ! -f "$handoff_script" ]]; then
+    echo "Skipping release build handoff refresh because the materializer is missing: $handoff_script" >&2
+    return 0
+  fi
+
+  if ! python3 "$handoff_script" "$bundle_dir" >/dev/null; then
+    echo "Skipping release build handoff refresh because materialization failed for bundle: $bundle_dir" >&2
+    return 0
+  fi
+}
+
+emit_windows_visual_proof_handoff_guidance() {
+  python3 - "$@" <<'PY' || true
+from __future__ import annotations
+
+import json
+import sys
+from pathlib import Path
+
+
+def load_json(path: Path) -> dict:
+    try:
+        payload = json.loads(path.read_text(encoding="utf-8-sig"))
+    except Exception:
+        return {}
+    return payload if isinstance(payload, dict) else {}
+
+
+def normalize(value: object) -> str:
+    return str(value or "").strip()
+
+
+roots = [Path(item) for item in sys.argv[1:] if normalize(item)]
+handoff_payload = {}
+handoff_path = None
+
+for root in roots:
+    direct_path = root / "WINDOWS_INSTALLER_VISUAL_PROOF_HANDOFF.generated.json"
+    if direct_path.is_file():
+        handoff_payload = load_json(direct_path)
+        handoff_path = direct_path
+        break
+
+for root in roots:
+    if handoff_payload:
+        break
+    release_handoff_path = root / "RELEASE_BUILD_HANDOFF.generated.json"
+    if release_handoff_path.is_file():
+        release_handoff = load_json(release_handoff_path)
+        candidate = release_handoff.get("windows_visual_proof_handoff")
+        if isinstance(candidate, dict):
+            handoff_payload = candidate
+            candidate_path = normalize(candidate.get("json_path"))
+            if candidate_path:
+                handoff_path = Path(candidate_path)
+            break
+
+if not handoff_payload:
+    raise SystemExit(0)
+
+status = normalize(handoff_payload.get("status"))
+summary = normalize(handoff_payload.get("summary"))
+next_actions = handoff_payload.get("next_actions") if isinstance(handoff_payload.get("next_actions"), list) else []
+json_path = normalize(handoff_payload.get("json_path")) or str(handoff_path or "")
+
+if json_path:
+    print(f"Windows visual proof handoff: {json_path}", file=sys.stderr)
+if status:
+    print(f"Windows visual proof status: {status}", file=sys.stderr)
+if summary:
+    print(f"Windows visual proof summary: {summary}", file=sys.stderr)
+if next_actions:
+    first_action = normalize(next_actions[0])
+    if first_action:
+        print(f"Windows visual proof next action: {first_action}", file=sys.stderr)
+PY
+}
+
 is_public_artifact() {
   local artifact_name
   artifact_name="$(basename "$1")"
@@ -72,6 +158,32 @@ verify_windows_installer_payload_gate() {
     done
   fi
   python3 "$SCRIPT_DIR/verify-windows-installer-payloads.py" "${gate_args[@]}"
+}
+
+verify_windows_desktop_exit_gate() {
+  local gate_output
+  local visual_proof_path="${CHUMMER_WINDOWS_INSTALLER_VISUAL_PROOF_PATH:-${BUNDLE_DIR}/WINDOWS_INSTALLER_VISUAL_PROOF.generated.json}"
+  gate_output="$(mktemp)"
+
+  if [[ ! -f "$SCRIPT_DIR/materialize-windows-desktop-exit-gate.sh" ]]; then
+    echo "Missing Windows desktop exit gate: $SCRIPT_DIR/materialize-windows-desktop-exit-gate.sh" >&2
+    rm -f "$gate_output"
+    exit 1
+  fi
+
+  if ! CHUMMER_WINDOWS_RELEASE_CHANNEL_PATH="$DEPLOY_DIR/RELEASE_CHANNEL.generated.json" \
+    CHUMMER_WINDOWS_LOCAL_DESKTOP_FILES_ROOT="$DEPLOY_DIR/files" \
+    CHUMMER_WINDOWS_INSTALLER_VISUAL_PROOF_PATH="$visual_proof_path" \
+    CHUMMER_UI_WINDOWS_DESKTOP_EXIT_GATE_PATH="$gate_output" \
+    bash "$SCRIPT_DIR/materialize-windows-desktop-exit-gate.sh" >/dev/null
+  then
+    rm -f "$gate_output"
+    emit_windows_visual_proof_handoff_guidance "$BUNDLE_DIR" "$DEPLOY_DIR"
+    echo "Published downloads shelf failed Windows desktop exit gate verification. Use the Windows visual proof handoff above." >&2
+    exit 1
+  fi
+
+  rm -f "$gate_output"
 }
 
 strip_non_public_manifest_rows() {
@@ -282,6 +394,7 @@ if [[ "${#artifacts[@]}" -eq 0 ]]; then
 fi
 
 verify_windows_installer_payload_gate
+refresh_release_build_handoff "$BUNDLE_DIR"
 
 sync_source_dir="$(mktemp -d)"
 cleanup() {
@@ -550,6 +663,7 @@ CHUMMER_PUBLIC_STARTUP_SMOKE_MAX_AGE_SECONDS="${CHUMMER_PUBLIC_STARTUP_SMOKE_MAX
 CHUMMER_PUBLIC_SKIP_STARTUP_SMOKE_FILTER="${CHUMMER_PUBLIC_SKIP_STARTUP_SMOKE_FILTER:-$PUBLIC_SKIP_STARTUP_SMOKE_FILTER}" \
 CHUMMER_RELEASE_REQUIRE_COMPLETE_DESKTOP_COVERAGE="${CHUMMER_RELEASE_REQUIRE_COMPLETE_DESKTOP_COVERAGE:-1}" \
 CHUMMER_EXTERNAL_PROOF_BASE_URL="${CHUMMER_EXTERNAL_PROOF_BASE_URL:-https://chummer.run}" \
+CHUMMER_GENERATE_EXTERNAL_HOST_PROOF_BLOCKERS="${CHUMMER_GENERATE_EXTERNAL_HOST_PROOF_BLOCKERS:-0}" \
 bash "$SCRIPT_DIR/generate-releases-manifest.sh"
 
 strip_non_public_manifest_rows "$DEPLOY_DIR/RELEASE_CHANNEL.generated.json"
@@ -832,6 +946,15 @@ PY
   readarray -t verified_startup_smoke_receipts <"$verified_startup_smoke_tmp"
   rm -f "$verified_startup_smoke_tmp"
 
+  if ! python3 "$SCRIPT_DIR/verify-windows-bootstrap-startup-smoke.py" \
+    --release-channel "$DEPLOY_DIR/RELEASE_CHANNEL.generated.json" \
+    --downloads-manifest "$DEPLOY_DIR/releases.json" \
+    --startup-smoke-dir "$STARTUP_SMOKE_SOURCE" \
+    --files-dir "$DEPLOY_DIR/files" >/dev/null
+  then
+    exit 1
+  fi
+
   startup_smoke_deploy_dir="$DEPLOY_DIR/startup-smoke"
   startup_smoke_stage_dir="$(mktemp -d)"
   startup_smoke_deploy_dir_real="$(realpath -m "$startup_smoke_deploy_dir")"
@@ -951,13 +1074,20 @@ PY
     -name "dpkg-*.log" -o \
     -name "installed-launch-*" -o \
     -name "installed-wrapper-*" -o \
-    -name "installed-desktop-entry-*" \
+    -name "installed-desktop-entry-*" -o \
+    -name "windows-installer-progress-*.log" \
   \) -exec rm -f -- {} +
   if find "$startup_smoke_stage_dir" -mindepth 1 -maxdepth 1 -type f | grep -q .; then
     cp "$startup_smoke_stage_dir"/* "$startup_smoke_deploy_dir"/
   fi
+  if [[ -d "$STARTUP_SMOKE_SOURCE" ]] && find "$STARTUP_SMOKE_SOURCE" -maxdepth 1 -type f -name 'windows-installer-progress-*.log' | grep -q .; then
+    cp -f "$STARTUP_SMOKE_SOURCE"/windows-installer-progress-*.log "$startup_smoke_deploy_dir"/
+  fi
   rm -rf "$startup_smoke_stage_dir"
 fi
+
+refresh_release_build_handoff "$DEPLOY_DIR"
+verify_windows_desktop_exit_gate
 
 if to_bool "$DEPLOY_MODE"; then
   export CHUMMER_PORTAL_DOWNLOADS_REQUIRE_PUBLISHED_VERSION="${CHUMMER_PORTAL_DOWNLOADS_REQUIRE_PUBLISHED_VERSION:-true}"

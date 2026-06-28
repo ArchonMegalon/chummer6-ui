@@ -46,7 +46,7 @@ internal static class DesktopHorizonWindowScaffold
         {
             Content = new Border
             {
-                Background = ResolveThemeBrush("ChummerShellWindowBackgroundBrush", "#E3EAF3"),
+                Background = DesktopShellTheme.ResolveWindowBackgroundBrush(),
                 Padding = new Thickness(16),
                 Child = root
             }
@@ -98,9 +98,9 @@ internal static class DesktopHorizonWindowScaffold
 
         return new Border
         {
-            BorderBrush = ResolveThemeBrush("ChummerShellBorderBrush", "#B5C0CF"),
+            BorderBrush = DesktopShellTheme.ResolveBorderBrush(),
             BorderThickness = new Thickness(1),
-            Background = ResolveThemeBrush("ChummerShellSurfaceAltBrush", "#F2F5FA"),
+            Background = DesktopShellTheme.ResolveSurfaceAltBrush(),
             CornerRadius = new CornerRadius(6),
             Padding = new Thickness(12),
             Child = stack
@@ -135,13 +135,13 @@ internal static class DesktopHorizonWindowScaffold
         return new Border
         {
             Name = name,
-            Background = ResolveThemeBrush("ChummerShellChromeAccentBrush", "#DEE8F6"),
+            Background = DesktopShellTheme.ResolveChromeAccentBrush(),
             CornerRadius = new CornerRadius(999),
             Padding = new Thickness(8, 4),
             Child = new TextBlock
             {
                 Text = UndetectableHumanizerCopyAdapter.Humanize($"{label}: {value}"),
-                Foreground = ResolveThemeBrush("ChummerShellInfoBrush", "#173A6C"),
+                Foreground = DesktopShellTheme.ResolveInfoBrush(),
                 FontWeight = FontWeight.SemiBold,
                 TextWrapping = TextWrapping.Wrap
             }

@@ -186,6 +186,10 @@ unsigned_public_release_reason() {
 }
 
 windows_signing_required() {
+  if allow_unsigned_public_release && ! is_preview_release_channel; then
+    return 1
+  fi
+
   if [[ -n "${CHUMMER_WINDOWS_SIGNING_REQUIRED:-}" ]]; then
     env_truthy "${CHUMMER_WINDOWS_SIGNING_REQUIRED}"
     return
@@ -199,6 +203,10 @@ windows_signing_required() {
 }
 
 macos_signing_required() {
+  if allow_unsigned_public_release && ! is_preview_release_channel; then
+    return 1
+  fi
+
   if [[ -n "${CHUMMER_MAC_SIGNING_REQUIRED:-}" ]]; then
     env_truthy "${CHUMMER_MAC_SIGNING_REQUIRED}"
     return
@@ -212,6 +220,10 @@ macos_signing_required() {
 }
 
 macos_notarization_required() {
+  if allow_unsigned_public_release && ! is_preview_release_channel; then
+    return 1
+  fi
+
   if [[ -n "${CHUMMER_MAC_NOTARIZATION_REQUIRED:-}" ]]; then
     env_truthy "${CHUMMER_MAC_NOTARIZATION_REQUIRED}"
     return
@@ -659,6 +671,32 @@ print(installer)
 PY
 }
 
+append_bootstrap_metadata_to_windows_installer() {
+  local installer_path="$1"
+  local payload_url="$2"
+  local payload_sha256="$3"
+  local payload_size_bytes="$4"
+  python3 - "$installer_path" "$payload_url" "$payload_sha256" "$payload_size_bytes" <<'PY'
+from pathlib import Path
+import sys
+
+installer = Path(sys.argv[1])
+payload_url = sys.argv[2]
+payload_sha256 = sys.argv[3]
+payload_size_bytes = sys.argv[4]
+
+metadata = (
+    "\nCHUMMER6_BOOTSTRAP_METADATA\n"
+    f"payloadDownloadUrl={payload_url}\n"
+    f"payloadSha256={payload_sha256}\n"
+    f"payloadSizeBytes={payload_size_bytes}\n"
+).encode("utf-8")
+
+with installer.open("ab") as handle:
+    handle.write(metadata)
+PY
+}
+
 verify_windows_installer_payload_gate() {
   local installer_path="$1"
   local payload_path="${2:-}"
@@ -1013,6 +1051,115 @@ print(base64.b64encode(payload).decode("ascii"))
 PY
 }
 
+escape_nsis_define() {
+  python3 - "$1" <<'PY'
+import sys
+
+value = sys.argv[1]
+value = value.replace("$", "$$")
+value = value.replace('"', '$\\"')
+print(value)
+PY
+}
+
+write_windows_bootstrap_config() {
+  local config_path="$1"
+  local stage_dir="$2"
+  local icon_path="$3"
+  local installer_display_name="$4"
+  local installer_install_dir_name="$5"
+  local installer_output_name="$6"
+  local payload_file_name="$7"
+  local payload_url="$8"
+  local payload_sha256="$9"
+  local payload_size_bytes="${10}"
+  local head_count="${11}"
+  local head1_id="${12}"
+  local head1_display_name="${13}"
+  local head1_launch_executable="${14}"
+  local head1_shortcut_name="${15}"
+  local head1_relative_root="${16}"
+  local head2_id="${17:-}"
+  local head2_display_name="${18:-}"
+  local head2_launch_executable="${19:-}"
+  local head2_shortcut_name="${20:-}"
+  local head2_relative_root="${21:-}"
+
+  local rid_suffix="${RID#win-}"
+
+  python3 - "$config_path" "$stage_dir" "$icon_path" "$APP_KEY" "$RID" "$rid_suffix" "$installer_display_name" "$installer_install_dir_name" "$VERSION" "ArchonMegalon" "$SHORTCUT_NAME" "$installer_output_name" "$payload_file_name" "$payload_url" "$payload_sha256" "$payload_size_bytes" "$head_count" "$head1_id" "$head1_display_name" "$head1_launch_executable" "$head1_shortcut_name" "$head1_relative_root" "$head2_id" "$head2_display_name" "$head2_launch_executable" "$head2_shortcut_name" "$head2_relative_root" <<'PY'
+from pathlib import Path
+import sys
+
+(
+    config_path,
+    stage_dir,
+    icon_path,
+    app_id,
+    rid,
+    rid_suffix,
+    display_name,
+    install_dir_name,
+    version,
+    publisher,
+    shortcut_name,
+    installer_output_name,
+    payload_file_name,
+    payload_url,
+    payload_sha256,
+    payload_size_bytes,
+    head_count,
+    head1_id,
+    head1_display_name,
+    head1_launch_executable,
+    head1_shortcut_name,
+    head1_relative_root,
+    head2_id,
+    head2_display_name,
+    head2_launch_executable,
+    head2_shortcut_name,
+    head2_relative_root,
+) = sys.argv[1:]
+
+
+def esc(value: str) -> str:
+    return value.replace("$", "$$").replace('"', '$\\"')
+
+
+lines = [
+    '!define CHUMMER_STAGE_DIR "/work"',
+    f'!define CHUMMER_ICON_PATH "/work/{esc(Path(icon_path).name)}"',
+    f'!define CHUMMER_APP_ID "{esc(app_id)}"',
+    f'!define CHUMMER_RID "{esc(rid)}"',
+    f'!define CHUMMER_RID_SUFFIX "{esc(rid_suffix)}"',
+    f'!define CHUMMER_DISPLAY_NAME "{esc(display_name)}"',
+    f'!define CHUMMER_INSTALL_DIR_NAME "{esc(install_dir_name)}"',
+    f'!define CHUMMER_VERSION "{esc(version)}"',
+    f'!define CHUMMER_PUBLISHER "{esc(publisher)}"',
+    f'!define CHUMMER_SHORTCUT_NAME "{esc(shortcut_name)}"',
+    f'!define CHUMMER_INSTALLER_OUTPUT_NAME "{esc(installer_output_name)}"',
+    f'!define CHUMMER_PAYLOAD_FILE_NAME "{esc(payload_file_name)}"',
+    f'!define CHUMMER_PAYLOAD_URL "{esc(payload_url)}"',
+    f'!define CHUMMER_PAYLOAD_SHA256 "{esc(payload_sha256)}"',
+    f'!define CHUMMER_PAYLOAD_SIZE_BYTES "{esc(payload_size_bytes)}"',
+    f'!define CHUMMER_ARCH "{esc(rid.split("-")[-1])}"',
+    f'!define CHUMMER_HEAD_COUNT "{esc(head_count)}"',
+    f'!define CHUMMER_HEAD_1_ID "{esc(head1_id)}"',
+    f'!define CHUMMER_HEAD_1_DISPLAY_NAME "{esc(head1_display_name)}"',
+    f'!define CHUMMER_HEAD_1_LAUNCH_EXECUTABLE "{esc(head1_launch_executable)}"',
+    f'!define CHUMMER_HEAD_1_SHORTCUT_NAME "{esc(head1_shortcut_name)}"',
+    f'!define CHUMMER_HEAD_1_RELATIVE_ROOT "{esc(head1_relative_root)}"',
+    f'!define CHUMMER_HEAD_2_ID "{esc(head2_id)}"',
+    f'!define CHUMMER_HEAD_2_DISPLAY_NAME "{esc(head2_display_name)}"',
+    f'!define CHUMMER_HEAD_2_LAUNCH_EXECUTABLE "{esc(head2_launch_executable)}"',
+    f'!define CHUMMER_HEAD_2_SHORTCUT_NAME "{esc(head2_shortcut_name)}"',
+    f'!define CHUMMER_HEAD_2_RELATIVE_ROOT "{esc(head2_relative_root)}"',
+]
+
+Path(config_path).write_text("\n".join(lines) + "\n", encoding="utf-8")
+PY
+}
+
 build_windows_installer() {
   ensure_self_contained_publish
 
@@ -1020,6 +1167,7 @@ build_windows_installer() {
   local payload_resource_name="ChummerInstaller.Payload.zip"
   local installer_name="chummer-$APP_KEY-$RID-installer.exe"
   local installer_out_dir="$DIST_DIR/installer-$APP_KEY-$RID"
+  local native_bootstrap_stage_dir="$DIST_DIR/native-bootstrap-$APP_KEY-$RID"
   local payload_source_dir="$PUBLISH_DIR"
   local primary_relative_root=""
   local secondary_head_key="$WINDOWS_SECONDARY_HEAD_KEY"
@@ -1034,6 +1182,17 @@ build_windows_installer() {
   local bootstrap_payload_url=""
   local bootstrap_payload_sha256=""
   local bootstrap_payload_size_bytes=""
+  local head_count="1"
+  local head1_id="$APP_KEY"
+  local head1_display_name="$installer_display_name"
+  local head1_launch_executable="$LAUNCH_TARGET"
+  local head1_shortcut_name="$SHORTCUT_NAME"
+  local head1_relative_root=""
+  local head2_id=""
+  local head2_display_name=""
+  local head2_launch_executable=""
+  local head2_shortcut_name=""
+  local head2_relative_root=""
 
   if [[ -n "$secondary_head_key" || -n "$secondary_publish_dir" || -n "$secondary_launch_target" ]]; then
     if [[ -z "$secondary_head_key" || -z "$secondary_publish_dir" || -z "$secondary_launch_target" ]]; then
@@ -1053,6 +1212,17 @@ build_windows_installer() {
     cp -a "$PUBLISH_DIR"/. "$stage_root/$primary_relative_root"/
     cp -a "$secondary_publish_dir"/. "$stage_root/$secondary_relative_root"/
     payload_source_dir="$stage_root"
+    head_count="2"
+    head1_id="$APP_KEY"
+    head1_display_name="$(resolve_head_display_name "$APP_KEY")"
+    head1_launch_executable="$LAUNCH_TARGET"
+    head1_shortcut_name="Chummer6 Desktop"
+    head1_relative_root="$primary_relative_root"
+    head2_id="$secondary_head_key"
+    head2_display_name="$(resolve_head_display_name "$secondary_head_key")"
+    head2_launch_executable="$secondary_launch_target"
+    head2_shortcut_name="$(resolve_head_shortcut_name "$secondary_head_key")"
+    head2_relative_root="$secondary_relative_root"
     heads_json_base64="$(build_installed_heads_json_base64 \
       "$APP_KEY" \
       "$LAUNCH_TARGET" \
@@ -1081,45 +1251,40 @@ build_windows_installer() {
       ;;
   esac
 
-  rm -rf "$installer_out_dir"
-  "$REPO_ROOT/scripts/ai/with-package-plane.sh" publish "$REPO_ROOT/Chummer.Desktop.Installer/Chummer.Desktop.Installer.csproj" \
-    -c Release \
-    -r "$RID" \
-    --self-contained true \
-    -p:PublishSingleFile=true \
-    -p:GenerateRuntimeConfigurationFiles=true \
-    -p:PublishTrimmed=false \
-    -p:EnableCompressionInSingleFile=false \
-    -p:IncludeNativeLibrariesForSelfExtract=true \
-    -p:ChummerInstallerPayloadRequired=false \
-    -p:ChummerInstallerEmbedPayload=false \
-    -p:ChummerInstallerIncludeSidecarPayload=false \
-    -p:ChummerInstallerAssemblyName="Chummer6Installer-$APP_KEY-$RID" \
-    -p:InstallerPayloadZip="$payload_zip" \
-    -p:ChummerInstallerPayloadResourceName="$payload_resource_name" \
-    -p:ChummerInstallerPayloadUrl="$bootstrap_payload_url" \
-    -p:ChummerInstallerPayloadSha256="$bootstrap_payload_sha256" \
-    -p:ChummerInstallerPayloadSizeBytes="$bootstrap_payload_size_bytes" \
-    -p:ChummerInstallerAppId="$APP_KEY-$RID" \
-    -p:ChummerInstallerHeadId="$APP_KEY" \
-    -p:ChummerInstallerDisplayName="$installer_display_name" \
-    -p:ChummerInstallerInstallDirName="$installer_install_dir_name" \
-    -p:ChummerInstallerLaunchExecutable="$LAUNCH_TARGET" \
-    -p:ChummerInstallerVersion="$VERSION" \
-    -p:ChummerInstallerShortcutName="$SHORTCUT_NAME" \
-    -p:ChummerInstallerHeadsJsonBase64="$heads_json_base64" \
-    -p:ChummerInstallerOutputName="Chummer6Installer-$APP_KEY-$RID" \
-    -o "$installer_out_dir"
-
-  local installer_source
-  installer_source="$(find "$installer_out_dir" -maxdepth 1 -type f -name '*.exe' | sort | head -n 1)"
-  if [[ -z "$installer_source" ]]; then
-    echo "Installer publish output did not produce a .exe in $installer_out_dir" >&2
-    exit 1
-  fi
-
-  cp "$installer_source" "$DIST_DIR/$installer_name"
-  if [[ "$installer_mode" == "bootstrap" ]]; then
+    if [[ "$installer_mode" == "bootstrap" ]]; then
+    rm -rf "$native_bootstrap_stage_dir"
+    mkdir -p "$native_bootstrap_stage_dir"
+    cp -f "$REPO_ROOT/Chummer/chummer.ico" "$native_bootstrap_stage_dir/chummer.ico"
+    write_windows_bootstrap_config \
+      "$native_bootstrap_stage_dir/bootstrap-config.nsh" \
+      "$native_bootstrap_stage_dir" \
+      "$native_bootstrap_stage_dir/chummer.ico" \
+      "$installer_display_name" \
+      "$installer_install_dir_name" \
+      "Chummer6Installer-$APP_KEY-$RID" \
+      "$(basename "$payload_zip")" \
+      "$bootstrap_payload_url" \
+      "$bootstrap_payload_sha256" \
+      "$bootstrap_payload_size_bytes" \
+      "$head_count" \
+      "$head1_id" \
+      "$head1_display_name" \
+      "$head1_launch_executable" \
+      "$head1_shortcut_name" \
+      "$head1_relative_root" \
+      "$head2_id" \
+      "$head2_display_name" \
+      "$head2_launch_executable" \
+      "$head2_shortcut_name" \
+      "$head2_relative_root"
+    "$REPO_ROOT/scripts/build-native-windows-bootstrap-installer.sh" \
+      "$native_bootstrap_stage_dir" \
+      "$DIST_DIR/$installer_name"
+    append_bootstrap_metadata_to_windows_installer \
+      "$DIST_DIR/$installer_name" \
+      "$bootstrap_payload_url" \
+      "$bootstrap_payload_sha256" \
+      "$bootstrap_payload_size_bytes"
     mkdir -p "$DIST_DIR/files"
     cp -f "$payload_zip" "$DIST_DIR/files/$(basename "$payload_zip")"
     cat > "$DIST_DIR/files/$(basename "$payload_zip").json" <<EOF
@@ -1133,14 +1298,58 @@ build_windows_installer() {
   "releaseVersion": "$VERSION"
 }
 EOF
+    # Refresh the staged installer copy before running the payload gate so an
+    # earlier shelf build cannot be mistaken for the installer we just emitted.
+    cp -f "$DIST_DIR/$installer_name" "$DIST_DIR/files/$installer_name"
     verify_windows_installer_payload_gate "$DIST_DIR/$installer_name" "$DIST_DIR/files/$(basename "$payload_zip")"
   else
+    rm -rf "$installer_out_dir"
+    "$REPO_ROOT/scripts/ai/with-package-plane.sh" publish "$REPO_ROOT/Chummer.Desktop.Installer/Chummer.Desktop.Installer.csproj" \
+      -c Release \
+      -r "$RID" \
+      --self-contained true \
+      -p:PublishSingleFile=true \
+      -p:GenerateRuntimeConfigurationFiles=true \
+      -p:PublishTrimmed=false \
+      -p:EnableCompressionInSingleFile=false \
+      -p:IncludeNativeLibrariesForSelfExtract=true \
+      -p:ChummerInstallerPayloadRequired=false \
+      -p:ChummerInstallerEmbedPayload=false \
+      -p:ChummerInstallerIncludeSidecarPayload=false \
+      -p:ChummerInstallerAssemblyName="Chummer6Installer-$APP_KEY-$RID" \
+      -p:InstallerPayloadZip="$payload_zip" \
+      -p:ChummerInstallerPayloadResourceName="$payload_resource_name" \
+      -p:ChummerInstallerPayloadUrl="$bootstrap_payload_url" \
+      -p:ChummerInstallerPayloadSha256="$bootstrap_payload_sha256" \
+      -p:ChummerInstallerPayloadSizeBytes="$bootstrap_payload_size_bytes" \
+      -p:ChummerInstallerAppId="$APP_KEY-$RID" \
+      -p:ChummerInstallerHeadId="$APP_KEY" \
+      -p:ChummerInstallerDisplayName="$installer_display_name" \
+      -p:ChummerInstallerInstallDirName="$installer_install_dir_name" \
+      -p:ChummerInstallerLaunchExecutable="$LAUNCH_TARGET" \
+      -p:ChummerInstallerVersion="$VERSION" \
+      -p:ChummerInstallerShortcutName="$SHORTCUT_NAME" \
+      -p:ChummerInstallerHeadsJsonBase64="$heads_json_base64" \
+      -p:ChummerInstallerOutputName="Chummer6Installer-$APP_KEY-$RID" \
+      -o "$installer_out_dir"
+
+    local installer_source
+    installer_source="$(find "$installer_out_dir" -maxdepth 1 -type f -name '*.exe' | sort | head -n 1)"
+    if [[ -z "$installer_source" ]]; then
+      echo "Installer publish output did not produce a .exe in $installer_out_dir" >&2
+      exit 1
+    fi
+
+    cp "$installer_source" "$DIST_DIR/$installer_name"
     append_payload_zip_to_windows_installer "$DIST_DIR/$installer_name" "$payload_zip"
     verify_windows_installer_payload_gate "$DIST_DIR/$installer_name"
   fi
   rm -f "$payload_zip"
   if [[ -n "$stage_root" ]]; then
     rm -rf "$stage_root"
+  fi
+  if [[ -d "$native_bootstrap_stage_dir" ]]; then
+    rm -rf "$native_bootstrap_stage_dir"
   fi
   echo "built installer $DIST_DIR/$installer_name"
 }

@@ -219,14 +219,14 @@ internal sealed class DesktopHorizonsWindow : Window
         Border badge = new()
         {
             Name = $"HorizonsSectionBadge_{SanitizeToken(text)}",
-            Background = DesktopShellTheme.ResolveThemeBrush("ChummerShellChromeAccentBrush", "#DEE8F6"),
+            Background = DesktopShellTheme.ResolveChromeAccentBrush(),
             CornerRadius = new CornerRadius(999),
             Padding = new Thickness(8, 2),
             HorizontalAlignment = HorizontalAlignment.Right,
             Child = new TextBlock
             {
                 Text = count.ToString(CultureInfo.InvariantCulture),
-                Foreground = DesktopShellTheme.ResolveThemeBrush("ChummerShellInfoBrush", "#173A6C"),
+                Foreground = DesktopShellTheme.ResolveInfoBrush(),
                 FontWeight = FontWeight.SemiBold
             }
         };

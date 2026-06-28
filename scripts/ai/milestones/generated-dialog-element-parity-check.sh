@@ -60,6 +60,9 @@ EXPECTED_CONTROL_IDS = [
     "edit_entry",
     "delete_entry",
     "open_notes",
+    "identity_license_add",
+    "identity_license_edit",
+    "identity_license_delete",
     "move_up",
     "move_down",
     "toggle_free_paid",
@@ -67,6 +70,9 @@ EXPECTED_CONTROL_IDS = [
     "gear_add",
     "gear_edit",
     "gear_delete",
+    "runner_benchmark",
+    "runner_what_if",
+    "runner_cohort_privacy",
     "gear_mount",
     "gear_source",
     "cyberware_add",
@@ -117,6 +123,7 @@ EXPECTED_REBUILDABLE_DIALOG_IDS = [
     "dialog.ui.gear_add",
     "dialog.ui.combat_add_weapon",
     "dialog.ui.combat_add_armor",
+    "dialog.ui.skill_add",
     "dialog.ui.vehicle_add",
     "dialog.ui.cyberware_edit",
     "dialog.ui.gear_edit",
@@ -258,7 +265,7 @@ presenter_tests_text = texts.get("presenter_tests", "")
 workflow_tests_text = texts.get("workflow_tests", "")
 flagship_ui_tests_text = texts.get("flagship_ui_tests", "")
 
-command_switch_start = dialog_factory_text.find("return commandId switch")
+command_switch_start = dialog_factory_text.find("return HumanizeVisibleDialog(commandId switch")
 command_switch_end = dialog_factory_text.find("private static DesktopDialogState CreateRuntimeInspectorDialog")
 command_switch_text = dialog_factory_text[command_switch_start:command_switch_end] if command_switch_start >= 0 and command_switch_end > command_switch_start else ""
 

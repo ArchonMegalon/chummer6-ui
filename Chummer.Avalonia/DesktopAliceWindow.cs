@@ -244,7 +244,7 @@ internal sealed class DesktopAliceWindow : Window
         {
             Name = "AliceModeGuideText",
             TextWrapping = TextWrapping.Wrap,
-            Foreground = DesktopShellTheme.ResolveThemeBrush("ChummerShellMutedForegroundBrush", "#334155")
+            Foreground = DesktopShellTheme.ResolveMutedForegroundBrush()
         };
 
         TextBlock settingsGuideTitleText = new()
@@ -259,7 +259,7 @@ internal sealed class DesktopAliceWindow : Window
         {
             Name = "AliceSettingsGuideText",
             TextWrapping = TextWrapping.Wrap,
-            Foreground = DesktopShellTheme.ResolveThemeBrush("ChummerShellMutedForegroundBrush", "#334155")
+            Foreground = DesktopShellTheme.ResolveMutedForegroundBrush()
         };
 
         ListBox conversationList = new()
@@ -289,7 +289,7 @@ internal sealed class DesktopAliceWindow : Window
             Name = "AliceGmAllowanceGuideText",
             Text = "GM notes can require addiction, magic, attribute floors, extra ware, availability, money, gear, qualities, or table exceptions. Alice will use them as guidance, not silent sheet edits.",
             TextWrapping = TextWrapping.Wrap,
-            Foreground = DesktopShellTheme.ResolveThemeBrush("ChummerShellMutedForegroundBrush", "#334155")
+            Foreground = DesktopShellTheme.ResolveMutedForegroundBrush()
         };
 
         TextBox gmAllowanceBox = new()
@@ -410,7 +410,7 @@ internal sealed class DesktopAliceWindow : Window
             Name = "AliceOriginWizardGuideText",
             Text = "Start with a story draft. Choose the edition first, then turn the approved draft into the matching book, presentation, voice, portrait, scene, and video handoffs without letting prose mutate the sheet.",
             TextWrapping = TextWrapping.Wrap,
-            Foreground = DesktopShellTheme.ResolveThemeBrush("ChummerShellMutedForegroundBrush", "#334155")
+            Foreground = DesktopShellTheme.ResolveMutedForegroundBrush()
         };
 
         StackPanel originGmConstraintList = new()
@@ -446,9 +446,9 @@ internal sealed class DesktopAliceWindow : Window
         Border originSteeringPanel = new()
         {
             Name = "AliceOriginStorySteeringPanel",
-            BorderBrush = DesktopShellTheme.ResolveThemeBrush("ChummerShellBorderBrush", "#B5C0CF"),
+            BorderBrush = DesktopShellTheme.ResolveBorderBrush(),
             BorderThickness = new Thickness(1),
-            Background = DesktopShellTheme.ResolveThemeBrush("ChummerShellSurfaceAltBrush", "#F4F7FB"),
+            Background = DesktopShellTheme.ResolveSurfaceAltBrush(),
             CornerRadius = new CornerRadius(4),
             Padding = new Thickness(10),
             Child = new StackPanel
@@ -466,7 +466,7 @@ internal sealed class DesktopAliceWindow : Window
                     {
                         Text = "Set the edition, output surface, voices, portrait look, video look, and any GM constraints before you draft or redraft the story.",
                         TextWrapping = TextWrapping.Wrap,
-                        Foreground = DesktopShellTheme.ResolveThemeBrush("ChummerShellMutedForegroundBrush", "#334155")
+                        Foreground = DesktopShellTheme.ResolveMutedForegroundBrush()
                     },
                     CreateFieldGrid(
                         ("Edition", originEditionCombo),
@@ -504,9 +504,9 @@ internal sealed class DesktopAliceWindow : Window
         Border originWizardPanel = new()
         {
             Name = "AliceOriginWizardPanel",
-            BorderBrush = DesktopShellTheme.ResolveThemeBrush("ChummerShellBorderBrush", "#B5C0CF"),
+            BorderBrush = DesktopShellTheme.ResolveBorderBrush(),
             BorderThickness = new Thickness(1),
-            Background = DesktopShellTheme.ResolveThemeBrush("ChummerShellSurfaceBrush", "#FBFCFE"),
+            Background = DesktopShellTheme.ResolveSurfaceBrush(),
             CornerRadius = new CornerRadius(4),
             Padding = new Thickness(10),
             Child = new StackPanel
@@ -554,7 +554,7 @@ internal sealed class DesktopAliceWindow : Window
         {
             Name = "AliceAssistantStatusText",
             Text = BuildIdleAssistantStatus(modeCombo.SelectedItem?.ToString()),
-            Foreground = DesktopShellTheme.ResolveThemeBrush("ChummerShellMutedForegroundBrush", "#334155"),
+            Foreground = DesktopShellTheme.ResolveMutedForegroundBrush(),
             TextWrapping = TextWrapping.Wrap
         };
 
@@ -604,7 +604,7 @@ internal sealed class DesktopAliceWindow : Window
         TextBlock contextDetailText = new()
         {
             Name = "AliceAssistantContextDetailText",
-            Foreground = DesktopShellTheme.ResolveThemeBrush("ChummerShellMutedForegroundBrush", "#334155"),
+            Foreground = DesktopShellTheme.ResolveMutedForegroundBrush(),
             TextWrapping = TextWrapping.Wrap
         };
 
@@ -1336,9 +1336,9 @@ internal sealed class DesktopAliceWindow : Window
                 new Border
                 {
                     Name = "AliceSettingsGuideCard",
-                    BorderBrush = DesktopShellTheme.ResolveThemeBrush("ChummerShellBorderBrush", "#B5C0CF"),
+                    BorderBrush = DesktopShellTheme.ResolveBorderBrush(),
                     BorderThickness = new Thickness(1),
-                    Background = DesktopShellTheme.ResolveThemeBrush("ChummerShellSurfaceAltBrush", "#F8FAFC"),
+                    Background = DesktopShellTheme.ResolveSurfaceAltBrush(),
                     CornerRadius = new CornerRadius(4),
                     Padding = new Thickness(10),
                     Child = new StackPanel
@@ -1354,9 +1354,9 @@ internal sealed class DesktopAliceWindow : Window
                 new Border
                 {
                     Name = "AliceAssistantContextCard",
-                    BorderBrush = DesktopShellTheme.ResolveThemeBrush("ChummerShellBorderBrush", "#B5C0CF"),
+                    BorderBrush = DesktopShellTheme.ResolveBorderBrush(),
                     BorderThickness = new Thickness(1),
-                    Background = DesktopShellTheme.ResolveThemeBrush("ChummerShellSelectionInsetBrush", "#F1F5F9"),
+                    Background = DesktopShellTheme.ResolveSelectionInsetBrush(),
                     CornerRadius = new CornerRadius(4),
                     Padding = new Thickness(10),
                     Child = new StackPanel
@@ -1377,9 +1377,9 @@ internal sealed class DesktopAliceWindow : Window
                 new Border
                 {
                     Name = "AliceAssistantAnswerCard",
-                    BorderBrush = DesktopShellTheme.ResolveThemeBrush("ChummerShellBorderBrush", "#B5C0CF"),
+                    BorderBrush = DesktopShellTheme.ResolveBorderBrush(),
                     BorderThickness = new Thickness(1),
-                    Background = DesktopShellTheme.ResolveThemeBrush("ChummerShellSurfaceBrush", "#FBFCFE"),
+                    Background = DesktopShellTheme.ResolveSurfaceBrush(),
                     CornerRadius = new CornerRadius(4),
                     Padding = new Thickness(10),
                     Child = answerText
@@ -1578,7 +1578,7 @@ internal sealed class DesktopAliceWindow : Window
                 new Border
                 {
                     Name = "AliceSelectedHandoffCard",
-                    BorderBrush = DesktopShellTheme.ResolveThemeBrush("ChummerShellBorderBrush", "#B5C0CF"),
+                    BorderBrush = DesktopShellTheme.ResolveBorderBrush(),
                     BorderThickness = new Thickness(1),
                     CornerRadius = new CornerRadius(4),
                     Padding = new Thickness(10),
@@ -1667,7 +1667,7 @@ internal sealed class DesktopAliceWindow : Window
         {
             Name = "AliceBuildPathGuideText",
             TextWrapping = TextWrapping.Wrap,
-            Foreground = DesktopShellTheme.ResolveThemeBrush("ChummerShellMutedForegroundBrush", "#334155"),
+            Foreground = DesktopShellTheme.ResolveMutedForegroundBrush(),
             Text = "Summary compares the visible starter route. Runtime focuses on workspace compatibility. Warnings show watchouts before changes are applied."
         };
 
@@ -1750,7 +1750,7 @@ internal sealed class DesktopAliceWindow : Window
                 new Border
                 {
                     Name = "AliceSelectedBuildPathCard",
-                    BorderBrush = DesktopShellTheme.ResolveThemeBrush("ChummerShellBorderBrush", "#B5C0CF"),
+                    BorderBrush = DesktopShellTheme.ResolveBorderBrush(),
                     BorderThickness = new Thickness(1),
                     CornerRadius = new CornerRadius(4),
                     Padding = new Thickness(10),
@@ -2113,9 +2113,9 @@ internal sealed class DesktopAliceWindow : Window
         return new Border
         {
             Name = name,
-            BorderBrush = DesktopShellTheme.ResolveThemeBrush("ChummerShellBorderBrush", "#B5C0CF"),
+            BorderBrush = DesktopShellTheme.ResolveBorderBrush(),
             BorderThickness = new Thickness(1),
-            Background = DesktopShellTheme.ResolveThemeBrush("ChummerShellSurfaceAltBrush", "#F2F5FA"),
+            Background = DesktopShellTheme.ResolveSurfaceAltBrush(),
             CornerRadius = new CornerRadius(6),
             Padding = new Thickness(12),
             Child = stack
@@ -5019,7 +5019,7 @@ internal sealed class DesktopAliceWindow : Window
                 new TextBlock
                 {
                     Text = string.Join(Environment.NewLine, entry.EvidenceLines.Select(static line => $"• {line}")),
-                    Foreground = DesktopShellTheme.ResolveThemeBrush("ChummerShellTextMutedBrush", "#475569"),
+                    Foreground = DesktopShellTheme.ResolveTextMutedBrush(),
                     TextWrapping = TextWrapping.Wrap
                 });
         }
@@ -5030,7 +5030,7 @@ internal sealed class DesktopAliceWindow : Window
                 new TextBlock
                 {
                     Text = "Next: " + string.Join(" · ", entry.SuggestedActionTitles),
-                    Foreground = DesktopShellTheme.ResolveThemeBrush("ChummerShellMutedForegroundBrush", "#334155"),
+                    Foreground = DesktopShellTheme.ResolveMutedForegroundBrush(),
                     TextWrapping = TextWrapping.Wrap
                 });
         }
@@ -5038,11 +5038,11 @@ internal sealed class DesktopAliceWindow : Window
         return new Border
         {
             Name = $"AliceConversationTurn_{entry.Kind}",
-            BorderBrush = DesktopShellTheme.ResolveThemeBrush("ChummerShellBorderBrush", "#B5C0CF"),
+            BorderBrush = DesktopShellTheme.ResolveBorderBrush(),
             BorderThickness = new Thickness(1),
-            Background = DesktopShellTheme.ResolveThemeBrush(
-                entry.Kind == AliceConversationTurnKind.User ? "ChummerShellSelectionInsetBrush" : "ChummerShellSurfaceAltBrush",
-                entry.Kind == AliceConversationTurnKind.User ? "#F1F5F9" : "#F2F5FA"),
+            Background = entry.Kind == AliceConversationTurnKind.User
+                ? DesktopShellTheme.ResolveSelectionInsetBrush()
+                : DesktopShellTheme.ResolveSurfaceAltBrush(),
             CornerRadius = new CornerRadius(4),
             Padding = new Thickness(10),
             Child = stack

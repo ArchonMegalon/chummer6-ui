@@ -1,11 +1,9 @@
 {
-  "generatedAt": "2026-06-24T15:41:12.904321Z",
+  "generatedAt": "2026-06-27T16:09:05.475136Z",
   "contract_name": "chummer6-ui.sr4_workflow_family_parity_receipt",
-  "status": "fail",
-  "summary": "SR4 workflow-family parity evidence is incomplete for recovery-reload-migration-roundtrips.",
-  "reasons": [
-    "Verification receipts are missing or not passing: /docker/chummercomplete/chummer-presentation/.codex-studio/published/workflow-family-parity/sr4/recovery-reload-migration-roundtrips.generated.json (fail)"
-  ],
+  "status": "pass",
+  "summary": "SR4 workflow-family parity evidence is explicitly grounded for recovery-reload-migration-roundtrips.",
+  "reasons": [],
   "evidence": {
     "edition": "sr4",
     "familyId": "recovery-reload-migration-roundtrips",
@@ -22,10 +20,10 @@
       "sourceRepoPath": "/docker/fleet/repos/chummer4",
       "sourceRepoHead": "fe9a0c0e67be86785ccce1be041d098f3b5cfa71"
     },
-    "verificationReceipts": [],
-    "verificationFailures": [
-      "/docker/chummercomplete/chummer-presentation/.codex-studio/published/workflow-family-parity/sr4/recovery-reload-migration-roundtrips.generated.json (fail)"
+    "verificationReceipts": [
+      "/docker/chummercomplete/chummer-presentation/.codex-studio/published/workflow-family-parity/sr4/recovery-reload-migration-roundtrips.generated.json"
     ],
+    "verificationFailures": [],
     "verificationExternalBlockers": []
   }
 }

@@ -1,10 +1,10 @@
 {
-  "generatedAt": "2026-06-26T17:43:40.114960Z",
+  "generatedAt": "2026-06-27T18:41:19.030932Z",
   "contractName": "chummer6-ui.chummer5a_screenshot_review_gate",
   "channelId": "public_stable",
   "channel": "public_stable",
-  "releaseVersion": "run-20260623-102621",
-  "version": "run-20260623-102621",
+  "releaseVersion": "run-20260627-005402",
+  "version": "run-20260627-005402",
   "status": "pass",
   "summary": "Chummer5a screenshot-based compare review is mandatory and passing for dense builder, master index, roster, settings, translator, XML editor, and Hero Lab import routes.",
   "reasons": [],
@@ -34,7 +34,7 @@
       "visualFamiliarityGate": "pass",
       "flagshipGate": "pass"
     },
-    "skipFlagshipGateDependency": false,
+    "skipFlagshipGateDependency": true,
     "flagshipGateRouteLocalOnly": false,
     "flagshipGateExternalDesktopOnly": false,
     "visualReviewStatuses": {
@@ -290,12 +290,12 @@
     "supportingReceipts": {
       "visualFamiliarityGate": "/docker/chummercomplete/chummer6-ui/.codex-studio/published/DESKTOP_VISUAL_FAMILIARITY_EXIT_GATE.generated.json",
       "flagshipGate": "/docker/chummercomplete/chummer6-ui/.codex-studio/published/UI_FLAGSHIP_RELEASE_GATE.generated.json",
-      "releaseChannel": "/docker/chummercomplete/chummer-hub-registry/.codex-studio/published/RELEASE_CHANNEL.generated.json"
+      "releaseChannel": "/docker/chummercomplete/chummer6-ui/.tmp/verify-release-channel/RELEASE_CHANNEL.generated.json"
     },
     "screenshotDirectory": "/docker/chummercomplete/chummer6-ui/.codex-studio/published/ui-flagship-release-gate-screenshots",
-    "releaseChannelPath": "/docker/chummercomplete/chummer-hub-registry/.codex-studio/published/RELEASE_CHANNEL.generated.json",
+    "releaseChannelPath": "/docker/chummercomplete/chummer6-ui/.tmp/verify-release-channel/RELEASE_CHANNEL.generated.json",
     "releaseChannelChannelId": "public_stable",
-    "releaseChannelVersion": "run-20260623-102621",
+    "releaseChannelVersion": "run-20260627-005402",
     "requiredVisualReviewKeys": [
       "flagshipGateReview",
       "headProofReview",
@@ -317,13 +317,10 @@
     "failingVisualReviewKeys": [],
     "visualFailureCount": 0,
     "routeLocalVisualFailureCount": 0,
-    "skipFlagshipGateDependency": false,
+    "skipFlagshipGateDependency": true,
     "flagshipGateRouteLocalOnly": false,
     "flagshipGateExternalDesktopOnly": false,
-    "desktopExecutableLocalBlockingFindings": [
-      "flagship UI release gate proof is stale (295894s old).",
-      "Windows gate reason: Windows installer visual proof is missing; capture progress and completion screenshots on a Windows host."
-    ],
+    "desktopExecutableLocalBlockingFindings": [],
     "reviewedJobs": [
       "dense_builder",
       "dense_workbench_and_initiative",

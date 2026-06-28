@@ -1,11 +1,11 @@
 {
-  "generatedAt": "2026-06-26T17:39:23.717983Z",
+  "generatedAt": "2026-06-27T11:04:08.502729Z",
   "contract_name": "chummer6-ui.chummer5a_legacy_ui_element_parity",
   "status": "pass",
   "summary": "Every extracted Chummer5a designer, runtime, and dynamically created interactive UI element has an individual live Chummer6 command/control/action counterpart disposition and executable proof coverage.",
   "reasons": [],
   "evidence": {
-    "receiptPath": "/docker/chummercomplete/chummer-presentation/.codex-studio/published/CHUMMER5A_LEGACY_UI_ELEMENT_PARITY.generated.json",
+    "receiptPath": "/docker/chummercomplete/chummer6-ui/.codex-studio/published/CHUMMER5A_LEGACY_UI_ELEMENT_PARITY.generated.json",
     "legacySubject": "Chummer5a",
     "legacySubjectSlug": "chummer5a",
     "sourcePaths": {
@@ -701,7 +701,7 @@
     "testResult": {
       "exitCode": 0,
       "noMatches": false,
-      "outputTail": "Running tests from /docker/chummercomplete/chummer-presentation/Chummer.Tests/bin/Debug/net10.0/Chummer.Tests.dll (net10.0|x64)\n[+1/x0/?0] Chummer.Tests.dll (net10.0|x64)(2s)\n[+2/x0/?0] Chummer.Tests.dll (net10.0|x64)(5s)\n[+3/x0/?0] Chummer.Tests.dll (net10.0|x64)(8s)\n[+3/x0/?0] Chummer.Tests.dll (net10.0|x64)(11s)\n[+6/x0/?0] Chummer.Tests.dll (net10.0|x64)(14s)\n[+7/x0/?0] Chummer.Tests.dll (net10.0|x64)(17s)\n[+11/x0/?0] Chummer.Tests.dll (net10.0|x64)(20s)\n[+14/x0/?0] Chummer.Tests.dll (net10.0|x64)(23s)\n[+15/x0/?0] Chummer.Tests.dll (net10.0|x64)(26s)\n/docker/chummercomplete/chummer-presentation/Chummer.Tests/bin/Debug/net10.0/Chummer.Tests.dll (net10.0|x64) passed (28s 319ms)\nTest run summary: Passed!\n  total: 16\n  failed: 0\n  succeeded: 16\n  skipped: 0\n  duration: 28s 512ms"
+      "outputTail": "Running tests from /docker/chummercomplete/chummer-presentation/Chummer.Tests/bin/Debug/net10.0/Chummer.Tests.dll (net10.0|x64)\n[+1/x0/?0] Chummer.Tests.dll (net10.0|x64)(2s)\n[+2/x0/?0] Chummer.Tests.dll (net10.0|x64)(5s)\n[+3/x0/?0] Chummer.Tests.dll (net10.0|x64)(8s)\n[+3/x0/?0] Chummer.Tests.dll (net10.0|x64)(11s)\n[+6/x0/?0] Chummer.Tests.dll (net10.0|x64)(14s)\n[+9/x0/?0] Chummer.Tests.dll (net10.0|x64)(17s)\n[+15/x0/?0] Chummer.Tests.dll (net10.0|x64)(20s)\n/docker/chummercomplete/chummer-presentation/Chummer.Tests/bin/Debug/net10.0/Chummer.Tests.dll (net10.0|x64) passed (22s 432ms)\nTest run summary: Passed!\n  total: 16\n  failed: 0\n  succeeded: 16\n  skipped: 0\n  duration: 22s 653ms"
     },
     "missingFiles": [],
     "legacyEventSamples": [
@@ -3804,7 +3804,7 @@
       "chummer5a-legacy-ui-element-parity-check.sh": true,
       "chummer5a_legacy_ui_element_parity_receipt_path": true
     },
-    "testAssemblyPath": "/docker/chummercomplete/chummer-presentation/Chummer.Tests/bin/Debug/net10.0/Chummer.Tests.dll",
+    "testAssemblyPath": "/docker/chummercomplete/chummer6-ui/Chummer.Tests/bin/Debug/net10.0/Chummer.Tests.dll",
     "reusedExistingTestBuild": true,
     "testCommand": [
       "dotnet",
@@ -4491,7 +4491,7 @@
     "testResult": {
       "exitCode": 0,
       "noMatches": false,
-      "outputTail": "Running tests from /docker/chummercomplete/chummer-presentation/Chummer.Tests/bin/Debug/net10.0/Chummer.Tests.dll (net10.0|x64)\n[+1/x0/?0] Chummer.Tests.dll (net10.0|x64)(2s)\n[+2/x0/?0] Chummer.Tests.dll (net10.0|x64)(5s)\n[+3/x0/?0] Chummer.Tests.dll (net10.0|x64)(8s)\n[+3/x0/?0] Chummer.Tests.dll (net10.0|x64)(11s)\n[+6/x0/?0] Chummer.Tests.dll (net10.0|x64)(14s)\n[+7/x0/?0] Chummer.Tests.dll (net10.0|x64)(17s)\n[+11/x0/?0] Chummer.Tests.dll (net10.0|x64)(20s)\n[+14/x0/?0] Chummer.Tests.dll (net10.0|x64)(23s)\n[+15/x0/?0] Chummer.Tests.dll (net10.0|x64)(26s)\n/docker/chummercomplete/chummer-presentation/Chummer.Tests/bin/Debug/net10.0/Chummer.Tests.dll (net10.0|x64) passed (28s 319ms)\nTest run summary: Passed!\n  total: 16\n  failed: 0\n  succeeded: 16\n  skipped: 0\n  duration: 28s 512ms"
+      "outputTail": "Running tests from /docker/chummercomplete/chummer-presentation/Chummer.Tests/bin/Debug/net10.0/Chummer.Tests.dll (net10.0|x64)\n[+1/x0/?0] Chummer.Tests.dll (net10.0|x64)(2s)\n[+2/x0/?0] Chummer.Tests.dll (net10.0|x64)(5s)\n[+3/x0/?0] Chummer.Tests.dll (net10.0|x64)(8s)\n[+3/x0/?0] Chummer.Tests.dll (net10.0|x64)(11s)\n[+6/x0/?0] Chummer.Tests.dll (net10.0|x64)(14s)\n[+9/x0/?0] Chummer.Tests.dll (net10.0|x64)(17s)\n[+15/x0/?0] Chummer.Tests.dll (net10.0|x64)(20s)\n/docker/chummercomplete/chummer-presentation/Chummer.Tests/bin/Debug/net10.0/Chummer.Tests.dll (net10.0|x64) passed (22s 432ms)\nTest run summary: Passed!\n  total: 16\n  failed: 0\n  succeeded: 16\n  skipped: 0\n  duration: 22s 653ms"
     }
   }
 }

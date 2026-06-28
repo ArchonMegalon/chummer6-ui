@@ -525,8 +525,8 @@
   letter-spacing: 0.12em;
 }
 
-.home-page :is(p, .muted, .hint, .summary),
-.chummer-home :is(p, .muted, .hint, .summary) {
+.home-page p,
+.chummer-home p {
   color: var(--home-muted);
 }
 

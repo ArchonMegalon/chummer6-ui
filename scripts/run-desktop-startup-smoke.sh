@@ -35,10 +35,28 @@ MOUNT_DIR=""
 BUNDLE_EXTRACT_ROOT=""
 RUNTIME_HOME=""
 DPKG_ADMIN_DIR=""
+WINDOWS_LOCAL_PAYLOAD_COPY=""
 DPKG_LOG_PATH="$OUTPUT_DIR/dpkg-$APP_KEY-$RID.log"
 INSTALL_VERIFICATION_PATH="$OUTPUT_DIR/install-verification-$APP_KEY-$RID.json"
+WINDOWS_PAYLOAD_HTTP_ROOT=""
+WINDOWS_PAYLOAD_HTTP_LOG=""
+WINDOWS_PAYLOAD_HTTP_PID=""
+WINDOWS_STARTUP_SMOKE_PAYLOAD_MODE="${CHUMMER_WINDOWS_STARTUP_SMOKE_PAYLOAD_MODE:-local}"
+WINDOWS_STARTUP_SMOKE_EFFECTIVE_PAYLOAD_MODE=""
+WINDOWS_STARTUP_SMOKE_EFFECTIVE_PAYLOAD_URL=""
+WINDOWS_STARTUP_SMOKE_EFFECTIVE_PAYLOAD_SHA256=""
+WINDOWS_STARTUP_SMOKE_EFFECTIVE_PAYLOAD_SIZE_BYTES=""
+WINDOWS_STARTUP_SMOKE_EFFECTIVE_PAYLOAD_FILE_NAME=""
 
 cleanup() {
+  if [[ -n "$WINDOWS_PAYLOAD_HTTP_PID" ]]; then
+    kill "$WINDOWS_PAYLOAD_HTTP_PID" >/dev/null 2>&1 || true
+  fi
+
+  if [[ -n "$WINDOWS_PAYLOAD_HTTP_ROOT" && -d "$WINDOWS_PAYLOAD_HTTP_ROOT" ]]; then
+    rm -rf "$WINDOWS_PAYLOAD_HTTP_ROOT"
+  fi
+
   if [[ -n "$MOUNT_DIR" ]]; then
     hdiutil detach "$MOUNT_DIR" >/dev/null 2>&1 || true
   fi
@@ -57,6 +75,10 @@ cleanup() {
 
   if [[ -n "$RUNTIME_HOME" && -d "$RUNTIME_HOME" ]]; then
     rm -rf "$RUNTIME_HOME"
+  fi
+
+  if [[ -n "$WINDOWS_LOCAL_PAYLOAD_COPY" && -f "$WINDOWS_LOCAL_PAYLOAD_COPY" ]]; then
+    rm -f "$WINDOWS_LOCAL_PAYLOAD_COPY"
   fi
 }
 
@@ -153,6 +175,124 @@ env_truthy() {
       return 1
       ;;
   esac
+}
+
+find_free_tcp_port() {
+  "$PYTHON_BIN" - <<'PY'
+import socket
+
+with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as sock:
+    sock.bind(("127.0.0.1", 0))
+    print(sock.getsockname()[1])
+PY
+}
+
+wait_for_local_http_url() {
+  local url="$1"
+  "$PYTHON_BIN" - "$url" <<'PY'
+import sys
+import time
+import urllib.request
+
+url = sys.argv[1]
+last_error = None
+for _ in range(50):
+    try:
+        with urllib.request.urlopen(url, timeout=1) as response:
+            if response.status == 200:
+                raise SystemExit(0)
+    except Exception as exc:  # noqa: BLE001
+        last_error = exc
+        time.sleep(0.1)
+
+print(f"Timed out waiting for local payload server: {last_error}", file=sys.stderr)
+raise SystemExit(1)
+PY
+}
+
+resolve_windows_payload_http_host() {
+  "$PYTHON_BIN" - <<'PY'
+import socket
+
+host = "127.0.0.1"
+try:
+    with socket.socket(socket.AF_INET, socket.SOCK_DGRAM) as sock:
+        sock.connect(("8.8.8.8", 80))
+        candidate = sock.getsockname()[0].strip()
+        if candidate and candidate != "127.0.0.1":
+            host = candidate
+except OSError:
+    pass
+
+print(host)
+PY
+}
+
+start_windows_payload_http_server() {
+  local payload_path="$1"
+  local payload_name
+  payload_name="$(basename "$payload_path")"
+  local payload_port
+  payload_port="$(find_free_tcp_port)"
+  local payload_host
+  payload_host="$(resolve_windows_payload_http_host)"
+  local bind_host="127.0.0.1"
+  if [[ "$payload_host" != "127.0.0.1" ]]; then
+    bind_host="0.0.0.0"
+  fi
+
+  WINDOWS_PAYLOAD_HTTP_ROOT="$(mktemp -d "${TMPDIR:-/tmp}/chummer-windows-payload-http.XXXXXX")"
+  WINDOWS_PAYLOAD_HTTP_LOG="$OUTPUT_DIR/startup-smoke-payload-http-$APP_KEY-$RID.log"
+  cp "$payload_path" "$WINDOWS_PAYLOAD_HTTP_ROOT/$payload_name"
+
+  "$PYTHON_BIN" -m http.server "$payload_port" --bind "$bind_host" --directory "$WINDOWS_PAYLOAD_HTTP_ROOT" \
+    >"$WINDOWS_PAYLOAD_HTTP_LOG" 2>&1 &
+  WINDOWS_PAYLOAD_HTTP_PID=$!
+
+  local payload_url="http://${payload_host}:${payload_port}/${payload_name}"
+  wait_for_local_http_url "$payload_url"
+  printf '%s\n' "$payload_url"
+}
+
+attach_windows_bootstrap_verification_to_receipt() {
+  local payload_mode="$1"
+  local payload_url="$2"
+  local payload_sha256="$3"
+  local payload_size_bytes="$4"
+  local payload_file_name="$5"
+
+  if [[ ! -f "$RECEIPT_PATH" ]]; then
+    return
+  fi
+
+  python3 - "$RECEIPT_PATH" "$ARTIFACT_PATH" "$payload_mode" "$payload_url" "$payload_sha256" "$payload_size_bytes" "$payload_file_name" <<'PY'
+import json
+import pathlib
+import sys
+
+receipt_path = pathlib.Path(sys.argv[1])
+artifact_path = pathlib.Path(sys.argv[2])
+payload_mode = str(sys.argv[3]).strip()
+payload_url = str(sys.argv[4]).strip()
+payload_sha256 = str(sys.argv[5]).strip().lower()
+payload_size_bytes = str(sys.argv[6]).strip()
+payload_file_name = str(sys.argv[7]).strip()
+
+payload = json.loads(receipt_path.read_text(encoding="utf-8-sig"))
+payload["artifactInstallMode"] = "nsis_bootstrap_installer"
+payload["artifactPath"] = str(artifact_path)
+if payload_mode:
+    payload["bootstrapPayloadAcquisitionMode"] = payload_mode
+if payload_url:
+    payload["bootstrapPayloadDownloadUrl"] = payload_url
+if payload_sha256:
+    payload["bootstrapPayloadSha256"] = payload_sha256
+if payload_size_bytes:
+    payload["bootstrapPayloadSizeBytes"] = int(payload_size_bytes)
+if payload_file_name:
+    payload["bootstrapPayloadFileName"] = payload_file_name
+receipt_path.write_text(json.dumps(payload, indent=2) + "\n", encoding="utf-8")
+PY
 }
 
 resolve_public_web_base_url() {
@@ -380,6 +520,43 @@ to_native_path() {
   echo "$input_path"
 }
 
+resolve_wine_temp_dir() {
+  if ! command -v winepath >/dev/null 2>&1; then
+    return 1
+  fi
+
+  local wine_bin=""
+  if command -v wine >/dev/null 2>&1; then
+    wine_bin="wine"
+  elif command -v wine64 >/dev/null 2>&1; then
+    wine_bin="wine64"
+  elif [[ -x /usr/lib/wine/wine64 ]]; then
+    wine_bin="/usr/lib/wine/wine64"
+  else
+    return 1
+  fi
+
+  local native_temp=""
+  native_temp="$("$wine_bin" cmd /c echo %TEMP% 2>/dev/null | tr -d '\r' | awk 'NF { line=$0 } END { print line }')"
+  if [[ -n "$native_temp" ]]; then
+    local unix_temp=""
+    unix_temp="$(winepath -u "$native_temp" 2>/dev/null | tr -d '\r' || true)"
+    if [[ -n "$unix_temp" ]]; then
+      printf '%s\n' "$unix_temp"
+      return 0
+    fi
+  fi
+
+  local fallback_temp=""
+  fallback_temp="$(winepath -u 'C:\\windows\\temp' 2>/dev/null | tr -d '\r' || true)"
+  if [[ -n "$fallback_temp" ]]; then
+    printf '%s\n' "$fallback_temp"
+    return 0
+  fi
+
+  return 1
+}
+
 run_with_optional_xvfb() {
   if [[ -n "${DISPLAY:-}" || -n "${WAYLAND_DISPLAY:-}" ]]; then
     "$@"
@@ -589,11 +766,115 @@ run_windows_smoke() {
     return 0
   fi
 
-  INSTALL_ROOT="$(mktemp -d "${TMPDIR:-/tmp}/chummer-win-smoke.XXXXXX")"
+  local wine_temp_dir=""
+  if command -v winepath >/dev/null 2>&1 \
+    && { command -v wine >/dev/null 2>&1 || command -v wine64 >/dev/null 2>&1 || [[ -x /usr/lib/wine/wine64 ]]; }; then
+    wine_temp_dir="$(resolve_wine_temp_dir || true)"
+    if [[ -n "$wine_temp_dir" ]]; then
+      mkdir -p "$wine_temp_dir"
+      INSTALL_ROOT="$(mktemp -d "$wine_temp_dir/chummerwinsmokeXXXXXX")"
+    else
+      INSTALL_ROOT="$(mktemp -d "${TMPDIR:-/tmp}/chummerwinsmokeXXXXXX")"
+    fi
+  else
+    INSTALL_ROOT="$(mktemp -d "${TMPDIR:-/tmp}/chummerwinsmokeXXXXXX")"
+  fi
   local native_install_root
   native_install_root="$(to_native_path "$INSTALL_ROOT")"
-  run_windows_binary "$ARTIFACT_PATH" --smoke-install "$native_install_root" >>"$LOG_PATH" 2>&1
+  local -a installer_args=(--smoke-install "$native_install_root")
+  local local_payload_path=""
+  local local_payload_sha256=""
+  local local_payload_size_bytes=""
+  local configured_payload_mode="${WINDOWS_STARTUP_SMOKE_PAYLOAD_MODE,,}"
+  local artifact_dir
+  artifact_dir="$(dirname "$ARTIFACT_PATH")"
+  local artifact_name
+  artifact_name="$(basename "$ARTIFACT_PATH")"
+  if [[ "$artifact_name" == *-installer.exe ]]; then
+    local payload_name="${artifact_name%-installer.exe}-payload.zip"
+    if [[ -f "$artifact_dir/files/$payload_name" ]]; then
+      local_payload_path="$artifact_dir/files/$payload_name"
+    elif [[ -f "$artifact_dir/$payload_name" ]]; then
+      local_payload_path="$artifact_dir/$payload_name"
+    fi
+  fi
+  case "$configured_payload_mode" in
+    ""|auto)
+      configured_payload_mode="local"
+      ;;
+    local|download|none)
+      ;;
+    *)
+      echo "Unsupported CHUMMER_WINDOWS_STARTUP_SMOKE_PAYLOAD_MODE: $configured_payload_mode" >&2
+      return 1
+      ;;
+  esac
+
+  if [[ "$configured_payload_mode" == "download" && -z "$local_payload_path" ]]; then
+    echo "Windows startup smoke download mode requires a local bootstrap payload zip beside the installer." >&2
+    return 1
+  fi
+
+  if [[ -n "$local_payload_path" ]]; then
+    local_payload_sha256="$(sha256_file "$local_payload_path")"
+    local_payload_size_bytes="$(wc -c < "$local_payload_path" | tr -d '[:space:]')"
+    WINDOWS_STARTUP_SMOKE_EFFECTIVE_PAYLOAD_FILE_NAME="$(basename "$local_payload_path")"
+    WINDOWS_STARTUP_SMOKE_EFFECTIVE_PAYLOAD_SHA256="$local_payload_sha256"
+    WINDOWS_STARTUP_SMOKE_EFFECTIVE_PAYLOAD_SIZE_BYTES="$local_payload_size_bytes"
+  fi
+
+  if [[ "$configured_payload_mode" == "local" && -n "$local_payload_path" ]]; then
+    if command -v winepath >/dev/null 2>&1 \
+      && { command -v wine >/dev/null 2>&1 || command -v wine64 >/dev/null 2>&1 || [[ -x /usr/lib/wine/wine64 ]]; }; then
+      local wine_temp_dir=""
+      wine_temp_dir="$(resolve_wine_temp_dir || true)"
+      if [[ -n "$wine_temp_dir" ]]; then
+        mkdir -p "$wine_temp_dir"
+        WINDOWS_LOCAL_PAYLOAD_COPY="$(mktemp "$wine_temp_dir/chummer-payload.XXXXXX.zip")"
+        cp "$local_payload_path" "$WINDOWS_LOCAL_PAYLOAD_COPY"
+        local_payload_path="$WINDOWS_LOCAL_PAYLOAD_COPY"
+      fi
+    fi
+    WINDOWS_STARTUP_SMOKE_EFFECTIVE_PAYLOAD_MODE="local_handoff"
+    CHUMMER_INSTALLER_PAYLOAD_PATH="$(to_native_path "$local_payload_path")" \
+    CHUMMER_INSTALLER_PAYLOAD_SHA256="$local_payload_sha256" \
+    CHUMMER_INSTALLER_PAYLOAD_SIZE_BYTES="$local_payload_size_bytes" \
+    run_windows_binary "$ARTIFACT_PATH" "${installer_args[@]}" >>"$LOG_PATH" 2>&1
+  elif [[ "$configured_payload_mode" == "download" ]]; then
+    WINDOWS_STARTUP_SMOKE_EFFECTIVE_PAYLOAD_MODE="download"
+    WINDOWS_STARTUP_SMOKE_EFFECTIVE_PAYLOAD_URL="$(start_windows_payload_http_server "$local_payload_path")"
+    CHUMMER_INSTALLER_PAYLOAD_URL="$WINDOWS_STARTUP_SMOKE_EFFECTIVE_PAYLOAD_URL" \
+    CHUMMER_INSTALLER_PAYLOAD_SHA256="$local_payload_sha256" \
+    CHUMMER_INSTALLER_PAYLOAD_SIZE_BYTES="$local_payload_size_bytes" \
+    run_windows_binary "$ARTIFACT_PATH" "${installer_args[@]}" >>"$LOG_PATH" 2>&1
+  else
+    WINDOWS_STARTUP_SMOKE_EFFECTIVE_PAYLOAD_MODE="embedded_metadata"
+    run_windows_binary "$ARTIFACT_PATH" "${installer_args[@]}" >>"$LOG_PATH" 2>&1
+  fi
   sleep 2
+  if [[ -n "$wine_temp_dir" ]]; then
+    local installer_trace_capture_path="$OUTPUT_DIR/windows-installer-progress-$APP_KEY-$RID.log"
+    local -a installer_trace_candidates=(
+      "$wine_temp_dir/Chummer6/installer-temp/chummer-desktop-installer-progress.log"
+      "$wine_temp_dir/chummer-desktop-installer-progress.log"
+    )
+    local installer_trace_source=""
+    local installer_trace_candidate=""
+    for installer_trace_candidate in "${installer_trace_candidates[@]}"; do
+      if [[ -f "$installer_trace_candidate" ]]; then
+        installer_trace_source="$installer_trace_candidate"
+        break
+      fi
+    done
+    if [[ -n "$installer_trace_source" ]]; then
+      cp "$installer_trace_source" "$installer_trace_capture_path"
+      {
+        printf '\n--- windows installer trace ---\n'
+        cat "$installer_trace_capture_path"
+        printf '\n'
+      } >>"$LOG_PATH" 2>/dev/null || true
+    fi
+  fi
 
   resolve_windows_installed_relative_path() {
     local requested_relative_path="$1"
@@ -740,7 +1021,15 @@ PY
     fi
     sleep 1
   done
-  run_head_smoke "$INSTALL_ROOT/$launch_relative_path"
+  local smoke_status=0
+  run_head_smoke "$INSTALL_ROOT/$launch_relative_path" || smoke_status=$?
+  attach_windows_bootstrap_verification_to_receipt \
+    "$WINDOWS_STARTUP_SMOKE_EFFECTIVE_PAYLOAD_MODE" \
+    "$WINDOWS_STARTUP_SMOKE_EFFECTIVE_PAYLOAD_URL" \
+    "$WINDOWS_STARTUP_SMOKE_EFFECTIVE_PAYLOAD_SHA256" \
+    "$WINDOWS_STARTUP_SMOKE_EFFECTIVE_PAYLOAD_SIZE_BYTES" \
+    "$WINDOWS_STARTUP_SMOKE_EFFECTIVE_PAYLOAD_FILE_NAME"
+  return "$smoke_status"
 }
 
 seed_dpkg_admin_dir() {

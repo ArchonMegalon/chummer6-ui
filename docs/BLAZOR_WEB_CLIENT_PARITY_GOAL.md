@@ -147,7 +147,7 @@ Required proof should include:
 - public-edge smoke against the `chummer.run` route when the hosted lane is being promoted
 - a separate hosted execution-proof lane for `chummer.run` browser workflows, not only hosted route-entry posture
 - parity ledger entries that distinguish Avalonia native behavior from browser behavior
-- operator documentation that points self-host users at the portal-backed browser-client lane instead of treating raw Blazor hosting as the product shape
+- operator documentation that points self-host users at the portal-backed browser workbench lane instead of treating raw Blazor hosting as the product shape
 
 Current browser-backed proof now includes:
 
