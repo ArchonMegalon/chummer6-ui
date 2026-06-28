@@ -5,7 +5,7 @@
   "contractName": "Chummer.Hub.Registry.Contracts",
   "version": "run-20260627-005402",
   "releaseVersion": "run-20260627-005402",
-  "publicVersion": null,
+  "publicVersion": "0.0.0.1",
   "channel": "public_stable",
   "publishedAt": "2026-06-27T07:51:47Z",
   "downloads": [
@@ -19,7 +19,7 @@
       "flavor": "installer",
       "kind": "installer",
       "head": "avalonia",
-      "platformId": "linux",
+      "platformId": "linux-x64",
       "arch": "x64",
       "fileName": "chummer-avalonia-linux-x64-installer.deb",
       "channelId": "public_stable",
@@ -33,8 +33,7 @@
       "payloadDownloadUrl": null,
       "payloadSha256": null,
       "payloadSizeBytes": null,
-      "installAccessClass": "open_public",
-      "artifactId": "avalonia-linux-x64-installer"
+      "installAccessClass": "open_public"
     },
     {
       "id": "avalonia-win-x64-installer",
@@ -46,7 +45,7 @@
       "flavor": "installer",
       "kind": "installer",
       "head": "avalonia",
-      "platformId": "windows",
+      "platformId": "windows-x64",
       "arch": "x64",
       "fileName": "chummer-avalonia-win-x64-installer.exe",
       "channelId": "public_stable",
@@ -60,8 +59,7 @@
       "payloadDownloadUrl": "https://chummer.run/downloads/files/chummer-avalonia-win-x64-payload.zip",
       "payloadSha256": "0d35a21cea0434d74056bc4437e44479ccf9835fd2fec4d1e36568c44dd040a3",
       "payloadSizeBytes": 50967126,
-      "installAccessClass": "open_public",
-      "artifactId": "avalonia-win-x64-installer"
+      "installAccessClass": "open_public"
     }
   ],
   "source": "registry",
@@ -70,8 +68,8 @@
   "rolloutState": "public_stable",
   "rolloutReason": "Current release shelf was exercised by the local docker release proof harness before publication.",
   "supportabilityState": "gold_supported",
-  "supportabilitySummary": "Current public release is supported on the promoted routes. Recent checks cover install guidance, session recovery, account return, release updates, community wrap-up, bounded offline prefetch, and current support follow-up.",
-  "knownIssueSummary": "Current release checks are clear, and the downloads page has recent install, account return, release updates, community wrap-up, bounded offline prefetch, and current support follow-up coverage.",
+  "supportabilitySummary": "Release checks are missing or stale on this shelf, so review is still required before this release can be treated as supportable.",
+  "knownIssueSummary": "Release checks are missing or stale on this shelf, so preview publication is visible but not yet gold-ready.",
   "fixAvailabilitySummary": "Only send fixed notices after the affected install can receive the published channel artifact now on the shelf.",
   "releaseProof": {
     "status": "passed",
@@ -508,12 +506,12 @@
       "packetRef": "registry-packet:public_stable:run-20260627-005402:avalonia-linux-x64-installer",
       "localeRef": "registry-locale:public_stable:run-20260627-005402:avalonia-linux-x64-installer",
       "retentionRef": "registry-retention:public_stable:run-20260627-005402:avalonia-linux-x64-installer",
-      "retentionState": "current",
       "publicationBindingId": "binding:public_stable:run-20260627-005402:avalonia:linux:linux-x64",
-      "publicationState": "published",
       "signedInShelfRef": "shelf:signed-in:public_stable:run-20260627-005402:avalonia-linux-x64-installer",
       "publicShelfRef": "shelf:public:public_stable:run-20260627-005402:avalonia-linux-x64-installer",
-      "publicInstallRoute": "/downloads/install/avalonia-linux-x64-installer"
+      "publicInstallRoute": "/downloads/install/avalonia-linux-x64-installer",
+      "retentionState": "current",
+      "publicationState": "published"
     },
     {
       "registryId": "artifact-identity:public_stable:run-20260627-005402:avalonia:windows:win-x64",
@@ -532,12 +530,12 @@
       "packetRef": "registry-packet:public_stable:run-20260627-005402:avalonia-win-x64-installer",
       "localeRef": "registry-locale:public_stable:run-20260627-005402:avalonia-win-x64-installer",
       "retentionRef": "registry-retention:public_stable:run-20260627-005402:avalonia-win-x64-installer",
-      "retentionState": "current",
       "publicationBindingId": "binding:public_stable:run-20260627-005402:avalonia:windows:win-x64",
-      "publicationState": "published",
       "signedInShelfRef": "shelf:signed-in:public_stable:run-20260627-005402:avalonia-win-x64-installer",
       "publicShelfRef": "shelf:public:public_stable:run-20260627-005402:avalonia-win-x64-installer",
-      "publicInstallRoute": "/downloads/install/avalonia-win-x64-installer"
+      "publicInstallRoute": "/downloads/install/avalonia-win-x64-installer",
+      "retentionState": "current",
+      "publicationState": "published"
     }
   ],
   "artifactPublicationBindings": [
@@ -562,8 +560,8 @@
       "packetRef": "registry-packet:public_stable:run-20260627-005402:avalonia-linux-x64-installer",
       "localeRef": "registry-locale:public_stable:run-20260627-005402:avalonia-linux-x64-installer",
       "retentionRef": "registry-retention:public_stable:run-20260627-005402:avalonia-linux-x64-installer",
-      "retentionState": "current",
       "publicInstallRoute": "/downloads/install/avalonia-linux-x64-installer",
+      "retentionState": "current",
       "rationale": "public_stable keeps primary tuple avalonia:linux:linux-x64 published so signed-in and public shelves cite the same governed preview, caption, and install refs."
     },
     {
@@ -587,8 +585,8 @@
       "packetRef": "registry-packet:public_stable:run-20260627-005402:avalonia-win-x64-installer",
       "localeRef": "registry-locale:public_stable:run-20260627-005402:avalonia-win-x64-installer",
       "retentionRef": "registry-retention:public_stable:run-20260627-005402:avalonia-win-x64-installer",
-      "retentionState": "current",
       "publicInstallRoute": "/downloads/install/avalonia-win-x64-installer",
+      "retentionState": "current",
       "rationale": "public_stable keeps primary tuple avalonia:windows:win-x64 published so signed-in and public shelves cite the same governed preview, caption, and install refs."
     }
   ],

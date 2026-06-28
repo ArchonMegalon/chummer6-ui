@@ -13,7 +13,7 @@
   "platform": "windows",
   "rid": "win-x64",
   "artifactPath": "/docker/chummercomplete/chummer-presentation/Docker/Downloads/files/chummer-avalonia-win-x64-installer.exe",
-  "artifactDigest": "sha256:5836ae868913c862266a18d091bae77953c67e9d7162b52040bf9cd22c881642",
+  "artifactDigest": "sha256:d9d25b2c93dbd4887590b52b03431c4aba3c5614dbc4b18ec2f282222067466c",
   "installerDigest": "sha256:5836ae868913c862266a18d091bae77953c67e9d7162b52040bf9cd22c881642",
   "installerSha256": "5836ae868913c862266a18d091bae77953c67e9d7162b52040bf9cd22c881642",
   "screenshots": [

@@ -16,8 +16,8 @@
   "rolloutState": "public_stable",
   "rolloutReason": "Current release shelf was exercised by the local docker release proof harness before publication.",
   "supportabilityState": "gold_supported",
-  "supportabilitySummary": "Current public release is supported on the promoted routes. Recent checks cover install guidance, session recovery, account return, release updates, community wrap-up, bounded offline prefetch, and current support follow-up.",
-  "knownIssueSummary": "Current release checks are clear, and the downloads page has recent install, account return, release updates, community wrap-up, bounded offline prefetch, and current support follow-up coverage.",
+  "supportabilitySummary": "Release checks are missing or stale on this shelf, so review is still required before this release can be treated as supportable.",
+  "knownIssueSummary": "Release checks are missing or stale on this shelf, so preview publication is visible but not yet gold-ready.",
   "fixAvailabilitySummary": "Only send fixed notices after the affected install can receive the published channel artifact now on the shelf.",
   "releaseProof": {
     "status": "passed",
@@ -517,12 +517,12 @@
       "packetRef": "registry-packet:public_stable:run-20260627-005402:avalonia-linux-x64-installer",
       "localeRef": "registry-locale:public_stable:run-20260627-005402:avalonia-linux-x64-installer",
       "retentionRef": "registry-retention:public_stable:run-20260627-005402:avalonia-linux-x64-installer",
-      "retentionState": "current",
       "publicationBindingId": "binding:public_stable:run-20260627-005402:avalonia:linux:linux-x64",
-      "publicationState": "published",
       "signedInShelfRef": "shelf:signed-in:public_stable:run-20260627-005402:avalonia-linux-x64-installer",
       "publicShelfRef": "shelf:public:public_stable:run-20260627-005402:avalonia-linux-x64-installer",
-      "publicInstallRoute": "/downloads/install/avalonia-linux-x64-installer"
+      "publicInstallRoute": "/downloads/install/avalonia-linux-x64-installer",
+      "retentionState": "current",
+      "publicationState": "published"
     },
     {
       "registryId": "artifact-identity:public_stable:run-20260627-005402:avalonia:windows:win-x64",
@@ -541,12 +541,12 @@
       "packetRef": "registry-packet:public_stable:run-20260627-005402:avalonia-win-x64-installer",
       "localeRef": "registry-locale:public_stable:run-20260627-005402:avalonia-win-x64-installer",
       "retentionRef": "registry-retention:public_stable:run-20260627-005402:avalonia-win-x64-installer",
-      "retentionState": "current",
       "publicationBindingId": "binding:public_stable:run-20260627-005402:avalonia:windows:win-x64",
-      "publicationState": "published",
       "signedInShelfRef": "shelf:signed-in:public_stable:run-20260627-005402:avalonia-win-x64-installer",
       "publicShelfRef": "shelf:public:public_stable:run-20260627-005402:avalonia-win-x64-installer",
-      "publicInstallRoute": "/downloads/install/avalonia-win-x64-installer"
+      "publicInstallRoute": "/downloads/install/avalonia-win-x64-installer",
+      "retentionState": "current",
+      "publicationState": "published"
     }
   ],
   "artifactPublicationBindings": [
@@ -571,8 +571,8 @@
       "packetRef": "registry-packet:public_stable:run-20260627-005402:avalonia-linux-x64-installer",
       "localeRef": "registry-locale:public_stable:run-20260627-005402:avalonia-linux-x64-installer",
       "retentionRef": "registry-retention:public_stable:run-20260627-005402:avalonia-linux-x64-installer",
-      "retentionState": "current",
       "publicInstallRoute": "/downloads/install/avalonia-linux-x64-installer",
+      "retentionState": "current",
       "rationale": "public_stable keeps primary tuple avalonia:linux:linux-x64 published so signed-in and public shelves cite the same governed preview, caption, and install refs."
     },
     {
@@ -596,11 +596,12 @@
       "packetRef": "registry-packet:public_stable:run-20260627-005402:avalonia-win-x64-installer",
       "localeRef": "registry-locale:public_stable:run-20260627-005402:avalonia-win-x64-installer",
       "retentionRef": "registry-retention:public_stable:run-20260627-005402:avalonia-win-x64-installer",
-      "retentionState": "current",
       "publicInstallRoute": "/downloads/install/avalonia-win-x64-installer",
+      "retentionState": "current",
       "rationale": "public_stable keeps primary tuple avalonia:windows:win-x64 published so signed-in and public shelves cite the same governed preview, caption, and install refs."
     }
   ],
+  "publicVersion": "0.0.0.1",
   "publicTrustMetrics": {
     "releaseChannel": {
       "channelId": "public_stable",
