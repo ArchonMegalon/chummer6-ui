@@ -13,6 +13,7 @@ REPO_ROOT = Path("/docker/chummercomplete/chummer-presentation")
 VERIFY_SCRIPT = REPO_ROOT / "scripts" / "verify-windows-installer-payloads.py"
 PUBLISH_SCRIPT = REPO_ROOT / "scripts" / "publish-download-bundle.sh"
 APPENDED_PAYLOAD_MAGIC = b"CHUMMER6PAYLOAD1"
+BOOTSTRAP_METADATA_MARKER = b"\nCHUMMER6_BOOTSTRAP_METADATA\n"
 
 
 def _write_bootstrap_payload(payload_path: Path, *, launch_executable: str = "Chummer.Avalonia.exe") -> bytes:
@@ -31,10 +32,11 @@ def _write_bootstrap_installer(
 ) -> None:
     installer_path.write_bytes(
         b"installer-stub\n"
-        + f"ChummerInstallerPayloadUrl={payload_download_url}\n".encode("utf-8")
-        + f"ChummerInstallerPayloadSha256={payload_sha256}\n".encode("utf-8")
-        + f"ChummerInstallerPayloadSizeBytes={payload_size_bytes}\n".encode("utf-8")
         + (b"installer-padding" * 200)
+        + BOOTSTRAP_METADATA_MARKER
+        + f"payloadDownloadUrl={payload_download_url}\n".encode("utf-8")
+        + f"payloadSha256={payload_sha256}\n".encode("utf-8")
+        + f"payloadSizeBytes={payload_size_bytes}\n".encode("utf-8")
     )
 
 
@@ -131,6 +133,66 @@ def test_windows_installer_verifier_accepts_bootstrap_payload(tmp_path: Path) ->
 
     assert result.returncode == 0, result.stderr
     assert "windows_installer_payload_gate:ok checked=1" in result.stdout
+
+
+def test_windows_installer_verifier_rejects_bootstrap_installer_with_malformed_embedded_payload_url(tmp_path: Path) -> None:
+    files_dir = tmp_path / "files"
+    files_dir.mkdir()
+    installer_path = files_dir / "chummer-avalonia-win-x64-installer.exe"
+    payload_path = files_dir / "chummer-avalonia-win-x64-payload.zip"
+    payload_bytes = _write_bootstrap_payload(payload_path)
+    payload_sha256 = hashlib.sha256(payload_bytes).hexdigest()
+    payload_url = f"https://example.invalid/downloads/files/{payload_path.name}"
+    _write_bootstrap_installer(
+        installer_path,
+        payload_download_url=f"\\{payload_path.name}",
+        payload_sha256=payload_sha256,
+        payload_size_bytes=len(payload_bytes),
+    )
+    (files_dir / "chummer-avalonia-win-x64-payload.zip.json").write_text(
+        json.dumps(
+            {
+                "contractName": "chummer6-ui.windows_bootstrap_payload",
+                "fileName": payload_path.name,
+                "downloadUrl": payload_url,
+                "sha256": payload_sha256,
+                "sizeBytes": len(payload_bytes),
+                "installerFileName": installer_path.name,
+                "releaseVersion": "run-test",
+            },
+            indent=2,
+        )
+        + "\n",
+        encoding="utf-8",
+    )
+    manifest_path = tmp_path / "releases.json"
+    _write_bundle_manifest(
+        manifest_path,
+        installer_name=installer_path.name,
+        payload_name=payload_path.name,
+        payload_sha256=payload_sha256,
+        payload_size_bytes=len(payload_bytes),
+        payload_download_url=payload_url,
+    )
+
+    result = subprocess.run(
+        [
+            "python3",
+            str(VERIFY_SCRIPT),
+            "--files-dir",
+            str(files_dir),
+            "--manifest",
+            str(manifest_path),
+            "--require-embedded-bootstrap-metadata",
+        ],
+        text=True,
+        capture_output=True,
+        check=False,
+    )
+
+    assert result.returncode != 0
+    assert "bootstrap installer embedded payloadDownloadUrl must be an absolute file, http, or https URL" in result.stderr
+    assert "bootstrap installer embedded payloadDownloadUrl does not match manifest/sidecar metadata" in result.stderr
 
 
 def test_windows_installer_verifier_rejects_oversized_bootstrap_installer(tmp_path: Path) -> None:
@@ -798,6 +860,7 @@ def test_publish_download_bundle_promotes_bootstrap_payload_zip_with_installer(t
                 r"Bootstrap temp root: C:\users\tibor\Temp\Chummer6\installer-temp",
                 rf"Payload download target: C:\users\tibor\Temp\Chummer6\installer-temp\{payload_path.name}",
                 "Downloading application files",
+                "Downloading application files - 50% - 24.5 / 49.0 MiB - 4.0 MiB/s",
                 "Verifying payload size",
                 "Verifying payload checksum",
                 "Extracting application files",
@@ -982,6 +1045,7 @@ def test_publish_download_bundle_refreshes_windows_visual_proof_handoff_before_e
                 r"Bootstrap temp root: C:\users\tibor\Temp\Chummer6\installer-temp",
                 rf"Payload download target: C:\users\tibor\Temp\Chummer6\installer-temp\{payload_path.name}",
                 "Downloading application files",
+                "Downloading application files - 50% - 24.5 / 49.0 MiB - 4.0 MiB/s",
                 "Verifying payload size",
                 "Verifying payload checksum",
                 "Extracting application files",

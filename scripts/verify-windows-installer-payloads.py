@@ -19,6 +19,7 @@ from urllib.parse import urlparse
 APPENDED_PAYLOAD_MAGIC = b"CHUMMER6PAYLOAD1"
 FOOTER_LENGTH = len(APPENDED_PAYLOAD_MAGIC) + 8
 DEFAULT_MAX_BOOTSTRAP_INSTALLER_BYTES = 15 * 1024 * 1024
+BOOTSTRAP_METADATA_MARKER = b"\nCHUMMER6_BOOTSTRAP_METADATA\n"
 
 DEFAULT_LAUNCH_EXECUTABLES = {
     "avalonia": "Chummer.Avalonia.exe",
@@ -42,6 +43,13 @@ class PayloadCandidate:
     mode: str
     source: str
     data: bytes
+
+
+@dataclass(frozen=True)
+class BootstrapInstallerMetadata:
+    payload_download_url: str
+    payload_sha256: str
+    payload_size_bytes: int | None
 
 
 def sha256_bytes(data: bytes) -> str:
@@ -157,6 +165,13 @@ def is_absolute_https_url(value: str) -> bool:
     return parsed.scheme.lower() == "https" and bool(parsed.netloc)
 
 
+def is_absolute_payload_url(value: str) -> bool:
+    parsed = urlparse(value)
+    if parsed.scheme.lower() in {"http", "https", "file"} and parsed.scheme:
+        return bool(parsed.netloc) or parsed.scheme.lower() == "file"
+    return False
+
+
 def same_origin(left: str, right: str) -> bool:
     left_uri = urlparse(left)
     right_uri = urlparse(right)
@@ -237,6 +252,28 @@ def read_sidecar_payload(
     return None
 
 
+def extract_bootstrap_installer_metadata(installer_bytes: bytes) -> BootstrapInstallerMetadata | None:
+    marker_offset = installer_bytes.rfind(BOOTSTRAP_METADATA_MARKER)
+    if marker_offset < 0:
+        return None
+
+    metadata_bytes = installer_bytes[marker_offset + len(BOOTSTRAP_METADATA_MARKER) :]
+    metadata_text = metadata_bytes.decode("utf-8", errors="ignore")
+    values: dict[str, str] = {}
+    for raw_line in metadata_text.splitlines():
+        line = raw_line.strip()
+        if not line or "=" not in line:
+            continue
+        key, value = line.split("=", 1)
+        values[key.strip()] = value.strip()
+
+    return BootstrapInstallerMetadata(
+        payload_download_url=values.get("payloadDownloadUrl", ""),
+        payload_sha256=values.get("payloadSha256", "").lower(),
+        payload_size_bytes=try_int(values.get("payloadSizeBytes")),
+    )
+
+
 def validate_manifest_payload_metadata(candidate: PayloadCandidate, manifest_row: ManifestRow | None) -> list[str]:
     if manifest_row is None:
         return []
@@ -299,11 +336,15 @@ def validate_bootstrap_installer_metadata(installer_path: Path, candidate: Paylo
     if candidate.mode != "bootstrap":
         return []
 
-    payload_download_url = manifest_row.payload_download_url if manifest_row is not None else ""
-    payload_sha256 = manifest_row.payload_sha256 if manifest_row is not None else ""
-    payload_size_bytes = manifest_row.payload_size_bytes if manifest_row is not None else None
+    expected_payload_download_url = manifest_row.payload_download_url if manifest_row is not None else ""
+    expected_payload_sha256 = manifest_row.payload_sha256 if manifest_row is not None else ""
+    expected_payload_size_bytes = manifest_row.payload_size_bytes if manifest_row is not None else None
 
-    if not payload_download_url or not payload_sha256 or payload_size_bytes is None:
+    if (
+        not expected_payload_download_url
+        or not expected_payload_sha256
+        or expected_payload_size_bytes is None
+    ):
         sidecar_path = Path(candidate.source + ".json")
         if sidecar_path.is_file():
             try:
@@ -311,23 +352,46 @@ def validate_bootstrap_installer_metadata(installer_path: Path, candidate: Paylo
             except json.JSONDecodeError:
                 sidecar = {}
             if isinstance(sidecar, dict):
-                payload_download_url = payload_download_url or str(sidecar.get("downloadUrl") or "").strip()
-                payload_sha256 = payload_sha256 or str(sidecar.get("sha256") or "").strip().lower()
-                payload_size_bytes = payload_size_bytes if payload_size_bytes is not None else try_int(sidecar.get("sizeBytes"))
+                expected_payload_download_url = expected_payload_download_url or str(sidecar.get("downloadUrl") or "").strip()
+                expected_payload_sha256 = expected_payload_sha256 or str(sidecar.get("sha256") or "").strip().lower()
+                expected_payload_size_bytes = (
+                    expected_payload_size_bytes
+                    if expected_payload_size_bytes is not None
+                    else try_int(sidecar.get("sizeBytes"))
+                )
 
-    if not payload_download_url or not payload_sha256 or payload_size_bytes is None:
-        return []
-
-    installer_bytes = installer_path.read_bytes()
-    required_values = {
-        "payloadDownloadUrl": payload_download_url,
-        "payloadSha256": payload_sha256,
-        "payloadSizeBytes": str(payload_size_bytes),
-    }
+    installer_metadata = extract_bootstrap_installer_metadata(installer_path.read_bytes())
     failures: list[str] = []
-    for label, value in required_values.items():
-        if value.encode("utf-8") not in installer_bytes:
-            failures.append(f"bootstrap installer does not contain embedded {label} metadata")
+    if installer_metadata is None:
+        return ["bootstrap installer does not contain embedded payloadDownloadUrl metadata"]
+
+    if not installer_metadata.payload_download_url:
+        failures.append("bootstrap installer does not contain embedded payloadDownloadUrl metadata")
+    elif not is_absolute_payload_url(installer_metadata.payload_download_url):
+        failures.append("bootstrap installer embedded payloadDownloadUrl must be an absolute file, http, or https URL")
+    elif Path(urlparse(installer_metadata.payload_download_url).path).name != Path(candidate.source).name:
+        failures.append("bootstrap installer embedded payloadDownloadUrl file name must match the payload sidecar")
+
+    if not installer_metadata.payload_sha256:
+        failures.append("bootstrap installer does not contain embedded payloadSha256 metadata")
+    elif not is_sha256_hex(installer_metadata.payload_sha256):
+        failures.append("bootstrap installer embedded payloadSha256 must be a 64-character hex digest")
+
+    if installer_metadata.payload_size_bytes is None:
+        failures.append("bootstrap installer does not contain embedded payloadSizeBytes metadata")
+    elif installer_metadata.payload_size_bytes <= 0:
+        failures.append("bootstrap installer embedded payloadSizeBytes must be greater than zero")
+
+    if expected_payload_download_url and installer_metadata.payload_download_url != expected_payload_download_url:
+        failures.append("bootstrap installer embedded payloadDownloadUrl does not match manifest/sidecar metadata")
+    if expected_payload_sha256 and installer_metadata.payload_sha256 != expected_payload_sha256:
+        failures.append("bootstrap installer embedded payloadSha256 does not match manifest/sidecar metadata")
+    if (
+        expected_payload_size_bytes is not None
+        and installer_metadata.payload_size_bytes != expected_payload_size_bytes
+    ):
+        failures.append("bootstrap installer embedded payloadSizeBytes does not match manifest/sidecar metadata")
+
     return failures
 
 
