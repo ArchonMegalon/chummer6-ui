@@ -10,6 +10,7 @@ using Chummer.Contracts.Rulesets;
 using Chummer.Contracts.Workspaces;
 using Chummer.Presentation.Overview;
 using Chummer.Presentation.Shell;
+using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
@@ -91,11 +92,13 @@ public sealed class BlazorPublicEdgeWarmupServiceTests
         services.AddSingleton<IShellPresenter>(shellPresenter);
         services.AddSingleton<ICharacterOverviewPresenter>(overviewPresenter);
         services.AddSingleton<IShellBootstrapDataProvider>(bootstrapProvider);
+        services.AddSingleton<IConfiguration>(new ConfigurationBuilder().Build());
         services.AddLogging();
 
         ServiceProvider provider = services.BuildServiceProvider();
         return new BlazorPublicEdgeWarmupService(
             provider.GetRequiredService<IServiceScopeFactory>(),
+            provider.GetRequiredService<IConfiguration>(),
             provider.GetRequiredService<ILogger<BlazorPublicEdgeWarmupService>>());
     }
 
