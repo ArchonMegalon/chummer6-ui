@@ -76,6 +76,8 @@ def test_public_edge_execution_verifier_accepts_scope_specific_required_workflow
 def test_public_edge_execution_runner_reuses_rewritten_fixture_workspace() -> None:
     script = Path("scripts/e2e-public-edge-playwright.cjs").read_text(encoding="utf-8")
 
+    assert "let promotedContinuationQuery = 'runner=blue';" in script
+    assert "let promotedContinuationQuery = 'workspace=ws-1';" not in script
     assert "function continuationQueryFromUrl(urlString)" in script
     assert "function isReusableContinuationQuery(query)" in script
     assert "return query.startsWith('workspace=') || (query.startsWith('runner=') && query !== 'runner=blue');" in script
