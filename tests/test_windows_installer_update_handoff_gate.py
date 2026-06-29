@@ -38,24 +38,39 @@ def test_installer_handoff_keeps_staged_bootstrap_payload_until_next_startup_cle
 
 def test_windows_bootstrap_installer_falls_back_to_download_metadata_when_local_handoff_is_missing() -> None:
     text = WINDOWS_BOOTSTRAP_INSTALLER.read_text(encoding="utf-8")
+    assert "Function NormalizePathToR9" in text
+    assert 'GetFullPathName $1 "$0"' in text
+    assert "Function TryUseBootstrapTempRootCandidate" in text
+    assert 'FileOpen $2 "$9\\bootstrap-root-probe.tmp" w' in text
     assert "Function EnsureBootstrapTempRoot" in text
     assert 'ReadEnvStr $0 "TEMP"' in text
     assert 'ReadEnvStr $0 "TMP"' in text
     assert 'CreateDirectory "$0\\Chummer6"' in text
-    assert 'StrCpy $BootstrapTempRoot "$0\\Chummer6\\installer-temp"' in text
+    assert 'Push "$0\\Chummer6\\installer-temp"' in text
+    assert "Call TryUseBootstrapTempRootCandidate" in text
+    assert 'StrCpy $BootstrapTempRoot $9' in text
     assert "InitPluginsDir" in text
-    assert 'StrCpy $BootstrapTempRoot "$PLUGINSDIR"' in text
+    assert 'Push "$PLUGINSDIR"' in text
     assert text.index('ReadEnvStr $0 "TEMP"') < text.index("InitPluginsDir")
     assert 'Push "Bootstrap temp root: $BootstrapTempRoot"' in text
     assert 'ReadEnvStr $PayloadPathOverride "CHUMMER_INSTALLER_PAYLOAD_PATH"' in text
     assert 'ReadEnvStr $PayloadUrlOverride "CHUMMER_INSTALLER_PAYLOAD_URL"' in text
-    assert 'StrCpy $EffectivePayloadPath "$BootstrapTempRoot\\${CHUMMER_PAYLOAD_FILE_NAME}"' in text
+    assert 'Push "$BootstrapTempRoot\\${CHUMMER_PAYLOAD_FILE_NAME}"' in text
+    assert "Call NormalizePathToR9" in text
+    assert 'StrCpy $EffectivePayloadPath $9' in text
+    assert 'StrCpy $1 $EffectivePayloadPath 2' in text
+    assert 'Push "Chummer could not resolve a writable payload download target."' in text
     assert 'Push "Payload download target: $EffectivePayloadPath"' in text
     assert 'Push "Local payload handoff was missing, falling back to payload download metadata"' in text
     assert "Function TryDownloadPayloadWithCurl" in text
     assert 'File /oname=curl.exe "${CHUMMER_STAGE_DIR}/curl/curl.exe"' in text
     assert 'File /oname=libcurl-x64.dll "${CHUMMER_STAGE_DIR}/curl/libcurl-x64.dll"' in text
     assert 'File /oname=curl-ca-bundle.crt "${CHUMMER_STAGE_DIR}/curl/curl-ca-bundle.crt"' in text
+    assert 'FileWrite $6 ">$\\"$DownloadHelperStartedPath$\\" echo started$\\r$\\n"' in text
+    assert 'FileWrite $6 "del /q $\\"$DownloadHelperPartialPath$\\" 2>nul$\\r$\\n"' in text
+    assert 'FileWrite $6 "del /q $\\"$EffectivePayloadPath$\\" 2>nul$\\r$\\n"' in text
+    assert 'FileWrite $6 "$\\"$BootstrapTempRoot\\curl.exe$\\" --location --fail --silent --show-error --retry 5 --retry-delay 2 --connect-timeout 20 --cacert $\\"$BootstrapTempRoot\\curl-ca-bundle.crt$\\" --output $\\"$DownloadHelperPartialPath$\\" $\\"$EffectivePayloadUrl$\\" 1>$\\"$BootstrapTempRoot\\download-curl-stdout.txt$\\" 2>$\\"$DownloadHelperStdErrPath$\\"$\\r$\\n"' in text
+    assert 'FileWrite $6 "    move /y $\\"$DownloadHelperPartialPath$\\" $\\"$EffectivePayloadPath$\\" >nul$\\r$\\n"' in text
     assert 'Push "Payload download completed with bundled curl"' in text
     assert 'Push "Bundled curl download failed code=$DownloadHelperStatus output=$DownloadHelperOutput"' in text
     assert 'StrCpy $PayloadPathOverride ""' in text

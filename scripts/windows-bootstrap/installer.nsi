@@ -155,6 +155,48 @@ Function FormatKiBAsMiBStringToR9
   Pop $0
 FunctionEnd
 
+Function NormalizePathToR9
+  Exch $0
+  StrCpy $9 ""
+  ${If} $0 == ""
+    Pop $0
+    Return
+  ${EndIf}
+  GetFullPathName $1 "$0"
+  ${If} $1 != ""
+    StrCpy $9 $1
+  ${Else}
+    StrCpy $9 $0
+  ${EndIf}
+  Pop $0
+FunctionEnd
+
+Function TryUseBootstrapTempRootCandidate
+  Exch $0
+  StrCpy $9 ""
+  ${If} $0 == ""
+    Pop $0
+    Return
+  ${EndIf}
+  Push "$0"
+  Call NormalizePathToR9
+  ${If} $9 == ""
+    Pop $0
+    Return
+  ${EndIf}
+  CreateDirectory "$9"
+  ClearErrors
+  FileOpen $2 "$9\bootstrap-root-probe.tmp" w
+  ${IfNot} ${Errors}
+    FileWrite $2 "ok$\r$\n"
+    FileClose $2
+    Delete "$9\bootstrap-root-probe.tmp"
+  ${Else}
+    StrCpy $9 ""
+  ${EndIf}
+  Pop $0
+FunctionEnd
+
 Function AbortInstallWithMessage
   Exch $0
   ${If} $IsSmokeInstall != "1"
@@ -230,19 +272,29 @@ Function EnsureBootstrapTempRoot
   ${EndIf}
   ${If} $0 != ""
     CreateDirectory "$0\Chummer6"
-    StrCpy $BootstrapTempRoot "$0\Chummer6\installer-temp"
-    CreateDirectory "$BootstrapTempRoot"
+    Push "$0\Chummer6\installer-temp"
+    Call TryUseBootstrapTempRootCandidate
+    ${If} $9 != ""
+      StrCpy $BootstrapTempRoot $9
+    ${EndIf}
   ${EndIf}
 
   ${If} $BootstrapTempRoot == ""
     InitPluginsDir
-    StrCpy $BootstrapTempRoot "$PLUGINSDIR"
+    Push "$PLUGINSDIR"
+    Call TryUseBootstrapTempRootCandidate
+    ${If} $9 != ""
+      StrCpy $BootstrapTempRoot $9
+    ${EndIf}
   ${EndIf}
 
   ${If} $BootstrapTempRoot == ""
     CreateDirectory "$LOCALAPPDATA\Chummer6"
-    StrCpy $BootstrapTempRoot "$LOCALAPPDATA\Chummer6\installer-temp"
-    CreateDirectory "$BootstrapTempRoot"
+    Push "$LOCALAPPDATA\Chummer6\installer-temp"
+    Call TryUseBootstrapTempRootCandidate
+    ${If} $9 != ""
+      StrCpy $BootstrapTempRoot $9
+    ${EndIf}
   ${EndIf}
 
   ${If} $BootstrapTempRoot == ""
@@ -297,21 +349,20 @@ Function TryDownloadPayloadWithCurl
   FileOpen $6 "$BootstrapTempRoot\chummer-download-payload.cmd" w
   FileWrite $6 "@echo off$\r$\n"
   FileWrite $6 "setlocal enableextensions$\r$\n"
-  FileWrite $6 "cd /d %~dp0$\r$\n"
-  FileWrite $6 ">$\"download-started.txt$\" echo started$\r$\n"
-  FileWrite $6 "del /q $\"${CHUMMER_PAYLOAD_FILE_NAME}.partial$\" 2>nul$\r$\n"
-  FileWrite $6 "del /q $\"${CHUMMER_PAYLOAD_FILE_NAME}$\" 2>nul$\r$\n"
-  FileWrite $6 "curl.exe --location --fail --silent --show-error --retry 5 --retry-delay 2 --connect-timeout 20 --cacert $\"curl-ca-bundle.crt$\" --output $\"${CHUMMER_PAYLOAD_FILE_NAME}.partial$\" $\"$EffectivePayloadUrl$\" 1>$\"download-curl-stdout.txt$\" 2>$\"download-curl-stderr.txt$\"$\r$\n"
+  FileWrite $6 ">$\"$DownloadHelperStartedPath$\" echo started$\r$\n"
+  FileWrite $6 "del /q $\"$DownloadHelperPartialPath$\" 2>nul$\r$\n"
+  FileWrite $6 "del /q $\"$EffectivePayloadPath$\" 2>nul$\r$\n"
+  FileWrite $6 "$\"$BootstrapTempRoot\curl.exe$\" --location --fail --silent --show-error --retry 5 --retry-delay 2 --connect-timeout 20 --cacert $\"$BootstrapTempRoot\curl-ca-bundle.crt$\" --output $\"$DownloadHelperPartialPath$\" $\"$EffectivePayloadUrl$\" 1>$\"$BootstrapTempRoot\download-curl-stdout.txt$\" 2>$\"$DownloadHelperStdErrPath$\"$\r$\n"
   FileWrite $6 "set $\"EXITCODE=%ERRORLEVEL%$\"$\r$\n"
   FileWrite $6 "if $\"%EXITCODE%$\"==$\"0$\" ($\r$\n"
-  FileWrite $6 "  if exist $\"${CHUMMER_PAYLOAD_FILE_NAME}.partial$\" ($\r$\n"
-  FileWrite $6 "    move /y $\"${CHUMMER_PAYLOAD_FILE_NAME}.partial$\" $\"${CHUMMER_PAYLOAD_FILE_NAME}$\" >nul$\r$\n"
+  FileWrite $6 "  if exist $\"$DownloadHelperPartialPath$\" ($\r$\n"
+  FileWrite $6 "    move /y $\"$DownloadHelperPartialPath$\" $\"$EffectivePayloadPath$\" >nul$\r$\n"
   FileWrite $6 "  ) else ($\r$\n"
   FileWrite $6 "    set $\"EXITCODE=1$\"$\r$\n"
-  FileWrite $6 "    >$\"download-curl-stderr.txt$\" echo bundled curl completed without creating the payload file.$\r$\n"
+  FileWrite $6 "    >$\"$DownloadHelperStdErrPath$\" echo bundled curl completed without creating the payload file.$\r$\n"
   FileWrite $6 "  )$\r$\n"
   FileWrite $6 ")$\r$\n"
-  FileWrite $6 ">$\"download-exit-code.txt$\" echo %EXITCODE%$\r$\n"
+  FileWrite $6 ">$\"$DownloadHelperExitCodePath$\" echo %EXITCODE%$\r$\n"
   FileWrite $6 "exit /b %EXITCODE%$\r$\n"
   FileClose $6
   StrCpy $6 "$BootstrapTempRoot\chummer-download-payload.cmd"
@@ -483,7 +534,21 @@ Function EnsurePayloadPath
     StrCpy $PayloadPathOverride ""
   ${EndIf}
 
-  StrCpy $EffectivePayloadPath "$BootstrapTempRoot\${CHUMMER_PAYLOAD_FILE_NAME}"
+  Push "$BootstrapTempRoot\${CHUMMER_PAYLOAD_FILE_NAME}"
+  Call NormalizePathToR9
+  ${If} $9 != ""
+    StrCpy $EffectivePayloadPath $9
+  ${Else}
+    StrCpy $EffectivePayloadPath "$BootstrapTempRoot\${CHUMMER_PAYLOAD_FILE_NAME}"
+  ${EndIf}
+  ${StrStr} $0 "$EffectivePayloadPath" ":\"
+  ${If} $0 == ""
+    StrCpy $1 $EffectivePayloadPath 2
+    ${If} $1 != "\\"
+      Push "Chummer could not resolve a writable payload download target."
+      Call AbortInstallWithMessage
+    ${EndIf}
+  ${EndIf}
   Delete "$EffectivePayloadPath"
   Push "Payload download target: $EffectivePayloadPath"
   Call TraceLine

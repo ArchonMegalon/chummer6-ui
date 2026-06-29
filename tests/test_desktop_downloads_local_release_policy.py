@@ -162,18 +162,26 @@ def test_windows_bootstrap_build_is_measured_by_the_real_payload_gate() -> None:
     assert 'ReadEnvStr $0 "TEMP"' in bootstrap_template
     assert 'ReadEnvStr $0 "TMP"' in bootstrap_template
     assert 'CreateDirectory "$0\\Chummer6"' in bootstrap_template
-    assert 'StrCpy $BootstrapTempRoot "$0\\Chummer6\\installer-temp"' in bootstrap_template
+    assert 'Push "$0\\Chummer6\\installer-temp"' in bootstrap_template
     assert "InitPluginsDir" in bootstrap_template
     assert bootstrap_template.index('ReadEnvStr $0 "TEMP"') < bootstrap_template.index("InitPluginsDir")
-    assert bootstrap_template.index("InitPluginsDir") < bootstrap_template.index('StrCpy $BootstrapTempRoot "$PLUGINSDIR"')
+    assert bootstrap_template.index("InitPluginsDir") < bootstrap_template.index('Push "$PLUGINSDIR"')
     assert "Function EnsureBootstrapTempRoot" in bootstrap_template
+    assert "Function NormalizePathToR9" in bootstrap_template
+    assert "Function TryUseBootstrapTempRootCandidate" in bootstrap_template
+    assert 'GetFullPathName $1 "$0"' in bootstrap_template
+    assert 'FileOpen $2 "$9\\bootstrap-root-probe.tmp" w' in bootstrap_template
     assert 'Push "Bootstrap temp root: $BootstrapTempRoot"' in bootstrap_template
     assert 'SetOutPath "$BootstrapTempRoot"' in bootstrap_template
     assert 'File /oname=7za.exe "${CHUMMER_STAGE_DIR}/7zip/7za.exe"' in bootstrap_template
     assert 'File /oname=curl.exe "${CHUMMER_STAGE_DIR}/curl/curl.exe"' in bootstrap_template
     assert 'File /oname=libcurl-x64.dll "${CHUMMER_STAGE_DIR}/curl/libcurl-x64.dll"' in bootstrap_template
     assert 'File /oname=curl-ca-bundle.crt "${CHUMMER_STAGE_DIR}/curl/curl-ca-bundle.crt"' in bootstrap_template
-    assert 'StrCpy $EffectivePayloadPath "$BootstrapTempRoot\\${CHUMMER_PAYLOAD_FILE_NAME}"' in bootstrap_template
+    assert 'Push "$BootstrapTempRoot\\${CHUMMER_PAYLOAD_FILE_NAME}"' in bootstrap_template
+    assert "Call NormalizePathToR9" in bootstrap_template
+    assert 'StrCpy $EffectivePayloadPath $9' in bootstrap_template
+    assert 'StrCpy $1 $EffectivePayloadPath 2' in bootstrap_template
+    assert 'Push "Chummer could not resolve a writable payload download target."' in bootstrap_template
     assert 'Push "Payload download target: $EffectivePayloadPath"' in bootstrap_template
     assert "Function TryDownloadPayloadWithCurl" in bootstrap_template
     assert "Var DownloadHelperPartialPath" in bootstrap_template
@@ -186,7 +194,11 @@ def test_windows_bootstrap_build_is_measured_by_the_real_payload_gate() -> None:
     assert 'StrCpy $DownloadHelperStartedPath "$BootstrapTempRoot\\download-started.txt"' in bootstrap_template
     assert 'StrCpy $DownloadHelperExitCodePath "$BootstrapTempRoot\\download-exit-code.txt"' in bootstrap_template
     assert 'StrCpy $DownloadHelperStdErrPath "$BootstrapTempRoot\\download-curl-stderr.txt"' in bootstrap_template
-    assert 'FileWrite $6 ">$\\"download-exit-code.txt$\\" echo %EXITCODE%$\\r$\\n"' in bootstrap_template
+    assert 'FileWrite $6 ">$\\"$DownloadHelperStartedPath$\\" echo started$\\r$\\n"' in bootstrap_template
+    assert 'FileWrite $6 "del /q $\\"$DownloadHelperPartialPath$\\" 2>nul$\\r$\\n"' in bootstrap_template
+    assert 'FileWrite $6 "del /q $\\"$EffectivePayloadPath$\\" 2>nul$\\r$\\n"' in bootstrap_template
+    assert 'FileWrite $6 "$\\"$BootstrapTempRoot\\curl.exe$\\" --location --fail --silent --show-error --retry 5 --retry-delay 2 --connect-timeout 20 --cacert $\\"$BootstrapTempRoot\\curl-ca-bundle.crt$\\" --output $\\"$DownloadHelperPartialPath$\\" $\\"$EffectivePayloadUrl$\\" 1>$\\"$BootstrapTempRoot\\download-curl-stdout.txt$\\" 2>$\\"$DownloadHelperStdErrPath$\\"$\\r$\\n"' in bootstrap_template
+    assert 'FileWrite $6 ">$\\"$DownloadHelperExitCodePath$\\" echo %EXITCODE%$\\r$\\n"' in bootstrap_template
     assert 'nsExec::ExecToStack \'"$SYSDIR\\cmd.exe" /C start "" /B "$SYSDIR\\cmd.exe" /C call $6\'' in bootstrap_template
     assert 'StrCpy $0 "Downloading application files - $6% - $3 / $8 MiB - $2"' in bootstrap_template
     assert 'StrCpy $0 "Downloading application files - 100% - $3 / $8 MiB - $2"' in bootstrap_template
@@ -201,7 +213,6 @@ def test_windows_bootstrap_build_is_measured_by_the_real_payload_gate() -> None:
     assert 'GetFullPathName /SHORT $7 "$BootstrapTempRoot\\chummer-verify-size.cmd"' in bootstrap_template
     assert 'Delete "$BootstrapTempRoot\\payload-hash.txt"' in bootstrap_template
     assert 'FileOpen $6 "$BootstrapTempRoot\\chummer-verify-payload.cmd" w' in bootstrap_template
-    assert 'FileWrite $6 "cd /d %~dp0$\\r$\\n"' in bootstrap_template
     assert 'FileWrite $6 "7za.exe h -scrcSHA256 $\\"$EffectivePayloadPath$\\" > payload-hash.txt$\\r$\\n"' in bootstrap_template
     assert 'GetFullPathName /SHORT $7 "$BootstrapTempRoot\\chummer-verify-payload.cmd"' in bootstrap_template
     assert 'nsExec::ExecToStack \'"$SYSDIR\\cmd.exe" /C call $6\'' in bootstrap_template
