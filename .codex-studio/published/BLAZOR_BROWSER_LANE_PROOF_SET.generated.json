@@ -1,7 +1,12 @@
 {
   "contract_name": "chummer6-ui.blazor_browser_lane_proof_set",
-  "generated_at": "2026-06-24T19:05:29.429521+00:00",
-  "passed_receipt_count": 6,
+  "generated_at": "2026-06-29T10:50:54.334494+00:00",
+  "notes": [
+    "The source_staged_release_boundary receipt is required as source-policy evidence only; it does not execute hosted or Docker browser workflows.",
+    "MIG-106 through MIG-109 remain open until refreshed hosted route-entry, hosted execution, Docker self-host, analytics posture, connected-runtime, source-boundary, and aggregate browser-lane receipts prove the Chummer Online release claim."
+  ],
+  "passed_receipt_count": 8,
+  "passed_source_check_count": 1,
   "receipts": [
     {
       "checks": [
@@ -32,13 +37,13 @@
           "passed": true
         },
         {
-          "actual": 16,
+          "actual": 30,
           "id": "minimum_length:proof_routes",
           "minimum": 16,
           "passed": true
         },
         {
-          "actual": 24,
+          "actual": 25,
           "id": "minimum_length:workflow_proofs",
           "minimum": 20,
           "passed": true
@@ -79,21 +84,44 @@
           "passed": true
         },
         {
-          "actual": 13,
+          "actual": 17,
           "id": "minimum_length:proof_routes",
           "minimum": 10,
           "passed": true
         },
         {
-          "actual": 11,
+          "actual": 14,
           "id": "minimum_length:route_proof_markers",
-          "minimum": 8,
+          "minimum": 10,
           "passed": true
         },
         {
           "actual": 10,
           "id": "minimum_length:workflow_proofs",
           "minimum": 7,
+          "passed": true
+        },
+        {
+          "expected": [
+            "/app",
+            "/app?command=character_roster",
+            "/blazor/",
+            "/blazor/app",
+            "/blazor/workbench"
+          ],
+          "id": "required_list_items:proof_routes",
+          "missing": [],
+          "passed": true
+        },
+        {
+          "expected": [
+            "public_chummer_app_route",
+            "public_chummer_app_roster_route",
+            "public_blazor_root_redirect",
+            "public_blazor_home_roster_entry"
+          ],
+          "id": "required_list_items:route_proof_markers",
+          "missing": [],
           "passed": true
         }
       ],
@@ -137,15 +165,82 @@
           "passed": true
         },
         {
-          "actual": 32,
+          "actual": 9,
           "id": "minimum_length:workflow_families",
-          "minimum": 30,
+          "minimum": 9,
+          "passed": true
+        },
+        {
+          "expected": [
+            "promoted_startup_command_executions",
+            "promoted_dense_tool_surfaces",
+            "promoted_origin_rules_continuity",
+            "promoted_build_lab_continuity",
+            "promoted_resumed_workspace",
+            "promoted_result_continuations",
+            "promoted_action_continuations",
+            "promoted_committed_actions",
+            "promoted_advanced_action_executions"
+          ],
+          "id": "required_object_ids:workflow_families",
+          "missing": [],
           "passed": true
         }
       ],
       "id": "hosted_execution",
       "passed": true,
       "path": "/docker/chummercomplete/chummer-presentation/.codex-studio/published/BLAZOR_PUBLIC_EDGE_EXECUTION_PROOF.generated.json",
+      "status": "passed"
+    },
+    {
+      "checks": [
+        {
+          "actual": "chummer6-ui.blazor_pwa_public_edge_proof",
+          "expected": "chummer6-ui.blazor_pwa_public_edge_proof",
+          "id": "contract_name",
+          "passed": true
+        },
+        {
+          "actual": "passed",
+          "expected": [
+            "passed"
+          ],
+          "id": "status",
+          "passed": true
+        },
+        {
+          "actual": "hosted_pwa_public_edge_execution",
+          "expected": "hosted_pwa_public_edge_execution",
+          "id": "field:proof_tier",
+          "passed": true
+        },
+        {
+          "actual": "blazor_pwa_play_shell",
+          "expected": "blazor_pwa_play_shell",
+          "id": "field:route_lane",
+          "passed": true
+        },
+        {
+          "actual": 4,
+          "id": "minimum_length:checks",
+          "minimum": 4,
+          "passed": true
+        },
+        {
+          "expected": [
+            "manifest_install_contract",
+            "service_worker_static_privacy_contract",
+            "offline_living_world_boundary",
+            "app_head_and_registration"
+          ],
+          "id": "required_check_ids",
+          "missing": [],
+          "passed": true
+        }
+      ],
+      "id": "hosted_pwa_play_shell",
+      "passed": true,
+      "path": "/docker/chummercomplete/chummer-presentation/.codex-studio/published/BLAZOR_PWA_PUBLIC_EDGE_PROOF.generated.json",
       "status": "passed"
     },
     {
@@ -183,7 +278,19 @@
           "passed": true
         },
         {
-          "actual": 10,
+          "actual": "disabled",
+          "expected": "disabled",
+          "id": "field:session_replay_policy",
+          "passed": true
+        },
+        {
+          "actual": "disabled",
+          "expected": "disabled",
+          "id": "field:autocapture_policy",
+          "passed": true
+        },
+        {
+          "actual": 12,
           "id": "minimum_length:checks",
           "minimum": 8,
           "passed": true
@@ -267,9 +374,65 @@
       "passed": true,
       "path": "/docker/chummercomplete/chummer-presentation/.codex-studio/published/UI_EXTERNAL_HOST_PROOF_BLOCKERS.generated.json",
       "status": "ready"
+    },
+    {
+      "checks": [
+        {
+          "actual": "chummer6-ui.blazor_source_staged_release_boundary",
+          "expected": "chummer6-ui.blazor_source_staged_release_boundary",
+          "id": "contract_name",
+          "passed": true
+        },
+        {
+          "actual": "passed",
+          "expected": [
+            "passed"
+          ],
+          "id": "status",
+          "passed": true
+        },
+        {
+          "actual": "source_policy_no_browser_execution",
+          "expected": "source_policy_no_browser_execution",
+          "id": "field:proof_tier",
+          "passed": true
+        },
+        {
+          "actual": "staged_and_source_plan_receipts_must_not_enter_release_readiness_aggregation",
+          "expected": "staged_and_source_plan_receipts_must_not_enter_release_readiness_aggregation",
+          "id": "field:scope",
+          "passed": true
+        },
+        {
+          "actual": 8,
+          "id": "minimum_length:documentation_sources",
+          "minimum": 6,
+          "passed": true
+        },
+        {
+          "actual": 1,
+          "id": "minimum_length:status_reporting_sources",
+          "minimum": 1,
+          "passed": true
+        }
+      ],
+      "id": "source_staged_release_boundary",
+      "passed": true,
+      "path": "/docker/chummercomplete/chummer-presentation/.codex-studio/published/BLAZOR_SOURCE_STAGED_RELEASE_BOUNDARY.generated.json",
+      "status": "passed"
     }
   ],
-  "required_receipt_count": 6,
+  "required_receipt_count": 8,
   "scope": "aggregate-browser-lane-proof-set-not-full-desktop-parity",
+  "source_check_count": 1,
+  "source_checks": [
+    {
+      "id": "example_receipt_shape",
+      "missing_tokens": [],
+      "passed": true,
+      "path": "/docker/chummercomplete/chummer-presentation/docs/examples/blazor-browser-lane-proof-set.receipt.example.json",
+      "status": "passed"
+    }
+  ],
   "status": "passed"
 }

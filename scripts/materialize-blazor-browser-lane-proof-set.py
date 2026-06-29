@@ -68,8 +68,40 @@ REQUIRED_RECEIPTS = [
             "promoted_route_base": "/blazor/workbench",
         },
         "minimum_lengths": {
-            "workflow_families": 30,
+            "workflow_families": 9,
         },
+        "required_object_ids": {
+            "workflow_families": [
+                "promoted_startup_command_executions",
+                "promoted_dense_tool_surfaces",
+                "promoted_origin_rules_continuity",
+                "promoted_build_lab_continuity",
+                "promoted_resumed_workspace",
+                "promoted_result_continuations",
+                "promoted_action_continuations",
+                "promoted_committed_actions",
+                "promoted_advanced_action_executions",
+            ],
+        },
+    },
+    {
+        "id": "hosted_pwa_play_shell",
+        "path": PUBLISHED / "BLAZOR_PWA_PUBLIC_EDGE_PROOF.generated.json",
+        "contract_name": "chummer6-ui.blazor_pwa_public_edge_proof",
+        "allowed_statuses": {"passed"},
+        "required_fields": {
+            "proof_tier": "hosted_pwa_public_edge_execution",
+            "route_lane": "blazor_pwa_play_shell",
+        },
+        "minimum_lengths": {
+            "checks": 4,
+        },
+        "required_check_ids": [
+            "manifest_install_contract",
+            "service_worker_static_privacy_contract",
+            "offline_living_world_boundary",
+            "app_head_and_registration",
+        ],
     },
     {
         "id": "analytics_posture",
@@ -138,13 +170,35 @@ EXAMPLE_RECEIPT_TOKENS = [
     '"public_chummer_app_roster_route"',
     '"id": "required_list_items:proof_routes"',
     '"/app?command=character_roster"',
+    '"id": "hosted_execution"',
+    '"id": "required_object_ids:workflow_families"',
+    '"promoted_startup_command_executions"',
+    '"promoted_dense_tool_surfaces"',
+    '"promoted_origin_rules_continuity"',
+    '"promoted_build_lab_continuity"',
+    '"promoted_resumed_workspace"',
+    '"promoted_result_continuations"',
+    '"promoted_action_continuations"',
+    '"promoted_committed_actions"',
+    '"promoted_advanced_action_executions"',
     '"id": "analytics_posture"',
     '"field:session_replay_policy"',
     '"field:autocapture_policy"',
+    '"id": "hosted_pwa_play_shell"',
+    '"contract_name": "chummer6-ui.blazor_pwa_public_edge_proof"',
+    '"field:proof_tier"',
+    '"hosted_pwa_public_edge_execution"',
+    '"field:route_lane"',
+    '"blazor_pwa_play_shell"',
+    '"id": "required_check_ids"',
+    '"manifest_install_contract"',
+    '"service_worker_static_privacy_contract"',
+    '"offline_living_world_boundary"',
+    '"app_head_and_registration"',
     '"id": "source_staged_release_boundary"',
     '"contract_name": "chummer6-ui.blazor_source_staged_release_boundary"',
     '"scope": "staged_and_source_plan_receipts_must_not_enter_release_readiness_aggregation"',
-    '"MIG-106 through MIG-109"',
+    'MIG-106 through MIG-109',
     '"The source_staged_release_boundary receipt is required as source-policy evidence only; it does not execute hosted or Docker browser workflows."',
     '"MIG-106 through MIG-109 remain open until refreshed hosted route-entry, hosted execution, Docker self-host, analytics posture, connected-runtime, source-boundary, and aggregate browser-lane receipts prove the Chummer Online release claim."',
 ]
@@ -242,6 +296,45 @@ def evaluate_receipt(spec: dict[str, Any]) -> dict[str, Any]:
                 "passed": not missing_items,
                 "expected": expected_items,
                 "missing": missing_items,
+            }
+        )
+
+    for field, expected_items in spec.get("required_object_ids", {}).items():
+        actual = payload.get(field)
+        actual_items = {
+            str(item.get("id") or "").strip()
+            for item in actual
+            if isinstance(item, dict) and str(item.get("id") or "").strip()
+        } if isinstance(actual, list) else set()
+        missing_items = [
+            item for item in expected_items if str(item).strip() not in actual_items
+        ]
+        checks.append(
+            {
+                "id": f"required_object_ids:{field}",
+                "passed": not missing_items,
+                "expected": expected_items,
+                "missing": missing_items,
+            }
+        )
+
+    required_check_ids = spec.get("required_check_ids") or []
+    if required_check_ids:
+        actual_checks = payload.get("checks")
+        actual_check_ids = {
+            str(item.get("id") or "").strip()
+            for item in actual_checks
+            if isinstance(item, dict) and str(item.get("id") or "").strip()
+        } if isinstance(actual_checks, list) else set()
+        missing_check_ids = [
+            check_id for check_id in required_check_ids if check_id not in actual_check_ids
+        ]
+        checks.append(
+            {
+                "id": "required_check_ids",
+                "passed": not missing_check_ids,
+                "expected": required_check_ids,
+                "missing": missing_check_ids,
             }
         )
 

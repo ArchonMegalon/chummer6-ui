@@ -10,6 +10,7 @@ PUBLISHED = REPO_ROOT / ".codex-studio" / "published"
 
 ROUTE_PROOF = PUBLISHED / "BLAZOR_PUBLIC_EDGE_WORKBENCH_PROOF.generated.json"
 EXECUTION_PROOF = PUBLISHED / "BLAZOR_PUBLIC_EDGE_EXECUTION_PROOF.generated.json"
+PWA_PUBLIC_EDGE_PROOF = PUBLISHED / "BLAZOR_PWA_PUBLIC_EDGE_PROOF.generated.json"
 SELF_HOST_PROOF = PUBLISHED / "BLAZOR_SELF_HOST_WORKBENCH_PROOF.generated.json"
 ANALYTICS_PROOF = PUBLISHED / "BLAZOR_ANALYTICS_POSTURE.generated.json"
 CONNECTED_RUNTIME_PROOF = PUBLISHED / "BLAZOR_CONNECTED_RUNTIME_POSTURE.generated.json"
@@ -148,6 +149,7 @@ def count_staged_source_checks(staged: dict) -> int:
 def main() -> int:
     route = load_json(ROUTE_PROOF)
     execution = load_json(EXECUTION_PROOF)
+    pwa_public_edge = load_json(PWA_PUBLIC_EDGE_PROOF)
     self_host = load_json(SELF_HOST_PROOF)
     analytics = load_json(ANALYTICS_PROOF)
     connected_runtime = load_json(CONNECTED_RUNTIME_PROOF)
@@ -287,6 +289,19 @@ def main() -> int:
             if isinstance(item, dict) and str(item.get("id") or "").strip()
         )
     )
+    pwa_check_ids = [
+        str(item.get("id") or "").strip()
+        for item in (pwa_public_edge.get("checks") or [])
+        if isinstance(item, dict) and str(item.get("id") or "").strip()
+    ]
+    print(f"pwa_public_edge_proof_receipt={PWA_PUBLIC_EDGE_PROOF}")
+    print(f"pwa_public_edge_status={str(pwa_public_edge.get('status') or '').strip() or 'missing'}")
+    print(f"pwa_public_edge_contract={str(pwa_public_edge.get('contract_name') or '').strip() or 'missing'}")
+    print(f"pwa_public_edge_base_url={str(pwa_public_edge.get('base_url') or '').strip() or 'missing'}")
+    print(f"pwa_public_edge_proof_tier={str(pwa_public_edge.get('proof_tier') or '').strip() or 'missing'}")
+    print(f"pwa_public_edge_route_lane={str(pwa_public_edge.get('route_lane') or '').strip() or 'missing'}")
+    print(f"pwa_public_edge_check_count={len(pwa_check_ids)}")
+    print("pwa_public_edge_check_ids=" + ",".join(pwa_check_ids))
     print(f"self_host_proof_receipt={SELF_HOST_PROOF}")
     print(f"self_host_proof_status={str(self_host.get('status') or '').strip() or 'missing'}")
     print(f"self_host_proof_contract={str(self_host.get('contract_name') or '').strip() or 'missing'}")

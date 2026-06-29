@@ -1,12 +1,13 @@
 {
+  "autocapture_policy": "disabled",
   "checks": [
     {
-      "evidence": "Chummer.Blazor/Components/App.razor conditionally renders the Rybbit script from configuration.",
+      "evidence": "Chummer.Blazor/Components/App.razor conditionally renders the Rybbit script from configuration with explicit no-replay/no-autocapture metadata.",
       "id": "blazor_shell_loads_rybbit_only_from_config",
       "passed": true
     },
     {
-      "evidence": "The Blazor shell event bridge emits route/workflow metadata instead of character payloads.",
+      "evidence": "The Blazor shell event bridge emits only allowlisted route/workflow metadata and explicit no-replay/no-autocapture posture instead of character payloads.",
       "id": "analytics_event_bridge_uses_sanitized_route_metadata",
       "passed": true
     },
@@ -21,7 +22,7 @@
       "passed": true
     },
     {
-      "evidence": "Chummer.Blazor /health reports non-secret analytics policy posture for operators.",
+      "evidence": "Chummer.Blazor /health reports non-secret analytics policy posture, including no-replay/no-autocapture policy, explicit metadata allowlist, analytics-specific exclusions, and shared Runner Intelligence sensitive-field exclusions for operators.",
       "id": "blazor_health_reports_non_secret_analytics_policy",
       "passed": true
     },
@@ -46,6 +47,11 @@
       "passed": true
     },
     {
+      "evidence": "The analytics example receipt documents the route metadata, sensitive-data, no-replay, and no-autocapture fields.",
+      "id": "analytics_example_receipt_documents_policy_fields",
+      "passed": true
+    },
+    {
       "evidence": "Live hosted Blazor HTML at https://chummer.run/blazor/ contains the Rybbit script tag and sanitized analytics bridge.",
       "id": "hosted_chummer_run_blazor_renders_rybbit_adapter",
       "passed": true
@@ -57,11 +63,15 @@
     }
   ],
   "contract_name": "chummer6-ui.blazor_analytics_posture",
-  "generated_at": "2026-06-25T01:31:05.481025+00:00",
+  "generated_at": "2026-06-29T10:51:09.189065+00:00",
   "health_url": "https://chummer.run/blazor/health",
   "hosted_public_edge": "rybbit-enabled-when-site-id-configured",
   "live_url": "https://chummer.run/blazor/",
+  "proof_compatible_route": "/blazor/workbench",
+  "public_app_route": "/blazor/app",
+  "public_app_route_family": "chummer_app",
   "self_host_default": "analytics-disabled",
   "sensitive_data_policy": "route-and-workflow-metadata-only",
+  "session_replay_policy": "disabled",
   "status": "passed"
 }

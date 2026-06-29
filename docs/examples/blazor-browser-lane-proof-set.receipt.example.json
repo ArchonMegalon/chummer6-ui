@@ -2,16 +2,18 @@
   "contract_name": "chummer6-ui.blazor_browser_lane_proof_set",
   "status": "passed",
   "generated_at": "2026-06-24T00:00:00+00:00",
-  "required_receipt_count": 7,
-  "passed_receipt_count": 7,
+  "required_receipt_count": 8,
+  "passed_receipt_count": 8,
   "source_check_count": 1,
   "passed_source_check_count": 1,
   "scope": "aggregate-browser-lane-proof-set-not-full-desktop-parity",
   "receipts": [
     {
       "id": "source_staged_release_boundary",
+      "contract_name": "chummer6-ui.blazor_source_staged_release_boundary",
       "status": "passed",
       "passed": true,
+      "scope": "staged_and_source_plan_receipts_must_not_enter_release_readiness_aggregation",
       "checks": [
         {
           "id": "contract_name",
@@ -58,6 +60,73 @@
             "/blazor/",
             "/blazor/app",
             "/blazor/workbench"
+          ],
+          "missing": []
+        }
+      ]
+    },
+    {
+      "id": "hosted_pwa_play_shell",
+      "contract_name": "chummer6-ui.blazor_pwa_public_edge_proof",
+      "status": "passed",
+      "passed": true,
+      "checks": [
+        {
+          "id": "contract_name",
+          "passed": true,
+          "expected": "chummer6-ui.blazor_pwa_public_edge_proof",
+          "actual": "chummer6-ui.blazor_pwa_public_edge_proof"
+        },
+        {
+          "id": "field:proof_tier",
+          "passed": true,
+          "expected": "hosted_pwa_public_edge_execution",
+          "actual": "hosted_pwa_public_edge_execution"
+        },
+        {
+          "id": "field:route_lane",
+          "passed": true,
+          "expected": "blazor_pwa_play_shell",
+          "actual": "blazor_pwa_play_shell"
+        },
+        {
+          "id": "required_check_ids",
+          "passed": true,
+          "expected": [
+            "manifest_install_contract",
+            "service_worker_static_privacy_contract",
+            "offline_living_world_boundary",
+            "app_head_and_registration"
+          ],
+          "missing": []
+        }
+      ]
+    },
+    {
+      "id": "hosted_execution",
+      "contract_name": "chummer6-ui.blazor_public_edge_execution_proof",
+      "status": "passed",
+      "passed": true,
+      "checks": [
+        {
+          "id": "minimum_length:workflow_families",
+          "passed": true,
+          "minimum": 9,
+          "actual": 9
+        },
+        {
+          "id": "required_object_ids:workflow_families",
+          "passed": true,
+          "expected": [
+            "promoted_startup_command_executions",
+            "promoted_dense_tool_surfaces",
+            "promoted_origin_rules_continuity",
+            "promoted_build_lab_continuity",
+            "promoted_resumed_workspace",
+            "promoted_result_continuations",
+            "promoted_action_continuations",
+            "promoted_committed_actions",
+            "promoted_advanced_action_executions"
           ],
           "missing": []
         }

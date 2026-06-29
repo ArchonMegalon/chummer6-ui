@@ -1,6 +1,6 @@
 {
   "contract_name": "chummer6-ui.blazor_source_staged_release_boundary",
-  "generated_at": "2026-06-25T04:43:29.501738+00:00",
+  "generated_at": "2026-06-29T10:50:54.426386+00:00",
   "status": "passed",
   "proof_tier": "source_policy_no_browser_execution",
   "scope": "staged_and_source_plan_receipts_must_not_enter_release_readiness_aggregation",
@@ -33,12 +33,27 @@
       "missing_tokens": []
     },
     {
+      "path": "docs/MIGRATION_BACKLOG.md",
+      "status": "passed",
+      "missing_tokens": []
+    },
+    {
+      "path": "docs/BLAZOR_RUNTIME_PROOF_REFRESH_PLAN.md",
+      "status": "passed",
+      "missing_tokens": []
+    },
+    {
       "path": "docs/BLAZOR_WEB_CLIENT_DOCS_INDEX.md",
       "status": "passed",
       "missing_tokens": []
     },
     {
       "path": "docs/examples/blazor-source-staged-release-boundary.receipt.example.json",
+      "status": "passed",
+      "missing_tokens": []
+    },
+    {
+      "path": "docs/examples/blazor-browser-lane-proof-set.receipt.example.json",
       "status": "passed",
       "missing_tokens": []
     }

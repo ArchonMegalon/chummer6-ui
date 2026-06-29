@@ -26,7 +26,10 @@ The goal is straightforward: `Chummer.Blazor` should ship as a polished web clie
 - `scripts/verify_blazor_public_edge_execution_proof.py`: structural verifier for the hosted execution-proof receipt contract
 - `scripts/ai/milestones/blazor-public-edge-execution-proof-check.sh`: milestone-style wrapper for the hosted execution-proof verifier
 - `docs/examples/blazor-public-edge-execution-proof.receipt.example.json`: example hosted execution-proof receipt shape
+- `scripts/materialize-blazor-pwa-public-edge-proof.py`: live public-edge materializer for the hosted `/blazor` installable PWA shell, static-cache privacy boundary, offline copy, and app-head service-worker registration
+- `scripts/verify_blazor_pwa_public_edge_proof.py`: structural verifier for `.codex-studio/published/BLAZOR_PWA_PUBLIC_EDGE_PROOF.generated.json`
 - `scripts/print_blazor_public_edge_proof_status.py`: shared status summary utility for self-host proof, hosted route-entry proof including `route_public_chummer_app`, `route_public_chummer_app_roster`, `route_public_blazor_root_redirect`, and `route_public_blazor_home_roster_entry`, hosted execution proof, analytics posture including session-replay and autocapture policy lines, connected-runtime posture, aggregate source-check counts, and external-host blocker receipts
+- `scripts/print_blazor_public_edge_proof_status.py`: also reports the hosted `/blazor` PWA proof receipt, base URL, proof tier, route lane, and required manifest/service-worker/offline/app-head check ids so operators can confirm the Play shell is installable without treating runner, workspace, API, Black Ledger, heat, or session data as offline cacheable
 - `scripts/print_blazor_public_edge_proof_status.py`: also exposes aggregate browser-lane boundary visibility through `aggregate_note_count`, `aggregate_source_boundary_policy_note`, and `aggregate_migration_boundary_note`, so operators can see whether regenerated aggregate receipts carry the source-policy-only guard and `MIG-106` through `MIG-109` open-until-refreshed-proof posture
 - `scripts/print_blazor_public_edge_proof_status.py`: also reports the optional staged career/support source-alignment receipt when it has been generated; that status line is not browser execution proof
 - `scripts/materialize-blazor-browser-lane-proof-set.py`: aggregate proof-set materializer that fails unless the required browser-lane receipts are all in their expected passing/ready states and the aggregate example receipt source shape still documents hosted route-marker and analytics policy checks
@@ -108,6 +111,7 @@ The goal is straightforward: `Chummer.Blazor` should ship as a polished web clie
 - `scripts/materialize-blazor-legacy-control-coverage-staged-proof.py`: source-structural materializer for legacy control coverage breadth
 - `docs/examples/blazor-legacy-control-coverage-staged-proof.receipt.example.json`: example receipt shape for `BLAZOR_LEGACY_CONTROL_COVERAGE_STAGED_PROOF.generated.json`
 - `.codex-studio/published/BLAZOR_BROWSER_LANE_PROOF_SET.generated.json`: published aggregate browser-lane proof-set receipt
+- `.codex-studio/published/BLAZOR_PWA_PUBLIC_EDGE_PROOF.generated.json`: published hosted `/blazor` PWA install-shell receipt covering manifest, service worker, offline living-world boundary copy, and app-head registration
 - `.codex-studio/published/BLAZOR_PUBLIC_EDGE_EXECUTION_PROOF.generated.json`: published hosted execution-proof receipt
 - `.codex-studio/published/BLAZOR_PUBLIC_EDGE_WORKBENCH_PROOF.generated.json`: published hosted route-entry proof receipt covering clean public `/app`, roster-start `/app?command=character_roster`, hosted `/blazor/app`, and proof-compatible `/blazor/workbench`
 
