@@ -73,8 +73,7 @@ if (pathBase.HasValue)
 
 app.UseAntiforgery();
 
-string appEntryRoute = pathBase.HasValue ? $"{pathBase.Value}/app" : "/app";
-app.MapGet("/", () => Results.Redirect(appEntryRoute));
+app.MapMethods("/", [HttpMethods.Head], () => Results.Ok());
 
 app.MapGet("/health", () => Results.Ok(new
 {

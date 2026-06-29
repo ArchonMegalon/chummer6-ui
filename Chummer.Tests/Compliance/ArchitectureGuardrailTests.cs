@@ -78,11 +78,18 @@ public class ArchitectureGuardrailTests
     [TestMethod]
     public void Blazor_head_exposes_health_endpoint()
     {
-        string programPath = FindPath("Chummer.Blazor", "Program.cs");
+        string programPath = "/docker/chummercomplete/chummer-presentation/Chummer.Blazor/Program.cs";
+        if (!File.Exists(programPath))
+        {
+            programPath = FindPath("Chummer.Blazor", "Program.cs");
+        }
+
         string text = File.ReadAllText(programPath);
 
         StringAssert.Contains(text, "builder.Services.AddRazorComponents()");
         StringAssert.Contains(text, "AddInteractiveServerComponents();");
+        Assert.IsFalse(text.Contains("app.MapGet(\"/\",", StringComparison.Ordinal), "The public-edge /blazor/ root must not compete with the Razor root page.");
+        StringAssert.Contains(text, "app.MapMethods(\"/\", [HttpMethods.Head], () => Results.Ok())");
         StringAssert.Contains(text, "app.MapRazorComponents<App>()");
     }
 
