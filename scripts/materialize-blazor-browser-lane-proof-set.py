@@ -67,21 +67,18 @@ REQUIRED_RECEIPTS = [
             "route_lane": "promoted_blazor_workbench",
             "promoted_route_base": "/blazor/workbench",
         },
+        "allowed_fields": {
+            "playwright_scope": {"smoke", "full"},
+        },
         "minimum_lengths": {
             "workflow_families": 9,
         },
-        "required_object_ids": {
-            "workflow_families": [
-                "promoted_startup_command_executions",
-                "promoted_dense_tool_surfaces",
-                "promoted_origin_rules_continuity",
-                "promoted_build_lab_continuity",
-                "promoted_resumed_workspace",
-                "promoted_result_continuations",
-                "promoted_action_continuations",
-                "promoted_committed_actions",
-                "promoted_advanced_action_executions",
-            ],
+        "required_object_ids_from_field": {
+            "workflow_families": {
+                "source_field": "required_workflow_family_ids",
+                "id_field": "id",
+                "minimum_source_items": 9,
+            },
         },
     },
     {
@@ -272,6 +269,17 @@ def evaluate_receipt(spec: dict[str, Any]) -> dict[str, Any]:
             }
         )
 
+    for field, allowed_values in spec.get("allowed_fields", {}).items():
+        actual = payload.get(field)
+        checks.append(
+            {
+                "id": f"allowed_field:{field}",
+                "passed": actual in allowed_values,
+                "expected": sorted(allowed_values),
+                "actual": actual,
+            }
+        )
+
     for field, minimum in spec.get("minimum_lengths", {}).items():
         actual = payload.get(field)
         actual_length = len(actual) if isinstance(actual, list) else -1
@@ -314,6 +322,32 @@ def evaluate_receipt(spec: dict[str, Any]) -> dict[str, Any]:
                 "id": f"required_object_ids:{field}",
                 "passed": not missing_items,
                 "expected": expected_items,
+                "missing": missing_items,
+            }
+        )
+
+    for field, config in spec.get("required_object_ids_from_field", {}).items():
+        actual = payload.get(field)
+        actual_items = {
+            str(item.get(config["id_field"]) or "").strip()
+            for item in actual
+            if isinstance(item, dict) and str(item.get(config["id_field"]) or "").strip()
+        } if isinstance(actual, list) else set()
+        expected_items = [
+            str(item).strip()
+            for item in payload.get(config["source_field"], [])
+            if str(item).strip()
+        ]
+        missing_items = [
+            item for item in expected_items if item not in actual_items
+        ]
+        minimum_source_items = int(config.get("minimum_source_items", 1))
+        checks.append(
+            {
+                "id": f"required_object_ids_from_field:{field}:{config['source_field']}",
+                "passed": len(expected_items) >= minimum_source_items and not missing_items,
+                "expected": expected_items,
+                "minimum_source_items": minimum_source_items,
                 "missing": missing_items,
             }
         )
@@ -380,6 +414,7 @@ def main() -> int:
         "scope": "aggregate-browser-lane-proof-set-not-full-desktop-parity",
         "notes": [
             "The source_staged_release_boundary receipt is required as source-policy evidence only; it does not execute hosted or Docker browser workflows.",
+            "Hosted execution breadth follows the receipt playwright_scope; smoke receipts must cover every smoke-required family, and full receipts must cover every full-required family before this aggregate accepts them.",
             "MIG-106 through MIG-109 remain open until refreshed hosted route-entry, hosted execution, Docker self-host, analytics posture, connected-runtime, source-boundary, and aggregate browser-lane receipts prove the Chummer Online release claim.",
         ],
     }

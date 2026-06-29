@@ -21,19 +21,6 @@ PWA_REQUIRED_CHECKS = {
     "offline_living_world_boundary",
     "app_head_and_registration",
 }
-HOSTED_EXECUTION_REQUIRED_FAMILIES = {
-    "promoted_startup_command_executions",
-    "promoted_dense_tool_surfaces",
-    "promoted_origin_rules_continuity",
-    "promoted_build_lab_continuity",
-    "promoted_resumed_workspace",
-    "promoted_result_continuations",
-    "promoted_action_continuations",
-    "promoted_committed_actions",
-    "promoted_advanced_action_executions",
-}
-
-
 def _load_browser_lane_materializer():
     spec = importlib.util.spec_from_file_location("blazor_browser_lane_proof_set", MATERIALIZER_PATH)
     assert spec is not None
@@ -67,14 +54,19 @@ def test_browser_lane_materializer_requires_hosted_pwa_public_edge_receipt() -> 
     assert result["passed"], result
 
 
-def test_browser_lane_materializer_requires_named_hosted_execution_families() -> None:
+def test_browser_lane_materializer_keeps_hosted_execution_scope_aware() -> None:
     module = _load_browser_lane_materializer()
     hosted_execution_spec = next(
         spec for spec in module.REQUIRED_RECEIPTS if spec["id"] == "hosted_execution"
     )
 
+    assert hosted_execution_spec["allowed_fields"]["playwright_scope"] == {"smoke", "full"}
     assert hosted_execution_spec["minimum_lengths"] == {"workflow_families": 9}
-    assert set(hosted_execution_spec["required_object_ids"]["workflow_families"]) == HOSTED_EXECUTION_REQUIRED_FAMILIES
+    assert hosted_execution_spec["required_object_ids_from_field"]["workflow_families"] == {
+        "source_field": "required_workflow_family_ids",
+        "id_field": "id",
+        "minimum_source_items": 9,
+    }
 
     result = module.evaluate_receipt(hosted_execution_spec)
     assert result["passed"], result
