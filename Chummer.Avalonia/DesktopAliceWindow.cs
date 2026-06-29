@@ -794,7 +794,7 @@ internal sealed class DesktopAliceWindow : Window
                 else
                 {
                     actionRow.Children.Add(CreateButton("Draft story", StartOriginDossierAsync, isPrimary: true, name: "AliceOriginStartDossierButton"));
-                    actionRow.Children.Add(CreateButton("Open account workspace", static () => DesktopInstallLinkingRuntime.TryOpenRelativePortal("/account/alice"), name: "AliceAssistantOpenAccountButton"));
+                    actionRow.Children.Add(CreateButton("Open Chummer account", static () => DesktopInstallLinkingRuntime.TryOpenRelativePortal("/account/alice"), name: "AliceAssistantOpenAccountButton"));
                 }
             }
             else
@@ -806,11 +806,11 @@ internal sealed class DesktopAliceWindow : Window
                         promptBox.Text = "Build a complete SR4 BP troll decker from scratch. Explain legality, qualities, ware, gear, and first purchases.";
                         return AskAsync();
                     }, isPrimary: true, name: "AliceDraftFromScratchButton"));
-                    actionRow.Children.Add(CreateButton("Open account workspace", static () => DesktopInstallLinkingRuntime.TryOpenRelativePortal("/account/alice"), name: "AliceAssistantOpenAccountButton"));
+                    actionRow.Children.Add(CreateButton("Open Chummer account", static () => DesktopInstallLinkingRuntime.TryOpenRelativePortal("/account/alice"), name: "AliceAssistantOpenAccountButton"));
                 }
                 else
                 {
-                    actionRow.Children.Add(CreateButton("Open account workspace", static () => DesktopInstallLinkingRuntime.TryOpenRelativePortal("/account/alice"), isPrimary: true, name: "AliceAssistantOpenAccountButton"));
+                    actionRow.Children.Add(CreateButton("Open Chummer account", static () => DesktopInstallLinkingRuntime.TryOpenRelativePortal("/account/alice"), isPrimary: true, name: "AliceAssistantOpenAccountButton"));
                 }
 
                 actionRow.Children.Add(CreateButton("Open browser guide", static () => DesktopInstallLinkingRuntime.TryOpenRelativePortal("/alice"), name: "AliceAssistantOpenPublicButton"));
@@ -1248,9 +1248,9 @@ internal sealed class DesktopAliceWindow : Window
                     statusText.Text,
                     answerText.Text,
                     fallbackEvidence,
-                    ["Open account workspace", "Open browser guide"]));
+                    ["Open Chummer account", "Open browser guide"]));
                 RefreshConversationFeed();
-                actionRow.Children.Add(CreateButton("Open account workspace", static () => DesktopInstallLinkingRuntime.TryOpenRelativePortal("/account/alice"), isPrimary: true, name: "AliceAssistantFallbackAccountButton"));
+                actionRow.Children.Add(CreateButton("Open Chummer account", static () => DesktopInstallLinkingRuntime.TryOpenRelativePortal("/account/alice"), isPrimary: true, name: "AliceAssistantFallbackAccountButton"));
                 actionRow.Children.Add(CreateButton("Open browser guide", static () => DesktopInstallLinkingRuntime.TryOpenRelativePortal("/alice"), name: "AliceAssistantFallbackPublicButton"));
                 return;
             }
@@ -1410,7 +1410,7 @@ internal sealed class DesktopAliceWindow : Window
                 "No account build link is available yet.",
                 null,
                 "AliceLeadHandoffCard",
-                CreateButton("Open account workspace", static () => DesktopInstallLinkingRuntime.TryOpenRelativePortal("/account/alice"), name: "AliceOpenAccountRailButton"),
+                CreateButton("Open Chummer account", static () => DesktopInstallLinkingRuntime.TryOpenRelativePortal("/account/alice"), name: "AliceOpenAccountRailButton"),
                 CreateButton("Open browser guide", static () => DesktopInstallLinkingRuntime.TryOpenRelativePortal("/alice"), name: "AliceOpenPublicButton"));
         }
 
@@ -1435,7 +1435,7 @@ internal sealed class DesktopAliceWindow : Window
             leadDetails,
             "AliceLeadHandoffCard",
             CreateButton("Open build link", () => DesktopInstallLinkingRuntime.TryOpenRelativePortal($"/account/alice/{Uri.EscapeDataString(lead.HandoffId)}"), isPrimary: true, name: "AliceOpenLeadHandoffButton"),
-            CreateButton("Open account workspace", static () => DesktopInstallLinkingRuntime.TryOpenRelativePortal("/account/alice"), name: "AliceOpenAccountLaneButton"));
+            CreateButton("Open Chummer account", static () => DesktopInstallLinkingRuntime.TryOpenRelativePortal("/account/alice"), name: "AliceOpenAccountLaneButton"));
     }
 
     private Control CreateHandoffListCard()
@@ -1602,7 +1602,7 @@ internal sealed class DesktopAliceWindow : Window
                 : $"{handoffs.Count} account build link(s) are available.",
             body,
             "AliceAccountHandoffsCard",
-            CreateButton("Open account workspace", static () => DesktopInstallLinkingRuntime.TryOpenRelativePortal("/account/alice"), isPrimary: HasHandoffContext, name: "AliceOpenAccountFromListButton"));
+            CreateButton("Open Chummer account", static () => DesktopInstallLinkingRuntime.TryOpenRelativePortal("/account/alice"), isPrimary: HasHandoffContext, name: "AliceOpenAccountFromListButton"));
     }
 
     private Control CreateBuildPathCard()
@@ -1774,7 +1774,7 @@ internal sealed class DesktopAliceWindow : Window
                 : $"{_buildPathCandidates.Count} build path candidate(s) are available.",
             body,
             "AliceBuildPathCard",
-            CreateButton("Open account workspace", static () => DesktopInstallLinkingRuntime.TryOpenRelativePortal("/account/alice"), isPrimary: HasBuildPathContext, name: "AliceOpenAccountFromBuildPathsButton"),
+            CreateButton("Open Chummer account", static () => DesktopInstallLinkingRuntime.TryOpenRelativePortal("/account/alice"), isPrimary: HasBuildPathContext, name: "AliceOpenAccountFromBuildPathsButton"),
             CreateButton("Open browser guide", static () => DesktopInstallLinkingRuntime.TryOpenRelativePortal("/alice"), name: "AliceOpenPublicFromBuildPathsButton"));
     }
 
@@ -4983,7 +4983,7 @@ internal sealed class DesktopAliceWindow : Window
 
         if (buttons.Count == 0)
         {
-            buttons.Add(CreateButton("Open account workspace", static () => DesktopInstallLinkingRuntime.TryOpenRelativePortal("/account/alice"), isPrimary: true, name: "AliceSuggestedActionFallbackAccount"));
+            buttons.Add(CreateButton("Open Chummer account", static () => DesktopInstallLinkingRuntime.TryOpenRelativePortal("/account/alice"), isPrimary: true, name: "AliceSuggestedActionFallbackAccount"));
             buttons.Add(CreateButton("Open browser guide", static () => DesktopInstallLinkingRuntime.TryOpenRelativePortal("/alice"), name: "AliceSuggestedActionFallbackPublic"));
         }
 

@@ -1249,6 +1249,16 @@ public sealed class DesktopThemeManagerTests
     }
 
     [TestMethod]
+    public void Alice_account_handoffs_do_not_call_the_account_a_workspace()
+    {
+        string repoRoot = TestContextLocator.ResolveChummerPresentationRepoRoot();
+        string aliceSource = File.ReadAllText(Path.Combine(repoRoot, "Chummer.Avalonia", "DesktopAliceWindow.cs"));
+
+        StringAssert.Contains(aliceSource, "Open Chummer account");
+        Assert.IsFalse(aliceSource.Contains("Open account workspace", StringComparison.Ordinal));
+    }
+
+    [TestMethod]
     public void Desktop_media_and_install_link_surfaces_use_named_theme_brushes_instead_of_raw_white_black()
     {
         string repoRoot = TestContextLocator.ResolveChummerPresentationRepoRoot();
