@@ -46,7 +46,10 @@ public partial class DesktopShell
             return;
 
         await _bridge.ExecuteCommandAsync(commandId, CancellationToken.None);
-        await SyncShellWorkspaceContextAsync();
+        if (ShouldSyncShellWorkspaceContext(State, ShellState))
+        {
+            await SyncShellWorkspaceContextAsync();
+        }
     }
 
     private Task OpenRuntimeInspectorAsync()
