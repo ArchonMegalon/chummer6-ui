@@ -368,6 +368,14 @@ node scripts/e2e-public-edge-playwright.cjs
 If the hosted browser assertions fail, the script writes a failed receipt to the ignored failure sidecar and exits non-zero. It does not overwrite the published passing receipt unless `CHUMMER_PUBLIC_EDGE_WRITE_FAILED_PROOF_TO_OUTPUT=1` is set.
 If the browser assertions pass but the receipt contract is malformed, the wrapper still exits non-zero because it runs the canonical receipt verifier after Playwright completes.
 
+The current horizon receipt is materialized separately:
+
+```bash
+python3 scripts/materialize-blazor-public-edge-execution-horizon.py
+```
+
+That receipt reads the published execution proof and optional failed-run sidecar, then reports whether near-term smoke execution and the mid-term full live public-edge matrix are actually proven. It is not browser execution proof by itself and must not upgrade a smoke-scope receipt into a full-scope claim.
+
 The canonical contract check for the hosted execution receipt is:
 
 ```bash

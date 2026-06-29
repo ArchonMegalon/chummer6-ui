@@ -26,6 +26,7 @@ The goal is straightforward: `Chummer.Blazor` should ship as a polished web clie
 - `scripts/verify_blazor_public_edge_execution_proof.py`: structural verifier for the hosted execution-proof receipt contract
 - `scripts/ai/milestones/blazor-public-edge-execution-proof-check.sh`: milestone-style wrapper for the hosted execution-proof verifier
 - `docs/examples/blazor-public-edge-execution-proof.receipt.example.json`: example hosted execution-proof receipt shape
+- `scripts/materialize-blazor-public-edge-execution-horizon.py`: generated horizon receipt that makes current smoke execution proof, unproven full live public-edge matrix breadth, failed-run sidecar posture, and no-smoke-to-full promotion boundaries explicit
 - `scripts/materialize-blazor-pwa-public-edge-proof.py`: live public-edge materializer for the hosted `/blazor` installable PWA shell, static-cache privacy boundary, offline copy, and app-head service-worker registration
 - `scripts/verify_blazor_pwa_public_edge_proof.py`: structural verifier for `.codex-studio/published/BLAZOR_PWA_PUBLIC_EDGE_PROOF.generated.json`
 - `scripts/print_blazor_public_edge_proof_status.py`: shared status summary utility for self-host proof, hosted route-entry proof including `route_public_chummer_app`, `route_public_chummer_app_roster`, `route_public_blazor_root_redirect`, and `route_public_blazor_home_roster_entry`, hosted execution proof, analytics posture including session-replay and autocapture policy lines, connected-runtime posture, aggregate source-check counts, and external-host blocker receipts
@@ -112,6 +113,7 @@ The goal is straightforward: `Chummer.Blazor` should ship as a polished web clie
 - `scripts/materialize-blazor-legacy-control-coverage-staged-proof.py`: source-structural materializer for legacy control coverage breadth
 - `docs/examples/blazor-legacy-control-coverage-staged-proof.receipt.example.json`: example receipt shape for `BLAZOR_LEGACY_CONTROL_COVERAGE_STAGED_PROOF.generated.json`
 - `.codex-studio/published/BLAZOR_BROWSER_LANE_PROOF_SET.generated.json`: published aggregate browser-lane proof-set receipt
+- `.codex-studio/published/BLAZOR_PUBLIC_EDGE_EXECUTION_HORIZON.generated.json`: published hosted execution horizon receipt showing current smoke proof status and whether the full live public-edge execution matrix is actually proven
 - `.codex-studio/published/BLAZOR_PWA_PUBLIC_EDGE_PROOF.generated.json`: published hosted `/blazor` PWA install-shell receipt covering manifest, service worker, offline living-world boundary copy, and app-head registration
 - `.codex-studio/published/BLAZOR_PUBLIC_EDGE_EXECUTION_PROOF.generated.json`: published hosted execution-proof receipt
 - `.codex-studio/published/BLAZOR_PUBLIC_EDGE_WORKBENCH_PROOF.generated.json`: published hosted route-entry proof receipt covering clean public `/app`, roster-start `/app?command=character_roster`, hosted `/blazor/app`, and proof-compatible `/blazor/workbench`

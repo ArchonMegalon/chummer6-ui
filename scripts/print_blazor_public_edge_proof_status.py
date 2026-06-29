@@ -10,6 +10,7 @@ PUBLISHED = REPO_ROOT / ".codex-studio" / "published"
 
 ROUTE_PROOF = PUBLISHED / "BLAZOR_PUBLIC_EDGE_WORKBENCH_PROOF.generated.json"
 EXECUTION_PROOF = PUBLISHED / "BLAZOR_PUBLIC_EDGE_EXECUTION_PROOF.generated.json"
+EXECUTION_HORIZON = PUBLISHED / "BLAZOR_PUBLIC_EDGE_EXECUTION_HORIZON.generated.json"
 PWA_PUBLIC_EDGE_PROOF = PUBLISHED / "BLAZOR_PWA_PUBLIC_EDGE_PROOF.generated.json"
 SELF_HOST_PROOF = PUBLISHED / "BLAZOR_SELF_HOST_WORKBENCH_PROOF.generated.json"
 ANALYTICS_PROOF = PUBLISHED / "BLAZOR_ANALYTICS_POSTURE.generated.json"
@@ -149,6 +150,7 @@ def count_staged_source_checks(staged: dict) -> int:
 def main() -> int:
     route = load_json(ROUTE_PROOF)
     execution = load_json(EXECUTION_PROOF)
+    execution_horizon = load_json(EXECUTION_HORIZON)
     pwa_public_edge = load_json(PWA_PUBLIC_EDGE_PROOF)
     self_host = load_json(SELF_HOST_PROOF)
     analytics = load_json(ANALYTICS_PROOF)
@@ -289,6 +291,21 @@ def main() -> int:
             if isinstance(item, dict) and str(item.get("id") or "").strip()
         )
     )
+    horizon_rows = {
+        str(item.get("id") or "").strip(): item
+        for item in (execution_horizon.get("horizons") or [])
+        if isinstance(item, dict) and str(item.get("id") or "").strip()
+    }
+    mid_term_full_horizon = horizon_rows.get("mid_term_full_live_public_edge_execution_matrix") or {}
+    near_term_smoke_horizon = horizon_rows.get("near_term_hosted_smoke_execution") or {}
+    print(f"execution_horizon_receipt={EXECUTION_HORIZON}")
+    print(f"execution_horizon_status={str(execution_horizon.get('status') or '').strip() or 'missing'}")
+    print(f"execution_horizon_contract={str(execution_horizon.get('contract_name') or '').strip() or 'missing'}")
+    print(f"execution_horizon_near_term_smoke_status={str(near_term_smoke_horizon.get('status') or '').strip() or 'missing'}")
+    print(f"execution_horizon_mid_term_full_status={str(mid_term_full_horizon.get('status') or '').strip() or 'missing'}")
+    print(f"execution_horizon_mid_term_full_required={mid_term_full_horizon.get('required_workflow_family_count', 'unknown')}")
+    print(f"execution_horizon_mid_term_full_covered={mid_term_full_horizon.get('covered_workflow_family_count', 'unknown')}")
+    print(f"execution_horizon_failed_sidecar_present={str(bool((execution_horizon.get('failed_execution_sidecar') or {}).get('present'))).lower()}")
     pwa_check_ids = [
         str(item.get("id") or "").strip()
         for item in (pwa_public_edge.get("checks") or [])

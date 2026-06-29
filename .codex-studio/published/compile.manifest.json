@@ -1,6 +1,7 @@
 {
   "artifacts": [
     "BLAZOR_BROWSER_LANE_PROOF_SET.generated.json",
+    "BLAZOR_PUBLIC_EDGE_EXECUTION_HORIZON.generated.json",
     "BLAZOR_PUBLIC_EDGE_EXECUTION_PROOF.generated.json",
     "BLAZOR_PUBLIC_EDGE_WORKBENCH_PROOF.generated.json",
     "BLAZOR_PWA_PUBLIC_EDGE_PROOF.generated.json",
