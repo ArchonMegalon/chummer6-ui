@@ -63,6 +63,7 @@ builder.Services.AddScoped<IShellPresenter, ShellPresenter>();
 builder.Services.AddScoped<ICommandAvailabilityEvaluator, DefaultCommandAvailabilityEvaluator>();
 builder.Services.AddScoped<IShellSurfaceResolver, ShellSurfaceResolver>();
 builder.Services.AddBlazorRunnerIntelligence();
+builder.Services.AddHostedService<BlazorPublicEdgeWarmupService>();
 
 WebApplication app = builder.Build();
 
