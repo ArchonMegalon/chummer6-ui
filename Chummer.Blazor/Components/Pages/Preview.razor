@@ -2721,6 +2721,7 @@
                 <h2>@RouteOpenTitle</h2>
             </div>
             <p data-chummer-app-startup-command="@StartupCommandLabel">
+                <strong>@StartupCommandDisplayLabel</strong>
                 @RouteOpenSummary
             </p>
         </div>
@@ -3018,6 +3019,22 @@
     private string StartupCommandLabel => string.IsNullOrWhiteSpace(Command)
         ? "none"
         : Command;
+    private string StartupCommandDisplayLabel => (Command ?? string.Empty).Trim().ToLowerInvariant() switch
+    {
+        NewCharacterCommand => "New runner",
+        NewCharacterOriginCommand => "Origin Dossier",
+        CharacterRosterCommand => "Character Roster",
+        MasterIndexCommand => "Master Index",
+        OpenCharacterCommand => "Open Dossier",
+        OpenForPrintingCommand => "Open for Printing",
+        OpenForExportCommand => "Open for Export",
+        SaveCharacterCommand => "Save Runner",
+        SaveCharacterAsCommand => "Save Runner As",
+        ExportCharacterCommand => "Export Dossier",
+        PrintCharacterCommand => "Print Dossier",
+        "" => "No startup command selected",
+        _ => "Startup command"
+    };
     private string GlobalSettingsHref => BuildPreviewHref(command: "global_settings", useWorkbenchRoute: true);
     private string ChummerOnlineRosterHref => IsWorkbenchRoute
         ? BuildPreviewHref(command: CharacterRosterCommand, useWorkbenchRoute: true)
