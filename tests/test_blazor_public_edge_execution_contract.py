@@ -73,6 +73,22 @@ def test_public_edge_execution_verifier_accepts_scope_specific_required_workflow
     )
 
 
+def test_public_edge_execution_runner_reuses_rewritten_fixture_workspace() -> None:
+    script = Path("scripts/e2e-public-edge-playwright.cjs").read_text(encoding="utf-8")
+
+    assert "function continuationQueryFromUrl(urlString)" in script
+    assert "function isReusableContinuationQuery(query)" in script
+    assert "return query.startsWith('workspace=') || (query.startsWith('runner=') && query !== 'runner=blue');" in script
+    assert "if (isReusableContinuationQuery(promotedContinuationQuery))" in script
+    assert "return `workspace=${workspaceId}`;" in script
+    assert "return `fixture=${fixtureId}`;" in script
+    assert "await openPath(page, `${promotedRouteBase}?fixture=${encodeURIComponent(fixtureId)}`, 'section.classic-chummer-shell');" in script
+    assert "new URL(window.location.href).searchParams.has('workspace')" in script
+    assert "const rewrittenQuery = continuationQueryFromUrl(page.url());" in script
+    assert "if (rewrittenQuery && isReusableContinuationQuery(rewrittenQuery))" in script
+    assert "const resolvedQuery = continuationQueryFromUrl(resolvedHref);" in script
+
+
 def test_promoted_workbench_surfaces_startup_command_display_labels() -> None:
     preview = Path("Chummer.Blazor/Components/Pages/Preview.razor").read_text(encoding="utf-8")
 

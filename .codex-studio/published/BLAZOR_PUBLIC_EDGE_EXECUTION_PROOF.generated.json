@@ -1,6 +1,6 @@
 {
   "contract_name": "chummer6-ui.blazor_public_edge_execution_proof",
-  "generated_at": "2026-06-29T08:34:44.034Z",
+  "generated_at": "2026-06-29T08:51:48.454Z",
   "status": "passed",
   "base_url": "https://chummer.run",
   "playwright_scope": "smoke",
@@ -115,7 +115,7 @@
           "status": "pass"
         },
         {
-          "route": "/blazor/workbench?fixture=blue&tab=tab-rules",
+          "route": "/blazor/workbench?workspace=9664c7405cf34d24b8ceba5a7562c2a2&tab=tab-rules",
           "assertion": "rules continuity route preserved the rules tab, runner continuation, and visible ruleset posture on the hosted shell",
           "status": "pass"
         }
@@ -127,7 +127,7 @@
       "workflow_contract": "build_lab_runner_continuity",
       "checks": [
         {
-          "route": "/blazor/workbench?fixture=blue&tab=tab-create",
+          "route": "/blazor/workbench?workspace=9664c7405cf34d24b8ceba5a7562c2a2&tab=tab-create",
           "assertion": "build-lab continuity route preserved the seeded build-lab workflow and continuation posture on the hosted shell",
           "status": "pass"
         }
@@ -139,7 +139,7 @@
       "workflow_contract": "workspace_resume_continuity",
       "checks": [
         {
-          "route": "/blazor/workbench?fixture=blue",
+          "route": "/blazor/workbench?workspace=9664c7405cf34d24b8ceba5a7562c2a2",
           "assertion": "restored workspace recovery actions and hosted shell state rendered with canonical continuation hrefs",
           "status": "pass"
         }
@@ -151,12 +151,12 @@
       "workflow_contract": "browser_result_continuations",
       "checks": [
         {
-          "route": "/blazor/workbench?fixture=blue&command=save_character_as",
+          "route": "/blazor/workbench?workspace=9664c7405cf34d24b8ceba5a7562c2a2&command=save_character_as",
           "assertion": "visible result continuation text 'Download prepared:' rendered",
           "status": "pass"
         },
         {
-          "route": "/blazor/workbench?fixture=blue&command=print_character",
+          "route": "/blazor/workbench?workspace=9664c7405cf34d24b8ceba5a7562c2a2&command=print_character",
           "assertion": "visible result continuation text 'Print preview prepared:' rendered",
           "status": "pass"
         }
@@ -168,7 +168,7 @@
       "workflow_contract": "dialog_action_continuity",
       "checks": [
         {
-          "route": "/blazor/workbench?fixture=blue&tab=tab-calendar&control=create_entry",
+          "route": "/blazor/workbench?workspace=9664c7405cf34d24b8ceba5a7562c2a2&tab=tab-calendar&control=create_entry",
           "assertion": "calendar entry dialog opened with expected browser-visible fields",
           "status": "pass"
         }
@@ -180,7 +180,7 @@
       "workflow_contract": "committed_visible_state",
       "checks": [
         {
-          "route": "/blazor/workbench?fixture=blue&tab=tab-calendar&control=create_entry&dialog_action=add",
+          "route": "/blazor/workbench?workspace=9664c7405cf34d24b8ceba5a7562c2a2&tab=tab-calendar&control=create_entry&dialog_action=add",
           "assertion": "committed calendar entry result remains visible after dialog action",
           "status": "pass"
         }
@@ -192,7 +192,7 @@
       "workflow_contract": "advanced_dialog_action_execution",
       "checks": [
         {
-          "route": "/blazor/workbench?fixture=blue&tab=tab-technomancer&control=complex_form_add",
+          "route": "/blazor/workbench?workspace=9664c7405cf34d24b8ceba5a7562c2a2&tab=tab-technomancer&control=complex_form_add",
           "assertion": "advanced dialog 'Add Complex Form' rendered with expected browser-visible details",
           "status": "pass"
         }

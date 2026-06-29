@@ -156,7 +156,35 @@ async function openPath(page, route, waitSelector) {
   throw await enrichRouteError(page, route, 'openPath failure', lastError || new Error(`Unable to open ${route}`));
 }
 
+function continuationQueryFromUrl(urlString) {
+  const url = new URL(urlString, `${baseUrl}${promotedRouteBase}`);
+  const runnerId = url.searchParams.get('runner');
+  if (runnerId) {
+    return `runner=${runnerId}`;
+  }
+
+  const workspaceId = url.searchParams.get('workspace');
+  if (workspaceId) {
+    return `workspace=${workspaceId}`;
+  }
+
+  const fixtureId = url.searchParams.get('fixture');
+  if (fixtureId) {
+    return `fixture=${fixtureId}`;
+  }
+
+  return null;
+}
+
+function isReusableContinuationQuery(query) {
+  return query.startsWith('workspace=') || (query.startsWith('runner=') && query !== 'runner=blue');
+}
+
 async function resolvePromotedContinuationQuery(page) {
+  if (isReusableContinuationQuery(promotedContinuationQuery)) {
+    return promotedContinuationQuery;
+  }
+
   await openPath(page, promotedRouteBase, 'body');
   const findContinuationHref = async () => page.evaluate(() => {
     const anchors = Array.from(document.querySelectorAll('a[href]'));
@@ -172,26 +200,32 @@ async function resolvePromotedContinuationQuery(page) {
   if (!continuationHref) {
     throw new Error('unable to resolve promoted continuation query from visible runner, workspace, or fixture links');
   }
+  const continuationQuery = continuationQueryFromUrl(continuationHref);
+  if (continuationQuery && isReusableContinuationQuery(continuationQuery)) {
+    promotedContinuationQuery = continuationQuery;
+    return promotedContinuationQuery;
+  }
   const continuationUrl = new URL(continuationHref, `${baseUrl}${promotedRouteBase}`);
-  const runnerId = continuationUrl.searchParams.get('runner');
-  if (runnerId) {
-    promotedContinuationQuery = `runner=${runnerId}`;
-    return promotedContinuationQuery;
-  }
-  const workspaceId = continuationUrl.searchParams.get('workspace');
-  if (workspaceId) {
-    promotedContinuationQuery = `workspace=${workspaceId}`;
-    return promotedContinuationQuery;
-  }
   const fixtureId = continuationUrl.searchParams.get('fixture');
   if (fixtureId) {
-    await openPath(page, `${promotedRouteBase}?fixture=${encodeURIComponent(fixtureId)}`, 'body');
-    const runnerHref = await findContinuationHref();
-    if (runnerHref) {
-      const runnerUrl = new URL(runnerHref, `${baseUrl}${promotedRouteBase}`);
-      const promotedRunnerId = runnerUrl.searchParams.get('runner');
-      if (promotedRunnerId) {
-        promotedContinuationQuery = `runner=${promotedRunnerId}`;
+    await openPath(page, `${promotedRouteBase}?fixture=${encodeURIComponent(fixtureId)}`, 'section.classic-chummer-shell');
+    await page.waitForFunction(
+      () => new URL(window.location.href).searchParams.has('workspace'),
+      null,
+      { timeout: 45000 },
+    ).catch(() => {});
+
+    const rewrittenQuery = continuationQueryFromUrl(page.url());
+    if (rewrittenQuery && isReusableContinuationQuery(rewrittenQuery)) {
+      promotedContinuationQuery = rewrittenQuery;
+      return promotedContinuationQuery;
+    }
+
+    const resolvedHref = await findContinuationHref();
+    if (resolvedHref) {
+      const resolvedQuery = continuationQueryFromUrl(resolvedHref);
+      if (resolvedQuery && isReusableContinuationQuery(resolvedQuery)) {
+        promotedContinuationQuery = resolvedQuery;
         return promotedContinuationQuery;
       }
     }
