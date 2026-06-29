@@ -6144,6 +6144,34 @@
     box-shadow: inset 0 1px 0 rgba(255,255,255,.75);
 }
 
+.browser-preview-shell .browser-preview-status-card {
+    color: #1f1d1a;
+}
+
+.browser-preview-shell .browser-preview-status-card strong {
+    color: #1f1d1a;
+}
+
+.browser-preview-shell .browser-preview-status-card p {
+    color: #4b5563;
+}
+
+.browser-preview-shell .browser-preview-status-card a {
+    border: 1px solid #7b756b;
+    background: linear-gradient(180deg, #fbfaf6 0, #d8d2c8 100%);
+    color: #1f1d1a;
+    box-shadow: inset 0 1px 0 rgba(255,255,255,.9);
+}
+
+.browser-preview-shell .browser-preview-status-card a:hover,
+.browser-preview-shell .browser-preview-status-card a:focus-visible {
+    border-color: #315f7c;
+    background: #dbeaf6;
+    color: #102235;
+    box-shadow: inset 0 1px 0 rgba(255,255,255,.72);
+    transform: none;
+}
+
 .browser-preview-shell :is(h1, h2, h3) {
     color: #1f1d1a;
     letter-spacing: 0;

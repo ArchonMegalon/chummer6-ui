@@ -12,6 +12,8 @@ using Chummer.Rulesets.Sr5;
 using Microsoft.AspNetCore.Components;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
+using System;
+using System.IO;
 using BunitContext = Bunit.BunitContext;
 
 namespace Chummer.Tests.Presentation;
@@ -94,6 +96,19 @@ public sealed class PublicPreviewSurfaceTests
         Assert.IsNotNull(cut.Find("[data-preview-proof-card='save-character-as-result']"));
         Assert.IsNotNull(cut.Find("[data-preview-proof-card='origin-dossier']"));
         Assert.IsNotNull(cut.Find(".desktop-shell"));
+    }
+
+    [TestMethod]
+    public void Preview_component_css_keeps_status_cards_readable_when_light_card_surface_is_active()
+    {
+        string repoRoot = TestContextLocator.ResolveChummerPresentationRepoRoot();
+        string css = File.ReadAllText(Path.Combine(repoRoot, "Chummer.Blazor", "Components", "Pages", "Preview.razor.css"));
+
+        AssertBlockContains(css, ".browser-preview-shell .browser-preview-status-card {", "color: #1f1d1a;");
+        AssertBlockContains(css, ".browser-preview-shell .browser-preview-status-card strong {", "color: #1f1d1a;");
+        AssertBlockContains(css, ".browser-preview-shell .browser-preview-status-card p {", "color: #4b5563;");
+        AssertBlockContains(css, ".browser-preview-shell .browser-preview-status-card a {", "color: #1f1d1a;");
+        AssertBlockContains(css, ".browser-preview-shell .browser-preview-status-card a:hover,", "background: #dbeaf6;");
     }
 
     [TestMethod]
@@ -481,6 +496,18 @@ public sealed class PublicPreviewSurfaceTests
         context.Services.AddSingleton<IRulesetShellCatalogResolver, RulesetShellCatalogResolverService>();
         context.Services.AddSingleton<IShellSurfaceResolver, ShellSurfaceResolver>();
         return presenter;
+    }
+
+    private static void AssertBlockContains(string source, string selector, string expectedSnippet)
+    {
+        int selectorIndex = source.IndexOf(selector, StringComparison.Ordinal);
+        Assert.IsTrue(selectorIndex >= 0, $"Expected selector '{selector}' was not found.");
+
+        int nextBraceIndex = source.IndexOf('}', selectorIndex);
+        Assert.IsTrue(nextBraceIndex > selectorIndex, $"Expected selector '{selector}' to have a closing brace.");
+
+        string block = source.Substring(selectorIndex, nextBraceIndex - selectorIndex + 1);
+        StringAssert.Contains(block, expectedSnippet);
     }
 
     private sealed class StaticShellPresenter : IShellPresenter
