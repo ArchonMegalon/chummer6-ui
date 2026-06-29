@@ -228,10 +228,17 @@ public sealed class PublicPreviewSurfaceTests
         StringAssert.Contains(cut.Markup, "Street samurai");
         StringAssert.Contains(cut.Markup, "Rook");
         StringAssert.Contains(cut.Markup, "Decker");
-        Assert.IsNotNull(cut.Find(".browser-app-launch"));
-        Assert.IsNotNull(cut.Find(".browser-preview-frame--app"));
-        Assert.IsNotNull(cut.Find(".desktop-shell"));
+        Assert.IsTrue(cut.Markup.Contains("chummer-online-app-shell", StringComparison.Ordinal));
+        Assert.IsNotNull(cut.Find(".browser-app-roster"));
+        Assert.IsNotNull(cut.Find(".browser-app-roster-tree"));
+        Assert.IsNotNull(cut.Find(".browser-app-runner-panel"));
+        Assert.IsNotNull(cut.Find(".browser-app-example-panel"));
+        Assert.IsNotNull(cut.Find("[data-drop-target='runner-folder']"));
         Assert.IsFalse(cut.Markup.Contains("data-preview-proof-card=", StringComparison.Ordinal));
+        Assert.IsFalse(cut.Markup.Contains("browser-preview-banner", StringComparison.Ordinal));
+        Assert.IsFalse(cut.Markup.Contains("classic-promoted-app", StringComparison.Ordinal));
+        Assert.IsFalse(cut.Markup.Contains("browser-preview-frame--app", StringComparison.Ordinal));
+        Assert.IsFalse(cut.Markup.Contains("desktop-shell", StringComparison.Ordinal));
         Assert.IsFalse(cut.Markup.Contains("classic-chummer-shell", StringComparison.Ordinal));
     }
 

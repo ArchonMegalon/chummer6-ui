@@ -16,109 +16,145 @@
 
 <PageTitle>@PageTitleText</PageTitle>
 
-<main class="browser-preview-shell @(IsAppRoute ? "classic-promoted-app" : IsWorkbenchRoute ? "classic-compat-app" : "classic-preview-tools")">
+<main class="browser-preview-shell @(IsAppRoute ? "chummer-online-app-shell" : IsWorkbenchRoute ? "classic-compat-app" : "classic-preview-tools")">
     <a class="browser-skip-link" href="#chummer-online-app">Skip to Chummer</a>
-    <header class="browser-preview-banner">
-        <div class="browser-preview-banner-copy">
-            @if (IsAppRoute)
-            {
-                <p class="browser-preview-kicker">Chummer Online</p>
-                <h1>Chummer Online.</h1>
-                <p>
-                    Open a runner, start a new one, or use an example archetype.
-                </p>
-            }
-            else if (IsWorkbenchRoute)
-            {
+    @if (!IsAppRoute)
+    {
+        <header class="browser-preview-banner">
+            <div class="browser-preview-banner-copy">
+                @if (IsWorkbenchRoute)
+                {
                 <p class="browser-preview-kicker">Compatibility route</p>
                 <h1>Chummer Online compatibility shell, running in the browser.</h1>
                 <p>
                     This route keeps older browser links alive. The user-facing product route is Chummer Online at <code>/blazor/app</code>.
                 </p>
-            }
-            else
-            {
+                }
+                else
+                {
                 <p class="browser-preview-kicker">Preview route tools</p>
                 <h1>Preview Chummer Online workflows without changing the public route.</h1>
                 <p>
                     This route is for startup deep links and browser result-state checks. Use Chummer Online for normal use.
                 </p>
-            }
-        </div>
+                }
+            </div>
 
-        <nav class="browser-preview-actions" aria-label="@RouteNavigationLabel">
-            <a href="@HomeHref">Public home</a>
-            @if (IsAppRoute)
-            {
-                <a href="@ChummerOnlineRosterHref">Runners</a>
-                <a href="@BuildPreviewHref(command: NewCharacterCommand, useWorkbenchRoute: true)">New runner</a>
-                <a href="@HelpHref">Help</a>
-            }
-            else if (IsWorkbenchRoute)
-            {
-                <a href="@AppHref">Chummer Online</a>
-                <a href="@PreviewHref">Preview tools</a>
-            }
-            else
-            {
-                <a href="@AppHref">Chummer Online</a>
-                <a href="@WorkbenchRouteSegment">Compatibility route</a>
-            }
-            <a href="@ShowcaseHref">Showcase</a>
-            <a href="@DownloadsHref">Downloads</a>
-            <a href="@DocsHref">Docs</a>
-        </nav>
-    </header>
+            <nav class="browser-preview-actions" aria-label="@RouteNavigationLabel">
+                <a href="@HomeHref">Public home</a>
+                @if (IsWorkbenchRoute)
+                {
+                    <a href="@AppHref">Chummer Online</a>
+                    <a href="@PreviewHref">Preview tools</a>
+                }
+                else
+                {
+                    <a href="@AppHref">Chummer Online</a>
+                    <a href="@WorkbenchRouteSegment">Compatibility route</a>
+                }
+                <a href="@ShowcaseHref">Showcase</a>
+                <a href="@DownloadsHref">Downloads</a>
+                <a href="@DocsHref">Docs</a>
+            </nav>
+        </header>
+    }
 
-    @if (IsAppRoute || IsWorkbenchRoute)
+    @if (IsAppRoute)
     {
-        @if (IsAppRoute)
-        {
-            <section id="chummer-online-app" class="browser-app-launch" tabindex="-1" aria-label="Character roster">
-                <div class="browser-app-launch-copy">
-                    <span class="browser-preview-status-label">Character Roster</span>
-                    <strong>Start with a runner.</strong>
-                    <p>Your runners will appear here. Until then, use an example archetype or create a new runner.</p>
+        <section id="chummer-online-app" class="browser-app-roster" tabindex="-1" aria-label="Character roster">
+            <header class="browser-app-roster-head">
+                <div>
+                    <span>Chummer Online</span>
+                    <h1>Character Roster</h1>
+                    <p>Your runners will appear here. Start one, import one, or open an example.</p>
                 </div>
-                <nav class="browser-app-launch-actions" aria-label="Roster actions">
+                <nav class="browser-app-roster-actions" aria-label="Roster actions">
                     <a href="@BuildPreviewHref(command: NewCharacterCommand, useWorkbenchRoute: true)">New runner</a>
-                    <a href="@BuildPreviewHref(command: OpenCharacterCommand, useWorkbenchRoute: true)">Open/import</a>
-                    <a href="@BuildPreviewHref(SeededWorkspaceId, useWorkbenchRoute: true)">Open sample</a>
+                    <a href="@BuildPreviewHref(command: OpenCharacterCommand, useWorkbenchRoute: true)">Import</a>
+                    <a href="@BuildPreviewHref(SeededWorkspaceId, useWorkbenchRoute: true)">Open example</a>
                 </nav>
-                <div class="browser-app-example-runners" role="list" aria-label="Example runners">
-                    <a role="listitem" href="@BuildPreviewHref("kestrel-samurai", useWorkbenchRoute: true)">
-                        <span>Kestrel</span>
-                        <strong>Street samurai</strong>
-                        <small>Fast, direct, gear-heavy.</small>
-                    </a>
-                    <a role="listitem" href="@BuildPreviewHref("rook-decker", useWorkbenchRoute: true)">
-                        <span>Rook</span>
-                        <strong>Decker</strong>
-                        <small>Matrix work and quiet entry.</small>
-                    </a>
-                    <a role="listitem" href="@BuildPreviewHref("mara-face", useWorkbenchRoute: true)">
-                        <span>Mara</span>
-                        <strong>Face</strong>
-                        <small>Contacts, leverage, social pressure.</small>
-                    </a>
-                    <a role="listitem" href="@BuildPreviewHref("ash-mage", useWorkbenchRoute: true)">
-                        <span>Ash</span>
-                        <strong>Mage</strong>
-                        <small>Spells, spirits, and astral risk.</small>
-                    </a>
-                </div>
-            </section>
+            </header>
 
-            <section class="browser-preview-frame browser-preview-frame--app" aria-label="Chummer Online">
-                <DesktopShell @ref="_desktopShell"
-                              DemoFixtureId="@Fixture"
-                              DemoWorkspaceId="@ResolvedWorkspace"
-                              DemoTabId="@Tab"
-                              DemoStartupCommandId="@Command"
-                              DemoUiControlId="@Control"
-                              DemoDialogActionId="@DialogAction" />
-            </section>
-        }
+            <div class="browser-app-roster-grid">
+                <aside class="browser-app-roster-tree" aria-label="Runner folders">
+                    <div class="browser-app-roster-toolbar" role="toolbar" aria-label="Organize runners">
+                        <button type="button">New folder</button>
+                        <button type="button">Rename</button>
+                        <button type="button">Move</button>
+                    </div>
+                    <ul role="tree" aria-label="Character roster">
+                        <li role="treeitem" aria-expanded="true" data-drop-target="runner-folder">
+                            <span>Current table</span>
+                            <ul role="group">
+                                <li role="treeitem" aria-selected="true" draggable="true">
+                                    <a href="@BuildPreviewHref("kestrel-samurai", useWorkbenchRoute: true)">Kestrel</a>
+                                </li>
+                                <li role="treeitem" draggable="true">
+                                    <a href="@BuildPreviewHref("rook-decker", useWorkbenchRoute: true)">Rook</a>
+                                </li>
+                            </ul>
+                        </li>
+                        <li role="treeitem" aria-expanded="true" data-drop-target="runner-folder">
+                            <span>Examples</span>
+                            <ul role="group">
+                                <li role="treeitem" draggable="true">
+                                    <a href="@BuildPreviewHref("mara-face", useWorkbenchRoute: true)">Mara</a>
+                                </li>
+                                <li role="treeitem" draggable="true">
+                                    <a href="@BuildPreviewHref("ash-mage", useWorkbenchRoute: true)">Ash</a>
+                                </li>
+                            </ul>
+                        </li>
+                    </ul>
+                </aside>
+
+                <section class="browser-app-runner-panel" aria-label="Selected runner">
+                    <header>
+                        <span>Street samurai</span>
+                        <h2>Kestrel</h2>
+                        <p>Fast, direct, gear-heavy.</p>
+                    </header>
+                    <div class="browser-app-runner-stats" aria-label="Runner summary">
+                        <span><strong>SR5</strong><small>rules</small></span>
+                        <span><strong>12</strong><small>karma</small></span>
+                        <span><strong>8,450 nuyen</strong><small>cash</small></span>
+                        <span><strong>5.4</strong><small>essence</small></span>
+                    </div>
+                    <nav class="browser-app-runner-actions" aria-label="Open Kestrel">
+                        <a href="@BuildPreviewHref("kestrel-samurai", tab: BuildTabId, useWorkbenchRoute: true)">Build</a>
+                        <a href="@BuildPreviewHref("kestrel-samurai", tab: GearTabId, useWorkbenchRoute: true)">Gear</a>
+                        <a href="@BuildPreviewHref("kestrel-samurai", tab: ContactsTabId, useWorkbenchRoute: true)">Contacts</a>
+                        <a href="@BuildPreviewHref("kestrel-samurai", command: SaveCharacterAsCommand, useWorkbenchRoute: true)">Download</a>
+                    </nav>
+                </section>
+
+                <section class="browser-app-example-panel" aria-label="Example archetypes">
+                    <h2>Examples</h2>
+                    <div class="browser-app-example-runners" role="list">
+                        <a role="listitem" href="@BuildPreviewHref("kestrel-samurai", useWorkbenchRoute: true)">
+                            <span>Kestrel</span>
+                            <strong>Street samurai</strong>
+                            <small>Fast, direct, gear-heavy.</small>
+                        </a>
+                        <a role="listitem" href="@BuildPreviewHref("rook-decker", useWorkbenchRoute: true)">
+                            <span>Rook</span>
+                            <strong>Decker</strong>
+                            <small>Matrix work and quiet entry.</small>
+                        </a>
+                        <a role="listitem" href="@BuildPreviewHref("mara-face", useWorkbenchRoute: true)">
+                            <span>Mara</span>
+                            <strong>Face</strong>
+                            <small>Contacts, leverage, social pressure.</small>
+                        </a>
+                        <a role="listitem" href="@BuildPreviewHref("ash-mage", useWorkbenchRoute: true)">
+                            <span>Ash</span>
+                            <strong>Mage</strong>
+                            <small>Spells, spirits, and astral risk.</small>
+                        </a>
+                    </div>
+                </section>
+            </div>
+        </section>
     }
 
     @if (IsWorkbenchRoute)
