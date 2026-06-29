@@ -91,6 +91,14 @@ def test_public_edge_execution_runner_reuses_rewritten_fixture_workspace() -> No
     assert "const resolvedQuery = continuationQueryFromUrl(resolvedHref);" in script
 
 
+def test_public_edge_execution_runner_waits_for_result_continuation_text() -> None:
+    script = Path("scripts/e2e-public-edge-playwright.cjs").read_text(encoding="utf-8")
+
+    assert "async function waitForBodyTextIncludes(page, expected, label)" in script
+    assert "document.body.innerText.includes(expectedText)" in script
+    assert "await waitForBodyTextIncludes(page, expectedText, `hosted resumed result route ${route}`);" in script
+
+
 def test_promoted_workbench_surfaces_startup_command_display_labels() -> None:
     preview = Path("Chummer.Blazor/Components/Pages/Preview.razor").read_text(encoding="utf-8")
 

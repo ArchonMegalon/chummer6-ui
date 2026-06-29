@@ -93,6 +93,18 @@ function expectTextIncludes(text, expected, label) {
   }
 }
 
+async function waitForBodyTextIncludes(page, expected, label) {
+  try {
+    await page.waitForFunction(
+      expectedText => document.body && document.body.innerText.includes(expectedText),
+      expected,
+      { timeout: 45000 },
+    );
+  } catch (error) {
+    throw await enrichRouteError(page, page.url().replace(baseUrl, ''), label, error);
+  }
+}
+
 async function currentBodyExcerpt(page) {
   try {
     const bodyText = await page.locator('body').innerText({ timeout: 5000 });
@@ -749,6 +761,7 @@ async function auditIdentityLicenseSurface(page, controlId, expectedTitle, expec
 
 async function auditResumedResultContinuation(page, route, expectedText) {
   await openPath(page, route, 'body');
+  await waitForBodyTextIncludes(page, expectedText, `hosted resumed result route ${route}`);
   const bodyText = await page.locator('body').innerText();
   expectTextIncludes(bodyText, expectedText, `hosted resumed result route ${route}`);
   return {

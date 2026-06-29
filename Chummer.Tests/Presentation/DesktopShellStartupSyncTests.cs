@@ -82,6 +82,23 @@ public sealed class DesktopShellStartupSyncTests
         Assert.AreEqual("new_character", presenter.ExecutedCommandId);
     }
 
+    [TestMethod]
+    public void DemoWorkspaceId_loads_workspace_without_importing_seed_fixture()
+    {
+        using var context = new BunitContext();
+        context.JSInterop.Mode = JSRuntimeMode.Loose;
+
+        FakeCharacterOverviewPresenter presenter = new();
+        RecordingShellPresenter shellPresenter = new(CreateStartupShellState());
+        RegisterDesktopShellServices(context, presenter, shellPresenter);
+
+        context.Render<DesktopShell>(parameters => parameters.Add(shell => shell.DemoWorkspaceId, "ws-1"));
+
+        Assert.AreEqual("ws-1", presenter.LoadedWorkspaceId?.Value);
+        Assert.IsNull(presenter.ImportedContent);
+        Assert.IsNull(presenter.ImportedRulesetId);
+    }
+
     private static void RegisterDesktopShellServices(
         BunitContext context,
         ICharacterOverviewPresenter presenter,

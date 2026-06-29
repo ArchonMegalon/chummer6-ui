@@ -264,14 +264,6 @@ public partial class DesktopShell : IDisposable
 
         string? fixtureId = NormalizeDemoFixtureId(DemoFixtureId);
         string? workspaceId = NormalizeOptionalToken(DemoWorkspaceId);
-        if (fixtureId is null
-            && workspaceId is not null
-            && string.Equals(workspaceId, "ws-1", StringComparison.OrdinalIgnoreCase)
-            && State.WorkspaceId is null
-            && State.Session.OpenWorkspaces.Count == 0)
-        {
-            fixtureId = "BLUE";
-        }
         string? tabId = NormalizeOptionalToken(DemoTabId);
         string? commandId = NormalizeDemoStartupCommandId(DemoStartupCommandId);
         string? controlId = NormalizeOptionalToken(DemoUiControlId);
