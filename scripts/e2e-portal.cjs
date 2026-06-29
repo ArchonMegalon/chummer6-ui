@@ -2,19 +2,10 @@
 'use strict';
 
 const baseUrl = (process.env.CHUMMER_PORTAL_BASE_URL || 'http://chummer-portal:8080').replace(/\/$/, '');
-const expectedImplicitOwner = process.env.CHUMMER_PORTAL_EXPECTED_IMPLICIT_OWNER || 'local@self-host';
-
 const requiredLandingLinks = [
-  '/blazor/',
-  '/hub/',
-  '/session/',
-  '/coach/',
-  '/avalonia/',
-  '/downloads/',
+  '/downloads',
   '/help',
-  '/docs/',
-  '/api/health',
-  '/openapi/v1.json'
+  '/contact'
 ];
 
 function hasIsolationHeaders(response) {
@@ -55,20 +46,17 @@ const checks = [
   {
     url: `${baseUrl}/`,
     assert: text =>
-      text.includes('Chummer Portal') &&
-      text.includes('Mode: implicit self-host sign-in') &&
-      text.includes(`Current owner: <code>${expectedImplicitOwner}</code>`) &&
-      text.includes('API posture:') &&
-      (
-        text.includes('signed owner propagation enabled')
-        || text.includes('unsigned local-single-user API mode')
-      ) &&
-      text.includes('data-portal-home-action="explore-chummer-online"') &&
-      text.includes('aria-label="Chummer browser routes"') &&
-      hasPortalChrome(text) &&
-      text.includes('linear-gradient(135deg,#b9812f 0%,#ffd46f 58%,#fff2b4 100%)') &&
-      text.includes('/app?command=character_roster') &&
-      text.includes('data-portal-home-route="chummer-app-roster"') &&
+      text.includes('data-homepage-section="hero"') &&
+      text.includes('A Shadowrun character manager for clean sheets and faster tables.') &&
+      text.includes('Download Chummer') &&
+      text.includes('Current public installers: Windows and Linux.') &&
+      text.includes('Watch the Chummer promo video') &&
+      text.includes('Watch 90 sec') &&
+      text.includes('/media/promo/every-wonder-horizon-promo.mp4') &&
+      text.includes('aria-label="Example runners"') &&
+      text.includes('Kestrel') &&
+      text.includes('Brick') &&
+      text.includes('Whisper') &&
       requiredLandingLinks.every(link => text.includes(link))
   },
   {
@@ -80,13 +68,18 @@ const checks = [
   },
   {
     url: `${baseUrl}/blazor/`,
-    assert: text => /<base href="[^"]*\/blazor\/"/i.test(text)
+    assert: text =>
+      text.includes('Browser preview is not ready right now.')
+      && text.includes('The downloadable Chummer client is the current stable path.')
+      && text.includes('href="/downloads"')
+      && text.includes('href="/status"')
   },
   {
     url: `${baseUrl}/app`,
     assert: (text, response) =>
-      /\/blazor\/app\/?$/.test(response.url)
+      (/\/app\/?$/.test(response.url) || /\/blazor\/app\/?$/.test(response.url))
       && /<base href="[^"]*\/blazor\/"/i.test(text)
+      && text.includes('data-route-family="app"')
   },
   {
     url: `${baseUrl}/blazor/app`,

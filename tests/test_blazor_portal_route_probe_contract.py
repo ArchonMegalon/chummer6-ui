@@ -29,7 +29,8 @@ def test_portal_playwright_contract_uses_runner_shell_language_instead_of_stale_
     assert "expectTextIncludes(bodyText, 'Import runner XML', 'portal workbench route');" in script
     assert "expectTextIncludes(bodyText, 'Saved Runners', 'portal workbench route');" in script
     assert "expectTextIncludes(bodyText, 'Active Table', 'portal workbench route');" in script
-    assert "expectTextIncludes(bodyText, 'ACTIVE RUNNER', 'portal blazor root route');" in script
+    assert "expectTextIncludes(bodyText, 'Browser preview is not ready right now.', 'portal blazor root route');" in script
+    assert "expectTextIncludes(bodyText, 'The downloadable Chummer client is the current stable path.', 'portal blazor root route');" in script
     assert "Import an existing dossier" not in script
     assert "No recent dossiers yet" not in script
     assert "Continue a recent dossier" not in script

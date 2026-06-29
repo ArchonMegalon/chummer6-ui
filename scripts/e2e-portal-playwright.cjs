@@ -4,7 +4,6 @@
 const { chromium } = require('playwright');
 
 const baseUrl = (process.env.CHUMMER_PORTAL_BASE_URL || 'http://127.0.0.1:8091').replace(/\/$/, '');
-const expectedImplicitOwner = process.env.CHUMMER_PORTAL_EXPECTED_IMPLICIT_OWNER || 'local@self-host';
 const navWaitUntil = process.env.CHUMMER_UI_NAV_WAIT_UNTIL || 'commit';
 const navTimeoutMs = Number(process.env.CHUMMER_UI_NAV_TIMEOUT_MS || '15000');
 const routeNavigationRetryAttempts = Number(process.env.CHUMMER_PORTAL_ROUTE_RETRY_ATTEMPTS || '3');
@@ -78,9 +77,9 @@ async function openPortalWorkbench(page) {
 }
 
 async function openPortalBlazorRoot(page) {
-  await openPortalRoute(page, '/blazor/', '.classic-promoted-app [data-chummer-classic-shell][data-route-family="app"]');
-  if (!page.url().includes('/blazor/app')) {
-    throw new Error(`Expected portal /blazor/ root to resolve to /blazor/app, got '${page.url()}'.`);
+  await openPortalRoute(page, '/blazor/', 'main');
+  if (!page.url().includes('/blazor/')) {
+    throw new Error(`Expected portal /blazor/ root to stay on /blazor/, got '${page.url()}'.`);
   }
 }
 
@@ -92,14 +91,17 @@ async function openPortalPreviewPath(page, relativePath, readySelector, waitUnti
 }
 
 async function auditPortalHome(page) {
-  await openPortalRoute(page, '/', '.hero, .panel');
+  await openPortalRoute(page, '/', '.minimal-hero');
 
   const bodyText = await page.locator('body').innerText();
-  expectTextIncludes(bodyText, 'implicit self-host sign-in', 'portal home');
-  expectTextIncludes(bodyText, expectedImplicitOwner, 'portal home');
-  expectTextIncludes(bodyText, 'api posture:', 'portal home');
-  expectAnyTextIncludes(bodyText, ['signed owner propagation enabled', 'unsigned local-single-user api mode'], 'portal home');
-  await expectVisibleSelector(page, 'a.cta[href="/app?command=character_roster"][data-portal-home-action="explore-chummer-online"]', 'portal home Chummer Online roster CTA');
+  expectTextIncludes(bodyText, 'Chummer', 'portal home');
+  expectTextIncludes(bodyText, 'A Shadowrun character manager for clean sheets and faster tables.', 'portal home');
+  expectTextIncludes(bodyText, 'Download Chummer', 'portal home');
+  expectTextIncludes(bodyText, 'Current public installers: Windows and Linux.', 'portal home');
+  expectTextIncludes(bodyText, 'Watch 90 sec', 'portal home');
+  expectAnyTextIncludes(bodyText, ['Kestrel', 'Brick', 'Whisper'], 'portal home example runner rail');
+  await expectVisibleSelector(page, '.minimal-hero [href="/downloads"]', 'portal home downloads CTA');
+  await expectVisibleSelector(page, '.minimal-hero__visual[href="/media/promo/every-wonder-horizon-promo.mp4"]', 'portal home promo video link');
 }
 
 async function expectVisibleSelector(page, selector, context) {
@@ -536,12 +538,14 @@ async function auditPortalWorkbenchRoute(page) {
 
 async function auditPortalBlazorRootResolvesToApp(page) {
   await openPortalBlazorRoot(page);
-  await expectVisibleSelector(page, '.classic-promoted-app [data-chummer-classic-shell][data-route-family="app"]', 'portal blazor root app shell');
+  await expectVisibleSelector(page, 'main .button[href="/downloads"]', 'portal blazor root downloads CTA');
+  await expectVisibleSelector(page, 'main .button.muted[href="/status"]', 'portal blazor root status CTA');
 
   const bodyText = await page.locator('body').innerText();
-  expectTextIncludes(bodyText, 'Character Roster', 'portal blazor root route');
-  expectTextIncludes(bodyText, 'ACTIVE RUNNER', 'portal blazor root route');
-  expectTextIncludes(bodyText, 'Continue Seeded Dossier', 'portal blazor root route');
+  expectTextIncludes(bodyText, 'Browser preview is not ready right now.', 'portal blazor root route');
+  expectTextIncludes(bodyText, 'The downloadable Chummer client is the current stable path.', 'portal blazor root route');
+  expectTextIncludes(bodyText, 'Download Chummer', 'portal blazor root route');
+  expectTextIncludes(bodyText, 'Status', 'portal blazor root route');
 }
 
 async function auditPortalOriginDossier(page) {
