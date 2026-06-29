@@ -18,6 +18,9 @@ public partial class DesktopShell : IDisposable
     private const string NewCharacterCommandId = "new_character";
     private const string OpenCharacterCommandId = "open_character";
     private const string CloseWindowCommandId = "close_window";
+    private const string LegacySeededWorkspaceAlias = "ws-1";
+    private const string LegacySeededWorkspaceAliasWarning =
+        "The legacy sample workspace link 'ws-1' is stale. Open Chummer Online or the preview fixture to mint a fresh workspace link.";
 
     private static readonly string[] PreferredToolStripCommandOrder =
     [
@@ -94,6 +97,7 @@ public partial class DesktopShell : IDisposable
     private bool _demoBootstrapCompleted;
     private string? _lastDemoBootstrapKey;
     private string? _bootstrappedDemoFixtureId;
+    private string? _demoWorkspaceRouteWarning;
     private ShellSurfaceState _shellSurfaceState = ShellSurfaceState.Empty;
 
     private CharacterOverviewState State => _bridge?.Current ?? Presenter.State;
@@ -280,6 +284,19 @@ public partial class DesktopShell : IDisposable
             return;
         }
 
+        _demoWorkspaceRouteWarning = null;
+
+        if (workspaceId is not null
+            && fixtureId is null
+            && IsLegacySeededWorkspaceAlias(workspaceId))
+        {
+            _demoWorkspaceRouteWarning = LegacySeededWorkspaceAliasWarning;
+            _demoBootstrapCompleted = true;
+            _lastDemoBootstrapKey = demoKey;
+            RefreshShellSurfaceState();
+            return;
+        }
+
         if (workspaceId is not null
             && fixtureId is null
             && (State.WorkspaceId is null || !string.Equals(State.WorkspaceId.Value.Value, workspaceId, StringComparison.Ordinal)))
@@ -360,6 +377,9 @@ public partial class DesktopShell : IDisposable
         => string.IsNullOrWhiteSpace(value)
             ? null
             : value.Trim();
+
+    private static bool IsLegacySeededWorkspaceAlias(string workspaceId)
+        => string.Equals(workspaceId, LegacySeededWorkspaceAlias, StringComparison.OrdinalIgnoreCase);
 
     private static string? NormalizeDemoStartupCommandId(string? commandId)
     {

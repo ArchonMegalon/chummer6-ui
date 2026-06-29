@@ -116,6 +116,10 @@ else
     {
         <p class="shell-notice" role="status" data-shell-notice>@State.Notice</p>
     }
+    @if (!string.IsNullOrWhiteSpace(_demoWorkspaceRouteWarning))
+    {
+        <p class="shell-notice shell-notice--warning" role="alert" data-demo-workspace-route-warning>@_demoWorkspaceRouteWarning</p>
+    }
 
     <div class="workspace-layout @(ShowLeftPane ? "workspace-layout--with-left-pane" : "workspace-layout--without-left-pane")">
         @if (ShowLeftPane)

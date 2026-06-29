@@ -215,6 +215,12 @@ button:disabled {
     font-weight: 600;
 }
 
+.shell-notice--warning {
+    border-color: #a16207;
+    background: #fffbeb;
+    color: #713f12;
+}
+
 .menu-shell {
     position: relative;
     z-index: 20;

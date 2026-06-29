@@ -83,7 +83,7 @@ public sealed class DesktopShellStartupSyncTests
     }
 
     [TestMethod]
-    public void DemoWorkspaceId_loads_workspace_without_importing_seed_fixture()
+    public void DemoWorkspaceId_loads_non_legacy_workspace_without_importing_seed_fixture()
     {
         using var context = new BunitContext();
         context.JSInterop.Mode = JSRuntimeMode.Loose;
@@ -92,11 +92,30 @@ public sealed class DesktopShellStartupSyncTests
         RecordingShellPresenter shellPresenter = new(CreateStartupShellState());
         RegisterDesktopShellServices(context, presenter, shellPresenter);
 
-        context.Render<DesktopShell>(parameters => parameters.Add(shell => shell.DemoWorkspaceId, "ws-1"));
+        context.Render<DesktopShell>(parameters => parameters.Add(shell => shell.DemoWorkspaceId, "preview-ws"));
 
-        Assert.AreEqual("ws-1", presenter.LoadedWorkspaceId?.Value);
+        Assert.AreEqual("preview-ws", presenter.LoadedWorkspaceId?.Value);
         Assert.IsNull(presenter.ImportedContent);
         Assert.IsNull(presenter.ImportedRulesetId);
+    }
+
+    [TestMethod]
+    public void DemoWorkspaceId_legacy_seed_alias_skips_backend_load_and_warns()
+    {
+        using var context = new BunitContext();
+        context.JSInterop.Mode = JSRuntimeMode.Loose;
+
+        FakeCharacterOverviewPresenter presenter = new();
+        RecordingShellPresenter shellPresenter = new(CreateStartupShellState());
+        RegisterDesktopShellServices(context, presenter, shellPresenter);
+
+        IRenderedComponent<DesktopShell> cut = context.Render<DesktopShell>(
+            parameters => parameters.Add(shell => shell.DemoWorkspaceId, "ws-1"));
+
+        Assert.IsNull(presenter.LoadedWorkspaceId);
+        Assert.IsNull(presenter.ImportedContent);
+        StringAssert.Contains(cut.Markup, "data-demo-workspace-route-warning");
+        StringAssert.Contains(cut.Markup, "legacy sample workspace link");
     }
 
     private static void RegisterDesktopShellServices(
