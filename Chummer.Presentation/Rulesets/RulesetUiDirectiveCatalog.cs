@@ -185,9 +185,9 @@ public static class RulesetUiDirectiveCatalog
         RulesetUiDirective directive = Resolve(rulesetId);
         return directive.RulesetId switch
         {
-            RulesetDefaults.Sr4 => "SR4 Roster",
-            RulesetDefaults.Sr5 => "SR5 Roster",
-            RulesetDefaults.Sr6 => "SR6 Roster",
+            RulesetDefaults.Sr4 => "SR4 Characters",
+            RulesetDefaults.Sr5 => "SR5 Characters",
+            RulesetDefaults.Sr6 => "SR6 Characters",
             _ => "Open Runners"
         };
     }

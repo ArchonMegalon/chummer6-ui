@@ -366,7 +366,7 @@ public sealed class MainWindowShellFrameProjectorTests
 
         Assert.AreEqual(1, frame.RosterPaneState.Items.Length);
         Assert.AreEqual("runner-011", frame.RosterPaneState.SelectedWorkspaceId);
-        Assert.AreEqual("SR6 Roster", frame.RosterPaneState.Items[0].Name);
+        Assert.AreEqual("SR6 Characters", frame.RosterPaneState.Items[0].Name);
         Assert.AreEqual("2 characters", frame.RosterPaneState.Items[0].Meta);
         CollectionAssert.AreEqual(new[] { "runner-011", "runner-012" }, frame.RosterPaneState.Items[0].Children.Select(item => item.Id).ToArray());
     }

@@ -17,6 +17,7 @@
 <PageTitle>@PageTitleText</PageTitle>
 
 <main class="browser-preview-shell @(IsAppRoute ? "classic-promoted-app" : IsWorkbenchRoute ? "classic-compat-app" : "classic-preview-tools")">
+    <a class="browser-skip-link" href="#chummer-online-app">Skip to Chummer</a>
     <header class="browser-preview-banner">
         <div class="browser-preview-banner-copy">
             @if (IsAppRoute)
@@ -24,7 +25,7 @@
                 <p class="browser-preview-kicker">Chummer Online</p>
                 <h1>Explore Chummer Online.</h1>
                 <p>
-                    This is the Chummer Online entrypoint: open, organize, build, review, export, and resume runners through the shared Chummer shell without exposing proof-route language.
+                    This is the Chummer Online entrypoint: open, organize, build, review, export, and resume runners in the browser.
                 </p>
             }
             else if (IsWorkbenchRoute)
@@ -32,7 +33,7 @@
                 <p class="browser-preview-kicker">Compatibility route</p>
                 <h1>Chummer Online compatibility shell, running in the browser.</h1>
                 <p>
-                    This route keeps older workbench and proof links alive. The user-facing product route is Chummer Online at <code>/blazor/app</code>.
+                    This route keeps older browser links alive. The user-facing product route is Chummer Online at <code>/blazor/app</code>.
                 </p>
             }
             else
@@ -40,7 +41,7 @@
                 <p class="browser-preview-kicker">Preview route tools</p>
                 <h1>Preview Chummer Online workflows without changing the public route.</h1>
                 <p>
-                    This route is for startup deep links, seeded workflows, and browser result-state checks. Use Chummer Online for the normal user workflow.
+                    This route is for startup deep links and browser result-state checks. Use Chummer Online for normal use.
                 </p>
             }
         </div>
@@ -69,7 +70,7 @@
 
     @if (IsAppRoute || IsWorkbenchRoute)
     {
-        <section class="classic-chummer-shell" aria-label="Chummer Online classic desktop shell" data-chummer-classic-shell="true" data-active-workflow="@ActiveWorkflowDataKey" data-output-workflow="@OutputWorkflowDataKey" data-output-state="@OutputStateDataKey" data-output-target="@OutputTargetDataKey" data-route-family="@RouteFamilyDataKey" data-route-segment="@RouteSegmentDataKey" data-route-surface="@RouteSurfaceDataKey" data-canonical-route="@CanonicalRouteDataKey" data-route-alias="@RouteAliasDataKey" data-command="@CommandDataKey" data-tab="@TabDataKey" data-workspace="@WorkspaceDataKey" data-active-runner="@ActiveRunnerDataKey" data-roster-selected-node="@SelectedRosterNodeDataKey" data-dossier-state="@DossierStateDataKey" data-dossier-storage="@DossierStorageDataKey" data-ruleset="@RulesetDataKey" data-validation-state="@ValidationStateDataKey" data-privacy-mode="@PrivacyModeDataKey" data-analytics-scope="@AnalyticsScopeDataKey" data-hosting-mode="@HostingModeDataKey" data-deployment-target="@DeploymentTargetDataKey" data-self-hostable="@SelfHostableDataKey" data-container-target="@ContainerTargetDataKey" data-auth-gate="@AuthGateDataKey" data-session-state="@SessionStateDataKey" data-login-target="@LoginTargetDataKey" data-auth-return-policy="@AuthReturnPolicyDataKey" data-fixture="@FixtureDataKey" data-legacy-runner="@LegacyRunnerDataKey" data-control="@ControlDataKey" data-dialog-action="@DialogActionDataKey" data-client-kind="@ClientKindDataKey" data-parity-target="@ParityTargetDataKey" data-calculation-owner="@CalculationOwnerDataKey" data-statistics-runtime="@StatisticsRuntimeDataKey" data-character-statistics="@CharacterStatisticsDataKey" data-statistics-scope="@StatisticsScopeDataKey" data-recommendation-mode="@RecommendationModeDataKey" data-recommendation-inputs="@RecommendationInputsDataKey" data-risk-model="@RiskModelDataKey" data-calculation-boundary="@CalculationBoundaryDataKey" data-result-consumer="@ResultConsumerDataKey">
+        <section id="chummer-online-app" class="classic-chummer-shell" tabindex="-1" aria-label="Chummer Online classic desktop shell" data-chummer-classic-shell="true" data-active-workflow="@ActiveWorkflowDataKey" data-output-workflow="@OutputWorkflowDataKey" data-output-state="@OutputStateDataKey" data-output-target="@OutputTargetDataKey" data-route-family="@RouteFamilyDataKey" data-route-segment="@RouteSegmentDataKey" data-route-surface="@RouteSurfaceDataKey" data-canonical-route="@CanonicalRouteDataKey" data-route-alias="@RouteAliasDataKey" data-command="@CommandDataKey" data-tab="@TabDataKey" data-workspace="@WorkspaceDataKey" data-active-runner="@ActiveRunnerDataKey" data-roster-selected-node="@SelectedRosterNodeDataKey" data-dossier-state="@DossierStateDataKey" data-dossier-storage="@DossierStorageDataKey" data-ruleset="@RulesetDataKey" data-validation-state="@ValidationStateDataKey" data-privacy-mode="@PrivacyModeDataKey" data-analytics-scope="@AnalyticsScopeDataKey" data-hosting-mode="@HostingModeDataKey" data-deployment-target="@DeploymentTargetDataKey" data-self-hostable="@SelfHostableDataKey" data-container-target="@ContainerTargetDataKey" data-auth-gate="@AuthGateDataKey" data-session-state="@SessionStateDataKey" data-login-target="@LoginTargetDataKey" data-auth-return-policy="@AuthReturnPolicyDataKey" data-fixture="@FixtureDataKey" data-legacy-runner="@LegacyRunnerDataKey" data-control="@ControlDataKey" data-dialog-action="@DialogActionDataKey" data-client-kind="@ClientKindDataKey" data-parity-target="@ParityTargetDataKey" data-calculation-owner="@CalculationOwnerDataKey" data-statistics-runtime="@StatisticsRuntimeDataKey" data-character-statistics="@CharacterStatisticsDataKey" data-statistics-scope="@StatisticsScopeDataKey" data-recommendation-mode="@RecommendationModeDataKey" data-recommendation-inputs="@RecommendationInputsDataKey" data-risk-model="@RiskModelDataKey" data-calculation-boundary="@CalculationBoundaryDataKey" data-result-consumer="@ResultConsumerDataKey">
             <header class="classic-chummer-titlebar" aria-label="Chummer Online window title">
                 <div class="classic-chummer-titlebar-title">Chummer Online - @(PrimaryRecentWorkspace?.ShortLabel ?? "Sample Runner") - @ActiveWorkflowStatus</div>
                 <div class="classic-window-controls" aria-hidden="true"><span>_</span><span>[]</span><span>X</span></div>
@@ -227,7 +228,7 @@
                     </ul>
                 </aside>
 
-                <section class="classic-chummer-dossier" aria-label="Active runner workspace">
+                <section class="classic-chummer-dossier" aria-label="Active runner">
                     <header>
                         <span>Active runner</span>
                         <strong>@(PrimaryRecentWorkspace?.ShortLabel ?? "Sample Runner")</strong>
@@ -346,10 +347,10 @@
 
     <section class="browser-preview-boundary" aria-label="Boundary notice">
         <div>
-            <strong>Browser-owned here:</strong> responsive shell navigation, implicit owner session posture, and browser-ready workflows that already have parity proof.
+            <strong>Browser-ready here:</strong> responsive shell navigation, signed-in session posture, and browser workflows that are ready to use.
         </div>
         <div>
-            <strong>Desktop-owned still:</strong> native install continuity, local-file-heavy operations, and any workflow slice that has not yet been proven end to end in browser.
+            <strong>Desktop-only still:</strong> native install continuity, local-file-heavy operations, and workflows that are not ready in the browser yet.
         </div>
     </section>
 
@@ -2963,7 +2964,7 @@
             ? "Use this route for saved compatibility links"
             : "Use this route for preview and result-state tools";
     private string RouteGuidanceSummary => IsAppRoute
-        ? "The shell below is the user-facing Chummer Online route: open, organize, resume, build, and export runners without proof-route language in the main path."
+        ? "The shell below is the user-facing Chummer Online route: open, organize, resume, build, and export runners without internal route language in the main path."
         : IsWorkbenchRoute
             ? "The shell below keeps older compatibility bookmarks and shared links working while the main Chummer Online route remains available at /blazor/app."
             : "The shell below keeps preview tools, startup deep links, and browser result-state checks separate from the user-facing Chummer Online route.";
@@ -3003,11 +3004,11 @@
         ? "Route Chummer Online issues through the portal support surface without breaking the Chummer Online product shape."
         : "Route Chummer Online issues through the portal support surface without breaking the Chummer Online product shape.";
     private string NewCharacterProofSummary => IsAppRoute
-        ? "Deep-links Chummer Online into the same shared new-character command so startup workflow proof does not depend on manual clicking."
-        : "Deep-links Chummer Online into the same shared new-character command so startup workflow proof does not depend on manual clicking.";
+        ? "Deep-links Chummer Online into the shared new-runner command so startup does not depend on manual clicking."
+        : "Deep-links Chummer Online into the shared new-runner command so startup does not depend on manual clicking.";
     private string ImportProofSummary => IsAppRoute
-        ? "Deep-links Chummer Online into the shared import dialog so existing-dossier intake is proven from the same route model as desktop startup commands."
-        : "Deep-links Chummer Online into the shared import dialog so existing-dossier intake is proven from the same route model as desktop startup commands.";
+        ? "Deep-links Chummer Online into the shared import dialog from the same route model as desktop startup commands."
+        : "Deep-links Chummer Online into the shared import dialog from the same route model as desktop startup commands.";
     private string OriginDossierSummary => IsAppRoute
         ? "Deep-links Chummer Online into the same origin-dossier wizard used by the shared startup flow."
         : "Deep-links Chummer Online into the same origin-dossier wizard used by the shared startup flow.";
@@ -3024,7 +3025,7 @@
     private static string ChummerOnlineRosterAppHref => $"{AppRouteQueryPrefix}{CharacterRosterCommand}";
     private string RouteOpenSummary => IsCharacterRosterCommand
         ? "Chummer Online is opening directly into the Character Roster so dossiers can be grouped, moved, resumed, or organized without stopping at a generic landing shell."
-        : "Use the shell below to verify navigation, startup posture, and active browser workflow routes.";
+        : "Use the shell below to check navigation, startup posture, and active browser workflow routes.";
     private const string NewCharacterCommand = "new_character";
     private const string OpenCharacterCommand = "open_character";
     private const string OpenRecentCommand = "open_recent";

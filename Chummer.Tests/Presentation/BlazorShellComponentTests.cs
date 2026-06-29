@@ -282,7 +282,7 @@ public sealed class BlazorShellComponentTests
 
         StringAssert.Contains(cut.Markup, "SR5 Editor Actions");
         StringAssert.Contains(cut.Markup, "SR5 Editor Flows");
-        StringAssert.Contains(cut.Markup, "SR5 Roster");
+        StringAssert.Contains(cut.Markup, "SR5 Characters");
         StringAssert.Contains(cut.Markup, "Ares Runner (AR) · Shadowrun 5 · main editor");
         StringAssert.Contains(cut.Markup, "Character Summary");
         Assert.AreEqual("tab-info", cut.Find("button[data-nav-tab='tab-info']").Id);
@@ -456,7 +456,7 @@ public sealed class BlazorShellComponentTests
         StringAssert.Contains(cut.Find(".navigator").ClassName, "classic-navigator");
         StringAssert.Contains(cut.Find(".navigator .command-button").ClassName, "classic-navigator-button");
         StringAssert.Contains(cut.Find(".navigator .command-button").ClassName, "selected");
-        StringAssert.Contains(cut.Markup, "SR5 Roster");
+        StringAssert.Contains(cut.Markup, "SR5 Characters");
         StringAssert.Contains(cut.Markup, "Shadowrun 5");
         StringAssert.Contains(cut.Markup, "main editor");
         string openDossierTitle = cut.Find(".navigator .command-button").GetAttribute("title") ?? string.Empty;

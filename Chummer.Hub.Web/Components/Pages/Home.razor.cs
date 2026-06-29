@@ -23,6 +23,14 @@ public class HomeBase : ComponentBase
     protected AiConversationAuditSummary? _coachAudit;
     protected string? _statusMessage;
     protected string? _errorMessage;
+    protected string? _coachErrorMessage;
+    protected bool _isCatalogLoading;
+    protected bool _isCoachLoading;
+    protected bool _isDetailLoading;
+    protected bool _isPreviewLoading;
+    protected bool _isDraftsLoading;
+    protected bool _isDraftDetailLoading;
+    protected bool _isModerationLoading;
     protected string _draftProjectId = string.Empty;
     protected string _draftTitle = string.Empty;
     protected string _draftSummary = string.Empty;
@@ -38,6 +46,7 @@ public class HomeBase : ComponentBase
 
     protected async Task LoadCatalogAsync()
     {
+        _isCatalogLoading = true;
         try
         {
             _catalog = await HubClient.SearchAsync(new BrowseQuery(string.Empty, new Dictionary<string, IReadOnlyList<string>>(), HubCatalogSortIds.Title));
@@ -48,20 +57,52 @@ public class HomeBase : ComponentBase
             _catalog = new HubCatalogResultPage(new BrowseQuery(string.Empty, new Dictionary<string, IReadOnlyList<string>>(), HubCatalogSortIds.Title), [], [], [], 0);
             _errorMessage = ex.Message;
         }
+        finally
+        {
+            _isCatalogLoading = false;
+        }
     }
 
     protected async Task LoadCoachAsync()
     {
-        _coachStatus = await CoachClient.GetStatusAsync();
-        _coachProvider = (await CoachClient.GetProviderHealthAsync(AiRouteTypes.Coach)).FirstOrDefault();
-        _coachAudit = (await CoachClient.GetConversationAuditsAsync(AiRouteTypes.Coach, 3)).FirstOrDefault();
+        _isCoachLoading = true;
+        try
+        {
+            _coachStatus = await CoachClient.GetStatusAsync();
+            _coachProvider = (await CoachClient.GetProviderHealthAsync(AiRouteTypes.Coach)).FirstOrDefault();
+            _coachAudit = (await CoachClient.GetConversationAuditsAsync(AiRouteTypes.Coach, 3)).FirstOrDefault();
+            _coachErrorMessage = null;
+        }
+        catch (Exception ex)
+        {
+            _coachProvider = null;
+            _coachAudit = null;
+            _coachErrorMessage = ex.Message;
+        }
+        finally
+        {
+            _isCoachLoading = false;
+        }
     }
 
     protected async Task SelectItemAsync(HubCatalogItem item)
     {
-        _selectedDetail = await HubClient.GetProjectDetailAsync(item.Kind, item.ItemId);
-        _compatibility = await HubClient.GetCompatibilityAsync(item.Kind, item.ItemId);
-        _installPreview = null;
+        _isDetailLoading = true;
+        try
+        {
+            _selectedDetail = await HubClient.GetProjectDetailAsync(item.Kind, item.ItemId);
+            _compatibility = await HubClient.GetCompatibilityAsync(item.Kind, item.ItemId);
+            _installPreview = null;
+            _errorMessage = null;
+        }
+        catch (Exception ex)
+        {
+            _errorMessage = ex.Message;
+        }
+        finally
+        {
+            _isDetailLoading = false;
+        }
     }
 
     protected async Task PreviewInstallAsync()
@@ -71,18 +112,57 @@ public class HomeBase : ComponentBase
             return;
         }
 
-        _installPreview = await HubClient.PreviewInstallAsync(_selectedDetail.Summary.Kind, _selectedDetail.Summary.ItemId);
+        _isPreviewLoading = true;
+        try
+        {
+            _installPreview = await HubClient.PreviewInstallAsync(_selectedDetail.Summary.Kind, _selectedDetail.Summary.ItemId);
+            _errorMessage = null;
+        }
+        catch (Exception ex)
+        {
+            _errorMessage = ex.Message;
+        }
+        finally
+        {
+            _isPreviewLoading = false;
+        }
     }
 
     protected async Task LoadDraftsAsync()
     {
-        _drafts = await HubClient.ListDraftsAsync();
+        _isDraftsLoading = true;
+        try
+        {
+            _drafts = await HubClient.ListDraftsAsync();
+            _errorMessage = null;
+        }
+        catch (Exception ex)
+        {
+            _errorMessage = ex.Message;
+        }
+        finally
+        {
+            _isDraftsLoading = false;
+        }
     }
 
     protected async Task SelectDraftAsync(string draftId)
     {
-        _selectedDraftDetail = await HubClient.GetDraftDetailAsync(draftId);
-        HydrateDraftEditor(_selectedDraftDetail.Draft, _selectedDraftDetail.Description);
+        _isDraftDetailLoading = true;
+        try
+        {
+            _selectedDraftDetail = await HubClient.GetDraftDetailAsync(draftId);
+            HydrateDraftEditor(_selectedDraftDetail.Draft, _selectedDraftDetail.Description);
+            _errorMessage = null;
+        }
+        catch (Exception ex)
+        {
+            _errorMessage = ex.Message;
+        }
+        finally
+        {
+            _isDraftDetailLoading = false;
+        }
     }
 
     protected async Task CreateDraftAsync()
@@ -161,7 +241,20 @@ public class HomeBase : ComponentBase
 
     protected async Task LoadModerationQueueAsync()
     {
-        _moderationQueue = await HubClient.ListModerationQueueAsync(_moderationState);
+        _isModerationLoading = true;
+        try
+        {
+            _moderationQueue = await HubClient.ListModerationQueueAsync(_moderationState);
+            _errorMessage = null;
+        }
+        catch (Exception ex)
+        {
+            _errorMessage = ex.Message;
+        }
+        finally
+        {
+            _isModerationLoading = false;
+        }
     }
 
     protected async Task ApproveModerationAsync(string caseId)

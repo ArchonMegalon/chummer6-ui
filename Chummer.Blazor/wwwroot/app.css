@@ -23,6 +23,10 @@ html, body {
     color: #111111;
 }
 
+* {
+    box-sizing: border-box;
+}
+
 .app-frame {
     min-height: 100vh;
     display: grid;
@@ -81,11 +85,12 @@ button:disabled {
     width: 100%;
     max-width: none;
     min-width: 0;
+    min-height: 100vh;
     margin: 0;
     padding: 0;
     box-sizing: border-box;
     display: grid;
-    grid-template-rows: auto auto auto auto 1fr auto;
+    grid-template-rows: auto auto auto auto auto 1fr auto;
     gap: 0;
 }
 
@@ -97,6 +102,107 @@ button:disabled {
 .desktop-shell > * {
     min-width: 0;
     box-sizing: border-box;
+}
+
+.skip-link {
+    position: fixed;
+    left: 0.5rem;
+    top: 0.5rem;
+    z-index: 1000;
+    transform: translateY(-160%);
+    padding: 0.45rem 0.7rem;
+    border: 2px solid var(--ui-kit-focus-ring);
+    background: #ffffff;
+    color: #111827;
+    font-weight: 700;
+    text-decoration: none;
+}
+
+.skip-link:focus {
+    transform: translateY(0);
+}
+
+.desktop-shell-topline {
+    display: grid;
+    grid-template-columns: minmax(14rem, 0.75fr) minmax(0, 1.25fr);
+    gap: 0.45rem;
+    align-items: stretch;
+    padding: 0.35rem;
+    border: 1px solid var(--ui-kit-shell-border-strong);
+    border-top: 0;
+    background:
+        linear-gradient(90deg, rgba(49, 106, 197, 0.14), rgba(255, 255, 255, 0.22)),
+        var(--ui-kit-shell-surface-muted);
+}
+
+.desktop-shell-topline--gate {
+    border-top: 1px solid var(--ui-kit-shell-border-strong);
+}
+
+.desktop-shell-title {
+    display: grid;
+    gap: 0.08rem;
+    align-content: center;
+    min-width: 0;
+    padding: 0.45rem 0.55rem;
+    border: 1px solid #9aa8b8;
+    background:
+        linear-gradient(135deg, #ffffff 0%, #eef4fb 100%);
+}
+
+.desktop-shell-title p {
+    margin: 0;
+    color: #1e3a8a;
+    font-size: 0.68rem;
+    font-weight: 700;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+}
+
+.desktop-shell-title h1 {
+    margin: 0;
+    overflow: hidden;
+    color: #0f172a;
+    font-size: 1rem;
+    line-height: 1.2;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.desktop-shell-readiness {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 0.35rem;
+    margin: 0;
+    min-width: 0;
+}
+
+.desktop-shell-readiness div {
+    display: grid;
+    gap: 0.08rem;
+    align-content: center;
+    min-width: 0;
+    padding: 0.35rem 0.45rem;
+    border: 1px solid #aeb8c4;
+    background: #ffffff;
+}
+
+.desktop-shell-readiness dt {
+    color: #475569;
+    font-size: 0.66rem;
+    font-weight: 700;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+}
+
+.desktop-shell-readiness dd {
+    margin: 0;
+    overflow: hidden;
+    color: #111827;
+    font-size: 0.86rem;
+    font-weight: 700;
+    text-overflow: ellipsis;
+    white-space: nowrap;
 }
 
 .shell-notice {
@@ -357,7 +463,7 @@ button:disabled {
 .workspace-layout {
     display: grid;
     gap: 0.15rem;
-    min-height: calc(100vh - 86px);
+    min-height: calc(100vh - 140px);
     padding: 0.15rem 0.15rem 0.2rem;
     min-width: 0;
 }
@@ -2070,12 +2176,29 @@ input[type="radio"] {
         grid-template-columns: 1fr;
     }
 
+    .workspace-layout--with-left-pane,
+    .workspace-layout--without-left-pane {
+        grid-template-columns: 1fr;
+    }
+
+    .left-pane {
+        grid-template-columns: repeat(auto-fit, minmax(14rem, 1fr));
+    }
+
     .status-strip {
         grid-template-columns: 1fr;
     }
 
     .flagship-fact-grid,
     .flagship-watchouts {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+
+    .desktop-shell-topline {
+        grid-template-columns: 1fr;
+    }
+
+    .desktop-shell-readiness {
         grid-template-columns: repeat(2, minmax(0, 1fr));
     }
 }
@@ -2088,6 +2211,49 @@ input[type="radio"] {
     .flagship-fact-grid,
     .flagship-watchouts {
         grid-template-columns: 1fr;
+    }
+}
+
+@media (max-width: 640px) {
+    html,
+    body {
+        font-size: 13px;
+    }
+
+    .menu-bar,
+    .tool-strip,
+    .tab-strip-buttons,
+    .status-strip {
+        overflow-x: auto;
+        flex-wrap: nowrap;
+    }
+
+    .desktop-shell-readiness,
+    .summary-grid,
+    .browse-results-shell,
+    .dialog-body,
+    .dialog-field,
+    .dialog-grid-row,
+    .dialog-origin-story-grid,
+    .dialog-origin-life-grid,
+    .dialog-origin-advanced-grid,
+    .dialog-origin-summary-strip {
+        grid-template-columns: 1fr;
+    }
+
+    .desktop-shell-title h1 {
+        white-space: normal;
+    }
+
+    .left-pane {
+        max-height: none;
+    }
+
+    .navigator-list,
+    .tab-grid,
+    .action-grid,
+    .mini-grid {
+        max-height: none;
     }
 }
 

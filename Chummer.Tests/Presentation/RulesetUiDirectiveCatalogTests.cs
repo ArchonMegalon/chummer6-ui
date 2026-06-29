@@ -165,7 +165,7 @@ public sealed class RulesetUiDirectiveCatalogTests
         Assert.AreEqual("Shadowrun 5 character editor", sr5MarqueeTitle);
         Assert.AreEqual("SR6 setup tools", sr6MarqueeEyebrow);
         Assert.AreEqual("Desktop Summary · SR4 Import Tools", sr4Summary);
-        Assert.AreEqual("SR5 Roster", sr5Dossiers);
+        Assert.AreEqual("SR5 Characters", sr5Dossiers);
         Assert.AreEqual("No open SR6 runner", sr6EmptyStrip);
         StringAssert.Contains(sr5StripTitle, "Shadowrun 5");
         StringAssert.Contains(sr5StripTitle, "main editor");

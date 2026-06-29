@@ -113,16 +113,16 @@ public sealed class HubWebComponentTests
         cut.WaitForAssertion(() =>
         {
             StringAssert.Contains(cut.Markup, "Street Session");
-            StringAssert.Contains(cut.Markup, "Coach Sidecar");
-            StringAssert.Contains(cut.Markup, "Curation Signals");
+            StringAssert.Contains(cut.Markup, "Guidance");
+            StringAssert.Contains(cut.Markup, "Current source");
             StringAssert.Contains(cut.Markup, "AI Magicx");
             StringAssert.Contains(cut.Markup, "Transport: ready · base yes · model yes · keys primary 1 / fallback 0 · route coach · binding primary / slot 0");
-            StringAssert.Contains(cut.Markup, "Recent Coach Guidance");
+            StringAssert.Contains(cut.Markup, "Recent guidance");
             StringAssert.Contains(cut.Markup, "Signal's clean. Keep the trust readout tight before you push.");
-            StringAssert.Contains(cut.Markup, "Budget snapshot: 18 / 400 chummer-ai-units");
-            StringAssert.Contains(cut.Markup, "Structured summary: Summarize trust impact, compatibility, and review posture before publication.");
+            StringAssert.Contains(cut.Markup, "Credits: 18 / 400 chummer-ai-units");
+            StringAssert.Contains(cut.Markup, "Summary: Summarize trust impact, compatibility, and review posture before publication.");
             StringAssert.Contains(cut.Markup, "Recommendations: 1 · Highlight trust footprint");
-            StringAssert.Contains(cut.Markup, "Evidence: 1 · Compatibility matrix");
+            StringAssert.Contains(cut.Markup, "Why: 1 · Compatibility matrix");
             StringAssert.Contains(cut.Markup, "Risks: 1 · Review posture");
             StringAssert.Contains(cut.Markup, "Sources: 1 sources / 1 action drafts");
             StringAssert.Contains(cut.Markup, "data-testid=\"hub-coach-provider-transport\"");
@@ -230,7 +230,7 @@ public sealed class HubWebComponentTests
         cut.Find("button[data-hub-draft='draft-1']").Click();
         cut.WaitForAssertion(() =>
         {
-            StringAssert.Contains(cut.Markup, "Editing owner-backed draft");
+            StringAssert.Contains(cut.Markup, "Editing draft");
             StringAssert.Contains(cut.Markup, "Needs publisher attribution.");
             StringAssert.Contains(cut.Markup, "pub.street");
         });

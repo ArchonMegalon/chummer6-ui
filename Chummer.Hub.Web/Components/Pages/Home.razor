@@ -3,107 +3,204 @@
 
 <PageTitle>Discover Projects</PageTitle>
 
-<main>
-    <section>
-        <h1>Discover Projects</h1>
+<main class="hub-app-shell">
+    <header class="hub-topbar" aria-label="Hub navigation">
+        <a class="hub-brand" href="/">
+            <span class="hub-brand-mark">CH</span>
+            <span>
+                <strong>Chummer Hub</strong>
+                <em>Catalog, guidance, drafts</em>
+            </span>
+        </a>
+        <nav class="hub-topbar-links" aria-label="Hub work areas">
+            <a href="#catalog">Catalog</a>
+            <a href="#coach">Guidance</a>
+            <a href="#drafts">Drafts</a>
+            <a href="#moderation">Moderation</a>
+        </nav>
+    </header>
+
+    <section class="hub-hero" aria-labelledby="hub-title">
+        <div>
+            <p class="hub-kicker">Chummer Hub</p>
+            <h1 id="hub-title">Discover Projects</h1>
+            <p class="hub-hero-copy">Browse Chummer projects, check compatibility, and prepare drafts from one quiet surface.</p>
+        </div>
+        <dl class="hub-hero-stats" aria-label="Hub state summary">
+            <div><dt>Catalog</dt><dd>@(_isCatalogLoading ? "Loading" : $"{_catalog.Items.Count} results")</dd></div>
+            <div><dt>Guidance</dt><dd>@(_isCoachLoading ? "Loading" : _coachProvider?.DisplayName ?? "Offline")</dd></div>
+            <div><dt>Drafts</dt><dd>@_drafts.Items.Count</dd></div>
+            <div><dt>Moderation</dt><dd>@_moderationQueue.Items.Count</dd></div>
+        </dl>
+    </section>
+
+    <section class="hub-message-stack" aria-live="polite" aria-atomic="true">
         @if (!string.IsNullOrWhiteSpace(_statusMessage))
         {
-            <p>@_statusMessage</p>
+            <p class="hub-status">@_statusMessage</p>
         }
         @if (!string.IsNullOrWhiteSpace(_errorMessage))
         {
-            <p class="error">@_errorMessage</p>
+            <p class="hub-error error" role="alert">@_errorMessage</p>
         }
+        @if (!string.IsNullOrWhiteSpace(_coachErrorMessage))
+        {
+            <p class="hub-error error" role="alert">@_coachErrorMessage</p>
+        }
+    </section>
+
+    <div class="hub-dashboard">
+    <section id="catalog" class="hub-panel hub-panel--catalog">
+        <div class="hub-panel-heading">
+            <div>
+                <p class="hub-kicker">Catalog</p>
+                <h2>Project discovery</h2>
+            </div>
+            <span class="hub-pill">@(_isCatalogLoading ? "Loading" : $"{_catalog.Items.Count} available")</span>
+        </div>
         @if (_catalog.Items.Count == 0)
         {
-            <p>No hub projects matched the current query.</p>
+            <p class="hub-empty">No hub projects matched the current query.</p>
         }
         else
         {
-            <div>
+            <div class="hub-catalog-list" role="list" aria-label="Hub projects">
                 @foreach (HubCatalogItem item in _catalog.Items)
                 {
-                    <button type="button" data-hub-item="@item.ItemId" @onclick="() => SelectItemAsync(item)">@item.Title</button>
+                    <button class="hub-catalog-item" type="button" data-hub-item="@item.ItemId" disabled="@_isDetailLoading" @onclick="() => SelectItemAsync(item)">
+                        <strong>@item.Title</strong>
+                        <span>@item.Kind / @item.RulesetId / @item.InstallState</span>
+                    </button>
                 }
             </div>
         }
     </section>
 
-    <section>
-        <h2>Coach Sidecar</h2>
-        <h3>Curation Signals</h3>
+    <section id="coach" class="hub-panel hub-panel--coach">
+        <div class="hub-panel-heading">
+            <div>
+                <p class="hub-kicker">Guidance</p>
+                <h2>Guidance</h2>
+            </div>
+            <span class="hub-pill">@(_isCoachLoading ? "Loading" : _coachStatus?.Status ?? "Unknown")</span>
+        </div>
+        <h3>Current source</h3>
         @if (_coachProvider is not null)
         {
-            <div>
+            <div class="hub-coach-provider">
                 <strong>@_coachProvider.DisplayName</strong>
                 <div data-testid="hub-coach-provider-transport">Transport: @FormatTransport(_coachProvider)</div>
             </div>
         }
-        <h3>Recent Coach Guidance</h3>
+        else
+        {
+            <p class="hub-empty">Guidance source is not available yet.</p>
+        }
+        <h3>Recent guidance</h3>
         @if (_coachAudit is not null)
         {
-            <p data-testid="hub-coach-audit-flavor">@_coachAudit.FlavorLine</p>
-            <p>Budget snapshot: @FormatBudget(_coachAudit.Budget)</p>
-            <p>Structured summary: @_coachAudit.StructuredAnswer?.Summary</p>
-            <p>Recommendations: @FormatRecommendations(_coachAudit.StructuredAnswer)</p>
-            <p>Evidence: @FormatEvidence(_coachAudit.StructuredAnswer)</p>
-            <p>Risks: @FormatRisks(_coachAudit.StructuredAnswer)</p>
-            <p>Sources: @FormatSources(_coachAudit.StructuredAnswer)</p>
-            <a data-testid="hub-open-coach-thread" href="@BuildCoachLaunchUri(_coachAudit.ConversationId, _coachAudit.RuntimeFingerprint, ResolveRulesetId())">Open thread</a>
+            <div class="hub-coach-guidance">
+                <p data-testid="hub-coach-audit-flavor">@_coachAudit.FlavorLine</p>
+                <p>Credits: @FormatBudget(_coachAudit.Budget)</p>
+                <p>Summary: @_coachAudit.StructuredAnswer?.Summary</p>
+                <p>Recommendations: @FormatRecommendations(_coachAudit.StructuredAnswer)</p>
+                <p>Why: @FormatEvidence(_coachAudit.StructuredAnswer)</p>
+                <p>Risks: @FormatRisks(_coachAudit.StructuredAnswer)</p>
+                <p>Sources: @FormatSources(_coachAudit.StructuredAnswer)</p>
+                <a class="hub-action-link" data-testid="hub-open-coach-thread" href="@BuildCoachLaunchUri(_coachAudit.ConversationId, _coachAudit.RuntimeFingerprint, ResolveRulesetId())">Open thread</a>
+            </div>
+        }
+        else
+        {
+            <p class="hub-empty">Recent guidance has not loaded yet.</p>
         }
     </section>
 
-    <section>
+    <section class="hub-panel hub-panel--detail">
+        <div class="hub-panel-heading">
+            <div>
+                <p class="hub-kicker">Selected project</p>
+                <h2>@(_selectedDetail?.Summary.Title ?? "No project selected")</h2>
+            </div>
+            <span class="hub-pill">@(_selectedDetail?.PublicationStatus ?? "Waiting")</span>
+        </div>
         @if (_selectedDetail is not null)
         {
-            <h2>@_selectedDetail.Summary.Title</h2>
+            <div class="hub-detail-grid">
             @if (_selectedDetail.Publisher is not null)
             {
-                <p>@_selectedDetail.Publisher.DisplayName</p>
+                <p><span>Publisher</span><strong>@_selectedDetail.Publisher.DisplayName</strong></p>
             }
             @if (!string.IsNullOrWhiteSpace(_selectedDetail.RuntimeFingerprint))
             {
-                <p>@_selectedDetail.RuntimeFingerprint</p>
+                <p><span>Runtime</span><strong>@_selectedDetail.RuntimeFingerprint</strong></p>
             }
             @foreach (HubProjectDetailFact fact in _selectedDetail.Facts)
             {
-                <p>@fact.Value</p>
+                <p><span>@fact.Label</span><strong>@fact.Value</strong></p>
             }
-            <a data-hub-action="open-coach" href="@BuildCoachLaunchUri(null, _selectedDetail.RuntimeFingerprint, _selectedDetail.Summary.RulesetId)">Open coach</a>
-            <div>
-                <button type="button" @onclick="PreviewInstallAsync">Preview Install</button>
             </div>
+            <div class="hub-action-row">
+                <a class="hub-action-link" data-hub-action="open-coach" href="@BuildCoachLaunchUri(null, _selectedDetail.RuntimeFingerprint, _selectedDetail.Summary.RulesetId)">Open guidance</a>
+                <button class="hub-primary-button" type="button" disabled="@_isPreviewLoading" @onclick="PreviewInstallAsync">Preview Install</button>
+            </div>
+            @if (_compatibility is not null)
+            {
+                <div class="hub-compatibility">
+                    <h3>Compatibility</h3>
+                    @foreach (HubProjectCompatibilityRow row in _compatibility.Rows)
+                    {
+                        <p><span>@row.Label</span><strong>@row.State</strong><em>@row.CurrentValue</em>@if (!string.IsNullOrWhiteSpace(row.Notes)) { <small>@row.Notes</small> }</p>
+                    }
+                </div>
+            }
+        }
+        else
+        {
+            <p class="hub-empty">Select a catalog item to inspect publisher, runtime, compatibility, and install preview.</p>
         }
         @if (_installPreview is not null)
         {
-            @foreach (HubProjectInstallPreviewChange change in _installPreview.Changes)
-            {
-                <p>@change.Summary</p>
-            }
-            @foreach (HubProjectInstallPreviewDiagnostic diagnostic in _installPreview.Diagnostics)
-            {
-                <p>@diagnostic.Message</p>
-            }
+            <div class="hub-install-preview">
+                <h3>Install preview</h3>
+                @foreach (HubProjectInstallPreviewChange change in _installPreview.Changes)
+                {
+                    <p>@change.Summary</p>
+                }
+                @foreach (HubProjectInstallPreviewDiagnostic diagnostic in _installPreview.Diagnostics)
+                {
+                    <p>@diagnostic.Message</p>
+                }
+            </div>
         }
     </section>
 
-    <section>
-        <h2>Draft Foundry</h2>
-        <button type="button" data-hub-action="load-drafts" @onclick="LoadDraftsAsync">Load Drafts</button>
-        <div>
+    <section id="drafts" class="hub-panel hub-panel--drafts">
+        <div class="hub-panel-heading">
+            <div>
+                <p class="hub-kicker">Drafts</p>
+                <h2>Drafts</h2>
+            </div>
+            <button class="hub-secondary-button" type="button" data-hub-action="load-drafts" disabled="@_isDraftsLoading" @onclick="LoadDraftsAsync">Load Drafts</button>
+        </div>
+        <div class="hub-draft-list">
             @foreach (HubPublishDraftReceipt draft in _drafts.Items)
             {
-                <button type="button" data-hub-draft="@draft.DraftId" @onclick="() => SelectDraftAsync(draft.DraftId)">@draft.Title</button>
+                <button class="hub-draft-item" type="button" data-hub-draft="@draft.DraftId" disabled="@_isDraftDetailLoading" @onclick="() => SelectDraftAsync(draft.DraftId)">
+                    <strong>@draft.Title</strong>
+                    <span>@draft.State / @draft.ProjectKind / @draft.ProjectId</span>
+                </button>
             }
         </div>
         @if (_selectedDraftDetail is null)
         {
-            <p>Create or inspect a draft</p>
+            <p class="hub-empty">Create or inspect a draft</p>
         }
         else
         {
-            <h3>Editing owner-backed draft</h3>
-            <p>@_selectedDraftDetail.Draft.DraftId</p>
+            <div class="hub-draft-detail">
+                <h3>Editing draft</h3>
+                <p>@_selectedDraftDetail.Draft.DraftId</p>
             @if (!string.IsNullOrWhiteSpace(_selectedDraftDetail.LatestModerationNotes))
             {
                 <p>@_selectedDraftDetail.LatestModerationNotes</p>
@@ -112,41 +209,60 @@
             {
                 <p>@_selectedDraftDetail.Draft.PublisherId</p>
             }
-            <button type="button" data-hub-action="archive-draft" @onclick="ArchiveDraftAsync">Archive Draft</button>
-            <button type="button" data-hub-action="delete-draft" @onclick="DeleteDraftAsync">Delete Draft</button>
+                <div class="hub-action-row">
+                    <button class="hub-secondary-button" type="button" data-hub-action="archive-draft" @onclick="ArchiveDraftAsync">Archive Draft</button>
+                    <button class="hub-danger-button" type="button" data-hub-action="delete-draft" @onclick="DeleteDraftAsync">Delete Draft</button>
+                </div>
+            </div>
         }
 
-        <input data-draft-field="project-id" value="@_draftProjectId" @onchange="eventArgs => _draftProjectId = eventArgs.Value?.ToString() ?? string.Empty" />
-        <input data-draft-field="title" value="@_draftTitle" @onchange="eventArgs => _draftTitle = eventArgs.Value?.ToString() ?? string.Empty" />
-        <input data-draft-field="summary" value="@_draftSummary" @onchange="eventArgs => _draftSummary = eventArgs.Value?.ToString() ?? string.Empty" />
-        <textarea data-draft-field="description" @onchange="eventArgs => _draftDescription = eventArgs.Value?.ToString() ?? string.Empty">@_draftDescription</textarea>
-        <textarea data-draft-field="submission-notes" @onchange="eventArgs => _submissionNotes = eventArgs.Value?.ToString() ?? string.Empty">@_submissionNotes</textarea>
-        <div>
-            <button type="button" data-hub-action="create-draft" @onclick="CreateDraftAsync">Create Draft</button>
-            <button type="button" data-hub-action="save-draft" @onclick="SaveDraftAsync">Save Draft</button>
-            <button type="button" data-hub-action="submit-draft" @onclick="SubmitDraftAsync">Submit Draft</button>
+        <div class="hub-form-grid">
+            <label>Project id<input data-draft-field="project-id" value="@_draftProjectId" @onchange="eventArgs => _draftProjectId = eventArgs.Value?.ToString() ?? string.Empty" /></label>
+            <label>Title<input data-draft-field="title" value="@_draftTitle" @onchange="eventArgs => _draftTitle = eventArgs.Value?.ToString() ?? string.Empty" /></label>
+            <label class="hub-field-wide">Summary<input data-draft-field="summary" value="@_draftSummary" @onchange="eventArgs => _draftSummary = eventArgs.Value?.ToString() ?? string.Empty" /></label>
+            <label class="hub-field-wide">Description<textarea data-draft-field="description" @onchange="eventArgs => _draftDescription = eventArgs.Value?.ToString() ?? string.Empty">@_draftDescription</textarea></label>
+            <label class="hub-field-wide">Submission notes<textarea data-draft-field="submission-notes" @onchange="eventArgs => _submissionNotes = eventArgs.Value?.ToString() ?? string.Empty">@_submissionNotes</textarea></label>
+        </div>
+        <div class="hub-action-row">
+            <button class="hub-primary-button" type="button" data-hub-action="create-draft" @onclick="CreateDraftAsync">Create Draft</button>
+            <button class="hub-secondary-button" type="button" data-hub-action="save-draft" disabled="@(_selectedDraftDetail is null)" @onclick="SaveDraftAsync">Save Draft</button>
+            <button class="hub-secondary-button" type="button" data-hub-action="submit-draft" disabled="@(_selectedDraftDetail is null)" @onclick="SubmitDraftAsync">Submit Draft</button>
         </div>
     </section>
 
-    <section>
-        <h2>Moderation Queue</h2>
-        <select data-moderation-filter="state" value="@_moderationState" @onchange="eventArgs => _moderationState = eventArgs.Value?.ToString() ?? string.Empty">
-            <option value="">all</option>
-            <option value="@HubModerationStates.PendingReview">@HubModerationStates.PendingReview</option>
-            <option value="@HubModerationStates.Approved">@HubModerationStates.Approved</option>
-            <option value="@HubModerationStates.Rejected">@HubModerationStates.Rejected</option>
-        </select>
-        <textarea data-moderation-field="notes" @onchange="eventArgs => _moderationNotes = eventArgs.Value?.ToString() ?? string.Empty">@_moderationNotes</textarea>
-        <button type="button" data-hub-action="load-moderation-queue" @onclick="LoadModerationQueueAsync">Load Moderation Queue</button>
+    <section id="moderation" class="hub-panel hub-panel--moderation">
+        <div class="hub-panel-heading">
+            <div>
+                <p class="hub-kicker">Moderation Queue</p>
+                <h2>Moderation Queue</h2>
+            </div>
+            <button class="hub-secondary-button" type="button" data-hub-action="load-moderation-queue" disabled="@_isModerationLoading" @onclick="LoadModerationQueueAsync">Load Moderation Queue</button>
+        </div>
+        <div class="hub-form-grid">
+            <label>State
+                <select data-moderation-filter="state" value="@_moderationState" @onchange="eventArgs => _moderationState = eventArgs.Value?.ToString() ?? string.Empty">
+                    <option value="">all</option>
+                    <option value="@HubModerationStates.PendingReview">@HubModerationStates.PendingReview</option>
+                    <option value="@HubModerationStates.Approved">@HubModerationStates.Approved</option>
+                    <option value="@HubModerationStates.Rejected">@HubModerationStates.Rejected</option>
+                </select>
+            </label>
+            <label class="hub-field-wide">Decision notes<textarea data-moderation-field="notes" @onchange="eventArgs => _moderationNotes = eventArgs.Value?.ToString() ?? string.Empty">@_moderationNotes</textarea></label>
+        </div>
+        <div class="hub-moderation-list">
         @foreach (HubModerationQueueItem item in _moderationQueue.Items)
         {
-            <div>
+            <article class="hub-moderation-item">
                 <p>@item.CaseId</p>
-                <p>@item.Title</p>
+                <h3>@item.Title</h3>
                 <p>@item.State</p>
-                <button type="button" data-hub-approve="@item.CaseId" @onclick="() => ApproveModerationAsync(item.CaseId)">Approve</button>
-                <button type="button" data-hub-reject="@item.CaseId" @onclick="() => RejectModerationAsync(item.CaseId)">Reject</button>
-            </div>
+                <div class="hub-action-row">
+                    <button class="hub-primary-button" type="button" data-hub-approve="@item.CaseId" @onclick="() => ApproveModerationAsync(item.CaseId)">Approve</button>
+                    <button class="hub-danger-button" type="button" data-hub-reject="@item.CaseId" @onclick="() => RejectModerationAsync(item.CaseId)">Reject</button>
+                </div>
+            </article>
         }
+        </div>
     </section>
+    </div>
 </main>

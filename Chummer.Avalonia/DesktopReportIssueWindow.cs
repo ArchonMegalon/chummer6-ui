@@ -187,7 +187,7 @@ internal sealed class DesktopReportIssueWindow : Window
             Text = label,
             FontWeight = FontWeight.SemiBold,
             TextWrapping = TextWrapping.Wrap,
-            Foreground = DesktopShellTheme.ResolveForegroundBrush()
+            Foreground = DesktopShellTheme.ResolveThemeBrush("ChummerShellForegroundBrush", "#E5E7EB")
         };
         AutomationProperties.SetName(labelBlock, label);
         AutomationProperties.SetHelpText(labelBlock, hint);

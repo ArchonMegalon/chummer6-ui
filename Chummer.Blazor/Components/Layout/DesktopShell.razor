@@ -8,7 +8,19 @@
          @ref="_shellRoot"
          tabindex="0"
          @onkeydown="OnShellKeyDown">
-        <main class="center-pane">
+        <a class="skip-link" href="#chummer-workspace-main">Skip to runner</a>
+        <header class="desktop-shell-topline desktop-shell-topline--gate" aria-label="Chummer install claim state">
+            <div class="desktop-shell-title">
+                <p>Chummer Online</p>
+                <h1>Claim this installation</h1>
+            </div>
+            <dl class="desktop-shell-readiness">
+                <div><dt>Install</dt><dd>Unclaimed</dd></div>
+                <div><dt>Runtime</dt><dd>@InstallLinkingState.ChannelId @InstallLinkingState.ApplicationVersion</dd></div>
+                <div><dt>Platform</dt><dd>@InstallLinkingState.Platform / @InstallLinkingState.Arch</dd></div>
+            </dl>
+        </header>
+        <main id="chummer-workspace-main" class="center-pane" tabindex="-1">
             <section class="panel coach-panel" data-testid="desktop-install-claim-gate">
                 <div class="coach-header">
                     <div>
@@ -50,7 +62,9 @@ else
 <div class="desktop-shell classic-desktop-shell"
      @ref="_shellRoot"
      tabindex="0"
+     aria-busy="@State.IsBusy"
      @onkeydown="OnShellKeyDown">
+    <a class="skip-link" href="#chummer-workspace-main">Skip to runner</a>
     <MenuBar MenuRoots="@MenuRoots.ToArray()"
              CurrentLanguage="@CurrentLanguage"
              OpenMenuId="@_shellSurfaceState.OpenMenuId"
@@ -66,6 +80,19 @@ else
                IsBusy="@State.IsBusy"
                IsCommandEnabled="@IsCommandEnabled"
                ExecuteCommandRequested="@ExecuteCommandAsync" />
+
+    <header class="desktop-shell-topline" aria-label="Chummer Online session state">
+        <div class="desktop-shell-title">
+            <p>Chummer Online</p>
+            <h1>@(State.Profile?.Alias ?? State.Profile?.Name ?? "Runner")</h1>
+        </div>
+        <dl class="desktop-shell-readiness">
+            <div><dt>Route</dt><dd>Browser app</dd></div>
+            <div><dt>Runners</dt><dd>@_shellSurfaceState.OpenWorkspaces.Count open</dd></div>
+            <div><dt>Ruleset</dt><dd>@(_shellSurfaceState.ActiveRulesetId ?? State.Rules?.GameEdition ?? "not set")</dd></div>
+            <div><dt>State</dt><dd>@(State.IsBusy ? "Working" : string.IsNullOrWhiteSpace(_shellSurfaceState.Error) ? "Ready" : "Needs attention")</dd></div>
+        </dl>
+    </header>
 
     @if (_shellSurfaceState.OpenWorkspaces.Count > 1)
     {
@@ -108,7 +135,7 @@ else
                                ExecuteWorkflowSurfaceRequested="@ExecuteWorkflowSurfaceAsync" />
         }
 
-        <main class="center-pane">
+        <main id="chummer-workspace-main" class="center-pane" tabindex="-1">
             <SectionPane State="@State"
                          IsCommandEnabled="@IsCommandEnabled"
                          ExecuteCommandRequested="@ExecuteCommandAsync"
