@@ -8,6 +8,9 @@ const { chromium } = require('playwright');
 const baseUrl = (process.env.CHUMMER_PORTAL_BASE_URL || 'https://chummer.run').replace(/\/$/, '');
 const outputPath = process.env.CHUMMER_PUBLIC_EDGE_EXECUTION_PROOF_PATH
   || path.join(process.cwd(), '.codex-studio/published/BLAZOR_PUBLIC_EDGE_EXECUTION_PROOF.generated.json');
+const failedOutputPath = process.env.CHUMMER_PUBLIC_EDGE_FAILED_EXECUTION_PROOF_PATH
+  || path.join(path.dirname(outputPath), '..', 'tmp', 'BLAZOR_PUBLIC_EDGE_EXECUTION_PROOF.failed.generated.json');
+const writeFailedProofToOutput = process.env.CHUMMER_PUBLIC_EDGE_WRITE_FAILED_PROOF_TO_OUTPUT === '1';
 const promotedRouteBase = '/blazor/workbench';
 const traceRoutes = process.env.CHUMMER_PUBLIC_EDGE_E2E_TRACE === '1';
 const routeNavigationRetryAttempts = Number(process.env.CHUMMER_PUBLIC_EDGE_ROUTE_RETRY_ATTEMPTS || '3');
@@ -135,7 +138,7 @@ async function enrichRouteError(page, route, label, error) {
 
 function shouldRetryRouteNavigation(error) {
   const message = String(error && error.message || '');
-  return message.includes('ERR_ABORTED') || message.includes('Timeout');
+  return message.includes('ERR_ABORTED') || message.includes('ERR_NETWORK_CHANGED') || message.includes('Timeout');
 }
 
 async function openPath(page, route, waitSelector) {
@@ -1651,10 +1654,15 @@ async function run() {
     await browser.close();
   }
 
-  fs.mkdirSync(path.dirname(outputPath), { recursive: true });
-  fs.writeFileSync(outputPath, `${JSON.stringify(receipt, null, 2)}\n`);
+  const finalOutputPath = receipt.status === 'passed' || writeFailedProofToOutput ? outputPath : failedOutputPath;
+  fs.mkdirSync(path.dirname(finalOutputPath), { recursive: true });
+  fs.writeFileSync(finalOutputPath, `${JSON.stringify(receipt, null, 2)}\n`);
 
   if (receipt.status !== 'passed') {
+    if (finalOutputPath !== outputPath) {
+      console.error(`public-edge execution failed; wrote failure receipt to ${finalOutputPath}`);
+      console.error(`left published receipt unchanged at ${outputPath}`);
+    }
     process.exitCode = 1;
   }
 }

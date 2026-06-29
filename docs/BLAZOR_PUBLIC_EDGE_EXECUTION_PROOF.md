@@ -346,6 +346,10 @@ Supported environment variables:
   overrides the target public-edge base URL
 - `CHUMMER_PUBLIC_EDGE_EXECUTION_PROOF_PATH`
   overrides the generated receipt path
+- `CHUMMER_PUBLIC_EDGE_FAILED_EXECUTION_PROOF_PATH`
+  overrides where failed live-run receipts are written; defaults to an ignored `.codex-studio/tmp/` sidecar
+- `CHUMMER_PUBLIC_EDGE_WRITE_FAILED_PROOF_TO_OUTPUT=1`
+  intentionally restores the old behavior of writing failed live-run receipts to `CHUMMER_PUBLIC_EDGE_EXECUTION_PROOF_PATH`
 
 Example invocation:
 
@@ -361,7 +365,7 @@ CHUMMER_PUBLIC_EDGE_EXECUTION_PROOF_PATH=".codex-studio/published/BLAZOR_PUBLIC_
 node scripts/e2e-public-edge-playwright.cjs
 ```
 
-If the hosted browser assertions fail, the script writes a failed receipt and exits non-zero.
+If the hosted browser assertions fail, the script writes a failed receipt to the ignored failure sidecar and exits non-zero. It does not overwrite the published passing receipt unless `CHUMMER_PUBLIC_EDGE_WRITE_FAILED_PROOF_TO_OUTPUT=1` is set.
 If the browser assertions pass but the receipt contract is malformed, the wrapper still exits non-zero because it runs the canonical receipt verifier after Playwright completes.
 
 The canonical contract check for the hosted execution receipt is:

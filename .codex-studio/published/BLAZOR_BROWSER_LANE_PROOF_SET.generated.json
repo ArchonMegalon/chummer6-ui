@@ -1,8 +1,9 @@
 {
   "contract_name": "chummer6-ui.blazor_browser_lane_proof_set",
-  "generated_at": "2026-06-29T10:50:54.334494+00:00",
+  "generated_at": "2026-06-29T11:04:58.441682+00:00",
   "notes": [
     "The source_staged_release_boundary receipt is required as source-policy evidence only; it does not execute hosted or Docker browser workflows.",
+    "Hosted execution breadth follows the receipt playwright_scope; smoke receipts must cover every smoke-required family, and full receipts must cover every full-required family before this aggregate accepts them.",
     "MIG-106 through MIG-109 remain open until refreshed hosted route-entry, hosted execution, Docker self-host, analytics posture, connected-runtime, source-boundary, and aggregate browser-lane receipts prove the Chummer Online release claim."
   ],
   "passed_receipt_count": 8,
@@ -165,6 +166,15 @@
           "passed": true
         },
         {
+          "actual": "smoke",
+          "expected": [
+            "full",
+            "smoke"
+          ],
+          "id": "allowed_field:playwright_scope",
+          "passed": true
+        },
+        {
           "actual": 9,
           "id": "minimum_length:workflow_families",
           "minimum": 9,
@@ -182,7 +192,8 @@
             "promoted_committed_actions",
             "promoted_advanced_action_executions"
           ],
-          "id": "required_object_ids:workflow_families",
+          "id": "required_object_ids_from_field:workflow_families:required_workflow_family_ids",
+          "minimum_source_items": 9,
           "missing": [],
           "passed": true
         }

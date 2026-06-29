@@ -99,6 +99,27 @@ def test_public_edge_execution_runner_waits_for_result_continuation_text() -> No
     assert "await waitForBodyTextIncludes(page, expectedText, `hosted resumed result route ${route}`);" in script
 
 
+def test_public_edge_execution_runner_preserves_published_receipt_on_live_failure() -> None:
+    script = Path("scripts/e2e-public-edge-playwright.cjs").read_text(encoding="utf-8")
+
+    assert "const failedOutputPath = process.env.CHUMMER_PUBLIC_EDGE_FAILED_EXECUTION_PROOF_PATH" in script
+    assert "'.codex-studio/published/BLAZOR_PUBLIC_EDGE_EXECUTION_PROOF.generated.json'" in script
+    assert "'BLAZOR_PUBLIC_EDGE_EXECUTION_PROOF.failed.generated.json'" in script
+    assert "const writeFailedProofToOutput = process.env.CHUMMER_PUBLIC_EDGE_WRITE_FAILED_PROOF_TO_OUTPUT === '1';" in script
+    assert "receipt.status === 'passed' || writeFailedProofToOutput ? outputPath : failedOutputPath" in script
+    assert "public-edge execution failed; wrote failure receipt" in script
+    assert "left published receipt unchanged" in script
+
+
+def test_public_edge_execution_runner_retries_network_changed_navigation() -> None:
+    script = Path("scripts/e2e-public-edge-playwright.cjs").read_text(encoding="utf-8")
+
+    assert "function shouldRetryRouteNavigation(error)" in script
+    assert "message.includes('ERR_ABORTED')" in script
+    assert "message.includes('ERR_NETWORK_CHANGED')" in script
+    assert "message.includes('Timeout')" in script
+
+
 def test_promoted_workbench_surfaces_startup_command_display_labels() -> None:
     preview = Path("Chummer.Blazor/Components/Pages/Preview.razor").read_text(encoding="utf-8")
 
