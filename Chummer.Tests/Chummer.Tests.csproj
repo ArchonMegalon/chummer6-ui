@@ -140,6 +140,7 @@
     <Compile Include="ManifestStoreTests.cs" />
     <Compile Include="PortalAuthenticatedOwnerPropagationTests.cs" />
     <Compile Include="PortalSettingsResolverTests.cs" />
+    <Compile Include="Presentation\AppRouteSurfaceTests.cs" />
     <Compile Include="PublicationStoreTests.cs" />
     <Compile Include="RequestOwnerContextAccessorTests.cs" />
     <Compile Include="RestartSafeWorkspacePersistenceTests.cs" />

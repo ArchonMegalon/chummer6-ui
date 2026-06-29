@@ -3,17 +3,22 @@
 using Bunit;
 using Chummer.Blazor;
 using Chummer.Blazor.Components.Pages;
+using Chummer.Blazor.RunnerIntelligence;
 using Chummer.Contracts.Presentation;
 using Chummer.Contracts.Rulesets;
 using Chummer.Contracts.Workspaces;
 using Chummer.Presentation.Overview;
+using Chummer.Presentation.RunnerIntelligence;
 using Chummer.Presentation.Shell;
 using Chummer.Rulesets.Sr5;
 using Microsoft.AspNetCore.Components;
+using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using System;
 using System.IO;
+using System.Threading;
+using System.Threading.Tasks;
 using BunitContext = Bunit.BunitContext;
 
 namespace Chummer.Tests.Presentation;
@@ -121,8 +126,8 @@ public sealed class PublicPreviewSurfaceTests
         navigation.NavigateTo("/workbench");
         IRenderedComponent<Preview> cut = context.Render<Preview>();
 
-        StringAssert.Contains(cut.Markup, "This is the product-shaped browser workbench entrypoint");
-        StringAssert.Contains(cut.Markup, "Open preview proof shelf");
+        StringAssert.Contains(cut.Markup, "Chummer Online compatibility shell, running in the browser.");
+        StringAssert.Contains(cut.Markup, "Preview tools");
         StringAssert.Contains(cut.Markup, "Start a new runner");
         StringAssert.Contains(cut.Markup, "Import an existing runner");
         StringAssert.Contains(cut.Markup, "Open a live seeded workspace");
@@ -205,6 +210,29 @@ public sealed class PublicPreviewSurfaceTests
         Assert.IsNotNull(cut.Find("[data-workbench-entry-card='export']"));
         Assert.IsNotNull(cut.Find("[data-workbench-entry-card='print']"));
         Assert.IsNotNull(cut.Find(".desktop-shell"));
+    }
+
+    [TestMethod]
+    public void App_route_renders_character_roster_without_preview_scaffolding()
+    {
+        using var context = new BunitContext();
+        context.JSInterop.Mode = JSRuntimeMode.Loose;
+        RegisterDesktopShellServices(context);
+        NavigationManager navigation = context.Services.GetRequiredService<NavigationManager>();
+        navigation.NavigateTo("/app?command=character_roster");
+        IRenderedComponent<Preview> cut = context.Render<Preview>();
+
+        StringAssert.Contains(cut.Markup, "Character Roster");
+        StringAssert.Contains(cut.Markup, "Your runners will appear here.");
+        StringAssert.Contains(cut.Markup, "Kestrel");
+        StringAssert.Contains(cut.Markup, "Street samurai");
+        StringAssert.Contains(cut.Markup, "Rook");
+        StringAssert.Contains(cut.Markup, "Decker");
+        Assert.IsNotNull(cut.Find(".browser-app-launch"));
+        Assert.IsNotNull(cut.Find(".browser-preview-frame--app"));
+        Assert.IsNotNull(cut.Find(".desktop-shell"));
+        Assert.IsFalse(cut.Markup.Contains("data-preview-proof-card=", StringComparison.Ordinal));
+        Assert.IsFalse(cut.Markup.Contains("classic-chummer-shell", StringComparison.Ordinal));
     }
 
     [DataTestMethod]
@@ -488,9 +516,13 @@ public sealed class PublicPreviewSurfaceTests
         presenter.Publish(overviewState);
 
         context.Services.AddSingleton<ICharacterOverviewPresenter>(presenter);
+        context.Services.AddSingleton<IConfiguration>(new ConfigurationBuilder().Build());
         context.Services.AddSingleton<IShellPresenter>(new StaticShellPresenter(shellState));
         context.Services.AddSingleton<ICommandAvailabilityEvaluator, DefaultCommandAvailabilityEvaluator>();
         context.Services.AddSingleton<IWorkbenchCoachApiClient>(FakeWorkbenchCoachApiClient.CreateDefault());
+        context.Services.AddSingleton<IRunnerIntelligenceCalculator, RunnerIntelligenceCalculator>();
+        context.Services.AddSingleton<IRunnerIntelligenceScenarioCatalog, RunnerIntelligenceScenarioCatalog>();
+        context.Services.AddSingleton<BlazorRunnerIntelligencePreviewService>();
         context.Services.AddSingleton<IRulesetPlugin, Sr5RulesetPlugin>();
         context.Services.AddSingleton<IRulesetPluginRegistry, RulesetPluginRegistry>();
         context.Services.AddSingleton<IRulesetShellCatalogResolver, RulesetShellCatalogResolverService>();

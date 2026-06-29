@@ -508,7 +508,7 @@ async function auditPortalWorkbenchRoute(page) {
 
   const bodyText = await page.locator('body').innerText();
   expectTextIncludes(bodyText, 'Chummer Online compatibility shell, running in the browser.', 'portal workbench route');
-  expectTextIncludes(bodyText, 'older workbench and proof links alive', 'portal workbench route');
+  expectTextIncludes(bodyText, 'older browser links alive', 'portal workbench route');
   expectTextIncludes(bodyText, 'Preview tools', 'portal workbench route');
   expectTextIncludes(bodyText, 'Start a new runner', 'portal workbench route');
   expectTextIncludes(bodyText, 'Import runner XML', 'portal workbench route');

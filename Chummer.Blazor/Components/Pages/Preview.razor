@@ -23,9 +23,9 @@
             @if (IsAppRoute)
             {
                 <p class="browser-preview-kicker">Chummer Online</p>
-                <h1>Explore Chummer Online.</h1>
+                <h1>Chummer Online.</h1>
                 <p>
-                    This is the Chummer Online entrypoint: open, organize, build, review, export, and resume runners in the browser.
+                    Open a runner, start a new one, or use an example archetype.
                 </p>
             }
             else if (IsWorkbenchRoute)
@@ -50,7 +50,9 @@
             <a href="@HomeHref">Public home</a>
             @if (IsAppRoute)
             {
-                <a href="@PreviewHref">Preview tools</a>
+                <a href="@ChummerOnlineRosterHref">Runners</a>
+                <a href="@BuildPreviewHref(command: NewCharacterCommand, useWorkbenchRoute: true)">New runner</a>
+                <a href="@HelpHref">Help</a>
             }
             else if (IsWorkbenchRoute)
             {
@@ -69,6 +71,57 @@
     </header>
 
     @if (IsAppRoute || IsWorkbenchRoute)
+    {
+        @if (IsAppRoute)
+        {
+            <section id="chummer-online-app" class="browser-app-launch" tabindex="-1" aria-label="Character roster">
+                <div class="browser-app-launch-copy">
+                    <span class="browser-preview-status-label">Character Roster</span>
+                    <strong>Start with a runner.</strong>
+                    <p>Your runners will appear here. Until then, use an example archetype or create a new runner.</p>
+                </div>
+                <nav class="browser-app-launch-actions" aria-label="Roster actions">
+                    <a href="@BuildPreviewHref(command: NewCharacterCommand, useWorkbenchRoute: true)">New runner</a>
+                    <a href="@BuildPreviewHref(command: OpenCharacterCommand, useWorkbenchRoute: true)">Open/import</a>
+                    <a href="@BuildPreviewHref(SeededWorkspaceId, useWorkbenchRoute: true)">Open sample</a>
+                </nav>
+                <div class="browser-app-example-runners" role="list" aria-label="Example runners">
+                    <a role="listitem" href="@BuildPreviewHref("kestrel-samurai", useWorkbenchRoute: true)">
+                        <span>Kestrel</span>
+                        <strong>Street samurai</strong>
+                        <small>Fast, direct, gear-heavy.</small>
+                    </a>
+                    <a role="listitem" href="@BuildPreviewHref("rook-decker", useWorkbenchRoute: true)">
+                        <span>Rook</span>
+                        <strong>Decker</strong>
+                        <small>Matrix work and quiet entry.</small>
+                    </a>
+                    <a role="listitem" href="@BuildPreviewHref("mara-face", useWorkbenchRoute: true)">
+                        <span>Mara</span>
+                        <strong>Face</strong>
+                        <small>Contacts, leverage, social pressure.</small>
+                    </a>
+                    <a role="listitem" href="@BuildPreviewHref("ash-mage", useWorkbenchRoute: true)">
+                        <span>Ash</span>
+                        <strong>Mage</strong>
+                        <small>Spells, spirits, and astral risk.</small>
+                    </a>
+                </div>
+            </section>
+
+            <section class="browser-preview-frame browser-preview-frame--app" aria-label="Chummer Online">
+                <DesktopShell @ref="_desktopShell"
+                              DemoFixtureId="@Fixture"
+                              DemoWorkspaceId="@ResolvedWorkspace"
+                              DemoTabId="@Tab"
+                              DemoStartupCommandId="@Command"
+                              DemoUiControlId="@Control"
+                              DemoDialogActionId="@DialogAction" />
+            </section>
+        }
+    }
+
+    @if (IsWorkbenchRoute)
     {
         <section id="chummer-online-app" class="classic-chummer-shell" tabindex="-1" aria-label="Chummer Online classic desktop shell" data-chummer-classic-shell="true" data-active-workflow="@ActiveWorkflowDataKey" data-output-workflow="@OutputWorkflowDataKey" data-output-state="@OutputStateDataKey" data-output-target="@OutputTargetDataKey" data-route-family="@RouteFamilyDataKey" data-route-segment="@RouteSegmentDataKey" data-route-surface="@RouteSurfaceDataKey" data-canonical-route="@CanonicalRouteDataKey" data-route-alias="@RouteAliasDataKey" data-command="@CommandDataKey" data-tab="@TabDataKey" data-workspace="@WorkspaceDataKey" data-active-runner="@ActiveRunnerDataKey" data-roster-selected-node="@SelectedRosterNodeDataKey" data-dossier-state="@DossierStateDataKey" data-dossier-storage="@DossierStorageDataKey" data-ruleset="@RulesetDataKey" data-validation-state="@ValidationStateDataKey" data-privacy-mode="@PrivacyModeDataKey" data-analytics-scope="@AnalyticsScopeDataKey" data-hosting-mode="@HostingModeDataKey" data-deployment-target="@DeploymentTargetDataKey" data-self-hostable="@SelfHostableDataKey" data-container-target="@ContainerTargetDataKey" data-auth-gate="@AuthGateDataKey" data-session-state="@SessionStateDataKey" data-login-target="@LoginTargetDataKey" data-auth-return-policy="@AuthReturnPolicyDataKey" data-fixture="@FixtureDataKey" data-legacy-runner="@LegacyRunnerDataKey" data-control="@ControlDataKey" data-dialog-action="@DialogActionDataKey" data-client-kind="@ClientKindDataKey" data-parity-target="@ParityTargetDataKey" data-calculation-owner="@CalculationOwnerDataKey" data-statistics-runtime="@StatisticsRuntimeDataKey" data-character-statistics="@CharacterStatisticsDataKey" data-statistics-scope="@StatisticsScopeDataKey" data-recommendation-mode="@RecommendationModeDataKey" data-recommendation-inputs="@RecommendationInputsDataKey" data-risk-model="@RiskModelDataKey" data-calculation-boundary="@CalculationBoundaryDataKey" data-result-consumer="@ResultConsumerDataKey">
             <header class="classic-chummer-titlebar" aria-label="Chummer Online window title">
@@ -345,43 +398,46 @@
         </section>
     }
 
-    <section class="browser-preview-boundary" aria-label="Boundary notice">
-        <div>
-            <strong>Browser-ready here:</strong> responsive shell navigation, signed-in session posture, and browser workflows that are ready to use.
-        </div>
-        <div>
-            <strong>Desktop-only still:</strong> native install continuity, local-file-heavy operations, and workflows that are not ready in the browser yet.
-        </div>
-    </section>
+    @if (!IsAppRoute)
+    {
+        <section class="browser-preview-boundary" aria-label="Boundary notice">
+            <div>
+                <strong>Browser-ready here:</strong> responsive shell navigation, signed-in session posture, and browser workflows that are ready to use.
+            </div>
+            <div>
+                <strong>Desktop-only still:</strong> native install continuity, local-file-heavy operations, and workflows that are not ready in the browser yet.
+            </div>
+        </section>
 
-    <section class="browser-preview-status-grid" aria-label="@RouteStatusLabel">
-        <article class="browser-preview-status-card">
-            <span class="browser-preview-status-label">Deployment</span>
-            <strong>Published self-hosted Docker surface</strong>
-            <p>Portal, browser shell, docs, downloads, and API routes are exposed through one public front door.</p>
-        </article>
-        <article class="browser-preview-status-card">
-            <span class="browser-preview-status-label">Session</span>
-            <strong>Implicit owner sign-in</strong>
-            <p>The browser-facing stack carries a self-hosted owner identity without forcing an explicit login wall first.</p>
-        </article>
-        <article class="browser-preview-status-card">
-            <span class="browser-preview-status-label">Workflow truth</span>
-            <strong>Parity where implemented, boundaries where not</strong>
-            <p>The browser surface is allowed to claim real capability, but it must keep native-only paths clearly separated.</p>
-        </article>
-        <article class="browser-preview-status-card"
-                 data-connected-runtime-posture
-                 data-connected-runtime-session="@BuildRuntimeLaneState(Configuration[SessionProxyConfigKey])"
-                 data-connected-runtime-coach="@BuildRuntimeLaneState(Configuration[CoachProxyConfigKey])"
-                 data-connected-runtime-ai="@BuildRuntimeLaneState(Configuration[AiProxyConfigKey])">
-            <span class="browser-preview-status-label">Connected runtime</span>
-            <strong>@BuildConnectedRuntimeTitle()</strong>
-            <p>@BuildConnectedRuntimeSummary()</p>
-        </article>
-    </section>
+        <section class="browser-preview-status-grid" aria-label="@RouteStatusLabel">
+            <article class="browser-preview-status-card">
+                <span class="browser-preview-status-label">Deployment</span>
+                <strong>Published self-hosted Docker surface</strong>
+                <p>Portal, browser shell, docs, downloads, and API routes are exposed through one public front door.</p>
+            </article>
+            <article class="browser-preview-status-card">
+                <span class="browser-preview-status-label">Session</span>
+                <strong>Implicit owner sign-in</strong>
+                <p>The browser-facing stack carries a self-hosted owner identity without forcing an explicit login wall first.</p>
+            </article>
+            <article class="browser-preview-status-card">
+                <span class="browser-preview-status-label">Workflow truth</span>
+                <strong>Parity where implemented, boundaries where not</strong>
+                <p>The browser surface is allowed to claim real capability, but it must keep native-only paths clearly separated.</p>
+            </article>
+            <article class="browser-preview-status-card"
+                     data-connected-runtime-posture
+                     data-connected-runtime-session="@BuildRuntimeLaneState(Configuration[SessionProxyConfigKey])"
+                     data-connected-runtime-coach="@BuildRuntimeLaneState(Configuration[CoachProxyConfigKey])"
+                     data-connected-runtime-ai="@BuildRuntimeLaneState(Configuration[AiProxyConfigKey])">
+                <span class="browser-preview-status-label">Connected runtime</span>
+                <strong>@BuildConnectedRuntimeTitle()</strong>
+                <p>@BuildConnectedRuntimeSummary()</p>
+            </article>
+        </section>
+    }
 
-    @if (IsAppRoute || IsWorkbenchRoute)
+    @if (IsWorkbenchRoute)
     {
         <section class="browser-preview-status-grid" aria-label="@RouteGuidanceLabel">
             <article class="browser-preview-status-card">
@@ -2630,7 +2686,7 @@
             </article>
         </section>
     }
-    else
+    else if (!IsAppRoute)
     {
     <section class="browser-preview-status-grid" aria-label="Verified workflow entries">
         <article class="browser-preview-status-card" data-preview-proof-card="build-lab">
@@ -2714,25 +2770,28 @@
     </section>
     }
 
-    <section class="browser-preview-frame">
-        <div class="browser-preview-frame-header">
-            <div>
-                <p class="browser-preview-frame-kicker">Chummer Online shell</p>
-                <h2>@RouteOpenTitle</h2>
+    @if (!IsAppRoute)
+    {
+        <section class="browser-preview-frame">
+            <div class="browser-preview-frame-header">
+                <div>
+                    <p class="browser-preview-frame-kicker">Chummer Online shell</p>
+                    <h2>@RouteOpenTitle</h2>
+                </div>
+                <p data-chummer-app-startup-command="@StartupCommandLabel">
+                    <strong>@StartupCommandDisplayLabel</strong>
+                    @RouteOpenSummary
+                </p>
             </div>
-            <p data-chummer-app-startup-command="@StartupCommandLabel">
-                <strong>@StartupCommandDisplayLabel</strong>
-                @RouteOpenSummary
-            </p>
-        </div>
-        <DesktopShell @ref="_desktopShell"
-                      DemoFixtureId="@Fixture"
-                      DemoWorkspaceId="@ResolvedWorkspace"
-                      DemoTabId="@Tab"
-                      DemoStartupCommandId="@Command"
-                      DemoUiControlId="@Control"
-                      DemoDialogActionId="@DialogAction" />
-    </section>
+            <DesktopShell @ref="_desktopShell"
+                          DemoFixtureId="@Fixture"
+                          DemoWorkspaceId="@ResolvedWorkspace"
+                          DemoTabId="@Tab"
+                          DemoStartupCommandId="@Command"
+                          DemoUiControlId="@Control"
+                          DemoDialogActionId="@DialogAction" />
+        </section>
+    }
 </main>
 
 @code {

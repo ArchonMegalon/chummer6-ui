@@ -524,7 +524,7 @@ async function auditWorkbenchDesktopSurface(page) {
 
   const bodyText = await page.locator('body').innerText();
   expectTextIncludes(bodyText, 'Chummer Online compatibility shell, running in the browser.', 'workbench desktop shell');
-  expectTextIncludes(bodyText, 'older workbench and proof links alive', 'workbench desktop shell');
+  expectTextIncludes(bodyText, 'older browser links alive', 'workbench desktop shell');
   expectTextIncludes(bodyText, 'Preview tools', 'workbench desktop shell');
   expectTextIncludes(bodyText, 'Start a new runner', 'workbench desktop shell');
   expectTextIncludes(bodyText, 'Import an existing runner', 'workbench desktop shell');
