@@ -6,8 +6,16 @@
 <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="theme-color" content="#0f3b3e" />
+    <meta name="mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-title" content="Chummer Online" />
+    <meta name="application-name" content="Chummer Online" />
     <base href="@BuildBaseHref()" />
     <title>Chummer Online</title>
+    <link rel="manifest" href="manifest.webmanifest" />
+    <link rel="icon" type="image/svg+xml" href="icons/chummer-pwa.svg" />
+    <link rel="apple-touch-icon" href="media/chummer6/chummer6-hero-baseline.png" />
     <link rel="stylesheet" href="Chummer.Blazor.styles.css" />
     <link rel="stylesheet" href="app.css" />
     @if (BuildRybbitAnalyticsOptions() is { } rybbitAnalytics)
@@ -25,6 +33,28 @@
 <Routes @rendermode="new InteractiveServerRenderMode()" />
 <script src="_framework/blazor.web.js"></script>
 <script>
+    window.chummerPwa = window.chummerPwa || {};
+    (function(pwa) {
+        const serviceWorkerScript = 'service-worker.js';
+        const serviceWorkerScope = './';
+        pwa.installState = pwa.installState || 'unsupported';
+        if (!('serviceWorker' in navigator)) {
+            return;
+        }
+
+        pwa.installState = 'pending';
+        window.addEventListener('load', function() {
+            navigator.serviceWorker.register(serviceWorkerScript, { scope: serviceWorkerScope })
+                .then(function(registration) {
+                    pwa.installState = 'ready';
+                    pwa.registrationScope = registration.scope;
+                })
+                .catch(function(error) {
+                    pwa.installState = 'failed';
+                    pwa.installError = error && error.message ? error.message : String(error || 'unknown');
+                });
+        }, { once: true });
+    })(window.chummerPwa);
     window.chummerUtilities = window.chummerUtilities || {};
     window.chummerUtilities.decodeBase64Utf8 = function(contentBase64) {
         const binary = atob(contentBase64 || '');

@@ -1,0 +1,17 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" role="img" aria-label="Chummer Online">
+  <defs>
+    <linearGradient id="bg" x1="60" y1="48" x2="452" y2="464" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#31d0aa"/>
+      <stop offset="0.52" stop-color="#186d73"/>
+      <stop offset="1" stop-color="#08111f"/>
+    </linearGradient>
+    <linearGradient id="mark" x1="134" y1="110" x2="390" y2="402" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#f8fafc"/>
+      <stop offset="1" stop-color="#b9fff0"/>
+    </linearGradient>
+  </defs>
+  <rect width="512" height="512" rx="112" fill="url(#bg)"/>
+  <path d="M128 256c0-74 54-132 132-132 47 0 86 20 110 55l-54 39c-13-18-31-29-57-29-37 0-63 28-63 67 0 40 27 67 65 67 25 0 45-10 60-29l53 38c-25 36-65 56-114 56-78 0-132-58-132-132Z" fill="url(#mark)"/>
+  <path d="M274 247h118v48H274z" fill="#31d0aa"/>
+  <path d="M274 171h48v170h-48z" fill="#31d0aa"/>
+</svg>

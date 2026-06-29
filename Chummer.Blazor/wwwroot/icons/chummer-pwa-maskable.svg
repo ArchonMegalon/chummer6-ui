@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" role="img" aria-label="Chummer Online">
+  <rect width="512" height="512" fill="#08111f"/>
+  <circle cx="256" cy="256" r="214" fill="#0f3b3e"/>
+  <circle cx="256" cy="256" r="168" fill="#31d0aa" opacity="0.18"/>
+  <path d="M126 256c0-76 55-134 134-134 47 0 87 20 112 55l-55 40c-13-18-32-29-57-29-38 0-64 28-64 68 0 41 27 68 66 68 25 0 46-10 61-30l54 39c-26 37-67 57-117 57-79 0-134-58-134-134Z" fill="#f8fafc"/>
+  <path d="M278 246h118v50H278z" fill="#08111f"/>
+  <path d="M278 170h50v172h-50z" fill="#08111f"/>
+</svg>

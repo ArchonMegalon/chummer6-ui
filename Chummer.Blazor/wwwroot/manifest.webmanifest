@@ -1,0 +1,74 @@
+{
+  "name": "Chummer Online",
+  "short_name": "Chummer",
+  "description": "A mobile-ready Chummer session companion for runner status, table flow, and safe in-session continuity.",
+  "id": "./app",
+  "start_url": "./app?source=pwa",
+  "scope": "./",
+  "display": "standalone",
+  "display_override": ["window-controls-overlay", "standalone", "browser"],
+  "background_color": "#08111f",
+  "theme_color": "#0f3b3e",
+  "orientation": "any",
+  "categories": ["games", "productivity", "utilities"],
+  "lang": "en-US",
+  "dir": "ltr",
+  "icons": [
+    {
+      "src": "icons/chummer-pwa.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any"
+    },
+    {
+      "src": "icons/chummer-pwa-maskable.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "maskable"
+    }
+  ],
+  "shortcuts": [
+    {
+      "name": "Play Session",
+      "short_name": "Play",
+      "description": "Open the mobile-friendly in-session Chummer surface.",
+      "url": "./app?command=session_dashboard&source=pwa-shortcut",
+      "icons": [
+        {
+          "src": "icons/chummer-pwa.svg",
+          "sizes": "any",
+          "type": "image/svg+xml"
+        }
+      ]
+    },
+    {
+      "name": "Runner Roster",
+      "short_name": "Roster",
+      "description": "Open Chummer Online to choose or resume a runner.",
+      "url": "./app?command=character_roster&source=pwa-shortcut",
+      "icons": [
+        {
+          "src": "icons/chummer-pwa.svg",
+          "sizes": "any",
+          "type": "image/svg+xml"
+        }
+      ]
+    }
+  ],
+  "screenshots": [
+    {
+      "src": "media/chummer6/chummer6-hero.png",
+      "sizes": "1600x900",
+      "type": "image/png",
+      "form_factor": "wide",
+      "label": "Chummer Online public shell"
+    },
+    {
+      "src": "media/chummer6/karma-forge.png",
+      "sizes": "960x540",
+      "type": "image/png",
+      "form_factor": "wide",
+      "label": "Runner tools and session-ready workflow lanes"
+    }
+  ]
+}
