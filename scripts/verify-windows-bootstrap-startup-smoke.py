@@ -47,6 +47,17 @@ def extract_prefixed_line(text: str, prefix: str) -> str:
     return ""
 
 
+def normalize_windows_path(value: str) -> str:
+    return value.strip().replace("/", "\\").rstrip("\\").lower()
+
+
+def windows_path_file_name(value: str) -> str:
+    normalized = value.strip().replace("/", "\\").rstrip("\\")
+    if not normalized:
+        return ""
+    return normalized.rsplit("\\", 1)[-1].lower()
+
+
 def receipt_matches_current_release(receipt: dict[str, Any], *, release_version: str, release_channel: str) -> bool:
     receipt_version = str(receipt.get("releaseVersion") or receipt.get("version") or "").strip()
     receipt_channel = norm(receipt.get("channelId") or receipt.get("channel"))
@@ -143,6 +154,7 @@ def verify(
         if norm(receipt.get("artifactDigest")) != expected_digest:
             errors.append(f"Windows installer startup-smoke receipt artifactDigest mismatch: {receipt_path.name}")
         if norm(artifact.get("installerMode")) == "bootstrap":
+            payload_file_name = str(artifact.get("payloadFileName") or "").strip()
             progress_log_path = startup_smoke_dir / f"windows-installer-progress-{head}-{rid}.log"
             if not progress_log_path.is_file():
                 errors.append(
@@ -187,15 +199,27 @@ def verify(
                     errors.append(
                         f"Windows bootstrap installer startup-smoke progress log is missing the payload target value: {progress_log_path.name}"
                     )
-                elif payload_target.startswith("\\"):
+                elif payload_target.startswith(("\\", "/")):
                     errors.append(
                         f"Windows bootstrap installer startup-smoke progress log captured a root-level payload target: {progress_log_path.name}"
                     )
+                elif bootstrap_temp_root:
+                    normalized_root = normalize_windows_path(bootstrap_temp_root)
+                    normalized_target = normalize_windows_path(payload_target)
+                    if normalized_root and not normalized_target.startswith(normalized_root + "\\"):
+                        errors.append(
+                            f"Windows bootstrap installer startup-smoke progress log payload target is outside the bootstrap temp root: {progress_log_path.name}"
+                        )
+                if payload_target and payload_file_name:
+                    target_file_name = windows_path_file_name(payload_target)
+                    if target_file_name and target_file_name != payload_file_name.lower():
+                        errors.append(
+                            f"Windows bootstrap installer startup-smoke progress log payload target file name does not match release metadata: {progress_log_path.name}"
+                        )
             if norm(receipt.get("bootstrapPayloadAcquisitionMode")) != "download":
                 errors.append(
                     f"Windows bootstrap installer startup-smoke receipt did not exercise payload download mode: {receipt_path.name}"
                 )
-            payload_file_name = str(artifact.get("payloadFileName") or "").strip()
             if payload_file_name and norm(receipt.get("bootstrapPayloadFileName")) != norm(payload_file_name):
                 errors.append(
                     f"Windows bootstrap installer startup-smoke receipt payloadFileName mismatch: {receipt_path.name}"
