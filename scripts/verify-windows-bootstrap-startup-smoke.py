@@ -10,6 +10,14 @@ from typing import Any
 
 
 PASSING_STATUSES = {"pass", "passed", "ready"}
+BOOTSTRAP_PROGRESS_FAILURE_MARKERS = (
+    "Payload download failed:",
+    "Bundled curl download failed",
+    "bundled curl download timed out",
+    "bundled curl downloader did not start",
+    "bundled curl completed without creating the payload file",
+    "Chummer could not download the application files.",
+)
 
 
 def norm(value: Any) -> str:
@@ -175,6 +183,11 @@ def verify(
                     if marker not in progress_text:
                         errors.append(
                             f"Windows bootstrap installer startup-smoke progress log is missing '{marker}': {progress_log_path.name}"
+                        )
+                for marker in BOOTSTRAP_PROGRESS_FAILURE_MARKERS:
+                    if marker in progress_text:
+                        errors.append(
+                            f"Windows bootstrap installer startup-smoke progress log contains failure marker '{marker}': {progress_log_path.name}"
                         )
                 progress_metric_lines = [
                     line.strip()

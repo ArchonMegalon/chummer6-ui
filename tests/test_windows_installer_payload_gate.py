@@ -16,6 +16,14 @@ APPENDED_PAYLOAD_MAGIC = b"CHUMMER6PAYLOAD1"
 BOOTSTRAP_METADATA_MARKER = b"\nCHUMMER6_BOOTSTRAP_METADATA\n"
 
 
+def _publish_env(tmp_path: Path, **overrides: str) -> dict[str, str]:
+    return {
+        "PATH": "/usr/bin:/bin",
+        "QUARANTINE_PROMOTION_EVIDENCE_PATH": str(tmp_path / "QUARANTINED_INSTALLER_PROMOTION.generated.json"),
+        **overrides,
+    }
+
+
 def _write_bootstrap_payload(payload_path: Path, *, launch_executable: str = "Chummer.Avalonia.exe") -> bytes:
     with zipfile.ZipFile(payload_path, "w") as archive:
         archive.writestr(launch_executable, b"placeholder")
@@ -655,6 +663,7 @@ def test_publish_download_bundle_fails_before_promotion_when_windows_payload_is_
     result = subprocess.run(
         ["bash", str(PUBLISH_SCRIPT), str(bundle_dir), str(deploy_dir)],
         cwd=REPO_ROOT,
+        env=_publish_env(tmp_path),
         text=True,
         capture_output=True,
         check=False,
@@ -678,6 +687,7 @@ def test_publish_download_bundle_fails_when_root_installer_has_no_matching_paylo
     result = subprocess.run(
         ["bash", str(PUBLISH_SCRIPT), str(bundle_dir), str(deploy_dir)],
         cwd=REPO_ROOT,
+        env=_publish_env(tmp_path),
         text=True,
         capture_output=True,
         check=False,
@@ -897,14 +907,14 @@ def test_publish_download_bundle_promotes_bootstrap_payload_zip_with_installer(t
     result = subprocess.run(
         ["bash", str(PUBLISH_SCRIPT), str(bundle_dir), str(deploy_dir)],
         cwd=REPO_ROOT,
-        env={
-            "PATH": "/usr/bin:/bin",
-            "CHUMMER_PUBLIC_EDGE_DOWNLOADS_SYNC_MIRRORS": "false",
-            "CHUMMER_RELEASE_REQUIRE_COMPLETE_DESKTOP_COVERAGE": "0",
-            "CHUMMER_PUBLIC_SKIP_STARTUP_SMOKE_FILTER": "true",
-            "CHUMMER_WINDOWS_INSTALLER_VISUAL_PROOF_PATH": str(visual_proof_path),
-            "RELEASE_PROOF_PATH": str(release_proof_path),
-        },
+        env=_publish_env(
+            tmp_path,
+            CHUMMER_PUBLIC_EDGE_DOWNLOADS_SYNC_MIRRORS="false",
+            CHUMMER_RELEASE_REQUIRE_COMPLETE_DESKTOP_COVERAGE="0",
+            CHUMMER_PUBLIC_SKIP_STARTUP_SMOKE_FILTER="true",
+            CHUMMER_WINDOWS_INSTALLER_VISUAL_PROOF_PATH=str(visual_proof_path),
+            RELEASE_PROOF_PATH=str(release_proof_path),
+        ),
         text=True,
         capture_output=True,
         check=False,
@@ -1106,14 +1116,14 @@ def test_publish_download_bundle_refreshes_windows_visual_proof_handoff_before_e
     result = subprocess.run(
         ["bash", str(PUBLISH_SCRIPT), str(bundle_dir), str(deploy_dir)],
         cwd=REPO_ROOT,
-        env={
-            "PATH": "/usr/bin:/bin",
-            "CHUMMER_PUBLIC_EDGE_DOWNLOADS_SYNC_MIRRORS": "false",
-            "CHUMMER_RELEASE_REQUIRE_COMPLETE_DESKTOP_COVERAGE": "0",
-            "CHUMMER_PUBLIC_SKIP_STARTUP_SMOKE_FILTER": "true",
-            "CHUMMER_RELEASE_BUILD_HANDOFF_SCRIPT_PATH": str(handoff_stub),
-            "RELEASE_PROOF_PATH": str(release_proof_path),
-        },
+        env=_publish_env(
+            tmp_path,
+            CHUMMER_PUBLIC_EDGE_DOWNLOADS_SYNC_MIRRORS="false",
+            CHUMMER_RELEASE_REQUIRE_COMPLETE_DESKTOP_COVERAGE="0",
+            CHUMMER_PUBLIC_SKIP_STARTUP_SMOKE_FILTER="true",
+            CHUMMER_RELEASE_BUILD_HANDOFF_SCRIPT_PATH=str(handoff_stub),
+            RELEASE_PROOF_PATH=str(release_proof_path),
+        ),
         text=True,
         capture_output=True,
         check=False,
@@ -1274,13 +1284,13 @@ def test_publish_download_bundle_fails_when_windows_bootstrap_receipt_payload_pr
     result = subprocess.run(
         ["bash", str(PUBLISH_SCRIPT), str(bundle_dir), str(deploy_dir)],
         cwd=REPO_ROOT,
-        env={
-            "PATH": "/usr/bin:/bin",
-            "CHUMMER_PUBLIC_EDGE_DOWNLOADS_SYNC_MIRRORS": "false",
-            "CHUMMER_RELEASE_REQUIRE_COMPLETE_DESKTOP_COVERAGE": "0",
-            "CHUMMER_PUBLIC_SKIP_STARTUP_SMOKE_FILTER": "true",
-            "RELEASE_PROOF_PATH": str(release_proof_path),
-        },
+        env=_publish_env(
+            tmp_path,
+            CHUMMER_PUBLIC_EDGE_DOWNLOADS_SYNC_MIRRORS="false",
+            CHUMMER_RELEASE_REQUIRE_COMPLETE_DESKTOP_COVERAGE="0",
+            CHUMMER_PUBLIC_SKIP_STARTUP_SMOKE_FILTER="true",
+            RELEASE_PROOF_PATH=str(release_proof_path),
+        ),
         text=True,
         capture_output=True,
         check=False,

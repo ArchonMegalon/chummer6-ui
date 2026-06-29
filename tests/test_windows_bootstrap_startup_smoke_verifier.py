@@ -328,6 +328,50 @@ def test_windows_bootstrap_startup_smoke_verifier_fails_when_payload_target_name
     assert "Windows bootstrap installer startup-smoke progress log payload target file name does not match release metadata" in result.stderr
 
 
+def test_windows_bootstrap_startup_smoke_verifier_fails_when_progress_log_contains_payload_download_failure(tmp_path: Path) -> None:
+    release_channel_manifest, releases_manifest, files_dir, startup_smoke_dir = _build_fixture(tmp_path)
+    (startup_smoke_dir / "windows-installer-progress-avalonia-win-x64.log").write_text(
+        "\n".join(
+            [
+                "# Chummer installer trace",
+                "Bootstrap temp root: C:\\Users\\tibor\\AppData\\Local\\Temp\\Chummer6\\installer-temp",
+                "Payload download target: C:\\Users\\tibor\\AppData\\Local\\Temp\\Chummer6\\installer-temp\\chummer-avalonia-win-x64-payload.zip",
+                "Downloading application files",
+                "Downloading application files - 12% - 5.4 / 45.0 MiB - 5.4 MiB/s",
+                "Payload download failed: Unable to open \\chummer-avalonia-win-x64-payload.zip",
+                "Verifying payload size",
+                "Verifying payload checksum",
+                "Extracting application files",
+                "Install complete",
+            ]
+        )
+        + "\n",
+        encoding="utf-8",
+    )
+
+    result = subprocess.run(
+        [
+            "python3",
+            str(SCRIPT),
+            "--release-channel",
+            str(release_channel_manifest),
+            "--downloads-manifest",
+            str(releases_manifest),
+            "--files-dir",
+            str(files_dir),
+            "--startup-smoke-dir",
+            str(startup_smoke_dir),
+        ],
+        cwd=REPO_ROOT,
+        capture_output=True,
+        text=True,
+        check=False,
+    )
+
+    assert result.returncode == 1
+    assert "Windows bootstrap installer startup-smoke progress log contains failure marker 'Payload download failed:'" in result.stderr
+
+
 def test_windows_bootstrap_startup_smoke_verifier_fails_when_progress_log_lacks_percent_and_speed_lines(tmp_path: Path) -> None:
     release_channel_manifest, releases_manifest, files_dir, startup_smoke_dir = _build_fixture(tmp_path)
     (startup_smoke_dir / "windows-installer-progress-avalonia-win-x64.log").write_text(
