@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-06-26T17:09:47.480325Z",
+  "generatedAt": "2026-06-29T13:22:22.339473Z",
   "contractName": "chummer6-ui.chummer5a_human_parity_acceptance_matrix",
   "status": "pass",
   "summary": "Element-level Chummer5A parity rows are materialized for every required family, surface, dialog, and reviewed Chummer6-only control.",
@@ -2932,7 +2932,9 @@
         "chummer-presentation/.codex-studio/published/DESKTOP_VISUAL_FAMILIARITY_EXIT_GATE.generated.json",
         "chummer-presentation/.codex-studio/published/VETERAN_TASK_TIME_EVIDENCE_GATE.generated.json",
         "chummer6-core/.codex-studio/published/IMPORT_PARITY_CERTIFICATION.generated.json",
-        "chummer-core-engine/docs/NEXT90_M141_IMPORT_ROUTE_RECEIPTS.md"
+        "chummer-core-engine/docs/NEXT90_M141_IMPORT_ROUTE_RECEIPTS.md",
+        "chummer-presentation/.codex-studio/published/CHUMMER5A_MUSCLE_MEMORY_INVENTORY.generated.json",
+        "chummer-presentation/.codex-studio/published/UI_FLAGSHIP_RELEASE_GATE.generated.json"
       ],
       "test_refs": [
         "parity_audit::source:hero_lab_importer_route"
@@ -3704,13 +3706,17 @@
       "visual_parity": "yes",
       "behavioral_parity": "yes",
       "removable_if_not_in_chummer5a": "no",
-      "reason": "Route-local dice and initiative proof cites the generated dice dialog parity, runboard initiative route, and current workflow receipts directly.",
+      "reason": "Route-local dice and initiative proof cites the generated dice dialog parity, runboard initiative route, and deterministic core receipts directly.",
       "screenshot_refs": [],
       "runtime_receipt_refs": [
         "/docker/fleet/docs/chummer5a-oracle/veteran_workflow_packs.yaml",
+        "chummer-presentation/.codex-studio/published/DESKTOP_VISUAL_FAMILIARITY_EXIT_GATE.generated.json",
+        "chummer-presentation/.codex-studio/published/DESKTOP_WORKFLOW_EXECUTION_GATE.generated.json",
         "chummer-presentation/.codex-studio/published/GENERATED_DIALOG_ELEMENT_PARITY.generated.json",
         "chummer-presentation/.codex-studio/published/SECTION_HOST_RULESET_PARITY.generated.json",
         "chummer-presentation/.codex-studio/published/NEXT90_M121_UI_GM_RUNBOARD_ROUTE.generated.json",
+        "chummer-presentation/.codex-studio/published/CHUMMER5A_MUSCLE_MEMORY_INVENTORY.generated.json",
+        "chummer-presentation/.codex-studio/published/UI_FLAGSHIP_RELEASE_GATE.generated.json",
         "chummer-presentation/.codex-studio/published/NEXT90_M142_UI_DIRECT_WORKFLOW_PROOF.generated.json"
       ],
       "test_refs": [
@@ -3760,7 +3766,9 @@
         "chummer-presentation/.codex-studio/published/DESKTOP_WORKFLOW_EXECUTION_GATE.generated.json",
         "chummer-presentation/.codex-studio/published/VETERAN_TASK_TIME_EVIDENCE_GATE.generated.json",
         "chummer6-core/.codex-studio/published/IMPORT_PARITY_CERTIFICATION.generated.json",
-        "chummer-core-engine/docs/NEXT90_M141_IMPORT_ROUTE_RECEIPTS.md"
+        "chummer-core-engine/docs/NEXT90_M141_IMPORT_ROUTE_RECEIPTS.md",
+        "chummer-presentation/.codex-studio/published/CHUMMER5A_MUSCLE_MEMORY_INVENTORY.generated.json",
+        "chummer-presentation/.codex-studio/published/UI_FLAGSHIP_RELEASE_GATE.generated.json"
       ],
       "test_refs": [
         "parity_audit::family:legacy_and_adjacent_import_oracles"
@@ -3825,11 +3833,15 @@
       "screenshot_refs": [],
       "runtime_receipt_refs": [
         "/docker/fleet/docs/chummer5a-oracle/veteran_workflow_packs.yaml",
+        "chummer-presentation/.codex-studio/published/DESKTOP_VISUAL_FAMILIARITY_EXIT_GATE.generated.json",
+        "chummer-presentation/.codex-studio/published/DESKTOP_WORKFLOW_EXECUTION_GATE.generated.json",
         "chummer-presentation/.codex-studio/published/SECTION_HOST_RULESET_PARITY.generated.json",
         "chummer-presentation/.codex-studio/published/GENERATED_DIALOG_ELEMENT_PARITY.generated.json",
         "chummer-presentation/.codex-studio/published/CHUMMER5A_SCREENSHOT_REVIEW_GATE.generated.json",
-        "chummer-presentation/.codex-studio/published/NEXT90_M143_UI_DIRECT_OUTPUT_PROOF.generated.json",
-        "chummer-core-engine/docs/NEXT90_M143_EXPORT_PRINT_SUPPLEMENT_RULE_ENVIRONMENT_RECEIPTS.md"
+        "chummer-core-engine/docs/NEXT90_M143_EXPORT_PRINT_SUPPLEMENT_RULE_ENVIRONMENT_RECEIPTS.md",
+        "chummer-presentation/.codex-studio/published/CHUMMER5A_MUSCLE_MEMORY_INVENTORY.generated.json",
+        "chummer-presentation/.codex-studio/published/UI_FLAGSHIP_RELEASE_GATE.generated.json",
+        "chummer-presentation/.codex-studio/published/NEXT90_M143_UI_DIRECT_OUTPUT_PROOF.generated.json"
       ],
       "test_refs": [
         "parity_audit::family:sheet_export_print_viewer_and_exchange"

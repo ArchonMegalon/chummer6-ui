@@ -1,7 +1,7 @@
 {
   "contract_name": "chummer6-ui.chummer5a_human_parity_matrix_proof",
   "status": "pass",
-  "generated_at": "2026-06-26T17:09:47.546838Z",
+  "generated_at": "2026-06-29T13:22:22.273534Z",
   "summary": "The Chummer5A human parity matrix is fully covered by passing family-level UI parity rows and mandatory screenshot-backed review jobs.",
   "matrix": {
     "path": "chummer-design/products/chummer/CHUMMER5A_HUMAN_PARITY_ACCEPTANCE_MATRIX.yaml",

@@ -264,6 +264,9 @@ bash scripts/ai/milestones/chummer-shared-legacy-equivalent-chrome-gate.sh
 echo "[verify] checking Chummer5a screenshot review gate..."
 bash scripts/ai/milestones/chummer5a-screenshot-review-gate.sh
 
+echo "[verify] materializing Chummer5a effective UI element parity audit..."
+python3 scripts/ai/materialize_chummer5a_ui_element_parity_effective_audit.py
+
 echo "[verify] checking Pixefy Chummer5a screenshot comparison gate..."
 bash scripts/ai/milestones/pixefy-chummer5a-screenshot-comparison-gate.sh
 

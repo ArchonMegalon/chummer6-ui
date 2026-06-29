@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-06-27T18:41:22.018229Z",
+  "generatedAt": "2026-06-29T13:23:17.385529Z",
   "contract_name": "chummer6-ui.next90_m143_ui_direct_output_proof",
   "status": "pass",
   "summary": "Milestone 143 direct output proof is closed on route-local screenshot, runtime, and queue/registry evidence.",
@@ -55,11 +55,11 @@
       "design_queue_worker_safe": true
     },
     "parityAuditChecks": {
-      "parity_audit_status_pass": false,
+      "parity_audit_status_pass": true,
       "sheet_export_print_viewer_and_exchange_row_present": true,
-      "sheet_export_print_viewer_and_exchange_visual_yes": false,
-      "sheet_export_print_viewer_and_exchange_behavioral_yes": false,
-      "sheet_export_print_viewer_and_exchange_evidence_present": false,
+      "sheet_export_print_viewer_and_exchange_visual_yes": true,
+      "sheet_export_print_viewer_and_exchange_behavioral_yes": true,
+      "sheet_export_print_viewer_and_exchange_evidence_present": true,
       "sr6_supplements_designers_and_house_rules_row_present": true,
       "sr6_supplements_designers_and_house_rules_visual_yes": true,
       "sr6_supplements_designers_and_house_rules_behavioral_yes": true,
@@ -206,16 +206,16 @@
       "dotnet test --project Chummer.Tests/Chummer.Tests.csproj --filter \"FullyQualifiedName~Next90M143DirectOutputProofGuardTests\" --no-restore"
     ],
     "supportingReceipts": {
-      "parityAudit": "/docker/chummercomplete/chummer6-ui/.codex-studio/published/CHUMMER5A_UI_ELEMENT_PARITY_AUDIT.generated.json",
-      "screenshotReview": "/docker/chummercomplete/chummer6-ui/.codex-studio/published/CHUMMER5A_SCREENSHOT_REVIEW_GATE.generated.json",
-      "sectionHostParity": "/docker/chummercomplete/chummer6-ui/.codex-studio/published/SECTION_HOST_RULESET_PARITY.generated.json",
-      "generatedDialogParity": "/docker/chummercomplete/chummer6-ui/.codex-studio/published/GENERATED_DIALOG_ELEMENT_PARITY.generated.json",
-      "ruleStudio": "/docker/chummercomplete/chummer6-ui/.codex-studio/published/NEXT90_M114_UI_RULE_STUDIO.generated.json",
-      "uiFlagshipGate": "/docker/chummercomplete/chummer6-ui/.codex-studio/published/UI_FLAGSHIP_RELEASE_GATE.generated.json",
-      "receipt": "/docker/chummercomplete/chummer6-ui/.codex-studio/published/NEXT90_M143_UI_DIRECT_OUTPUT_PROOF.generated.json"
+      "parityAudit": "/docker/chummercomplete/chummer-presentation/.codex-studio/published/CHUMMER5A_UI_ELEMENT_PARITY_AUDIT.generated.json",
+      "screenshotReview": "/docker/chummercomplete/chummer-presentation/.codex-studio/published/CHUMMER5A_SCREENSHOT_REVIEW_GATE.generated.json",
+      "sectionHostParity": "/docker/chummercomplete/chummer-presentation/.codex-studio/published/SECTION_HOST_RULESET_PARITY.generated.json",
+      "generatedDialogParity": "/docker/chummercomplete/chummer-presentation/.codex-studio/published/GENERATED_DIALOG_ELEMENT_PARITY.generated.json",
+      "ruleStudio": "/docker/chummercomplete/chummer-presentation/.codex-studio/published/NEXT90_M114_UI_RULE_STUDIO.generated.json",
+      "uiFlagshipGate": "/docker/chummercomplete/chummer-presentation/.codex-studio/published/UI_FLAGSHIP_RELEASE_GATE.generated.json",
+      "receipt": "/docker/chummercomplete/chummer-presentation/.codex-studio/published/NEXT90_M143_UI_DIRECT_OUTPUT_PROOF.generated.json"
     },
-    "parityAuditSourceStatus": "fail",
-    "parityAuditRouteLocalOnly": true,
+    "parityAuditSourceStatus": "pass",
+    "parityAuditRouteLocalOnly": false,
     "parityAuditEffectiveStatus": "pass"
   }
 }

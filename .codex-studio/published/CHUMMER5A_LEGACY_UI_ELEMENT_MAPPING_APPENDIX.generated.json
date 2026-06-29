@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-06-26T17:09:48.893413Z",
+  "generatedAt": "2026-06-29T13:22:23.474192Z",
   "contractName": "chummer6-ui.chummer5a_legacy_ui_element_mapping_appendix",
   "status": "pass",
   "summary": "Legacy Chummer5A event hooks, dynamic elements, family mappings, and per-dialog human parity rows are exported together so family-level proof cannot substitute for element-level review.",
@@ -1743,7 +1743,7 @@
           "present_in_chummer6": "yes",
           "visual_parity": "yes",
           "behavioral_parity": "yes",
-          "reason": "Route-local dice and initiative proof cites the generated dice dialog parity, runboard initiative route, and current workflow receipts directly.",
+          "reason": "Route-local dice and initiative proof cites the generated dice dialog parity, runboard initiative route, and deterministic core receipts directly.",
           "test_refs": [
             "parity_audit::family:dice_initiative_and_table_utilities"
           ]
