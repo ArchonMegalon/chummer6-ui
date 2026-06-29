@@ -54,6 +54,7 @@ public static class DesktopDialogFieldVisualKinds
     public const string Detail = "detail";
     public const string Summary = "summary";
     public const string Snippet = "snippet";
+    public const string Narrative = "narrative";
     public const string Tabs = "tabs";
     public const string Image = "image";
     public const string Book = "book";

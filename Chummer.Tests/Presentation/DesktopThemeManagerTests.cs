@@ -1310,8 +1310,11 @@ public sealed class DesktopThemeManagerTests
         StringAssert.Contains(originCss, ".dialog-origin-summary-label {");
         StringAssert.Contains(originCss, ".dialog-origin-panel > header p,");
         StringAssert.Contains(originCss, ".dialog-origin-panel .dialog-note,");
+        StringAssert.Contains(originCss, ".dialog-origin-narrative,");
+        StringAssert.Contains(originCss, ".dialog-origin-book,");
         StringAssert.Contains(originCss, ".dialog-origin-preview :is(p, pre, strong, span, li, em),");
         StringAssert.Contains(originCss, ".dialog-origin-preview .dialog-visual-pre,");
+        StringAssert.Contains(originCss, ".dialog-origin-support-grid {");
         StringAssert.Contains(originCss, "color: var(--ui-kit-ink);");
         StringAssert.Contains(originCss, "color: var(--ui-kit-ink-strong);");
         StringAssert.Contains(originCss, "color: var(--ui-kit-muted);");
@@ -1359,7 +1362,9 @@ public sealed class DesktopThemeManagerTests
         StringAssert.Contains(previewShellCss, ".browser-preview-frame ::deep .desktop-shell pre,");
         StringAssert.Contains(previewShellCss, ".browser-preview-frame ::deep .dialog-visual-pre {");
         StringAssert.Contains(previewShellCss, ".browser-preview-shell ::deep .desktop-dialog pre,");
+        StringAssert.Contains(previewShellCss, ".browser-preview-shell ::deep .dialog-origin-narrative,");
         StringAssert.Contains(previewShellCss, ".browser-preview-shell ::deep .dialog-origin-preview,");
+        StringAssert.Contains(previewShellCss, ".browser-preview-shell ::deep .dialog-origin-narrative p,");
         StringAssert.Contains(previewShellCss, ".browser-preview-shell ::deep .dialog-origin-preview p,");
         StringAssert.Contains(previewShellCss, ".browser-preview-shell ::deep .dialog-origin-preview--book {");
         StringAssert.Contains(previewShellCss, ".browser-preview-shell ::deep .dialog-origin-panel > header p,");

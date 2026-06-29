@@ -697,6 +697,7 @@ public sealed class BlazorShellComponentTests
         Assert.IsNotNull(wizardCut.Find("select[data-field-id='newCharacterOriginMetatypePreference']"));
         Assert.IsNotNull(wizardCut.Find("select[data-field-id='newCharacterOriginBuildPreference']"));
         Assert.IsNotNull(wizardCut.Find("[data-origin-story-preview]"));
+        Assert.IsNotNull(wizardCut.Find("[data-origin-story-preview] .dialog-origin-narrative"));
 
         IRenderedComponent<DialogHost> buildCut = context.Render<DialogHost>(parameters => parameters
             .Add(component => component.Dialog, originBuild));
@@ -705,6 +706,8 @@ public sealed class BlazorShellComponentTests
         StringAssert.Contains(buildCut.Markup, "Build Translation");
         Assert.IsNotNull(buildCut.Find("[data-origin-build]"));
         Assert.IsNotNull(buildCut.Find("[data-origin-book-preview]"));
+        Assert.IsNotNull(buildCut.Find("[data-origin-build-support]"));
+        Assert.IsNotNull(buildCut.Find(".dialog-origin-preview .dialog-origin-narrative"));
     }
 
     [TestMethod]

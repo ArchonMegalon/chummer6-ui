@@ -80,8 +80,8 @@ def test_portal_playwright_origin_dossier_audit_measures_story_preview_contrast(
     assert "expected: expectedTitle.toLowerCase()," in script
     assert "fallback: expectedFallback ? expectedFallback.toLowerCase() : ''" in script
     assert "}, { query: selector, requiredMatches: minimumMatches }, { timeout: 15000 });" in script
-    assert "await expectMinimumTextContrast(page, '[data-origin-story-preview] .dialog-visual-pre', 4.5, 'portal origin dossier story preview');" in script
-    assert "await expectMinimumTextContrast(page, '[data-origin-story-preview] .dialog-visual-pre', 4.5, 'portal origin dossier deep-link story preview');" in script
+    assert "await expectVisibleCollectionMinimumTextContrast(page, '[data-origin-story-preview] .dialog-origin-narrative p', 4.5, 1, 'portal origin dossier story preview');" in script
+    assert "await expectVisibleCollectionMinimumTextContrast(page, '[data-origin-story-preview] .dialog-origin-narrative p', 4.5, 1, 'portal origin dossier deep-link story preview');" in script
     assert "await expectVisibleCollectionMinimumTextContrast(page, '[data-origin-wizard] .dialog-origin-panel > header p', 4.5, 2, 'portal origin dossier helper copy');" in script
     assert "await expectVisibleCollectionMinimumTextContrast(page, '[data-origin-wizard] .dialog-origin-summary-label', 4.5, 3, 'portal origin dossier summary labels');" in script
     assert "await expectVisibleCollectionMinimumTextContrast(page, '[data-origin-wizard] .dialog-origin-summary-card strong', 4.5, 3, 'portal origin dossier summary values');" in script
@@ -96,7 +96,8 @@ def test_portal_playwright_origin_dossier_audit_measures_story_preview_contrast(
     assert "await expectVisibleCollectionMinimumTextContrast(page, '[data-origin-build] .dialog-origin-summary-label', 4.5, 3, 'portal origin build summary labels');" in script
     assert "await expectVisibleCollectionMinimumTextContrast(page, '[data-origin-build] .dialog-origin-summary-card strong', 4.5, 3, 'portal origin build summary values');" in script
     assert "await expectVisibleCollectionMinimumTextContrast(page, '[data-origin-book-preview] .dialog-origin-readonly p', 4.5, 2, 'portal origin build book preview');" in script
-    assert "await expectVisibleCollectionMinimumTextContrast(page, '[data-origin-build] .dialog-origin-review-stack .dialog-visual-pre', 4.5, 3, 'portal origin build supporting previews');" in script
+    assert "await expectVisibleCollectionMinimumTextContrast(page, '[data-origin-build] .dialog-origin-preview .dialog-origin-narrative p', 4.5, 1, 'portal origin build story preview');" in script
+    assert "await expectVisibleCollectionMinimumTextContrast(page, '[data-origin-build-support] .dialog-visual-pre', 4.5, 2, 'portal origin build supporting previews');" in script
     assert "await expectVisibleCollectionMinimumTextContrast(page, '.desktop-dialog .dialog-label', 4.5, 2, 'portal origin dossier labels');" in script
     assert "await expectVisibleCollectionMinimumTextContrast(page, '.desktop-dialog .dialog-input', 4.5, 2, 'portal origin dossier inputs');" in script
     assert "await expectVisibleCollectionMinimumTextContrast(page, '.desktop-dialog .dialog-label', 4.5, 3, 'portal new character labels');" in script

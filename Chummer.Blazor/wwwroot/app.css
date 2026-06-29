@@ -2581,9 +2581,27 @@ input[type="radio"] {
     background: var(--ui-kit-shell-surface-emphasis);
 }
 
+.dialog-origin-narrative,
+.dialog-origin-book,
+.dialog-narrative {
+    display: grid;
+    gap: 0.72rem;
+    max-width: 72ch;
+}
+
 .dialog-origin-preview :is(p, pre, strong, span, li, em),
 .dialog-origin-readonly :is(p, pre, strong, span, li, em) {
     color: inherit;
+}
+
+.dialog-origin-narrative p,
+.dialog-origin-book p,
+.dialog-narrative p {
+    margin: 0;
+    color: inherit;
+    line-height: 1.7;
+    font-size: 0.98rem;
+    font-family: var(--ui-kit-sans-font, var(--ui-kit-classic-font));
 }
 
 .dialog-origin-preview--book p,
@@ -2601,11 +2619,17 @@ input[type="radio"] {
 }
 
 .dialog-origin-review-grid {
-    grid-template-columns: minmax(0, 1.05fr) minmax(0, 0.95fr);
+    grid-template-columns: 1fr;
 }
 
 .dialog-origin-review-stack {
     display: grid;
+    gap: 0.75rem;
+}
+
+.dialog-origin-support-grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
     gap: 0.75rem;
 }
 
@@ -2623,7 +2647,8 @@ input[type="radio"] {
     .browser-preview-status-grid,
     .browser-preview-boundary,
     .dialog-origin-advanced-grid,
-    .dialog-origin-review-grid {
+    .dialog-origin-review-grid,
+    .dialog-origin-support-grid {
         grid-template-columns: 1fr;
     }
 }

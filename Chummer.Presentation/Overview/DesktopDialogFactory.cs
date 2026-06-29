@@ -881,7 +881,7 @@ public sealed class DesktopDialogFactory : IDesktopDialogFactory
                     recommendation.OriginSummary,
                     IsReadOnly: true,
                     IsMultiline: true,
-                    VisualKind: DesktopDialogFieldVisualKinds.Snippet),
+                    VisualKind: DesktopDialogFieldVisualKinds.Narrative),
                 BuildNewCharacterContextField("newCharacterOriginArchetype", "Origin Archetype", recommendation.ArchetypeLabel),
                 BuildNewCharacterContextField("newCharacterOriginBuildMethod", "Origin Build Method", recommendation.BuildMethod),
                 BuildNewCharacterContextField("newCharacterOriginMetatypeCategory", "Origin Metatype Range", recommendation.MetatypeCategory),
@@ -957,7 +957,7 @@ public sealed class DesktopDialogFactory : IDesktopDialogFactory
                     recommendation.OriginSummary,
                     IsReadOnly: true,
                     IsMultiline: true,
-                    VisualKind: DesktopDialogFieldVisualKinds.Snippet),
+                    VisualKind: DesktopDialogFieldVisualKinds.Narrative),
                 new DesktopDialogField(
                     "newCharacterOriginBuildLogic",
                     "Build Direction",

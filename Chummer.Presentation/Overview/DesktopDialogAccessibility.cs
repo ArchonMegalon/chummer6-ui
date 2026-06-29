@@ -84,6 +84,7 @@ public static class DesktopDialogAccessibility
                 DesktopDialogFieldVisualKinds.Tree => "tree view",
                 DesktopDialogFieldVisualKinds.Grid => "grid summary",
                 DesktopDialogFieldVisualKinds.Snippet => "snippet preview",
+                DesktopDialogFieldVisualKinds.Narrative => "story preview",
                 DesktopDialogFieldVisualKinds.List => "list view",
                 DesktopDialogFieldVisualKinds.Detail => "detail pane",
                 DesktopDialogFieldVisualKinds.Summary => "summary pane",

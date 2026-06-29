@@ -557,7 +557,7 @@ async function auditPortalOriginDossier(page) {
   await expectVisibleCollectionMinimumTextContrast(page, '[data-origin-wizard] .dialog-origin-panel > header p', 4.5, 2, 'portal origin dossier helper copy');
   await expectVisibleCollectionMinimumTextContrast(page, '[data-origin-wizard] .dialog-origin-summary-label', 4.5, 3, 'portal origin dossier summary labels');
   await expectVisibleCollectionMinimumTextContrast(page, '[data-origin-wizard] .dialog-origin-summary-card strong', 4.5, 3, 'portal origin dossier summary values');
-  await expectMinimumTextContrast(page, '[data-origin-story-preview] .dialog-visual-pre', 4.5, 'portal origin dossier story preview');
+  await expectVisibleCollectionMinimumTextContrast(page, '[data-origin-story-preview] .dialog-origin-narrative p', 4.5, 1, 'portal origin dossier story preview');
 }
 
 async function auditPortalNewCharacter(page) {
@@ -605,7 +605,7 @@ async function auditPortalOriginDossierDeepLink(page) {
   await expectVisibleCollectionMinimumTextContrast(page, '[data-origin-wizard] .dialog-origin-panel > header p', 4.5, 2, 'portal origin dossier deep-link helper copy');
   await expectVisibleCollectionMinimumTextContrast(page, '[data-origin-wizard] .dialog-origin-summary-label', 4.5, 3, 'portal origin dossier deep-link summary labels');
   await expectVisibleCollectionMinimumTextContrast(page, '[data-origin-wizard] .dialog-origin-summary-card strong', 4.5, 3, 'portal origin dossier deep-link summary values');
-  await expectMinimumTextContrast(page, '[data-origin-story-preview] .dialog-visual-pre', 4.5, 'portal origin dossier deep-link story preview');
+  await expectVisibleCollectionMinimumTextContrast(page, '[data-origin-story-preview] .dialog-origin-narrative p', 4.5, 1, 'portal origin dossier deep-link story preview');
 }
 
 async function auditPortalOriginBuildDeepLink(page) {
@@ -626,7 +626,8 @@ async function auditPortalOriginBuildDeepLink(page) {
   await expectVisibleCollectionMinimumTextContrast(page, '[data-origin-build] .dialog-origin-summary-label', 4.5, 3, 'portal origin build summary labels');
   await expectVisibleCollectionMinimumTextContrast(page, '[data-origin-build] .dialog-origin-summary-card strong', 4.5, 3, 'portal origin build summary values');
   await expectVisibleCollectionMinimumTextContrast(page, '[data-origin-book-preview] .dialog-origin-readonly p', 4.5, 2, 'portal origin build book preview');
-  await expectVisibleCollectionMinimumTextContrast(page, '[data-origin-build] .dialog-origin-review-stack .dialog-visual-pre', 4.5, 3, 'portal origin build supporting previews');
+  await expectVisibleCollectionMinimumTextContrast(page, '[data-origin-build] .dialog-origin-preview .dialog-origin-narrative p', 4.5, 1, 'portal origin build story preview');
+  await expectVisibleCollectionMinimumTextContrast(page, '[data-origin-build-support] .dialog-visual-pre', 4.5, 2, 'portal origin build supporting previews');
 }
 
 async function auditPortalOpenCharacterDeepLink(page) {

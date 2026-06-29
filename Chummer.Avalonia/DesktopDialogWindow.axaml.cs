@@ -846,6 +846,11 @@ public partial class DesktopDialogWindow : Window
             return 68d;
         }
 
+        if (string.Equals(field.VisualKind, DesktopDialogFieldVisualKinds.Narrative, StringComparison.Ordinal))
+        {
+            return 92d;
+        }
+
         if (string.Equals(field.VisualKind, DesktopDialogFieldVisualKinds.List, StringComparison.Ordinal))
         {
             return 92d;
@@ -1483,7 +1488,7 @@ public partial class DesktopDialogWindow : Window
         shell.Children.Add(CreateLegacySummaryCard(
             "Story Preview",
             "Review the story seed first. Mechanics can follow after the story is accepted.",
-            CreateFieldControl(summaryField)));
+            CreateNarrativePanel(summaryField.Value, minHeight: 120, maxHeight: 240)));
 
         return shell;
     }
@@ -1510,38 +1515,32 @@ public partial class DesktopDialogWindow : Window
                 ("Ruleset", rulesetField.Value.ToUpperInvariant()),
                 ("Method", methodField.Value))));
 
-        Grid reviewGrid = new()
-        {
-            ColumnDefinitions = new ColumnDefinitions("1.05*,0.95*"),
-            ColumnSpacing = 12
-        };
-        reviewGrid.Children.Add(CreateLegacySummaryCard(
+        shell.Children.Add(CreateLegacySummaryCard(
             "Book Preview",
             "Read this first. Character creation starts after the story feels right.",
             CreateFieldControl(bookField)));
 
-        StackPanel right = new()
+        shell.Children.Add(CreateLegacySummaryCard(
+            "Story",
+            "Alice can use this text later; it does not change the sheet by itself.",
+            CreateNarrativePanel(storyField.Value, minHeight: 144, maxHeight: 260)));
+
+        Grid supportGrid = new()
         {
-            Spacing = 10,
-            Children =
-            {
-                CreateLegacySummaryCard(
-                    "Story",
-                    "Alice can use this text later; it does not change the sheet by itself.",
-                    CreateFieldControl(storyField)),
-                CreateLegacySummaryCard(
-                    "Build Translation",
-                    "The handoff translates the story into a normal guided character-creation path.",
-                    CreateFieldControl(buildLogicField)),
-                CreateLegacySummaryCard(
-                    "Constraints",
-                    "GM grants and requirements stay visible before opening chargen.",
-                    CreateFieldControl(implicationsField))
-            }
+            ColumnDefinitions = new ColumnDefinitions("*,*"),
+            ColumnSpacing = 12
         };
-        Grid.SetColumn(right, 1);
-        reviewGrid.Children.Add(right);
-        shell.Children.Add(reviewGrid);
+        supportGrid.Children.Add(CreateLegacySummaryCard(
+            "Build Translation",
+            "The handoff translates the story into a normal guided character-creation path.",
+            CreateFieldControl(buildLogicField)));
+        Border constraintsCard = CreateLegacySummaryCard(
+            "Constraints",
+            "GM grants and requirements stay visible before opening chargen.",
+            CreateFieldControl(implicationsField));
+        Grid.SetColumn(constraintsCard, 1);
+        supportGrid.Children.Add(constraintsCard);
+        shell.Children.Add(supportGrid);
         return shell;
     }
 
@@ -2744,6 +2743,10 @@ public partial class DesktopDialogWindow : Window
             {
                 visualControl = CreateGridPanel(field.Value);
             }
+            else if (string.Equals(field.VisualKind, DesktopDialogFieldVisualKinds.Narrative, StringComparison.Ordinal))
+            {
+                visualControl = CreateNarrativePanel(field.Value);
+            }
             else if (string.Equals(field.VisualKind, DesktopDialogFieldVisualKinds.Snippet, StringComparison.Ordinal))
             {
                 visualControl = CreateSnippetPanel(field.Value);
@@ -3041,6 +3044,49 @@ public partial class DesktopDialogWindow : Window
                 Text = value,
                 Foreground = DesktopShellTheme.ResolveForegroundBrush(),
                 TextWrapping = TextWrapping.Wrap
+            }
+        };
+    }
+
+    private static Control CreateNarrativePanel(string value, double minHeight = 144, double maxHeight = 320)
+    {
+        string[] paragraphs = value
+            .Replace("\r\n", "\n", StringComparison.Ordinal)
+            .Split(["\n\n"], StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
+        string[] bodyParagraphs = paragraphs.Length == 0 ? [value.Trim()] : paragraphs;
+
+        StackPanel narrative = new()
+        {
+            Spacing = 12
+        };
+
+        foreach (string paragraph in bodyParagraphs.Where(static paragraph => !string.IsNullOrWhiteSpace(paragraph)))
+        {
+            narrative.Children.Add(new TextBlock
+            {
+                Name = "OriginNarrativeParagraphText",
+                Text = paragraph,
+                Foreground = DesktopShellTheme.ResolveForegroundBrush(),
+                TextWrapping = TextWrapping.Wrap,
+                LineHeight = 22,
+                FontSize = 14
+            });
+        }
+
+        return new Border
+        {
+            Name = "OriginNarrativePreviewPanel",
+            BorderThickness = new Thickness(1),
+            BorderBrush = DesktopShellTheme.ResolveBorderBrush(),
+            Background = DesktopShellTheme.ResolveSurfaceBrush(),
+            Padding = new Thickness(16, 14),
+            MinHeight = minHeight,
+            Child = new ScrollViewer
+            {
+                VerticalScrollBarVisibility = ScrollBarVisibility.Auto,
+                HorizontalScrollBarVisibility = ScrollBarVisibility.Disabled,
+                MaxHeight = maxHeight,
+                Content = narrative
             }
         };
     }

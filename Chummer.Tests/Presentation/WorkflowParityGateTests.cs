@@ -807,7 +807,7 @@ public sealed class WorkflowParityGateTests
                     $"'{workflowId}' must expose editable posture or a concrete apply/advance action.");
                 Assert.IsTrue(
                     dialog.Fields.Any(IsDetailAffordance)
-                    || dialog.Fields.Any(field => field.VisualKind == DesktopDialogFieldVisualKinds.Snippet),
+                    || dialog.Fields.Any(field => field.VisualKind is DesktopDialogFieldVisualKinds.Snippet or DesktopDialogFieldVisualKinds.Narrative),
                     $"'{workflowId}' must keep dense details or notes visible.");
                 break;
 
@@ -832,7 +832,7 @@ public sealed class WorkflowParityGateTests
 
             case WorkflowShape.Preview:
                 Assert.IsTrue(dialog.Actions.Any(action => string.Equals(action.Id, "download", StringComparison.Ordinal) || string.Equals(action.Id, "close", StringComparison.Ordinal)), $"'{workflowId}' must keep explicit preview/download exit actions.");
-                Assert.IsTrue(dialog.Fields.Any(field => field.IsMultiline || field.VisualKind == DesktopDialogFieldVisualKinds.Snippet), $"'{workflowId}' must keep preview content visible.");
+                Assert.IsTrue(dialog.Fields.Any(field => field.IsMultiline || field.VisualKind is DesktopDialogFieldVisualKinds.Snippet or DesktopDialogFieldVisualKinds.Narrative), $"'{workflowId}' must keep preview content visible.");
                 break;
 
             case WorkflowShape.Info:

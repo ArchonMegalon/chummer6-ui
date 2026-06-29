@@ -4511,6 +4511,9 @@
 .browser-preview-shell ::deep .dialog-visual-pre,
 .browser-preview-shell ::deep .dialog-body,
 .browser-preview-shell ::deep .dialog-label,
+.browser-preview-shell ::deep .dialog-narrative,
+.browser-preview-shell ::deep .dialog-origin-narrative,
+.browser-preview-shell ::deep .dialog-origin-book,
 .browser-preview-shell ::deep .dialog-origin-preview,
 .browser-preview-shell ::deep .dialog-origin-readonly {
     color: var(--ui-kit-ink);
@@ -4544,7 +4547,10 @@
 .browser-preview-shell ::deep .dialog-origin-preview li,
 .browser-preview-shell ::deep .dialog-origin-readonly li,
 .browser-preview-shell ::deep .dialog-origin-preview em,
-.browser-preview-shell ::deep .dialog-origin-readonly em {
+.browser-preview-shell ::deep .dialog-origin-readonly em,
+.browser-preview-shell ::deep .dialog-origin-narrative p,
+.browser-preview-shell ::deep .dialog-origin-book p,
+.browser-preview-shell ::deep .dialog-narrative p {
     color: inherit;
 }
 

@@ -1,6 +1,7 @@
 using Avalonia;
 using Avalonia.Automation;
 using Avalonia.Controls;
+using Avalonia.Controls.Primitives;
 using Avalonia.Controls.Templates;
 using Avalonia.Input;
 using Avalonia.Interactivity;
@@ -879,6 +880,11 @@ public partial class CommandDialogPaneControl : UserControl
             return 68d;
         }
 
+        if (string.Equals(field.VisualKind, DesktopDialogFieldVisualKinds.Narrative, StringComparison.Ordinal))
+        {
+            return 92d;
+        }
+
         if (string.Equals(field.VisualKind, DesktopDialogFieldVisualKinds.List, StringComparison.Ordinal))
         {
             return 92d;
@@ -1069,6 +1075,10 @@ public partial class CommandDialogPaneControl : UserControl
             else if (string.Equals(field.VisualKind, DesktopDialogFieldVisualKinds.Grid, StringComparison.Ordinal))
             {
                 visualControl = CreateGridPanel(field.Value);
+            }
+            else if (string.Equals(field.VisualKind, DesktopDialogFieldVisualKinds.Narrative, StringComparison.Ordinal))
+            {
+                visualControl = CreateNarrativePanel(field.Value);
             }
             else if (string.Equals(field.VisualKind, DesktopDialogFieldVisualKinds.Snippet, StringComparison.Ordinal))
             {
@@ -1321,6 +1331,47 @@ public partial class CommandDialogPaneControl : UserControl
             {
                 Text = value,
                 TextWrapping = TextWrapping.Wrap
+            }
+        };
+    }
+
+    private static Control CreateNarrativePanel(string value, double minHeight = 144, double maxHeight = 320)
+    {
+        string[] paragraphs = value
+            .Replace("\r\n", "\n", StringComparison.Ordinal)
+            .Split(["\n\n"], StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
+        string[] bodyParagraphs = paragraphs.Length == 0 ? [value.Trim()] : paragraphs;
+
+        StackPanel narrative = new()
+        {
+            Spacing = 12
+        };
+
+        foreach (string paragraph in bodyParagraphs.Where(static paragraph => !string.IsNullOrWhiteSpace(paragraph)))
+        {
+            narrative.Children.Add(new TextBlock
+            {
+                Text = paragraph,
+                Foreground = DesktopShellTheme.ResolveForegroundBrush(),
+                TextWrapping = TextWrapping.Wrap,
+                LineHeight = 22,
+                FontSize = 14
+            });
+        }
+
+        return new Border
+        {
+            BorderThickness = new Thickness(1),
+            BorderBrush = DesktopShellTheme.ResolveBorderBrush(),
+            Background = DesktopShellTheme.ResolveSurfaceBrush(),
+            Padding = new Thickness(16, 14),
+            MinHeight = minHeight,
+            Child = new ScrollViewer
+            {
+                VerticalScrollBarVisibility = ScrollBarVisibility.Auto,
+                HorizontalScrollBarVisibility = ScrollBarVisibility.Disabled,
+                MaxHeight = maxHeight,
+                Content = narrative
             }
         };
     }

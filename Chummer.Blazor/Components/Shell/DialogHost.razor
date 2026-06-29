@@ -246,16 +246,17 @@
                                 </div>
                             </section>
 
-                            <div class="dialog-origin-review-stack">
-                                <section class="dialog-origin-panel">
-                                    <header>
-                                        <h3>Story</h3>
-                                        <p>Alice can use this text later; it does not change the sheet by itself.</p>
-                                    </header>
-                                    <div class="dialog-origin-preview">
-                                        @RenderOriginReadonlyField(GetDialogField(dialog, "newCharacterOriginStory"))
-                                    </div>
-                                </section>
+                            <section class="dialog-origin-panel">
+                                <header>
+                                    <h3>Story</h3>
+                                    <p>Alice can use this text later; it does not change the sheet by itself.</p>
+                                </header>
+                                <div class="dialog-origin-preview">
+                                    @RenderOriginReadonlyField(GetDialogField(dialog, "newCharacterOriginStory"))
+                                </div>
+                            </section>
+
+                            <div class="dialog-origin-support-grid" data-origin-build-support>
                                 <section class="dialog-origin-panel">
                                     <header>
                                         <h3>Build Translation</h3>
@@ -349,6 +350,10 @@
                                         else if (string.Equals(field.VisualKind, DesktopDialogFieldVisualKinds.Snippet, StringComparison.Ordinal))
                                         {
                                             <div class="dialog-snippet">@field.Value</div>
+                                        }
+                                        else if (string.Equals(field.VisualKind, DesktopDialogFieldVisualKinds.Narrative, StringComparison.Ordinal))
+                                        {
+                                            @RenderNarrativeParagraphs(field.Value, "dialog-narrative")
                                         }
                                         else if (string.Equals(field.VisualKind, DesktopDialogFieldVisualKinds.Tree, StringComparison.Ordinal))
                                         {
@@ -710,6 +715,7 @@
             DesktopDialogFieldVisualKinds.Detail => "dialog-field--detail",
             DesktopDialogFieldVisualKinds.Summary => "dialog-field--summary",
             DesktopDialogFieldVisualKinds.Snippet => "dialog-field--snippet",
+            DesktopDialogFieldVisualKinds.Narrative => "dialog-field--narrative",
             DesktopDialogFieldVisualKinds.Tabs => "dialog-field--tabs",
             DesktopDialogFieldVisualKinds.Image => "dialog-field--image",
             _ => string.Empty
@@ -730,6 +736,7 @@
             DesktopDialogFieldVisualKinds.Detail => "dialog-input dialog-input--detail",
             DesktopDialogFieldVisualKinds.Summary => "dialog-input dialog-input--summary",
             DesktopDialogFieldVisualKinds.Snippet => "dialog-input dialog-input--snippet",
+            DesktopDialogFieldVisualKinds.Narrative => "dialog-input dialog-input--summary",
             _ => "dialog-input"
         };
     }
@@ -744,6 +751,7 @@
             DesktopDialogFieldVisualKinds.Grid => "dialog-visual dialog-visual--grid",
             DesktopDialogFieldVisualKinds.List => "dialog-visual dialog-visual--list",
             DesktopDialogFieldVisualKinds.Snippet => "dialog-visual dialog-visual--snippet",
+            DesktopDialogFieldVisualKinds.Narrative => "dialog-visual dialog-visual--narrative",
             _ => "dialog-visual"
         };
 
@@ -1281,29 +1289,48 @@
     {
         builder.OpenElement(0, "div");
         builder.AddAttribute(1, "class", "dialog-origin-readonly");
-        builder.AddContent(2, RenderOriginReadonlyContent(field.Value, string.Equals(field.VisualKind, DesktopDialogFieldVisualKinds.Book, StringComparison.Ordinal)));
+        builder.AddContent(2, RenderOriginReadonlyContent(field));
         builder.CloseElement();
     };
 
-    private static RenderFragment RenderOriginReadonlyContent(string value, bool asBook) => builder =>
+    private static RenderFragment RenderOriginReadonlyContent(DesktopDialogField field) => builder =>
     {
-        IReadOnlyList<string> lines = SplitVisualLines(value);
-        if (asBook)
+        if (string.Equals(field.VisualKind, DesktopDialogFieldVisualKinds.Book, StringComparison.Ordinal))
         {
-            int sequence = 0;
-            foreach (string line in lines)
-            {
-                builder.OpenElement(sequence++, "p");
-                builder.AddContent(sequence++, line);
-                builder.CloseElement();
-            }
+            builder.AddContent(0, RenderNarrativeParagraphs(field.Value, "dialog-origin-book"));
+            return;
+        }
 
+        if (string.Equals(field.VisualKind, DesktopDialogFieldVisualKinds.Narrative, StringComparison.Ordinal))
+        {
+            builder.AddContent(0, RenderNarrativeParagraphs(field.Value, "dialog-origin-narrative"));
             return;
         }
 
         builder.OpenElement(0, "pre");
         builder.AddAttribute(1, "class", "dialog-visual-pre");
-        builder.AddContent(2, value);
+        builder.AddContent(2, field.Value);
+        builder.CloseElement();
+    };
+
+    private static RenderFragment RenderNarrativeParagraphs(string value, string cssClass) => builder =>
+    {
+        string normalized = value.Replace("\r\n", "\n", StringComparison.Ordinal);
+        string[] paragraphs = normalized
+            .Split(["\n\n"], StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
+        string[] renderedParagraphs = paragraphs.Length == 0 ? [normalized.Trim()] : paragraphs;
+
+        builder.OpenElement(0, "div");
+        builder.AddAttribute(1, "class", cssClass);
+
+        int sequence = 2;
+        foreach (string paragraph in renderedParagraphs.Where(static paragraph => !string.IsNullOrWhiteSpace(paragraph)))
+        {
+            builder.OpenElement(sequence++, "p");
+            builder.AddContent(sequence++, paragraph);
+            builder.CloseElement();
+        }
+
         builder.CloseElement();
     };
 
