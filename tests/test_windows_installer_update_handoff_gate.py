@@ -73,6 +73,8 @@ def test_windows_bootstrap_installer_falls_back_to_download_metadata_when_local_
     assert 'FileWrite $6 "    move /y $\\"$DownloadHelperPartialPath$\\" $\\"$EffectivePayloadPath$\\" >nul$\\r$\\n"' in text
     assert 'Push "Payload download completed with bundled curl"' in text
     assert 'Push "Bundled curl download failed code=$DownloadHelperStatus output=$DownloadHelperOutput"' in text
+    assert 'Push "Payload download failed; legacy NSIS downloader is disabled for bootstrap installs"' in text
+    assert "NSISdl::download" not in text
     assert 'StrCpy $PayloadPathOverride ""' in text
     assert 'Push "Skipping payload size verification for local payload handoff"' in text
     assert '${If} $IsSmokeInstall == "1"' in text

@@ -569,17 +569,14 @@ Function EnsurePayloadPath
     Push "Bundled curl download failed code=$DownloadHelperStatus"
     Call TraceLine
   ${EndIf}
-  Push "Falling back to NSISdl download"
+  Push "Payload download failed; legacy NSIS downloader is disabled for bootstrap installs"
   Call TraceLine
-
-  NSISdl::download "$EffectivePayloadUrl" "$EffectivePayloadPath"
-  Pop $0
-  ${If} $0 != "success"
-    Push "Payload download failed: $0"
-    Call TraceLine
-    Push "Chummer could not download the application files.$\r$\n$\r$\n$0"
-    Call AbortInstallWithMessage
+  ${If} $DownloadHelperOutput != ""
+    Push "Chummer could not download the application files.$\r$\n$\r$\n$DownloadHelperOutput"
+  ${Else}
+    Push "Chummer could not download the application files. Check your connection and try again."
   ${EndIf}
+  Call AbortInstallWithMessage
 FunctionEnd
 
 Function VerifyPayloadSize

@@ -206,7 +206,8 @@ def test_windows_bootstrap_build_is_measured_by_the_real_payload_gate() -> None:
     assert 'StrCpy $DownloadHelperOutput "bundled curl download timed out."' in bootstrap_template
     assert 'Push "Payload download completed with bundled curl"' in bootstrap_template
     assert 'Push "Bundled curl download failed code=$DownloadHelperStatus output=$DownloadHelperOutput"' in bootstrap_template
-    assert 'NSISdl::download "$EffectivePayloadUrl" "$EffectivePayloadPath"' in bootstrap_template
+    assert 'Push "Payload download failed; legacy NSIS downloader is disabled for bootstrap installs"' in bootstrap_template
+    assert "NSISdl::download" not in bootstrap_template
     assert 'Delete "$BootstrapTempRoot\\chummer-verify-size.cmd"' in bootstrap_template
     assert 'FileOpen $6 "$BootstrapTempRoot\\chummer-verify-size.cmd" w' in bootstrap_template
     assert 'FileWrite $6 "for %%I in ($\\"$EffectivePayloadPath$\\") do @echo %%~zI$\\r$\\n"' in bootstrap_template
