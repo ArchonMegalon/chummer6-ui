@@ -1,6 +1,7 @@
 # Release Build Handoff
 
-Purpose: turn a locally verified release bundle into a short, operator-facing handoff instead of relying on shell scrollback.
+Purpose: turn a locally verified staged nightly bundle into a short, operator-facing handoff instead of relying on shell scrollback.
+This handoff does not publish the live downloads shelf and does not change the stable channel by itself.
 
 ## When to use it
 
@@ -40,15 +41,18 @@ The handoff records:
 6. next operator actions
 7. when present, the stage-local Windows visual-proof handoff packet for the exact staged installer bytes
 8. a refreshed stage-local Windows exit-gate receipt, materialized against that same stage manifest, files shelf, and stage-local `WINDOWS_INSTALLER_VISUAL_PROOF.generated.json` target
+9. explicit staged-nightly-only contract flags: `handoff_only`, `stable_release_unchanged`, `requires_separate_publish_lane`, and `stage_proof_complete`
 
-## Promotion rule
+## Handoff rule
 
 Do not promote the bundle to `public_stable` if the handoff still shows:
 
 1. `missing_required_platforms`
-2. `promotion_ready: false`
+2. `stage_proof_complete: false`
 3. startup-smoke receipts that are only `skipped` for a required installer tuple
 
-In that state, the bundle is a valid release-build handoff, not a promotable stable release.
+In that state, the bundle is a valid release-build handoff, not a promotable stable release. The live downloads shelf and stable channel should remain unchanged.
+
+Even when `stage_proof_complete: true`, the handoff is still only a staged nightly artifact. Public/stable publication remains a separate explicit operator lane.
 
 If the handoff includes `windows_visual_proof_handoff.status: ready_for_windows_host`, the staged Windows bytes are locally verified and blocked only by the missing Windows screenshots. Use the emitted `WINDOWS_INSTALLER_VISUAL_PROOF_HANDOFF.generated.{json,md}` packet from the same stage directory to drive the real Windows capture step. Do not substitute repo-default downloads paths at that point; the packet is already pinned to the exact staged manifest, installer, payload, and startup-smoke receipt.

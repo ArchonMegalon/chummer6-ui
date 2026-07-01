@@ -18,6 +18,7 @@ def test_daily_publish_policy_is_documented_in_local_runbook() -> None:
     assert "08:00 Europe/Vienna" in runbook
     assert "once per day in the morning release window" in runbook
     assert "Build only what the proof needs" in runbook
+    assert "does not publish the live downloads shelf and does not change the stable channel by itself" in runbook
     assert ("workflow" + "_dispatch") not in runbook
     assert ("GitHub " + "Actions") not in runbook
 
@@ -131,13 +132,22 @@ def test_portal_e2e_distinguishes_public_desktop_installer_handoffs_from_account
 
 def test_release_candidate_handoff_blocks_when_windows_smoke_exists_without_staged_artifact_or_manifest_row() -> None:
     handoff = (REPO_ROOT / "scripts" / "materialize_release_candidate_handoff.py").read_text(encoding="utf-8")
+    handoff_doc = (REPO_ROOT / "docs" / "RELEASE_CANDIDATE_HANDOFF.md").read_text(encoding="utf-8")
 
     assert "Windows startup-smoke passed for" in handoff
     assert "staged installer bytes are missing" in handoff
     assert "does not expose a matching Windows artifact row" in handoff
     assert "windows_exit_gate_refresh" in handoff
     assert "maybe_materialize_windows_exit_gate" in handoff
-    assert "promotion_ready\": not missing_platforms and not blockers" in handoff
+    assert '"handoff_only": True' in handoff
+    assert '"stable_release_unchanged": True' in handoff
+    assert '"requires_separate_publish_lane": True' in handoff
+    assert '"stage_proof_complete": stage_proof_complete' in handoff
+    assert "Keep the live downloads shelf and stable channel unchanged" in handoff
+    assert '"promotion_ready": stage_proof_complete' in handoff
+    assert "This handoff does not publish the live downloads shelf and does not change the stable channel by itself." in handoff_doc
+    assert "`stage_proof_complete: false`" in handoff_doc
+    assert "Public/stable publication remains a separate explicit operator lane." in handoff_doc
 
 
 def test_s3_publish_windows_payload_gate_allows_empty_only_before_installers_are_added() -> None:

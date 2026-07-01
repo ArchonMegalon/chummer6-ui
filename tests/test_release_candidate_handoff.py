@@ -97,8 +97,15 @@ def test_release_candidate_handoff_embeds_stage_windows_visual_proof_packet(tmp_
     windows_exit_gate_refresh = payload["windows_exit_gate_refresh"]
     windows_visual_proof_handoff = payload["windows_visual_proof_handoff"]
 
+    assert payload["handoff_only"] is True
+    assert payload["handoff_scope"] == "staged_nightly"
+    assert payload["stable_release_unchanged"] is True
+    assert payload["requires_separate_publish_lane"] is True
+    assert payload["stage_proof_complete"] is False
     assert payload["promotion_ready"] is False
     assert "Windows visual proof is still outstanding for the staged installer bytes." in payload["blockers"]
+    assert any("stable channel unchanged" in action for action in payload["next_actions"])
+    assert all("CHUMMER_RELEASE_UPLOAD_TOKEN" not in action for action in payload["next_actions"])
     assert windows_exit_gate_refresh["status"] == "failed"
     assert windows_exit_gate_refresh["blocking_mode"] == "external_only"
     assert windows_visual_proof_handoff["status"] == "ready_for_windows_host"
@@ -200,6 +207,10 @@ def test_release_candidate_handoff_can_refresh_stage_local_windows_exit_gate_wit
     assert completed.returncode == 0, completed.stderr
 
     payload = json.loads((stage_dir / "RELEASE_BUILD_HANDOFF.generated.json").read_text(encoding="utf-8"))
+    assert payload["handoff_only"] is True
+    assert payload["stable_release_unchanged"] is True
+    assert payload["requires_separate_publish_lane"] is True
+    assert payload["stage_proof_complete"] is False
     assert payload["windows_exit_gate_refresh"]["script_path"] == str(gate_stub)
     assert payload["windows_exit_gate_refresh"]["status"] == "failed"
     assert payload["windows_exit_gate_refresh"]["blocking_mode"] == "external_only"

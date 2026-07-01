@@ -101,6 +101,10 @@ def test_materialize_windows_visual_proof_handoff_blocks_stale_startup_smoke(tmp
     assert payload["status"] == "needs_review"
     assert payload["only_blocker_is_visual_proof"] is True
     assert payload["release_shelf_root"] == str(tmp_path)
+    assert payload["handoff_only"] is True
+    assert payload["handoff_scope"] == "staged_nightly_windows_visual_proof"
+    assert payload["stable_release_unchanged"] is True
+    assert payload["requires_separate_publish_lane"] is True
     assert payload["release"]["version"] == "run-20260627-005402"
     assert payload["startup_smoke"]["matches_release_version"] is False
     assert payload["startup_smoke"]["matches_artifact_digest"] is False
@@ -119,6 +123,7 @@ def test_materialize_windows_visual_proof_handoff_blocks_stale_startup_smoke(tmp
     assert any("-ReleaseChannelPath" in item for item in payload["next_actions"])
     assert any("-OutputPath" in item for item in payload["next_actions"])
     assert any("windows-installer-visual-proof" in item for item in payload["next_actions"])
+    assert any("does not publish the live downloads shelf" in item for item in payload["next_actions"])
     assert "Windows Visual Proof Handoff" in md_output.read_text(encoding="utf-8")
 
 
@@ -197,6 +202,8 @@ def test_materialize_windows_visual_proof_handoff_prefers_gate_startup_smoke_rec
 
     payload = json.loads(json_output.read_text(encoding="utf-8"))
     assert payload["status"] == "ready_for_windows_host"
+    assert payload["handoff_only"] is True
+    assert payload["stable_release_unchanged"] is True
     assert payload["startup_smoke_path"] == str(preferred_startup_smoke_path)
     assert payload["startup_smoke"]["matches_release_version"] is True
     assert payload["startup_smoke"]["matches_artifact_digest"] is True
@@ -273,6 +280,8 @@ def test_materialize_windows_visual_proof_handoff_marks_existing_visual_receipt_
 
     payload = json.loads(json_output.read_text(encoding="utf-8"))
     assert payload["status"] == "ready_for_windows_host"
+    assert payload["handoff_only"] is True
+    assert payload["stable_release_unchanged"] is True
     assert payload["current_visual_proof_exists"] is True
     assert payload["current_visual_proof"]["matches_release_version"] is False
     assert payload["current_visual_proof"]["matches_installer_digest"] is False

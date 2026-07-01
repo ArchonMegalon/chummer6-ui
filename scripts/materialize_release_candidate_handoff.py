@@ -259,7 +259,7 @@ def build_payload(stage_dir: Path) -> dict[str, Any]:
     if gate_refresh_status in {"missing_script", "missing_output", "error", "unavailable"}:
         blockers.append("Stage-local Windows exit-gate refresh did not produce a usable gate receipt.")
         next_actions.append(
-            "Fix the stage-local Windows exit-gate refresh path before promotion: "
+            "Fix the stage-local Windows exit-gate refresh path before closing the staged nightly handoff: "
             f"{windows_exit_gate_refresh.get('json_path') or windows_exit_gate_refresh.get('script_path')}"
         )
 
@@ -277,11 +277,19 @@ def build_payload(stage_dir: Path) -> dict[str, Any]:
                 "Windows visual-proof handoff is not ready; inspect the staged handoff packet before asking a Windows operator to continue."
             )
             next_actions.append(
-                "Inspect the Windows visual-proof handoff packet and fix the staged shelf mismatch before promotion: "
+                "Inspect the Windows visual-proof handoff packet and fix the staged shelf mismatch before the nightly handoff continues: "
                 f"{windows_visual_proof_handoff.get('json_path') or windows_visual_proof_handoff.get('command')}"
             )
 
-    next_actions.append("Publish the verified bundle with CHUMMER_RELEASE_UPLOAD_TOKEN once all required platform tuples are promotable.")
+    stage_proof_complete = not missing_platforms and not blockers
+    if stage_proof_complete:
+        next_actions.append(
+            "This staged nightly handoff is complete. Keep the live downloads shelf and stable channel unchanged until a separate guarded publish lane is intentionally run."
+        )
+    else:
+        next_actions.append(
+            "Keep the live downloads shelf and stable channel unchanged while this staged nightly handoff is still incomplete."
+        )
 
     return {
         "contract_name": "chummer.release_build_handoff",
@@ -290,6 +298,11 @@ def build_payload(stage_dir: Path) -> dict[str, Any]:
         "channel": normalize(manifest.get("channelId")),
         "version": normalize(manifest.get("version")),
         "artifact_count": len(artifacts),
+        "handoff_only": True,
+        "handoff_scope": "staged_nightly",
+        "stable_release_unchanged": True,
+        "requires_separate_publish_lane": True,
+        "stage_proof_complete": stage_proof_complete,
         "artifacts": artifacts,
         "promoted_tuples": coverage.get("promotedPlatformHeadRidTuples") or [],
         "missing_required_platforms": missing_platforms,
@@ -299,7 +312,7 @@ def build_payload(stage_dir: Path) -> dict[str, Any]:
         "windows_visual_proof_handoff": windows_visual_proof_handoff,
         "blockers": blockers,
         "next_actions": next_actions,
-        "promotion_ready": not missing_platforms and not blockers,
+        "promotion_ready": stage_proof_complete,
     }
 
 
@@ -337,7 +350,11 @@ def render_markdown(payload: dict[str, Any]) -> str:
         f"- Channel: `{payload['channel']}`",
         f"- Version: `{payload['version']}`",
         f"- Artifact count: `{payload['artifact_count']}`",
-        f"- Promotion ready: `{payload['promotion_ready']}`",
+        f"- Handoff only: `{payload['handoff_only']}`",
+        f"- Handoff scope: `{payload['handoff_scope']}`",
+        f"- Stage proof complete: `{payload['stage_proof_complete']}`",
+        f"- Stable release unchanged: `{payload['stable_release_unchanged']}`",
+        f"- Separate publish lane required: `{payload['requires_separate_publish_lane']}`",
         "",
         "## Artifacts",
         "",

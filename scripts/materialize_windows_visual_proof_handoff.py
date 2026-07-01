@@ -283,6 +283,7 @@ def build_payload(
         f"CHUMMER_WINDOWS_LOCAL_DESKTOP_FILES_ROOT=\"{manifest_path.parent / 'files'}\" "
         f"CHUMMER_WINDOWS_INSTALLER_VISUAL_PROOF_PATH=\"{visual_proof_path}\" "
         f"bash {repo_root / 'scripts' / 'materialize-windows-desktop-exit-gate.sh'}`.",
+        "This packet is handoff-only for the staged nightly bytes. It does not publish the live downloads shelf or change the stable channel.",
     ]
     if current_visual_proof_stale:
         next_actions.insert(
@@ -292,7 +293,7 @@ def build_payload(
     elif current_visual_proof:
         next_actions.insert(
             0,
-            f"Refresh the existing Windows visual-proof receipt at `{visual_proof_path}` against the staged candidate before promotion.",
+            f"Refresh the existing Windows visual-proof receipt at `{visual_proof_path}` against the staged candidate before the nightly handoff continues.",
         )
     ready_for_windows_host = only_visual_blocker and not blockers
 
@@ -303,6 +304,10 @@ def build_payload(
         "release_channel_manifest_path": str(manifest_path),
         "release_shelf_root": str(manifest_path.parent),
         "windows_gate_path": str(windows_gate_path),
+        "handoff_only": True,
+        "handoff_scope": "staged_nightly_windows_visual_proof",
+        "stable_release_unchanged": True,
+        "requires_separate_publish_lane": True,
         "startup_smoke_requested_path": str(startup_smoke_path),
         "startup_smoke_path": str(resolved_startup_smoke_path or startup_smoke_path),
         "startup_smoke_candidate_paths": startup_smoke_candidate_paths,
@@ -403,6 +408,9 @@ def render_markdown(payload: dict[str, Any]) -> str:
         f"- Channel: `{payload['release']['channel_id']}`",
         f"- Version: `{payload['release']['version']}`",
         f"- Shelf root: `{payload['release_shelf_root']}`",
+        f"- Handoff only: `{payload['handoff_only']}`",
+        f"- Stable release unchanged: `{payload['stable_release_unchanged']}`",
+        f"- Separate publish lane required: `{payload['requires_separate_publish_lane']}`",
         "",
         "## Installer",
         "",
