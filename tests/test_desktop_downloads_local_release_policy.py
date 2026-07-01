@@ -101,6 +101,17 @@ def test_latest_nightly_publish_verifies_open_public_desktop_install_routes_afte
     assert 'docker compose -f docker-compose.public-edge.yml up -d' in publisher
 
 
+def test_latest_nightly_publish_remains_preview_handoff_lane() -> None:
+    publisher = (REPO_ROOT / "scripts" / "publish-latest-nightly-to-downloads.sh").read_text(encoding="utf-8")
+
+    assert 'PUBLIC_RELEASE_CHANNEL="${CHUMMER_PUBLIC_DEFAULT_RELEASE_CHANNEL:-preview}"' in publisher
+    assert 'ALLOW_STABLE_CHANNEL_FROM_NIGHTLY_PUBLISH="${CHUMMER_ALLOW_STABLE_CHANNEL_FROM_NIGHTLY_PUBLISH:-0}"' in publisher
+    assert "Nightly publisher is the preview handoff lane. Refusing stable/public_stable publication from this script." in publisher
+    assert "is_publishable_nightly_stage()" in publisher
+    assert 'if ! is_publishable_nightly_stage "$candidate"; then' in publisher
+    assert "No publishable nightly stage found under $STAGING_ROOT" in publisher
+
+
 def test_public_edge_e2e_enforces_direct_public_installer_handoff_routes() -> None:
     e2e = (REPO_ROOT / "scripts" / "e2e-public-edge.cjs").read_text(encoding="utf-8")
 
