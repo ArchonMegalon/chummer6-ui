@@ -193,6 +193,13 @@ verify_latest_stage_windows_exit_gate() {
   rm -f "$gate_output"
 }
 
+is_publishable_nightly_stage() {
+  local stage_dir="$1"
+  [[ -f "$stage_dir/RELEASE_CHANNEL.generated.json" ]] || return 1
+  [[ -f "$stage_dir/releases.json" ]] || return 1
+  [[ -d "$stage_dir/files" ]] || return 1
+}
+
 verify_public_edge_open_public_install_routes() {
   local manifest_path="$1"
   local base_url="$2"
@@ -358,11 +365,14 @@ esac
 
 latest_stage=""
 while IFS= read -r candidate; do
+  if ! is_publishable_nightly_stage "$candidate"; then
+    continue
+  fi
   latest_stage="$candidate"
 done < <(find "$STAGING_ROOT" -maxdepth 1 -mindepth 1 \( -type d -o -type l \) -name 'nightly-run-*' | sort)
 
 if [[ -z "$latest_stage" ]]; then
-  echo "No nightly stage found under $STAGING_ROOT" >&2
+  echo "No publishable nightly stage found under $STAGING_ROOT" >&2
   exit 1
 fi
 

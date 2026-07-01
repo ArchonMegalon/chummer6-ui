@@ -34,6 +34,18 @@ def test_latest_nightly_publish_preflights_windows_bootstrap_payload_metadata() 
     assert publisher.index('verify_latest_stage_windows_payload_gate "$latest_stage"') < publisher.index('echo "Publishing latest nightly stage: $latest_stage"')
 
 
+def test_latest_nightly_publish_ignores_incomplete_helper_stage_directories() -> None:
+    publisher = (REPO_ROOT / "scripts" / "publish-latest-nightly-to-downloads.sh").read_text(encoding="utf-8")
+
+    assert "is_publishable_nightly_stage()" in publisher
+    assert '[[ -f "$stage_dir/RELEASE_CHANNEL.generated.json" ]] || return 1' in publisher
+    assert '[[ -f "$stage_dir/releases.json" ]] || return 1' in publisher
+    assert '[[ -d "$stage_dir/files" ]] || return 1' in publisher
+    assert 'if ! is_publishable_nightly_stage "$candidate"; then' in publisher
+    assert 'echo "No publishable nightly stage found under $STAGING_ROOT"' in publisher
+    assert publisher.index('if ! is_publishable_nightly_stage "$candidate"; then') < publisher.index('latest_stage="$candidate"')
+
+
 def test_latest_nightly_publish_requires_windows_installer_startup_smoke_before_promotion() -> None:
     publisher = (REPO_ROOT / "scripts" / "publish-latest-nightly-to-downloads.sh").read_text(encoding="utf-8")
     verifier = (REPO_ROOT / "scripts" / "verify-windows-bootstrap-startup-smoke.py").read_text(encoding="utf-8")
