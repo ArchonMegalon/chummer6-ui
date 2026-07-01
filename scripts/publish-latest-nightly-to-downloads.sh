@@ -13,7 +13,10 @@ REQUIRE_COMPLETE_DESKTOP_COVERAGE="${CHUMMER_RELEASE_REQUIRE_COMPLETE_DESKTOP_CO
 PROMOTE_PROOF_BACKED_QUARANTINED_INSTALLERS="${CHUMMER_PROMOTE_PROOF_BACKED_QUARANTINED_INSTALLERS:-0}"
 SKIP_STARTUP_SMOKE_HYDRATION="${CHUMMER_SKIP_STARTUP_SMOKE_HYDRATION:-0}"
 ALLOW_SKIPPED_STARTUP_SMOKE="${CHUMMER_ALLOW_SKIPPED_STARTUP_SMOKE:-0}"
-PUBLIC_RELEASE_CHANNEL="${CHUMMER_PUBLIC_DEFAULT_RELEASE_CHANNEL:-public_stable}"
+# Nightly publication is a preview handoff lane. Stable/public release promotion
+# must happen through the explicit stable release path instead.
+PUBLIC_RELEASE_CHANNEL="${CHUMMER_PUBLIC_DEFAULT_RELEASE_CHANNEL:-preview}"
+ALLOW_STABLE_CHANNEL_FROM_NIGHTLY_PUBLISH="${CHUMMER_ALLOW_STABLE_CHANNEL_FROM_NIGHTLY_PUBLISH:-0}"
 DAILY_PUBLISH_TIMEZONE="${CHUMMER_DAILY_NIGHTLY_PUBLISH_TIMEZONE:-Europe/Vienna}"
 DAILY_PUBLISH_HOUR="${CHUMMER_DAILY_NIGHTLY_PUBLISH_HOUR:-8}"
 FORCE_NIGHTLY_PUBLISH="${CHUMMER_FORCE_NIGHTLY_PUBLISH:-0}"
@@ -26,6 +29,13 @@ to_bool() {
   value="$(echo "${1:-}" | tr '[:upper:]' '[:lower:]')"
   [[ "$value" == "1" || "$value" == "true" || "$value" == "yes" || "$value" == "on" ]]
 }
+
+normalized_public_release_channel="$(echo "$PUBLIC_RELEASE_CHANNEL" | tr '[:upper:]' '[:lower:]')"
+if [[ "$normalized_public_release_channel" =~ ^(public_stable|stable)$ ]] && ! to_bool "$ALLOW_STABLE_CHANNEL_FROM_NIGHTLY_PUBLISH"; then
+  echo "Nightly publisher is the preview handoff lane. Refusing stable/public_stable publication from this script." >&2
+  echo "Use the stable release publisher, or set CHUMMER_ALLOW_STABLE_CHANNEL_FROM_NIGHTLY_PUBLISH=true for an explicit one-off override." >&2
+  exit 1
+fi
 
 refresh_release_build_handoff() {
   local stage_dir="$1"
@@ -195,9 +205,38 @@ verify_latest_stage_windows_exit_gate() {
 
 is_publishable_nightly_stage() {
   local stage_dir="$1"
+  local release_channel_manifest="$stage_dir/RELEASE_CHANNEL.generated.json"
+
   [[ -f "$stage_dir/RELEASE_CHANNEL.generated.json" ]] || return 1
   [[ -f "$stage_dir/releases.json" ]] || return 1
   [[ -d "$stage_dir/files" ]] || return 1
+
+  local release_channel
+  release_channel="$(python3 - "$release_channel_manifest" <<'PY'
+import json
+import sys
+from pathlib import Path
+
+payload = {}
+try:
+    payload = json.loads(Path(sys.argv[1]).read_text(encoding="utf-8-sig"))
+except Exception:
+    sys.exit(1)
+
+if not isinstance(payload, dict):
+    sys.exit(1)
+
+release_channel = str(payload.get("channel") or payload.get("channelId") or "").strip().lower()
+if not release_channel:
+    sys.exit(1)
+
+print(release_channel)
+PY
+)" || return 1
+
+  if [[ "$release_channel" != "preview" ]]; then
+    return 1
+  fi
 }
 
 verify_public_edge_open_public_install_routes() {
