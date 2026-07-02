@@ -214,6 +214,90 @@ def test_materialize_windows_visual_proof_handoff_prefers_gate_startup_smoke_rec
     assert payload["blockers"] == []
 
 
+def test_materialize_windows_visual_proof_handoff_marks_matching_visual_receipt_ready(tmp_path: Path) -> None:
+    manifest_path = tmp_path / "RELEASE_CHANNEL.generated.json"
+    windows_gate_path = tmp_path / "UI_WINDOWS_DESKTOP_EXIT_GATE.generated.json"
+    startup_smoke_path = tmp_path / "startup-smoke-avalonia-win-x64.receipt.json"
+    capture_script_path = tmp_path / "capture-windows-installer-visual-proof.ps1"
+    visual_proof_path = tmp_path / "published" / "WINDOWS_INSTALLER_VISUAL_PROOF.generated.json"
+    json_output = tmp_path / "WINDOWS_INSTALLER_VISUAL_PROOF_HANDOFF.generated.json"
+    md_output = tmp_path / "WINDOWS_INSTALLER_VISUAL_PROOF_HANDOFF.generated.md"
+    files_dir = tmp_path / "files"
+
+    capture_script_path.write_text("Write-Host proof\n", encoding="utf-8")
+    files_dir.mkdir()
+    (files_dir / "chummer-avalonia-win-x64-installer.exe").write_bytes(b"installer")
+    (files_dir / "chummer-avalonia-win-x64-payload.zip").write_bytes(b"payload")
+
+    gate_payload = _base_windows_gate()
+    gate_payload["status"] = "passed"
+    gate_payload["summary"] = "Windows desktop exit gate passed."
+    gate_payload["reasons"] = []
+
+    _write_json(manifest_path, _base_manifest())
+    _write_json(windows_gate_path, gate_payload)
+    _write_json(
+        startup_smoke_path,
+        {
+            "status": "pass",
+            "version": "run-20260627-005402",
+            "releaseVersion": "run-20260627-005402",
+            "artifactFileName": "chummer-avalonia-win-x64-installer.exe",
+            "artifactDigest": "sha256:04ae1f160e299b8d5613bde3f166cb7b6214e8514927e88af61131ad95eccba4",
+            "hostClass": "local-win-x64",
+        },
+    )
+    _write_json(
+        visual_proof_path,
+        {
+            "status": "pass",
+            "version": "run-20260627-005402",
+            "releaseVersion": "run-20260627-005402",
+            "artifactDigest": "sha256:04ae1f160e299b8d5613bde3f166cb7b6214e8514927e88af61131ad95eccba4",
+        },
+    )
+
+    completed = subprocess.run(
+        [
+            "python3",
+            str(SCRIPT),
+            "--manifest",
+            str(manifest_path),
+            "--windows-gate",
+            str(windows_gate_path),
+            "--startup-smoke",
+            str(startup_smoke_path),
+            "--capture-script",
+            str(capture_script_path),
+            "--visual-proof",
+            str(visual_proof_path),
+            "--json-output",
+            str(json_output),
+            "--md-output",
+            str(md_output),
+        ],
+        check=False,
+        capture_output=True,
+        text=True,
+    )
+
+    assert completed.returncode == 0, completed.stderr
+
+    payload = json.loads(json_output.read_text(encoding="utf-8"))
+    assert payload["status"] == "ready"
+    assert payload["blockers"] == []
+    assert payload["current_visual_proof_exists"] is True
+    assert payload["current_visual_proof"]["matches_release_version"] is True
+    assert payload["current_visual_proof"]["matches_installer_digest"] is True
+    assert payload["current_visual_proof"]["stale"] is False
+    assert payload["startup_smoke"]["matches_release_version"] is True
+    assert payload["startup_smoke"]["matches_artifact_digest"] is True
+    assert payload["next_actions"] == [
+        "This staged nightly handoff is complete. Keep the stable release unchanged unless a separate guarded stable publish is intentionally run.",
+        "Use the public nightly/preview shelf for handoff verification; do not recapture Windows proof unless the staged installer bytes change.",
+    ]
+
+
 def test_materialize_windows_visual_proof_handoff_marks_existing_visual_receipt_as_stale(tmp_path: Path) -> None:
     manifest_path = tmp_path / "RELEASE_CHANNEL.generated.json"
     windows_gate_path = tmp_path / "UI_WINDOWS_DESKTOP_EXIT_GATE.generated.json"

@@ -272,30 +272,51 @@ def build_payload(
         not current_visual_proof_matches_release or not current_visual_proof_matches_installer_digest
     )
 
-    next_actions = [
-        "On a real Windows host, open the repo checkout that contains the capture script and run "
-        f"`powershell -NoLogo -NoProfile -ExecutionPolicy Bypass -File .\\scripts\\capture-windows-installer-visual-proof.ps1 "
-        f"-ReleaseChannelPath \"{manifest_path}\" -OutputPath \"{visual_proof_path}\"`.",
-        f"Confirm `{progress_path.name}` and `{completion_path.name}` are written under `{screenshot_dir}`.",
-        f"Confirm `{visual_proof_path.name}` is written under `{visual_proof_path.parent}`.",
-        "Rerun the Windows exit gate against the same shelf: "
-        f"`CHUMMER_WINDOWS_RELEASE_CHANNEL_PATH=\"{manifest_path}\" "
-        f"CHUMMER_WINDOWS_LOCAL_DESKTOP_FILES_ROOT=\"{manifest_path.parent / 'files'}\" "
-        f"CHUMMER_WINDOWS_INSTALLER_VISUAL_PROOF_PATH=\"{visual_proof_path}\" "
-        f"bash {repo_root / 'scripts' / 'materialize-windows-desktop-exit-gate.sh'}`.",
-        "This packet is handoff-only for the staged nightly bytes. It does not publish the live downloads shelf or change the stable channel.",
-    ]
+    current_visual_proof_ready = (
+        current_visual_proof_status.lower() in {"pass", "passed", "ready"}
+        and current_visual_proof_matches_release
+        and current_visual_proof_matches_installer_digest
+    )
+    windows_gate_ready = normalize(windows_gate.get("status")).lower() in {"pass", "passed", "ready"}
+    startup_smoke_ready = (
+        startup_smoke_status_ok
+        and startup_smoke_release_ok
+        and startup_smoke_artifact_matches_installer
+        and startup_smoke_digest_matches_installer
+    )
+    ready_for_publish_handoff = windows_gate_ready and startup_smoke_ready and current_visual_proof_ready and not blockers
+    ready_for_windows_host = only_visual_blocker and not blockers and not ready_for_publish_handoff
+
+    if ready_for_publish_handoff:
+        next_actions = [
+            "This staged nightly handoff is complete. Keep the stable release unchanged unless a separate guarded stable publish is intentionally run.",
+            "Use the public nightly/preview shelf for handoff verification; do not recapture Windows proof unless the staged installer bytes change.",
+        ]
+    else:
+        next_actions = [
+            "On a real Windows host, open the repo checkout that contains the capture script and run "
+            f"`powershell -NoLogo -NoProfile -ExecutionPolicy Bypass -File .\\scripts\\capture-windows-installer-visual-proof.ps1 "
+            f"-ReleaseChannelPath \"{manifest_path}\" -OutputPath \"{visual_proof_path}\"`.",
+            f"Confirm `{progress_path.name}` and `{completion_path.name}` are written under `{screenshot_dir}`.",
+            f"Confirm `{visual_proof_path.name}` is written under `{visual_proof_path.parent}`.",
+            "Rerun the Windows exit gate against the same shelf: "
+            f"`CHUMMER_WINDOWS_RELEASE_CHANNEL_PATH=\"{manifest_path}\" "
+            f"CHUMMER_WINDOWS_LOCAL_DESKTOP_FILES_ROOT=\"{manifest_path.parent / 'files'}\" "
+            f"CHUMMER_WINDOWS_INSTALLER_VISUAL_PROOF_PATH=\"{visual_proof_path}\" "
+            f"bash {repo_root / 'scripts' / 'materialize-windows-desktop-exit-gate.sh'}`.",
+            "This packet is handoff-only for the staged nightly bytes. It does not publish the live downloads shelf or change the stable channel.",
+        ]
+
     if current_visual_proof_stale:
         next_actions.insert(
             0,
             f"Overwrite the stale Windows visual-proof receipt at `{visual_proof_path}`; its recorded release or installer digest no longer matches the staged candidate.",
         )
-    elif current_visual_proof:
+    elif current_visual_proof and not ready_for_publish_handoff:
         next_actions.insert(
             0,
             f"Refresh the existing Windows visual-proof receipt at `{visual_proof_path}` against the staged candidate before the nightly handoff continues.",
         )
-    ready_for_windows_host = only_visual_blocker and not blockers
 
     return {
         "contract_name": "chummer6-ui.windows_installer_visual_proof_handoff",
@@ -316,7 +337,7 @@ def build_payload(
         "capture_script_path": str(capture_script_path),
         "visual_proof_receipt_path": str(visual_proof_path),
         "current_visual_proof_exists": bool(current_visual_proof),
-        "status": "ready_for_windows_host" if ready_for_windows_host else "needs_review",
+        "status": "ready" if ready_for_publish_handoff else "ready_for_windows_host" if ready_for_windows_host else "needs_review",
         "summary": normalize(windows_gate.get("summary")),
         "windows_gate_status": normalize(windows_gate.get("status")),
         "windows_gate_reasons": gate_reasons,
