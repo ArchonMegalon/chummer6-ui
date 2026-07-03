@@ -20,7 +20,12 @@ PWA_REQUIRED_CHECKS = {
     "service_worker_static_privacy_contract",
     "offline_living_world_boundary",
     "app_head_and_registration",
+    "clean_public_entry_route_contract",
+    "static_asset_fetch_contract",
+    "mobile_viewport_shell_contract",
 }
+
+
 def _load_browser_lane_materializer():
     spec = importlib.util.spec_from_file_location("blazor_browser_lane_proof_set", MATERIALIZER_PATH)
     assert spec is not None
@@ -48,6 +53,7 @@ def test_browser_lane_materializer_requires_hosted_pwa_public_edge_receipt() -> 
         "proof_tier": "hosted_pwa_public_edge_execution",
         "route_lane": "blazor_pwa_play_shell",
     }
+    assert pwa_spec["minimum_lengths"] == {"checks": 7}
     assert set(pwa_spec["required_check_ids"]) == PWA_REQUIRED_CHECKS
 
     result = module.evaluate_receipt(pwa_spec)
@@ -107,5 +113,7 @@ def test_docs_name_hosted_pwa_public_edge_proof_boundary() -> None:
     assert PWA_RECEIPT_NAME in docs_index
     assert "scripts/materialize-blazor-pwa-public-edge-proof.py" in docs_index
     assert "scripts/verify_blazor_pwa_public_edge_proof.py" in docs_index
+    assert "clean `/app` entry, static deployed assets, mobile viewport" in docs_index
     assert PWA_RECEIPT_NAME in signoff
     assert "not app-store acceptance or offline runner-data parity" in signoff
+    assert "clean `/app` entry, static deployed assets, mobile viewport" in signoff

@@ -96,7 +96,10 @@
             "manifest_install_contract",
             "service_worker_static_privacy_contract",
             "offline_living_world_boundary",
-            "app_head_and_registration"
+            "app_head_and_registration",
+            "clean_public_entry_route_contract",
+            "static_asset_fetch_contract",
+            "mobile_viewport_shell_contract"
           ],
           "missing": []
         }

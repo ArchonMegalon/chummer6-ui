@@ -1,6 +1,6 @@
 {
   "contract_name": "chummer6-ui.blazor_browser_lane_proof_set",
-  "generated_at": "2026-06-29T11:11:48.877148+00:00",
+  "generated_at": "2026-07-03T20:15:26.211046+00:00",
   "notes": [
     "The source_staged_release_boundary receipt is required as source-policy evidence only; it does not execute hosted or Docker browser workflows.",
     "Hosted execution breadth follows the receipt playwright_scope; smoke receipts must cover every smoke-required family, and full receipts must cover every full-required family before this aggregate accepts them.",
@@ -52,7 +52,7 @@
       ],
       "id": "self_host_workbench",
       "passed": true,
-      "path": "/docker/chummercomplete/chummer-presentation/.codex-studio/published/BLAZOR_SELF_HOST_WORKBENCH_PROOF.generated.json",
+      "path": "/docker/chummercomplete/_work/presentation-pwa-public-entry-proof/.codex-studio/published/BLAZOR_SELF_HOST_WORKBENCH_PROOF.generated.json",
       "status": "passed"
     },
     {
@@ -128,7 +128,7 @@
       ],
       "id": "hosted_route_entry",
       "passed": true,
-      "path": "/docker/chummercomplete/chummer-presentation/.codex-studio/published/BLAZOR_PUBLIC_EDGE_WORKBENCH_PROOF.generated.json",
+      "path": "/docker/chummercomplete/_work/presentation-pwa-public-entry-proof/.codex-studio/published/BLAZOR_PUBLIC_EDGE_WORKBENCH_PROOF.generated.json",
       "status": "passed"
     },
     {
@@ -200,7 +200,7 @@
       ],
       "id": "hosted_execution",
       "passed": true,
-      "path": "/docker/chummercomplete/chummer-presentation/.codex-studio/published/BLAZOR_PUBLIC_EDGE_EXECUTION_PROOF.generated.json",
+      "path": "/docker/chummercomplete/_work/presentation-pwa-public-entry-proof/.codex-studio/published/BLAZOR_PUBLIC_EDGE_EXECUTION_PROOF.generated.json",
       "status": "passed"
     },
     {
@@ -232,9 +232,9 @@
           "passed": true
         },
         {
-          "actual": 4,
+          "actual": 7,
           "id": "minimum_length:checks",
-          "minimum": 4,
+          "minimum": 7,
           "passed": true
         },
         {
@@ -242,7 +242,10 @@
             "manifest_install_contract",
             "service_worker_static_privacy_contract",
             "offline_living_world_boundary",
-            "app_head_and_registration"
+            "app_head_and_registration",
+            "clean_public_entry_route_contract",
+            "static_asset_fetch_contract",
+            "mobile_viewport_shell_contract"
           ],
           "id": "required_check_ids",
           "missing": [],
@@ -251,7 +254,7 @@
       ],
       "id": "hosted_pwa_play_shell",
       "passed": true,
-      "path": "/docker/chummercomplete/chummer-presentation/.codex-studio/published/BLAZOR_PWA_PUBLIC_EDGE_PROOF.generated.json",
+      "path": "/docker/chummercomplete/_work/presentation-pwa-public-entry-proof/.codex-studio/published/BLAZOR_PWA_PUBLIC_EDGE_PROOF.generated.json",
       "status": "passed"
     },
     {
@@ -309,7 +312,7 @@
       ],
       "id": "analytics_posture",
       "passed": true,
-      "path": "/docker/chummercomplete/chummer-presentation/.codex-studio/published/BLAZOR_ANALYTICS_POSTURE.generated.json",
+      "path": "/docker/chummercomplete/_work/presentation-pwa-public-entry-proof/.codex-studio/published/BLAZOR_ANALYTICS_POSTURE.generated.json",
       "status": "passed"
     },
     {
@@ -355,7 +358,7 @@
       ],
       "id": "connected_runtime_posture",
       "passed": true,
-      "path": "/docker/chummercomplete/chummer-presentation/.codex-studio/published/BLAZOR_CONNECTED_RUNTIME_POSTURE.generated.json",
+      "path": "/docker/chummercomplete/_work/presentation-pwa-public-entry-proof/.codex-studio/published/BLAZOR_CONNECTED_RUNTIME_POSTURE.generated.json",
       "status": "passed"
     },
     {
@@ -383,7 +386,7 @@
       ],
       "id": "external_host_blockers",
       "passed": true,
-      "path": "/docker/chummercomplete/chummer-presentation/.codex-studio/published/UI_EXTERNAL_HOST_PROOF_BLOCKERS.generated.json",
+      "path": "/docker/chummercomplete/_work/presentation-pwa-public-entry-proof/.codex-studio/published/UI_EXTERNAL_HOST_PROOF_BLOCKERS.generated.json",
       "status": "ready"
     },
     {
@@ -429,7 +432,7 @@
       ],
       "id": "source_staged_release_boundary",
       "passed": true,
-      "path": "/docker/chummercomplete/chummer-presentation/.codex-studio/published/BLAZOR_SOURCE_STAGED_RELEASE_BOUNDARY.generated.json",
+      "path": "/docker/chummercomplete/_work/presentation-pwa-public-entry-proof/.codex-studio/published/BLAZOR_SOURCE_STAGED_RELEASE_BOUNDARY.generated.json",
       "status": "passed"
     }
   ],
@@ -441,7 +444,7 @@
       "id": "example_receipt_shape",
       "missing_tokens": [],
       "passed": true,
-      "path": "/docker/chummercomplete/chummer-presentation/docs/examples/blazor-browser-lane-proof-set.receipt.example.json",
+      "path": "/docker/chummercomplete/_work/presentation-pwa-public-entry-proof/docs/examples/blazor-browser-lane-proof-set.receipt.example.json",
       "status": "passed"
     }
   ],
