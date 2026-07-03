@@ -2154,8 +2154,10 @@ public sealed class AccessibilitySignoffSmokeTests
         RequireContains(shellCodeBehind, "ShowInstallClaimGate");
         RequireContains(shellCodeBehind, "BuildInstallClaimHref()");
         RequireContains(shellCodeBehind, "BuildInstallSupportHref()");
+        RequireContains(shellCodeBehind, "BuildInstallOriginDossierHref()");
         RequireContains(shellSource, "Please claim your app");
         RequireContains(shellSource, "Claim this app on chummer.run");
+        RequireContains(shellSource, "desktop-install-origin-dossier");
         RequireContains(shellSource, "desktop-install-claim-gate");
         RequireContains(shellSource, "desktop-install-claim-start");
     }

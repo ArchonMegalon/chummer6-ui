@@ -87,6 +87,7 @@ public static class DesktopInstallLinkingRuntime
     private const string PendingInstallLinkCallbackFileName = "pending-install-link-callback.txt";
     private const string ProtectedPrivateKeyFileName = "private-key.protected";
     private const string AppLocalInstallLinkCallbackPath = "/install-link/callback";
+    private const string OriginDossierPortalRelativePath = "/blazor/app?command=new_character_origin";
     private const string GuestStatus = "guest";
     private const string ClaimedStatus = "claimed";
     private static readonly object AppLocalCallbackListenerSync = new();
@@ -511,6 +512,12 @@ public static class DesktopInstallLinkingRuntime
         return BuildPublicPortalAbsoluteUri(BuildClaimPortalRelativePathForInstall(state));
     }
 
+    public static string BuildOriginDossierPortalRelativePath()
+        => OriginDossierPortalRelativePath;
+
+    public static string BuildOriginDossierPortalAbsoluteUri()
+        => BuildPublicPortalAbsoluteUri(OriginDossierPortalRelativePath);
+
     public static bool TryOpenSupportPortal()
     {
         return TryOpenPublicPortal("/account/support");
@@ -689,6 +696,11 @@ public static class DesktopInstallLinkingRuntime
     public static bool TryOpenDownloadsPortal()
     {
         return TryOpenPublicPortal("/downloads");
+    }
+
+    public static bool TryOpenOriginDossierPortal()
+    {
+        return TryOpenPublicPortal(OriginDossierPortalRelativePath);
     }
 
     public static bool TryOpenWorkPortal()

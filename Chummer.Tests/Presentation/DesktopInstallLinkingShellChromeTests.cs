@@ -116,7 +116,11 @@ public sealed class DesktopInstallLinkingShellChromeTests
         StringAssert.Contains(formText, "Continue unlinked");
         StringAssert.Contains(shellSource, "desktop-install-claim-gate");
         StringAssert.Contains(shellSource, "Please claim your app");
+        StringAssert.Contains(shellSource, "desktop-install-origin-dossier");
+        StringAssert.Contains(shellSource, "Open Origin Dossier");
         StringAssert.Contains(runtimeSource, "BuildClaimPortalRelativePathForInstall");
+        StringAssert.Contains(runtimeSource, "BuildOriginDossierPortalRelativePath");
+        StringAssert.Contains(runtimeSource, "/blazor/app?command=new_character_origin");
         Assert.IsFalse(
             formText.Contains("Install link required", StringComparison.Ordinal),
             "Claiming must stay optional even when the online claim path is the guarded route.");
@@ -261,12 +265,21 @@ public sealed class DesktopInstallLinkingShellChromeTests
         StringAssert.Contains(installWindowSource, "ApplyExternalPreferenceState(nextPreferences)");
         StringAssert.Contains(localizationSource, "desktop.install_link.preference.visible_choice");
         StringAssert.Contains(localizationSource, "desktop.install_link.preference.hidden_choice");
-        StringAssert.Contains(localizationSource, "Yes, I'm ready for a modern world like Shadowrun is");
-        StringAssert.Contains(localizationSource, "No, emotionally I'm a scared caveman");
-        StringAssert.Contains(localizationSource, "Nein, emotional bin ich ein ängstlicher Höhlenmensch");
+        StringAssert.Contains(localizationSource, "Use guided story tools?");
+        StringAssert.Contains(localizationSource, "Show Alice and Origin Dossier");
+        StringAssert.Contains(localizationSource, "Hide guided story tools");
+        StringAssert.Contains(localizationSource, "Alice und Origin Dossier anzeigen");
         Assert.IsFalse(
             localizationSource.Contains("Keep the interface manual", StringComparison.Ordinal),
             "The first-run preference should describe the user-visible result, not internal manual mode.");
+        Assert.IsFalse(
+            localizationSource.Contains("scared caveman", StringComparison.OrdinalIgnoreCase)
+            || localizationSource.Contains("Höhlenmensch", StringComparison.OrdinalIgnoreCase)
+            || localizationSource.Contains("homme des cavernes", StringComparison.OrdinalIgnoreCase)
+            || localizationSource.Contains("原始人", StringComparison.OrdinalIgnoreCase)
+            || localizationSource.Contains("穴居人", StringComparison.OrdinalIgnoreCase)
+            || localizationSource.Contains("homem das cavernas", StringComparison.OrdinalIgnoreCase),
+            "First-run preference copy must not insult or mock the user.");
         StringAssert.Contains(localizationSource, "desktop.devices.section.interface");
         StringAssert.Contains(localizationSource, "Your Copy");
         StringAssert.Contains(localizationSource, "desktop.devices.section.current_description");
@@ -315,6 +328,9 @@ public sealed class DesktopInstallLinkingShellChromeTests
         StringAssert.Contains(devicesSource, "DevicesAccessGuidedToolsHiddenOption");
         StringAssert.Contains(devicesSource, "? CreateButton(S(\"desktop.home.button.open_current_campaign_workspace\"), OpenWorkRouteAsync, isPrimary: true)");
         StringAssert.Contains(devicesSource, "CreateButton(S(\"desktop.devices.button.manage_linked_copies\"), OpenAccountAsync, isPrimary: true)");
+        StringAssert.Contains(installWindowSource, "desktop.install_link.button.open_origin_dossier");
+        StringAssert.Contains(installWindowSource, "OpenOriginDossierPortalAsync");
+        StringAssert.Contains(installWindowSource, "DesktopInstallLinkingRuntime.TryOpenOriginDossierPortal()");
         Assert.IsFalse(
             devicesSource.Contains("CreateButton(S(\"desktop.home.button.open_support_center\"), OpenSupportWindowAsync)\n        ];", StringComparison.Ordinal),
             "Linked copies should not duplicate a support action in the same section.");

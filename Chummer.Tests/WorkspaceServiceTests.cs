@@ -477,7 +477,10 @@ public class WorkspaceServiceTests
                 fileQueries,
                 sectionQueries,
                 metadataCommands),
-            new Sr6WorkspaceCodec(),
+            new Sr6WorkspaceCodec(
+                fileQueries,
+                sectionQueries,
+                metadataCommands),
             .. additionalCodecs
         ];
         IRulesetWorkspaceCodecResolver resolver = new RulesetWorkspaceCodecResolver(

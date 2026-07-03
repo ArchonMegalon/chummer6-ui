@@ -255,6 +255,9 @@ public partial class DesktopShell : IDisposable
     private string BuildInstallDownloadsHref()
         => DesktopInstallLinkingRuntime.BuildPublicPortalAbsoluteUri("/downloads");
 
+    private string BuildInstallOriginDossierHref()
+        => DesktopInstallLinkingRuntime.BuildOriginDossierPortalAbsoluteUri();
+
     protected override async Task OnParametersSetAsync()
     {
         await base.OnParametersSetAsync();

@@ -2837,7 +2837,7 @@ public class RulesetSeamContractsTests
                 new XmlCharacterFileQueries(new CharacterFileService()),
                 new XmlCharacterSectionQueries(new CharacterSectionService()),
                 new XmlCharacterMetadataCommands(new CharacterFileService())),
-            new Sr6WorkspaceCodec()
+            CreateSr6WorkspaceCodec()
         ];
 
         foreach (IRulesetWorkspaceCodec codec in codecs)
@@ -2950,7 +2950,7 @@ public class RulesetSeamContractsTests
     public async Task Sr6_plugin_exposes_independent_catalogs_and_executes_deterministic_baseline_capabilities()
     {
         Sr6RulesetPlugin plugin = new();
-        Sr6WorkspaceCodec codec = new();
+        Sr6WorkspaceCodec codec = CreateSr6WorkspaceCodec();
 
         Assert.AreEqual(RulesetDefaults.Sr6, plugin.Id.NormalizedValue);
         Assert.AreEqual("Shadowrun 6", plugin.DisplayName);
@@ -3033,6 +3033,12 @@ public class RulesetSeamContractsTests
                 .Single(descriptor => string.Equals(descriptor.CapabilityId, RulePackCapabilityIds.SessionQuickActions, StringComparison.Ordinal))
                 .TitleKey);
     }
+
+    private static Sr6WorkspaceCodec CreateSr6WorkspaceCodec()
+        => new(
+            new XmlCharacterFileQueries(new CharacterFileService()),
+            new XmlCharacterSectionQueries(new CharacterSectionService()),
+            new XmlCharacterMetadataCommands(new CharacterFileService()));
 
     [TestMethod]
     public async Task Sr4_plugin_exposes_independent_catalogs_and_executes_deterministic_baseline_capabilities()

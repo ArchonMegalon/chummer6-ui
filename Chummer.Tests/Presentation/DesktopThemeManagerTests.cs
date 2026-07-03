@@ -1031,9 +1031,12 @@ public sealed class DesktopThemeManagerTests
         StringAssert.Contains(localizationSource, "[\"desktop.devices.status.refresh_failed\"] = \"Could not refresh account state. The last loaded state is still shown.\"");
         StringAssert.Contains(localizationSource, "localized[\"desktop.devices.button.reload\"] = \"Kontostand aktualisieren\"");
         StringAssert.Contains(localizationSource, "[\"desktop.devices.button.manage_linked_copies\"] = \"Manage linked copies\"");
-        StringAssert.Contains(localizationSource, "[\"desktop.install_link.preference.visible_choice\"] = \"Yes, I'm ready for a modern world like Shadowrun is\"");
-        StringAssert.Contains(localizationSource, "[\"desktop.install_link.preference.hidden_choice\"] = \"No, emotionally I'm a scared caveman\"");
-        StringAssert.Contains(localizationSource, "localized[\"desktop.install_link.preference.hidden_choice\"] = \"Nein, emotional bin ich ein ängstlicher Höhlenmensch\"");
+        StringAssert.Contains(localizationSource, "[\"desktop.install_link.preference.visible_choice\"] = \"Show Alice and Origin Dossier\"");
+        StringAssert.Contains(localizationSource, "[\"desktop.install_link.preference.hidden_choice\"] = \"Hide guided story tools\"");
+        StringAssert.Contains(localizationSource, "localized[\"desktop.install_link.preference.visible_choice\"] = \"Alice und Origin Dossier anzeigen\"");
+        StringAssert.Contains(localizationSource, "[\"desktop.install_link.button.open_origin_dossier\"] = \"Open Origin Dossier\"");
+        Assert.IsFalse(localizationSource.Contains("scared caveman", StringComparison.OrdinalIgnoreCase));
+        Assert.IsFalse(localizationSource.Contains("Höhlenmensch", StringComparison.OrdinalIgnoreCase));
         Assert.IsFalse(localizationSource.Contains("localized[\"desktop.report.context.supportability\"] = \"Supportability-Posture", StringComparison.Ordinal));
         Assert.IsFalse(localizationSource.Contains("localized[\"desktop.report.bug.intro\"] = \"Nutzen Sie diese Spur", StringComparison.Ordinal));
         Assert.IsFalse(localizationSource.Contains("localized[\"desktop.report.section.feedback\"] = \"Leichtgewichtiges Feedback\"", StringComparison.Ordinal));

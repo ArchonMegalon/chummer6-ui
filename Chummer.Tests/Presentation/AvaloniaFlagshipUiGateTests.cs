@@ -8834,7 +8834,7 @@ public sealed class AvaloniaFlagshipUiGateTests
                 new XmlCharacterFileQueries(new CharacterFileService()),
                 new XmlCharacterSectionQueries(new CharacterSectionService()),
                 new XmlCharacterMetadataCommands(new CharacterFileService())),
-            new Sr6WorkspaceCodec()
+            CreateSr6WorkspaceCodec()
         ];
         IRulesetWorkspaceCodecResolver resolver = new RulesetWorkspaceCodecResolver(codecs);
         return new WorkspaceService(
@@ -8842,6 +8842,12 @@ public sealed class AvaloniaFlagshipUiGateTests
             resolver,
             new WorkspaceImportRulesetDetector());
     }
+
+    private static Sr6WorkspaceCodec CreateSr6WorkspaceCodec()
+        => new(
+            new XmlCharacterFileQueries(new CharacterFileService()),
+            new XmlCharacterSectionQueries(new CharacterSectionService()),
+            new XmlCharacterMetadataCommands(new CharacterFileService()));
 
     private sealed class FlagshipUiHarness : IDisposable
     {

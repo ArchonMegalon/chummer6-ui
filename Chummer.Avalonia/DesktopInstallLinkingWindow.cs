@@ -309,6 +309,7 @@ internal sealed class DesktopInstallLinkingWindow : Window
             Children =
             {
                 CreateButton(DesktopLocalizationCatalog.GetRequiredString("desktop.install_link.button.open_account", _language), OpenAccountAsync),
+                CreateButton(DesktopLocalizationCatalog.GetRequiredString("desktop.install_link.button.open_origin_dossier", _language), OpenOriginDossierPortalAsync),
                 _unlinkButton,
                 CreateButton(DesktopLocalizationCatalog.GetRequiredString("desktop.install_link.button.copy_install_id", _language), CopyInstallIdAsync),
                 CreateButton(DesktopLocalizationCatalog.GetRequiredString("desktop.install_link.button.open_downloads", _language), OpenDownloadsAsync),
@@ -965,6 +966,20 @@ internal sealed class DesktopInstallLinkingWindow : Window
         else
         {
             SetStatus(DesktopLocalizationCatalog.GetRequiredString("desktop.install_link.status.unable_open_downloads", _language));
+        }
+
+        return Task.CompletedTask;
+    }
+
+    private Task OpenOriginDossierPortalAsync()
+    {
+        if (DesktopInstallLinkingRuntime.TryOpenOriginDossierPortal())
+        {
+            SetStatus(DesktopLocalizationCatalog.GetRequiredString("desktop.install_link.status.opened_origin_dossier", _language));
+        }
+        else
+        {
+            SetStatus(DesktopLocalizationCatalog.GetRequiredString("desktop.install_link.status.unable_open_origin_dossier", _language));
         }
 
         return Task.CompletedTask;
