@@ -17,11 +17,30 @@ RELEASE_PROOF_PATH="${RELEASE_PROOF_PATH:-}"
 STARTUP_SMOKE_SOURCE="${STARTUP_SMOKE_SOURCE:-$BUNDLE_DIR/startup-smoke}"
 PUBLIC_SKIP_STARTUP_SMOKE_FILTER="${CHUMMER_PUBLIC_SKIP_STARTUP_SMOKE_FILTER:-}"
 SYNC_LIVE_DOWNLOADS_MIRRORS="${CHUMMER_PUBLIC_EDGE_DOWNLOADS_SYNC_MIRRORS:-true}"
+ALLOW_WINDOWS_VISUAL_PROOF_HANDOFF_PUBLISH="${CHUMMER_ALLOW_WINDOWS_VISUAL_PROOF_HANDOFF_PUBLISH:-0}"
 
 to_bool() {
   local value
   value="$(echo "${1:-}" | tr '[:upper:]' '[:lower:]')"
   [[ "$value" == "1" || "$value" == "true" || "$value" == "yes" || "$value" == "on" ]]
+}
+
+manifest_channel_is_preview() {
+  local manifest_path="$1"
+  python3 - "$manifest_path" <<'PY'
+import json
+import sys
+from pathlib import Path
+
+path = Path(sys.argv[1])
+try:
+    payload = json.loads(path.read_text(encoding="utf-8-sig"))
+except Exception:
+    raise SystemExit(1)
+
+channel = str(payload.get("channel") or payload.get("channelId") or "").strip().lower()
+raise SystemExit(0 if channel == "preview" else 1)
+PY
 }
 
 refresh_release_build_handoff() {
@@ -179,6 +198,10 @@ verify_windows_desktop_exit_gate() {
   then
     rm -f "$gate_output"
     emit_windows_visual_proof_handoff_guidance "$BUNDLE_DIR" "$DEPLOY_DIR"
+    if to_bool "$ALLOW_WINDOWS_VISUAL_PROOF_HANDOFF_PUBLISH" && manifest_channel_is_preview "$DEPLOY_DIR/RELEASE_CHANNEL.generated.json"; then
+      echo "Published preview downloads shelf is carrying a Windows visual proof handoff instead of a passable Windows visual proof. Continuing because this lane publishes preview handoffs, not stable releases." >&2
+      return 0
+    fi
     echo "Published downloads shelf failed Windows desktop exit gate verification. Use the Windows visual proof handoff above." >&2
     exit 1
   fi

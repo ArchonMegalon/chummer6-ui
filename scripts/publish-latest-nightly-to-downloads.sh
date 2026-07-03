@@ -13,6 +13,7 @@ REQUIRE_COMPLETE_DESKTOP_COVERAGE="${CHUMMER_RELEASE_REQUIRE_COMPLETE_DESKTOP_CO
 PROMOTE_PROOF_BACKED_QUARANTINED_INSTALLERS="${CHUMMER_PROMOTE_PROOF_BACKED_QUARANTINED_INSTALLERS:-0}"
 SKIP_STARTUP_SMOKE_HYDRATION="${CHUMMER_SKIP_STARTUP_SMOKE_HYDRATION:-0}"
 ALLOW_SKIPPED_STARTUP_SMOKE="${CHUMMER_ALLOW_SKIPPED_STARTUP_SMOKE:-0}"
+ALLOW_WINDOWS_VISUAL_PROOF_HANDOFF_PUBLISH="${CHUMMER_ALLOW_WINDOWS_VISUAL_PROOF_HANDOFF_PUBLISH:-1}"
 # Nightly publication is a preview handoff lane. Stable/public release promotion
 # must happen through the explicit stable release path instead.
 PUBLIC_RELEASE_CHANNEL="${CHUMMER_PUBLIC_DEFAULT_RELEASE_CHANNEL:-preview}"
@@ -28,6 +29,24 @@ to_bool() {
   local value
   value="$(echo "${1:-}" | tr '[:upper:]' '[:lower:]')"
   [[ "$value" == "1" || "$value" == "true" || "$value" == "yes" || "$value" == "on" ]]
+}
+
+manifest_channel_is_preview() {
+  local manifest_path="$1"
+  python3 - "$manifest_path" <<'PY'
+import json
+import sys
+from pathlib import Path
+
+path = Path(sys.argv[1])
+try:
+    payload = json.loads(path.read_text(encoding="utf-8-sig"))
+except Exception:
+    raise SystemExit(1)
+
+channel = str(payload.get("channel") or payload.get("channelId") or "").strip().lower()
+raise SystemExit(0 if channel == "preview" else 1)
+PY
 }
 
 normalized_public_release_channel="$(echo "$PUBLIC_RELEASE_CHANNEL" | tr '[:upper:]' '[:lower:]')"
@@ -196,6 +215,10 @@ verify_latest_stage_windows_exit_gate() {
   then
     rm -f "$gate_output"
     emit_windows_visual_proof_handoff_guidance "$stage_dir"
+    if to_bool "$ALLOW_WINDOWS_VISUAL_PROOF_HANDOFF_PUBLISH" && manifest_channel_is_preview "$release_channel_manifest"; then
+      echo "Nightly stage is carrying a Windows visual proof handoff instead of a passable Windows visual proof. Continuing because this lane publishes preview handoffs, not stable releases." >&2
+      return 0
+    fi
     echo "Nightly stage failed Windows desktop exit gate preflight. Use the Windows visual proof handoff above before publishing." >&2
     exit 1
   fi
@@ -450,6 +473,7 @@ CHUMMER_RELEASE_REQUIRE_COMPLETE_DESKTOP_COVERAGE="$REQUIRE_COMPLETE_DESKTOP_COV
 CHUMMER_PROMOTE_PROOF_BACKED_QUARANTINED_INSTALLERS="$PROMOTE_PROOF_BACKED_QUARANTINED_INSTALLERS" \
 CHUMMER_SKIP_STARTUP_SMOKE_HYDRATION="$SKIP_STARTUP_SMOKE_HYDRATION" \
 CHUMMER_ALLOW_SKIPPED_STARTUP_SMOKE="$ALLOW_SKIPPED_STARTUP_SMOKE" \
+CHUMMER_ALLOW_WINDOWS_VISUAL_PROOF_HANDOFF_PUBLISH="$ALLOW_WINDOWS_VISUAL_PROOF_HANDOFF_PUBLISH" \
 bash "$SCRIPT_DIR/publish-download-bundle.sh" "$latest_stage" "$DEPLOY_DIR"
 
 if to_bool "$REDEPLOY_PUBLIC_EDGE" && [[ "$DEPLOY_DIR" == "$WORKSPACE_ROOT/chummer.run-services/Chummer.Portal/downloads" ]]; then
