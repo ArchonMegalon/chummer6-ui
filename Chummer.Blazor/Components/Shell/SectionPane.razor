@@ -701,11 +701,19 @@
     }
     else
     {
+        IReadOnlyList<AttributeWorkbenchRow> sr6AttributeRows = BuildSr6AttributeRows();
+        string sr6AttributeSummary = BuildSr6AttributeSummary(sr6AttributeRows);
         IReadOnlyList<ClassicSheetFact> summaryFacts = BuildClassicSummaryFacts();
         IReadOnlyList<ClassicSheetFact> attributeFacts = BuildClassicAttributeFacts();
         bool hasClassicFacts = summaryFacts.Count > 0 || attributeFacts.Count > 0;
 
-        if (hasClassicFacts)
+        if (sr6AttributeRows.Count > 0)
+        {
+            <Sr6AttributeWorkbench Rows="@sr6AttributeRows"
+                                   SummaryText="@sr6AttributeSummary"
+                                   AttributeEditRequested="@AttributeEditRequested" />
+        }
+        else if (hasClassicFacts)
         {
             <section class="classic-runner-sheet">
                 <h3>@BuildClassicSheetHeading()</h3>
@@ -759,18 +767,21 @@
             </section>
         }
 
-        <table class="section-table">
-            <thead>
-                <tr><th>Entry</th><th>Detail</th></tr>
-            </thead>
-            @* <Virtualize Items="@State.ActiveSectionRows" Context="row" ItemSize="40"> *@
-            <Virtualize Items="@(State.ActiveSectionRows.ToArray())"
-                       Context="row"
-                       ItemSize="40">
-                <td class="section-table-label">@FormatRowPath(row.Path)</td>
-                <td class="section-table-value">@FormatRowValue(row.Value)</td>
-            </Virtualize>
-        </table>
+        @if (sr6AttributeRows.Count == 0)
+        {
+            <table class="section-table">
+                <thead>
+                    <tr><th>Entry</th><th>Detail</th></tr>
+                </thead>
+                @* <Virtualize Items="@State.ActiveSectionRows" Context="row" ItemSize="40"> *@
+                <Virtualize Items="@(State.ActiveSectionRows.ToArray())"
+                           Context="row"
+                           ItemSize="40">
+                    <td class="section-table-label">@FormatRowPath(row.Path, ResolveActiveRulesetId())</td>
+                    <td class="section-table-value">@FormatRowValue(row.Value)</td>
+                </Virtualize>
+            </table>
+        }
     }
 </section>
 
@@ -792,6 +803,9 @@
 
     [Parameter]
     public EventCallback<string> LoadWorkspaceRequested { get; set; }
+
+    [Parameter]
+    public EventCallback<AttributeEditRequest> AttributeEditRequested { get; set; }
 
     protected override void OnParametersSet()
     {
@@ -1222,23 +1236,21 @@
         if (string.IsNullOrWhiteSpace(State.ActiveSectionId))
             return Array.Empty<SectionQuickActionDefinition>();
 
-        string? rulesetId = RulesetDefaults.NormalizeOptional(State.Rules?.GameEdition)
-            ?? RulesetDefaults.NormalizeOptional(State.OpenWorkspaces
-                .FirstOrDefault(workspace => string.Equals(workspace.Id.Value, State.WorkspaceId?.Value, StringComparison.Ordinal))
-                ?.RulesetId)
-            ?? RulesetDefaults.NormalizeOptional(State.OpenWorkspaces.FirstOrDefault()?.RulesetId);
-        return SectionQuickActionCatalog.ForSection(rulesetId, State.ActiveSectionId);
+        return SectionQuickActionCatalog.ForSection(ResolveActiveRulesetId(), State.ActiveSectionId);
     }
 
     private bool HasSectionQuickActions()
         => BuildSectionQuickActions().Count > 0;
 
-    private string? ResolveResultRulesetId()
+    private string? ResolveActiveRulesetId()
         => RulesetDefaults.NormalizeOptional(State.Rules?.GameEdition)
             ?? RulesetDefaults.NormalizeOptional(State.OpenWorkspaces
                 .FirstOrDefault(workspace => string.Equals(workspace.Id.Value, State.WorkspaceId?.Value, StringComparison.Ordinal))
                 ?.RulesetId)
             ?? RulesetDefaults.NormalizeOptional(State.OpenWorkspaces.FirstOrDefault()?.RulesetId);
+
+    private string? ResolveResultRulesetId()
+        => ResolveActiveRulesetId();
 
     private string BuildClassicSheetHeading()
     {
@@ -1274,6 +1286,7 @@
 
     private IReadOnlyList<ClassicSheetFact> BuildClassicAttributeFacts()
     {
+        string? rulesetId = ResolveActiveRulesetId();
         JsonObject? root = TryGetClassicSectionRoot();
         JsonObject? attributes = root?["attributes"] as JsonObject;
         List<ClassicSheetFact> facts = [];
@@ -1285,7 +1298,7 @@
                 string? value = ReadScalar(attributes, key);
                 if (!string.IsNullOrWhiteSpace(value))
                 {
-                    facts.Add(new ClassicSheetFact(ToAttributeAbbreviation(key), value));
+                    facts.Add(new ClassicSheetFact(FormatAttributeLabel(key, rulesetId), value));
                 }
             }
         }
@@ -1302,10 +1315,37 @@
                 continue;
             }
 
-            facts.Add(new ClassicSheetFact(ToAttributeAbbreviation(row.Path["attributes.".Length..]), FormatRowValue(row.Value)));
+            facts.Add(new ClassicSheetFact(FormatAttributeLabel(row.Path["attributes.".Length..], rulesetId), FormatRowValue(row.Value)));
         }
 
         return facts;
+    }
+
+    private IReadOnlyList<AttributeWorkbenchRow> BuildSr6AttributeRows()
+    {
+        string? rulesetId = ResolveActiveRulesetId();
+        if (!AttributeWorkbenchProjector.IsSr6Ruleset(rulesetId))
+        {
+            return [];
+        }
+
+        return AttributeWorkbenchProjector.BuildRows(State.ActiveSectionId, State.ActiveSectionJson ?? string.Empty);
+    }
+
+    private static string BuildSr6AttributeSummary(IReadOnlyList<AttributeWorkbenchRow> attributeRows)
+    {
+        if (attributeRows.Count == 0)
+        {
+            return string.Empty;
+        }
+
+        AttributeWorkbenchRow leadAttribute = attributeRows[0];
+        return string.Join(
+            "  •  ",
+            [
+                attributeRows.Count == 1 ? "1 attribute ready" : $"{attributeRows.Count} attributes ready",
+                $"{leadAttribute.DisplayName} {leadAttribute.TotalValue}"
+            ]);
     }
 
     private JsonObject? TryGetClassicSectionRoot()
@@ -1353,6 +1393,12 @@
 
     private string BuildSectionContextSummary()
     {
+        IReadOnlyList<AttributeWorkbenchRow> sr6AttributeRows = BuildSr6AttributeRows();
+        if (sr6AttributeRows.Count > 0)
+        {
+            return BuildSr6AttributeSummary(sr6AttributeRows);
+        }
+
         SectionRowState[] rows = State.ActiveSectionRows.ToArray();
         if (rows.Length == 0)
         {
@@ -1381,7 +1427,7 @@
         return System.Globalization.CultureInfo.InvariantCulture.TextInfo.ToTitleCase(normalized.ToLowerInvariant());
     }
 
-    private static string FormatRowPath(string path)
+    private static string FormatRowPath(string path, string? rulesetId)
     {
         if (string.IsNullOrWhiteSpace(path))
         {
@@ -1402,7 +1448,7 @@
 
         if (string.Equals(section, "attributes", StringComparison.OrdinalIgnoreCase))
         {
-            return ToAttributeAbbreviation(bareLeaf);
+            return FormatAttributeLabel(bareLeaf, rulesetId);
         }
 
         if (string.Equals(section, "combat", StringComparison.OrdinalIgnoreCase))
@@ -1423,6 +1469,9 @@
 
         return FormatDesktopLabel(leaf);
     }
+
+    private static string FormatAttributeLabel(string attributeName, string? rulesetId)
+        => AttributeWorkbenchProjector.FormatDisplayLabel(attributeName, rulesetId);
 
     private static string FormatRowValue(string value)
         => value.Length >= 2 && value[0] == '"' && value[^1] == '"'

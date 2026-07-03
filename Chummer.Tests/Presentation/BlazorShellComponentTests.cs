@@ -607,6 +607,66 @@ public sealed class BlazorShellComponentTests
     }
 
     [TestMethod]
+    public void SectionPane_renders_sr6_attribute_workbench_and_emits_attribute_edits()
+    {
+        using var context = CreateContext();
+
+        CharacterWorkspaceId workspaceId = new("ws-sr6-attribute-workbench");
+        OpenWorkspaceState openWorkspace = new(workspaceId, "Nova", "Cipher", DateTimeOffset.UtcNow, RulesetDefaults.Sr6);
+        AttributeEditRequest? editRequest = null;
+        CharacterOverviewState sectionState = CharacterOverviewState.Empty with
+        {
+            WorkspaceId = workspaceId,
+            OpenWorkspaces = [openWorkspace],
+            ActiveSectionId = "attributes",
+            ActiveSectionJson = """
+{
+  "sectionId": "attributes",
+  "attributes": [
+    {
+      "name": "Body",
+      "base": 3,
+      "karma": 1,
+      "value": 4,
+      "metatypeMin": 1,
+      "metatypeMax": 6,
+      "metatypeAugMax": 9,
+      "priorityMaximum": 6,
+      "karmaMaximum": 5,
+      "baseUnlocked": true
+    }
+  ]
+}
+""",
+            ActiveSectionRows = []
+        };
+
+        IRenderedComponent<SectionPane> cut = context.Render<SectionPane>(parameters => parameters
+            .Add(component => component.State, sectionState)
+            .Add(component => component.AttributeEditRequested, (Action<AttributeEditRequest>)(request => editRequest = request)));
+
+        Assert.IsTrue(cut.Markup.Contains("data-sr6-attribute-workbench", StringComparison.Ordinal));
+        Assert.AreEqual("1 attribute ready  •  Body 4", cut.Find(".sr6-attribute-workbench__summary").TextContent.Trim());
+        CollectionAssert.AreEqual(
+            new[] { "Attribute", "Base", "Karma", "Total", "Limits" },
+            cut.FindAll(".sr6-attribute-table span").Select(node => node.TextContent.Trim()).ToArray());
+        Assert.AreEqual("Body", cut.Find("[data-sr6-attribute='BOD'] .sr6-attribute-row__name").TextContent.Trim());
+        Assert.AreEqual("ready", cut.Find("[data-sr6-attribute='BOD']").GetAttribute("data-sr6-attribute-state"));
+        Assert.AreEqual("Base 1 to 6", cut.Find("[data-sr6-attribute='BOD'] [data-sr6-stepper-group='base'] .sr6-attribute-stepper").GetAttribute("title"));
+        Assert.AreEqual("Karma 0 to 5", cut.Find("[data-sr6-attribute='BOD'] [data-sr6-stepper-group='karma'] .sr6-attribute-stepper").GetAttribute("title"));
+        Assert.AreEqual("4", cut.Find("[data-sr6-attribute='BOD'] [data-sr6-attribute-total]").TextContent.Trim());
+        Assert.AreEqual("1 / 6 (9)", cut.Find("[data-sr6-attribute='BOD'] [data-sr6-attribute-limits]").TextContent.Trim());
+        Assert.AreEqual(0, cut.FindAll(".section-table").Count);
+
+        cut.Find("[data-sr6-attribute='BOD'] button[data-sr6-stepper='base-increase']").Click();
+
+        Assert.IsNotNull(editRequest);
+        Assert.AreEqual("Body", editRequest.AttributeName);
+        Assert.AreEqual("base", editRequest.Bucket);
+        Assert.AreEqual(4, editRequest.Value);
+    }
+
+    [TestMethod]
     public void SectionPane_renders_quality_quick_action_and_invokes_ui_control()
     {
         using var context = CreateContext();

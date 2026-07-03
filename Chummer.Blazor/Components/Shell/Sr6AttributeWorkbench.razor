@@ -1,0 +1,299 @@
+@namespace Chummer.Blazor.Components.Shell
+@using Microsoft.AspNetCore.Components
+@using System.Collections.Generic
+@using Chummer.Contracts.Rulesets
+@using Chummer.Presentation.Overview
+
+<section class="sr6-attribute-workbench" data-sr6-attribute-workbench>
+    <header class="sr6-attribute-workbench__header">
+        <div>
+            <h3>Attributes</h3>
+            @if (!string.IsNullOrWhiteSpace(SummaryText))
+            {
+                <p class="sr6-attribute-workbench__summary">@SummaryText</p>
+            }
+        </div>
+    </header>
+
+    <div class="sr6-attribute-table" role="presentation">
+        <span>Attribute</span>
+        <span>Base</span>
+        <span>Karma</span>
+        <span>Total</span>
+        <span>Limits</span>
+    </div>
+
+    @foreach (AttributeWorkbenchRow row in Rows)
+    {
+        <article class="@BuildRowClass(row)"
+                 data-sr6-attribute="@row.CompactLabel"
+                 data-sr6-attribute-state="@BuildRowState(row)">
+            <div class="sr6-attribute-cell sr6-attribute-cell--name">
+                <div class="sr6-attribute-row__namebar">
+                    <span class="sr6-attribute-row__name">@row.DisplayName</span>
+                    <span class="sr6-attribute-row__actions">
+                        @if (ShowImprove(row))
+                        {
+                            <button type="button"
+                                    class="mini-btn sr6-attribute-row__improve"
+                                    data-sr6-attribute-action="improve"
+                                    aria-label="Improve @row.DisplayName"
+                                    title="@BuildImproveTitle(row)"
+                                    disabled="@(!CanImprove(row))"
+                                    @onclick='@(() => ApplyImproveAsync(row))'>
+                                Improve
+                            </button>
+                        }
+                        @if (ShowBurnEdge(row))
+                        {
+                            <button type="button"
+                                    class="mini-btn sr6-attribute-row__burn"
+                                    data-sr6-attribute-action="burn-edge"
+                                    aria-label="Burn @row.DisplayName"
+                                    disabled="@(!CanBurnEdge(row))"
+                                    @onclick='@(() => ApplyBurnAsync(row))'>
+                                Burn
+                            </button>
+                        }
+                    </span>
+                </div>
+                @if (row.CareerMode)
+                {
+                    <span class="sr6-attribute-row__detail">@BuildCareerDetail(row)</span>
+                }
+                else if (!row.BaseUnlocked)
+                {
+                    <span class="sr6-attribute-row__detail">Base locked</span>
+                }
+            </div>
+
+            <div class="sr6-attribute-cell" data-column="Base" data-sr6-stepper-group="base">
+                @if (row.CareerMode)
+                {
+                    <div class="sr6-attribute-readonly"
+                         data-sr6-readonly="base"
+                         title="@BuildBaseTitle(row)"
+                         aria-label="@($"{row.DisplayName} base")">
+                        <strong data-sr6-readonly-value="base">@row.BaseValue</strong>
+                    </div>
+                }
+                else
+                {
+                    <div class="sr6-attribute-stepper" title="@BuildBaseTitle(row)">
+                        <button type="button"
+                                class="mini-btn"
+                                data-sr6-stepper="base-decrease"
+                                aria-label="Decrease @row.DisplayName base"
+                                disabled="@(!CanDecreaseBase(row))"
+                                @onclick='@(() => ApplyAsync(row, "base", row.BaseValue - 1))'>
+                            -
+                        </button>
+                        <strong data-sr6-stepper-value="base">@row.BaseValue</strong>
+                        <button type="button"
+                                class="mini-btn"
+                                data-sr6-stepper="base-increase"
+                                aria-label="Increase @row.DisplayName base"
+                                disabled="@(!CanIncreaseBase(row))"
+                                @onclick='@(() => ApplyAsync(row, "base", row.BaseValue + 1))'>
+                            +
+                        </button>
+                    </div>
+                }
+            </div>
+
+            <div class="sr6-attribute-cell" data-column="Karma" data-sr6-stepper-group="karma">
+                @if (row.CareerMode)
+                {
+                    <div class="sr6-attribute-readonly"
+                         data-sr6-readonly="karma"
+                         title="@BuildKarmaTitle(row)"
+                         aria-label="@($"{row.DisplayName} karma")">
+                        <strong data-sr6-readonly-value="karma">@row.KarmaValue</strong>
+                    </div>
+                }
+                else
+                {
+                    <div class="sr6-attribute-stepper" title="@BuildKarmaTitle(row)">
+                        <button type="button"
+                                class="mini-btn"
+                                data-sr6-stepper="karma-decrease"
+                                aria-label="Decrease @row.DisplayName karma"
+                                disabled="@(!CanDecreaseKarma(row))"
+                                @onclick='@(() => ApplyAsync(row, "karma", row.KarmaValue - 1))'>
+                            -
+                        </button>
+                        <strong data-sr6-stepper-value="karma">@row.KarmaValue</strong>
+                        <button type="button"
+                                class="mini-btn"
+                                data-sr6-stepper="karma-increase"
+                                aria-label="Increase @row.DisplayName karma"
+                                disabled="@(!CanIncreaseKarma(row))"
+                                @onclick='@(() => ApplyAsync(row, "karma", row.KarmaValue + 1))'>
+                            +
+                        </button>
+                    </div>
+                }
+            </div>
+
+            <div class="sr6-attribute-cell sr6-attribute-cell--metric" data-column="Total">
+                <strong class="sr6-attribute-metric"
+                        data-sr6-attribute-total
+                        title="@BuildTotalTitle(row)">
+                    @row.TotalValue
+                </strong>
+            </div>
+
+            <div class="sr6-attribute-cell sr6-attribute-cell--metric" data-column="Limits">
+                <span class="sr6-attribute-metric sr6-attribute-metric--limits"
+                      data-sr6-attribute-limits
+                      title="@BuildLimitsTitle(row)">
+                    @BuildLimitsDisplay(row)
+                </span>
+            </div>
+        </article>
+    }
+</section>
+
+@code {
+    [Parameter]
+    public IReadOnlyList<AttributeWorkbenchRow> Rows { get; set; } = [];
+
+    [Parameter]
+    public string? SummaryText { get; set; }
+
+    [Parameter]
+    public EventCallback<AttributeEditRequest> AttributeEditRequested { get; set; }
+
+    private static string BuildBaseTitle(AttributeWorkbenchRow row)
+        => row.CareerMode
+            ? $"Career base value {row.BaseValue}"
+            : row.BaseUnlocked
+                ? $"Base {row.EffectiveBaseMinimum} to {row.EffectiveBaseMaximum}"
+                : "Base locked";
+
+    private static string BuildKarmaTitle(AttributeWorkbenchRow row)
+        => row.CareerMode
+            ? $"Career karma contribution {row.KarmaValue}"
+            : $"Karma 0 to {row.EffectiveKarmaMaximum}";
+
+    private static string BuildTotalTitle(AttributeWorkbenchRow row)
+        => $"Base {row.BaseValue} + Karma {row.KarmaValue}";
+
+    private static string BuildLimitsTitle(AttributeWorkbenchRow row)
+        => $"Minimum {row.MetatypeMin}, natural maximum {row.MetatypeMax}, augmented maximum {row.MetatypeAugMax}";
+
+    private static string BuildImproveTitle(AttributeWorkbenchRow row)
+        => CanImprove(row)
+            ? $"Improve {row.DisplayName} for {row.UpgradeKarmaCost} Karma"
+            : row.UpgradeKarmaCost <= 0
+                ? $"{row.DisplayName} is already at its current ceiling."
+                : $"Need {row.UpgradeKarmaCost} Karma to improve {row.DisplayName}.";
+
+    private static string BuildCareerDetail(AttributeWorkbenchRow row)
+        => row.UpgradeKarmaCost > 0
+            ? $"{row.AvailableKarma} Karma available"
+            : "Career mode";
+
+    private static string BuildLimitsDisplay(AttributeWorkbenchRow row)
+        => AttributeWorkbenchProjector.FormatLimitsDisplay(row, RulesetDefaults.Sr6);
+
+    private static string BuildRowClass(AttributeWorkbenchRow row)
+    {
+        List<string> classes =
+        [
+            "sr6-attribute-row"
+        ];
+
+        if (!row.BaseUnlocked)
+        {
+            classes.Add("sr6-attribute-row--locked");
+        }
+
+        if (row.CareerMode)
+        {
+            classes.Add("sr6-attribute-row--career");
+        }
+
+        if (row.TotalValue >= ResolveTotalCap(row))
+        {
+            classes.Add("sr6-attribute-row--capped");
+        }
+
+        if (IsSpecialAttribute(row.AttributeName))
+        {
+            classes.Add("sr6-attribute-row--special");
+        }
+
+        return string.Join(" ", classes);
+    }
+
+    private static string BuildRowState(AttributeWorkbenchRow row)
+    {
+        if (!row.BaseUnlocked)
+        {
+            return "locked";
+        }
+
+        if (row.TotalValue >= ResolveTotalCap(row))
+        {
+            return "capped";
+        }
+
+        return IsSpecialAttribute(row.AttributeName) ? "special" : "ready";
+    }
+
+    private Task ApplyAsync(AttributeWorkbenchRow row, string bucket, int nextValue)
+    {
+        int clampedValue = string.Equals(bucket, "base", StringComparison.Ordinal)
+            ? Math.Clamp(nextValue, row.EffectiveBaseMinimum, row.EffectiveBaseMaximum)
+            : Math.Clamp(nextValue, 0, row.EffectiveKarmaMaximum);
+        return AttributeEditRequested.InvokeAsync(new AttributeEditRequest(row.AttributeName, bucket, clampedValue));
+    }
+
+    private Task ApplyBurnAsync(AttributeWorkbenchRow row)
+        => AttributeEditRequested.InvokeAsync(new AttributeEditRequest(row.AttributeName, "burn", Math.Max(0, row.TotalValue - 1)));
+
+    private Task ApplyImproveAsync(AttributeWorkbenchRow row)
+        => AttributeEditRequested.InvokeAsync(new AttributeEditRequest(row.AttributeName, "improve", Math.Max(0, row.TotalValue + 1)));
+
+    private static bool CanDecreaseBase(AttributeWorkbenchRow row)
+        => row.BaseUnlocked && row.BaseValue > row.EffectiveBaseMinimum;
+
+    private static bool CanIncreaseBase(AttributeWorkbenchRow row)
+        => row.BaseUnlocked && row.BaseValue < row.EffectiveBaseMaximum;
+
+    private static bool CanDecreaseKarma(AttributeWorkbenchRow row)
+        => row.KarmaValue > 0;
+
+    private static bool CanIncreaseKarma(AttributeWorkbenchRow row)
+        => row.KarmaValue < row.EffectiveKarmaMaximum;
+
+    private static bool CanImprove(AttributeWorkbenchRow row)
+        => AttributeWorkbenchProjector.CanCareerAdvance(row);
+
+    private static int ResolveTotalCap(AttributeWorkbenchRow row)
+        => Math.Max(row.MetatypeMax, row.MetatypeAugMax);
+
+    private static bool ShowBurnEdge(AttributeWorkbenchRow row)
+        => row.CareerMode && AttributeWorkbenchProjector.IsEdgeAttribute(row.AttributeName);
+
+    private static bool ShowImprove(AttributeWorkbenchRow row)
+        => row.CareerMode;
+
+    private static bool CanBurnEdge(AttributeWorkbenchRow row)
+        => AttributeWorkbenchProjector.CanBurnEdge(row);
+
+    private static bool IsSpecialAttribute(string attributeName)
+        => attributeName.Trim().ToLowerInvariant() switch
+        {
+            "edg" => true,
+            "edge" => true,
+            "mag" => true,
+            "magic" => true,
+            "res" => true,
+            "resonance" => true,
+            "essence" => true,
+            "initiative" => true,
+            _ => false
+        };
+}

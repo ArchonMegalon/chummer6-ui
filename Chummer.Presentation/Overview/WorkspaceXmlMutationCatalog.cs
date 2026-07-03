@@ -89,19 +89,27 @@ internal static class WorkspaceXmlMutationCatalog
 
         XElement attributes = EnsureElement(root, "attributes");
         XElement attribute = attributes.Elements("attribute")
-            .FirstOrDefault(candidate =>
-                string.Equals(
-                    FirstNonBlank(candidate.Element("name")?.Value),
-                    NormalizeAttributeName(request.AttributeName),
-                    StringComparison.OrdinalIgnoreCase))
+            .FirstOrDefault(candidate => AttributeNamesMatch(candidate.Element("name")?.Value, request.AttributeName))
             ?? throw new InvalidOperationException($"Attribute '{request.AttributeName}' was not found in the workspace XML.");
 
+        string attributeName = FirstNonBlank(attribute.Element("name")?.Value);
+        bool isEdgeAttribute = AttributeWorkbenchProjector.IsEdgeAttribute(attributeName)
+            || AttributeWorkbenchProjector.IsEdgeAttribute(request.AttributeName);
         string normalizedBucket = FirstNonBlank(request.Bucket).ToLowerInvariant();
         int requestedValue = Math.Max(0, request.Value);
+        bool created = ParseBool(root.Element("created")?.Value);
         XElement baseElement = EnsureElement(attribute, "base");
         XElement karmaElement = EnsureElement(attribute, "karma");
         int currentBaseValue = ParseInt(baseElement.Value);
         int currentKarmaValue = ParseInt(karmaElement.Value);
+        int currentTotalValue = ParseInt(
+            FirstNonBlank(attribute.Element("totalvalue")?.Value, attribute.Element("value")?.Value),
+            currentBaseValue + currentKarmaValue);
+        if (currentKarmaValue == 0 && currentTotalValue >= currentBaseValue)
+        {
+            currentKarmaValue = currentTotalValue - currentBaseValue;
+        }
+
         int metatypeMin = Math.Max(0, ParseInt(attribute.Element("metatypemin")?.Value, fallback: 0));
         int metatypeMax = Math.Max(metatypeMin, ParseInt(attribute.Element("metatypemax")?.Value, fallback: Math.Max(currentBaseValue, requestedValue)));
         int metatypeAugMax = Math.Max(metatypeMax, ParseInt(attribute.Element("metatypeaugmax")?.Value, fallback: metatypeMax));
@@ -113,6 +121,60 @@ internal static class WorkspaceXmlMutationCatalog
                 break;
             case "karma":
                 currentKarmaValue = Math.Clamp(requestedValue, 0, Math.Max(0, metatypeAugMax - currentBaseValue));
+                break;
+            case "improve":
+                if (!created)
+                {
+                    throw new InvalidOperationException($"Attribute '{request.AttributeName}' can only be improved from a created/career workspace.");
+                }
+
+                int improveCost = ComputeCareerAttributeUpgradeCost(currentBaseValue + currentKarmaValue, metatypeAugMax);
+                if (improveCost <= 0)
+                {
+                    throw new InvalidOperationException($"Attribute '{request.AttributeName}' is already at its current ceiling.");
+                }
+
+                XElement totalKarmaElement = EnsureElement(root, "karma");
+                decimal availableKarma = ParseDecimal(totalKarmaElement.Value);
+                if (availableKarma < improveCost)
+                {
+                    throw new InvalidOperationException($"Attribute '{request.AttributeName}' requires {improveCost} Karma but only {availableKarma.ToString(CultureInfo.InvariantCulture)} is available.");
+                }
+
+                availableKarma -= improveCost;
+                if (isEdgeAttribute && metatypeMin < 1 && currentBaseValue == metatypeMin && currentKarmaValue == 0)
+                {
+                    metatypeMin += 1;
+                    currentBaseValue += 1;
+                }
+                else
+                {
+                    currentKarmaValue += 1;
+                }
+
+                totalKarmaElement.Value = availableKarma.ToString(CultureInfo.InvariantCulture);
+                AppendKarmaExpense(root, improveCost, $"Improve {AttributeWorkbenchProjector.FormatFullLabel(attributeName)}");
+                break;
+            case "burn":
+                if (!isEdgeAttribute)
+                {
+                    throw new InvalidOperationException($"Attribute '{request.AttributeName}' does not support the burn workflow.");
+                }
+
+                if (currentKarmaValue > 0)
+                {
+                    currentKarmaValue -= 1;
+                }
+                else if (currentBaseValue > metatypeMin)
+                {
+                    currentBaseValue -= 1;
+                }
+                else if (currentBaseValue > 0 && metatypeMin > 0)
+                {
+                    currentBaseValue -= 1;
+                    metatypeMin -= 1;
+                }
+
                 break;
             default:
                 throw new InvalidOperationException($"Unsupported attribute edit bucket '{request.Bucket}'.");
@@ -132,6 +194,7 @@ internal static class WorkspaceXmlMutationCatalog
 
         baseElement.Value = currentBaseValue.ToString(CultureInfo.InvariantCulture);
         karmaElement.Value = currentKarmaValue.ToString(CultureInfo.InvariantCulture);
+        EnsureElement(attribute, "metatypemin").Value = metatypeMin.ToString(CultureInfo.InvariantCulture);
         EnsureElement(attribute, "value").Value = currentBaseValue.ToString(CultureInfo.InvariantCulture);
         EnsureElement(attribute, "totalvalue").Value = (currentBaseValue + currentKarmaValue).ToString(CultureInfo.InvariantCulture);
 
@@ -373,13 +436,65 @@ internal static class WorkspaceXmlMutationCatalog
     private static string FirstNonBlank(params string?[] values)
         => values.FirstOrDefault(static value => !string.IsNullOrWhiteSpace(value))?.Trim() ?? string.Empty;
 
-    private static string NormalizeAttributeName(string value)
-        => FirstNonBlank(value).Trim();
+    private static bool AttributeNamesMatch(string? left, string? right)
+    {
+        string leftName = FirstNonBlank(left);
+        string rightName = FirstNonBlank(right);
+        if (string.IsNullOrWhiteSpace(leftName) || string.IsNullOrWhiteSpace(rightName))
+        {
+            return false;
+        }
+
+        return string.Equals(leftName, rightName, StringComparison.OrdinalIgnoreCase)
+            || string.Equals(
+                AttributeWorkbenchProjector.FormatCompactLabel(leftName),
+                AttributeWorkbenchProjector.FormatCompactLabel(rightName),
+                StringComparison.OrdinalIgnoreCase);
+    }
 
     private static int ParseInt(string? value, int fallback = 0)
         => int.TryParse(value, NumberStyles.Integer, CultureInfo.InvariantCulture, out int parsed)
             ? parsed
             : fallback;
+
+    private static decimal ParseDecimal(string? value)
+        => decimal.TryParse(value, NumberStyles.Number, CultureInfo.InvariantCulture, out decimal parsed)
+            ? parsed
+            : 0m;
+
+    private static bool ParseBool(string? value)
+        => bool.TryParse(value, out bool parsed) && parsed;
+
+    private static int ComputeCareerAttributeUpgradeCost(int currentValue, int totalMaximum)
+    {
+        if (currentValue >= totalMaximum)
+        {
+            return -1;
+        }
+
+        int nextRank = Math.Max(1, currentValue + 1);
+        return nextRank * 5;
+    }
+
+    private static void AppendKarmaExpense(XElement root, int amount, string reason)
+    {
+        EnsureElement(root, "expenses").Add(
+            new XElement(
+                "expense",
+                new XElement("guid", Guid.NewGuid().ToString()),
+                new XElement("date", DateTime.UtcNow.ToString("s", CultureInfo.InvariantCulture)),
+                new XElement("amount", amount.ToString(CultureInfo.InvariantCulture)),
+                new XElement("reason", reason),
+                new XElement("type", "Karma"),
+                new XElement("refund", "False"),
+                new XElement(
+                    "undo",
+                    new XElement("karmatype", "ImproveAttribute"),
+                    new XElement("nuyentype", "ManualAdd"),
+                    new XElement("objectid"),
+                    new XElement("qty", "0"),
+                    new XElement("extra"))));
+    }
 
     private static string NormalizeToken(string value)
     {
