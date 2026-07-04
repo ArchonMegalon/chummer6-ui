@@ -2,12 +2,15 @@ from __future__ import annotations
 
 import importlib.util
 import json
+import subprocess
+import sys
 from pathlib import Path
 
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
 PUBLISHED = REPO_ROOT / ".codex-studio" / "published"
 MATERIALIZER_PATH = REPO_ROOT / "scripts" / "materialize-blazor-browser-lane-proof-set.py"
+STATUS_SCRIPT = REPO_ROOT / "scripts" / "print_blazor_public_edge_proof_status.py"
 DOCS_INDEX = REPO_ROOT / "docs" / "BLAZOR_WEB_CLIENT_DOCS_INDEX.md"
 SIGNOFF_DOC = REPO_ROOT / "docs" / "WORKBENCH_RELEASE_SIGNOFF.md"
 COMPILE_MANIFEST = PUBLISHED / "compile.manifest.json"
@@ -21,6 +24,9 @@ PWA_REQUIRED_CHECKS = {
     "offline_living_world_boundary",
     "app_head_and_registration",
     "clean_public_entry_route_contract",
+    "player_pwa_alias_route_contract",
+    "player_manifest_install_contract",
+    "mobile_pwa_living_world_boundary",
     "static_asset_fetch_contract",
     "mobile_viewport_shell_contract",
 }
@@ -53,7 +59,7 @@ def test_browser_lane_materializer_requires_hosted_pwa_public_edge_receipt() -> 
         "proof_tier": "hosted_pwa_public_edge_execution",
         "route_lane": "blazor_pwa_play_shell",
     }
-    assert pwa_spec["minimum_lengths"] == {"checks": 7}
+    assert pwa_spec["minimum_lengths"] == {"checks": 10}
     assert set(pwa_spec["required_check_ids"]) == PWA_REQUIRED_CHECKS
 
     result = module.evaluate_receipt(pwa_spec)
@@ -113,7 +119,22 @@ def test_docs_name_hosted_pwa_public_edge_proof_boundary() -> None:
     assert PWA_RECEIPT_NAME in docs_index
     assert "scripts/materialize-blazor-pwa-public-edge-proof.py" in docs_index
     assert "scripts/verify_blazor_pwa_public_edge_proof.py" in docs_index
-    assert "clean `/app` entry, static deployed assets, mobile viewport" in docs_index
+    assert "clean `/app` entry, `/pwa` player companion alias, player manifest, mobile living-world opt-in boundary, static deployed assets, mobile viewport" in docs_index
     assert PWA_RECEIPT_NAME in signoff
     assert "not app-store acceptance or offline runner-data parity" in signoff
-    assert "clean `/app` entry, static deployed assets, mobile viewport" in signoff
+    assert "clean `/app` entry, `/pwa` player companion alias, player manifest, mobile living-world opt-in boundary, static deployed assets, mobile viewport" in signoff
+
+
+def test_status_summary_reports_player_pwa_alias_and_living_world_checks() -> None:
+    result = subprocess.run(
+        [sys.executable, str(STATUS_SCRIPT)],
+        cwd=REPO_ROOT,
+        check=True,
+        capture_output=True,
+        text=True,
+    )
+
+    assert "pwa_public_edge_pwa_alias_url=https://chummer.run/pwa" in result.stdout
+    assert "player_pwa_alias_route_contract" in result.stdout
+    assert "player_manifest_install_contract" in result.stdout
+    assert "mobile_pwa_living_world_boundary" in result.stdout

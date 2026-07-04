@@ -316,6 +316,7 @@ def main() -> int:
     print(f"pwa_public_edge_contract={str(pwa_public_edge.get('contract_name') or '').strip() or 'missing'}")
     print(f"pwa_public_edge_base_url={str(pwa_public_edge.get('base_url') or '').strip() or 'missing'}")
     print(f"pwa_public_edge_public_entry_url={str(pwa_public_edge.get('public_entry_url') or '').strip() or 'missing'}")
+    print(f"pwa_public_edge_pwa_alias_url={str(pwa_public_edge.get('pwa_alias_url') or '').strip() or 'missing'}")
     print(f"pwa_public_edge_proof_tier={str(pwa_public_edge.get('proof_tier') or '').strip() or 'missing'}")
     print(f"pwa_public_edge_route_lane={str(pwa_public_edge.get('route_lane') or '').strip() or 'missing'}")
     print(f"pwa_public_edge_check_count={len(pwa_check_ids)}")
