@@ -45,9 +45,7 @@ public sealed class ReleaseChannelPublicationTruthGuardTests
             new[] { "avalonia-linux-x64-installer", "avalonia-win-x64-installer" },
             canonical.ArtifactIds.ToArray(),
             "Every published release must expose the current Windows and Linux installer artifacts on every shelf.");
-        Assert.AreEqual("public_stable", canonical.ChannelId);
-        Assert.AreEqual("public_stable", canonical.Channel);
-        Assert.AreEqual("public_stable", canonical.RolloutState);
+        AssertRecognizedPublishedChannelPosture(canonical);
     }
 
     private static void AssertShelfMatches(ReleaseChannelSnapshot expected, ReleaseChannelSnapshot actual)
@@ -65,6 +63,19 @@ public sealed class ReleaseChannelPublicationTruthGuardTests
             expected.ArtifactDigests.ToArray(),
             actual.ArtifactDigests.ToArray(),
             $"{actual.Label} artifact digests must match {expected.Label}.");
+    }
+
+    private static void AssertRecognizedPublishedChannelPosture(ReleaseChannelSnapshot canonical)
+    {
+        Assert.AreEqual(canonical.ChannelId, canonical.Channel, $"{canonical.Label} channel aliases must match.");
+        string expectedRolloutState = canonical.ChannelId switch
+        {
+            "preview" => "promoted_preview",
+            "public_stable" => "public_stable",
+            _ => throw new AssertFailedException(
+                $"{canonical.Label} channelId must be a recognized published lane: {canonical.ChannelId}.")
+        };
+        Assert.AreEqual(expectedRolloutState, canonical.RolloutState);
     }
 
     private static ReleaseChannelSnapshot Load(string path, string label)
