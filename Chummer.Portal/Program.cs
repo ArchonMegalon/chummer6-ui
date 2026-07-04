@@ -396,7 +396,7 @@ static string BuildPortalHomeHtml(HttpContext context, PortalOptions options)
     <h1>Explore Chummer Online, downloads, and support from one self-hosted edge.</h1>
     <p class="meta">Start in the Character Roster, continue into Chummer Online, and keep owner-aware portal routing in one place when self-hosting is configured.</p>
     <a class="cta" href="{{appRosterUrl}}" data-portal-home-action="explore-chummer-online">Explore Chummer Online</a>
-    <nav class="route-pills" aria-label="Chummer browser routes">
+    <nav class="route-pills" aria-label="Chummer Online routes">
       <a href="{{appRosterUrl}}" data-portal-home-route="chummer-app-roster">Open Character Roster</a>
       <a href="{{appUrl}}" data-portal-home-route="chummer-app">Open Chummer Online</a>
       <a href="{{appHomeUrl}}" data-portal-home-route="chummer-home">Open Chummer Online overview</a>
@@ -553,7 +553,7 @@ static string BuildDownloadsHtml(HttpContext context, PortalOptions options)
       <div>
         <p data-download-kicker="chummer-release-shelf">Desktop or browser</p>
         <h1 id="desktop-downloads-title">Downloads</h1>
-        <p>Use the desktop app when you need local files. Otherwise keep moving in Chummer Online.</p>
+        <p>Install native Chummer when you need desktop file-system behavior. Otherwise keep moving in Chummer Online.</p>
       </div>
       <nav class="download-actions" aria-label="Downloads handoff actions">
         <a class="primary" href="{{appRosterUrl}}" data-download-action="open-chummer-app">Open Chummer Online</a>
@@ -564,12 +564,12 @@ static string BuildDownloadsHtml(HttpContext context, PortalOptions options)
     <div class="download-meta" aria-label="Current desktop release summary">
       <span data-download-version="{{WebUtility.HtmlEncode(summary.Version)}}">Build <code>{{WebUtility.HtmlEncode(summary.Version)}}</code></span>
       <span data-download-status="{{WebUtility.HtmlEncode(summary.Status)}}">State <code>{{WebUtility.HtmlEncode(summary.Status)}}</code></span>
-      <span data-download-artifact-summary="{{summary.Downloads.Count}}">{{summary.Downloads.Count}} download{{(summary.Downloads.Count == 1 ? string.Empty : "s")}}</span>
+      <span data-download-artifact-summary="{{summary.Downloads.Count}}" data-download-count="{{summary.Downloads.Count}}">Published artifacts: {{summary.Downloads.Count}} download{{(summary.Downloads.Count == 1 ? string.Empty : "s")}}</span>
     </div>
     {{installStatePanel}}
     <p id="fallback-link" class="download-subtle" data-download-fallback-guidance>{{fallbackText}}</p>
     <h2 id="published-download-artifacts">Available now</h2>
-    <p id="published-download-description" class="download-subtle" data-download-description>These downloads come from the current release manifest.</p>
+    <p id="published-download-description" class="download-subtle" data-download-description>Published artifacts stay on this self-hosted edge when local bytes are mounted here.</p>
     <ul data-download-list="published-artifacts" aria-labelledby="published-download-artifacts" aria-describedby="published-download-description">
       {{artifactLines}}
     </ul>
@@ -578,18 +578,18 @@ static string BuildDownloadsHtml(HttpContext context, PortalOptions options)
       <div>
         <p data-self-host-docker-command="docker compose --profile portal up -d">Run <code>docker compose --profile portal up -d</code> when you want to serve this portal and its downloads from one local edge.</p>
         <ul>
-          <li data-self-host-release-manifest="{{WebUtility.HtmlEncode(releasesJsonUrl)}}">Mount <code>releases.json</code> and <code>RELEASE_CHANNEL.generated.json</code> before claiming installer availability.</li>
-          <li data-self-host-browser-app="{{WebUtility.HtmlEncode(PortalRoutes.PublicAppRoster)}}">Use /app?command=character_roster when installer proof is still pending.</li>
-          <li data-self-host-installer-boundary="proof-required">Proof-required routes stay visible, but they do not serve installer bytes until the manifest and proof agree.</li>
+          <li data-self-host-release-manifest="{{WebUtility.HtmlEncode(releasesJsonUrl)}}">Mount <code>releases.json</code> and the sibling <code>RELEASE_CHANNEL.generated.json</code> into the downloads volume before claiming installer availability.</li>
+          <li data-self-host-browser-app="{{WebUtility.HtmlEncode(PortalRoutes.PublicAppRoster)}}">Use /app?command=character_roster when installer proof is pending.</li>
+          <li data-self-host-installer-boundary="proof-required">Proof-required compatibility routes stay visible, but they do not serve installer bytes until the manifest and proof agree.</li>
         </ul>
         <p><a href="{{releasesJsonUrl}}" data-download-manifest-link aria-label="Open raw releases manifest JSON">Release data</a></p>
       </div>
     </details>
     <details class="secondary-block">
-      <summary id="compatibility-handoff-routes">Other install routes</summary>
+      <summary id="compatibility-handoff-routes">Compatibility handoff routes</summary>
       <div>
-        <p id="compatibility-handoff-description" class="download-subtle" data-install-route-description>Known fallback routes that still need proof.</p>
-        <p class="download-subtle" data-install-route-count="{{compatibilityRoutes.Count}}">{{compatibilityRoutes.Count}} route{{(compatibilityRoutes.Count == 1 ? string.Empty : "s")}} waiting for proof</p>
+        <p id="compatibility-handoff-description" class="download-subtle" data-install-route-description>Known fallback install routes stay visible here until their installer bytes and startup proof are ready.</p>
+        <p class="download-subtle" data-install-route-count="{{compatibilityRoutes.Count}}">Compatibility routes: {{compatibilityRoutes.Count}} route{{(compatibilityRoutes.Count == 1 ? string.Empty : "s")}} waiting for proof</p>
         <ul class="compatibility-routes" data-install-route-list="compatibility-handoff" aria-labelledby="compatibility-handoff-routes" aria-describedby="compatibility-handoff-description">
           {{compatibilityRouteLines}}
         </ul>
@@ -616,7 +616,7 @@ static string BuildDownloadsInstallStatePanel(PortalOptions options, string inst
     string nextRouteValue = string.IsNullOrWhiteSpace(nextInstallRoute)
         ? "requested-installer-route"
         : WebUtility.HtmlEncode(nextInstallRoute);
-    return $"""<p class="install-state" data-install-state="proof_required" data-install-next-route="{nextRouteValue}" role="status" aria-live="polite">{routeLabel} is known, but it is not live yet because installer proof is still missing.<br /><a href="{appRosterUrl}" data-install-state-action="open-browser-app">Open Chummer Online instead</a></p>""";
+    return $"""<p class="install-state" data-install-state="proof_required" data-install-next-route="{nextRouteValue}" role="status" aria-live="polite">{routeLabel} is known, but it is not live yet because installer proof is still required.<br /><a href="{appRosterUrl}" data-install-state-action="open-browser-app">Open Chummer Online instead</a></p>""";
 }
 
 static IResult ResolveInstallHandoff(string artifactId, PortalOptions options)
@@ -796,6 +796,7 @@ static IEnumerable<string> EnumerateLocalDownloadRelativePaths(ReleaseDownloadSu
 static string BuildContactHtml(PortalOptions options)
 {
     string appRosterUrl = WebUtility.HtmlEncode(PortalRoutes.PublicAppRoster);
+    string appHomeUrl = WebUtility.HtmlEncode(BuildBlazorHomeUrl(options));
     string discordUrl = WebUtility.HtmlEncode(PortalRoutes.CommunityDiscord);
 
     return $$"""
@@ -826,9 +827,14 @@ static string BuildContactHtml(PortalOptions options)
 <main>
   <section class="panel" data-portal-contact-panel="support-handoff" aria-labelledby="portal-contact-title">
     <h1 id="portal-contact-title">Contact</h1>
-    <p data-portal-contact-context="discord-first">The fastest human route is the Chummer Discord.</p>
-    <p data-portal-contact-public-route="discord-community">If you are stuck on install, access, or account linking, start with downloads or help and then use Discord if you still need a person.</p>
-    <nav class="handoff-actions" aria-label="Contact recovery actions"><a href="{{discordUrl}}" data-portal-contact-action="open-discord">Open Discord</a><a href="/downloads/" data-portal-contact-action="open-downloads">Open downloads</a><a href="/help" data-portal-contact-action="open-help">Open help</a><a href="/status" data-portal-contact-action="open-status">Open status</a><a href="{{appRosterUrl}}" data-portal-contact-action="open-chummer-app">Open Chummer Online</a></nav>
+    <p data-portal-contact-context="self-host-fallback">The fastest human route is the Chummer Discord.</p>
+    <p data-portal-contact-public-route="chummer.run/contact">If you are stuck on install, access, or account linking, start with downloads or help and then use Discord if you still need a person.</p>
+    <div data-portal-contact-scenarios="installer-account-app">
+      <p data-portal-contact-scenario="installer-proof">Installer issue: open downloads first so the current build and proof-required routes stay visible.</p>
+      <p data-portal-contact-scenario="account-recovery">Account or access issue: open status and help before sending private details.</p>
+      <p data-portal-contact-scenario="browser-app">Chummer Online issue: open the roster or overview route and include which route failed.</p>
+    </div>
+    <nav class="handoff-actions" aria-label="Contact recovery actions"><a href="{{discordUrl}}" data-portal-contact-action="open-discord">Open Discord</a><a href="/downloads/" data-portal-contact-action="open-downloads">Open downloads</a><a href="/help" data-portal-contact-action="open-help">Open help</a><a href="/status" data-portal-contact-action="open-status">Open status</a><a href="{{appRosterUrl}}" data-portal-contact-action="open-chummer-app">Open Chummer Online</a><a href="{{appHomeUrl}}" data-portal-contact-action="open-chummer-home">Open Chummer Online overview</a><a href="/docs/" data-portal-contact-action="open-docs">Open docs</a></nav>
   </section>
 </main>
 </body>
@@ -839,6 +845,7 @@ static string BuildContactHtml(PortalOptions options)
 static string BuildHelpHtml(PortalOptions options)
 {
     string appRosterUrl = WebUtility.HtmlEncode(PortalRoutes.PublicAppRoster);
+    string appHomeUrl = WebUtility.HtmlEncode(BuildBlazorHomeUrl(options));
     string downloadsUrl = WebUtility.HtmlEncode(options.DownloadsUrl);
     string discordUrl = WebUtility.HtmlEncode(PortalRoutes.CommunityDiscord);
 
@@ -870,10 +877,11 @@ static string BuildHelpHtml(PortalOptions options)
 <main>
   <section class="panel" data-portal-help-panel="handoff-guide" aria-labelledby="portal-help-title">
     <h1 id="portal-help-title">Help</h1>
-    <p data-portal-help-context="shortest-path-first">Pick the shortest path.</p>
+    <p data-portal-help-context="self-host-first">Pick the shortest path.</p>
     <nav class="help-grid" aria-label="Help recovery actions">
       <a class="help-card" href="{{downloadsUrl}}" data-portal-help-action="open-downloads">Downloads and install</a>
       <a class="help-card" href="{{appRosterUrl}}" data-portal-help-action="open-chummer-app">Open Chummer Online</a>
+      <a class="help-card" href="{{appHomeUrl}}" data-portal-help-action="open-chummer-home">Open Chummer Online overview</a>
       <a class="help-card" href="/status" data-portal-help-action="open-status">Current status</a>
       <a class="help-card" href="{{discordUrl}}" data-portal-help-action="open-discord">Community Discord</a>
       <a class="help-card" href="/contact" data-portal-help-action="open-contact">Contact</a>
@@ -893,6 +901,7 @@ static string BuildStatusHtml(PortalOptions options)
     string availability = summary.Downloads.Count > 0 ? "Available now" : "Not published yet";
     string downloadsUrl = WebUtility.HtmlEncode(options.DownloadsUrl);
     string appRosterUrl = WebUtility.HtmlEncode(PortalRoutes.PublicAppRoster);
+    string appHomeUrl = WebUtility.HtmlEncode(BuildBlazorHomeUrl(options));
     string discordUrl = WebUtility.HtmlEncode(PortalRoutes.CommunityDiscord);
 
     return $$"""
@@ -927,8 +936,8 @@ static string BuildStatusHtml(PortalOptions options)
 <body>
 <main>
   <section class="panel" data-portal-status-panel="release-availability" aria-labelledby="portal-status-title">
-    <h1 id="portal-status-title">Status</h1>
-    <p>The current build and whether downloads are live.</p>
+    <h1 id="portal-status-title">Current release</h1>
+    <p>The build, platforms, and current state in one place.</p>
     <div class="status-grid">
       <div class="status-card" data-portal-status-version="{{WebUtility.HtmlEncode(summary.Version)}}"><strong>Build</strong><code>{{WebUtility.HtmlEncode(summary.Version)}}</code></div>
       <div class="status-card" data-portal-status-availability="{{WebUtility.HtmlEncode(availability)}}"><strong>Downloads</strong>{{availability}}</div>
@@ -936,8 +945,8 @@ static string BuildStatusHtml(PortalOptions options)
     </div>
     <p class="status-meta" data-portal-status-artifact-count="{{summary.Downloads.Count}}">Published files: <code>{{summary.Downloads.Count}}</code></p>
     <p class="status-meta" data-portal-status-install-route-count="{{summary.InstallRoutes.Count}}">Install routes: <code>{{summary.InstallRoutes.Count}}</code></p>
-    <p class="status-meta" data-portal-status-boundary="source-manifest-backed">This page reads directly from the local release manifest.</p>
-    <nav class="handoff-actions" aria-label="Status recovery actions"><a href="{{downloadsUrl}}" data-portal-status-action="open-downloads">Open downloads</a><a href="/help" data-portal-status-action="open-help">Open help</a><a href="{{discordUrl}}" data-portal-status-action="open-discord">Open Discord</a><a href="{{appRosterUrl}}" data-portal-status-action="open-chummer-app">Open Chummer Online</a></nav>
+    <p class="status-meta" data-portal-status-boundary="source-manifest-backed">This status page is backed by the local release-manifest shelf.</p>
+    <nav class="handoff-actions" aria-label="Status recovery actions"><a href="{{downloadsUrl}}" data-portal-status-action="open-downloads">Open downloads</a><a href="/help" data-portal-status-action="open-help">Open help</a><a href="{{discordUrl}}" data-portal-status-action="open-discord">Open Discord</a><a href="{{appRosterUrl}}" data-portal-status-action="open-chummer-app">Open Chummer Online</a><a href="{{appHomeUrl}}" data-portal-status-action="open-chummer-home">Open Chummer Online overview</a><a href="/docs/" data-portal-status-action="open-docs">Open docs</a></nav>
   </section>
 </main>
 </body>
