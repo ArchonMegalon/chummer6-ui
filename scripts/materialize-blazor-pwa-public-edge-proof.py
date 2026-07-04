@@ -89,6 +89,17 @@ def fetch_bytes(path: str) -> dict[str, Any]:
     }
 
 
+def parse_manifest_hrefs(body: str) -> list[str]:
+    probe = HeadProbe()
+    probe.feed(body)
+    hrefs = {
+        str(link.get("href") or "").strip()
+        for link in probe.links
+        if "manifest" in str(link.get("rel") or "").lower()
+    }
+    return sorted(href for href in hrefs if href)
+
+
 def passed_check(check_id: str, assertion: str, url: str, facts: dict[str, Any]) -> dict[str, Any]:
     return {
         "id": check_id,
@@ -657,6 +668,123 @@ def check_player_manifest() -> dict[str, Any]:
     )
 
 
+def check_player_manifest_route_targets() -> dict[str, Any]:
+    manifest_url = f"{BASE_ORIGIN}/manifest.player.webmanifest"
+    manifest_result = fetch_text_url(manifest_url)
+    facts: dict[str, Any] = {
+        "manifest_url": manifest_result["url"],
+        "manifest_status_code": manifest_result["status_code"],
+        "manifest_content_type": manifest_result["content_type"],
+        "manifest_elapsed_ms": manifest_result["elapsed_ms"],
+    }
+    try:
+        manifest = json.loads(manifest_result["body"])
+    except json.JSONDecodeError as error:
+        return failed_check(
+            "player_manifest_route_targets_contract",
+            "player companion manifest start URL and shortcuts render their advertised mobile role shells",
+            manifest_url,
+            f"manifest JSON parse failed: {error}",
+            facts,
+        )
+
+    route_targets: list[tuple[str, str, str]] = [
+        ("start_url", str(manifest.get("start_url") or ""), "Player"),
+    ]
+    for shortcut in manifest.get("shortcuts") or []:
+        if not isinstance(shortcut, dict):
+            continue
+        short_name = str(shortcut.get("short_name") or "")
+        url = str(shortcut.get("url") or "")
+        expected_role = "GameMaster" if short_name == "GM" else short_name
+        route_targets.append((f"shortcut:{short_name}", url, expected_role))
+
+    target_facts: list[dict[str, Any]] = []
+    failures: list[str] = []
+    seen_targets: set[str] = set()
+    for target_id, route, expected_role in route_targets:
+        if not route:
+            failures.append(f"{target_id} is missing its route")
+            continue
+        if not route.startswith("/mobile/"):
+            failures.append(f"{target_id} route must stay under /mobile/, got {route!r}")
+            continue
+        if route in seen_targets:
+            continue
+        seen_targets.add(route)
+
+        result = fetch_text_url(f"{BASE_ORIGIN}{route}")
+        body = result["body"]
+        manifest_hrefs = parse_manifest_hrefs(body)
+        expected_manifest_href = (
+            "/manifest.gm.webmanifest" if expected_role == "GameMaster" else "/manifest.player.webmanifest"
+        )
+        target_fact = {
+            "id": target_id,
+            "route": route,
+            "url": result["url"],
+            "final_url": result.get("final_url") or result["url"],
+            "status_code": result["status_code"],
+            "content_type": result["content_type"],
+            "elapsed_ms": result["elapsed_ms"],
+            "expected_role": expected_role,
+            "has_turn_root": "data-turn-root" in body,
+            "has_expected_role": f'data-role="{expected_role}"' in body,
+            "has_expected_role_link": f'data-role-name="{expected_role}"' in body,
+            "manifest_hrefs": manifest_hrefs,
+            "expected_manifest_href": expected_manifest_href,
+            "has_expected_manifest_link": expected_manifest_href in manifest_hrefs,
+            "has_living_world_opt_in_boundary": 'data-living-world-opt-in-boundary="true"' in body,
+            "has_owner_route_link": 'id="turn-owner-route-link"' in body,
+            "mentions_black_ledger": "Black Ledger" in body,
+            "mentions_heat": "heat" in body.lower(),
+        }
+        target_facts.append(target_fact)
+
+        if result["status_code"] != 200:
+            failures.append(f"{target_id} route {route} did not return HTTP 200")
+        if "text/html" not in str(result["content_type"]):
+            failures.append(f"{target_id} route {route} must return HTML")
+        if not target_fact["has_turn_root"]:
+            failures.append(f"{target_id} route {route} missing turn companion root")
+        if not target_fact["has_expected_role"]:
+            failures.append(f"{target_id} route {route} missing data-role={expected_role}")
+        if not target_fact["has_expected_role_link"]:
+            failures.append(f"{target_id} route {route} missing role navigation for {expected_role}")
+        if not target_fact["has_expected_manifest_link"]:
+            failures.append(f"{target_id} route {route} missing expected manifest link {expected_manifest_href}")
+        if not target_fact["has_living_world_opt_in_boundary"]:
+            failures.append(f"{target_id} route {route} missing living-world opt-in boundary")
+        if not target_fact["has_owner_route_link"]:
+            failures.append(f"{target_id} route {route} missing owner route link")
+        if not target_fact["mentions_black_ledger"]:
+            failures.append(f"{target_id} route {route} must mention Black Ledger")
+        if not target_fact["mentions_heat"]:
+            failures.append(f"{target_id} route {route} must mention heat")
+
+    facts.update(
+        {
+            "target_count": len(target_facts),
+            "targets": target_facts,
+        }
+    )
+    if failures:
+        return failed_check(
+            "player_manifest_route_targets_contract",
+            "player companion manifest start URL and shortcuts render their advertised mobile role shells",
+            manifest_url,
+            "; ".join(failures),
+            facts,
+        )
+
+    return passed_check(
+        "player_manifest_route_targets_contract",
+        "player companion manifest start URL and shortcuts render their advertised mobile role shells",
+        manifest_url,
+        facts,
+    )
+
+
 def check_mobile_living_world_boundary() -> dict[str, Any]:
     pwa_url = f"{BASE_ORIGIN}/mobile/pwa.json"
     ledger_url = f"{BASE_ORIGIN}/mobile/pwa/ledger.json"
@@ -917,6 +1045,7 @@ def main() -> int:
         check_pwa_alias_route(),
         check_mobile_player_shell_route(),
         check_player_manifest(),
+        check_player_manifest_route_targets(),
         check_mobile_living_world_boundary(),
         check_account_ledger_notifications_opt_in_boundary(),
         check_static_assets(),

@@ -1,6 +1,6 @@
 {
   "contract_name": "chummer6-ui.blazor_pwa_public_edge_proof",
-  "generated_at": "2026-07-04T12:54:44.906267+00:00",
+  "generated_at": "2026-07-04T13:03:30.308430+00:00",
   "status": "passed",
   "base_url": "https://chummer.run/blazor",
   "public_entry_url": "https://chummer.run/app",
@@ -17,7 +17,7 @@
       "facts": {
         "status_code": 200,
         "content_type": "application/manifest+json",
-        "elapsed_ms": 73,
+        "elapsed_ms": 153,
         "name": "Chummer Online",
         "short_name": "Chummer",
         "start_url": "./app?source=pwa",
@@ -42,7 +42,7 @@
       "facts": {
         "status_code": 200,
         "content_type": "text/javascript",
-        "elapsed_ms": 74,
+        "elapsed_ms": 90,
         "declares_static_cache": true,
         "handles_navigations_with_offline_fallback": true,
         "rejects_query_asset_cache": true,
@@ -60,7 +60,7 @@
       "facts": {
         "status_code": 200,
         "content_type": "text/html",
-        "elapsed_ms": 98,
+        "elapsed_ms": 99,
         "states_runner_data_not_cached": true,
         "mentions_black_ledger": true,
         "mentions_heat": true,
@@ -75,7 +75,7 @@
       "facts": {
         "status_code": 200,
         "content_type": "text/html; charset=utf-8",
-        "elapsed_ms": 101,
+        "elapsed_ms": 104,
         "base_hrefs": [
           "/blazor/"
         ],
@@ -97,7 +97,7 @@
       "facts": {
         "status_code": 200,
         "content_type": "text/html; charset=utf-8",
-        "elapsed_ms": 99,
+        "elapsed_ms": 98,
         "base_hrefs": [
           "/blazor/"
         ],
@@ -129,7 +129,7 @@
       "facts": {
         "status_code": 200,
         "content_type": "text/html; charset=utf-8",
-        "elapsed_ms": 206,
+        "elapsed_ms": 201,
         "base_hrefs": [
           "/"
         ],
@@ -188,7 +188,7 @@
       "facts": {
         "status_code": 200,
         "content_type": "application/manifest+json",
-        "elapsed_ms": 88,
+        "elapsed_ms": 92,
         "id": "/mobile/player",
         "name": "Chummer Player Companion",
         "short_name": "Chummer Player",
@@ -209,6 +209,65 @@
       }
     },
     {
+      "id": "player_manifest_route_targets_contract",
+      "url": "https://chummer.run/manifest.player.webmanifest",
+      "status": "passed",
+      "assertion": "player companion manifest start URL and shortcuts render their advertised mobile role shells",
+      "facts": {
+        "manifest_url": "https://chummer.run/manifest.player.webmanifest",
+        "manifest_status_code": 200,
+        "manifest_content_type": "application/manifest+json",
+        "manifest_elapsed_ms": 99,
+        "target_count": 2,
+        "targets": [
+          {
+            "id": "start_url",
+            "route": "/mobile/player?role=Player",
+            "url": "https://chummer.run/mobile/player?role=Player",
+            "final_url": "https://chummer.run/mobile/player?role=Player",
+            "status_code": 200,
+            "content_type": "text/html; charset=utf-8",
+            "elapsed_ms": 106,
+            "expected_role": "Player",
+            "has_turn_root": true,
+            "has_expected_role": true,
+            "has_expected_role_link": true,
+            "manifest_hrefs": [
+              "/manifest.player.webmanifest"
+            ],
+            "expected_manifest_href": "/manifest.player.webmanifest",
+            "has_expected_manifest_link": true,
+            "has_living_world_opt_in_boundary": true,
+            "has_owner_route_link": true,
+            "mentions_black_ledger": true,
+            "mentions_heat": true
+          },
+          {
+            "id": "shortcut:GM",
+            "route": "/mobile/gm?role=GameMaster",
+            "url": "https://chummer.run/mobile/gm?role=GameMaster",
+            "final_url": "https://chummer.run/mobile/gm?role=GameMaster",
+            "status_code": 200,
+            "content_type": "text/html; charset=utf-8",
+            "elapsed_ms": 101,
+            "expected_role": "GameMaster",
+            "has_turn_root": true,
+            "has_expected_role": true,
+            "has_expected_role_link": true,
+            "manifest_hrefs": [
+              "/manifest.gm.webmanifest"
+            ],
+            "expected_manifest_href": "/manifest.gm.webmanifest",
+            "has_expected_manifest_link": true,
+            "has_living_world_opt_in_boundary": true,
+            "has_owner_route_link": true,
+            "mentions_black_ledger": true,
+            "mentions_heat": true
+          }
+        ]
+      }
+    },
+    {
       "id": "mobile_pwa_living_world_boundary",
       "url": "https://chummer.run/mobile/pwa/ledger.json",
       "status": "passed",
@@ -217,11 +276,11 @@
         "pwa_url": "https://chummer.run/mobile/pwa.json",
         "pwa_status_code": 200,
         "pwa_content_type": "application/json",
-        "pwa_elapsed_ms": 99,
+        "pwa_elapsed_ms": 88,
         "ledger_url": "https://chummer.run/mobile/pwa/ledger.json",
         "ledger_status_code": 200,
         "ledger_content_type": "application/json",
-        "ledger_elapsed_ms": 61,
+        "ledger_elapsed_ms": 99,
         "pwa_mode": "nexus_pan_mobile_pwa",
         "pwa_status": "live",
         "pwa_living_world_updates_route": "/mobile/pwa/ledger.json",
@@ -244,7 +303,7 @@
       "facts": {
         "status_code": 200,
         "content_type": "text/html; charset=utf-8",
-        "elapsed_ms": 145,
+        "elapsed_ms": 205,
         "final_url": "https://chummer.run/login?next=%2Faccount%2Fledger%2Fnotifications",
         "redirected_to_login": true,
         "has_login_route_marker": true,
@@ -269,7 +328,7 @@
             "status_code": 200,
             "content_type": "text/css",
             "size_bytes": 74728,
-            "elapsed_ms": 102
+            "elapsed_ms": 103
           },
           {
             "path": "/icons/chummer-pwa.svg",
@@ -277,7 +336,7 @@
             "status_code": 200,
             "content_type": "image/svg+xml",
             "size_bytes": 938,
-            "elapsed_ms": 94
+            "elapsed_ms": 51
           },
           {
             "path": "/icons/chummer-pwa-maskable.svg",
@@ -285,7 +344,7 @@
             "status_code": 200,
             "content_type": "image/svg+xml",
             "size_bytes": 580,
-            "elapsed_ms": 99
+            "elapsed_ms": 51
           },
           {
             "path": "/media/chummer6/chummer6-hero-baseline.png",
@@ -293,7 +352,7 @@
             "status_code": 200,
             "content_type": "image/png",
             "size_bytes": 704388,
-            "elapsed_ms": 121
+            "elapsed_ms": 66
           },
           {
             "path": "/media/chummer6/karma-forge-baseline.png",
@@ -301,7 +360,7 @@
             "status_code": 200,
             "content_type": "image/png",
             "size_bytes": 342385,
-            "elapsed_ms": 103
+            "elapsed_ms": 51
           }
         ],
         "responsive_css_seen": true
@@ -315,7 +374,7 @@
       "facts": {
         "status_code": 200,
         "content_type": "text/html; charset=utf-8",
-        "elapsed_ms": 79,
+        "elapsed_ms": 78,
         "viewport_content": "width=device-width, initial-scale=1.0",
         "base_hrefs": [
           "/blazor/"

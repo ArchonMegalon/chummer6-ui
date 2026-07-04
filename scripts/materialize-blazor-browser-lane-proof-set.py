@@ -91,7 +91,7 @@ REQUIRED_RECEIPTS = [
             "route_lane": "blazor_pwa_play_shell",
         },
         "minimum_lengths": {
-            "checks": 12,
+            "checks": 13,
         },
         "required_check_ids": [
             "manifest_install_contract",
@@ -102,6 +102,7 @@ REQUIRED_RECEIPTS = [
             "player_pwa_alias_route_contract",
             "mobile_player_shell_route_contract",
             "player_manifest_install_contract",
+            "player_manifest_route_targets_contract",
             "mobile_pwa_living_world_boundary",
             "account_ledger_notifications_opt_in_boundary",
             "static_asset_fetch_contract",

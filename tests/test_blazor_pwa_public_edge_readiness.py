@@ -27,6 +27,7 @@ PWA_REQUIRED_CHECKS = {
     "player_pwa_alias_route_contract",
     "mobile_player_shell_route_contract",
     "player_manifest_install_contract",
+    "player_manifest_route_targets_contract",
     "mobile_pwa_living_world_boundary",
     "account_ledger_notifications_opt_in_boundary",
     "static_asset_fetch_contract",
@@ -61,7 +62,7 @@ def test_browser_lane_materializer_requires_hosted_pwa_public_edge_receipt() -> 
         "proof_tier": "hosted_pwa_public_edge_execution",
         "route_lane": "blazor_pwa_play_shell",
     }
-    assert pwa_spec["minimum_lengths"] == {"checks": 12}
+    assert pwa_spec["minimum_lengths"] == {"checks": 13}
     assert set(pwa_spec["required_check_ids"]) == PWA_REQUIRED_CHECKS
 
     result = module.evaluate_receipt(pwa_spec)
@@ -121,10 +122,10 @@ def test_docs_name_hosted_pwa_public_edge_proof_boundary() -> None:
     assert PWA_RECEIPT_NAME in docs_index
     assert "scripts/materialize-blazor-pwa-public-edge-proof.py" in docs_index
     assert "scripts/verify_blazor_pwa_public_edge_proof.py" in docs_index
-    assert "clean `/app` entry, `/pwa` player companion alias, `/mobile` player shell, player manifest, mobile living-world opt-in boundary, account ledger notifications opt-in boundary, static deployed assets, mobile viewport" in docs_index
+    assert "clean `/app` entry, `/pwa` player companion alias, `/mobile` player shell, player manifest, manifest route targets, mobile living-world opt-in boundary, account ledger notifications opt-in boundary, static deployed assets, mobile viewport" in docs_index
     assert PWA_RECEIPT_NAME in signoff
     assert "not app-store acceptance or offline runner-data parity" in signoff
-    assert "clean `/app` entry, `/pwa` player companion alias, `/mobile` player shell, player manifest, mobile living-world opt-in boundary, account ledger notifications opt-in boundary, static deployed assets, mobile viewport" in signoff
+    assert "clean `/app` entry, `/pwa` player companion alias, `/mobile` player shell, player manifest, manifest route targets, mobile living-world opt-in boundary, account ledger notifications opt-in boundary, static deployed assets, mobile viewport" in signoff
 
 
 def test_status_summary_reports_player_pwa_alias_and_living_world_checks() -> None:
@@ -140,5 +141,6 @@ def test_status_summary_reports_player_pwa_alias_and_living_world_checks() -> No
     assert "player_pwa_alias_route_contract" in result.stdout
     assert "mobile_player_shell_route_contract" in result.stdout
     assert "player_manifest_install_contract" in result.stdout
+    assert "player_manifest_route_targets_contract" in result.stdout
     assert "mobile_pwa_living_world_boundary" in result.stdout
     assert "account_ledger_notifications_opt_in_boundary" in result.stdout
