@@ -4039,6 +4039,11 @@ public partial class DesktopDialogWindow : Window
             return;
         }
 
+        if (preservedScrollOffset is not null)
+        {
+            return;
+        }
+
         if (preservedInteractionAnchor is { } interactionAnchor)
         {
             ApplyPreferredDialogInteractionAnchorNow(interactionAnchor.ControlName, interactionAnchor.OffsetY);

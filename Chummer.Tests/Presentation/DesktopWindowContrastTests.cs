@@ -163,11 +163,6 @@ public sealed class DesktopWindowContrastTests
             activeSectionJson: null,
             currentWorkspace: null,
             rulesetId: RulesetDefaults.Sr5);
-        DesktopDialogField metatypePreferenceField = originWizard.Fields
-            .Single(field => string.Equals(field.Id, "newCharacterOriginMetatypePreference", StringComparison.Ordinal));
-        DesktopDialogFieldOption nextMetatypePreference = (metatypePreferenceField.Options ?? Array.Empty<DesktopDialogFieldOption>())
-            .First(option => !string.Equals(option.Value, metatypePreferenceField.Value, StringComparison.Ordinal));
-
         WithPresenterBoundDialogWindow(originWizard, window =>
         {
             window.Height = 420;
@@ -177,34 +172,53 @@ public sealed class DesktopWindowContrastTests
                 .OfType<Expander>()
                 .Single(expander => string.Equals(expander.Name, "OriginDossierStandaloneAdvancedStoryControlsExpander", StringComparison.Ordinal));
             ScrollViewer scrollViewer = window.FindControl<ScrollViewer>("DialogScrollViewer")!;
-            ComboBox metatypePreferenceCombo = window.GetVisualDescendants()
-                .OfType<ComboBox>()
-                .Single(comboBox => string.Equals(comboBox.Name, DesktopDialogAccessibility.BuildFieldInputName("newCharacterOriginMetatypePreference"), StringComparison.Ordinal));
 
             advancedStoryControls.IsExpanded = true;
             PumpUi();
 
-            scrollViewer.Offset = new Vector(0d, 180d);
-            PumpUi();
-            double preservedOffsetY = scrollViewer.Offset.Y;
+            foreach (string fieldId in new[]
+                     {
+                         "newCharacterOriginBackground",
+                         "newCharacterOriginTurningPoint",
+                         "newCharacterOriginGmConstraintPreset",
+                         "newCharacterOriginMetatypePreference"
+                     })
+            {
+                ComboBox comboBox = window.GetVisualDescendants()
+                    .OfType<ComboBox>()
+                    .Single(control => string.Equals(control.Name, DesktopDialogAccessibility.BuildFieldInputName(fieldId), StringComparison.Ordinal));
 
-            metatypePreferenceCombo.SelectedItem = nextMetatypePreference;
-            PumpUi();
-            PumpUi();
+                if (comboBox.TranslatePoint(default, scrollViewer) is { } translated)
+                {
+                    double nextOffsetY = Math.Max(0d, scrollViewer.Offset.Y + translated.Y - 96d);
+                    scrollViewer.Offset = new Vector(scrollViewer.Offset.X, nextOffsetY);
+                    PumpUi();
+                }
 
-            Expander reboundAdvancedStoryControls = window.GetVisualDescendants()
-                .OfType<Expander>()
-                .Single(expander => string.Equals(expander.Name, "OriginDossierStandaloneAdvancedStoryControlsExpander", StringComparison.Ordinal));
-            ScrollViewer reboundScrollViewer = window.FindControl<ScrollViewer>("DialogScrollViewer")!;
-            ComboBox reboundMetatypePreferenceCombo = window.GetVisualDescendants()
-                .OfType<ComboBox>()
-                .Single(comboBox => string.Equals(comboBox.Name, DesktopDialogAccessibility.BuildFieldInputName("newCharacterOriginMetatypePreference"), StringComparison.Ordinal));
+                DesktopDialogFieldOption currentOption = (DesktopDialogFieldOption)(comboBox.SelectedItem
+                    ?? throw new AssertFailedException($"Origin combo '{fieldId}' did not expose a selected option."));
+                DesktopDialogFieldOption nextOption = (((System.Collections.IEnumerable?)comboBox.ItemsSource)?.Cast<DesktopDialogFieldOption>() ?? Enumerable.Empty<DesktopDialogFieldOption>())
+                    .First(option => !string.Equals(option.Value, currentOption.Value, StringComparison.Ordinal));
+                double preservedOffsetY = scrollViewer.Offset.Y;
 
-            Assert.IsTrue(reboundAdvancedStoryControls.IsExpanded, "Advanced story controls should stay expanded after a live combo selection refresh.");
-            Assert.AreEqual(nextMetatypePreference.Value, ((DesktopDialogFieldOption)reboundMetatypePreferenceCombo.SelectedItem!).Value, "The live combo selection should survive the dialog refresh.");
-            Assert.IsTrue(
-                Math.Abs(reboundScrollViewer.Offset.Y - preservedOffsetY) <= 8d,
-                $"Origin Dossier should preserve scroll position across a live combo selection refresh. Before={preservedOffsetY:F1}, After={reboundScrollViewer.Offset.Y:F1}.");
+                comboBox.SelectedItem = nextOption;
+                PumpUi();
+                PumpUi();
+
+                Expander reboundAdvancedStoryControls = window.GetVisualDescendants()
+                    .OfType<Expander>()
+                    .Single(expander => string.Equals(expander.Name, "OriginDossierStandaloneAdvancedStoryControlsExpander", StringComparison.Ordinal));
+                ScrollViewer reboundScrollViewer = window.FindControl<ScrollViewer>("DialogScrollViewer")!;
+                ComboBox reboundComboBox = window.GetVisualDescendants()
+                    .OfType<ComboBox>()
+                    .Single(control => string.Equals(control.Name, DesktopDialogAccessibility.BuildFieldInputName(fieldId), StringComparison.Ordinal));
+
+                Assert.IsTrue(reboundAdvancedStoryControls.IsExpanded, $"Advanced story controls should stay expanded after a live combo selection refresh from '{fieldId}'.");
+                Assert.AreEqual(nextOption.Value, ((DesktopDialogFieldOption)reboundComboBox.SelectedItem!).Value, $"The live combo selection should survive the dialog refresh for '{fieldId}'.");
+                Assert.IsTrue(
+                    Math.Abs(reboundScrollViewer.Offset.Y - preservedOffsetY) <= 12d,
+                    $"Origin Dossier should preserve scroll position across a live combo selection refresh from '{fieldId}'. Before={preservedOffsetY:F1}, After={reboundScrollViewer.Offset.Y:F1}.");
+            }
         });
     }
 
