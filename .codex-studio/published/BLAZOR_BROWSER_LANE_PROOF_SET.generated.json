@@ -1,6 +1,6 @@
 {
   "contract_name": "chummer6-ui.blazor_browser_lane_proof_set",
-  "generated_at": "2026-07-04T02:46:45.956138+00:00",
+  "generated_at": "2026-07-04T11:58:33.054784+00:00",
   "notes": [
     "The source_staged_release_boundary receipt is required as source-policy evidence only; it does not execute hosted or Docker browser workflows.",
     "Hosted execution breadth follows the receipt playwright_scope; smoke receipts must cover every smoke-required family, and full receipts must cover every full-required family before this aggregate accepts them.",
@@ -232,9 +232,9 @@
           "passed": true
         },
         {
-          "actual": 10,
+          "actual": 11,
           "id": "minimum_length:checks",
-          "minimum": 10,
+          "minimum": 11,
           "passed": true
         },
         {
@@ -245,6 +245,7 @@
             "app_head_and_registration",
             "clean_public_entry_route_contract",
             "player_pwa_alias_route_contract",
+            "mobile_player_shell_route_contract",
             "player_manifest_install_contract",
             "mobile_pwa_living_world_boundary",
             "static_asset_fetch_contract",

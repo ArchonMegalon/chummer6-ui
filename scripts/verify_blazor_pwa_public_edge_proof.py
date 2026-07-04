@@ -18,6 +18,7 @@ REQUIRED_CHECK_IDS = {
     "app_head_and_registration",
     "clean_public_entry_route_contract",
     "player_pwa_alias_route_contract",
+    "mobile_player_shell_route_contract",
     "player_manifest_install_contract",
     "mobile_pwa_living_world_boundary",
     "static_asset_fetch_contract",
@@ -25,6 +26,7 @@ REQUIRED_CHECK_IDS = {
 }
 PUBLIC_ORIGIN_CHECK_IDS = {
     "player_pwa_alias_route_contract",
+    "mobile_player_shell_route_contract",
     "player_manifest_install_contract",
     "mobile_pwa_living_world_boundary",
 }
@@ -44,6 +46,7 @@ def main() -> int:
     base_url = str(payload.get("base_url") or "")
     public_entry_url = str(payload.get("public_entry_url") or "")
     pwa_alias_url = str(payload.get("pwa_alias_url") or "")
+    mobile_player_url = str(payload.get("mobile_player_url") or "")
     checks = payload.get("checks")
 
     if contract != EXPECTED_CONTRACT:
@@ -60,6 +63,8 @@ def main() -> int:
         reasons.append(f"public_entry_url must be https, got {public_entry_url!r}")
     if not pwa_alias_url.startswith("https://"):
         reasons.append(f"pwa_alias_url must be https, got {pwa_alias_url!r}")
+    if not mobile_player_url.startswith("https://"):
+        reasons.append(f"mobile_player_url must be https, got {mobile_player_url!r}")
     if not isinstance(checks, list):
         reasons.append("checks must be a list")
         checks = []
@@ -87,6 +92,7 @@ def main() -> int:
         )
         is_public_entry_url = url == public_entry_url or url.startswith(f"{public_entry_url}?")
         is_pwa_alias_url = url == pwa_alias_url or url.startswith(f"{pwa_alias_url}?")
+        is_mobile_player_url = url == mobile_player_url or url.startswith(f"{mobile_player_url}?")
         is_public_origin_check = (
             check_id in PUBLIC_ORIGIN_CHECK_IDS
             and bool(public_origin)
@@ -99,11 +105,13 @@ def main() -> int:
             and not is_public_entry_url
             and url != pwa_alias_url
             and not is_pwa_alias_url
+            and url != mobile_player_url
+            and not is_mobile_player_url
             and not is_public_origin_check
         ):
             reasons.append(
                 f"check {check_id!r} url must stay under {base_url!r} or match public entry "
-                f"{public_entry_url!r} or PWA alias {pwa_alias_url!r}, got {url!r}"
+                f"{public_entry_url!r} or PWA alias {pwa_alias_url!r} or mobile player {mobile_player_url!r}, got {url!r}"
             )
 
     missing = REQUIRED_CHECK_IDS - check_ids

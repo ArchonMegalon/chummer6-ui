@@ -99,6 +99,7 @@
             "app_head_and_registration",
             "clean_public_entry_route_contract",
             "player_pwa_alias_route_contract",
+            "mobile_player_shell_route_contract",
             "player_manifest_install_contract",
             "mobile_pwa_living_world_boundary",
             "static_asset_fetch_contract",

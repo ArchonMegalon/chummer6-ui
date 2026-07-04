@@ -23,6 +23,10 @@ PWA_ALIAS_URL = os.environ.get(
     "CHUMMER_BLAZOR_PWA_ALIAS_URL",
     urljoin(f"{BASE_URL}/", "../pwa") if urlparse(BASE_URL).path.rstrip("/") == "/blazor" else f"{BASE_URL}/pwa",
 )
+MOBILE_PLAYER_URL = os.environ.get(
+    "CHUMMER_BLAZOR_MOBILE_PLAYER_URL",
+    f"{BASE_ORIGIN}/mobile",
+)
 OUTPUT_PATH = Path(
     os.environ.get(
         "CHUMMER_BLAZOR_PWA_PUBLIC_EDGE_PROOF_PATH",
@@ -486,6 +490,106 @@ def check_pwa_alias_route() -> dict[str, Any]:
     )
 
 
+def check_mobile_player_shell_route() -> dict[str, Any]:
+    result = fetch_text_url(MOBILE_PLAYER_URL)
+    body = result["body"]
+    body_lower = body.lower()
+    probe = HeadProbe()
+    probe.feed(body)
+
+    base_hrefs = [str(base.get("href") or "") for base in probe.bases]
+    manifest_hrefs = [
+        str(link.get("href") or "")
+        for link in probe.links
+        if str(link.get("rel") or "") == "manifest"
+    ]
+    viewport_content = next(
+        (
+            str(meta.get("content") or "")
+            for meta in probe.metas
+            if meta.get("name") == "viewport"
+        ),
+        "",
+    )
+    theme_color = next(
+        (
+            str(meta.get("content") or "")
+            for meta in probe.metas
+            if meta.get("name") == "theme-color"
+        ),
+        "",
+    )
+    facts = {
+        "status_code": result["status_code"],
+        "content_type": result["content_type"],
+        "elapsed_ms": result["elapsed_ms"],
+        "base_hrefs": base_hrefs,
+        "manifest_hrefs": manifest_hrefs,
+        "viewport_content": viewport_content,
+        "theme_color": theme_color,
+        "has_mobile_web_app_capable": any(
+            meta.get("name") == "mobile-web-app-capable" and meta.get("content") == "yes"
+            for meta in probe.metas
+        ),
+        "has_apple_mobile_web_app_capable": any(
+            meta.get("name") == "apple-mobile-web-app-capable" and meta.get("content") == "yes"
+            for meta in probe.metas
+        ),
+        "has_turn_root": "data-turn-root" in body,
+        "has_player_role_link": 'data-role-name="Player"' in body,
+        "has_owner_route_link": 'id="turn-owner-route-link"' in body,
+        "has_living_world_opt_in_boundary": 'data-living-world-opt-in-boundary="true"' in body,
+        "mentions_black_ledger": "Black Ledger" in body,
+        "mentions_heat": "heat" in body_lower,
+        "mentions_health": "health" in body_lower or "physical" in body_lower,
+        "mentions_ammo": "ammo" in body_lower or "magazine" in body_lower,
+        "mentions_inventory": "inventory" in body_lower,
+        "mentions_modifiers": "modifier" in body_lower,
+        "shows_dice_odds": 'id="turn-odds-summary"' in body and "%" in body and "dice" in body_lower,
+        "has_digital_roll_action": 'data-turn-kind="resolve-digital"' in body,
+        "has_manual_roll_action": 'data-turn-kind="resolve-manual"' in body,
+    }
+    required = [
+        (result["status_code"] == 200, "/mobile did not return HTTP 200"),
+        ("text/html" in str(result["content_type"]), "/mobile must return HTML"),
+        ("/" in base_hrefs, "/mobile must keep root base href for the player companion"),
+        ("/manifest.player.webmanifest" in manifest_hrefs, "/mobile must advertise the player manifest"),
+        (viewport_content == "width=device-width, initial-scale=1.0", "/mobile viewport meta must stay mobile-width and initial-scale 1.0"),
+        (theme_color == "#0f1b26", "/mobile theme color must match the player companion shell"),
+        (facts["has_mobile_web_app_capable"], "/mobile missing mobile-web-app-capable meta"),
+        (facts["has_apple_mobile_web_app_capable"], "/mobile missing apple mobile web app meta"),
+        (facts["has_turn_root"], "/mobile missing turn companion root"),
+        (facts["has_player_role_link"], "/mobile missing player role route"),
+        (facts["has_owner_route_link"], "/mobile missing owner route link"),
+        (facts["has_living_world_opt_in_boundary"], "/mobile missing living-world opt-in boundary"),
+        (facts["mentions_black_ledger"], "/mobile must mention Black Ledger"),
+        (facts["mentions_heat"], "/mobile must mention heat"),
+        (facts["mentions_health"], "/mobile must cover health or damage tracking"),
+        (facts["mentions_ammo"], "/mobile must cover ammo tracking"),
+        (facts["mentions_inventory"], "/mobile must cover inventory tracking"),
+        (facts["mentions_modifiers"], "/mobile must cover modifiers"),
+        (facts["shows_dice_odds"], "/mobile must show dice odds or percentage chance"),
+        (facts["has_digital_roll_action"], "/mobile must expose digital roll action"),
+        (facts["has_manual_roll_action"], "/mobile must expose manual roll action"),
+    ]
+    failures = [message for passed, message in required if not passed]
+    if failures:
+        return failed_check(
+            "mobile_player_shell_route_contract",
+            "live /mobile player shell renders playtime tracking, dice odds, roll actions, and living-world opt-in boundaries",
+            result["url"],
+            "; ".join(failures),
+            facts,
+        )
+
+    return passed_check(
+        "mobile_player_shell_route_contract",
+        "live /mobile player shell renders playtime tracking, dice odds, roll actions, and living-world opt-in boundaries",
+        result["url"],
+        facts,
+    )
+
+
 def check_player_manifest() -> dict[str, Any]:
     url = f"{BASE_ORIGIN}/manifest.player.webmanifest"
     result = fetch_text_url(url)
@@ -762,6 +866,7 @@ def main() -> int:
         check_app_head(),
         check_clean_public_entry_route(),
         check_pwa_alias_route(),
+        check_mobile_player_shell_route(),
         check_player_manifest(),
         check_mobile_living_world_boundary(),
         check_static_assets(),
@@ -775,13 +880,14 @@ def main() -> int:
         "base_url": BASE_URL,
         "public_entry_url": PUBLIC_ENTRY_URL,
         "pwa_alias_url": PWA_ALIAS_URL,
+        "mobile_player_url": MOBILE_PLAYER_URL,
         "proof_tier": "hosted_pwa_public_edge_execution",
         "route_lane": "blazor_pwa_play_shell",
         "checks": checks,
         "failures": failures,
         "notes": [
             "This receipt proves the deployed /blazor PWA shell contract, not app-store acceptance or offline runner-data parity.",
-            "The /pwa route is the Hub Web player companion PWA, and is proven separately from the /blazor workbench shell.",
+            "The /pwa route aliases the Hub Web player companion PWA, and the live /mobile player shell is proven separately from the /blazor workbench shell.",
             "The service worker is required to cache only static shell assets and leave runner, workspace, API, Black Ledger, heat, and session data server-bound.",
             "The installed start URL remains the Play app surface; full character building stays outside the in-session PWA use case.",
         ],

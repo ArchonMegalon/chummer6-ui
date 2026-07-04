@@ -91,7 +91,7 @@ REQUIRED_RECEIPTS = [
             "route_lane": "blazor_pwa_play_shell",
         },
         "minimum_lengths": {
-            "checks": 10,
+            "checks": 11,
         },
         "required_check_ids": [
             "manifest_install_contract",
@@ -100,6 +100,7 @@ REQUIRED_RECEIPTS = [
             "app_head_and_registration",
             "clean_public_entry_route_contract",
             "player_pwa_alias_route_contract",
+            "mobile_player_shell_route_contract",
             "player_manifest_install_contract",
             "mobile_pwa_living_world_boundary",
             "static_asset_fetch_contract",
@@ -200,6 +201,7 @@ EXAMPLE_RECEIPT_TOKENS = [
     '"app_head_and_registration"',
     '"clean_public_entry_route_contract"',
     '"player_pwa_alias_route_contract"',
+    '"mobile_player_shell_route_contract"',
     '"player_manifest_install_contract"',
     '"mobile_pwa_living_world_boundary"',
     '"static_asset_fetch_contract"',

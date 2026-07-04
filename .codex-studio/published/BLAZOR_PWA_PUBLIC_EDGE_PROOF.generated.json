@@ -1,10 +1,11 @@
 {
   "contract_name": "chummer6-ui.blazor_pwa_public_edge_proof",
-  "generated_at": "2026-07-04T02:44:22.731365+00:00",
+  "generated_at": "2026-07-04T11:47:02.109511+00:00",
   "status": "passed",
   "base_url": "https://chummer.run/blazor",
   "public_entry_url": "https://chummer.run/app",
   "pwa_alias_url": "https://chummer.run/pwa",
+  "mobile_player_url": "https://chummer.run/mobile",
   "proof_tier": "hosted_pwa_public_edge_execution",
   "route_lane": "blazor_pwa_play_shell",
   "checks": [
@@ -16,7 +17,7 @@
       "facts": {
         "status_code": 200,
         "content_type": "application/manifest+json",
-        "elapsed_ms": 59,
+        "elapsed_ms": 132,
         "name": "Chummer Online",
         "short_name": "Chummer",
         "start_url": "./app?source=pwa",
@@ -41,7 +42,7 @@
       "facts": {
         "status_code": 200,
         "content_type": "text/javascript",
-        "elapsed_ms": 43,
+        "elapsed_ms": 117,
         "declares_static_cache": true,
         "handles_navigations_with_offline_fallback": true,
         "rejects_query_asset_cache": true,
@@ -59,7 +60,7 @@
       "facts": {
         "status_code": 200,
         "content_type": "text/html",
-        "elapsed_ms": 46,
+        "elapsed_ms": 98,
         "states_runner_data_not_cached": true,
         "mentions_black_ledger": true,
         "mentions_heat": true,
@@ -74,7 +75,7 @@
       "facts": {
         "status_code": 200,
         "content_type": "text/html; charset=utf-8",
-        "elapsed_ms": 68,
+        "elapsed_ms": 86,
         "base_hrefs": [
           "/blazor/"
         ],
@@ -96,7 +97,7 @@
       "facts": {
         "status_code": 200,
         "content_type": "text/html; charset=utf-8",
-        "elapsed_ms": 44,
+        "elapsed_ms": 114,
         "base_hrefs": [
           "/blazor/"
         ],
@@ -128,7 +129,7 @@
       "facts": {
         "status_code": 200,
         "content_type": "text/html; charset=utf-8",
-        "elapsed_ms": 103,
+        "elapsed_ms": 240,
         "base_hrefs": [
           "/"
         ],
@@ -146,6 +147,40 @@
       }
     },
     {
+      "id": "mobile_player_shell_route_contract",
+      "url": "https://chummer.run/mobile",
+      "status": "passed",
+      "assertion": "live /mobile player shell renders playtime tracking, dice odds, roll actions, and living-world opt-in boundaries",
+      "facts": {
+        "status_code": 200,
+        "content_type": "text/html; charset=utf-8",
+        "elapsed_ms": 197,
+        "base_hrefs": [
+          "/"
+        ],
+        "manifest_hrefs": [
+          "/manifest.player.webmanifest"
+        ],
+        "viewport_content": "width=device-width, initial-scale=1.0",
+        "theme_color": "#0f1b26",
+        "has_mobile_web_app_capable": true,
+        "has_apple_mobile_web_app_capable": true,
+        "has_turn_root": true,
+        "has_player_role_link": true,
+        "has_owner_route_link": true,
+        "has_living_world_opt_in_boundary": true,
+        "mentions_black_ledger": true,
+        "mentions_heat": true,
+        "mentions_health": true,
+        "mentions_ammo": true,
+        "mentions_inventory": true,
+        "mentions_modifiers": true,
+        "shows_dice_odds": true,
+        "has_digital_roll_action": true,
+        "has_manual_roll_action": true
+      }
+    },
+    {
       "id": "player_manifest_install_contract",
       "url": "https://chummer.run/manifest.player.webmanifest",
       "status": "passed",
@@ -153,7 +188,7 @@
       "facts": {
         "status_code": 200,
         "content_type": "application/manifest+json",
-        "elapsed_ms": 54,
+        "elapsed_ms": 125,
         "id": "/mobile/player",
         "name": "Chummer Player Companion",
         "short_name": "Chummer Player",
@@ -182,11 +217,11 @@
         "pwa_url": "https://chummer.run/mobile/pwa.json",
         "pwa_status_code": 200,
         "pwa_content_type": "application/json",
-        "pwa_elapsed_ms": 43,
+        "pwa_elapsed_ms": 103,
         "ledger_url": "https://chummer.run/mobile/pwa/ledger.json",
         "ledger_status_code": 200,
         "ledger_content_type": "application/json",
-        "ledger_elapsed_ms": 40,
+        "ledger_elapsed_ms": 54,
         "pwa_mode": "nexus_pan_mobile_pwa",
         "pwa_status": "live",
         "pwa_living_world_updates_route": "/mobile/pwa/ledger.json",
@@ -214,8 +249,8 @@
             "url": "https://chummer.run/blazor/app.css",
             "status_code": 200,
             "content_type": "text/css",
-            "size_bytes": 69622,
-            "elapsed_ms": 61
+            "size_bytes": 74728,
+            "elapsed_ms": 92
           },
           {
             "path": "/icons/chummer-pwa.svg",
@@ -223,7 +258,7 @@
             "status_code": 200,
             "content_type": "image/svg+xml",
             "size_bytes": 938,
-            "elapsed_ms": 57
+            "elapsed_ms": 85
           },
           {
             "path": "/icons/chummer-pwa-maskable.svg",
@@ -231,7 +266,7 @@
             "status_code": 200,
             "content_type": "image/svg+xml",
             "size_bytes": 580,
-            "elapsed_ms": 61
+            "elapsed_ms": 82
           },
           {
             "path": "/media/chummer6/chummer6-hero-baseline.png",
@@ -239,7 +274,7 @@
             "status_code": 200,
             "content_type": "image/png",
             "size_bytes": 704388,
-            "elapsed_ms": 82
+            "elapsed_ms": 154
           },
           {
             "path": "/media/chummer6/karma-forge-baseline.png",
@@ -247,7 +282,7 @@
             "status_code": 200,
             "content_type": "image/png",
             "size_bytes": 342385,
-            "elapsed_ms": 65
+            "elapsed_ms": 100
           }
         ],
         "responsive_css_seen": true
@@ -261,7 +296,7 @@
       "facts": {
         "status_code": 200,
         "content_type": "text/html; charset=utf-8",
-        "elapsed_ms": 45,
+        "elapsed_ms": 64,
         "viewport_content": "width=device-width, initial-scale=1.0",
         "base_hrefs": [
           "/blazor/"
@@ -275,7 +310,7 @@
   "failures": [],
   "notes": [
     "This receipt proves the deployed /blazor PWA shell contract, not app-store acceptance or offline runner-data parity.",
-    "The /pwa route is the Hub Web player companion PWA, and is proven separately from the /blazor workbench shell.",
+    "The /pwa route aliases the Hub Web player companion PWA, and the live /mobile player shell is proven separately from the /blazor workbench shell.",
     "The service worker is required to cache only static shell assets and leave runner, workspace, API, Black Ledger, heat, and session data server-bound.",
     "The installed start URL remains the Play app surface; full character building stays outside the in-session PWA use case."
   ]
