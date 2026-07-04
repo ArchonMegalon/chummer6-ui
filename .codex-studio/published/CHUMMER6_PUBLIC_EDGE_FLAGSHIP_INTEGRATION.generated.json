@@ -13,15 +13,15 @@
           "avalonia-linux-x64-installer",
           "avalonia-win-x64-installer"
         ],
-        "published_at": "2026-07-04T16:24:49Z",
+        "published_at": "2026-07-04T17:48:20Z",
         "release_channel_status_code": 200,
         "release_channel_url": "https://chummer.run/downloads/RELEASE_CHANNEL.generated.json",
         "releases_channel": "preview",
         "releases_status_code": 200,
         "releases_url": "https://chummer.run/downloads/releases.json",
-        "releases_version": "run-20260704-150719",
+        "releases_version": "run-20260704-170602",
         "status": "published",
-        "version": "run-20260704-150719"
+        "version": "run-20260704-170602"
       },
       "id": "release_channel_contract",
       "status": "passed"
@@ -38,18 +38,18 @@
         "install_routes": [
           {
             "artifact_id": "avalonia-linux-x64-installer",
-            "elapsed_ms": 143,
+            "elapsed_ms": 89,
             "location": "/downloads/get/avalonia-linux-x64-installer",
             "status_code": 302
           },
           {
             "artifact_id": "avalonia-win-x64-installer",
-            "elapsed_ms": 51,
+            "elapsed_ms": 96,
             "location": "/downloads/get/avalonia-win-x64-installer",
             "status_code": 302
           }
         ],
-        "version": "run-20260704-150719"
+        "version": "run-20260704-170602"
       },
       "id": "download_install_routes_contract",
       "status": "passed"
@@ -60,7 +60,7 @@
         "routes": [
           {
             "content_type": "text/html; charset=utf-8",
-            "elapsed_ms": 128,
+            "elapsed_ms": 59,
             "has_viewport": true,
             "missing_needles": [],
             "route": "/",
@@ -68,7 +68,7 @@
           },
           {
             "content_type": "text/html; charset=utf-8",
-            "elapsed_ms": 85,
+            "elapsed_ms": 80,
             "has_viewport": true,
             "missing_needles": [],
             "route": "/app",
@@ -76,7 +76,7 @@
           },
           {
             "content_type": "text/html; charset=utf-8",
-            "elapsed_ms": 65,
+            "elapsed_ms": 79,
             "has_viewport": true,
             "missing_needles": [],
             "route": "/participate",
@@ -84,7 +84,7 @@
           },
           {
             "content_type": "text/html; charset=utf-8",
-            "elapsed_ms": 64,
+            "elapsed_ms": 88,
             "has_viewport": true,
             "missing_needles": [],
             "route": "/status",
@@ -92,7 +92,7 @@
           },
           {
             "content_type": "text/html; charset=utf-8",
-            "elapsed_ms": 142,
+            "elapsed_ms": 104,
             "has_viewport": true,
             "missing_needles": [],
             "route": "/help",
@@ -569,7 +569,7 @@
         "targets": [
           {
             "content_type": "",
-            "elapsed_ms": 968,
+            "elapsed_ms": 198,
             "error": "",
             "location": "/account/access",
             "method": "GET",
@@ -578,7 +578,7 @@
           },
           {
             "content_type": "",
-            "elapsed_ms": 260,
+            "elapsed_ms": 141,
             "error": "",
             "location": "/app?command=character_roster",
             "method": "HEAD",
@@ -587,7 +587,7 @@
           },
           {
             "content_type": "text/html; charset=utf-8",
-            "elapsed_ms": 358,
+            "elapsed_ms": 231,
             "error": "",
             "location": "",
             "method": "HEAD",
@@ -596,7 +596,7 @@
           },
           {
             "content_type": "application/octet-stream",
-            "elapsed_ms": 3664,
+            "elapsed_ms": 57,
             "error": "",
             "location": "",
             "method": "GET",
@@ -605,7 +605,7 @@
           },
           {
             "content_type": "application/octet-stream",
-            "elapsed_ms": 3648,
+            "elapsed_ms": 146,
             "error": "",
             "location": "",
             "method": "GET",
@@ -614,7 +614,7 @@
           },
           {
             "content_type": "text/html; charset=utf-8",
-            "elapsed_ms": 1173,
+            "elapsed_ms": 200,
             "error": "",
             "location": "",
             "method": "HEAD",
@@ -623,7 +623,7 @@
           },
           {
             "content_type": "text/html; charset=utf-8",
-            "elapsed_ms": 4264,
+            "elapsed_ms": 140,
             "error": "",
             "location": "",
             "method": "HEAD",
@@ -632,7 +632,7 @@
           },
           {
             "content_type": "text/html; charset=utf-8",
-            "elapsed_ms": 1164,
+            "elapsed_ms": 298,
             "error": "",
             "location": "",
             "method": "HEAD",
@@ -641,7 +641,7 @@
           },
           {
             "content_type": "text/html; charset=utf-8",
-            "elapsed_ms": 353,
+            "elapsed_ms": 259,
             "error": "",
             "location": "",
             "method": "HEAD",
@@ -650,7 +650,7 @@
           },
           {
             "content_type": "text/html; charset=utf-8",
-            "elapsed_ms": 3072,
+            "elapsed_ms": 476,
             "error": "",
             "location": "",
             "method": "GET",
@@ -659,7 +659,7 @@
           },
           {
             "content_type": "application/json",
-            "elapsed_ms": 2560,
+            "elapsed_ms": 61,
             "error": "",
             "location": "",
             "method": "GET",
@@ -688,7 +688,7 @@
               "/blazor/"
             ],
             "content_type": "text/html; charset=utf-8",
-            "elapsed_ms": 70,
+            "elapsed_ms": 66,
             "has_chummer_online_title": true,
             "has_viewport": true,
             "route": "/blazor/",
@@ -699,7 +699,7 @@
               "/blazor/"
             ],
             "content_type": "text/html; charset=utf-8",
-            "elapsed_ms": 56,
+            "elapsed_ms": 58,
             "has_chummer_online_title": true,
             "has_viewport": true,
             "route": "/blazor/app",
@@ -765,7 +765,7 @@
         "routes": [
           {
             "content_type": "text/html; charset=utf-8",
-            "elapsed_ms": 82,
+            "elapsed_ms": 81,
             "expected_manifest_href": "/manifest.player.webmanifest",
             "expected_role": "Player",
             "has_expected_role": true,
@@ -782,7 +782,7 @@
           },
           {
             "content_type": "text/html; charset=utf-8",
-            "elapsed_ms": 149,
+            "elapsed_ms": 60,
             "expected_manifest_href": "/manifest.gm.webmanifest",
             "expected_role": "GameMaster",
             "has_expected_role": true,
@@ -828,7 +828,7 @@
         "assets": [
           {
             "content_type": "text/css",
-            "elapsed_ms": 77,
+            "elapsed_ms": 72,
             "has_responsive_media": true,
             "path": "/blazor/app.css",
             "size_bytes": 74728,
@@ -836,35 +836,35 @@
           },
           {
             "content_type": "image/svg+xml",
-            "elapsed_ms": 64,
+            "elapsed_ms": 83,
             "path": "/blazor/icons/chummer-pwa.svg",
             "size_bytes": 938,
             "status_code": 200
           },
           {
             "content_type": "image/svg+xml",
-            "elapsed_ms": 120,
+            "elapsed_ms": 64,
             "path": "/blazor/icons/chummer-pwa-maskable.svg",
             "size_bytes": 580,
             "status_code": 200
           },
           {
             "content_type": "image/png",
-            "elapsed_ms": 119,
+            "elapsed_ms": 81,
             "path": "/blazor/media/chummer6/chummer6-hero-baseline.png",
             "size_bytes": 704388,
             "status_code": 200
           },
           {
             "content_type": "application/manifest+json",
-            "elapsed_ms": 57,
+            "elapsed_ms": 62,
             "path": "/blazor/manifest.webmanifest",
             "size_bytes": 1979,
             "status_code": 200
           },
           {
             "content_type": "text/javascript",
-            "elapsed_ms": 65,
+            "elapsed_ms": 62,
             "excludes_api": true,
             "excludes_sessions": true,
             "excludes_workspaces": true,
@@ -874,7 +874,7 @@
           },
           {
             "content_type": "text/html",
-            "elapsed_ms": 48,
+            "elapsed_ms": 75,
             "mentions_black_ledger": true,
             "mentions_heat": true,
             "path": "/blazor/offline.html",
@@ -950,7 +950,7 @@
           },
           {
             "contract_name": "chummer6-ui.blazor_public_edge_execution_horizon",
-            "generated_at": "2026-07-04T02:52:45.143181+00:00",
+            "generated_at": "2026-07-04T16:58:48.756851+00:00",
             "id": "hosted_execution_horizon",
             "path": "/docker/chummercomplete/chummer-presentation-sr6-origin-dialog-clean/.codex-studio/published/BLAZOR_PUBLIC_EDGE_EXECUTION_HORIZON.generated.json",
             "present": true,
@@ -988,7 +988,7 @@
   ],
   "contract_name": "chummer6-ui.public_edge_flagship_integration",
   "failures": [],
-  "generated_at": "2026-07-04T16:32:17Z",
+  "generated_at": "2026-07-04T17:54:24Z",
   "promotion_boundaries": {
     "authenticated_living_world_execution_not_claimed": true,
     "full_desktop_parity_not_claimed_by_this_receipt": true,
