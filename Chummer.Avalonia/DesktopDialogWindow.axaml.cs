@@ -111,11 +111,19 @@ public partial class DesktopDialogWindow : Window
 
     public void BindDialog(DesktopDialogState dialog)
     {
+        bool preserveOriginWizardComboRefreshStateThroughBind =
+            string.Equals(dialog.Id, OriginWizardDialogId, StringComparison.Ordinal)
+            && string.Equals(BoundDialogId, OriginWizardDialogId, StringComparison.Ordinal)
+            && (_suppressOriginWizardAdvancedStoryControlsCollapseDuringComboRefresh || _originWizardTransientRefreshPending);
+
         _dialogBindVersion++;
-        _suppressOriginWizardAdvancedStoryControlsCollapseDuringComboRefresh = false;
-        if (string.Equals(dialog.Id, OriginWizardDialogId, StringComparison.Ordinal))
+        if (!preserveOriginWizardComboRefreshStateThroughBind)
         {
-            ClearPendingOriginWizardTransientRefresh();
+            _suppressOriginWizardAdvancedStoryControlsCollapseDuringComboRefresh = false;
+            if (string.Equals(dialog.Id, OriginWizardDialogId, StringComparison.Ordinal))
+            {
+                ClearPendingOriginWizardTransientRefresh();
+            }
         }
 
         CapturePreferredFocusState();
@@ -154,6 +162,12 @@ public partial class DesktopDialogWindow : Window
 
         BuildFields(dialog.Fields);
         RestoreTransientDialogState(dialog.Id, preservedOriginWizardAdvancedStoryControlsExpanded);
+        if (preserveOriginWizardComboRefreshStateThroughBind)
+        {
+            _suppressOriginWizardAdvancedStoryControlsCollapseDuringComboRefresh = false;
+            ClearPendingOriginWizardTransientRefresh();
+        }
+
         BuildActions(dialog.Actions);
         RefreshDialogVisuals();
         PrimePreferredScrollOffsetForDialogRebind(dialog.Id, preservedScrollOffset, preservedViewportAnchor, preservedInteractionAnchor);
@@ -1521,7 +1535,7 @@ public partial class DesktopDialogWindow : Window
         {
             Name = OriginWizardAdvancedStoryControlsExpanderName,
             Header = "Advanced story controls",
-            IsExpanded = _originWizardAdvancedStoryControlsExpanded,
+            IsExpanded = IsOriginWizardAdvancedStoryControlsEffectivelyExpanded(),
             Content = new StackPanel
             {
                 Spacing = 12,
@@ -4110,8 +4124,11 @@ public partial class DesktopDialogWindow : Window
             return;
         }
 
-        advancedStoryControls.IsExpanded = preservedOriginWizardAdvancedStoryControlsExpanded;
-        _originWizardAdvancedStoryControlsExpanded = preservedOriginWizardAdvancedStoryControlsExpanded;
+        bool shouldRemainExpanded = preservedOriginWizardAdvancedStoryControlsExpanded
+            || _suppressOriginWizardAdvancedStoryControlsCollapseDuringComboRefresh
+            || _originWizardTransientRefreshPending;
+        advancedStoryControls.IsExpanded = shouldRemainExpanded;
+        _originWizardAdvancedStoryControlsExpanded = shouldRemainExpanded;
     }
 
     private (string ControlName, double OffsetY)? CaptureCurrentOriginWizardViewportAnchor()
@@ -4121,7 +4138,7 @@ public partial class DesktopDialogWindow : Window
             return null;
         }
 
-        if (!_originWizardAdvancedStoryControlsExpanded)
+        if (!IsOriginWizardAdvancedStoryControlsEffectivelyExpanded())
         {
             return null;
         }
@@ -4221,13 +4238,14 @@ public partial class DesktopDialogWindow : Window
         await ExecuteSafeAsync(
             () => _adapter.UpdateDialogFieldAsync(fieldId, value, CancellationToken.None),
             $"update field '{fieldId}'");
-        if (suppressOriginWizardCollapseDuringRefresh)
-        {
-            _suppressOriginWizardAdvancedStoryControlsCollapseDuringComboRefresh = false;
-        }
-
         if (_dialogBindVersion == bindVersionBeforeUpdate)
         {
+            if (suppressOriginWizardCollapseDuringRefresh)
+            {
+                _suppressOriginWizardAdvancedStoryControlsCollapseDuringComboRefresh = false;
+                ClearPendingOriginWizardTransientRefresh();
+            }
+
             _skipPreferredFocusRestoreOnNextBind = false;
             FocusPreferredControlDuringRestore();
         }
@@ -4283,7 +4301,14 @@ public partial class DesktopDialogWindow : Window
     private bool ShouldPreserveOriginWizardComboInteractionScroll()
     {
         return string.Equals(BoundDialogId, OriginWizardDialogId, StringComparison.Ordinal)
-            && _originWizardAdvancedStoryControlsExpanded;
+            && IsOriginWizardAdvancedStoryControlsEffectivelyExpanded();
+    }
+
+    private bool IsOriginWizardAdvancedStoryControlsEffectivelyExpanded()
+    {
+        return _originWizardAdvancedStoryControlsExpanded
+            || _suppressOriginWizardAdvancedStoryControlsCollapseDuringComboRefresh
+            || _originWizardTransientRefreshPending;
     }
 
     private void ArmOriginWizardTransientRefresh()

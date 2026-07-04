@@ -1164,8 +1164,10 @@ public sealed class DesktopThemeManagerTests
         StringAssert.Contains(desktopDialogSource, "private const string OriginWizardAdvancedStoryControlsExpanderName = \"OriginDossierStandaloneAdvancedStoryControlsExpander\";");
         StringAssert.Contains(originSurfaceSource, "Name = OriginWizardAdvancedStoryControlsExpanderName");
         StringAssert.Contains(originSurfaceSource, "Header = \"Advanced story controls\"");
-        StringAssert.Contains(originSurfaceSource, "IsExpanded = _originWizardAdvancedStoryControlsExpanded");
+        StringAssert.Contains(originSurfaceSource, "IsExpanded = IsOriginWizardAdvancedStoryControlsEffectivelyExpanded()");
+        StringAssert.Contains(desktopDialogSource, "private bool IsOriginWizardAdvancedStoryControlsEffectivelyExpanded()");
         StringAssert.Contains(desktopDialogSource, "_suppressOriginWizardAdvancedStoryControlsCollapseDuringComboRefresh");
+        StringAssert.Contains(desktopDialogSource, "_originWizardTransientRefreshPending");
         StringAssert.Contains(originSurfaceSource, "Pick only the basics, then build the story. Advanced controls are optional.");
         StringAssert.Contains(desktopDialogSource, "\"Story Preview\"");
         StringAssert.Contains(desktopDialogSource, "\"Book Preview\"");

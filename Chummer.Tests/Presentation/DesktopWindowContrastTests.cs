@@ -178,10 +178,18 @@ public sealed class DesktopWindowContrastTests
 
             foreach (string fieldId in new[]
                      {
+                         "newCharacterOriginMetatypePreference",
+                         "newCharacterOriginArchetypeIntent",
+                         "newCharacterRulesetId",
+                         "newCharacterOriginBuildPreference",
                          "newCharacterOriginBackground",
                          "newCharacterOriginTurningPoint",
-                         "newCharacterOriginGmConstraintPreset",
-                         "newCharacterOriginMetatypePreference"
+                         "newCharacterOriginTrainingPath",
+                         "newCharacterOriginUpgradeExposure",
+                         "newCharacterOriginPressureCost",
+                         "newCharacterOriginMotivation",
+                         "newCharacterOriginTone",
+                         "newCharacterOriginGmConstraintPreset"
                      })
             {
                 ComboBox comboBox = window.GetVisualDescendants()
