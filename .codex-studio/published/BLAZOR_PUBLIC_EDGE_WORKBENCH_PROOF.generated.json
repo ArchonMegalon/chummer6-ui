@@ -1,6 +1,6 @@
 {
   "contract_name": "chummer6-ui.blazor_public_edge_workbench_proof",
-  "generated_at": "2026-06-27T18:33:20Z",
+  "generated_at": "2026-07-04T07:21:05Z",
   "status": "passed",
   "base_url": "https://chummer.run",
   "proof_shape": "expanded",
@@ -194,7 +194,7 @@
       "route": "/blazor/workbench?workspace=ws-1&tab=tab-contacts&control=contact_add&dialog_action=add"
     }
   ],
-  "source_receipt": "/docker/chummercomplete/chummer-presentation/.codex-studio/published/UI_EXTERNAL_HOST_PROOF_BLOCKERS.generated.json",
+  "source_receipt": "/docker/chummercomplete/chummer-presentation-sr6-origin-dialog-clean/.codex-studio/published/UI_EXTERNAL_HOST_PROOF_BLOCKERS.generated.json",
   "notes": [
     "Hosted public-edge browser proof is distinct from the Docker self-host workbench receipt.",
     "Public product navigation remains /app, /blazor/ redirects into the roster-first app?command=character_roster browser workflow, /blazor/app is the hosted app path, /blazor/home carries the roster-first orientation entry, and /blazor/workbench is the canonical proof-compatible route base.",

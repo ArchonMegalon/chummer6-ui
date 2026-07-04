@@ -1,25 +1,18 @@
 {
   "contractName": "chummer6-ui.desktop_artifact_signing",
-  "generatedAt": "2026-06-12T12:40:29Z",
+  "generatedAt": "2026-06-18T17:55:02Z",
   "platform": "windows",
   "app": "avalonia",
   "rid": "win-x64",
-  "releaseChannel": "public_stable",
-  "releaseVersion": "run-20260612-121055",
+  "releaseChannel": "stable",
+  "releaseVersion": "run-20260618-142358",
   "signingStatus": "unsigned_public_release",
   "notarizationStatus": null,
-  "reason": "Unsigned public release posture is explicitly allowed for this lane.",
+  "reason": "Unsigned public release posture is explicitly allowed for this local domain release lane.",
   "artifacts": [
     {
-      "fileName": "chummer-avalonia-win-x64.exe",
-      "sha256": "f6f8da708530ee4360711e88bae849341c25768a270e80ec66b37b2e30417f73",
-      "kind": "portable",
-      "signingStatus": "unsigned_public_release",
-      "notarizationStatus": null
-    },
-    {
       "fileName": "chummer-avalonia-win-x64-installer.exe",
-      "sha256": "2ea79c4d484942becaeaf6823990fa30933b2d4eb97c367e1f88f7cb5d91ab47",
+      "sha256": "e086ef0a4c7a207af76461cc4ba5daf680842833fb1fa1d5b1486d7cb1f06707",
       "kind": "installer",
       "signingStatus": "unsigned_public_release",
       "notarizationStatus": null
