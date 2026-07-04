@@ -2195,8 +2195,15 @@ public class DesktopDialogFactoryTests
         StringAssert.Contains(DesktopDialogFieldValueParser.GetValue(dialog, "newCharacterOriginBuildLogic"), "magic-forward focus");
         StringAssert.Contains(DesktopDialogFieldValueParser.GetValue(dialog, "newCharacterOriginBookPreview"), "Cipher: Origin Dossier");
         StringAssert.Contains(DesktopDialogFieldValueParser.GetValue(dialog, "newCharacterOriginBookPreview"), "When this origin feels right, start character creation.");
+        Assert.AreEqual(
+            "/app?command=new_character_origin&ruleset=sr4&alias=Cipher",
+            DesktopDialogFieldValueParser.GetValue(dialog, "newCharacterOriginDossierLink"));
+        StringAssert.Contains(
+            DesktopDialogFieldValueParser.GetValue(dialog, "newCharacterOriginDossierLinkNotes"),
+            "story text stays local");
         StringAssert.Contains(DesktopDialogFieldValueParser.GetValue(dialog, "newCharacterOriginImplications"), "Alice Seed");
         StringAssert.Contains(DesktopDialogFieldValueParser.GetValue(dialog, "newCharacterOriginImplications"), "approved origin story");
+        StringAssert.Contains(DesktopDialogFieldValueParser.GetValue(dialog, "newCharacterOriginImplications"), "Dossier Link");
         StringAssert.Contains(DesktopDialogFieldValueParser.GetValue(dialog, "newCharacterOriginImplications"), "Addiction quality");
         StringAssert.Contains(DesktopDialogFieldValueParser.GetValue(dialog, "newCharacterOriginImplications"), "Intelligence 2+");
         string visibleOriginText = string.Join(
@@ -2205,9 +2212,10 @@ public class DesktopDialogFactoryTests
                 .Where(field => !string.Equals(field.LayoutSlot, DesktopDialogFieldLayoutSlots.Hidden, StringComparison.Ordinal))
                 .Select(field => field.Value));
         Assert.IsFalse(visibleOriginText.Contains(" lane", StringComparison.OrdinalIgnoreCase), "Origin Dossier visible copy should describe focus/path, not internal lanes.");
+        Assert.AreEqual("Show dossier link", dialog.Actions.Single(action => string.Equals(action.Id, "show_origin_dossier_link", StringComparison.Ordinal)).Label);
         Assert.AreEqual("Start character creation", dialog.Actions.Single(action => string.Equals(action.Id, "open_origin_guided_chargen", StringComparison.Ordinal)).Label);
         CollectionAssert.AreEqual(
-            new[] { "open_origin_guided_chargen", "cancel" },
+            new[] { "show_origin_dossier_link", "open_origin_guided_chargen", "cancel" },
             dialog.Actions.Select(action => action.Id).ToArray());
     }
 

@@ -254,6 +254,19 @@
                             </div>
                         </section>
 
+                        <section class="dialog-origin-panel" data-origin-dossier-link>
+                            <header>
+                                <h3>Origin Dossier Link</h3>
+                                <p>Use this route to reopen the Origin Dossier workflow without publishing the story text.</p>
+                            </header>
+                            <div class="dialog-origin-story-grid">
+                                @RenderOriginField(GetDialogField(dialog, "newCharacterOriginDossierLink"))
+                            </div>
+                            <div class="dialog-origin-preview">
+                                @RenderOriginReadonlyField(GetDialogField(dialog, "newCharacterOriginDossierLinkNotes"))
+                            </div>
+                        </section>
+
                         <div class="dialog-origin-review-grid">
                             <section class="dialog-origin-panel">
                                 <header>

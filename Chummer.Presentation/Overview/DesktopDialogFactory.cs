@@ -16,6 +16,7 @@ public sealed class DesktopDialogFactory : IDesktopDialogFactory
     private const string NewCharacterKarmaWorkflowDialogId = "dialog.new_character.karma_workflow";
     private const string NewCharacterOriginWizardDialogId = "dialog.new_character.origin_wizard";
     private const string NewCharacterOriginBuildDialogId = "dialog.new_character.origin_build";
+    private const string OriginDossierOnlineRoute = "/app";
     private const string NewCharacterPriorityWorkflowStateFieldId = "newCharacterPriorityWorkflowState";
     private const string NewCharacterPriorityLastChangedFieldId = "newCharacterPriorityLastChangedFieldId";
     private const string NewCharacterMetavariantFieldId = "newCharacterMetavariant";
@@ -915,6 +916,7 @@ public sealed class DesktopDialogFactory : IDesktopDialogFactory
             DesktopDialogFieldValueParser.GetValue(originDialog, "newCharacterOriginGmRequirements"));
         string name = DesktopDialogFieldValueParser.GetValue(originDialog, "newCharacterName") ?? "New runner";
         string alias = DesktopDialogFieldValueParser.GetValue(originDialog, "newCharacterAlias") ?? "Runner";
+        string dossierRoute = BuildOriginDossierOnlineRoute(rulesetId, alias);
         string buildLogic = BuildGridValue(
             ("Build Method", recommendation.BuildMethod),
             ("Likely Archetype", recommendation.ArchetypeLabel),
@@ -927,6 +929,7 @@ public sealed class DesktopDialogFactory : IDesktopDialogFactory
             "Alice Seed | approved origin story" + Environment.NewLine +
             $"Build | {recommendation.BuildSummary}{Environment.NewLine}" +
             $"GM Requirements | {recommendation.GmRequirementSummary}{Environment.NewLine}" +
+            $"Dossier Link | {dossierRoute}{Environment.NewLine}" +
             "Sheet Changes | none yet; review the path before applying mechanics";
         string bookPreview = BuildOriginBookPreview(alias, recommendation);
 
@@ -942,6 +945,23 @@ public sealed class DesktopDialogFactory : IDesktopDialogFactory
                 BuildNewCharacterContextField("newCharacterWorkflowHouseRulesEnabled", "Workflow House Rules", "false"),
                 BuildNewCharacterContextField("newCharacterOriginSummary", "Origin Summary", recommendation.OriginSummary),
                 BuildNewCharacterContextField("newCharacterOriginAliceSeedSource", "Alice Seed Source", "approved_origin_story"),
+                new DesktopDialogField(
+                    "newCharacterOriginDossierLink",
+                    "Origin Dossier Link",
+                    dossierRoute,
+                    dossierRoute,
+                    IsReadOnly: true,
+                    InputType: "url",
+                    LayoutSlot: DesktopDialogFieldLayoutSlots.Right),
+                new DesktopDialogField(
+                    "newCharacterOriginDossierLinkNotes",
+                    "Link Notes",
+                    "Opens Chummer Online directly into the Origin Dossier workflow. The story text stays local until you publish it.",
+                    "Opens Chummer Online directly into the Origin Dossier workflow. The story text stays local until you publish it.",
+                    IsReadOnly: true,
+                    IsMultiline: true,
+                    VisualKind: DesktopDialogFieldVisualKinds.Snippet,
+                    LayoutSlot: DesktopDialogFieldLayoutSlots.Right),
                 new DesktopDialogField(
                     "newCharacterOriginBookPreview",
                     "Book Preview",
@@ -978,9 +998,28 @@ public sealed class DesktopDialogFactory : IDesktopDialogFactory
                     LayoutSlot: DesktopDialogFieldLayoutSlots.Right)
             ],
             [
+                new DesktopDialogAction("show_origin_dossier_link", "Show dossier link"),
                 new DesktopDialogAction("open_origin_guided_chargen", "Start character creation", true),
                 new DesktopDialogAction("cancel", "Cancel")
             ]);
+    }
+
+    private static string BuildOriginDossierOnlineRoute(string? rulesetId, string? alias)
+    {
+        string normalizedRulesetId = RulesetDefaults.NormalizeOptional(rulesetId) ?? RulesetDefaults.Sr5;
+        string aliasToken = string.IsNullOrWhiteSpace(alias) ? string.Empty : alias.Trim();
+        List<string> query =
+        [
+            $"command={Uri.EscapeDataString("new_character_origin")}",
+            $"ruleset={Uri.EscapeDataString(normalizedRulesetId)}"
+        ];
+
+        if (!string.IsNullOrWhiteSpace(aliasToken))
+        {
+            query.Add($"alias={Uri.EscapeDataString(aliasToken)}");
+        }
+
+        return $"{OriginDossierOnlineRoute}?{string.Join("&", query)}";
     }
 
     private static string BuildOriginBookPreview(string alias, OriginBuildRecommendation recommendation)

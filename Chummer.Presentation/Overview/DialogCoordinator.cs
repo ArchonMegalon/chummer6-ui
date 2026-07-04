@@ -139,6 +139,20 @@ public sealed class DialogCoordinator : IDialogCoordinator
         }
 
         if (string.Equals(dialog.Id, "dialog.new_character.origin_build", StringComparison.Ordinal)
+            && string.Equals(actionId, "show_origin_dossier_link", StringComparison.Ordinal))
+        {
+            string dossierLink = DesktopDialogFieldValueParser.GetValue(dialog, "newCharacterOriginDossierLink")
+                ?? "/app?command=new_character_origin";
+            context.Publish(context.State with
+            {
+                ActiveDialog = dialog,
+                Error = null,
+                Notice = $"Origin Dossier link: {dossierLink}"
+            });
+            return;
+        }
+
+        if (string.Equals(dialog.Id, "dialog.new_character.origin_build", StringComparison.Ordinal)
             && string.Equals(actionId, "open_origin_guided_chargen", StringComparison.Ordinal))
         {
             if (context.State.Preferences.DisableAiFeatures)

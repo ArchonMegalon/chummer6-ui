@@ -748,6 +748,21 @@ public class DialogCoordinatorTests
 
         Assert.AreEqual("dialog.new_character.origin_build", published.ActiveDialog?.Id);
         StringAssert.Contains(DesktopDialogFieldValueParser.GetValue(published.ActiveDialog!, "newCharacterOriginBuildLogic"), "Likely Archetype");
+        Assert.AreEqual(
+            "/app?command=new_character_origin&ruleset=sr5&alias=Cipher",
+            DesktopDialogFieldValueParser.GetValue(published.ActiveDialog!, "newCharacterOriginDossierLink"));
+
+        context = new DialogCoordinationContext(
+            State: published,
+            Publish: state => published = state,
+            ImportAsync: static (_, _) => Task.CompletedTask,
+            UpdateMetadataAsync: static (_, _) => Task.CompletedTask,
+            GetState: () => published);
+
+        await coordinator.CoordinateAsync("show_origin_dossier_link", context, CancellationToken.None);
+
+        Assert.AreEqual("dialog.new_character.origin_build", published.ActiveDialog?.Id);
+        StringAssert.Contains(published.Notice ?? string.Empty, "/app?command=new_character_origin&ruleset=sr5&alias=Cipher");
 
         context = new DialogCoordinationContext(
             State: published,
@@ -867,6 +882,7 @@ public class DialogCoordinatorTests
         StringAssert.Contains(buildLogic, "Likely Metatype | Troll");
         StringAssert.Contains(buildLogic, "GM Requirements | Must carry an Addiction quality tied to an illegal drug.");
         StringAssert.Contains(storyNotes, "Alice Seed | approved origin story");
+        StringAssert.Contains(storyNotes, "Dossier Link | /app?command=new_character_origin&ruleset=sr4&alias=Vault");
         StringAssert.Contains(storyNotes, "Sheet Changes | none yet");
 
         context = context with

@@ -1581,6 +1581,8 @@ public partial class DesktopDialogWindow : Window
         DesktopDialogField storyField = FindRequiredField(fields, "newCharacterOriginStory");
         DesktopDialogField buildLogicField = FindRequiredField(fields, "newCharacterOriginBuildLogic");
         DesktopDialogField implicationsField = FindRequiredField(fields, "newCharacterOriginImplications");
+        DesktopDialogField dossierLinkField = FindRequiredField(fields, "newCharacterOriginDossierLink");
+        DesktopDialogField dossierLinkNotesField = FindRequiredField(fields, "newCharacterOriginDossierLinkNotes");
         DesktopDialogField rulesetField = FindRequiredField(fields, "newCharacterWorkflowRulesetId");
         DesktopDialogField methodField = FindRequiredField(fields, "newCharacterWorkflowBuildMethod");
         DesktopDialogField aliasField = FindRequiredField(fields, "newCharacterWorkflowAlias");
@@ -1596,6 +1598,12 @@ public partial class DesktopDialogWindow : Window
                 ("Runner", aliasField.Value),
                 ("Ruleset", rulesetField.Value.ToUpperInvariant()),
                 ("Method", methodField.Value))));
+
+        shell.Children.Add(CreateLegacyFieldGroup(
+            "Origin Dossier Link",
+            CreateLegacyGroupLead("Use this route to reopen the Origin Dossier workflow without publishing the story text."),
+            CreateStandaloneFieldRow(dossierLinkField),
+            CreateFieldControl(dossierLinkNotesField)));
 
         shell.Children.Add(CreateLegacySummaryCard(
             "Book Preview",
