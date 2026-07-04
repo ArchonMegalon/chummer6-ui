@@ -2,8 +2,8 @@
   "contractName": "chummer6-ui.windows_bootstrap_payload",
   "fileName": "chummer-avalonia-win-x64-payload.zip",
   "downloadUrl": "https://chummer.run/downloads/files/chummer-avalonia-win-x64-payload.zip",
-  "sha256": "3f3afa29fbd6079565866bbecec48bd43fd6d516530252db17a87ab85c48c184",
-  "sizeBytes": 51124031,
+  "sha256": "75aa4be8f9efdae3ad4ef9edc2b0a56fba547924e65f92d5a82076478e1b5441",
+  "sizeBytes": 51124035,
   "installerFileName": "chummer-avalonia-win-x64-installer.exe",
-  "releaseVersion": "run-20260704-140214"
+  "releaseVersion": "run-20260704-150719"
 }

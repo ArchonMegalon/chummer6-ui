@@ -19,6 +19,7 @@ REQUIRED_CHECK_IDS = {
     "release_channel_contract",
     "download_install_routes_contract",
     "public_navigation_contract",
+    "public_navigation_link_graph_contract",
     "blazor_runtime_contract",
     "api_session_continuity_contract",
     "pwa_mobile_role_shell_contract",
@@ -47,6 +48,8 @@ def test_flagship_materializer_names_live_public_edge_scope() -> None:
         "/play/continuity",
         "/play/continuity/history",
         "/session",
+        "public_navigation_link_graph_contract",
+        "dense /blazor/workbench and /blazor/preview command links stay under browser execution/horizon proof",
         "/mobile/gm?role=GameMaster",
         "/mobile/pwa/ledger.json",
         "/account/ledger/notifications",
@@ -88,6 +91,7 @@ def test_flagship_receipt_proves_live_release_pwa_and_living_world_boundaries() 
     checks = {item["id"]: item for item in receipt["checks"]}
     release = checks["release_channel_contract"]["facts"]
     downloads = checks["download_install_routes_contract"]["facts"]
+    link_graph = checks["public_navigation_link_graph_contract"]["facts"]
     pwa = checks["pwa_mobile_role_shell_contract"]["facts"]
     continuity = checks["api_session_continuity_contract"]["facts"]
     living_world = checks["living_world_opt_in_contract"]["facts"]
@@ -99,6 +103,10 @@ def test_flagship_receipt_proves_live_release_pwa_and_living_world_boundaries() 
     assert {"avalonia-linux-x64-installer", "avalonia-win-x64-installer"}.issubset(release["artifact_ids"])
     assert downloads["downloads_page_mentions_version"] is True
     assert all(route["status_code"] == 302 for route in downloads["install_routes"])
+    assert link_graph["missing_required_targets"] == []
+    assert link_graph["probed_required_target_count"] == len(link_graph["required_targets"])
+    assert link_graph["discovered_unique_target_count"] >= link_graph["probed_required_target_count"]
+    assert all(200 <= target["status_code"] < 400 for target in link_graph["targets"])
     assert continuity["api_health_ok"] is True
     assert continuity["api_health_service"] == "chummer.run.api"
     assert continuity["session_status_code"] == 302
@@ -126,7 +134,8 @@ def test_flagship_status_summary_docs_and_compile_manifest_are_wired() -> None:
     signoff = SIGNOFF_DOC.read_text(encoding="utf-8")
 
     assert "flagship_integration_status=passed" in result.stdout
-    assert "flagship_integration_check_count=9" in result.stdout
+    assert "flagship_integration_check_count=10" in result.stdout
+    assert "public_navigation_link_graph_contract" in result.stdout
     assert "api_session_continuity_contract" in result.stdout
     assert "living_world_opt_in_contract" in result.stdout
     assert RECEIPT.name in artifacts

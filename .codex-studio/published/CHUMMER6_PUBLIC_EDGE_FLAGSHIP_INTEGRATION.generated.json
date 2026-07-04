@@ -13,15 +13,15 @@
           "avalonia-linux-x64-installer",
           "avalonia-win-x64-installer"
         ],
-        "published_at": "2026-07-04T14:23:39Z",
+        "published_at": "2026-07-04T16:24:49Z",
         "release_channel_status_code": 200,
         "release_channel_url": "https://chummer.run/downloads/RELEASE_CHANNEL.generated.json",
         "releases_channel": "preview",
         "releases_status_code": 200,
         "releases_url": "https://chummer.run/downloads/releases.json",
-        "releases_version": "run-20260704-140214",
+        "releases_version": "run-20260704-150719",
         "status": "published",
-        "version": "run-20260704-140214"
+        "version": "run-20260704-150719"
       },
       "id": "release_channel_contract",
       "status": "passed"
@@ -38,18 +38,18 @@
         "install_routes": [
           {
             "artifact_id": "avalonia-linux-x64-installer",
-            "elapsed_ms": 150,
+            "elapsed_ms": 143,
             "location": "/downloads/get/avalonia-linux-x64-installer",
             "status_code": 302
           },
           {
             "artifact_id": "avalonia-win-x64-installer",
-            "elapsed_ms": 87,
+            "elapsed_ms": 51,
             "location": "/downloads/get/avalonia-win-x64-installer",
             "status_code": 302
           }
         ],
-        "version": "run-20260704-140214"
+        "version": "run-20260704-150719"
       },
       "id": "download_install_routes_contract",
       "status": "passed"
@@ -60,7 +60,7 @@
         "routes": [
           {
             "content_type": "text/html; charset=utf-8",
-            "elapsed_ms": 79,
+            "elapsed_ms": 128,
             "has_viewport": true,
             "missing_needles": [],
             "route": "/",
@@ -68,7 +68,7 @@
           },
           {
             "content_type": "text/html; charset=utf-8",
-            "elapsed_ms": 281,
+            "elapsed_ms": 85,
             "has_viewport": true,
             "missing_needles": [],
             "route": "/app",
@@ -76,7 +76,7 @@
           },
           {
             "content_type": "text/html; charset=utf-8",
-            "elapsed_ms": 92,
+            "elapsed_ms": 65,
             "has_viewport": true,
             "missing_needles": [],
             "route": "/participate",
@@ -84,7 +84,7 @@
           },
           {
             "content_type": "text/html; charset=utf-8",
-            "elapsed_ms": 380,
+            "elapsed_ms": 64,
             "has_viewport": true,
             "missing_needles": [],
             "route": "/status",
@@ -92,7 +92,7 @@
           },
           {
             "content_type": "text/html; charset=utf-8",
-            "elapsed_ms": 589,
+            "elapsed_ms": 142,
             "has_viewport": true,
             "missing_needles": [],
             "route": "/help",
@@ -101,6 +101,574 @@
         ]
       },
       "id": "public_navigation_contract",
+      "status": "passed"
+    },
+    {
+      "assertion": "same-origin public navigation links resolve without broken public-edge targets",
+      "facts": {
+        "discovered_unique_target_count": 50,
+        "excluded_dense_proof_target_count": 0,
+        "excluded_dense_proof_targets_sample": [],
+        "missing_required_targets": [],
+        "probe_policy": "discover same-origin anchors and iframes from public product routes; probe required navigation targets only; stylesheet/icon link tags are covered by static asset proof; dense /blazor/workbench and /blazor/preview command links stay under browser execution/horizon proof",
+        "probed_required_target_count": 11,
+        "required_targets": [
+          "/account",
+          "/build",
+          "/downloads",
+          "/downloads/get/avalonia-linux-x64-installer",
+          "/downloads/get/avalonia-win-x64-installer",
+          "/help",
+          "/mobile/gm?sessionId=session-main&role=GameMaster",
+          "/mobile/player?sessionId=session-main&role=Player",
+          "/participate/board?embed=1",
+          "/play/continuity",
+          "/play/continuity/history"
+        ],
+        "seed_route_count": 10,
+        "seed_routes": [
+          {
+            "content_type": "text/html; charset=utf-8",
+            "has_viewport": true,
+            "route": "/",
+            "same_origin_anchor_iframe_link_count": 7,
+            "same_origin_anchor_iframe_links": [
+              {
+                "kind": "a",
+                "target": "/"
+              },
+              {
+                "kind": "a",
+                "target": "/contact"
+              },
+              {
+                "kind": "a",
+                "target": "/downloads"
+              },
+              {
+                "kind": "a",
+                "target": "/help"
+              },
+              {
+                "kind": "a",
+                "target": "/login?next=%2F"
+              },
+              {
+                "kind": "a",
+                "target": "/login?next=%2Faccount%2Faccess"
+              },
+              {
+                "kind": "a",
+                "target": "/media/promo/every-wonder-horizon-promo.mp4"
+              }
+            ],
+            "status_code": 200
+          },
+          {
+            "content_type": "text/html; charset=utf-8",
+            "has_viewport": true,
+            "route": "/downloads/",
+            "same_origin_anchor_iframe_link_count": 7,
+            "same_origin_anchor_iframe_links": [
+              {
+                "kind": "a",
+                "target": "/"
+              },
+              {
+                "kind": "a",
+                "target": "/contact"
+              },
+              {
+                "kind": "a",
+                "target": "/downloads/build-chummer6-linux.sh"
+              },
+              {
+                "kind": "a",
+                "target": "/downloads/get/avalonia-linux-x64-installer"
+              },
+              {
+                "kind": "a",
+                "target": "/downloads/get/avalonia-win-x64-installer"
+              },
+              {
+                "kind": "a",
+                "target": "/help"
+              },
+              {
+                "kind": "a",
+                "target": "/login?next=%2Fdownloads"
+              }
+            ],
+            "status_code": 200
+          },
+          {
+            "content_type": "text/html; charset=utf-8",
+            "has_viewport": true,
+            "route": "/status",
+            "same_origin_anchor_iframe_link_count": 5,
+            "same_origin_anchor_iframe_links": [
+              {
+                "kind": "a",
+                "target": "/"
+              },
+              {
+                "kind": "a",
+                "target": "/contact"
+              },
+              {
+                "kind": "a",
+                "target": "/downloads"
+              },
+              {
+                "kind": "a",
+                "target": "/help"
+              },
+              {
+                "kind": "a",
+                "target": "/login?next=%2Fstatus"
+              }
+            ],
+            "status_code": 200
+          },
+          {
+            "content_type": "text/html; charset=utf-8",
+            "has_viewport": true,
+            "route": "/help",
+            "same_origin_anchor_iframe_link_count": 6,
+            "same_origin_anchor_iframe_links": [
+              {
+                "kind": "a",
+                "target": "/"
+              },
+              {
+                "kind": "a",
+                "target": "/contact"
+              },
+              {
+                "kind": "a",
+                "target": "/downloads"
+              },
+              {
+                "kind": "a",
+                "target": "/faq"
+              },
+              {
+                "kind": "a",
+                "target": "/login?next=%2Fhelp"
+              },
+              {
+                "kind": "a",
+                "target": "/signup?next=/home"
+              }
+            ],
+            "status_code": 200
+          },
+          {
+            "content_type": "text/html; charset=utf-8",
+            "has_viewport": true,
+            "route": "/participate",
+            "same_origin_anchor_iframe_link_count": 2,
+            "same_origin_anchor_iframe_links": [
+              {
+                "kind": "a",
+                "target": "/"
+              },
+              {
+                "kind": "iframe",
+                "target": "/participate/board?embed=1"
+              }
+            ],
+            "status_code": 200
+          },
+          {
+            "content_type": "text/html; charset=utf-8",
+            "has_viewport": true,
+            "route": "/play",
+            "same_origin_anchor_iframe_link_count": 19,
+            "same_origin_anchor_iframe_links": [
+              {
+                "kind": "a",
+                "target": "/"
+              },
+              {
+                "kind": "a",
+                "target": "/account"
+              },
+              {
+                "kind": "a",
+                "target": "/build"
+              },
+              {
+                "kind": "a",
+                "target": "/changelog"
+              },
+              {
+                "kind": "a",
+                "target": "/contact"
+              },
+              {
+                "kind": "a",
+                "target": "/downloads"
+              },
+              {
+                "kind": "a",
+                "target": "/downloads/get/avalonia-linux-x64-installer"
+              },
+              {
+                "kind": "a",
+                "target": "/help"
+              },
+              {
+                "kind": "a",
+                "target": "/ledger/map"
+              },
+              {
+                "kind": "a",
+                "target": "/ledger/turns/1"
+              },
+              {
+                "kind": "a",
+                "target": "/ledger/turns/1/newsreel.json"
+              },
+              {
+                "kind": "a",
+                "target": "/login?next=%2Fmobile%2Fplayer"
+              },
+              {
+                "kind": "a",
+                "target": "/login?next=%2Fplay"
+              },
+              {
+                "kind": "a",
+                "target": "/mobile"
+              },
+              {
+                "kind": "a",
+                "target": "/mobile/gm"
+              },
+              {
+                "kind": "a",
+                "target": "/mobile/observer"
+              },
+              {
+                "kind": "a",
+                "target": "/mobile/player"
+              },
+              {
+                "kind": "a",
+                "target": "/play/continuity"
+              },
+              {
+                "kind": "a",
+                "target": "/progress"
+              }
+            ],
+            "status_code": 200
+          },
+          {
+            "content_type": "text/html; charset=utf-8",
+            "has_viewport": true,
+            "route": "/play/continuity",
+            "same_origin_anchor_iframe_link_count": 14,
+            "same_origin_anchor_iframe_links": [
+              {
+                "kind": "a",
+                "target": "/"
+              },
+              {
+                "kind": "a",
+                "target": "/account"
+              },
+              {
+                "kind": "a",
+                "target": "/build"
+              },
+              {
+                "kind": "a",
+                "target": "/changelog"
+              },
+              {
+                "kind": "a",
+                "target": "/contact"
+              },
+              {
+                "kind": "a",
+                "target": "/downloads"
+              },
+              {
+                "kind": "a",
+                "target": "/downloads/get/avalonia-linux-x64-installer"
+              },
+              {
+                "kind": "a",
+                "target": "/help"
+              },
+              {
+                "kind": "a",
+                "target": "/login?next=%2Fplay%2Fcontinuity"
+              },
+              {
+                "kind": "a",
+                "target": "/play/continuity/history"
+              },
+              {
+                "kind": "a",
+                "target": "/play/continuity/history/nexus_claimed_install_posture.json"
+              },
+              {
+                "kind": "a",
+                "target": "/play/continuity/history/nexus_reconnect_handoff.json"
+              },
+              {
+                "kind": "a",
+                "target": "/play/continuity/history/nexus_runboard_boundary.json"
+              },
+              {
+                "kind": "a",
+                "target": "/progress"
+              }
+            ],
+            "status_code": 200
+          },
+          {
+            "content_type": "text/html; charset=utf-8",
+            "has_viewport": true,
+            "route": "/mobile",
+            "same_origin_anchor_iframe_link_count": 3,
+            "same_origin_anchor_iframe_links": [
+              {
+                "kind": "a",
+                "target": "/mobile/gm?sessionId=session-main&role=GameMaster"
+              },
+              {
+                "kind": "a",
+                "target": "/mobile/observer?sessionId=session-main&role=Observer"
+              },
+              {
+                "kind": "a",
+                "target": "/mobile/player?sessionId=session-main&role=Player"
+              }
+            ],
+            "status_code": 200
+          },
+          {
+            "content_type": "text/html; charset=utf-8",
+            "has_viewport": true,
+            "route": "/blazor/",
+            "same_origin_anchor_iframe_link_count": 12,
+            "same_origin_anchor_iframe_links": [
+              {
+                "kind": "a",
+                "target": "/blazor/app?command=new_character"
+              },
+              {
+                "kind": "a",
+                "target": "/blazor/app?command=new_character_origin"
+              },
+              {
+                "kind": "a",
+                "target": "/blazor/app?command=open_character"
+              },
+              {
+                "kind": "a",
+                "target": "/blazor/app?fixture=ash-mage"
+              },
+              {
+                "kind": "a",
+                "target": "/blazor/app?fixture=blue"
+              },
+              {
+                "kind": "a",
+                "target": "/blazor/app?fixture=kestrel-samurai"
+              },
+              {
+                "kind": "a",
+                "target": "/blazor/app?fixture=kestrel-samurai&command=save_character_as"
+              },
+              {
+                "kind": "a",
+                "target": "/blazor/app?fixture=kestrel-samurai&tab=tab-contacts"
+              },
+              {
+                "kind": "a",
+                "target": "/blazor/app?fixture=kestrel-samurai&tab=tab-create"
+              },
+              {
+                "kind": "a",
+                "target": "/blazor/app?fixture=kestrel-samurai&tab=tab-gear"
+              },
+              {
+                "kind": "a",
+                "target": "/blazor/app?fixture=mara-face"
+              },
+              {
+                "kind": "a",
+                "target": "/blazor/app?fixture=rook-decker"
+              }
+            ],
+            "status_code": 200
+          },
+          {
+            "content_type": "text/html; charset=utf-8",
+            "has_viewport": true,
+            "route": "/blazor/app",
+            "same_origin_anchor_iframe_link_count": 12,
+            "same_origin_anchor_iframe_links": [
+              {
+                "kind": "a",
+                "target": "/blazor/app?command=new_character"
+              },
+              {
+                "kind": "a",
+                "target": "/blazor/app?command=new_character_origin"
+              },
+              {
+                "kind": "a",
+                "target": "/blazor/app?command=open_character"
+              },
+              {
+                "kind": "a",
+                "target": "/blazor/app?fixture=ash-mage"
+              },
+              {
+                "kind": "a",
+                "target": "/blazor/app?fixture=blue"
+              },
+              {
+                "kind": "a",
+                "target": "/blazor/app?fixture=kestrel-samurai"
+              },
+              {
+                "kind": "a",
+                "target": "/blazor/app?fixture=kestrel-samurai&command=save_character_as"
+              },
+              {
+                "kind": "a",
+                "target": "/blazor/app?fixture=kestrel-samurai&tab=tab-contacts"
+              },
+              {
+                "kind": "a",
+                "target": "/blazor/app?fixture=kestrel-samurai&tab=tab-create"
+              },
+              {
+                "kind": "a",
+                "target": "/blazor/app?fixture=kestrel-samurai&tab=tab-gear"
+              },
+              {
+                "kind": "a",
+                "target": "/blazor/app?fixture=mara-face"
+              },
+              {
+                "kind": "a",
+                "target": "/blazor/app?fixture=rook-decker"
+              }
+            ],
+            "status_code": 200
+          }
+        ],
+        "targets": [
+          {
+            "content_type": "",
+            "elapsed_ms": 968,
+            "error": "",
+            "location": "/account/access",
+            "method": "GET",
+            "status_code": 302,
+            "target": "/account"
+          },
+          {
+            "content_type": "",
+            "elapsed_ms": 260,
+            "error": "",
+            "location": "/app?command=character_roster",
+            "method": "HEAD",
+            "status_code": 302,
+            "target": "/build"
+          },
+          {
+            "content_type": "text/html; charset=utf-8",
+            "elapsed_ms": 358,
+            "error": "",
+            "location": "",
+            "method": "HEAD",
+            "status_code": 200,
+            "target": "/downloads"
+          },
+          {
+            "content_type": "application/octet-stream",
+            "elapsed_ms": 3664,
+            "error": "",
+            "location": "",
+            "method": "GET",
+            "status_code": 200,
+            "target": "/downloads/get/avalonia-linux-x64-installer"
+          },
+          {
+            "content_type": "application/octet-stream",
+            "elapsed_ms": 3648,
+            "error": "",
+            "location": "",
+            "method": "GET",
+            "status_code": 200,
+            "target": "/downloads/get/avalonia-win-x64-installer"
+          },
+          {
+            "content_type": "text/html; charset=utf-8",
+            "elapsed_ms": 1173,
+            "error": "",
+            "location": "",
+            "method": "HEAD",
+            "status_code": 200,
+            "target": "/help"
+          },
+          {
+            "content_type": "text/html; charset=utf-8",
+            "elapsed_ms": 4264,
+            "error": "",
+            "location": "",
+            "method": "HEAD",
+            "status_code": 200,
+            "target": "/mobile/gm?sessionId=session-main&role=GameMaster"
+          },
+          {
+            "content_type": "text/html; charset=utf-8",
+            "elapsed_ms": 1164,
+            "error": "",
+            "location": "",
+            "method": "HEAD",
+            "status_code": 200,
+            "target": "/mobile/player?sessionId=session-main&role=Player"
+          },
+          {
+            "content_type": "text/html; charset=utf-8",
+            "elapsed_ms": 353,
+            "error": "",
+            "location": "",
+            "method": "HEAD",
+            "status_code": 200,
+            "target": "/participate/board?embed=1"
+          },
+          {
+            "content_type": "text/html; charset=utf-8",
+            "elapsed_ms": 3072,
+            "error": "",
+            "location": "",
+            "method": "GET",
+            "status_code": 200,
+            "target": "/play/continuity"
+          },
+          {
+            "content_type": "application/json",
+            "elapsed_ms": 2560,
+            "error": "",
+            "location": "",
+            "method": "GET",
+            "status_code": 200,
+            "target": "/play/continuity/history"
+          }
+        ]
+      },
+      "id": "public_navigation_link_graph_contract",
       "status": "passed"
     },
     {
@@ -120,7 +688,7 @@
               "/blazor/"
             ],
             "content_type": "text/html; charset=utf-8",
-            "elapsed_ms": 376,
+            "elapsed_ms": 70,
             "has_chummer_online_title": true,
             "has_viewport": true,
             "route": "/blazor/",
@@ -131,24 +699,14 @@
               "/blazor/"
             ],
             "content_type": "text/html; charset=utf-8",
-            "elapsed_ms": 385,
+            "elapsed_ms": 56,
             "has_chummer_online_title": true,
             "has_viewport": true,
             "route": "/blazor/app",
             "status_code": 200
-          },
-          {
-            "base_hrefs": [
-              "/blazor/"
-            ],
-            "content_type": "text/html; charset=utf-8",
-            "elapsed_ms": 3191,
-            "has_chummer_online_title": true,
-            "has_viewport": true,
-            "route": "/blazor/workbench",
-            "status_code": 200
           }
-        ]
+        ],
+        "workbench_route_boundary": "/blazor/workbench is covered by hosted route-entry and hosted execution receipts; this lightweight flagship check probes fast runtime readiness routes"
       },
       "id": "blazor_runtime_contract",
       "status": "passed"
@@ -176,9 +734,9 @@
         "history_summary": {
           "active_grant_count": 0,
           "active_installation_count": 0,
-          "last_updated_utc": "2026-07-04T14:43:04.5924386+00:00",
+          "last_updated_utc": "2026-07-04T16:13:26.8937274+00:00",
           "pending_browser_callback_count": 0,
-          "pending_claim_count": 0,
+          "pending_claim_count": 4,
           "platform_labels": []
         },
         "mobile_pwa_continuity_route": "/play/continuity",
@@ -207,7 +765,7 @@
         "routes": [
           {
             "content_type": "text/html; charset=utf-8",
-            "elapsed_ms": 397,
+            "elapsed_ms": 82,
             "expected_manifest_href": "/manifest.player.webmanifest",
             "expected_role": "Player",
             "has_expected_role": true,
@@ -224,7 +782,7 @@
           },
           {
             "content_type": "text/html; charset=utf-8",
-            "elapsed_ms": 366,
+            "elapsed_ms": 149,
             "expected_manifest_href": "/manifest.gm.webmanifest",
             "expected_role": "GameMaster",
             "has_expected_role": true,
@@ -270,7 +828,7 @@
         "assets": [
           {
             "content_type": "text/css",
-            "elapsed_ms": 496,
+            "elapsed_ms": 77,
             "has_responsive_media": true,
             "path": "/blazor/app.css",
             "size_bytes": 74728,
@@ -278,35 +836,35 @@
           },
           {
             "content_type": "image/svg+xml",
-            "elapsed_ms": 36,
+            "elapsed_ms": 64,
             "path": "/blazor/icons/chummer-pwa.svg",
             "size_bytes": 938,
             "status_code": 200
           },
           {
             "content_type": "image/svg+xml",
-            "elapsed_ms": 56,
+            "elapsed_ms": 120,
             "path": "/blazor/icons/chummer-pwa-maskable.svg",
             "size_bytes": 580,
             "status_code": 200
           },
           {
             "content_type": "image/png",
-            "elapsed_ms": 56,
+            "elapsed_ms": 119,
             "path": "/blazor/media/chummer6/chummer6-hero-baseline.png",
             "size_bytes": 704388,
             "status_code": 200
           },
           {
             "content_type": "application/manifest+json",
-            "elapsed_ms": 496,
+            "elapsed_ms": 57,
             "path": "/blazor/manifest.webmanifest",
             "size_bytes": 1979,
             "status_code": 200
           },
           {
             "content_type": "text/javascript",
-            "elapsed_ms": 88,
+            "elapsed_ms": 65,
             "excludes_api": true,
             "excludes_sessions": true,
             "excludes_workspaces": true,
@@ -316,7 +874,7 @@
           },
           {
             "content_type": "text/html",
-            "elapsed_ms": 84,
+            "elapsed_ms": 48,
             "mentions_black_ledger": true,
             "mentions_heat": true,
             "path": "/blazor/offline.html",
@@ -343,6 +901,7 @@
               "release_channel_contract",
               "download_install_routes_contract",
               "public_navigation_contract",
+              "public_navigation_link_graph_contract",
               "blazor_runtime_contract",
               "api_session_continuity_contract"
             ],
@@ -429,7 +988,7 @@
   ],
   "contract_name": "chummer6-ui.public_edge_flagship_integration",
   "failures": [],
-  "generated_at": "2026-07-04T14:43:08Z",
+  "generated_at": "2026-07-04T16:32:17Z",
   "promotion_boundaries": {
     "authenticated_living_world_execution_not_claimed": true,
     "full_desktop_parity_not_claimed_by_this_receipt": true,
@@ -440,6 +999,7 @@
     "release_channel_contract",
     "download_install_routes_contract",
     "public_navigation_contract",
+    "public_navigation_link_graph_contract",
     "blazor_runtime_contract",
     "api_session_continuity_contract",
     "pwa_mobile_role_shell_contract",

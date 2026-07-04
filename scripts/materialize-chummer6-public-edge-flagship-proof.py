@@ -6,11 +6,12 @@ import os
 import time
 import urllib.error
 import urllib.request
+from concurrent.futures import ThreadPoolExecutor, as_completed
 from datetime import datetime, timezone
 from html.parser import HTMLParser
 from pathlib import Path
 from typing import Any
-from urllib.parse import urljoin
+from urllib.parse import urljoin, urlparse
 
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
@@ -41,6 +42,7 @@ class HeadProbe(HTMLParser):
         self.metas: list[dict[str, str | None]] = []
         self.bases: list[dict[str, str | None]] = []
         self.iframes: list[dict[str, str | None]] = []
+        self.anchors: list[dict[str, str | None]] = []
 
     def handle_starttag(self, tag: str, attrs: list[tuple[str, str | None]]) -> None:
         data = dict(attrs)
@@ -52,6 +54,8 @@ class HeadProbe(HTMLParser):
             self.bases.append(data)
         elif tag == "iframe":
             self.iframes.append(data)
+        elif tag == "a":
+            self.anchors.append(data)
 
 
 def now_iso() -> str:
@@ -62,13 +66,20 @@ def normalize(value: object) -> str:
     return str(value or "").strip()
 
 
-def fetch_url(url: str, *, method: str = "GET", follow_redirects: bool = True, limit: int | None = None) -> dict[str, Any]:
+def fetch_url(
+    url: str,
+    *,
+    method: str = "GET",
+    follow_redirects: bool = True,
+    limit: int | None = None,
+    timeout: int = 30,
+) -> dict[str, Any]:
     request = urllib.request.Request(url, headers={"User-Agent": USER_AGENT}, method=method)
     opener = urllib.request.build_opener() if follow_redirects else urllib.request.build_opener(NoRedirectHandler)
     started = time.perf_counter()
     try:
-        with opener.open(request, timeout=30) as response:
-            body = response.read(limit)
+        with opener.open(request, timeout=timeout) as response:
+            body = b"" if method == "HEAD" else response.read(limit)
             return {
                 "url": url,
                 "final_url": response.url,
@@ -79,7 +90,7 @@ def fetch_url(url: str, *, method: str = "GET", follow_redirects: bool = True, l
                 "body": body,
             }
     except urllib.error.HTTPError as error:
-        body = error.read(limit)
+        body = b"" if method == "HEAD" else error.read(limit)
         return {
             "url": url,
             "final_url": error.url,
@@ -89,10 +100,21 @@ def fetch_url(url: str, *, method: str = "GET", follow_redirects: bool = True, l
             "elapsed_ms": round((time.perf_counter() - started) * 1000),
             "body": body,
         }
+    except (TimeoutError, urllib.error.URLError, OSError) as error:
+        return {
+            "url": url,
+            "final_url": url,
+            "status_code": 0,
+            "content_type": "",
+            "location": "",
+            "elapsed_ms": round((time.perf_counter() - started) * 1000),
+            "error": str(error),
+            "body": b"",
+        }
 
 
-def fetch_text(path: str, *, follow_redirects: bool = True) -> dict[str, Any]:
-    result = fetch_url(urljoin(f"{BASE_ORIGIN}/", path.lstrip("/")), follow_redirects=follow_redirects)
+def fetch_text(path: str, *, follow_redirects: bool = True, limit: int | None = None) -> dict[str, Any]:
+    result = fetch_url(urljoin(f"{BASE_ORIGIN}/", path.lstrip("/")), follow_redirects=follow_redirects, limit=limit)
     result["text"] = result["body"].decode("utf-8", errors="replace")
     result.pop("body", None)
     return result
@@ -132,6 +154,24 @@ def has_viewport(body: str) -> bool:
         if normalize(meta.get("name")).lower() == "viewport":
             return "width=device-width" in normalize(meta.get("content")).lower()
     return False
+
+
+def same_origin_target(current_path: str, href: str) -> str:
+    href = normalize(href)
+    if not href or href.startswith(("#", "mailto:", "tel:", "javascript:")):
+        return ""
+    parsed = urlparse(urljoin(f"{BASE_ORIGIN}{current_path}", href))
+    if parsed.netloc != urlparse(BASE_ORIGIN).netloc:
+        return ""
+    path = parsed.path or "/"
+    return f"{path}?{parsed.query}" if parsed.query else path
+
+
+def is_public_product_navigation_target(target: str) -> bool:
+    parsed = urlparse(target)
+    if parsed.path == "/blazor/preview" and parsed.query:
+        return False
+    return True
 
 
 def passed_check(check_id: str, assertion: str, facts: dict[str, Any]) -> dict[str, Any]:
@@ -270,11 +310,133 @@ def check_navigation_routes() -> dict[str, Any]:
     )
 
 
+def check_public_navigation_link_graph() -> dict[str, Any]:
+    seed_routes = [
+        "/",
+        "/downloads/",
+        "/status",
+        "/help",
+        "/participate",
+        "/play",
+        "/play/continuity",
+        "/mobile",
+        "/blazor/",
+        "/blazor/app",
+    ]
+    seed_facts: list[dict[str, Any]] = []
+    target_map: dict[str, set[str]] = {}
+    excluded_targets: set[str] = set()
+    failures: list[str] = []
+    for seed in seed_routes:
+        result = fetch_text(seed)
+        body = result["text"]
+        probe = parse_head(body)
+        links: list[tuple[str, str]] = []
+        for anchor in probe.anchors:
+            target = same_origin_target(seed, normalize(anchor.get("href")))
+            if target:
+                if is_public_product_navigation_target(target):
+                    links.append(("a", target))
+                else:
+                    excluded_targets.add(target)
+        for iframe in probe.iframes:
+            target = same_origin_target(seed, normalize(iframe.get("src")))
+            if target:
+                if is_public_product_navigation_target(target):
+                    links.append(("iframe", target))
+                else:
+                    excluded_targets.add(target)
+
+        unique_links = sorted(set(links), key=lambda item: (item[1], item[0]))
+        target_map[seed] = {target for _, target in unique_links}
+        seed_facts.append(
+            {
+                "route": seed,
+                "status_code": result["status_code"],
+                "content_type": result["content_type"],
+                "has_viewport": has_viewport(body),
+                "same_origin_anchor_iframe_link_count": len(unique_links),
+                "same_origin_anchor_iframe_links": [
+                    {"kind": kind, "target": target} for kind, target in unique_links
+                ],
+            }
+        )
+        if result["status_code"] != 200:
+            failures.append(f"{seed} seed route must return HTTP 200 before link graph probing")
+        if not unique_links:
+            failures.append(f"{seed} seed route must expose at least one same-origin navigation link")
+
+    observed_targets = sorted({target for targets in target_map.values() for target in targets})
+    required_targets = {
+        "/account",
+        "/build",
+        "/downloads",
+        "/downloads/get/avalonia-linux-x64-installer",
+        "/downloads/get/avalonia-win-x64-installer",
+        "/help",
+        "/participate/board?embed=1",
+        "/play/continuity",
+        "/play/continuity/history",
+        "/mobile/player?sessionId=session-main&role=Player",
+        "/mobile/gm?sessionId=session-main&role=GameMaster",
+    }
+    missing_required = sorted(required_targets - set(observed_targets))
+    if missing_required:
+        failures.append(f"public navigation graph is missing required targets: {', '.join(missing_required)}")
+
+    def probe_target(target: str) -> dict[str, Any]:
+        target_url = f"{BASE_ORIGIN}{target}"
+        result = fetch_url(target_url, method="HEAD", follow_redirects=False, limit=512, timeout=10)
+        method = "HEAD"
+        if result["status_code"] == 405:
+            result = fetch_url(target_url, method="GET", follow_redirects=False, limit=512, timeout=10)
+            method = "GET"
+        return {
+            "target": target,
+            "method": method,
+            "status_code": int(result["status_code"]),
+            "content_type": result["content_type"],
+            "location": result["location"],
+            "elapsed_ms": result["elapsed_ms"],
+            "error": result.get("error") or "",
+        }
+
+    target_facts = []
+    with ThreadPoolExecutor(max_workers=12) as executor:
+        futures = {executor.submit(probe_target, target): target for target in sorted(required_targets)}
+        for future in as_completed(futures):
+            target_facts.append(future.result())
+    target_facts.sort(key=lambda item: item["target"])
+    for target_fact in target_facts:
+        status_code = int(target_fact["status_code"])
+        if status_code < 200 or status_code >= 400:
+            detail = f" ({target_fact['error']})" if target_fact.get("error") else ""
+            failures.append(f"{target_fact['target']} linked from public navigation returned HTTP {status_code}{detail}")
+
+    facts = {
+        "seed_route_count": len(seed_routes),
+        "seed_routes": seed_facts,
+        "discovered_unique_target_count": len(observed_targets),
+        "probed_required_target_count": len(target_facts),
+        "targets": target_facts,
+        "excluded_dense_proof_target_count": len(excluded_targets),
+        "excluded_dense_proof_targets_sample": sorted(excluded_targets)[:20],
+        "required_targets": sorted(required_targets),
+        "missing_required_targets": missing_required,
+        "probe_policy": "discover same-origin anchors and iframes from public product routes; probe required navigation targets only; stylesheet/icon link tags are covered by static asset proof; dense /blazor/workbench and /blazor/preview command links stay under browser execution/horizon proof",
+    }
+    return (
+        failed_check("public_navigation_link_graph_contract", "same-origin public navigation links resolve without broken public-edge targets", "; ".join(failures), facts)
+        if failures
+        else passed_check("public_navigation_link_graph_contract", "same-origin public navigation links resolve without broken public-edge targets", facts)
+    )
+
+
 def check_blazor_runtime() -> dict[str, Any]:
     route_facts = []
     failures = []
-    for route in ("/blazor/", "/blazor/app", "/blazor/workbench"):
-        result = fetch_text(route)
+    for route in ("/blazor/", "/blazor/app"):
+        result = fetch_text(route, limit=262_144)
         body = result["text"]
         fact = {
             "route": route,
@@ -307,6 +469,7 @@ def check_blazor_runtime() -> dict[str, Any]:
         "analytics_session_replay_policy": analytics.get("sessionReplayPolicy"),
         "analytics_autocapture_policy": analytics.get("autocapturePolicy"),
         "analytics_sensitive_data_policy": analytics.get("sensitiveDataPolicy"),
+        "workbench_route_boundary": "/blazor/workbench is covered by hosted route-entry and hosted execution receipts; this lightweight flagship check probes fast runtime readiness routes",
     }
     if health_result["status_code"] != 200:
         failures.append("/blazor/health must return HTTP 200")
@@ -597,6 +760,7 @@ def check_receipt_horizons() -> dict[str, Any]:
                     "release_channel_contract",
                     "download_install_routes_contract",
                     "public_navigation_contract",
+                    "public_navigation_link_graph_contract",
                     "blazor_runtime_contract",
                     "api_session_continuity_contract",
                 ],
@@ -645,6 +809,7 @@ def main() -> int:
         check_release_channel(),
         check_download_routes(),
         check_navigation_routes(),
+        check_public_navigation_link_graph(),
         check_blazor_runtime(),
         check_api_session_continuity(),
         check_pwa_mobile_shells(),
