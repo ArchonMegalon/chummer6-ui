@@ -61,6 +61,7 @@ def fetch_text_url(url: str) -> dict[str, Any]:
 
     return {
         "url": url,
+        "final_url": response.url,
         "status_code": response.status,
         "content_type": response.headers.get("content-type") or "",
         "elapsed_ms": round((time.perf_counter() - started) * 1000),
@@ -738,6 +739,54 @@ def check_mobile_living_world_boundary() -> dict[str, Any]:
     )
 
 
+def check_account_ledger_notifications_opt_in_boundary() -> dict[str, Any]:
+    url = f"{BASE_ORIGIN}/account/ledger/notifications"
+    result = fetch_text_url(url)
+    body = result["body"]
+    final_url = str(result.get("final_url") or result["url"])
+    encoded_next_path = "%2Faccount%2Fledger%2Fnotifications"
+    facts = {
+        "status_code": result["status_code"],
+        "content_type": result["content_type"],
+        "elapsed_ms": result["elapsed_ms"],
+        "final_url": final_url,
+        "redirected_to_login": "/login?next=" in final_url and encoded_next_path in final_url,
+        "has_login_route_marker": 'data-route-key="login"' in body,
+        "has_auth_surface_marker": 'data-surface-class="surface-auth surface-minimal surface-auth-login"' in body,
+        "has_open_chummer_title": "<title>Open Chummer \u00b7 Chummer</title>" in body,
+        "has_email_first_copy": "Email first. Google if you prefer." in body,
+        "preserves_ledger_notifications_next": encoded_next_path in body,
+        "mentions_private_run_state": "private run table state" in body.lower(),
+    }
+    required = [
+        (result["status_code"] == 200, "account ledger notifications boundary did not return HTTP 200 after redirect"),
+        ("text/html" in str(result["content_type"]), "account ledger notifications boundary must resolve to HTML"),
+        (facts["redirected_to_login"], "account ledger notifications must redirect unauthenticated users to login with the ledger notifications next path"),
+        (facts["has_login_route_marker"], "account ledger notifications login boundary missing login route marker"),
+        (facts["has_auth_surface_marker"], "account ledger notifications login boundary missing auth surface marker"),
+        (facts["has_open_chummer_title"], "account ledger notifications login boundary missing Open Chummer title"),
+        (facts["has_email_first_copy"], "account ledger notifications login boundary missing user-facing sign-in copy"),
+        (facts["preserves_ledger_notifications_next"], "account ledger notifications login boundary must preserve the next route"),
+        (not facts["mentions_private_run_state"], "unauthenticated account ledger notifications boundary must not leak private run table state"),
+    ]
+    failures = [message for passed, message in required if not passed]
+    if failures:
+        return failed_check(
+            "account_ledger_notifications_opt_in_boundary",
+            "account Black Ledger notifications stay behind the signed-in opt-in boundary without exposing private table state",
+            result["url"],
+            "; ".join(failures),
+            facts,
+        )
+
+    return passed_check(
+        "account_ledger_notifications_opt_in_boundary",
+        "account Black Ledger notifications stay behind the signed-in opt-in boundary without exposing private table state",
+        result["url"],
+        facts,
+    )
+
+
 def check_static_assets() -> dict[str, Any]:
     required_assets = [
         ("/app.css", "text/css", 1000),
@@ -869,6 +918,7 @@ def main() -> int:
         check_mobile_player_shell_route(),
         check_player_manifest(),
         check_mobile_living_world_boundary(),
+        check_account_ledger_notifications_opt_in_boundary(),
         check_static_assets(),
         check_mobile_viewport_shell(),
     ]
@@ -888,6 +938,7 @@ def main() -> int:
         "notes": [
             "This receipt proves the deployed /blazor PWA shell contract, not app-store acceptance or offline runner-data parity.",
             "The /pwa route aliases the Hub Web player companion PWA, and the live /mobile player shell is proven separately from the /blazor workbench shell.",
+            "The account Black Ledger notifications route is required to resolve through the signed-in opt-in boundary before private heat or table state is visible.",
             "The service worker is required to cache only static shell assets and leave runner, workspace, API, Black Ledger, heat, and session data server-bound.",
             "The installed start URL remains the Play app surface; full character building stays outside the in-session PWA use case.",
         ],

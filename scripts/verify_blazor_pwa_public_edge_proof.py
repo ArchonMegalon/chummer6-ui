@@ -21,6 +21,7 @@ REQUIRED_CHECK_IDS = {
     "mobile_player_shell_route_contract",
     "player_manifest_install_contract",
     "mobile_pwa_living_world_boundary",
+    "account_ledger_notifications_opt_in_boundary",
     "static_asset_fetch_contract",
     "mobile_viewport_shell_contract",
 }
@@ -29,6 +30,7 @@ PUBLIC_ORIGIN_CHECK_IDS = {
     "mobile_player_shell_route_contract",
     "player_manifest_install_contract",
     "mobile_pwa_living_world_boundary",
+    "account_ledger_notifications_opt_in_boundary",
 }
 
 

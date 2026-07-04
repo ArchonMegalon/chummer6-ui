@@ -1,6 +1,6 @@
 {
   "contract_name": "chummer6-ui.blazor_pwa_public_edge_proof",
-  "generated_at": "2026-07-04T11:47:02.109511+00:00",
+  "generated_at": "2026-07-04T12:54:44.906267+00:00",
   "status": "passed",
   "base_url": "https://chummer.run/blazor",
   "public_entry_url": "https://chummer.run/app",
@@ -17,7 +17,7 @@
       "facts": {
         "status_code": 200,
         "content_type": "application/manifest+json",
-        "elapsed_ms": 132,
+        "elapsed_ms": 73,
         "name": "Chummer Online",
         "short_name": "Chummer",
         "start_url": "./app?source=pwa",
@@ -42,7 +42,7 @@
       "facts": {
         "status_code": 200,
         "content_type": "text/javascript",
-        "elapsed_ms": 117,
+        "elapsed_ms": 74,
         "declares_static_cache": true,
         "handles_navigations_with_offline_fallback": true,
         "rejects_query_asset_cache": true,
@@ -75,7 +75,7 @@
       "facts": {
         "status_code": 200,
         "content_type": "text/html; charset=utf-8",
-        "elapsed_ms": 86,
+        "elapsed_ms": 101,
         "base_hrefs": [
           "/blazor/"
         ],
@@ -97,7 +97,7 @@
       "facts": {
         "status_code": 200,
         "content_type": "text/html; charset=utf-8",
-        "elapsed_ms": 114,
+        "elapsed_ms": 99,
         "base_hrefs": [
           "/blazor/"
         ],
@@ -129,7 +129,7 @@
       "facts": {
         "status_code": 200,
         "content_type": "text/html; charset=utf-8",
-        "elapsed_ms": 240,
+        "elapsed_ms": 206,
         "base_hrefs": [
           "/"
         ],
@@ -154,7 +154,7 @@
       "facts": {
         "status_code": 200,
         "content_type": "text/html; charset=utf-8",
-        "elapsed_ms": 197,
+        "elapsed_ms": 99,
         "base_hrefs": [
           "/"
         ],
@@ -188,7 +188,7 @@
       "facts": {
         "status_code": 200,
         "content_type": "application/manifest+json",
-        "elapsed_ms": 125,
+        "elapsed_ms": 88,
         "id": "/mobile/player",
         "name": "Chummer Player Companion",
         "short_name": "Chummer Player",
@@ -217,11 +217,11 @@
         "pwa_url": "https://chummer.run/mobile/pwa.json",
         "pwa_status_code": 200,
         "pwa_content_type": "application/json",
-        "pwa_elapsed_ms": 103,
+        "pwa_elapsed_ms": 99,
         "ledger_url": "https://chummer.run/mobile/pwa/ledger.json",
         "ledger_status_code": 200,
         "ledger_content_type": "application/json",
-        "ledger_elapsed_ms": 54,
+        "ledger_elapsed_ms": 61,
         "pwa_mode": "nexus_pan_mobile_pwa",
         "pwa_status": "live",
         "pwa_living_world_updates_route": "/mobile/pwa/ledger.json",
@@ -234,6 +234,25 @@
         "ledger_legal_posture": "Public lane stays aggregate only. No private run table state is published.",
         "ledger_opt_in_route": "/account",
         "ledger_updates_route": "/mobile/pwa/ledger.json"
+      }
+    },
+    {
+      "id": "account_ledger_notifications_opt_in_boundary",
+      "url": "https://chummer.run/account/ledger/notifications",
+      "status": "passed",
+      "assertion": "account Black Ledger notifications stay behind the signed-in opt-in boundary without exposing private table state",
+      "facts": {
+        "status_code": 200,
+        "content_type": "text/html; charset=utf-8",
+        "elapsed_ms": 145,
+        "final_url": "https://chummer.run/login?next=%2Faccount%2Fledger%2Fnotifications",
+        "redirected_to_login": true,
+        "has_login_route_marker": true,
+        "has_auth_surface_marker": true,
+        "has_open_chummer_title": true,
+        "has_email_first_copy": true,
+        "preserves_ledger_notifications_next": true,
+        "mentions_private_run_state": false
       }
     },
     {
@@ -250,7 +269,7 @@
             "status_code": 200,
             "content_type": "text/css",
             "size_bytes": 74728,
-            "elapsed_ms": 92
+            "elapsed_ms": 102
           },
           {
             "path": "/icons/chummer-pwa.svg",
@@ -258,7 +277,7 @@
             "status_code": 200,
             "content_type": "image/svg+xml",
             "size_bytes": 938,
-            "elapsed_ms": 85
+            "elapsed_ms": 94
           },
           {
             "path": "/icons/chummer-pwa-maskable.svg",
@@ -266,7 +285,7 @@
             "status_code": 200,
             "content_type": "image/svg+xml",
             "size_bytes": 580,
-            "elapsed_ms": 82
+            "elapsed_ms": 99
           },
           {
             "path": "/media/chummer6/chummer6-hero-baseline.png",
@@ -274,7 +293,7 @@
             "status_code": 200,
             "content_type": "image/png",
             "size_bytes": 704388,
-            "elapsed_ms": 154
+            "elapsed_ms": 121
           },
           {
             "path": "/media/chummer6/karma-forge-baseline.png",
@@ -282,7 +301,7 @@
             "status_code": 200,
             "content_type": "image/png",
             "size_bytes": 342385,
-            "elapsed_ms": 100
+            "elapsed_ms": 103
           }
         ],
         "responsive_css_seen": true
@@ -296,7 +315,7 @@
       "facts": {
         "status_code": 200,
         "content_type": "text/html; charset=utf-8",
-        "elapsed_ms": 64,
+        "elapsed_ms": 79,
         "viewport_content": "width=device-width, initial-scale=1.0",
         "base_hrefs": [
           "/blazor/"
@@ -311,6 +330,7 @@
   "notes": [
     "This receipt proves the deployed /blazor PWA shell contract, not app-store acceptance or offline runner-data parity.",
     "The /pwa route aliases the Hub Web player companion PWA, and the live /mobile player shell is proven separately from the /blazor workbench shell.",
+    "The account Black Ledger notifications route is required to resolve through the signed-in opt-in boundary before private heat or table state is visible.",
     "The service worker is required to cache only static shell assets and leave runner, workspace, API, Black Ledger, heat, and session data server-bound.",
     "The installed start URL remains the Play app surface; full character building stays outside the in-session PWA use case."
   ]
