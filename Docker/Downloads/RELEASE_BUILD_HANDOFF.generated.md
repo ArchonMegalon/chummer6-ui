@@ -1,12 +1,16 @@
 # Release Build Handoff
 
-Generated: 2026-06-28T19:52:27Z
+Generated: 2026-07-04T12:38:47Z
 
 - Stage dir: `Docker/Downloads`
-- Channel: `public_stable`
-- Version: `run-20260627-005402`
+- Channel: `preview`
+- Version: `run-20260704-140118`
 - Artifact count: `2`
-- Promotion ready: `False`
+- Handoff only: `True`
+- Handoff scope: `staged_nightly`
+- Stage proof complete: `False`
+- Stable release unchanged: `True`
+- Separate publish lane required: `True`
 
 ## Artifacts
 
@@ -20,25 +24,25 @@ Generated: 2026-06-28T19:52:27Z
 
 ## Windows Exit Gate Refresh
 
-- Status: `passed`
+- Status: `failed`
 - JSON: `Docker/Downloads/UI_WINDOWS_DESKTOP_EXIT_GATE.generated.json`
-- Script: `/docker/chummercomplete/chummer-presentation/scripts/materialize-windows-desktop-exit-gate.sh`
-- Blocking mode: `none`
-- Summary: Windows desktop exit gate passed.
+- Script: `/docker/chummercomplete/chummer-presentation-sr6-origin-dialog-clean/scripts/materialize-windows-desktop-exit-gate.sh`
+- Blocking mode: `mixed_or_local`
+- Summary: Windows desktop exit gate failed: Windows installer visual proof version does not match release channel.; Windows installer visual proof artifactDigest does not match promoted installer bytes.
 
 ## Windows Visual Proof Handoff
 
-- Status: `needs_review`
+- Status: `ready_for_windows_host`
 - JSON: `Docker/Downloads/WINDOWS_INSTALLER_VISUAL_PROOF_HANDOFF.generated.json`
 - Markdown: `Docker/Downloads/WINDOWS_INSTALLER_VISUAL_PROOF_HANDOFF.generated.md`
 - Visual proof receipt target: `Docker/Downloads/WINDOWS_INSTALLER_VISUAL_PROOF.generated.json`
-- Summary: Windows desktop exit gate passed.
+- Summary: Windows desktop exit gate failed: Windows installer visual proof version does not match release channel.; Windows installer visual proof artifactDigest does not match promoted installer bytes.
 
 ## Remaining Blockers
 
-- Windows visual-proof handoff is not ready; inspect the staged handoff packet before asking a Windows operator to continue.
+- Windows visual proof is still outstanding for the staged installer bytes.
 
 ## Next Actions
 
-- Inspect the Windows visual-proof handoff packet and fix the staged shelf mismatch before promotion: Docker/Downloads/WINDOWS_INSTALLER_VISUAL_PROOF_HANDOFF.generated.json
-- Publish the verified bundle with CHUMMER_RELEASE_UPLOAD_TOKEN once all required platform tuples are promotable.
+- Use the Windows visual-proof handoff packet to capture progress and completion screenshots for the staged installer bytes: Docker/Downloads/WINDOWS_INSTALLER_VISUAL_PROOF_HANDOFF.generated.json
+- Keep the live downloads shelf and stable channel unchanged while this staged nightly handoff is still incomplete.
