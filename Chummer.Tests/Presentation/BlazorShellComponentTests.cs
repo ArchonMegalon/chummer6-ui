@@ -814,6 +814,39 @@ public sealed class BlazorShellComponentTests
     }
 
     [TestMethod]
+    public async Task DialogHost_keeps_origin_advanced_controls_open_across_multiple_origin_select_changes()
+    {
+        DesktopDialogState originWizard = DesktopDialogFactory.BuildNewCharacterOriginWizardDialog(RulesetDefaults.Sr4, "Nova", "Cipher");
+
+        using var context = CreateContext();
+        IRenderedComponent<LiveOriginDialogHostHarness> cut = context.Render<LiveOriginDialogHostHarness>(parameters => parameters
+            .Add(component => component.InitialDialog, originWizard));
+
+        cut.Find("[data-origin-advanced-toggle]").Click();
+        cut.WaitForAssertion(() =>
+        {
+            Assert.AreEqual("true", cut.Find("[data-origin-advanced-toggle]").GetAttribute("aria-expanded"));
+            Assert.IsFalse(cut.Find("[data-origin-advanced-content]").HasAttribute("hidden"));
+        });
+
+        await cut.Find("select[data-field-id='newCharacterOriginMetatypePreference']")
+            .ChangeAsync(new ChangeEventArgs { Value = "human" });
+        cut.WaitForAssertion(() =>
+        {
+            Assert.AreEqual("true", cut.Find("[data-origin-advanced-toggle]").GetAttribute("aria-expanded"));
+            Assert.IsFalse(cut.Find("[data-origin-advanced-content]").HasAttribute("hidden"));
+        });
+
+        await cut.Find("select[data-field-id='newCharacterOriginBuildPreference']")
+            .ChangeAsync(new ChangeEventArgs { Value = "BP" });
+        cut.WaitForAssertion(() =>
+        {
+            Assert.AreEqual("true", cut.Find("[data-origin-advanced-toggle]").GetAttribute("aria-expanded"));
+            Assert.IsFalse(cut.Find("[data-origin-advanced-content]").HasAttribute("hidden"));
+        });
+    }
+
+    [TestMethod]
     public async Task DialogHost_reuses_first_origin_select_scroll_capture_when_another_select_gains_focus_before_refresh()
     {
         DesktopDialogState originWizard = DesktopDialogFactory.BuildNewCharacterOriginWizardDialog(RulesetDefaults.Sr4, "Nova", "Cipher");
@@ -871,6 +904,45 @@ public sealed class BlazorShellComponentTests
         {
             builder.OpenComponent<DialogHost>(0);
             builder.AddAttribute(1, nameof(DialogHost.Dialog), _dialog);
+            builder.CloseComponent();
+        }
+    }
+
+    private sealed class LiveOriginDialogHostHarness : ComponentBase
+    {
+        [Parameter]
+        public DesktopDialogState? InitialDialog { get; set; }
+
+        private DesktopDialogState? _dialog;
+
+        protected override void OnParametersSet()
+        {
+            _dialog ??= InitialDialog;
+        }
+
+        private void OnFieldInputRequested(DialogFieldInputChange change)
+        {
+            if (_dialog is null)
+            {
+                return;
+            }
+
+            _dialog = _dialog with
+            {
+                Fields = _dialog.Fields
+                    .Select(field => string.Equals(field.Id, change.FieldId, StringComparison.Ordinal)
+                        ? field with { Value = change.Value ?? string.Empty }
+                        : field)
+                    .ToArray()
+            };
+            StateHasChanged();
+        }
+
+        protected override void BuildRenderTree(RenderTreeBuilder builder)
+        {
+            builder.OpenComponent<DialogHost>(0);
+            builder.AddAttribute(1, nameof(DialogHost.Dialog), _dialog);
+            builder.AddAttribute(2, nameof(DialogHost.FieldInputRequested), EventCallback.Factory.Create<DialogFieldInputChange>(this, OnFieldInputRequested));
             builder.CloseComponent();
         }
     }

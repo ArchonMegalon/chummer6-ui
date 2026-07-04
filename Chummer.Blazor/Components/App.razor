@@ -574,8 +574,7 @@
             return true;
         };
         const shouldPreferOriginAdvancedAnchor = function() {
-            return !window.chummerDialogs._pendingOriginFieldAnchor
-                && !!window.chummerDialogs._pendingOriginAdvancedAnchor;
+            return !!window.chummerDialogs._pendingOriginAdvancedAnchor;
         };
         const restore = function() {
             if (restoreVersion !== Number(window.chummerDialogs._pendingDialogScrollRestoreVersion || 0)) {

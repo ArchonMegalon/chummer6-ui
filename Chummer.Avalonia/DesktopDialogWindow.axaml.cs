@@ -4052,8 +4052,24 @@ public partial class DesktopDialogWindow : Window
             }
         }
 
+        bool hasPreferredViewportAnchor = preservedViewportAnchor is not null
+            && string.Equals(dialogId, OriginWizardDialogId, StringComparison.Ordinal);
+        if (hasPreferredViewportAnchor)
+        {
+            int anchorVersion = ++_preferredDialogViewportAnchorVersion;
+            ApplyPreferredDialogViewportAnchor(preservedViewportAnchor!.Value.ControlName, preservedViewportAnchor.Value.OffsetY, anchorVersion, DispatcherPriority.Input);
+            ApplyPreferredDialogViewportAnchor(preservedViewportAnchor.Value.ControlName, preservedViewportAnchor.Value.OffsetY, anchorVersion, DispatcherPriority.Loaded);
+            ApplyPreferredDialogViewportAnchor(preservedViewportAnchor.Value.ControlName, preservedViewportAnchor.Value.OffsetY, anchorVersion, DispatcherPriority.Background);
+            ScheduleDelayedPreferredDialogViewportAnchor(preservedViewportAnchor.Value.ControlName, preservedViewportAnchor.Value.OffsetY, anchorVersion);
+        }
+
         bool hasPreferredInteractionAnchor = preservedInteractionAnchor is not null
             && string.Equals(dialogId, OriginWizardDialogId, StringComparison.Ordinal);
+        if (hasPreferredViewportAnchor)
+        {
+            return;
+        }
+
         if (hasPreferredInteractionAnchor)
         {
             (string ControlName, double OffsetY) interactionAnchor = preservedInteractionAnchor!.Value;
@@ -4063,19 +4079,6 @@ public partial class DesktopDialogWindow : Window
             ApplyPreferredDialogInteractionAnchor(interactionAnchor.ControlName, interactionAnchor.OffsetY, interactionAnchorVersion, DispatcherPriority.Background);
             ScheduleDelayedPreferredDialogInteractionAnchor(interactionAnchor.ControlName, interactionAnchor.OffsetY, interactionAnchorVersion);
         }
-
-        if (hasPreferredInteractionAnchor
-            || preservedViewportAnchor is null
-            || !string.Equals(dialogId, OriginWizardDialogId, StringComparison.Ordinal))
-        {
-            return;
-        }
-
-        int anchorVersion = ++_preferredDialogViewportAnchorVersion;
-        ApplyPreferredDialogViewportAnchor(preservedViewportAnchor.Value.ControlName, preservedViewportAnchor.Value.OffsetY, anchorVersion, DispatcherPriority.Input);
-        ApplyPreferredDialogViewportAnchor(preservedViewportAnchor.Value.ControlName, preservedViewportAnchor.Value.OffsetY, anchorVersion, DispatcherPriority.Loaded);
-        ApplyPreferredDialogViewportAnchor(preservedViewportAnchor.Value.ControlName, preservedViewportAnchor.Value.OffsetY, anchorVersion, DispatcherPriority.Background);
-        ScheduleDelayedPreferredDialogViewportAnchor(preservedViewportAnchor.Value.ControlName, preservedViewportAnchor.Value.OffsetY, anchorVersion);
     }
 
     private void PrimePreferredScrollOffsetForDialogRebind(
@@ -4098,14 +4101,15 @@ public partial class DesktopDialogWindow : Window
             return;
         }
 
+        if (preservedViewportAnchor is { } viewportAnchor)
+        {
+            ApplyPreferredDialogViewportAnchorNow(viewportAnchor.ControlName, viewportAnchor.OffsetY);
+            return;
+        }
+
         if (preservedInteractionAnchor is { } interactionAnchor)
         {
             ApplyPreferredDialogInteractionAnchorNow(interactionAnchor.ControlName, interactionAnchor.OffsetY);
-        }
-
-        if (preservedInteractionAnchor is null && preservedViewportAnchor is { } viewportAnchor)
-        {
-            ApplyPreferredDialogViewportAnchorNow(viewportAnchor.ControlName, viewportAnchor.OffsetY);
         }
     }
 
@@ -4364,11 +4368,12 @@ public partial class DesktopDialogWindow : Window
             ScheduleDelayedPreferredDialogScrollAnchor(anchor, anchorVersion);
         }
 
-        if (_preferredDialogInteractionAnchor is null && _preferredDialogViewportAnchor is { } viewportAnchor)
+        if (_preferredDialogViewportAnchor is { } viewportAnchor)
         {
             int viewportAnchorVersion = ++_preferredDialogViewportAnchorVersion;
             ApplyPreferredDialogViewportAnchor(viewportAnchor.ControlName, viewportAnchor.OffsetY, viewportAnchorVersion, DispatcherPriority.Background);
             ScheduleDelayedPreferredDialogViewportAnchor(viewportAnchor.ControlName, viewportAnchor.OffsetY, viewportAnchorVersion);
+            return;
         }
 
         if (_preferredDialogInteractionAnchor is { } interactionAnchor)
