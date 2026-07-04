@@ -30,6 +30,9 @@ def test_execution_horizon_materializer_uses_verifier_sets_and_failed_sidecar_bo
     assert "does_not_upgrade_smoke_to_full" in source
     assert "full_scope_requires_current_passing_full_receipt" in source
     assert "published full-scope hosted execution proof is missing full-required workflow families" in source
+    assert "missing_full_workflow_family_count" in source
+    assert "extract_error_detail" in source
+    assert "ANSI_ESCAPE_PATTERN" in source
 
 
 def test_execution_horizon_receipt_tracks_smoke_and_full_matrix_separately() -> None:
@@ -44,6 +47,13 @@ def test_execution_horizon_receipt_tracks_smoke_and_full_matrix_separately() -> 
     assert horizons["near_term_hosted_smoke_execution"]["status"] == "proven"
 
     full_horizon = horizons["mid_term_full_live_public_edge_execution_matrix"]
+    sidecar = horizon["failed_execution_sidecar"]
+    if sidecar["present"]:
+        assert sidecar["status"] in {"failed", "passed"}
+        assert "playwright_scope" in sidecar
+        assert "missing_full_workflow_family_count" in sidecar
+        assert sidecar["missing_full_workflow_family_count"] >= 0
+
     if current_scope == "full":
         assert full_horizon["status"] == "proven"
         assert full_horizon["missing_workflow_family_ids"] == []

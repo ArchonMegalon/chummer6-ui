@@ -305,7 +305,12 @@ def main() -> int:
     print(f"execution_horizon_mid_term_full_status={str(mid_term_full_horizon.get('status') or '').strip() or 'missing'}")
     print(f"execution_horizon_mid_term_full_required={mid_term_full_horizon.get('required_workflow_family_count', 'unknown')}")
     print(f"execution_horizon_mid_term_full_covered={mid_term_full_horizon.get('covered_workflow_family_count', 'unknown')}")
-    print(f"execution_horizon_failed_sidecar_present={str(bool((execution_horizon.get('failed_execution_sidecar') or {}).get('present'))).lower()}")
+    failed_execution_sidecar = execution_horizon.get("failed_execution_sidecar") or {}
+    print(f"execution_horizon_failed_sidecar_present={str(bool(failed_execution_sidecar.get('present'))).lower()}")
+    print(f"execution_horizon_failed_sidecar_status={str(failed_execution_sidecar.get('status') or '').strip() or 'missing'}")
+    print(f"execution_horizon_failed_sidecar_scope={str(failed_execution_sidecar.get('playwright_scope') or '').strip() or 'missing'}")
+    print(f"execution_horizon_failed_sidecar_route={str(failed_execution_sidecar.get('error_route') or '').strip() or 'missing'}")
+    print(f"execution_horizon_failed_sidecar_missing_full={failed_execution_sidecar.get('missing_full_workflow_family_count', 'unknown')}")
     pwa_check_ids = [
         str(item.get("id") or "").strip()
         for item in (pwa_public_edge.get("checks") or [])

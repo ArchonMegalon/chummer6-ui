@@ -4,6 +4,7 @@ from __future__ import annotations
 import importlib.util
 import json
 import os
+import re
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
@@ -32,6 +33,7 @@ FAILED_EXECUTION_PROOF_PATH = Path(
 )
 VERIFIER_PATH = REPO_ROOT / "scripts" / "verify_blazor_public_edge_execution_proof.py"
 CONTRACT_NAME = "chummer6-ui.blazor_public_edge_execution_horizon"
+ANSI_ESCAPE_PATTERN = re.compile(r"\x1b\[[0-?]*[ -/]*[@-~]")
 
 
 def load_json(path: Path) -> tuple[dict[str, Any], str | None]:
@@ -66,7 +68,16 @@ def workflow_family_ids(payload: dict[str, Any]) -> set[str]:
     }
 
 
-def summarize_failed_sidecar(path: Path) -> dict[str, Any]:
+def extract_error_detail(error: str, key: str) -> str:
+    match = re.search(rf"^{re.escape(key)}=(.+)$", error, re.MULTILINE)
+    return match.group(1).strip() if match else ""
+
+
+def strip_ansi(text: str) -> str:
+    return ANSI_ESCAPE_PATTERN.sub("", text)
+
+
+def summarize_failed_sidecar(path: Path, full_required: set[str]) -> dict[str, Any]:
     payload, error = load_json(path)
     if error is not None:
         return {
@@ -77,13 +88,23 @@ def summarize_failed_sidecar(path: Path) -> dict[str, Any]:
             "workflow_family_count": 0,
         }
 
+    failed_ids = workflow_family_ids(payload)
+    failed_missing = sorted(full_required - failed_ids)
+    error_text = strip_ansi(str(payload.get("error") or "").strip())
     return {
         "path": str(path),
         "present": True,
         "status": str(payload.get("status") or "unknown").strip() or "unknown",
+        "generated_at": str(payload.get("generated_at") or "").strip(),
         "playwright_scope": str(payload.get("playwright_scope") or "").strip() or "unknown",
-        "error": str(payload.get("error") or "").strip(),
-        "workflow_family_count": len(workflow_family_ids(payload)),
+        "error": error_text,
+        "error_route": extract_error_detail(error_text, "route"),
+        "error_page_url": extract_error_detail(error_text, "page_url"),
+        "workflow_family_count": len(failed_ids),
+        "required_workflow_family_count": len(payload.get("required_workflow_family_ids") or []),
+        "available_workflow_family_count": len(payload.get("available_workflow_family_ids") or []),
+        "missing_full_workflow_family_count": len(failed_missing),
+        "missing_full_workflow_family_ids": failed_missing,
     }
 
 
@@ -148,7 +169,7 @@ def main() -> int:
                 "promotion_rule": "hosted execution proof alone is not full desktop parity; keep UI parity gates distinct",
             },
         ],
-        "failed_execution_sidecar": summarize_failed_sidecar(FAILED_EXECUTION_PROOF_PATH),
+        "failed_execution_sidecar": summarize_failed_sidecar(FAILED_EXECUTION_PROOF_PATH, full_required),
         "boundary": {
             "does_not_upgrade_smoke_to_full": True,
             "does_not_treat_failed_sidecar_as_published_proof": True,
