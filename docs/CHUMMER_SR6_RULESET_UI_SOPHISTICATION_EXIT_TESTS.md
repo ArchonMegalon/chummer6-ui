@@ -24,7 +24,7 @@ Required proof:
 Fail conditions:
 
 - SR6 is only covered by shared-shell posture while SR5 has authored editor posture
-- SR6 loses authored setup tabs, setup actions, setup flows, setup tools, or ruleset-specific workflow labels
+- SR6 loses authored editor tabs, editor actions, editor flows, editor commands, or ruleset-specific workflow labels
 - SR6 runtime route inventory is missing shell/dialog/popup/section/ruleset route families
 - SR6 lane coverage is missing from the recursive runtime inventory receipt
 - SR6 uses blank panes, generic filler, or unsupported-state fakery where an authored lane is expected

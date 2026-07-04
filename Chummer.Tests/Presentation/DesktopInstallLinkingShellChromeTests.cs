@@ -120,7 +120,7 @@ public sealed class DesktopInstallLinkingShellChromeTests
         StringAssert.Contains(shellSource, "Open Origin Dossier");
         StringAssert.Contains(runtimeSource, "BuildClaimPortalRelativePathForInstall");
         StringAssert.Contains(runtimeSource, "BuildOriginDossierPortalRelativePath");
-        StringAssert.Contains(runtimeSource, "/blazor/app?command=new_character_origin");
+        StringAssert.Contains(runtimeSource, "/app?command=new_character_origin");
         Assert.IsFalse(
             formText.Contains("Install link required", StringComparison.Ordinal),
             "Claiming must stay optional even when the online claim path is the guarded route.");
@@ -331,6 +331,8 @@ public sealed class DesktopInstallLinkingShellChromeTests
         StringAssert.Contains(installWindowSource, "desktop.install_link.button.open_origin_dossier");
         StringAssert.Contains(installWindowSource, "OpenOriginDossierPortalAsync");
         StringAssert.Contains(installWindowSource, "DesktopInstallLinkingRuntime.TryOpenOriginDossierPortal()");
+        StringAssert.Contains(installWindowSource, "_moreToolsHeading.IsVisible = true;");
+        StringAssert.Contains(installWindowSource, "_moreToolsPanel.IsVisible = true;");
         Assert.IsFalse(
             devicesSource.Contains("CreateButton(S(\"desktop.home.button.open_support_center\"), OpenSupportWindowAsync)\n        ];", StringComparison.Ordinal),
             "Linked copies should not duplicate a support action in the same section.");

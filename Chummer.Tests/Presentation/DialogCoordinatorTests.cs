@@ -1271,7 +1271,7 @@ public class DialogCoordinatorTests
 
         await coordinator.CoordinateAsync("add", context, CancellationToken.None);
 
-        StringAssert.Contains(published.Notice ?? string.Empty, "SR6 setup tools:");
+        StringAssert.Contains(published.Notice ?? string.Empty, "SR6 editor:");
         StringAssert.Contains(published.Notice ?? string.Empty, "Program 'Armor' added.");
     }
 
@@ -1894,7 +1894,7 @@ public class DialogCoordinatorTests
 
         Assert.IsNull(published.ActiveDialog);
         Assert.AreEqual(workspaceTwo, published.WorkspaceId);
-        StringAssert.Contains(published.Notice ?? string.Empty, "SR6 setup tools:");
+        StringAssert.Contains(published.Notice ?? string.Empty, "SR6 editor:");
         StringAssert.Contains(published.Notice ?? string.Empty, "Runner 'APX' opened from roster.");
     }
 
@@ -2012,7 +2012,7 @@ public class DialogCoordinatorTests
 
             Assert.IsNull(published.ActiveDialog);
             Assert.AreEqual(workspaceTwo, published.WorkspaceId);
-            StringAssert.Contains(published.Notice ?? string.Empty, "SR6 setup tools:");
+            StringAssert.Contains(published.Notice ?? string.Empty, "SR6 editor:");
             StringAssert.Contains(published.Notice ?? string.Empty, "Watched runner 'APX' opened from roster watch folder.");
         }
         finally

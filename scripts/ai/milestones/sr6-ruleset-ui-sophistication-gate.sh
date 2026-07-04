@@ -262,11 +262,11 @@ for marker in policy.get("requiredSourceMarkers") or []:
         add_failure(f"SR6 sophistication source marker is missing: {marker}", source_reasons)
 
 for marker in (
-    "Desktop Summary · SR6 Setup Tools",
-    "SR6 Setup Tabs",
-    "SR6 Setup Actions",
-    "SR6 Setup Flows",
-    "No SR6 setup tools are currently available.",
+    "Desktop Summary · SR6 Editor",
+    "SR6 Editor Tabs",
+    "SR6 Editor Actions",
+    "SR6 Editor Flows",
+    "No SR6 editor commands are currently available.",
     "SR6 Matrix Action",
     "DesktopShell_renders_ruleset_specific_flagship_posture_for_each_supported_lane",
     "DesktopShell_uses_active_ruleset_plugin_catalogs_for_actions_and_workflow_surfaces",

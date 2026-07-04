@@ -33,11 +33,11 @@
     "Interactive_runtime_route_inventory_receipt_captures_recursive_shell_dialog_popup_and_ruleset_branches"
   ],
   "requiredSourceMarkers": [
-    "SR6 Setup Tabs",
-    "SR6 Setup Actions",
-    "SR6 Setup Flows",
-    "SR6 Setup Tools",
-    "No SR6 setup tools are currently available.",
+    "SR6 Editor Tabs",
+    "SR6 Editor Actions",
+    "SR6 Editor Flows",
+    "SR6 Editor Commands",
+    "No SR6 editor commands are currently available.",
     "SR6 Matrix Action"
   ]
 }

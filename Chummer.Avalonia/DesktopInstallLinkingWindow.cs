@@ -1110,8 +1110,8 @@ internal sealed class DesktopInstallLinkingWindow : Window
         _claimCodeLabelText.IsVisible = !claimed && _browserFallbackVisible;
         _claimCodeEntryRow.IsVisible = !claimed && _browserFallbackVisible;
         _browserFallbackPanel.IsVisible = !claimed && _browserFallbackVisible;
-        _moreToolsHeading.IsVisible = claimed;
-        _moreToolsPanel.IsVisible = claimed;
+        _moreToolsHeading.IsVisible = true;
+        _moreToolsPanel.IsVisible = true;
     }
 
     private void RefreshMatrixIdentityOverlay()

@@ -103,24 +103,24 @@ public static class RulesetUiDirectiveCatalog
     private static readonly RulesetUiDirective Sr6 = new(
         RulesetId: RulesetDefaults.Sr6,
         DisplayName: "Shadowrun 6",
-        PostureLabel: "setup tools",
+        PostureLabel: "Sixth World editor",
         FileExtension: ".chum6",
-        HomeSpotlight: "SR6 opens to guided setup and starter kits before full editing.",
-        ResumeLaneSummary: "Resume the SR6 runner with runtime status and starter-kit guidance visible.",
+        HomeSpotlight: "SR6 opens to the Sixth World runner editor with creation, Edge, gear, and rules review visible.",
+        ResumeLaneSummary: "Resume the SR6 runner with runtime status, Edge, gear, and session notes visible.",
         OpenWorkspaceLabel: "Open SR6 runner",
-        BuildFollowThroughLabel: "Open SR6 setup details",
+        BuildFollowThroughLabel: "Open SR6 build details",
         WorkspaceFollowThroughLabel: "Open SR6 runner details",
         NextActionPrefix: "SR6",
-        DefaultSectionSummary: "SR6 starts with guided setup while deeper editor work continues.",
-        BuildLabSectionSummary: "SR6 build emphasizes curated setup, edge-first flows, and guided follow-through before full editor depth.",
-        RulesSectionSummary: "SR6 rules and validation stay guided until the SR6 engine is complete.",
-        UngroundedHomeSummary: "starter kits and guided setup come before full editing.",
-        PinnedRuntimeHomeSummary: "SR6 runtime status is loaded; use guided setup before deeper rules edits.",
-        GroundedHomeSummary: "SR6 setup tools keep curated setup and rules review clear.",
+        DefaultSectionSummary: "SR6 uses the shared desktop editor with Sixth World labels and Edge-first details.",
+        BuildLabSectionSummary: "SR6 build keeps creation choices, metatype limits, Edge, gear, and follow-through visible before apply or export.",
+        RulesSectionSummary: "SR6 rules and review show what can be checked now and what still needs table review.",
+        UngroundedHomeSummary: "restore or create a runner before editing.",
+        PinnedRuntimeHomeSummary: "SR6 runtime status is loaded; open the editor sections with Edge and gear details visible.",
+        GroundedHomeSummary: "SR6 editor keeps creation, Edge, gear, and rules review clear.",
         BuildExplainWatchouts:
         [
-            "SR6 remains setup-first while deeper rules work continues.",
-            "SR6 starter, rules, and export actions should keep .chum6 setup behavior explicit."
+            "Review SR6 creation choices, Edge, gear, and table notes before export.",
+            "SR6 import, export, and print actions should keep .chum6 behavior explicit."
         ]);
 
     public static RulesetUiDirective Resolve(string? rulesetId)
@@ -151,7 +151,7 @@ public static class RulesetUiDirectiveCatalog
         {
             RulesetDefaults.Sr4 => "Desktop Summary · SR4 Import Tools",
             RulesetDefaults.Sr5 => "Desktop Summary · SR5 Editor",
-            RulesetDefaults.Sr6 => "Desktop Summary · SR6 Setup Tools",
+            RulesetDefaults.Sr6 => "Desktop Summary · SR6 Editor",
             _ => "Desktop Summary Header"
         };
     }
@@ -163,7 +163,7 @@ public static class RulesetUiDirectiveCatalog
         {
             RulesetDefaults.Sr4 => "SR4 import tools",
             RulesetDefaults.Sr5 => "SR5 main editor",
-            RulesetDefaults.Sr6 => "SR6 setup tools",
+            RulesetDefaults.Sr6 => "SR6 editor",
             _ => "Desktop editor"
         };
     }
@@ -175,7 +175,7 @@ public static class RulesetUiDirectiveCatalog
         {
             RulesetDefaults.Sr4 => "Shadowrun 4 import character tools",
             RulesetDefaults.Sr5 => "Shadowrun 5 character editor",
-            RulesetDefaults.Sr6 => "Shadowrun 6 setup character tools",
+            RulesetDefaults.Sr6 => "Shadowrun 6 character editor",
             _ => "Character editor"
         };
     }
@@ -218,7 +218,7 @@ public static class RulesetUiDirectiveCatalog
         {
             RulesetDefaults.Sr4 => "SR4 Import Tabs",
             RulesetDefaults.Sr5 => "SR5 Editor Tabs",
-            RulesetDefaults.Sr6 => "SR6 Setup Tabs",
+            RulesetDefaults.Sr6 => "SR6 Editor Tabs",
             _ => "Workspace Tabs"
         };
     }
@@ -230,7 +230,7 @@ public static class RulesetUiDirectiveCatalog
         {
             RulesetDefaults.Sr4 => "SR4 Import Actions",
             RulesetDefaults.Sr5 => "SR5 Editor Actions",
-            RulesetDefaults.Sr6 => "SR6 Setup Actions",
+            RulesetDefaults.Sr6 => "SR6 Editor Actions",
             _ => "Section Actions"
         };
     }
@@ -242,7 +242,7 @@ public static class RulesetUiDirectiveCatalog
         {
             RulesetDefaults.Sr4 => "SR4 Import Flows",
             RulesetDefaults.Sr5 => "SR5 Editor Flows",
-            RulesetDefaults.Sr6 => "SR6 Setup Flows",
+            RulesetDefaults.Sr6 => "SR6 Editor Flows",
             _ => "Workflow Surfaces"
         };
     }
@@ -324,7 +324,7 @@ public static class RulesetUiDirectiveCatalog
         {
             RulesetDefaults.Sr4 => "SR4 Import Tools",
             RulesetDefaults.Sr5 => "SR5 Editor Commands",
-            RulesetDefaults.Sr6 => "SR6 Setup Tools",
+            RulesetDefaults.Sr6 => "SR6 Editor Commands",
             _ => "Commands"
         };
     }
@@ -336,7 +336,7 @@ public static class RulesetUiDirectiveCatalog
         {
             RulesetDefaults.Sr4 => "No SR4 import tools are currently available.",
             RulesetDefaults.Sr5 => "No SR5 editor commands are currently available.",
-            RulesetDefaults.Sr6 => "No SR6 setup tools are currently available.",
+            RulesetDefaults.Sr6 => "No SR6 editor commands are currently available.",
             _ => "No commands are currently available."
         };
     }
@@ -348,7 +348,7 @@ public static class RulesetUiDirectiveCatalog
         {
             RulesetDefaults.Sr4 => "SR4 Import Summary",
             RulesetDefaults.Sr5 => "SR5 Editor Result",
-            RulesetDefaults.Sr6 => "SR6 Setup Summary",
+            RulesetDefaults.Sr6 => "SR6 Editor Result",
             _ => "Result"
         };
     }
@@ -360,7 +360,7 @@ public static class RulesetUiDirectiveCatalog
         {
             RulesetDefaults.Sr4 => "Shadowrun 4 starts with import tools and character review.",
             RulesetDefaults.Sr5 => "Shadowrun 5 uses the main desktop editor.",
-            RulesetDefaults.Sr6 => "Shadowrun 6 starts with guided setup tools.",
+            RulesetDefaults.Sr6 => "Shadowrun 6 uses the Sixth World character editor.",
             _ => "Choose a ruleset before relying on rules or export details."
         });
     }
@@ -372,7 +372,7 @@ public static class RulesetUiDirectiveCatalog
         {
             RulesetDefaults.Sr4 => "SR4 import tools are ready.",
             RulesetDefaults.Sr5 => "SR5 editor is ready.",
-            RulesetDefaults.Sr6 => "SR6 setup tools are ready.",
+            RulesetDefaults.Sr6 => "SR6 editor is ready.",
             _ => "Ready."
         });
     }
@@ -555,7 +555,7 @@ public static class RulesetUiDirectiveCatalog
         {
             RulesetDefaults.Sr4 => Clean($"SR4 import tools: {notice}"),
             RulesetDefaults.Sr5 => Clean($"SR5 editor: {notice}"),
-            RulesetDefaults.Sr6 => Clean($"SR6 setup tools: {notice}"),
+            RulesetDefaults.Sr6 => Clean($"SR6 editor: {notice}"),
             _ => Clean(notice)
         };
     }
@@ -620,7 +620,7 @@ public static class RulesetUiDirectiveCatalog
                 : "runtime service is available",
             RulesetDefaults.Sr6 => hasWarnings
                 ? "runtime warnings remain active"
-                : "setup runtime is available",
+                : "runtime service is available",
             _ => hasWarnings
                 ? "runtime attention required"
                 : "ruleset still unresolved"
@@ -644,7 +644,7 @@ public static class RulesetUiDirectiveCatalog
             || label.Contains("oracle", StringComparison.OrdinalIgnoreCase)
             || label.Contains("workbench", StringComparison.OrdinalIgnoreCase)
             || label.Contains("import tools", StringComparison.OrdinalIgnoreCase)
-            || label.Contains("setup tools", StringComparison.OrdinalIgnoreCase)
+            || label.Contains("Sixth World", StringComparison.OrdinalIgnoreCase)
             || label.Contains("starter", StringComparison.OrdinalIgnoreCase)
             || label.Contains("editor", StringComparison.OrdinalIgnoreCase)
             || label.Contains("preview", StringComparison.OrdinalIgnoreCase);

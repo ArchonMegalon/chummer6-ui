@@ -92,6 +92,9 @@ public partial class DesktopDialogWindow : Window
     {
         string? previousDialogId = BoundDialogId;
         bool dialogIdentityChanged = !string.Equals(previousDialogId, dialog.Id, StringComparison.Ordinal);
+        Vector? preservedScrollOffset = !dialogIdentityChanged && IsVisible
+            ? _dialogScrollViewer.Offset
+            : null;
         CapturePreferredFocusState();
         if (dialogIdentityChanged)
         {
@@ -115,6 +118,20 @@ public partial class DesktopDialogWindow : Window
         BuildFields(dialog.Fields);
         BuildActions(dialog.Actions);
         RefreshDialogVisuals();
+        if (preservedScrollOffset is Vector offset)
+        {
+            Dispatcher.UIThread.Post(() =>
+            {
+                if (!IsVisible
+                    || !string.Equals(BoundDialogId, dialog.Id, StringComparison.Ordinal))
+                {
+                    return;
+                }
+
+                RestoreDialogScrollOffset(offset);
+            }, DispatcherPriority.Background);
+        }
+
         if (IsVisible && dialogIdentityChanged)
         {
             Dispatcher.UIThread.Post(FocusPreferredControl, DispatcherPriority.Input);
@@ -1493,8 +1510,24 @@ public partial class DesktopDialogWindow : Window
                 }
             }
         };
-        advancedStoryControls.Expanded += (_, _) => _originWizardAdvancedStoryControlsExpanded = true;
-        advancedStoryControls.Collapsed += (_, _) => _originWizardAdvancedStoryControlsExpanded = false;
+        advancedStoryControls.Expanded += (_, _) =>
+        {
+            if (_suppressDialogUpdates)
+            {
+                return;
+            }
+
+            _originWizardAdvancedStoryControlsExpanded = true;
+        };
+        advancedStoryControls.Collapsed += (_, _) =>
+        {
+            if (_suppressDialogUpdates)
+            {
+                return;
+            }
+
+            _originWizardAdvancedStoryControlsExpanded = false;
+        };
         shell.Children.Add(advancedStoryControls);
 
         shell.Children.Add(CreateLegacySummaryCard(
@@ -2720,7 +2753,7 @@ public partial class DesktopDialogWindow : Window
                         return;
                     }
 
-                    QueueDialogFieldUpdate(field.Id, selectedOption.Value);
+                    QueueDialogFieldUpdate(field.Id, selectedOption.Value, comboBox);
                 };
             }
 
@@ -3483,7 +3516,7 @@ public partial class DesktopDialogWindow : Window
                 if (comboBox.SelectedItem is DesktopDialogFieldOption selectedOption
                     && !string.Equals(selectedOption.Value, field.Value, StringComparison.Ordinal))
                 {
-                    QueueDialogFieldUpdate(field.Id, selectedOption.Value);
+                    QueueDialogFieldUpdate(field.Id, selectedOption.Value, comboBox);
                 }
             };
         }
@@ -3739,34 +3772,49 @@ public partial class DesktopDialogWindow : Window
         }, DispatcherPriority.Input);
     }
 
-    private void CapturePreferredFocusState()
+    private void CapturePreferredFocusState(Control? fallbackControl = null)
     {
         _preferredFocusControlName = null;
         _preferredFocusSelectionStart = null;
 
         if (GetTopLevel(this)?.FocusManager?.GetFocusedElement() is not Control focusedControl)
         {
+            if (fallbackControl is not null)
+            {
+                CapturePreferredControlState(fallbackControl);
+            }
+
             return;
         }
 
         if (focusedControl.GetVisualRoot() is not DesktopDialogWindow)
         {
+            if (fallbackControl is not null)
+            {
+                CapturePreferredControlState(fallbackControl);
+            }
+
             return;
         }
 
-        _preferredFocusControlName = focusedControl.Name;
-        if (focusedControl is TextBox textBox)
+        CapturePreferredControlState(focusedControl);
+    }
+
+    private void CapturePreferredControlState(Control control)
+    {
+        _preferredFocusControlName = control.Name;
+        if (control is TextBox textBox)
         {
             _preferredFocusSelectionStart = textBox.CaretIndex;
         }
     }
 
-    private async void QueueDialogFieldUpdate(string fieldId, string value)
+    private async void QueueDialogFieldUpdate(string fieldId, string value, Control? preferredFocusControl = null)
     {
         if (_adapter is null || _suppressDialogUpdates)
             return;
 
-        CapturePreferredFocusState();
+        CapturePreferredFocusState(preferredFocusControl);
         Vector preservedScrollOffset = _dialogScrollViewer.Offset;
         await ExecuteSafeAsync(
             () => _adapter.UpdateDialogFieldAsync(fieldId, value, CancellationToken.None),

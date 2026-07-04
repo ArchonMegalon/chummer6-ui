@@ -679,7 +679,7 @@ public sealed class AccessibilitySignoffSmokeTests
 
         DesktopHomeBuildExplainProjection projection = DesktopHomeBuildExplainProjector.Create([workspace], build, rules, campaignSummary, activeRuntime, runtimeInspector, buildPathCandidates);
         RequireContains(projection.NextSafeAction, "rebind the active profile");
-        RequireContains(projection.RulesetSpotlight, "SR6 opens to guided setup");
+        RequireContains(projection.RulesetSpotlight, "SR6 opens to the Sixth World runner editor");
         RequireContains(projection.ExplainFocus, "Explain focus:");
         RequireContains(projection.ExplainFocus, "Build path focus: Edge Runner Starter");
         RequireContains(projection.ExplainFocus, "Campaign next step:");

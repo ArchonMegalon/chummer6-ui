@@ -1343,8 +1343,9 @@
         return string.Join(
             "  •  ",
             [
-                attributeRows.Count == 1 ? "1 attribute ready" : $"{attributeRows.Count} attributes ready",
-                $"{leadAttribute.DisplayName} {leadAttribute.TotalValue}"
+                attributeRows.Count == 1 ? "1 SR6 attribute ready" : $"{attributeRows.Count} SR6 attributes ready",
+                $"{leadAttribute.DisplayName} rating {leadAttribute.TotalValue}",
+                $"range {AttributeWorkbenchProjector.FormatLimitsDisplay(leadAttribute, RulesetDefaults.Sr6)}"
             ]);
     }
 

@@ -533,8 +533,8 @@ public sealed class BlazorShellComponentTests
             .Add(component => component.RulesetId, RulesetDefaults.Sr5)
             .Add(component => component.State, state));
 
-        StringAssert.Contains(commandCut.Markup, "SR6 Setup Tools");
-        StringAssert.Contains(commandCut.Markup, "No SR6 setup tools are currently available.");
+        StringAssert.Contains(commandCut.Markup, "SR6 Editor Commands");
+        StringAssert.Contains(commandCut.Markup, "No SR6 editor commands are currently available.");
         StringAssert.Contains(resultCut.Markup, "SR5 Editor Result");
         StringAssert.Contains(resultCut.Markup, "Shadowrun 5 uses the main desktop editor");
         StringAssert.Contains(resultCut.Markup, "SR5 editor is ready");
@@ -647,14 +647,14 @@ public sealed class BlazorShellComponentTests
             .Add(component => component.AttributeEditRequested, (Action<AttributeEditRequest>)(request => editRequest = request)));
 
         Assert.IsTrue(cut.Markup.Contains("data-sr6-attribute-workbench", StringComparison.Ordinal));
-        Assert.AreEqual("1 attribute ready  •  Body 4", cut.Find(".sr6-attribute-workbench__summary").TextContent.Trim());
+        Assert.AreEqual("1 SR6 attribute ready  •  Body rating 4  •  range 1 / 6 (9)", cut.Find(".sr6-attribute-workbench__summary").TextContent.Trim());
         CollectionAssert.AreEqual(
-            new[] { "Attribute", "Base", "Karma", "Total", "Limits" },
+            new[] { "Attribute", "Start", "Adjustment", "Rating", "Legal Range" },
             cut.FindAll(".sr6-attribute-table span").Select(node => node.TextContent.Trim()).ToArray());
         Assert.AreEqual("Body", cut.Find("[data-sr6-attribute='BOD'] .sr6-attribute-row__name").TextContent.Trim());
         Assert.AreEqual("ready", cut.Find("[data-sr6-attribute='BOD']").GetAttribute("data-sr6-attribute-state"));
-        Assert.AreEqual("Base 1 to 6", cut.Find("[data-sr6-attribute='BOD'] [data-sr6-stepper-group='base'] .sr6-attribute-stepper").GetAttribute("title"));
-        Assert.AreEqual("Karma 0 to 5", cut.Find("[data-sr6-attribute='BOD'] [data-sr6-stepper-group='karma'] .sr6-attribute-stepper").GetAttribute("title"));
+        Assert.AreEqual("Start 1 to 6", cut.Find("[data-sr6-attribute='BOD'] [data-sr6-stepper-group='base'] .sr6-attribute-stepper").GetAttribute("title"));
+        Assert.AreEqual("Adjustment 0 to 5", cut.Find("[data-sr6-attribute='BOD'] [data-sr6-stepper-group='karma'] .sr6-attribute-stepper").GetAttribute("title"));
         Assert.AreEqual("4", cut.Find("[data-sr6-attribute='BOD'] [data-sr6-attribute-total]").TextContent.Trim());
         Assert.AreEqual("1 / 6 (9)", cut.Find("[data-sr6-attribute='BOD'] [data-sr6-attribute-limits]").TextContent.Trim());
         Assert.AreEqual(0, cut.FindAll(".section-table").Count);

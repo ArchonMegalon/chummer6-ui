@@ -87,7 +87,7 @@ public static class DesktopInstallLinkingRuntime
     private const string PendingInstallLinkCallbackFileName = "pending-install-link-callback.txt";
     private const string ProtectedPrivateKeyFileName = "private-key.protected";
     private const string AppLocalInstallLinkCallbackPath = "/install-link/callback";
-    private const string OriginDossierPortalRelativePath = "/blazor/app?command=new_character_origin";
+    private const string OriginDossierPortalRelativePath = "/app?command=new_character_origin";
     private const string GuestStatus = "guest";
     private const string ClaimedStatus = "claimed";
     private static readonly object AppLocalCallbackListenerSync = new();

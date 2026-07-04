@@ -42,9 +42,9 @@ public sealed class RulesetUiDirectiveCatalogTests
         StringAssert.Contains(sr5, "main editor");
         StringAssert.Contains(sr5, ".chum5");
         StringAssert.Contains(sr5, "runtime attention required");
-        StringAssert.Contains(sr6, "setup tools");
+        StringAssert.Contains(sr6, "Sixth World editor");
         StringAssert.Contains(sr6, ".chum6");
-        StringAssert.Contains(sr6, "setup runtime is available");
+        StringAssert.Contains(sr6, "runtime service is available");
     }
 
     [TestMethod]
@@ -68,7 +68,7 @@ public sealed class RulesetUiDirectiveCatalogTests
         StringAssert.Contains(sr4Rules, "limited");
         StringAssert.Contains(sr5BuildLab, "main desktop editor");
         StringAssert.Contains(sr5BuildLab, "campaign return");
-        StringAssert.Contains(sr6Rules, "guided");
+        StringAssert.Contains(sr6Rules, "table review");
         StringAssert.Contains(sr6Rules, "runtime warnings remain active");
     }
 
@@ -90,7 +90,7 @@ public sealed class RulesetUiDirectiveCatalogTests
         StringAssert.Contains(sr5, ".chum5");
         StringAssert.Contains(sr5, "runtime status is loaded");
         StringAssert.Contains(sr6, ".chum6");
-        StringAssert.Contains(sr6, "curated setup");
+        StringAssert.Contains(sr6, "creation, Edge, gear");
         StringAssert.Contains(sr6, "Seattle Nights");
     }
 
@@ -163,7 +163,7 @@ public sealed class RulesetUiDirectiveCatalogTests
 
         Assert.AreEqual("SR4 import tools", sr4MarqueeEyebrow);
         Assert.AreEqual("Shadowrun 5 character editor", sr5MarqueeTitle);
-        Assert.AreEqual("SR6 setup tools", sr6MarqueeEyebrow);
+        Assert.AreEqual("SR6 editor", sr6MarqueeEyebrow);
         Assert.AreEqual("Desktop Summary · SR4 Import Tools", sr4Summary);
         Assert.AreEqual("SR5 Characters", sr5Dossiers);
         Assert.AreEqual("No open SR6 runner", sr6EmptyStrip);
@@ -172,14 +172,14 @@ public sealed class RulesetUiDirectiveCatalogTests
         StringAssert.Contains(sr5StripTitle, "unsaved");
         Assert.AreEqual("SR4 Import Tabs", sr4Tabs);
         Assert.AreEqual("SR5 Editor Actions", sr5Actions);
-        Assert.AreEqual("SR6 Setup Flows", sr6Flows);
+        Assert.AreEqual("SR6 Editor Flows", sr6Flows);
         Assert.AreEqual("Import SR4 Runner File", sr4Import);
         Assert.AreEqual(".chum5,.chum4,.chum6,.xml,text/xml,application/xml", sr5ImportAccept);
         StringAssert.Contains(sr6ImportHint, ".chum6");
         Assert.AreEqual("SR4 Runner XML Review", sr4ImportDebug);
         Assert.AreEqual("Import SR6 Runner XML", sr6ImportAction);
         Assert.AreEqual("SR4 Import Tools", sr4Commands);
-        Assert.AreEqual("No SR6 setup tools are currently available.", sr6CommandHint);
+        Assert.AreEqual("No SR6 editor commands are currently available.", sr6CommandHint);
         Assert.AreEqual("SR5 Editor Result", sr5Result);
         StringAssert.Contains(sr5ResultHint, "main desktop editor");
         StringAssert.Contains(sr4Ready, "import");
@@ -221,7 +221,7 @@ public sealed class RulesetUiDirectiveCatalogTests
             "SR5 editor: Cyberware 'Wired Reflexes 2' added.",
             RulesetUiDirectiveCatalog.FormatDialogNotice(RulesetDefaults.Sr5, "Cyberware 'Wired Reflexes 2' added."));
         Assert.AreEqual(
-            "SR6 setup tools: Program 'Armor' added.",
+            "SR6 editor: Program 'Armor' added.",
             RulesetUiDirectiveCatalog.FormatDialogNotice(RulesetDefaults.Sr6, "Program 'Armor' added."));
         Assert.AreEqual(
             "Generic notice.",
