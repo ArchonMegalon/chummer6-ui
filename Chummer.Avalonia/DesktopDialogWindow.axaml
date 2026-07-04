@@ -26,6 +26,7 @@
       </Border>
 
       <ScrollViewer Grid.Row="1"
+                    Name="DialogScrollViewer"
                     VerticalScrollBarVisibility="Auto"
                     Padding="8,6">
         <StackPanel Spacing="6">

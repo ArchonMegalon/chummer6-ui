@@ -169,8 +169,15 @@
                             </div>
                         </section>
 
-                        <details class="dialog-origin-panel dialog-origin-panel--advanced">
-                            <summary>Advanced story controls</summary>
+                        <details class="dialog-origin-panel dialog-origin-panel--advanced"
+                                 data-origin-advanced-details
+                                 open="@_originWizardAdvancedStoryControlsExpanded">
+                            <summary data-origin-advanced-summary
+                                     aria-expanded="@(_originWizardAdvancedStoryControlsExpanded ? "true" : "false")"
+                                     @onclick:preventDefault="true"
+                                     @onclick="ToggleOriginWizardAdvancedStoryControls">
+                                Advanced story controls
+                            </summary>
                             <p class="dialog-note">Optional runner identity, life-path steering, and GM guidance for the story packet.</p>
                             <div class="dialog-origin-advanced-grid">
                                 <section class="dialog-origin-subpanel">
@@ -545,9 +552,22 @@
 
     private string? _rosterMouseDragSourceLine;
     private string? _rosterKeyboardSourceLine;
+    private bool _originWizardAdvancedStoryControlsExpanded;
+    private string? _trackedDialogId;
 
     private ElementReference _dialogRoot;
     private string? _focusedDialogId;
+
+    protected override void OnParametersSet()
+    {
+        string? currentDialogId = Dialog?.Id;
+        if (!string.Equals(_trackedDialogId, currentDialogId, StringComparison.Ordinal))
+        {
+            _originWizardAdvancedStoryControlsExpanded = false;
+        }
+
+        _trackedDialogId = currentDialogId;
+    }
 
     protected override async Task OnAfterRenderAsync(bool firstRender)
     {
@@ -567,6 +587,11 @@
     private Task ExecuteDialogActionAsync(string actionId)
     {
         return ExecuteDialogActionRequested.InvokeAsync(actionId);
+    }
+
+    private void ToggleOriginWizardAdvancedStoryControls()
+    {
+        _originWizardAdvancedStoryControlsExpanded = !_originWizardAdvancedStoryControlsExpanded;
     }
 
     private Task OnDialogFieldInputAsync(DesktopDialogField field, string? value)

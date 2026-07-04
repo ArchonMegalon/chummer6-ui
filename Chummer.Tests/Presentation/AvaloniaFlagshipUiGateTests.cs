@@ -3933,6 +3933,46 @@ public sealed class AvaloniaFlagshipUiGateTests
     }
 
     [TestMethod]
+    public void Standalone_origin_wizard_preserves_advanced_controls_and_viewport_across_field_rebinds()
+    {
+        WithStandaloneDialogWindow(window =>
+        {
+            DesktopDialogState dialog = DesktopDialogFactory.BuildNewCharacterOriginWizardDialog(RulesetDefaults.Sr4, "Nova", "Cipher");
+            window.BindDialog(dialog);
+            PumpStandaloneUi();
+
+            Expander advancedStoryControls = FindDescendant<Expander>(window, "OriginDossierStandaloneAdvancedStoryControlsExpander");
+            ScrollViewer scrollViewer = FindDescendant<ScrollViewer>(window, "DialogScrollViewer");
+
+            advancedStoryControls.IsExpanded = true;
+            scrollViewer.Offset = new Vector(0d, 180d);
+            PumpStandaloneUi();
+
+            DesktopDialogState updatedDialog = dialog with
+            {
+                Fields = dialog.Fields
+                    .Select(field => string.Equals(field.Id, "newCharacterOriginBackground", StringComparison.Ordinal)
+                        ? field with
+                        {
+                            Value = "corporate",
+                            Placeholder = "corporate"
+                        }
+                        : field)
+                    .ToArray()
+            };
+
+            window.BindDialog(updatedDialog);
+            PumpStandaloneUi();
+
+            advancedStoryControls = FindDescendant<Expander>(window, "OriginDossierStandaloneAdvancedStoryControlsExpander");
+            scrollViewer = FindDescendant<ScrollViewer>(window, "DialogScrollViewer");
+
+            Assert.IsTrue(advancedStoryControls.IsExpanded, "Origin advanced story controls must stay expanded after a same-dialog field refresh.");
+            Assert.IsTrue(scrollViewer.Offset.Y >= 170d, $"Origin wizard viewport should stay near the pre-refresh scroll position, got {scrollViewer.Offset.Y.ToString(CultureInfo.InvariantCulture)}.");
+        });
+    }
+
+    [TestMethod]
     public void Runtime_priority_workflow_heritage_change_refreshes_visible_metatype_list_and_repairs_invalid_selection()
     {
         WithRuntimeHarness(harness =>

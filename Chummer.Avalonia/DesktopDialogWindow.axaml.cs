@@ -26,12 +26,14 @@ public partial class DesktopDialogWindow : Window
     private readonly TextBlock _dialogTitleText;
     private readonly TextBlock _dialogMessageText;
     private readonly ContentControl _dialogTrustReceiptPanel;
+    private readonly ScrollViewer _dialogScrollViewer;
     private readonly StackPanel _dialogFieldsPanel;
     private readonly Border _dialogActionsBorder;
     private readonly StackPanel _dialogActionsPanel;
     private IReadOnlyList<DesktopDialogField> _boundDialogFields = Array.Empty<DesktopDialogField>();
     private string? _preferredFocusControlName;
     private int? _preferredFocusSelectionStart;
+    private bool _originWizardAdvancedStoryControlsExpanded;
     private bool _suppressCloseNotification;
     private bool _suppressDialogUpdates;
 
@@ -42,6 +44,7 @@ public partial class DesktopDialogWindow : Window
         _dialogTitleText = this.FindControl<TextBlock>("DialogTitleText")!;
         _dialogMessageText = this.FindControl<TextBlock>("DialogMessageText")!;
         _dialogTrustReceiptPanel = this.FindControl<ContentControl>("DialogTrustReceiptPanel")!;
+        _dialogScrollViewer = this.FindControl<ScrollViewer>("DialogScrollViewer")!;
         _dialogFieldsPanel = this.FindControl<StackPanel>("DialogFieldsPanel")!;
         _dialogActionsBorder = this.FindControl<Border>("DialogActionsBorder")!;
         _dialogActionsPanel = this.FindControl<StackPanel>("DialogActionsPanel")!;
@@ -87,7 +90,14 @@ public partial class DesktopDialogWindow : Window
 
     public void BindDialog(DesktopDialogState dialog)
     {
+        string? previousDialogId = BoundDialogId;
+        bool dialogIdentityChanged = !string.Equals(previousDialogId, dialog.Id, StringComparison.Ordinal);
         CapturePreferredFocusState();
+        if (dialogIdentityChanged)
+        {
+            _originWizardAdvancedStoryControlsExpanded = false;
+        }
+
         BoundDialogId = dialog.Id;
         _boundDialogFields = dialog.Fields;
         ApplyDialogSizing(dialog.Id);
@@ -105,7 +115,7 @@ public partial class DesktopDialogWindow : Window
         BuildFields(dialog.Fields);
         BuildActions(dialog.Actions);
         RefreshDialogVisuals();
-        if (IsVisible)
+        if (IsVisible && dialogIdentityChanged)
         {
             Dispatcher.UIThread.Post(FocusPreferredControl, DispatcherPriority.Input);
         }
@@ -1460,7 +1470,7 @@ public partial class DesktopDialogWindow : Window
         {
             Name = "OriginDossierStandaloneAdvancedStoryControlsExpander",
             Header = "Advanced story controls",
-            IsExpanded = false,
+            IsExpanded = _originWizardAdvancedStoryControlsExpanded,
             Content = new StackPanel
             {
                 Spacing = 12,
@@ -1483,6 +1493,8 @@ public partial class DesktopDialogWindow : Window
                 }
             }
         };
+        advancedStoryControls.Expanded += (_, _) => _originWizardAdvancedStoryControlsExpanded = true;
+        advancedStoryControls.Collapsed += (_, _) => _originWizardAdvancedStoryControlsExpanded = false;
         shell.Children.Add(advancedStoryControls);
 
         shell.Children.Add(CreateLegacySummaryCard(
@@ -3755,10 +3767,27 @@ public partial class DesktopDialogWindow : Window
             return;
 
         CapturePreferredFocusState();
+        Vector preservedScrollOffset = _dialogScrollViewer.Offset;
         await ExecuteSafeAsync(
             () => _adapter.UpdateDialogFieldAsync(fieldId, value, CancellationToken.None),
             $"update field '{fieldId}'");
-        FocusPreferredControl();
+        Dispatcher.UIThread.Post(() =>
+        {
+            if (!IsVisible)
+                return;
+
+            FocusPreferredControl();
+            RestoreDialogScrollOffset(preservedScrollOffset);
+        }, DispatcherPriority.Input);
+    }
+
+    private void RestoreDialogScrollOffset(Vector offset)
+    {
+        double maxX = Math.Max(0d, _dialogScrollViewer.Extent.Width - _dialogScrollViewer.Viewport.Width);
+        double maxY = Math.Max(0d, _dialogScrollViewer.Extent.Height - _dialogScrollViewer.Viewport.Height);
+        _dialogScrollViewer.Offset = new Vector(
+            Math.Clamp(offset.X, 0d, maxX),
+            Math.Clamp(offset.Y, 0d, maxY));
     }
 
     private void OnClosing(object? sender, WindowClosingEventArgs e)

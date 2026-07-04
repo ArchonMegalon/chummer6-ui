@@ -23,6 +23,7 @@ using Chummer.Presentation.RunnerIntelligence;
 using Chummer.Presentation.Shell;
 using Chummer.Rulesets.Sr5;
 using Microsoft.AspNetCore.Components;
+using Microsoft.AspNetCore.Components.Rendering;
 using Microsoft.AspNetCore.Components.Web;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
@@ -768,6 +769,55 @@ public sealed class BlazorShellComponentTests
         Assert.IsNotNull(buildCut.Find("[data-origin-book-preview]"));
         Assert.IsNotNull(buildCut.Find("[data-origin-build-support]"));
         Assert.IsNotNull(buildCut.Find(".dialog-origin-preview .dialog-origin-narrative"));
+    }
+
+    [TestMethod]
+    public void DialogHost_keeps_origin_advanced_controls_open_across_dialog_rerenders()
+    {
+        DesktopDialogState originWizard = DesktopDialogFactory.BuildNewCharacterOriginWizardDialog(RulesetDefaults.Sr4, "Nova", "Cipher");
+
+        using var context = CreateContext();
+
+        IRenderedComponent<DialogHostHarness> cut = context.Render<DialogHostHarness>();
+        cut.InvokeAsync(() => cut.Instance.SetDialog(originWizard)).GetAwaiter().GetResult();
+
+        cut.Find("[data-origin-advanced-summary]").Click();
+        cut.WaitForAssertion(() => Assert.IsTrue(cut.Find("[data-origin-advanced-details]").HasAttribute("open")));
+
+        DesktopDialogState updatedWizard = originWizard with
+        {
+            Fields = originWizard.Fields
+                .Select(field => string.Equals(field.Id, "newCharacterOriginBackground", StringComparison.Ordinal)
+                    ? field with
+                    {
+                        Value = "corporate",
+                        Placeholder = "corporate"
+                    }
+                    : field)
+                .ToArray()
+        };
+
+        cut.InvokeAsync(() => cut.Instance.SetDialog(updatedWizard)).GetAwaiter().GetResult();
+
+        cut.WaitForAssertion(() => Assert.IsTrue(cut.Find("[data-origin-advanced-details]").HasAttribute("open")));
+    }
+
+    private sealed class DialogHostHarness : ComponentBase
+    {
+        private DesktopDialogState? _dialog;
+
+        public void SetDialog(DesktopDialogState dialog)
+        {
+            _dialog = dialog;
+            StateHasChanged();
+        }
+
+        protected override void BuildRenderTree(RenderTreeBuilder builder)
+        {
+            builder.OpenComponent<DialogHost>(0);
+            builder.AddAttribute(1, nameof(DialogHost.Dialog), _dialog);
+            builder.CloseComponent();
+        }
     }
 
     [TestMethod]
