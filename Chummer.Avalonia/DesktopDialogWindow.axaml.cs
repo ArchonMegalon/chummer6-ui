@@ -21,6 +21,13 @@ namespace Chummer.Avalonia;
 
 public partial class DesktopDialogWindow : Window
 {
+    private const string OriginWizardDialogId = "dialog.new_character.origin_wizard";
+    private const string OriginWizardAdvancedStoryControlsExpanderName = "OriginDossierStandaloneAdvancedStoryControlsExpander";
+    private static readonly TimeSpan[] DelayedOriginWizardComboRestoreDelays =
+    [
+        TimeSpan.FromMilliseconds(48),
+        TimeSpan.FromMilliseconds(96)
+    ];
     private static readonly string UiKitAccessibilityAdapterMarker = AccessibilityPrimitiveBoundary.RootClass;
     private CharacterOverviewViewModelAdapter? _adapter;
     private readonly TextBlock _dialogTitleText;
@@ -34,6 +41,16 @@ public partial class DesktopDialogWindow : Window
     private string? _preferredFocusControlName;
     private int? _preferredFocusSelectionStart;
     private bool _originWizardAdvancedStoryControlsExpanded;
+    private Vector? _preferredDialogScrollAnchor;
+    private int _preferredDialogScrollAnchorVersion;
+    private (string ControlName, double OffsetY)? _preferredDialogViewportAnchor;
+    private int _preferredDialogViewportAnchorVersion;
+    private (string ControlName, double OffsetY)? _preferredDialogInteractionAnchor;
+    private int _preferredDialogInteractionAnchorVersion;
+    private bool _suppressProgrammaticComboFocusAnchorCapture;
+    private bool _skipPreferredFocusRestoreOnNextBind;
+    private bool _suppressOriginWizardAdvancedStoryControlsCollapseDuringComboRefresh;
+    private int _dialogBindVersion;
     private bool _suppressCloseNotification;
     private bool _suppressDialogUpdates;
 
@@ -90,20 +107,31 @@ public partial class DesktopDialogWindow : Window
 
     public void BindDialog(DesktopDialogState dialog)
     {
-        string? previousDialogId = BoundDialogId;
-        bool dialogIdentityChanged = !string.Equals(previousDialogId, dialog.Id, StringComparison.Ordinal);
-        Vector? preservedScrollOffset = !dialogIdentityChanged && IsVisible
-            ? _dialogScrollViewer.Offset
-            : null;
+        _dialogBindVersion++;
+        _suppressOriginWizardAdvancedStoryControlsCollapseDuringComboRefresh = false;
         CapturePreferredFocusState();
-        if (dialogIdentityChanged)
+        CaptureTransientDialogState();
+        bool preservedOriginWizardAdvancedStoryControlsExpanded = _originWizardAdvancedStoryControlsExpanded;
+        string? previousDialogId = BoundDialogId;
+        Vector? preservedScrollOffset = CapturePreferredScrollOffset(dialog.Id);
+        (string ControlName, double OffsetY)? preservedViewportAnchor = CapturePreferredDialogViewportAnchorSnapshot(dialog.Id);
+        (string ControlName, double OffsetY)? preservedInteractionAnchor = CapturePreferredDialogInteractionAnchorSnapshot(dialog.Id);
+        bool preserveInteractionContext = string.Equals(dialog.Id, previousDialogId, StringComparison.Ordinal);
+        bool skipPreferredFocusRestore = preserveInteractionContext && _skipPreferredFocusRestoreOnNextBind;
+        _skipPreferredFocusRestoreOnNextBind = false;
+        BoundDialogId = dialog.Id;
+        if (!string.Equals(BoundDialogId, previousDialogId, StringComparison.Ordinal)
+            && !string.Equals(BoundDialogId, OriginWizardDialogId, StringComparison.Ordinal))
         {
             _originWizardAdvancedStoryControlsExpanded = false;
         }
 
-        BoundDialogId = dialog.Id;
         _boundDialogFields = dialog.Fields;
-        ApplyDialogSizing(dialog.Id);
+        if (!preserveInteractionContext)
+        {
+            ApplyDialogSizing(dialog.Id);
+        }
+
         Title = dialog.Title;
         _dialogTitleText.Text = dialog.Title;
         string visibleMessage = SuppressDialogBanner(dialog.Id) ? string.Empty : dialog.Message ?? string.Empty;
@@ -116,25 +144,16 @@ public partial class DesktopDialogWindow : Window
         ToolTip.SetTip(_dialogFieldsPanel, null);
 
         BuildFields(dialog.Fields);
+        RestoreTransientDialogState(dialog.Id, preservedOriginWizardAdvancedStoryControlsExpanded);
         BuildActions(dialog.Actions);
+        PrimePreferredScrollOffsetForDialogRebind(dialog.Id, preservedScrollOffset, preservedViewportAnchor, preservedInteractionAnchor);
         RefreshDialogVisuals();
-        if (preservedScrollOffset is Vector offset)
+        RestorePreferredScrollOffset(dialog.Id, preservedScrollOffset, preservedViewportAnchor, preservedInteractionAnchor);
+        if (IsVisible && !skipPreferredFocusRestore)
         {
-            Dispatcher.UIThread.Post(() =>
-            {
-                if (!IsVisible
-                    || !string.Equals(BoundDialogId, dialog.Id, StringComparison.Ordinal))
-                {
-                    return;
-                }
-
-                RestoreDialogScrollOffset(offset);
-            }, DispatcherPriority.Background);
-        }
-
-        if (IsVisible && dialogIdentityChanged)
-        {
-            Dispatcher.UIThread.Post(FocusPreferredControl, DispatcherPriority.Input);
+            Dispatcher.UIThread.Post(
+                () => FocusPreferredControlDuringRestore(allowFallback: !preserveInteractionContext || !skipPreferredFocusRestore),
+                DispatcherPriority.Input);
         }
     }
 
@@ -1485,7 +1504,7 @@ public partial class DesktopDialogWindow : Window
 
         Expander advancedStoryControls = new()
         {
-            Name = "OriginDossierStandaloneAdvancedStoryControlsExpander",
+            Name = OriginWizardAdvancedStoryControlsExpanderName,
             Header = "Advanced story controls",
             IsExpanded = _originWizardAdvancedStoryControlsExpanded,
             Content = new StackPanel
@@ -1510,9 +1529,10 @@ public partial class DesktopDialogWindow : Window
                 }
             }
         };
+        int advancedStoryControlsBindVersion = _dialogBindVersion;
         advancedStoryControls.Expanded += (_, _) =>
         {
-            if (_suppressDialogUpdates)
+            if (_suppressDialogUpdates || advancedStoryControlsBindVersion != _dialogBindVersion)
             {
                 return;
             }
@@ -1521,7 +1541,9 @@ public partial class DesktopDialogWindow : Window
         };
         advancedStoryControls.Collapsed += (_, _) =>
         {
-            if (_suppressDialogUpdates)
+            if (_suppressDialogUpdates
+                || advancedStoryControlsBindVersion != _dialogBindVersion
+                || _suppressOriginWizardAdvancedStoryControlsCollapseDuringComboRefresh)
             {
                 return;
             }
@@ -2736,13 +2758,20 @@ public partial class DesktopDialogWindow : Window
                 IsEnabled = !field.IsReadOnly,
                 MinWidth = 180
             };
+            int comboBoxBindVersion = _dialogBindVersion;
             ApplyShellComboBoxTheme(comboBox);
+            PrepareComboBoxForDialogStatePreservation(comboBox, comboBoxBindVersion);
             comboBox.ItemTemplate = new FuncDataTemplate<DesktopDialogFieldOption>((option, _) =>
                 CreateComboBoxOptionText(option?.Label ?? string.Empty));
             if (!field.IsReadOnly)
             {
                 comboBox.SelectionChanged += (_, _) =>
                 {
+                    if (_suppressDialogUpdates || comboBoxBindVersion != _dialogBindVersion)
+                    {
+                        return;
+                    }
+
                     if (comboBox.SelectedItem is not DesktopDialogFieldOption selectedOption)
                     {
                         return;
@@ -3506,13 +3535,20 @@ public partial class DesktopDialogWindow : Window
             IsEnabled = !field.IsReadOnly,
             MinWidth = minWidth
         };
+        int comboBoxBindVersion = _dialogBindVersion;
         ApplyShellComboBoxTheme(comboBox);
+        PrepareComboBoxForDialogStatePreservation(comboBox, comboBoxBindVersion);
         comboBox.ItemTemplate = new FuncDataTemplate<DesktopDialogFieldOption>((option, _) =>
             CreateComboBoxOptionText(option?.Label ?? string.Empty, TextWrapping.Wrap));
         if (!field.IsReadOnly)
         {
             comboBox.SelectionChanged += (_, _) =>
             {
+                if (_suppressDialogUpdates || comboBoxBindVersion != _dialogBindVersion)
+                {
+                    return;
+                }
+
                 if (comboBox.SelectedItem is DesktopDialogFieldOption selectedOption
                     && !string.Equals(selectedOption.Value, field.Value, StringComparison.Ordinal))
                 {
@@ -3539,6 +3575,33 @@ public partial class DesktopDialogWindow : Window
     private static void ApplyShellComboBoxTheme(ComboBox comboBox)
     {
         DesktopShellTheme.ApplyShellComboBoxTheme(comboBox);
+    }
+
+    private void PrepareComboBoxForDialogStatePreservation(ComboBox comboBox, int comboBoxBindVersion)
+    {
+        void CaptureInteractionAnchor()
+        {
+            if (_suppressDialogUpdates
+                || _suppressProgrammaticComboFocusAnchorCapture
+                || comboBoxBindVersion != _dialogBindVersion)
+            {
+                return;
+            }
+
+            CaptureTransientDialogState();
+            _preferredDialogScrollAnchor ??= _dialogScrollViewer.Offset;
+            CapturePreferredDialogViewportAnchor();
+            CapturePreferredDialogInteractionAnchor(comboBox);
+            RestorePreferredScrollAnchorDuringOriginWizardComboInteraction();
+        }
+
+        comboBox.GotFocus += (_, _) => CaptureInteractionAnchor();
+        comboBox.DropDownOpened += (_, _) => CaptureInteractionAnchor();
+        comboBox.AddHandler(
+            InputElement.PointerPressedEvent,
+            (_, _) => CaptureInteractionAnchor(),
+            RoutingStrategies.Tunnel,
+            handledEventsToo: true);
     }
 
     private static void ApplyShellListBoxTheme(ListBox listBox)
@@ -3768,40 +3831,300 @@ public partial class DesktopDialogWindow : Window
         Dispatcher.UIThread.Post(() =>
         {
             Activate();
-            FocusPreferredControl();
+            FocusPreferredControlDuringRestore();
         }, DispatcherPriority.Input);
     }
 
-    private void CapturePreferredFocusState(Control? fallbackControl = null)
+    private void CaptureTransientDialogState()
+    {
+        Expander? advancedStoryControls = _dialogFieldsPanel.GetVisualDescendants()
+            .OfType<Expander>()
+            .FirstOrDefault(expander => string.Equals(expander.Name, OriginWizardAdvancedStoryControlsExpanderName, StringComparison.Ordinal));
+        if (advancedStoryControls is not null)
+        {
+            _originWizardAdvancedStoryControlsExpanded = advancedStoryControls.IsExpanded;
+        }
+    }
+
+    private void CapturePreferredDialogViewportAnchor()
+    {
+        if (!ShouldPreserveOriginWizardComboInteractionScroll())
+        {
+            _preferredDialogViewportAnchor = null;
+            return;
+        }
+
+        if (_preferredDialogViewportAnchor is not null)
+        {
+            return;
+        }
+
+        Expander? advancedStoryControls = _dialogFieldsPanel.GetVisualDescendants()
+            .OfType<Expander>()
+            .FirstOrDefault(expander => string.Equals(expander.Name, OriginWizardAdvancedStoryControlsExpanderName, StringComparison.Ordinal));
+        if (advancedStoryControls is null || string.IsNullOrWhiteSpace(advancedStoryControls.Name))
+        {
+            _preferredDialogViewportAnchor = null;
+            return;
+        }
+
+        Point? translated = advancedStoryControls.TranslatePoint(default, _dialogScrollViewer);
+        if (translated is null)
+        {
+            _preferredDialogViewportAnchor = null;
+            return;
+        }
+
+        _preferredDialogViewportAnchor = (advancedStoryControls.Name, translated.Value.Y);
+    }
+
+    private void CapturePreferredDialogInteractionAnchor(Control control)
+    {
+        if (!ShouldPreserveOriginWizardComboInteractionScroll()
+            || string.IsNullOrWhiteSpace(control.Name))
+        {
+            _preferredDialogInteractionAnchor = null;
+            return;
+        }
+
+        if (_preferredDialogInteractionAnchor is { } existingAnchor
+            && string.Equals(existingAnchor.ControlName, control.Name, StringComparison.Ordinal))
+        {
+            return;
+        }
+
+        Point? translated = control.TranslatePoint(default, _dialogScrollViewer);
+        if (translated is null)
+        {
+            _preferredDialogInteractionAnchor = null;
+            return;
+        }
+
+        _preferredDialogInteractionAnchor = (control.Name, translated.Value.Y);
+    }
+
+    private void ClearPreferredDialogViewportAnchor()
+    {
+        _preferredDialogViewportAnchor = null;
+        _preferredDialogViewportAnchorVersion++;
+    }
+
+    private void ClearPreferredDialogInteractionAnchor()
+    {
+        _preferredDialogInteractionAnchor = null;
+        _preferredDialogInteractionAnchorVersion++;
+    }
+
+    private Vector? CapturePreferredScrollOffset(string nextDialogId)
+    {
+        if (!string.Equals(BoundDialogId, nextDialogId, StringComparison.Ordinal))
+        {
+            _preferredDialogScrollAnchor = null;
+            _preferredDialogScrollAnchorVersion++;
+            ClearPreferredDialogViewportAnchor();
+            ClearPreferredDialogInteractionAnchor();
+            return null;
+        }
+
+        Vector preservedOffset = _preferredDialogScrollAnchor ?? _dialogScrollViewer.Offset;
+        _preferredDialogScrollAnchor = null;
+        _preferredDialogScrollAnchorVersion++;
+        return preservedOffset;
+    }
+
+    private (string ControlName, double OffsetY)? CapturePreferredDialogViewportAnchorSnapshot(string nextDialogId)
+    {
+        if (!string.Equals(BoundDialogId, nextDialogId, StringComparison.Ordinal))
+        {
+            ClearPreferredDialogViewportAnchor();
+            return null;
+        }
+
+        (string ControlName, double OffsetY)? preservedAnchor = _preferredDialogViewportAnchor;
+        if (preservedAnchor is null)
+        {
+            preservedAnchor = CaptureCurrentOriginWizardViewportAnchor();
+        }
+
+        ClearPreferredDialogViewportAnchor();
+        return preservedAnchor;
+    }
+
+    private (string ControlName, double OffsetY)? CapturePreferredDialogInteractionAnchorSnapshot(string nextDialogId)
+    {
+        if (!string.Equals(BoundDialogId, nextDialogId, StringComparison.Ordinal))
+        {
+            ClearPreferredDialogInteractionAnchor();
+            return null;
+        }
+
+        (string ControlName, double OffsetY)? preservedAnchor = _preferredDialogInteractionAnchor;
+        ClearPreferredDialogInteractionAnchor();
+        return preservedAnchor;
+    }
+
+    private void RestorePreferredScrollOffset(
+        string? dialogId,
+        Vector? preservedScrollOffset,
+        (string ControlName, double OffsetY)? preservedViewportAnchor,
+        (string ControlName, double OffsetY)? preservedInteractionAnchor)
+    {
+        Vector offset = preservedScrollOffset ?? default;
+        bool hasPreferredAnchor = (preservedViewportAnchor is not null || preservedInteractionAnchor is not null)
+            && string.Equals(dialogId, OriginWizardDialogId, StringComparison.Ordinal);
+        if (!hasPreferredAnchor)
+        {
+            _dialogScrollViewer.Offset = offset;
+        }
+
+        if (preservedScrollOffset is null)
+        {
+            if ((preservedViewportAnchor is null && preservedInteractionAnchor is null)
+                || !string.Equals(dialogId, OriginWizardDialogId, StringComparison.Ordinal))
+            {
+                return;
+            }
+        }
+        else if (!hasPreferredAnchor)
+        {
+            Dispatcher.UIThread.Post(() => _dialogScrollViewer.Offset = offset, DispatcherPriority.Input);
+            Dispatcher.UIThread.Post(() => _dialogScrollViewer.Offset = offset, DispatcherPriority.Loaded);
+            Dispatcher.UIThread.Post(() => _dialogScrollViewer.Offset = offset, DispatcherPriority.Background);
+            ScheduleDelayedPreferredDialogScrollAnchor(offset, _preferredDialogScrollAnchorVersion);
+        }
+
+        bool hasPreferredInteractionAnchor = preservedInteractionAnchor is not null
+            && string.Equals(dialogId, OriginWizardDialogId, StringComparison.Ordinal);
+        if (hasPreferredInteractionAnchor)
+        {
+            (string ControlName, double OffsetY) interactionAnchor = preservedInteractionAnchor!.Value;
+            int interactionAnchorVersion = ++_preferredDialogInteractionAnchorVersion;
+            ApplyPreferredDialogInteractionAnchor(interactionAnchor.ControlName, interactionAnchor.OffsetY, interactionAnchorVersion, DispatcherPriority.Input);
+            ApplyPreferredDialogInteractionAnchor(interactionAnchor.ControlName, interactionAnchor.OffsetY, interactionAnchorVersion, DispatcherPriority.Loaded);
+            ApplyPreferredDialogInteractionAnchor(interactionAnchor.ControlName, interactionAnchor.OffsetY, interactionAnchorVersion, DispatcherPriority.Background);
+            ScheduleDelayedPreferredDialogInteractionAnchor(interactionAnchor.ControlName, interactionAnchor.OffsetY, interactionAnchorVersion);
+        }
+
+        if (hasPreferredInteractionAnchor
+            || preservedViewportAnchor is null
+            || !string.Equals(dialogId, OriginWizardDialogId, StringComparison.Ordinal))
+        {
+            return;
+        }
+
+        int anchorVersion = ++_preferredDialogViewportAnchorVersion;
+        ApplyPreferredDialogViewportAnchor(preservedViewportAnchor.Value.ControlName, preservedViewportAnchor.Value.OffsetY, anchorVersion, DispatcherPriority.Input);
+        ApplyPreferredDialogViewportAnchor(preservedViewportAnchor.Value.ControlName, preservedViewportAnchor.Value.OffsetY, anchorVersion, DispatcherPriority.Loaded);
+        ApplyPreferredDialogViewportAnchor(preservedViewportAnchor.Value.ControlName, preservedViewportAnchor.Value.OffsetY, anchorVersion, DispatcherPriority.Background);
+        ScheduleDelayedPreferredDialogViewportAnchor(preservedViewportAnchor.Value.ControlName, preservedViewportAnchor.Value.OffsetY, anchorVersion);
+    }
+
+    private void PrimePreferredScrollOffsetForDialogRebind(
+        string? dialogId,
+        Vector? preservedScrollOffset,
+        (string ControlName, double OffsetY)? preservedViewportAnchor,
+        (string ControlName, double OffsetY)? preservedInteractionAnchor)
+    {
+        if (preservedScrollOffset is { } offset)
+        {
+            _dialogScrollViewer.Offset = offset;
+        }
+        else if (preservedViewportAnchor is null && preservedInteractionAnchor is null)
+        {
+            _dialogScrollViewer.Offset = default;
+        }
+
+        if (!string.Equals(dialogId, OriginWizardDialogId, StringComparison.Ordinal))
+        {
+            return;
+        }
+
+        if (preservedInteractionAnchor is { } interactionAnchor)
+        {
+            ApplyPreferredDialogInteractionAnchorNow(interactionAnchor.ControlName, interactionAnchor.OffsetY);
+        }
+
+        if (preservedInteractionAnchor is null && preservedViewportAnchor is { } viewportAnchor)
+        {
+            ApplyPreferredDialogViewportAnchorNow(viewportAnchor.ControlName, viewportAnchor.OffsetY);
+        }
+    }
+
+    private void RestoreTransientDialogState(string? dialogId, bool preservedOriginWizardAdvancedStoryControlsExpanded)
+    {
+        if (!string.Equals(dialogId, OriginWizardDialogId, StringComparison.Ordinal))
+        {
+            return;
+        }
+
+        Expander? advancedStoryControls = _dialogFieldsPanel.GetVisualDescendants()
+            .OfType<Expander>()
+            .FirstOrDefault(expander => string.Equals(expander.Name, OriginWizardAdvancedStoryControlsExpanderName, StringComparison.Ordinal));
+        if (advancedStoryControls is null)
+        {
+            return;
+        }
+
+        advancedStoryControls.IsExpanded = preservedOriginWizardAdvancedStoryControlsExpanded;
+        _originWizardAdvancedStoryControlsExpanded = preservedOriginWizardAdvancedStoryControlsExpanded;
+    }
+
+    private (string ControlName, double OffsetY)? CaptureCurrentOriginWizardViewportAnchor()
+    {
+        if (!string.Equals(BoundDialogId, OriginWizardDialogId, StringComparison.Ordinal) || !_originWizardAdvancedStoryControlsExpanded)
+        {
+            return null;
+        }
+
+        Expander? advancedStoryControls = _dialogFieldsPanel.GetVisualDescendants()
+            .OfType<Expander>()
+            .FirstOrDefault(expander => string.Equals(expander.Name, OriginWizardAdvancedStoryControlsExpanderName, StringComparison.Ordinal));
+        if (advancedStoryControls is null || string.IsNullOrWhiteSpace(advancedStoryControls.Name))
+        {
+            return null;
+        }
+
+        Point? translated = advancedStoryControls.TranslatePoint(default, _dialogScrollViewer);
+        if (translated is null)
+        {
+            return null;
+        }
+
+        return (advancedStoryControls.Name, translated.Value.Y);
+    }
+
+    private void CapturePreferredFocusState()
     {
         _preferredFocusControlName = null;
         _preferredFocusSelectionStart = null;
 
         if (GetTopLevel(this)?.FocusManager?.GetFocusedElement() is not Control focusedControl)
         {
-            if (fallbackControl is not null)
-            {
-                CapturePreferredControlState(fallbackControl);
-            }
-
             return;
         }
 
         if (focusedControl.GetVisualRoot() is not DesktopDialogWindow)
         {
-            if (fallbackControl is not null)
-            {
-                CapturePreferredControlState(fallbackControl);
-            }
-
             return;
         }
 
-        CapturePreferredControlState(focusedControl);
+        _preferredFocusControlName = focusedControl.Name;
+        if (focusedControl is TextBox textBox)
+        {
+            _preferredFocusSelectionStart = textBox.CaretIndex;
+        }
     }
 
-    private void CapturePreferredControlState(Control control)
+    private void RememberPreferredFocus(Control? control)
     {
+        _preferredFocusControlName = null;
+        _preferredFocusSelectionStart = null;
+
+        if (control is null || control.GetVisualRoot() is not DesktopDialogWindow)
+        {
+            return;
+        }
+
         _preferredFocusControlName = control.Name;
         if (control is TextBox textBox)
         {
@@ -3809,24 +4132,54 @@ public partial class DesktopDialogWindow : Window
         }
     }
 
-    private async void QueueDialogFieldUpdate(string fieldId, string value, Control? preferredFocusControl = null)
+    private async void QueueDialogFieldUpdate(string fieldId, string value, Control? preferredControl = null)
     {
         if (_adapter is null || _suppressDialogUpdates)
             return;
 
-        CapturePreferredFocusState(preferredFocusControl);
-        Vector preservedScrollOffset = _dialogScrollViewer.Offset;
+        CaptureTransientDialogState();
+        bool suppressOriginWizardCollapseDuringRefresh = false;
+        if (preferredControl is ComboBox)
+        {
+            suppressOriginWizardCollapseDuringRefresh = ShouldPreserveOriginWizardComboInteractionScroll();
+            _suppressOriginWizardAdvancedStoryControlsCollapseDuringComboRefresh = suppressOriginWizardCollapseDuringRefresh;
+            _preferredDialogScrollAnchor ??= _dialogScrollViewer.Offset;
+            CapturePreferredDialogViewportAnchor();
+            CapturePreferredDialogInteractionAnchor(preferredControl);
+            RestorePreferredScrollAnchorDuringOriginWizardComboInteraction();
+        }
+        else
+        {
+            _preferredDialogScrollAnchor = null;
+            _preferredDialogScrollAnchorVersion++;
+            ClearPreferredDialogViewportAnchor();
+            ClearPreferredDialogInteractionAnchor();
+        }
+
+        _skipPreferredFocusRestoreOnNextBind = preferredControl is ComboBox;
+        if (preferredControl is null)
+        {
+            CapturePreferredFocusState();
+        }
+        else
+        {
+            RememberPreferredFocus(preferredControl);
+        }
+
+        int bindVersionBeforeUpdate = _dialogBindVersion;
         await ExecuteSafeAsync(
             () => _adapter.UpdateDialogFieldAsync(fieldId, value, CancellationToken.None),
             $"update field '{fieldId}'");
-        Dispatcher.UIThread.Post(() =>
+        if (suppressOriginWizardCollapseDuringRefresh)
         {
-            if (!IsVisible)
-                return;
+            _suppressOriginWizardAdvancedStoryControlsCollapseDuringComboRefresh = false;
+        }
 
-            FocusPreferredControl();
-            RestoreDialogScrollOffset(preservedScrollOffset);
-        }, DispatcherPriority.Input);
+        if (_dialogBindVersion == bindVersionBeforeUpdate)
+        {
+            _skipPreferredFocusRestoreOnNextBind = false;
+            FocusPreferredControlDuringRestore();
+        }
     }
 
     private void RestoreDialogScrollOffset(Vector offset)
@@ -3836,6 +4189,183 @@ public partial class DesktopDialogWindow : Window
         _dialogScrollViewer.Offset = new Vector(
             Math.Clamp(offset.X, 0d, maxX),
             Math.Clamp(offset.Y, 0d, maxY));
+    }
+
+    private void FocusPreferredControlDuringRestore(bool allowFallback = true)
+    {
+        _suppressProgrammaticComboFocusAnchorCapture = true;
+        try
+        {
+            FocusPreferredControl(allowFallback);
+        }
+        finally
+        {
+            Dispatcher.UIThread.Post(
+                () => _suppressProgrammaticComboFocusAnchorCapture = false,
+                DispatcherPriority.Background);
+        }
+    }
+
+    private bool ShouldPreserveOriginWizardComboInteractionScroll()
+    {
+        return string.Equals(BoundDialogId, OriginWizardDialogId, StringComparison.Ordinal)
+            && _originWizardAdvancedStoryControlsExpanded;
+    }
+
+    private void RestorePreferredScrollAnchorDuringOriginWizardComboInteraction()
+    {
+        if (!ShouldPreserveOriginWizardComboInteractionScroll())
+        {
+            return;
+        }
+
+        bool hasPreferredAnchor = _preferredDialogViewportAnchor is { } || _preferredDialogInteractionAnchor is { };
+        if (!hasPreferredAnchor && _preferredDialogScrollAnchor is Vector anchor)
+        {
+            int anchorVersion = ++_preferredDialogScrollAnchorVersion;
+            ApplyPreferredDialogScrollAnchor(anchor, anchorVersion, DispatcherPriority.Background);
+            ScheduleDelayedPreferredDialogScrollAnchor(anchor, anchorVersion);
+        }
+
+        if (_preferredDialogInteractionAnchor is null && _preferredDialogViewportAnchor is { } viewportAnchor)
+        {
+            int viewportAnchorVersion = ++_preferredDialogViewportAnchorVersion;
+            ApplyPreferredDialogViewportAnchor(viewportAnchor.ControlName, viewportAnchor.OffsetY, viewportAnchorVersion, DispatcherPriority.Background);
+            ScheduleDelayedPreferredDialogViewportAnchor(viewportAnchor.ControlName, viewportAnchor.OffsetY, viewportAnchorVersion);
+        }
+
+        if (_preferredDialogInteractionAnchor is { } interactionAnchor)
+        {
+            int interactionAnchorVersion = ++_preferredDialogInteractionAnchorVersion;
+            ApplyPreferredDialogInteractionAnchor(interactionAnchor.ControlName, interactionAnchor.OffsetY, interactionAnchorVersion, DispatcherPriority.Background);
+            ScheduleDelayedPreferredDialogInteractionAnchor(interactionAnchor.ControlName, interactionAnchor.OffsetY, interactionAnchorVersion);
+        }
+    }
+
+    private void ScheduleDelayedPreferredDialogScrollAnchor(Vector anchor, int anchorVersion)
+    {
+        foreach (TimeSpan delay in DelayedOriginWizardComboRestoreDelays)
+        {
+            DispatcherTimer.RunOnce(
+                () => ApplyPreferredDialogScrollAnchor(anchor, anchorVersion, DispatcherPriority.Background),
+                delay);
+        }
+    }
+
+    private void ScheduleDelayedPreferredDialogViewportAnchor(string controlName, double offsetY, int anchorVersion)
+    {
+        foreach (TimeSpan delay in DelayedOriginWizardComboRestoreDelays)
+        {
+            DispatcherTimer.RunOnce(
+                () => ApplyPreferredDialogViewportAnchor(controlName, offsetY, anchorVersion, DispatcherPriority.Background),
+                delay);
+        }
+    }
+
+    private void ScheduleDelayedPreferredDialogInteractionAnchor(string controlName, double offsetY, int anchorVersion)
+    {
+        foreach (TimeSpan delay in DelayedOriginWizardComboRestoreDelays)
+        {
+            DispatcherTimer.RunOnce(
+                () => ApplyPreferredDialogInteractionAnchor(controlName, offsetY, anchorVersion, DispatcherPriority.Background),
+                delay);
+        }
+    }
+
+    private void ApplyPreferredDialogScrollAnchor(Vector anchor, int anchorVersion, DispatcherPriority priority)
+    {
+        Dispatcher.UIThread.Post(() =>
+        {
+            if (anchorVersion != _preferredDialogScrollAnchorVersion
+                || !ShouldPreserveOriginWizardComboInteractionScroll())
+            {
+                return;
+            }
+
+            _dialogScrollViewer.Offset = anchor;
+        }, priority);
+    }
+
+    private void ApplyPreferredDialogViewportAnchor(string controlName, double offsetY, int anchorVersion, DispatcherPriority priority)
+    {
+        Dispatcher.UIThread.Post(() =>
+        {
+            if (anchorVersion != _preferredDialogViewportAnchorVersion
+                || !ShouldPreserveOriginWizardComboInteractionScroll())
+            {
+                return;
+            }
+
+            TryAdjustDialogScrollOffsetForAnchor(controlName, offsetY);
+        }, priority);
+    }
+
+    private void ApplyPreferredDialogInteractionAnchor(string controlName, double offsetY, int anchorVersion, DispatcherPriority priority)
+    {
+        Dispatcher.UIThread.Post(() =>
+        {
+            if (anchorVersion != _preferredDialogInteractionAnchorVersion
+                || !ShouldPreserveOriginWizardComboInteractionScroll())
+            {
+                return;
+            }
+
+            TryAdjustDialogScrollOffsetForAnchor(controlName, offsetY);
+        }, priority);
+    }
+
+    private void ApplyPreferredDialogViewportAnchorNow(string controlName, double offsetY)
+    {
+        if (!ShouldPreserveOriginWizardComboInteractionScroll())
+        {
+            return;
+        }
+
+        TryAdjustDialogScrollOffsetForAnchor(controlName, offsetY);
+    }
+
+    private void ApplyPreferredDialogInteractionAnchorNow(string controlName, double offsetY)
+    {
+        if (!ShouldPreserveOriginWizardComboInteractionScroll())
+        {
+            return;
+        }
+
+        TryAdjustDialogScrollOffsetForAnchor(controlName, offsetY);
+    }
+
+    private bool TryAdjustDialogScrollOffsetForAnchor(string controlName, double offsetY)
+    {
+        Control? anchorControl = _dialogFieldsPanel.GetVisualDescendants()
+            .OfType<Control>()
+            .FirstOrDefault(control => string.Equals(control.Name, controlName, StringComparison.Ordinal));
+        if (anchorControl is null)
+        {
+            return false;
+        }
+
+        Point? translated = anchorControl.TranslatePoint(default, _dialogScrollViewer);
+        if (translated is null)
+        {
+            return false;
+        }
+
+        double deltaY = translated.Value.Y - offsetY;
+        if (Math.Abs(deltaY) <= 0.5d)
+        {
+            return false;
+        }
+
+        Vector currentOffset = _dialogScrollViewer.Offset;
+        double maxOffsetY = Math.Max(0d, _dialogScrollViewer.Extent.Height - _dialogScrollViewer.Viewport.Height);
+        if (maxOffsetY <= 0d && currentOffset.Y > 0d)
+        {
+            return false;
+        }
+
+        double nextOffsetY = Math.Clamp(currentOffset.Y + deltaY, 0d, maxOffsetY);
+        _dialogScrollViewer.Offset = new Vector(currentOffset.X, nextOffsetY);
+        return true;
     }
 
     private void OnClosing(object? sender, WindowClosingEventArgs e)
@@ -3899,9 +4429,14 @@ public partial class DesktopDialogWindow : Window
         }
     }
 
-    private void FocusPreferredControl()
+    private void FocusPreferredControl(bool allowFallback = true)
     {
         if (TryRestorePreferredFocus())
+        {
+            return;
+        }
+
+        if (!allowFallback)
         {
             return;
         }

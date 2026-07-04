@@ -1,7 +1,9 @@
 using System;
+using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
 using System.Threading;
+using System.Threading.Tasks;
 using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Controls.Primitives;
@@ -14,8 +16,10 @@ using Avalonia.VisualTree;
 using Chummer.Avalonia;
 using Chummer.Avalonia.Controls;
 using Chummer.Campaign.Contracts;
+using Chummer.Contracts.Presentation;
 using Chummer.Desktop.Runtime;
 using Chummer.Contracts.Rulesets;
+using Chummer.Contracts.Workspaces;
 using Chummer.Presentation.Overview;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 
@@ -147,6 +151,61 @@ public sealed class DesktopWindowContrastTests
             Assert.IsTrue(bookPreview.IsVisible, "The Origin Dossier book preview must be visible for dark-mode contrast proof.");
             AssertVisibleTextBlockContrast(bookPreview, "origin dossier book preview dark mode", minimumVisibleTextBlocks: 2);
         }, requestedTheme: ThemeVariant.Dark);
+    }
+
+    [TestMethod]
+    public void Origin_dossier_advanced_story_controls_do_not_jump_or_collapse_after_live_combo_selection()
+    {
+        DesktopDialogState originWizard = new DesktopDialogFactory().CreateCommandDialog(
+            "new_character_origin",
+            profile: null,
+            DesktopPreferenceState.Default,
+            activeSectionJson: null,
+            currentWorkspace: null,
+            rulesetId: RulesetDefaults.Sr5);
+        DesktopDialogField metatypePreferenceField = originWizard.Fields
+            .Single(field => string.Equals(field.Id, "newCharacterOriginMetatypePreference", StringComparison.Ordinal));
+        DesktopDialogFieldOption nextMetatypePreference = (metatypePreferenceField.Options ?? Array.Empty<DesktopDialogFieldOption>())
+            .First(option => !string.Equals(option.Value, metatypePreferenceField.Value, StringComparison.Ordinal));
+
+        WithPresenterBoundDialogWindow(originWizard, window =>
+        {
+            window.Height = 420;
+            PumpUi();
+
+            Expander advancedStoryControls = window.GetVisualDescendants()
+                .OfType<Expander>()
+                .Single(expander => string.Equals(expander.Name, "OriginDossierStandaloneAdvancedStoryControlsExpander", StringComparison.Ordinal));
+            ScrollViewer scrollViewer = window.FindControl<ScrollViewer>("DialogScrollViewer")!;
+            ComboBox metatypePreferenceCombo = window.GetVisualDescendants()
+                .OfType<ComboBox>()
+                .Single(comboBox => string.Equals(comboBox.Name, DesktopDialogAccessibility.BuildFieldInputName("newCharacterOriginMetatypePreference"), StringComparison.Ordinal));
+
+            advancedStoryControls.IsExpanded = true;
+            PumpUi();
+
+            scrollViewer.Offset = new Vector(0d, 180d);
+            PumpUi();
+            double preservedOffsetY = scrollViewer.Offset.Y;
+
+            metatypePreferenceCombo.SelectedItem = nextMetatypePreference;
+            PumpUi();
+            PumpUi();
+
+            Expander reboundAdvancedStoryControls = window.GetVisualDescendants()
+                .OfType<Expander>()
+                .Single(expander => string.Equals(expander.Name, "OriginDossierStandaloneAdvancedStoryControlsExpander", StringComparison.Ordinal));
+            ScrollViewer reboundScrollViewer = window.FindControl<ScrollViewer>("DialogScrollViewer")!;
+            ComboBox reboundMetatypePreferenceCombo = window.GetVisualDescendants()
+                .OfType<ComboBox>()
+                .Single(comboBox => string.Equals(comboBox.Name, DesktopDialogAccessibility.BuildFieldInputName("newCharacterOriginMetatypePreference"), StringComparison.Ordinal));
+
+            Assert.IsTrue(reboundAdvancedStoryControls.IsExpanded, "Advanced story controls should stay expanded after a live combo selection refresh.");
+            Assert.AreEqual(nextMetatypePreference.Value, ((DesktopDialogFieldOption)reboundMetatypePreferenceCombo.SelectedItem!).Value, "The live combo selection should survive the dialog refresh.");
+            Assert.IsTrue(
+                Math.Abs(reboundScrollViewer.Offset.Y - preservedOffsetY) <= 8d,
+                $"Origin Dossier should preserve scroll position across a live combo selection refresh. Before={preservedOffsetY:F1}, After={reboundScrollViewer.Offset.Y:F1}.");
+        });
     }
 
     [TestMethod]
@@ -562,6 +621,82 @@ public sealed class DesktopWindowContrastTests
         }
 
         throw new AssertFailedException($"Avalonia dialog {dialog.Id} headless session did not stabilize for contrast proof.", lastFailure);
+    }
+
+    private static void WithPresenterBoundDialogWindow(
+        DesktopDialogState dialog,
+        Action<DesktopDialogWindow> assertion,
+        ThemeVariant? requestedTheme = null)
+    {
+        EnsureHeadlessPlatform();
+        Exception? lastFailure = null;
+        for (int attempt = 1; attempt <= HeadlessSessionAttempts; attempt++)
+        {
+            HeadlessUnitTestSession? session = null;
+            try
+            {
+                session = HeadlessUnitTestSession.StartNew(typeof(ContrastHeadlessAppBootstrap));
+                session.Dispatch(
+                        () =>
+                        {
+                            ThemeVariant? priorAppTheme = global::Avalonia.Application.Current?.RequestedThemeVariant;
+                            if (requestedTheme is not null && global::Avalonia.Application.Current is not null)
+                            {
+                                global::Avalonia.Application.Current.RequestedThemeVariant = requestedTheme;
+                            }
+
+                            RebindingDialogPresenter presenter = new(dialog);
+                            using CharacterOverviewViewModelAdapter adapter = new(presenter);
+                            DesktopDialogWindow window = new(adapter)
+                            {
+                                Width = 1080,
+                                Height = 900,
+                                RequestedThemeVariant = requestedTheme ?? ThemeVariant.Default
+                            };
+
+                            adapter.Updated += (_, _) =>
+                            {
+                                if (adapter.State.ActiveDialog is DesktopDialogState activeDialog)
+                                {
+                                    window.BindDialog(activeDialog);
+                                    PumpUi();
+                                }
+                            };
+
+                            try
+                            {
+                                window.BindDialog(dialog);
+                                window.Show();
+                                PumpUi();
+                                assertion(window);
+                            }
+                            finally
+                            {
+                                window.Close();
+                                if (requestedTheme is not null && global::Avalonia.Application.Current is not null && priorAppTheme is not null)
+                                {
+                                    global::Avalonia.Application.Current.RequestedThemeVariant = priorAppTheme;
+                                }
+
+                                PumpUi();
+                            }
+                        },
+                        CancellationToken.None)
+                    .GetAwaiter()
+                    .GetResult();
+                return;
+            }
+            catch (Exception ex) when (IsTransientHeadlessFailure(ex) && attempt < HeadlessSessionAttempts)
+            {
+                lastFailure = ex;
+            }
+            finally
+            {
+                SafeDisposeHeadlessSession(session);
+            }
+        }
+
+        throw new AssertFailedException($"Avalonia presenter-backed dialog {dialog.Id} headless session did not stabilize for contrast proof.", lastFailure);
     }
 
     private static void WithStandaloneShellInputThemeWindow(Action<Window> assertion)
@@ -1104,6 +1239,88 @@ public sealed class DesktopWindowContrastTests
             _window.RequestedThemeVariant = _priorWindowTheme;
             _window.InvalidateVisual();
             PumpUi();
+        }
+    }
+
+    private sealed class RebindingDialogPresenter : ICharacterOverviewPresenter
+    {
+        public RebindingDialogPresenter(DesktopDialogState dialog)
+        {
+            State = CharacterOverviewState.Empty with
+            {
+                ActiveDialog = dialog,
+                Preferences = DesktopPreferenceState.Default
+            };
+        }
+
+        public CharacterOverviewState State { get; private set; }
+
+        public event EventHandler? StateChanged;
+
+        public Task InitializeAsync(CancellationToken ct) => Task.CompletedTask;
+
+        public Task ImportAsync(WorkspaceImportDocument document, CancellationToken ct) => Task.CompletedTask;
+
+        public Task LoadAsync(CharacterWorkspaceId id, CancellationToken ct) => Task.CompletedTask;
+
+        public Task SwitchWorkspaceAsync(CharacterWorkspaceId id, CancellationToken ct) => Task.CompletedTask;
+
+        public Task CloseWorkspaceAsync(CharacterWorkspaceId id, CancellationToken ct) => Task.CompletedTask;
+
+        public Task ExecuteCommandAsync(string commandId, CancellationToken ct) => Task.CompletedTask;
+
+        public Task SelectTabAsync(string tabId, CancellationToken ct) => Task.CompletedTask;
+
+        public Task HandleUiControlAsync(string controlId, CancellationToken ct) => Task.CompletedTask;
+
+        public Task ExecuteWorkspaceActionAsync(WorkspaceSurfaceActionDefinition action, CancellationToken ct) => Task.CompletedTask;
+
+        public Task UpdateDialogFieldAsync(string fieldId, string? value, CancellationToken ct)
+        {
+            DesktopDialogState dialog = State.ActiveDialog
+                ?? throw new AssertFailedException("A dialog update was requested without an active dialog.");
+
+            DesktopDialogField[] updatedFields = dialog.Fields
+                .Select(field => string.Equals(field.Id, fieldId, StringComparison.Ordinal)
+                    ? field with { Value = value ?? string.Empty }
+                    : field)
+                .ToArray();
+
+            MethodInfo rebuildMethod = typeof(DesktopDialogFactory).GetMethod(
+                "RebuildDynamicDialog",
+                BindingFlags.Static | BindingFlags.NonPublic)
+                ?? throw new AssertFailedException("RebuildDynamicDialog reflection entry point was not found.");
+            DesktopDialogState nextDialog = (DesktopDialogState)(rebuildMethod.Invoke(
+                null,
+                new object[] { dialog with { Fields = updatedFields }, DesktopPreferenceState.Default })
+                ?? throw new AssertFailedException("RebuildDynamicDialog returned null."));
+
+            Publish(State with
+            {
+                ActiveDialog = nextDialog
+            });
+
+            return Task.CompletedTask;
+        }
+
+        public Task ApplyAttributeEditAsync(AttributeEditRequest request, CancellationToken ct) => Task.CompletedTask;
+
+        public Task ExecuteDialogActionAsync(string actionId, CancellationToken ct) => Task.CompletedTask;
+
+        public Task CloseDialogAsync(CancellationToken ct) => Task.CompletedTask;
+
+        public Task UpdateMetadataAsync(UpdateWorkspaceMetadata command, CancellationToken ct) => Task.CompletedTask;
+
+        public Task SaveAsync(CancellationToken ct) => Task.CompletedTask;
+
+        public Task ExportAsync(CancellationToken ct) => Task.CompletedTask;
+
+        public Task PrintAsync(CancellationToken ct) => Task.CompletedTask;
+
+        private void Publish(CharacterOverviewState state)
+        {
+            State = state;
+            StateChanged?.Invoke(this, EventArgs.Empty);
         }
     }
 }

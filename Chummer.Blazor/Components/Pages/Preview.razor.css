@@ -9083,6 +9083,7 @@
 }
 
 .browser-app-roster-head span,
+.browser-app-origin-copy span,
 .browser-app-runner-panel span,
 .browser-app-example-panel h2 {
     color: #d8bf7a;
@@ -9092,6 +9093,8 @@
 
 .browser-app-roster-head h1,
 .browser-app-roster-head p,
+.browser-app-origin-copy h2,
+.browser-app-origin-copy p,
 .browser-app-runner-panel h2,
 .browser-app-runner-panel p,
 .browser-app-example-panel h2 {
@@ -9105,12 +9108,14 @@
 }
 
 .browser-app-roster-head p,
+.browser-app-origin-copy p,
 .browser-app-runner-panel p,
 .browser-app-example-runners small {
     color: rgba(247, 242, 232, .72);
 }
 
 .browser-app-roster-actions,
+.browser-app-origin-actions,
 .browser-app-runner-actions,
 .browser-app-roster-toolbar {
     display: flex;
@@ -9119,6 +9124,7 @@
 }
 
 .browser-app-roster-actions a,
+.browser-app-origin-actions a,
 .browser-app-runner-actions a,
 .browser-app-roster-toolbar button {
     min-height: 2.15rem;
@@ -9134,18 +9140,56 @@
 }
 
 .browser-app-roster-actions a:first-child,
+.browser-app-origin-actions a:first-child,
 .browser-app-runner-actions a:first-child {
     border-color: rgba(143, 240, 188, .5);
     background: rgba(143, 240, 188, .14);
 }
 
 .browser-app-roster-actions a:hover,
+.browser-app-origin-actions a:hover,
 .browser-app-runner-actions a:hover,
 .browser-app-roster-toolbar button:hover,
 .browser-app-example-runners a:hover,
 .browser-app-roster-tree a:hover {
     border-color: rgba(143, 240, 188, .72);
     background: rgba(143, 240, 188, .12);
+}
+
+.browser-app-origin-panel {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    gap: .85rem;
+    align-items: end;
+    margin: .85rem 0;
+    padding: .95rem;
+    border: 1px solid rgba(244, 207, 115, .24);
+    border-radius: .55rem;
+    background:
+        linear-gradient(135deg, rgba(244, 207, 115, .13), rgba(143, 240, 188, .08)),
+        rgba(5, 7, 10, .74);
+    box-shadow:
+        inset 0 1px 0 rgba(255, 255, 255, .055),
+        0 .8rem 2rem rgba(0, 0, 0, .24);
+}
+
+.browser-app-origin-copy {
+    display: grid;
+    gap: .25rem;
+}
+
+.browser-app-origin-copy h2 {
+    color: #fff8e8;
+    font-size: clamp(1.35rem, 2.2vw, 2rem);
+    line-height: 1.05;
+}
+
+.browser-preview-frame--origin-app {
+    margin-top: .85rem;
+    border-color: rgba(143, 240, 188, .28);
+    background:
+        linear-gradient(180deg, rgba(12, 18, 16, .96), rgba(7, 9, 13, .98)),
+        #080b0f;
 }
 
 .browser-app-roster-grid {
@@ -9282,11 +9326,13 @@
 
 @media (max-width: 920px) {
     .browser-app-roster-head,
+    .browser-app-origin-panel,
     .browser-app-roster-grid {
         grid-template-columns: 1fr;
     }
 
-    .browser-app-roster-actions {
+    .browser-app-roster-actions,
+    .browser-app-origin-actions {
         justify-content: flex-start;
     }
 

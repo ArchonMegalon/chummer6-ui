@@ -1161,9 +1161,11 @@ public sealed class DesktopThemeManagerTests
         StringAssert.Contains(originSurfaceSource, "Classes = { \"shell-kicker\" }");
         StringAssert.Contains(originSurfaceSource, "Foreground = DesktopShellTheme.ResolveForegroundBrush()");
         StringAssert.Contains(desktopDialogSource, "newCharacterOriginGmConstraintPreset");
-        StringAssert.Contains(originSurfaceSource, "OriginDossierStandaloneAdvancedStoryControlsExpander");
+        StringAssert.Contains(desktopDialogSource, "private const string OriginWizardAdvancedStoryControlsExpanderName = \"OriginDossierStandaloneAdvancedStoryControlsExpander\";");
+        StringAssert.Contains(originSurfaceSource, "Name = OriginWizardAdvancedStoryControlsExpanderName");
         StringAssert.Contains(originSurfaceSource, "Header = \"Advanced story controls\"");
-        StringAssert.Contains(originSurfaceSource, "IsExpanded = false");
+        StringAssert.Contains(originSurfaceSource, "IsExpanded = _originWizardAdvancedStoryControlsExpanded");
+        StringAssert.Contains(desktopDialogSource, "_suppressOriginWizardAdvancedStoryControlsCollapseDuringComboRefresh");
         StringAssert.Contains(originSurfaceSource, "Pick only the basics, then build the story. Advanced controls are optional.");
         StringAssert.Contains(desktopDialogSource, "\"Story Preview\"");
         StringAssert.Contains(desktopDialogSource, "\"Book Preview\"");

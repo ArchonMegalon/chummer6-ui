@@ -61,20 +61,68 @@
 
     @if (IsAppRoute)
     {
-        <section id="chummer-online-app" class="browser-app-roster" tabindex="-1" aria-label="Character roster">
+        <section id="chummer-online-app"
+                 class="browser-app-roster"
+                 tabindex="-1"
+                 aria-label="@AppRouteAriaLabel"
+                 data-chummer-app-startup-command="@StartupCommandLabel"
+                 data-browser-shell-command="@CommandDataKey"
+                 data-origin-dossier-startup="@IsOriginDossierCommand.ToString().ToLowerInvariant()">
             <header class="browser-app-roster-head">
                 <div>
                     <span>Chummer Online</span>
-                    <h1>Character Roster</h1>
-                    <p>Your runners will appear here. Start one, import one, or open an example.</p>
+                    <h1>@AppRouteTitle</h1>
+                    <p>@AppRouteSummary</p>
                 </div>
                 <nav class="browser-app-roster-actions" aria-label="Roster actions">
                     <a href="@BuildPreviewHref(command: NewCharacterCommand, useWorkbenchRoute: true)">New runner</a>
+                    <a href="@BuildPreviewHref(command: NewCharacterOriginCommand, useWorkbenchRoute: true)">Origin Dossier</a>
                     <a href="@BuildPreviewHref(command: OpenCharacterCommand, useWorkbenchRoute: true)">Import</a>
                     <a href="@BuildPreviewHref(SeededWorkspaceId, useWorkbenchRoute: true)">Open example</a>
                 </nav>
             </header>
 
+            @if (IsOriginDossierCommand)
+            {
+                <section class="browser-app-origin-panel"
+                         aria-label="Origin Dossier"
+                         data-origin-dossier-route="app"
+                         data-startup-command="@NewCharacterOriginCommand">
+                    <div class="browser-app-origin-copy">
+                        <span>Origin Dossier</span>
+                        <h2>Start the story-first character path.</h2>
+                        <p>@OriginDossierSummary</p>
+                    </div>
+                    <div class="browser-app-origin-actions">
+                        <a href="@BuildPreviewHref(command: NewCharacterCommand, useWorkbenchRoute: true)">Use standard creation</a>
+                        <a href="@BuildPreviewHref(command: CharacterRosterCommand, useWorkbenchRoute: true)">Return to roster</a>
+                    </div>
+                </section>
+
+                <section class="browser-preview-frame browser-preview-frame--origin-app"
+                         aria-label="Origin Dossier builder"
+                         data-origin-dossier-shared-shell="true">
+                    <div class="browser-preview-frame-header">
+                        <div>
+                            <p class="browser-preview-frame-kicker">Origin Dossier</p>
+                            <h2>Dossier builder</h2>
+                        </div>
+                        <p data-chummer-app-startup-command="@StartupCommandLabel">
+                            <strong>@StartupCommandDisplayLabel</strong>
+                            @RouteOpenSummary
+                        </p>
+                    </div>
+                    <DesktopShell @ref="_desktopShell"
+                                  DemoFixtureId="@Fixture"
+                                  DemoWorkspaceId="@ResolvedWorkspace"
+                                  DemoTabId="@Tab"
+                                  DemoStartupCommandId="@Command"
+                                  DemoUiControlId="@Control"
+                                  DemoDialogActionId="@DialogAction" />
+                </section>
+            }
+            else
+            {
             <div class="browser-app-roster-grid">
                 <aside class="browser-app-roster-tree" aria-label="Runner folders">
                     <div class="browser-app-roster-toolbar" role="toolbar" aria-label="Organize runners">
@@ -154,6 +202,7 @@
                     </div>
                 </section>
             </div>
+            }
         </section>
     }
 
@@ -2880,6 +2929,7 @@
     private bool IsAppRoute => IsRouteSegment(AppRouteSegment) || IsRouteSegment(OnlineRouteSegment);
     private bool IsOnlineAliasRoute => IsRouteSegment(OnlineRouteSegment);
     private bool IsWorkbenchRoute => IsRouteSegment(WorkbenchRouteSegment);
+    private bool IsOriginDossierCommand => string.Equals(Command, NewCharacterOriginCommand, StringComparison.OrdinalIgnoreCase);
     private bool IsCharacterRosterCommand => string.Equals(Command, CharacterRosterCommand, StringComparison.OrdinalIgnoreCase);
     private bool IsSaveWorkflow => string.Equals(Command, SaveCharacterCommand, StringComparison.OrdinalIgnoreCase)
         || string.Equals(Command, SaveCharacterAsCommand, StringComparison.OrdinalIgnoreCase);
@@ -2895,7 +2945,9 @@
     private bool IsMatrixWorkflow => string.Equals(Tab, MatrixTabId, StringComparison.OrdinalIgnoreCase);
     private bool IsContactsWorkflow => string.Equals(Tab, ContactsTabId, StringComparison.OrdinalIgnoreCase);
     private bool IsCareerWorkflow => string.Equals(Tab, CareerTabId, StringComparison.OrdinalIgnoreCase);
-    private string ActiveWorkflowStatus => IsCharacterRosterCommand
+    private string ActiveWorkflowStatus => IsOriginDossierCommand
+        ? "Origin Dossier"
+        : IsCharacterRosterCommand
         ? "Character Roster"
         : IsSaveWorkflow
             ? "Save"
@@ -2920,7 +2972,9 @@
                                 : IsCareerWorkflow
                                     ? "Career"
                                     : "Dossier";
-    private string ActiveWorkflowDataKey => IsCharacterRosterCommand
+    private string ActiveWorkflowDataKey => IsOriginDossierCommand
+        ? "origin-dossier"
+        : IsCharacterRosterCommand
         ? "character-roster"
         : IsSaveWorkflow
             ? "save"
@@ -2967,7 +3021,7 @@
     private string WorkspaceDataKey => NormalizeShellDataToken(PrimaryRecentWorkspace?.WorkspaceId ?? Workspace);
     private string ActiveRunnerDataKey => NormalizeShellDataToken(PrimaryRecentWorkspace?.ShortLabel);
     private string SelectedRosterNodeDataKey => IsCharacterRosterCommand ? "runner-active" : "none";
-    private string DossierStateDataKey => "unsaved";
+    private string DossierStateDataKey => IsOriginDossierCommand ? "origin-draft" : "unsaved";
     private string DossierStorageDataKey => "local";
     private string RulesetDataKey => "sr5";
     private string ValidationStateDataKey => "review-required";
@@ -3105,9 +3159,12 @@
     private string ImportProofSummary => IsAppRoute
         ? "Deep-links Chummer Online into the shared import dialog from the same route model as desktop startup commands."
         : "Deep-links Chummer Online into the shared import dialog from the same route model as desktop startup commands.";
-    private string OriginDossierSummary => IsAppRoute
-        ? "Deep-links Chummer Online into the same origin-dossier wizard used by the shared startup flow."
-        : "Deep-links Chummer Online into the same origin-dossier wizard used by the shared startup flow.";
+    private string OriginDossierSummary => "Start with concept, table role, and story hooks before moving into the full build.";
+    private string AppRouteAriaLabel => IsOriginDossierCommand ? "Origin Dossier" : "Character roster";
+    private string AppRouteTitle => IsOriginDossierCommand ? "Origin Dossier" : "Character Roster";
+    private string AppRouteSummary => IsOriginDossierCommand
+        ? "Start with the story-first dossier path, then move into standard character creation when the origin is ready."
+        : "Your runners will appear here. Start one, import one, or open an example.";
     private string RouteOpenTitle => IsAppRoute
         ? "Open Chummer Online"
         : "Open Chummer Online";
@@ -3135,7 +3192,9 @@
         ? BuildPreviewHref(command: CharacterRosterCommand, useWorkbenchRoute: true)
         : ChummerOnlineRosterAppHref;
     private static string ChummerOnlineRosterAppHref => $"{AppRouteQueryPrefix}{CharacterRosterCommand}";
-    private string RouteOpenSummary => IsCharacterRosterCommand
+    private string RouteOpenSummary => IsOriginDossierCommand
+        ? "Chummer Online is opening directly into Origin Dossier with the story-first path ready."
+        : IsCharacterRosterCommand
         ? "Chummer Online is opening directly into the Character Roster so dossiers can be grouped, moved, resumed, or organized without stopping at a generic landing shell."
         : "Use the shell below to check navigation, startup posture, and active browser workflow routes.";
     private const string NewCharacterCommand = "new_character";

@@ -57,6 +57,33 @@ public sealed class AppRouteSurfaceTests
         Assert.IsFalse(cut.Markup.Contains("classic-chummer-shell", StringComparison.Ordinal));
     }
 
+    [TestMethod]
+    public void App_origin_dossier_command_opens_dossier_builder_without_falling_back_to_roster()
+    {
+        using var context = new BunitContext();
+        context.JSInterop.Mode = JSRuntimeMode.Loose;
+        FakeCharacterOverviewPresenter presenter = RegisterDesktopShellServices(context);
+
+        NavigationManager navigation = context.Services.GetRequiredService<NavigationManager>();
+        navigation.NavigateTo("/app?command=new_character_origin");
+        IRenderedComponent<Preview> cut = context.Render<Preview>();
+
+        StringAssert.Contains(cut.Markup, "Origin Dossier");
+        StringAssert.Contains(cut.Markup, "Start the story-first character path.");
+        StringAssert.Contains(cut.Markup, "data-chummer-app-startup-command=\"new_character_origin\"");
+        StringAssert.Contains(cut.Markup, "data-browser-shell-command=\"new-character-origin\"");
+        StringAssert.Contains(cut.Markup, "data-origin-dossier-route=\"app\"");
+        StringAssert.Contains(cut.Markup, "data-origin-dossier-shared-shell=\"true\"");
+        StringAssert.Contains(cut.Markup, "href=\"app?command=new_character_origin\"");
+        Assert.IsNotNull(cut.Find("[data-startup-command='new_character_origin']"));
+        Assert.IsNotNull(cut.Find(".browser-app-origin-panel"));
+        Assert.IsNotNull(cut.Find(".desktop-shell"));
+        Assert.AreEqual("new_character_origin", presenter.ExecutedCommandId);
+        Assert.IsFalse(
+            cut.Markup.Contains("Your runners will appear here.", StringComparison.Ordinal),
+            "The Origin Dossier app deep link must not silently fall back to the generic roster body.");
+    }
+
     private static FakeCharacterOverviewPresenter RegisterDesktopShellServices(BunitContext context)
     {
         CharacterWorkspaceId workspaceId = new("preview-ws");
