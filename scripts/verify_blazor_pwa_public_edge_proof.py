@@ -3,6 +3,7 @@ from __future__ import annotations
 
 import json
 from pathlib import Path
+from urllib.parse import urlparse
 
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
@@ -16,8 +17,16 @@ REQUIRED_CHECK_IDS = {
     "offline_living_world_boundary",
     "app_head_and_registration",
     "clean_public_entry_route_contract",
+    "player_pwa_alias_route_contract",
+    "player_manifest_install_contract",
+    "mobile_pwa_living_world_boundary",
     "static_asset_fetch_contract",
     "mobile_viewport_shell_contract",
+}
+PUBLIC_ORIGIN_CHECK_IDS = {
+    "player_pwa_alias_route_contract",
+    "player_manifest_install_contract",
+    "mobile_pwa_living_world_boundary",
 }
 
 
@@ -34,6 +43,7 @@ def main() -> int:
     route_lane = str(payload.get("route_lane") or "")
     base_url = str(payload.get("base_url") or "")
     public_entry_url = str(payload.get("public_entry_url") or "")
+    pwa_alias_url = str(payload.get("pwa_alias_url") or "")
     checks = payload.get("checks")
 
     if contract != EXPECTED_CONTRACT:
@@ -48,9 +58,14 @@ def main() -> int:
         reasons.append(f"base_url must be https, got {base_url!r}")
     if not public_entry_url.startswith("https://"):
         reasons.append(f"public_entry_url must be https, got {public_entry_url!r}")
+    if not pwa_alias_url.startswith("https://"):
+        reasons.append(f"pwa_alias_url must be https, got {pwa_alias_url!r}")
     if not isinstance(checks, list):
         reasons.append("checks must be a list")
         checks = []
+
+    parsed_base_url = urlparse(base_url)
+    public_origin = f"{parsed_base_url.scheme}://{parsed_base_url.netloc}" if parsed_base_url.scheme and parsed_base_url.netloc else ""
 
     check_ids = set()
     for index, check in enumerate(checks, start=1):
@@ -66,15 +81,29 @@ def main() -> int:
             reasons.append(f"check {check_id!r} must be passed, got {check_status!r}")
         if not assertion:
             reasons.append(f"check {check_id!r} missing assertion")
+        is_under_blazor_scope = (
+            url != base_url
+            and url.startswith(f"{base_url}/")
+        )
+        is_public_entry_url = url == public_entry_url or url.startswith(f"{public_entry_url}?")
+        is_pwa_alias_url = url == pwa_alias_url or url.startswith(f"{pwa_alias_url}?")
+        is_public_origin_check = (
+            check_id in PUBLIC_ORIGIN_CHECK_IDS
+            and bool(public_origin)
+            and (url == public_origin or url.startswith(f"{public_origin}/"))
+        )
         if (
             url != base_url
-            and not url.startswith(f"{base_url}/")
+            and not is_under_blazor_scope
             and url != public_entry_url
-            and not url.startswith(f"{public_entry_url}?")
+            and not is_public_entry_url
+            and url != pwa_alias_url
+            and not is_pwa_alias_url
+            and not is_public_origin_check
         ):
             reasons.append(
                 f"check {check_id!r} url must stay under {base_url!r} or match public entry "
-                f"{public_entry_url!r}, got {url!r}"
+                f"{public_entry_url!r} or PWA alias {pwa_alias_url!r}, got {url!r}"
             )
 
     missing = REQUIRED_CHECK_IDS - check_ids

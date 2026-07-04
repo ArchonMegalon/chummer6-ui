@@ -14,9 +14,14 @@ from urllib.parse import urljoin, urlparse
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
 BASE_URL = os.environ.get("CHUMMER_BLAZOR_PWA_PUBLIC_EDGE_BASE_URL", "https://chummer.run/blazor").rstrip("/")
+BASE_ORIGIN = f"{urlparse(BASE_URL).scheme}://{urlparse(BASE_URL).netloc}"
 PUBLIC_ENTRY_URL = os.environ.get(
     "CHUMMER_BLAZOR_PWA_PUBLIC_ENTRY_URL",
     urljoin(f"{BASE_URL}/", "../app") if urlparse(BASE_URL).path.rstrip("/") == "/blazor" else f"{BASE_URL}/app",
+)
+PWA_ALIAS_URL = os.environ.get(
+    "CHUMMER_BLAZOR_PWA_ALIAS_URL",
+    urljoin(f"{BASE_URL}/", "../pwa") if urlparse(BASE_URL).path.rstrip("/") == "/blazor" else f"{BASE_URL}/pwa",
 )
 OUTPUT_PATH = Path(
     os.environ.get(
@@ -298,8 +303,14 @@ def check_app_head() -> dict[str, Any]:
     )
 
 
-def check_clean_public_entry_route() -> dict[str, Any]:
-    result = fetch_text_url(PUBLIC_ENTRY_URL)
+def check_public_entry_route(
+    *,
+    url: str,
+    check_id: str,
+    assertion: str,
+    label: str,
+) -> dict[str, Any]:
+    result = fetch_text_url(url)
     body = result["body"]
     probe = HeadProbe()
     probe.feed(body)
@@ -323,6 +334,14 @@ def check_clean_public_entry_route() -> dict[str, Any]:
         "const serviceWorkerScript = 'service-worker.js'" in body
         and "const serviceWorkerScope = './'" in body
     )
+    viewport_content = next(
+        (
+            str(meta.get("content") or "")
+            for meta in probe.metas
+            if meta.get("name") == "viewport"
+        ),
+        "",
+    )
     facts = {
         "status_code": result["status_code"],
         "content_type": result["content_type"],
@@ -334,40 +353,283 @@ def check_clean_public_entry_route() -> dict[str, Any]:
         "resolved_manifest_urls": resolved_manifest_urls,
         "resolved_icon_urls": resolved_icon_urls,
         "service_worker_registration_is_relative": service_worker_registration_is_relative,
+        "viewport_content": viewport_content,
+        "has_pwa_install_state_object": "window.chummerPwa" in body,
     }
     required = [
-        (result["status_code"] == 200, "clean public app route did not return HTTP 200"),
-        ("text/html" in str(result["content_type"]), "clean public app route must return HTML"),
-        ("/blazor/" in base_hrefs, "clean public app route must keep base href scoped to /blazor/"),
-        ("manifest.webmanifest" in manifest_hrefs, "clean public app route missing relative manifest link"),
-        ("icons/chummer-pwa.svg" in icon_hrefs, "clean public app route missing relative PWA icon link"),
+        (result["status_code"] == 200, f"{label} did not return HTTP 200"),
+        ("text/html" in str(result["content_type"]), f"{label} must return HTML"),
+        ("/blazor/" in base_hrefs, f"{label} must keep base href scoped to /blazor/"),
+        ("manifest.webmanifest" in manifest_hrefs, f"{label} missing relative manifest link"),
+        ("icons/chummer-pwa.svg" in icon_hrefs, f"{label} missing relative PWA icon link"),
         (
             any(url.rstrip("/") == f"{BASE_URL}/manifest.webmanifest" for url in resolved_manifest_urls),
-            "clean public app route manifest must resolve under the hosted /blazor scope",
+            f"{label} manifest must resolve under the hosted /blazor scope",
         ),
         (
             any(url.rstrip("/") == f"{BASE_URL}/icons/chummer-pwa.svg" for url in resolved_icon_urls),
-            "clean public app route icon must resolve under the hosted /blazor scope",
+            f"{label} icon must resolve under the hosted /blazor scope",
         ),
         (
             service_worker_registration_is_relative,
-            "clean public app route must keep service-worker script and scope relative to /blazor/",
+            f"{label} must keep service-worker script and scope relative to /blazor/",
         ),
+        (viewport_content == "width=device-width, initial-scale=1.0", f"{label} viewport meta must stay mobile-width and initial-scale 1.0"),
+        (facts["has_pwa_install_state_object"], f"{label} missing PWA install state object"),
     ]
     failures = [message for passed, message in required if not passed]
     if failures:
         return failed_check(
-            "clean_public_entry_route_contract",
-            "clean /app route resolves installable PWA assets through the hosted /blazor scope",
+            check_id,
+            assertion,
             result["url"],
             "; ".join(failures),
             facts,
         )
 
     return passed_check(
-        "clean_public_entry_route_contract",
-        "clean /app route resolves installable PWA assets through the hosted /blazor scope",
+        check_id,
+        assertion,
         result["url"],
+        facts,
+    )
+
+
+def check_clean_public_entry_route() -> dict[str, Any]:
+    return check_public_entry_route(
+        url=PUBLIC_ENTRY_URL,
+        check_id="clean_public_entry_route_contract",
+        assertion="clean /app route resolves installable PWA assets through the hosted /blazor scope",
+        label="clean public app route",
+    )
+
+
+def check_pwa_alias_route() -> dict[str, Any]:
+    result = fetch_text_url(PWA_ALIAS_URL)
+    body = result["body"]
+    probe = HeadProbe()
+    probe.feed(body)
+
+    base_hrefs = [str(base.get("href") or "") for base in probe.bases]
+    manifest_hrefs = [
+        str(link.get("href") or "")
+        for link in probe.links
+        if str(link.get("rel") or "") == "manifest"
+    ]
+    apple_touch_icons = [
+        str(link.get("href") or "")
+        for link in probe.links
+        if str(link.get("rel") or "") == "apple-touch-icon"
+    ]
+    viewport_content = next(
+        (
+            str(meta.get("content") or "")
+            for meta in probe.metas
+            if meta.get("name") == "viewport"
+        ),
+        "",
+    )
+    theme_color = next(
+        (
+            str(meta.get("content") or "")
+            for meta in probe.metas
+            if meta.get("name") == "theme-color"
+        ),
+        "",
+    )
+    facts = {
+        "status_code": result["status_code"],
+        "content_type": result["content_type"],
+        "elapsed_ms": result["elapsed_ms"],
+        "base_hrefs": base_hrefs,
+        "manifest_hrefs": manifest_hrefs,
+        "apple_touch_icons": apple_touch_icons,
+        "viewport_content": viewport_content,
+        "theme_color": theme_color,
+        "has_mobile_web_app_capable": any(
+            meta.get("name") == "mobile-web-app-capable" and meta.get("content") == "yes"
+            for meta in probe.metas
+        ),
+        "has_apple_mobile_web_app_capable": any(
+            meta.get("name") == "apple-mobile-web-app-capable" and meta.get("content") == "yes"
+            for meta in probe.metas
+        ),
+        "has_turn_companion_title": "<title>Chummer Mobile Turn Companion</title>" in body,
+    }
+    required = [
+        (result["status_code"] == 200, "/pwa did not return HTTP 200"),
+        ("text/html" in str(result["content_type"]), "/pwa must return HTML"),
+        ("/" in base_hrefs, "/pwa must keep root base href for the Hub Web player companion"),
+        ("/manifest.player.webmanifest" in manifest_hrefs, "/pwa must advertise the player companion manifest"),
+        ("/icons/apple-touch-icon.png" in apple_touch_icons, "/pwa must expose the player touch icon"),
+        (viewport_content == "width=device-width, initial-scale=1.0", "/pwa viewport meta must stay mobile-width and initial-scale 1.0"),
+        (theme_color == "#0f1b26", "/pwa theme color must match the player companion shell"),
+        (facts["has_mobile_web_app_capable"], "/pwa missing mobile-web-app-capable meta"),
+        (facts["has_apple_mobile_web_app_capable"], "/pwa missing apple mobile web app meta"),
+        (facts["has_turn_companion_title"], "/pwa title must identify the mobile turn companion"),
+    ]
+    failures = [message for passed, message in required if not passed]
+    if failures:
+        return failed_check(
+            "player_pwa_alias_route_contract",
+            "/pwa serves the installable Hub Web player companion shell",
+            result["url"],
+            "; ".join(failures),
+            facts,
+        )
+
+    return passed_check(
+        "player_pwa_alias_route_contract",
+        "/pwa serves the installable Hub Web player companion shell",
+        result["url"],
+        facts,
+    )
+
+
+def check_player_manifest() -> dict[str, Any]:
+    url = f"{BASE_ORIGIN}/manifest.player.webmanifest"
+    result = fetch_text_url(url)
+    body = result["body"]
+    facts = {
+        "status_code": result["status_code"],
+        "content_type": result["content_type"],
+        "elapsed_ms": result["elapsed_ms"],
+    }
+    try:
+        manifest = json.loads(body)
+    except json.JSONDecodeError as error:
+        return failed_check(
+            "player_manifest_install_contract",
+            "player companion manifest installs the bounded mobile turn companion",
+            result["url"],
+            f"manifest JSON parse failed: {error}",
+            facts,
+        )
+
+    shortcuts = {str(item.get("short_name") or "") for item in manifest.get("shortcuts") or [] if isinstance(item, dict)}
+    facts.update(
+        {
+            "id": manifest.get("id"),
+            "name": manifest.get("name"),
+            "short_name": manifest.get("short_name"),
+            "start_url": manifest.get("start_url"),
+            "scope": manifest.get("scope"),
+            "display": manifest.get("display"),
+            "theme_color": manifest.get("theme_color"),
+            "shortcut_short_names": sorted(shortcuts),
+            "icon_purposes": [item.get("purpose") for item in manifest.get("icons") or [] if isinstance(item, dict)],
+        }
+    )
+    required = [
+        (result["status_code"] == 200, "player manifest did not return HTTP 200"),
+        (manifest.get("id") == "/mobile/player", "player manifest id mismatch"),
+        (manifest.get("name") == "Chummer Player Companion", "player manifest name mismatch"),
+        (manifest.get("start_url") == "/mobile/player?role=Player", "player manifest start_url must target player role"),
+        (manifest.get("scope") == "/mobile/", "player manifest scope must remain under /mobile/"),
+        (manifest.get("display") == "standalone", "player manifest display must be standalone"),
+        (manifest.get("theme_color") == "#0f1b26", "player manifest theme color mismatch"),
+        ({"Player", "GM"}.issubset(shortcuts), "player manifest shortcuts must include Player and GM"),
+        (
+            any("maskable" in str(item.get("purpose") or "") for item in manifest.get("icons") or [] if isinstance(item, dict)),
+            "player manifest missing maskable icon",
+        ),
+    ]
+    failures = [message for passed, message in required if not passed]
+    if failures:
+        return failed_check(
+            "player_manifest_install_contract",
+            "player companion manifest installs the bounded mobile turn companion",
+            result["url"],
+            "; ".join(failures),
+            facts,
+        )
+
+    return passed_check(
+        "player_manifest_install_contract",
+        "player companion manifest installs the bounded mobile turn companion",
+        result["url"],
+        facts,
+    )
+
+
+def check_mobile_living_world_boundary() -> dict[str, Any]:
+    pwa_url = f"{BASE_ORIGIN}/mobile/pwa.json"
+    ledger_url = f"{BASE_ORIGIN}/mobile/pwa/ledger.json"
+    pwa_result = fetch_text_url(pwa_url)
+    ledger_result = fetch_text_url(ledger_url)
+    facts = {
+        "pwa_url": pwa_result["url"],
+        "pwa_status_code": pwa_result["status_code"],
+        "pwa_content_type": pwa_result["content_type"],
+        "pwa_elapsed_ms": pwa_result["elapsed_ms"],
+        "ledger_url": ledger_result["url"],
+        "ledger_status_code": ledger_result["status_code"],
+        "ledger_content_type": ledger_result["content_type"],
+        "ledger_elapsed_ms": ledger_result["elapsed_ms"],
+    }
+    try:
+        pwa_payload = json.loads(pwa_result["body"])
+        ledger_payload = json.loads(ledger_result["body"])
+    except json.JSONDecodeError as error:
+        return failed_check(
+            "mobile_pwa_living_world_boundary",
+            "mobile PWA exposes living-world update discovery while keeping Black Ledger data opt-in",
+            ledger_url,
+            f"JSON parse failed: {error}",
+            facts,
+        )
+
+    living_world_data = pwa_payload.get("living_world_data") if isinstance(pwa_payload.get("living_world_data"), dict) else {}
+    facts.update(
+        {
+            "pwa_mode": pwa_payload.get("mode"),
+            "pwa_status": pwa_payload.get("status"),
+            "pwa_living_world_updates_route": pwa_payload.get("living_world_updates_route"),
+            "pwa_living_world_data_mode": living_world_data.get("mode"),
+            "pwa_living_world_data_update_route": living_world_data.get("update_route"),
+            "ledger_mode": ledger_payload.get("mode"),
+            "ledger_status": ledger_payload.get("status"),
+            "ledger_status_label": ledger_payload.get("status_label"),
+            "ledger_summary": ledger_payload.get("summary"),
+            "ledger_legal_posture": ledger_payload.get("legal_posture"),
+            "ledger_opt_in_route": ledger_payload.get("opt_in_route"),
+            "ledger_updates_route": ledger_payload.get("updates_route"),
+        }
+    )
+    required = [
+        (pwa_result["status_code"] == 200, "/mobile/pwa.json did not return HTTP 200"),
+        (ledger_result["status_code"] == 200, "/mobile/pwa/ledger.json did not return HTTP 200"),
+        (pwa_payload.get("mode") == "nexus_pan_mobile_pwa", "mobile PWA discovery mode mismatch"),
+        (pwa_payload.get("status") == "live", "mobile PWA discovery status must be live"),
+        (
+            pwa_payload.get("living_world_updates_route") == "/mobile/pwa/ledger.json",
+            "mobile PWA discovery must point at the ledger update route",
+        ),
+        (
+            living_world_data.get("update_route") == "/mobile/pwa/ledger.json",
+            "mobile PWA living-world data must point at the ledger update route",
+        ),
+        (ledger_payload.get("mode") == "mobile_pwa_living_world", "ledger mode mismatch"),
+        (ledger_payload.get("status") == "opt_in_required", "ledger must require opt-in on the public lane"),
+        (ledger_payload.get("opt_in_route") == "/account", "ledger opt-in route mismatch"),
+        (ledger_payload.get("updates_route") == "/mobile/pwa/ledger.json", "ledger updates route mismatch"),
+        ("Black Ledger" in str(ledger_payload.get("summary") or ""), "ledger summary must mention Black Ledger"),
+        ("No private run table state is published" in str(ledger_payload.get("legal_posture") or ""), "ledger legal posture must keep private run table state unpublished"),
+    ]
+    failures = [message for passed, message in required if not passed]
+    if failures:
+        return failed_check(
+            "mobile_pwa_living_world_boundary",
+            "mobile PWA exposes living-world update discovery while keeping Black Ledger data opt-in",
+            ledger_url,
+            "; ".join(failures),
+            facts,
+        )
+
+    return passed_check(
+        "mobile_pwa_living_world_boundary",
+        "mobile PWA exposes living-world update discovery while keeping Black Ledger data opt-in",
+        ledger_url,
         facts,
     )
 
@@ -499,6 +761,9 @@ def main() -> int:
         check_offline_shell(),
         check_app_head(),
         check_clean_public_entry_route(),
+        check_pwa_alias_route(),
+        check_player_manifest(),
+        check_mobile_living_world_boundary(),
         check_static_assets(),
         check_mobile_viewport_shell(),
     ]
@@ -509,12 +774,14 @@ def main() -> int:
         "status": "failed" if failures else "passed",
         "base_url": BASE_URL,
         "public_entry_url": PUBLIC_ENTRY_URL,
+        "pwa_alias_url": PWA_ALIAS_URL,
         "proof_tier": "hosted_pwa_public_edge_execution",
         "route_lane": "blazor_pwa_play_shell",
         "checks": checks,
         "failures": failures,
         "notes": [
             "This receipt proves the deployed /blazor PWA shell contract, not app-store acceptance or offline runner-data parity.",
+            "The /pwa route is the Hub Web player companion PWA, and is proven separately from the /blazor workbench shell.",
             "The service worker is required to cache only static shell assets and leave runner, workspace, API, Black Ledger, heat, and session data server-bound.",
             "The installed start URL remains the Play app surface; full character building stays outside the in-session PWA use case.",
         ],
