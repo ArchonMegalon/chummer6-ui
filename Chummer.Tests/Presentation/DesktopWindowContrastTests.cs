@@ -223,6 +223,53 @@ public sealed class DesktopWindowContrastTests
     }
 
     [TestMethod]
+    public void Origin_dossier_combo_refresh_defers_transient_presenter_close()
+    {
+        DesktopDialogState originWizard = new DesktopDialogFactory().CreateCommandDialog(
+            "new_character_origin",
+            profile: null,
+            DesktopPreferenceState.Default,
+            activeSectionJson: null,
+            currentWorkspace: null,
+            rulesetId: RulesetDefaults.Sr5);
+
+        RebindingDialogPresenter presenter = new(originWizard, deferFieldUpdates: true);
+        WithPresenterBoundDialogWindow(originWizard, presenter, window =>
+        {
+            window.Height = 420;
+            PumpUi();
+
+            Expander advancedStoryControls = window.GetVisualDescendants()
+                .OfType<Expander>()
+                .Single(expander => string.Equals(expander.Name, "OriginDossierStandaloneAdvancedStoryControlsExpander", StringComparison.Ordinal));
+            ScrollViewer scrollViewer = window.FindControl<ScrollViewer>("DialogScrollViewer")!;
+
+            advancedStoryControls.IsExpanded = true;
+            scrollViewer.Offset = new Vector(0d, 180d);
+            PumpUi();
+
+            ComboBox refreshCombo = window.GetVisualDescendants()
+                .OfType<ComboBox>()
+                .First(control => (control.ItemsSource as System.Collections.IEnumerable)?.Cast<object>().OfType<DesktopDialogFieldOption>().Any() == true);
+            DesktopDialogFieldOption currentOption = (DesktopDialogFieldOption)(refreshCombo.SelectedItem
+                ?? throw new AssertFailedException("Origin combo did not expose a selected option."));
+            DesktopDialogFieldOption nextOption = (((System.Collections.IEnumerable?)refreshCombo.ItemsSource)?.Cast<DesktopDialogFieldOption>() ?? Enumerable.Empty<DesktopDialogFieldOption>())
+                .First(option => !string.Equals(option.Value, currentOption.Value, StringComparison.Ordinal));
+
+            refreshCombo.SelectedItem = nextOption;
+            PumpUi();
+
+            Assert.IsTrue(
+                window.TryDeferCloseForPendingOriginWizardTransientRefresh(),
+                "Origin Dossier should defer a transient presenter close while a combo refresh is preserving the current viewport.");
+
+            presenter.ReleaseFieldUpdates();
+            PumpUi();
+            Assert.IsTrue(window.IsVisible, "Origin Dossier should remain visible after the deferred refresh is rebound.");
+        });
+    }
+
+    [TestMethod]
     public void Shell_theme_helpers_keep_idle_input_controls_readable_in_dark_mode()
     {
         WithStandaloneShellInputThemeWindow(window =>
@@ -642,6 +689,15 @@ public sealed class DesktopWindowContrastTests
         Action<DesktopDialogWindow> assertion,
         ThemeVariant? requestedTheme = null)
     {
+        WithPresenterBoundDialogWindow(dialog, new RebindingDialogPresenter(dialog), assertion, requestedTheme);
+    }
+
+    private static void WithPresenterBoundDialogWindow(
+        DesktopDialogState dialog,
+        RebindingDialogPresenter presenter,
+        Action<DesktopDialogWindow> assertion,
+        ThemeVariant? requestedTheme = null)
+    {
         EnsureHeadlessPlatform();
         Exception? lastFailure = null;
         for (int attempt = 1; attempt <= HeadlessSessionAttempts; attempt++)
@@ -659,7 +715,6 @@ public sealed class DesktopWindowContrastTests
                                 global::Avalonia.Application.Current.RequestedThemeVariant = requestedTheme;
                             }
 
-                            RebindingDialogPresenter presenter = new(dialog);
                             using CharacterOverviewViewModelAdapter adapter = new(presenter);
                             DesktopDialogWindow window = new(adapter)
                             {
@@ -1258,8 +1313,15 @@ public sealed class DesktopWindowContrastTests
 
     private sealed class RebindingDialogPresenter : ICharacterOverviewPresenter
     {
-        public RebindingDialogPresenter(DesktopDialogState dialog)
+        private readonly TaskCompletionSource? _fieldUpdateGate;
+
+        public RebindingDialogPresenter(DesktopDialogState dialog, bool deferFieldUpdates = false)
         {
+            if (deferFieldUpdates)
+            {
+                _fieldUpdateGate = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+            }
+
             State = CharacterOverviewState.Empty with
             {
                 ActiveDialog = dialog,
@@ -1289,8 +1351,18 @@ public sealed class DesktopWindowContrastTests
 
         public Task ExecuteWorkspaceActionAsync(WorkspaceSurfaceActionDefinition action, CancellationToken ct) => Task.CompletedTask;
 
-        public Task UpdateDialogFieldAsync(string fieldId, string? value, CancellationToken ct)
+        public void ReleaseFieldUpdates()
         {
+            _fieldUpdateGate?.TrySetResult();
+        }
+
+        public async Task UpdateDialogFieldAsync(string fieldId, string? value, CancellationToken ct)
+        {
+            if (_fieldUpdateGate is not null)
+            {
+                await _fieldUpdateGate.Task.WaitAsync(ct);
+            }
+
             DesktopDialogState dialog = State.ActiveDialog
                 ?? throw new AssertFailedException("A dialog update was requested without an active dialog.");
 
@@ -1314,7 +1386,6 @@ public sealed class DesktopWindowContrastTests
                 ActiveDialog = nextDialog
             });
 
-            return Task.CompletedTask;
         }
 
         public Task ApplyAttributeEditAsync(AttributeEditRequest request, CancellationToken ct) => Task.CompletedTask;

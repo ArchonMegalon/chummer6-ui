@@ -28,6 +28,7 @@ public partial class DesktopDialogWindow : Window
         TimeSpan.FromMilliseconds(48),
         TimeSpan.FromMilliseconds(96)
     ];
+    private static readonly TimeSpan OriginWizardTransientRefreshCloseGrace = TimeSpan.FromMilliseconds(300);
     private static readonly string UiKitAccessibilityAdapterMarker = AccessibilityPrimitiveBoundary.RootClass;
     private CharacterOverviewViewModelAdapter? _adapter;
     private readonly TextBlock _dialogTitleText;
@@ -51,6 +52,9 @@ public partial class DesktopDialogWindow : Window
     private bool _skipPreferredFocusRestoreOnNextBind;
     private bool _suppressOriginWizardAdvancedStoryControlsCollapseDuringComboRefresh;
     private int _dialogBindVersion;
+    private bool _originWizardTransientRefreshPending;
+    private DateTimeOffset _originWizardTransientRefreshPendingAtUtc;
+    private int _originWizardTransientRefreshCloseDeferralVersion;
     private bool _suppressCloseNotification;
     private bool _suppressDialogUpdates;
 
@@ -109,6 +113,11 @@ public partial class DesktopDialogWindow : Window
     {
         _dialogBindVersion++;
         _suppressOriginWizardAdvancedStoryControlsCollapseDuringComboRefresh = false;
+        if (string.Equals(dialog.Id, OriginWizardDialogId, StringComparison.Ordinal))
+        {
+            ClearPendingOriginWizardTransientRefresh();
+        }
+
         CapturePreferredFocusState();
         CaptureTransientDialogState();
         bool preservedOriginWizardAdvancedStoryControlsExpanded = _originWizardAdvancedStoryControlsExpanded;
@@ -146,14 +155,20 @@ public partial class DesktopDialogWindow : Window
         BuildFields(dialog.Fields);
         RestoreTransientDialogState(dialog.Id, preservedOriginWizardAdvancedStoryControlsExpanded);
         BuildActions(dialog.Actions);
-        PrimePreferredScrollOffsetForDialogRebind(dialog.Id, preservedScrollOffset, preservedViewportAnchor, preservedInteractionAnchor);
         RefreshDialogVisuals();
+        PrimePreferredScrollOffsetForDialogRebind(dialog.Id, preservedScrollOffset, preservedViewportAnchor, preservedInteractionAnchor);
         RestorePreferredScrollOffset(dialog.Id, preservedScrollOffset, preservedViewportAnchor, preservedInteractionAnchor);
-        if (IsVisible && !skipPreferredFocusRestore)
+        if (IsVisible)
         {
-            Dispatcher.UIThread.Post(
-                () => FocusPreferredControlDuringRestore(allowFallback: !preserveInteractionContext || !skipPreferredFocusRestore),
-                DispatcherPriority.Input);
+            Dispatcher.UIThread.Post(() =>
+            {
+                if (!skipPreferredFocusRestore)
+                {
+                    FocusPreferredControlDuringRestore(allowFallback: !preserveInteractionContext);
+                }
+
+                RestorePreferredScrollOffset(dialog.Id, preservedScrollOffset, preservedViewportAnchor, preservedInteractionAnchor);
+            }, DispatcherPriority.Input);
         }
     }
 
@@ -4148,6 +4163,7 @@ public partial class DesktopDialogWindow : Window
         {
             suppressOriginWizardCollapseDuringRefresh = ShouldPreserveOriginWizardComboInteractionScroll();
             _suppressOriginWizardAdvancedStoryControlsCollapseDuringComboRefresh = suppressOriginWizardCollapseDuringRefresh;
+            ArmOriginWizardTransientRefresh();
             _preferredDialogScrollAnchor ??= _dialogScrollViewer.Offset;
             CapturePreferredDialogViewportAnchor();
             CapturePreferredDialogInteractionAnchor(preferredControl);
@@ -4187,6 +4203,29 @@ public partial class DesktopDialogWindow : Window
         }
     }
 
+    internal bool TryDeferCloseForPendingOriginWizardTransientRefresh()
+    {
+        if (!ShouldPreservePendingOriginWizardTransientRefresh())
+        {
+            ClearPendingOriginWizardTransientRefresh();
+            return false;
+        }
+
+        int closeDeferralVersion = ++_originWizardTransientRefreshCloseDeferralVersion;
+        DispatcherTimer.RunOnce(() =>
+        {
+            if (closeDeferralVersion != _originWizardTransientRefreshCloseDeferralVersion
+                || !_originWizardTransientRefreshPending)
+            {
+                return;
+            }
+
+            ClearPendingOriginWizardTransientRefresh();
+            CloseFromPresenter();
+        }, OriginWizardTransientRefreshCloseGrace);
+        return true;
+    }
+
     private void RestoreDialogScrollOffset(Vector offset)
     {
         double maxX = Math.Max(0d, _dialogScrollViewer.Extent.Width - _dialogScrollViewer.Viewport.Width);
@@ -4215,6 +4254,44 @@ public partial class DesktopDialogWindow : Window
     {
         return string.Equals(BoundDialogId, OriginWizardDialogId, StringComparison.Ordinal)
             && _originWizardAdvancedStoryControlsExpanded;
+    }
+
+    private void ArmOriginWizardTransientRefresh()
+    {
+        if (!ShouldPreserveOriginWizardComboInteractionScroll())
+        {
+            ClearPendingOriginWizardTransientRefresh();
+            return;
+        }
+
+        _originWizardTransientRefreshPending = true;
+        _originWizardTransientRefreshPendingAtUtc = DateTimeOffset.UtcNow;
+        _originWizardTransientRefreshCloseDeferralVersion++;
+    }
+
+    private void ClearPendingOriginWizardTransientRefresh()
+    {
+        _originWizardTransientRefreshPending = false;
+        _originWizardTransientRefreshPendingAtUtc = default;
+        _originWizardTransientRefreshCloseDeferralVersion++;
+    }
+
+    private bool ShouldPreservePendingOriginWizardTransientRefresh()
+    {
+        if (!_originWizardTransientRefreshPending
+            || !ShouldPreserveOriginWizardComboInteractionScroll())
+        {
+            return false;
+        }
+
+        if (_preferredDialogScrollAnchor is null
+            && _preferredDialogViewportAnchor is null
+            && _preferredDialogInteractionAnchor is null)
+        {
+            return false;
+        }
+
+        return (DateTimeOffset.UtcNow - _originWizardTransientRefreshPendingAtUtc) <= OriginWizardTransientRefreshCloseGrace;
     }
 
     private void RestorePreferredScrollAnchorDuringOriginWizardComboInteraction()

@@ -57,6 +57,11 @@ internal static class MainWindowPostRefreshCoordinator
         {
             if (currentWindow is not null)
             {
+                if (currentWindow.TryDeferCloseForPendingOriginWizardTransientRefresh())
+                {
+                    return currentWindow;
+                }
+
                 currentWindow.CloseFromPresenter();
             }
 

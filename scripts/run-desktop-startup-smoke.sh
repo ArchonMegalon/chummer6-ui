@@ -54,7 +54,7 @@ cleanup() {
   fi
 
   if [[ -n "$WINDOWS_PAYLOAD_HTTP_ROOT" && -d "$WINDOWS_PAYLOAD_HTTP_ROOT" ]]; then
-    rm -rf "$WINDOWS_PAYLOAD_HTTP_ROOT"
+    rm -rf "$WINDOWS_PAYLOAD_HTTP_ROOT" || true
   fi
 
   if [[ -n "$MOUNT_DIR" ]]; then
@@ -62,23 +62,23 @@ cleanup() {
   fi
 
   if [[ -n "$UNPACK_ROOT" && -d "$UNPACK_ROOT" ]]; then
-    rm -rf "$UNPACK_ROOT"
+    rm -rf "$UNPACK_ROOT" || true
   fi
 
   if [[ -n "$INSTALL_ROOT" && -d "$INSTALL_ROOT" ]]; then
-    rm -rf "$INSTALL_ROOT"
+    rm -rf "$INSTALL_ROOT" || true
   fi
 
   if [[ -n "$BUNDLE_EXTRACT_ROOT" && -d "$BUNDLE_EXTRACT_ROOT" ]]; then
-    rm -rf "$BUNDLE_EXTRACT_ROOT"
+    rm -rf "$BUNDLE_EXTRACT_ROOT" || true
   fi
 
   if [[ -n "$RUNTIME_HOME" && -d "$RUNTIME_HOME" ]]; then
-    rm -rf "$RUNTIME_HOME"
+    rm -rf "$RUNTIME_HOME" || true
   fi
 
   if [[ -n "$WINDOWS_LOCAL_PAYLOAD_COPY" && -f "$WINDOWS_LOCAL_PAYLOAD_COPY" ]]; then
-    rm -f "$WINDOWS_LOCAL_PAYLOAD_COPY"
+    rm -f "$WINDOWS_LOCAL_PAYLOAD_COPY" || true
   fi
 }
 
