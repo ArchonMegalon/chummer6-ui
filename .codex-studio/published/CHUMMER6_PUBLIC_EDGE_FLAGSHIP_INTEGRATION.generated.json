@@ -38,13 +38,13 @@
         "install_routes": [
           {
             "artifact_id": "avalonia-linux-x64-installer",
-            "elapsed_ms": 88,
+            "elapsed_ms": 150,
             "location": "/downloads/get/avalonia-linux-x64-installer",
             "status_code": 302
           },
           {
             "artifact_id": "avalonia-win-x64-installer",
-            "elapsed_ms": 64,
+            "elapsed_ms": 87,
             "location": "/downloads/get/avalonia-win-x64-installer",
             "status_code": 302
           }
@@ -60,7 +60,7 @@
         "routes": [
           {
             "content_type": "text/html; charset=utf-8",
-            "elapsed_ms": 56,
+            "elapsed_ms": 79,
             "has_viewport": true,
             "missing_needles": [],
             "route": "/",
@@ -68,7 +68,7 @@
           },
           {
             "content_type": "text/html; charset=utf-8",
-            "elapsed_ms": 50,
+            "elapsed_ms": 281,
             "has_viewport": true,
             "missing_needles": [],
             "route": "/app",
@@ -76,7 +76,7 @@
           },
           {
             "content_type": "text/html; charset=utf-8",
-            "elapsed_ms": 45,
+            "elapsed_ms": 92,
             "has_viewport": true,
             "missing_needles": [],
             "route": "/participate",
@@ -84,7 +84,7 @@
           },
           {
             "content_type": "text/html; charset=utf-8",
-            "elapsed_ms": 92,
+            "elapsed_ms": 380,
             "has_viewport": true,
             "missing_needles": [],
             "route": "/status",
@@ -92,7 +92,7 @@
           },
           {
             "content_type": "text/html; charset=utf-8",
-            "elapsed_ms": 162,
+            "elapsed_ms": 589,
             "has_viewport": true,
             "missing_needles": [],
             "route": "/help",
@@ -120,7 +120,7 @@
               "/blazor/"
             ],
             "content_type": "text/html; charset=utf-8",
-            "elapsed_ms": 53,
+            "elapsed_ms": 376,
             "has_chummer_online_title": true,
             "has_viewport": true,
             "route": "/blazor/",
@@ -131,7 +131,7 @@
               "/blazor/"
             ],
             "content_type": "text/html; charset=utf-8",
-            "elapsed_ms": 109,
+            "elapsed_ms": 385,
             "has_chummer_online_title": true,
             "has_viewport": true,
             "route": "/blazor/app",
@@ -142,7 +142,7 @@
               "/blazor/"
             ],
             "content_type": "text/html; charset=utf-8",
-            "elapsed_ms": 397,
+            "elapsed_ms": 3191,
             "has_chummer_online_title": true,
             "has_viewport": true,
             "route": "/blazor/workbench",
@@ -151,6 +151,48 @@
         ]
       },
       "id": "blazor_runtime_contract",
+      "status": "passed"
+    },
+    {
+      "assertion": "public API health and session continuity routes stay live, mobile-safe, and aggregate-bound",
+      "facts": {
+        "api_health_ok": true,
+        "api_health_service": "chummer.run.api",
+        "api_health_status": "pass",
+        "api_health_status_code": 200,
+        "continuity_has_viewport": true,
+        "continuity_links_history": true,
+        "continuity_mentions_claimed_install": true,
+        "continuity_mentions_nexus_pan": true,
+        "continuity_mentions_private_boundary": true,
+        "continuity_status_code": 200,
+        "history_boundary": "Public continuity stays aggregate and preview-safe. Private device history, account detail, and workspace continuity stay on account paths.",
+        "history_receipt_ids": [
+          "nexus_claimed_install_posture",
+          "nexus_reconnect_handoff",
+          "nexus_runboard_boundary"
+        ],
+        "history_status_code": 200,
+        "history_summary": {
+          "active_grant_count": 0,
+          "active_installation_count": 0,
+          "last_updated_utc": "2026-07-04T14:43:04.5924386+00:00",
+          "pending_browser_callback_count": 0,
+          "pending_claim_count": 0,
+          "platform_labels": []
+        },
+        "mobile_pwa_continuity_route": "/play/continuity",
+        "mobile_pwa_receipt_index_route": "/play/continuity/history",
+        "mobile_pwa_status_code": 200,
+        "play_has_viewport": true,
+        "play_mentions_black_ledger": true,
+        "play_mentions_continuity": true,
+        "play_mentions_heat": true,
+        "play_status_code": 200,
+        "session_location": "/play",
+        "session_status_code": 302
+      },
+      "id": "api_session_continuity_contract",
       "status": "passed"
     },
     {
@@ -165,7 +207,7 @@
         "routes": [
           {
             "content_type": "text/html; charset=utf-8",
-            "elapsed_ms": 67,
+            "elapsed_ms": 397,
             "expected_manifest_href": "/manifest.player.webmanifest",
             "expected_role": "Player",
             "has_expected_role": true,
@@ -182,7 +224,7 @@
           },
           {
             "content_type": "text/html; charset=utf-8",
-            "elapsed_ms": 66,
+            "elapsed_ms": 366,
             "expected_manifest_href": "/manifest.gm.webmanifest",
             "expected_role": "GameMaster",
             "has_expected_role": true,
@@ -228,7 +270,7 @@
         "assets": [
           {
             "content_type": "text/css",
-            "elapsed_ms": 64,
+            "elapsed_ms": 496,
             "has_responsive_media": true,
             "path": "/blazor/app.css",
             "size_bytes": 74728,
@@ -236,35 +278,35 @@
           },
           {
             "content_type": "image/svg+xml",
-            "elapsed_ms": 48,
+            "elapsed_ms": 36,
             "path": "/blazor/icons/chummer-pwa.svg",
             "size_bytes": 938,
             "status_code": 200
           },
           {
             "content_type": "image/svg+xml",
-            "elapsed_ms": 38,
+            "elapsed_ms": 56,
             "path": "/blazor/icons/chummer-pwa-maskable.svg",
             "size_bytes": 580,
             "status_code": 200
           },
           {
             "content_type": "image/png",
-            "elapsed_ms": 71,
+            "elapsed_ms": 56,
             "path": "/blazor/media/chummer6/chummer6-hero-baseline.png",
             "size_bytes": 704388,
             "status_code": 200
           },
           {
             "content_type": "application/manifest+json",
-            "elapsed_ms": 64,
+            "elapsed_ms": 496,
             "path": "/blazor/manifest.webmanifest",
             "size_bytes": 1979,
             "status_code": 200
           },
           {
             "content_type": "text/javascript",
-            "elapsed_ms": 52,
+            "elapsed_ms": 88,
             "excludes_api": true,
             "excludes_sessions": true,
             "excludes_workspaces": true,
@@ -274,7 +316,7 @@
           },
           {
             "content_type": "text/html",
-            "elapsed_ms": 54,
+            "elapsed_ms": 84,
             "mentions_black_ledger": true,
             "mentions_heat": true,
             "path": "/blazor/offline.html",
@@ -301,7 +343,8 @@
               "release_channel_contract",
               "download_install_routes_contract",
               "public_navigation_contract",
-              "blazor_runtime_contract"
+              "blazor_runtime_contract",
+              "api_session_continuity_contract"
             ],
             "id": "near_term_stabilization",
             "stable_promotion_blockers": [
@@ -311,6 +354,7 @@
           },
           {
             "evidence": [
+              "api_session_continuity_contract",
               "pwa_mobile_role_shell_contract",
               "living_world_opt_in_contract",
               "static_asset_and_offline_boundary_contract"
@@ -385,7 +429,7 @@
   ],
   "contract_name": "chummer6-ui.public_edge_flagship_integration",
   "failures": [],
-  "generated_at": "2026-07-04T14:39:05Z",
+  "generated_at": "2026-07-04T14:43:08Z",
   "promotion_boundaries": {
     "authenticated_living_world_execution_not_claimed": true,
     "full_desktop_parity_not_claimed_by_this_receipt": true,
@@ -397,6 +441,7 @@
     "download_install_routes_contract",
     "public_navigation_contract",
     "blazor_runtime_contract",
+    "api_session_continuity_contract",
     "pwa_mobile_role_shell_contract",
     "living_world_opt_in_contract",
     "static_asset_and_offline_boundary_contract",

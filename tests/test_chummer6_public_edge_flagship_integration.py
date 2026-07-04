@@ -20,6 +20,7 @@ REQUIRED_CHECK_IDS = {
     "download_install_routes_contract",
     "public_navigation_contract",
     "blazor_runtime_contract",
+    "api_session_continuity_contract",
     "pwa_mobile_role_shell_contract",
     "living_world_opt_in_contract",
     "static_asset_and_offline_boundary_contract",
@@ -42,6 +43,10 @@ def test_flagship_materializer_names_live_public_edge_scope() -> None:
         "/downloads/install/",
         "/participate",
         "/blazor/health",
+        "/api/health",
+        "/play/continuity",
+        "/play/continuity/history",
+        "/session",
         "/mobile/gm?role=GameMaster",
         "/mobile/pwa/ledger.json",
         "/account/ledger/notifications",
@@ -84,6 +89,7 @@ def test_flagship_receipt_proves_live_release_pwa_and_living_world_boundaries() 
     release = checks["release_channel_contract"]["facts"]
     downloads = checks["download_install_routes_contract"]["facts"]
     pwa = checks["pwa_mobile_role_shell_contract"]["facts"]
+    continuity = checks["api_session_continuity_contract"]["facts"]
     living_world = checks["living_world_opt_in_contract"]["facts"]
     static = checks["static_asset_and_offline_boundary_contract"]["facts"]
 
@@ -93,6 +99,13 @@ def test_flagship_receipt_proves_live_release_pwa_and_living_world_boundaries() 
     assert {"avalonia-linux-x64-installer", "avalonia-win-x64-installer"}.issubset(release["artifact_ids"])
     assert downloads["downloads_page_mentions_version"] is True
     assert all(route["status_code"] == 302 for route in downloads["install_routes"])
+    assert continuity["api_health_ok"] is True
+    assert continuity["api_health_service"] == "chummer.run.api"
+    assert continuity["session_status_code"] == 302
+    assert continuity["session_location"] == "/play"
+    assert "nexus_claimed_install_posture" in continuity["history_receipt_ids"]
+    assert continuity["mobile_pwa_continuity_route"] == "/play/continuity"
+    assert continuity["mobile_pwa_receipt_index_route"] == "/play/continuity/history"
     assert pwa["player_manifest_start_url"] == "/mobile/player?role=Player"
     assert pwa["gm_manifest_start_url"] == "/mobile/gm?role=GameMaster"
     assert living_world["ledger_status"] == "opt_in_required"
@@ -113,7 +126,8 @@ def test_flagship_status_summary_docs_and_compile_manifest_are_wired() -> None:
     signoff = SIGNOFF_DOC.read_text(encoding="utf-8")
 
     assert "flagship_integration_status=passed" in result.stdout
-    assert "flagship_integration_check_count=8" in result.stdout
+    assert "flagship_integration_check_count=9" in result.stdout
+    assert "api_session_continuity_contract" in result.stdout
     assert "living_world_opt_in_contract" in result.stdout
     assert RECEIPT.name in artifacts
     assert "scripts/materialize-chummer6-public-edge-flagship-proof.py" in docs_index

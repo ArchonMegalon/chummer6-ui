@@ -323,6 +323,76 @@ def check_blazor_runtime() -> dict[str, Any]:
     )
 
 
+def check_api_session_continuity() -> dict[str, Any]:
+    api_result, api = fetch_json("/api/health")
+    play = fetch_text("/play")
+    continuity = fetch_text("/play/continuity")
+    history_result, history = fetch_json("/play/continuity/history")
+    session_redirect = fetch_text("/session", follow_redirects=False)
+    mobile_pwa_result, mobile_pwa = fetch_json("/mobile/pwa.json")
+
+    receipts = history.get("receipts") if isinstance(history.get("receipts"), list) else []
+    receipt_ids = [
+        normalize(item.get("receiptId"))
+        for item in receipts
+        if isinstance(item, dict) and normalize(item.get("receiptId"))
+    ]
+    facts = {
+        "api_health_status_code": api_result["status_code"],
+        "api_health_ok": api.get("ok"),
+        "api_health_service": api.get("service"),
+        "api_health_status": api.get("status"),
+        "play_status_code": play["status_code"],
+        "play_has_viewport": has_viewport(play["text"]),
+        "play_mentions_continuity": "continuity" in play["text"].lower(),
+        "play_mentions_black_ledger": "Black Ledger" in play["text"],
+        "play_mentions_heat": "heat" in play["text"].lower(),
+        "continuity_status_code": continuity["status_code"],
+        "continuity_has_viewport": has_viewport(continuity["text"]),
+        "continuity_mentions_nexus_pan": "NEXUS-PAN" in continuity["text"],
+        "continuity_mentions_claimed_install": "claimed install" in continuity["text"].lower(),
+        "continuity_mentions_private_boundary": "private" in continuity["text"].lower(),
+        "continuity_links_history": "/play/continuity/history" in continuity["text"],
+        "history_status_code": history_result["status_code"],
+        "history_receipt_ids": receipt_ids,
+        "history_boundary": history.get("boundary"),
+        "history_summary": history.get("summary"),
+        "session_status_code": session_redirect["status_code"],
+        "session_location": session_redirect["location"],
+        "mobile_pwa_status_code": mobile_pwa_result["status_code"],
+        "mobile_pwa_continuity_route": mobile_pwa.get("continuity_route"),
+        "mobile_pwa_receipt_index_route": mobile_pwa.get("receipt_index_route"),
+    }
+    failures = []
+    if api_result["status_code"] != 200 or api.get("ok") is not True or api.get("status") != "pass":
+        failures.append("/api/health must report a passing public API dependency")
+    if play["status_code"] != 200 or not facts["play_has_viewport"]:
+        failures.append("/play must return a mobile-safe public player entry")
+    if not facts["play_mentions_continuity"] or not facts["play_mentions_black_ledger"] or not facts["play_mentions_heat"]:
+        failures.append("/play must surface continuity, Black Ledger, and heat entry copy")
+    if continuity["status_code"] != 200 or not facts["continuity_has_viewport"]:
+        failures.append("/play/continuity must return a mobile-safe public continuity page")
+    if not facts["continuity_mentions_nexus_pan"] or not facts["continuity_mentions_claimed_install"]:
+        failures.append("/play/continuity must expose NEXUS-PAN claimed-install continuity posture")
+    if not facts["continuity_mentions_private_boundary"] or not facts["continuity_links_history"]:
+        failures.append("/play/continuity must expose the private-data boundary and receipt history link")
+    if history_result["status_code"] != 200 or len(receipt_ids) < 3:
+        failures.append("/play/continuity/history must return live continuity receipt rows")
+    if "Public continuity stays aggregate" not in normalize(history.get("boundary")):
+        failures.append("/play/continuity/history must state the aggregate public continuity boundary")
+    if session_redirect["status_code"] != 302 or session_redirect["location"] != "/play":
+        failures.append("/session must redirect anonymous public entry to /play")
+    if mobile_pwa.get("continuity_route") != "/play/continuity":
+        failures.append("/mobile/pwa.json must advertise /play/continuity")
+    if mobile_pwa.get("receipt_index_route") != "/play/continuity/history":
+        failures.append("/mobile/pwa.json must advertise /play/continuity/history")
+    return (
+        failed_check("api_session_continuity_contract", "public API health and session continuity routes stay live, mobile-safe, and aggregate-bound", "; ".join(failures), facts)
+        if failures
+        else passed_check("api_session_continuity_contract", "public API health and session continuity routes stay live, mobile-safe, and aggregate-bound", facts)
+    )
+
+
 def check_pwa_mobile_shells() -> dict[str, Any]:
     route_specs = [
         ("/mobile", "Player", "/manifest.player.webmanifest"),
@@ -528,6 +598,7 @@ def check_receipt_horizons() -> dict[str, Any]:
                     "download_install_routes_contract",
                     "public_navigation_contract",
                     "blazor_runtime_contract",
+                    "api_session_continuity_contract",
                 ],
                 "stable_promotion_blockers": ["windows_visual_proof_missing"],
             },
@@ -535,6 +606,7 @@ def check_receipt_horizons() -> dict[str, Any]:
                 "id": "mid_term_pwa_session_utility",
                 "status": "pwa_shell_and_opt_in_boundary_proven",
                 "evidence": [
+                    "api_session_continuity_contract",
                     "pwa_mobile_role_shell_contract",
                     "living_world_opt_in_contract",
                     "static_asset_and_offline_boundary_contract",
@@ -574,6 +646,7 @@ def main() -> int:
         check_download_routes(),
         check_navigation_routes(),
         check_blazor_runtime(),
+        check_api_session_continuity(),
         check_pwa_mobile_shells(),
         check_living_world_opt_in(),
         check_static_assets(),
