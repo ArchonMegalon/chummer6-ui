@@ -1,0 +1,407 @@
+{
+  "base_url": "https://chummer.run",
+  "checks": [
+    {
+      "assertion": "live downloads manifests agree on the current published desktop preview",
+      "facts": {
+        "artifact_ids": [
+          "avalonia-linux-x64-installer",
+          "avalonia-win-x64-installer"
+        ],
+        "channel": "preview",
+        "download_ids": [
+          "avalonia-linux-x64-installer",
+          "avalonia-win-x64-installer"
+        ],
+        "published_at": "2026-07-04T14:23:39Z",
+        "release_channel_status_code": 200,
+        "release_channel_url": "https://chummer.run/downloads/RELEASE_CHANNEL.generated.json",
+        "releases_channel": "preview",
+        "releases_status_code": 200,
+        "releases_url": "https://chummer.run/downloads/releases.json",
+        "releases_version": "run-20260704-140214",
+        "status": "published",
+        "version": "run-20260704-140214"
+      },
+      "id": "release_channel_contract",
+      "status": "passed"
+    },
+    {
+      "assertion": "downloads page and install routes expose the current nightly safely",
+      "facts": {
+        "downloads_page_content_type": "text/html; charset=utf-8",
+        "downloads_page_has_viewport": true,
+        "downloads_page_mentions_linux": true,
+        "downloads_page_mentions_version": true,
+        "downloads_page_mentions_windows": true,
+        "downloads_page_status_code": 200,
+        "install_routes": [
+          {
+            "artifact_id": "avalonia-linux-x64-installer",
+            "elapsed_ms": 88,
+            "location": "/downloads/get/avalonia-linux-x64-installer",
+            "status_code": 302
+          },
+          {
+            "artifact_id": "avalonia-win-x64-installer",
+            "elapsed_ms": 64,
+            "location": "/downloads/get/avalonia-win-x64-installer",
+            "status_code": 302
+          }
+        ],
+        "version": "run-20260704-140214"
+      },
+      "id": "download_install_routes_contract",
+      "status": "passed"
+    },
+    {
+      "assertion": "public navigation routes remain reachable, mobile-safe, and product-shaped",
+      "facts": {
+        "routes": [
+          {
+            "content_type": "text/html; charset=utf-8",
+            "elapsed_ms": 56,
+            "has_viewport": true,
+            "missing_needles": [],
+            "route": "/",
+            "status_code": 200
+          },
+          {
+            "content_type": "text/html; charset=utf-8",
+            "elapsed_ms": 50,
+            "has_viewport": true,
+            "missing_needles": [],
+            "route": "/app",
+            "status_code": 200
+          },
+          {
+            "content_type": "text/html; charset=utf-8",
+            "elapsed_ms": 45,
+            "has_viewport": true,
+            "missing_needles": [],
+            "route": "/participate",
+            "status_code": 200
+          },
+          {
+            "content_type": "text/html; charset=utf-8",
+            "elapsed_ms": 92,
+            "has_viewport": true,
+            "missing_needles": [],
+            "route": "/status",
+            "status_code": 200
+          },
+          {
+            "content_type": "text/html; charset=utf-8",
+            "elapsed_ms": 162,
+            "has_viewport": true,
+            "missing_needles": [],
+            "route": "/help",
+            "status_code": 200
+          }
+        ]
+      },
+      "id": "public_navigation_contract",
+      "status": "passed"
+    },
+    {
+      "assertion": "Blazor runtime routes and health endpoint are live with privacy-safe analytics posture",
+      "facts": {
+        "analytics_autocapture_policy": "disabled",
+        "analytics_sensitive_data_policy": "route-and-workflow-metadata-only",
+        "analytics_session_replay_policy": "disabled",
+        "health_content_type": "application/json; charset=utf-8",
+        "health_ok": true,
+        "health_path_base": "/blazor",
+        "health_service": "Chummer",
+        "health_status_code": 200,
+        "routes": [
+          {
+            "base_hrefs": [
+              "/blazor/"
+            ],
+            "content_type": "text/html; charset=utf-8",
+            "elapsed_ms": 53,
+            "has_chummer_online_title": true,
+            "has_viewport": true,
+            "route": "/blazor/",
+            "status_code": 200
+          },
+          {
+            "base_hrefs": [
+              "/blazor/"
+            ],
+            "content_type": "text/html; charset=utf-8",
+            "elapsed_ms": 109,
+            "has_chummer_online_title": true,
+            "has_viewport": true,
+            "route": "/blazor/app",
+            "status_code": 200
+          },
+          {
+            "base_hrefs": [
+              "/blazor/"
+            ],
+            "content_type": "text/html; charset=utf-8",
+            "elapsed_ms": 397,
+            "has_chummer_online_title": true,
+            "has_viewport": true,
+            "route": "/blazor/workbench",
+            "status_code": 200
+          }
+        ]
+      },
+      "id": "blazor_runtime_contract",
+      "status": "passed"
+    },
+    {
+      "assertion": "PWA mobile Player and GM shells are installable, role-correct, and living-world bounded",
+      "facts": {
+        "gm_manifest_start_url": "/mobile/gm?role=GameMaster",
+        "gm_manifest_status_code": 200,
+        "player_manifest_start_url": "/mobile/player?role=Player",
+        "player_manifest_status_code": 200,
+        "pwa_alias_location": "/mobile",
+        "pwa_alias_status_code": 302,
+        "routes": [
+          {
+            "content_type": "text/html; charset=utf-8",
+            "elapsed_ms": 67,
+            "expected_manifest_href": "/manifest.player.webmanifest",
+            "expected_role": "Player",
+            "has_expected_role": true,
+            "has_living_world_opt_in_boundary": true,
+            "has_turn_root": true,
+            "has_viewport": true,
+            "manifest_hrefs": [
+              "/manifest.player.webmanifest"
+            ],
+            "mentions_black_ledger": true,
+            "mentions_heat": true,
+            "route": "/mobile",
+            "status_code": 200
+          },
+          {
+            "content_type": "text/html; charset=utf-8",
+            "elapsed_ms": 66,
+            "expected_manifest_href": "/manifest.gm.webmanifest",
+            "expected_role": "GameMaster",
+            "has_expected_role": true,
+            "has_living_world_opt_in_boundary": true,
+            "has_turn_root": true,
+            "has_viewport": true,
+            "manifest_hrefs": [
+              "/manifest.gm.webmanifest"
+            ],
+            "mentions_black_ledger": true,
+            "mentions_heat": true,
+            "route": "/mobile/gm?role=GameMaster",
+            "status_code": 200
+          }
+        ]
+      },
+      "id": "pwa_mobile_role_shell_contract",
+      "status": "passed"
+    },
+    {
+      "assertion": "Black Ledger, heat, and account notification routes stay opt-in bounded on the public lane",
+      "facts": {
+        "account_notifications_location": "/login?next=%2Faccount%2Fledger%2Fnotifications",
+        "account_notifications_status_code": 302,
+        "ledger_legal_posture": "Public lane stays aggregate only. No private run table state is published.",
+        "ledger_mode": "mobile_pwa_living_world",
+        "ledger_opt_in_route": "/account",
+        "ledger_status": "opt_in_required",
+        "ledger_status_code": 200,
+        "ledger_status_label": "Opt in required",
+        "ledger_summary": "Black Ledger live updates are available when you opt in via account preferences.",
+        "pwa_living_world_updates_route": "/mobile/pwa/ledger.json",
+        "pwa_mode": "nexus_pan_mobile_pwa",
+        "pwa_status": "live",
+        "pwa_status_code": 200
+      },
+      "id": "living_world_opt_in_contract",
+      "status": "passed"
+    },
+    {
+      "assertion": "static assets, service worker, and offline shell stay deployed and privacy bounded",
+      "facts": {
+        "assets": [
+          {
+            "content_type": "text/css",
+            "elapsed_ms": 64,
+            "has_responsive_media": true,
+            "path": "/blazor/app.css",
+            "size_bytes": 74728,
+            "status_code": 200
+          },
+          {
+            "content_type": "image/svg+xml",
+            "elapsed_ms": 48,
+            "path": "/blazor/icons/chummer-pwa.svg",
+            "size_bytes": 938,
+            "status_code": 200
+          },
+          {
+            "content_type": "image/svg+xml",
+            "elapsed_ms": 38,
+            "path": "/blazor/icons/chummer-pwa-maskable.svg",
+            "size_bytes": 580,
+            "status_code": 200
+          },
+          {
+            "content_type": "image/png",
+            "elapsed_ms": 71,
+            "path": "/blazor/media/chummer6/chummer6-hero-baseline.png",
+            "size_bytes": 704388,
+            "status_code": 200
+          },
+          {
+            "content_type": "application/manifest+json",
+            "elapsed_ms": 64,
+            "path": "/blazor/manifest.webmanifest",
+            "size_bytes": 1979,
+            "status_code": 200
+          },
+          {
+            "content_type": "text/javascript",
+            "elapsed_ms": 52,
+            "excludes_api": true,
+            "excludes_sessions": true,
+            "excludes_workspaces": true,
+            "path": "/blazor/service-worker.js",
+            "size_bytes": 2347,
+            "status_code": 200
+          },
+          {
+            "content_type": "text/html",
+            "elapsed_ms": 54,
+            "mentions_black_ledger": true,
+            "mentions_heat": true,
+            "path": "/blazor/offline.html",
+            "size_bytes": 2143,
+            "states_runner_data_not_cached": true,
+            "status_code": 200
+          }
+        ]
+      },
+      "id": "static_asset_and_offline_boundary_contract",
+      "status": "passed"
+    },
+    {
+      "assertion": "local receipts define the working horizons without upgrading preview evidence to stable or full parity",
+      "facts": {
+        "claim_boundaries": {
+          "does_not_claim_authenticated_living_world_execution": true,
+          "does_not_claim_full_desktop_parity": true,
+          "does_not_claim_stable_gold": true
+        },
+        "horizons": [
+          {
+            "evidence": [
+              "release_channel_contract",
+              "download_install_routes_contract",
+              "public_navigation_contract",
+              "blazor_runtime_contract"
+            ],
+            "id": "near_term_stabilization",
+            "stable_promotion_blockers": [
+              "windows_visual_proof_missing"
+            ],
+            "status": "preview_deployed"
+          },
+          {
+            "evidence": [
+              "pwa_mobile_role_shell_contract",
+              "living_world_opt_in_contract",
+              "static_asset_and_offline_boundary_contract"
+            ],
+            "id": "mid_term_pwa_session_utility",
+            "remaining_work": [
+              "authenticated in-session inventory, health, ammo, modifier, and dice utility workflow proof",
+              "full-scope hosted browser execution matrix"
+            ],
+            "status": "pwa_shell_and_opt_in_boundary_proven"
+          },
+          {
+            "evidence": [
+              "living_world_opt_in_contract",
+              "blazor_runtime_contract"
+            ],
+            "id": "long_term_living_world_expansion",
+            "remaining_work": [
+              "authenticated Black Ledger opt-in flow",
+              "GM-governed heat/session update execution proof",
+              "stable/gold Windows visual proof"
+            ],
+            "status": "public_opt_in_boundary_proven_expansion_not_claimed"
+          }
+        ],
+        "receipts": [
+          {
+            "contract_name": "chummer6-ui.blazor_public_edge_workbench_proof",
+            "generated_at": "2026-07-04T14:23:51Z",
+            "id": "hosted_route_entry",
+            "path": "/docker/chummercomplete/chummer-presentation-sr6-origin-dialog-clean/.codex-studio/published/BLAZOR_PUBLIC_EDGE_WORKBENCH_PROOF.generated.json",
+            "present": true,
+            "status": "passed"
+          },
+          {
+            "contract_name": "chummer6-ui.blazor_public_edge_execution_horizon",
+            "generated_at": "2026-07-04T02:52:45.143181+00:00",
+            "id": "hosted_execution_horizon",
+            "path": "/docker/chummercomplete/chummer-presentation-sr6-origin-dialog-clean/.codex-studio/published/BLAZOR_PUBLIC_EDGE_EXECUTION_HORIZON.generated.json",
+            "present": true,
+            "status": "passed"
+          },
+          {
+            "contract_name": "chummer6-ui.blazor_pwa_public_edge_proof",
+            "generated_at": "2026-07-04T13:03:30.308430+00:00",
+            "id": "hosted_pwa_play_shell",
+            "path": "/docker/chummercomplete/chummer-presentation-sr6-origin-dialog-clean/.codex-studio/published/BLAZOR_PWA_PUBLIC_EDGE_PROOF.generated.json",
+            "present": true,
+            "status": "passed"
+          },
+          {
+            "contract_name": "chummer6-ui.blazor_browser_lane_proof_set",
+            "generated_at": "2026-07-04T14:28:21.659486+00:00",
+            "id": "aggregate_browser_lane",
+            "path": "/docker/chummercomplete/chummer-presentation-sr6-origin-dialog-clean/.codex-studio/published/BLAZOR_BROWSER_LANE_PROOF_SET.generated.json",
+            "present": true,
+            "status": "passed"
+          },
+          {
+            "contract_name": "chummer6-ui.external_host_proof_blockers",
+            "generated_at": "2026-07-04T14:23:51Z",
+            "id": "external_host_blockers",
+            "path": "/docker/chummercomplete/chummer-presentation-sr6-origin-dialog-clean/.codex-studio/published/UI_EXTERNAL_HOST_PROOF_BLOCKERS.generated.json",
+            "present": true,
+            "status": "ready"
+          }
+        ]
+      },
+      "id": "receipt_horizon_contract",
+      "status": "passed"
+    }
+  ],
+  "contract_name": "chummer6-ui.public_edge_flagship_integration",
+  "failures": [],
+  "generated_at": "2026-07-04T14:39:05Z",
+  "promotion_boundaries": {
+    "authenticated_living_world_execution_not_claimed": true,
+    "full_desktop_parity_not_claimed_by_this_receipt": true,
+    "nightly_preview_is_not_stable": true,
+    "windows_visual_proof_required_for_stable_gold": true
+  },
+  "required_check_ids": [
+    "release_channel_contract",
+    "download_install_routes_contract",
+    "public_navigation_contract",
+    "blazor_runtime_contract",
+    "pwa_mobile_role_shell_contract",
+    "living_world_opt_in_contract",
+    "static_asset_and_offline_boundary_contract",
+    "receipt_horizon_contract"
+  ],
+  "scope": "live-public-edge-preview-integration-not-stable-gold",
+  "status": "passed"
+}
