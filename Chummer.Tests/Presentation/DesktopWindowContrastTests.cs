@@ -223,6 +223,74 @@ public sealed class DesktopWindowContrastTests
     }
 
     [TestMethod]
+    public void Origin_dossier_advanced_story_controls_keep_first_scroll_anchor_when_another_combo_gains_focus_before_selection()
+    {
+        DesktopDialogState originWizard = new DesktopDialogFactory().CreateCommandDialog(
+            "new_character_origin",
+            profile: null,
+            DesktopPreferenceState.Default,
+            activeSectionJson: null,
+            currentWorkspace: null,
+            rulesetId: RulesetDefaults.Sr5);
+        DesktopDialogField metatypePreferenceField = originWizard.Fields
+            .Single(field => string.Equals(field.Id, "newCharacterOriginMetatypePreference", StringComparison.Ordinal));
+        DesktopDialogFieldOption nextMetatypePreference = (metatypePreferenceField.Options ?? [])
+            .First(option => !string.Equals(option.Value, metatypePreferenceField.Value, StringComparison.Ordinal));
+
+        WithPresenterBoundDialogWindow(originWizard, window =>
+        {
+            window.Height = 420;
+            PumpUi();
+
+            Expander advancedStoryControls = window.GetVisualDescendants()
+                .OfType<Expander>()
+                .Single(expander => string.Equals(expander.Name, "OriginDossierStandaloneAdvancedStoryControlsExpander", StringComparison.Ordinal));
+            ScrollViewer scrollViewer = window.FindControl<ScrollViewer>("DialogScrollViewer")!;
+
+            advancedStoryControls.IsExpanded = true;
+            PumpUi();
+
+            scrollViewer.Offset = new Vector(0d, 180d);
+            PumpUi();
+            double preservedOffsetY = scrollViewer.Offset.Y;
+
+            ComboBox buildPreferenceCombo = window.GetVisualDescendants()
+                .OfType<ComboBox>()
+                .Single(comboBox => string.Equals(comboBox.Name, DesktopDialogAccessibility.BuildFieldInputName("newCharacterOriginBuildPreference"), StringComparison.Ordinal));
+            ComboBox metatypePreferenceCombo = window.GetVisualDescendants()
+                .OfType<ComboBox>()
+                .Single(comboBox => string.Equals(comboBox.Name, DesktopDialogAccessibility.BuildFieldInputName("newCharacterOriginMetatypePreference"), StringComparison.Ordinal));
+
+            buildPreferenceCombo.Focus();
+            PumpUi();
+
+            scrollViewer.Offset = new Vector(0d, 28d);
+            PumpUi();
+
+            metatypePreferenceCombo.Focus();
+            PumpUi();
+
+            metatypePreferenceCombo.SelectedItem = nextMetatypePreference;
+            PumpUi();
+            PumpUi();
+
+            Expander reboundAdvancedStoryControls = window.GetVisualDescendants()
+                .OfType<Expander>()
+                .Single(expander => string.Equals(expander.Name, "OriginDossierStandaloneAdvancedStoryControlsExpander", StringComparison.Ordinal));
+            ScrollViewer reboundScrollViewer = window.FindControl<ScrollViewer>("DialogScrollViewer")!;
+            ComboBox reboundMetatypePreferenceCombo = window.GetVisualDescendants()
+                .OfType<ComboBox>()
+                .Single(comboBox => string.Equals(comboBox.Name, DesktopDialogAccessibility.BuildFieldInputName("newCharacterOriginMetatypePreference"), StringComparison.Ordinal));
+
+            Assert.IsTrue(reboundAdvancedStoryControls.IsExpanded, "Advanced story controls should stay expanded when another combo gains focus before the selection refresh.");
+            Assert.AreEqual(nextMetatypePreference.Value, ((DesktopDialogFieldOption)reboundMetatypePreferenceCombo.SelectedItem!).Value, "The later combo selection should survive the cross-field focus refresh.");
+            Assert.IsTrue(
+                Math.Abs(reboundScrollViewer.Offset.Y - preservedOffsetY) <= 8d,
+                $"Origin Dossier should keep the first pre-selection scroll anchor when another combo gains focus before refresh. Before={preservedOffsetY:F1}, After={reboundScrollViewer.Offset.Y:F1}.");
+        });
+    }
+
+    [TestMethod]
     public void Origin_dossier_combo_refresh_defers_transient_presenter_close()
     {
         DesktopDialogState originWizard = new DesktopDialogFactory().CreateCommandDialog(

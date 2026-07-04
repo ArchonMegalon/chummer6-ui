@@ -7,9 +7,12 @@
 @using Microsoft.JSInterop
 @inject IJSRuntime JsRuntime
 @* m104: blazor_dialog_surface *@
-@if (Dialog is { } dialog)
+@if (GetRenderedDialog() is { } dialog)
 {
-    <div id="dialogBackdrop" class="dialog-backdrop" @onclick="CloseAsync">
+    <div id="dialogBackdrop"
+         class="dialog-backdrop"
+         data-dialog-id="@dialog.Id"
+         @onclick="CloseAsync">
         <div class="desktop-dialog classic-dialog"
              @ref="_dialogRoot"
              role="@AccessibilityPrimitiveBoundary.DialogRole"
@@ -28,7 +31,9 @@
                         aria-description="Close the current dialog."
                         @onclick="CloseAsync">X</button>
             </div>
-            <div id="@AccessibilityPrimitiveBoundary.BuildDialogDescriptionId(dialog.Id)" class="dialog-body classic-dialog-grid">
+            <div id="@AccessibilityPrimitiveBoundary.BuildDialogDescriptionId(dialog.Id)"
+                 class="dialog-body classic-dialog-grid"
+                 @ref="_dialogBody">
                 @if (!string.IsNullOrWhiteSpace(dialog.Message))
                 {
                     <p class="dialog-note">@dialog.Message</p>
@@ -169,53 +174,60 @@
                             </div>
                         </section>
 
-                        <details class="dialog-origin-panel dialog-origin-panel--advanced"
-                                 data-origin-advanced-details
-                                 open="@_originWizardAdvancedStoryControlsExpanded">
-                            <summary data-origin-advanced-summary
-                                     aria-expanded="@(_originWizardAdvancedStoryControlsExpanded ? "true" : "false")"
-                                     @onclick:preventDefault="true"
-                                     @onclick="ToggleOriginWizardAdvancedStoryControls">
+                        <section class="dialog-origin-panel dialog-origin-panel--advanced"
+                                 data-origin-advanced-controls
+                                 data-expanded="@(CurrentOriginWizardAdvancedControlsOpen ? "true" : "false")">
+                            <button type="button"
+                                    class="dialog-origin-advanced-toggle"
+                                    data-origin-advanced-toggle
+                                    aria-expanded="@(CurrentOriginWizardAdvancedControlsOpen ? "true" : "false")"
+                                    aria-controls="origin-wizard-advanced-story-controls"
+                                    @onclick="ToggleOriginWizardAdvancedControls">
                                 Advanced story controls
-                            </summary>
-                            <p class="dialog-note">Optional runner identity, life-path steering, and GM guidance for the story packet.</p>
-                            <div class="dialog-origin-advanced-grid">
-                                <section class="dialog-origin-subpanel">
-                                    <h4>Runner</h4>
-                                    <div class="dialog-origin-story-grid">
-                                        @RenderOriginField(GetDialogField(dialog, "newCharacterName"))
-                                        @RenderOriginField(GetDialogField(dialog, "newCharacterAlias"))
-                                        @RenderOriginField(GetDialogField(dialog, "newCharacterRulesetId"))
-                                        @RenderOriginField(GetDialogField(dialog, "newCharacterOriginBuildPreference"))
-                                    </div>
-                                </section>
+                            </button>
+                            <div id="origin-wizard-advanced-story-controls"
+                                 class="dialog-origin-advanced-content"
+                                 data-origin-advanced-content
+                                 hidden="@(!CurrentOriginWizardAdvancedControlsOpen)">
+                                <p class="dialog-note">Optional runner identity, life-path steering, and GM guidance for the story packet.</p>
+                                <div class="dialog-origin-advanced-grid">
+                                    <section class="dialog-origin-subpanel">
+                                        <h4>Runner</h4>
+                                        <div class="dialog-origin-story-grid">
+                                            @RenderOriginField(GetDialogField(dialog, "newCharacterName"))
+                                            @RenderOriginField(GetDialogField(dialog, "newCharacterAlias"))
+                                            @RenderOriginField(GetDialogField(dialog, "newCharacterRulesetId"))
+                                            @RenderOriginField(GetDialogField(dialog, "newCharacterOriginBuildPreference"))
+                                        </div>
+                                    </section>
+
+                                    <section class="dialog-origin-subpanel">
+                                        <h4>Life Path</h4>
+                                        <div class="dialog-origin-life-grid">
+                                            @RenderOriginField(GetDialogField(dialog, "newCharacterOriginBackground"))
+                                            @RenderOriginField(GetDialogField(dialog, "newCharacterOriginTurningPoint"))
+                                            @RenderOriginField(GetDialogField(dialog, "newCharacterOriginTrainingPath"))
+                                            @RenderOriginField(GetDialogField(dialog, "newCharacterOriginUpgradeExposure"))
+                                            @RenderOriginField(GetDialogField(dialog, "newCharacterOriginPressureCost"))
+                                            @RenderOriginField(GetDialogField(dialog, "newCharacterOriginMotivation"))
+                                            @RenderOriginField(GetDialogField(dialog, "newCharacterOriginTone"))
+                                        </div>
+                                    </section>
+                                </div>
 
                                 <section class="dialog-origin-subpanel">
-                                    <h4>Life Path</h4>
-                                    <div class="dialog-origin-life-grid">
-                                        @RenderOriginField(GetDialogField(dialog, "newCharacterOriginBackground"))
-                                        @RenderOriginField(GetDialogField(dialog, "newCharacterOriginTurningPoint"))
-                                        @RenderOriginField(GetDialogField(dialog, "newCharacterOriginTrainingPath"))
-                                        @RenderOriginField(GetDialogField(dialog, "newCharacterOriginUpgradeExposure"))
-                                        @RenderOriginField(GetDialogField(dialog, "newCharacterOriginPressureCost"))
-                                        @RenderOriginField(GetDialogField(dialog, "newCharacterOriginMotivation"))
-                                        @RenderOriginField(GetDialogField(dialog, "newCharacterOriginTone"))
+                                    <h4>GM Steering</h4>
+                                    <div class="dialog-origin-story-grid">
+                                        @RenderOriginField(GetDialogField(dialog, "newCharacterOriginGmConstraintPreset"))
+                                        @RenderOriginField(GetDialogField(dialog, "newCharacterOriginGmRequirements"))
+                                    </div>
+                                    <div class="dialog-origin-summary-strip">
+                                        @RenderOriginSummaryMetric("Applied GM Constraint", GetDialogFieldValue(dialog, "newCharacterOriginGmRequirementSummary"))
+                                        @RenderOriginSummaryMetric("Pressure", GetDialogFieldValue(dialog, "newCharacterOriginQualityFocus"))
                                     </div>
                                 </section>
                             </div>
-
-                            <section class="dialog-origin-subpanel">
-                                <h4>GM Steering</h4>
-                                <div class="dialog-origin-story-grid">
-                                    @RenderOriginField(GetDialogField(dialog, "newCharacterOriginGmConstraintPreset"))
-                                    @RenderOriginField(GetDialogField(dialog, "newCharacterOriginGmRequirements"))
-                                </div>
-                                <div class="dialog-origin-summary-strip">
-                                    @RenderOriginSummaryMetric("Applied GM Constraint", GetDialogFieldValue(dialog, "newCharacterOriginGmRequirementSummary"))
-                                    @RenderOriginSummaryMetric("Pressure", GetDialogFieldValue(dialog, "newCharacterOriginQualityFocus"))
-                                </div>
-                            </section>
-                        </details>
+                        </section>
 
                         <section class="dialog-origin-panel">
                             <header>
@@ -460,6 +472,8 @@
                                         aria-description="@field.HelpText"
                                         disabled="@field.IsReadOnly"
                                         value="@field.Value"
+                                        @onfocus="(_) => PrepareDialogFieldInteractionAsync(field)"
+                                        @onpointerdown="(_) => PrepareDialogFieldInteractionAsync(field)"
                                         @onchange="e => OnDialogFieldInputAsync(field, e.Value?.ToString())">
                                     @foreach (DesktopDialogFieldOption option in field.Options ?? [])
                                     {
@@ -550,31 +564,123 @@
     [Parameter]
     public EventCallback<DialogRosterDropIntent> RosterDropRequested { get; set; }
 
+    [Parameter]
+    public bool OriginWizardAdvancedControlsOpen { get; set; }
+
+    [Parameter]
+    public EventCallback<bool> OriginWizardAdvancedControlsOpenChanged { get; set; }
+
     private string? _rosterMouseDragSourceLine;
     private string? _rosterKeyboardSourceLine;
-    private bool _originWizardAdvancedStoryControlsExpanded;
-    private string? _trackedDialogId;
+    private bool _originWizardAdvancedControlsOpen;
+    private bool _preserveOriginWizardAdvancedControlsAcrossTransientNull;
+    private bool _renderOriginWizardTransientFallback;
+    private DesktopDialogState? _cachedOriginWizardDialog;
 
     private ElementReference _dialogRoot;
+    private ElementReference _dialogBody;
     private string? _focusedDialogId;
+    private string? _lastDialogId;
+    private double[]? _pendingDialogScrollRestore;
+    private string? _pendingDialogScrollDialogId;
+    private DesktopDialogState? _scrollRestoreSourceDialog;
+    private string? _armedDialogScrollFieldId;
+    private string? _armedDialogScrollDialogId;
+    private bool IsOriginWizardAdvancedControlsOpenBound => OriginWizardAdvancedControlsOpenChanged.HasDelegate;
+    private bool CurrentOriginWizardAdvancedControlsOpen =>
+        OriginWizardAdvancedControlsOpen || _originWizardAdvancedControlsOpen;
+
+    private bool ShouldPreserveLocalOriginWizardAdvancedControlsOpenOnBoundRefresh()
+    {
+        if (OriginWizardAdvancedControlsOpen || !_originWizardAdvancedControlsOpen)
+        {
+            return false;
+        }
+
+        if (Dialog is not null)
+        {
+            return IsOriginWizardDialog(Dialog);
+        }
+
+        return _renderOriginWizardTransientFallback
+            || (_cachedOriginWizardDialog is not null && IsOriginWizardDialog(_cachedOriginWizardDialog));
+    }
 
     protected override void OnParametersSet()
     {
-        string? currentDialogId = Dialog?.Id;
-        if (!string.Equals(_trackedDialogId, currentDialogId, StringComparison.Ordinal))
+        if (IsOriginWizardAdvancedControlsOpenBound)
         {
-            _originWizardAdvancedStoryControlsExpanded = false;
+            if (!ShouldPreserveLocalOriginWizardAdvancedControlsOpenOnBoundRefresh())
+            {
+                _originWizardAdvancedControlsOpen = OriginWizardAdvancedControlsOpen;
+            }
         }
 
-        _trackedDialogId = currentDialogId;
+        if (Dialog is null)
+        {
+            if ((_preserveOriginWizardAdvancedControlsAcrossTransientNull || CurrentOriginWizardAdvancedControlsOpen)
+                && _cachedOriginWizardDialog is not null
+                && IsOriginWizardDialog(_cachedOriginWizardDialog))
+            {
+                _renderOriginWizardTransientFallback = true;
+                _preserveOriginWizardAdvancedControlsAcrossTransientNull = false;
+                return;
+            }
+
+            _renderOriginWizardTransientFallback = false;
+            _cachedOriginWizardDialog = null;
+
+            if (!_preserveOriginWizardAdvancedControlsAcrossTransientNull)
+            {
+                _lastDialogId = null;
+                SyncOriginWizardAdvancedControlsOpen(false);
+                ClearPendingDialogScrollRestore();
+            }
+
+            return;
+        }
+
+        _renderOriginWizardTransientFallback = false;
+        _preserveOriginWizardAdvancedControlsAcrossTransientNull = false;
+        _cachedOriginWizardDialog = IsOriginWizardDialog(Dialog) ? Dialog : null;
+
+        if (!string.Equals(Dialog.Id, _lastDialogId, StringComparison.Ordinal))
+        {
+            _lastDialogId = Dialog.Id;
+            if (!IsOriginWizardDialog(Dialog) || !CurrentOriginWizardAdvancedControlsOpen)
+            {
+                SyncOriginWizardAdvancedControlsOpen(false);
+            }
+        }
+
+        if (!string.Equals(Dialog.Id, _pendingDialogScrollDialogId, StringComparison.Ordinal))
+        {
+            ClearPendingDialogScrollRestore();
+        }
     }
 
     protected override async Task OnAfterRenderAsync(bool firstRender)
     {
-        if (Dialog is null || string.Equals(_focusedDialogId, Dialog.Id, StringComparison.Ordinal))
+        DesktopDialogState? renderedDialog = GetRenderedDialog();
+        if (renderedDialog is null)
+        {
+            return;
+        }
+
+        await RestorePendingDialogScrollAsync(renderedDialog);
+
+        if (Dialog is null || string.Equals(_focusedDialogId, renderedDialog.Id, StringComparison.Ordinal))
             return;
 
-        _focusedDialogId = Dialog.Id;
+        bool sameDialogRefresh = await JsRuntime.InvokeAsync<bool>(
+            "chummerDialogs.isSameDialogRefresh",
+            renderedDialog.Id);
+        _focusedDialogId = renderedDialog.Id;
+        if (sameDialogRefresh)
+        {
+            return;
+        }
+
         await JsRuntime.InvokeVoidAsync("chummerDialogs.revealActiveDialog");
         await _dialogRoot.FocusAsync();
     }
@@ -589,28 +695,157 @@
         return ExecuteDialogActionRequested.InvokeAsync(actionId);
     }
 
-    private void ToggleOriginWizardAdvancedStoryControls()
+    private async Task ToggleOriginWizardAdvancedControls()
     {
-        _originWizardAdvancedStoryControlsExpanded = !_originWizardAdvancedStoryControlsExpanded;
+        bool nextIsOpen = !CurrentOriginWizardAdvancedControlsOpen;
+        await SetOriginWizardAdvancedControlsOpenAsync(nextIsOpen);
+        if (nextIsOpen)
+        {
+            RememberOriginWizardTransientState();
+            return;
+        }
+
+        _preserveOriginWizardAdvancedControlsAcrossTransientNull = false;
     }
 
-    private Task OnDialogFieldInputAsync(DesktopDialogField field, string? value)
+    private async Task PrepareDialogFieldInteractionAsync(DesktopDialogField field)
     {
         if (field.IsReadOnly)
-            return Task.CompletedTask;
+            return;
 
-        return FieldInputRequested.InvokeAsync(new DialogFieldInputChange(field.Id, value));
+        await CaptureDialogScrollForFieldInteractionAsync(field.Id);
+        RememberOriginWizardTransientState();
     }
 
-    private Task OnDialogCheckboxChangedAsync(DesktopDialogField field, object? value)
+    private async Task OnDialogFieldInputAsync(DesktopDialogField field, string? value)
     {
         if (field.IsReadOnly)
-            return Task.CompletedTask;
+            return;
+
+        if (!IsDialogScrollCaptureArmedForField(field.Id))
+        {
+            await CaptureDialogScrollForFieldInteractionAsync(field.Id);
+        }
+
+        RememberOriginWizardTransientState();
+        await FieldInputRequested.InvokeAsync(new DialogFieldInputChange(field.Id, value));
+    }
+
+    private async Task OnDialogCheckboxChangedAsync(DesktopDialogField field, object? value)
+    {
+        if (field.IsReadOnly)
+            return;
 
         bool parsed = value is bool direct
             ? direct
             : bool.TryParse(value?.ToString(), out bool parsedBool) && parsedBool;
-        return FieldCheckboxRequested.InvokeAsync(new DialogFieldCheckboxChange(field.Id, parsed));
+        await CaptureDialogScrollForFieldInteractionAsync(field.Id);
+        RememberOriginWizardTransientState();
+        await FieldCheckboxRequested.InvokeAsync(new DialogFieldCheckboxChange(field.Id, parsed));
+    }
+
+    private void SyncOriginWizardAdvancedControlsOpen(bool isOpen)
+    {
+        _originWizardAdvancedControlsOpen = isOpen;
+    }
+
+    private async Task SetOriginWizardAdvancedControlsOpenAsync(bool isOpen)
+    {
+        SyncOriginWizardAdvancedControlsOpen(isOpen);
+        if (IsOriginWizardAdvancedControlsOpenBound && OriginWizardAdvancedControlsOpen != isOpen)
+        {
+            await OriginWizardAdvancedControlsOpenChanged.InvokeAsync(isOpen);
+        }
+    }
+
+    private void RememberOriginWizardTransientState()
+    {
+        if (Dialog is not null && IsOriginWizardDialog(Dialog))
+        {
+            _cachedOriginWizardDialog = Dialog;
+            _preserveOriginWizardAdvancedControlsAcrossTransientNull = true;
+        }
+    }
+
+    private DesktopDialogState? GetRenderedDialog()
+        => Dialog ?? (_renderOriginWizardTransientFallback ? _cachedOriginWizardDialog : null);
+
+    private bool IsDialogScrollCaptureArmedForField(string fieldId)
+    {
+        DesktopDialogState? renderedDialog = GetRenderedDialog();
+        return renderedDialog is not null
+            && _pendingDialogScrollRestore is { Length: >= 2 }
+            && string.Equals(renderedDialog.Id, _armedDialogScrollDialogId, StringComparison.Ordinal)
+            && (string.Equals(fieldId, _armedDialogScrollFieldId, StringComparison.Ordinal)
+                || ShouldReuseArmedOriginWizardScrollCapture(renderedDialog));
+    }
+
+    private bool ShouldReuseArmedOriginWizardScrollCapture(DesktopDialogState renderedDialog)
+    {
+        return IsOriginWizardDialog(renderedDialog)
+            && CurrentOriginWizardAdvancedControlsOpen
+            && _pendingDialogScrollRestore is { Length: >= 2 }
+            && string.Equals(renderedDialog.Id, _armedDialogScrollDialogId, StringComparison.Ordinal);
+    }
+
+    private async Task CaptureDialogScrollForFieldInteractionAsync(string fieldId)
+    {
+        DesktopDialogState? renderedDialog = GetRenderedDialog();
+        if (renderedDialog is null)
+        {
+            ClearPendingDialogScrollRestore();
+            return;
+        }
+
+        if (ShouldReuseArmedOriginWizardScrollCapture(renderedDialog))
+        {
+            return;
+        }
+
+        double[]? scrollOffset = await JsRuntime.InvokeAsync<double[]?>(
+            "chummerDialogs.captureDialogScroll",
+            _dialogBody,
+            fieldId);
+
+        if (scrollOffset is not { Length: >= 2 })
+        {
+            ClearPendingDialogScrollRestore();
+            return;
+        }
+
+        _pendingDialogScrollRestore = scrollOffset;
+        _pendingDialogScrollDialogId = renderedDialog.Id;
+        _scrollRestoreSourceDialog = Dialog ?? renderedDialog;
+        _armedDialogScrollFieldId = fieldId;
+        _armedDialogScrollDialogId = renderedDialog.Id;
+    }
+
+    private async Task RestorePendingDialogScrollAsync(DesktopDialogState renderedDialog)
+    {
+        if (_pendingDialogScrollRestore is not { Length: >= 2 } scrollOffset
+            || !string.Equals(renderedDialog.Id, _pendingDialogScrollDialogId, StringComparison.Ordinal))
+        {
+            return;
+        }
+
+        await JsRuntime.InvokeVoidAsync(
+            "chummerDialogs.restoreDialogScroll",
+            _dialogBody,
+            scrollOffset);
+
+        if (Dialog is not null && !ReferenceEquals(Dialog, _scrollRestoreSourceDialog))
+        {
+            ClearPendingDialogScrollRestore();
+        }
+    }
+
+    private void ClearPendingDialogScrollRestore()
+    {
+        _pendingDialogScrollRestore = null;
+        _pendingDialogScrollDialogId = null;
+        _scrollRestoreSourceDialog = null;
+        _armedDialogScrollFieldId = null;
+        _armedDialogScrollDialogId = null;
     }
 
     private static bool IsDialogCheckboxChecked(DesktopDialogField field)
@@ -1213,6 +1448,7 @@
         int? size = null) => builder =>
     {
         builder.OpenElement(0, "select");
+        builder.SetKey($"dialog-select:{field.Id}");
         builder.AddAttribute(1, "class", cssClass);
         builder.AddAttribute(2, "data-field-id", field.Id);
         builder.AddAttribute(3, "aria-label", field.AccessibleName);
@@ -1224,12 +1460,18 @@
         }
 
         builder.AddAttribute(7, "value", field.Value);
-        builder.AddAttribute(8, "onchange", EventCallback.Factory.CreateBinder<string?>(
+        builder.AddAttribute(8, "onfocus", EventCallback.Factory.Create<Microsoft.AspNetCore.Components.Web.FocusEventArgs>(
+            this,
+            _ => PrepareDialogFieldInteractionAsync(field)));
+        builder.AddAttribute(9, "onpointerdown", EventCallback.Factory.Create<Microsoft.AspNetCore.Components.Web.PointerEventArgs>(
+            this,
+            _ => PrepareDialogFieldInteractionAsync(field)));
+        builder.AddAttribute(10, "onchange", EventCallback.Factory.CreateBinder<string?>(
             this,
             value => OnDialogFieldInputAsync(field, value),
             field.Value));
 
-        int sequence = 9;
+        int sequence = 11;
         foreach (DesktopDialogFieldOption option in field.Options ?? [])
         {
             builder.OpenElement(sequence++, "option");

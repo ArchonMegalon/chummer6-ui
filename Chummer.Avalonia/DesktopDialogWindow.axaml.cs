@@ -3603,10 +3603,10 @@ public partial class DesktopDialogWindow : Window
                 return;
             }
 
-            CaptureTransientDialogState();
             _preferredDialogScrollAnchor ??= _dialogScrollViewer.Offset;
             CapturePreferredDialogViewportAnchor();
             CapturePreferredDialogInteractionAnchor(comboBox);
+            CaptureTransientDialogState();
             RestorePreferredScrollAnchorDuringOriginWizardComboInteraction();
         }
 
@@ -3617,6 +3617,19 @@ public partial class DesktopDialogWindow : Window
             (_, _) => CaptureInteractionAnchor(),
             RoutingStrategies.Tunnel,
             handledEventsToo: true);
+        comboBox.KeyDown += (_, args) =>
+        {
+            switch (args.Key)
+            {
+                case Key.Down:
+                case Key.Up:
+                case Key.Enter:
+                case Key.Space:
+                case Key.F4:
+                    CaptureInteractionAnchor();
+                    break;
+            }
+        };
     }
 
     private static void ApplyShellListBoxTheme(ListBox listBox)
@@ -3902,6 +3915,12 @@ public partial class DesktopDialogWindow : Window
             return;
         }
 
+        if (_preferredDialogScrollAnchor is not null
+            && _preferredDialogInteractionAnchor is not null)
+        {
+            return;
+        }
+
         if (_preferredDialogInteractionAnchor is { } existingAnchor
             && string.Equals(existingAnchor.ControlName, control.Name, StringComparison.Ordinal))
         {
@@ -4000,12 +4019,15 @@ public partial class DesktopDialogWindow : Window
                 return;
             }
         }
-        else if (!hasPreferredAnchor)
+        else
         {
-            Dispatcher.UIThread.Post(() => _dialogScrollViewer.Offset = offset, DispatcherPriority.Input);
-            Dispatcher.UIThread.Post(() => _dialogScrollViewer.Offset = offset, DispatcherPriority.Loaded);
-            Dispatcher.UIThread.Post(() => _dialogScrollViewer.Offset = offset, DispatcherPriority.Background);
-            ScheduleDelayedPreferredDialogScrollAnchor(offset, _preferredDialogScrollAnchorVersion);
+            if (!hasPreferredAnchor)
+            {
+                Dispatcher.UIThread.Post(() => _dialogScrollViewer.Offset = offset, DispatcherPriority.Input);
+                Dispatcher.UIThread.Post(() => _dialogScrollViewer.Offset = offset, DispatcherPriority.Loaded);
+                Dispatcher.UIThread.Post(() => _dialogScrollViewer.Offset = offset, DispatcherPriority.Background);
+                ScheduleDelayedPreferredDialogScrollAnchor(offset, _preferredDialogScrollAnchorVersion);
+            }
         }
 
         bool hasPreferredInteractionAnchor = preservedInteractionAnchor is not null
@@ -4054,11 +4076,6 @@ public partial class DesktopDialogWindow : Window
             return;
         }
 
-        if (preservedScrollOffset is not null)
-        {
-            return;
-        }
-
         if (preservedInteractionAnchor is { } interactionAnchor)
         {
             ApplyPreferredDialogInteractionAnchorNow(interactionAnchor.ControlName, interactionAnchor.OffsetY);
@@ -4091,7 +4108,12 @@ public partial class DesktopDialogWindow : Window
 
     private (string ControlName, double OffsetY)? CaptureCurrentOriginWizardViewportAnchor()
     {
-        if (!string.Equals(BoundDialogId, OriginWizardDialogId, StringComparison.Ordinal) || !_originWizardAdvancedStoryControlsExpanded)
+        if (!string.Equals(BoundDialogId, OriginWizardDialogId, StringComparison.Ordinal))
+        {
+            return null;
+        }
+
+        if (!_originWizardAdvancedStoryControlsExpanded)
         {
             return null;
         }
@@ -4157,7 +4179,6 @@ public partial class DesktopDialogWindow : Window
         if (_adapter is null || _suppressDialogUpdates)
             return;
 
-        CaptureTransientDialogState();
         bool suppressOriginWizardCollapseDuringRefresh = false;
         if (preferredControl is ComboBox)
         {
@@ -4187,6 +4208,7 @@ public partial class DesktopDialogWindow : Window
             RememberPreferredFocus(preferredControl);
         }
 
+        CaptureTransientDialogState();
         int bindVersionBeforeUpdate = _dialogBindVersion;
         await ExecuteSafeAsync(
             () => _adapter.UpdateDialogFieldAsync(fieldId, value, CancellationToken.None),

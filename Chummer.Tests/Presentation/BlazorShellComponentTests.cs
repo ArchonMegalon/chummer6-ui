@@ -38,7 +38,10 @@ public sealed class BlazorShellComponentTests
     private static BunitContext CreateContext()
     {
         BunitContext context = new();
+        context.JSInterop.Setup<bool>("chummerDialogs.isSameDialogRefresh", _ => true).SetResult(false);
         context.JSInterop.SetupVoid("chummerDialogs.revealActiveDialog");
+        context.JSInterop.Setup<double[]>("chummerDialogs.captureDialogScroll", _ => true).SetResult([180d, 0d]);
+        context.JSInterop.SetupVoid("chummerDialogs.restoreDialogScroll", _ => true);
         context.Services.AddSingleton<IConfiguration>(
             new ConfigurationBuilder().AddInMemoryCollection().Build());
         context.Services.AddSingleton<IRunnerIntelligenceCalculator, RunnerIntelligenceCalculator>();
@@ -781,8 +784,12 @@ public sealed class BlazorShellComponentTests
         IRenderedComponent<DialogHostHarness> cut = context.Render<DialogHostHarness>();
         cut.InvokeAsync(() => cut.Instance.SetDialog(originWizard)).GetAwaiter().GetResult();
 
-        cut.Find("[data-origin-advanced-summary]").Click();
-        cut.WaitForAssertion(() => Assert.IsTrue(cut.Find("[data-origin-advanced-details]").HasAttribute("open")));
+        cut.Find("[data-origin-advanced-toggle]").Click();
+        cut.WaitForAssertion(() =>
+        {
+            Assert.AreEqual("true", cut.Find("[data-origin-advanced-toggle]").GetAttribute("aria-expanded"));
+            Assert.IsFalse(cut.Find("[data-origin-advanced-content]").HasAttribute("hidden"));
+        });
 
         DesktopDialogState updatedWizard = originWizard with
         {
@@ -799,7 +806,55 @@ public sealed class BlazorShellComponentTests
 
         cut.InvokeAsync(() => cut.Instance.SetDialog(updatedWizard)).GetAwaiter().GetResult();
 
-        cut.WaitForAssertion(() => Assert.IsTrue(cut.Find("[data-origin-advanced-details]").HasAttribute("open")));
+        cut.WaitForAssertion(() =>
+        {
+            Assert.AreEqual("true", cut.Find("[data-origin-advanced-toggle]").GetAttribute("aria-expanded"));
+            Assert.IsFalse(cut.Find("[data-origin-advanced-content]").HasAttribute("hidden"));
+        });
+    }
+
+    [TestMethod]
+    public async Task DialogHost_reuses_first_origin_select_scroll_capture_when_another_select_gains_focus_before_refresh()
+    {
+        DesktopDialogState originWizard = DesktopDialogFactory.BuildNewCharacterOriginWizardDialog(RulesetDefaults.Sr4, "Nova", "Cipher");
+        List<DialogFieldInputChange> inputChanges = [];
+
+        using var context = CreateContext();
+        IRenderedComponent<DialogHost> cut = context.Render<DialogHost>(parameters => parameters
+            .Add(component => component.Dialog, originWizard)
+            .Add(component => component.FieldInputRequested, (Action<DialogFieldInputChange>)(change => inputChanges.Add(change))));
+
+        cut.Find("[data-origin-advanced-toggle]").Click();
+        IElement buildPreferenceSelect = cut.Find("select[data-field-id='newCharacterOriginBuildPreference']");
+        IElement metatypePreferenceSelect = cut.Find("select[data-field-id='newCharacterOriginMetatypePreference']");
+
+        await buildPreferenceSelect.TriggerEventAsync("onfocus", new FocusEventArgs());
+
+        int captureInvocationsAfterFirstFocus = context.JSInterop.Invocations.Count(invocation =>
+            string.Equals(invocation.Identifier, "chummerDialogs.captureDialogScroll", StringComparison.Ordinal));
+
+        await metatypePreferenceSelect.TriggerEventAsync("onfocus", new FocusEventArgs());
+
+        int captureInvocationsAfterSecondFocus = context.JSInterop.Invocations.Count(invocation =>
+            string.Equals(invocation.Identifier, "chummerDialogs.captureDialogScroll", StringComparison.Ordinal));
+
+        await metatypePreferenceSelect.ChangeAsync(new ChangeEventArgs { Value = "human" });
+
+        int captureInvocationsAfterChange = context.JSInterop.Invocations.Count(invocation =>
+            string.Equals(invocation.Identifier, "chummerDialogs.captureDialogScroll", StringComparison.Ordinal));
+
+        Assert.AreEqual(1, inputChanges.Count);
+        Assert.AreEqual("newCharacterOriginMetatypePreference", inputChanges[0].FieldId);
+        Assert.AreEqual("human", inputChanges[0].Value);
+        Assert.AreEqual(1, captureInvocationsAfterFirstFocus, "The first origin select focus should arm the scroll capture.");
+        Assert.AreEqual(
+            captureInvocationsAfterFirstFocus,
+            captureInvocationsAfterSecondFocus,
+            "A second origin select focus should reuse the first armed scroll anchor instead of overwriting it.");
+        Assert.AreEqual(
+            captureInvocationsAfterSecondFocus,
+            captureInvocationsAfterChange,
+            "The later origin select change should keep using the first armed scroll anchor.");
     }
 
     private sealed class DialogHostHarness : ComponentBase

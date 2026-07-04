@@ -312,15 +312,140 @@
     })(window.chummerAnalytics);
     window.chummerDialogs = window.chummerDialogs || {};
     window.chummerDialogs._lastRevealedBackdrop = window.chummerDialogs._lastRevealedBackdrop || null;
+    window.chummerDialogs._lastRevealedDialogId = window.chummerDialogs._lastRevealedDialogId || null;
+    window.chummerDialogs._pendingRevealResetHandle = window.chummerDialogs._pendingRevealResetHandle || null;
+    window.chummerDialogs._pendingOriginAdvancedAnchor = window.chummerDialogs._pendingOriginAdvancedAnchor || null;
+    window.chummerDialogs._pendingOriginFieldAnchor = window.chummerDialogs._pendingOriginFieldAnchor || null;
+    window.chummerDialogs._pendingOriginAnchorCapturedAtMs = window.chummerDialogs._pendingOriginAnchorCapturedAtMs || 0;
+    window.chummerDialogs._pendingSameDialogRefreshDialogId = window.chummerDialogs._pendingSameDialogRefreshDialogId || null;
+    window.chummerDialogs._pendingSameDialogRefreshCapturedAtMs = window.chummerDialogs._pendingSameDialogRefreshCapturedAtMs || 0;
+    window.chummerDialogs._pendingDialogScrollRestoreVersion = window.chummerDialogs._pendingDialogScrollRestoreVersion || 0;
+    window.chummerDialogs._originSameDialogAnchorGraceWindowMs = window.chummerDialogs._originSameDialogAnchorGraceWindowMs || 4000;
+    window.chummerDialogs._sameDialogRefreshArmWindowMs = window.chummerDialogs._sameDialogRefreshArmWindowMs || 4000;
+    window.chummerDialogs._sameDialogRefreshGraceWindowMs = window.chummerDialogs._sameDialogRefreshGraceWindowMs || 750;
+    window.chummerDialogs.clearPendingOriginAnchors = function() {
+        window.chummerDialogs._pendingDialogScrollRestoreVersion =
+            Number(window.chummerDialogs._pendingDialogScrollRestoreVersion || 0) + 1;
+        window.chummerDialogs._pendingOriginAdvancedAnchor = null;
+        window.chummerDialogs._pendingOriginFieldAnchor = null;
+        window.chummerDialogs._pendingOriginAnchorCapturedAtMs = 0;
+        window.chummerDialogs._pendingSameDialogRefreshDialogId = null;
+        window.chummerDialogs._pendingSameDialogRefreshCapturedAtMs = 0;
+    };
+    window.chummerDialogs.armSameDialogRefresh = function(dialogId) {
+        if (!dialogId) {
+            window.chummerDialogs._pendingSameDialogRefreshDialogId = null;
+            window.chummerDialogs._pendingSameDialogRefreshCapturedAtMs = 0;
+            return;
+        }
+
+        window.chummerDialogs._pendingSameDialogRefreshDialogId = dialogId;
+        window.chummerDialogs._pendingSameDialogRefreshCapturedAtMs = Date.now();
+    };
+    window.chummerDialogs.hasPendingSameDialogRefresh = function(dialogId) {
+        const pendingDialogId = window.chummerDialogs._pendingSameDialogRefreshDialogId;
+        if (!pendingDialogId) {
+            return false;
+        }
+
+        if (dialogId && pendingDialogId !== dialogId) {
+            return false;
+        }
+
+        const capturedAtMs = Number(window.chummerDialogs._pendingSameDialogRefreshCapturedAtMs || 0);
+        return capturedAtMs > 0
+            && (Date.now() - capturedAtMs) <= window.chummerDialogs._sameDialogRefreshArmWindowMs;
+    };
+    window.chummerDialogs.hasPendingOriginAnchor = function(dialogId) {
+        const matchesDialog = function(anchor) {
+            if (!anchor) {
+                return false;
+            }
+
+            if (!dialogId) {
+                return true;
+            }
+
+            return !anchor.dialogId || anchor.dialogId === dialogId;
+        };
+
+        if (!matchesDialog(window.chummerDialogs._pendingOriginFieldAnchor)
+            && !matchesDialog(window.chummerDialogs._pendingOriginAdvancedAnchor)) {
+            return false;
+        }
+
+        const capturedAtMs = Number(window.chummerDialogs._pendingOriginAnchorCapturedAtMs || 0);
+        return capturedAtMs <= 0
+            || (Date.now() - capturedAtMs) <= window.chummerDialogs._originSameDialogAnchorGraceWindowMs;
+    };
+    window.chummerDialogs.resetRevealState = function() {
+        if (window.chummerDialogs._pendingRevealResetHandle) {
+            window.clearTimeout(window.chummerDialogs._pendingRevealResetHandle);
+            window.chummerDialogs._pendingRevealResetHandle = null;
+        }
+
+        window.chummerDialogs._lastRevealedBackdrop = null;
+        window.chummerDialogs._lastRevealedDialogId = null;
+        window.chummerDialogs.clearPendingOriginAnchors();
+    };
+    window.chummerDialogs.scheduleRevealReset = function() {
+        if (window.chummerDialogs._pendingRevealResetHandle) {
+            return;
+        }
+
+        window.chummerDialogs._pendingRevealResetHandle = window.setTimeout(() => {
+            window.chummerDialogs._pendingRevealResetHandle = null;
+            if (window.chummerDialogs.hasPendingOriginAnchor(window.chummerDialogs._lastRevealedDialogId || null)
+                || window.chummerDialogs.hasPendingSameDialogRefresh(window.chummerDialogs._lastRevealedDialogId || null)) {
+                window.chummerDialogs.scheduleRevealReset();
+                return;
+            }
+
+            window.chummerDialogs._lastRevealedBackdrop = null;
+            window.chummerDialogs._lastRevealedDialogId = null;
+            window.chummerDialogs.clearPendingOriginAnchors();
+        }, window.chummerDialogs._sameDialogRefreshGraceWindowMs);
+    };
+    window.chummerDialogs.cancelRevealReset = function() {
+        if (!window.chummerDialogs._pendingRevealResetHandle) {
+            return;
+        }
+
+        window.clearTimeout(window.chummerDialogs._pendingRevealResetHandle);
+        window.chummerDialogs._pendingRevealResetHandle = null;
+    };
+    window.chummerDialogs.hasLiveRevealedBackdrop = function() {
+        return !!(window.chummerDialogs._lastRevealedBackdrop
+            && document.body.contains(window.chummerDialogs._lastRevealedBackdrop));
+    };
+    window.chummerDialogs.isSameDialogRefresh = function(dialogId) {
+        return !!(dialogId
+            && (window.chummerDialogs._lastRevealedDialogId === dialogId
+                || window.chummerDialogs.hasPendingSameDialogRefresh(dialogId)
+                || window.chummerDialogs.hasPendingOriginAnchor(dialogId)));
+    };
     window.chummerDialogs.revealActiveDialog = function() {
         return new Promise((resolve) => {
             const reveal = function() {
                 const backdrop = document.getElementById('dialogBackdrop');
-                if (backdrop) {
-                    window.chummerDialogs._lastRevealedBackdrop = backdrop;
-                    backdrop.scrollIntoView({ block: 'center', inline: 'center' });
+                if (!backdrop) {
+                    window.chummerDialogs.scheduleRevealReset();
+                    resolve();
+                    return;
                 }
 
+                const dialogId = backdrop.getAttribute('data-dialog-id') || '';
+                window.chummerDialogs.cancelRevealReset();
+                if (window.chummerDialogs.isSameDialogRefresh(dialogId)) {
+                    window.chummerDialogs._lastRevealedBackdrop = backdrop;
+                    window.chummerDialogs._lastRevealedDialogId = dialogId || null;
+                    resolve();
+                    return;
+                }
+
+                window.chummerDialogs._lastRevealedBackdrop = backdrop;
+                window.chummerDialogs._lastRevealedDialogId = dialogId || null;
+                backdrop.scrollIntoView({ block: 'center', inline: 'center' });
                 resolve();
             };
 
@@ -332,6 +457,160 @@
             window.setTimeout(reveal, 0);
         });
     };
+    window.chummerDialogs.captureDialogScroll = function(element, fieldId) {
+        if (!element) {
+            window.chummerDialogs.clearPendingOriginAnchors();
+            return [0, 0];
+        }
+
+        window.chummerDialogs._pendingDialogScrollRestoreVersion =
+            Number(window.chummerDialogs._pendingDialogScrollRestoreVersion || 0) + 1;
+
+        const backdrop = document.getElementById('dialogBackdrop');
+        const dialogId = backdrop ? (backdrop.getAttribute('data-dialog-id') || '') : '';
+        window.chummerDialogs.armSameDialogRefresh(dialogId || null);
+        const normalizedFieldId = typeof fieldId === 'string' ? fieldId : '';
+        const fieldAnchorElement = normalizedFieldId
+            ? Array.from(element.querySelectorAll('[data-field-id]')).find(candidate => candidate.getAttribute('data-field-id') === normalizedFieldId)
+            : null;
+        const fieldAnchorInsideOriginWizard = !!(fieldAnchorElement && fieldAnchorElement.closest('[data-origin-wizard]'));
+        if (fieldAnchorElement && fieldAnchorInsideOriginWizard) {
+            const elementRect = element.getBoundingClientRect();
+            const fieldRect = fieldAnchorElement.getBoundingClientRect();
+            window.chummerDialogs._pendingOriginFieldAnchor = {
+                dialogId: dialogId || null,
+                fieldId: normalizedFieldId,
+                top: fieldRect.top - elementRect.top
+            };
+        } else {
+            window.chummerDialogs._pendingOriginFieldAnchor = null;
+        }
+
+        const advancedControls = element.querySelector('[data-origin-advanced-controls][data-expanded="true"]');
+        if (advancedControls) {
+            const elementRect = element.getBoundingClientRect();
+            const advancedRect = advancedControls.getBoundingClientRect();
+            window.chummerDialogs._pendingOriginAdvancedAnchor = {
+                dialogId: dialogId || null,
+                top: advancedRect.top - elementRect.top
+            };
+        } else {
+            window.chummerDialogs._pendingOriginAdvancedAnchor = null;
+        }
+
+        window.chummerDialogs._pendingOriginAnchorCapturedAtMs =
+            window.chummerDialogs._pendingOriginFieldAnchor || window.chummerDialogs._pendingOriginAdvancedAnchor
+                ? Date.now()
+                : 0;
+
+        return [element.scrollTop || 0, element.scrollLeft || 0];
+    };
+    window.chummerDialogs.restoreDialogScroll = function(element, scrollOffset) {
+        if (!element || !Array.isArray(scrollOffset) || scrollOffset.length < 2) {
+            return;
+        }
+
+        const restoreVersion = Number(window.chummerDialogs._pendingDialogScrollRestoreVersion || 0);
+        const top = Number(scrollOffset[0] || 0);
+        const left = Number(scrollOffset[1] || 0);
+        const hasOriginAnchor = function() {
+            return !!window.chummerDialogs._pendingOriginFieldAnchor
+                || !!window.chummerDialogs._pendingOriginAdvancedAnchor;
+        };
+        const restoreOriginFieldAnchor = function() {
+            const anchor = window.chummerDialogs._pendingOriginFieldAnchor;
+            if (!anchor) {
+                return false;
+            }
+
+            const backdrop = document.getElementById('dialogBackdrop');
+            const dialogId = backdrop ? (backdrop.getAttribute('data-dialog-id') || '') : '';
+            if (anchor.dialogId && dialogId && anchor.dialogId !== dialogId) {
+                window.chummerDialogs._pendingOriginFieldAnchor = null;
+                return false;
+            }
+
+            const fieldAnchorElement = Array.from(element.querySelectorAll('[data-field-id]')).find(candidate => candidate.getAttribute('data-field-id') === anchor.fieldId);
+            if (!fieldAnchorElement || !fieldAnchorElement.closest('[data-origin-wizard]')) {
+                return false;
+            }
+
+            const elementRect = element.getBoundingClientRect();
+            const fieldRect = fieldAnchorElement.getBoundingClientRect();
+            const delta = (fieldRect.top - elementRect.top) - Number(anchor.top || 0);
+            if (Math.abs(delta) <= 0.5) {
+                return true;
+            }
+
+            element.scrollTop += delta;
+            return true;
+        };
+        const restoreOriginAdvancedAnchor = function() {
+            const anchor = window.chummerDialogs._pendingOriginAdvancedAnchor;
+            if (!anchor) {
+                return false;
+            }
+
+            const backdrop = document.getElementById('dialogBackdrop');
+            const dialogId = backdrop ? (backdrop.getAttribute('data-dialog-id') || '') : '';
+            if (anchor.dialogId && dialogId && anchor.dialogId !== dialogId) {
+                window.chummerDialogs._pendingOriginAdvancedAnchor = null;
+                return false;
+            }
+
+            const advancedControls = element.querySelector('[data-origin-advanced-controls][data-expanded="true"]');
+            if (!advancedControls) {
+                return false;
+            }
+
+            const elementRect = element.getBoundingClientRect();
+            const advancedRect = advancedControls.getBoundingClientRect();
+            const delta = (advancedRect.top - elementRect.top) - Number(anchor.top || 0);
+            if (Math.abs(delta) <= 0.5) {
+                return true;
+            }
+
+            element.scrollTop += delta;
+            return true;
+        };
+        const shouldPreferOriginAdvancedAnchor = function() {
+            return !window.chummerDialogs._pendingOriginFieldAnchor
+                && !!window.chummerDialogs._pendingOriginAdvancedAnchor;
+        };
+        const restore = function() {
+            if (restoreVersion !== Number(window.chummerDialogs._pendingDialogScrollRestoreVersion || 0)) {
+                return;
+            }
+
+            const anchoredRestorePending = hasOriginAnchor();
+            if (!anchoredRestorePending) {
+                element.scrollTop = top;
+                element.scrollLeft = left;
+            }
+
+            if (shouldPreferOriginAdvancedAnchor()) {
+                if (!restoreOriginAdvancedAnchor()) {
+                    restoreOriginFieldAnchor();
+                }
+                return;
+            }
+
+            if (anchoredRestorePending && !restoreOriginFieldAnchor()) {
+                restoreOriginAdvancedAnchor();
+            }
+        };
+
+        restore();
+
+        if (typeof window.requestAnimationFrame === 'function') {
+            window.requestAnimationFrame(() => restore());
+        }
+
+        window.setTimeout(() => restore(), 0);
+        window.setTimeout(() => restore(), 32);
+        window.setTimeout(() => restore(), 96);
+        window.setTimeout(() => restore(), 192);
+    };
     window.chummerDialogs.startObserver = function() {
         if (window.chummerDialogs._observer) {
             return;
@@ -339,7 +618,17 @@
 
         const revealIfNeeded = function() {
             const backdrop = document.getElementById('dialogBackdrop');
-            if (!backdrop || window.chummerDialogs._lastRevealedBackdrop === backdrop) {
+            if (!backdrop) {
+                window.chummerDialogs.scheduleRevealReset();
+                return;
+            }
+
+            const dialogId = backdrop.getAttribute('data-dialog-id') || '';
+            if (window.chummerDialogs.hasLiveRevealedBackdrop()
+                && window.chummerDialogs._lastRevealedBackdrop === backdrop
+                && window.chummerDialogs._lastRevealedDialogId === dialogId
+                && !window.chummerDialogs.hasPendingSameDialogRefresh(dialogId)
+                && !window.chummerDialogs.hasPendingOriginAnchor(dialogId)) {
                 return;
             }
 
