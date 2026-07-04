@@ -847,7 +847,7 @@ public sealed class BlazorShellComponentTests
     }
 
     [TestMethod]
-    public async Task DialogHost_reuses_first_origin_select_scroll_capture_when_another_select_gains_focus_before_refresh()
+    public async Task DialogHost_updates_origin_select_scroll_capture_when_another_select_gains_focus_before_refresh()
     {
         DesktopDialogState originWizard = DesktopDialogFactory.BuildNewCharacterOriginWizardDialog(RulesetDefaults.Sr4, "Nova", "Cipher");
         List<DialogFieldInputChange> inputChanges = [];
@@ -881,13 +881,13 @@ public sealed class BlazorShellComponentTests
         Assert.AreEqual("human", inputChanges[0].Value);
         Assert.AreEqual(1, captureInvocationsAfterFirstFocus, "The first origin select focus should arm the scroll capture.");
         Assert.AreEqual(
-            captureInvocationsAfterFirstFocus,
+            captureInvocationsAfterFirstFocus + 1,
             captureInvocationsAfterSecondFocus,
-            "A second origin select focus should reuse the first armed scroll anchor instead of overwriting it.");
+            "A second origin select focus should replace the prior scroll anchor with the latest active select.");
         Assert.AreEqual(
             captureInvocationsAfterSecondFocus,
             captureInvocationsAfterChange,
-            "The later origin select change should keep using the first armed scroll anchor.");
+            "The later origin select change should keep using the latest armed scroll anchor.");
     }
 
     private sealed class DialogHostHarness : ComponentBase

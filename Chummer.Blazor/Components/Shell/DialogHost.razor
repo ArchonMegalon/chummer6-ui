@@ -789,16 +789,7 @@
         return renderedDialog is not null
             && _pendingDialogScrollRestore is { Length: >= 2 }
             && string.Equals(renderedDialog.Id, _armedDialogScrollDialogId, StringComparison.Ordinal)
-            && (string.Equals(fieldId, _armedDialogScrollFieldId, StringComparison.Ordinal)
-                || ShouldReuseArmedOriginWizardScrollCapture(renderedDialog));
-    }
-
-    private bool ShouldReuseArmedOriginWizardScrollCapture(DesktopDialogState renderedDialog)
-    {
-        return IsOriginWizardDialog(renderedDialog)
-            && CurrentOriginWizardAdvancedControlsOpen
-            && _pendingDialogScrollRestore is { Length: >= 2 }
-            && string.Equals(renderedDialog.Id, _armedDialogScrollDialogId, StringComparison.Ordinal);
+            && string.Equals(fieldId, _armedDialogScrollFieldId, StringComparison.Ordinal);
     }
 
     private async Task CaptureDialogScrollForFieldInteractionAsync(string fieldId)
@@ -807,11 +798,6 @@
         if (renderedDialog is null)
         {
             ClearPendingDialogScrollRestore();
-            return;
-        }
-
-        if (ShouldReuseArmedOriginWizardScrollCapture(renderedDialog))
-        {
             return;
         }
 

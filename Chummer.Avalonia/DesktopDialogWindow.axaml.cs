@@ -3625,7 +3625,8 @@ public partial class DesktopDialogWindow : Window
                 return;
             }
 
-            _preferredDialogScrollAnchor ??= _dialogScrollViewer.Offset;
+            _preferredDialogScrollAnchor = _dialogScrollViewer.Offset;
+            _preferredDialogScrollAnchorVersion++;
             CapturePreferredDialogViewportAnchor();
             CapturePreferredDialogInteractionAnchor(comboBox);
             CaptureTransientDialogState();
@@ -3904,11 +3905,6 @@ public partial class DesktopDialogWindow : Window
             return;
         }
 
-        if (_preferredDialogViewportAnchor is not null)
-        {
-            return;
-        }
-
         Expander? advancedStoryControls = _dialogFieldsPanel.GetVisualDescendants()
             .OfType<Expander>()
             .FirstOrDefault(expander => string.Equals(expander.Name, OriginWizardAdvancedStoryControlsExpanderName, StringComparison.Ordinal));
@@ -3925,6 +3921,7 @@ public partial class DesktopDialogWindow : Window
             return;
         }
 
+        _preferredDialogViewportAnchorVersion++;
         _preferredDialogViewportAnchor = (advancedStoryControls.Name, translated.Value.Y);
     }
 
@@ -3937,18 +3934,6 @@ public partial class DesktopDialogWindow : Window
             return;
         }
 
-        if (_preferredDialogScrollAnchor is not null
-            && _preferredDialogInteractionAnchor is not null)
-        {
-            return;
-        }
-
-        if (_preferredDialogInteractionAnchor is { } existingAnchor
-            && string.Equals(existingAnchor.ControlName, control.Name, StringComparison.Ordinal))
-        {
-            return;
-        }
-
         Point? translated = control.TranslatePoint(default, _dialogScrollViewer);
         if (translated is null)
         {
@@ -3956,6 +3941,7 @@ public partial class DesktopDialogWindow : Window
             return;
         }
 
+        _preferredDialogInteractionAnchorVersion++;
         _preferredDialogInteractionAnchor = (control.Name, translated.Value.Y);
     }
 
@@ -4214,7 +4200,8 @@ public partial class DesktopDialogWindow : Window
             suppressOriginWizardCollapseDuringRefresh = ShouldPreserveOriginWizardComboInteractionScroll();
             _suppressOriginWizardAdvancedStoryControlsCollapseDuringComboRefresh = suppressOriginWizardCollapseDuringRefresh;
             ArmOriginWizardTransientRefresh();
-            _preferredDialogScrollAnchor ??= _dialogScrollViewer.Offset;
+            _preferredDialogScrollAnchor = _dialogScrollViewer.Offset;
+            _preferredDialogScrollAnchorVersion++;
             CapturePreferredDialogViewportAnchor();
             CapturePreferredDialogInteractionAnchor(preferredControl);
             RestorePreferredScrollAnchorDuringOriginWizardComboInteraction();

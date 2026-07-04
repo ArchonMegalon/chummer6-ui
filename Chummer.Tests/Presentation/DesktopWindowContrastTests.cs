@@ -231,7 +231,7 @@ public sealed class DesktopWindowContrastTests
     }
 
     [TestMethod]
-    public void Origin_dossier_advanced_story_controls_keep_first_scroll_anchor_when_another_combo_gains_focus_before_selection()
+    public void Origin_dossier_advanced_story_controls_keep_current_scroll_anchor_when_another_combo_gains_focus_before_selection()
     {
         DesktopDialogState originWizard = new DesktopDialogFactory().CreateCommandDialog(
             "new_character_origin",
@@ -260,7 +260,6 @@ public sealed class DesktopWindowContrastTests
 
             scrollViewer.Offset = new Vector(0d, 180d);
             PumpUi();
-            double preservedOffsetY = scrollViewer.Offset.Y;
 
             ComboBox buildPreferenceCombo = window.GetVisualDescendants()
                 .OfType<ComboBox>()
@@ -274,6 +273,7 @@ public sealed class DesktopWindowContrastTests
 
             scrollViewer.Offset = new Vector(0d, 28d);
             PumpUi();
+            double preservedOffsetY = scrollViewer.Offset.Y;
 
             metatypePreferenceCombo.Focus();
             PumpUi();
@@ -294,7 +294,7 @@ public sealed class DesktopWindowContrastTests
             Assert.AreEqual(nextMetatypePreference.Value, ((DesktopDialogFieldOption)reboundMetatypePreferenceCombo.SelectedItem!).Value, "The later combo selection should survive the cross-field focus refresh.");
             Assert.IsTrue(
                 Math.Abs(reboundScrollViewer.Offset.Y - preservedOffsetY) <= 8d,
-                $"Origin Dossier should keep the first pre-selection scroll anchor when another combo gains focus before refresh. Before={preservedOffsetY:F1}, After={reboundScrollViewer.Offset.Y:F1}.");
+                $"Origin Dossier should keep the current scroll anchor when another combo gains focus before refresh. Before={preservedOffsetY:F1}, After={reboundScrollViewer.Offset.Y:F1}.");
         });
     }
 
