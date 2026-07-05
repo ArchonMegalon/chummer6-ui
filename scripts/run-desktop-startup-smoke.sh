@@ -121,6 +121,39 @@ print(hasher.hexdigest())
 PY
 }
 
+lower_ascii() {
+  printf '%s' "${1:-}" | tr '[:upper:]' '[:lower:]'
+}
+
+upper_ascii() {
+  printf '%s' "${1:-}" | tr '[:lower:]' '[:upper:]'
+}
+
+array_count() {
+  local array_name="${1:-}"
+  [[ -n "$array_name" ]] || {
+    printf '0\n'
+    return 0
+  }
+
+  local restore_nounset=0
+  case "$-" in
+    *u*)
+      restore_nounset=1
+      set +u
+      ;;
+  esac
+
+  eval "set -- \"\${${array_name}[@]}\""
+  local count="$#"
+
+  if (( restore_nounset == 1 )); then
+    set -u
+  fi
+
+  printf '%s\n' "$count"
+}
+
 host_machine() {
   local machine=""
   machine="$(uname -m 2>/dev/null | tr '[:upper:]' '[:lower:]' || true)"
@@ -130,7 +163,7 @@ host_machine() {
   fi
 
   if [[ -n "${PROCESSOR_ARCHITECTURE:-}" ]]; then
-    printf '%s\n' "${PROCESSOR_ARCHITECTURE,,}"
+    printf '%s\n' "$(lower_ascii "$PROCESSOR_ARCHITECTURE")"
     return
   fi
 
@@ -140,8 +173,8 @@ host_machine() {
 host_can_execute_windows_arm64() {
   local arch_primary="${PROCESSOR_ARCHITECTURE:-}"
   local arch_secondary="${PROCESSOR_ARCHITEW6432:-}"
-  arch_primary="${arch_primary^^}"
-  arch_secondary="${arch_secondary^^}"
+  arch_primary="$(upper_ascii "$arch_primary")"
+  arch_secondary="$(upper_ascii "$arch_secondary")"
   [[ "$arch_primary" == "ARM64" || "$arch_secondary" == "ARM64" ]]
 }
 
@@ -167,7 +200,7 @@ host_can_execute_linux_arm64() {
 }
 
 env_truthy() {
-  case "${1,,}" in
+  case "$(lower_ascii "${1:-}")" in
     1|true|yes|on)
       return 0
       ;;
@@ -785,7 +818,8 @@ run_windows_smoke() {
   local local_payload_path=""
   local local_payload_sha256=""
   local local_payload_size_bytes=""
-  local configured_payload_mode="${WINDOWS_STARTUP_SMOKE_PAYLOAD_MODE,,}"
+  local configured_payload_mode
+  configured_payload_mode="$(lower_ascii "${WINDOWS_STARTUP_SMOKE_PAYLOAD_MODE:-}")"
   local artifact_dir
   artifact_dir="$(dirname "$ARTIFACT_PATH")"
   local artifact_name
@@ -990,7 +1024,7 @@ PY
       fi
     done < <(printf '%s' "$required_paths" | tr ';' '\n')
 
-    if (( ${#missing_paths[@]} > 0 )); then
+    if (( $(array_count missing_paths) > 0 )); then
       {
         printf 'Missing required installed path(s) after Windows smoke install:%s\n' " ${missing_paths[*]}"
         find "$INSTALL_ROOT" -maxdepth 6 -type f | sort || true
