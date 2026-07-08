@@ -19,6 +19,12 @@ SPEC.loader.exec_module(readiness)
 
 
 class DesktopExternalDeployReadinessTests(unittest.TestCase):
+    def test_default_output_path_uses_untracked_tmp_receipt(self) -> None:
+        self.assertEqual(
+            readiness.DEFAULT_OUTPUT,
+            REPO_ROOT / ".tmp" / "deploy-readiness" / "EXTERNAL_DEPLOY_READINESS.generated.json",
+        )
+
     def test_unconfigured_push_is_explicit_not_configured_receipt(self) -> None:
         with patch.dict(os.environ, {}, clear=True):
             receipt = readiness.build_receipt(require_external_deploy=False)

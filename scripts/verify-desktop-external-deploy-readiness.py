@@ -16,6 +16,11 @@ def present(name: str) -> bool:
     return bool(os.environ.get(name, "").strip())
 
 
+SCRIPT_DIR = Path(__file__).resolve().parent
+REPO_ROOT = SCRIPT_DIR.parent
+DEFAULT_OUTPUT = REPO_ROOT / ".tmp" / "deploy-readiness" / "EXTERNAL_DEPLOY_READINESS.generated.json"
+
+
 def valid_http_url(value: str) -> bool:
     parsed = urlparse(value.strip())
     return parsed.scheme.lower() in {"http", "https"} and bool(parsed.netloc)
@@ -161,7 +166,7 @@ def main() -> int:
     parser = argparse.ArgumentParser()
     parser.add_argument(
         "--output",
-        default="deploy-readiness/EXTERNAL_DEPLOY_READINESS.generated.json",
+        default=str(DEFAULT_OUTPUT),
         help="Receipt path to write.",
     )
     parser.add_argument(

@@ -870,17 +870,25 @@ def test_publish_download_bundle_requires_explicit_opt_in_before_falling_back_to
     assert publish_script.index('if to_bool "$ALLOW_BUNDLE_FILES_SOURCE_FALLBACK"; then') < publish_script.index('echo "Bundle is missing files directory: $FILES_SOURCE" >&2')
 
 
-def test_publish_download_bundle_only_auto_syncs_live_mirrors_for_live_deploy_roots() -> None:
+def test_publish_download_bundle_defaults_cross_checkout_mirror_sync_to_repo_owned_live_roots() -> None:
     publish_script = (REPO_ROOT / "scripts" / "publish-download-bundle.sh").read_text(encoding="utf-8")
 
+    assert 'SYNC_LIVE_DOWNLOADS_MIRRORS="${CHUMMER_PUBLIC_EDGE_DOWNLOADS_SYNC_MIRRORS:-auto}"' in publish_script
+    assert "normalize_mirror_sync_mode()" in publish_script
+    assert 'printf \'%s\\n\' "auto"' in publish_script
+    assert "deploy_dir_is_repo_owned_live_downloads_root()" in publish_script
     assert "deploy_dir_is_live_downloads_root()" in publish_script
-    assert 'if ! deploy_dir_is_live_downloads_root "$deploy_dir_physical"; then' in publish_script
+    assert 'if [[ "$mode" == "auto" ]] && ! deploy_dir_is_repo_owned_live_downloads_root "$deploy_dir_physical"; then' in publish_script
+    assert 'if [[ "$mode" != "auto" ]] && ! deploy_dir_is_live_downloads_root "$deploy_dir_physical"; then' in publish_script
     assert 'return 0' in publish_script
     assert 'configured="${CHUMMER_PUBLIC_EDGE_DOWNLOADS_MIRROR_DIRS:-}"' in publish_script
+    assert 'sync_live_downloads_mirrors_mode="$(normalize_mirror_sync_mode "$SYNC_LIVE_DOWNLOADS_MIRRORS")"' in publish_script
+    assert 'if [[ "$sync_live_downloads_mirrors_mode" != "false" ]]; then' in publish_script
+    assert 'discover_live_downloads_mirror_dirs "$sync_live_downloads_mirrors_mode"' in publish_script
     assert '"$REPO_ROOT/Chummer.Portal/downloads" \\' in publish_script
     assert '"$REPO_ROOT/.codex-studio/published/portal" \\' in publish_script
     assert '"$REPO_ROOT/../chummer.run-services/Chummer.Portal/downloads" \\' in publish_script
-    assert publish_script.index('if ! deploy_dir_is_live_downloads_root "$deploy_dir_physical"; then') < publish_script.index('if [[ "$deploy_dir_physical" != "$canonical_downloads_physical" ]]; then')
+    assert publish_script.index('if [[ "$mode" == "auto" ]] && ! deploy_dir_is_repo_owned_live_downloads_root "$deploy_dir_physical"; then') < publish_script.index('if [[ "$deploy_dir_physical" != "$canonical_downloads_physical" ]]; then')
 
 
 def test_publish_download_bundle_rejects_nested_files_layout_before_manifest_sync() -> None:

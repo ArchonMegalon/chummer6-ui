@@ -26,7 +26,7 @@ FILES_SOURCE="$BUNDLE_DIR/files"
 RELEASE_PROOF_PATH="${RELEASE_PROOF_PATH:-}"
 STARTUP_SMOKE_SOURCE="${STARTUP_SMOKE_SOURCE:-$BUNDLE_DIR/startup-smoke}"
 PUBLIC_SKIP_STARTUP_SMOKE_FILTER="${CHUMMER_PUBLIC_SKIP_STARTUP_SMOKE_FILTER:-}"
-SYNC_LIVE_DOWNLOADS_MIRRORS="${CHUMMER_PUBLIC_EDGE_DOWNLOADS_SYNC_MIRRORS:-true}"
+SYNC_LIVE_DOWNLOADS_MIRRORS="${CHUMMER_PUBLIC_EDGE_DOWNLOADS_SYNC_MIRRORS:-auto}"
 ALLOW_WINDOWS_VISUAL_PROOF_HANDOFF_PUBLISH="${CHUMMER_ALLOW_WINDOWS_VISUAL_PROOF_HANDOFF_PUBLISH:-0}"
 ROOT_RELEASE_BLOCKERS_PATH="${CHUMMER_ROOT_RELEASE_BLOCKERS_PATH:-$WORKSPACE_ROOT/RELEASE_BLOCKERS.generated.json}"
 PUBLIC_STABLE_BLOCKERS_MAX_AGE_SECONDS="${CHUMMER_PUBLIC_STABLE_BLOCKERS_MAX_AGE_SECONDS:-86400}"
@@ -36,6 +36,28 @@ to_bool() {
   local value
   value="$(echo "${1:-}" | tr '[:upper:]' '[:lower:]')"
   [[ "$value" == "1" || "$value" == "true" || "$value" == "yes" || "$value" == "on" ]]
+}
+
+normalize_mirror_sync_mode() {
+  local value
+  value="$(echo "${1:-auto}" | tr '[:upper:]' '[:lower:]')"
+  value="${value#"${value%%[![:space:]]*}"}"
+  value="${value%"${value##*[![:space:]]}"}"
+  case "$value" in
+    ""|auto)
+      printf '%s\n' "auto"
+      ;;
+    1|true|yes|on)
+      printf '%s\n' "true"
+      ;;
+    0|false|no|off)
+      printf '%s\n' "false"
+      ;;
+    *)
+      echo "Invalid CHUMMER_PUBLIC_EDGE_DOWNLOADS_SYNC_MIRRORS value: '$1' (expected auto|true|false)." >&2
+      exit 1
+      ;;
+  esac
 }
 
 validate_absolute_http_url() {
@@ -687,7 +709,27 @@ deploy_dir_is_live_downloads_root() {
   return 1
 }
 
+deploy_dir_is_repo_owned_live_downloads_root() {
+  local candidate="$1"
+  local resolved_candidate=""
+  local known_root=""
+
+  resolved_candidate="$(realpath -m "$candidate")"
+  for known_root in \
+    "$REPO_ROOT/Docker/Downloads" \
+    "$REPO_ROOT/Chummer.Portal/downloads" \
+    "$REPO_ROOT/.codex-studio/published/portal"
+  do
+    if [[ "$resolved_candidate" == "$(realpath -m "$known_root")" ]]; then
+      return 0
+    fi
+  done
+
+  return 1
+}
+
 discover_live_downloads_mirror_dirs() {
+  local mode="${1:-auto}"
   local configured="${CHUMMER_PUBLIC_EDGE_DOWNLOADS_MIRROR_DIRS:-}"
   local deploy_dir_physical=""
   local canonical_downloads_physical=""
@@ -709,7 +751,11 @@ discover_live_downloads_mirror_dirs() {
   canonical_downloads_physical="$(realpath -m "$REPO_ROOT/Docker/Downloads")"
   portal_downloads_physical="$(realpath -m "$REPO_ROOT/../chummer.run-services/Chummer.Portal/downloads")"
 
-  if ! deploy_dir_is_live_downloads_root "$deploy_dir_physical"; then
+  if [[ "$mode" == "auto" ]] && ! deploy_dir_is_repo_owned_live_downloads_root "$deploy_dir_physical"; then
+    return 0
+  fi
+
+  if [[ "$mode" != "auto" ]] && ! deploy_dir_is_live_downloads_root "$deploy_dir_physical"; then
     return 0
   fi
 
@@ -925,8 +971,9 @@ release_channel="${release_channel:-docker}"
 release_published_at="${release_published_at:-$default_published_at}"
 require_public_stable_root_blocker_clearance "$release_channel"
 live_downloads_mirror_dirs=()
-if to_bool "$SYNC_LIVE_DOWNLOADS_MIRRORS"; then
-  discover_live_downloads_mirror_dirs
+sync_live_downloads_mirrors_mode="$(normalize_mirror_sync_mode "$SYNC_LIVE_DOWNLOADS_MIRRORS")"
+if [[ "$sync_live_downloads_mirrors_mode" != "false" ]]; then
+  discover_live_downloads_mirror_dirs "$sync_live_downloads_mirrors_mode"
 fi
 live_downloads_mirror_dir_count="$(array_count live_downloads_mirror_dirs)"
 
