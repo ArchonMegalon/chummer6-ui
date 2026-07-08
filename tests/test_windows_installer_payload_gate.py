@@ -5,6 +5,7 @@ import struct
 import subprocess
 import zipfile
 import hashlib
+import shutil
 import socket
 import threading
 from datetime import datetime, timezone
@@ -186,6 +187,221 @@ def _write_release_channel_manifest(manifest_path: Path, *, version: str, channe
         + "\n",
         encoding="utf-8",
     )
+
+
+def _write_publish_ready_preview_release_bundle(
+    bundle_dir: Path,
+    tmp_path: Path,
+    *,
+    release_version: str = "run-test",
+) -> tuple[Path, Path]:
+    files_dir = bundle_dir / "files"
+    files_dir.mkdir(parents=True)
+    installer_path = files_dir / "chummer-avalonia-win-x64-installer.exe"
+    payload_path = files_dir / "chummer-avalonia-win-x64-payload.zip"
+    payload_bytes = _write_bootstrap_payload(payload_path)
+    payload_sha256 = hashlib.sha256(payload_bytes).hexdigest()
+    payload_url = f"https://example.invalid/downloads/files/{payload_path.name}"
+    _write_bootstrap_installer(
+        installer_path,
+        payload_download_url=payload_url,
+        payload_sha256=payload_sha256,
+        payload_size_bytes=len(payload_bytes),
+    )
+    installer_sha256 = hashlib.sha256(installer_path.read_bytes()).hexdigest()
+    (files_dir / "chummer-avalonia-win-x64-payload.zip.json").write_text(
+        json.dumps(
+            {
+                "contractName": "chummer6-ui.windows_bootstrap_payload",
+                "fileName": payload_path.name,
+                "downloadUrl": payload_url,
+                "sha256": payload_sha256,
+                "sizeBytes": len(payload_bytes),
+                "installerFileName": installer_path.name,
+                "releaseVersion": release_version,
+            },
+            indent=2,
+        )
+        + "\n",
+        encoding="utf-8",
+    )
+    _write_bundle_manifest(
+        bundle_dir / "releases.json",
+        installer_name=installer_path.name,
+        installer_sha256=installer_sha256,
+        installer_size_bytes=installer_path.stat().st_size,
+        payload_name=payload_path.name,
+        payload_sha256=payload_sha256,
+        payload_size_bytes=len(payload_bytes),
+    )
+    manifest_payload = json.loads((bundle_dir / "releases.json").read_text(encoding="utf-8"))
+    manifest_payload["version"] = release_version
+    linux_path = files_dir / "chummer-avalonia-linux-x64-installer.deb"
+    linux_path.write_bytes(b"linux-installer-placeholder")
+    linux_sha256 = hashlib.sha256(linux_path.read_bytes()).hexdigest()
+    manifest_payload["downloads"].append(
+        {
+            "artifactId": "avalonia-linux-x64-installer",
+            "fileName": linux_path.name,
+            "url": f"https://example.invalid/downloads/files/{linux_path.name}",
+            "sha256": linux_sha256,
+            "sizeBytes": linux_path.stat().st_size,
+            "kind": "installer",
+            "platform": "linux",
+            "head": "avalonia",
+            "rid": "linux-x64",
+        }
+    )
+    (bundle_dir / "releases.json").write_text(json.dumps(manifest_payload, indent=2) + "\n", encoding="utf-8")
+
+    progress_screenshot = tmp_path / "windows-installer-progress.png"
+    completion_screenshot = tmp_path / "windows-installer-completion.png"
+    progress_screenshot.write_bytes(b"progress-image")
+    completion_screenshot.write_bytes(b"completion-image")
+
+    recorded_at = datetime.now(timezone.utc).isoformat().replace("+00:00", "Z")
+    release_proof_path = tmp_path / "HUB_LOCAL_RELEASE_PROOF.generated.json"
+    release_proof_path.write_text(
+        json.dumps(
+            {
+                "contractName": "chummer6-hub.local_release_proof",
+                "status": "passed",
+                "generatedAt": recorded_at,
+                "baseUrl": "https://example.invalid",
+                "journeysPassed": [
+                    "install_claim_restore_continue",
+                    "build_explain_publish",
+                    "campaign_session_recover_recap",
+                    "report_cluster_release_notify",
+                    "organize_community_and_close_loop",
+                ],
+                "proofRoutes": [
+                    "/downloads/install/avalonia-linux-x64-installer",
+                    "/home/access",
+                    "/home/work",
+                    "/account/access",
+                    "/account/work",
+                    "/account/support",
+                    "/contact",
+                    "/downloads",
+                    "/downloads/install/avalonia-win-x64-installer",
+                ],
+            },
+            indent=2,
+        )
+        + "\n",
+        encoding="utf-8",
+    )
+
+    startup_smoke_dir = bundle_dir / "startup-smoke"
+    startup_smoke_dir.mkdir()
+    visual_proof_path = tmp_path / "WINDOWS_INSTALLER_VISUAL_PROOF.generated.json"
+    visual_proof_path.write_text(
+        json.dumps(
+            {
+                "contract_name": "chummer6-ui.windows_installer_visual_proof",
+                "contractName": "chummer6-ui.windows_installer_visual_proof",
+                "status": "pass",
+                "generated_at": recorded_at,
+                "generatedAt": recorded_at,
+                "recordedAtUtc": recorded_at,
+                "channelId": "preview",
+                "releaseVersion": release_version,
+                "version": release_version,
+                "headId": "avalonia",
+                "head": "avalonia",
+                "platform": "windows",
+                "rid": "win-x64",
+                "artifactDigest": f"sha256:{installer_sha256}",
+                "screenshots": [
+                    {
+                        "role": "progress",
+                        "path": str(progress_screenshot),
+                        "sha256": hashlib.sha256(progress_screenshot.read_bytes()).hexdigest(),
+                    },
+                    {
+                        "role": "completion",
+                        "path": str(completion_screenshot),
+                        "sha256": hashlib.sha256(completion_screenshot.read_bytes()).hexdigest(),
+                    },
+                ],
+                "readabilityReview": {"status": "pass"},
+                "contrastReview": {"status": "pass"},
+                "clippingReview": {"status": "pass"},
+            },
+            indent=2,
+        )
+        + "\n",
+        encoding="utf-8",
+    )
+    (startup_smoke_dir / "startup-smoke-avalonia-win-x64.receipt.json").write_text(
+        json.dumps(
+            {
+                "status": "pass",
+                "headId": "avalonia",
+                "platform": "windows",
+                "arch": "x64",
+                "rid": "win-x64",
+                "readyCheckpoint": "pre_ui_event_loop",
+                "hostClass": "wine64-linux-x64-container",
+                "operatingSystem": "Microsoft Windows 10.0.19043",
+                "artifactDigest": f"sha256:{installer_sha256}",
+                "artifactSha256": installer_sha256,
+                "artifactFileName": installer_path.name,
+                "fileName": installer_path.name,
+                "artifactRelativePath": f"files/{installer_path.name}",
+                "bootstrapPayloadAcquisitionMode": "download",
+                "bootstrapPayloadFileName": payload_path.name,
+                "bootstrapPayloadSha256": payload_sha256,
+                "bootstrapPayloadSizeBytes": len(payload_bytes),
+                "recordedAtUtc": recorded_at,
+            },
+            indent=2,
+        )
+        + "\n",
+        encoding="utf-8",
+    )
+    (startup_smoke_dir / "windows-installer-progress-avalonia-win-x64.log").write_text(
+        "\n".join(
+            [
+                "# Chummer installer trace",
+                r"Bootstrap temp root: C:\users\tibor\Temp\Chummer6\installer-temp",
+                rf"Payload download target: C:\users\tibor\Temp\Chummer6\installer-temp\{payload_path.name}",
+                "Downloading application files",
+                "Downloading application files - 50% - 24.5 / 49.0 MiB - 4.0 MiB/s",
+                "Verifying payload size",
+                "Verifying payload checksum",
+                "Extracting application files",
+                "Install complete",
+            ]
+        )
+        + "\n",
+        encoding="utf-8",
+    )
+    (startup_smoke_dir / "startup-smoke-avalonia-linux-x64.receipt.json").write_text(
+        json.dumps(
+            {
+                "status": "pass",
+                "headId": "avalonia",
+                "platform": "linux",
+                "arch": "x64",
+                "rid": "linux-x64",
+                "readyCheckpoint": "pre_ui_event_loop",
+                "hostClass": "linux-x64-container",
+                "operatingSystem": "Linux 6.0.0",
+                "artifactDigest": f"sha256:{linux_sha256}",
+                "artifactSha256": linux_sha256,
+                "artifactFileName": linux_path.name,
+                "fileName": linux_path.name,
+                "artifactRelativePath": f"files/{linux_path.name}",
+                "recordedAtUtc": recorded_at,
+            },
+            indent=2,
+        )
+        + "\n",
+        encoding="utf-8",
+    )
+    return release_proof_path, visual_proof_path
 
 
 def test_windows_installer_verifier_accepts_bootstrap_payload(tmp_path: Path) -> None:
@@ -2070,6 +2286,78 @@ def test_publish_download_bundle_promotes_bootstrap_payload_zip_with_installer(t
     assert (deploy_dir / "files" / installer_path.name).is_file()
     assert (deploy_dir / "files" / payload_path.name).is_file()
     assert (deploy_dir / "files" / payload_sidecar.name).is_file()
+
+
+def test_publish_download_bundle_keeps_detached_worktree_clean_for_sibling_live_shelf_in_auto_mode(tmp_path: Path) -> None:
+    bundle_dir = tmp_path / "bundle"
+    release_proof_path, visual_proof_path = _write_publish_ready_preview_release_bundle(bundle_dir, tmp_path)
+
+    workspace_root = tmp_path / "workspace"
+    worktree_path = workspace_root / "ui-worktree"
+    deploy_dir = workspace_root / "chummer.run-services" / "Chummer.Portal" / "downloads"
+    sibling_presentation_mirror = workspace_root / "chummer-presentation" / "Docker" / "Downloads"
+    sibling_registry_mirror = workspace_root / "chummer-hub-registry" / ".codex-studio" / "published"
+    workspace_root.mkdir()
+
+    add_result = subprocess.run(
+        ["git", "-C", str(REPO_ROOT), "worktree", "add", "--detach", str(worktree_path), "HEAD"],
+        text=True,
+        capture_output=True,
+        check=False,
+    )
+    assert add_result.returncode == 0, add_result.stderr
+    shutil.copy2(REPO_ROOT / "scripts" / "publish-download-bundle.sh", worktree_path / "scripts" / "publish-download-bundle.sh")
+    shutil.copy2(REPO_ROOT / "scripts" / "generate-releases-manifest.sh", worktree_path / "scripts" / "generate-releases-manifest.sh")
+
+    baseline_status_result = subprocess.run(
+        ["git", "-C", str(worktree_path), "status", "--short"],
+        text=True,
+        capture_output=True,
+        check=False,
+    )
+    assert baseline_status_result.returncode == 0, baseline_status_result.stderr
+    baseline_status = baseline_status_result.stdout.strip()
+
+    try:
+        result = subprocess.run(
+            ["bash", str(worktree_path / "scripts" / "publish-download-bundle.sh"), str(bundle_dir), str(deploy_dir)],
+            cwd=worktree_path,
+            env=_publish_env(
+                tmp_path,
+                CHUMMER_RELEASE_REQUIRE_COMPLETE_DESKTOP_COVERAGE="0",
+                CHUMMER_PUBLIC_SKIP_STARTUP_SMOKE_FILTER="true",
+                CHUMMER_WINDOWS_INSTALLER_VISUAL_PROOF_PATH=str(visual_proof_path),
+                RELEASE_PROOF_PATH=str(release_proof_path),
+            ),
+            text=True,
+            capture_output=True,
+            check=False,
+        )
+
+        assert result.returncode == 0, result.stderr
+        combined_output = f"{result.stdout}\n{result.stderr}"
+        assert "public-edge mirror" not in combined_output
+        assert (deploy_dir / "RELEASE_CHANNEL.generated.json").is_file()
+        assert (deploy_dir / "PUBLICATION_SCOPE.generated.json").is_file()
+        assert not sibling_presentation_mirror.exists()
+        assert not sibling_registry_mirror.exists()
+
+        status_result = subprocess.run(
+            ["git", "-C", str(worktree_path), "status", "--short"],
+            text=True,
+            capture_output=True,
+            check=False,
+        )
+        assert status_result.returncode == 0, status_result.stderr
+        assert status_result.stdout.strip() == baseline_status
+    finally:
+        remove_result = subprocess.run(
+            ["git", "-C", str(REPO_ROOT), "worktree", "remove", "--force", str(worktree_path)],
+            text=True,
+            capture_output=True,
+            check=False,
+        )
+        assert remove_result.returncode == 0, remove_result.stderr
 
 
 def test_publish_download_bundle_refreshes_windows_visual_proof_handoff_before_exit_gate_failure(tmp_path: Path) -> None:

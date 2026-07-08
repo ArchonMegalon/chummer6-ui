@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import importlib.util
 import os
+import subprocess
 import sys
 import unittest
 from pathlib import Path
@@ -24,6 +25,22 @@ class DesktopExternalDeployReadinessTests(unittest.TestCase):
             readiness.DEFAULT_OUTPUT,
             REPO_ROOT / ".tmp" / "deploy-readiness" / "EXTERNAL_DEPLOY_READINESS.generated.json",
         )
+
+    def test_cli_default_output_writes_tmp_receipt_without_touching_tracked_path(self) -> None:
+        tracked_output = REPO_ROOT / "deploy-readiness" / "EXTERNAL_DEPLOY_READINESS.generated.json"
+        tracked_before = tracked_output.read_text(encoding="utf-8")
+
+        result = subprocess.run(
+            ["python3", str(MODULE_PATH)],
+            cwd=REPO_ROOT,
+            text=True,
+            capture_output=True,
+            check=False,
+        )
+
+        self.assertEqual(result.returncode, 0, result.stderr)
+        self.assertTrue(readiness.DEFAULT_OUTPUT.is_file())
+        self.assertEqual(tracked_output.read_text(encoding="utf-8"), tracked_before)
 
     def test_unconfigured_push_is_explicit_not_configured_receipt(self) -> None:
         with patch.dict(os.environ, {}, clear=True):

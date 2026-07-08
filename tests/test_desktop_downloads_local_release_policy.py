@@ -332,6 +332,19 @@ def test_generate_releases_manifest_uses_repo_local_or_configured_ui_localizatio
     assert '"/docker/chummercomplete/chummer6-ui"' not in manifest_script
 
 
+def test_generate_releases_manifest_only_cleans_tmp_gate_artifacts_outside_repo_root() -> None:
+    manifest_script = (REPO_ROOT / "scripts" / "generate-releases-manifest.sh").read_text(encoding="utf-8")
+
+    assert "path_is_tmp_outside_repo()" in manifest_script
+    assert 'resolved_candidate="$(resolve_path_allow_missing "$candidate")"' in manifest_script
+    assert 'resolved_repo_root="$(resolve_path_allow_missing "$REPO_ROOT")"' in manifest_script
+    assert '[[ "$resolved_candidate" == /tmp/* && "$resolved_candidate" != "$resolved_repo_root" && "$resolved_candidate" != "$resolved_repo_root/"* ]]' in manifest_script
+    assert 'if path_is_tmp_outside_repo "$RELEASE_PROOF_PATH"; then' in manifest_script
+    assert 'if path_is_tmp_outside_repo "$UI_LOCALIZATION_RELEASE_GATE_PATH"; then' in manifest_script
+    assert 'if [[ "$RELEASE_PROOF_PATH" == /tmp/* ]]; then' not in manifest_script
+    assert 'if [[ "$UI_LOCALIZATION_RELEASE_GATE_PATH" == /tmp/* ]]; then' not in manifest_script
+
+
 def test_latest_nightly_publish_ignores_incomplete_helper_stage_directories() -> None:
     publisher = (REPO_ROOT / "scripts" / "publish-latest-nightly-to-downloads.sh").read_text(encoding="utf-8")
 

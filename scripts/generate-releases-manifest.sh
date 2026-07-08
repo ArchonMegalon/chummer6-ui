@@ -171,6 +171,17 @@ print(pathlib.Path(sys.argv[1]).resolve(strict=False))
 PY
 }
 
+path_is_tmp_outside_repo() {
+  local candidate="${1:-}"
+  local resolved_candidate=""
+  local resolved_repo_root=""
+
+  [[ -n "$candidate" ]] || return 1
+  resolved_candidate="$(resolve_path_allow_missing "$candidate")"
+  resolved_repo_root="$(resolve_path_allow_missing "$REPO_ROOT")"
+  [[ "$resolved_candidate" == /tmp/* && "$resolved_candidate" != "$resolved_repo_root" && "$resolved_candidate" != "$resolved_repo_root/"* ]]
+}
+
 presentation_mirror_enabled() {
   if [[ -z "$PRESENTATION_MIRROR_ROOT" || ! -d "$PRESENTATION_MIRROR_ROOT" ]]; then
     return 1
@@ -1543,7 +1554,7 @@ cleanup_generate_release_manifest() {
 }
 trap cleanup_generate_release_manifest EXIT
 if [[ -n "$RELEASE_PROOF_PATH" && -f "$RELEASE_PROOF_PATH" ]]; then
-  if [[ "$RELEASE_PROOF_PATH" == /tmp/* ]]; then
+  if path_is_tmp_outside_repo "$RELEASE_PROOF_PATH"; then
     GENERATED_RELEASE_PROOF_PATH="$RELEASE_PROOF_PATH"
   fi
   SANITIZED_RELEASE_PROOF_PATH="$(mktemp)"
@@ -1551,7 +1562,7 @@ if [[ -n "$RELEASE_PROOF_PATH" && -f "$RELEASE_PROOF_PATH" ]]; then
   RELEASE_PROOF_PATH="$SANITIZED_RELEASE_PROOF_PATH"
 fi
 if [[ -n "$UI_LOCALIZATION_RELEASE_GATE_PATH" && -f "$UI_LOCALIZATION_RELEASE_GATE_PATH" ]]; then
-  if [[ "$UI_LOCALIZATION_RELEASE_GATE_PATH" == /tmp/* ]]; then
+  if path_is_tmp_outside_repo "$UI_LOCALIZATION_RELEASE_GATE_PATH"; then
     GENERATED_UI_LOCALIZATION_RELEASE_GATE_PATH="$UI_LOCALIZATION_RELEASE_GATE_PATH"
   fi
   SANITIZED_UI_LOCALIZATION_RELEASE_GATE_PATH="$(mktemp)"
