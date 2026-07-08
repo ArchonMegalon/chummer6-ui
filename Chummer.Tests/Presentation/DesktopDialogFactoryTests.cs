@@ -2647,6 +2647,24 @@ public class DesktopDialogFactoryTests
     }
 
     [TestMethod]
+    public void BuildNewCharacterContinuationDialog_origin_source_restores_dossier_defaults_when_identity_uses_runner_defaults()
+    {
+        DesktopDialogState dialog = BuildNewCharacterContinuationDialog(
+            RulesetDefaults.Sr6,
+            "Priority",
+            houseRulesEnabled: false,
+            name: "New runner",
+            alias: "Runner",
+            preferences: DesktopPreferenceState.Default,
+            workflowOriginSource: "approved_origin_story");
+
+        Assert.AreEqual("dialog.new_character.priority_workflow", dialog.Id);
+        Assert.AreEqual("New dossier", DesktopDialogFieldValueParser.GetValue(dialog, "newCharacterWorkflowName"));
+        Assert.AreEqual("Dossier", DesktopDialogFieldValueParser.GetValue(dialog, "newCharacterWorkflowAlias"));
+        Assert.AreEqual("approved_origin_story", DesktopDialogFieldValueParser.GetValue(dialog, "newCharacterWorkflowOriginSource"));
+    }
+
+    [TestMethod]
     public void BuildNewCharacterPriorityWorkflowDialog_origin_source_restores_dossier_defaults_when_identity_is_blank()
     {
         DesktopDialogState dialog = BuildNewCharacterPriorityWorkflowDialog(
@@ -2667,6 +2685,24 @@ public class DesktopDialogFactoryTests
     }
 
     [TestMethod]
+    public void BuildNewCharacterPriorityWorkflowDialog_origin_source_restores_dossier_defaults_when_identity_uses_runner_defaults()
+    {
+        DesktopDialogState dialog = BuildNewCharacterPriorityWorkflowDialog(
+            RulesetDefaults.Sr6,
+            "Priority",
+            houseRulesEnabled: false,
+            name: "New runner",
+            alias: "Runner",
+            preferences: DesktopPreferenceState.Default,
+            workflowOriginSource: "approved_origin_story");
+
+        Assert.AreEqual("dialog.new_character.priority_workflow", dialog.Id);
+        Assert.AreEqual("New dossier", DesktopDialogFieldValueParser.GetValue(dialog, "newCharacterWorkflowName"));
+        Assert.AreEqual("Dossier", DesktopDialogFieldValueParser.GetValue(dialog, "newCharacterWorkflowAlias"));
+        Assert.AreEqual("approved_origin_story", DesktopDialogFieldValueParser.GetValue(dialog, "newCharacterWorkflowOriginSource"));
+    }
+
+    [TestMethod]
     public void BuildNewCharacterKarmaWorkflowDialog_origin_source_restores_dossier_defaults_when_identity_is_blank()
     {
         DesktopDialogState dialog = BuildNewCharacterKarmaWorkflowDialog(
@@ -2684,6 +2720,24 @@ public class DesktopDialogFactoryTests
         Assert.AreEqual("approved_origin_story", DesktopDialogFieldValueParser.GetValue(dialog, "newCharacterWorkflowOriginSource"));
         Assert.IsFalse(string.Equals("New runner", DesktopDialogFieldValueParser.GetValue(dialog, "newCharacterWorkflowName"), StringComparison.Ordinal));
         Assert.IsFalse(string.Equals("Runner", DesktopDialogFieldValueParser.GetValue(dialog, "newCharacterWorkflowAlias"), StringComparison.Ordinal));
+    }
+
+    [TestMethod]
+    public void BuildNewCharacterKarmaWorkflowDialog_origin_source_restores_dossier_defaults_when_identity_uses_runner_defaults()
+    {
+        DesktopDialogState dialog = BuildNewCharacterKarmaWorkflowDialog(
+            RulesetDefaults.Sr6,
+            "Karma",
+            houseRulesEnabled: false,
+            name: "New runner",
+            alias: "Runner",
+            preferences: DesktopPreferenceState.Default,
+            workflowOriginSource: "approved_origin_story");
+
+        Assert.AreEqual("dialog.new_character.karma_workflow", dialog.Id);
+        Assert.AreEqual("New dossier", DesktopDialogFieldValueParser.GetValue(dialog, "newCharacterWorkflowName"));
+        Assert.AreEqual("Dossier", DesktopDialogFieldValueParser.GetValue(dialog, "newCharacterWorkflowAlias"));
+        Assert.AreEqual("approved_origin_story", DesktopDialogFieldValueParser.GetValue(dialog, "newCharacterWorkflowOriginSource"));
     }
 
     [TestMethod]

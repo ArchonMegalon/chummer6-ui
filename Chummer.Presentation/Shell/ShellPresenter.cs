@@ -1,6 +1,7 @@
 using Chummer.Contracts.Presentation;
 using Chummer.Contracts.Rulesets;
 using Chummer.Contracts.Workspaces;
+using Chummer.Presentation.Rulesets;
 
 namespace Chummer.Presentation.Shell;
 
@@ -75,13 +76,31 @@ public sealed class ShellPresenter : IShellPresenter
             IReadOnlyList<NavigationTabDefinition> tabs = bootstrap.NavigationTabs;
             IReadOnlyList<WorkflowDefinition> workflowDefinitions = bootstrap.WorkflowDefinitions ?? [];
             IReadOnlyList<WorkflowSurfaceDefinition> workflowSurfaces = bootstrap.WorkflowSurfaces ?? [];
-            Dictionary<string, string> workspaceTabMap = NormalizeWorkspaceTabMap(bootstrap.ActiveTabsByWorkspace);
-            string? requestedActiveTabId = ResolveWorkspaceTab(workspaceTabMap, activeWorkspaceId) ?? bootstrap.ActiveTabId;
+            Dictionary<string, string> bootstrapWorkspaceTabMap = NormalizeWorkspaceTabMap(bootstrap.ActiveTabsByWorkspace);
+            Dictionary<string, string> workspaceTabMap = new(bootstrapWorkspaceTabMap, StringComparer.Ordinal);
+            string? requestedActiveTabId = NormalizeRequestedActiveTabId(
+                activeWorkspaceId,
+                ResolveWorkspaceTab(workspaceTabMap, activeWorkspaceId) ?? bootstrap.ActiveTabId);
             string? resolvedActiveTabId = ResolveActiveTabId(
                 tabs,
                 requestedActiveTabId: requestedActiveTabId,
-                currentActiveTabId: State.ActiveTabId);
+                currentActiveTabId: NormalizeFallbackCurrentActiveTabId(
+                    previousActiveWorkspaceId: State.ActiveWorkspaceId,
+                    nextActiveWorkspaceId: activeWorkspaceId,
+                    currentActiveTabId: State.ActiveTabId));
             SetWorkspaceTab(workspaceTabMap, activeWorkspaceId, resolvedActiveTabId);
+            bool activeWorkspaceChanged = !WorkspaceIdsEqual(bootstrap.ActiveWorkspaceId, activeWorkspaceId);
+            bool activeTabChanged = !string.Equals(bootstrap.ActiveTabId, resolvedActiveTabId, StringComparison.Ordinal);
+            bool workspaceTabMapChanged = !WorkspaceTabMapsEqual(bootstrapWorkspaceTabMap, workspaceTabMap);
+            if (activeWorkspaceChanged || activeTabChanged || workspaceTabMapChanged)
+            {
+                await _runtimeClient.SaveShellSessionAsync(
+                    new ShellSessionState(
+                        ActiveWorkspaceId: activeWorkspaceId?.Value,
+                        ActiveTabId: resolvedActiveTabId,
+                        ActiveTabsByWorkspace: workspaceTabMap),
+                    ct);
+            }
             _activeTabsByWorkspace = workspaceTabMap;
 
             AppCommandDefinition[] menuRoots = BuildMenuRoots(commands);
@@ -187,6 +206,13 @@ public sealed class ShellPresenter : IShellPresenter
             return;
         }
 
+        if (State.ActiveWorkspaceId is not null
+            && !RulesetUiDirectiveCatalog.IsLoadedRunnerVisibleNavigationTab(tab.Id))
+        {
+            Publish(State with { Error = $"Tab '{tabId}' is unavailable while a dossier is active." });
+            return;
+        }
+
         Dictionary<string, string> nextWorkspaceTabs = BuildUpdatedWorkspaceTabMap(State.ActiveWorkspaceId, tab.Id);
         await _runtimeClient.SaveShellSessionAsync(
             new ShellSessionState(
@@ -280,8 +306,13 @@ public sealed class ShellPresenter : IShellPresenter
         Dictionary<string, string> nextWorkspaceTabs = BuildUpdatedWorkspaceTabMap(State.ActiveWorkspaceId, State.ActiveTabId);
         string? resolvedActiveTabId = ResolveActiveTabId(
             tabs,
-            requestedActiveTabId: ResolveWorkspaceTab(nextWorkspaceTabs, State.ActiveWorkspaceId) ?? State.ActiveTabId,
-            currentActiveTabId: State.ActiveTabId);
+            requestedActiveTabId: NormalizeRequestedActiveTabId(
+                State.ActiveWorkspaceId,
+                ResolveWorkspaceTab(nextWorkspaceTabs, State.ActiveWorkspaceId) ?? State.ActiveTabId),
+            currentActiveTabId: NormalizeFallbackCurrentActiveTabId(
+                previousActiveWorkspaceId: State.ActiveWorkspaceId,
+                nextActiveWorkspaceId: State.ActiveWorkspaceId,
+                currentActiveTabId: State.ActiveTabId));
         SetWorkspaceTab(nextWorkspaceTabs, State.ActiveWorkspaceId, resolvedActiveTabId);
         bool activeTabChanged = !string.Equals(State.ActiveTabId, resolvedActiveTabId, StringComparison.Ordinal);
         bool workspaceTabMapChanged = !WorkspaceTabMapsEqual(_activeTabsByWorkspace, nextWorkspaceTabs);
@@ -347,8 +378,13 @@ public sealed class ShellPresenter : IShellPresenter
         }
 
         Dictionary<string, string> nextWorkspaceTabs = BuildUpdatedWorkspaceTabMap(State.ActiveWorkspaceId, State.ActiveTabId);
-        string? requestedActiveTabId = ResolveWorkspaceTab(nextWorkspaceTabs, resolvedActiveWorkspace);
-        string? fallbackCurrentActiveTabId = State.ActiveTabId;
+        string? requestedActiveTabId = NormalizeRequestedActiveTabId(
+            resolvedActiveWorkspace,
+            ResolveWorkspaceTab(nextWorkspaceTabs, resolvedActiveWorkspace));
+        string? fallbackCurrentActiveTabId = NormalizeFallbackCurrentActiveTabId(
+            previousActiveWorkspaceId: State.ActiveWorkspaceId,
+            nextActiveWorkspaceId: resolvedActiveWorkspace,
+            currentActiveTabId: State.ActiveTabId);
         string? resolvedActiveTabId = ResolveActiveTabId(
             tabs,
             requestedActiveTabId: requestedActiveTabId,
@@ -544,6 +580,37 @@ public sealed class ShellPresenter : IShellPresenter
         }
 
         return tabs.FirstOrDefault(tab => tab.EnabledByDefault)?.Id;
+    }
+
+    private static string? NormalizeRequestedActiveTabId(
+        CharacterWorkspaceId? activeWorkspaceId,
+        string? requestedActiveTabId)
+    {
+        if (activeWorkspaceId is null)
+        {
+            return requestedActiveTabId;
+        }
+
+        return RulesetUiDirectiveCatalog.IsLoadedRunnerVisibleNavigationTab(requestedActiveTabId)
+            ? requestedActiveTabId
+            : null;
+    }
+
+    private static string? NormalizeFallbackCurrentActiveTabId(
+        CharacterWorkspaceId? previousActiveWorkspaceId,
+        CharacterWorkspaceId? nextActiveWorkspaceId,
+        string? currentActiveTabId)
+    {
+        if (nextActiveWorkspaceId is null)
+        {
+            return previousActiveWorkspaceId is not null
+                ? null
+                : currentActiveTabId;
+        }
+
+        return RulesetUiDirectiveCatalog.IsLoadedRunnerVisibleNavigationTab(currentActiveTabId)
+            ? currentActiveTabId
+            : null;
     }
 
     private static Dictionary<string, string> NormalizeWorkspaceTabMap(IReadOnlyDictionary<string, string>? rawMap)

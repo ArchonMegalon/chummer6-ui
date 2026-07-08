@@ -2291,10 +2291,10 @@ for raw_path in sys.argv[2:]:
         payload["supportabilityState"] = trust_supportability_state
         if trust_supportability_state == "review_required":
             payload["supportabilitySummary"] = (
-                "Proof freshness is missing or stale on this shelf, so review is still required before this release can be treated as supportable."
+                "Treat this shelf as review-required until stale or incomplete proof receipts are refreshed."
             )
             payload["knownIssueSummary"] = (
-                "Proof freshness is missing or stale on this shelf, so preview publication is visible but not yet gold-ready."
+                "The preview shelf remains visible, but stale or incomplete proof receipts mean it is not yet gold-ready."
             )
     # Recompute verifier-owned registry surfaces once more after supportability/trust normalization
     # so carried-forward manifests cannot keep stale dependent rows such as desktopSurfaceRefs.

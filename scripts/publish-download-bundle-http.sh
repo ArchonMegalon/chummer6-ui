@@ -37,6 +37,25 @@ to_bool() {
   [[ "$value" == "1" || "$value" == "true" || "$value" == "yes" || "$value" == "on" ]]
 }
 
+validate_absolute_http_url() {
+  local value="$1"
+  local label="$2"
+  python3 - "$value" "$label" <<'PY'
+import sys
+from urllib.parse import urlparse
+
+value = sys.argv[1].strip()
+label = sys.argv[2]
+parsed = urlparse(value)
+if parsed.scheme.lower() not in {"http", "https"} or not parsed.netloc:
+    print(
+        f"Invalid {label}: {value!r} (expected absolute http:// or https:// URL).",
+        file=sys.stderr,
+    )
+    raise SystemExit(1)
+PY
+}
+
 array_count() {
   local array_name="${1:-}"
   [[ -n "$array_name" ]] || {
@@ -84,10 +103,34 @@ array_values_nul() {
   return "$status"
 }
 
+verify_bundle_layout() {
+  local bundle_dir="$1"
+  local files_dir="$2"
+  local normalized_bundle_dir="${bundle_dir%/}"
+  local parent_dir
+  parent_dir="$(dirname "$normalized_bundle_dir")"
+  local nested_files_dir="$files_dir/files"
+
+  if [[ "$(basename "$normalized_bundle_dir")" == "files" ]] \
+    && [[ -f "$parent_dir/releases.json" || -f "$parent_dir/RELEASE_CHANNEL.generated.json" ]]; then
+    echo "Bundle root points at files/ directory: $normalized_bundle_dir" >&2
+    echo "Publish from the stage or bundle root, not its files/ child." >&2
+    exit 1
+  fi
+
+  if [[ -d "$nested_files_dir" ]] && find "$nested_files_dir" -mindepth 1 -maxdepth 1 | grep -q .; then
+    echo "Bundle is malformed: found nested files directory under $nested_files_dir" >&2
+    echo "Publish from the stage or bundle root, not its files/ child." >&2
+    exit 1
+  fi
+}
+
 if [[ ! -d "$BUNDLE_DIR" ]]; then
   echo "Bundle directory not found: $BUNDLE_DIR" >&2
   exit 1
 fi
+
+verify_bundle_layout "$BUNDLE_DIR" "$BUNDLE_DIR/files"
 
 if [[ ! -f "$MANIFEST_PATH" ]]; then
   echo "Bundle is missing releases.json: $MANIFEST_PATH" >&2
@@ -129,6 +172,10 @@ if (( windows_payload_gate_args_count == 8 )); then
   windows_payload_gate_args+=(--allow-empty)
 fi
 python3 "$SCRIPT_DIR/verify-windows-installer-payloads.py" "${windows_payload_gate_args[@]}"
+
+validate_absolute_http_url "$UPLOAD_URL" "CHUMMER_RELEASE_UPLOAD_URL"
+validate_absolute_http_url "$SESSIONS_URL" "CHUMMER_RELEASE_UPLOAD_SESSIONS_URL"
+validate_absolute_http_url "$VERIFY_URL" "CHUMMER_PORTAL_DOWNLOADS_VERIFY_URL"
 
 prompt_for_upload_token() {
   if [[ ! -t 0 ]]; then

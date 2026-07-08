@@ -96,6 +96,93 @@ resolve_runbook_dir() {
   echo "$REPO_ROOT/.tmp/${base_name}"
 }
 
+join_pipe_delimited() {
+  local IFS='|'
+  printf '%s' "$*"
+}
+
+validate_host_port_endpoint() {
+  local value="$1"
+  local label="$2"
+  local host="${value%:*}"
+  local port="${value##*:}"
+  local port_number=0
+
+  if [[ -z "$host" || -z "$port" || "$host" == "$port" ]]; then
+    echo "Invalid ${label} value: '$value' (expected host:port with numeric port 1-65535)." >&2
+    return 1
+  fi
+  if [[ ! "$port" =~ ^[0-9]+$ ]]; then
+    echo "Invalid ${label} value: '$value' (expected host:port with numeric port 1-65535)." >&2
+    return 1
+  fi
+
+  port_number=$((10#$port))
+  if (( port_number < 1 || port_number > 65535 )); then
+    echo "Invalid ${label} value: '$value' (expected host:port with numeric port 1-65535)." >&2
+    return 1
+  fi
+
+  return 0
+}
+
+is_microsoft_testing_platform_runner() {
+  local global_json_path="${1:-$REPO_ROOT/global.json}"
+  [[ -f "$global_json_path" ]] || return 1
+
+  python3 - "$global_json_path" <<'PY'
+import json
+import sys
+
+path = sys.argv[1]
+try:
+    with open(path, "r", encoding="utf-8") as handle:
+        payload = json.load(handle)
+except Exception:
+    raise SystemExit(1)
+
+runner = payload.get("test", {}).get("runner")
+raise SystemExit(0 if runner == "Microsoft.Testing.Platform" else 1)
+PY
+}
+
+resolve_mtp_test_runner() {
+  local project_path="$1"
+  local configuration="$2"
+  local framework="$3"
+  local project_dir
+  local project_name
+  local candidate
+
+  if [[ "$project_path" != /* ]]; then
+    project_path="$REPO_ROOT/$project_path"
+  fi
+
+  project_dir="$(cd "$(dirname "$project_path")" && pwd -P)"
+  project_name="$(basename "$project_path" .csproj)"
+
+  if [[ -n "$framework" ]]; then
+    candidate="$project_dir/bin/$configuration/$framework/$project_name"
+    if [[ -f "$candidate" ]]; then
+      echo "$candidate"
+      return 0
+    fi
+    candidate="$project_dir/bin/$configuration/$framework/$project_name.exe"
+    if [[ -f "$candidate" ]]; then
+      echo "$candidate"
+      return 0
+    fi
+  fi
+
+  while IFS= read -r candidate; do
+    echo "$candidate"
+    return 0
+  done < <(find "$project_dir/bin/$configuration" -mindepth 2 -maxdepth 2 -type f \
+    \( -name "$project_name" -o -name "$project_name.exe" \) | sort)
+
+  return 1
+}
+
 if [[ "$RUNBOOK_MODE" == "migration" ]]; then
   LOOPS="${MIGRATION_LOOPS:-1}"
   LOG_FILE="${RUNBOOK_LOG_FILE:-$(resolve_runbook_log_file migration-loop-runbook)}"
@@ -122,6 +209,7 @@ if [[ "$RUNBOOK_MODE" == "local-tests" ]]; then
   TEST_NUGET_SOFT_FAIL="${TEST_NUGET_SOFT_FAIL:-}"
   TEST_NUGET_ENDPOINT="${TEST_NUGET_ENDPOINT:-api.nuget.org:443}"
   TEST_LOG_FILE="${TEST_LOG_FILE:-$(resolve_runbook_log_file chummer-local-tests)}"
+  TEST_MTP_DIRECT_RUNNER="${TEST_MTP_DIRECT_RUNNER:-auto}"
   export DOTNET_CLI_HOME="${DOTNET_CLI_HOME:-$(resolve_runbook_dir dotnet-cli-home)}"
   export DOTNET_NOLOGO="${DOTNET_NOLOGO:-1}"
   export DOTNET_SKIP_FIRST_TIME_EXPERIENCE="${DOTNET_SKIP_FIRST_TIME_EXPERIENCE:-1}"
@@ -170,12 +258,11 @@ if [[ "$RUNBOOK_MODE" == "local-tests" ]]; then
   fi
   if [[ "$TEST_NO_RESTORE" != "1" && "$TEST_NO_RESTORE" != "true" && "$TEST_NO_RESTORE" != "TRUE" ]]; then
     if [[ "$TEST_NUGET_PREFLIGHT" == "1" || "$TEST_NUGET_PREFLIGHT" == "true" || "$TEST_NUGET_PREFLIGHT" == "TRUE" ]]; then
-      host="${TEST_NUGET_ENDPOINT%:*}"
-      port="${TEST_NUGET_ENDPOINT##*:}"
-      if [[ -z "$host" || -z "$port" || "$host" == "$port" ]]; then
-        echo "Invalid TEST_NUGET_ENDPOINT value: '$TEST_NUGET_ENDPOINT' (expected host:port)." >&2
+      if ! validate_host_port_endpoint "$TEST_NUGET_ENDPOINT" "TEST_NUGET_ENDPOINT"; then
         exit 1
       fi
+      host="${TEST_NUGET_ENDPOINT%:*}"
+      port="${TEST_NUGET_ENDPOINT##*:}"
       set +e
       python3 - "$host" "$port" <<'PY' >/dev/null 2>&1
 import socket
@@ -201,13 +288,183 @@ PY
   if [[ -n "${CHUMMER_API_BASE_URL:-}" ]]; then
     echo "local-tests using CHUMMER_API_BASE_URL=$CHUMMER_API_BASE_URL"
   fi
+  : > "$TEST_LOG_FILE"
+  use_mtp_direct_runner=0
+  if [[ "$TEST_MTP_DIRECT_RUNNER" == "1" || "$TEST_MTP_DIRECT_RUNNER" == "true" || "$TEST_MTP_DIRECT_RUNNER" == "TRUE" ]]; then
+    use_mtp_direct_runner=1
+  elif [[ "$TEST_MTP_DIRECT_RUNNER" != "0" && "$TEST_MTP_DIRECT_RUNNER" != "false" && "$TEST_MTP_DIRECT_RUNNER" != "FALSE" ]] \
+    && is_microsoft_testing_platform_runner "$REPO_ROOT/global.json"; then
+    use_mtp_direct_runner=1
+  fi
+
+  if [[ "$use_mtp_direct_runner" == "1" ]]; then
+    runner_args=(--output Normal)
+    if [[ -n "$TEST_FILTER" ]]; then
+      runner_args=(--filter "$TEST_FILTER" "${runner_args[@]}")
+    fi
+
+    if [[ "$TEST_NO_BUILD" != "1" && "$TEST_NO_BUILD" != "true" && "$TEST_NO_BUILD" != "TRUE" ]]; then
+      echo "local-tests using Microsoft.Testing.Platform direct runner"
+      set +e
+      dotnet build "$TEST_PROJECT" -c "$TEST_CONFIGURATION" "${framework_args[@]}" "${restore_args[@]}" "${disable_build_servers_args[@]}" -v minimal 2>&1 | tee -a "$TEST_LOG_FILE"
+      status=${PIPESTATUS[0]}
+      set -e
+      if [[ "$status" -ne 0 ]]; then
+        echo
+        echo "== local test failure extract =="
+        rg -n "^\\s*Failed\\s|\\[xUnit.net\\]|Total tests:|Passed!|Failed!|Stack Trace|Error Message" "$TEST_LOG_FILE" | tail -n 200 || true
+        exit "$status"
+      fi
+    fi
+
+    TEST_RUNNER_PATH="$(resolve_mtp_test_runner "$TEST_PROJECT" "$TEST_CONFIGURATION" "$TEST_FRAMEWORK")"
+    if [[ -z "$TEST_RUNNER_PATH" || ! -f "$TEST_RUNNER_PATH" ]]; then
+      echo "Unable to resolve Microsoft.Testing.Platform runner for $TEST_PROJECT." >&2
+      exit 1
+    fi
+
+    set +e
+    "$TEST_RUNNER_PATH" "${runner_args[@]}" 2>&1 | tee -a "$TEST_LOG_FILE"
+    status=${PIPESTATUS[0]}
+    set -e
+  else
+    set +e
+    dotnet test --project "$TEST_PROJECT" -c "$TEST_CONFIGURATION" "${framework_args[@]}" "${filter_args[@]}" "${restore_args[@]}" "${build_args[@]}" "${disable_build_servers_args[@]}" --output Normal 2>&1 | tee -a "$TEST_LOG_FILE"
+    status=${PIPESTATUS[0]}
+    set -e
+  fi
+  if [[ "$status" -ne 0 ]]; then
+    echo
+    echo "== local test failure extract =="
+    rg -n "^\\s*Failed\\s|\\[xUnit.net\\]|Total tests:|Passed!|Failed!|Stack Trace|Error Message" "$TEST_LOG_FILE" | tail -n 200 || true
+  fi
+  exit "$status"
+fi
+
+if [[ "$RUNBOOK_MODE" == "focused-presentation-tests" ]]; then
+  FOCUSED_TEST_PROJECT="${FOCUSED_TEST_PROJECT:-Chummer.Tests/Chummer.Tests.csproj}"
+  FOCUSED_TEST_CONFIGURATION="${FOCUSED_TEST_CONFIGURATION:-Release}"
+  FOCUSED_TEST_FRAMEWORK="${FOCUSED_TEST_FRAMEWORK:-net10.0}"
+  FOCUSED_TEST_FILE="${FOCUSED_TEST_FILE:-${RUNBOOK_ARG_FRAMEWORK:-}}"
+  FOCUSED_TEST_SUPPORT_FILE="${FOCUSED_TEST_SUPPORT_FILE:-${RUNBOOK_ARG_FILTER:-}}"
+  FOCUSED_TEST_SUPPORT_FILE2="${FOCUSED_TEST_SUPPORT_FILE2:-${4:-}}"
+  FOCUSED_TEST_SUPPORT_FILE3="${FOCUSED_TEST_SUPPORT_FILE3:-${5:-}}"
+  FOCUSED_TEST_SUPPORT_FILES="${FOCUSED_TEST_SUPPORT_FILES:-}"
+  FOCUSED_TEST_PREREQUISITE_PROJECTS="${FOCUSED_TEST_PREREQUISITE_PROJECTS:-${FOCUSED_TEST_PREREQUISITE_PROJECT:-Chummer.Presentation/Chummer.Presentation.csproj}}"
+  FOCUSED_TEST_NO_RESTORE="${FOCUSED_TEST_NO_RESTORE:-1}"
+  FOCUSED_TEST_LOG_FILE="${FOCUSED_TEST_LOG_FILE:-$(resolve_runbook_log_file chummer-focused-presentation-tests)}"
+  export DOTNET_CLI_HOME="${DOTNET_CLI_HOME:-$(resolve_runbook_dir dotnet-cli-home)}"
+  export DOTNET_NOLOGO="${DOTNET_NOLOGO:-1}"
+  export DOTNET_SKIP_FIRST_TIME_EXPERIENCE="${DOTNET_SKIP_FIRST_TIME_EXPERIENCE:-1}"
+  export DOTNET_CLI_TELEMETRY_OPTOUT="${DOTNET_CLI_TELEMETRY_OPTOUT:-1}"
+  export AVALONIA_TELEMETRY_OPTOUT="${AVALONIA_TELEMETRY_OPTOUT:-1}"
+  export DOTNET_CLI_DO_NOT_USE_MSBUILD_SERVER="${DOTNET_CLI_DO_NOT_USE_MSBUILD_SERVER:-1}"
+  export MSBUILDDISABLENODEREUSE="${MSBUILDDISABLENODEREUSE:-1}"
+
+  if [[ -z "$FOCUSED_TEST_FILE" ]]; then
+    echo "Usage: bash scripts/runbook.sh focused-presentation-tests Presentation/<TestFile>.cs [Presentation/<SupportFile>.cs ...]" >&2
+    exit 1
+  fi
+
+  if [[ -z "$FOCUSED_TEST_SUPPORT_FILES" ]]; then
+    focused_test_support_args=()
+    if [[ -n "$FOCUSED_TEST_SUPPORT_FILE" ]]; then
+      focused_test_support_args+=("$FOCUSED_TEST_SUPPORT_FILE")
+    fi
+    if [[ -n "$FOCUSED_TEST_SUPPORT_FILE2" ]]; then
+      focused_test_support_args+=("$FOCUSED_TEST_SUPPORT_FILE2")
+    fi
+    if [[ -n "$FOCUSED_TEST_SUPPORT_FILE3" ]]; then
+      focused_test_support_args+=("$FOCUSED_TEST_SUPPORT_FILE3")
+    fi
+    if (( $# > 5 )); then
+      focused_test_support_args+=("${@:6}")
+    fi
+    if (( ${#focused_test_support_args[@]} > 0 )); then
+      FOCUSED_TEST_SUPPORT_FILES="$(join_pipe_delimited "${focused_test_support_args[@]}")"
+    fi
+  fi
+
+  focused_test_prerequisite_projects=()
+  if [[ -n "$FOCUSED_TEST_PREREQUISITE_PROJECTS" ]]; then
+    IFS='|' read -r -a focused_test_prerequisite_projects <<< "$FOCUSED_TEST_PREREQUISITE_PROJECTS"
+  fi
+
+  : > "$FOCUSED_TEST_LOG_FILE"
+  if (( ${#focused_test_prerequisite_projects[@]} > 0 )); then
+    for prerequisite_project in "${focused_test_prerequisite_projects[@]}"; do
+      if [[ -z "$prerequisite_project" ]]; then
+        continue
+      fi
+
+      prerequisite_build_args=(
+        dotnet build "$prerequisite_project"
+        -c "$FOCUSED_TEST_CONFIGURATION"
+        -f "$FOCUSED_TEST_FRAMEWORK"
+        -v minimal
+        -m:1
+        -p:UseSharedCompilation=false
+      )
+      if [[ "$FOCUSED_TEST_NO_RESTORE" == "1" || "$FOCUSED_TEST_NO_RESTORE" == "true" || "$FOCUSED_TEST_NO_RESTORE" == "TRUE" ]]; then
+        prerequisite_build_args+=(--no-restore)
+      fi
+
+      set +e
+      "${prerequisite_build_args[@]}" 2>&1 | tee -a "$FOCUSED_TEST_LOG_FILE"
+      status=${PIPESTATUS[0]}
+      set -e
+      if [[ "$status" -ne 0 ]]; then
+        echo
+        echo "== focused presentation prerequisite build failure extract =="
+        rg -n "Build FAILED|error CS|error MSB|warning CS|warning MSB" "$FOCUSED_TEST_LOG_FILE" | tail -n 200 || true
+        exit "$status"
+      fi
+    done
+  fi
+
+  build_args=(
+    dotnet build "$FOCUSED_TEST_PROJECT"
+    -c "$FOCUSED_TEST_CONFIGURATION"
+    -f "$FOCUSED_TEST_FRAMEWORK"
+    -v minimal
+    -m:1
+    -p:UseSharedCompilation=false
+    -p:BuildProjectReferences=false
+    "-p:FocusedTestCompileFiles=$FOCUSED_TEST_FILE"
+  )
+  if [[ "$FOCUSED_TEST_NO_RESTORE" == "1" || "$FOCUSED_TEST_NO_RESTORE" == "true" || "$FOCUSED_TEST_NO_RESTORE" == "TRUE" ]]; then
+    build_args+=(--no-restore)
+  fi
+  if [[ -n "$FOCUSED_TEST_SUPPORT_FILES" ]]; then
+    build_args+=("-p:FocusedTestSupportFiles=$FOCUSED_TEST_SUPPORT_FILES")
+  fi
+
   set +e
-  dotnet test --project "$TEST_PROJECT" -c "$TEST_CONFIGURATION" "${framework_args[@]}" "${filter_args[@]}" "${restore_args[@]}" "${build_args[@]}" "${disable_build_servers_args[@]}" --output Normal 2>&1 | tee "$TEST_LOG_FILE"
+  "${build_args[@]}" 2>&1 | tee -a "$FOCUSED_TEST_LOG_FILE"
   status=${PIPESTATUS[0]}
   set -e
-  echo
-  echo "== local test failure extract =="
-  rg -n "^\\s*Failed\\s|\\[xUnit.net\\]|Total tests:|Passed!|Failed!|Stack Trace|Error Message" "$TEST_LOG_FILE" | tail -n 200 || true
+  if [[ "$status" -ne 0 ]]; then
+    echo
+    echo "== focused presentation build failure extract =="
+    rg -n "Build FAILED|error CS|error MSB|warning CS|warning MSB" "$FOCUSED_TEST_LOG_FILE" | tail -n 200 || true
+    exit "$status"
+  fi
+
+  TEST_RUNNER_PATH="$(resolve_mtp_test_runner "$FOCUSED_TEST_PROJECT" "$FOCUSED_TEST_CONFIGURATION" "$FOCUSED_TEST_FRAMEWORK")"
+  if [[ -z "$TEST_RUNNER_PATH" || ! -f "$TEST_RUNNER_PATH" ]]; then
+    echo "Unable to resolve Microsoft.Testing.Platform runner for $FOCUSED_TEST_PROJECT." >&2
+    exit 1
+  fi
+
+  set +e
+  "$TEST_RUNNER_PATH" --output Detailed 2>&1 | tee -a "$FOCUSED_TEST_LOG_FILE"
+  status=${PIPESTATUS[0]}
+  set -e
+  if [[ "$status" -ne 0 ]]; then
+    echo
+    echo "== focused presentation test failure extract =="
+    rg -n "^\\s*Failed\\s|Total:|total:|Passed!|Failed!|Stack Trace|Error Message" "$FOCUSED_TEST_LOG_FILE" | tail -n 200 || true
+  fi
   exit "$status"
 fi
 
@@ -378,6 +635,44 @@ if [[ "$RUNBOOK_MODE" == "desktop-build" ]]; then
   DESKTOP_PROJECT="${DESKTOP_PROJECT:-${RUNBOOK_ARG_FRAMEWORK:-Chummer.Blazor.Desktop/Chummer.Blazor.Desktop.csproj}}"
   DESKTOP_FRAMEWORK="${DESKTOP_FRAMEWORK:-${RUNBOOK_ARG_FILTER:-net10.0}}"
   DESKTOP_LOG_FILE="${DESKTOP_LOG_FILE:-$(resolve_runbook_log_file chummer-desktop-build)}"
+  DESKTOP_BUILD_PACKAGE="${DESKTOP_BUILD_PACKAGE:-0}"
+  DESKTOP_PUBLISH_DIR="${DESKTOP_PUBLISH_DIR:-}"
+  DESKTOP_APP_KEY="${DESKTOP_APP_KEY:-}"
+  DESKTOP_RID="${DESKTOP_RID:-}"
+  DESKTOP_LAUNCH_TARGET="${DESKTOP_LAUNCH_TARGET:-}"
+  DESKTOP_DIST_DIR="${DESKTOP_DIST_DIR:-$REPO_ROOT/dist}"
+  DESKTOP_RELEASE_VERSION="${DESKTOP_RELEASE_VERSION:-local}"
+  desktop_build_package_requested=0
+  if [[ "$DESKTOP_BUILD_PACKAGE" == "1" || "$DESKTOP_BUILD_PACKAGE" == "true" || "$DESKTOP_BUILD_PACKAGE" == "TRUE" ]]; then
+    desktop_build_package_requested=1
+  elif [[ -n "$DESKTOP_PUBLISH_DIR" || -n "$DESKTOP_APP_KEY" || -n "$DESKTOP_RID" || -n "$DESKTOP_LAUNCH_TARGET" ]]; then
+    desktop_build_package_requested=1
+  fi
+
+  if [[ "$desktop_build_package_requested" == "1" ]]; then
+    if [[ -z "$DESKTOP_PUBLISH_DIR" || -z "$DESKTOP_APP_KEY" || -z "$DESKTOP_RID" || -z "$DESKTOP_LAUNCH_TARGET" ]]; then
+      echo "desktop-build packaging mode requires DESKTOP_PUBLISH_DIR, DESKTOP_APP_KEY, DESKTOP_RID, and DESKTOP_LAUNCH_TARGET." >&2
+      echo "Use scripts/build-desktop-installer.sh through this wrapper by setting DESKTOP_BUILD_PACKAGE=1 and the required packaging inputs." >&2
+      echo "Use the project build path when you only need a compile." >&2
+      exit 1
+    fi
+
+    set +e
+    bash scripts/build-desktop-installer.sh \
+      "$DESKTOP_PUBLISH_DIR" \
+      "$DESKTOP_APP_KEY" \
+      "$DESKTOP_RID" \
+      "$DESKTOP_LAUNCH_TARGET" \
+      "$DESKTOP_DIST_DIR" \
+      "$DESKTOP_RELEASE_VERSION" 2>&1 | tee "$DESKTOP_LOG_FILE"
+    status=${PIPESTATUS[0]}
+    set -e
+    echo
+    echo "== desktop packaging extract =="
+    rg -n "built installer|Refusing to package public desktop artifacts|Launch target not found|Unsupported installer target RID|ERROR:" "$DESKTOP_LOG_FILE" | tail -n 200 || true
+    exit "$status"
+  fi
+
   set +e
   docker compose run --build --rm chummer-tests sh -lc \
     "cd /src && dotnet build '$DESKTOP_PROJECT' -c Release -f '$DESKTOP_FRAMEWORK' --nologo" \
@@ -553,20 +848,197 @@ if [[ "$RUNBOOK_MODE" == "downloads-smoke" ]]; then
   DOWNLOADS_SMOKE_DEPLOY_DIR="${DOWNLOADS_SMOKE_DEPLOY_DIR:-$DOWNLOADS_SMOKE_RUN_DIR/deploy}"
   DOWNLOADS_SMOKE_LOG_FILE="${DOWNLOADS_SMOKE_LOG_FILE:-$(resolve_runbook_log_file chummer-downloads-smoke)}"
   DOWNLOADS_SMOKE_VERSION="${DOWNLOADS_SMOKE_VERSION:-smoke-0001}"
-  mkdir -p "$DOWNLOADS_SMOKE_BUNDLE_DIR/files" "$DOWNLOADS_SMOKE_DEPLOY_DIR"
+  mkdir -p "$DOWNLOADS_SMOKE_BUNDLE_DIR/files" "$DOWNLOADS_SMOKE_BUNDLE_DIR/startup-smoke" "$DOWNLOADS_SMOKE_DEPLOY_DIR"
 
   artifact_path="$DOWNLOADS_SMOKE_BUNDLE_DIR/files/chummer-avalonia-linux-x64-installer.deb"
   installer_path="$DOWNLOADS_SMOKE_BUNDLE_DIR/files/chummer-avalonia-win-x64-installer.exe"
+  payload_path="$DOWNLOADS_SMOKE_BUNDLE_DIR/files/chummer-avalonia-win-x64-payload.zip"
+  payload_metadata_path="${payload_path}.json"
+  startup_smoke_dir="$DOWNLOADS_SMOKE_BUNDLE_DIR/startup-smoke"
   printf 'downloads smoke installer (linux deb)\n' > "$artifact_path"
-  printf 'downloads smoke installer\n' > "$installer_path"
-  cat > "$DOWNLOADS_SMOKE_BUNDLE_DIR/releases.json" <<JSON
-{
-  "version": "$DOWNLOADS_SMOKE_VERSION",
-  "channel": "smoke",
-  "publishedAt": "2026-03-05T00:00:00Z",
-  "downloads": []
-}
-JSON
+  python3 - "$artifact_path" "$installer_path" "$payload_path" "$payload_metadata_path" "$DOWNLOADS_SMOKE_BUNDLE_DIR/releases.json" "$startup_smoke_dir" "$DOWNLOADS_SMOKE_VERSION" <<'PY'
+import hashlib
+import json
+import sys
+import zipfile
+from datetime import datetime, timezone
+from pathlib import Path
+
+
+BOOTSTRAP_METADATA_MARKER = b"\nCHUMMER6_BOOTSTRAP_METADATA\n"
+PUBLIC_BASE_URL = "https://example.invalid/downloads/files"
+
+
+def sha256_for(path: Path) -> str:
+    return hashlib.sha256(path.read_bytes()).hexdigest()
+
+
+linux_installer = Path(sys.argv[1])
+windows_installer = Path(sys.argv[2])
+payload_zip = Path(sys.argv[3])
+payload_metadata = Path(sys.argv[4])
+manifest_path = Path(sys.argv[5])
+startup_smoke_dir = Path(sys.argv[6])
+version = sys.argv[7]
+published_at = datetime.now(timezone.utc).replace(microsecond=0).isoformat().replace("+00:00", "Z")
+
+linux_file_name = linux_installer.name
+windows_file_name = windows_installer.name
+payload_file_name = payload_zip.name
+linux_download_url = f"{PUBLIC_BASE_URL}/{linux_file_name}"
+windows_download_url = f"{PUBLIC_BASE_URL}/{windows_file_name}"
+payload_download_url = f"{PUBLIC_BASE_URL}/{payload_file_name}"
+
+with zipfile.ZipFile(payload_zip, "w", compression=zipfile.ZIP_DEFLATED) as archive:
+    archive.writestr("Chummer.Avalonia.exe", b"downloads smoke avalonia binary\n")
+    archive.writestr("Samples/Legacy/Soma-Career.chum5", b"downloads smoke sample character\n")
+
+payload_sha256 = sha256_for(payload_zip)
+payload_size = payload_zip.stat().st_size
+
+payload_metadata.write_text(
+    json.dumps(
+        {
+            "contractName": "chummer6-ui.windows_bootstrap_payload",
+            "fileName": payload_file_name,
+            "installerFileName": windows_file_name,
+            "downloadUrl": payload_download_url,
+            "sha256": payload_sha256,
+            "sizeBytes": payload_size,
+        },
+        indent=2,
+    )
+    + "\n",
+    encoding="utf-8",
+)
+
+windows_installer.write_bytes(
+    b"downloads smoke bootstrap installer\n"
+    + BOOTSTRAP_METADATA_MARKER
+    + (
+        f"payloadDownloadUrl={payload_download_url}\n"
+        f"payloadSha256={payload_sha256}\n"
+        f"payloadSizeBytes={payload_size}\n"
+    ).encode("utf-8")
+)
+
+manifest_path.write_text(
+    json.dumps(
+        {
+            "version": version,
+            "channel": "preview",
+            "channelId": "preview",
+            "status": "published",
+            "rolloutState": "preview",
+            "publishedAt": published_at,
+            "downloads": [
+                {
+                    "artifactId": "avalonia-linux-x64-installer",
+                    "fileName": linux_file_name,
+                    "url": linux_download_url,
+                    "downloadUrl": linux_download_url,
+                    "sha256": sha256_for(linux_installer),
+                    "sizeBytes": linux_installer.stat().st_size,
+                    "kind": "installer",
+                    "platformId": "linux-x64",
+                    "head": "avalonia",
+                },
+                {
+                    "artifactId": "avalonia-win-x64-installer",
+                    "fileName": windows_file_name,
+                    "url": windows_download_url,
+                    "downloadUrl": windows_download_url,
+                    "sha256": sha256_for(windows_installer),
+                    "sizeBytes": windows_installer.stat().st_size,
+                    "kind": "installer",
+                    "platformId": "win-x64",
+                    "head": "avalonia",
+                    "installerMode": "bootstrap",
+                    "payloadFileName": payload_file_name,
+                    "payloadDownloadUrl": payload_download_url,
+                    "payloadSha256": payload_sha256,
+                    "payloadSizeBytes": payload_size,
+                },
+            ],
+        },
+        indent=2,
+    )
+    + "\n",
+    encoding="utf-8",
+)
+
+startup_smoke_dir.mkdir(parents=True, exist_ok=True)
+for receipt_name, artifact_id, installer_name, artifact_sha256, platform, rid, host_class, operating_system in (
+    (
+        "startup-smoke-avalonia-linux-x64.receipt.json",
+        "avalonia-linux-x64-installer",
+        linux_file_name,
+        sha256_for(linux_installer),
+        "linux",
+        "linux-x64",
+        "linux-smoke-host",
+        "linux",
+    ),
+    (
+        "startup-smoke-avalonia-win-x64.receipt.json",
+        "avalonia-win-x64-installer",
+        windows_file_name,
+        sha256_for(windows_installer),
+        "windows",
+        "win-x64",
+        "windows-smoke-host",
+        "windows-11",
+    ),
+):
+    (startup_smoke_dir / receipt_name).write_text(
+        json.dumps(
+            {
+                "status": "pass",
+                "readyCheckpoint": "pre_ui_event_loop",
+                "headId": "avalonia",
+                "head": "avalonia",
+                "platform": platform,
+                "rid": rid,
+                "arch": "x64",
+                "artifactId": artifact_id,
+                "artifactFileName": installer_name,
+                "artifactRelativePath": f"files/{installer_name}",
+                "artifactPath": f"files/{installer_name}",
+                "artifactDigest": f"sha256:{artifact_sha256}",
+                "channelId": "preview",
+                "channel": "preview",
+                "releaseVersion": version,
+                "hostClass": host_class,
+                "operatingSystem": operating_system,
+                "completedAtUtc": published_at,
+                "bootstrapPayloadAcquisitionMode": "download" if platform == "windows" else "",
+                "bootstrapPayloadFileName": payload_file_name if platform == "windows" else "",
+                "bootstrapPayloadSha256": payload_sha256 if platform == "windows" else "",
+                "bootstrapPayloadSizeBytes": payload_size if platform == "windows" else 0,
+            },
+            indent=2,
+        )
+        + "\n",
+        encoding="utf-8",
+    )
+
+(startup_smoke_dir / "windows-installer-progress-avalonia-win-x64.log").write_text(
+    "\n".join(
+        [
+            "Bootstrap temp root: C:\\Temp\\chummer-bootstrap",
+            f"Payload download target: C:\\Temp\\chummer-bootstrap\\{payload_file_name}",
+            "Downloading application files",
+            "Downloading application files - 100% at 12.3 MB/s",
+            "Verifying payload size",
+            "Verifying payload checksum",
+            "Extracting application files",
+            "Install complete",
+        ]
+    )
+    + "\n",
+    encoding="utf-8",
+)
+PY
 
   set +e
   {
@@ -576,6 +1048,7 @@ JSON
     RUNBOOK_MODE=downloads-sync \
       DOWNLOAD_BUNDLE_DIR="$DOWNLOADS_SMOKE_BUNDLE_DIR" \
       DOWNLOAD_DEPLOY_DIR="$DOWNLOADS_SMOKE_DEPLOY_DIR" \
+      CHUMMER_ALLOW_WINDOWS_VISUAL_PROOF_HANDOFF_PUBLISH=1 \
       DOWNLOADS_SYNC_VERIFY_LINKS=1 \
       bash "$SCRIPT_DIR/runbook.sh"
     sync_status=$?

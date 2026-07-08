@@ -1228,14 +1228,28 @@ public sealed class DesktopDialogFactory : IDesktopDialogFactory
     }
 
     private static string ResolveWorkflowIdentityName(string? name, string? workflowOriginSource)
-        => string.IsNullOrWhiteSpace(name)
-            ? IsOriginWorkflowSource(workflowOriginSource) ? "New dossier" : "New runner"
+    {
+        if (IsOriginWorkflowSource(workflowOriginSource))
+        {
+            return NormalizeOriginSeedName(name);
+        }
+
+        return string.IsNullOrWhiteSpace(name)
+            ? "New runner"
             : name.Trim();
+    }
 
     private static string ResolveWorkflowIdentityAlias(string? alias, string? workflowOriginSource)
-        => string.IsNullOrWhiteSpace(alias)
-            ? IsOriginWorkflowSource(workflowOriginSource) ? "Dossier" : "Runner"
+    {
+        if (IsOriginWorkflowSource(workflowOriginSource))
+        {
+            return NormalizeOriginSeedAlias(alias);
+        }
+
+        return string.IsNullOrWhiteSpace(alias)
+            ? "Runner"
             : alias.Trim();
+    }
 
     private static bool IsOriginWorkflowSource(string? workflowOriginSource)
         => string.Equals(workflowOriginSource?.Trim(), "approved_origin_story", StringComparison.Ordinal);

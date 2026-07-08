@@ -1,6 +1,7 @@
 using Chummer.Contracts.Presentation;
 using Chummer.Contracts.Rulesets;
 using Chummer.Contracts.Workspaces;
+using Chummer.Presentation.Rulesets;
 
 namespace Chummer.Presentation.Overview;
 
@@ -124,6 +125,12 @@ public sealed partial class CharacterOverviewPresenter
         if (tab is null)
         {
             Publish(State with { Error = $"Unknown tab '{tabId}'." });
+            return;
+        }
+
+        if (!RulesetUiDirectiveCatalog.IsLoadedRunnerVisibleNavigationTab(tab.Id))
+        {
+            Publish(State with { Error = $"Tab '{tabId}' is unavailable while a dossier is active." });
             return;
         }
 

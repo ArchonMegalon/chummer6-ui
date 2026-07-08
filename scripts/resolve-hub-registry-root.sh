@@ -23,11 +23,24 @@ print(pathlib.Path(sys.argv[1]).resolve(strict=False))
 PY
 }
 
-declare -a candidates=()
-
 if [[ -n "${CHUMMER_HUB_REGISTRY_ROOT:-}" ]]; then
-  candidates+=("${CHUMMER_HUB_REGISTRY_ROOT}")
+  explicit_registry_root="${CHUMMER_HUB_REGISTRY_ROOT}"
+  if [[ ! -d "$explicit_registry_root" ]]; then
+    echo "Configured CHUMMER_HUB_REGISTRY_ROOT does not exist: $explicit_registry_root" >&2
+    exit 1
+  fi
+
+  if [[ -f "${explicit_registry_root}/scripts/materialize_public_release_channel.py" ]] || [[ -f "${explicit_registry_root}/scripts/verify_public_release_channel.py" ]]; then
+    resolve_path_allow_missing "${explicit_registry_root}"
+    exit 0
+  fi
+
+  echo "Configured CHUMMER_HUB_REGISTRY_ROOT is not a hub registry repo root: $explicit_registry_root" >&2
+  echo "Expected scripts/materialize_public_release_channel.py or scripts/verify_public_release_channel.py under that directory." >&2
+  exit 1
 fi
+
+declare -a candidates=()
 
 if [[ -n "${GITHUB_WORKSPACE:-}" ]]; then
   candidates+=("${GITHUB_WORKSPACE}/chummer6-hub-registry")

@@ -153,6 +153,87 @@ def test_daily_publish_policy_is_documented_in_local_runbook() -> None:
     assert ("GitHub " + "Actions") not in runbook
 
 
+def test_runbook_desktop_build_can_wrap_installer_packaging() -> None:
+    runbook = (REPO_ROOT / "scripts" / "runbook.sh").read_text(encoding="utf-8")
+
+    assert 'DESKTOP_BUILD_PACKAGE="${DESKTOP_BUILD_PACKAGE:-0}"' in runbook
+    assert 'desktop_build_package_requested=0' in runbook
+    assert 'elif [[ -n "$DESKTOP_PUBLISH_DIR" || -n "$DESKTOP_APP_KEY" || -n "$DESKTOP_RID" || -n "$DESKTOP_LAUNCH_TARGET" ]]; then' in runbook
+    assert "desktop-build packaging mode requires DESKTOP_PUBLISH_DIR, DESKTOP_APP_KEY, DESKTOP_RID, and DESKTOP_LAUNCH_TARGET." in runbook
+    assert "Use scripts/build-desktop-installer.sh through this wrapper by setting DESKTOP_BUILD_PACKAGE=1 and the required packaging inputs." in runbook
+    assert "Use the project build path when you only need a compile." in runbook
+    assert "bash scripts/build-desktop-installer.sh \\" in runbook
+    assert '"$DESKTOP_PUBLISH_DIR"' in runbook
+    assert '"$DESKTOP_APP_KEY"' in runbook
+    assert '"$DESKTOP_RID"' in runbook
+    assert '"$DESKTOP_LAUNCH_TARGET"' in runbook
+    assert '"$DESKTOP_DIST_DIR"' in runbook
+    assert '"$DESKTOP_RELEASE_VERSION"' in runbook
+    assert 'echo "== desktop packaging extract =="' in runbook
+
+
+def test_runbook_downloads_smoke_stages_bootstrap_complete_preview_fixture() -> None:
+    runbook = (REPO_ROOT / "scripts" / "runbook.sh").read_text(encoding="utf-8")
+
+    assert 'mkdir -p "$DOWNLOADS_SMOKE_BUNDLE_DIR/files" "$DOWNLOADS_SMOKE_BUNDLE_DIR/startup-smoke" "$DOWNLOADS_SMOKE_DEPLOY_DIR"' in runbook
+    assert 'startup_smoke_dir="$DOWNLOADS_SMOKE_BUNDLE_DIR/startup-smoke"' in runbook
+    assert 'payload_path="$DOWNLOADS_SMOKE_BUNDLE_DIR/files/chummer-avalonia-win-x64-payload.zip"' in runbook
+    assert 'BOOTSTRAP_METADATA_MARKER = b"\\nCHUMMER6_BOOTSTRAP_METADATA\\n"' in runbook
+    assert '"contractName": "chummer6-ui.windows_bootstrap_payload"' in runbook
+    assert '"artifactId": "avalonia-linux-x64-installer"' in runbook
+    assert '"artifactId": "avalonia-win-x64-installer"' in runbook
+    assert '"installerMode": "bootstrap"' in runbook
+    assert '"payloadFileName": payload_file_name' in runbook
+    assert '"payloadDownloadUrl": payload_download_url' in runbook
+    assert '"payloadSha256": payload_sha256' in runbook
+    assert '"payloadSizeBytes": payload_size' in runbook
+    assert '"channel": "preview"' in runbook
+    assert '"channelId": "preview"' in runbook
+    assert 'archive.writestr("Chummer.Avalonia.exe", b"downloads smoke avalonia binary\\n")' in runbook
+    assert 'archive.writestr("Samples/Legacy/Soma-Career.chum5", b"downloads smoke sample character\\n")' in runbook
+    assert '"readyCheckpoint": "pre_ui_event_loop"' in runbook
+    assert '"artifactRelativePath": f"files/{installer_name}"' in runbook
+    assert '"artifactDigest": f"sha256:{artifact_sha256}"' in runbook
+    assert '"hostClass": host_class' in runbook
+    assert '"operatingSystem": operating_system' in runbook
+    assert '"bootstrapPayloadAcquisitionMode": "download" if platform == "windows" else ""' in runbook
+    assert '"bootstrapPayloadFileName": payload_file_name if platform == "windows" else ""' in runbook
+    assert '"bootstrapPayloadSha256": payload_sha256 if platform == "windows" else ""' in runbook
+    assert '"bootstrapPayloadSizeBytes": payload_size if platform == "windows" else 0' in runbook
+    assert 'published_at = datetime.now(timezone.utc).replace(microsecond=0).isoformat().replace("+00:00", "Z")' in runbook
+    assert '"publishedAt": published_at' in runbook
+    assert '"completedAtUtc": published_at' in runbook
+    assert '(startup_smoke_dir / "windows-installer-progress-avalonia-win-x64.log").write_text(' in runbook
+    assert '"Bootstrap temp root: C:\\\\Temp\\\\chummer-bootstrap"' in runbook
+    assert 'f"Payload download target: C:\\\\Temp\\\\chummer-bootstrap\\\\{payload_file_name}"' in runbook
+    assert '"Downloading application files - 100% at 12.3 MB/s"' in runbook
+    assert '"Verifying payload size"' in runbook
+    assert '"Verifying payload checksum"' in runbook
+    assert '"Extracting application files"' in runbook
+    assert '"Install complete"' in runbook
+    assert 'RUNBOOK_MODE=downloads-sync \\' in runbook
+    assert 'DOWNLOAD_BUNDLE_DIR="$DOWNLOADS_SMOKE_BUNDLE_DIR" \\' in runbook
+    assert 'DOWNLOAD_DEPLOY_DIR="$DOWNLOADS_SMOKE_DEPLOY_DIR" \\' in runbook
+    assert 'CHUMMER_ALLOW_WINDOWS_VISUAL_PROOF_HANDOFF_PUBLISH=1 \\' in runbook
+    assert 'DOWNLOADS_SYNC_VERIFY_LINKS=1 \\' in runbook
+    assert 'RUNBOOK_MODE=downloads-verify \\' in runbook
+    assert 'DOWNLOADS_VERIFY_TARGET="$DOWNLOADS_SMOKE_DEPLOY_DIR/releases.json" \\' in runbook
+    assert 'DOWNLOADS_VERIFY_LINKS=1 \\' in runbook
+    assert 'echo "downloads-smoke sync_status=$sync_status verify_status=$verify_status"' in runbook
+
+
+def test_public_stable_blocker_truth_guard_is_documented_for_self_hosted_release_ops() -> None:
+    runbook = (REPO_ROOT / "docs" / "SELF_HOSTED_DOWNLOADS_RUNBOOK.md").read_text(encoding="utf-8")
+    env_example = (REPO_ROOT / "docs" / "examples" / "self-hosted-downloads.env.example").read_text(encoding="utf-8")
+
+    assert "RELEASE_BLOCKERS.generated.json" in runbook
+    assert "CHUMMER_PUBLIC_STABLE_BLOCKERS_MAX_AGE_SECONDS" in runbook
+    assert "default max age is `86400` seconds" in runbook
+    assert "adjusted blocker-truth window" in runbook
+    assert "# CHUMMER_PUBLIC_STABLE_BLOCKERS_MAX_AGE_SECONDS=86400" in env_example
+    assert "Keep CHUMMER_PUBLIC_STABLE_BLOCKERS_MAX_AGE_SECONDS at 86400" in env_example
+
+
 def test_codex_wrappers_resolve_repo_root_from_script_location() -> None:
     for script_path in AI_CODEX_WRAPPERS:
         text = script_path.read_text(encoding="utf-8")
@@ -255,12 +336,30 @@ def test_latest_nightly_publish_ignores_incomplete_helper_stage_directories() ->
     publisher = (REPO_ROOT / "scripts" / "publish-latest-nightly-to-downloads.sh").read_text(encoding="utf-8")
 
     assert "is_publishable_nightly_stage()" in publisher
+    assert 'echo "Nightly staging root not found: $STAGING_ROOT"' in publisher
+    assert 'verify_latest_stage_layout "$STAGING_ROOT"' in publisher
+    assert 'if is_publishable_nightly_stage "$STAGING_ROOT"; then' in publisher
+    assert 'latest_stage="$STAGING_ROOT"' in publisher
     assert '[[ -f "$stage_dir/RELEASE_CHANNEL.generated.json" ]] || return 1' in publisher
     assert '[[ -f "$stage_dir/releases.json" ]] || return 1' in publisher
     assert '[[ -d "$stage_dir/files" ]] || return 1' in publisher
     assert 'if ! is_publishable_nightly_stage "$candidate"; then' in publisher
     assert 'echo "No publishable nightly stage found under $STAGING_ROOT"' in publisher
+    assert publisher.index('echo "Nightly staging root not found: $STAGING_ROOT" >&2') < publisher.index('latest_stage=""')
+    assert publisher.index('if is_publishable_nightly_stage "$STAGING_ROOT"; then') < publisher.index('while IFS= read -r candidate; do')
     assert publisher.index('if ! is_publishable_nightly_stage "$candidate"; then') < publisher.index('latest_stage="$candidate"')
+
+
+def test_latest_nightly_publish_rejects_nested_files_stage_layout_before_payload_preflight() -> None:
+    publisher = (REPO_ROOT / "scripts" / "publish-latest-nightly-to-downloads.sh").read_text(encoding="utf-8")
+
+    assert "verify_latest_stage_layout()" in publisher
+    assert 'echo "Nightly staging root points at files/ directory: $normalized_stage_dir"' in publisher
+    assert 'local nested_files_dir="$files_dir/files"' in publisher
+    assert 'echo "Nightly stage is malformed: found nested files directory under $nested_files_dir"' in publisher
+    assert 'echo "Build the nightly stage root, not its files/ child, before publishing."' in publisher
+    assert 'verify_latest_stage_layout "$latest_stage"' in publisher
+    assert publisher.index('verify_latest_stage_layout "$latest_stage"') < publisher.index('verify_latest_stage_windows_payload_gate "$latest_stage"')
 
 
 def test_latest_nightly_publish_requires_windows_installer_startup_smoke_before_promotion() -> None:
@@ -307,6 +406,12 @@ def test_latest_nightly_publish_verifies_open_public_desktop_install_routes_afte
     assert 'PUBLIC_EDGE_VERIFY_BASE_URL="${CHUMMER_PUBLIC_EDGE_VERIFY_BASE_URL:-http://127.0.0.1:${CHUMMER_PUBLIC_EDGE_PORT:-8091}}"' in publisher
     assert 'PUBLIC_EDGE_VERIFY_HOST="${CHUMMER_PUBLIC_EDGE_VERIFY_HOST:-chummer.run}"' in publisher
     assert 'PUBLIC_EDGE_VERIFY_PROTO="${CHUMMER_PUBLIC_EDGE_VERIFY_PROTO:-https}"' in publisher
+    assert "validate_absolute_http_url()" in publisher
+    assert "validate_http_host_header()" in publisher
+    assert "validate_forwarded_proto()" in publisher
+    assert 'validate_absolute_http_url "$PUBLIC_EDGE_VERIFY_BASE_URL" "CHUMMER_PUBLIC_EDGE_VERIFY_BASE_URL"' in publisher
+    assert 'validate_http_host_header "$PUBLIC_EDGE_VERIFY_HOST" "CHUMMER_PUBLIC_EDGE_VERIFY_HOST"' in publisher
+    assert 'validate_forwarded_proto "$PUBLIC_EDGE_VERIFY_PROTO" "CHUMMER_PUBLIC_EDGE_VERIFY_PROTO"' in publisher
     assert "verify_public_edge_open_public_install_routes()" in publisher
     assert 'for key in ("downloads", "artifacts"):' in publisher
     assert 'install_access_class == "open_public"' in publisher
@@ -315,6 +420,7 @@ def test_latest_nightly_publish_verifies_open_public_desktop_install_routes_afte
     assert 'Published downloads shelf failed open-public installer route verification.' in publisher
     assert 'verify_public_edge_open_public_install_routes \\' in publisher
     assert 'docker compose -f docker-compose.public-edge.yml up -d' in publisher
+    assert publisher.index('validate_absolute_http_url "$PUBLIC_EDGE_VERIFY_BASE_URL" "CHUMMER_PUBLIC_EDGE_VERIFY_BASE_URL"') < publisher.index('bash "$SCRIPT_DIR/publish-download-bundle.sh" "$latest_stage" "$DEPLOY_DIR"')
 
 
 def test_latest_nightly_publish_remains_preview_handoff_lane() -> None:
@@ -328,6 +434,15 @@ def test_latest_nightly_publish_remains_preview_handoff_lane() -> None:
     assert "No publishable nightly stage found under $STAGING_ROOT" in publisher
 
 
+def test_latest_nightly_publish_prevalidates_public_edge_postdeploy_probe_config() -> None:
+    publisher = (REPO_ROOT / "scripts" / "publish-latest-nightly-to-downloads.sh").read_text(encoding="utf-8")
+
+    assert 'if to_bool "$REDEPLOY_PUBLIC_EDGE" && [[ "$DEPLOY_DIR" == "$WORKSPACE_ROOT/chummer.run-services/Chummer.Portal/downloads" ]]; then' in publisher
+    assert "expected bare host header value" in publisher
+    assert "expected 'http' or 'https'" in publisher
+    assert publisher.index('validate_forwarded_proto "$PUBLIC_EDGE_VERIFY_PROTO" "CHUMMER_PUBLIC_EDGE_VERIFY_PROTO"') < publisher.index('refresh_release_build_handoff()')
+
+
 def test_release_support_shell_scripts_use_alias_safe_repo_root() -> None:
     for script_path in RELEASE_SUPPORT_ALIAS_SAFE_SCRIPTS:
         assert_release_script_uses_alias_safe_repo_root(script_path)
@@ -337,12 +452,16 @@ def test_resolve_hub_registry_root_prefers_physical_workspace_sibling_candidates
     resolver = (REPO_ROOT / "scripts" / "resolve-hub-registry-root.sh").read_text(encoding="utf-8")
 
     assert 'WORKSPACE_ROOT="$(cd "$REPO_ROOT_PHYSICAL/.." && pwd -P)"' in resolver
+    assert 'echo "Configured CHUMMER_HUB_REGISTRY_ROOT does not exist: $explicit_registry_root"' in resolver
+    assert 'echo "Configured CHUMMER_HUB_REGISTRY_ROOT is not a hub registry repo root: $explicit_registry_root"' in resolver
+    assert 'echo "Expected scripts/materialize_public_release_channel.py or scripts/verify_public_release_channel.py under that directory."' in resolver
     assert '"${WORKSPACE_ROOT}/chummer6-hub-registry"' in resolver
     assert '"${WORKSPACE_ROOT}/chummer-hub-registry"' in resolver
     assert '"${REPO_ROOT}/../chummer6-hub-registry"' not in resolver
     assert '"${REPO_ROOT}/../chummer-hub-registry"' not in resolver
     assert '"$(cd "${REPO_ROOT}/.." && pwd)/chummer6-hub-registry"' not in resolver
     assert '"$(cd "${REPO_ROOT}/.." && pwd)/chummer-hub-registry"' not in resolver
+    assert resolver.index('if [[ -n "${CHUMMER_HUB_REGISTRY_ROOT:-}" ]]; then') < resolver.index('declare -a candidates=()')
 
 
 def test_public_edge_e2e_enforces_direct_public_installer_handoff_routes() -> None:
@@ -408,12 +527,74 @@ def test_s3_publish_windows_payload_gate_allows_empty_only_before_installers_are
     assert "--allow-empty" in publisher
 
 
+def test_s3_publish_rejects_nested_files_layout_before_payload_preflight() -> None:
+    publisher = (REPO_ROOT / "scripts" / "publish-download-bundle-s3.sh").read_text(encoding="utf-8")
+
+    assert "verify_bundle_layout()" in publisher
+    assert 'echo "Bundle root points at files/ directory: $normalized_bundle_dir"' in publisher
+    assert 'local nested_files_dir="$files_dir/files"' in publisher
+    assert 'echo "Bundle is malformed: found nested files directory under $nested_files_dir"' in publisher
+    assert 'echo "Publish from the stage or bundle root, not its files/ child."' in publisher
+    assert 'verify_bundle_layout "$BUNDLE_DIR" "$FILES_SOURCE"' in publisher
+    assert publisher.index('verify_bundle_layout "$BUNDLE_DIR" "$FILES_SOURCE"') < publisher.index('python3 "$SCRIPT_DIR/verify-windows-installer-payloads.py"')
+
+
+def test_s3_publish_validates_object_storage_and_verify_config_before_manifest_regeneration() -> None:
+    publisher = (REPO_ROOT / "scripts" / "publish-download-bundle-s3.sh").read_text(encoding="utf-8")
+
+    assert "validate_s3_uri()" in publisher
+    assert "validate_absolute_http_url()" in publisher
+    assert "expected s3://bucket/path URI" in publisher
+    assert "expected absolute http:// or https:// URL" in publisher
+    assert 'validate_s3_uri "$S3_TARGET_URI" "CHUMMER_PORTAL_DOWNLOADS_S3_URI"' in publisher
+    assert 'validate_s3_uri "$S3_LATEST_URI" "CHUMMER_PORTAL_DOWNLOADS_S3_LATEST_URI"' in publisher
+    assert 'validate_absolute_http_url "$VERIFY_URL" "CHUMMER_PORTAL_DOWNLOADS_VERIFY_URL"' in publisher
+    assert 'validate_absolute_http_url "$S3_ENDPOINT_URL" "CHUMMER_PORTAL_DOWNLOADS_S3_ENDPOINT_URL"' in publisher
+    assert publisher.index('validate_s3_uri "$S3_TARGET_URI" "CHUMMER_PORTAL_DOWNLOADS_S3_URI"') < publisher.index('bash "$SCRIPT_DIR/generate-releases-manifest.sh"')
+    assert publisher.index('validate_absolute_http_url "$VERIFY_URL" "CHUMMER_PORTAL_DOWNLOADS_VERIFY_URL"') < publisher.index('bash "$SCRIPT_DIR/generate-releases-manifest.sh"')
+
+
+def test_s3_publish_reports_missing_bundle_root_before_layout_checks() -> None:
+    publisher = (REPO_ROOT / "scripts" / "publish-download-bundle-s3.sh").read_text(encoding="utf-8")
+
+    assert 'echo "Bundle directory not found: $BUNDLE_DIR"' in publisher
+    assert publisher.index('echo "Bundle directory not found: $BUNDLE_DIR" >&2') < publisher.index('echo "Expected desktop-download-bundle layout: releases.json + files/chummer-*" >&2')
+
+
+def test_http_publish_rejects_nested_files_layout_before_payload_preflight() -> None:
+    publisher = (REPO_ROOT / "scripts" / "publish-download-bundle-http.sh").read_text(encoding="utf-8")
+
+    assert "verify_bundle_layout()" in publisher
+    assert 'echo "Bundle root points at files/ directory: $normalized_bundle_dir"' in publisher
+    assert 'local nested_files_dir="$files_dir/files"' in publisher
+    assert 'echo "Bundle is malformed: found nested files directory under $nested_files_dir"' in publisher
+    assert 'echo "Publish from the stage or bundle root, not its files/ child."' in publisher
+    assert 'verify_bundle_layout "$BUNDLE_DIR" "$BUNDLE_DIR/files"' in publisher
+    assert publisher.index('verify_bundle_layout "$BUNDLE_DIR" "$BUNDLE_DIR/files"') < publisher.index('python3 "$SCRIPT_DIR/verify-windows-installer-payloads.py"')
+
+
+def test_http_publish_validates_upload_and_verify_urls_before_dry_run_or_network() -> None:
+    publisher = (REPO_ROOT / "scripts" / "publish-download-bundle-http.sh").read_text(encoding="utf-8")
+
+    assert "validate_absolute_http_url()" in publisher
+    assert "expected absolute http:// or https:// URL" in publisher
+    assert 'validate_absolute_http_url "$UPLOAD_URL" "CHUMMER_RELEASE_UPLOAD_URL"' in publisher
+    assert 'validate_absolute_http_url "$SESSIONS_URL" "CHUMMER_RELEASE_UPLOAD_SESSIONS_URL"' in publisher
+    assert 'validate_absolute_http_url "$VERIFY_URL" "CHUMMER_PORTAL_DOWNLOADS_VERIFY_URL"' in publisher
+    assert publisher.index('validate_absolute_http_url "$UPLOAD_URL" "CHUMMER_RELEASE_UPLOAD_URL"') < publisher.index('if to_bool "$DRY_RUN"; then')
+    assert publisher.index('validate_absolute_http_url "$VERIFY_URL" "CHUMMER_PORTAL_DOWNLOADS_VERIFY_URL"') < publisher.index('if to_bool "$DRY_RUN"; then')
+    assert publisher.index('validate_absolute_http_url "$SESSIONS_URL" "CHUMMER_RELEASE_UPLOAD_SESSIONS_URL"') < publisher.index('if ! resolve_upload_token; then')
+
+
 def test_windows_bootstrap_build_is_measured_by_the_real_payload_gate() -> None:
     builder = (REPO_ROOT / "scripts" / "build-desktop-installer.sh").read_text(encoding="utf-8")
     native_builder = (REPO_ROOT / "scripts" / "build-native-windows-bootstrap-installer.sh").read_text(encoding="utf-8")
     bootstrap_template = (REPO_ROOT / "scripts" / "windows-bootstrap" / "installer.nsi").read_text(encoding="utf-8")
 
     assert 'local installer_mode="${CHUMMER_WINDOWS_INSTALLER_MODE:-bootstrap}"' in builder
+    assert 'if [[ "$(basename "$DIST_DIR")" == "files" ]]; then' in builder
+    assert "Refusing to use a downloads files/ directory as the desktop installer dist root" in builder
+    assert "Pass the release stage root" in builder
     assert 'bootstrap_payload_url="${CHUMMER_WINDOWS_BOOTSTRAP_PAYLOAD_URL:-${downloads_prefix%/}/$(basename "$payload_zip")}"' in builder
     assert 'write_windows_bootstrap_config' in builder
     assert 'scripts/build-native-windows-bootstrap-installer.sh' in builder
@@ -533,6 +714,9 @@ def test_windows_startup_smoke_prefers_local_bootstrap_payload_sidecar_when_pres
     assert "WINDOWS_LOCAL_PAYLOAD_COPY" in smoke
     assert "winepath -u 'C:\\\\windows\\\\temp'" in smoke
     assert 'cp "$local_payload_path" "$WINDOWS_LOCAL_PAYLOAD_COPY"' in smoke
+    assert 'configured_payload_mode="$(lower_ascii "${WINDOWS_STARTUP_SMOKE_PAYLOAD_MODE:-}")"' in smoke
+    assert 'if [[ -n "$local_payload_path" ]]; then' in smoke
+    assert 'configured_payload_mode="download"' in smoke
     assert 'CHUMMER_INSTALLER_PAYLOAD_PATH="$(to_native_path "$local_payload_path")"' in smoke
     assert 'CHUMMER_INSTALLER_PAYLOAD_SHA256="$local_payload_sha256"' in smoke
     assert 'CHUMMER_INSTALLER_PAYLOAD_SIZE_BYTES="$local_payload_size_bytes"' in smoke
@@ -564,6 +748,13 @@ def test_release_manifest_generation_uses_portable_release_channel_normalization
     assert "${RELEASE_CHANNEL,,}" not in generator
 
 
+def test_release_manifest_generation_uses_registry_review_required_supportability_language() -> None:
+    generator = (REPO_ROOT / "scripts" / "generate-releases-manifest.sh").read_text(encoding="utf-8")
+
+    assert "Treat this shelf as review-required until stale or incomplete proof receipts are refreshed." in generator
+    assert "The preview shelf remains visible, but stale or incomplete proof receipts mean it is not yet gold-ready." in generator
+
+
 def test_ui_release_shell_scripts_use_nounset_safe_array_count() -> None:
     for script_path, expectations in RELEASE_ARRAY_PORTABILITY_EXPECTATIONS.items():
         text = script_path.read_text(encoding="utf-8")
@@ -581,15 +772,161 @@ def test_ui_release_shell_scripts_use_nounset_safe_array_count() -> None:
             assert snippet not in text, f"found bash3-unsafe raw array length expansion in {script_path}: {snippet}"
 
 
+def test_verify_releases_manifest_rejects_downloads_files_child_and_missing_local_root_manifest() -> None:
+    verifier = (REPO_ROOT / "scripts" / "verify-releases-manifest.sh").read_text(encoding="utf-8")
+
+    assert 'if [[ -d "$TARGET" ]]; then' in verifier
+    assert 'echo "Verification target points at downloads files/ directory: $normalized_target"' in verifier
+    assert 'echo "Verify the downloads shelf root or its releases.json manifest, not its files/ child."' in verifier
+    assert 'target_manifest_path="$normalized_target/releases.json"' in verifier
+    assert 'echo "Local downloads shelf directory is missing releases.json: $target_manifest_path"' in verifier
+    assert 'TARGET="$target_manifest_path"' in verifier
+    assert verifier.index('if [[ -d "$TARGET" ]]; then') < verifier.index('python3 "$REGISTRY_ROOT/scripts/verify_public_release_channel.py"')
+
+
 def test_runbook_release_shell_scripts_use_alias_safe_repo_root() -> None:
     for script_path in RUNBOOK_ALIAS_SAFE_SCRIPTS:
         assert_release_script_uses_alias_safe_repo_root(script_path)
+
+
+def test_runbook_and_host_prereq_scripts_validate_nuget_endpoints_before_python_probes() -> None:
+    prereqs = (REPO_ROOT / "scripts" / "check-host-gate-prereqs.sh").read_text(encoding="utf-8")
+    runbook = (REPO_ROOT / "scripts" / "runbook.sh").read_text(encoding="utf-8")
+
+    assert "validate_host_port_endpoint()" in prereqs
+    assert "validate_host_port_endpoint()" in runbook
+    assert "expected host:port with numeric port 1-65535" in prereqs
+    assert "expected host:port with numeric port 1-65535" in runbook
+    assert 'if ! endpoint_validation_error="$(validate_host_port_endpoint "$NUGET_ENDPOINT" "NUGET_ENDPOINT")"; then' in prereqs
+    assert 'if ! validate_host_port_endpoint "$TEST_NUGET_ENDPOINT" "TEST_NUGET_ENDPOINT"; then' in runbook
+    assert prereqs.index('if ! endpoint_validation_error="$(validate_host_port_endpoint "$NUGET_ENDPOINT" "NUGET_ENDPOINT")"; then') < prereqs.index('python3 - "$host" "$port" <<\'PY\' >"$NUGET_LOG_FILE" 2>&1')
+    assert runbook.index('if ! validate_host_port_endpoint "$TEST_NUGET_ENDPOINT" "TEST_NUGET_ENDPOINT"; then') < runbook.index('python3 - "$host" "$port" <<\'PY\' >/dev/null 2>&1')
+
+
+def test_focused_presentation_runbook_rebuilds_presentation_before_focused_test_host() -> None:
+    runbook = (REPO_ROOT / "scripts" / "runbook.sh").read_text(encoding="utf-8")
+
+    assert 'if [[ "$RUNBOOK_MODE" == "focused-presentation-tests" ]]; then' in runbook
+    assert 'FOCUSED_TEST_FRAMEWORK="${FOCUSED_TEST_FRAMEWORK:-net10.0}"' in runbook
+    assert 'FOCUSED_TEST_PREREQUISITE_PROJECTS="${FOCUSED_TEST_PREREQUISITE_PROJECTS:-${FOCUSED_TEST_PREREQUISITE_PROJECT:-Chummer.Presentation/Chummer.Presentation.csproj}}"' in runbook
+    assert 'IFS=\'|\' read -r -a focused_test_prerequisite_projects <<< "$FOCUSED_TEST_PREREQUISITE_PROJECTS"' in runbook
+    assert 'dotnet build "$prerequisite_project"' in runbook
+    assert '-f "$FOCUSED_TEST_FRAMEWORK"' in runbook
+    assert '== focused presentation prerequisite build failure extract ==' in runbook
+    assert 'dotnet build "$FOCUSED_TEST_PROJECT"' in runbook
+    assert 'TEST_RUNNER_PATH="$(resolve_mtp_test_runner "$FOCUSED_TEST_PROJECT" "$FOCUSED_TEST_CONFIGURATION" "$FOCUSED_TEST_FRAMEWORK")"' in runbook
+    assert runbook.index('dotnet build "$prerequisite_project"') < runbook.index('dotnet build "$FOCUSED_TEST_PROJECT"')
+
+
+def test_focused_presentation_test_project_supports_pipe_delimited_helper_files() -> None:
+    project = (REPO_ROOT / "Chummer.Tests" / "Chummer.Tests.csproj").read_text(encoding="utf-8")
+
+    assert "<FocusedTestSupportFiles Condition=\"'$(FocusedTestSupportFiles)' == ''\"></FocusedTestSupportFiles>" in project
+    assert "<ResolvedFocusedTestSupportFiles Condition=\"'$(FocusedTestSupportFiles)' != ''\">$([System.String]::Copy('$(FocusedTestSupportFiles)').Replace('|', ';'))</ResolvedFocusedTestSupportFiles>" in project
+    assert "<_FocusedTestSupportFile Include=\"$([MSBuild]::Unescape('$(ResolvedFocusedTestSupportFiles)'))\" Condition=\"'$(ResolvedFocusedTestSupportFiles)' != ''\" />" in project
+    assert "<Compile Include=\"@(_FocusedTestSupportFile)\" />" in project
+
+
+def test_runbook_local_tests_supports_microsoft_testing_platform_direct_runner() -> None:
+    runbook = (REPO_ROOT / "scripts" / "runbook.sh").read_text(encoding="utf-8")
+
+    assert 'TEST_MTP_DIRECT_RUNNER="${TEST_MTP_DIRECT_RUNNER:-auto}"' in runbook
+    assert "is_microsoft_testing_platform_runner()" in runbook
+    assert 'runner = payload.get("test", {}).get("runner")' in runbook
+    assert 'raise SystemExit(0 if runner == "Microsoft.Testing.Platform" else 1)' in runbook
+    assert '&& is_microsoft_testing_platform_runner "$REPO_ROOT/global.json"; then' in runbook
+    assert 'echo "local-tests using Microsoft.Testing.Platform direct runner"' in runbook
+    assert 'dotnet build "$TEST_PROJECT" -c "$TEST_CONFIGURATION"' in runbook
+    assert 'TEST_RUNNER_PATH="$(resolve_mtp_test_runner "$TEST_PROJECT" "$TEST_CONFIGURATION" "$TEST_FRAMEWORK")"' in runbook
+    assert 'if [[ -z "$TEST_RUNNER_PATH" || ! -f "$TEST_RUNNER_PATH" ]]; then' in runbook
+    assert 'echo "Unable to resolve Microsoft.Testing.Platform runner for $TEST_PROJECT." >&2' in runbook
+    assert '"$TEST_RUNNER_PATH" "${runner_args[@]}" 2>&1 | tee -a "$TEST_LOG_FILE"' in runbook
+    assert runbook.index('echo "local-tests using Microsoft.Testing.Platform direct runner"') < runbook.index('TEST_RUNNER_PATH="$(resolve_mtp_test_runner "$TEST_PROJECT" "$TEST_CONFIGURATION" "$TEST_FRAMEWORK")"')
+
+
+def test_runbook_resolve_mtp_test_runner_checks_framework_then_bin_scan() -> None:
+    runbook = (REPO_ROOT / "scripts" / "runbook.sh").read_text(encoding="utf-8")
+
+    assert "resolve_mtp_test_runner()" in runbook
+    assert 'candidate="$project_dir/bin/$configuration/$framework/$project_name"' in runbook
+    assert 'candidate="$project_dir/bin/$configuration/$framework/$project_name.exe"' in runbook
+    assert 'done < <(find "$project_dir/bin/$configuration" -mindepth 2 -maxdepth 2 -type f \\' in runbook
+    assert '\\( -name "$project_name" -o -name "$project_name.exe" \\) | sort)' in runbook
+    assert runbook.index('candidate="$project_dir/bin/$configuration/$framework/$project_name"') < runbook.index('done < <(find "$project_dir/bin/$configuration" -mindepth 2 -maxdepth 2 -type f \\')
 
 
 def test_publish_download_bundle_defaults_external_host_proof_blockers_off_during_shelf_sync() -> None:
     publish_script = (REPO_ROOT / "scripts" / "publish-download-bundle.sh").read_text(encoding="utf-8")
 
     assert 'CHUMMER_GENERATE_EXTERNAL_HOST_PROOF_BLOCKERS="${CHUMMER_GENERATE_EXTERNAL_HOST_PROOF_BLOCKERS:-0}" \\' in publish_script
+
+
+def test_publish_download_bundle_requires_explicit_opt_in_before_falling_back_to_unrelated_files_roots() -> None:
+    publish_script = (REPO_ROOT / "scripts" / "publish-download-bundle.sh").read_text(encoding="utf-8")
+
+    assert 'ALLOW_BUNDLE_FILES_SOURCE_FALLBACK="${CHUMMER_ALLOW_BUNDLE_FILES_SOURCE_FALLBACK:-0}"' in publish_script
+    assert 'if to_bool "$ALLOW_BUNDLE_FILES_SOURCE_FALLBACK"; then' in publish_script
+    assert 'echo "Refusing to fall back to unrelated downloads/files roots unless CHUMMER_ALLOW_BUNDLE_FILES_SOURCE_FALLBACK=true is set explicitly."' in publish_script
+    assert publish_script.index('if to_bool "$ALLOW_BUNDLE_FILES_SOURCE_FALLBACK"; then') < publish_script.index('echo "Bundle is missing files directory: $FILES_SOURCE" >&2')
+
+
+def test_publish_download_bundle_only_auto_syncs_live_mirrors_for_live_deploy_roots() -> None:
+    publish_script = (REPO_ROOT / "scripts" / "publish-download-bundle.sh").read_text(encoding="utf-8")
+
+    assert "deploy_dir_is_live_downloads_root()" in publish_script
+    assert 'if ! deploy_dir_is_live_downloads_root "$deploy_dir_physical"; then' in publish_script
+    assert 'return 0' in publish_script
+    assert 'configured="${CHUMMER_PUBLIC_EDGE_DOWNLOADS_MIRROR_DIRS:-}"' in publish_script
+    assert '"$REPO_ROOT/Chummer.Portal/downloads" \\' in publish_script
+    assert '"$REPO_ROOT/.codex-studio/published/portal" \\' in publish_script
+    assert '"$REPO_ROOT/../chummer.run-services/Chummer.Portal/downloads" \\' in publish_script
+    assert publish_script.index('if ! deploy_dir_is_live_downloads_root "$deploy_dir_physical"; then') < publish_script.index('if [[ "$deploy_dir_physical" != "$canonical_downloads_physical" ]]; then')
+
+
+def test_publish_download_bundle_rejects_nested_files_layout_before_manifest_sync() -> None:
+    publish_script = (REPO_ROOT / "scripts" / "publish-download-bundle.sh").read_text(encoding="utf-8")
+
+    assert "verify_bundle_layout()" in publish_script
+    assert 'echo "Bundle root points at files/ directory: $normalized_bundle_dir"' in publish_script
+    assert 'local nested_files_dir="$files_dir/files"' in publish_script
+    assert 'echo "Bundle is malformed: found nested files directory under $nested_files_dir"' in publish_script
+    assert 'echo "Publish from the stage or bundle root, not its files/ child."' in publish_script
+    assert 'verify_bundle_layout "$BUNDLE_DIR" "$FILES_SOURCE"' in publish_script
+    assert publish_script.index('verify_bundle_layout "$BUNDLE_DIR" "$FILES_SOURCE"') < publish_script.index("artifacts=()")
+
+
+def test_publish_download_bundle_validates_live_verify_url_before_deploy_mutation() -> None:
+    publish_script = (REPO_ROOT / "scripts" / "publish-download-bundle.sh").read_text(encoding="utf-8")
+
+    assert "validate_absolute_http_url()" in publish_script
+    assert "expected absolute http:// or https:// URL" in publish_script
+    assert 'validate_absolute_http_url "$LIVE_VERIFY_TARGET" "CHUMMER_PORTAL_DOWNLOADS_VERIFY_URL"' in publish_script
+    assert publish_script.index('validate_absolute_http_url "$LIVE_VERIFY_TARGET" "CHUMMER_PORTAL_DOWNLOADS_VERIFY_URL"') < publish_script.index('sync_source_dir="$(mktemp -d)"')
+    assert publish_script.index('validate_absolute_http_url "$LIVE_VERIFY_TARGET" "CHUMMER_PORTAL_DOWNLOADS_VERIFY_URL"') < publish_script.index('bash "$SCRIPT_DIR/generate-releases-manifest.sh"')
+
+
+def test_publish_download_bundle_rejects_files_child_root_before_fallback_lookup() -> None:
+    publish_script = (REPO_ROOT / "scripts" / "publish-download-bundle.sh").read_text(encoding="utf-8")
+
+    assert 'echo "Bundle root points at files/ directory: $normalized_bundle_dir"' in publish_script
+    assert 'verify_bundle_layout "$BUNDLE_DIR" "$FILES_SOURCE"' in publish_script
+    assert publish_script.index('verify_bundle_layout "$BUNDLE_DIR" "$FILES_SOURCE"') < publish_script.index('if to_bool "$ALLOW_BUNDLE_FILES_SOURCE_FALLBACK"; then')
+
+
+def test_s3_publish_rejects_files_child_root_before_layout_check() -> None:
+    publisher = (REPO_ROOT / "scripts" / "publish-download-bundle-s3.sh").read_text(encoding="utf-8")
+
+    assert 'echo "Bundle root points at files/ directory: $normalized_bundle_dir"' in publisher
+    assert 'verify_bundle_layout "$BUNDLE_DIR" "$FILES_SOURCE"' in publisher
+    assert publisher.index('verify_bundle_layout "$BUNDLE_DIR" "$FILES_SOURCE"') < publisher.index('echo "Expected desktop-download-bundle layout: releases.json + files/chummer-*" >&2')
+
+
+def test_http_publish_rejects_files_child_root_before_manifest_checks() -> None:
+    publisher = (REPO_ROOT / "scripts" / "publish-download-bundle-http.sh").read_text(encoding="utf-8")
+
+    assert 'echo "Bundle root points at files/ directory: $normalized_bundle_dir"' in publisher
+    assert 'verify_bundle_layout "$BUNDLE_DIR" "$BUNDLE_DIR/files"' in publisher
+    assert publisher.index('verify_bundle_layout "$BUNDLE_DIR" "$BUNDLE_DIR/files"') < publisher.index('echo "Bundle is missing releases.json: $MANIFEST_PATH" >&2')
 
 
 def test_publish_download_bundle_carries_windows_bootstrap_progress_logs_into_the_deploy_shelf() -> None:
@@ -625,10 +962,14 @@ def test_public_stable_publish_download_bundle_requires_root_release_truth_clear
 
     assert 'WORKSPACE_ROOT="$(cd "$REPO_ROOT_PHYSICAL/.." && pwd -P)"' in publish_script
     assert 'ROOT_RELEASE_BLOCKERS_PATH="${CHUMMER_ROOT_RELEASE_BLOCKERS_PATH:-$WORKSPACE_ROOT/RELEASE_BLOCKERS.generated.json}"' in publish_script
+    assert 'PUBLIC_STABLE_BLOCKERS_MAX_AGE_SECONDS="${CHUMMER_PUBLIC_STABLE_BLOCKERS_MAX_AGE_SECONDS:-86400}"' in publish_script
     assert 'ROOT_RELEASE_BLOCKERS_PATH="${CHUMMER_ROOT_RELEASE_BLOCKERS_PATH:-$REPO_ROOT/../RELEASE_BLOCKERS.generated.json}"' not in publish_script
     assert "require_public_stable_root_blocker_clearance()" in publish_script
     assert 'if [[ "$normalized_release_channel" != "public_stable" ]]; then' in publish_script
+    assert 'python3 - "$ROOT_RELEASE_BLOCKERS_PATH" "$PUBLIC_STABLE_BLOCKERS_MAX_AGE_SECONDS" <<\'PY\'' in publish_script
     assert '"release_posture:non_flagship_channel"' in publish_script
+    assert "Public stable publication requires fresh root release blocker truth." in publish_script
+    assert 'MAX_AGE_ENV_LABEL = "CHUMMER_PUBLIC_STABLE_BLOCKERS_MAX_AGE_SECONDS"' in publish_script
     assert 'require_public_stable_root_blocker_clearance "$release_channel"' in publish_script
     assert publish_script.index('require_public_stable_root_blocker_clearance "$release_channel"') < publish_script.index('bash "$SCRIPT_DIR/generate-releases-manifest.sh"')
 

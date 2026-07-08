@@ -26,6 +26,31 @@ is_true() {
   [[ "$value" == "1" || "$value" == "true" || "$value" == "yes" || "$value" == "on" ]]
 }
 
+validate_host_port_endpoint() {
+  local value="$1"
+  local label="$2"
+  local host="${value%:*}"
+  local port="${value##*:}"
+  local port_number=0
+
+  if [[ -z "$host" || -z "$port" || "$host" == "$port" ]]; then
+    echo "invalid ${label} value '$value' (expected host:port with numeric port 1-65535)."
+    return 1
+  fi
+  if [[ ! "$port" =~ ^[0-9]+$ ]]; then
+    echo "invalid ${label} value '$value' (expected host:port with numeric port 1-65535)."
+    return 1
+  fi
+
+  port_number=$((10#$port))
+  if (( port_number < 1 || port_number > 65535 )); then
+    echo "invalid ${label} value '$value' (expected host:port with numeric port 1-65535)."
+    return 1
+  fi
+
+  return 0
+}
+
 resolve_log_file() {
   local base_name="$1"
   local uid_suffix
@@ -83,12 +108,12 @@ else
 fi
 
 if is_true "$CHECK_NUGET"; then
-  host="${NUGET_ENDPOINT%:*}"
-  port="${NUGET_ENDPOINT##*:}"
-  if [[ -z "$host" || -z "$port" || "$host" == "$port" ]]; then
-    echo "[FAIL] invalid NUGET_ENDPOINT value '$NUGET_ENDPOINT' (expected host:port)."
+  if ! endpoint_validation_error="$(validate_host_port_endpoint "$NUGET_ENDPOINT" "NUGET_ENDPOINT")"; then
+    echo "[FAIL] $endpoint_validation_error"
     status=1
   else
+    host="${NUGET_ENDPOINT%:*}"
+    port="${NUGET_ENDPOINT##*:}"
     set +e
     python3 - "$host" "$port" <<'PY' >"$NUGET_LOG_FILE" 2>&1
 import socket

@@ -50,7 +50,8 @@ INSTALL_VERIFICATION_PATH="$OUTPUT_DIR/install-verification-$APP_KEY-$RID.json"
 WINDOWS_PAYLOAD_HTTP_ROOT=""
 WINDOWS_PAYLOAD_HTTP_LOG=""
 WINDOWS_PAYLOAD_HTTP_PID=""
-WINDOWS_STARTUP_SMOKE_PAYLOAD_MODE="${CHUMMER_WINDOWS_STARTUP_SMOKE_PAYLOAD_MODE:-local}"
+WINDOWS_WINE_HOST_TEMP_ROOT=""
+WINDOWS_STARTUP_SMOKE_PAYLOAD_MODE="${CHUMMER_WINDOWS_STARTUP_SMOKE_PAYLOAD_MODE:-auto}"
 WINDOWS_STARTUP_SMOKE_EFFECTIVE_PAYLOAD_MODE=""
 WINDOWS_STARTUP_SMOKE_EFFECTIVE_PAYLOAD_URL=""
 WINDOWS_STARTUP_SMOKE_EFFECTIVE_PAYLOAD_SHA256=""
@@ -88,6 +89,10 @@ cleanup() {
 
   if [[ -n "$WINDOWS_LOCAL_PAYLOAD_COPY" && -f "$WINDOWS_LOCAL_PAYLOAD_COPY" ]]; then
     rm -f "$WINDOWS_LOCAL_PAYLOAD_COPY"
+  fi
+
+  if [[ -n "$WINDOWS_WINE_HOST_TEMP_ROOT" && -d "$WINDOWS_WINE_HOST_TEMP_ROOT" ]]; then
+    rm -rf "$WINDOWS_WINE_HOST_TEMP_ROOT"
   fi
 }
 
@@ -620,11 +625,21 @@ resolve_wine_temp_dir() {
     return 1
   fi
 
+  local wine_temp_timeout="${CHUMMER_WINE_TEMP_QUERY_TIMEOUT_SECONDS:-15}"
+
   local native_temp=""
-  native_temp="$("$wine_bin" cmd /c echo %TEMP% 2>/dev/null | tr -d '\r' | awk 'NF { line=$0 } END { print line }')"
+  if command -v timeout >/dev/null 2>&1 && [[ -n "$wine_temp_timeout" && "$wine_temp_timeout" != "0" ]]; then
+    native_temp="$(timeout "$wine_temp_timeout" "$wine_bin" cmd /c echo %TEMP% 2>/dev/null | tr -d '\r' | awk 'NF { line=$0 } END { print line }' || true)"
+  else
+    native_temp="$("$wine_bin" cmd /c echo %TEMP% 2>/dev/null | tr -d '\r' | awk 'NF { line=$0 } END { print line }')"
+  fi
   if [[ -n "$native_temp" ]]; then
     local unix_temp=""
-    unix_temp="$(winepath -u "$native_temp" 2>/dev/null | tr -d '\r' || true)"
+    if command -v timeout >/dev/null 2>&1 && [[ -n "$wine_temp_timeout" && "$wine_temp_timeout" != "0" ]]; then
+      unix_temp="$(timeout "$wine_temp_timeout" winepath -u "$native_temp" 2>/dev/null | tr -d '\r' || true)"
+    else
+      unix_temp="$(winepath -u "$native_temp" 2>/dev/null | tr -d '\r' || true)"
+    fi
     if [[ -n "$unix_temp" ]]; then
       printf '%s\n' "$unix_temp"
       return 0
@@ -632,7 +647,11 @@ resolve_wine_temp_dir() {
   fi
 
   local fallback_temp=""
-  fallback_temp="$(winepath -u 'C:\\windows\\temp' 2>/dev/null | tr -d '\r' || true)"
+  if command -v timeout >/dev/null 2>&1 && [[ -n "$wine_temp_timeout" && "$wine_temp_timeout" != "0" ]]; then
+    fallback_temp="$(timeout "$wine_temp_timeout" winepath -u 'C:\\windows\\temp' 2>/dev/null | tr -d '\r' || true)"
+  else
+    fallback_temp="$(winepath -u 'C:\\windows\\temp' 2>/dev/null | tr -d '\r' || true)"
+  fi
   if [[ -n "$fallback_temp" ]]; then
     printf '%s\n' "$fallback_temp"
     return 0
@@ -659,6 +678,12 @@ run_windows_binary() {
   local executable_path="$1"
   shift
 
+  local windows_binary_temp_root="${CHUMMER_WINDOWS_BINARY_TEMP_ROOT:-}"
+  local -a windows_binary_env_prefix=()
+  if [[ -n "$windows_binary_temp_root" ]]; then
+    windows_binary_env_prefix=(env "TEMP=$windows_binary_temp_root" "TMP=$windows_binary_temp_root")
+  fi
+
   local wine_bin=""
   if command -v wine >/dev/null 2>&1; then
     wine_bin="wine"
@@ -672,9 +697,9 @@ run_windows_binary() {
     native_executable_path="$(to_native_launch_path "$executable_path")"
     local wine_binary_timeout="${CHUMMER_WINDOWS_BINARY_TIMEOUT_SECONDS:-300}"
     if command -v timeout >/dev/null 2>&1 && [[ -n "$wine_binary_timeout" && "$wine_binary_timeout" != "0" ]]; then
-      run_with_optional_xvfb timeout "$wine_binary_timeout" "$wine_bin" "$native_executable_path" "$@"
+      run_with_optional_xvfb "${windows_binary_env_prefix[@]}" timeout "$wine_binary_timeout" "$wine_bin" "$native_executable_path" "$@"
     else
-      run_with_optional_xvfb "$wine_bin" "$native_executable_path" "$@"
+      run_with_optional_xvfb "${windows_binary_env_prefix[@]}" "$wine_bin" "$native_executable_path" "$@"
     fi
     return
   fi
@@ -950,14 +975,23 @@ run_windows_smoke() {
   fi
 
   local wine_temp_dir=""
+  local windows_host_temp_root=""
+  local windows_native_temp_root=""
   if command -v winepath >/dev/null 2>&1 \
     && { command -v wine >/dev/null 2>&1 || command -v wine64 >/dev/null 2>&1 || [[ -x /usr/lib/wine/wine64 ]]; }; then
-    wine_temp_dir="$(resolve_wine_temp_dir || true)"
-    if [[ -n "$wine_temp_dir" ]]; then
-      mkdir -p "$wine_temp_dir"
-      INSTALL_ROOT="$(mktemp -d "$wine_temp_dir/chummerwinsmokeXXXXXX")"
+    windows_host_temp_root="$(mktemp -d "${TMPDIR:-/tmp}/chummer-wine-temp.XXXXXX")"
+    windows_native_temp_root="$(to_native_path "$windows_host_temp_root")"
+    if [[ -n "$windows_host_temp_root" && -n "$windows_native_temp_root" ]]; then
+      WINDOWS_WINE_HOST_TEMP_ROOT="$windows_host_temp_root"
+      INSTALL_ROOT="$(mktemp -d "$windows_host_temp_root/chummerwinsmokeXXXXXX")"
     else
-      INSTALL_ROOT="$(mktemp -d "${TMPDIR:-/tmp}/chummerwinsmokeXXXXXX")"
+      wine_temp_dir="$(resolve_wine_temp_dir || true)"
+      if [[ -n "$wine_temp_dir" ]]; then
+        mkdir -p "$wine_temp_dir"
+        INSTALL_ROOT="$(mktemp -d "$wine_temp_dir/chummerwinsmokeXXXXXX")"
+      else
+        INSTALL_ROOT="$(mktemp -d "${TMPDIR:-/tmp}/chummerwinsmokeXXXXXX")"
+      fi
     fi
   else
     INSTALL_ROOT="$(mktemp -d "${TMPDIR:-/tmp}/chummerwinsmokeXXXXXX")"
@@ -984,7 +1018,11 @@ run_windows_smoke() {
   fi
   case "$configured_payload_mode" in
     ""|auto)
-      configured_payload_mode="local"
+      if [[ -n "$local_payload_path" ]]; then
+        configured_payload_mode="download"
+      else
+        configured_payload_mode="local"
+      fi
       ;;
     local|download|none)
       ;;
@@ -1008,7 +1046,11 @@ run_windows_smoke() {
   fi
 
   if [[ "$configured_payload_mode" == "local" && -n "$local_payload_path" ]]; then
-    if command -v winepath >/dev/null 2>&1 \
+    if [[ -n "$windows_host_temp_root" ]]; then
+      WINDOWS_LOCAL_PAYLOAD_COPY="$(mktemp "$windows_host_temp_root/chummer-payload.XXXXXX.zip")"
+      cp "$local_payload_path" "$WINDOWS_LOCAL_PAYLOAD_COPY"
+      local_payload_path="$WINDOWS_LOCAL_PAYLOAD_COPY"
+    elif command -v winepath >/dev/null 2>&1 \
       && { command -v wine >/dev/null 2>&1 || command -v wine64 >/dev/null 2>&1 || [[ -x /usr/lib/wine/wine64 ]]; }; then
       local wine_temp_dir=""
       wine_temp_dir="$(resolve_wine_temp_dir || true)"
@@ -1020,6 +1062,7 @@ run_windows_smoke() {
       fi
     fi
     WINDOWS_STARTUP_SMOKE_EFFECTIVE_PAYLOAD_MODE="local_handoff"
+    CHUMMER_WINDOWS_BINARY_TEMP_ROOT="$windows_native_temp_root" \
     CHUMMER_INSTALLER_PAYLOAD_PATH="$(to_native_path "$local_payload_path")" \
     CHUMMER_INSTALLER_PAYLOAD_SHA256="$local_payload_sha256" \
     CHUMMER_INSTALLER_PAYLOAD_SIZE_BYTES="$local_payload_size_bytes" \
@@ -1027,20 +1070,23 @@ run_windows_smoke() {
   elif [[ "$configured_payload_mode" == "download" ]]; then
     WINDOWS_STARTUP_SMOKE_EFFECTIVE_PAYLOAD_MODE="download"
     WINDOWS_STARTUP_SMOKE_EFFECTIVE_PAYLOAD_URL="$(start_windows_payload_http_server "$local_payload_path")"
+    CHUMMER_WINDOWS_BINARY_TEMP_ROOT="$windows_native_temp_root" \
     CHUMMER_INSTALLER_PAYLOAD_URL="$WINDOWS_STARTUP_SMOKE_EFFECTIVE_PAYLOAD_URL" \
     CHUMMER_INSTALLER_PAYLOAD_SHA256="$local_payload_sha256" \
     CHUMMER_INSTALLER_PAYLOAD_SIZE_BYTES="$local_payload_size_bytes" \
     run_windows_binary "$ARTIFACT_PATH" "${installer_args[@]}" >>"$LOG_PATH" 2>&1
   else
     WINDOWS_STARTUP_SMOKE_EFFECTIVE_PAYLOAD_MODE="embedded_metadata"
+    CHUMMER_WINDOWS_BINARY_TEMP_ROOT="$windows_native_temp_root" \
     run_windows_binary "$ARTIFACT_PATH" "${installer_args[@]}" >>"$LOG_PATH" 2>&1
   fi
   sleep 2
-  if [[ -n "$wine_temp_dir" ]]; then
+  local installer_trace_root="${WINDOWS_WINE_HOST_TEMP_ROOT:-$wine_temp_dir}"
+  if [[ -n "$installer_trace_root" ]]; then
     local installer_trace_capture_path="$OUTPUT_DIR/windows-installer-progress-$APP_KEY-$RID.log"
     local -a installer_trace_candidates=(
-      "$wine_temp_dir/Chummer6/installer-temp/chummer-desktop-installer-progress.log"
-      "$wine_temp_dir/chummer-desktop-installer-progress.log"
+      "$installer_trace_root/Chummer6/installer-temp/chummer-desktop-installer-progress.log"
+      "$installer_trace_root/chummer-desktop-installer-progress.log"
     )
     local installer_trace_source=""
     local installer_trace_candidate=""
@@ -1206,7 +1252,7 @@ PY
     sleep 1
   done
   local smoke_status=0
-  run_head_smoke "$INSTALL_ROOT/$launch_relative_path" || smoke_status=$?
+  CHUMMER_WINDOWS_BINARY_TEMP_ROOT="$windows_native_temp_root" run_head_smoke "$INSTALL_ROOT/$launch_relative_path" || smoke_status=$?
   attach_windows_bootstrap_verification_to_receipt \
     "$WINDOWS_STARTUP_SMOKE_EFFECTIVE_PAYLOAD_MODE" \
     "$WINDOWS_STARTUP_SMOKE_EFFECTIVE_PAYLOAD_URL" \

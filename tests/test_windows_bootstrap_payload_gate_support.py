@@ -108,3 +108,36 @@ def test_windows_bootstrap_build_fails_from_measured_size_gate_instead_of_hardco
     combined_output = f"{result.stdout}\n{result.stderr}"
     assert "built installer" in combined_output
     assert "blocked until the native bootstrap builder is wired" not in combined_output
+
+
+def test_windows_bootstrap_build_rejects_files_directory_as_dist_root(tmp_path: Path) -> None:
+    publish_dir = tmp_path / "publish"
+    dist_files_dir = tmp_path / "nightly-run-test" / "files"
+    publish_dir.mkdir()
+    dist_files_dir.mkdir(parents=True)
+    (publish_dir / "Chummer.Avalonia.exe").write_bytes(b"stub")
+
+    result = subprocess.run(
+        [
+            "bash",
+            str(REPO_ROOT / "scripts" / "build-desktop-installer.sh"),
+            str(publish_dir),
+            "avalonia",
+            "win-x64",
+            "Chummer.Avalonia.exe",
+            str(dist_files_dir),
+            "0.0.0.1",
+        ],
+        text=True,
+        capture_output=True,
+        check=False,
+        env={
+            **dict(os.environ),
+            "CHUMMER_WINDOWS_INSTALLER_MODE": "bootstrap",
+        },
+    )
+
+    assert result.returncode != 0
+    combined_output = f"{result.stdout}\n{result.stderr}"
+    assert "Refusing to use a downloads files/ directory as the desktop installer dist root" in combined_output
+    assert "Pass the release stage root" in combined_output

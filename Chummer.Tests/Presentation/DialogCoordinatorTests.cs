@@ -981,6 +981,44 @@ public class DialogCoordinatorTests
     }
 
     [TestMethod]
+    public async Task CoordinateAsync_open_origin_guided_chargen_restores_dossier_defaults_when_hidden_identity_uses_runner_defaults()
+    {
+        DialogCoordinator coordinator = new();
+        DesktopDialogState originBuild = DesktopDialogFactory.BuildNewCharacterOriginBuildDialog(
+            DesktopDialogFactory.BuildNewCharacterOriginWizardDialog(RulesetDefaults.Sr6, null, null));
+        CharacterOverviewState published = CharacterOverviewState.Empty with
+        {
+            ActiveDialog = originBuild with
+            {
+                Fields = originBuild.Fields
+                    .Select(field => field.Id switch
+                    {
+                        "newCharacterWorkflowName" => field with { Value = "New runner" },
+                        "newCharacterWorkflowAlias" => field with { Value = "Runner" },
+                        _ => field
+                    })
+                    .ToArray()
+            }
+        };
+
+        DialogCoordinationContext context = new(
+            State: published,
+            Publish: state => published = state,
+            ImportAsync: static (_, _) => Task.CompletedTask,
+            UpdateMetadataAsync: static (_, _) => Task.CompletedTask,
+            GetState: () => published);
+
+        await coordinator.CoordinateAsync("open_origin_guided_chargen", context, CancellationToken.None);
+
+        Assert.IsTrue(
+            string.Equals("dialog.new_character.priority_workflow", published.ActiveDialog?.Id, StringComparison.Ordinal)
+            || string.Equals("dialog.new_character.karma_workflow", published.ActiveDialog?.Id, StringComparison.Ordinal));
+        Assert.AreEqual("approved_origin_story", DesktopDialogFieldValueParser.GetValue(published.ActiveDialog!, "newCharacterWorkflowOriginSource"));
+        Assert.AreEqual("New dossier", DesktopDialogFieldValueParser.GetValue(published.ActiveDialog!, "newCharacterWorkflowName"));
+        Assert.AreEqual("Dossier", DesktopDialogFieldValueParser.GetValue(published.ActiveDialog!, "newCharacterWorkflowAlias"));
+    }
+
+    [TestMethod]
     public async Task CoordinateAsync_show_origin_dossier_link_rebuilds_clean_route_when_hidden_link_is_blank()
     {
         DialogCoordinator coordinator = new();
@@ -1427,6 +1465,119 @@ public class DialogCoordinatorTests
         Assert.AreEqual("sr6", preferredRulesetId);
         Assert.IsNull(published.ActiveDialog);
         Assert.AreEqual("Preferred ruleset set to 'sr6'.", published.Notice);
+    }
+
+    [TestMethod]
+    public async Task CoordinateAsync_apply_ruleset_preserves_delegate_updated_workspace_surface()
+    {
+        DialogCoordinator coordinator = new();
+        CharacterOverviewState published = CharacterOverviewState.Empty with
+        {
+            ActiveTabId = "tab-gear",
+            ActiveSectionId = "gear",
+            ActiveActionId = "tab-gear.gear",
+            ActiveSectionJson = "{\"sectionId\":\"gear\"}",
+            ActiveSectionRows = [new SectionRowState("gear[0]", "Ares Predator")],
+            ActiveDialog = new DesktopDialogState(
+                Id: "dialog.switch_ruleset",
+                Title: "Switch Ruleset",
+                Message: null,
+                Fields:
+                [
+                    new DesktopDialogField("preferredRulesetId", "Ruleset", " SR6 ", RulesetDefaults.Sr5)
+                ],
+                Actions:
+                [
+                    new DesktopDialogAction("apply_ruleset", "Apply", true)
+                ])
+        };
+
+        DialogCoordinationContext context = new(
+            State: published,
+            Publish: state => published = state,
+            ImportAsync: static (_, _) => Task.CompletedTask,
+            UpdateMetadataAsync: static (_, _) => Task.CompletedTask,
+            GetState: () => published,
+            SetPreferredRulesetAsync: (rulesetId, _) =>
+            {
+                published = published with
+                {
+                    Error = null,
+                    Commands =
+                    [
+                        new AppCommandDefinition("open_character", "command.open_character", "file", false, true, rulesetId)
+                    ],
+                    NavigationTabs =
+                    [
+                        new NavigationTabDefinition("tab-info", "Info", "profile", "character", true, true, rulesetId),
+                        new NavigationTabDefinition("tab-rules", "Rules", "rules", "character", true, true, rulesetId)
+                    ],
+                    ActiveTabId = "tab-info",
+                    ActiveSectionId = "profile",
+                    ActiveActionId = "tab-info.profile",
+                    ActiveSectionJson = "{\"sectionId\":\"profile\"}",
+                    ActiveSectionRows = [new SectionRowState("profile.alias", "Cipher")],
+                    Notice = $"Preferred ruleset set to '{rulesetId}'."
+                };
+                return Task.CompletedTask;
+            });
+
+        await coordinator.CoordinateAsync("apply_ruleset", context, CancellationToken.None);
+
+        Assert.IsNull(published.ActiveDialog);
+        Assert.AreEqual("tab-info", published.ActiveTabId);
+        Assert.AreEqual("profile", published.ActiveSectionId);
+        Assert.AreEqual("tab-info.profile", published.ActiveActionId);
+        Assert.AreEqual("{\"sectionId\":\"profile\"}", published.ActiveSectionJson);
+        Assert.AreEqual("Cipher", published.ActiveSectionRows.Single().Value);
+        Assert.AreEqual("open_character", published.Commands.Single().Id);
+        CollectionAssert.AreEqual(new[] { "tab-info", "tab-rules" }, published.NavigationTabs.Select(tab => tab.Id).ToArray());
+        Assert.AreEqual("Preferred ruleset set to 'sr6'.", published.Notice);
+        Assert.IsNull(published.Error);
+    }
+
+    [TestMethod]
+    public async Task CoordinateAsync_apply_ruleset_keeps_dialog_open_when_delegate_sets_error()
+    {
+        DialogCoordinator coordinator = new();
+        DesktopDialogState dialog = new(
+            Id: "dialog.switch_ruleset",
+            Title: "Switch Ruleset",
+            Message: null,
+            Fields:
+            [
+                new DesktopDialogField("preferredRulesetId", "Ruleset", " SR6 ", RulesetDefaults.Sr5)
+            ],
+            Actions:
+            [
+                new DesktopDialogAction("apply_ruleset", "Apply", true)
+            ]);
+        CharacterOverviewState published = CharacterOverviewState.Empty with
+        {
+            ActiveDialog = dialog
+        };
+
+        DialogCoordinationContext context = new(
+            State: published,
+            Publish: state => published = state,
+            ImportAsync: static (_, _) => Task.CompletedTask,
+            UpdateMetadataAsync: static (_, _) => Task.CompletedTask,
+            GetState: () => published,
+            SetPreferredRulesetAsync: (_, _) =>
+            {
+                published = published with
+                {
+                    Error = "Ruleset switch failed.",
+                    Notice = null
+                };
+                return Task.CompletedTask;
+            });
+
+        await coordinator.CoordinateAsync("apply_ruleset", context, CancellationToken.None);
+
+        Assert.AreEqual("Ruleset switch failed.", published.Error);
+        Assert.AreSame(dialog, published.ActiveDialog);
+        Assert.IsNull(published.Notice);
     }
 
     [TestMethod]

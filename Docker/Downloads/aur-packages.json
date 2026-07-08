@@ -1,34 +1,34 @@
 {
   "contractName": "chummer.downloads.aur_packages.v1",
   "contract_name": "chummer.downloads.aur_packages.v1",
-  "generatedAt": "2026-07-04T17:50:45Z",
-  "generated_at": "2026-07-04T17:50:45Z",
-  "version": "run-20260704-170602",
+  "generatedAt": "2026-07-08T17:07:41Z",
+  "generated_at": "2026-07-08T17:07:41Z",
+  "version": "smoke-0001",
   "channel": "preview",
   "packages": [
     {
       "id": "chummer6-bin",
       "packageName": "chummer6-bin",
-      "packageVersion": "20260704.170602",
+      "packageVersion": "20260708.170738",
       "title": "Arch / CachyOS",
       "summary": "AUR-compatible source package for the same Linux build published as the .deb.",
       "platformLabel": "Arch / CachyOS",
       "installCommand": "Download the AUR source, extract it, then run makepkg -si.",
       "sourceArchiveFileName": "chummer6-bin-aur-source.tar.gz",
       "sourceArchiveUrl": "https://chummer.run/downloads/files/chummer6-bin-aur-source.tar.gz",
-      "sourceArchiveSha256": "7931fa7137db7fec046498d5d0d690258abffc200fccdfbeca776b5b401a18ec",
-      "sourceArchiveSizeBytes": 997,
+      "sourceArchiveSha256": "3488d286ad4d3b1c9ff02425888d9783a1f02085827c683aa8d6c751a96e95c4",
+      "sourceArchiveSizeBytes": 995,
       "pkgbuildFileName": "chummer6-bin.PKGBUILD",
       "pkgbuildUrl": "https://chummer.run/downloads/files/chummer6-bin.PKGBUILD",
-      "pkgbuildSha256": "ce1e18209fcf0f64268df625db47d9faa40d7bd2670630f2c290261a3af73867",
+      "pkgbuildSha256": "5c5d645401406932473f7b2e90aee1ae4f428e8de47f2944d136da8e02736f00",
       "srcinfoFileName": "chummer6-bin.SRCINFO",
       "srcinfoUrl": "https://chummer.run/downloads/files/chummer6-bin.SRCINFO",
-      "srcinfoSha256": "622f0956713d4a6d921011fcab07fd11f8c92d209e2c04874fa42d5eb04a41a0",
+      "srcinfoSha256": "d36dc86621a5decdeb04971a64ab2f537d679ce360a6bcb42f7c2b9e009894fd",
       "upstreamArtifactId": "avalonia-linux-x64-installer",
       "upstreamArtifactFileName": "chummer-avalonia-linux-x64-installer.deb",
       "upstreamArtifactUrl": "https://chummer.run/downloads/files/chummer-avalonia-linux-x64-installer.deb",
-      "upstreamArtifactSha256": "5c8518f0f7f24b3f7101ff6fcea0fe33f012b4dfb03704f5bdf0067571f2d70b",
-      "upstreamArtifactSizeBytes": 37024862
+      "upstreamArtifactSha256": "bb12482c0abfe15d7ec5104b12bbc414f7e11774dd8350e1c48a7f36921bbcdd",
+      "upstreamArtifactSizeBytes": 38
     }
   ]
 }

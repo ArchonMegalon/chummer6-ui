@@ -46,14 +46,14 @@ public sealed class ShellSurfaceResolver : IShellSurfaceResolver
             shellOpenWorkspaces);
         string activeRulesetId = ResolveRulesetId(
             ResolveWorkspaceRulesetId(activeWorkspaceId, openWorkspaces),
-            openWorkspaces.Select(workspace => workspace.RulesetId),
+            activeWorkspaceId is null ? [] : openWorkspaces.Select(workspace => workspace.RulesetId),
             shellState.NavigationTabs.Select(tab => tab.RulesetId),
             [
                 shellState.ActiveRulesetId,
                 preferredRulesetId
             ]);
         string? activeTabId = shellState.ActiveTabId;
-        bool hasOpenWorkspace = activeWorkspaceId is not null || openWorkspaces.Count > 0;
+        bool hasActiveWorkspace = activeWorkspaceId is not null;
         IReadOnlyList<NavigationTabDefinition> sourceNavigationTabs = shellState.NavigationTabs.Count > 0
             ? shellState.NavigationTabs
             : string.IsNullOrWhiteSpace(activeRulesetId)
@@ -61,8 +61,8 @@ public sealed class ShellSurfaceResolver : IShellSurfaceResolver
                 : _catalogResolver.ResolveNavigationTabs(activeRulesetId);
         IReadOnlyList<NavigationTabDefinition> navigationTabs = FilterPresentedNavigationTabs(
             sourceNavigationTabs,
-            hasOpenWorkspace);
-        activeTabId = ResolvePresentedActiveTabId(activeTabId, navigationTabs, hasOpenWorkspace);
+            hasActiveWorkspace);
+        activeTabId = ResolvePresentedActiveTabId(activeTabId, navigationTabs, hasActiveWorkspace);
 
         WorkspaceSurfaceActionDefinition[] workspaceActions = string.IsNullOrWhiteSpace(activeRulesetId)
             ? []

@@ -28,6 +28,32 @@ class DesktopExternalDeployReadinessTests(unittest.TestCase):
         self.assertEqual(receipt["completeModes"], [])
         self.assertIn("rolling GitHub Release", receipt["summary"])
 
+    def test_portal_directory_ready_when_verify_url_is_valid(self) -> None:
+        env = {
+            "CHUMMER_PORTAL_DOWNLOADS_DEPLOY_DIR": "/tmp/chummer-downloads",
+            "CHUMMER_PORTAL_DOWNLOADS_VERIFY_URL": "https://example.invalid/downloads/releases.json",
+        }
+        with patch.dict(os.environ, env, clear=True):
+            receipt = readiness.build_receipt(require_external_deploy=False)
+
+        self.assertEqual(receipt["status"], "ready")
+        self.assertEqual(receipt["configuredModes"], ["portal_directory"])
+        self.assertEqual(receipt["completeModes"], ["portal_directory"])
+
+    def test_invalid_portal_directory_verify_url_is_not_counted_as_complete(self) -> None:
+        env = {
+            "CHUMMER_PORTAL_DOWNLOADS_DEPLOY_DIR": "/tmp/chummer-downloads",
+            "CHUMMER_PORTAL_DOWNLOADS_VERIFY_URL": "not-a-url",
+        }
+        with patch.dict(os.environ, env, clear=True):
+            receipt = readiness.build_receipt(require_external_deploy=False)
+
+        self.assertEqual(receipt["status"], "configured_incomplete")
+        self.assertEqual(receipt["configuredModes"], ["portal_directory"])
+        self.assertEqual(receipt["completeModes"], [])
+        portal_mode = next(mode for mode in receipt["modes"] if mode["mode"] == "portal_directory")
+        self.assertEqual(portal_mode["invalid"], ["CHUMMER_PORTAL_DOWNLOADS_VERIFY_URL"])
+
     def test_required_external_deploy_blocks_without_complete_mode(self) -> None:
         with patch.dict(os.environ, {}, clear=True):
             receipt = readiness.build_receipt(require_external_deploy=True)
@@ -48,6 +74,19 @@ class DesktopExternalDeployReadinessTests(unittest.TestCase):
         self.assertEqual(receipt["configuredModes"], ["http_promote"])
         self.assertEqual(receipt["completeModes"], ["http_promote"])
 
+    def test_http_promote_accepts_token_file_as_auth_source(self) -> None:
+        env = {
+            "CHUMMER_RELEASE_UPLOAD_URL": "https://example.invalid/upload",
+            "CHUMMER_RELEASE_UPLOAD_TOKEN_FILE": "/tmp/chummer-upload-token.txt",
+            "CHUMMER_PORTAL_DOWNLOADS_VERIFY_URL": "https://example.invalid/downloads/releases.json",
+        }
+        with patch.dict(os.environ, env, clear=True):
+            receipt = readiness.build_receipt(require_external_deploy=True)
+
+        self.assertEqual(receipt["status"], "ready")
+        self.assertEqual(receipt["configuredModes"], ["http_promote"])
+        self.assertEqual(receipt["completeModes"], ["http_promote"])
+
     def test_incomplete_http_promote_is_not_mistaken_for_ready(self) -> None:
         with patch.dict(os.environ, {"CHUMMER_RELEASE_UPLOAD_URL": "https://example.invalid/upload"}, clear=True):
             receipt = readiness.build_receipt(require_external_deploy=False)
@@ -57,8 +96,59 @@ class DesktopExternalDeployReadinessTests(unittest.TestCase):
         http_mode = next(mode for mode in receipt["modes"] if mode["mode"] == "http_promote")
         self.assertEqual(
             sorted(http_mode["missing"]),
-            ["CHUMMER_PORTAL_DOWNLOADS_VERIFY_URL", "CHUMMER_RELEASE_UPLOAD_TOKEN"],
+            [
+                "CHUMMER_PORTAL_DOWNLOADS_VERIFY_URL",
+                "CHUMMER_RELEASE_UPLOAD_TOKEN or CHUMMER_RELEASE_UPLOAD_TOKEN_FILE/CHUMMER_RELEASE_UPLOAD_TOKEN_PATH",
+            ],
         )
+
+    def test_invalid_http_promote_urls_are_not_counted_as_complete(self) -> None:
+        env = {
+            "CHUMMER_RELEASE_UPLOAD_URL": "not-a-url",
+            "CHUMMER_RELEASE_UPLOAD_TOKEN": "token",
+            "CHUMMER_PORTAL_DOWNLOADS_VERIFY_URL": "bad verify",
+        }
+        with patch.dict(os.environ, env, clear=True):
+            receipt = readiness.build_receipt(require_external_deploy=True)
+
+        self.assertEqual(receipt["status"], "blocked")
+        self.assertEqual(receipt["configuredModes"], ["http_promote"])
+        self.assertEqual(receipt["completeModes"], [])
+        http_mode = next(mode for mode in receipt["modes"] if mode["mode"] == "http_promote")
+        self.assertEqual(
+            sorted(http_mode["invalid"]),
+            ["CHUMMER_PORTAL_DOWNLOADS_VERIFY_URL", "CHUMMER_RELEASE_UPLOAD_URL"],
+        )
+
+    def test_invalid_object_storage_uri_is_not_counted_as_complete(self) -> None:
+        env = {
+            "CHUMMER_PORTAL_DOWNLOADS_S3_URI": "bucket/path",
+            "CHUMMER_PORTAL_DOWNLOADS_VERIFY_URL": "https://example.invalid/downloads/releases.json",
+            "CHUMMER_PORTAL_DOWNLOADS_AWS_ACCESS_KEY_ID": "key",
+            "CHUMMER_PORTAL_DOWNLOADS_AWS_SECRET_ACCESS_KEY": "secret",
+        }
+        with patch.dict(os.environ, env, clear=True):
+            receipt = readiness.build_receipt(require_external_deploy=False)
+
+        self.assertEqual(receipt["status"], "configured_incomplete")
+        self.assertEqual(receipt["configuredModes"], ["object_storage"])
+        self.assertEqual(receipt["completeModes"], [])
+        object_storage_mode = next(mode for mode in receipt["modes"] if mode["mode"] == "object_storage")
+        self.assertEqual(object_storage_mode["invalid"], ["CHUMMER_PORTAL_DOWNLOADS_S3_URI"])
+
+    def test_object_storage_ready_with_verify_url_and_credentials(self) -> None:
+        env = {
+            "CHUMMER_PORTAL_DOWNLOADS_S3_URI": "s3://bucket/path",
+            "CHUMMER_PORTAL_DOWNLOADS_VERIFY_URL": "https://example.invalid/downloads/releases.json",
+            "CHUMMER_PORTAL_DOWNLOADS_AWS_ACCESS_KEY_ID": "key",
+            "CHUMMER_PORTAL_DOWNLOADS_AWS_SECRET_ACCESS_KEY": "secret",
+        }
+        with patch.dict(os.environ, env, clear=True):
+            receipt = readiness.build_receipt(require_external_deploy=True)
+
+        self.assertEqual(receipt["status"], "ready")
+        self.assertEqual(receipt["configuredModes"], ["object_storage"])
+        self.assertEqual(receipt["completeModes"], ["object_storage"])
 
 
 if __name__ == "__main__":

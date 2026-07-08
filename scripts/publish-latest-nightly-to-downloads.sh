@@ -40,6 +40,59 @@ to_bool() {
   [[ "$value" == "1" || "$value" == "true" || "$value" == "yes" || "$value" == "on" ]]
 }
 
+validate_absolute_http_url() {
+  local value="$1"
+  local label="$2"
+  python3 - "$value" "$label" <<'PY'
+import sys
+from urllib.parse import urlparse
+
+value = sys.argv[1].strip()
+label = sys.argv[2]
+parsed = urlparse(value)
+if parsed.scheme.lower() not in {"http", "https"} or not parsed.netloc:
+    print(
+        f"Invalid {label}: {value!r} (expected absolute http:// or https:// URL).",
+        file=sys.stderr,
+    )
+    raise SystemExit(1)
+PY
+}
+
+validate_http_host_header() {
+  local value="$1"
+  local label="$2"
+  python3 - "$value" "$label" <<'PY'
+import sys
+
+value = sys.argv[1].strip()
+label = sys.argv[2]
+if not value or any(ch.isspace() for ch in value) or "://" in value or "/" in value:
+    print(
+        f"Invalid {label}: {value!r} (expected bare host header value).",
+        file=sys.stderr,
+    )
+    raise SystemExit(1)
+PY
+}
+
+validate_forwarded_proto() {
+  local value="$1"
+  local label="$2"
+  python3 - "$value" "$label" <<'PY'
+import sys
+
+value = sys.argv[1].strip().lower()
+label = sys.argv[2]
+if value not in {"http", "https"}:
+    print(
+        f"Invalid {label}: {sys.argv[1]!r} (expected 'http' or 'https').",
+        file=sys.stderr,
+    )
+    raise SystemExit(1)
+PY
+}
+
 manifest_channel_is_preview() {
   local manifest_path="$1"
   python3 - "$manifest_path" <<'PY'
@@ -63,6 +116,12 @@ if [[ "$normalized_public_release_channel" =~ ^(public_stable|stable)$ ]] && ! t
   echo "Nightly publisher is the preview handoff lane. Refusing stable/public_stable publication from this script." >&2
   echo "Use the stable release publisher, or set CHUMMER_ALLOW_STABLE_CHANNEL_FROM_NIGHTLY_PUBLISH=true for an explicit one-off override." >&2
   exit 1
+fi
+
+if to_bool "$REDEPLOY_PUBLIC_EDGE" && [[ "$DEPLOY_DIR" == "$WORKSPACE_ROOT/chummer.run-services/Chummer.Portal/downloads" ]]; then
+  validate_absolute_http_url "$PUBLIC_EDGE_VERIFY_BASE_URL" "CHUMMER_PUBLIC_EDGE_VERIFY_BASE_URL"
+  validate_http_host_header "$PUBLIC_EDGE_VERIFY_HOST" "CHUMMER_PUBLIC_EDGE_VERIFY_HOST"
+  validate_forwarded_proto "$PUBLIC_EDGE_VERIFY_PROTO" "CHUMMER_PUBLIC_EDGE_VERIFY_PROTO"
 fi
 
 refresh_release_build_handoff() {
@@ -233,6 +292,28 @@ verify_latest_stage_windows_exit_gate() {
   fi
 
   rm -f "$gate_output"
+}
+
+verify_latest_stage_layout() {
+  local stage_dir="$1"
+  local normalized_stage_dir="${stage_dir%/}"
+  local parent_dir
+  parent_dir="$(dirname "$normalized_stage_dir")"
+  local files_dir="$stage_dir/files"
+  local nested_files_dir="$files_dir/files"
+
+  if [[ "$(basename "$normalized_stage_dir")" == "files" ]] \
+    && [[ -f "$parent_dir/releases.json" || -f "$parent_dir/RELEASE_CHANNEL.generated.json" ]]; then
+    echo "Nightly staging root points at files/ directory: $normalized_stage_dir" >&2
+    echo "Build the nightly stage root, not its files/ child, before publishing." >&2
+    exit 1
+  fi
+
+  if [[ -d "$nested_files_dir" ]] && find "$nested_files_dir" -mindepth 1 -maxdepth 1 | grep -q .; then
+    echo "Nightly stage is malformed: found nested files directory under $nested_files_dir" >&2
+    echo "Build the nightly stage root, not its files/ child, before publishing." >&2
+    exit 1
+  fi
 }
 
 is_publishable_nightly_stage() {
@@ -434,13 +515,24 @@ case "$publish_guard_result" in
     ;;
 esac
 
+if [[ ! -d "$STAGING_ROOT" ]]; then
+  echo "Nightly staging root not found: $STAGING_ROOT" >&2
+  exit 1
+fi
+
 latest_stage=""
-while IFS= read -r candidate; do
-  if ! is_publishable_nightly_stage "$candidate"; then
-    continue
-  fi
-  latest_stage="$candidate"
-done < <(find "$STAGING_ROOT" -maxdepth 1 -mindepth 1 \( -type d -o -type l \) -name 'nightly-run-*' | sort)
+verify_latest_stage_layout "$STAGING_ROOT"
+
+if is_publishable_nightly_stage "$STAGING_ROOT"; then
+  latest_stage="$STAGING_ROOT"
+else
+  while IFS= read -r candidate; do
+    if ! is_publishable_nightly_stage "$candidate"; then
+      continue
+    fi
+    latest_stage="$candidate"
+  done < <(find "$STAGING_ROOT" -maxdepth 1 -mindepth 1 \( -type d -o -type l \) -name 'nightly-run-*' | sort)
+fi
 
 if [[ -z "$latest_stage" ]]; then
   echo "No publishable nightly stage found under $STAGING_ROOT" >&2
@@ -454,6 +546,7 @@ fi
 
 refresh_release_build_handoff "$latest_stage"
 
+verify_latest_stage_layout "$latest_stage"
 verify_latest_stage_windows_payload_gate "$latest_stage"
 verify_latest_stage_windows_startup_smoke_gate "$latest_stage"
 verify_latest_stage_windows_exit_gate "$latest_stage"

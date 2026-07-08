@@ -323,6 +323,60 @@ public class ShellPresenterTests
     }
 
     [TestMethod]
+    public async Task InitializeAsync_keeps_shell_only_tab_when_workspace_list_is_open_without_active_selection()
+    {
+        DateTimeOffset now = DateTimeOffset.UtcNow;
+        var client = new ShellClientStub
+        {
+            Workspaces =
+            [
+                CreateWorkspace("ws-sr6", "SR6 Character", "SR6", now, RulesetDefaults.Sr6)
+            ],
+            Session = new ShellSessionState(ActiveTabId: "tab-rules")
+        };
+        var presenter = new ShellPresenter(client);
+
+        await presenter.InitializeAsync(CancellationToken.None);
+
+        Assert.IsNull(presenter.State.ActiveWorkspaceId);
+        Assert.AreEqual("tab-rules", presenter.State.ActiveTabId);
+        Assert.AreEqual(RulesetDefaults.Sr5, presenter.State.ActiveRulesetId);
+        Assert.HasCount(1, presenter.State.OpenWorkspaces);
+        Assert.AreEqual("ws-sr6", presenter.State.OpenWorkspaces[0].Id.Value);
+    }
+
+    [TestMethod]
+    public async Task InitializeAsync_replaces_shell_only_workspace_tab_with_runner_visible_default()
+    {
+        DateTimeOffset now = DateTimeOffset.UtcNow;
+        var client = new ShellClientStub
+        {
+            Workspaces =
+            [
+                CreateWorkspace("ws-sr6", "SR6 Character", "SR6", now, RulesetDefaults.Sr6)
+            ],
+            Session = new ShellSessionState(
+                ActiveWorkspaceId: "ws-sr6",
+                ActiveTabId: "tab-rules",
+                ActiveTabsByWorkspace: new Dictionary<string, string>
+                {
+                    ["ws-sr6"] = "tab-rules"
+                })
+        };
+        var presenter = new ShellPresenter(client);
+
+        await presenter.InitializeAsync(CancellationToken.None);
+
+        Assert.AreEqual("ws-sr6", presenter.State.ActiveWorkspaceId?.Value);
+        Assert.AreEqual("tab-info", presenter.State.ActiveTabId);
+        Assert.IsNotEmpty(client.SavedSessions);
+        Assert.AreEqual("ws-sr6", client.SavedSessions[^1].ActiveWorkspaceId);
+        Assert.AreEqual("tab-info", client.SavedSessions[^1].ActiveTabId);
+        Assert.IsNotNull(client.SavedSessions[^1].ActiveTabsByWorkspace);
+        Assert.AreEqual("tab-info", client.SavedSessions[^1].ActiveTabsByWorkspace!["ws-sr6"]);
+    }
+
+    [TestMethod]
     public async Task InitializeAsync_projects_workflow_metadata_from_bootstrap_snapshot()
     {
         var client = new ShellClientStub
@@ -398,6 +452,32 @@ public class ShellPresenterTests
     }
 
     [TestMethod]
+    public async Task SetPreferredRulesetAsync_keeps_shell_only_tab_when_workspace_list_is_open_without_active_selection()
+    {
+        DateTimeOffset now = DateTimeOffset.UtcNow;
+        var client = new ShellClientStub
+        {
+            Workspaces =
+            [
+                CreateWorkspace("ws-sr6", "SR6 Character", "SR6", now, RulesetDefaults.Sr6)
+            ],
+            Session = new ShellSessionState(ActiveTabId: "tab-rules")
+        };
+        var presenter = new ShellPresenter(client);
+        await presenter.InitializeAsync(CancellationToken.None);
+
+        await presenter.SetPreferredRulesetAsync("sr6", CancellationToken.None);
+
+        Assert.IsNull(presenter.State.ActiveWorkspaceId);
+        Assert.AreEqual(RulesetDefaults.Sr6, presenter.State.PreferredRulesetId);
+        Assert.AreEqual(RulesetDefaults.Sr6, presenter.State.ActiveRulesetId);
+        Assert.AreEqual("tab-rules", presenter.State.ActiveTabId);
+        Assert.IsEmpty(client.SavedSessions);
+        Assert.AreEqual(RulesetDefaults.Sr6, client.Preferences.PreferredRulesetId);
+        CollectionAssert.Contains(client.RequestedBootstrapRulesets, RulesetDefaults.Sr6);
+    }
+
+    [TestMethod]
     public async Task SelectTabAsync_persists_active_tab_in_shell_session()
     {
         var client = new ShellClientStub();
@@ -425,11 +505,34 @@ public class ShellPresenterTests
         var presenter = new ShellPresenter(client);
         await presenter.InitializeAsync(CancellationToken.None);
 
-        await presenter.SelectTabAsync("tab-rules", CancellationToken.None);
+        await presenter.SelectTabAsync("tab-gear", CancellationToken.None);
 
         Assert.IsNotEmpty(client.SavedSessions);
         Assert.IsNotNull(client.SavedSessions[^1].ActiveTabsByWorkspace);
-        Assert.AreEqual("tab-rules", client.SavedSessions[^1].ActiveTabsByWorkspace!["ws-1"]);
+        Assert.AreEqual("tab-gear", client.SavedSessions[^1].ActiveTabsByWorkspace!["ws-1"]);
+    }
+
+    [TestMethod]
+    public async Task SelectTabAsync_rejects_shell_only_tab_when_workspace_is_active()
+    {
+        DateTimeOffset now = DateTimeOffset.UtcNow;
+        var client = new ShellClientStub
+        {
+            Workspaces =
+            [
+                CreateWorkspace("ws-1", "Runner", "R1", now)
+            ],
+            Session = new ShellSessionState(ActiveWorkspaceId: "ws-1")
+        };
+        var presenter = new ShellPresenter(client);
+        await presenter.InitializeAsync(CancellationToken.None);
+        int savedSessionCount = client.SavedSessions.Count;
+
+        await presenter.SelectTabAsync("tab-rules", CancellationToken.None);
+
+        Assert.AreEqual("Tab 'tab-rules' is unavailable while a dossier is active.", presenter.State.Error);
+        Assert.AreEqual("tab-info", presenter.State.ActiveTabId);
+        Assert.AreEqual(savedSessionCount, client.SavedSessions.Count);
     }
 
     [TestMethod]
@@ -449,7 +552,7 @@ public class ShellPresenterTests
                 ActiveTabsByWorkspace: new Dictionary<string, string>
                 {
                     ["ws-1"] = "tab-info",
-                    ["ws-2"] = "tab-rules"
+                    ["ws-2"] = "tab-gear"
                 })
         };
         var presenter = new ShellPresenter(client);
@@ -457,7 +560,112 @@ public class ShellPresenterTests
 
         await presenter.SyncWorkspaceContextAsync(new CharacterWorkspaceId("ws-2"), CancellationToken.None);
 
-        Assert.AreEqual("tab-rules", presenter.State.ActiveTabId);
+        Assert.AreEqual("tab-gear", presenter.State.ActiveTabId);
+    }
+
+    [TestMethod]
+    public async Task SyncWorkspaceContextAsync_does_not_persist_shell_only_tab_when_activating_workspace_from_shell_posture()
+    {
+        DateTimeOffset now = DateTimeOffset.UtcNow;
+        var client = new ShellClientStub
+        {
+            Workspaces =
+            [
+                CreateWorkspace("ws-sr6", "SR6 Character", "SR6", now, RulesetDefaults.Sr6)
+            ],
+            Session = new ShellSessionState(ActiveTabId: "tab-rules")
+        };
+        var presenter = new ShellPresenter(client);
+        await presenter.InitializeAsync(CancellationToken.None);
+
+        await presenter.SyncWorkspaceContextAsync(new CharacterWorkspaceId("ws-sr6"), CancellationToken.None);
+
+        Assert.AreEqual("ws-sr6", presenter.State.ActiveWorkspaceId?.Value);
+        Assert.AreEqual("tab-info", presenter.State.ActiveTabId);
+        Assert.IsNotEmpty(client.SavedSessions);
+        Assert.AreEqual("tab-info", client.SavedSessions[^1].ActiveTabId);
+        Assert.IsNotNull(client.SavedSessions[^1].ActiveTabsByWorkspace);
+        Assert.AreEqual("tab-info", client.SavedSessions[^1].ActiveTabsByWorkspace!["ws-sr6"]);
+    }
+
+    [TestMethod]
+    public async Task SyncWorkspaceContextAsync_clears_missing_active_workspace_and_restores_preferred_sr6_shell()
+    {
+        DateTimeOffset now = DateTimeOffset.UtcNow;
+        var client = new ShellClientStub
+        {
+            Workspaces =
+            [
+                CreateWorkspace("ws-sr5", "SR5 Character", "SR5", now, RulesetDefaults.Sr5)
+            ],
+            Preferences = new ShellPreferences("sr6"),
+            Session = new ShellSessionState(
+                ActiveWorkspaceId: "ws-sr5",
+                ActiveTabId: "tab-attributes",
+                ActiveTabsByWorkspace: new Dictionary<string, string>
+                {
+                    ["ws-sr5"] = "tab-attributes"
+                })
+        };
+        var presenter = new ShellPresenter(client);
+        await presenter.InitializeAsync(CancellationToken.None);
+
+        client.Workspaces = Array.Empty<WorkspaceListItem>();
+
+        await presenter.SyncWorkspaceContextAsync(new CharacterWorkspaceId("ws-sr5"), CancellationToken.None);
+
+        Assert.IsNull(presenter.State.ActiveWorkspaceId);
+        Assert.AreEqual("sr6", presenter.State.PreferredRulesetId);
+        Assert.AreEqual("sr6", presenter.State.ActiveRulesetId);
+        Assert.AreEqual("tab-info", presenter.State.ActiveTabId);
+        Assert.IsEmpty(presenter.State.OpenWorkspaces);
+        Assert.IsNotEmpty(client.SavedSessions);
+        Assert.IsNull(client.SavedSessions[^1].ActiveWorkspaceId);
+        Assert.AreEqual("tab-info", client.SavedSessions[^1].ActiveTabId);
+        Assert.AreEqual("sr6", client.RequestedBootstrapRulesets[^1]);
+        Assert.AreEqual("sr6", client.RequestedCommandRulesets[^1]);
+        Assert.AreEqual("sr6", client.RequestedNavigationRulesets[^1]);
+    }
+
+    [TestMethod]
+    public async Task SyncWorkspaceContextAsync_does_not_auto_select_replacement_workspace_when_requested_workspace_is_missing()
+    {
+        DateTimeOffset now = DateTimeOffset.UtcNow;
+        var client = new ShellClientStub
+        {
+            Workspaces =
+            [
+                CreateWorkspace("ws-old", "Old Character", "OLD", now.AddMinutes(-10), RulesetDefaults.Sr5),
+                CreateWorkspace("ws-sr6", "SR6 Character", "SR6", now.AddMinutes(-5), "sr6")
+            ],
+            Session = new ShellSessionState(
+                ActiveWorkspaceId: "ws-old",
+                ActiveTabId: "tab-attributes",
+                ActiveTabsByWorkspace: new Dictionary<string, string>
+                {
+                    ["ws-old"] = "tab-attributes",
+                    ["ws-sr6"] = "tab-rules"
+                })
+        };
+        var presenter = new ShellPresenter(client);
+        await presenter.InitializeAsync(CancellationToken.None);
+
+        client.Workspaces =
+        [
+            CreateWorkspace("ws-sr6", "SR6 Character", "SR6", now.AddMinutes(-1), "sr6")
+        ];
+
+        await presenter.SyncWorkspaceContextAsync(new CharacterWorkspaceId("ws-old"), CancellationToken.None);
+
+        Assert.IsNull(presenter.State.ActiveWorkspaceId);
+        Assert.AreEqual(RulesetDefaults.Sr5, presenter.State.ActiveRulesetId);
+        Assert.AreEqual("tab-info", presenter.State.ActiveTabId);
+        Assert.HasCount(1, presenter.State.OpenWorkspaces);
+        Assert.AreEqual("ws-sr6", presenter.State.OpenWorkspaces[0].Id.Value);
+        Assert.IsNotEmpty(client.SavedSessions);
+        Assert.IsNull(client.SavedSessions[^1].ActiveWorkspaceId);
+        Assert.AreEqual("tab-info", client.SavedSessions[^1].ActiveTabId);
+        Assert.AreEqual(RulesetDefaults.Sr5, client.RequestedBootstrapRulesets[^1]);
     }
 
     [TestMethod]

@@ -351,6 +351,64 @@ public sealed class BlazorShellComponentTests
     }
 
     [TestMethod]
+    public void WorkspaceLeftPane_keeps_shell_posture_when_workspace_list_remains_open_without_active_selection()
+    {
+        CharacterWorkspaceId workspaceId = new("ws-1");
+        OpenWorkspaceState openWorkspace = new(workspaceId, "Ares Runner", "AR", DateTimeOffset.UtcNow, RulesetDefaults.Sr6);
+        CharacterOverviewState state = CharacterOverviewState.Empty with
+        {
+            Session = new WorkspaceSessionState(
+                ActiveWorkspaceId: null,
+                OpenWorkspaces: [openWorkspace],
+                RecentWorkspaceIds: [workspaceId]),
+            OpenWorkspaces = [openWorkspace],
+            ActiveTabId = "tab-create",
+            IsBusy = false
+        };
+
+        WorkspaceSurfaceActionDefinition summaryAction = new(
+            Id: "tab-info.validate",
+            Label: "Validate",
+            TabId: "tab-info",
+            Kind: WorkspaceSurfaceActionKind.Validate,
+            TargetId: "validate",
+            RequiresOpenCharacter: true,
+            EnabledByDefault: true,
+            RulesetId: RulesetDefaults.Sr5);
+        WorkflowSurfaceActionBinding summarySurface = new(
+            SurfaceId: "surface.summary",
+            WorkflowId: WorkflowDefinitionIds.CareerWorkbench,
+            Label: "Refresh Summary",
+            ActionId: "summary",
+            RegionId: ShellRegionIds.SectionPane,
+            LayoutToken: WorkflowLayoutTokens.CareerWorkbench);
+        IReadOnlyList<NavigationTabDefinition> navigationTabs =
+        [
+            new NavigationTabDefinition("tab-create", "Create", "build-lab", "character", true, true, RulesetDefaults.Sr5),
+            new NavigationTabDefinition("tab-info", "Info", "profile", "character", true, true, RulesetDefaults.Sr5)
+        ];
+
+        using var context = CreateContext();
+        IRenderedComponent<WorkspaceLeftPane> cut = context.Render<WorkspaceLeftPane>(parameters => parameters
+            .Add(component => component.State, state)
+            .Add(component => component.OpenWorkspaces, [openWorkspace])
+            .Add(component => component.ActiveWorkspaceId, null)
+            .Add(component => component.ActiveTabId, "tab-create")
+            .Add(component => component.NavigationTabs, navigationTabs)
+            .Add(component => component.ActiveWorkspaceActions, new[] { summaryAction })
+            .Add(component => component.ActiveWorkflowSurfaceActions, new[] { summarySurface })
+            .Add(component => component.IsNavigationTabEnabled, _ => true));
+
+        Assert.IsNotNull(cut.Find("button[data-nav-tab='tab-create']"));
+        Assert.IsNotNull(cut.Find("button[data-nav-tab='tab-info']"));
+        StringAssert.Contains(cut.Markup, "Ares Runner (AR) · Shadowrun 6");
+        StringAssert.Contains(cut.Markup, "Sixth World editor");
+        StringAssert.Contains(cut.Markup, "SR5 Editor Tabs");
+        Assert.AreEqual(0, cut.FindAll(".section-actions").Count, "Workspace actions should stay hidden until a dossier is actively selected.");
+        Assert.AreEqual(0, cut.FindAll(".controls").Count, "Workflow chrome should stay hidden until a dossier is actively selected.");
+    }
+
+    [TestMethod]
     public void SummaryHeader_renders_ruleset_specific_heading_and_runtime_inspector_action()
     {
         bool inspectRequested = false;

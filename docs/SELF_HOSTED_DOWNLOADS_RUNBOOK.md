@@ -31,6 +31,7 @@ Treat that handoff as staged-nightly-only evidence: it refreshes staged receipts
 6. Mainline `Desktop Downloads Matrix` runs on `main` resolve to `preview` automatically for the rolling Windows/Linux shelf. Set `CHUMMER_DESKTOP_RELEASE_CHANNEL` only when you intentionally want a non-mainline `docker`, `release_candidate`, or `public_stable` lane.
 7. Set `CHUMMER_ALLOW_UNSIGNED_PUBLIC_RELEASE=true` only when you are intentionally publishing an unsigned public build. Without that override, `public_stable` and any explicit `release_candidate` lane fail closed unless the workflow can emit signing receipts:
 `CHUMMER_WINDOWS_SIGN_PFX_BASE64` / `CHUMMER_WINDOWS_SIGN_PFX_PASSWORD` for Windows Authenticode, plus either a preconfigured mac keychain identity/profile, a hosted-signing P12 (`CHUMMER_MAC_CERTIFICATE_P12_BASE64` / `CHUMMER_MAC_CERTIFICATE_PASSWORD` / `CHUMMER_MAC_KEYCHAIN_PASSWORD` / `CHUMMER_MAC_APPLE_ID` / `CHUMMER_MAC_APPLE_APP_PASSWORD` / `CHUMMER_MAC_TEAM_ID`), or the persistent local-keychain fallback for Mac-hosted preview lanes (`CHUMMER_MAC_KEYCHAIN_PATH`, `CHUMMER_MAC_LOCAL_KEYCHAIN_PASSWORD`, `CHUMMER_MAC_LOCAL_CERT_COMMON_NAME`).
+8. `public_stable` promotion also requires fresh root blocker truth from `RELEASE_BLOCKERS.generated.json`. The default max age is `86400` seconds via `CHUMMER_PUBLIC_STABLE_BLOCKERS_MAX_AGE_SECONDS`; override it only when the release lane explicitly approves an adjusted blocker-truth window.
 
 ## Recommended Production Topology
 
@@ -46,6 +47,7 @@ Repository variables:
 2. `CHUMMER_PORTAL_DOWNLOADS_VERIFY_URL`
 3. Optional `CHUMMER_DESKTOP_RELEASE_CHANNEL` override for non-mainline lanes
 4. `CHUMMER_ALLOW_UNSIGNED_PUBLIC_RELEASE` (optional; explicit unsigned public-release posture)
+5. `CHUMMER_PUBLIC_STABLE_BLOCKERS_MAX_AGE_SECONDS` (optional; only when the release lane explicitly approves an adjusted blocker-truth window)
 
 Local release path:
 1. Push the release-ready source to `main`, then build the release bundle on the controlled release host.
@@ -68,6 +70,7 @@ Repository variables:
 5. `CHUMMER_PORTAL_DOWNLOADS_VERIFY_URL`
 6. Optional `CHUMMER_DESKTOP_RELEASE_CHANNEL` override for non-mainline lanes
 7. `CHUMMER_ALLOW_UNSIGNED_PUBLIC_RELEASE` (optional; explicit unsigned public-release posture)
+8. `CHUMMER_PUBLIC_STABLE_BLOCKERS_MAX_AGE_SECONDS` (optional; only when the release lane explicitly approves an adjusted blocker-truth window)
 
 Repository secrets:
 1. `CHUMMER_PORTAL_DOWNLOADS_AWS_ACCESS_KEY_ID`
@@ -94,10 +97,11 @@ Repository variables and secrets:
 3. `CHUMMER_RELEASE_UPLOAD_TOKEN`
 4. Optional `CHUMMER_DESKTOP_RELEASE_CHANNEL` override for non-mainline lanes
 5. `CHUMMER_ALLOW_UNSIGNED_PUBLIC_RELEASE` (optional; set to `true` only when you deliberately want an unsigned public build)
-6. Windows public release secrets: `CHUMMER_WINDOWS_SIGN_PFX_BASE64`, `CHUMMER_WINDOWS_SIGN_PFX_PASSWORD`
-7. macOS public release secrets/vars for hosted signing: `CHUMMER_MAC_CERTIFICATE_P12_BASE64`, `CHUMMER_MAC_CERTIFICATE_PASSWORD`, `CHUMMER_MAC_KEYCHAIN_PASSWORD`, `CHUMMER_MAC_APPLE_ID`, `CHUMMER_MAC_APPLE_APP_PASSWORD`, `CHUMMER_MAC_TEAM_ID`
-8. Optional preconfigured mac runner vars: `CHUMMER_MAC_APP_SIGN_IDENTITY`, `CHUMMER_MAC_NOTARY_PROFILE`
-9. Optional persistent local-preview vars on a Mac host when no P12 is configured: `CHUMMER_MAC_KEYCHAIN_PATH`, `CHUMMER_MAC_LOCAL_KEYCHAIN_PASSWORD`, `CHUMMER_MAC_LOCAL_CERT_COMMON_NAME`
+6. `CHUMMER_PUBLIC_STABLE_BLOCKERS_MAX_AGE_SECONDS` (optional; only when the release lane explicitly approves an adjusted blocker-truth window)
+7. Windows public release secrets: `CHUMMER_WINDOWS_SIGN_PFX_BASE64`, `CHUMMER_WINDOWS_SIGN_PFX_PASSWORD`
+8. macOS public release secrets/vars for hosted signing: `CHUMMER_MAC_CERTIFICATE_P12_BASE64`, `CHUMMER_MAC_CERTIFICATE_PASSWORD`, `CHUMMER_MAC_KEYCHAIN_PASSWORD`, `CHUMMER_MAC_APPLE_ID`, `CHUMMER_MAC_APPLE_APP_PASSWORD`, `CHUMMER_MAC_TEAM_ID`
+9. Optional preconfigured mac runner vars: `CHUMMER_MAC_APP_SIGN_IDENTITY`, `CHUMMER_MAC_NOTARY_PROFILE`
+10. Optional persistent local-preview vars on a Mac host when no P12 is configured: `CHUMMER_MAC_KEYCHAIN_PATH`, `CHUMMER_MAC_LOCAL_KEYCHAIN_PASSWORD`, `CHUMMER_MAC_LOCAL_CERT_COMMON_NAME`
 
 Local-preview note:
 1. `scripts/prepare-macos-signing-keychain.sh` now defaults the local bootstrap keychain to `~/Library/Keychains/chummer-signing.keychain-db` on macOS.
@@ -131,6 +135,7 @@ Operational rule:
 5. Public channels are proof-backed, not best-effort. If the resolved channel is `release_candidate` or `public_stable`, the workflow must either:
 emit Windows signing and macOS signing/notarization receipts, or
 run with `CHUMMER_ALLOW_UNSIGNED_PUBLIC_RELEASE=true` so the public-promotion evidence records `unsigned_public_release` explicitly.
+6. `public_stable` publication also requires fresh root blocker truth from `RELEASE_BLOCKERS.generated.json`; the default max age is `86400` seconds via `CHUMMER_PUBLIC_STABLE_BLOCKERS_MAX_AGE_SECONDS`.
 
 ## Strict Test Gate Commands (host-side)
 

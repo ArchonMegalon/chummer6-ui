@@ -1,6 +1,7 @@
 using Chummer.Contracts.Presentation;
 using Chummer.Contracts.Rulesets;
 using Chummer.Contracts.Workspaces;
+using Chummer.Presentation.Rulesets;
 
 namespace Chummer.Presentation.Overview;
 
@@ -98,11 +99,37 @@ public sealed partial class CharacterOverviewPresenter
         }
 
         await _shellPresenter.SetPreferredRulesetAsync(normalizedRulesetId, ct);
-        Publish(State with
+        IReadOnlyList<NavigationTabDefinition> navigationTabs = _shellPresenter.State.NavigationTabs;
+        string? activeTabId = _shellPresenter.State.ActiveTabId;
+        CharacterWorkspaceId? currentWorkspaceId = ResolveCurrentWorkspaceId();
+        if (currentWorkspaceId is not null
+            && !RulesetUiDirectiveCatalog.IsLoadedRunnerVisibleNavigationTab(activeTabId))
+        {
+            activeTabId = ResolveDefaultWorkspaceTabId(navigationTabs, State.LastCommandId)
+                ?? navigationTabs.FirstOrDefault(tab => RulesetUiDirectiveCatalog.IsLoadedRunnerVisibleNavigationTab(tab.Id))?.Id
+                ?? State.ActiveTabId;
+        }
+
+        CharacterOverviewState nextState = State with
         {
             Error = _shellPresenter.State.Error,
+            Notice = _shellPresenter.State.Notice,
             Commands = _shellPresenter.State.Commands,
-            NavigationTabs = _shellPresenter.State.NavigationTabs
-        });
+            NavigationTabs = navigationTabs,
+            ActiveTabId = activeTabId
+        };
+
+        bool shouldReloadWorkspaceSurface = currentWorkspaceId is not null
+            && string.IsNullOrWhiteSpace(_shellPresenter.State.Error)
+            && !string.IsNullOrWhiteSpace(activeTabId)
+            && !string.Equals(State.ActiveTabId, activeTabId, StringComparison.Ordinal);
+        if (!shouldReloadWorkspaceSurface)
+        {
+            Publish(nextState);
+            return;
+        }
+
+        Publish(nextState);
+        await SelectTabAsync(activeTabId!, ct);
     }
 }

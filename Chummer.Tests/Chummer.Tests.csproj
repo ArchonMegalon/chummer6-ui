@@ -26,9 +26,18 @@
     <EnableNETAnalyzers>false</EnableNETAnalyzers>
     <MSTestAnalysisMode>None</MSTestAnalysisMode>
     <EnableMSTestRunner>true</EnableMSTestRunner>
-    <TestingPlatformDotnetTestSupport>true</TestingPlatformDotnetTestSupport>
-    <GenerateRuntimeConfigurationFiles>true</GenerateRuntimeConfigurationFiles>
-    <RunDesktopUpdateTestsOnly Condition="'$(RunDesktopUpdateTestsOnly)' == ''">false</RunDesktopUpdateTestsOnly>
+	    <TestingPlatformDotnetTestSupport>true</TestingPlatformDotnetTestSupport>
+	    <GenerateRuntimeConfigurationFiles>true</GenerateRuntimeConfigurationFiles>
+	    <RunDesktopUpdateTestsOnly Condition="'$(RunDesktopUpdateTestsOnly)' == ''">false</RunDesktopUpdateTestsOnly>
+	    <RunCharacterOverviewPresenterTestsOnly Condition="'$(RunCharacterOverviewPresenterTestsOnly)' == ''">false</RunCharacterOverviewPresenterTestsOnly>
+	    <FocusedTestCompileFiles Condition="'$(FocusedTestCompileFiles)' == '' and '$(RunCharacterOverviewPresenterTestsOnly)' == 'true'">Presentation\CharacterOverviewPresenterTests.cs</FocusedTestCompileFiles>
+	    <ResolvedFocusedTestCompileFiles Condition="'$(FocusedTestCompileFiles)' != ''">$([System.String]::Copy('$(FocusedTestCompileFiles)').Replace('|', ';'))</ResolvedFocusedTestCompileFiles>
+	    <FocusedTestSupportFiles Condition="'$(FocusedTestSupportFiles)' == ''"></FocusedTestSupportFiles>
+	    <ResolvedFocusedTestSupportFiles Condition="'$(FocusedTestSupportFiles)' != ''">$([System.String]::Copy('$(FocusedTestSupportFiles)').Replace('|', ';'))</ResolvedFocusedTestSupportFiles>
+	    <FocusedTestSupportFile Condition="'$(FocusedTestSupportFile)' == ''"></FocusedTestSupportFile>
+	    <FocusedTestSupportFile2 Condition="'$(FocusedTestSupportFile2)' == ''"></FocusedTestSupportFile2>
+	    <FocusedTestSupportFile3 Condition="'$(FocusedTestSupportFile3)' == ''"></FocusedTestSupportFile3>
+	    <FocusedTestBaselineHostDir Condition="'$(FocusedTestBaselineHostDir)' == ''">$(MSBuildProjectDirectory)/bin/$(Configuration)/$(TargetFramework)/</FocusedTestBaselineHostDir>
 	<Configurations>Debug;Release;Debuggable Release</Configurations>
 	<AnalysisLevel>none</AnalysisLevel>
 	<NeutralLanguage>en-US</NeutralLanguage>
@@ -69,7 +78,41 @@
     <Compile Include="DesktopInstallLinkingRuntimeTests.cs" />
     <Compile Include="Presentation\HttpChummerClientBuildPathTests.cs" />
   </ItemGroup>
-  <ItemGroup Condition="'$(OS)' != 'Windows_NT' and '$(RunDesktopUpdateTestsOnly)' != 'true'">
+	  <ItemGroup Condition="'$(ResolvedFocusedTestCompileFiles)' != ''">
+	    <_FocusedTestCompileFile Include="$([MSBuild]::Unescape('$(ResolvedFocusedTestCompileFiles)'))" />
+	    <_FocusedTestSupportFile Include="$([MSBuild]::Unescape('$(ResolvedFocusedTestSupportFiles)'))" Condition="'$(ResolvedFocusedTestSupportFiles)' != ''" />
+	    <_FocusedPresentationSharedSupport Include="Presentation\Fake*.cs" />
+	    <_FocusedPresentationSharedSupport Include="Presentation\TestContextLocator.cs" />
+	    <Compile Remove="**\*.cs" />
+	    <Compile Include="GlobalUsings.cs" />
+	    <Compile Include="@(_FocusedTestCompileFile)" />
+	    <Compile Include="@(_FocusedTestSupportFile)" />
+	    <Compile Include="@(_FocusedPresentationSharedSupport)" />
+	    <Compile Include="$(FocusedTestSupportFile)" Condition="'$(FocusedTestSupportFile)' != ''" />
+	    <Compile Include="$(FocusedTestSupportFile2)" Condition="'$(FocusedTestSupportFile2)' != ''" />
+	    <Compile Include="$(FocusedTestSupportFile3)" Condition="'$(FocusedTestSupportFile3)' != ''" />
+	  </ItemGroup>
+  <Target Name="PrimeFocusedTestHostOutput"
+          BeforeTargets="GenerateBuildDependencyFile"
+          Condition="'$(ResolvedFocusedTestCompileFiles)' != '' and '$(BuildProjectReferences)' == 'false'">
+    <PropertyGroup>
+      <_FocusedBaselineHostDir>$([System.IO.Path]::GetFullPath('$(FocusedTestBaselineHostDir)'))</_FocusedBaselineHostDir>
+      <_FocusedOutputDir>$([System.IO.Path]::GetFullPath('$(OutDir)'))</_FocusedOutputDir>
+    </PropertyGroup>
+
+    <Error Condition="!Exists('$(_FocusedBaselineHostDir)')"
+           Text="Focused test builds with BuildProjectReferences=false require a baseline test host at '$(_FocusedBaselineHostDir)'. Build Chummer.Tests once without focused compile pruning or set FocusedTestBaselineHostDir." />
+
+    <ItemGroup Condition="'$(_FocusedBaselineHostDir)' != '$(_FocusedOutputDir)'">
+      <_FocusedBaselineHostFile Include="$(_FocusedBaselineHostDir)**/*" />
+    </ItemGroup>
+
+    <Copy Condition="'$(_FocusedBaselineHostDir)' != '$(_FocusedOutputDir)'"
+          SourceFiles="@(_FocusedBaselineHostFile)"
+          DestinationFiles="@(_FocusedBaselineHostFile->'$(_FocusedOutputDir)%(RecursiveDir)%(Filename)%(Extension)')"
+          SkipUnchangedFiles="true" />
+  </Target>
+  <ItemGroup Condition="'$(OS)' != 'Windows_NT' and '$(RunDesktopUpdateTestsOnly)' != 'true' and '$(ResolvedFocusedTestCompileFiles)' == ''">
     <Compile Include="GlobalUsings.cs" />
     <Compile Include="CharacterSectionServiceTests.cs" />
     <Compile Include="ActiveRuntimeStatusServiceTests.cs" />

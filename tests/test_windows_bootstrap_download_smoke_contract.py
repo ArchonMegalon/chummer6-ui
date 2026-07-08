@@ -13,14 +13,21 @@ WINDOWS_EXIT_GATE = REPO_ROOT / "scripts" / "materialize-windows-desktop-exit-ga
 def test_windows_startup_smoke_supports_bootstrap_payload_download_mode() -> None:
     text = STARTUP_SMOKE.read_text(encoding="utf-8")
 
-    assert 'WINDOWS_STARTUP_SMOKE_PAYLOAD_MODE="${CHUMMER_WINDOWS_STARTUP_SMOKE_PAYLOAD_MODE:-local}"' in text
+    assert 'WINDOWS_STARTUP_SMOKE_PAYLOAD_MODE="${CHUMMER_WINDOWS_STARTUP_SMOKE_PAYLOAD_MODE:-auto}"' in text
+    assert 'WINDOWS_WINE_HOST_TEMP_ROOT=""' in text
     assert "start_windows_payload_http_server()" in text
+    assert 'if [[ -n "$local_payload_path" ]]; then' in text
+    assert 'configured_payload_mode="download"' in text
+    assert 'windows_binary_env_prefix=(env "TEMP=$windows_binary_temp_root" "TMP=$windows_binary_temp_root")' in text
+    assert 'windows_host_temp_root="$(mktemp -d "${TMPDIR:-/tmp}/chummer-wine-temp.XXXXXX")"' in text
+    assert 'CHUMMER_WINDOWS_BINARY_TEMP_ROOT="$windows_native_temp_root" \\' in text
+    assert 'local installer_trace_root="${WINDOWS_WINE_HOST_TEMP_ROOT:-$wine_temp_dir}"' in text
     assert 'WINDOWS_STARTUP_SMOKE_EFFECTIVE_PAYLOAD_MODE="download"' in text
     assert 'CHUMMER_INSTALLER_PAYLOAD_URL="$WINDOWS_STARTUP_SMOKE_EFFECTIVE_PAYLOAD_URL"' in text
     assert 'wait_for_local_http_url "$payload_url"' in text
     assert 'local -a installer_trace_candidates=(' in text
-    assert '"$wine_temp_dir/Chummer6/installer-temp/chummer-desktop-installer-progress.log"' in text
-    assert '"$wine_temp_dir/chummer-desktop-installer-progress.log"' in text
+    assert '"$installer_trace_root/Chummer6/installer-temp/chummer-desktop-installer-progress.log"' in text
+    assert '"$installer_trace_root/chummer-desktop-installer-progress.log"' in text
     assert 'installer_trace_capture_path="$OUTPUT_DIR/windows-installer-progress-$APP_KEY-$RID.log"' in text
     assert 'payload["bootstrapPayloadAcquisitionMode"] = payload_mode' in text
     assert 'payload["bootstrapPayloadSha256"] = payload_sha256' in text

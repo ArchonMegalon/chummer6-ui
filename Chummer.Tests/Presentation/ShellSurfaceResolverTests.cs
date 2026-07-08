@@ -379,6 +379,61 @@ public sealed class ShellSurfaceResolverTests
         Assert.AreEqual("ws-overview-sr6", surface.ActiveWorkspaceId?.Value);
     }
 
+    [TestMethod]
+    public void Resolve_preserves_shell_ruleset_when_no_active_workspace_is_selected()
+    {
+        var createTab = new NavigationTabDefinition("tab-create", "Create", "build-lab", "character", true, true, RulesetDefaults.Sr5);
+        var sr5Tab = new NavigationTabDefinition("tab-info", "Info", "profile", "character", true, true, RulesetDefaults.Sr5);
+        var shellState = ShellState.Empty with
+        {
+            ActiveWorkspaceId = null,
+            ActiveRulesetId = RulesetDefaults.Sr5,
+            PreferredRulesetId = RulesetDefaults.Sr5,
+            OpenWorkspaces =
+            [
+                new ShellWorkspaceState(
+                    Id: new Chummer.Contracts.Workspaces.CharacterWorkspaceId("ws-sr6"),
+                    Name: "SR6 Runner",
+                    Alias: "SR6",
+                    LastOpenedUtc: DateTimeOffset.UtcNow,
+                    RulesetId: RulesetDefaults.Sr6,
+                    HasSavedWorkspace: true)
+            ],
+            NavigationTabs = [createTab, sr5Tab],
+            ActiveTabId = createTab.Id
+        };
+
+        var workspaceAction = new WorkspaceSurfaceActionDefinition(
+            Id: "action.profile",
+            Label: "Create",
+            TabId: createTab.Id,
+            Kind: WorkspaceSurfaceActionKind.Section,
+            TargetId: "build-lab",
+            RequiresOpenCharacter: false,
+            EnabledByDefault: true,
+            RulesetId: RulesetDefaults.Sr5);
+        var catalogResolver = new StubShellCatalogResolver([workspaceAction]);
+        var resolver = new ShellSurfaceResolver(
+            catalogResolver,
+            new StubAvailabilityEvaluator(
+                commandEnabled: true,
+                tabEnabled: true,
+                actionEnabled: true));
+
+        ShellSurfaceState surface = resolver.Resolve(CharacterOverviewState.Empty, shellState);
+
+        Assert.IsNull(surface.ActiveWorkspaceId);
+        Assert.AreEqual(RulesetDefaults.Sr5, surface.ActiveRulesetId);
+        Assert.AreEqual(RulesetDefaults.Sr5, surface.PreferredRulesetId);
+        Assert.AreEqual(RulesetDefaults.Sr5, catalogResolver.LastWorkspaceActionRulesetId);
+        CollectionAssert.AreEqual(
+            new[] { createTab.Id, sr5Tab.Id },
+            surface.NavigationTabs.Select(tab => tab.Id).ToArray());
+        Assert.AreEqual(createTab.Id, surface.ActiveTabId);
+        Assert.HasCount(1, surface.OpenWorkspaces);
+        Assert.AreEqual("ws-sr6", surface.OpenWorkspaces[0].Id.Value);
+    }
+
     private sealed class StubShellCatalogResolver : IRulesetShellCatalogResolver
     {
         private readonly IReadOnlyList<WorkspaceSurfaceActionDefinition> _workspaceActions;

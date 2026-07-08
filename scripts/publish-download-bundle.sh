@@ -29,11 +29,32 @@ PUBLIC_SKIP_STARTUP_SMOKE_FILTER="${CHUMMER_PUBLIC_SKIP_STARTUP_SMOKE_FILTER:-}"
 SYNC_LIVE_DOWNLOADS_MIRRORS="${CHUMMER_PUBLIC_EDGE_DOWNLOADS_SYNC_MIRRORS:-true}"
 ALLOW_WINDOWS_VISUAL_PROOF_HANDOFF_PUBLISH="${CHUMMER_ALLOW_WINDOWS_VISUAL_PROOF_HANDOFF_PUBLISH:-0}"
 ROOT_RELEASE_BLOCKERS_PATH="${CHUMMER_ROOT_RELEASE_BLOCKERS_PATH:-$WORKSPACE_ROOT/RELEASE_BLOCKERS.generated.json}"
+PUBLIC_STABLE_BLOCKERS_MAX_AGE_SECONDS="${CHUMMER_PUBLIC_STABLE_BLOCKERS_MAX_AGE_SECONDS:-86400}"
+ALLOW_BUNDLE_FILES_SOURCE_FALLBACK="${CHUMMER_ALLOW_BUNDLE_FILES_SOURCE_FALLBACK:-0}"
 
 to_bool() {
   local value
   value="$(echo "${1:-}" | tr '[:upper:]' '[:lower:]')"
   [[ "$value" == "1" || "$value" == "true" || "$value" == "yes" || "$value" == "on" ]]
+}
+
+validate_absolute_http_url() {
+  local value="$1"
+  local label="$2"
+  python3 - "$value" "$label" <<'PY'
+import sys
+from urllib.parse import urlparse
+
+value = sys.argv[1].strip()
+label = sys.argv[2]
+parsed = urlparse(value)
+if parsed.scheme.lower() not in {"http", "https"} or not parsed.netloc:
+    print(
+        f"Invalid {label}: {value!r} (expected absolute http:// or https:// URL).",
+        file=sys.stderr,
+    )
+    raise SystemExit(1)
+PY
 }
 
 array_count() {
@@ -99,6 +120,28 @@ except Exception:
 channel = str(payload.get("channel") or payload.get("channelId") or "").strip().lower()
 raise SystemExit(0 if channel == "preview" else 1)
 PY
+}
+
+verify_bundle_layout() {
+  local bundle_dir="$1"
+  local files_dir="$2"
+  local normalized_bundle_dir="${bundle_dir%/}"
+  local parent_dir
+  parent_dir="$(dirname "$normalized_bundle_dir")"
+  local nested_files_dir="$files_dir/files"
+
+  if [[ "$(basename "$normalized_bundle_dir")" == "files" ]] \
+    && [[ -f "$parent_dir/releases.json" || -f "$parent_dir/RELEASE_CHANNEL.generated.json" ]]; then
+    echo "Bundle root points at files/ directory: $normalized_bundle_dir" >&2
+    echo "Publish from the stage or bundle root, not its files/ child." >&2
+    exit 1
+  fi
+
+  if [[ -d "$nested_files_dir" ]] && find "$nested_files_dir" -mindepth 1 -maxdepth 1 | grep -q .; then
+    echo "Bundle is malformed: found nested files directory under $nested_files_dir" >&2
+    echo "Publish from the stage or bundle root, not its files/ child." >&2
+    exit 1
+  fi
 }
 
 refresh_release_build_handoff() {
@@ -196,15 +239,17 @@ require_public_stable_root_blocker_clearance() {
     return 0
   fi
 
-  python3 - "$ROOT_RELEASE_BLOCKERS_PATH" <<'PY'
+  python3 - "$ROOT_RELEASE_BLOCKERS_PATH" "$PUBLIC_STABLE_BLOCKERS_MAX_AGE_SECONDS" <<'PY'
 from __future__ import annotations
 
 import json
 import sys
+from datetime import datetime, timezone
 from pathlib import Path
 
 
 ALLOWED_BLOCKERS = {"release_posture:non_flagship_channel"}
+MAX_AGE_ENV_LABEL = "CHUMMER_PUBLIC_STABLE_BLOCKERS_MAX_AGE_SECONDS"
 
 
 def fail(message: str) -> None:
@@ -216,10 +261,46 @@ path = Path(sys.argv[1])
 if not path.is_file():
     fail(f"Public stable publication requires root release blocker truth, but the receipt is missing: {path}")
 
+raw_max_age_seconds = str(sys.argv[2]).strip()
+try:
+    max_age_seconds = int(raw_max_age_seconds)
+except ValueError:
+    fail(
+        f"Invalid {MAX_AGE_ENV_LABEL} value: {sys.argv[2]!r} "
+        "(expected integer max age in seconds)."
+    )
+if max_age_seconds < 0:
+    fail(
+        f"Invalid {MAX_AGE_ENV_LABEL} value: {sys.argv[2]!r} "
+        "(expected integer max age in seconds)."
+    )
+
 try:
     payload = json.loads(path.read_text(encoding="utf-8-sig"))
 except Exception as exc:  # pragma: no cover - surfaced via stderr
     fail(f"Public stable publication requires readable root release blocker truth: {path} ({exc})")
+
+generated_at = str(payload.get("generated_at") or "").strip()
+if not generated_at:
+    fail(f"Public stable publication requires fresh root release blocker truth, but generated_at is missing: {path}")
+try:
+    normalized_generated_at = generated_at[:-1] + "+00:00" if generated_at.endswith("Z") else generated_at
+    generated_at_dt = datetime.fromisoformat(normalized_generated_at)
+except ValueError as exc:
+    fail(
+        "Public stable publication requires parseable generated_at in root release blocker truth: "
+        f"{path} ({generated_at!r}; {exc})"
+    )
+if generated_at_dt.tzinfo is None:
+    generated_at_dt = generated_at_dt.replace(tzinfo=timezone.utc)
+generated_at_utc = generated_at_dt.astimezone(timezone.utc)
+age_seconds = (datetime.now(timezone.utc) - generated_at_utc).total_seconds()
+if age_seconds > max_age_seconds:
+    fail(
+        "Public stable publication requires fresh root release blocker truth. "
+        f"source={path} generated_at={generated_at} "
+        f"age_seconds={int(age_seconds)} max_age_seconds={max_age_seconds}"
+    )
 
 blockers = payload.get("blockers")
 if not isinstance(blockers, list):
@@ -237,7 +318,6 @@ for entry in blockers:
 
 disallowed = [blocker_id for blocker_id in blocker_ids if blocker_id not in ALLOWED_BLOCKERS]
 if disallowed:
-    generated_at = str(payload.get("generated_at") or "").strip()
     fail(
         "Public stable publication is blocked by root release truth. "
         f"source={path} generated_at={generated_at or 'unknown'} "
@@ -498,23 +578,28 @@ if [[ ! -d "$BUNDLE_DIR" ]]; then
   exit 1
 fi
 
+verify_bundle_layout "$BUNDLE_DIR" "$FILES_SOURCE"
+
 if [[ ! -d "$FILES_SOURCE" ]]; then
-  for fallback_files_source in \
-    "$REPO_ROOT/Chummer.Portal/downloads/files" \
-    "$REPO_ROOT/../chummer.run-services/Chummer.Portal/downloads/files" \
-    "$REPO_ROOT/../chummer6-hub/Chummer.Portal/downloads/files" \
-    "$REPO_ROOT/../chummer-hub-registry/.codex-studio/published/files"
-  do
-    if [[ -d "$fallback_files_source" ]]; then
-      FILES_SOURCE="$fallback_files_source"
-      break
-    fi
-  done
+  if to_bool "$ALLOW_BUNDLE_FILES_SOURCE_FALLBACK"; then
+    for fallback_files_source in \
+      "$REPO_ROOT/Chummer.Portal/downloads/files" \
+      "$REPO_ROOT/../chummer.run-services/Chummer.Portal/downloads/files" \
+      "$REPO_ROOT/../chummer6-hub/Chummer.Portal/downloads/files" \
+      "$REPO_ROOT/../chummer-hub-registry/.codex-studio/published/files"
+    do
+      if [[ -d "$fallback_files_source" ]]; then
+        FILES_SOURCE="$fallback_files_source"
+        break
+      fi
+    done
+  fi
 fi
 
 if [[ ! -d "$FILES_SOURCE" ]]; then
   echo "Bundle is missing files directory: $FILES_SOURCE" >&2
   echo "Expected desktop-download-bundle layout: releases.json + files/chummer-*" >&2
+  echo "Refusing to fall back to unrelated downloads/files roots unless CHUMMER_ALLOW_BUNDLE_FILES_SOURCE_FALLBACK=true is set explicitly." >&2
   exit 1
 fi
 
@@ -544,6 +629,19 @@ fi
 verify_windows_installer_payload_gate
 refresh_release_build_handoff "$BUNDLE_DIR"
 
+if to_bool "$DEPLOY_MODE"; then
+  export CHUMMER_PORTAL_DOWNLOADS_REQUIRE_PUBLISHED_VERSION="${CHUMMER_PORTAL_DOWNLOADS_REQUIRE_PUBLISHED_VERSION:-true}"
+  export CHUMMER_PORTAL_DOWNLOADS_VERIFY_LINKS="${CHUMMER_PORTAL_DOWNLOADS_VERIFY_LINKS:-true}"
+  if [[ -z "$LIVE_VERIFY_TARGET" ]]; then
+    echo "Deployment mode requires CHUMMER_PORTAL_DOWNLOADS_VERIFY_URL for live manifest verification." >&2
+    exit 1
+  fi
+fi
+
+if [[ -n "$LIVE_VERIFY_TARGET" ]]; then
+  validate_absolute_http_url "$LIVE_VERIFY_TARGET" "CHUMMER_PORTAL_DOWNLOADS_VERIFY_URL"
+fi
+
 sync_source_dir="$(mktemp -d)"
 cleanup() {
   rm -rf "$sync_source_dir"
@@ -564,6 +662,29 @@ append_unique_downloads_mirror_dir() {
     fi
   done < <(array_values_nul live_downloads_mirror_dirs)
   live_downloads_mirror_dirs+=("$candidate")
+}
+
+deploy_dir_is_live_downloads_root() {
+  local candidate="$1"
+  local resolved_candidate=""
+  local known_root=""
+
+  resolved_candidate="$(realpath -m "$candidate")"
+  for known_root in \
+    "$REPO_ROOT/Docker/Downloads" \
+    "$REPO_ROOT/Chummer.Portal/downloads" \
+    "$REPO_ROOT/.codex-studio/published/portal" \
+    "$REPO_ROOT/../chummer.run-services/Chummer.Portal/downloads" \
+    "$REPO_ROOT/../chummer-hub-registry/.codex-studio/published" \
+    "$REPO_ROOT/../chummer6-hub/Chummer.Portal/downloads" \
+    "$REPO_ROOT/../chummer-presentation/Docker/Downloads"
+  do
+    if [[ "$resolved_candidate" == "$(realpath -m "$known_root")" ]]; then
+      return 0
+    fi
+  done
+
+  return 1
 }
 
 discover_live_downloads_mirror_dirs() {
@@ -587,6 +708,10 @@ discover_live_downloads_mirror_dirs() {
   deploy_dir_physical="$(realpath -m "$DEPLOY_DIR")"
   canonical_downloads_physical="$(realpath -m "$REPO_ROOT/Docker/Downloads")"
   portal_downloads_physical="$(realpath -m "$REPO_ROOT/../chummer.run-services/Chummer.Portal/downloads")"
+
+  if ! deploy_dir_is_live_downloads_root "$deploy_dir_physical"; then
+    return 0
+  fi
 
   if [[ "$deploy_dir_physical" != "$canonical_downloads_physical" ]]; then
     append_unique_downloads_mirror_dir "$REPO_ROOT/Docker/Downloads"
@@ -1252,15 +1377,6 @@ fi
 
 refresh_release_build_handoff "$DEPLOY_DIR"
 verify_windows_desktop_exit_gate
-
-if to_bool "$DEPLOY_MODE"; then
-  export CHUMMER_PORTAL_DOWNLOADS_REQUIRE_PUBLISHED_VERSION="${CHUMMER_PORTAL_DOWNLOADS_REQUIRE_PUBLISHED_VERSION:-true}"
-  export CHUMMER_PORTAL_DOWNLOADS_VERIFY_LINKS="${CHUMMER_PORTAL_DOWNLOADS_VERIFY_LINKS:-true}"
-  if [[ -z "$LIVE_VERIFY_TARGET" ]]; then
-    echo "Deployment mode requires CHUMMER_PORTAL_DOWNLOADS_VERIFY_URL for live manifest verification." >&2
-    exit 1
-  fi
-fi
 
 CHUMMER_VERIFY_REQUIRE_COMPLETE_DESKTOP_COVERAGE="${CHUMMER_RELEASE_REQUIRE_COMPLETE_DESKTOP_COVERAGE:-1}" \
 CHUMMER_VERIFY_SKIP_STARTUP_SMOKE_FILTER="${CHUMMER_PUBLIC_SKIP_STARTUP_SMOKE_FILTER:-$PUBLIC_SKIP_STARTUP_SMOKE_FILTER}" \

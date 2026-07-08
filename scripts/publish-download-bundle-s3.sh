@@ -49,6 +49,71 @@ array_count() {
   printf '%s\n' "$count"
 }
 
+validate_absolute_http_url() {
+  local value="$1"
+  local label="$2"
+  python3 - "$value" "$label" <<'PY'
+import sys
+from urllib.parse import urlparse
+
+value = sys.argv[1].strip()
+label = sys.argv[2]
+parsed = urlparse(value)
+if parsed.scheme.lower() not in {"http", "https"} or not parsed.netloc:
+    print(
+        f"Invalid {label}: {value!r} (expected absolute http:// or https:// URL).",
+        file=sys.stderr,
+    )
+    raise SystemExit(1)
+PY
+}
+
+validate_s3_uri() {
+  local value="$1"
+  local label="$2"
+  python3 - "$value" "$label" <<'PY'
+import sys
+
+value = sys.argv[1].strip()
+label = sys.argv[2]
+if not value.startswith("s3://") or len(value) <= len("s3://") or any(ch.isspace() for ch in value):
+    print(
+        f"Invalid {label}: {value!r} (expected s3://bucket/path URI).",
+        file=sys.stderr,
+    )
+    raise SystemExit(1)
+PY
+}
+
+verify_bundle_layout() {
+  local bundle_dir="$1"
+  local files_dir="$2"
+  local normalized_bundle_dir="${bundle_dir%/}"
+  local parent_dir
+  parent_dir="$(dirname "$normalized_bundle_dir")"
+  local nested_files_dir="$files_dir/files"
+
+  if [[ "$(basename "$normalized_bundle_dir")" == "files" ]] \
+    && [[ -f "$parent_dir/releases.json" || -f "$parent_dir/RELEASE_CHANNEL.generated.json" ]]; then
+    echo "Bundle root points at files/ directory: $normalized_bundle_dir" >&2
+    echo "Publish from the stage or bundle root, not its files/ child." >&2
+    exit 1
+  fi
+
+  if [[ -d "$nested_files_dir" ]] && find "$nested_files_dir" -mindepth 1 -maxdepth 1 | grep -q .; then
+    echo "Bundle is malformed: found nested files directory under $nested_files_dir" >&2
+    echo "Publish from the stage or bundle root, not its files/ child." >&2
+    exit 1
+  fi
+}
+
+verify_bundle_layout "$BUNDLE_DIR" "$FILES_SOURCE"
+
+if [[ ! -d "$BUNDLE_DIR" ]]; then
+  echo "Bundle directory not found: $BUNDLE_DIR" >&2
+  exit 1
+fi
+
 if [[ ! -f "$MANIFEST_SOURCE" || ! -d "$FILES_SOURCE" ]]; then
   echo "Expected desktop-download-bundle layout: releases.json + files/chummer-*" >&2
   exit 1
@@ -84,6 +149,25 @@ if (( windows_payload_gate_args_count == 6 )); then
 fi
 python3 "$SCRIPT_DIR/verify-windows-installer-payloads.py" "${windows_payload_gate_args[@]}"
 
+if [[ -z "$S3_TARGET_URI" ]]; then
+  echo "Set CHUMMER_PORTAL_DOWNLOADS_S3_URI (for example: s3://bucket/path)." >&2
+  exit 1
+fi
+
+if [[ -z "$VERIFY_URL" ]]; then
+  echo "Set CHUMMER_PORTAL_DOWNLOADS_VERIFY_URL to verify published manifest after object-storage sync." >&2
+  exit 1
+fi
+
+validate_s3_uri "$S3_TARGET_URI" "CHUMMER_PORTAL_DOWNLOADS_S3_URI"
+if [[ -n "$S3_LATEST_URI" ]]; then
+  validate_s3_uri "$S3_LATEST_URI" "CHUMMER_PORTAL_DOWNLOADS_S3_LATEST_URI"
+fi
+validate_absolute_http_url "$VERIFY_URL" "CHUMMER_PORTAL_DOWNLOADS_VERIFY_URL"
+if [[ -n "$S3_ENDPOINT_URL" ]]; then
+  validate_absolute_http_url "$S3_ENDPOINT_URL" "CHUMMER_PORTAL_DOWNLOADS_S3_ENDPOINT_URL"
+fi
+
 sync_source_dir="$(mktemp -d)"
 cleanup() {
   rm -rf "$sync_source_dir"
@@ -110,16 +194,6 @@ RELEASE_PROOF_PATH="${RELEASE_PROOF_PATH:-${CHUMMER_HUB_LOCAL_RELEASE_PROOF_PATH
 CHUMMER_UI_LOCALIZATION_RELEASE_GATE_PATH="${CHUMMER_UI_LOCALIZATION_RELEASE_GATE_PATH:-}" \
 CHUMMER_EXTERNAL_PROOF_BASE_URL="${CHUMMER_EXTERNAL_PROOF_BASE_URL:-https://chummer.run}" \
 bash "$SCRIPT_DIR/generate-releases-manifest.sh"
-
-if [[ -z "$S3_TARGET_URI" ]]; then
-  echo "Set CHUMMER_PORTAL_DOWNLOADS_S3_URI (for example: s3://bucket/path)." >&2
-  exit 1
-fi
-
-if [[ -z "$VERIFY_URL" ]]; then
-  echo "Set CHUMMER_PORTAL_DOWNLOADS_VERIFY_URL to verify published manifest after object-storage sync." >&2
-  exit 1
-fi
 
 export CHUMMER_PORTAL_DOWNLOADS_VERIFY_LINKS="${CHUMMER_PORTAL_DOWNLOADS_VERIFY_LINKS:-true}"
 

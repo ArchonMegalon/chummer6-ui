@@ -45,6 +45,23 @@ if [[ -z "${TARGET}" ]]; then
   exit 1
 fi
 
+if [[ -d "$TARGET" ]]; then
+  normalized_target="${TARGET%/}"
+  if [[ "$(basename "$normalized_target")" == "files" ]]; then
+    echo "Verification target points at downloads files/ directory: $normalized_target" >&2
+    echo "Verify the downloads shelf root or its releases.json manifest, not its files/ child." >&2
+    exit 1
+  fi
+
+  target_manifest_path="$normalized_target/releases.json"
+  if [[ ! -f "$target_manifest_path" ]]; then
+    echo "Local downloads shelf directory is missing releases.json: $target_manifest_path" >&2
+    exit 1
+  fi
+
+  TARGET="$target_manifest_path"
+fi
+
 if [[ ! -f "$REGISTRY_ROOT/scripts/verify_public_release_channel.py" ]]; then
   echo "Missing registry verifier: $REGISTRY_ROOT/scripts/verify_public_release_channel.py" >&2
   exit 1

@@ -127,6 +127,12 @@ PY
 PUBLISH_DIR="$(abspath "$PUBLISH_DIR")"
 DIST_DIR="$(abspath "$DIST_DIR")"
 
+if [[ "$(basename "$DIST_DIR")" == "files" ]]; then
+  echo "Refusing to use a downloads files/ directory as the desktop installer dist root: $DIST_DIR" >&2
+  echo "Pass the release stage root (for example nightly-run-*/ or dist/), not its files/ child." >&2
+  exit 1
+fi
+
 case "$APP_KEY" in
   avalonia)
     APP_DISPLAY="Chummer6 Avalonia Desktop"
