@@ -2373,8 +2373,8 @@ for raw_path in sys.argv[2:]:
 PY
 canonical_startup_smoke_dir="$(dirname "$CANONICAL_MANIFEST_PATH")/startup-smoke"
 if [[ -n "$STARTUP_SMOKE_DIR" && -d "$STARTUP_SMOKE_DIR" ]]; then
-  resolved_startup_smoke_dir="$(realpath -m "$STARTUP_SMOKE_DIR")"
-  resolved_canonical_startup_smoke_dir="$(realpath -m "$canonical_startup_smoke_dir")"
+  resolved_startup_smoke_dir="$(resolve_path_allow_missing "$STARTUP_SMOKE_DIR")"
+  resolved_canonical_startup_smoke_dir="$(resolve_path_allow_missing "$canonical_startup_smoke_dir")"
   if [[ "$resolved_startup_smoke_dir" != "$resolved_canonical_startup_smoke_dir" ]]; then
     mkdir -p "$canonical_startup_smoke_dir"
     find "$canonical_startup_smoke_dir" -maxdepth 1 -type f -name 'startup-smoke-*.receipt.json' -exec rm -f -- {} +
@@ -2439,8 +2439,8 @@ prune_downloads_dir_to_promoted_files() {
     return 0
   fi
 
-  repo_owned_downloads_dir="$(realpath -m "$REPO_ROOT/Docker/Downloads/files")"
-  resolved_downloads_dir="$(realpath -m "$DOWNLOADS_DIR")"
+  repo_owned_downloads_dir="$(resolve_path_allow_missing "$REPO_ROOT/Docker/Downloads/files")"
+  resolved_downloads_dir="$(resolve_path_allow_missing "$DOWNLOADS_DIR")"
   if [[ "$resolved_downloads_dir" != "$repo_owned_downloads_dir" ]]; then
     echo "skipping downloads prune because source dir is external to repo-owned staging: $DOWNLOADS_DIR"
     return 0
@@ -2649,8 +2649,8 @@ sync_presentation_downloads_mirror() {
 }
 
 canonical_files_dir="$(dirname "$CANONICAL_MANIFEST_PATH")/files"
-resolved_downloads_dir="$(realpath -m "$DOWNLOADS_DIR")"
-resolved_canonical_files_dir="$(realpath -m "$canonical_files_dir")"
+resolved_downloads_dir="$(resolve_path_allow_missing "$DOWNLOADS_DIR")"
+resolved_canonical_files_dir="$(resolve_path_allow_missing "$canonical_files_dir")"
 if [[ "$resolved_downloads_dir" == "$resolved_canonical_files_dir" ]]; then
   echo "canonical files dir matches downloads source; skipped canonical files sync"
 else

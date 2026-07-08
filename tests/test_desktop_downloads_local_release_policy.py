@@ -904,6 +904,24 @@ def test_publish_download_bundle_defaults_cross_checkout_mirror_sync_to_repo_own
     assert publish_script.index('if [[ "$mode" == "auto" ]] && ! deploy_dir_is_repo_owned_live_downloads_root "$deploy_dir_physical"; then') < publish_script.index('if [[ "$deploy_dir_physical" != "$canonical_downloads_physical" ]]; then')
 
 
+def test_nightly_publish_path_uses_portable_missing_path_resolution() -> None:
+    publish_script = (REPO_ROOT / "scripts" / "publish-download-bundle.sh").read_text(encoding="utf-8")
+    manifest_script = (REPO_ROOT / "scripts" / "generate-releases-manifest.sh").read_text(encoding="utf-8")
+
+    assert "resolve_path_allow_missing()" in publish_script
+    assert 'print(pathlib.Path(sys.argv[1]).resolve(strict=False))' in publish_script
+    assert 'resolved_candidate="$(resolve_path_allow_missing "$candidate")"' in publish_script
+    assert 'deploy_dir_physical="$(resolve_path_allow_missing "$DEPLOY_DIR")"' in publish_script
+    assert 'resolved_target_dir="$(resolve_path_allow_missing "$target_dir")"' in publish_script
+    assert "realpath -m" not in publish_script
+
+    assert "resolve_path_allow_missing()" in manifest_script
+    assert 'resolved_startup_smoke_dir="$(resolve_path_allow_missing "$STARTUP_SMOKE_DIR")"' in manifest_script
+    assert 'repo_owned_downloads_dir="$(resolve_path_allow_missing "$REPO_ROOT/Docker/Downloads/files")"' in manifest_script
+    assert 'resolved_canonical_files_dir="$(resolve_path_allow_missing "$canonical_files_dir")"' in manifest_script
+    assert "realpath -m" not in manifest_script
+
+
 def test_publish_download_bundle_rejects_nested_files_layout_before_manifest_sync() -> None:
     publish_script = (REPO_ROOT / "scripts" / "publish-download-bundle.sh").read_text(encoding="utf-8")
 

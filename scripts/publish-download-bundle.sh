@@ -126,6 +126,15 @@ array_values_nul() {
   return "$status"
 }
 
+resolve_path_allow_missing() {
+  python3 - "$1" <<'PY'
+import pathlib
+import sys
+
+print(pathlib.Path(sys.argv[1]).resolve(strict=False))
+PY
+}
+
 manifest_channel_is_preview() {
   local manifest_path="$1"
   python3 - "$manifest_path" <<'PY'
@@ -584,7 +593,7 @@ PY
 }
 
 if [[ -z "$PORTAL_MANIFEST_PATH" ]]; then
-  if [[ "$(realpath -m "$DEPLOY_DIR")" == "$(realpath -m "$REPO_ROOT/Docker/Downloads")" ]]; then
+  if [[ "$(resolve_path_allow_missing "$DEPLOY_DIR")" == "$(resolve_path_allow_missing "$REPO_ROOT/Docker/Downloads")" ]]; then
     PORTAL_MANIFEST_PATH="$REPO_ROOT/Chummer.Portal/downloads/releases.json"
   else
     PORTAL_MANIFEST_PATH="$DEPLOY_DIR/releases.json"
@@ -676,10 +685,10 @@ append_unique_downloads_mirror_dir() {
   local existing=""
 
   [[ -n "$candidate" ]] || return 0
-  resolved_candidate="$(realpath -m "$candidate")"
+  resolved_candidate="$(resolve_path_allow_missing "$candidate")"
   while IFS= read -r -d '' existing; do
     [[ -n "$existing" ]] || continue
-    if [[ "$(realpath -m "$existing")" == "$resolved_candidate" ]]; then
+    if [[ "$(resolve_path_allow_missing "$existing")" == "$resolved_candidate" ]]; then
       return 0
     fi
   done < <(array_values_nul live_downloads_mirror_dirs)
@@ -691,7 +700,7 @@ deploy_dir_is_live_downloads_root() {
   local resolved_candidate=""
   local known_root=""
 
-  resolved_candidate="$(realpath -m "$candidate")"
+  resolved_candidate="$(resolve_path_allow_missing "$candidate")"
   for known_root in \
     "$REPO_ROOT/Docker/Downloads" \
     "$REPO_ROOT/Chummer.Portal/downloads" \
@@ -701,7 +710,7 @@ deploy_dir_is_live_downloads_root() {
     "$REPO_ROOT/../chummer6-hub/Chummer.Portal/downloads" \
     "$REPO_ROOT/../chummer-presentation/Docker/Downloads"
   do
-    if [[ "$resolved_candidate" == "$(realpath -m "$known_root")" ]]; then
+    if [[ "$resolved_candidate" == "$(resolve_path_allow_missing "$known_root")" ]]; then
       return 0
     fi
   done
@@ -714,13 +723,13 @@ deploy_dir_is_repo_owned_live_downloads_root() {
   local resolved_candidate=""
   local known_root=""
 
-  resolved_candidate="$(realpath -m "$candidate")"
+  resolved_candidate="$(resolve_path_allow_missing "$candidate")"
   for known_root in \
     "$REPO_ROOT/Docker/Downloads" \
     "$REPO_ROOT/Chummer.Portal/downloads" \
     "$REPO_ROOT/.codex-studio/published/portal"
   do
-    if [[ "$resolved_candidate" == "$(realpath -m "$known_root")" ]]; then
+    if [[ "$resolved_candidate" == "$(resolve_path_allow_missing "$known_root")" ]]; then
       return 0
     fi
   done
@@ -747,9 +756,9 @@ discover_live_downloads_mirror_dirs() {
     done
   fi
 
-  deploy_dir_physical="$(realpath -m "$DEPLOY_DIR")"
-  canonical_downloads_physical="$(realpath -m "$REPO_ROOT/Docker/Downloads")"
-  portal_downloads_physical="$(realpath -m "$REPO_ROOT/../chummer.run-services/Chummer.Portal/downloads")"
+  deploy_dir_physical="$(resolve_path_allow_missing "$DEPLOY_DIR")"
+  canonical_downloads_physical="$(resolve_path_allow_missing "$REPO_ROOT/Docker/Downloads")"
+  portal_downloads_physical="$(resolve_path_allow_missing "$REPO_ROOT/../chummer.run-services/Chummer.Portal/downloads")"
 
   if [[ "$mode" == "auto" ]] && ! deploy_dir_is_repo_owned_live_downloads_root "$deploy_dir_physical"; then
     return 0
@@ -842,10 +851,10 @@ sync_live_downloads_mirror_dir() {
   local source_path=""
   local file_name=""
 
-  resolved_target_dir="$(realpath -m "$target_dir")"
-  resolved_deploy_dir="$(realpath -m "$DEPLOY_DIR")"
+  resolved_target_dir="$(resolve_path_allow_missing "$target_dir")"
+  resolved_deploy_dir="$(resolve_path_allow_missing "$DEPLOY_DIR")"
   if [[ -n "$PORTAL_DOWNLOADS_DIR" ]]; then
-    resolved_portal_dir="$(realpath -m "$PORTAL_DOWNLOADS_DIR")"
+    resolved_portal_dir="$(resolve_path_allow_missing "$PORTAL_DOWNLOADS_DIR")"
   else
     resolved_portal_dir="$resolved_deploy_dir"
   fi
@@ -1293,8 +1302,8 @@ PY
 
   startup_smoke_deploy_dir="$DEPLOY_DIR/startup-smoke"
   startup_smoke_stage_dir="$(mktemp -d)"
-  startup_smoke_deploy_dir_real="$(realpath -m "$startup_smoke_deploy_dir")"
-  deploy_files_dir_real="$(realpath -m "$DEPLOY_DIR/files")"
+  startup_smoke_deploy_dir_real="$(resolve_path_allow_missing "$startup_smoke_deploy_dir")"
+  deploy_files_dir_real="$(resolve_path_allow_missing "$DEPLOY_DIR/files")"
   mkdir -p "$startup_smoke_deploy_dir"
   startup_smoke_fallback_dir="$PORTAL_DOWNLOADS_DIR/startup-smoke"
   run_services_startup_smoke_dir="$REPO_ROOT/../chummer.run-services/Chummer.Portal/downloads/startup-smoke"

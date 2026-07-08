@@ -2360,6 +2360,52 @@ def test_publish_download_bundle_keeps_detached_worktree_clean_for_sibling_live_
         assert remove_result.returncode == 0, remove_result.stderr
 
 
+def test_publish_download_bundle_does_not_require_gnu_realpath_dash_m_for_preview_sync(tmp_path: Path) -> None:
+    bundle_dir = tmp_path / "bundle"
+    deploy_dir = tmp_path / "deploy"
+    release_proof_path, visual_proof_path = _write_publish_ready_preview_release_bundle(bundle_dir, tmp_path)
+
+    fake_bin = tmp_path / "fake-bin"
+    fake_bin.mkdir()
+    fake_realpath = fake_bin / "realpath"
+    fake_realpath.write_text(
+        "\n".join(
+            [
+                "#!/usr/bin/env bash",
+                "if [[ \"${1:-}\" == \"-m\" ]]; then",
+                "  echo \"realpath: illegal option -- m\" >&2",
+                "  exit 1",
+                "fi",
+                "exec /usr/bin/realpath \"$@\"",
+            ]
+        )
+        + "\n",
+        encoding="utf-8",
+    )
+    fake_realpath.chmod(0o755)
+
+    result = subprocess.run(
+        ["bash", str(PUBLISH_SCRIPT), str(bundle_dir), str(deploy_dir)],
+        cwd=REPO_ROOT,
+        env=_publish_env(
+            tmp_path,
+            PATH=f"{fake_bin}:/usr/bin:/bin",
+            CHUMMER_RELEASE_REQUIRE_COMPLETE_DESKTOP_COVERAGE="0",
+            CHUMMER_PUBLIC_SKIP_STARTUP_SMOKE_FILTER="true",
+            CHUMMER_WINDOWS_INSTALLER_VISUAL_PROOF_PATH=str(visual_proof_path),
+            RELEASE_PROOF_PATH=str(release_proof_path),
+        ),
+        text=True,
+        capture_output=True,
+        check=False,
+    )
+
+    assert result.returncode == 0, result.stderr
+    assert (deploy_dir / "RELEASE_CHANNEL.generated.json").is_file()
+    assert (deploy_dir / "files" / "chummer-avalonia-win-x64-installer.exe").is_file()
+    assert "realpath: illegal option -- m" not in result.stderr
+
+
 def test_publish_download_bundle_refreshes_windows_visual_proof_handoff_before_exit_gate_failure(tmp_path: Path) -> None:
     bundle_dir = tmp_path / "bundle"
     files_dir = bundle_dir / "files"
