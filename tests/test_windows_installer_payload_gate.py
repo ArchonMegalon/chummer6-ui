@@ -2014,6 +2014,108 @@ def test_publish_latest_nightly_publishes_preview_child_stage_through_stubbed_la
     assert published_manifest["channel"] == "preview"
 
 
+def test_publish_latest_nightly_requires_actionable_windows_visual_proof_handoff_for_preview_continuation(tmp_path: Path) -> None:
+    fake_workspace = tmp_path / "workspace"
+    fake_repo = fake_workspace / "chummer-presentation-sr6-origin-dialog-clean"
+    fake_scripts = fake_repo / "scripts"
+    fake_scripts.mkdir(parents=True)
+    script_copy = fake_scripts / PUBLISH_LATEST_NIGHTLY_SCRIPT.name
+    script_copy.write_text(PUBLISH_LATEST_NIGHTLY_SCRIPT.read_text(encoding="utf-8"), encoding="utf-8")
+
+    staging_root = fake_workspace / "_staging"
+    selected_stage = staging_root / "nightly-run-111-preview"
+    selected_stage_files = selected_stage / "files"
+    selected_stage_files.mkdir(parents=True)
+    _write_bundle_manifest(selected_stage / "releases.json", installer_name="selected-installer.exe")
+    _write_release_channel_manifest(
+        selected_stage / "RELEASE_CHANNEL.generated.json",
+        version="nightly-2026-07-08",
+        channel="preview",
+    )
+
+    publish_capture_path = tmp_path / "publish-capture.json"
+    (fake_scripts / "materialize_release_candidate_handoff.py").write_text(
+        "\n".join(
+            [
+                "#!/usr/bin/env python3",
+                "from __future__ import annotations",
+                "",
+                "import json",
+                "import sys",
+                "from pathlib import Path",
+                "",
+                "stage_dir = Path(sys.argv[1])",
+                "handoff_path = stage_dir / 'WINDOWS_INSTALLER_VISUAL_PROOF_HANDOFF.generated.json'",
+                "payload = {",
+                "  'status': 'needs_review',",
+                "  'summary': 'Windows startup smoke receipt version does not match the current Windows release candidate.',",
+                "  'json_path': str(handoff_path),",
+                "  'blockers': ['Windows startup smoke receipt version does not match the current Windows release candidate.'],",
+                "  'next_actions': ['Refresh the staged Windows startup smoke before attempting preview publication.']",
+                "}",
+                "handoff_path.write_text(json.dumps(payload, indent=2) + '\\n', encoding='utf-8')",
+                "(stage_dir / 'RELEASE_BUILD_HANDOFF.generated.json').write_text(json.dumps({'windows_visual_proof_handoff': payload}, indent=2) + '\\n', encoding='utf-8')",
+            ]
+        )
+        + "\n",
+        encoding="utf-8",
+    )
+    (fake_scripts / "verify-windows-installer-payloads.py").write_text(
+        "print('windows_installer_payload_gate:ok checked=0')\n",
+        encoding="utf-8",
+    )
+    (fake_scripts / "verify-windows-bootstrap-startup-smoke.py").write_text(
+        "print('windows_startup_smoke_gate:ok checked=0')\n",
+        encoding="utf-8",
+    )
+    (fake_scripts / "materialize-windows-desktop-exit-gate.sh").write_text(
+        "\n".join(
+            [
+                "#!/usr/bin/env bash",
+                "set -euo pipefail",
+                ': > "${CHUMMER_UI_WINDOWS_DESKTOP_EXIT_GATE_PATH:?}"',
+                "exit 1",
+            ]
+        )
+        + "\n",
+        encoding="utf-8",
+    )
+    (fake_scripts / "publish-download-bundle.sh").write_text(
+        "\n".join(
+            [
+                "#!/usr/bin/env bash",
+                "set -euo pipefail",
+                f"printf '%s\\n' called > {str(publish_capture_path)!r}",
+            ]
+        )
+        + "\n",
+        encoding="utf-8",
+    )
+
+    deploy_dir = tmp_path / "deploy"
+    result = subprocess.run(
+        ["bash", str(script_copy), str(deploy_dir)],
+        cwd=fake_repo,
+        env={
+            "PATH": "/usr/bin:/bin",
+            "CHUMMER_STAGING_ROOT": str(staging_root),
+            "CHUMMER_FORCE_NIGHTLY_PUBLISH": "1",
+            "CHUMMER_REDEPLOY_PUBLIC_EDGE_AFTER_NIGHTLY_PUBLISH": "false",
+            "CHUMMER_ALLOW_WINDOWS_VISUAL_PROOF_HANDOFF_PUBLISH": "1",
+        },
+        text=True,
+        capture_output=True,
+        check=False,
+    )
+
+    assert result.returncode != 0
+    assert "Windows visual proof handoff:" in result.stderr
+    assert "Windows visual proof status: needs_review" in result.stderr
+    assert "Nightly stage is carrying a Windows visual proof handoff instead of a passable Windows visual proof." not in result.stderr
+    assert "Nightly stage failed Windows desktop exit gate preflight. Use the Windows visual proof handoff above before publishing." in result.stderr
+    assert not publish_capture_path.exists()
+
+
 def test_publish_download_bundle_http_rejects_files_child_stage_root(tmp_path: Path) -> None:
     bundle_dir = tmp_path / "bundle"
     files_dir = bundle_dir / "files"
@@ -2614,6 +2716,61 @@ def test_publish_download_bundle_refreshes_windows_visual_proof_handoff_before_e
     assert str(deploy_dir / "WINDOWS_INSTALLER_VISUAL_PROOF_HANDOFF.generated.json") in result.stderr
     assert "Windows visual proof status: ready_for_windows_host" in result.stderr
     assert "Windows visual proof next action: Run the stage-local Windows visual capture lane." in result.stderr
+
+
+def test_publish_download_bundle_requires_actionable_windows_visual_proof_handoff_for_preview_continuation(tmp_path: Path) -> None:
+    bundle_dir = tmp_path / "bundle"
+    deploy_dir = tmp_path / "deploy"
+    release_proof_path, visual_proof_path = _write_publish_ready_preview_release_bundle(bundle_dir, tmp_path)
+    visual_proof_path.unlink()
+
+    handoff_stub = tmp_path / "handoff_stub.py"
+    handoff_stub.write_text(
+        "\n".join(
+            [
+                "from __future__ import annotations",
+                "import json, sys",
+                "from pathlib import Path",
+                "root = Path(sys.argv[1])",
+                "handoff_path = root / 'WINDOWS_INSTALLER_VISUAL_PROOF_HANDOFF.generated.json'",
+                "payload = {",
+                "  'status': 'needs_review',",
+                "  'summary': 'Windows startup smoke receipt version does not match the current Windows release candidate.',",
+                "  'json_path': str(handoff_path),",
+                "  'blockers': ['Windows startup smoke receipt version does not match the current Windows release candidate.'],",
+                "  'next_actions': ['Refresh the staged Windows startup smoke before attempting preview publication.']",
+                "}",
+                "handoff_path.write_text(json.dumps(payload, indent=2) + '\\n', encoding='utf-8')",
+                "(root / 'RELEASE_BUILD_HANDOFF.generated.json').write_text(json.dumps({'windows_visual_proof_handoff': payload}, indent=2) + '\\n', encoding='utf-8')",
+            ]
+        )
+        + "\n",
+        encoding="utf-8",
+    )
+
+    result = subprocess.run(
+        ["bash", str(PUBLISH_SCRIPT), str(bundle_dir), str(deploy_dir)],
+        cwd=REPO_ROOT,
+        env=_publish_env(
+            tmp_path,
+            CHUMMER_PUBLIC_EDGE_DOWNLOADS_SYNC_MIRRORS="false",
+            CHUMMER_RELEASE_REQUIRE_COMPLETE_DESKTOP_COVERAGE="0",
+            CHUMMER_PUBLIC_SKIP_STARTUP_SMOKE_FILTER="true",
+            CHUMMER_RELEASE_BUILD_HANDOFF_SCRIPT_PATH=str(handoff_stub),
+            CHUMMER_ALLOW_WINDOWS_VISUAL_PROOF_HANDOFF_PUBLISH="1",
+            CHUMMER_WINDOWS_INSTALLER_VISUAL_PROOF_PATH=str(visual_proof_path),
+            RELEASE_PROOF_PATH=str(release_proof_path),
+        ),
+        text=True,
+        capture_output=True,
+        check=False,
+    )
+
+    assert result.returncode != 0
+    assert "Windows visual proof handoff:" in result.stderr
+    assert "Windows visual proof status: needs_review" in result.stderr
+    assert "Published preview downloads shelf is carrying a Windows visual proof handoff instead of a passable Windows visual proof." not in result.stderr
+    assert "Published downloads shelf failed Windows desktop exit gate verification. Use the Windows visual proof handoff above." in result.stderr
 
 
 def test_stable_publish_download_bundle_refuses_non_posture_root_blockers(tmp_path: Path) -> None:

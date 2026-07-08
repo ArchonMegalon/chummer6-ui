@@ -146,7 +146,7 @@ refresh_release_build_handoff() {
 
 emit_windows_visual_proof_handoff_guidance() {
   local stage_dir="$1"
-  python3 - "$stage_dir" <<'PY' || true
+  python3 - "$stage_dir" <<'PY'
 from __future__ import annotations
 
 import json
@@ -187,12 +187,22 @@ if not handoff_payload:
                 handoff_path = Path(candidate_path)
 
 if not handoff_payload:
-    raise SystemExit(0)
+    raise SystemExit(1)
 
 status = normalize(handoff_payload.get("status"))
 summary = normalize(handoff_payload.get("summary"))
 next_actions = handoff_payload.get("next_actions") if isinstance(handoff_payload.get("next_actions"), list) else []
 json_path = normalize(handoff_payload.get("json_path")) or str(handoff_path or "")
+json_artifact_path = None
+if handoff_path and handoff_path.is_file():
+    json_artifact_path = handoff_path
+elif json_path:
+    candidate = Path(json_path)
+    if candidate.is_file():
+        json_artifact_path = candidate
+blockers = handoff_payload.get("blockers")
+blockers_present = isinstance(blockers, list) and any(str(item).strip() for item in blockers)
+actionable = status in {"ready", "ready_for_windows_host"} and not blockers_present and json_artifact_path is not None
 
 if json_path:
     print(f"Windows visual proof handoff: {json_path}", file=sys.stderr)
@@ -204,6 +214,7 @@ if next_actions:
     first_action = normalize(next_actions[0])
     if first_action:
         print(f"Windows visual proof next action: {first_action}", file=sys.stderr)
+raise SystemExit(0 if actionable else 2)
 PY
 }
 
@@ -281,13 +292,22 @@ verify_latest_stage_windows_exit_gate() {
     CHUMMER_UI_WINDOWS_DESKTOP_EXIT_GATE_PATH="$gate_output" \
     bash "$SCRIPT_DIR/materialize-windows-desktop-exit-gate.sh" >/dev/null
   then
+    local handoff_status=0
     rm -f "$gate_output"
-    emit_windows_visual_proof_handoff_guidance "$stage_dir"
-    if to_bool "$ALLOW_WINDOWS_VISUAL_PROOF_HANDOFF_PUBLISH" && manifest_channel_is_preview "$release_channel_manifest"; then
+    if emit_windows_visual_proof_handoff_guidance "$stage_dir"; then
+      handoff_status=0
+    else
+      handoff_status="$?"
+    fi
+    if (( handoff_status == 0 )) && to_bool "$ALLOW_WINDOWS_VISUAL_PROOF_HANDOFF_PUBLISH" && manifest_channel_is_preview "$release_channel_manifest"; then
       echo "Nightly stage is carrying a Windows visual proof handoff instead of a passable Windows visual proof. Continuing because this lane publishes preview handoffs, not stable releases." >&2
       return 0
     fi
-    echo "Nightly stage failed Windows desktop exit gate preflight. Use the Windows visual proof handoff above before publishing." >&2
+    if (( handoff_status == 1 )); then
+      echo "Nightly stage failed Windows desktop exit gate preflight and no actionable Windows visual proof handoff was materialized." >&2
+    else
+      echo "Nightly stage failed Windows desktop exit gate preflight. Use the Windows visual proof handoff above before publishing." >&2
+    fi
     exit 1
   fi
 
