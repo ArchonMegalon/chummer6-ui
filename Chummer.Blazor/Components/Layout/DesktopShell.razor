@@ -8,7 +8,7 @@
          @ref="_shellRoot"
          tabindex="0"
          @onkeydown="OnShellKeyDown">
-        <a class="skip-link" href="#chummer-workspace-main">Skip to runner</a>
+        <a class="skip-link" href="#chummer-workspace-main">Skip to dossier</a>
         <header class="desktop-shell-topline desktop-shell-topline--gate" aria-label="Chummer install claim state">
             <div class="desktop-shell-title">
                 <p>Chummer Online</p>
@@ -55,7 +55,7 @@
                     <a class="mini-btn"
                        data-testid="desktop-install-origin-dossier"
                        href="@BuildInstallOriginDossierHref()">
-                        Open Origin Dossier
+                        Open clean Origin Dossier route
                     </a>
                 </div>
             </section>
@@ -64,12 +64,18 @@
 }
 else
 {
-<div class="desktop-shell classic-desktop-shell"
-     @ref="_shellRoot"
-     tabindex="0"
-     aria-busy="@State.IsBusy"
-     @onkeydown="OnShellKeyDown">
-    <a class="skip-link" href="#chummer-workspace-main">Skip to runner</a>
+<section class="desktop-shell classic-desktop-shell"
+         @ref="_shellRoot"
+         tabindex="0"
+         aria-busy="@State.IsBusy"
+         data-tab="@ClassicShellActiveTabId"
+         data-ruleset="@ClassicShellRulesetId"
+         data-active-workflow="@ClassicShellActiveWorkflowId"
+         data-route-segment="@ClassicShellRouteSegment"
+         data-active-runner="@ClassicShellActiveRunner"
+         data-legacy-runner="@ClassicShellActiveRunner"
+         @onkeydown="OnShellKeyDown">
+    <a class="skip-link" href="#chummer-workspace-main">Skip to dossier</a>
     <MenuBar MenuRoots="@MenuRoots.ToArray()"
              CurrentLanguage="@CurrentLanguage"
              OpenMenuId="@_shellSurfaceState.OpenMenuId"
@@ -89,11 +95,11 @@ else
     <header class="desktop-shell-topline" aria-label="Chummer Online session state">
         <div class="desktop-shell-title">
             <p>Chummer Online</p>
-            <h1>@(State.Profile?.Alias ?? State.Profile?.Name ?? "Runner")</h1>
+            <h1>@(State.Profile?.Alias ?? State.Profile?.Name ?? "Dossier")</h1>
         </div>
         <dl class="desktop-shell-readiness">
             <div><dt>Route</dt><dd>Browser app</dd></div>
-            <div><dt>Runners</dt><dd>@_shellSurfaceState.OpenWorkspaces.Count open</dd></div>
+            <div><dt>Dossiers</dt><dd>@_shellSurfaceState.OpenWorkspaces.Count open</dd></div>
             <div><dt>Ruleset</dt><dd>@(_shellSurfaceState.ActiveRulesetId ?? State.Rules?.GameEdition ?? "not set")</dd></div>
             <div><dt>State</dt><dd>@(State.IsBusy ? "Working" : string.IsNullOrWhiteSpace(_shellSurfaceState.Error) ? "Ready" : "Needs attention")</dd></div>
         </dl>
@@ -119,11 +125,81 @@ else
 
     @if (!string.IsNullOrWhiteSpace(State.Notice))
     {
-        <p class="shell-notice" role="status" data-shell-notice>@State.Notice</p>
+        @if (OriginDossierNoticeHref is { } originDossierNoticeHref)
+        {
+            <div class="shell-notice" role="status" data-shell-notice data-shell-notice-kind="origin-dossier-link">
+                <p>@State.Notice</p>
+                <div class="shell-notice-actions">
+                    <a href="@originDossierNoticeHref"
+                       data-shell-notice-link="origin-dossier">
+                        Open clean Origin Dossier route
+                    </a>
+                </div>
+                <code class="shell-notice-code" data-shell-notice-route="origin-dossier">@originDossierNoticeHref</code>
+            </div>
+        }
+        else if (DownloadNoticeReceipt is { } downloadNoticeReceipt)
+        {
+            <div class="shell-notice" role="status" data-shell-notice data-shell-notice-kind="download">
+                <p>@State.Notice</p>
+                <div class="shell-notice-actions">
+                    <button type="button"
+                            data-shell-notice-action="download"
+                            @onclick="RetryPendingDownloadAsync">
+                        Download again
+                    </button>
+                </div>
+                <code class="shell-notice-code" data-shell-notice-file="download">@downloadNoticeReceipt.FileName</code>
+            </div>
+        }
+        else if (ExportNoticeReceipt is { } exportNoticeReceipt)
+        {
+            <div class="shell-notice" role="status" data-shell-notice data-shell-notice-kind="export">
+                <p>@State.Notice</p>
+                <div class="shell-notice-actions">
+                    <button type="button"
+                            data-shell-notice-action="export"
+                            @onclick="RetryPendingExportAsync">
+                        Export again
+                    </button>
+                </div>
+                <code class="shell-notice-code" data-shell-notice-file="export">@exportNoticeReceipt.FileName</code>
+            </div>
+        }
+        else if (PrintNoticeReceipt is { } printNoticeReceipt)
+        {
+            <div class="shell-notice" role="status" data-shell-notice data-shell-notice-kind="print">
+                <p>@State.Notice</p>
+                <div class="shell-notice-actions">
+                    <button type="button"
+                            data-shell-notice-action="print"
+                            @onclick="RetryPendingPrintAsync">
+                        Open preview again
+                    </button>
+                </div>
+                <code class="shell-notice-code" data-shell-notice-file="print">@printNoticeReceipt.FileName</code>
+            </div>
+        }
+        else
+        {
+            <p class="shell-notice" role="status" data-shell-notice>@State.Notice</p>
+        }
     }
     @if (!string.IsNullOrWhiteSpace(_demoWorkspaceRouteWarning))
     {
-        <p class="shell-notice shell-notice--warning" role="alert" data-demo-workspace-route-warning>@_demoWorkspaceRouteWarning</p>
+        <div class="shell-notice shell-notice--warning" role="alert" data-demo-workspace-route-warning>
+            <p>@_demoWorkspaceRouteWarning</p>
+            <div class="shell-notice-actions">
+                <a href="@DemoWorkspaceRecoveryAppHref"
+                   data-demo-workspace-route-recovery="app">
+                    Open seeded Build Lab on Chummer Online
+                </a>
+                <a href="@DemoWorkspaceRecoveryWorkbenchHref"
+                   data-demo-workspace-route-recovery="workbench">
+                    Open seeded compatibility shell
+                </a>
+            </div>
+        </div>
     }
 
     <div class="workspace-layout @(ShowLeftPane ? "workspace-layout--with-left-pane" : "workspace-layout--without-left-pane")">
@@ -149,7 +225,10 @@ else
                          IsCommandEnabled="@IsCommandEnabled"
                          ExecuteCommandRequested="@ExecuteCommandAsync"
                          ExecuteUiControlRequested="@HandleUiControlAsync"
-                         LoadWorkspaceRequested="@(workspaceId => LoadWorkspaceAsync(workspaceId))" />
+                         LoadWorkspaceRequested="@(workspaceId => LoadWorkspaceAsync(workspaceId))"
+                         RetryPendingDownloadRequested="@RetryPendingDownloadAsync"
+                         RetryPendingExportRequested="@RetryPendingExportAsync"
+                         RetryPendingPrintRequested="@RetryPendingPrintAsync" />
         </main>
 
     </div>
@@ -158,12 +237,14 @@ else
                  Error="@_shellSurfaceState.Error"
                  LastUiUtc="@_lastUiUtc"
                  ComplianceState="@ComplianceState" />
-</div>
+</section>
 
 <DialogHost Dialog="@State.ActiveDialog"
             CloseRequested="@CloseDialogAsync"
             ExecuteDialogActionRequested="@ExecuteDialogActionAsync"
             FieldInputRequested="@OnDialogFieldInputAsync"
             FieldCheckboxRequested="@OnDialogCheckboxChangedAsync"
-            RosterDropRequested="@OnDialogRosterDropAsync" />
+            RosterDropRequested="@OnDialogRosterDropAsync"
+            OriginWizardAdvancedControlsOpen="@_originWizardAdvancedControlsOpen"
+            OriginWizardAdvancedControlsOpenChanged="@OnOriginWizardAdvancedControlsOpenChangedAsync" />
 }

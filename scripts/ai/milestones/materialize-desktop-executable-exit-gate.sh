@@ -2,7 +2,7 @@
 set -euo pipefail
 
 repo_root_physical="$(cd "$(dirname "${BASH_SOURCE[0]}")/../../.." && pwd -P)"
-repo_root_alias_candidate="${CHUMMER_UI_REPO_ROOT_ALIAS:-/docker/chummercomplete/chummer6-ui}"
+repo_root_alias_candidate="${CHUMMER_UI_REPO_ROOT_ALIAS:-$repo_root_physical}"
 repo_root="$repo_root_physical"
 if [[ -n "$repo_root_alias_candidate" && -d "$repo_root_alias_candidate" ]]; then
   alias_physical="$(cd "$repo_root_alias_candidate" && pwd -P)"
@@ -12,12 +12,16 @@ if [[ -n "$repo_root_alias_candidate" && -d "$repo_root_alias_candidate" ]]; the
 fi
 cd "$repo_root"
 
+upper_ascii() {
+  printf '%s' "${1:-}" | tr '[:lower:]' '[:upper:]'
+}
+
 receipt_path="${CHUMMER_DESKTOP_EXECUTABLE_GATE_PATH:-$repo_root/.codex-studio/published/DESKTOP_EXECUTABLE_EXIT_GATE.generated.json}"
 release_gate_lock_dir="$repo_root/.codex-studio/locks/b14-flagship-ui-release-gate.lock"
 hub_registry_root="${CHUMMER_HUB_REGISTRY_ROOT:-$("$repo_root/scripts/resolve-hub-registry-root.sh" 2>/dev/null || true)}"
 canonical_release_channel_path="${hub_registry_root:+$hub_registry_root/.codex-studio/published/RELEASE_CHANNEL.generated.json}"
 default_release_channel_path="$repo_root/Docker/Downloads/RELEASE_CHANNEL.generated.json"
-presentation_release_channel_path="/docker/chummercomplete/chummer-presentation/Chummer.Portal/downloads/RELEASE_CHANNEL.generated.json"
+presentation_release_channel_path="$repo_root/Chummer.Portal/downloads/RELEASE_CHANNEL.generated.json"
 verified_release_channel_path="$repo_root/.tmp/verify-release-channel/RELEASE_CHANNEL.generated.json"
 if [[ -n "$canonical_release_channel_path" && -f "$canonical_release_channel_path" ]]; then
   release_channel_path_default="$canonical_release_channel_path"
@@ -269,9 +273,9 @@ if [[ "$skip_dependency_materialize" != "1" ]]; then
         elif [[ "$head" == "blazor-desktop" && "$rid" == "linux-x64" ]]; then
           linux_gate_tuple_path="$linux_blazor_gate_path"
         else
-          head_token="${head^^}"
+          head_token="$(upper_ascii "$head")"
           head_token="${head_token//-/_}"
-          rid_token="${rid^^}"
+          rid_token="$(upper_ascii "$rid")"
           rid_token="${rid_token//-/_}"
           linux_gate_tuple_path="$repo_root/.codex-studio/published/UI_LINUX_${head_token}_${rid_token}_DESKTOP_EXIT_GATE.generated.json"
         fi
@@ -292,9 +296,9 @@ if [[ "$skip_dependency_materialize" != "1" ]]; then
         if [[ "$head" == "avalonia" && "$rid" == "win-x64" ]]; then
           windows_gate_tuple_path="$windows_gate_path_default"
         else
-          head_token="${head^^}"
+          head_token="$(upper_ascii "$head")"
           head_token="${head_token//-/_}"
-          rid_token="${rid^^}"
+          rid_token="$(upper_ascii "$rid")"
           rid_token="${rid_token//-/_}"
           windows_gate_tuple_path="$repo_root/.codex-studio/published/UI_WINDOWS_${head_token}_${rid_token}_DESKTOP_EXIT_GATE.generated.json"
         fi
@@ -311,9 +315,9 @@ if [[ "$skip_dependency_materialize" != "1" ]]; then
         fi
       fi
       if [[ "$platform" == "macos" && -f "$macos_gate_materializer_path" ]]; then
-        head_token="${head^^}"
+        head_token="$(upper_ascii "$head")"
         head_token="${head_token//-/_}"
-        rid_token="${rid^^}"
+        rid_token="$(upper_ascii "$rid")"
         rid_token="${rid_token//-/_}"
         macos_gate_tuple_path="$repo_root/.codex-studio/published/UI_MACOS_${head_token}_${rid_token}_DESKTOP_EXIT_GATE.generated.json"
         if ! run_dependency_materializer_with_receipt_restore \
@@ -1305,7 +1309,7 @@ def external_proof_expected_capture_commands(
         operating_system_token = "macOS"
     else:
         operating_system_token = "Linux"
-    repo_root_value = str(globals().get("repo_root") or "/docker/chummercomplete/chummer6-ui")
+    repo_root_value = str(globals().get("repo_root") or Path.cwd())
     release_channel_path_value = globals().get("release_channel_path")
     release_channel_root = (
         release_channel_path_value.parent

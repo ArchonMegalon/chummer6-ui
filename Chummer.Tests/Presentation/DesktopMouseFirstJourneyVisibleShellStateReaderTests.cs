@@ -10,7 +10,7 @@ public sealed class DesktopMouseFirstJourneyVisibleShellStateReaderTests
     public void ParseWorkspaceStripState_reads_active_saved_workspace_in_default_locale()
     {
         ParsedWorkspaceStripState state = DesktopMouseFirstJourneyVisibleShellStateReader.ParseWorkspaceStripState(
-            "Workspace: ws-123 (open: 1, saved)",
+            "Dossier: ws-123 (open: 1, saved)",
             "en-us");
 
         Assert.AreEqual("ws-123", state.WorkspaceId);
@@ -23,7 +23,7 @@ public sealed class DesktopMouseFirstJourneyVisibleShellStateReaderTests
     public void ParseWorkspaceStripState_understands_localized_saved_state()
     {
         ParsedWorkspaceStripState state = DesktopMouseFirstJourneyVisibleShellStateReader.ParseWorkspaceStripState(
-            "Arbeitsbereich: ws-de (offen: 1, gespeichert)",
+            "Dossier: ws-de (offen: 1, gespeichert)",
             "de-de");
 
         Assert.AreEqual("ws-de", state.WorkspaceId);
@@ -35,12 +35,43 @@ public sealed class DesktopMouseFirstJourneyVisibleShellStateReaderTests
     public void ParseToolStripStatusState_reads_active_saved_workspace_snapshot()
     {
         ParsedWorkspaceStripState state = DesktopMouseFirstJourneyVisibleShellStateReader.ParseToolStripStatusState(
-            "State: ready, workspace=ws-tool, open=1, saved=saved, last-command=save_character",
+            "State: ready, dossier=ws-tool, open=1, saved=saved, last-command=save_character",
             "en-us");
 
         Assert.AreEqual("ws-tool", state.WorkspaceId);
         Assert.AreEqual(1, state.OpenCount);
         Assert.IsTrue(state.IsSaved);
+    }
+
+    [TestMethod]
+    public void ParseToolStripStatusState_understands_localized_dossier_snapshot()
+    {
+        ParsedWorkspaceStripState state = DesktopMouseFirstJourneyVisibleShellStateReader.ParseToolStripStatusState(
+            "Status: bereit, dossier=ws-de, offen=1, gespeichert=gespeichert, letzter-befehl=save_character",
+            "de-de");
+
+        Assert.AreEqual("ws-de", state.WorkspaceId);
+        Assert.AreEqual(1, state.OpenCount);
+        Assert.IsTrue(state.IsSaved);
+    }
+
+    [TestMethod]
+    public void ParseToolStripStatusState_understands_japanese_and_chinese_dossier_snapshot_tokens()
+    {
+        ParsedWorkspaceStripState japaneseState = DesktopMouseFirstJourneyVisibleShellStateReader.ParseToolStripStatusState(
+            "状態: ready, ドシエ=ws-jp, オープン=1, 保存=保存済み, 前回コマンド=save_character",
+            "ja-jp");
+        ParsedWorkspaceStripState chineseState = DesktopMouseFirstJourneyVisibleShellStateReader.ParseToolStripStatusState(
+            "状态: ready, 档案=ws-cn, 已打开=1, 保存=已保存, 上一命令=save_character",
+            "zh-cn");
+
+        Assert.AreEqual("ws-jp", japaneseState.WorkspaceId);
+        Assert.AreEqual(1, japaneseState.OpenCount);
+        Assert.IsTrue(japaneseState.IsSaved);
+
+        Assert.AreEqual("ws-cn", chineseState.WorkspaceId);
+        Assert.AreEqual(1, chineseState.OpenCount);
+        Assert.IsTrue(chineseState.IsSaved);
     }
 
     [TestMethod]
@@ -65,7 +96,7 @@ public sealed class DesktopMouseFirstJourneyVisibleShellStateReaderTests
     {
         DesktopMouseFirstJourneyVisibleShellState state = DesktopMouseFirstJourneyVisibleShellStateReader.Read(
             workspaceStripText: string.Empty,
-            toolStripStatusText: "State: ready, workspace=ws-visible, open=1, saved=saved, last-command=save_character",
+            toolStripStatusText: "State: ready, dossier=ws-visible, open=1, saved=saved, last-command=save_character",
             characterStateText: "Character: loaded",
             complianceStateText: "Ruleset: Shadowrun 5 .chum5 | Workflows: 5 defs / 6 surfaces | Prefs: 100%/classic/en-us",
             language: "en-us");

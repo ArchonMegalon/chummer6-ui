@@ -1,8 +1,8 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-REPO_ROOT="$(cd "$SCRIPT_DIR/../.." && pwd)"
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd -P)"
+source "$SCRIPT_DIR/_env.sh"
 LOG_DIR="$REPO_ROOT/scripts/ai/logs"
 mkdir -p "$LOG_DIR"
 
@@ -13,8 +13,6 @@ LOG_FILE="$LOG_DIR/day1-p1-${TIMESTAMP}.log"
   echo "============================================================"
   echo "[day1-p1-run] started: $(date -u +"%Y-%m-%dT%H:%M:%SZ")"
   echo "[day1-p1-run] log: $LOG_FILE"
-
-  source "$SCRIPT_DIR/_env.sh"
 
   echo "[day1-p1-run] running: scripts/ai/day1-p1-setup.sh"
   cd "$REPO_ROOT"

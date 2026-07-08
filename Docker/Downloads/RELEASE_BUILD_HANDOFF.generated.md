@@ -1,10 +1,10 @@
 # Release Build Handoff
 
-Generated: 2026-07-04T12:38:47Z
+Generated: 2026-07-07T07:46:20Z
 
-- Stage dir: `Docker/Downloads`
+- Stage dir: `/docker/chummercomplete/chummer-presentation-sr6-origin-dialog-clean/Docker/Downloads`
 - Channel: `preview`
-- Version: `run-20260704-140118`
+- Version: `run-20260704-170602`
 - Artifact count: `2`
 - Handoff only: `True`
 - Handoff scope: `staged_nightly`
@@ -25,7 +25,7 @@ Generated: 2026-07-04T12:38:47Z
 ## Windows Exit Gate Refresh
 
 - Status: `failed`
-- JSON: `Docker/Downloads/UI_WINDOWS_DESKTOP_EXIT_GATE.generated.json`
+- JSON: `/docker/chummercomplete/chummer-presentation-sr6-origin-dialog-clean/Docker/Downloads/UI_WINDOWS_DESKTOP_EXIT_GATE.generated.json`
 - Script: `/docker/chummercomplete/chummer-presentation-sr6-origin-dialog-clean/scripts/materialize-windows-desktop-exit-gate.sh`
 - Blocking mode: `mixed_or_local`
 - Summary: Windows desktop exit gate failed: Windows installer visual proof version does not match release channel.; Windows installer visual proof artifactDigest does not match promoted installer bytes.
@@ -33,9 +33,9 @@ Generated: 2026-07-04T12:38:47Z
 ## Windows Visual Proof Handoff
 
 - Status: `ready_for_windows_host`
-- JSON: `Docker/Downloads/WINDOWS_INSTALLER_VISUAL_PROOF_HANDOFF.generated.json`
-- Markdown: `Docker/Downloads/WINDOWS_INSTALLER_VISUAL_PROOF_HANDOFF.generated.md`
-- Visual proof receipt target: `Docker/Downloads/WINDOWS_INSTALLER_VISUAL_PROOF.generated.json`
+- JSON: `/docker/chummercomplete/chummer-presentation-sr6-origin-dialog-clean/Docker/Downloads/WINDOWS_INSTALLER_VISUAL_PROOF_HANDOFF.generated.json`
+- Markdown: `/docker/chummercomplete/chummer-presentation-sr6-origin-dialog-clean/Docker/Downloads/WINDOWS_INSTALLER_VISUAL_PROOF_HANDOFF.generated.md`
+- Visual proof receipt target: `/docker/chummercomplete/chummer-presentation-sr6-origin-dialog-clean/Docker/Downloads/WINDOWS_INSTALLER_VISUAL_PROOF.generated.json`
 - Summary: Windows desktop exit gate failed: Windows installer visual proof version does not match release channel.; Windows installer visual proof artifactDigest does not match promoted installer bytes.
 
 ## Remaining Blockers
@@ -44,5 +44,5 @@ Generated: 2026-07-04T12:38:47Z
 
 ## Next Actions
 
-- Use the Windows visual-proof handoff packet to capture progress and completion screenshots for the staged installer bytes: Docker/Downloads/WINDOWS_INSTALLER_VISUAL_PROOF_HANDOFF.generated.json
+- Use the Windows visual-proof handoff packet to capture progress and completion screenshots for the staged installer bytes: /docker/chummercomplete/chummer-presentation-sr6-origin-dialog-clean/Docker/Downloads/WINDOWS_INSTALLER_VISUAL_PROOF_HANDOFF.generated.json
 - Keep the live downloads shelf and stable channel unchanged while this staged nightly handoff is still incomplete.

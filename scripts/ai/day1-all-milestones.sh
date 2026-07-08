@@ -1,8 +1,8 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-REPO_ROOT="$(cd "$SCRIPT_DIR/../.." && pwd)"
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd -P)"
+source "$SCRIPT_DIR/_env.sh"
 CHECK_DIR="$SCRIPT_DIR/milestones"
 LOG_DIR="$REPO_ROOT/scripts/ai/logs"
 mkdir -p "$LOG_DIR"
@@ -81,8 +81,6 @@ run_milestone_pipeline() {
     echo "[milestone] attempt: ${attempt}"
     echo "[milestone] allow-missing-gates: ${ALLOW_MISSING_GATES}"
     echo "[milestone] max-attempts: ${MAX_ATTEMPTS}"
-
-    source "$SCRIPT_DIR/_env.sh"
 
     echo "[milestone] running baseline isolate-compile step (day1-p1-run.sh)"
     bash "$SCRIPT_DIR/day1-p1-run.sh"

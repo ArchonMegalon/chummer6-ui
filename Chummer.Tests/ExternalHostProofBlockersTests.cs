@@ -24,7 +24,6 @@ public sealed class ExternalHostProofBlockersTests
         DesktopRepoRootLocator.TryResolveChummerPresentationRepoRoot(AppContext.BaseDirectory, Directory.GetCurrentDirectory()),
         Directory.GetCurrentDirectory(),
         AppContext.BaseDirectory,
-        "/docker/chummercomplete/chummer6-ui",
     };
 
     [TestMethod]

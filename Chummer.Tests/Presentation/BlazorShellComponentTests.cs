@@ -42,6 +42,7 @@ public sealed class BlazorShellComponentTests
         context.JSInterop.SetupVoid("chummerDialogs.revealActiveDialog");
         context.JSInterop.Setup<double[]>("chummerDialogs.captureDialogScroll", _ => true).SetResult([180d, 0d]);
         context.JSInterop.SetupVoid("chummerDialogs.restoreDialogScroll", _ => true);
+        context.JSInterop.Setup<bool>("chummerDialogs.restorePendingDialogScroll", _ => true).SetResult(false);
         context.Services.AddSingleton<IConfiguration>(
             new ConfigurationBuilder().AddInMemoryCollection().Build());
         context.Services.AddSingleton<IRunnerIntelligenceCalculator, RunnerIntelligenceCalculator>();
@@ -177,12 +178,20 @@ public sealed class BlazorShellComponentTests
 
         IRenderedComponent<Preview> cut = context.Render<Preview>();
 
+        Assert.AreEqual("false", cut.Find("nav.classic-chummer-menu [data-classic-menu-trigger='file']").GetAttribute("aria-expanded"));
+
+        cut.Find("nav.classic-chummer-menu [data-classic-menu-trigger='file']").Click();
+        Assert.AreEqual("true", cut.Find("nav.classic-chummer-menu [data-classic-menu-trigger='file']").GetAttribute("aria-expanded"));
         cut.Find("nav.classic-chummer-menu a[role='menuitem'][data-browser-shell-command='new_character']").Click();
         Assert.AreEqual("new_character", presenter.ExecutedCommandId);
+        Assert.AreEqual("false", cut.Find("nav.classic-chummer-menu [data-classic-menu-trigger='file']").GetAttribute("aria-expanded"));
         StringAssert.EndsWith(navigation.Uri, "/workbench");
 
+        cut.Find("nav.classic-chummer-menu [data-classic-menu-trigger='file']").Click();
+        Assert.AreEqual("true", cut.Find("nav.classic-chummer-menu [data-classic-menu-trigger='file']").GetAttribute("aria-expanded"));
         cut.Find("nav.classic-chummer-menu a[role='menuitem'][data-browser-shell-command='open_character']").Click();
         Assert.AreEqual("open_character", presenter.ExecutedCommandId);
+        Assert.AreEqual("false", cut.Find("nav.classic-chummer-menu [data-classic-menu-trigger='file']").GetAttribute("aria-expanded"));
         StringAssert.EndsWith(navigation.Uri, "/workbench");
     }
 
@@ -201,11 +210,15 @@ public sealed class BlazorShellComponentTests
             .Add(component => component.IsBusy, false));
 
         IReadOnlyList<AngleSharp.Dom.IElement> docs = cut.FindAll(".mdi-doc");
+        IReadOnlyList<AngleSharp.Dom.IElement> closeButtons = cut.FindAll(".mdi-close");
         Assert.HasCount(2, docs);
+        Assert.HasCount(2, closeButtons);
         StringAssert.Contains(docs[0].TextContent, "*");
         StringAssert.Contains(docs[0].GetAttribute("title"), "Shadowrun 5");
         StringAssert.Contains(docs[0].GetAttribute("title"), "main editor");
         Assert.IsLessThan(0, docs[1].TextContent.IndexOf('*'));
+        Assert.AreEqual("Close dossier", closeButtons[0].GetAttribute("title"));
+        Assert.AreEqual("Close dossier", closeButtons[0].GetAttribute("aria-label"));
     }
 
     [TestMethod]
@@ -217,7 +230,7 @@ public sealed class BlazorShellComponentTests
             .Add(component => component.RulesetId, RulesetDefaults.Sr6)
             .Add(component => component.IsBusy, false));
 
-        StringAssert.Contains(cut.Markup, "No open SR6 runner");
+        StringAssert.Contains(cut.Markup, "No open SR6 dossier");
     }
 
     [TestMethod]
@@ -464,7 +477,7 @@ public sealed class BlazorShellComponentTests
         StringAssert.Contains(cut.Markup, "Shadowrun 5");
         StringAssert.Contains(cut.Markup, "main editor");
         string openDossierTitle = cut.Find(".navigator .command-button").GetAttribute("title") ?? string.Empty;
-        StringAssert.Contains(openDossierTitle, "Open runner: Ares Runner (AR)");
+        StringAssert.Contains(openDossierTitle, "Open SR5 character: Ares Runner (AR)");
         StringAssert.Contains(openDossierTitle, "Shadowrun 5");
         Assert.AreEqual(0, cut.FindAll(".navigator .command-button .hint").Count, "Classic runner rows must not print workspace ids into the visible left rail.");
     }
@@ -587,13 +600,47 @@ public sealed class BlazorShellComponentTests
     }
 
     [TestMethod]
+    public void ResultPanel_save_receipt_uses_dossier_copy_when_workspace_is_saved()
+    {
+        CharacterWorkspaceId workspaceId = new("saved-dossier");
+        OpenWorkspaceState savedWorkspace = new(
+            workspaceId,
+            "Saved Dossier",
+            "SD",
+            DateTimeOffset.UtcNow,
+            RulesetDefaults.Sr5,
+            HasSavedWorkspace: true);
+        CharacterOverviewState state = CharacterOverviewState.Empty with
+        {
+            Session = new WorkspaceSessionState(workspaceId, [savedWorkspace], [workspaceId]),
+            OpenWorkspaces = [savedWorkspace],
+            WorkspaceId = workspaceId,
+            LastCommandId = "save_character",
+            HasSavedWorkspace = true
+        };
+
+        using var context = CreateContext();
+        IRenderedComponent<ResultPanel> cut = context.Render<ResultPanel>(parameters => parameters
+            .Add(component => component.RulesetId, RulesetDefaults.Sr5)
+            .Add(component => component.State, state));
+
+        IElement receipt = cut.Find("[data-result-dispatch='save']");
+        StringAssert.Contains(receipt.TextContent, "Saved in this browser");
+        StringAssert.Contains(receipt.TextContent, "Dossier:");
+        StringAssert.Contains(receipt.TextContent, "saved-dossier");
+        StringAssert.Contains(receipt.TextContent, "This dossier is saved and ready to reopen.");
+        Assert.IsFalse(receipt.TextContent.Contains("Runner:", StringComparison.Ordinal));
+        Assert.IsFalse(receipt.TextContent.Contains("This runner is saved and ready to reopen.", StringComparison.Ordinal));
+    }
+
+    [TestMethod]
     public void SectionPane_switches_between_placeholder_and_section_payload()
     {
         using var context = CreateContext();
         IRenderedComponent<SectionPane> emptyCut = context.Render<SectionPane>(parameters => parameters
             .Add(component => component.State, CharacterOverviewState.Empty));
 
-        StringAssert.Contains(emptyCut.Markup, "Select a tab to render a runner section");
+        StringAssert.Contains(emptyCut.Markup, "Select a tab to render a dossier section");
 
         CharacterOverviewState sectionState = CharacterOverviewState.Empty with
         {
@@ -704,6 +751,7 @@ public sealed class BlazorShellComponentTests
     {
         using var context = CreateContext();
 
+        DefaultCommandAvailabilityEvaluator evaluator = new();
         string? executedCommandId = null;
         string? loadedWorkspaceId = null;
         CharacterOverviewState startupState = CharacterOverviewState.Empty with
@@ -727,22 +775,81 @@ public sealed class BlazorShellComponentTests
 
         IRenderedComponent<SectionPane> cut = context.Render<SectionPane>(parameters => parameters
             .Add(component => component.State, startupState)
-            .Add(component => component.IsCommandEnabled, _ => true)
+            .Add(component => component.IsCommandEnabled, command => evaluator.IsCommandEnabled(command, startupState))
             .Add(component => component.ExecuteCommandRequested, (Action<string>)(commandId => executedCommandId = commandId))
             .Add(component => component.LoadWorkspaceRequested, (Action<string>)(workspaceId => loadedWorkspaceId = workspaceId)));
 
         StringAssert.Contains(cut.Markup, "Continue Chummer Online");
+        StringAssert.Contains(cut.Markup, "Start a fresh dossier, reopen a saved dossier, or jump straight into classic utilities from Chummer Online.");
+        StringAssert.Contains(cut.Markup, "reopen a saved dossier");
+        StringAssert.Contains(cut.Markup, "Recent Dossiers");
         StringAssert.Contains(cut.Markup, "Origin Dossier");
         StringAssert.Contains(cut.Markup, "Character Roster");
         StringAssert.Contains(cut.Markup, "Master Index");
         StringAssert.Contains(cut.Markup, "Auto ALICE");
         StringAssert.Contains(cut.Markup, "ws-recent-1");
+        StringAssert.Contains(cut.Markup, "Restore this Chummer Online dossier continuation.");
+        Assert.IsFalse(cut.Markup.Contains("Start a fresh runner", StringComparison.Ordinal));
+        Assert.IsFalse(cut.Find("[data-startup-command='open_character']").HasAttribute("disabled"));
+        Assert.IsFalse(cut.Find("[data-startup-command='report_bug']").HasAttribute("disabled"));
 
         cut.Find("[data-startup-command='open_character']").Click();
         cut.Find("[data-recent-workspace-id='ws-recent-1']").Click();
 
         Assert.AreEqual("open_character", executedCommandId);
         Assert.AreEqual("ws-recent-1", loadedWorkspaceId);
+    }
+
+    [TestMethod]
+    public void SectionPane_startup_workbench_without_recent_runners_uses_open_dossier_copy()
+    {
+        using var context = CreateContext();
+
+        DefaultCommandAvailabilityEvaluator evaluator = new();
+        CharacterOverviewState startupState = CharacterOverviewState.Empty with
+        {
+            Session = new WorkspaceSessionState(
+                ActiveWorkspaceId: null,
+                OpenWorkspaces: [],
+                RecentWorkspaceIds: []),
+            Commands =
+            [
+                new AppCommandDefinition("open_character", "Open", "file", false, true, RulesetDefaults.Sr5),
+                new AppCommandDefinition("new_character", "New", "file", false, true, RulesetDefaults.Sr5)
+            ]
+        };
+
+        IRenderedComponent<SectionPane> cut = context.Render<SectionPane>(parameters => parameters
+            .Add(component => component.State, startupState)
+            .Add(component => component.IsCommandEnabled, command => evaluator.IsCommandEnabled(command, startupState)));
+
+        StringAssert.Contains(cut.Markup, "Open Dossier...");
+        StringAssert.Contains(cut.Markup, "No recent dossiers yet.");
+        StringAssert.Contains(cut.Markup, "restore a dossier from disk");
+        Assert.IsNotNull(cut.Find("[data-startup-command='open_character']"));
+    }
+
+    [TestMethod]
+    public void MetadataPanel_uses_dossier_metadata_copy()
+    {
+        using var context = CreateContext();
+
+        CharacterOverviewState state = CharacterOverviewState.Empty with
+        {
+            WorkspaceId = new CharacterWorkspaceId("ws-meta")
+        };
+
+        IRenderedComponent<MetadataPanel> cut = context.Render<MetadataPanel>(parameters => parameters
+            .Add(component => component.State, state)
+            .Add(component => component.LoadWorkspaceId, "queued-dossier"));
+
+        StringAssert.Contains(cut.Markup, "Dossier Metadata");
+        StringAssert.Contains(cut.Markup, "Dossier ID");
+        StringAssert.Contains(cut.Markup, "Update Dossier Metadata");
+        StringAssert.Contains(cut.Markup, "Save Dossier");
+        StringAssert.Contains(cut.Markup, "Load Dossier");
+        StringAssert.Contains(cut.Markup, "placeholder=\"Dossier id\"");
+        StringAssert.Contains(cut.Markup, "value=\"ws-meta\"");
     }
 
     [TestMethod]
@@ -757,6 +864,13 @@ public sealed class BlazorShellComponentTests
             .Add(component => component.Dialog, originWizard));
         StringAssert.Contains(wizardCut.Markup, "Advanced story controls");
         StringAssert.Contains(wizardCut.Markup, "Story Preview");
+        Assert.AreEqual(
+            "Optional dossier identity, life-path steering, and GM guidance for the story packet.",
+            wizardCut.Find(".dialog-origin-advanced-content .dialog-note").TextContent.Trim());
+        CollectionAssert.AreEqual(
+            new[] { "Dossier", "Life Path", "GM Steering" },
+            wizardCut.FindAll(".dialog-origin-subpanel > h4").Select(element => element.TextContent.Trim()).ToArray());
+        Assert.AreEqual(0, wizardCut.FindAll(".dialog-body > .dialog-note").Count);
         Assert.IsNotNull(wizardCut.Find("[data-origin-wizard]"));
         Assert.IsNotNull(wizardCut.Find("select[data-field-id='newCharacterOriginMetatypePreference']"));
         Assert.IsNotNull(wizardCut.Find("select[data-field-id='newCharacterOriginBuildPreference']"));
@@ -768,10 +882,452 @@ public sealed class BlazorShellComponentTests
         StringAssert.Contains(buildCut.Markup, "Build Handoff");
         StringAssert.Contains(buildCut.Markup, "Book Preview");
         StringAssert.Contains(buildCut.Markup, "Build Translation");
+        CollectionAssert.AreEqual(
+            new[] { "Dossier", "Ruleset", "Method" },
+            buildCut.FindAll(".dialog-origin-summary-strip .dialog-origin-summary-label").Select(element => element.TextContent.Trim()).ToArray());
+        Assert.AreEqual(0, buildCut.FindAll(".dialog-body > .dialog-note").Count);
         Assert.IsNotNull(buildCut.Find("[data-origin-build]"));
         Assert.IsNotNull(buildCut.Find("[data-origin-book-preview]"));
         Assert.IsNotNull(buildCut.Find("[data-origin-build-support]"));
+        var dossierLink = buildCut.Find("[data-origin-dossier-route-link]");
+        Assert.AreEqual("/app?command=new_character_origin&ruleset=sr4&alias=Cipher", dossierLink.GetAttribute("data-origin-dossier-route-link"));
+        Assert.AreEqual("/app?command=new_character_origin&ruleset=sr4&alias=Cipher", dossierLink.QuerySelector("code")!.TextContent.Trim());
+        Assert.AreEqual("/app?command=new_character_origin&ruleset=sr4&alias=Cipher", dossierLink.QuerySelector("a")!.GetAttribute("href"));
+        StringAssert.Contains(dossierLink.TextContent, "Open clean Origin Dossier route");
+        Assert.IsFalse(buildCut.Markup.Contains("Open clean Chummer Online route", StringComparison.Ordinal));
+        StringAssert.Contains(buildCut.Markup, "Show Origin Dossier link");
+        Assert.IsFalse(buildCut.Markup.Contains("Show dossier link", StringComparison.Ordinal));
+        StringAssert.Contains(buildCut.Markup, "clean Origin Dossier route");
+        StringAssert.Contains(buildCut.Markup, "Use this clean route to reopen Origin Dossier without publishing the story text.");
+        Assert.IsFalse(buildCut.Markup.Contains("Use this route to reopen the Origin Dossier workflow without publishing the story text.", StringComparison.Ordinal));
+        StringAssert.Contains(buildCut.Markup, "story text stays local");
+        Assert.IsFalse(buildCut.Markup.Contains("Opens Chummer Online directly into the Origin Dossier workflow.", StringComparison.Ordinal));
         Assert.IsNotNull(buildCut.Find(".dialog-origin-preview .dialog-origin-narrative"));
+        Assert.IsFalse(buildCut.Markup.Contains("Runner", StringComparison.Ordinal));
+    }
+
+    [TestMethod]
+    public void DialogHost_origin_specialized_shells_fail_closed_to_dossier_identity_when_hidden_values_are_stale()
+    {
+        DesktopDialogState baseWizard = DesktopDialogFactory.BuildNewCharacterOriginWizardDialog(RulesetDefaults.Sr4, "Nova", "Cipher");
+        DesktopDialogState baseBuild = DesktopDialogFactory.BuildNewCharacterOriginBuildDialog(baseWizard);
+        DesktopDialogState originWizard = baseWizard with
+        {
+            Fields = baseWizard.Fields
+                .Select(field => field.Id switch
+                {
+                    "newCharacterName" => field with { Value = string.Empty },
+                    "newCharacterAlias" => field with { Value = "Runner" },
+                    _ => field
+                })
+                .ToArray()
+        };
+        DesktopDialogState originBuild = baseBuild with
+        {
+            Fields = baseBuild.Fields
+                .Select(field => string.Equals(field.Id, "newCharacterWorkflowAlias", StringComparison.Ordinal)
+                    ? field with { Value = string.Empty }
+                    : field)
+                .ToArray()
+        };
+
+        using var wizardContext = CreateContext();
+
+        IRenderedComponent<DialogHost> wizardCut = wizardContext.Render<DialogHost>(parameters => parameters
+            .Add(component => component.Dialog, originWizard));
+        Assert.AreEqual("New dossier", wizardCut.Find("[data-field-id='newCharacterName'] input").GetAttribute("value"));
+        Assert.AreEqual("Dossier", wizardCut.Find("[data-field-id='newCharacterAlias'] input").GetAttribute("value"));
+
+        using var buildContext = CreateContext();
+
+        IRenderedComponent<DialogHost> buildCut = buildContext.Render<DialogHost>(parameters => parameters
+            .Add(component => component.Dialog, originBuild));
+        Assert.AreEqual(
+            "Dossier",
+            buildCut.FindAll(".dialog-origin-summary-strip .dialog-origin-summary-card strong")[0].TextContent.Trim());
+        Assert.IsFalse(buildCut.Markup.Contains(">Runner<", StringComparison.Ordinal));
+        Assert.IsFalse(buildCut.Markup.Contains(">Pending<", StringComparison.Ordinal));
+    }
+
+    [TestMethod]
+    public void DialogHost_origin_wizard_recovers_summary_and_story_preview_when_hidden_display_fields_are_blank()
+    {
+        static string NormalizeText(string value)
+            => string.Join(" ", value.Split((char[]?)null, StringSplitOptions.RemoveEmptyEntries));
+
+        DesktopDialogState baseDialog = DesktopDialogFactory.BuildNewCharacterOriginWizardDialog(RulesetDefaults.Sr4, "Nova", "Cipher");
+        string expectedMetatype = DesktopDialogFieldValueParser.GetValue(baseDialog, "newCharacterOriginMetatype");
+        string expectedArchetype = DesktopDialogFieldValueParser.GetValue(baseDialog, "newCharacterOriginArchetype");
+        string expectedPath = DesktopDialogFieldValueParser.GetValue(baseDialog, "newCharacterOriginPathSummary");
+        string expectedStory = DesktopDialogFieldValueParser.GetValue(baseDialog, "newCharacterOriginSummary");
+        string expectedGmSummary = DesktopDialogFieldValueParser.GetValue(baseDialog, "newCharacterOriginGmRequirementSummary");
+        string expectedPressure = DesktopDialogFieldValueParser.GetValue(baseDialog, "newCharacterOriginQualityFocus");
+        DesktopDialogState dialog = baseDialog with
+        {
+            Fields = baseDialog.Fields
+                .Select(field => field.Id switch
+                {
+                    "newCharacterOriginMetatype" => field with { Value = string.Empty },
+                    "newCharacterOriginArchetype" => field with { Value = string.Empty },
+                    "newCharacterOriginPathSummary" => field with { Value = string.Empty },
+                    "newCharacterOriginSummary" => field with { Value = string.Empty },
+                    "newCharacterOriginGmRequirementSummary" => field with { Value = string.Empty },
+                    "newCharacterOriginQualityFocus" => field with { Value = string.Empty },
+                    _ => field
+                })
+                .ToArray()
+        };
+
+        using var context = CreateContext();
+
+        IRenderedComponent<DialogHost> cut = context.Render<DialogHost>(parameters => parameters
+            .Add(component => component.Dialog, dialog));
+
+        CollectionAssert.AreEqual(
+            new[] { expectedMetatype, expectedArchetype, expectedPath },
+            cut.Find("[data-origin-summary-strip]")
+                .QuerySelectorAll(".dialog-origin-summary-card strong")
+                .Select(element => element.TextContent.Trim())
+                .ToArray());
+        Assert.AreEqual(
+            NormalizeText(expectedStory),
+            NormalizeText(cut.Find("[data-origin-story-preview]").TextContent));
+
+        cut.Find("[data-origin-advanced-toggle]").Click();
+        cut.WaitForAssertion(() =>
+        {
+            Assert.AreEqual("true", cut.Find("[data-origin-advanced-toggle]").GetAttribute("aria-expanded"));
+            CollectionAssert.AreEqual(
+                new[] { expectedGmSummary, expectedPressure },
+                cut.Find(".dialog-origin-advanced-content .dialog-origin-summary-strip")
+                    .QuerySelectorAll(".dialog-origin-summary-card strong")
+                    .Select(element => element.TextContent.Trim())
+                    .ToArray());
+        });
+    }
+
+    [TestMethod]
+    public void DialogHost_origin_build_recovers_clean_route_when_hidden_link_value_is_blank()
+    {
+        DesktopDialogState baseWizard = DesktopDialogFactory.BuildNewCharacterOriginWizardDialog(RulesetDefaults.Sr4, "Nova", "Cipher");
+        DesktopDialogState baseBuild = DesktopDialogFactory.BuildNewCharacterOriginBuildDialog(baseWizard);
+        DesktopDialogState originBuild = baseBuild with
+        {
+            Fields = baseBuild.Fields
+                .Select(field => field.Id switch
+                {
+                    "newCharacterOriginDossierLink" => field with { Value = string.Empty },
+                    "newCharacterWorkflowAlias" => field with { Value = "Runner" },
+                    _ => field
+                })
+                .ToArray()
+        };
+
+        using var context = CreateContext();
+
+        IRenderedComponent<DialogHost> buildCut = context.Render<DialogHost>(parameters => parameters
+            .Add(component => component.Dialog, originBuild));
+
+        var dossierLink = buildCut.Find("[data-origin-dossier-route-link]");
+        Assert.AreEqual("/app?command=new_character_origin&ruleset=sr4&alias=Dossier", dossierLink.GetAttribute("data-origin-dossier-route-link"));
+        Assert.AreEqual("/app?command=new_character_origin&ruleset=sr4&alias=Dossier", dossierLink.QuerySelector("code")!.TextContent.Trim());
+        Assert.AreEqual("/app?command=new_character_origin&ruleset=sr4&alias=Dossier", dossierLink.QuerySelector("a")!.GetAttribute("href"));
+        Assert.IsFalse(dossierLink.TextContent.Contains("alias=Runner", StringComparison.Ordinal));
+    }
+
+    [TestMethod]
+    public void DialogHost_origin_build_recovers_preview_title_and_constraints_route_when_hidden_values_are_stale()
+    {
+        DesktopDialogState baseWizard = DesktopDialogFactory.BuildNewCharacterOriginWizardDialog(RulesetDefaults.Sr4, "Nova", "Cipher");
+        DesktopDialogState baseBuild = DesktopDialogFactory.BuildNewCharacterOriginBuildDialog(baseWizard);
+        DesktopDialogState originBuild = baseBuild with
+        {
+            Fields = baseBuild.Fields
+                .Select(field => field.Id switch
+                {
+                    "newCharacterOriginDossierLink" => field with { Value = string.Empty },
+                    "newCharacterWorkflowAlias" => field with { Value = "Runner" },
+                    _ => field
+                })
+                .ToArray()
+        };
+
+        using var context = CreateContext();
+
+        IRenderedComponent<DialogHost> buildCut = context.Render<DialogHost>(parameters => parameters
+            .Add(component => component.Dialog, originBuild));
+
+        string bookPreviewText = buildCut.Find(".dialog-origin-book p").TextContent.Trim();
+        Assert.AreEqual("Dossier: Origin Dossier", bookPreviewText.Split('\n', StringSplitOptions.RemoveEmptyEntries).First());
+
+        string constraintsText = buildCut.FindAll(".dialog-visual-pre")
+            .Single(element => element.TextContent.Contains("Dossier Link |", StringComparison.Ordinal))
+            .TextContent;
+        StringAssert.Contains(constraintsText, "Dossier Link | /app?command=new_character_origin&ruleset=sr4&alias=Dossier");
+        Assert.IsFalse(constraintsText.Contains("alias=Cipher", StringComparison.Ordinal));
+        Assert.IsFalse(bookPreviewText.Contains("Cipher: Origin Dossier", StringComparison.Ordinal));
+    }
+
+    [TestMethod]
+    public void DialogHost_origin_build_recovers_constraints_route_when_constraints_label_is_legacy_cased()
+    {
+        DesktopDialogState baseWizard = DesktopDialogFactory.BuildNewCharacterOriginWizardDialog(RulesetDefaults.Sr4, "Nova", "Cipher");
+        DesktopDialogState baseBuild = DesktopDialogFactory.BuildNewCharacterOriginBuildDialog(baseWizard);
+        DesktopDialogState originBuild = baseBuild with
+        {
+            Fields = baseBuild.Fields
+                .Select(field => field.Id switch
+                {
+                    "newCharacterOriginImplications" => field with
+                    {
+                        Value = "dossier link | /app?command=new_character_origin&ruleset=sr4&alias=Cipher" + Environment.NewLine +
+                                "sheet changes | Sheet changes visible after the origin packet.",
+                        Placeholder = "dossier link | /app?command=new_character_origin&ruleset=sr4&alias=Cipher" + Environment.NewLine +
+                                      "sheet changes | Sheet changes visible after the origin packet."
+                    },
+                    "newCharacterWorkflowAlias" => field with { Value = "Runner" },
+                    _ => field
+                })
+                .ToArray()
+        };
+
+        using var context = CreateContext();
+
+        IRenderedComponent<DialogHost> buildCut = context.Render<DialogHost>(parameters => parameters
+            .Add(component => component.Dialog, originBuild));
+
+        string constraintsText = buildCut.FindAll(".dialog-visual-pre")
+            .Single(element => element.TextContent.Contains("Dossier Link |", StringComparison.Ordinal))
+            .TextContent;
+        StringAssert.Contains(constraintsText, "Dossier Link | /app?command=new_character_origin&ruleset=sr4&alias=Dossier");
+        Assert.IsFalse(constraintsText.Contains("alias=Cipher", StringComparison.Ordinal));
+    }
+
+    [TestMethod]
+    public void DialogHost_origin_build_recovers_constraints_route_when_constraints_label_uses_colon_separator()
+    {
+        DesktopDialogState baseWizard = DesktopDialogFactory.BuildNewCharacterOriginWizardDialog(RulesetDefaults.Sr4, "Nova", "Cipher");
+        DesktopDialogState baseBuild = DesktopDialogFactory.BuildNewCharacterOriginBuildDialog(baseWizard);
+        DesktopDialogState originBuild = baseBuild with
+        {
+            Fields = baseBuild.Fields
+                .Select(field => field.Id switch
+                {
+                    "newCharacterOriginImplications" => field with
+                    {
+                        Value = "dossier link: /app?command=new_character_origin&ruleset=sr4&alias=Cipher" + Environment.NewLine +
+                                "sheet changes | Sheet changes visible after the origin packet.",
+                        Placeholder = "dossier link: /app?command=new_character_origin&ruleset=sr4&alias=Cipher" + Environment.NewLine +
+                                      "sheet changes | Sheet changes visible after the origin packet."
+                    },
+                    "newCharacterWorkflowAlias" => field with { Value = "Runner" },
+                    _ => field
+                })
+                .ToArray()
+        };
+
+        using var context = CreateContext();
+
+        IRenderedComponent<DialogHost> buildCut = context.Render<DialogHost>(parameters => parameters
+            .Add(component => component.Dialog, originBuild));
+
+        string constraintsText = buildCut.FindAll(".dialog-visual-pre")
+            .Single(element => element.TextContent.Contains("Dossier Link |", StringComparison.Ordinal))
+            .TextContent;
+        StringAssert.Contains(constraintsText, "Dossier Link | /app?command=new_character_origin&ruleset=sr4&alias=Dossier");
+        Assert.IsFalse(constraintsText.Contains("alias=Cipher", StringComparison.Ordinal));
+    }
+
+    [TestMethod]
+    public void DialogHost_origin_build_does_not_duplicate_dossier_link_line_when_canonicalizing_constraints()
+    {
+        DesktopDialogState baseWizard = DesktopDialogFactory.BuildNewCharacterOriginWizardDialog(RulesetDefaults.Sr4, "Nova", "Cipher");
+        DesktopDialogState baseBuild = DesktopDialogFactory.BuildNewCharacterOriginBuildDialog(baseWizard);
+        DesktopDialogState originBuild = baseBuild with
+        {
+            Fields = baseBuild.Fields
+                .Select(field => field.Id switch
+                {
+                    "newCharacterOriginImplications" => field with
+                    {
+                        Value = "dossier link | /app?command=new_character_origin&ruleset=sr4&alias=Cipher" + Environment.NewLine +
+                                "Dossier Link | /app?command=new_character_origin&ruleset=sr4&alias=Cipher" + Environment.NewLine +
+                                "sheet changes | Sheet changes visible after the origin packet.",
+                        Placeholder = "dossier link | /app?command=new_character_origin&ruleset=sr4&alias=Cipher" + Environment.NewLine +
+                                      "Dossier Link | /app?command=new_character_origin&ruleset=sr4&alias=Cipher" + Environment.NewLine +
+                                      "sheet changes | Sheet changes visible after the origin packet."
+                    },
+                    "newCharacterWorkflowAlias" => field with { Value = "Runner" },
+                    _ => field
+                })
+                .ToArray()
+        };
+
+        using var context = CreateContext();
+
+        IRenderedComponent<DialogHost> buildCut = context.Render<DialogHost>(parameters => parameters
+            .Add(component => component.Dialog, originBuild));
+
+        string constraintsText = buildCut.FindAll(".dialog-visual-pre")
+            .Single(element => element.TextContent.Contains("Dossier Link |", StringComparison.Ordinal))
+            .TextContent;
+        StringAssert.Contains(constraintsText, "Dossier Link | /app?command=new_character_origin&ruleset=sr4&alias=Dossier");
+        Assert.IsFalse(constraintsText.Contains("alias=Cipher", StringComparison.Ordinal));
+        int dossierCount = constraintsText.Split("Dossier Link |", StringSplitOptions.None).Length - 1;
+        Assert.AreEqual(1, dossierCount, "The duplicated dossier link constraints lines should be collapsed to a single canonical row.");
+    }
+
+    [TestMethod]
+    public void DialogHost_origin_build_recovers_stale_one_line_book_preview_title()
+    {
+        DesktopDialogState baseWizard = DesktopDialogFactory.BuildNewCharacterOriginWizardDialog(RulesetDefaults.Sr4, "Nova", "Cipher");
+        DesktopDialogState baseBuild = DesktopDialogFactory.BuildNewCharacterOriginBuildDialog(baseWizard);
+        DesktopDialogState originBuild = baseBuild with
+        {
+            Fields = baseBuild.Fields
+                .Select(field => field.Id switch
+                {
+                    "newCharacterWorkflowAlias" => field with { Value = "Runner" },
+                    "newCharacterOriginBookPreview" => field with { Value = "Runner: Origin Dossier" },
+                    _ => field
+                })
+                .ToArray()
+        };
+
+        using var context = CreateContext();
+
+        IRenderedComponent<DialogHost> buildCut = context.Render<DialogHost>(parameters => parameters
+            .Add(component => component.Dialog, originBuild));
+
+        Assert.AreEqual("Dossier: Origin Dossier", buildCut.Find(".dialog-origin-book p").TextContent.Trim());
+    }
+
+    [TestMethod]
+    public void DialogHost_origin_build_recovers_story_panel_when_hidden_story_is_blank()
+    {
+        static string NormalizeText(string value)
+            => string.Join(" ", value.Split((char[]?)null, StringSplitOptions.RemoveEmptyEntries));
+
+        DesktopDialogState baseWizard = DesktopDialogFactory.BuildNewCharacterOriginWizardDialog(RulesetDefaults.Sr4, "Nova", "Cipher");
+        DesktopDialogState baseBuild = DesktopDialogFactory.BuildNewCharacterOriginBuildDialog(baseWizard);
+        string expectedStory = DesktopDialogFieldValueParser.GetValue(baseBuild, "newCharacterOriginSummary");
+        DesktopDialogState originBuild = baseBuild with
+        {
+            Fields = baseBuild.Fields
+                .Select(field => string.Equals(field.Id, "newCharacterOriginStory", StringComparison.Ordinal)
+                    ? field with { Value = string.Empty }
+                    : field)
+                .ToArray()
+        };
+
+        using var context = CreateContext();
+
+        IRenderedComponent<DialogHost> buildCut = context.Render<DialogHost>(parameters => parameters
+            .Add(component => component.Dialog, originBuild));
+
+        Assert.AreEqual(
+            NormalizeText(expectedStory),
+            NormalizeText(buildCut.Find(".dialog-origin-narrative").TextContent));
+    }
+
+    [TestMethod]
+    public void DialogHost_origin_build_recovers_dossier_link_notes_when_hidden_notes_are_stale()
+    {
+        DesktopDialogState baseWizard = DesktopDialogFactory.BuildNewCharacterOriginWizardDialog(RulesetDefaults.Sr4, "Nova", "Cipher");
+        DesktopDialogState baseBuild = DesktopDialogFactory.BuildNewCharacterOriginBuildDialog(baseWizard);
+        string expectedNotes = DesktopDialogFactory.BuildOriginDossierLinkNotesDisplayValue();
+        DesktopDialogState originBuild = baseBuild with
+        {
+            Fields = baseBuild.Fields
+                .Select(field => string.Equals(field.Id, "newCharacterOriginDossierLinkNotes", StringComparison.Ordinal)
+                    ? field with { Value = "Opens Chummer Online directly into the Origin Dossier workflow." }
+                    : field)
+                .ToArray()
+        };
+
+        using var context = CreateContext();
+
+        IRenderedComponent<DialogHost> buildCut = context.Render<DialogHost>(parameters => parameters
+            .Add(component => component.Dialog, originBuild));
+
+        string notesText = buildCut.FindAll(".dialog-visual-pre")
+            .First(element => element.TextContent.Contains("story text stays local", StringComparison.Ordinal))
+            .TextContent;
+        StringAssert.Contains(notesText, expectedNotes);
+        Assert.IsFalse(notesText.Contains("Chummer Online", StringComparison.Ordinal));
+    }
+
+    [TestMethod]
+    public void DialogHost_origin_build_recovers_book_preview_body_when_hidden_preview_is_blank()
+    {
+        DesktopDialogState baseWizard = DesktopDialogFactory.BuildNewCharacterOriginWizardDialog(RulesetDefaults.Sr4, "Nova", "Cipher");
+        DesktopDialogState baseBuild = DesktopDialogFactory.BuildNewCharacterOriginBuildDialog(baseWizard);
+        string expectedStory = DesktopDialogFieldValueParser.GetValue(baseBuild, "newCharacterOriginSummary");
+        string expectedBuildSummary = (DesktopDialogFieldValueParser.GetValue(baseBuild, "newCharacterOriginImplications") ?? string.Empty)
+            .Split(Environment.NewLine, StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
+            .Single(line => line.StartsWith("Build |", StringComparison.Ordinal))
+            .Split('|', 2, StringSplitOptions.TrimEntries)[1];
+        string expectedGmRequirements = (DesktopDialogFieldValueParser.GetValue(baseBuild, "newCharacterOriginImplications") ?? string.Empty)
+            .Split(Environment.NewLine, StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
+            .Single(line => line.StartsWith("GM Requirements |", StringComparison.Ordinal))
+            .Split('|', 2, StringSplitOptions.TrimEntries)[1];
+        DesktopDialogState originBuild = baseBuild with
+        {
+            Fields = baseBuild.Fields
+                .Select(field => string.Equals(field.Id, "newCharacterOriginBookPreview", StringComparison.Ordinal)
+                    ? field with { Value = string.Empty }
+                    : field)
+                .ToArray()
+        };
+
+        using var context = CreateContext();
+
+        IRenderedComponent<DialogHost> buildCut = context.Render<DialogHost>(parameters => parameters
+            .Add(component => component.Dialog, originBuild));
+
+        string bookPreviewText = buildCut.Find("[data-origin-book-preview]").TextContent;
+        StringAssert.Contains(bookPreviewText, expectedStory);
+        StringAssert.Contains(bookPreviewText, $"The shape of the build is visible in the fiction: {expectedBuildSummary}");
+        StringAssert.Contains(bookPreviewText, $"At the table, the story keeps these constraints in view: {expectedGmRequirements}");
+        StringAssert.Contains(bookPreviewText, "When this origin feels right, start character creation.");
+    }
+
+    [TestMethod]
+    public void DialogHost_origin_build_recovers_summary_ruleset_and_method_when_workflow_fields_are_blank()
+    {
+        DesktopDialogState baseWizard = DesktopDialogFactory.BuildNewCharacterOriginWizardDialog(RulesetDefaults.Sr4, "Nova", "Cipher");
+        DesktopDialogState baseBuild = DesktopDialogFactory.BuildNewCharacterOriginBuildDialog(baseWizard);
+        string expectedRoute = DesktopDialogFieldValueParser.GetValue(baseBuild, "newCharacterOriginDossierLink");
+        string expectedRulesetLabel = (RulesetDefaults.NormalizeOptional(DesktopDialogFieldValueParser.GetValue(baseBuild, "newCharacterWorkflowRulesetId")) ?? RulesetDefaults.Sr5).ToUpperInvariant();
+        string expectedBuildMethod = DesktopDialogFieldValueParser.GetValue(baseBuild, "newCharacterWorkflowBuildMethod");
+        DesktopDialogState originBuild = baseBuild with
+        {
+            Fields = baseBuild.Fields
+                .Select(field => field.Id switch
+                {
+                    "newCharacterWorkflowRulesetId" => field with { Value = string.Empty },
+                    "newCharacterWorkflowBuildMethod" => field with { Value = string.Empty },
+                    _ => field
+                })
+                .ToArray()
+        };
+
+        using var context = CreateContext();
+
+        IRenderedComponent<DialogHost> buildCut = context.Render<DialogHost>(parameters => parameters
+            .Add(component => component.Dialog, originBuild));
+
+        IReadOnlyList<string> summaryValues = buildCut.FindAll(".dialog-origin-summary-card strong")
+            .Select(element => element.TextContent.Trim())
+            .ToArray();
+        var dossierLink = buildCut.Find("[data-origin-dossier-route-link]");
+
+        Assert.AreEqual(expectedRulesetLabel, summaryValues[1]);
+        Assert.AreEqual(expectedBuildMethod, summaryValues[2]);
+        Assert.AreEqual(expectedRoute, dossierLink.GetAttribute("data-origin-dossier-route-link"));
+        Assert.AreEqual(expectedRoute, dossierLink.QuerySelector("code")!.TextContent.Trim());
+        Assert.IsFalse(string.Equals("Pending", summaryValues[2], StringComparison.Ordinal));
+        Assert.IsFalse(dossierLink.TextContent.Contains("ruleset=sr5", StringComparison.Ordinal));
     }
 
     [TestMethod]
@@ -847,6 +1403,94 @@ public sealed class BlazorShellComponentTests
     }
 
     [TestMethod]
+    public async Task DialogHost_keeps_origin_advanced_controls_open_when_parent_recreates_the_dialog_host_during_select_refreshes()
+    {
+        DesktopDialogState originWizard = DesktopDialogFactory.BuildNewCharacterOriginWizardDialog(RulesetDefaults.Sr4, "Nova", "Cipher");
+
+        using var context = CreateContext();
+        IRenderedComponent<RemountingOriginDialogHostHarness> cut = context.Render<RemountingOriginDialogHostHarness>(parameters => parameters
+            .Add(component => component.InitialDialog, originWizard));
+
+        cut.Find("[data-origin-advanced-toggle]").Click();
+        cut.WaitForAssertion(() =>
+        {
+            Assert.AreEqual("true", cut.Find("[data-origin-advanced-toggle]").GetAttribute("aria-expanded"));
+            Assert.IsFalse(cut.Find("[data-origin-advanced-content]").HasAttribute("hidden"));
+        });
+
+        foreach (string fieldId in new[]
+                 {
+                     "newCharacterOriginMetatypePreference",
+                     "newCharacterOriginArchetypeIntent",
+                     "newCharacterRulesetId",
+                     "newCharacterOriginBuildPreference",
+                     "newCharacterOriginBackground",
+                     "newCharacterOriginTurningPoint",
+                     "newCharacterOriginTrainingPath",
+                     "newCharacterOriginUpgradeExposure",
+                     "newCharacterOriginPressureCost",
+                     "newCharacterOriginMotivation",
+                     "newCharacterOriginTone",
+                     "newCharacterOriginGmConstraintPreset"
+                 })
+        {
+            IElement select = cut.Find($"select[data-field-id='{fieldId}']");
+            string currentValue = select.GetAttribute("value")
+                ?? throw new AssertFailedException($"Origin select '{fieldId}' did not expose a current value.");
+            string nextValue = select.Children
+                .Where(option => string.Equals(option.TagName, "OPTION", StringComparison.OrdinalIgnoreCase))
+                .Select(option => option.GetAttribute("value"))
+                .First(value => !string.IsNullOrWhiteSpace(value) && !string.Equals(value, currentValue, StringComparison.Ordinal))
+                ?? throw new AssertFailedException($"Origin select '{fieldId}' did not expose an alternative value.");
+
+            await select.ChangeAsync(new ChangeEventArgs { Value = nextValue });
+            cut.WaitForAssertion(() =>
+            {
+                Assert.AreEqual("true", cut.Find("[data-origin-advanced-toggle]").GetAttribute("aria-expanded"), $"Origin advanced controls should stay expanded after the parent remounts the dialog host on '{fieldId}'.");
+                Assert.IsFalse(cut.Find("[data-origin-advanced-content]").HasAttribute("hidden"), $"Origin advanced controls should stay visible after the parent remounts the dialog host on '{fieldId}'.");
+            });
+        }
+    }
+
+    [TestMethod]
+    public async Task DialogHost_restores_origin_scroll_when_parent_recreates_the_dialog_host_during_select_refreshes()
+    {
+        DesktopDialogState originWizard = DesktopDialogFactory.BuildNewCharacterOriginWizardDialog(RulesetDefaults.Sr4, "Nova", "Cipher");
+
+        using var context = CreateContext();
+        IRenderedComponent<RemountingOriginDialogHostHarness> cut = context.Render<RemountingOriginDialogHostHarness>(parameters => parameters
+            .Add(component => component.InitialDialog, originWizard));
+
+        cut.Find("[data-origin-advanced-toggle]").Click();
+        IElement select = cut.Find("select[data-field-id='newCharacterOriginBuildPreference']");
+        string currentValue = select.GetAttribute("value")
+            ?? throw new AssertFailedException("Origin build-preference select did not expose a current value.");
+        string nextValue = select.Children
+            .Where(option => string.Equals(option.TagName, "OPTION", StringComparison.OrdinalIgnoreCase))
+            .Select(option => option.GetAttribute("value"))
+            .First(value => !string.IsNullOrWhiteSpace(value) && !string.Equals(value, currentValue, StringComparison.Ordinal))
+            ?? throw new AssertFailedException("Origin build-preference select did not expose an alternative value.");
+
+        await select.TriggerEventAsync("onfocus", new FocusEventArgs());
+        int restoreInvocationsBeforeChange = context.JSInterop.Invocations.Count(invocation =>
+            string.Equals(invocation.Identifier, "chummerDialogs.restorePendingDialogScroll", StringComparison.Ordinal));
+
+        await select.ChangeAsync(new ChangeEventArgs { Value = nextValue });
+        cut.WaitForAssertion(() =>
+        {
+            Assert.AreEqual("true", cut.Find("[data-origin-advanced-toggle]").GetAttribute("aria-expanded"));
+            Assert.IsFalse(cut.Find("[data-origin-advanced-content]").HasAttribute("hidden"));
+        });
+
+        int restoreInvocationsAfterChange = context.JSInterop.Invocations.Count(invocation =>
+            string.Equals(invocation.Identifier, "chummerDialogs.restorePendingDialogScroll", StringComparison.Ordinal));
+
+        Assert.IsTrue(
+            restoreInvocationsAfterChange > restoreInvocationsBeforeChange,
+            "A remounted Origin Dossier dialog host should consume the shared pending scroll restore so select refreshes do not jump the viewport.");
+    }
+
+    [TestMethod]
     public async Task DialogHost_updates_origin_select_scroll_capture_when_another_select_gains_focus_before_refresh()
     {
         DesktopDialogState originWizard = DesktopDialogFactory.BuildNewCharacterOriginWizardDialog(RulesetDefaults.Sr4, "Nova", "Cipher");
@@ -885,9 +1529,59 @@ public sealed class BlazorShellComponentTests
             captureInvocationsAfterSecondFocus,
             "A second origin select focus should replace the prior scroll anchor with the latest active select.");
         Assert.AreEqual(
-            captureInvocationsAfterSecondFocus,
+            captureInvocationsAfterSecondFocus + 1,
             captureInvocationsAfterChange,
-            "The later origin select change should keep using the latest armed scroll anchor.");
+            "The later origin select change should recapture the latest scroll anchor right before refresh so the dialog does not jump back to an earlier focus position.");
+    }
+
+    [TestMethod]
+    public async Task DialogHost_recaptures_origin_select_scroll_when_the_same_select_changes_after_focus()
+    {
+        DesktopDialogState originWizard = DesktopDialogFactory.BuildNewCharacterOriginWizardDialog(RulesetDefaults.Sr4, "Nova", "Cipher");
+        List<DialogFieldInputChange> inputChanges = [];
+
+        using var context = CreateContext();
+        IRenderedComponent<DialogHost> cut = context.Render<DialogHost>(parameters => parameters
+            .Add(component => component.Dialog, originWizard)
+            .Add(component => component.FieldInputRequested, (Action<DialogFieldInputChange>)(change => inputChanges.Add(change))));
+
+        cut.Find("[data-origin-advanced-toggle]").Click();
+        IElement metatypePreferenceSelect = cut.Find("select[data-field-id='newCharacterOriginMetatypePreference']");
+
+        await metatypePreferenceSelect.TriggerEventAsync("onfocus", new FocusEventArgs());
+
+        int captureInvocationsAfterFocus = context.JSInterop.Invocations.Count(invocation =>
+            string.Equals(invocation.Identifier, "chummerDialogs.captureDialogScroll", StringComparison.Ordinal));
+
+        await metatypePreferenceSelect.ChangeAsync(new ChangeEventArgs { Value = "human" });
+
+        int captureInvocationsAfterChange = context.JSInterop.Invocations.Count(invocation =>
+            string.Equals(invocation.Identifier, "chummerDialogs.captureDialogScroll", StringComparison.Ordinal));
+
+        Assert.AreEqual(1, inputChanges.Count);
+        Assert.AreEqual("newCharacterOriginMetatypePreference", inputChanges[0].FieldId);
+        Assert.AreEqual("human", inputChanges[0].Value);
+        Assert.AreEqual(1, captureInvocationsAfterFocus, "The origin select focus should arm the first scroll capture.");
+        Assert.AreEqual(
+            captureInvocationsAfterFocus + 1,
+            captureInvocationsAfterChange,
+            "Changing the same origin select after focus should recapture scroll state so the advanced controls stay anchored at the current viewport.");
+    }
+
+    [TestMethod]
+    public void App_restoreDialogScroll_prefers_origin_field_anchor_before_advanced_panel_anchor()
+    {
+        string source = File.ReadAllText(Path.Combine(
+            TestContextLocator.ResolveChummerPresentationRepoRoot(),
+            "Chummer.Blazor",
+            "Components",
+            "App.razor"));
+
+        StringAssert.Contains(source, "if (anchoredRestorePending && !restoreOriginFieldAnchor())");
+        StringAssert.Contains(source, "restoreOriginAdvancedAnchor();");
+        Assert.IsFalse(
+            source.Contains("const shouldPreferOriginAdvancedAnchor = function()", StringComparison.Ordinal),
+            "Origin wizard scroll restore should not prefer the advanced-panel anchor ahead of the active field anchor.");
     }
 
     private sealed class DialogHostHarness : ComponentBase
@@ -943,6 +1637,57 @@ public sealed class BlazorShellComponentTests
             builder.OpenComponent<DialogHost>(0);
             builder.AddAttribute(1, nameof(DialogHost.Dialog), _dialog);
             builder.AddAttribute(2, nameof(DialogHost.FieldInputRequested), EventCallback.Factory.Create<DialogFieldInputChange>(this, OnFieldInputRequested));
+            builder.CloseComponent();
+        }
+    }
+
+    private sealed class RemountingOriginDialogHostHarness : ComponentBase
+    {
+        [Parameter]
+        public DesktopDialogState? InitialDialog { get; set; }
+
+        private DesktopDialogState? _dialog;
+        private bool _originWizardAdvancedControlsOpen;
+        private bool _useAlternateKey;
+
+        protected override void OnParametersSet()
+        {
+            _dialog ??= InitialDialog;
+        }
+
+        private void OnFieldInputRequested(DialogFieldInputChange change)
+        {
+            if (_dialog is null)
+            {
+                return;
+            }
+
+            _dialog = _dialog with
+            {
+                Fields = _dialog.Fields
+                    .Select(field => string.Equals(field.Id, change.FieldId, StringComparison.Ordinal)
+                        ? field with { Value = change.Value ?? string.Empty }
+                        : field)
+                    .ToArray()
+            };
+            _useAlternateKey = !_useAlternateKey;
+            StateHasChanged();
+        }
+
+        private void OnOriginWizardAdvancedControlsOpenChanged(bool isOpen)
+        {
+            _originWizardAdvancedControlsOpen = isOpen;
+            StateHasChanged();
+        }
+
+        protected override void BuildRenderTree(RenderTreeBuilder builder)
+        {
+            builder.OpenComponent<DialogHost>(0);
+            builder.SetKey(_useAlternateKey ? "origin-dialog-host-b" : "origin-dialog-host-a");
+            builder.AddAttribute(1, nameof(DialogHost.Dialog), _dialog);
+            builder.AddAttribute(2, nameof(DialogHost.FieldInputRequested), EventCallback.Factory.Create<DialogFieldInputChange>(this, OnFieldInputRequested));
+            builder.AddAttribute(3, nameof(DialogHost.OriginWizardAdvancedControlsOpen), _originWizardAdvancedControlsOpen);
+            builder.AddAttribute(4, nameof(DialogHost.OriginWizardAdvancedControlsOpenChanged), EventCallback.Factory.Create<bool>(this, OnOriginWizardAdvancedControlsOpenChanged));
             builder.CloseComponent();
         }
     }
@@ -1260,7 +2005,7 @@ public sealed class BlazorShellComponentTests
                 SupportClosureSummary: "Support can use the same runtime fingerprint after the next step.",
                 TeamCoverage: new BuildLabTeamCoverageProjection(
                     Summary: "2 of 3 required crew roles are covered before the next step; one deliberate face overlap stays visible while astral support remains missing.",
-                    CoverageSummary: "Coverage score stays stable with Face and Legwork already covered before the first campaign step.",
+                    CoverageSummary: "Coverage score stays grounded with Face and Legwork already covered before the first campaign step.",
                     RolePressureSummary: "Role pressure stays light because the duplicate face lane is intentional, but astral support still needs a partner runner.",
                     MissingRoleTags: ["astral"],
                     CoveredRoleTags: ["face", "legwork"],
@@ -1297,6 +2042,8 @@ public sealed class BlazorShellComponentTests
         StringAssert.Contains(cut.Markup, "Covered roles: Face | Legwork");
         StringAssert.Contains(cut.Markup, "Missing roles: Astral");
         StringAssert.Contains(cut.Markup, "Duplicate roles: Face");
+        StringAssert.Contains(cut.Markup, "Coverage score stays grounded with Face and Legwork already covered before the first campaign step.");
+        Assert.IsFalse(cut.Markup.Contains("Coverage score stays stable with Face and Legwork already covered before the first campaign step.", StringComparison.Ordinal));
         StringAssert.Contains(cut.Markup, "Light face overlap");
         StringAssert.Contains(cut.Markup, "strongest coverage checkpoint at 100 Karma");
         StringAssert.Contains(cut.Markup, "Decision rail");
@@ -1925,6 +2672,73 @@ public sealed class BlazorShellComponentTests
     }
 
     [TestMethod]
+    public void RuntimeInspectorPanel_uses_current_and_no_diff_badges_for_clean_local_diagnostics()
+    {
+        using var context = CreateContext();
+        IRenderedComponent<RuntimeInspectorPanel> cut = context.Render<RuntimeInspectorPanel>(parameters => parameters
+            .Add(component => component.Projection, new RuntimeInspectorProjection(
+                TargetKind: RuntimeInspectorTargetKinds.RuntimeLock,
+                TargetId: "official.sr6.core",
+                RuntimeLock: new ResolvedRuntimeLock(
+                    RulesetId: RulesetDefaults.Sr6,
+                    ContentBundles:
+                    [
+                        new ContentBundleDescriptor("sr6.core.bundle", RulesetDefaults.Sr6, "1.0.0", "SR6 Core", "Core bundle", ["data/sr6-core.xml"])
+                    ],
+                    RulePacks:
+                    [
+                        new ArtifactVersionReference("official.sr6.core", "1.0.0")
+                    ],
+                    ProviderBindings: new Dictionary<string, string>(StringComparer.Ordinal)
+                    {
+                        [RulePackCapabilityIds.DeriveStat] = "official.sr6.core/derive.stat"
+                    },
+                    EngineApiVersion: "1.0.0",
+                    RuntimeFingerprint: "sha256:sr6-runtime-fingerprint"),
+                Install: new ArtifactInstallState(
+                    ArtifactInstallStates.Pinned,
+                    InstalledTargetKind: RuntimeInspectorTargetKinds.Workspace,
+                    InstalledTargetId: "workspace-sr6",
+                    RuntimeFingerprint: "sha256:sr6-runtime-fingerprint"),
+                ResolvedRulePacks:
+                [
+                    new RuntimeInspectorRulePackEntry(
+                        new ArtifactVersionReference("official.sr6.core", "1.0.0"),
+                        "SR6 Core",
+                        ArtifactVisibilityModes.Shared,
+                        ArtifactTrustTiers.Official,
+                        [RulePackCapabilityIds.DeriveStat],
+                        SourceKind: RegistryEntrySourceKinds.BuiltInCoreProfile)
+                ],
+                ProviderBindings:
+                [
+                    new RuntimeInspectorProviderBinding(RulePackCapabilityIds.DeriveStat, "official.sr6.core/derive.stat", "official.sr6.core", SessionSafe: false)
+                ],
+                CompatibilityDiagnostics: [],
+                Warnings: [],
+                MigrationPreview: [],
+                GeneratedAtUtc: new DateTimeOffset(2026, 03, 10, 9, 0, 0, TimeSpan.Zero),
+                ProfileSourceKind: RegistryEntrySourceKinds.BuiltInCoreProfile,
+                CapabilityDescriptors:
+                [
+                    new RuntimeInspectorCapabilityDescriptorProjection(
+                        RulePackCapabilityIds.DeriveStat,
+                        RulesetCapabilityInvocationKinds.Rule,
+                        "Derived Stat",
+                        Explainable: true,
+                        SessionSafe: false,
+                        DefaultGasBudget: new RulesetGasBudget(100, 200, 4 * 1024 * 1024),
+                        ProviderId: "official.sr6.core/derive.stat",
+                        PackId: "official.sr6.core")
+                ])));
+
+        StringAssert.Contains(cut.Markup, ">current<");
+        StringAssert.Contains(cut.Markup, ">no diff<");
+        Assert.IsFalse(cut.Markup.Contains(">stable<", StringComparison.Ordinal));
+        Assert.IsNotNull(cut.Find("[data-diagnostics-environment-diff]"));
+    }
+
+    [TestMethod]
     public void ContactNetworkPanel_renders_relationship_graph_rails()
     {
         CharacterContactsSection contacts = new(
@@ -2277,8 +3091,8 @@ public sealed class BlazorShellComponentTests
                     new DesktopDialogField(
                         "rosterMugshot",
                         "Mugshot",
-                        $"Runner Portrait{Environment.NewLine}Portrait Source | {portraitPath}{Environment.NewLine}Portrait Match | watched runner sibling",
-                        "Runner Portrait",
+                        $"Dossier Mugshot{Environment.NewLine}Portrait Source | {portraitPath}{Environment.NewLine}Portrait Match | watched dossier sibling",
+                        "Dossier Mugshot",
                         IsMultiline: true,
                         IsReadOnly: true,
                         VisualKind: DesktopDialogFieldVisualKinds.Image)
@@ -2294,7 +3108,7 @@ public sealed class BlazorShellComponentTests
 
             IElement preview = cut.Find(".dialog-image-preview");
             StringAssert.StartsWith(preview.GetAttribute("src"), "data:image/png;base64,", StringComparison.Ordinal);
-            Assert.AreEqual("Runner Portrait", preview.GetAttribute("alt"));
+            Assert.AreEqual("Dossier Mugshot", preview.GetAttribute("alt"));
         }
         finally
         {
@@ -2303,6 +3117,49 @@ public sealed class BlazorShellComponentTests
                 File.Delete(portraitPath);
             }
         }
+    }
+
+    [TestMethod]
+    public void DialogHost_roster_hierarchy_uses_dossier_copy_and_keeps_empty_state_non_draggable()
+    {
+        DesktopDialogState dialog = new(
+            Id: "dialog.character_roster",
+            Title: "Character Roster",
+            Message: "Organize dossiers.",
+            Fields:
+            [
+                new DesktopDialogField(
+                    "rosterCustomFolders",
+                    "Saved Dossiers",
+                    $"[Saved Dossiers]{Environment.NewLine}Campaign A · custom{Environment.NewLine}   └─ no saved dossiers yet",
+                    string.Empty,
+                    IsMultiline: true,
+                    IsReadOnly: true,
+                    VisualKind: DesktopDialogFieldVisualKinds.Tree)
+            ],
+            Actions:
+            [
+                new DesktopDialogAction("close", "Close", true)
+            ]);
+
+        using var context = CreateContext();
+        IRenderedComponent<DialogHost> cut = context.Render<DialogHost>(parameters => parameters
+            .Add(component => component.Dialog, dialog));
+
+        IElement toolbar = cut.Find("[data-roster-hierarchy-toolbar='rosterCustomFolders']");
+        StringAssert.Contains(toolbar.TextContent, "Dossier library tree");
+        StringAssert.Contains(toolbar.TextContent, "Create your own folder hierarchy, then drag dossiers or custom folders onto any directory.");
+
+        IElement folderLine = cut.FindAll("[data-roster-tree-line]")
+            .Single(element => element.TextContent.Contains("Campaign A · custom", StringComparison.Ordinal));
+        StringAssert.Contains(folderLine.GetAttribute("title"), "Drop a dossier or link row here");
+        StringAssert.Contains(folderLine.ClassName, "is-drop-target");
+
+        IElement emptyLine = cut.FindAll("[data-roster-tree-line]")
+            .Single(element => element.TextContent.Contains("no saved dossiers yet", StringComparison.Ordinal));
+        Assert.IsFalse(emptyLine.ClassName.Contains("is-draggable", StringComparison.Ordinal), "The dossier empty-state line must not present as draggable.");
+        Assert.AreEqual("-1", emptyLine.GetAttribute("tabindex"));
+        Assert.AreEqual("presentation", emptyLine.GetAttribute("data-roster-line-kind"));
     }
 
     [TestMethod]

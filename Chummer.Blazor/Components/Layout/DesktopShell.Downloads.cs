@@ -11,19 +11,7 @@ public partial class DesktopShell
         if (pendingDownload is null || State.PendingDownloadVersion <= _lastDownloadVersionHandled)
             return;
 
-        try
-        {
-            await JsRuntime.InvokeVoidAsync(
-                "chummerDownloads.downloadBase64",
-                pendingDownload.FileName,
-                pendingDownload.ContentBase64,
-                ResolveDownloadMimeType(pendingDownload.Format));
-            _lastDownloadVersionHandled = State.PendingDownloadVersion;
-        }
-        catch (JSException ex)
-        {
-            ImportError = $"Download failed: {ex.Message}";
-        }
+        await DispatchDownloadAsync(pendingDownload, State.PendingDownloadVersion, markVersionHandled: true);
     }
 
     private async Task DispatchPendingExportAsync()
@@ -32,19 +20,7 @@ public partial class DesktopShell
         if (pendingExport is null || State.PendingExportVersion <= _lastExportVersionHandled)
             return;
 
-        try
-        {
-            await JsRuntime.InvokeVoidAsync(
-                "chummerExports.downloadBase64",
-                pendingExport.FileName,
-                pendingExport.ContentBase64,
-                ResolveDownloadMimeType(pendingExport.Format));
-            _lastExportVersionHandled = State.PendingExportVersion;
-        }
-        catch (JSException ex)
-        {
-            ImportError = $"Export failed: {ex.Message}";
-        }
+        await DispatchExportAsync(pendingExport, State.PendingExportVersion, markVersionHandled: true);
     }
 
     private async Task DispatchPendingPrintAsync()
@@ -53,6 +29,84 @@ public partial class DesktopShell
         if (pendingPrint is null || State.PendingPrintVersion <= _lastPrintVersionHandled)
             return;
 
+        await DispatchPrintAsync(pendingPrint, State.PendingPrintVersion, markVersionHandled: true);
+    }
+
+    private Task RetryPendingDownloadAsync()
+    {
+        WorkspaceDownloadReceipt? pendingDownload = State.PendingDownload;
+        return pendingDownload is null
+            ? Task.CompletedTask
+            : DispatchDownloadAsync(pendingDownload, State.PendingDownloadVersion, markVersionHandled: false);
+    }
+
+    private Task RetryPendingExportAsync()
+    {
+        WorkspaceExportReceipt? pendingExport = State.PendingExport;
+        return pendingExport is null
+            ? Task.CompletedTask
+            : DispatchExportAsync(pendingExport, State.PendingExportVersion, markVersionHandled: false);
+    }
+
+    private Task RetryPendingPrintAsync()
+    {
+        WorkspacePrintReceipt? pendingPrint = State.PendingPrint;
+        return pendingPrint is null
+            ? Task.CompletedTask
+            : DispatchPrintAsync(pendingPrint, State.PendingPrintVersion, markVersionHandled: false);
+    }
+
+    private async Task DispatchDownloadAsync(
+        WorkspaceDownloadReceipt pendingDownload,
+        long version,
+        bool markVersionHandled)
+    {
+        try
+        {
+            await JsRuntime.InvokeVoidAsync(
+                "chummerDownloads.downloadBase64",
+                pendingDownload.FileName,
+                pendingDownload.ContentBase64,
+                ResolveDownloadMimeType(pendingDownload.Format));
+            if (markVersionHandled)
+            {
+                _lastDownloadVersionHandled = version;
+            }
+        }
+        catch (JSException ex)
+        {
+            ImportError = $"Download failed: {ex.Message}";
+        }
+    }
+
+    private async Task DispatchExportAsync(
+        WorkspaceExportReceipt pendingExport,
+        long version,
+        bool markVersionHandled)
+    {
+        try
+        {
+            await JsRuntime.InvokeVoidAsync(
+                "chummerExports.downloadBase64",
+                pendingExport.FileName,
+                pendingExport.ContentBase64,
+                ResolveDownloadMimeType(pendingExport.Format));
+            if (markVersionHandled)
+            {
+                _lastExportVersionHandled = version;
+            }
+        }
+        catch (JSException ex)
+        {
+            ImportError = $"Export failed: {ex.Message}";
+        }
+    }
+
+    private async Task DispatchPrintAsync(
+        WorkspacePrintReceipt pendingPrint,
+        long version,
+        bool markVersionHandled)
+    {
         try
         {
             await JsRuntime.InvokeVoidAsync(
@@ -61,7 +115,10 @@ public partial class DesktopShell
                 pendingPrint.ContentBase64,
                 pendingPrint.MimeType,
                 pendingPrint.Title);
-            _lastPrintVersionHandled = State.PendingPrintVersion;
+            if (markVersionHandled)
+            {
+                _lastPrintVersionHandled = version;
+            }
         }
         catch (JSException ex)
         {

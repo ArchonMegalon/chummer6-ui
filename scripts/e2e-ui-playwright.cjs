@@ -484,7 +484,7 @@ async function auditPublicRootSurface(page) {
   await expectVisibleSelector(page, '#trust', 'trust section');
 
   const bodyText = await page.locator('body').innerText();
-  expectTextIncludes(bodyText, "Chummer Online for real runner work.", 'public preview root');
+  expectTextIncludes(bodyText, "Chummer Online for real dossier work.", 'public preview root');
   expectTextIncludes(bodyText, 'Chummer Online, rules guidance', 'public preview root');
   expectTextIncludes(bodyText, 'Explore Chummer Online', 'public preview root');
   expectTextIncludes(bodyText, 'Roster entry:', 'public preview root');

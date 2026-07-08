@@ -418,7 +418,7 @@ public sealed class WorkflowParityGateTests
         DesktopDialogState originWizard = harness.State.ActiveDialog!;
         Assert.AreEqual("dialog.new_character.origin_wizard", originWizard.Id);
         Assert.AreEqual("Origin Dossier", originWizard.Title);
-        StringAssert.Contains(originWizard.Message, "Create the story first.");
+        StringAssert.Contains(originWizard.Message, "Pick only the basics, then build the story.");
         AssertDialogParity(RulesetDefaults.Sr4, "new_character_origin", WorkflowShape.Choice, originWizard);
         AssertExactVisibleSelectField(
             originWizard,
@@ -464,7 +464,7 @@ public sealed class WorkflowParityGateTests
         Assert.IsNotNull(harness.State.ActiveDialog, "Build story must open the origin story review before mechanics.");
         DesktopDialogState originBuild = harness.State.ActiveDialog!;
         Assert.AreEqual("dialog.new_character.origin_build", originBuild.Id);
-        StringAssert.Contains(originBuild.Message, "Read the origin first.");
+        StringAssert.Contains(originBuild.Message, "Read this first.");
         StringAssert.Contains(DesktopDialogFieldValueParser.GetValue(originBuild, "newCharacterOriginBookPreview") ?? string.Empty, "Origin Dossier");
         Assert.AreEqual("approved_origin_story", DesktopDialogFieldValueParser.GetValue(originBuild, "newCharacterOriginAliceSeedSource"));
         Assert.AreEqual("BP", DesktopDialogFieldValueParser.GetValue(originBuild, "newCharacterWorkflowBuildMethod"));
@@ -736,7 +736,9 @@ public sealed class WorkflowParityGateTests
             BuildSectionJson("profile"),
             new CharacterWorkspaceId("ws-1"),
             rulesetId,
-            runtimeInspector: null,
+            runtimeInspector: string.Equals(commandId, OverviewCommandPolicy.RuntimeInspectorCommandId, StringComparison.Ordinal)
+                ? CreateRuntimeInspectorProjection(rulesetId)
+                : null,
             masterIndex: CreateMasterIndexResponse(),
             translatorLanguages: null,
             openWorkspaces: [CreateOpenWorkspace(rulesetId)]);
@@ -1562,9 +1564,9 @@ public sealed class WorkflowParityGateTests
                 true);
 
         expectedFields["rosterSectionTabs"] = Create("rosterSectionTabs", "Sections", DesktopDialogFieldVisualKinds.Tabs, DesktopDialogFieldLayoutSlots.Full);
-        expectedFields["rosterDetailTabs"] = Create("rosterDetailTabs", "Runner Pages", DesktopDialogFieldVisualKinds.Tabs, DesktopDialogFieldLayoutSlots.Full);
-        expectedFields["rosterOpenCount"] = Create("rosterOpenCount", "Open Runners", DesktopDialogFieldVisualKinds.Default, DesktopDialogFieldLayoutSlots.Left);
-        expectedFields["rosterSavedCount"] = Create("rosterSavedCount", "Saved Runners", DesktopDialogFieldVisualKinds.Default, DesktopDialogFieldLayoutSlots.Left);
+        expectedFields["rosterDetailTabs"] = Create("rosterDetailTabs", "Dossier Pages", DesktopDialogFieldVisualKinds.Tabs, DesktopDialogFieldLayoutSlots.Full);
+        expectedFields["rosterOpenCount"] = Create("rosterOpenCount", "Open Dossiers", DesktopDialogFieldVisualKinds.Default, DesktopDialogFieldLayoutSlots.Left);
+        expectedFields["rosterSavedCount"] = Create("rosterSavedCount", "Saved Dossiers", DesktopDialogFieldVisualKinds.Default, DesktopDialogFieldLayoutSlots.Left);
         expectedFields["rosterRulesetMix"] = Create("rosterRulesetMix", "Ruleset Mix", DesktopDialogFieldVisualKinds.Default, DesktopDialogFieldLayoutSlots.Left);
         expectedFields["rosterTree"] = Create("rosterTree", "Characters", DesktopDialogFieldVisualKinds.Tree, DesktopDialogFieldLayoutSlots.Left);
         expectedFields["rosterFolderName"] = Create("rosterFolderName", "Directory Name", DesktopDialogFieldVisualKinds.Default, DesktopDialogFieldLayoutSlots.Left);
@@ -1577,11 +1579,11 @@ public sealed class WorkflowParityGateTests
         expectedFields["rosterHierarchyStatus"] = Create("rosterHierarchyStatus", "Hierarchy Status", DesktopDialogFieldVisualKinds.Grid, DesktopDialogFieldLayoutSlots.Full);
         expectedFields["rosterSelectionTrail"] = Create("rosterSelectionTrail", "Selection Trail", DesktopDialogFieldVisualKinds.Grid, DesktopDialogFieldLayoutSlots.Full);
         expectedFields["rosterMugshot"] = Create("rosterMugshot", "Mugshot", DesktopDialogFieldVisualKinds.Image, DesktopDialogFieldLayoutSlots.Right);
-        expectedFields["rosterSelectedRunner"] = Create("rosterSelectedRunner", "Selected Runner", DesktopDialogFieldVisualKinds.Grid, DesktopDialogFieldLayoutSlots.Right);
+        expectedFields["rosterSelectedRunner"] = Create("rosterSelectedRunner", "Selected Dossier", DesktopDialogFieldVisualKinds.Grid, DesktopDialogFieldLayoutSlots.Right);
         expectedFields["rosterWatchFolderStatus"] = Create("rosterWatchFolderStatus", "Watch Folder", DesktopDialogFieldVisualKinds.Grid, DesktopDialogFieldLayoutSlots.Right);
-        expectedFields["rosterRunnerCommands"] = Create("rosterRunnerCommands", "Runner Commands", DesktopDialogFieldVisualKinds.List, DesktopDialogFieldLayoutSlots.Right);
+        expectedFields["rosterRunnerCommands"] = Create("rosterRunnerCommands", "Dossier Commands", DesktopDialogFieldVisualKinds.List, DesktopDialogFieldLayoutSlots.Right);
         expectedFields["rosterWatchFolderCommands"] = Create("rosterWatchFolderCommands", "Watch Folder Commands", DesktopDialogFieldVisualKinds.List, DesktopDialogFieldLayoutSlots.Right);
-        expectedFields["rosterSelectedRunnerStatus"] = Create("rosterSelectedRunnerStatus", "Runner Status", DesktopDialogFieldVisualKinds.Snippet, DesktopDialogFieldLayoutSlots.Full);
+        expectedFields["rosterSelectedRunnerStatus"] = Create("rosterSelectedRunnerStatus", "Dossier Status", DesktopDialogFieldVisualKinds.Snippet, DesktopDialogFieldLayoutSlots.Full);
         expectedFields["rosterSelectedRunnerBackground"] = Create("rosterSelectedRunnerBackground", "Background / Concept", DesktopDialogFieldVisualKinds.Snippet, DesktopDialogFieldLayoutSlots.Full);
         expectedFields["rosterSelectedRunnerNotes"] = Create("rosterSelectedRunnerNotes", "Bio / Concept / Notes", DesktopDialogFieldVisualKinds.Snippet, DesktopDialogFieldLayoutSlots.Full);
         expectedFields["rosterEntries"] = Create("rosterEntries", "Roster Entries", DesktopDialogFieldVisualKinds.List, DesktopDialogFieldLayoutSlots.Full);
@@ -2224,6 +2226,7 @@ public sealed class WorkflowParityGateTests
             new MenuWorkflowContract("print_setup", WorkflowShape.Choice),
             new MenuWorkflowContract("report_bug", WorkflowShape.Info),
             new MenuWorkflowContract("revision_history", WorkflowShape.Info),
+            new MenuWorkflowContract(OverviewCommandPolicy.RuntimeInspectorCommandId, WorkflowShape.Info),
             new MenuWorkflowContract("show_login_video", WorkflowShape.Info),
             new MenuWorkflowContract("switch_ruleset", WorkflowShape.Choice),
             new MenuWorkflowContract("translator", WorkflowShape.Info),
@@ -2232,26 +2235,110 @@ public sealed class WorkflowParityGateTests
             new MenuWorkflowContract("xml_editor", WorkflowShape.Utility)
         }.ToDictionary(contract => contract.Id, StringComparer.Ordinal);
 
+    private static RuntimeInspectorProjection CreateRuntimeInspectorProjection(string rulesetId)
+    {
+        string normalizedRulesetId = RulesetDefaults.NormalizeRequired(rulesetId);
+        string packId = $"official.{normalizedRulesetId}.core";
+
+        return new RuntimeInspectorProjection(
+            TargetKind: RuntimeInspectorTargetKinds.RuntimeLock,
+            TargetId: packId,
+            RuntimeLock: new ResolvedRuntimeLock(
+                RulesetId: normalizedRulesetId,
+                ContentBundles:
+                [
+                    new ContentBundleDescriptor(
+                        BundleId: $"{normalizedRulesetId}.core.bundle",
+                        RulesetId: normalizedRulesetId,
+                        Version: "1.0.0",
+                        Title: $"{normalizedRulesetId.ToUpperInvariant()} Core Bundle",
+                        Description: "Representative parity bundle",
+                        AssetPaths: ["data/core.xml"])
+                ],
+                RulePacks:
+                [
+                    new ArtifactVersionReference(packId, "1.0.0")
+                ],
+                ProviderBindings: new Dictionary<string, string>(StringComparer.Ordinal)
+                {
+                    [RulePackCapabilityIds.DeriveStat] = $"{packId}/derive.stat"
+                },
+                EngineApiVersion: "1.0.0",
+                RuntimeFingerprint: $"sha256:{normalizedRulesetId}-runtime-fingerprint"),
+            Install: new ArtifactInstallState(
+                State: ArtifactInstallStates.Available,
+                RuntimeFingerprint: $"sha256:{normalizedRulesetId}-runtime-fingerprint"),
+            ResolvedRulePacks:
+            [
+                new RuntimeInspectorRulePackEntry(
+                    new ArtifactVersionReference(packId, "1.0.0"),
+                    $"{normalizedRulesetId.ToUpperInvariant()} Core",
+                    ArtifactVisibilityModes.LocalOnly,
+                    ArtifactTrustTiers.Official,
+                    [RulePackCapabilityIds.DeriveStat],
+                    SourceKind: RegistryEntrySourceKinds.BuiltInCoreProfile)
+            ],
+            ProviderBindings:
+            [
+                new RuntimeInspectorProviderBinding(
+                    CapabilityId: RulePackCapabilityIds.DeriveStat,
+                    ProviderId: $"{packId}/derive.stat",
+                    PackId: packId)
+            ],
+            CompatibilityDiagnostics:
+            [
+                new RuntimeLockCompatibilityDiagnostic(
+                    State: RuntimeLockCompatibilityStates.Compatible,
+                    Message: "Runtime lock resolves against the current RuleProfile and RulePack catalog.",
+                    RequiredRulesetId: normalizedRulesetId,
+                    RequiredRuntimeFingerprint: $"sha256:{normalizedRulesetId}-runtime-fingerprint")
+            ],
+            Warnings: [],
+            MigrationPreview:
+            [
+                new RuntimeMigrationPreviewItem(
+                    Kind: RuntimeMigrationPreviewChangeKinds.RulePackAdded,
+                    Summary: $"Profile applies RulePack '{packId}@1.0.0'.",
+                    SubjectId: packId,
+                    AfterValue: "1.0.0")
+            ],
+            GeneratedAtUtc: DateTimeOffset.UtcNow,
+            ProfileSourceKind: RegistryEntrySourceKinds.BuiltInCoreProfile,
+            CapabilityDescriptors:
+            [
+                new RuntimeInspectorCapabilityDescriptorProjection(
+                    CapabilityId: RulePackCapabilityIds.DeriveStat,
+                    InvocationKind: RulesetCapabilityInvocationKinds.Rule,
+                    Title: "Derived Stat Evaluation",
+                    Explainable: true,
+                    SessionSafe: false,
+                    DefaultGasBudget: new RulesetGasBudget(2_000, 5_000, 4_194_304),
+                    MaximumGasBudget: new RulesetGasBudget(5_000, 10_000, 8_388_608),
+                    ProviderId: $"{packId}/derive.stat",
+                    PackId: packId)
+            ]);
+    }
+
     private static readonly IReadOnlyDictionary<string, UiControlWorkflowContract> UiControlContracts =
         new[]
         {
-            new UiControlWorkflowContract("create_entry", WorkflowShape.Utility, "tab-info", "profile"),
-            new UiControlWorkflowContract("edit_entry", WorkflowShape.Utility, "tab-info", "profile"),
-            new UiControlWorkflowContract("delete_entry", WorkflowShape.Utility, "tab-info", "profile"),
+            new UiControlWorkflowContract("create_entry", WorkflowShape.Utility, "tab-calendar", "calendar", true),
+            new UiControlWorkflowContract("edit_entry", WorkflowShape.Utility, "tab-calendar", "calendar"),
+            new UiControlWorkflowContract("delete_entry", WorkflowShape.Utility, "tab-calendar", "calendar"),
             new UiControlWorkflowContract("open_notes", WorkflowShape.Utility, "tab-info", "profile", true),
             new UiControlWorkflowContract("identity_license_add", WorkflowShape.DenseEditor, "tab-info", "profile"),
             new UiControlWorkflowContract("identity_license_edit", WorkflowShape.DenseEditor, "tab-info", "profile"),
             new UiControlWorkflowContract("identity_license_delete", WorkflowShape.Utility, "tab-info", "profile"),
-            new UiControlWorkflowContract("move_up", WorkflowShape.Utility, "tab-info", "profile"),
-            new UiControlWorkflowContract("move_down", WorkflowShape.Utility, "tab-info", "profile"),
-            new UiControlWorkflowContract("toggle_free_paid", WorkflowShape.Utility, "tab-info", "profile"),
-            new UiControlWorkflowContract("show_source", WorkflowShape.Utility, "tab-info", "profile"),
+            new UiControlWorkflowContract("move_up", WorkflowShape.Utility, "tab-calendar", "calendar"),
+            new UiControlWorkflowContract("move_down", WorkflowShape.Utility, "tab-calendar", "calendar"),
+            new UiControlWorkflowContract("toggle_free_paid", WorkflowShape.Utility, "tab-gear", "inventory"),
+            new UiControlWorkflowContract("show_source", WorkflowShape.Utility, "tab-rules", "rules"),
             new UiControlWorkflowContract("gear_add", WorkflowShape.Selection, "tab-gear", "inventory", true),
             new UiControlWorkflowContract("gear_edit", WorkflowShape.DenseEditor, "tab-gear", "inventory"),
             new UiControlWorkflowContract("gear_delete", WorkflowShape.Utility, "tab-gear", "inventory"),
-            new UiControlWorkflowContract("runner_benchmark", WorkflowShape.Utility, "tab-info", "profile"),
-            new UiControlWorkflowContract("runner_what_if", WorkflowShape.Utility, "tab-info", "profile"),
-            new UiControlWorkflowContract("runner_cohort_privacy", WorkflowShape.Utility, "tab-info", "profile"),
+            new UiControlWorkflowContract("runner_benchmark", WorkflowShape.Utility, "tab-stats", "profile"),
+            new UiControlWorkflowContract("runner_what_if", WorkflowShape.Utility, "tab-stats", "profile"),
+            new UiControlWorkflowContract("runner_cohort_privacy", WorkflowShape.Utility, "tab-stats", "profile"),
             new UiControlWorkflowContract("gear_mount", WorkflowShape.DenseEditor, "tab-gear", "inventory"),
             new UiControlWorkflowContract("gear_source", WorkflowShape.Utility, "tab-gear", "inventory"),
             new UiControlWorkflowContract("cyberware_add", WorkflowShape.Selection, "tab-cyberware", "cyberwares", true),
@@ -2265,11 +2352,11 @@ public sealed class WorkflowParityGateTests
             new UiControlWorkflowContract("magic_source", WorkflowShape.Utility, "tab-magician", "spells"),
             new UiControlWorkflowContract("spell_add", WorkflowShape.Selection, "tab-magician", "spells", true),
             new UiControlWorkflowContract("adept_power_add", WorkflowShape.Selection, "tab-adept", "powers", true),
-            new UiControlWorkflowContract("complex_form_add", WorkflowShape.Selection, "tab-adept", "complexforms", true),
+            new UiControlWorkflowContract("complex_form_add", WorkflowShape.Selection, "tab-technomancer", "complexforms", true),
             new UiControlWorkflowContract("initiation_add", WorkflowShape.Selection, "tab-adept", "initiationgrades", true),
             new UiControlWorkflowContract("spirit_add", WorkflowShape.Selection, "tab-magician", "spirits", true),
-            new UiControlWorkflowContract("critter_power_add", WorkflowShape.Selection, "tab-magician", "critterpowers", true),
-            new UiControlWorkflowContract("matrix_program_add", WorkflowShape.Selection, "tab-adept", "aiprograms", true),
+            new UiControlWorkflowContract("critter_power_add", WorkflowShape.Selection, "tab-critter", "critterpowers", true),
+            new UiControlWorkflowContract("matrix_program_add", WorkflowShape.Selection, "tab-technomancer", "aiprograms", true),
             new UiControlWorkflowContract("skill_add", WorkflowShape.Selection, "tab-skills", "skills", true),
             new UiControlWorkflowContract("skill_specialize", WorkflowShape.DenseEditor, "tab-skills", "skills"),
             new UiControlWorkflowContract("skill_remove", WorkflowShape.Utility, "tab-skills", "skills"),

@@ -14,7 +14,7 @@ public static class DesktopLocalizationCatalog
     private static readonly IReadOnlyDictionary<string, string> DefaultTrustSurfaceStrings = new Dictionary<string, string>(StringComparer.Ordinal)
     {
         ["desktop.shell.window_title"] = "Chummer Desktop",
-        ["desktop.shell.banner"] = "Runner Workbench",
+        ["desktop.shell.banner"] = "Dossier Workbench",
         ["desktop.shell.menu.file"] = "File",
         ["desktop.shell.menu.edit"] = "Edit",
         ["desktop.shell.menu.special"] = "Special",
@@ -32,8 +32,8 @@ public static class DesktopLocalizationCatalog
         ["desktop.shell.tool.load_demo_runner"] = "Open Sample Character",
         ["desktop.shell.tool.import_character_file"] = "Import Character File",
         ["desktop.shell.tool.import_raw_xml"] = "Import Raw XML",
-        ["desktop.shell.tool.save_workspace"] = "Save Runner",
-        ["desktop.shell.tool.close_active_workspace"] = "Close Active Runner",
+        ["desktop.shell.tool.save_workspace"] = "Save Dossier",
+        ["desktop.shell.tool.close_active_workspace"] = "Close Active Dossier",
         ["desktop.shell.tool.status_idle"] = "State: idle",
         ["desktop.shell.state.value.ready"] = "ready",
         ["desktop.shell.state.value.busy"] = "busy",
@@ -44,11 +44,11 @@ public static class DesktopLocalizationCatalog
         ["desktop.shell.state.value.error"] = "error",
         ["desktop.shell.value.none"] = "none",
         ["desktop.shell.value.na"] = "n/a",
-        ["desktop.shell.state.snapshot"] = "{0} · {1} · {2} open · {3} · {4}",
+        ["desktop.shell.state.snapshot"] = "State: {0}, dossier={1}, open={2}, saved={3}, last-command={4}",
         ["desktop.shell.state.error"] = "State: error - {0}",
-        ["desktop.shell.workspace_strip.heading"] = "Current Runner",
-        ["desktop.shell.workspace_strip.summary"] = "Runner: {0} (open: {1}, {2})",
-        ["desktop.shell.workspace_strip.empty"] = "Runner: none",
+        ["desktop.shell.workspace_strip.heading"] = "Current Dossier",
+        ["desktop.shell.workspace_strip.summary"] = "Dossier: {0} (open: {1}, {2})",
+        ["desktop.shell.workspace_strip.empty"] = "Dossier: none",
         ["desktop.shell.workspace_strip.caption"] = "Ruleset, file, and active tab stay visible while you move through dense builder sections.",
         ["desktop.shell.workspace_strip.quick_start_caption"] = "Open the bundled Soma-Career sample before you start a blank build.",
         ["desktop.shell.summary.name"] = "Name",
@@ -68,7 +68,7 @@ public static class DesktopLocalizationCatalog
         ["desktop.shell.feedback.import_file_cancelled"] = "State: {0} selection cancelled.",
         ["desktop.shell.feedback.demo_runner_unavailable"] = "State: the bundled sample character is unavailable in this build.",
         ["desktop.shell.feedback.demo_runner_loading"] = "State: opening bundled sample character from {0}.",
-        ["desktop.shell.feedback.no_active_workspace"] = "State: no active runner to close.",
+        ["desktop.shell.feedback.no_active_workspace"] = "State: no active dossier to close.",
         ["desktop.shell.feedback.desktop_home_reviewed"] = "State: desktop home reviewed.",
         ["desktop.shell.feedback.campaign_workspace_reviewed"] = "State: campaign reviewed.",
         ["desktop.shell.feedback.update_reviewed"] = "State: update status reviewed.",
@@ -87,7 +87,7 @@ public static class DesktopLocalizationCatalog
         ["desktop.home.section.build_explain"] = "Build and explain next",
         ["desktop.home.section.horizons"] = "Tools",
         ["desktop.home.section.language_trust"] = "Language and trust surfaces",
-        ["desktop.home.section.recent_workspaces"] = "Recent runners",
+        ["desktop.home.section.recent_workspaces"] = "Recent dossiers",
         ["desktop.home.horizons.summary"] = "Open the main tools from desktop home. Alice, Ready for Tonight, Run Control, Table Pulse, and account tools stay one click away.",
         ["desktop.horizons.title"] = "Tools",
         ["desktop.horizons.heading"] = "Tools",
@@ -98,7 +98,7 @@ public static class DesktopLocalizationCatalog
         ["desktop.campaign.section.runboard"] = "Session readiness and runboard",
         ["desktop.campaign.section.restore"] = "Restore and devices",
         ["desktop.campaign.section.support"] = "Support and watchouts",
-        ["desktop.campaign.section.recent_workspaces"] = "Recent runners",
+        ["desktop.campaign.section.recent_workspaces"] = "Recent dossiers",
         ["desktop.campaign.button.refresh"] = "Reload campaign state",
         ["desktop.campaign.intro.guest"] = "This campaign is still local-only. Claim this copy before you rely on restore, device status, or support.",
         ["desktop.campaign.intro.local_fallback"] = "The campaign service is unavailable, so this view is showing the best local campaign summary and restore status available on this desktop.",
@@ -108,8 +108,8 @@ public static class DesktopLocalizationCatalog
         ["desktop.campaign.status.server_generated"] = "Campaign status: live service updated {0} UTC.",
         ["desktop.campaign.status.refresh_failed"] = "Campaign status: refresh failed, so the last good local state is still shown.",
         ["desktop.campaign.readiness.local_fallback"] = "Runboard detail is limited to local campaign data until the live service returns.",
-        ["desktop.campaign.restore.latest_workspace"] = "Latest local runner: {0} . {1} UTC",
-        ["desktop.campaign.restore.no_workspace"] = "No local runner is pinned yet, so restore status is limited to the campaign summary and linked-copy state.",
+        ["desktop.campaign.restore.latest_workspace"] = "Latest local dossier: {0} . {1} UTC",
+        ["desktop.campaign.restore.no_workspace"] = "No local dossier is pinned yet, so restore status is limited to the campaign summary and linked-copy state.",
         ["desktop.campaign.support.no_watchouts"] = "No current campaign or support watchouts are blocking continuation from this desktop surface.",
         ["desktop.install_link.title"] = "Claim your copy",
         ["desktop.install_link.heading"] = "Claim this downloaded copy",
@@ -129,8 +129,8 @@ public static class DesktopLocalizationCatalog
         ["desktop.install_link.button.copy_install_id"] = "Copy Install ID",
         ["desktop.install_link.button.open_downloads"] = "Open Downloads",
         ["desktop.install_link.button.open_support"] = "Open Support",
-        ["desktop.install_link.button.open_origin_dossier"] = "Open Origin Dossier",
-        ["desktop.install_link.button.open_work"] = "Open linked runner",
+        ["desktop.install_link.button.open_origin_dossier"] = "Open clean Origin Dossier route",
+        ["desktop.install_link.button.open_work"] = "Open Linked Dossier",
         ["desktop.install_link.button.open_account"] = "Open Account",
         ["desktop.install_link.button.link_copy"] = "Claim your copy",
         ["desktop.install_link.button.copy_login_url"] = "Copy Claim Link",
@@ -148,7 +148,7 @@ public static class DesktopLocalizationCatalog
         ["desktop.home.intro.update_available"] = "An update is ready for this copy. Check Updates before you jump back into campaign work.",
         ["desktop.home.intro.release_posture_review"] = "This copy is linked, but the current build needs attention before you rely on updates, support, or campaign continuity.",
         ["desktop.home.intro.campaign_watchouts"] = "This copy is linked and current enough to continue, but campaign return has items to review before you reopen work.",
-        ["desktop.home.intro.ready_recent_workspaces"] = "This copy is linked, current enough to continue, and ready to reopen recent runners.",
+        ["desktop.home.intro.ready_recent_workspaces"] = "This copy is linked, current enough to continue, and ready to reopen recent dossiers.",
         ["desktop.home.intro.ready_current_campaign_workspace"] = "This copy is linked, current enough to continue, and ready to reopen the current campaign.",
         ["desktop.home.install_summary.install_id"] = "Install ID: {0}",
         ["desktop.home.install_summary.head"] = "App: {0}",
@@ -168,15 +168,15 @@ public static class DesktopLocalizationCatalog
         ["desktop.home.value.none_published"] = "None published",
         ["desktop.home.value.no_supportability_summary"] = "No support summary is available yet.",
         ["desktop.home.value.no_fix_guidance"] = "No fix guidance published yet.",
-        ["desktop.home.workspace_summary.empty"] = "No recent runners were restored yet. Import or create a runner to get started.",
+        ["desktop.home.workspace_summary.empty"] = "No recent dossiers were restored yet. Import or create a dossier to get started.",
         ["desktop.home.workspace_summary.entry"] = "{0} . {1} . {2} UTC",
         ["desktop.home.button.continue"] = "Continue",
         ["desktop.home.button.open_devices_access"] = "Your Copy",
-        ["desktop.home.button.open_current_workspace"] = "Open Runner",
+        ["desktop.home.button.open_current_workspace"] = "Open Dossier",
         ["desktop.home.button.open_current_campaign_workspace"] = "Open Campaign",
         ["desktop.home.button.open_install_support"] = "Open Install Support",
         ["desktop.home.button.open_update_support"] = "Open Update Support",
-        ["desktop.home.button.open_work_support"] = "Get runner help",
+        ["desktop.home.button.open_work_support"] = "Get dossier help",
         ["desktop.home.button.open_tracked_case"] = "Open Tracked Case",
         ["desktop.home.button.open_campaign_followthrough"] = "Open Campaign Return",
         ["desktop.home.button.open_campaign_primer"] = "Open Campaign Primer",
@@ -185,7 +185,7 @@ public static class DesktopLocalizationCatalog
         ["desktop.home.button.open_campaign_artifacts"] = "Open Campaign Files",
         ["desktop.home.button.open_published_artifacts"] = "Open Published Files",
         ["desktop.home.button.open_build_followthrough"] = "Open Build Help",
-        ["desktop.home.button.open_workspace_followthrough"] = "Open Runner Help",
+        ["desktop.home.button.open_workspace_followthrough"] = "Open Dossier Help",
         ["desktop.home.button.open_update_status"] = "Open Update Status",
         ["desktop.home.button.open_support_center"] = "Open Support Center",
         ["desktop.home.button.open_report_issue"] = "Report Issue",
@@ -206,7 +206,7 @@ public static class DesktopLocalizationCatalog
         ["desktop.dialog.translator.message"] = "Desktop language set to {0}. Restart Chummer to apply it everywhere.",
         ["desktop.dialog.translator.field.search"] = "Language Search",
         ["desktop.dialog.translator.field.search_placeholder"] = "filter languages",
-        ["desktop.dialog.character_settings.notice.updated"] = "Runner settings updated.",
+        ["desktop.dialog.character_settings.notice.updated"] = "Dossier settings updated.",
         ["desktop.shell.notice.download_unavailable"] = "Notice: download requested but file save is unavailable on this platform.",
         ["desktop.shell.notice.download_cancelled"] = "Notice: download canceled.",
         ["desktop.shell.notice.download_completed"] = "Notice: downloaded {0}.",
@@ -225,8 +225,8 @@ public static class DesktopLocalizationCatalog
         ["desktop.install_link.fallback.claim_url_label"] = "Claim link",
         ["desktop.install_link.status.clipboard_unavailable"] = "Clipboard access is unavailable in this host.",
         ["desktop.install_link.status.install_id_copied"] = "Copied the installation id to the clipboard.",
-        ["desktop.install_link.status.opened_work_route"] = "Opened your runner.",
-        ["desktop.install_link.status.unable_open_work_route"] = "Unable to open the runner from this host.",
+        ["desktop.install_link.status.opened_work_route"] = "Opened your dossier.",
+        ["desktop.install_link.status.unable_open_work_route"] = "Unable to open the dossier from this host.",
         ["desktop.install_link.status.opened_account"] = "Opened the claim page for this copy.",
         ["desktop.install_link.status.unable_open_account"] = "Unable to open the Hub account page from this host.",
         ["desktop.install_link.status.unlinked_copy"] = "This copy is now unlinked on this device.",
@@ -255,7 +255,7 @@ public static class DesktopLocalizationCatalog
         ["desktop.install_link.summary.claim_error"] = "Claim error: {0}",
         ["desktop.install_link.summary.browser_open_attempt"] = "Browser claim attempt: {0} UTC.",
         ["desktop.install_link.summary.browser_open_error"] = "Browser claim error: {0}",
-        ["desktop.install_link.summary.next_safe_action_claimed"] = "Next step: open your runner.",
+        ["desktop.install_link.summary.next_safe_action_claimed"] = "Next step: open your dossier.",
         ["desktop.install_link.summary.next_safe_action_guest"] = "Next step: claim this copy online before using account recovery or support history.",
         ["desktop.devices.title"] = "Your Copy",
         ["desktop.devices.heading"] = "Your copy",
@@ -294,7 +294,7 @@ public static class DesktopLocalizationCatalog
         ["desktop.devices.context.claims_local_last"] = "A previous claim attempt is saved locally on this install.",
         ["desktop.devices.context.claims_receipt"] = "Recent download: {0} · {1} {2} for {3}/{4}, added {5} UTC.",
         ["desktop.devices.context.access_guest"] = "Claim this copy before using account recovery or support history.",
-        ["desktop.devices.context.access_claimed"] = "Support, updates, and runner recovery are attached to this linked install.",
+        ["desktop.devices.context.access_claimed"] = "Support, updates, and dossier recovery are attached to this linked install.",
         ["desktop.devices.context.access_no_grants"] = "No active access grants are visible for this account yet.",
         ["desktop.devices.context.access_grant"] = "Grant {0} for {1} stays {2} until {3} UTC.",
         ["desktop.update.title"] = "Update status",
@@ -463,7 +463,7 @@ public static class DesktopLocalizationCatalog
         if (string.Equals(languageCode, "de-de", StringComparison.Ordinal))
         {
             localized["desktop.shell.window_title"] = "Chummer Desktop";
-            localized["desktop.shell.banner"] = "Runner Workbench";
+            localized["desktop.shell.banner"] = "Dossier Workbench";
             localized["desktop.shell.menu.file"] = "Datei";
             localized["desktop.shell.menu.edit"] = "Bearbeiten";
             localized["desktop.shell.menu.special"] = "Besonderes";
@@ -480,8 +480,8 @@ public static class DesktopLocalizationCatalog
             localized["desktop.shell.tool.settings"] = "Einstellungen";
             localized["desktop.shell.tool.import_character_file"] = "Charakterdatei importieren";
             localized["desktop.shell.tool.import_raw_xml"] = "Raw-XML importieren";
-            localized["desktop.shell.tool.save_workspace"] = "Runner speichern";
-            localized["desktop.shell.tool.close_active_workspace"] = "Aktiven Runner schließen";
+            localized["desktop.shell.tool.save_workspace"] = "Dossier speichern";
+            localized["desktop.shell.tool.close_active_workspace"] = "Aktives Dossier schließen";
             localized["desktop.shell.tool.load_demo_runner"] = "Beispielcharakter öffnen";
             localized["desktop.shell.tool.status_idle"] = "Status: inaktiv";
             localized["desktop.shell.state.value.ready"] = "bereit";
@@ -493,14 +493,14 @@ public static class DesktopLocalizationCatalog
             localized["desktop.shell.state.value.error"] = "fehler";
             localized["desktop.shell.value.none"] = "keine";
             localized["desktop.shell.value.na"] = "n/v";
-            localized["desktop.shell.state.snapshot"] = "Status: {0}, arbeitsbereich={1}, offen={2}, gespeichert={3}, letzter-befehl={4}";
+            localized["desktop.shell.state.snapshot"] = "Status: {0}, dossier={1}, offen={2}, gespeichert={3}, letzter-befehl={4}";
             localized["desktop.shell.state.error"] = "Status: Fehler - {0}";
             localized["desktop.shell.feedback.import_raw_required"] = "Status: Fugen Sie vor dem Import Debug-XML-Inhalt ein.";
             localized["desktop.shell.feedback.import_file_unavailable"] = "Status: Dateiauswahl ist auf dieser Plattform nicht verfügbar.";
             localized["desktop.shell.feedback.import_file_cancelled"] = "Status: Auswahl für {0} wurde abgebrochen.";
             localized["desktop.shell.feedback.demo_runner_unavailable"] = "Status: Der mitgelieferte Beispielcharakter ist in diesem Build nicht verfügbar.";
             localized["desktop.shell.feedback.demo_runner_loading"] = "Status: Mitgelieferter Beispielcharakter wird aus {0} geöffnet.";
-            localized["desktop.shell.feedback.no_active_workspace"] = "Status: Kein aktiver Runner zum Schließen.";
+            localized["desktop.shell.feedback.no_active_workspace"] = "Status: Kein aktives Dossier zum Schließen.";
             localized["desktop.shell.feedback.desktop_home_reviewed"] = "Status: Desktop-Start wurde geprüft.";
             localized["desktop.shell.feedback.campaign_workspace_reviewed"] = "Status: Kampagne geprüft.";
             localized["desktop.shell.feedback.update_reviewed"] = "Status: Update-Status wurde geprüft.";
@@ -511,7 +511,7 @@ public static class DesktopLocalizationCatalog
             localized["desktop.shell.feedback.install_support_unavailable"] = "Status: Support-Nachverfolgung ist auf diesem Host nicht verfügbar.";
             localized["desktop.shell.feedback.operation_failed_state"] = "Status: Fehler - {0} fehlgeschlagen: {1}";
             localized["desktop.shell.feedback.operation_failed_notice"] = "Hinweis: {0} fehlgeschlagen.";
-            localized["desktop.shell.workspace_strip.heading"] = "Aktueller Runner";
+            localized["desktop.shell.workspace_strip.heading"] = "Aktuelles Dossier";
             localized["desktop.shell.summary.name"] = "Name";
             localized["desktop.shell.summary.alias"] = "Alias";
             localized["desktop.shell.summary.karma"] = "Karma";
@@ -519,8 +519,8 @@ public static class DesktopLocalizationCatalog
             localized["desktop.shell.summary.runtime"] = "Runtime";
             localized["desktop.shell.summary.inspect_runtime"] = "Runtime anzeigen";
             localized["desktop.shell.summary.empty_value"] = "-";
-            localized["desktop.shell.workspace_strip.summary"] = "Runner: {0} (offen: {1}, {2})";
-            localized["desktop.shell.workspace_strip.empty"] = "Runner: keiner";
+            localized["desktop.shell.workspace_strip.summary"] = "Dossier: {0} (offen: {1}, {2})";
+            localized["desktop.shell.workspace_strip.empty"] = "Dossier: keines";
             localized["desktop.shell.workspace_strip.caption"] = "Regelsatz, Datei und aktiver Tab bleiben sichtbar, wahrend Sie durch dichte Builder-Bereiche wechseln.";
             localized["desktop.shell.workspace_strip.quick_start_caption"] = "Öffnen Sie das mitgelieferte Soma-Career-Beispiel, bevor Sie mit einem leeren Build starten.";
             localized["desktop.shell.status.character"] = "Charakter: {0}";
@@ -546,7 +546,7 @@ public static class DesktopLocalizationCatalog
             localized["desktop.home.section.build_explain"] = "Build und Explain als Nächstes";
             localized["desktop.home.section.horizons"] = "Werkzeuge";
             localized["desktop.home.section.language_trust"] = "Sprache und Vertrauensoberflächen";
-            localized["desktop.home.section.recent_workspaces"] = "Letzte Runner";
+            localized["desktop.home.section.recent_workspaces"] = "Letzte Dossiers";
             localized["desktop.home.horizons.summary"] = "Öffne die wichtigsten Produktbereiche direkt von Desktop Home. Karma Forge, Alice, Run Control, Black Ledger, Quicksilver und weitere Werkzeuge bleiben einen Klick entfernt.";
             localized["desktop.horizons.title"] = "Werkzeuge";
             localized["desktop.horizons.heading"] = "Werkzeuge";
@@ -555,19 +555,19 @@ public static class DesktopLocalizationCatalog
             localized["desktop.home.button.continue"] = "Weiter";
             localized["desktop.home.button.open_install_support"] = "Installations-Support öffnen";
             localized["desktop.home.button.open_update_support"] = "Update-Support öffnen";
-            localized["desktop.home.button.open_work_support"] = "Runner-Hilfe öffnen";
+            localized["desktop.home.button.open_work_support"] = "Dossier-Hilfe öffnen";
             localized["desktop.home.button.open_tracked_case"] = "Verfolgten Fall öffnen";
             localized["desktop.home.button.open_campaign_followthrough"] = "Kampagnen-Rückkehr öffnen";
             localized["desktop.home.button.open_campaign_primer"] = "Kampagnen-Priming öffnen";
             localized["desktop.home.button.open_mission_briefing"] = "Mission-Briefing öffnen";
             localized["desktop.home.button.open_devices_access"] = "Deine Kopie";
-            localized["desktop.home.button.open_current_workspace"] = "Runner öffnen";
+            localized["desktop.home.button.open_current_workspace"] = "Dossier öffnen";
             localized["desktop.home.button.open_current_campaign_workspace"] = "Kampagne öffnen";
             localized["desktop.home.button.open_my_artifacts"] = "Meine Dateien öffnen";
             localized["desktop.home.button.open_campaign_artifacts"] = "Kampagnendateien öffnen";
             localized["desktop.home.button.open_published_artifacts"] = "Veröffentlichte Dateien öffnen";
             localized["desktop.home.button.open_build_followthrough"] = "Build-Hilfe öffnen";
-            localized["desktop.home.button.open_workspace_followthrough"] = "Runner-Hilfe öffnen";
+            localized["desktop.home.button.open_workspace_followthrough"] = "Dossier-Hilfe öffnen";
             localized["desktop.home.button.open_update_status"] = "Update-Status öffnen";
             localized["desktop.home.button.open_support_center"] = "Support-Center öffnen";
             localized["desktop.home.button.open_report_issue"] = "Fehler melden";
@@ -598,28 +598,28 @@ public static class DesktopLocalizationCatalog
             localized["desktop.home.intro.update_available"] = "Ein Update ist für diese Kopie bereit. Prüfen Sie die Aktualisierungen, bevor Sie zur Kampagnenarbeit zurückkehren.";
             localized["desktop.home.intro.release_posture_review"] = "Diese Kopie ist verknüpft, aber der aktuelle Build braucht Aufmerksamkeit, bevor Sie Updates, Support oder Kampagnen-Kontinuität nutzen.";
             localized["desktop.home.intro.campaign_watchouts"] = "Diese Kopie ist verknüpft und aktuell genug, aber die Kampagnen-Rückkehr hat Punkte zu prüfen, bevor Sie die Arbeit wieder öffnen.";
-            localized["desktop.home.intro.ready_recent_workspaces"] = "Diese Kopie ist verknüpft, aktuell genug und bereit, zuletzt geöffnete Runner wieder zu öffnen.";
+            localized["desktop.home.intro.ready_recent_workspaces"] = "Diese Kopie ist verknüpft, aktuell genug und bereit, zuletzt geöffnete Dossiers wieder zu öffnen.";
             localized["desktop.home.intro.ready_current_campaign_workspace"] = "Diese Kopie ist verknüpft, aktuell genug und bereit, die aktuelle Kampagne wieder zu öffnen.";
             localized["desktop.home.update_summary"] = "Build: {1}\nAktualisiert: {3} UTC\nKanal: {4}\nUpdate-Einstellung: {6}\nStatus: {0}\nNächster Schritt: {15}\nProblem: {16}";
-            localized["desktop.home.workspace_summary.empty"] = "Es wurden noch keine zuletzt geöffneten Runner wiederhergestellt. Importiere oder erstelle einen Runner, um zu beginnen.";
+            localized["desktop.home.workspace_summary.empty"] = "Es wurden noch keine zuletzt geöffneten Dossiers wiederhergestellt. Importiere oder erstelle ein Dossier, um zu beginnen.";
             localized["desktop.home.workspace_summary.entry"] = "{0} . {1} . {2} UTC";
             localized["desktop.campaign.title"] = "Kampagne";
             localized["desktop.campaign.heading"] = "Kampagne";
             localized["desktop.campaign.section.runboard"] = "Sitzungsbereitschaft und Runboard";
             localized["desktop.campaign.section.restore"] = "Wiederherstellung und Geräte";
             localized["desktop.campaign.section.support"] = "Support und Watchouts";
-            localized["desktop.campaign.section.recent_workspaces"] = "Letzte Runner";
+            localized["desktop.campaign.section.recent_workspaces"] = "Letzte Dossiers";
             localized["desktop.campaign.button.refresh"] = "Kampagne neu laden";
             localized["desktop.campaign.intro.guest"] = "Diese Kampagne ist noch nur lokal. Beanspruche diese Kopie, bevor du Wiederherstellung, Gerätestatus oder Support nutzt.";
-            localized["desktop.campaign.intro.local_fallback"] = "Der Kampagnendienst ist nicht verfügbar, daher zeigt dieser Arbeitsbereich die beste lokale Kampagnenzusammenfassung und Wiederherstellung auf diesem Desktop.";
+            localized["desktop.campaign.intro.local_fallback"] = "Der Kampagnendienst ist nicht verfügbar, daher zeigt diese Ansicht die beste lokale Kampagnenzusammenfassung und Wiederherstellung auf diesem Desktop.";
             localized["desktop.campaign.intro.watchouts"] = "Diese Kampagne ist fast bereit, aber vor der Fortsetzung der Live-Sitzung müssen noch ein paar Punkte geprüft werden.";
             localized["desktop.campaign.intro.ready"] = "Diese Kampagne kann Sitzungsstand, Runboard-Stand und Support-Status vom Desktop wieder öffnen.";
             localized["desktop.campaign.status.local_fallback"] = "Kampagnenstatus: Lokale Kampagnendaten werden angezeigt, weil der Live-Kampagnendienst nicht verfügbar ist.";
             localized["desktop.campaign.status.server_generated"] = "Kampagnenstatus: Live-Dienst aktualisiert um {0} UTC.";
             localized["desktop.campaign.status.refresh_failed"] = "Kampagnenstatus: Aktualisierung fehlgeschlagen, daher wird weiter der letzte gute lokale Stand angezeigt.";
             localized["desktop.campaign.readiness.local_fallback"] = "Runboard-Details sind derzeit auf lokale Kampagnendaten begrenzt, bis der Live-Dienst zurückkehrt.";
-            localized["desktop.campaign.restore.latest_workspace"] = "Letzter lokaler Arbeitsbereich: {0} . {1} UTC";
-            localized["desktop.campaign.restore.no_workspace"] = "Noch ist kein lokaler Arbeitsbereich angeheftet, daher bleibt die Wiederherstellung auf Kampagnen-Zusammenfassung und verknüpfte Kopien begrenzt.";
+            localized["desktop.campaign.restore.latest_workspace"] = "Letztes lokales Dossier: {0} . {1} UTC";
+            localized["desktop.campaign.restore.no_workspace"] = "Noch ist kein lokales Dossier angeheftet, daher bleibt die Wiederherstellung auf Kampagnen-Zusammenfassung und verknüpfte Kopien begrenzt.";
             localized["desktop.campaign.support.no_watchouts"] = "Aktuell blockieren keine Kampagnen- oder Support-Watchouts die Fortsetzung von dieser Desktop-Oberflache.";
             localized["desktop.install_link.title"] = "Diese Kopie beanspruchen";
             localized["desktop.install_link.heading"] = "Diese Desktop-Kopie beanspruchen";
@@ -637,8 +637,8 @@ public static class DesktopLocalizationCatalog
             localized["desktop.install_link.button.copy_install_id"] = "Installations-ID kopieren";
             localized["desktop.install_link.button.open_downloads"] = "Downloads öffnen";
             localized["desktop.install_link.button.open_support"] = "Support öffnen";
-            localized["desktop.install_link.button.open_origin_dossier"] = "Origin Dossier öffnen";
-            localized["desktop.install_link.button.open_work"] = "Verknüpften Runner öffnen";
+            localized["desktop.install_link.button.open_origin_dossier"] = "Saubere Origin-Dossier-Route öffnen";
+            localized["desktop.install_link.button.open_work"] = "Verknüpftes Dossier öffnen";
             localized["desktop.install_link.button.open_account"] = "Konto öffnen";
             localized["desktop.install_link.button.link_copy"] = "Diese Kopie beanspruchen";
             localized["desktop.install_link.button.open_claim_link"] = "Claim-Link offnen";
@@ -657,8 +657,8 @@ public static class DesktopLocalizationCatalog
             localized["desktop.install_link.fallback.claim_url_label"] = "Beanspruchungslink";
             localized["desktop.install_link.status.clipboard_unavailable"] = "Der Zugriff auf die Zwischenablage ist auf diesem Host nicht verfügbar.";
             localized["desktop.install_link.status.install_id_copied"] = "Die Installations-ID wurde in die Zwischenablage kopiert.";
-            localized["desktop.install_link.status.opened_work_route"] = "Dein Runner wurde geöffnet.";
-            localized["desktop.install_link.status.unable_open_work_route"] = "Der Runner kann auf diesem Host nicht geöffnet werden.";
+            localized["desktop.install_link.status.opened_work_route"] = "Dein Dossier wurde geöffnet.";
+            localized["desktop.install_link.status.unable_open_work_route"] = "Das Dossier kann auf diesem Host nicht geöffnet werden.";
             localized["desktop.install_link.status.opened_account"] = "Die Claim-Seite für diese Kopie wurde geöffnet.";
             localized["desktop.install_link.status.unable_open_account"] = "Die Hub-Kontoseite kann auf diesem Host nicht geöffnet werden.";
             localized["desktop.install_link.status.unlinked_copy"] = "Diese Kopie ist jetzt auf diesem Geraet nicht mehr verknuepft.";
@@ -688,7 +688,7 @@ public static class DesktopLocalizationCatalog
             localized["desktop.install_link.summary.last_claim_attempt"] = "Letzter Claim-Versuch: {0} UTC.";
             localized["desktop.install_link.summary.hub_message"] = "Hub-Nachricht: {0}";
             localized["desktop.install_link.summary.claim_error"] = "Claim-Fehler: {0}";
-            localized["desktop.install_link.summary.next_safe_action_claimed"] = "Nächster Schritt: Öffne deinen Runner.";
+            localized["desktop.install_link.summary.next_safe_action_claimed"] = "Nächster Schritt: Öffne dein Dossier.";
             localized["desktop.install_link.summary.next_safe_action_guest"] = "Nächster Schritt: diese Kopie online beanspruchen, bevor Sie Konto-Wiederherstellung oder Support-Verlauf nutzen.";
             localized["desktop.install_link.summary"] = "Downloads bleiben unverandert. Beanspruchen Sie diese Kopie online, wenn Konto, Wiederherstellung oder Support an diese Installation gebunden sein sollen.";
             localized["desktop.update.title"] = "Update-Status";
@@ -885,7 +885,7 @@ public static class DesktopLocalizationCatalog
             localized["desktop.devices.context.claims_local_last"] = "Ein vorheriger Anmeldeversuch ist lokal auf dieser Installation gespeichert.";
             localized["desktop.devices.context.claims_receipt"] = "Letzter Download: {0} · {1} {2} auf {3}/{4}, erstellt {5} UTC.";
             localized["desktop.devices.context.access_guest"] = "Verknüpfen Sie diese Installation, bevor Sie Kontowiederherstellung oder Supportverlauf nutzen.";
-            localized["desktop.devices.context.access_claimed"] = "Support, Updates und Runner-Wiederherstellung sind mit dieser verknüpften Installation verbunden.";
+            localized["desktop.devices.context.access_claimed"] = "Support, Updates und Dossier-Wiederherstellung sind mit dieser verknüpften Installation verbunden.";
             localized["desktop.devices.context.access_no_grants"] = "Für dieses Konto sind noch keine aktiven Zugriffsgrants sichtbar.";
             localized["desktop.devices.context.access_grant"] = "Grant {0} für {1} bleibt {2} bis {3} UTC.";
 
@@ -904,14 +904,14 @@ public static class DesktopLocalizationCatalog
             localized["desktop.dialog.translator.message"] = "Desktopsprache auf {0} gesetzt. Starten Sie Chummer neu, um sie uberall anzuwenden.";
             localized["desktop.dialog.translator.field.search"] = "Language Search";
             localized["desktop.dialog.translator.field.search_placeholder"] = "filter languages";
-            localized["desktop.dialog.character_settings.notice.updated"] = "Runner-Einstellungen wurden aktualisiert.";
+            localized["desktop.dialog.character_settings.notice.updated"] = "Dossier-Einstellungen wurden aktualisiert.";
 
         }
 
         if (string.Equals(languageCode, "fr-fr", StringComparison.Ordinal))
         {
             localized["desktop.shell.window_title"] = "Chummer Bureau";
-            localized["desktop.shell.banner"] = "Runner Workbench";
+            localized["desktop.shell.banner"] = "Dossier Workbench";
             localized["desktop.shell.menu.file"] = "Fichier";
             localized["desktop.shell.menu.edit"] = "Éditer";
             localized["desktop.shell.menu.special"] = "Spécial";
@@ -920,7 +920,7 @@ public static class DesktopLocalizationCatalog
             localized["desktop.shell.menu.help"] = "Aide";
             localized["desktop.shell.tool.desktop_home"] = "Accueil";
             localized["desktop.shell.tool.horizons"] = "Outils";
-            localized["desktop.shell.tool.campaign_workspace"] = "Espace de campagne";
+            localized["desktop.shell.tool.campaign_workspace"] = "Campagne";
             localized["desktop.shell.tool.update_status"] = "État de la mise à jour";
             localized["desktop.shell.tool.link_copy"] = "Lier cette copie";
             localized["desktop.shell.tool.open_support"] = "Ouvrir le support";
@@ -929,8 +929,8 @@ public static class DesktopLocalizationCatalog
             localized["desktop.shell.tool.load_demo_runner"] = "Ouvrir le personnage d'exemple";
             localized["desktop.shell.tool.import_character_file"] = "Importer un fichier personnage";
             localized["desktop.shell.tool.import_raw_xml"] = "Importer un XML brut";
-            localized["desktop.shell.tool.save_workspace"] = "Enregistrer l'espace de travail";
-            localized["desktop.shell.tool.close_active_workspace"] = "Fermer l'espace de travail actif";
+            localized["desktop.shell.tool.save_workspace"] = "Enregistrer le dossier";
+            localized["desktop.shell.tool.close_active_workspace"] = "Fermer le dossier actif";
             localized["desktop.shell.tool.status_idle"] = "État : inactif";
             localized["desktop.shell.state.value.ready"] = "prêt";
             localized["desktop.shell.state.value.busy"] = "occupe";
@@ -941,16 +941,16 @@ public static class DesktopLocalizationCatalog
             localized["desktop.shell.state.value.error"] = "erreur";
             localized["desktop.shell.value.none"] = "aucun";
             localized["desktop.shell.value.na"] = "n/d";
-            localized["desktop.shell.state.snapshot"] = "Etat : {0}, espace={1}, ouvert={2}, sauvegarde={3}, derniere-commande={4}";
+            localized["desktop.shell.state.snapshot"] = "Etat : {0}, dossier={1}, ouvert={2}, sauvegarde={3}, derniere-commande={4}";
             localized["desktop.shell.state.error"] = "Etat : erreur - {0}";
             localized["desktop.shell.feedback.import_raw_required"] = "Etat : fournissez le contenu XML de debug avant l'import.";
             localized["desktop.shell.feedback.import_file_unavailable"] = "Etat : le selecteur de fichier est indisponible sur cette plateforme.";
             localized["desktop.shell.feedback.import_file_cancelled"] = "Etat : la selection de fichier {0} a ete annulee.";
             localized["desktop.shell.feedback.demo_runner_unavailable"] = "Etat : le personnage d'exemple fourni est indisponible dans ce build.";
             localized["desktop.shell.feedback.demo_runner_loading"] = "Etat : ouverture du personnage d'exemple fourni depuis {0}.";
-            localized["desktop.shell.feedback.no_active_workspace"] = "Etat : aucun workspace actif a fermer.";
+            localized["desktop.shell.feedback.no_active_workspace"] = "Etat : aucun dossier actif a fermer.";
             localized["desktop.shell.feedback.desktop_home_reviewed"] = "Etat : accueil desktop verifie.";
-            localized["desktop.shell.feedback.campaign_workspace_reviewed"] = "Etat : workspace de campagne verifie.";
+            localized["desktop.shell.feedback.campaign_workspace_reviewed"] = "Etat : campagne verifiee.";
             localized["desktop.shell.feedback.update_reviewed"] = "Etat : posture de mise a jour verifiee.";
             localized["desktop.shell.feedback.install_linking_reviewed"] = "Etat : reclamation de la copie verifiee.";
             localized["desktop.shell.feedback.support_reviewed"] = "Etat : support verifie.";
@@ -959,7 +959,7 @@ public static class DesktopLocalizationCatalog
             localized["desktop.shell.feedback.install_support_unavailable"] = "Etat : le suivi support est indisponible sur cet hote.";
             localized["desktop.shell.feedback.operation_failed_state"] = "Etat : erreur - {0} a echoue : {1}";
             localized["desktop.shell.feedback.operation_failed_notice"] = "Notice : echec de {0}.";
-            localized["desktop.shell.workspace_strip.heading"] = "Runner actuel";
+            localized["desktop.shell.workspace_strip.heading"] = "Dossier actuel";
             localized["desktop.shell.summary.name"] = "Nom";
             localized["desktop.shell.summary.alias"] = "Alias";
             localized["desktop.shell.summary.karma"] = "Karma";
@@ -967,8 +967,8 @@ public static class DesktopLocalizationCatalog
             localized["desktop.shell.summary.runtime"] = "Runtime";
             localized["desktop.shell.summary.inspect_runtime"] = "Inspecter le runtime";
             localized["desktop.shell.summary.empty_value"] = "-";
-            localized["desktop.shell.workspace_strip.summary"] = "Espace de travail : {0} (ouverts : {1}, {2})";
-            localized["desktop.shell.workspace_strip.empty"] = "Espace de travail : aucun";
+            localized["desktop.shell.workspace_strip.summary"] = "Dossier : {0} (ouverts : {1}, {2})";
+            localized["desktop.shell.workspace_strip.empty"] = "Dossier : aucun";
             localized["desktop.shell.workspace_strip.caption"] = "Le ruleset, le fichier et l'onglet actif restent visibles pendant la navigation des sections denses du builder.";
             localized["desktop.shell.workspace_strip.quick_start_caption"] = "Ouvrez l'exemple Soma-Career fourni avant de démarrer une création vide.";
             localized["desktop.shell.status.character"] = "Personnage : {0}";
@@ -994,7 +994,7 @@ public static class DesktopLocalizationCatalog
             localized["desktop.home.section.build_explain"] = "Build et Explain ensuite";
             localized["desktop.home.section.horizons"] = "Outils";
             localized["desktop.home.section.language_trust"] = "Langue et surfaces de confiance";
-            localized["desktop.home.section.recent_workspaces"] = "Espaces de travail récents";
+            localized["desktop.home.section.recent_workspaces"] = "Dossiers récents";
             localized["desktop.home.horizons.summary"] = "Ouvrez les principaux espaces produit depuis l’accueil desktop. Karma Forge, Alice, Run Control, Black Ledger, Quicksilver et les autres outils restent à un clic.";
             localized["desktop.horizons.title"] = "Outils";
             localized["desktop.horizons.heading"] = "Outils";
@@ -1003,19 +1003,19 @@ public static class DesktopLocalizationCatalog
             localized["desktop.home.button.continue"] = "Continuer";
             localized["desktop.home.button.open_install_support"] = "Ouvrir le support d'installation";
             localized["desktop.home.button.open_update_support"] = "Ouvrir le support des mises à jour";
-            localized["desktop.home.button.open_work_support"] = "Obtenir de l'aide pour l'espace de travail";
+            localized["desktop.home.button.open_work_support"] = "Obtenir de l'aide pour le dossier";
             localized["desktop.home.button.open_tracked_case"] = "Ouvrir le dossier suivi";
             localized["desktop.home.button.open_campaign_followthrough"] = "Ouvrir le suivi de campagne";
             localized["desktop.home.button.open_campaign_primer"] = "Ouvrir le guide de campagne";
             localized["desktop.home.button.open_mission_briefing"] = "Ouvrir le briefing de mission";
             localized["desktop.home.button.open_devices_access"] = "Votre copie";
-            localized["desktop.home.button.open_current_workspace"] = "Ouvrir l'espace de travail actuel";
-            localized["desktop.home.button.open_current_campaign_workspace"] = "Ouvrir l'espace de campagne actuel";
+            localized["desktop.home.button.open_current_workspace"] = "Ouvrir le dossier";
+            localized["desktop.home.button.open_current_campaign_workspace"] = "Ouvrir la campagne";
             localized["desktop.home.button.open_my_artifacts"] = "Ouvrir mes fichiers";
             localized["desktop.home.button.open_campaign_artifacts"] = "Ouvrir les fichiers de campagne";
             localized["desktop.home.button.open_published_artifacts"] = "Ouvrir les fichiers publies";
             localized["desktop.home.button.open_build_followthrough"] = "Ouvrir le suivi build";
-            localized["desktop.home.button.open_workspace_followthrough"] = "Ouvrir le suivi workspace";
+            localized["desktop.home.button.open_workspace_followthrough"] = "Ouvrir l'aide du dossier";
             localized["desktop.home.button.open_update_status"] = "Ouvrir l'etat de mise a jour";
             localized["desktop.home.button.open_support_center"] = "Ouvrir le centre de support";
             localized["desktop.home.button.open_report_issue"] = "Signaler un problème";
@@ -1046,28 +1046,28 @@ public static class DesktopLocalizationCatalog
             localized["desktop.home.intro.update_available"] = "Une mise a jour est prete pour cette installation. Verifiez les mises a jour avant de revenir au travail de campagne.";
             localized["desktop.home.intro.release_posture_review"] = "Cette copie est liee, mais la version actuelle doit etre verifiee avant de compter sur les mises a jour, le support ou la continuite de campagne.";
             localized["desktop.home.intro.campaign_watchouts"] = "Cette copie est liee et assez a jour pour continuer, mais le retour de campagne a des points a verifier avant de rouvrir le travail.";
-            localized["desktop.home.intro.ready_recent_workspaces"] = "Cette copie est liee, assez a jour pour continuer, et prete a rouvrir les espaces de travail recents.";
-            localized["desktop.home.intro.ready_current_campaign_workspace"] = "Cette copie est liee, assez a jour pour continuer, et prete a rouvrir l'espace de campagne actuel.";
+            localized["desktop.home.intro.ready_recent_workspaces"] = "Cette copie est liee, assez a jour pour continuer, et prete a rouvrir les dossiers recents.";
+            localized["desktop.home.intro.ready_current_campaign_workspace"] = "Cette copie est liee, assez a jour pour continuer, et prete a rouvrir la campagne actuelle.";
             localized["desktop.home.update_summary"] = "Statut: {0}\nInstalle: {1}\nListe des versions: {2}\nListe mise a jour: {3} UTC\nCanal: {4}\nDerniere verification: {5} UTC\nMode de mise a jour: {6}\nEtat de version: {7}\nNote de version: {8}\nEtat du support: {9}\nNote de support: {10}\nEtat local: {11}\nStatut mis a jour: {12} UTC\nProblemes connus: {13}\nDisponibilite du correctif: {14}\nAction recommandee: {15}\nDerniere erreur: {16}";
-            localized["desktop.home.workspace_summary.empty"] = "Aucun espace recent n'a encore ete restaure. Importez ou creez un runner pour amorcer la voie d'espace de campagne.";
+            localized["desktop.home.workspace_summary.empty"] = "Aucun dossier recent n'a encore ete restaure. Importez ou creez un dossier pour commencer.";
             localized["desktop.home.workspace_summary.entry"] = "{0} . {1} . {2} UTC";
-            localized["desktop.campaign.title"] = "Espace de campagne";
-            localized["desktop.campaign.heading"] = "Espace de campagne";
+            localized["desktop.campaign.title"] = "Campagne";
+            localized["desktop.campaign.heading"] = "Campagne";
             localized["desktop.campaign.section.runboard"] = "Préparation de session et runboard";
             localized["desktop.campaign.section.restore"] = "Restauration et posture appareil";
             localized["desktop.campaign.section.support"] = "Support et alertes";
-            localized["desktop.campaign.section.recent_workspaces"] = "Espaces de travail récents";
+            localized["desktop.campaign.section.recent_workspaces"] = "Dossiers récents";
             localized["desktop.campaign.button.refresh"] = "Recharger la campagne";
-            localized["desktop.campaign.intro.guest"] = "Cet espace de campagne est encore local. Reclamez cette copie avant de compter sur la restauration, l'etat de l'appareil ou le support.";
-            localized["desktop.campaign.intro.local_fallback"] = "Le plan serveur de campagne en direct est indisponible, donc cet espace affiche le digest de campagne local le plus sur et la meilleure posture de restauration disponible sur ce desktop.";
-            localized["desktop.campaign.intro.watchouts"] = "Cet espace de campagne est solide, mais il reste des points d'attention a traiter avant de reprendre le runboard en direct.";
-            localized["desktop.campaign.intro.ready"] = "Cet espace de campagne est solide et pret a restaurer la posture de session, l'etat du runboard et la cloture support depuis le desktop flagship.";
-            localized["desktop.campaign.status.local_fallback"] = "Statut espace de campagne: le fallback local borne est actif car le plan serveur de campagne en direct est indisponible.";
-            localized["desktop.campaign.status.server_generated"] = "Statut espace de campagne: plan serveur en direct genere a {0} UTC.";
-            localized["desktop.campaign.status.refresh_failed"] = "Statut espace de campagne: le rafraichissement a echoue, donc le dernier etat valide reste affiche avec fallback borne.";
+            localized["desktop.campaign.intro.guest"] = "Cette campagne est encore locale. Reclamez cette copie avant de compter sur la restauration, l'etat de l'appareil ou le support.";
+            localized["desktop.campaign.intro.local_fallback"] = "Le service de campagne est indisponible, donc cette vue affiche le meilleur resume de campagne local et le meilleur statut de restauration disponible sur ce desktop.";
+            localized["desktop.campaign.intro.watchouts"] = "Cette campagne est prete a continuer, mais quelques points doivent encore etre verifies avant de reprendre le travail de session en direct.";
+            localized["desktop.campaign.intro.ready"] = "Cette campagne peut rouvrir le contexte de session, le contexte du runboard et le statut du support depuis le desktop.";
+            localized["desktop.campaign.status.local_fallback"] = "Statut campagne: des donnees de campagne locales sont affichees car le service de campagne en direct est indisponible.";
+            localized["desktop.campaign.status.server_generated"] = "Statut campagne: le service en direct a ete mis a jour a {0} UTC.";
+            localized["desktop.campaign.status.refresh_failed"] = "Statut campagne: le rafraichissement a echoue, donc le dernier bon etat local reste affiche.";
             localized["desktop.campaign.readiness.local_fallback"] = "Le detail du runboard est actuellement borne a la verite de campagne disponible localement jusqu'au retour du plan serveur en direct.";
-            localized["desktop.campaign.restore.latest_workspace"] = "Dernier espace local: {0} . {1} UTC";
-            localized["desktop.campaign.restore.no_workspace"] = "Aucun espace local n'est epingle pour l'instant, donc la posture de restauration reste bornee au digest de campagne et a la verite des appareils lies.";
+            localized["desktop.campaign.restore.latest_workspace"] = "Dernier dossier local: {0} . {1} UTC";
+            localized["desktop.campaign.restore.no_workspace"] = "Aucun dossier local n'est epingle pour l'instant, donc le statut de restauration reste borne au digest de campagne et a la verite des appareils lies.";
             localized["desktop.campaign.support.no_watchouts"] = "Aucun point d'attention de campagne ou de support ne bloque actuellement la continuation depuis cette surface desktop.";
             localized["desktop.install_link.title"] = "Lier cette copie";
             localized["desktop.install_link.heading"] = "Lier cette copie desktop à votre compte";
@@ -1085,8 +1085,8 @@ public static class DesktopLocalizationCatalog
             localized["desktop.install_link.button.copy_install_id"] = "Copier l'ID d'installation";
             localized["desktop.install_link.button.open_downloads"] = "Ouvrir Téléchargements";
             localized["desktop.install_link.button.open_support"] = "Ouvrir le support";
-            localized["desktop.install_link.button.open_origin_dossier"] = "Ouvrir Origin Dossier";
-            localized["desktop.install_link.button.open_work"] = "Ouvrir l'espace lié";
+            localized["desktop.install_link.button.open_origin_dossier"] = "Ouvrir la route propre d'Origin Dossier";
+            localized["desktop.install_link.button.open_work"] = "Ouvrir le dossier lie";
             localized["desktop.install_link.button.open_account"] = "Ouvrir le compte";
             localized["desktop.install_link.button.link_copy"] = "Lier cette copie";
             localized["desktop.install_link.button.open_claim_link"] = "Ouvrir le lien";
@@ -1105,8 +1105,8 @@ public static class DesktopLocalizationCatalog
             localized["desktop.install_link.fallback.claim_url_label"] = "Lien de reclamation";
             localized["desktop.install_link.status.clipboard_unavailable"] = "L'acces au presse-papiers n'est pas disponible sur cet hote.";
             localized["desktop.install_link.status.install_id_copied"] = "L'identifiant d'installation a ete copie dans le presse-papiers.";
-            localized["desktop.install_link.status.opened_work_route"] = "L'espace de travail a ete ouvert.";
-            localized["desktop.install_link.status.unable_open_work_route"] = "Impossible d'ouvrir l'espace de travail depuis cet hote.";
+            localized["desktop.install_link.status.opened_work_route"] = "Le dossier a ete ouvert.";
+            localized["desktop.install_link.status.unable_open_work_route"] = "Impossible d'ouvrir le dossier depuis cet hote.";
             localized["desktop.install_link.status.opened_account"] = "Votre compte Hub a ete ouvert pour relancer le transfert guide d'installation ou verifier l'etat de liaison de cette installation.";
             localized["desktop.install_link.status.unable_open_account"] = "Impossible d'ouvrir la page de compte Hub depuis cet hote.";
             localized["desktop.install_link.status.unlinked_copy"] = "Cette copie est maintenant deliee sur cet appareil.";
@@ -1136,7 +1136,7 @@ public static class DesktopLocalizationCatalog
             localized["desktop.install_link.status.manual_login_url"] = "La reclamation navigateur ne s'est pas ouverte automatiquement. Ouvrez ou copiez ce lien pour reclamer cette copie :";
             localized["desktop.install_link.summary.browser_open_attempt"] = "Tentative de reclamation navigateur : {0} UTC.";
             localized["desktop.install_link.summary.browser_open_error"] = "Erreur de reclamation navigateur : {0}";
-            localized["desktop.install_link.summary.next_safe_action_claimed"] = "Prochaine action sure : ouvrez la route de travail liee au compte et confirmez restauration, mise a jour et suivi support depuis cette installation liee.";
+            localized["desktop.install_link.summary.next_safe_action_claimed"] = "Prochaine action sure : ouvrez votre dossier.";
             localized["desktop.install_link.summary.next_safe_action_guest"] = "Prochaine action sure : copiez l'ID d'installation, utilisez le code de liaison Hub et gardez le support lie a l'installation ouvert jusqu'a reception du grant.";
             localized["desktop.install_link.summary"] = "Chummer garde le binaire canonique. La liaison passe par un code de liaison d'installation et un grant d'installation emis par Hub, au lieu de modifier l'installeur par utilisateur.";
             localized["desktop.update.title"] = "État de la mise à jour";
@@ -1333,7 +1333,7 @@ public static class DesktopLocalizationCatalog
             localized["desktop.devices.context.claims_local_last"] = "A previous claim attempt is saved locally on this install.";
             localized["desktop.devices.context.claims_receipt"] = "Recent download: {0} · {1} {2} for {3}/{4}, added {5} UTC.";
             localized["desktop.devices.context.access_guest"] = "Claim this copy before using account recovery or support history.";
-            localized["desktop.devices.context.access_claimed"] = "Support, updates, and workspace recovery are attached to this linked install.";
+            localized["desktop.devices.context.access_claimed"] = "Le support, les mises a jour et la restauration du dossier sont attaches a cette installation liee.";
             localized["desktop.devices.context.access_no_grants"] = "No active access grants are visible for this account yet.";
             localized["desktop.devices.context.access_grant"] = "Grant {0} for {1} stays {2} until {3} UTC.";
 
@@ -1359,7 +1359,7 @@ public static class DesktopLocalizationCatalog
         if (string.Equals(languageCode, "ja-jp", StringComparison.Ordinal))
         {
             localized["desktop.shell.window_title"] = "Chummer デスクトップ";
-            localized["desktop.shell.banner"] = "Runner Workbench";
+            localized["desktop.shell.banner"] = "Dossier Workbench";
             localized["desktop.shell.menu.file"] = "ファイル";
             localized["desktop.shell.menu.edit"] = "編集";
             localized["desktop.shell.menu.special"] = "特別";
@@ -1368,7 +1368,7 @@ public static class DesktopLocalizationCatalog
             localized["desktop.shell.menu.help"] = "ヘルプ";
             localized["desktop.shell.tool.desktop_home"] = "デスクトップホーム";
             localized["desktop.shell.tool.horizons"] = "ツール";
-            localized["desktop.shell.tool.campaign_workspace"] = "キャンペーンワークスペース";
+            localized["desktop.shell.tool.campaign_workspace"] = "キャンペーン";
             localized["desktop.shell.tool.update_status"] = "更新ステータス";
             localized["desktop.shell.tool.link_copy"] = "このコピーをリンク";
             localized["desktop.shell.tool.open_support"] = "サポートを開く";
@@ -1377,8 +1377,8 @@ public static class DesktopLocalizationCatalog
             localized["desktop.shell.tool.load_demo_runner"] = "サンプルキャラクターを開く";
             localized["desktop.shell.tool.import_character_file"] = "キャラクターファイルをインポート";
             localized["desktop.shell.tool.import_raw_xml"] = "Raw XML をインポート";
-            localized["desktop.shell.tool.save_workspace"] = "ワークスペースを保存";
-            localized["desktop.shell.tool.close_active_workspace"] = "アクティブなワークスペースを閉じる";
+            localized["desktop.shell.tool.save_workspace"] = "ドシエを保存";
+            localized["desktop.shell.tool.close_active_workspace"] = "アクティブなドシエを閉じる";
             localized["desktop.shell.tool.status_idle"] = "状態: アイドル";
             localized["desktop.shell.state.value.ready"] = "準備完了";
             localized["desktop.shell.state.value.busy"] = "処理中";
@@ -1389,16 +1389,16 @@ public static class DesktopLocalizationCatalog
             localized["desktop.shell.state.value.error"] = "エラー";
             localized["desktop.shell.value.none"] = "なし";
             localized["desktop.shell.value.na"] = "n/a";
-            localized["desktop.shell.state.snapshot"] = "状態: {0}, workspace={1}, open={2}, saved={3}, last-command={4}";
+            localized["desktop.shell.state.snapshot"] = "状態: {0}, ドシエ={1}, オープン={2}, 保存={3}, 前回コマンド={4}";
             localized["desktop.shell.state.error"] = "状態: エラー - {0}";
             localized["desktop.shell.feedback.import_raw_required"] = "状態: インポート前にデバッグ XML 内容を入力してください。";
             localized["desktop.shell.feedback.import_file_unavailable"] = "状態: このプラットフォームではファイルピッカーを利用できません。";
             localized["desktop.shell.feedback.import_file_cancelled"] = "状態: {0} のファイル選択は取り消されました。";
             localized["desktop.shell.feedback.demo_runner_unavailable"] = "状態: このビルドでは同梱サンプルキャラクターを利用できません。";
             localized["desktop.shell.feedback.demo_runner_loading"] = "状態: 同梱サンプルキャラクターを {0} から開いています。";
-            localized["desktop.shell.feedback.no_active_workspace"] = "状態: 閉じるアクティブワークスペースがありません。";
+            localized["desktop.shell.feedback.no_active_workspace"] = "状態: 閉じるアクティブなドシエはありません。";
             localized["desktop.shell.feedback.desktop_home_reviewed"] = "状態: デスクトップホームを確認しました。";
-            localized["desktop.shell.feedback.campaign_workspace_reviewed"] = "状態: キャンペーンワークスペースを確認しました。";
+            localized["desktop.shell.feedback.campaign_workspace_reviewed"] = "状態: キャンペーンを確認しました。";
             localized["desktop.shell.feedback.update_reviewed"] = "状態: 更新ステータスを確認しました。";
             localized["desktop.shell.feedback.install_linking_reviewed"] = "状態: コピーの請求を確認しました。";
             localized["desktop.shell.feedback.support_reviewed"] = "状態: サポートを確認しました。";
@@ -1407,7 +1407,7 @@ public static class DesktopLocalizationCatalog
             localized["desktop.shell.feedback.install_support_unavailable"] = "状態: このホストではサポート追跡を利用できません。";
             localized["desktop.shell.feedback.operation_failed_state"] = "状態: エラー - {0} に失敗しました: {1}";
             localized["desktop.shell.feedback.operation_failed_notice"] = "通知: {0} に失敗しました。";
-            localized["desktop.shell.workspace_strip.heading"] = "現在のランナー";
+            localized["desktop.shell.workspace_strip.heading"] = "現在のドシエ";
             localized["desktop.shell.summary.name"] = "名前";
             localized["desktop.shell.summary.alias"] = "エイリアス";
             localized["desktop.shell.summary.karma"] = "カルマ";
@@ -1415,8 +1415,8 @@ public static class DesktopLocalizationCatalog
             localized["desktop.shell.summary.runtime"] = "ランタイム";
             localized["desktop.shell.summary.inspect_runtime"] = "ランタイムを確認";
             localized["desktop.shell.summary.empty_value"] = "-";
-            localized["desktop.shell.workspace_strip.summary"] = "ワークスペース: {0} (オープン: {1}, {2})";
-            localized["desktop.shell.workspace_strip.empty"] = "ワークスペース: なし";
+            localized["desktop.shell.workspace_strip.summary"] = "ドシエ: {0} (オープン: {1}, {2})";
+            localized["desktop.shell.workspace_strip.empty"] = "ドシエ: なし";
             localized["desktop.shell.workspace_strip.caption"] = "ルールセット、ファイル、アクティブタブを表示したまま、高密度ビルダー区画を移動できます。";
             localized["desktop.shell.workspace_strip.quick_start_caption"] = "空のビルドを始める前に、同梱のSoma-Careerサンプルを開いて確認してください。";
             localized["desktop.shell.status.character"] = "キャラクター: {0}";
@@ -1442,7 +1442,7 @@ public static class DesktopLocalizationCatalog
             localized["desktop.home.section.build_explain"] = "次のビルドとExplain";
             localized["desktop.home.section.horizons"] = "ツール";
             localized["desktop.home.section.language_trust"] = "言語と信頼サーフェス";
-            localized["desktop.home.section.recent_workspaces"] = "最近のワークスペース";
+            localized["desktop.home.section.recent_workspaces"] = "最近のドシエ";
             localized["desktop.home.horizons.summary"] = "デスクトップホームから主要な製品エリアを開けます。Karma Forge、Alice、Run Control、Black Ledger、Quicksilver などのツールに 1 クリックで移動できます。";
             localized["desktop.horizons.title"] = "ツール";
             localized["desktop.horizons.heading"] = "ツール";
@@ -1451,19 +1451,19 @@ public static class DesktopLocalizationCatalog
             localized["desktop.home.button.continue"] = "続行";
             localized["desktop.home.button.open_install_support"] = "インストールサポートを開く";
             localized["desktop.home.button.open_update_support"] = "更新サポートを開く";
-            localized["desktop.home.button.open_work_support"] = "ワークスペースのヘルプを開く";
+            localized["desktop.home.button.open_work_support"] = "ドシエのサポートを開く";
             localized["desktop.home.button.open_tracked_case"] = "追跡ケースを開く";
             localized["desktop.home.button.open_campaign_followthrough"] = "キャンペーン追跡を開く";
             localized["desktop.home.button.open_campaign_primer"] = "キャンペーンプライマーを開く";
             localized["desktop.home.button.open_mission_briefing"] = "ミッションブリーフィングを開く";
             localized["desktop.home.button.open_devices_access"] = "Your Copy";
-            localized["desktop.home.button.open_current_workspace"] = "現在のワークスペースを開く";
-            localized["desktop.home.button.open_current_campaign_workspace"] = "現在のキャンペーンワークスペースを開く";
+            localized["desktop.home.button.open_current_workspace"] = "ドシエを開く";
+            localized["desktop.home.button.open_current_campaign_workspace"] = "キャンペーンを開く";
             localized["desktop.home.button.open_my_artifacts"] = "自分のファイルを開く";
             localized["desktop.home.button.open_campaign_artifacts"] = "キャンペーンのファイルを開く";
             localized["desktop.home.button.open_published_artifacts"] = "公開済みファイルを開く";
             localized["desktop.home.button.open_build_followthrough"] = "ビルドのフォローアップを開く";
-            localized["desktop.home.button.open_workspace_followthrough"] = "ワークスペースのフォローアップを開く";
+            localized["desktop.home.button.open_workspace_followthrough"] = "ドシエのヘルプを開く";
             localized["desktop.home.button.open_update_status"] = "更新ステータスを開く";
             localized["desktop.home.button.open_support_center"] = "サポートセンターを開く";
             localized["desktop.home.button.open_report_issue"] = "問題を報告";
@@ -1494,28 +1494,28 @@ public static class DesktopLocalizationCatalog
             localized["desktop.home.intro.update_available"] = "このインストール向けに昇格済み更新が利用可能です。キャンペーン作業に戻る前に更新姿勢を確認してください。";
             localized["desktop.home.intro.release_posture_review"] = "このコピーはリンク済みですが、更新、サポート、キャンペーン継続を頼る前に現在のリリース確認が必要です。";
             localized["desktop.home.intro.campaign_watchouts"] = "このコピーはリンク済みで継続可能ですが、作業を再開する前にキャンペーン復帰の確認項目があります。";
-            localized["desktop.home.intro.ready_recent_workspaces"] = "このコピーはリンク済みで継続可能で、最近のワークスペースを再開できます。";
-            localized["desktop.home.intro.ready_current_campaign_workspace"] = "このコピーはリンク済みで継続可能で、現在のキャンペーンワークスペースを再開できます。";
+            localized["desktop.home.intro.ready_recent_workspaces"] = "このコピーはリンク済みで継続可能で、最近のドシエを再度開く準備ができています。";
+            localized["desktop.home.intro.ready_current_campaign_workspace"] = "このコピーはリンク済みで継続可能で、現在のキャンペーンを再開できます。";
             localized["desktop.home.update_summary"] = "状態: {0}\nインストール済み: {1}\nリリース一覧: {2}\n一覧更新: {3} UTC\nチャンネル: {4}\n最終確認: {5} UTC\n更新モード: {6}\nリリース状態: {7}\nリリースメモ: {8}\nサポート状態: {9}\nサポートメモ: {10}\nローカル状態: {11}\n状態更新: {12} UTC\n既知の問題: {13}\n修正提供状況: {14}\n推奨アクション: {15}\n最終エラー: {16}";
-            localized["desktop.home.workspace_summary.empty"] = "最近のワークスペースはまだ復元されていません。ランナーをインポートまたは作成して、キャンペーンワークスペースレーンを開始してください。";
+            localized["desktop.home.workspace_summary.empty"] = "最近のドシエはまだ復元されていません。開始するにはドシエをインポートするか作成してください。";
             localized["desktop.home.workspace_summary.entry"] = "{0} . {1} . {2} UTC";
-            localized["desktop.campaign.title"] = "キャンペーンワークスペース";
-            localized["desktop.campaign.heading"] = "キャンペーンワークスペース";
+            localized["desktop.campaign.title"] = "キャンペーン";
+            localized["desktop.campaign.heading"] = "キャンペーン";
             localized["desktop.campaign.section.runboard"] = "セッション準備とランボード";
             localized["desktop.campaign.section.restore"] = "復元とデバイスポスチャ";
             localized["desktop.campaign.section.support"] = "サポートと注意点";
-            localized["desktop.campaign.section.recent_workspaces"] = "最近のワークスペース";
+            localized["desktop.campaign.section.recent_workspaces"] = "最近のドシエ";
             localized["desktop.campaign.button.refresh"] = "キャンペーンを再読み込み";
-            localized["desktop.campaign.intro.guest"] = "このキャンペーンワークスペースは、まだゲストとローカルフォールバックの姿勢で動作しています。復元、デバイスロール、サポート完了をインストール連携の真実として信頼する前に、このコピーをリンクしてください。";
-            localized["desktop.campaign.intro.local_fallback"] = "ライブのキャンペーンサーバープレーンが利用できないため、このワークスペースはこのデスクトップで利用可能な最も安全なローカルキャンペーンダイジェストと復元姿勢を表示しています。";
-            localized["desktop.campaign.intro.watchouts"] = "このキャンペーンワークスペースは安定していますが、ライブのランボード作業を再開する前に確認すべき注意事項があります。";
-            localized["desktop.campaign.intro.ready"] = "このキャンペーンワークスペースは安定しており、フラッグシップデスクトップからセッション姿勢、ランボード状態、サポート完了を復元する準備ができています。";
-            localized["desktop.campaign.status.local_fallback"] = "キャンペーンワークスペース状態: ライブのキャンペーンサーバープレーンが利用できないため、制限付きローカルフォールバックが有効です。";
-            localized["desktop.campaign.status.server_generated"] = "キャンペーンワークスペース状態: ライブサーバープレーンは {0} UTC に生成されました。";
-            localized["desktop.campaign.status.refresh_failed"] = "キャンペーンワークスペース状態: 更新に失敗したため、最後に正常だった状態を制限付きフォールバックで表示しています。";
+            localized["desktop.campaign.intro.guest"] = "このキャンペーンはまだローカル専用です。復元、デバイス状態、サポートを利用する前に、このコピーをリンクしてください。";
+            localized["desktop.campaign.intro.local_fallback"] = "キャンペーンサービスを利用できないため、このビューではこのデスクトップで利用できる最善のローカルキャンペーン概要と復元状態を表示しています。";
+            localized["desktop.campaign.intro.watchouts"] = "このキャンペーンは継続可能ですが、ライブセッション作業に戻る前にいくつか確認事項があります。";
+            localized["desktop.campaign.intro.ready"] = "このキャンペーンは、デスクトップからセッション状況、ランボード状況、サポート状態を再開できます。";
+            localized["desktop.campaign.status.local_fallback"] = "キャンペーン状態: ライブのキャンペーンサービスを利用できないため、ローカルのキャンペーンデータを表示しています。";
+            localized["desktop.campaign.status.server_generated"] = "キャンペーン状態: ライブサービスは {0} UTC に更新されました。";
+            localized["desktop.campaign.status.refresh_failed"] = "キャンペーン状態: 更新に失敗したため、最後の正常なローカル状態を表示しています。";
             localized["desktop.campaign.readiness.local_fallback"] = "ライブサーバープレーンが復帰するまで、ランボード詳細はローカルで利用可能なキャンペーン真実に制限されます。";
-            localized["desktop.campaign.restore.latest_workspace"] = "最新のローカルワークスペース: {0} . {1} UTC";
-            localized["desktop.campaign.restore.no_workspace"] = "ローカルワークスペースはまだ固定されていないため、復元姿勢はキャンペーンダイジェストと認証済みデバイス真実に制限されます。";
+            localized["desktop.campaign.restore.latest_workspace"] = "最新のローカルドシエ: {0} . {1} UTC";
+            localized["desktop.campaign.restore.no_workspace"] = "ローカルドシエはまだ固定されていないため、復元姿勢はキャンペーンダイジェストと認証済みデバイス真実に制限されます。";
             localized["desktop.campaign.support.no_watchouts"] = "現在、このデスクトップ画面で継続を妨げるキャンペーンまたはサポートの注意事項はありません。";
             localized["desktop.install_link.title"] = "このコピーをリンク";
             localized["desktop.install_link.heading"] = "このデスクトップコピーをアカウントにリンク";
@@ -1533,8 +1533,8 @@ public static class DesktopLocalizationCatalog
             localized["desktop.install_link.button.copy_install_id"] = "インストール ID をコピー";
             localized["desktop.install_link.button.open_downloads"] = "ダウンロードを開く";
             localized["desktop.install_link.button.open_support"] = "サポートを開く";
-            localized["desktop.install_link.button.open_origin_dossier"] = "Origin Dossier を開く";
-            localized["desktop.install_link.button.open_work"] = "リンク済みワークスペースを開く";
+            localized["desktop.install_link.button.open_origin_dossier"] = "クリーンな Origin Dossier ルートを開く";
+            localized["desktop.install_link.button.open_work"] = "リンク済みドシエを開く";
             localized["desktop.install_link.button.open_account"] = "アカウントを開く";
             localized["desktop.install_link.button.link_copy"] = "このコピーをリンク";
             localized["desktop.install_link.button.open_claim_link"] = "請求リンクを開く";
@@ -1553,8 +1553,8 @@ public static class DesktopLocalizationCatalog
             localized["desktop.install_link.fallback.claim_url_label"] = "請求リンク";
             localized["desktop.install_link.status.clipboard_unavailable"] = "このホストではクリップボードにアクセスできません。";
             localized["desktop.install_link.status.install_id_copied"] = "インストール ID をクリップボードにコピーしました。";
-            localized["desktop.install_link.status.opened_work_route"] = "ワークスペースを開きました。";
-            localized["desktop.install_link.status.unable_open_work_route"] = "このホストではワークスペースを開けません。";
+            localized["desktop.install_link.status.opened_work_route"] = "ドシエを開きました。";
+            localized["desktop.install_link.status.unable_open_work_route"] = "このホストではドシエを開けません。";
             localized["desktop.install_link.status.opened_account"] = "ガイド付きインストール引き継ぎの再開、またはこのインストールのリンク状態確認のため、Hub アカウントを開きました。";
             localized["desktop.install_link.status.unable_open_account"] = "このホストでは Hub アカウントページを開けません。";
             localized["desktop.install_link.status.unlinked_copy"] = "このデバイスでこのコピーのリンクを解除しました。";
@@ -1584,7 +1584,7 @@ public static class DesktopLocalizationCatalog
             localized["desktop.install_link.status.manual_login_url"] = "ブラウザーで取得ページを自動で開けませんでした。この取得リンクを開くかコピーしてください:";
             localized["desktop.install_link.summary.browser_open_attempt"] = "ブラウザー起動試行: {0} UTC.";
             localized["desktop.install_link.summary.browser_open_error"] = "ブラウザー起動エラー: {0}";
-            localized["desktop.install_link.summary.next_safe_action_claimed"] = "次のステップ: ワークスペースを開きます。";
+            localized["desktop.install_link.summary.next_safe_action_claimed"] = "次のステップ: ドシエを開きます。";
             localized["desktop.install_link.summary.next_safe_action_guest"] = "次の安全なアクション: インストール ID をコピーし、Hub 請求コードを適用し、付与が着地するまでインストール連携サポートを開いたままにしてください。";
             localized["desktop.install_link.summary"] = "Chummer はバイナリを正規状態のまま保持します。ユーザーごとにインストーラーを変えるのではなく、インストール請求コードと Hub 発行のインストール付与でリンクします。";
             localized["desktop.update.title"] = "更新ステータス";
@@ -1781,7 +1781,7 @@ public static class DesktopLocalizationCatalog
             localized["desktop.devices.context.claims_local_last"] = "A previous claim attempt is saved locally on this install.";
             localized["desktop.devices.context.claims_receipt"] = "Recent download: {0} · {1} {2} for {3}/{4}, added {5} UTC.";
             localized["desktop.devices.context.access_guest"] = "Link this install before using account recovery or support history.";
-            localized["desktop.devices.context.access_claimed"] = "Support, updates, and workspace recovery are attached to this linked install.";
+            localized["desktop.devices.context.access_claimed"] = "サポート、更新、ドシエの復元はこのリンク済みインストールに関連付けられています。";
             localized["desktop.devices.context.access_no_grants"] = "No active access grants are visible for this account yet.";
             localized["desktop.devices.context.access_grant"] = "Grant {0} for {1} stays {2} until {3} UTC.";
 
@@ -1807,7 +1807,7 @@ public static class DesktopLocalizationCatalog
         if (string.Equals(languageCode, "pt-br", StringComparison.Ordinal))
         {
             localized["desktop.shell.window_title"] = "Chummer Desktop";
-            localized["desktop.shell.banner"] = "Runner Workbench";
+            localized["desktop.shell.banner"] = "Dossier Workbench";
             localized["desktop.shell.menu.file"] = "Arquivo";
             localized["desktop.shell.menu.edit"] = "Editar";
             localized["desktop.shell.menu.special"] = "Especial";
@@ -1816,7 +1816,7 @@ public static class DesktopLocalizationCatalog
             localized["desktop.shell.menu.help"] = "Ajuda";
             localized["desktop.shell.tool.desktop_home"] = "Início";
             localized["desktop.shell.tool.horizons"] = "Ferramentas";
-            localized["desktop.shell.tool.campaign_workspace"] = "Espaço de campanha";
+            localized["desktop.shell.tool.campaign_workspace"] = "Campanha";
             localized["desktop.shell.tool.update_status"] = "Status da atualização";
             localized["desktop.shell.tool.link_copy"] = "Vincular esta cópia";
             localized["desktop.shell.tool.open_support"] = "Abrir suporte";
@@ -1825,8 +1825,8 @@ public static class DesktopLocalizationCatalog
             localized["desktop.shell.tool.load_demo_runner"] = "Abrir personagem de exemplo";
             localized["desktop.shell.tool.import_character_file"] = "Importar arquivo de personagem";
             localized["desktop.shell.tool.import_raw_xml"] = "Importar XML bruto";
-            localized["desktop.shell.tool.save_workspace"] = "Salvar workspace";
-            localized["desktop.shell.tool.close_active_workspace"] = "Fechar workspace ativo";
+            localized["desktop.shell.tool.save_workspace"] = "Salvar dossie";
+            localized["desktop.shell.tool.close_active_workspace"] = "Fechar dossie ativo";
             localized["desktop.shell.tool.status_idle"] = "Status: ocioso";
             localized["desktop.shell.state.value.ready"] = "pronto";
             localized["desktop.shell.state.value.busy"] = "ocupado";
@@ -1837,16 +1837,16 @@ public static class DesktopLocalizationCatalog
             localized["desktop.shell.state.value.error"] = "erro";
             localized["desktop.shell.value.none"] = "nenhum";
             localized["desktop.shell.value.na"] = "n/d";
-            localized["desktop.shell.state.snapshot"] = "Status: {0}, workspace={1}, aberto={2}, salvo={3}, ultimo-comando={4}";
+            localized["desktop.shell.state.snapshot"] = "Status: {0}, dossie={1}, aberto={2}, salvo={3}, ultimo-comando={4}";
             localized["desktop.shell.state.error"] = "Status: erro - {0}";
             localized["desktop.shell.feedback.import_raw_required"] = "Status: forneca o conteudo XML de debug antes de importar.";
             localized["desktop.shell.feedback.import_file_unavailable"] = "Status: seletor de arquivo indisponivel nesta plataforma.";
             localized["desktop.shell.feedback.import_file_cancelled"] = "Status: selecao de arquivo {0} cancelada.";
             localized["desktop.shell.feedback.demo_runner_unavailable"] = "Status: o personagem de exemplo incluido esta indisponivel neste build.";
             localized["desktop.shell.feedback.demo_runner_loading"] = "Status: abrindo personagem de exemplo incluido de {0}.";
-            localized["desktop.shell.feedback.no_active_workspace"] = "Status: nenhum workspace ativo para fechar.";
+            localized["desktop.shell.feedback.no_active_workspace"] = "Status: nenhum dossie ativo para fechar.";
             localized["desktop.shell.feedback.desktop_home_reviewed"] = "Status: painel inicial revisado.";
-            localized["desktop.shell.feedback.campaign_workspace_reviewed"] = "Status: workspace de campanha revisado.";
+            localized["desktop.shell.feedback.campaign_workspace_reviewed"] = "Status: campanha revisada.";
             localized["desktop.shell.feedback.update_reviewed"] = "Status: postura de atualizacao revisada.";
             localized["desktop.shell.feedback.install_linking_reviewed"] = "Status: reivindicacao da copia revisada.";
             localized["desktop.shell.feedback.support_reviewed"] = "Status: suporte revisado.";
@@ -1855,7 +1855,7 @@ public static class DesktopLocalizationCatalog
             localized["desktop.shell.feedback.install_support_unavailable"] = "Status: acompanhamento de suporte indisponivel neste host.";
             localized["desktop.shell.feedback.operation_failed_state"] = "Status: erro - {0} falhou: {1}";
             localized["desktop.shell.feedback.operation_failed_notice"] = "Aviso: {0} falhou.";
-            localized["desktop.shell.workspace_strip.heading"] = "Runner atual";
+            localized["desktop.shell.workspace_strip.heading"] = "Dossie atual";
             localized["desktop.shell.summary.name"] = "Nome";
             localized["desktop.shell.summary.alias"] = "Apelido";
             localized["desktop.shell.summary.karma"] = "Karma";
@@ -1863,8 +1863,8 @@ public static class DesktopLocalizationCatalog
             localized["desktop.shell.summary.runtime"] = "Runtime";
             localized["desktop.shell.summary.inspect_runtime"] = "Inspecionar runtime";
             localized["desktop.shell.summary.empty_value"] = "-";
-            localized["desktop.shell.workspace_strip.summary"] = "Workspace: {0} (abertos: {1}, {2})";
-            localized["desktop.shell.workspace_strip.empty"] = "Workspace: nenhum";
+            localized["desktop.shell.workspace_strip.summary"] = "Dossie: {0} (abertos: {1}, {2})";
+            localized["desktop.shell.workspace_strip.empty"] = "Dossie: nenhum";
             localized["desktop.shell.workspace_strip.caption"] = "Ruleset, arquivo e guia ativa permanecem visiveis enquanto voce navega por secoes densas do builder.";
             localized["desktop.shell.workspace_strip.quick_start_caption"] = "Abra o exemplo Soma-Career incluso antes de iniciar um build em branco.";
             localized["desktop.shell.status.character"] = "Personagem: {0}";
@@ -1890,7 +1890,7 @@ public static class DesktopLocalizationCatalog
             localized["desktop.home.section.build_explain"] = "Build e Explain em seguida";
             localized["desktop.home.section.horizons"] = "Ferramentas";
             localized["desktop.home.section.language_trust"] = "Idioma e superfícies de confiança";
-            localized["desktop.home.section.recent_workspaces"] = "Workspaces recentes";
+            localized["desktop.home.section.recent_workspaces"] = "Dossies recentes";
             localized["desktop.home.horizons.summary"] = "Abra as principais áreas do produto pela tela inicial do desktop. Karma Forge, Alice, Run Control, Black Ledger, Quicksilver e outras ferramentas ficam a um clique.";
             localized["desktop.horizons.title"] = "Ferramentas";
             localized["desktop.horizons.heading"] = "Ferramentas";
@@ -1899,19 +1899,19 @@ public static class DesktopLocalizationCatalog
             localized["desktop.home.button.continue"] = "Continuar";
             localized["desktop.home.button.open_install_support"] = "Abrir suporte de instalação";
             localized["desktop.home.button.open_update_support"] = "Abrir suporte de atualização";
-            localized["desktop.home.button.open_work_support"] = "Obter ajuda do workspace";
+            localized["desktop.home.button.open_work_support"] = "Obter ajuda do dossie";
             localized["desktop.home.button.open_tracked_case"] = "Abrir caso rastreado";
             localized["desktop.home.button.open_campaign_followthrough"] = "Abrir acompanhamento da campanha";
             localized["desktop.home.button.open_campaign_primer"] = "Abrir introducao da campanha";
             localized["desktop.home.button.open_mission_briefing"] = "Abrir briefing da missao";
             localized["desktop.home.button.open_devices_access"] = "Sua copia";
-            localized["desktop.home.button.open_current_workspace"] = "Abrir workspace atual";
-            localized["desktop.home.button.open_current_campaign_workspace"] = "Abrir workspace atual da campanha";
+            localized["desktop.home.button.open_current_workspace"] = "Abrir dossie";
+            localized["desktop.home.button.open_current_campaign_workspace"] = "Abrir campanha";
             localized["desktop.home.button.open_my_artifacts"] = "Abrir meus arquivos";
             localized["desktop.home.button.open_campaign_artifacts"] = "Abrir arquivos da campanha";
             localized["desktop.home.button.open_published_artifacts"] = "Abrir arquivos publicados";
             localized["desktop.home.button.open_build_followthrough"] = "Abrir acompanhamento de build";
-            localized["desktop.home.button.open_workspace_followthrough"] = "Abrir acompanhamento de workspace";
+            localized["desktop.home.button.open_workspace_followthrough"] = "Abrir ajuda do dossie";
             localized["desktop.home.button.open_update_status"] = "Abrir status de atualizacao";
             localized["desktop.home.button.open_support_center"] = "Abrir central de suporte";
             localized["desktop.home.button.open_report_issue"] = "Reportar problema";
@@ -1942,28 +1942,28 @@ public static class DesktopLocalizationCatalog
             localized["desktop.home.intro.update_available"] = "Uma atualizacao promovida esta pronta para esta instalacao. Revise a postura de atualizacao antes de voltar ao trabalho de campanha.";
             localized["desktop.home.intro.release_posture_review"] = "Esta copia esta vinculada, mas a versao atual precisa de revisao antes de confiar em atualizacoes, suporte ou continuidade de campanha.";
             localized["desktop.home.intro.campaign_watchouts"] = "Esta copia esta vinculada e atual o suficiente para continuar, mas o retorno da campanha tem pontos para revisar antes de reabrir o trabalho.";
-            localized["desktop.home.intro.ready_recent_workspaces"] = "Esta copia esta vinculada, atual o suficiente para continuar e pronta para reabrir workspaces recentes.";
-            localized["desktop.home.intro.ready_current_campaign_workspace"] = "Esta copia esta vinculada, atual o suficiente para continuar e pronta para reabrir o workspace atual da campanha.";
+            localized["desktop.home.intro.ready_recent_workspaces"] = "Esta copia esta vinculada, atual o suficiente para continuar e pronta para reabrir dossies recentes.";
+            localized["desktop.home.intro.ready_current_campaign_workspace"] = "Esta copia esta vinculada, atual o suficiente para continuar e pronta para reabrir a campanha atual.";
             localized["desktop.home.update_summary"] = "Status: {0}\nInstalado: {1}\nLista de releases: {2}\nLista atualizada: {3} UTC\nCanal: {4}\nUltima verificacao: {5} UTC\nModo de atualizacao: {6}\nEstado do release: {7}\nNota do release: {8}\nEstado do suporte: {9}\nNota de suporte: {10}\nEstado local: {11}\nStatus atualizado: {12} UTC\nProblemas conhecidos: {13}\nDisponibilidade de correcao: {14}\nAcao recomendada: {15}\nUltimo erro: {16}";
-            localized["desktop.home.workspace_summary.empty"] = "Nenhum workspace recente foi restaurado ainda. Importe ou crie um runner para iniciar a trilha do workspace de campanha.";
+            localized["desktop.home.workspace_summary.empty"] = "Nenhum dossie recente foi restaurado ainda. Importe ou crie um dossie para comecar.";
             localized["desktop.home.workspace_summary.entry"] = "{0} . {1} . {2} UTC";
-            localized["desktop.campaign.title"] = "Espaço de campanha";
-            localized["desktop.campaign.heading"] = "Espaço de campanha";
+            localized["desktop.campaign.title"] = "Campanha";
+            localized["desktop.campaign.heading"] = "Campanha";
             localized["desktop.campaign.section.runboard"] = "Prontidão da sessão e runboard";
             localized["desktop.campaign.section.restore"] = "Restauração e postura do dispositivo";
             localized["desktop.campaign.section.support"] = "Suporte e alertas";
-            localized["desktop.campaign.section.recent_workspaces"] = "Workspaces recentes";
+            localized["desktop.campaign.section.recent_workspaces"] = "Dossies recentes";
             localized["desktop.campaign.button.refresh"] = "Recarregar campanha";
-            localized["desktop.campaign.intro.guest"] = "Este workspace de campanha ainda esta local. Reivindique esta copia antes de confiar em restauracao, status do dispositivo ou suporte.";
-            localized["desktop.campaign.intro.local_fallback"] = "O plano de servidor de campanha ao vivo esta indisponivel, entao este workspace mostra o resumo local de campanha mais seguro e a melhor postura de restauração disponivel neste desktop.";
-            localized["desktop.campaign.intro.watchouts"] = "Este workspace de campanha esta consistente, mas ainda tem alertas para limpar antes de retomar o trabalho de runboard ao vivo.";
-            localized["desktop.campaign.intro.ready"] = "Este workspace de campanha esta consistente e pronto para restaurar postura da sessão, estado do runboard e fechamento de suporte a partir do desktop flagship.";
-            localized["desktop.campaign.status.local_fallback"] = "Status do workspace de campanha: fallback local limitado esta ativo porque o plano de servidor de campanha ao vivo esta indisponivel.";
-            localized["desktop.campaign.status.server_generated"] = "Status do workspace de campanha: plano de servidor ao vivo gerado em {0} UTC.";
-            localized["desktop.campaign.status.refresh_failed"] = "Status do workspace de campanha: atualizacao falhou, entao o ultimo estado valido continua exibido com fallback limitado.";
+            localized["desktop.campaign.intro.guest"] = "Esta campanha ainda esta apenas local. Reivindique esta copia antes de confiar em restauracao, status do dispositivo ou suporte.";
+            localized["desktop.campaign.intro.local_fallback"] = "O servico de campanha esta indisponivel, entao esta tela mostra o melhor resumo local da campanha e o melhor status de restauracao disponivel neste desktop.";
+            localized["desktop.campaign.intro.watchouts"] = "Esta campanha esta pronta para continuar, mas alguns pontos ainda precisam ser revisados antes de retomar o trabalho de sessao ao vivo.";
+            localized["desktop.campaign.intro.ready"] = "Esta campanha pode reabrir o contexto da sessao, o contexto do runboard e o status de suporte a partir do desktop.";
+            localized["desktop.campaign.status.local_fallback"] = "Status da campanha: os dados locais da campanha estao sendo exibidos porque o servico de campanha ao vivo esta indisponivel.";
+            localized["desktop.campaign.status.server_generated"] = "Status da campanha: o servico ao vivo foi atualizado em {0} UTC.";
+            localized["desktop.campaign.status.refresh_failed"] = "Status da campanha: a atualizacao falhou, entao o ultimo bom estado local continua exibido.";
             localized["desktop.campaign.readiness.local_fallback"] = "Os detalhes do runboard estao limitados a verdade de campanha disponivel localmente ate o retorno do plano de servidor ao vivo.";
-            localized["desktop.campaign.restore.latest_workspace"] = "Workspace local mais recente: {0} . {1} UTC";
-            localized["desktop.campaign.restore.no_workspace"] = "Nenhum workspace local foi fixado ainda, entao a postura de restauração permanece limitada ao resumo da campanha e a verdade do dispositivo vinculado.";
+            localized["desktop.campaign.restore.latest_workspace"] = "Dossie local mais recente: {0} . {1} UTC";
+            localized["desktop.campaign.restore.no_workspace"] = "Nenhum dossie local foi fixado ainda, entao a postura de restauracao permanece limitada ao resumo da campanha e a verdade do dispositivo vinculado.";
             localized["desktop.campaign.support.no_watchouts"] = "Nenhum alerta atual de campanha ou suporte esta bloqueando a continuidade a partir desta superficie desktop.";
             localized["desktop.install_link.title"] = "Vincular esta cópia";
             localized["desktop.install_link.heading"] = "Vincular esta cópia desktop à sua conta";
@@ -1981,8 +1981,8 @@ public static class DesktopLocalizationCatalog
             localized["desktop.install_link.button.copy_install_id"] = "Copiar ID da instalação";
             localized["desktop.install_link.button.open_downloads"] = "Abrir Downloads";
             localized["desktop.install_link.button.open_support"] = "Abrir suporte";
-            localized["desktop.install_link.button.open_origin_dossier"] = "Abrir Origin Dossier";
-            localized["desktop.install_link.button.open_work"] = "Abrir workspace vinculado";
+            localized["desktop.install_link.button.open_origin_dossier"] = "Abrir rota limpa do Origin Dossier";
+            localized["desktop.install_link.button.open_work"] = "Abrir dossie vinculado";
             localized["desktop.install_link.button.open_account"] = "Abrir conta";
             localized["desktop.install_link.button.link_copy"] = "Vincular esta cópia";
             localized["desktop.install_link.button.open_claim_link"] = "Abrir link";
@@ -2001,8 +2001,8 @@ public static class DesktopLocalizationCatalog
             localized["desktop.install_link.fallback.claim_url_label"] = "Link de reivindicacao";
             localized["desktop.install_link.status.clipboard_unavailable"] = "O acesso a area de transferencia nao esta disponivel neste host.";
             localized["desktop.install_link.status.install_id_copied"] = "ID da instalacao copiado para a area de transferencia.";
-            localized["desktop.install_link.status.opened_work_route"] = "O espaco de trabalho foi aberto.";
-            localized["desktop.install_link.status.unable_open_work_route"] = "Nao foi possivel abrir o espaco de trabalho neste host.";
+            localized["desktop.install_link.status.opened_work_route"] = "O dossie foi aberto.";
+            localized["desktop.install_link.status.unable_open_work_route"] = "Nao foi possivel abrir o dossie neste host.";
             localized["desktop.install_link.status.opened_account"] = "Sua conta Hub foi aberta para reabrir o repasse guiado da instalacao ou revisar o estado de vinculacao desta instalacao.";
             localized["desktop.install_link.status.unable_open_account"] = "Nao foi possivel abrir a pagina da conta Hub neste host.";
             localized["desktop.install_link.status.unlinked_copy"] = "Esta copia foi desvinculada neste dispositivo.";
@@ -2032,7 +2032,7 @@ public static class DesktopLocalizationCatalog
             localized["desktop.install_link.status.manual_login_url"] = "A reivindicacao no navegador nao abriu automaticamente. Abra ou copie este link para reivindicar esta copia:";
             localized["desktop.install_link.summary.browser_open_attempt"] = "Tentativa de abertura do navegador: {0} UTC.";
             localized["desktop.install_link.summary.browser_open_error"] = "Erro ao abrir o navegador: {0}";
-            localized["desktop.install_link.summary.next_safe_action_claimed"] = "Proximo passo: abrir o espaco de trabalho.";
+            localized["desktop.install_link.summary.next_safe_action_claimed"] = "Proximo passo: abrir o dossie.";
             localized["desktop.install_link.summary.next_safe_action_guest"] = "Proxima acao segura: copie o ID da instalacao, resgate o codigo de vinculacao do Hub e mantenha o suporte ligado a instalacao aberto ate o grant chegar.";
             localized["desktop.install_link.summary"] = "O Chummer mantem o binario canonico. A copia e reivindicada com um codigo de claim e um grant emitido pelo Hub, sem alterar o instalador por usuario.";
             localized["desktop.update.title"] = "Status da atualização";
@@ -2229,7 +2229,7 @@ public static class DesktopLocalizationCatalog
             localized["desktop.devices.context.claims_local_last"] = "A previous claim attempt is saved locally on this install.";
             localized["desktop.devices.context.claims_receipt"] = "Recent download: {0} · {1} {2} for {3}/{4}, added {5} UTC.";
             localized["desktop.devices.context.access_guest"] = "Claim this copy before using recovery or support history.";
-            localized["desktop.devices.context.access_claimed"] = "Support, updates, and workspace recovery are attached to this linked install.";
+            localized["desktop.devices.context.access_claimed"] = "Suporte, atualizacoes e recuperacao do dossie estao associados a esta instalacao vinculada.";
             localized["desktop.devices.context.access_no_grants"] = "No active access grants are visible for this account yet.";
             localized["desktop.devices.context.access_grant"] = "Grant {0} for {1} stays {2} until {3} UTC.";
 
@@ -2255,7 +2255,7 @@ public static class DesktopLocalizationCatalog
         if (string.Equals(languageCode, "zh-cn", StringComparison.Ordinal))
         {
             localized["desktop.shell.window_title"] = "Chummer 桌面";
-            localized["desktop.shell.banner"] = "Runner Workbench";
+            localized["desktop.shell.banner"] = "Dossier Workbench";
             localized["desktop.shell.menu.file"] = "文件";
             localized["desktop.shell.menu.edit"] = "编辑";
             localized["desktop.shell.menu.special"] = "特殊";
@@ -2264,7 +2264,7 @@ public static class DesktopLocalizationCatalog
             localized["desktop.shell.menu.help"] = "帮助";
             localized["desktop.shell.tool.desktop_home"] = "桌面首页";
             localized["desktop.shell.tool.horizons"] = "工具";
-            localized["desktop.shell.tool.campaign_workspace"] = "战役工作区";
+            localized["desktop.shell.tool.campaign_workspace"] = "战役";
             localized["desktop.shell.tool.update_status"] = "更新状态";
             localized["desktop.shell.tool.link_copy"] = "绑定此副本";
             localized["desktop.shell.tool.open_support"] = "打开支持";
@@ -2273,8 +2273,8 @@ public static class DesktopLocalizationCatalog
             localized["desktop.shell.tool.load_demo_runner"] = "打开示例角色";
             localized["desktop.shell.tool.import_character_file"] = "导入角色文件";
             localized["desktop.shell.tool.import_raw_xml"] = "导入原始 XML";
-            localized["desktop.shell.tool.save_workspace"] = "保存工作区";
-            localized["desktop.shell.tool.close_active_workspace"] = "关闭当前工作区";
+            localized["desktop.shell.tool.save_workspace"] = "保存档案";
+            localized["desktop.shell.tool.close_active_workspace"] = "关闭当前档案";
             localized["desktop.shell.tool.status_idle"] = "状态：空闲";
             localized["desktop.shell.state.value.ready"] = "就绪";
             localized["desktop.shell.state.value.busy"] = "忙碌";
@@ -2285,16 +2285,16 @@ public static class DesktopLocalizationCatalog
             localized["desktop.shell.state.value.error"] = "错误";
             localized["desktop.shell.value.none"] = "无";
             localized["desktop.shell.value.na"] = "n/a";
-            localized["desktop.shell.state.snapshot"] = "状态: {0}, workspace={1}, open={2}, saved={3}, last-command={4}";
+            localized["desktop.shell.state.snapshot"] = "状态: {0}, 档案={1}, 已打开={2}, 保存={3}, 上一命令={4}";
             localized["desktop.shell.state.error"] = "状态: 错误 - {0}";
             localized["desktop.shell.feedback.import_raw_required"] = "状态: 导入前请先提供调试 XML 内容。";
             localized["desktop.shell.feedback.import_file_unavailable"] = "状态: 此平台无法使用文件选择器。";
             localized["desktop.shell.feedback.import_file_cancelled"] = "状态: 已取消 {0} 文件选择。";
             localized["desktop.shell.feedback.demo_runner_unavailable"] = "状态: 此构建中的内置示例角色不可用。";
             localized["desktop.shell.feedback.demo_runner_loading"] = "状态: 正在从 {0} 打开内置示例角色。";
-            localized["desktop.shell.feedback.no_active_workspace"] = "状态: 没有可关闭的活动工作区。";
+            localized["desktop.shell.feedback.no_active_workspace"] = "状态: 没有可关闭的活动档案。";
             localized["desktop.shell.feedback.desktop_home_reviewed"] = "状态: 已查看桌面首页。";
-            localized["desktop.shell.feedback.campaign_workspace_reviewed"] = "状态: 已查看战役工作区。";
+            localized["desktop.shell.feedback.campaign_workspace_reviewed"] = "状态: 已查看战役。";
             localized["desktop.shell.feedback.update_reviewed"] = "状态: 已查看更新状态。";
             localized["desktop.shell.feedback.install_linking_reviewed"] = "状态: 已查看副本认领。";
             localized["desktop.shell.feedback.support_reviewed"] = "状态: 已查看支持。";
@@ -2303,7 +2303,7 @@ public static class DesktopLocalizationCatalog
             localized["desktop.shell.feedback.install_support_unavailable"] = "状态: 此主机上不提供支持跟进。";
             localized["desktop.shell.feedback.operation_failed_state"] = "状态: 错误 - {0} 失败: {1}";
             localized["desktop.shell.feedback.operation_failed_notice"] = "提示: {0} 失败。";
-            localized["desktop.shell.workspace_strip.heading"] = "当前跑者";
+            localized["desktop.shell.workspace_strip.heading"] = "当前档案";
             localized["desktop.shell.summary.name"] = "名称";
             localized["desktop.shell.summary.alias"] = "代号";
             localized["desktop.shell.summary.karma"] = "业力";
@@ -2311,8 +2311,8 @@ public static class DesktopLocalizationCatalog
             localized["desktop.shell.summary.runtime"] = "运行时";
             localized["desktop.shell.summary.inspect_runtime"] = "检查运行时";
             localized["desktop.shell.summary.empty_value"] = "-";
-            localized["desktop.shell.workspace_strip.summary"] = "工作区: {0} (已打开: {1}, {2})";
-            localized["desktop.shell.workspace_strip.empty"] = "工作区: 无";
+            localized["desktop.shell.workspace_strip.summary"] = "档案: {0} (已打开: {1}, {2})";
+            localized["desktop.shell.workspace_strip.empty"] = "档案: 无";
             localized["desktop.shell.workspace_strip.caption"] = "在穿梭高密度构建区时，规则集、文件和活动标签页保持可见。";
             localized["desktop.shell.workspace_strip.quick_start_caption"] = "开始空白构建前，请先打开内置的 Soma-Career 示例。";
             localized["desktop.shell.status.character"] = "角色: {0}";
@@ -2338,7 +2338,7 @@ public static class DesktopLocalizationCatalog
             localized["desktop.home.section.build_explain"] = "下一步构建与Explain";
             localized["desktop.home.section.horizons"] = "工具";
             localized["desktop.home.section.language_trust"] = "语言与信任界面";
-            localized["desktop.home.section.recent_workspaces"] = "最近工作区";
+            localized["desktop.home.section.recent_workspaces"] = "最近的档案";
             localized["desktop.home.horizons.summary"] = "从桌面主页打开主要产品区域。Karma Forge、Alice、Run Control、Black Ledger、Quicksilver 等工具都保持一键可达。";
             localized["desktop.horizons.title"] = "工具";
             localized["desktop.horizons.heading"] = "工具";
@@ -2347,19 +2347,19 @@ public static class DesktopLocalizationCatalog
             localized["desktop.home.button.continue"] = "继续";
             localized["desktop.home.button.open_install_support"] = "打开安装支持";
             localized["desktop.home.button.open_update_support"] = "打开更新支持";
-            localized["desktop.home.button.open_work_support"] = "获取工作区帮助";
+            localized["desktop.home.button.open_work_support"] = "获取档案帮助";
             localized["desktop.home.button.open_tracked_case"] = "打开跟踪工单";
             localized["desktop.home.button.open_campaign_followthrough"] = "打开战役跟进";
             localized["desktop.home.button.open_campaign_primer"] = "打开战役导览";
             localized["desktop.home.button.open_mission_briefing"] = "打开任务简报";
             localized["desktop.home.button.open_devices_access"] = "Your Copy";
-            localized["desktop.home.button.open_current_workspace"] = "打开当前工作区";
-            localized["desktop.home.button.open_current_campaign_workspace"] = "打开当前战役工作区";
+            localized["desktop.home.button.open_current_workspace"] = "打开档案";
+            localized["desktop.home.button.open_current_campaign_workspace"] = "打开战役";
             localized["desktop.home.button.open_my_artifacts"] = "打开我的文件";
             localized["desktop.home.button.open_campaign_artifacts"] = "打开战役文件";
             localized["desktop.home.button.open_published_artifacts"] = "打开已发布文件";
             localized["desktop.home.button.open_build_followthrough"] = "打开构建跟进";
-            localized["desktop.home.button.open_workspace_followthrough"] = "打开工作区跟进";
+            localized["desktop.home.button.open_workspace_followthrough"] = "打开档案帮助";
             localized["desktop.home.button.open_update_status"] = "打开更新状态";
             localized["desktop.home.button.open_support_center"] = "打开支持中心";
             localized["desktop.home.button.open_report_issue"] = "报告问题";
@@ -2390,28 +2390,28 @@ public static class DesktopLocalizationCatalog
             localized["desktop.home.intro.update_available"] = "该安装已有可推广更新。返回战役工作前请先检查更新姿态。";
             localized["desktop.home.intro.release_posture_review"] = "此副本已绑定，但在依赖更新、支持或战役连续性之前，仍需先检查当前版本。";
             localized["desktop.home.intro.campaign_watchouts"] = "此副本已绑定且足够新，可以继续，但重新打开工作前仍有战役回归事项需要查看。";
-            localized["desktop.home.intro.ready_recent_workspaces"] = "此副本已绑定且足够新，可以重新打开最近工作区。";
-            localized["desktop.home.intro.ready_current_campaign_workspace"] = "此副本已绑定且足够新，可以重新打开当前战役工作区。";
+            localized["desktop.home.intro.ready_recent_workspaces"] = "此副本已绑定且足够新，可以重新打开最近的档案。";
+            localized["desktop.home.intro.ready_current_campaign_workspace"] = "此副本已绑定且足够新，可以重新打开当前战役。";
             localized["desktop.home.update_summary"] = "状态: {0}\n已安装: {1}\n版本列表: {2}\n列表更新时间: {3} UTC\n通道: {4}\n上次检查: {5} UTC\n更新模式: {6}\n发布状态: {7}\n发布说明: {8}\n支持状态: {9}\n支持说明: {10}\n本地状态: {11}\n状态更新时间: {12} UTC\n已知问题: {13}\n修复可用性: {14}\n建议操作: {15}\n最后错误: {16}";
-            localized["desktop.home.workspace_summary.empty"] = "尚未恢复任何最近工作区。请导入或创建跑者以启动战役工作区链路。";
+            localized["desktop.home.workspace_summary.empty"] = "尚未恢复任何最近的档案。请导入或创建档案以开始。";
             localized["desktop.home.workspace_summary.entry"] = "{0} . {1} . {2} UTC";
-            localized["desktop.campaign.title"] = "战役工作区";
-            localized["desktop.campaign.heading"] = "战役工作区";
+            localized["desktop.campaign.title"] = "战役";
+            localized["desktop.campaign.heading"] = "战役";
             localized["desktop.campaign.section.runboard"] = "会话就绪与运行看板";
             localized["desktop.campaign.section.restore"] = "恢复与设备姿态";
             localized["desktop.campaign.section.support"] = "支持与注意项";
-            localized["desktop.campaign.section.recent_workspaces"] = "最近工作区";
+            localized["desktop.campaign.section.recent_workspaces"] = "最近的档案";
             localized["desktop.campaign.button.refresh"] = "重新载入战役";
-            localized["desktop.campaign.intro.guest"] = "该战役工作区仍处于访客与本地回退姿态。请先绑定此副本，再将恢复、设备角色或支持闭环视为安装关联真相。";
-            localized["desktop.campaign.intro.local_fallback"] = "实时战役服务器平面当前不可用，因此该工作区正在显示此桌面可用的最安全本地战役摘要与恢复姿态。";
-            localized["desktop.campaign.intro.watchouts"] = "该战役工作区已具备基础可信性，但在恢复实时运行看板之前仍有注意项需要清理。";
-            localized["desktop.campaign.intro.ready"] = "该战役工作区已就绪，可从旗舰桌面恢复会话姿态、运行看板状态与支持闭环。";
-            localized["desktop.campaign.status.local_fallback"] = "战役工作区状态: 因实时战役服务器平面不可用，已启用受限本地回退。";
-            localized["desktop.campaign.status.server_generated"] = "战役工作区状态: 实时服务器平面生成时间为 {0} UTC。";
-            localized["desktop.campaign.status.refresh_failed"] = "战役工作区状态: 刷新失败，因此仍显示最近一次有效状态并保持受限回退。";
+            localized["desktop.campaign.intro.guest"] = "该战役仍仅限本地。请先绑定此副本，再依赖恢复、设备状态或支持。";
+            localized["desktop.campaign.intro.local_fallback"] = "战役服务当前不可用，因此此视图会显示此桌面上可用的最佳本地战役摘要与恢复状态。";
+            localized["desktop.campaign.intro.watchouts"] = "该战役已可继续，但在恢复实时会话工作前仍有一些事项需要检查。";
+            localized["desktop.campaign.intro.ready"] = "该战役可从桌面重新打开会话上下文、运行看板上下文与支持状态。";
+            localized["desktop.campaign.status.local_fallback"] = "战役状态: 因实时战役服务不可用，当前显示本地战役数据。";
+            localized["desktop.campaign.status.server_generated"] = "战役状态: 实时服务已于 {0} UTC 更新。";
+            localized["desktop.campaign.status.refresh_failed"] = "战役状态: 刷新失败，因此仍显示最近一次有效的本地状态。";
             localized["desktop.campaign.readiness.local_fallback"] = "在实时服务器平面恢复前，运行看板细节将受限于本地可用战役真相。";
-            localized["desktop.campaign.restore.latest_workspace"] = "最近本地工作区: {0} . {1} UTC";
-            localized["desktop.campaign.restore.no_workspace"] = "尚未固定任何本地工作区，因此恢复姿态仍受限于战役摘要与已认领设备真相。";
+            localized["desktop.campaign.restore.latest_workspace"] = "最近的本地档案: {0} . {1} UTC";
+            localized["desktop.campaign.restore.no_workspace"] = "尚未固定任何本地档案，因此恢复姿态仍受限于战役摘要与已认领设备真相。";
             localized["desktop.campaign.support.no_watchouts"] = "当前没有战役或支持注意项阻止从该桌面界面继续。";
             localized["desktop.install_link.title"] = "绑定此副本";
             localized["desktop.install_link.heading"] = "将此桌面副本绑定到您的账户";
@@ -2429,8 +2429,8 @@ public static class DesktopLocalizationCatalog
             localized["desktop.install_link.button.copy_install_id"] = "复制安装 ID";
             localized["desktop.install_link.button.open_downloads"] = "打开下载";
             localized["desktop.install_link.button.open_support"] = "打开支持";
-            localized["desktop.install_link.button.open_origin_dossier"] = "打开 Origin Dossier";
-            localized["desktop.install_link.button.open_work"] = "打开已关联工作区";
+            localized["desktop.install_link.button.open_origin_dossier"] = "打开干净的 Origin Dossier 路由";
+            localized["desktop.install_link.button.open_work"] = "打开已关联档案";
             localized["desktop.install_link.button.open_account"] = "打开账户";
             localized["desktop.install_link.button.link_copy"] = "绑定此副本";
             localized["desktop.install_link.button.open_claim_link"] = "打开认领链接";
@@ -2449,8 +2449,8 @@ public static class DesktopLocalizationCatalog
             localized["desktop.install_link.fallback.claim_url_label"] = "认领链接";
             localized["desktop.install_link.status.clipboard_unavailable"] = "此主机无法访问剪贴板。";
             localized["desktop.install_link.status.install_id_copied"] = "已将安装 ID 复制到剪贴板。";
-            localized["desktop.install_link.status.opened_work_route"] = "已打开工作区。";
-            localized["desktop.install_link.status.unable_open_work_route"] = "此主机无法打开工作区。";
+            localized["desktop.install_link.status.opened_work_route"] = "已打开档案。";
+            localized["desktop.install_link.status.unable_open_work_route"] = "此主机无法打开档案。";
             localized["desktop.install_link.status.opened_account"] = "已打开您的 Hub 账户，便于重新进入引导安装交接或查看此安装的绑定状态。";
             localized["desktop.install_link.status.unable_open_account"] = "此主机无法打开 Hub 账户页面。";
             localized["desktop.install_link.status.unlinked_copy"] = "此设备上的该副本已解除绑定。";
@@ -2480,7 +2480,7 @@ public static class DesktopLocalizationCatalog
             localized["desktop.install_link.status.manual_login_url"] = "浏览器启动失败。打开或复制此登录链接以完成此安装的绑定:";
             localized["desktop.install_link.summary.browser_open_attempt"] = "浏览器跳转尝试：{0} UTC。";
             localized["desktop.install_link.summary.browser_open_error"] = "浏览器启动错误：{0}";
-            localized["desktop.install_link.summary.next_safe_action_claimed"] = "下一步: 打开工作区。";
+            localized["desktop.install_link.summary.next_safe_action_claimed"] = "下一步: 打开档案。";
             localized["desktop.install_link.summary.next_safe_action_guest"] = "下一步安全操作: 复制安装 ID，兑换 Hub 认领码，并在授权落地前保持安装关联支持处于打开状态。";
             localized["desktop.install_link.summary"] = "Chummer 保持二进制为规范状态。绑定通过安装认领码和 Hub 下发的安装授权完成，而不是按用户改写安装器。";
             localized["desktop.update.title"] = "更新状态";
@@ -2677,7 +2677,7 @@ public static class DesktopLocalizationCatalog
             localized["desktop.devices.context.claims_local_last"] = "A previous claim attempt is saved locally on this install.";
             localized["desktop.devices.context.claims_receipt"] = "Recent download: {0} · {1} {2} for {3}/{4}, added {5} UTC.";
             localized["desktop.devices.context.access_guest"] = "Claim this copy before using recovery or support history.";
-            localized["desktop.devices.context.access_claimed"] = "Support, updates, and workspace recovery are attached to this linked install.";
+            localized["desktop.devices.context.access_claimed"] = "支持、更新和档案恢复已附加到此已绑定安装。";
             localized["desktop.devices.context.access_no_grants"] = "No active access grants are visible for this account yet.";
             localized["desktop.devices.context.access_grant"] = "Grant {0} for {1} stays {2} until {3} UTC.";
 

@@ -12,8 +12,8 @@
     {
         <aside class="trust-receipt" data-result-dispatch="save">
             <strong>Saved in this browser</strong>
-            <p class="hint"><strong>Runner:</strong> @(State.WorkspaceId?.Value ?? "none")</p>
-            <p class="hint"><strong>Status:</strong> This runner is saved and ready to reopen.</p>
+            <p class="hint"><strong>Dossier:</strong> @(State.WorkspaceId?.Value ?? "none")</p>
+            <p class="hint"><strong>Status:</strong> This dossier is saved and ready to reopen.</p>
             <p class="hint"><strong>Command:</strong> @State.LastCommandId</p>
         </aside>
     }
@@ -21,9 +21,19 @@
     {
         <aside class="trust-receipt" data-result-dispatch="download">
             <strong>Download ready</strong>
-            <p class="hint"><strong>File:</strong> @pendingDownload.FileName</p>
             <p class="hint"><strong>Format:</strong> @pendingDownload.Format</p>
             <p class="hint"><strong>Length:</strong> @pendingDownload.DocumentLength bytes</p>
+            <code class="shell-notice-code" data-result-file="download">@pendingDownload.FileName</code>
+            @if (RetryPendingDownloadRequested.HasDelegate)
+            {
+                <div class="shell-notice-actions">
+                    <button type="button"
+                            data-result-action="download"
+                            @onclick="RetryPendingDownloadRequested">
+                        Download again
+                    </button>
+                </div>
+            }
         </aside>
     }
     @if (State.PendingPrint is { } pendingPrint)
@@ -31,18 +41,38 @@
         <aside class="trust-receipt" data-result-dispatch="print">
             <strong>Print file ready</strong>
             <p class="hint"><strong>Title:</strong> @pendingPrint.Title</p>
-            <p class="hint"><strong>File:</strong> @pendingPrint.FileName</p>
             <p class="hint"><strong>Type:</strong> @pendingPrint.MimeType</p>
             <p class="hint"><strong>Length:</strong> @pendingPrint.DocumentLength bytes</p>
+            <code class="shell-notice-code" data-result-file="print">@pendingPrint.FileName</code>
+            @if (RetryPendingPrintRequested.HasDelegate)
+            {
+                <div class="shell-notice-actions">
+                    <button type="button"
+                            data-result-action="print"
+                            @onclick="RetryPendingPrintRequested">
+                        Open preview again
+                    </button>
+                </div>
+            }
         </aside>
     }
     @if (State.PendingExport is { } pendingExport)
     {
         <aside class="trust-receipt" data-result-dispatch="export">
             <strong>Export ready</strong>
-            <p class="hint"><strong>File:</strong> @pendingExport.FileName</p>
             <p class="hint"><strong>Format:</strong> @pendingExport.Format</p>
             <p class="hint"><strong>Length:</strong> @pendingExport.DocumentLength bytes</p>
+            <code class="shell-notice-code" data-result-file="export">@pendingExport.FileName</code>
+            @if (RetryPendingExportRequested.HasDelegate)
+            {
+                <div class="shell-notice-actions">
+                    <button type="button"
+                            data-result-action="export"
+                            @onclick="RetryPendingExportRequested">
+                        Export again
+                    </button>
+                </div>
+            }
         </aside>
     }
     @if (State.LatestPortabilityActivity is { } portability)
@@ -109,6 +139,15 @@
 
     [Parameter]
     public CharacterOverviewState State { get; set; } = CharacterOverviewState.Empty;
+
+    [Parameter]
+    public EventCallback RetryPendingDownloadRequested { get; set; }
+
+    [Parameter]
+    public EventCallback RetryPendingExportRequested { get; set; }
+
+    [Parameter]
+    public EventCallback RetryPendingPrintRequested { get; set; }
 
     private string BuildResultHeading()
         => RulesetUiDirectiveCatalog.BuildResultHeading(RulesetId);

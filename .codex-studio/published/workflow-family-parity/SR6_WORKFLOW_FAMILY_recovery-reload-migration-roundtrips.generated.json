@@ -1,15 +1,17 @@
 {
-  "generatedAt": "2026-06-27T16:13:03.708443Z",
+  "generatedAt": "2026-07-04T20:05:54.080169Z",
   "contract_name": "chummer6-ui.sr6_workflow_family_parity_receipt",
-  "status": "pass",
-  "summary": "SR6 workflow-family parity evidence is explicitly grounded for recovery-reload-migration-roundtrips.",
-  "reasons": [],
+  "status": "fail",
+  "summary": "SR6 workflow-family parity evidence is incomplete for recovery-reload-migration-roundtrips.",
+  "reasons": [
+    "Verification receipts are missing or not passing: /docker/chummercomplete/chummer-presentation-sr6-origin-dialog-clean/.codex-studio/published/workflow-family-parity/sr6/recovery-reload-migration-roundtrips.generated.json (fail)"
+  ],
   "evidence": {
     "edition": "sr6",
     "familyId": "recovery-reload-migration-roundtrips",
     "proofKind": "sr6_family_carry_forward",
-    "ledgerPath": "/docker/chummercomplete/chummer-presentation/docs/SR6_WORKFLOW_PARITY_LEDGER.json",
-    "oraclePath": "/docker/chummercomplete/chummer-presentation/docs/SR6_DESKTOP_WORKFLOW_PARITY_ORACLE.json",
+    "ledgerPath": "/docker/chummercomplete/chummer-presentation-sr6-origin-dialog-clean/docs/SR6_WORKFLOW_PARITY_LEDGER.json",
+    "oraclePath": "/docker/chummercomplete/chummer-presentation-sr6-origin-dialog-clean/docs/SR6_DESKTOP_WORKFLOW_PARITY_ORACLE.json",
     "auditTests": [
       "Avalonia_and_Blazor_metadata_save_roundtrip_match",
       "Avalonia_and_Blazor_tab_selection_loads_same_workspace_section",
@@ -24,10 +26,10 @@
         "Avalonia_and_Blazor_tab_selection_loads_same_workspace_section"
       ]
     },
-    "verificationReceipts": [
-      "/docker/chummercomplete/chummer-presentation/.codex-studio/published/workflow-family-parity/sr6/recovery-reload-migration-roundtrips.generated.json"
+    "verificationReceipts": [],
+    "verificationFailures": [
+      "/docker/chummercomplete/chummer-presentation-sr6-origin-dialog-clean/.codex-studio/published/workflow-family-parity/sr6/recovery-reload-migration-roundtrips.generated.json (fail)"
     ],
-    "verificationFailures": [],
     "verificationExternalBlockers": []
   }
 }

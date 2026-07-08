@@ -3,7 +3,7 @@ from __future__ import annotations
 from pathlib import Path
 
 
-REPO_ROOT = Path("/docker/chummercomplete/chummer-presentation")
+REPO_ROOT = Path(__file__).resolve().parents[1]
 STARTUP_SMOKE = REPO_ROOT / "scripts" / "run-desktop-startup-smoke.sh"
 PUBLISH_LATEST = REPO_ROOT / "scripts" / "publish-latest-nightly-to-downloads.sh"
 VERIFY_WINDOWS_BOOTSTRAP = REPO_ROOT / "scripts" / "verify-windows-bootstrap-startup-smoke.py"
@@ -26,6 +26,22 @@ def test_windows_startup_smoke_supports_bootstrap_payload_download_mode() -> Non
     assert 'payload["bootstrapPayloadSha256"] = payload_sha256' in text
     assert 'payload["bootstrapPayloadSizeBytes"] = int(payload_size_bytes)' in text
     assert 'payload["bootstrapPayloadFileName"] = payload_file_name' in text
+
+
+def test_startup_smoke_avoids_bash4_case_conversion_expansions() -> None:
+    text = STARTUP_SMOKE.read_text(encoding="utf-8")
+
+    assert "array_count()" in text
+    assert "lower_ascii()" in text
+    assert "upper_ascii()" in text
+    assert '${PROCESSOR_ARCHITECTURE,,}' not in text
+    assert '${arch_primary^^}' not in text
+    assert '${arch_secondary^^}' not in text
+    assert 'case "${1,,}" in' not in text
+    assert '${drive^^}' not in text
+    assert '${WINDOWS_STARTUP_SMOKE_PAYLOAD_MODE,,}' not in text
+    assert '${#missing_paths[@]}' not in text
+    assert 'if (( $(array_count timeout_prefix) > 0 )); then' in text
 
 
 def test_publish_latest_nightly_requires_download_mode_receipts_for_bootstrap_installers() -> None:

@@ -1,8 +1,18 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-REPO_ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"
+SCRIPT_DIR_PHYSICAL="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd -P)"
+REPO_ROOT_PHYSICAL="$(cd "$SCRIPT_DIR_PHYSICAL/.." && pwd -P)"
+REPO_ROOT_ALIAS_CANDIDATE="${CHUMMER_UI_REPO_ROOT_ALIAS:-$REPO_ROOT_PHYSICAL}"
+REPO_ROOT="$REPO_ROOT_PHYSICAL"
+if [[ -n "$REPO_ROOT_ALIAS_CANDIDATE" && -d "$REPO_ROOT_ALIAS_CANDIDATE" ]]; then
+  ALIAS_PHYSICAL="$(cd "$REPO_ROOT_ALIAS_CANDIDATE" && pwd -P)"
+  if [[ "$ALIAS_PHYSICAL" == "$REPO_ROOT_PHYSICAL" ]]; then
+    REPO_ROOT="$(cd -L "$REPO_ROOT_ALIAS_CANDIDATE" && pwd -L)"
+  fi
+fi
+SCRIPT_DIR="$REPO_ROOT/scripts"
+WORKSPACE_ROOT="$(cd "$REPO_ROOT_PHYSICAL/.." && pwd -P)"
 
 resolve_path_allow_missing() {
   python3 - "$1" <<'PY'
@@ -26,10 +36,8 @@ if [[ -n "${GITHUB_WORKSPACE:-}" ]]; then
 fi
 
 candidates+=(
-  "${REPO_ROOT}/../chummer6-hub-registry"
-  "${REPO_ROOT}/../chummer-hub-registry"
-  "$(cd "${REPO_ROOT}/.." && pwd)/chummer6-hub-registry"
-  "$(cd "${REPO_ROOT}/.." && pwd)/chummer-hub-registry"
+  "${WORKSPACE_ROOT}/chummer6-hub-registry"
+  "${WORKSPACE_ROOT}/chummer-hub-registry"
   "/docker/chummercomplete/chummer6-hub-registry"
   "/docker/chummercomplete/chummer-hub-registry"
 )

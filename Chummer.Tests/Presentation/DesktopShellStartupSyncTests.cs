@@ -13,6 +13,7 @@ using Chummer.Contracts.Workspaces;
 using Chummer.Presentation.Overview;
 using Chummer.Presentation.Shell;
 using Chummer.Rulesets.Sr5;
+using Microsoft.AspNetCore.Components;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 
@@ -83,6 +84,51 @@ public sealed class DesktopShellStartupSyncTests
     }
 
     [TestMethod]
+    public void ExecuteCommandFromSurfaceAsync_honors_shared_startup_command_availability_before_forwarding_to_overview_presenter()
+    {
+        using var context = new BunitContext();
+        context.JSInterop.Mode = JSRuntimeMode.Loose;
+
+        AppCommandDefinition menuRoot = new("file", "menu.file", "menu", false, true, RulesetDefaults.Sr5);
+        AppCommandDefinition xmlEditor = new("xml_editor", "XML Editor", "tools", false, true, RulesetDefaults.Sr5);
+        AppCommandDefinition dataExporter = new("data_exporter", "Data Exporter", "tools", true, true, RulesetDefaults.Sr5);
+        NavigationTabDefinition infoTab = new("tab-info", "Info", "profile", "character", true, true, RulesetDefaults.Sr5);
+
+        FakeCharacterOverviewPresenter presenter = new();
+        presenter.Publish(CharacterOverviewState.Empty with
+        {
+            Session = new WorkspaceSessionState(
+                ActiveWorkspaceId: null,
+                OpenWorkspaces: [],
+                RecentWorkspaceIds: []),
+            Commands = [menuRoot, xmlEditor, dataExporter]
+        });
+
+        RecordingShellPresenter shellPresenter = new(ShellState.Empty with
+        {
+            ActiveWorkspaceId = null,
+            OpenWorkspaces = [],
+            ActiveRulesetId = RulesetDefaults.Sr5,
+            Commands = [menuRoot, xmlEditor, dataExporter],
+            MenuRoots = [menuRoot],
+            NavigationTabs = [infoTab],
+            ActiveTabId = infoTab.Id
+        });
+        RegisterDesktopShellServices(context, presenter, shellPresenter);
+
+        IRenderedComponent<DesktopShell> cut = context.Render<DesktopShell>();
+
+        cut.Instance.ExecuteCommandFromSurfaceAsync("data_exporter").GetAwaiter().GetResult();
+        Assert.IsNull(presenter.ExecutedCommandId);
+
+        cut.Instance.ExecuteCommandFromSurfaceAsync("xml_editor").GetAwaiter().GetResult();
+
+        CollectionAssert.AreEqual(new[] { "data_exporter", "xml_editor" }, shellPresenter.ExecutedCommandIds.ToArray());
+        Assert.AreEqual("xml_editor", presenter.ExecutedCommandId);
+        Assert.AreEqual(0, shellPresenter.SyncWorkspaceContextCalls);
+    }
+
+    [TestMethod]
     public void DemoWorkspaceId_loads_non_legacy_workspace_without_importing_seed_fixture()
     {
         using var context = new BunitContext();
@@ -116,6 +162,106 @@ public sealed class DesktopShellStartupSyncTests
         Assert.IsNull(presenter.ImportedContent);
         StringAssert.Contains(cut.Markup, "data-demo-workspace-route-warning");
         StringAssert.Contains(cut.Markup, "legacy sample workspace link");
+        var appRecoveryLink = cut.Find("[data-demo-workspace-route-recovery='app']");
+        var workbenchRecoveryLink = cut.Find("[data-demo-workspace-route-recovery='workbench']");
+        Assert.AreEqual("/app?fixture=blue&tab=tab-create", appRecoveryLink.GetAttribute("href"));
+        Assert.AreEqual("/workbench?fixture=blue&tab=tab-create", workbenchRecoveryLink.GetAttribute("href"));
+        StringAssert.Contains(appRecoveryLink.TextContent, "Open seeded Build Lab on Chummer Online");
+        StringAssert.Contains(workbenchRecoveryLink.TextContent, "Open seeded compatibility shell");
+    }
+
+    [TestMethod]
+    public void DesktopShell_origin_dossier_notice_renders_actionable_clean_route_affordance()
+    {
+        using var context = new BunitContext();
+        context.JSInterop.Mode = JSRuntimeMode.Loose;
+
+        CharacterWorkspaceId workspaceId = new("preview-ws");
+        FakeCharacterOverviewPresenter presenter = new();
+        presenter.Publish(CreateOverviewState(workspaceId) with
+        {
+            Notice = "Origin Dossier link: /app?command=new_character_origin&ruleset=sr5&alias=Cipher"
+        });
+        RecordingShellPresenter shellPresenter = new(CreateShellState(workspaceId));
+        RegisterDesktopShellServices(context, presenter, shellPresenter);
+
+        IRenderedComponent<DesktopShell> cut = context.Render<DesktopShell>();
+
+        var notice = cut.Find("[data-shell-notice-kind='origin-dossier-link']");
+        var link = cut.Find("[data-shell-notice-link='origin-dossier']");
+        var route = cut.Find("[data-shell-notice-route='origin-dossier']");
+
+        StringAssert.Contains(notice.TextContent, "Origin Dossier link:");
+        Assert.AreEqual("/app?command=new_character_origin&ruleset=sr5&alias=Cipher", link.GetAttribute("href"));
+        StringAssert.Contains(link.TextContent, "Open clean Origin Dossier route");
+        Assert.IsFalse(cut.Markup.Contains("Open Origin Dossier on Chummer Online", StringComparison.Ordinal));
+        Assert.AreEqual("/app?command=new_character_origin&ruleset=sr5&alias=Cipher", route.TextContent.Trim());
+    }
+
+    [TestMethod]
+    public void DesktopShell_publishes_classic_browser_execution_metadata_on_root_element()
+    {
+        using var context = new BunitContext();
+        context.JSInterop.Mode = JSRuntimeMode.Loose;
+
+        CharacterWorkspaceId workspaceId = new("ws-1");
+        OpenWorkspaceState openWorkspace = new(
+            Id: workspaceId,
+            Name: "Nova Runner",
+            Alias: "NOVA",
+            LastOpenedUtc: DateTimeOffset.UtcNow,
+            RulesetId: RulesetDefaults.Sr5);
+        WorkspaceSessionState session = new(
+            ActiveWorkspaceId: workspaceId,
+            OpenWorkspaces: [openWorkspace],
+            RecentWorkspaceIds: [workspaceId]);
+        CharacterOverviewState overviewState = CharacterOverviewState.Empty with
+        {
+            Session = session,
+            OpenWorkspaces = [openWorkspace],
+            WorkspaceId = workspaceId,
+            ActiveTabId = "tab-create"
+        };
+
+        AppCommandDefinition menuRoot = new("file", "menu.file", "menu", false, true, RulesetDefaults.Sr5);
+        NavigationTabDefinition createTab = new("tab-create", "Create", "spark", "character", true, true, RulesetDefaults.Sr5);
+        ShellWorkspaceState shellWorkspace = new(
+            Id: workspaceId,
+            Name: openWorkspace.Name,
+            Alias: openWorkspace.Alias,
+            LastOpenedUtc: openWorkspace.LastOpenedUtc,
+            RulesetId: openWorkspace.RulesetId);
+        ShellState shellState = ShellState.Empty with
+        {
+            ActiveWorkspaceId = workspaceId,
+            OpenWorkspaces = [shellWorkspace],
+            ActiveRulesetId = RulesetDefaults.Sr5,
+            Commands = [menuRoot],
+            MenuRoots = [menuRoot],
+            NavigationTabs = [createTab],
+            ActiveTabId = createTab.Id
+        };
+
+        FakeCharacterOverviewPresenter presenter = new();
+        presenter.Publish(overviewState);
+        RecordingShellPresenter shellPresenter = new(shellState);
+        RegisterDesktopShellServices(context, presenter, shellPresenter);
+
+        NavigationManager navigation = context.Services.GetRequiredService<NavigationManager>();
+        navigation.NavigateTo("/blazor/workbench?workspace=ws-1&tab=tab-create");
+
+        IRenderedComponent<DesktopShell> cut = context.Render<DesktopShell>();
+
+        cut.WaitForAssertion(() =>
+        {
+            var shell = cut.Find("section.desktop-shell.classic-desktop-shell");
+            Assert.AreEqual("tab-create", shell.GetAttribute("data-tab"));
+            Assert.AreEqual("sr5", shell.GetAttribute("data-ruleset"));
+            Assert.AreEqual("build-lab", shell.GetAttribute("data-active-workflow"));
+            Assert.AreEqual("workbench", shell.GetAttribute("data-route-segment"));
+            Assert.AreEqual("NOVA", shell.GetAttribute("data-active-runner"));
+            Assert.AreEqual("NOVA", shell.GetAttribute("data-legacy-runner"));
+        });
     }
 
     private static void RegisterDesktopShellServices(
@@ -225,6 +371,7 @@ public sealed class DesktopShellStartupSyncTests
         public int InitializeCalls { get; private set; }
         public int SyncWorkspaceContextCalls { get; private set; }
         public CharacterWorkspaceId? LastSyncedWorkspaceId { get; private set; }
+        public List<string> ExecutedCommandIds { get; } = [];
 
         public event EventHandler? StateChanged;
 
@@ -236,6 +383,7 @@ public sealed class DesktopShellStartupSyncTests
 
         public Task ExecuteCommandAsync(string commandId, CancellationToken ct)
         {
+            ExecutedCommandIds.Add(commandId);
             return Task.CompletedTask;
         }
 

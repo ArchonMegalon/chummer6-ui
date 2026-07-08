@@ -99,7 +99,7 @@ function expectTextIncludes(text, expected, label) {
 async function waitForBodyTextIncludes(page, expected, label) {
   try {
     await page.waitForFunction(
-      expectedText => document.body && document.body.innerText.includes(expectedText),
+      expectedText => document.body && ((document.body.innerText || document.body.textContent || '').includes(expectedText)),
       expected,
       { timeout: 45000 },
     );
@@ -341,7 +341,7 @@ async function auditOriginWizardSurface(page) {
   await openPath(page, route, '[data-origin-wizard]');
   const dialogText = await page.locator('.desktop-dialog').innerText();
   expectTextIncludes(dialogText, 'Origin Dossier', 'hosted origin wizard route');
-  expectTextIncludes(dialogText, 'Create the story first. Review it, then continue to a guided build if you want mechanics.', 'hosted origin wizard route');
+  expectTextIncludes(dialogText, 'Pick only the basics, then build the story. Advanced controls are optional.', 'hosted origin wizard route');
   expectTextIncludes(dialogText, 'Advanced story controls', 'hosted origin wizard route');
   expectTextIncludes(dialogText, 'Story Preview', 'hosted origin wizard route');
   return {
@@ -923,9 +923,10 @@ async function auditAdvancedActionExecution(page, route, expectedTitle, expected
 }
 
 async function auditCommittedAction(page) {
-  const route = `${promotedRouteBase}?${promotedContinuationQuery}&tab=tab-calendar&control=create_entry&dialog_action=add`;
-  await openPath(page, route, '#summaryName');
+  const route = `${promotedRouteBase}?fixture=blue&tab=tab-calendar&control=create_entry&dialog_action=add`;
+  await openPath(page, route);
   await page.waitForFunction(() => !document.querySelector('#dialogBackdrop'), { timeout: 15000 });
+  await waitForBodyTextIncludes(page, "Entry 'New entry' added.", 'hosted committed action route');
   const bodyText = await page.locator('body').innerText();
   expectTextIncludes(bodyText, "Entry 'New entry' added.", 'hosted committed action route');
   return {
@@ -936,8 +937,9 @@ async function auditCommittedAction(page) {
 }
 
 async function auditAdvancedCommittedAction(page, route, expectedText) {
-  await openPath(page, route, '#summaryName');
+  await openPath(page, route);
   await page.waitForFunction(() => !document.querySelector('#dialogBackdrop'), { timeout: 15000 });
+  await waitForBodyTextIncludes(page, expectedText, `hosted advanced committed action route ${route}`);
   const bodyText = await page.locator('body').innerText();
   expectTextIncludes(bodyText, expectedText, `hosted advanced committed action route ${route}`);
   return {

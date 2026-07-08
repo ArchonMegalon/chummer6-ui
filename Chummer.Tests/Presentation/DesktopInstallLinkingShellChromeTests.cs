@@ -6,6 +6,7 @@ using System.Linq;
 using Chummer.Avalonia;
 using Chummer.Desktop.Runtime;
 using Chummer.Presentation.Overview;
+using Chummer.Presentation.UiKit;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 
 namespace Chummer.Tests.Presentation;
@@ -13,6 +14,27 @@ namespace Chummer.Tests.Presentation;
 [TestClass]
 public sealed class DesktopInstallLinkingShellChromeTests
 {
+    [DataTestMethod]
+    [DataRow("open_character", "Open Dossier...")]
+    [DataRow("open_for_printing", "Open Print Staging...")]
+    [DataRow("open_for_export", "Open Export Staging...")]
+    [DataRow("save_character", "Save Dossier")]
+    [DataRow("save_character_as", "Save Dossier As...")]
+    [DataRow("print_character", "Print Dossier...")]
+    [DataRow("export_character", "Export Dossier...")]
+    [DataRow("character_settings", "Character Settings")]
+    [DataRow("runtime_inspector", "Runtime Inspector")]
+    [DataRow("open_sourcebooks", "Sourcebooks")]
+    [DataRow("open_errata", "Errata")]
+    [DataRow("open_custom_data", "Custom Data")]
+    [DataRow("update_data_packs", "Update Pack")]
+    [DataRow("validate_data_scope", "Validation Scope")]
+    [DataRow("open_data_folder", "Data Folder")]
+    public void FormatCommandLabel_keeps_shared_shell_commands_human_facing(string commandId, string expectedLabel)
+    {
+        Assert.AreEqual(expectedLabel, ShellChromeBoundary.FormatCommandLabel(commandId));
+    }
+
     [TestMethod]
     public void BuildShellWindowTitle_returns_claim_title_for_unlinked_install()
     {
@@ -116,11 +138,18 @@ public sealed class DesktopInstallLinkingShellChromeTests
         StringAssert.Contains(formText, "Continue unlinked");
         StringAssert.Contains(shellSource, "desktop-install-claim-gate");
         StringAssert.Contains(shellSource, "Please claim your app");
+        StringAssert.Contains(shellSource, "Skip to dossier");
         StringAssert.Contains(shellSource, "desktop-install-origin-dossier");
-        StringAssert.Contains(shellSource, "Open Origin Dossier");
+        StringAssert.Contains(shellSource, "Open clean Origin Dossier route");
         StringAssert.Contains(runtimeSource, "BuildClaimPortalRelativePathForInstall");
         StringAssert.Contains(runtimeSource, "BuildOriginDossierPortalRelativePath");
         StringAssert.Contains(runtimeSource, "/app?command=new_character_origin");
+        Assert.IsFalse(
+            shellSource.Contains("Skip to runner", StringComparison.Ordinal),
+            "The install-claim shell should keep dossier-facing skip-link copy.");
+        Assert.IsFalse(
+            shellSource.Contains("Open Origin Dossier", StringComparison.Ordinal),
+            "The install-claim shell should keep the route-specific dossier CTA instead of the older generic label.");
         Assert.IsFalse(
             formText.Contains("Install link required", StringComparison.Ordinal),
             "Claiming must stay optional even when the online claim path is the guarded route.");
@@ -316,6 +345,7 @@ public sealed class DesktopInstallLinkingShellChromeTests
             || localizationSource.Contains("localized[\"desktop.install_link.button.link_copy\"] = \"Diese Kopie verkn", StringComparison.Ordinal),
             "German first-run claim copy must not frame the normal account flow as install linking.");
         StringAssert.Contains(localizationSource, "Claim your copy");
+        StringAssert.Contains(localizationSource, "[\"desktop.install_link.button.open_origin_dossier\"] = \"Open clean Origin Dossier route\"");
         string devicesSource = File.ReadAllText(FindPath("Chummer.Avalonia", "DesktopDevicesAccessWindow.cs"));
         StringAssert.Contains(devicesSource, "BuildInstallLinkEntryButtonLabel");
         StringAssert.Contains(devicesSource, "desktop.install_link.button.open_claim_link");
@@ -333,6 +363,9 @@ public sealed class DesktopInstallLinkingShellChromeTests
         StringAssert.Contains(installWindowSource, "DesktopInstallLinkingRuntime.TryOpenOriginDossierPortal()");
         StringAssert.Contains(installWindowSource, "_moreToolsHeading.IsVisible = true;");
         StringAssert.Contains(installWindowSource, "_moreToolsPanel.IsVisible = true;");
+        Assert.IsFalse(
+            localizationSource.Contains("[\"desktop.install_link.button.open_origin_dossier\"] = \"Open Origin Dossier\"", StringComparison.Ordinal),
+            "The native install-link window should keep the same clean-route dossier CTA as the guarded browser shell.");
         Assert.IsFalse(
             devicesSource.Contains("CreateButton(S(\"desktop.home.button.open_support_center\"), OpenSupportWindowAsync)\n        ];", StringComparison.Ordinal),
             "Linked copies should not duplicate a support action in the same section.");

@@ -515,6 +515,54 @@ public sealed class DesktopShellRulesetCatalogTests
         });
     }
 
+    [TestMethod]
+    public void DesktopShell_uses_dossier_navigation_copy_for_skip_link_and_readiness_summary()
+    {
+        using var context = new BunitContext();
+        context.JSInterop.Mode = JSRuntimeMode.Loose;
+
+        CharacterWorkspaceId workspaceId = new("ws-sr5");
+        OpenWorkspaceState openWorkspace = new(
+            Id: workspaceId,
+            Name: "SR5 Runner",
+            Alias: "SR5",
+            LastOpenedUtc: DateTimeOffset.UtcNow,
+            RulesetId: RulesetDefaults.Sr5,
+            HasSavedWorkspace: true);
+        CharacterOverviewState overviewState = CharacterOverviewState.Empty with
+        {
+            Session = new WorkspaceSessionState(workspaceId, [openWorkspace], [workspaceId]),
+            OpenWorkspaces = [openWorkspace],
+            WorkspaceId = workspaceId,
+            ActiveTabId = "tab-info",
+            IsBusy = false
+        };
+        ShellState shellState = CreateShellState(
+            workspaceId,
+            openWorkspace,
+            RulesetDefaults.Sr5,
+            runtimeTitle: "SR5 Core",
+            runtimeFingerprint: "sr5-runtime-fp-shell-copy");
+
+        RegisterDesktopShellServices(
+            context,
+            overviewState,
+            shellState,
+            FakeWorkbenchCoachApiClient.CreateDefault("sr5-runtime-fp-shell-copy"),
+            new CatalogOnlyRulesetPlugin(RulesetDefaults.Sr5));
+
+        IRenderedComponent<DesktopShell> cut = context.Render<DesktopShell>();
+
+        cut.WaitForAssertion(() =>
+        {
+            Assert.AreEqual("Skip to dossier", cut.Find(".skip-link").TextContent.Trim());
+            Assert.AreEqual("Dossier", cut.Find(".desktop-shell-title h1").TextContent.Trim());
+            StringAssert.Contains(cut.Find(".desktop-shell-readiness").TextContent, "Dossiers");
+            StringAssert.Contains(cut.Find(".desktop-shell-readiness").TextContent, "1 open");
+            Assert.IsFalse(cut.Find(".desktop-shell-readiness").TextContent.Contains("Runners", StringComparison.Ordinal));
+        });
+    }
+
     private static string SourcePath(params string[] segments)
     {
         DirectoryInfo? current = new(AppContext.BaseDirectory);

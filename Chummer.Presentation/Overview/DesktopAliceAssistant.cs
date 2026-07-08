@@ -42,7 +42,7 @@ internal static class DesktopAliceAssistant
             && string.IsNullOrWhiteSpace(activeSectionId)
             && string.IsNullOrWhiteSpace(activeDialogId);
         string message = blankState
-            ? "No runner is open yet. ALICE can plan a complete first build, explain the settings, or start an origin dossier. Use the guided workflow handoff when ready."
+            ? "No dossier is open yet. ALICE can plan a complete first build, explain the settings, or start an origin dossier. Use the guided workflow handoff when ready."
             : plan.SupportMode switch
         {
             AliceSupportMode.QuickAddApply => IsPreviewRuleset(normalizedRulesetId)
@@ -54,7 +54,7 @@ internal static class DesktopAliceAssistant
             AliceSupportMode.SettingsHandoff => IsPreviewRuleset(normalizedRulesetId)
                 ? "ALICE can suggest an SR4-safe settings posture here, then hand you to the real settings form for deliberate edits."
                 : "ALICE can suggest a sane settings posture here, then hand you to the real settings form for deliberate edits.",
-            _ => "No runner is open yet. ALICE can still plan a complete first build, explain the settings, or start an origin dossier."
+            _ => "No dossier is open yet. ALICE can still plan a complete first build, explain the settings, or start an origin dossier."
         };
 
         return new DesktopDialogState(
@@ -360,7 +360,7 @@ internal static class DesktopAliceAssistant
             "qualities" => BuildPlan("qualities", "Qualities", AliceSupportMode.QuickAddApply),
             "create" or "metatype" or "priority" => BuildPlan("character_create", "Character Create", AliceSupportMode.GuidedBuildPlan, "new_character"),
             "settings" => BuildPlan("character_settings", "Character Settings", AliceSupportMode.SettingsHandoff, "character_settings"),
-            _ => BuildPlan("character_create", "New runner", AliceSupportMode.GuidedBuildPlan, "new_character")
+            _ => BuildPlan("character_create", "Character Create", AliceSupportMode.GuidedBuildPlan, "new_character")
         };
     }
 

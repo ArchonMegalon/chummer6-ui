@@ -21,7 +21,7 @@ CHECKS = [
         "tokens": [
             "Browser-client compare and merge posture",
             "data-workbench-compare-merge=\"strip\"",
-            "Review imported changes before they touch the runner.",
+            "Review imported changes before they touch the dossier.",
             "data-workbench-compare-merge-action=\"diff-view\"",
             "data-workbench-compare-merge-action=\"conflict-choice\"",
             "data-workbench-compare-merge-action=\"source-trace\"",

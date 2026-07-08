@@ -105,7 +105,7 @@ public sealed class CampaignSpineShowcaseComponentTests
             SupportClosureSummary: "Support can use the same runtime fingerprint.",
             TeamCoverage: new BuildLabTeamCoverageProjection(
                 Summary: "2 of 3 required crew roles are covered before the next step; one deliberate face overlap stays visible while astral support remains missing.",
-                CoverageSummary: "Coverage score stays stable with Face and Legwork already covered before the first campaign step.",
+                CoverageSummary: "Coverage score stays grounded with Face and Legwork already covered before the first campaign step.",
                 RolePressureSummary: "Role pressure stays light because the duplicate face lane is intentional, but astral support still needs a partner runner.",
                 MissingRoleTags: ["astral"],
                 CoveredRoleTags: ["face", "legwork"],
@@ -139,6 +139,8 @@ public sealed class CampaignSpineShowcaseComponentTests
         StringAssert.Contains(cut.Markup, "Covered roles: Face | Legwork");
         StringAssert.Contains(cut.Markup, "Missing roles: Astral");
         StringAssert.Contains(cut.Markup, "Duplicate roles: Face");
+        StringAssert.Contains(cut.Markup, "Coverage score stays grounded with Face and Legwork already covered before the first campaign step.");
+        Assert.IsFalse(cut.Markup.Contains("Coverage score stays stable with Face and Legwork already covered before the first campaign step.", StringComparison.Ordinal));
         StringAssert.Contains(cut.Markup, "Light face overlap");
         StringAssert.Contains(cut.Markup, "strongest coverage checkpoint at 100 Karma");
         StringAssert.Contains(cut.Markup, "buildlab.timeline.social-25");
@@ -172,7 +174,7 @@ public sealed class CampaignSpineShowcaseComponentTests
             ],
             Outputs:
             [
-                new PublicationSafeProjection("projection-1", "dossier_card", "Living dossier", "Stable runner identity.", "artifact-1")
+                new PublicationSafeProjection("projection-1", "dossier_card", "Living dossier", "Persistent dossier identity.", "artifact-1")
             ],
             UpdatedAtUtc: DateTimeOffset.UtcNow,
             NextSafeAction: "Rebind runtime before dossier handoff.",
@@ -198,6 +200,8 @@ public sealed class CampaignSpineShowcaseComponentTests
 
         StringAssert.Contains(cut.Markup, "Ops handoff");
         StringAssert.Contains(cut.Markup, "Living dossier");
+        StringAssert.Contains(cut.Markup, "Persistent dossier identity.");
+        Assert.IsFalse(cut.Markup.Contains("Stable dossier identity.", StringComparison.Ordinal));
         StringAssert.Contains(cut.Markup, "artifact-1");
         StringAssert.Contains(cut.Markup, "25 / 50 / 100 Karma path");
         StringAssert.Contains(cut.Markup, "Campaign-safe handoff");
@@ -338,6 +342,8 @@ public sealed class CampaignSpineShowcaseComponentTests
             StringAssert.Contains(cut.Markup, "Social Operator build path");
             StringAssert.Contains(cut.Markup, "Rules Navigator");
             StringAssert.Contains(cut.Markup, "Downtown Burn run module packet");
+            StringAssert.Contains(cut.Markup, "Persistent dossier identity with campaign continuity attached.");
+            Assert.IsFalse(cut.Markup.Contains("Stable dossier identity with campaign continuity attached.", StringComparison.Ordinal));
             StringAssert.Contains(cut.Markup, "Run Module");
             StringAssert.Contains(cut.Markup, "Governance depth");
             StringAssert.Contains(cut.Markup, "Trust posture");

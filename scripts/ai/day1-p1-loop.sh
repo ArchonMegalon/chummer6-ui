@@ -1,8 +1,8 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-REPO_ROOT="$(cd "$SCRIPT_DIR/../.." && pwd)"
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd -P)"
+source "$SCRIPT_DIR/_env.sh"
 
 MAX_ATTEMPTS="${DAY1_MAX_ATTEMPTS:-0}"   # 0 means infinite retries
 SLEEP_SECONDS="${DAY1_SLEEP_SECONDS:-2}"

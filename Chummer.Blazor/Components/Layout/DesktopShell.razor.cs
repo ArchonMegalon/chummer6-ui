@@ -20,7 +20,9 @@ public partial class DesktopShell : IDisposable
     private const string CloseWindowCommandId = "close_window";
     private const string LegacySeededWorkspaceAlias = "ws-1";
     private const string LegacySeededWorkspaceAliasWarning =
-        "The legacy sample workspace link 'ws-1' is stale. Open Chummer Online or the preview fixture to mint a fresh workspace link.";
+        "The legacy sample workspace link 'ws-1' is stale. Use a seeded recovery route below to mint a fresh workspace link.";
+    private const string LegacySeededWorkspaceRecoveryAppHref = "/app?fixture=blue&tab=tab-create";
+    private const string LegacySeededWorkspaceRecoveryWorkbenchHref = "/workbench?fixture=blue&tab=tab-create";
 
     private static readonly string[] PreferredToolStripCommandOrder =
     [
@@ -98,6 +100,7 @@ public partial class DesktopShell : IDisposable
     private string? _lastDemoBootstrapKey;
     private string? _bootstrappedDemoFixtureId;
     private string? _demoWorkspaceRouteWarning;
+    private bool _originWizardAdvancedControlsOpen;
     private ShellSurfaceState _shellSurfaceState = ShellSurfaceState.Empty;
 
     private CharacterOverviewState State => _bridge?.Current ?? Presenter.State;
@@ -136,6 +139,112 @@ public partial class DesktopShell : IDisposable
     private string ComplianceState =>
         ShellStatusTextFormatter.BuildComplianceState(_shellSurfaceState, State.Preferences);
 
+    private string DemoWorkspaceRecoveryAppHref => LegacySeededWorkspaceRecoveryAppHref;
+
+    private string DemoWorkspaceRecoveryWorkbenchHref => LegacySeededWorkspaceRecoveryWorkbenchHref;
+
+    private string? OriginDossierNoticeHref =>
+        TryGetOriginDossierNoticeHref(State.Notice, out string? href) ? href : null;
+
+    private WorkspaceDownloadReceipt? DownloadNoticeReceipt =>
+        HasNoticePrefix(State.Notice, "Download prepared:") ? State.PendingDownload : null;
+
+    private WorkspaceExportReceipt? ExportNoticeReceipt =>
+        HasNoticePrefix(State.Notice, "Portable export ready:")
+        || HasNoticePrefix(State.Notice, "Export prepared:")
+            ? State.PendingExport
+            : null;
+
+    private WorkspacePrintReceipt? PrintNoticeReceipt =>
+        HasNoticePrefix(State.Notice, "Print preview prepared:") ? State.PendingPrint : null;
+
+    private string ClassicShellActiveTabId =>
+        _shellSurfaceState.ActiveTabId
+        ?? State.ActiveTabId
+        ?? string.Empty;
+
+    private string ClassicShellRulesetId =>
+        RulesetDefaults.NormalizeOptional(_shellSurfaceState.ActiveRulesetId)
+        ?? RulesetDefaults.NormalizeOptional(State.Rules?.GameEdition)
+        ?? RulesetDefaults.NormalizeOptional(ResolveClassicShellActiveWorkspace()?.RulesetId)
+        ?? string.Empty;
+
+    private string ClassicShellActiveWorkflowId
+    {
+        get
+        {
+            if (string.Equals(ClassicShellActiveTabId, "tab-create", StringComparison.Ordinal))
+            {
+                return "build-lab";
+            }
+
+            string? activeActionId = State.ActiveActionId;
+            WorkflowSurfaceActionBinding? activeWorkflow = _shellSurfaceState.ActiveWorkflowSurfaceActions.FirstOrDefault(action =>
+                !string.IsNullOrWhiteSpace(activeActionId)
+                && string.Equals(action.ActionId, activeActionId, StringComparison.Ordinal));
+            return activeWorkflow?.WorkflowId ?? string.Empty;
+        }
+    }
+
+    private string ClassicShellRouteSegment
+    {
+        get
+        {
+            string route = Navigation.ToBaseRelativePath(Navigation.Uri);
+            int queryOrFragmentIndex = route.IndexOfAny(['?', '#']);
+            if (queryOrFragmentIndex >= 0)
+            {
+                route = route[..queryOrFragmentIndex];
+            }
+
+            route = route.Trim('/');
+            if (route.StartsWith("blazor/", StringComparison.OrdinalIgnoreCase))
+            {
+                route = route["blazor/".Length..];
+            }
+
+            if (string.IsNullOrWhiteSpace(route))
+            {
+                return "home";
+            }
+
+            int nestedSegmentIndex = route.IndexOf('/');
+            string segment = nestedSegmentIndex >= 0 ? route[..nestedSegmentIndex] : route;
+            return segment.ToLowerInvariant();
+        }
+    }
+
+    private string ClassicShellActiveRunner
+    {
+        get
+        {
+            OpenWorkspaceState? activeWorkspace = ResolveClassicShellActiveWorkspace();
+            return State.Profile?.Alias
+                ?? activeWorkspace?.Alias
+                ?? State.Profile?.Name
+                ?? activeWorkspace?.Name
+                ?? string.Empty;
+        }
+    }
+
+    private OpenWorkspaceState? ResolveClassicShellActiveWorkspace()
+    {
+        CharacterWorkspaceId? activeWorkspaceId = _shellSurfaceState.ActiveWorkspaceId
+            ?? State.Session.ActiveWorkspaceId
+            ?? State.WorkspaceId;
+        if (activeWorkspaceId is null)
+        {
+            return null;
+        }
+
+        return _shellSurfaceState.OpenWorkspaces
+                   .FirstOrDefault(workspace => WorkspaceIdsEqual(workspace.Id, activeWorkspaceId))
+               ?? State.OpenWorkspaces
+                   .FirstOrDefault(workspace => WorkspaceIdsEqual(workspace.Id, activeWorkspaceId))
+               ?? State.Session.OpenWorkspaces
+                   .FirstOrDefault(workspace => WorkspaceIdsEqual(workspace.Id, activeWorkspaceId));
+    }
+
     protected override async Task OnInitializedAsync()
     {
         ShellPresenter.StateChanged += OnShellStateChanged;
@@ -146,11 +255,13 @@ public partial class DesktopShell : IDisposable
             if (_isDisposed)
                 return;
 
+            SyncOriginWizardDialogUiState();
             RefreshShellSurfaceState();
             _lastUiUtc = DateTimeOffset.UtcNow.ToString("u");
             _ = InvokeAsync(StateHasChanged);
         });
         await _bridge.InitializeAsync(CancellationToken.None);
+        SyncOriginWizardDialogUiState(clearWhenDialogClosed: true);
         if (ShouldSyncShellWorkspaceContext(State, ShellState))
         {
             await SyncShellWorkspaceContextAsync();
@@ -170,6 +281,25 @@ public partial class DesktopShell : IDisposable
         await DispatchPendingDownloadAsync();
         await DispatchPendingExportAsync();
         await DispatchPendingPrintAsync();
+    }
+
+    private void SyncOriginWizardDialogUiState(bool clearWhenDialogClosed = false)
+    {
+        DesktopDialogState? activeDialog = State.ActiveDialog;
+        if (activeDialog is null)
+        {
+            if (clearWhenDialogClosed)
+            {
+                _originWizardAdvancedControlsOpen = false;
+            }
+
+            return;
+        }
+
+        if (!string.Equals(activeDialog.Id, "dialog.new_character.origin_wizard", StringComparison.Ordinal))
+        {
+            _originWizardAdvancedControlsOpen = false;
+        }
     }
 
     private void OnShellStateChanged(object? sender, EventArgs e)
@@ -367,13 +497,22 @@ public partial class DesktopShell : IDisposable
             _ => throw new InvalidOperationException($"Unknown browser demo fixture '{fixtureId}'.")
         };
 
-        string fixturePath = Path.Combine(AppContext.BaseDirectory, "Fixtures", fileName);
-        if (!File.Exists(fixturePath))
+        string[] candidatePaths =
+        [
+            Path.Combine(AppContext.BaseDirectory, "Fixtures", fileName),
+            Path.Combine(AppContext.BaseDirectory, "TestFiles", fileName)
+        ];
+
+        foreach (string fixturePath in candidatePaths)
         {
-            throw new FileNotFoundException($"Browser demo fixture '{fileName}' was not found.", fixturePath);
+            if (File.Exists(fixturePath))
+                return fixturePath;
         }
 
-        return fixturePath;
+        string fixturePathHint = string.Join(", ", candidatePaths);
+        throw new FileNotFoundException(
+            $"Browser demo fixture '{fileName}' was not found in any known output location.",
+            fixturePathHint);
     }
 
     private static string? NormalizeOptionalToken(string? value)
@@ -383,6 +522,28 @@ public partial class DesktopShell : IDisposable
 
     private static bool IsLegacySeededWorkspaceAlias(string workspaceId)
         => string.Equals(workspaceId, LegacySeededWorkspaceAlias, StringComparison.OrdinalIgnoreCase);
+
+    private static bool TryGetOriginDossierNoticeHref(string? notice, out string? href)
+    {
+        const string prefix = "Origin Dossier link:";
+        if (!string.IsNullOrWhiteSpace(notice)
+            && notice.StartsWith(prefix, StringComparison.Ordinal))
+        {
+            string candidate = notice[prefix.Length..].Trim();
+            if (candidate.StartsWith("/app?command=new_character_origin", StringComparison.Ordinal))
+            {
+                href = candidate;
+                return true;
+            }
+        }
+
+        href = null;
+        return false;
+    }
+
+    private static bool HasNoticePrefix(string? notice, string prefix)
+        => !string.IsNullOrWhiteSpace(notice)
+            && notice.StartsWith(prefix, StringComparison.Ordinal);
 
     private static string? NormalizeDemoStartupCommandId(string? commandId)
     {

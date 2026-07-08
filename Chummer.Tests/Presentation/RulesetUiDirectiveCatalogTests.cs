@@ -113,6 +113,12 @@ public sealed class RulesetUiDirectiveCatalogTests
             RulesetDefaults.Sr5,
             summary,
             DateTimeOffset.Parse("2026-03-31T08:55:00+00:00"));
+        string sr6Spotlight = RulesetUiDirectiveCatalog.BuildHomeSpotlight(RulesetDefaults.Sr6);
+        string sr6Resume = RulesetUiDirectiveCatalog.BuildWorkspaceResumeSummary(
+            RulesetDefaults.Sr6,
+            summary,
+            DateTimeOffset.Parse("2026-03-31T09:15:00+00:00"));
+        string sharedOpen = RulesetUiDirectiveCatalog.BuildOpenWorkspaceActionLabel("shared", "Open workspace");
         string sr6Open = RulesetUiDirectiveCatalog.BuildOpenWorkspaceActionLabel(RulesetDefaults.Sr6, "Open workspace");
         string sr4FollowThrough = RulesetUiDirectiveCatalog.BuildBuildFollowThroughActionLabel(RulesetDefaults.Sr4, "Open build follow-through");
         string sr6WorkspaceFollowThrough = RulesetUiDirectiveCatalog.BuildWorkspaceFollowThroughActionLabel(RulesetDefaults.Sr6, "Open workspace follow-through");
@@ -122,9 +128,12 @@ public sealed class RulesetUiDirectiveCatalogTests
         StringAssert.Contains(sr5Resume, "Shadowrun 5 resume");
         StringAssert.Contains(sr5Resume, "SR5 character");
         StringAssert.Contains(sr5Resume, "Apex / Ghost");
-        StringAssert.Contains(sr6Open, "SR6 runner");
+        StringAssert.Contains(sr6Spotlight, "dossier editor");
+        StringAssert.Contains(sr6Resume, "SR6 dossier");
+        Assert.AreEqual("Open dossier", sharedOpen);
+        StringAssert.Contains(sr6Open, "SR6 dossier");
         StringAssert.Contains(sr4FollowThrough, "SR4 intake details");
-        StringAssert.Contains(sr6WorkspaceFollowThrough, "SR6 runner details");
+        StringAssert.Contains(sr6WorkspaceFollowThrough, "SR6 dossier details");
         Assert.AreEqual("SR5", sr5Prefix);
     }
 
@@ -135,7 +144,9 @@ public sealed class RulesetUiDirectiveCatalogTests
         string sr5MarqueeTitle = RulesetUiDirectiveCatalog.BuildDesktopMarqueeTitle(RulesetDefaults.Sr5);
         string sr6MarqueeEyebrow = RulesetUiDirectiveCatalog.BuildDesktopMarqueeEyebrow(RulesetDefaults.Sr6);
         string sr4Summary = RulesetUiDirectiveCatalog.BuildSummaryHeading(RulesetDefaults.Sr4);
+        string sharedDossiers = RulesetUiDirectiveCatalog.BuildOpenWorkspacesHeading(null);
         string sr5Dossiers = RulesetUiDirectiveCatalog.BuildOpenWorkspacesHeading(RulesetDefaults.Sr5);
+        string sharedEmptyStrip = RulesetUiDirectiveCatalog.BuildWorkspaceStripEmptyState(null);
         string sr6EmptyStrip = RulesetUiDirectiveCatalog.BuildWorkspaceStripEmptyState(RulesetDefaults.Sr6);
         string sr5StripTitle = RulesetUiDirectiveCatalog.BuildWorkspaceStripTitle(RulesetDefaults.Sr5, "ws-1", hasSavedWorkspace: false);
         string sr4Tabs = RulesetUiDirectiveCatalog.BuildNavigationTabsHeading(RulesetDefaults.Sr4);
@@ -165,8 +176,10 @@ public sealed class RulesetUiDirectiveCatalogTests
         Assert.AreEqual("Shadowrun 5 character editor", sr5MarqueeTitle);
         Assert.AreEqual("SR6 editor", sr6MarqueeEyebrow);
         Assert.AreEqual("Desktop Summary · SR4 Import Tools", sr4Summary);
+        Assert.AreEqual("Open Dossiers", sharedDossiers);
         Assert.AreEqual("SR5 Characters", sr5Dossiers);
-        Assert.AreEqual("No open SR6 runner", sr6EmptyStrip);
+        Assert.AreEqual("No open dossier", sharedEmptyStrip);
+        Assert.AreEqual("No open SR6 dossier", sr6EmptyStrip);
         StringAssert.Contains(sr5StripTitle, "Shadowrun 5");
         StringAssert.Contains(sr5StripTitle, "main editor");
         StringAssert.Contains(sr5StripTitle, "unsaved");
@@ -177,7 +190,7 @@ public sealed class RulesetUiDirectiveCatalogTests
         Assert.AreEqual(".chum5,.chum4,.chum6,.xml,text/xml,application/xml", sr5ImportAccept);
         StringAssert.Contains(sr6ImportHint, ".chum6");
         Assert.AreEqual("SR4 Runner XML Review", sr4ImportDebug);
-        Assert.AreEqual("Import SR6 Runner XML", sr6ImportAction);
+        Assert.AreEqual("Import SR6 Dossier XML", sr6ImportAction);
         Assert.AreEqual("SR4 Import Tools", sr4Commands);
         Assert.AreEqual("No SR6 editor commands are currently available.", sr6CommandHint);
         Assert.AreEqual("SR5 Editor Result", sr5Result);
@@ -194,6 +207,28 @@ public sealed class RulesetUiDirectiveCatalogTests
         StringAssert.Contains(sr5Workspace, "saved");
         Assert.AreEqual("Review", sr6Workflow);
         Assert.AreEqual("SR6 Matrix Action", preservedWorkflow);
+    }
+
+    [TestMethod]
+    public void Import_helpers_use_dossier_language_for_shared_and_sr6_copy()
+    {
+        string sharedImport = RulesetUiDirectiveCatalog.BuildImportHeading(null);
+        string sr6Import = RulesetUiDirectiveCatalog.BuildImportHeading(RulesetDefaults.Sr6);
+        string sharedPlaceholder = RulesetUiDirectiveCatalog.BuildImportFilePlaceholder(null);
+        string sr6Placeholder = RulesetUiDirectiveCatalog.BuildImportFilePlaceholder(RulesetDefaults.Sr6);
+        string sharedDebug = RulesetUiDirectiveCatalog.BuildImportDebugHeading(null);
+        string sr6Debug = RulesetUiDirectiveCatalog.BuildImportDebugHeading(RulesetDefaults.Sr6);
+        string sharedAction = RulesetUiDirectiveCatalog.BuildImportRawActionLabel(null);
+        string sr6Action = RulesetUiDirectiveCatalog.BuildImportRawActionLabel(RulesetDefaults.Sr6);
+
+        Assert.AreEqual("Import Dossier File", sharedImport);
+        Assert.AreEqual("Import SR6 Dossier File", sr6Import);
+        Assert.AreEqual("(no dossier file selected)", sharedPlaceholder);
+        Assert.AreEqual("(no SR6 dossier file selected)", sr6Placeholder);
+        Assert.AreEqual("Raw Dossier XML Review", sharedDebug);
+        Assert.AreEqual("SR6 Dossier XML Review", sr6Debug);
+        Assert.AreEqual("Import Dossier XML", sharedAction);
+        Assert.AreEqual("Import SR6 Dossier XML", sr6Action);
     }
 
     [TestMethod]

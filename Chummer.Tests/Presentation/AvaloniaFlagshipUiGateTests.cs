@@ -3820,49 +3820,40 @@ public sealed class AvaloniaFlagshipUiGateTests
     public void Main_window_review_bounded_follow_up_opens_text_first_desktop_follow_up_window()
     {
         EnsureHeadlessPlatform();
-        HeadlessUnitTestSession? session = null;
-        try
+        RunFlagshipHeadless(session => session.Dispatch(() =>
         {
-            session = HeadlessUnitTestSession.StartNew(typeof(FlagshipHeadlessAppBootstrap));
-            session.Dispatch(() =>
+            DesktopExplainDrawerFollowUpWindow.LastShownWindowForTesting = null;
+            try
             {
+                using FlagshipUiHarness harness = new();
+                harness.WaitForReady();
+                harness.SetActiveSectionForTesting("gear");
+                harness.WaitUntil(() => harness.FindControlOrDefault<Control>("SectionQuickAction_explain_drawer.review_bounded_follow_up")?.IsVisible == true);
+                harness.Click("SectionQuickAction_explain_drawer.review_bounded_follow_up");
+                harness.WaitUntil(() => DesktopExplainDrawerFollowUpWindow.LastShownWindowForTesting is not null);
+
+                DesktopExplainDrawerFollowUpWindow window = DesktopExplainDrawerFollowUpWindow.LastShownWindowForTesting
+                    ?? throw new AssertFailedException("Expected explain follow-up window to open.");
+                TextBlock statusText = window.GetVisualDescendants()
+                    .OfType<TextBlock>()
+                    .First(textBlock => string.Equals(textBlock.Text, "Follow-up stays text-first, packet-backed, and scoped to the current desktop snapshot.", StringComparison.Ordinal));
+                Assert.IsNotNull(statusText);
+                Assert.AreEqual("Explain Follow-up", window.Title);
+
+                Button openSourceAnchor = window.GetVisualDescendants()
+                    .OfType<Button>()
+                    .First(button => string.Equals(button.Content?.ToString(), "Open Source Anchor", StringComparison.Ordinal));
+                Assert.IsTrue(openSourceAnchor.IsVisible);
+
+                window.Close();
+                harness.WaitUntil(() => DesktopExplainDrawerFollowUpWindow.LastShownWindowForTesting is null);
+            }
+            finally
+            {
+                DesktopExplainDrawerFollowUpWindow.LastShownWindowForTesting?.Close();
                 DesktopExplainDrawerFollowUpWindow.LastShownWindowForTesting = null;
-                try
-                {
-                    using FlagshipUiHarness harness = new();
-                    harness.WaitForReady();
-                    harness.SetActiveSectionForTesting("gear");
-                    harness.WaitUntil(() => harness.FindControlOrDefault<Control>("SectionQuickAction_explain_drawer.review_bounded_follow_up")?.IsVisible == true);
-                    harness.Click("SectionQuickAction_explain_drawer.review_bounded_follow_up");
-                    harness.WaitUntil(() => DesktopExplainDrawerFollowUpWindow.LastShownWindowForTesting is not null);
-
-                    DesktopExplainDrawerFollowUpWindow window = DesktopExplainDrawerFollowUpWindow.LastShownWindowForTesting
-                        ?? throw new AssertFailedException("Expected explain follow-up window to open.");
-                    TextBlock statusText = window.GetVisualDescendants()
-                        .OfType<TextBlock>()
-                        .First(textBlock => string.Equals(textBlock.Text, "Follow-up stays text-first, packet-backed, and scoped to the current desktop snapshot.", StringComparison.Ordinal));
-                    Assert.IsNotNull(statusText);
-                    Assert.AreEqual("Explain Follow-up", window.Title);
-
-                    Button openSourceAnchor = window.GetVisualDescendants()
-                        .OfType<Button>()
-                        .First(button => string.Equals(button.Content?.ToString(), "Open Source Anchor", StringComparison.Ordinal));
-                    Assert.IsTrue(openSourceAnchor.IsVisible);
-
-                    window.Close();
-                    harness.WaitUntil(() => DesktopExplainDrawerFollowUpWindow.LastShownWindowForTesting is null);
-                }
-                finally
-                {
-                    DesktopExplainDrawerFollowUpWindow.LastShownWindowForTesting?.Close();
-                    DesktopExplainDrawerFollowUpWindow.LastShownWindowForTesting = null;
-                }
-            }, CancellationToken.None).GetAwaiter().GetResult();
-        }
-        finally
-        {
-            DisposeHeadlessSessionQuietly(session);
-        }
+            }
+        }, CancellationToken.None).GetAwaiter().GetResult());
     }
 
     [TestMethod]
@@ -3969,6 +3960,462 @@ public sealed class AvaloniaFlagshipUiGateTests
 
             Assert.IsTrue(advancedStoryControls.IsExpanded, "Origin advanced story controls must stay expanded after a same-dialog field refresh.");
             Assert.IsTrue(scrollViewer.Offset.Y >= 170d, $"Origin wizard viewport should stay near the pre-refresh scroll position, got {scrollViewer.Offset.Y.ToString(CultureInfo.InvariantCulture)}.");
+        });
+    }
+
+    [TestMethod]
+    public void Standalone_origin_wizard_fail_closes_identity_fields_to_dossier_defaults_when_hidden_values_are_stale()
+    {
+        WithStandaloneDialogWindow(window =>
+        {
+            DesktopDialogState baseDialog = DesktopDialogFactory.BuildNewCharacterOriginWizardDialog(RulesetDefaults.Sr4, "Nova", "Cipher");
+            DesktopDialogState dialog = baseDialog with
+            {
+                Fields = baseDialog.Fields
+                    .Select(field => field.Id switch
+                    {
+                        "newCharacterName" => field with { Value = string.Empty },
+                        "newCharacterAlias" => field with { Value = "Runner" },
+                        _ => field
+                    })
+                    .ToArray()
+            };
+
+            window.BindDialog(dialog);
+            PumpStandaloneUi();
+
+            Expander advancedStoryControls = FindDescendant<Expander>(window, "OriginDossierStandaloneAdvancedStoryControlsExpander");
+            advancedStoryControls.IsExpanded = true;
+            PumpStandaloneUi();
+
+            TextBox nameBox = FindDescendant<TextBox>(window, DesktopDialogAccessibility.BuildFieldInputName("newCharacterName"));
+            TextBox aliasBox = FindDescendant<TextBox>(window, DesktopDialogAccessibility.BuildFieldInputName("newCharacterAlias"));
+
+            Assert.AreEqual("New dossier", nameBox.Text);
+            Assert.AreEqual("Dossier", aliasBox.Text);
+        });
+    }
+
+    [TestMethod]
+    public void Standalone_origin_wizard_recovers_summary_and_story_preview_when_hidden_display_fields_are_blank()
+    {
+        static string NormalizeText(string value)
+            => string.Join(" ", value.Split((char[]?)null, StringSplitOptions.RemoveEmptyEntries));
+
+        static string GetSummaryMetricValue(DesktopDialogWindow window, string label)
+        {
+            TextBlock labelText = window.GetVisualDescendants()
+                .OfType<TextBlock>()
+                .Single(textBlock =>
+                    string.Equals(textBlock.Text, label, StringComparison.Ordinal)
+                    && textBlock.Classes.Contains("shell-kicker"));
+            StackPanel metricPanel = labelText.Parent as StackPanel
+                ?? throw new AssertFailedException($"Expected summary metric panel for '{label}'.");
+            TextBlock valueText = metricPanel.Children
+                .OfType<TextBlock>()
+                .Last();
+            return valueText.Text ?? string.Empty;
+        }
+
+        WithStandaloneDialogWindow(window =>
+        {
+            DesktopDialogState baseDialog = DesktopDialogFactory.BuildNewCharacterOriginWizardDialog(RulesetDefaults.Sr4, "Nova", "Cipher");
+            string expectedMetatype = DesktopDialogFieldValueParser.GetValue(baseDialog, "newCharacterOriginMetatype");
+            string expectedArchetype = DesktopDialogFieldValueParser.GetValue(baseDialog, "newCharacterOriginArchetype");
+            string expectedPath = DesktopDialogFieldValueParser.GetValue(baseDialog, "newCharacterOriginPathSummary");
+            string expectedStory = DesktopDialogFieldValueParser.GetValue(baseDialog, "newCharacterOriginSummary");
+            string expectedGmSummary = DesktopDialogFieldValueParser.GetValue(baseDialog, "newCharacterOriginGmRequirementSummary");
+            string expectedPressure = DesktopDialogFieldValueParser.GetValue(baseDialog, "newCharacterOriginQualityFocus");
+            DesktopDialogState dialog = baseDialog with
+            {
+                Fields = baseDialog.Fields
+                    .Select(field => field.Id switch
+                    {
+                        "newCharacterOriginMetatype" => field with { Value = string.Empty },
+                        "newCharacterOriginArchetype" => field with { Value = string.Empty },
+                        "newCharacterOriginPathSummary" => field with { Value = string.Empty },
+                        "newCharacterOriginSummary" => field with { Value = string.Empty },
+                        "newCharacterOriginGmRequirementSummary" => field with { Value = string.Empty },
+                        "newCharacterOriginQualityFocus" => field with { Value = string.Empty },
+                        _ => field
+                    })
+                    .ToArray()
+            };
+
+            window.BindDialog(dialog);
+            PumpStandaloneUi();
+
+            Assert.AreEqual(expectedMetatype, GetSummaryMetricValue(window, "Metatype"));
+            Assert.AreEqual(expectedArchetype, GetSummaryMetricValue(window, "Archetype"));
+            Assert.AreEqual(expectedPath, GetSummaryMetricValue(window, "Path"));
+
+            string actualStory = string.Join(
+                Environment.NewLine,
+                window.GetVisualDescendants()
+                    .OfType<TextBlock>()
+                    .Where(textBlock => string.Equals(textBlock.Name, "OriginNarrativeParagraphText", StringComparison.Ordinal))
+                    .Select(textBlock => textBlock.Text ?? string.Empty));
+            Assert.AreEqual(NormalizeText(expectedStory), NormalizeText(actualStory));
+
+            Expander advancedStoryControls = FindDescendant<Expander>(window, "OriginDossierStandaloneAdvancedStoryControlsExpander");
+            advancedStoryControls.IsExpanded = true;
+            PumpStandaloneUi();
+
+            Assert.AreEqual(expectedGmSummary, GetSummaryMetricValue(window, "Applied GM Constraint"));
+            Assert.AreEqual(expectedPressure, GetSummaryMetricValue(window, "Pressure"));
+        });
+    }
+
+    [TestMethod]
+    public void Standalone_origin_build_recovers_clean_route_when_hidden_link_value_is_blank()
+    {
+        WithStandaloneDialogWindow(window =>
+        {
+            DesktopDialogState baseWizard = DesktopDialogFactory.BuildNewCharacterOriginWizardDialog(RulesetDefaults.Sr4, "Nova", "Cipher");
+            DesktopDialogState baseBuild = DesktopDialogFactory.BuildNewCharacterOriginBuildDialog(baseWizard);
+            DesktopDialogState dialog = baseBuild with
+            {
+                Fields = baseBuild.Fields
+                    .Select(field => field.Id switch
+                    {
+                        "newCharacterOriginDossierLink" => field with { Value = string.Empty },
+                        "newCharacterWorkflowAlias" => field with { Value = "Runner" },
+                        _ => field
+                    })
+                    .ToArray()
+            };
+
+            window.BindDialog(dialog);
+            PumpStandaloneUi();
+
+            TextBox routeBox = FindDescendant<TextBox>(window, DesktopDialogAccessibility.BuildFieldInputName("newCharacterOriginDossierLink"));
+
+            Assert.AreEqual("/app?command=new_character_origin&ruleset=sr4&alias=Dossier", routeBox.Text);
+        });
+    }
+
+    [TestMethod]
+    public void Standalone_origin_build_recovers_preview_title_and_constraints_route_when_hidden_values_are_stale()
+    {
+        WithStandaloneDialogWindow(window =>
+        {
+            DesktopDialogState baseWizard = DesktopDialogFactory.BuildNewCharacterOriginWizardDialog(RulesetDefaults.Sr4, "Nova", "Cipher");
+            DesktopDialogState baseBuild = DesktopDialogFactory.BuildNewCharacterOriginBuildDialog(baseWizard);
+            DesktopDialogState dialog = baseBuild with
+            {
+                Fields = baseBuild.Fields
+                    .Select(field => field.Id switch
+                    {
+                        "newCharacterOriginDossierLink" => field with { Value = string.Empty },
+                        "newCharacterWorkflowAlias" => field with { Value = "Runner" },
+                        _ => field
+                    })
+                    .ToArray()
+            };
+
+            window.BindDialog(dialog);
+            PumpStandaloneUi();
+
+            TextBlock bookPreviewTitle = window.GetVisualDescendants()
+                .OfType<TextBlock>()
+                .First(textBlock => string.Equals(textBlock.Name, "OriginBookPreviewTitleText", StringComparison.Ordinal));
+            TextBlock constraintsText = window.GetVisualDescendants()
+                .OfType<TextBlock>()
+                .First(textBlock => (textBlock.Text ?? string.Empty).Contains("Dossier Link |", StringComparison.Ordinal));
+
+            Assert.IsNotNull(bookPreviewTitle.Text);
+            Assert.AreEqual("Dossier: Origin Dossier", bookPreviewTitle.Text.Split('\n', StringSplitOptions.RemoveEmptyEntries).First());
+            StringAssert.Contains(constraintsText.Text, "Dossier Link | /app?command=new_character_origin&ruleset=sr4&alias=Dossier");
+            Assert.IsFalse((constraintsText.Text ?? string.Empty).Contains("alias=Cipher", StringComparison.Ordinal));
+        });
+    }
+
+    [TestMethod]
+    public void Standalone_origin_build_recovers_constraints_route_when_constraints_label_is_legacy_cased()
+    {
+        WithStandaloneDialogWindow(window =>
+        {
+            DesktopDialogState baseWizard = DesktopDialogFactory.BuildNewCharacterOriginWizardDialog(RulesetDefaults.Sr4, "Nova", "Cipher");
+            DesktopDialogState baseBuild = DesktopDialogFactory.BuildNewCharacterOriginBuildDialog(baseWizard);
+            DesktopDialogState dialog = baseBuild with
+            {
+                Fields = baseBuild.Fields
+                    .Select(field => field.Id switch
+                    {
+                        "newCharacterOriginImplications" => field with
+                        {
+                            Value = "dossier link | /app?command=new_character_origin&ruleset=sr4&alias=Cipher" + Environment.NewLine +
+                                    "sheet changes | Sheet changes visible after the origin packet.",
+                            Placeholder = "dossier link | /app?command=new_character_origin&ruleset=sr4&alias=Cipher" + Environment.NewLine +
+                                          "sheet changes | Sheet changes visible after the origin packet."
+                        },
+                        "newCharacterWorkflowAlias" => field with { Value = "Runner" },
+                        _ => field
+                    })
+                    .ToArray()
+            };
+
+            window.BindDialog(dialog);
+            PumpStandaloneUi();
+
+            TextBlock constraintsText = window.GetVisualDescendants()
+                .OfType<TextBlock>()
+                .First(textBlock => (textBlock.Text ?? string.Empty).Contains("Dossier Link |", StringComparison.Ordinal));
+
+            StringAssert.Contains(constraintsText.Text, "Dossier Link | /app?command=new_character_origin&ruleset=sr4&alias=Dossier");
+            Assert.IsFalse((constraintsText.Text ?? string.Empty).Contains("alias=Cipher", StringComparison.Ordinal));
+        });
+    }
+
+    [TestMethod]
+    public void Standalone_origin_build_recovers_constraints_route_when_constraints_label_uses_colon_separator()
+    {
+        WithStandaloneDialogWindow(window =>
+        {
+            DesktopDialogState baseWizard = DesktopDialogFactory.BuildNewCharacterOriginWizardDialog(RulesetDefaults.Sr4, "Nova", "Cipher");
+            DesktopDialogState baseBuild = DesktopDialogFactory.BuildNewCharacterOriginBuildDialog(baseWizard);
+            DesktopDialogState dialog = baseBuild with
+            {
+                Fields = baseBuild.Fields
+                    .Select(field => field.Id switch
+                    {
+                        "newCharacterOriginImplications" => field with
+                        {
+                            Value = "dossier link: /app?command=new_character_origin&ruleset=sr4&alias=Cipher" + Environment.NewLine +
+                                    "sheet changes | Sheet changes visible after the origin packet.",
+                            Placeholder = "dossier link: /app?command=new_character_origin&ruleset=sr4&alias=Cipher" + Environment.NewLine +
+                                          "sheet changes | Sheet changes visible after the origin packet."
+                        },
+                        "newCharacterWorkflowAlias" => field with { Value = "Runner" },
+                        _ => field
+                    })
+                    .ToArray()
+            };
+
+            window.BindDialog(dialog);
+            PumpStandaloneUi();
+
+            TextBlock constraintsText = window.GetVisualDescendants()
+                .OfType<TextBlock>()
+                .First(textBlock => (textBlock.Text ?? string.Empty).Contains("Dossier Link |", StringComparison.Ordinal));
+
+            StringAssert.Contains(constraintsText.Text, "Dossier Link | /app?command=new_character_origin&ruleset=sr4&alias=Dossier");
+            Assert.IsFalse((constraintsText.Text ?? string.Empty).Contains("alias=Cipher", StringComparison.Ordinal));
+        });
+    }
+
+    [TestMethod]
+    public void Standalone_origin_build_does_not_duplicate_dossier_link_line_when_canonicalizing_constraints()
+    {
+        WithStandaloneDialogWindow(window =>
+        {
+            DesktopDialogState baseWizard = DesktopDialogFactory.BuildNewCharacterOriginWizardDialog(RulesetDefaults.Sr4, "Nova", "Cipher");
+            DesktopDialogState baseBuild = DesktopDialogFactory.BuildNewCharacterOriginBuildDialog(baseWizard);
+            DesktopDialogState dialog = baseBuild with
+            {
+                Fields = baseBuild.Fields
+                    .Select(field => field.Id switch
+                    {
+                        "newCharacterOriginImplications" => field with
+                        {
+                            Value = "dossier link | /app?command=new_character_origin&ruleset=sr4&alias=Cipher" + Environment.NewLine +
+                                    "Dossier Link | /app?command=new_character_origin&ruleset=sr4&alias=Cipher" + Environment.NewLine +
+                                    "sheet changes | Sheet changes visible after the origin packet.",
+                            Placeholder = "dossier link | /app?command=new_character_origin&ruleset=sr4&alias=Cipher" + Environment.NewLine +
+                                          "Dossier Link | /app?command=new_character_origin&ruleset=sr4&alias=Cipher" + Environment.NewLine +
+                                          "sheet changes | Sheet changes visible after the origin packet."
+                        },
+                        "newCharacterWorkflowAlias" => field with { Value = "Runner" },
+                        _ => field
+                    })
+                    .ToArray()
+            };
+
+            window.BindDialog(dialog);
+            PumpStandaloneUi();
+
+            TextBlock constraintsText = window.GetVisualDescendants()
+                .OfType<TextBlock>()
+                .First(textBlock => (textBlock.Text ?? string.Empty).Contains("Dossier Link |", StringComparison.Ordinal));
+
+            StringAssert.Contains(constraintsText.Text, "Dossier Link | /app?command=new_character_origin&ruleset=sr4&alias=Dossier");
+            Assert.IsFalse((constraintsText.Text ?? string.Empty).Contains("alias=Cipher", StringComparison.Ordinal));
+            int dossierCount = (constraintsText.Text ?? string.Empty).Split("Dossier Link |", StringSplitOptions.None).Length - 1;
+            Assert.AreEqual(1, dossierCount, "The duplicated dossier link constraints lines should be collapsed to a single canonical row.");
+        });
+    }
+
+    [TestMethod]
+    public void Standalone_origin_build_recovers_stale_one_line_book_preview_title()
+    {
+        WithStandaloneDialogWindow(window =>
+        {
+            DesktopDialogState baseWizard = DesktopDialogFactory.BuildNewCharacterOriginWizardDialog(RulesetDefaults.Sr4, "Nova", "Cipher");
+            DesktopDialogState baseBuild = DesktopDialogFactory.BuildNewCharacterOriginBuildDialog(baseWizard);
+            DesktopDialogState dialog = baseBuild with
+            {
+                Fields = baseBuild.Fields
+                    .Select(field => field.Id switch
+                    {
+                        "newCharacterWorkflowAlias" => field with { Value = "Runner" },
+                        "newCharacterOriginBookPreview" => field with { Value = "Runner: Origin Dossier" },
+                        _ => field
+                    })
+                    .ToArray()
+            };
+
+            window.BindDialog(dialog);
+            PumpStandaloneUi();
+
+            TextBlock bookPreviewTitle = window.GetVisualDescendants()
+                .OfType<TextBlock>()
+                .First(textBlock => string.Equals(textBlock.Name, "OriginBookPreviewTitleText", StringComparison.Ordinal));
+
+            Assert.AreEqual("Dossier: Origin Dossier", bookPreviewTitle.Text);
+        });
+    }
+
+    [TestMethod]
+    public void Standalone_origin_build_recovers_story_panel_when_hidden_story_is_blank()
+    {
+        static string NormalizeText(string value)
+            => string.Join(" ", value.Split((char[]?)null, StringSplitOptions.RemoveEmptyEntries));
+
+        WithStandaloneDialogWindow(window =>
+        {
+            DesktopDialogState baseWizard = DesktopDialogFactory.BuildNewCharacterOriginWizardDialog(RulesetDefaults.Sr4, "Nova", "Cipher");
+            DesktopDialogState baseBuild = DesktopDialogFactory.BuildNewCharacterOriginBuildDialog(baseWizard);
+            string expectedStory = DesktopDialogFieldValueParser.GetValue(baseBuild, "newCharacterOriginSummary");
+            DesktopDialogState dialog = baseBuild with
+            {
+                Fields = baseBuild.Fields
+                    .Select(field => string.Equals(field.Id, "newCharacterOriginStory", StringComparison.Ordinal)
+                        ? field with { Value = string.Empty }
+                        : field)
+                    .ToArray()
+            };
+
+            window.BindDialog(dialog);
+            PumpStandaloneUi();
+
+            string actualStory = string.Join(
+                Environment.NewLine,
+                window.GetVisualDescendants()
+                    .OfType<TextBlock>()
+                    .Where(textBlock => string.Equals(textBlock.Name, "OriginNarrativeParagraphText", StringComparison.Ordinal))
+                    .Select(textBlock => textBlock.Text ?? string.Empty));
+
+            Assert.AreEqual(NormalizeText(expectedStory), NormalizeText(actualStory));
+        });
+    }
+
+    [TestMethod]
+    public void Standalone_origin_build_recovers_dossier_link_notes_when_hidden_notes_are_stale()
+    {
+        WithStandaloneDialogWindow(window =>
+        {
+            DesktopDialogState baseWizard = DesktopDialogFactory.BuildNewCharacterOriginWizardDialog(RulesetDefaults.Sr4, "Nova", "Cipher");
+            DesktopDialogState baseBuild = DesktopDialogFactory.BuildNewCharacterOriginBuildDialog(baseWizard);
+            string expectedNotes = DesktopDialogFactory.BuildOriginDossierLinkNotesDisplayValue();
+            DesktopDialogState dialog = baseBuild with
+            {
+                Fields = baseBuild.Fields
+                    .Select(field => string.Equals(field.Id, "newCharacterOriginDossierLinkNotes", StringComparison.Ordinal)
+                        ? field with { Value = "Opens Chummer Online directly into the Origin Dossier workflow." }
+                        : field)
+                    .ToArray()
+            };
+
+            window.BindDialog(dialog);
+            PumpStandaloneUi();
+
+            string notesText = window.GetVisualDescendants()
+                .OfType<TextBlock>()
+                .Select(textBlock => textBlock.Text ?? string.Empty)
+                .First(text => text.Contains("story text stays local", StringComparison.Ordinal));
+
+            StringAssert.Contains(notesText, expectedNotes);
+            Assert.IsFalse(notesText.Contains("Chummer Online", StringComparison.Ordinal));
+        });
+    }
+
+    [TestMethod]
+    public void Standalone_origin_build_recovers_book_preview_body_when_hidden_preview_is_blank()
+    {
+        WithStandaloneDialogWindow(window =>
+        {
+            DesktopDialogState baseWizard = DesktopDialogFactory.BuildNewCharacterOriginWizardDialog(RulesetDefaults.Sr4, "Nova", "Cipher");
+            DesktopDialogState baseBuild = DesktopDialogFactory.BuildNewCharacterOriginBuildDialog(baseWizard);
+            string expectedStory = DesktopDialogFieldValueParser.GetValue(baseBuild, "newCharacterOriginSummary");
+            string expectedBuildSummary = (DesktopDialogFieldValueParser.GetValue(baseBuild, "newCharacterOriginImplications") ?? string.Empty)
+                .Split(Environment.NewLine, StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
+                .Single(line => line.StartsWith("Build |", StringComparison.Ordinal))
+                .Split('|', 2, StringSplitOptions.TrimEntries)[1];
+            string expectedGmRequirements = (DesktopDialogFieldValueParser.GetValue(baseBuild, "newCharacterOriginImplications") ?? string.Empty)
+                .Split(Environment.NewLine, StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
+                .Single(line => line.StartsWith("GM Requirements |", StringComparison.Ordinal))
+                .Split('|', 2, StringSplitOptions.TrimEntries)[1];
+            DesktopDialogState dialog = baseBuild with
+            {
+                Fields = baseBuild.Fields
+                    .Select(field => string.Equals(field.Id, "newCharacterOriginBookPreview", StringComparison.Ordinal)
+                        ? field with { Value = string.Empty }
+                        : field)
+                    .ToArray()
+            };
+
+            window.BindDialog(dialog);
+            PumpStandaloneUi();
+
+            string[] previewText = window.GetVisualDescendants()
+                .OfType<TextBlock>()
+                .Where(textBlock => string.Equals(textBlock.Name, "OriginBookPreviewBodyText", StringComparison.Ordinal))
+                .Select(textBlock => textBlock.Text ?? string.Empty)
+                .ToArray();
+
+            CollectionAssert.Contains(previewText, expectedStory);
+            CollectionAssert.Contains(previewText, $"The shape of the build is visible in the fiction: {expectedBuildSummary}");
+            CollectionAssert.Contains(previewText, $"At the table, the story keeps these constraints in view: {expectedGmRequirements}");
+            Assert.IsTrue(previewText.Any(text => text.Contains("When this origin feels right, start character creation.", StringComparison.Ordinal)));
+        });
+    }
+
+    [TestMethod]
+    public void Standalone_origin_build_recovers_summary_ruleset_and_method_when_workflow_fields_are_blank()
+    {
+        WithStandaloneDialogWindow(window =>
+        {
+            DesktopDialogState baseWizard = DesktopDialogFactory.BuildNewCharacterOriginWizardDialog(RulesetDefaults.Sr4, "Nova", "Cipher");
+            DesktopDialogState baseBuild = DesktopDialogFactory.BuildNewCharacterOriginBuildDialog(baseWizard);
+            string expectedRoute = DesktopDialogFieldValueParser.GetValue(baseBuild, "newCharacterOriginDossierLink");
+            string expectedRulesetLabel = (RulesetDefaults.NormalizeOptional(DesktopDialogFieldValueParser.GetValue(baseBuild, "newCharacterWorkflowRulesetId")) ?? RulesetDefaults.Sr5).ToUpperInvariant();
+            string expectedBuildMethod = DesktopDialogFieldValueParser.GetValue(baseBuild, "newCharacterWorkflowBuildMethod");
+            DesktopDialogState dialog = baseBuild with
+            {
+                Fields = baseBuild.Fields
+                    .Select(field => field.Id switch
+                    {
+                        "newCharacterWorkflowRulesetId" => field with { Value = string.Empty },
+                        "newCharacterWorkflowBuildMethod" => field with { Value = string.Empty },
+                        _ => field
+                    })
+                    .ToArray()
+            };
+
+            window.BindDialog(dialog);
+            PumpStandaloneUi();
+
+            TextBox routeBox = FindDescendant<TextBox>(window, DesktopDialogAccessibility.BuildFieldInputName("newCharacterOriginDossierLink"));
+            IReadOnlyList<string?> textValues = window.GetVisualDescendants()
+                .OfType<TextBlock>()
+                .Select(textBlock => textBlock.Text)
+                .ToArray();
+
+            Assert.AreEqual(expectedRoute, routeBox.Text);
+            CollectionAssert.Contains(textValues.ToArray(), expectedRulesetLabel);
+            CollectionAssert.Contains(textValues.ToArray(), expectedBuildMethod);
+            CollectionAssert.DoesNotContain(textValues.ToArray(), "Pending");
+            Assert.IsFalse((routeBox.Text ?? string.Empty).Contains("ruleset=sr5", StringComparison.Ordinal));
         });
     }
 
@@ -5261,8 +5708,8 @@ public sealed class AvaloniaFlagshipUiGateTests
         Assert.IsFalse(
             dialogSource.Contains("Text = text,\n            IsVisible = false,\n            FontWeight = FontWeight.SemiBold", StringComparison.Ordinal),
             "Priority build row labels must remain visible.");
-        StringAssert.Contains(dialogSource, "Foreground = ResolveThemeBrush(\"ChummerShellForegroundBrush\"");
-        StringAssert.Contains(dialogSource, "valueText.Foreground = ResolveThemeBrush(\"ChummerShellForegroundBrush\"");
+        StringAssert.Contains(dialogSource, "Foreground = DesktopShellTheme.ResolveForegroundBrush(),");
+        StringAssert.Contains(dialogSource, "valueText.Foreground = DesktopShellTheme.ResolveForegroundBrush();");
         StringAssert.Contains(
             File.ReadAllText(ResolveSourceFile("Chummer.Avalonia", "DesktopDialogWindow.axaml")),
             "<ScrollViewer Grid.Row=\"1\"");
@@ -6412,26 +6859,20 @@ public sealed class AvaloniaFlagshipUiGateTests
         Exception? lastFailure = null;
         for (int attempt = 1; attempt <= HeadlessSessionAttempts; attempt++)
         {
-            HeadlessUnitTestSession? session = null;
             try
             {
-                session = HeadlessUnitTestSession.StartNew(typeof(FlagshipHeadlessAppBootstrap));
-                return session.Dispatch(() =>
+                return RunFlagshipHeadless(session => session.Dispatch(() =>
                     {
                         using FlagshipUiHarness harness = new();
                         return assertion(harness);
                     },
                     CancellationToken.None)
                     .GetAwaiter()
-                    .GetResult();
+                    .GetResult());
             }
             catch (Exception ex) when (IsTransientHeadlessFailure(ex) && attempt < HeadlessSessionAttempts)
             {
                 lastFailure = ex;
-            }
-            finally
-            {
-                DisposeHeadlessSessionQuietly(session);
             }
         }
 
@@ -6494,26 +6935,20 @@ public sealed class AvaloniaFlagshipUiGateTests
         Exception? lastFailure = null;
         for (int attempt = 1; attempt <= HeadlessSessionAttempts; attempt++)
         {
-            HeadlessUnitTestSession? session = null;
             try
             {
-                session = HeadlessUnitTestSession.StartNew(typeof(FlagshipHeadlessAppBootstrap));
-                return session.Dispatch(() =>
+                return RunFlagshipHeadless(session => session.Dispatch(() =>
                     {
                         using RuntimeFlagshipUiHarness harness = new();
                         return assertion(harness);
                     },
                     CancellationToken.None)
                     .GetAwaiter()
-                    .GetResult();
+                    .GetResult());
             }
             catch (Exception ex) when (IsTransientHeadlessFailure(ex) && attempt < HeadlessSessionAttempts)
             {
                 lastFailure = ex;
-            }
-            finally
-            {
-                DisposeHeadlessSessionQuietly(session);
             }
         }
 
@@ -6526,26 +6961,20 @@ public sealed class AvaloniaFlagshipUiGateTests
         Exception? lastFailure = null;
         for (int attempt = 1; attempt <= HeadlessSessionAttempts; attempt++)
         {
-            HeadlessUnitTestSession? session = null;
             try
             {
-                session = HeadlessUnitTestSession.StartNew(typeof(FlagshipHeadlessAppBootstrap));
-                return session.Dispatch(() =>
+                return RunFlagshipHeadless(session => session.Dispatch(() =>
                     {
                         using RuntimeFlagshipUiHarness harness = new(clientFactory());
                         return assertion(harness);
                     },
                     CancellationToken.None)
                     .GetAwaiter()
-                    .GetResult();
+                    .GetResult());
             }
             catch (Exception ex) when (IsTransientHeadlessFailure(ex) && attempt < HeadlessSessionAttempts)
             {
                 lastFailure = ex;
-            }
-            finally
-            {
-                DisposeHeadlessSessionQuietly(session);
             }
         }
 
@@ -6567,6 +6996,40 @@ public sealed class AvaloniaFlagshipUiGateTests
         {
             // Avalonia headless teardown can intermittently throw after successful dispatch.
             // Keep test assertions as the authoritative pass/fail signal.
+        }
+    }
+
+    private static void RunFlagshipHeadless(Action<HeadlessUnitTestSession> action)
+    {
+        lock (AvaloniaHeadlessSessionGate.SyncRoot)
+        {
+            HeadlessUnitTestSession? session = null;
+            try
+            {
+                session = HeadlessUnitTestSession.StartNew(typeof(FlagshipHeadlessAppBootstrap));
+                action(session);
+            }
+            finally
+            {
+                DisposeHeadlessSessionQuietly(session);
+            }
+        }
+    }
+
+    private static TResult RunFlagshipHeadless<TResult>(Func<HeadlessUnitTestSession, TResult> action)
+    {
+        lock (AvaloniaHeadlessSessionGate.SyncRoot)
+        {
+            HeadlessUnitTestSession? session = null;
+            try
+            {
+                session = HeadlessUnitTestSession.StartNew(typeof(FlagshipHeadlessAppBootstrap));
+                return action(session);
+            }
+            finally
+            {
+                DisposeHeadlessSessionQuietly(session);
+            }
         }
     }
 
@@ -6597,10 +7060,7 @@ public sealed class AvaloniaFlagshipUiGateTests
         string? match = ResolveExistingPath(
             Path.Combine("Chummer.Tests", "TestFiles", fileName),
             Path.Combine("TestFiles", fileName),
-            Path.Combine("/src", "Chummer.Tests", "TestFiles", fileName),
-            Path.Combine("/docker/chummercomplete/chummer-presentation", "Chummer.Tests", "TestFiles", fileName),
-            Path.Combine("/docker/chummercomplete/chummer6-ui", "Chummer.Tests", "TestFiles", fileName),
-            Path.Combine("/docker/chummercomplete/chummer6-ui-finish", "Chummer.Tests", "TestFiles", fileName));
+            Path.Combine("/src", "Chummer.Tests", "TestFiles", fileName));
         if (match is null)
         {
             throw new FileNotFoundException("Could not locate test file.", fileName);
@@ -6649,18 +7109,10 @@ public sealed class AvaloniaFlagshipUiGateTests
 
     private static string ResolveTestFilesDirectory()
     {
-        string repoRoot = TestContextLocator.ResolveChummerPresentationRepoRoot();
-        string[] candidates =
-        {
-            Path.Combine(repoRoot, "Chummer.Tests", "TestFiles"),
-            Path.Combine(Directory.GetCurrentDirectory(), "Chummer.Tests", "TestFiles"),
-            Path.Combine(Directory.GetCurrentDirectory(), "TestFiles"),
-            Path.Combine(AppContext.BaseDirectory, "TestFiles"),
-            Path.Combine("/src", "Chummer.Tests", "TestFiles"),
-            "/docker/chummercomplete/chummer-presentation/Chummer.Tests/TestFiles"
-        };
-
-        string? match = candidates.FirstOrDefault(Directory.Exists);
+        string? match = ResolveExistingDirectory(
+            Path.Combine("Chummer.Tests", "TestFiles"),
+            "TestFiles",
+            Path.Combine("/src", "Chummer.Tests", "TestFiles"));
         if (match is null)
         {
             throw new DirectoryNotFoundException("Could not locate the Chummer test fixture directory.");
@@ -7306,11 +7758,8 @@ public sealed class AvaloniaFlagshipUiGateTests
     {
         string relativePath = Path.Combine(segments);
         string? match = ResolveExistingPath(
-            Path.Combine(TestContextLocator.ResolveChummerPresentationRepoRoot(), relativePath),
             relativePath,
-            Path.Combine("/docker/chummercomplete/chummer6-ui-finish", relativePath),
-            Path.Combine("/docker/chummercomplete/chummer-presentation", relativePath),
-            Path.Combine("/docker/chummercomplete/chummer6-ui", relativePath));
+            Path.Combine("/src", relativePath));
         if (match is null)
         {
             throw new FileNotFoundException("Could not locate source file.", Path.Combine(segments));
@@ -7341,12 +7790,45 @@ public sealed class AvaloniaFlagshipUiGateTests
         return null;
     }
 
+    private static string? ResolveExistingDirectory(params string[] candidates)
+    {
+        foreach (string candidate in candidates)
+        {
+            if (Path.IsPathRooted(candidate) && Directory.Exists(candidate))
+            {
+                return candidate;
+            }
+
+            string? relativeMatch = ResolveRelativeDirectoryFromKnownRoots(candidate);
+            if (relativeMatch is not null)
+            {
+                return relativeMatch;
+            }
+        }
+
+        return null;
+    }
+
     private static string? ResolveRelativePathFromKnownRoots(string relativePath)
     {
         foreach (string root in EnumerateSearchRoots())
         {
             string candidate = Path.Combine(root, relativePath);
             if (File.Exists(candidate))
+            {
+                return candidate;
+            }
+        }
+
+        return null;
+    }
+
+    private static string? ResolveRelativeDirectoryFromKnownRoots(string relativePath)
+    {
+        foreach (string root in EnumerateSearchRoots())
+        {
+            string candidate = Path.Combine(root, relativePath);
+            if (Directory.Exists(candidate))
             {
                 return candidate;
             }
@@ -8279,11 +8761,9 @@ public sealed class AvaloniaFlagshipUiGateTests
         Exception? lastFailure = null;
         for (int attempt = 1; attempt <= HeadlessSessionAttempts; attempt++)
         {
-            HeadlessUnitTestSession? session = null;
             try
             {
-                session = HeadlessUnitTestSession.StartNew(typeof(FlagshipHeadlessAppBootstrap));
-                return session.Dispatch(() =>
+                return RunFlagshipHeadless(session => session.Dispatch(() =>
                     {
                         Window hostWindow = new()
                         {
@@ -8306,15 +8786,11 @@ public sealed class AvaloniaFlagshipUiGateTests
                     },
                     CancellationToken.None)
                     .GetAwaiter()
-                    .GetResult();
+                    .GetResult());
             }
             catch (Exception ex) when (IsTransientHeadlessFailure(ex) && attempt < HeadlessSessionAttempts)
             {
                 lastFailure = ex;
-            }
-            finally
-            {
-                DisposeHeadlessSessionQuietly(session);
             }
         }
 
@@ -8327,11 +8803,9 @@ public sealed class AvaloniaFlagshipUiGateTests
         Exception? lastFailure = null;
         for (int attempt = 1; attempt <= HeadlessSessionAttempts; attempt++)
         {
-            HeadlessUnitTestSession? session = null;
             try
             {
-                session = HeadlessUnitTestSession.StartNew(typeof(FlagshipHeadlessAppBootstrap));
-                session.Dispatch(
+                RunFlagshipHeadless(session => session.Dispatch(
                         () =>
                         {
                             DesktopDialogWindow window = new()
@@ -8354,16 +8828,12 @@ public sealed class AvaloniaFlagshipUiGateTests
                         },
                         CancellationToken.None)
                     .GetAwaiter()
-                    .GetResult();
+                    .GetResult());
                 return;
             }
             catch (Exception ex) when (IsTransientHeadlessFailure(ex) && attempt < HeadlessSessionAttempts)
             {
                 lastFailure = ex;
-            }
-            finally
-            {
-                DisposeHeadlessSessionQuietly(session);
             }
         }
 
@@ -8376,11 +8846,9 @@ public sealed class AvaloniaFlagshipUiGateTests
         Exception? lastFailure = null;
         for (int attempt = 1; attempt <= HeadlessSessionAttempts; attempt++)
         {
-            HeadlessUnitTestSession? session = null;
             try
             {
-                session = HeadlessUnitTestSession.StartNew(typeof(FlagshipHeadlessAppBootstrap));
-                session.Dispatch(
+                RunFlagshipHeadless(session => session.Dispatch(
                         () =>
                         {
                             ConstructorInfo constructor = typeof(DesktopReportIssueWindow).GetConstructor(
@@ -8414,16 +8882,12 @@ public sealed class AvaloniaFlagshipUiGateTests
                         },
                         CancellationToken.None)
                     .GetAwaiter()
-                    .GetResult();
+                    .GetResult());
                 return;
             }
             catch (Exception ex) when (IsTransientHeadlessFailure(ex) && attempt < HeadlessSessionAttempts)
             {
                 lastFailure = ex;
-            }
-            finally
-            {
-                DisposeHeadlessSessionQuietly(session);
             }
         }
 

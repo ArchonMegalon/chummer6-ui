@@ -59,6 +59,19 @@ public class CommandAvailabilityEvaluatorTests
         Assert.IsFalse(evaluator.IsCommandEnabled(saveCharacter, state));
     }
 
+    [DataTestMethod]
+    [DataRow("xml_editor", false, true)]
+    [DataRow("data_exporter", true, false)]
+    public void IsCommandEnabled_honors_shared_utility_workspace_gating(string commandId, bool requiresOpenCharacter, bool expectedWhenNoWorkspace)
+    {
+        DefaultCommandAvailabilityEvaluator evaluator = new();
+        AppCommandDefinition command = new(commandId, commandId, "tools", requiresOpenCharacter, true, RulesetDefaults.Sr5);
+
+        bool enabled = evaluator.IsCommandEnabled(command, CharacterOverviewState.Empty);
+
+        Assert.AreEqual(expectedWhenNoWorkspace, enabled);
+    }
+
     [TestMethod]
     public void IsWorkspaceActionEnabled_requires_open_workspace_when_flagged()
     {

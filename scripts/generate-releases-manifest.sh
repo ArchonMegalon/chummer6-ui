@@ -1,15 +1,24 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-REPO_ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"
+SCRIPT_DIR_PHYSICAL="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd -P)"
+REPO_ROOT_PHYSICAL="$(cd "$SCRIPT_DIR_PHYSICAL/.." && pwd -P)"
+REPO_ROOT_ALIAS_CANDIDATE="${CHUMMER_UI_REPO_ROOT_ALIAS:-$REPO_ROOT_PHYSICAL}"
+REPO_ROOT="$REPO_ROOT_PHYSICAL"
+if [[ -n "$REPO_ROOT_ALIAS_CANDIDATE" && -d "$REPO_ROOT_ALIAS_CANDIDATE" ]]; then
+  ALIAS_PHYSICAL="$(cd "$REPO_ROOT_ALIAS_CANDIDATE" && pwd -P)"
+  if [[ "$ALIAS_PHYSICAL" == "$REPO_ROOT_PHYSICAL" ]]; then
+    REPO_ROOT="$(cd -L "$REPO_ROOT_ALIAS_CANDIDATE" && pwd -L)"
+  fi
+fi
+SCRIPT_DIR="$REPO_ROOT/scripts"
 REGISTRY_ROOT="$("$SCRIPT_DIR/resolve-hub-registry-root.sh")"
 
 DOWNLOADS_DIR="${DOWNLOADS_DIR:-$REPO_ROOT/Docker/Downloads/files}"
 MANIFEST_PATH="${MANIFEST_PATH:-$REPO_ROOT/Docker/Downloads/releases.json}"
 PORTAL_MANIFEST_PATH="${PORTAL_MANIFEST_PATH:-$REPO_ROOT/Chummer.Portal/downloads/releases.json}"
 PORTAL_DOWNLOADS_DIR="${PORTAL_DOWNLOADS_DIR:-$REPO_ROOT/Chummer.Portal/downloads}"
-PRESENTATION_MIRROR_ROOT="${PRESENTATION_MIRROR_ROOT:-/docker/chummercomplete/chummer-presentation}"
+PRESENTATION_MIRROR_ROOT="${PRESENTATION_MIRROR_ROOT:-$REPO_ROOT}"
 STARTUP_SMOKE_DIR="${STARTUP_SMOKE_DIR:-$(dirname "$DOWNLOADS_DIR")/startup-smoke}"
 SIGNING_RECEIPTS_DIR="${SIGNING_RECEIPTS_DIR:-$(dirname "$DOWNLOADS_DIR")/signing}"
 STARTUP_SMOKE_MAX_AGE_SECONDS="${CHUMMER_PUBLIC_STARTUP_SMOKE_MAX_AGE_SECONDS:-}"
@@ -41,6 +50,35 @@ REGISTRY_RELEASES_MANIFEST_PATH="${REGISTRY_RELEASES_MANIFEST_PATH:-$REGISTRY_RO
 REGISTRY_FILES_DIR="${REGISTRY_FILES_DIR:-$REGISTRY_ROOT/.codex-studio/published/files}"
 CANONICAL_FILES_DIR="${CANONICAL_FILES_DIR:-$(dirname "$CANONICAL_MANIFEST_PATH")/files}"
 
+lower_ascii() {
+  printf '%s' "${1:-}" | tr '[:upper:]' '[:lower:]'
+}
+
+array_count() {
+  local array_name="${1:-}"
+  [[ -n "$array_name" ]] || {
+    printf '0\n'
+    return 0
+  }
+
+  local restore_nounset=0
+  case "$-" in
+    *u*)
+      restore_nounset=1
+      set +u
+      ;;
+  esac
+
+  eval "set -- \"\${${array_name}[@]}\""
+  local count="$#"
+
+  if (( restore_nounset == 1 )); then
+    set -u
+  fi
+
+  printf '%s\n' "$count"
+}
+
 to_bool() {
   local value
   value="$(echo "${1:-}" | tr '[:upper:]' '[:lower:]')"
@@ -48,7 +86,7 @@ to_bool() {
 }
 
 if [[ -z "$PUBLIC_SKIP_STARTUP_SMOKE_FILTER" ]]; then
-  if [[ "${RELEASE_CHANNEL,,}" == "preview" ]]; then
+  if [[ "$(lower_ascii "$RELEASE_CHANNEL")" == "preview" ]]; then
     PUBLIC_SKIP_STARTUP_SMOKE_FILTER="true"
   else
     PUBLIC_SKIP_STARTUP_SMOKE_FILTER="false"
@@ -444,8 +482,7 @@ resolve_ui_localization_release_gate_generator_root() {
   local -a roots=(
     "$REPO_ROOT"
     "$REPO_ROOT/../chummer6-ui"
-    "/docker/chummercomplete/chummer-presentation"
-    "/docker/chummercomplete/chummer6-ui"
+    "$PRESENTATION_MIRROR_ROOT"
   )
   local root
   for root in "${roots[@]}"; do
@@ -650,8 +687,7 @@ resolve_ui_localization_release_gate_path() {
   candidates+=(
     "$REPO_ROOT/.codex-studio/published/UI_LOCALIZATION_RELEASE_GATE.generated.json"
     "$REPO_ROOT/../chummer6-ui/.codex-studio/published/UI_LOCALIZATION_RELEASE_GATE.generated.json"
-    "/docker/chummercomplete/chummer-presentation/.codex-studio/published/UI_LOCALIZATION_RELEASE_GATE.generated.json"
-    "/docker/chummercomplete/chummer6-ui/.codex-studio/published/UI_LOCALIZATION_RELEASE_GATE.generated.json"
+    "$PRESENTATION_MIRROR_ROOT/.codex-studio/published/UI_LOCALIZATION_RELEASE_GATE.generated.json"
     "$REGISTRY_ROOT/.codex-studio/published/.tmp_ui_localization_release_gate.json"
   )
 
@@ -1580,7 +1616,7 @@ if [[ "$PROMOTE_PROOF_BACKED_QUARANTINED_INSTALLERS" != "0" ]]; then
     >/dev/null
 fi
 
-readarray -t promoted_file_names < <(true)
+promoted_file_names=()
 
 materializer_help="$(python3 "$REGISTRY_ROOT/scripts/materialize_public_release_channel.py" --help 2>&1 || true)"
 run_materializer() {
@@ -2355,7 +2391,11 @@ else
   echo "skipped external host proof blocker materialization"
 fi
 verify_args=()
-readarray -t promoted_file_names < <(python3 - "$CANONICAL_MANIFEST_PATH" <<'PY'
+promoted_file_names=()
+while IFS= read -r file_name; do
+  [[ -n "$file_name" ]] || continue
+  promoted_file_names+=("$file_name")
+done < <(python3 - "$CANONICAL_MANIFEST_PATH" <<'PY'
 import json
 import sys
 from pathlib import Path
@@ -2378,10 +2418,12 @@ prune_downloads_dir_to_promoted_files() {
   local file_path=""
   local file_name=""
   local keep=""
+  local promoted_file_count=""
   local repo_owned_downloads_dir=""
   local resolved_downloads_dir=""
 
-  if [[ "${#promoted_file_names[@]}" -eq 0 ]]; then
+  promoted_file_count="$(array_count promoted_file_names)"
+  if (( promoted_file_count == 0 )); then
     echo "no promoted desktop artifacts discovered in $CANONICAL_MANIFEST_PATH; skipping downloads prune"
     return 0
   fi
@@ -2455,6 +2497,7 @@ sync_promoted_files_dir() {
   local payload_file_name=""
   local payload_source_path=""
   local payload_sidecar_path=""
+  local portal_artifact_count=""
   # portal_artifacts: keep historical variable naming expected by migration compliance checks.
   local -a portal_artifacts=()
   local source_path=""
@@ -2496,7 +2539,8 @@ sync_promoted_files_dir() {
     fi
   done
 
-  if [[ "${#portal_artifacts[@]}" -gt 0 ]]; then
+  portal_artifact_count="$(array_count portal_artifacts)"
+  if (( portal_artifact_count > 0 )); then
     rm -f \
       "$target_dir"/chummer-*.exe \
       "$target_dir"/chummer-*.zip \
@@ -2510,9 +2554,9 @@ sync_promoted_files_dir() {
       # keep legacy sync pattern visible for compliance checks: cp -f "${portal_artifacts[@]}" "$portal_files_dir"/
       cp -f "${portal_artifacts[@]}" "$target_dir"/
       if [[ "$target_label" == "local portal" ]]; then
-        echo "synced ${#portal_artifacts[@]} local portal artifact(s) -> $target_dir"
+        echo "synced ${portal_artifact_count} local portal artifact(s) -> $target_dir"
       else
-        echo "synced ${#portal_artifacts[@]} ${target_label} artifact(s) -> $target_dir"
+        echo "synced ${portal_artifact_count} ${target_label} artifact(s) -> $target_dir"
       fi
     else
     echo "no promoted desktop artifacts found in $DOWNLOADS_DIR for $target_label sync"

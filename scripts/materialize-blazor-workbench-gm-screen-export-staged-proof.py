@@ -21,7 +21,7 @@ CHECKS = [
         "tokens": [
             "Browser-client GM screen export posture",
             "data-workbench-gm-screen-export=\"strip\"",
-            "Build table panels from this runner.",
+            "Build table panels from this dossier.",
             "data-workbench-gm-screen-export-action=\"screen-cards\"",
             "data-workbench-gm-screen-export-action=\"player-safe-view\"",
             "data-workbench-gm-screen-export-action=\"initiative-panel\"",

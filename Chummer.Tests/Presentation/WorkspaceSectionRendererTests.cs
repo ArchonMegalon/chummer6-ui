@@ -160,6 +160,9 @@ public class WorkspaceSectionRendererTests
         Assert.AreEqual(100, result.ActiveBuildLab.ProgressionTimelines[0].Steps[^1].KarmaTarget);
         Assert.IsNotNull(result.ActiveBuildLab.TeamCoverage);
         Assert.AreEqual("buildlab.teamcoverage.ops-first", result.ActiveBuildLab.TeamCoverage!.ExplainEntryId);
+        Assert.AreEqual(
+            "Coverage score stays grounded with Face and Legwork already covered before the first campaign handoff.",
+            result.ActiveBuildLab.TeamCoverage.CoverageSummary);
         CollectionAssert.AreEqual(new[] { "face", "legwork" }, result.ActiveBuildLab.TeamCoverage.CoveredRoleTags!.ToArray());
         CollectionAssert.AreEqual(new[] { "astral" }, result.ActiveBuildLab.TeamCoverage.MissingRoleTags.ToArray());
         CollectionAssert.AreEqual(new[] { "face" }, result.ActiveBuildLab.TeamCoverage.DuplicateRoleTags!.ToArray());
@@ -750,7 +753,7 @@ public class WorkspaceSectionRendererTests
                 ["TeamCoverage"] = new JsonObject
                 {
                     ["Summary"] = "2 of 3 required crew roles are covered before handoff; one deliberate face overlap stays visible while astral support remains missing.",
-                    ["CoverageSummary"] = "Coverage score stays stable with Face and Legwork already covered before the first campaign handoff.",
+                    ["CoverageSummary"] = "Coverage score stays grounded with Face and Legwork already covered before the first campaign handoff.",
                     ["RolePressureSummary"] = "Role pressure stays light because the duplicate face lane is intentional, but astral support still needs a partner runner.",
                     ["MissingRoleTags"] = new JsonArray("astral"),
                     ["CoveredRoleTags"] = new JsonArray("face", "legwork"),

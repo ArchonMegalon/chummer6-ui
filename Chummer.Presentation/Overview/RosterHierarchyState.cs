@@ -54,7 +54,7 @@ public static class RosterHierarchyMetadata
     public const string ActiveTableFolderId = "active-table";
     public const string ActiveTableFolderName = "Active Table";
     public const string SavedRunnersFolderId = "saved-runners";
-    public const string SavedRunnersFolderName = "Saved Runners";
+    public const string SavedRunnersFolderName = "Saved Dossiers";
     public const string InboxFolderId = "inbox";
     public const string InboxFolderName = "Inbox";
     public const string WatchLinksFolderId = "watch-links";

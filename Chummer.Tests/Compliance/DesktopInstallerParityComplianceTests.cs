@@ -250,19 +250,34 @@ public sealed class DesktopInstallerParityComplianceTests
         StringAssert.Contains(gateText, "Windows installer is missing from the supplied release manifest");
         StringAssert.Contains(gateText, "bootstrap installer does not contain embedded");
         StringAssert.Contains(gateText, "payload zip is missing launch executable");
+        StringAssert.Contains(installerScriptText, "SCRIPT_DIR_PHYSICAL=\"$(cd \"$(dirname \"${BASH_SOURCE[0]}\")\" && pwd -P)\"");
+        StringAssert.Contains(installerScriptText, "REPO_ROOT_ALIAS_CANDIDATE=\"${CHUMMER_UI_REPO_ROOT_ALIAS:-$REPO_ROOT_PHYSICAL}\"");
+        StringAssert.Contains(installerScriptText, "SCRIPT_DIR=\"$REPO_ROOT/scripts\"");
+        Assert.IsFalse(
+            installerScriptText.Contains("SCRIPT_DIR=\"$(cd \"$(dirname \"${BASH_SOURCE[0]}\")\" && pwd -P)\"\nREPO_ROOT=\"$(cd \"$SCRIPT_DIR/..\" && pwd -P)\"", StringComparison.Ordinal),
+            "Desktop installer builder should not stop at the older physical-only root resolution without the alias-safe repo-root contract.");
         StringAssert.Contains(installerScriptText, "verify_windows_installer_payload_gate \"$DIST_DIR/$installer_name\"");
         StringAssert.Contains(installerScriptText, "--heads-json-base64 \"$heads_json_base64\"");
         StringAssert.Contains(installerScriptText, "--expected-entry \"$primary_relative_root/$LAUNCH_TARGET\"");
         StringAssert.Contains(installerScriptText, "--require-embedded-bootstrap-metadata");
+        StringAssert.Contains(publishBundleText, "SCRIPT_DIR_PHYSICAL=\"$(cd \"$(dirname \"${BASH_SOURCE[0]}\")\" && pwd -P)\"");
+        StringAssert.Contains(publishBundleText, "REPO_ROOT_ALIAS_CANDIDATE=\"${CHUMMER_UI_REPO_ROOT_ALIAS:-$REPO_ROOT_PHYSICAL}\"");
+        StringAssert.Contains(publishBundleText, "WORKSPACE_ROOT=\"$(cd \"$REPO_ROOT_PHYSICAL/..\" && pwd -P)\"");
         StringAssert.Contains(publishBundleText, "verify_windows_installer_payload_gate");
         StringAssert.Contains(publishBundleText, "--require-embedded-bootstrap-metadata");
         StringAssert.Contains(publishBundleText, "--require-manifest-row");
         StringAssert.Contains(publishBundleText, "chummer-*-win-*-payload.zip)");
         StringAssert.Contains(publishBundleText, "file_path.name.endswith(\"-payload.zip\")");
+        StringAssert.Contains(publishHttpText, "SCRIPT_DIR_PHYSICAL=\"$(cd \"$(dirname \"${BASH_SOURCE[0]}\")\" && pwd -P)\"");
+        StringAssert.Contains(publishHttpText, "REPO_ROOT_ALIAS_CANDIDATE=\"${CHUMMER_UI_REPO_ROOT_ALIAS:-$REPO_ROOT_PHYSICAL}\"");
+        StringAssert.Contains(publishHttpText, "SCRIPT_DIR=\"$REPO_ROOT/scripts\"");
         StringAssert.Contains(publishHttpText, "verify-windows-installer-payloads.py");
         StringAssert.Contains(publishHttpText, "--manifest \"$CANONICAL_MANIFEST_PATH\"");
         StringAssert.Contains(publishHttpText, "--require-embedded-bootstrap-metadata");
         StringAssert.Contains(publishHttpText, "--require-manifest-row");
+        StringAssert.Contains(publishS3Text, "SCRIPT_DIR_PHYSICAL=\"$(cd \"$(dirname \"${BASH_SOURCE[0]}\")\" && pwd -P)\"");
+        StringAssert.Contains(publishS3Text, "REPO_ROOT_ALIAS_CANDIDATE=\"${CHUMMER_UI_REPO_ROOT_ALIAS:-$REPO_ROOT_PHYSICAL}\"");
+        StringAssert.Contains(publishS3Text, "SCRIPT_DIR=\"$REPO_ROOT/scripts\"");
         StringAssert.Contains(publishS3Text, "verify-windows-installer-payloads.py");
         StringAssert.Contains(publishS3Text, "--manifest \"$MANIFEST_SOURCE\"");
         StringAssert.Contains(publishS3Text, "--require-embedded-bootstrap-metadata");

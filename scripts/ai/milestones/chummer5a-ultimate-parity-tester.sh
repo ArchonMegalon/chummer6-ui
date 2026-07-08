@@ -22,7 +22,11 @@ export CHUMMER_FIXTURE_UI_RECONSTRUCTION_RECEIPTS_DIR="$receipts_dir"
 
 bash "$repo_root/scripts/ai/milestones/chummer5a-fixture-ui-reconstruction.sh" >/dev/null
 
-mapfile -d '' fixtures < <(find "$fixtures_root" -maxdepth 1 -name '*.chum5' -print0 | sort -z)
+fixtures=()
+while IFS= read -r -d '' fixture_path; do
+  [[ -n "$fixture_path" ]] || continue
+  fixtures+=("$fixture_path")
+done < <(find "$fixtures_root" -maxdepth 1 -name '*.chum5' -print0 | sort -z)
 if [[ "${#fixtures[@]}" -eq 0 ]]; then
   echo "no .chum5 fixtures found under $fixtures_root" >&2
   exit 2

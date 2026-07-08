@@ -9,7 +9,7 @@ from datetime import datetime, timezone
 from pathlib import Path
 
 
-REPO_ROOT = Path("/docker/chummercomplete/chummer-presentation")
+REPO_ROOT = Path(__file__).resolve().parents[1]
 VERIFY_SCRIPT = REPO_ROOT / "scripts" / "verify-windows-installer-payloads.py"
 PUBLISH_SCRIPT = REPO_ROOT / "scripts" / "publish-download-bundle.sh"
 APPENDED_PAYLOAD_MAGIC = b"CHUMMER6PAYLOAD1"
@@ -1134,6 +1134,88 @@ def test_publish_download_bundle_refreshes_windows_visual_proof_handoff_before_e
     assert str(deploy_dir / "WINDOWS_INSTALLER_VISUAL_PROOF_HANDOFF.generated.json") in result.stderr
     assert "Windows visual proof status: ready_for_windows_host" in result.stderr
     assert "Windows visual proof next action: Run the stage-local Windows visual capture lane." in result.stderr
+
+
+def test_stable_publish_download_bundle_refuses_non_posture_root_blockers(tmp_path: Path) -> None:
+    bundle_dir = tmp_path / "bundle"
+    files_dir = bundle_dir / "files"
+    files_dir.mkdir(parents=True)
+    installer_path = files_dir / "chummer-avalonia-win-x64-installer.exe"
+    payload_path = files_dir / "chummer-avalonia-win-x64-payload.zip"
+    payload_bytes = _write_bootstrap_payload(payload_path)
+    payload_sha256 = hashlib.sha256(payload_bytes).hexdigest()
+    payload_url = f"https://example.invalid/downloads/files/{payload_path.name}"
+    _write_bootstrap_installer(
+        installer_path,
+        payload_download_url=payload_url,
+        payload_sha256=payload_sha256,
+        payload_size_bytes=len(payload_bytes),
+    )
+    installer_sha256 = hashlib.sha256(installer_path.read_bytes()).hexdigest()
+    (files_dir / "chummer-avalonia-win-x64-payload.zip.json").write_text(
+        json.dumps(
+            {
+                "contractName": "chummer6-ui.windows_bootstrap_payload",
+                "fileName": payload_path.name,
+                "downloadUrl": payload_url,
+                "sha256": payload_sha256,
+                "sizeBytes": len(payload_bytes),
+                "installerFileName": installer_path.name,
+                "releaseVersion": "run-stable-test",
+            },
+            indent=2,
+        )
+        + "\n",
+        encoding="utf-8",
+    )
+    _write_bundle_manifest(
+        bundle_dir / "releases.json",
+        installer_name=installer_path.name,
+        installer_sha256=installer_sha256,
+        installer_size_bytes=installer_path.stat().st_size,
+        payload_name=payload_path.name,
+        payload_sha256=payload_sha256,
+        payload_size_bytes=len(payload_bytes),
+    )
+
+    root_release_blockers = tmp_path / "RELEASE_BLOCKERS.generated.json"
+    root_release_blockers.write_text(
+        json.dumps(
+            {
+                "generated_at": "2026-07-06T07:07:19+02:00",
+                "blockers": [
+                    {"blocker_id": "release_posture:non_flagship_channel"},
+                    {"blocker_id": "release_truth:windows_installer_visual_audit"},
+                ],
+            },
+            indent=2,
+        )
+        + "\n",
+        encoding="utf-8",
+    )
+
+    deploy_dir = tmp_path / "deploy"
+    result = subprocess.run(
+        ["bash", str(PUBLISH_SCRIPT), str(bundle_dir), str(deploy_dir)],
+        cwd=REPO_ROOT,
+        env=_publish_env(
+            tmp_path,
+            RELEASE_CHANNEL="public_stable",
+            RELEASE_VERSION="run-stable-test",
+            RELEASE_PUBLISHED_AT="2026-07-06T00:00:00Z",
+            CHUMMER_ROOT_RELEASE_BLOCKERS_PATH=str(root_release_blockers),
+            CHUMMER_PUBLIC_EDGE_DOWNLOADS_SYNC_MIRRORS="false",
+        ),
+        text=True,
+        capture_output=True,
+        check=False,
+    )
+
+    assert result.returncode != 0
+    assert "Public stable publication is blocked by root release truth." in result.stderr
+    assert "release_truth:windows_installer_visual_audit" in result.stderr
+    assert "Windows visual proof handoff:" not in result.stderr
+    assert "Published downloads shelf failed Windows desktop exit gate verification." not in result.stderr
 
 
 def test_publish_download_bundle_fails_when_windows_bootstrap_receipt_payload_proof_is_wrong(tmp_path: Path) -> None:

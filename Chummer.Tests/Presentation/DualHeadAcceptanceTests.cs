@@ -40,7 +40,7 @@ public class DualHeadAcceptanceTests
         StringComparison.Ordinal);
     private static readonly RulesetShellCatalogResolverService ShellCatalogResolver =
         CreateShellCatalogResolver();
-    private static readonly Regex WorkspaceTokenRegex = new("(?<=Workspace:\\s)[A-Za-z0-9-]+|(?<=Dossier:\\s)[A-Za-z0-9-]+", RegexOptions.Compiled);
+    private static readonly Regex WorkspaceTokenRegex = new("(?<=Workspace:\\s)[A-Za-z0-9-]+|(?<=Dossier:\\s)[A-Za-z0-9-]+|(?<=Runner:\\s)[A-Za-z0-9-]+", RegexOptions.Compiled);
     private static readonly Regex WorkspaceFileNameRegex = new("^[a-f0-9]{32}(?:-[a-f0-9]{4}){0,4}\\.(?:chum5|json)$", RegexOptions.Compiled | RegexOptions.IgnoreCase);
     private static readonly Regex WorkspaceFileTokenRegex = new("[a-f0-9]{32}(?:-[a-f0-9]{4}){0,4}\\.(?:chum5|json)", RegexOptions.Compiled | RegexOptions.IgnoreCase);
     private static readonly Regex RuntimeGeneratedAtRegex = new(@"Generated:\s\d{4}-\d{2}-\d{2}\s\d{2}:\d{2}:\d{2}Z", RegexOptions.Compiled);
@@ -1499,6 +1499,9 @@ public class DualHeadAcceptanceTests
 
         if (string.Equals(fieldId, "rosterSelectedRunnerId", StringComparison.Ordinal))
             return "<runner>";
+
+        if (string.Equals(fieldId, "autoAliceWorkspaceId", StringComparison.Ordinal))
+            return "<workspace>";
 
         if (string.Equals(fieldId, "rosterSnapshot", StringComparison.Ordinal))
             return NormalizeRosterSnapshotValue(value);

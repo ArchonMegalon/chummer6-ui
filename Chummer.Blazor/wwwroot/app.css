@@ -215,10 +215,81 @@ button:disabled {
     font-weight: 600;
 }
 
+.shell-notice p {
+    margin: 0;
+}
+
+.shell-notice-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.55rem;
+    margin-top: 0.55rem;
+}
+
+.shell-notice-actions a {
+    width: fit-content;
+    padding: 0.38rem 0.55rem;
+    border: 1px solid currentColor;
+    color: inherit;
+    font-size: 0.82rem;
+    font-weight: 700;
+    text-decoration: none;
+}
+
+.shell-notice-actions button {
+    width: fit-content;
+    padding: 0.38rem 0.55rem;
+    border: 1px solid currentColor;
+    background: transparent;
+    color: inherit;
+    font: inherit;
+    font-size: 0.82rem;
+    font-weight: 700;
+    cursor: pointer;
+}
+
+.shell-notice-actions a:hover,
+.shell-notice-actions a:focus-visible,
+.shell-notice-actions button:hover,
+.shell-notice-actions button:focus-visible {
+    outline: none;
+    border-color: #1d4ed8;
+}
+
+.shell-notice-code {
+    display: block;
+    width: fit-content;
+    max-width: 100%;
+    margin-top: 0.55rem;
+    padding: 0.32rem 0.48rem;
+    border: 1px solid currentColor;
+    font-family: var(--ui-kit-mono-font, ui-monospace, SFMono-Regular, Consolas, monospace);
+    font-size: 0.8rem;
+    line-height: 1.4;
+    overflow-wrap: anywhere;
+}
+
 .shell-notice--warning {
     border-color: #a16207;
     background: #fffbeb;
     color: #713f12;
+}
+
+.result-panel {
+    display: grid;
+    gap: 0.45rem;
+    width: fit-content;
+    max-width: 100%;
+    padding: 0.4rem 0.55rem;
+    border: 1px solid var(--ui-kit-shell-border);
+    background: var(--ui-kit-panel-surface);
+    color: #16202b;
+    font-size: 0.88rem;
+    font-weight: 600;
+}
+
+.result-panel p {
+    margin: 0;
 }
 
 .menu-shell {
@@ -2978,6 +3049,39 @@ input[type="radio"] {
     color: var(--ui-kit-ink);
     padding: 0.7rem 0.8rem;
     min-height: 7rem;
+    overflow-wrap: anywhere;
+}
+
+.dialog-origin-link {
+    display: grid;
+    gap: 0.55rem;
+}
+
+.dialog-origin-link-anchor {
+    width: fit-content;
+    padding: 0.45rem 0.65rem;
+    border: 1px solid var(--ui-kit-shell-border-strong);
+    background: var(--ui-kit-shell-surface-emphasis);
+    color: var(--ui-kit-ink-strong);
+    font-weight: 700;
+    text-decoration: none;
+}
+
+.dialog-origin-link-anchor:hover,
+.dialog-origin-link-anchor:focus-visible {
+    border-color: var(--ui-kit-accent, var(--ui-kit-shell-border-strong));
+    outline: none;
+}
+
+.dialog-origin-link-code {
+    display: block;
+    padding: 0.55rem 0.65rem;
+    border: 1px solid var(--ui-kit-shell-border);
+    background: color-mix(in srgb, var(--ui-kit-panel-surface) 78%, black);
+    color: var(--ui-kit-ink);
+    font-family: var(--ui-kit-mono-font, ui-monospace, SFMono-Regular, Consolas, monospace);
+    font-size: 0.9rem;
+    line-height: 1.45;
     overflow-wrap: anywhere;
 }
 

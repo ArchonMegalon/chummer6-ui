@@ -1,10 +1,10 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd -P)"
 source "$SCRIPT_DIR/_env.sh"
 
-repo_root="$(cd "$SCRIPT_DIR/../.." && pwd)"
+repo_root="$REPO_ROOT"
 cd "$repo_root"
 
 solution_path="Chummer.Presentation.sln"
@@ -23,16 +23,33 @@ if [[ ! -f "$solution_path" ]]; then
   cp -f "$bootstrap_solution" "$solution_path"
 fi
 
-mapfile -t existing_projects < <(dotnet sln "$solution_path" list | tail -n +3 | sed 's/\r$//')
+collect_solution_projects() {
+  dotnet sln "$solution_path" list | tail -n +3 | sed 's/\r$//'
+}
 
-declare -A desired_lookup=()
-for project in "${desired_projects[@]}"; do
-  desired_lookup["$project"]=1
-done
+array_contains_exact() {
+  local needle="$1"
+  shift || true
+
+  local candidate=""
+  for candidate in "$@"; do
+    if [[ "$candidate" == "$needle" ]]; then
+      return 0
+    fi
+  done
+
+  return 1
+}
+
+existing_projects=()
+while IFS= read -r existing_project; do
+  [[ -n "$existing_project" ]] || continue
+  existing_projects+=("$existing_project")
+done < <(collect_solution_projects)
 
 declare -a projects_to_remove=()
 for project in "${existing_projects[@]}"; do
-  if [[ -n "$project" ]] && [[ -z "${desired_lookup[$project]:-}" ]]; then
+  if [[ -n "$project" ]] && ! array_contains_exact "$project" "${desired_projects[@]}"; then
     projects_to_remove+=("$project")
   fi
 done
@@ -41,18 +58,15 @@ if [[ "${#projects_to_remove[@]}" -gt 0 ]]; then
   dotnet sln "$solution_path" remove "${projects_to_remove[@]}"
 fi
 
-mapfile -t existing_projects < <(dotnet sln "$solution_path" list | tail -n +3 | sed 's/\r$//')
-
-declare -A existing_lookup=()
-for project in "${existing_projects[@]}"; do
-  if [[ -n "$project" ]]; then
-    existing_lookup["$project"]=1
-  fi
-done
+existing_projects=()
+while IFS= read -r existing_project; do
+  [[ -n "$existing_project" ]] || continue
+  existing_projects+=("$existing_project")
+done < <(collect_solution_projects)
 
 declare -a projects_to_add=()
 for project in "${desired_projects[@]}"; do
-  if [[ -z "${existing_lookup[$project]:-}" ]]; then
+  if ! array_contains_exact "$project" "${existing_projects[@]}"; then
     projects_to_add+=("$project")
   fi
 done

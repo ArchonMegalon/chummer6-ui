@@ -212,6 +212,8 @@ public sealed class DesktopWindowContrastTests
                 comboBox.SelectedItem = nextOption;
                 PumpUi();
                 PumpUi();
+                PumpUi();
+                PumpUi();
 
                 Expander reboundAdvancedStoryControls = window.GetVisualDescendants()
                     .OfType<Expander>()
@@ -299,6 +301,54 @@ public sealed class DesktopWindowContrastTests
     }
 
     [TestMethod]
+    public void Origin_dossier_combo_refresh_prefers_active_combo_anchor_before_advanced_panel_anchor_in_desktop_restore_lane()
+    {
+        string source = System.IO.File.ReadAllText(System.IO.Path.Combine(
+            TestContextLocator.ResolveChummerPresentationRepoRoot(),
+            "Chummer.Avalonia",
+            "DesktopDialogWindow.axaml.cs"));
+
+        int methodIndex = source.IndexOf("private void RestorePreferredScrollAnchorDuringOriginWizardComboInteraction()", StringComparison.Ordinal);
+        Assert.IsTrue(methodIndex >= 0, "Desktop origin combo restore helper must stay present.");
+
+        int interactionIndex = source.IndexOf("if (_preferredDialogInteractionAnchor is { } interactionAnchor)", methodIndex, StringComparison.Ordinal);
+        int viewportIndex = source.IndexOf("if (_preferredDialogViewportAnchor is { } viewportAnchor)", methodIndex, StringComparison.Ordinal);
+
+        Assert.IsTrue(interactionIndex >= 0, "Desktop origin combo restore must keep an explicit active-combo anchor path.");
+        Assert.IsTrue(viewportIndex >= 0, "Desktop origin combo restore must keep an advanced-panel fallback anchor path.");
+        Assert.IsTrue(
+            interactionIndex < viewportIndex,
+            "Desktop origin combo restore must prefer the active combo anchor before the advanced-panel anchor to avoid jumpy refreshes.");
+    }
+
+    [TestMethod]
+    public void Origin_dossier_combo_refresh_primes_active_combo_anchor_before_raw_scroll_offset_in_desktop_restore_lane()
+    {
+        string source = System.IO.File.ReadAllText(System.IO.Path.Combine(
+            TestContextLocator.ResolveChummerPresentationRepoRoot(),
+            "Chummer.Avalonia",
+            "DesktopDialogWindow.axaml.cs"));
+
+        int methodIndex = source.IndexOf("private void PrimePreferredScrollOffsetForDialogRebind(", StringComparison.Ordinal);
+        Assert.IsTrue(methodIndex >= 0, "Desktop origin combo prime helper must stay present.");
+
+        int interactionIndex = source.IndexOf(
+            "if (preservedInteractionAnchor is { } interactionAnchor",
+            methodIndex,
+            StringComparison.Ordinal);
+        int rawOffsetIndex = source.IndexOf(
+            "_dialogScrollViewer.Offset = offset;",
+            methodIndex,
+            StringComparison.Ordinal);
+
+        Assert.IsTrue(interactionIndex >= 0, "Desktop origin combo prime helper must keep the active-combo anchor path.");
+        Assert.IsTrue(rawOffsetIndex >= 0, "Desktop origin combo prime helper must keep the raw scroll-offset fallback path.");
+        Assert.IsTrue(
+            interactionIndex < rawOffsetIndex,
+            "Desktop origin combo prime helper must try the active combo anchor before falling back to the prior raw scroll offset.");
+    }
+
+    [TestMethod]
     public void Origin_dossier_combo_refresh_defers_transient_presenter_close()
     {
         DesktopDialogState originWizard = new DesktopDialogFactory().CreateCommandDialog(
@@ -342,6 +392,190 @@ public sealed class DesktopWindowContrastTests
             presenter.ReleaseFieldUpdates();
             PumpUi();
             Assert.IsTrue(window.IsVisible, "Origin Dossier should remain visible after the deferred refresh is rebound.");
+        });
+    }
+
+    [TestMethod]
+    public void Origin_dossier_combo_refresh_keeps_dialog_visible_during_slow_rebind()
+    {
+        DesktopDialogState originWizard = new DesktopDialogFactory().CreateCommandDialog(
+            "new_character_origin",
+            profile: null,
+            DesktopPreferenceState.Default,
+            activeSectionJson: null,
+            currentWorkspace: null,
+            rulesetId: RulesetDefaults.Sr5);
+
+        RebindingDialogPresenter presenter = new(originWizard, deferFieldUpdates: true);
+        WithPresenterBoundDialogWindow(originWizard, presenter, window =>
+        {
+            window.Height = 420;
+            PumpUi();
+
+            Expander advancedStoryControls = window.GetVisualDescendants()
+                .OfType<Expander>()
+                .Single(expander => string.Equals(expander.Name, "OriginDossierStandaloneAdvancedStoryControlsExpander", StringComparison.Ordinal));
+            ScrollViewer scrollViewer = window.FindControl<ScrollViewer>("DialogScrollViewer")!;
+
+            advancedStoryControls.IsExpanded = true;
+            scrollViewer.Offset = new Vector(0d, 180d);
+            PumpUi();
+
+            ComboBox refreshCombo = window.GetVisualDescendants()
+                .OfType<ComboBox>()
+                .First(control => (control.ItemsSource as System.Collections.IEnumerable)?.Cast<object>().OfType<DesktopDialogFieldOption>().Any() == true);
+            DesktopDialogFieldOption currentOption = (DesktopDialogFieldOption)(refreshCombo.SelectedItem
+                ?? throw new AssertFailedException("Origin combo did not expose a selected option."));
+            DesktopDialogFieldOption nextOption = (((System.Collections.IEnumerable?)refreshCombo.ItemsSource)?.Cast<DesktopDialogFieldOption>() ?? Enumerable.Empty<DesktopDialogFieldOption>())
+                .First(option => !string.Equals(option.Value, currentOption.Value, StringComparison.Ordinal));
+
+            refreshCombo.SelectedItem = nextOption;
+            PumpUi();
+
+            Assert.IsTrue(
+                window.TryDeferCloseForPendingOriginWizardTransientRefresh(),
+                "Origin Dossier should defer a transient presenter close while a combo refresh is preserving the current viewport.");
+
+            for (int i = 0; i < 10; i++)
+            {
+                Thread.Sleep(50);
+                PumpUi();
+                Assert.IsTrue(window.IsVisible, "Origin Dossier should remain visible while a slow combo refresh is still pending.");
+            }
+
+            presenter.ReleaseFieldUpdates();
+            PumpUi();
+            PumpUi();
+
+            Expander reboundAdvancedStoryControls = window.GetVisualDescendants()
+                .OfType<Expander>()
+                .Single(expander => string.Equals(expander.Name, "OriginDossierStandaloneAdvancedStoryControlsExpander", StringComparison.Ordinal));
+            ComboBox reboundRefreshCombo = window.GetVisualDescendants()
+                .OfType<ComboBox>()
+                .First(control => (control.ItemsSource as System.Collections.IEnumerable)?.Cast<object>().OfType<DesktopDialogFieldOption>().Any() == true);
+
+            Assert.IsTrue(reboundAdvancedStoryControls.IsExpanded, "Origin Dossier should keep advanced story controls expanded after a slow combo refresh rebounds.");
+            Assert.AreEqual(nextOption.Value, ((DesktopDialogFieldOption)reboundRefreshCombo.SelectedItem!).Value, "Origin Dossier should keep the selected combo value after a slow refresh rebounds.");
+        });
+    }
+
+    [TestMethod]
+    public void Origin_dossier_advanced_story_controls_keep_active_combo_viewport_anchor_after_live_combo_selection_inside_advanced_controls()
+    {
+        DesktopDialogState originWizard = new DesktopDialogFactory().CreateCommandDialog(
+            "new_character_origin",
+            profile: null,
+            DesktopPreferenceState.Default,
+            activeSectionJson: null,
+            currentWorkspace: null,
+            rulesetId: RulesetDefaults.Sr5);
+        DesktopDialogField buildPreferenceField = originWizard.Fields
+            .Single(field => string.Equals(field.Id, "newCharacterOriginBuildPreference", StringComparison.Ordinal));
+        DesktopDialogFieldOption nextBuildPreference = (buildPreferenceField.Options ?? [])
+            .First(option => !string.Equals(option.Value, buildPreferenceField.Value, StringComparison.Ordinal));
+
+        WithPresenterBoundDialogWindow(originWizard, window =>
+        {
+            window.Height = 420;
+            PumpUi();
+
+            Expander advancedStoryControls = window.GetVisualDescendants()
+                .OfType<Expander>()
+                .Single(expander => string.Equals(expander.Name, "OriginDossierStandaloneAdvancedStoryControlsExpander", StringComparison.Ordinal));
+            ScrollViewer scrollViewer = window.FindControl<ScrollViewer>("DialogScrollViewer")!;
+
+            advancedStoryControls.IsExpanded = true;
+            PumpUi();
+
+            scrollViewer.Offset = new Vector(0d, 180d);
+            PumpUi();
+
+            ComboBox buildPreferenceCombo = window.GetVisualDescendants()
+                .OfType<ComboBox>()
+                .Single(comboBox => string.Equals(comboBox.Name, DesktopDialogAccessibility.BuildFieldInputName("newCharacterOriginBuildPreference"), StringComparison.Ordinal));
+
+            buildPreferenceCombo.Focus();
+            PumpUi();
+
+            Point? preservedAnchor = buildPreferenceCombo.TranslatePoint(default, scrollViewer);
+            Assert.IsNotNull(preservedAnchor, "The active advanced combo should expose a viewport anchor before the live selection refresh.");
+
+            buildPreferenceCombo.SelectedItem = nextBuildPreference;
+            PumpUi();
+            PumpUi();
+
+            ComboBox reboundBuildPreferenceCombo = window.GetVisualDescendants()
+                .OfType<ComboBox>()
+                .Single(comboBox => string.Equals(comboBox.Name, DesktopDialogAccessibility.BuildFieldInputName("newCharacterOriginBuildPreference"), StringComparison.Ordinal));
+            ScrollViewer reboundScrollViewer = window.FindControl<ScrollViewer>("DialogScrollViewer")!;
+            Point? reboundAnchor = reboundBuildPreferenceCombo.TranslatePoint(default, reboundScrollViewer);
+
+            Assert.IsNotNull(reboundAnchor, "The active advanced combo should still expose a viewport anchor after the live selection refresh.");
+            Assert.IsTrue(
+                Math.Abs(reboundAnchor.Value.Y - preservedAnchor.Value.Y) <= 8d,
+                $"Origin Dossier should keep the active advanced combo anchored through live combo refreshes. Before={preservedAnchor.Value.Y:F1}, After={reboundAnchor.Value.Y:F1}.");
+        });
+    }
+
+    [TestMethod]
+    public void Origin_dossier_advanced_story_controls_keep_active_combo_viewport_anchor_after_live_combo_selection_in_story_controls()
+    {
+        DesktopDialogState originWizard = new DesktopDialogFactory().CreateCommandDialog(
+            "new_character_origin",
+            profile: null,
+            DesktopPreferenceState.Default,
+            activeSectionJson: null,
+            currentWorkspace: null,
+            rulesetId: RulesetDefaults.Sr5);
+        DesktopDialogField metatypePreferenceField = originWizard.Fields
+            .Single(field => string.Equals(field.Id, "newCharacterOriginMetatypePreference", StringComparison.Ordinal));
+        DesktopDialogFieldOption nextMetatypePreference = (metatypePreferenceField.Options ?? [])
+            .First(option => !string.Equals(option.Value, metatypePreferenceField.Value, StringComparison.Ordinal));
+
+        WithPresenterBoundDialogWindow(originWizard, window =>
+        {
+            window.Height = 420;
+            PumpUi();
+
+            Expander advancedStoryControls = window.GetVisualDescendants()
+                .OfType<Expander>()
+                .Single(expander => string.Equals(expander.Name, "OriginDossierStandaloneAdvancedStoryControlsExpander", StringComparison.Ordinal));
+            ScrollViewer scrollViewer = window.FindControl<ScrollViewer>("DialogScrollViewer")!;
+
+            advancedStoryControls.IsExpanded = true;
+            PumpUi();
+
+            scrollViewer.Offset = new Vector(0d, 56d);
+            PumpUi();
+
+            ComboBox metatypePreferenceCombo = window.GetVisualDescendants()
+                .OfType<ComboBox>()
+                .Single(comboBox => string.Equals(comboBox.Name, DesktopDialogAccessibility.BuildFieldInputName("newCharacterOriginMetatypePreference"), StringComparison.Ordinal));
+
+            metatypePreferenceCombo.Focus();
+            PumpUi();
+
+            Point? preservedAnchor = metatypePreferenceCombo.TranslatePoint(default, scrollViewer);
+            Assert.IsNotNull(preservedAnchor, "The active story combo should expose a viewport anchor before the live selection refresh.");
+
+            metatypePreferenceCombo.SelectedItem = nextMetatypePreference;
+            PumpUi();
+            PumpUi();
+
+            ComboBox reboundMetatypePreferenceCombo = window.GetVisualDescendants()
+                .OfType<ComboBox>()
+                .Single(comboBox => string.Equals(comboBox.Name, DesktopDialogAccessibility.BuildFieldInputName("newCharacterOriginMetatypePreference"), StringComparison.Ordinal));
+            ScrollViewer reboundScrollViewer = window.FindControl<ScrollViewer>("DialogScrollViewer")!;
+            Point? reboundAnchor = reboundMetatypePreferenceCombo.TranslatePoint(default, reboundScrollViewer);
+            Expander reboundAdvancedStoryControls = window.GetVisualDescendants()
+                .OfType<Expander>()
+                .Single(expander => string.Equals(expander.Name, "OriginDossierStandaloneAdvancedStoryControlsExpander", StringComparison.Ordinal));
+
+            Assert.IsNotNull(reboundAnchor, "The active story combo should still expose a viewport anchor after the live selection refresh.");
+            Assert.IsTrue(reboundAdvancedStoryControls.IsExpanded, "Advanced story controls should stay expanded after a story-lane combo refresh.");
+            Assert.IsTrue(
+                Math.Abs(reboundAnchor.Value.Y - preservedAnchor.Value.Y) <= 8d,
+                $"Origin Dossier should keep the active story combo anchored through live combo refreshes. Before={preservedAnchor.Value.Y:F1}, After={reboundAnchor.Value.Y:F1}.");
         });
     }
 
@@ -396,11 +630,9 @@ public sealed class DesktopWindowContrastTests
         Exception? lastFailure = null;
         for (int attempt = 1; attempt <= HeadlessSessionAttempts; attempt++)
         {
-            HeadlessUnitTestSession? session = null;
             try
             {
-                session = HeadlessUnitTestSession.StartNew(typeof(ContrastHeadlessAppBootstrap));
-                session.Dispatch(
+                RunContrastHeadless(session => session.Dispatch(
                         () =>
                         {
                             Window window = new DesktopInstallLinkingWindow(CreateInstallLinkingStartupContext())
@@ -423,16 +655,12 @@ public sealed class DesktopWindowContrastTests
                         },
                         CancellationToken.None)
                     .GetAwaiter()
-                    .GetResult();
+                    .GetResult());
                 return;
             }
             catch (Exception ex) when (IsTransientHeadlessFailure(ex) && attempt < HeadlessSessionAttempts)
             {
                 lastFailure = ex;
-            }
-            finally
-            {
-                SafeDisposeHeadlessSession(session);
             }
         }
 
@@ -445,11 +673,9 @@ public sealed class DesktopWindowContrastTests
         Exception? lastFailure = null;
         for (int attempt = 1; attempt <= HeadlessSessionAttempts; attempt++)
         {
-            HeadlessUnitTestSession? session = null;
             try
             {
-                session = HeadlessUnitTestSession.StartNew(typeof(ContrastHeadlessAppBootstrap));
-                session.Dispatch(
+                RunContrastHeadless(session => session.Dispatch(
                         () =>
                         {
                             ConstructorInfo constructor = typeof(DesktopReportIssueWindow).GetConstructor(
@@ -485,16 +711,12 @@ public sealed class DesktopWindowContrastTests
                         },
                         CancellationToken.None)
                     .GetAwaiter()
-                    .GetResult();
+                    .GetResult());
                 return;
             }
             catch (Exception ex) when (IsTransientHeadlessFailure(ex) && attempt < HeadlessSessionAttempts)
             {
                 lastFailure = ex;
-            }
-            finally
-            {
-                SafeDisposeHeadlessSession(session);
             }
         }
 
@@ -522,11 +744,9 @@ public sealed class DesktopWindowContrastTests
         Exception? lastFailure = null;
         for (int attempt = 1; attempt <= HeadlessSessionAttempts; attempt++)
         {
-            HeadlessUnitTestSession? session = null;
             try
             {
-                session = HeadlessUnitTestSession.StartNew(typeof(ContrastHeadlessAppBootstrap));
-                session.Dispatch(
+                RunContrastHeadless(session => session.Dispatch(
                         () =>
                         {
                             ConstructorInfo constructor = typeof(DesktopUpdateWindow).GetConstructor(
@@ -562,16 +782,12 @@ public sealed class DesktopWindowContrastTests
                         },
                         CancellationToken.None)
                     .GetAwaiter()
-                    .GetResult();
+                    .GetResult());
                 return;
             }
             catch (Exception ex) when (IsTransientHeadlessFailure(ex) && attempt < HeadlessSessionAttempts)
             {
                 lastFailure = ex;
-            }
-            finally
-            {
-                SafeDisposeHeadlessSession(session);
             }
         }
 
@@ -584,11 +800,9 @@ public sealed class DesktopWindowContrastTests
         Exception? lastFailure = null;
         for (int attempt = 1; attempt <= HeadlessSessionAttempts; attempt++)
         {
-            HeadlessUnitTestSession? session = null;
             try
             {
-                session = HeadlessUnitTestSession.StartNew(typeof(ContrastHeadlessAppBootstrap));
-                session.Dispatch(
+                RunContrastHeadless(session => session.Dispatch(
                         () =>
                         {
                             ConstructorInfo constructor = typeof(DesktopStartupUpdateWindow).GetConstructor(
@@ -614,16 +828,12 @@ public sealed class DesktopWindowContrastTests
                         },
                         CancellationToken.None)
                     .GetAwaiter()
-                    .GetResult();
+                    .GetResult());
                 return;
             }
             catch (Exception ex) when (IsTransientHeadlessFailure(ex) && attempt < HeadlessSessionAttempts)
             {
                 lastFailure = ex;
-            }
-            finally
-            {
-                SafeDisposeHeadlessSession(session);
             }
         }
 
@@ -636,11 +846,9 @@ public sealed class DesktopWindowContrastTests
         Exception? lastFailure = null;
         for (int attempt = 1; attempt <= HeadlessSessionAttempts; attempt++)
         {
-            HeadlessUnitTestSession? session = null;
             try
             {
-                session = HeadlessUnitTestSession.StartNew(typeof(ContrastHeadlessAppBootstrap));
-                session.Dispatch(
+                RunContrastHeadless(session => session.Dispatch(
                         () =>
                         {
                             ConstructorInfo constructor = typeof(DesktopDevicesAccessWindow).GetConstructor(
@@ -680,16 +888,12 @@ public sealed class DesktopWindowContrastTests
                         },
                         CancellationToken.None)
                     .GetAwaiter()
-                    .GetResult();
+                    .GetResult());
                 return;
             }
             catch (Exception ex) when (IsTransientHeadlessFailure(ex) && attempt < HeadlessSessionAttempts)
             {
                 lastFailure = ex;
-            }
-            finally
-            {
-                SafeDisposeHeadlessSession(session);
             }
         }
 
@@ -705,11 +909,9 @@ public sealed class DesktopWindowContrastTests
         Exception? lastFailure = null;
         for (int attempt = 1; attempt <= HeadlessSessionAttempts; attempt++)
         {
-            HeadlessUnitTestSession? session = null;
             try
             {
-                session = HeadlessUnitTestSession.StartNew(typeof(ContrastHeadlessAppBootstrap));
-                session.Dispatch(
+                RunContrastHeadless(session => session.Dispatch(
                         () =>
                         {
                             ThemeVariant? priorAppTheme = global::Avalonia.Application.Current?.RequestedThemeVariant;
@@ -744,16 +946,12 @@ public sealed class DesktopWindowContrastTests
                         },
                         CancellationToken.None)
                     .GetAwaiter()
-                    .GetResult();
+                    .GetResult());
                 return;
             }
             catch (Exception ex) when (IsTransientHeadlessFailure(ex) && attempt < HeadlessSessionAttempts)
             {
                 lastFailure = ex;
-            }
-            finally
-            {
-                SafeDisposeHeadlessSession(session);
             }
         }
 
@@ -778,11 +976,9 @@ public sealed class DesktopWindowContrastTests
         Exception? lastFailure = null;
         for (int attempt = 1; attempt <= HeadlessSessionAttempts; attempt++)
         {
-            HeadlessUnitTestSession? session = null;
             try
             {
-                session = HeadlessUnitTestSession.StartNew(typeof(ContrastHeadlessAppBootstrap));
-                session.Dispatch(
+                RunContrastHeadless(session => session.Dispatch(
                         () =>
                         {
                             ThemeVariant? priorAppTheme = global::Avalonia.Application.Current?.RequestedThemeVariant;
@@ -828,16 +1024,12 @@ public sealed class DesktopWindowContrastTests
                         },
                         CancellationToken.None)
                     .GetAwaiter()
-                    .GetResult();
+                    .GetResult());
                 return;
             }
             catch (Exception ex) when (IsTransientHeadlessFailure(ex) && attempt < HeadlessSessionAttempts)
             {
                 lastFailure = ex;
-            }
-            finally
-            {
-                SafeDisposeHeadlessSession(session);
             }
         }
 
@@ -850,11 +1042,9 @@ public sealed class DesktopWindowContrastTests
         Exception? lastFailure = null;
         for (int attempt = 1; attempt <= HeadlessSessionAttempts; attempt++)
         {
-            HeadlessUnitTestSession? session = null;
             try
             {
-                session = HeadlessUnitTestSession.StartNew(typeof(ContrastHeadlessAppBootstrap));
-                session.Dispatch(
+                RunContrastHeadless(session => session.Dispatch(
                         () =>
                         {
                             TextBox textBox = new() { Name = "ShellThemeTextBox", Text = "Runner note" };
@@ -911,16 +1101,12 @@ public sealed class DesktopWindowContrastTests
                         },
                         CancellationToken.None)
                     .GetAwaiter()
-                    .GetResult();
+                    .GetResult());
                 return;
             }
             catch (Exception ex) when (IsTransientHeadlessFailure(ex) && attempt < HeadlessSessionAttempts)
             {
                 lastFailure = ex;
-            }
-            finally
-            {
-                SafeDisposeHeadlessSession(session);
             }
         }
 
@@ -933,11 +1119,9 @@ public sealed class DesktopWindowContrastTests
         Exception? lastFailure = null;
         for (int attempt = 1; attempt <= HeadlessSessionAttempts; attempt++)
         {
-            HeadlessUnitTestSession? session = null;
             try
             {
-                session = HeadlessUnitTestSession.StartNew(typeof(ContrastHeadlessAppBootstrap));
-                session.Dispatch(
+                RunContrastHeadless(session => session.Dispatch(
                         () =>
                         {
                             CharacterCreateClassicPort port = new()
@@ -993,16 +1177,12 @@ public sealed class DesktopWindowContrastTests
                         },
                         CancellationToken.None)
                     .GetAwaiter()
-                    .GetResult();
+                    .GetResult());
                 return;
             }
             catch (Exception ex) when (IsTransientHeadlessFailure(ex) && attempt < HeadlessSessionAttempts)
             {
                 lastFailure = ex;
-            }
-            finally
-            {
-                SafeDisposeHeadlessSession(session);
             }
         }
 
@@ -1307,6 +1487,23 @@ public sealed class DesktopWindowContrastTests
         return message.Contains("The visual is not attached to a visual tree", StringComparison.Ordinal)
             || message.Contains("Call from invalid thread", StringComparison.Ordinal)
             || message.Contains("Operation is not valid due to the current state of the object", StringComparison.Ordinal);
+    }
+
+    private static void RunContrastHeadless(Action<HeadlessUnitTestSession> action)
+    {
+        lock (AvaloniaHeadlessSessionGate.SyncRoot)
+        {
+            HeadlessUnitTestSession? session = null;
+            try
+            {
+                session = HeadlessUnitTestSession.StartNew(typeof(ContrastHeadlessAppBootstrap));
+                action(session);
+            }
+            finally
+            {
+                SafeDisposeHeadlessSession(session);
+            }
+        }
     }
 
     private static void SafeDisposeHeadlessSession(HeadlessUnitTestSession? session)

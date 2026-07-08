@@ -137,6 +137,13 @@ public class MigrationComplianceTests
         string scriptPath = FindPath("scripts", "ai", "milestones", "next90-m103-ui-veteran-certification-check.sh");
         string scriptText = File.ReadAllText(scriptPath);
 
+        StringAssert.Contains(scriptText, "repo_root_physical=\"$(cd \"$(dirname \"${BASH_SOURCE[0]}\")/../../..\" && pwd -P)\"");
+        StringAssert.Contains(scriptText, "repo_root_alias_candidate=\"${CHUMMER_UI_REPO_ROOT_ALIAS:-$repo_root_physical}\"");
+        StringAssert.Contains(scriptText, "repo_root=\"$repo_root_physical\"");
+        StringAssert.Contains(scriptText, "repo_root=\"$(cd -L \"$repo_root_alias_candidate\" && pwd -L)\"");
+        Assert.IsFalse(
+            scriptText.Contains("repo_root=\"$(cd \"$(dirname \"${BASH_SOURCE[0]}\")/../../..\" && pwd)\"", StringComparison.Ordinal),
+            "M103 veteran certification guard should not fall back to the older non-alias-aware repo root resolution.");
         StringAssert.Contains(scriptText, "CHUMMER_RELEASE_CHANNEL_PATH");
         StringAssert.Contains(scriptText, "PROMOTED_PRIMARY_HEAD = \"avalonia\"");
         StringAssert.Contains(scriptText, "REQUIRED_PROMOTED_PLATFORMS");
@@ -169,6 +176,21 @@ public class MigrationComplianceTests
         string portalScriptPath = FindPath("scripts", "e2e-portal.sh");
         string uiScriptText = File.ReadAllText(uiScriptPath);
         string portalScriptText = File.ReadAllText(portalScriptPath);
+
+        StringAssert.Contains(uiScriptText, "SCRIPT_DIR_PHYSICAL=\"$(cd \"$(dirname \"${BASH_SOURCE[0]}\")\" && pwd -P)\"");
+        StringAssert.Contains(uiScriptText, "REPO_ROOT_PHYSICAL=\"$(cd \"$SCRIPT_DIR_PHYSICAL/..\" && pwd -P)\"");
+        StringAssert.Contains(uiScriptText, "REPO_ROOT_ALIAS_CANDIDATE=\"${CHUMMER_UI_REPO_ROOT_ALIAS:-$REPO_ROOT_PHYSICAL}\"");
+        StringAssert.Contains(uiScriptText, "REPO_ROOT=\"$REPO_ROOT_PHYSICAL\"");
+        StringAssert.Contains(uiScriptText, "SCRIPT_DIR=\"$REPO_ROOT/scripts\"");
+        StringAssert.Contains(uiScriptText, "WORKSPACE_ROOT=\"$(cd \"$REPO_ROOT_PHYSICAL/..\" && pwd -P)\"");
+        StringAssert.Contains(uiScriptText, "PLAYWRIGHT_SAMPLE_FILE=\"${CHUMMER_UI_SAMPLE_FILE:-$REPO_ROOT/Chummer.Tests/TestFiles/BLUE.chum5}\"");
+        StringAssert.Contains(uiScriptText, "CHUMMER_PLAYWRIGHT_NODE_PATH");
+        StringAssert.Contains(uiScriptText, "CHUMMER_PLAYWRIGHT_ROOT");
+        StringAssert.Contains(uiScriptText, "\"$WORKSPACE_ROOT/chummer.run-services/node_modules\"");
+        StringAssert.Contains(uiScriptText, "\"$WORKSPACE_ROOT/node_modules\"");
+        Assert.IsFalse(uiScriptText.Contains("SCRIPT_DIR=\"$(cd \"$(dirname \"${BASH_SOURCE[0]}\")\" && pwd)\"", StringComparison.Ordinal));
+        Assert.IsFalse(uiScriptText.Contains("REPO_ROOT=\"$(cd \"$SCRIPT_DIR/../..\" && pwd)\"", StringComparison.Ordinal));
+        Assert.IsFalse(uiScriptText.Contains("$REPO_ROOT/chummer-presentation/Chummer.Tests/TestFiles/BLUE.chum5", StringComparison.Ordinal));
 
         StringAssert.Contains(uiScriptText, "RUN_PLAYWRIGHT=\"1\"");
         StringAssert.Contains(uiScriptText, "PLAYWRIGHT_SOFT_FAIL=\"0\"");
@@ -1609,6 +1631,25 @@ public class MigrationComplianceTests
     }
 
     [TestMethod]
+    public void Npc_persona_studio_milestone_guard_uses_alias_safe_repo_root_resolution()
+    {
+        string scriptPath = FindPath("scripts", "ai", "milestones", "b11-npc-persona-studio-check.sh");
+        string scriptText = File.ReadAllText(scriptPath);
+
+        StringAssert.Contains(scriptText, "SCRIPT_DIR=\"$(cd \"$(dirname \"${BASH_SOURCE[0]}\")\" && pwd -P)\"");
+        StringAssert.Contains(scriptText, "repo_root_physical=\"$(cd \"$SCRIPT_DIR/../../..\" && pwd -P)\"");
+        StringAssert.Contains(scriptText, "repo_root_alias_candidate=\"${CHUMMER_UI_REPO_ROOT_ALIAS:-$repo_root_physical}\"");
+        StringAssert.Contains(scriptText, "REPO_ROOT=\"$repo_root_physical\"");
+        StringAssert.Contains(scriptText, "REPO_ROOT=\"$(cd -L \"$repo_root_alias_candidate\" && pwd -L)\"");
+        Assert.IsFalse(
+            scriptText.Contains("SCRIPT_DIR=\"$(cd \"$(dirname \"${BASH_SOURCE[0]}\")\" && pwd)\"", StringComparison.Ordinal),
+            "NPC Persona Studio milestone guard should not fall back to the older non-physical script directory resolution.");
+        Assert.IsFalse(
+            scriptText.Contains("REPO_ROOT=\"$(cd \"$SCRIPT_DIR/../../..\" && pwd)\"", StringComparison.Ordinal),
+            "NPC Persona Studio milestone guard should not fall back to the older non-alias-aware repo root resolution.");
+    }
+
+    [TestMethod]
     public void Hub_web_head_uses_browser_fetch_for_live_hub_catalog_routes()
     {
         string hubProjectReferencePath = FindPath("Chummer.Tests", "Chummer.Tests.csproj");
@@ -3003,9 +3044,17 @@ public class MigrationComplianceTests
         StringAssert.Contains(previewText, "data-preview-proof-card=\"save-character-result\"");
         StringAssert.Contains(previewText, "data-preview-proof-card=\"save-character-as-result\"");
         StringAssert.Contains(previewText, "data-preview-proof-card=\"origin-dossier\"");
-        StringAssert.Contains(previewText, "class=\"browser-app-launch\"");
+        StringAssert.Contains(previewText, "class=\"browser-app-roster\"");
         StringAssert.Contains(previewText, "browser-preview-frame--app");
-        StringAssert.Contains(previewText, "Your runners will appear here.");
+        StringAssert.Contains(previewText, "Find, group, and organize existing dossiers.");
+        StringAssert.Contains(previewText, "aria-label=\"Dossier folders\"");
+        StringAssert.Contains(previewText, "aria-label=\"Organize dossiers\"");
+        StringAssert.Contains(previewText, "aria-label=\"Selected dossier\"");
+        StringAssert.Contains(previewText, "aria-label=\"Dossier summary\"");
+        StringAssert.Contains(previewText, "aria-label=\"Open dossier Kestrel\"");
+        StringAssert.Contains(previewText, "aria-label=\"Selection-sensitive dossier actions\"");
+        StringAssert.Contains(previewText, "Create from the selected dossier lane.");
+        StringAssert.Contains(previewText, "Return to the active dossier context.");
         StringAssert.Contains(previewText, "Kestrel");
         StringAssert.Contains(previewText, "Street samurai");
         StringAssert.Contains(previewText, "if (IsWorkbenchRoute)");
@@ -3053,9 +3102,9 @@ public class MigrationComplianceTests
         StringAssert.Contains(previewText, "BuildWorkbenchLaneHref(RulesTabId)");
         StringAssert.Contains(previewText, "BuildWorkbenchLaneHref(GearTabId)");
         StringAssert.Contains(previewText, "BuildWorkbenchLaneHref(MatrixTabId)");
-        StringAssert.Contains(previewText, "BuildWorkbenchCommandHref(SaveCharacterAsCommand)");
-        StringAssert.Contains(previewText, "BuildWorkbenchCommandHref(ExportCharacterCommand");
-        StringAssert.Contains(previewText, "BuildWorkbenchCommandHref(PrintCharacterCommand)");
+        StringAssert.Contains(previewText, "SaveAsFlowHref => BuildAppCommandHref(SaveCharacterAsCommand);");
+        StringAssert.Contains(previewText, "ExportFlowHref => BuildAppCommandHref(ExportCharacterCommand, DownloadDialogAction);");
+        StringAssert.Contains(previewText, "PrintFlowHref => BuildAppCommandHref(PrintCharacterCommand);");
         StringAssert.Contains(previewText, "ProfileTabId = \"tab-info\"");
         StringAssert.Contains(previewText, "BuildTabId = \"tab-create\"");
         StringAssert.Contains(previewText, "RulesTabId = \"tab-rules\"");
@@ -3080,11 +3129,11 @@ public class MigrationComplianceTests
         StringAssert.Contains(previewText, "BuildWorkbenchLaneHref(RulesTabId)");
         StringAssert.Contains(previewText, "BuildWorkbenchLaneHref(GearTabId)");
         StringAssert.Contains(previewText, "BuildWorkbenchLaneHref(MatrixTabId)");
-        StringAssert.Contains(previewText, "BuildPreviewHref(SeededWorkspaceId, command: commandId, dialogAction: dialogAction, useWorkbenchRoute: true)");
+        StringAssert.Contains(previewText, "BuildAppHref(fixture: SeededWorkspaceId, command: commandId, dialogAction: dialogAction)");
         StringAssert.Contains(previewText, "New runner");
-        StringAssert.Contains(previewText, "Open Runner");
-        StringAssert.Contains(previewText, "Open for Printing");
-        StringAssert.Contains(previewText, "Open for Export");
+        StringAssert.Contains(previewText, "Open Dossier");
+        StringAssert.Contains(previewText, "Open Print Staging");
+        StringAssert.Contains(previewText, "Open Export Staging");
         StringAssert.Contains(previewText, "Open Print Result");
         StringAssert.Contains(previewText, "Open Export Result");
         StringAssert.Contains(previewText, "Open Save Result");
@@ -3095,9 +3144,9 @@ public class MigrationComplianceTests
         StringAssert.Contains(previewText, "BuildPreviewHref(command: OpenForPrintingCommand)");
         StringAssert.Contains(previewText, "BuildPreviewHref(command: OpenForExportCommand)");
         StringAssert.Contains(previewText, "BuildPreviewHref(SeededWorkspaceId, command: SaveCharacterCommand)");
-        StringAssert.Contains(previewText, "BuildPreviewHref(SeededWorkspaceId, command: SaveCharacterAsCommand)");
+        StringAssert.Contains(previewText, "BuildPreviewHref(SeededWorkspaceId, command: SaveCharacterAsCommand, dialogAction: DownloadDialogAction)");
         StringAssert.Contains(previewText, "BuildPreviewHref(SeededWorkspaceId, command: PrintCharacterCommand)");
-        StringAssert.Contains(previewText, "BuildPreviewHref(SeededWorkspaceId, command: ExportCharacterCommand)");
+        StringAssert.Contains(previewText, "BuildPreviewHref(SeededWorkspaceId, command: ExportCharacterCommand, dialogAction: DownloadDialogAction)");
         StringAssert.Contains(previewText, "BuildPreviewHref(command: NewCharacterOriginCommand)");
 
         StringAssert.Contains(previewTestsText, "DataRow(\"open_character\")");
@@ -3121,7 +3170,7 @@ public class MigrationComplianceTests
         StringAssert.Contains(previewTestsText, "[data-workbench-entry-card='new-character']");
         StringAssert.Contains(previewTestsText, "[data-workbench-entry-card='open-character']");
         StringAssert.Contains(previewTestsText, "[data-workbench-entry-card='seeded-build-lab']");
-        StringAssert.Contains(previewTestsText, "Continue PRV in build lab");
+        StringAssert.Contains(previewTestsText, "Continue PRV in Build Lab");
         StringAssert.Contains(previewTestsText, "[data-workbench-entry-card='continue-recent']");
         StringAssert.Contains(previewTestsText, "[data-workbench-entry-card='recent-work']");
         StringAssert.Contains(previewTestsText, "data-workbench-recent-workspace=\\\"preview-ws\\\"");
@@ -3201,7 +3250,10 @@ public class MigrationComplianceTests
         StringAssert.Contains(testText, "WorkspaceLeftPane_renders_shell_controls_and_invokes_callbacks");
         StringAssert.Contains(testText, "SectionPane_switches_between_placeholder_and_section_payload");
         StringAssert.Contains(testText, "DialogHost_renders_dialog_and_emits_events");
+        StringAssert.Contains(testText, "DialogHost_roster_hierarchy_uses_dossier_copy_and_keeps_empty_state_non_draggable");
+        StringAssert.Contains(testText, "ResultPanel_save_receipt_uses_dossier_copy_when_workspace_is_saved");
         StringAssert.Contains(desktopShellRulesetText, "DesktopShell_uses_active_ruleset_plugin_catalogs_for_actions_and_workflow_surfaces");
+        StringAssert.Contains(desktopShellRulesetText, "DesktopShell_uses_dossier_navigation_copy_for_skip_link_and_readiness_summary");
     }
 
     [TestMethod]
@@ -3223,6 +3275,10 @@ public class MigrationComplianceTests
         StringAssert.Contains(uiE2eText, "CHUMMER_E2E_DOCKER_FALLBACK");
         StringAssert.Contains(uiE2eText, "CHUMMER_E2E_HOST_PROBE_ATTEMPTS");
         StringAssert.Contains(uiE2eText, "CHUMMER_E2E_DOCKER_PROBE_ATTEMPTS");
+        StringAssert.Contains(uiE2eText, "CHUMMER_PLAYWRIGHT_NODE_PATH");
+        StringAssert.Contains(uiE2eText, "CHUMMER_PLAYWRIGHT_ROOT");
+        StringAssert.Contains(uiE2eText, "\"$WORKSPACE_ROOT/chummer.run-services/node_modules\"");
+        StringAssert.Contains(uiE2eText, "\"$WORKSPACE_ROOT/node_modules\"");
         StringAssert.Contains(uiE2eText, "docker_fetch_with_key");
         StringAssert.Contains(uiE2eText, "docker compose --profile test run --build --rm -T chummer-playwright");
         StringAssert.Contains(migrationLoopText, "bash scripts/e2e-ui.sh");
@@ -3230,7 +3286,7 @@ public class MigrationComplianceTests
         StringAssert.Contains(playwrightScriptText, "[data-testid=\"startup-workbench\"]");
         StringAssert.Contains(playwrightScriptText, "main.public-preview");
         StringAssert.Contains(playwrightScriptText, "openPreviewWithRetry");
-        StringAssert.Contains(playwrightScriptText, "Character workflows are live in the browser where parity is actually implemented");
+        StringAssert.Contains(playwrightScriptText, "Chummer Online for real dossier work.");
         StringAssert.Contains(playwrightScriptText, "Published self-hosted Docker surface");
         StringAssert.Contains(playwrightScriptText, "390, height: 844");
         StringAssert.Contains(playwrightScriptText, "[data-startup-command=\"new_character\"]");
@@ -3262,8 +3318,8 @@ public class MigrationComplianceTests
         StringAssert.Contains(playwrightScriptText, "#summaryName");
         StringAssert.Contains(playwrightScriptText, "playwright UI flow completed");
         StringAssert.Contains(uiE2eText, "blazor-preview-html");
-        StringAssert.Contains(uiE2eText, "Chummer Browser Workbench");
-        StringAssert.Contains(uiE2eText, "shared workbench shell, running in the browser");
+        StringAssert.Contains(uiE2eText, "Chummer Online for real dossier work.");
+        StringAssert.Contains(uiE2eText, "Preview Chummer Online workflows without changing the public route.");
 
         StringAssert.Contains(dockerComposeText, "dockerfile: chummer-presentation/Chummer.Blazor/Dockerfile");
         StringAssert.Contains(blazorDockerfileText, "COPY . .");
@@ -3332,11 +3388,12 @@ public class MigrationComplianceTests
         StringAssert.Contains(portalRouteProbeText, "'/downloads'");
         StringAssert.Contains(portalRouteProbeText, "'/help'");
         StringAssert.Contains(portalRouteProbeText, "'/contact'");
-        StringAssert.Contains(portalRouteProbeText, "response.url.endsWith('/login?next=%2Faccount')");
+        StringAssert.Contains(portalRouteProbeText, "response.url.includes('/login?next=%2Faccount')");
         StringAssert.Contains(portalRouteProbeText, "url: `${baseUrl}/downloads/releases.json`");
         StringAssert.Contains(portalRouteProbeText, "url: `${baseUrl}/now`");
         StringAssert.Contains(portalRouteProbeText, "What works today");
-        StringAssert.Contains(portalRouteProbeText, "What Is Chummer?");
+        StringAssert.Contains(portalRouteProbeText, "url: `${baseUrl}/what-is-chummer`");
+        StringAssert.Contains(portalRouteProbeText, "Character tools for Shadowrun.");
         StringAssert.Contains(portalRouteProbeText, "url: `${baseUrl}/play`");
         StringAssert.Contains(portalRouteProbeText, "url: `${baseUrl}/status`");
         StringAssert.Contains(portalRouteProbeText, "url: `${baseUrl}/ledger`");
@@ -3372,12 +3429,11 @@ public class MigrationComplianceTests
         StringAssert.Contains(portalPlaywrightText, "complex_form_add");
         StringAssert.Contains(portalPlaywrightText, "Complex Forms");
         StringAssert.Contains(portalPlaywrightText, "portal playwright e2e completed");
-        StringAssert.Contains(portalRouteProbeText, "/blazor/workbench?command=new_character");
-        StringAssert.Contains(portalRouteProbeText, "/blazor/workbench?command=open_character");
-        StringAssert.Contains(portalRouteProbeText, "/blazor/workbench?command=open_for_printing");
-        StringAssert.Contains(portalRouteProbeText, "/blazor/workbench?command=open_for_export");
-        StringAssert.Contains(portalRouteProbeText, "/blazor/workbench?workspace=ws-1&tab=tab-technomancer&control=complex_form_add");
-        StringAssert.Contains(portalRouteProbeText, "/blazor/workbench?workspace=ws-1&tab=tab-technomancer&control=complex_form_add&dialog_action=add");
+        StringAssert.Contains(portalRouteProbeText, "url: `${baseUrl}/app?command=character_roster`");
+        StringAssert.Contains(portalRouteProbeText, "url: `${baseUrl}/blazor/home`");
+        StringAssert.Contains(portalRouteProbeText, "url: `${baseUrl}/blazor/app`");
+        StringAssert.Contains(portalRouteProbeText, "response.url.endsWith('/play')");
+        StringAssert.Contains(portalRouteProbeText, "response.url.endsWith('/status')");
         StringAssert.Contains(portalFixtureProbeText, "deep-link-check");
         StringAssert.Contains(portalFixtureProbeText, "deep-link-signoff");
         StringAssert.Contains(portalFixtureProbeText, "cross-origin-opener-policy");
@@ -3389,6 +3445,13 @@ public class MigrationComplianceTests
 
         string b7SignoffPath = FindPath("scripts", "ai", "milestones", "b7-browser-isolation-check.sh");
         string b7SignoffText = File.ReadAllText(b7SignoffPath);
+        StringAssert.Contains(b7SignoffText, "repo_root_physical=\"$(cd \"$(dirname \"${BASH_SOURCE[0]}\")/../../..\" && pwd -P)\"");
+        StringAssert.Contains(b7SignoffText, "repo_root_alias_candidate=\"${CHUMMER_UI_REPO_ROOT_ALIAS:-$repo_root_physical}\"");
+        StringAssert.Contains(b7SignoffText, "repo_root=\"$repo_root_physical\"");
+        StringAssert.Contains(b7SignoffText, "repo_root=\"$(cd -L \"$repo_root_alias_candidate\" && pwd -L)\"");
+        Assert.IsFalse(
+            b7SignoffText.Contains("repo_root=\"$(cd \"$(dirname \"${BASH_SOURCE[0]}\")/../../..\" && pwd)\"", StringComparison.Ordinal),
+            "B7 browser isolation check should not fall back to the older non-alias-aware repo root resolution.");
         Assert.IsFalse(b7SignoffText.Contains("CHUMMER_PORTAL_INPROCESS_FIXTURE=1", StringComparison.Ordinal));
         StringAssert.Contains(b7SignoffText, "connected runtime-capable lane");
         StringAssert.Contains(b7SignoffText, "local runtime fixture could not bind");
@@ -3493,17 +3556,45 @@ public class MigrationComplianceTests
         string buildScriptText = File.ReadAllText(FindPath("scripts", "ai", "build.sh"));
         string testScriptText = File.ReadAllText(FindPath("scripts", "ai", "test.sh"));
         string restoreScriptText = File.ReadAllText(FindPath("scripts", "ai", "restore.sh"));
+        string cleanScriptText = File.ReadAllText(FindPath("scripts", "ai", "clean.sh"));
+        string formatScriptText = File.ReadAllText(FindPath("scripts", "ai", "format.sh"));
+        string coverageScriptText = File.ReadAllText(FindPath("scripts", "ai", "coverage.sh"));
+        string testMatrixScriptText = File.ReadAllText(FindPath("scripts", "ai", "test-matrix.sh"));
+        string testNativeHostMatrixScriptText = File.ReadAllText(FindPath("scripts", "ai", "test-native-host-matrix.sh"));
+        string envScriptText = File.ReadAllText(FindPath("scripts", "ai", "_env.sh"));
         string helperScriptText = File.ReadAllText(FindPath("scripts", "ai", "with-package-plane.sh"));
         string desktopRuntimeProjectText = File.ReadAllText(FindPath("Chummer.Desktop.Runtime", "Chummer.Desktop.Runtime.csproj"));
+
+        static void AssertPhysicalAiScriptDirHeader(string scriptText, string scriptLabel)
+        {
+            StringAssert.Contains(scriptText, "SCRIPT_DIR=\"$(cd \"$(dirname \"${BASH_SOURCE[0]}\")\" && pwd -P)\"");
+            Assert.IsFalse(
+                scriptText.Contains("SCRIPT_DIR=\"$(cd \"$(dirname \"${BASH_SOURCE[0]}\")\" && pwd)\"", StringComparison.Ordinal),
+                $"{scriptLabel} should not regress to the older non-physical script directory resolution.");
+        }
 
         StringAssert.Contains(propsText, "<ChummerUseLocalCompatibilityTree Condition=\"'$(ChummerUseLocalCompatibilityTree)' == ''\">false</ChummerUseLocalCompatibilityTree>");
         StringAssert.Contains(propsText, "<ChummerRunContractsPackageId Condition=\"'$(ChummerRunContractsPackageId)' == ''\">Chummer.Run.Contracts</ChummerRunContractsPackageId>");
         StringAssert.Contains(propsText, "<ChummerRunContractsPackageVersion Condition=\"'$(ChummerRunContractsPackageVersion)' == ''\">0.1.0-preview</ChummerRunContractsPackageVersion>");
         StringAssert.Contains(propsText, "<ChummerHubRegistryContractsPackageId Condition=\"'$(ChummerHubRegistryContractsPackageId)' == ''\">Chummer.Hub.Registry.Contracts</ChummerHubRegistryContractsPackageId>");
         StringAssert.Contains(propsText, "<ChummerHubRegistryContractsPackageVersion Condition=\"'$(ChummerHubRegistryContractsPackageVersion)' == ''\">0.1.0-preview</ChummerHubRegistryContractsPackageVersion>");
+        AssertPhysicalAiScriptDirHeader(buildScriptText, "build helper");
+        AssertPhysicalAiScriptDirHeader(testScriptText, "test helper");
+        AssertPhysicalAiScriptDirHeader(cleanScriptText, "clean helper");
+        AssertPhysicalAiScriptDirHeader(formatScriptText, "format helper");
+        AssertPhysicalAiScriptDirHeader(coverageScriptText, "coverage helper");
+        AssertPhysicalAiScriptDirHeader(testMatrixScriptText, "test-matrix helper");
+        AssertPhysicalAiScriptDirHeader(testNativeHostMatrixScriptText, "test-native-host-matrix helper");
         StringAssert.Contains(buildScriptText, "with-package-plane.sh");
         StringAssert.Contains(testScriptText, "with-package-plane.sh");
         StringAssert.Contains(restoreScriptText, "with-package-plane.sh");
+        StringAssert.Contains(restoreScriptText, "exec \"$SCRIPT_DIR/with-package-plane.sh\" restore \"$@\"");
+        StringAssert.Contains(envScriptText, "SCRIPT_DIR_PHYSICAL=\"$(cd \"$(dirname \"${BASH_SOURCE[0]}\")\" && pwd -P)\"");
+        StringAssert.Contains(envScriptText, "REPO_ROOT_PHYSICAL=\"$(cd \"$SCRIPT_DIR_PHYSICAL/../..\" && pwd -P)\"");
+        StringAssert.Contains(envScriptText, "REPO_ROOT_ALIAS_CANDIDATE=\"${CHUMMER_UI_REPO_ROOT_ALIAS:-$REPO_ROOT_PHYSICAL}\"");
+        StringAssert.Contains(envScriptText, "if [[ \"$alias_physical\" == \"$REPO_ROOT_PHYSICAL\" ]]; then");
+        StringAssert.Contains(envScriptText, "REPO_ROOT=\"$(cd -L \"$REPO_ROOT_ALIAS_CANDIDATE\" && pwd -L)\"");
+        StringAssert.Contains(helperScriptText, "script_dir=\"$(cd \"$(dirname \"${BASH_SOURCE[0]}\")\" && pwd -P)\"");
         StringAssert.Contains(helperScriptText, "missing local compatibility-tree owner projects:");
         StringAssert.Contains(helperScriptText, "CHUMMER_PUBLISHED_FEED_SOURCES");
         StringAssert.Contains(helperScriptText, "Chummer.Run.Contracts");
@@ -3512,6 +3603,13 @@ public class MigrationComplianceTests
         StringAssert.Contains(helperScriptText, "local configuration=\"$3\"");
         StringAssert.Contains(helperScriptText, "dotnet build \"$project_path\" -c \"$configuration\"");
         StringAssert.Contains(helperScriptText, "\"$prebuild_configuration\"");
+        StringAssert.Contains(helperScriptText, "repo_root=\"$REPO_ROOT\"");
+        StringAssert.Contains(helperScriptText, "repo_root_physical=\"$(cd \"$repo_root\" && pwd -P)\"");
+        StringAssert.Contains(helperScriptText, "workspace_root=\"$(cd \"$repo_root_physical/..\" && pwd -P)\"");
+        Assert.IsFalse(envScriptText.Contains("REPO_ROOT=\"$(cd \"$SCRIPT_DIR/../..\" && pwd)\"", StringComparison.Ordinal));
+        Assert.IsFalse(envScriptText.Contains("REPO_ROOT_PHYSICAL=\"$(cd \"$SCRIPT_DIR/../..\" && pwd -P)\"", StringComparison.Ordinal));
+        Assert.IsFalse(helperScriptText.Contains("script_dir=\"$(cd \"$(dirname \"${BASH_SOURCE[0]}\")\" && pwd)\"", StringComparison.Ordinal));
+        Assert.IsFalse(helperScriptText.Contains("repo_root=\"$(cd \"$script_dir/../..\" && pwd)\"", StringComparison.Ordinal));
         StringAssert.Contains(desktopRuntimeProjectText, "ProjectReference Include=\"$(ChummerLocalHubRegistryContractsProject)\"");
         StringAssert.Contains(desktopRuntimeProjectText, "PackageReference Include=\"$(ChummerHubRegistryContractsPackageId)\" Version=\"$(ChummerHubRegistryContractsPackageVersion)\"");
         Assert.IsFalse(
@@ -3791,14 +3889,39 @@ public class MigrationComplianceTests
         StringAssert.Contains(blazorDesktopProgramText, "DesktopUpdateRuntime.CheckAndScheduleStartupUpdateAsync");
         StringAssert.Contains(blazorDesktopProgramText, "DesktopInstallLinkingRuntime.InitializeForStartupAsync");
         StringAssert.Contains(blazorDesktopProgramText, "builder.RootComponents.Add<DesktopAppHost>(\"app\")");
+        StringAssert.Contains(manifestScriptText, "SCRIPT_DIR_PHYSICAL=\"$(cd \"$(dirname \"${BASH_SOURCE[0]}\")\" && pwd -P)\"");
+        StringAssert.Contains(manifestScriptText, "REPO_ROOT_ALIAS_CANDIDATE=\"${CHUMMER_UI_REPO_ROOT_ALIAS:-$REPO_ROOT_PHYSICAL}\"");
+        StringAssert.Contains(manifestScriptText, "SCRIPT_DIR=\"$REPO_ROOT/scripts\"");
+        Assert.IsFalse(
+            manifestScriptText.Contains("SCRIPT_DIR=\"$(cd \"$(dirname \"${BASH_SOURCE[0]}\")\" && pwd)\"", StringComparison.Ordinal),
+            "Release manifest generator should not fall back to the older non-alias-aware script directory resolution.");
+        StringAssert.Contains(verifyScriptText, "SCRIPT_DIR_PHYSICAL=\"$(cd \"$(dirname \"${BASH_SOURCE[0]}\")\" && pwd -P)\"");
+        StringAssert.Contains(verifyScriptText, "REPO_ROOT_ALIAS_CANDIDATE=\"${CHUMMER_UI_REPO_ROOT_ALIAS:-$REPO_ROOT_PHYSICAL}\"");
+        StringAssert.Contains(verifyScriptText, "SCRIPT_DIR=\"$REPO_ROOT/scripts\"");
+        Assert.IsFalse(
+            verifyScriptText.Contains("SCRIPT_DIR=\"$(cd \"$(dirname \"${BASH_SOURCE[0]}\")\" && pwd)\"", StringComparison.Ordinal),
+            "Release manifest verifier should not fall back to the older non-alias-aware script directory resolution.");
         StringAssert.Contains(startupSmokeScriptText, "CHUMMER_STARTUP_SMOKE_REQUIRED_INSTALL_PATHS");
         StringAssert.Contains(startupSmokeScriptText, "Missing required installed path(s) after Windows smoke install:");
         StringAssert.Contains(startupSmokeScriptText, "CHUMMER_DESKTOP_STARTUP_SMOKE_HOST_CLASS");
+        StringAssert.Contains(startupSmokeScriptText, "SCRIPT_DIR_PHYSICAL=\"$(cd \"$(dirname \"${BASH_SOURCE[0]}\")\" && pwd -P)\"");
+        StringAssert.Contains(startupSmokeScriptText, "REPO_ROOT_ALIAS_CANDIDATE=\"${CHUMMER_UI_REPO_ROOT_ALIAS:-$REPO_ROOT_PHYSICAL}\"");
+        StringAssert.Contains(startupSmokeScriptText, "SCRIPT_DIR=\"$REPO_ROOT/scripts\"");
+        Assert.IsFalse(
+            startupSmokeScriptText.Contains("SCRIPT_DIR=\"$(cd \"$(dirname \"${BASH_SOURCE[0]}\")\" && pwd)\"", StringComparison.Ordinal),
+            "Desktop startup smoke script should not fall back to the older non-alias-aware script directory resolution.");
         StringAssert.Contains(manifestScriptText, "--startup-smoke-dir");
         StringAssert.Contains(manifestScriptText, "SIGNING_RECEIPTS_DIR");
         StringAssert.Contains(manifestScriptText, "--signing-receipts-dir");
         StringAssert.Contains(manifestScriptText, "promotion_evidence_args");
         StringAssert.Contains(verifyScriptText, "--skip-startup-smoke-filter");
+        StringAssert.Contains(publishBundleScriptText, "SCRIPT_DIR_PHYSICAL=\"$(cd \"$(dirname \"${BASH_SOURCE[0]}\")\" && pwd -P)\"");
+        StringAssert.Contains(publishBundleScriptText, "REPO_ROOT_ALIAS_CANDIDATE=\"${CHUMMER_UI_REPO_ROOT_ALIAS:-$REPO_ROOT_PHYSICAL}\"");
+        StringAssert.Contains(publishBundleScriptText, "SCRIPT_DIR=\"$REPO_ROOT/scripts\"");
+        StringAssert.Contains(publishBundleScriptText, "WORKSPACE_ROOT=\"$(cd \"$REPO_ROOT_PHYSICAL/..\" && pwd -P)\"");
+        Assert.IsFalse(
+            publishBundleScriptText.Contains("SCRIPT_DIR=\"$(cd \"$(dirname \"${BASH_SOURCE[0]}\")\" && pwd)\"", StringComparison.Ordinal),
+            "Downloads publisher should not fall back to the older non-alias-aware script directory resolution.");
         StringAssert.Contains(publishBundleScriptText, "CHUMMER_PORTAL_DOWNLOADS_VERIFY_URL");
         StringAssert.Contains(publishBundleScriptText, "CHUMMER_PORTAL_DOWNLOADS_VERIFY_LINKS");
         StringAssert.Contains(publishBundleScriptText, "CHUMMER_PORTAL_DOWNLOADS_DEPLOY_ENABLED");
@@ -3808,6 +3931,12 @@ public class MigrationComplianceTests
         StringAssert.Contains(publishBundleScriptText, "bash \"$SCRIPT_DIR/verify-releases-manifest.sh\" \"$LIVE_VERIFY_TARGET\"");
         StringAssert.Contains(publishBundleS3ScriptText, "CHUMMER_PORTAL_DOWNLOADS_S3_URI");
         StringAssert.Contains(publishBundleS3ScriptText, "Set CHUMMER_PORTAL_DOWNLOADS_S3_URI");
+        StringAssert.Contains(publishBundleS3ScriptText, "SCRIPT_DIR_PHYSICAL=\"$(cd \"$(dirname \"${BASH_SOURCE[0]}\")\" && pwd -P)\"");
+        StringAssert.Contains(publishBundleS3ScriptText, "REPO_ROOT_ALIAS_CANDIDATE=\"${CHUMMER_UI_REPO_ROOT_ALIAS:-$REPO_ROOT_PHYSICAL}\"");
+        StringAssert.Contains(publishBundleS3ScriptText, "SCRIPT_DIR=\"$REPO_ROOT/scripts\"");
+        Assert.IsFalse(
+            publishBundleS3ScriptText.Contains("SCRIPT_DIR=\"$(cd \"$(dirname \"${BASH_SOURCE[0]}\")\" && pwd)\"", StringComparison.Ordinal),
+            "S3 downloads publisher should not fall back to the older non-alias-aware script directory resolution.");
         StringAssert.Contains(runbookText, "CHUMMER_PORTAL_DOWNLOADS_AWS_ACCESS_KEY_ID");
         StringAssert.Contains(runbookText, "CHUMMER_PORTAL_DOWNLOADS_VERIFY_URL");
         Assert.IsFalse(
@@ -3837,7 +3966,8 @@ public class MigrationComplianceTests
         StringAssert.Contains(startupSmokeScriptText, "CHUMMER_DESKTOP_STARTUP_SMOKE_ARTIFACT_DIGEST");
         StringAssert.Contains(startupSmokeScriptText, "CHUMMER_DESKTOP_STARTUP_SMOKE_READY_CHECKPOINT");
         StringAssert.Contains(startupSmokeScriptText, "--smoke-install");
-        StringAssert.Contains(startupSmokeScriptText, "winepath -w \"$input_path\" | tr -d '\\r'");
+        StringAssert.Contains(startupSmokeScriptText, "local winepath_timeout=\"${CHUMMER_WINEPATH_TIMEOUT_SECONDS:-15}\"");
+        StringAssert.Contains(startupSmokeScriptText, "winepath -w \"$input_path\" 2>/dev/null | tr -d '\\r' || true");
         StringAssert.Contains(startupSmokeScriptText, "run_with_optional_xvfb wine");
         StringAssert.Contains(startupSmokeScriptText, "payload[\"artifactPath\"] = str(artifact_path)");
         StringAssert.Contains(startupSmokeScriptText, "hdiutil attach");
@@ -3870,13 +4000,36 @@ public class MigrationComplianceTests
         string runbookScriptText = File.ReadAllText(runbookScriptPath);
         string manifestScriptPath = FindPath("scripts", "generate-releases-manifest.sh");
         string manifestScriptText = File.ReadAllText(manifestScriptPath);
+        string nightlyPublisherPath = FindPath("scripts", "publish-latest-nightly-to-downloads.sh");
+        string nightlyPublisherText = File.ReadAllText(nightlyPublisherPath);
 
+        static void AssertAliasSafeRepoRootHeader(string scriptText, string scriptLabel)
+        {
+            StringAssert.Contains(scriptText, "SCRIPT_DIR_PHYSICAL=\"$(cd \"$(dirname \"${BASH_SOURCE[0]}\")\" && pwd -P)\"");
+            StringAssert.Contains(scriptText, "REPO_ROOT_PHYSICAL=\"$(cd \"$SCRIPT_DIR_PHYSICAL/..\" && pwd -P)\"");
+            StringAssert.Contains(scriptText, "REPO_ROOT_ALIAS_CANDIDATE=\"${CHUMMER_UI_REPO_ROOT_ALIAS:-$REPO_ROOT_PHYSICAL}\"");
+            StringAssert.Contains(scriptText, "REPO_ROOT=\"$REPO_ROOT_PHYSICAL\"");
+            StringAssert.Contains(scriptText, "SCRIPT_DIR=\"$REPO_ROOT/scripts\"");
+            Assert.IsFalse(
+                scriptText.Contains("SCRIPT_DIR=\"$(cd \"$(dirname \"${BASH_SOURCE[0]}\")\" && pwd)\"", StringComparison.Ordinal),
+                $"{scriptLabel} should not regress to the older non-alias-aware script directory resolution.");
+            Assert.IsFalse(
+                scriptText.Contains("REPO_ROOT=\"$(cd \"$SCRIPT_DIR/..\" && pwd)\"", StringComparison.Ordinal),
+                $"{scriptLabel} should not regress to the older non-alias-aware repo root resolution.");
+        }
+
+        AssertAliasSafeRepoRootHeader(nightlyPublisherText, "publish-latest-nightly-to-downloads");
+        StringAssert.Contains(nightlyPublisherText, "WORKSPACE_ROOT=\"$(cd \"$REPO_ROOT_PHYSICAL/..\" && pwd -P)\"");
+        Assert.IsFalse(
+            nightlyPublisherText.Contains("WORKSPACE_ROOT=\"$(cd \"$REPO_ROOT/..\" && pwd)\"", StringComparison.Ordinal),
+            "Nightly publisher should keep sibling workspace defaults rooted to the physical checkout even when the repo is entered through an alias path.");
         StringAssert.Contains(runbookScriptText, "RUNBOOK_MODE=publish-latest-nightly");
         StringAssert.Contains(runbookScriptText, "CHUMMER_FORCE_NIGHTLY_PUBLISH");
         StringAssert.Contains(runbookScriptText, "Europe/Vienna");
         StringAssert.Contains(runbookScriptText, "08:00 Europe/Vienna");
-        StringAssert.Contains(runbookScriptText, "already published today");
-        StringAssert.Contains(manifestScriptText, "\"kind\": \"installer\"");
+        StringAssert.Contains(nightlyPublisherText, "already published today");
+        StringAssert.Contains(manifestScriptText, "kind = str(artifact.get(\"kind\") or \"\").strip().lower()");
+        StringAssert.Contains(manifestScriptText, "if kind not in {\"installer\", \"dmg\", \"pkg\", \"msix\"}:");
         StringAssert.Contains(manifestScriptText, "chummer-*-installer.deb");
         StringAssert.Contains(manifestScriptText, "chummer-*-installer.dmg");
         Assert.IsFalse(
@@ -3888,8 +4041,8 @@ public class MigrationComplianceTests
 
         StringAssert.Contains(runbookText, "Pushes do not publish the downloads shelf.");
         StringAssert.Contains(runbookText, "only publishes during the 08:00 Europe/Vienna release window");
-        StringAssert.Contains(runbookText, "Manual workflow runs are build/proof runs by default.");
-        StringAssert.Contains(runbookText, "They publish only when `force_publish_downloads` is explicitly enabled.");
+        StringAssert.Contains(runbookText, "Manual build/proof runs do not publish by default.");
+        StringAssert.Contains(runbookText, "Publish only through the guarded runbook mode or an explicit emergency override.");
         StringAssert.Contains(runbookText, "Build only what the proof needs.");
         StringAssert.Contains(releasePipelineText, "publishes the live `chummer.run` shelf once per day during the 08:00 Europe/Vienna release window.");
         StringAssert.Contains(releasePipelineText, "Manual workflow runs are build/proof runs by default; they publish only when `force_publish_downloads` is explicitly enabled.");
@@ -3977,7 +4130,7 @@ public class MigrationComplianceTests
             "canonical_release_channel_path=\"${hub_registry_root:+$hub_registry_root/.codex-studio/published/RELEASE_CHANNEL.generated.json}\"");
         StringAssert.Contains(
             executableGateScriptText,
-            "presentation_release_channel_path=\"/docker/chummercomplete/chummer-presentation/Chummer.Portal/downloads/RELEASE_CHANNEL.generated.json\"");
+            "presentation_release_channel_path=\"$repo_root/Chummer.Portal/downloads/RELEASE_CHANNEL.generated.json\"");
         StringAssert.Contains(executableGateScriptText, "release_channel_path_default");
         StringAssert.Contains(
             executableGateScriptText,
@@ -4605,6 +4758,17 @@ public class MigrationComplianceTests
         string portalPlaywrightPath = FindPath("scripts", "e2e-portal-playwright.cjs");
         string portalPlaywrightText = File.ReadAllText(portalPlaywrightPath);
 
+        StringAssert.Contains(workflowGuardText, "repo_root_physical=\"$(cd \"$(dirname \"${BASH_SOURCE[0]}\")/../../..\" && pwd -P)\"");
+        StringAssert.Contains(workflowGuardText, "workspace_root=\"$(cd \"$repo_root_physical/..\" && pwd -P)\"");
+        StringAssert.Contains(workflowGuardText, "repo_root_alias_candidate=\"${CHUMMER_UI_REPO_ROOT_ALIAS:-$workspace_root/chummer6-ui}\"");
+        StringAssert.Contains(workflowGuardText, "repo_root=\"$repo_root_physical\"");
+        StringAssert.Contains(workflowGuardText, "repo_root=\"$(cd -L \"$repo_root_alias_candidate\" && pwd -L)\"");
+        Assert.IsFalse(
+            workflowGuardText.Contains("repo_root=\"$(cd \"$(dirname \"${BASH_SOURCE[0]}\")/../../..\" && pwd)\"", StringComparison.Ordinal),
+            "M142 direct workflow guard should not fall back to the older non-alias-aware repo root resolution.");
+        Assert.IsFalse(
+            workflowGuardText.Contains("workspace_root=\"$(cd \"$repo_root/..\" && pwd)\"", StringComparison.Ordinal),
+            "M142 direct workflow guard should derive workspace root from the physical checkout, not the logical repo alias.");
         StringAssert.Contains(workflowGuardText, "\"family:dense_builder_and_career_workflows\"");
         StringAssert.Contains(workflowGuardText, "\"UI_LOCAL_RELEASE_PROOF.generated.json\"");
         StringAssert.Contains(workflowGuardText, "\"scripts/ai/milestones/b14-flagship-ui-release-gate.sh\"");
@@ -4625,7 +4789,7 @@ public class MigrationComplianceTests
         StringAssert.Contains(uiPlaywrightText, "data-workbench-entry-card=\"print\"");
         StringAssert.Contains(portalPlaywrightText, "Chummer Online compatibility shell, running in the browser.");
         StringAssert.Contains(portalPlaywrightText, "older browser links alive");
-        StringAssert.Contains(portalPlaywrightText, "Expected portal /blazor/ root to resolve to /blazor/workbench");
+        StringAssert.Contains(portalPlaywrightText, "Expected portal /blazor/ root to stay on /blazor/");
         StringAssert.Contains(portalPlaywrightText, "/blazor/workbench?workspace=ws-1");
         StringAssert.Contains(uiPlaywrightText, "/workbench?workspace=");
 
@@ -4644,6 +4808,13 @@ public class MigrationComplianceTests
         string m113CheckPath = FindPath("scripts", "ai", "milestones", "next90-m113-ui-gm-prep-roster-surface-check.sh");
         string m113CheckText = File.ReadAllText(m113CheckPath);
 
+        StringAssert.Contains(m113CheckText, "repo_root_physical=\"$(cd \"$(dirname \"${BASH_SOURCE[0]}\")/../../..\" && pwd -P)\"");
+        StringAssert.Contains(m113CheckText, "repo_root_alias_candidate=\"${CHUMMER_UI_REPO_ROOT_ALIAS:-$repo_root_physical}\"");
+        StringAssert.Contains(m113CheckText, "repo_root=\"$repo_root_physical\"");
+        StringAssert.Contains(m113CheckText, "repo_root=\"$(cd -L \"$repo_root_alias_candidate\" && pwd -L)\"");
+        Assert.IsFalse(
+            m113CheckText.Contains("repo_root=\"$(cd \"$(dirname \"${BASH_SOURCE[0]}\")/../../..\" && pwd)\"", StringComparison.Ordinal),
+            "M113 GM-prep roster surface check should not fall back to the older non-alias-aware repo root resolution.");
         StringAssert.Contains(m113CheckText, "CHUMMER_BLAZOR_SELF_HOST_WORKBENCH_PROOF_PATH");
         StringAssert.Contains(m113CheckText, "self_host_workbench_proof = json.loads");
         StringAssert.Contains(m113CheckText, "\"self_host_workbench_proof_status_pass\"");
@@ -4742,6 +4913,13 @@ public class MigrationComplianceTests
         string recoveryGatePath = FindPath("scripts", "ai", "milestones", "dense-workbench-recovery-gate.sh");
         string recoveryGateText = File.ReadAllText(recoveryGatePath);
 
+        StringAssert.Contains(recoveryGateText, "repo_root_physical=\"$(cd \"$(dirname \"${BASH_SOURCE[0]}\")/../../..\" && pwd -P)\"");
+        StringAssert.Contains(recoveryGateText, "repo_root_alias_candidate=\"${CHUMMER_UI_REPO_ROOT_ALIAS:-$repo_root_physical}\"");
+        StringAssert.Contains(recoveryGateText, "repo_root=\"$repo_root_physical\"");
+        StringAssert.Contains(recoveryGateText, "repo_root=\"$(cd -L \"$repo_root_alias_candidate\" && pwd -L)\"");
+        Assert.IsFalse(
+            recoveryGateText.Contains("repo_root=\"$(cd \"$(dirname \"${BASH_SOURCE[0]}\")/../../..\" && pwd)\"", StringComparison.Ordinal),
+            "Dense workbench recovery gate should not fall back to the older non-alias-aware repo root resolution.");
         StringAssert.Contains(recoveryGateText, "budget_reasons");
         StringAssert.Contains(recoveryGateText, "layout_reasons");
         StringAssert.Contains(recoveryGateText, "screenshot_review_reasons");
@@ -4763,6 +4941,13 @@ public class MigrationComplianceTests
         string classicDenseGatePath = FindPath("scripts", "ai", "milestones", "classic-dense-workbench-posture-gate.sh");
         string classicDenseGateText = File.ReadAllText(classicDenseGatePath);
 
+        StringAssert.Contains(classicDenseGateText, "repo_root_physical=\"$(cd \"$(dirname \"${BASH_SOURCE[0]}\")/../../..\" && pwd -P)\"");
+        StringAssert.Contains(classicDenseGateText, "repo_root_alias_candidate=\"${CHUMMER_UI_REPO_ROOT_ALIAS:-$repo_root_physical}\"");
+        StringAssert.Contains(classicDenseGateText, "repo_root=\"$repo_root_physical\"");
+        StringAssert.Contains(classicDenseGateText, "repo_root=\"$(cd -L \"$repo_root_alias_candidate\" && pwd -L)\"");
+        Assert.IsFalse(
+            classicDenseGateText.Contains("repo_root=\"$(cd \"$(dirname \"${BASH_SOURCE[0]}\")/../../..\" && pwd)\"", StringComparison.Ordinal),
+            "Classic dense workbench posture gate should not fall back to the older non-alias-aware repo root resolution.");
         StringAssert.Contains(classicDenseGateText, "feedback_reasons");
         StringAssert.Contains(classicDenseGateText, "density_token_reasons");
         StringAssert.Contains(classicDenseGateText, "layout_reasons");
@@ -4831,6 +5016,21 @@ public class MigrationComplianceTests
         StringAssert.Contains(veteranTaskTimeGateText, "\"status\": \"pass\" if not screenshot_review_reasons and not screenshot_review_failing_jobs else \"fail\"");
         Assert.IsFalse(veteranTaskTimeGateText.Contains("\"status\": \"pass\" if not any(\"screenshot\" in reason for reason in reasons) else \"fail\"", StringComparison.Ordinal),
             "Veteran task-time screenshot review must derive from dedicated screenshot proof buckets, not top-level reason text scanning.");
+    }
+
+    [TestMethod]
+    public void Veteran_task_time_gate_uses_alias_safe_repo_root_resolution()
+    {
+        string veteranTaskTimeGatePath = FindPath("scripts", "ai", "milestones", "veteran-task-time-evidence-gate.sh");
+        string veteranTaskTimeGateText = File.ReadAllText(veteranTaskTimeGatePath);
+
+        StringAssert.Contains(veteranTaskTimeGateText, "repo_root_physical=\"$(cd \"$(dirname \"${BASH_SOURCE[0]}\")/../../..\" && pwd -P)\"");
+        StringAssert.Contains(veteranTaskTimeGateText, "repo_root_alias_candidate=\"${CHUMMER_UI_REPO_ROOT_ALIAS:-$repo_root_physical}\"");
+        StringAssert.Contains(veteranTaskTimeGateText, "repo_root=\"$repo_root_physical\"");
+        StringAssert.Contains(veteranTaskTimeGateText, "repo_root=\"$(cd -L \"$repo_root_alias_candidate\" && pwd -L)\"");
+        Assert.IsFalse(
+            veteranTaskTimeGateText.Contains("repo_root=\"$(cd \"$(dirname \"${BASH_SOURCE[0]}\")/../../..\" && pwd)\"", StringComparison.Ordinal),
+            "Veteran task-time gate should not fall back to the older non-alias-aware repo root resolution.");
     }
 
     [TestMethod]
@@ -4961,6 +5161,13 @@ public class MigrationComplianceTests
         string srFrontierScriptPath = FindPath("scripts", "ai", "milestones", "sr4-sr6-desktop-parity-frontier-receipt.sh");
         string srFrontierScriptText = File.ReadAllText(srFrontierScriptPath);
 
+        StringAssert.Contains(srFrontierScriptText, "repo_root_physical=\"$(cd \"$(dirname \"${BASH_SOURCE[0]}\")/../../..\" && pwd -P)\"");
+        StringAssert.Contains(srFrontierScriptText, "repo_root_alias_candidate=\"${CHUMMER_UI_REPO_ROOT_ALIAS:-$repo_root_physical}\"");
+        StringAssert.Contains(srFrontierScriptText, "repo_root=\"$repo_root_physical\"");
+        StringAssert.Contains(srFrontierScriptText, "repo_root=\"$(cd -L \"$repo_root_alias_candidate\" && pwd -L)\"");
+        Assert.IsFalse(
+            srFrontierScriptText.Contains("repo_root=\"$(cd \"$(dirname \"${BASH_SOURCE[0]}\")/../../..\" && pwd)\"", StringComparison.Ordinal),
+            "SR4/SR6 frontier receipt should not fall back to the older non-alias-aware repo root resolution.");
         StringAssert.Contains(srFrontierScriptText, "CHUMMER_DESKTOP_RELEASE_CHANNEL_PROOF_MAX_AGE_SECONDS");
         StringAssert.Contains(srFrontierScriptText, "CHUMMER_DESKTOP_RELEASE_CHANNEL_PROOF_MAX_FUTURE_SKEW_SECONDS");
         StringAssert.Contains(srFrontierScriptText, "release_channel_reasons");
@@ -4991,6 +5198,13 @@ public class MigrationComplianceTests
         string rulesetAdaptationScriptPath = FindPath("scripts", "ai", "milestones", "ruleset-ui-adaptation-check.sh");
         string rulesetAdaptationScriptText = File.ReadAllText(rulesetAdaptationScriptPath);
 
+        StringAssert.Contains(rulesetAdaptationScriptText, "repo_root_physical=\"$(cd \"$(dirname \"${BASH_SOURCE[0]}\")/../../..\" && pwd -P)\"");
+        StringAssert.Contains(rulesetAdaptationScriptText, "repo_root_alias_candidate=\"${CHUMMER_UI_REPO_ROOT_ALIAS:-$repo_root_physical}\"");
+        StringAssert.Contains(rulesetAdaptationScriptText, "repo_root=\"$repo_root_physical\"");
+        StringAssert.Contains(rulesetAdaptationScriptText, "repo_root=\"$(cd -L \"$repo_root_alias_candidate\" && pwd -L)\"");
+        Assert.IsFalse(
+            rulesetAdaptationScriptText.Contains("repo_root=\"$(cd \"$(dirname \"${BASH_SOURCE[0]}\")/../../..\" && pwd)\"", StringComparison.Ordinal),
+            "Ruleset adaptation guard should not fall back to the older non-alias-aware repo root resolution.");
         StringAssert.Contains(rulesetAdaptationScriptText, "directive_matrix_reasons_file");
         StringAssert.Contains(rulesetAdaptationScriptText, "catalog_definition_reasons_file");
         StringAssert.Contains(rulesetAdaptationScriptText, "shell_binding_reasons_file");
@@ -5157,6 +5371,13 @@ public class MigrationComplianceTests
         string chummer5aLayoutHardGatePath = FindPath("scripts", "ai", "milestones", "chummer5a-layout-hard-gate.sh");
         string chummer5aLayoutHardGateText = File.ReadAllText(chummer5aLayoutHardGatePath);
 
+        StringAssert.Contains(chummer5aLayoutHardGateText, "repo_root_physical=\"$(cd \"$(dirname \"${BASH_SOURCE[0]}\")/../../..\" && pwd -P)\"");
+        StringAssert.Contains(chummer5aLayoutHardGateText, "repo_root_alias_candidate=\"${CHUMMER_UI_REPO_ROOT_ALIAS:-$repo_root_physical}\"");
+        StringAssert.Contains(chummer5aLayoutHardGateText, "repo_root=\"$repo_root_physical\"");
+        StringAssert.Contains(chummer5aLayoutHardGateText, "repo_root=\"$(cd -L \"$repo_root_alias_candidate\" && pwd -L)\"");
+        Assert.IsFalse(
+            chummer5aLayoutHardGateText.Contains("repo_root=\"$(cd \"$(dirname \"${BASH_SOURCE[0]}\")/../../..\" && pwd)\"", StringComparison.Ordinal),
+            "Chummer5a layout hard gate should not fall back to the older non-alias-aware repo root resolution.");
         StringAssert.Contains(chummer5aLayoutHardGateText, "legacy_contract_reasons");
         StringAssert.Contains(chummer5aLayoutHardGateText, "avalonia_layout_reasons");
         StringAssert.Contains(chummer5aLayoutHardGateText, "blazor_layout_reasons");
@@ -5210,6 +5431,13 @@ public class MigrationComplianceTests
         string policyText = File.ReadAllText(policyPath);
         string verifyText = File.ReadAllText(FindPath("scripts", "ai", "verify.sh"));
 
+        StringAssert.Contains(scriptText, "repo_root_physical=\"$(cd \"$(dirname \"${BASH_SOURCE[0]}\")/../../..\" && pwd -P)\"");
+        StringAssert.Contains(scriptText, "repo_root_alias_candidate=\"${CHUMMER_UI_REPO_ROOT_ALIAS:-$repo_root_physical}\"");
+        StringAssert.Contains(scriptText, "repo_root=\"$repo_root_physical\"");
+        StringAssert.Contains(scriptText, "repo_root=\"$(cd -L \"$repo_root_alias_candidate\" && pwd -L)\"");
+        Assert.IsFalse(
+            scriptText.Contains("repo_root=\"$(cd \"$(dirname \"${BASH_SOURCE[0]}\")/../../..\" && pwd)\"", StringComparison.Ordinal),
+            "Chummer5a legacy-equivalent chrome gate should not fall back to the older non-alias-aware repo root resolution.");
         StringAssert.Contains(scriptText, "chummer6-ui.chummer5a_legacy_equivalent_chrome_gate");
         StringAssert.Contains(scriptText, "CHUMMER5A_LEGACY_EQUIVALENT_CHROME_GATE.generated.json");
         StringAssert.Contains(scriptText, "CHUMMER5A_LEGACY_EQUIVALENT_CHROME_POLICY_PATH");
@@ -5242,6 +5470,13 @@ public class MigrationComplianceTests
         string designDocText = File.ReadAllText(designDocPath);
         string verifyText = File.ReadAllText(FindPath("scripts", "ai", "verify.sh"));
 
+        StringAssert.Contains(scriptText, "repo_root_physical=\"$(cd \"$(dirname \"${BASH_SOURCE[0]}\")/../../..\" && pwd -P)\"");
+        StringAssert.Contains(scriptText, "repo_root_alias_candidate=\"${CHUMMER_UI_REPO_ROOT_ALIAS:-$repo_root_physical}\"");
+        StringAssert.Contains(scriptText, "repo_root=\"$repo_root_physical\"");
+        StringAssert.Contains(scriptText, "repo_root=\"$(cd -L \"$repo_root_alias_candidate\" && pwd -L)\"");
+        Assert.IsFalse(
+            scriptText.Contains("repo_root=\"$(cd \"$(dirname \"${BASH_SOURCE[0]}\")/../../..\" && pwd)\"", StringComparison.Ordinal),
+            "Chummer5a muscle-memory parity gate should not fall back to the older non-alias-aware repo root resolution.");
         StringAssert.Contains(scriptText, "chummer6-ui.chummer5a_muscle_memory_parity_gate");
         StringAssert.Contains(scriptText, "CHUMMER5A_MUSCLE_MEMORY_PARITY_GATE.generated.json");
         StringAssert.Contains(scriptText, "\"scopeInventoryReview\"");
@@ -5311,6 +5546,13 @@ public class MigrationComplianceTests
         string designDocText = File.ReadAllText(designDocPath);
         string verifyText = File.ReadAllText(FindPath("scripts", "ai", "verify.sh"));
 
+        StringAssert.Contains(scriptText, "repo_root_physical=\"$(cd \"$(dirname \"${BASH_SOURCE[0]}\")/../../..\" && pwd -P)\"");
+        StringAssert.Contains(scriptText, "repo_root_alias_candidate=\"${CHUMMER_UI_REPO_ROOT_ALIAS:-$repo_root_physical}\"");
+        StringAssert.Contains(scriptText, "repo_root=\"$repo_root_physical\"");
+        StringAssert.Contains(scriptText, "repo_root=\"$(cd -L \"$repo_root_alias_candidate\" && pwd -L)\"");
+        Assert.IsFalse(
+            scriptText.Contains("repo_root=\"$(cd \"$(dirname \"${BASH_SOURCE[0]}\")/../../..\" && pwd)\"", StringComparison.Ordinal),
+            "Chummer4/SR4 muscle-memory parity gate should not fall back to the older non-alias-aware repo root resolution.");
         StringAssert.Contains(scriptText, "chummer6-ui.chummer4_sr4_muscle_memory_parity_gate");
         StringAssert.Contains(scriptText, "CHUMMER4_SR4_MUSCLE_MEMORY_PARITY_GATE.generated.json");
         StringAssert.Contains(scriptText, "CHUMMER4_SR4_MUSCLE_MEMORY_PARITY_POLICY.json");
@@ -5373,6 +5615,13 @@ public class MigrationComplianceTests
         string designDocText = File.ReadAllText(designDocPath);
         string verifyText = File.ReadAllText(FindPath("scripts", "ai", "verify.sh"));
 
+        StringAssert.Contains(scriptText, "repo_root_physical=\"$(cd \"$(dirname \"${BASH_SOURCE[0]}\")/../../..\" && pwd -P)\"");
+        StringAssert.Contains(scriptText, "repo_root_alias_candidate=\"${CHUMMER_UI_REPO_ROOT_ALIAS:-$repo_root_physical}\"");
+        StringAssert.Contains(scriptText, "repo_root=\"$repo_root_physical\"");
+        StringAssert.Contains(scriptText, "repo_root=\"$(cd -L \"$repo_root_alias_candidate\" && pwd -L)\"");
+        Assert.IsFalse(
+            scriptText.Contains("repo_root=\"$(cd \"$(dirname \"${BASH_SOURCE[0]}\")/../../..\" && pwd)\"", StringComparison.Ordinal),
+            "SR6 shared muscle-memory parity gate should not fall back to the older non-alias-aware repo root resolution.");
         StringAssert.Contains(scriptText, "chummer6-ui.chummer_sr6_shared_muscle_memory_parity_gate");
         StringAssert.Contains(scriptText, "CHUMMER_SR6_SHARED_MUSCLE_MEMORY_PARITY_GATE.generated.json");
         StringAssert.Contains(scriptText, "CHUMMER_SR6_SHARED_MUSCLE_MEMORY_POLICY.json");
@@ -5425,6 +5674,13 @@ public class MigrationComplianceTests
         string verifyText = File.ReadAllText(FindPath("scripts", "ai", "verify.sh"));
         string b14Text = File.ReadAllText(FindPath("scripts", "ai", "milestones", "b14-flagship-ui-release-gate.sh"));
 
+        StringAssert.Contains(scriptText, "repo_root_physical=\"$(cd \"$(dirname \"${BASH_SOURCE[0]}\")/../../..\" && pwd -P)\"");
+        StringAssert.Contains(scriptText, "repo_root_alias_candidate=\"${CHUMMER_UI_REPO_ROOT_ALIAS:-$repo_root_physical}\"");
+        StringAssert.Contains(scriptText, "repo_root=\"$repo_root_physical\"");
+        StringAssert.Contains(scriptText, "repo_root=\"$(cd -L \"$repo_root_alias_candidate\" && pwd -L)\"");
+        Assert.IsFalse(
+            scriptText.Contains("repo_root=\"$(cd \"$(dirname \"${BASH_SOURCE[0]}\")/../../..\" && pwd)\"", StringComparison.Ordinal),
+            "SR6 ruleset sophistication gate should not fall back to the older non-alias-aware repo root resolution.");
         StringAssert.Contains(scriptText, "chummer6-ui.chummer_sr6_ruleset_ui_sophistication_gate");
         StringAssert.Contains(scriptText, "CHUMMER_SR6_RULESET_UI_SOPHISTICATION_GATE.generated.json");
         StringAssert.Contains(scriptText, "CHUMMER_SR6_RULESET_UI_SOPHISTICATION_POLICY.json");
@@ -5478,6 +5734,13 @@ public class MigrationComplianceTests
         string b14Text = File.ReadAllText(FindPath("scripts", "ai", "milestones", "b14-flagship-ui-release-gate.sh"));
         string visualLedgerText = File.ReadAllText(FindPath("docs", "CHUMMER5A_VISUAL_DIFFERENCE_LEDGER.json"));
 
+        StringAssert.Contains(scriptText, "repo_root_physical=\"$(cd \"$(dirname \"${BASH_SOURCE[0]}\")/../../..\" && pwd -P)\"");
+        StringAssert.Contains(scriptText, "repo_root_alias_candidate=\"${CHUMMER_UI_REPO_ROOT_ALIAS:-$repo_root_physical}\"");
+        StringAssert.Contains(scriptText, "repo_root=\"$repo_root_physical\"");
+        StringAssert.Contains(scriptText, "repo_root=\"$(cd -L \"$repo_root_alias_candidate\" && pwd -L)\"");
+        Assert.IsFalse(
+            scriptText.Contains("repo_root=\"$(cd \"$(dirname \"${BASH_SOURCE[0]}\")/../../..\" && pwd)\"", StringComparison.Ordinal),
+            "Design-authorized parity softening gate should not fall back to the older non-alias-aware repo root resolution.");
         StringAssert.Contains(scriptText, "chummer6-ui.design_authorized_parity_softening");
         StringAssert.Contains(scriptText, "DESIGN_AUTHORIZED_PARITY_SOFTENING.generated.json");
         StringAssert.Contains(scriptText, "\"designMirrorReview\"");
@@ -5523,6 +5786,13 @@ public class MigrationComplianceTests
         string designDocText = File.ReadAllText(designDocPath);
         string verifyText = File.ReadAllText(FindPath("scripts", "ai", "verify.sh"));
 
+        StringAssert.Contains(scriptText, "repo_root_physical=\"$(cd \"$(dirname \"${BASH_SOURCE[0]}\")/../../..\" && pwd -P)\"");
+        StringAssert.Contains(scriptText, "repo_root_alias_candidate=\"${CHUMMER_UI_REPO_ROOT_ALIAS:-$repo_root_physical}\"");
+        StringAssert.Contains(scriptText, "repo_root=\"$repo_root_physical\"");
+        StringAssert.Contains(scriptText, "repo_root=\"$(cd -L \"$repo_root_alias_candidate\" && pwd -L)\"");
+        Assert.IsFalse(
+            scriptText.Contains("repo_root=\"$(cd \"$(dirname \"${BASH_SOURCE[0]}\")/../../..\" && pwd)\"", StringComparison.Ordinal),
+            "Shared legacy-equivalent chrome gate should not fall back to the older non-alias-aware repo root resolution.");
         StringAssert.Contains(scriptText, "chummer6-ui.chummer_shared_legacy_equivalent_chrome_gate");
         StringAssert.Contains(scriptText, "CHUMMER_SHARED_LEGACY_EQUIVALENT_CHROME_GATE.generated.json");
         StringAssert.Contains(scriptText, "CHUMMER_SHARED_LEGACY_EQUIVALENT_CHROME_POLICY_PATH");
@@ -5609,9 +5879,12 @@ public class MigrationComplianceTests
         StringAssert.Contains(macosGateScriptText, "APP_KEY_OVERRIDE=\"${CHUMMER_MACOS_DESKTOP_EXIT_GATE_APP_KEY:-}\"");
         StringAssert.Contains(macosGateScriptText, "RID_OVERRIDE=\"${CHUMMER_MACOS_DESKTOP_EXIT_GATE_RID:-}\"");
         StringAssert.Contains(macosGateScriptText, "python3 - \"$RELEASE_CHANNEL_PATH\" \"$APP_KEY_OVERRIDE\" \"$RID_OVERRIDE\"");
-        StringAssert.Contains(macosGateScriptText, "mapfile -t RELEASE_PROMOTED_TUPLE");
+        StringAssert.Contains(macosGateScriptText, "RELEASE_PROMOTED_TUPLE=()");
+        StringAssert.Contains(macosGateScriptText, "while IFS= read -r tuple_value; do");
+        StringAssert.Contains(macosGateScriptText, "RELEASE_PROMOTED_TUPLE+=(\"$tuple_value\")");
         StringAssert.Contains(macosGateScriptText, "APP_KEY=\"${APP_KEY_OVERRIDE:-${RELEASE_PROMOTED_TUPLE[0]:-avalonia}}\"");
         StringAssert.Contains(macosGateScriptText, "RID=\"${RID_OVERRIDE:-${RELEASE_PROMOTED_TUPLE[1]:-osx-arm64}}\"");
+        Assert.IsFalse(macosGateScriptText.Contains("mapfile -t RELEASE_PROMOTED_TUPLE", StringComparison.Ordinal));
         StringAssert.Contains(macosGateScriptText, "CURRENT_STAGE=\"promoted_installer_proof_integrity\"");
         StringAssert.Contains(macosGateScriptText, "if app_key_override:");
         StringAssert.Contains(macosGateScriptText, "if rid_override:");
@@ -5681,9 +5954,12 @@ public class MigrationComplianceTests
         StringAssert.Contains(linuxGateScriptText, "HUB_REGISTRY_ROOT=\"${CHUMMER_HUB_REGISTRY_ROOT:-$(\"$REPO_ROOT/scripts/resolve-hub-registry-root.sh\" 2>/dev/null || true)}\"");
         StringAssert.Contains(linuxGateScriptText, "CANONICAL_RELEASE_CHANNEL_PATH=\"${HUB_REGISTRY_ROOT:+$HUB_REGISTRY_ROOT/.codex-studio/published/RELEASE_CHANNEL.generated.json}\"");
         StringAssert.Contains(linuxGateScriptText, "\"$PYTHON_BIN\" - \"$RELEASE_CHANNEL_PATH\" \"$APP_KEY_OVERRIDE\" \"$RID_OVERRIDE\"");
-        StringAssert.Contains(linuxGateScriptText, "mapfile -t RELEASE_PROMOTED_TUPLE");
+        StringAssert.Contains(linuxGateScriptText, "RELEASE_PROMOTED_TUPLE=()");
+        StringAssert.Contains(linuxGateScriptText, "while IFS= read -r tuple_value; do");
+        StringAssert.Contains(linuxGateScriptText, "RELEASE_PROMOTED_TUPLE+=(\"$tuple_value\")");
         StringAssert.Contains(linuxGateScriptText, "APP_KEY=\"${APP_KEY_OVERRIDE:-${RELEASE_PROMOTED_TUPLE[0]:-avalonia}}\"");
         StringAssert.Contains(linuxGateScriptText, "RID=\"${RID_OVERRIDE:-${RELEASE_PROMOTED_TUPLE[1]:-linux-x64}}\"");
+        Assert.IsFalse(linuxGateScriptText.Contains("mapfile -t RELEASE_PROMOTED_TUPLE", StringComparison.Ordinal));
         StringAssert.Contains(linuxGateScriptText, "CHUMMER_LINUX_DESKTOP_EXIT_GATE_USE_PROMOTED_INSTALLER");
         StringAssert.Contains(linuxGateScriptText, "elif [[ -n \"${CI:-}\" ]]; then");
         StringAssert.Contains(linuxGateScriptText, "USE_PROMOTED_INSTALLER=\"0\"");
@@ -5751,9 +6027,12 @@ public class MigrationComplianceTests
         StringAssert.Contains(windowsGateScriptText, "APP_KEY_OVERRIDE=\"${CHUMMER_WINDOWS_DESKTOP_EXIT_GATE_APP_KEY:-}\"");
         StringAssert.Contains(windowsGateScriptText, "RID_OVERRIDE=\"${CHUMMER_WINDOWS_DESKTOP_EXIT_GATE_RID:-}\"");
         StringAssert.Contains(windowsGateScriptText, "python3 - \"$RELEASE_CHANNEL_PATH\" \"$APP_KEY_OVERRIDE\" \"$RID_OVERRIDE\"");
-        StringAssert.Contains(windowsGateScriptText, "mapfile -t RELEASE_PROMOTED_TUPLE");
+        StringAssert.Contains(windowsGateScriptText, "RELEASE_PROMOTED_TUPLE=()");
+        StringAssert.Contains(windowsGateScriptText, "while IFS= read -r tuple_value; do");
+        StringAssert.Contains(windowsGateScriptText, "RELEASE_PROMOTED_TUPLE+=(\"$tuple_value\")");
         StringAssert.Contains(windowsGateScriptText, "APP_KEY=\"${APP_KEY_OVERRIDE:-${RELEASE_PROMOTED_TUPLE[0]:-avalonia}}\"");
         StringAssert.Contains(windowsGateScriptText, "RID=\"${RID_OVERRIDE:-${RELEASE_PROMOTED_TUPLE[1]:-win-x64}}\"");
+        Assert.IsFalse(windowsGateScriptText.Contains("mapfile -t RELEASE_PROMOTED_TUPLE", StringComparison.Ordinal));
         StringAssert.Contains(windowsGateScriptText, "and normalize(item.get(\"platform\")) == \"windows\"");
         StringAssert.Contains(windowsGateScriptText, "and normalize(item.get(\"kind\")) in {\"installer\", \"msix\"}");
         StringAssert.Contains(windowsGateScriptText, "if app_key_override:");
@@ -5769,9 +6048,9 @@ public class MigrationComplianceTests
         StringAssert.Contains(windowsGateScriptText, "RELEASE_CHANNEL_PATH_DEFAULT");
         StringAssert.Contains(windowsGateScriptText, "WINDOWS_INSTALLER_VISUAL_PROOF_PATH=\"${CHUMMER_WINDOWS_INSTALLER_VISUAL_PROOF_PATH:-$REPO_ROOT/.codex-studio/published/WINDOWS_INSTALLER_VISUAL_PROOF.generated.json}\"");
         StringAssert.Contains(windowsGateScriptText, "blazor_self_host_workbench_proof_path = Path(sys.argv[6])");
-        StringAssert.Contains(windowsGateScriptText, "windows_installer_visual_proof_path = Path(sys.argv[12])");
-        StringAssert.Contains(windowsGateScriptText, "repo_root = Path(sys.argv[13])");
-        StringAssert.Contains(windowsGateScriptText, "hub_registry_root_arg = str(sys.argv[14] or \"\").strip()");
+        StringAssert.Contains(windowsGateScriptText, "windows_installer_visual_proof_path = Path(sys.argv[14])");
+        StringAssert.Contains(windowsGateScriptText, "repo_root = Path(sys.argv[15])");
+        StringAssert.Contains(windowsGateScriptText, "hub_registry_root_arg = str(sys.argv[16] or \"\").strip()");
         StringAssert.Contains(windowsGateScriptText, "hub_registry_root / \".codex-studio\" / \"published\" / \"startup-smoke\"");
         StringAssert.Contains(windowsGateScriptText, "hub_registry_root / \"Docker\" / \"Downloads\" / \"startup-smoke\"");
         StringAssert.Contains(windowsGateScriptText, "CHUMMER_WINDOWS_STARTUP_SMOKE_RECEIPT_PATH");
@@ -6897,6 +7176,8 @@ public class MigrationComplianceTests
         string hostPrereqText = File.ReadAllText(hostPrereqPath);
         string strictHostGatesPath = FindPath("scripts", "runbook-strict-host-gates.sh");
         string strictHostGatesText = File.ReadAllText(strictHostGatesPath);
+        string registryRootResolverPath = FindPath("scripts", "resolve-hub-registry-root.sh");
+        string registryRootResolverText = File.ReadAllText(registryRootResolverPath);
         string startupSmokePath = FindPath("scripts", "run-desktop-startup-smoke.sh");
         string startupSmokeText = File.ReadAllText(startupSmokePath);
         string amendValidatorPath = FindPath("scripts", "validate-amend-manifests.sh");
@@ -6905,6 +7186,43 @@ public class MigrationComplianceTests
         string parityGeneratorText = File.ReadAllText(parityGeneratorPath);
         string parityChecklistPath = FindPath("docs", "PARITY_CHECKLIST.md");
         string parityChecklistText = File.ReadAllText(parityChecklistPath);
+
+        static void AssertAliasSafeRepoRootHeader(string scriptText, string scriptLabel)
+        {
+            StringAssert.Contains(scriptText, "SCRIPT_DIR_PHYSICAL=\"$(cd \"$(dirname \"${BASH_SOURCE[0]}\")\" && pwd -P)\"");
+            StringAssert.Contains(scriptText, "REPO_ROOT_PHYSICAL=\"$(cd \"$SCRIPT_DIR_PHYSICAL/..\" && pwd -P)\"");
+            StringAssert.Contains(scriptText, "REPO_ROOT_ALIAS_CANDIDATE=\"${CHUMMER_UI_REPO_ROOT_ALIAS:-$REPO_ROOT_PHYSICAL}\"");
+            StringAssert.Contains(scriptText, "REPO_ROOT=\"$REPO_ROOT_PHYSICAL\"");
+            StringAssert.Contains(scriptText, "SCRIPT_DIR=\"$REPO_ROOT/scripts\"");
+            Assert.IsFalse(
+                scriptText.Contains("SCRIPT_DIR=\"$(cd \"$(dirname \"${BASH_SOURCE[0]}\")\" && pwd)\"", StringComparison.Ordinal),
+                $"{scriptLabel} should not regress to the older non-alias-aware script directory resolution.");
+            Assert.IsFalse(
+                scriptText.Contains("REPO_ROOT=\"$(cd \"$SCRIPT_DIR/..\" && pwd)\"", StringComparison.Ordinal),
+                $"{scriptLabel} should not regress to the older non-alias-aware repo root resolution.");
+        }
+
+        AssertAliasSafeRepoRootHeader(runbookText, "runbook");
+        AssertAliasSafeRepoRootHeader(hostPrereqText, "check-host-gate-prereqs");
+        AssertAliasSafeRepoRootHeader(strictHostGatesText, "runbook-strict-host-gates");
+        AssertAliasSafeRepoRootHeader(registryRootResolverText, "resolve-hub-registry-root");
+        AssertAliasSafeRepoRootHeader(amendValidatorText, "validate-amend-manifests");
+        AssertAliasSafeRepoRootHeader(parityGeneratorText, "generate-parity-checklist");
+        StringAssert.Contains(registryRootResolverText, "WORKSPACE_ROOT=\"$(cd \"$REPO_ROOT_PHYSICAL/..\" && pwd -P)\"");
+        StringAssert.Contains(registryRootResolverText, "\"${WORKSPACE_ROOT}/chummer6-hub-registry\"");
+        StringAssert.Contains(registryRootResolverText, "\"${WORKSPACE_ROOT}/chummer-hub-registry\"");
+        Assert.IsFalse(
+            registryRootResolverText.Contains("\"${REPO_ROOT}/../chummer6-hub-registry\"", StringComparison.Ordinal),
+            "Hub registry resolver should not depend on logical alias siblings for workspace repo discovery.");
+        Assert.IsFalse(
+            registryRootResolverText.Contains("\"${REPO_ROOT}/../chummer-hub-registry\"", StringComparison.Ordinal),
+            "Hub registry resolver should not depend on logical alias siblings for workspace repo discovery.");
+        Assert.IsFalse(
+            registryRootResolverText.Contains("\"$(cd \"${REPO_ROOT}/..\" && pwd)/chummer6-hub-registry\"", StringComparison.Ordinal),
+            "Hub registry resolver should not recompute sibling candidates from the logical repo alias.");
+        Assert.IsFalse(
+            registryRootResolverText.Contains("\"$(cd \"${REPO_ROOT}/..\" && pwd)/chummer-hub-registry\"", StringComparison.Ordinal),
+            "Hub registry resolver should not recompute sibling candidates from the logical repo alias.");
 
         StringAssert.Contains(runbookText, "RUNBOOK_MODE\" == \"downloads-manifest\"");
         StringAssert.Contains(runbookText, "RUNBOOK_MODE\" == \"host-prereqs\"");
@@ -7053,7 +7371,8 @@ public class MigrationComplianceTests
         StringAssert.Contains(generatorText, "Docker/Downloads/releases.json");
         StringAssert.Contains(generatorText, "Chummer.Portal/downloads/releases.json");
         StringAssert.Contains(generatorText, "PORTAL_DOWNLOADS_DIR");
-        StringAssert.Contains(generatorText, "synced ${#portal_artifacts[@]} local portal artifact(s)");
+        StringAssert.Contains(generatorText, "portal_artifact_count=\"$(array_count portal_artifacts)\"");
+        StringAssert.Contains(generatorText, "synced ${portal_artifact_count} local portal artifact(s) -> $target_dir");
         StringAssert.Contains(generatorText, "materialize_public_release_channel.py");
         StringAssert.Contains(generatorText, "normalize_release_channel_artifact_identity_fields");
         StringAssert.Contains(generatorText, "artifact[\"channel\"] = channel_id");
@@ -7094,7 +7413,8 @@ public class MigrationComplianceTests
         StringAssert.Contains(publisherText, "Deployment mode requires CHUMMER_PORTAL_DOWNLOADS_VERIFY_URL");
         StringAssert.Contains(publisherText, "CHUMMER_PORTAL_DOWNLOADS_VERIFY_LINKS");
         StringAssert.Contains(publisherText, "installer.exe");
-        StringAssert.Contains(publisherText, "Published ${#promoted_file_names[@]} desktop artifact(s)");
+        StringAssert.Contains(publisherText, "promoted_file_count=\"$(array_count promoted_file_names)\"");
+        StringAssert.Contains(publisherText, "Published ${promoted_file_count} desktop artifact(s) through verified external downloads lane: $LIVE_VERIFY_TARGET");
         StringAssert.Contains(generatorText, "--display-downloads-dir \"$CANONICAL_FILES_DIR\"");
         StringAssert.Contains(generatorText, "--display-startup-smoke-dir \"$(dirname \"$CANONICAL_MANIFEST_PATH\")/startup-smoke\"");
         StringAssert.Contains(generatorText, "--display-manifest \"$CANONICAL_MANIFEST_PATH\"");
@@ -8311,6 +8631,21 @@ public class MigrationComplianceTests
         StringAssert.Contains(npcPersonaText, "ChummerPatternBoundary.DenseRowClass");
         StringAssert.Contains(gmBoardText, "ChummerPatternBoundary.SpiderStatusCardClass");
         StringAssert.Contains(gmBoardText, "ChummerPatternBoundary.StaleBadgeClass");
+    }
+
+    [TestMethod]
+    public void Runtime_inspector_milestone_guard_uses_alias_safe_repo_root_resolution()
+    {
+        string scriptPath = FindPath("scripts", "ai", "milestones", "b8-runtime-inspector-check.sh");
+        string scriptText = File.ReadAllText(scriptPath);
+
+        StringAssert.Contains(scriptText, "repo_root_physical=\"$(cd \"$(dirname \"${BASH_SOURCE[0]}\")/../../..\" && pwd -P)\"");
+        StringAssert.Contains(scriptText, "repo_root_alias_candidate=\"${CHUMMER_UI_REPO_ROOT_ALIAS:-$repo_root_physical}\"");
+        StringAssert.Contains(scriptText, "repo_root=\"$repo_root_physical\"");
+        StringAssert.Contains(scriptText, "repo_root=\"$(cd -L \"$repo_root_alias_candidate\" && pwd -L)\"");
+        Assert.IsFalse(
+            scriptText.Contains("repo_root=\"$(cd \"$(dirname \"${BASH_SOURCE[0]}\")/../../..\" && pwd)\"", StringComparison.Ordinal),
+            "Runtime inspector milestone guard should not fall back to the older non-alias-aware repo root resolution.");
     }
 
     [TestMethod]

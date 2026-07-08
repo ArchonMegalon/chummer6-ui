@@ -11,9 +11,8 @@ def test_desktop_release_matrix_verifies_windows_installer_payloads_against_publ
     text = VERIFY_DESKTOP_RELEASE_MATRIX.read_text(encoding="utf-8")
     assert 'repo_root="/docker/chummercomplete/chummer-presentation"' in text
     assert 'cd "$repo_root"' in text
-    assert "dotnet build Chummer.Tests/Chummer.Tests.csproj -v minimal" in text
-    assert "dotnet test --project Chummer.Tests/Chummer.Tests.csproj" in text
-    assert "--no-build" in text
+    assert "dotnet build Chummer.Tests/Chummer.Tests.csproj --no-restore -v minimal -m:1 -p:UseSharedCompilation=false -p:BuildInParallel=false" in text
+    assert "dotnet Chummer.Tests/bin/Debug/net10.0/Chummer.Tests.dll" in text
     assert "CheckAndScheduleStartupUpdateAsync_bootstrap_installer_handoff_stages_payload_and_sidecar" in text
     assert "BuildInstallerBootstrapPayloadArtifact_requires_payload_metadata" in text
     assert "StageInstallerBootstrapPayloadIfNeededAsync_downloads_payload_and_writes_sidecar" in text

@@ -11,42 +11,42 @@
     "version": "run-20260627-005402"
   },
   "current_visual_proof_exists": true,
-  "generated_at": "2026-07-04T12:38:47Z",
+  "generated_at": "2026-07-07T07:46:18Z",
   "handoff_only": true,
   "handoff_scope": "staged_nightly_windows_visual_proof",
   "next_actions": [
-    "Overwrite the stale Windows visual-proof receipt at `Docker/Downloads/WINDOWS_INSTALLER_VISUAL_PROOF.generated.json`; its recorded release or installer digest no longer matches the staged candidate.",
-    "On a real Windows host, open the repo checkout that contains the capture script and run `powershell -NoLogo -NoProfile -ExecutionPolicy Bypass -File .\\scripts\\capture-windows-installer-visual-proof.ps1 -ReleaseChannelPath \"Docker/Downloads/RELEASE_CHANNEL.generated.json\" -OutputPath \"Docker/Downloads/WINDOWS_INSTALLER_VISUAL_PROOF.generated.json\"`.",
-    "Confirm `windows-installer-progress.png` and `windows-installer-completion.png` are written under `Docker/Downloads/windows-installer-visual-proof`.",
-    "Confirm `WINDOWS_INSTALLER_VISUAL_PROOF.generated.json` is written under `Docker/Downloads`.",
-    "Rerun the Windows exit gate against the same shelf: `CHUMMER_WINDOWS_RELEASE_CHANNEL_PATH=\"Docker/Downloads/RELEASE_CHANNEL.generated.json\" CHUMMER_WINDOWS_LOCAL_DESKTOP_FILES_ROOT=\"Docker/Downloads/files\" CHUMMER_WINDOWS_INSTALLER_VISUAL_PROOF_PATH=\"Docker/Downloads/WINDOWS_INSTALLER_VISUAL_PROOF.generated.json\" bash /docker/chummercomplete/chummer-presentation-sr6-origin-dialog-clean/scripts/materialize-windows-desktop-exit-gate.sh`.",
+    "Overwrite the stale Windows visual-proof receipt at `/docker/chummercomplete/chummer-presentation-sr6-origin-dialog-clean/Docker/Downloads/WINDOWS_INSTALLER_VISUAL_PROOF.generated.json`; its recorded release or installer digest no longer matches the staged candidate.",
+    "On a real Windows host, open the repo checkout that contains the capture script and run `powershell -NoLogo -NoProfile -ExecutionPolicy Bypass -File .\\scripts\\capture-windows-installer-visual-proof.ps1 -ReleaseChannelPath \"/docker/chummercomplete/chummer-presentation-sr6-origin-dialog-clean/Docker/Downloads/RELEASE_CHANNEL.generated.json\" -OutputPath \"/docker/chummercomplete/chummer-presentation-sr6-origin-dialog-clean/Docker/Downloads/WINDOWS_INSTALLER_VISUAL_PROOF.generated.json\"`.",
+    "Confirm `windows-installer-progress.png` and `windows-installer-completion.png` are written under `/docker/chummercomplete/chummer-presentation-sr6-origin-dialog-clean/Docker/Downloads/windows-installer-visual-proof`.",
+    "Confirm `WINDOWS_INSTALLER_VISUAL_PROOF.generated.json` is written under `/docker/chummercomplete/chummer-presentation-sr6-origin-dialog-clean/Docker/Downloads`.",
+    "Rerun the Windows exit gate against the same shelf: `CHUMMER_WINDOWS_RELEASE_CHANNEL_PATH=\"/docker/chummercomplete/chummer-presentation-sr6-origin-dialog-clean/Docker/Downloads/RELEASE_CHANNEL.generated.json\" CHUMMER_WINDOWS_LOCAL_DESKTOP_FILES_ROOT=\"/docker/chummercomplete/chummer-presentation-sr6-origin-dialog-clean/Docker/Downloads/files\" CHUMMER_WINDOWS_INSTALLER_VISUAL_PROOF_PATH=\"/docker/chummercomplete/chummer-presentation-sr6-origin-dialog-clean/Docker/Downloads/WINDOWS_INSTALLER_VISUAL_PROOF.generated.json\" bash /docker/chummercomplete/chummer-presentation-sr6-origin-dialog-clean/scripts/materialize-windows-desktop-exit-gate.sh`.",
     "This packet is handoff-only for the staged nightly bytes. It does not publish the live downloads shelf or change the stable channel."
   ],
   "only_blocker_is_visual_proof": true,
   "release": {
     "channel_id": "preview",
-    "release_version": "run-20260704-140118",
-    "version": "run-20260704-140118"
+    "release_version": "run-20260704-170602",
+    "version": "run-20260704-170602"
   },
-  "release_channel_manifest_path": "Docker/Downloads/RELEASE_CHANNEL.generated.json",
-  "release_shelf_root": "Docker/Downloads",
+  "release_channel_manifest_path": "/docker/chummercomplete/chummer-presentation-sr6-origin-dialog-clean/Docker/Downloads/RELEASE_CHANNEL.generated.json",
+  "release_shelf_root": "/docker/chummercomplete/chummer-presentation-sr6-origin-dialog-clean/Docker/Downloads",
   "repo_root": "/docker/chummercomplete/chummer-presentation-sr6-origin-dialog-clean",
   "required_screenshots": [
     {
       "file_name": "windows-installer-progress.png",
-      "path": "Docker/Downloads/windows-installer-visual-proof/windows-installer-progress.png",
+      "path": "/docker/chummercomplete/chummer-presentation-sr6-origin-dialog-clean/Docker/Downloads/windows-installer-visual-proof/windows-installer-progress.png",
       "role": "progress"
     },
     {
       "file_name": "windows-installer-completion.png",
-      "path": "Docker/Downloads/windows-installer-visual-proof/windows-installer-completion.png",
+      "path": "/docker/chummercomplete/chummer-presentation-sr6-origin-dialog-clean/Docker/Downloads/windows-installer-visual-proof/windows-installer-completion.png",
       "role": "completion"
     }
   ],
   "requires_separate_publish_lane": true,
   "stable_release_unchanged": true,
   "startup_smoke": {
-    "artifact_digest": "sha256:f9c70cf259278d76991cbf7e0d53e77ae2febaf9008029f1ba5114843959ae76",
+    "artifact_digest": "sha256:80655fd79a096cd7714910d7b38f7741eea01f82ada96dc6a2a097951997d91a",
     "artifact_file_name": "chummer-avalonia-win-x64-installer.exe",
     "host_class": "local-win-x64",
     "matches_artifact_digest": true,
@@ -54,14 +54,13 @@
     "matches_release_version": true,
     "progress_log_exists": true,
     "progress_log_path": "/docker/chummercomplete/chummer-presentation-sr6-origin-dialog-clean/Docker/Downloads/startup-smoke/windows-installer-progress-avalonia-win-x64.log",
-    "release_version": "run-20260704-140118",
+    "release_version": "run-20260704-170602",
     "status": "pass",
-    "version": "run-20260704-140118"
+    "version": "run-20260704-170602"
   },
   "startup_smoke_candidate_paths": [
     "/docker/chummercomplete/chummer-presentation-sr6-origin-dialog-clean/Docker/Downloads/startup-smoke/startup-smoke-avalonia-win-x64.receipt.json",
-    "Docker/Downloads/startup-smoke/startup-smoke-avalonia-win-x64.receipt.json",
-    "Docker/startup-smoke/startup-smoke-avalonia-win-x64.receipt.json",
+    "/docker/chummercomplete/chummer-presentation-sr6-origin-dialog-clean/Docker/startup-smoke/startup-smoke-avalonia-win-x64.receipt.json",
     "/docker/chummercomplete/chummer-presentation-sr6-origin-dialog-clean/.codex-studio/published/startup-smoke/startup-smoke-avalonia-win-x64.receipt.json",
     "/docker/chummercomplete/chummer-hub-registry/.codex-studio/published/startup-smoke/startup-smoke-avalonia-win-x64.receipt.json",
     "/docker/chummercomplete/chummer-hub-registry/Docker/Downloads/startup-smoke/startup-smoke-avalonia-win-x64.receipt.json"
@@ -69,11 +68,11 @@
   "startup_smoke_path": "/docker/chummercomplete/chummer-presentation-sr6-origin-dialog-clean/Docker/Downloads/startup-smoke/startup-smoke-avalonia-win-x64.receipt.json",
   "startup_smoke_progress_log_exists": true,
   "startup_smoke_progress_log_path": "/docker/chummercomplete/chummer-presentation-sr6-origin-dialog-clean/Docker/Downloads/startup-smoke/windows-installer-progress-avalonia-win-x64.log",
-  "startup_smoke_requested_path": "Docker/Downloads/startup-smoke/startup-smoke-avalonia-win-x64.receipt.json",
+  "startup_smoke_requested_path": "/docker/chummercomplete/chummer-presentation-sr6-origin-dialog-clean/Docker/Downloads/startup-smoke/startup-smoke-avalonia-win-x64.receipt.json",
   "status": "ready_for_windows_host",
   "summary": "Windows desktop exit gate failed: Windows installer visual proof version does not match release channel.; Windows installer visual proof artifactDigest does not match promoted installer bytes.",
-  "visual_proof_receipt_path": "Docker/Downloads/WINDOWS_INSTALLER_VISUAL_PROOF.generated.json",
-  "windows_gate_path": "Docker/Downloads/UI_WINDOWS_DESKTOP_EXIT_GATE.generated.json",
+  "visual_proof_receipt_path": "/docker/chummercomplete/chummer-presentation-sr6-origin-dialog-clean/Docker/Downloads/WINDOWS_INSTALLER_VISUAL_PROOF.generated.json",
+  "windows_gate_path": "/docker/chummercomplete/chummer-presentation-sr6-origin-dialog-clean/Docker/Downloads/UI_WINDOWS_DESKTOP_EXIT_GATE.generated.json",
   "windows_gate_reasons": [
     "Windows installer visual proof version does not match release channel.",
     "Windows installer visual proof artifactDigest does not match promoted installer bytes."
@@ -85,7 +84,7 @@
     "file_name": "chummer-avalonia-win-x64-installer.exe",
     "local_candidates": {
       "files_root_candidates": [
-        "Docker/Downloads/files",
+        "/docker/chummercomplete/chummer-presentation-sr6-origin-dialog-clean/Docker/Downloads/files",
         "/docker/chummercomplete/chummer-presentation-sr6-origin-dialog-clean/files",
         "/docker/chummercomplete/chummer.run-services/Chummer.Portal/downloads/files"
       ],
@@ -110,6 +109,6 @@
     },
     "payload_download_url": "https://chummer.run/downloads/files/chummer-avalonia-win-x64-payload.zip",
     "payload_file_name": "chummer-avalonia-win-x64-payload.zip",
-    "sha256": "sha256:f9c70cf259278d76991cbf7e0d53e77ae2febaf9008029f1ba5114843959ae76"
+    "sha256": "sha256:80655fd79a096cd7714910d7b38f7741eea01f82ada96dc6a2a097951997d91a"
   }
 }

@@ -37,21 +37,21 @@ public static class RulesetUiDirectiveCatalog
         PostureLabel: "cross-ruleset",
         FileExtension: "ruleset codecs",
         HomeSpotlight: "Select a ruleset before using build, rules, export, or release tools.",
-        ResumeLaneSummary: "Resume the current runner after ruleset and runtime status are loaded.",
-        OpenWorkspaceLabel: "Open runner",
+        ResumeLaneSummary: "Resume the current dossier after ruleset and runtime status are loaded.",
+        OpenWorkspaceLabel: "Open dossier",
         BuildFollowThroughLabel: "Open build details",
-        WorkspaceFollowThroughLabel: "Open runner details",
+        WorkspaceFollowThroughLabel: "Open dossier details",
         NextActionPrefix: "Next step",
         DefaultSectionSummary: "Select or restore a ruleset before using rules, build, or export tools.",
         BuildLabSectionSummary: "Choose a ruleset to load the matching builder and browser.",
         RulesSectionSummary: "Choose a ruleset to load the matching rules diagnostics.",
-        UngroundedHomeSummary: "the first restored runner still needs runtime status before build, rules, and export tools are ready.",
+        UngroundedHomeSummary: "the first restored dossier still needs runtime status before build, rules, and export tools are ready.",
         PinnedRuntimeHomeSummary: "runtime status is loaded; open a ruleset section to continue.",
-        GroundedHomeSummary: "shared shell selected; restore a ruleset-specific runner to continue.",
+        GroundedHomeSummary: "shared shell selected; restore a ruleset-specific dossier to continue.",
         BuildExplainWatchouts:
         [
             "Pick a ruleset before using edition-specific tools.",
-            "Restore a runner before running build, import, export, or print actions."
+            "Restore a dossier before running build, import, export, or print actions."
         ]);
 
     private static readonly RulesetUiDirective Sr4 = new(
@@ -105,16 +105,16 @@ public static class RulesetUiDirectiveCatalog
         DisplayName: "Shadowrun 6",
         PostureLabel: "Sixth World editor",
         FileExtension: ".chum6",
-        HomeSpotlight: "SR6 opens to the Sixth World runner editor with creation, Edge, gear, and rules review visible.",
-        ResumeLaneSummary: "Resume the SR6 runner with runtime status, Edge, gear, and session notes visible.",
-        OpenWorkspaceLabel: "Open SR6 runner",
+        HomeSpotlight: "SR6 opens to the Sixth World dossier editor with creation, Edge, gear, and rules review visible.",
+        ResumeLaneSummary: "Resume the SR6 dossier with runtime status, Edge, gear, and session notes visible.",
+        OpenWorkspaceLabel: "Open SR6 dossier",
         BuildFollowThroughLabel: "Open SR6 build details",
-        WorkspaceFollowThroughLabel: "Open SR6 runner details",
+        WorkspaceFollowThroughLabel: "Open SR6 dossier details",
         NextActionPrefix: "SR6",
         DefaultSectionSummary: "SR6 uses the shared desktop editor with Sixth World labels and Edge-first details.",
         BuildLabSectionSummary: "SR6 build keeps creation choices, metatype limits, Edge, gear, and follow-through visible before apply or export.",
         RulesSectionSummary: "SR6 rules and review show what can be checked now and what still needs table review.",
-        UngroundedHomeSummary: "restore or create a runner before editing.",
+        UngroundedHomeSummary: "restore or create a dossier before editing.",
         PinnedRuntimeHomeSummary: "SR6 runtime status is loaded; open the editor sections with Edge and gear details visible.",
         GroundedHomeSummary: "SR6 editor keeps creation, Edge, gear, and rules review clear.",
         BuildExplainWatchouts:
@@ -188,7 +188,7 @@ public static class RulesetUiDirectiveCatalog
             RulesetDefaults.Sr4 => "SR4 Characters",
             RulesetDefaults.Sr5 => "SR5 Characters",
             RulesetDefaults.Sr6 => "SR6 Characters",
-            _ => "Open Runners"
+            _ => "Open Dossiers"
         };
     }
 
@@ -199,8 +199,8 @@ public static class RulesetUiDirectiveCatalog
         {
             RulesetDefaults.Sr4 => "No open SR4 runner",
             RulesetDefaults.Sr5 => "No open SR5 runner",
-            RulesetDefaults.Sr6 => "No open SR6 runner",
-            _ => "No open runner"
+            RulesetDefaults.Sr6 => "No open SR6 dossier",
+            _ => "No open dossier"
         };
     }
 
@@ -254,8 +254,8 @@ public static class RulesetUiDirectiveCatalog
         {
             RulesetDefaults.Sr4 => "Import SR4 Runner File",
             RulesetDefaults.Sr5 => "Import SR5 Runner File",
-            RulesetDefaults.Sr6 => "Import SR6 Runner File",
-            _ => "Import Runner File"
+            RulesetDefaults.Sr6 => "Import SR6 Dossier File",
+            _ => "Import Dossier File"
         };
     }
 
@@ -288,8 +288,8 @@ public static class RulesetUiDirectiveCatalog
         {
             RulesetDefaults.Sr4 => "(no SR4 runner file selected)",
             RulesetDefaults.Sr5 => "(no SR5 runner file selected)",
-            RulesetDefaults.Sr6 => "(no SR6 runner file selected)",
-            _ => "(no runner file selected)"
+            RulesetDefaults.Sr6 => "(no SR6 dossier file selected)",
+            _ => "(no dossier file selected)"
         };
     }
 
@@ -300,8 +300,8 @@ public static class RulesetUiDirectiveCatalog
         {
             RulesetDefaults.Sr4 => "SR4 Runner XML Review",
             RulesetDefaults.Sr5 => "SR5 Runner XML Review",
-            RulesetDefaults.Sr6 => "SR6 Runner XML Review",
-            _ => "Raw Runner XML Review"
+            RulesetDefaults.Sr6 => "SR6 Dossier XML Review",
+            _ => "Raw Dossier XML Review"
         };
     }
 
@@ -312,8 +312,8 @@ public static class RulesetUiDirectiveCatalog
         {
             RulesetDefaults.Sr4 => "Import SR4 Runner XML",
             RulesetDefaults.Sr5 => "Import SR5 Runner XML",
-            RulesetDefaults.Sr6 => "Import SR6 Runner XML",
-            _ => "Import Runner XML"
+            RulesetDefaults.Sr6 => "Import SR6 Dossier XML",
+            _ => "Import Dossier XML"
         };
     }
 

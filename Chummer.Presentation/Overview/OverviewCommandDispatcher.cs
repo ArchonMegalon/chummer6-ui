@@ -79,7 +79,21 @@ public sealed class OverviewCommandDispatcher : IOverviewCommandDispatcher
                 await context.DownloadAsync(ct);
                 return;
             case "print_character":
+            case "print_preview":
                 await context.PrintAsync(ct);
+                return;
+            case "open_sourcebooks":
+            case "open_errata":
+            case "open_custom_data":
+            case "update_data_packs":
+            case "validate_data_scope":
+            case "open_data_folder":
+                context.Publish(context.State with
+                {
+                    ActiveDialog = null,
+                    Error = null,
+                    Notice = $"Rules data posture ready for '{commandId}'."
+                });
                 return;
             case "refresh_character":
                 if (context.CurrentWorkspace is null)

@@ -1,18 +1,19 @@
 {
   "contract_name": "chummer6-ui.blazor_workbench_gm_screen_export_staged_proof",
-  "generated_at": "2026-06-25T04:43:35.601110+00:00",
+  "generated_at": "2026-07-07T09:38:03.252824+00:00",
   "status": "passed",
   "proof_tier": "source_staged_no_browser_execution",
   "route_lane": "promoted_blazor_workbench",
   "expected_routes": [
-    "/blazor/workbench"
+    "/blazor/workbench",
+    "/help"
   ],
   "checks": [
     {
       "id": "product_workbench_gm_screen_export",
       "path": "Chummer.Blazor/Components/Pages/Preview.razor",
       "status": "passed",
-      "required_token_count": 9,
+      "required_token_count": 23,
       "missing_tokens": []
     },
     {
@@ -46,8 +47,8 @@
   ],
   "failures": [],
   "notes": [
-    "This receipt only proves that promoted workbench GM-screen export source, style, status, and docs agree.",
-    "It is not a substitute for hosted Playwright execution proof, Docker self-host proof, GM-screen rendering proof, player-view routing proof, initiative sync proof, or export-bundle proof.",
-    "Do not use this receipt to claim GM-screen rendering, player-view routing, initiative sync, export-bundle behavior, or browser execution parity."
+    "This receipt only proves that Chummer Online and /blazor/workbench compatibility route GM-screen export source, style, status, and docs agree.",
+    "It is not a substitute for hosted Playwright execution proof, Docker self-host proof, GM-screen rendering proof, player-view routing proof, initiative sync proof, export-bundle proof, or portal help runtime proof.",
+    "Do not use this receipt to claim GM-screen rendering, player-view routing, initiative sync, export-bundle behavior, portal help runtime behavior, or browser execution parity."
   ]
 }

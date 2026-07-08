@@ -1,6 +1,6 @@
 {
   "contract_name": "chummer6-ui.localization_release_gate",
-  "generated_at": "2026-06-27T11:26:34Z",
+  "generated_at": "2026-07-04T11:34:37Z",
   "status": "pass",
   "shipping_locales": [
     "en-us",
@@ -10,7 +10,7 @@
     "pt-br",
     "zh-cn"
   ],
-  "default_key_count": 438,
+  "default_key_count": 441,
   "release_seed_keys": [
     "desktop.shell.menu.file",
     "desktop.shell.tool.update_status",
@@ -31,15 +31,15 @@
       "  failed: 0",
       "  succeeded: 1",
       "  skipped: 0",
-      "  duration: 320ms"
+      "  duration: 566ms"
     ]
   },
   "locale_summary": [
     {
       "locale": "en-us",
-      "override_count": 438,
-      "minimum_override_count": 438,
-      "default_key_count": 438,
+      "override_count": 441,
+      "minimum_override_count": 441,
+      "default_key_count": 441,
       "untranslated_key_count": 0,
       "missing_release_seed_keys": [],
       "legacy_xml_present": true,
@@ -47,9 +47,9 @@
     },
     {
       "locale": "de-de",
-      "override_count": 438,
+      "override_count": 441,
       "minimum_override_count": 40,
-      "default_key_count": 438,
+      "default_key_count": 441,
       "untranslated_key_count": 0,
       "missing_release_seed_keys": [],
       "legacy_xml_present": true,
@@ -57,9 +57,9 @@
     },
     {
       "locale": "fr-fr",
-      "override_count": 438,
+      "override_count": 441,
       "minimum_override_count": 40,
-      "default_key_count": 438,
+      "default_key_count": 441,
       "untranslated_key_count": 0,
       "missing_release_seed_keys": [],
       "legacy_xml_present": true,
@@ -67,9 +67,9 @@
     },
     {
       "locale": "ja-jp",
-      "override_count": 438,
+      "override_count": 441,
       "minimum_override_count": 40,
-      "default_key_count": 438,
+      "default_key_count": 441,
       "untranslated_key_count": 0,
       "missing_release_seed_keys": [],
       "legacy_xml_present": true,
@@ -77,9 +77,9 @@
     },
     {
       "locale": "pt-br",
-      "override_count": 438,
+      "override_count": 441,
       "minimum_override_count": 40,
-      "default_key_count": 438,
+      "default_key_count": 441,
       "untranslated_key_count": 0,
       "missing_release_seed_keys": [],
       "legacy_xml_present": true,
@@ -87,24 +87,25 @@
     },
     {
       "locale": "zh-cn",
-      "override_count": 438,
+      "override_count": 441,
       "minimum_override_count": 40,
-      "default_key_count": 438,
+      "default_key_count": 441,
       "untranslated_key_count": 0,
       "missing_release_seed_keys": [],
       "legacy_xml_present": true,
       "legacy_data_xml_present": true
     }
   ],
-  "legacy_language_root": "/docker/chummercomplete/chummer-presentation/Chummer/lang",
+  "legacy_language_root": "/docker/chummercomplete/chummer-presentation-sr6-origin-dialog-clean/Chummer/lang",
   "local_release_proof": {
     "contract_name": "chummer6-ui.local_release_proof",
-    "generated_at": "2026-06-24T18:33:16Z",
+    "generated_at": "2026-06-28T18:35:45Z",
     "status": "passed",
-    "base_url": "http://127.0.0.1:18091",
+    "base_url": "http://127.0.0.1:8093",
     "compose_file": "/docker/chummercomplete/chummer-presentation/docker-compose.yml",
-    "playwright_timeout_seconds": 240,
-    "edge_rebuild_skipped": false,
+    "playwright_timeout_seconds": 420,
+    "playwright_scope": "smoke",
+    "edge_rebuild_skipped": true,
     "runtime_required": true,
     "route_probe_executed": true,
     "journeys_passed": [
@@ -120,15 +121,19 @@
     ],
     "proof_routes": [
       "/downloads/install/avalonia-linux-x64-installer",
+      "/downloads/install/blazor-desktop-linux-x64-installer",
+      "/downloads/install/blazor-desktop-win-x64-installer",
       "/home/access",
       "/home/work",
       "/account/work",
       "/account/support",
-      "/contact"
+      "/contact",
+      "/status",
+      "/help"
     ],
     "receipts": [
       {
-        "path": "/docker/chummercomplete/chummer-presentation/.codex-studio/published/NEXT90_M113_UI_GM_PREP_ROSTER_SURFACE.generated.json",
+        "path": ".codex-studio/published/NEXT90_M113_UI_GM_PREP_ROSTER_SURFACE.generated.json",
         "package_id": "next90-m113-ui-gm-prep-roster-surface",
         "status": "pass",
         "surface_routes": [
@@ -139,7 +144,8 @@
     ],
     "notes": [
       "Desktop campaign workspace keeps GM prep packets and roster movement as first-class successor surfaces.",
-      "next90-m113-ui-gm-prep-roster-surface anchors the desktop workspace proof shelf for GM prep and roster movement."
+      "next90-m113-ui-gm-prep-roster-surface anchors the desktop workspace proof shelf for GM prep and roster movement.",
+      "Portal account/support handoff expects signed owner propagation enabled when the owner shared key is configured."
     ]
   },
   "blocking_findings": [],
@@ -367,8 +373,8 @@
     },
     "install_update_support": {
       "status": "pass",
-      "matched_default_key_count": 269,
-      "required_key_count": 269,
+      "matched_default_key_count": 272,
+      "required_key_count": 272,
       "required_keys": [
         "desktop.crash.button.copy_summary",
         "desktop.crash.button.keep_local_only",
@@ -453,6 +459,7 @@
         "desktop.install_link.button.open_account",
         "desktop.install_link.button.open_claim_link",
         "desktop.install_link.button.open_downloads",
+        "desktop.install_link.button.open_origin_dossier",
         "desktop.install_link.button.open_support",
         "desktop.install_link.button.open_work",
         "desktop.install_link.button.redeem_claim_code",
@@ -486,11 +493,13 @@
         "desktop.install_link.status.manual_login_url",
         "desktop.install_link.status.opened_account",
         "desktop.install_link.status.opened_downloads",
+        "desktop.install_link.status.opened_origin_dossier",
         "desktop.install_link.status.opened_support",
         "desktop.install_link.status.opened_work_route",
         "desktop.install_link.status.prompt_guest_claim",
         "desktop.install_link.status.unable_open_account",
         "desktop.install_link.status.unable_open_downloads",
+        "desktop.install_link.status.unable_open_origin_dossier",
         "desktop.install_link.status.unable_open_support",
         "desktop.install_link.status.unable_open_work_route",
         "desktop.install_link.status.unlinked_copy",

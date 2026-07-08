@@ -5,10 +5,20 @@ API_URL="${CHUMMER_API_BASE_URL:-${CHUMMER_WEB_BASE_URL:-http://127.0.0.1:${CHUM
 UI_URL="${CHUMMER_BLAZOR_BASE_URL:-http://127.0.0.1:${CHUMMER_BLAZOR_PORT:-8089}}"
 PLAYWRIGHT_UI_URL="${CHUMMER_UI_PLAYWRIGHT_BASE_URL:-http://127.0.0.1:${CHUMMER_BLAZOR_PORT:-8089}}"
 API_KEY="${CHUMMER_API_KEY:-}"
-SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-REPO_ROOT="$(cd "$SCRIPT_DIR/../.." && pwd)"
+SCRIPT_DIR_PHYSICAL="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd -P)"
+REPO_ROOT_PHYSICAL="$(cd "$SCRIPT_DIR_PHYSICAL/.." && pwd -P)"
+REPO_ROOT_ALIAS_CANDIDATE="${CHUMMER_UI_REPO_ROOT_ALIAS:-$REPO_ROOT_PHYSICAL}"
+REPO_ROOT="$REPO_ROOT_PHYSICAL"
+if [[ -n "$REPO_ROOT_ALIAS_CANDIDATE" && -d "$REPO_ROOT_ALIAS_CANDIDATE" ]]; then
+  ALIAS_PHYSICAL="$(cd "$REPO_ROOT_ALIAS_CANDIDATE" && pwd -P)"
+  if [[ "$ALIAS_PHYSICAL" == "$REPO_ROOT_PHYSICAL" ]]; then
+    REPO_ROOT="$(cd -L "$REPO_ROOT_ALIAS_CANDIDATE" && pwd -L)"
+  fi
+fi
+SCRIPT_DIR="$REPO_ROOT/scripts"
+WORKSPACE_ROOT="$(cd "$REPO_ROOT_PHYSICAL/.." && pwd -P)"
 PLAYWRIGHT_SCRIPT="$SCRIPT_DIR/e2e-ui-playwright.cjs"
-PLAYWRIGHT_SAMPLE_FILE="${CHUMMER_UI_SAMPLE_FILE:-$REPO_ROOT/chummer-presentation/Chummer.Tests/TestFiles/BLUE.chum5}"
+PLAYWRIGHT_SAMPLE_FILE="${CHUMMER_UI_SAMPLE_FILE:-$REPO_ROOT/Chummer.Tests/TestFiles/BLUE.chum5}"
 MAX_CURL_ATTEMPTS="${CHUMMER_E2E_CURL_ATTEMPTS:-5}"
 MAX_CURL_SECONDS="${CHUMMER_E2E_CURL_MAX_SECONDS:-30}"
 CURL_ARGS=(--connect-timeout 5 --max-time "$MAX_CURL_SECONDS")
@@ -72,9 +82,15 @@ detect_local_playwright() {
   if [[ -n "${NODE_PATH:-}" ]]; then
     candidates+=("$NODE_PATH")
   fi
+  if [[ -n "${CHUMMER_PLAYWRIGHT_NODE_PATH:-}" ]]; then
+    candidates+=("$CHUMMER_PLAYWRIGHT_NODE_PATH")
+  fi
+  if [[ -n "${CHUMMER_PLAYWRIGHT_ROOT:-}" ]]; then
+    candidates+=("$CHUMMER_PLAYWRIGHT_ROOT/node_modules")
+  fi
   candidates+=(
-    "$REPO_ROOT/chummer.run-services/node_modules"
-    "$REPO_ROOT/node_modules"
+    "$WORKSPACE_ROOT/chummer.run-services/node_modules"
+    "$WORKSPACE_ROOT/node_modules"
     "$SCRIPT_DIR/node_modules"
   )
 
@@ -239,7 +255,7 @@ if ! grep -q '"head":"blazor"' <<<"$ui_health"; then
   exit 1
 fi
 
-if ! grep -q "Chummer Online for real runner work." <<<"$ui_html"; then
+if ! grep -q "Chummer Online for real dossier work." <<<"$ui_html"; then
   echo "Chummer Online marker not found in root page response." >&2
   exit 1
 fi

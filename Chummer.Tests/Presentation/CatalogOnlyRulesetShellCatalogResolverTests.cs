@@ -4,6 +4,9 @@ using System;
 using System.Linq;
 using Chummer.Contracts.Rulesets;
 using Chummer.Presentation.Shell;
+using Chummer.Rulesets.Hosting.Presentation;
+using Chummer.Rulesets.Sr5;
+using Chummer.Rulesets.Sr6;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 
 namespace Chummer.Tests.Presentation;
@@ -75,6 +78,60 @@ public sealed class CatalogOnlyRulesetShellCatalogResolverTests
         Assert.IsTrue(actions.All(action => string.Equals(action.RulesetId, RulesetDefaults.Sr6, StringComparison.Ordinal)));
     }
 
+    [TestMethod]
+    public void Shared_command_inventory_stays_in_sync_with_hosting_and_ruleset_shell_catalogs()
+    {
+        CatalogOnlyRulesetShellCatalogResolver resolver = new();
+        string[] compatibilityCommandIds = resolver.ResolveCommands(RulesetDefaults.Sr5)
+            .Select(command => command.Id)
+            .ToArray();
+
+        CollectionAssert.AreEquivalent(
+            compatibilityCommandIds,
+            AppCommandCatalog.All.Select(command => command.Id).ToArray(),
+            "Hosting app command catalog drifted from the compatibility resolver inventory.");
+        CollectionAssert.AreEquivalent(
+            compatibilityCommandIds,
+            new Sr5RulesetShellDefinitionProvider().GetCommands().Select(command => command.Id).ToArray(),
+            "SR5 shell command catalog drifted from the compatibility resolver inventory.");
+        CollectionAssert.AreEquivalent(
+            compatibilityCommandIds,
+            new Sr6RulesetShellDefinitionProvider().GetCommands().Select(command => command.Id).ToArray(),
+            "SR6 shell command catalog drifted from the compatibility resolver inventory.");
+    }
+
+    [TestMethod]
+    public void Shared_command_metadata_stays_in_sync_with_hosting_and_ruleset_shell_catalogs()
+    {
+        CatalogOnlyRulesetShellCatalogResolver resolver = new();
+        string[] compatibilityMetadata = resolver.ResolveCommands(RulesetDefaults.Sr5)
+            .Select(command => $"{command.Id}|{command.LabelKey}|{command.Group}|{command.RequiresOpenCharacter}|{command.EnabledByDefault}")
+            .OrderBy(entry => entry, StringComparer.Ordinal)
+            .ToArray();
+
+        CollectionAssert.AreEqual(
+            compatibilityMetadata,
+            AppCommandCatalog.All
+                .Select(command => $"{command.Id}|{command.LabelKey}|{command.Group}|{command.RequiresOpenCharacter}|{command.EnabledByDefault}")
+                .OrderBy(entry => entry, StringComparer.Ordinal)
+                .ToArray(),
+            "Hosting app command metadata drifted from the compatibility resolver contract.");
+        CollectionAssert.AreEqual(
+            compatibilityMetadata,
+            new Sr5RulesetShellDefinitionProvider().GetCommands()
+                .Select(command => $"{command.Id}|{command.LabelKey}|{command.Group}|{command.RequiresOpenCharacter}|{command.EnabledByDefault}")
+                .OrderBy(entry => entry, StringComparer.Ordinal)
+                .ToArray(),
+            "SR5 shell command metadata drifted from the compatibility resolver contract.");
+        CollectionAssert.AreEqual(
+            compatibilityMetadata,
+            new Sr6RulesetShellDefinitionProvider().GetCommands()
+                .Select(command => $"{command.Id}|{command.LabelKey}|{command.Group}|{command.RequiresOpenCharacter}|{command.EnabledByDefault}")
+                .OrderBy(entry => entry, StringComparer.Ordinal)
+                .ToArray(),
+            "SR6 shell command metadata drifted from the compatibility resolver contract.");
+    }
+
     private sealed record TabActionExpectation(string TabId, string[] ActionIds);
 
     private static readonly string[] SupportedRulesets =
@@ -111,9 +168,16 @@ public sealed class CatalogOnlyRulesetShellCatalogResolverTests
         "update",
         "restart",
         "switch_ruleset",
+        "runtime_inspector",
         "translator",
         "xml_editor",
         "hero_lab_importer",
+        "open_sourcebooks",
+        "open_errata",
+        "open_custom_data",
+        "update_data_packs",
+        "validate_data_scope",
+        "open_data_folder",
         "master_index",
         "character_roster",
         "data_exporter",
@@ -144,7 +208,11 @@ public sealed class CatalogOnlyRulesetShellCatalogResolverTests
         "tab-gear",
         "tab-cyberware",
         "tab-adept",
+        "tab-critter",
+        "tab-stats",
+        "tab-technomancer",
         "tab-contacts",
+        "tab-calendar",
         "tab-rules",
         "tab-notes"
     ];
@@ -168,8 +236,12 @@ public sealed class CatalogOnlyRulesetShellCatalogResolverTests
         new("tab-combat", ["tab-combat.weapons", "tab-combat.armors"]),
         new("tab-gear", ["tab-gear.inventory", "tab-gear.drugs", "tab-gear.vehicles"]),
         new("tab-cyberware", ["tab-cyberware.cyberwares"]),
-        new("tab-adept", ["tab-adept.powers", "tab-adept.complexforms", "tab-adept.aiprograms", "tab-adept.metamagics", "tab-adept.initiationgrades"]),
+        new("tab-adept", ["tab-adept.powers", "tab-adept.metamagics", "tab-adept.initiationgrades"]),
+        new("tab-critter", ["tab-critter.critterpowers"]),
+        new("tab-stats", ["tab-stats.profile"]),
+        new("tab-technomancer", ["tab-technomancer.complexforms", "tab-technomancer.sprites", "tab-technomancer.aiprograms"]),
         new("tab-contacts", ["tab-contacts.contacts"]),
+        new("tab-calendar", ["tab-calendar.calendar"]),
         new("tab-rules", ["tab-rules.rules"]),
         new("tab-notes", ["tab-notes.metadata"])
     ];

@@ -490,7 +490,7 @@
         => $"{budget.ProviderInstructionLimit}/{budget.RequestInstructionLimit} · {budget.MemoryBytesLimit / 1024 / 1024} MB";
 
     private static string GetProfileBadgeText(RuntimeInspectorProjection projection)
-        => RuntimeInspectorDiagnostics.CountProfileAttentionItems(projection) == 0 ? "stable" : "attention";
+        => RuntimeInspectorDiagnostics.CountProfileAttentionItems(projection) == 0 ? "current" : "attention";
 
     private static string GetInstallBadgeClass(string installState)
         => installState switch
@@ -701,7 +701,7 @@
         int diffCount = projection.MigrationPreview.Count
             + projection.CompatibilityDiagnostics.Count
             + projection.Warnings.Count;
-        return diffCount == 0 ? "stable" : $"{diffCount} diff signal(s)";
+        return diffCount == 0 ? "no diff" : $"{diffCount} diff signal(s)";
     }
 
     private static string BuildDiagnosticsDiffBefore(RuntimeInspectorProjection projection)

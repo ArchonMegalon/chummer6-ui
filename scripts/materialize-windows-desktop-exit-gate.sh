@@ -3,7 +3,7 @@ set -euo pipefail
 
 SCRIPT_DIR="$(cd -L "$(dirname "${BASH_SOURCE[0]}")" && pwd -L)"
 REPO_ROOT_PHYSICAL="$(cd "$SCRIPT_DIR/.." && pwd -P)"
-REPO_ROOT_ALIAS_CANDIDATE="${CHUMMER_UI_REPO_ROOT_ALIAS:-/docker/chummercomplete/chummer6-ui}"
+REPO_ROOT_ALIAS_CANDIDATE="${CHUMMER_UI_REPO_ROOT_ALIAS:-$REPO_ROOT_PHYSICAL}"
 REPO_ROOT="$REPO_ROOT_PHYSICAL"
 if [[ -n "$REPO_ROOT_ALIAS_CANDIDATE" && -d "$REPO_ROOT_ALIAS_CANDIDATE" ]]; then
   ALIAS_PHYSICAL="$(cd "$REPO_ROOT_ALIAS_CANDIDATE" && pwd -P)"
@@ -25,7 +25,11 @@ RELEASE_CHANNEL_PATH="${CHUMMER_WINDOWS_RELEASE_CHANNEL_PATH:-$RELEASE_CHANNEL_P
 APP_KEY_OVERRIDE="${CHUMMER_WINDOWS_DESKTOP_EXIT_GATE_APP_KEY:-}"
 RID_OVERRIDE="${CHUMMER_WINDOWS_DESKTOP_EXIT_GATE_RID:-}"
 if [[ -z "$APP_KEY_OVERRIDE" || -z "$RID_OVERRIDE" ]]; then
-  mapfile -t RELEASE_PROMOTED_TUPLE < <(python3 - "$RELEASE_CHANNEL_PATH" "$APP_KEY_OVERRIDE" "$RID_OVERRIDE" <<'PY'
+  RELEASE_PROMOTED_TUPLE=()
+  while IFS= read -r tuple_value; do
+    [[ -n "$tuple_value" ]] || continue
+    RELEASE_PROMOTED_TUPLE+=("$tuple_value")
+  done < <(python3 - "$RELEASE_CHANNEL_PATH" "$APP_KEY_OVERRIDE" "$RID_OVERRIDE" <<'PY'
 from __future__ import annotations
 
 import json

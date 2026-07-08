@@ -1,6 +1,7 @@
 @namespace Chummer.Blazor.Components.Shell
 @using System.Globalization
 @using System.IO
+@using Chummer.Contracts.Rulesets
 @using Chummer.Presentation.UiKit
 @using Chummer.Presentation.Overview
 @using Microsoft.AspNetCore.Components
@@ -14,6 +15,7 @@
          data-dialog-id="@dialog.Id"
          @onclick="CloseAsync">
         <div class="desktop-dialog classic-dialog"
+             @onclick="HandleDialogSurfaceClick"
              @ref="_dialogRoot"
              role="@AccessibilityPrimitiveBoundary.DialogRole"
              aria-modal="true"
@@ -34,7 +36,7 @@
             <div id="@AccessibilityPrimitiveBoundary.BuildDialogDescriptionId(dialog.Id)"
                  class="dialog-body classic-dialog-grid"
                  @ref="_dialogBody">
-                @if (!string.IsNullOrWhiteSpace(dialog.Message))
+                @if (ShouldRenderDialogBanner(dialog))
                 {
                     <p class="dialog-note">@dialog.Message</p>
                 }
@@ -157,6 +159,7 @@
                 }
                 else if (IsOriginWizardDialog(dialog))
                 {
+                    DesktopDialogState displayOriginWizard = DesktopDialogFactory.NormalizeOriginWizardDialogForDisplay(dialog);
                     <div class="dialog-origin-shell" data-origin-wizard>
                         <section class="dialog-origin-panel">
                             <header>
@@ -168,9 +171,9 @@
                                 @RenderOriginField(dialog, "newCharacterOriginArchetypeIntent")
                             </div>
                             <div class="dialog-origin-summary-strip" data-origin-summary-strip>
-                                @RenderOriginSummaryMetric("Metatype", GetDialogFieldValue(dialog, "newCharacterOriginMetatype"))
-                                @RenderOriginSummaryMetric("Archetype", GetDialogFieldValue(dialog, "newCharacterOriginArchetype"))
-                                @RenderOriginSummaryMetric("Path", GetDialogFieldValue(dialog, "newCharacterOriginPathSummary"))
+                                @RenderOriginSummaryMetric("Metatype", GetDialogFieldValue(displayOriginWizard, "newCharacterOriginMetatype"))
+                                @RenderOriginSummaryMetric("Archetype", GetDialogFieldValue(displayOriginWizard, "newCharacterOriginArchetype"))
+                                @RenderOriginSummaryMetric("Path", GetDialogFieldValue(displayOriginWizard, "newCharacterOriginPathSummary"))
                             </div>
                         </section>
 
@@ -189,13 +192,13 @@
                                  class="dialog-origin-advanced-content"
                                  data-origin-advanced-content
                                  hidden="@(!CurrentOriginWizardAdvancedControlsOpen)">
-                                <p class="dialog-note">Optional runner identity, life-path steering, and GM guidance for the story packet.</p>
+                                <p class="dialog-note">Optional dossier identity, life-path steering, and GM guidance for the story packet.</p>
                                 <div class="dialog-origin-advanced-grid">
                                     <section class="dialog-origin-subpanel">
-                                        <h4>Runner</h4>
+                                        <h4>Dossier</h4>
                                         <div class="dialog-origin-story-grid">
-                                            @RenderOriginField(GetDialogField(dialog, "newCharacterName"))
-                                            @RenderOriginField(GetDialogField(dialog, "newCharacterAlias"))
+                                            @RenderOriginField(NormalizeOriginFieldForDisplay(GetDialogField(dialog, "newCharacterName")))
+                                            @RenderOriginField(NormalizeOriginFieldForDisplay(GetDialogField(dialog, "newCharacterAlias")))
                                             @RenderOriginField(GetDialogField(dialog, "newCharacterRulesetId"))
                                             @RenderOriginField(GetDialogField(dialog, "newCharacterOriginBuildPreference"))
                                         </div>
@@ -222,8 +225,8 @@
                                         @RenderOriginField(GetDialogField(dialog, "newCharacterOriginGmRequirements"))
                                     </div>
                                     <div class="dialog-origin-summary-strip">
-                                        @RenderOriginSummaryMetric("Applied GM Constraint", GetDialogFieldValue(dialog, "newCharacterOriginGmRequirementSummary"))
-                                        @RenderOriginSummaryMetric("Pressure", GetDialogFieldValue(dialog, "newCharacterOriginQualityFocus"))
+                                        @RenderOriginSummaryMetric("Applied GM Constraint", GetDialogFieldValue(displayOriginWizard, "newCharacterOriginGmRequirementSummary"))
+                                        @RenderOriginSummaryMetric("Pressure", GetDialogFieldValue(displayOriginWizard, "newCharacterOriginQualityFocus"))
                                     </div>
                                 </section>
                             </div>
@@ -235,7 +238,7 @@
                                 <p>Review the story seed first. Mechanics can follow after the story is accepted.</p>
                             </header>
                             <div class="dialog-origin-preview" data-origin-story-preview>
-                                @RenderOriginReadonlyField(GetDialogField(dialog, "newCharacterOriginSummary"))
+                                @RenderOriginReadonlyField(GetDialogField(displayOriginWizard, "newCharacterOriginSummary"))
                             </div>
                         </section>
                     </div>
@@ -248,35 +251,35 @@
                                 <h3>Build Handoff</h3>
                             </header>
                             <div class="dialog-origin-summary-strip">
-                                @RenderOriginSummaryMetric("Runner", GetDialogFieldValue(dialog, "newCharacterWorkflowAlias"))
-                                @RenderOriginSummaryMetric("Ruleset", (GetDialogFieldValue(dialog, "newCharacterWorkflowRulesetId") ?? string.Empty).ToUpperInvariant())
-                                @RenderOriginSummaryMetric("Method", GetDialogFieldValue(dialog, "newCharacterWorkflowBuildMethod"))
+                                @RenderOriginSummaryMetric("Dossier", NormalizeOriginIdentityValueForDisplay("newCharacterWorkflowAlias", GetDialogFieldValue(dialog, "newCharacterWorkflowAlias")))
+                                @RenderOriginSummaryMetric("Ruleset", GetOriginRulesetLabelForDisplay(dialog))
+                                @RenderOriginSummaryMetric("Method", GetOriginBuildMethodForDisplay(dialog))
                             </div>
                         </section>
 
                         <section class="dialog-origin-panel" data-origin-dossier-link>
                             <header>
                                 <h3>Origin Dossier Link</h3>
-                                <p>Use this route to reopen the Origin Dossier workflow without publishing the story text.</p>
+                                <p>Use this clean route to reopen Origin Dossier without publishing the story text.</p>
                             </header>
                             <div class="dialog-origin-story-grid">
-                                @RenderOriginField(GetDialogField(dialog, "newCharacterOriginDossierLink"))
+                                @RenderOriginField(NormalizeOriginFieldForDisplay(dialog, GetDialogField(dialog, "newCharacterOriginDossierLink")))
                             </div>
                             <div class="dialog-origin-preview">
-                                @RenderOriginReadonlyField(GetDialogField(dialog, "newCharacterOriginDossierLinkNotes"))
+                                @RenderOriginReadonlyField(NormalizeOriginFieldForDisplay(dialog, GetDialogField(dialog, "newCharacterOriginDossierLinkNotes")))
                             </div>
                         </section>
 
                         <div class="dialog-origin-review-grid">
-                            <section class="dialog-origin-panel">
-                                <header>
-                                    <h3>Book Preview</h3>
-                                    <p>Read this first. Character creation starts after the story feels right.</p>
-                                </header>
-                                <div class="dialog-origin-preview dialog-origin-preview--book" data-origin-book-preview>
-                                    @RenderOriginReadonlyField(GetDialogField(dialog, "newCharacterOriginBookPreview"))
-                                </div>
-                            </section>
+                                <section class="dialog-origin-panel">
+                                    <header>
+                                        <h3>Book Preview</h3>
+                                        <p>Read this first. Character creation starts after the story feels right.</p>
+                                    </header>
+                                    <div class="dialog-origin-preview dialog-origin-preview--book" data-origin-book-preview>
+                                    @RenderOriginReadonlyField(NormalizeOriginFieldForDisplay(dialog, GetDialogField(dialog, "newCharacterOriginBookPreview")))
+                                    </div>
+                                </section>
 
                             <section class="dialog-origin-panel">
                                 <header>
@@ -284,7 +287,7 @@
                                     <p>Alice can use this text later; it does not change the sheet by itself.</p>
                                 </header>
                                 <div class="dialog-origin-preview">
-                                    @RenderOriginReadonlyField(GetDialogField(dialog, "newCharacterOriginStory"))
+                                    @RenderOriginReadonlyField(NormalizeOriginFieldForDisplay(dialog, GetDialogField(dialog, "newCharacterOriginStory")))
                                 </div>
                             </section>
 
@@ -304,7 +307,7 @@
                                         <p>GM grants and requirements stay visible before opening chargen.</p>
                                     </header>
                                     <div class="dialog-origin-preview">
-                                        @RenderOriginReadonlyField(GetDialogField(dialog, "newCharacterOriginImplications"))
+                                        @RenderOriginReadonlyField(NormalizeOriginFieldForDisplay(dialog, GetDialogField(dialog, "newCharacterOriginImplications")))
                                     </div>
                                 </section>
                             </div>
@@ -680,7 +683,11 @@
             return;
         }
 
-        await RestorePendingDialogScrollAsync(renderedDialog);
+        bool restoredPendingScroll = await RestorePendingDialogScrollAsync(renderedDialog);
+        if (!restoredPendingScroll)
+        {
+            await RestorePendingDialogScrollAcrossRemountAsync(renderedDialog);
+        }
 
         if (Dialog is null || string.Equals(_focusedDialogId, renderedDialog.Id, StringComparison.Ordinal))
             return;
@@ -696,6 +703,10 @@
 
         await JsRuntime.InvokeVoidAsync("chummerDialogs.revealActiveDialog");
         await _dialogRoot.FocusAsync();
+    }
+
+    private void HandleDialogSurfaceClick()
+    {
     }
 
     private Task CloseAsync()
@@ -735,7 +746,10 @@
         if (field.IsReadOnly)
             return;
 
-        if (!IsDialogScrollCaptureArmedForField(field.Id))
+        bool shouldRefreshScrollCaptureForCurrentInput =
+            string.Equals(field.InputType, "select", StringComparison.Ordinal);
+        if (shouldRefreshScrollCaptureForCurrentInput
+            || !IsDialogScrollCaptureArmedForField(field.Id))
         {
             await CaptureDialogScrollForFieldInteractionAsync(field.Id);
         }
@@ -819,12 +833,12 @@
         _armedDialogScrollDialogId = renderedDialog.Id;
     }
 
-    private async Task RestorePendingDialogScrollAsync(DesktopDialogState renderedDialog)
+    private async Task<bool> RestorePendingDialogScrollAsync(DesktopDialogState renderedDialog)
     {
         if (_pendingDialogScrollRestore is not { Length: >= 2 } scrollOffset
             || !string.Equals(renderedDialog.Id, _pendingDialogScrollDialogId, StringComparison.Ordinal))
         {
-            return;
+            return false;
         }
 
         await JsRuntime.InvokeVoidAsync(
@@ -836,6 +850,16 @@
         {
             ClearPendingDialogScrollRestore();
         }
+
+        return true;
+    }
+
+    private async Task RestorePendingDialogScrollAcrossRemountAsync(DesktopDialogState renderedDialog)
+    {
+        await JsRuntime.InvokeAsync<bool>(
+            "chummerDialogs.restorePendingDialogScroll",
+            _dialogBody,
+            renderedDialog.Id);
     }
 
     private void ClearPendingDialogScrollRestore()
@@ -890,6 +914,11 @@
     private static bool IsOriginBuildDialog(DesktopDialogState dialog)
         => string.Equals(dialog.Id, "dialog.new_character.origin_build", StringComparison.Ordinal);
 
+    private static bool ShouldRenderDialogBanner(DesktopDialogState dialog)
+        => !string.IsNullOrWhiteSpace(dialog.Message)
+            && !IsOriginWizardDialog(dialog)
+            && !IsOriginBuildDialog(dialog);
+
     private static IEnumerable<DesktopDialogField> GetVisibleDialogFields(DesktopDialogState dialog)
         => dialog.Fields.Where(field => !string.Equals(field.LayoutSlot, DesktopDialogFieldLayoutSlots.Hidden, StringComparison.Ordinal));
 
@@ -898,6 +927,300 @@
 
     private static string GetDialogFieldValue(DesktopDialogState dialog, string fieldId)
         => dialog.Fields.FirstOrDefault(field => string.Equals(field.Id, fieldId, StringComparison.Ordinal))?.Value ?? string.Empty;
+
+    private static DesktopDialogField NormalizeOriginFieldForDisplay(DesktopDialogField field)
+        => field.Id switch
+        {
+            "newCharacterName" or "newCharacterAlias" or "newCharacterWorkflowName" or "newCharacterWorkflowAlias"
+                => field with { Value = NormalizeOriginIdentityValueForDisplay(field.Id, field.Value) },
+            _ => field
+        };
+
+    private static DesktopDialogField NormalizeOriginFieldForDisplay(DesktopDialogState dialog, DesktopDialogField field)
+        => field.Id switch
+        {
+            "newCharacterOriginDossierLink" => field with { Value = BuildOriginDossierDisplayRoute(dialog) },
+            "newCharacterOriginDossierLinkNotes" => field with { Value = DesktopDialogFactory.BuildOriginDossierLinkNotesDisplayValue() },
+            "newCharacterOriginBookPreview" => field with { Value = BuildOriginBookPreviewDisplayValue(dialog, field.Value) },
+            "newCharacterOriginStory" => field with { Value = BuildOriginStoryDisplayValue(dialog, field.Value) },
+            "newCharacterOriginImplications" => field with { Value = BuildOriginImplicationsDisplayValue(dialog, field.Value) },
+            _ => NormalizeOriginFieldForDisplay(field)
+        };
+
+    private static string NormalizeOriginIdentityValueForDisplay(string fieldId, string? value)
+    {
+        string trimmed = value?.Trim() ?? string.Empty;
+
+        return fieldId switch
+        {
+            "newCharacterName" or "newCharacterWorkflowName"
+                when string.IsNullOrWhiteSpace(trimmed)
+                    || string.Equals(trimmed, "New runner", StringComparison.OrdinalIgnoreCase)
+                => "New dossier",
+            "newCharacterAlias" or "newCharacterWorkflowAlias"
+                when string.IsNullOrWhiteSpace(trimmed)
+                    || string.Equals(trimmed, "Runner", StringComparison.OrdinalIgnoreCase)
+                => "Dossier",
+            _ => trimmed
+        };
+    }
+
+    private static string BuildOriginDossierDisplayRoute(DesktopDialogState dialog)
+    {
+        string normalizedRulesetId = GetOriginRulesetIdForDisplay(dialog);
+        string aliasToken = GetOriginAliasForDisplay(dialog);
+        List<string> query =
+        [
+            $"command={Uri.EscapeDataString("new_character_origin")}",
+            $"ruleset={Uri.EscapeDataString(normalizedRulesetId)}"
+        ];
+
+        if (!string.IsNullOrWhiteSpace(aliasToken))
+        {
+            query.Add($"alias={Uri.EscapeDataString(aliasToken)}");
+        }
+
+        return $"/app?{string.Join("&", query)}";
+    }
+
+    private static string BuildOriginBookPreviewDisplayValue(DesktopDialogState dialog, string? value)
+    {
+        string normalized = (value ?? string.Empty).Replace("\r\n", "\n", StringComparison.Ordinal);
+        string title = $"{GetOriginAliasForDisplay(dialog)}: Origin Dossier";
+        string[] paragraphs = normalized
+            .Split(["\n\n"], StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
+
+        if (paragraphs.Length == 0
+            || (paragraphs.Length == 1 && string.Equals(paragraphs[0], title, StringComparison.Ordinal)))
+        {
+            return BuildOriginBookPreviewFallbackValue(dialog, title);
+        }
+
+        if (paragraphs.Length == 1)
+        {
+            string[] lines = paragraphs[0].Split('\n', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
+            if (lines.Length > 0 && lines[0].Contains("Origin Dossier", StringComparison.OrdinalIgnoreCase))
+            {
+                string trimmedLeadingLine = lines[0].Trim();
+                if (string.Equals(trimmedLeadingLine, title, StringComparison.Ordinal))
+                {
+                    return paragraphs[0];
+                }
+
+                if (trimmedLeadingLine.EndsWith(": Origin Dossier", StringComparison.OrdinalIgnoreCase))
+                {
+                    lines[0] = title;
+                    return lines.Length == 1
+                        ? title
+                        : string.Join(
+                            Environment.NewLine + Environment.NewLine,
+                            new[]
+                            {
+                                lines[0],
+                                string.Join(Environment.NewLine, lines.Skip(1))
+                            });
+                }
+
+                return paragraphs[0];
+            }
+
+            if (!paragraphs[0].Contains("Origin Dossier", StringComparison.OrdinalIgnoreCase))
+            {
+                return string.Join(
+                    Environment.NewLine + Environment.NewLine,
+                    new[]
+                    {
+                        title,
+                        paragraphs[0]
+                    });
+            }
+        }
+
+        paragraphs[0] = title;
+        return string.Join(Environment.NewLine + Environment.NewLine, paragraphs);
+    }
+
+    private static string BuildOriginBookPreviewFallbackValue(DesktopDialogState dialog, string title)
+    {
+        List<string> paragraphs = [title];
+
+        string storySummary = GetDialogFieldValue(dialog, "newCharacterOriginSummary").Trim();
+        string buildSummary = GetStructuredDisplayLineValue(GetDialogFieldValue(dialog, "newCharacterOriginImplications"), "Build") ?? string.Empty;
+        string gmRequirements = GetStructuredDisplayLineValue(GetDialogFieldValue(dialog, "newCharacterOriginImplications"), "GM Requirements")
+            ?? GetStructuredDisplayLineValue(GetDialogFieldValue(dialog, "newCharacterOriginBuildLogic"), "GM Requirements")
+            ?? string.Empty;
+
+        if (!string.IsNullOrWhiteSpace(storySummary))
+        {
+            paragraphs.Add(storySummary);
+        }
+
+        if (!string.IsNullOrWhiteSpace(buildSummary))
+        {
+            paragraphs.Add($"The shape of the build is visible in the fiction: {buildSummary}");
+        }
+
+        if (!string.IsNullOrWhiteSpace(gmRequirements))
+        {
+            paragraphs.Add($"At the table, the story keeps these constraints in view: {gmRequirements}");
+        }
+
+        paragraphs.Add("When this origin feels right, start character creation. Alice can use the story as context later; no numbers are written to the sheet from this preview alone.");
+        return string.Join(Environment.NewLine + Environment.NewLine, paragraphs);
+    }
+
+    private static string BuildOriginImplicationsDisplayValue(DesktopDialogState dialog, string? value)
+    {
+        string dossierLine = $"Dossier Link | {BuildOriginDossierDisplayRoute(dialog)}";
+        string[] rawLines = (value ?? string.Empty)
+            .Replace("\r\n", "\n", StringComparison.Ordinal)
+            .Split('\n', StringSplitOptions.RemoveEmptyEntries);
+
+        List<string> lines = [];
+        bool dossierLineAdded = false;
+        foreach (string rawLine in rawLines)
+        {
+            string trimmed = rawLine.Trim();
+            if (string.IsNullOrWhiteSpace(trimmed))
+            {
+                continue;
+            }
+
+            if (IsDossierLinkLine(trimmed))
+            {
+                if (!dossierLineAdded)
+                {
+                    lines.Add(dossierLine);
+                    dossierLineAdded = true;
+                }
+
+                continue;
+            }
+
+            lines.Add(trimmed);
+        }
+
+        int dossierLineIndex = lines.FindIndex(IsDossierLinkLine);
+        if (dossierLineIndex >= 0)
+        {
+            return string.Join(Environment.NewLine, lines);
+        }
+
+        int sheetChangesIndex = lines.FindIndex(IsSheetChangesLine);
+        if (sheetChangesIndex >= 0)
+        {
+            lines.Insert(sheetChangesIndex, dossierLine);
+        }
+        else
+        {
+            lines.Add(dossierLine);
+        }
+
+        return string.Join(Environment.NewLine, lines);
+    }
+
+    private static bool IsDossierLinkLine(string value)
+        => HasOriginImplicationLineLabel(value, "Dossier Link");
+
+    private static bool IsSheetChangesLine(string value)
+        => HasOriginImplicationLineLabel(value, "Sheet Changes");
+
+    private static bool HasOriginImplicationLineLabel(string value, string label)
+    {
+        int separatorIndex = value.AsSpan().IndexOfAny('|', ':');
+        if (separatorIndex <= 0)
+        {
+            return false;
+        }
+
+        ReadOnlySpan<char> fieldLabel = value.AsSpan(0, separatorIndex).Trim();
+        return fieldLabel.Equals(label.AsSpan(), StringComparison.OrdinalIgnoreCase);
+    }
+
+    private static string BuildOriginStoryDisplayValue(DesktopDialogState dialog, string? value)
+        => string.IsNullOrWhiteSpace(value)
+            ? GetDialogFieldValue(dialog, "newCharacterOriginSummary")
+            : value;
+
+    private static string GetOriginRulesetIdForDisplay(DesktopDialogState dialog)
+        => RulesetDefaults.NormalizeOptional(GetDialogFieldValue(dialog, "newCharacterWorkflowRulesetId"))
+            ?? RulesetDefaults.NormalizeOptional(GetDialogFieldValue(dialog, "newCharacterRulesetId"))
+            ?? RulesetDefaults.NormalizeOptional(GetOriginDossierRouteQueryValue(GetDialogFieldValue(dialog, "newCharacterOriginDossierLink"), "ruleset"))
+            ?? RulesetDefaults.Sr5;
+
+    private static string GetOriginRulesetLabelForDisplay(DesktopDialogState dialog)
+        => GetOriginRulesetIdForDisplay(dialog).ToUpperInvariant();
+
+    private static string GetOriginAliasForDisplay(DesktopDialogState dialog)
+    {
+        string aliasValue = GetDialogFieldValue(dialog, "newCharacterWorkflowAlias");
+        if (string.IsNullOrWhiteSpace(aliasValue))
+        {
+            aliasValue = GetDialogFieldValue(dialog, "newCharacterAlias");
+        }
+
+        return NormalizeOriginIdentityValueForDisplay("newCharacterWorkflowAlias", aliasValue);
+    }
+
+    private static string GetOriginBuildMethodForDisplay(DesktopDialogState dialog)
+    {
+        string buildMethod = GetDialogFieldValue(dialog, "newCharacterWorkflowBuildMethod").Trim();
+        if (!string.IsNullOrWhiteSpace(buildMethod))
+        {
+            return buildMethod;
+        }
+
+        return GetStructuredDisplayLineValue(GetDialogFieldValue(dialog, "newCharacterOriginBuildLogic"), "Build Method") ?? string.Empty;
+    }
+
+    private static string? GetOriginDossierRouteQueryValue(string? route, string queryKey)
+    {
+        if (string.IsNullOrWhiteSpace(route))
+        {
+            return null;
+        }
+
+        int queryStart = route.IndexOf('?', StringComparison.Ordinal);
+        if (queryStart < 0 || queryStart == route.Length - 1)
+        {
+            return null;
+        }
+
+        foreach (string segment in route[(queryStart + 1)..].Split('&', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries))
+        {
+            string[] parts = segment.Split('=', 2, StringSplitOptions.TrimEntries);
+            if (parts.Length != 2
+                || !string.Equals(parts[0], queryKey, StringComparison.OrdinalIgnoreCase))
+            {
+                continue;
+            }
+
+            return Uri.UnescapeDataString(parts[1]);
+        }
+
+        return null;
+    }
+
+    private static string? GetStructuredDisplayLineValue(string? value, string label)
+    {
+        if (string.IsNullOrWhiteSpace(value))
+        {
+            return null;
+        }
+
+        foreach (string line in value.Replace("\r\n", "\n", StringComparison.Ordinal)
+                     .Split('\n', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries))
+        {
+            string[] parts = line.Split('|', 2, StringSplitOptions.TrimEntries);
+            if (parts.Length == 2
+                && string.Equals(parts[0], label, StringComparison.Ordinal))
+            {
+                return parts[1];
+            }
+        }
+
+        return null;
+    }
 
     private static bool IsDialogActionDisabled(DesktopDialogState dialog, DesktopDialogAction action)
     {
@@ -1051,9 +1374,13 @@
             && !line.TrimStart().StartsWith("[", StringComparison.Ordinal)
             && !(string.Equals(field.Id, RosterCustomFoldersFieldId, StringComparison.Ordinal)
                 && line.Contains(RosterSystemFolderMarker, StringComparison.OrdinalIgnoreCase))
-            && !line.Contains("no watched files", StringComparison.OrdinalIgnoreCase)
-            && !line.Contains("no saved runners", StringComparison.OrdinalIgnoreCase)
-            && !line.Contains("empty", StringComparison.OrdinalIgnoreCase);
+            && !IsRosterPlaceholderLine(line);
+
+    private static bool IsRosterPlaceholderLine(string line)
+        => line.Contains("no watched files", StringComparison.OrdinalIgnoreCase)
+            || line.Contains("no saved dossiers", StringComparison.OrdinalIgnoreCase)
+            || line.Contains("no saved runners", StringComparison.OrdinalIgnoreCase)
+            || line.Contains("empty", StringComparison.OrdinalIgnoreCase);
 
     private void StartRosterDrag(DesktopDialogField field, string line)
     {
@@ -1172,6 +1499,8 @@
         string trimmed = line.TrimStart();
         if (trimmed.StartsWith("[", StringComparison.Ordinal))
             return "heading";
+        if (IsRosterPlaceholderLine(line))
+            return "presentation";
         if (string.Equals(field.Id, RosterCustomFoldersFieldId, StringComparison.Ordinal)
             && (line.Contains(RosterSystemFolderMarker, StringComparison.OrdinalIgnoreCase)
                 || line.Contains(RosterCustomFolderMarker, StringComparison.OrdinalIgnoreCase)))
@@ -1221,7 +1550,7 @@
             return string.Empty;
 
         if (IsRosterDropTargetLine(field, line))
-            return "Drop a runner/link row here to move it into this roster directory, or drop a custom directory here to nest it. Keyboard: Enter/Space drops the selected source here.";
+            return "Drop a dossier or link row here to move it into this roster directory, or drop a custom directory here to nest it. Keyboard: Enter/Space drops the selected source here.";
 
         if (IsRosterDraggableLine(field, line))
             return "Drag this roster row to a directory. Keyboard: Enter/Space selects this source; Escape clears it. Moves are virtual metadata only until explicitly committed.";
@@ -1274,25 +1603,29 @@
 
     private static string BuildRosterHierarchyToolbarTitle(DesktopDialogField field)
         => string.Equals(field.Id, RosterCustomFoldersFieldId, StringComparison.Ordinal)
-            ? "Character library tree"
+            ? "Dossier library tree"
             : "Roster organization";
 
     private static string BuildRosterHierarchyToolbarSummary(DesktopDialogField field)
         => string.Equals(field.Id, RosterCustomFoldersFieldId, StringComparison.Ordinal)
-            ? "Create your own folder hierarchy, then drag runners or custom folders onto any directory. Keyboard users can select a row with Enter or Space and drop it on a directory."
+            ? "Create your own folder hierarchy, then drag dossiers or custom folders onto any directory. Keyboard users can select a row with Enter or Space and drop it on a directory."
             : "This roster view keeps groups, folders, move targets, and hierarchy policy visible before the app commits library changes.";
 
     private static bool IsRosterKeyboardStatusHost(DesktopDialogField field)
         => string.Equals(field.Id, RosterCustomFoldersFieldId, StringComparison.Ordinal);
 
     private static string BuildRosterHierarchyLineRole(DesktopDialogField field, string line)
-        => IsRosterHierarchyField(field) && !line.TrimStart().StartsWith("[", StringComparison.Ordinal)
+        => IsRosterHierarchyField(field)
+            && !line.TrimStart().StartsWith("[", StringComparison.Ordinal)
+            && !IsRosterPlaceholderLine(line)
             ? "treeitem"
             : "presentation";
 
     private static string? BuildRosterHierarchyLineLevel(DesktopDialogField field, string line)
     {
-        if (!IsRosterHierarchyField(field) || line.TrimStart().StartsWith("[", StringComparison.Ordinal))
+        if (!IsRosterHierarchyField(field)
+            || line.TrimStart().StartsWith("[", StringComparison.Ordinal)
+            || IsRosterPlaceholderLine(line))
             return null;
 
         int level = 1;
@@ -1311,7 +1644,9 @@
 
     private string? BuildRosterHierarchyLineSelected(DesktopDialogField field, string line)
     {
-        if (!IsRosterHierarchyField(field) || line.TrimStart().StartsWith("[", StringComparison.Ordinal))
+        if (!IsRosterHierarchyField(field)
+            || line.TrimStart().StartsWith("[", StringComparison.Ordinal)
+            || IsRosterPlaceholderLine(line))
             return null;
 
         return line.TrimStart().Contains("* ", StringComparison.Ordinal)
@@ -1516,6 +1851,27 @@
         if (string.Equals(field.InputType, "select", StringComparison.Ordinal))
         {
             builder.AddContent(6, RenderPrioritySelectControl(field, "dialog-input dialog-priority-select"));
+        }
+        else if (field.IsReadOnly && string.Equals(field.InputType, "url", StringComparison.Ordinal))
+        {
+            builder.OpenElement(7, "div");
+            builder.AddAttribute(8, "class", "dialog-origin-link");
+            builder.AddAttribute(9, "data-origin-dossier-route-link", field.Value);
+
+            builder.OpenElement(10, "a");
+            builder.AddAttribute(11, "class", "dialog-origin-link-anchor");
+            builder.AddAttribute(12, "href", field.Value);
+            builder.AddAttribute(13, "aria-label", field.AccessibleName);
+            builder.AddAttribute(14, "aria-description", field.HelpText);
+            builder.AddContent(15, "Open clean Origin Dossier route");
+            builder.CloseElement();
+
+            builder.OpenElement(16, "code");
+            builder.AddAttribute(17, "class", "dialog-origin-link-code");
+            builder.AddContent(18, field.Value);
+            builder.CloseElement();
+
+            builder.CloseElement();
         }
         else if (field.IsMultiline)
         {

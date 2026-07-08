@@ -28,6 +28,7 @@
 **/secrets.dev.yaml
 **/values.dev.yaml
 .codex-studio
+.tmp
 out
 dist
 unpublished

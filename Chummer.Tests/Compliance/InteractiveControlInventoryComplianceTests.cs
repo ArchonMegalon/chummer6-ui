@@ -46,7 +46,9 @@ public sealed class InteractiveControlInventoryComplianceTests
         StringAssert.Contains(scriptText, "Alice_supports_blank_state_build_help_and_gm_steered_origin_dossier_flow");
         StringAssert.Contains(scriptText, "does not preserve the expected empty-or-four codex root labels posture");
         StringAssert.Contains(scriptText, "reports no codex root labels without the expected empty-workspace marker");
+        StringAssert.Contains(scriptText, "\"Dossier: none (open: 0, n/a)\"");
         StringAssert.Contains(scriptText, "\"Workspace: none (open: 0, n/a)\"");
+        StringAssert.Contains(scriptText, "\"State: ready, dossier=none, open=0, saved=unsaved, last-command=close_window\"");
         StringAssert.Contains(scriptText, "\"State: ready, workspace=none, open=0, saved=unsaved, last-command=close_window\"");
         StringAssert.Contains(scriptText, "\"delegate_route_receipt\": repo_root / \".codex-studio/published/DELEGATE_COMMAND_ROUTE_PARITY.generated.json\"");
         StringAssert.Contains(scriptText, "\"generated_dialog_receipt\": repo_root / \".codex-studio/published/GENERATED_DIALOG_ELEMENT_PARITY.generated.json\"");
@@ -73,6 +75,26 @@ public sealed class InteractiveControlInventoryComplianceTests
 
         StringAssert.Contains(verifyText, "checking standalone interactive control inventory guard");
         StringAssert.Contains(verifyText, "bash scripts/ai/milestones/interactive-control-inventory-check.sh");
+    }
+
+    [TestMethod]
+    public void Interactive_control_inventory_guard_uses_alias_safe_repo_root_resolution()
+    {
+        string repoRoot = FindRepoRoot();
+        string scriptPath = Path.Combine(
+            repoRoot,
+            "scripts",
+            "ai",
+            "milestones",
+            "interactive-control-inventory-check.sh");
+        string scriptText = File.ReadAllText(scriptPath);
+
+        StringAssert.Contains(scriptText, "repo_root_physical=\"$(cd \"$(dirname \"${BASH_SOURCE[0]}\")/../../..\" && pwd -P)\"");
+        StringAssert.Contains(scriptText, "repo_root_alias_candidate=\"${CHUMMER_UI_REPO_ROOT_ALIAS:-$repo_root_physical}\"");
+        StringAssert.Contains(scriptText, "repo_root=\"$(cd -L \"$repo_root_alias_candidate\" && pwd -L)\"");
+        Assert.IsFalse(
+            scriptText.Contains("repo_root=\"$(cd \"$(dirname \"${BASH_SOURCE[0]}\")/../../..\" && pwd)\"", StringComparison.Ordinal),
+            "Interactive control inventory guard should not fall back to the older non-alias-aware repo root resolution.");
     }
 
     [TestMethod]

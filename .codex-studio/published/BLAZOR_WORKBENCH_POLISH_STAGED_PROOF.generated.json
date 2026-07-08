@@ -1,52 +1,318 @@
 {
   "contract_name": "chummer6-ui.blazor_workbench_polish_staged_proof",
-  "generated_at": "2026-06-25T04:43:33.913470+00:00",
-  "status": "passed",
+  "generated_at": "2026-07-07T06:52:59.454310+00:00",
+  "status": "failed",
   "proof_tier": "source_staged_no_browser_execution",
-  "route_lane": "promoted_blazor_workbench",
+  "route_lane": "chummer_app_and_proof_compatible_blazor_workbench",
   "expected_routes": [
+    "/blazor/app",
     "/blazor/workbench"
   ],
   "checks": [
     {
       "id": "product_workbench_task_dock",
       "path": "Chummer.Blazor/Components/Pages/Preview.razor",
-      "status": "passed",
-      "required_token_count": 12,
-      "missing_tokens": []
+      "status": "failed",
+      "required_token_count": 87,
+      "missing_tokens": [
+        "BuildWorkbenchCommandHref(SaveCharacterAsCommand)",
+        "BuildWorkbenchCommandHref(ExportCharacterCommand)",
+        "BuildWorkbenchCommandHref(ExportCharacterCommand, \"download\")",
+        "BuildWorkbenchCommandHref(PrintCharacterCommand)",
+        "AppRouteMarker",
+        "WorkbenchRouteMarker",
+        "user-facing browser client remains Chummer Online at /blazor/app",
+        "href=\"home\"",
+        "href=\"app\"",
+        "href=\"workbench\"",
+        "href=\"preview\"",
+        "href=\"showcase\"",
+        "href=\"health\""
+      ]
     },
     {
       "id": "scoped_visual_design",
       "path": "Chummer.Blazor/Components/Pages/Preview.razor.css",
+      "status": "failed",
+      "required_token_count": 70,
+      "missing_tokens": [
+        "background-size: 4.25rem 4.25rem"
+      ]
+    },
+    {
+      "id": "status_strip_route_chrome",
+      "path": "Chummer.Blazor/Components/Shell/StatusStrip.razor",
+      "status": "failed",
+      "required_token_count": 14,
+      "missing_tokens": [
+        "Route: {BuildRouteLabel()} | Dossier:"
+      ]
+    },
+    {
+      "id": "shell_chrome_boundary_dossier_command_labels",
+      "path": "Chummer.Presentation/UiKit/ShellChromeBoundary.cs",
+      "status": "failed",
+      "required_token_count": 10,
+      "missing_tokens": [
+        "[\"new_character\"] = \"New Runner\"",
+        "[\"open_for_printing\"] = \"Open Dossier for Printing...\"",
+        "[\"open_for_export\"] = \"Open Dossier for Export...\"",
+        "[\"print_character\"] = \"Print Dossier...\"",
+        "[\"export_character\"] = \"Export Dossier...\"",
+        "[\"character_settings\"] = \"Dossier Settings\""
+      ]
+    },
+    {
+      "id": "tool_strip_command_chrome",
+      "path": "Chummer.Blazor/Components/Shell/ToolStrip.razor",
+      "status": "passed",
+      "required_token_count": 17,
+      "missing_tokens": []
+    },
+    {
+      "id": "desktop_shell_tool_strip_order",
+      "path": "Chummer.Blazor/Components/Layout/DesktopShell.razor.cs",
+      "status": "passed",
+      "required_token_count": 13,
+      "missing_tokens": []
+    },
+    {
+      "id": "open_workspace_tree_dossier_copy",
+      "path": "Chummer.Blazor/Components/Shell/OpenWorkspaceTree.razor",
+      "status": "failed",
+      "required_token_count": 11,
+      "missing_tokens": [
+        "private const string NoOpenDossiersMessage = \"No open dossiers.\"",
+        "private const string CloseDossierLabel = \"Close dossier\"",
+        "private const string OpenDossierLabelPrefix = \"Open dossier\"",
+        "<p class=\"hint\">@NoOpenDossiersMessage</p>",
+        "title=\"@BuildOpenDossierTitle(workspaceLabel)\"",
+        "aria-label=\"@BuildOpenDossierTitle(workspaceLabel)\"",
+        "aria-label=\"@CloseDossierLabel\"",
+        "title=\"@CloseDossierLabel\""
+      ]
+    },
+    {
+      "id": "mdi_strip_dossier_copy",
+      "path": "Chummer.Blazor/Components/Shell/MdiStrip.razor",
+      "status": "failed",
+      "required_token_count": 8,
+      "missing_tokens": [
+        "private const string CloseDossierLabel = \"Close dossier\"",
+        "title=\"@CloseDossierLabel\"",
+        "aria-label=\"@CloseDossierLabel\""
+      ]
+    },
+    {
+      "id": "ruleset_catalog_dossier_shell_fallback_copy",
+      "path": "Chummer.Presentation/Rulesets/RulesetUiDirectiveCatalog.cs",
+      "status": "failed",
+      "required_token_count": 9,
+      "missing_tokens": [
+        "RulesetDefaults.Sr5 => \"SR5 Roster\"",
+        "RulesetDefaults.Sr5 => \"No open SR5 dossier\"",
+        "dossier {workspaceId} is {saveState}."
+      ]
+    },
+    {
+      "id": "metadata_panel_dossier_copy",
+      "path": "Chummer.Blazor/Components/Shell/MetadataPanel.razor",
+      "status": "passed",
+      "required_token_count": 15,
+      "missing_tokens": []
+    },
+    {
+      "id": "build_lab_handoff_dossier_copy",
+      "path": "Chummer.Blazor/Components/Shared/BuildLabHandoffPanel.razor",
       "status": "passed",
       "required_token_count": 4,
+      "missing_tokens": []
+    },
+    {
+      "id": "desktop_home_build_explain_dossier_copy",
+      "path": "Chummer.Presentation/Overview/DesktopHomeBuildExplainProjector.cs",
+      "status": "failed",
+      "required_token_count": 12,
+      "missing_tokens": [
+        "aligned with the current dossier"
+      ]
+    },
+    {
+      "id": "desktop_home_campaign_dossier_copy",
+      "path": "Chummer.Presentation/Overview/DesktopHomeCampaignProjector.cs",
+      "status": "failed",
+      "required_token_count": 10,
+      "missing_tokens": [
+        "No signed-in campaign dossier is loaded yet.",
+        "open your dossier",
+        "your campaign dossier",
+        "current campaign dossier line up",
+        "calmer dossier digest",
+        "no current campaign dossier return target is pinned yet",
+        "grounded campaign dossier",
+        "local-only dossier",
+        "create one campaign dossier",
+        "campaign dossier you reopen from this home cockpit"
+      ]
+    },
+    {
+      "id": "overview_presenter_dossier_feedback_copy",
+      "path": "Chummer.Presentation/Overview/CharacterOverviewPresenter.Persistence.cs",
+      "status": "passed",
+      "required_token_count": 7,
+      "missing_tokens": []
+    },
+    {
+      "id": "overview_rendering_dossier_feedback_copy",
+      "path": "Chummer.Presentation/Overview/CharacterOverviewPresenter.WorkspaceRendering.cs",
+      "status": "passed",
+      "required_token_count": 4,
+      "missing_tokens": []
+    },
+    {
+      "id": "overview_mutation_dossier_feedback_copy",
+      "path": "Chummer.Presentation/Overview/CharacterOverviewPresenter.WorkspaceMutations.cs",
+      "status": "passed",
+      "required_token_count": 3,
+      "missing_tokens": []
+    },
+    {
+      "id": "overview_command_dossier_feedback_copy",
+      "path": "Chummer.Presentation/Overview/CharacterOverviewPresenter.Commands.cs",
+      "status": "passed",
+      "required_token_count": 5,
+      "missing_tokens": []
+    },
+    {
+      "id": "overview_shell_dossier_feedback_copy",
+      "path": "Chummer.Presentation/Overview/CharacterOverviewPresenter.cs",
+      "status": "passed",
+      "required_token_count": 3,
+      "missing_tokens": []
+    },
+    {
+      "id": "overview_dispatcher_dossier_feedback_copy",
+      "path": "Chummer.Presentation/Overview/OverviewCommandDispatcher.cs",
+      "status": "failed",
+      "required_token_count": 6,
+      "missing_tokens": [
+        "No open dossier to close."
+      ]
+    },
+    {
+      "id": "overview_lifecycle_dossier_feedback_copy",
+      "path": "Chummer.Presentation/Overview/WorkspaceOverviewLifecycleCoordinator.cs",
+      "status": "passed",
+      "required_token_count": 7,
+      "missing_tokens": []
+    },
+    {
+      "id": "desktop_localization_default_dossier_copy",
+      "path": "Chummer.Presentation/Overview/DesktopLocalizationCatalog.cs",
+      "status": "failed",
+      "required_token_count": 17,
+      "missing_tokens": [
+        "[\"desktop.shell.tool.campaign_workspace\"] = \"Campaign Dossier\"",
+        "[\"desktop.shell.feedback.campaign_workspace_reviewed\"] = \"State: campaign dossier reviewed.\"",
+        "[\"desktop.campaign.title\"] = \"Campaign dossier\"",
+        "[\"desktop.campaign.heading\"] = \"Campaign dossier\"",
+        "[\"desktop.install_link.button.open_work\"] = \"Open linked dossier\"",
+        "[\"desktop.home.button.open_current_workspace\"] = \"Open Runner Dossier\"",
+        "[\"desktop.home.button.open_current_campaign_workspace\"] = \"Open Campaign Dossier\""
+      ]
+    },
+    {
+      "id": "desktop_dialog_factory_dossier_copy",
+      "path": "Chummer.Presentation/Overview/DesktopDialogFactory.cs",
+      "status": "failed",
+      "required_token_count": 15,
+      "missing_tokens": [
+        "Apply runner profile metadata changes to the active dossier.",
+        "Paste Chummer XML to import into a dossier.",
+        "dossier mutation",
+        "(no dossier)",
+        "dossier available",
+        "\"Saved Dossiers\""
+      ]
+    },
+    {
+      "id": "section_pane_browse_dossier_copy",
+      "path": "Chummer.Blazor/Components/Shell/SectionPane.razor",
+      "status": "passed",
+      "required_token_count": 4,
+      "missing_tokens": []
+    },
+    {
+      "id": "showcase_campaign_dossier_copy",
+      "path": "Chummer.Blazor/Components/Pages/Showcase.razor",
+      "status": "passed",
+      "required_token_count": 6,
+      "missing_tokens": []
+    },
+    {
+      "id": "status_strip_route_chrome_style",
+      "path": "Chummer.Blazor/wwwroot/app.css",
+      "status": "passed",
+      "required_token_count": 8,
       "missing_tokens": []
     },
     {
       "id": "release_truth_docs",
       "path": "docs/WORKBENCH_RELEASE_SIGNOFF.md",
       "status": "passed",
-      "required_token_count": 3,
+      "required_token_count": 8,
       "missing_tokens": []
+    },
+    {
+      "id": "proof_contract_docs",
+      "path": "docs/BLAZOR_WORKBENCH_POLISH_STAGED_PROOF.md",
+      "status": "failed",
+      "required_token_count": 32,
+      "missing_tokens": [
+        "setup and rules command links for XML editor, ruleset, global settings, and dossier settings derive from local command constants",
+        "keyboard-visible primary startup focus"
+      ]
     },
     {
       "id": "parity_goal_docs",
       "path": "docs/BLAZOR_WEB_CLIENT_PARITY_GOAL.md",
       "status": "passed",
-      "required_token_count": 3,
+      "required_token_count": 17,
+      "missing_tokens": []
+    },
+    {
+      "id": "docs_index_contract",
+      "path": "docs/BLAZOR_WEB_CLIENT_DOCS_INDEX.md",
+      "status": "passed",
+      "required_token_count": 18,
       "missing_tokens": []
     },
     {
       "id": "status_utility_reporting",
       "path": "scripts/print_blazor_public_edge_proof_status.py",
       "status": "passed",
-      "required_token_count": 4,
+      "required_token_count": 5,
       "missing_tokens": []
     }
   ],
-  "failures": [],
+  "failures": [
+    "Chummer.Blazor/Components/Pages/Preview.razor: missing BuildWorkbenchCommandHref(SaveCharacterAsCommand), BuildWorkbenchCommandHref(ExportCharacterCommand), BuildWorkbenchCommandHref(ExportCharacterCommand, \"download\"), BuildWorkbenchCommandHref(PrintCharacterCommand), AppRouteMarker, WorkbenchRouteMarker, user-facing browser client remains Chummer Online at /blazor/app, href=\"home\", href=\"app\", href=\"workbench\", href=\"preview\", href=\"showcase\", href=\"health\"",
+    "Chummer.Blazor/Components/Pages/Preview.razor.css: missing background-size: 4.25rem 4.25rem",
+    "Chummer.Blazor/Components/Shell/StatusStrip.razor: missing Route: {BuildRouteLabel()} | Dossier:",
+    "Chummer.Presentation/UiKit/ShellChromeBoundary.cs: missing [\"new_character\"] = \"New Runner\", [\"open_for_printing\"] = \"Open Dossier for Printing...\", [\"open_for_export\"] = \"Open Dossier for Export...\", [\"print_character\"] = \"Print Dossier...\", [\"export_character\"] = \"Export Dossier...\", [\"character_settings\"] = \"Dossier Settings\"",
+    "Chummer.Blazor/Components/Shell/OpenWorkspaceTree.razor: missing private const string NoOpenDossiersMessage = \"No open dossiers.\", private const string CloseDossierLabel = \"Close dossier\", private const string OpenDossierLabelPrefix = \"Open dossier\", <p class=\"hint\">@NoOpenDossiersMessage</p>, title=\"@BuildOpenDossierTitle(workspaceLabel)\", aria-label=\"@BuildOpenDossierTitle(workspaceLabel)\", aria-label=\"@CloseDossierLabel\", title=\"@CloseDossierLabel\"",
+    "Chummer.Blazor/Components/Shell/MdiStrip.razor: missing private const string CloseDossierLabel = \"Close dossier\", title=\"@CloseDossierLabel\", aria-label=\"@CloseDossierLabel\"",
+    "Chummer.Presentation/Rulesets/RulesetUiDirectiveCatalog.cs: missing RulesetDefaults.Sr5 => \"SR5 Roster\", RulesetDefaults.Sr5 => \"No open SR5 dossier\", dossier {workspaceId} is {saveState}.",
+    "Chummer.Presentation/Overview/DesktopHomeBuildExplainProjector.cs: missing aligned with the current dossier",
+    "Chummer.Presentation/Overview/DesktopHomeCampaignProjector.cs: missing No signed-in campaign dossier is loaded yet., open your dossier, your campaign dossier, current campaign dossier line up, calmer dossier digest, no current campaign dossier return target is pinned yet, grounded campaign dossier, local-only dossier, create one campaign dossier, campaign dossier you reopen from this home cockpit",
+    "Chummer.Presentation/Overview/OverviewCommandDispatcher.cs: missing No open dossier to close.",
+    "Chummer.Presentation/Overview/DesktopLocalizationCatalog.cs: missing [\"desktop.shell.tool.campaign_workspace\"] = \"Campaign Dossier\", [\"desktop.shell.feedback.campaign_workspace_reviewed\"] = \"State: campaign dossier reviewed.\", [\"desktop.campaign.title\"] = \"Campaign dossier\", [\"desktop.campaign.heading\"] = \"Campaign dossier\", [\"desktop.install_link.button.open_work\"] = \"Open linked dossier\", [\"desktop.home.button.open_current_workspace\"] = \"Open Runner Dossier\", [\"desktop.home.button.open_current_campaign_workspace\"] = \"Open Campaign Dossier\"",
+    "Chummer.Presentation/Overview/DesktopDialogFactory.cs: missing Apply runner profile metadata changes to the active dossier., Paste Chummer XML to import into a dossier., dossier mutation, (no dossier), dossier available, \"Saved Dossiers\"",
+    "docs/BLAZOR_WORKBENCH_POLISH_STAGED_PROOF.md: missing setup and rules command links for XML editor, ruleset, global settings, and dossier settings derive from local command constants, keyboard-visible primary startup focus"
+  ],
   "notes": [
-    "This receipt only proves that promoted workbench polish source, style, status, and docs agree.",
+    "This receipt only proves that Chummer Online and compatibility route polish source, style, status, and docs agree.",
+    "The status utility reports this as app theme, primary startup, mobile posture, portal navigation, and reduced-motion-safe command-deck motion source alignment.",
     "It is not a substitute for hosted Playwright execution proof or Docker self-host proof.",
     "Do not use this receipt to claim desktop-equivalent browser workflow parity."
   ]

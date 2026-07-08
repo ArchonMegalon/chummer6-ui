@@ -511,10 +511,10 @@ async function auditPortalWorkbenchRoute(page) {
   expectTextIncludes(bodyText, 'older browser links alive', 'portal workbench route');
   expectTextIncludes(bodyText, 'Preview tools', 'portal workbench route');
   expectTextIncludes(bodyText, 'Start a new runner', 'portal workbench route');
-  expectTextIncludes(bodyText, 'Import runner XML', 'portal workbench route');
+  expectTextIncludes(bodyText, 'Import dossier XML', 'portal workbench route');
   expectTextIncludes(bodyText, 'Open Seeded Build Lab', 'portal workbench route');
   expectTextIncludes(bodyText, 'Continue Seeded Dossier', 'portal workbench route');
-  expectTextIncludes(bodyText, 'Saved Runners', 'portal workbench route');
+  expectTextIncludes(bodyText, 'Saved Dossiers', 'portal workbench route');
   expectTextIncludes(bodyText, 'Active Table', 'portal workbench route');
   expectTextIncludes(bodyText, 'Review identity and profile', 'portal workbench route');
   expectTextIncludes(bodyText, 'Review rules and references', 'portal workbench route');

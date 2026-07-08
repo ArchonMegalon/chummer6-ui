@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-06-28T07:45:25.5076845\u002B00:00",
+  "generatedAt": "2026-07-08T03:29:09.5035195\u002B00:00",
   "contractName": "chummer6-ui.interactive_runtime_route_inventory",
   "status": "pass",
   "summary": "Runtime route inventory captures recursive shell, popup, dialog, section, and ruleset-lane surfaces.",
@@ -60,11 +60,11 @@
         "Settings",
         "Special",
         "Start",
-        "Time: 2026-06-28 07:45:24Z",
+        "State: ready, dossier=none, open=0, saved=unsaved, last-command=Global Settings",
+        "Time: 2026-07-08 03:29:03Z",
         "Tools",
         "Total",
-        "Windows",
-        "ready \u00B7 none \u00B7 0 open \u00B7 unsaved \u00B7 Global Settings"
+        "Windows"
       ],
       "visibleCommandIds": [],
       "navigatorRootLabels": [],
@@ -1186,7 +1186,7 @@
                                                       {
                                                         "name": "StatusText",
                                                         "controlType": "TextBlock",
-                                                        "text": "ready \u00B7 none \u00B7 0 open \u00B7 unsaved \u00B7 Global Settings",
+                                                        "text": "State: ready, dossier=none, open=0, saved=unsaved, last-command=Global Settings",
                                                         "toolTip": "",
                                                         "isVisible": true,
                                                         "children": []
@@ -2770,7 +2770,7 @@
                                                       {
                                                         "name": "TimeStateText",
                                                         "controlType": "TextBlock",
-                                                        "text": "Time: 2026-06-28 07:45:24Z",
+                                                        "text": "Time: 2026-07-08 03:29:03Z",
                                                         "toolTip": "",
                                                         "isVisible": true,
                                                         "children": []
@@ -2892,7 +2892,7 @@
                                     "name": "StatusStripControl",
                                     "controlType": "StatusStripControl",
                                     "text": "",
-                                    "toolTip": "Character: none | Service: online | Time: 2026-06-28 07:45:24Z | Ruleset: Shadowrun 5 .chum5 | Workflows: 5 defs / 6 surfaces | Prefs: 100%/classic/en-us",
+                                    "toolTip": "Character: none | Service: online | Time: 2026-07-08 03:29:03Z | Ruleset: Shadowrun 5 .chum5 | Workflows: 5 defs / 6 surfaces | Prefs: 100%/classic/en-us",
                                     "isVisible": false,
                                     "children": []
                                   }
@@ -2946,11 +2946,11 @@
         "Settings",
         "Special",
         "Start",
-        "Time: 2026-06-28 07:45:23Z",
+        "State: ready, dossier=none, open=0, saved=unsaved, last-command=New Character",
+        "Time: 2026-07-08 03:29:01Z",
         "Tools",
         "Total",
-        "Windows",
-        "ready \u00B7 none \u00B7 0 open \u00B7 unsaved \u00B7 New Character"
+        "Windows"
       ],
       "visibleCommandIds": [],
       "navigatorRootLabels": [],
@@ -4072,7 +4072,7 @@
                                                       {
                                                         "name": "StatusText",
                                                         "controlType": "TextBlock",
-                                                        "text": "ready \u00B7 none \u00B7 0 open \u00B7 unsaved \u00B7 New Character",
+                                                        "text": "State: ready, dossier=none, open=0, saved=unsaved, last-command=New Character",
                                                         "toolTip": "",
                                                         "isVisible": true,
                                                         "children": []
@@ -5016,7 +5016,7 @@
                                                       {
                                                         "name": "TimeStateText",
                                                         "controlType": "TextBlock",
-                                                        "text": "Time: 2026-06-28 07:45:23Z",
+                                                        "text": "Time: 2026-07-08 03:29:01Z",
                                                         "toolTip": "",
                                                         "isVisible": true,
                                                         "children": []
@@ -5138,7 +5138,7 @@
                                     "name": "StatusStripControl",
                                     "controlType": "StatusStripControl",
                                     "text": "",
-                                    "toolTip": "Character: none | Service: online | Time: 2026-06-28 07:45:23Z | Ruleset: Shadowrun 5 .chum5 | Workflows: 5 defs / 6 surfaces | Prefs: 100%/classic/en-us",
+                                    "toolTip": "Character: none | Service: online | Time: 2026-07-08 03:29:01Z | Ruleset: Shadowrun 5 .chum5 | Workflows: 5 defs / 6 surfaces | Prefs: 100%/classic/en-us",
                                     "isVisible": false,
                                     "children": []
                                   }
@@ -5316,7 +5316,7 @@
                                 ]
                               },
                               {
-                                "name": "",
+                                "name": "DialogScrollViewer",
                                 "controlType": "ScrollViewer",
                                 "text": "",
                                 "toolTip": "",
@@ -8349,7 +8349,7 @@
                                 ]
                               },
                               {
-                                "name": "",
+                                "name": "DialogScrollViewer",
                                 "controlType": "ScrollViewer",
                                 "text": "",
                                 "toolTip": "",
@@ -11259,11 +11259,11 @@
         "Settings",
         "Special",
         "Start",
-        "Time: 2026-06-28 07:45:23Z",
+        "State: ready, dossier=none, open=0, saved=unsaved, last-command=none",
+        "Time: 2026-07-08 03:29:01Z",
         "Tools",
         "Total",
-        "Windows",
-        "ready \u00B7 none \u00B7 0 open \u00B7 unsaved \u00B7 none"
+        "Windows"
       ],
       "visibleCommandIds": [],
       "navigatorRootLabels": [],
@@ -12385,7 +12385,7 @@
                                                       {
                                                         "name": "StatusText",
                                                         "controlType": "TextBlock",
-                                                        "text": "ready \u00B7 none \u00B7 0 open \u00B7 unsaved \u00B7 none",
+                                                        "text": "State: ready, dossier=none, open=0, saved=unsaved, last-command=none",
                                                         "toolTip": "",
                                                         "isVisible": true,
                                                         "children": []
@@ -13329,7 +13329,7 @@
                                                       {
                                                         "name": "TimeStateText",
                                                         "controlType": "TextBlock",
-                                                        "text": "Time: 2026-06-28 07:45:23Z",
+                                                        "text": "Time: 2026-07-08 03:29:01Z",
                                                         "toolTip": "",
                                                         "isVisible": true,
                                                         "children": []
@@ -13451,7 +13451,7 @@
                                     "name": "StatusStripControl",
                                     "controlType": "StatusStripControl",
                                     "text": "",
-                                    "toolTip": "Character: none | Service: online | Time: 2026-06-28 07:45:23Z | Ruleset: Shadowrun 5 .chum5 | Workflows: 5 defs / 6 surfaces | Prefs: 100%/classic/en-us",
+                                    "toolTip": "Character: none | Service: online | Time: 2026-07-08 03:29:01Z | Ruleset: Shadowrun 5 .chum5 | Workflows: 5 defs / 6 surfaces | Prefs: 100%/classic/en-us",
                                     "isVisible": false,
                                     "children": []
                                   }
@@ -13517,6 +13517,7 @@
         "Height",
         "Help",
         "Human",
+        "Karma \u0026 Nuyen",
         "Lifestyle",
         "Limits",
         "Loadout summary",
@@ -13539,12 +13540,13 @@
         "Print",
         "Profile",
         "Qualities",
+        "Relationships",
         "Review Character",
         "Rules",
         "Ruleset: Shadowrun 5 .chum5 | Workflows: 5 defs / 6 surfaces | Prefs: 100%/classic/en-us",
         "Runner",
         "SR5",
-        "SR5 Roster",
+        "SR5 Characters",
         "Save",
         "Service: online",
         "Settings",
@@ -13552,21 +13554,23 @@
         "Skills",
         "Soma",
         "Special",
+        "Spell Defense",
         "Spells",
         "Start",
+        "State: ready, dossier=Soma, open=1, saved=unsaved, last-command=Global Settings",
+        "Street Gear",
         "SumtoTen",
         "Technomancer",
-        "Time: 2026-06-28 07:45:24Z",
+        "Time: 2026-07-08 03:29:06Z",
         "Tools",
         "Total",
         "Vehicles",
         "Weight",
-        "Windows",
-        "ready \u00B7 Soma \u00B7 1 open \u00B7 unsaved \u00B7 Global Settings"
+        "Windows"
       ],
       "visibleCommandIds": [],
       "navigatorRootLabels": [
-        "SR5 Roster"
+        "SR5 Characters"
       ],
       "inventory": {
         "name": "",
@@ -14686,7 +14690,7 @@
                                                       {
                                                         "name": "StatusText",
                                                         "controlType": "TextBlock",
-                                                        "text": "ready \u00B7 Soma \u00B7 1 open \u00B7 unsaved \u00B7 Global Settings",
+                                                        "text": "State: ready, dossier=Soma, open=1, saved=unsaved, last-command=Global Settings",
                                                         "toolTip": "",
                                                         "isVisible": true,
                                                         "children": []
@@ -14980,7 +14984,7 @@
                                                                                                                       {
                                                                                                                         "name": "",
                                                                                                                         "controlType": "TextBlock",
-                                                                                                                        "text": "SR5 Roster",
+                                                                                                                        "text": "SR5 Characters",
                                                                                                                         "toolTip": "",
                                                                                                                         "isVisible": true,
                                                                                                                         "children": []
@@ -15695,6 +15699,58 @@
                                                                                           {
                                                                                             "name": "",
                                                                                             "controlType": "TextBlock",
+                                                                                            "text": "Street Gear",
+                                                                                            "toolTip": "",
+                                                                                            "isVisible": true,
+                                                                                            "children": []
+                                                                                          }
+                                                                                        ]
+                                                                                      },
+                                                                                      {
+                                                                                        "name": "PART_SelectedPipe",
+                                                                                        "controlType": "Border",
+                                                                                        "text": "",
+                                                                                        "toolTip": "",
+                                                                                        "isVisible": false,
+                                                                                        "children": []
+                                                                                      }
+                                                                                    ]
+                                                                                  }
+                                                                                ]
+                                                                              }
+                                                                            ]
+                                                                          },
+                                                                          {
+                                                                            "name": "",
+                                                                            "controlType": "TabStripItem",
+                                                                            "text": "",
+                                                                            "toolTip": "",
+                                                                            "isVisible": true,
+                                                                            "children": [
+                                                                              {
+                                                                                "name": "PART_LayoutRoot",
+                                                                                "controlType": "Border",
+                                                                                "text": "",
+                                                                                "toolTip": "",
+                                                                                "isVisible": true,
+                                                                                "children": [
+                                                                                  {
+                                                                                    "name": "",
+                                                                                    "controlType": "Panel",
+                                                                                    "text": "",
+                                                                                    "toolTip": "",
+                                                                                    "isVisible": true,
+                                                                                    "children": [
+                                                                                      {
+                                                                                        "name": "PART_ContentPresenter",
+                                                                                        "controlType": "ContentPresenter",
+                                                                                        "text": "",
+                                                                                        "toolTip": "",
+                                                                                        "isVisible": true,
+                                                                                        "children": [
+                                                                                          {
+                                                                                            "name": "",
+                                                                                            "controlType": "TextBlock",
                                                                                             "text": "Gear \u0026 Ware",
                                                                                             "toolTip": "",
                                                                                             "isVisible": true,
@@ -15955,6 +16011,58 @@
                                                                                           {
                                                                                             "name": "",
                                                                                             "controlType": "TextBlock",
+                                                                                            "text": "Relationships",
+                                                                                            "toolTip": "",
+                                                                                            "isVisible": true,
+                                                                                            "children": []
+                                                                                          }
+                                                                                        ]
+                                                                                      },
+                                                                                      {
+                                                                                        "name": "PART_SelectedPipe",
+                                                                                        "controlType": "Border",
+                                                                                        "text": "",
+                                                                                        "toolTip": "",
+                                                                                        "isVisible": false,
+                                                                                        "children": []
+                                                                                      }
+                                                                                    ]
+                                                                                  }
+                                                                                ]
+                                                                              }
+                                                                            ]
+                                                                          },
+                                                                          {
+                                                                            "name": "",
+                                                                            "controlType": "TabStripItem",
+                                                                            "text": "",
+                                                                            "toolTip": "",
+                                                                            "isVisible": true,
+                                                                            "children": [
+                                                                              {
+                                                                                "name": "PART_LayoutRoot",
+                                                                                "controlType": "Border",
+                                                                                "text": "",
+                                                                                "toolTip": "",
+                                                                                "isVisible": true,
+                                                                                "children": [
+                                                                                  {
+                                                                                    "name": "",
+                                                                                    "controlType": "Panel",
+                                                                                    "text": "",
+                                                                                    "toolTip": "",
+                                                                                    "isVisible": true,
+                                                                                    "children": [
+                                                                                      {
+                                                                                        "name": "PART_ContentPresenter",
+                                                                                        "controlType": "ContentPresenter",
+                                                                                        "text": "",
+                                                                                        "toolTip": "",
+                                                                                        "isVisible": true,
+                                                                                        "children": [
+                                                                                          {
+                                                                                            "name": "",
+                                                                                            "controlType": "TextBlock",
                                                                                             "text": "Contacts",
                                                                                             "toolTip": "",
                                                                                             "isVisible": true,
@@ -16008,6 +16116,58 @@
                                                                                             "name": "",
                                                                                             "controlType": "TextBlock",
                                                                                             "text": "Notes",
+                                                                                            "toolTip": "",
+                                                                                            "isVisible": true,
+                                                                                            "children": []
+                                                                                          }
+                                                                                        ]
+                                                                                      },
+                                                                                      {
+                                                                                        "name": "PART_SelectedPipe",
+                                                                                        "controlType": "Border",
+                                                                                        "text": "",
+                                                                                        "toolTip": "",
+                                                                                        "isVisible": false,
+                                                                                        "children": []
+                                                                                      }
+                                                                                    ]
+                                                                                  }
+                                                                                ]
+                                                                              }
+                                                                            ]
+                                                                          },
+                                                                          {
+                                                                            "name": "",
+                                                                            "controlType": "TabStripItem",
+                                                                            "text": "",
+                                                                            "toolTip": "",
+                                                                            "isVisible": true,
+                                                                            "children": [
+                                                                              {
+                                                                                "name": "PART_LayoutRoot",
+                                                                                "controlType": "Border",
+                                                                                "text": "",
+                                                                                "toolTip": "",
+                                                                                "isVisible": true,
+                                                                                "children": [
+                                                                                  {
+                                                                                    "name": "",
+                                                                                    "controlType": "Panel",
+                                                                                    "text": "",
+                                                                                    "toolTip": "",
+                                                                                    "isVisible": true,
+                                                                                    "children": [
+                                                                                      {
+                                                                                        "name": "PART_ContentPresenter",
+                                                                                        "controlType": "ContentPresenter",
+                                                                                        "text": "",
+                                                                                        "toolTip": "",
+                                                                                        "isVisible": true,
+                                                                                        "children": [
+                                                                                          {
+                                                                                            "name": "",
+                                                                                            "controlType": "TextBlock",
+                                                                                            "text": "Karma \u0026 Nuyen",
                                                                                             "toolTip": "",
                                                                                             "isVisible": true,
                                                                                             "children": []
@@ -16625,6 +16785,58 @@
                                                                                             "name": "",
                                                                                             "controlType": "TextBlock",
                                                                                             "text": "Awakening",
+                                                                                            "toolTip": "",
+                                                                                            "isVisible": true,
+                                                                                            "children": []
+                                                                                          }
+                                                                                        ]
+                                                                                      },
+                                                                                      {
+                                                                                        "name": "PART_SelectedPipe",
+                                                                                        "controlType": "Border",
+                                                                                        "text": "",
+                                                                                        "toolTip": "",
+                                                                                        "isVisible": false,
+                                                                                        "children": []
+                                                                                      }
+                                                                                    ]
+                                                                                  }
+                                                                                ]
+                                                                              }
+                                                                            ]
+                                                                          },
+                                                                          {
+                                                                            "name": "",
+                                                                            "controlType": "TabStripItem",
+                                                                            "text": "",
+                                                                            "toolTip": "",
+                                                                            "isVisible": true,
+                                                                            "children": [
+                                                                              {
+                                                                                "name": "PART_LayoutRoot",
+                                                                                "controlType": "Border",
+                                                                                "text": "",
+                                                                                "toolTip": "",
+                                                                                "isVisible": true,
+                                                                                "children": [
+                                                                                  {
+                                                                                    "name": "",
+                                                                                    "controlType": "Panel",
+                                                                                    "text": "",
+                                                                                    "toolTip": "",
+                                                                                    "isVisible": true,
+                                                                                    "children": [
+                                                                                      {
+                                                                                        "name": "PART_ContentPresenter",
+                                                                                        "controlType": "ContentPresenter",
+                                                                                        "text": "",
+                                                                                        "toolTip": "",
+                                                                                        "isVisible": true,
+                                                                                        "children": [
+                                                                                          {
+                                                                                            "name": "",
+                                                                                            "controlType": "TextBlock",
+                                                                                            "text": "Spell Defense",
                                                                                             "toolTip": "",
                                                                                             "isVisible": true,
                                                                                             "children": []
@@ -18485,7 +18697,7 @@
                                             "name": "CoachSidecarControl",
                                             "controlType": "CoachSidecarControl",
                                             "text": "",
-                                            "toolTip": "Status: unloaded\nPrompt policy: Policy not loaded yet\nBudget: Budget not loaded yet\nWorkspace: 176bc97787124a9293dd13d46ef420f4\nRuntime: No runtime fingerprint yet\nfile:///coach/%3FrouteType=coach\u0026workspaceId=176bc97787124a9293dd13d46ef420f4\nOpen Coach in your browser, or copy the link if you need to hand it off.\nError: disabled",
+                                            "toolTip": "Status: unloaded\nPrompt policy: Policy not loaded yet\nBudget: Budget not loaded yet\nWorkspace: acf5584f589b454485d3d61769c2f222\nRuntime: No runtime fingerprint yet\nfile:///coach/%3FrouteType=coach\u0026workspaceId=acf5584f589b454485d3d61769c2f222\nOpen Coach in your browser, or copy the link if you need to hand it off.\nError: disabled",
                                             "isVisible": true,
                                             "children": []
                                           }
@@ -18574,7 +18786,7 @@
                                                       {
                                                         "name": "TimeStateText",
                                                         "controlType": "TextBlock",
-                                                        "text": "Time: 2026-06-28 07:45:24Z",
+                                                        "text": "Time: 2026-07-08 03:29:06Z",
                                                         "toolTip": "",
                                                         "isVisible": true,
                                                         "children": []
@@ -18696,7 +18908,7 @@
                                     "name": "StatusStripControl",
                                     "controlType": "StatusStripControl",
                                     "text": "",
-                                    "toolTip": "Character: loaded | Service: online | Time: 2026-06-28 07:45:24Z | Ruleset: Shadowrun 5 .chum5 | Workflows: 5 defs / 6 surfaces | Prefs: 100%/classic/en-us",
+                                    "toolTip": "Character: loaded | Service: online | Time: 2026-07-08 03:29:06Z | Ruleset: Shadowrun 5 .chum5 | Workflows: 5 defs / 6 surfaces | Prefs: 100%/classic/en-us",
                                     "isVisible": false,
                                     "children": []
                                   }
@@ -18752,11 +18964,11 @@
         "Settings",
         "Special",
         "Start",
-        "Time: 2026-06-28 07:45:25Z",
+        "State: ready, dossier=none, open=0, saved=unsaved, last-command=Close Window",
+        "Time: 2026-07-08 03:29:07Z",
         "Tools",
         "Total",
-        "Windows",
-        "ready \u00B7 none \u00B7 0 open \u00B7 unsaved \u00B7 Close Window"
+        "Windows"
       ],
       "visibleCommandIds": [],
       "navigatorRootLabels": [],
@@ -19878,7 +20090,7 @@
                                                       {
                                                         "name": "StatusText",
                                                         "controlType": "TextBlock",
-                                                        "text": "ready \u00B7 none \u00B7 0 open \u00B7 unsaved \u00B7 Close Window",
+                                                        "text": "State: ready, dossier=none, open=0, saved=unsaved, last-command=Close Window",
                                                         "toolTip": "",
                                                         "isVisible": true,
                                                         "children": []
@@ -21468,7 +21680,7 @@
                                                       {
                                                         "name": "TimeStateText",
                                                         "controlType": "TextBlock",
-                                                        "text": "Time: 2026-06-28 07:45:25Z",
+                                                        "text": "Time: 2026-07-08 03:29:07Z",
                                                         "toolTip": "",
                                                         "isVisible": true,
                                                         "children": []
@@ -21590,7 +21802,7 @@
                                     "name": "StatusStripControl",
                                     "controlType": "StatusStripControl",
                                     "text": "",
-                                    "toolTip": "Character: none | Service: online | Time: 2026-06-28 07:45:25Z | Ruleset: Shadowrun 4 .chum4 | Workflows: 5 defs / 6 surfaces | Prefs: 100%/classic/en-us",
+                                    "toolTip": "Character: none | Service: online | Time: 2026-07-08 03:29:07Z | Ruleset: Shadowrun 4 .chum4 | Workflows: 5 defs / 6 surfaces | Prefs: 100%/classic/en-us",
                                     "isVisible": false,
                                     "children": []
                                   }
@@ -21646,11 +21858,11 @@
         "Settings",
         "Special",
         "Start",
-        "Time: 2026-06-28 07:45:25Z",
+        "State: ready, dossier=none, open=0, saved=unsaved, last-command=Close Window",
+        "Time: 2026-07-08 03:29:08Z",
         "Tools",
         "Total",
-        "Windows",
-        "ready \u00B7 none \u00B7 0 open \u00B7 unsaved \u00B7 Close Window"
+        "Windows"
       ],
       "visibleCommandIds": [],
       "navigatorRootLabels": [],
@@ -22772,7 +22984,7 @@
                                                       {
                                                         "name": "StatusText",
                                                         "controlType": "TextBlock",
-                                                        "text": "ready \u00B7 none \u00B7 0 open \u00B7 unsaved \u00B7 Close Window",
+                                                        "text": "State: ready, dossier=none, open=0, saved=unsaved, last-command=Close Window",
                                                         "toolTip": "",
                                                         "isVisible": true,
                                                         "children": []
@@ -24362,7 +24574,7 @@
                                                       {
                                                         "name": "TimeStateText",
                                                         "controlType": "TextBlock",
-                                                        "text": "Time: 2026-06-28 07:45:25Z",
+                                                        "text": "Time: 2026-07-08 03:29:08Z",
                                                         "toolTip": "",
                                                         "isVisible": true,
                                                         "children": []
@@ -24484,7 +24696,7 @@
                                     "name": "StatusStripControl",
                                     "controlType": "StatusStripControl",
                                     "text": "",
-                                    "toolTip": "Character: none | Service: online | Time: 2026-06-28 07:45:25Z | Ruleset: Shadowrun 5 .chum5 | Workflows: 5 defs / 6 surfaces | Prefs: 100%/classic/en-us",
+                                    "toolTip": "Character: none | Service: online | Time: 2026-07-08 03:29:08Z | Ruleset: Shadowrun 5 .chum5 | Workflows: 5 defs / 6 surfaces | Prefs: 100%/classic/en-us",
                                     "isVisible": false,
                                     "children": []
                                   }
@@ -24540,11 +24752,11 @@
         "Settings",
         "Special",
         "Start",
-        "Time: 2026-06-28 07:45:25Z",
+        "State: ready, dossier=none, open=0, saved=unsaved, last-command=Close Window",
+        "Time: 2026-07-08 03:29:08Z",
         "Tools",
         "Total",
-        "Windows",
-        "ready \u00B7 none \u00B7 0 open \u00B7 unsaved \u00B7 Close Window"
+        "Windows"
       ],
       "visibleCommandIds": [],
       "navigatorRootLabels": [],
@@ -25666,7 +25878,7 @@
                                                       {
                                                         "name": "StatusText",
                                                         "controlType": "TextBlock",
-                                                        "text": "ready \u00B7 none \u00B7 0 open \u00B7 unsaved \u00B7 Close Window",
+                                                        "text": "State: ready, dossier=none, open=0, saved=unsaved, last-command=Close Window",
                                                         "toolTip": "",
                                                         "isVisible": true,
                                                         "children": []
@@ -27256,7 +27468,7 @@
                                                       {
                                                         "name": "TimeStateText",
                                                         "controlType": "TextBlock",
-                                                        "text": "Time: 2026-06-28 07:45:25Z",
+                                                        "text": "Time: 2026-07-08 03:29:08Z",
                                                         "toolTip": "",
                                                         "isVisible": true,
                                                         "children": []
@@ -27378,7 +27590,7 @@
                                     "name": "StatusStripControl",
                                     "controlType": "StatusStripControl",
                                     "text": "",
-                                    "toolTip": "Character: none | Service: online | Time: 2026-06-28 07:45:25Z | Ruleset: Shadowrun 6 .chum6 | Workflows: 5 defs / 6 surfaces | Prefs: 100%/classic/en-us",
+                                    "toolTip": "Character: none | Service: online | Time: 2026-07-08 03:29:08Z | Ruleset: Shadowrun 6 .chum6 | Workflows: 5 defs / 6 surfaces | Prefs: 100%/classic/en-us",
                                     "isVisible": false,
                                     "children": []
                                   }
@@ -27444,6 +27656,7 @@
         "Height",
         "Help",
         "Human",
+        "Karma \u0026 Nuyen",
         "Lifestyle",
         "Limits",
         "Loadout summary",
@@ -27466,12 +27679,13 @@
         "Print",
         "Profile",
         "Qualities",
+        "Relationships",
         "Review Character",
         "Rules",
         "Ruleset: Shadowrun 5 .chum5 | Workflows: 5 defs / 6 surfaces | Prefs: 100%/classic/en-us",
         "Runner",
         "SR5",
-        "SR5 Roster",
+        "SR5 Characters",
         "Save",
         "Service: online",
         "Settings",
@@ -27479,21 +27693,23 @@
         "Skills",
         "Soma",
         "Special",
+        "Spell Defense",
         "Spells",
         "Start",
+        "State: ready, dossier=Soma, open=1, saved=unsaved, last-command=Global Settings",
+        "Street Gear",
         "SumtoTen",
         "Technomancer",
-        "Time: 2026-06-28 07:45:24Z",
+        "Time: 2026-07-08 03:29:06Z",
         "Tools",
         "Total",
         "Vehicles",
         "Weight",
-        "Windows",
-        "ready \u00B7 Soma \u00B7 1 open \u00B7 unsaved \u00B7 Global Settings"
+        "Windows"
       ],
       "visibleCommandIds": [],
       "navigatorRootLabels": [
-        "SR5 Roster"
+        "SR5 Characters"
       ],
       "inventory": {
         "name": "",
@@ -28613,7 +28829,7 @@
                                                       {
                                                         "name": "StatusText",
                                                         "controlType": "TextBlock",
-                                                        "text": "ready \u00B7 Soma \u00B7 1 open \u00B7 unsaved \u00B7 Global Settings",
+                                                        "text": "State: ready, dossier=Soma, open=1, saved=unsaved, last-command=Global Settings",
                                                         "toolTip": "",
                                                         "isVisible": true,
                                                         "children": []
@@ -28907,7 +29123,7 @@
                                                                                                                       {
                                                                                                                         "name": "",
                                                                                                                         "controlType": "TextBlock",
-                                                                                                                        "text": "SR5 Roster",
+                                                                                                                        "text": "SR5 Characters",
                                                                                                                         "toolTip": "",
                                                                                                                         "isVisible": true,
                                                                                                                         "children": []
@@ -29622,6 +29838,58 @@
                                                                                           {
                                                                                             "name": "",
                                                                                             "controlType": "TextBlock",
+                                                                                            "text": "Street Gear",
+                                                                                            "toolTip": "",
+                                                                                            "isVisible": true,
+                                                                                            "children": []
+                                                                                          }
+                                                                                        ]
+                                                                                      },
+                                                                                      {
+                                                                                        "name": "PART_SelectedPipe",
+                                                                                        "controlType": "Border",
+                                                                                        "text": "",
+                                                                                        "toolTip": "",
+                                                                                        "isVisible": false,
+                                                                                        "children": []
+                                                                                      }
+                                                                                    ]
+                                                                                  }
+                                                                                ]
+                                                                              }
+                                                                            ]
+                                                                          },
+                                                                          {
+                                                                            "name": "",
+                                                                            "controlType": "TabStripItem",
+                                                                            "text": "",
+                                                                            "toolTip": "",
+                                                                            "isVisible": true,
+                                                                            "children": [
+                                                                              {
+                                                                                "name": "PART_LayoutRoot",
+                                                                                "controlType": "Border",
+                                                                                "text": "",
+                                                                                "toolTip": "",
+                                                                                "isVisible": true,
+                                                                                "children": [
+                                                                                  {
+                                                                                    "name": "",
+                                                                                    "controlType": "Panel",
+                                                                                    "text": "",
+                                                                                    "toolTip": "",
+                                                                                    "isVisible": true,
+                                                                                    "children": [
+                                                                                      {
+                                                                                        "name": "PART_ContentPresenter",
+                                                                                        "controlType": "ContentPresenter",
+                                                                                        "text": "",
+                                                                                        "toolTip": "",
+                                                                                        "isVisible": true,
+                                                                                        "children": [
+                                                                                          {
+                                                                                            "name": "",
+                                                                                            "controlType": "TextBlock",
                                                                                             "text": "Gear \u0026 Ware",
                                                                                             "toolTip": "",
                                                                                             "isVisible": true,
@@ -29882,6 +30150,58 @@
                                                                                           {
                                                                                             "name": "",
                                                                                             "controlType": "TextBlock",
+                                                                                            "text": "Relationships",
+                                                                                            "toolTip": "",
+                                                                                            "isVisible": true,
+                                                                                            "children": []
+                                                                                          }
+                                                                                        ]
+                                                                                      },
+                                                                                      {
+                                                                                        "name": "PART_SelectedPipe",
+                                                                                        "controlType": "Border",
+                                                                                        "text": "",
+                                                                                        "toolTip": "",
+                                                                                        "isVisible": false,
+                                                                                        "children": []
+                                                                                      }
+                                                                                    ]
+                                                                                  }
+                                                                                ]
+                                                                              }
+                                                                            ]
+                                                                          },
+                                                                          {
+                                                                            "name": "",
+                                                                            "controlType": "TabStripItem",
+                                                                            "text": "",
+                                                                            "toolTip": "",
+                                                                            "isVisible": true,
+                                                                            "children": [
+                                                                              {
+                                                                                "name": "PART_LayoutRoot",
+                                                                                "controlType": "Border",
+                                                                                "text": "",
+                                                                                "toolTip": "",
+                                                                                "isVisible": true,
+                                                                                "children": [
+                                                                                  {
+                                                                                    "name": "",
+                                                                                    "controlType": "Panel",
+                                                                                    "text": "",
+                                                                                    "toolTip": "",
+                                                                                    "isVisible": true,
+                                                                                    "children": [
+                                                                                      {
+                                                                                        "name": "PART_ContentPresenter",
+                                                                                        "controlType": "ContentPresenter",
+                                                                                        "text": "",
+                                                                                        "toolTip": "",
+                                                                                        "isVisible": true,
+                                                                                        "children": [
+                                                                                          {
+                                                                                            "name": "",
+                                                                                            "controlType": "TextBlock",
                                                                                             "text": "Contacts",
                                                                                             "toolTip": "",
                                                                                             "isVisible": true,
@@ -29935,6 +30255,58 @@
                                                                                             "name": "",
                                                                                             "controlType": "TextBlock",
                                                                                             "text": "Notes",
+                                                                                            "toolTip": "",
+                                                                                            "isVisible": true,
+                                                                                            "children": []
+                                                                                          }
+                                                                                        ]
+                                                                                      },
+                                                                                      {
+                                                                                        "name": "PART_SelectedPipe",
+                                                                                        "controlType": "Border",
+                                                                                        "text": "",
+                                                                                        "toolTip": "",
+                                                                                        "isVisible": false,
+                                                                                        "children": []
+                                                                                      }
+                                                                                    ]
+                                                                                  }
+                                                                                ]
+                                                                              }
+                                                                            ]
+                                                                          },
+                                                                          {
+                                                                            "name": "",
+                                                                            "controlType": "TabStripItem",
+                                                                            "text": "",
+                                                                            "toolTip": "",
+                                                                            "isVisible": true,
+                                                                            "children": [
+                                                                              {
+                                                                                "name": "PART_LayoutRoot",
+                                                                                "controlType": "Border",
+                                                                                "text": "",
+                                                                                "toolTip": "",
+                                                                                "isVisible": true,
+                                                                                "children": [
+                                                                                  {
+                                                                                    "name": "",
+                                                                                    "controlType": "Panel",
+                                                                                    "text": "",
+                                                                                    "toolTip": "",
+                                                                                    "isVisible": true,
+                                                                                    "children": [
+                                                                                      {
+                                                                                        "name": "PART_ContentPresenter",
+                                                                                        "controlType": "ContentPresenter",
+                                                                                        "text": "",
+                                                                                        "toolTip": "",
+                                                                                        "isVisible": true,
+                                                                                        "children": [
+                                                                                          {
+                                                                                            "name": "",
+                                                                                            "controlType": "TextBlock",
+                                                                                            "text": "Karma \u0026 Nuyen",
                                                                                             "toolTip": "",
                                                                                             "isVisible": true,
                                                                                             "children": []
@@ -30552,6 +30924,58 @@
                                                                                             "name": "",
                                                                                             "controlType": "TextBlock",
                                                                                             "text": "Awakening",
+                                                                                            "toolTip": "",
+                                                                                            "isVisible": true,
+                                                                                            "children": []
+                                                                                          }
+                                                                                        ]
+                                                                                      },
+                                                                                      {
+                                                                                        "name": "PART_SelectedPipe",
+                                                                                        "controlType": "Border",
+                                                                                        "text": "",
+                                                                                        "toolTip": "",
+                                                                                        "isVisible": false,
+                                                                                        "children": []
+                                                                                      }
+                                                                                    ]
+                                                                                  }
+                                                                                ]
+                                                                              }
+                                                                            ]
+                                                                          },
+                                                                          {
+                                                                            "name": "",
+                                                                            "controlType": "TabStripItem",
+                                                                            "text": "",
+                                                                            "toolTip": "",
+                                                                            "isVisible": true,
+                                                                            "children": [
+                                                                              {
+                                                                                "name": "PART_LayoutRoot",
+                                                                                "controlType": "Border",
+                                                                                "text": "",
+                                                                                "toolTip": "",
+                                                                                "isVisible": true,
+                                                                                "children": [
+                                                                                  {
+                                                                                    "name": "",
+                                                                                    "controlType": "Panel",
+                                                                                    "text": "",
+                                                                                    "toolTip": "",
+                                                                                    "isVisible": true,
+                                                                                    "children": [
+                                                                                      {
+                                                                                        "name": "PART_ContentPresenter",
+                                                                                        "controlType": "ContentPresenter",
+                                                                                        "text": "",
+                                                                                        "toolTip": "",
+                                                                                        "isVisible": true,
+                                                                                        "children": [
+                                                                                          {
+                                                                                            "name": "",
+                                                                                            "controlType": "TextBlock",
+                                                                                            "text": "Spell Defense",
                                                                                             "toolTip": "",
                                                                                             "isVisible": true,
                                                                                             "children": []
@@ -32412,7 +32836,7 @@
                                             "name": "CoachSidecarControl",
                                             "controlType": "CoachSidecarControl",
                                             "text": "",
-                                            "toolTip": "Status: unloaded\nPrompt policy: Policy not loaded yet\nBudget: Budget not loaded yet\nWorkspace: 176bc97787124a9293dd13d46ef420f4\nRuntime: No runtime fingerprint yet\nfile:///coach/%3FrouteType=coach\u0026workspaceId=176bc97787124a9293dd13d46ef420f4\nOpen Coach in your browser, or copy the link if you need to hand it off.\nError: disabled",
+                                            "toolTip": "Status: unloaded\nPrompt policy: Policy not loaded yet\nBudget: Budget not loaded yet\nWorkspace: acf5584f589b454485d3d61769c2f222\nRuntime: No runtime fingerprint yet\nfile:///coach/%3FrouteType=coach\u0026workspaceId=acf5584f589b454485d3d61769c2f222\nOpen Coach in your browser, or copy the link if you need to hand it off.\nError: disabled",
                                             "isVisible": true,
                                             "children": []
                                           }
@@ -32501,7 +32925,7 @@
                                                       {
                                                         "name": "TimeStateText",
                                                         "controlType": "TextBlock",
-                                                        "text": "Time: 2026-06-28 07:45:24Z",
+                                                        "text": "Time: 2026-07-08 03:29:06Z",
                                                         "toolTip": "",
                                                         "isVisible": true,
                                                         "children": []
@@ -32623,7 +33047,7 @@
                                     "name": "StatusStripControl",
                                     "controlType": "StatusStripControl",
                                     "text": "",
-                                    "toolTip": "Character: loaded | Service: online | Time: 2026-06-28 07:45:24Z | Ruleset: Shadowrun 5 .chum5 | Workflows: 5 defs / 6 surfaces | Prefs: 100%/classic/en-us",
+                                    "toolTip": "Character: loaded | Service: online | Time: 2026-07-08 03:29:06Z | Ruleset: Shadowrun 5 .chum5 | Workflows: 5 defs / 6 surfaces | Prefs: 100%/classic/en-us",
                                     "isVisible": false,
                                     "children": []
                                   }
@@ -33652,7 +34076,7 @@
         "Character: none",
         "Characters",
         "Close",
-        "Closed active runner.",
+        "Closed active dossier.",
         "Copy",
         "Edit",
         "File",
@@ -33675,11 +34099,11 @@
         "Settings",
         "Special",
         "Start",
-        "Time: 2026-06-28 07:45:25Z",
+        "State: ready, dossier=none, open=0, saved=unsaved, last-command=Close Window",
+        "Time: 2026-07-08 03:29:07Z",
         "Tools",
         "Total",
-        "Windows",
-        "ready \u00B7 none \u00B7 0 open \u00B7 unsaved \u00B7 Close Window"
+        "Windows"
       ],
       "visibleCommandIds": [],
       "navigatorRootLabels": [],
@@ -34801,7 +35225,7 @@
                                                       {
                                                         "name": "StatusText",
                                                         "controlType": "TextBlock",
-                                                        "text": "ready \u00B7 none \u00B7 0 open \u00B7 unsaved \u00B7 Close Window",
+                                                        "text": "State: ready, dossier=none, open=0, saved=unsaved, last-command=Close Window",
                                                         "toolTip": "",
                                                         "isVisible": true,
                                                         "children": []
@@ -35409,7 +35833,7 @@
                                                                               {
                                                                                 "name": "NoticeText",
                                                                                 "controlType": "TextBlock",
-                                                                                "text": "Closed active runner.",
+                                                                                "text": "Closed active dossier.",
                                                                                 "toolTip": "",
                                                                                 "isVisible": true,
                                                                                 "children": []
@@ -36391,7 +36815,7 @@
                                                       {
                                                         "name": "TimeStateText",
                                                         "controlType": "TextBlock",
-                                                        "text": "Time: 2026-06-28 07:45:25Z",
+                                                        "text": "Time: 2026-07-08 03:29:07Z",
                                                         "toolTip": "",
                                                         "isVisible": true,
                                                         "children": []
@@ -36513,7 +36937,7 @@
                                     "name": "StatusStripControl",
                                     "controlType": "StatusStripControl",
                                     "text": "",
-                                    "toolTip": "Character: none | Service: online | Time: 2026-06-28 07:45:25Z | Ruleset: Shadowrun 5 .chum5 | Workflows: 5 defs / 6 surfaces | Prefs: 100%/classic/en-us",
+                                    "toolTip": "Character: none | Service: online | Time: 2026-07-08 03:29:07Z | Ruleset: Shadowrun 5 .chum5 | Workflows: 5 defs / 6 surfaces | Prefs: 100%/classic/en-us",
                                     "isVisible": false,
                                     "children": []
                                   }
@@ -36579,6 +37003,7 @@
         "Height",
         "Help",
         "Human",
+        "Karma \u0026 Nuyen",
         "Lifestyle",
         "Limits",
         "Loadout summary",
@@ -36601,12 +37026,13 @@
         "Print",
         "Profile",
         "Qualities",
+        "Relationships",
         "Review Character",
         "Rules",
         "Ruleset: Shadowrun 5 .chum5 | Workflows: 5 defs / 6 surfaces | Prefs: 100%/classic/en-us",
         "Runner",
         "SR5",
-        "SR5 Roster",
+        "SR5 Characters",
         "Save",
         "Service: online",
         "Settings",
@@ -36614,21 +37040,23 @@
         "Skills",
         "Soma",
         "Special",
+        "Spell Defense",
         "Spells",
         "Start",
+        "State: ready, dossier=Soma, open=1, saved=unsaved, last-command=Global Settings",
+        "Street Gear",
         "SumtoTen",
         "Technomancer",
-        "Time: 2026-06-28 07:45:24Z",
+        "Time: 2026-07-08 03:29:06Z",
         "Tools",
         "Total",
         "Vehicles",
         "Weight",
-        "Windows",
-        "ready \u00B7 Soma \u00B7 1 open \u00B7 unsaved \u00B7 Global Settings"
+        "Windows"
       ],
       "visibleCommandIds": [],
       "navigatorRootLabels": [
-        "SR5 Roster"
+        "SR5 Characters"
       ],
       "inventory": {
         "name": "",
@@ -37748,7 +38176,7 @@
                                                       {
                                                         "name": "StatusText",
                                                         "controlType": "TextBlock",
-                                                        "text": "ready \u00B7 Soma \u00B7 1 open \u00B7 unsaved \u00B7 Global Settings",
+                                                        "text": "State: ready, dossier=Soma, open=1, saved=unsaved, last-command=Global Settings",
                                                         "toolTip": "",
                                                         "isVisible": true,
                                                         "children": []
@@ -38042,7 +38470,7 @@
                                                                                                                       {
                                                                                                                         "name": "",
                                                                                                                         "controlType": "TextBlock",
-                                                                                                                        "text": "SR5 Roster",
+                                                                                                                        "text": "SR5 Characters",
                                                                                                                         "toolTip": "",
                                                                                                                         "isVisible": true,
                                                                                                                         "children": []
@@ -38757,6 +39185,58 @@
                                                                                           {
                                                                                             "name": "",
                                                                                             "controlType": "TextBlock",
+                                                                                            "text": "Street Gear",
+                                                                                            "toolTip": "",
+                                                                                            "isVisible": true,
+                                                                                            "children": []
+                                                                                          }
+                                                                                        ]
+                                                                                      },
+                                                                                      {
+                                                                                        "name": "PART_SelectedPipe",
+                                                                                        "controlType": "Border",
+                                                                                        "text": "",
+                                                                                        "toolTip": "",
+                                                                                        "isVisible": false,
+                                                                                        "children": []
+                                                                                      }
+                                                                                    ]
+                                                                                  }
+                                                                                ]
+                                                                              }
+                                                                            ]
+                                                                          },
+                                                                          {
+                                                                            "name": "",
+                                                                            "controlType": "TabStripItem",
+                                                                            "text": "",
+                                                                            "toolTip": "",
+                                                                            "isVisible": true,
+                                                                            "children": [
+                                                                              {
+                                                                                "name": "PART_LayoutRoot",
+                                                                                "controlType": "Border",
+                                                                                "text": "",
+                                                                                "toolTip": "",
+                                                                                "isVisible": true,
+                                                                                "children": [
+                                                                                  {
+                                                                                    "name": "",
+                                                                                    "controlType": "Panel",
+                                                                                    "text": "",
+                                                                                    "toolTip": "",
+                                                                                    "isVisible": true,
+                                                                                    "children": [
+                                                                                      {
+                                                                                        "name": "PART_ContentPresenter",
+                                                                                        "controlType": "ContentPresenter",
+                                                                                        "text": "",
+                                                                                        "toolTip": "",
+                                                                                        "isVisible": true,
+                                                                                        "children": [
+                                                                                          {
+                                                                                            "name": "",
+                                                                                            "controlType": "TextBlock",
                                                                                             "text": "Gear \u0026 Ware",
                                                                                             "toolTip": "",
                                                                                             "isVisible": true,
@@ -39017,6 +39497,58 @@
                                                                                           {
                                                                                             "name": "",
                                                                                             "controlType": "TextBlock",
+                                                                                            "text": "Relationships",
+                                                                                            "toolTip": "",
+                                                                                            "isVisible": true,
+                                                                                            "children": []
+                                                                                          }
+                                                                                        ]
+                                                                                      },
+                                                                                      {
+                                                                                        "name": "PART_SelectedPipe",
+                                                                                        "controlType": "Border",
+                                                                                        "text": "",
+                                                                                        "toolTip": "",
+                                                                                        "isVisible": false,
+                                                                                        "children": []
+                                                                                      }
+                                                                                    ]
+                                                                                  }
+                                                                                ]
+                                                                              }
+                                                                            ]
+                                                                          },
+                                                                          {
+                                                                            "name": "",
+                                                                            "controlType": "TabStripItem",
+                                                                            "text": "",
+                                                                            "toolTip": "",
+                                                                            "isVisible": true,
+                                                                            "children": [
+                                                                              {
+                                                                                "name": "PART_LayoutRoot",
+                                                                                "controlType": "Border",
+                                                                                "text": "",
+                                                                                "toolTip": "",
+                                                                                "isVisible": true,
+                                                                                "children": [
+                                                                                  {
+                                                                                    "name": "",
+                                                                                    "controlType": "Panel",
+                                                                                    "text": "",
+                                                                                    "toolTip": "",
+                                                                                    "isVisible": true,
+                                                                                    "children": [
+                                                                                      {
+                                                                                        "name": "PART_ContentPresenter",
+                                                                                        "controlType": "ContentPresenter",
+                                                                                        "text": "",
+                                                                                        "toolTip": "",
+                                                                                        "isVisible": true,
+                                                                                        "children": [
+                                                                                          {
+                                                                                            "name": "",
+                                                                                            "controlType": "TextBlock",
                                                                                             "text": "Contacts",
                                                                                             "toolTip": "",
                                                                                             "isVisible": true,
@@ -39070,6 +39602,58 @@
                                                                                             "name": "",
                                                                                             "controlType": "TextBlock",
                                                                                             "text": "Notes",
+                                                                                            "toolTip": "",
+                                                                                            "isVisible": true,
+                                                                                            "children": []
+                                                                                          }
+                                                                                        ]
+                                                                                      },
+                                                                                      {
+                                                                                        "name": "PART_SelectedPipe",
+                                                                                        "controlType": "Border",
+                                                                                        "text": "",
+                                                                                        "toolTip": "",
+                                                                                        "isVisible": false,
+                                                                                        "children": []
+                                                                                      }
+                                                                                    ]
+                                                                                  }
+                                                                                ]
+                                                                              }
+                                                                            ]
+                                                                          },
+                                                                          {
+                                                                            "name": "",
+                                                                            "controlType": "TabStripItem",
+                                                                            "text": "",
+                                                                            "toolTip": "",
+                                                                            "isVisible": true,
+                                                                            "children": [
+                                                                              {
+                                                                                "name": "PART_LayoutRoot",
+                                                                                "controlType": "Border",
+                                                                                "text": "",
+                                                                                "toolTip": "",
+                                                                                "isVisible": true,
+                                                                                "children": [
+                                                                                  {
+                                                                                    "name": "",
+                                                                                    "controlType": "Panel",
+                                                                                    "text": "",
+                                                                                    "toolTip": "",
+                                                                                    "isVisible": true,
+                                                                                    "children": [
+                                                                                      {
+                                                                                        "name": "PART_ContentPresenter",
+                                                                                        "controlType": "ContentPresenter",
+                                                                                        "text": "",
+                                                                                        "toolTip": "",
+                                                                                        "isVisible": true,
+                                                                                        "children": [
+                                                                                          {
+                                                                                            "name": "",
+                                                                                            "controlType": "TextBlock",
+                                                                                            "text": "Karma \u0026 Nuyen",
                                                                                             "toolTip": "",
                                                                                             "isVisible": true,
                                                                                             "children": []
@@ -39687,6 +40271,58 @@
                                                                                             "name": "",
                                                                                             "controlType": "TextBlock",
                                                                                             "text": "Awakening",
+                                                                                            "toolTip": "",
+                                                                                            "isVisible": true,
+                                                                                            "children": []
+                                                                                          }
+                                                                                        ]
+                                                                                      },
+                                                                                      {
+                                                                                        "name": "PART_SelectedPipe",
+                                                                                        "controlType": "Border",
+                                                                                        "text": "",
+                                                                                        "toolTip": "",
+                                                                                        "isVisible": false,
+                                                                                        "children": []
+                                                                                      }
+                                                                                    ]
+                                                                                  }
+                                                                                ]
+                                                                              }
+                                                                            ]
+                                                                          },
+                                                                          {
+                                                                            "name": "",
+                                                                            "controlType": "TabStripItem",
+                                                                            "text": "",
+                                                                            "toolTip": "",
+                                                                            "isVisible": true,
+                                                                            "children": [
+                                                                              {
+                                                                                "name": "PART_LayoutRoot",
+                                                                                "controlType": "Border",
+                                                                                "text": "",
+                                                                                "toolTip": "",
+                                                                                "isVisible": true,
+                                                                                "children": [
+                                                                                  {
+                                                                                    "name": "",
+                                                                                    "controlType": "Panel",
+                                                                                    "text": "",
+                                                                                    "toolTip": "",
+                                                                                    "isVisible": true,
+                                                                                    "children": [
+                                                                                      {
+                                                                                        "name": "PART_ContentPresenter",
+                                                                                        "controlType": "ContentPresenter",
+                                                                                        "text": "",
+                                                                                        "toolTip": "",
+                                                                                        "isVisible": true,
+                                                                                        "children": [
+                                                                                          {
+                                                                                            "name": "",
+                                                                                            "controlType": "TextBlock",
+                                                                                            "text": "Spell Defense",
                                                                                             "toolTip": "",
                                                                                             "isVisible": true,
                                                                                             "children": []
@@ -41547,7 +42183,7 @@
                                             "name": "CoachSidecarControl",
                                             "controlType": "CoachSidecarControl",
                                             "text": "",
-                                            "toolTip": "Status: unloaded\nPrompt policy: Policy not loaded yet\nBudget: Budget not loaded yet\nWorkspace: 176bc97787124a9293dd13d46ef420f4\nRuntime: No runtime fingerprint yet\nfile:///coach/%3FrouteType=coach\u0026workspaceId=176bc97787124a9293dd13d46ef420f4\nOpen Coach in your browser, or copy the link if you need to hand it off.\nError: disabled",
+                                            "toolTip": "Status: unloaded\nPrompt policy: Policy not loaded yet\nBudget: Budget not loaded yet\nWorkspace: acf5584f589b454485d3d61769c2f222\nRuntime: No runtime fingerprint yet\nfile:///coach/%3FrouteType=coach\u0026workspaceId=acf5584f589b454485d3d61769c2f222\nOpen Coach in your browser, or copy the link if you need to hand it off.\nError: disabled",
                                             "isVisible": true,
                                             "children": []
                                           }
@@ -41636,7 +42272,7 @@
                                                       {
                                                         "name": "TimeStateText",
                                                         "controlType": "TextBlock",
-                                                        "text": "Time: 2026-06-28 07:45:24Z",
+                                                        "text": "Time: 2026-07-08 03:29:06Z",
                                                         "toolTip": "",
                                                         "isVisible": true,
                                                         "children": []
@@ -41758,7 +42394,7 @@
                                     "name": "StatusStripControl",
                                     "controlType": "StatusStripControl",
                                     "text": "",
-                                    "toolTip": "Character: loaded | Service: online | Time: 2026-06-28 07:45:24Z | Ruleset: Shadowrun 5 .chum5 | Workflows: 5 defs / 6 surfaces | Prefs: 100%/classic/en-us",
+                                    "toolTip": "Character: loaded | Service: online | Time: 2026-07-08 03:29:06Z | Ruleset: Shadowrun 5 .chum5 | Workflows: 5 defs / 6 surfaces | Prefs: 100%/classic/en-us",
                                     "isVisible": false,
                                     "children": []
                                   }
@@ -41812,11 +42448,11 @@
         "Settings",
         "Special",
         "Start",
-        "Time: 2026-06-28 07:45:23Z",
+        "State: ready, dossier=none, open=0, saved=unsaved, last-command=none",
+        "Time: 2026-07-08 03:29:01Z",
         "Tools",
         "Total",
-        "Windows",
-        "ready \u00B7 none \u00B7 0 open \u00B7 unsaved \u00B7 none"
+        "Windows"
       ],
       "visibleCommandIds": [],
       "navigatorRootLabels": [],
@@ -42938,7 +43574,7 @@
                                                       {
                                                         "name": "StatusText",
                                                         "controlType": "TextBlock",
-                                                        "text": "ready \u00B7 none \u00B7 0 open \u00B7 unsaved \u00B7 none",
+                                                        "text": "State: ready, dossier=none, open=0, saved=unsaved, last-command=none",
                                                         "toolTip": "",
                                                         "isVisible": true,
                                                         "children": []
@@ -43882,7 +44518,7 @@
                                                       {
                                                         "name": "TimeStateText",
                                                         "controlType": "TextBlock",
-                                                        "text": "Time: 2026-06-28 07:45:23Z",
+                                                        "text": "Time: 2026-07-08 03:29:01Z",
                                                         "toolTip": "",
                                                         "isVisible": true,
                                                         "children": []
@@ -44004,7 +44640,7 @@
                                     "name": "StatusStripControl",
                                     "controlType": "StatusStripControl",
                                     "text": "",
-                                    "toolTip": "Character: none | Service: online | Time: 2026-06-28 07:45:23Z | Ruleset: Shadowrun 5 .chum5 | Workflows: 5 defs / 6 surfaces | Prefs: 100%/classic/en-us",
+                                    "toolTip": "Character: none | Service: online | Time: 2026-07-08 03:29:01Z | Ruleset: Shadowrun 5 .chum5 | Workflows: 5 defs / 6 surfaces | Prefs: 100%/classic/en-us",
                                     "isVisible": false,
                                     "children": []
                                   }

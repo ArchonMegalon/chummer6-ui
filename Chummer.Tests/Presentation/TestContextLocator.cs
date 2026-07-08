@@ -12,3 +12,9 @@ internal static class TestContextLocator
             Directory.GetCurrentDirectory());
     }
 }
+
+internal static class AvaloniaHeadlessSessionGate
+{
+    // Serializes headless session lifecycles across test classes.
+    internal static object SyncRoot { get; } = new();
+}

@@ -5,10 +5,10 @@ namespace Chummer.Presentation.Shell;
 
 internal static partial class DesktopMouseFirstJourneyVisibleShellStateReader
 {
-    [GeneratedRegex(@"^(?:Workspace|Arbeitsbereich|Espace de travail|ワークスペース|工作区):\s*(?<workspaceId>.+?)\s+\((?:open|offen|ouverts|オープン|已打开|abertos):\s*(?<openCount>\d+),\s*(?<saveStatus>[^)]+)\)$", RegexOptions.CultureInvariant)]
+    [GeneratedRegex(@"^(?:Workspace|Dossier|Arbeitsbereich|Espace de travail|ドシエ|ワークスペース|Dossie|工作区|档案):\s*(?<workspaceId>.+?)\s+\((?:open|offen|ouverts|オープン|已打开|abertos):\s*(?<openCount>\d+),\s*(?<saveStatus>[^)]+)\)$", RegexOptions.CultureInvariant)]
     private static partial Regex WorkspaceStripRegex();
 
-    [GeneratedRegex(@"^(?:State|Status|Etat|状態|状态):\s*(?<readiness>.+?),\s*(?:workspace|arbeitsbereich|espace|workspace|工作区)=(?<workspaceId>.+?),\s*(?:open|offen|ouvert|open|aberto|open)=(?<openCount>\d+),\s*(?:saved|gespeichert|sauvegarde|saved|salvo|saved)=(?<saveStatus>.+?),\s*(?:last-command|letzter-befehl|derniere-commande|last-command|ultimo-comando|last-command)=(?<lastCommand>.+)$", RegexOptions.CultureInvariant)]
+    [GeneratedRegex(@"^(?:State|Status|Etat|状態|状态):\s*(?<readiness>.+?),\s*(?:workspace|dossier|arbeitsbereich|espace|ドシエ|dossie|工作区|档案)=(?<workspaceId>.+?),\s*(?:open|offen|ouvert|aberto|オープン|已打开)=(?<openCount>\d+),\s*(?:saved|gespeichert|sauvegarde|salvo|保存)=(?<saveStatus>.+?),\s*(?:last-command|letzter-befehl|derniere-commande|ultimo-comando|前回コマンド|上一命令)=(?<lastCommand>.+)$", RegexOptions.CultureInvariant)]
     private static partial Regex ToolStripStatusRegex();
 
     public static DesktopMouseFirstJourneyVisibleShellState Read(

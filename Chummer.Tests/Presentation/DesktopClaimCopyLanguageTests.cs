@@ -18,7 +18,7 @@ public sealed class DesktopClaimCopyLanguageTests
         StringAssert.Contains(catalog, "Claim your copy");
         StringAssert.Contains(catalog, "Browser claim attempt: {0} UTC.");
         StringAssert.Contains(catalog, "Browser claim error: {0}");
-        StringAssert.Contains(catalog, "Recent claim: {0}");
+        StringAssert.Contains(catalog, "Last claim attempt: {0} UTC.");
         StringAssert.Contains(catalog, "State: copy claim reviewed.");
 
         AssertVisibleCopyDoesNotContain(catalog, "Browser handoff");
@@ -45,6 +45,18 @@ public sealed class DesktopClaimCopyLanguageTests
         AssertVisibleCopyDoesNotContain(runtime, "copy the callback URL from the browser page");
         AssertVisibleCopyDoesNotContain(runtime, "Browser handoff requested");
         AssertVisibleCopyDoesNotContain(runtime, "Browser handoff could not be opened automatically");
+    }
+
+    [TestMethod]
+    public void Desktop_shell_continuity_copy_avoids_flagship_claim_language()
+    {
+        string repoRoot = TestContextLocator.ResolveChummerPresentationRepoRoot();
+        string shellCopy = File.ReadAllText(Path.Combine(repoRoot, "Chummer.Blazor", "Components", "Layout", "DesktopShell.Flagship.cs"));
+
+        StringAssert.Contains(shellCopy, "No grounded dossier is open yet; restore or import one before relying on dossier continuity.");
+
+        AssertVisibleCopyDoesNotContain(shellCopy, "claiming flagship continuity");
+        AssertVisibleCopyDoesNotContain(shellCopy, "flagship continuity");
     }
 
     private static void AssertVisibleCopyDoesNotContain(string source, string value)

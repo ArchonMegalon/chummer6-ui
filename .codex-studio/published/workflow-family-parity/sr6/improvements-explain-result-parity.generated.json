@@ -1,15 +1,17 @@
 {
-  "generatedAt": "2026-06-27T16:13:03.671548Z",
+  "generatedAt": "2026-07-04T20:05:54.009607Z",
   "contract_name": "chummer6-ui.sr6_workflow_family_verification_receipt",
-  "status": "pass",
-  "summary": "SR6 workflow-family verification evidence is explicitly grounded for improvements-explain-result-parity.",
-  "reasons": [],
+  "status": "fail",
+  "summary": "SR6 workflow-family verification evidence is incomplete for improvements-explain-result-parity.",
+  "reasons": [
+    "Execution receipts are missing or not passing: /docker/chummercomplete/chummer-presentation-sr6-origin-dialog-clean/.codex-studio/published/workflow-family-parity/executed/sr6/improvements-explain-result-parity.generated.json (fail)"
+  ],
   "evidence": {
     "edition": "sr6",
     "familyId": "improvements-explain-result-parity",
     "proofKind": "sr6_family_carry_forward",
-    "ledgerPath": "/docker/chummercomplete/chummer-presentation/docs/SR6_WORKFLOW_PARITY_LEDGER.json",
-    "oraclePath": "/docker/chummercomplete/chummer-presentation/docs/SR6_DESKTOP_WORKFLOW_PARITY_ORACLE.json",
+    "ledgerPath": "/docker/chummercomplete/chummer-presentation-sr6-origin-dialog-clean/docs/SR6_WORKFLOW_PARITY_LEDGER.json",
+    "oraclePath": "/docker/chummercomplete/chummer-presentation-sr6-origin-dialog-clean/docs/SR6_DESKTOP_WORKFLOW_PARITY_ORACLE.json",
     "auditTests": [
       "Avalonia_and_Blazor_workspace_action_summary_matches",
       "Menu_dialog_workflows_keep_recursive_parity",
@@ -22,10 +24,10 @@
         "Avalonia_and_Blazor_workspace_action_summary_matches"
       ]
     },
-    "executionReceipts": [
-      "/docker/chummercomplete/chummer-presentation/.codex-studio/published/workflow-family-parity/executed/sr6/improvements-explain-result-parity.generated.json"
+    "executionReceipts": [],
+    "executionFailures": [
+      "/docker/chummercomplete/chummer-presentation-sr6-origin-dialog-clean/.codex-studio/published/workflow-family-parity/executed/sr6/improvements-explain-result-parity.generated.json (fail)"
     ],
-    "executionFailures": [],
     "executionExternalBlockers": []
   }
 }

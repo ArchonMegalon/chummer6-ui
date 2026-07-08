@@ -284,8 +284,31 @@ if api_surface_ready:
 test_process_env = dict(os.environ)
 test_process_env["CHUMMER_API_BASE_URL"] = api_base_url
 test_process_env["CHUMMER_WEB_BASE_URL"] = api_base_url
+test_host_path = repo_root / "Chummer.Tests" / "bin" / "Release" / "net10.0" / "Chummer.Tests"
+test_build_proc: subprocess.CompletedProcess[str] | None = None
 
 if unique_tests:
+    test_build_proc = subprocess.run(
+        [
+            "dotnet",
+            "build",
+            "Chummer.Tests/Chummer.Tests.csproj",
+            "--configuration",
+            "Release",
+            "--no-restore",
+        ],
+        cwd=repo_root,
+        stdout=subprocess.PIPE,
+        stderr=subprocess.STDOUT,
+        text=True,
+        check=False,
+        env=test_process_env,
+    )
+    if test_build_proc.returncode != 0:
+        run_exit = int(test_build_proc.returncode)
+        output_lines = (test_build_proc.stdout or "").strip().splitlines()
+        run_error = output_lines[-1] if output_lines else "Chummer.Tests Release build failed"
+
     with lock_path.open("w", encoding="utf-8") as lock_handle:
         fcntl.flock(lock_handle.fileno(), fcntl.LOCK_EX)
         observed_attempt_count = 0
@@ -294,21 +317,19 @@ if unique_tests:
             per_test_trx = run_root / f"{index:02d}-{safe_name}.trx"
             per_test_trx_paths[test_name] = str(per_test_trx)
             proc = None
+            if run_exit != 0:
+                break
             for attempt in range(1, max_test_attempts + 1):
                 observed_attempt_count = max(observed_attempt_count, attempt)
                 if per_test_trx.exists():
                     per_test_trx.unlink()
                 proc = subprocess.run(
                     [
-                        "dotnet",
-                        "test",
-                        "--project",
-                        "Chummer.Tests/Chummer.Tests.csproj",
-                        "--configuration",
-                        "Release",
-                        "--no-restore",
+                        str(test_host_path),
                         "--filter",
-                        f"FullyQualifiedName~{test_name}",
+                        test_name,
+                        "--minimum-expected-tests",
+                        "1",
                         "--results-directory",
                         str(run_root),
                         "--report-trx",

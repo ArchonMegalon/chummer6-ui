@@ -30,6 +30,26 @@ public partial class DesktopShell
         return AvailabilityEvaluator.IsNavigationTabEnabled(tab, State);
     }
 
+    private bool TryResolveCommandDefinition(string commandId, out AppCommandDefinition command)
+    {
+        AppCommandDefinition? resolvedCommand = State.Commands.FirstOrDefault(candidate => string.Equals(candidate.Id, commandId, StringComparison.Ordinal));
+        if (resolvedCommand is not null)
+        {
+            command = resolvedCommand;
+            return true;
+        }
+
+        resolvedCommand = _shellSurfaceState.Commands.FirstOrDefault(candidate => string.Equals(candidate.Id, commandId, StringComparison.Ordinal));
+        if (resolvedCommand is not null)
+        {
+            command = resolvedCommand;
+            return true;
+        }
+
+        command = default!;
+        return false;
+    }
+
     private Task ToggleMenu(string menuId)
     {
         return ShellPresenter.ToggleMenuAsync(menuId, CancellationToken.None);
@@ -39,6 +59,13 @@ public partial class DesktopShell
     {
         if (_bridge is null)
             return;
+
+        if (TryResolveCommandDefinition(commandId, out AppCommandDefinition? command)
+            && !IsCommandEnabled(command))
+        {
+            await ShellPresenter.ExecuteCommandAsync(commandId, CancellationToken.None);
+            return;
+        }
 
         await ShellPresenter.ExecuteCommandAsync(commandId, CancellationToken.None);
         bool isMenuRoot = _shellSurfaceState.MenuRoots.Any(command => string.Equals(command.Id, commandId, StringComparison.Ordinal));

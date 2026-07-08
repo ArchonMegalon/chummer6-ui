@@ -280,7 +280,7 @@ const checks = [
     url: `${baseUrl}/blazor/home`,
     assert: text =>
       hasBlazorBaseHref(text)
-      && text.includes('Chummer Online for real runner work.')
+      && text.includes('Chummer Online for real dossier work.')
       && text.includes('Explore Chummer Online')
       && text.includes('data-home-hero-action="explore-chummer-online"')
       && text.includes('Roster entry:')

@@ -142,6 +142,7 @@
     <Compile Include="PortalReleaseManifestReaderTests.cs" />
     <Compile Include="PortalSettingsResolverTests.cs" />
     <Compile Include="Presentation\AppRouteSurfaceTests.cs" />
+    <Compile Include="Presentation\PublicPreviewSurfaceTests.cs" />
     <Compile Include="PublicationStoreTests.cs" />
     <Compile Include="RequestOwnerContextAccessorTests.cs" />
     <Compile Include="RestartSafeWorkspacePersistenceTests.cs" />

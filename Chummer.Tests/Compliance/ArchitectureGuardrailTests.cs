@@ -78,12 +78,7 @@ public class ArchitectureGuardrailTests
     [TestMethod]
     public void Blazor_head_exposes_health_endpoint()
     {
-        string programPath = "/docker/chummercomplete/chummer-presentation/Chummer.Blazor/Program.cs";
-        if (!File.Exists(programPath))
-        {
-            programPath = FindPath("Chummer.Blazor", "Program.cs");
-        }
-
+        string programPath = FindPath("Chummer.Blazor", "Program.cs");
         string text = File.ReadAllText(programPath);
 
         StringAssert.Contains(text, "builder.Services.AddRazorComponents()");
@@ -91,6 +86,23 @@ public class ArchitectureGuardrailTests
         Assert.IsFalse(text.Contains("app.MapGet(\"/\",", StringComparison.Ordinal), "The public-edge /blazor/ root must not compete with the Razor root page.");
         StringAssert.Contains(text, "app.MapMethods(\"/\", [HttpMethods.Head], () => Results.Ok())");
         StringAssert.Contains(text, "app.MapRazorComponents<App>()");
+    }
+
+    [TestMethod]
+    public void Presentation_test_helpers_do_not_hardcode_legacy_checkout_roots()
+    {
+        string avaloniaTestPath = FindPath("Chummer.Tests", "Presentation", "AvaloniaFlagshipUiGateTests.cs");
+        string externalProofBlockersPath = FindPath("Chummer.Tests", "ExternalHostProofBlockersTests.cs");
+
+        string avaloniaTestText = File.ReadAllText(avaloniaTestPath);
+        string externalProofBlockersText = File.ReadAllText(externalProofBlockersPath);
+
+        StringAssert.Contains(avaloniaTestText, "TestContextLocator.ResolveChummerPresentationRepoRoot()");
+        StringAssert.Contains(externalProofBlockersText, "DesktopRepoRootLocator.TryResolveChummerPresentationRepoRoot");
+        Assert.IsFalse(avaloniaTestText.Contains("/docker/chummercomplete/chummer-presentation", StringComparison.Ordinal));
+        Assert.IsFalse(avaloniaTestText.Contains("/docker/chummercomplete/chummer6-ui", StringComparison.Ordinal));
+        Assert.IsFalse(avaloniaTestText.Contains("/docker/chummercomplete/chummer6-ui-finish", StringComparison.Ordinal));
+        Assert.IsFalse(externalProofBlockersText.Contains("/docker/chummercomplete/chummer6-ui", StringComparison.Ordinal));
     }
 
     [TestMethod]
@@ -361,6 +373,41 @@ public class ArchitectureGuardrailTests
                 File.Exists(Path.Combine(coreLifeModulesDirectory, file)),
                 $"Legacy life modules XML service file must be removed from Chummer.Core: {file}");
         }
+    }
+
+    [TestMethod]
+    public void Verification_test_project_keeps_tracked_workbench_route_suite_and_rejects_duplicate_local_harness()
+    {
+        string projectPath = FindPath("Chummer.Tests", "Chummer.Tests.csproj");
+        string projectText = File.ReadAllText(projectPath);
+
+        StringAssert.Contains(projectText, @"<Compile Include=""Presentation\AppRouteSurfaceTests.cs"" />");
+        Assert.IsFalse(
+            projectText.Contains(@"<Compile Include=""Presentation\AppShellBaseHrefTests.cs"" />", StringComparison.Ordinal),
+            "The duplicate local AppShellBaseHrefTests harness must not be compiled into the verification assembly once AppRouteSurfaceTests owns the route truth.");
+    }
+
+    [TestMethod]
+    public void Verification_test_project_does_not_depend_on_local_portal_or_headless_support_files()
+    {
+        string projectPath = FindPath("Chummer.Tests", "Chummer.Tests.csproj");
+        string projectText = File.ReadAllText(projectPath);
+
+        Assert.IsFalse(
+            projectText.Contains(@"<Compile Include=""Presentation\AvaloniaHeadlessSessionGate.cs"" />", StringComparison.Ordinal),
+            "Headless-session synchronization must live in a tracked shared test helper instead of a local-only compile include.");
+        Assert.IsFalse(
+            projectText.Contains(@"<Compile Include=""Presentation\PortalAppRouteContractTests.cs"" />", StringComparison.Ordinal),
+            "Portal route contracts must live in tracked presentation test surfaces instead of a local-only compile include.");
+
+        string helperPath = FindPath("Chummer.Tests", "Presentation", "TestContextLocator.cs");
+        string helperText = File.ReadAllText(helperPath);
+        StringAssert.Contains(helperText, "internal static class AvaloniaHeadlessSessionGate");
+
+        string publicPreviewTestsPath = FindPath("Chummer.Tests", "Presentation", "PublicPreviewSurfaceTests.cs");
+        string publicPreviewTestsText = File.ReadAllText(publicPreviewTestsPath);
+        StringAssert.Contains(publicPreviewTestsText, "Portal_program_redirects_clean_public_app_route_to_hosted_blazor_app_and_preserves_query_string");
+        StringAssert.Contains(publicPreviewTestsText, "Portal_program_keeps_clean_public_app_route_in_openapi_and_route_registry");
     }
 
     private static string FindPath(params string[] parts)

@@ -106,6 +106,7 @@ app.MapGet("/", async context =>
 string blazorHomeRoute = RouteRootFromPublicPath(options.BlazorUrl);
 app.MapGet(blazorHomeRoute, () => Results.Redirect(BuildBlazorAppUrl(options)));
 app.MapGet(PortalRoutes.PublicApp, (HttpContext context) => Results.Redirect(BuildPublicAppRedirectUrl(options, context)));
+app.MapGet(PortalRoutes.PublicOnline, (HttpContext context) => Results.Redirect(BuildPublicOnlineRedirectUrl(options, context)));
 
 app.MapGet(downloadsHomeRoute, async context =>
 {
@@ -1063,15 +1064,15 @@ async function bootDocs() {
       const statusMarker = route === '/status' ? ' data-openapi-release-status-route="true"' : '';
       const contactMarker = route === '/contact' ? ' data-openapi-support-handoff-route="true"' : '';
       const helpMarker = route === '/help' ? ' data-openapi-help-handoff-route="true"' : '';
-      const blazorAppMarker = route === '{{PortalRoutes.PublicApp}}' || route === '{{PortalRoutes.BlazorApp}}' ? ' data-openapi-chummer-app-route="true"' : '';
+      const blazorAppMarker = route === '{{PortalRoutes.PublicApp}}' || route === '{{PortalRoutes.BlazorApp}}' || route === '{{PortalRoutes.PublicOnline}}' ? ' data-openapi-chummer-app-route="true"' : '';
       const blazorHomeMarker = route === '{{PortalRoutes.BlazorHome}}' ? ' data-openapi-chummer-home-route="true"' : '';
       const blazorEntryMarker = route === '/blazor/' ? ' data-openapi-blazor-entry-route="true"' : '';
-      const routeFamily = route === '{{PortalRoutes.PublicApp}}' || route === '{{PortalRoutes.BlazorApp}}'
+      const routeFamily = route === '{{PortalRoutes.PublicApp}}' || route === '{{PortalRoutes.BlazorApp}}' || route === '{{PortalRoutes.PublicOnline}}'
         ? 'Chummer Online'
         : route === '{{PortalRoutes.BlazorHome}}'
           ? 'Chummer Online overview'
           : route === '/blazor/'
-            ? 'Stable browser entry'
+            ? 'Hosted browser entry'
             : isDownloadsRoute
               ? 'Downloads'
               : route === '/status'
@@ -1176,6 +1177,13 @@ static object BuildOpenApiDocument()
                     summary = "Open Chummer Online through the clean public /app route"
                 }
             },
+            [PortalRoutes.PublicOnline] = new
+            {
+                get = new
+                {
+                    summary = "Open Chummer Online through the clean public /online alias"
+                }
+            },
             [PortalRoutes.BlazorHome] = new
             {
                 get = new
@@ -1187,7 +1195,7 @@ static object BuildOpenApiDocument()
             {
                 get = new
                 {
-                    summary = "Open the stable Blazor browser entry that resolves into Chummer Online"
+                    summary = "Open the hosted Blazor browser entry that resolves into Chummer Online"
                 }
             },
             ["/status"] = new
@@ -1262,6 +1270,11 @@ static string BuildPublicAppRedirectUrl(PortalOptions options, HttpContext conte
     return $"{BuildBlazorAppUrl(options)}{context.Request.QueryString}";
 }
 
+static string BuildPublicOnlineRedirectUrl(PortalOptions options, HttpContext context)
+{
+    return $"{BuildBlazorAppUrl(options)}{context.Request.QueryString}";
+}
+
 static string BuildBlazorAppUrl(PortalOptions options)
     => BuildPublicUrl(options.BlazorUrl, PortalRoutes.BlazorAppSegment);
 
@@ -1277,7 +1290,7 @@ static class PortalRoutes
 {
     public const string CommunityDiscord = "https://discord.gg/mJB7st9";
     public const string PublicApp = "/app";
-    public const string PublicAppSlash = "/app/";
+    public const string PublicOnline = "/online";
     public const string BlazorApp = "/blazor/app";
     public const string BlazorHome = "/blazor/home";
     public const string BlazorAppSegment = "app";

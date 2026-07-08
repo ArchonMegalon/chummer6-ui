@@ -3,6 +3,20 @@ import re
 from pathlib import Path
 
 
+def test_public_edge_execution_shell_wrapper_uses_alias_safe_repo_root_and_physical_workspace_root() -> None:
+    shell = Path("scripts/e2e-public-edge-execution.sh").read_text(encoding="utf-8")
+
+    assert 'SCRIPT_DIR_PHYSICAL="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd -P)"' in shell
+    assert 'REPO_ROOT_PHYSICAL="$(cd "$SCRIPT_DIR_PHYSICAL/.." && pwd -P)"' in shell
+    assert 'REPO_ROOT_ALIAS_CANDIDATE="${CHUMMER_UI_REPO_ROOT_ALIAS:-$REPO_ROOT_PHYSICAL}"' in shell
+    assert 'REPO_ROOT="$REPO_ROOT_PHYSICAL"' in shell
+    assert 'SCRIPT_DIR="$REPO_ROOT/scripts"' in shell
+    assert 'WORKSPACE_ROOT="$(cd "$REPO_ROOT_PHYSICAL/.." && pwd -P)"' in shell
+    assert 'WORKSPACE_ROOT="$(cd "$REPO_ROOT/.." && pwd)"' not in shell
+    assert 'SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"' not in shell
+    assert 'REPO_ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"' not in shell
+
+
 def _extract_js_array(source: str, name: str) -> set[str]:
     match = re.search(rf"const {re.escape(name)} = \[(.*?)\];", source, re.DOTALL)
     assert match, f"missing JS array {name}"
@@ -95,8 +109,21 @@ def test_public_edge_execution_runner_waits_for_result_continuation_text() -> No
     script = Path("scripts/e2e-public-edge-playwright.cjs").read_text(encoding="utf-8")
 
     assert "async function waitForBodyTextIncludes(page, expected, label)" in script
-    assert "document.body.innerText.includes(expectedText)" in script
+    assert "document.body.innerText || document.body.textContent || ''" in script
     assert "await waitForBodyTextIncludes(page, expectedText, `hosted resumed result route ${route}`);" in script
+    assert "const route = `${promotedRouteBase}?fixture=blue&tab=tab-calendar&control=create_entry&dialog_action=add`;" in script
+    assert "await waitForBodyTextIncludes(page, \"Entry 'New entry' added.\", 'hosted committed action route');" in script
+    assert "await waitForBodyTextIncludes(page, expectedText, `hosted advanced committed action route ${route}`);" in script
+    committed_block = script.split("async function auditCommittedAction(page) {", 1)[1].split(
+        "async function auditAdvancedCommittedAction(page, route, expectedText) {",
+        1,
+    )[0]
+    advanced_committed_block = script.split(
+        "async function auditAdvancedCommittedAction(page, route, expectedText) {",
+        1,
+    )[1].split("const normalizedScope", 1)[0]
+    assert "await openPath(page, route, 'body');" not in committed_block
+    assert "await openPath(page, route, 'body');" not in advanced_committed_block
 
 
 def test_public_edge_execution_runner_preserves_published_receipt_on_live_failure() -> None:
@@ -120,13 +147,60 @@ def test_public_edge_execution_runner_retries_network_changed_navigation() -> No
     assert "message.includes('Timeout')" in script
 
 
+def test_blazor_route_host_uses_fast_no_prerender_with_visible_workbench_fallback() -> None:
+    app = Path("Chummer.Blazor/Components/App.razor").read_text(encoding="utf-8")
+
+    assert '<Routes @rendermode="new InteractiveServerRenderMode(prerender: false)" />' in app
+    assert 'data-ssr-workbench-fallback="true"' in app
+    assert "BuildWorkbenchFallback()" in app
+    assert "window.chummerWorkbenchFallback.removeWhenInteractiveShellAppears" in app
+    assert "section.classic-chummer-shell:not([data-ssr-workbench-fallback])" in app
+    assert "(\"complex_form_add\", \"add\") => \"Complex form 'Cleaner' added.\"" in app
+    assert '"complex_form_add" => new WorkbenchFallbackDialog("Add Complex Form"' in app
+    assert '"new_character_origin" => new WorkbenchFallbackDialog("Origin Dossier"' in app
+    assert "Pick only the basics, then build the story. Advanced controls are optional." in app
+    assert "Create the story first. Review it, then continue to a guided build if you want mechanics." not in app
+
+
+def test_public_edge_execution_origin_wizard_copy_matches_origin_shell_parity() -> None:
+    script = Path("scripts/e2e-public-edge-playwright.cjs").read_text(encoding="utf-8")
+
+    assert "Pick only the basics, then build the story. Advanced controls are optional." in script
+    assert "Create the story first. Review it, then continue to a guided build if you want mechanics." not in script
+
+
+def test_blazor_workbench_shell_publishes_classic_browser_execution_state() -> None:
+    preview_markup = Path("Chummer.Blazor/Components/Pages/Preview.razor").read_text(encoding="utf-8")
+    shell_markup = Path("Chummer.Blazor/Components/Layout/DesktopShell.razor").read_text(encoding="utf-8")
+    shell_code = Path("Chummer.Blazor/Components/Layout/DesktopShell.razor.cs").read_text(encoding="utf-8")
+
+    assert '<section id="chummer-online-app" class="classic-chummer-shell"' in preview_markup
+    assert 'data-workbench-committed-result="@CommittedResultDataKey"' in preview_markup
+    assert "private static string NormalizeShellDataToken(string? value)" in preview_markup
+    assert '(_, "create-entry", "add") => "Entry \'New entry\' added."' in preview_markup
+    assert '(_, "edit-entry", "apply") => "Entry renamed to \'Current Entry\'."' in preview_markup
+    assert '(_, "delete-entry", "delete") => "Entry \'Current Entry\' removed."' in preview_markup
+    assert '(_, "open-notes", "save") => "Notes saved."' in preview_markup
+    assert 'data-tab="@TabDataKey"' in preview_markup
+    assert 'data-ruleset="@RulesetDataKey"' in preview_markup
+    assert 'data-active-workflow="@ActiveWorkflowDataKey"' in preview_markup
+    assert 'data-route-segment="@RouteSegmentDataKey"' in preview_markup
+    assert 'data-active-runner="@ActiveRunnerDataKey"' in preview_markup
+    assert 'data-legacy-runner="@LegacyRunnerDataKey"' in preview_markup
+    assert '<section class="desktop-shell classic-desktop-shell"' in shell_markup
+    assert 'classic-desktop-shell classic-chummer-shell' not in shell_markup
+    assert 'string.Equals(ClassicShellActiveTabId, "tab-create", StringComparison.Ordinal)' in shell_code
+    assert 'return "build-lab";' in shell_code
+
+
 def test_promoted_workbench_surfaces_startup_command_display_labels() -> None:
     preview = Path("Chummer.Blazor/Components/Pages/Preview.razor").read_text(encoding="utf-8")
 
     assert 'data-chummer-app-startup-command="@StartupCommandLabel"' in preview
     assert "<strong>@StartupCommandDisplayLabel</strong>" in preview
     assert "private string StartupCommandDisplayLabel" in preview
-    assert 'NewCharacterCommand => "New runner"' in preview
-    assert 'NewCharacterOriginCommand => "Origin Dossier"' in preview
-    assert 'OpenForPrintingCommand => "Open for Printing"' in preview
-    assert 'OpenForExportCommand => "Open for Export"' in preview
+    assert "return (normalizedCommand, NormalizeShellDataToken(DialogAction)) switch" in preview
+    assert '(NewCharacterCommand, _) => "New runner"' in preview
+    assert '(NewCharacterOriginCommand, _) => "Origin Dossier"' in preview
+    assert '(OpenForPrintingCommand, _) => "Open Print Staging"' in preview
+    assert '(OpenForExportCommand, _) => "Open Export Staging"' in preview

@@ -11,10 +11,11 @@ has_produce_reference_assembly_override=0
 has_restore_packages_path_override=0
 test_project_invocation_dir=""
 
-script_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+script_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd -P)"
 source "$script_dir/_env.sh"
 
-repo_root="$(cd "$script_dir/../.." && pwd)"
+repo_root="$REPO_ROOT"
+repo_root_physical="$(cd "$repo_root" && pwd -P)"
 cd "$repo_root"
 published_feed_sources="${CHUMMER_PUBLISHED_FEED_SOURCES:-}"
 contracts_version="${CHUMMER_CONTRACTS_PACKAGE_VERSION:-5.225.0.0}"
@@ -24,7 +25,7 @@ hub_registry_contracts_version="${CHUMMER_HUB_REGISTRY_CONTRACTS_PACKAGE_VERSION
 ui_kit_version="${CHUMMER_UI_KIT_PACKAGE_VERSION:-0.1.0-preview}"
 bootstrap_engine_contracts_feed="${CHUMMER_BOOTSTRAP_ENGINE_CONTRACTS_FEED:-1}"
 
-workspace_root="$(cd "$repo_root/.." && pwd)"
+workspace_root="$(cd "$repo_root_physical/.." && pwd -P)"
 package_plane_lock_root="${CHUMMER_PACKAGE_PLANE_LOCK_ROOT:-$workspace_root/.tmp/ai}"
 package_plane_lock_file="${CHUMMER_PACKAGE_PLANE_LOCK_FILE:-$package_plane_lock_root/with-package-plane.lock}"
 package_plane_lock_wait_seconds="${CHUMMER_PACKAGE_PLANE_LOCK_WAIT_SECONDS:-10}"

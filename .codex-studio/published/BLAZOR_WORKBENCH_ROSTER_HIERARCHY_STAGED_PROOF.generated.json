@@ -1,6 +1,6 @@
 {
   "contract_name": "chummer6-ui.blazor_workbench_roster_hierarchy_staged_proof",
-  "generated_at": "2026-06-25T17:03:39.627615+00:00",
+  "generated_at": "2026-07-07T08:00:09.049039+00:00",
   "status": "passed",
   "proof_tier": "source_staged_no_browser_execution",
   "route_lane": "chummer_app_and_promoted_blazor_workbench",

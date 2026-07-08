@@ -3,7 +3,9 @@ using System.Linq;
 using Avalonia;
 using Avalonia.Automation;
 using Avalonia.Controls;
+using Avalonia.Fonts.Inter;
 using Avalonia.Headless;
+using Avalonia.Media;
 using Avalonia.VisualTree;
 using Chummer.Avalonia;
 using Chummer.Contracts.AI;
@@ -11,110 +13,111 @@ using Chummer.Contracts.Rulesets;
 using Chummer.Desktop.Runtime;
 using Chummer.Presentation.Overview;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
+using System.Threading;
 
 namespace Chummer.Tests.Presentation;
 
 [TestClass]
 public sealed class DesktopTrustPanelFactoryTests
 {
-    private static readonly object HeadlessInitLock = new();
-    private static bool _headlessInitialized;
-
     [TestMethod]
     public void CreateDialogPanel_surfaces_import_explanation_and_companion_launch_context()
     {
-        EnsureHeadlessPlatform();
+        WithHeadlessUi(() =>
+        {
+            DesktopDialogFactory factory = new();
+            DesktopDialogState dialog = factory.CreateCommandDialog(
+                "open_character",
+                profile: null,
+                DesktopPreferenceState.Default,
+                activeSectionJson: null,
+                currentWorkspace: null,
+                rulesetId: RulesetDefaults.Sr5);
 
-        DesktopDialogFactory factory = new();
-        DesktopDialogState dialog = factory.CreateCommandDialog(
-            "open_character",
-            profile: null,
-            DesktopPreferenceState.Default,
-            activeSectionJson: null,
-            currentWorkspace: null,
-            rulesetId: RulesetDefaults.Sr5);
+            string trustReceiptText = DesktopTrustReceiptText.BuildDialogReceipt(dialog);
+            Control? panel = DesktopTrustPanelFactory.CreateDialogPanel(dialog, trustReceiptText);
 
-        string trustReceiptText = DesktopTrustReceiptText.BuildDialogReceipt(dialog);
-        Control? panel = DesktopTrustPanelFactory.CreateDialogPanel(dialog, trustReceiptText);
+            Assert.IsNotNull(panel);
+            Assert.AreEqual(
+                "Import explanation and environment details",
+                FindDescendant<TextBlock>(panel, text => text.Text?.Contains("Import explanation and environment details", StringComparison.Ordinal) is true).Text);
 
-        Assert.IsNotNull(panel);
-        Assert.AreEqual(
-            "Import explanation and environment details",
-            FindDescendant<TextBlock>(panel, text => text.Text?.Contains("Import explanation and environment details", StringComparison.Ordinal) is true).Text);
+            Button companionButton = FindDescendant<Button>(panel, "OpenDesktopDialogExplainCompanionButton");
+            Assert.AreEqual("Open explanation details", AutomationProperties.GetName(companionButton));
 
-        Button companionButton = FindDescendant<Button>(panel, "OpenDesktopDialogExplainCompanionButton");
-        Assert.AreEqual("Open explanation details", AutomationProperties.GetName(companionButton));
-
-        string launchUri = AssertString(companionButton.Tag);
-        AiCoachLaunchContext context = AiCoachLaunchQuery.Parse(new Uri("https://chummer.test" + launchUri).Query);
-        Assert.AreEqual(AiRouteTypes.Build, context.RouteType);
-        Assert.AreEqual(RulesetDefaults.Sr5, context.RulesetId);
-        StringAssert.Contains(context.Message ?? string.Empty, "explanation");
-        StringAssert.Contains(context.Message ?? string.Empty, "Import rules setup record");
-        Assert.IsFalse((context.Message ?? string.Empty).Contains("receipt", StringComparison.OrdinalIgnoreCase));
-        Assert.IsFalse((context.Message ?? string.Empty).Contains("rule-environment", StringComparison.OrdinalIgnoreCase));
+            string launchUri = AssertString(companionButton.Tag);
+            AiCoachLaunchContext context = AiCoachLaunchQuery.Parse(new Uri("https://chummer.test" + launchUri).Query);
+            Assert.AreEqual(AiRouteTypes.Build, context.RouteType);
+            Assert.AreEqual(RulesetDefaults.Sr5, context.RulesetId);
+            StringAssert.Contains(context.Message ?? string.Empty, "explanation");
+            StringAssert.Contains(context.Message ?? string.Empty, "Import rules setup record");
+            Assert.IsFalse((context.Message ?? string.Empty).Contains("receipt", StringComparison.OrdinalIgnoreCase));
+            Assert.IsFalse((context.Message ?? string.Empty).Contains("rule-environment", StringComparison.OrdinalIgnoreCase));
+        });
     }
 
     [TestMethod]
     public void CreateDiagnosticsPanel_surfaces_support_blocker_companion()
     {
-        EnsureHeadlessPlatform();
+        WithHeadlessUi(() =>
+        {
+            Control? panel = DesktopTrustPanelFactory.CreateDiagnosticsPanel(
+                CreateInstallState(status: "claimed"),
+                CreateUpdateStatus(status: "attention_required", lastError: "Manifest signature mismatch."),
+                rawLines: ["Fallback diagnostics receipt"]);
 
-        Control? panel = DesktopTrustPanelFactory.CreateDiagnosticsPanel(
-            CreateInstallState(status: "claimed"),
-            CreateUpdateStatus(status: "attention_required", lastError: "Manifest signature mismatch."),
-            rawLines: ["Fallback diagnostics receipt"]);
+            Assert.IsNotNull(panel);
+            Assert.AreEqual(
+                "Support diagnostics and environment details",
+                FindDescendant<TextBlock>(panel, text => text.Text?.Contains("Support diagnostics and environment details", StringComparison.Ordinal) is true).Text);
 
-        Assert.IsNotNull(panel);
-        Assert.AreEqual(
-            "Support diagnostics and environment details",
-            FindDescendant<TextBlock>(panel, text => text.Text?.Contains("Support diagnostics and environment details", StringComparison.Ordinal) is true).Text);
-
-        Button companionButton = FindDescendant<Button>(panel, "OpenDesktopBlockerExplainCompanionButton");
-        string launchUri = AssertString(companionButton.Tag);
-        AiCoachLaunchContext context = AiCoachLaunchQuery.Parse(new Uri("https://chummer.test" + launchUri).Query);
-        Assert.AreEqual(AiRouteTypes.Build, context.RouteType);
-        Assert.AreEqual("avalonia", context.RuntimeFingerprint);
-        StringAssert.Contains(context.Message ?? string.Empty, "Support blocker explanation");
-        StringAssert.Contains(context.Message ?? string.Empty, "Diagnostics record correlation key: support/install-1/avalonia/stable");
-        StringAssert.Contains(context.Message ?? string.Empty, "Manifest signature mismatch.");
+            Button companionButton = FindDescendant<Button>(panel, "OpenDesktopBlockerExplainCompanionButton");
+            string launchUri = AssertString(companionButton.Tag);
+            AiCoachLaunchContext context = AiCoachLaunchQuery.Parse(new Uri("https://chummer.test" + launchUri).Query);
+            Assert.AreEqual(AiRouteTypes.Build, context.RouteType);
+            Assert.AreEqual("avalonia", context.RuntimeFingerprint);
+            StringAssert.Contains(context.Message ?? string.Empty, "Support blocker explanation");
+            StringAssert.Contains(context.Message ?? string.Empty, "Diagnostics record correlation key: support/install-1/avalonia/stable");
+            StringAssert.Contains(context.Message ?? string.Empty, "Manifest signature mismatch.");
+        });
     }
 
     [TestMethod]
     public void CreateCrashDiagnosticsPanel_surfaces_crash_blocker_companion()
     {
-        EnsureHeadlessPlatform();
+        WithHeadlessUi(() =>
+        {
+            Control? panel = DesktopTrustPanelFactory.CreateCrashDiagnosticsPanel(
+                new DesktopCrashReport(
+                    CrashId: "crash-42",
+                    HeadId: "avalonia",
+                    CapturedAtUtc: DateTimeOffset.Parse("2026-05-11T06:00:00Z"),
+                    IsTerminating: true,
+                    ApplicationVersion: "1.4.0",
+                    RuntimeVersion: ".NET 10.0.7",
+                    OperatingSystem: "Linux",
+                    ProcessArchitecture: "x64",
+                    ProcessName: "Chummer.Avalonia",
+                    BaseDirectoryLabel: "/opt/chummer",
+                    CurrentDirectoryLabel: "/opt/chummer",
+                    ExceptionType: "System.InvalidOperationException",
+                    ExceptionMessage: "Boom",
+                    ExceptionDetail: "stack"),
+                rawLines: ["Fallback crash receipt"]);
 
-        Control? panel = DesktopTrustPanelFactory.CreateCrashDiagnosticsPanel(
-            new DesktopCrashReport(
-                CrashId: "crash-42",
-                HeadId: "avalonia",
-                CapturedAtUtc: DateTimeOffset.Parse("2026-05-11T06:00:00Z"),
-                IsTerminating: true,
-                ApplicationVersion: "1.4.0",
-                RuntimeVersion: ".NET 10.0.7",
-                OperatingSystem: "Linux",
-                ProcessArchitecture: "x64",
-                ProcessName: "Chummer.Avalonia",
-                BaseDirectoryLabel: "/opt/chummer",
-                CurrentDirectoryLabel: "/opt/chummer",
-                ExceptionType: "System.InvalidOperationException",
-                ExceptionMessage: "Boom",
-                ExceptionDetail: "stack"),
-            rawLines: ["Fallback crash receipt"]);
+            Assert.IsNotNull(panel);
+            Assert.AreEqual(
+                "Crash diagnostics and environment details",
+                FindDescendant<TextBlock>(panel, text => text.Text?.Contains("Crash diagnostics and environment details", StringComparison.Ordinal) is true).Text);
 
-        Assert.IsNotNull(panel);
-        Assert.AreEqual(
-            "Crash diagnostics and environment details",
-            FindDescendant<TextBlock>(panel, text => text.Text?.Contains("Crash diagnostics and environment details", StringComparison.Ordinal) is true).Text);
-
-        Button companionButton = FindDescendant<Button>(panel, "OpenDesktopCrashBlockerExplainCompanionButton");
-        string launchUri = AssertString(companionButton.Tag);
-        AiCoachLaunchContext context = AiCoachLaunchQuery.Parse(new Uri("https://chummer.test" + launchUri).Query);
-        Assert.AreEqual(AiRouteTypes.Build, context.RouteType);
-        Assert.AreEqual("avalonia", context.RuntimeFingerprint);
-        StringAssert.Contains(context.Message ?? string.Empty, "Crash blocker explanation");
-        StringAssert.Contains(context.Message ?? string.Empty, "Crash diagnostics record");
+            Button companionButton = FindDescendant<Button>(panel, "OpenDesktopCrashBlockerExplainCompanionButton");
+            string launchUri = AssertString(companionButton.Tag);
+            AiCoachLaunchContext context = AiCoachLaunchQuery.Parse(new Uri("https://chummer.test" + launchUri).Query);
+            Assert.AreEqual(AiRouteTypes.Build, context.RouteType);
+            Assert.AreEqual("avalonia", context.RuntimeFingerprint);
+            StringAssert.Contains(context.Message ?? string.Empty, "Crash blocker explanation");
+            StringAssert.Contains(context.Message ?? string.Empty, "Crash diagnostics record");
+        });
     }
 
     [TestMethod]
@@ -152,54 +155,8 @@ public sealed class DesktopTrustPanelFactoryTests
     [TestMethod]
     public void DesktopExplainCompanionWindow_uses_plain_labels_and_hides_internal_ids()
     {
-        EnsureHeadlessPlatform();
-        DesktopExplainCompanionRequest request = new(
-            Title: "Build lab explain companion",
-            SurfaceId: "build_lab:desktop",
-            SurfaceLabel: "Desktop build lab explain companion",
-            Sections:
-            [
-                new DesktopTrustReceiptSection(
-                    "Grounded explain receipt",
-                    ["Support handoff receipt: support/build-lab/123", "Correlation key: build-lab/123"])
-            ],
-            SurfaceFamilyId: "explain_receipts:desktop",
-            WorkspaceId: "ws-77",
-            RulesetId: RulesetDefaults.Sr6,
-            RuntimeFingerprint: "sha256:runtime");
-
-        DesktopExplainCompanionWindow window = new(request);
-        Control root = (Control)window.Content!;
-        Control[] controls = CollectControls(root).ToArray();
-        string visibleText = string.Join(
-            "\n",
-            controls.OfType<TextBlock>().Select(static text => text.Text)
-                .Concat(controls.OfType<Button>().Select(static button => button.Content?.ToString()))
-                .Concat(controls.OfType<TextBox>().Select(static textBox => textBox.Text))
-                .Where(static text => !string.IsNullOrWhiteSpace(text)));
-
-        StringAssert.Contains(visibleText, "Help link");
-        StringAssert.Contains(visibleText, "Details");
-        StringAssert.Contains(visibleText, "Copy details");
-        StringAssert.Contains(visibleText, "Current explanation");
-        StringAssert.Contains(visibleText, "Support next step record");
-        Assert.IsFalse(visibleText.Contains("Receipt text", StringComparison.OrdinalIgnoreCase), visibleText);
-        Assert.IsFalse(visibleText.Contains("Copy Explain Receipt", StringComparison.OrdinalIgnoreCase), visibleText);
-        Assert.IsFalse(visibleText.Contains("Companion launch link", StringComparison.OrdinalIgnoreCase), visibleText);
-        Assert.IsFalse(visibleText.Contains("build_lab:desktop", StringComparison.OrdinalIgnoreCase), visibleText);
-        Assert.IsFalse(visibleText.Contains("explain_receipts", StringComparison.OrdinalIgnoreCase), visibleText);
-        Assert.IsFalse(visibleText.Contains("receipt", StringComparison.OrdinalIgnoreCase), visibleText);
-        Assert.IsFalse(visibleText.Contains("proof", StringComparison.OrdinalIgnoreCase), visibleText);
-    }
-
-    [TestMethod]
-    public void CreateLaunchButton_hides_companion_when_ai_features_are_disabled()
-    {
-        EnsureHeadlessPlatform();
-        DesktopPreferenceState previousPreferences = DesktopPreferenceStateRuntime.Current;
-        try
+        WithHeadlessUi(() =>
         {
-            DesktopPreferenceStateRuntime.SetCurrent(DesktopPreferenceState.Default with { DisableAiFeatures = true });
             DesktopExplainCompanionRequest request = new(
                 Title: "Build lab explain companion",
                 SurfaceId: "build_lab:desktop",
@@ -210,48 +167,124 @@ public sealed class DesktopTrustPanelFactoryTests
                         "Grounded explain receipt",
                         ["Support handoff receipt: support/build-lab/123", "Correlation key: build-lab/123"])
                 ],
-                SurfaceFamilyId: "build_lab",
+                SurfaceFamilyId: "explain_receipts:desktop",
                 WorkspaceId: "ws-77",
                 RulesetId: RulesetDefaults.Sr6,
                 RuntimeFingerprint: "sha256:runtime");
 
-            Button companionButton = DesktopExplainCompanionLauncher.CreateLaunchButton(
-                new Border(),
-                request,
-                "OpenSuppressedExplainCompanionButton");
+            DesktopExplainCompanionWindow window = new(request);
+            Control root = (Control)window.Content!;
+            Control[] controls = CollectControls(root).ToArray();
+            string visibleText = string.Join(
+                "\n",
+                controls.OfType<TextBlock>().Select(static text => text.Text)
+                    .Concat(controls.OfType<Button>().Select(static button => button.Content?.ToString()))
+                    .Concat(controls.OfType<TextBox>().Select(static textBox => textBox.Text))
+                    .Where(static text => !string.IsNullOrWhiteSpace(text)));
 
-            Assert.IsFalse(companionButton.IsVisible);
-            Assert.IsFalse(companionButton.IsEnabled);
-            Assert.IsNull(companionButton.Tag);
-            Assert.AreEqual(string.Empty, companionButton.Content?.ToString());
-        }
-        finally
+            StringAssert.Contains(visibleText, "Help link");
+            StringAssert.Contains(visibleText, "Details");
+            StringAssert.Contains(visibleText, "Copy details");
+            StringAssert.Contains(visibleText, "Current explanation");
+            StringAssert.Contains(visibleText, "Support next step record");
+            Assert.IsFalse(visibleText.Contains("Receipt text", StringComparison.OrdinalIgnoreCase), visibleText);
+            Assert.IsFalse(visibleText.Contains("Copy Explain Receipt", StringComparison.OrdinalIgnoreCase), visibleText);
+            Assert.IsFalse(visibleText.Contains("Companion launch link", StringComparison.OrdinalIgnoreCase), visibleText);
+            Assert.IsFalse(visibleText.Contains("build_lab:desktop", StringComparison.OrdinalIgnoreCase), visibleText);
+            Assert.IsFalse(visibleText.Contains("explain_receipts", StringComparison.OrdinalIgnoreCase), visibleText);
+            Assert.IsFalse(visibleText.Contains("receipt", StringComparison.OrdinalIgnoreCase), visibleText);
+            Assert.IsFalse(visibleText.Contains("proof", StringComparison.OrdinalIgnoreCase), visibleText);
+        });
+    }
+
+    [TestMethod]
+    public void CreateLaunchButton_hides_companion_when_ai_features_are_disabled()
+    {
+        WithHeadlessUi(() =>
         {
-            DesktopPreferenceStateRuntime.SetCurrent(previousPreferences);
+            DesktopPreferenceState previousPreferences = DesktopPreferenceStateRuntime.Current;
+            try
+            {
+                DesktopPreferenceStateRuntime.SetCurrent(DesktopPreferenceState.Default with { DisableAiFeatures = true });
+                DesktopExplainCompanionRequest request = new(
+                    Title: "Build lab explain companion",
+                    SurfaceId: "build_lab:desktop",
+                    SurfaceLabel: "Desktop build lab explain companion",
+                    Sections:
+                    [
+                        new DesktopTrustReceiptSection(
+                            "Grounded explain receipt",
+                            ["Support handoff receipt: support/build-lab/123", "Correlation key: build-lab/123"])
+                    ],
+                    SurfaceFamilyId: "build_lab",
+                    WorkspaceId: "ws-77",
+                    RulesetId: RulesetDefaults.Sr6,
+                    RuntimeFingerprint: "sha256:runtime");
+
+                Button companionButton = DesktopExplainCompanionLauncher.CreateLaunchButton(
+                    new Border(),
+                    request,
+                    "OpenSuppressedExplainCompanionButton");
+
+                Assert.IsFalse(companionButton.IsVisible);
+                Assert.IsFalse(companionButton.IsEnabled);
+                Assert.IsNull(companionButton.Tag);
+                Assert.AreEqual(string.Empty, companionButton.Content?.ToString());
+            }
+            finally
+            {
+                DesktopPreferenceStateRuntime.SetCurrent(previousPreferences);
+            }
+        });
+    }
+
+    private static void WithHeadlessUi(Action action)
+        => WithHeadlessUi<bool>(() =>
+        {
+            action();
+            return true;
+        });
+
+    private static TResult WithHeadlessUi<TResult>(Func<TResult> action)
+    {
+        lock (AvaloniaHeadlessSessionGate.SyncRoot)
+        {
+            HeadlessUnitTestSession? session = null;
+            try
+            {
+                session = HeadlessUnitTestSession.StartNew(typeof(TrustPanelHeadlessAppBootstrap));
+                return session.Dispatch(action, CancellationToken.None).GetAwaiter().GetResult();
+            }
+            finally
+            {
+                try
+                {
+                    session?.Dispose();
+                }
+                catch (NullReferenceException)
+                {
+                    // Avalonia headless teardown can intermittently throw after successful dispatch.
+                }
+            }
         }
     }
 
-    private static void EnsureHeadlessPlatform()
+    private sealed class TrustPanelHeadlessAppBootstrap
     {
-        lock (HeadlessInitLock)
+        public static AppBuilder BuildAvaloniaApp()
         {
-            if (_headlessInitialized)
-            {
-                return;
-            }
-
-            try
-            {
-                AppBuilder.Configure<global::Avalonia.Application>()
-                    .UseHeadless(new AvaloniaHeadlessPlatformOptions())
-                    .SetupWithoutStarting();
-            }
-            catch (InvalidOperationException ex) when (ex.Message.Contains("Setup was already called", StringComparison.Ordinal))
-            {
-                // Several Avalonia presentation tests share one process; another test may have already initialized the platform.
-            }
-
-            _headlessInitialized = true;
+            return AppBuilder.Configure<App>()
+                .UseSkia()
+                .UseHeadless(new AvaloniaHeadlessPlatformOptions
+                {
+                    UseHeadlessDrawing = false
+                })
+                .ConfigureFonts(static fontManager => fontManager.AddFontCollection(new InterFontCollection()))
+                .With(new FontManagerOptions
+                {
+                    DefaultFamilyName = "fonts:Inter#Inter"
+                })
+                .WithInterFont();
         }
     }
 

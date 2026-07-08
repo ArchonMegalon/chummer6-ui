@@ -82,6 +82,12 @@ const checks = [
       && text.includes('data-route-family="app"')
   },
   {
+    url: `${baseUrl}/online?command=character_roster`,
+    assert: (text, response) =>
+      /\/blazor\/app\/?\?command=character_roster$/.test(response.url)
+      && /<base href="[^"]*\/blazor\/"/i.test(text)
+  },
+  {
     url: `${baseUrl}/blazor/app`,
     assert: text => /<base href="[^"]*\/blazor\/"/i.test(text)
   },
@@ -89,7 +95,7 @@ const checks = [
     url: `${baseUrl}/blazor/home`,
     assert: text =>
       /<base href="[^"]*\/blazor\/"/i.test(text)
-      && text.includes('Chummer Online for real runner work.')
+      && text.includes('Chummer Online for real dossier work.')
   },
   {
     url: `${baseUrl}/blazor/workbench`,
@@ -182,6 +188,7 @@ const checks = [
         && payload.openapi.length > 0
         && typeof payload?.paths?.['/help'] === 'object'
         && typeof payload?.paths?.['/app'] === 'object'
+        && typeof payload?.paths?.['/online'] === 'object'
         && typeof payload?.paths?.['/contact'] === 'object'
         && typeof payload?.paths?.['/status'] === 'object'
         && typeof payload?.paths?.['/blazor/app'] === 'object'
@@ -239,7 +246,7 @@ const checks = [
       text.includes('data-openapi-blazor-entry-route="true"') &&
       text.includes('Chummer Online') &&
       text.includes('Chummer Online overview') &&
-      text.includes('Stable browser entry') &&
+      text.includes('Hosted browser entry') &&
       text.includes('endpoint-summary') &&
       text.includes('escapeHtml') &&
       text.includes('/downloads/install/{artifactId}')

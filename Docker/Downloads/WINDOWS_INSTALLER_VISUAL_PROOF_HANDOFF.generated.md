@@ -1,13 +1,13 @@
 # Windows Visual Proof Handoff
 
-Generated: 2026-07-04T12:38:47Z
+Generated: 2026-07-07T07:46:18Z
 
 - Status: `ready_for_windows_host`
 - Gate summary: Windows desktop exit gate failed: Windows installer visual proof version does not match release channel.; Windows installer visual proof artifactDigest does not match promoted installer bytes.
 - Only blocker is visual proof: `True`
 - Channel: `preview`
-- Version: `run-20260704-140118`
-- Shelf root: `Docker/Downloads`
+- Version: `run-20260704-170602`
+- Shelf root: `/docker/chummercomplete/chummer-presentation-sr6-origin-dialog-clean/Docker/Downloads`
 - Handoff only: `True`
 - Stable release unchanged: `True`
 - Separate publish lane required: `True`
@@ -17,7 +17,7 @@ Generated: 2026-07-04T12:38:47Z
 - Artifact: `avalonia-win-x64-installer`
 - File: `chummer-avalonia-win-x64-installer.exe`
 - URL: `https://chummer.run/downloads/files/chummer-avalonia-win-x64-installer.exe`
-- SHA-256: `sha256:f9c70cf259278d76991cbf7e0d53e77ae2febaf9008029f1ba5114843959ae76`
+- SHA-256: `sha256:80655fd79a096cd7714910d7b38f7741eea01f82ada96dc6a2a097951997d91a`
 - Payload: `chummer-avalonia-win-x64-payload.zip`
 - Payload URL: `https://chummer.run/downloads/files/chummer-avalonia-win-x64-payload.zip`
 
@@ -34,8 +34,8 @@ Generated: 2026-07-04T12:38:47Z
 ## Startup smoke already present
 
 - Status: `pass`
-- Version: `run-20260704-140118`
-- Release version: `run-20260704-140118`
+- Version: `run-20260704-170602`
+- Release version: `run-20260704-170602`
 - Receipt: `/docker/chummercomplete/chummer-presentation-sr6-origin-dialog-clean/Docker/Downloads/startup-smoke/startup-smoke-avalonia-win-x64.receipt.json`
 - Host class: `local-win-x64`
 - Matches release candidate: `True`
@@ -56,8 +56,8 @@ Generated: 2026-07-04T12:38:47Z
 
 ## Required screenshots
 
-- `progress`: `windows-installer-progress.png` -> `Docker/Downloads/windows-installer-visual-proof/windows-installer-progress.png`
-- `completion`: `windows-installer-completion.png` -> `Docker/Downloads/windows-installer-visual-proof/windows-installer-completion.png`
+- `progress`: `windows-installer-progress.png` -> `/docker/chummercomplete/chummer-presentation-sr6-origin-dialog-clean/Docker/Downloads/windows-installer-visual-proof/windows-installer-progress.png`
+- `completion`: `windows-installer-completion.png` -> `/docker/chummercomplete/chummer-presentation-sr6-origin-dialog-clean/Docker/Downloads/windows-installer-visual-proof/windows-installer-completion.png`
 
 ## Gate reasons
 
@@ -70,9 +70,9 @@ Generated: 2026-07-04T12:38:47Z
 
 ## Next actions
 
-- Overwrite the stale Windows visual-proof receipt at `Docker/Downloads/WINDOWS_INSTALLER_VISUAL_PROOF.generated.json`; its recorded release or installer digest no longer matches the staged candidate.
-- On a real Windows host, open the repo checkout that contains the capture script and run `powershell -NoLogo -NoProfile -ExecutionPolicy Bypass -File .\scripts\capture-windows-installer-visual-proof.ps1 -ReleaseChannelPath "Docker/Downloads/RELEASE_CHANNEL.generated.json" -OutputPath "Docker/Downloads/WINDOWS_INSTALLER_VISUAL_PROOF.generated.json"`.
-- Confirm `windows-installer-progress.png` and `windows-installer-completion.png` are written under `Docker/Downloads/windows-installer-visual-proof`.
-- Confirm `WINDOWS_INSTALLER_VISUAL_PROOF.generated.json` is written under `Docker/Downloads`.
-- Rerun the Windows exit gate against the same shelf: `CHUMMER_WINDOWS_RELEASE_CHANNEL_PATH="Docker/Downloads/RELEASE_CHANNEL.generated.json" CHUMMER_WINDOWS_LOCAL_DESKTOP_FILES_ROOT="Docker/Downloads/files" CHUMMER_WINDOWS_INSTALLER_VISUAL_PROOF_PATH="Docker/Downloads/WINDOWS_INSTALLER_VISUAL_PROOF.generated.json" bash /docker/chummercomplete/chummer-presentation-sr6-origin-dialog-clean/scripts/materialize-windows-desktop-exit-gate.sh`.
+- Overwrite the stale Windows visual-proof receipt at `/docker/chummercomplete/chummer-presentation-sr6-origin-dialog-clean/Docker/Downloads/WINDOWS_INSTALLER_VISUAL_PROOF.generated.json`; its recorded release or installer digest no longer matches the staged candidate.
+- On a real Windows host, open the repo checkout that contains the capture script and run `powershell -NoLogo -NoProfile -ExecutionPolicy Bypass -File .\scripts\capture-windows-installer-visual-proof.ps1 -ReleaseChannelPath "/docker/chummercomplete/chummer-presentation-sr6-origin-dialog-clean/Docker/Downloads/RELEASE_CHANNEL.generated.json" -OutputPath "/docker/chummercomplete/chummer-presentation-sr6-origin-dialog-clean/Docker/Downloads/WINDOWS_INSTALLER_VISUAL_PROOF.generated.json"`.
+- Confirm `windows-installer-progress.png` and `windows-installer-completion.png` are written under `/docker/chummercomplete/chummer-presentation-sr6-origin-dialog-clean/Docker/Downloads/windows-installer-visual-proof`.
+- Confirm `WINDOWS_INSTALLER_VISUAL_PROOF.generated.json` is written under `/docker/chummercomplete/chummer-presentation-sr6-origin-dialog-clean/Docker/Downloads`.
+- Rerun the Windows exit gate against the same shelf: `CHUMMER_WINDOWS_RELEASE_CHANNEL_PATH="/docker/chummercomplete/chummer-presentation-sr6-origin-dialog-clean/Docker/Downloads/RELEASE_CHANNEL.generated.json" CHUMMER_WINDOWS_LOCAL_DESKTOP_FILES_ROOT="/docker/chummercomplete/chummer-presentation-sr6-origin-dialog-clean/Docker/Downloads/files" CHUMMER_WINDOWS_INSTALLER_VISUAL_PROOF_PATH="/docker/chummercomplete/chummer-presentation-sr6-origin-dialog-clean/Docker/Downloads/WINDOWS_INSTALLER_VISUAL_PROOF.generated.json" bash /docker/chummercomplete/chummer-presentation-sr6-origin-dialog-clean/scripts/materialize-windows-desktop-exit-gate.sh`.
 - This packet is handoff-only for the staged nightly bytes. It does not publish the live downloads shelf or change the stable channel.

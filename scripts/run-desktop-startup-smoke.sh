@@ -1,8 +1,17 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-REPO_ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"
+SCRIPT_DIR_PHYSICAL="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd -P)"
+REPO_ROOT_PHYSICAL="$(cd "$SCRIPT_DIR_PHYSICAL/.." && pwd -P)"
+REPO_ROOT_ALIAS_CANDIDATE="${CHUMMER_UI_REPO_ROOT_ALIAS:-$REPO_ROOT_PHYSICAL}"
+REPO_ROOT="$REPO_ROOT_PHYSICAL"
+if [[ -n "$REPO_ROOT_ALIAS_CANDIDATE" && -d "$REPO_ROOT_ALIAS_CANDIDATE" ]]; then
+  ALIAS_PHYSICAL="$(cd "$REPO_ROOT_ALIAS_CANDIDATE" && pwd -P)"
+  if [[ "$ALIAS_PHYSICAL" == "$REPO_ROOT_PHYSICAL" ]]; then
+    REPO_ROOT="$(cd -L "$REPO_ROOT_ALIAS_CANDIDATE" && pwd -L)"
+  fi
+fi
+SCRIPT_DIR="$REPO_ROOT/scripts"
 PYTHON_BIN="${CHUMMER_PYTHON_BIN:-/usr/bin/python3}"
 if [[ ! -x "$PYTHON_BIN" ]]; then
   PYTHON_BIN="$(command -v python3)"
@@ -54,7 +63,7 @@ cleanup() {
   fi
 
   if [[ -n "$WINDOWS_PAYLOAD_HTTP_ROOT" && -d "$WINDOWS_PAYLOAD_HTTP_ROOT" ]]; then
-    rm -rf "$WINDOWS_PAYLOAD_HTTP_ROOT" || true
+    rm -rf "$WINDOWS_PAYLOAD_HTTP_ROOT"
   fi
 
   if [[ -n "$MOUNT_DIR" ]]; then
@@ -62,23 +71,23 @@ cleanup() {
   fi
 
   if [[ -n "$UNPACK_ROOT" && -d "$UNPACK_ROOT" ]]; then
-    rm -rf "$UNPACK_ROOT" || true
+    rm -rf "$UNPACK_ROOT"
   fi
 
   if [[ -n "$INSTALL_ROOT" && -d "$INSTALL_ROOT" ]]; then
-    rm -rf "$INSTALL_ROOT" || true
+    rm -rf "$INSTALL_ROOT"
   fi
 
   if [[ -n "$BUNDLE_EXTRACT_ROOT" && -d "$BUNDLE_EXTRACT_ROOT" ]]; then
-    rm -rf "$BUNDLE_EXTRACT_ROOT" || true
+    rm -rf "$BUNDLE_EXTRACT_ROOT"
   fi
 
   if [[ -n "$RUNTIME_HOME" && -d "$RUNTIME_HOME" ]]; then
-    rm -rf "$RUNTIME_HOME" || true
+    rm -rf "$RUNTIME_HOME"
   fi
 
   if [[ -n "$WINDOWS_LOCAL_PAYLOAD_COPY" && -f "$WINDOWS_LOCAL_PAYLOAD_COPY" ]]; then
-    rm -f "$WINDOWS_LOCAL_PAYLOAD_COPY" || true
+    rm -f "$WINDOWS_LOCAL_PAYLOAD_COPY"
   fi
 }
 
@@ -524,8 +533,36 @@ to_native_path() {
   fi
 
   if command -v winepath >/dev/null 2>&1; then
-    winepath -w "$input_path" | tr -d '\r'
-    return
+    local native_path=""
+    local winepath_timeout="${CHUMMER_WINEPATH_TIMEOUT_SECONDS:-15}"
+    if command -v timeout >/dev/null 2>&1; then
+      native_path="$(timeout "$winepath_timeout" winepath -w "$input_path" 2>/dev/null | tr -d '\r' || true)"
+    else
+      native_path="$(winepath -w "$input_path" 2>/dev/null | tr -d '\r' || true)"
+    fi
+    if [[ -n "$native_path" ]]; then
+      printf '%s\n' "$native_path"
+      return
+    fi
+
+    case "$input_path" in
+      [A-Za-z]:[\\/]*)
+        printf '%s\n' "$input_path"
+        return
+        ;;
+      */dosdevices/[A-Za-z]:/*)
+        local dosdevices_path="${input_path#*/dosdevices/}"
+        local drive="${dosdevices_path%%:*}"
+        local drive_path="${dosdevices_path#*:}"
+        printf '%s:%s\n' "$(upper_ascii "$drive")" "${drive_path//\//\\}"
+        return
+        ;;
+      /*)
+        # Wine maps the Unix filesystem root to Z: by default; use it when winepath hangs.
+        printf 'Z:%s\n' "${input_path//\//\\}"
+        return
+        ;;
+    esac
   fi
 
   if pwd -W >/dev/null 2>&1; then
@@ -551,6 +588,20 @@ to_native_path() {
   fi
 
   echo "$input_path"
+}
+
+to_native_launch_path() {
+  local input_path="$1"
+
+  case "$input_path" in
+    */dosdevices/[A-Za-z]:/*)
+      # Keep Wine-prefix temp installs addressable as concrete filesystem paths.
+      printf 'Z:%s\n' "${input_path//\//\\}"
+      return
+      ;;
+  esac
+
+  to_native_path "$input_path"
 }
 
 resolve_wine_temp_dir() {
@@ -618,14 +669,19 @@ run_windows_binary() {
   fi
   if [[ -n "$wine_bin" ]]; then
     local native_executable_path
-    native_executable_path="$(to_native_path "$executable_path")"
-    run_with_optional_xvfb "$wine_bin" "$native_executable_path" "$@"
+    native_executable_path="$(to_native_launch_path "$executable_path")"
+    local wine_binary_timeout="${CHUMMER_WINDOWS_BINARY_TIMEOUT_SECONDS:-300}"
+    if command -v timeout >/dev/null 2>&1 && [[ -n "$wine_binary_timeout" && "$wine_binary_timeout" != "0" ]]; then
+      run_with_optional_xvfb timeout "$wine_binary_timeout" "$wine_bin" "$native_executable_path" "$@"
+    else
+      run_with_optional_xvfb "$wine_bin" "$native_executable_path" "$@"
+    fi
     return
   fi
 
   if command -v powershell.exe >/dev/null 2>&1 || command -v pwsh >/dev/null 2>&1; then
     local native_executable_path
-    native_executable_path="$(to_native_path "$executable_path")"
+    native_executable_path="$(to_native_launch_path "$executable_path")"
     local powershell_bin="powershell.exe"
     if command -v pwsh >/dev/null 2>&1; then
       powershell_bin="pwsh"
@@ -702,6 +758,53 @@ run_mouse_first_journey_process() {
   run_with_optional_xvfb "$launch_path" --mouse-first-user-journey
 }
 
+initialize_windows_startup_wine_prefix() {
+  local runtime_home="$1"
+
+  if [[ "$(platform_from_rid "$RID")" != "windows" ]]; then
+    return 0
+  fi
+  if ! command -v wine >/dev/null 2>&1 || ! command -v wineboot >/dev/null 2>&1 || ! command -v wineserver >/dev/null 2>&1; then
+    return 0
+  fi
+
+  local wineboot_timeout="${CHUMMER_WINEBOOT_INIT_TIMEOUT_SECONDS:-180}"
+  local -a timeout_prefix=()
+  if command -v timeout >/dev/null 2>&1 && [[ -n "$wineboot_timeout" && "$wineboot_timeout" != "0" ]]; then
+    timeout_prefix=(timeout "$wineboot_timeout")
+  fi
+
+  if (( $(array_count timeout_prefix) > 0 )); then
+    HOME="$runtime_home" \
+    XDG_CONFIG_HOME="$runtime_home/.config" \
+    XDG_DATA_HOME="$runtime_home/.local/share" \
+    XDG_STATE_HOME="$runtime_home/.local/state" \
+    XDG_CACHE_HOME="$runtime_home/.cache" \
+    run_with_optional_xvfb "${timeout_prefix[@]}" wineboot --init
+
+    HOME="$runtime_home" \
+    XDG_CONFIG_HOME="$runtime_home/.config" \
+    XDG_DATA_HOME="$runtime_home/.local/share" \
+    XDG_STATE_HOME="$runtime_home/.local/state" \
+    XDG_CACHE_HOME="$runtime_home/.cache" \
+    run_with_optional_xvfb "${timeout_prefix[@]}" wineserver -w
+  else
+    HOME="$runtime_home" \
+    XDG_CONFIG_HOME="$runtime_home/.config" \
+    XDG_DATA_HOME="$runtime_home/.local/share" \
+    XDG_STATE_HOME="$runtime_home/.local/state" \
+    XDG_CACHE_HOME="$runtime_home/.cache" \
+    run_with_optional_xvfb wineboot --init
+
+    HOME="$runtime_home" \
+    XDG_CONFIG_HOME="$runtime_home/.config" \
+    XDG_DATA_HOME="$runtime_home/.local/share" \
+    XDG_STATE_HOME="$runtime_home/.local/state" \
+    XDG_CACHE_HOME="$runtime_home/.cache" \
+    run_with_optional_xvfb wineserver -w
+  fi
+}
+
 run_head_smoke() {
   local launch_path="$1"
   local receipt_path="$RECEIPT_PATH"
@@ -710,6 +813,13 @@ run_head_smoke() {
   artifact_sha="$(sha256_file "$ARTIFACT_PATH")"
   local public_web_base_url
   public_web_base_url="$(resolve_public_web_base_url "${CHUMMER_PUBLIC_WEB_BASE_URL:-}" "${CHUMMER_WEB_BASE_URL:-}")"
+  local use_existing_windows_wine_home="false"
+  if [[ "$(platform_from_rid "$RID")" == "windows" ]] \
+    && command -v winepath >/dev/null 2>&1 \
+    && { command -v wine >/dev/null 2>&1 || command -v wine64 >/dev/null 2>&1 || [[ -x /usr/lib/wine/wine64 ]]; } \
+    && ! env_truthy "${CHUMMER_WINDOWS_STARTUP_SMOKE_ISOLATED_PREFIX:-0}"; then
+    use_existing_windows_wine_home="true"
+  fi
 
   if [[ ! -f "$launch_path" ]]; then
     echo "Launch target missing for startup smoke: $launch_path" >&2
@@ -724,38 +834,62 @@ run_head_smoke() {
   if [[ -z "$BUNDLE_EXTRACT_ROOT" ]]; then
     BUNDLE_EXTRACT_ROOT="$(mktemp -d "${TMPDIR:-/tmp}/chummer-startup-bundle.XXXXXX")"
   fi
-  if [[ -z "$RUNTIME_HOME" ]]; then
+  if [[ -z "$RUNTIME_HOME" && "$use_existing_windows_wine_home" != "true" ]]; then
     RUNTIME_HOME="$(mktemp -d "${TMPDIR:-/tmp}/chummer-startup-home.XXXXXX")"
   fi
 
   local bundle_extract_base_dir="$BUNDLE_EXTRACT_ROOT"
   local runtime_home="$RUNTIME_HOME"
+  if [[ "$use_existing_windows_wine_home" == "true" ]]; then
+    runtime_home="${HOME:-}"
+  fi
   if [[ "$(platform_from_rid "$RID")" == "windows" ]]; then
     receipt_path="$(to_native_path "$receipt_path")"
     packet_path="$(to_native_path "$packet_path")"
     bundle_extract_base_dir="$(to_native_path "$BUNDLE_EXTRACT_ROOT")"
-    if ! command -v wine >/dev/null 2>&1; then
+    if [[ "$use_existing_windows_wine_home" != "true" ]] && ! command -v wine >/dev/null 2>&1; then
       runtime_home="$(to_native_path "$RUNTIME_HOME")"
     fi
   fi
 
-  CHUMMER_DESKTOP_STARTUP_SMOKE_RECEIPT="$receipt_path" \
-  CHUMMER_DESKTOP_STARTUP_SMOKE_FAILURE_PACKET="$packet_path" \
-  CHUMMER_DESKTOP_STARTUP_SMOKE_ARTIFACT_DIGEST="sha256:${artifact_sha}" \
-  CHUMMER_DESKTOP_STARTUP_SMOKE_HOST_CLASS="$HOST_CLASS" \
-  CHUMMER_DESKTOP_STARTUP_SMOKE_RELEASE_VERSION="$VERSION_HINT" \
-  CHUMMER_DESKTOP_STARTUP_SMOKE_RID="$RID" \
-  CHUMMER_DESKTOP_STARTUP_SMOKE_READY_CHECKPOINT="pre_ui_event_loop" \
-  CHUMMER_DESKTOP_UPDATE_ENABLED=0 \
-  CHUMMER_PUBLIC_WEB_BASE_URL="$public_web_base_url" \
-  CHUMMER_ALLOW_INTERNAL_PUBLIC_WEB_HOSTS="${CHUMMER_ALLOW_INTERNAL_PUBLIC_WEB_HOSTS:-0}" \
-  DOTNET_BUNDLE_EXTRACT_BASE_DIR="$bundle_extract_base_dir" \
-  HOME="$runtime_home" \
-  XDG_CONFIG_HOME="$runtime_home/.config" \
-  XDG_DATA_HOME="$runtime_home/.local/share" \
-  XDG_STATE_HOME="$runtime_home/.local/state" \
-  XDG_CACHE_HOME="$runtime_home/.cache" \
-  run_startup_smoke_process "$launch_path" >>"$LOG_PATH" 2>&1
+  if [[ "$use_existing_windows_wine_home" != "true" ]] \
+    && ! initialize_windows_startup_wine_prefix "$runtime_home" >>"$LOG_PATH" 2>&1; then
+    echo "Wine prefix initialization failed for Windows startup smoke." >>"$LOG_PATH"
+    return 1
+  fi
+
+  if [[ "$use_existing_windows_wine_home" == "true" ]]; then
+    CHUMMER_DESKTOP_STARTUP_SMOKE_RECEIPT="$receipt_path" \
+    CHUMMER_DESKTOP_STARTUP_SMOKE_FAILURE_PACKET="$packet_path" \
+    CHUMMER_DESKTOP_STARTUP_SMOKE_ARTIFACT_DIGEST="sha256:${artifact_sha}" \
+    CHUMMER_DESKTOP_STARTUP_SMOKE_HOST_CLASS="$HOST_CLASS" \
+    CHUMMER_DESKTOP_STARTUP_SMOKE_RELEASE_VERSION="$VERSION_HINT" \
+    CHUMMER_DESKTOP_STARTUP_SMOKE_RID="$RID" \
+    CHUMMER_DESKTOP_STARTUP_SMOKE_READY_CHECKPOINT="pre_ui_event_loop" \
+    CHUMMER_DESKTOP_UPDATE_ENABLED=0 \
+    CHUMMER_PUBLIC_WEB_BASE_URL="$public_web_base_url" \
+    CHUMMER_ALLOW_INTERNAL_PUBLIC_WEB_HOSTS="${CHUMMER_ALLOW_INTERNAL_PUBLIC_WEB_HOSTS:-0}" \
+    DOTNET_BUNDLE_EXTRACT_BASE_DIR="$bundle_extract_base_dir" \
+    run_startup_smoke_process "$launch_path" >>"$LOG_PATH" 2>&1
+  else
+    CHUMMER_DESKTOP_STARTUP_SMOKE_RECEIPT="$receipt_path" \
+    CHUMMER_DESKTOP_STARTUP_SMOKE_FAILURE_PACKET="$packet_path" \
+    CHUMMER_DESKTOP_STARTUP_SMOKE_ARTIFACT_DIGEST="sha256:${artifact_sha}" \
+    CHUMMER_DESKTOP_STARTUP_SMOKE_HOST_CLASS="$HOST_CLASS" \
+    CHUMMER_DESKTOP_STARTUP_SMOKE_RELEASE_VERSION="$VERSION_HINT" \
+    CHUMMER_DESKTOP_STARTUP_SMOKE_RID="$RID" \
+    CHUMMER_DESKTOP_STARTUP_SMOKE_READY_CHECKPOINT="pre_ui_event_loop" \
+    CHUMMER_DESKTOP_UPDATE_ENABLED=0 \
+    CHUMMER_PUBLIC_WEB_BASE_URL="$public_web_base_url" \
+    CHUMMER_ALLOW_INTERNAL_PUBLIC_WEB_HOSTS="${CHUMMER_ALLOW_INTERNAL_PUBLIC_WEB_HOSTS:-0}" \
+    DOTNET_BUNDLE_EXTRACT_BASE_DIR="$bundle_extract_base_dir" \
+    HOME="$runtime_home" \
+    XDG_CONFIG_HOME="$runtime_home/.config" \
+    XDG_DATA_HOME="$runtime_home/.local/share" \
+    XDG_STATE_HOME="$runtime_home/.local/state" \
+    XDG_CACHE_HOME="$runtime_home/.cache" \
+    run_startup_smoke_process "$launch_path" >>"$LOG_PATH" 2>&1
+  fi
 
   local mouse_journey_receipt_path="${CHUMMER_DESKTOP_MOUSE_FIRST_JOURNEY_RECEIPT:-}"
   if [[ -z "$mouse_journey_receipt_path" ]]; then
@@ -767,24 +901,40 @@ run_head_smoke() {
   local mouse_journey_trace_path="${CHUMMER_DESKTOP_MOUSE_FIRST_JOURNEY_TRACE:-$OUTPUT_DIR/mouse-first-journey-$APP_KEY-$RID.trace.json}"
   mkdir -p "$(dirname "$mouse_journey_receipt_path")" "$mouse_journey_screenshot_dir" "$(dirname "$mouse_journey_trace_path")"
 
-  CHUMMER_DESKTOP_MOUSE_FIRST_JOURNEY_RECEIPT="$mouse_journey_receipt_path" \
-  CHUMMER_DESKTOP_MOUSE_FIRST_JOURNEY_FAILURE_PACKET="$mouse_journey_failure_packet_path" \
-  CHUMMER_DESKTOP_MOUSE_FIRST_JOURNEY_SCREENSHOT_DIR="$mouse_journey_screenshot_dir" \
-  CHUMMER_DESKTOP_MOUSE_FIRST_JOURNEY_TRACE="$mouse_journey_trace_path" \
-  CHUMMER_DESKTOP_MOUSE_FIRST_JOURNEY_ARTIFACT_DIGEST="sha256:${artifact_sha}" \
-  CHUMMER_DESKTOP_MOUSE_FIRST_JOURNEY_HOST_CLASS="$HOST_CLASS" \
-  CHUMMER_DESKTOP_MOUSE_FIRST_JOURNEY_RELEASE_VERSION="$VERSION_HINT" \
-  CHUMMER_DESKTOP_MOUSE_FIRST_JOURNEY_RID="$RID" \
-  CHUMMER_DESKTOP_RELEASE_CHANNEL="$CHANNEL_HINT" \
-  CHUMMER_PUBLIC_WEB_BASE_URL="$public_web_base_url" \
-  CHUMMER_ALLOW_INTERNAL_PUBLIC_WEB_HOSTS="${CHUMMER_ALLOW_INTERNAL_PUBLIC_WEB_HOSTS:-0}" \
-  DOTNET_BUNDLE_EXTRACT_BASE_DIR="$bundle_extract_base_dir" \
-  HOME="$runtime_home" \
-  XDG_CONFIG_HOME="$runtime_home/.config" \
-  XDG_DATA_HOME="$runtime_home/.local/share" \
-  XDG_STATE_HOME="$runtime_home/.local/state" \
-  XDG_CACHE_HOME="$runtime_home/.cache" \
-  run_mouse_first_journey_process "$launch_path" >>"$LOG_PATH" 2>&1
+  if [[ "$use_existing_windows_wine_home" == "true" ]]; then
+    CHUMMER_DESKTOP_MOUSE_FIRST_JOURNEY_RECEIPT="$mouse_journey_receipt_path" \
+    CHUMMER_DESKTOP_MOUSE_FIRST_JOURNEY_FAILURE_PACKET="$mouse_journey_failure_packet_path" \
+    CHUMMER_DESKTOP_MOUSE_FIRST_JOURNEY_SCREENSHOT_DIR="$mouse_journey_screenshot_dir" \
+    CHUMMER_DESKTOP_MOUSE_FIRST_JOURNEY_TRACE="$mouse_journey_trace_path" \
+    CHUMMER_DESKTOP_MOUSE_FIRST_JOURNEY_ARTIFACT_DIGEST="sha256:${artifact_sha}" \
+    CHUMMER_DESKTOP_MOUSE_FIRST_JOURNEY_HOST_CLASS="$HOST_CLASS" \
+    CHUMMER_DESKTOP_MOUSE_FIRST_JOURNEY_RELEASE_VERSION="$VERSION_HINT" \
+    CHUMMER_DESKTOP_MOUSE_FIRST_JOURNEY_RID="$RID" \
+    CHUMMER_DESKTOP_RELEASE_CHANNEL="$CHANNEL_HINT" \
+    CHUMMER_PUBLIC_WEB_BASE_URL="$public_web_base_url" \
+    CHUMMER_ALLOW_INTERNAL_PUBLIC_WEB_HOSTS="${CHUMMER_ALLOW_INTERNAL_PUBLIC_WEB_HOSTS:-0}" \
+    DOTNET_BUNDLE_EXTRACT_BASE_DIR="$bundle_extract_base_dir" \
+    run_mouse_first_journey_process "$launch_path" >>"$LOG_PATH" 2>&1
+  else
+    CHUMMER_DESKTOP_MOUSE_FIRST_JOURNEY_RECEIPT="$mouse_journey_receipt_path" \
+    CHUMMER_DESKTOP_MOUSE_FIRST_JOURNEY_FAILURE_PACKET="$mouse_journey_failure_packet_path" \
+    CHUMMER_DESKTOP_MOUSE_FIRST_JOURNEY_SCREENSHOT_DIR="$mouse_journey_screenshot_dir" \
+    CHUMMER_DESKTOP_MOUSE_FIRST_JOURNEY_TRACE="$mouse_journey_trace_path" \
+    CHUMMER_DESKTOP_MOUSE_FIRST_JOURNEY_ARTIFACT_DIGEST="sha256:${artifact_sha}" \
+    CHUMMER_DESKTOP_MOUSE_FIRST_JOURNEY_HOST_CLASS="$HOST_CLASS" \
+    CHUMMER_DESKTOP_MOUSE_FIRST_JOURNEY_RELEASE_VERSION="$VERSION_HINT" \
+    CHUMMER_DESKTOP_MOUSE_FIRST_JOURNEY_RID="$RID" \
+    CHUMMER_DESKTOP_RELEASE_CHANNEL="$CHANNEL_HINT" \
+    CHUMMER_PUBLIC_WEB_BASE_URL="$public_web_base_url" \
+    CHUMMER_ALLOW_INTERNAL_PUBLIC_WEB_HOSTS="${CHUMMER_ALLOW_INTERNAL_PUBLIC_WEB_HOSTS:-0}" \
+    DOTNET_BUNDLE_EXTRACT_BASE_DIR="$bundle_extract_base_dir" \
+    HOME="$runtime_home" \
+    XDG_CONFIG_HOME="$runtime_home/.config" \
+    XDG_DATA_HOME="$runtime_home/.local/share" \
+    XDG_STATE_HOME="$runtime_home/.local/state" \
+    XDG_CACHE_HOME="$runtime_home/.cache" \
+    run_mouse_first_journey_process "$launch_path" >>"$LOG_PATH" 2>&1
+  fi
 }
 
 run_windows_smoke() {

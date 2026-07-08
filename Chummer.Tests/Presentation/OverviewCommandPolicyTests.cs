@@ -29,9 +29,50 @@ public class OverviewCommandPolicyTests
     }
 
     [TestMethod]
+    public void Print_preview_is_treated_as_known_shared_command()
+    {
+        Assert.IsTrue(OverviewCommandPolicy.IsKnownSharedCommand("print_preview"));
+    }
+
+    [TestMethod]
     public void Switch_ruleset_is_treated_as_known_shared_command()
     {
         Assert.IsTrue(OverviewCommandPolicy.IsKnownSharedCommand("switch_ruleset"));
+    }
+
+    [DataTestMethod]
+    [DataRow("open_sourcebooks")]
+    [DataRow("open_errata")]
+    [DataRow("open_custom_data")]
+    [DataRow("update_data_packs")]
+    [DataRow("validate_data_scope")]
+    [DataRow("open_data_folder")]
+    public void Rules_data_commands_are_treated_as_known_shared_non_dialog_commands(string commandId)
+    {
+        Assert.IsTrue(OverviewCommandPolicy.IsKnownSharedCommand(commandId));
+        Assert.IsFalse(OverviewCommandPolicy.IsDialogCommand(commandId));
+    }
+
+    [DataTestMethod]
+    [DataRow("new_critter")]
+    [DataRow("restart")]
+    [DataRow("exit")]
+    [DataRow("close_window")]
+    [DataRow("close_all")]
+    public void Action_commands_are_treated_as_known_shared_non_dialog_commands(string commandId)
+    {
+        Assert.IsTrue(OverviewCommandPolicy.IsKnownSharedCommand(commandId));
+        Assert.IsFalse(OverviewCommandPolicy.IsDialogCommand(commandId));
+    }
+
+    [DataTestMethod]
+    [DataRow("copy")]
+    [DataRow("paste")]
+    public void Editor_relay_commands_are_treated_as_known_shared_non_dialog_commands(string commandId)
+    {
+        Assert.IsTrue(OverviewCommandPolicy.IsKnownSharedCommand(commandId));
+        Assert.IsTrue(OverviewCommandPolicy.IsEditorRelayCommand(commandId));
+        Assert.IsFalse(OverviewCommandPolicy.IsDialogCommand(commandId));
     }
 
     [TestMethod]

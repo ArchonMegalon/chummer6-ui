@@ -12,8 +12,13 @@ WWWROOT = REPO_ROOT / "Chummer.Blazor" / "wwwroot"
 def test_blazor_app_advertises_installable_pwa_surface() -> None:
     app = APP_RAZOR.read_text(encoding="utf-8")
 
-    assert '<link rel="manifest" href="manifest.webmanifest" />' in app
+    assert '<base href="@BuildBaseHref()" />' in app
+    assert '<link rel="manifest" href="@BuildStaticAssetHref("manifest.webmanifest")" />' in app
+    assert '<link rel="icon" type="image/svg+xml" href="@BuildStaticAssetHref("icons/chummer-pwa.svg")" />' in app
+    assert '<link rel="apple-touch-icon" href="@BuildStaticAssetHref("media/chummer6/chummer6-hero-baseline.png")" />' in app
     assert '<meta name="theme-color" content="#0f3b3e" />' in app
+    assert 'const serviceWorkerScript = \'@BuildStaticAssetHref("service-worker.js")\';' in app
+    assert 'const serviceWorkerScope = \'@BuildServiceWorkerScope()\';' in app
     assert "navigator.serviceWorker.register(serviceWorkerScript, { scope: serviceWorkerScope })" in app
     assert "window.chummerPwa" in app
 

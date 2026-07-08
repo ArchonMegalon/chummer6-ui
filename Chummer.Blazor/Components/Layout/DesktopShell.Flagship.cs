@@ -43,7 +43,7 @@ public partial class DesktopShell
             IReadOnlyList<OpenWorkspaceState> workspaces = _shellSurfaceState.OpenWorkspaces;
             if (workspaces.Count == 0)
             {
-                return "No grounded dossier is open yet; restore or import one before claiming flagship continuity.";
+                return "No grounded dossier is open yet; restore or import one before relying on dossier continuity.";
             }
 
             OpenWorkspaceState leadWorkspace = ResolveActiveWorkspace(workspaces) ?? workspaces[0];

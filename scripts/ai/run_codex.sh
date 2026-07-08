@@ -1,7 +1,8 @@
 #!/usr/bin/env bash
 set -euo pipefail
-cd "/docker/chummercomplete/chummer-presentation"
-source "./scripts/ai/_env.sh"
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd -P)"
+source "$SCRIPT_DIR/_env.sh"
+cd "$REPO_ROOT"
 /docker/chummercomplete/scripts/codex_context_guard.sh "$(pwd)"
 
 BOOT_FILE=".codex.boot.prompt.txt"

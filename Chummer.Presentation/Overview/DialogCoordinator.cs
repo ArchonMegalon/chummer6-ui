@@ -141,8 +141,12 @@ public sealed class DialogCoordinator : IDialogCoordinator
         if (string.Equals(dialog.Id, "dialog.new_character.origin_build", StringComparison.Ordinal)
             && string.Equals(actionId, "show_origin_dossier_link", StringComparison.Ordinal))
         {
-            string dossierLink = DesktopDialogFieldValueParser.GetValue(dialog, "newCharacterOriginDossierLink")
-                ?? "/app?command=new_character_origin";
+            string rulesetId = RulesetDefaults.NormalizeOptional(DesktopDialogFieldValueParser.GetValue(dialog, "newCharacterWorkflowRulesetId"))
+                ?? RulesetDefaults.Sr5;
+            string alias = DesktopDialogFieldValueParser.GetValue(dialog, "newCharacterWorkflowAlias")
+                ?? DesktopDialogFieldValueParser.GetValue(dialog, "newCharacterAlias")
+                ?? "Dossier";
+            string dossierLink = DesktopDialogFactory.BuildOriginDossierOnlineRoute(rulesetId, alias);
             context.Publish(context.State with
             {
                 ActiveDialog = dialog,
@@ -168,9 +172,13 @@ public sealed class DialogCoordinator : IDialogCoordinator
 
             string rulesetId = RulesetDefaults.NormalizeOptional(DesktopDialogFieldValueParser.GetValue(dialog, "newCharacterWorkflowRulesetId")) ?? RulesetDefaults.Sr5;
             string buildMethod = DesktopDialogFieldValueParser.GetValue(dialog, "newCharacterWorkflowBuildMethod") ?? string.Empty;
-            string name = DesktopDialogFieldValueParser.GetValue(dialog, "newCharacterWorkflowName") ?? "New runner";
-            string alias = DesktopDialogFieldValueParser.GetValue(dialog, "newCharacterWorkflowAlias") ?? "Runner";
+            string name = DesktopDialogFieldValueParser.GetValue(dialog, "newCharacterWorkflowName") ?? "New dossier";
+            string alias = DesktopDialogFieldValueParser.GetValue(dialog, "newCharacterWorkflowAlias") ?? "Dossier";
             bool houseRulesEnabled = DesktopDialogFieldValueParser.ParseBool(dialog, "newCharacterWorkflowHouseRulesEnabled", false);
+            string? workflowOriginSourceValue = DesktopDialogFieldValueParser.GetValue(dialog, "newCharacterOriginAliceSeedSource");
+            string workflowOriginSource = string.IsNullOrWhiteSpace(workflowOriginSourceValue)
+                ? "approved_origin_story"
+                : workflowOriginSourceValue.Trim();
             context.Publish(context.State with
             {
                 ActiveDialog = DesktopDialogFactory.BuildNewCharacterContinuationDialog(
@@ -179,7 +187,8 @@ public sealed class DialogCoordinator : IDialogCoordinator
                     houseRulesEnabled,
                     name,
                     alias,
-                    context.State.Preferences),
+                    context.State.Preferences,
+                    workflowOriginSource),
                 Error = null,
                 Notice = "Origin story translated into a guided build plan."
             });
@@ -1179,17 +1188,26 @@ public sealed class DialogCoordinator : IDialogCoordinator
     {
         string rulesetId = RulesetDefaults.NormalizeOptional(ReadDialogValue(dialog, "newCharacterWorkflowRulesetId", RulesetDefaults.Sr5))
             ?? RulesetDefaults.Sr5;
-        string name = ReadDialogValue(dialog, "newCharacterWorkflowName", "New runner").Trim();
-        string alias = ReadDialogValue(dialog, "newCharacterWorkflowAlias", "Runner").Trim();
+        string workflowOriginSource = ReadDialogValue(dialog, "newCharacterWorkflowOriginSource", "none").Trim();
+        bool isOriginWorkflow = string.Equals(workflowOriginSource, "approved_origin_story", StringComparison.Ordinal);
+        string defaultName = isOriginWorkflow ? "New dossier" : "New runner";
+        string defaultAlias = isOriginWorkflow ? "Dossier" : "Runner";
+        string name = ReadDialogValue(dialog, "newCharacterWorkflowName", defaultName).Trim();
+        string alias = ReadDialogValue(dialog, "newCharacterWorkflowAlias", defaultAlias).Trim();
         string buildMethod = ReadDialogValue(dialog, "newCharacterWorkflowBuildMethod", "Priority").Trim();
         bool houseRulesEnabled = DesktopDialogFieldValueParser.ParseBool(
             dialog,
             "newCharacterWorkflowHouseRulesEnabled",
             context.State.Preferences.HouseRulesEnabled);
 
+        if (string.IsNullOrWhiteSpace(name))
+        {
+            name = defaultName;
+        }
+
         if (string.IsNullOrWhiteSpace(alias))
         {
-            alias = "Runner";
+            alias = defaultAlias;
         }
 
         string xml = StarterWorkspaceXmlFactory.CreateCharacterXml(rulesetId, name, alias, buildMethod);
@@ -2189,7 +2207,7 @@ public sealed class DialogCoordinator : IDialogCoordinator
             Error = null,
             Notice = RulesetUiDirectiveCatalog.FormatDialogNotice(
                 RulesetDefaults.NormalizeOptional(selectedRunner.RulesetId),
-                $"Runner '{selectedRunner.Alias}' opened from roster.")
+                $"Dossier '{selectedRunner.Alias}' opened from roster.")
         });
     }
 
@@ -2200,7 +2218,7 @@ public sealed class DialogCoordinator : IDialogCoordinator
         string selectedWatchFile = DesktopDialogFieldValueParser.GetValue(dialog, "rosterSelectedWatchFile") ?? string.Empty;
         if (string.IsNullOrWhiteSpace(selectedWatchFile))
         {
-            PublishCharacterRosterDialog(context, "No watched runner file is currently matched.");
+            PublishCharacterRosterDialog(context, "No watched dossier file is currently matched.");
             return;
         }
 
@@ -2231,7 +2249,7 @@ public sealed class DialogCoordinator : IDialogCoordinator
             Error = null,
             Notice = RulesetUiDirectiveCatalog.FormatDialogNotice(
                 RulesetDefaults.NormalizeOptional(matchedRunner.RulesetId),
-                $"Watched runner '{matchedRunner.Alias}' opened from roster watch folder.")
+                $"Watched dossier '{matchedRunner.Alias}' opened from roster watch folder.")
         });
     }
 
@@ -2548,7 +2566,7 @@ public sealed class DialogCoordinator : IDialogCoordinator
         PublishCharacterRosterDialog(
             context,
             nextPreferences,
-            "Roster layout reset to generated grouping. Custom folder metadata was cleared; runner files were not moved.");
+            "Roster layout reset to generated grouping. Custom folder metadata was cleared; dossier files were not moved.");
     }
 
     private static RosterHierarchyState? TryReadRosterHierarchyState(DesktopDialogState dialog)
@@ -2649,7 +2667,7 @@ public sealed class DialogCoordinator : IDialogCoordinator
             .ToArray();
         int movedItemCount = hierarchy.Items.Count(item => string.Equals(item.FolderId, folderId, StringComparison.Ordinal));
         int reparentedFolderCount = hierarchy.Folders.Count(candidate => string.Equals(candidate.ParentFolderId, folderId, StringComparison.Ordinal));
-        notice = $"Deleted roster folder '{folder.Name}'. Moved {movedItemCount} runner/link item(s) to {RosterHierarchyMetadata.InboxFolderName} and reparented {reparentedFolderCount} child folder(s).";
+        notice = $"Deleted roster folder '{folder.Name}'. Moved {movedItemCount} dossier/link item(s) to {RosterHierarchyMetadata.InboxFolderName} and reparented {reparentedFolderCount} child folder(s).";
         return hierarchy with
         {
             Folders = folders,
@@ -2674,7 +2692,7 @@ public sealed class DialogCoordinator : IDialogCoordinator
     {
         if (string.IsNullOrWhiteSpace(selectedRunnerId) && string.IsNullOrWhiteSpace(sourceItem))
         {
-            notice = "No selected runner is available to move.";
+            notice = "No selected dossier is available to move.";
             return hierarchy;
         }
 

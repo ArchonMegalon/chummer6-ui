@@ -4,12 +4,19 @@ namespace Chummer.Blazor.Components.Layout;
 
 public partial class DesktopShell
 {
+    private Task OnOriginWizardAdvancedControlsOpenChangedAsync(bool isOpen)
+    {
+        _originWizardAdvancedControlsOpen = isOpen;
+        return Task.CompletedTask;
+    }
+
     private async Task ExecuteDialogActionAsync(string actionId)
     {
         if (_bridge is null)
             return;
 
         await _bridge.ExecuteDialogActionAsync(actionId, CancellationToken.None);
+        SyncOriginWizardDialogUiState(clearWhenDialogClosed: true);
         await SyncShellWorkspaceContextAsync();
     }
 
@@ -47,5 +54,6 @@ public partial class DesktopShell
             return;
 
         await _bridge.CloseDialogAsync(CancellationToken.None);
+        SyncOriginWizardDialogUiState(clearWhenDialogClosed: true);
     }
 }

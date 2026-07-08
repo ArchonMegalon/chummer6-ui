@@ -219,7 +219,12 @@ public sealed class DesktopExecutableGateComplianceTests
         StringAssert.Contains(goldGateText, "def classify_workbench_proof_shape(payload: dict) -> str:");
         StringAssert.Contains(goldGateText, "\"blazor_public_edge_workbench_proof_shape\"] = public_edge_workbench_proof_shape");
         StringAssert.Contains(goldGateText, "\"hosted_route_entry_proof_shape\"] = public_edge_workbench_proof_shape");
-        StringAssert.Contains(goldGateText, "repo_root=\"$(cd \"$(dirname \"${BASH_SOURCE[0]}\")/../../..\" && pwd)\"");
+        StringAssert.Contains(goldGateText, "repo_root_physical=\"$(cd \"$(dirname \"${BASH_SOURCE[0]}\")/../../..\" && pwd -P)\"");
+        StringAssert.Contains(goldGateText, "repo_root_alias_candidate=\"${CHUMMER_UI_REPO_ROOT_ALIAS:-$repo_root_physical}\"");
+        StringAssert.Contains(goldGateText, "repo_root=\"$(cd -L \"$repo_root_alias_candidate\" && pwd -L)\"");
+        Assert.IsFalse(
+            goldGateText.Contains("repo_root=\"$(cd \"$(dirname \"${BASH_SOURCE[0]}\")/../../..\" && pwd)\"", StringComparison.Ordinal),
+            "UI gold proof depth gate should not fall back to the older non-alias-aware repo root resolution.");
 
         StringAssert.Contains(b14Text, "\"proof_shape_known\": str(public_edge_workbench_receipt.get(\"proof_shape\") or \"\").strip() in {\"core\", \"expanded\"}");
     }
@@ -514,11 +519,28 @@ public sealed class DesktopExecutableGateComplianceTests
         string executionDocText = File.ReadAllText(executionDocPath);
         string docsIndexPath = Path.Combine(repoRoot, "docs", "BLAZOR_WEB_CLIENT_DOCS_INDEX.md");
         string docsIndexText = File.ReadAllText(docsIndexPath);
+        string executionRunnerPath = Path.Combine(repoRoot, "scripts", "e2e-public-edge-execution.sh");
+        string executionRunnerText = File.ReadAllText(executionRunnerPath);
         string uiGoldPath = Path.Combine(repoRoot, "scripts", "ai", "milestones", "ui-gold-proof-depth-gate.sh");
         string uiGoldText = File.ReadAllText(uiGoldPath);
         string verifyPath = Path.Combine(repoRoot, "scripts", "ai", "verify.sh");
         string verifyText = File.ReadAllText(verifyPath);
 
+        StringAssert.Contains(executionRunnerText, "SCRIPT_DIR_PHYSICAL=\"$(cd \"$(dirname \"${BASH_SOURCE[0]}\")\" && pwd -P)\"");
+        StringAssert.Contains(executionRunnerText, "REPO_ROOT_PHYSICAL=\"$(cd \"$SCRIPT_DIR_PHYSICAL/..\" && pwd -P)\"");
+        StringAssert.Contains(executionRunnerText, "REPO_ROOT_ALIAS_CANDIDATE=\"${CHUMMER_UI_REPO_ROOT_ALIAS:-$REPO_ROOT_PHYSICAL}\"");
+        StringAssert.Contains(executionRunnerText, "REPO_ROOT=\"$REPO_ROOT_PHYSICAL\"");
+        StringAssert.Contains(executionRunnerText, "SCRIPT_DIR=\"$REPO_ROOT/scripts\"");
+        StringAssert.Contains(executionRunnerText, "WORKSPACE_ROOT=\"$(cd \"$REPO_ROOT_PHYSICAL/..\" && pwd -P)\"");
+        Assert.IsFalse(
+            executionRunnerText.Contains("SCRIPT_DIR=\"$(cd \"$(dirname \"${BASH_SOURCE[0]}\")\" && pwd)\"", StringComparison.Ordinal),
+            "Hosted public-edge execution wrapper should not regress to the older non-alias-aware script directory resolution.");
+        Assert.IsFalse(
+            executionRunnerText.Contains("REPO_ROOT=\"$(cd \"$SCRIPT_DIR/..\" && pwd)\"", StringComparison.Ordinal),
+            "Hosted public-edge execution wrapper should not regress to the older non-alias-aware repo root resolution.");
+        Assert.IsFalse(
+            executionRunnerText.Contains("WORKSPACE_ROOT=\"$(cd \"$REPO_ROOT/..\" && pwd)\"", StringComparison.Ordinal),
+            "Hosted public-edge execution wrapper should keep sibling workspace defaults rooted to the physical checkout even when the repo is entered through an alias path.");
         StringAssert.Contains(executionDocText, "`scripts/e2e-public-edge-playwright.cjs`");
         StringAssert.Contains(executionDocText, "`scripts/e2e-public-edge-execution.sh`");
         StringAssert.Contains(executionDocText, "`scripts/verify_blazor_public_edge_execution_proof.py`");
@@ -1916,25 +1938,31 @@ public sealed class DesktopExecutableGateComplianceTests
     {
         string repoRoot = FindRepoRoot();
         string executableGateScriptPath = Path.Combine(repoRoot, "scripts", "ai", "milestones", "materialize-desktop-executable-exit-gate.sh");
+        string verifyScriptPath = Path.Combine(repoRoot, "scripts", "ai", "verify.sh");
         string linuxScriptPath = Path.Combine(repoRoot, "scripts", "materialize-linux-desktop-exit-gate.sh");
         string windowsScriptPath = Path.Combine(repoRoot, "scripts", "materialize-windows-desktop-exit-gate.sh");
         string macosScriptPath = Path.Combine(repoRoot, "scripts", "materialize-macos-desktop-exit-gate.sh");
 
         string executableGateScriptText = File.ReadAllText(executableGateScriptPath);
+        string verifyScriptText = File.ReadAllText(verifyScriptPath);
         string linuxScriptText = File.ReadAllText(linuxScriptPath);
         string windowsScriptText = File.ReadAllText(windowsScriptPath);
         string macosScriptText = File.ReadAllText(macosScriptPath);
 
-        StringAssert.Contains(executableGateScriptText, "repo_root_alias_candidate=\"${CHUMMER_UI_REPO_ROOT_ALIAS:-/docker/chummercomplete/chummer6-ui}\"");
+        StringAssert.Contains(executableGateScriptText, "repo_root_alias_candidate=\"${CHUMMER_UI_REPO_ROOT_ALIAS:-$repo_root_physical}\"");
         StringAssert.Contains(executableGateScriptText, "repo_root_physical=\"$(cd \"$(dirname \"${BASH_SOURCE[0]}\")/../../..\" && pwd -P)\"");
         StringAssert.Contains(executableGateScriptText, "repo_root=\"$(cd -L \"$repo_root_alias_candidate\" && pwd -L)\"");
-        StringAssert.Contains(linuxScriptText, "REPO_ROOT_ALIAS_CANDIDATE=\"${CHUMMER_UI_REPO_ROOT_ALIAS:-/docker/chummercomplete/chummer6-ui}\"");
+        StringAssert.Contains(executableGateScriptText, "repo_root_value = str(globals().get(\"repo_root\") or Path.cwd())");
+        StringAssert.Contains(verifyScriptText, "repo_root_alias_candidate=\"${CHUMMER_UI_REPO_ROOT_ALIAS:-$repo_root_physical}\"");
+        StringAssert.Contains(verifyScriptText, "repo_root_physical=\"$(cd \"$(dirname \"${BASH_SOURCE[0]}\")/../..\" && pwd -P)\"");
+        StringAssert.Contains(verifyScriptText, "repo_root=\"$(cd -L \"$repo_root_alias_candidate\" && pwd -L)\"");
+        StringAssert.Contains(linuxScriptText, "REPO_ROOT_ALIAS_CANDIDATE=\"${CHUMMER_UI_REPO_ROOT_ALIAS:-$REPO_ROOT_PHYSICAL}\"");
         StringAssert.Contains(linuxScriptText, "REPO_ROOT_PHYSICAL=\"$(cd \"$SCRIPT_DIR/..\" && pwd -P)\"");
         StringAssert.Contains(linuxScriptText, "REPO_ROOT=\"$(cd -L \"$REPO_ROOT_ALIAS_CANDIDATE\" && pwd -L)\"");
-        StringAssert.Contains(windowsScriptText, "REPO_ROOT_ALIAS_CANDIDATE=\"${CHUMMER_UI_REPO_ROOT_ALIAS:-/docker/chummercomplete/chummer6-ui}\"");
+        StringAssert.Contains(windowsScriptText, "REPO_ROOT_ALIAS_CANDIDATE=\"${CHUMMER_UI_REPO_ROOT_ALIAS:-$REPO_ROOT_PHYSICAL}\"");
         StringAssert.Contains(windowsScriptText, "REPO_ROOT_PHYSICAL=\"$(cd \"$SCRIPT_DIR/..\" && pwd -P)\"");
         StringAssert.Contains(windowsScriptText, "REPO_ROOT=\"$(cd -L \"$REPO_ROOT_ALIAS_CANDIDATE\" && pwd -L)\"");
-        StringAssert.Contains(macosScriptText, "REPO_ROOT_ALIAS_CANDIDATE=\"${CHUMMER_UI_REPO_ROOT_ALIAS:-/docker/chummercomplete/chummer6-ui}\"");
+        StringAssert.Contains(macosScriptText, "REPO_ROOT_ALIAS_CANDIDATE=\"${CHUMMER_UI_REPO_ROOT_ALIAS:-$REPO_ROOT_PHYSICAL}\"");
         StringAssert.Contains(macosScriptText, "REPO_ROOT_PHYSICAL=\"$(cd \"$SCRIPT_DIR/..\" && pwd -P)\"");
         StringAssert.Contains(macosScriptText, "REPO_ROOT=\"$(cd -L \"$REPO_ROOT_ALIAS_CANDIDATE\" && pwd -L)\"");
         StringAssert.Contains(windowsScriptText, "Promoted Windows installer was not resolved from the release-aligned desktop shelf.");
@@ -1946,6 +1974,7 @@ public sealed class DesktopExecutableGateComplianceTests
         StringAssert.Contains(macosScriptText, "evidence[\"startup_smoke_external_blocker\"] = startup_smoke_external_blocker");
         StringAssert.Contains(macosScriptText, "\"external_blocker\": startup_smoke_external_blocker");
         StringAssert.Contains(macosScriptText, "evidence[\"startup_smoke_receipt_found\"] = startup_smoke_receipt_found");
+        Assert.IsFalse(verifyScriptText.Contains("repo_root=\"$(cd \"$(dirname \"${BASH_SOURCE[0]}\")/../..\" && pwd)\"", StringComparison.Ordinal));
         Assert.IsFalse(windowsScriptText.Contains("/docker/chummer5a/", StringComparison.Ordinal));
         Assert.IsFalse(macosScriptText.Contains("/docker/chummer5a/", StringComparison.Ordinal));
         StringAssert.Contains(executableGateScriptText, "startup.get(\"external_blocker\")");

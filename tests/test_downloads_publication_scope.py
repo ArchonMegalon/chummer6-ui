@@ -7,7 +7,7 @@ import sys
 from pathlib import Path
 
 
-REPO_ROOT = Path("/docker/chummercomplete/chummer-presentation")
+REPO_ROOT = Path(__file__).resolve().parents[1]
 SCRIPT_PATH = REPO_ROOT / "scripts" / "materialize-downloads-publication-scope.py"
 PUBLISH_SCRIPT_PATH = REPO_ROOT / "scripts" / "publish-download-bundle.sh"
 SPEC = importlib.util.spec_from_file_location("downloads_publication_scope", SCRIPT_PATH)

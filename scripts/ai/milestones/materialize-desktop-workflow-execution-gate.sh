@@ -2,7 +2,7 @@
 set -euo pipefail
 
 repo_root_physical="$(cd "$(dirname "${BASH_SOURCE[0]}")/../../.." && pwd -P)"
-repo_root_alias_candidate="${CHUMMER_UI_REPO_ROOT_ALIAS:-/docker/chummercomplete/chummer6-ui}"
+repo_root_alias_candidate="${CHUMMER_UI_REPO_ROOT_ALIAS:-$repo_root_physical}"
 repo_root="$repo_root_physical"
 if [[ -n "$repo_root_alias_candidate" && -d "$repo_root_alias_candidate" ]]; then
   alias_physical="$(cd "$repo_root_alias_candidate" && pwd -P)"
@@ -253,7 +253,11 @@ if [[ "$refresh_dependency_receipts" == "1" ]]; then
     if [[ ! -f "$dependency_script" ]]; then
       continue
     fi
-    mapfile -t dependency_refresh_env < <(build_dependency_refresh_env "$dependency_label" "$dependency_receipt_target")
+    dependency_refresh_env=()
+    while IFS= read -r dependency_refresh_env_var; do
+      [[ -n "$dependency_refresh_env_var" ]] || continue
+      dependency_refresh_env+=("$dependency_refresh_env_var")
+    done < <(build_dependency_refresh_env "$dependency_label" "$dependency_receipt_target")
     before_generated_at="$(capture_receipt_generated_at "$dependency_receipt_target")"
     before_mtime="$(capture_receipt_mtime "$dependency_receipt_target")"
     dependency_exit_code=0

@@ -132,8 +132,9 @@ def test_portal_runtime_renders_release_shelf_help_and_status_from_local_manifes
     assert f'href="/downloads/get/{primary_download["artifactId"]}"' in downloads_html
     assert f'data-download-install-route="/downloads/install/{primary_download["artifactId"]}"' in downloads_html
     assert 'data-download-link-mode="self-host-dispatch"' in downloads_html
-    assert "These downloads come from the current release manifest." in downloads_html
+    assert "Published artifacts stay on this self-hosted edge when local bytes are mounted here." in downloads_html
     assert "RELEASE_CHANNEL.generated.json" in downloads_html
+    assert 'data-self-host-release-manifest="/downloads/releases.json"' in downloads_html
 
     assert manifest_version in status_html
     assert f'Published files: <code>{len(manifest_downloads)}</code>' in status_html
@@ -174,3 +175,43 @@ def test_portal_runtime_keeps_open_public_installer_handoffs_on_the_self_hosted_
     assert headers.get("Location") == expected_dispatch
     assert get_status in {200, 206}
     assert primary_download["fileName"] in get_headers.get("Content-Disposition", "")
+
+
+def test_portal_runtime_redirects_public_app_route_to_hosted_blazor_app_and_preserves_query() -> None:
+    with _running_portal() as base_url:
+        status, headers, _ = _http_request(
+            f"{base_url}/app?command=character_roster",
+            follow_redirects=False,
+        )
+        slash_status, slash_headers, _ = _http_request(
+            f"{base_url}/app/?command=new_character_origin",
+            follow_redirects=False,
+        )
+        openapi = json.loads(_http_get(f"{base_url}/openapi/v1.json"))
+
+    assert status in {301, 302, 303, 307, 308}
+    assert headers.get("Location") == "/blazor/app?command=character_roster"
+    assert slash_status in {301, 302, 303, 307, 308}
+    assert slash_headers.get("Location") == "/blazor/app?command=new_character_origin"
+    assert isinstance(openapi.get("paths", {}).get("/app"), dict)
+    assert isinstance(openapi.get("paths", {}).get("/blazor/app"), dict)
+
+
+def test_portal_runtime_redirects_public_online_alias_to_hosted_blazor_app_and_preserves_query() -> None:
+    with _running_portal() as base_url:
+        status, headers, _ = _http_request(
+            f"{base_url}/online?command=character_roster",
+            follow_redirects=False,
+        )
+        slash_status, slash_headers, _ = _http_request(
+            f"{base_url}/online/?command=new_character_origin",
+            follow_redirects=False,
+        )
+        openapi = json.loads(_http_get(f"{base_url}/openapi/v1.json"))
+
+    assert status in {301, 302, 303, 307, 308}
+    assert headers.get("Location") == "/blazor/app?command=character_roster"
+    assert slash_status in {301, 302, 303, 307, 308}
+    assert slash_headers.get("Location") == "/blazor/app?command=new_character_origin"
+    assert isinstance(openapi.get("paths", {}).get("/online"), dict)
+    assert isinstance(openapi.get("paths", {}).get("/blazor/app"), dict)

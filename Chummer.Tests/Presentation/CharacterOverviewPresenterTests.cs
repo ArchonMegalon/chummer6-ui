@@ -106,7 +106,7 @@ public class CharacterOverviewPresenterTests
         Assert.HasCount(2, presenter.State.OpenWorkspaces);
         Assert.AreEqual("ws-legacy-2", presenter.State.OpenWorkspaces[0].Id.Value);
         Assert.AreEqual("ws-legacy-1", presenter.State.OpenWorkspaces[1].Id.Value);
-        StringAssert.Contains(presenter.State.Notice ?? string.Empty, "Restored 2 workspace(s)");
+        StringAssert.Contains(presenter.State.Notice ?? string.Empty, "Restored 2 dossier(s).");
     }
 
     [TestMethod]
@@ -361,7 +361,7 @@ public class CharacterOverviewPresenterTests
 
         Assert.AreEqual(getProfileCalls, client.GetProfileCalls);
         Assert.AreEqual("ws-1", presenter.State.WorkspaceId?.Value);
-        Assert.AreEqual("Workspace 'ws-1' is already active.", presenter.State.Notice);
+        Assert.AreEqual("Dossier 'ws-1' is already active.", presenter.State.Notice);
     }
 
     [TestMethod]
@@ -412,7 +412,7 @@ public class CharacterOverviewPresenterTests
         Assert.AreEqual("ws-1", presenter.State.WorkspaceId?.Value);
         Assert.HasCount(1, presenter.State.OpenWorkspaces);
         Assert.AreEqual("ws-1", presenter.State.OpenWorkspaces[0].Id.Value);
-        Assert.IsTrue((presenter.State.Notice ?? string.Empty).Contains("Closed active workspace.", StringComparison.Ordinal));
+        Assert.IsTrue((presenter.State.Notice ?? string.Empty).Contains("Closed active dossier.", StringComparison.Ordinal));
     }
 
     [TestMethod]
@@ -422,7 +422,7 @@ public class CharacterOverviewPresenterTests
 
         await presenter.UpdateMetadataAsync(new UpdateWorkspaceMetadata("Name", "Alias", "Notes"), CancellationToken.None);
 
-        Assert.AreEqual("No workspace loaded.", presenter.State.Error);
+        Assert.AreEqual("No dossier loaded.", presenter.State.Error);
     }
 
     [TestMethod]
@@ -445,7 +445,7 @@ public class CharacterOverviewPresenterTests
 
         await presenter.SaveAsync(CancellationToken.None);
 
-        Assert.AreEqual("No workspace loaded.", presenter.State.Error);
+        Assert.AreEqual("No dossier loaded.", presenter.State.Error);
     }
 
     [TestMethod]
@@ -473,7 +473,7 @@ public class CharacterOverviewPresenterTests
         await presenter.SaveAsync(CancellationToken.None);
 
         Assert.IsNotNull(shellPresenter.LastOverviewFeedback);
-        Assert.AreEqual("Workspace saved.", shellPresenter.LastOverviewFeedback.Notice);
+        Assert.AreEqual("Dossier saved.", shellPresenter.LastOverviewFeedback.Notice);
         Assert.AreEqual("ws-1", shellPresenter.LastOverviewFeedback.OpenWorkspaces[0].Id.Value);
         Assert.IsTrue(shellPresenter.LastOverviewFeedback.OpenWorkspaces[0].HasSavedWorkspace);
     }
@@ -582,6 +582,52 @@ public class CharacterOverviewPresenterTests
         string payload = Encoding.UTF8.GetString(Convert.FromBase64String(presenter.State.PendingPrint!.ContentBase64));
         StringAssert.Contains(payload, "<html");
         StringAssert.Contains(payload, "Troy Simmons");
+    }
+
+    [TestMethod]
+    public async Task Print_preview_command_prepares_html_preview()
+    {
+        var client = new FakeChummerClient();
+        var presenter = new CharacterOverviewPresenter(client);
+
+        await presenter.LoadAsync(new CharacterWorkspaceId("ws-1"), CancellationToken.None);
+        await presenter.ExecuteCommandAsync("print_preview", CancellationToken.None);
+
+        Assert.AreEqual("print_preview", presenter.State.LastCommandId);
+        Assert.AreEqual(1, client.PrintCalls);
+        Assert.IsNull(presenter.State.ActiveDialog);
+        Assert.IsNull(presenter.State.Error);
+        Assert.IsNull(presenter.State.PendingDownload);
+        Assert.IsNull(presenter.State.PendingExport);
+        Assert.IsNotNull(presenter.State.PendingPrint);
+        StringAssert.EndsWith(presenter.State.PendingPrint?.FileName ?? string.Empty, "-print.html");
+        Assert.AreEqual("text/html", presenter.State.PendingPrint?.MimeType);
+        StringAssert.Contains(presenter.State.Notice ?? string.Empty, "Print preview prepared:");
+    }
+
+    [DataTestMethod]
+    [DataRow("open_sourcebooks")]
+    [DataRow("open_errata")]
+    [DataRow("open_custom_data")]
+    [DataRow("update_data_packs")]
+    [DataRow("validate_data_scope")]
+    [DataRow("open_data_folder")]
+    public async Task Rules_data_commands_publish_shared_notice_without_requiring_workspace(string commandId)
+    {
+        var client = new FakeChummerClient();
+        var presenter = new CharacterOverviewPresenter(client);
+
+        await presenter.InitializeAsync(CancellationToken.None);
+        await presenter.ExecuteCommandAsync(commandId, CancellationToken.None);
+
+        Assert.AreEqual(commandId, presenter.State.LastCommandId);
+        Assert.IsNull(presenter.State.ActiveDialog);
+        Assert.IsNull(presenter.State.Error);
+        Assert.IsNull(presenter.State.WorkspaceId);
+        Assert.IsNull(presenter.State.PendingDownload);
+        Assert.IsNull(presenter.State.PendingExport);
+        Assert.IsNull(presenter.State.PendingPrint);
+        Assert.AreEqual($"Rules data posture ready for '{commandId}'.", presenter.State.Notice);
     }
 
     [TestMethod]
@@ -998,6 +1044,8 @@ public class CharacterOverviewPresenterTests
         string[] dialogCommands =
         [
             OverviewCommandPolicy.RuntimeInspectorCommandId,
+            "auto_alice",
+            "new_character_origin",
             "new_window",
             "wiki",
             "discord",
@@ -1078,10 +1126,10 @@ public class CharacterOverviewPresenterTests
 
         Assert.AreEqual("dialog.dice_roller", presenter.State.ActiveDialog?.Id);
         Assert.AreEqual("Dice roller + initiative preview + roster context", DesktopDialogFieldValueParser.GetValue(presenter.State.ActiveDialog!, "diceUtilityLane"));
-        StringAssert.Contains(DesktopDialogFieldValueParser.GetValue(presenter.State.ActiveDialog!, "diceRosterContext"), "Open Runners | 2");
+        StringAssert.Contains(DesktopDialogFieldValueParser.GetValue(presenter.State.ActiveDialog!, "diceRosterContext"), "Open Dossiers | 2");
         string initiativePreview = DesktopDialogFieldValueParser.GetValue(presenter.State.ActiveDialog!, "initiativePreview");
         StringAssert.Contains(initiativePreview, "L2 · Legacy Two [sr6]");
-        StringAssert.Contains(initiativePreview, "Initiative preview uses the active roster runner");
+        StringAssert.Contains(initiativePreview, "Initiative preview uses the active dossier");
     }
 
     [TestMethod]
@@ -1211,7 +1259,7 @@ public class CharacterOverviewPresenterTests
 
         await presenter.SelectTabAsync("tab-info", CancellationToken.None);
 
-        Assert.AreEqual("No workspace loaded.", presenter.State.Error);
+        Assert.AreEqual("No dossier loaded.", presenter.State.Error);
     }
 
     [TestMethod]
@@ -1227,6 +1275,96 @@ public class CharacterOverviewPresenterTests
         Assert.AreEqual("tab-info", presenter.State.ActiveTabId);
         Assert.AreEqual("profile", presenter.State.ActiveSectionId);
         StringAssert.Contains(presenter.State.ActiveSectionJson ?? string.Empty, "\"sectionId\": \"profile\"");
+        Assert.IsGreaterThan(0, presenter.State.ActiveSectionRows.Count);
+    }
+
+    [TestMethod]
+    public async Task SelectTabAsync_uses_compatibility_catalog_for_sr6_technomancer_tab()
+    {
+        var client = new FakeChummerClient();
+        client.SeedWorkspace("ws-sr6", "Ruleset Six", "RS6", rulesetId: RulesetDefaults.Sr6);
+        var presenter = new CharacterOverviewPresenter(client);
+
+        await presenter.InitializeAsync(CancellationToken.None);
+        await presenter.LoadAsync(new CharacterWorkspaceId("ws-sr6"), CancellationToken.None);
+        await presenter.SelectTabAsync("tab-technomancer", CancellationToken.None);
+
+        Assert.AreEqual("tab-technomancer", presenter.State.ActiveTabId);
+        Assert.AreEqual("complexforms", presenter.State.ActiveSectionId);
+        Assert.AreEqual("tab-technomancer.complexforms", presenter.State.ActiveActionId);
+        StringAssert.Contains(presenter.State.ActiveSectionJson ?? string.Empty, "\"sectionId\": \"complexforms\"");
+        Assert.IsGreaterThan(0, presenter.State.ActiveSectionRows.Count);
+    }
+
+    [TestMethod]
+    public async Task SelectTabAsync_uses_compatibility_catalog_for_sr6_skills_tab()
+    {
+        var client = new FakeChummerClient();
+        client.SeedWorkspace("ws-sr6", "Ruleset Six", "RS6", rulesetId: RulesetDefaults.Sr6);
+        var presenter = new CharacterOverviewPresenter(client);
+
+        await presenter.InitializeAsync(CancellationToken.None);
+        await presenter.LoadAsync(new CharacterWorkspaceId("ws-sr6"), CancellationToken.None);
+        await presenter.SelectTabAsync("tab-skills", CancellationToken.None);
+
+        Assert.AreEqual("tab-skills", presenter.State.ActiveTabId);
+        Assert.AreEqual("skills", presenter.State.ActiveSectionId);
+        Assert.AreEqual("tab-skills.skills", presenter.State.ActiveActionId);
+        StringAssert.Contains(presenter.State.ActiveSectionJson ?? string.Empty, "\"sectionId\": \"skills\"");
+        Assert.IsGreaterThan(0, presenter.State.ActiveSectionRows.Count);
+    }
+
+    [TestMethod]
+    public async Task SelectTabAsync_uses_compatibility_catalog_for_sr6_critter_tab()
+    {
+        var client = new FakeChummerClient();
+        client.SeedWorkspace("ws-sr6", "Ruleset Six", "RS6", rulesetId: RulesetDefaults.Sr6);
+        var presenter = new CharacterOverviewPresenter(client);
+
+        await presenter.InitializeAsync(CancellationToken.None);
+        await presenter.LoadAsync(new CharacterWorkspaceId("ws-sr6"), CancellationToken.None);
+        await presenter.SelectTabAsync("tab-critter", CancellationToken.None);
+
+        Assert.AreEqual("tab-critter", presenter.State.ActiveTabId);
+        Assert.AreEqual("critterpowers", presenter.State.ActiveSectionId);
+        Assert.AreEqual("tab-critter.critterpowers", presenter.State.ActiveActionId);
+        StringAssert.Contains(presenter.State.ActiveSectionJson ?? string.Empty, "\"sectionId\": \"critterpowers\"");
+        Assert.IsGreaterThan(0, presenter.State.ActiveSectionRows.Count);
+    }
+
+    [TestMethod]
+    public async Task SelectTabAsync_uses_compatibility_catalog_for_sr6_stats_tab()
+    {
+        var client = new FakeChummerClient();
+        client.SeedWorkspace("ws-sr6", "Ruleset Six", "RS6", rulesetId: RulesetDefaults.Sr6);
+        var presenter = new CharacterOverviewPresenter(client);
+
+        await presenter.InitializeAsync(CancellationToken.None);
+        await presenter.LoadAsync(new CharacterWorkspaceId("ws-sr6"), CancellationToken.None);
+        await presenter.SelectTabAsync("tab-stats", CancellationToken.None);
+
+        Assert.AreEqual("tab-stats", presenter.State.ActiveTabId);
+        Assert.AreEqual("profile", presenter.State.ActiveSectionId);
+        Assert.AreEqual("tab-stats.profile", presenter.State.ActiveActionId);
+        StringAssert.Contains(presenter.State.ActiveSectionJson ?? string.Empty, "\"sectionId\": \"profile\"");
+        Assert.IsGreaterThan(0, presenter.State.ActiveSectionRows.Count);
+    }
+
+    [TestMethod]
+    public async Task SelectTabAsync_uses_compatibility_catalog_for_sr6_career_tab()
+    {
+        var client = new FakeChummerClient();
+        client.SeedWorkspace("ws-sr6", "Ruleset Six", "RS6", rulesetId: RulesetDefaults.Sr6);
+        var presenter = new CharacterOverviewPresenter(client);
+
+        await presenter.InitializeAsync(CancellationToken.None);
+        await presenter.LoadAsync(new CharacterWorkspaceId("ws-sr6"), CancellationToken.None);
+        await presenter.SelectTabAsync("tab-calendar", CancellationToken.None);
+
+        Assert.AreEqual("tab-calendar", presenter.State.ActiveTabId);
+        Assert.AreEqual("calendar", presenter.State.ActiveSectionId);
+        Assert.AreEqual("tab-calendar.calendar", presenter.State.ActiveActionId);
+        StringAssert.Contains(presenter.State.ActiveSectionJson ?? string.Empty, "\"sectionId\": \"calendar\"");
         Assert.IsGreaterThan(0, presenter.State.ActiveSectionRows.Count);
     }
 

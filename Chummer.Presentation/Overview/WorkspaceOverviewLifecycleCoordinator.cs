@@ -118,7 +118,7 @@ public sealed class WorkspaceOverviewLifecycleCoordinator : IWorkspaceOverviewLi
                 _workspaceShellStateFactory.CreateEmptyShellState(
                     currentState,
                     session,
-                    closed ? "Closed active runner." : "Active runner was already closed."),
+                    closed ? "Closed active dossier." : "Active dossier was already closed."),
                 CurrentWorkspaceId);
         }
 
@@ -135,8 +135,8 @@ public sealed class WorkspaceOverviewLifecycleCoordinator : IWorkspaceOverviewLi
                 State = switched.State with
                 {
                     Notice = closed
-                        ? $"Closed active runner. Switched to '{nextWorkspace.Value}'."
-                        : $"Active runner was already closed. Switched to '{nextWorkspace.Value}'."
+                        ? $"Closed active dossier. Switched to '{nextWorkspace.Value}'."
+                        : $"Active dossier was already closed. Switched to '{nextWorkspace.Value}'."
                 }
             };
         }

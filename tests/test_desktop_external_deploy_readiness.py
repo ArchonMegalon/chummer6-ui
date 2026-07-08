@@ -8,7 +8,7 @@ from pathlib import Path
 from unittest.mock import patch
 
 
-REPO_ROOT = Path("/docker/chummercomplete/chummer-presentation")
+REPO_ROOT = Path(__file__).resolve().parents[1]
 MODULE_PATH = REPO_ROOT / "scripts" / "verify-desktop-external-deploy-readiness.py"
 SPEC = importlib.util.spec_from_file_location("desktop_external_deploy_readiness", MODULE_PATH)
 if SPEC is None or SPEC.loader is None:

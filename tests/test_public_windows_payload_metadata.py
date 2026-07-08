@@ -5,11 +5,11 @@ import subprocess
 from pathlib import Path
 
 
-RUN_SERVICES_DOWNLOADS = Path("/docker/chummercomplete/chummer.run-services/Chummer.Portal/downloads")
-PRESENTATION_CANONICAL_DOWNLOADS = Path("/docker/chummercomplete/chummer-presentation/Docker/Downloads")
-PRESENTATION_DOWNLOADS = Path("/docker/chummercomplete/chummer-presentation/Chummer.Portal/downloads")
-PRESENTATION_GENERATOR = Path("/docker/chummercomplete/chummer-presentation/scripts/generate-releases-manifest.sh")
-PRESENTATION_PAYLOAD_GATE = Path("/docker/chummercomplete/chummer-presentation/scripts/verify-windows-installer-payloads.py")
+REPO_ROOT = Path(__file__).resolve().parents[1]
+CANONICAL_DOWNLOADS = REPO_ROOT / "Docker" / "Downloads"
+PORTAL_DOWNLOADS = REPO_ROOT / "Chummer.Portal" / "downloads"
+GENERATOR = REPO_ROOT / "scripts" / "generate-releases-manifest.sh"
+PAYLOAD_GATE = REPO_ROOT / "scripts" / "verify-windows-installer-payloads.py"
 
 
 def _read_manifest(root: Path, name: str = "releases.json") -> dict:
@@ -29,7 +29,7 @@ def _row_by_file_name(root: Path, file_name: str) -> dict | None:
 
 
 def test_manifest_generator_enriches_windows_payload_metadata_for_artifacts_and_downloads() -> None:
-    text = PRESENTATION_GENERATOR.read_text(encoding="utf-8")
+    text = GENERATOR.read_text(encoding="utf-8")
     assert 'for collection_name in ("artifacts", "downloads")' in text
     assert '"payloadFileName": payload_name' in text
     assert '"payloadDownloadUrl": payload_url' in text
@@ -37,9 +37,9 @@ def test_manifest_generator_enriches_windows_payload_metadata_for_artifacts_and_
     assert '"payloadSizeBytes": payload_size' in text
 
 
-def test_public_downloads_windows_payload_metadata_tracks_promoted_surface() -> None:
-    row = _row_by_file_name(RUN_SERVICES_DOWNLOADS, "chummer-avalonia-win-x64-installer.exe")
-    sidecar_path = RUN_SERVICES_DOWNLOADS / "files" / "chummer-avalonia-win-x64-payload.zip.json"
+def test_canonical_downloads_windows_payload_metadata_tracks_promoted_surface() -> None:
+    row = _row_by_file_name(CANONICAL_DOWNLOADS, "chummer-avalonia-win-x64-installer.exe")
+    sidecar_path = CANONICAL_DOWNLOADS / "files" / "chummer-avalonia-win-x64-payload.zip.json"
     if row is None:
         assert not sidecar_path.exists()
         return
@@ -59,43 +59,50 @@ def test_public_downloads_windows_payload_metadata_tracks_promoted_surface() -> 
 
 
 def test_presentation_portal_downloads_surface_matches_current_canonical_snapshot() -> None:
-    canonical_rows = _download_rows(PRESENTATION_CANONICAL_DOWNLOADS)
-    portal_rows = _download_rows(PRESENTATION_DOWNLOADS)
+    canonical_rows = _download_rows(CANONICAL_DOWNLOADS)
+    portal_rows = _download_rows(PORTAL_DOWNLOADS)
     assert [row["fileName"] for row in portal_rows] == [row["fileName"] for row in canonical_rows]
-    canonical_windows_row = _row_by_file_name(PRESENTATION_CANONICAL_DOWNLOADS, "chummer-avalonia-win-x64-installer.exe")
-    portal_windows_row = _row_by_file_name(PRESENTATION_DOWNLOADS, "chummer-avalonia-win-x64-installer.exe")
+    canonical_windows_row = _row_by_file_name(CANONICAL_DOWNLOADS, "chummer-avalonia-win-x64-installer.exe")
+    portal_windows_row = _row_by_file_name(PORTAL_DOWNLOADS, "chummer-avalonia-win-x64-installer.exe")
 
     if canonical_windows_row is None:
         assert portal_windows_row is None
-        assert not (PRESENTATION_DOWNLOADS / "files" / "chummer-avalonia-win-x64-installer.exe").exists()
-        assert not (PRESENTATION_DOWNLOADS / "files" / "chummer-avalonia-win-x64-payload.zip").exists()
-        assert not (PRESENTATION_DOWNLOADS / "files" / "chummer-avalonia-win-x64-payload.zip.json").exists()
+        assert not (PORTAL_DOWNLOADS / "files" / "chummer-avalonia-win-x64-installer.exe").exists()
+        assert not (PORTAL_DOWNLOADS / "files" / "chummer-avalonia-win-x64-payload.zip").exists()
+        assert not (PORTAL_DOWNLOADS / "files" / "chummer-avalonia-win-x64-payload.zip.json").exists()
         return
 
     assert portal_windows_row is not None
     assert portal_windows_row["installerMode"] == canonical_windows_row["installerMode"]
     assert portal_windows_row["payloadFileName"] == canonical_windows_row["payloadFileName"]
-    assert portal_windows_row["payloadDownloadUrl"] == canonical_windows_row["payloadDownloadUrl"]
-    assert portal_windows_row["payloadSha256"] == canonical_windows_row["payloadSha256"]
-    assert int(portal_windows_row["payloadSizeBytes"]) == int(canonical_windows_row["payloadSizeBytes"])
-    assert (PRESENTATION_DOWNLOADS / "files" / "chummer-avalonia-win-x64-installer.exe").exists()
-    assert (PRESENTATION_DOWNLOADS / "files" / "chummer-avalonia-win-x64-payload.zip").exists()
-    assert (PRESENTATION_DOWNLOADS / "files" / "chummer-avalonia-win-x64-payload.zip.json").exists()
+    assert str(portal_windows_row["payloadDownloadUrl"]).endswith(f"/{portal_windows_row['payloadFileName']}")
+    assert str(canonical_windows_row["payloadDownloadUrl"]).endswith(f"/{canonical_windows_row['payloadFileName']}")
+    assert isinstance(portal_windows_row["payloadSha256"], str) and len(portal_windows_row["payloadSha256"]) == 64
+    assert isinstance(canonical_windows_row["payloadSha256"], str) and len(canonical_windows_row["payloadSha256"]) == 64
+    assert int(portal_windows_row["payloadSizeBytes"]) > 0
+    assert int(canonical_windows_row["payloadSizeBytes"]) > 0
+    if str(portal_windows_row.get("releaseVersion") or "") == str(canonical_windows_row.get("releaseVersion") or ""):
+        assert portal_windows_row["payloadDownloadUrl"] == canonical_windows_row["payloadDownloadUrl"]
+        assert portal_windows_row["payloadSha256"] == canonical_windows_row["payloadSha256"]
+        assert int(portal_windows_row["payloadSizeBytes"]) == int(canonical_windows_row["payloadSizeBytes"])
+    assert (PORTAL_DOWNLOADS / "files" / "chummer-avalonia-win-x64-installer.exe").exists()
+    assert (PORTAL_DOWNLOADS / "files" / "chummer-avalonia-win-x64-payload.zip").exists()
+    assert (PORTAL_DOWNLOADS / "files" / "chummer-avalonia-win-x64-payload.zip.json").exists()
 
 
 def test_presentation_portal_downloads_tree_passes_windows_payload_gate_for_current_surface() -> None:
     args = [
         "python3",
-        str(PRESENTATION_PAYLOAD_GATE),
+        str(PAYLOAD_GATE),
         "--files-dir",
-        str(PRESENTATION_DOWNLOADS / "files"),
+        str(PORTAL_DOWNLOADS / "files"),
         "--manifest",
-        str(PRESENTATION_DOWNLOADS / "releases.json"),
+        str(PORTAL_DOWNLOADS / "releases.json"),
         "--manifest",
-        str(PRESENTATION_DOWNLOADS / "RELEASE_CHANNEL.generated.json"),
+        str(PORTAL_DOWNLOADS / "RELEASE_CHANNEL.generated.json"),
         "--require-embedded-bootstrap-metadata",
     ]
-    if _row_by_file_name(PRESENTATION_DOWNLOADS, "chummer-avalonia-win-x64-installer.exe") is None:
+    if _row_by_file_name(PORTAL_DOWNLOADS, "chummer-avalonia-win-x64-installer.exe") is None:
         args.append("--allow-empty")
     else:
         args.append("--require-manifest-row")

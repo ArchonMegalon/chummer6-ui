@@ -2,7 +2,7 @@
 set -euo pipefail
 
 repo_root_physical="$(cd "$(dirname "${BASH_SOURCE[0]}")/../../.." && pwd -P)"
-repo_root_alias_candidate="${CHUMMER_UI_REPO_ROOT_ALIAS:-/docker/chummercomplete/chummer6-ui}"
+repo_root_alias_candidate="${CHUMMER_UI_REPO_ROOT_ALIAS:-$repo_root_physical}"
 repo_root="$repo_root_physical"
 if [[ -n "$repo_root_alias_candidate" && -d "$repo_root_alias_candidate" ]]; then
   alias_physical="$(cd "$repo_root_alias_candidate" && pwd -P)"

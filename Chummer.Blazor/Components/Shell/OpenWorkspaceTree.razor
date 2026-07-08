@@ -8,7 +8,7 @@
     <h2 class="visually-hidden" aria-hidden="true">@BuildOpenWorkspacesHeading()</h2>
     @if (OpenWorkspaces.Count == 0)
     {
-        <p class="hint">@NoOpenRunnersMessage</p>
+        <p class="hint">@BuildEmptyStateMessage()</p>
     }
     else
     {
@@ -27,15 +27,15 @@
                 }
                 <div class="navigator-row">
                     <button class="command-button classic-navigator-button @(isActive ? "selected" : string.Empty)"
-                            title="@BuildOpenRunnerTitle(workspaceLabel)"
-                            aria-label="@BuildOpenRunnerTitle(workspaceLabel)"
+                            title="@BuildOpenWorkspaceTitle(workspace)"
+                            aria-label="@BuildOpenWorkspaceTitle(workspace)"
                             disabled="@IsBusy"
                             @onclick="() => OpenWorkspaceAsync(workspace.Id.Value)">
                         <span>@workspaceLabel</span>
                     </button>
                     <button class="mini-btn compact-close"
-                            aria-label="@CloseRunnerLabel"
-                            title="@CloseRunnerLabel"
+                            aria-label="@CloseWorkspaceLabel"
+                            title="@CloseWorkspaceLabel"
                             disabled="@IsBusy"
                             @onclick="() => CloseWorkspaceAsync(workspace.Id.Value)">
                         ×
@@ -47,9 +47,7 @@
 </section>
 
 @code {
-    private const string NoOpenRunnersMessage = "No open runners.";
-    private const string CloseRunnerLabel = "Close runner";
-    private const string OpenRunnerLabelPrefix = "Open runner";
+    private const string CloseWorkspaceLabel = "Close open item";
 
     [Parameter]
     public IReadOnlyList<OpenWorkspaceState> OpenWorkspaces { get; set; } = [];
@@ -79,8 +77,16 @@
         return CloseWorkspaceRequested.InvokeAsync(workspaceId);
     }
 
-    private static string BuildOpenRunnerTitle(string workspaceLabel)
-        => $"{OpenRunnerLabelPrefix}: {workspaceLabel}";
+    private static string BuildOpenWorkspaceTitle(OpenWorkspaceState workspace)
+    {
+        string workspaceLabel = RulesetUiDirectiveCatalog.BuildWorkspaceNavigatorLabel(
+            workspace.RulesetId,
+            workspace.Name,
+            workspace.Alias,
+            workspace.HasSavedWorkspace);
+        string actionLabel = RulesetUiDirectiveCatalog.BuildOpenWorkspaceActionLabel(workspace.RulesetId, "Open dossier");
+        return $"{actionLabel}: {workspaceLabel}";
+    }
 
     private string BuildOpenWorkspacesHeading()
     {
@@ -88,6 +94,16 @@
             .FirstOrDefault(workspace => string.Equals(workspace.Id.Value, ActiveWorkspaceId?.Value, StringComparison.Ordinal))
             ?.RulesetId;
         return RulesetUiDirectiveCatalog.BuildOpenWorkspacesHeading(
+            RulesetDefaults.NormalizeOptional(activeRulesetId)
+            ?? RulesetDefaults.NormalizeOptional(OpenWorkspaces.FirstOrDefault()?.RulesetId));
+    }
+
+    private string BuildEmptyStateMessage()
+    {
+        string? activeRulesetId = OpenWorkspaces
+            .FirstOrDefault(workspace => string.Equals(workspace.Id.Value, ActiveWorkspaceId?.Value, StringComparison.Ordinal))
+            ?.RulesetId;
+        return RulesetUiDirectiveCatalog.BuildWorkspaceStripEmptyState(
             RulesetDefaults.NormalizeOptional(activeRulesetId)
             ?? RulesetDefaults.NormalizeOptional(OpenWorkspaces.FirstOrDefault()?.RulesetId));
     }

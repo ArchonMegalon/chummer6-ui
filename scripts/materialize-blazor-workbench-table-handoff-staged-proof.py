@@ -21,7 +21,7 @@ CHECKS = [
         "tokens": [
             "Browser-client table handoff posture",
             "data-workbench-table-handoff=\"strip\"",
-            "Package the runner for play.",
+            "Package the dossier for play.",
             "data-workbench-table-handoff-action=\"gm-packet\"",
             "data-workbench-table-handoff-action=\"initiative-card\"",
             "data-workbench-table-handoff-action=\"condition-tracker\"",

@@ -8,7 +8,7 @@ PYTHON_BIN="${CHUMMER_PYTHON_BIN:-/usr/bin/python3}"
 if [[ ! -x "$PYTHON_BIN" ]]; then
   PYTHON_BIN="$(command -v python3)"
 fi
-REPO_ROOT_ALIAS_CANDIDATE="${CHUMMER_UI_REPO_ROOT_ALIAS:-/docker/chummercomplete/chummer6-ui}"
+REPO_ROOT_ALIAS_CANDIDATE="${CHUMMER_UI_REPO_ROOT_ALIAS:-$REPO_ROOT_PHYSICAL}"
 REPO_ROOT="$REPO_ROOT_PHYSICAL"
 if [[ -n "$REPO_ROOT_ALIAS_CANDIDATE" && -d "$REPO_ROOT_ALIAS_CANDIDATE" ]]; then
   ALIAS_PHYSICAL="$(cd "$REPO_ROOT_ALIAS_CANDIDATE" && pwd -P)"
@@ -30,7 +30,11 @@ RELEASE_CHANNEL_PATH="${CHUMMER_LINUX_DESKTOP_EXIT_GATE_RELEASE_CHANNEL_PATH:-$R
 APP_KEY_OVERRIDE="${CHUMMER_LINUX_DESKTOP_EXIT_GATE_APP_KEY:-}"
 RID_OVERRIDE="${CHUMMER_LINUX_DESKTOP_EXIT_GATE_RID:-}"
 if [[ -z "$APP_KEY_OVERRIDE" || -z "$RID_OVERRIDE" ]]; then
-  mapfile -t RELEASE_PROMOTED_TUPLE < <("$PYTHON_BIN" - "$RELEASE_CHANNEL_PATH" "$APP_KEY_OVERRIDE" "$RID_OVERRIDE" <<'PY'
+  RELEASE_PROMOTED_TUPLE=()
+  while IFS= read -r tuple_value; do
+    [[ -n "$tuple_value" ]] || continue
+    RELEASE_PROMOTED_TUPLE+=("$tuple_value")
+  done < <("$PYTHON_BIN" - "$RELEASE_CHANNEL_PATH" "$APP_KEY_OVERRIDE" "$RID_OVERRIDE" <<'PY'
 from __future__ import annotations
 
 import json
@@ -2742,14 +2746,15 @@ prune_old_run_roots() {
     return 0
   }
 
-  declare -A keep_roots=()
-  keep_roots["$current_run_root"]=1
+  local keep_roots_file=""
+  keep_roots_file="$(mktemp "${TMPDIR:-/tmp}/chummer-linux-exit-keep-roots.XXXXXX")" || return 1
+  printf '%s\n' "$current_run_root" >> "$keep_roots_file"
 
   if [[ -L "$LATEST_LINK" ]]; then
     local latest_run_root=""
     latest_run_root="$(readlink -f "$LATEST_LINK" 2>/dev/null || true)"
     if [[ -n "$latest_run_root" ]]; then
-      keep_roots["$latest_run_root"]=1
+      printf '%s\n' "$latest_run_root" >> "$keep_roots_file"
     fi
   fi
 
@@ -2762,9 +2767,9 @@ prune_old_run_roots() {
     if [[ -n "$path" ]]; then
       resolved_path="$(readlink -f "$path" 2>/dev/null || printf '%s' "$path")"
       if run_root_has_live_owner "$resolved_path"; then
-        keep_roots["$resolved_path"]=1
+        printf '%s\n' "$resolved_path" >> "$keep_roots_file"
       elif (( retained < RUN_RETENTION_COUNT )); then
-        keep_roots["$resolved_path"]=1
+        printf '%s\n' "$resolved_path" >> "$keep_roots_file"
         ((retained += 1))
       fi
     fi
@@ -2774,11 +2779,13 @@ prune_old_run_roots() {
     path="${line#* }"
     if [[ -n "$path" ]]; then
       resolved_path="$(readlink -f "$path" 2>/dev/null || printf '%s' "$path")"
-      if ! run_root_has_live_owner "$resolved_path" && [[ -z "${keep_roots[$resolved_path]:-}" ]]; then
+      if ! run_root_has_live_owner "$resolved_path" && ! grep -Fqx -- "$resolved_path" "$keep_roots_file"; then
         rm -rf "$path"
       fi
     fi
   done < <(find "$OUTPUT_BASE_ROOT" -mindepth 1 -maxdepth 1 -type d -name 'run.*' -printf '%T@ %p\n' 2>/dev/null | sort -nr)
+
+  rm -f "$keep_roots_file"
 }
 
 trap on_error ERR

@@ -4,9 +4,12 @@ import json
 from pathlib import Path
 
 
+REPO_ROOT = Path(__file__).resolve().parents[1]
+
+
 def test_flagship_docs_spec_promotes_origin_dossier_and_alice() -> None:
     spec = json.loads(
-        Path("/docker/chummercomplete/chummer-presentation/docs/TABLE_PULSE_FLAGSHIP_DOCS_SPEC.json").read_text(
+        (REPO_ROOT / "docs" / "TABLE_PULSE_FLAGSHIP_DOCS_SPEC.json").read_text(
             encoding="utf-8"
         )
     )
@@ -26,7 +29,7 @@ def test_flagship_docs_spec_promotes_origin_dossier_and_alice() -> None:
 
 
 def test_flagship_docs_generator_syncs_visual_gallery_and_user_first_story() -> None:
-    source = Path("/docker/chummercomplete/chummer-presentation/scripts/generate_chummer_flagship_docs.py").read_text(
+    source = (REPO_ROOT / "scripts" / "generate_chummer_flagship_docs.py").read_text(
         encoding="utf-8"
     )
 

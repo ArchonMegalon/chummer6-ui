@@ -1,3 +1,5 @@
 #!/usr/bin/env bash
 set -euo pipefail
-"$(dirname "$0")/with-package-plane.sh" restore "$@"
+
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd -P)"
+exec "$SCRIPT_DIR/with-package-plane.sh" restore "$@"

@@ -2,7 +2,7 @@
 set -euo pipefail
 
 repo_root_physical="$(cd "$(dirname "${BASH_SOURCE[0]}")/../../.." && pwd -P)"
-repo_root_alias_candidate="${CHUMMER_UI_REPO_ROOT_ALIAS:-/docker/chummercomplete/chummer6-ui}"
+repo_root_alias_candidate="${CHUMMER_UI_REPO_ROOT_ALIAS:-$repo_root_physical}"
 repo_root="$repo_root_physical"
 if [[ -n "$repo_root_alias_candidate" && -d "$repo_root_alias_candidate" ]]; then
   alias_physical="$(cd "$repo_root_alias_candidate" && pwd -P)"
@@ -21,6 +21,9 @@ ui_gate_tests_path="$repo_root/Chummer.Tests/Presentation/AvaloniaFlagshipUiGate
 workflow_gate_tests_path="$repo_root/Chummer.Tests/Presentation/WorkflowParityGateTests.cs"
 lock_dir="$repo_root/.codex-studio/locks"
 workflow_family_chain_lock_path="$lock_dir/sr4-workflow-family-parity-chain.lock"
+workflow_family_chain_lock_dir="$workflow_family_chain_lock_path.d"
+workflow_family_chain_lock_pid_path="$workflow_family_chain_lock_dir/pid"
+workflow_family_chain_lock_acquired=0
 hub_registry_root="${CHUMMER_HUB_REGISTRY_ROOT:-$("$repo_root/scripts/resolve-hub-registry-root.sh" 2>/dev/null || true)}"
 canonical_release_channel_path="${hub_registry_root:+$hub_registry_root/.codex-studio/published/RELEASE_CHANNEL.generated.json}"
 default_release_channel_path="$repo_root/Docker/Downloads/RELEASE_CHANNEL.generated.json"
@@ -37,10 +40,49 @@ fi
 release_channel_path="${CHUMMER_DESKTOP_WORKFLOW_RELEASE_CHANNEL_PATH:-$release_channel_path_default}"
 skip_dependency_materialize="${CHUMMER_SR4_WORKFLOW_PARITY_SKIP_DEPENDENCY_MATERIALIZE:-0}"
 
+release_workflow_family_chain_lock() {
+  if [[ "${workflow_family_chain_lock_acquired:-0}" != "1" ]]; then
+    return 0
+  fi
+
+  rm -f "$workflow_family_chain_lock_pid_path"
+  rmdir "$workflow_family_chain_lock_dir" 2>/dev/null || true
+  workflow_family_chain_lock_acquired=0
+}
+
+acquire_workflow_family_chain_lock() {
+  if command -v flock >/dev/null 2>&1; then
+    exec 9>"$workflow_family_chain_lock_path"
+    flock 9
+    return 0
+  fi
+
+  while true; do
+    if mkdir "$workflow_family_chain_lock_dir" 2>/dev/null; then
+      printf '%s\n' "$$" > "$workflow_family_chain_lock_pid_path"
+      workflow_family_chain_lock_acquired=1
+      trap 'release_workflow_family_chain_lock' EXIT
+      return 0
+    fi
+
+    owner_pid=""
+    if [[ -f "$workflow_family_chain_lock_pid_path" ]]; then
+      owner_pid="$(tr -cd '0-9' < "$workflow_family_chain_lock_pid_path" 2>/dev/null || true)"
+    fi
+
+    if [[ -n "$owner_pid" ]] && ! kill -0 "$owner_pid" 2>/dev/null; then
+      rm -f "$workflow_family_chain_lock_pid_path"
+      rmdir "$workflow_family_chain_lock_dir" 2>/dev/null || rm -rf "$workflow_family_chain_lock_dir" 2>/dev/null || true
+      continue
+    fi
+
+    sleep 1
+  done
+}
+
 mkdir -p "$(dirname "$receipt_path")"
 mkdir -p "$lock_dir"
-exec 9>"$workflow_family_chain_lock_path"
-flock 9
+acquire_workflow_family_chain_lock
 workflow_gate_build_exit=0
 workflow_gate_exit=0
 dotnet test --project Chummer.Tests/Chummer.Tests.csproj --no-restore --filter "FullyQualifiedName~WorkflowParityGateTests" -v minimal >/dev/null || workflow_gate_exit=$?

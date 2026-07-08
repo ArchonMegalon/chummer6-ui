@@ -1,8 +1,18 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-REPO_ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"
+SCRIPT_DIR_PHYSICAL="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd -P)"
+REPO_ROOT_PHYSICAL="$(cd "$SCRIPT_DIR_PHYSICAL/.." && pwd -P)"
+REPO_ROOT_ALIAS_CANDIDATE="${CHUMMER_UI_REPO_ROOT_ALIAS:-$REPO_ROOT_PHYSICAL}"
+REPO_ROOT="$REPO_ROOT_PHYSICAL"
+if [[ -n "$REPO_ROOT_ALIAS_CANDIDATE" && -d "$REPO_ROOT_ALIAS_CANDIDATE" ]]; then
+  ALIAS_PHYSICAL="$(cd "$REPO_ROOT_ALIAS_CANDIDATE" && pwd -P)"
+  if [[ "$ALIAS_PHYSICAL" == "$REPO_ROOT_PHYSICAL" ]]; then
+    REPO_ROOT="$(cd -L "$REPO_ROOT_ALIAS_CANDIDATE" && pwd -L)"
+  fi
+fi
+SCRIPT_DIR="$REPO_ROOT/scripts"
+WORKSPACE_ROOT="$(cd "$REPO_ROOT_PHYSICAL/.." && pwd -P)"
 
 BUNDLE_DIR="${1:-$REPO_ROOT/dist}"
 DEPLOY_DIR="${2:-$REPO_ROOT/Docker/Downloads}"
@@ -18,11 +28,59 @@ STARTUP_SMOKE_SOURCE="${STARTUP_SMOKE_SOURCE:-$BUNDLE_DIR/startup-smoke}"
 PUBLIC_SKIP_STARTUP_SMOKE_FILTER="${CHUMMER_PUBLIC_SKIP_STARTUP_SMOKE_FILTER:-}"
 SYNC_LIVE_DOWNLOADS_MIRRORS="${CHUMMER_PUBLIC_EDGE_DOWNLOADS_SYNC_MIRRORS:-true}"
 ALLOW_WINDOWS_VISUAL_PROOF_HANDOFF_PUBLISH="${CHUMMER_ALLOW_WINDOWS_VISUAL_PROOF_HANDOFF_PUBLISH:-0}"
+ROOT_RELEASE_BLOCKERS_PATH="${CHUMMER_ROOT_RELEASE_BLOCKERS_PATH:-$WORKSPACE_ROOT/RELEASE_BLOCKERS.generated.json}"
 
 to_bool() {
   local value
   value="$(echo "${1:-}" | tr '[:upper:]' '[:lower:]')"
   [[ "$value" == "1" || "$value" == "true" || "$value" == "yes" || "$value" == "on" ]]
+}
+
+array_count() {
+  local array_name="${1:-}"
+  [[ -n "$array_name" ]] || {
+    printf '0\n'
+    return 0
+  }
+
+  local restore_nounset=0
+  case "$-" in
+    *u*)
+      restore_nounset=1
+      set +u
+      ;;
+  esac
+
+  eval "set -- \"\${${array_name}[@]}\""
+  local count="$#"
+
+  if (( restore_nounset == 1 )); then
+    set -u
+  fi
+
+  printf '%s\n' "$count"
+}
+
+array_values_nul() {
+  local array_name="${1:-}"
+  [[ -n "$array_name" ]] || return 0
+
+  local restore_nounset=0
+  case "$-" in
+    *u*)
+      restore_nounset=1
+      set +u
+      ;;
+  esac
+
+  eval "printf '%s\\0' \"\${${array_name}[@]}\""
+  local status="$?"
+
+  if (( restore_nounset == 1 )); then
+    set -u
+  fi
+
+  return "$status"
 }
 
 manifest_channel_is_preview() {
@@ -129,6 +187,66 @@ if next_actions:
 PY
 }
 
+require_public_stable_root_blocker_clearance() {
+  local release_channel="${1:-}"
+  local normalized_release_channel=""
+
+  normalized_release_channel="$(echo "$release_channel" | tr '[:upper:]' '[:lower:]')"
+  if [[ "$normalized_release_channel" != "public_stable" ]]; then
+    return 0
+  fi
+
+  python3 - "$ROOT_RELEASE_BLOCKERS_PATH" <<'PY'
+from __future__ import annotations
+
+import json
+import sys
+from pathlib import Path
+
+
+ALLOWED_BLOCKERS = {"release_posture:non_flagship_channel"}
+
+
+def fail(message: str) -> None:
+    print(message, file=sys.stderr)
+    raise SystemExit(1)
+
+
+path = Path(sys.argv[1])
+if not path.is_file():
+    fail(f"Public stable publication requires root release blocker truth, but the receipt is missing: {path}")
+
+try:
+    payload = json.loads(path.read_text(encoding="utf-8-sig"))
+except Exception as exc:  # pragma: no cover - surfaced via stderr
+    fail(f"Public stable publication requires readable root release blocker truth: {path} ({exc})")
+
+blockers = payload.get("blockers")
+if not isinstance(blockers, list):
+    blockers = payload.get("root_blockers") if isinstance(payload.get("root_blockers"), list) else None
+if not isinstance(blockers, list):
+    fail(f"Public stable publication requires a blockers list in root release blocker truth: {path}")
+
+blocker_ids: list[str] = []
+for entry in blockers:
+    if not isinstance(entry, dict):
+        continue
+    blocker_id = str(entry.get("blocker_id") or entry.get("id") or "").strip()
+    if blocker_id:
+        blocker_ids.append(blocker_id)
+
+disallowed = [blocker_id for blocker_id in blocker_ids if blocker_id not in ALLOWED_BLOCKERS]
+if disallowed:
+    generated_at = str(payload.get("generated_at") or "").strip()
+    fail(
+        "Public stable publication is blocked by root release truth. "
+        f"source={path} generated_at={generated_at or 'unknown'} "
+        f"root_blocker_ids={','.join(blocker_ids) or '(none)'} "
+        f"disallowed_blockers={','.join(disallowed)}"
+    )
+PY
+}
+
 is_public_artifact() {
   local artifact_name
   artifact_name="$(basename "$1")"
@@ -168,7 +286,9 @@ verify_windows_installer_payload_gate() {
     [[ -n "$installer_path" ]] || continue
     installer_candidates+=("$installer_path")
   done < <(find "$FILES_SOURCE" -maxdepth 1 -type f -name 'chummer-*-win-*-installer.exe' | sort)
-  if [[ "${#installer_candidates[@]}" -eq 0 ]]; then
+  local installer_candidate_count
+  installer_candidate_count="$(array_count installer_candidates)"
+  if (( installer_candidate_count == 0 )); then
     gate_args+=(--allow-empty)
   else
     local installer_path=""
@@ -398,7 +518,11 @@ if [[ ! -d "$FILES_SOURCE" ]]; then
   exit 1
 fi
 
-mapfile -t artifacts < <(find "$FILES_SOURCE" -maxdepth 1 -type f \
+artifacts=()
+while IFS= read -r artifact_path; do
+  [[ -n "$artifact_path" ]] || continue
+  artifacts+=("$artifact_path")
+done < <(find "$FILES_SOURCE" -maxdepth 1 -type f \
   \( -name "chummer-avalonia-*.exe" -o -name "chummer-avalonia-*.zip" -o \
      -name "chummer-avalonia-*.tar.gz" -o -name "chummer-avalonia-*-installer.exe" -o -name "chummer-avalonia-*-installer.deb" -o \
      -name "chummer-avalonia-*-installer.pkg" -o -name "chummer-avalonia-*-installer.dmg" -o \
@@ -411,7 +535,8 @@ mapfile -t artifacts < <(find "$FILES_SOURCE" -maxdepth 1 -type f \
      -name "chummer-blazor-desktop-*-payload.zip" -o -name "chummer-blazor-desktop-*-payload.zip.json" \) \
   | sort)
 
-if [[ "${#artifacts[@]}" -eq 0 ]]; then
+artifact_count="$(array_count artifacts)"
+if (( artifact_count == 0 )); then
   echo "No desktop artifacts found under $FILES_SOURCE" >&2
   exit 1
 fi
@@ -432,12 +557,12 @@ append_unique_downloads_mirror_dir() {
 
   [[ -n "$candidate" ]] || return 0
   resolved_candidate="$(realpath -m "$candidate")"
-  for existing in "${live_downloads_mirror_dirs[@]:-}"; do
+  while IFS= read -r -d '' existing; do
     [[ -n "$existing" ]] || continue
     if [[ "$(realpath -m "$existing")" == "$resolved_candidate" ]]; then
       return 0
     fi
-  done
+  done < <(array_values_nul live_downloads_mirror_dirs)
   live_downloads_mirror_dirs+=("$candidate")
 }
 
@@ -597,14 +722,14 @@ sync_live_downloads_mirror_dir() {
        -name "chummer-6-*-payload.zip.json" \) \
     -delete
 
-  for file_name in "${promoted_file_names[@]}"; do
+  while IFS= read -r -d '' file_name; do
     source_path="$DEPLOY_DIR/files/$file_name"
     if [[ ! -f "$source_path" ]]; then
       echo "promoted artifact missing from deploy root for $target_label mirror: $source_path" >&2
       exit 1
     fi
     cp "$source_path" "$files_dir/"
-  done
+  done < <(array_values_nul promoted_file_names)
   for file_name in chummer6-bin-aur-source.tar.gz chummer6-bin.PKGBUILD chummer6-bin.SRCINFO; do
     source_path="$DEPLOY_DIR/files/$file_name"
     if [[ -f "$source_path" ]]; then
@@ -615,14 +740,14 @@ sync_live_downloads_mirror_dir() {
   CHUMMER_VERIFY_REQUIRE_COMPLETE_DESKTOP_COVERAGE="${CHUMMER_RELEASE_REQUIRE_COMPLETE_DESKTOP_COVERAGE:-1}" \
   CHUMMER_VERIFY_SKIP_STARTUP_SMOKE_FILTER="${CHUMMER_PUBLIC_SKIP_STARTUP_SMOKE_FILTER:-$PUBLIC_SKIP_STARTUP_SMOKE_FILTER}" \
     bash "$SCRIPT_DIR/verify-releases-manifest.sh" "$target_dir/RELEASE_CHANNEL.generated.json" >/dev/null
-  echo "synced ${#promoted_file_names[@]} promoted artifact(s) -> $target_label mirror $target_dir"
+  echo "synced ${promoted_file_count} promoted artifact(s) -> $target_label mirror $target_dir"
 }
 
-for artifact in "${artifacts[@]}"; do
+while IFS= read -r -d '' artifact; do
   if is_public_artifact "$artifact"; then
     cp "$artifact" "$sync_source_dir/"
   fi
-done
+done < <(array_values_nul artifacts)
 
 release_version="${RELEASE_VERSION:-}"
 release_channel="${RELEASE_CHANNEL:-}"
@@ -630,7 +755,10 @@ release_published_at="${RELEASE_PUBLISHED_AT:-}"
 default_published_at="$(date -u +%Y-%m-%dT%H:%M:%SZ)"
 
 if [[ -f "$MANIFEST_SOURCE" ]]; then
-  readarray -t manifest_meta < <(python3 - "$MANIFEST_SOURCE" <<'PY'
+  manifest_meta=()
+  while IFS= read -r line; do
+    manifest_meta+=("$line")
+  done < <(python3 - "$MANIFEST_SOURCE" <<'PY'
 import json
 import sys
 from pathlib import Path
@@ -643,7 +771,10 @@ print(str(data.get("publishedAt", "")))
 PY
 )
 
-  readarray -t manifest_integrity < <(bundle_manifest_matches_files "$MANIFEST_SOURCE" "$FILES_SOURCE")
+  manifest_integrity=()
+  while IFS= read -r line; do
+    manifest_integrity+=("$line")
+  done < <(bundle_manifest_matches_files "$MANIFEST_SOURCE" "$FILES_SOURCE")
   manifest_matches_files="${manifest_integrity[0]:-false}"
 
   if [[ "$manifest_matches_files" != "true" && -z "${RELEASE_VERSION:-}" ]]; then
@@ -667,10 +798,12 @@ fi
 release_version="${release_version:-unpublished}"
 release_channel="${release_channel:-docker}"
 release_published_at="${release_published_at:-$default_published_at}"
+require_public_stable_root_blocker_clearance "$release_channel"
 live_downloads_mirror_dirs=()
 if to_bool "$SYNC_LIVE_DOWNLOADS_MIRRORS"; then
   discover_live_downloads_mirror_dirs
 fi
+live_downloads_mirror_dir_count="$(array_count live_downloads_mirror_dirs)"
 
 DOWNLOADS_DIR="$sync_source_dir" \
 MANIFEST_PATH="$DEPLOY_DIR/releases.json" \
@@ -692,7 +825,11 @@ bash "$SCRIPT_DIR/generate-releases-manifest.sh"
 strip_non_public_manifest_rows "$DEPLOY_DIR/RELEASE_CHANNEL.generated.json"
 strip_non_public_manifest_rows "$DEPLOY_DIR/releases.json"
 
-readarray -t promoted_file_names < <(python3 - "$DEPLOY_DIR/RELEASE_CHANNEL.generated.json" "$sync_source_dir" <<'PY'
+promoted_file_names=()
+while IFS= read -r file_name; do
+  [[ -n "$file_name" ]] || continue
+  promoted_file_names+=("$file_name")
+done < <(python3 - "$DEPLOY_DIR/RELEASE_CHANNEL.generated.json" "$sync_source_dir" <<'PY'
 import json
 import sys
 from pathlib import Path
@@ -722,6 +859,7 @@ for artifact in payload.get("artifacts") or []:
             seen.add(candidate)
 PY
 )
+promoted_file_count="$(array_count promoted_file_names)"
 
 mkdir -p "$DEPLOY_DIR/files"
 find "$DEPLOY_DIR/files" -maxdepth 1 -type f \
@@ -742,21 +880,21 @@ find "$DEPLOY_DIR/files" -maxdepth 1 -type f \
      -name "chummer-6-*-payload.zip.json" \) \
   -delete
 
-for file_name in "${promoted_file_names[@]}"; do
+while IFS= read -r -d '' file_name; do
   source_path="$sync_source_dir/$file_name"
   if [[ ! -f "$source_path" ]]; then
     echo "promoted artifact missing from bundle source: $source_path" >&2
     exit 1
   fi
   cp "$source_path" "$DEPLOY_DIR/files/"
-done
+done < <(array_values_nul promoted_file_names)
 
 materialize_aur_sidecar
 
-if [[ "${#live_downloads_mirror_dirs[@]}" -gt 0 ]]; then
-  for mirror_dir in "${live_downloads_mirror_dirs[@]}"; do
+if (( live_downloads_mirror_dir_count > 0 )); then
+  while IFS= read -r -d '' mirror_dir; do
     sync_live_downloads_mirror_dir "$mirror_dir" "public-edge"
-  done
+  done < <(array_values_nul live_downloads_mirror_dirs)
 fi
 
 if [[ -d "$STARTUP_SMOKE_SOURCE" ]]; then
@@ -966,7 +1104,10 @@ PY
     rm -f "$verified_startup_smoke_tmp"
     exit 1
   fi
-  readarray -t verified_startup_smoke_receipts <"$verified_startup_smoke_tmp"
+  verified_startup_smoke_receipts=()
+  while IFS= read -r receipt_path; do
+    verified_startup_smoke_receipts+=("$receipt_path")
+  done <"$verified_startup_smoke_tmp"
   rm -f "$verified_startup_smoke_tmp"
 
   if ! python3 "$SCRIPT_DIR/verify-windows-bootstrap-startup-smoke.py" \
@@ -1136,7 +1277,7 @@ scope_args=(
   --deploy-dir "$DEPLOY_DIR"
   --release-version "$release_version"
   --release-channel "$release_channel"
-  --promoted-artifact-count "${#promoted_file_names[@]}"
+  --promoted-artifact-count "$promoted_file_count"
 )
 if to_bool "$DEPLOY_MODE"; then
   scope_args+=(--deploy-mode)
@@ -1150,7 +1291,7 @@ fi
 python3 "$SCRIPT_DIR/materialize-downloads-publication-scope.py" "${scope_args[@]}"
 
 if to_bool "$DEPLOY_MODE"; then
-  echo "Published ${#promoted_file_names[@]} desktop artifact(s) through verified external downloads lane: $LIVE_VERIFY_TARGET"
+  echo "Published ${promoted_file_count} desktop artifact(s) through verified external downloads lane: $LIVE_VERIFY_TARGET"
 else
-  echo "Updated local downloads shelf with ${#promoted_file_names[@]} desktop artifact(s): $DEPLOY_DIR"
+  echo "Updated local downloads shelf with ${promoted_file_count} desktop artifact(s): $DEPLOY_DIR"
 fi

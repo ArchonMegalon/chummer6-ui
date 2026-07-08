@@ -11,14 +11,83 @@ from types import SimpleNamespace
 import yaml
 
 
-REPO_ROOT = Path("/docker/chummercomplete/chummer-presentation")
+REPO_ROOT = Path(__file__).resolve().parents[1]
 MODULE_PATH = REPO_ROOT / "scripts" / "chummer5a_parity_tester.py"
+EXECUTION_RECEIPTS_SCRIPT = (
+    REPO_ROOT
+    / "scripts"
+    / "ai"
+    / "milestones"
+    / "materialize-sr-workflow-family-execution-receipts.sh"
+)
+SR6_PARITY_SCRIPT = (
+    REPO_ROOT
+    / "scripts"
+    / "ai"
+    / "milestones"
+    / "sr6-desktop-workflow-parity-check.sh"
+)
 SPEC = importlib.util.spec_from_file_location("chummer5a_parity_tester", MODULE_PATH)
 if SPEC is None or SPEC.loader is None:
     raise ImportError(f"Unable to load module from {MODULE_PATH}")
 tester = importlib.util.module_from_spec(SPEC)
 sys.modules[SPEC.name] = tester
 SPEC.loader.exec_module(tester)
+
+
+def test_workflow_family_execution_receipts_materializer_autostarts_and_retries_local_api() -> None:
+    text = EXECUTION_RECEIPTS_SCRIPT.read_text(encoding="utf-8")
+
+    assert 'or "http://127.0.0.1:8088"' in text
+    assert "http://chummer-api:8080" not in text
+    assert 'or os.environ.get("CHUMMER_WEB_BASE_URL")' in text
+    assert 'api_probe_paths = ["/api/workspaces?maxCount=1", "/api/shell/bootstrap"]' in text
+    assert "def warm_api_surface(base_url: str, attempts: int = 5, delay_seconds: float = 0.5)" in text
+    assert "def terminate_local_api() -> None:" in text
+    assert "def ensure_local_api(base_url: str) -> tuple[dict[str, object], bool]:" in text
+    assert 'str(os.environ.get("CHUMMER_API_AUTOSTART") or "1").strip().lower() not in {"0", "false", "no"}' in text
+    assert 'api_project_override = str(os.environ.get("CHUMMER_API_AUTOSTART_PROJECT") or "").strip()' in text
+    assert 'default_api_project = repo_root / "Chummer.Api" / "Chummer.Api.csproj"' in text
+    assert 'build_output_override = str(os.environ.get("CHUMMER_API_AUTOSTART_BUILD_OUTPUT") or "").strip()' in text
+    assert 'int(str(os.environ.get("CHUMMER_API_AUTOSTART_TIMEOUT_SECONDS") or "90").strip() or "90")' in text
+    assert 'run_command = [' in text
+    assert '"dotnet",' in text
+    assert '"run",' in text
+    assert '"--project",' in text
+    assert '"--no-restore",' in text
+    assert 'run_command.append("--no-build")' in text
+    assert 'if test_result_indicates_missing_api(per_test_trx, proc.stdout or ""):' in text
+    assert 'api_probe, api_surface_ready = ensure_local_api(api_base_url)' in text
+    assert 'api_probe, api_surface_ready = warm_api_surface(api_base_url)' in text
+    assert 'external_blocker = "missing_api_surface_contract"' in text
+    assert 'Dual-head workflow execution requires a chummer-api host exposing /api/workspaces and /api/shell/bootstrap ' in text
+    assert '"autostartLogPath"' in text
+    assert '"autostartPid"' in text
+    assert '"autostartExitCode"' in text
+    assert '"autostartUsedNoBuild"' in text
+    assert "terminate_local_api()" in text
+
+
+def test_sr6_workflow_parity_wrapper_chains_execution_materializers_behind_single_skip_switch() -> None:
+    text = SR6_PARITY_SCRIPT.read_text(encoding="utf-8")
+
+    assert 'skip_dependency_materialize="${CHUMMER_SR6_WORKFLOW_PARITY_SKIP_DEPENDENCY_MATERIALIZE:-0}"' in text
+    assert 'workflow_family_chain_lock_path="$lock_dir/sr6-workflow-family-parity-chain.lock"' in text
+    assert 'workflow_family_chain_lock_dir="$workflow_family_chain_lock_path.d"' in text
+    assert 'workflow_family_chain_lock_pid_path="$workflow_family_chain_lock_dir/pid"' in text
+    assert "if command -v flock >/dev/null 2>&1; then" in text
+    assert 'exec 9>"$workflow_family_chain_lock_path"' in text
+    assert "flock 9" in text
+    assert 'if mkdir "$workflow_family_chain_lock_dir" 2>/dev/null; then' in text
+    assert "printf '%s\\n' \"$$\" > \"$workflow_family_chain_lock_pid_path\"" in text
+    assert 'trap \'release_workflow_family_chain_lock\' EXIT' in text
+    assert 'if [[ -n "$owner_pid" ]] && ! kill -0 "$owner_pid" 2>/dev/null; then' in text
+    assert 'dotnet build Chummer.Tests/Chummer.Tests.csproj --no-restore >/dev/null || workflow_gate_build_exit=$?' in text
+    assert '"$repo_root/Chummer.Tests/bin/Debug/net10.0/Chummer.Tests" --filter "WorkflowParityGateTests" --minimum-expected-tests 1 --output Normal >/dev/null || workflow_gate_exit=$?' in text
+    assert 'if [[ "$skip_dependency_materialize" != "1" ]]; then' in text
+    assert 'bash "$repo_root/scripts/ai/milestones/materialize-sr-workflow-family-execution-receipts.sh" sr6 >/dev/null || execution_exit=$?' in text
+    assert 'bash "$repo_root/scripts/ai/milestones/materialize-sr-workflow-family-verification-receipts.sh" sr6 >/dev/null || verification_exit=$?' in text
+    assert 'bash "$repo_root/scripts/ai/milestones/materialize-sr-workflow-family-receipts.sh" sr6 >/dev/null || materializer_exit=$?' in text
 
 
 def write_json(path: Path, payload: dict) -> None:

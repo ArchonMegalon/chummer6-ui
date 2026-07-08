@@ -58,7 +58,7 @@ public sealed class DesktopDialogFactory : IDesktopDialogFactory
         return new DesktopDialogState(
             Id: "dialog.workspace.metadata",
             Title: "Edit Metadata",
-            Message: "Apply runner profile metadata changes to the active runner.",
+            Message: "Apply dossier profile metadata changes to the active dossier.",
             Fields:
             [
                 new DesktopDialogField("metadataName", "Name", profile?.Name ?? string.Empty, "Character Name"),
@@ -98,24 +98,24 @@ public sealed class DesktopDialogFactory : IDesktopDialogFactory
             OverviewCommandPolicy.RuntimeInspectorCommandId when runtimeInspector is not null => CreateRuntimeInspectorDialog(runtimeInspector),
             "open_character" => CreateOpenCharacterDialog(
                 "dialog.open_character",
-                "Open Runner",
-                "Paste Chummer XML to open a runner.",
+                "Open Dossier",
+                "Paste Chummer XML to open a dossier.",
                 rulesetId),
             "open_for_printing" => CreateOpenCharacterDialog(
                 "dialog.open_for_printing",
-                "Open Runner for Printing",
-                "Paste Chummer XML to stage runner print workflows.",
+                "Open Print Staging",
+                "Paste Chummer XML to stage dossier print workflows.",
                 rulesetId),
             "open_for_export" => CreateOpenCharacterDialog(
                 "dialog.open_for_export",
-                "Open Runner for Export",
-                "Paste Chummer XML to stage runner export workflows.",
+                "Open Export Staging",
+                "Paste Chummer XML to stage dossier export workflows.",
                 rulesetId),
             "new_character" => BuildNewCharacterDialog(preferences, rulesetId),
             "new_character_origin" => BuildNewCharacterOriginWizardDialog(
                 rulesetId,
-                profile?.Name ?? "New runner",
-                string.IsNullOrWhiteSpace(profile?.Alias) ? "Runner" : profile!.Alias,
+                profile?.Name,
+                profile?.Alias,
                 preferences),
             "print_setup" => new DesktopDialogState(
                 "dialog.print_setup",
@@ -249,23 +249,23 @@ public sealed class DesktopDialogFactory : IDesktopDialogFactory
             "character_roster" => new DesktopDialogState(
                 "dialog.character_roster",
                 "Character Roster",
-                "Group runners into your own folders, drag runners or custom directories through the tree, and keep selected-runner details close without moving watched files until explicitly confirmed.",
+                "Group dossiers into your own folders, drag dossiers or custom directories through the tree, and keep selected-dossier details close without moving watched files until explicitly confirmed.",
                 BuildRosterFields(name, alias, workspace, currentWorkspace, openWorkspaces, preferences),
                 BuildRosterActions(name, alias, workspace, currentWorkspace, openWorkspaces, preferences)),
             "data_exporter" => new DesktopDialogState(
                 "dialog.data_exporter",
                 "Data Exporter",
                 "Export pipeline is routed through API tool endpoints.",
-                [new DesktopDialogField("dataExportPreview", "Export Preview", $"Runner: {workspace}", "{}", true, true)],
+                [new DesktopDialogField("dataExportPreview", "Export Preview", $"Dossier: {workspace}", "{}", true, true)],
                 [
                     new DesktopDialogAction("download", "Download", true),
                     new DesktopDialogAction("close", "Close")
                 ]),
             "export_character" => new DesktopDialogState(
                 "dialog.export_character",
-                "Export Runner",
-                "Export the selected runner bundle.",
-                [new DesktopDialogField("dataExportPreview", "Export Preview", $"Runner: {workspace}", "{}", true, true)],
+                "Export Dossier",
+                "Export the selected dossier bundle.",
+                [new DesktopDialogField("dataExportPreview", "Export Preview", $"Dossier: {workspace}", "{}", true, true)],
                 [
                     new DesktopDialogAction("download", "Download", true),
                     new DesktopDialogAction("close", "Close")
@@ -286,7 +286,7 @@ public sealed class DesktopDialogFactory : IDesktopDialogFactory
                 "Dual-head preview over shared presenter/API behavior path.",
                 [
                     new DesktopDialogField("runtime", "Runtime", "net10.0", "net10.0", IsReadOnly: true),
-                    new DesktopDialogField("workspace", "Runner", workspace, workspace, IsReadOnly: true)
+                    new DesktopDialogField("workspace", "Dossier", workspace, workspace, IsReadOnly: true)
                 ],
                 [new DesktopDialogAction("close", "Close", true)]),
             "hero_lab_importer" => new DesktopDialogState(
@@ -396,9 +396,9 @@ public sealed class DesktopDialogFactory : IDesktopDialogFactory
                 [new DesktopDialogAction("close", "Close", true)]),
             "print_character" => new DesktopDialogState(
                 "dialog.print_character",
-                "Print Runner",
+                "Print Dossier",
                 "Print preview is rendered by host/browser print facilities.",
-                BuildPrintUtilityFields("Current runner", "Print preview stays host-driven while sheet/export context remains visible."),
+                BuildPrintUtilityFields("Current dossier", "Print preview stays host-driven while sheet/export context remains visible."),
                 [new DesktopDialogAction("close", "Close", true)]),
             "print_multiple" => new DesktopDialogState(
                 "dialog.print_multiple",
@@ -494,8 +494,8 @@ public sealed class DesktopDialogFactory : IDesktopDialogFactory
     {
         const string defaultXml = "<character><name>Imported Runner</name></character>";
         string normalizedRulesetId = RulesetDefaults.NormalizeOptional(rulesetId) ?? RulesetDefaults.Sr5;
-        string importSource = "Paste runner XML from a trusted local or reviewed export source.";
-        string reviewSummary = $"Review the imported summary before applying this {normalizedRulesetId.ToUpperInvariant()} runner import.";
+        string importSource = "Paste dossier XML from a trusted local or reviewed export source.";
+        string reviewSummary = $"Review the imported summary before applying this {normalizedRulesetId.ToUpperInvariant()} dossier import.";
 
         return new DesktopDialogState(
             Id: id,
@@ -524,7 +524,7 @@ public sealed class DesktopDialogFactory : IDesktopDialogFactory
                     IsReadOnly: true),
                 new DesktopDialogField(
                     Id: "openCharacterXml",
-                    Label: "Runner XML",
+                    Label: "Dossier XML",
                     Value: defaultXml,
                     Placeholder: defaultXml,
                     IsMultiline: true)
@@ -682,6 +682,8 @@ public sealed class DesktopDialogFactory : IDesktopDialogFactory
         DesktopPreferenceState preferences)
     {
         string normalizedRulesetId = RulesetDefaults.NormalizeOptional(rulesetId) ?? RulesetDefaults.Sr5;
+        string normalizedName = NormalizeOriginSeedName(name);
+        string normalizedAlias = NormalizeOriginSeedAlias(alias);
         OriginBuildRecommendation recommendation = ResolveOriginBuildRecommendation(
             normalizedRulesetId,
             "decker",
@@ -700,19 +702,19 @@ public sealed class DesktopDialogFactory : IDesktopDialogFactory
         return new DesktopDialogState(
             NewCharacterOriginWizardDialogId,
             "Origin Dossier",
-            "Create the story first. Review it, then continue to a guided build if you want mechanics.",
+            "Pick only the basics, then build the story. Advanced controls are optional.",
             [
                 new DesktopDialogField(
                     "newCharacterName",
                     "Character Name",
-                    string.IsNullOrWhiteSpace(name) ? "New runner" : name.Trim(),
-                    "New runner",
+                    normalizedName,
+                    "New dossier",
                     LayoutSlot: DesktopDialogFieldLayoutSlots.Hidden),
                 new DesktopDialogField(
                     "newCharacterAlias",
                     "Alias",
-                    string.IsNullOrWhiteSpace(alias) ? "Runner" : alias.Trim(),
-                    "Runner",
+                    normalizedAlias,
+                    "Dossier",
                     LayoutSlot: DesktopDialogFieldLayoutSlots.Hidden),
                 CreateRulesetField("newCharacterRulesetId", normalizedRulesetId) with
                 {
@@ -914,8 +916,8 @@ public sealed class DesktopDialogFactory : IDesktopDialogFactory
             DesktopDialogFieldValueParser.GetValue(originDialog, "newCharacterOriginTone"),
             DesktopDialogFieldValueParser.GetValue(originDialog, "newCharacterOriginGmConstraintPreset"),
             DesktopDialogFieldValueParser.GetValue(originDialog, "newCharacterOriginGmRequirements"));
-        string name = DesktopDialogFieldValueParser.GetValue(originDialog, "newCharacterName") ?? "New runner";
-        string alias = DesktopDialogFieldValueParser.GetValue(originDialog, "newCharacterAlias") ?? "Runner";
+        string name = NormalizeOriginSeedName(DesktopDialogFieldValueParser.GetValue(originDialog, "newCharacterName"));
+        string alias = NormalizeOriginSeedAlias(DesktopDialogFieldValueParser.GetValue(originDialog, "newCharacterAlias"));
         string dossierRoute = BuildOriginDossierOnlineRoute(rulesetId, alias);
         string buildLogic = BuildGridValue(
             ("Build Method", recommendation.BuildMethod),
@@ -936,12 +938,12 @@ public sealed class DesktopDialogFactory : IDesktopDialogFactory
         return new DesktopDialogState(
             NewCharacterOriginBuildDialogId,
             "Origin Dossier",
-            "Read the origin first. Character creation starts after this screen.",
+            "Read this first. Character creation starts after the story feels right.",
             [
                 BuildNewCharacterContextField("newCharacterWorkflowRulesetId", "Workflow Ruleset", rulesetId),
                 BuildNewCharacterContextField("newCharacterWorkflowBuildMethod", "Workflow Build Method", recommendation.BuildMethod),
-                BuildNewCharacterContextField("newCharacterWorkflowName", "Workflow Name", string.IsNullOrWhiteSpace(name) ? "New runner" : name.Trim()),
-                BuildNewCharacterContextField("newCharacterWorkflowAlias", "Workflow Alias", string.IsNullOrWhiteSpace(alias) ? "Runner" : alias.Trim()),
+                BuildNewCharacterContextField("newCharacterWorkflowName", "Workflow Name", name),
+                BuildNewCharacterContextField("newCharacterWorkflowAlias", "Workflow Alias", alias),
                 BuildNewCharacterContextField("newCharacterWorkflowHouseRulesEnabled", "Workflow House Rules", "false"),
                 BuildNewCharacterContextField("newCharacterOriginSummary", "Origin Summary", recommendation.OriginSummary),
                 BuildNewCharacterContextField("newCharacterOriginAliceSeedSource", "Alice Seed Source", "approved_origin_story"),
@@ -956,8 +958,8 @@ public sealed class DesktopDialogFactory : IDesktopDialogFactory
                 new DesktopDialogField(
                     "newCharacterOriginDossierLinkNotes",
                     "Link Notes",
-                    "Opens Chummer Online directly into the Origin Dossier workflow. The story text stays local until you publish it.",
-                    "Opens Chummer Online directly into the Origin Dossier workflow. The story text stays local until you publish it.",
+                    BuildOriginDossierLinkNotesDisplayValue(),
+                    BuildOriginDossierLinkNotesDisplayValue(),
                     IsReadOnly: true,
                     IsMultiline: true,
                     VisualKind: DesktopDialogFieldVisualKinds.Snippet,
@@ -998,16 +1000,135 @@ public sealed class DesktopDialogFactory : IDesktopDialogFactory
                     LayoutSlot: DesktopDialogFieldLayoutSlots.Right)
             ],
             [
-                new DesktopDialogAction("show_origin_dossier_link", "Show dossier link"),
+                new DesktopDialogAction("show_origin_dossier_link", "Show Origin Dossier link"),
                 new DesktopDialogAction("open_origin_guided_chargen", "Start character creation", true),
                 new DesktopDialogAction("cancel", "Cancel")
             ]);
     }
 
-    private static string BuildOriginDossierOnlineRoute(string? rulesetId, string? alias)
+    internal static DesktopDialogState NormalizeOriginWizardDialogForDisplay(DesktopDialogState dialog)
+        => string.Equals(dialog.Id, NewCharacterOriginWizardDialogId, StringComparison.Ordinal)
+            ? RebuildNewCharacterOriginWizardDialog(dialog, DesktopPreferenceStateRuntime.Current)
+            : dialog;
+
+    internal static IReadOnlyList<DesktopDialogField> NormalizeOriginWizardFieldsForDisplay(IReadOnlyList<DesktopDialogField> fields)
+        => NormalizeOriginWizardDialogForDisplay(new DesktopDialogState(
+                NewCharacterOriginWizardDialogId,
+                string.Empty,
+                string.Empty,
+                fields.ToArray(),
+                []))
+            .Fields;
+
+    internal static string BuildOriginDossierLinkNotesDisplayValue()
+        => "Opens the clean Origin Dossier route directly. The story text stays local until you publish it.";
+
+    internal static string BuildOriginImplicationsDisplayValue(
+        string? originSummary,
+        string? aliceSeedSource,
+        string? buildLogicValue,
+        string? implicationsValue,
+        string dossierRoute)
+    {
+        List<string> lines = [];
+        string originLine = GetStructuredDisplayLineValue(implicationsValue, "Origin") ?? (originSummary?.Trim() ?? string.Empty);
+        string aliceSeedLine = BuildOriginAliceSeedDisplayValue(
+            GetStructuredDisplayLineValue(implicationsValue, "Alice Seed") ?? aliceSeedSource);
+        string? buildSummary = BuildOriginBuildSummaryDisplayValue(implicationsValue, buildLogicValue);
+        string? gmRequirements = BuildOriginGmRequirementDisplayValue(implicationsValue, buildLogicValue);
+        string sheetChanges = BuildOriginSheetChangesDisplayValue(implicationsValue);
+
+        if (!string.IsNullOrWhiteSpace(originLine))
+        {
+            lines.Add($"Origin | {originLine}");
+        }
+
+        if (!string.IsNullOrWhiteSpace(aliceSeedLine))
+        {
+            lines.Add($"Alice Seed | {aliceSeedLine}");
+        }
+
+        if (!string.IsNullOrWhiteSpace(buildSummary))
+        {
+            lines.Add($"Build | {buildSummary}");
+        }
+
+        if (!string.IsNullOrWhiteSpace(gmRequirements))
+        {
+            lines.Add($"GM Requirements | {gmRequirements}");
+        }
+
+        lines.Add($"Dossier Link | {dossierRoute}");
+        lines.Add($"Sheet Changes | {sheetChanges}");
+
+        lines.AddRange((implicationsValue ?? string.Empty)
+            .Replace("\r\n", "\n", StringComparison.Ordinal)
+            .Split('\n', StringSplitOptions.RemoveEmptyEntries)
+            .Select(static line => line.Trim())
+            .Where(static line => !string.IsNullOrWhiteSpace(line))
+            .Where(static line => !HasStructuredDisplayLineLabel(line, "Origin"))
+            .Where(static line => !HasStructuredDisplayLineLabel(line, "Alice Seed"))
+            .Where(static line => !HasStructuredDisplayLineLabel(line, "Build"))
+            .Where(static line => !HasStructuredDisplayLineLabel(line, "GM Requirements"))
+            .Where(static line => !HasStructuredDisplayLineLabel(line, "Dossier Link"))
+            .Where(static line => !HasStructuredDisplayLineLabel(line, "Sheet Changes")));
+
+        return string.Join(Environment.NewLine, lines);
+    }
+
+    internal static string? BuildOriginBuildSummaryDisplayValue(string? implicationsValue, string? buildLogicValue)
+    {
+        string? existingBuildSummary = GetStructuredDisplayLineValue(implicationsValue, "Build");
+        if (!string.IsNullOrWhiteSpace(existingBuildSummary))
+        {
+            return existingBuildSummary;
+        }
+
+        string archetype = GetStructuredDisplayLineValue(buildLogicValue, "Likely Archetype") ?? string.Empty;
+        string buildMethod = GetStructuredDisplayLineValue(buildLogicValue, "Build Method") ?? string.Empty;
+        string metatype = GetStructuredDisplayLineValue(buildLogicValue, "Likely Metatype") ?? string.Empty;
+        string qualityFocus = GetStructuredDisplayLineValue(buildLogicValue, "Quality Focus") ?? string.Empty;
+        string pathSummary = GetStructuredDisplayLineValue(buildLogicValue, "Path") ?? string.Empty;
+        List<string> segments = [];
+
+        if (!string.IsNullOrWhiteSpace(archetype))
+        {
+            segments.Add($"{archetype} posture");
+        }
+
+        if (!string.IsNullOrWhiteSpace(buildMethod))
+        {
+            segments.Add($"{buildMethod} build");
+        }
+
+        if (!string.IsNullOrWhiteSpace(metatype))
+        {
+            segments.Add($"{metatype} lean");
+        }
+
+        if (!string.IsNullOrWhiteSpace(qualityFocus))
+        {
+            segments.Add(qualityFocus.ToLowerInvariant());
+        }
+
+        if (!string.IsNullOrWhiteSpace(pathSummary))
+        {
+            segments.Add(pathSummary);
+        }
+
+        return segments.Count == 0
+            ? null
+            : UndetectableHumanizerCopyAdapter.Humanize(string.Join(", ", segments) + ".");
+    }
+
+    internal static string? BuildOriginGmRequirementDisplayValue(string? implicationsValue, string? buildLogicValue)
+        => GetStructuredDisplayLineValue(implicationsValue, "GM Requirements")
+            ?? GetStructuredDisplayLineValue(buildLogicValue, "GM Requirements");
+
+    internal static string BuildOriginDossierOnlineRoute(string? rulesetId, string? alias)
     {
         string normalizedRulesetId = RulesetDefaults.NormalizeOptional(rulesetId) ?? RulesetDefaults.Sr5;
-        string aliasToken = string.IsNullOrWhiteSpace(alias) ? string.Empty : alias.Trim();
+        string aliasToken = NormalizeOriginSeedAlias(alias);
         List<string> query =
         [
             $"command={Uri.EscapeDataString("new_character_origin")}",
@@ -1022,9 +1143,60 @@ public sealed class DesktopDialogFactory : IDesktopDialogFactory
         return $"{OriginDossierOnlineRoute}?{string.Join("&", query)}";
     }
 
+    private static string BuildOriginAliceSeedDisplayValue(string? value)
+    {
+        string normalized = string.IsNullOrWhiteSpace(value) ? "approved_origin_story" : value.Trim();
+        normalized = normalized.Replace('_', ' ').Replace('-', ' ');
+        return string.Join(" ", normalized.Split((char[]?)null, StringSplitOptions.RemoveEmptyEntries));
+    }
+
+    private static string BuildOriginSheetChangesDisplayValue(string? implicationsValue)
+        => GetStructuredDisplayLineValue(implicationsValue, "Sheet Changes")
+            ?? "none yet; review the path before applying mechanics";
+
+    private static string? GetStructuredDisplayLineValue(string? value, string label)
+    {
+        if (string.IsNullOrWhiteSpace(value))
+        {
+            return null;
+        }
+
+        foreach (string rawLine in value.Replace("\r\n", "\n", StringComparison.Ordinal)
+                     .Split('\n', StringSplitOptions.RemoveEmptyEntries))
+        {
+            string line = rawLine.Trim();
+            if (string.IsNullOrWhiteSpace(line)
+                || !HasStructuredDisplayLineLabel(line, label))
+            {
+                continue;
+            }
+
+            int separatorIndex = line.IndexOfAny(['|', ':']);
+            if (separatorIndex < 0 || separatorIndex == line.Length - 1)
+            {
+                return string.Empty;
+            }
+
+            return line[(separatorIndex + 1)..].Trim();
+        }
+
+        return null;
+    }
+
+    private static bool HasStructuredDisplayLineLabel(string value, string label)
+    {
+        int separatorIndex = value.AsSpan().IndexOfAny('|', ':');
+        if (separatorIndex <= 0)
+        {
+            return false;
+        }
+
+        return value.AsSpan(0, separatorIndex).Trim().Equals(label.AsSpan(), StringComparison.OrdinalIgnoreCase);
+    }
+
     private static string BuildOriginBookPreview(string alias, OriginBuildRecommendation recommendation)
     {
-        string runnerName = string.IsNullOrWhiteSpace(alias) ? "Runner" : alias.Trim();
+        string runnerName = NormalizeOriginSeedAlias(alias);
         return UndetectableHumanizerCopyAdapter.Humanize(
             $"{runnerName}: Origin Dossier{Environment.NewLine}{Environment.NewLine}" +
             $"{recommendation.OriginSummary}{Environment.NewLine}{Environment.NewLine}" +
@@ -1032,6 +1204,41 @@ public sealed class DesktopDialogFactory : IDesktopDialogFactory
             $"At the table, the story keeps these constraints in view: {recommendation.GmRequirementSummary}{Environment.NewLine}{Environment.NewLine}" +
             "When this origin feels right, start character creation. Alice can use the story as context later; no numbers are written to the sheet from this preview alone.");
     }
+
+    private static string NormalizeOriginSeedName(string? name)
+    {
+        if (string.IsNullOrWhiteSpace(name)
+            || string.Equals(name.Trim(), "New runner", StringComparison.OrdinalIgnoreCase))
+        {
+            return "New dossier";
+        }
+
+        return name.Trim();
+    }
+
+    private static string NormalizeOriginSeedAlias(string? alias)
+    {
+        if (string.IsNullOrWhiteSpace(alias)
+            || string.Equals(alias.Trim(), "Runner", StringComparison.OrdinalIgnoreCase))
+        {
+            return "Dossier";
+        }
+
+        return alias.Trim();
+    }
+
+    private static string ResolveWorkflowIdentityName(string? name, string? workflowOriginSource)
+        => string.IsNullOrWhiteSpace(name)
+            ? IsOriginWorkflowSource(workflowOriginSource) ? "New dossier" : "New runner"
+            : name.Trim();
+
+    private static string ResolveWorkflowIdentityAlias(string? alias, string? workflowOriginSource)
+        => string.IsNullOrWhiteSpace(alias)
+            ? IsOriginWorkflowSource(workflowOriginSource) ? "Dossier" : "Runner"
+            : alias.Trim();
+
+    private static bool IsOriginWorkflowSource(string? workflowOriginSource)
+        => string.Equals(workflowOriginSource?.Trim(), "approved_origin_story", StringComparison.Ordinal);
 
     private static DesktopDialogField CreateBuildMethodField(string fieldId, string? rulesetId, string? preferredBuildMethod = null)
     {
@@ -1090,12 +1297,31 @@ public sealed class DesktopDialogFactory : IDesktopDialogFactory
         string name,
         string alias,
         DesktopPreferenceState preferences)
+        => BuildNewCharacterContinuationDialog(
+            rulesetId,
+            buildMethod,
+            houseRulesEnabled,
+            name,
+            alias,
+            preferences,
+            workflowOriginSource: null);
+
+    internal static DesktopDialogState BuildNewCharacterContinuationDialog(
+        string? rulesetId,
+        string? buildMethod,
+        bool houseRulesEnabled,
+        string name,
+        string alias,
+        DesktopPreferenceState preferences,
+        string? workflowOriginSource)
     {
         string normalizedRulesetId = RulesetDefaults.NormalizeOptional(rulesetId) ?? RulesetDefaults.Sr5;
         string resolvedBuildMethod = ResolvePreferredBuildMethod(normalizedRulesetId, buildMethod);
+        string normalizedWorkflowName = ResolveWorkflowIdentityName(name, workflowOriginSource);
+        string normalizedWorkflowAlias = ResolveWorkflowIdentityAlias(alias, workflowOriginSource);
         return UsesPriorityWorkflow(resolvedBuildMethod)
-            ? BuildNewCharacterPriorityWorkflowDialog(normalizedRulesetId, resolvedBuildMethod, houseRulesEnabled, name, alias, preferences)
-            : BuildNewCharacterKarmaWorkflowDialog(normalizedRulesetId, resolvedBuildMethod, houseRulesEnabled, name, alias, preferences);
+            ? BuildNewCharacterPriorityWorkflowDialog(normalizedRulesetId, resolvedBuildMethod, houseRulesEnabled, normalizedWorkflowName, normalizedWorkflowAlias, preferences, workflowOriginSource)
+            : BuildNewCharacterKarmaWorkflowDialog(normalizedRulesetId, resolvedBuildMethod, houseRulesEnabled, normalizedWorkflowName, normalizedWorkflowAlias, preferences, workflowOriginSource);
     }
 
     private static DesktopDialogState BuildNewCharacterPriorityWorkflowDialog(
@@ -1104,7 +1330,8 @@ public sealed class DesktopDialogFactory : IDesktopDialogFactory
         bool houseRulesEnabled,
         string name,
         string alias,
-        DesktopPreferenceState preferences)
+        DesktopPreferenceState preferences,
+        string? workflowOriginSource)
     {
         PriorityWorkflowResolution resolution = ResolvePriorityWorkflowResolution(
             rulesetId,
@@ -1140,6 +1367,9 @@ public sealed class DesktopDialogFactory : IDesktopDialogFactory
             resolution.TalentChoice,
             houseRulesEnabled);
 
+        string normalizedWorkflowName = ResolveWorkflowIdentityName(name, workflowOriginSource);
+        string normalizedWorkflowAlias = ResolveWorkflowIdentityAlias(alias, workflowOriginSource);
+
         return new DesktopDialogState(
             NewCharacterPriorityWorkflowDialogId,
             "Select Metatype Priority",
@@ -1147,9 +1377,10 @@ public sealed class DesktopDialogFactory : IDesktopDialogFactory
             [
                 BuildNewCharacterContextField("newCharacterWorkflowRulesetId", "Workflow Ruleset", rulesetId),
                 BuildNewCharacterContextField("newCharacterWorkflowBuildMethod", "Workflow Build Method", buildMethod),
-                BuildNewCharacterContextField("newCharacterWorkflowName", "Workflow Name", string.IsNullOrWhiteSpace(name) ? "New runner" : name.Trim()),
-                BuildNewCharacterContextField("newCharacterWorkflowAlias", "Workflow Alias", string.IsNullOrWhiteSpace(alias) ? "Runner" : alias.Trim()),
+                BuildNewCharacterContextField("newCharacterWorkflowName", "Workflow Name", normalizedWorkflowName),
+                BuildNewCharacterContextField("newCharacterWorkflowAlias", "Workflow Alias", normalizedWorkflowAlias),
                 BuildNewCharacterContextField("newCharacterWorkflowHouseRulesEnabled", "Workflow House Rules", houseRulesValue),
+                BuildNewCharacterContextField("newCharacterWorkflowOriginSource", "Workflow Origin Source", string.IsNullOrWhiteSpace(workflowOriginSource) ? "none" : workflowOriginSource.Trim()),
                 BuildNewCharacterContextField("newCharacterDisableAiFeatures", "Disable Helper Features", preferences.DisableAiFeatures ? "true" : "false"),
                 new DesktopDialogField(
                     "newCharacterMetatypeCategory",
@@ -1278,7 +1509,8 @@ public sealed class DesktopDialogFactory : IDesktopDialogFactory
         bool houseRulesEnabled,
         string name,
         string alias,
-        DesktopPreferenceState preferences)
+        DesktopPreferenceState preferences,
+        string? workflowOriginSource)
     {
         string category = "Standard";
         string metatype = ResolveDefaultMetatype(category);
@@ -1295,6 +1527,9 @@ public sealed class DesktopDialogFactory : IDesktopDialogFactory
             metatype,
             houseRulesEnabled);
 
+        string normalizedWorkflowName = ResolveWorkflowIdentityName(name, workflowOriginSource);
+        string normalizedWorkflowAlias = ResolveWorkflowIdentityAlias(alias, workflowOriginSource);
+
         return new DesktopDialogState(
             NewCharacterKarmaWorkflowDialogId,
             "Select Metatype",
@@ -1302,9 +1537,10 @@ public sealed class DesktopDialogFactory : IDesktopDialogFactory
             [
                 BuildNewCharacterContextField("newCharacterWorkflowRulesetId", "Workflow Ruleset", rulesetId),
                 BuildNewCharacterContextField("newCharacterWorkflowBuildMethod", "Workflow Build Method", buildMethod),
-                BuildNewCharacterContextField("newCharacterWorkflowName", "Workflow Name", string.IsNullOrWhiteSpace(name) ? "New runner" : name.Trim()),
-                BuildNewCharacterContextField("newCharacterWorkflowAlias", "Workflow Alias", string.IsNullOrWhiteSpace(alias) ? "Runner" : alias.Trim()),
+                BuildNewCharacterContextField("newCharacterWorkflowName", "Workflow Name", normalizedWorkflowName),
+                BuildNewCharacterContextField("newCharacterWorkflowAlias", "Workflow Alias", normalizedWorkflowAlias),
                 BuildNewCharacterContextField("newCharacterWorkflowHouseRulesEnabled", "Workflow House Rules", houseRulesValue),
+                BuildNewCharacterContextField("newCharacterWorkflowOriginSource", "Workflow Origin Source", string.IsNullOrWhiteSpace(workflowOriginSource) ? "none" : workflowOriginSource.Trim()),
                 BuildNewCharacterContextField("newCharacterDisableAiFeatures", "Disable Helper Features", preferences.DisableAiFeatures ? "true" : "false"),
                 new DesktopDialogField(
                     "newCharacterMetatypeCategory",
@@ -1462,7 +1698,7 @@ public sealed class DesktopDialogFactory : IDesktopDialogFactory
             normalizedGmRequirementPreset,
             normalizedGmRequirements);
         string originSummary = UndetectableHumanizerCopyAdapter.Humanize(
-            $"{FormatChoiceLabel(normalizedBackground)} upbringing, {FormatChoiceLabel(normalizedTurningPoint)} turning point, and a {FormatChoiceLabel(normalizedTrainingPath)} training path pushed this runner toward {FormatChoiceLabel(archetype)} work. " +
+            $"{FormatChoiceLabel(normalizedBackground)} upbringing, {FormatChoiceLabel(normalizedTurningPoint)} turning point, and a {FormatChoiceLabel(normalizedTrainingPath)} training path pushed this dossier path toward {FormatChoiceLabel(archetype)} work. " +
             $"{FormatChoiceLabel(normalizedPressureCost)} still shapes their decisions, while {FormatChoiceLabel(normalizedMotivation)} keeps the next run in view. " +
             $"The dossier keeps {exposureSummary} visible as the story reason for the build choices.");
         string buildSummary = UndetectableHumanizerCopyAdapter.Humanize(
@@ -2478,7 +2714,7 @@ public sealed class DesktopDialogFactory : IDesktopDialogFactory
             new DesktopDialogField("diceResultsList", "Roll History", "No rolls yet.", "No rolls yet.", IsReadOnly: true, IsMultiline: true, VisualKind: DesktopDialogFieldVisualKinds.List),
             new DesktopDialogField("diceUtilityLane", "Utility Lane", "Dice roller + initiative preview + roster context", "Dice roller + initiative preview + roster context", IsReadOnly: true, LayoutSlot: DesktopDialogFieldLayoutSlots.Hidden),
             new DesktopDialogField("diceRosterContext", "Roster Context", BuildDiceRosterContext(currentWorkspace, openWorkspaces), "No roster context.", IsReadOnly: true, IsMultiline: true, VisualKind: DesktopDialogFieldVisualKinds.Grid, LayoutSlot: DesktopDialogFieldLayoutSlots.Hidden),
-            new DesktopDialogField("initiativePreview", "Initiative Preview", BuildInitiativePreview(currentWorkspace, openWorkspaces), "No active runner.", IsReadOnly: true, IsMultiline: true, VisualKind: DesktopDialogFieldVisualKinds.Snippet, LayoutSlot: DesktopDialogFieldLayoutSlots.Hidden),
+            new DesktopDialogField("initiativePreview", "Initiative Preview", BuildInitiativePreview(currentWorkspace, openWorkspaces), "No active dossier.", IsReadOnly: true, IsMultiline: true, VisualKind: DesktopDialogFieldVisualKinds.Snippet, LayoutSlot: DesktopDialogFieldLayoutSlots.Hidden),
             new DesktopDialogField("diceLastRollState", "Last Roll State", string.Empty, string.Empty, IsReadOnly: true, LayoutSlot: DesktopDialogFieldLayoutSlots.Hidden)
         ];
     }
@@ -2501,8 +2737,8 @@ public sealed class DesktopDialogFactory : IDesktopDialogFactory
             : string.Join(", ", roster.Select(workspace => $"{workspace.Alias}/{workspace.RulesetId}"));
 
         return BuildGridValue(
-            ("Active Runner", activeRunner),
-            ("Open Runners", roster.Length.ToString(CultureInfo.InvariantCulture)),
+            ("Active Dossier", activeRunner),
+            ("Open Dossiers", roster.Length.ToString(CultureInfo.InvariantCulture)),
             ("Roster Mix", openSummary));
     }
 
@@ -2519,10 +2755,10 @@ public sealed class DesktopDialogFactory : IDesktopDialogFactory
 
         if (active is null)
         {
-            return "No active runner. Roll history stays available and initiative context appears after opening a roster entry.";
+            return "No active dossier. Roll history stays available and initiative context appears after opening a roster entry.";
         }
 
-        return $"{active.Alias} · {active.Name} [{active.RulesetId}]{Environment.NewLine}Initiative preview uses the active roster runner and keeps results local to this utility.";
+        return $"{active.Alias} · {active.Name} [{active.RulesetId}]{Environment.NewLine}Initiative preview uses the active dossier and keeps results local to this utility.";
     }
 
     private static IReadOnlyList<DesktopDialogFieldOption> BuildDiceMethodOptions()
@@ -3087,11 +3323,11 @@ public sealed class DesktopDialogFactory : IDesktopDialogFactory
         List<DesktopDialogAction> actions = [];
         if (selectedRunner is not null)
         {
-            actions.Add(new DesktopDialogAction("open_runner", $"Open Runner {selectedRunner.Alias}", true));
+            actions.Add(new DesktopDialogAction("open_runner", $"Open Dossier {selectedRunner.Alias}", true));
         }
         else
         {
-            actions.Add(new DesktopDialogAction("open_runner", $"Open Runner {alias}", true));
+            actions.Add(new DesktopDialogAction("open_runner", $"Open Dossier {alias}", true));
         }
 
         if (!string.IsNullOrWhiteSpace(selectedWatchedFile))
@@ -3112,7 +3348,7 @@ public sealed class DesktopDialogFactory : IDesktopDialogFactory
         actions.Add(new DesktopDialogAction("create_roster_group", "Create Roster Directory"));
         actions.Add(new DesktopDialogAction("rename_roster_group", "Rename Roster Directory"));
         actions.Add(new DesktopDialogAction("delete_roster_group", "Delete Roster Directory"));
-        actions.Add(new DesktopDialogAction("move_runner_to_group", "Move Runner to Directory"));
+        actions.Add(new DesktopDialogAction("move_runner_to_group", "Move Dossier to Directory"));
         actions.Add(new DesktopDialogAction("reorder_roster_tree", "Reorder Character Tree"));
         actions.Add(new DesktopDialogAction("reset_roster_hierarchy", "Reset Character Layout"));
 
@@ -3194,21 +3430,21 @@ public sealed class DesktopDialogFactory : IDesktopDialogFactory
             : !watchFolderExists
                 ? $"└─ {rosterPath}{Environment.NewLine}   ├─ watcher: configured{Environment.NewLine}   └─ folder missing on disk"
                 : watchedFiles.Length == 0
-                    ? $"└─ {rosterPath}{Environment.NewLine}   ├─ watcher: FileSystemWatcher (subdirectories){Environment.NewLine}   └─ no runner files detected"
+                    ? $"└─ {rosterPath}{Environment.NewLine}   ├─ watcher: FileSystemWatcher (subdirectories){Environment.NewLine}   └─ no dossier files detected"
                     : $"└─ {rosterPath}{Environment.NewLine}   ├─ watcher: FileSystemWatcher (subdirectories){Environment.NewLine}{string.Join(Environment.NewLine, watchedFiles.Select((fileName, index) => $"{(index == watchedFiles.Length - 1 ? "   └─ " : "   ├─ ")}{(string.Equals(fileName, selectedWatchedFile, StringComparison.OrdinalIgnoreCase) ? "* " : string.Empty)}{fileName}"))}";
         string rosterTree = ordered.Length == 0
-            ? $"[Open Runners]{Environment.NewLine}└─ {alias} · {name}{Environment.NewLine}[Watch Folder]{Environment.NewLine}{watchFolderTree}"
-            : $"[Open Runners]{Environment.NewLine}{string.Join(Environment.NewLine, ordered.Select(candidate => $"└─ {(selectedRunner is not null && string.Equals(candidate.Id.Value, selectedRunner.Id.Value, StringComparison.Ordinal) ? "*" : "-")} {candidate.Alias} · {candidate.Name} [{(RulesetDefaults.NormalizeOptional(candidate.RulesetId) ?? candidate.RulesetId)}]"))}{Environment.NewLine}[Watch Folder]{Environment.NewLine}{watchFolderTree}";
+            ? $"[Open Dossiers]{Environment.NewLine}└─ {alias} · {name}{Environment.NewLine}[Watch Folder]{Environment.NewLine}{watchFolderTree}"
+            : $"[Open Dossiers]{Environment.NewLine}{string.Join(Environment.NewLine, ordered.Select(candidate => $"└─ {(selectedRunner is not null && string.Equals(candidate.Id.Value, selectedRunner.Id.Value, StringComparison.Ordinal) ? "*" : "-")} {candidate.Alias} · {candidate.Name} [{(RulesetDefaults.NormalizeOptional(candidate.RulesetId) ?? candidate.RulesetId)}]"))}{Environment.NewLine}[Watch Folder]{Environment.NewLine}{watchFolderTree}";
         string customRosterFolders = BuildCustomRosterFolderPreview(ordered, watchedFiles, selectedRunner, selectedWatchedFile, alias, name);
         string rosterMoveTargets = BuildGridValue(
             ("Drop Target", selectedRunner is null ? "New directory or watched file" : $"{selectedRunner.Alias} directory"),
-            ("Default Directory", selectedRunner?.HasSavedWorkspace == true ? "Saved runners" : $"{RosterHierarchyMetadata.InboxFolderName} / unsaved"),
-            ("Tree Scope", watchFolderConfigured ? "Open runners + watched files + user hierarchy" : "Open runners + user hierarchy"),
+            ("Default Directory", selectedRunner?.HasSavedWorkspace == true ? "Saved dossiers" : $"{RosterHierarchyMetadata.InboxFolderName} / unsaved"),
+            ("Tree Scope", watchFolderConfigured ? "Open dossiers + watched files + user hierarchy" : "Open dossiers + user hierarchy"),
             ("Ordering", "manual sibling order with recent-open fallback"),
             ("Persistence", "character tree metadata, not filesystem move until confirmed"),
-            ("Conflict Rule", "drag creates preview; explicit Move Runner commits"));
+            ("Conflict Rule", "drag creates preview; explicit Move Dossier commits"));
         string rosterDragDropGuide =
-            "Drag runner onto directory: preview move" + Environment.NewLine +
+            "Drag dossier onto directory: preview move" + Environment.NewLine +
             "Drag directory onto directory: nest directory" + Environment.NewLine +
             "Drag between siblings: reorder within parent" + Environment.NewLine +
             "Keyboard: Enter/Space selects source, Enter/Space on directory drops, Escape clears source" + Environment.NewLine +
@@ -3220,10 +3456,10 @@ public sealed class DesktopDialogFactory : IDesktopDialogFactory
             ("Character Placement", "one primary directory in the user's hierarchy, optional pinned aliases later"),
             ("Watched Files", "can appear under custom roster directories without moving disk files"),
             ("Filesystem Moves", "separate confirmation step"),
-            ("Self-host Sync", "layout metadata follows owner and runner scope"),
-            ("Safe Delete", $"delete custom directory moves runner/link items to {RosterHierarchyMetadata.InboxFolderName} and reparents child directories"),
+            ("Self-host Sync", "layout metadata follows owner and dossier scope"),
+            ("Safe Delete", $"delete custom directory moves dossier/link items to {RosterHierarchyMetadata.InboxFolderName} and reparents child directories"),
             ("Cycle Guard", "directory drops cannot target their own descendants"),
-            ("Drag Source", "dragged row wins before selected-runner fallback"));
+            ("Drag Source", "dragged row wins before selected-dossier fallback"));
         string selectedRunnerSummary = selectedRunner is null
             ? BuildGridValue(
                 ("Character Name", name),
@@ -3257,12 +3493,12 @@ public sealed class DesktopDialogFactory : IDesktopDialogFactory
         FileInfo? portraitInfo = File.Exists(portraitCandidate) ? new FileInfo(portraitCandidate) : null;
         string selectionTrail = selectedRunner is null
             ? BuildGridValue(
-                ("Active Runner", $"{alias} · {name}"),
-                ("Save Posture", string.IsNullOrWhiteSpace(workspace) ? "not saved yet" : "runner available"),
+                ("Active Dossier", $"{alias} · {name}"),
+                ("Save Posture", string.IsNullOrWhiteSpace(workspace) ? "not saved yet" : "dossier available"),
                 ("Watch Folder", watchFolderConfigured ? rosterPath : "not configured"),
                 ("Watch File", selectedWatchedFile ?? "not matched"))
             : BuildGridValue(
-                ("Active Runner", $"{selectedRunner.Alias} · {selectedRunner.Name}"),
+                ("Active Dossier", $"{selectedRunner.Alias} · {selectedRunner.Name}"),
                 ("Save Posture", selectedRunner.HasSavedWorkspace ? "saved to disk" : "not saved yet"),
                 ("Watch Folder", watchFolderConfigured ? rosterPath : "not configured"),
                 ("Watch File", selectedWatchedFile ?? "not matched"));
@@ -3271,32 +3507,32 @@ public sealed class DesktopDialogFactory : IDesktopDialogFactory
             ("Watcher", !watchFolderConfigured ? "inactive" : watchFolderExists ? "FileSystemWatcher active" : "configured via global settings"),
             ("Include Subdirectories", watchFolderConfigured ? "Yes" : "n/a"),
             ("Watched Files", watchedCount.ToString(CultureInfo.InvariantCulture)),
-            ("Saved Runners", savedCount.ToString(CultureInfo.InvariantCulture)),
+            ("Saved Dossiers", savedCount.ToString(CultureInfo.InvariantCulture)),
             ("Selected Watch File", selectedWatchedFile ?? "not matched"),
             ("Selected Updated", selectedWatchFileInfo is null ? "n/a" : $"{selectedWatchFileInfo.LastWriteTimeUtc:yyyy-MM-dd HH:mm} UTC"),
             ("Selected Bytes", selectedWatchFileInfo?.Length.ToString(CultureInfo.InvariantCulture) ?? "n/a"),
             ("Portrait Match", portraitMatchSource),
             ("Scan Posture", !watchFolderConfigured ? "configure a roster folder first" : watchFolderExists ? "folder contents surfaced in roster tree" : "folder missing on disk"));
         string runnerCommands =
-            "Open selected runner" + Environment.NewLine +
-            "Save selected runner" + Environment.NewLine +
+            "Open selected dossier" + Environment.NewLine +
+            "Save selected dossier" + Environment.NewLine +
             "Create custom roster directory" + Environment.NewLine +
-            "Move selected runner to directory" + Environment.NewLine +
+            "Move selected dossier to directory" + Environment.NewLine +
             "Rename selected directory" + Environment.NewLine +
             "Undo last roster move" + Environment.NewLine +
-            (selectedRunner?.HasSavedWorkspace == true ? "Open saved runner location" : "Save runner to roster folder");
+            (selectedRunner?.HasSavedWorkspace == true ? "Open saved dossier location" : "Save dossier to roster folder");
         string watchFolderCommands = watchFolderConfigured
             ? watchFolderExists
                 ? "Open roster folder" + Environment.NewLine +
                   "Refresh watched file list" + Environment.NewLine +
-                  "Open selected watched runner" + Environment.NewLine +
+                  "Open selected watched dossier" + Environment.NewLine +
                   (portraitInfo is not null ? "Open matched portrait" : "Open portrait slot")
                 : "Open roster folder" + Environment.NewLine +
                   "Create roster folder" + Environment.NewLine +
                   "Refresh watched file list"
             : "Configure watch folder" + Environment.NewLine +
               "Scan watch folder now" + Environment.NewLine +
-              "Open imported runner";
+              "Open imported dossier";
         string mugshotStatus = portraitCandidate;
         RosterHierarchyState rosterHierarchy = BuildRosterHierarchyState(ordered, watchedFiles, selectedRunner, selectedWatchedFile, alias, name, preferences.RosterHierarchyJson, out string rosterHierarchySource);
         customRosterFolders = BuildCustomRosterFolderPreview(rosterHierarchy);
@@ -3323,15 +3559,15 @@ public sealed class DesktopDialogFactory : IDesktopDialogFactory
         return
         [
             new DesktopDialogField("rosterSectionTabs", "Sections", "Roster" + Environment.NewLine + "Details" + Environment.NewLine + "Background" + Environment.NewLine + "Notes", "Roster", IsReadOnly: true, IsMultiline: true, VisualKind: DesktopDialogFieldVisualKinds.Tabs),
-            new DesktopDialogField("rosterDetailTabs", "Runner Pages", "Description" + Environment.NewLine + "Concept" + Environment.NewLine + "Background" + Environment.NewLine + "Character Notes" + Environment.NewLine + "Game Notes", "Description", IsReadOnly: true, IsMultiline: true, VisualKind: DesktopDialogFieldVisualKinds.Tabs),
-            new DesktopDialogField("rosterOpenCount", "Open Runners", ordered.Length.ToString(), "0", IsReadOnly: true, LayoutSlot: DesktopDialogFieldLayoutSlots.Left),
-            new DesktopDialogField("rosterSavedCount", "Saved Runners", savedCount.ToString(), "0", IsReadOnly: true, LayoutSlot: DesktopDialogFieldLayoutSlots.Left),
+            new DesktopDialogField("rosterDetailTabs", "Dossier Pages", "Description" + Environment.NewLine + "Concept" + Environment.NewLine + "Background" + Environment.NewLine + "Character Notes" + Environment.NewLine + "Game Notes", "Description", IsReadOnly: true, IsMultiline: true, VisualKind: DesktopDialogFieldVisualKinds.Tabs),
+            new DesktopDialogField("rosterOpenCount", "Open Dossiers", ordered.Length.ToString(), "0", IsReadOnly: true, LayoutSlot: DesktopDialogFieldLayoutSlots.Left),
+            new DesktopDialogField("rosterSavedCount", "Saved Dossiers", savedCount.ToString(), "0", IsReadOnly: true, LayoutSlot: DesktopDialogFieldLayoutSlots.Left),
             new DesktopDialogField("rosterWatchedCount", "Watched Files", watchedCount.ToString(), "0", IsReadOnly: true, LayoutSlot: DesktopDialogFieldLayoutSlots.Hidden),
             new DesktopDialogField("rosterRulesetMix", "Ruleset Mix", string.IsNullOrWhiteSpace(rulesetMix) ? "(none)" : rulesetMix, "(none)", IsReadOnly: true, LayoutSlot: DesktopDialogFieldLayoutSlots.Left),
-            new DesktopDialogField("rosterActiveWorkspace", "Active Runner", currentWorkspace?.Value ?? workspace, workspace, IsReadOnly: true, LayoutSlot: DesktopDialogFieldLayoutSlots.Hidden),
-            new DesktopDialogField("rosterOpsLane", "Operator Lane", "open runners + save state + ruleset mix", "open runners + save state + ruleset mix", IsReadOnly: true, LayoutSlot: DesktopDialogFieldLayoutSlots.Hidden),
-            new DesktopDialogField("rosterSelectedRunnerId", "Selected Runner Id", selectedRunner?.Id.Value ?? string.Empty, string.Empty, IsReadOnly: true, LayoutSlot: DesktopDialogFieldLayoutSlots.Hidden),
-            new DesktopDialogField("rosterSelectedRunnerAlias", "Selected Runner Alias", selectedRunner?.Alias ?? alias, alias, IsReadOnly: true, LayoutSlot: DesktopDialogFieldLayoutSlots.Hidden),
+            new DesktopDialogField("rosterActiveWorkspace", "Active Dossier", currentWorkspace?.Value ?? workspace, workspace, IsReadOnly: true, LayoutSlot: DesktopDialogFieldLayoutSlots.Hidden),
+            new DesktopDialogField("rosterOpsLane", "Operator Lane", "open dossiers + save state + ruleset mix", "open dossiers + save state + ruleset mix", IsReadOnly: true, LayoutSlot: DesktopDialogFieldLayoutSlots.Hidden),
+            new DesktopDialogField("rosterSelectedRunnerId", "Selected Dossier Id", selectedRunner?.Id.Value ?? string.Empty, string.Empty, IsReadOnly: true, LayoutSlot: DesktopDialogFieldLayoutSlots.Hidden),
+            new DesktopDialogField("rosterSelectedRunnerAlias", "Selected Dossier Alias", selectedRunner?.Alias ?? alias, alias, IsReadOnly: true, LayoutSlot: DesktopDialogFieldLayoutSlots.Hidden),
             new DesktopDialogField("rosterWatchFolderPath", "Watch Folder Path", rosterPath, rosterPath, IsReadOnly: true, LayoutSlot: DesktopDialogFieldLayoutSlots.Hidden),
             new DesktopDialogField("rosterSelectedWatchFile", "Selected Watch File", selectedWatchedFile ?? string.Empty, string.Empty, IsReadOnly: true, LayoutSlot: DesktopDialogFieldLayoutSlots.Hidden),
             new DesktopDialogField("rosterPortraitPath", "Portrait Path", portraitCandidate, portraitCandidate, IsReadOnly: true, LayoutSlot: DesktopDialogFieldLayoutSlots.Hidden),
@@ -3341,19 +3577,19 @@ public sealed class DesktopDialogFactory : IDesktopDialogFactory
             new DesktopDialogField("rosterFolderName", "Directory Name", string.Empty, "New custom roster directory name or rename label", LayoutSlot: DesktopDialogFieldLayoutSlots.Left),
             new DesktopDialogField("rosterTargetFolder", "Target Directory", string.Empty, "Choose a directory or type a directory id/name for nesting and moves", LayoutSlot: DesktopDialogFieldLayoutSlots.Left, Options: rosterTargetFolderOptions),
             new DesktopDialogField("rosterSourceFolder", "Source Directory", string.Empty, "Choose a custom directory or type a directory id/name for rename, delete, and nesting", LayoutSlot: DesktopDialogFieldLayoutSlots.Left, Options: rosterSourceFolderOptions),
-            new DesktopDialogField("rosterSourceItem", "Source Item", string.Empty, "Dragged runner or watched-file row", LayoutSlot: DesktopDialogFieldLayoutSlots.Hidden),
+            new DesktopDialogField("rosterSourceItem", "Source Item", string.Empty, "Dragged dossier or watched-file row", LayoutSlot: DesktopDialogFieldLayoutSlots.Hidden),
             new DesktopDialogField("rosterCustomFolders", "Custom Directories", customRosterFolders, customRosterFolders, IsReadOnly: true, IsMultiline: true, VisualKind: DesktopDialogFieldVisualKinds.Tree, LayoutSlot: DesktopDialogFieldLayoutSlots.Left),
             new DesktopDialogField("rosterMoveTargets", "Move Targets", rosterMoveTargets, rosterMoveTargets, IsReadOnly: true, IsMultiline: true, VisualKind: DesktopDialogFieldVisualKinds.Grid),
             new DesktopDialogField("rosterDragDropGuide", "Drag / Drop", rosterDragDropGuide, rosterDragDropGuide, IsReadOnly: true, IsMultiline: true, VisualKind: DesktopDialogFieldVisualKinds.List),
             new DesktopDialogField("rosterHierarchyPolicy", "Hierarchy Policy", rosterHierarchyPolicy, rosterHierarchyPolicy, IsReadOnly: true, IsMultiline: true, VisualKind: DesktopDialogFieldVisualKinds.Grid),
             new DesktopDialogField("rosterHierarchyStatus", "Hierarchy Status", rosterHierarchyStatus, rosterHierarchyStatus, IsReadOnly: true, IsMultiline: true, VisualKind: DesktopDialogFieldVisualKinds.Grid),
             new DesktopDialogField("rosterSelectionTrail", "Selection Trail", selectionTrail, selectionTrail, IsReadOnly: true, IsMultiline: true, VisualKind: DesktopDialogFieldVisualKinds.Grid),
-            new DesktopDialogField("rosterMugshot", "Mugshot", mugshotStatus, "Runner Mugshot", IsReadOnly: true, IsMultiline: true, VisualKind: DesktopDialogFieldVisualKinds.Image, LayoutSlot: DesktopDialogFieldLayoutSlots.Right),
-            new DesktopDialogField("rosterSelectedRunner", "Selected Runner", selectedRunnerSummary, selectedRunnerSummary, IsReadOnly: true, IsMultiline: true, VisualKind: DesktopDialogFieldVisualKinds.Grid, LayoutSlot: DesktopDialogFieldLayoutSlots.Right),
+            new DesktopDialogField("rosterMugshot", "Mugshot", mugshotStatus, "Dossier Mugshot", IsReadOnly: true, IsMultiline: true, VisualKind: DesktopDialogFieldVisualKinds.Image, LayoutSlot: DesktopDialogFieldLayoutSlots.Right),
+            new DesktopDialogField("rosterSelectedRunner", "Selected Dossier", selectedRunnerSummary, selectedRunnerSummary, IsReadOnly: true, IsMultiline: true, VisualKind: DesktopDialogFieldVisualKinds.Grid, LayoutSlot: DesktopDialogFieldLayoutSlots.Right),
             new DesktopDialogField("rosterWatchFolderStatus", "Watch Folder", watchFolderStatus, watchFolderStatus, IsReadOnly: true, IsMultiline: true, VisualKind: DesktopDialogFieldVisualKinds.Grid, LayoutSlot: DesktopDialogFieldLayoutSlots.Right),
-            new DesktopDialogField("rosterRunnerCommands", "Runner Commands", runnerCommands, runnerCommands, IsReadOnly: true, IsMultiline: true, VisualKind: DesktopDialogFieldVisualKinds.List, LayoutSlot: DesktopDialogFieldLayoutSlots.Right),
+            new DesktopDialogField("rosterRunnerCommands", "Dossier Commands", runnerCommands, runnerCommands, IsReadOnly: true, IsMultiline: true, VisualKind: DesktopDialogFieldVisualKinds.List, LayoutSlot: DesktopDialogFieldLayoutSlots.Right),
             new DesktopDialogField("rosterWatchFolderCommands", "Watch Folder Commands", watchFolderCommands, watchFolderCommands, IsReadOnly: true, IsMultiline: true, VisualKind: DesktopDialogFieldVisualKinds.List, LayoutSlot: DesktopDialogFieldLayoutSlots.Right),
-            new DesktopDialogField("rosterSelectedRunnerStatus", "Runner Status", selectedRunnerStatus, selectedRunnerStatus, IsReadOnly: true, IsMultiline: true, VisualKind: DesktopDialogFieldVisualKinds.Snippet),
+            new DesktopDialogField("rosterSelectedRunnerStatus", "Dossier Status", selectedRunnerStatus, selectedRunnerStatus, IsReadOnly: true, IsMultiline: true, VisualKind: DesktopDialogFieldVisualKinds.Snippet),
             new DesktopDialogField("rosterSelectedRunnerBackground", "Background / Concept", selectedRunnerBackground, selectedRunnerBackground, IsReadOnly: true, IsMultiline: true, VisualKind: DesktopDialogFieldVisualKinds.Snippet),
             new DesktopDialogField("rosterSelectedRunnerNotes", "Bio / Concept / Notes", selectedRunnerNotes, selectedRunnerNotes, IsReadOnly: true, IsMultiline: true, VisualKind: DesktopDialogFieldVisualKinds.Snippet),
             new DesktopDialogField("rosterEntries", "Roster Entries", rosterEntries, rosterEntries, IsReadOnly: true, IsMultiline: true, VisualKind: DesktopDialogFieldVisualKinds.List)
@@ -3399,7 +3635,7 @@ public sealed class DesktopDialogFactory : IDesktopDialogFactory
                         string candidate = Path.Combine(watchedDirectory, $"{watchedStem}{extension}");
                         if (File.Exists(candidate))
                         {
-                            return (candidate, "loaded from watched runner sibling", "watched runner sibling");
+                            return (candidate, "loaded from watched dossier sibling", "watched dossier sibling");
                         }
                     }
                 }
@@ -3423,7 +3659,7 @@ public sealed class DesktopDialogFactory : IDesktopDialogFactory
             string watchedStem = Path.GetFileNameWithoutExtension(selectedWatchedFile);
             if (!string.IsNullOrWhiteSpace(watchedStem))
             {
-                return (Path.Combine(watchedDirectory, $"{watchedStem}.png"), string.Empty, "watched runner sibling");
+                return (Path.Combine(watchedDirectory, $"{watchedStem}.png"), string.Empty, "watched dossier sibling");
             }
         }
 
@@ -5450,9 +5686,9 @@ public sealed class DesktopDialogFactory : IDesktopDialogFactory
             new DesktopDialogField("uiDeleteNeighborList", "Current List", "Armor Vest" + Environment.NewLine + "> Armor Jacket" + Environment.NewLine + "Actioneer Business Clothes", "Armor Vest", IsReadOnly: true, IsMultiline: true, VisualKind: DesktopDialogFieldVisualKinds.List, LayoutSlot: DesktopDialogFieldLayoutSlots.Left),
             new DesktopDialogField("uiDeleteTarget", "Selected Item", "Armor Jacket", "Armor Jacket", IsReadOnly: true),
             new DesktopDialogField("uiDeleteSummary", "Details", BuildGridValue(("Category", "Armor"), ("Cost", "¥1000"), ("Source", "Core Rulebook p. 437"), ("Encumbrance", "none")), "Category | Armor", IsReadOnly: true, IsMultiline: true, VisualKind: DesktopDialogFieldVisualKinds.Grid, LayoutSlot: DesktopDialogFieldLayoutSlots.Right),
-            new DesktopDialogField("uiDeleteImpact", "Impact", BuildGridValue(("Removal Scope", "runner inventory only"), ("Armor Totals", "recalculate after remove"), ("Undo", "re-add from gear selector"), ("Dossier", "inventory tab stays active")), "Removal Scope | runner inventory only", IsReadOnly: true, IsMultiline: true, VisualKind: DesktopDialogFieldVisualKinds.Grid, LayoutSlot: DesktopDialogFieldLayoutSlots.Right),
+            new DesktopDialogField("uiDeleteImpact", "Impact", BuildGridValue(("Removal Scope", "dossier inventory only"), ("Armor Totals", "recalculate after remove"), ("Undo", "re-add from gear selector"), ("Dossier", "inventory tab stays active")), "Removal Scope | dossier inventory only", IsReadOnly: true, IsMultiline: true, VisualKind: DesktopDialogFieldVisualKinds.Grid, LayoutSlot: DesktopDialogFieldLayoutSlots.Right),
             new DesktopDialogField("uiDeleteRecoveryCommands", "Recovery", "Return to gear tab" + Environment.NewLine + "Re-open Add Gear" + Environment.NewLine + "Armor totals and mods", "Return to gear tab", IsReadOnly: true, IsMultiline: true, VisualKind: DesktopDialogFieldVisualKinds.List, LayoutSlot: DesktopDialogFieldLayoutSlots.Right),
-            new DesktopDialogField("uiDeleteNotes", "Notes", "The selected item will be removed from the runner inventory while the current gear list remains visible.", "The selected item will be removed from the runner inventory while the current gear list remains visible.", IsReadOnly: true, IsMultiline: true, VisualKind: DesktopDialogFieldVisualKinds.Snippet)
+            new DesktopDialogField("uiDeleteNotes", "Notes", "The selected item will be removed from the active dossier inventory while the current gear list remains visible.", "The selected item will be removed from the active dossier inventory while the current gear list remains visible.", IsReadOnly: true, IsMultiline: true, VisualKind: DesktopDialogFieldVisualKinds.Snippet)
         ];
     }
 
@@ -5467,7 +5703,7 @@ public sealed class DesktopDialogFactory : IDesktopDialogFactory
             new DesktopDialogField("uiDeleteSummary", "Details", BuildGridValue(("Category", "Headware"), ("Essence", "0.40"), ("Capacity", "16"), ("Source", "Core Rulebook p. 455")), "Category | Headware", IsReadOnly: true, IsMultiline: true, VisualKind: DesktopDialogFieldVisualKinds.Grid, LayoutSlot: DesktopDialogFieldLayoutSlots.Right),
             new DesktopDialogField("uiDeleteImpact", "Impact", BuildGridValue(("Removal Scope", "installed ware only"), ("Essence Refund", "none"), ("Undo", "re-add from selector"), ("Dossier", "cyberware tab stays active")), "Removal Scope | installed ware only", IsReadOnly: true, IsMultiline: true, VisualKind: DesktopDialogFieldVisualKinds.Grid, LayoutSlot: DesktopDialogFieldLayoutSlots.Right),
             new DesktopDialogField("uiDeleteRecoveryCommands", "Recovery", "Return to cyberware tab" + Environment.NewLine + "Re-open Add Cyberware" + Environment.NewLine + "Essence and capacity totals", "Return to cyberware tab", IsReadOnly: true, IsMultiline: true, VisualKind: DesktopDialogFieldVisualKinds.List, LayoutSlot: DesktopDialogFieldLayoutSlots.Right),
-            new DesktopDialogField("uiDeleteNotes", "Notes", "The selected implant will be removed from the runner while essence and capacity stay explicit in the same utility pane.", "The selected implant will be removed from the runner while essence and capacity stay explicit in the same utility pane.", IsReadOnly: true, IsMultiline: true, VisualKind: DesktopDialogFieldVisualKinds.Snippet)
+            new DesktopDialogField("uiDeleteNotes", "Notes", "The selected implant will be removed from the active dossier while essence and capacity stay explicit in the same utility pane.", "The selected implant will be removed from the active dossier while essence and capacity stay explicit in the same utility pane.", IsReadOnly: true, IsMultiline: true, VisualKind: DesktopDialogFieldVisualKinds.Snippet)
         ];
     }
 
@@ -5525,7 +5761,7 @@ public sealed class DesktopDialogFactory : IDesktopDialogFactory
             new DesktopDialogField("uiDeleteNeighborList", "Current Ledger", "Cram" + Environment.NewLine + "> Jazz" + Environment.NewLine + "Kamikaze", "Cram", IsReadOnly: true, IsMultiline: true, VisualKind: DesktopDialogFieldVisualKinds.List, LayoutSlot: DesktopDialogFieldLayoutSlots.Left),
             new DesktopDialogField("uiDeleteTarget", "Selected Item", "Jazz", "Jazz", IsReadOnly: true),
             new DesktopDialogField("uiDeleteSummary", "Details", BuildGridValue(("Quantity", "1"), ("Speed", "1 Combat Turn"), ("Crash", "Stun + fatigue"), ("Source", "Core Rulebook p. 411")), "Quantity | 1", IsReadOnly: true, IsMultiline: true, VisualKind: DesktopDialogFieldVisualKinds.Grid, LayoutSlot: DesktopDialogFieldLayoutSlots.Right),
-            new DesktopDialogField("uiDeleteImpact", "Impact", BuildGridValue(("Removal Scope", "runner ledger only"), ("Crash Tracking", "check after remove"), ("Undo", "re-add from drug selector"), ("Dossier", "drugs tab stays active")), "Removal Scope | runner ledger only", IsReadOnly: true, IsMultiline: true, VisualKind: DesktopDialogFieldVisualKinds.Grid, LayoutSlot: DesktopDialogFieldLayoutSlots.Right),
+            new DesktopDialogField("uiDeleteImpact", "Impact", BuildGridValue(("Removal Scope", "dossier ledger only"), ("Crash Tracking", "check after remove"), ("Undo", "re-add from drug selector"), ("Dossier", "drugs tab stays active")), "Removal Scope | dossier ledger only", IsReadOnly: true, IsMultiline: true, VisualKind: DesktopDialogFieldVisualKinds.Grid, LayoutSlot: DesktopDialogFieldLayoutSlots.Right),
             new DesktopDialogField("uiDeleteRecoveryCommands", "Recovery", "Return to drugs tab" + Environment.NewLine + "Re-open Add Drug" + Environment.NewLine + "Crash and addiction notes", "Return to drugs tab", IsReadOnly: true, IsMultiline: true, VisualKind: DesktopDialogFieldVisualKinds.List, LayoutSlot: DesktopDialogFieldLayoutSlots.Right),
             new DesktopDialogField("uiDeleteNotes", "Notes", "The selected drug entry will be removed while quantity, crash state, and nearby doses remain visible.", "The selected drug entry will be removed while quantity, crash state, and nearby doses remain visible.", IsReadOnly: true, IsMultiline: true, VisualKind: DesktopDialogFieldVisualKinds.Snippet)
         ];
@@ -5874,7 +6110,7 @@ public sealed class DesktopDialogFactory : IDesktopDialogFactory
             new DesktopDialogField("uiSourceBook", "Book", "Core Rulebook", "Core Rulebook", IsReadOnly: true),
             new DesktopDialogField("uiSourcePage", "Page", "424", "424", IsReadOnly: true),
             new DesktopDialogField("uiSourceDetails", "Source Details", sourceDetails, sourceDetails, IsReadOnly: true, IsMultiline: true, VisualKind: DesktopDialogFieldVisualKinds.Grid, LayoutSlot: DesktopDialogFieldLayoutSlots.Right),
-            new DesktopDialogField("uiSourceNotes", "Notes", "Source references stay compact and copyable without pushing the runner view off screen.", "Source references stay compact and copyable without pushing the runner view off screen.", IsReadOnly: true, IsMultiline: true, VisualKind: DesktopDialogFieldVisualKinds.Snippet)
+            new DesktopDialogField("uiSourceNotes", "Notes", "Source references stay compact and copyable without pushing the dossier view off screen.", "Source references stay compact and copyable without pushing the dossier view off screen.", IsReadOnly: true, IsMultiline: true, VisualKind: DesktopDialogFieldVisualKinds.Snippet)
         ];
     }
 
@@ -6439,7 +6675,7 @@ public sealed class DesktopDialogFactory : IDesktopDialogFactory
             "open_notes" => new DesktopDialogState(
                 "dialog.ui.open_notes",
                 "Edit Notes",
-                "Edit runner notes in a compact text utility pane.",
+                "Edit dossier notes in a compact text utility pane.",
                 BuildNotesEditorFields(preferences.CharacterNotes),
                 [
                     new DesktopDialogAction("save", "Save", true),
@@ -6497,7 +6733,7 @@ public sealed class DesktopDialogFactory : IDesktopDialogFactory
             "runner_benchmark" => new DesktopDialogState(
                 "dialog.ui.runner_benchmark",
                 "Runner Intelligence",
-                "Compare this runner against privacy-safe cohorts and local roster benchmarks before changing the sheet.",
+                "Compare this dossier against privacy-safe cohorts and local roster benchmarks before changing the sheet.",
                 [
                     BuildUtilitySectionsField("uiRunnerBenchmarkSections", "Edge", "Exposure", "Delta"),
                     new DesktopDialogField("uiRunnerBenchmarkInitiative", "Initiative Percentile", "Top 3% of comparable runners", "Top 3%", IsReadOnly: true),
@@ -6508,7 +6744,7 @@ public sealed class DesktopDialogFactory : IDesktopDialogFactory
             "runner_what_if" => new DesktopDialogState(
                 "dialog.ui.runner_what_if",
                 "Runner Intelligence What-If",
-                "Model spells, drugs, gear, and sustained effects without mutating the runner until the user applies a real workflow.",
+                "Model spells, drugs, gear, and sustained effects without mutating the active dossier until the user applies a real workflow.",
                 [
                     BuildUtilitySectionsField("uiRunnerWhatIfSections", "Spell", "Inventory", "Risk"),
                     new DesktopDialogField("uiRunnerWhatIfSpell", "Spell", "Increase Initiative Force 6", "Increase Initiative Force 6"),
@@ -6519,12 +6755,12 @@ public sealed class DesktopDialogFactory : IDesktopDialogFactory
             "runner_cohort_privacy" => new DesktopDialogState(
                 "dialog.ui.runner_cohort_privacy",
                 "Runner Intelligence Privacy",
-                "Opt-in anonymized benchmark cohorts stay separate from private character, owner, dossier id, XML, notes, and dossier content.",
+                "Opt-in anonymized benchmark cohorts stay separate from private dossier, owner, dossier id, XML, notes, and dossier content.",
                 [
                     BuildUtilitySectionsField("uiRunnerPrivacySections", "Hosted", "Self-Host", "Excluded"),
                     new DesktopDialogField("uiRunnerPrivacyHosted", "Hosted Cohorts", "Opt-in anonymized benchmark cohorts", "Opt-in only", IsReadOnly: true),
                     new DesktopDialogField("uiRunnerPrivacyDocker", "Docker Self-Host", "Local roster and campaign benchmark pool only by default", "Local-only default", IsReadOnly: true),
-                    new DesktopDialogField("uiRunnerPrivacyExcluded", "Excluded Data", "Runner names, aliases, owner identifiers, dossier identifiers, files, XML, notes, and dossier text", "Private dossier data excluded", IsReadOnly: true)
+                    new DesktopDialogField("uiRunnerPrivacyExcluded", "Excluded Data", "Dossier names, aliases, owner identifiers, dossier identifiers, files, XML, notes, and dossier text", "Private dossier data excluded", IsReadOnly: true)
                 ],
                 [new DesktopDialogAction("close", "Close", true)]),
             "gear_mount" => new DesktopDialogState(

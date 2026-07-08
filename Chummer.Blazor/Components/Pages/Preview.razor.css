@@ -4656,6 +4656,14 @@
     background: var(--ui-kit-panel-surface);
 }
 
+.browser-preview-shell ::deep .dialog-origin-link-anchor {
+    color: var(--ui-kit-ink-strong);
+}
+
+.browser-preview-shell ::deep .dialog-origin-link-code {
+    color: var(--ui-kit-ink);
+}
+
 .browser-preview-shell ::deep .dialog-origin-preview--book {
     background: var(--ui-kit-shell-surface-emphasis);
 }
@@ -6174,7 +6182,7 @@
 }
 
 .browser-preview-shell::before {
-    content: "File   Edit   View   Runner   Tools   Help\A New runner  Open Runner  Save  Print  Export  Character Roster  Build Lab";
+    content: "File   Edit   View   Dossier   Tools   Help\A New runner  Open Dossier  Save  Print  Export  Character Roster  Build Lab";
     white-space: pre-wrap;
     line-height: 1.45;
     margin: 0 0 .3rem;
@@ -6347,7 +6355,8 @@
     background: linear-gradient(180deg, #f6f2ea 0, #d8d0c3 100%);
 }
 
-.classic-chummer-menu a {
+.classic-chummer-menu a,
+.classic-menu-root-button {
     border: 0;
     background: transparent;
     box-shadow: none;
@@ -6356,10 +6365,15 @@
     color: #1f1d1a;
     font-size: .78rem;
     font-weight: 500;
+    font-family: inherit;
+    text-align: left;
 }
 
 .classic-chummer-menu a:hover,
-.classic-chummer-menu a:focus-visible {
+.classic-chummer-menu a:focus-visible,
+.classic-menu-root-button:hover,
+.classic-menu-root-button:focus-visible,
+.classic-menu-item.is-open > .classic-menu-root-button {
     background: #315f7c;
     color: #fff;
     outline: 0;
@@ -7061,8 +7075,16 @@
     position: relative;
 }
 
-.classic-menu-item > a {
+.classic-menu-item > a,
+.classic-menu-item > button {
     display: inline-flex;
+}
+
+.classic-menu-root-button {
+    appearance: none;
+    align-items: center;
+    cursor: pointer;
+    text-decoration: none;
 }
 
 .classic-menu-flyout {
@@ -7079,7 +7101,8 @@
 }
 
 .classic-menu-item:hover .classic-menu-flyout,
-.classic-menu-item:focus-within .classic-menu-flyout {
+.classic-menu-item:focus-within .classic-menu-flyout,
+.classic-menu-item.is-open .classic-menu-flyout {
     display: grid;
 }
 
@@ -9171,6 +9194,36 @@
     box-shadow:
         inset 0 1px 0 rgba(255, 255, 255, .055),
         0 .8rem 2rem rgba(0, 0, 0, .24);
+}
+
+.browser-shared-shell-result {
+    display: grid;
+    gap: .25rem;
+    padding: .8rem .95rem;
+    border: 1px solid rgba(143, 240, 188, .34);
+    border-radius: .55rem;
+    background:
+        linear-gradient(135deg, rgba(143, 240, 188, .12), rgba(118, 174, 202, .08)),
+        rgba(7, 10, 14, .82);
+    box-shadow:
+        inset 0 1px 0 rgba(255, 255, 255, .045),
+        0 .8rem 2rem rgba(0, 0, 0, .2);
+}
+
+.browser-shared-shell-result strong {
+    color: #fff8e8;
+    font-size: .96rem;
+    letter-spacing: .01em;
+}
+
+.browser-shared-shell-result--app {
+    margin: .85rem 0 0;
+}
+
+.browser-shared-shell-result--preview,
+.browser-shared-shell-result--workbench {
+    width: min(1240px, calc(100% - 1rem));
+    margin: 0 auto .85rem;
 }
 
 .browser-app-origin-copy {

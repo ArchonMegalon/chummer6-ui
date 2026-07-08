@@ -83,6 +83,55 @@ public sealed class DesktopShellDownloadDispatchTests
     }
 
     [TestMethod]
+    public void Download_notice_renders_retry_button_and_redispatches_pending_receipt()
+    {
+        using var context = new BunitContext();
+        context.JSInterop.Mode = JSRuntimeMode.Loose;
+
+        FakeCharacterOverviewPresenter presenter = new();
+        presenter.Publish(CreateOverviewState(
+            receipt: CreateReceipt("ws-1"),
+            version: 1,
+            notice: "Download prepared: ws-1.chum5 (12 bytes)."));
+        TrackingShellPresenter shellPresenter = new(ShellState.Empty);
+        RegisterDesktopShellServices(context, presenter, shellPresenter);
+
+        IRenderedComponent<DesktopShell> cut = context.Render<DesktopShell>();
+
+        cut.WaitForAssertion(() => Assert.AreEqual(1, DownloadInvocationCount(context)));
+        Assert.AreEqual("download", cut.Find("[data-shell-notice]").GetAttribute("data-shell-notice-kind"));
+        Assert.AreEqual("ws-1.chum5", cut.Find("[data-shell-notice-file='download']").TextContent);
+
+        cut.Find("[data-shell-notice-action='download']").Click();
+
+        cut.WaitForAssertion(() => Assert.AreEqual(2, DownloadInvocationCount(context)));
+    }
+
+    [TestMethod]
+    public void Download_result_panel_renders_retry_button_and_redispatches_pending_receipt()
+    {
+        using var context = new BunitContext();
+        context.JSInterop.Mode = JSRuntimeMode.Loose;
+
+        FakeCharacterOverviewPresenter presenter = new();
+        presenter.Publish(CreateOverviewState(
+            receipt: CreateReceipt("ws-1"),
+            version: 1,
+            activeSectionJson: "{\"result\":1}"));
+        TrackingShellPresenter shellPresenter = new(ShellState.Empty);
+        RegisterDesktopShellServices(context, presenter, shellPresenter);
+
+        IRenderedComponent<DesktopShell> cut = context.Render<DesktopShell>();
+
+        cut.WaitForAssertion(() => Assert.AreEqual(1, DownloadInvocationCount(context)));
+        Assert.AreEqual("ws-1.chum5", cut.Find("[data-result-file='download']").TextContent);
+
+        cut.Find("[data-result-action='download']").Click();
+
+        cut.WaitForAssertion(() => Assert.AreEqual(2, DownloadInvocationCount(context)));
+    }
+
+    [TestMethod]
     public void OnAfterRenderAsync_dispatches_pending_export_once_per_version()
     {
         using var context = new BunitContext();
@@ -106,6 +155,55 @@ public sealed class DesktopShellDownloadDispatchTests
     }
 
     [TestMethod]
+    public void Export_notice_renders_retry_button_and_redispatches_pending_receipt()
+    {
+        using var context = new BunitContext();
+        context.JSInterop.Mode = JSRuntimeMode.Loose;
+
+        FakeCharacterOverviewPresenter presenter = new();
+        presenter.Publish(CreateOverviewState(
+            exportReceipt: CreateExportReceipt("ws-1"),
+            exportVersion: 1,
+            notice: "Portable export ready: ws-1-export.json (16 bytes). Portable receipt."));
+        TrackingShellPresenter shellPresenter = new(ShellState.Empty);
+        RegisterDesktopShellServices(context, presenter, shellPresenter);
+
+        IRenderedComponent<DesktopShell> cut = context.Render<DesktopShell>();
+
+        cut.WaitForAssertion(() => Assert.AreEqual(1, ExportInvocationCount(context)));
+        Assert.AreEqual("export", cut.Find("[data-shell-notice]").GetAttribute("data-shell-notice-kind"));
+        Assert.AreEqual("ws-1-export.json", cut.Find("[data-shell-notice-file='export']").TextContent);
+
+        cut.Find("[data-shell-notice-action='export']").Click();
+
+        cut.WaitForAssertion(() => Assert.AreEqual(2, ExportInvocationCount(context)));
+    }
+
+    [TestMethod]
+    public void Export_result_panel_renders_retry_button_and_redispatches_pending_receipt()
+    {
+        using var context = new BunitContext();
+        context.JSInterop.Mode = JSRuntimeMode.Loose;
+
+        FakeCharacterOverviewPresenter presenter = new();
+        presenter.Publish(CreateOverviewState(
+            exportReceipt: CreateExportReceipt("ws-1"),
+            exportVersion: 1,
+            activeSectionJson: "{\"result\":1}"));
+        TrackingShellPresenter shellPresenter = new(ShellState.Empty);
+        RegisterDesktopShellServices(context, presenter, shellPresenter);
+
+        IRenderedComponent<DesktopShell> cut = context.Render<DesktopShell>();
+
+        cut.WaitForAssertion(() => Assert.AreEqual(1, ExportInvocationCount(context)));
+        Assert.AreEqual("ws-1-export.json", cut.Find("[data-result-file='export']").TextContent);
+
+        cut.Find("[data-result-action='export']").Click();
+
+        cut.WaitForAssertion(() => Assert.AreEqual(2, ExportInvocationCount(context)));
+    }
+
+    [TestMethod]
     public void OnAfterRenderAsync_dispatches_pending_print_once_per_version()
     {
         using var context = new BunitContext();
@@ -124,6 +222,55 @@ public sealed class DesktopShellDownloadDispatchTests
         Assert.AreEqual("ws-1-print.html", invocation.Arguments[0]?.ToString());
         Assert.AreEqual("text/html", invocation.Arguments[2]?.ToString());
         Assert.AreEqual("Runner", invocation.Arguments[3]?.ToString());
+    }
+
+    [TestMethod]
+    public void Print_notice_renders_retry_button_and_redispatches_pending_receipt()
+    {
+        using var context = new BunitContext();
+        context.JSInterop.Mode = JSRuntimeMode.Loose;
+
+        FakeCharacterOverviewPresenter presenter = new();
+        presenter.Publish(CreateOverviewState(
+            printReceipt: CreatePrintReceipt("ws-1"),
+            printVersion: 1,
+            notice: "Print preview prepared: Runner."));
+        TrackingShellPresenter shellPresenter = new(ShellState.Empty);
+        RegisterDesktopShellServices(context, presenter, shellPresenter);
+
+        IRenderedComponent<DesktopShell> cut = context.Render<DesktopShell>();
+
+        cut.WaitForAssertion(() => Assert.AreEqual(1, PrintInvocationCount(context)));
+        Assert.AreEqual("print", cut.Find("[data-shell-notice]").GetAttribute("data-shell-notice-kind"));
+        Assert.AreEqual("ws-1-print.html", cut.Find("[data-shell-notice-file='print']").TextContent);
+
+        cut.Find("[data-shell-notice-action='print']").Click();
+
+        cut.WaitForAssertion(() => Assert.AreEqual(2, PrintInvocationCount(context)));
+    }
+
+    [TestMethod]
+    public void Print_result_panel_renders_retry_button_and_redispatches_pending_receipt()
+    {
+        using var context = new BunitContext();
+        context.JSInterop.Mode = JSRuntimeMode.Loose;
+
+        FakeCharacterOverviewPresenter presenter = new();
+        presenter.Publish(CreateOverviewState(
+            printReceipt: CreatePrintReceipt("ws-1"),
+            printVersion: 1,
+            activeSectionJson: "{\"result\":1}"));
+        TrackingShellPresenter shellPresenter = new(ShellState.Empty);
+        RegisterDesktopShellServices(context, presenter, shellPresenter);
+
+        IRenderedComponent<DesktopShell> cut = context.Render<DesktopShell>();
+
+        cut.WaitForAssertion(() => Assert.AreEqual(1, PrintInvocationCount(context)));
+        Assert.AreEqual("ws-1-print.html", cut.Find("[data-result-file='print']").TextContent);
+
+        cut.Find("[data-result-action='print']").Click();
+
+        cut.WaitForAssertion(() => Assert.AreEqual(2, PrintInvocationCount(context)));
     }
 
     private static int DownloadInvocationCount(BunitContext context)
@@ -150,10 +297,14 @@ public sealed class DesktopShellDownloadDispatchTests
         WorkspaceExportReceipt? exportReceipt = null,
         long exportVersion = 0,
         WorkspacePrintReceipt? printReceipt = null,
-        long printVersion = 0)
+        long printVersion = 0,
+        string? notice = null,
+        string? activeSectionJson = null)
     {
         return CharacterOverviewState.Empty with
         {
+            ActiveSectionJson = activeSectionJson,
+            Notice = notice,
             PendingDownload = receipt,
             PendingDownloadVersion = version,
             PendingExport = exportReceipt,

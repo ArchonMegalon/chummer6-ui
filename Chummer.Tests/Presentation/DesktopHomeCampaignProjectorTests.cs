@@ -24,7 +24,7 @@ public sealed class DesktopHomeCampaignProjectorTests
 
         CollectionAssert.Contains((System.Collections.ICollection)projection.ReadinessHighlights, "Campaign adoption: Campaign adoption stays attached to this desktop.");
         CollectionAssert.Contains((System.Collections.ICollection)projection.ReadinessHighlights, "Adoption details: Adoption record adopt-001 keeps the remaining cleanup trail visible.");
-        CollectionAssert.Contains((System.Collections.ICollection)projection.ReadinessHighlights, "Goal pins: Ghostwire upgrade (47k / 149k nuyen); Apex fixer follow-up");
+        CollectionAssert.Contains((System.Collections.ICollection)projection.ReadinessHighlights, "Goal pins: Ghostwire upgrade (47k / 149k nuyen); Apex fixer Next step");
         CollectionAssert.Contains((System.Collections.ICollection)projection.ReadinessHighlights, "ResolutionReport closeout: ResolutionReport closeout is approved and ready to publish the player-safe recap.");
         CollectionAssert.Contains((System.Collections.ICollection)projection.ReadinessHighlights, "BLACK LEDGER consequence: BLACK LEDGER consequence keeps the consequence record and recap publication on the same reviewed chain.");
         CollectionAssert.Contains((System.Collections.ICollection)projection.ReadinessHighlights, "BLACK LEDGER details: BLACK LEDGER details record binds adoption, resolution, and recap details together.");
@@ -64,7 +64,7 @@ public sealed class DesktopHomeCampaignProjectorTests
         StringAssert.Contains(highlights, "Campaign adoption: Campaign adoption stays attached to this desktop.");
         StringAssert.Contains(highlights, "Adoption confidence: playable_with_review because one aftermath note still needs approval.");
         StringAssert.Contains(highlights, "Adoption details: Adoption record adopt-001 keeps the remaining cleanup trail visible.");
-        StringAssert.Contains(highlights, "Goal pins: Ghostwire upgrade (47k / 149k nuyen); Apex fixer follow-up");
+        StringAssert.Contains(highlights, "Goal pins: Ghostwire upgrade (47k / 149k nuyen); Apex fixer Next step");
         StringAssert.Contains(highlights, "ResolutionReport closeout: ResolutionReport closeout is approved and ready to publish the player-safe recap.");
         StringAssert.Contains(highlights, "BLACK LEDGER consequence: BLACK LEDGER consequence keeps the consequence record and recap publication on the same reviewed chain.");
         StringAssert.Contains(highlights, "BLACK LEDGER details: BLACK LEDGER details record binds adoption, resolution, and recap details together.");
