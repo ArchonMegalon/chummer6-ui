@@ -27,6 +27,20 @@ SR6_PARITY_SCRIPT = (
     / "milestones"
     / "sr6-desktop-workflow-parity-check.sh"
 )
+SR4_PARITY_SCRIPT = (
+    REPO_ROOT
+    / "scripts"
+    / "ai"
+    / "milestones"
+    / "sr4-desktop-workflow-parity-check.sh"
+)
+CHUMMER5A_PARITY_SCRIPT = (
+    REPO_ROOT
+    / "scripts"
+    / "ai"
+    / "milestones"
+    / "chummer5a-desktop-workflow-parity-check.sh"
+)
 SPEC = importlib.util.spec_from_file_location("chummer5a_parity_tester", MODULE_PATH)
 if SPEC is None or SPEC.loader is None:
     raise ImportError(f"Unable to load module from {MODULE_PATH}")
@@ -88,6 +102,22 @@ def test_sr6_workflow_parity_wrapper_chains_execution_materializers_behind_singl
     assert 'bash "$repo_root/scripts/ai/milestones/materialize-sr-workflow-family-execution-receipts.sh" sr6 >/dev/null || execution_exit=$?' in text
     assert 'bash "$repo_root/scripts/ai/milestones/materialize-sr-workflow-family-verification-receipts.sh" sr6 >/dev/null || verification_exit=$?' in text
     assert 'bash "$repo_root/scripts/ai/milestones/materialize-sr-workflow-family-receipts.sh" sr6 >/dev/null || materializer_exit=$?' in text
+
+
+def test_sr4_workflow_parity_wrapper_uses_direct_mtp_runner_after_explicit_build() -> None:
+    text = SR4_PARITY_SCRIPT.read_text(encoding="utf-8")
+
+    assert 'dotnet build Chummer.Tests/Chummer.Tests.csproj --no-restore >/dev/null || workflow_gate_build_exit=$?' in text
+    assert '"$repo_root/Chummer.Tests/bin/Debug/net10.0/Chummer.Tests" --filter "WorkflowParityGateTests" --minimum-expected-tests 1 --output Normal >/dev/null || workflow_gate_exit=$?' in text
+    assert 'dotnet test --project Chummer.Tests/Chummer.Tests.csproj' not in text
+
+
+def test_chummer5a_workflow_parity_wrapper_uses_direct_mtp_runner_after_explicit_build() -> None:
+    text = CHUMMER5A_PARITY_SCRIPT.read_text(encoding="utf-8")
+
+    assert 'dotnet build Chummer.Tests/Chummer.Tests.csproj --no-restore -v minimal >/dev/null || workflow_gate_build_exit=$?' in text
+    assert '"$repo_root/Chummer.Tests/bin/Debug/net10.0/Chummer.Tests" --filter "WorkflowParityGateTests" --minimum-expected-tests 1 --output Normal >/dev/null || workflow_gate_exit=$?' in text
+    assert 'dotnet test --project Chummer.Tests/Chummer.Tests.csproj' not in text
 
 
 def write_json(path: Path, payload: dict) -> None:
