@@ -4027,6 +4027,15 @@ public class MigrationComplianceTests
         StringAssert.Contains(runbookScriptText, "CHUMMER_FORCE_NIGHTLY_PUBLISH");
         StringAssert.Contains(runbookScriptText, "Europe/Vienna");
         StringAssert.Contains(runbookScriptText, "08:00 Europe/Vienna");
+        StringAssert.Contains(runbookScriptText, "array_count()");
+        StringAssert.Contains(runbookScriptText, "focused_test_support_arg_count=\"$(array_count focused_test_support_args)\"");
+        StringAssert.Contains(runbookScriptText, "focused_test_prerequisite_project_count=\"$(array_count focused_test_prerequisite_projects)\"");
+        Assert.IsFalse(
+            runbookScriptText.Contains("${#focused_test_support_args[@]}", StringComparison.Ordinal),
+            "Focused presentation runbook mode should avoid bash3-unsafe raw support-arg array length expansions.");
+        Assert.IsFalse(
+            runbookScriptText.Contains("${#focused_test_prerequisite_projects[@]}", StringComparison.Ordinal),
+            "Focused presentation runbook mode should avoid bash3-unsafe raw prerequisite-project array length expansions.");
         StringAssert.Contains(nightlyPublisherText, "already published today");
         StringAssert.Contains(manifestScriptText, "kind = str(artifact.get(\"kind\") or \"\").strip().lower()");
         StringAssert.Contains(manifestScriptText, "if kind not in {\"installer\", \"dmg\", \"pkg\", \"msix\"}:");

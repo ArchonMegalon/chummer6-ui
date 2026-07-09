@@ -802,6 +802,20 @@ def test_runbook_release_shell_scripts_use_alias_safe_repo_root() -> None:
         assert_release_script_uses_alias_safe_repo_root(script_path)
 
 
+def test_runbook_focused_presentation_mode_uses_nounset_safe_array_count() -> None:
+    runbook = (REPO_ROOT / "scripts" / "runbook.sh").read_text(encoding="utf-8")
+
+    for snippet in ARRAY_COUNT_HELPER_SNIPPETS:
+        assert snippet in runbook, f"missing nounset-safe array_count helper snippet in runbook.sh: {snippet}"
+
+    assert 'focused_test_support_arg_count="$(array_count focused_test_support_args)"' in runbook
+    assert 'if (( focused_test_support_arg_count > 0 )); then' in runbook
+    assert 'focused_test_prerequisite_project_count="$(array_count focused_test_prerequisite_projects)"' in runbook
+    assert 'if (( focused_test_prerequisite_project_count > 0 )); then' in runbook
+    assert '${#focused_test_support_args[@]}' not in runbook
+    assert '${#focused_test_prerequisite_projects[@]}' not in runbook
+
+
 def test_runbook_and_host_prereq_scripts_validate_nuget_endpoints_before_python_probes() -> None:
     prereqs = (REPO_ROOT / "scripts" / "check-host-gate-prereqs.sh").read_text(encoding="utf-8")
     runbook = (REPO_ROOT / "scripts" / "runbook.sh").read_text(encoding="utf-8")

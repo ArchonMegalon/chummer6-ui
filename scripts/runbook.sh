@@ -101,6 +101,31 @@ join_pipe_delimited() {
   printf '%s' "$*"
 }
 
+array_count() {
+  local array_name="${1:-}"
+  [[ -n "$array_name" ]] || {
+    printf '0\n'
+    return 0
+  }
+
+  local restore_nounset=0
+  case "$-" in
+    *u*)
+      restore_nounset=1
+      set +u
+      ;;
+  esac
+
+  eval "set -- \"\${${array_name}[@]}\""
+  local count="$#"
+
+  if (( restore_nounset == 1 )); then
+    set -u
+  fi
+
+  printf '%s\n' "$count"
+}
+
 validate_host_port_endpoint() {
   local value="$1"
   local label="$2"
@@ -380,7 +405,8 @@ if [[ "$RUNBOOK_MODE" == "focused-presentation-tests" ]]; then
     if (( $# > 5 )); then
       focused_test_support_args+=("${@:6}")
     fi
-    if (( ${#focused_test_support_args[@]} > 0 )); then
+    focused_test_support_arg_count="$(array_count focused_test_support_args)"
+    if (( focused_test_support_arg_count > 0 )); then
       FOCUSED_TEST_SUPPORT_FILES="$(join_pipe_delimited "${focused_test_support_args[@]}")"
     fi
   fi
@@ -391,7 +417,8 @@ if [[ "$RUNBOOK_MODE" == "focused-presentation-tests" ]]; then
   fi
 
   : > "$FOCUSED_TEST_LOG_FILE"
-  if (( ${#focused_test_prerequisite_projects[@]} > 0 )); then
+  focused_test_prerequisite_project_count="$(array_count focused_test_prerequisite_projects)"
+  if (( focused_test_prerequisite_project_count > 0 )); then
     for prerequisite_project in "${focused_test_prerequisite_projects[@]}"; do
       if [[ -z "$prerequisite_project" ]]; then
         continue
