@@ -139,9 +139,16 @@ public sealed class DesktopExecutableGateComplianceTests
 
         StringAssert.Contains(verifyScriptText, "checking codex-studio tracked artifact guard");
         StringAssert.Contains(verifyScriptText, "bash scripts/ai/milestones/codex-studio-tracking-check.sh");
+        StringAssert.Contains(guardScriptText, "repo_root_physical=\"$(cd \"$(dirname \"${BASH_SOURCE[0]}\")/../../..\" && pwd -P)\"");
+        StringAssert.Contains(guardScriptText, "repo_root_alias_candidate=\"${CHUMMER_UI_REPO_ROOT_ALIAS:-$repo_root_physical}\"");
+        StringAssert.Contains(guardScriptText, "array_count()");
+        StringAssert.Contains(guardScriptText, "tracked_path_count=\"$(array_count tracked_paths)\"");
         StringAssert.Contains(guardScriptText, "git ls-files .codex-studio");
         StringAssert.Contains(guardScriptText, "grep -E '^\\.codex-studio/(locks/|generated/|tmp/)'");
         StringAssert.Contains(guardScriptText, "ephemeral .codex-studio lock/generated/tmp artifacts may not be tracked.");
+        Assert.IsFalse(
+            guardScriptText.Contains("${#tracked_paths[@]}", StringComparison.Ordinal),
+            "codex-studio tracking guard should avoid bash3-unsafe raw tracked-path array length expansions.");
     }
 
     [TestMethod]

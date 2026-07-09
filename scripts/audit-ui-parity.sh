@@ -1,11 +1,44 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-repo_root="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+repo_root_physical="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd -P)"
+repo_root_alias_candidate="${CHUMMER_UI_REPO_ROOT_ALIAS:-$repo_root_physical}"
+repo_root="$repo_root_physical"
+if [[ -n "$repo_root_alias_candidate" && -d "$repo_root_alias_candidate" ]]; then
+  alias_physical="$(cd "$repo_root_alias_candidate" && pwd -P)"
+  if [[ "$alias_physical" == "$repo_root_physical" ]]; then
+    repo_root="$(cd -L "$repo_root_alias_candidate" && pwd -L)"
+  fi
+fi
 cd "$repo_root"
 
 receipt_path="${CHUMMER_UI_PARITY_AUDIT_RECEIPT_PATH:-$repo_root/.codex-studio/published/UI_PARITY_AUDIT.generated.json}"
 mkdir -p "$(dirname "$receipt_path")"
+
+array_count() {
+  local array_name="${1:-}"
+  [[ -n "$array_name" ]] || {
+    printf '0\n'
+    return 0
+  }
+
+  local restore_nounset=0
+  case "$-" in
+    *u*)
+      restore_nounset=1
+      set +u
+      ;;
+  esac
+
+  eval "set -- \"\${${array_name}[@]}\""
+  local count="$#"
+
+  if (( restore_nounset == 1 )); then
+    set -u
+  fi
+
+  printf '%s\n' "$count"
+}
 
 gates=(
   "scripts/ai/milestones/design-mirror-completeness-check.sh"
@@ -28,7 +61,9 @@ required_workflow_markers=(
   "character_roster"
 )
 
-python3 - <<'PY' "$repo_root" "$receipt_path" "${#required_workflow_markers[@]}" "${required_workflow_markers[@]}" "${gates[@]}"
+required_workflow_marker_count="$(array_count required_workflow_markers)"
+
+python3 - <<'PY' "$repo_root" "$receipt_path" "$required_workflow_marker_count" "${required_workflow_markers[@]}" "${gates[@]}"
 from __future__ import annotations
 
 import json

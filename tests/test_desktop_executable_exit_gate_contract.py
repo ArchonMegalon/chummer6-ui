@@ -8,6 +8,8 @@ MATERIALIZER = REPO_ROOT / "scripts" / "ai" / "milestones" / "materialize-deskto
 VISUAL_GATE = REPO_ROOT / "scripts" / "ai" / "milestones" / "materialize-desktop-visual-familiarity-exit-gate.sh"
 FLAGSHIP_GATE = REPO_ROOT / "scripts" / "ai" / "milestones" / "b14-flagship-ui-release-gate.sh"
 VERIFY_SCRIPT = REPO_ROOT / "scripts" / "ai" / "verify.sh"
+CODEX_STUDIO_TRACKING_GUARD = REPO_ROOT / "scripts" / "ai" / "milestones" / "codex-studio-tracking-check.sh"
+AUDIT_UI_PARITY = REPO_ROOT / "scripts" / "audit-ui-parity.sh"
 VISUAL_FAMILIARITY_GATE = REPO_ROOT / "scripts" / "ai" / "milestones" / "materialize-desktop-visual-familiarity-exit-gate.sh"
 WORKFLOW_EXECUTION_GATE = REPO_ROOT / "scripts" / "ai" / "milestones" / "materialize-desktop-workflow-execution-gate.sh"
 CHUMMER5A_PARITY_TESTER = REPO_ROOT / "scripts" / "ai" / "milestones" / "chummer5a-ultimate-parity-tester.sh"
@@ -160,3 +162,36 @@ def test_workflow_family_parity_wrappers_fallback_when_flock_is_unavailable() ->
         assert "printf '%s\\n' \"$$\" > \"$workflow_family_chain_lock_pid_path\"" in text
         assert 'trap \'release_workflow_family_chain_lock\' EXIT' in text
         assert 'if [[ -n "$owner_pid" ]] && ! kill -0 "$owner_pid" 2>/dev/null; then' in text
+
+
+def test_parity_audit_and_codex_studio_tracking_guard_use_alias_safe_repo_root_contract() -> None:
+    audit_text = AUDIT_UI_PARITY.read_text(encoding="utf-8")
+    tracking_guard_text = CODEX_STUDIO_TRACKING_GUARD.read_text(encoding="utf-8")
+
+    assert 'repo_root_physical="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd -P)"' in audit_text
+    assert 'repo_root_alias_candidate="${CHUMMER_UI_REPO_ROOT_ALIAS:-$repo_root_physical}"' in audit_text
+    assert 'repo_root="$repo_root_physical"' in audit_text
+    assert 'repo_root="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"' not in audit_text
+
+    assert 'repo_root_physical="$(cd "$(dirname "${BASH_SOURCE[0]}")/../../.." && pwd -P)"' in tracking_guard_text
+    assert 'repo_root_alias_candidate="${CHUMMER_UI_REPO_ROOT_ALIAS:-$repo_root_physical}"' in tracking_guard_text
+    assert 'repo_root="$repo_root_physical"' in tracking_guard_text
+    assert 'repo_root="$(cd "$(dirname "${BASH_SOURCE[0]}")/../../.." && pwd)"' not in tracking_guard_text
+
+
+def test_parity_audit_and_codex_studio_tracking_guard_use_nounset_safe_array_count() -> None:
+    audit_text = AUDIT_UI_PARITY.read_text(encoding="utf-8")
+    tracking_guard_text = CODEX_STUDIO_TRACKING_GUARD.read_text(encoding="utf-8")
+
+    for text in (audit_text, tracking_guard_text):
+        assert "array_count()" in text
+        assert 'local restore_nounset=0' in text
+        assert 'eval "set -- \\"\\${${array_name}[@]}\\""' in text
+
+    assert 'required_workflow_marker_count="$(array_count required_workflow_markers)"' in audit_text
+    assert '"$required_workflow_marker_count"' in audit_text
+    assert '${#required_workflow_markers[@]}' not in audit_text
+
+    assert 'tracked_path_count="$(array_count tracked_paths)"' in tracking_guard_text
+    assert 'if (( tracked_path_count > 0 )); then' in tracking_guard_text
+    assert '${#tracked_paths[@]}' not in tracking_guard_text

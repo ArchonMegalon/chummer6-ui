@@ -37,6 +37,22 @@ public sealed class ParityChecklistComplianceTests
         StringAssert.Contains(parityGeneratorText, "parse_switch_case_ids(text, variable_name=\"controlId\")");
     }
 
+    [TestMethod]
+    public void Parity_audit_script_uses_alias_safe_repo_root_and_nounset_safe_marker_counts()
+    {
+        string parityAuditPath = FindPath("scripts", "audit-ui-parity.sh");
+        string parityAuditText = File.ReadAllText(parityAuditPath);
+
+        StringAssert.Contains(parityAuditText, "repo_root_physical=\"$(cd \"$(dirname \"${BASH_SOURCE[0]}\")/..\" && pwd -P)\"");
+        StringAssert.Contains(parityAuditText, "repo_root_alias_candidate=\"${CHUMMER_UI_REPO_ROOT_ALIAS:-$repo_root_physical}\"");
+        StringAssert.Contains(parityAuditText, "repo_root=\"$repo_root_physical\"");
+        StringAssert.Contains(parityAuditText, "array_count()");
+        StringAssert.Contains(parityAuditText, "required_workflow_marker_count=\"$(array_count required_workflow_markers)\"");
+        Assert.IsFalse(
+            parityAuditText.Contains("${#required_workflow_markers[@]}", StringComparison.Ordinal),
+            "Parity audit script should avoid bash3-unsafe raw workflow-marker array length expansions.");
+    }
+
     private static string FindPath(params string[] parts)
     {
         foreach (string? root in CandidateRoots())
