@@ -1,11 +1,9 @@
 #!/usr/bin/env python3
 from __future__ import annotations
 
-import importlib.util
 import json
-import os
+import shutil
 import subprocess
-import sys
 from datetime import datetime, timezone
 from pathlib import Path
 
@@ -14,52 +12,68 @@ def utc_now() -> str:
     return datetime.now(timezone.utc).replace(microsecond=0).isoformat().replace("+00:00", "Z")
 
 
-def load_verifier_module(repo_root: Path):
-    verifier_path = repo_root.parent / "chummer-hub-registry" / "scripts" / "verify_public_release_channel.py"
-    spec = importlib.util.spec_from_file_location("verify_public_release_channel", verifier_path)
-    if spec is None or spec.loader is None:
-        raise SystemExit(f"Could not load verifier module: {verifier_path}")
-    module = importlib.util.module_from_spec(spec)
-    spec.loader.exec_module(module)
-    return module
+def resolve_portal_support_source_root(repo_root: Path) -> Path:
+    candidates = (
+        repo_root.parent / "chummer.run-services" / "Chummer.Portal" / "downloads",
+        repo_root / "Chummer.Portal" / "downloads",
+        repo_root / "Docker" / "Downloads",
+    )
+    for candidate in candidates:
+        if (candidate / "RELEASE_CHANNEL.generated.json").is_file() and (candidate / "files").is_dir():
+            return candidate
+    raise SystemExit("Could not resolve a portal support source root with release-channel artifacts and files.")
 
 
-def refresh_generated_at_fields(payload: dict, generated_at: str) -> None:
-    payload["generated_at"] = generated_at
-    payload["generatedAt"] = generated_at
+def sync_startup_smoke_tree(source_root: Path, output_root: Path) -> None:
+    source_dir = source_root / "startup-smoke"
+    target_dir = output_root / "startup-smoke"
+    if not source_dir.is_dir():
+        return
+    if source_dir.resolve() == target_dir.resolve(strict=False):
+        return
+    if target_dir.exists():
+        shutil.rmtree(target_dir)
+    shutil.copytree(source_dir, target_dir)
 
 
-def normalize_verifier_owned_fields(payload: dict, verifier_module, generated_at: str) -> dict:
-    normalized = json.loads(json.dumps(payload))
-    refresh_generated_at_fields(normalized, generated_at)
-    for artifact in normalized.get("artifacts") or []:
-        if isinstance(artifact, dict):
-            refresh_generated_at_fields(artifact, generated_at)
+def cleanup_manifest_validation_audit(output_dir: Path) -> None:
+    audit_dir = output_dir / "manifest-validation-audit"
+    if audit_dir.is_dir():
+        shutil.rmtree(audit_dir)
 
-    release_proof = normalized.get("releaseProof")
-    if isinstance(release_proof, dict):
-        refresh_generated_at_fields(release_proof, generated_at)
-        localization_gate = release_proof.get("uiLocalizationReleaseGate")
-        if isinstance(localization_gate, dict):
-            refresh_generated_at_fields(localization_gate, generated_at)
-            for key in ("local_release_proof", "localReleaseProof"):
-                nested = localization_gate.get(key)
-                if isinstance(nested, dict):
-                    refresh_generated_at_fields(nested, generated_at)
 
-    normalized["desktopRouteTruth"] = verifier_module.expected_desktop_route_truth_rows(normalized)
-    tuple_coverage = normalized.get("desktopTupleCoverage")
-    if isinstance(tuple_coverage, dict):
-        tuple_coverage["desktopRouteTruth"] = verifier_module.expected_desktop_route_truth_rows(normalized)
-        tuple_coverage["externalProofRequests"] = verifier_module.expected_external_proof_request_rows(normalized)
-    normalized["installAwareArtifactRegistry"] = verifier_module.expected_install_aware_artifact_registry_rows(normalized)
-    normalized["desktopSurfaceRefs"] = verifier_module.expected_desktop_surface_ref_rows(normalized)
-    normalized["artifactIdentityRegistry"] = verifier_module.expected_artifact_identity_registry_rows(normalized)
-    normalized["artifactPublicationBindings"] = verifier_module.expected_artifact_publication_binding_rows(normalized)
-    normalized["exchangeLineageRegistry"] = verifier_module.expected_exchange_lineage_registry_rows(normalized)
-    normalized["publicTrustMetrics"] = verifier_module.expected_public_trust_metrics(normalized)
-    normalized["registryBoundaryCoverage"] = verifier_module.expected_registry_boundary_coverage(normalized)
-    return normalized
+def copy_and_verify_mirror(
+    repo_root: Path,
+    source_manifest: Path,
+    compat_source_manifest: Path,
+    output_dir: Path,
+    *,
+    sync_output_startup_smoke_from: Path | None = None,
+) -> None:
+    output_dir.mkdir(parents=True, exist_ok=True)
+    shutil.copy2(source_manifest, output_dir / "RELEASE_CHANNEL.generated.json")
+    shutil.copy2(compat_source_manifest, output_dir / "releases.json")
+
+    if sync_output_startup_smoke_from is not None:
+        sync_startup_smoke_tree(sync_output_startup_smoke_from, output_dir)
+
+    subprocess.run(
+        [
+            "bash",
+            str(repo_root / "scripts" / "verify-releases-manifest.sh"),
+            str(output_dir / "RELEASE_CHANNEL.generated.json"),
+        ],
+        check=True,
+    )
+    cleanup_manifest_validation_audit(output_dir)
+    subprocess.run(
+        [
+            "bash",
+            str(repo_root / "scripts" / "verify-releases-manifest.sh"),
+            str(output_dir / "releases.json"),
+        ],
+        check=True,
+    )
 
 
 def main() -> int:
@@ -73,18 +87,16 @@ def main() -> int:
     ).stdout.strip()
     if not resolved_registry_root:
         raise SystemExit("Could not resolve hub-registry root.")
+    registry_root_path = Path(resolved_registry_root)
 
-    canonical_manifest = Path(resolved_registry_root) / ".codex-studio" / "published" / "RELEASE_CHANNEL.generated.json"
+    canonical_manifest = registry_root_path / ".codex-studio" / "published" / "RELEASE_CHANNEL.generated.json"
     if not canonical_manifest.is_file():
         raise SystemExit(f"Canonical release channel is missing: {canonical_manifest}")
 
     payload = json.loads(canonical_manifest.read_text(encoding="utf-8-sig"))
     source_generated_at = str(payload.get("generatedAt") or payload.get("generated_at") or "").strip()
     now = utc_now()
-    verifier_module = load_verifier_module(repo_root)
-    payload = normalize_verifier_owned_fields(payload, verifier_module, now)
-    payload["generated_at"] = now
-    payload["generatedAt"] = now
+    payload = json.loads(json.dumps(payload))
     payload["verifiedAt"] = now
     payload["verifiedFromPath"] = str(canonical_manifest)
     payload["verifiedFromGeneratedAt"] = source_generated_at
@@ -98,51 +110,23 @@ def main() -> int:
         check=True,
     )
 
-    portal_mirror_dir = repo_root / ".codex-studio" / "published" / "portal"
-    portal_mirror_dir.mkdir(parents=True, exist_ok=True)
-    materializer_path = Path(resolved_registry_root) / "scripts" / "materialize_public_release_channel.py"
-    mirror_command = [
-        "python3",
-        str(materializer_path),
-        "--manifest",
-        str(output_path),
-        "--downloads-dir",
-        str(repo_root / "Docker" / "Downloads" / "files"),
-        "--startup-smoke-dir",
-        str(repo_root / "Docker" / "Downloads" / "startup-smoke"),
-        "--output",
-        str(portal_mirror_dir / "RELEASE_CHANNEL.generated.json"),
-        "--compat-output",
-        str(portal_mirror_dir / "releases.json"),
-    ]
-    if os.environ.get("CHUMMER_VERIFIED_RELEASE_MIRROR_REFILTER_STARTUP_SMOKE", "0").strip().lower() not in {
-        "1",
-        "true",
-        "yes",
-        "on",
-    }:
-        mirror_command.append("--skip-startup-smoke-filter")
-    subprocess.run(
-        mirror_command,
-        check=True,
-        stdout=subprocess.DEVNULL,
-    )
+    canonical_compat_manifest = registry_root_path / ".codex-studio" / "published" / "releases.json"
+    if not canonical_compat_manifest.is_file():
+        raise SystemExit(f"Canonical compat release channel is missing: {canonical_compat_manifest}")
+    portal_support_source_root = resolve_portal_support_source_root(repo_root)
 
-    subprocess.run(
-        [
-            "bash",
-            str(repo_root / "scripts" / "verify-releases-manifest.sh"),
-            str(portal_mirror_dir / "RELEASE_CHANNEL.generated.json"),
-        ],
-        check=True,
+    copy_and_verify_mirror(
+        repo_root,
+        canonical_manifest,
+        canonical_compat_manifest,
+        repo_root / "Chummer.Portal" / "downloads",
+        sync_output_startup_smoke_from=portal_support_source_root,
     )
-    subprocess.run(
-        [
-            "bash",
-            str(repo_root / "scripts" / "verify-releases-manifest.sh"),
-            str(portal_mirror_dir / "releases.json"),
-        ],
-        check=True,
+    copy_and_verify_mirror(
+        repo_root,
+        canonical_manifest,
+        canonical_compat_manifest,
+        repo_root / ".codex-studio" / "published" / "portal",
     )
 
     print(output_path)
