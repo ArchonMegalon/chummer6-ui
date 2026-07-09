@@ -44,6 +44,7 @@ public partial class DesktopDialogWindow : Window
     private readonly Border _dialogActionsBorder;
     private readonly StackPanel _dialogActionsPanel;
     private IReadOnlyList<DesktopDialogField> _boundDialogFields = Array.Empty<DesktopDialogField>();
+    private string _boundDialogMessage = string.Empty;
     private string? _preferredFocusControlName;
     private int? _preferredFocusSelectionStart;
     private bool _originWizardAdvancedStoryControlsExpanded;
@@ -151,6 +152,7 @@ public partial class DesktopDialogWindow : Window
         }
 
         _boundDialogFields = dialog.Fields;
+        _boundDialogMessage = dialog.Message ?? string.Empty;
         if (!preserveInteractionContext)
         {
             ApplyDialogSizing(dialog.Id);
@@ -1633,7 +1635,7 @@ public partial class DesktopDialogWindow : Window
 
         shell.Children.Add(CreateLegacySummaryCard(
             "Book Preview",
-            "Read this first. Character creation starts after the story feels right.",
+            GetOriginBuildMessageForDisplay(),
             CreateFieldControl(displayBookField)));
 
         shell.Children.Add(CreateLegacySummaryCard(
@@ -1659,6 +1661,11 @@ public partial class DesktopDialogWindow : Window
         shell.Children.Add(supportGrid);
         return shell;
     }
+
+    private string GetOriginBuildMessageForDisplay()
+        => string.IsNullOrWhiteSpace(_boundDialogMessage)
+            ? DesktopDialogFactory.BuildOriginBuildDialogMessageDisplayValue()
+            : _boundDialogMessage;
 
     private static DesktopDialogField NormalizeOriginIdentityFieldForDisplay(DesktopDialogField field)
         => field.Id switch

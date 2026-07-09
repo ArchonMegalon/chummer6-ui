@@ -938,7 +938,7 @@ public sealed class DesktopDialogFactory : IDesktopDialogFactory
         return new DesktopDialogState(
             NewCharacterOriginBuildDialogId,
             "Origin Build Handoff",
-            "Read this first. Character creation starts after the story feels right.",
+            BuildOriginBuildDialogMessageDisplayValue(),
             [
                 BuildNewCharacterContextField("newCharacterWorkflowRulesetId", "Workflow Ruleset", rulesetId),
                 BuildNewCharacterContextField("newCharacterWorkflowBuildMethod", "Workflow Build Method", recommendation.BuildMethod),
@@ -1022,6 +1022,9 @@ public sealed class DesktopDialogFactory : IDesktopDialogFactory
 
     internal static string BuildOriginDossierLinkNotesDisplayValue()
         => "Opens the clean Origin Dossier route directly. The story text stays local until you publish it.";
+
+    internal static string BuildOriginBuildDialogMessageDisplayValue()
+        => "Read this first. Character creation starts after the story feels right.";
 
     internal static string BuildOriginImplicationsDisplayValue(
         string? originSummary,

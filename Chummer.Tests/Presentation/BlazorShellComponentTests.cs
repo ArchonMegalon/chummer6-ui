@@ -1291,6 +1291,25 @@ public sealed class BlazorShellComponentTests
     }
 
     [TestMethod]
+    public void DialogHost_origin_build_uses_bound_dialog_message_for_book_preview_guidance()
+    {
+        DesktopDialogState baseWizard = DesktopDialogFactory.BuildNewCharacterOriginWizardDialog(RulesetDefaults.Sr4, "Nova", "Cipher");
+        DesktopDialogState baseBuild = DesktopDialogFactory.BuildNewCharacterOriginBuildDialog(baseWizard);
+        const string customMessage = "Confirm the fiction first; only then continue into guided chargen.";
+        DesktopDialogState originBuild = baseBuild with { Message = customMessage };
+
+        using var context = CreateContext();
+
+        IRenderedComponent<DialogHost> buildCut = context.Render<DialogHost>(parameters => parameters
+            .Add(component => component.Dialog, originBuild));
+
+        StringAssert.Contains(buildCut.Markup, customMessage);
+        Assert.IsFalse(
+            buildCut.Markup.Contains(DesktopDialogFactory.BuildOriginBuildDialogMessageDisplayValue(), StringComparison.Ordinal),
+            "Origin build guidance should follow the bound dialog message instead of a stale hardcoded fallback.");
+    }
+
+    [TestMethod]
     public void DialogHost_origin_build_recovers_dossier_link_notes_when_hidden_notes_are_stale()
     {
         DesktopDialogState baseWizard = DesktopDialogFactory.BuildNewCharacterOriginWizardDialog(RulesetDefaults.Sr4, "Nova", "Cipher");

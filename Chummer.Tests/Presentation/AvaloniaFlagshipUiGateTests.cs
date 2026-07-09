@@ -4310,6 +4310,25 @@ public sealed class AvaloniaFlagshipUiGateTests
     }
 
     [TestMethod]
+    public void Standalone_origin_build_uses_bound_dialog_message_for_book_preview_guidance()
+    {
+        WithStandaloneDialogWindow(window =>
+        {
+            DesktopDialogState baseWizard = DesktopDialogFactory.BuildNewCharacterOriginWizardDialog(RulesetDefaults.Sr4, "Nova", "Cipher");
+            DesktopDialogState baseBuild = DesktopDialogFactory.BuildNewCharacterOriginBuildDialog(baseWizard);
+            const string customMessage = "Confirm the fiction first; only then continue into guided chargen.";
+            DesktopDialogState dialog = baseBuild with { Message = customMessage };
+
+            window.BindDialog(dialog);
+            PumpStandaloneUi();
+
+            TextBlock summaryText = FindDescendant<TextBlock>(window, "LegacyBookPreviewSummaryText");
+
+            Assert.AreEqual(customMessage, summaryText.Text);
+        });
+    }
+
+    [TestMethod]
     public void Standalone_origin_build_recovers_dossier_link_notes_when_hidden_notes_are_stale()
     {
         WithStandaloneDialogWindow(window =>

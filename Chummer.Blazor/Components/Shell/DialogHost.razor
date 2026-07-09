@@ -274,7 +274,7 @@
                                 <section class="dialog-origin-panel">
                                     <header>
                                         <h3>Book Preview</h3>
-                                        <p>Read this first. Character creation starts after the story feels right.</p>
+                                        <p>@GetOriginBuildMessageForDisplay(dialog)</p>
                                     </header>
                                     <div class="dialog-origin-preview dialog-origin-preview--book" data-origin-book-preview>
                                     @RenderOriginReadonlyField(NormalizeOriginFieldForDisplay(dialog, GetDialogField(dialog, "newCharacterOriginBookPreview")))
@@ -982,6 +982,11 @@
 
         return $"/app?{string.Join("&", query)}";
     }
+
+    private static string GetOriginBuildMessageForDisplay(DesktopDialogState dialog)
+        => string.IsNullOrWhiteSpace(dialog.Message)
+            ? DesktopDialogFactory.BuildOriginBuildDialogMessageDisplayValue()
+            : dialog.Message;
 
     private static string BuildOriginBookPreviewDisplayValue(DesktopDialogState dialog, string? value)
     {
