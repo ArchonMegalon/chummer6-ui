@@ -937,7 +937,7 @@ public sealed class DesktopDialogFactory : IDesktopDialogFactory
 
         return new DesktopDialogState(
             NewCharacterOriginBuildDialogId,
-            "Origin Dossier",
+            "Origin Build Handoff",
             "Read this first. Character creation starts after the story feels right.",
             [
                 BuildNewCharacterContextField("newCharacterWorkflowRulesetId", "Workflow Ruleset", rulesetId),

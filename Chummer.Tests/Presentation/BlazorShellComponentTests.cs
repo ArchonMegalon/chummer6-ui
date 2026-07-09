@@ -937,9 +937,11 @@ public sealed class BlazorShellComponentTests
 
         IRenderedComponent<DialogHost> buildCut = context.Render<DialogHost>(parameters => parameters
             .Add(component => component.Dialog, originBuild));
+        StringAssert.Contains(buildCut.Markup, "Origin Build Handoff");
         StringAssert.Contains(buildCut.Markup, "Build Handoff");
         StringAssert.Contains(buildCut.Markup, "Book Preview");
         StringAssert.Contains(buildCut.Markup, "Build Translation");
+        StringAssert.Contains(buildCut.Markup, "aria-labelledby=\"dialogTitle\"");
         CollectionAssert.AreEqual(
             new[] { "Dossier", "Ruleset", "Method" },
             buildCut.FindAll(".dialog-origin-summary-strip .dialog-origin-summary-label").Select(element => element.TextContent.Trim()).ToArray());

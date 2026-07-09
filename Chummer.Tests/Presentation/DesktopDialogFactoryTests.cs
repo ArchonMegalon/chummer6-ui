@@ -2399,6 +2399,7 @@ public class DesktopDialogFactoryTests
         DesktopDialogState dialog = DesktopDialogFactory.BuildNewCharacterOriginBuildDialog(wizard);
 
         Assert.AreEqual("dialog.new_character.origin_build", dialog.Id);
+        Assert.AreEqual("Origin Build Handoff", dialog.Title);
         Assert.AreEqual("Read this first. Character creation starts after the story feels right.", dialog.Message);
         Assert.AreEqual("Nova", DesktopDialogFieldValueParser.GetValue(dialog, "newCharacterWorkflowName"));
         Assert.AreEqual("Cipher", DesktopDialogFieldValueParser.GetValue(dialog, "newCharacterWorkflowAlias"));
@@ -2433,6 +2434,7 @@ public class DesktopDialogFactoryTests
             dialog.Fields
                 .Where(field => !string.Equals(field.LayoutSlot, DesktopDialogFieldLayoutSlots.Hidden, StringComparison.Ordinal))
                 .Select(field => field.Value));
+        Assert.IsFalse(string.Equals(dialog.Title, "Origin Dossier", StringComparison.Ordinal));
         Assert.IsFalse(visibleOriginText.Contains(" lane", StringComparison.OrdinalIgnoreCase), "Origin Dossier visible copy should describe focus/path, not internal lanes.");
         Assert.AreEqual("Show Origin Dossier link", dialog.Actions.Single(action => string.Equals(action.Id, "show_origin_dossier_link", StringComparison.Ordinal)).Label);
         Assert.AreEqual("Start character creation", dialog.Actions.Single(action => string.Equals(action.Id, "open_origin_guided_chargen", StringComparison.Ordinal)).Label);
