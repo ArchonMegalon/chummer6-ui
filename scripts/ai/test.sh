@@ -47,6 +47,7 @@ run_mstest_runner() {
   local project_path="$test_target_path"
   local configuration="Debug"
   local framework=""
+  local skip_build=0
   local -a build_args=(build "$project_path")
   local -a runner_args=()
   local index=0
@@ -111,6 +112,7 @@ run_mstest_runner() {
         continue
         ;;
       --no-build)
+        skip_build=1
         ((index += 1))
         continue
         ;;
@@ -143,7 +145,9 @@ run_mstest_runner() {
     ((index += 1))
   done
 
-  "$SCRIPT_DIR/with-package-plane.sh" "${build_args[@]}"
+  if [[ "$skip_build" -eq 0 ]]; then
+    "$SCRIPT_DIR/with-package-plane.sh" "${build_args[@]}"
+  fi
 
   target_path="$(find_mstest_runner_binary "$project_path" "$configuration" "$framework" || true)"
   if [[ -z "$target_path" ]]; then
