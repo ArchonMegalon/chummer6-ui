@@ -32,6 +32,8 @@ FORCE_NIGHTLY_PUBLISH="${CHUMMER_FORCE_NIGHTLY_PUBLISH:-0}"
 PUBLIC_EDGE_VERIFY_BASE_URL="${CHUMMER_PUBLIC_EDGE_VERIFY_BASE_URL:-http://127.0.0.1:${CHUMMER_PUBLIC_EDGE_PORT:-8091}}"
 PUBLIC_EDGE_VERIFY_HOST="${CHUMMER_PUBLIC_EDGE_VERIFY_HOST:-chummer.run}"
 PUBLIC_EDGE_VERIFY_PROTO="${CHUMMER_PUBLIC_EDGE_VERIFY_PROTO:-https}"
+PUBLIC_EDGE_VERIFY_ATTEMPTS="${CHUMMER_PUBLIC_EDGE_VERIFY_ATTEMPTS:-20}"
+PUBLIC_EDGE_VERIFY_RETRY_DELAY_SECONDS="${CHUMMER_PUBLIC_EDGE_VERIFY_RETRY_DELAY_SECONDS:-2}"
 
 to_bool() {
   local value
@@ -445,15 +447,18 @@ verify_public_edge_open_public_install_routes() {
   local base_url="$2"
   local public_host="$3"
   local forwarded_proto="$4"
+  local attempts="$5"
+  local retry_delay_seconds="$6"
 
   if [[ ! -f "$manifest_path" ]]; then
     echo "Published downloads shelf is missing canonical manifest for install-route verification: $manifest_path" >&2
     exit 1
   fi
 
-  if ! python3 - "$manifest_path" "$base_url" "$public_host" "$forwarded_proto" <<'PY'
+  if ! python3 - "$manifest_path" "$base_url" "$public_host" "$forwarded_proto" "$attempts" "$retry_delay_seconds" <<'PY'
 import json
 import sys
+import time
 import urllib.error
 import urllib.request
 from pathlib import Path
@@ -463,6 +468,13 @@ manifest_path = Path(sys.argv[1])
 base_url = sys.argv[2].rstrip("/")
 public_host = sys.argv[3].strip()
 forwarded_proto = sys.argv[4].strip()
+try:
+    attempts = int(sys.argv[5])
+    retry_delay_seconds = float(sys.argv[6])
+except ValueError as exc:
+    raise SystemExit(f"Invalid public-edge retry configuration: {exc}") from exc
+if attempts < 1 or retry_delay_seconds < 0:
+    raise SystemExit("Public-edge retry attempts must be positive and delay must be non-negative.")
 
 payload = json.loads(manifest_path.read_text(encoding="utf-8-sig"))
 downloads = []
@@ -492,6 +504,37 @@ class NoRedirectHandler(urllib.request.HTTPRedirectHandler):
 opener = urllib.request.build_opener(NoRedirectHandler)
 errors = []
 
+def request_route(route, headers):
+    request = urllib.request.Request(f"{base_url}{route}", method="GET", headers=headers)
+    for attempt in range(1, attempts + 1):
+        try:
+            with opener.open(request) as response:
+                status = getattr(response, "status", None) or response.getcode()
+                location = response.headers.get("Location", "")
+        except urllib.error.HTTPError as exc:
+            status = exc.code
+            location = exc.headers.get("Location", "")
+        except Exception as exc:
+            if attempt >= attempts:
+                return None, "", f"request failed after {attempts} attempts ({exc})"
+            print(
+                f"{route}: public edge not ready on attempt {attempt}/{attempts} ({exc}); retrying",
+                file=sys.stderr,
+            )
+            time.sleep(retry_delay_seconds)
+            continue
+
+        if status in {500, 502, 503, 504} and attempt < attempts:
+            print(
+                f"{route}: public edge returned {status} on attempt {attempt}/{attempts}; retrying",
+                file=sys.stderr,
+            )
+            time.sleep(retry_delay_seconds)
+            continue
+        return status, location, ""
+
+    return None, "", f"request failed after {attempts} attempts"
+
 for download in downloads:
     if not is_public_desktop_installer(download):
         continue
@@ -503,16 +546,9 @@ for download in downloads:
         headers["Host"] = public_host
     if forwarded_proto:
         headers["X-Forwarded-Proto"] = forwarded_proto
-    request = urllib.request.Request(f"{base_url}{route}", method="HEAD", headers=headers)
-    try:
-        response = opener.open(request)
-        status = getattr(response, "status", None) or response.getcode()
-        location = response.headers.get("Location", "")
-    except urllib.error.HTTPError as exc:
-        status = exc.code
-        location = exc.headers.get("Location", "")
-    except Exception as exc:
-        errors.append(f"{route}: request failed ({exc})")
+    status, location, request_error = request_route(route, headers)
+    if request_error:
+        errors.append(f"{route}: {request_error}")
         continue
 
     decoded_location = unquote(location or "")
@@ -678,7 +714,9 @@ if to_bool "$REDEPLOY_PUBLIC_EDGE" && [[ "$DEPLOY_DIR" == "$WORKSPACE_ROOT/chumm
     "$DEPLOY_DIR/RELEASE_CHANNEL.generated.json" \
     "$PUBLIC_EDGE_VERIFY_BASE_URL" \
     "$PUBLIC_EDGE_VERIFY_HOST" \
-    "$PUBLIC_EDGE_VERIFY_PROTO"
+    "$PUBLIC_EDGE_VERIFY_PROTO" \
+    "$PUBLIC_EDGE_VERIFY_ATTEMPTS" \
+    "$PUBLIC_EDGE_VERIFY_RETRY_DELAY_SECONDS"
 fi
 
 python3 - "$DEPLOY_DIR/RELEASE_CHANNEL.generated.json" "$expected_version" <<'PY'

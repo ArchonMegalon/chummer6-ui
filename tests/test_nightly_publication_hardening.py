@@ -71,6 +71,21 @@ def test_release_generation_can_bind_an_explicit_flagship_readiness_receipt() ->
     assert 'materialize_args+=(--flagship-readiness "$FLAGSHIP_READINESS_PATH")' in generator
 
 
+def test_nightly_publisher_retries_public_edge_routes_during_restart_warmup() -> None:
+    nightly = script_text("publish-latest-nightly-to-downloads.sh")
+
+    assert 'PUBLIC_EDGE_VERIFY_ATTEMPTS="${CHUMMER_PUBLIC_EDGE_VERIFY_ATTEMPTS:-20}"' in nightly
+    assert (
+        'PUBLIC_EDGE_VERIFY_RETRY_DELAY_SECONDS="${CHUMMER_PUBLIC_EDGE_VERIFY_RETRY_DELAY_SECONDS:-2}"'
+        in nightly
+    )
+    assert 'urllib.request.Request(f"{base_url}{route}", method="GET", headers=headers)' in nightly
+    assert 'for attempt in range(1, attempts + 1):' in nightly
+    assert 'if status in {500, 502, 503, 504} and attempt < attempts:' in nightly
+    assert 'time.sleep(retry_delay_seconds)' in nightly
+    assert 'method="HEAD"' not in nightly
+
+
 def test_linux_deb_stage_normalizes_package_metadata_permissions() -> None:
     installer = script_text("build-desktop-installer.sh")
 
