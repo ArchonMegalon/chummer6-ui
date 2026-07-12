@@ -25,6 +25,20 @@ def test_windows_startup_smoke_supports_bootstrap_payload_download_mode() -> Non
     assert 'CHUMMER_WINDOWS_BINARY_TEMP_ROOT="$windows_native_temp_root" \\' in text
     assert 'local installer_trace_root="${WINDOWS_WINE_HOST_TEMP_ROOT:-$wine_temp_dir}"' in text
     assert 'WINDOWS_STARTUP_SMOKE_EFFECTIVE_PAYLOAD_MODE="download"' in text
+
+
+def test_windows_startup_smoke_owns_and_stops_an_isolated_wine_prefix_by_default() -> None:
+    text = STARTUP_SMOKE.read_text(encoding="utf-8")
+
+    assert 'WINDOWS_WINE_PREFIX_ROOT=""' in text
+    assert 'WINDOWS_WINE_PREFIX_OWNED=0' in text
+    assert 'configure_windows_wine_prefix()' in text
+    assert 'CHUMMER_WINDOWS_STARTUP_SMOKE_ISOLATED_PREFIX:-1' in text
+    assert 'export WINEPREFIX="$WINDOWS_WINE_PREFIX_ROOT"' in text
+    assert 'WINEPREFIX="$WINDOWS_WINE_PREFIX_ROOT" timeout 15 wineserver -k' in text
+    assert 'WINEPREFIX="$WINDOWS_WINE_PREFIX_ROOT" timeout 15 wineserver -w' in text
+    assert 'rm -rf "$WINDOWS_WINE_PREFIX_ROOT"' in text
+    assert text.index('configure_windows_wine_prefix') < text.index('case "$RID" in')
     assert 'CHUMMER_INSTALLER_PAYLOAD_URL="$WINDOWS_STARTUP_SMOKE_EFFECTIVE_PAYLOAD_URL"' in text
     assert 'wait_for_local_http_url "$payload_url"' in text
     assert 'CHUMMER_WINDOWS_STARTUP_SMOKE_INSTALL_READY_TIMEOUT_SECONDS:-180' in text

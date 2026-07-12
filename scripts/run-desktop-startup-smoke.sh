@@ -51,6 +51,8 @@ WINDOWS_PAYLOAD_HTTP_ROOT=""
 WINDOWS_PAYLOAD_HTTP_LOG=""
 WINDOWS_PAYLOAD_HTTP_PID=""
 WINDOWS_WINE_HOST_TEMP_ROOT=""
+WINDOWS_WINE_PREFIX_ROOT=""
+WINDOWS_WINE_PREFIX_OWNED=0
 WINDOWS_STARTUP_SMOKE_PAYLOAD_MODE="${CHUMMER_WINDOWS_STARTUP_SMOKE_PAYLOAD_MODE:-auto}"
 WINDOWS_STARTUP_SMOKE_EFFECTIVE_PAYLOAD_MODE=""
 WINDOWS_STARTUP_SMOKE_EFFECTIVE_PAYLOAD_URL=""
@@ -61,6 +63,19 @@ WINDOWS_STARTUP_SMOKE_EFFECTIVE_PAYLOAD_FILE_NAME=""
 cleanup() {
   if [[ -n "$WINDOWS_PAYLOAD_HTTP_PID" ]]; then
     kill "$WINDOWS_PAYLOAD_HTTP_PID" >/dev/null 2>&1 || true
+  fi
+
+  if [[ "$WINDOWS_WINE_PREFIX_OWNED" == "1" && -n "$WINDOWS_WINE_PREFIX_ROOT" ]]; then
+    if command -v wineserver >/dev/null 2>&1; then
+      if command -v timeout >/dev/null 2>&1; then
+        WINEPREFIX="$WINDOWS_WINE_PREFIX_ROOT" timeout 15 wineserver -k >/dev/null 2>&1 || true
+        WINEPREFIX="$WINDOWS_WINE_PREFIX_ROOT" timeout 15 wineserver -w >/dev/null 2>&1 || true
+      else
+        WINEPREFIX="$WINDOWS_WINE_PREFIX_ROOT" wineserver -k >/dev/null 2>&1 || true
+        WINEPREFIX="$WINDOWS_WINE_PREFIX_ROOT" wineserver -w >/dev/null 2>&1 || true
+      fi
+    fi
+    rm -rf "$WINDOWS_WINE_PREFIX_ROOT"
   fi
 
   if [[ -n "$WINDOWS_PAYLOAD_HTTP_ROOT" && -d "$WINDOWS_PAYLOAD_HTTP_ROOT" ]]; then
@@ -222,6 +237,24 @@ env_truthy() {
       return 1
       ;;
   esac
+}
+
+configure_windows_wine_prefix() {
+  if [[ "$(platform_from_rid "$RID")" != "windows" ]]; then
+    return
+  fi
+  if ! env_truthy "${CHUMMER_WINDOWS_STARTUP_SMOKE_ISOLATED_PREFIX:-1}"; then
+    return
+  fi
+  if ! command -v wine >/dev/null 2>&1 \
+    && ! command -v wine64 >/dev/null 2>&1 \
+    && [[ ! -x /usr/lib/wine/wine64 ]]; then
+    return
+  fi
+
+  WINDOWS_WINE_PREFIX_ROOT="$(mktemp -d "${TMPDIR:-/tmp}/chummer-startup-wineprefix.XXXXXX")"
+  WINDOWS_WINE_PREFIX_OWNED=1
+  export WINEPREFIX="$WINDOWS_WINE_PREFIX_ROOT"
 }
 
 find_free_tcp_port() {
@@ -842,7 +875,7 @@ run_head_smoke() {
   if [[ "$(platform_from_rid "$RID")" == "windows" ]] \
     && command -v winepath >/dev/null 2>&1 \
     && { command -v wine >/dev/null 2>&1 || command -v wine64 >/dev/null 2>&1 || [[ -x /usr/lib/wine/wine64 ]]; } \
-    && ! env_truthy "${CHUMMER_WINDOWS_STARTUP_SMOKE_ISOLATED_PREFIX:-0}"; then
+    && ! env_truthy "${CHUMMER_WINDOWS_STARTUP_SMOKE_ISOLATED_PREFIX:-1}"; then
     use_existing_windows_wine_home="true"
   fi
 
@@ -1775,6 +1808,7 @@ PY
 main() {
   : >"$LOG_PATH"
   rm -f "$RECEIPT_PATH" "$PACKET_PATH"
+  configure_windows_wine_prefix
 
   case "$RID" in
     win-*)
