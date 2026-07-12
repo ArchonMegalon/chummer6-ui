@@ -141,6 +141,25 @@ function Wait-Or-Prompt {
     [void](Read-Host "Press Enter to capture")
 }
 
+function Confirm-OperatorReview {
+    param([string]$Prompt)
+
+    if ($Auto) {
+        return $false
+    }
+
+    while ($true) {
+        $answer = (Read-Host "$Prompt [y/n]").Trim().ToLowerInvariant()
+        if ($answer -in @("y", "yes")) {
+            return $true
+        }
+        if ($answer -in @("n", "no")) {
+            return $false
+        }
+        Write-Host "Enter y or n."
+    }
+}
+
 if (($env:OS -ne "Windows_NT") -and (-not ([System.Runtime.InteropServices.RuntimeInformation]::IsOSPlatform([System.Runtime.InteropServices.OSPlatform]::Windows)))) {
     throw "This visual installer receipt must be captured on a Windows host."
 }
@@ -206,6 +225,11 @@ Capture-ScreenPng $completionPath
 $progressSha256 = Get-Sha256Lower $progressPath
 $completionSha256 = Get-Sha256Lower $completionPath
 $screenshotsDistinct = $progressSha256 -ne $completionSha256
+$readabilityConfirmed = Confirm-OperatorReview "Is all important installer text readable in both screenshots?"
+$contrastConfirmed = Confirm-OperatorReview "Is foreground/background contrast readable in both screenshots?"
+$clippingConfirmed = Confirm-OperatorReview "Is all important installer text free from clipping in both screenshots?"
+$humanReviewConfirmed = $readabilityConfirmed -and $contrastConfirmed -and $clippingConfirmed
+$reviewer = $(if ($Auto) { "automation" } else { "operator" })
 
 $processExitCode = $null
 if ($process.HasExited) {
@@ -221,6 +245,16 @@ if (-not $screenshotsDistinct) {
 if ($null -ne $processExitCode -and $processExitCode -ne 0) {
     $status = "fail"
     $reasons.Add("installer process exited with code $processExitCode")
+}
+if (-not $humanReviewConfirmed) {
+    if ($Auto -and $status -eq "pass") {
+        $status = "needs_review"
+        $reasons.Add("automated capture requires interactive operator readability, contrast, and clipping review")
+    }
+    else {
+        $status = "fail"
+        $reasons.Add("operator did not confirm readability, contrast, and clipping review")
+    }
 }
 
 $receipt = [ordered]@{
@@ -260,19 +294,19 @@ $receipt = [ordered]@{
         }
     )
     readabilityReview = [ordered]@{
-        status = "pass"
-        reviewer = "operator"
-        note = "operator confirmed installer text is readable in the captured states"
+        status = $(if ($readabilityConfirmed) { "pass" } else { "needs_review" })
+        reviewer = $reviewer
+        note = $(if ($readabilityConfirmed) { "operator confirmed installer text is readable in the captured states" } else { "interactive operator readability review is still required" })
     }
     contrastReview = [ordered]@{
-        status = "pass"
-        reviewer = "operator"
-        note = "operator confirmed foreground and background contrast is readable"
+        status = $(if ($contrastConfirmed) { "pass" } else { "needs_review" })
+        reviewer = $reviewer
+        note = $(if ($contrastConfirmed) { "operator confirmed foreground and background contrast is readable" } else { "interactive operator contrast review is still required" })
     }
     clippingReview = [ordered]@{
-        status = "pass"
-        reviewer = "operator"
-        note = "operator confirmed no important installer text is clipped"
+        status = $(if ($clippingConfirmed) { "pass" } else { "needs_review" })
+        reviewer = $reviewer
+        note = $(if ($clippingConfirmed) { "operator confirmed no important installer text is clipped" } else { "interactive operator clipping review is still required" })
     }
     checks = [ordered]@{
         installer_exists = $true
@@ -280,6 +314,7 @@ $receipt = [ordered]@{
         process_exited = $process.HasExited
         process_exit_code = $processExitCode
         capture_mode = $(if ($Auto) { "auto" } else { "interactive" })
+        human_review_confirmed = $humanReviewConfirmed
     }
     reasons = @($reasons)
 }

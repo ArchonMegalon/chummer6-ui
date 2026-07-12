@@ -127,6 +127,7 @@ import json
 import ntpath
 import os
 import platform
+import re
 import shutil
 import sys
 import zipfile
@@ -568,6 +569,40 @@ def nested_status(payload: Dict[str, Any], *keys: str) -> str:
     return ""
 
 
+def nested_reviewer(payload: Dict[str, Any], *keys: str) -> str:
+    for key in keys:
+        value = payload.get(key)
+        if isinstance(value, dict):
+            reviewer = normalize_token(value.get("reviewer"))
+            if reviewer:
+                return reviewer
+    return ""
+
+
+def reviewer_is_non_automated(reviewer: str) -> bool:
+    normalized = normalize_token(reviewer)
+    if not normalized:
+        return False
+    automated_markers = {
+        "auto",
+        "automated",
+        "automation",
+        "bot",
+        "ci",
+        "machine",
+        "script",
+        "scripted",
+        "synthetic",
+        "wine",
+    }
+    reviewer_tokens = {
+        token
+        for token in re.split(r"[^a-z0-9]+", normalized)
+        if token
+    }
+    return reviewer_tokens.isdisjoint(automated_markers)
+
+
 proof_path = Path(sys.argv[1])
 release_channel_path = Path(sys.argv[2])
 installer_path = Path(sys.argv[3])
@@ -977,6 +1012,40 @@ visual_clipping_status = nested_status(
     "clippingReview",
     "clipping",
 )
+visual_checks = (
+    visual_proof_payload.get("checks")
+    if isinstance(visual_proof_payload.get("checks"), dict)
+    else {}
+)
+visual_capture_mode = normalize_token(visual_checks.get("capture_mode"))
+visual_human_review_confirmed = visual_checks.get("human_review_confirmed") is True
+visual_reviewers = {
+    "readability": nested_reviewer(
+        visual_proof_payload,
+        "readabilityReview",
+        "textReadabilityReview",
+        "readability",
+    ),
+    "contrast": nested_reviewer(
+        visual_proof_payload,
+        "contrastReview",
+        "contrast",
+    ),
+    "clipping": nested_reviewer(
+        visual_proof_payload,
+        "clippingReview",
+        "clipping",
+    ),
+}
+visual_reviewers_non_automated = {
+    review_name: reviewer_is_non_automated(reviewer)
+    for review_name, reviewer in visual_reviewers.items()
+}
+visual_invalid_reviewers = [
+    review_name
+    for review_name, is_non_automated in visual_reviewers_non_automated.items()
+    if not is_non_automated
+]
 evidence["windows_installer_visual_proof_found"] = windows_installer_visual_proof_path.is_file()
 evidence["windows_installer_visual_proof_contract"] = visual_proof_contract
 evidence["windows_installer_visual_proof_status"] = visual_proof_status
@@ -1000,6 +1069,11 @@ evidence["windows_installer_visual_actual_unique_digest_count"] = visual_actual_
 evidence["windows_installer_visual_readability_status"] = visual_readability_status
 evidence["windows_installer_visual_contrast_status"] = visual_contrast_status
 evidence["windows_installer_visual_clipping_status"] = visual_clipping_status
+evidence["windows_installer_visual_capture_mode"] = visual_capture_mode
+evidence["windows_installer_visual_human_review_confirmed"] = visual_human_review_confirmed
+evidence["windows_installer_visual_reviewers"] = visual_reviewers
+evidence["windows_installer_visual_reviewers_non_automated"] = visual_reviewers_non_automated
+evidence["windows_installer_visual_invalid_reviewers"] = visual_invalid_reviewers
 windows_visual_proof_external_blocker = (
     "missing_windows_visual_proof_capture"
     if not windows_installer_visual_proof_path.is_file()
@@ -1072,6 +1146,16 @@ for review_name, review_status in (
 ):
     if windows_installer_visual_proof_path.is_file() and not status_is_passing(review_status):
         reasons.append(f"Windows installer visual proof {review_name} review is not passing.")
+if windows_installer_visual_proof_path.is_file() and visual_capture_mode != "interactive":
+    reasons.append("Windows installer visual proof capture_mode is not interactive.")
+if windows_installer_visual_proof_path.is_file() and not visual_human_review_confirmed:
+    reasons.append("Windows installer visual proof human_review_confirmed is not true.")
+if windows_installer_visual_proof_path.is_file() and visual_invalid_reviewers:
+    reasons.append(
+        "Windows installer visual proof reviewers are missing or automated for: "
+        + ", ".join(visual_invalid_reviewers)
+        + "."
+    )
 
 startup_smoke_receipt_override = os.environ.get("CHUMMER_WINDOWS_STARTUP_SMOKE_RECEIPT_PATH", "").strip()
 if startup_smoke_receipt_override:

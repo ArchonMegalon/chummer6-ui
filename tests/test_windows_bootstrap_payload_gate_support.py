@@ -42,6 +42,11 @@ def test_windows_visual_proof_capture_script_writes_gate_compatible_receipt() ->
     assert "readabilityReview" in script
     assert "contrastReview" in script
     assert "clippingReview" in script
+    assert "Confirm-OperatorReview" in script
+    assert 'capture_mode = $(if ($Auto) { "auto" } else { "interactive" })' in script
+    assert "human_review_confirmed = $humanReviewConfirmed" in script
+    assert '$status = "needs_review"' in script
+    assert '$reviewer = $(if ($Auto) { "automation" } else { "operator" })' in script
 
 
 def test_desktop_release_pipeline_documents_windows_visual_capture_without_github_actions() -> None:
