@@ -998,7 +998,7 @@ run_windows_smoke() {
   fi
   local native_install_root
   native_install_root="$(to_native_path "$INSTALL_ROOT")"
-  local -a installer_args=("--smoke-install=$native_install_root")
+  local -a installer_args=("/smoke-install=$native_install_root")
   local local_payload_path=""
   local local_payload_sha256=""
   local local_payload_size_bytes=""

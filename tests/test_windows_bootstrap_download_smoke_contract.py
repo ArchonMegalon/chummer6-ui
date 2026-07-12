@@ -21,7 +21,7 @@ def test_windows_startup_smoke_supports_bootstrap_payload_download_mode() -> Non
     assert 'configured_payload_mode="download"' in text
     assert 'windows_binary_env_prefix=(env "TEMP=$windows_binary_temp_root" "TMP=$windows_binary_temp_root")' in text
     assert 'windows_host_temp_root="$(mktemp -d "${TMPDIR:-/tmp}/chummer-wine-temp.XXXXXX")"' in text
-    assert 'local -a installer_args=("--smoke-install=$native_install_root")' in text
+    assert 'local -a installer_args=("/smoke-install=$native_install_root")' in text
     assert 'CHUMMER_WINDOWS_BINARY_TEMP_ROOT="$windows_native_temp_root" \\' in text
     assert 'local installer_trace_root="${WINDOWS_WINE_HOST_TEMP_ROOT:-$wine_temp_dir}"' in text
     assert 'WINDOWS_STARTUP_SMOKE_EFFECTIVE_PAYLOAD_MODE="download"' in text
@@ -44,8 +44,9 @@ def test_windows_startup_smoke_supports_bootstrap_payload_download_mode() -> Non
 def test_windows_bootstrap_smoke_install_uses_value_option_delimiter() -> None:
     text = WINDOWS_BOOTSTRAP_INSTALLER.read_text(encoding="utf-8")
 
-    assert '${GetOptions} "$CommandLine" "--smoke-install=" $SmokeInstallPath' in text
+    assert '${GetOptions} "$CommandLine" "/smoke-install=" $SmokeInstallPath' in text
     assert '${GetOptions} "$CommandLine" "--smoke-install" $SmokeInstallPath' not in text
+    assert '${GetOptions} "$CommandLine" "--smoke-install=" $SmokeInstallPath' not in text
     assert 'Push "Smoke install target: $SmokeInstallPath"' in text
 
 
