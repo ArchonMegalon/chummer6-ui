@@ -244,6 +244,8 @@ Function ParseCommandLine
   ${If} $SmokeInstallPath != ""
     StrCpy $IsSmokeInstall "1"
     StrCpy $INSTDIR $SmokeInstallPath
+    Push "Smoke install target: $SmokeInstallPath"
+    Call TraceLine
     SetSilent silent
   ${EndIf}
 FunctionEnd

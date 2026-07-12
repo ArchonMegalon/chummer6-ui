@@ -46,6 +46,7 @@ def test_windows_bootstrap_smoke_install_uses_value_option_delimiter() -> None:
 
     assert '${GetOptions} "$CommandLine" "--smoke-install=" $SmokeInstallPath' in text
     assert '${GetOptions} "$CommandLine" "--smoke-install" $SmokeInstallPath' not in text
+    assert 'Push "Smoke install target: $SmokeInstallPath"' in text
 
 
 def test_startup_smoke_avoids_bash4_case_conversion_expansions() -> None:
