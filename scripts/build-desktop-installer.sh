@@ -1465,6 +1465,8 @@ if command -v xdg-mime >/dev/null 2>&1; then
 fi
 exit 0
 EOF
+  find "$stage_root" -type d -exec chmod 0755 {} +
+  chmod 0644 "$stage_root/DEBIAN/control" "$desktop_path"
   chmod 0755 "$stage_root/DEBIAN/postinst"
 
   if dpkg-deb --help 2>&1 | grep -q -- '--root-owner-group'; then

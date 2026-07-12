@@ -22,7 +22,6 @@ REQUIRE_COMPLETE_DESKTOP_COVERAGE="${CHUMMER_RELEASE_REQUIRE_COMPLETE_DESKTOP_CO
 PROMOTE_PROOF_BACKED_QUARANTINED_INSTALLERS="${CHUMMER_PROMOTE_PROOF_BACKED_QUARANTINED_INSTALLERS:-0}"
 SKIP_STARTUP_SMOKE_HYDRATION="${CHUMMER_SKIP_STARTUP_SMOKE_HYDRATION:-0}"
 ALLOW_SKIPPED_STARTUP_SMOKE="${CHUMMER_ALLOW_SKIPPED_STARTUP_SMOKE:-0}"
-ALLOW_WINDOWS_VISUAL_PROOF_HANDOFF_PUBLISH="${CHUMMER_ALLOW_WINDOWS_VISUAL_PROOF_HANDOFF_PUBLISH:-1}"
 # Nightly publication is a preview handoff lane. Stable/public release promotion
 # must happen through the explicit stable release path instead.
 PUBLIC_RELEASE_CHANNEL="${CHUMMER_PUBLIC_DEFAULT_RELEASE_CHANNEL:-preview}"
@@ -56,6 +55,61 @@ if parsed.scheme.lower() not in {"http", "https"} or not parsed.netloc:
         file=sys.stderr,
     )
     raise SystemExit(1)
+PY
+}
+
+forced_preview_nightly_visual_handoff_allowed() {
+  local stage_dir="$1"
+
+  if ! to_bool "$FORCE_NIGHTLY_PUBLISH"; then
+    return 1
+  fi
+  if [[ "$normalized_public_release_channel" != "preview" ]]; then
+    return 1
+  fi
+
+  python3 - "$stage_dir" <<'PY'
+from __future__ import annotations
+
+import json
+import sys
+from pathlib import Path
+
+
+ALLOWED_BLOCKER = "Windows visual proof is still outstanding for the staged installer bytes."
+
+
+def load_json(path: Path) -> dict:
+    try:
+        payload = json.loads(path.read_text(encoding="utf-8-sig"))
+    except Exception:
+        return {}
+    return payload if isinstance(payload, dict) else {}
+
+
+def normalize(value: object) -> str:
+    return str(value or "").strip().lower()
+
+
+stage_dir = Path(sys.argv[1])
+handoff = load_json(stage_dir / "RELEASE_BUILD_HANDOFF.generated.json")
+visual = handoff.get("windows_visual_proof_handoff")
+if not isinstance(visual, dict):
+    visual = load_json(stage_dir / "WINDOWS_INSTALLER_VISUAL_PROOF_HANDOFF.generated.json")
+
+blockers = handoff.get("blockers")
+if blockers != [ALLOWED_BLOCKER]:
+    raise SystemExit(1)
+if normalize(handoff.get("channel")) != "preview":
+    raise SystemExit(1)
+if handoff.get("stage_proof_complete") is not False:
+    raise SystemExit(1)
+if normalize(visual.get("status")) != "ready_for_windows_host":
+    raise SystemExit(1)
+if visual.get("only_blocker_is_visual_proof") is not True:
+    raise SystemExit(1)
+
+print("ok")
 PY
 }
 
@@ -249,6 +303,29 @@ verify_latest_stage_windows_payload_gate() {
   fi
 }
 
+verify_latest_stage_artifact_scope_gate() {
+  local stage_dir="$1"
+  local files_dir="$stage_dir/files"
+  local releases_manifest="$stage_dir/releases.json"
+  local release_channel_manifest="$stage_dir/RELEASE_CHANNEL.generated.json"
+  local startup_smoke_dir="$stage_dir/startup-smoke"
+
+  if [[ ! -f "$SCRIPT_DIR/verify-release-stage-artifact-scope.py" ]]; then
+    echo "Missing release stage artifact scope gate: $SCRIPT_DIR/verify-release-stage-artifact-scope.py" >&2
+    exit 1
+  fi
+
+  if ! python3 "$SCRIPT_DIR/verify-release-stage-artifact-scope.py" \
+    --manifest "$release_channel_manifest" \
+    --manifest "$releases_manifest" \
+    --files-dir "$files_dir" \
+    --startup-smoke-dir "$startup_smoke_dir"
+  then
+    echo "Nightly stage failed release artifact scope preflight. Remove stale artifacts/receipts or rebuild a scoped stage before publishing." >&2
+    exit 1
+  fi
+}
+
 verify_latest_stage_windows_startup_smoke_gate() {
   local stage_dir="$1"
   local files_dir="$stage_dir/files"
@@ -292,22 +369,13 @@ verify_latest_stage_windows_exit_gate() {
     CHUMMER_UI_WINDOWS_DESKTOP_EXIT_GATE_PATH="$gate_output" \
     bash "$SCRIPT_DIR/materialize-windows-desktop-exit-gate.sh" >/dev/null
   then
-    local handoff_status=0
     rm -f "$gate_output"
-    if emit_windows_visual_proof_handoff_guidance "$stage_dir"; then
-      handoff_status=0
-    else
-      handoff_status="$?"
-    fi
-    if (( handoff_status == 0 )) && to_bool "$ALLOW_WINDOWS_VISUAL_PROOF_HANDOFF_PUBLISH" && manifest_channel_is_preview "$release_channel_manifest"; then
-      echo "Nightly stage is carrying a Windows visual proof handoff instead of a passable Windows visual proof. Continuing because this lane publishes preview handoffs, not stable releases." >&2
+    emit_windows_visual_proof_handoff_guidance "$stage_dir" || true
+    if forced_preview_nightly_visual_handoff_allowed "$stage_dir" >/dev/null; then
+      echo "Forced preview nightly publication continuing with Windows visual proof handoff only; stable promotion remains blocked." >&2
       return 0
     fi
-    if (( handoff_status == 1 )); then
-      echo "Nightly stage failed Windows desktop exit gate preflight and no actionable Windows visual proof handoff was materialized." >&2
-    else
-      echo "Nightly stage failed Windows desktop exit gate preflight. Use the Windows visual proof handoff above before publishing." >&2
-    fi
+    echo "Nightly stage failed Windows desktop exit gate preflight. Use the Windows visual proof handoff above before publishing." >&2
     exit 1
   fi
 
@@ -567,6 +635,7 @@ fi
 refresh_release_build_handoff "$latest_stage"
 
 verify_latest_stage_layout "$latest_stage"
+verify_latest_stage_artifact_scope_gate "$latest_stage"
 verify_latest_stage_windows_payload_gate "$latest_stage"
 verify_latest_stage_windows_startup_smoke_gate "$latest_stage"
 verify_latest_stage_windows_exit_gate "$latest_stage"
@@ -595,7 +664,8 @@ CHUMMER_RELEASE_REQUIRE_COMPLETE_DESKTOP_COVERAGE="$REQUIRE_COMPLETE_DESKTOP_COV
 CHUMMER_PROMOTE_PROOF_BACKED_QUARANTINED_INSTALLERS="$PROMOTE_PROOF_BACKED_QUARANTINED_INSTALLERS" \
 CHUMMER_SKIP_STARTUP_SMOKE_HYDRATION="$SKIP_STARTUP_SMOKE_HYDRATION" \
 CHUMMER_ALLOW_SKIPPED_STARTUP_SMOKE="$ALLOW_SKIPPED_STARTUP_SMOKE" \
-CHUMMER_ALLOW_WINDOWS_VISUAL_PROOF_HANDOFF_PUBLISH="$ALLOW_WINDOWS_VISUAL_PROOF_HANDOFF_PUBLISH" \
+CHUMMER_FORCE_NIGHTLY_PUBLISH="$FORCE_NIGHTLY_PUBLISH" \
+CHUMMER_RELEASE_SCOPE_TO_STAGE_ARTIFACTS=1 \
 bash "$SCRIPT_DIR/publish-download-bundle.sh" "$latest_stage" "$DEPLOY_DIR"
 
 if to_bool "$REDEPLOY_PUBLIC_EDGE" && [[ "$DEPLOY_DIR" == "$WORKSPACE_ROOT/chummer.run-services/Chummer.Portal/downloads" ]]; then

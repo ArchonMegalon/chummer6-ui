@@ -49,6 +49,7 @@ REGISTRY_CANONICAL_MANIFEST_PATH="${REGISTRY_CANONICAL_MANIFEST_PATH:-$REGISTRY_
 REGISTRY_RELEASES_MANIFEST_PATH="${REGISTRY_RELEASES_MANIFEST_PATH:-$REGISTRY_ROOT/.codex-studio/published/releases.json}"
 REGISTRY_FILES_DIR="${REGISTRY_FILES_DIR:-$REGISTRY_ROOT/.codex-studio/published/files}"
 CANONICAL_FILES_DIR="${CANONICAL_FILES_DIR:-$(dirname "$CANONICAL_MANIFEST_PATH")/files}"
+SCOPE_TO_STAGE_ARTIFACTS="${CHUMMER_RELEASE_SCOPE_TO_STAGE_ARTIFACTS:-0}"
 
 lower_ascii() {
   printf '%s' "${1:-}" | tr '[:upper:]' '[:lower:]'
@@ -1271,9 +1272,11 @@ sanitize_startup_smoke_dir() {
   local release_version="${4:-}"
   local downloads_dir="${5:-}"
   local display_downloads_dir="${6:-$downloads_dir}"
-  python3 - "$source_dir" "$output_dir" "$release_channel" "$release_version" "$downloads_dir" "$display_downloads_dir" <<'PY'
+  local scope_to_downloads_dir="${7:-0}"
+  python3 - "$source_dir" "$output_dir" "$release_channel" "$release_version" "$downloads_dir" "$display_downloads_dir" "$scope_to_downloads_dir" <<'PY'
 from __future__ import annotations
 
+import hashlib
 import json
 import os
 import shutil
@@ -1286,8 +1289,27 @@ release_channel = str(sys.argv[3]).strip()
 release_version = str(sys.argv[4]).strip()
 downloads_dir = Path(sys.argv[5]).resolve(strict=False) if str(sys.argv[5]).strip() else None
 display_downloads_dir = Path(sys.argv[6]).resolve(strict=False) if str(sys.argv[6]).strip() else downloads_dir
+scope_to_downloads_dir = str(sys.argv[7] or "").strip().lower() in {"1", "true", "yes", "on"}
 
 output_dir.mkdir(parents=True, exist_ok=True)
+
+
+def sha256_file(path: Path) -> str:
+    hasher = hashlib.sha256()
+    with path.open("rb") as handle:
+        for chunk in iter(lambda: handle.read(1024 * 1024), b""):
+            hasher.update(chunk)
+    return hasher.hexdigest().lower()
+
+
+def receipt_digest(payload: dict) -> str:
+    digest = str(payload.get("artifactSha256") or "").strip().lower()
+    if len(digest) == 64:
+        return digest
+    artifact_digest = str(payload.get("artifactDigest") or "").strip().lower()
+    if artifact_digest.startswith("sha256:") and len(artifact_digest) == 71:
+        return artifact_digest.split(":", 1)[1]
+    return ""
 
 for path in sorted(source_dir.iterdir()):
     if path.is_file():
@@ -1306,6 +1328,18 @@ for receipt_path in sorted(output_dir.glob("startup-smoke-*.receipt.json")):
         or payload.get("fileName")
         or Path(str(payload.get("artifactPath") or "")).name
     ).strip()
+    if scope_to_downloads_dir:
+        if not artifact_file_name or downloads_dir is None:
+            receipt_path.unlink(missing_ok=True)
+            continue
+        staged_artifact_path = downloads_dir / artifact_file_name
+        if not staged_artifact_path.is_file():
+            receipt_path.unlink(missing_ok=True)
+            continue
+        digest = receipt_digest(payload)
+        if digest and sha256_file(staged_artifact_path) != digest:
+            receipt_path.unlink(missing_ok=True)
+            continue
     if artifact_file_name:
         payload["artifactFileName"] = artifact_file_name
         payload["fileName"] = artifact_file_name
@@ -1575,6 +1609,9 @@ if [[ -d "$STARTUP_SMOKE_DIR" ]] && find "$STARTUP_SMOKE_DIR" -maxdepth 1 -type 
   hydrated_startup_smoke_dir="$(mktemp -d)"
   if to_bool "$SKIP_STARTUP_SMOKE_HYDRATION"; then
     cp "$STARTUP_SMOKE_DIR"/startup-smoke-*.receipt.json "$hydrated_startup_smoke_dir"/
+  elif to_bool "$SCOPE_TO_STAGE_ARTIFACTS"; then
+    echo "scoped stage artifacts active; skipped registry startup-smoke hydration"
+    cp "$STARTUP_SMOKE_DIR"/startup-smoke-*.receipt.json "$hydrated_startup_smoke_dir"/
   else
     hydrate_startup_smoke_dir \
       "$STARTUP_SMOKE_DIR" \
@@ -1590,7 +1627,8 @@ if [[ -d "$STARTUP_SMOKE_DIR" ]] && find "$STARTUP_SMOKE_DIR" -maxdepth 1 -type 
     "$RELEASE_CHANNEL" \
     "$RELEASE_VERSION" \
     "$DOWNLOADS_DIR" \
-    "$CANONICAL_FILES_DIR"
+    "$CANONICAL_FILES_DIR" \
+    "$SCOPE_TO_STAGE_ARTIFACTS"
   STARTUP_SMOKE_DIR="$SANITIZED_STARTUP_SMOKE_DIR"
   rm -rf "$hydrated_startup_smoke_dir"
 fi
@@ -1607,14 +1645,18 @@ fi
 mkdir -p "$(dirname "$MANIFEST_PATH")"
 mkdir -p "$(dirname "$PORTAL_MANIFEST_PATH")"
 mkdir -p "$DOWNLOADS_DIR"
-restore_local_manifests_from_registry_if_needed \
-  "$CANONICAL_MANIFEST_PATH" \
-  "$MANIFEST_PATH" \
-  "$RELEASE_VERSION" \
-  "$CANONICAL_FILES_DIR" \
-  "$REGISTRY_FILES_DIR"
+if to_bool "$SCOPE_TO_STAGE_ARTIFACTS"; then
+  echo "scoped stage artifacts active; skipped registry manifest fallback restore"
+else
+  restore_local_manifests_from_registry_if_needed \
+    "$CANONICAL_MANIFEST_PATH" \
+    "$MANIFEST_PATH" \
+    "$RELEASE_VERSION" \
+    "$CANONICAL_FILES_DIR" \
+    "$REGISTRY_FILES_DIR"
+fi
 
-if [[ "$PROMOTE_PROOF_BACKED_QUARANTINED_INSTALLERS" != "0" ]]; then
+if [[ "$PROMOTE_PROOF_BACKED_QUARANTINED_INSTALLERS" != "0" ]] && ! to_bool "$SCOPE_TO_STAGE_ARTIFACTS"; then
   python3 "$SCRIPT_DIR/promote-proof-backed-quarantined-installers.py" \
     --repo-root "$REPO_ROOT" \
     --downloads-dir "$DOWNLOADS_DIR" \
@@ -1625,6 +1667,8 @@ if [[ "$PROMOTE_PROOF_BACKED_QUARANTINED_INSTALLERS" != "0" ]]; then
     --release-version "$RELEASE_VERSION" \
     --output "$QUARANTINE_PROMOTION_EVIDENCE_PATH" \
     >/dev/null
+elif to_bool "$SCOPE_TO_STAGE_ARTIFACTS"; then
+  echo "scoped stage artifacts active; skipped proof-backed quarantined installer promotion"
 fi
 
 promoted_file_names=()
@@ -2476,6 +2520,15 @@ resolve_promoted_artifact_source() {
   local candidate_dir=""
   local candidate_path=""
 
+  if to_bool "$SCOPE_TO_STAGE_ARTIFACTS"; then
+    candidate_path="$DOWNLOADS_DIR/$file_name"
+    if [[ -f "$candidate_path" ]]; then
+      printf '%s\n' "$candidate_path"
+      return 0
+    fi
+    return 1
+  fi
+
   for candidate_dir in \
     "$DOWNLOADS_DIR" \
     "$CANONICAL_FILES_DIR" \
@@ -2503,7 +2556,6 @@ windows_payload_name_for_installer() {
 sync_promoted_files_dir() {
   local target_dir="$1"
   local target_label="$2"
-  local artifact_path=""
   local file_name=""
   local payload_file_name=""
   local payload_source_path=""

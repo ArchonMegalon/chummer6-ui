@@ -27,7 +27,8 @@ RELEASE_PROOF_PATH="${RELEASE_PROOF_PATH:-}"
 STARTUP_SMOKE_SOURCE="${STARTUP_SMOKE_SOURCE:-$BUNDLE_DIR/startup-smoke}"
 PUBLIC_SKIP_STARTUP_SMOKE_FILTER="${CHUMMER_PUBLIC_SKIP_STARTUP_SMOKE_FILTER:-}"
 SYNC_LIVE_DOWNLOADS_MIRRORS="${CHUMMER_PUBLIC_EDGE_DOWNLOADS_SYNC_MIRRORS:-auto}"
-ALLOW_WINDOWS_VISUAL_PROOF_HANDOFF_PUBLISH="${CHUMMER_ALLOW_WINDOWS_VISUAL_PROOF_HANDOFF_PUBLISH:-0}"
+FORCE_NIGHTLY_PUBLISH="${CHUMMER_FORCE_NIGHTLY_PUBLISH:-0}"
+SCOPE_TO_STAGE_ARTIFACTS="${CHUMMER_RELEASE_SCOPE_TO_STAGE_ARTIFACTS:-0}"
 ROOT_RELEASE_BLOCKERS_PATH="${CHUMMER_ROOT_RELEASE_BLOCKERS_PATH:-$WORKSPACE_ROOT/RELEASE_BLOCKERS.generated.json}"
 PUBLIC_STABLE_BLOCKERS_MAX_AGE_SECONDS="${CHUMMER_PUBLIC_STABLE_BLOCKERS_MAX_AGE_SECONDS:-86400}"
 ALLOW_BUNDLE_FILES_SOURCE_FALLBACK="${CHUMMER_ALLOW_BUNDLE_FILES_SOURCE_FALLBACK:-0}"
@@ -76,6 +77,81 @@ if parsed.scheme.lower() not in {"http", "https"} or not parsed.netloc:
         file=sys.stderr,
     )
     raise SystemExit(1)
+PY
+}
+
+forced_preview_nightly_visual_handoff_allowed() {
+  local bundle_dir="$1"
+  local deploy_dir="$2"
+  local release_channel
+
+  if ! to_bool "$FORCE_NIGHTLY_PUBLISH"; then
+    return 1
+  fi
+
+  release_channel="$(echo "${RELEASE_CHANNEL:-preview}" | tr '[:upper:]' '[:lower:]')"
+  if [[ "$release_channel" != "preview" ]]; then
+    return 1
+  fi
+  if ! manifest_channel_is_preview "$deploy_dir/RELEASE_CHANNEL.generated.json"; then
+    return 1
+  fi
+
+  python3 - "$bundle_dir" "$deploy_dir" <<'PY'
+from __future__ import annotations
+
+import json
+import sys
+from pathlib import Path
+
+
+ALLOWED_BLOCKER = "Windows visual proof is still outstanding for the staged installer bytes."
+
+
+def load_json(path: Path) -> dict:
+    try:
+        payload = json.loads(path.read_text(encoding="utf-8-sig"))
+    except Exception:
+        return {}
+    return payload if isinstance(payload, dict) else {}
+
+
+def normalize(value: object) -> str:
+    return str(value or "").strip().lower()
+
+
+roots = [Path(item) for item in sys.argv[1:] if str(item or "").strip()]
+handoff: dict = {}
+for root in roots:
+    candidate = load_json(root / "RELEASE_BUILD_HANDOFF.generated.json")
+    if candidate:
+        handoff = candidate
+        break
+
+if not handoff:
+    raise SystemExit(1)
+
+visual = handoff.get("windows_visual_proof_handoff")
+if not isinstance(visual, dict):
+    visual = {}
+    for root in roots:
+        visual = load_json(root / "WINDOWS_INSTALLER_VISUAL_PROOF_HANDOFF.generated.json")
+        if visual:
+            break
+
+blockers = handoff.get("blockers")
+if blockers != [ALLOWED_BLOCKER]:
+    raise SystemExit(1)
+if normalize(handoff.get("channel")) != "preview":
+    raise SystemExit(1)
+if handoff.get("stage_proof_complete") is not False:
+    raise SystemExit(1)
+if normalize(visual.get("status")) != "ready_for_windows_host":
+    raise SystemExit(1)
+if visual.get("only_blocker_is_visual_proof") is not True:
+    raise SystemExit(1)
+
+print("ok")
 PY
 }
 
@@ -438,22 +514,13 @@ verify_windows_desktop_exit_gate() {
     CHUMMER_UI_WINDOWS_DESKTOP_EXIT_GATE_PATH="$gate_output" \
     bash "$SCRIPT_DIR/materialize-windows-desktop-exit-gate.sh" >/dev/null
   then
-    local handoff_status=0
     rm -f "$gate_output"
-    if emit_windows_visual_proof_handoff_guidance "$BUNDLE_DIR" "$DEPLOY_DIR"; then
-      handoff_status=0
-    else
-      handoff_status="$?"
-    fi
-    if (( handoff_status == 0 )) && to_bool "$ALLOW_WINDOWS_VISUAL_PROOF_HANDOFF_PUBLISH" && manifest_channel_is_preview "$DEPLOY_DIR/RELEASE_CHANNEL.generated.json"; then
-      echo "Published preview downloads shelf is carrying a Windows visual proof handoff instead of a passable Windows visual proof. Continuing because this lane publishes preview handoffs, not stable releases." >&2
+    emit_windows_visual_proof_handoff_guidance "$BUNDLE_DIR" "$DEPLOY_DIR" || true
+    if forced_preview_nightly_visual_handoff_allowed "$BUNDLE_DIR" "$DEPLOY_DIR" >/dev/null; then
+      echo "Forced preview nightly publication continuing with Windows visual proof handoff only; stable promotion remains blocked." >&2
       return 0
     fi
-    if (( handoff_status == 1 )); then
-      echo "Published downloads shelf failed Windows desktop exit gate verification and no actionable Windows visual proof handoff was materialized." >&2
-    else
-      echo "Published downloads shelf failed Windows desktop exit gate verification. Use the Windows visual proof handoff above." >&2
-    fi
+    echo "Published downloads shelf failed Windows desktop exit gate verification. Use the Windows visual proof handoff above." >&2
     exit 1
   fi
 
@@ -1019,6 +1086,7 @@ STARTUP_SMOKE_DIR="$STARTUP_SMOKE_SOURCE" \
 CHUMMER_PUBLIC_STARTUP_SMOKE_MAX_AGE_SECONDS="${CHUMMER_PUBLIC_STARTUP_SMOKE_MAX_AGE_SECONDS:-}" \
 CHUMMER_PUBLIC_SKIP_STARTUP_SMOKE_FILTER="${CHUMMER_PUBLIC_SKIP_STARTUP_SMOKE_FILTER:-$PUBLIC_SKIP_STARTUP_SMOKE_FILTER}" \
 CHUMMER_RELEASE_REQUIRE_COMPLETE_DESKTOP_COVERAGE="${CHUMMER_RELEASE_REQUIRE_COMPLETE_DESKTOP_COVERAGE:-1}" \
+CHUMMER_RELEASE_SCOPE_TO_STAGE_ARTIFACTS="$SCOPE_TO_STAGE_ARTIFACTS" \
 CHUMMER_EXTERNAL_PROOF_BASE_URL="${CHUMMER_EXTERNAL_PROOF_BASE_URL:-https://chummer.run}" \
 CHUMMER_GENERATE_EXTERNAL_HOST_PROOF_BLOCKERS="${CHUMMER_GENERATE_EXTERNAL_HOST_PROOF_BLOCKERS:-0}" \
 bash "$SCRIPT_DIR/generate-releases-manifest.sh"

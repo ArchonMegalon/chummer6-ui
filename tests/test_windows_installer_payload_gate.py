@@ -1921,6 +1921,10 @@ def test_publish_latest_nightly_publishes_preview_child_stage_through_stubbed_la
         "print('windows_installer_payload_gate:ok checked=0')\n",
         encoding="utf-8",
     )
+    (fake_scripts / "verify-release-stage-artifact-scope.py").write_text(
+        "print('release_stage_artifact_scope:ok checked_files=0 checked_receipts=0')\n",
+        encoding="utf-8",
+    )
     (fake_scripts / "verify-windows-bootstrap-startup-smoke.py").write_text(
         "print('windows_startup_smoke_gate:ok checked=0')\n",
         encoding="utf-8",
@@ -2062,6 +2066,10 @@ def test_publish_latest_nightly_requires_actionable_windows_visual_proof_handoff
     )
     (fake_scripts / "verify-windows-installer-payloads.py").write_text(
         "print('windows_installer_payload_gate:ok checked=0')\n",
+        encoding="utf-8",
+    )
+    (fake_scripts / "verify-release-stage-artifact-scope.py").write_text(
+        "print('release_stage_artifact_scope:ok checked_files=0 checked_receipts=0')\n",
         encoding="utf-8",
     )
     (fake_scripts / "verify-windows-bootstrap-startup-smoke.py").write_text(
