@@ -24,6 +24,8 @@ def test_windows_startup_smoke_supports_bootstrap_payload_download_mode() -> Non
     assert 'local -a installer_args=("/smoke-install=$native_install_root")' in text
     assert 'CHUMMER_WINDOWS_BINARY_TEMP_ROOT="$windows_native_temp_root" \\' in text
     assert 'local installer_trace_root="${WINDOWS_WINE_HOST_TEMP_ROOT:-$wine_temp_dir}"' in text
+    assert 'resolved_wine_temp_dir="$(resolve_wine_temp_dir || true)"' in text
+    assert '"$resolved_wine_temp_dir/Chummer6/installer-temp/chummer-desktop-installer-progress.log"' in text
     assert 'WINDOWS_STARTUP_SMOKE_EFFECTIVE_PAYLOAD_MODE="download"' in text
 
 

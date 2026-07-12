@@ -1127,12 +1127,22 @@ run_windows_smoke() {
   fi
   sleep 2
   local installer_trace_root="${WINDOWS_WINE_HOST_TEMP_ROOT:-$wine_temp_dir}"
-  if [[ -n "$installer_trace_root" ]]; then
+  local resolved_wine_temp_dir=""
+  if command -v winepath >/dev/null 2>&1; then
+    resolved_wine_temp_dir="$(resolve_wine_temp_dir || true)"
+  fi
+  if [[ -n "$installer_trace_root" || -n "$resolved_wine_temp_dir" ]]; then
     local installer_trace_capture_path="$OUTPUT_DIR/windows-installer-progress-$APP_KEY-$RID.log"
     local -a installer_trace_candidates=(
       "$installer_trace_root/Chummer6/installer-temp/chummer-desktop-installer-progress.log"
       "$installer_trace_root/chummer-desktop-installer-progress.log"
     )
+    if [[ -n "$resolved_wine_temp_dir" ]]; then
+      installer_trace_candidates+=(
+        "$resolved_wine_temp_dir/Chummer6/installer-temp/chummer-desktop-installer-progress.log"
+        "$resolved_wine_temp_dir/chummer-desktop-installer-progress.log"
+      )
+    fi
     local installer_trace_source=""
     local installer_trace_candidate=""
     for installer_trace_candidate in "${installer_trace_candidates[@]}"; do
