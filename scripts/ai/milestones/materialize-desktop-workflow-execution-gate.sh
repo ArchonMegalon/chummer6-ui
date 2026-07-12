@@ -702,6 +702,42 @@ def path_within_root(path: Path, root: Path) -> bool:
         return False
 
 
+HISTORICAL_PRESENTATION_REPO_ROOTS = tuple(
+    Path(value)
+    for value in (
+        "/docker/chummercomplete/chummer6-ui",
+        "/docker/chummercomplete/chummer6-ui-finish",
+        "/docker/chummercomplete/chummer-presentation",
+        "/docker/chummercomplete/chummer-presentation-clean",
+        "/src/chummercomplete/chummer6-ui",
+        "/src/chummercomplete/chummer-presentation",
+    )
+)
+
+
+def resolve_source_test_file_path(raw_value: str, root: Path) -> tuple[Path | None, bool]:
+    if not raw_value:
+        return None, False
+
+    raw_path = Path(raw_value).expanduser()
+    candidate = raw_path if raw_path.is_absolute() else root / raw_path
+    candidate = candidate.resolve()
+    if path_within_root(candidate, root):
+        return candidate, False
+
+    if raw_path.is_absolute():
+        for historical_root in HISTORICAL_PRESENTATION_REPO_ROOTS:
+            try:
+                relative_path = raw_path.relative_to(historical_root)
+            except ValueError:
+                continue
+            remapped = (root / relative_path).resolve()
+            if path_within_root(remapped, root) and remapped.is_file():
+                return remapped, True
+
+    return candidate, False
+
+
 def workflow_receipt_targets_direct_flagship_slice(entry: str) -> bool:
     lowered = normalize_token(entry)
     return any(family_id in lowered for family_id in DIRECT_FLAGSHIP_WORKFLOW_FAMILY_IDS)
@@ -1529,6 +1565,8 @@ required_head_list_markers = {
 flagship_head_contract_marker_statuses: Dict[str, Dict[str, str]] = {}
 flagship_head_missing_contract_markers: Dict[str, List[str]] = {}
 flagship_head_source_test_file_paths: Dict[str, str] = {}
+flagship_head_source_test_file_resolved_paths: Dict[str, str] = {}
+flagship_head_source_test_file_remapped: Dict[str, bool] = {}
 flagship_head_source_test_file_exists: Dict[str, bool] = {}
 flagship_head_source_test_file_within_repo_root: Dict[str, bool] = {}
 for required_head in required_desktop_heads:
@@ -1545,7 +1583,10 @@ for required_head in required_desktop_heads:
     marker_statuses: Dict[str, str] = {}
     missing_markers: List[str] = []
     source_test_file_value = str(proof_payload.get("sourceTestFile") or "").strip()
-    source_test_file_path = Path(source_test_file_value) if source_test_file_value else None
+    source_test_file_path, source_test_file_remapped = resolve_source_test_file_path(
+        source_test_file_value,
+        repo_root,
+    )
     source_test_file_exists = source_test_file_path is not None and source_test_file_path.is_file()
     source_test_file_within_repo_root = (
         path_within_root(source_test_file_path, repo_root)
@@ -1553,6 +1594,10 @@ for required_head in required_desktop_heads:
         else False
     )
     flagship_head_source_test_file_paths[required_head] = source_test_file_value
+    flagship_head_source_test_file_resolved_paths[required_head] = (
+        str(source_test_file_path) if source_test_file_path is not None else ""
+    )
+    flagship_head_source_test_file_remapped[required_head] = source_test_file_remapped
     flagship_head_source_test_file_exists[required_head] = source_test_file_exists
     flagship_head_source_test_file_within_repo_root[required_head] = (
         source_test_file_within_repo_root
@@ -1608,6 +1653,12 @@ evidence["flagship_head_missing_contract_markers"] = (
 )
 evidence["flagship_head_source_test_file_paths"] = (
     flagship_head_source_test_file_paths
+)
+evidence["flagship_head_source_test_file_resolved_paths"] = (
+    flagship_head_source_test_file_resolved_paths
+)
+evidence["flagship_head_source_test_file_remapped"] = (
+    flagship_head_source_test_file_remapped
 )
 evidence["flagship_head_source_test_file_exists"] = (
     flagship_head_source_test_file_exists
