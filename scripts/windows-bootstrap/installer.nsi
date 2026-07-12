@@ -207,7 +207,7 @@ FunctionEnd
 
 Function ParseCommandLine
   ${GetParameters} $CommandLine
-  ${GetOptions} "$CommandLine" "--smoke-install" $SmokeInstallPath
+  ${GetOptions} "$CommandLine" "--smoke-install=" $SmokeInstallPath
   ${GetOptions} "$CommandLine" "--payload-path" $PayloadPathOverride
   ${If} $PayloadPathOverride == ""
     ${GetOptions} "$CommandLine" "--payload" $PayloadPathOverride
