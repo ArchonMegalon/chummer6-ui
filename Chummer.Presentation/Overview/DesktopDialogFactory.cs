@@ -203,6 +203,48 @@ public sealed class DesktopDialogFactory : IDesktopDialogFactory
                 + " Language search and enabled overlays remain visible.",
                 BuildTranslatorFields(language, masterIndex, translatorLanguages),
                 [new DesktopDialogAction("close", S("desktop.dialog.action.close"), true)]),
+            "open_sourcebooks" => CreateGovernedUtilityDialog(
+                "dialog.open_sourcebooks",
+                "Sourcebooks",
+                "Review governed sourcebook coverage and linked references without leaving the shared shell.",
+                "Reference Surface",
+                "Master Index keeps sourcebook coverage, linked PDFs, and governed reference posture visible together.",
+                "Open Master Index when you need search, source toggles, or linked reference receipts."),
+            "open_errata" => CreateGovernedUtilityDialog(
+                "dialog.open_errata",
+                "Errata",
+                "Errata references stay in the governed rules and reference lane rather than a detached shell surface.",
+                "Errata Surface",
+                "Keep sourcebook context and errata follow-through together in the shared reference lane.",
+                "Open Master Index before you jump to external errata references so the current source context stays visible."),
+            "open_custom_data" => CreateGovernedUtilityDialog(
+                "dialog.open_custom_data",
+                "Custom Data",
+                "Custom data stays governed through the XML and overlay lane instead of mutating the runner shell directly.",
+                "Custom Data Posture",
+                "XML Editor tracks overlay directories, authoring posture, and XML bridge receipts together.",
+                "Open XML Editor when you need overlay directory counts, authoring receipts, or bridge posture."),
+            "update_data_packs" => CreateGovernedUtilityDialog(
+                "dialog.update_data_packs",
+                "Update Data Packs",
+                "Data pack refresh stays governed through the XML and custom-data lane.",
+                "Update Posture",
+                "Refreshes should follow the governed XML bridge and custom-data posture instead of bypassing shared verification surfaces.",
+                "Review XML Editor and governed release receipts before you refresh external data packs."),
+            "validate_data_scope" => CreateGovernedUtilityDialog(
+                "dialog.validate_data_scope",
+                "Validate Data Scope",
+                "Data-scope validation is surfaced through governed XML posture and release verification receipts.",
+                "Validation Surface",
+                "Use the shared XML and custom-data lane to confirm which overlays, directories, and receipts define the active scope.",
+                "Review XML Editor and release receipts when you need to verify overlay scope or authoring status."),
+            "open_data_folder" => CreateGovernedUtilityDialog(
+                "dialog.open_data_folder",
+                "Data Folder",
+                "Data folders stay host-owned and governed outside the shared runner surface.",
+                "Folder Posture",
+                "The shared shell keeps data-lane posture visible before you move into host file-system actions.",
+                "Use XML Editor and custom-data posture to review the active lane before you open host file locations."),
             "xml_editor" => new DesktopDialogState(
                 "dialog.xml_editor",
                 "XML Editor",
@@ -484,6 +526,25 @@ public sealed class DesktopDialogFactory : IDesktopDialogFactory
             [
                 new DesktopDialogAction("close", "Close", true)
             ]);
+    }
+
+    private static DesktopDialogState CreateGovernedUtilityDialog(
+        string dialogId,
+        string title,
+        string message,
+        string summaryLabel,
+        string summary,
+        string nextStep)
+    {
+        return new DesktopDialogState(
+            dialogId,
+            title,
+            message,
+            [
+                new DesktopDialogField("utilitySummary", summaryLabel, summary, summary, IsReadOnly: true, IsMultiline: true),
+                new DesktopDialogField("utilityNextStep", "Next Step", nextStep, nextStep, IsReadOnly: true, IsMultiline: true)
+            ],
+            [new DesktopDialogAction("close", "Close", true)]);
     }
 
     private static DesktopDialogState CreateOpenCharacterDialog(
@@ -6081,6 +6142,38 @@ public sealed class DesktopDialogFactory : IDesktopDialogFactory
         ];
     }
 
+    private static IReadOnlyList<DesktopDialogField> BuildSpriteSelectionFields()
+    {
+        string categoryTree =
+            "[Sprites]" + Environment.NewLine +
+            "├─ Courier" + Environment.NewLine +
+            "├─ Crack" + Environment.NewLine +
+            "├─ Fault" + Environment.NewLine +
+            "└─ Machine";
+        string candidateList =
+            "Courier Sprite · Sprite" + Environment.NewLine +
+            "Machine Sprite · Sprite" + Environment.NewLine +
+            "Fault Sprite · Sprite";
+        string selectionDetails = BuildGridValue(
+            ("Selected", "Courier Sprite"),
+            ("Level", "3"),
+            ("Type", "Sprite"),
+            ("Source", "Core Rulebook p. 251"));
+
+        return
+        [
+            BuildSelectionSectionsField("uiSpriteSections"),
+            BuildSelectionTreeField("uiSpriteCategoryTree", "Categories", categoryTree),
+            new DesktopDialogField("uiSpriteSearch", "Search", string.Empty, "Search sprites"),
+            new DesktopDialogField("uiSpriteType", "Type", "Sprite", "Sprite"),
+            new DesktopDialogField("uiSpriteName", "Name", "Courier Sprite", "Courier Sprite"),
+            new DesktopDialogField("uiSpriteCandidateList", "Available Entries", candidateList, candidateList, IsReadOnly: true, IsMultiline: true, VisualKind: DesktopDialogFieldVisualKinds.List, LayoutSlot: DesktopDialogFieldLayoutSlots.Left),
+            new DesktopDialogField("uiSpriteForce", "Level", "3", "3", InputType: "number"),
+            new DesktopDialogField("uiSpriteSelectionDetails", "Selection Details", selectionDetails, selectionDetails, IsReadOnly: true, IsMultiline: true, VisualKind: DesktopDialogFieldVisualKinds.Grid, LayoutSlot: DesktopDialogFieldLayoutSlots.Right),
+            new DesktopDialogField("uiSpriteNotes", "Notes", "Type, level, and source remain visible before confirmation.", "Type, level, and source remain visible before confirmation.", IsReadOnly: true, IsMultiline: true, VisualKind: DesktopDialogFieldVisualKinds.Snippet)
+        ];
+    }
+
     private static IReadOnlyList<DesktopDialogField> BuildCritterPowerSelectionFields()
     {
         string categoryTree =
@@ -6906,6 +6999,12 @@ public sealed class DesktopDialogFactory : IDesktopDialogFactory
                 "Add Spirit / Ally / Familiar",
                 "Browse spirits and allies, inspect force and type, then confirm the selected entry.",
                 BuildSpiritSelectionFields(),
+                BuildSelectionConfirmationActions()),
+            "sprite_add" => new DesktopDialogState(
+                "dialog.ui.sprite_add",
+                "Add Sprite",
+                "Browse sprites, inspect level and type, then confirm the selected entry.",
+                BuildSpriteSelectionFields(),
                 BuildSelectionConfirmationActions()),
             "critter_power_add" => new DesktopDialogState(
                 "dialog.ui.critter_power_add",
