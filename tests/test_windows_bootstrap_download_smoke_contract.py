@@ -25,6 +25,10 @@ def test_windows_startup_smoke_supports_bootstrap_payload_download_mode() -> Non
     assert 'WINDOWS_STARTUP_SMOKE_EFFECTIVE_PAYLOAD_MODE="download"' in text
     assert 'CHUMMER_INSTALLER_PAYLOAD_URL="$WINDOWS_STARTUP_SMOKE_EFFECTIVE_PAYLOAD_URL"' in text
     assert 'wait_for_local_http_url "$payload_url"' in text
+    assert 'CHUMMER_WINDOWS_STARTUP_SMOKE_INSTALL_READY_TIMEOUT_SECONDS:-180' in text
+    assert 'CHUMMER_WINDOWS_STARTUP_SMOKE_INSTALL_READY_POLL_SECONDS:-1' in text
+    assert "wait_for_windows_installed_relative_path()" in text
+    assert 'resolved_launch_relative_path="$(wait_for_windows_installed_relative_path "$launch_relative_path")"' in text
     assert 'local -a installer_trace_candidates=(' in text
     assert '"$installer_trace_root/Chummer6/installer-temp/chummer-desktop-installer-progress.log"' in text
     assert '"$installer_trace_root/chummer-desktop-installer-progress.log"' in text

@@ -1004,6 +1004,18 @@ run_windows_smoke() {
   local local_payload_size_bytes=""
   local configured_payload_mode
   configured_payload_mode="$(lower_ascii "${WINDOWS_STARTUP_SMOKE_PAYLOAD_MODE:-}")"
+  local install_ready_timeout_seconds="${CHUMMER_WINDOWS_STARTUP_SMOKE_INSTALL_READY_TIMEOUT_SECONDS:-180}"
+  local install_ready_poll_interval_seconds="${CHUMMER_WINDOWS_STARTUP_SMOKE_INSTALL_READY_POLL_SECONDS:-1}"
+  if [[ ! "$install_ready_timeout_seconds" =~ ^[0-9]+$ ]] \
+    || (( install_ready_timeout_seconds < 1 || install_ready_timeout_seconds > 900 )); then
+    echo "CHUMMER_WINDOWS_STARTUP_SMOKE_INSTALL_READY_TIMEOUT_SECONDS must be an integer from 1 to 900." >&2
+    return 1
+  fi
+  if [[ ! "$install_ready_poll_interval_seconds" =~ ^[0-9]+$ ]] \
+    || (( install_ready_poll_interval_seconds < 1 || install_ready_poll_interval_seconds > 30 )); then
+    echo "CHUMMER_WINDOWS_STARTUP_SMOKE_INSTALL_READY_POLL_SECONDS must be an integer from 1 to 30." >&2
+    return 1
+  fi
   local artifact_dir
   artifact_dir="$(dirname "$ARTIFACT_PATH")"
   local artifact_name
@@ -1202,6 +1214,23 @@ PY
     return 1
   }
 
+  wait_for_windows_installed_relative_path() {
+    local requested_relative_path="$1"
+    local deadline=$((SECONDS + install_ready_timeout_seconds))
+    local resolved_relative_path=""
+
+    while :; do
+      if resolved_relative_path="$(resolve_windows_installed_relative_path "$requested_relative_path")"; then
+        printf '%s\n' "$resolved_relative_path"
+        return 0
+      fi
+      if (( SECONDS >= deadline )); then
+        return 1
+      fi
+      sleep "$install_ready_poll_interval_seconds"
+    done
+  }
+
   local required_paths="${CHUMMER_STARTUP_SMOKE_REQUIRED_INSTALL_PATHS:-}"
   if [[ -n "$required_paths" ]]; then
     local relative_path
@@ -1209,12 +1238,7 @@ PY
     while IFS= read -r relative_path; do
       [[ -n "$relative_path" ]] || continue
       local resolved_required_path=""
-      for _attempt in 1 2 3 4 5; do
-        if resolved_required_path="$(resolve_windows_installed_relative_path "$relative_path")"; then
-          break
-        fi
-        sleep 1
-      done
+      resolved_required_path="$(wait_for_windows_installed_relative_path "$relative_path")" || resolved_required_path=""
       if [[ -z "$resolved_required_path" ]]; then
         missing_paths+=("$relative_path")
       fi
@@ -1244,13 +1268,10 @@ PY
 
   local launch_relative_path="${CHUMMER_STARTUP_SMOKE_LAUNCH_RELATIVE_PATH:-$LAUNCH_TARGET}"
   local resolved_launch_relative_path
-  for _attempt in 1 2 3 4 5; do
-    if resolved_launch_relative_path="$(resolve_windows_installed_relative_path "$launch_relative_path")"; then
-      launch_relative_path="$resolved_launch_relative_path"
-      break
-    fi
-    sleep 1
-  done
+  echo "Waiting up to ${install_ready_timeout_seconds}s for Windows smoke install launch target: $launch_relative_path" >>"$LOG_PATH"
+  if resolved_launch_relative_path="$(wait_for_windows_installed_relative_path "$launch_relative_path")"; then
+    launch_relative_path="$resolved_launch_relative_path"
+  fi
   local smoke_status=0
   CHUMMER_WINDOWS_BINARY_TEMP_ROOT="$windows_native_temp_root" run_head_smoke "$INSTALL_ROOT/$launch_relative_path" || smoke_status=$?
   attach_windows_bootstrap_verification_to_receipt \
