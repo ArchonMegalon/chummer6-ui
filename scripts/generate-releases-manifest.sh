@@ -40,6 +40,7 @@ PROMOTION_EVIDENCE_PATH="${PROMOTION_EVIDENCE_PATH:-$(dirname "$MANIFEST_PATH")/
 QUARANTINE_PROMOTION_EVIDENCE_PATH="${QUARANTINE_PROMOTION_EVIDENCE_PATH:-$REPO_ROOT/.codex-studio/published/QUARANTINED_INSTALLER_PROMOTION.generated.json}"
 SOURCE_MANIFEST_PATH="${SOURCE_MANIFEST_PATH:-}"
 RELEASE_PROOF_PATH="${RELEASE_PROOF_PATH:-${CHUMMER_HUB_LOCAL_RELEASE_PROOF_PATH:-}}"
+FLAGSHIP_READINESS_PATH="${CHUMMER_FLAGSHIP_READINESS_PATH:-${CHUMMER_FLAGSHIP_PRODUCT_READINESS_RECEIPT_PATH:-}}"
 PREVIEW_INSTALL_ACCESS_CLASS="${CHUMMER_PREVIEW_INSTALL_ACCESS_CLASS:-}"
 EXTERNAL_PROOF_BASE_URL="${CHUMMER_EXTERNAL_PROOF_BASE_URL:-https://chummer.run}"
 DOWNLOADS_PREFIX="${CHUMMER_PUBLIC_DOWNLOADS_PREFIX:-${EXTERNAL_PROOF_BASE_URL%/}/downloads/files}"
@@ -1698,6 +1699,18 @@ run_materializer() {
 
   if [[ -n "$UI_LOCALIZATION_RELEASE_GATE_PATH" && -f "$UI_LOCALIZATION_RELEASE_GATE_PATH" ]]; then
     materialize_args+=(--ui-localization-release-gate "$UI_LOCALIZATION_RELEASE_GATE_PATH")
+  fi
+
+  if [[ -n "$FLAGSHIP_READINESS_PATH" ]]; then
+    if [[ ! -f "$FLAGSHIP_READINESS_PATH" ]]; then
+      echo "Flagship readiness receipt does not exist: $FLAGSHIP_READINESS_PATH" >&2
+      exit 1
+    fi
+    if [[ "$materializer_help" != *"--flagship-readiness"* ]]; then
+      echo "Registry materializer CLI mismatch: $REGISTRY_ROOT/scripts/materialize_public_release_channel.py does not support --flagship-readiness." >&2
+      exit 1
+    fi
+    materialize_args+=(--flagship-readiness "$FLAGSHIP_READINESS_PATH")
   fi
 
   if [[ -d "$STARTUP_SMOKE_DIR" ]] && find "$STARTUP_SMOKE_DIR" -type f -name 'startup-smoke-*.receipt.json' | grep -q .; then

@@ -58,6 +58,19 @@ def test_scoped_preview_generation_does_not_rehydrate_other_release_artifacts() 
     assert "if digest and sha256_file(staged_artifact_path) != digest:" in generator
 
 
+def test_release_generation_can_bind_an_explicit_flagship_readiness_receipt() -> None:
+    generator = script_text("generate-releases-manifest.sh")
+
+    assert (
+        'FLAGSHIP_READINESS_PATH="${CHUMMER_FLAGSHIP_READINESS_PATH:-${CHUMMER_FLAGSHIP_PRODUCT_READINESS_RECEIPT_PATH:-}}"'
+        in generator
+    )
+    assert 'if [[ -n "$FLAGSHIP_READINESS_PATH" ]]; then' in generator
+    assert 'if [[ ! -f "$FLAGSHIP_READINESS_PATH" ]]; then' in generator
+    assert 'if [[ "$materializer_help" != *"--flagship-readiness"* ]]; then' in generator
+    assert 'materialize_args+=(--flagship-readiness "$FLAGSHIP_READINESS_PATH")' in generator
+
+
 def test_linux_deb_stage_normalizes_package_metadata_permissions() -> None:
     installer = script_text("build-desktop-installer.sh")
 
