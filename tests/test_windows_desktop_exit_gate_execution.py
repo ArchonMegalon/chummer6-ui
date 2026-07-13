@@ -191,9 +191,9 @@ def _write_visual_proof(path: Path, installer_sha: str, progress_path: Path, com
                     "sha256": _sha256_file(completion_path),
                 },
             ],
-            "readabilityReview": {"status": "pass", "reviewer": "operator"},
-            "contrastReview": {"status": "pass", "reviewer": "operator"},
-            "clippingReview": {"status": "pass", "reviewer": "operator"},
+            "readabilityReview": {"status": "pass", "reviewer": "Lucia"},
+            "contrastReview": {"status": "pass", "reviewer": "Lucia"},
+            "clippingReview": {"status": "pass", "reviewer": "Lucia"},
             "checks": {
                 "capture_mode": "interactive",
                 "human_review_confirmed": True,
@@ -279,7 +279,12 @@ def _build_fixture(root: Path) -> dict[str, Path]:
     }
 
 
-def _run_gate(paths: dict[str, Path], *, set_files_root_env: bool = True) -> subprocess.CompletedProcess[str]:
+def _run_gate(
+    paths: dict[str, Path],
+    *,
+    set_files_root_env: bool = True,
+    authorized_reviewer_ids: str = "Lucia",
+) -> subprocess.CompletedProcess[str]:
     env = {
         **os.environ,
         "CHUMMER_WINDOWS_RELEASE_CHANNEL_PATH": str(paths["release_channel_path"]),
@@ -297,6 +302,7 @@ def _run_gate(paths: dict[str, Path], *, set_files_root_env: bool = True) -> sub
         "CHUMMER_WINDOWS_STARTUP_SMOKE_RECEIPT_PATH": str(paths["startup_smoke_path"]),
         "CHUMMER_WINDOWS_DESKTOP_EXIT_GATE_APP_KEY": "avalonia",
         "CHUMMER_WINDOWS_DESKTOP_EXIT_GATE_RID": "win-x64",
+        "CHUMMER_WINDOWS_VISUAL_AUTHORIZED_REVIEWER_IDS": authorized_reviewer_ids,
     }
     if set_files_root_env:
         env["CHUMMER_WINDOWS_LOCAL_DESKTOP_FILES_ROOT"] = str(paths["files_dir"])
@@ -355,10 +361,18 @@ def test_windows_desktop_exit_gate_passes_with_valid_visual_proof_and_bootstrap_
     assert receipt["checks"]["windows_installer_visual_capture_mode"] == "interactive"
     assert receipt["checks"]["windows_installer_visual_human_review_confirmed"] is True
     assert receipt["checks"]["windows_installer_visual_reviewers"] == {
-        "readability": "operator",
-        "contrast": "operator",
-        "clipping": "operator",
+        "readability": "lucia",
+        "contrast": "lucia",
+        "clipping": "lucia",
     }
+    assert receipt["checks"]["windows_installer_visual_reviewers_identified_human"] == {
+        "readability": True,
+        "contrast": True,
+        "clipping": True,
+    }
+    assert receipt["checks"]["windows_installer_visual_authorized_reviewer_configured"] is True
+    assert receipt["checks"]["windows_installer_visual_authorized_reviewer_count"] == 1
+    assert receipt["checks"]["windows_installer_visual_unique_reviewer_identity_count"] == 1
     assert receipt["checks"]["windows_installer_visual_invalid_reviewers"] == []
     assert receipt["checks"]["startup_smoke_status"] == "pass"
     assert receipt["checks"]["startup_smoke_progress_log_found"] is True
@@ -445,7 +459,7 @@ def test_windows_desktop_exit_gate_rejects_automated_visual_review(tmp_path: Pat
     assert result.returncode != 0
     assert "Windows installer visual proof capture_mode is not interactive." in result.stderr
     assert "Windows installer visual proof human_review_confirmed is not true." in result.stderr
-    assert "Windows installer visual proof reviewers are missing or automated for: readability, contrast, clipping." in result.stderr
+    assert "Windows installer visual proof reviewers are missing, generic, automated, or unauthorized for: readability, contrast, clipping." in result.stderr
     receipt = json.loads(paths["output_path"].read_text(encoding="utf-8"))
     assert receipt["status"] == "failed"
     assert receipt["checks"]["windows_installer_visual_capture_mode"] == "auto"
@@ -473,7 +487,7 @@ def test_windows_desktop_exit_gate_rejects_missing_visual_reviewers(tmp_path: Pa
     result = _run_gate(paths)
 
     assert result.returncode != 0
-    assert "Windows installer visual proof reviewers are missing or automated for: readability, contrast, clipping." in result.stderr
+    assert "Windows installer visual proof reviewers are missing, generic, automated, or unauthorized for: readability, contrast, clipping." in result.stderr
     receipt = json.loads(paths["output_path"].read_text(encoding="utf-8"))
     assert receipt["status"] == "failed"
     assert receipt["checks"]["windows_installer_visual_reviewers"] == {
@@ -501,11 +515,191 @@ def test_windows_desktop_exit_gate_accepts_human_reviewer_name_containing_ci(tmp
         visual_proof[review_name]["reviewer"] = "Lucia"
     _write_json(paths["visual_proof_path"], visual_proof)
 
-    result = _run_gate(paths)
+    result = _run_gate(paths, authorized_reviewer_ids="Lucia")
 
     assert result.returncode == 0, result.stderr
     receipt = json.loads(paths["output_path"].read_text(encoding="utf-8"))
     assert receipt["checks"]["windows_installer_visual_invalid_reviewers"] == []
+
+
+def test_windows_desktop_exit_gate_rejects_generic_operator_reviewer(tmp_path: Path) -> None:
+    paths = _build_fixture(tmp_path)
+    _write_visual_proof(
+        paths["visual_proof_path"],
+        _sha256_file(paths["installer_path"]),
+        paths["progress_screenshot_path"],
+        paths["completion_screenshot_path"],
+    )
+    visual_proof = json.loads(paths["visual_proof_path"].read_text(encoding="utf-8"))
+    for review_name in ("readabilityReview", "contrastReview", "clippingReview"):
+        visual_proof[review_name]["reviewer"] = "operator"
+    _write_json(paths["visual_proof_path"], visual_proof)
+
+    result = _run_gate(paths, authorized_reviewer_ids="operator")
+
+    assert result.returncode != 0
+    assert "Windows installer visual proof reviewers are missing, generic, automated, or unauthorized for: readability, contrast, clipping." in result.stderr
+    receipt = json.loads(paths["output_path"].read_text(encoding="utf-8"))
+    assert receipt["checks"]["windows_installer_visual_reviewers_identified_human"] == {
+        "readability": False,
+        "contrast": False,
+        "clipping": False,
+    }
+
+
+def test_windows_desktop_exit_gate_rejects_unlisted_automation_identities_even_when_allowlisted(tmp_path: Path) -> None:
+    paths = _build_fixture(tmp_path)
+    _write_visual_proof(
+        paths["visual_proof_path"],
+        _sha256_file(paths["installer_path"]),
+        paths["progress_screenshot_path"],
+        paths["completion_screenshot_path"],
+    )
+    visual_proof = json.loads(paths["visual_proof_path"].read_text(encoding="utf-8"))
+    visual_proof["readabilityReview"]["reviewer"] = "codexea"
+    visual_proof["contrastReview"]["reviewer"] = "github-actions"
+    visual_proof["clippingReview"]["reviewer"] = "jenkins"
+    _write_json(paths["visual_proof_path"], visual_proof)
+
+    result = _run_gate(paths, authorized_reviewer_ids="codexea,github-actions,jenkins")
+
+    assert result.returncode != 0
+    assert "Windows installer visual proof reviewers are missing, generic, automated, or unauthorized for: readability, contrast, clipping." in result.stderr
+    receipt = json.loads(paths["output_path"].read_text(encoding="utf-8"))
+    assert receipt["checks"]["windows_installer_visual_reviewers_identified_human"] == {
+        "readability": False,
+        "contrast": False,
+        "clipping": False,
+    }
+
+
+def test_windows_desktop_exit_gate_rejects_qualified_automation_identities_even_when_allowlisted(tmp_path: Path) -> None:
+    paths = _build_fixture(tmp_path)
+    _write_visual_proof(
+        paths["visual_proof_path"],
+        _sha256_file(paths["installer_path"]),
+        paths["progress_screenshot_path"],
+        paths["completion_screenshot_path"],
+    )
+    visual_proof = json.loads(paths["visual_proof_path"].read_text(encoding="utf-8"))
+    qualified_automation_identity = "codexea-runner-42"
+    for review_name in ("readabilityReview", "contrastReview", "clippingReview"):
+        visual_proof[review_name]["reviewer"] = qualified_automation_identity
+    _write_json(paths["visual_proof_path"], visual_proof)
+
+    result = _run_gate(paths, authorized_reviewer_ids=qualified_automation_identity)
+
+    assert result.returncode != 0
+    receipt = json.loads(paths["output_path"].read_text(encoding="utf-8"))
+    assert receipt["checks"]["windows_installer_visual_reviewers_non_automated"] == {
+        "readability": False,
+        "contrast": False,
+        "clipping": False,
+    }
+
+
+def test_windows_desktop_exit_gate_rejects_benign_reviewer_missing_from_allowlist(tmp_path: Path) -> None:
+    paths = _build_fixture(tmp_path)
+    _write_visual_proof(
+        paths["visual_proof_path"],
+        _sha256_file(paths["installer_path"]),
+        paths["progress_screenshot_path"],
+        paths["completion_screenshot_path"],
+    )
+
+    result = _run_gate(paths, authorized_reviewer_ids="Tibor")
+
+    assert result.returncode != 0
+    receipt = json.loads(paths["output_path"].read_text(encoding="utf-8"))
+    assert receipt["checks"]["windows_installer_visual_reviewers_non_automated"] == {
+        "readability": True,
+        "contrast": True,
+        "clipping": True,
+    }
+    assert receipt["checks"]["windows_installer_visual_reviewers_identified_human"] == {
+        "readability": False,
+        "contrast": False,
+        "clipping": False,
+    }
+
+
+def test_windows_desktop_exit_gate_rejects_mixed_accountable_reviewer_identities(tmp_path: Path) -> None:
+    paths = _build_fixture(tmp_path)
+    _write_visual_proof(
+        paths["visual_proof_path"],
+        _sha256_file(paths["installer_path"]),
+        paths["progress_screenshot_path"],
+        paths["completion_screenshot_path"],
+    )
+    visual_proof = json.loads(paths["visual_proof_path"].read_text(encoding="utf-8"))
+    visual_proof["contrastReview"]["reviewer"] = "Tibor"
+    _write_json(paths["visual_proof_path"], visual_proof)
+
+    result = _run_gate(paths, authorized_reviewer_ids="Lucia,Tibor")
+
+    assert result.returncode != 0
+    assert "Windows installer visual proof must use one accountable reviewer identity for all reviews." in result.stderr
+    receipt = json.loads(paths["output_path"].read_text(encoding="utf-8"))
+    assert receipt["checks"]["windows_installer_visual_unique_reviewer_identity_count"] == 2
+
+
+def test_windows_desktop_exit_gate_requires_authorized_reviewer_allowlist(tmp_path: Path) -> None:
+    paths = _build_fixture(tmp_path)
+    _write_visual_proof(
+        paths["visual_proof_path"],
+        _sha256_file(paths["installer_path"]),
+        paths["progress_screenshot_path"],
+        paths["completion_screenshot_path"],
+    )
+
+    result = _run_gate(paths, authorized_reviewer_ids="")
+
+    assert result.returncode != 0
+    assert "Windows installer visual proof authorized reviewer allowlist is not configured." in result.stderr
+    receipt = json.loads(paths["output_path"].read_text(encoding="utf-8"))
+    assert receipt["checks"]["windows_installer_visual_authorized_reviewer_configured"] is False
+
+
+def test_windows_desktop_exit_gate_accepts_authorized_unicode_reviewer_identity(tmp_path: Path) -> None:
+    paths = _build_fixture(tmp_path)
+    _write_visual_proof(
+        paths["visual_proof_path"],
+        _sha256_file(paths["installer_path"]),
+        paths["progress_screenshot_path"],
+        paths["completion_screenshot_path"],
+    )
+    visual_proof = json.loads(paths["visual_proof_path"].read_text(encoding="utf-8"))
+    for review_name in ("readabilityReview", "contrastReview", "clippingReview"):
+        visual_proof[review_name]["reviewer"] = "李雷"
+    _write_json(paths["visual_proof_path"], visual_proof)
+
+    result = _run_gate(paths, authorized_reviewer_ids="李雷")
+
+    assert result.returncode == 0, result.stderr
+    receipt = json.loads(paths["output_path"].read_text(encoding="utf-8"))
+    assert receipt["checks"]["windows_installer_visual_reviewers_identified_human"] == {
+        "readability": True,
+        "contrast": True,
+        "clipping": True,
+    }
+
+
+def test_windows_desktop_exit_gate_normalizes_composed_and_decomposed_reviewer_identity(tmp_path: Path) -> None:
+    paths = _build_fixture(tmp_path)
+    _write_visual_proof(
+        paths["visual_proof_path"],
+        _sha256_file(paths["installer_path"]),
+        paths["progress_screenshot_path"],
+        paths["completion_screenshot_path"],
+    )
+    visual_proof = json.loads(paths["visual_proof_path"].read_text(encoding="utf-8"))
+    for review_name in ("readabilityReview", "contrastReview", "clippingReview"):
+        visual_proof[review_name]["reviewer"] = "A\u030asa"
+    _write_json(paths["visual_proof_path"], visual_proof)
+
+    result = _run_gate(paths, authorized_reviewer_ids="Åsa")
+
+    assert result.returncode == 0, result.stderr
 
 
 def test_windows_desktop_exit_gate_defaults_to_release_aligned_files_shelf(tmp_path: Path) -> None:

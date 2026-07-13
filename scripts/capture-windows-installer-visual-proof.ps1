@@ -4,6 +4,7 @@ param(
     [string]$OutputPath = "",
     [string]$Head = "avalonia",
     [string]$Rid = "win-x64",
+    [string]$Reviewer = "",
     [switch]$Auto,
     [int]$ProgressDelaySeconds = 5,
     [int]$CompletionDelaySeconds = 2,
@@ -160,6 +161,88 @@ function Confirm-OperatorReview {
     }
 }
 
+function Resolve-InteractiveReviewer {
+    if ($Auto) {
+        return "automation"
+    }
+
+    $candidate = $Reviewer.Trim()
+    $invalidIdentities = @(
+        "anonymous",
+        "agent",
+        "auto",
+        "automated",
+        "automation",
+        "bot",
+        "buildkite",
+        "ci",
+        "codex",
+        "codexea",
+        "github-actions",
+        "human",
+        "jenkins",
+        "llm",
+        "machine",
+        "operator",
+        "reviewer",
+        "runner",
+        "script",
+        "scripted",
+        "synthetic",
+        "test-runner",
+        "unknown",
+        "wine",
+        "workflow"
+    )
+    $automationIdentityTokens = @(
+        "actions",
+        "agent",
+        "auto",
+        "automated",
+        "automation",
+        "bot",
+        "buildkite",
+        "ci",
+        "codex",
+        "codexea",
+        "github",
+        "jenkins",
+        "llm",
+        "machine",
+        "runner",
+        "script",
+        "scripted",
+        "synthetic",
+        "wine",
+        "workflow"
+    )
+
+    while ($true) {
+        if ([string]::IsNullOrWhiteSpace($candidate)) {
+            $candidate = (Read-Host "Enter your reviewer name or accountable operator ID").Trim()
+        }
+
+        $normalizedCandidate = $candidate.Normalize([System.Text.NormalizationForm]::FormKC).Trim().ToLowerInvariant()
+        $candidateTokens = @(
+            [regex]::Matches($normalizedCandidate, "[\p{L}\p{Nd}]+") |
+                ForEach-Object { $_.Value }
+        )
+        $containsAutomationToken = @(
+            $candidateTokens | Where-Object { $automationIdentityTokens -contains $_ }
+        ).Count -gt 0
+        if (
+            $normalizedCandidate.Length -gt 0 -and
+            $invalidIdentities -notcontains $normalizedCandidate -and
+            -not $containsAutomationToken
+        ) {
+            return $candidate
+        }
+
+        Write-Host "Use a specific human reviewer name or accountable operator ID, not a generic or automated label."
+        $candidate = ""
+    }
+}
+
 if (($env:OS -ne "Windows_NT") -and (-not ([System.Runtime.InteropServices.RuntimeInformation]::IsOSPlatform([System.Runtime.InteropServices.OSPlatform]::Windows)))) {
     throw "This visual installer receipt must be captured on a Windows host."
 }
@@ -225,11 +308,11 @@ Capture-ScreenPng $completionPath
 $progressSha256 = Get-Sha256Lower $progressPath
 $completionSha256 = Get-Sha256Lower $completionPath
 $screenshotsDistinct = $progressSha256 -ne $completionSha256
+$reviewer = Resolve-InteractiveReviewer
 $readabilityConfirmed = Confirm-OperatorReview "Is all important installer text readable in both screenshots?"
 $contrastConfirmed = Confirm-OperatorReview "Is foreground/background contrast readable in both screenshots?"
 $clippingConfirmed = Confirm-OperatorReview "Is all important installer text free from clipping in both screenshots?"
 $humanReviewConfirmed = $readabilityConfirmed -and $contrastConfirmed -and $clippingConfirmed
-$reviewer = $(if ($Auto) { "automation" } else { "operator" })
 
 $processExitCode = $null
 if ($process.HasExited) {
@@ -315,6 +398,8 @@ $receipt = [ordered]@{
         process_exit_code = $processExitCode
         capture_mode = $(if ($Auto) { "auto" } else { "interactive" })
         human_review_confirmed = $humanReviewConfirmed
+        human_reviewer_identified = (-not $Auto) -and (-not [string]::IsNullOrWhiteSpace($reviewer))
+        reviewer_authorization_deferred_to_exit_gate = $true
     }
     reasons = @($reasons)
 }

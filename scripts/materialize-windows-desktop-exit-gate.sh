@@ -130,6 +130,7 @@ import platform
 import re
 import shutil
 import sys
+import unicodedata
 import zipfile
 from datetime import datetime, timezone
 from pathlib import Path
@@ -579,28 +580,83 @@ def nested_reviewer(payload: Dict[str, Any], *keys: str) -> str:
     return ""
 
 
+def normalize_reviewer_identity(value: Any) -> str:
+    return unicodedata.normalize("NFKC", str(value or "")).strip().casefold()
+
+
+INVALID_REVIEWER_IDENTITIES = {
+    "anonymous",
+    "agent",
+    "auto",
+    "automated",
+    "automation",
+    "bot",
+    "buildkite",
+    "ci",
+    "codex",
+    "codexea",
+    "github-actions",
+    "human",
+    "jenkins",
+    "llm",
+    "machine",
+    "operator",
+    "reviewer",
+    "runner",
+    "script",
+    "scripted",
+    "synthetic",
+    "test-runner",
+    "unknown",
+    "wine",
+    "workflow",
+}
+AUTOMATION_REVIEWER_TOKENS = {
+    "actions",
+    "agent",
+    "auto",
+    "automated",
+    "automation",
+    "bot",
+    "buildkite",
+    "ci",
+    "codex",
+    "codexea",
+    "github",
+    "jenkins",
+    "llm",
+    "machine",
+    "runner",
+    "script",
+    "scripted",
+    "synthetic",
+    "wine",
+    "workflow",
+}
+
+
+def configured_authorized_reviewer_identities() -> set[str]:
+    raw = os.environ.get("CHUMMER_WINDOWS_VISUAL_AUTHORIZED_REVIEWER_IDS", "")
+    return {
+        normalized
+        for value in re.split(r"[,;\n]+", raw)
+        if (normalized := normalize_reviewer_identity(value))
+    }
+
+
 def reviewer_is_non_automated(reviewer: str) -> bool:
-    normalized = normalize_token(reviewer)
-    if not normalized:
-        return False
-    automated_markers = {
-        "auto",
-        "automated",
-        "automation",
-        "bot",
-        "ci",
-        "machine",
-        "script",
-        "scripted",
-        "synthetic",
-        "wine",
-    }
-    reviewer_tokens = {
-        token
-        for token in re.split(r"[^a-z0-9]+", normalized)
-        if token
-    }
-    return reviewer_tokens.isdisjoint(automated_markers)
+    normalized = normalize_reviewer_identity(reviewer)
+    identity_tokens = set(re.findall(r"[^\W_]+", normalized, flags=re.UNICODE))
+    return bool(
+        normalized
+        and normalized not in INVALID_REVIEWER_IDENTITIES
+        and identity_tokens.isdisjoint(AUTOMATION_REVIEWER_TOKENS)
+    )
+
+
+def reviewer_is_identified_human(reviewer: str, authorized_identities: set[str]) -> bool:
+    normalized = normalize_reviewer_identity(reviewer)
+    return reviewer_is_non_automated(reviewer) and normalized in authorized_identities
 
 
 proof_path = Path(sys.argv[1])
@@ -1037,14 +1093,30 @@ visual_reviewers = {
         "clipping",
     ),
 }
+visual_authorized_reviewer_identities = configured_authorized_reviewer_identities()
+visual_normalized_reviewer_identities = {
+    review_name: normalize_reviewer_identity(reviewer)
+    for review_name, reviewer in visual_reviewers.items()
+}
+visual_reviewers_identified_human = {
+    review_name: reviewer_is_identified_human(reviewer, visual_authorized_reviewer_identities)
+    for review_name, reviewer in visual_reviewers.items()
+}
 visual_reviewers_non_automated = {
     review_name: reviewer_is_non_automated(reviewer)
     for review_name, reviewer in visual_reviewers.items()
 }
+visual_unique_reviewer_identities = sorted(
+    {
+        reviewer_identity
+        for reviewer_identity in visual_normalized_reviewer_identities.values()
+        if reviewer_identity
+    }
+)
 visual_invalid_reviewers = [
     review_name
-    for review_name, is_non_automated in visual_reviewers_non_automated.items()
-    if not is_non_automated
+    for review_name, is_identified_human in visual_reviewers_identified_human.items()
+    if not is_identified_human
 ]
 evidence["windows_installer_visual_proof_found"] = windows_installer_visual_proof_path.is_file()
 evidence["windows_installer_visual_proof_contract"] = visual_proof_contract
@@ -1072,7 +1144,17 @@ evidence["windows_installer_visual_clipping_status"] = visual_clipping_status
 evidence["windows_installer_visual_capture_mode"] = visual_capture_mode
 evidence["windows_installer_visual_human_review_confirmed"] = visual_human_review_confirmed
 evidence["windows_installer_visual_reviewers"] = visual_reviewers
+evidence["windows_installer_visual_authorized_reviewer_configured"] = bool(visual_authorized_reviewer_identities)
+evidence["windows_installer_visual_authorized_reviewer_count"] = len(visual_authorized_reviewer_identities)
+evidence["windows_installer_visual_authorized_reviewer_set_sha256"] = (
+    hashlib.sha256("\n".join(sorted(visual_authorized_reviewer_identities)).encode("utf-8")).hexdigest()
+    if visual_authorized_reviewer_identities
+    else ""
+)
+evidence["windows_installer_visual_normalized_reviewer_identities"] = visual_normalized_reviewer_identities
+evidence["windows_installer_visual_unique_reviewer_identity_count"] = len(visual_unique_reviewer_identities)
 evidence["windows_installer_visual_reviewers_non_automated"] = visual_reviewers_non_automated
+evidence["windows_installer_visual_reviewers_identified_human"] = visual_reviewers_identified_human
 evidence["windows_installer_visual_invalid_reviewers"] = visual_invalid_reviewers
 windows_visual_proof_external_blocker = (
     "missing_windows_visual_proof_capture"
@@ -1150,12 +1232,16 @@ if windows_installer_visual_proof_path.is_file() and visual_capture_mode != "int
     reasons.append("Windows installer visual proof capture_mode is not interactive.")
 if windows_installer_visual_proof_path.is_file() and not visual_human_review_confirmed:
     reasons.append("Windows installer visual proof human_review_confirmed is not true.")
+if windows_installer_visual_proof_path.is_file() and not visual_authorized_reviewer_identities:
+    reasons.append("Windows installer visual proof authorized reviewer allowlist is not configured.")
 if windows_installer_visual_proof_path.is_file() and visual_invalid_reviewers:
     reasons.append(
-        "Windows installer visual proof reviewers are missing or automated for: "
+        "Windows installer visual proof reviewers are missing, generic, automated, or unauthorized for: "
         + ", ".join(visual_invalid_reviewers)
         + "."
     )
+if windows_installer_visual_proof_path.is_file() and len(visual_unique_reviewer_identities) != 1:
+    reasons.append("Windows installer visual proof must use one accountable reviewer identity for all reviews.")
 
 startup_smoke_receipt_override = os.environ.get("CHUMMER_WINDOWS_STARTUP_SMOKE_RECEIPT_PATH", "").strip()
 if startup_smoke_receipt_override:

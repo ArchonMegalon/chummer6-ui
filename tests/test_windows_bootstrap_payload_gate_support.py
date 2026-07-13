@@ -43,10 +43,19 @@ def test_windows_visual_proof_capture_script_writes_gate_compatible_receipt() ->
     assert "contrastReview" in script
     assert "clippingReview" in script
     assert "Confirm-OperatorReview" in script
+    assert '[string]$Reviewer = ""' in script
+    assert "Resolve-InteractiveReviewer" in script
+    assert "Enter your reviewer name or accountable operator ID" in script
+    assert '$automationIdentityTokens = @(' in script
+    assert '[regex]::Matches($normalizedCandidate, "[\\p{L}\\p{Nd}]+")' in script
+    assert "$containsAutomationToken" in script
+    assert '$reviewer = Resolve-InteractiveReviewer' in script
     assert 'capture_mode = $(if ($Auto) { "auto" } else { "interactive" })' in script
     assert "human_review_confirmed = $humanReviewConfirmed" in script
+    assert "human_reviewer_identified" in script
+    assert "reviewer_authorization_deferred_to_exit_gate" in script
     assert '$status = "needs_review"' in script
-    assert '$reviewer = $(if ($Auto) { "automation" } else { "operator" })' in script
+    assert '$reviewer = $(if ($Auto) { "automation" } else { "operator" })' not in script
 
 
 def test_desktop_release_pipeline_documents_windows_visual_capture_without_github_actions() -> None:
@@ -57,6 +66,10 @@ def test_desktop_release_pipeline_documents_windows_visual_capture_without_githu
     assert "windows-installer-visual-proof" in doc
     assert "release-manifest shelf" in doc
     assert "host-specific gate" in doc
+    assert "specific reviewer name or accountable operator ID" in doc
+    assert "separately confirm readability, contrast, and clipping" in doc
+    assert "Generic labels such as `operator`" in doc
+    assert "CHUMMER_WINDOWS_VISUAL_AUTHORIZED_REVIEWER_IDS" in doc
     assert "GitHub Actions" not in doc
 
 
