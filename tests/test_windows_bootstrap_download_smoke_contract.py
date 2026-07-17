@@ -29,6 +29,21 @@ def test_windows_startup_smoke_supports_bootstrap_payload_download_mode() -> Non
     assert 'WINDOWS_STARTUP_SMOKE_EFFECTIVE_PAYLOAD_MODE="download"' in text
 
 
+def test_windows_startup_smoke_none_mode_reports_embedded_payload_without_override() -> None:
+    text = STARTUP_SMOKE.read_text(encoding="utf-8")
+
+    assert 'configured_payload_mode="$(lower_ascii "${WINDOWS_STARTUP_SMOKE_PAYLOAD_MODE:-}")"' in text
+    assert "local|download|none)" in text
+    assert (
+        '  else\n'
+        '    WINDOWS_STARTUP_SMOKE_EFFECTIVE_PAYLOAD_MODE="embedded"\n'
+        '    CHUMMER_WINDOWS_BINARY_TEMP_ROOT="$windows_native_temp_root" \\\n'
+        '    run_windows_binary "$ARTIFACT_PATH" "${installer_args[@]}" >>"$LOG_PATH" 2>&1\n'
+        '  fi'
+    ) in text
+    assert 'WINDOWS_STARTUP_SMOKE_EFFECTIVE_PAYLOAD_MODE="embedded_metadata"' not in text
+
+
 def test_windows_startup_smoke_owns_and_stops_an_isolated_wine_prefix_by_default() -> None:
     text = STARTUP_SMOKE.read_text(encoding="utf-8")
 
