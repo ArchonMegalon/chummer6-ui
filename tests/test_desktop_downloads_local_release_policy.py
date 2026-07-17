@@ -149,6 +149,9 @@ def test_daily_publish_policy_is_documented_in_local_runbook() -> None:
     assert "once per day in the morning release window" in runbook
     assert "Build only what the proof needs" in runbook
     assert "does not publish the live downloads shelf and does not change the stable channel by itself" in runbook
+    assert "force does not bypass installer eligibility or release proof gates" in runbook
+    assert "CHUMMER_NIGHTLY_SUPPORT_PROOF_ONLY_HANDOFF=1" in runbook
+    assert "A macOS-only, account-gated, hidden, quarantined, or support-only artifact set cannot replace the downloadable shelf." in runbook
     assert ("workflow" + "_dispatch") not in runbook
     assert ("GitHub " + "Actions") not in runbook
 

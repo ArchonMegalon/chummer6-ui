@@ -120,7 +120,9 @@ Manual path:
 2. `RUNBOOK_MODE=downloads-verify DOWNLOADS_VERIFY_LINKS=1 DOWNLOADS_VERIFY_TARGET=<portalBaseOrManifestUrl> bash scripts/runbook.sh`
 3. Local host shortcut for the newest staged nightly:
 `RUNBOOK_MODE=publish-latest-nightly bash scripts/runbook.sh`
-This command is guarded by the same daily cadence. It exits without publishing before 08:00 Europe/Vienna or when the downloads shelf was already published today. Use `CHUMMER_FORCE_NIGHTLY_PUBLISH=1` only for an explicit emergency/operator override.
+This command is guarded by the same daily cadence. It exits without publishing before 08:00 Europe/Vienna or when the downloads shelf was already published today. Use `CHUMMER_FORCE_NIGHTLY_PUBLISH=1` only for an explicit emergency/operator override of that cadence; force does not bypass installer eligibility or release proof gates.
+4. The generic public-nightly lane requires at least one staged `open_public` Windows or Linux installer whose platform is `promoted_release` in `.codex-design/product/DESKTOP_PLATFORM_ACCEPTANCE_MATRIX.yaml`. A macOS-only, account-gated, hidden, quarantined, or support-only artifact set cannot replace the downloadable shelf.
+5. To refresh and inspect the newest staged handoff without publishing, use `CHUMMER_NIGHTLY_SUPPORT_PROOF_ONLY_HANDOFF=1 RUNBOOK_MODE=publish-latest-nightly bash scripts/runbook.sh`. This narrowly scoped support/proof-only mode skips the public cadence check, materializes the handoff, validates stage scope, and exits before public-nightly eligibility checks, deploy synchronization, edge redeploy, or any public publication claim.
 
 Release-build handoff expectation:
 1. If a staged latest-build bundle verifies but still lists `missingRequiredPlatforms` for the public Windows/Linux promotion scope, do not promote it to `public_stable`.
@@ -132,10 +134,11 @@ Operational rule:
 2. Build only what the proof needs. Local work should use targeted tests and the affected platform; the full public Windows `win-x64` plus Linux `linux-x64` package set is for scheduled release proof or explicit override.
 3. Mainline rolling release scope is Windows `win-x64` and Linux `linux-x64`. macOS may still build and publish bounded artifacts, but it must not block the public Windows/Linux shelf from advancing.
 4. `preview` is the rolling release lane for mainline Windows/Linux builds. `public_stable` remains explicit promotion only.
-5. Public channels are proof-backed, not best-effort. If the resolved channel is `release_candidate` or `public_stable`, the workflow must either:
+5. Public-nightly eligibility is sourced from `.codex-design/product/DESKTOP_PLATFORM_ACCEPTANCE_MATRIX.yaml`; keep Windows/Linux `public_shelf_status` and `primary_package_kind` changes synchronized with the artifact rows emitted by the release materializer.
+6. Public channels are proof-backed, not best-effort. If the resolved channel is `release_candidate` or `public_stable`, the workflow must either:
 emit Windows signing and macOS signing/notarization receipts, or
 run with `CHUMMER_ALLOW_UNSIGNED_PUBLIC_RELEASE=true` so the public-promotion evidence records `unsigned_public_release` explicitly.
-6. `public_stable` publication also requires fresh root blocker truth from `RELEASE_BLOCKERS.generated.json`; the default max age is `86400` seconds via `CHUMMER_PUBLIC_STABLE_BLOCKERS_MAX_AGE_SECONDS`.
+7. `public_stable` publication also requires fresh root blocker truth from `RELEASE_BLOCKERS.generated.json`; the default max age is `86400` seconds via `CHUMMER_PUBLIC_STABLE_BLOCKERS_MAX_AGE_SECONDS`.
 
 ## Strict Test Gate Commands (host-side)
 
