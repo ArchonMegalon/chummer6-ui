@@ -1121,7 +1121,7 @@ run_windows_smoke() {
     CHUMMER_INSTALLER_PAYLOAD_SIZE_BYTES="$local_payload_size_bytes" \
     run_windows_binary "$ARTIFACT_PATH" "${installer_args[@]}" >>"$LOG_PATH" 2>&1
   else
-    WINDOWS_STARTUP_SMOKE_EFFECTIVE_PAYLOAD_MODE="embedded_metadata"
+    WINDOWS_STARTUP_SMOKE_EFFECTIVE_PAYLOAD_MODE="embedded"
     CHUMMER_WINDOWS_BINARY_TEMP_ROOT="$windows_native_temp_root" \
     run_windows_binary "$ARTIFACT_PATH" "${installer_args[@]}" >>"$LOG_PATH" 2>&1
   fi

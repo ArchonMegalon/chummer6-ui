@@ -62,14 +62,20 @@ def test_nsis_prefers_compiled_payload_and_still_verifies_exact_size_and_sha() -
     assert 'FileWrite $6 "7za.exe h -scrcSHA256' in installer
 
 
-def test_embedded_smoke_receipt_mode_is_exact_and_download_policy_remains_default() -> None:
+def test_none_mode_emits_exact_embedded_smoke_receipt_without_payload_override() -> None:
     smoke = STARTUP_SMOKE.read_text(encoding="utf-8")
     verifier = STARTUP_SMOKE_VERIFIER.read_text(encoding="utf-8")
 
-    assert 'WINDOWS_STARTUP_SMOKE_PAYLOAD_MODE="${CHUMMER_WINDOWS_STARTUP_SMOKE_PAYLOAD_MODE:-local}"' in smoke
-    assert "local|download|embedded|none)" in smoke
+    assert 'WINDOWS_STARTUP_SMOKE_PAYLOAD_MODE="${CHUMMER_WINDOWS_STARTUP_SMOKE_PAYLOAD_MODE:-auto}"' in smoke
+    assert 'configured_payload_mode="$(lower_ascii "${WINDOWS_STARTUP_SMOKE_PAYLOAD_MODE:-}")"' in smoke
+    assert "local|download|none)" in smoke
     assert 'WINDOWS_STARTUP_SMOKE_EFFECTIVE_PAYLOAD_MODE="embedded"' in smoke
-    assert "grep -aFq 'payloadAcquisitionMode=embedded'" in smoke
+    embedded_branch = smoke[smoke.index('  else\n    WINDOWS_STARTUP_SMOKE_EFFECTIVE_PAYLOAD_MODE="embedded"') :]
+    embedded_branch = embedded_branch[: embedded_branch.index("\n  fi")]
+    assert "CHUMMER_INSTALLER_PAYLOAD_PATH=" not in embedded_branch
+    assert "CHUMMER_INSTALLER_PAYLOAD_URL=" not in embedded_branch
+    assert "CHUMMER_INSTALLER_PAYLOAD_SHA256=" not in embedded_branch
+    assert "CHUMMER_INSTALLER_PAYLOAD_SIZE_BYTES=" not in embedded_branch
     assert 'CHUMMER_INSTALLER_PAYLOAD_URL="$WINDOWS_STARTUP_SMOKE_EFFECTIVE_PAYLOAD_URL"' in smoke
     assert 'return norm(row.get("payloadAcquisitionMode")) or "download"' in verifier
     assert 'if expected_acquisition_mode == "embedded":' in verifier
