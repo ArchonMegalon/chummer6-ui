@@ -1,4 +1,6 @@
+using System.Runtime.InteropServices;
 using System.Security.Cryptography;
+using System.Security.Cryptography.Pkcs;
 using System.Security.Cryptography.X509Certificates;
 using System.Xml;
 using System.Xml.Linq;
@@ -18,8 +20,6 @@ public static class HubDataProtection
     private const string ApplicationName = "Chummer.Hub.Web";
     private const int MinimumRsaKeyBits = 3072;
     private const long MaximumKeyRingXmlCharacters = 1024 * 1024;
-    private const UnixFileMode PrivateDirectoryMode =
-        UnixFileMode.UserRead | UnixFileMode.UserWrite | UnixFileMode.UserExecute;
 
     public static void Configure(
         IServiceCollection services,
@@ -71,28 +71,42 @@ public static class HubDataProtection
             configuredKeysPath,
             KeysPathConfigurationKey,
             environment.ContentRootPath);
-        ValidateDirectory(keysPath, environment.ContentRootPath);
-        ValidatePersistedKeyRing(keysPath);
+        if (!OperatingSystem.IsLinux())
+        {
+            throw new PlatformNotSupportedException(
+                "Configured Hub Data Protection storage requires Linux openat/statx and procfs descriptor semantics.");
+        }
 
-        HubDataProtectionCertificateSet certificates = HubDataProtectionCertificateSet.Load(
-            configuration,
-            environment.ContentRootPath,
-            configuredCertificatePath,
-            configuredPreviousCertificatePath);
+        HubPinnedCertificateFile.PinnedDirectory pinnedKeyRing =
+            HubPinnedCertificateFile.OpenKeyRingDirectory(
+                keysPath,
+                KeysPathConfigurationKey);
+        HubDataProtectionCertificateSet? certificates = null;
         try
         {
+            ValidatePersistedKeyRing(pinnedKeyRing);
+            certificates = HubDataProtectionCertificateSet.Load(
+                configuration,
+                environment.ContentRootPath,
+                configuredCertificatePath,
+                configuredPreviousCertificatePath);
+
             // Register through a factory so the container owns and disposes the
-            // ephemeral private-key handles after the host has stopped.
+            // ephemeral private-key handles and pinned key-ring descriptor after
+            // the host has stopped.
+            services.AddSingleton<HubPinnedCertificateFile.PinnedDirectory>(
+                _ => pinnedKeyRing);
             services.AddSingleton<HubDataProtectionCertificateSet>(_ => certificates);
             IDataProtectionBuilder dataProtection = services.AddDataProtection()
                 .SetApplicationName(ApplicationName)
-                .PersistKeysToFileSystem(new DirectoryInfo(keysPath))
+                .PersistKeysToFileSystem(pinnedKeyRing.Directory)
                 .ProtectKeysWithCertificate(certificates.Current);
             dataProtection.UnprotectKeysWithAnyCertificate(certificates.All);
         }
         catch
         {
-            certificates.Dispose();
+            certificates?.Dispose();
+            pinnedKeyRing.Dispose();
             throw;
         }
     }
@@ -108,6 +122,8 @@ public static class HubDataProtection
         // Resolve the factory registration before the first key operation so the
         // host owns the certificate set's lifetime even when startup later fails.
         _ = services.GetRequiredService<HubDataProtectionCertificateSet>();
+        HubPinnedCertificateFile.PinnedDirectory pinnedKeyRing =
+            services.GetRequiredService<HubPinnedCertificateFile.PinnedDirectory>();
 
         // Materialize every retained key before Protect is allowed to generate a
         // replacement default key. Without this gate, a host missing an older
@@ -131,11 +147,7 @@ public static class HubDataProtection
             throw new InvalidOperationException("Hub Data Protection failed its startup round trip.");
         }
 
-        string keysPath = Path.GetFullPath(
-            configuration[KeysPathConfigurationKey]
-            ?? throw new InvalidOperationException(
-                $"{KeysPathConfigurationKey} was removed during startup."));
-        ValidatePersistedKeyRing(keysPath, requireAtLeastOneKey: true);
+        ValidatePersistedKeyRing(pinnedKeyRing, requireAtLeastOneKey: true);
     }
 
     private static void RejectIncompletePreviousCertificateConfiguration(
@@ -181,52 +193,22 @@ public static class HubDataProtection
         return fullPath;
     }
 
-    private static void ValidateDirectory(string keysPath, string contentRoot)
-    {
-        _ = ResolveExternalPath(keysPath, KeysPathConfigurationKey, contentRoot);
-
-        if (OperatingSystem.IsLinux())
-        {
-            HubPinnedCertificateFile.ValidatePrivateDirectory(
-                keysPath,
-                KeysPathConfigurationKey);
-            return;
-        }
-
-        if (!Directory.Exists(keysPath))
-        {
-            throw new InvalidOperationException(
-                $"{KeysPathConfigurationKey} must reference an existing persistent directory.");
-        }
-
-        FileAttributes attributes = File.GetAttributes(keysPath);
-        if ((attributes & FileAttributes.ReparsePoint) != 0)
-        {
-            throw new InvalidOperationException(
-                $"{KeysPathConfigurationKey} must not reference a symbolic link or reparse point.");
-        }
-
-        if (!OperatingSystem.IsWindows() && File.GetUnixFileMode(keysPath) != PrivateDirectoryMode)
-        {
-            throw new InvalidOperationException(
-                $"{KeysPathConfigurationKey} must have private user-only directory permissions.");
-        }
-    }
-
     private static void ValidatePersistedKeyRing(
-        string keysPath,
+        HubPinnedCertificateFile.PinnedDirectory pinnedKeyRing,
         bool requireAtLeastOneKey = false)
     {
+        string keysPath = pinnedKeyRing.GetStableRuntimePath();
         string[] xmlFiles = Directory
             .EnumerateFiles(keysPath, "*.xml", SearchOption.TopDirectoryOnly)
+            .Select(path => Path.GetFileName(path)!)
             .Order(StringComparer.Ordinal)
             .ToArray();
 
         int keyCount = 0;
-        foreach (string xmlFile in xmlFiles)
+        foreach (string fileName in xmlFiles)
         {
             using HubPinnedCertificateFile pinnedEntry =
-                HubPinnedCertificateFile.OpenKeyRingEntry(xmlFile);
+                pinnedKeyRing.OpenEntry(fileName);
             byte[] xmlBytes = pinnedEntry.ReadStableBytes();
             try
             {
@@ -244,7 +226,6 @@ public static class HubDataProtection
                 XElement root = document.Root
                     ?? throw new InvalidOperationException(
                         "The Hub Data Protection key ring contains an empty XML entry.");
-                string fileName = Path.GetFileName(xmlFile);
                 string rootName = root.Name.LocalName;
                 bool isKey = string.Equals(rootName, "key", StringComparison.Ordinal);
                 bool isRevocation = string.Equals(rootName, "revocation", StringComparison.Ordinal);
@@ -399,6 +380,12 @@ public static class HubDataProtection
             X509Certificate2 certificate;
             try
             {
+                ValidatePkcs12Structure(
+                    pkcs12Bytes,
+                    certificatePassword
+                        ?? throw new InvalidOperationException(
+                            $"{configurationKey} requires a non-empty password."),
+                    configurationKey);
                 certificate = X509CertificateLoader.LoadPkcs12(
                     pkcs12Bytes,
                     certificatePassword,
@@ -440,6 +427,154 @@ public static class HubDataProtection
             {
                 certificate.Dispose();
                 throw;
+            }
+        }
+
+        private static void ValidatePkcs12Structure(
+            byte[] pkcs12Bytes,
+            string password,
+            string configurationKey)
+        {
+            Pkcs12Info info;
+            try
+            {
+                info = Pkcs12Info.Decode(
+                    pkcs12Bytes,
+                    out int bytesConsumed,
+                    skipCopy: true);
+                if (bytesConsumed != pkcs12Bytes.Length)
+                {
+                    throw new InvalidOperationException(
+                        $"{configurationKey} PKCS#12 payload must not contain trailing data.");
+                }
+            }
+            catch (CryptographicException ex)
+            {
+                throw new InvalidOperationException(
+                    $"{configurationKey} could not be decoded as a structurally valid PKCS#12 payload.",
+                    ex);
+            }
+
+            if (info.IntegrityMode != Pkcs12IntegrityMode.Password)
+            {
+                throw new InvalidOperationException(
+                    $"{configurationKey} PKCS#12 payload must include password MAC integrity.");
+            }
+
+            bool verified;
+            try
+            {
+                verified = info.VerifyMac(password.AsSpan());
+            }
+            catch (CryptographicException ex)
+            {
+                throw new InvalidOperationException(
+                    $"{configurationKey} PKCS#12 password MAC could not be verified.",
+                    ex);
+            }
+            if (!verified)
+            {
+                throw new InvalidOperationException(
+                    $"{configurationKey} PKCS#12 password MAC did not verify.");
+            }
+
+            char[] deliberatelyWrongPassword = new char[password.Length + 1];
+            password.CopyTo(0, deliberatelyWrongPassword, 0, password.Length);
+            deliberatelyWrongPassword[^1] = '\u0001';
+            try
+            {
+                if (info.VerifyMac(deliberatelyWrongPassword))
+                {
+                    throw new InvalidOperationException(
+                        $"{configurationKey} PKCS#12 password MAC accepted a deliberately incorrect password.");
+                }
+            }
+            catch (CryptographicException ex)
+            {
+                throw new InvalidOperationException(
+                    $"{configurationKey} PKCS#12 wrong-password MAC probe failed unexpectedly.",
+                    ex);
+            }
+            finally
+            {
+                CryptographicOperations.ZeroMemory(
+                    MemoryMarshal.AsBytes(deliberatelyWrongPassword.AsSpan()));
+            }
+
+            int privateKeyCount = 0;
+            foreach (Pkcs12SafeContents safeContents in info.AuthenticatedSafe)
+            {
+                InspectSafeContents(
+                    safeContents,
+                    password,
+                    inheritedPasswordProtection: false,
+                    configurationKey,
+                    ref privateKeyCount);
+            }
+
+            if (privateKeyCount == 0)
+            {
+                throw new InvalidOperationException(
+                    $"{configurationKey} PKCS#12 payload must contain at least one protected private key.");
+            }
+        }
+
+        private static void InspectSafeContents(
+            Pkcs12SafeContents safeContents,
+            string password,
+            bool inheritedPasswordProtection,
+            string configurationKey,
+            ref int privateKeyCount)
+        {
+            bool passwordProtected = inheritedPasswordProtection;
+            switch (safeContents.ConfidentialityMode)
+            {
+                case Pkcs12ConfidentialityMode.None:
+                    break;
+                case Pkcs12ConfidentialityMode.Password:
+                    try
+                    {
+                        safeContents.Decrypt(password.AsSpan());
+                    }
+                    catch (CryptographicException ex)
+                    {
+                        throw new InvalidOperationException(
+                            $"{configurationKey} contains PKCS#12 safe contents that the configured password cannot decrypt.",
+                            ex);
+                    }
+                    passwordProtected = true;
+                    break;
+                default:
+                    throw new InvalidOperationException(
+                        $"{configurationKey} PKCS#12 safe contents must be unencrypted certificate metadata or password encrypted.");
+            }
+
+            foreach (Pkcs12SafeBag bag in safeContents.GetBags())
+            {
+                switch (bag)
+                {
+                    case Pkcs12KeyBag:
+                        if (!passwordProtected)
+                        {
+                            throw new InvalidOperationException(
+                                $"{configurationKey} PKCS#12 payload contains an unprotected plaintext private-key bag.");
+                        }
+                        privateKeyCount++;
+                        break;
+                    case Pkcs12ShroudedKeyBag:
+                        privateKeyCount++;
+                        break;
+                    case Pkcs12SafeContentsBag nested:
+                        InspectSafeContents(
+                            nested.SafeContents
+                                ?? throw new InvalidOperationException(
+                                    $"{configurationKey} contains an empty nested PKCS#12 safe-contents bag."),
+                            password,
+                            passwordProtected,
+                            configurationKey,
+                            ref privateKeyCount);
+                        break;
+                }
             }
         }
 

@@ -9,6 +9,7 @@ ring_a_volume="chummer-hub-data-protection-a-proof-$$"
 ring_b_volume="chummer-hub-data-protection-b-proof-$$"
 missing_password_volume="chummer-hub-data-protection-missing-password-proof-$$"
 wrong_password_volume="chummer-hub-data-protection-wrong-password-proof-$$"
+unprotected_pkcs12_volume="chummer-hub-data-protection-unprotected-pkcs12-proof-$$"
 keys_path="/var/lib/chummer-hub/data-protection"
 secrets_path="/run/secrets/chummer-config"
 current_certificate_path="$secrets_path/certificates/hub-current.p12"
@@ -20,7 +21,8 @@ cleanup() {
         "$ring_a_volume" \
         "$ring_b_volume" \
         "$missing_password_volume" \
-        "$wrong_password_volume" >/dev/null 2>&1 || true
+        "$wrong_password_volume" \
+        "$unprotected_pkcs12_volume" >/dev/null 2>&1 || true
     if [ -d "$proof_root" ]; then
         docker run --rm \
             --user 0 \
@@ -382,6 +384,16 @@ openssl pkcs12 -export \
     -out "$proof_root/certificate-b.p12" \
     -passout "file:$proof_root/sentinels/password-b" >/dev/null 2>&1
 
+# This is a deliberately invalid authority fixture: it has neither a MAC nor
+# encrypted key/certificate bags. The Hub must reject it before touching the
+# persistent key ring even though X509CertificateLoader could otherwise parse it.
+openssl pkcs12 -export \
+    -nomac -keypbe NONE -certpbe NONE \
+    -inkey "$proof_root/certificate-a.key" \
+    -in "$proof_root/certificate-a.crt" \
+    -out "$proof_root/certificate-a-unprotected.p12" \
+    -passout "file:$proof_root/sentinels/password-a" >/dev/null 2>&1
+
 make_secret_set \
     "$proof_root/secrets-a" \
     "$proof_root/certificate-a.p12" \
@@ -400,6 +412,10 @@ make_secret_set \
     "$proof_root/secrets-wrong-a" \
     "$proof_root/certificate-a.p12" \
     "$proof_root/sentinels/password-wrong"
+make_secret_set \
+    "$proof_root/secrets-unprotected-a" \
+    "$proof_root/certificate-a-unprotected.p12" \
+    "$proof_root/sentinels/password-a"
 install -d -m 0700 \
     "$proof_root/secrets-missing-password-a" \
     "$proof_root/secrets-missing-password-a/certificates"
@@ -417,6 +433,7 @@ docker run --rm \
     /proof/secrets-b \
     /proof/secrets-b-with-a \
     /proof/secrets-wrong-a \
+    /proof/secrets-unprotected-a \
     /proof/secrets-missing-password-a >/dev/null
 
 test "$(docker image inspect "$image" --format '{{.Config.User}}')" = "1654:1654"
@@ -424,6 +441,7 @@ docker volume create "$ring_a_volume" >/dev/null
 docker volume create "$ring_b_volume" >/dev/null
 docker volume create "$missing_password_volume" >/dev/null
 docker volume create "$wrong_password_volume" >/dev/null
+docker volume create "$unprotected_pkcs12_volume" >/dev/null
 
 # A Production host may not silently run without any Data Protection material.
 expect_rejected "missing-material"
@@ -443,6 +461,15 @@ expect_rejected "wrong-certificate-password" \
     --volume "$wrong_password_volume:$keys_path" \
     --volume "$proof_root/secrets-wrong-a:$secrets_path:ro"
 test -z "$(volume_digest "$wrong_password_volume")"
+
+# A no-MAC PKCS#12 with plaintext key and certificate bags must be rejected
+# before the framework has any opportunity to mint a fallback key.
+expect_rejected "unprotected-pkcs12" \
+    --env CHUMMER_HUB_DATA_PROTECTION_KEYS_PATH="$keys_path" \
+    --env CHUMMER_HUB_DATA_PROTECTION_CERTIFICATE_PATH="$current_certificate_path" \
+    --volume "$unprotected_pkcs12_volume:$keys_path" \
+    --volume "$proof_root/secrets-unprotected-a:$secrets_path:ro"
+test -z "$(volume_digest "$unprotected_pkcs12_volume")"
 
 # Ring A is created with certificate A and remains stable across an exact-image restart.
 start_positive "ring-a-current-a" \

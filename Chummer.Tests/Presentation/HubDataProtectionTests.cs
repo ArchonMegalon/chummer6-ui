@@ -2,12 +2,14 @@
 
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Runtime.InteropServices;
 using System.Runtime.Versioning;
 using System.Security.Cryptography;
 using System.Security.Cryptography.X509Certificates;
+using System.Threading;
 using System.Threading.Tasks;
 using System.Xml.Linq;
 using Chummer.Hub.Web;
@@ -148,6 +150,48 @@ public sealed class HubDataProtectionTests
                     configuration,
                     fixture.Environment));
         }
+    }
+
+    [TestMethod]
+    public void No_mac_plaintext_openssl_pkcs12_is_rejected_before_key_ring_mutation()
+    {
+        RequireLinux();
+        using var fixture = new HubDataProtectionFixture();
+        string unprotectedPath = fixture.CertificatePath("openssl-nomac-unprotected.p12");
+        WriteOpenSslUnprotectedPkcs12(fixture, unprotectedPath, omitMac: true);
+        IConfiguration configuration = fixture.CreateCurrentConfiguration(
+            unprotectedPath,
+            CertificatePassword);
+
+        InvalidOperationException exception = Assert.ThrowsExactly<InvalidOperationException>(() =>
+            HubDataProtection.Configure(
+                new ServiceCollection(),
+                configuration,
+                fixture.Environment));
+
+        StringAssert.Contains(exception.Message, "password MAC integrity");
+        Assert.HasCount(0, Directory.GetFileSystemEntries(fixture.KeysPath));
+    }
+
+    [TestMethod]
+    public void Mac_protected_openssl_pkcs12_with_plaintext_key_bag_is_rejected()
+    {
+        RequireLinux();
+        using var fixture = new HubDataProtectionFixture();
+        string unprotectedPath = fixture.CertificatePath("openssl-mac-plaintext-key.p12");
+        WriteOpenSslUnprotectedPkcs12(fixture, unprotectedPath, omitMac: false);
+        IConfiguration configuration = fixture.CreateCurrentConfiguration(
+            unprotectedPath,
+            CertificatePassword);
+
+        InvalidOperationException exception = Assert.ThrowsExactly<InvalidOperationException>(() =>
+            HubDataProtection.Configure(
+                new ServiceCollection(),
+                configuration,
+                fixture.Environment));
+
+        StringAssert.Contains(exception.Message, "unprotected plaintext private-key bag");
+        Assert.HasCount(0, Directory.GetFileSystemEntries(fixture.KeysPath));
     }
 
     [TestMethod]
@@ -309,6 +353,51 @@ public sealed class HubDataProtectionTests
     }
 
     [TestMethod]
+    public void Pinned_key_ring_survives_writable_ancestor_swap_during_host_startup()
+    {
+        RequireLinux();
+        using var fixture = new HubDataProtectionFixture();
+        WriteRsaCertificate(
+            fixture.CurrentCertificatePath,
+            keySize: 3072,
+            password: CertificatePassword,
+            subjectName: "CN=Chummer Hub Pinned Key Ring Swap Test");
+        IConfiguration configuration = fixture.CreateCurrentConfiguration(
+            fixture.CurrentCertificatePath,
+            CertificatePassword);
+        ServiceCollection services = new();
+        string pinnedKeysPath = Path.Combine(fixture.ExternalRoot, "keys-pinned");
+        using var keyRingPinned = new ManualResetEventSlim(initialState: false);
+        Task ancestorSwap = Task.Run(() =>
+        {
+            keyRingPinned.Wait();
+            Directory.Move(fixture.KeysPath, pinnedKeysPath);
+            Directory.CreateDirectory(fixture.KeysPath);
+            File.SetUnixFileMode(fixture.KeysPath, PrivateDirectoryMode);
+        });
+
+        try
+        {
+            HubDataProtection.Configure(services, configuration, fixture.Environment);
+        }
+        finally
+        {
+            keyRingPinned.Set();
+        }
+        ancestorSwap.GetAwaiter().GetResult();
+
+        using ServiceProvider provider = services.BuildServiceProvider();
+        HubDataProtection.VerifyOperational(provider, configuration);
+
+        Assert.HasCount(0, Directory.GetFileSystemEntries(fixture.KeysPath));
+        Assert.IsTrue(Directory.GetFiles(
+                pinnedKeysPath,
+                "key-*.xml",
+                SearchOption.TopDirectoryOnly).Length > 0,
+            "The framework must persist its encrypted key through the pinned directory descriptor.");
+    }
+
+    [TestMethod]
     public void Key_ring_rejects_unexpected_and_symbolic_link_xml_entries()
     {
         RequireLinux();
@@ -380,6 +469,77 @@ public sealed class HubDataProtectionTests
                         fifoConfiguration,
                         fixture.Environment)))
             .WaitAsync(TimeSpan.FromSeconds(2));
+
+        IConfiguration deviceConfiguration = fixture.CreateCurrentConfiguration(
+            "/dev/null",
+            CertificatePassword);
+        Assert.ThrowsExactly<InvalidOperationException>(() =>
+            HubDataProtection.Configure(
+                new ServiceCollection(),
+                deviceConfiguration,
+                fixture.Environment));
+    }
+
+    [TestMethod]
+    public async Task Key_ring_fifo_is_rejected_without_blocking()
+    {
+        RequireLinux();
+        using var fixture = new HubDataProtectionFixture();
+        WriteRsaCertificate(
+            fixture.CurrentCertificatePath,
+            keySize: 3072,
+            password: CertificatePassword,
+            subjectName: "CN=Chummer Hub Key Ring FIFO Test");
+        string fifoPath = Path.Combine(fixture.KeysPath, "key-fifo.xml");
+        Assert.AreEqual(0, CreateFifo(fifoPath, Convert.ToUInt32("600", 8)));
+        IConfiguration configuration = fixture.CreateCurrentConfiguration(
+            fixture.CurrentCertificatePath,
+            CertificatePassword);
+
+        await Task.Run(() =>
+                Assert.ThrowsExactly<InvalidOperationException>(() =>
+                    HubDataProtection.Configure(
+                        new ServiceCollection(),
+                        configuration,
+                        fixture.Environment)))
+            .WaitAsync(TimeSpan.FromSeconds(2));
+    }
+
+    [TestMethod]
+    public void Certificate_size_boundary_is_exact_and_oversize_is_rejected_before_allocation()
+    {
+        RequireLinux();
+        using var fixture = new HubDataProtectionFixture();
+        const long maximumCertificateBytes = 16L * 1024 * 1024;
+        string boundaryPath = fixture.CertificatePath("boundary.p12");
+        using (FileStream stream = File.Create(boundaryPath))
+            stream.SetLength(maximumCertificateBytes);
+        File.SetUnixFileMode(boundaryPath, PrivateFileMode);
+        IConfiguration boundaryConfiguration = fixture.CreateCurrentConfiguration(
+            boundaryPath,
+            CertificatePassword);
+
+        InvalidOperationException boundaryFailure = Assert.ThrowsExactly<InvalidOperationException>(() =>
+            HubDataProtection.Configure(
+                new ServiceCollection(),
+                boundaryConfiguration,
+                fixture.Environment));
+        StringAssert.Contains(boundaryFailure.Message, "structurally valid PKCS#12");
+
+        string oversizePath = fixture.CertificatePath("oversize.p12");
+        using (FileStream stream = File.Create(oversizePath))
+            stream.SetLength(maximumCertificateBytes + 1);
+        File.SetUnixFileMode(oversizePath, PrivateFileMode);
+        IConfiguration oversizeConfiguration = fixture.CreateCurrentConfiguration(
+            oversizePath,
+            CertificatePassword);
+
+        InvalidOperationException oversizeFailure = Assert.ThrowsExactly<InvalidOperationException>(() =>
+            HubDataProtection.Configure(
+                new ServiceCollection(),
+                oversizeConfiguration,
+                fixture.Environment));
+        StringAssert.Contains(oversizeFailure.Message, "between 1 and 16777216 bytes");
     }
 
     private static ServiceProvider CreateProvider(
@@ -462,6 +622,80 @@ public sealed class HubDataProtectionTests
             CryptographicOperations.ZeroMemory(pkcs12);
         }
     }
+
+    private static void WriteOpenSslUnprotectedPkcs12(
+        HubDataProtectionFixture fixture,
+        string outputPath,
+        bool omitMac)
+    {
+        string keyPath = fixture.CertificatePath("openssl-nomac.key");
+        string certificatePath = fixture.CertificatePath("openssl-nomac.crt");
+        string passwordPath = fixture.CertificatePath("openssl-password.txt");
+        File.WriteAllText(passwordPath, CertificatePassword);
+        File.SetUnixFileMode(passwordPath, PrivateFileMode);
+
+        RunOpenSsl(
+            fixture.CertificatesPath,
+            "req", "-x509", "-newkey", "rsa:3072", "-sha256", "-nodes",
+            "-subj", "/CN=Chummer Hub OpenSSL no-MAC rejection test",
+            "-keyout", keyPath,
+            "-out", certificatePath,
+            "-days", "1");
+        if (omitMac)
+        {
+            RunOpenSsl(
+                fixture.CertificatesPath,
+                "pkcs12", "-export",
+                "-nomac", "-keypbe", "NONE", "-certpbe", "NONE",
+                "-inkey", keyPath,
+                "-in", certificatePath,
+                "-out", outputPath,
+                "-passout", $"file:{passwordPath}");
+        }
+        else
+        {
+            RunOpenSsl(
+                fixture.CertificatesPath,
+                "pkcs12", "-export",
+                "-keypbe", "NONE", "-certpbe", "NONE",
+                "-inkey", keyPath,
+                "-in", certificatePath,
+                "-out", outputPath,
+                "-passout", $"file:{passwordPath}");
+        }
+        File.SetUnixFileMode(outputPath, PrivateFileMode);
+    }
+
+    private static void RunOpenSsl(string workingDirectory, params string[] arguments)
+    {
+        using var process = new Process
+        {
+            StartInfo = new ProcessStartInfo
+            {
+                FileName = "openssl",
+                WorkingDirectory = workingDirectory,
+                RedirectStandardOutput = true,
+                RedirectStandardError = true,
+                UseShellExecute = false,
+                CreateNoWindow = true
+            }
+        };
+        foreach (string argument in arguments)
+            process.StartInfo.ArgumentList.Add(argument);
+
+        Assert.IsTrue(process.Start(), "OpenSSL did not start for PKCS#12 fixture generation.");
+        Task<string> standardOutput = process.StandardOutput.ReadToEndAsync();
+        Task<string> standardError = process.StandardError.ReadToEndAsync();
+        process.WaitForExit();
+        Task.WaitAll(standardOutput, standardError);
+        Assert.AreEqual(
+            0,
+            process.ExitCode,
+            $"OpenSSL fixture generation failed (stdout sha256={Digest(standardOutput.Result)}, stderr sha256={Digest(standardError.Result)}).");
+    }
+
+    private static string Digest(string value)
+        => Convert.ToHexStringLower(SHA256.HashData(System.Text.Encoding.UTF8.GetBytes(value)));
 
     private static void RequireLinux()
     {

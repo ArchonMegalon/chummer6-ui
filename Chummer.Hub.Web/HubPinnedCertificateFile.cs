@@ -74,7 +74,7 @@ internal sealed class HubPinnedCertificateFile : IDisposable
             MaxKeyRingEntryBytes,
             allowReadOnly: false);
 
-    internal static void ValidatePrivateDirectory(
+    internal static PinnedDirectory OpenKeyRingDirectory(
         string directoryPath,
         string configurationKey)
     {
@@ -87,24 +87,31 @@ internal sealed class HubPinnedCertificateFile : IDisposable
         {
             current = OpenPinnedPath(directoryPath, finalIsDirectory: true, configurationKey);
             LinuxStatx status = ReadStatus(current);
-            ushort modeBits = (ushort)(status.Mode & ModeBitsMask);
-            if ((status.Mode & FileTypeMask) != DirectoryFileType
-                || status.UserId != GetEffectiveUserId()
-                || modeBits != (UserRead | UserWrite | UserExecute))
-            {
-                throw new InvalidOperationException(
-                    $"{configurationKey} must be an owner-owned directory with mode 0700.");
-            }
+            RequirePrivateDirectory(status, configurationKey);
             if (!HasDescriptorCloseOnExec(current))
             {
                 throw new InvalidOperationException(
                     $"The pinned {configurationKey} descriptor is not close-on-exec.");
             }
+
+            var pinned = new PinnedDirectory(
+                current,
+                configurationKey,
+                DirectoryIdentity.From(status));
+            current = null;
+            return pinned;
         }
         finally
         {
             current?.Dispose();
         }
+    }
+
+    internal static void ValidatePrivateDirectory(
+        string directoryPath,
+        string configurationKey)
+    {
+        using PinnedDirectory _ = OpenKeyRingDirectory(directoryPath, configurationKey);
     }
 
     private static HubPinnedCertificateFile OpenPrivateFile(
@@ -383,6 +390,20 @@ internal sealed class HubPinnedCertificateFile : IDisposable
         }
     }
 
+    private static void RequirePrivateDirectory(
+        LinuxStatx status,
+        string configurationKey)
+    {
+        ushort modeBits = (ushort)(status.Mode & ModeBitsMask);
+        if ((status.Mode & FileTypeMask) != DirectoryFileType
+            || status.UserId != GetEffectiveUserId()
+            || modeBits != (UserRead | UserWrite | UserExecute))
+        {
+            throw new InvalidOperationException(
+                $"{configurationKey} must be an owner-owned directory with mode 0700.");
+        }
+    }
+
     private static void ReadExactly(SafeFileHandle handle, byte[] destination)
     {
         int total = 0;
@@ -408,7 +429,7 @@ internal sealed class HubPinnedCertificateFile : IDisposable
         => new(Marshal.GetLastPInvokeError());
 
     [StructLayout(LayoutKind.Explicit, Size = 256)]
-    private struct LinuxStatx
+    internal struct LinuxStatx
     {
         [FieldOffset(0)] public uint Mask;
         [FieldOffset(20)] public uint UserId;
@@ -428,14 +449,14 @@ internal sealed class HubPinnedCertificateFile : IDisposable
     }
 
     [StructLayout(LayoutKind.Sequential)]
-    private readonly struct LinuxStatxTimestamp
+    internal readonly struct LinuxStatxTimestamp
     {
         internal readonly long Seconds;
         internal readonly uint Nanoseconds;
         private readonly int _reserved;
     }
 
-    private readonly record struct FileIdentity(
+    internal readonly record struct FileIdentity(
         uint DeviceMajor,
         uint DeviceMinor,
         ulong Inode,
@@ -457,7 +478,145 @@ internal sealed class HubPinnedCertificateFile : IDisposable
                 status.StatusChangeTime.Nanoseconds);
     }
 
+    internal readonly record struct DirectoryIdentity(
+        uint DeviceMajor,
+        uint DeviceMinor,
+        ulong Inode)
+    {
+        internal static DirectoryIdentity From(LinuxStatx status)
+            => new(status.DeviceMajor, status.DeviceMinor, status.Inode);
+    }
+
     private readonly record struct LinuxDevice(uint Major, uint Minor);
+
+    /// <summary>
+    /// Retains the validated key-ring inode for the host lifetime. Framework
+    /// reads and writes use the procfs descriptor projection, so renaming any
+    /// writable ancestor cannot redirect the repository after startup checks.
+    /// </summary>
+    internal sealed class PinnedDirectory : IDisposable
+    {
+        private readonly object _gate = new();
+        private readonly string _configurationKey;
+        private readonly DirectoryIdentity _identity;
+        private SafeFileHandle? _directoryHandle;
+
+        internal PinnedDirectory(
+            SafeFileHandle directoryHandle,
+            string configurationKey,
+            DirectoryIdentity identity)
+        {
+            _directoryHandle = directoryHandle;
+            _configurationKey = configurationKey;
+            _identity = identity;
+        }
+
+        internal DirectoryInfo Directory
+            => new(GetStableRuntimePath());
+
+        internal HubPinnedCertificateFile OpenEntry(string fileName)
+        {
+            if (string.IsNullOrWhiteSpace(fileName)
+                || !string.Equals(fileName, Path.GetFileName(fileName), StringComparison.Ordinal)
+                || fileName.IndexOf(Path.DirectorySeparatorChar) >= 0
+                || fileName.IndexOf(Path.AltDirectorySeparatorChar) >= 0)
+            {
+                throw new InvalidOperationException(
+                    "Hub Data Protection key-ring entry names must be single path components.");
+            }
+
+            lock (_gate)
+            {
+                SafeFileHandle directory = GetHandleLocked();
+                ValidateIdentityLocked(directory);
+                SafeFileHandle? entry = null;
+                try
+                {
+                    entry = OpenRelativeHandle(
+                        directory,
+                        fileName,
+                        OpenReadOnly | OpenNonBlocking | OpenNoFollow | OpenCloseOnExec,
+                        "Hub Data Protection key-ring entries must be non-symbolic-link regular files.");
+                    LinuxStatx status = ReadStatus(entry);
+                    RequireRegularPrivateFile(
+                        status,
+                        "Hub Data Protection key-ring entry",
+                        MaxKeyRingEntryBytes,
+                        allowReadOnly: false);
+                    if (!HasDescriptorCloseOnExec(entry))
+                    {
+                        throw new InvalidOperationException(
+                            "The pinned Hub Data Protection key-ring entry descriptor is not close-on-exec.");
+                    }
+
+                    var pinned = new HubPinnedCertificateFile(
+                        entry,
+                        "Hub Data Protection key-ring entry",
+                        MaxKeyRingEntryBytes,
+                        allowReadOnly: false);
+                    entry = null;
+                    return pinned;
+                }
+                finally
+                {
+                    entry?.Dispose();
+                }
+            }
+        }
+
+        internal string GetStableRuntimePath()
+        {
+            lock (_gate)
+            {
+                SafeFileHandle directory = GetHandleLocked();
+                ValidateIdentityLocked(directory);
+                string procPath = $"/proc/self/fd/{GetDescriptor(directory)}";
+
+                using SafeFileHandle projected = OpenHandle(
+                    procPath,
+                    OpenPath | OpenDirectory | OpenCloseOnExec,
+                    $"Could not resolve the pinned {_configurationKey} descriptor projection.");
+                LinuxStatx projectedStatus = ReadStatus(projected);
+                if (!_identity.Equals(DirectoryIdentity.From(projectedStatus)))
+                {
+                    throw new InvalidOperationException(
+                        $"The pinned {_configurationKey} descriptor projection changed identity.");
+                }
+
+                return procPath;
+            }
+        }
+
+        public void Dispose()
+        {
+            lock (_gate)
+            {
+                SafeFileHandle? handle = _directoryHandle;
+                _directoryHandle = null;
+                handle?.Dispose();
+            }
+        }
+
+        private SafeFileHandle GetHandleLocked()
+            => _directoryHandle
+                ?? throw new ObjectDisposedException(nameof(PinnedDirectory));
+
+        private void ValidateIdentityLocked(SafeFileHandle directory)
+        {
+            LinuxStatx status = ReadStatus(directory);
+            RequirePrivateDirectory(status, _configurationKey);
+            if (!_identity.Equals(DirectoryIdentity.From(status)))
+            {
+                throw new InvalidOperationException(
+                    $"The pinned {_configurationKey} directory changed identity.");
+            }
+            if (!HasDescriptorCloseOnExec(directory))
+            {
+                throw new InvalidOperationException(
+                    $"The pinned {_configurationKey} descriptor lost close-on-exec protection.");
+            }
+        }
+    }
 
     [DllImport("libc", EntryPoint = "open", SetLastError = true)]
     private static extern int OpenDescriptor(

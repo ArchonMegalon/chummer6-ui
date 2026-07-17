@@ -22,6 +22,7 @@
     <PackageReference Include="$(ChummerRunContractsPackageId)" Version="$(ChummerRunContractsPackageVersion)" />
   </ItemGroup>
   <ItemGroup>
+    <PackageReference Include="System.Security.Cryptography.Pkcs" Version="10.0.0" />
     <ProjectReference Include="..\Chummer.Presentation\Chummer.Presentation.csproj"
                       AdditionalProperties="RuntimeIdentifier=$(RuntimeIdentifier);RuntimeIdentifiers=$(RuntimeIdentifiers)" />
   </ItemGroup>
