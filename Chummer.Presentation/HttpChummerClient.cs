@@ -1,4 +1,5 @@
 using Chummer.Campaign.Contracts;
+using System.Net;
 using System.Net.Http.Json;
 using System.Text;
 using System.Text.Json.Nodes;
@@ -108,7 +109,10 @@ public sealed class HttpChummerClient : IChummerClient, IOriginDossierPublicatio
             RulesetId: NormalizeRulesetId(payload.RulesetId),
             ImportReceiptId: payload.ImportReceiptId ?? string.Empty,
             ImportedAtUtc: payload.ImportedAtUtc,
-            Portability: payload.Portability);
+            Portability: payload.Portability,
+            WorkflowDeterministicReceipt: payload.WorkflowDeterministicReceipt,
+            ContentRevision: payload.ContentRevision,
+            SavedRevision: payload.SavedRevision);
     }
 
     public async Task<IReadOnlyList<WorkspaceListItem>> ListWorkspacesAsync(CancellationToken ct)
@@ -121,8 +125,64 @@ public sealed class HttpChummerClient : IChummerClient, IOriginDossierPublicatio
                 Summary: workspace.Summary,
                 LastUpdatedUtc: workspace.LastUpdatedUtc,
                 RulesetId: NormalizeRulesetId(workspace.RulesetId),
-                HasSavedWorkspace: workspace.HasSavedWorkspace))
+                HasSavedWorkspace: workspace.HasSavedWorkspace,
+                ContentRevision: workspace.ContentRevision,
+                SavedRevision: workspace.SavedRevision))
             .ToArray();
+    }
+
+    public async Task<CommandResult<WorkspaceDocumentSnapshot>> GetWorkspaceAsync(
+        CharacterWorkspaceId id,
+        CancellationToken ct)
+    {
+        using HttpResponseMessage response = await _httpClient.GetAsync(
+            $"/api/workspaces/{Uri.EscapeDataString(id.Value)}",
+            ct).ConfigureAwait(false);
+        if (!response.IsSuccessStatusCode)
+        {
+            return WorkspaceFailure<WorkspaceDocumentSnapshot>(response.StatusCode);
+        }
+
+        WorkspaceDocumentResponse? payload = await response.Content
+            .ReadFromJsonAsync<WorkspaceDocumentResponse>(ct)
+            .ConfigureAwait(false);
+        if (payload is null
+            || string.IsNullOrWhiteSpace(payload.Id)
+            || payload.ContentRevision <= 0
+            || !HasMatchingStrongEtag(response, payload.ContentRevision))
+        {
+            return WorkspaceCorrupt<WorkspaceDocumentSnapshot>("Workspace read response was incomplete.");
+        }
+
+        try
+        {
+            if (!TryParseWorkspaceDocumentFormat(payload.Format, out WorkspaceDocumentFormat format))
+            {
+                return WorkspaceCorrupt<WorkspaceDocumentSnapshot>("Workspace read response contained an invalid format.");
+            }
+
+            WorkspaceDocument document = new(
+                new WorkspaceDocumentState(
+                    payload.RulesetId,
+                    payload.SchemaVersion,
+                    payload.PayloadKind,
+                    Encoding.UTF8.GetString(Convert.FromBase64String(payload.ContentBase64))),
+                format);
+            return new CommandResult<WorkspaceDocumentSnapshot>(
+                true,
+                new WorkspaceDocumentSnapshot(
+                    new CharacterWorkspaceId(payload.Id),
+                    document,
+                    payload.LastUpdatedUtc,
+                    payload.ContentRevision,
+                    payload.SavedRevision),
+                null,
+                WorkspaceOperationOutcome.Success);
+        }
+        catch (Exception ex) when (ex is FormatException or ArgumentException)
+        {
+            return WorkspaceCorrupt<WorkspaceDocumentSnapshot>("Workspace read response contained invalid document data.");
+        }
     }
 
     public async Task<AccountCampaignSummary?> GetAccountCampaignSummaryAsync(CancellationToken ct)
@@ -400,16 +460,33 @@ public sealed class HttpChummerClient : IChummerClient, IOriginDossierPublicatio
         return payload?.ToProjection() ?? DesktopInstallLinkingSummaryProjection.Empty;
     }
 
+    [Obsolete("Compatibility close performs one read and one conditional request. Pass expectedContentRevision.")]
     public async Task<bool> CloseWorkspaceAsync(CharacterWorkspaceId id, CancellationToken ct)
     {
-        using HttpResponseMessage response = await _httpClient.DeleteAsync($"/api/workspaces/{id.Value}", ct);
-        if (response.StatusCode == System.Net.HttpStatusCode.NotFound)
+        CommandResult<WorkspaceDocumentSnapshot> read = await GetWorkspaceAsync(id, ct).ConfigureAwait(false);
+        if (!read.Success || read.Value is null)
+        {
             return false;
+        }
 
-        if (!response.IsSuccessStatusCode)
-            throw new InvalidOperationException($"Workspace close failed with HTTP {(int)response.StatusCode}.");
+        CommandResult<WorkspaceRevisionReceipt> result = await CloseWorkspaceAsync(
+            id,
+            read.Value.ContentRevision,
+            ct).ConfigureAwait(false);
+        return result.Success;
+    }
 
-        return true;
+    public async Task<CommandResult<WorkspaceRevisionReceipt>> CloseWorkspaceAsync(
+        CharacterWorkspaceId id,
+        long expectedContentRevision,
+        CancellationToken ct)
+    {
+        using HttpRequestMessage request = CreateConditionalRequest(
+            HttpMethod.Delete,
+            $"/api/workspaces/{Uri.EscapeDataString(id.Value)}",
+            expectedContentRevision);
+        using HttpResponseMessage response = await _httpClient.SendAsync(request, ct).ConfigureAwait(false);
+        return await ReadRevisionResponseAsync(response, ct).ConfigureAwait(false);
     }
 
     public async Task<IReadOnlyList<AppCommandDefinition>> GetCommandsAsync(string? rulesetId, CancellationToken ct)
@@ -672,63 +749,128 @@ public sealed class HttpChummerClient : IChummerClient, IOriginDossierPublicatio
         return await GetRequiredAsync<CharacterAwakeningSection>($"/api/workspaces/{id.Value}/awakening", ct);
     }
 
+    [Obsolete("Compatibility metadata update performs one read and one conditional request. Pass expectedContentRevision.")]
     public async Task<CommandResult<CharacterProfileSection>> UpdateMetadataAsync(
         CharacterWorkspaceId id,
         UpdateWorkspaceMetadata command,
         CancellationToken ct)
     {
-        using HttpRequestMessage request = new(HttpMethod.Patch, $"/api/workspaces/{id.Value}/metadata")
-        {
-            Content = JsonContent.Create(command)
-        };
-
-        using HttpResponseMessage response = await _httpClient.SendAsync(request, ct);
-        if (!response.IsSuccessStatusCode)
+        CommandResult<WorkspaceDocumentSnapshot> read = await GetWorkspaceAsync(id, ct).ConfigureAwait(false);
+        if (!read.Success || read.Value is null)
         {
             return new CommandResult<CharacterProfileSection>(
-                Success: false,
-                Value: null,
-                Error: $"HTTP {(int)response.StatusCode}");
+                false,
+                null,
+                read.Error,
+                read.Outcome);
         }
 
-        WorkspaceMetadataResponse? payload = await response.Content.ReadFromJsonAsync<WorkspaceMetadataResponse>(ct);
-        if (payload?.Profile is null)
-        {
-            return new CommandResult<CharacterProfileSection>(
-                Success: false,
-                Value: null,
-                Error: "Metadata response did not include a profile payload.");
-        }
-
+        CommandResult<WorkspaceMetadataResult> mutation = await UpdateMetadataAsync(
+            id,
+            read.Value.ContentRevision,
+            command,
+            ct).ConfigureAwait(false);
         return new CommandResult<CharacterProfileSection>(
-            Success: true,
-            Value: payload.Profile,
-            Error: null);
+            mutation.Success,
+            mutation.Value?.Profile,
+            mutation.Error,
+            mutation.Outcome);
     }
 
+    public async Task<CommandResult<WorkspaceMetadataResult>> UpdateMetadataAsync(
+        CharacterWorkspaceId id,
+        long expectedContentRevision,
+        UpdateWorkspaceMetadata command,
+        CancellationToken ct)
+    {
+        using HttpRequestMessage request = CreateConditionalRequest(
+            HttpMethod.Patch,
+            $"/api/workspaces/{Uri.EscapeDataString(id.Value)}/metadata",
+            expectedContentRevision,
+            JsonContent.Create(command));
+
+        using HttpResponseMessage response = await _httpClient.SendAsync(request, ct).ConfigureAwait(false);
+        if (!response.IsSuccessStatusCode)
+        {
+            return WorkspaceFailure<WorkspaceMetadataResult>(response.StatusCode);
+        }
+
+        WorkspaceMetadataResponse? payload = await response.Content
+            .ReadFromJsonAsync<WorkspaceMetadataResponse>(ct)
+            .ConfigureAwait(false);
+        if (payload?.Profile is null
+            || payload.ContentRevision <= 0
+            || !HasMatchingStrongEtag(response, payload.ContentRevision))
+        {
+            return WorkspaceCorrupt<WorkspaceMetadataResult>("Metadata response was incomplete.");
+        }
+
+        return new CommandResult<WorkspaceMetadataResult>(
+            true,
+            new WorkspaceMetadataResult(payload.Profile, payload.ContentRevision, payload.SavedRevision),
+            null,
+            WorkspaceOperationOutcome.Success);
+    }
+
+    public async Task<CommandResult<WorkspaceRevisionReceipt>> ReplaceWorkspaceDocumentAsync(
+        CharacterWorkspaceId id,
+        long expectedContentRevision,
+        WorkspaceDocument document,
+        CancellationToken ct)
+    {
+        using HttpRequestMessage request = CreateConditionalRequest(
+            HttpMethod.Put,
+            $"/api/workspaces/{Uri.EscapeDataString(id.Value)}",
+            expectedContentRevision,
+            JsonContent.Create(new WorkspaceDocumentReplaceRequest(
+                ContentBase64: Convert.ToBase64String(Encoding.UTF8.GetBytes(document.Content)),
+                Format: document.Format.ToString(),
+                RulesetId: document.RulesetId,
+                SchemaVersion: document.SchemaVersion,
+                PayloadKind: document.PayloadKind)));
+        using HttpResponseMessage response = await _httpClient.SendAsync(request, ct).ConfigureAwait(false);
+        return await ReadRevisionResponseAsync(response, ct).ConfigureAwait(false);
+    }
+
+    [Obsolete("Compatibility save performs one read and one conditional request. Pass expectedContentRevision.")]
     public async Task<CommandResult<WorkspaceSaveReceipt>> SaveAsync(CharacterWorkspaceId id, CancellationToken ct)
     {
-        using HttpResponseMessage response = await _httpClient.PostAsJsonAsync(
-            $"/api/workspaces/{id.Value}/save",
-            new { },
-            ct);
+        CommandResult<WorkspaceDocumentSnapshot> read = await GetWorkspaceAsync(id, ct).ConfigureAwait(false);
+        if (!read.Success || read.Value is null)
+        {
+            return new CommandResult<WorkspaceSaveReceipt>(false, null, read.Error, read.Outcome);
+        }
+
+        return await SaveAsync(id, read.Value.ContentRevision, ct).ConfigureAwait(false);
+    }
+
+    public async Task<CommandResult<WorkspaceSaveReceipt>> SaveAsync(
+        CharacterWorkspaceId id,
+        long expectedContentRevision,
+        CancellationToken ct)
+    {
+        using HttpRequestMessage request = CreateConditionalRequest(
+            HttpMethod.Post,
+            $"/api/workspaces/{Uri.EscapeDataString(id.Value)}/save",
+            expectedContentRevision,
+            JsonContent.Create(new { }));
+        using HttpResponseMessage response = await _httpClient.SendAsync(request, ct).ConfigureAwait(false);
 
         if (!response.IsSuccessStatusCode)
         {
-            return new CommandResult<WorkspaceSaveReceipt>(
-                Success: false,
-                Value: null,
-                Error: $"HTTP {(int)response.StatusCode}");
+            return WorkspaceFailure<WorkspaceSaveReceipt>(response.StatusCode);
         }
 
-        WorkspaceSaveResponse? payload = await response.Content.ReadFromJsonAsync<WorkspaceSaveResponse>(ct);
+        WorkspaceSaveResponse? payload = await response.Content
+            .ReadFromJsonAsync<WorkspaceSaveResponse>(ct)
+            .ConfigureAwait(false);
 
-        if (payload is null || string.IsNullOrWhiteSpace(payload.Id))
+        if (payload is null
+            || string.IsNullOrWhiteSpace(payload.Id)
+            || payload.ContentRevision <= 0
+            || !HasMatchingStrongEtag(response, payload.ContentRevision))
         {
-            return new CommandResult<WorkspaceSaveReceipt>(
-                Success: false,
-                Value: null,
-                Error: "Save response did not include workspace id.");
+            return WorkspaceCorrupt<WorkspaceSaveReceipt>("Save response was incomplete.");
         }
 
         return new CommandResult<WorkspaceSaveReceipt>(
@@ -736,8 +878,13 @@ public sealed class HttpChummerClient : IChummerClient, IOriginDossierPublicatio
             Value: new WorkspaceSaveReceipt(
                 Id: new CharacterWorkspaceId(payload.Id),
                 DocumentLength: payload.DocumentLength,
-                RulesetId: NormalizeRulesetId(payload.RulesetId)),
-            Error: null);
+                RulesetId: NormalizeRulesetId(payload.RulesetId),
+                ReceiptId: payload.ReceiptId ?? string.Empty,
+                WorkflowDeterministicReceipt: payload.WorkflowDeterministicReceipt,
+                ContentRevision: payload.ContentRevision,
+                SavedRevision: payload.SavedRevision),
+            Error: null,
+            OperationOutcome: WorkspaceOperationOutcome.Success);
     }
 
     public async Task<CommandResult<WorkspaceDownloadReceipt>> DownloadAsync(CharacterWorkspaceId id, CancellationToken ct)
@@ -899,11 +1046,97 @@ public sealed class HttpChummerClient : IChummerClient, IOriginDossierPublicatio
 
     private static WorkspaceDocumentFormat ParseWorkspaceDocumentFormat(string? rawFormat)
     {
-        return !string.IsNullOrWhiteSpace(rawFormat)
-            && Enum.TryParse(rawFormat, ignoreCase: true, out WorkspaceDocumentFormat parsedFormat)
+        return TryParseWorkspaceDocumentFormat(rawFormat, out WorkspaceDocumentFormat parsedFormat)
             ? parsedFormat
             : WorkspaceDocumentFormat.NativeXml;
     }
+
+    private static bool TryParseWorkspaceDocumentFormat(
+        string? rawFormat,
+        out WorkspaceDocumentFormat parsedFormat)
+    {
+        parsedFormat = WorkspaceDocumentFormat.NativeXml;
+        return !string.IsNullOrWhiteSpace(rawFormat)
+               && Enum.TryParse(rawFormat, ignoreCase: true, out parsedFormat)
+               && Enum.IsDefined(parsedFormat);
+    }
+
+    private static HttpRequestMessage CreateConditionalRequest(
+        HttpMethod method,
+        string requestUri,
+        long expectedContentRevision,
+        HttpContent? content = null)
+    {
+        HttpRequestMessage request = new(method, requestUri)
+        {
+            Content = content
+        };
+        request.Headers.TryAddWithoutValidation(
+            "If-Match",
+            WorkspaceRevisionEtag.Format(expectedContentRevision));
+        return request;
+    }
+
+    private static async Task<CommandResult<WorkspaceRevisionReceipt>> ReadRevisionResponseAsync(
+        HttpResponseMessage response,
+        CancellationToken ct)
+    {
+        if (!response.IsSuccessStatusCode)
+        {
+            return WorkspaceFailure<WorkspaceRevisionReceipt>(response.StatusCode);
+        }
+
+        WorkspaceRevisionResponse? payload = await response.Content
+            .ReadFromJsonAsync<WorkspaceRevisionResponse>(ct)
+            .ConfigureAwait(false);
+        if (payload is null
+            || string.IsNullOrWhiteSpace(payload.Id)
+            || payload.ContentRevision <= 0
+            || !HasMatchingStrongEtag(response, payload.ContentRevision))
+        {
+            return WorkspaceCorrupt<WorkspaceRevisionReceipt>("Workspace mutation response was incomplete.");
+        }
+
+        return new CommandResult<WorkspaceRevisionReceipt>(
+            true,
+            new WorkspaceRevisionReceipt(
+                new CharacterWorkspaceId(payload.Id),
+                payload.ContentRevision,
+                payload.SavedRevision),
+            null,
+            WorkspaceOperationOutcome.Success);
+    }
+
+    private static bool HasMatchingStrongEtag(HttpResponseMessage response, long contentRevision)
+    {
+        string? tag = response.Headers.ETag?.Tag;
+        return WorkspaceRevisionEtag.TryParseStrong(tag, out long taggedRevision)
+               && taggedRevision == contentRevision;
+    }
+
+    private static CommandResult<T> WorkspaceFailure<T>(HttpStatusCode statusCode)
+        where T : class
+    {
+        WorkspaceOperationOutcome outcome = statusCode switch
+        {
+            HttpStatusCode.NotFound => WorkspaceOperationOutcome.Missing,
+            HttpStatusCode.Conflict => WorkspaceOperationOutcome.Conflict,
+            HttpStatusCode.UnprocessableEntity => WorkspaceOperationOutcome.Corrupt,
+            _ => WorkspaceOperationOutcome.Unavailable
+        };
+        string error = outcome switch
+        {
+            WorkspaceOperationOutcome.Missing => "Workspace not found.",
+            WorkspaceOperationOutcome.Conflict => "Workspace revision conflict.",
+            WorkspaceOperationOutcome.Corrupt => "Workspace data is corrupt.",
+            _ => "Workspace service is unavailable."
+        };
+        return new CommandResult<T>(false, null, error, outcome);
+    }
+
+    private static CommandResult<T> WorkspaceCorrupt<T>(string error)
+        where T : class
+        => new(false, null, error, WorkspaceOperationOutcome.Corrupt);
 
     private async Task<BuildKitCompatibilityResponse?> GetBuildKitCompatibilityAsync(
         string buildKitId,

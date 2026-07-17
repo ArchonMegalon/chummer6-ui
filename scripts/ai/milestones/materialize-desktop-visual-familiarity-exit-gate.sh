@@ -1,15 +1,7 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-repo_root_physical="$(cd "$(dirname "${BASH_SOURCE[0]}")/../../.." && pwd -P)"
-repo_root_alias_candidate="${CHUMMER_UI_REPO_ROOT_ALIAS:-/docker/chummercomplete/chummer6-ui}"
-repo_root="$repo_root_physical"
-if [[ -n "$repo_root_alias_candidate" && -d "$repo_root_alias_candidate" ]]; then
-  alias_physical="$(cd "$repo_root_alias_candidate" && pwd -P)"
-  if [[ "$alias_physical" == "$repo_root_physical" ]]; then
-    repo_root="$(cd -L "$repo_root_alias_candidate" && pwd -L)"
-  fi
-fi
+repo_root="$(cd "$(dirname "${BASH_SOURCE[0]}")/../../.." && pwd -P)"
 cd "$repo_root"
 
 receipt_path="$repo_root/.codex-studio/published/DESKTOP_VISUAL_FAMILIARITY_EXIT_GATE.generated.json"
@@ -18,6 +10,7 @@ screenshot_dir="$repo_root/.codex-studio/published/ui-flagship-release-gate-scre
 hub_registry_root="${CHUMMER_HUB_REGISTRY_ROOT:-$("$repo_root/scripts/resolve-hub-registry-root.sh" 2>/dev/null || true)}"
 flagship_product_readiness_materializer_path="${CHUMMER_FLAGSHIP_PRODUCT_READINESS_MATERIALIZER_PATH:-/docker/fleet/scripts/materialize_flagship_product_readiness.py}"
 canonical_release_channel_path="${hub_registry_root:+$hub_registry_root/.codex-studio/published/RELEASE_CHANNEL.generated.json}"
+run_services_release_channel_path="${CHUMMER_RUN_SERVICES_RELEASE_CHANNEL_PATH:-/docker/chummercomplete/chummer.run-services/Chummer.Portal/downloads/RELEASE_CHANNEL.generated.json}"
 default_release_channel_path="$repo_root/Docker/Downloads/RELEASE_CHANNEL.generated.json"
 presentation_release_channel_path="/docker/chummercomplete/chummer-presentation/Chummer.Portal/downloads/RELEASE_CHANNEL.generated.json"
 verified_release_channel_path="$repo_root/.tmp/verify-release-channel/RELEASE_CHANNEL.generated.json"
@@ -28,6 +21,10 @@ else
   if [[ -f "$presentation_release_channel_path" ]] && [[ ! -f "$default_release_channel_path" || "$presentation_release_channel_path" -nt "$default_release_channel_path" ]]; then
     release_channel_path_default="$presentation_release_channel_path"
   fi
+fi
+if [[ -f "$run_services_release_channel_path" \
+  && ( ! -f "$release_channel_path_default" || "$run_services_release_channel_path" -nt "$release_channel_path_default" ) ]]; then
+  release_channel_path_default="$run_services_release_channel_path"
 fi
 if [[ -f "$verified_release_channel_path" \
   && ( ! -f "$release_channel_path_default" || "$verified_release_channel_path" -nt "$release_channel_path_default" ) ]]; then

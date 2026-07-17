@@ -139,6 +139,20 @@ public sealed class DialogCoordinator : IDialogCoordinator
         }
 
         if (string.Equals(dialog.Id, "dialog.new_character.origin_build", StringComparison.Ordinal)
+            && string.Equals(actionId, "show_origin_dossier_link", StringComparison.Ordinal))
+        {
+            string dossierLink = DesktopDialogFieldValueParser.GetValue(dialog, "newCharacterOriginDossierLink")
+                ?? "/app?command=new_character_origin";
+            context.Publish(context.State with
+            {
+                ActiveDialog = dialog,
+                Error = null,
+                Notice = $"Origin Dossier link: {dossierLink}"
+            });
+            return;
+        }
+
+        if (string.Equals(dialog.Id, "dialog.new_character.origin_build", StringComparison.Ordinal)
             && string.Equals(actionId, "open_origin_guided_chargen", StringComparison.Ordinal))
         {
             if (context.State.Preferences.DisableAiFeatures)
@@ -167,7 +181,7 @@ public sealed class DialogCoordinator : IDialogCoordinator
                     alias,
                     context.State.Preferences),
                 Error = null,
-                Notice = "Origin story translated into a guided build plan."
+                Notice = "Origin story translated into a character build plan."
             });
             return;
         }
@@ -221,6 +235,18 @@ public sealed class DialogCoordinator : IDialogCoordinator
         if (string.Equals(dialog.Id, "dialog.character_settings", StringComparison.Ordinal) && string.Equals(actionId, "save", StringComparison.Ordinal))
         {
             ApplyCharacterSettings(dialog, context);
+            return;
+        }
+
+        if (string.Equals(dialog.Id, "dialog.runtime_inspector", StringComparison.Ordinal)
+            && string.Equals(actionId, "refresh", StringComparison.Ordinal))
+        {
+            context.Publish(context.State with
+            {
+                ActiveDialog = dialog,
+                Error = null,
+                Notice = "Runtime inspector refreshed."
+            });
             return;
         }
 
@@ -333,6 +359,11 @@ public sealed class DialogCoordinator : IDialogCoordinator
         }
 
         if (TryCoordinateLegacyDeleteAction(dialog, actionId, context))
+        {
+            return;
+        }
+
+        if (TryCoordinateLegacyUtilityMutationAction(dialog, actionId, context))
         {
             return;
         }
@@ -756,6 +787,31 @@ public sealed class DialogCoordinator : IDialogCoordinator
             return;
         }
 
+        if (string.Equals(dialog.Id, "dialog.ui.sprite_add", StringComparison.Ordinal) && string.Equals(actionId, "add", StringComparison.Ordinal))
+        {
+            string spriteName = ReadDialogValue(dialog, "uiSpriteName", "Courier Sprite");
+            await ApplyQuickAddDialogAsync(
+                context,
+                dialog,
+                BuildSpriteQuickAddRequest(dialog),
+                $"Sprite '{spriteName}' added.",
+                ct);
+            return;
+        }
+
+        if (string.Equals(dialog.Id, "dialog.ui.sprite_add", StringComparison.Ordinal) && string.Equals(actionId, "add_more", StringComparison.Ordinal))
+        {
+            string spriteName = ReadDialogValue(dialog, "uiSpriteName", "Courier Sprite");
+            await ApplyQuickAddDialogAddMoreAsync(
+                context,
+                dialog,
+                BuildSpriteQuickAddRequest(dialog),
+                $"Sprite '{spriteName}' added. Dialog remains open for another sprite.",
+                ct,
+                "uiSpriteForce");
+            return;
+        }
+
         if (string.Equals(dialog.Id, "dialog.ui.critter_power_add", StringComparison.Ordinal) && string.Equals(actionId, "add", StringComparison.Ordinal))
         {
             string powerName = ReadDialogValue(dialog, "uiCritterPowerName", "Natural Weapon");
@@ -806,6 +862,19 @@ public sealed class DialogCoordinator : IDialogCoordinator
             return;
         }
 
+        if (string.Equals(dialog.Id, "dialog.ui.vehicle_mod_add", StringComparison.Ordinal) && string.Equals(actionId, "add", StringComparison.Ordinal))
+        {
+            string vehicleModName = ReadDialogValue(dialog, "uiVehicleModName", "Spoof Chips");
+            PublishRulesetAwareDialogNotice(context, $"Vehicle mod '{vehicleModName}' added.");
+            return;
+        }
+
+        if (string.Equals(dialog.Id, "dialog.ui.vehicle_mod_add", StringComparison.Ordinal) && string.Equals(actionId, "add_more", StringComparison.Ordinal))
+        {
+            PublishRulesetAwareDialogAddMore(context, dialog, "Vehicle mod added. Dialog remains open for another modification.");
+            return;
+        }
+
         if (string.Equals(dialog.Id, "dialog.ui.quality_add", StringComparison.Ordinal) && string.Equals(actionId, "add", StringComparison.Ordinal))
         {
             string qualityName = ReadDialogValue(dialog, "uiQualityName", "First Impression");
@@ -843,6 +912,18 @@ public sealed class DialogCoordinator : IDialogCoordinator
             string connection = DesktopDialogFieldValueParser.GetValue(dialog, "uiContactConnection") ?? "0";
             string loyalty = DesktopDialogFieldValueParser.GetValue(dialog, "uiContactLoyalty") ?? "0";
             PublishRulesetAwareDialogNotice(context, $"Contact connection/loyalty applied ({connection}/{loyalty}).");
+            return;
+        }
+
+        if (string.Equals(dialog.Id, "dialog.ui.combat_damage_track", StringComparison.Ordinal) && string.Equals(actionId, "apply", StringComparison.Ordinal))
+        {
+            PublishRulesetAwareDialogNotice(context, "Damage track applied.");
+            return;
+        }
+
+        if (string.Equals(dialog.Id, "dialog.ui.combat_reload", StringComparison.Ordinal) && string.Equals(actionId, "apply", StringComparison.Ordinal))
+        {
+            PublishRulesetAwareDialogNotice(context, "Weapon reloaded.");
             return;
         }
 
@@ -1938,6 +2019,17 @@ public sealed class DialogCoordinator : IDialogCoordinator
             Bound: false);
     }
 
+    private static WorkspaceQuickAddRequest BuildSpriteQuickAddRequest(DesktopDialogState dialog)
+    {
+        return new WorkspaceQuickAddRequest(
+            Kind: WorkspaceQuickAddKinds.Spirit,
+            Name: ReadDialogValue(dialog, "uiSpriteName", "Sprite"),
+            Category: ReadDialogValue(dialog, "uiSpriteType", "Sprite"),
+            Force: Math.Max(1, DesktopDialogFieldValueParser.ParseInt(dialog, "uiSpriteForce", 1)),
+            Services: 0,
+            Bound: false);
+    }
+
     private static WorkspaceQuickAddRequest BuildCritterPowerQuickAddRequest(DesktopDialogState dialog)
     {
         return new WorkspaceQuickAddRequest(
@@ -1991,6 +2083,20 @@ public sealed class DialogCoordinator : IDialogCoordinator
         return true;
     }
 
+    private static bool TryCoordinateLegacyUtilityMutationAction(
+        DesktopDialogState dialog,
+        string actionId,
+        DialogCoordinationContext context)
+    {
+        if (!TryGetLegacyUtilityMutationNotice(dialog, actionId, out string notice))
+        {
+            return false;
+        }
+
+        PublishRulesetAwareDialogNotice(context, notice);
+        return true;
+    }
+
     private static bool TryGetLegacyDeleteNotice(DesktopDialogState dialog, out string notice)
     {
         string target = ReadDialogValue(dialog, "uiDeleteTarget", "Selected Entry");
@@ -2023,6 +2129,43 @@ public sealed class DialogCoordinator : IDialogCoordinator
                 return true;
             case "dialog.ui.quality_delete":
                 notice = $"Quality '{target}' removed.";
+                return true;
+            case "dialog.ui.identity_license_delete":
+                notice = $"Identity / license '{ReadDialogValue(dialog, "uiIdentityDeleteTarget", "Selected Record")}' removed.";
+                return true;
+            default:
+                notice = string.Empty;
+                return false;
+        }
+    }
+
+    private static bool TryGetLegacyUtilityMutationNotice(
+        DesktopDialogState dialog,
+        string actionId,
+        out string notice)
+    {
+        switch (dialog.Id)
+        {
+            case "dialog.ui.cyberware_edit" when string.Equals(actionId, "apply", StringComparison.Ordinal):
+                notice = $"Cyberware '{ReadDialogValue(dialog, "uiCyberwareEditName", "Selected Cyberware")}' updated.";
+                return true;
+            case "dialog.ui.gear_mount" when string.Equals(actionId, "apply", StringComparison.Ordinal):
+                notice = $"Gear '{ReadDialogValue(dialog, "uiGearMountTarget", "Selected Gear")}' mounted to '{ReadDialogValue(dialog, "uiGearMountHost", "Selected Host")}'.";
+                return true;
+            case "dialog.ui.magic_bind" when string.Equals(actionId, "apply", StringComparison.Ordinal):
+                notice = $"Magic entry '{ReadDialogValue(dialog, "uiMagicBindTarget", "Selected Entry")}' bound/linked.";
+                return true;
+            case "dialog.ui.skill_group" when string.Equals(actionId, "apply", StringComparison.Ordinal):
+                notice = $"Skill group '{ReadDialogValue(dialog, "uiSkillGroupName", "Selected Group")}' set to rating {ReadDialogValue(dialog, "uiSkillGroupRating", "0")}.";
+                return true;
+            case "dialog.ui.vehicle_edit" when string.Equals(actionId, "apply", StringComparison.Ordinal):
+                notice = $"Vehicle '{ReadDialogValue(dialog, "uiVehicleEditName", "Selected Vehicle")}' updated.";
+                return true;
+            case "dialog.ui.identity_license_add" when string.Equals(actionId, "add", StringComparison.Ordinal):
+                notice = $"Identity / license '{ReadDialogValue(dialog, "uiIdentityName", "Selected Record")}' added.";
+                return true;
+            case "dialog.ui.identity_license_edit" when string.Equals(actionId, "apply", StringComparison.Ordinal):
+                notice = $"Identity / license '{ReadDialogValue(dialog, "uiIdentitySelected", "Selected Record")}' updated.";
                 return true;
             default:
                 notice = string.Empty;

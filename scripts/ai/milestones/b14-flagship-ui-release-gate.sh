@@ -46,6 +46,9 @@ chummer5a_screenshot_review_receipt_path="$repo_root/.codex-studio/published/CHU
 classic_dense_workbench_receipt_path="$repo_root/.codex-studio/published/CLASSIC_DENSE_WORKBENCH_POSTURE_GATE.generated.json"
 chummer5a_legacy_ui_element_parity_receipt_path="$repo_root/.codex-studio/published/CHUMMER5A_LEGACY_UI_ELEMENT_PARITY.generated.json"
 chummer4_legacy_ui_element_parity_receipt_path="$repo_root/.codex-studio/published/CHUMMER4_LEGACY_UI_ELEMENT_PARITY.generated.json"
+sr5_sr6_ui_parity_audit_receipt_path="$repo_root/.codex-studio/published/SR5_SR6_UI_PARITY_AUDIT.generated.json"
+browser_lane_proof_set_receipt_path="$repo_root/.codex-studio/published/BLAZOR_BROWSER_LANE_PROOF_SET.generated.json"
+play_surface_horizon_receipt_path="$repo_root/.codex-studio/published/BLAZOR_PLAY_SURFACE_HORIZON.generated.json"
 default_chummer5a_oracle_root="/docker/fleet/docs/chummer5a-oracle"
 local_chummer5a_oracle_root="$repo_root/docs/chummer5a-oracle"
 if [[ ! -d "$default_chummer5a_oracle_root" ]]; then
@@ -60,6 +63,7 @@ chummer5a_oracle_root="${CHUMMER5A_ORACLE_ROOT:-$default_chummer5a_oracle_root}"
 flagship_product_readiness_receipt_path="${CHUMMER_FLAGSHIP_PRODUCT_READINESS_RECEIPT_PATH:-/docker/fleet/.codex-studio/published/FLAGSHIP_PRODUCT_READINESS.generated.json}"
 hub_registry_root="${CHUMMER_HUB_REGISTRY_ROOT:-$("$repo_root/scripts/resolve-hub-registry-root.sh" 2>/dev/null || true)}"
 canonical_release_channel_path="${hub_registry_root:+$hub_registry_root/.codex-studio/published/RELEASE_CHANNEL.generated.json}"
+run_services_release_channel_path="${CHUMMER_RUN_SERVICES_RELEASE_CHANNEL_PATH:-/docker/chummercomplete/chummer.run-services/Chummer.Portal/downloads/RELEASE_CHANNEL.generated.json}"
 default_release_channel_path="$repo_root/Docker/Downloads/RELEASE_CHANNEL.generated.json"
 presentation_release_channel_path="/docker/chummercomplete/chummer-presentation/Chummer.Portal/downloads/RELEASE_CHANNEL.generated.json"
 verified_release_channel_path="$repo_root/.tmp/verify-release-channel/RELEASE_CHANNEL.generated.json"
@@ -69,6 +73,10 @@ elif [[ -f "$presentation_release_channel_path" && ( ! -f "$default_release_chan
   release_channel_path_default="$presentation_release_channel_path"
 else
   release_channel_path_default="$default_release_channel_path"
+fi
+if [[ -f "$run_services_release_channel_path" \
+  && ( ! -f "$release_channel_path_default" || "$run_services_release_channel_path" -nt "$release_channel_path_default" ) ]]; then
+  release_channel_path_default="$run_services_release_channel_path"
 fi
 if [[ "${CHUMMER_FLAGSHIP_UI_RELEASE_GATE_ALLOW_VERIFY_RELEASE_CHANNEL_OVERRIDE:-${CHUMMER_DESKTOP_WORKFLOW_ALLOW_VERIFY_RELEASE_CHANNEL_OVERRIDE:-0}}" == "1" \
   && -f "$verified_release_channel_path" \
@@ -775,6 +783,21 @@ if ! receipt_passes_recently "$chummer4_legacy_ui_element_parity_receipt_path"; 
   bash scripts/ai/milestones/chummer4-legacy-ui-element-parity-check.sh >/dev/null
 fi
 
+echo "[b14] running explicit direct SR5/SR6 UI parity audit..."
+if ! receipt_passes_recently "$sr5_sr6_ui_parity_audit_receipt_path"; then
+  bash scripts/ai/milestones/sr5-sr6-ui-parity-audit-check.sh >/dev/null
+fi
+
+echo "[b14] running aggregate Blazor browser-lane proof-set gate..."
+if ! receipt_passes_recently "$browser_lane_proof_set_receipt_path"; then
+  bash scripts/ai/milestones/blazor-browser-lane-proof-set-check.sh >/dev/null
+fi
+
+echo "[b14] running public browser/PWA play-surface horizon gate..."
+if ! receipt_passes_recently "$play_surface_horizon_receipt_path"; then
+  bash scripts/ai/milestones/blazor-play-surface-horizon-check.sh >/dev/null
+fi
+
 echo "[b14] running explicit Chummer5a desktop workflow parity gate..."
 if ! receipt_passes_recently "$workflow_parity_receipt_path"; then
   CHUMMER_DESKTOP_WORKFLOW_RELEASE_CHANNEL_PATH="$release_channel_path" \
@@ -912,10 +935,13 @@ release_channel_version = ""
 repo_root = str(Path(receipt_path).resolve().parents[2])
 published_root = os.path.join(repo_root, ".codex-studio", "published")
 ui_element_parity_audit_receipt_path = os.path.join(published_root, "CHUMMER5A_UI_ELEMENT_PARITY_AUDIT.generated.json")
+sr5_sr6_ui_parity_audit_receipt_path = os.path.join(published_root, "SR5_SR6_UI_PARITY_AUDIT.generated.json")
 desktop_executable_exit_gate_receipt_path = os.path.join(published_root, "DESKTOP_EXECUTABLE_EXIT_GATE.generated.json")
 direct_import_route_proof_receipt_path = os.path.join(published_root, "NEXT90_M141_UI_DIRECT_IMPORT_ROUTE_PROOF.generated.json")
 direct_workflow_route_proof_receipt_path = os.path.join(published_root, "NEXT90_M142_UI_DIRECT_WORKFLOW_PROOF.generated.json")
 direct_output_route_proof_receipt_path = os.path.join(published_root, "NEXT90_M143_UI_DIRECT_OUTPUT_PROOF.generated.json")
+browser_lane_proof_set_receipt_path = os.path.join(published_root, "BLAZOR_BROWSER_LANE_PROOF_SET.generated.json")
+play_surface_horizon_receipt_path = os.path.join(published_root, "BLAZOR_PLAY_SURFACE_HORIZON.generated.json")
 flagship_product_readiness_receipt_path = os.environ.get(
     "CHUMMER_FLAGSHIP_PRODUCT_READINESS_RECEIPT_PATH",
     "/docker/fleet/.codex-studio/published/FLAGSHIP_PRODUCT_READINESS.generated.json",
@@ -1007,6 +1033,13 @@ if (
     raise SystemExit(
         "[b14] FAIL: explicit SR6 ruleset UI sophistication proof is not passed: "
         + ", ".join(sr6_ruleset_ui_sophistication_receipt.get("reasons") or ["missing reason"])
+    )
+with open(sr5_sr6_ui_parity_audit_receipt_path, "r", encoding="utf-8") as handle:
+    sr5_sr6_ui_parity_audit_receipt = json.load(handle)
+if str(sr5_sr6_ui_parity_audit_receipt.get("status") or "").strip().lower() not in {"pass", "passed", "ready"}:
+    raise SystemExit(
+        "[b14] FAIL: explicit direct SR5/SR6 UI parity audit is not passed: "
+        + ", ".join(sr5_sr6_ui_parity_audit_receipt.get("reasons") or ["missing reason"])
     )
 with open(sr4_sr6_frontier_receipt_path, "r", encoding="utf-8") as handle:
     sr4_sr6_frontier_receipt = json.load(handle)
@@ -1332,9 +1365,7 @@ public_edge_workbench_receipt = load_json_if_present(
     os.path.join(published_root, "BLAZOR_PUBLIC_EDGE_WORKBENCH_PROOF.generated.json")
 )
 public_edge_workbench_receipt_status = receipt_status(public_edge_workbench_receipt)
-browser_lane_proof_set_receipt = load_json_if_present(
-    os.path.join(published_root, "BLAZOR_BROWSER_LANE_PROOF_SET.generated.json")
-)
+browser_lane_proof_set_receipt = load_json_if_present(browser_lane_proof_set_receipt_path)
 browser_lane_proof_set_status = receipt_status(browser_lane_proof_set_receipt)
 browser_lane_proof_set_checks = {
     "status_pass": browser_lane_proof_set_status == "pass",
@@ -1342,6 +1373,29 @@ browser_lane_proof_set_checks = {
     == "chummer6-ui.blazor_browser_lane_proof_set",
     "all_required_receipts_passed": int(browser_lane_proof_set_receipt.get("required_receipt_count") or 0)
     == int(browser_lane_proof_set_receipt.get("passed_receipt_count") or -1),
+}
+play_surface_horizon_receipt = load_json_if_present(play_surface_horizon_receipt_path)
+play_surface_horizon_status = receipt_status(play_surface_horizon_receipt)
+play_surface_horizon_ids = {
+    str(item.get("id") or "").strip()
+    for item in play_surface_horizon_receipt.get("horizons") or []
+    if isinstance(item, dict)
+}
+play_surface_horizon_checks = {
+    "status_pass": play_surface_horizon_status == "pass",
+    "contract_matches": str(play_surface_horizon_receipt.get("contract_name") or "").strip()
+    == "chummer6-ui.blazor_play_surface_horizon",
+    "required_horizon_ids_present": {
+        "near_term_stabilization",
+        "mid_term_pwa_session_utility",
+        "long_term_living_world_expansion",
+    }.issubset(play_surface_horizon_ids),
+    "pwa_public_edge_status_pass": normalize(
+        (play_surface_horizon_receipt.get("current_release_truth") or {}).get("pwa_public_edge_status")
+    ) in {"pass", "passed", "ready"},
+    "promoted_route_base_present": str(
+        (play_surface_horizon_receipt.get("current_release_truth") or {}).get("promoted_route_base") or ""
+    ).strip() == "/blazor/workbench",
 }
 public_edge_workbench_required_route_markers = [
     "public_chummer_app_route",
@@ -1461,6 +1515,10 @@ if not all(public_edge_workbench_receipt_checks.values()):
 if not all(browser_lane_proof_set_checks.values()):
     blocking_findings.append(
         "Aggregate Blazor browser-lane proof set is missing or not passing."
+    )
+if not all(play_surface_horizon_checks.values()):
+    blocking_findings.append(
+        "Public browser/PWA play-surface horizon proof is missing required horizons or release-truth posture."
     )
 if desktop_executable_exit_gate_status != "pass" and not desktop_executable_exit_gate_route_local_only:
     blocking_findings.append(
@@ -1702,8 +1760,34 @@ payload = {
         "directOutputRouteProofReceiptPath": direct_output_route_proof_receipt_path,
         "publicEdgeWorkbenchReceiptPath": os.path.join(published_root, "BLAZOR_PUBLIC_EDGE_WORKBENCH_PROOF.generated.json"),
         "publicEdgeWorkbenchReceiptChecks": public_edge_workbench_receipt_checks,
-        "browserLaneProofSetReceiptPath": os.path.join(published_root, "BLAZOR_BROWSER_LANE_PROOF_SET.generated.json"),
+        "browserLaneProofSetReceiptPath": browser_lane_proof_set_receipt_path,
         "browserLaneProofSetReceiptChecks": browser_lane_proof_set_checks,
+        "playSurfaceHorizonReceiptPath": play_surface_horizon_receipt_path,
+        "playSurfaceHorizonReceiptChecks": play_surface_horizon_checks,
+    },
+    "playSurfaceHorizonProof": {
+        "status": str(play_surface_horizon_receipt.get("status") or "").strip(),
+        "receiptPath": play_surface_horizon_receipt_path,
+        "checks": play_surface_horizon_checks,
+        "currentReleaseTruth": play_surface_horizon_receipt.get("current_release_truth") or {},
+        "horizonIds": sorted(play_surface_horizon_ids),
+    },
+    "sr5Sr6UiParityAuditProof": {
+        "status": str(sr5_sr6_ui_parity_audit_receipt.get("status") or "").strip(),
+        "receiptPath": sr5_sr6_ui_parity_audit_receipt_path,
+        "legacyTabCount": (sr5_sr6_ui_parity_audit_receipt.get("evidence") or {}).get("legacyTabCount"),
+        "legacyControlCount": (sr5_sr6_ui_parity_audit_receipt.get("evidence") or {}).get("legacyControlCount"),
+        "legacyElementDispositionCount": (sr5_sr6_ui_parity_audit_receipt.get("evidence") or {}).get("legacyElementDispositionCount"),
+        "partialTabCount": (sr5_sr6_ui_parity_audit_receipt.get("evidence") or {}).get("partialTabCount"),
+        "missingTabCount": (sr5_sr6_ui_parity_audit_receipt.get("evidence") or {}).get("missingTabCount"),
+        "partialControlCount": (sr5_sr6_ui_parity_audit_receipt.get("evidence") or {}).get("partialControlCount"),
+        "missingControlCount": (sr5_sr6_ui_parity_audit_receipt.get("evidence") or {}).get("missingControlCount"),
+        "missingLegacyElementDispositionCount": (sr5_sr6_ui_parity_audit_receipt.get("evidence") or {}).get("missingLegacyElementDispositionCount"),
+        "familyFallbackLegacyElementDispositionCount": (sr5_sr6_ui_parity_audit_receipt.get("evidence") or {}).get("familyFallbackLegacyElementDispositionCount"),
+        "nonPendantMappedCurrentIdCount": (sr5_sr6_ui_parity_audit_receipt.get("evidence") or {}).get("nonPendantMappedCurrentIdCount"),
+        "legacyElementsMissingExplicitSr6Pendants": (sr5_sr6_ui_parity_audit_receipt.get("evidence") or {}).get("legacyElementsMissingExplicitSr6Pendants"),
+        "unsupportedMappedCurrentIdCount": (sr5_sr6_ui_parity_audit_receipt.get("evidence") or {}).get("unsupportedMappedCurrentIdCount"),
+        "providerParityTests": sr5_sr6_ui_parity_audit_receipt.get("providerParityTests") or [],
     },
     "desktopExecutableProof": {
         "status": desktop_executable_exit_gate_status,

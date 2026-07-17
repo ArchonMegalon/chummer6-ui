@@ -924,8 +924,9 @@ async function auditAdvancedActionExecution(page, route, expectedTitle, expected
 
 async function auditCommittedAction(page) {
   const route = `${promotedRouteBase}?${promotedContinuationQuery}&tab=tab-calendar&control=create_entry&dialog_action=add`;
-  await openPath(page, route, '#summaryName');
+  await openPath(page, route, 'section.classic-chummer-shell');
   await page.waitForFunction(() => !document.querySelector('#dialogBackdrop'), { timeout: 15000 });
+  await waitForBodyTextIncludes(page, "Entry 'New entry' added.", 'hosted committed action route');
   const bodyText = await page.locator('body').innerText();
   expectTextIncludes(bodyText, "Entry 'New entry' added.", 'hosted committed action route');
   return {
@@ -936,8 +937,9 @@ async function auditCommittedAction(page) {
 }
 
 async function auditAdvancedCommittedAction(page, route, expectedText) {
-  await openPath(page, route, '#summaryName');
+  await openPath(page, route, 'section.classic-chummer-shell');
   await page.waitForFunction(() => !document.querySelector('#dialogBackdrop'), { timeout: 15000 });
+  await waitForBodyTextIncludes(page, expectedText, `hosted advanced committed action route ${route}`);
   const bodyText = await page.locator('body').innerText();
   expectTextIncludes(bodyText, expectedText, `hosted advanced committed action route ${route}`);
   return {
@@ -947,8 +949,18 @@ async function auditAdvancedCommittedAction(page, route, expectedText) {
   };
 }
 
+function browserLaunchOptions() {
+  const executablePath = (process.env.CHUMMER_PLAYWRIGHT_EXECUTABLE_PATH || '').trim();
+  if (executablePath) {
+    return { headless: true, executablePath };
+  }
+
+  const channel = (process.env.CHUMMER_PLAYWRIGHT_CHANNEL || 'chromium').trim();
+  return channel ? { headless: true, channel } : { headless: true };
+}
+
 async function run() {
-  const browser = await chromium.launch({ headless: true });
+  const browser = await chromium.launch(browserLaunchOptions());
   const normalizedScope = normalizePlaywrightScope();
   console.log(`public-edge playwright scope: ${normalizedScope}`);
   const receipt = {

@@ -15,6 +15,9 @@ REQUIRED_CHECK_IDS = {
     "service_worker_static_privacy_contract",
     "offline_living_world_boundary",
     "app_head_and_registration",
+    "clean_public_entry_route_contract",
+    "static_asset_fetch_contract",
+    "mobile_viewport_shell_contract",
 }
 
 
@@ -30,6 +33,7 @@ def main() -> int:
     proof_tier = str(payload.get("proof_tier") or "")
     route_lane = str(payload.get("route_lane") or "")
     base_url = str(payload.get("base_url") or "")
+    public_entry_url = str(payload.get("public_entry_url") or "")
     checks = payload.get("checks")
 
     if contract != EXPECTED_CONTRACT:
@@ -42,6 +46,8 @@ def main() -> int:
         reasons.append(f"route_lane mismatch: expected {EXPECTED_ROUTE_LANE!r}, got {route_lane!r}")
     if not base_url.startswith("https://"):
         reasons.append(f"base_url must be https, got {base_url!r}")
+    if not public_entry_url.startswith("https://"):
+        reasons.append(f"public_entry_url must be https, got {public_entry_url!r}")
     if not isinstance(checks, list):
         reasons.append("checks must be a list")
         checks = []
@@ -60,8 +66,16 @@ def main() -> int:
             reasons.append(f"check {check_id!r} must be passed, got {check_status!r}")
         if not assertion:
             reasons.append(f"check {check_id!r} missing assertion")
-        if not url.startswith(f"{base_url}/"):
-            reasons.append(f"check {check_id!r} url must stay under {base_url!r}, got {url!r}")
+        if (
+            url != base_url
+            and not url.startswith(f"{base_url}/")
+            and url != public_entry_url
+            and not url.startswith(f"{public_entry_url}?")
+        ):
+            reasons.append(
+                f"check {check_id!r} url must stay under {base_url!r} or match public entry "
+                f"{public_entry_url!r}, got {url!r}"
+            )
 
     missing = REQUIRED_CHECK_IDS - check_ids
     extra = check_ids - REQUIRED_CHECK_IDS

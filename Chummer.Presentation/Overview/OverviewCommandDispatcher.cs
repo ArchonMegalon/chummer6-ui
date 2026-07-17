@@ -29,11 +29,7 @@ public sealed class OverviewCommandDispatcher : IOverviewCommandDispatcher
 
         if (OverviewCommandPolicy.IsMenuCommand(commandId))
         {
-            context.Publish(context.State with
-            {
-                Error = null,
-                Notice = $"Menu '{commandId}' is handled by the active UI shell."
-            });
+            // Menu roots are handled by the shell surface (open/close behavior is not a shared dialogue command).
             return;
         }
 

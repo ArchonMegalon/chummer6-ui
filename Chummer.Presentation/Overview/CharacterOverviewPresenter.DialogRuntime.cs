@@ -105,41 +105,106 @@ public sealed partial class CharacterOverviewPresenter
 
     private void QueueRosterWatchRefresh()
     {
-        string? rosterPath;
-        CancellationTokenSource debounce;
-        lock (_rosterWatchRuntimeSync)
-        {
-            rosterPath = _rosterWatchedFolderPath;
-            if (string.IsNullOrWhiteSpace(rosterPath))
-            {
-                return;
-            }
-
-            _rosterWatchRefreshDebounce?.Cancel();
-            _rosterWatchRefreshDebounce?.Dispose();
-            debounce = new CancellationTokenSource();
-            _rosterWatchRefreshDebounce = debounce;
-        }
-
-        _ = DebouncedRefreshRosterDialogAsync(rosterPath, debounce.Token);
-    }
-
-    private async Task DebouncedRefreshRosterDialogAsync(string rosterPath, CancellationToken ct)
-    {
+        PresenterOperationLease? operation = null;
+        CancellationTokenSource? previousDebounce = null;
         try
         {
+            operation = EnterPresenterOperation(CancellationToken.None);
+            string? rosterPath;
+            CancellationTokenSource debounce;
+            lock (_rosterWatchRuntimeSync)
+            {
+                rosterPath = _rosterWatchedFolderPath;
+                if (string.IsNullOrWhiteSpace(rosterPath))
+                    return;
+
+                previousDebounce = _rosterWatchRefreshDebounce;
+                debounce = CancellationTokenSource.CreateLinkedTokenSource(operation.Token);
+                _rosterWatchRefreshDebounce = debounce;
+            }
+
+            if (previousDebounce is not null)
+            {
+                try
+                {
+                    previousDebounce.Cancel();
+                }
+                catch (ObjectDisposedException)
+                {
+                    // A completing predecessor can win this benign race.
+                }
+                previousDebounce.Dispose();
+                previousDebounce = null;
+            }
+
+            _ = DebouncedRefreshRosterDialogAsync(rosterPath, debounce, operation);
+            operation.DetachCallerContextForAsyncTransfer();
+            operation = null;
+        }
+        catch (ObjectDisposedException)
+        {
+            // FileSystemWatcher can race presenter shutdown. Closing admission
+            // is authoritative; late callbacks are intentionally ignored.
+        }
+        finally
+        {
+            previousDebounce?.Dispose();
+            operation?.Dispose();
+        }
+    }
+
+    private async Task DebouncedRefreshRosterDialogAsync(
+        string rosterPath,
+        CancellationTokenSource debounce,
+        PresenterOperationLease operation)
+    {
+        CancellationToken ct = default;
+        try
+        {
+            // Token acquisition belongs inside the lease-owning try/finally:
+            // shutdown can detach and dispose the stored CTS between queueing
+            // this callback and its first instruction.
+            ct = debounce.Token;
             await Task.Delay(150, ct).ConfigureAwait(false);
+            ct.ThrowIfCancellationRequested();
+            RefreshRosterDialogFromWatcher(rosterPath);
         }
         catch (OperationCanceledException)
         {
-            return;
+            // Replacement and presenter shutdown cancel pending refresh work.
         }
+        catch (ObjectDisposedException) when (_disposeRequested || _disposed)
+        {
+            // A close which won after callback admission is an expected race.
+        }
+        catch
+        {
+            // Roster refresh is best-effort observer work. Filesystem races or
+            // UI observers cannot fault the FileSystemWatcher callback lane.
+        }
+        finally
+        {
+            bool ownsDebounce = false;
+            lock (_rosterWatchRuntimeSync)
+            {
+                if (ReferenceEquals(_rosterWatchRefreshDebounce, debounce))
+                {
+                    _rosterWatchRefreshDebounce = null;
+                    ownsDebounce = true;
+                }
+            }
 
-        RefreshRosterDialogFromWatcher(rosterPath);
+            if (ownsDebounce)
+                debounce.Dispose();
+            operation.Dispose();
+        }
     }
 
     private void RefreshRosterDialogFromWatcher(string rosterPath)
     {
+        if (_disposed)
+            return;
+
         CharacterOverviewState state = State;
         string? activeRosterPath = ResolveActiveRosterWatchFolderPath(state);
         if (!string.Equals(activeRosterPath, rosterPath, StringComparison.Ordinal))

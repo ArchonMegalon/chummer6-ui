@@ -1,4 +1,3 @@
-using System.Text;
 using Chummer.Contracts.Rulesets;
 using Chummer.Contracts.Workspaces;
 
@@ -6,12 +5,14 @@ namespace Chummer.Presentation.Overview;
 
 public sealed partial class CharacterOverviewPresenter
 {
-    public Task ApplyAttributeEditAsync(AttributeEditRequest request, CancellationToken ct)
+    public async Task ApplyAttributeEditAsync(AttributeEditRequest request, CancellationToken ct)
     {
+        using PresenterOperationLease operation = EnterPresenterOperation(ct);
+        ct = operation.Token;
         ArgumentNullException.ThrowIfNull(request);
-        return ApplyWorkspaceXmlMutationAsync(
+        await ApplyWorkspaceXmlMutationAsync(
             xml => WorkspaceXmlMutationCatalog.ApplyAttributeEdit(xml, request),
-            ct);
+            ct).ConfigureAwait(false);
     }
 
     private async Task ApplyQuickAddAsync(WorkspaceQuickAddRequest request, CancellationToken ct)
@@ -31,53 +32,272 @@ public sealed partial class CharacterOverviewPresenter
             return;
         }
 
-        CommandResult<WorkspaceDownloadReceipt> download = await _client.DownloadAsync(currentWorkspace.Value, ct);
-        if (!download.Success || download.Value is null)
+        long expectedContentRevision = State.ContentRevision;
+        if (expectedContentRevision <= 0)
         {
-            Publish(State with { Error = download.Error ?? "Dossier download failed." });
+            Publish(State with { Error = "Dossier revision is unavailable. Reload before editing." });
             return;
         }
 
-        string xml = Encoding.UTF8.GetString(Convert.FromBase64String(download.Value.ContentBase64));
-        string mutatedXml;
+        string? returnTabId = State.ActiveTabId;
+        string? returnActionId = State.ActiveActionId;
+        string? returnSectionId = State.ActiveSectionId;
+        WorkspaceDocument? committedDocument = null;
+        IWorkspaceRecoveryCaptureIntent? postCommitCaptureIntent = null;
+        WorkspaceOperationExecution<CommandResult<WorkspaceRevisionReceipt>> execution;
         try
         {
-            mutatedXml = mutateXml(xml);
+            if (HasAuthoritativeRecoveryLoader)
+            {
+                long anticipatedContentRevision = checked(expectedContentRevision + 1);
+                _workspaceRecoveryPayloadStore.TryBeginCaptureIntent(
+                    currentWorkspace.Value,
+                    anticipatedContentRevision,
+                    out postCommitCaptureIntent);
+            }
+
+            execution = await _workspaceOperationCoordinator.RunCurrentAsync(
+                currentWorkspace.Value,
+                async token =>
+                {
+                    CommandResult<WorkspaceDocumentSnapshot> read = await _client
+                        .GetWorkspaceAsync(currentWorkspace.Value, token)
+                        .ConfigureAwait(false);
+                    if (!read.Success || read.Value is null)
+                    {
+                        return new CommandResult<WorkspaceRevisionReceipt>(
+                            false,
+                            null,
+                            read.Error ?? "Dossier could not be read for editing.",
+                            read.Outcome);
+                    }
+
+                    if (!string.Equals(
+                            read.Value.Id.Value,
+                            currentWorkspace.Value.Value,
+                            StringComparison.Ordinal))
+                    {
+                        return new CommandResult<WorkspaceRevisionReceipt>(
+                            false,
+                            null,
+                            "Dossier read returned a different workspace than the requested edit target.",
+                            WorkspaceOperationOutcome.Corrupt);
+                    }
+
+                    if (read.Value.ContentRevision != expectedContentRevision)
+                    {
+                        return new CommandResult<WorkspaceRevisionReceipt>(
+                            false,
+                            null,
+                            "The dossier changed before the edit could be applied.",
+                            WorkspaceOperationOutcome.Conflict);
+                    }
+
+                    if (read.Value.Document.Format != WorkspaceDocumentFormat.NativeXml)
+                    {
+                        return new CommandResult<WorkspaceRevisionReceipt>(
+                            false,
+                            null,
+                            "This edit requires a native XML dossier.",
+                            WorkspaceOperationOutcome.Corrupt);
+                    }
+
+                    string mutatedXml = mutateXml(read.Value.Document.Content);
+                    WorkspaceDocument replacement = read.Value.Document with
+                    {
+                        State = read.Value.Document.State with { Payload = mutatedXml }
+                    };
+                    committedDocument = replacement;
+                    CommandResult<WorkspaceRevisionReceipt> replacementResult = await _client.ReplaceWorkspaceDocumentAsync(
+                        currentWorkspace.Value,
+                        expectedContentRevision,
+                        replacement,
+                        token).ConfigureAwait(false);
+                    return replacementResult;
+                },
+                ct).ConfigureAwait(false);
         }
         catch (Exception ex)
         {
+            postCommitCaptureIntent?.Dispose();
             Publish(State with { Error = ex.Message });
             return;
         }
 
-        CharacterWorkspaceId previousWorkspaceId = currentWorkspace.Value;
-        string? returnTabId = State.ActiveTabId;
-        string? returnActionId = State.ActiveActionId;
-        string? returnSectionId = State.ActiveSectionId;
-        string rulesetId = RulesetDefaults.NormalizeOptional(download.Value.RulesetId)
-            ?? ResolveWorkspaceRulesetId(previousWorkspaceId)
-            ?? RulesetDefaults.Sr5;
-
-        await ImportAsync(new WorkspaceImportDocument(mutatedXml, rulesetId, WorkspaceDocumentFormat.NativeXml), ct);
-        if (!string.IsNullOrWhiteSpace(State.Error) || State.WorkspaceId is null)
+        if (!execution.CanPublish)
         {
+            if (execution.HasValue
+                && execution.Value is { Success: true, Value: not null } staleResult
+                && committedDocument is not null
+                && HasAuthoritativeRecoveryLoader)
+            {
+                using var stalePostCommitBudget = new CancellationTokenSource(PostCommitRecoveryBudget);
+                bool staleRecoveryCaptured = await TryCaptureRecoveryPayloadAsync(
+                    currentWorkspace.Value,
+                    staleResult.Value.ContentRevision,
+                    stalePostCommitBudget.Token,
+                    postCommitCaptureIntent,
+                    committedDocument).ConfigureAwait(false);
+                if (!staleRecoveryCaptured)
+                {
+                    GateStalePostCommitRecovery(
+                        currentWorkspace.Value,
+                        staleResult.Value.ContentRevision,
+                        "stale postcommit XML recovery",
+                        "The edit committed after its view was superseded, but exact recovery validation failed. Review this runner before closing it.");
+                }
+                postCommitCaptureIntent = null;
+            }
+
+            postCommitCaptureIntent?.Dispose();
             return;
         }
 
-        if (!string.Equals(State.WorkspaceId.Value.Value, previousWorkspaceId.Value, StringComparison.Ordinal))
+        CommandResult<WorkspaceRevisionReceipt> replaced = execution.Value;
+        if (!replaced.Success || replaced.Value is null)
         {
-            await CloseWorkspaceAsync(previousWorkspaceId, ct);
-            if (!string.IsNullOrWhiteSpace(State.Error))
+            postCommitCaptureIntent?.Dispose();
+            WorkspaceSessionState failedSession = replaced.Outcome == WorkspaceOperationOutcome.Conflict
+                ? _workspaceSessionPresenter.SetConflictState(
+                    currentWorkspace.Value,
+                    new WorkspaceConflictState(
+                        "XML edit",
+                        expectedContentRevision,
+                        ActualContentRevision: null,
+                        replaced.Error ?? "The dossier changed before the edit could be applied."))
+                : _workspaceSessionPresenter.State;
+            Publish(State with
             {
-                return;
-            }
+                IsBusy = false,
+                Error = replaced.Error,
+                Notice = replaced.Outcome == WorkspaceOperationOutcome.Conflict
+                    ? "Edit stopped because a newer dossier revision won. No overwrite or retry was attempted."
+                    : State.Notice,
+                Session = failedSession,
+                OpenWorkspaces = failedSession.OpenWorkspaces
+            });
+            return;
+        }
+
+        if (committedDocument is null)
+        {
+            postCommitCaptureIntent?.Dispose();
+            Publish(State with
+            {
+                IsBusy = false,
+                Error = null,
+                Notice = "The edit committed, but its exact postcommit document is unavailable. Keep this runner open for review."
+            });
+            return;
+        }
+
+        using var postCommitBudget = new CancellationTokenSource(PostCommitRecoveryBudget);
+        bool recoveryCaptured = !HasAuthoritativeRecoveryLoader;
+        if (!recoveryCaptured)
+        {
+            recoveryCaptured = await TryCaptureRecoveryPayloadAsync(
+                currentWorkspace.Value,
+                replaced.Value.ContentRevision,
+                postCommitBudget.Token,
+                postCommitCaptureIntent,
+                committedDocument).ConfigureAwait(false);
+            postCommitCaptureIntent = null;
+        }
+
+        WorkspaceSessionState session = _workspaceSessionPresenter.SetRevisions(
+            currentWorkspace.Value,
+            replaced.Value.ContentRevision,
+            replaced.Value.SavedRevision);
+        CharacterOverviewState revisionState = State with
+        {
+            Session = session,
+            OpenWorkspaces = session.OpenWorkspaces,
+            Error = null
+        };
+        bool viewCaptureFailed = false;
+        try
+        {
+            _workspaceOverviewLifecycleCoordinator.CaptureCurrentWorkspaceView(revisionState);
+        }
+        catch
+        {
+            viewCaptureFailed = true;
+        }
+        WorkspaceOverviewLifecycleResult? reloaded = null;
+        try
+        {
+            reloaded = await _workspaceOverviewLifecycleCoordinator.LoadAsync(
+                revisionState,
+                currentWorkspace.Value,
+                postCommitBudget.Token);
+        }
+        catch
+        {
+            // The durable mutation and exact recovery capture are retained;
+            // bounded overview projection failure is review-gated below.
+        }
+
+        if (!recoveryCaptured || reloaded is null || !reloaded.CanPublish)
+        {
+            WorkspaceSessionState reviewSession = _workspaceSessionPresenter.SetConflictState(
+                currentWorkspace.Value,
+                new WorkspaceConflictState(
+                    "postcommit XML refresh",
+                    replaced.Value.ContentRevision,
+                    replaced.Value.ContentRevision,
+                    recoveryCaptured
+                        ? "The edit committed and its exact recovery copy is secured, but the refreshed view needs review."
+                        : "The edit committed, but exact recovery validation needs review before this runner can close."));
+            PublishPostCommitState(revisionState with
+            {
+                IsBusy = false,
+                Error = null,
+                Notice = recoveryCaptured
+                    ? "Edit committed. Exact postcommit recovery is secured; keep this runner open while the refreshed view is reviewed."
+                    : "Edit committed, but exact postcommit recovery is review-gated. Keep this runner open.",
+                Session = reviewSession,
+                OpenWorkspaces = reviewSession.OpenWorkspaces
+            });
+            return;
+        }
+
+        PublishPostCommitState(reloaded.State);
+        if (viewCaptureFailed)
+        {
+            PublishPostCommitWarning(
+                "The edit committed, but the local workspace view could not be retained; it will refresh on the next interaction.");
         }
 
         if (!string.IsNullOrWhiteSpace(returnSectionId)
             && !string.Equals(returnSectionId, "summary", StringComparison.OrdinalIgnoreCase)
             && !string.Equals(returnSectionId, "validate", StringComparison.OrdinalIgnoreCase))
         {
-            await LoadSectionAsync(returnSectionId, returnTabId, returnActionId, ct);
+            try
+            {
+                await LoadSectionAsync(
+                    returnSectionId,
+                    returnTabId,
+                    returnActionId,
+                    postCommitBudget.Token);
+            }
+            catch
+            {
+                WorkspaceSessionState reviewSession = _workspaceSessionPresenter.SetConflictState(
+                    currentWorkspace.Value,
+                    new WorkspaceConflictState(
+                        "postcommit section refresh",
+                        replaced.Value.ContentRevision,
+                        replaced.Value.ContentRevision,
+                        "The edit and exact recovery copy committed, but the requested section needs review."));
+                PublishPostCommitState(State with
+                {
+                    IsBusy = false,
+                    Error = null,
+                    Notice = "Edit committed and exact recovery is secured, but the requested section refresh is review-gated.",
+                    Session = reviewSession,
+                    OpenWorkspaces = reviewSession.OpenWorkspaces
+                });
+            }
         }
     }
 }

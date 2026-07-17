@@ -1,7 +1,13 @@
-#!/usr/bin/env bash
+#!/bin/bash -p
 set -euo pipefail
 
-SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+SCRIPT_PATH="${BASH_SOURCE[0]}"
+if [[ "$SCRIPT_PATH" == */* ]]; then
+  SCRIPT_PARENT="${SCRIPT_PATH%/*}"
+else
+  SCRIPT_PARENT="."
+fi
+SCRIPT_DIR="$(cd -- "$SCRIPT_PARENT" && pwd -P)"
 REPO_ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"
 
 if [[ -z "${COMPOSE_FILE:-}" ]]; then
@@ -15,6 +21,12 @@ fi
 RUNBOOK_MODE="${RUNBOOK_MODE:-${1:-tunnel}}"
 RUNBOOK_ARG_FRAMEWORK="${2:-}"
 RUNBOOK_ARG_FILTER="${3:-}"
+
+if [[ "$RUNBOOK_MODE" == "downloads-sync-s3" ]]; then
+  DOWNLOAD_BUNDLE_DIR="${DOWNLOAD_BUNDLE_DIR:-${RUNBOOK_ARG_FRAMEWORK:-$REPO_ROOT/dist}}"
+  exec /bin/bash -p "$SCRIPT_DIR/publish-download-bundle-s3.sh" "$DOWNLOAD_BUNDLE_DIR"
+fi
+
 TUNNEL_CONTAINER="${TUNNEL_CONTAINER:-cloudflared_v2}"
 DOCKER_NETWORK="${DOCKER_NETWORK:-arr_net_v2}"
 UPSTREAM_PRIMARY="${UPSTREAM_PRIMARY:-http://172.17.0.1:8088}"
@@ -339,10 +351,10 @@ if [[ "$RUNBOOK_MODE" == "desktop-gate" ]]; then
   require_match "bash scripts/generate-parity-checklist.sh" "scripts/runbook.sh"
   require_match "bash scripts/publish-download-bundle.sh" "scripts/runbook.sh"
   require_match "bash scripts/publish-download-bundle-http.sh" "scripts/runbook.sh"
-  require_match "bash scripts/publish-download-bundle-s3.sh" "scripts/runbook.sh"
+  require_match "/bin/bash -p.*publish-download-bundle-s3.sh" "scripts/runbook.sh"
   require_match "CHUMMER_PORTAL_DOWNLOADS_DEPLOY_DIR" "docs/SELF_HOSTED_DOWNLOADS_RUNBOOK.md"
-  require_match "CHUMMER_PORTAL_DOWNLOADS_S3_URI" "docs/SELF_HOSTED_DOWNLOADS_RUNBOOK.md"
-  require_match "CHUMMER_PORTAL_DOWNLOADS_AWS_ACCESS_KEY_ID" "docs/SELF_HOSTED_DOWNLOADS_RUNBOOK.md"
+  require_match "Mode B: Object Storage Deploy \(disabled\)" "docs/SELF_HOSTED_DOWNLOADS_RUNBOOK.md"
+  require_match "immutable versioned artifact/proof keys" "docs/SELF_HOSTED_DOWNLOADS_RUNBOOK.md"
   require_match "CHUMMER_PORTAL_DOWNLOADS_VERIFY_LINKS" "docs/SELF_HOSTED_DOWNLOADS_RUNBOOK.md"
   require_match "DOCKER_TESTS_SOFT_FAIL=0" "scripts/runbook-strict-host-gates.sh"
   require_match "TEST_NUGET_SOFT_FAIL=0" "scripts/runbook-strict-host-gates.sh"
@@ -466,25 +478,6 @@ if [[ "$RUNBOOK_MODE" == "downloads-sync" ]]; then
     echo "== deployment-mode verification summary =="
     rg -n "Verified manifest at|Verified artifact links/files|failed artifact verification" "$SYNC_LOG_FILE" | tail -n 40 || true
   fi
-  exit "$status"
-fi
-
-if [[ "$RUNBOOK_MODE" == "downloads-sync-s3" ]]; then
-  DOWNLOAD_BUNDLE_DIR="${DOWNLOAD_BUNDLE_DIR:-${RUNBOOK_ARG_FRAMEWORK:-$REPO_ROOT/dist}}"
-  DOWNLOADS_SYNC_S3_VERIFY_LINKS="${DOWNLOADS_SYNC_S3_VERIFY_LINKS:-true}"
-  SYNC_S3_LOG_FILE="${SYNC_S3_LOG_FILE:-$(resolve_runbook_log_file chummer-downloads-sync-s3)}"
-  if [[ "$DOWNLOADS_SYNC_S3_VERIFY_LINKS" == "1" || "$DOWNLOADS_SYNC_S3_VERIFY_LINKS" == "true" || "$DOWNLOADS_SYNC_S3_VERIFY_LINKS" == "TRUE" ]]; then
-    export CHUMMER_PORTAL_DOWNLOADS_VERIFY_LINKS=true
-  else
-    unset CHUMMER_PORTAL_DOWNLOADS_VERIFY_LINKS || true
-  fi
-  set +e
-  bash scripts/publish-download-bundle-s3.sh "$DOWNLOAD_BUNDLE_DIR" 2>&1 | tee "$SYNC_S3_LOG_FILE"
-  status=${PIPESTATUS[0]}
-  set -e
-  echo
-  echo "== object storage sync summary =="
-  rg -n "Published|Verified manifest|Verified artifact links/files|failed artifact verification|Set CHUMMER|Expected desktop-download-bundle|aws CLI" "$SYNC_S3_LOG_FILE" | tail -n 200 || true
   exit "$status"
 fi
 

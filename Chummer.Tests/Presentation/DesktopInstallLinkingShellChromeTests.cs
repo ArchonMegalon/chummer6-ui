@@ -261,9 +261,11 @@ public sealed class DesktopInstallLinkingShellChromeTests
         StringAssert.Contains(installWindowSource, "ApplyExternalPreferenceState(nextPreferences)");
         StringAssert.Contains(localizationSource, "desktop.install_link.preference.visible_choice");
         StringAssert.Contains(localizationSource, "desktop.install_link.preference.hidden_choice");
-        StringAssert.Contains(localizationSource, "Yes, I'm ready for a modern world like Shadowrun is");
-        StringAssert.Contains(localizationSource, "No, emotionally I'm a scared caveman");
-        StringAssert.Contains(localizationSource, "Nein, emotional bin ich ein ängstlicher Höhlenmensch");
+        StringAssert.Contains(localizationSource, "Show Alice and Origin Dossier");
+        StringAssert.Contains(localizationSource, "Keep character creation focused");
+        StringAssert.Contains(localizationSource, "Alice und Origin Dossier anzeigen");
+        Assert.IsFalse(localizationSource.Contains("scared " + "cave" + "man", StringComparison.OrdinalIgnoreCase));
+        Assert.IsFalse(localizationSource.Contains("Höhlen" + "mensch", StringComparison.OrdinalIgnoreCase));
         Assert.IsFalse(
             localizationSource.Contains("Keep the interface manual", StringComparison.Ordinal),
             "The first-run preference should describe the user-visible result, not internal manual mode.");
@@ -332,10 +334,13 @@ public sealed class DesktopInstallLinkingShellChromeTests
         string selectionSource = File.ReadAllText(FindPath("Chummer.Avalonia", "MainWindow.SelectionHandlers.cs"));
         string projectorSource = File.ReadAllText(FindPath("Chummer.Avalonia", "MainWindow.ShellFrameProjector.cs"));
         string catalogSource = File.ReadAllText(FindPath("Chummer.Presentation", "Shell", "CatalogOnlyRulesetShellCatalogResolver.cs"));
+        string projectionSource = File.ReadAllText(FindPath("Chummer.Presentation", "Shell", "DesktopMenuProjectionCatalog.cs"));
         string labelSource = File.ReadAllText(FindPath("Chummer.Presentation", "UiKit", "ShellChromeBoundary.cs"));
 
         StringAssert.Contains(catalogSource, "Command(\"show_login_video\", \"command.show_login_video\", \"help\", false)");
-        StringAssert.Contains(projectorSource, "\"show_login_video\"");
+        StringAssert.Contains(projectorSource, "DesktopMenuProjectionCatalog.ResolveVisibleMenuCommands(");
+        StringAssert.Contains(projectionSource, "[\"help\"] =");
+        StringAssert.Contains(projectionSource, "\"show_login_video\"");
         StringAssert.Contains(labelSource, "[\"show_login_video\"] = \"Show Login Video\"");
         StringAssert.Contains(selectionSource, "case \"show_login_video\":");
         StringAssert.Contains(selectionSource, "DesktopInstallLinkingWindow.ShowLoginVideoAsync(this, DesktopHeadId)");

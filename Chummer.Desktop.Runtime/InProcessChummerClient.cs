@@ -41,6 +41,9 @@ public sealed class InProcessChummerClient : IChummerClient
     private readonly IOwnerContextAccessor _ownerContextAccessor;
     private readonly IDesktopWorkspaceRoamingSync _workspaceRoamingSync;
 
+    public DesktopWorkspaceRoamingResult LastWorkspaceRoamingResult { get; private set; }
+        = DesktopWorkspaceRoamingResult.AlreadyCurrent();
+
     public InProcessChummerClient(
         IWorkspaceService workspaceService,
         IRulesetShellCatalogResolver shellCatalogResolver,
@@ -109,7 +112,9 @@ public sealed class InProcessChummerClient : IChummerClient
         ct.ThrowIfCancellationRequested();
         OwnerScope owner = _ownerContextAccessor.Current;
         WorkspaceImportResult result = _workspaceService.Import(owner, document);
-        await _workspaceRoamingSync.SynchronizeOutboundAsync(owner, result.Id, ct).ConfigureAwait(false);
+        LastWorkspaceRoamingResult = await _workspaceRoamingSync
+            .SynchronizeOutboundAsync(owner, result.Id, ct)
+            .ConfigureAwait(false);
         return result;
     }
 
@@ -117,8 +122,19 @@ public sealed class InProcessChummerClient : IChummerClient
     {
         ct.ThrowIfCancellationRequested();
         OwnerScope owner = _ownerContextAccessor.Current;
-        await _workspaceRoamingSync.SynchronizeInboundAsync(owner, ct).ConfigureAwait(false);
+        LastWorkspaceRoamingResult = await _workspaceRoamingSync
+            .SynchronizeInboundAsync(owner, ct)
+            .ConfigureAwait(false);
         return _workspaceService.List(owner);
+    }
+
+    public Task<CommandResult<WorkspaceDocumentSnapshot>> GetWorkspaceAsync(
+        CharacterWorkspaceId id,
+        CancellationToken ct)
+    {
+        ct.ThrowIfCancellationRequested();
+        OwnerScope owner = _ownerContextAccessor.Current;
+        return Task.FromResult(_workspaceService.GetWorkspace(owner, id));
     }
 
     public Task<AccountCampaignSummary?> GetAccountCampaignSummaryAsync(CancellationToken ct)
@@ -163,11 +179,24 @@ public sealed class InProcessChummerClient : IChummerClient
         return Task.FromResult(DesktopInstallLinkingSummaryProjection.Empty);
     }
 
+    [Obsolete("Compatibility close performs one read and one CAS. Pass expectedContentRevision.")]
     public Task<bool> CloseWorkspaceAsync(CharacterWorkspaceId id, CancellationToken ct)
     {
         ct.ThrowIfCancellationRequested();
         OwnerScope owner = _ownerContextAccessor.Current;
+#pragma warning disable CS0618
         return Task.FromResult(_workspaceService.Close(owner, id));
+#pragma warning restore CS0618
+    }
+
+    public Task<CommandResult<WorkspaceRevisionReceipt>> CloseWorkspaceAsync(
+        CharacterWorkspaceId id,
+        long expectedContentRevision,
+        CancellationToken ct)
+    {
+        ct.ThrowIfCancellationRequested();
+        OwnerScope owner = _ownerContextAccessor.Current;
+        return Task.FromResult(_workspaceService.Close(owner, id, expectedContentRevision));
     }
 
     public Task<IReadOnlyList<AppCommandDefinition>> GetCommandsAsync(string? rulesetId, CancellationToken ct)
@@ -187,7 +216,9 @@ public sealed class InProcessChummerClient : IChummerClient
         ct.ThrowIfCancellationRequested();
 
         OwnerScope owner = _ownerContextAccessor.Current;
-        await _workspaceRoamingSync.SynchronizeInboundAsync(owner, ct).ConfigureAwait(false);
+        LastWorkspaceRoamingResult = await _workspaceRoamingSync
+            .SynchronizeInboundAsync(owner, ct)
+            .ConfigureAwait(false);
         IReadOnlyList<WorkspaceListItem> workspaces = _workspaceService.List(owner, ShellBootstrapDefaults.MaxWorkspaces);
         ShellPreferences preferences = _shellPreferencesService.Load(owner);
         ShellSessionState session = _shellSessionService.Load(owner);
@@ -381,27 +412,101 @@ public sealed class InProcessChummerClient : IChummerClient
         return Task.FromResult(RequireWorkspacePayload(id, _workspaceService.GetAwakening(owner, id), "Awakening"));
     }
 
+    [Obsolete("Compatibility metadata update performs one read and one CAS. Pass expectedContentRevision.")]
     public async Task<CommandResult<CharacterProfileSection>> UpdateMetadataAsync(CharacterWorkspaceId id, UpdateWorkspaceMetadata command, CancellationToken ct)
     {
         ct.ThrowIfCancellationRequested();
         OwnerScope owner = _ownerContextAccessor.Current;
+#pragma warning disable CS0618
         CommandResult<CharacterProfileSection> result = _workspaceService.UpdateMetadata(owner, id, command);
+#pragma warning restore CS0618
         if (result.Success)
         {
-            await _workspaceRoamingSync.SynchronizeOutboundAsync(owner, id, ct).ConfigureAwait(false);
+            LastWorkspaceRoamingResult = await _workspaceRoamingSync
+                .SynchronizeOutboundAsync(owner, id, ct)
+                .ConfigureAwait(false);
         }
 
         return result;
     }
 
+    public async Task<CommandResult<WorkspaceMetadataResult>> UpdateMetadataAsync(
+        CharacterWorkspaceId id,
+        long expectedContentRevision,
+        UpdateWorkspaceMetadata command,
+        CancellationToken ct)
+    {
+        ct.ThrowIfCancellationRequested();
+        OwnerScope owner = _ownerContextAccessor.Current;
+        CommandResult<WorkspaceMetadataResult> result = _workspaceService.UpdateMetadata(
+            owner,
+            id,
+            expectedContentRevision,
+            command);
+        if (result.Success)
+        {
+            LastWorkspaceRoamingResult = await _workspaceRoamingSync
+                .SynchronizeOutboundAsync(owner, id, ct)
+                .ConfigureAwait(false);
+        }
+
+        return result;
+    }
+
+    public async Task<CommandResult<WorkspaceRevisionReceipt>> ReplaceWorkspaceDocumentAsync(
+        CharacterWorkspaceId id,
+        long expectedContentRevision,
+        WorkspaceDocument document,
+        CancellationToken ct)
+    {
+        ct.ThrowIfCancellationRequested();
+        OwnerScope owner = _ownerContextAccessor.Current;
+        CommandResult<WorkspaceRevisionReceipt> result = _workspaceService.ReplaceWorkspaceDocument(
+            owner,
+            id,
+            expectedContentRevision,
+            document);
+        if (result.Success)
+        {
+            LastWorkspaceRoamingResult = await _workspaceRoamingSync
+                .SynchronizeOutboundAsync(owner, id, ct)
+                .ConfigureAwait(false);
+        }
+
+        return result;
+    }
+
+    [Obsolete("Compatibility save performs one read and one CAS. Pass expectedContentRevision.")]
     public async Task<CommandResult<WorkspaceSaveReceipt>> SaveAsync(CharacterWorkspaceId id, CancellationToken ct)
     {
         ct.ThrowIfCancellationRequested();
         OwnerScope owner = _ownerContextAccessor.Current;
+#pragma warning disable CS0618
         CommandResult<WorkspaceSaveReceipt> result = _workspaceService.Save(owner, id);
+#pragma warning restore CS0618
         if (result.Success)
         {
-            await _workspaceRoamingSync.SynchronizeOutboundAsync(owner, id, ct).ConfigureAwait(false);
+            LastWorkspaceRoamingResult = await _workspaceRoamingSync
+                .SynchronizeOutboundAsync(owner, id, ct)
+                .ConfigureAwait(false);
+        }
+
+        return result;
+    }
+
+    public async Task<CommandResult<WorkspaceSaveReceipt>> SaveAsync(
+        CharacterWorkspaceId id,
+        long expectedContentRevision,
+        CancellationToken ct)
+    {
+        ct.ThrowIfCancellationRequested();
+        OwnerScope owner = _ownerContextAccessor.Current;
+        CommandResult<WorkspaceSaveReceipt> result = _workspaceService.Save(owner, id, expectedContentRevision);
+        if (result.Success)
+        {
+            LastWorkspaceRoamingResult = await _workspaceRoamingSync
+                .SynchronizeOutboundAsync(owner, id, ct)
+                .ConfigureAwait(false);
         }
 
         return result;

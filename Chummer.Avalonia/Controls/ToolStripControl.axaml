@@ -13,7 +13,7 @@
       <Setter Property="BorderBrush" Value="{DynamicResource ChummerShellActiveMenuBorderBrush}" />
     </Style>
   </UserControl.Styles>
-  <Grid ColumnDefinitions="*,Auto,Auto,Auto" ColumnSpacing="8">
+  <Grid ColumnDefinitions="*,Auto,Auto" ColumnSpacing="8">
     <WrapPanel Orientation="Horizontal"
                Grid.Column="0"
                Classes="shell-toolstrip-band"
@@ -60,17 +60,5 @@
             VerticalAlignment="Center"
             Click="StartOriginButton_OnClick" />
 
-    <Border x:Name="StatusTextBorder"
-            Grid.Column="3"
-            Classes="shell-toolstrip-state"
-            Padding="6,2"
-            IsHitTestVisible="False"
-            IsVisible="False">
-      <TextBlock x:Name="StatusText"
-                 Classes="shell-caption"
-                 VerticalAlignment="Center"
-                 Text="Ready"
-                 TextTrimming="CharacterEllipsis" />
-    </Border>
   </Grid>
 </UserControl>

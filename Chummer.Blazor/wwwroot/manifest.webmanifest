@@ -1,12 +1,12 @@
 {
-  "name": "Chummer Online",
-  "short_name": "Chummer",
-  "description": "A mobile-ready Chummer session companion for runner status, table flow, and safe in-session continuity.",
+  "name": "Chummer Runner Builder",
+  "short_name": "Chummer Build",
+  "description": "Installable character-building workspace for creating, opening, and managing Chummer runners.",
   "id": "./app",
-  "start_url": "./app?source=pwa",
+  "start_url": "./app?command=character_roster&source=pwa",
   "scope": "./",
   "display": "standalone",
-  "display_override": ["window-controls-overlay", "standalone", "browser"],
+  "display_override": ["standalone", "browser"],
   "background_color": "#08111f",
   "theme_color": "#0f3b3e",
   "orientation": "any",
@@ -14,6 +14,30 @@
   "lang": "en-US",
   "dir": "ltr",
   "icons": [
+    {
+      "src": "icons/chummer-build-180.png",
+      "sizes": "180x180",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "icons/chummer-build-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "icons/chummer-build-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "icons/chummer-build-maskable-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable"
+    },
     {
       "src": "icons/chummer-pwa.svg",
       "sizes": "any",
@@ -29,28 +53,28 @@
   ],
   "shortcuts": [
     {
-      "name": "Play Session",
-      "short_name": "Play",
-      "description": "Open the mobile-friendly in-session Chummer surface.",
-      "url": "./app?command=session_dashboard&source=pwa-shortcut",
+      "name": "New Runner",
+      "short_name": "New",
+      "description": "Start a new runner in the character-building workspace.",
+      "url": "./app?command=new_character&source=pwa-shortcut",
       "icons": [
         {
-          "src": "icons/chummer-pwa.svg",
-          "sizes": "any",
-          "type": "image/svg+xml"
+          "src": "icons/chummer-build-192.png",
+          "sizes": "192x192",
+          "type": "image/png"
         }
       ]
     },
     {
       "name": "Runner Roster",
       "short_name": "Roster",
-      "description": "Open Chummer Online to choose or resume a runner.",
+      "description": "Choose an existing runner or return to the build roster.",
       "url": "./app?command=character_roster&source=pwa-shortcut",
       "icons": [
         {
-          "src": "icons/chummer-pwa.svg",
-          "sizes": "any",
-          "type": "image/svg+xml"
+          "src": "icons/chummer-build-192.png",
+          "sizes": "192x192",
+          "type": "image/png"
         }
       ]
     }
@@ -61,14 +85,14 @@
       "sizes": "1600x900",
       "type": "image/png",
       "form_factor": "wide",
-      "label": "Chummer Online public shell"
+      "label": "Chummer Runner Builder roster and build workspace"
     },
     {
       "src": "media/chummer6/karma-forge.png",
       "sizes": "960x540",
       "type": "image/png",
       "form_factor": "wide",
-      "label": "Runner tools and session-ready workflow lanes"
+      "label": "Runner creation tools and character workflow lanes"
     }
   ]
 }

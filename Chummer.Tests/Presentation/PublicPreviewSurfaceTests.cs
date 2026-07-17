@@ -32,20 +32,21 @@ public sealed class PublicPreviewSurfaceTests
         using var context = new BunitContext();
         IRenderedComponent<Home> cut = context.Render<Home>();
 
-        StringAssert.Contains(cut.Markup, "Chummer&#x27;s public browser workbench, grounded in the real product.");
-        StringAssert.Contains(cut.Markup, "This surface is the public landing lane for the self-hosted Chummer portal");
-        StringAssert.Contains(cut.Markup, "Character workflows are live in the browser where parity is actually implemented");
-        StringAssert.Contains(cut.Markup, "href=\"/workbench\"");
-        StringAssert.Contains(cut.Markup, "href=\"/showcase\"");
+        StringAssert.Contains(cut.Markup, "Chummer Online for real runner work.");
+        StringAssert.Contains(cut.Markup, "This surface is the front door for the self-hosted Chummer portal");
+        StringAssert.Contains(cut.Markup, "Character workflows are live in the browser where parity is");
+        StringAssert.Contains(cut.Markup, "href=\"app?command=character_roster\"");
+        StringAssert.Contains(cut.Markup, "href=\"showcase\"");
         StringAssert.Contains(cut.Markup, "href=\"/downloads/\"");
         StringAssert.Contains(cut.Markup, "href=\"/docs/\"");
-        StringAssert.Contains(cut.Markup, "/workbench</code>");
-        StringAssert.Contains(cut.Markup, "/preview</code>");
+        StringAssert.Contains(cut.Markup, "/app?command=character_roster</code>");
+        StringAssert.Contains(cut.Markup, "/app</code>");
         StringAssert.Contains(cut.Markup, "Desktop client remains authoritative for");
         StringAssert.Contains(cut.Markup, "NPC Persona Studio");
         Assert.IsNotNull(cut.Find("main.public-preview"));
+        Assert.IsNotNull(cut.Find("#tour"));
         Assert.IsNotNull(cut.Find("#boundaries"));
-        Assert.IsNotNull(cut.Find("#proof"));
+        Assert.IsNotNull(cut.Find("#trust"));
     }
 
     [TestMethod]
@@ -56,20 +57,20 @@ public sealed class PublicPreviewSurfaceTests
         RegisterDesktopShellServices(context);
         IRenderedComponent<Preview> cut = context.Render<Preview>();
 
-        StringAssert.Contains(cut.Markup, "Chummer&#x27;s shared workbench shell, running in the browser.");
-        StringAssert.Contains(cut.Markup, "Browser-owned here:");
-        StringAssert.Contains(cut.Markup, "Desktop-owned still:");
+        StringAssert.Contains(cut.Markup, "Preview Chummer Online workflows without changing the public route.");
+        StringAssert.Contains(cut.Markup, "Browser-ready here:");
+        StringAssert.Contains(cut.Markup, "Desktop-only still:");
         StringAssert.Contains(cut.Markup, "Published self-hosted Docker surface");
         StringAssert.Contains(cut.Markup, "Implicit owner sign-in");
-        StringAssert.Contains(cut.Markup, "href=\"/\"");
-        StringAssert.Contains(cut.Markup, "href=\"/showcase\"");
+        StringAssert.Contains(cut.Markup, "href=\"home\"");
+        StringAssert.Contains(cut.Markup, "href=\"showcase\"");
         StringAssert.Contains(cut.Markup, "href=\"/downloads/\"");
         StringAssert.Contains(cut.Markup, "href=\"/docs/\"");
         StringAssert.Contains(cut.Markup, "Open Build Lab");
-        StringAssert.Contains(cut.Markup, "/preview?fixture=blue&amp;tab=tab-create");
-        StringAssert.Contains(cut.Markup, "/preview?fixture=blue&amp;tab=tab-rules");
-        StringAssert.Contains(cut.Markup, "/preview?fixture=blue&amp;tab=tab-technomancer");
-        StringAssert.Contains(cut.Markup, "/preview?fixture=blue&amp;tab=tab-contacts");
+        StringAssert.Contains(cut.Markup, "preview?fixture=blue&amp;tab=tab-create");
+        StringAssert.Contains(cut.Markup, "preview?fixture=blue&amp;tab=tab-rules");
+        StringAssert.Contains(cut.Markup, "preview?fixture=blue&amp;tab=tab-technomancer");
+        StringAssert.Contains(cut.Markup, "preview?fixture=blue&amp;tab=tab-contacts");
         StringAssert.Contains(cut.Markup, "New runner");
         StringAssert.Contains(cut.Markup, "Open Runner");
         StringAssert.Contains(cut.Markup, "Open for Printing");
@@ -79,16 +80,17 @@ public sealed class PublicPreviewSurfaceTests
         StringAssert.Contains(cut.Markup, "Open Save Result");
         StringAssert.Contains(cut.Markup, "Open Save As Result");
         StringAssert.Contains(cut.Markup, "Open Origin Dossier");
-        StringAssert.Contains(cut.Markup, "/preview?command=open_character");
-        StringAssert.Contains(cut.Markup, "/preview?command=open_for_printing");
-        StringAssert.Contains(cut.Markup, "/preview?command=open_for_export");
-        StringAssert.Contains(cut.Markup, "/preview?fixture=blue&amp;command=print_character");
-        StringAssert.Contains(cut.Markup, "/preview?fixture=blue&amp;command=export_character");
-        StringAssert.Contains(cut.Markup, "/preview?fixture=blue&amp;command=save_character");
-        StringAssert.Contains(cut.Markup, "/preview?fixture=blue&amp;command=save_character_as");
-        StringAssert.Contains(cut.Markup, "/preview?command=new_character");
-        StringAssert.Contains(cut.Markup, "/preview?command=new_character_origin");
+        StringAssert.Contains(cut.Markup, "preview?command=open_character");
+        StringAssert.Contains(cut.Markup, "preview?command=open_for_printing");
+        StringAssert.Contains(cut.Markup, "preview?command=open_for_export");
+        StringAssert.Contains(cut.Markup, "preview?fixture=blue&amp;command=print_character");
+        StringAssert.Contains(cut.Markup, "preview?fixture=blue&amp;command=export_character");
+        StringAssert.Contains(cut.Markup, "preview?fixture=blue&amp;command=save_character");
+        StringAssert.Contains(cut.Markup, "preview?fixture=blue&amp;command=save_character_as");
+        StringAssert.Contains(cut.Markup, "preview?command=new_character");
+        StringAssert.Contains(cut.Markup, "preview?command=new_character_origin");
         Assert.IsNotNull(cut.Find(".browser-preview-status-grid"));
+        Assert.IsNotNull(cut.Find(".browser-preview-frame"));
         Assert.IsNotNull(cut.Find("[data-preview-proof-card='build-lab']"));
         Assert.IsNotNull(cut.Find("[data-preview-proof-card='technomancer']"));
         Assert.IsNotNull(cut.Find("[data-preview-proof-card='new-character']"));
@@ -130,8 +132,8 @@ public sealed class PublicPreviewSurfaceTests
         StringAssert.Contains(cut.Markup, "Preview tools");
         StringAssert.Contains(cut.Markup, "Start a new runner");
         StringAssert.Contains(cut.Markup, "Import an existing runner");
-        StringAssert.Contains(cut.Markup, "Open a live seeded workspace");
-        StringAssert.Contains(cut.Markup, "Continue PRV in build lab");
+        StringAssert.Contains(cut.Markup, "Open a live seeded runner");
+        StringAssert.Contains(cut.Markup, "Continue PRV in Build Lab");
         StringAssert.Contains(cut.Markup, "Resume from restored session state");
         StringAssert.Contains(cut.Markup, "Resume PRV");
         StringAssert.Contains(cut.Markup, "saved");
@@ -166,34 +168,34 @@ public sealed class PublicPreviewSurfaceTests
         StringAssert.Contains(cut.Markup, "Prepare a browser download");
         StringAssert.Contains(cut.Markup, "Prepare an export package");
         StringAssert.Contains(cut.Markup, "Prepare a print preview");
-        StringAssert.Contains(cut.Markup, "href=\"/workbench?command=new_character\"");
-        StringAssert.Contains(cut.Markup, "href=\"/workbench?command=open_character\"");
-        StringAssert.Contains(cut.Markup, "href=\"/workbench?workspace=preview-ws&amp;tab=tab-create\"");
-        StringAssert.Contains(cut.Markup, "href=\"/workbench?workspace=preview-ws\"");
+        StringAssert.Contains(cut.Markup, "href=\"workbench?command=new_character\"");
+        StringAssert.Contains(cut.Markup, "href=\"workbench?command=open_character\"");
+        StringAssert.Contains(cut.Markup, "href=\"workbench?workspace=preview-ws&amp;tab=tab-create\"");
+        StringAssert.Contains(cut.Markup, "href=\"workbench?workspace=preview-ws\"");
         StringAssert.Contains(cut.Markup, "data-workbench-recent-workspace=\"preview-ws\"");
-        StringAssert.Contains(cut.Markup, "href=\"/workbench?workspace=preview-ws&amp;tab=tab-info\"");
-        StringAssert.Contains(cut.Markup, "href=\"/workbench?workspace=preview-ws&amp;tab=tab-rules\"");
-        StringAssert.Contains(cut.Markup, "href=\"/workbench?workspace=preview-ws&amp;tab=tab-gear\"");
-        StringAssert.Contains(cut.Markup, "href=\"/workbench?workspace=preview-ws&amp;tab=tab-technomancer\"");
-        StringAssert.Contains(cut.Markup, "href=\"/workbench?workspace=preview-ws&amp;tab=tab-contacts&amp;control=contact_add&amp;dialog_action=add\"");
-        StringAssert.Contains(cut.Markup, "href=\"/workbench?workspace=preview-ws&amp;tab=tab-contacts&amp;control=contact_add\"");
-        StringAssert.Contains(cut.Markup, "href=\"/workbench?workspace=preview-ws&amp;tab=tab-technomancer&amp;control=complex_form_add&amp;dialog_action=add\"");
-        StringAssert.Contains(cut.Markup, "href=\"/workbench?workspace=preview-ws&amp;tab=tab-technomancer&amp;control=complex_form_add\"");
-        StringAssert.Contains(cut.Markup, "href=\"/workbench?workspace=preview-ws&amp;tab=tab-adept&amp;control=initiation_add&amp;dialog_action=add\"");
-        StringAssert.Contains(cut.Markup, "href=\"/workbench?workspace=preview-ws&amp;tab=tab-adept&amp;control=initiation_add\"");
-        StringAssert.Contains(cut.Markup, "href=\"/workbench?workspace=preview-ws&amp;tab=tab-cyberware&amp;control=cyberware_add&amp;dialog_action=add\"");
-        StringAssert.Contains(cut.Markup, "href=\"/workbench?workspace=preview-ws&amp;tab=tab-cyberware&amp;control=cyberware_add\"");
-        StringAssert.Contains(cut.Markup, "href=\"/workbench?workspace=preview-ws&amp;tab=tab-magician&amp;control=spell_add&amp;dialog_action=add\"");
-        StringAssert.Contains(cut.Markup, "href=\"/workbench?workspace=preview-ws&amp;tab=tab-magician&amp;control=spell_add\"");
-        StringAssert.Contains(cut.Markup, "href=\"/workbench?workspace=preview-ws&amp;tab=tab-contacts\"");
-        StringAssert.Contains(cut.Markup, "href=\"/workbench?workspace=preview-ws&amp;tab=tab-info\"");
-        StringAssert.Contains(cut.Markup, "href=\"/workbench?workspace=preview-ws&amp;tab=tab-rules\"");
-        StringAssert.Contains(cut.Markup, "href=\"/workbench?workspace=preview-ws&amp;tab=tab-gear\"");
-        StringAssert.Contains(cut.Markup, "href=\"/workbench?workspace=preview-ws&amp;tab=tab-technomancer\"");
-        StringAssert.Contains(cut.Markup, "href=\"/workbench?workspace=preview-ws&amp;command=save_character_as\"");
-        StringAssert.Contains(cut.Markup, "href=\"/workbench?workspace=preview-ws&amp;command=export_character\"");
-        StringAssert.Contains(cut.Markup, "href=\"/workbench?workspace=preview-ws&amp;command=print_character\"");
-        StringAssert.Contains(cut.Markup, "href=\"/preview\"");
+        StringAssert.Contains(cut.Markup, "href=\"workbench?workspace=preview-ws&amp;tab=tab-info\"");
+        StringAssert.Contains(cut.Markup, "href=\"workbench?workspace=preview-ws&amp;tab=tab-rules\"");
+        StringAssert.Contains(cut.Markup, "href=\"workbench?workspace=preview-ws&amp;tab=tab-gear\"");
+        StringAssert.Contains(cut.Markup, "href=\"workbench?workspace=preview-ws&amp;tab=tab-technomancer\"");
+        StringAssert.Contains(cut.Markup, "href=\"workbench?workspace=preview-ws&amp;tab=tab-contacts&amp;control=contact_add&amp;dialog_action=add\"");
+        StringAssert.Contains(cut.Markup, "href=\"workbench?workspace=preview-ws&amp;tab=tab-contacts&amp;control=contact_add\"");
+        StringAssert.Contains(cut.Markup, "href=\"workbench?workspace=preview-ws&amp;tab=tab-technomancer&amp;control=complex_form_add&amp;dialog_action=add\"");
+        StringAssert.Contains(cut.Markup, "href=\"workbench?workspace=preview-ws&amp;tab=tab-technomancer&amp;control=complex_form_add\"");
+        StringAssert.Contains(cut.Markup, "href=\"workbench?workspace=preview-ws&amp;tab=tab-adept&amp;control=initiation_add&amp;dialog_action=add\"");
+        StringAssert.Contains(cut.Markup, "href=\"workbench?workspace=preview-ws&amp;tab=tab-adept&amp;control=initiation_add\"");
+        StringAssert.Contains(cut.Markup, "href=\"workbench?workspace=preview-ws&amp;tab=tab-cyberware&amp;control=cyberware_add&amp;dialog_action=add\"");
+        StringAssert.Contains(cut.Markup, "href=\"workbench?workspace=preview-ws&amp;tab=tab-cyberware&amp;control=cyberware_add\"");
+        StringAssert.Contains(cut.Markup, "href=\"workbench?workspace=preview-ws&amp;tab=tab-magician&amp;control=spell_add&amp;dialog_action=add\"");
+        StringAssert.Contains(cut.Markup, "href=\"workbench?workspace=preview-ws&amp;tab=tab-magician&amp;control=spell_add\"");
+        StringAssert.Contains(cut.Markup, "href=\"workbench?workspace=preview-ws&amp;tab=tab-contacts\"");
+        StringAssert.Contains(cut.Markup, "href=\"workbench?workspace=preview-ws&amp;tab=tab-info\"");
+        StringAssert.Contains(cut.Markup, "href=\"workbench?workspace=preview-ws&amp;tab=tab-rules\"");
+        StringAssert.Contains(cut.Markup, "href=\"workbench?workspace=preview-ws&amp;tab=tab-gear\"");
+        StringAssert.Contains(cut.Markup, "href=\"workbench?workspace=preview-ws&amp;tab=tab-technomancer\"");
+        StringAssert.Contains(cut.Markup, "href=\"workbench?workspace=preview-ws&amp;command=save_character_as\"");
+        StringAssert.Contains(cut.Markup, "href=\"workbench?workspace=preview-ws&amp;command=export_character&amp;dialog_action=download\"");
+        StringAssert.Contains(cut.Markup, "href=\"workbench?workspace=preview-ws&amp;command=print_character\"");
+        StringAssert.Contains(cut.Markup, "href=\"preview\"");
         Assert.IsFalse(cut.Markup.Contains("data-preview-proof-card=\"build-lab\"", StringComparison.Ordinal));
         Assert.IsNotNull(cut.Find("[data-workbench-entry-card='new-character']"));
         Assert.IsNotNull(cut.Find("[data-workbench-entry-card='open-character']"));
@@ -242,6 +244,29 @@ public sealed class PublicPreviewSurfaceTests
         Assert.IsFalse(cut.Markup.Contains("classic-chummer-shell", StringComparison.Ordinal));
     }
 
+    [TestMethod]
+    public void App_route_same_path_command_navigation_updates_to_the_shared_startup_shell()
+    {
+        using var context = new BunitContext();
+        context.JSInterop.Mode = JSRuntimeMode.Loose;
+        FakeCharacterOverviewPresenter presenter = RegisterDesktopShellServices(context, includeActiveWorkspace: false);
+
+        IRenderedComponent<Preview> cut = RenderPreview(context, "/app");
+        NavigationManager navigation = context.Services.GetRequiredService<NavigationManager>();
+        navigation.NavigateTo("/app?command=new_character");
+
+        cut.WaitForAssertion(() =>
+        {
+            Assert.AreEqual("new_character", presenter.ExecutedCommandId);
+            StringAssert.Contains(cut.Markup, "data-active-workflow=\"build-lab\"");
+            StringAssert.Contains(cut.Markup, "data-command=\"new-character\"");
+            StringAssert.Contains(cut.Markup, "data-chummer-app-startup-command=\"new_character\"");
+            StringAssert.Contains(cut.Markup, "Build Lab shell");
+            Assert.IsNotNull(cut.Find("[data-app-route-shared-shell='true']"));
+            Assert.IsNotNull(cut.Find(".desktop-shell"));
+        });
+    }
+
     [DataTestMethod]
     [DataRow("new_character_origin")]
     [DataRow("open_character")]
@@ -251,16 +276,17 @@ public sealed class PublicPreviewSurfaceTests
     [DataRow("export_character")]
     [DataRow("save_character")]
     [DataRow("save_character_as")]
+    [DataRow("master_index")]
+    [DataRow("global_settings")]
     public void Preview_command_query_bootstraps_shared_startup_command(string commandId)
     {
         using var context = new BunitContext();
         context.JSInterop.Mode = JSRuntimeMode.Loose;
-        FakeCharacterOverviewPresenter presenter = RegisterDesktopShellServices(context);
+        FakeCharacterOverviewPresenter presenter = RegisterDesktopShellServices(context, includeActiveWorkspace: false);
 
-        context.Render<Preview>(parameters => parameters
-            .Add(component => component.Command, commandId));
+        IRenderedComponent<Preview> cut = RenderPreview(context, $"/preview?command={commandId}");
 
-        Assert.AreEqual(commandId, presenter.ExecutedCommandId);
+        cut.WaitForAssertion(() => Assert.AreEqual(commandId, presenter.ExecutedCommandId));
     }
 
     [TestMethod]
@@ -268,15 +294,39 @@ public sealed class PublicPreviewSurfaceTests
     {
         using var context = new BunitContext();
         context.JSInterop.Mode = JSRuntimeMode.Loose;
-        FakeCharacterOverviewPresenter presenter = RegisterDesktopShellServices(context);
+        FakeCharacterOverviewPresenter presenter = RegisterDesktopShellServices(context, includeActiveWorkspace: false);
 
-        NavigationManager navigation = context.Services.GetRequiredService<NavigationManager>();
-        navigation.NavigateTo("/workbench?workspace=preview-ws");
+        IRenderedComponent<Preview> cut = RenderPreview(context, "/workbench?workspace=preview-ws");
 
-        context.Render<Preview>(parameters => parameters
-            .Add(component => component.Workspace, "preview-ws"));
+        cut.WaitForAssertion(() => Assert.AreEqual("preview-ws", presenter.LoadedWorkspaceId?.Value));
+    }
 
-        Assert.AreEqual("preview-ws", presenter.LoadedWorkspaceId?.Value);
+    [TestMethod]
+    public void Workbench_workspace_new_runner_link_preserves_workspace_context()
+    {
+        using var context = new BunitContext();
+        context.JSInterop.Mode = JSRuntimeMode.Loose;
+        RegisterDesktopShellServices(context);
+
+        IRenderedComponent<Preview> cut = RenderPreview(context, "/workbench?workspace=preview-ws&tab=tab-create");
+
+        Assert.AreEqual(
+            "workbench?workspace=preview-ws&tab=tab-create&command=new_character",
+            cut.Find("[data-app-menu-item='new-runner']").GetAttribute("href"));
+    }
+
+    [TestMethod]
+    public void Workbench_new_runner_route_keeps_new_runner_link_on_dialog_route()
+    {
+        using var context = new BunitContext();
+        context.JSInterop.Mode = JSRuntimeMode.Loose;
+        RegisterDesktopShellServices(context);
+
+        IRenderedComponent<Preview> cut = RenderPreview(context, "/workbench?workspace=preview-ws&command=new_character");
+
+        Assert.AreEqual(
+            "workbench?workspace=preview-ws&tab=tab-create&command=new_character",
+            cut.Find("[data-app-menu-item='new-runner']").GetAttribute("href"));
     }
 
     [TestMethod]
@@ -284,18 +334,15 @@ public sealed class PublicPreviewSurfaceTests
     {
         using var context = new BunitContext();
         context.JSInterop.Mode = JSRuntimeMode.Loose;
-        FakeCharacterOverviewPresenter presenter = RegisterDesktopShellServices(context);
+        FakeCharacterOverviewPresenter presenter = RegisterDesktopShellServices(context, includeActiveWorkspace: false);
 
-        NavigationManager navigation = context.Services.GetRequiredService<NavigationManager>();
-        navigation.NavigateTo("/workbench?workspace=preview-ws&tab=tab-contacts&control=contact_add");
+        IRenderedComponent<Preview> cut = RenderPreview(context, "/workbench?workspace=preview-ws&tab=tab-contacts&control=contact_add");
 
-        context.Render<Preview>(parameters => parameters
-            .Add(component => component.Workspace, "preview-ws")
-            .Add(component => component.Tab, "tab-contacts")
-            .Add(component => component.Control, "contact_add"));
-
-        Assert.AreEqual("preview-ws", presenter.LoadedWorkspaceId?.Value);
-        Assert.AreEqual("contact_add", presenter.HandledUiControlId);
+        cut.WaitForAssertion(() =>
+        {
+            Assert.AreEqual("preview-ws", presenter.LoadedWorkspaceId?.Value);
+            Assert.AreEqual("contact_add", presenter.HandledUiControlId);
+        });
     }
 
     [TestMethod]
@@ -303,20 +350,16 @@ public sealed class PublicPreviewSurfaceTests
     {
         using var context = new BunitContext();
         context.JSInterop.Mode = JSRuntimeMode.Loose;
-        FakeCharacterOverviewPresenter presenter = RegisterDesktopShellServices(context);
+        FakeCharacterOverviewPresenter presenter = RegisterDesktopShellServices(context, includeActiveWorkspace: false);
 
-        NavigationManager navigation = context.Services.GetRequiredService<NavigationManager>();
-        navigation.NavigateTo("/workbench?workspace=preview-ws&tab=tab-contacts&control=contact_add&dialog_action=add");
+        IRenderedComponent<Preview> cut = RenderPreview(context, "/workbench?workspace=preview-ws&tab=tab-contacts&control=contact_add&dialog_action=add");
 
-        context.Render<Preview>(parameters => parameters
-            .Add(component => component.Workspace, "preview-ws")
-            .Add(component => component.Tab, "tab-contacts")
-            .Add(component => component.Control, "contact_add")
-            .Add(component => component.DialogAction, "add"));
-
-        Assert.AreEqual("preview-ws", presenter.LoadedWorkspaceId?.Value);
-        Assert.AreEqual("contact_add", presenter.HandledUiControlId);
-        Assert.AreEqual("add", presenter.ExecutedDialogActionId);
+        cut.WaitForAssertion(() =>
+        {
+            Assert.AreEqual("preview-ws", presenter.LoadedWorkspaceId?.Value);
+            Assert.AreEqual("contact_add", presenter.HandledUiControlId);
+            Assert.AreEqual("add", presenter.ExecutedDialogActionId);
+        });
     }
 
     [TestMethod]
@@ -324,18 +367,15 @@ public sealed class PublicPreviewSurfaceTests
     {
         using var context = new BunitContext();
         context.JSInterop.Mode = JSRuntimeMode.Loose;
-        FakeCharacterOverviewPresenter presenter = RegisterDesktopShellServices(context);
+        FakeCharacterOverviewPresenter presenter = RegisterDesktopShellServices(context, includeActiveWorkspace: false);
 
-        NavigationManager navigation = context.Services.GetRequiredService<NavigationManager>();
-        navigation.NavigateTo("/workbench?workspace=preview-ws&tab=tab-technomancer&control=complex_form_add");
+        IRenderedComponent<Preview> cut = RenderPreview(context, "/workbench?workspace=preview-ws&tab=tab-technomancer&control=complex_form_add");
 
-        context.Render<Preview>(parameters => parameters
-            .Add(component => component.Workspace, "preview-ws")
-            .Add(component => component.Tab, "tab-technomancer")
-            .Add(component => component.Control, "complex_form_add"));
-
-        Assert.AreEqual("preview-ws", presenter.LoadedWorkspaceId?.Value);
-        Assert.AreEqual("complex_form_add", presenter.HandledUiControlId);
+        cut.WaitForAssertion(() =>
+        {
+            Assert.AreEqual("preview-ws", presenter.LoadedWorkspaceId?.Value);
+            Assert.AreEqual("complex_form_add", presenter.HandledUiControlId);
+        });
     }
 
     [TestMethod]
@@ -343,20 +383,16 @@ public sealed class PublicPreviewSurfaceTests
     {
         using var context = new BunitContext();
         context.JSInterop.Mode = JSRuntimeMode.Loose;
-        FakeCharacterOverviewPresenter presenter = RegisterDesktopShellServices(context);
+        FakeCharacterOverviewPresenter presenter = RegisterDesktopShellServices(context, includeActiveWorkspace: false);
 
-        NavigationManager navigation = context.Services.GetRequiredService<NavigationManager>();
-        navigation.NavigateTo("/workbench?workspace=preview-ws&tab=tab-technomancer&control=complex_form_add&dialog_action=add");
+        IRenderedComponent<Preview> cut = RenderPreview(context, "/workbench?workspace=preview-ws&tab=tab-technomancer&control=complex_form_add&dialog_action=add");
 
-        context.Render<Preview>(parameters => parameters
-            .Add(component => component.Workspace, "preview-ws")
-            .Add(component => component.Tab, "tab-technomancer")
-            .Add(component => component.Control, "complex_form_add")
-            .Add(component => component.DialogAction, "add"));
-
-        Assert.AreEqual("preview-ws", presenter.LoadedWorkspaceId?.Value);
-        Assert.AreEqual("complex_form_add", presenter.HandledUiControlId);
-        Assert.AreEqual("add", presenter.ExecutedDialogActionId);
+        cut.WaitForAssertion(() =>
+        {
+            Assert.AreEqual("preview-ws", presenter.LoadedWorkspaceId?.Value);
+            Assert.AreEqual("complex_form_add", presenter.HandledUiControlId);
+            Assert.AreEqual("add", presenter.ExecutedDialogActionId);
+        });
     }
 
     [TestMethod]
@@ -364,18 +400,15 @@ public sealed class PublicPreviewSurfaceTests
     {
         using var context = new BunitContext();
         context.JSInterop.Mode = JSRuntimeMode.Loose;
-        FakeCharacterOverviewPresenter presenter = RegisterDesktopShellServices(context);
+        FakeCharacterOverviewPresenter presenter = RegisterDesktopShellServices(context, includeActiveWorkspace: false);
 
-        NavigationManager navigation = context.Services.GetRequiredService<NavigationManager>();
-        navigation.NavigateTo("/workbench?workspace=preview-ws&tab=tab-adept&control=initiation_add");
+        IRenderedComponent<Preview> cut = RenderPreview(context, "/workbench?workspace=preview-ws&tab=tab-adept&control=initiation_add");
 
-        context.Render<Preview>(parameters => parameters
-            .Add(component => component.Workspace, "preview-ws")
-            .Add(component => component.Tab, "tab-adept")
-            .Add(component => component.Control, "initiation_add"));
-
-        Assert.AreEqual("preview-ws", presenter.LoadedWorkspaceId?.Value);
-        Assert.AreEqual("initiation_add", presenter.HandledUiControlId);
+        cut.WaitForAssertion(() =>
+        {
+            Assert.AreEqual("preview-ws", presenter.LoadedWorkspaceId?.Value);
+            Assert.AreEqual("initiation_add", presenter.HandledUiControlId);
+        });
     }
 
     [TestMethod]
@@ -383,20 +416,16 @@ public sealed class PublicPreviewSurfaceTests
     {
         using var context = new BunitContext();
         context.JSInterop.Mode = JSRuntimeMode.Loose;
-        FakeCharacterOverviewPresenter presenter = RegisterDesktopShellServices(context);
+        FakeCharacterOverviewPresenter presenter = RegisterDesktopShellServices(context, includeActiveWorkspace: false);
 
-        NavigationManager navigation = context.Services.GetRequiredService<NavigationManager>();
-        navigation.NavigateTo("/workbench?workspace=preview-ws&tab=tab-adept&control=initiation_add&dialog_action=add");
+        IRenderedComponent<Preview> cut = RenderPreview(context, "/workbench?workspace=preview-ws&tab=tab-adept&control=initiation_add&dialog_action=add");
 
-        context.Render<Preview>(parameters => parameters
-            .Add(component => component.Workspace, "preview-ws")
-            .Add(component => component.Tab, "tab-adept")
-            .Add(component => component.Control, "initiation_add")
-            .Add(component => component.DialogAction, "add"));
-
-        Assert.AreEqual("preview-ws", presenter.LoadedWorkspaceId?.Value);
-        Assert.AreEqual("initiation_add", presenter.HandledUiControlId);
-        Assert.AreEqual("add", presenter.ExecutedDialogActionId);
+        cut.WaitForAssertion(() =>
+        {
+            Assert.AreEqual("preview-ws", presenter.LoadedWorkspaceId?.Value);
+            Assert.AreEqual("initiation_add", presenter.HandledUiControlId);
+            Assert.AreEqual("add", presenter.ExecutedDialogActionId);
+        });
     }
 
     [TestMethod]
@@ -404,18 +433,15 @@ public sealed class PublicPreviewSurfaceTests
     {
         using var context = new BunitContext();
         context.JSInterop.Mode = JSRuntimeMode.Loose;
-        FakeCharacterOverviewPresenter presenter = RegisterDesktopShellServices(context);
+        FakeCharacterOverviewPresenter presenter = RegisterDesktopShellServices(context, includeActiveWorkspace: false);
 
-        NavigationManager navigation = context.Services.GetRequiredService<NavigationManager>();
-        navigation.NavigateTo("/workbench?workspace=preview-ws&tab=tab-cyberware&control=cyberware_add");
+        IRenderedComponent<Preview> cut = RenderPreview(context, "/workbench?workspace=preview-ws&tab=tab-cyberware&control=cyberware_add");
 
-        context.Render<Preview>(parameters => parameters
-            .Add(component => component.Workspace, "preview-ws")
-            .Add(component => component.Tab, "tab-cyberware")
-            .Add(component => component.Control, "cyberware_add"));
-
-        Assert.AreEqual("preview-ws", presenter.LoadedWorkspaceId?.Value);
-        Assert.AreEqual("cyberware_add", presenter.HandledUiControlId);
+        cut.WaitForAssertion(() =>
+        {
+            Assert.AreEqual("preview-ws", presenter.LoadedWorkspaceId?.Value);
+            Assert.AreEqual("cyberware_add", presenter.HandledUiControlId);
+        });
     }
 
     [TestMethod]
@@ -423,20 +449,16 @@ public sealed class PublicPreviewSurfaceTests
     {
         using var context = new BunitContext();
         context.JSInterop.Mode = JSRuntimeMode.Loose;
-        FakeCharacterOverviewPresenter presenter = RegisterDesktopShellServices(context);
+        FakeCharacterOverviewPresenter presenter = RegisterDesktopShellServices(context, includeActiveWorkspace: false);
 
-        NavigationManager navigation = context.Services.GetRequiredService<NavigationManager>();
-        navigation.NavigateTo("/workbench?workspace=preview-ws&tab=tab-cyberware&control=cyberware_add&dialog_action=add");
+        IRenderedComponent<Preview> cut = RenderPreview(context, "/workbench?workspace=preview-ws&tab=tab-cyberware&control=cyberware_add&dialog_action=add");
 
-        context.Render<Preview>(parameters => parameters
-            .Add(component => component.Workspace, "preview-ws")
-            .Add(component => component.Tab, "tab-cyberware")
-            .Add(component => component.Control, "cyberware_add")
-            .Add(component => component.DialogAction, "add"));
-
-        Assert.AreEqual("preview-ws", presenter.LoadedWorkspaceId?.Value);
-        Assert.AreEqual("cyberware_add", presenter.HandledUiControlId);
-        Assert.AreEqual("add", presenter.ExecutedDialogActionId);
+        cut.WaitForAssertion(() =>
+        {
+            Assert.AreEqual("preview-ws", presenter.LoadedWorkspaceId?.Value);
+            Assert.AreEqual("cyberware_add", presenter.HandledUiControlId);
+            Assert.AreEqual("add", presenter.ExecutedDialogActionId);
+        });
     }
 
     [TestMethod]
@@ -444,18 +466,15 @@ public sealed class PublicPreviewSurfaceTests
     {
         using var context = new BunitContext();
         context.JSInterop.Mode = JSRuntimeMode.Loose;
-        FakeCharacterOverviewPresenter presenter = RegisterDesktopShellServices(context);
+        FakeCharacterOverviewPresenter presenter = RegisterDesktopShellServices(context, includeActiveWorkspace: false);
 
-        NavigationManager navigation = context.Services.GetRequiredService<NavigationManager>();
-        navigation.NavigateTo("/workbench?workspace=preview-ws&tab=tab-magician&control=spell_add");
+        IRenderedComponent<Preview> cut = RenderPreview(context, "/workbench?workspace=preview-ws&tab=tab-magician&control=spell_add");
 
-        context.Render<Preview>(parameters => parameters
-            .Add(component => component.Workspace, "preview-ws")
-            .Add(component => component.Tab, "tab-magician")
-            .Add(component => component.Control, "spell_add"));
-
-        Assert.AreEqual("preview-ws", presenter.LoadedWorkspaceId?.Value);
-        Assert.AreEqual("spell_add", presenter.HandledUiControlId);
+        cut.WaitForAssertion(() =>
+        {
+            Assert.AreEqual("preview-ws", presenter.LoadedWorkspaceId?.Value);
+            Assert.AreEqual("spell_add", presenter.HandledUiControlId);
+        });
     }
 
     [TestMethod]
@@ -463,23 +482,19 @@ public sealed class PublicPreviewSurfaceTests
     {
         using var context = new BunitContext();
         context.JSInterop.Mode = JSRuntimeMode.Loose;
-        FakeCharacterOverviewPresenter presenter = RegisterDesktopShellServices(context);
+        FakeCharacterOverviewPresenter presenter = RegisterDesktopShellServices(context, includeActiveWorkspace: false);
 
-        NavigationManager navigation = context.Services.GetRequiredService<NavigationManager>();
-        navigation.NavigateTo("/workbench?workspace=preview-ws&tab=tab-magician&control=spell_add&dialog_action=add");
+        IRenderedComponent<Preview> cut = RenderPreview(context, "/workbench?workspace=preview-ws&tab=tab-magician&control=spell_add&dialog_action=add");
 
-        context.Render<Preview>(parameters => parameters
-            .Add(component => component.Workspace, "preview-ws")
-            .Add(component => component.Tab, "tab-magician")
-            .Add(component => component.Control, "spell_add")
-            .Add(component => component.DialogAction, "add"));
-
-        Assert.AreEqual("preview-ws", presenter.LoadedWorkspaceId?.Value);
-        Assert.AreEqual("spell_add", presenter.HandledUiControlId);
-        Assert.AreEqual("add", presenter.ExecutedDialogActionId);
+        cut.WaitForAssertion(() =>
+        {
+            Assert.AreEqual("preview-ws", presenter.LoadedWorkspaceId?.Value);
+            Assert.AreEqual("spell_add", presenter.HandledUiControlId);
+            Assert.AreEqual("add", presenter.ExecutedDialogActionId);
+        });
     }
 
-    private static FakeCharacterOverviewPresenter RegisterDesktopShellServices(BunitContext context)
+    private static FakeCharacterOverviewPresenter RegisterDesktopShellServices(BunitContext context, bool includeActiveWorkspace = true)
     {
         CharacterWorkspaceId workspaceId = new("preview-ws");
         OpenWorkspaceState openWorkspace = new(
@@ -490,14 +505,14 @@ public sealed class PublicPreviewSurfaceTests
             RulesetId: RulesetDefaults.Sr5,
             HasSavedWorkspace: true);
         WorkspaceSessionState session = new(
-            ActiveWorkspaceId: workspaceId,
+            ActiveWorkspaceId: includeActiveWorkspace ? workspaceId : null,
             OpenWorkspaces: [openWorkspace],
             RecentWorkspaceIds: [workspaceId]);
         CharacterOverviewState overviewState = CharacterOverviewState.Empty with
         {
             Session = session,
             OpenWorkspaces = [openWorkspace],
-            WorkspaceId = workspaceId
+            WorkspaceId = includeActiveWorkspace ? workspaceId : null
         };
 
         AppCommandDefinition menuRoot = new("file", "menu.file", "menu", false, true, RulesetDefaults.Sr5);
@@ -510,7 +525,7 @@ public sealed class PublicPreviewSurfaceTests
             RulesetId: openWorkspace.RulesetId);
         ShellState shellState = ShellState.Empty with
         {
-            ActiveWorkspaceId = workspaceId,
+            ActiveWorkspaceId = includeActiveWorkspace ? workspaceId : null,
             OpenWorkspaces = [shellWorkspace],
             ActiveRulesetId = RulesetDefaults.Sr5,
             Commands = [menuRoot],
@@ -535,6 +550,13 @@ public sealed class PublicPreviewSurfaceTests
         context.Services.AddSingleton<IRulesetShellCatalogResolver, RulesetShellCatalogResolverService>();
         context.Services.AddSingleton<IShellSurfaceResolver, ShellSurfaceResolver>();
         return presenter;
+    }
+
+    private static IRenderedComponent<Preview> RenderPreview(BunitContext context, string uri)
+    {
+        NavigationManager navigation = context.Services.GetRequiredService<NavigationManager>();
+        navigation.NavigateTo(uri);
+        return context.Render<Preview>();
     }
 
     private static void AssertBlockContains(string source, string selector, string expectedSnippet)

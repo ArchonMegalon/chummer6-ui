@@ -109,6 +109,16 @@ def test_release_candidate_handoff_embeds_stage_windows_visual_proof_packet(tmp_
     assert windows_exit_gate_refresh["status"] == "failed"
     assert windows_exit_gate_refresh["blocking_mode"] == "external_only"
     assert windows_visual_proof_handoff["status"] == "ready_for_windows_host"
+    artifact_intake = windows_visual_proof_handoff["operator_artifact_intake"]
+    assert artifact_intake["external_artifact_required"] is True
+    assert artifact_intake["preferred_drop_root"] == str(stage_dir)
+    assert artifact_intake["preferred_visual_proof_receipt_path"] == str(stage_dir / "WINDOWS_INSTALLER_VISUAL_PROOF.generated.json")
+    assert "artifact_intake.py discover" in artifact_intake["discover_receipt_command"]
+    assert artifact_intake["post_copy_verify_command"] == windows_visual_proof_handoff["windows_operator_commands"]["linux_exit_gate_after_copy_back"]
+    assert (
+        "<windows-stage>\\RELEASE_CHANNEL.generated.json"
+        in windows_visual_proof_handoff["windows_operator_commands"]["windows_stage_template_powershell"]
+    )
     assert Path(windows_visual_proof_handoff["json_path"]).is_file()
     assert Path(windows_visual_proof_handoff["md_path"]).is_file()
     assert any(

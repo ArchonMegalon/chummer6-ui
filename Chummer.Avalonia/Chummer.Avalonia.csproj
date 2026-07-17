@@ -34,10 +34,10 @@
     <PackageReference Include="Tmds.DBus.Protocol" Version="0.21.3" />
   </ItemGroup>
   <ItemGroup>
-    <ProjectReference Include="..\Chummer.Desktop.Runtime\Chummer.Desktop.Runtime.csproj" />
-    <ProjectReference Include="..\Chummer.Presentation\Chummer.Presentation.csproj" />
-    <ProjectReference Include="..\..\chummer-core-engine\Chummer.Application\Chummer.Application.csproj"
-                      Condition="Exists('..\..\chummer-core-engine\Chummer.Application\Chummer.Application.csproj')"
+    <ProjectReference Include="$(MSBuildProjectDirectory)/../Chummer.Desktop.Runtime/Chummer.Desktop.Runtime.csproj" />
+    <ProjectReference Include="$(MSBuildProjectDirectory)/../Chummer.Presentation/Chummer.Presentation.csproj" />
+    <ProjectReference Include="$(MSBuildProjectDirectory)/../../chummer-core-engine/Chummer.Application/Chummer.Application.csproj"
+                      Condition="Exists('$(MSBuildProjectDirectory)/../../chummer-core-engine/Chummer.Application/Chummer.Application.csproj')"
                       AdditionalProperties="RuntimeIdentifier=$(RuntimeIdentifier);RuntimeIdentifiers=$(RuntimeIdentifiers)" />
   </ItemGroup>
   <ItemGroup>

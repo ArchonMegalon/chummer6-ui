@@ -237,6 +237,9 @@ public sealed class InProcessChummerClientRulesetPluginTests
 
         Assert.AreEqual(owner.NormalizedValue, roamingSync.LastInboundOwner?.NormalizedValue);
         Assert.AreEqual(owner.NormalizedValue, workspaceService.LastListOwner?.NormalizedValue);
+        Assert.AreEqual(
+            DesktopWorkspaceRoamingOutcome.AlreadyCurrent,
+            client.LastWorkspaceRoamingResult.Outcome);
     }
 
     [TestMethod]
@@ -264,41 +267,51 @@ public sealed class InProcessChummerClientRulesetPluginTests
         OwnerScope owner = new("alice@example.com");
         RecordingDesktopWorkspaceRoamingSync roamingSync = new();
         CharacterWorkspaceId workspaceId = new("ws-owner");
+        CharacterProfileSection updatedProfile = new(
+            Name: "Owner Runner",
+            Alias: "Owner Runner",
+            PlayerName: string.Empty,
+            Metatype: "Human",
+            Metavariant: string.Empty,
+            Sex: string.Empty,
+            Age: string.Empty,
+            Height: string.Empty,
+            Weight: string.Empty,
+            Hair: string.Empty,
+            Eyes: string.Empty,
+            Skin: string.Empty,
+            Concept: string.Empty,
+            Description: string.Empty,
+            Background: string.Empty,
+            CreatedVersion: "6",
+            AppVersion: "6",
+            BuildMethod: "Priority",
+            GameplayOption: string.Empty,
+            Created: true,
+            Adept: false,
+            Magician: false,
+            Technomancer: false,
+            AI: false,
+            MainMugshotIndex: 0,
+            MugshotCount: 0);
         NoOpWorkspaceService workspaceService = new()
         {
-            SaveResult = new CommandResult<WorkspaceSaveReceipt>(
+            Workspaces =
+            [
+                CreateWorkspace(workspaceId.Value, DateTimeOffset.UtcNow, RulesetDefaults.Sr6, contentRevision: 7)
+            ],
+            RevisionedSaveResult = new CommandResult<WorkspaceSaveReceipt>(
                 Success: true,
-                Value: new WorkspaceSaveReceipt(workspaceId, 42, RulesetDefaults.Sr6),
+                Value: new WorkspaceSaveReceipt(
+                    workspaceId,
+                    42,
+                    RulesetDefaults.Sr6,
+                    ContentRevision: 7,
+                    SavedRevision: 7),
                 Error: null),
-            UpdateMetadataResult = new CommandResult<CharacterProfileSection>(
+            RevisionedUpdateMetadataResult = new CommandResult<WorkspaceMetadataResult>(
                 Success: true,
-                Value: new CharacterProfileSection(
-                    Name: "Owner Runner",
-                    Alias: "Owner Runner",
-                    PlayerName: string.Empty,
-                    Metatype: "Human",
-                    Metavariant: string.Empty,
-                    Sex: string.Empty,
-                    Age: string.Empty,
-                    Height: string.Empty,
-                    Weight: string.Empty,
-                    Hair: string.Empty,
-                    Eyes: string.Empty,
-                    Skin: string.Empty,
-                    Concept: string.Empty,
-                    Description: string.Empty,
-                    Background: string.Empty,
-                    CreatedVersion: "6",
-                    AppVersion: "6",
-                    BuildMethod: "Priority",
-                    GameplayOption: string.Empty,
-                    Created: true,
-                    Adept: false,
-                    Magician: false,
-                    Technomancer: false,
-                    AI: false,
-                    MainMugshotIndex: 0,
-                    MugshotCount: 0),
+                Value: new WorkspaceMetadataResult(updatedProfile, ContentRevision: 8, SavedRevision: 7),
                 Error: null)
         };
         InProcessChummerClient client = new(
@@ -308,13 +321,110 @@ public sealed class InProcessChummerClientRulesetPluginTests
             ownerContextAccessor: new StubOwnerContextAccessor(owner),
             workspaceRoamingSync: roamingSync);
 
+#pragma warning disable CS0618 // Exercise the deliberate one-read/one-CAS compatibility adapters.
         _ = await client.SaveAsync(workspaceId, CancellationToken.None);
         _ = await client.UpdateMetadataAsync(workspaceId, new UpdateWorkspaceMetadata("Owner Runner", null, null), CancellationToken.None);
+#pragma warning restore CS0618
 
         CollectionAssert.AreEqual(
             new[] { workspaceId.Value, workspaceId.Value },
             roamingSync.OutboundWorkspaceIds.Select(static item => item.Value).ToArray());
         Assert.AreEqual(owner.NormalizedValue, roamingSync.LastOutboundOwner?.NormalizedValue);
+    }
+
+    [TestMethod]
+    public async Task CloseWorkspaceAsync_does_not_retry_or_remove_a_concurrent_winner_on_conflict()
+    {
+        OwnerScope owner = new("alice@example.com");
+        CharacterWorkspaceId workspaceId = new("ws-owner");
+        NoOpWorkspaceService workspaceService = CreateConflictingWorkspaceService(workspaceId);
+        workspaceService.RevisionedCloseResult = new CommandResult<WorkspaceRevisionReceipt>(
+            Success: false,
+            Value: null,
+            Error: "Workspace revision changed.",
+            OperationOutcome: WorkspaceOperationOutcome.Conflict);
+        InProcessChummerClient client = new(
+            workspaceService,
+            CreateRuntimeShellCatalogResolver(),
+            ownerContextAccessor: new StubOwnerContextAccessor(owner));
+
+#pragma warning disable CS0618 // Exercise the deliberate one-read/one-CAS compatibility adapter.
+        bool closed = await client.CloseWorkspaceAsync(workspaceId, CancellationToken.None);
+#pragma warning restore CS0618
+
+        Assert.IsFalse(closed);
+        Assert.AreEqual(1, workspaceService.ListCallCount);
+        Assert.AreEqual(1, workspaceService.RevisionedCloseCallCount);
+        Assert.AreEqual(7L, workspaceService.LastCloseExpectedContentRevision);
+        Assert.HasCount(1, workspaceService.Workspaces);
+        Assert.AreEqual(8L, workspaceService.Workspaces[0].ContentRevision);
+    }
+
+    [TestMethod]
+    public async Task UpdateMetadataAsync_does_not_retry_over_or_publish_a_concurrent_winner_on_conflict()
+    {
+        OwnerScope owner = new("alice@example.com");
+        CharacterWorkspaceId workspaceId = new("ws-owner");
+        RecordingDesktopWorkspaceRoamingSync roamingSync = new();
+        NoOpWorkspaceService workspaceService = CreateConflictingWorkspaceService(workspaceId);
+        workspaceService.RevisionedUpdateMetadataResult = new CommandResult<WorkspaceMetadataResult>(
+            Success: false,
+            Value: null,
+            Error: "Workspace revision changed.",
+            OperationOutcome: WorkspaceOperationOutcome.Conflict);
+        InProcessChummerClient client = new(
+            workspaceService,
+            CreateRuntimeShellCatalogResolver(),
+            ownerContextAccessor: new StubOwnerContextAccessor(owner),
+            workspaceRoamingSync: roamingSync);
+
+#pragma warning disable CS0618 // Exercise the deliberate one-read/one-CAS compatibility adapter.
+        CommandResult<CharacterProfileSection> result = await client.UpdateMetadataAsync(
+            workspaceId,
+            new UpdateWorkspaceMetadata("Losing update", null, null),
+            CancellationToken.None);
+#pragma warning restore CS0618
+
+        Assert.IsFalse(result.Success);
+        Assert.AreEqual(WorkspaceOperationOutcome.Conflict, result.Outcome);
+        Assert.AreEqual(1, workspaceService.ListCallCount);
+        Assert.AreEqual(1, workspaceService.RevisionedUpdateMetadataCallCount);
+        Assert.AreEqual(7L, workspaceService.LastUpdateExpectedContentRevision);
+        Assert.HasCount(1, workspaceService.Workspaces);
+        Assert.AreEqual(8L, workspaceService.Workspaces[0].ContentRevision);
+        Assert.IsEmpty(roamingSync.OutboundWorkspaceIds);
+    }
+
+    [TestMethod]
+    public async Task SaveAsync_does_not_retry_over_or_publish_a_concurrent_winner_on_conflict()
+    {
+        OwnerScope owner = new("alice@example.com");
+        CharacterWorkspaceId workspaceId = new("ws-owner");
+        RecordingDesktopWorkspaceRoamingSync roamingSync = new();
+        NoOpWorkspaceService workspaceService = CreateConflictingWorkspaceService(workspaceId);
+        workspaceService.RevisionedSaveResult = new CommandResult<WorkspaceSaveReceipt>(
+            Success: false,
+            Value: null,
+            Error: "Workspace revision changed.",
+            OperationOutcome: WorkspaceOperationOutcome.Conflict);
+        InProcessChummerClient client = new(
+            workspaceService,
+            CreateRuntimeShellCatalogResolver(),
+            ownerContextAccessor: new StubOwnerContextAccessor(owner),
+            workspaceRoamingSync: roamingSync);
+
+#pragma warning disable CS0618 // Exercise the deliberate one-read/one-CAS compatibility adapter.
+        CommandResult<WorkspaceSaveReceipt> result = await client.SaveAsync(workspaceId, CancellationToken.None);
+#pragma warning restore CS0618
+
+        Assert.IsFalse(result.Success);
+        Assert.AreEqual(WorkspaceOperationOutcome.Conflict, result.Outcome);
+        Assert.AreEqual(1, workspaceService.ListCallCount);
+        Assert.AreEqual(1, workspaceService.RevisionedSaveCallCount);
+        Assert.AreEqual(7L, workspaceService.LastSaveExpectedContentRevision);
+        Assert.HasCount(1, workspaceService.Workspaces);
+        Assert.AreEqual(8L, workspaceService.Workspaces[0].ContentRevision);
+        Assert.IsEmpty(roamingSync.OutboundWorkspaceIds);
     }
 
     [TestMethod]
@@ -752,9 +862,43 @@ public sealed class InProcessChummerClientRulesetPluginTests
 
         public OwnerScope? LastListOwner { get; private set; }
 
+        public int ListCallCount { get; private set; }
+
+        public int RevisionedCloseCallCount { get; private set; }
+
+        public int RevisionedUpdateMetadataCallCount { get; private set; }
+
+        public int RevisionedSaveCallCount { get; private set; }
+
+        public long? LastCloseExpectedContentRevision { get; private set; }
+
+        public long? LastUpdateExpectedContentRevision { get; private set; }
+
+        public long? LastSaveExpectedContentRevision { get; private set; }
+
         public CommandResult<CharacterProfileSection> UpdateMetadataResult { get; init; } = new(false, null, "Update not configured.");
 
         public CommandResult<WorkspaceSaveReceipt> SaveResult { get; init; } = new(false, null, "Save not configured.");
+
+        public CommandResult<WorkspaceRevisionReceipt> RevisionedCloseResult { get; set; } = new(
+            false,
+            null,
+            "Revision-aware close not configured.",
+            WorkspaceOperationOutcome.Unavailable);
+
+        public CommandResult<WorkspaceMetadataResult> RevisionedUpdateMetadataResult { get; set; } = new(
+            false,
+            null,
+            "Revision-aware metadata update not configured.",
+            WorkspaceOperationOutcome.Unavailable);
+
+        public CommandResult<WorkspaceSaveReceipt> RevisionedSaveResult { get; set; } = new(
+            false,
+            null,
+            "Revision-aware save not configured.",
+            WorkspaceOperationOutcome.Unavailable);
+
+        public IReadOnlyList<WorkspaceListItem>? ConcurrentWinnerWorkspaces { get; init; }
 
         public WorkspaceImportResult Import(WorkspaceImportDocument document) => ImportResult;
 
@@ -764,7 +908,7 @@ public sealed class InProcessChummerClientRulesetPluginTests
             return Import(document);
         }
 
-        public IReadOnlyList<WorkspaceListItem> Workspaces { get; init; } = Array.Empty<WorkspaceListItem>();
+        public IReadOnlyList<WorkspaceListItem> Workspaces { get; set; } = Array.Empty<WorkspaceListItem>();
 
         public IReadOnlyList<WorkspaceListItem> List(int? maxCount = null)
         {
@@ -778,13 +922,30 @@ public sealed class InProcessChummerClientRulesetPluginTests
 
         public IReadOnlyList<WorkspaceListItem> List(OwnerScope owner, int? maxCount = null)
         {
+            ListCallCount++;
             LastListOwner = owner;
             return List(maxCount);
         }
 
         public bool Close(CharacterWorkspaceId id) => throw new NotSupportedException();
 
-        public bool Close(OwnerScope owner, CharacterWorkspaceId id) => Close(id);
+        public bool Close(OwnerScope owner, CharacterWorkspaceId id)
+        {
+            WorkspaceListItem? workspace = List(owner).FirstOrDefault(item => item.Id == id);
+            return workspace is not null
+                && Close(owner, id, workspace.ContentRevision).Success;
+        }
+
+        public CommandResult<WorkspaceRevisionReceipt> Close(
+            OwnerScope owner,
+            CharacterWorkspaceId id,
+            long expectedContentRevision)
+        {
+            RevisionedCloseCallCount++;
+            LastCloseExpectedContentRevision = expectedContentRevision;
+            PublishConcurrentWinner();
+            return RevisionedCloseResult;
+        }
 
         public object? GetSection(CharacterWorkspaceId id, string sectionId) => throw new NotSupportedException();
 
@@ -828,11 +989,69 @@ public sealed class InProcessChummerClientRulesetPluginTests
 
         public CommandResult<CharacterProfileSection> UpdateMetadata(CharacterWorkspaceId id, UpdateWorkspaceMetadata command) => UpdateMetadataResult;
 
-        public CommandResult<CharacterProfileSection> UpdateMetadata(OwnerScope owner, CharacterWorkspaceId id, UpdateWorkspaceMetadata command) => UpdateMetadata(id, command);
+        public CommandResult<CharacterProfileSection> UpdateMetadata(
+            OwnerScope owner,
+            CharacterWorkspaceId id,
+            UpdateWorkspaceMetadata command)
+        {
+            WorkspaceListItem? workspace = List(owner).FirstOrDefault(item => item.Id == id);
+            if (workspace is null)
+            {
+                return new CommandResult<CharacterProfileSection>(
+                    Success: false,
+                    Value: null,
+                    Error: "Workspace not found.",
+                    OperationOutcome: WorkspaceOperationOutcome.Missing);
+            }
+
+            CommandResult<WorkspaceMetadataResult> result = UpdateMetadata(
+                owner,
+                id,
+                workspace.ContentRevision,
+                command);
+            return new CommandResult<CharacterProfileSection>(
+                result.Success,
+                result.Value?.Profile,
+                result.Error,
+                result.Outcome);
+        }
+
+        public CommandResult<WorkspaceMetadataResult> UpdateMetadata(
+            OwnerScope owner,
+            CharacterWorkspaceId id,
+            long expectedContentRevision,
+            UpdateWorkspaceMetadata command)
+        {
+            RevisionedUpdateMetadataCallCount++;
+            LastUpdateExpectedContentRevision = expectedContentRevision;
+            PublishConcurrentWinner();
+            return RevisionedUpdateMetadataResult;
+        }
 
         public CommandResult<WorkspaceSaveReceipt> Save(CharacterWorkspaceId id) => SaveResult;
 
-        public CommandResult<WorkspaceSaveReceipt> Save(OwnerScope owner, CharacterWorkspaceId id) => Save(id);
+        public CommandResult<WorkspaceSaveReceipt> Save(OwnerScope owner, CharacterWorkspaceId id)
+        {
+            WorkspaceListItem? workspace = List(owner).FirstOrDefault(item => item.Id == id);
+            return workspace is null
+                ? new CommandResult<WorkspaceSaveReceipt>(
+                    Success: false,
+                    Value: null,
+                    Error: "Workspace not found.",
+                    OperationOutcome: WorkspaceOperationOutcome.Missing)
+                : Save(owner, id, workspace.ContentRevision);
+        }
+
+        public CommandResult<WorkspaceSaveReceipt> Save(
+            OwnerScope owner,
+            CharacterWorkspaceId id,
+            long expectedContentRevision)
+        {
+            RevisionedSaveCallCount++;
+            LastSaveExpectedContentRevision = expectedContentRevision;
+            PublishConcurrentWinner();
+            return RevisionedSaveResult;
+        }
 
         public CommandResult<WorkspaceDownloadReceipt> Download(CharacterWorkspaceId id) => throw new NotSupportedException();
 
@@ -847,6 +1066,14 @@ public sealed class InProcessChummerClientRulesetPluginTests
         public CommandResult<WorkspacePrintReceipt> Print(CharacterWorkspaceId id) => throw new NotSupportedException();
 
         public CommandResult<WorkspacePrintReceipt> Print(OwnerScope owner, CharacterWorkspaceId id) => Print(id);
+
+        private void PublishConcurrentWinner()
+        {
+            if (ConcurrentWinnerWorkspaces is not null)
+            {
+                Workspaces = ConcurrentWinnerWorkspaces;
+            }
+        }
     }
 
     private sealed class StubOwnerContextAccessor : IOwnerContextAccessor
@@ -867,19 +1094,24 @@ public sealed class InProcessChummerClientRulesetPluginTests
 
         public List<CharacterWorkspaceId> OutboundWorkspaceIds { get; } = new();
 
-        public Task SynchronizeInboundAsync(OwnerScope owner, CancellationToken ct)
+        public Task<DesktopWorkspaceRoamingResult> SynchronizeInboundAsync(OwnerScope owner, CancellationToken ct)
         {
             ct.ThrowIfCancellationRequested();
             LastInboundOwner = owner;
-            return Task.CompletedTask;
+            return Task.FromResult(DesktopWorkspaceRoamingResult.AlreadyCurrent());
         }
 
-        public Task SynchronizeOutboundAsync(OwnerScope owner, CharacterWorkspaceId workspaceId, CancellationToken ct)
+        public Task<DesktopWorkspaceRoamingResult> SynchronizeOutboundAsync(
+            OwnerScope owner,
+            CharacterWorkspaceId workspaceId,
+            CancellationToken ct)
         {
             ct.ThrowIfCancellationRequested();
             LastOutboundOwner = owner;
             OutboundWorkspaceIds.Add(workspaceId);
-            return Task.CompletedTask;
+            return Task.FromResult(new DesktopWorkspaceRoamingResult(
+                DesktopWorkspaceRoamingOutcome.Applied,
+                workspaceId));
         }
     }
 
@@ -904,10 +1136,28 @@ public sealed class InProcessChummerClientRulesetPluginTests
         }
     }
 
+    private static NoOpWorkspaceService CreateConflictingWorkspaceService(CharacterWorkspaceId workspaceId)
+    {
+        DateTimeOffset now = DateTimeOffset.UtcNow;
+        return new NoOpWorkspaceService
+        {
+            Workspaces =
+            [
+                CreateWorkspace(workspaceId.Value, now, RulesetDefaults.Sr6, contentRevision: 7)
+            ],
+            ConcurrentWinnerWorkspaces =
+            [
+                CreateWorkspace(workspaceId.Value, now.AddSeconds(1), RulesetDefaults.Sr6, contentRevision: 8)
+            ]
+        };
+    }
+
     private static WorkspaceListItem CreateWorkspace(
         string id,
         DateTimeOffset lastUpdatedUtc,
-        string rulesetId)
+        string rulesetId,
+        long contentRevision = 0,
+        long savedRevision = 0)
     {
         return new WorkspaceListItem(
             Id: new CharacterWorkspaceId(id),
@@ -922,6 +1172,8 @@ public sealed class InProcessChummerClientRulesetPluginTests
                 Nuyen: 0m,
                 Created: true),
             LastUpdatedUtc: lastUpdatedUtc,
-            RulesetId: rulesetId);
+            RulesetId: rulesetId,
+            ContentRevision: contentRevision,
+            SavedRevision: savedRevision);
     }
 }

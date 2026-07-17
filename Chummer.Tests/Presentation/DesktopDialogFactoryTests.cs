@@ -669,7 +669,21 @@ public class DesktopDialogFactoryTests
             StringAssert.Contains(DesktopDialogFieldValueParser.GetValue(dialog, "rosterEntries"), "GST · Ghost · sr6 · unsaved");
             StringAssert.Contains(DesktopDialogFieldValueParser.GetValue(dialog, "rosterEntries"), "APX · Apex · sr5 · saved");
             CollectionAssert.AreEqual(
-                new[] { "open_runner", "open_watch_file", "open_roster_folder", "refresh_watch_folder", "open_portrait", "close" },
+                new[]
+                {
+                    "open_runner",
+                    "open_watch_file",
+                    "open_roster_folder",
+                    "refresh_watch_folder",
+                    "create_roster_group",
+                    "rename_roster_group",
+                    "delete_roster_group",
+                    "move_runner_to_group",
+                    "reorder_roster_tree",
+                    "reset_roster_hierarchy",
+                    "open_portrait",
+                    "close"
+                },
                 dialog.Actions.Select(action => action.Id).ToArray());
             Assert.AreEqual("Open Runner GST", dialog.Actions.Single(action => string.Equals(action.Id, "open_runner", StringComparison.Ordinal)).Label);
             Assert.AreEqual("Open Watch File GST.chum5", dialog.Actions.Single(action => string.Equals(action.Id, "open_watch_file", StringComparison.Ordinal)).Label);
@@ -949,6 +963,7 @@ public class DesktopDialogFactoryTests
             "complex_form_add",
             "initiation_add",
             "spirit_add",
+            "sprite_add",
             "critter_power_add",
             "matrix_program_add",
             "vehicle_mod_add",
@@ -1106,6 +1121,8 @@ public class DesktopDialogFactoryTests
 
         Assert.AreEqual("dialog.ui.combat_damage_track", dialog.Id);
         Assert.AreEqual("3 / 10", DesktopDialogFieldValueParser.GetValue(dialog, "uiDamageTrackPhysical"));
+        Assert.AreEqual("2 / 8", DesktopDialogFieldValueParser.GetValue(dialog, "uiDamageTrackMatrix"));
+        StringAssert.Contains(DesktopDialogFieldValueParser.GetValue(dialog, "uiDamageTrackDetails"), "Item / Vehicle | 0 / 6");
         StringAssert.Contains(DesktopDialogFieldValueParser.GetValue(dialog, "uiDamageTrackDetails"), "Penalty | none");
         StringAssert.Contains(DesktopDialogFieldValueParser.GetValue(dialog, "uiDamageTrackCommands"), "Apply current damage step");
         Assert.AreEqual(DesktopDialogFieldVisualKinds.Grid, dialog.Fields.Single(field => string.Equals(field.Id, "uiDamageTrackDetails", StringComparison.Ordinal)).VisualKind);
@@ -1178,6 +1195,24 @@ public class DesktopDialogFactoryTests
     }
 
     [TestMethod]
+    public void CreateUiControlDialog_sprite_add_uses_selection_form_posture()
+    {
+        DesktopDialogFactory factory = new();
+
+        DesktopDialogState dialog = factory.CreateUiControlDialog("sprite_add", DesktopPreferenceState.Default);
+
+        Assert.AreEqual("dialog.ui.sprite_add", dialog.Id);
+        Assert.AreEqual("Courier Sprite", DesktopDialogFieldValueParser.GetValue(dialog, "uiSpriteName"));
+        StringAssert.Contains(DesktopDialogFieldValueParser.GetValue(dialog, "uiSpriteSections"), "Browse");
+        StringAssert.Contains(DesktopDialogFieldValueParser.GetValue(dialog, "uiSpriteSelectionDetails"), "Level | 3");
+        StringAssert.Contains(DesktopDialogFieldValueParser.GetValue(dialog, "uiSpriteCategoryTree"), "Machine");
+        StringAssert.Contains(DesktopDialogFieldValueParser.GetValue(dialog, "uiSpriteCandidateList"), "Fault Sprite");
+        Assert.AreEqual(DesktopDialogFieldVisualKinds.Grid, dialog.Fields.Single(field => string.Equals(field.Id, "uiSpriteSelectionDetails", StringComparison.Ordinal)).VisualKind);
+        Assert.AreEqual(DesktopDialogFieldVisualKinds.Snippet, dialog.Fields.Single(field => string.Equals(field.Id, "uiSpriteNotes", StringComparison.Ordinal)).VisualKind);
+        Assert.AreEqual("OK", dialog.Actions.Single(action => string.Equals(action.Id, "add", StringComparison.Ordinal)).Label);
+    }
+
+    [TestMethod]
     public void CreateUiControlDialog_critter_power_add_uses_selection_form_posture()
     {
         DesktopDialogFactory factory = new();
@@ -1233,6 +1268,7 @@ public class DesktopDialogFactoryTests
             "complex_form_add",
             "initiation_add",
             "spirit_add",
+            "sprite_add",
             "critter_power_add",
             "matrix_program_add",
             "skill_add",
@@ -1284,6 +1320,7 @@ public class DesktopDialogFactoryTests
             "complex_form_add",
             "initiation_add",
             "spirit_add",
+            "sprite_add",
             "critter_power_add",
             "matrix_program_add",
             "skill_add",
@@ -2036,7 +2073,7 @@ public class DesktopDialogFactoryTests
         Assert.AreEqual("sr6", DesktopDialogFieldValueParser.GetValue(dialog, "newCharacterRulesetId"));
         Assert.AreEqual("Priority", DesktopDialogFieldValueParser.GetValue(dialog, "newCharacterBuildMethod"));
         Assert.AreEqual("false", DesktopDialogFieldValueParser.GetValue(dialog, "newCharacterHouseRulesEnabled"));
-        Assert.AreEqual("New Character", DesktopDialogFieldValueParser.GetValue(dialog, "newCharacterName"));
+        Assert.AreEqual("New runner", DesktopDialogFieldValueParser.GetValue(dialog, "newCharacterName"));
         Assert.AreEqual("Runner", DesktopDialogFieldValueParser.GetValue(dialog, "newCharacterAlias"));
         Assert.AreEqual("OK", dialog.Actions.Single(action => string.Equals(action.Id, "create_character", StringComparison.Ordinal)).Label);
         Assert.AreEqual("Start Origin Dossier", dialog.Actions.Single(action => string.Equals(action.Id, "start_from_origin", StringComparison.Ordinal)).Label);
@@ -2195,8 +2232,15 @@ public class DesktopDialogFactoryTests
         StringAssert.Contains(DesktopDialogFieldValueParser.GetValue(dialog, "newCharacterOriginBuildLogic"), "magic-forward focus");
         StringAssert.Contains(DesktopDialogFieldValueParser.GetValue(dialog, "newCharacterOriginBookPreview"), "Cipher: Origin Dossier");
         StringAssert.Contains(DesktopDialogFieldValueParser.GetValue(dialog, "newCharacterOriginBookPreview"), "When this origin feels right, start character creation.");
+        Assert.AreEqual(
+            "/app?command=new_character_origin&ruleset=sr4&alias=Cipher",
+            DesktopDialogFieldValueParser.GetValue(dialog, "newCharacterOriginDossierLink"));
+        StringAssert.Contains(
+            DesktopDialogFieldValueParser.GetValue(dialog, "newCharacterOriginDossierLinkNotes"),
+            "story text stays local");
         StringAssert.Contains(DesktopDialogFieldValueParser.GetValue(dialog, "newCharacterOriginImplications"), "Alice Seed");
         StringAssert.Contains(DesktopDialogFieldValueParser.GetValue(dialog, "newCharacterOriginImplications"), "approved origin story");
+        StringAssert.Contains(DesktopDialogFieldValueParser.GetValue(dialog, "newCharacterOriginImplications"), "Dossier Link");
         StringAssert.Contains(DesktopDialogFieldValueParser.GetValue(dialog, "newCharacterOriginImplications"), "Addiction quality");
         StringAssert.Contains(DesktopDialogFieldValueParser.GetValue(dialog, "newCharacterOriginImplications"), "Intelligence 2+");
         string visibleOriginText = string.Join(
@@ -2205,9 +2249,10 @@ public class DesktopDialogFactoryTests
                 .Where(field => !string.Equals(field.LayoutSlot, DesktopDialogFieldLayoutSlots.Hidden, StringComparison.Ordinal))
                 .Select(field => field.Value));
         Assert.IsFalse(visibleOriginText.Contains(" lane", StringComparison.OrdinalIgnoreCase), "Origin Dossier visible copy should describe focus/path, not internal lanes.");
+        Assert.AreEqual("Show dossier link", dialog.Actions.Single(action => string.Equals(action.Id, "show_origin_dossier_link", StringComparison.Ordinal)).Label);
         Assert.AreEqual("Start character creation", dialog.Actions.Single(action => string.Equals(action.Id, "open_origin_guided_chargen", StringComparison.Ordinal)).Label);
         CollectionAssert.AreEqual(
-            new[] { "open_origin_guided_chargen", "cancel" },
+            new[] { "show_origin_dossier_link", "open_origin_guided_chargen", "cancel" },
             dialog.Actions.Select(action => action.Id).ToArray());
     }
 
@@ -3226,6 +3271,12 @@ public class DesktopDialogFactoryTests
         "switch_ruleset",
         "character_settings",
         "translator",
+        "open_sourcebooks",
+        "open_errata",
+        "open_custom_data",
+        "update_data_packs",
+        "validate_data_scope",
+        "open_data_folder",
         "xml_editor",
         "master_index",
         "character_roster",

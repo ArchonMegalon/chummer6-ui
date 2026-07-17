@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import hashlib
 import json
 import subprocess
 from pathlib import Path
@@ -115,6 +116,26 @@ def test_materialize_windows_visual_proof_handoff_blocks_stale_startup_smoke(tmp
     assert "Startup smoke receipt artifact digest does not match the current Windows installer digest." in payload["blockers"]
     assert payload["windows_installer"]["file_name"] == "chummer-avalonia-win-x64-installer.exe"
     assert payload["windows_installer"]["payload_file_name"] == "chummer-avalonia-win-x64-payload.zip"
+    assert payload["windows_operator_commands"]["stage_root"] == str(tmp_path)
+    assert "capture-windows-installer-visual-proof.ps1" in payload["windows_operator_commands"]["stage_local_powershell"]
+    assert "<windows-stage>\\RELEASE_CHANNEL.generated.json" in payload["windows_operator_commands"]["windows_stage_template_powershell"]
+    assert str(visual_proof_path) in payload["windows_operator_commands"]["copy_back_required_paths"]
+    assert any(path.endswith("windows-installer-progress.png") for path in payload["windows_operator_commands"]["copy_back_required_paths"])
+    assert "copy the whole stage directory" in payload["windows_operator_commands"]["copy_back_note"]
+    artifact_intake = payload["operator_artifact_intake"]
+    assert artifact_intake["external_artifact_required"] is True
+    assert artifact_intake["preferred_drop_root"] == str(tmp_path)
+    assert artifact_intake["preferred_visual_proof_receipt_path"] == str(visual_proof_path)
+    assert artifact_intake["preferred_screenshot_dir"] == str(tmp_path / "windows-installer-visual-proof")
+    assert artifact_intake["required_copy_back_paths"] == payload["windows_operator_commands"]["copy_back_required_paths"]
+    assert "WINDOWS_INSTALLER_VISUAL_PROOF.generated.json" in artifact_intake["accepted_file_patterns"]
+    assert "windows-installer-progress.png" in artifact_intake["accepted_file_patterns"]
+    assert "windows-installer-completion.png" in artifact_intake["accepted_file_patterns"]
+    assert "artifact_intake.py discover" in artifact_intake["discover_receipt_command"]
+    assert "--pattern 'WINDOWS_INSTALLER_VISUAL_PROOF.generated.json'" in artifact_intake["discover_receipt_command"]
+    assert "--pattern 'windows-installer-*.png'" in artifact_intake["discover_screenshot_command"]
+    assert str(tmp_path) in artifact_intake["discover_receipt_command"]
+    assert artifact_intake["post_copy_verify_command"] == payload["windows_operator_commands"]["linux_exit_gate_after_copy_back"]
     assert payload["required_screenshots"][0]["file_name"] == "windows-installer-progress.png"
     assert payload["required_screenshots"][1]["file_name"] == "windows-installer-completion.png"
     assert payload["required_screenshots"][0]["path"].endswith("windows-installer-visual-proof/windows-installer-progress.png")
@@ -122,9 +143,13 @@ def test_materialize_windows_visual_proof_handoff_blocks_stale_startup_smoke(tmp
     assert any("capture-windows-installer-visual-proof.ps1" in item for item in payload["next_actions"])
     assert any("-ReleaseChannelPath" in item for item in payload["next_actions"])
     assert any("-OutputPath" in item for item in payload["next_actions"])
+    assert any("<windows-stage>\\RELEASE_CHANNEL.generated.json" in item for item in payload["next_actions"])
     assert any("windows-installer-visual-proof" in item for item in payload["next_actions"])
     assert any("does not publish the live downloads shelf" in item for item in payload["next_actions"])
-    assert "Windows Visual Proof Handoff" in md_output.read_text(encoding="utf-8")
+    markdown = md_output.read_text(encoding="utf-8")
+    assert "Windows Visual Proof Handoff" in markdown
+    assert "## Artifact intake" in markdown
+    assert "WINDOWS_INSTALLER_VISUAL_PROOF.generated.json" in markdown
 
 
 def test_materialize_windows_visual_proof_handoff_prefers_gate_startup_smoke_receipt(tmp_path: Path) -> None:
@@ -207,11 +232,129 @@ def test_materialize_windows_visual_proof_handoff_prefers_gate_startup_smoke_rec
     assert payload["startup_smoke_path"] == str(preferred_startup_smoke_path)
     assert payload["startup_smoke"]["matches_release_version"] is True
     assert payload["startup_smoke"]["matches_artifact_digest"] is True
+    assert payload["startup_smoke"]["receipt_file_name"] == preferred_startup_smoke_path.name
+    assert payload["startup_smoke"]["receipt_sha256"] == hashlib.sha256(
+        preferred_startup_smoke_path.read_bytes()
+    ).hexdigest()
     assert payload["current_visual_proof_exists"] is False
     assert payload["windows_installer"]["local_candidates"]["installer_existing_paths"][0] == str(files_dir / "chummer-avalonia-win-x64-installer.exe")
     assert payload["windows_installer"]["local_candidates"]["payload_existing_paths"][0] == str(files_dir / "chummer-avalonia-win-x64-payload.zip")
     assert str(files_dir) in payload["windows_installer"]["local_candidates"]["files_root_candidates"]
     assert payload["blockers"] == []
+
+
+def test_materialize_windows_visual_proof_handoff_surfaces_gold_bundle_intake(tmp_path: Path) -> None:
+    stage_root = tmp_path / "run-services" / "Chummer.Portal" / "downloads"
+    manifest_path = stage_root / "RELEASE_CHANNEL.generated.json"
+    windows_gate_path = stage_root / "UI_WINDOWS_DESKTOP_EXIT_GATE.generated.json"
+    startup_smoke_path = stage_root / "startup-smoke" / "startup-smoke-avalonia-win-x64.receipt.json"
+    capture_script_path = tmp_path / "capture-windows-installer-visual-proof.ps1"
+    visual_proof_path = stage_root / "WINDOWS_INSTALLER_VISUAL_PROOF.generated.json"
+    json_output = stage_root / "WINDOWS_INSTALLER_VISUAL_PROOF_HANDOFF.generated.json"
+    md_output = stage_root / "WINDOWS_INSTALLER_VISUAL_PROOF_HANDOFF.generated.md"
+    intake_request_path = (
+        tmp_path
+        / "run-services"
+        / ".codex-studio"
+        / "published"
+        / "WINDOWS_INSTALLER_VISUAL_AUDIT_INTAKE_REQUEST.generated.json"
+    )
+    preferred_drop_path = (
+        tmp_path
+        / "run-services"
+        / ".state"
+        / "incoming_windows_installer_gold_proof"
+        / "windows-installer-gold-proof-04ae1f160e29.zip"
+    )
+
+    capture_script_path.write_text("Write-Host proof\n", encoding="utf-8")
+
+    _write_json(manifest_path, _base_manifest())
+    _write_json(windows_gate_path, _base_windows_gate())
+    _write_json(
+        startup_smoke_path,
+        {
+            "status": "pass",
+            "version": "run-20260627-005402",
+            "releaseVersion": "run-20260627-005402",
+            "artifactFileName": "chummer-avalonia-win-x64-installer.exe",
+            "artifactDigest": "sha256:04ae1f160e299b8d5613bde3f166cb7b6214e8514927e88af61131ad95eccba4",
+            "hostClass": "local-win-x64",
+        },
+    )
+    _write_json(
+        intake_request_path,
+        {
+            "status": "external_artifact_required",
+            "summary": "Provide the promoted-digest Windows gold proof bundle.",
+            "promoted_installer_sha256": "04ae1f160e299b8d5613bde3f166cb7b6214e8514927e88af61131ad95eccba4",
+            "preferred_zip_name": "windows-installer-gold-proof-04ae1f160e29.zip",
+            "preferred_drop_folder": str(preferred_drop_path.parent),
+            "preferred_drop_path": str(preferred_drop_path),
+            "artifact_intake": {
+                "discover_command": "python3 ~/.codex/skills/ea-artifact-intake/scripts/artifact_intake.py discover --pattern '*windows-installer-gold-proof*.zip'",
+                "import_command": f"python3 scripts/import_windows_installer_gold_proof_artifact.py {preferred_drop_path}",
+                "auto_import_watch_command": "python3 scripts/auto_import_windows_installer_gold_proof.py --wait-seconds 900",
+                "post_import_verify_command": "python3 scripts/verify_windows_installer_visual_audit.py",
+                "post_import_verify_note": "Import reruns the full verifier chain.",
+                "startup_receipt_bundle_required": False,
+            },
+            "operator_request": {
+                "summary": "Provide the promoted-digest Windows gold proof bundle.",
+                "powershell_commands": [
+                    "${REPO_ROOT}\\scripts\\capture_windows_installer_gold_proof.ps1 -InstallerPath ${REPO_ROOT}\\Chummer.Portal\\downloads\\files\\chummer-avalonia-win-x64-installer.exe",
+                    "Compress-Archive -Path ${REPO_ROOT}\\Chummer.Portal\\downloads\\visual-audit\\windows-installer\\* -DestinationPath windows-installer-gold-proof-04ae1f160e29.zip -Force",
+                ],
+                "copy_to_windows": [
+                    "Copy the repository checkout or at least Chummer.Portal/downloads/files and scripts to the Windows host."
+                ],
+            },
+        },
+    )
+
+    completed = subprocess.run(
+        [
+            "python3",
+            str(SCRIPT),
+            "--manifest",
+            str(manifest_path),
+            "--windows-gate",
+            str(windows_gate_path),
+            "--startup-smoke",
+            str(startup_smoke_path),
+            "--capture-script",
+            str(capture_script_path),
+            "--visual-proof",
+            str(visual_proof_path),
+            "--json-output",
+            str(json_output),
+            "--md-output",
+            str(md_output),
+        ],
+        check=False,
+        capture_output=True,
+        text=True,
+    )
+
+    assert completed.returncode == 0, completed.stderr
+
+    payload = json.loads(json_output.read_text(encoding="utf-8"))
+    assert payload["status"] == "ready_for_windows_host"
+    assert payload["intake_request_path"] == str(intake_request_path)
+    artifact_intake = payload["operator_artifact_intake"]
+    assert artifact_intake["intake_request_path"] == str(intake_request_path)
+    gold_bundle = artifact_intake["gold_proof_bundle_intake"]
+    assert gold_bundle["available"] is True
+    assert gold_bundle["preferred_zip_name"] == "windows-installer-gold-proof-04ae1f160e29.zip"
+    assert gold_bundle["preferred_drop_path"] == str(preferred_drop_path)
+    assert "import_windows_installer_gold_proof_artifact.py" in gold_bundle["import_command"]
+    assert "capture_windows_installer_gold_proof.ps1" in gold_bundle["powershell_commands"][0]
+    assert any("windows-installer-gold-proof-04ae1f160e29.zip" in item for item in payload["next_actions"])
+    assert any("import_windows_installer_gold_proof_artifact.py" in item for item in payload["next_actions"])
+    markdown = md_output.read_text(encoding="utf-8")
+    assert "## Release-Truth Bundle Intake" in markdown
+    assert "windows-installer-gold-proof-04ae1f160e29.zip" in markdown
+    assert "import_windows_installer_gold_proof_artifact.py" in markdown
 
 
 def test_materialize_windows_visual_proof_handoff_marks_matching_visual_receipt_ready(tmp_path: Path) -> None:

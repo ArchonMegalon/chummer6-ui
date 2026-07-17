@@ -139,6 +139,17 @@ public sealed class ShellPresenter : IShellPresenter
 
         if (string.Equals(command.Group, "menu", StringComparison.Ordinal))
         {
+            if (!HasVisibleMenuCommands(command.Id))
+            {
+                Publish(State with
+                {
+                    Error = null,
+                    OpenMenuId = null,
+                    Notice = null
+                });
+                return Task.CompletedTask;
+            }
+
             string? nextOpenMenu = string.Equals(State.OpenMenuId, command.Id, StringComparison.Ordinal)
                 ? null
                 : command.Id;
@@ -147,9 +158,7 @@ public sealed class ShellPresenter : IShellPresenter
                 Error = null,
                 LastCommandId = command.Id,
                 OpenMenuId = nextOpenMenu,
-                Notice = nextOpenMenu is null
-                    ? $"Menu '{command.Id}' closed."
-                    : $"Menu '{command.Id}' opened."
+                Notice = null
             });
             return Task.CompletedTask;
         }
@@ -221,6 +230,17 @@ public sealed class ShellPresenter : IShellPresenter
             return Task.CompletedTask;
         }
 
+        if (!HasVisibleMenuCommands(menuId))
+        {
+            Publish(State with
+            {
+                Error = null,
+                OpenMenuId = null,
+                Notice = null
+            });
+            return Task.CompletedTask;
+        }
+
         string? nextOpenMenu = string.Equals(State.OpenMenuId, menuId, StringComparison.Ordinal)
             ? null
             : menuId;
@@ -228,13 +248,19 @@ public sealed class ShellPresenter : IShellPresenter
         {
             Error = null,
             OpenMenuId = nextOpenMenu,
-            Notice = nextOpenMenu is null
-                ? $"Menu '{menuId}' closed."
-                : $"Menu '{menuId}' opened."
+            Notice = null
         });
 
         return Task.CompletedTask;
     }
+
+    private bool HasVisibleMenuCommands(string menuId)
+        => !string.IsNullOrWhiteSpace(menuId)
+            && DesktopMenuProjectionCatalog.ResolveVisibleMenuCommands(
+                    State.ActiveRulesetId,
+                    State.Commands,
+                    menuId)
+                .Count > 0;
 
     public async Task SetPreferredRulesetAsync(string rulesetId, CancellationToken ct)
     {

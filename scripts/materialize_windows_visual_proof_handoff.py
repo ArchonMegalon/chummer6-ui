@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 import argparse
+import hashlib
 import json
 from datetime import UTC, datetime
 from pathlib import Path
@@ -16,6 +17,7 @@ DEFAULT_CAPTURE_SCRIPT = REPO_ROOT / "scripts" / "capture-windows-installer-visu
 DEFAULT_VISUAL_PROOF = REPO_ROOT / ".codex-studio" / "published" / "WINDOWS_INSTALLER_VISUAL_PROOF.generated.json"
 DEFAULT_JSON_OUTPUT = REPO_ROOT / ".codex-studio" / "published" / "WINDOWS_INSTALLER_VISUAL_PROOF_HANDOFF.generated.json"
 DEFAULT_MD_OUTPUT = REPO_ROOT / ".codex-studio" / "published" / "WINDOWS_INSTALLER_VISUAL_PROOF_HANDOFF.generated.md"
+INTAKE_REQUEST_NAME = "WINDOWS_INSTALLER_VISUAL_AUDIT_INTAKE_REQUEST.generated.json"
 
 
 def now_iso() -> str:
@@ -44,6 +46,14 @@ def normalize_sha256(value: Any) -> str:
     return normalized
 
 
+def sha256_file(path: Path) -> str:
+    digest = hashlib.sha256()
+    with path.open("rb") as stream:
+        for chunk in iter(lambda: stream.read(1024 * 1024), b""):
+            digest.update(chunk)
+    return digest.hexdigest()
+
+
 def unique_paths(paths: list[Path]) -> list[Path]:
     seen: set[str] = set()
     unique: list[Path] = []
@@ -56,6 +66,100 @@ def unique_paths(paths: list[Path]) -> list[Path]:
     return unique
 
 
+def resolve_intake_request_path(
+    *,
+    repo_root: Path,
+    manifest_path: Path,
+    requested_path: Path | None,
+) -> tuple[Path | None, list[str]]:
+    candidate_paths: list[Path] = []
+    if requested_path is not None:
+        candidate_paths.append(requested_path)
+
+    for ancestor in [manifest_path.parent, *manifest_path.parent.parents]:
+        candidate_paths.append(ancestor / ".codex-studio" / "published" / INTAKE_REQUEST_NAME)
+
+    candidate_paths.extend(
+        [
+            repo_root / ".codex-studio" / "published" / INTAKE_REQUEST_NAME,
+            repo_root.parent / "chummer.run-services" / ".codex-studio" / "published" / INTAKE_REQUEST_NAME,
+        ]
+    )
+
+    ordered_candidates = unique_paths(candidate_paths)
+    for candidate in ordered_candidates:
+        if candidate.is_file():
+            return candidate, [str(path) for path in ordered_candidates]
+    return None, [str(path) for path in ordered_candidates]
+
+
+def startup_receipt_bundle_required_from_intake(intake_request: dict[str, Any]) -> bool | None:
+    artifact_intake = intake_request.get("artifact_intake") if isinstance(intake_request.get("artifact_intake"), dict) else {}
+    operator_request = intake_request.get("operator_request") if isinstance(intake_request.get("operator_request"), dict) else {}
+    for value in (
+        artifact_intake.get("startup_receipt_bundle_required"),
+        operator_request.get("startup_receipt_bundle_required"),
+        intake_request.get("startup_receipt_bundle_required"),
+    ):
+        if isinstance(value, bool):
+            return value
+    return None
+
+
+def build_gold_proof_bundle_intake(
+    *,
+    intake_request_path: Path | None,
+    intake_request_candidate_paths: list[str],
+    intake_request: dict[str, Any],
+) -> dict[str, Any]:
+    artifact_intake = intake_request.get("artifact_intake") if isinstance(intake_request.get("artifact_intake"), dict) else {}
+    operator_request = intake_request.get("operator_request") if isinstance(intake_request.get("operator_request"), dict) else {}
+    powershell_commands = [
+        normalize(item)
+        for item in (operator_request.get("powershell_commands") or [])
+        if normalize(item)
+    ]
+    copy_to_windows = [
+        normalize(item)
+        for item in (operator_request.get("copy_to_windows") or [])
+        if normalize(item)
+    ]
+    return {
+        "available": intake_request_path is not None and bool(intake_request),
+        "intake_request_path": str(intake_request_path) if intake_request_path is not None else "",
+        "intake_request_candidate_paths": intake_request_candidate_paths,
+        "intake_request_status": normalize(intake_request.get("status")),
+        "summary": normalize(intake_request.get("summary") or operator_request.get("summary")),
+        "promoted_installer_sha256": normalize(
+            intake_request.get("promoted_installer_sha256")
+            or (intake_request.get("promoted_installer") or {}).get("sha256")
+        ),
+        "preferred_zip_name": normalize(
+            intake_request.get("preferred_zip_name")
+            or intake_request.get("required_zip_filename")
+        ),
+        "preferred_drop_folder": normalize(
+            intake_request.get("preferred_drop_folder")
+            or artifact_intake.get("dedicated_drop_root")
+        ),
+        "preferred_drop_path": normalize(
+            intake_request.get("preferred_drop_path")
+            or artifact_intake.get("preferred_drop_path")
+        ),
+        "discover_command": normalize(artifact_intake.get("discover_command")),
+        "import_command": normalize(
+            artifact_intake.get("import_command")
+            or intake_request.get("import_command")
+        ),
+        "auto_import_watch_command": normalize(artifact_intake.get("auto_import_watch_command")),
+        "post_import_verify_command": normalize(artifact_intake.get("post_import_verify_command")),
+        "post_import_verify_note": normalize(artifact_intake.get("post_import_verify_note")),
+        "startup_receipt_bundle_required": startup_receipt_bundle_required_from_intake(intake_request),
+        "powershell_commands": powershell_commands,
+        "copy_to_windows": copy_to_windows,
+    }
+
+
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(
         description="Materialize the exact Windows installer visual-proof handoff for the current Avalonia release candidate."
@@ -65,6 +169,7 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--startup-smoke", type=Path, default=DEFAULT_STARTUP_SMOKE)
     parser.add_argument("--capture-script", type=Path, default=DEFAULT_CAPTURE_SCRIPT)
     parser.add_argument("--visual-proof", type=Path, default=DEFAULT_VISUAL_PROOF)
+    parser.add_argument("--intake-request", type=Path, default=None)
     parser.add_argument("--json-output", type=Path, default=DEFAULT_JSON_OUTPUT)
     parser.add_argument("--md-output", type=Path, default=DEFAULT_MD_OUTPUT)
     return parser.parse_args()
@@ -91,6 +196,108 @@ def find_windows_artifact(manifest: dict[str, Any]) -> dict[str, Any] | None:
 def parse_path(value: Any) -> Path | None:
     raw = normalize(value)
     return Path(raw) if raw else None
+
+
+def build_windows_operator_commands(
+    *,
+    repo_root: Path,
+    manifest_path: Path,
+    visual_proof_path: Path,
+) -> dict[str, Any]:
+    stage_root = manifest_path.parent
+    capture_script = repo_root / "scripts" / "capture-windows-installer-visual-proof.ps1"
+    stage_local_command = (
+        "powershell -NoLogo -NoProfile -ExecutionPolicy Bypass "
+        f"-File .\\scripts\\capture-windows-installer-visual-proof.ps1 "
+        f"-ReleaseChannelPath \"{manifest_path}\" "
+        f"-OutputPath \"{visual_proof_path}\""
+    )
+    windows_stage_template_command = (
+        "powershell -NoLogo -NoProfile -ExecutionPolicy Bypass "
+        "-File .\\scripts\\capture-windows-installer-visual-proof.ps1 "
+        "-ReleaseChannelPath \"<windows-stage>\\RELEASE_CHANNEL.generated.json\" "
+        "-OutputPath \"<windows-stage>\\WINDOWS_INSTALLER_VISUAL_PROOF.generated.json\""
+    )
+    linux_exit_gate_command = (
+        f"CHUMMER_WINDOWS_RELEASE_CHANNEL_PATH=\"{manifest_path}\" "
+        f"CHUMMER_WINDOWS_LOCAL_DESKTOP_FILES_ROOT=\"{stage_root / 'files'}\" "
+        f"CHUMMER_WINDOWS_INSTALLER_VISUAL_PROOF_PATH=\"{visual_proof_path}\" "
+        f"bash {repo_root / 'scripts' / 'materialize-windows-desktop-exit-gate.sh'}"
+    )
+    return {
+        "stage_root": str(stage_root),
+        "capture_script_path": str(capture_script),
+        "stage_local_powershell": stage_local_command,
+        "windows_stage_template_powershell": windows_stage_template_command,
+        "linux_exit_gate_after_copy_back": linux_exit_gate_command,
+        "copy_back_required_paths": [
+            str(visual_proof_path),
+            str(visual_proof_path.parent / "windows-installer-visual-proof" / "windows-installer-progress.png"),
+            str(visual_proof_path.parent / "windows-installer-visual-proof" / "windows-installer-completion.png"),
+        ],
+        "copy_back_note": (
+            "If the Windows host cannot access the staged Linux path directly, copy the whole stage directory to "
+            "the Windows host, run the template command against that Windows-local stage, then copy the receipt "
+            "and screenshots back to these stage-relative paths before rerunning the Linux exit gate."
+        ),
+    }
+
+
+def build_operator_artifact_intake(
+    *,
+    stage_root: Path,
+    visual_proof_path: Path,
+    windows_operator_commands: dict[str, Any],
+    intake_request_path: Path | None,
+    intake_request_candidate_paths: list[str],
+    intake_request: dict[str, Any],
+) -> dict[str, Any]:
+    drop_roots = [
+        stage_root,
+        stage_root / "windows-installer-visual-proof",
+        Path("/tmp"),
+        Path.home() / "Downloads",
+        Path.home() / "pCloud Drive" / "EA",
+    ]
+    discover_roots = " ".join(f'--root "{path}"' for path in drop_roots)
+    discover_receipt_command = (
+        "python3 ~/.codex/skills/ea-artifact-intake/scripts/artifact_intake.py discover "
+        "--pattern 'WINDOWS_INSTALLER_VISUAL_PROOF.generated.json' "
+        f"{discover_roots}"
+    )
+    discover_screenshot_command = (
+        "python3 ~/.codex/skills/ea-artifact-intake/scripts/artifact_intake.py discover "
+        "--pattern 'windows-installer-*.png' "
+        f"{discover_roots}"
+    )
+
+    return {
+        "external_artifact_required": True,
+        "preferred_drop_root": str(stage_root),
+        "preferred_visual_proof_receipt_path": str(visual_proof_path),
+        "preferred_screenshot_dir": str(stage_root / "windows-installer-visual-proof"),
+        "required_copy_back_paths": windows_operator_commands["copy_back_required_paths"],
+        "intake_request_path": str(intake_request_path) if intake_request_path is not None else "",
+        "intake_request_candidate_paths": intake_request_candidate_paths,
+        "accepted_file_patterns": [
+            "WINDOWS_INSTALLER_VISUAL_PROOF.generated.json",
+            "windows-installer-progress.png",
+            "windows-installer-completion.png",
+        ],
+        "discover_receipt_command": discover_receipt_command,
+        "discover_screenshot_command": discover_screenshot_command,
+        "post_copy_verify_command": windows_operator_commands["linux_exit_gate_after_copy_back"],
+        "operator_request_summary": (
+            "Capture the staged Windows installer progress and completion screenshots on a real Windows host, "
+            "copy the generated receipt and screenshots back to the exact staged paths, then rerun the Linux "
+            "Windows exit gate against the same stage."
+        ),
+        "gold_proof_bundle_intake": build_gold_proof_bundle_intake(
+            intake_request_path=intake_request_path,
+            intake_request_candidate_paths=intake_request_candidate_paths,
+            intake_request=intake_request,
+        ),
+    }
 
 
 def candidate_files_roots(repo_root: Path, manifest_path: Path, windows_gate: dict[str, Any]) -> list[Path]:
@@ -195,6 +402,7 @@ def build_payload(
     startup_smoke_path: Path,
     capture_script_path: Path,
     visual_proof_path: Path,
+    intake_request_path: Path | None,
 ) -> dict[str, Any]:
     manifest = load_json(manifest_path)
     windows_gate = load_json(windows_gate_path)
@@ -277,6 +485,30 @@ def build_payload(
         and current_visual_proof_matches_release
         and current_visual_proof_matches_installer_digest
     )
+    windows_operator_commands = build_windows_operator_commands(
+        repo_root=repo_root,
+        manifest_path=manifest_path,
+        visual_proof_path=visual_proof_path,
+    )
+    resolved_intake_request_path, intake_request_candidate_paths = resolve_intake_request_path(
+        repo_root=repo_root,
+        manifest_path=manifest_path,
+        requested_path=intake_request_path,
+    )
+    intake_request = load_json(resolved_intake_request_path) if resolved_intake_request_path is not None else {}
+    operator_artifact_intake = build_operator_artifact_intake(
+        stage_root=manifest_path.parent,
+        visual_proof_path=visual_proof_path,
+        windows_operator_commands=windows_operator_commands,
+        intake_request_path=resolved_intake_request_path,
+        intake_request_candidate_paths=intake_request_candidate_paths,
+        intake_request=intake_request,
+    )
+    gold_proof_bundle_intake = (
+        operator_artifact_intake.get("gold_proof_bundle_intake")
+        if isinstance(operator_artifact_intake.get("gold_proof_bundle_intake"), dict)
+        else {}
+    )
     windows_gate_ready = normalize(windows_gate.get("status")).lower() in {"pass", "passed", "ready"}
     startup_smoke_ready = (
         startup_smoke_status_ok
@@ -293,17 +525,63 @@ def build_payload(
             "Use the public nightly/preview shelf for handoff verification; do not recapture Windows proof unless the staged installer bytes change.",
         ]
     else:
+        gold_proof_capture_command = (
+            gold_proof_bundle_intake["powershell_commands"][0]
+            if gold_proof_bundle_intake.get("available") and gold_proof_bundle_intake.get("powershell_commands")
+            else ""
+        )
+        gold_proof_archive_command = next(
+            (
+                item
+                for item in (gold_proof_bundle_intake.get("powershell_commands") or [])
+                if "compress-archive" in item.lower()
+            ),
+            "",
+        )
         next_actions = [
+            *(
+                [
+                    "If you are clearing the live release-truth blocker, run the promoted-digest Windows capture command "
+                    f"`{gold_proof_capture_command}`."
+                ]
+                if gold_proof_capture_command
+                else []
+            ),
+            *(
+                [
+                    "Package the promoted-digest Windows gold proof bundle as "
+                    f"`{gold_proof_bundle_intake['preferred_zip_name']}`"
+                    + (f" with `{gold_proof_archive_command}`." if gold_proof_archive_command else ".")
+                ]
+                if gold_proof_bundle_intake.get("available") and gold_proof_bundle_intake.get("preferred_zip_name")
+                else []
+            ),
+            *(
+                [
+                    "Drop the digest-bound bundle at "
+                    f"`{gold_proof_bundle_intake['preferred_drop_path']}` and import it with "
+                    f"`{gold_proof_bundle_intake['import_command']}`."
+                    + (
+                        f" Or watch for it with `{gold_proof_bundle_intake['auto_import_watch_command']}`."
+                        if gold_proof_bundle_intake.get("auto_import_watch_command")
+                        else ""
+                    )
+                ]
+                if (
+                    gold_proof_bundle_intake.get("available")
+                    and gold_proof_bundle_intake.get("preferred_drop_path")
+                    and gold_proof_bundle_intake.get("import_command")
+                )
+                else []
+            ),
             "On a real Windows host, open the repo checkout that contains the capture script and run "
-            f"`powershell -NoLogo -NoProfile -ExecutionPolicy Bypass -File .\\scripts\\capture-windows-installer-visual-proof.ps1 "
-            f"-ReleaseChannelPath \"{manifest_path}\" -OutputPath \"{visual_proof_path}\"`.",
+            f"`{windows_operator_commands['stage_local_powershell']}`.",
+            "If the Windows host cannot access the staged Linux path directly, copy the whole stage directory to the Windows host, "
+            f"run `{windows_operator_commands['windows_stage_template_powershell']}`, then copy the generated receipt and screenshots back.",
             f"Confirm `{progress_path.name}` and `{completion_path.name}` are written under `{screenshot_dir}`.",
             f"Confirm `{visual_proof_path.name}` is written under `{visual_proof_path.parent}`.",
             "Rerun the Windows exit gate against the same shelf: "
-            f"`CHUMMER_WINDOWS_RELEASE_CHANNEL_PATH=\"{manifest_path}\" "
-            f"CHUMMER_WINDOWS_LOCAL_DESKTOP_FILES_ROOT=\"{manifest_path.parent / 'files'}\" "
-            f"CHUMMER_WINDOWS_INSTALLER_VISUAL_PROOF_PATH=\"{visual_proof_path}\" "
-            f"bash {repo_root / 'scripts' / 'materialize-windows-desktop-exit-gate.sh'}`.",
+            f"`{windows_operator_commands['linux_exit_gate_after_copy_back']}`.",
             "This packet is handoff-only for the staged nightly bytes. It does not publish the live downloads shelf or change the stable channel.",
         ]
 
@@ -332,10 +610,14 @@ def build_payload(
         "startup_smoke_requested_path": str(startup_smoke_path),
         "startup_smoke_path": str(resolved_startup_smoke_path or startup_smoke_path),
         "startup_smoke_candidate_paths": startup_smoke_candidate_paths,
+        "intake_request_path": str(resolved_intake_request_path) if resolved_intake_request_path is not None else "",
+        "intake_request_candidate_paths": intake_request_candidate_paths,
         "startup_smoke_progress_log_path": str(startup_smoke_progress_log_path) if startup_smoke_progress_log_path else "",
         "startup_smoke_progress_log_exists": startup_smoke_progress_log_exists,
         "capture_script_path": str(capture_script_path),
         "visual_proof_receipt_path": str(visual_proof_path),
+        "windows_operator_commands": windows_operator_commands,
+        "operator_artifact_intake": operator_artifact_intake,
         "current_visual_proof_exists": bool(current_visual_proof),
         "status": "ready" if ready_for_publish_handoff else "ready_for_windows_host" if ready_for_windows_host else "needs_review",
         "summary": normalize(windows_gate.get("summary")),
@@ -360,6 +642,8 @@ def build_payload(
             "status": startup_smoke_status,
             "version": startup_smoke_version,
             "release_version": startup_smoke_release_version,
+            "receipt_file_name": resolved_startup_smoke_path.name if resolved_startup_smoke_path is not None else "",
+            "receipt_sha256": sha256_file(resolved_startup_smoke_path) if resolved_startup_smoke_path is not None else "",
             "artifact_file_name": startup_smoke_artifact_file_name,
             "artifact_digest": startup_smoke_artifact_digest,
             "host_class": normalize(startup_smoke.get("hostClass")),
@@ -398,9 +682,29 @@ def render_markdown(payload: dict[str, Any]) -> str:
     artifact = payload["windows_installer"]
     startup_smoke = payload["startup_smoke"]
     current_visual_proof = payload["current_visual_proof"]
+    windows_operator_commands = payload["windows_operator_commands"]
+    operator_artifact_intake = payload["operator_artifact_intake"]
     screenshot_lines = [
         f"- `{item['role']}`: `{item['file_name']}` -> `{item['path']}`"
         for item in payload["required_screenshots"]
+    ]
+    copy_back_lines = [f"- `{item}`" for item in windows_operator_commands["copy_back_required_paths"]]
+    intake_pattern_lines = [f"- `{item}`" for item in operator_artifact_intake["accepted_file_patterns"]]
+    intake_required_path_lines = [f"- `{item}`" for item in operator_artifact_intake["required_copy_back_paths"]]
+    gold_proof_bundle_intake = (
+        operator_artifact_intake.get("gold_proof_bundle_intake")
+        if isinstance(operator_artifact_intake.get("gold_proof_bundle_intake"), dict)
+        else {}
+    )
+    gold_proof_bundle_command_lines = [
+        f"- `{item}`"
+        for item in (gold_proof_bundle_intake.get("powershell_commands") or [])
+        if normalize(item)
+    ]
+    gold_proof_bundle_copy_lines = [
+        f"- {item}"
+        for item in (gold_proof_bundle_intake.get("copy_to_windows") or [])
+        if normalize(item)
     ]
     local_installer_lines = artifact["local_candidates"]["installer_existing_paths"]
     local_payload_lines = artifact["local_candidates"]["payload_existing_paths"]
@@ -473,22 +777,86 @@ def render_markdown(payload: dict[str, Any]) -> str:
         f"- Matches installer digest: `{current_visual_proof['matches_installer_digest']}`",
         f"- Stale: `{current_visual_proof['stale']}`",
         "",
-        "## Required screenshots",
+        "## Windows operator commands",
         "",
-        *screenshot_lines,
+        f"- Stage root: `{windows_operator_commands['stage_root']}`",
+        f"- Stage-local PowerShell: `{windows_operator_commands['stage_local_powershell']}`",
+        f"- Windows-local stage template: `{windows_operator_commands['windows_stage_template_powershell']}`",
+        f"- Linux exit gate after copy-back: `{windows_operator_commands['linux_exit_gate_after_copy_back']}`",
+        f"- Copy-back note: {windows_operator_commands['copy_back_note']}",
         "",
-        "## Gate reasons",
+        "### Required copy-back paths",
         "",
-        *reason_lines,
+        *copy_back_lines,
         "",
-        "## Blockers",
+        "## Artifact intake",
         "",
-        *blocker_lines,
+        f"- External artifact required: `{operator_artifact_intake['external_artifact_required']}`",
+        f"- Preferred drop root: `{operator_artifact_intake['preferred_drop_root']}`",
+        f"- Preferred receipt path: `{operator_artifact_intake['preferred_visual_proof_receipt_path']}`",
+        f"- Preferred screenshot directory: `{operator_artifact_intake['preferred_screenshot_dir']}`",
+        f"- Discover receipt command: `{operator_artifact_intake['discover_receipt_command']}`",
+        f"- Discover screenshot command: `{operator_artifact_intake['discover_screenshot_command']}`",
+        f"- Post-copy verify command: `{operator_artifact_intake['post_copy_verify_command']}`",
+        f"- Request summary: {operator_artifact_intake['operator_request_summary']}",
         "",
-        "## Next actions",
+        "### Accepted file patterns",
         "",
-        *next_action_lines,
+        *intake_pattern_lines,
+        "",
+        "### Required intake paths",
+        "",
+        *intake_required_path_lines,
+        "",
     ]
+    if gold_proof_bundle_intake.get("available"):
+        lines.extend(
+            [
+                "## Release-Truth Bundle Intake",
+                "",
+                f"- Intake request: `{gold_proof_bundle_intake['intake_request_path']}`",
+                f"- Intake status: `{gold_proof_bundle_intake['intake_request_status']}`",
+                f"- Promoted installer SHA-256: `{gold_proof_bundle_intake['promoted_installer_sha256']}`",
+                f"- Preferred zip name: `{gold_proof_bundle_intake['preferred_zip_name']}`",
+                f"- Preferred drop folder: `{gold_proof_bundle_intake['preferred_drop_folder']}`",
+                f"- Preferred drop path: `{gold_proof_bundle_intake['preferred_drop_path']}`",
+                f"- Discover command: `{gold_proof_bundle_intake['discover_command']}`",
+                f"- Import command: `{gold_proof_bundle_intake['import_command']}`",
+                f"- Auto-import watch command: `{gold_proof_bundle_intake['auto_import_watch_command']}`",
+                f"- Post-import verify command: `{gold_proof_bundle_intake['post_import_verify_command']}`",
+                f"- Post-import verify note: {gold_proof_bundle_intake['post_import_verify_note']}",
+                f"- Startup receipt bundle required: `{gold_proof_bundle_intake['startup_receipt_bundle_required']}`",
+                f"- Summary: {gold_proof_bundle_intake['summary']}",
+                "",
+                "### Windows-host bundle commands",
+                "",
+                *(gold_proof_bundle_command_lines or ["- none"]),
+                "",
+                "### Windows-host prep notes",
+                "",
+                *(gold_proof_bundle_copy_lines or ["- none"]),
+                "",
+            ]
+        )
+    lines.extend(
+        [
+            "## Required screenshots",
+            "",
+            *screenshot_lines,
+            "",
+            "## Gate reasons",
+            "",
+            *reason_lines,
+            "",
+            "## Blockers",
+            "",
+            *blocker_lines,
+            "",
+            "## Next actions",
+            "",
+            *next_action_lines,
+        ]
+    )
     return "\n".join(lines) + "\n"
 
 
@@ -501,6 +869,7 @@ def main() -> int:
         startup_smoke_path=args.startup_smoke,
         capture_script_path=args.capture_script,
         visual_proof_path=args.visual_proof,
+        intake_request_path=args.intake_request,
     )
     args.json_output.parent.mkdir(parents=True, exist_ok=True)
     args.md_output.parent.mkdir(parents=True, exist_ok=True)

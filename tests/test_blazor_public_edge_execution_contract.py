@@ -97,6 +97,9 @@ def test_public_edge_execution_runner_waits_for_result_continuation_text() -> No
     assert "async function waitForBodyTextIncludes(page, expected, label)" in script
     assert "document.body.innerText.includes(expectedText)" in script
     assert "await waitForBodyTextIncludes(page, expectedText, `hosted resumed result route ${route}`);" in script
+    assert "await openPath(page, route, 'section.classic-chummer-shell');" in script
+    assert "await waitForBodyTextIncludes(page, \"Entry 'New entry' added.\", 'hosted committed action route');" in script
+    assert "await waitForBodyTextIncludes(page, expectedText, `hosted advanced committed action route ${route}`);" in script
 
 
 def test_public_edge_execution_runner_preserves_published_receipt_on_live_failure() -> None:
@@ -120,13 +123,103 @@ def test_public_edge_execution_runner_retries_network_changed_navigation() -> No
     assert "message.includes('Timeout')" in script
 
 
+def test_public_edge_execution_runner_defaults_to_managed_chromium() -> None:
+    script = Path("scripts/e2e-public-edge-playwright.cjs").read_text(encoding="utf-8")
+
+    assert "function browserLaunchOptions()" in script
+    assert "process.env.CHUMMER_PLAYWRIGHT_EXECUTABLE_PATH" in script
+    assert "process.env.CHUMMER_PLAYWRIGHT_CHANNEL || 'chromium'" in script
+    assert "return { headless: true, executablePath };" in script
+    assert "return channel ? { headless: true, channel } : { headless: true };" in script
+    assert "chromium.launch(browserLaunchOptions())" in script
+
+
+def test_blazor_route_host_publishes_immediate_public_shell_fallbacks() -> None:
+    app = Path("Chummer.Blazor/Components/App.razor").read_text(encoding="utf-8")
+
+    assert '<Routes @rendermode="new InteractiveServerRenderMode(prerender: false)" />' in app
+    assert "BuildAppRouteFallback()" in app
+    assert 'data-ssr-app-route-fallback="true"' in app
+    assert 'data-active-workflow="@appRouteFallback.ActiveWorkflow"' in app
+    assert 'data-route-family="@appRouteFallback.RouteFamily"' in app
+    assert 'data-canonical-route="@appRouteFallback.CanonicalRoute"' in app
+    assert 'data-route-alias="@appRouteFallback.RouteAlias"' in app
+    assert 'data-command="@appRouteFallback.CommandDataKey"' in app
+    assert 'data-chummer-app-startup-command="@appRouteFallback.StartupCommandLabel"' in app
+    assert 'data-control="@appRouteFallback.ControlDataKey"' in app
+    assert 'data-dialog-action="@appRouteFallback.DialogActionDataKey"' in app
+    assert 'data-fixture="@appRouteFallback.FixtureDataKey"' in app
+    assert 'data-legacy-runner="@appRouteFallback.LegacyRunnerDataKey"' in app
+    assert 'data-app-route-shared-shell="true"' in app
+    assert "private static string BuildAppHref(" in app
+    assert "private static string BuildAppContinuationHref(" in app
+    assert "private static string BuildAppSeedHref(" in app
+    assert "private static string BuildAppNewRunnerHref(" in app
+    assert "private static string BuildWorkbenchNewRunnerHref(WorkbenchFallback fallback)" in app
+    assert 'HasExplicitWorkspace: !string.IsNullOrWhiteSpace(requestedWorkspace)' in app
+    assert 'string control = NormalizeDataToken(GetQueryValue(query, "control"));' in app
+    assert 'string dialogAction = NormalizeDataToken(GetQueryValue(query, "dialog_action"));' in app
+    assert 'string runner = NormalizeDataToken(GetQueryValue(query, "runner"));' in app
+    assert 'FixtureDataKey: NormalizeRouteDataKey(fixture)' in app
+    assert 'LegacyRunnerDataKey: NormalizeRouteDataKey(runner)' in app
+    assert 'ControlDataKey: NormalizeRouteDataKey(control)' in app
+    assert 'DialogActionDataKey: NormalizeRouteDataKey(dialogAction)' in app
+    assert 'fixture: fallback.Fixture' in app
+    assert 'href="@BuildAppNewRunnerHref(appRouteFallback)"' in app
+    assert 'href="@BuildAppContinuationHref(appRouteFallback, tab: "tab-create")"' in app
+    assert 'href="@BuildAppSeedHref(appRouteFallback, tab: "tab-technomancer")"' in app
+    assert 'string.Equals(fallback.Command, "new_character", StringComparison.OrdinalIgnoreCase)' in app
+    assert "ShouldRenderAppFallbackStartupShell(query, command)" in app
+    assert 'RouteFamily: isOnlineAliasRoute ? "online-alias" : "app"' in app
+    assert 'CanonicalRoute: "app"' in app
+    assert 'RouteAlias: isOnlineAliasRoute ? "online" : "none"' in app
+    assert 'string.Equals(tab, "tab-contacts", StringComparison.OrdinalIgnoreCase)' in app
+    assert 'string.Equals(tab, "tab-rules", StringComparison.OrdinalIgnoreCase)' in app
+    assert '"contacts" => "Contacts"' in app
+    assert '"rules" => "Rules"' in app
+    assert '"master-index" => "Master Index"' in app
+    assert '"global-settings" => "Global Settings"' in app
+    assert '"build-lab" => "Build Lab shell"' in app
+    assert "section.browser-app-roster:not([data-ssr-app-route-fallback])" in app
+    assert 'href="@BuildWorkbenchHref(appRouteFallback.Workspace, command: "new_character")"' not in app
+    assert "Character Roster" in app
+    assert "Open example" in app
+    assert "BuildWorkbenchFallback()" in app
+    assert 'data-ssr-workbench-fallback="true"' in app
+    assert 'class="classic-chummer-menu browser-app-classic-menu-bar"' in app
+    assert 'data-app-menu-root="file"' in app
+    assert 'data-app-menu-summary="file"' in app
+    assert 'href="@BuildWorkbenchNewRunnerHref(workbenchFallback)"' in app
+    assert 'string.Equals(fallback.Command, "new_character", StringComparison.OrdinalIgnoreCase)' in app
+    assert "section.classic-chummer-shell:not([data-ssr-workbench-fallback])" in app
+    assert "Complex form 'Cleaner' added." in app
+
+
 def test_promoted_workbench_surfaces_startup_command_display_labels() -> None:
     preview = Path("Chummer.Blazor/Components/Pages/Preview.razor").read_text(encoding="utf-8")
 
     assert 'data-chummer-app-startup-command="@StartupCommandLabel"' in preview
     assert "<strong>@StartupCommandDisplayLabel</strong>" in preview
     assert "private string StartupCommandDisplayLabel" in preview
-    assert 'NewCharacterCommand => "New runner"' in preview
-    assert 'NewCharacterOriginCommand => "Origin Dossier"' in preview
-    assert 'OpenForPrintingCommand => "Open for Printing"' in preview
-    assert 'OpenForExportCommand => "Open for Export"' in preview
+    assert '"new-character" => "New runner"' in preview
+    assert '"new-character-origin" => "Origin Dossier"' in preview
+    assert '"open-for-printing" => "Open for Printing"' in preview
+    assert '"open-for-export" => "Open for Export"' in preview
+
+
+def test_workbench_fallback_uses_click_safe_menu_roots_and_non_self_new_runner_links() -> None:
+    preview = Path("Chummer.Blazor/Components/Pages/Preview.razor").read_text(encoding="utf-8")
+
+    assert 'private bool ShouldPromoteWorkbenchNewRunnerToBuildLab => IsWorkbenchRoute && IsCommandAlias(Command, "new-character");' in preview
+    assert "private string WorkbenchNewRunnerHref => ShouldPromoteWorkbenchNewRunnerToBuildLab" in preview
+    assert '? BuildLabLaneHref' in preview
+    assert ': BuildPreviewHref(command: NewCharacterCommand, useWorkbenchRoute: true);' in preview
+    assert 'class="classic-chummer-menu browser-app-classic-menu-bar"' in preview
+    assert 'class="classic-menu-item browser-app-classic-menu-root" data-app-menu-root="file"' in preview
+    assert '<summary role="button" tabindex="0" aria-expanded="false" data-app-menu-summary="file">File</summary>' in preview
+    assert 'class="classic-menu-flyout browser-app-classic-menu-flyout" role="menu" data-app-menu-flyout="file"' in preview
+    assert 'href="@WorkbenchNewRunnerHref"' in preview
+    assert 'data-app-menu-item="new-runner"' in preview
+    assert 'data-classic-toolstrip-action="new-runner"' in preview
+    assert 'data-workbench-dock-action="start-new"' in preview
+    assert 'data-workbench-command-palette-action="new-character"' in preview

@@ -71,8 +71,7 @@ public partial class ToolStripControl : UserControl, IToolStripSurface
 
     public void SetStatusText(string statusText)
     {
-        StatusText.Text = statusText;
-        StatusTextBorder.IsVisible = !string.IsNullOrWhiteSpace(statusText) && !IsIdleStatus(statusText);
+        _ = statusText;
     }
 
     private static void ApplyVisibility(Control control, bool? isVisible)
@@ -83,18 +82,6 @@ public partial class ToolStripControl : UserControl, IToolStripSurface
         }
 
         control.IsVisible = isVisible.Value;
-    }
-
-    private static bool IsIdleStatus(string? statusText)
-    {
-        if (string.IsNullOrWhiteSpace(statusText))
-        {
-            return true;
-        }
-
-        string normalized = statusText.Trim();
-        return string.Equals(normalized, "State: idle", StringComparison.OrdinalIgnoreCase)
-            || string.Equals(normalized, "idle", StringComparison.OrdinalIgnoreCase);
     }
 
     private void ApplyLocalization()
@@ -124,8 +111,6 @@ public partial class ToolStripControl : UserControl, IToolStripSurface
         SetButtonLabel(SettingsButton, DesktopLocalizationCatalog.GetRequiredString("desktop.shell.tool.settings", language));
         SetButtonLabel(LoadDemoRunnerButton, DesktopLocalizationCatalog.GetRequiredString("desktop.shell.tool.load_demo_runner", language), "Sample");
         SetButtonLabel(ImportRawButton, DesktopLocalizationCatalog.GetRequiredString("desktop.shell.tool.import_raw_xml", language));
-        StatusText.Text = DesktopLocalizationCatalog.GetRequiredString("desktop.shell.tool.status_idle", language);
-        StatusTextBorder.IsVisible = false;
     }
 
     private static void SetButtonLabel(Button button, string label)
@@ -149,8 +134,11 @@ public partial class ToolStripControl : UserControl, IToolStripSurface
                     new TextBlock
                     {
                         Text = shortLabel,
-                        Classes = { "tool-button-label" },
-                        Foreground = button.Foreground,
+                        Classes =
+                        {
+                            "tool-button-label",
+                            button.Classes.Contains("primary") ? "primary" : "regular"
+                        },
                         VerticalAlignment = VerticalAlignment.Center
                     }
                 }

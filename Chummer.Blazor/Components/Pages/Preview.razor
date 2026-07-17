@@ -5,7 +5,9 @@
 @page "/workbench"
 @layout Chummer.Blazor.Components.Layout.NoLayout
 @using Microsoft.AspNetCore.Components
+@using Microsoft.AspNetCore.Components.Routing
 @using Microsoft.AspNetCore.Components.Web
+@using Microsoft.AspNetCore.WebUtilities
 @using Microsoft.Extensions.Configuration
 @using Chummer.Blazor.Components.Layout
 @using Chummer.Blazor.RunnerIntelligence
@@ -61,20 +63,198 @@
 
     @if (IsAppRoute)
     {
-        <section id="chummer-online-app" class="browser-app-roster" tabindex="-1" aria-label="Character roster">
+        <section id="chummer-online-app"
+                 class="browser-app-roster"
+                 tabindex="-1"
+                 aria-label="@AppRouteAriaLabel"
+                 data-active-workflow="@ActiveWorkflowDataKey"
+                 data-output-workflow="@OutputWorkflowDataKey"
+                 data-output-state="@OutputStateDataKey"
+                 data-output-target="@OutputTargetDataKey"
+                 data-route-family="@RouteFamilyDataKey"
+                 data-route-segment="@RouteSegmentDataKey"
+                 data-route-surface="@RouteSurfaceDataKey"
+                 data-canonical-route="@CanonicalRouteDataKey"
+                 data-route-alias="@RouteAliasDataKey"
+                 data-command="@CommandDataKey"
+                 data-workspace="@WorkspaceDataKey"
+                 data-tab="@TabDataKey"
+                 data-control="@ControlDataKey"
+                 data-dialog-action="@DialogActionDataKey"
+                 data-fixture="@FixtureDataKey"
+                 data-legacy-runner="@LegacyRunnerDataKey"
+                 data-chummer-app-startup-command="@StartupCommandLabel"
+                 data-browser-shell-command="@CommandDataKey">
+            @if (!ShouldRenderAppStartupShell)
+            {
+                <div class="browser-app-classic-chrome" data-app-classic-chrome="true">
+                    <nav class="browser-app-classic-menu-bar" aria-label="Chummer Online menu">
+                        <details class="browser-app-classic-menu-root" data-app-menu-root="file">
+                            <summary role="button" tabindex="0" aria-expanded="false" data-app-menu-summary="file">File</summary>
+                            <div class="browser-app-classic-menu-flyout" role="menu" data-app-menu-flyout="file">
+                                <a href="@BuildPreviewHref(command: NewCharacterCommand, useWorkbenchRoute: true)"
+                                   role="menuitem"
+                                   data-app-menu-item="new-runner">New runner</a>
+                                <a href="@BuildPreviewHref(command: OpenCharacterCommand, useWorkbenchRoute: true)"
+                                   role="menuitem"
+                                   data-app-menu-item="open-runner">Open Runner</a>
+                                <a href="@SaveAsFlowHref"
+                                   role="menuitem"
+                                   aria-current="@(IsSaveWorkflow ? "page" : null)"
+                                   data-app-menu-item="save-download">Save/download</a>
+                                <a href="@PrintFlowHref"
+                                   role="menuitem"
+                                   aria-current="@(IsPrintWorkflow ? "page" : null)"
+                                   data-app-menu-item="print">Print</a>
+                                <a href="@ExportFlowHref"
+                                   role="menuitem"
+                                   aria-current="@(IsExportWorkflow ? "page" : null)"
+                                   data-app-menu-item="export">Export</a>
+                            </div>
+                        </details>
+                        <details class="browser-app-classic-menu-root" data-app-menu-root="edit">
+                            <summary role="button" tabindex="0" aria-expanded="false" data-app-menu-summary="edit">Edit</summary>
+                            <div class="browser-app-classic-menu-flyout" role="menu" data-app-menu-flyout="edit">
+                                <a href="@BuildLabLaneHref"
+                                   role="menuitem"
+                                   aria-current="@(IsBuildLabWorkflow ? "page" : null)"
+                                   data-app-menu-item="build-lab">Build Lab</a>
+                                <a href="@GearLaneHref"
+                                   role="menuitem"
+                                   aria-current="@(IsGearWorkflow ? "page" : null)"
+                                   data-app-menu-item="gear">Gear</a>
+                                <a href="@BuildPreviewHref(SeededWorkspaceId, tab: ProfileTabId, useWorkbenchRoute: true)"
+                                   role="menuitem"
+                                   data-app-menu-item="profile">Profile</a>
+                            </div>
+                        </details>
+                        <details class="browser-app-classic-menu-root" data-app-menu-root="view">
+                            <summary role="button" tabindex="0" aria-expanded="false" data-app-menu-summary="view">View</summary>
+                            <div class="browser-app-classic-menu-flyout" role="menu" data-app-menu-flyout="view">
+                                <a href="@BuildPreviewHref(SeededWorkspaceId, tab: ProfileTabId, useWorkbenchRoute: true)"
+                                   role="menuitem"
+                                   data-app-menu-item="view-profile">Profile</a>
+                                <a href="@BuildPreviewHref(SeededWorkspaceId, tab: RulesTabId, useWorkbenchRoute: true)"
+                                   role="menuitem"
+                                   data-app-menu-item="view-rules">Rules</a>
+                                <a href="@BuildPreviewHref(SeededWorkspaceId, tab: ContactsTabId, useWorkbenchRoute: true)"
+                                   role="menuitem"
+                                   data-app-menu-item="view-contacts">Contacts</a>
+                            </div>
+                        </details>
+                        <details class="browser-app-classic-menu-root" data-app-menu-root="runner">
+                            <summary role="button" tabindex="0" aria-expanded="false" data-app-menu-summary="runner">Runner</summary>
+                            <div class="browser-app-classic-menu-flyout" role="menu" data-app-menu-flyout="runner">
+                                <a href="@ChummerOnlineRosterHref"
+                                   role="menuitem"
+                                   aria-current="@(IsCharacterRosterCommand ? "page" : null)"
+                                   data-app-menu-item="character-roster">Character Roster</a>
+                                <a href="@ContinueRecentHref"
+                                   role="menuitem"
+                                   data-app-menu-item="continue-runner">Continue runner</a>
+                                <a href="@BuildPreviewHref(command: OpenCharacterCommand, useWorkbenchRoute: true)"
+                                   role="menuitem"
+                                   data-app-menu-item="import-runner-xml">Import runner XML</a>
+                            </div>
+                        </details>
+                        <details class="browser-app-classic-menu-root" data-app-menu-root="tools">
+                            <summary role="button" tabindex="0" aria-expanded="false" data-app-menu-summary="tools">Tools</summary>
+                            <div class="browser-app-classic-menu-flyout" role="menu" data-app-menu-flyout="tools">
+                                <a href="@GlobalSettingsHref"
+                                   role="menuitem"
+                                   data-app-menu-item="options">Options</a>
+                                <a href="@StatusHref"
+                                   role="menuitem"
+                                   data-app-menu-item="status">Status</a>
+                                <a href="@DownloadsHref"
+                                   role="menuitem"
+                                   data-app-menu-item="desktop-installers">Desktop installers</a>
+                            </div>
+                        </details>
+                        <details class="browser-app-classic-menu-root" data-app-menu-root="help">
+                            <summary role="button" tabindex="0" aria-expanded="false" data-app-menu-summary="help">Help</summary>
+                            <div class="browser-app-classic-menu-flyout" role="menu" data-app-menu-flyout="help">
+                                <a href="@HelpHref"
+                                   role="menuitem"
+                                   data-app-menu-item="help">Help</a>
+                                <a href="@DocsHref"
+                                   role="menuitem"
+                                   data-app-menu-item="docs">Docs</a>
+                                <a href="@ContactHref"
+                                   role="menuitem"
+                                   data-app-menu-item="support">Support</a>
+                            </div>
+                        </details>
+                    </nav>
+
+                    <nav class="browser-app-classic-toolstrip"
+                         role="toolbar"
+                         aria-label="Chummer Online quick actions"
+                         data-app-toolstrip="classic">
+                        <a href="@BuildPreviewHref(command: NewCharacterCommand, useWorkbenchRoute: true)"
+                           data-app-toolstrip-action="new-runner">New runner</a>
+                        <a href="@BuildPreviewHref(command: OpenCharacterCommand, useWorkbenchRoute: true)"
+                           data-app-toolstrip-action="open-runner">Open Runner</a>
+                        <a href="@SaveAsFlowHref"
+                           aria-current="@(IsSaveWorkflow ? "page" : null)"
+                           data-app-toolstrip-action="save-download">Save/download</a>
+                        <a href="@PrintFlowHref"
+                           aria-current="@(IsPrintWorkflow ? "page" : null)"
+                           data-app-toolstrip-action="print">Print</a>
+                        <a href="@ExportFlowHref"
+                           aria-current="@(IsExportWorkflow ? "page" : null)"
+                           data-app-toolstrip-action="export">Export</a>
+                        <a href="@ChummerOnlineRosterHref"
+                           aria-current="@(IsCharacterRosterCommand ? "page" : null)"
+                           data-app-toolstrip-action="character-roster">Character Roster</a>
+                        <a href="@BuildLabLaneHref"
+                           aria-current="@(IsBuildLabWorkflow ? "page" : null)"
+                           data-app-toolstrip-action="build-lab">Build Lab</a>
+                    </nav>
+                </div>
+            }
+
             <header class="browser-app-roster-head">
                 <div>
                     <span>Chummer Online</span>
-                    <h1>Character Roster</h1>
-                    <p>Your runners will appear here. Start one, import one, or open an example.</p>
+                    <h1>@AppRouteTitle</h1>
+                    <p>@AppRouteSummary</p>
                 </div>
                 <nav class="browser-app-roster-actions" aria-label="Roster actions">
                     <a href="@BuildPreviewHref(command: NewCharacterCommand, useWorkbenchRoute: true)">New runner</a>
+                    <a href="@BuildPreviewHref(command: NewCharacterOriginCommand, useWorkbenchRoute: true)">Origin Dossier</a>
                     <a href="@BuildPreviewHref(command: OpenCharacterCommand, useWorkbenchRoute: true)">Import</a>
                     <a href="@BuildPreviewHref(SeededWorkspaceId, useWorkbenchRoute: true)">Open example</a>
                 </nav>
             </header>
 
+            @if (ShouldRenderAppStartupShell)
+            {
+                <section class="browser-preview-frame browser-preview-frame--app-route"
+                         aria-label="@AppRouteFrameLabel"
+                         data-app-route-shared-shell="true"
+                         data-app-route-workflow="@ActiveWorkflowDataKey">
+                    <div class="browser-preview-frame-header">
+                        <div>
+                            <p class="browser-preview-frame-kicker">@AppRouteContextLabel</p>
+                            <h2>@AppRouteFrameTitle</h2>
+                        </div>
+                        <p data-chummer-app-startup-command="@StartupCommandLabel">
+                            <strong>@AppRouteContextLabel</strong>
+                            @RouteOpenSummary
+                        </p>
+                    </div>
+                    <DesktopShell @ref="_desktopShell"
+                                  DemoFixtureId="@Fixture"
+                                  DemoWorkspaceId="@ResolvedWorkspace"
+                                  DemoTabId="@Tab"
+                                  DemoStartupCommandId="@Command"
+                                  DemoUiControlId="@Control"
+                                  DemoDialogActionId="@DialogAction" />
+                </section>
+            }
+            else
+            {
             <div class="browser-app-roster-grid">
                 <aside class="browser-app-roster-tree" aria-label="Runner folders">
                     <div class="browser-app-roster-toolbar" role="toolbar" aria-label="Organize runners">
@@ -87,10 +267,10 @@
                             <span>Current table</span>
                             <ul role="group">
                                 <li role="treeitem" aria-selected="true" draggable="true">
-                                    <a href="@BuildPreviewHref("kestrel-samurai", useWorkbenchRoute: true)">Kestrel</a>
+                                    <a href="@BuildPreviewHref(fixture: SeededWorkspaceId, useWorkbenchRoute: true)">Kestrel</a>
                                 </li>
                                 <li role="treeitem" draggable="true">
-                                    <a href="@BuildPreviewHref("rook-decker", useWorkbenchRoute: true)">Rook</a>
+                                    <a href="@BuildPreviewHref(fixture: SeededWorkspaceId, tab: MatrixTabId, useWorkbenchRoute: true)">Rook</a>
                                 </li>
                             </ul>
                         </li>
@@ -98,10 +278,10 @@
                             <span>Examples</span>
                             <ul role="group">
                                 <li role="treeitem" draggable="true">
-                                    <a href="@BuildPreviewHref("mara-face", useWorkbenchRoute: true)">Mara</a>
+                                    <a href="@BuildPreviewHref(fixture: SeededWorkspaceId, tab: ProfileTabId, useWorkbenchRoute: true)">Mara</a>
                                 </li>
                                 <li role="treeitem" draggable="true">
-                                    <a href="@BuildPreviewHref("ash-mage", useWorkbenchRoute: true)">Ash</a>
+                                    <a href="@BuildPreviewHref(fixture: SeededWorkspaceId, tab: RulesTabId, useWorkbenchRoute: true)">Ash</a>
                                 </li>
                             </ul>
                         </li>
@@ -121,32 +301,32 @@
                         <span><strong>5.4</strong><small>essence</small></span>
                     </div>
                     <nav class="browser-app-runner-actions" aria-label="Open Kestrel">
-                        <a href="@BuildPreviewHref("kestrel-samurai", tab: BuildTabId, useWorkbenchRoute: true)">Build</a>
-                        <a href="@BuildPreviewHref("kestrel-samurai", tab: GearTabId, useWorkbenchRoute: true)">Gear</a>
-                        <a href="@BuildPreviewHref("kestrel-samurai", tab: ContactsTabId, useWorkbenchRoute: true)">Contacts</a>
-                        <a href="@BuildPreviewHref("kestrel-samurai", command: SaveCharacterAsCommand, useWorkbenchRoute: true)">Download</a>
+                        <a href="@BuildPreviewHref(fixture: SeededWorkspaceId, tab: BuildTabId, useWorkbenchRoute: true)">Build</a>
+                        <a href="@BuildPreviewHref(fixture: SeededWorkspaceId, tab: GearTabId, useWorkbenchRoute: true)">Gear</a>
+                        <a href="@BuildPreviewHref(fixture: SeededWorkspaceId, tab: ContactsTabId, useWorkbenchRoute: true)">Contacts</a>
+                        <a href="@BuildPreviewHref(fixture: SeededWorkspaceId, command: SaveCharacterAsCommand, useWorkbenchRoute: true)">Download</a>
                     </nav>
                 </section>
 
                 <section class="browser-app-example-panel" aria-label="Example archetypes">
                     <h2>Examples</h2>
                     <div class="browser-app-example-runners" role="list">
-                        <a role="listitem" href="@BuildPreviewHref("kestrel-samurai", useWorkbenchRoute: true)">
+                        <a role="listitem" href="@BuildPreviewHref(fixture: SeededWorkspaceId, useWorkbenchRoute: true)">
                             <span>Kestrel</span>
                             <strong>Street samurai</strong>
                             <small>Fast, direct, gear-heavy.</small>
                         </a>
-                        <a role="listitem" href="@BuildPreviewHref("rook-decker", useWorkbenchRoute: true)">
+                        <a role="listitem" href="@BuildPreviewHref(fixture: SeededWorkspaceId, tab: MatrixTabId, useWorkbenchRoute: true)">
                             <span>Rook</span>
                             <strong>Decker</strong>
                             <small>Matrix work and quiet entry.</small>
                         </a>
-                        <a role="listitem" href="@BuildPreviewHref("mara-face", useWorkbenchRoute: true)">
+                        <a role="listitem" href="@BuildPreviewHref(fixture: SeededWorkspaceId, tab: ProfileTabId, useWorkbenchRoute: true)">
                             <span>Mara</span>
                             <strong>Face</strong>
                             <small>Contacts, leverage, social pressure.</small>
                         </a>
-                        <a role="listitem" href="@BuildPreviewHref("ash-mage", useWorkbenchRoute: true)">
+                        <a role="listitem" href="@BuildPreviewHref(fixture: SeededWorkspaceId, tab: RulesTabId, useWorkbenchRoute: true)">
                             <span>Ash</span>
                             <strong>Mage</strong>
                             <small>Spells, spirits, and astral risk.</small>
@@ -154,6 +334,14 @@
                     </div>
                 </section>
             </div>
+
+            <div class="browser-app-statusbar" role="status" aria-live="polite" data-app-statusbar="true">
+                <span><strong>Ready</strong></span>
+                <span>Browser roster</span>
+                <span>Rules: SR5 sample data</span>
+                <span>Chummer Online</span>
+            </div>
+            }
         </section>
     }
 
@@ -164,12 +352,13 @@
                 <div class="classic-chummer-titlebar-title">Chummer Online - @(PrimaryRecentWorkspace?.ShortLabel ?? "Sample Runner") - @ActiveWorkflowStatus</div>
                 <div class="classic-window-controls" aria-hidden="true"><span>_</span><span>[]</span><span>X</span></div>
             </header>
-            <nav class="classic-chummer-menu" aria-label="Classic Chummer menu">
-                <div class="classic-menu-item">
-                    <a href="@BuildPreviewHref(command: NewCharacterCommand, useWorkbenchRoute: true)">File</a>
-                    <div class="classic-menu-flyout" role="menu">
-                        <a href="@BuildPreviewHref(command: NewCharacterCommand, useWorkbenchRoute: true)"
+            <nav class="classic-chummer-menu browser-app-classic-menu-bar" aria-label="Classic Chummer menu">
+                <details class="classic-menu-item browser-app-classic-menu-root" data-app-menu-root="file">
+                    <summary role="button" tabindex="0" aria-expanded="false" data-app-menu-summary="file">File</summary>
+                    <div class="classic-menu-flyout browser-app-classic-menu-flyout" role="menu" data-app-menu-flyout="file">
+                        <a href="@WorkbenchNewRunnerHref"
                            role="menuitem"
+                           data-app-menu-item="new-runner"
                            data-browser-shell-command="@NewCharacterCommand"
                            data-chummer-shortcut="Ctrl+N"
                            aria-keyshortcuts="Control+N"
@@ -177,66 +366,68 @@
                            @onclick:preventDefault="true">New runner</a>
                         <a href="@BuildPreviewHref(command: OpenCharacterCommand, useWorkbenchRoute: true)"
                            role="menuitem"
+                           data-app-menu-item="open-runner"
                            data-browser-shell-command="@OpenCharacterCommand"
                            data-chummer-shortcut="Ctrl+O"
                            aria-keyshortcuts="Control+O"
                            @onclick="() => OpenShellCommandFromSurfaceAsync(OpenCharacterCommand)"
                            @onclick:preventDefault="true">Open runner</a>
-                        <a href="@SaveAsFlowHref" role="menuitem" aria-current="@(IsSaveWorkflow ? "page" : null)" data-chummer-shortcut="Ctrl+Shift+S" aria-keyshortcuts="Control+Shift+S">Save as</a>
-                        <a href="@PrintFlowHref" role="menuitem" aria-current="@(IsPrintWorkflow ? "page" : null)" data-chummer-shortcut="Ctrl+P" aria-keyshortcuts="Control+P">Print</a>
-                        <a href="@ExportFlowHref" role="menuitem" aria-current="@(IsExportWorkflow ? "page" : null)" data-chummer-shortcut="Ctrl+E" aria-keyshortcuts="Control+E">Export</a>
+                        <a href="@SaveAsFlowHref" role="menuitem" aria-current="@(IsSaveWorkflow ? "page" : null)" data-app-menu-item="save-download" data-chummer-shortcut="Ctrl+Shift+S" aria-keyshortcuts="Control+Shift+S">Save as</a>
+                        <a href="@PrintFlowHref" role="menuitem" aria-current="@(IsPrintWorkflow ? "page" : null)" data-app-menu-item="print" data-chummer-shortcut="Ctrl+P" aria-keyshortcuts="Control+P">Print</a>
+                        <a href="@ExportFlowHref" role="menuitem" aria-current="@(IsExportWorkflow ? "page" : null)" data-app-menu-item="export" data-chummer-shortcut="Ctrl+E" aria-keyshortcuts="Control+E">Export</a>
                     </div>
-                </div>
-                <div class="classic-menu-item">
-                    <a href="@BuildLabLaneHref">Edit</a>
-                    <div class="classic-menu-flyout" role="menu">
-                        <a href="@BuildLabLaneHref" role="menuitem" aria-current="@(IsBuildLabWorkflow ? "page" : null)" data-chummer-shortcut="Ctrl+B" aria-keyshortcuts="Control+B">Build Lab</a>
-                        <a href="@GearLaneHref" role="menuitem" aria-current="@(IsGearWorkflow ? "page" : null)" data-chummer-shortcut="Ctrl+G" aria-keyshortcuts="Control+G">Gear</a>
-                        <a href="@BuildPreviewHref(SeededWorkspaceId, tab: ProfileTabId, useWorkbenchRoute: true)" role="menuitem">Profile</a>
+                </details>
+                <details class="classic-menu-item browser-app-classic-menu-root" data-app-menu-root="edit">
+                    <summary role="button" tabindex="0" aria-expanded="false" data-app-menu-summary="edit">Edit</summary>
+                    <div class="classic-menu-flyout browser-app-classic-menu-flyout" role="menu" data-app-menu-flyout="edit">
+                        <a href="@BuildLabLaneHref" role="menuitem" aria-current="@(IsBuildLabWorkflow ? "page" : null)" data-app-menu-item="build-lab" data-chummer-shortcut="Ctrl+B" aria-keyshortcuts="Control+B">Build Lab</a>
+                        <a href="@GearLaneHref" role="menuitem" aria-current="@(IsGearWorkflow ? "page" : null)" data-app-menu-item="gear" data-chummer-shortcut="Ctrl+G" aria-keyshortcuts="Control+G">Gear</a>
+                        <a href="@BuildPreviewHref(SeededWorkspaceId, tab: ProfileTabId, useWorkbenchRoute: true)" role="menuitem" data-app-menu-item="profile">Profile</a>
                     </div>
-                </div>
-                <div class="classic-menu-item">
-                    <a href="@BuildPreviewHref(SeededWorkspaceId, tab: ProfileTabId, useWorkbenchRoute: true)">View</a>
-                    <div class="classic-menu-flyout" role="menu">
-                        <a href="@BuildPreviewHref(SeededWorkspaceId, tab: ProfileTabId, useWorkbenchRoute: true)" role="menuitem">Profile</a>
-                        <a href="@BuildPreviewHref(SeededWorkspaceId, tab: RulesTabId, useWorkbenchRoute: true)" role="menuitem">Rules</a>
-                        <a href="@BuildPreviewHref(SeededWorkspaceId, tab: ContactsTabId, useWorkbenchRoute: true)" role="menuitem">Contacts</a>
+                </details>
+                <details class="classic-menu-item browser-app-classic-menu-root" data-app-menu-root="view">
+                    <summary role="button" tabindex="0" aria-expanded="false" data-app-menu-summary="view">View</summary>
+                    <div class="classic-menu-flyout browser-app-classic-menu-flyout" role="menu" data-app-menu-flyout="view">
+                        <a href="@BuildPreviewHref(SeededWorkspaceId, tab: ProfileTabId, useWorkbenchRoute: true)" role="menuitem" data-app-menu-item="view-profile">Profile</a>
+                        <a href="@BuildPreviewHref(SeededWorkspaceId, tab: RulesTabId, useWorkbenchRoute: true)" role="menuitem" data-app-menu-item="view-rules">Rules</a>
+                        <a href="@BuildPreviewHref(SeededWorkspaceId, tab: ContactsTabId, useWorkbenchRoute: true)" role="menuitem" data-app-menu-item="view-contacts">Contacts</a>
                     </div>
-                </div>
-                <div class="classic-menu-item">
-                    <a href="@ChummerOnlineRosterHref">Runner</a>
-                    <div class="classic-menu-flyout" role="menu">
-                        <a href="@ChummerOnlineRosterHref" role="menuitem" aria-current="@(IsCharacterRosterCommand ? "page" : null)" data-chummer-shortcut="Ctrl+R" aria-keyshortcuts="Control+R">Character Roster</a>
-                        <a href="@ContinueRecentHref" role="menuitem">Continue runner</a>
+                </details>
+                <details class="classic-menu-item browser-app-classic-menu-root" data-app-menu-root="runner">
+                    <summary role="button" tabindex="0" aria-expanded="false" data-app-menu-summary="runner">Runner</summary>
+                    <div class="classic-menu-flyout browser-app-classic-menu-flyout" role="menu" data-app-menu-flyout="runner">
+                        <a href="@ChummerOnlineRosterHref" role="menuitem" aria-current="@(IsCharacterRosterCommand ? "page" : null)" data-app-menu-item="character-roster" data-chummer-shortcut="Ctrl+R" aria-keyshortcuts="Control+R">Character Roster</a>
+                        <a href="@ContinueRecentHref" role="menuitem" data-app-menu-item="continue-runner">Continue runner</a>
                         <a href="@BuildPreviewHref(command: OpenCharacterCommand, useWorkbenchRoute: true)"
                            role="menuitem"
+                           data-app-menu-item="import-runner-xml"
                            data-browser-shell-command="@OpenCharacterCommand"
                            @onclick="() => OpenShellCommandFromSurfaceAsync(OpenCharacterCommand)"
                            @onclick:preventDefault="true">Import runner XML</a>
                     </div>
-                </div>
-                <div class="classic-menu-item">
-                    <a href="@GlobalSettingsHref">Tools</a>
-                    <div class="classic-menu-flyout" role="menu">
-                        <a href="@GlobalSettingsHref" role="menuitem" data-chummer-shortcut="Ctrl+," aria-keyshortcuts="Control+,">Options</a>
-                        <a href="@StatusHref" role="menuitem">Status</a>
-                        <a href="@DownloadsHref" role="menuitem">Desktop installers</a>
+                </details>
+                <details class="classic-menu-item browser-app-classic-menu-root" data-app-menu-root="tools">
+                    <summary role="button" tabindex="0" aria-expanded="false" data-app-menu-summary="tools">Tools</summary>
+                    <div class="classic-menu-flyout browser-app-classic-menu-flyout" role="menu" data-app-menu-flyout="tools">
+                        <a href="@GlobalSettingsHref" role="menuitem" data-app-menu-item="options" data-chummer-shortcut="Ctrl+," aria-keyshortcuts="Control+,">Options</a>
+                        <a href="@StatusHref" role="menuitem" data-app-menu-item="status">Status</a>
+                        <a href="@DownloadsHref" role="menuitem" data-app-menu-item="desktop-installers">Desktop installers</a>
                     </div>
-                </div>
-                <div class="classic-menu-item">
-                    <a href="@HelpHref">Help</a>
-                    <div class="classic-menu-flyout" role="menu">
-                        <a href="@HelpHref" role="menuitem" data-chummer-shortcut="F1" aria-keyshortcuts="F1">Help</a>
-                        <a href="@DocsHref" role="menuitem">Docs</a>
-                        <a href="@ContactHref" role="menuitem">Support</a>
+                </details>
+                <details class="classic-menu-item browser-app-classic-menu-root" data-app-menu-root="help">
+                    <summary role="button" tabindex="0" aria-expanded="false" data-app-menu-summary="help">Help</summary>
+                    <div class="classic-menu-flyout browser-app-classic-menu-flyout" role="menu" data-app-menu-flyout="help">
+                        <a href="@HelpHref" role="menuitem" data-app-menu-item="help" data-chummer-shortcut="F1" aria-keyshortcuts="F1">Help</a>
+                        <a href="@DocsHref" role="menuitem" data-app-menu-item="docs">Docs</a>
+                        <a href="@ContactHref" role="menuitem" data-app-menu-item="support">Support</a>
                     </div>
-                </div>
+                </details>
             </nav>
 
             <nav class="classic-chummer-toolstrip" aria-label="Classic Chummer toolstrip">
                 <div class="classic-toolstrip-group" aria-label="File actions">
                     <a class="classic-tool-icon"
-                       href="@BuildPreviewHref(command: NewCharacterCommand, useWorkbenchRoute: true)"
+                       href="@WorkbenchNewRunnerHref"
                        data-browser-shell-command="@NewCharacterCommand"
                        data-classic-toolstrip-action="new-runner"
                        data-chummer-shortcut="Ctrl+N"
@@ -497,7 +688,7 @@
             </div>
             <nav class="browser-workbench-task-dock-actions" aria-label="@TaskShortcutAriaLabel">
                 <a href="@ChummerOnlineRosterHref" data-workbench-dock-action="character-roster">Character Roster</a>
-                <a href="@BuildPreviewHref(command: NewCharacterCommand, useWorkbenchRoute: true)"
+                <a href="@WorkbenchNewRunnerHref"
                    data-browser-shell-command="@NewCharacterCommand"
                    data-workbench-dock-action="start-new"
                    @onclick="() => OpenShellCommandFromSurfaceAsync(NewCharacterCommand)"
@@ -592,7 +783,7 @@
             <details open class="browser-workbench-command-panel" data-workbench-command-palette-panel="primary">
                 <summary>Quick command map</summary>
                 <div class="browser-workbench-command-list" role="list">
-                    <a href="@BuildPreviewHref(command: NewCharacterCommand, useWorkbenchRoute: true)"
+                    <a href="@WorkbenchNewRunnerHref"
                        data-browser-shell-command="@NewCharacterCommand"
                        role="listitem"
                        aria-keyshortcuts="Control+N"
@@ -2729,25 +2920,25 @@
             <span class="browser-preview-status-label">Browser check</span>
             <strong>Seed Build Lab with a real SR5 runner</strong>
             <p>Loads the published browser shell with the `BLUE` fixture and lands on the live `Create` tab.</p>
-            <a href="@BuildPreviewHref(SeededWorkspaceId, BuildTabId)">Open Build Lab</a>
+            <a href="@BuildPreviewHref(fixture: SeededWorkspaceId, tab: BuildTabId)">Open Build Lab</a>
         </article>
         <article class="browser-preview-status-card" data-preview-proof-card="rules">
             <span class="browser-preview-status-label">Rules check</span>
             <strong>Open the same seeded runner on Rules</strong>
             <p>Uses the same deterministic runner import but pivots to the rules-facing tab for browser continuity checks.</p>
-            <a href="@BuildPreviewHref(SeededWorkspaceId, RulesTabId)">Open Rules</a>
+            <a href="@BuildPreviewHref(fixture: SeededWorkspaceId, tab: RulesTabId)">Open Rules</a>
         </article>
         <article class="browser-preview-status-card" data-preview-proof-card="technomancer">
             <span class="browser-preview-status-label">Advanced check</span>
             <strong>Open Complex Forms in the browser</strong>
             <p>Drives the seeded runner into the `Technomancer` lane with live section rendering and add actions.</p>
-            <a href="@BuildPreviewHref(SeededWorkspaceId, MatrixTabId)">Open Complex Forms</a>
+            <a href="@BuildPreviewHref(fixture: SeededWorkspaceId, tab: MatrixTabId)">Open Complex Forms</a>
         </article>
         <article class="browser-preview-status-card" data-preview-proof-card="contacts">
             <span class="browser-preview-status-label">Continuity check</span>
             <strong>Keep runner context on Contacts</strong>
             <p>Moves a seeded browser runner past startup into a living continuation tab.</p>
-            <a href="@BuildPreviewHref(SeededWorkspaceId, ContactsTabId)">Open Contacts</a>
+            <a href="@BuildPreviewHref(fixture: SeededWorkspaceId, tab: ContactsTabId)">Open Contacts</a>
         </article>
         <article class="browser-preview-status-card" data-preview-proof-card="new-character">
             <span class="browser-preview-status-label">Startup check</span>
@@ -2880,7 +3071,19 @@
     private bool IsAppRoute => IsRouteSegment(AppRouteSegment) || IsRouteSegment(OnlineRouteSegment);
     private bool IsOnlineAliasRoute => IsRouteSegment(OnlineRouteSegment);
     private bool IsWorkbenchRoute => IsRouteSegment(WorkbenchRouteSegment);
-    private bool IsCharacterRosterCommand => string.Equals(Command, CharacterRosterCommand, StringComparison.OrdinalIgnoreCase);
+    private bool HasNonCommandRoutePayload => !string.IsNullOrWhiteSpace(Fixture)
+        || !string.IsNullOrWhiteSpace(Workspace)
+        || !string.IsNullOrWhiteSpace(Runner)
+        || !string.IsNullOrWhiteSpace(Tab)
+        || !string.IsNullOrWhiteSpace(Control)
+        || !string.IsNullOrWhiteSpace(DialogAction);
+    private bool IsOriginDossierCommand => string.Equals(Command, NewCharacterOriginCommand, StringComparison.OrdinalIgnoreCase);
+    private bool IsCharacterRosterCommand => IsCommandAlias(Command, CharacterRosterCommandAlias);
+    private bool IsOpenDossierCommand => string.Equals(Command, OpenCharacterCommand, StringComparison.OrdinalIgnoreCase);
+    private bool IsMasterIndexCommand => string.Equals(Command, MasterIndexCommand, StringComparison.OrdinalIgnoreCase);
+    private bool IsGlobalSettingsCommand => string.Equals(Command, GlobalSettingsCommand, StringComparison.OrdinalIgnoreCase);
+    private bool ShouldRenderAppStartupShell => IsAppRoute
+        && (HasNonCommandRoutePayload || (!string.IsNullOrWhiteSpace(Command) && !IsCharacterRosterCommand));
     private bool IsSaveWorkflow => string.Equals(Command, SaveCharacterCommand, StringComparison.OrdinalIgnoreCase)
         || string.Equals(Command, SaveCharacterAsCommand, StringComparison.OrdinalIgnoreCase);
     private bool IsPrintWorkflow => string.Equals(Command, PrintCharacterCommand, StringComparison.OrdinalIgnoreCase)
@@ -2888,15 +3091,25 @@
     private bool IsExportWorkflow => string.Equals(Command, ExportCharacterCommand, StringComparison.OrdinalIgnoreCase)
         || string.Equals(Command, OpenForExportCommand, StringComparison.OrdinalIgnoreCase);
     private bool IsProfileWorkflow => string.Equals(Tab, ProfileTabId, StringComparison.OrdinalIgnoreCase);
-    private bool IsBuildLabWorkflow => string.Equals(Tab, BuildTabId, StringComparison.OrdinalIgnoreCase);
+    private bool IsBuildLabWorkflow => string.Equals(Tab, BuildTabId, StringComparison.OrdinalIgnoreCase)
+        || string.Equals(Command, NewCharacterCommand, StringComparison.OrdinalIgnoreCase);
+    private bool IsRulesWorkflow => string.Equals(Tab, RulesTabId, StringComparison.OrdinalIgnoreCase);
     private bool IsGearWorkflow => string.Equals(Tab, GearTabId, StringComparison.OrdinalIgnoreCase);
     private bool IsCombatWorkflow => string.Equals(Tab, CombatTabId, StringComparison.OrdinalIgnoreCase);
     private bool IsMagicWorkflow => string.Equals(Tab, MagicTabId, StringComparison.OrdinalIgnoreCase);
     private bool IsMatrixWorkflow => string.Equals(Tab, MatrixTabId, StringComparison.OrdinalIgnoreCase);
     private bool IsContactsWorkflow => string.Equals(Tab, ContactsTabId, StringComparison.OrdinalIgnoreCase);
     private bool IsCareerWorkflow => string.Equals(Tab, CareerTabId, StringComparison.OrdinalIgnoreCase);
-    private string ActiveWorkflowStatus => IsCharacterRosterCommand
+    private string ActiveWorkflowStatus => IsOriginDossierCommand
+        ? "Origin Dossier"
+        : IsCharacterRosterCommand
         ? "Character Roster"
+        : IsOpenDossierCommand
+        ? "Open Dossier"
+        : IsMasterIndexCommand
+        ? "Master Index"
+        : IsGlobalSettingsCommand
+        ? "Global Settings"
         : IsSaveWorkflow
             ? "Save"
             : IsPrintWorkflow
@@ -2905,6 +3118,8 @@
                     ? "Export"
         : IsProfileWorkflow
             ? "Profile"
+        : IsRulesWorkflow
+            ? "Rules"
         : IsBuildLabWorkflow
             ? "Build Lab"
             : IsGearWorkflow
@@ -2920,8 +3135,16 @@
                                 : IsCareerWorkflow
                                     ? "Career"
                                     : "Dossier";
-    private string ActiveWorkflowDataKey => IsCharacterRosterCommand
+    private string ActiveWorkflowDataKey => IsOriginDossierCommand
+        ? "origin-dossier"
+        : IsCharacterRosterCommand
         ? "character-roster"
+        : IsOpenDossierCommand
+        ? "open-dossier"
+        : IsMasterIndexCommand
+        ? "master-index"
+        : IsGlobalSettingsCommand
+        ? "global-settings"
         : IsSaveWorkflow
             ? "save"
             : IsPrintWorkflow
@@ -2930,6 +3153,8 @@
                     ? "export"
         : IsProfileWorkflow
             ? "profile"
+            : IsRulesWorkflow
+                ? "rules"
             : IsBuildLabWorkflow
                 ? "build-lab"
                 : IsGearWorkflow
@@ -2967,7 +3192,7 @@
     private string WorkspaceDataKey => NormalizeShellDataToken(PrimaryRecentWorkspace?.WorkspaceId ?? Workspace);
     private string ActiveRunnerDataKey => NormalizeShellDataToken(PrimaryRecentWorkspace?.ShortLabel);
     private string SelectedRosterNodeDataKey => IsCharacterRosterCommand ? "runner-active" : "none";
-    private string DossierStateDataKey => "unsaved";
+    private string DossierStateDataKey => IsOriginDossierCommand ? "origin-draft" : "unsaved";
     private string DossierStorageDataKey => "local";
     private string RulesetDataKey => "sr5";
     private string ValidationStateDataKey => "review-required";
@@ -3043,13 +3268,36 @@
         return string.IsNullOrWhiteSpace(normalized) ? "none" : normalized;
     }
 
+    private static bool IsCommandAlias(string? command, string canonicalCommand)
+    {
+        if (string.IsNullOrWhiteSpace(command))
+        {
+            return false;
+        }
+
+        return string.Equals(
+            NormalizeCommandForMenu(command),
+            canonicalCommand,
+            StringComparison.OrdinalIgnoreCase);
+    }
+
+    private static string NormalizeCommandForMenu(string? command)
+    {
+        if (string.IsNullOrWhiteSpace(command))
+        {
+            return string.Empty;
+        }
+
+        return new string(command.Trim().ToLowerInvariant().Select(character => char.IsLetterOrDigit(character) ? character : '-').ToArray());
+    }
+
     private const int ShellDataTokenMaxLength = 80;
     private bool IsRouteSegment(string routeSegment)
     {
         string path = new Uri(Navigation.Uri).AbsolutePath.TrimEnd('/');
         return path.EndsWith($"/{routeSegment}", StringComparison.OrdinalIgnoreCase);
     }
-    private string PageTitleText => IsAppRoute ? $"Chummer Online - {ActiveWorkflowStatus}" : IsWorkbenchRoute ? "Chummer Online Compatibility Route" : "Chummer Online Preview Tools";
+    private string PageTitleText => IsAppRoute ? $"Chummer Online - {AppRouteTitle}" : IsWorkbenchRoute ? "Chummer Online Compatibility Route" : "Chummer Online Preview Tools";
     private string RouteNavigationLabel => IsAppRoute ? "Chummer Online navigation" : IsWorkbenchRoute ? "Compatibility route navigation" : "Preview tools navigation";
     private string RouteStatusLabel => IsAppRoute ? "Chummer Online status" : IsWorkbenchRoute ? "Compatibility route status" : "Preview tools status";
     private string RouteGuidanceLabel => IsAppRoute ? "Chummer Online route guidance" : IsWorkbenchRoute ? "Compatibility route guidance" : "Preview tools guidance";
@@ -3108,25 +3356,67 @@
     private string OriginDossierSummary => IsAppRoute
         ? "Deep-links Chummer Online into the same origin-dossier wizard used by the shared startup flow."
         : "Deep-links Chummer Online into the same origin-dossier wizard used by the shared startup flow.";
+    private string AppRouteContextLabel => !string.IsNullOrWhiteSpace(Command) ? StartupCommandDisplayLabel : ActiveWorkflowStatus;
+    private string AppRouteAriaLabel => ShouldRenderAppStartupShell ? AppRouteContextLabel : "Character roster";
+    private string AppRouteTitle => ShouldRenderAppStartupShell ? AppRouteContextLabel : "Character Roster";
+    private string AppRouteSummary => ShouldRenderAppStartupShell
+        ? AppStartupSummary
+        : "Your runners will appear here. Start one, import one, or open an example.";
+    private string AppStartupSummary => IsBuildLabWorkflow
+        ? "Open the shared Build Lab from Chummer Online so creation and continuation stay inside the app."
+        : IsRulesWorkflow
+            ? "Open the shared rules-facing lane from Chummer Online so source and rules context stay on the app route."
+        : IsOriginDossierCommand
+            ? "Start with the story-first dossier path, then move into standard character creation when the origin is ready."
+            : IsOpenDossierCommand
+                ? "Open the shared import flow from Chummer Online instead of silently falling back to the roster."
+                : IsMasterIndexCommand
+                    ? "Open the shared rules and source reference index from Chummer Online without falling back to the roster."
+                    : IsGlobalSettingsCommand
+                        ? "Open the shared global settings workflow from Chummer Online without falling back to the roster."
+                : IsSaveWorkflow
+                    ? "Run the shared runner-save workflow while keeping browser and desktop shell semantics aligned."
+                    : IsPrintWorkflow
+                        ? "Open the shared print workflow while keeping browser and desktop shell semantics aligned."
+                        : IsExportWorkflow
+                            ? "Open the shared export workflow while keeping browser and desktop shell semantics aligned."
+                            : "Open the requested runner context directly in the shared Chummer Online shell.";
+    private string AppRouteFrameLabel => $"{AppRouteTitle} shared shell";
+    private string AppRouteFrameTitle => IsBuildLabWorkflow
+        ? "Build Lab shell"
+        : IsRulesWorkflow
+            ? "Rules shell"
+        : IsOriginDossierCommand
+            ? "Origin Dossier shell"
+            : IsOpenDossierCommand
+                ? "Open Dossier shell"
+                : IsSaveWorkflow
+                    ? "Save Runner shell"
+                    : IsPrintWorkflow
+                        ? "Print shell"
+                        : IsExportWorkflow
+                            ? "Export shell"
+                            : $"{ActiveWorkflowStatus} shell";
     private string RouteOpenTitle => IsAppRoute
         ? "Open Chummer Online"
         : "Open Chummer Online";
     private string StartupCommandLabel => string.IsNullOrWhiteSpace(Command)
         ? "none"
         : Command;
-    private string StartupCommandDisplayLabel => (Command ?? string.Empty).Trim().ToLowerInvariant() switch
+    private string StartupCommandDisplayLabel => NormalizeCommandForMenu(Command) switch
     {
-        NewCharacterCommand => "New runner",
-        NewCharacterOriginCommand => "Origin Dossier",
-        CharacterRosterCommand => "Character Roster",
-        MasterIndexCommand => "Master Index",
-        OpenCharacterCommand => "Open Dossier",
-        OpenForPrintingCommand => "Open for Printing",
-        OpenForExportCommand => "Open for Export",
-        SaveCharacterCommand => "Save Runner",
-        SaveCharacterAsCommand => "Save Runner As",
-        ExportCharacterCommand => "Export Dossier",
-        PrintCharacterCommand => "Print Dossier",
+        "new-character" => "New runner",
+        "new-character-origin" => "Origin Dossier",
+        CharacterRosterCommandAlias => "Character Roster",
+        "master-index" => "Master Index",
+        "global-settings" => "Global Settings",
+        "open-character" => "Open Dossier",
+        "open-for-printing" => "Open for Printing",
+        "open-for-export" => "Open for Export",
+        "save-character" => "Save Runner",
+        "save-character-as" => "Save Runner As",
+        "export-character" => "Export Dossier",
+        "print-character" => "Print Dossier",
         "" => "No startup command selected",
         _ => "Startup command"
     };
@@ -3135,14 +3425,33 @@
         ? BuildPreviewHref(command: CharacterRosterCommand, useWorkbenchRoute: true)
         : ChummerOnlineRosterAppHref;
     private static string ChummerOnlineRosterAppHref => $"{AppRouteQueryPrefix}{CharacterRosterCommand}";
-    private string RouteOpenSummary => IsCharacterRosterCommand
+    private string RouteOpenSummary => IsOriginDossierCommand
+        ? "Chummer Online is opening directly into Origin Dossier with the story-first path ready."
+        : IsCharacterRosterCommand
         ? "Chummer Online is opening directly into the Character Roster so dossiers can be grouped, moved, resumed, or organized without stopping at a generic landing shell."
+        : IsRulesWorkflow
+            ? "Chummer Online is opening directly into the rules lane so source and rules context stay on the app route."
+        : IsBuildLabWorkflow
+            ? "Chummer Online is opening directly into Build Lab so new-runner and live continuation links stay on the app route."
+            : IsOpenDossierCommand
+                ? "Chummer Online is opening directly into the shared import workflow so local dossiers can be selected from the app route."
+                : IsMasterIndexCommand
+                    ? "Chummer Online is opening directly into the shared Master Index so rules and source references stay on the app route."
+                    : IsGlobalSettingsCommand
+                        ? "Chummer Online is opening directly into shared global settings so preferences can be adjusted from the app route."
+                : IsSaveWorkflow
+                    ? "Chummer Online is opening directly into the shared runner-save continuation from the app route."
+                    : IsPrintWorkflow
+                        ? "Chummer Online is opening directly into the print continuation path from the app route."
+                        : IsExportWorkflow
+                            ? "Chummer Online is opening directly into the export continuation path from the app route."
         : "Use the shell below to check navigation, startup posture, and active browser workflow routes.";
     private const string NewCharacterCommand = "new_character";
     private const string OpenCharacterCommand = "open_character";
     private const string OpenRecentCommand = "open_recent";
     private const string NewCharacterOriginCommand = "new_character_origin";
     private const string CharacterRosterCommand = "character_roster";
+    private const string CharacterRosterCommandAlias = "character-roster";
     private const string PinCharacterCommand = "pin_character";
     private const string CloneCharacterCommand = "clone_character";
     private const string ArchiveCharacterCommand = "archive_character";
@@ -3443,6 +3752,26 @@
     private string ContinueRecentDescription => PrimaryRecentWorkspace is null
         ? "Open a live seeded continuation tab so Chummer Online can behave like an already-opened desktop session."
         : "Open the most recent restored runner directly on its contacts lane so browser continuity follows shared session state instead of a seeded-only demo.";
+    private string WorkbenchNewRunnerHref
+    {
+        get
+        {
+            if (!IsWorkbenchRoute)
+            {
+                return BuildPreviewHref(command: NewCharacterCommand, useWorkbenchRoute: true);
+            }
+
+            string? workspaceId = !string.IsNullOrWhiteSpace(Workspace) ? Workspace : null;
+            string? tabId = workspaceId is not null || IsCommandAlias(Command, "new-character")
+                ? BuildTabId
+                : null;
+            return BuildPreviewHref(
+                workspace: workspaceId,
+                tab: tabId,
+                command: NewCharacterCommand,
+                useWorkbenchRoute: true);
+        }
+    }
     private string BuildLabLaneHref => BuildWorkbenchLaneHref(BuildTabId);
     private string BuildLabLaneLabel => PrimaryRecentWorkspace is null
         ? "Open Seeded Build Lab"
@@ -3502,17 +3831,53 @@
     protected override void OnInitialized()
     {
         Presenter.StateChanged += OnPresenterStateChanged;
+        Navigation.LocationChanged += OnLocationChanged;
+        SyncRouteStateFromNavigation();
+    }
+
+    protected override void OnParametersSet()
+    {
+        SyncRouteStateFromNavigation();
     }
 
     public void Dispose()
     {
         Presenter.StateChanged -= OnPresenterStateChanged;
+        Navigation.LocationChanged -= OnLocationChanged;
     }
 
     private void OnPresenterStateChanged(object? sender, EventArgs e)
     {
         _ = InvokeAsync(StateHasChanged);
     }
+
+    private void OnLocationChanged(object? sender, LocationChangedEventArgs e)
+    {
+        SyncRouteStateFromNavigation();
+        _ = InvokeAsync(StateHasChanged);
+    }
+
+    private void SyncRouteStateFromNavigation()
+    {
+        if (!Uri.TryCreate(Navigation.Uri, UriKind.Absolute, out Uri? uri))
+        {
+            return;
+        }
+
+        var query = QueryHelpers.ParseQuery(uri.Query);
+        Fixture = ReadFirstQueryValue(query, FixtureQueryName);
+        Workspace = ReadFirstQueryValue(query, WorkspaceQueryName);
+        Runner = ReadFirstQueryValue(query, LegacyRunnerQueryName);
+        Tab = ReadFirstQueryValue(query, TabQueryName);
+        Command = ReadFirstQueryValue(query, CommandQueryName);
+        Control = ReadFirstQueryValue(query, ControlQueryName);
+        DialogAction = ReadFirstQueryValue(query, DialogActionQueryName);
+    }
+
+    private static string? ReadFirstQueryValue(IReadOnlyDictionary<string, Microsoft.Extensions.Primitives.StringValues> query, string key)
+        => query.TryGetValue(key, out Microsoft.Extensions.Primitives.StringValues values)
+            ? values.FirstOrDefault()
+            : null;
 
     private async Task OpenShellCommandFromSurfaceAsync(string commandId)
     {

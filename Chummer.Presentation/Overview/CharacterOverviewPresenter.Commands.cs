@@ -8,6 +8,8 @@ public sealed partial class CharacterOverviewPresenter
 {
     public async Task ExecuteCommandAsync(string commandId, CancellationToken ct)
     {
+        using PresenterOperationLease operation = EnterPresenterOperation(ct);
+        ct = operation.Token;
         if (string.IsNullOrWhiteSpace(commandId))
         {
             Publish(State with { Error = "Command id is required." });
@@ -43,6 +45,8 @@ public sealed partial class CharacterOverviewPresenter
 
     public async Task ExecuteWorkspaceActionAsync(WorkspaceSurfaceActionDefinition action, CancellationToken ct)
     {
+        using PresenterOperationLease operation = EnterPresenterOperation(ct);
+        ct = operation.Token;
         CharacterWorkspaceId? currentWorkspace = ResolveCurrentWorkspaceId();
         if (action is null)
         {
@@ -98,6 +102,8 @@ public sealed partial class CharacterOverviewPresenter
 
     public async Task SelectTabAsync(string tabId, CancellationToken ct)
     {
+        using PresenterOperationLease operation = EnterPresenterOperation(ct);
+        ct = operation.Token;
         CharacterWorkspaceId? currentWorkspace = ResolveCurrentWorkspaceId();
         if (string.IsNullOrWhiteSpace(tabId))
         {
@@ -112,6 +118,10 @@ public sealed partial class CharacterOverviewPresenter
         }
 
         await EnsureNavigationContextAsync(ct);
+        if (!IsWorkspaceContextCurrent(currentWorkspace))
+        {
+            return;
+        }
 
         IReadOnlyList<NavigationTabDefinition> navigationTabs = State.NavigationTabs ?? [];
         string? rulesetId = ResolveWorkspaceRulesetId(currentWorkspace.Value);

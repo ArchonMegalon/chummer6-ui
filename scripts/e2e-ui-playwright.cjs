@@ -979,8 +979,8 @@ async function createSr4BpTrollDeckerAndExerciseAddWorkflows(page) {
       resultMarker: 'Improved Reflexes'
     },
     {
-      tabId: 'tab-adept',
-      actionId: 'tab-adept.complexforms',
+      tabId: 'tab-technomancer',
+      actionId: 'tab-technomancer.complexforms',
       quickActionId: 'complex_form_add',
       dialogTitle: 'add complex form',
       dialogMarkers: ['Cleaner', 'Target'],
@@ -988,8 +988,8 @@ async function createSr4BpTrollDeckerAndExerciseAddWorkflows(page) {
       resultMarker: 'Cleaner'
     },
     {
-      tabId: 'tab-adept',
-      actionId: 'tab-adept.aiprograms',
+      tabId: 'tab-technomancer',
+      actionId: 'tab-technomancer.aiprograms',
       quickActionId: 'matrix_program_add',
       dialogTitle: 'add program',
       dialogMarkers: ['Armor', 'Data Trails'],

@@ -14,13 +14,66 @@ VERIFY_URL="${CHUMMER_PORTAL_DOWNLOADS_VERIFY_URL:-$PUBLIC_BASE_URL/downloads/RE
 TOKEN="${CHUMMER_RELEASE_UPLOAD_TOKEN:-}"
 TOKEN_FILE="${CHUMMER_RELEASE_UPLOAD_TOKEN_FILE:-${CHUMMER_RELEASE_UPLOAD_TOKEN_PATH:-}}"
 CHUMMER_RELEASE_UPLOAD_NON_INTERACTIVE="${CHUMMER_RELEASE_UPLOAD_NON_INTERACTIVE:-0}"
-ALLOW_DIRECT_FALLBACK="${CHUMMER_RELEASE_UPLOAD_ALLOW_DIRECT_FALLBACK:-1}"
+ALLOW_DIRECT_FALLBACK="${CHUMMER_RELEASE_UPLOAD_ALLOW_DIRECT_FALLBACK:-0}"
 DRY_RUN="${CHUMMER_RELEASE_UPLOAD_DRY_RUN:-0}"
 VERIFY_MANIFEST="${CHUMMER_RELEASE_UPLOAD_VERIFY_MANIFEST:-1}"
 VERIFY_ROUTES="${CHUMMER_RELEASE_UPLOAD_VERIFY_ROUTES:-1}"
 VERIFY_WINDOWS_PAYLOADS="${CHUMMER_RELEASE_UPLOAD_VERIFY_WINDOWS_PAYLOADS:-1}"
 CHUNK_BYTES="${CHUMMER_RELEASE_UPLOAD_CHUNK_BYTES:-52428800}"
 DIRECT_LIMIT_BYTES="${CHUMMER_RELEASE_UPLOAD_DIRECT_LIMIT_BYTES:-$CHUNK_BYTES}"
+
+to_bool() {
+  local value
+  value="$(echo "${1:-}" | tr '[:upper:]' '[:lower:]')"
+  [[ "$value" == "1" || "$value" == "true" || "$value" == "yes" || "$value" == "on" ]]
+}
+
+array_count() {
+  local array_name="${1:-}"
+  [[ -n "$array_name" ]] || {
+    printf '0\n'
+    return 0
+  }
+
+  local restore_nounset=0
+  case "$-" in
+    *u*)
+      restore_nounset=1
+      set +u
+      ;;
+  esac
+
+  eval "set -- \"\${${array_name}[@]}\""
+  local count="$#"
+
+  if (( restore_nounset == 1 )); then
+    set -u
+  fi
+
+  printf '%s\n' "$count"
+}
+
+array_values_nul() {
+  local array_name="${1:-}"
+  [[ -n "$array_name" ]] || return 0
+
+  local restore_nounset=0
+  case "$-" in
+    *u*)
+      restore_nounset=1
+      set +u
+      ;;
+  esac
+
+  eval "printf '%s\\0' \"\${${array_name}[@]}\""
+  local status="$?"
+
+  if (( restore_nounset == 1 )); then
+    set -u
+  fi
+
+  return "$status"
+}
 
 if [[ ! -d "$BUNDLE_DIR" ]]; then
   echo "Bundle directory not found: $BUNDLE_DIR" >&2
@@ -62,16 +115,7 @@ while IFS= read -r installer_path; do
   [[ -n "$installer_path" ]] || continue
   windows_payload_gate_args+=(--installer "$installer_path")
 done < <(find "$BUNDLE_DIR/files" -maxdepth 1 -type f -name 'chummer-*-win-*-installer.exe' | sort)
-if [[ "${#windows_payload_gate_args[@]}" -eq 8 ]]; then
-  windows_payload_gate_args+=(--allow-empty)
-fi
 python3 "$SCRIPT_DIR/verify-windows-installer-payloads.py" "${windows_payload_gate_args[@]}"
-
-to_bool() {
-  local value
-  value="$(echo "${1:-}" | tr '[:upper:]' '[:lower:]')"
-  [[ "$value" == "1" || "$value" == "true" || "$value" == "yes" || "$value" == "on" ]]
-}
 
 prompt_for_upload_token() {
   if [[ ! -t 0 ]]; then
@@ -307,12 +351,14 @@ while IFS= read -r file_path; do
   upload_files+=("$file_path")
 done < <(collect_upload_files "$BUNDLE_DIR")
 
-if (( ${#upload_files[@]} == 0 )); then
+upload_file_count="$(array_count upload_files)"
+
+if (( upload_file_count == 0 )); then
   echo "Bundle has no uploadable files: $BUNDLE_DIR" >&2
   exit 1
 fi
 
-echo "Publishing $((${#upload_files[@]})) bundle files from $BUNDLE_DIR"
+echo "Publishing ${upload_file_count} bundle files from $BUNDLE_DIR"
 
 session_json="$tmp_root/session.json"
 response_json="$tmp_root/response.json"
@@ -342,7 +388,7 @@ else
   chunks_url="$(join_url "$SESSIONS_URL" "$chunks_url")"
   complete_url="$(join_url "$SESSIONS_URL" "$complete_url")"
 
-  for file_path in "${upload_files[@]}"; do
+  while IFS= read -r -d '' file_path; do
     relative_path="${file_path#$BUNDLE_DIR/}"
     file_size="$(file_size_bytes "$file_path")"
     if (( file_size <= DIRECT_LIMIT_BYTES )); then
@@ -350,7 +396,7 @@ else
     else
       upload_file_chunked "$file_path" "$relative_path" "$chunks_url" "${request_common[@]}"
     fi
-  done
+  done < <(array_values_nul upload_files)
 
   request_json "$response_json" "complete upload session" "$complete_url" "${request_common[@]}" -X POST
 fi
@@ -367,7 +413,7 @@ fi
 if to_bool "$VERIFY_WINDOWS_PAYLOADS"; then
   python3 "$SCRIPT_DIR/verify-live-windows-bootstrap-payloads.py" \
     --manifest-url "$VERIFY_URL" \
-    --allow-empty
+    --expected-manifest "$CANONICAL_MANIFEST_PATH"
 fi
 
 if to_bool "$VERIFY_ROUTES"; then

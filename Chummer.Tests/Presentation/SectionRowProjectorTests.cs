@@ -64,4 +64,48 @@ public class SectionRowProjectorTests
         IReadOnlyList<SectionRowState> rows = SectionRowProjector.BuildRows(node: null);
         Assert.IsEmpty(rows);
     }
+
+    [TestMethod]
+    public void BuildRows_projects_spell_defense_metrics_into_readable_row_summaries()
+    {
+        JsonObject payload = new()
+        {
+            ["metrics"] = new JsonArray
+            {
+                new JsonObject
+                {
+                    ["label"] = "Indirect Dodge",
+                    ["baseValue"] = 8,
+                    ["counterspellingDice"] = 4,
+                    ["totalValue"] = 12,
+                    ["formula"] = "REA + INT"
+                },
+                new JsonObject
+                {
+                    ["label"] = "Detection",
+                    ["baseValue"] = 6,
+                    ["counterspellingDice"] = 0,
+                    ["totalValue"] = 6,
+                    ["formula"] = "INT + LOG + WIL"
+                }
+            }
+        };
+
+        IReadOnlyList<SectionRowState> rows = SectionRowProjector.BuildRows("spelldefense", payload);
+
+        Assert.AreEqual(2, rows.Count);
+        SectionRowState indirectDodge = rows.Single(row => row.Path == "metrics[0]");
+        StringAssert.Contains(indirectDodge.Value, "Indirect Dodge");
+        StringAssert.Contains(indirectDodge.Value, "Base 8");
+        StringAssert.Contains(indirectDodge.Value, "With Counter 12");
+        StringAssert.Contains(indirectDodge.Value, "REA");
+        StringAssert.Contains(indirectDodge.Value, "INT");
+
+        SectionRowState detection = rows.Single(row => row.Path == "metrics[1]");
+        StringAssert.Contains(detection.Value, "Detection");
+        StringAssert.Contains(detection.Value, "Base 6");
+        StringAssert.Contains(detection.Value, "INT");
+        StringAssert.Contains(detection.Value, "LOG");
+        StringAssert.Contains(detection.Value, "WIL");
+    }
 }

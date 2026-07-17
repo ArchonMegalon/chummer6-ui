@@ -10,6 +10,7 @@
     <EnableMSTestRunner>true</EnableMSTestRunner>
     <TestingPlatformDotnetTestSupport>true</TestingPlatformDotnetTestSupport>
     <CopyLocalLockFileAssemblies>true</CopyLocalLockFileAssemblies>
+    <GenerateRuntimeConfigurationFiles>true</GenerateRuntimeConfigurationFiles>
   </PropertyGroup>
   <ItemGroup>
     <AssemblyAttribute Include="Microsoft.VisualStudio.TestTools.UnitTesting.DoNotParallelizeAttribute" />
@@ -28,12 +29,32 @@
     <ProjectReference Include="..\..\Chummer.Presentation\Chummer.Presentation.csproj"
                       ReferenceOutputAssembly="true"
                       Private="true" />
+    <ProjectReference Include="..\..\..\chummer-core-engine\Chummer.Rulesets.Hosting\Chummer.Rulesets.Hosting.csproj"
+                      Condition="Exists('..\..\..\chummer-core-engine\Chummer.Rulesets.Hosting\Chummer.Rulesets.Hosting.csproj')" />
+    <ProjectReference Include="..\..\..\chummer-core-engine\Chummer.Rulesets.Sr5\Chummer.Rulesets.Sr5.csproj"
+                      Condition="Exists('..\..\..\chummer-core-engine\Chummer.Rulesets.Sr5\Chummer.Rulesets.Sr5.csproj')" />
+    <ProjectReference Include="..\..\..\chummer-core-engine\Chummer.Rulesets.Sr6\Chummer.Rulesets.Sr6.csproj"
+                      Condition="Exists('..\..\..\chummer-core-engine\Chummer.Rulesets.Sr6\Chummer.Rulesets.Sr6.csproj')" />
   </ItemGroup>
   <ItemGroup>
     <Compile Include="AccessibilitySignoffSmokeTests.cs" />
     <Compile Include="CharacterRosterStructureParityGuardTests.cs" />
+    <Compile Include="RulesetUiDirectiveCatalogTests.cs" />
   </ItemGroup>
   <ItemGroup>
     <PackageReference Include="MSTest" Version="4.0.2" />
   </ItemGroup>
+  <Target Name="CopyPresentationRuntimeClosure" AfterTargets="Build">
+    <PropertyGroup>
+      <_PresentationRuntimeDir>$(MSBuildProjectDirectory)\..\..\Chummer.Presentation\bin\$(Configuration)\$(TargetFramework)\</_PresentationRuntimeDir>
+    </PropertyGroup>
+    <ItemGroup Condition="Exists('$(_PresentationRuntimeDir)')">
+      <_PresentationRuntimeFiles Include="$(_PresentationRuntimeDir)**\*" />
+    </ItemGroup>
+    <Copy
+      SourceFiles="@(_PresentationRuntimeFiles)"
+      DestinationFiles="@(_PresentationRuntimeFiles->'$(OutputPath)%(RecursiveDir)%(Filename)%(Extension)')"
+      SkipUnchangedFiles="true"
+      Condition="'@(_PresentationRuntimeFiles)' != ''" />
+  </Target>
 </Project>

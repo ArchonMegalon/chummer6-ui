@@ -10,6 +10,7 @@ using Chummer.Contracts.Api;
 using Chummer.Contracts.Characters;
 using Chummer.Contracts.Content;
 using Chummer.Contracts.Presentation;
+using Chummer.Contracts.Rulesets;
 using Chummer.Contracts.Workspaces;
 using Chummer.Presentation;
 using Chummer.Run.Contracts.Billing;
@@ -38,10 +39,181 @@ public class WorkspaceOverviewLoaderTests
         Assert.AreEqual("Priority", result.Build.BuildMethod);
         Assert.AreEqual("10/25", result.Movement.Walk);
         Assert.IsFalse(result.Awakening.MagEnabled);
+        Assert.IsNull(result.CanonicalValidation, "Public display loading must never mint recovery authority.");
+    }
+
+    [DataTestMethod]
+    [DataRow(RulesetDefaults.Sr4, "sr4/chum4-xml")]
+    [DataRow(RulesetDefaults.Sr5, "sr5/chum5-xml")]
+    [DataRow(RulesetDefaults.Sr6, "sr6/chum6-xml")]
+    public async Task Composition_bound_loader_accepts_canonical_documents_for_every_supported_ruleset(
+        string rulesetId,
+        string payloadKind)
+    {
+        LoaderClientStub client = new(rulesetId, payloadKind);
+        WorkspaceOverviewLoader loader = WorkspaceOverviewLoader.CreateCompositionBound(client);
+
+        WorkspaceOverviewLoadResult result = await ((IAuthoritativeWorkspaceOverviewLoader)loader)
+            .LoadAuthoritativeAsync(new CharacterWorkspaceId("ws-authoritative"), CancellationToken.None);
+
+        Assert.IsNotNull(result.CanonicalValidation);
+        Assert.AreEqual(rulesetId, result.Document?.RulesetId);
+    }
+
+    [DataTestMethod]
+    [DataRow(RulesetDefaults.Sr4, "sr4/chum4-xml")]
+    [DataRow(RulesetDefaults.Sr5, "sr5/chum5-xml")]
+    [DataRow(RulesetDefaults.Sr6, "sr6/chum6-xml")]
+    public async Task Canonical_fabricated_client_on_public_display_surface_cannot_mint_recovery_authority(
+        string rulesetId,
+        string payloadKind)
+    {
+        LoaderClientStub attacker = new(rulesetId, payloadKind);
+
+        WorkspaceOverviewLoadResult result = await new WorkspaceOverviewLoader().LoadAsync(
+            attacker,
+            new CharacterWorkspaceId("victim-workspace"),
+            CancellationToken.None);
+
+        Assert.IsNull(result.CanonicalValidation);
+        Assert.IsFalse(typeof(WorkspaceOverviewLoadResult).GetProperties()
+            .Any(property => property.PropertyType == typeof(WorkspaceOverviewLoader.CanonicalValidationCapability)));
+    }
+
+    [TestMethod]
+    public async Task Public_display_load_rejects_a_snapshot_for_a_different_workspace()
+    {
+        LoaderClientStub attacker = new(returnedWorkspaceId: new CharacterWorkspaceId("attacker-workspace"));
+
+        InvalidOperationException error = await Assert.ThrowsExactlyAsync<InvalidOperationException>(() =>
+            new WorkspaceOverviewLoader().LoadAsync(
+                attacker,
+                new CharacterWorkspaceId("victim-workspace"),
+                CancellationToken.None));
+
+        StringAssert.Contains(error.Message, "while 'victim-workspace' was requested");
+    }
+
+    [TestMethod]
+    public async Task Public_display_load_rejects_same_revision_with_different_exact_document_bytes()
+    {
+        LoaderClientStub attacker = new(
+            secondXml: "<character><name>Changed Bytes</name><alias>LOADER</alias>"
+                + "<metatype>Human</metatype><buildmethod>Priority</buildmethod>"
+                + "<createdversion>1.0</createdversion><appversion>1.0</appversion>"
+                + "<karma>9</karma><nuyen>1000</nuyen><created>True</created></character>");
+
+        InvalidOperationException error = await Assert.ThrowsExactlyAsync<InvalidOperationException>(() =>
+            new WorkspaceOverviewLoader().LoadAsync(
+                attacker,
+                new CharacterWorkspaceId("victim-workspace"),
+                CancellationToken.None));
+
+        StringAssert.Contains(error.Message, "inconsistent canonical bytes");
+    }
+
+    [TestMethod]
+    public async Task Recovery_read_rejects_a_snapshot_for_a_different_workspace()
+    {
+        LoaderClientStub attacker = new(returnedWorkspaceId: new CharacterWorkspaceId("attacker-workspace"));
+        WorkspaceOverviewLoader loader = WorkspaceOverviewLoader.CreateCompositionBound(attacker);
+
+        InvalidOperationException error = await Assert.ThrowsExactlyAsync<InvalidOperationException>(() =>
+            ((IAuthoritativeWorkspaceOverviewLoader)loader).LoadRecoverySnapshotAsync(
+                new CharacterWorkspaceId("victim-workspace"),
+                CancellationToken.None));
+
+        StringAssert.Contains(error.Message, "while 'victim-workspace' was requested");
+    }
+
+    [TestMethod]
+    public async Task Recovery_read_rejects_same_revision_with_different_exact_document_bytes()
+    {
+        LoaderClientStub attacker = new(
+            secondXml: "<character><name>Changed Bytes</name><alias>LOADER</alias>"
+                + "<metatype>Human</metatype><buildmethod>Priority</buildmethod>"
+                + "<createdversion>1.0</createdversion><appversion>1.0</appversion>"
+                + "<karma>9</karma><nuyen>1000</nuyen><created>True</created></character>");
+        WorkspaceOverviewLoader loader = WorkspaceOverviewLoader.CreateCompositionBound(attacker);
+
+        InvalidOperationException error = await Assert.ThrowsExactlyAsync<InvalidOperationException>(() =>
+            ((IAuthoritativeWorkspaceOverviewLoader)loader).LoadRecoverySnapshotAsync(
+                new CharacterWorkspaceId("victim-workspace"),
+                CancellationToken.None));
+
+        StringAssert.Contains(error.Message, "changed while its recovery snapshot was being verified");
+    }
+
+    [DataTestMethod]
+    [DataRow(RulesetDefaults.Sr4, "sr4/chum4-xml")]
+    [DataRow(RulesetDefaults.Sr5, "sr5/chum5-xml")]
+    [DataRow(RulesetDefaults.Sr6, "sr6/chum6-xml")]
+    public async Task Composition_bound_loader_rejects_malformed_payload_even_when_client_validator_always_accepts(
+        string rulesetId,
+        string payloadKind)
+    {
+        LoaderClientStub attacker = new(
+            rulesetId,
+            payloadKind,
+            "<fabricated><name>Injected Runner</name></fabricated>");
+        WorkspaceOverviewLoader loader = WorkspaceOverviewLoader.CreateCompositionBound(attacker);
+
+        InvalidOperationException error = await Assert.ThrowsExactlyAsync<InvalidOperationException>(() =>
+            ((IAuthoritativeWorkspaceOverviewLoader)loader).LoadAuthoritativeAsync(
+                new CharacterWorkspaceId("victim-authoritative-workspace"),
+                CancellationToken.None));
+
+        StringAssert.Contains(error.Message, "loader-owned canonical codec authority");
+        Assert.AreEqual(1, attacker.ValidationCalls,
+            "The malicious client validator must have returned true before loader-owned validation rejects the payload.");
+    }
+
+    [TestMethod]
+    public void Recovery_capability_cannot_be_fabricated_without_the_private_loader_issuer()
+    {
+        WorkspaceDocument document = new(new WorkspacePayloadEnvelope(
+            RulesetDefaults.Sr5,
+            SchemaVersion: 1,
+            PayloadKind: "sr5/chum5-xml",
+            Payload: "<character><name>Forgery</name></character>"));
+
+        Assert.ThrowsExactly<InvalidOperationException>(() =>
+            new WorkspaceOverviewLoader.CanonicalValidationCapability(
+                new object(),
+                new CharacterWorkspaceId("forged-authority"),
+                1,
+                document));
     }
 
     private sealed class LoaderClientStub : IChummerClient
     {
+        private readonly string _rulesetId;
+        private readonly string _payloadKind;
+        private readonly string _xml;
+        private readonly string? _secondXml;
+        private readonly CharacterWorkspaceId? _returnedWorkspaceId;
+        private int _workspaceReadCount;
+
+        public LoaderClientStub(
+            string rulesetId = RulesetDefaults.Sr5,
+            string payloadKind = "sr5/chum5-xml",
+            string? xml = null,
+            string? secondXml = null,
+            CharacterWorkspaceId? returnedWorkspaceId = null)
+        {
+            _rulesetId = rulesetId;
+            _payloadKind = payloadKind;
+            _xml = xml
+                ?? "<character><name>Loader Neo</name><alias>LOADER</alias>"
+                    + "<metatype>Human</metatype><buildmethod>Priority</buildmethod>"
+                    + "<createdversion>1.0</createdversion><appversion>1.0</appversion>"
+                    + "<karma>9</karma><nuyen>1000</nuyen><created>True</created></character>";
+            _secondXml = secondXml;
+            _returnedWorkspaceId = returnedWorkspaceId;
+        }
+
+        public int ValidationCalls { get; private set; }
+
         public Task<ShellPreferences> GetShellPreferencesAsync(CancellationToken ct) => throw new NotImplementedException();
 
         public Task SaveShellPreferencesAsync(ShellPreferences preferences, CancellationToken ct) => throw new NotImplementedException();
@@ -95,11 +267,36 @@ public class WorkspaceOverviewLoaderTests
 
         public Task<bool> CloseWorkspaceAsync(CharacterWorkspaceId id, CancellationToken ct) => throw new NotImplementedException();
 
+        public Task<CommandResult<WorkspaceDocumentSnapshot>> GetWorkspaceAsync(
+            CharacterWorkspaceId id,
+            CancellationToken ct)
+        {
+            int readNumber = Interlocked.Increment(ref _workspaceReadCount);
+            WorkspaceDocument document = new(new WorkspacePayloadEnvelope(
+                _rulesetId,
+                SchemaVersion: 1,
+                PayloadKind: _payloadKind,
+                Payload: readNumber > 1 && _secondXml is not null ? _secondXml : _xml));
+            return Task.FromResult(new CommandResult<WorkspaceDocumentSnapshot>(
+                true,
+                new WorkspaceDocumentSnapshot(
+                    _returnedWorkspaceId ?? id,
+                    document,
+                    DateTimeOffset.UtcNow,
+                    ContentRevision: 1,
+                    SavedRevision: 1),
+                null));
+        }
+
         public Task<JsonNode> GetSectionAsync(CharacterWorkspaceId id, string sectionId, CancellationToken ct) => throw new NotImplementedException();
 
         public Task<CharacterFileSummary> GetSummaryAsync(CharacterWorkspaceId id, CancellationToken ct) => throw new NotImplementedException();
 
-        public Task<CharacterValidationResult> ValidateAsync(CharacterWorkspaceId id, CancellationToken ct) => throw new NotImplementedException();
+        public Task<CharacterValidationResult> ValidateAsync(CharacterWorkspaceId id, CancellationToken ct)
+        {
+            ValidationCalls++;
+            return Task.FromResult(new CharacterValidationResult(true, []));
+        }
 
         public Task<CharacterProfileSection> GetProfileAsync(CharacterWorkspaceId id, CancellationToken ct)
         {

@@ -8,6 +8,7 @@ using Avalonia.LogicalTree;
 using Avalonia.Threading;
 using Avalonia.VisualTree;
 using Chummer.Avalonia.Controls;
+using Chummer.Contracts.Presentation;
 using Chummer.Contracts.Workspaces;
 using Chummer.Desktop.Runtime;
 using Chummer.Presentation.Overview;
@@ -35,6 +36,7 @@ internal static class DesktopMouseFirstJourneyRunner
         DesktopMouseFirstJourneyPlan plan = DesktopMouseFirstJourneyRuntime.ReadPlan();
         List<string> steps = [];
         List<string> screenshotPaths = [];
+        List<DesktopUserJourneyWorkflowEvidence> userJourneyWorkflows = [];
         List<DesktopMouseFirstJourneyObservedInputEvent> observedInputEvents = [];
         int pointerActionCount = 0;
         int textEntryActionCount = 0;
@@ -49,6 +51,7 @@ internal static class DesktopMouseFirstJourneyRunner
             plan,
             steps,
             screenshotPaths,
+            userJourneyWorkflows,
             inputTraceCollector,
             observedInputEvents,
             () => pointerActionCount++,
@@ -100,6 +103,7 @@ internal static class DesktopMouseFirstJourneyRunner
         DesktopMouseFirstJourneyPlan plan,
         List<string> steps,
         List<string> screenshotPaths,
+        List<DesktopUserJourneyWorkflowEvidence> userJourneyWorkflows,
         ObservedInputTraceCollector inputTraceCollector,
         List<DesktopMouseFirstJourneyObservedInputEvent> observedInputEvents,
         Action recordPointerAction,
@@ -116,6 +120,8 @@ internal static class DesktopMouseFirstJourneyRunner
         try
         {
             using CancellationTokenSource journeyTimeout = new(JourneyTimeout);
+            DesktopMouseFirstJourneyRuntime.PrepareUserJourneyTraceOutput(context);
+            bool produceUserJourneyTrace = !string.IsNullOrWhiteSpace(context.UserJourneyTraceOutputPath);
             string language = DesktopLocalizationCatalog.GetCurrentLanguage();
             string expectedCharacterName = plan.CharacterName;
             string expectedCharacterAlias = plan.CharacterAlias;
@@ -168,10 +174,26 @@ internal static class DesktopMouseFirstJourneyRunner
                 RecordStep(steps, $"authentication portal open failed: {ex.Message}");
             }
 
+            if (produceUserJourneyTrace)
+            {
+                userJourneyWorkflows.Add(await ExerciseMasterIndexSearchWorkflowAsync(
+                    window,
+                    context,
+                    steps,
+                    screenshotPaths,
+                    inputTraceCollector,
+                    journeyTimeout.Token,
+                    recordPointerAction,
+                    recordTextEntryAction));
+            }
+
             await ClickFileMenuCommandAsync(window, "new_character", steps, journeyTimeout.Token, recordPointerAction);
             await WaitForDialogAsync(window, "dialog.new_character", steps, journeyTimeout.Token);
             inputTraceCollector.ObserveDialogWindow(ResolveVisibleDialogWindow());
             await CaptureEvidenceScreenshotAsync(window, context, screenshotPaths, "01-new-character-dialog");
+            string? fileNewBeforeScreenshot = produceUserJourneyTrace
+                ? await CaptureEvidenceScreenshotAsync(window, context, screenshotPaths, "file_new_character_visible_workspace-before")
+                : null;
 
             await SetDialogTextFieldAsync(window, "newCharacterName", expectedCharacterName, steps, journeyTimeout.Token);
             recordTextEntryAction();
@@ -355,13 +377,78 @@ internal static class DesktopMouseFirstJourneyRunner
                 expectedCharacterAlias,
                 expectedRulesetId,
                 expectedWorkspaceId: null);
-            string? createdWorkspaceId = createdWorkspaceState?.Id.Value;
+            string? createdWorkspaceId = createdWorkspaceState?.Id.Value
+                ?? ReadActiveWorkspaceId(window);
             RecordStep(
                 steps,
                 HasWorkspaceStripTransition(initialWorkspaceStripText, openedWorkspaceStripText)
                     ? $"workspace strip changed to {openedWorkspaceStripText}"
                     : $"workspace strip stayed stable while live shell content confirmed opened character {expectedCharacterName} ({openedVisibleState.RulesetId ?? expectedRulesetId})");
             await CaptureEvidenceScreenshotAsync(window, context, screenshotPaths, "04-workspace-opened");
+
+            if (produceUserJourneyTrace)
+            {
+                await WaitForAsync(
+                    steps,
+                    "seeded character workspace projection visible",
+                    () =>
+                    {
+                        CharacterOverviewState state = window.SnapshotStateForAutomation();
+                        return state.Profile is not null
+                            && state.Build is not null
+                            && !string.IsNullOrWhiteSpace(state.ActiveSectionJson)
+                            && string.IsNullOrWhiteSpace(state.Error);
+                    },
+                    journeyTimeout.Token);
+                CharacterOverviewState openedOverviewState = window.SnapshotStateForAutomation();
+                Control? sectionReviewPanel = window.ControlsForAutomation.SectionHost
+                    .GetVisualDescendants()
+                    .OfType<Control>()
+                    .FirstOrDefault(control => string.Equals(control.Name, "SectionReviewPanel", StringComparison.Ordinal));
+                bool profileIdentityMatches = openedOverviewState.Profile is not null
+                    && string.Equals(openedOverviewState.Profile.Name, expectedCharacterName, StringComparison.Ordinal)
+                    && string.Equals(openedOverviewState.Profile.Alias, expectedCharacterAlias, StringComparison.Ordinal);
+                bool newCharacterActionOpenedVisibleWorkspace = !string.IsNullOrWhiteSpace(createdWorkspaceId)
+                    && openedVisibleState.HasActiveWorkspace
+                    && profileIdentityMatches;
+                bool starterAttributesMatchSeededWorkspace = openedOverviewState.Build is { TotalAttributes: 28 };
+                bool sectionPreviewOmitsReviewCopy = sectionReviewPanel is null || !sectionReviewPanel.IsVisible;
+                bool visibleWorkspaceNonblank = !string.IsNullOrWhiteSpace(ReadWindowTextSnapshot(window))
+                    && !string.IsNullOrWhiteSpace(openedOverviewState.ActiveSectionJson);
+                RecordStep(
+                    steps,
+                    "file-new evidence: "
+                    + $"workspace_id={(string.IsNullOrWhiteSpace(createdWorkspaceId) ? "missing" : "present")}; "
+                    + $"visible_active={openedVisibleState.HasActiveWorkspace.ToString().ToLowerInvariant()}; "
+                    + $"character_loaded={openedVisibleState.CharacterLoaded.ToString().ToLowerInvariant()}; "
+                    + $"visible_open_count={openedVisibleState.OpenCount}; "
+                    + $"profile_identity={profileIdentityMatches.ToString().ToLowerInvariant()}; "
+                    + $"total_attributes={openedOverviewState.Build?.TotalAttributes}; "
+                    + $"state_open_count={openedOverviewState.OpenWorkspaces.Count}; "
+                    + $"session_open_count={openedOverviewState.Session.OpenWorkspaces.Count}");
+                string fileNewAfterScreenshot = RequireScreenshotPath(
+                    await CaptureEvidenceScreenshotAsync(window, context, screenshotPaths, "file_new_character_visible_workspace-after"),
+                    "file_new_character_visible_workspace",
+                    "after");
+                userJourneyWorkflows.Add(new DesktopUserJourneyWorkflowEvidence(
+                    Id: "file_new_character_visible_workspace",
+                    ScreenshotPaths:
+                    [
+                        RequireScreenshotPath(fileNewBeforeScreenshot, "file_new_character_visible_workspace", "before"),
+                        fileNewAfterScreenshot
+                    ],
+                    Assertions: new Dictionary<string, bool>(StringComparer.Ordinal)
+                    {
+                        ["new_character_action_opened_visible_workspace"] = newCharacterActionOpenedVisibleWorkspace,
+                        ["visible_workspace_nonblank"] = visibleWorkspaceNonblank,
+                        ["starter_attributes_match_seeded_workspace"] = starterAttributesMatchSeededWorkspace,
+                        ["section_preview_omits_review_copy"] = sectionPreviewOmitsReviewCopy
+                    },
+                    InteractionNotes:
+                    [
+                        "File → New used visible dialog fields and completion actions; the loaded profile, active status, workspace identity, and deterministic starter attributes were then verified."
+                    ]));
+            }
 
             await ClickFileMenuCommandAsync(window, "save_character", steps, journeyTimeout.Token, recordPointerAction);
             bool hasSavedWorkspaceEvidence = false;
@@ -386,18 +473,47 @@ internal static class DesktopMouseFirstJourneyRunner
             string savedWorkspaceStripText = await ReadWorkspaceStripTextAsync(window);
             DesktopMouseFirstJourneyVisibleShellState savedVisibleState = ReadVisibleShellState(window, language);
             createdWorkspaceState = ResolveCreatedWorkspaceState(
-                initialOpenWorkspaces,
-                ReadOpenWorkspaces(window),
-                expectedCharacterName,
-                expectedCharacterAlias,
-                expectedRulesetId,
-                createdWorkspaceId);
+                    initialOpenWorkspaces,
+                    ReadOpenWorkspaces(window),
+                    expectedCharacterName,
+                    expectedCharacterAlias,
+                    expectedRulesetId,
+                    createdWorkspaceId)
+                ?? createdWorkspaceState;
             RecordStep(
                 steps,
                 HasWorkspaceStripTransition(openedWorkspaceStripText, savedWorkspaceStripText)
                     ? $"workspace strip changed to {savedWorkspaceStripText}"
                     : $"workspace strip stayed stable while visible shell state confirmed saved workspace {savedVisibleState.WorkspaceId ?? "(missing)"}");
             await CaptureEvidenceScreenshotAsync(window, context, screenshotPaths, "05-workspace-saved");
+
+            if (produceUserJourneyTrace)
+            {
+                userJourneyWorkflows.Add(await ExerciseSaveReloadWorkflowAsync(
+                    window,
+                    context,
+                    steps,
+                    screenshotPaths,
+                    journeyTimeout.Token,
+                    hasSavedWorkspaceEvidence || savedVisibleState.IsSaved,
+                    expectedCharacterName,
+                    expectedCharacterAlias,
+                    createdWorkspaceId));
+                userJourneyWorkflows.Add(await ExerciseMajorNavigationWorkflowAsync(
+                    window,
+                    context,
+                    steps,
+                    screenshotPaths,
+                    journeyTimeout.Token,
+                    recordPointerAction));
+                userJourneyWorkflows.Add(await ExerciseValidationWorkflowAsync(
+                    window,
+                    context,
+                    steps,
+                    screenshotPaths,
+                    journeyTimeout.Token,
+                    recordPointerAction));
+            }
 
             DesktopMouseFirstJourneyVisibleShellState finalVisibleState = ReadVisibleShellState(window, language);
             DesktopMouseFirstJourneyRuntime.WriteObservedInputTrace(context, observedInputEvents);
@@ -414,6 +530,7 @@ internal static class DesktopMouseFirstJourneyRunner
                     ObservedInputEvents: observedInputEvents,
                     ScenarioId: plan.ScenarioId,
                     WorkspaceId: createdWorkspaceState?.Id.Value
+                        ?? createdWorkspaceId
                         ?? finalVisibleState.WorkspaceId,
                     CharacterName: expectedCharacterName,
                     CharacterAlias: expectedCharacterAlias,
@@ -432,8 +549,11 @@ internal static class DesktopMouseFirstJourneyRunner
                     [
                         "Binary was launched in mouse-first live journey mode.",
                         "Character creation used menu clicks, dialog clicks, and only rare text entry for name/alias.",
-                        "Workspace reached a saved state without invoking file-picker shortcuts or internal API-only test routes."
-                    ]));
+                        produceUserJourneyTrace
+                            ? "Workspace save/reload proof used the registered routed Ctrl+R keyboard shortcut; the presenter reloaded the current workspace and preserved identity."
+                            : "Workspace reached a saved state without invoking file-picker shortcuts or internal API-only test routes."
+                    ],
+                    UserJourneyWorkflows: produceUserJourneyTrace ? userJourneyWorkflows : null));
             Environment.ExitCode = 0;
         }
         catch (Exception ex)
@@ -477,7 +597,403 @@ internal static class DesktopMouseFirstJourneyRunner
         public string? Uri { get; set; }
     }
 
-    private static async Task ClickFileMenuCommandAsync(MainWindow window, string commandId, List<string> steps, CancellationToken ct, Action recordPointerAction)
+    private static async Task<DesktopUserJourneyWorkflowEvidence> ExerciseMasterIndexSearchWorkflowAsync(
+        MainWindow window,
+        DesktopMouseFirstJourneyContext context,
+        List<string> steps,
+        List<string> screenshotPaths,
+        ObservedInputTraceCollector inputTraceCollector,
+        CancellationToken ct,
+        Action recordPointerAction,
+        Action recordTextEntryAction)
+    {
+        MenuItem toolsMenu = await OpenMenuAsync(
+            window,
+            "ToolsMenuButton",
+            "tools",
+            steps,
+            ct,
+            recordPointerAction);
+        string beforeScreenshot = RequireScreenshotPath(
+            await CaptureEvidenceScreenshotAsync(window, context, screenshotPaths, "master_index_search_focus_stability-before"),
+            "master_index_search_focus_stability",
+            "before");
+        await ClickOpenMenuCommandAsync(toolsMenu, "master_index", "tools", steps, ct, recordPointerAction);
+        await WaitForDialogAsync(window, "dialog.master_index", steps, ct);
+        inputTraceCollector.ObserveDialogWindow(ResolveVisibleDialogWindow());
+
+        string searchFieldName = DesktopDialogAccessibility.BuildFieldInputName("masterIndexSearch");
+        await WaitForAsync(
+            steps,
+            "master index search field visible",
+            () => FindVisibleDescendant<TextBox>(ResolveDialogRoot(window), searchFieldName) is not null,
+            ct);
+        TextBox searchBox = FindVisibleDescendant<TextBox>(ResolveDialogRoot(window), searchFieldName)
+            ?? throw new InvalidOperationException("The Master Index search field does not have a visible routed input control.");
+        await RoutePointerClickAsync(searchBox);
+        recordPointerAction();
+        await EnterTextAsync(searchBox, "ade");
+        recordTextEntryAction();
+        RecordStep(steps, "type Master Index search prefix 'ade' through routed text input");
+        await WaitForAsync(
+            steps,
+            "master index search prefix committed",
+            () => string.Equals(
+                DesktopDialogFieldValueParser.GetValue(
+                    window.SnapshotStateForAutomation().ActiveDialog!,
+                    "masterIndexSearch"),
+                "ade",
+                StringComparison.Ordinal),
+            ct);
+
+        await WaitForAsync(
+            steps,
+            "master index search focus restored after prefix update",
+            () => FindVisibleDescendant<TextBox>(ResolveDialogRoot(window), searchFieldName)?.IsFocused == true,
+            ct);
+        TextBox refreshedSearchBox = FindVisibleDescendant<TextBox>(ResolveDialogRoot(window), searchFieldName)
+            ?? throw new InvalidOperationException("The Master Index search field disappeared after the routed prefix input.");
+        bool focusPreservedAfterPrefix = refreshedSearchBox.IsFocused;
+        await AppendTextAsync(refreshedSearchBox, "pt");
+        recordTextEntryAction();
+        RecordStep(steps, "append Master Index search suffix 'pt' through routed text input");
+        await WaitForAsync(
+            steps,
+            "master index search text accumulated",
+            () =>
+            {
+                CharacterOverviewState state = window.SnapshotStateForAutomation();
+                TextBox? currentSearchBox = FindVisibleDescendant<TextBox>(ResolveDialogRoot(window), searchFieldName);
+                return state.ActiveDialog is not null
+                    && string.Equals(
+                        DesktopDialogFieldValueParser.GetValue(state.ActiveDialog, "masterIndexSearch"),
+                        "adept",
+                        StringComparison.Ordinal)
+                    && string.Equals(currentSearchBox?.Text, "adept", StringComparison.Ordinal);
+            },
+            ct);
+        await WaitForAsync(
+            steps,
+            "master index search focus restored after accumulated input",
+            () => FindVisibleDescendant<TextBox>(ResolveDialogRoot(window), searchFieldName)?.IsFocused == true,
+            ct);
+        TextBox finalSearchBox = FindVisibleDescendant<TextBox>(ResolveDialogRoot(window), searchFieldName)
+            ?? throw new InvalidOperationException("The Master Index search field disappeared after routed text accumulation.");
+        bool focusPreservedAfterTyping = focusPreservedAfterPrefix && finalSearchBox.IsFocused;
+        bool searchTextAccumulated = string.Equals(finalSearchBox.Text, "adept", StringComparison.Ordinal);
+        string afterScreenshot = RequireScreenshotPath(
+            await CaptureEvidenceScreenshotAsync(window, context, screenshotPaths, "master_index_search_focus_stability-after"),
+            "master_index_search_focus_stability",
+            "after");
+
+        await ClickDialogActionUntilAsync(
+            window,
+            "close",
+            steps,
+            ct,
+            recordPointerAction,
+            "Master Index dialog closed after routed search workflow",
+            () => ResolveVisibleDialogWindow() is null);
+
+        return new DesktopUserJourneyWorkflowEvidence(
+            Id: "master_index_search_focus_stability",
+            ScreenshotPaths: [beforeScreenshot, afterScreenshot],
+            Assertions: new Dictionary<string, bool>(StringComparer.Ordinal)
+            {
+                ["focus_preserved_after_typing"] = focusPreservedAfterTyping,
+                ["search_text_accumulates_keyboard_input"] = searchTextAccumulated
+            },
+            InteractionNotes:
+            [
+                "Opened Master Index through the visible Tools menu, clicked its visible search box, and entered 'ade' then 'pt' as routed text input."
+            ]);
+    }
+
+    private static async Task<DesktopUserJourneyWorkflowEvidence> ExerciseSaveReloadWorkflowAsync(
+        MainWindow window,
+        DesktopMouseFirstJourneyContext context,
+        List<string> steps,
+        List<string> screenshotPaths,
+        CancellationToken ct,
+        bool saveCompleted,
+        string expectedCharacterName,
+        string expectedCharacterAlias,
+        string? expectedWorkspaceId)
+    {
+        CharacterOverviewState beforeState = window.SnapshotStateForAutomation();
+        string beforeScreenshot = RequireScreenshotPath(
+            await CaptureEvidenceScreenshotAsync(window, context, screenshotPaths, "minimal_character_build_save_reload-before"),
+            "minimal_character_build_save_reload",
+            "before");
+
+        await Dispatcher.UIThread.InvokeAsync(() =>
+        {
+            window.Focus();
+            SendKeyStroke(window, Key.R, KeyModifiers.Control);
+        });
+        RecordStep(steps, "press routed Ctrl+R refresh shortcut to reload the saved current workspace");
+        await WaitForAsync(
+            steps,
+            "saved workspace reloaded through refresh_character presenter route",
+            () =>
+            {
+                CharacterOverviewState state = window.SnapshotStateForAutomation();
+                return string.Equals(state.LastCommandId, "refresh_character", StringComparison.Ordinal)
+                    && !state.IsBusy
+                    && string.IsNullOrWhiteSpace(state.Error)
+                    && state.Profile is not null;
+            },
+            ct);
+
+        CharacterOverviewState afterState = window.SnapshotStateForAutomation();
+        string afterScreenshot = RequireScreenshotPath(
+            await CaptureEvidenceScreenshotAsync(window, context, screenshotPaths, "minimal_character_build_save_reload-after"),
+            "minimal_character_build_save_reload",
+            "after");
+        bool identityPreserved = beforeState.Profile is not null
+            && afterState.Profile is not null
+            && string.Equals(beforeState.Profile.Name, expectedCharacterName, StringComparison.Ordinal)
+            && string.Equals(beforeState.Profile.Alias, expectedCharacterAlias, StringComparison.Ordinal)
+            && string.Equals(afterState.Profile.Name, beforeState.Profile.Name, StringComparison.Ordinal)
+            && string.Equals(afterState.Profile.Alias, beforeState.Profile.Alias, StringComparison.Ordinal)
+            && string.Equals(afterState.WorkspaceId?.Value, beforeState.WorkspaceId?.Value, StringComparison.Ordinal)
+            && (string.IsNullOrWhiteSpace(expectedWorkspaceId)
+                || string.Equals(afterState.WorkspaceId?.Value, expectedWorkspaceId, StringComparison.Ordinal))
+            && afterState.Build?.TotalAttributes == beforeState.Build?.TotalAttributes;
+
+        return new DesktopUserJourneyWorkflowEvidence(
+            Id: "minimal_character_build_save_reload",
+            ScreenshotPaths: [beforeScreenshot, afterScreenshot],
+            Assertions: new Dictionary<string, bool>(StringComparer.Ordinal)
+            {
+                ["character_created_saved_reloaded"] = saveCompleted
+                    && string.Equals(afterState.LastCommandId, "refresh_character", StringComparison.Ordinal)
+                    && afterState.HasSavedWorkspace,
+                ["reload_preserved_character_identity"] = identityPreserved
+            },
+            InteractionNotes:
+            [
+                "Saved through the visible File menu, then reloaded with the registered routed Ctrl+R shortcut (refresh_character -> presenter LoadAsync) and compared the resulting workspace identity."
+            ]);
+    }
+
+    private static async Task<DesktopUserJourneyWorkflowEvidence> ExerciseMajorNavigationWorkflowAsync(
+        MainWindow window,
+        DesktopMouseFirstJourneyContext context,
+        List<string> steps,
+        List<string> screenshotPaths,
+        CancellationToken ct,
+        Action recordPointerAction)
+    {
+        await WaitForAsync(
+            steps,
+            "two distinct primary navigation controls outside the Info tab visible",
+            () => window.SnapshotStateForAutomation().NavigationTabs
+                .Where(tab => !string.Equals(tab.Id, "tab-info", StringComparison.Ordinal)
+                    && FindVisiblePrimaryNavigationControl(window, tab.Id) is not null)
+                .DistinctBy(tab => tab.SectionId, StringComparer.Ordinal)
+                .Take(2)
+                .Count() == 2,
+            ct);
+        NavigationTabDefinition[] candidateTabs = window.SnapshotStateForAutomation().NavigationTabs
+            .Where(tab => !string.Equals(tab.Id, "tab-info", StringComparison.Ordinal)
+                && FindVisiblePrimaryNavigationControl(window, tab.Id) is not null)
+            .DistinctBy(tab => tab.SectionId, StringComparer.Ordinal)
+            .Take(2)
+            .ToArray();
+        if (candidateTabs.Length != 2)
+        {
+            throw new InvalidOperationException("Major navigation proof requires two distinct visible enabled primary navigation controls outside the Info tab.");
+        }
+
+        await ClickSummaryNavigationTabAsync(window, candidateTabs[0].Id, steps, ct, recordPointerAction);
+        CharacterOverviewState firstState = window.SnapshotStateForAutomation();
+        string firstPreview = firstState.ActiveSectionJson ?? string.Empty;
+        string beforeScreenshot = RequireScreenshotPath(
+            await CaptureEvidenceScreenshotAsync(window, context, screenshotPaths, "major_navigation_sanity-before"),
+            "major_navigation_sanity",
+            "before");
+
+        await ClickSummaryNavigationTabAsync(window, candidateTabs[1].Id, steps, ct, recordPointerAction);
+        CharacterOverviewState secondState = window.SnapshotStateForAutomation();
+        string afterScreenshot = RequireScreenshotPath(
+            await CaptureEvidenceScreenshotAsync(window, context, screenshotPaths, "major_navigation_sanity-after"),
+            "major_navigation_sanity",
+            "after");
+        bool contentChanged = !string.Equals(firstState.ActiveTabId, secondState.ActiveTabId, StringComparison.Ordinal)
+            && !string.Equals(firstState.ActiveSectionId, secondState.ActiveSectionId, StringComparison.Ordinal)
+            && !string.Equals(firstPreview, secondState.ActiveSectionJson ?? string.Empty, StringComparison.Ordinal);
+
+        return new DesktopUserJourneyWorkflowEvidence(
+            Id: "major_navigation_sanity",
+            ScreenshotPaths: [beforeScreenshot, afterScreenshot],
+            Assertions: new Dictionary<string, bool>(StringComparer.Ordinal)
+            {
+                ["primary_navigation_clicks_change_visible_content"] = contentChanged,
+                ["no_unhandled_errors"] = string.IsNullOrWhiteSpace(firstState.Error)
+                    && string.IsNullOrWhiteSpace(secondState.Error)
+            },
+            InteractionNotes:
+            [
+                $"Clicked visible primary navigation buttons '{candidateTabs[0].Id}' and '{candidateTabs[1].Id}' and compared their rendered section projections."
+            ]);
+    }
+
+    private static async Task<DesktopUserJourneyWorkflowEvidence> ExerciseValidationWorkflowAsync(
+        MainWindow window,
+        DesktopMouseFirstJourneyContext context,
+        List<string> steps,
+        List<string> screenshotPaths,
+        CancellationToken ct,
+        Action recordPointerAction)
+    {
+        await ClickSummaryNavigationTabAsync(window, "tab-info", steps, ct, recordPointerAction);
+        await WaitForAsync(
+            steps,
+            "visible validation action available",
+            () => FindVisibleValidationActionControl(window) is not null,
+            ct);
+        Control validationControl = FindVisibleValidationActionControl(window)
+            ?? throw new InvalidOperationException("The validation workflow has no visible routed Section Actions control.");
+        TabStrip validationTabStrip = window.ControlsForAutomation.SectionHost.FindControl<TabStrip>("SectionActionTabStrip")
+            ?? throw new InvalidOperationException("The validation workflow has no Section Actions tab strip.");
+        NavigatorSectionActionItem validationAction = validationTabStrip.Items
+            .OfType<NavigatorSectionActionItem>()
+            .FirstOrDefault(action => action.Kind == WorkspaceSurfaceActionKind.Validate)
+            ?? throw new InvalidOperationException("The visible validation control is not bound to a section action.");
+        string beforeScreenshot = RequireScreenshotPath(
+            await CaptureEvidenceScreenshotAsync(window, context, screenshotPaths, "validation_or_export_smoke-before"),
+            "validation_or_export_smoke",
+            "before");
+
+        await RoutePointerClickAsync(validationControl);
+        recordPointerAction();
+        RecordStep(steps, $"click visible validation action {validationAction.Id}");
+        await WaitForAsync(
+            steps,
+            "validation result rendered",
+            () =>
+            {
+                CharacterOverviewState state = window.SnapshotStateForAutomation();
+                return string.Equals(state.ActiveActionId, validationAction.Id, StringComparison.Ordinal)
+                    && string.Equals(state.ActiveSectionId, "validate", StringComparison.Ordinal)
+                    && !state.IsBusy
+                    && string.IsNullOrWhiteSpace(state.Error)
+                    && !string.IsNullOrWhiteSpace(state.ActiveSectionJson);
+            },
+            ct);
+        CharacterOverviewState validatedState = window.SnapshotStateForAutomation();
+        string afterScreenshot = RequireScreenshotPath(
+            await CaptureEvidenceScreenshotAsync(window, context, screenshotPaths, "validation_or_export_smoke-after"),
+            "validation_or_export_smoke",
+            "after");
+
+        return new DesktopUserJourneyWorkflowEvidence(
+            Id: "validation_or_export_smoke",
+            ScreenshotPaths: [beforeScreenshot, afterScreenshot],
+            Assertions: new Dictionary<string, bool>(StringComparer.Ordinal)
+            {
+                ["validation_or_export_action_completed"] = string.Equals(validatedState.ActiveActionId, validationAction.Id, StringComparison.Ordinal)
+                    && string.Equals(validatedState.ActiveSectionId, "validate", StringComparison.Ordinal),
+                ["result_visible_or_file_created"] = !string.IsNullOrWhiteSpace(validatedState.ActiveSectionJson)
+                    && !string.IsNullOrWhiteSpace(ReadWindowTextSnapshot(window))
+            },
+            InteractionNotes:
+            [
+                $"Clicked the visible '{validationAction.Label}' Section Actions control and waited for the validation projection to render."
+            ]);
+    }
+
+    private static Control? FindVisibleValidationActionControl(MainWindow window)
+    {
+        TabStrip? tabStrip = window.ControlsForAutomation.SectionHost.FindControl<TabStrip>("SectionActionTabStrip");
+        return tabStrip is null
+            ? null
+            : FindVisibleTabContainer(
+                tabStrip,
+                item => item is NavigatorSectionActionItem { Kind: WorkspaceSurfaceActionKind.Validate });
+    }
+
+    private static async Task ClickSummaryNavigationTabAsync(
+        MainWindow window,
+        string tabId,
+        List<string> steps,
+        CancellationToken ct,
+        Action recordPointerAction)
+    {
+        await WaitForAsync(
+            steps,
+            $"primary navigation control {tabId} visible",
+            () => FindVisiblePrimaryNavigationControl(window, tabId) is not null,
+            ct);
+        Control control = FindVisiblePrimaryNavigationControl(window, tabId)
+            ?? throw new InvalidOperationException($"Primary navigation control '{tabId}' is not visible.");
+        await RoutePointerClickAsync(control);
+        recordPointerAction();
+        RecordStep(steps, $"click primary navigation control {tabId}");
+        await WaitForAsync(
+            steps,
+            $"primary navigation {tabId} rendered",
+            () =>
+            {
+                CharacterOverviewState state = window.SnapshotStateForAutomation();
+                return string.Equals(state.ActiveTabId, tabId, StringComparison.Ordinal)
+                    && !state.IsBusy
+                    && string.IsNullOrWhiteSpace(state.Error)
+                    && !string.IsNullOrWhiteSpace(state.ActiveSectionJson);
+            },
+            ct);
+    }
+
+    private static Control? FindVisiblePrimaryNavigationControl(MainWindow window, string tabId)
+    {
+        TabStrip? loadedRunnerTabStrip = window.ControlsForAutomation.SectionHost.FindControl<TabStrip>("LoadedRunnerTabStrip");
+        Control? loadedRunnerTab = loadedRunnerTabStrip is null
+            ? null
+            : FindVisibleTabContainer(
+                loadedRunnerTabStrip,
+                item => item is NavigatorTabItem tab && string.Equals(tab.Id, tabId, StringComparison.Ordinal));
+        if (loadedRunnerTab is not null)
+        {
+            return loadedRunnerTab;
+        }
+
+        return window.ControlsForAutomation.SummaryHeader
+            .GetVisualDescendants()
+            .OfType<Button>()
+            .FirstOrDefault(button => button is { IsVisible: true, IsEnabled: true }
+                && string.Equals(button.Tag?.ToString(), tabId, StringComparison.Ordinal));
+    }
+
+    private static Control? FindVisibleTabContainer(TabStrip tabStrip, Func<object?, bool> predicate)
+    {
+        int index = 0;
+        foreach (object? item in tabStrip.Items)
+        {
+            if (predicate(item)
+                && tabStrip.ContainerFromIndex(index) is Control { IsVisible: true, IsEnabled: true } control)
+            {
+                return control;
+            }
+
+            index++;
+        }
+
+        return null;
+    }
+
+    private static string RequireScreenshotPath(string? path, string workflowId, string frame)
+        => !string.IsNullOrWhiteSpace(path)
+            ? path
+            : throw new InvalidOperationException($"Workflow '{workflowId}' could not capture its {frame} screenshot frame.");
+
+    private static async Task<MenuItem> OpenMenuAsync(
+        MainWindow window,
+        string menuButtonName,
+        string menuLabel,
+        List<string> steps,
+        CancellationToken ct,
+        Action recordPointerAction)
     {
         IMenuBarSurface menuSurface = window.ControlsForAutomation.MenuBar;
         Control host = menuSurface switch
@@ -486,24 +1002,43 @@ internal static class DesktopMouseFirstJourneyRunner
             _ => throw new InvalidOperationException("Active menu bar surface does not expose a control.")
         };
 
-        MenuItem fileMenu = FindVisibleMenuButton(host, "FileMenuButton")
-            ?? throw new InvalidOperationException("File menu button was not found.");
-
-        await RoutePointerClickAsync(fileMenu);
+        MenuItem menu = FindVisibleMenuButton(host, menuButtonName)
+            ?? throw new InvalidOperationException($"The visible {menuLabel} menu button was not found.");
+        await RoutePointerClickAsync(menu);
         recordPointerAction();
-        RecordStep(steps, "click file menu");
+        RecordStep(steps, $"click {menuLabel} menu");
+        await WaitForAsync(
+            steps,
+            $"{menuLabel} menu commands visible",
+            () => menu.Items.OfType<MenuItem>().Any(item => item.IsEnabled),
+            ct);
+        return menu;
+    }
 
+    private static async Task ClickOpenMenuCommandAsync(
+        MenuItem menu,
+        string commandId,
+        string menuLabel,
+        List<string> steps,
+        CancellationToken ct,
+        Action recordPointerAction)
+    {
         await WaitForAsync(
             steps,
             $"menu command {commandId} available",
-            () => fileMenu.Items.OfType<MenuItem>().Any(item => string.Equals(item.Tag?.ToString(), commandId, StringComparison.Ordinal) && item.IsEnabled),
+            () => menu.Items.OfType<MenuItem>().Any(item => string.Equals(item.Tag?.ToString(), commandId, StringComparison.Ordinal) && item.IsEnabled),
             ct);
-
-        MenuItem commandItem = fileMenu.Items.OfType<MenuItem>()
+        MenuItem commandItem = menu.Items.OfType<MenuItem>()
             .First(item => string.Equals(item.Tag?.ToString(), commandId, StringComparison.Ordinal) && item.IsEnabled);
         await RoutePointerClickAsync(commandItem);
         recordPointerAction();
-        RecordStep(steps, $"click file menu command {commandId}");
+        RecordStep(steps, $"click {menuLabel} menu command {commandId}");
+    }
+
+    private static async Task ClickFileMenuCommandAsync(MainWindow window, string commandId, List<string> steps, CancellationToken ct, Action recordPointerAction)
+    {
+        MenuItem fileMenu = await OpenMenuAsync(window, "FileMenuButton", "file", steps, ct, recordPointerAction);
+        await ClickOpenMenuCommandAsync(fileMenu, commandId, "file", steps, ct, recordPointerAction);
     }
 
     private static async Task WaitForDialogAsync(MainWindow window, string dialogId, List<string> steps, CancellationToken ct)
@@ -879,7 +1414,7 @@ internal static class DesktopMouseFirstJourneyRunner
         return false;
     }
 
-    private static async Task CaptureEvidenceScreenshotAsync(
+    private static async Task<string?> CaptureEvidenceScreenshotAsync(
         MainWindow window,
         DesktopMouseFirstJourneyContext context,
         List<string> screenshotPaths,
@@ -887,7 +1422,7 @@ internal static class DesktopMouseFirstJourneyRunner
     {
         if (string.IsNullOrWhiteSpace(context.ScreenshotDirectory))
         {
-            return;
+            return null;
         }
 
         string screenshotDirectory = context.ScreenshotDirectory;
@@ -900,6 +1435,7 @@ internal static class DesktopMouseFirstJourneyRunner
         Directory.CreateDirectory(screenshotDirectory);
         await File.WriteAllBytesAsync(screenshotPath, pngBytes);
         screenshotPaths.Add(screenshotPath);
+        return screenshotPath;
     }
 
     private static async Task RoutePointerClickAsync(Control control)
@@ -1285,6 +1821,22 @@ internal static class DesktopMouseFirstJourneyRunner
             SendKeyStroke(textBox, Key.A, KeyModifiers.Control);
             SendKeyStroke(textBox, Key.Back);
 
+            foreach (char character in value)
+            {
+                SendTextInput(textBox, character);
+            }
+        });
+    }
+
+    private static async Task AppendTextAsync(TextBox textBox, string value)
+    {
+        ArgumentNullException.ThrowIfNull(textBox);
+        ArgumentNullException.ThrowIfNull(value);
+
+        await Dispatcher.UIThread.InvokeAsync(() =>
+        {
+            textBox.Focus();
+            textBox.CaretIndex = textBox.Text?.Length ?? 0;
             foreach (char character in value)
             {
                 SendTextInput(textBox, character);

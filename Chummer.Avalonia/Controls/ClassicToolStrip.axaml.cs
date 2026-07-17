@@ -33,7 +33,7 @@ public partial class ClassicToolStrip : UserControl, IToolStripSurface
     {
         AvaloniaXamlLoader.Load(this);
         ApplyLabels();
-        SetStatusText("State: idle");
+        SetStatusText("Idle");
     }
 
     public event EventHandler? ImportFileRequested;
@@ -73,17 +73,7 @@ public partial class ClassicToolStrip : UserControl, IToolStripSurface
 
     public void SetStatusText(string statusText)
     {
-        if (this.FindControl<TextBlock>("StatusText") is { } statusTextBlock)
-        {
-            statusTextBlock.Text = statusText;
-        }
-
-        if (this.FindControl<Border>("StatusTextBorder") is { } statusBorder)
-        {
-            statusBorder.IsVisible = !string.IsNullOrWhiteSpace(statusText)
-            && !string.Equals(statusText.Trim(), "State: idle", StringComparison.OrdinalIgnoreCase)
-            && !string.Equals(statusText.Trim(), "idle", StringComparison.OrdinalIgnoreCase);
-        }
+        _ = statusText;
     }
 
     private void ApplyLabels()
@@ -131,8 +121,11 @@ public partial class ClassicToolStrip : UserControl, IToolStripSurface
                     new TextBlock
                     {
                         Text = shortLabel,
-                        Classes = { "tool-button-label" },
-                        Foreground = button.Foreground,
+                        Classes =
+                        {
+                            "tool-button-label",
+                            button.Classes.Contains("primary") ? "primary" : "regular"
+                        },
                         VerticalAlignment = VerticalAlignment.Center
                     }
                 }

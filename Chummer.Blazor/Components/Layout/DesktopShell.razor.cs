@@ -18,6 +18,7 @@ public partial class DesktopShell : IDisposable
     private const string NewCharacterCommandId = "new_character";
     private const string OpenCharacterCommandId = "open_character";
     private const string CloseWindowCommandId = "close_window";
+    private const string OriginWizardDialogId = "dialog.new_character.origin_wizard";
     private const string LegacySeededWorkspaceAlias = "ws-1";
     private const string LegacySeededWorkspaceAliasWarning =
         "The legacy sample workspace link 'ws-1' is stale. Open Chummer Online or the preview fixture to mint a fresh workspace link.";
@@ -35,6 +36,7 @@ public partial class DesktopShell : IDisposable
     private CharacterOverviewStateBridge? _bridge;
     private const long MaxImportBytes = 8 * 1024 * 1024;
     private ElementReference _shellRoot;
+    private readonly CancellationTokenSource _componentLifetime = new();
 
     [Inject]
     public ICharacterOverviewPresenter Presenter { get; set; } = default!;
@@ -91,6 +93,7 @@ public partial class DesktopShell : IDisposable
     private string MetadataNotes { get; set; } = string.Empty;
     private string _lastUiUtc = DateTimeOffset.UtcNow.ToString("u");
     private long _lastDownloadVersionHandled;
+    private long _lastRecoveryExportVersionHandled;
     private long _lastExportVersionHandled;
     private long _lastPrintVersionHandled;
     private bool _isDisposed;
@@ -98,6 +101,8 @@ public partial class DesktopShell : IDisposable
     private string? _lastDemoBootstrapKey;
     private string? _bootstrappedDemoFixtureId;
     private string? _demoWorkspaceRouteWarning;
+    private bool _originWizardAdvancedControlsOpen;
+    private bool _preserveOriginWizardAdvancedControlsAcrossFieldRefresh;
     private ShellSurfaceState _shellSurfaceState = ShellSurfaceState.Empty;
 
     private CharacterOverviewState State => _bridge?.Current ?? Presenter.State;
@@ -121,6 +126,12 @@ public partial class DesktopShell : IDisposable
         _shellSurfaceState.ActiveWorkspaceId is not null
         && _shellSurfaceState.OpenWorkspaces.Count > 1;
 
+    private bool UseResponsiveBuildWorkspace =>
+        (_shellSurfaceState.ActiveWorkspaceId is not null || State.WorkspaceId is not null)
+        && NavigationTabs.Count > 0;
+
+    private bool IsShellChromeLocked => State.IsBusy || State.ActiveDialog is not null;
+
     private IReadOnlyList<AppCommandDefinition> MenuRoots =>
         _shellSurfaceState.MenuRoots;
 
@@ -139,7 +150,7 @@ public partial class DesktopShell : IDisposable
     protected override async Task OnInitializedAsync()
     {
         ShellPresenter.StateChanged += OnShellStateChanged;
-        await ShellPresenter.InitializeAsync(CancellationToken.None);
+        await ShellPresenter.InitializeAsync(_componentLifetime.Token);
 
         _bridge = new CharacterOverviewStateBridge(Presenter, state =>
         {
@@ -150,7 +161,7 @@ public partial class DesktopShell : IDisposable
             _lastUiUtc = DateTimeOffset.UtcNow.ToString("u");
             _ = InvokeAsync(StateHasChanged);
         });
-        await _bridge.InitializeAsync(CancellationToken.None);
+        await _bridge.InitializeAsync(_componentLifetime.Token);
         if (ShouldSyncShellWorkspaceContext(State, ShellState))
         {
             await SyncShellWorkspaceContextAsync();
@@ -162,11 +173,7 @@ public partial class DesktopShell : IDisposable
 
     protected override async Task OnAfterRenderAsync(bool firstRender)
     {
-        if (firstRender)
-        {
-            await _shellRoot.FocusAsync();
-        }
-
+        await DispatchPendingRecoveryExportAsync();
         await DispatchPendingDownloadAsync();
         await DispatchPendingExportAsync();
         await DispatchPendingPrintAsync();
@@ -184,20 +191,51 @@ public partial class DesktopShell : IDisposable
 
     public void Dispose()
     {
+        if (_isDisposed)
+            return;
+
         _isDisposed = true;
+        _componentLifetime.Cancel();
         ShellPresenter.StateChanged -= OnShellStateChanged;
         _bridge?.Dispose();
+        _componentLifetime.Dispose();
     }
 
     private Task SyncShellWorkspaceContextAsync()
     {
         CharacterWorkspaceId? activeWorkspaceId = State.Session.ActiveWorkspaceId ?? State.WorkspaceId;
-        return ShellPresenter.SyncWorkspaceContextAsync(activeWorkspaceId, CancellationToken.None);
+        return ShellPresenter.SyncWorkspaceContextAsync(activeWorkspaceId, _componentLifetime.Token);
     }
 
     private void RefreshShellSurfaceState()
     {
         _shellSurfaceState = ShellSurfaceResolver.Resolve(State, ShellState);
+
+        string? activeDialogId = State.ActiveDialog?.Id;
+        if (string.Equals(activeDialogId, OriginWizardDialogId, StringComparison.Ordinal))
+        {
+            _preserveOriginWizardAdvancedControlsAcrossFieldRefresh = false;
+            return;
+        }
+
+        if (activeDialogId is null && _preserveOriginWizardAdvancedControlsAcrossFieldRefresh)
+        {
+            return;
+        }
+
+        if (_originWizardAdvancedControlsOpen)
+        {
+            _originWizardAdvancedControlsOpen = false;
+        }
+
+        _preserveOriginWizardAdvancedControlsAcrossFieldRefresh = false;
+    }
+
+    private void ArmOriginWizardAdvancedControlsRefreshPreservation()
+    {
+        _preserveOriginWizardAdvancedControlsAcrossFieldRefresh =
+            _originWizardAdvancedControlsOpen
+            && string.Equals(State.ActiveDialog?.Id, OriginWizardDialogId, StringComparison.Ordinal);
     }
 
     internal static bool ShouldSyncShellWorkspaceContext(CharacterOverviewState overviewState, ShellState shellState)

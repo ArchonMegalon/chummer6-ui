@@ -48,7 +48,7 @@ Required design traits:
 - browser-safe substitutes for native behaviors, especially around file open, save-as, export, print, downloads, and host integration
 - release-proof honesty, where unsupported or partial routes are visible as such and are not dressed up as parity-complete
 - a deliberate slate/amber/mint/blue browser-client palette with warm Chummer desktop chrome, strong focus states, and themed Character Roster hierarchy surfaces so `/blazor/app` feels like a real client instead of a default preview page
-- portal recovery pages for downloads, docs, help, status, and contact must preserve the same polished Chummer Online visual language with restrained ambient glow and deep ink/surface contrast, keep the portal root route rail labelled as `Chummer browser routes` with explicit hover/focus affordances and reduced-motion handling, and keep help/contact/status recovery exits as labelled recovery rails with pill-style keyboard focus, explicit hover/focus affordances, and reduced-motion guards
+- portal recovery pages for downloads, docs, help, status, and contact must preserve the same polished Chummer Online visual language with restrained ambient glow and deep ink/surface contrast, keep the portal root route rail labelled as `Chummer Online routes` with explicit hover/focus affordances and reduced-motion handling, and keep help/contact/status recovery exits as labelled recovery rails with pill-style keyboard focus, explicit hover/focus affordances, and reduced-motion guards
 
 ## Promoted Route Shape
 

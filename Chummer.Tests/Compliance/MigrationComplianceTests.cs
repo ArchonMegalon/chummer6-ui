@@ -5429,6 +5429,7 @@ public class MigrationComplianceTests
         StringAssert.Contains(scriptText, "CHUMMER_SR6_RULESET_UI_SOPHISTICATION_GATE.generated.json");
         StringAssert.Contains(scriptText, "CHUMMER_SR6_RULESET_UI_SOPHISTICATION_POLICY.json");
         StringAssert.Contains(scriptText, "RULESET_UI_ADAPTATION.generated.json");
+        StringAssert.Contains(scriptText, "SECTION_HOST_RULESET_PARITY.generated.json");
         StringAssert.Contains(scriptText, "SR6_DESKTOP_WORKFLOW_PARITY.generated.json");
         StringAssert.Contains(scriptText, "CHUMMER_SR6_SHARED_MUSCLE_MEMORY_PARITY_GATE.generated.json");
         StringAssert.Contains(scriptText, "INTERACTIVE_CONTROL_INVENTORY.generated.json");
@@ -5436,6 +5437,7 @@ public class MigrationComplianceTests
         StringAssert.Contains(scriptText, "\"policyReview\"");
         StringAssert.Contains(scriptText, "\"receiptReview\"");
         StringAssert.Contains(scriptText, "\"runtimeReview\"");
+        StringAssert.Contains(scriptText, "\"providerParityReview\"");
         StringAssert.Contains(scriptText, "\"sourceReview\"");
         StringAssert.Contains(scriptText, "\"wiringReview\"");
         StringAssert.Contains(scriptText, "\"equalSophisticationReview\"");
@@ -5445,10 +5447,15 @@ public class MigrationComplianceTests
         StringAssert.Contains(policyText, "\"contractName\": \"chummer6-ui.chummer_sr6_ruleset_ui_sophistication_policy\"");
         StringAssert.Contains(policyText, "\"scopeStrategy\": \"sr6_ruleset_specific_surface_depth_must_match_sr5_editor_grade_richness\"");
         StringAssert.Contains(policyText, "\"sr5ComparisonContract\": \"chummer6-ui.ruleset_ui_adaptation_frontier\"");
+        StringAssert.Contains(policyText, "\"sectionHostParityContract\": \"chummer6-ui.section_host_ruleset_parity\"");
         StringAssert.Contains(policyText, "\"sr6WorkflowParityContract\": \"chummer6-ui.sr6_desktop_workflow_parity\"");
         StringAssert.Contains(policyText, "\"sr6SharedMuscleMemoryContract\": \"chummer6-ui.chummer_sr6_shared_muscle_memory_parity_gate\"");
         StringAssert.Contains(policyText, "\"interactiveInventoryContract\": \"chummer6-ui.interactive_control_inventory\"");
         StringAssert.Contains(policyText, "\"runtimeRouteInventoryContract\": \"chummer6-ui.interactive_runtime_route_inventory\"");
+        StringAssert.Contains(policyText, "\"requiredProviderParityTestMarkers\"");
+        StringAssert.Contains(policyText, "Sr6_ruleset_provider_keeps_sr5_command_tab_action_and_workflow_pendants");
+        StringAssert.Contains(policyText, "Sr6_ruleset_quick_action_pendants_exist_for_every_sr5_workspace_section");
+        StringAssert.Contains(policyText, "Sr6_ruleset_keeps_sr5_section_target_hosting_groups");
         StringAssert.Contains(policyText, "\"equalUiSophisticationAgainstSr5InScope\": true");
         StringAssert.Contains(policyText, "\"noThinSharedShellSubstituteInScope\": true");
         StringAssert.Contains(policyText, "\"zeroFallbackHostsInScope\": true");
@@ -5458,6 +5465,8 @@ public class MigrationComplianceTests
         StringAssert.Contains(designDocText, "promoted SR4, SR5, and SR6 lanes");
         StringAssert.Contains(designDocText, "zero hosts");
         StringAssert.Contains(designDocText, "ruleset-specific action and workflow labels");
+        StringAssert.Contains(designDocText, "section-host and ruleset parity receipt is present and passing");
+        StringAssert.Contains(designDocText, "direct SR5-versus-SR6 provider parity audit");
 
         StringAssert.Contains(verifyText, "checking SR6 ruleset UI sophistication gate");
         StringAssert.Contains(verifyText, "bash scripts/ai/milestones/sr6-ruleset-ui-sophistication-gate.sh");
@@ -5830,6 +5839,8 @@ public class MigrationComplianceTests
         StringAssert.Contains(windowsGateScriptText, "Windows installer visual proof is missing required screenshot roles:");
         StringAssert.Contains(windowsGateScriptText, "Windows installer visual proof screenshots are not distinct across progress and completion.");
         StringAssert.Contains(windowsGateScriptText, "Windows installer visual proof {review_name} review is not passing.");
+        StringAssert.Contains(windowsGateScriptText, "visual_proof_handoff_status == \"ready_for_windows_host\"");
+        StringAssert.Contains(windowsGateScriptText, "evidence[\"windows_installer_visual_proof_handoff_ready_for_windows_host\"]");
         StringAssert.Contains(windowsGateScriptText, "def startup_smoke_stale_age_is_acceptable(");
         StringAssert.Contains(windowsGateScriptText, "if host_supports_windows_smoke:");
         StringAssert.Contains(windowsGateScriptText, "if normalize_token(startup_smoke_artifact_digest) != normalize_token(expected_startup_smoke_digest):");

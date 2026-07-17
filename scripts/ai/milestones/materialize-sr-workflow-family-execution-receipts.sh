@@ -85,6 +85,9 @@ max_test_attempts = max(
         or "2"
     ),
 )
+skip_restore = str(
+    os.environ.get("CHUMMER_WORKFLOW_FAMILY_EXECUTION_SKIP_RESTORE") or "0"
+).strip().lower() in {"1", "true", "yes"}
 
 unique_tests: list[str] = []
 for family in families:
@@ -98,6 +101,7 @@ run_exit = 0
 external_blocker = ""
 api_probe: dict[str, object] = {}
 dotnet_attempt_count = 0
+build_attempt_count = 0
 api_server_proc: subprocess.Popen[str] | None = None
 api_server_log_path = run_root / f"{edition}-local-api.log"
 per_test_trx_paths: dict[str, str] = {}
@@ -107,6 +111,15 @@ api_project_path = Path(api_project_override) if api_project_override else defau
 default_api_build_output = (
     api_project_path.parent / "bin" / "Debug" / "net10.0" / f"{api_project_path.stem}.dll"
 )
+test_project_path = repo_root / "Chummer.Tests" / "Chummer.Tests.csproj"
+test_build_output_dir = repo_root / "Chummer.Tests" / "bin" / "Release" / "net10.0"
+test_runner_apphost = test_build_output_dir / "Chummer.Tests"
+test_runner_dll = test_build_output_dir / "Chummer.Tests.dll"
+test_build_projects = [
+    ("Chummer.Avalonia", repo_root / "Chummer.Avalonia" / "Chummer.Avalonia.csproj"),
+    ("Chummer.Portal", repo_root / "Chummer.Portal" / "Chummer.Portal.csproj"),
+    ("Chummer.Tests", test_project_path),
+]
 
 
 def probe_api_surface(base_url: str, path: str) -> tuple[bool, int, str]:
@@ -269,27 +282,121 @@ def test_result_indicates_missing_api(trx_path: Path, output_text: str) -> bool:
     return any(token in trx_text for token in missing_api_tokens)
 
 
-api_base_url = (
-    str(
-        os.environ.get("CHUMMER_API_BASE_URL")
-        or os.environ.get("CHUMMER_WEB_BASE_URL")
-        or "http://127.0.0.1:8088"
-    )
-    .strip()
-)
 api_probe_paths = ["/api/workspaces?maxCount=1", "/api/shell/bootstrap"]
+
+
+def discover_docker_presentation_api_base_url() -> str | None:
+    try:
+        ps_result = subprocess.run(
+            [
+                "docker",
+                "ps",
+                "--filter",
+                "name=chummer-presentation-api",
+                "--format",
+                "{{.ID}}",
+            ],
+            stdout=subprocess.PIPE,
+            stderr=subprocess.DEVNULL,
+            text=True,
+            check=False,
+        )
+    except OSError:
+        return None
+
+    for container_id in [line.strip() for line in (ps_result.stdout or "").splitlines() if line.strip()]:
+        inspect_result = subprocess.run(
+            [
+                "docker",
+                "inspect",
+                "-f",
+                "{{range .NetworkSettings.Networks}}{{.IPAddress}} {{end}}",
+                container_id,
+            ],
+            stdout=subprocess.PIPE,
+            stderr=subprocess.DEVNULL,
+            text=True,
+            check=False,
+        )
+        ip_addresses = [token.strip() for token in (inspect_result.stdout or "").split() if token.strip()]
+        for ip_address in ip_addresses:
+            candidate = f"http://{ip_address}:8080"
+            probe, ready = collect_api_probe(candidate)
+            if ready:
+                return candidate
+
+    return None
+
+
+configured_api_base_url = str(
+    os.environ.get("CHUMMER_API_BASE_URL")
+    or os.environ.get("CHUMMER_WEB_BASE_URL")
+    or ""
+).strip()
+api_base_url = configured_api_base_url or "http://127.0.0.1:8088"
+if not configured_api_base_url:
+    loopback_probe, loopback_ready = collect_api_probe(api_base_url)
+    if not loopback_ready and (docker_api_base_url := discover_docker_presentation_api_base_url()):
+        api_base_url = docker_api_base_url
+
 api_probe, api_surface_ready = ensure_local_api(api_base_url)
 if api_surface_ready:
     api_probe, api_surface_ready = warm_api_surface(api_base_url)
 test_process_env = dict(os.environ)
 test_process_env["CHUMMER_API_BASE_URL"] = api_base_url
 test_process_env["CHUMMER_WEB_BASE_URL"] = api_base_url
+test_process_env["CHUMMER_REPO_ROOT"] = str(repo_root)
 
 if unique_tests:
     with lock_path.open("w", encoding="utf-8") as lock_handle:
         fcntl.flock(lock_handle.fileno(), fcntl.LOCK_EX)
+        for project_label, project_path in test_build_projects:
+            build_attempt_count += 1
+            build_proc = subprocess.run(
+                [
+                    "dotnet",
+                    "build",
+                    str(project_path),
+                    "--configuration",
+                    "Release",
+                    "--nologo",
+                    "-p:UseSharedCompilation=false",
+                    "-p:BuildInParallel=false",
+                    "-maxcpucount:1",
+                ] + (["--no-restore"] if skip_restore else []),
+                cwd=repo_root,
+                stdout=subprocess.PIPE,
+                stderr=subprocess.STDOUT,
+                text=True,
+                check=False,
+                env=test_process_env,
+            )
+            if build_proc.returncode != 0:
+                output_lines = (build_proc.stdout or "").strip().splitlines()
+                if output_lines:
+                    run_error = output_lines[-1]
+                if not run_error:
+                    run_error = f"{project_label} release build failed"
+                run_exit = int(build_proc.returncode)
+                break
+
+        test_runner_command: list[str] = []
+        if run_exit == 0:
+            if test_runner_apphost.is_file():
+                test_runner_command = [str(test_runner_apphost)]
+            elif test_runner_dll.is_file():
+                test_runner_command = ["dotnet", str(test_runner_dll)]
+            else:
+                run_exit = 1
+                run_error = (
+                    f"built test runner was not found at {test_runner_apphost} or {test_runner_dll}"
+                )
+
         observed_attempt_count = 0
+        build_failed = run_exit != 0
         for index, test_name in enumerate(unique_tests, start=1):
+            if build_failed:
+                break
             safe_name = "".join(char if char.isalnum() or char in {"-", "_"} else "_" for char in test_name)
             per_test_trx = run_root / f"{index:02d}-{safe_name}.trx"
             per_test_trx_paths[test_name] = str(per_test_trx)
@@ -299,14 +406,7 @@ if unique_tests:
                 if per_test_trx.exists():
                     per_test_trx.unlink()
                 proc = subprocess.run(
-                    [
-                        "dotnet",
-                        "test",
-                        "--project",
-                        "Chummer.Tests/Chummer.Tests.csproj",
-                        "--configuration",
-                        "Release",
-                        "--no-restore",
+                    test_runner_command + [
                         "--filter",
                         f"FullyQualifiedName~{test_name}",
                         "--results-directory",
@@ -480,6 +580,8 @@ for family in families:
             "dotnetTest": {
                 "project": "Chummer.Tests/Chummer.Tests.csproj",
                 "configuration": "Release",
+                "buildAttemptCount": build_attempt_count,
+                "runnerCommand": test_runner_command,
                 "trxPath": str(trx_path),
                 "perTestTrxPaths": per_test_trx_paths,
                 "exitCode": run_exit,

@@ -1,0 +1,11 @@
+FROM mcr.microsoft.com/dotnet/aspnet:10.0
+WORKDIR /app
+COPY app/ .
+COPY --chmod=0555 chummer-blazor-entrypoint /usr/local/bin/chummer-blazor-entrypoint
+RUN chmod -R u=rwX,go=rX /app \
+ && install -d -o "$APP_UID" -g "$APP_UID" -m 0700 /app/state \
+ && install -d -o "$APP_UID" -g "$APP_UID" -m 0700 /var/lib/chummer-build/data-protection \
+ && install -d -o "$APP_UID" -g "$APP_UID" -m 0700 /run/secrets/chummer-config
+EXPOSE 8080
+USER $APP_UID:$APP_UID
+ENTRYPOINT ["/usr/local/bin/chummer-blazor-entrypoint"]

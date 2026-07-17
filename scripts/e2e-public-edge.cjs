@@ -226,6 +226,24 @@ const checks = [
       && text.includes('Fictional campaign pressure, package heat, and closeout movement.')
   },
   {
+    url: `${baseUrl}/ledger/factions`,
+    assert: text =>
+      text.includes('Black Ledger faction files')
+      && text.includes('Use faction posture, pressure, and consequences to brief the next session cleanly.')
+      && text.includes('Open command map')
+      && text.includes('Open newsroom')
+      && text.includes('Open player entry')
+  },
+  {
+    url: `${baseUrl}/ledger/newsroom`,
+    assert: text =>
+      text.includes('Black Ledger newsroom')
+      && text.includes('Follow turn-ready updates, pressure notes, and closeout context from the same Black Ledger lane.')
+      && text.includes('Open command map')
+      && text.includes('Open factions')
+      && text.includes('Open player entry')
+  },
+  {
     url: `${baseUrl}/artifacts`,
     assert: text =>
       text.includes('Detail gallery')
@@ -244,6 +262,7 @@ const checks = [
     assert: text =>
       text.includes('Participate - Chummer.run')
       && text.includes('Public bugs and requests')
+      && text.includes('data-portal-participate-frame')
       && avoidsParticipateFailureCopy(text)
   },
   {
@@ -303,6 +322,34 @@ const checks = [
     assert: (text, response) =>
       response.url.endsWith('/status')
       && text.includes('Windows and Linux downloads are live.')
+  },
+  {
+    url: `${baseUrl}/openapi/v1.json`,
+    assert: text => {
+      const payload = JSON.parse(text);
+      return typeof payload?.openapi === 'string'
+        && typeof payload?.paths?.['/help'] === 'object'
+        && typeof payload?.paths?.['/app'] === 'object'
+        && typeof payload?.paths?.['/contact'] === 'object'
+        && typeof payload?.paths?.['/status'] === 'object'
+        && typeof payload?.paths?.['/blazor/app'] === 'object'
+        && typeof payload?.paths?.['/blazor/home'] === 'object'
+        && typeof payload?.paths?.['/blazor/'] === 'object'
+        && typeof payload?.paths?.['/downloads/'] === 'object'
+        && typeof payload?.paths?.['/downloads/releases.json'] === 'object'
+        && typeof payload?.paths?.['/downloads/install/{artifactId}'] === 'object'
+        && typeof payload?.paths?.['/play'] === 'object'
+        && typeof payload?.paths?.['/ledger'] === 'object'
+        && typeof payload?.paths?.['/ledger/map'] === 'object'
+        && typeof payload?.paths?.['/ledger/factions'] === 'object'
+        && typeof payload?.paths?.['/ledger/newsroom'] === 'object'
+        && typeof payload?.paths?.['/participate'] === 'object'
+        && typeof payload?.paths?.['/roadmap'] === 'object'
+        && typeof payload?.paths?.['/session/'] === 'object'
+        && typeof payload?.paths?.['/coach/'] === 'object'
+        && payload?.paths?.['/ledger/factions']?.get?.summary === 'Open the Black Ledger faction files surface'
+        && payload?.paths?.['/ledger/newsroom']?.get?.summary === 'Open the Black Ledger newsroom surface';
+    }
   }
 ];
 

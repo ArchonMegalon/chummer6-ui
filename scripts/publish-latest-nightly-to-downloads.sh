@@ -30,6 +30,26 @@ to_bool() {
   [[ "$value" == "1" || "$value" == "true" || "$value" == "yes" || "$value" == "on" ]]
 }
 
+assert_legacy_release_shelf_target() {
+  local target_dir="$1"
+  local layout_marker="$target_dir/.release-shelf-layout-v1"
+  local active_pointer="$target_dir/current.json"
+  local writer_policy="$target_dir/.release-shelf-writer-policy.json"
+
+  if [[ -e "$writer_policy" || -L "$writer_policy" ]]; then
+    echo "Refusing nightly filesystem publication into $target_dir: server-journal-v1 owns this shelf." >&2
+    echo "Use the staged HTTP upload API." >&2
+    return 1
+  fi
+  if [[ -e "$layout_marker" || -L "$layout_marker" || -e "$active_pointer" || -L "$active_pointer" ]]; then
+    echo "Refusing nightly fixed-path publication into $target_dir: immutable release shelf layout v1 is active." >&2
+    echo "Use the generation-aware publisher; this writer must not mutate paths behind current.json." >&2
+    return 1
+  fi
+}
+
+assert_legacy_release_shelf_target "$DEPLOY_DIR"
+
 normalized_public_release_channel="$(echo "$PUBLIC_RELEASE_CHANNEL" | tr '[:upper:]' '[:lower:]')"
 if [[ "$normalized_public_release_channel" =~ ^(public_stable|stable)$ ]] && ! to_bool "$ALLOW_STABLE_CHANNEL_FROM_NIGHTLY_PUBLISH"; then
   echo "Nightly publisher is the preview handoff lane. Refusing stable/public_stable publication from this script." >&2
@@ -113,10 +133,65 @@ if status:
     print(f"Windows visual proof status: {status}", file=sys.stderr)
 if summary:
     print(f"Windows visual proof summary: {summary}", file=sys.stderr)
-if next_actions:
-    first_action = normalize(next_actions[0])
-    if first_action:
-        print(f"Windows visual proof next action: {first_action}", file=sys.stderr)
+for index, action in enumerate(next_actions[:2], start=1):
+    normalized_action = normalize(action)
+    if normalized_action:
+        print(f"Windows visual proof next action {index}: {normalized_action}", file=sys.stderr)
+PY
+}
+
+forced_preview_nightly_visual_handoff_allowed() {
+  local stage_dir="$1"
+
+  if ! to_bool "$FORCE_NIGHTLY_PUBLISH"; then
+    return 1
+  fi
+  if [[ "$normalized_public_release_channel" != "preview" ]]; then
+    return 1
+  fi
+
+  python3 - "$stage_dir" <<'PY'
+from __future__ import annotations
+
+import json
+import sys
+from pathlib import Path
+
+
+ALLOWED_BLOCKER = "Windows visual proof is still outstanding for the staged installer bytes."
+
+
+def load_json(path: Path) -> dict:
+    try:
+        payload = json.loads(path.read_text(encoding="utf-8-sig"))
+    except Exception:
+        return {}
+    return payload if isinstance(payload, dict) else {}
+
+
+def normalize(value: object) -> str:
+    return str(value or "").strip().lower()
+
+
+stage_dir = Path(sys.argv[1])
+handoff = load_json(stage_dir / "RELEASE_BUILD_HANDOFF.generated.json")
+visual = handoff.get("windows_visual_proof_handoff")
+if not isinstance(visual, dict):
+    visual = load_json(stage_dir / "WINDOWS_INSTALLER_VISUAL_PROOF_HANDOFF.generated.json")
+
+blockers = handoff.get("blockers")
+if blockers != [ALLOWED_BLOCKER]:
+    raise SystemExit(1)
+if normalize(handoff.get("channel")) != "preview":
+    raise SystemExit(1)
+if handoff.get("stage_proof_complete") is not False:
+    raise SystemExit(1)
+if normalize(visual.get("status")) != "ready_for_windows_host":
+    raise SystemExit(1)
+if visual.get("only_blocker_is_visual_proof") is not True:
+    raise SystemExit(1)
+
+print("ok")
 PY
 }
 
@@ -127,7 +202,6 @@ verify_latest_stage_windows_payload_gate() {
   local release_channel_manifest="$stage_dir/RELEASE_CHANNEL.generated.json"
   local -a gate_args=(
     --files-dir "$files_dir"
-    --allow-empty
     --require-embedded-bootstrap-metadata
     --require-manifest-row
   )
@@ -147,6 +221,29 @@ verify_latest_stage_windows_payload_gate() {
 
   if ! python3 "$SCRIPT_DIR/verify-windows-installer-payloads.py" "${gate_args[@]}"; then
     echo "Nightly stage failed Windows installer payload preflight. Build a fresh stage before publishing." >&2
+    exit 1
+  fi
+}
+
+verify_latest_stage_artifact_scope_gate() {
+  local stage_dir="$1"
+  local files_dir="$stage_dir/files"
+  local releases_manifest="$stage_dir/releases.json"
+  local release_channel_manifest="$stage_dir/RELEASE_CHANNEL.generated.json"
+  local startup_smoke_dir="$stage_dir/startup-smoke"
+
+  if [[ ! -f "$SCRIPT_DIR/verify-release-stage-artifact-scope.py" ]]; then
+    echo "Missing release stage artifact scope gate: $SCRIPT_DIR/verify-release-stage-artifact-scope.py" >&2
+    exit 1
+  fi
+
+  if ! python3 "$SCRIPT_DIR/verify-release-stage-artifact-scope.py" \
+    --manifest "$release_channel_manifest" \
+    --manifest "$releases_manifest" \
+    --files-dir "$files_dir" \
+    --startup-smoke-dir "$startup_smoke_dir"
+  then
+    echo "Nightly stage failed release artifact scope preflight. Remove stale artifacts/receipts or rebuild a scoped stage before publishing." >&2
     exit 1
   fi
 }
@@ -196,11 +293,56 @@ verify_latest_stage_windows_exit_gate() {
   then
     rm -f "$gate_output"
     emit_windows_visual_proof_handoff_guidance "$stage_dir"
+    if forced_preview_nightly_visual_handoff_allowed "$stage_dir" >/dev/null; then
+      echo "Forced preview nightly publication continuing with Windows visual proof handoff only; stable promotion remains blocked." >&2
+      return 0
+    fi
     echo "Nightly stage failed Windows desktop exit gate preflight. Use the Windows visual proof handoff above before publishing." >&2
     exit 1
   fi
 
   rm -f "$gate_output"
+}
+
+verify_latest_stage_windows_release_evidence() {
+  local stage_dir="$1"
+  local release_channel_manifest="$stage_dir/RELEASE_CHANNEL.generated.json"
+  local releases_manifest="$stage_dir/releases.json"
+  local files_dir="$stage_dir/files"
+  local signing_dir="$stage_dir/signing"
+  local startup_smoke_dir="$stage_dir/startup-smoke"
+  local windows_exit_gate="$stage_dir/UI_WINDOWS_DESKTOP_EXIT_GATE.generated.json"
+  local -a evidence_args=(
+    --release-channel "$release_channel_manifest"
+    --downloads-manifest "$releases_manifest"
+    --files-dir "$files_dir"
+    --signing-dir "$signing_dir"
+    --startup-smoke-dir "$startup_smoke_dir"
+    --windows-exit-gate "$windows_exit_gate"
+  )
+
+  if [[ ! -f "$SCRIPT_DIR/verify-windows-release-evidence.py" ]]; then
+    echo "Missing Windows release evidence verifier: $SCRIPT_DIR/verify-windows-release-evidence.py" >&2
+    exit 1
+  fi
+
+  case "$normalized_public_release_channel" in
+    stable|public_stable)
+      evidence_args+=(--require-authenticode --require-native-windows)
+      ;;
+  esac
+
+  if forced_preview_nightly_visual_handoff_allowed "$stage_dir" >/dev/null; then
+    evidence_args+=(
+      --windows-visual-proof-handoff "$stage_dir/WINDOWS_INSTALLER_VISUAL_PROOF_HANDOFF.generated.json"
+      --allow-proof-only-visual-handoff
+    )
+  fi
+
+  if ! python3 "$SCRIPT_DIR/verify-windows-release-evidence.py" "${evidence_args[@]}"; then
+    echo "Nightly stage failed cross-evidence Windows release preflight. Rebuild a single-version Windows evidence set before publishing." >&2
+    exit 1
+  fi
 }
 
 is_publishable_nightly_stage() {
@@ -422,9 +564,11 @@ fi
 
 refresh_release_build_handoff "$latest_stage"
 
+verify_latest_stage_artifact_scope_gate "$latest_stage"
 verify_latest_stage_windows_payload_gate "$latest_stage"
 verify_latest_stage_windows_startup_smoke_gate "$latest_stage"
 verify_latest_stage_windows_exit_gate "$latest_stage"
+verify_latest_stage_windows_release_evidence "$latest_stage"
 
 echo "Publishing latest nightly stage: $latest_stage"
 echo "Target downloads shelf: $DEPLOY_DIR"

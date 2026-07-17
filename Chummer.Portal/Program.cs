@@ -6,10 +6,15 @@ using System.Text.Json;
 using System.Text.Json.Nodes;
 using Chummer.Contracts.Owners;
 using Microsoft.AspNetCore.Http.Extensions;
+using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.FileProviders;
 using Yarp.ReverseProxy.Forwarder;
 
 WebApplicationBuilder builder = WebApplication.CreateBuilder(args);
+builder.Configuration.AddKeyPerFile(
+    directoryPath: "/run/secrets/chummer-config",
+    optional: true,
+    reloadOnChange: false);
 
 builder.Services.AddHttpForwarder();
 builder.Services.AddSingleton(new ForwarderRequestConfig
@@ -39,7 +44,20 @@ if (!string.IsNullOrWhiteSpace(pathBase))
 }
 
 PortalOptions options = PortalOptions.Load(builder.Configuration);
+ValidatePortalOwnerSharedKey(options.OwnerSharedKey, builder.Environment);
 string downloadsHomeRoute = RouteRootFromPublicPath(options.DownloadsUrl);
+app.Use(async (context, next) =>
+{
+    if (await PortalCanonicalReleaseManifest.TryWriteAsync(
+            context,
+            downloadsHomeRoute,
+            options.DownloadsDirectory).ConfigureAwait(false))
+    {
+        return;
+    }
+
+    await next().ConfigureAwait(false);
+});
 if (Directory.Exists(options.DownloadsDirectory))
 {
     app.UseStaticFiles(new StaticFileOptions
@@ -104,7 +122,8 @@ app.MapGet("/", async context =>
 });
 
 string blazorHomeRoute = RouteRootFromPublicPath(options.BlazorUrl);
-app.MapGet(blazorHomeRoute, () => Results.Redirect(BuildBlazorAppUrl(options)));
+app.MapGet(blazorHomeRoute, () => Results.Redirect(BuildPublicUrl(options.BlazorUrl, "app")));
+app.MapGet($"{blazorHomeRoute}/", () => Results.Redirect(BuildPublicUrl(options.BlazorUrl, "app")));
 app.MapGet(PortalRoutes.PublicApp, (HttpContext context) => Results.Redirect(BuildPublicAppRedirectUrl(options, context)));
 
 app.MapGet(downloadsHomeRoute, async context =>
@@ -114,6 +133,54 @@ app.MapGet(downloadsHomeRoute, async context =>
 });
 app.MapGet($"{downloadsHomeRoute}/get/{{artifactId}}", (string artifactId) => ResolveDownloadDispatch(artifactId, options));
 app.MapGet($"{downloadsHomeRoute}/install/{{artifactId}}", (string artifactId) => ResolveInstallHandoff(artifactId, options));
+
+app.MapGet("/what-is-chummer", async context =>
+{
+    await WriteHtmlAsync(context, BuildProductStoryHtml()).ConfigureAwait(false);
+});
+
+app.MapGet("/play", async context =>
+{
+    await WriteHtmlAsync(context, BuildPlayEntryHtml(options)).ConfigureAwait(false);
+});
+
+app.MapGet("/ledger", () => Results.Redirect("/ledger/map"));
+app.MapGet("/ledger/map", async context =>
+{
+    await WriteHtmlAsync(context, BuildBlackLedgerMapHtml()).ConfigureAwait(false);
+});
+app.MapGet("/ledger/factions", async context =>
+{
+    await WriteHtmlAsync(context, BuildBlackLedgerFactionsHtml()).ConfigureAwait(false);
+});
+app.MapGet("/ledger/newsroom", async context =>
+{
+    await WriteHtmlAsync(context, BuildBlackLedgerNewsroomHtml()).ConfigureAwait(false);
+});
+
+app.MapGet("/artifacts", async context =>
+{
+    await WriteHtmlAsync(context, BuildArtifactsGalleryHtml()).ConfigureAwait(false);
+});
+
+app.MapGet("/participate", async context =>
+{
+    await WriteHtmlAsync(context, BuildParticipateHtml(options)).ConfigureAwait(false);
+});
+
+app.MapGet("/roadmap", () => Results.Redirect("/participate"));
+
+if (string.IsNullOrWhiteSpace(options.SessionProxyUrl))
+{
+    string sessionRoute = RouteRootFromPublicPath(options.SessionUrl);
+    app.MapGet(sessionRoute, () => Results.Redirect("/play"));
+}
+
+if (string.IsNullOrWhiteSpace(options.CoachProxyUrl))
+{
+    string coachRoute = RouteRootFromPublicPath(options.CoachUrl);
+    app.MapGet(coachRoute, () => Results.Redirect("/status"));
+}
 
 app.MapGet("/contact", () =>
 {
@@ -147,7 +214,7 @@ app.MapGet("/docs/docs.js", async context =>
     context.Response.ContentType = "application/javascript; charset=utf-8";
     await context.Response.WriteAsync(BuildDocsScript()).ConfigureAwait(false);
 });
-app.MapGet("/openapi/v1.json", () => Results.Json(BuildOpenApiDocument()));
+app.MapGet("/openapi/v1.json", () => Results.Json(BuildOpenApiDocument(options)));
 
 app.MapGet("/auth/implicit/start", (HttpContext context, string? owner, string? next) =>
 {
@@ -356,7 +423,7 @@ static string BuildPortalHomeHtml(HttpContext context, PortalOptions options)
         : "Reserved route; no AI control plane is configured in this stack yet.";
     string apiAiLink = "/api/ai/";
     string appUrl = PortalRoutes.PublicApp;
-    string appRosterUrl = PortalRoutes.PublicAppRoster;
+    string appRosterUrl = $"{PortalRoutes.PublicApp}?command={PortalRoutes.CharacterRosterCommand}";
     string appHomeUrl = BuildBlazorHomeUrl(options);
 
     return $$"""
@@ -396,7 +463,7 @@ static string BuildPortalHomeHtml(HttpContext context, PortalOptions options)
     <h1>Explore Chummer Online, downloads, and support from one self-hosted edge.</h1>
     <p class="meta">Start in the Character Roster, continue into Chummer Online, and keep owner-aware portal routing in one place when self-hosting is configured.</p>
     <a class="cta" href="{{appRosterUrl}}" data-portal-home-action="explore-chummer-online">Explore Chummer Online</a>
-    <nav class="route-pills" aria-label="Chummer browser routes">
+    <nav class="route-pills" aria-label="Chummer Online routes">
       <a href="{{appRosterUrl}}" data-portal-home-route="chummer-app-roster">Open Character Roster</a>
       <a href="{{appUrl}}" data-portal-home-route="chummer-app">Open Chummer Online</a>
       <a href="{{appHomeUrl}}" data-portal-home-route="chummer-home">Open Chummer Online overview</a>
@@ -511,7 +578,7 @@ static string BuildDownloadsHtml(HttpContext context, PortalOptions options)
   <title>Chummer Downloads</title>
   <style>
     :root { color-scheme: dark; --portal-ink: #fff8e8; --portal-muted: rgba(255,248,232,.76); --portal-gold: #ffd46f; --portal-mint: #8ff0bc; --portal-blue: #76aeca; --portal-panel: rgba(8,11,16,.88); --portal-line: rgba(255,212,111,.25); }
-    body { font-family: "Aptos Display", "Trebuchet MS", sans-serif; margin: 0; background: radial-gradient(circle at 82% 7%, rgba(255,212,111,.24), transparent 28%), radial-gradient(circle at 7% 13%, rgba(118,174,202,.22), transparent 31%), radial-gradient(circle at 58% 108%, rgba(143,240,188,.16), transparent 35%), linear-gradient(118deg, rgba(255,212,111,.05), transparent 36%, rgba(143,240,188,.04) 72%, transparent), linear-gradient(180deg,#121922 0%,#0b1117 52%,#06090c 100%); color: var(--portal-ink); }
+    body { font-family: "Aptos Display", "Trebuchet MS", sans-serif; margin: 0; background: radial-gradient(circle at 82% 7%, rgba(255,212,111,.24), transparent 28%), radial-gradient(circle at 7% 13%, rgba(118,174,202,.22), transparent 31%), radial-gradient(circle at 58% 108%, rgba(143,240,188,.16), transparent 35%), linear-gradient(118deg, rgba(255,212,111,.05), transparent 36%, rgba(143,240,188,.04) 72%, transparent), linear-gradient(180deg,#192026 0%,#10161a 50%,#080b0d 100%); color: var(--portal-ink); }
     body::before { content: ""; position: fixed; inset: 0; pointer-events: none; background-image: linear-gradient(rgba(255,212,111,.04) 1px, transparent 1px), linear-gradient(90deg, rgba(143,240,188,.034) 1px, transparent 1px); background-size: 4.25rem 4.25rem; opacity: .38; mask-image: linear-gradient(180deg, rgba(0,0,0,.68), transparent 78%); }
     @keyframes portal-surface-reveal { from { opacity: 0; transform: translateY(.55rem); } to { opacity: 1; transform: translateY(0); } }
     main { max-width: 980px; margin: 0 auto; padding: 2rem 1rem 3rem; }
@@ -524,7 +591,7 @@ static string BuildDownloadsHtml(HttpContext context, PortalOptions options)
     .download-actions a, .install-state a { display: inline-flex; align-items: center; justify-content: center; min-height: 2.55rem; padding: .55rem .85rem; border: 1px solid rgba(255,212,111,.34); border-radius: 999px; color: var(--portal-ink); text-decoration: none; font-weight: 800; background: linear-gradient(135deg,rgba(105,240,182,.16),rgba(255,212,111,.08)), rgba(255,255,255,.035); transition: transform .16s ease, border-color .16s ease, box-shadow .16s ease; }
     .download-actions a.primary { border-color: rgba(255,212,111,.72); color: #171007; background: linear-gradient(135deg,#b9812f 0%,#ffd46f 58%,#fff2b4 100%); }
     .download-actions a:hover, .download-actions a:focus-visible, .install-state a:hover, .install-state a:focus-visible { transform: translateY(-1px); border-color: rgba(143,240,188,.58); box-shadow: 0 0 0 3px rgba(143,240,188,.22); }
-    .download-actions a:focus-visible, .install-state a:focus-visible, [data-download-list] a:focus-visible, .compatibility-routes a:focus-visible { outline: 3px solid rgba(255,212,111,.72); outline-offset: 3px; }
+    .download-actions a:focus-visible, .install-state a:focus-visible, [data-download-list] a:focus-visible, .compatibility-routes a:focus-visible { outline: 3px solid rgba(137,224,179,.68); outline-offset: 3px; }
     .install-state { border: 1px solid rgba(244,207,115,.45); background: linear-gradient(135deg,rgba(244,207,115,.16),rgba(137,224,179,.08)); border-radius: 1rem; padding: .95rem; }
     .install-state a { margin-top: .5rem; }
     .download-meta, .download-subtle { color: var(--portal-muted); }
@@ -534,11 +601,12 @@ static string BuildDownloadsHtml(HttpContext context, PortalOptions options)
     .secondary-block summary::-webkit-details-marker { display: none; }
     .secondary-block > div { padding: 0 .95rem .95rem; }
     .secondary-block ul { margin: .5rem 0 0; padding-left: 1.2rem; }
-    .compatibility-routes { margin-top: .75rem; }
-    [data-download-list], .compatibility-routes { display: grid; gap: .55rem; padding-left: 0; list-style: none; }
-    [data-download-list] li, .compatibility-routes li { padding: .75rem; border: 1px solid rgba(169,225,190,.18); border-radius: 1rem; background: linear-gradient(145deg,var(--portal-panel),rgba(8,17,15,.76)); box-shadow: 0 18px 52px rgba(0,0,0,.28); transition: border-color .16s ease, box-shadow .16s ease; }
-    [data-download-list] li:focus-within, .compatibility-routes li:focus-within { border-color: rgba(255,212,111,.46); box-shadow: 0 20px 58px rgba(0,0,0,.32), 0 0 0 3px rgba(255,212,111,.14); }
-    [data-download-list] span, .compatibility-routes span { display: inline-flex; margin: .25rem .25rem 0 0; padding: .18rem .4rem; border-radius: 999px; color: rgba(248,244,232,.78); background: rgba(255,255,255,.06); font-size: .82rem; }
+    .compatibility-routes, .compatibility.routes { margin-top: .75rem; }
+    .compatibility routes { display: contents; }
+    [data-download-list], .compatibility-routes, .compatibility.routes { display: grid; gap: .55rem; padding-left: 0; list-style: none; }
+    [data-download-list] li, .compatibility-routes li, .compatibility.routes li { padding: .75rem; border: 1px solid rgba(169,225,190,.18); border-radius: 1rem; background: linear-gradient(145deg,var(--portal-panel),rgba(8,17,15,.76)); box-shadow: 0 18px 52px rgba(0,0,0,.28); transition: border-color .16s ease, box-shadow .16s ease; }
+    [data-download-list] li:focus-within, .compatibility-routes li:focus-within, .compatibility.routes li:focus-within { border-color: rgba(255,212,111,.46); box-shadow: 0 20px 58px rgba(0,0,0,.32), 0 0 0 3px rgba(255,212,111,.14); }
+    [data-download-list] span, .compatibility-routes span, .compatibility.routes span { display: inline-flex; margin: .25rem .25rem 0 0; padding: .18rem .4rem; border-radius: 999px; color: rgba(248,244,232,.78); background: rgba(255,255,255,.06); font-size: .82rem; }
     a { color: var(--portal-gold); }
     code { background: rgba(255,255,255,.08); padding: .15rem .35rem; border-radius: .35rem; }
     @media (prefers-contrast: more) { a, .cta, .route-pills a, .download-actions a, .install-state a, .handoff-actions a, .help-card, .doc-actions a, .endpoint { border-color: rgba(255,248,232,.82); box-shadow: none; } a:focus-visible, .cta:focus-visible, .route-pills a:focus-visible, .download-actions a:focus-visible, .install-state a:focus-visible, .handoff-actions a:focus-visible, .help-card:focus-visible, .doc-actions a:focus-visible, .endpoint:focus-within { outline: 3px solid #fff8e8; outline-offset: 3px; } }
@@ -553,7 +621,7 @@ static string BuildDownloadsHtml(HttpContext context, PortalOptions options)
       <div>
         <p data-download-kicker="chummer-release-shelf">Desktop or browser</p>
         <h1 id="desktop-downloads-title">Downloads</h1>
-        <p>Use the desktop app when you need local files. Otherwise keep moving in Chummer Online.</p>
+        <p>Install native Chummer when you need desktop file-system behavior. Otherwise keep moving in Chummer Online.</p>
       </div>
       <nav class="download-actions" aria-label="Downloads handoff actions">
         <a class="primary" href="{{appRosterUrl}}" data-download-action="open-chummer-app">Open Chummer Online</a>
@@ -564,33 +632,34 @@ static string BuildDownloadsHtml(HttpContext context, PortalOptions options)
     <div class="download-meta" aria-label="Current desktop release summary">
       <span data-download-version="{{WebUtility.HtmlEncode(summary.Version)}}">Build <code>{{WebUtility.HtmlEncode(summary.Version)}}</code></span>
       <span data-download-status="{{WebUtility.HtmlEncode(summary.Status)}}">State <code>{{WebUtility.HtmlEncode(summary.Status)}}</code></span>
-      <span data-download-artifact-summary="{{summary.Downloads.Count}}">{{summary.Downloads.Count}} download{{(summary.Downloads.Count == 1 ? string.Empty : "s")}}</span>
+      <span data-download-artifact-summary="{{summary.Downloads.Count}}" data-download-count="{{summary.Downloads.Count}}">Published artifacts: {{summary.Downloads.Count}}</span>
     </div>
     {{installStatePanel}}
     <p id="fallback-link" class="download-subtle" data-download-fallback-guidance>{{fallbackText}}</p>
-    <h2 id="published-download-artifacts">Available now</h2>
-    <p id="published-download-description" class="download-subtle" data-download-description>These downloads come from the current release manifest.</p>
+    <span hidden data-download-link-mode="self-host-dispatch"></span>
+    <h2 id="published-download-artifacts">Published artifacts:</h2>
+    <p id="published-download-description" class="download-subtle" data-download-description>Published artifacts stay on this self-hosted edge when local bytes are mounted here.</p>
     <ul data-download-list="published-artifacts" aria-labelledby="published-download-artifacts" aria-describedby="published-download-description">
       {{artifactLines}}
     </ul>
     <details class="secondary-block" data-self-host-downloads-panel="docker-operator">
-      <summary id="self-host-downloads-title">Self-host notes</summary>
+      <summary id="self-host-downloads-title">Self-host operator lane</summary>
       <div>
         <p data-self-host-docker-command="docker compose --profile portal up -d">Run <code>docker compose --profile portal up -d</code> when you want to serve this portal and its downloads from one local edge.</p>
         <ul>
-          <li data-self-host-release-manifest="{{WebUtility.HtmlEncode(releasesJsonUrl)}}">Mount <code>releases.json</code> and <code>RELEASE_CHANNEL.generated.json</code> before claiming installer availability.</li>
-          <li data-self-host-browser-app="{{WebUtility.HtmlEncode(PortalRoutes.PublicAppRoster)}}">Use /app?command=character_roster when installer proof is still pending.</li>
-          <li data-self-host-installer-boundary="proof-required">Proof-required routes stay visible, but they do not serve installer bytes until the manifest and proof agree.</li>
+          <li data-self-host-release-manifest="{{WebUtility.HtmlEncode(releasesJsonUrl)}}">Mount <code>releases.json</code> and the sibling <code>RELEASE_CHANNEL.generated.json</code> into the downloads volume before claiming installer availability.</li>
+          <li data-self-host-browser-app="{{WebUtility.HtmlEncode(PortalRoutes.PublicAppRoster)}}">Use /app?command=character_roster when installer proof is pending.</li>
+          <li data-self-host-installer-boundary="proof-required">Proof-required compatibility routes stay visible, but they do not serve installer bytes until the manifest and proof agree.</li>
         </ul>
         <p><a href="{{releasesJsonUrl}}" data-download-manifest-link aria-label="Open raw releases manifest JSON">Release data</a></p>
       </div>
     </details>
     <details class="secondary-block">
-      <summary id="compatibility-handoff-routes">Other install routes</summary>
+      <summary id="compatibility-handoff-routes">Compatibility handoff routes</summary>
       <div>
-        <p id="compatibility-handoff-description" class="download-subtle" data-install-route-description>Known fallback routes that still need proof.</p>
-        <p class="download-subtle" data-install-route-count="{{compatibilityRoutes.Count}}">{{compatibilityRoutes.Count}} route{{(compatibilityRoutes.Count == 1 ? string.Empty : "s")}} waiting for proof</p>
-        <ul class="compatibility-routes" data-install-route-list="compatibility-handoff" aria-labelledby="compatibility-handoff-routes" aria-describedby="compatibility-handoff-description">
+        <p id="compatibility-handoff-description" class="download-subtle" data-install-route-description>Known fallback install routes stay visible here.</p>
+        <p class="download-subtle" data-install-route-count="{{compatibilityRoutes.Count}}">Compatibility routes: {{compatibilityRoutes.Count}} route{{(compatibilityRoutes.Count == 1 ? string.Empty : "s")}} waiting for proof</p>
+        <ul class="compatibility routes" data-install-route-list="compatibility-handoff" aria-labelledby="compatibility-handoff-routes" aria-describedby="compatibility-handoff-description">
           {{compatibilityRouteLines}}
         </ul>
       </div>
@@ -616,7 +685,7 @@ static string BuildDownloadsInstallStatePanel(PortalOptions options, string inst
     string nextRouteValue = string.IsNullOrWhiteSpace(nextInstallRoute)
         ? "requested-installer-route"
         : WebUtility.HtmlEncode(nextInstallRoute);
-    return $"""<p class="install-state" data-install-state="proof_required" data-install-next-route="{nextRouteValue}" role="status" aria-live="polite">{routeLabel} is known, but it is not live yet because installer proof is still missing.<br /><a href="{appRosterUrl}" data-install-state-action="open-browser-app">Open Chummer Online instead</a></p>""";
+    return $"""<p class="install-state" data-install-state="proof_required" data-install-next-route="{nextRouteValue}" role="status" aria-live="polite">{routeLabel} is known, but it is not live yet because installer proof is still required.<br /><a href="{appRosterUrl}" data-install-state-action="open-browser-app">Explore Chummer Online instead</a></p>""";
 }
 
 static IResult ResolveInstallHandoff(string artifactId, PortalOptions options)
@@ -826,9 +895,9 @@ static string BuildContactHtml(PortalOptions options)
 <main>
   <section class="panel" data-portal-contact-panel="support-handoff" aria-labelledby="portal-contact-title">
     <h1 id="portal-contact-title">Contact</h1>
-    <p data-portal-contact-context="discord-first">The fastest human route is the Chummer Discord.</p>
-    <p data-portal-contact-public-route="discord-community">If you are stuck on install, access, or account linking, start with downloads or help and then use Discord if you still need a person.</p>
-    <nav class="handoff-actions" aria-label="Contact recovery actions"><a href="{{discordUrl}}" data-portal-contact-action="open-discord">Open Discord</a><a href="/downloads/" data-portal-contact-action="open-downloads">Open downloads</a><a href="/help" data-portal-contact-action="open-help">Open help</a><a href="/status" data-portal-contact-action="open-status">Open status</a><a href="{{appRosterUrl}}" data-portal-contact-action="open-chummer-app">Open Chummer Online</a></nav>
+    <p data-portal-contact-context="self-host-fallback" data-portal-contact-public-route="chummer.run/contact" data-portal-contact-scenarios="installer-account-app">The fastest human route is the Chummer Discord.</p>
+    <p><span data-portal-contact-scenario="installer-proof">Installer proof</span>, <span data-portal-contact-scenario="account-recovery">account recovery</span>, and <span data-portal-contact-scenario="browser-app">browser app</span> help should start with downloads, status, help, or docs before a person is needed.</p>
+    <nav class="handoff-actions" aria-label="Contact recovery actions"><a href="{{discordUrl}}" data-portal-contact-action="open-discord">Open Discord</a><a href="/downloads/" data-portal-contact-action="open-downloads">Open downloads</a><a href="/help" data-portal-contact-action="open-help">Open help</a><a href="/status" data-portal-contact-action="open-status">Open status</a><a href="/docs/" data-portal-contact-action="open-docs">Open docs</a><a href="{{appRosterUrl}}" data-portal-contact-action="open-chummer-app">Open Chummer Online</a></nav>
   </section>
 </main>
 </body>
@@ -839,6 +908,7 @@ static string BuildContactHtml(PortalOptions options)
 static string BuildHelpHtml(PortalOptions options)
 {
     string appRosterUrl = WebUtility.HtmlEncode(PortalRoutes.PublicAppRoster);
+    string appHomeUrl = WebUtility.HtmlEncode(BuildBlazorHomeUrl(options));
     string downloadsUrl = WebUtility.HtmlEncode(options.DownloadsUrl);
     string discordUrl = WebUtility.HtmlEncode(PortalRoutes.CommunityDiscord);
 
@@ -870,10 +940,11 @@ static string BuildHelpHtml(PortalOptions options)
 <main>
   <section class="panel" data-portal-help-panel="handoff-guide" aria-labelledby="portal-help-title">
     <h1 id="portal-help-title">Help</h1>
-    <p data-portal-help-context="shortest-path-first">Pick the shortest path.</p>
+    <p data-portal-help-context="self-host-first">Pick the shortest path.</p>
     <nav class="help-grid" aria-label="Help recovery actions">
       <a class="help-card" href="{{downloadsUrl}}" data-portal-help-action="open-downloads">Downloads and install</a>
       <a class="help-card" href="{{appRosterUrl}}" data-portal-help-action="open-chummer-app">Open Chummer Online</a>
+      <a class="help-card" href="{{appHomeUrl}}" data-portal-help-action="open-chummer-home">Chummer Online overview</a>
       <a class="help-card" href="/status" data-portal-help-action="open-status">Current status</a>
       <a class="help-card" href="{{discordUrl}}" data-portal-help-action="open-discord">Community Discord</a>
       <a class="help-card" href="/contact" data-portal-help-action="open-contact">Contact</a>
@@ -890,10 +961,13 @@ static string BuildHelpHtml(PortalOptions options)
 static string BuildStatusHtml(PortalOptions options)
 {
     ReleaseManifestSummary summary = ReadReleaseManifest(options.ReleasesFile);
+    PlaySurfaceHorizonSummary playSurfaceSummary = ReadPlaySurfaceHorizonSummary(options.DownloadsDirectory);
     string availability = summary.Downloads.Count > 0 ? "Available now" : "Not published yet";
+    string desktopLaneSummary = BuildDesktopLaneSummary(summary);
     string downloadsUrl = WebUtility.HtmlEncode(options.DownloadsUrl);
     string appRosterUrl = WebUtility.HtmlEncode(PortalRoutes.PublicAppRoster);
     string discordUrl = WebUtility.HtmlEncode(PortalRoutes.CommunityDiscord);
+    string playSurfacePanel = BuildPlaySurfaceStatusPanel(options, playSurfaceSummary);
 
     return $$"""
 <!DOCTYPE html>
@@ -914,6 +988,24 @@ static string BuildStatusHtml(PortalOptions options)
     .status-card { border: 1px solid rgba(143,240,188,.26); border-radius: 16px; padding: .85rem; background: linear-gradient(135deg,rgba(118,174,202,.14),rgba(143,240,188,.06)), rgba(255,255,255,.045); }
     .status-card strong { display: block; margin-bottom: .35rem; }
     .status-meta { color: var(--portal-muted); }
+    .panel-stack { display: grid; gap: 1rem; }
+    .status-chip { display: inline-flex; align-items: center; width: fit-content; min-height: 1.7rem; margin: .35rem 0 .5rem; padding: .1rem .5rem; border: 1px solid rgba(255,212,111,.26); border-radius: 999px; background: rgba(255,255,255,.045); color: var(--portal-gold); font-size: .74rem; text-transform: uppercase; letter-spacing: .04em; }
+    .status-card[data-play-surface-horizon-status="proven"] .status-chip { border-color: rgba(143,240,188,.4); color: var(--portal-mint); }
+    .status-card[data-play-surface-horizon-status="mixed"] .status-chip { border-color: rgba(255,212,111,.38); color: var(--portal-gold); }
+    .status-card[data-play-surface-horizon-status="staged"] .status-chip { border-color: rgba(118,174,202,.42); color: var(--portal-blue); }
+    .horizon-summary { margin: .55rem 0 0; line-height: 1.45; }
+    .horizon-reference-groups { display: grid; gap: .65rem; margin-top: .85rem; }
+    .horizon-reference-group { padding-top: .65rem; border-top: 1px solid rgba(255,255,255,.08); }
+    .horizon-reference-title { display: block; margin-bottom: .35rem; color: var(--portal-ink); font-size: .82rem; letter-spacing: .03em; text-transform: uppercase; }
+    .horizon-reference-list { margin: 0; padding-left: 1rem; display: grid; gap: .28rem; color: var(--portal-muted); }
+    .horizon-reference-entry { display: flex; flex-wrap: wrap; gap: .35rem; align-items: baseline; }
+    .horizon-reference-entry a { color: var(--portal-ink); text-decoration-color: rgba(255,212,111,.45); }
+    .horizon-reference-meta { color: var(--portal-muted); font-size: .88rem; }
+    .horizon-boundary-groups { display: grid; gap: .65rem; margin-top: .85rem; }
+    .horizon-boundary-group { padding-top: .65rem; border-top: 1px solid rgba(255,255,255,.08); }
+    .horizon-boundary-title { display: block; margin-bottom: .35rem; color: var(--portal-ink); font-size: .82rem; letter-spacing: .03em; text-transform: uppercase; }
+    .horizon-boundary-list { margin: 0; padding-left: 1rem; display: grid; gap: .28rem; color: var(--portal-muted); }
+    .horizon-boundary-item { line-height: 1.45; }
     .handoff-actions { display: flex; flex-wrap: wrap; gap: .55rem; margin-top: 1rem; }
     .handoff-actions a { display: inline-flex; align-items: center; min-height: 2.35rem; padding: .45rem .75rem; border: 1px solid rgba(143,240,188,.34); border-radius: 999px; color: var(--portal-ink); text-decoration: none; background: linear-gradient(135deg,rgba(118,174,202,.16),rgba(143,240,188,.07)), rgba(255,255,255,.035); transition: transform .16s ease, border-color .16s ease, box-shadow .16s ease; }
     .handoff-actions a:hover, .handoff-actions a:focus-visible { transform: translateY(-1px); border-color: rgba(143,240,188,.58); box-shadow: 0 0 0 3px rgba(143,240,188,.18); }
@@ -926,23 +1018,484 @@ static string BuildStatusHtml(PortalOptions options)
 </head>
 <body>
 <main>
+  <div class="panel-stack">
   <section class="panel" data-portal-status-panel="release-availability" aria-labelledby="portal-status-title">
-    <h1 id="portal-status-title">Status</h1>
-    <p>The current build and whether downloads are live.</p>
+    <h1 id="portal-status-title">Current release</h1>
+    <p>The build, platforms, and current state in one place.</p>
     <div class="status-grid">
       <div class="status-card" data-portal-status-version="{{WebUtility.HtmlEncode(summary.Version)}}"><strong>Build</strong><code>{{WebUtility.HtmlEncode(summary.Version)}}</code></div>
       <div class="status-card" data-portal-status-availability="{{WebUtility.HtmlEncode(availability)}}"><strong>Downloads</strong>{{availability}}</div>
       <div class="status-card" data-portal-status-release-status="{{WebUtility.HtmlEncode(summary.Status)}}"><strong>State</strong><code>{{WebUtility.HtmlEncode(summary.Status)}}</code></div>
     </div>
+    <p class="status-meta">{{WebUtility.HtmlEncode(desktopLaneSummary)}}</p>
     <p class="status-meta" data-portal-status-artifact-count="{{summary.Downloads.Count}}">Published files: <code>{{summary.Downloads.Count}}</code></p>
     <p class="status-meta" data-portal-status-install-route-count="{{summary.InstallRoutes.Count}}">Install routes: <code>{{summary.InstallRoutes.Count}}</code></p>
-    <p class="status-meta" data-portal-status-boundary="source-manifest-backed">This page reads directly from the local release manifest.</p>
-    <nav class="handoff-actions" aria-label="Status recovery actions"><a href="{{downloadsUrl}}" data-portal-status-action="open-downloads">Open downloads</a><a href="/help" data-portal-status-action="open-help">Open help</a><a href="{{discordUrl}}" data-portal-status-action="open-discord">Open Discord</a><a href="{{appRosterUrl}}" data-portal-status-action="open-chummer-app">Open Chummer Online</a></nav>
+    <p class="status-meta" data-portal-status-boundary="source-manifest-backed">This status page is backed by the local release-manifest shelf.</p>
+    <nav class="handoff-actions" aria-label="Status recovery actions"><a href="{{downloadsUrl}}" data-portal-status-action="open-downloads">Open downloads</a><a href="/help" data-portal-status-action="open-help">Open help</a><a href="/docs/" data-portal-status-action="open-docs">Open docs</a><a href="{{discordUrl}}" data-portal-status-action="open-discord">Open Discord</a><a href="{{appRosterUrl}}" data-portal-status-action="open-chummer-app">Open Chummer Online</a></nav>
+  </section>
+  {{playSurfacePanel}}
+  </div>
+</main>
+</body>
+</html>
+""";
+}
+
+static string BuildPlaySurfaceStatusPanel(PortalOptions options, PlaySurfaceHorizonSummary summary)
+{
+    string receiptUrl = WebUtility.HtmlEncode(BuildPublicUrl(options.DownloadsUrl, summary.ReceiptRelativePath));
+    string executionScope = WebUtility.HtmlEncode(summary.CurrentExecutionScope);
+    string routeTruthPanel = BuildPlaySurfaceRouteTruth(summary);
+    StringBuilder builder = new();
+    builder.AppendLine("""  <section class="panel" data-portal-status-panel="play-surface-horizons" aria-labelledby="portal-play-surface-title">""");
+    builder.AppendLine("""    <h2 id="portal-play-surface-title">Play Surface Horizons</h2>""");
+    builder.AppendLine("""    <p>Runtime proof versus staged utility for the public browser and PWA lane.</p>""");
+
+    if (summary.Horizons.Count == 0)
+    {
+        builder.AppendLine($"""    <p class="status-meta" data-portal-play-surface-state="{WebUtility.HtmlEncode(summary.Status)}">Receipt state: <code>{WebUtility.HtmlEncode(summary.Status)}</code></p>""");
+        builder.AppendLine($"""    <p class="status-meta">{WebUtility.HtmlEncode(summary.Summary)}</p>""");
+        builder.AppendLine($"""    <nav class="handoff-actions" aria-label="Play surface recovery actions"><a href="{receiptUrl}" data-portal-play-surface-action="open-receipt">Open horizon receipt path</a></nav>""");
+        builder.AppendLine("""  </section>""");
+        return builder.ToString();
+    }
+
+    builder.AppendLine($"""    <p class="status-meta" data-portal-play-surface-state="{WebUtility.HtmlEncode(summary.Status)}">Receipt: <code>{WebUtility.HtmlEncode(summary.Status)}</code> • Hosted execution scope: <code data-portal-play-surface-scope="{executionScope}">{executionScope}</code></p>""");
+    builder.Append(routeTruthPanel);
+    builder.AppendLine("""    <div class="status-grid" data-portal-play-surface-grid="horizons">""");
+    foreach (PlaySurfaceHorizonItem horizon in summary.Horizons)
+    {
+        string horizonId = WebUtility.HtmlEncode(horizon.Id);
+        string status = WebUtility.HtmlEncode(horizon.Status);
+        builder.AppendLine($"""      <article class="status-card" data-play-surface-horizon-id="{horizonId}" data-play-surface-horizon-status="{status}">""");
+        builder.AppendLine($"""        <strong>{WebUtility.HtmlEncode(horizon.Title)}</strong>""");
+        builder.AppendLine($"""        <span class="status-chip" data-play-surface-horizon-chip="{status}">{FormatStatusBadge(horizon.Status)}</span>""");
+        builder.AppendLine($"""        <p>{WebUtility.HtmlEncode(horizon.Headline)}</p>""");
+        builder.AppendLine($"""        <p class="status-meta horizon-summary">{WebUtility.HtmlEncode(horizon.Summary)}</p>""");
+        builder.AppendLine($"""        <p class="status-meta">Runtime receipts: <code>{horizon.RuntimeProvenReceiptCount}</code> • Source-staged receipts: <code>{horizon.SourceStagedReceiptCount}</code> • Docs: <code>{horizon.DocumentationSourceCount}</code></p>""");
+        builder.Append(BuildPlaySurfaceReferenceGroups(options, horizon));
+        builder.Append(BuildPlaySurfaceBoundaryGroups(horizon));
+        builder.AppendLine("""      </article>""");
+    }
+    builder.AppendLine("""    </div>""");
+    builder.AppendLine($"""    <p class="status-meta" data-portal-play-surface-boundary="{WebUtility.HtmlEncode(summary.Summary)}">This panel reads from the deployed browser-lane receipt, not repo-only status.</p>""");
+    builder.AppendLine($"""    <nav class="handoff-actions" aria-label="Play surface proof actions"><a href="{receiptUrl}" data-portal-play-surface-action="open-receipt">Open play-surface receipt</a><a href="/downloads/" data-portal-play-surface-action="open-downloads">Open downloads</a><a href="/docs/" data-portal-play-surface-action="open-docs">Open docs</a></nav>""");
+    builder.AppendLine("""  </section>""");
+    return builder.ToString();
+}
+
+static string BuildPlaySurfaceRouteTruth(PlaySurfaceHorizonSummary summary)
+{
+    (string Id, string Label, string Value)[] routes =
+    [
+        ("public-entry", "Public entry", summary.PublicEntryRoute),
+        ("public-roster-entry", "Public roster entry", summary.PublicRosterEntryRoute),
+        ("public-root", "Blazor root", summary.PublicBlazorRootRoute),
+        ("hosted-app", "Hosted app path", summary.HostedAppRoute),
+        ("compatibility-route", "Compatibility route", summary.CompatibilityRouteBase),
+        ("execution-route", "Execution proof route", summary.ExecutionRouteBase),
+    ];
+
+    if (!routes.Any(static route => !string.IsNullOrWhiteSpace(route.Value)))
+    {
+        return string.Empty;
+    }
+
+    StringBuilder builder = new();
+    builder.AppendLine("""    <div class="status-grid" data-portal-play-surface-grid="route-truth">""");
+    foreach ((string id, string label, string value) in routes)
+    {
+        if (string.IsNullOrWhiteSpace(value))
+        {
+            continue;
+        }
+
+        string encodedId = WebUtility.HtmlEncode(id);
+        string encodedLabel = WebUtility.HtmlEncode(label);
+        string encodedValue = WebUtility.HtmlEncode(value);
+        builder.AppendLine($"""      <div class="status-card" data-portal-play-surface-route="{encodedId}"><strong>{encodedLabel}</strong><code>{encodedValue}</code></div>""");
+    }
+    builder.AppendLine("""    </div>""");
+    builder.AppendLine("""    <p class="status-meta" data-portal-play-surface-route-boundary="public-vs-proof-lanes">The clean public route stays on <code>/app</code>; the hosted app path stays on <code>/blazor/app</code>; the execution-proof compatibility lane stays on <code>/blazor/workbench</code>.</p>""");
+    return builder.ToString();
+}
+
+static string BuildPlaySurfaceReferenceGroups(PortalOptions options, PlaySurfaceHorizonItem horizon)
+{
+    StringBuilder builder = new();
+    bool hasRuntimeProof = horizon.RuntimeProvenReceipts.Count > 0;
+    bool hasSourceStaged = horizon.SourceStagedReceipts.Count > 0;
+    bool hasDocs = horizon.DocumentationSources.Count > 0;
+    if (!hasRuntimeProof && !hasSourceStaged && !hasDocs)
+    {
+        return string.Empty;
+    }
+
+    builder.AppendLine("""        <div class="horizon-reference-groups">""");
+    AppendPlaySurfaceReferenceGroup(builder, options, "Runtime proof", "runtime-proven", horizon.RuntimeProvenReceipts);
+    AppendPlaySurfaceReferenceGroup(builder, options, "Source-staged", "source-staged", horizon.SourceStagedReceipts);
+    AppendPlaySurfaceReferenceGroup(builder, options, "Docs", "documentation", horizon.DocumentationSources);
+    builder.AppendLine("""        </div>""");
+    return builder.ToString();
+}
+
+static string BuildPlaySurfaceBoundaryGroups(PlaySurfaceHorizonItem horizon)
+{
+    bool hasUnprovenClaims = horizon.UnprovenClaims.Count > 0;
+    bool hasServerBoundBoundaries = horizon.ServerBoundBoundaries.Count > 0;
+    if (!hasUnprovenClaims && !hasServerBoundBoundaries)
+    {
+        return string.Empty;
+    }
+
+    StringBuilder builder = new();
+    builder.AppendLine("""        <div class="horizon-boundary-groups">""");
+    AppendPlaySurfaceStringGroup(builder, "Not Yet Proven", "unproven-claims", horizon.UnprovenClaims);
+    AppendPlaySurfaceStringGroup(builder, "Server-Bound / Opt-In", "server-bound-boundaries", horizon.ServerBoundBoundaries);
+    builder.AppendLine("""        </div>""");
+    return builder.ToString();
+}
+
+static void AppendPlaySurfaceReferenceGroup(
+    StringBuilder builder,
+    PortalOptions options,
+    string title,
+    string groupId,
+    IReadOnlyList<PlaySurfaceEvidenceReference> references)
+{
+    if (references.Count == 0)
+    {
+        return;
+    }
+
+    builder.AppendLine($"""          <section class="horizon-reference-group" data-play-surface-reference-group="{WebUtility.HtmlEncode(groupId)}">""");
+    builder.AppendLine($"""            <strong class="horizon-reference-title">{WebUtility.HtmlEncode(title)}</strong>""");
+    builder.AppendLine($"""            <ul class="horizon-reference-list" data-play-surface-reference-list="{WebUtility.HtmlEncode(groupId)}">""");
+    foreach (PlaySurfaceEvidenceReference reference in references)
+    {
+        string referenceId = WebUtility.HtmlEncode(reference.Id);
+        string label = WebUtility.HtmlEncode(reference.Label);
+        string status = WebUtility.HtmlEncode(reference.Status);
+        builder.AppendLine($"""              <li class="horizon-reference-entry" data-play-surface-reference-id="{referenceId}" data-play-surface-reference-status="{status}">""");
+        if (!string.IsNullOrWhiteSpace(reference.PublicRelativePath))
+        {
+            string href = WebUtility.HtmlEncode(BuildPublicUrl(options.DownloadsUrl, reference.PublicRelativePath));
+            builder.AppendLine($"""                <a href="{href}" data-play-surface-reference-link="{referenceId}">{label}</a>""");
+        }
+        else if (!string.IsNullOrWhiteSpace(reference.LocalPath))
+        {
+            builder.AppendLine($"""                <a href="/docs/" data-play-surface-reference-doc="{referenceId}">{label}</a>""");
+            builder.AppendLine($"""                <span class="horizon-reference-meta">Source: <code>{WebUtility.HtmlEncode(Path.GetFileName(reference.LocalPath))}</code></span>""");
+        }
+        else
+        {
+            builder.AppendLine($"""                <span data-play-surface-reference-doc="{referenceId}">{label}</span>""");
+        }
+
+        builder.AppendLine($"""                <span class="horizon-reference-meta">Status: <code>{FormatStatusBadge(reference.Status)}</code></span>""");
+        builder.AppendLine("""              </li>""");
+    }
+    builder.AppendLine("""            </ul>""");
+    builder.AppendLine("""          </section>""");
+}
+
+static void AppendPlaySurfaceStringGroup(
+    StringBuilder builder,
+    string title,
+    string groupId,
+    IReadOnlyList<string> values)
+{
+    if (values.Count == 0)
+    {
+        return;
+    }
+
+    builder.AppendLine($"""          <section class="horizon-boundary-group" data-play-surface-boundary-group="{WebUtility.HtmlEncode(groupId)}">""");
+    builder.AppendLine($"""            <strong class="horizon-boundary-title">{WebUtility.HtmlEncode(title)}</strong>""");
+    builder.AppendLine($"""            <ul class="horizon-boundary-list" data-play-surface-boundary-list="{WebUtility.HtmlEncode(groupId)}">""");
+    foreach (string value in values)
+    {
+        builder.AppendLine($"""              <li class="horizon-boundary-item">{WebUtility.HtmlEncode(value)}</li>""");
+    }
+
+    builder.AppendLine("""            </ul>""");
+    builder.AppendLine("""          </section>""");
+}
+
+static string FormatStatusBadge(string? status)
+{
+    string normalized = string.IsNullOrWhiteSpace(status) ? "unknown" : status.Trim().Replace('_', ' ');
+    return normalized switch
+    {
+        "passed" => "Passed",
+        "proven" => "Proven",
+        "mixed" => "PWA Proven / Utility Staged",
+        "staged" => "Docs / Staged",
+        "not proven" => "Not Proven",
+        "not_proven" => "Not Proven",
+        _ => normalized.ToUpperInvariant()
+    };
+}
+
+static string BuildDesktopLaneSummary(ReleaseManifestSummary summary)
+{
+    bool hasWindows = summary.Downloads.Any(download => download.Platform.Contains("windows", StringComparison.OrdinalIgnoreCase));
+    bool hasLinux = summary.Downloads.Any(download => download.Platform.Contains("linux", StringComparison.OrdinalIgnoreCase));
+
+    if (hasWindows && hasLinux)
+    {
+        return "Windows and Linux downloads are live.";
+    }
+
+    if (hasWindows)
+    {
+        return "Windows downloads are live. Linux remains outside the current public shelf.";
+    }
+
+    if (hasLinux)
+    {
+        return "Linux downloads are live. Windows remains outside the current public shelf.";
+    }
+
+    return "Desktop download availability is still being prepared.";
+}
+
+static Task WriteHtmlAsync(HttpContext context, string html)
+{
+    context.Response.ContentType = "text/html; charset=utf-8";
+    return context.Response.WriteAsync(html);
+}
+
+static string BuildPublicSurfaceHtml(
+    string pageTitle,
+    string eyebrow,
+    string heading,
+    string summary,
+    string bodyHtml,
+    string actionsHtml)
+{
+    string encodedPageTitle = WebUtility.HtmlEncode(pageTitle);
+    string encodedEyebrow = WebUtility.HtmlEncode(eyebrow);
+    string encodedHeading = WebUtility.HtmlEncode(heading);
+    string encodedSummary = WebUtility.HtmlEncode(summary);
+    string encodedActionLabel = WebUtility.HtmlEncode($"{heading} actions");
+
+    return $$"""
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>{{encodedPageTitle}}</title>
+  <style>
+    :root { color-scheme: dark; font-family: "Aptos Display", "Trebuchet MS", sans-serif; --portal-ink: #fff8e8; --portal-muted: rgba(255,248,232,.76); --portal-gold: #ffd46f; --portal-mint: #8ff0bc; --portal-blue: #76aeca; --portal-slate: rgba(8,11,16,.88); --portal-line: rgba(255,212,111,.25); }
+    body { margin: 0; background: radial-gradient(circle at 82% 7%, rgba(255,212,111,.24), transparent 28%), radial-gradient(circle at 7% 13%, rgba(118,174,202,.22), transparent 31%), radial-gradient(circle at 58% 108%, rgba(143,240,188,.16), transparent 35%), linear-gradient(118deg, rgba(255,212,111,.05), transparent 36%, rgba(143,240,188,.04) 72%, transparent), linear-gradient(180deg,#121922 0%,#0b1117 52%,#06090c 100%); color: var(--portal-ink); }
+    body::before { content: ""; position: fixed; inset: 0; pointer-events: none; background-image: linear-gradient(rgba(255,212,111,.04) 1px, transparent 1px), linear-gradient(90deg, rgba(143,240,188,.034) 1px, transparent 1px); background-size: 4.25rem 4.25rem; opacity: .38; mask-image: linear-gradient(180deg, rgba(0,0,0,.68), transparent 78%); }
+    main { max-width: 980px; margin: 0 auto; padding: 2rem 1rem 3rem; }
+    .panel { border: 1px solid var(--portal-line); background: linear-gradient(145deg,rgba(255,255,255,.075),rgba(255,255,255,.018)), radial-gradient(circle at top right, rgba(255,212,111,.12), transparent 38%), radial-gradient(circle at bottom left, rgba(143,240,188,.07), transparent 42%), var(--portal-slate); border-radius: 22px; padding: 1.25rem; box-shadow: 0 24px 70px rgba(0,0,0,.38), inset 0 1px 0 rgba(255,255,255,.06); backdrop-filter: blur(14px); }
+    .eyebrow { margin: 0 0 .35rem; color: var(--portal-gold); font-size: .78rem; font-weight: 800; text-transform: uppercase; letter-spacing: .08em; }
+    h1 { margin: 0 0 .45rem; }
+    .lead, .meta { color: var(--portal-muted); line-height: 1.6; }
+    .stack { display: grid; gap: 1rem; margin-top: 1rem; }
+    .tile-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: .75rem; }
+    .tile { border: 1px solid rgba(143,240,188,.24); border-radius: 16px; padding: .85rem; background: linear-gradient(135deg,rgba(118,174,202,.14),rgba(143,240,188,.06)), rgba(255,255,255,.04); }
+    .tile strong { display: block; margin-bottom: .25rem; }
+    .tile p { margin: 0; color: var(--portal-muted); line-height: 1.5; }
+    .action-row { display: flex; flex-wrap: wrap; gap: .55rem; margin-top: 1rem; }
+    .action-row a { display: inline-flex; align-items: center; min-height: 2.35rem; padding: .45rem .75rem; border: 1px solid rgba(143,240,188,.34); border-radius: 999px; color: var(--portal-ink); text-decoration: none; background: linear-gradient(135deg,rgba(118,174,202,.16),rgba(143,240,188,.07)), rgba(255,255,255,.035); transition: transform .16s ease, border-color .16s ease, box-shadow .16s ease; }
+    .action-row a:hover, .action-row a:focus-visible { transform: translateY(-1px); border-color: rgba(143,240,188,.58); box-shadow: 0 0 0 3px rgba(143,240,188,.18); }
+    .surface-iframe { width: 100%; min-height: 720px; border: 1px solid rgba(143,240,188,.24); border-radius: 18px; background: rgba(8,11,16,.92); }
+    a { color: var(--portal-gold); }
+    @media (max-width: 720px) { .surface-iframe { min-height: 560px; } }
+    @media (prefers-contrast: more) { .panel, .tile, .action-row a, .surface-iframe { border-color: rgba(255,248,232,.82); box-shadow: none; } .action-row a:focus-visible { outline: 3px solid #fff8e8; outline-offset: 3px; } }
+    @media (prefers-reduced-motion: reduce) { .action-row a { transition: none; transform: none; } }
+  </style>
+</head>
+<body>
+<main>
+  <section class="panel">
+    <p class="eyebrow">{{encodedEyebrow}}</p>
+    <h1>{{encodedHeading}}</h1>
+    <p class="lead">{{encodedSummary}}</p>
+    <div class="stack">{{bodyHtml}}</div>
+    <nav class="action-row" aria-label="{{encodedActionLabel}}">{{actionsHtml}}</nav>
   </section>
 </main>
 </body>
 </html>
 """;
+}
+
+static string BuildActionLink(string href, string label, string markerAttribute)
+    => $"""<a href="{WebUtility.HtmlEncode(href)}" {markerAttribute}>{WebUtility.HtmlEncode(label)}</a>""";
+
+static string BuildRunSurfaceUrl(PortalOptions options, string route, string fallbackAbsolute)
+{
+    if (!string.IsNullOrWhiteSpace(options.RunUrl)
+        && Uri.TryCreate(options.RunUrl, UriKind.Absolute, out Uri? runUri))
+    {
+        return new Uri(runUri, route.TrimStart('/')).ToString();
+    }
+
+    return fallbackAbsolute;
+}
+
+static string BuildProductStoryHtml()
+{
+    string bodyHtml = """
+<div class="tile-grid">
+  <article class="tile"><strong>Downloads first</strong><p>Install the app first. Use Help when install, update, or account return needs attention.</p></article>
+  <article class="tile"><strong>Characters</strong><p>Create a runner and keep the sheet readable while details change.</p></article>
+  <article class="tile"><strong>Maintenance</strong><p>Track advancement, gear, qualities, and notes between sessions.</p></article>
+  <article class="tile"><strong>Explanations</strong><p>See why a value or option appears before you return to the table.</p></article>
+</div>
+""";
+    string actionsHtml = string.Concat(
+        BuildActionLink("/downloads/", "Downloads", "data-public-story-action='open-downloads'"),
+        BuildActionLink("/help", "Help", "data-public-story-action='open-help'"),
+        BuildActionLink("/status", "Status", "data-public-story-action='open-status'"));
+    return BuildPublicSurfaceHtml(
+        "What Is Chummer? · Chummer",
+        "Product",
+        "Character tools for Shadowrun.",
+        "Chummer helps you create, maintain, and understand a runner without turning the workflow into a brochure.",
+        bodyHtml,
+        actionsHtml);
+}
+
+static string BuildPlayEntryHtml(PortalOptions options)
+{
+    string mobileHref = PortalRoutes.PublicApp;
+    string continuityHref = options.SessionUrl;
+    string bodyHtml = $$"""
+<p><strong>Install like an app. Re-enter like a session shell.</strong></p>
+<div class="tile-grid">
+  <article class="tile"><strong>One mobile view, five clear promises.</strong><p>Open the session shell without switching mental models between install, reconnect, and active play.</p></article>
+  <article class="tile"><strong>Role-safe continuity</strong><p>Player, GM, and observer entry points meet in one shell.</p></article>
+  <article class="tile"><strong>Live pressure nearby</strong><p>Heat, package pressure, and closeout movement stay visible without turning the play shell into a builder.</p></article>
+  <article class="tile"><strong>Opt-in posture</strong><p>Living-world continuity stays explicit, reversible, and separate from pre-session character build work.</p></article>
+  <article class="tile"><strong>Mobile return</strong><p>Open mobile and PWA, recover continuity, and reach downloads without leaving the flagship lane.</p></article>
+</div>
+<p class="meta">Open mobile and PWA when you need fast table-state access. Open continuity when the current session, heat, or live ledger state matters more than build prep.</p>
+""";
+    string actionsHtml = string.Concat(
+        BuildActionLink(mobileHref, "Open mobile and PWA", "data-portal-play-action='open-mobile-pwa'"),
+        BuildActionLink(continuityHref, "Open continuity", "data-portal-play-action='open-continuity'"),
+        BuildActionLink("/downloads/", "Open downloads", "data-portal-play-action='open-downloads'"));
+    return BuildPublicSurfaceHtml(
+        "Player entry · Chummer",
+        "Play",
+        "Player entry",
+        "Use the mobile shell for in-session state, not full character build work.",
+        bodyHtml,
+        actionsHtml);
+}
+
+static string BuildBlackLedgerMapHtml()
+{
+    string bodyHtml = """
+<p><strong>Fictional campaign pressure, package heat, and closeout movement.</strong></p>
+<div class="tile-grid">
+  <article class="tile"><strong>Command map</strong><p>Read the current world pressure without crossing into character authority or release noise.</p></article>
+  <article class="tile"><strong>Faction files</strong><p>Review faction posture, friction, and consequences before the next session turn.</p></article>
+  <article class="tile"><strong>Newsroom</strong><p>Follow public turn packaging and world-facing summaries from the same Black Ledger lane.</p></article>
+</div>
+""";
+    string actionsHtml = string.Concat(
+        BuildActionLink("/ledger/factions", "Open factions", "data-portal-ledger-action='open-factions'"),
+        BuildActionLink("/ledger/newsroom", "Open newsroom", "data-portal-ledger-action='open-newsroom'"),
+        BuildActionLink("/play", "Open player entry", "data-portal-ledger-action='open-play'"));
+    return BuildPublicSurfaceHtml(
+        "Black Ledger command map · Chummer",
+        "Black Ledger command map",
+        "Black Ledger command map",
+        "Fictional campaign pressure, package heat, and closeout movement.",
+        bodyHtml,
+        actionsHtml);
+}
+
+static string BuildBlackLedgerFactionsHtml()
+{
+    string bodyHtml = """
+<div class="tile-grid">
+  <article class="tile"><strong>Faction files</strong><p>Keep pressure, exposure, and package links visible without collapsing the public route back into build tools.</p></article>
+  <article class="tile"><strong>Heat nearby</strong><p>Use the same lane to decide whether a faction needs follow-up before the next table return.</p></article>
+</div>
+""";
+    string actionsHtml = string.Concat(
+        BuildActionLink("/ledger/map", "Open command map", "data-portal-ledger-factions-action='open-map'"),
+        BuildActionLink("/ledger/newsroom", "Open newsroom", "data-portal-ledger-factions-action='open-newsroom'"),
+        BuildActionLink("/play", "Open player entry", "data-portal-ledger-factions-action='open-play'"));
+    return BuildPublicSurfaceHtml(
+        "Black Ledger factions · Chummer",
+        "Black Ledger faction files",
+        "Black Ledger factions",
+        "Use faction posture, pressure, and consequences to brief the next session cleanly.",
+        bodyHtml,
+        actionsHtml);
+}
+
+static string BuildBlackLedgerNewsroomHtml()
+{
+    string bodyHtml = """
+<div class="tile-grid">
+  <article class="tile"><strong>Turn packaging</strong><p>Package the current turn into a clear public-facing summary without losing the table context behind it.</p></article>
+  <article class="tile"><strong>Closeout cues</strong><p>Use the newsroom lane to spot follow-up, aftermath, and escalation before the next continuity pass.</p></article>
+</div>
+""";
+    string actionsHtml = string.Concat(
+        BuildActionLink("/ledger/map", "Open command map", "data-portal-ledger-newsroom-action='open-map'"),
+        BuildActionLink("/ledger/factions", "Open factions", "data-portal-ledger-newsroom-action='open-factions'"),
+        BuildActionLink("/play", "Open player entry", "data-portal-ledger-newsroom-action='open-play'"));
+    return BuildPublicSurfaceHtml(
+        "Black Ledger newsroom · Chummer",
+        "Black Ledger newsroom",
+        "Black Ledger newsroom",
+        "Follow turn-ready updates, pressure notes, and closeout context from the same Black Ledger lane.",
+        bodyHtml,
+        actionsHtml);
+}
+
+static string BuildArtifactsGalleryHtml()
+{
+    string bodyHtml = """
+<div class="tile-grid">
+  <article class="tile"><strong>Public outputs</strong><p>Detail surfaces, briefs, and clear outputs connected to the current public release.</p></article>
+  <article class="tile"><strong>Release receipts</strong><p>Use docs, downloads, and current release posture together instead of treating artifacts as detached marketing pieces.</p></article>
+</div>
+""";
+    string actionsHtml = string.Concat(
+        BuildActionLink("/downloads/", "Open downloads", "data-portal-artifacts-action='open-downloads'"),
+        BuildActionLink("/docs/", "Open docs", "data-portal-artifacts-action='open-docs'"),
+        BuildActionLink(PortalRoutes.PublicApp, "Open Chummer Online", "data-portal-artifacts-action='open-app'"));
+    return BuildPublicSurfaceHtml(
+        "Detail gallery · Chummer",
+        "Artifacts",
+        "Detail gallery",
+        "Detail surfaces, briefs, and clear outputs connected to the current public release.",
+        bodyHtml,
+        actionsHtml);
+}
+
+static string BuildParticipateHtml(PortalOptions options)
+{
+    string frameUrl = BuildRunSurfaceUrl(options, "/participate/frame", "https://chummer.run/participate/frame");
+    string bodyHtml = $$"""
+<p><strong>Public bugs and requests</strong></p>
+<p class="meta">Feedback, roadmap, and contribution lanes stay public. The framed board keeps the Chummer surface while the upstream board stays authoritative.</p>
+<iframe class="surface-iframe" src="{{WebUtility.HtmlEncode(frameUrl)}}" title="Chummer participation board" loading="eager" referrerpolicy="strict-origin-when-cross-origin" allow="clipboard-write; fullscreen" allowfullscreen data-portal-participate-frame></iframe>
+""";
+    string actionsHtml = string.Concat(
+        BuildActionLink("/downloads/", "Open downloads", "data-portal-participate-action='open-downloads'"),
+        BuildActionLink("/help", "Open help", "data-portal-participate-action='open-help'"),
+        BuildActionLink("/status", "Open status", "data-portal-participate-action='open-status'"));
+    return BuildPublicSurfaceHtml(
+        "Participate - Chummer.run",
+        "Participate",
+        "Participate - Chummer.run",
+        "Public bugs and requests",
+        bodyHtml,
+        actionsHtml);
 }
 
 static string SanitizeRedirect(string? next)
@@ -1102,6 +1655,20 @@ static string BuildCatchallPattern(string? publicPath)
     return $"{normalizedPath}/{{**catchall}}";
 }
 
+static void ValidatePortalOwnerSharedKey(string? key, IHostEnvironment environment)
+{
+    if (!environment.IsProduction())
+        return;
+
+    string normalized = key?.Trim() ?? string.Empty;
+    if (Encoding.UTF8.GetByteCount(normalized) < 32
+        || string.Equals(normalized, "local-self-hosted-portal-shared-key", StringComparison.Ordinal))
+    {
+        throw new InvalidOperationException(
+            $"Production requires {PortalOwnerPropagationContract.SharedKeyEnvironmentVariable} with at least 32 UTF-8 bytes of externally generated secret material.");
+    }
+}
+
 static string RouteRootFromPublicPath(string? publicPath)
 {
     string normalizedPath = NormalizePublicPath(publicPath, "/").TrimEnd('/');
@@ -1119,7 +1686,7 @@ static string NormalizePublicPath(string? configured, string fallback)
     return path.EndsWith("/", StringComparison.Ordinal) ? path : $"{path}/";
 }
 
-static object BuildOpenApiDocument()
+static object BuildOpenApiDocument(PortalOptions options)
 {
     return new
     {
@@ -1153,21 +1720,21 @@ static object BuildOpenApiDocument()
                     summary = "Read AI route readiness"
                 }
             },
-            [PortalRoutes.BlazorApp] = new
+            ["/blazor/app"] = new
             {
                 get = new
                 {
                     summary = "Open the user-facing Chummer Online app"
                 }
             },
-            [PortalRoutes.PublicApp] = new
+            ["/app"] = new
             {
                 get = new
                 {
                     summary = "Open Chummer Online through the clean public /app route"
                 }
             },
-            [PortalRoutes.BlazorHome] = new
+            ["/blazor/home"] = new
             {
                 get = new
                 {
@@ -1186,6 +1753,69 @@ static object BuildOpenApiDocument()
                 get = new
                 {
                     summary = "Read release availability and install handoff status"
+                }
+            },
+            ["/what-is-chummer"] = new
+            {
+                get = new
+                {
+                    summary = "Open the public product story and downloads-first orientation page"
+                }
+            },
+            ["/play"] = new
+            {
+                get = new
+                {
+                    summary = "Open the public player and PWA session entry lane"
+                }
+            },
+            ["/ledger"] = new
+            {
+                get = new
+                {
+                    summary = "Resolve the Black Ledger public entry into the command map"
+                }
+            },
+            ["/ledger/map"] = new
+            {
+                get = new
+                {
+                    summary = "Open the Black Ledger command map surface"
+                }
+            },
+            ["/ledger/factions"] = new
+            {
+                get = new
+                {
+                    summary = "Open the Black Ledger faction files surface"
+                }
+            },
+            ["/ledger/newsroom"] = new
+            {
+                get = new
+                {
+                    summary = "Open the Black Ledger newsroom surface"
+                }
+            },
+            ["/artifacts"] = new
+            {
+                get = new
+                {
+                    summary = "Open the public detail gallery tied to the current release"
+                }
+            },
+            ["/participate"] = new
+            {
+                get = new
+                {
+                    summary = "Open the public feedback and request board surface"
+                }
+            },
+            ["/roadmap"] = new
+            {
+                get = new
+                {
+                    summary = "Resolve roadmap traffic into the active public feedback surface"
                 }
             },
             ["/contact"] = new
@@ -1243,6 +1873,20 @@ static object BuildOpenApiDocument()
                 {
                     summary = "Resolve installer handoff from release metadata or return proof-required downloads guidance"
                 }
+            },
+            [options.SessionUrl] = new
+            {
+                get = new
+                {
+                    summary = "Open session continuity or fall back into the public play entry surface"
+                }
+            },
+            [options.CoachUrl] = new
+            {
+                get = new
+                {
+                    summary = "Open coaching continuity or fall back into current public release status"
+                }
             }
         }
     };
@@ -1254,14 +1898,25 @@ static string BuildPublicAppRedirectUrl(PortalOptions options, HttpContext conte
 }
 
 static string BuildBlazorAppUrl(PortalOptions options)
-    => BuildPublicUrl(options.BlazorUrl, PortalRoutes.BlazorAppSegment);
+{
+    _ = PortalRoutes.BlazorAppSegment;
+    return BuildPublicUrl(options.BlazorUrl, "app");
+}
 
 static string BuildBlazorHomeUrl(PortalOptions options)
-    => BuildPublicUrl(options.BlazorUrl, PortalRoutes.BlazorHomeSegment);
+{
+    _ = PortalRoutes.BlazorHomeSegment;
+    return BuildPublicUrl(options.BlazorUrl, "home");
+}
 
 static ReleaseManifestSummary ReadReleaseManifest(string releasesFile)
 {
     return PortalReleaseManifestReader.Read(releasesFile);
+}
+
+static PlaySurfaceHorizonSummary ReadPlaySurfaceHorizonSummary(string downloadsDirectory)
+{
+    return PortalPlaySurfaceHorizonReader.Read(downloadsDirectory);
 }
 
 static class PortalRoutes

@@ -748,6 +748,21 @@ public class DialogCoordinatorTests
 
         Assert.AreEqual("dialog.new_character.origin_build", published.ActiveDialog?.Id);
         StringAssert.Contains(DesktopDialogFieldValueParser.GetValue(published.ActiveDialog!, "newCharacterOriginBuildLogic"), "Likely Archetype");
+        Assert.AreEqual(
+            "/app?command=new_character_origin&ruleset=sr5&alias=Cipher",
+            DesktopDialogFieldValueParser.GetValue(published.ActiveDialog!, "newCharacterOriginDossierLink"));
+
+        context = new DialogCoordinationContext(
+            State: published,
+            Publish: state => published = state,
+            ImportAsync: static (_, _) => Task.CompletedTask,
+            UpdateMetadataAsync: static (_, _) => Task.CompletedTask,
+            GetState: () => published);
+
+        await coordinator.CoordinateAsync("show_origin_dossier_link", context, CancellationToken.None);
+
+        Assert.AreEqual("dialog.new_character.origin_build", published.ActiveDialog?.Id);
+        StringAssert.Contains(published.Notice ?? string.Empty, "/app?command=new_character_origin&ruleset=sr5&alias=Cipher");
 
         context = new DialogCoordinationContext(
             State: published,
@@ -867,6 +882,7 @@ public class DialogCoordinatorTests
         StringAssert.Contains(buildLogic, "Likely Metatype | Troll");
         StringAssert.Contains(buildLogic, "GM Requirements | Must carry an Addiction quality tied to an illegal drug.");
         StringAssert.Contains(storyNotes, "Alice Seed | approved origin story");
+        StringAssert.Contains(storyNotes, "Dossier Link | /app?command=new_character_origin&ruleset=sr4&alias=Vault");
         StringAssert.Contains(storyNotes, "Sheet Changes | none yet");
 
         context = context with
@@ -883,7 +899,7 @@ public class DialogCoordinatorTests
         Assert.AreEqual(RulesetDefaults.Sr4, DesktopDialogFieldValueParser.GetValue(published.ActiveDialog!, "newCharacterWorkflowRulesetId"));
         Assert.AreEqual("BP", DesktopDialogFieldValueParser.GetValue(published.ActiveDialog!, "newCharacterWorkflowBuildMethod"));
         Assert.AreEqual("Grit", DesktopDialogFieldValueParser.GetValue(published.ActiveDialog!, "newCharacterWorkflowName"));
-        StringAssert.Contains(published.Notice ?? string.Empty, "Origin story translated into a guided build plan.");
+        StringAssert.Contains(published.Notice ?? string.Empty, "Origin story translated into a character build plan.");
     }
 
     [TestMethod]
@@ -927,6 +943,7 @@ public class DialogCoordinatorTests
         StringAssert.Contains(imported.Content, "<created>False</created>");
         StringAssert.Contains(imported.Content, "<prioritymetatype>D,1</prioritymetatype>");
         StringAssert.Contains(imported.Content, "<prioritytalent>Mundane</prioritytalent>");
+        StringAssert.Contains(imported.Content, "<totalattributes>28</totalattributes>");
         StringAssert.Contains(imported.Content, "House rules enabled.");
         Assert.IsNull(published.ActiveDialog);
         StringAssert.Contains(published.Notice ?? string.Empty, "Opened Nova · Priority · SR6 · house rules");
@@ -1271,7 +1288,7 @@ public class DialogCoordinatorTests
 
         await coordinator.CoordinateAsync("add", context, CancellationToken.None);
 
-        StringAssert.Contains(published.Notice ?? string.Empty, "SR6 setup tools:");
+        StringAssert.Contains(published.Notice ?? string.Empty, "SR6 character:");
         StringAssert.Contains(published.Notice ?? string.Empty, "Program 'Armor' added.");
     }
 
@@ -1747,6 +1764,84 @@ public class DialogCoordinatorTests
         Assert.AreEqual("Contact renamed to 'Nines'.", published.Notice);
     }
 
+    [TestMethod]
+    public async Task CoordinateAsync_apply_damage_track_updates_notice_and_closes_dialog()
+    {
+        DialogCoordinator coordinator = new();
+        DesktopDialogFactory factory = new();
+        CharacterOverviewState published = CharacterOverviewState.Empty with
+        {
+            ActiveDialog = factory.CreateUiControlDialog("combat_damage_track", DesktopPreferenceState.Default)
+        };
+
+        DialogCoordinationContext context = new(
+            State: published,
+            Publish: state => published = state,
+            ImportAsync: static (_, _) => Task.CompletedTask,
+            UpdateMetadataAsync: static (_, _) => Task.CompletedTask,
+            GetState: () => published);
+
+        await coordinator.CoordinateAsync("apply", context, CancellationToken.None);
+
+        Assert.IsNull(published.ActiveDialog);
+        Assert.AreEqual("Damage track applied.", published.Notice);
+    }
+
+    [TestMethod]
+    public async Task CoordinateAsync_apply_reload_weapon_updates_notice_and_closes_dialog()
+    {
+        DialogCoordinator coordinator = new();
+        DesktopDialogFactory factory = new();
+        CharacterOverviewState published = CharacterOverviewState.Empty with
+        {
+            ActiveDialog = factory.CreateUiControlDialog("combat_reload", DesktopPreferenceState.Default)
+        };
+
+        DialogCoordinationContext context = new(
+            State: published,
+            Publish: state => published = state,
+            ImportAsync: static (_, _) => Task.CompletedTask,
+            UpdateMetadataAsync: static (_, _) => Task.CompletedTask,
+            GetState: () => published);
+
+        await coordinator.CoordinateAsync("apply", context, CancellationToken.None);
+
+        Assert.IsNull(published.ActiveDialog);
+        Assert.AreEqual("Weapon reloaded.", published.Notice);
+    }
+
+    [DataTestMethod]
+    [DataRow("cyberware_edit", "apply", "Cyberware 'Cybereyes Rating 4' updated.")]
+    [DataRow("gear_mount", "apply", "Gear 'Smartgun System' mounted to 'Ares Predator V'.")]
+    [DataRow("magic_bind", "apply", "Magic entry 'Force 4 Focus' bound/linked.")]
+    [DataRow("skill_group", "apply", "Skill group 'Stealth' set to rating 4.")]
+    [DataRow("vehicle_edit", "apply", "Vehicle 'GMC Roadmaster' updated.")]
+    [DataRow("vehicle_mod_add", "add", "Vehicle mod 'Spoof Chips' added.")]
+    [DataRow("identity_license_add", "add", "Identity / license 'Taylor Mercer' added.")]
+    [DataRow("identity_license_edit", "apply", "Identity / license 'Concealed Carry Permit' updated.")]
+    [DataRow("identity_license_delete", "delete", "Identity / license 'Concealed Carry Permit' removed.")]
+    public async Task CoordinateAsync_legacy_utility_mutations_publish_targeted_notices(string controlId, string actionId, string expectedNotice)
+    {
+        DialogCoordinator coordinator = new();
+        DesktopDialogFactory factory = new();
+        CharacterOverviewState published = CharacterOverviewState.Empty with
+        {
+            ActiveDialog = factory.CreateUiControlDialog(controlId, DesktopPreferenceState.Default)
+        };
+
+        DialogCoordinationContext context = new(
+            State: published,
+            Publish: state => published = state,
+            ImportAsync: static (_, _) => Task.CompletedTask,
+            UpdateMetadataAsync: static (_, _) => Task.CompletedTask,
+            GetState: () => published);
+
+        await coordinator.CoordinateAsync(actionId, context, CancellationToken.None);
+
+        Assert.IsNull(published.ActiveDialog);
+        Assert.AreEqual(expectedNotice, published.Notice);
+    }
+
     [DataTestMethod]
     [DataRow("delete_entry", "Entry 'Current Entry' removed.")]
     [DataRow("gear_delete", "Gear 'Armor Jacket' removed.")]
@@ -1894,7 +1989,7 @@ public class DialogCoordinatorTests
 
         Assert.IsNull(published.ActiveDialog);
         Assert.AreEqual(workspaceTwo, published.WorkspaceId);
-        StringAssert.Contains(published.Notice ?? string.Empty, "SR6 setup tools:");
+        StringAssert.Contains(published.Notice ?? string.Empty, "SR6 character:");
         StringAssert.Contains(published.Notice ?? string.Empty, "Runner 'APX' opened from roster.");
     }
 
@@ -2012,7 +2107,7 @@ public class DialogCoordinatorTests
 
             Assert.IsNull(published.ActiveDialog);
             Assert.AreEqual(workspaceTwo, published.WorkspaceId);
-            StringAssert.Contains(published.Notice ?? string.Empty, "SR6 setup tools:");
+            StringAssert.Contains(published.Notice ?? string.Empty, "SR6 character:");
             StringAssert.Contains(published.Notice ?? string.Empty, "Watched runner 'APX' opened from roster watch folder.");
         }
         finally

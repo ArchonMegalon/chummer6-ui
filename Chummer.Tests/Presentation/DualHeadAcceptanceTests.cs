@@ -40,7 +40,7 @@ public class DualHeadAcceptanceTests
         StringComparison.Ordinal);
     private static readonly RulesetShellCatalogResolverService ShellCatalogResolver =
         CreateShellCatalogResolver();
-    private static readonly Regex WorkspaceTokenRegex = new("(?<=Workspace:\\s)[A-Za-z0-9-]+|(?<=Dossier:\\s)[A-Za-z0-9-]+", RegexOptions.Compiled);
+    private static readonly Regex WorkspaceTokenRegex = new("(?<=Workspace:\\s)[A-Za-z0-9-]+|(?<=Dossier:\\s)[A-Za-z0-9-]+|(?<=Runner:\\s)[A-Za-z0-9-]+", RegexOptions.Compiled);
     private static readonly Regex WorkspaceFileNameRegex = new("^[a-f0-9]{32}(?:-[a-f0-9]{4}){0,4}\\.(?:chum5|json)$", RegexOptions.Compiled | RegexOptions.IgnoreCase);
     private static readonly Regex WorkspaceFileTokenRegex = new("[a-f0-9]{32}(?:-[a-f0-9]{4}){0,4}\\.(?:chum5|json)", RegexOptions.Compiled | RegexOptions.IgnoreCase);
     private static readonly Regex RuntimeGeneratedAtRegex = new(@"Generated:\s\d{4}-\d{2}-\d{2}\s\d{2}:\d{2}:\d{2}Z", RegexOptions.Compiled);
@@ -615,6 +615,7 @@ public class DualHeadAcceptanceTests
             WorkspaceSurfaceActionCatalog.All.First(item => string.Equals(item.Id, "tab-magician.metamagics", StringComparison.Ordinal)),
             WorkspaceSurfaceActionCatalog.All.First(item => string.Equals(item.Id, "tab-adept.powers", StringComparison.Ordinal)),
             WorkspaceSurfaceActionCatalog.All.First(item => string.Equals(item.Id, "tab-technomancer.complexforms", StringComparison.Ordinal)),
+            WorkspaceSurfaceActionCatalog.All.First(item => string.Equals(item.Id, "tab-technomancer.sprites", StringComparison.Ordinal)),
             WorkspaceSurfaceActionCatalog.All.First(item => string.Equals(item.Id, "tab-technomancer.aiprograms", StringComparison.Ordinal))
         ];
 
@@ -624,6 +625,7 @@ public class DualHeadAcceptanceTests
             ["tab-magician.metamagics"] = "metamagics",
             ["tab-adept.powers"] = "powers",
             ["tab-technomancer.complexforms"] = "complexforms",
+            ["tab-technomancer.sprites"] = "sprites",
             ["tab-technomancer.aiprograms"] = "aiprograms"
         };
 
@@ -927,8 +929,8 @@ public class DualHeadAcceptanceTests
         Assert.AreEqual("Shared parity notes", blazorState.Preferences.CharacterNotes);
         Assert.IsNull(avaloniaState.ActiveDialog);
         Assert.IsNull(blazorState.ActiveDialog);
-        Assert.AreEqual("Dossier settings updated.", avaloniaState.Notice);
-        Assert.AreEqual("Dossier settings updated.", blazorState.Notice);
+        Assert.AreEqual("Runner settings updated.", avaloniaState.Notice);
+        Assert.AreEqual("Runner settings updated.", blazorState.Notice);
     }
 
     [TestMethod]
@@ -1497,6 +1499,9 @@ public class DualHeadAcceptanceTests
         if (string.Equals(fieldId, "rosterActiveWorkspace", StringComparison.Ordinal))
             return "<workspace>";
 
+        if (string.Equals(fieldId, "autoAliceWorkspaceId", StringComparison.Ordinal))
+            return "<workspace>";
+
         if (string.Equals(fieldId, "rosterSelectedRunnerId", StringComparison.Ordinal))
             return "<runner>";
 
@@ -2032,7 +2037,11 @@ public class DualHeadAcceptanceTests
                     continue;
                 }
 
-                using HttpResponseMessage response = await client.DeleteAsync($"/api/workspaces/{workspaceId}");
+                long contentRevision = node?["contentRevision"]?.GetValue<long>() ?? 0;
+                Assert.IsGreaterThan(0, contentRevision);
+                using HttpRequestMessage request = new(HttpMethod.Delete, $"/api/workspaces/{workspaceId}");
+                request.Headers.TryAddWithoutValidation("If-Match", $"\"{contentRevision}\"");
+                using HttpResponseMessage response = await client.SendAsync(request);
                 Assert.IsTrue(
                     response.IsSuccessStatusCode || response.StatusCode == System.Net.HttpStatusCode.NotFound,
                     $"DELETE /api/workspaces/{workspaceId} failed with {(int)response.StatusCode}");
@@ -2240,8 +2249,10 @@ public class DualHeadAcceptanceTests
         string? root = Environment.GetEnvironmentVariable("CHUMMER_REPO_ROOT");
         string[] candidates =
         {
+            Path.Combine(Directory.GetCurrentDirectory(), fileName),
             Path.Combine(Directory.GetCurrentDirectory(), "Chummer.Tests", "TestFiles", fileName),
             Path.Combine(Directory.GetCurrentDirectory(), "TestFiles", fileName),
+            Path.Combine(AppContext.BaseDirectory, fileName),
             Path.Combine(AppContext.BaseDirectory, "TestFiles", fileName),
             Path.Combine("/src", "Chummer.Tests", "TestFiles", fileName),
             string.IsNullOrWhiteSpace(root) ? string.Empty : Path.Combine(root, "Chummer.Tests", "TestFiles", fileName)

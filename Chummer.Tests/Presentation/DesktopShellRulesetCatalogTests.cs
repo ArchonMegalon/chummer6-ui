@@ -103,6 +103,24 @@ public sealed class DesktopShellRulesetCatalogTests
         }
     }
 
+    [TestMethod]
+    public void Blazor_desktop_shell_keeps_menu_chrome_above_active_dialog_backdrop()
+    {
+        string shellPath = SourcePath("Chummer.Blazor", "Components", "Layout", "DesktopShell.razor");
+        string cssPath = SourcePath("Chummer.Blazor", "wwwroot", "app.css");
+
+        string shellText = File.ReadAllText(shellPath);
+        string cssText = File.ReadAllText(cssPath);
+
+        StringAssert.Contains(shellText, "desktop-shell--dialog-open");
+        StringAssert.Contains(cssText, ".desktop-shell--dialog-open .menu-shell");
+        StringAssert.Contains(cssText, ".desktop-shell--dialog-open .tool-strip");
+        StringAssert.Contains(cssText, ".desktop-shell--dialog-open .menu-dropdown");
+        StringAssert.Contains(cssText, "z-index: 1002;");
+        StringAssert.Contains(cssText, "z-index: 1001;");
+        StringAssert.Contains(cssText, "z-index: 1003;");
+    }
+
     private static bool ContainsBlockedTerm(string value, string blockedFragment)
     {
         if (string.IsNullOrWhiteSpace(value) || string.IsNullOrWhiteSpace(blockedFragment))
@@ -117,7 +135,7 @@ public sealed class DesktopShellRulesetCatalogTests
     [DataTestMethod]
     [DataRow(RulesetDefaults.Sr4, "SR4 Characters", "Import SR4 Character File", "SR4 Import Summary", "SR4 Import Tools")]
     [DataRow(RulesetDefaults.Sr5, "SR5 Characters", "Import SR5 Character File", "SR5 Editor Result", "SR5 Editor Commands")]
-    [DataRow(RulesetDefaults.Sr6, "SR6 Characters", "Import SR6 Character File", "SR6 Setup Summary", "SR6 Setup Tools")]
+    [DataRow(RulesetDefaults.Sr6, "SR6 Characters", "Import SR6 Character File", "SR6 Character Summary", "SR6 Character Commands")]
     public void DesktopShell_renders_ruleset_specific_flagship_posture_for_each_supported_lane(
         string rulesetId,
         string expectedDossiers,
@@ -287,7 +305,7 @@ public sealed class DesktopShellRulesetCatalogTests
             Assert.IsFalse(cut.Markup.Contains("Shadowrun 6 guided starter cockpit", StringComparison.Ordinal));
             Assert.IsFalse(cut.Markup.Contains("SR6 home cockpit foregrounds starter kits", StringComparison.Ordinal));
             StringAssert.Contains(cut.Markup, "SR6 Characters");
-            StringAssert.Contains(cut.Markup, "SR6 Setup Tabs");
+            StringAssert.Contains(cut.Markup, "SR6 Character Tabs");
         });
     }
 

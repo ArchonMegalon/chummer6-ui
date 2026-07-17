@@ -478,7 +478,7 @@ public sealed class WorkflowParityGateTests
         DesktopDialogState continuation = harness.State.ActiveDialog!;
         Assert.AreEqual("dialog.new_character.karma_workflow", continuation.Id);
         Assert.AreEqual("BP", DesktopDialogFieldValueParser.GetValue(continuation, "newCharacterWorkflowBuildMethod"));
-        StringAssert.Contains(harness.State.Notice ?? string.Empty, "Origin story translated into a guided build plan.");
+        StringAssert.Contains(harness.State.Notice ?? string.Empty, "Origin story translated into a character build plan.");
     }
 
     private static async Task AssertNewCharacterRecursiveParityAsync(string rulesetId, string buildMethod)
@@ -736,7 +736,9 @@ public sealed class WorkflowParityGateTests
             BuildSectionJson("profile"),
             new CharacterWorkspaceId("ws-1"),
             rulesetId,
-            runtimeInspector: null,
+            runtimeInspector: string.Equals(commandId, OverviewCommandPolicy.RuntimeInspectorCommandId, StringComparison.Ordinal)
+                ? CreateRuntimeInspectorProjection(rulesetId)
+                : null,
             masterIndex: CreateMasterIndexResponse(),
             translatorLanguages: null,
             openWorkspaces: [CreateOpenWorkspace(rulesetId)]);
@@ -776,7 +778,6 @@ public sealed class WorkflowParityGateTests
             Preferences = DesktopPreferenceState.Default,
             Commands = commands,
             NavigationTabs = tabs,
-            HasSavedWorkspace = true,
             LastCommandId = string.Equals(dialog.Id, "dialog.new_character", StringComparison.Ordinal) ? "new_character" : null
         };
 
@@ -1292,7 +1293,7 @@ public sealed class WorkflowParityGateTests
         {
             expectedFields["workspace"] = new MuscleMemoryDialogFieldContract(
                 "workspace",
-                "Dossier",
+                "Runner",
                 "text",
                 DesktopDialogFieldVisualKinds.Default,
                 DesktopDialogFieldLayoutSlots.Full,
@@ -1324,6 +1325,22 @@ public sealed class WorkflowParityGateTests
 
         if (string.Equals(workflowId, "combat_damage_track", StringComparison.Ordinal))
         {
+            expectedFields["uiDamageTrackMatrix"] = new MuscleMemoryDialogFieldContract(
+                "uiDamageTrackMatrix",
+                "Matrix",
+                "text",
+                DesktopDialogFieldVisualKinds.Default,
+                DesktopDialogFieldLayoutSlots.Full,
+                0,
+                true);
+            expectedFields["uiDamageTrackAsset"] = new MuscleMemoryDialogFieldContract(
+                "uiDamageTrackAsset",
+                "Item / Vehicle",
+                "text",
+                DesktopDialogFieldVisualKinds.Default,
+                DesktopDialogFieldLayoutSlots.Full,
+                0,
+                true);
             expectedFields["uiDamageTrackCommands"] = new MuscleMemoryDialogFieldContract(
                 "uiDamageTrackCommands",
                 "Commands",
@@ -1505,6 +1522,18 @@ public sealed class WorkflowParityGateTests
             return currentFieldIds
                 .Where(id => contractedFieldIds.Contains(id)
                     || id is "uiQualitySelectionTrail" or "uiQualityFilterSummary" or "uiQualityResultCommands")
+                .ToArray();
+        }
+
+        if (string.Equals(workflowId, "combat_damage_track", StringComparison.Ordinal))
+        {
+            HashSet<string> contractedFieldIds = contractFields
+                .Select(field => field.FieldId)
+                .ToHashSet(StringComparer.Ordinal);
+
+            return currentFieldIds
+                .Where(id => contractedFieldIds.Contains(id)
+                    || id is "uiDamageTrackMatrix" or "uiDamageTrackAsset")
                 .ToArray();
         }
 
@@ -1785,6 +1814,81 @@ public sealed class WorkflowParityGateTests
                     ReferenceSourcePosture: "governed",
                     LocalPdfPath: "/books/core-rulebook.pdf")
             ]);
+
+    private static RuntimeInspectorProjection CreateRuntimeInspectorProjection(string rulesetId)
+    {
+        string normalizedRulesetId = RulesetDefaults.NormalizeRequired(rulesetId);
+        string packId = $"official.{normalizedRulesetId}.core";
+        string runtimeFingerprint = $"sha256:{normalizedRulesetId}-runtime-fingerprint";
+        string runtimeTitle = normalizedRulesetId == RulesetDefaults.Sr6
+            ? "SR6 Core"
+            : normalizedRulesetId == RulesetDefaults.Sr4
+                ? "SR4 Core"
+                : "SR5 Core";
+
+        return new RuntimeInspectorProjection(
+            TargetKind: RuntimeInspectorTargetKinds.RuntimeLock,
+            TargetId: packId,
+            RuntimeLock: new ResolvedRuntimeLock(
+                RulesetId: normalizedRulesetId,
+                ContentBundles:
+                [
+                    new ContentBundleDescriptor(
+                        BundleId: $"{normalizedRulesetId}.core.bundle",
+                        RulesetId: normalizedRulesetId,
+                        Version: "1.0.0",
+                        Title: "Core Bundle",
+                        Description: "Default bundle",
+                        AssetPaths: ["data/core.xml"])
+                ],
+                RulePacks:
+                [
+                    new ArtifactVersionReference(packId, "1.0.0")
+                ],
+                ProviderBindings: new Dictionary<string, string>(StringComparer.Ordinal)
+                {
+                    [RulePackCapabilityIds.DeriveStat] = $"{packId}/derive.stat"
+                },
+                EngineApiVersion: "1.0.0",
+                RuntimeFingerprint: runtimeFingerprint),
+            Install: new ArtifactInstallState(
+                State: ArtifactInstallStates.Available,
+                RuntimeFingerprint: runtimeFingerprint),
+            ResolvedRulePacks:
+            [
+                new RuntimeInspectorRulePackEntry(
+                    new ArtifactVersionReference(packId, "1.0.0"),
+                    runtimeTitle,
+                    ArtifactVisibilityModes.LocalOnly,
+                    ArtifactTrustTiers.Official,
+                    [RulePackCapabilityIds.DeriveStat])
+            ],
+            ProviderBindings:
+            [
+                new RuntimeInspectorProviderBinding(
+                    CapabilityId: RulePackCapabilityIds.DeriveStat,
+                    ProviderId: $"{packId}/derive.stat",
+                    PackId: packId)
+            ],
+            CompatibilityDiagnostics:
+            [
+                new RuntimeLockCompatibilityDiagnostic(
+                    State: RuntimeLockCompatibilityStates.Compatible,
+                    Message: "Runtime lock resolves against the current RuleProfile and RulePack catalog.",
+                    RequiredRulesetId: normalizedRulesetId,
+                    RequiredRuntimeFingerprint: runtimeFingerprint)
+            ],
+            Warnings: [],
+            MigrationPreview:
+            [
+                new RuntimeMigrationPreviewItem(
+                    Kind: RuntimeMigrationPreviewChangeKinds.RulePackAdded,
+                    Summary: $"Profile applies RulePack '{packId}@1.0.0'.",
+                    SubjectId: packId,
+                    AfterValue: "1.0.0")
+            ],
+            GeneratedAtUtc: DateTimeOffset.UtcNow);
+    }
 
     private static string? ResolvePrimaryActionId(DesktopDialogState dialog)
         => dialog.Actions
@@ -2218,24 +2322,85 @@ public sealed class WorkflowParityGateTests
             new MenuWorkflowContract("new_character_origin", WorkflowShape.Choice),
             new MenuWorkflowContract("new_window", WorkflowShape.Info),
             new MenuWorkflowContract("open_character", WorkflowShape.Import),
+            new MenuWorkflowContract("open_custom_data", WorkflowShape.Info),
+            new MenuWorkflowContract("open_data_folder", WorkflowShape.Info),
+            new MenuWorkflowContract("open_errata", WorkflowShape.Info),
             new MenuWorkflowContract("open_for_export", WorkflowShape.Import),
             new MenuWorkflowContract("open_for_printing", WorkflowShape.Import),
+            new MenuWorkflowContract("open_sourcebooks", WorkflowShape.Info),
             new MenuWorkflowContract("print_multiple", WorkflowShape.Info),
             new MenuWorkflowContract("print_setup", WorkflowShape.Choice),
             new MenuWorkflowContract("report_bug", WorkflowShape.Info),
             new MenuWorkflowContract("revision_history", WorkflowShape.Info),
+            new MenuWorkflowContract(OverviewCommandPolicy.RuntimeInspectorCommandId, WorkflowShape.Info),
             new MenuWorkflowContract("show_login_video", WorkflowShape.Info),
             new MenuWorkflowContract("switch_ruleset", WorkflowShape.Choice),
             new MenuWorkflowContract("translator", WorkflowShape.Info),
             new MenuWorkflowContract("update", WorkflowShape.Info),
+            new MenuWorkflowContract("update_data_packs", WorkflowShape.Info),
+            new MenuWorkflowContract("validate_data_scope", WorkflowShape.Info),
             new MenuWorkflowContract("wiki", WorkflowShape.Info),
             new MenuWorkflowContract("xml_editor", WorkflowShape.Utility)
         }.ToDictionary(contract => contract.Id, StringComparer.Ordinal);
 
+    private static readonly HashSet<string> QuickActionRootControlIds = new(StringComparer.Ordinal)
+    {
+        "create_entry",
+        "edit_entry",
+        "delete_entry",
+        "open_notes",
+        "identity_license_add",
+        "identity_license_edit",
+        "identity_license_delete",
+        "move_up",
+        "move_down",
+        "toggle_free_paid",
+        "show_source",
+        "gear_add",
+        "gear_edit",
+        "gear_delete",
+        "gear_mount",
+        "gear_source",
+        "cyberware_add",
+        "cyberware_edit",
+        "cyberware_delete",
+        "drug_add",
+        "drug_delete",
+        "magic_bind",
+        "magic_delete",
+        "magic_source",
+        "spell_add",
+        "adept_power_add",
+        "complex_form_add",
+        "initiation_add",
+        "spirit_add",
+        "sprite_add",
+        "critter_power_add",
+        "matrix_program_add",
+        "skill_add",
+        "skill_specialize",
+        "skill_remove",
+        "skill_group",
+        "combat_add_weapon",
+        "combat_add_armor",
+        "combat_reload",
+        "combat_damage_track",
+        "vehicle_add",
+        "vehicle_edit",
+        "vehicle_delete",
+        "vehicle_mod_add",
+        "contact_add",
+        "contact_edit",
+        "contact_remove",
+        "contact_connection",
+        "quality_add",
+        "quality_delete"
+    };
+
     private static readonly IReadOnlyDictionary<string, UiControlWorkflowContract> UiControlContracts =
         new[]
         {
-            new UiControlWorkflowContract("create_entry", WorkflowShape.Utility, "tab-info", "profile"),
+            new UiControlWorkflowContract("create_entry", WorkflowShape.Utility, "tab-info", "profile", true),
             new UiControlWorkflowContract("edit_entry", WorkflowShape.Utility, "tab-info", "profile"),
             new UiControlWorkflowContract("delete_entry", WorkflowShape.Utility, "tab-info", "profile"),
             new UiControlWorkflowContract("open_notes", WorkflowShape.Utility, "tab-info", "profile", true),
@@ -2265,11 +2430,12 @@ public sealed class WorkflowParityGateTests
             new UiControlWorkflowContract("magic_source", WorkflowShape.Utility, "tab-magician", "spells"),
             new UiControlWorkflowContract("spell_add", WorkflowShape.Selection, "tab-magician", "spells", true),
             new UiControlWorkflowContract("adept_power_add", WorkflowShape.Selection, "tab-adept", "powers", true),
-            new UiControlWorkflowContract("complex_form_add", WorkflowShape.Selection, "tab-adept", "complexforms", true),
+            new UiControlWorkflowContract("complex_form_add", WorkflowShape.Selection, "tab-technomancer", "complexforms", true),
             new UiControlWorkflowContract("initiation_add", WorkflowShape.Selection, "tab-adept", "initiationgrades", true),
             new UiControlWorkflowContract("spirit_add", WorkflowShape.Selection, "tab-magician", "spirits", true),
+            new UiControlWorkflowContract("sprite_add", WorkflowShape.Selection, "tab-technomancer", "sprites", true),
             new UiControlWorkflowContract("critter_power_add", WorkflowShape.Selection, "tab-magician", "critterpowers", true),
-            new UiControlWorkflowContract("matrix_program_add", WorkflowShape.Selection, "tab-adept", "aiprograms", true),
+            new UiControlWorkflowContract("matrix_program_add", WorkflowShape.Selection, "tab-technomancer", "aiprograms", true),
             new UiControlWorkflowContract("skill_add", WorkflowShape.Selection, "tab-skills", "skills", true),
             new UiControlWorkflowContract("skill_specialize", WorkflowShape.DenseEditor, "tab-skills", "skills"),
             new UiControlWorkflowContract("skill_remove", WorkflowShape.Utility, "tab-skills", "skills"),
@@ -2288,5 +2454,9 @@ public sealed class WorkflowParityGateTests
             new UiControlWorkflowContract("contact_connection", WorkflowShape.DenseEditor, "tab-contacts", "contacts"),
             new UiControlWorkflowContract("quality_add", WorkflowShape.Selection, "tab-qualities", "qualities", true),
             new UiControlWorkflowContract("quality_delete", WorkflowShape.Utility, "tab-qualities", "qualities")
-        }.ToDictionary(contract => contract.Id, StringComparer.Ordinal);
+        }
+        .Select(contract => QuickActionRootControlIds.Contains(contract.Id)
+            ? contract with { IsQuickActionRoot = true }
+            : contract)
+        .ToDictionary(contract => contract.Id, StringComparer.Ordinal);
 }

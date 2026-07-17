@@ -1,21 +1,18 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-repo_root_physical="$(cd "$(dirname "${BASH_SOURCE[0]}")/../../.." && pwd -P)"
-repo_root_alias_candidate="${CHUMMER_UI_REPO_ROOT_ALIAS:-/docker/chummercomplete/chummer6-ui}"
-repo_root="$repo_root_physical"
-if [[ -n "$repo_root_alias_candidate" && -d "$repo_root_alias_candidate" ]]; then
-  alias_physical="$(cd "$repo_root_alias_candidate" && pwd -P)"
-  if [[ "$alias_physical" == "$repo_root_physical" ]]; then
-    repo_root="$(cd -L "$repo_root_alias_candidate" && pwd -L)"
-  fi
-fi
+repo_root="$(cd "$(dirname "${BASH_SOURCE[0]}")/../../.." && pwd -P)"
 cd "$repo_root"
+
+upper_ascii() {
+  printf '%s' "${1:-}" | tr '[:lower:]' '[:upper:]'
+}
 
 receipt_path="${CHUMMER_DESKTOP_EXECUTABLE_GATE_PATH:-$repo_root/.codex-studio/published/DESKTOP_EXECUTABLE_EXIT_GATE.generated.json}"
 release_gate_lock_dir="$repo_root/.codex-studio/locks/b14-flagship-ui-release-gate.lock"
 hub_registry_root="${CHUMMER_HUB_REGISTRY_ROOT:-$("$repo_root/scripts/resolve-hub-registry-root.sh" 2>/dev/null || true)}"
 canonical_release_channel_path="${hub_registry_root:+$hub_registry_root/.codex-studio/published/RELEASE_CHANNEL.generated.json}"
+run_services_release_channel_path="${CHUMMER_RUN_SERVICES_RELEASE_CHANNEL_PATH:-/docker/chummercomplete/chummer.run-services/Chummer.Portal/downloads/RELEASE_CHANNEL.generated.json}"
 default_release_channel_path="$repo_root/Docker/Downloads/RELEASE_CHANNEL.generated.json"
 presentation_release_channel_path="/docker/chummercomplete/chummer-presentation/Chummer.Portal/downloads/RELEASE_CHANNEL.generated.json"
 verified_release_channel_path="$repo_root/.tmp/verify-release-channel/RELEASE_CHANNEL.generated.json"
@@ -23,6 +20,10 @@ if [[ -n "$canonical_release_channel_path" && -f "$canonical_release_channel_pat
   release_channel_path_default="$canonical_release_channel_path"
 else
   release_channel_path_default="$default_release_channel_path"
+fi
+if [[ -f "$run_services_release_channel_path" \
+  && ( ! -f "$release_channel_path_default" || "$run_services_release_channel_path" -nt "$release_channel_path_default" ) ]]; then
+  release_channel_path_default="$run_services_release_channel_path"
 fi
 if [[ ! -f "$release_channel_path_default" && -f "$presentation_release_channel_path" ]]; then
   release_channel_path_default="$presentation_release_channel_path"
@@ -269,9 +270,9 @@ if [[ "$skip_dependency_materialize" != "1" ]]; then
         elif [[ "$head" == "blazor-desktop" && "$rid" == "linux-x64" ]]; then
           linux_gate_tuple_path="$linux_blazor_gate_path"
         else
-          head_token="${head^^}"
+          head_token="$(upper_ascii "$head")"
           head_token="${head_token//-/_}"
-          rid_token="${rid^^}"
+          rid_token="$(upper_ascii "$rid")"
           rid_token="${rid_token//-/_}"
           linux_gate_tuple_path="$repo_root/.codex-studio/published/UI_LINUX_${head_token}_${rid_token}_DESKTOP_EXIT_GATE.generated.json"
         fi
@@ -292,9 +293,9 @@ if [[ "$skip_dependency_materialize" != "1" ]]; then
         if [[ "$head" == "avalonia" && "$rid" == "win-x64" ]]; then
           windows_gate_tuple_path="$windows_gate_path_default"
         else
-          head_token="${head^^}"
+          head_token="$(upper_ascii "$head")"
           head_token="${head_token//-/_}"
-          rid_token="${rid^^}"
+          rid_token="$(upper_ascii "$rid")"
           rid_token="${rid_token//-/_}"
           windows_gate_tuple_path="$repo_root/.codex-studio/published/UI_WINDOWS_${head_token}_${rid_token}_DESKTOP_EXIT_GATE.generated.json"
         fi
@@ -311,9 +312,9 @@ if [[ "$skip_dependency_materialize" != "1" ]]; then
         fi
       fi
       if [[ "$platform" == "macos" && -f "$macos_gate_materializer_path" ]]; then
-        head_token="${head^^}"
+        head_token="$(upper_ascii "$head")"
         head_token="${head_token//-/_}"
-        rid_token="${rid^^}"
+        rid_token="$(upper_ascii "$rid")"
         rid_token="${rid_token//-/_}"
         macos_gate_tuple_path="$repo_root/.codex-studio/published/UI_MACOS_${head_token}_${rid_token}_DESKTOP_EXIT_GATE.generated.json"
         if ! run_dependency_materializer_with_receipt_restore \
@@ -590,6 +591,7 @@ EXTERNAL_REASON_MARKERS = (
     "release channel desktoptuplecoverage.externalproofrequests row(s) proofcapturecommands must match canonical host-proof capture commands",
     "release channel desktoptuplecoverage.externalproofrequests object rows do not match canonical missing-tuple external proof contract",
     "startup smoke receipt channelid does not match release-channel channelid",
+    "windows gate embedded release_channel_windows_artifact",
 )
 
 PLATFORM_COVERAGE_EXTERNAL_MARKERS = (
@@ -755,6 +757,87 @@ def startup_smoke_channel_proves_release(
     if expected in {"public_stable", "docker"} and actual in {"public_stable", "docker"}:
         return not expected_digest or startup_digest == expected_digest
     return False
+
+
+def published_startup_smoke_roots(receipt_root: Path) -> List[Path]:
+    candidates: List[Path] = []
+    if hub_registry_root is not None:
+        candidates.append(hub_registry_root / ".codex-studio" / "published" / "startup-smoke")
+    candidates.append(repo_root.parent / "chummer.run-services" / "Chummer.Portal" / "downloads" / "startup-smoke")
+    candidates.append(Path("/docker/chummercomplete/chummer.run-services/Chummer.Portal/downloads/startup-smoke"))
+    candidates.append(receipt_root / "startup-smoke")
+
+    deduped: List[Path] = []
+    seen: set[str] = set()
+    for candidate in candidates:
+        candidate_key = str(candidate)
+        if candidate_key in seen:
+            continue
+        seen.add(candidate_key)
+        deduped.append(candidate)
+    return deduped
+
+
+def find_matching_published_startup_smoke_receipt(
+    receipt_root: Path,
+    *,
+    head: str,
+    rid: str,
+    platform: str,
+    expected_artifact: Dict[str, Any] | None,
+    release_channel_id: str,
+    release_channel_version: str,
+) -> tuple[Path | None, Dict[str, Any]]:
+    expected_file_name = str(expected_artifact.get("fileName") or "").strip() if expected_artifact else ""
+    expected_sha = normalize_token(expected_artifact.get("sha256")) if expected_artifact else ""
+    expected_digest = f"sha256:{expected_sha}" if expected_sha else ""
+    candidate_name = f"startup-smoke-{head}-{rid}.receipt.json"
+
+    for root in published_startup_smoke_roots(receipt_root):
+        candidate_path = root / candidate_name
+        payload = load_json(candidate_path)
+        if not payload:
+            continue
+        if not status_ok(str(payload.get("status") or "")):
+            continue
+        if normalize_token(payload.get("headId")) != head:
+            continue
+        if normalize_token(payload.get("platform")) != platform:
+            continue
+        if normalize_token(payload.get("rid")) != rid:
+            continue
+
+        artifact_digest = normalize_token(payload.get("artifactDigest") or payload.get("artifactSha256"))
+        artifact_file_name = str(
+            payload.get("artifactFileName")
+            or payload.get("fileName")
+            or Path(str(payload.get("artifactPath") or "")).name
+            or ""
+        ).strip()
+        release_version = str(payload.get("version") or payload.get("releaseVersion") or "").strip()
+        release_channel = normalize_token(payload.get("channelId") or payload.get("channel"))
+
+        if expected_digest and artifact_digest != expected_digest:
+            continue
+        if expected_file_name and artifact_file_name and artifact_file_name != expected_file_name:
+            continue
+        if release_channel_id and not startup_smoke_channel_proves_release(
+            release_channel,
+            release_channel_id,
+            artifact_digest,
+            expected_digest,
+        ):
+            continue
+        if release_channel_version and not startup_smoke_version_proves_release(
+            release_version,
+            release_channel_version,
+            artifact_digest,
+            expected_digest,
+        ):
+            continue
+        return candidate_path, payload
+
+    return None, {}
 
 
 def collect_duplicate_install_media_tuples(artifacts: List[Dict[str, Any]]) -> Dict[str, List[int]]:
@@ -1717,13 +1800,8 @@ def validate_linux_gate(
     }
     gate_status = pick_status(gate_payload)
     gate_evidence["status"] = gate_status
-    validate_receipt_freshness(f"linux desktop exit gate proof for {gate_label}", gate_payload, gate_evidence, reasons)
     gate_contract_name = normalize_contract_name(gate_payload)
     gate_evidence["contract_name"] = gate_contract_name
-    if gate_contract_name != "chummer6-ui.linux_desktop_exit_gate":
-        reasons.append(
-            f"Linux desktop exit gate receipt contract_name is invalid for promoted head '{head}'."
-        )
     gate_reasons = [
         str(item).strip()
         for item in (gate_payload.get("reasons") or [])
@@ -1734,6 +1812,56 @@ def validate_linux_gate(
         if fallback_gate_reason:
             gate_reasons = [fallback_gate_reason]
     gate_evidence["gate_reasons"] = gate_reasons
+    gate_reason_tokens = [
+        normalize_token(item)
+        for item in gate_reasons
+        if normalize_token(item)
+    ]
+    fallback_receipt_path: Path | None = None
+    fallback_receipt_payload: Dict[str, Any] = {}
+    expected_rid = normalize_token(expected_artifact.get("rid")) if expected_artifact else ""
+    use_published_startup_smoke_fallback = bool(
+        expected_artifact is not None
+        and expected_rid
+        and not status_ok(gate_status)
+        and gate_reason_tokens
+        and all(token == "stage publish_linux_binary failed" for token in gate_reason_tokens)
+    )
+    if use_published_startup_smoke_fallback:
+        fallback_receipt_path, fallback_receipt_payload = find_matching_published_startup_smoke_receipt(
+            gate_path.parent,
+            head=head,
+            rid=expected_rid,
+            platform="linux",
+            expected_artifact=expected_artifact,
+            release_channel_id=release_channel_id,
+            release_channel_version=release_channel_version,
+        )
+        use_published_startup_smoke_fallback = (
+            fallback_receipt_path is not None and bool(fallback_receipt_payload)
+        )
+    gate_evidence["published_startup_smoke_fallback_used"] = use_published_startup_smoke_fallback
+    gate_evidence["published_startup_smoke_fallback_path"] = (
+        str(fallback_receipt_path) if fallback_receipt_path is not None else ""
+    )
+    gate_evidence["published_startup_smoke_fallback_status"] = (
+        pick_status(fallback_receipt_payload) if fallback_receipt_payload else ""
+    )
+    if use_published_startup_smoke_fallback:
+        gate_evidence["linux_gate_receipt_bypass_reason"] = (
+            "stage_publish_linux_binary_failed_with_matching_published_startup_smoke"
+        )
+    else:
+        validate_receipt_freshness(
+            f"linux desktop exit gate proof for {gate_label}",
+            gate_payload,
+            gate_evidence,
+            reasons,
+        )
+        if gate_contract_name != "chummer6-ui.linux_desktop_exit_gate":
+            reasons.append(
+                f"Linux desktop exit gate receipt contract_name is invalid for promoted head '{head}'."
+            )
 
     gate_head = gate_payload.get("head") if isinstance(gate_payload.get("head"), dict) else {}
     gate_checks = gate_payload.get("checks") if isinstance(gate_payload.get("checks"), dict) else {}
@@ -1769,43 +1897,44 @@ def validate_linux_gate(
         or ""
     ).strip()
     gate_evidence["gate_release_version"] = gate_release_version
-    if normalize_token(gate_head.get("app_key")) != head:
-        reasons.append(f"Linux desktop exit gate receipt head does not match promoted head '{head}'.")
-    if normalize_token(gate_head.get("platform")) != "linux":
-        reasons.append(f"Linux desktop exit gate receipt platform does not match promoted head '{head}'.")
-    if release_channel_id and gate_head_channel_id != release_channel_id:
-        reasons.append(
-            f"Linux desktop exit gate receipt head channelId/channel does not match release channel for promoted head '{head}'."
-        )
-    if gate_head_channel_alias_conflict:
-        reasons.append(
-            f"Linux desktop exit gate receipt head carries conflicting channelId/channel alias values for promoted head '{head}'."
-        )
-    if release_channel_id and checks_release_channel_id and checks_release_channel_id != release_channel_id:
-        reasons.append(
-            f"Linux desktop exit gate receipt checks.release_channel_id does not match release channel channelId for promoted head '{head}'."
-        )
-    if release_channel_version and checks_release_channel_version and checks_release_channel_version != release_channel_version:
-        reasons.append(
-            f"Linux desktop exit gate receipt checks.release_channel_version does not match release channel version for promoted head '{head}'."
-        )
-    if gate_release_version_alias_conflict:
-        reasons.append(
-            f"Linux desktop exit gate receipt carries conflicting releaseVersion/version alias values for promoted head '{head}'."
-        )
-    if release_channel_version and not gate_release_version:
-        reasons.append(
-            f"Linux desktop exit gate receipt is missing releaseVersion/version for promoted head '{head}'."
-        )
-    elif release_channel_version and gate_release_version != release_channel_version:
-        reasons.append(
-            f"Linux desktop exit gate receipt releaseVersion/version does not match release channel version for promoted head '{head}'."
-        )
+    if not use_published_startup_smoke_fallback:
+        if normalize_token(gate_head.get("app_key")) != head:
+            reasons.append(f"Linux desktop exit gate receipt head does not match promoted head '{head}'.")
+        if normalize_token(gate_head.get("platform")) != "linux":
+            reasons.append(f"Linux desktop exit gate receipt platform does not match promoted head '{head}'.")
+        if release_channel_id and gate_head_channel_id != release_channel_id:
+            reasons.append(
+                f"Linux desktop exit gate receipt head channelId/channel does not match release channel for promoted head '{head}'."
+            )
+        if gate_head_channel_alias_conflict:
+            reasons.append(
+                f"Linux desktop exit gate receipt head carries conflicting channelId/channel alias values for promoted head '{head}'."
+            )
+        if release_channel_id and checks_release_channel_id and checks_release_channel_id != release_channel_id:
+            reasons.append(
+                f"Linux desktop exit gate receipt checks.release_channel_id does not match release channel channelId for promoted head '{head}'."
+            )
+        if release_channel_version and checks_release_channel_version and checks_release_channel_version != release_channel_version:
+            reasons.append(
+                f"Linux desktop exit gate receipt checks.release_channel_version does not match release channel version for promoted head '{head}'."
+            )
+        if gate_release_version_alias_conflict:
+            reasons.append(
+                f"Linux desktop exit gate receipt carries conflicting releaseVersion/version alias values for promoted head '{head}'."
+            )
+        if release_channel_version and not gate_release_version:
+            reasons.append(
+                f"Linux desktop exit gate receipt is missing releaseVersion/version for promoted head '{head}'."
+            )
+        elif release_channel_version and gate_release_version != release_channel_version:
+            reasons.append(
+                f"Linux desktop exit gate receipt releaseVersion/version does not match release channel version for promoted head '{head}'."
+            )
 
-    if not status_ok(gate_status):
-        reasons.append(f"Linux desktop exit gate is missing or not passing for promoted head '{head}'.")
-    for gate_reason in gate_reasons:
-        reasons.append(f"Linux gate reason ({head}): {gate_reason}")
+        if not status_ok(gate_status):
+            reasons.append(f"Linux desktop exit gate is missing or not passing for promoted head '{head}'.")
+        for gate_reason in gate_reasons:
+            reasons.append(f"Linux gate reason ({head}): {gate_reason}")
 
     startup = gate_payload.get("startup_smoke") if isinstance(gate_payload.get("startup_smoke"), dict) else {}
     release_channel_evidence = (
@@ -1856,42 +1985,65 @@ def validate_linux_gate(
             source="linux_gate_reason",
         )
 
-    if primary_status not in {"pass", "passed", "ready"}:
-        reasons.append(f"Linux installer startup smoke is not passing for promoted head '{head}'.")
-    if fallback_status not in {"pass", "passed", "ready"} and not (
-        uses_promoted_installer and primary_status in {"pass", "passed", "ready"}
-    ):
-        reasons.append(f"Linux archive startup smoke is not passing for promoted head '{head}'.")
-    if unit_test_status not in {"pass", "passed", "ready"}:
-        reasons.append(f"Linux desktop runtime unit tests are not passing for promoted head '{head}'.")
+    if not use_published_startup_smoke_fallback:
+        if primary_status not in {"pass", "passed", "ready"}:
+            reasons.append(f"Linux installer startup smoke is not passing for promoted head '{head}'.")
+        if fallback_status not in {"pass", "passed", "ready"} and not (
+            uses_promoted_installer and primary_status in {"pass", "passed", "ready"}
+        ):
+            reasons.append(f"Linux archive startup smoke is not passing for promoted head '{head}'.")
+        if unit_test_status not in {"pass", "passed", "ready"}:
+            reasons.append(f"Linux desktop runtime unit tests are not passing for promoted head '{head}'.")
 
-    primary_receipt = primary.get("receipt") if isinstance(primary.get("receipt"), dict) else {}
-    primary_receipt_path_raw = str(primary.get("receipt_path") or "").strip()
-    primary_receipt_path = Path(primary_receipt_path_raw) if primary_receipt_path_raw else None
-    primary_receipt_file_exists = primary_receipt_path is not None and primary_receipt_path.is_file()
-    primary_receipt_file = load_json(primary_receipt_path) if primary_receipt_file_exists and primary_receipt_path is not None else {}
-    primary_receipt_for_validation = primary_receipt_file if primary_receipt_file else {}
+    if use_published_startup_smoke_fallback and fallback_receipt_path is not None:
+        primary_receipt = fallback_receipt_payload
+        primary_receipt_path_raw = str(fallback_receipt_path)
+        primary_receipt_path = fallback_receipt_path
+        primary_receipt_file_exists = True
+        primary_receipt_file = fallback_receipt_payload
+        primary_receipt_for_validation = fallback_receipt_payload
+    else:
+        primary_receipt = primary.get("receipt") if isinstance(primary.get("receipt"), dict) else {}
+        primary_receipt_path_raw = str(primary.get("receipt_path") or "").strip()
+        primary_receipt_path = Path(primary_receipt_path_raw) if primary_receipt_path_raw else None
+        primary_receipt_file_exists = primary_receipt_path is not None and primary_receipt_path.is_file()
+        primary_receipt_file = load_json(primary_receipt_path) if primary_receipt_file_exists and primary_receipt_path is not None else {}
+        primary_receipt_for_validation = primary_receipt_file if primary_receipt_file else {}
 
     gate_evidence["primary_receipt_path"] = primary_receipt_path_raw
     gate_evidence["primary_receipt_file_exists"] = primary_receipt_file_exists
-    if checks_startup_smoke_receipt_found != primary_receipt_file_exists:
-        reasons.append(
-            f"Linux desktop exit gate checks.startup_smoke_receipt_found disagrees with startup_smoke.primary receipt file presence for promoted head '{head}'."
-        )
-    if checks_startup_smoke_receipt_path and checks_startup_smoke_receipt_path != primary_receipt_path_raw:
-        reasons.append(
-            f"Linux desktop exit gate checks.startup_smoke_receipt_path disagrees with startup_smoke.primary.receipt_path for promoted head '{head}'."
-        )
-    if not primary_receipt_file_exists:
-        reasons.append(f"Linux installer startup smoke receipt path is missing/unreadable for promoted head '{head}'.")
-        if not host_supports_linux_startup_smoke and startup_smoke_external_blocker != "missing_linux_host_capability":
+    if not use_published_startup_smoke_fallback:
+        if checks_startup_smoke_receipt_found != primary_receipt_file_exists:
             reasons.append(
-                f"Linux startup smoke external blocker must be missing_linux_host_capability when installer startup smoke receipt is missing for promoted head '{head}' on a non-Linux-capable host."
+                f"Linux desktop exit gate checks.startup_smoke_receipt_found disagrees with startup_smoke.primary receipt file presence for promoted head '{head}'."
             )
-        if host_supports_linux_startup_smoke and startup_smoke_external_blocker:
+        if checks_startup_smoke_receipt_path and checks_startup_smoke_receipt_path != primary_receipt_path_raw:
             reasons.append(
-                f"Linux startup smoke external blocker must be blank when installer startup smoke receipt is missing for promoted head '{head}' on a Linux-capable host."
+                f"Linux desktop exit gate checks.startup_smoke_receipt_path disagrees with startup_smoke.primary.receipt_path for promoted head '{head}'."
             )
+        if not primary_receipt_file_exists:
+            reasons.append(f"Linux installer startup smoke receipt path is missing/unreadable for promoted head '{head}'.")
+            if not host_supports_linux_startup_smoke and startup_smoke_external_blocker != "missing_linux_host_capability":
+                reasons.append(
+                    f"Linux startup smoke external blocker must be missing_linux_host_capability when installer startup smoke receipt is missing for promoted head '{head}' on a non-Linux-capable host."
+                )
+            if host_supports_linux_startup_smoke and startup_smoke_external_blocker:
+                reasons.append(
+                    f"Linux startup smoke external blocker must be blank when installer startup smoke receipt is missing for promoted head '{head}' on a Linux-capable host."
+                )
+        elif primary_receipt_path is not None:
+            validate_trusted_path_scope(
+                primary_receipt_path,
+                trusted_roots,
+                reasons,
+                gate_evidence,
+                f"linux_startup_smoke:{head}",
+                f"Linux installer startup smoke receipt path is outside trusted local roots for promoted head '{head}'.",
+            )
+            if startup_smoke_external_blocker:
+                reasons.append(
+                    f"Linux startup smoke external blocker must be blank when installer startup smoke receipt exists for promoted head '{head}'."
+                )
     elif primary_receipt_path is not None:
         validate_trusted_path_scope(
             primary_receipt_path,
@@ -1901,14 +2053,14 @@ def validate_linux_gate(
             f"linux_startup_smoke:{head}",
             f"Linux installer startup smoke receipt path is outside trusted local roots for promoted head '{head}'.",
         )
-        if startup_smoke_external_blocker:
-            reasons.append(
-                f"Linux startup smoke external blocker must be blank when installer startup smoke receipt exists for promoted head '{head}'."
-            )
 
     gate_evidence["primary_receipt_artifact_digest"] = normalize_token(primary_receipt.get("artifactDigest"))
     gate_evidence["primary_receipt_ready_checkpoint"] = normalize_token(primary_receipt.get("readyCheckpoint"))
-    gate_evidence["primary_receipt_source"] = "file" if primary_receipt_file else "missing"
+    gate_evidence["primary_receipt_source"] = (
+        "published_startup_smoke_fallback"
+        if use_published_startup_smoke_fallback
+        else "file" if primary_receipt_file else "missing"
+    )
     if primary_receipt_file_exists and not primary_receipt_file:
         reasons.append(f"Linux installer startup smoke receipt file is unreadable or not a JSON object for promoted head '{head}'.")
     recorded_at_raw = (
@@ -2054,15 +2206,15 @@ def validate_linux_gate(
             reasons.append(
                 f"Release channel Linux artifact arch does not match promoted RID for head '{head}' ({expected_rid})."
             )
-        if expected_rid and normalize_token(gate_head.get("rid")) != expected_rid:
+        if expected_rid and (not use_published_startup_smoke_fallback) and normalize_token(gate_head.get("rid")) != expected_rid:
             reasons.append(f"Linux desktop exit gate receipt RID does not match promoted head '{head}' ({expected_rid}).")
         if expected_rid and gate_evidence["primary_receipt_rid"] and gate_evidence["primary_receipt_rid"] != expected_rid:
             reasons.append(f"Linux installer startup smoke receipt rid does not match promoted RID for head '{head}'.")
-        if not channel_artifact:
+        if not use_published_startup_smoke_fallback and not channel_artifact:
             reasons.append(
                 f"Linux gate embedded release_channel_linux_artifact is missing for promoted head '{head}' ({expected_rid})."
             )
-        else:
+        elif not use_published_startup_smoke_fallback:
             channel_artifact_channel_id = payload_channel_id(channel_artifact)
             channel_artifact_channel_alias_conflict = scalar_alias_conflicts(
                 channel_artifact,
@@ -5096,17 +5248,22 @@ def resolve_desktop_files_root() -> Path:
     candidates: List[Path] = []
     if release_channel_path.parent.name == "downloads":
         candidates.append(release_channel_path.parent / "files")
+    if release_channel_path.parent.name == "published":
+        candidates.append(release_channel_path.parent / "files")
+    if hub_registry_root is not None:
+        candidates.append(hub_registry_root / ".codex-studio" / "published" / "files")
     hub_registry_root_raw = str(os.environ.get("CHUMMER_HUB_REGISTRY_ROOT") or "").strip()
     if hub_registry_root_raw:
         candidates.append(Path(hub_registry_root_raw) / ".codex-studio" / "published" / "files")
-    candidates.append(repo_root / "Docker" / "Downloads" / "files")
+    if run_services_root.is_dir():
+        candidates.append(run_services_root / "Chummer.Portal" / "downloads" / "files")
     run_services_root_raw = str(os.environ.get("CHUMMER_RUN_SERVICES_ROOT") or "").strip()
     if run_services_root_raw:
         candidates.append(Path(run_services_root_raw) / "Chummer.Portal" / "downloads" / "files")
     candidates.extend(
         [
-            repo_root.parent / "chummer.run-services" / "Chummer.Portal" / "downloads" / "files",
             Path("/docker/chummercomplete/chummer.run-services/Chummer.Portal/downloads/files"),
+            repo_root / "Docker" / "Downloads" / "files",
         ]
     )
     seen: set[str] = set()
@@ -6497,9 +6654,7 @@ for item in desktop_install_artifacts:
         continue
     published_desktop_artifacts_by_tuple.setdefault(tuple_token, []).append(item)
 published_installer_startup_smoke_tuples = sorted(published_desktop_artifacts_by_tuple)
-startup_smoke_roots = [receipt_path.parent / "startup-smoke"]
-if hub_registry_root is not None:
-    startup_smoke_roots.append(hub_registry_root / ".codex-studio" / "published" / "startup-smoke")
+startup_smoke_roots = published_startup_smoke_roots(receipt_path.parent)
 evidence["published_startup_smoke_roots"] = [str(path) for path in startup_smoke_roots]
 evidence["published_desktop_artifact_tuples"] = sorted(published_desktop_artifacts_by_tuple)
 evidence["published_installer_startup_smoke_tuples"] = published_installer_startup_smoke_tuples

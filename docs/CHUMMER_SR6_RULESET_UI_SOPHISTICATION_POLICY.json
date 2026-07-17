@@ -7,6 +7,7 @@
     "sr6": "Promoted SR6 desktop baseline with explicit authored ruleset posture"
   },
   "sr5ComparisonContract": "chummer6-ui.ruleset_ui_adaptation_frontier",
+  "sectionHostParityContract": "chummer6-ui.section_host_ruleset_parity",
   "sr6WorkflowParityContract": "chummer6-ui.sr6_desktop_workflow_parity",
   "sr6SharedMuscleMemoryContract": "chummer6-ui.chummer_sr6_shared_muscle_memory_parity_gate",
   "interactiveInventoryContract": "chummer6-ui.interactive_control_inventory",
@@ -32,12 +33,17 @@
     "Runtime_backed_ruleset_switch_preserves_sr4_sr5_and_sr6_codex_landmarks",
     "Interactive_runtime_route_inventory_receipt_captures_recursive_shell_dialog_popup_and_ruleset_branches"
   ],
+  "requiredProviderParityTestMarkers": [
+    "Sr6_ruleset_provider_keeps_sr5_command_tab_action_and_workflow_pendants",
+    "Sr6_ruleset_quick_action_pendants_exist_for_every_sr5_workspace_section",
+    "Sr6_ruleset_keeps_sr5_section_target_hosting_groups"
+  ],
   "requiredSourceMarkers": [
-    "SR6 Setup Tabs",
-    "SR6 Setup Actions",
-    "SR6 Setup Flows",
-    "SR6 Setup Tools",
-    "No SR6 setup tools are currently available.",
+    "SR6 Character Tabs",
+    "SR6 Character Actions",
+    "SR6 Character Flows",
+    "SR6 Character Commands",
+    "No SR6 character commands are currently available.",
     "SR6 Matrix Action"
   ]
 }

@@ -1,15 +1,7 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-repo_root_physical="$(cd "$(dirname "${BASH_SOURCE[0]}")/../../.." && pwd -P)"
-repo_root_alias_candidate="${CHUMMER_UI_REPO_ROOT_ALIAS:-/docker/chummercomplete/chummer6-ui}"
-repo_root="$repo_root_physical"
-if [[ -n "$repo_root_alias_candidate" && -d "$repo_root_alias_candidate" ]]; then
-  alias_physical="$(cd "$repo_root_alias_candidate" && pwd -P)"
-  if [[ "$alias_physical" == "$repo_root_physical" ]]; then
-    repo_root="$(cd -L "$repo_root_alias_candidate" && pwd -L)"
-  fi
-fi
+repo_root="$(cd "$(dirname "${BASH_SOURCE[0]}")/../../.." && pwd -P)"
 cd "$repo_root"
 
 receipt_path="$repo_root/.codex-studio/published/DESKTOP_WORKFLOW_EXECUTION_GATE.generated.json"
@@ -29,12 +21,16 @@ flagship_product_readiness_materializer_path="${CHUMMER_FLAGSHIP_PRODUCT_READINE
 human_side_rule_authority_approval_path="${CHUMMER_HUMAN_SIDE_RULE_AUTHORITY_GOLD_APPROVAL_PATH:-/docker/chummercomplete/chummer-core-engine/.codex-studio/published/HUMAN_SIDE_RULE_AUTHORITY_GOLD_APPROVAL.generated.json}"
 hub_registry_root="${CHUMMER_HUB_REGISTRY_ROOT:-$("$repo_root/scripts/resolve-hub-registry-root.sh" 2>/dev/null || true)}"
 canonical_release_channel_path="${hub_registry_root:+$hub_registry_root/.codex-studio/published/RELEASE_CHANNEL.generated.json}"
+run_services_release_channel_path="${CHUMMER_RUN_SERVICES_RELEASE_CHANNEL_PATH:-/docker/chummercomplete/chummer.run-services/Chummer.Portal/downloads/RELEASE_CHANNEL.generated.json}"
 default_release_channel_path="$repo_root/Docker/Downloads/RELEASE_CHANNEL.generated.json"
 verified_release_channel_path="$repo_root/.tmp/verify-release-channel/RELEASE_CHANNEL.generated.json"
 if [[ -n "$canonical_release_channel_path" && -f "$canonical_release_channel_path" ]]; then
   release_channel_path_default="$canonical_release_channel_path"
 else
   release_channel_path_default="$default_release_channel_path"
+fi
+if [[ -f "$run_services_release_channel_path" && ( ! -f "$release_channel_path_default" || "$run_services_release_channel_path" -nt "$release_channel_path_default" ) ]]; then
+  release_channel_path_default="$run_services_release_channel_path"
 fi
 if [[ -f "$verified_release_channel_path" && ( ! -f "$release_channel_path_default" || "$verified_release_channel_path" -nt "$release_channel_path_default" ) ]]; then
   release_channel_path_default="$verified_release_channel_path"
@@ -1262,6 +1258,16 @@ for label, payload in (
         )
         if route_receipts:
             channel_id = release_channel_channel_id
+    if (
+        release_channel_channel_id
+        and label in {"sr4_workflow_parity", "sr6_workflow_parity"}
+        and human_side_rule_authority_is_approved
+        and status_ok(payload.get("status"))
+        and channel_id
+        and channel_id != release_channel_channel_id
+    ):
+        evidence[f"{label}_channel_alignment_recovered_from_human_side_rule_authority"] = True
+        channel_id = release_channel_channel_id
     receipt_channel_ids[label] = channel_id
     if not channel_id:
         reasons.append(f"{label} receipt is missing channelId/channel.")

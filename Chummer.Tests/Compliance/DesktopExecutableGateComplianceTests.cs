@@ -546,7 +546,9 @@ public sealed class DesktopExecutableGateComplianceTests
         StringAssert.Contains(runnerText, "const routeNavigationRetryAttempts = Number(process.env.CHUMMER_PUBLIC_EDGE_ROUTE_RETRY_ATTEMPTS || '3');");
         StringAssert.Contains(runnerText, "const routeNavigationRetryDelayMs = Number(process.env.CHUMMER_PUBLIC_EDGE_ROUTE_RETRY_DELAY_MS || '1500');");
         StringAssert.Contains(runnerText, "function shouldRetryRouteNavigation(error)");
-        StringAssert.Contains(runnerText, "message.includes('ERR_ABORTED') || message.includes('Timeout')");
+        StringAssert.Contains(runnerText, "message.includes('ERR_ABORTED')");
+        StringAssert.Contains(runnerText, "message.includes('ERR_NETWORK_CHANGED')");
+        StringAssert.Contains(runnerText, "message.includes('Timeout')");
         StringAssert.Contains(runnerText, "await page.goto('about:blank', { waitUntil: 'load', timeout: 5000 });");
         StringAssert.Contains(runnerText, "await page.waitForTimeout(routeNavigationRetryDelayMs);");
         StringAssert.Contains(runnerText, "waitUntil: 'commit'");
@@ -772,13 +774,17 @@ public sealed class DesktopExecutableGateComplianceTests
         string repoRoot = FindRepoRoot();
         string sr4ScriptPath = Path.Combine(repoRoot, "scripts", "ai", "milestones", "sr4-desktop-workflow-parity-check.sh");
         string sr6ScriptPath = Path.Combine(repoRoot, "scripts", "ai", "milestones", "sr6-desktop-workflow-parity-check.sh");
+        string helperScriptPath = Path.Combine(repoRoot, "scripts", "ai", "milestones", "run-workflow-parity-gate-tests.sh");
         string sr4ScriptText = File.ReadAllText(sr4ScriptPath);
         string sr6ScriptText = File.ReadAllText(sr6ScriptPath);
+        string helperScriptText = File.ReadAllText(helperScriptPath);
 
         StringAssert.Contains(sr4ScriptText, "cd \"$repo_root\"");
-        StringAssert.Contains(sr4ScriptText, "dotnet test --project Chummer.Tests/Chummer.Tests.csproj");
+        StringAssert.Contains(sr4ScriptText, "run-workflow-parity-gate-tests.sh");
         StringAssert.Contains(sr6ScriptText, "cd \"$repo_root\"");
-        StringAssert.Contains(sr6ScriptText, "dotnet test --project Chummer.Tests/Chummer.Tests.csproj");
+        StringAssert.Contains(sr6ScriptText, "run-workflow-parity-gate-tests.sh");
+        StringAssert.Contains(helperScriptText, "dotnet build \"$test_project\"");
+        StringAssert.Contains(helperScriptText, "dotnet \"$test_assembly\" --filter \"$test_filter\"");
     }
 
     [TestMethod]
@@ -1909,6 +1915,32 @@ public sealed class DesktopExecutableGateComplianceTests
         StringAssert.Contains(linuxScriptText, "publish_run_root = best_receipt_path.parent");
         StringAssert.Contains(linuxScriptText, "temp_path.write_text(publish_source_path.read_text(encoding=\"utf-8\"), encoding=\"utf-8\")");
         StringAssert.Contains(linuxScriptText, "latest_link_path.symlink_to(publish_run_root)");
+    }
+
+    [TestMethod]
+    public void Windows_desktop_exit_gate_keeps_hub_registry_authority_when_portal_projection_is_newer()
+    {
+        string repoRoot = FindRepoRoot();
+        string windowsScriptPath = Path.Combine(repoRoot, "scripts", "materialize-windows-desktop-exit-gate.sh");
+        string scriptText = File.ReadAllText(windowsScriptPath);
+
+        StringAssert.Contains(
+            scriptText,
+            "if [[ -n \"$CANONICAL_RELEASE_CHANNEL_PATH\" && -f \"$CANONICAL_RELEASE_CHANNEL_PATH\" ]]; then\n  RELEASE_CHANNEL_PATH_DEFAULT=\"$CANONICAL_RELEASE_CHANNEL_PATH\"\nelse\n  RELEASE_CHANNEL_PATH_DEFAULT=\"$DEFAULT_RELEASE_CHANNEL_PATH\"\n  if [[ -f \"$RUN_SERVICES_RELEASE_CHANNEL_PATH\"");
+        StringAssert.Contains(
+            scriptText,
+            "Portal Windows installer binding disagrees with the authoritative release channel.");
+        StringAssert.Contains(
+            scriptText,
+            "evidence[\"portal_release_channel_binding_matches_authority\"] = portal_binding_matches_authority");
+        StringAssert.Contains(
+            scriptText,
+            "expected_installer_digest = normalize_digest_token(artifact_sha or installer_sha)");
+        Assert.IsFalse(
+            scriptText.Contains(
+                "fi\nif [[ -f \"$RUN_SERVICES_RELEASE_CHANNEL_PATH\" && ( ! -f \"$RELEASE_CHANNEL_PATH_DEFAULT\"",
+                StringComparison.Ordinal),
+            "A newer portal projection must not replace an existing hub-registry release authority.");
     }
 
     [TestMethod]

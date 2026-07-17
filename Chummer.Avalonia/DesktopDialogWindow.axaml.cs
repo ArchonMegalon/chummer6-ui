@@ -21,17 +21,45 @@ namespace Chummer.Avalonia;
 
 public partial class DesktopDialogWindow : Window
 {
+    private const string OriginWizardDialogId = "dialog.new_character.origin_wizard";
+    private const string OriginWizardAdvancedStoryControlsExpanderName = "OriginDossierStandaloneAdvancedStoryControlsExpander";
+    private static readonly TimeSpan[] DelayedOriginWizardComboRestoreDelays =
+    [
+        TimeSpan.FromMilliseconds(48),
+        TimeSpan.FromMilliseconds(96),
+        TimeSpan.FromMilliseconds(192),
+        TimeSpan.FromMilliseconds(384)
+    ];
+    private static readonly TimeSpan OriginWizardComboRestorePreservationGrace = TimeSpan.FromMilliseconds(480);
+    private static readonly TimeSpan OriginWizardTransientRefreshCloseGrace = TimeSpan.FromMilliseconds(300);
     private static readonly string UiKitAccessibilityAdapterMarker = AccessibilityPrimitiveBoundary.RootClass;
     private CharacterOverviewViewModelAdapter? _adapter;
     private readonly TextBlock _dialogTitleText;
     private readonly TextBlock _dialogMessageText;
     private readonly ContentControl _dialogTrustReceiptPanel;
+    private readonly ScrollViewer _dialogScrollViewer;
     private readonly StackPanel _dialogFieldsPanel;
     private readonly Border _dialogActionsBorder;
     private readonly StackPanel _dialogActionsPanel;
     private IReadOnlyList<DesktopDialogField> _boundDialogFields = Array.Empty<DesktopDialogField>();
     private string? _preferredFocusControlName;
     private int? _preferredFocusSelectionStart;
+    private bool _originWizardAdvancedStoryControlsExpanded;
+    private Vector? _preferredDialogScrollAnchor;
+    private int _preferredDialogScrollAnchorVersion;
+    private (string ControlName, double OffsetY)? _preferredDialogViewportAnchor;
+    private int _preferredDialogViewportAnchorVersion;
+    private (string ControlName, double OffsetY)? _preferredDialogInteractionAnchor;
+    private int _preferredDialogInteractionAnchorVersion;
+    private bool _suppressProgrammaticComboFocusAnchorCapture;
+    private bool _skipPreferredFocusRestoreOnNextBind;
+    private bool _suppressOriginWizardAdvancedStoryControlsCollapseDuringComboRefresh;
+    private bool _preferRawOriginWizardScrollAnchorOnNextBind;
+    private DateTimeOffset _originWizardComboRestorePreservationUntilUtc;
+    private int _dialogBindVersion;
+    private bool _originWizardTransientRefreshPending;
+    private DateTimeOffset _originWizardTransientRefreshPendingAtUtc;
+    private int _originWizardTransientRefreshCloseDeferralVersion;
     private bool _suppressCloseNotification;
     private bool _suppressDialogUpdates;
 
@@ -42,6 +70,7 @@ public partial class DesktopDialogWindow : Window
         _dialogTitleText = this.FindControl<TextBlock>("DialogTitleText")!;
         _dialogMessageText = this.FindControl<TextBlock>("DialogMessageText")!;
         _dialogTrustReceiptPanel = this.FindControl<ContentControl>("DialogTrustReceiptPanel")!;
+        _dialogScrollViewer = this.FindControl<ScrollViewer>("DialogScrollViewer")!;
         _dialogFieldsPanel = this.FindControl<StackPanel>("DialogFieldsPanel")!;
         _dialogActionsBorder = this.FindControl<Border>("DialogActionsBorder")!;
         _dialogActionsPanel = this.FindControl<StackPanel>("DialogActionsPanel")!;
@@ -87,10 +116,46 @@ public partial class DesktopDialogWindow : Window
 
     public void BindDialog(DesktopDialogState dialog)
     {
+        bool preserveOriginWizardComboRefreshStateThroughBind =
+            string.Equals(dialog.Id, OriginWizardDialogId, StringComparison.Ordinal)
+            && string.Equals(BoundDialogId, OriginWizardDialogId, StringComparison.Ordinal)
+            && (_suppressOriginWizardAdvancedStoryControlsCollapseDuringComboRefresh || _originWizardTransientRefreshPending);
+
+        _dialogBindVersion++;
+        if (!preserveOriginWizardComboRefreshStateThroughBind)
+        {
+            _suppressOriginWizardAdvancedStoryControlsCollapseDuringComboRefresh = false;
+            if (string.Equals(dialog.Id, OriginWizardDialogId, StringComparison.Ordinal))
+            {
+                ClearPendingOriginWizardTransientRefresh();
+            }
+            else
+            {
+                ClearOriginWizardComboRestorePreservation();
+            }
+        }
+
         CapturePreferredFocusState();
+        CaptureTransientDialogState();
+        bool preservedOriginWizardAdvancedStoryControlsExpanded = _originWizardAdvancedStoryControlsExpanded;
+        string? previousDialogId = BoundDialogId;
+        Vector? preservedScrollOffset = CapturePreferredScrollOffset(dialog.Id);
+        (string ControlName, double OffsetY)? preservedViewportAnchor = CapturePreferredDialogViewportAnchorSnapshot(dialog.Id);
+        (string ControlName, double OffsetY)? preservedInteractionAnchor = CapturePreferredDialogInteractionAnchorSnapshot(dialog.Id);
+        bool preserveInteractionContext = string.Equals(dialog.Id, previousDialogId, StringComparison.Ordinal);
+        bool skipPreferredFocusRestore = preserveInteractionContext && _skipPreferredFocusRestoreOnNextBind;
+        _skipPreferredFocusRestoreOnNextBind = false;
         BoundDialogId = dialog.Id;
+        if (!string.Equals(BoundDialogId, previousDialogId, StringComparison.Ordinal)
+            && !string.Equals(BoundDialogId, OriginWizardDialogId, StringComparison.Ordinal))
+        {
+            _originWizardAdvancedStoryControlsExpanded = false;
+        }
         _boundDialogFields = dialog.Fields;
-        ApplyDialogSizing(dialog.Id);
+        if (!preserveInteractionContext)
+        {
+            ApplyDialogSizing(dialog.Id);
+        }
         Title = dialog.Title;
         _dialogTitleText.Text = dialog.Title;
         string visibleMessage = SuppressDialogBanner(dialog.Id) ? string.Empty : dialog.Message ?? string.Empty;
@@ -103,11 +168,27 @@ public partial class DesktopDialogWindow : Window
         ToolTip.SetTip(_dialogFieldsPanel, null);
 
         BuildFields(dialog.Fields);
+        RestoreTransientDialogState(dialog.Id, preservedOriginWizardAdvancedStoryControlsExpanded);
+        if (preserveOriginWizardComboRefreshStateThroughBind)
+        {
+            _suppressOriginWizardAdvancedStoryControlsCollapseDuringComboRefresh = false;
+            ClearPendingOriginWizardTransientRefresh();
+        }
         BuildActions(dialog.Actions);
         RefreshDialogVisuals();
+        PrimePreferredScrollOffsetForDialogRebind(dialog.Id, preservedScrollOffset, preservedViewportAnchor, preservedInteractionAnchor);
+        RestorePreferredScrollOffset(dialog.Id, preservedScrollOffset, preservedViewportAnchor, preservedInteractionAnchor);
         if (IsVisible)
         {
-            Dispatcher.UIThread.Post(FocusPreferredControl, DispatcherPriority.Input);
+            Dispatcher.UIThread.Post(() =>
+            {
+                if (!skipPreferredFocusRestore)
+                {
+                    FocusPreferredControlDuringRestore(allowFallback: !preserveInteractionContext);
+                }
+
+                RestorePreferredScrollOffset(dialog.Id, preservedScrollOffset, preservedViewportAnchor, preservedInteractionAnchor);
+            }, DispatcherPriority.Input);
         }
     }
 
@@ -130,33 +211,37 @@ public partial class DesktopDialogWindow : Window
     private void BuildFields(IReadOnlyList<DesktopDialogField> fields)
     {
         _suppressDialogUpdates = true;
-        _dialogFieldsPanel.Children.Clear();
-        if (TryBuildLegacyParityDialog(fields))
+        try
         {
-            _suppressDialogUpdates = false;
-            return;
-        }
-
-        DesktopDialogField[] visibleFields = fields
-            .Where(field => !string.Equals(field.LayoutSlot, DesktopDialogFieldLayoutSlots.Hidden, StringComparison.Ordinal))
-            .Where(ShouldRenderField)
-            .ToArray();
-        for (int index = 0; index < visibleFields.Length; index++)
-        {
-            DesktopDialogField field = visibleFields[index];
-            if (string.Equals(field.LayoutSlot, DesktopDialogFieldLayoutSlots.Left, StringComparison.Ordinal)
-                && index + 1 < visibleFields.Length
-                && string.Equals(visibleFields[index + 1].LayoutSlot, DesktopDialogFieldLayoutSlots.Right, StringComparison.Ordinal))
+            _dialogFieldsPanel.Children.Clear();
+            if (TryBuildLegacyParityDialog(fields))
             {
-                _dialogFieldsPanel.Children.Add(CreateSplitFieldRow(field, visibleFields[index + 1]));
-                index++;
-                continue;
+                return;
             }
 
-            _dialogFieldsPanel.Children.Add(CreateStandaloneFieldRow(field));
-        }
+            DesktopDialogField[] visibleFields = fields
+                .Where(field => !string.Equals(field.LayoutSlot, DesktopDialogFieldLayoutSlots.Hidden, StringComparison.Ordinal))
+                .Where(ShouldRenderField)
+                .ToArray();
+            for (int index = 0; index < visibleFields.Length; index++)
+            {
+                DesktopDialogField field = visibleFields[index];
+                if (string.Equals(field.LayoutSlot, DesktopDialogFieldLayoutSlots.Left, StringComparison.Ordinal)
+                    && index + 1 < visibleFields.Length
+                    && string.Equals(visibleFields[index + 1].LayoutSlot, DesktopDialogFieldLayoutSlots.Right, StringComparison.Ordinal))
+                {
+                    _dialogFieldsPanel.Children.Add(CreateSplitFieldRow(field, visibleFields[index + 1]));
+                    index++;
+                    continue;
+                }
 
-        _suppressDialogUpdates = false;
+                _dialogFieldsPanel.Children.Add(CreateStandaloneFieldRow(field));
+            }
+        }
+        finally
+        {
+            _suppressDialogUpdates = false;
+        }
     }
 
     private bool TryBuildLegacyParityDialog(IReadOnlyList<DesktopDialogField> fields)
@@ -173,7 +258,7 @@ public partial class DesktopDialogWindow : Window
             return true;
         }
 
-        if (string.Equals(BoundDialogId, "dialog.new_character.origin_wizard", StringComparison.Ordinal))
+        if (string.Equals(BoundDialogId, OriginWizardDialogId, StringComparison.Ordinal))
         {
             _dialogFieldsPanel.Children.Add(CreateLegacyOriginWizardPane(fields));
             return true;
@@ -571,12 +656,14 @@ public partial class DesktopDialogWindow : Window
         {
             BorderBrush = DesktopShellTheme.ResolveBorderBrush(),
             BorderThickness = new Thickness(0, 0, 0, 1),
+            Background = DesktopShellTheme.ResolveSelectionPanelBrush(),
             Padding = new Thickness(0, 0, 0, 4),
             Child = new TextBlock
             {
                 Text = title,
                 FontWeight = FontWeight.SemiBold,
-                FontSize = 12
+                FontSize = 12,
+                Foreground = DesktopShellTheme.ResolveForegroundBrush()
             }
         };
     }
@@ -592,7 +679,8 @@ public partial class DesktopDialogWindow : Window
         TextBlock title = new()
         {
             Text = label,
-            FontWeight = FontWeight.SemiBold
+            FontWeight = FontWeight.SemiBold,
+            Foreground = DesktopShellTheme.ResolveForegroundBrush()
         };
         TextBlock badge = new()
         {
@@ -611,6 +699,7 @@ public partial class DesktopDialogWindow : Window
         {
             BorderBrush = DesktopShellTheme.ResolveBorderBrush(),
             BorderThickness = new Thickness(0, 0, 0, 1),
+            Background = DesktopShellTheme.ResolveSelectionPanelBrush(),
             Padding = new Thickness(0, 0, 0, 4),
             Child = header
         };
@@ -1219,7 +1308,7 @@ public partial class DesktopDialogWindow : Window
             Text = field.Value,
             IsReadOnly = field.IsReadOnly
         };
-        ApplyTextBoxAccessibility(textBox, field.AccessibleName, field.ToolTip, field.HelpText);
+        ApplyTextBoxAccessibility(textBox, field.AccessibleName, field.ToolTip, field.HelpText, field.IsReadOnly);
         if (!field.IsReadOnly)
         {
             textBox.TextChanged += (_, _) =>
@@ -1458,9 +1547,9 @@ public partial class DesktopDialogWindow : Window
 
         Expander advancedStoryControls = new()
         {
-            Name = "OriginDossierStandaloneAdvancedStoryControlsExpander",
+            Name = OriginWizardAdvancedStoryControlsExpanderName,
             Header = "Advanced story controls",
-            IsExpanded = false,
+            IsExpanded = IsOriginWizardAdvancedStoryControlsEffectivelyExpanded(),
             Content = new StackPanel
             {
                 Spacing = 12,
@@ -1483,6 +1572,29 @@ public partial class DesktopDialogWindow : Window
                 }
             }
         };
+        int advancedStoryControlsBindVersion = _dialogBindVersion;
+        advancedStoryControls.Expanded += (_, _) =>
+        {
+            if (_suppressDialogUpdates || advancedStoryControlsBindVersion != _dialogBindVersion)
+            {
+                return;
+            }
+
+            _originWizardAdvancedStoryControlsExpanded = true;
+        };
+        advancedStoryControls.Collapsed += (_, _) =>
+        {
+            if (_suppressDialogUpdates
+                || advancedStoryControlsBindVersion != _dialogBindVersion
+                || _suppressOriginWizardAdvancedStoryControlsCollapseDuringComboRefresh
+                || _originWizardTransientRefreshPending
+                || HasActiveOriginWizardComboRestorePreservation())
+            {
+                return;
+            }
+
+            CommitOriginWizardAdvancedStoryControlsCollapsedStateIfCurrentExpanderStillCollapsed(advancedStoryControlsBindVersion);
+        };
         shell.Children.Add(advancedStoryControls);
 
         shell.Children.Add(CreateLegacySummaryCard(
@@ -1499,6 +1611,8 @@ public partial class DesktopDialogWindow : Window
         DesktopDialogField storyField = FindRequiredField(fields, "newCharacterOriginStory");
         DesktopDialogField buildLogicField = FindRequiredField(fields, "newCharacterOriginBuildLogic");
         DesktopDialogField implicationsField = FindRequiredField(fields, "newCharacterOriginImplications");
+        DesktopDialogField dossierLinkField = FindRequiredField(fields, "newCharacterOriginDossierLink");
+        DesktopDialogField dossierLinkNotesField = FindRequiredField(fields, "newCharacterOriginDossierLinkNotes");
         DesktopDialogField rulesetField = FindRequiredField(fields, "newCharacterWorkflowRulesetId");
         DesktopDialogField methodField = FindRequiredField(fields, "newCharacterWorkflowBuildMethod");
         DesktopDialogField aliasField = FindRequiredField(fields, "newCharacterWorkflowAlias");
@@ -1515,10 +1629,16 @@ public partial class DesktopDialogWindow : Window
                 ("Ruleset", rulesetField.Value.ToUpperInvariant()),
                 ("Method", methodField.Value))));
 
+        shell.Children.Add(CreateLegacyFieldGroup(
+            "Origin Dossier Link",
+            CreateLegacyGroupLead("Use this route to reopen the Origin Dossier workflow without publishing the story text."),
+            CreateStandaloneFieldRow(dossierLinkField),
+            CreateFieldControl(dossierLinkNotesField)));
+
         shell.Children.Add(CreateLegacySummaryCard(
             "Book Preview",
             "Read this first. Character creation starts after the story feels right.",
-            CreateFieldControl(bookField)));
+            CreateBookPreviewPanel(bookField.Value)));
 
         shell.Children.Add(CreateLegacySummaryCard(
             "Story",
@@ -1585,6 +1705,8 @@ public partial class DesktopDialogWindow : Window
 
     private Control CreateLegacyPriorityWorkflowPane(IReadOnlyList<DesktopDialogField> fields)
     {
+        IBrush paneBackground = DesktopShellTheme.ResolveSurfaceBrush();
+        IBrush subtlePaneBackground = DesktopShellTheme.ResolveChromeSubtleBrush();
         DesktopDialogField categoryField = FindRequiredField(fields, "newCharacterMetatypeCategory");
         DesktopDialogField metatypeField = FindRequiredField(fields, "newCharacterMetatype");
         DesktopDialogField heritageField = FindRequiredField(fields, "newCharacterPriorityHeritage");
@@ -1609,7 +1731,15 @@ public partial class DesktopDialogWindow : Window
             Name = name,
             Text = text,
             FontWeight = FontWeight.SemiBold,
+            Foreground = DesktopShellTheme.ResolveForegroundBrush(),
             VerticalAlignment = global::Avalonia.Layout.VerticalAlignment.Center
+        };
+
+        static TextBlock CreateValueLabel(string text, TextWrapping wrapping = TextWrapping.NoWrap) => new()
+        {
+            Text = text,
+            Foreground = DesktopShellTheme.ResolveForegroundBrush(),
+            TextWrapping = wrapping
         };
 
         ComboBox BuildRuntimeCombo(DesktopDialogField field, double minWidth = 160d)
@@ -1625,7 +1755,8 @@ public partial class DesktopDialogWindow : Window
             ColumnDefinitions = new ColumnDefinitions("Auto,132,Auto,132,Auto,160"),
             RowDefinitions = new RowDefinitions("Auto,Auto,Auto"),
             ColumnSpacing = 8,
-            RowSpacing = 8
+            RowSpacing = 8,
+            Background = paneBackground
         };
         topMatrix.Children.Add(CreateRowLabel("Metatype:", DesktopDialogAccessibility.BuildFieldLabelName(heritageField.Id)));
         ComboBox heritageCombo = BuildRuntimeCombo(heritageField, 120);
@@ -1677,7 +1808,7 @@ public partial class DesktopDialogWindow : Window
             Name = "newCharacterPrioritySumToTenLabel",
             Text = runtimeState.SumToTenLabel,
             FontWeight = FontWeight.SemiBold,
-            Foreground = ResolveThemeBrush("ChummerShellInfoBrush", "#173A6C"),
+            Foreground = DesktopShellTheme.ResolveInfoBrush(),
             VerticalAlignment = global::Avalonia.Layout.VerticalAlignment.Center,
             IsVisible = !string.IsNullOrWhiteSpace(runtimeState.SumToTenLabel)
         };
@@ -1696,6 +1827,7 @@ public partial class DesktopDialogWindow : Window
         ComboBox categoryCombo = BuildRuntimeCombo(categoryField, 180);
         ListBox metatypeList = BuildSelectListBox(metatypeField);
         metatypeList.Name = DesktopDialogAccessibility.BuildFieldInputName(metatypeField.Id);
+        metatypeList.Background = paneBackground;
         metatypeList.MinHeight = 280;
         ApplyAccessibility(metatypeList, metatypeField.AccessibleName, metatypeField.ToolTip, metatypeField.HelpText);
         metatypeList.DoubleTapped += async (_, _) =>
@@ -1712,6 +1844,7 @@ public partial class DesktopDialogWindow : Window
 
         StackPanel browseLane = new()
         {
+            Background = paneBackground,
             Spacing = 8,
             Children =
             {
@@ -1735,55 +1868,69 @@ public partial class DesktopDialogWindow : Window
             ColumnDefinitions = new ColumnDefinitions("Auto,*"),
             RowDefinitions = new RowDefinitions("Auto,Auto,Auto,Auto"),
             ColumnSpacing = 8,
-            RowSpacing = 6
+            RowSpacing = 6,
+            Background = paneBackground
         };
         AddLabeledValueRow(
             rightFactsGrid,
             0,
             "Metavariant:",
             BuildRuntimeCombo(metavariantField with { Options = runtimeState.MetavariantOptions }, 180));
-        AddLabeledValueRow(rightFactsGrid, 1, "Karma:", new TextBlock { Text = runtimeState.MetatypeKarma });
-        AddLabeledValueRow(rightFactsGrid, 2, "Special Attributes:", new TextBlock { Text = runtimeState.SpecialAttributes });
-        AddLabeledValueRow(rightFactsGrid, 3, "Source:", new TextBlock { Text = runtimeState.Source, TextWrapping = TextWrapping.Wrap });
+        AddLabeledValueRow(rightFactsGrid, 1, "Karma:", CreateValueLabel(runtimeState.MetatypeKarma));
+        AddLabeledValueRow(rightFactsGrid, 2, "Special Attributes:", CreateValueLabel(runtimeState.SpecialAttributes));
+        AddLabeledValueRow(rightFactsGrid, 3, "Source:", CreateValueLabel(runtimeState.Source, TextWrapping.Wrap));
 
-        Grid inspectAttributesGrid = new()
+        WrapPanel inspectAttributesGrid = new()
         {
-            ColumnDefinitions = new ColumnDefinitions("Auto,*,Auto,*"),
-            ColumnSpacing = 8,
-            RowSpacing = 4
+            Orientation = global::Avalonia.Layout.Orientation.Horizontal,
+            ItemWidth = 132
         };
         for (int index = 0; index < runtimeState.InspectAttributes.Count; index++)
         {
             PriorityWorkflowInspectAttributeState attribute = runtimeState.InspectAttributes[index];
-            int row = index / 2;
-            while (inspectAttributesGrid.RowDefinitions.Count <= row)
+            inspectAttributesGrid.Children.Add(new Border
             {
-                inspectAttributesGrid.RowDefinitions.Add(new RowDefinition(GridLength.Auto));
-            }
-
-            int column = (index % 2) * 2;
-            TextBlock label = CreateRowLabel(attribute.Label);
-            Grid.SetRow(label, row);
-            Grid.SetColumn(label, column);
-            inspectAttributesGrid.Children.Add(label);
-
-            TextBlock value = new()
-            {
-                Text = attribute.Value,
-                Foreground = DesktopShellTheme.ResolveForegroundBrush(),
-                FontWeight = FontWeight.SemiBold,
-                HorizontalAlignment = global::Avalonia.Layout.HorizontalAlignment.Left
-            };
-            Grid.SetRow(value, row);
-            Grid.SetColumn(value, column + 1);
-            inspectAttributesGrid.Children.Add(value);
+                Background = DesktopShellTheme.ResolveSurfaceBrush(),
+                BorderBrush = DesktopShellTheme.ResolveBorderBrush(),
+                BorderThickness = new Thickness(1),
+                CornerRadius = new CornerRadius(8),
+                Padding = new Thickness(8, 6),
+                Margin = new Thickness(0, 0, 8, 8),
+                Child = new StackPanel
+                {
+                    Spacing = 2,
+                    Children =
+                    {
+                        new TextBlock
+                        {
+                            Text = attribute.Label,
+                            Classes = { "shell-caption" },
+                            Foreground = DesktopShellTheme.ResolveTextMutedBrush()
+                        },
+                        new TextBlock
+                        {
+                            Text = attribute.Value,
+                            Foreground = DesktopShellTheme.ResolveForegroundBrush(),
+                            FontWeight = FontWeight.SemiBold,
+                            FontSize = 15
+                        },
+                        new TextBlock
+                        {
+                            Text = "Natural range",
+                            Classes = { "shell-caption" },
+                            Foreground = DesktopShellTheme.ResolveMutedForegroundBrush()
+                        }
+                    }
+                }
+            });
         }
 
         ListBox qualitiesList = new()
         {
             Name = "newCharacterPriorityQualitiesList",
             ItemsSource = runtimeState.Qualities.Count == 0 ? new[] { "No innate qualities" } : runtimeState.Qualities,
-            MinHeight = 96
+            MinHeight = 96,
+            Background = paneBackground
         };
         ApplyShellListBoxTheme(qualitiesList);
         qualitiesList.ItemTemplate = new FuncDataTemplate<string>((line, _) =>
@@ -1791,15 +1938,23 @@ public partial class DesktopDialogWindow : Window
 
         StackPanel inspectLane = new()
         {
+            Background = paneBackground,
             Spacing = 10,
             Children =
             {
                 rightFactsGrid,
+                CreateRowLabel("Natural Ranges:")
+                    .Also(label => label.IsVisible = runtimeState.InspectAttributes.Count > 0),
                 new Border
                 {
                     Classes = { "shell-panel", "subtle" },
+                    Background = DesktopShellTheme.ResolveChromeSubtleBrush(),
+                    BorderBrush = DesktopShellTheme.ResolveBorderBrush(),
+                    BorderThickness = new Thickness(1),
+                    CornerRadius = new CornerRadius(8),
                     Padding = new Thickness(8),
-                    Child = inspectAttributesGrid
+                    Child = inspectAttributesGrid,
+                    IsVisible = runtimeState.InspectAttributes.Count > 0
                 },
                 CreateRowLabel("Qualities:"),
                 qualitiesList
@@ -1817,7 +1972,8 @@ public partial class DesktopDialogWindow : Window
         Grid centerGrid = new()
         {
             ColumnDefinitions = new ColumnDefinitions("300,*"),
-            ColumnSpacing = 12
+            ColumnSpacing = 12,
+            Background = subtlePaneBackground
         };
         centerGrid.Children.Add(browseLaneBorder);
         Grid.SetColumn(inspectLaneBorder, 1);
@@ -1825,6 +1981,7 @@ public partial class DesktopDialogWindow : Window
 
         StackPanel skillChoiceLane = new()
         {
+            Background = paneBackground,
             Spacing = 6,
             IsVisible = skillChoice1Field.Options is { Count: > 0 } || skillChoice2Field.Options is { Count: > 0 } || skillChoice3Field.Options is { Count: > 0 }
         };
@@ -1859,6 +2016,7 @@ public partial class DesktopDialogWindow : Window
 
         StackPanel shell = new()
         {
+            Background = subtlePaneBackground,
             Spacing = 14,
             Children =
             {
@@ -1886,6 +2044,7 @@ public partial class DesktopDialogWindow : Window
             Name = name,
             Text = text,
             FontWeight = FontWeight.SemiBold,
+            Foreground = DesktopShellTheme.ResolveForegroundBrush(),
             VerticalAlignment = global::Avalonia.Layout.VerticalAlignment.Center
         };
 
@@ -1925,6 +2084,7 @@ public partial class DesktopDialogWindow : Window
         {
             Name = "newCharacterKarmaWorkflowSummaryText",
             Text = summaryField.Value,
+            Foreground = DesktopShellTheme.ResolveForegroundBrush(),
             TextWrapping = TextWrapping.Wrap
         };
 
@@ -2125,6 +2285,7 @@ public partial class DesktopDialogWindow : Window
         body.Children.Add(new TextBlock
         {
             Text = title,
+            Foreground = DesktopShellTheme.ResolveForegroundBrush(),
             Classes = { "shell-section-title" }
         });
         foreach (Control child in children)
@@ -2135,6 +2296,10 @@ public partial class DesktopDialogWindow : Window
         return new Border
         {
             Classes = { "shell-panel", "subtle" },
+            Background = DesktopShellTheme.ResolveChromeSubtleBrush(),
+            BorderBrush = DesktopShellTheme.ResolveBorderBrush(),
+            BorderThickness = new Thickness(1),
+            CornerRadius = new CornerRadius(8),
             Padding = new Thickness(12),
             Child = body
         };
@@ -2145,6 +2310,7 @@ public partial class DesktopDialogWindow : Window
         return new TextBlock
         {
             Text = text,
+            Foreground = DesktopShellTheme.ResolveMutedForegroundBrush(),
             Classes = { "shell-caption" }
         };
     }
@@ -2156,6 +2322,10 @@ public partial class DesktopDialogWindow : Window
         {
             Name = $"Legacy{normalizedTitle}SummaryCard",
             Classes = { "shell-panel", "accent" },
+            Background = DesktopShellTheme.ResolveChromeAccentBrush(),
+            BorderBrush = DesktopShellTheme.ResolveActiveMenuBorderBrush(),
+            BorderThickness = new Thickness(1),
+            CornerRadius = new CornerRadius(8),
             Padding = new Thickness(12),
             Child = new StackPanel
             {
@@ -2166,12 +2336,14 @@ public partial class DesktopDialogWindow : Window
                     {
                         Name = $"Legacy{normalizedTitle}SummaryTitle",
                         Text = title,
+                        Foreground = DesktopShellTheme.ResolveForegroundBrush(),
                         Classes = { "shell-section-title" }
                     },
                     new TextBlock
                     {
                         Name = $"Legacy{normalizedTitle}SummaryText",
                         Text = summary,
+                        Foreground = DesktopShellTheme.ResolveMutedForegroundBrush(),
                         Classes = { "shell-caption" }
                     },
                     content
@@ -2349,7 +2521,7 @@ public partial class DesktopDialogWindow : Window
         if (linkedSourceAvailable)
         {
             sourceValueText.TextDecorations = TextDecorations.Underline;
-            sourceValueText.Foreground = ResolveThemeBrush("ChummerShellInfoBrush", "#173A6C");
+            sourceValueText.Foreground = DesktopShellTheme.ResolveInfoBrush();
             sourceValueText.PointerPressed += async (_, _) =>
             {
                 await ExecuteSafeAsync(
@@ -2618,6 +2790,7 @@ public partial class DesktopDialogWindow : Window
                 IsEnabled = !field.IsReadOnly,
                 HorizontalAlignment = global::Avalonia.Layout.HorizontalAlignment.Stretch
             };
+            DesktopShellTheme.ApplyShellCheckBoxTheme(checkBox);
             ApplyAccessibility(checkBox, field.AccessibleName, field.ToolTip, field.HelpText);
             return checkBox.Also(checkBox =>
             {
@@ -2691,13 +2864,20 @@ public partial class DesktopDialogWindow : Window
                 IsEnabled = !field.IsReadOnly,
                 MinWidth = 180
             };
+            int comboBoxBindVersion = _dialogBindVersion;
             ApplyShellComboBoxTheme(comboBox);
+            PrepareComboBoxForDialogStatePreservation(comboBox, comboBoxBindVersion);
             comboBox.ItemTemplate = new FuncDataTemplate<DesktopDialogFieldOption>((option, _) =>
                 CreateComboBoxOptionText(option?.Label ?? string.Empty));
             if (!field.IsReadOnly)
             {
                 comboBox.SelectionChanged += (_, _) =>
                 {
+                    if (_suppressDialogUpdates || comboBoxBindVersion != _dialogBindVersion)
+                    {
+                        return;
+                    }
+
                     if (comboBox.SelectedItem is not DesktopDialogFieldOption selectedOption)
                     {
                         return;
@@ -2708,7 +2888,7 @@ public partial class DesktopDialogWindow : Window
                         return;
                     }
 
-                    QueueDialogFieldUpdate(field.Id, selectedOption.Value);
+                    QueueDialogFieldUpdate(field.Id, selectedOption.Value, comboBox);
                 };
             }
 
@@ -2813,7 +2993,7 @@ public partial class DesktopDialogWindow : Window
             };
         }
 
-        ApplyTextBoxAccessibility(textBox, field.AccessibleName, field.ToolTip, field.HelpText);
+        ApplyTextBoxAccessibility(textBox, field.AccessibleName, field.ToolTip, field.HelpText, field.IsReadOnly);
         return textBox;
     }
 
@@ -3251,6 +3431,7 @@ public partial class DesktopDialogWindow : Window
             IsChecked = ParseCheckbox(field.Value),
             IsEnabled = !field.IsReadOnly
         };
+        DesktopShellTheme.ApplyShellCheckBoxTheme(checkBox);
         ApplyAccessibility(checkBox, field.AccessibleName, field.ToolTip, field.HelpText);
         if (!field.IsReadOnly)
         {
@@ -3374,9 +3555,17 @@ public partial class DesktopDialogWindow : Window
         ToolTip.SetTip(control, toolTip);
     }
 
-    private static void ApplyTextBoxAccessibility(TextBox textBox, string accessibleName, string toolTip, string helpText)
+    private static void ApplyTextBoxAccessibility(TextBox textBox, string accessibleName, string toolTip, string helpText, bool readOnly = false)
     {
-        DesktopShellTheme.ApplyShellTextInputTheme(textBox);
+        if (readOnly || textBox.IsReadOnly)
+        {
+            DesktopShellTheme.ApplyShellReadOnlyTextBoxTheme(textBox);
+        }
+        else
+        {
+            DesktopShellTheme.ApplyShellTextInputTheme(textBox);
+        }
+
         ApplyAccessibility(textBox, accessibleName, toolTip, helpText);
         ToolTip.SetTip(textBox, null);
     }
@@ -3385,8 +3574,15 @@ public partial class DesktopDialogWindow : Window
     {
         _dialogActionsPanel.Children.Clear();
         IEnumerable<DesktopDialogAction> visibleActions = actions;
-        if (string.Equals(BoundDialogId, "dialog.master_index", StringComparison.Ordinal)
-            || string.Equals(BoundDialogId, "dialog.character_roster", StringComparison.Ordinal)
+        if (string.Equals(BoundDialogId, "dialog.master_index", StringComparison.Ordinal))
+        {
+            // The legacy Master Index pane owns its inline source-link action, but it
+            // does not render an exit control. Keep the explicit routed Close action
+            // in the dialog footer so keyboard, pointer, and automation users all
+            // have the same discoverable way out of the modal surface.
+            visibleActions = actions.Where(action => string.Equals(action.Id, "close", StringComparison.Ordinal));
+        }
+        else if (string.Equals(BoundDialogId, "dialog.character_roster", StringComparison.Ordinal)
             || string.Equals(BoundDialogId, "dialog.dice_roller", StringComparison.Ordinal))
         {
             visibleActions = [];
@@ -3461,17 +3657,24 @@ public partial class DesktopDialogWindow : Window
             IsEnabled = !field.IsReadOnly,
             MinWidth = minWidth
         };
+        int comboBoxBindVersion = _dialogBindVersion;
         ApplyShellComboBoxTheme(comboBox);
+        PrepareComboBoxForDialogStatePreservation(comboBox, comboBoxBindVersion);
         comboBox.ItemTemplate = new FuncDataTemplate<DesktopDialogFieldOption>((option, _) =>
             CreateComboBoxOptionText(option?.Label ?? string.Empty, TextWrapping.Wrap));
         if (!field.IsReadOnly)
         {
             comboBox.SelectionChanged += (_, _) =>
             {
+                if (_suppressDialogUpdates || comboBoxBindVersion != _dialogBindVersion)
+                {
+                    return;
+                }
+
                 if (comboBox.SelectedItem is DesktopDialogFieldOption selectedOption
                     && !string.Equals(selectedOption.Value, field.Value, StringComparison.Ordinal))
                 {
-                    QueueDialogFieldUpdate(field.Id, selectedOption.Value);
+                    QueueDialogFieldUpdate(field.Id, selectedOption.Value, comboBox);
                 }
             };
         }
@@ -3494,6 +3697,58 @@ public partial class DesktopDialogWindow : Window
     private static void ApplyShellComboBoxTheme(ComboBox comboBox)
     {
         DesktopShellTheme.ApplyShellComboBoxTheme(comboBox);
+    }
+
+    private void PrepareComboBoxForDialogStatePreservation(ComboBox comboBox, int comboBoxBindVersion)
+    {
+        void CaptureInteractionAnchor()
+        {
+            if (_suppressDialogUpdates
+                || _suppressProgrammaticComboFocusAnchorCapture
+                || comboBoxBindVersion != _dialogBindVersion)
+            {
+                return;
+            }
+
+            bool preservePendingPreSelectionAnchor =
+                ShouldPreserveOriginWizardComboInteractionScroll()
+                && _preferredDialogScrollAnchor is not null;
+            if (preservePendingPreSelectionAnchor && _preferredDialogScrollAnchor is { } anchor)
+            {
+                RestoreDialogScrollOffset(anchor);
+            }
+            else
+            {
+                _preferredDialogScrollAnchor ??= _dialogScrollViewer.Offset;
+            }
+
+            PreferRawOriginWizardScrollAnchorOnNextBind();
+            CaptureTransientDialogState();
+            CapturePreferredDialogViewportAnchor();
+            CapturePreferredDialogInteractionAnchor(comboBox);
+            RestorePreferredScrollAnchorDuringOriginWizardComboInteraction();
+        }
+
+        comboBox.GotFocus += (_, _) => CaptureInteractionAnchor();
+        comboBox.DropDownOpened += (_, _) => CaptureInteractionAnchor();
+        comboBox.AddHandler(
+            InputElement.PointerPressedEvent,
+            (_, _) => CaptureInteractionAnchor(),
+            RoutingStrategies.Tunnel,
+            handledEventsToo: true);
+        comboBox.KeyDown += (_, args) =>
+        {
+            switch (args.Key)
+            {
+                case Key.Down:
+                case Key.Up:
+                case Key.Enter:
+                case Key.Space:
+                case Key.F4:
+                    CaptureInteractionAnchor();
+                    break;
+            }
+        };
     }
 
     private static void ApplyShellListBoxTheme(ListBox listBox)
@@ -3636,7 +3891,7 @@ public partial class DesktopDialogWindow : Window
             AcceptsReturn = true,
             TextWrapping = TextWrapping.Wrap
         };
-        DesktopShellTheme.ApplyShellTextInputTheme(textBox);
+        DesktopShellTheme.ApplyShellReadOnlyTextBoxTheme(textBox);
         ToolTip.SetTip(textBox, null);
         return textBox;
     }
@@ -3696,6 +3951,316 @@ public partial class DesktopDialogWindow : Window
         UpdateLayout();
     }
 
+    private void CaptureTransientDialogState()
+    {
+        Expander? advancedStoryControls = _dialogFieldsPanel.GetVisualDescendants()
+            .OfType<Expander>()
+            .FirstOrDefault(expander => string.Equals(expander.Name, OriginWizardAdvancedStoryControlsExpanderName, StringComparison.Ordinal));
+        if (advancedStoryControls is not null)
+        {
+            if (!advancedStoryControls.IsExpanded
+                && _originWizardAdvancedStoryControlsExpanded
+                && (_suppressOriginWizardAdvancedStoryControlsCollapseDuringComboRefresh
+                    || _originWizardTransientRefreshPending
+                    || HasActiveOriginWizardComboRestorePreservation()))
+            {
+                return;
+            }
+
+            _originWizardAdvancedStoryControlsExpanded = advancedStoryControls.IsExpanded;
+        }
+    }
+
+    private void CapturePreferredDialogViewportAnchor()
+    {
+        if (!ShouldPreserveOriginWizardComboInteractionScroll())
+        {
+            _preferredDialogViewportAnchor = null;
+            return;
+        }
+
+        Expander? advancedStoryControls = _dialogFieldsPanel.GetVisualDescendants()
+            .OfType<Expander>()
+            .FirstOrDefault(expander => string.Equals(expander.Name, OriginWizardAdvancedStoryControlsExpanderName, StringComparison.Ordinal));
+        if (advancedStoryControls is null || string.IsNullOrWhiteSpace(advancedStoryControls.Name))
+        {
+            _preferredDialogViewportAnchor = null;
+            return;
+        }
+
+        Point? translated = advancedStoryControls.TranslatePoint(default, _dialogScrollViewer);
+        if (translated is null)
+        {
+            _preferredDialogViewportAnchor = null;
+            return;
+        }
+
+        _preferredDialogViewportAnchor = (advancedStoryControls.Name, translated.Value.Y);
+    }
+
+    private void CapturePreferredDialogInteractionAnchor(Control control)
+    {
+        if (!ShouldPreserveOriginWizardComboInteractionScroll()
+            || string.IsNullOrWhiteSpace(control.Name))
+        {
+            _preferredDialogInteractionAnchor = null;
+            return;
+        }
+
+        Point? translated = control.TranslatePoint(default, _dialogScrollViewer);
+        if (translated is null)
+        {
+            _preferredDialogInteractionAnchor = null;
+            return;
+        }
+
+        _preferredDialogInteractionAnchor = (control.Name, translated.Value.Y);
+    }
+
+    private void ClearPreferredDialogViewportAnchor()
+    {
+        _preferredDialogViewportAnchor = null;
+        _preferredDialogViewportAnchorVersion++;
+    }
+
+    private void ClearPreferredDialogInteractionAnchor()
+    {
+        _preferredDialogInteractionAnchor = null;
+        _preferredDialogInteractionAnchorVersion++;
+    }
+
+    private void PreferRawOriginWizardScrollAnchorOnNextBind()
+    {
+        if (!ShouldPreserveOriginWizardComboInteractionScroll())
+        {
+            return;
+        }
+
+        _preferRawOriginWizardScrollAnchorOnNextBind = true;
+        ClearPreferredDialogViewportAnchor();
+        ClearPreferredDialogInteractionAnchor();
+    }
+
+    private Vector? CapturePreferredScrollOffset(string nextDialogId)
+    {
+        if (!string.Equals(BoundDialogId, nextDialogId, StringComparison.Ordinal))
+        {
+            _preferredDialogScrollAnchor = null;
+            _preferredDialogScrollAnchorVersion++;
+            ClearPreferredDialogViewportAnchor();
+            ClearPreferredDialogInteractionAnchor();
+            return null;
+        }
+
+        Vector preservedOffset = _preferredDialogScrollAnchor ?? _dialogScrollViewer.Offset;
+        _preferredDialogScrollAnchor = null;
+        _preferredDialogScrollAnchorVersion++;
+        return preservedOffset;
+    }
+
+    private (string ControlName, double OffsetY)? CapturePreferredDialogViewportAnchorSnapshot(string nextDialogId)
+    {
+        if (!string.Equals(BoundDialogId, nextDialogId, StringComparison.Ordinal))
+        {
+            ClearPreferredDialogViewportAnchor();
+            return null;
+        }
+
+        if (_preferRawOriginWizardScrollAnchorOnNextBind)
+        {
+            _preferRawOriginWizardScrollAnchorOnNextBind = false;
+        }
+
+        (string ControlName, double OffsetY)? preservedAnchor = _preferredDialogViewportAnchor;
+        if (preservedAnchor is null)
+        {
+            preservedAnchor = CaptureCurrentOriginWizardViewportAnchor();
+        }
+
+        ClearPreferredDialogViewportAnchor();
+        return preservedAnchor;
+    }
+
+    private (string ControlName, double OffsetY)? CapturePreferredDialogInteractionAnchorSnapshot(string nextDialogId)
+    {
+        if (!string.Equals(BoundDialogId, nextDialogId, StringComparison.Ordinal))
+        {
+            ClearPreferredDialogInteractionAnchor();
+            return null;
+        }
+
+        (string ControlName, double OffsetY)? preservedAnchor = _preferredDialogInteractionAnchor;
+        ClearPreferredDialogInteractionAnchor();
+        return preservedAnchor;
+    }
+
+    private void RestorePreferredScrollOffset(
+        string? dialogId,
+        Vector? preservedScrollOffset,
+        (string ControlName, double OffsetY)? preservedViewportAnchor,
+        (string ControlName, double OffsetY)? preservedInteractionAnchor)
+    {
+        Vector offset = preservedScrollOffset ?? default;
+        bool hasPreferredAnchor = (preservedViewportAnchor is not null || preservedInteractionAnchor is not null)
+            && string.Equals(dialogId, OriginWizardDialogId, StringComparison.Ordinal);
+        if (!hasPreferredAnchor)
+        {
+            _dialogScrollViewer.Offset = offset;
+        }
+
+        if (preservedScrollOffset is null)
+        {
+            if ((preservedViewportAnchor is null && preservedInteractionAnchor is null)
+                || !string.Equals(dialogId, OriginWizardDialogId, StringComparison.Ordinal))
+            {
+                return;
+            }
+        }
+        else
+        {
+            if (!hasPreferredAnchor)
+            {
+                Dispatcher.UIThread.Post(() => _dialogScrollViewer.Offset = offset, DispatcherPriority.Input);
+                Dispatcher.UIThread.Post(() => _dialogScrollViewer.Offset = offset, DispatcherPriority.Loaded);
+                Dispatcher.UIThread.Post(() => _dialogScrollViewer.Offset = offset, DispatcherPriority.Background);
+                ScheduleDelayedPreferredDialogScrollAnchor(offset, _preferredDialogScrollAnchorVersion);
+            }
+        }
+
+        bool hasPreferredInteractionAnchor = preservedInteractionAnchor is not null
+            && string.Equals(dialogId, OriginWizardDialogId, StringComparison.Ordinal);
+        if (hasPreferredInteractionAnchor)
+        {
+            (string ControlName, double OffsetY) interactionAnchor = preservedInteractionAnchor!.Value;
+            int interactionAnchorVersion = ++_preferredDialogInteractionAnchorVersion;
+            ApplyPreferredDialogInteractionAnchor(interactionAnchor.ControlName, interactionAnchor.OffsetY, interactionAnchorVersion, DispatcherPriority.Input);
+            ApplyPreferredDialogInteractionAnchor(interactionAnchor.ControlName, interactionAnchor.OffsetY, interactionAnchorVersion, DispatcherPriority.Loaded);
+            ApplyPreferredDialogInteractionAnchor(interactionAnchor.ControlName, interactionAnchor.OffsetY, interactionAnchorVersion, DispatcherPriority.Background);
+            ScheduleDelayedPreferredDialogInteractionAnchor(interactionAnchor.ControlName, interactionAnchor.OffsetY, interactionAnchorVersion);
+        }
+
+        if (hasPreferredInteractionAnchor
+            || preservedViewportAnchor is null
+            || !string.Equals(dialogId, OriginWizardDialogId, StringComparison.Ordinal))
+        {
+            return;
+        }
+
+        int anchorVersion = ++_preferredDialogViewportAnchorVersion;
+        ApplyPreferredDialogViewportAnchor(preservedViewportAnchor.Value.ControlName, preservedViewportAnchor.Value.OffsetY, anchorVersion, DispatcherPriority.Input);
+        ApplyPreferredDialogViewportAnchor(preservedViewportAnchor.Value.ControlName, preservedViewportAnchor.Value.OffsetY, anchorVersion, DispatcherPriority.Loaded);
+        ApplyPreferredDialogViewportAnchor(preservedViewportAnchor.Value.ControlName, preservedViewportAnchor.Value.OffsetY, anchorVersion, DispatcherPriority.Background);
+        ScheduleDelayedPreferredDialogViewportAnchor(preservedViewportAnchor.Value.ControlName, preservedViewportAnchor.Value.OffsetY, anchorVersion);
+    }
+
+    private void PrimePreferredScrollOffsetForDialogRebind(
+        string? dialogId,
+        Vector? preservedScrollOffset,
+        (string ControlName, double OffsetY)? preservedViewportAnchor,
+        (string ControlName, double OffsetY)? preservedInteractionAnchor)
+    {
+        if (preservedScrollOffset is { } offset)
+        {
+            _dialogScrollViewer.Offset = offset;
+        }
+        else if (preservedViewportAnchor is null && preservedInteractionAnchor is null)
+        {
+            _dialogScrollViewer.Offset = default;
+        }
+
+        if (!string.Equals(dialogId, OriginWizardDialogId, StringComparison.Ordinal))
+        {
+            return;
+        }
+
+        if (preservedInteractionAnchor is { } interactionAnchor)
+        {
+            ApplyPreferredDialogInteractionAnchorNow(interactionAnchor.ControlName, interactionAnchor.OffsetY);
+        }
+
+        if (preservedInteractionAnchor is null && preservedViewportAnchor is { } viewportAnchor)
+        {
+            ApplyPreferredDialogViewportAnchorNow(viewportAnchor.ControlName, viewportAnchor.OffsetY);
+        }
+    }
+
+    private void RestoreTransientDialogState(string? dialogId, bool preservedOriginWizardAdvancedStoryControlsExpanded)
+    {
+        if (!string.Equals(dialogId, OriginWizardDialogId, StringComparison.Ordinal))
+        {
+            return;
+        }
+
+        Expander? advancedStoryControls = _dialogFieldsPanel.GetVisualDescendants()
+            .OfType<Expander>()
+            .FirstOrDefault(expander => string.Equals(expander.Name, OriginWizardAdvancedStoryControlsExpanderName, StringComparison.Ordinal));
+        if (advancedStoryControls is null)
+        {
+            return;
+        }
+
+        bool shouldRemainExpanded = preservedOriginWizardAdvancedStoryControlsExpanded
+            || _suppressOriginWizardAdvancedStoryControlsCollapseDuringComboRefresh
+            || _originWizardTransientRefreshPending
+            || HasActiveOriginWizardComboRestorePreservation();
+        advancedStoryControls.IsExpanded = shouldRemainExpanded;
+        _originWizardAdvancedStoryControlsExpanded = shouldRemainExpanded;
+    }
+
+    private void CommitOriginWizardAdvancedStoryControlsCollapsedStateIfCurrentExpanderStillCollapsed(int bindVersion)
+    {
+        Dispatcher.UIThread.Post(() =>
+        {
+            if (_suppressDialogUpdates
+                || bindVersion != _dialogBindVersion
+                || _suppressOriginWizardAdvancedStoryControlsCollapseDuringComboRefresh
+                || _originWizardTransientRefreshPending
+                || HasActiveOriginWizardComboRestorePreservation())
+            {
+                return;
+            }
+
+            Expander? currentAdvancedStoryControls = _dialogFieldsPanel.GetVisualDescendants()
+                .OfType<Expander>()
+                .FirstOrDefault(expander => string.Equals(expander.Name, OriginWizardAdvancedStoryControlsExpanderName, StringComparison.Ordinal));
+            if (currentAdvancedStoryControls is null || currentAdvancedStoryControls.IsExpanded)
+            {
+                return;
+            }
+
+            _originWizardAdvancedStoryControlsExpanded = false;
+        }, DispatcherPriority.Background);
+    }
+
+    private (string ControlName, double OffsetY)? CaptureCurrentOriginWizardViewportAnchor()
+    {
+        if (!string.Equals(BoundDialogId, OriginWizardDialogId, StringComparison.Ordinal))
+        {
+            return null;
+        }
+
+        if (!IsOriginWizardAdvancedStoryControlsEffectivelyExpanded())
+        {
+            return null;
+        }
+
+        Expander? advancedStoryControls = _dialogFieldsPanel.GetVisualDescendants()
+            .OfType<Expander>()
+            .FirstOrDefault(expander => string.Equals(expander.Name, OriginWizardAdvancedStoryControlsExpanderName, StringComparison.Ordinal));
+        if (advancedStoryControls is null || string.IsNullOrWhiteSpace(advancedStoryControls.Name))
+        {
+            return null;
+        }
+
+        Point? translated = advancedStoryControls.TranslatePoint(default, _dialogScrollViewer);
+        if (translated is null)
+        {
+            return null;
+        }
+
+        return (advancedStoryControls.Name, translated.Value.Y);
+    }
+
     private void ApplyDialogSizing(string? dialogId)
     {
         (double width, double height, double minWidth, double minHeight) size = dialogId switch
@@ -3723,7 +4288,7 @@ public partial class DesktopDialogWindow : Window
         Dispatcher.UIThread.Post(() =>
         {
             Activate();
-            FocusPreferredControl();
+            FocusPreferredControlDuringRestore();
         }, DispatcherPriority.Input);
     }
 
@@ -3749,16 +4314,362 @@ public partial class DesktopDialogWindow : Window
         }
     }
 
-    private async void QueueDialogFieldUpdate(string fieldId, string value)
+    private void RememberPreferredFocus(Control? control)
+    {
+        _preferredFocusControlName = null;
+        _preferredFocusSelectionStart = null;
+
+        if (control is null || control.GetVisualRoot() is not DesktopDialogWindow)
+        {
+            return;
+        }
+
+        _preferredFocusControlName = control.Name;
+        if (control is TextBox textBox)
+        {
+            _preferredFocusSelectionStart = textBox.CaretIndex;
+        }
+    }
+
+    private async void QueueDialogFieldUpdate(string fieldId, string value, Control? preferredControl = null)
     {
         if (_adapter is null || _suppressDialogUpdates)
             return;
 
-        CapturePreferredFocusState();
+        bool suppressOriginWizardCollapseDuringRefresh = false;
+        if (preferredControl is ComboBox)
+        {
+            suppressOriginWizardCollapseDuringRefresh = ShouldPreserveOriginWizardComboInteractionScroll();
+            _suppressOriginWizardAdvancedStoryControlsCollapseDuringComboRefresh = suppressOriginWizardCollapseDuringRefresh;
+            ArmOriginWizardTransientRefresh();
+            ArmOriginWizardComboRestorePreservation();
+
+            Vector pendingScrollAnchor = _preferredDialogScrollAnchor ?? default;
+            bool preservePendingPreSelectionScrollAnchor = _preferredDialogScrollAnchor is not null;
+            if (preservePendingPreSelectionScrollAnchor)
+            {
+                RestoreDialogScrollOffset(pendingScrollAnchor);
+                PreferRawOriginWizardScrollAnchorOnNextBind();
+            }
+            else
+            {
+                _preferredDialogScrollAnchor ??= _dialogScrollViewer.Offset;
+                PreferRawOriginWizardScrollAnchorOnNextBind();
+            }
+
+            RestorePreferredScrollAnchorDuringOriginWizardComboInteraction();
+        }
+        else
+        {
+            ClearOriginWizardComboRestorePreservation();
+            _preferredDialogScrollAnchor = null;
+            _preferredDialogScrollAnchorVersion++;
+            ClearPreferredDialogViewportAnchor();
+            ClearPreferredDialogInteractionAnchor();
+        }
+
+        _skipPreferredFocusRestoreOnNextBind = preferredControl is ComboBox;
+        if (preferredControl is null)
+        {
+            CapturePreferredFocusState();
+        }
+        else
+        {
+            RememberPreferredFocus(preferredControl);
+        }
+
+        CaptureTransientDialogState();
+        int bindVersionBeforeUpdate = _dialogBindVersion;
         await ExecuteSafeAsync(
             () => _adapter.UpdateDialogFieldAsync(fieldId, value, CancellationToken.None),
             $"update field '{fieldId}'");
-        FocusPreferredControl();
+        if (suppressOriginWizardCollapseDuringRefresh)
+        {
+            _suppressOriginWizardAdvancedStoryControlsCollapseDuringComboRefresh = false;
+        }
+        if (_dialogBindVersion == bindVersionBeforeUpdate)
+        {
+            _skipPreferredFocusRestoreOnNextBind = false;
+            FocusPreferredControlDuringRestore();
+        }
+    }
+
+    internal bool TryDeferCloseForPendingOriginWizardTransientRefresh()
+    {
+        if (!ShouldPreservePendingOriginWizardTransientRefresh())
+        {
+            ClearPendingOriginWizardTransientRefresh();
+            return false;
+        }
+
+        int closeDeferralVersion = ++_originWizardTransientRefreshCloseDeferralVersion;
+        DispatcherTimer.RunOnce(() =>
+        {
+            if (closeDeferralVersion != _originWizardTransientRefreshCloseDeferralVersion
+                || !_originWizardTransientRefreshPending)
+            {
+                return;
+            }
+
+            ClearPendingOriginWizardTransientRefresh();
+            CloseFromPresenter();
+        }, OriginWizardTransientRefreshCloseGrace);
+        return true;
+    }
+
+    private void RestoreDialogScrollOffset(Vector offset)
+    {
+        double maxX = Math.Max(0d, _dialogScrollViewer.Extent.Width - _dialogScrollViewer.Viewport.Width);
+        double maxY = Math.Max(0d, _dialogScrollViewer.Extent.Height - _dialogScrollViewer.Viewport.Height);
+        _dialogScrollViewer.Offset = new Vector(
+            Math.Clamp(offset.X, 0d, maxX),
+            Math.Clamp(offset.Y, 0d, maxY));
+    }
+
+    private void FocusPreferredControlDuringRestore(bool allowFallback = true)
+    {
+        _suppressProgrammaticComboFocusAnchorCapture = true;
+        try
+        {
+            FocusPreferredControl(allowFallback);
+        }
+        finally
+        {
+            Dispatcher.UIThread.Post(
+                () => _suppressProgrammaticComboFocusAnchorCapture = false,
+                DispatcherPriority.Background);
+        }
+    }
+
+    private bool ShouldPreserveOriginWizardComboInteractionScroll()
+    {
+        return string.Equals(BoundDialogId, OriginWizardDialogId, StringComparison.Ordinal)
+            && IsOriginWizardAdvancedStoryControlsEffectivelyExpanded();
+    }
+
+    private bool IsOriginWizardAdvancedStoryControlsEffectivelyExpanded()
+    {
+        return _originWizardAdvancedStoryControlsExpanded
+            || _suppressOriginWizardAdvancedStoryControlsCollapseDuringComboRefresh
+            || _originWizardTransientRefreshPending
+            || HasActiveOriginWizardComboRestorePreservation();
+    }
+
+    private void ArmOriginWizardComboRestorePreservation()
+    {
+        if (!string.Equals(BoundDialogId, OriginWizardDialogId, StringComparison.Ordinal)
+            || !IsOriginWizardAdvancedStoryControlsEffectivelyExpanded())
+        {
+            return;
+        }
+
+        _originWizardComboRestorePreservationUntilUtc = DateTimeOffset.UtcNow + OriginWizardComboRestorePreservationGrace;
+    }
+
+    private void ClearOriginWizardComboRestorePreservation()
+    {
+        _originWizardComboRestorePreservationUntilUtc = default;
+    }
+
+    private bool HasActiveOriginWizardComboRestorePreservation()
+    {
+        return string.Equals(BoundDialogId, OriginWizardDialogId, StringComparison.Ordinal)
+            && _originWizardComboRestorePreservationUntilUtc != default
+            && DateTimeOffset.UtcNow <= _originWizardComboRestorePreservationUntilUtc;
+    }
+
+    private void ArmOriginWizardTransientRefresh()
+    {
+        if (!ShouldPreserveOriginWizardComboInteractionScroll())
+        {
+            ClearPendingOriginWizardTransientRefresh();
+            return;
+        }
+
+        _originWizardTransientRefreshPending = true;
+        _originWizardTransientRefreshPendingAtUtc = DateTimeOffset.UtcNow;
+        _originWizardTransientRefreshCloseDeferralVersion++;
+    }
+
+    private void ClearPendingOriginWizardTransientRefresh()
+    {
+        _originWizardTransientRefreshPending = false;
+        _originWizardTransientRefreshPendingAtUtc = default;
+        _originWizardTransientRefreshCloseDeferralVersion++;
+    }
+
+    private bool ShouldPreservePendingOriginWizardTransientRefresh()
+    {
+        if (!_originWizardTransientRefreshPending
+            || !ShouldPreserveOriginWizardComboInteractionScroll())
+        {
+            return false;
+        }
+
+        if (_preferredDialogScrollAnchor is null
+            && _preferredDialogViewportAnchor is null
+            && _preferredDialogInteractionAnchor is null)
+        {
+            return false;
+        }
+
+        return (DateTimeOffset.UtcNow - _originWizardTransientRefreshPendingAtUtc) <= OriginWizardTransientRefreshCloseGrace;
+    }
+
+    private void RestorePreferredScrollAnchorDuringOriginWizardComboInteraction()
+    {
+        if (!ShouldPreserveOriginWizardComboInteractionScroll())
+        {
+            return;
+        }
+
+        bool hasPreferredAnchor = _preferredDialogViewportAnchor is { } || _preferredDialogInteractionAnchor is { };
+        if (!hasPreferredAnchor && _preferredDialogScrollAnchor is Vector anchor)
+        {
+            int anchorVersion = ++_preferredDialogScrollAnchorVersion;
+            ApplyPreferredDialogScrollAnchor(anchor, anchorVersion, DispatcherPriority.Background);
+            ScheduleDelayedPreferredDialogScrollAnchor(anchor, anchorVersion);
+        }
+
+        if (_preferredDialogInteractionAnchor is null && _preferredDialogViewportAnchor is { } viewportAnchor)
+        {
+            int viewportAnchorVersion = ++_preferredDialogViewportAnchorVersion;
+            ApplyPreferredDialogViewportAnchor(viewportAnchor.ControlName, viewportAnchor.OffsetY, viewportAnchorVersion, DispatcherPriority.Background);
+            ScheduleDelayedPreferredDialogViewportAnchor(viewportAnchor.ControlName, viewportAnchor.OffsetY, viewportAnchorVersion);
+        }
+
+        if (_preferredDialogInteractionAnchor is { } interactionAnchor)
+        {
+            int interactionAnchorVersion = ++_preferredDialogInteractionAnchorVersion;
+            ApplyPreferredDialogInteractionAnchor(interactionAnchor.ControlName, interactionAnchor.OffsetY, interactionAnchorVersion, DispatcherPriority.Background);
+            ScheduleDelayedPreferredDialogInteractionAnchor(interactionAnchor.ControlName, interactionAnchor.OffsetY, interactionAnchorVersion);
+        }
+    }
+
+    private void ScheduleDelayedPreferredDialogScrollAnchor(Vector anchor, int anchorVersion)
+    {
+        foreach (TimeSpan delay in DelayedOriginWizardComboRestoreDelays)
+        {
+            DispatcherTimer.RunOnce(
+                () => ApplyPreferredDialogScrollAnchor(anchor, anchorVersion, DispatcherPriority.Background),
+                delay);
+        }
+    }
+
+    private void ScheduleDelayedPreferredDialogViewportAnchor(string controlName, double offsetY, int anchorVersion)
+    {
+        foreach (TimeSpan delay in DelayedOriginWizardComboRestoreDelays)
+        {
+            DispatcherTimer.RunOnce(
+                () => ApplyPreferredDialogViewportAnchor(controlName, offsetY, anchorVersion, DispatcherPriority.Background),
+                delay);
+        }
+    }
+
+    private void ScheduleDelayedPreferredDialogInteractionAnchor(string controlName, double offsetY, int anchorVersion)
+    {
+        foreach (TimeSpan delay in DelayedOriginWizardComboRestoreDelays)
+        {
+            DispatcherTimer.RunOnce(
+                () => ApplyPreferredDialogInteractionAnchor(controlName, offsetY, anchorVersion, DispatcherPriority.Background),
+                delay);
+        }
+    }
+
+    private void ApplyPreferredDialogScrollAnchor(Vector anchor, int anchorVersion, DispatcherPriority priority)
+    {
+        Dispatcher.UIThread.Post(() =>
+        {
+            if (anchorVersion != _preferredDialogScrollAnchorVersion
+                || !ShouldPreserveOriginWizardComboInteractionScroll())
+            {
+                return;
+            }
+
+            _dialogScrollViewer.Offset = anchor;
+        }, priority);
+    }
+
+    private void ApplyPreferredDialogViewportAnchor(string controlName, double offsetY, int anchorVersion, DispatcherPriority priority)
+    {
+        Dispatcher.UIThread.Post(() =>
+        {
+            if (anchorVersion != _preferredDialogViewportAnchorVersion
+                || !ShouldPreserveOriginWizardComboInteractionScroll())
+            {
+                return;
+            }
+
+            TryAdjustDialogScrollOffsetForAnchor(controlName, offsetY);
+        }, priority);
+    }
+
+    private void ApplyPreferredDialogInteractionAnchor(string controlName, double offsetY, int anchorVersion, DispatcherPriority priority)
+    {
+        Dispatcher.UIThread.Post(() =>
+        {
+            if (anchorVersion != _preferredDialogInteractionAnchorVersion
+                || !ShouldPreserveOriginWizardComboInteractionScroll())
+            {
+                return;
+            }
+
+            TryAdjustDialogScrollOffsetForAnchor(controlName, offsetY);
+        }, priority);
+    }
+
+    private void ApplyPreferredDialogViewportAnchorNow(string controlName, double offsetY)
+    {
+        if (!ShouldPreserveOriginWizardComboInteractionScroll())
+        {
+            return;
+        }
+
+        TryAdjustDialogScrollOffsetForAnchor(controlName, offsetY);
+    }
+
+    private void ApplyPreferredDialogInteractionAnchorNow(string controlName, double offsetY)
+    {
+        if (!ShouldPreserveOriginWizardComboInteractionScroll())
+        {
+            return;
+        }
+
+        TryAdjustDialogScrollOffsetForAnchor(controlName, offsetY);
+    }
+
+    private bool TryAdjustDialogScrollOffsetForAnchor(string controlName, double offsetY)
+    {
+        Control? anchorControl = _dialogFieldsPanel.GetVisualDescendants()
+            .OfType<Control>()
+            .FirstOrDefault(control => string.Equals(control.Name, controlName, StringComparison.Ordinal));
+        if (anchorControl is null)
+        {
+            return false;
+        }
+
+        Point? translated = anchorControl.TranslatePoint(default, _dialogScrollViewer);
+        if (translated is null)
+        {
+            return false;
+        }
+
+        double deltaY = translated.Value.Y - offsetY;
+        if (Math.Abs(deltaY) <= 0.5d)
+        {
+            return false;
+        }
+
+        Vector currentOffset = _dialogScrollViewer.Offset;
+        double maxOffsetY = Math.Max(0d, _dialogScrollViewer.Extent.Height - _dialogScrollViewer.Viewport.Height);
+        if (maxOffsetY <= 0d && currentOffset.Y > 0d)
+        {
+            return false;
+        }
+
+        double nextOffsetY = Math.Clamp(currentOffset.Y + deltaY, 0d, maxOffsetY);
+        _dialogScrollViewer.Offset = new Vector(currentOffset.X, nextOffsetY);
+        return true;
     }
 
     private void OnClosing(object? sender, WindowClosingEventArgs e)
@@ -3822,9 +4733,14 @@ public partial class DesktopDialogWindow : Window
         }
     }
 
-    private void FocusPreferredControl()
+    private void FocusPreferredControl(bool allowFallback = true)
     {
         if (TryRestorePreferredFocus())
+        {
+            return;
+        }
+
+        if (!allowFallback)
         {
             return;
         }

@@ -5,6 +5,31 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 REGISTRY_ROOT="$("$SCRIPT_DIR/resolve-hub-registry-root.sh")"
 TARGET="${1:-${CHUMMER_PORTAL_DOWNLOADS_VERIFY_URL:-}}"
 
+array_count() {
+  local array_name="${1:-}"
+  [[ -n "$array_name" ]] || {
+    printf '0\n'
+    return 0
+  }
+
+  local restore_nounset=0
+  case "$-" in
+    *u*)
+      restore_nounset=1
+      set +u
+      ;;
+  esac
+
+  eval "set -- \"\${${array_name}[@]}\""
+  local count="$#"
+
+  if (( restore_nounset == 1 )); then
+    set -u
+  fi
+
+  printf '%s\n' "$count"
+}
+
 if [[ -z "${TARGET}" ]]; then
   echo "Provide a portal base URL or manifest path as the first argument (or set CHUMMER_PORTAL_DOWNLOADS_VERIFY_URL)." >&2
   exit 1
@@ -23,7 +48,8 @@ if [[ "${CHUMMER_VERIFY_SKIP_STARTUP_SMOKE_FILTER:-${CHUMMER_PUBLIC_SKIP_STARTUP
   VERIFY_ARGS+=(--skip-startup-smoke-filter)
 fi
 
-if [[ "${#VERIFY_ARGS[@]}" -gt 0 ]]; then
+verify_arg_count="$(array_count VERIFY_ARGS)"
+if (( verify_arg_count > 0 )); then
   python3 "$REGISTRY_ROOT/scripts/verify_public_release_channel.py" "${VERIFY_ARGS[@]}" "$TARGET"
 else
   python3 "$REGISTRY_ROOT/scripts/verify_public_release_channel.py" "$TARGET"

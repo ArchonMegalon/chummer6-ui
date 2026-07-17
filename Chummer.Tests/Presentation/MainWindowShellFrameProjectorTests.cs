@@ -53,16 +53,15 @@ public sealed class MainWindowShellFrameProjectorTests
     [TestMethod]
     public void Project_projects_runtime_backed_magic_and_aug_section_quick_actions()
     {
-        foreach ((string sectionId, string expectedControlId, string expectedLabel) in RuntimeBackedSectionQuickActions)
+        foreach ((string sectionId, string[] expectedControlIds, string[] expectedLabels) in RuntimeBackedSectionQuickActions)
         {
             MainWindowShellFrame frame = ProjectFrame(
                 RulesetDefaults.Sr6,
                 activeSectionId: sectionId,
                 activeTabId: "tab-magic");
 
-            Assert.AreEqual(1, frame.SectionHostState.QuickActions.Length, $"Expected one quick action for '{sectionId}'.");
-            Assert.AreEqual(expectedControlId, frame.SectionHostState.QuickActions[0].ControlId);
-            Assert.AreEqual(expectedLabel, frame.SectionHostState.QuickActions[0].Label);
+            CollectionAssert.AreEqual(expectedControlIds, frame.SectionHostState.QuickActions.Select(action => action.ControlId).ToArray(), $"Unexpected quick action controls for '{sectionId}'.");
+            CollectionAssert.AreEqual(expectedLabels, frame.SectionHostState.QuickActions.Select(action => action.Label).ToArray(), $"Unexpected quick action labels for '{sectionId}'.");
             Assert.IsTrue(frame.SectionHostState.QuickActions[0].IsPrimary);
         }
     }
@@ -75,9 +74,29 @@ public sealed class MainWindowShellFrameProjectorTests
             activeSectionId: "progress",
             activeTabId: "tab-info");
 
-        Assert.AreEqual(1, frame.SectionHostState.QuickActions.Length);
-        Assert.AreEqual("create_entry", frame.SectionHostState.QuickActions[0].ControlId);
-        Assert.AreEqual("Add Entry", frame.SectionHostState.QuickActions[0].Label);
+        CollectionAssert.AreEqual(
+            new[] { "create_entry", "edit_entry", "delete_entry", "move_up", "move_down" },
+            frame.SectionHostState.QuickActions.Select(action => action.ControlId).ToArray());
+        CollectionAssert.AreEqual(
+            new[] { "Add Entry", "Edit Entry", "Remove Entry", "Move Up", "Move Down" },
+            frame.SectionHostState.QuickActions.Select(action => action.Label).ToArray());
+        Assert.IsTrue(frame.SectionHostState.QuickActions[0].IsPrimary);
+    }
+
+    [TestMethod]
+    public void Project_projects_profile_section_quick_actions_into_section_host_state()
+    {
+        MainWindowShellFrame frame = ProjectFrame(
+            RulesetDefaults.Sr6,
+            activeSectionId: "profile",
+            activeTabId: "tab-info");
+
+        CollectionAssert.AreEqual(
+            new[] { "open_notes", "identity_license_add", "identity_license_edit", "identity_license_delete" },
+            frame.SectionHostState.QuickActions.Select(action => action.ControlId).ToArray());
+        CollectionAssert.AreEqual(
+            new[] { "Open Notes", "Add SIN / License", "Edit SIN / License", "Remove SIN / License" },
+            frame.SectionHostState.QuickActions.Select(action => action.Label).ToArray());
         Assert.IsTrue(frame.SectionHostState.QuickActions[0].IsPrimary);
     }
 
@@ -200,6 +219,157 @@ public sealed class MainWindowShellFrameProjectorTests
                 notice.Contains(forbidden, StringComparison.OrdinalIgnoreCase),
                 $"Portable import notice should not expose '{forbidden}'. Notice: {notice}");
         }
+    }
+
+    [TestMethod]
+    public void Project_omits_routine_menu_open_notice_from_section_host()
+    {
+        foreach (string notice in new[] { "Menu 'special' opened.", "menu special opened" })
+        {
+            MainWindowShellFrame frame = ProjectFrame(
+                RulesetDefaults.Sr5,
+                activeSectionId: "summary",
+                activeTabId: "tab-info",
+                shellNotice: notice);
+
+            Assert.IsTrue(string.IsNullOrWhiteSpace(frame.SectionHostState.Notice), notice);
+        }
+    }
+
+    [TestMethod]
+    public void Project_omits_menu_root_from_toolstrip_last_command()
+    {
+        MainWindowShellFrame frame = ProjectFrame(
+            RulesetDefaults.Sr5,
+            activeSectionId: "summary",
+            activeTabId: "tab-info",
+            commands: [new AppCommandDefinition("special", "command.special", "menu", false, true, RulesetDefaults.Sr5)],
+            menuRoots: [new AppCommandDefinition("special", "command.special", "menu", false, true, RulesetDefaults.Sr5)],
+            lastCommandId: "special");
+
+        Assert.AreEqual(-1, frame.HeaderState.ToolStrip.StatusText.IndexOf("Special", StringComparison.OrdinalIgnoreCase));
+    }
+
+    [TestMethod]
+    public void Project_routes_classic_menu_groups_with_sr5_equivalent_visible_commands()
+    {
+        AppCommandDefinition[] commands =
+        [
+            new("file", "command.file", "menu", false, true, RulesetDefaults.Sr5),
+            new("edit", "command.edit", "menu", false, true, RulesetDefaults.Sr5),
+            new("special", "command.special", "menu", false, true, RulesetDefaults.Sr5),
+            new("tools", "command.tools", "menu", false, true, RulesetDefaults.Sr5),
+            new("windows", "command.windows", "menu", false, true, RulesetDefaults.Sr5),
+            new("help", "command.help", "menu", false, true, RulesetDefaults.Sr5),
+            new("new_character", "command.new_character", "file", false, true, RulesetDefaults.Sr5),
+            new("open_character", "command.open_character", "file", false, true, RulesetDefaults.Sr5),
+            new("open_for_printing", "command.open_for_printing", "file", false, true, RulesetDefaults.Sr5),
+            new("open_for_export", "command.open_for_export", "file", false, true, RulesetDefaults.Sr5),
+            new("save_character", "command.save_character", "file", true, true, RulesetDefaults.Sr5),
+            new("save_character_as", "command.save_character_as", "file", true, true, RulesetDefaults.Sr5),
+            new("refresh_character", "command.refresh_character", "file", true, true, RulesetDefaults.Sr5),
+            new("print_character", "command.print_character", "file", true, true, RulesetDefaults.Sr5),
+            new("export_character", "command.export_character", "file", true, true, RulesetDefaults.Sr5),
+            new("print_setup", "command.print_setup", "file", false, true, RulesetDefaults.Sr5),
+            new("print_multiple", "command.print_multiple", "file", false, true, RulesetDefaults.Sr5),
+            new("exit", "command.exit", "file", false, true, RulesetDefaults.Sr5),
+            new("copy", "command.copy", "edit", true, true, RulesetDefaults.Sr5),
+            new("paste", "command.paste", "edit", true, true, RulesetDefaults.Sr5),
+            new("switch_ruleset", "command.switch_ruleset", "tools", false, true, RulesetDefaults.Sr5),
+            new("global_settings", "command.global_settings", "tools", false, true, RulesetDefaults.Sr5),
+            new("new_window", "command.new_window", "windows", false, true, RulesetDefaults.Sr5),
+            new("close_window", "command.close_window", "windows", false, true, RulesetDefaults.Sr5),
+            new("close_all", "command.close_all", "windows", false, true, RulesetDefaults.Sr5),
+            new("wiki", "command.wiki", "help", false, true, RulesetDefaults.Sr5)
+        ];
+
+        MainWindowShellFrame frame = ProjectFrame(
+            RulesetDefaults.Sr5,
+            activeSectionId: "summary",
+            activeTabId: "tab-info",
+            commands: commands,
+            menuRoots: commands.Where(command => string.Equals(command.Group, "menu", StringComparison.Ordinal)).ToArray(),
+            openMenuId: "special");
+
+        CollectionAssert.AreEqual(
+            new[]
+            {
+                "new_character",
+                "open_character",
+                "open_for_printing",
+                "open_for_export",
+                "save_character",
+                "save_character_as",
+                "refresh_character",
+                "print_character",
+                "export_character",
+                "print_setup",
+                "print_multiple",
+                "exit"
+            },
+            frame.HeaderState.MenuBar.MenuCommandsByMenuId["file"].Select(command => command.Id).ToArray());
+        Assert.AreEqual(
+            "Reload Runner",
+            frame.HeaderState.MenuBar.MenuCommandsByMenuId["file"]
+                .Single(command => string.Equals(command.Id, "refresh_character", StringComparison.Ordinal))
+                .Label);
+        CollectionAssert.AreEqual(
+            new[] { "copy", "paste" },
+            frame.HeaderState.MenuBar.MenuCommandsByMenuId["edit"].Select(command => command.Id).ToArray());
+        CollectionAssert.AreEqual(
+            new[] { "switch_ruleset" },
+            frame.HeaderState.MenuBar.MenuCommandsByMenuId["special"].Select(command => command.Id).ToArray());
+        CollectionAssert.AreEqual(
+            new[] { "global_settings" },
+            frame.HeaderState.MenuBar.MenuCommandsByMenuId["tools"].Select(command => command.Id).ToArray());
+        CollectionAssert.AreEqual(
+            new[] { "new_window", "close_window", "close_all" },
+            frame.HeaderState.MenuBar.MenuCommandsByMenuId["windows"].Select(command => command.Id).ToArray());
+        CollectionAssert.AreEqual(
+            new[] { "wiki" },
+            frame.HeaderState.MenuBar.MenuCommandsByMenuId["help"].Select(command => command.Id).ToArray());
+    }
+
+    [TestMethod]
+    public void Project_supplements_sparse_sr6_runtime_menu_groups_with_classic_visible_commands()
+    {
+        AppCommandDefinition[] commands =
+        [
+            new("file", "command.file", "menu", false, true, RulesetDefaults.Sr6),
+            new("edit", "command.edit", "menu", false, true, RulesetDefaults.Sr6),
+            new("special", "command.special", "menu", false, true, RulesetDefaults.Sr6),
+            new("tools", "command.tools", "menu", false, true, RulesetDefaults.Sr6),
+            new("windows", "command.windows", "menu", false, true, RulesetDefaults.Sr6),
+            new("help", "command.help", "menu", false, true, RulesetDefaults.Sr6),
+            new("open_character", "command.open_character", "file", false, true, RulesetDefaults.Sr6),
+            new("save_character", "command.save_character", "file", true, true, RulesetDefaults.Sr6)
+        ];
+
+        MainWindowShellFrame frame = ProjectFrame(
+            RulesetDefaults.Sr6,
+            activeSectionId: "summary",
+            activeTabId: "tab-info",
+            commands: commands,
+            menuRoots: commands.Where(command => string.Equals(command.Group, "menu", StringComparison.Ordinal)).ToArray(),
+            openMenuId: "edit");
+
+        CollectionAssert.AreEqual(
+            new[] { "copy", "paste" },
+            frame.HeaderState.MenuBar.MenuCommandsByMenuId["edit"].Select(command => command.Id).ToArray(),
+            "SR6 must synthesize the classic Edit menu even when the runtime catalog is sparse.");
+        CollectionAssert.AreEqual(
+            new[] { "switch_ruleset" },
+            frame.HeaderState.MenuBar.MenuCommandsByMenuId["special"].Select(command => command.Id).ToArray());
+        CollectionAssert.AreEqual(
+            new[] { "new_window", "close_window", "close_all" },
+            frame.HeaderState.MenuBar.MenuCommandsByMenuId["windows"].Select(command => command.Id).ToArray());
+        CollectionAssert.AreEqual(
+            new[] { "wiki", "discord", "show_login_video", "revision_history", "dumpshock", "about" },
+            frame.HeaderState.MenuBar.MenuCommandsByMenuId["help"].Select(command => command.Id).ToArray());
+        CollectionAssert.AreEqual(
+            new[] { "copy", "paste" },
+            frame.CommandDialogPaneState.Commands.Select(command => command.Id).ToArray(),
+            "The runtime command pane must mirror the synthesized classic Edit menu commands for SR6.");
     }
 
     [TestMethod]
@@ -503,23 +673,45 @@ public sealed class MainWindowShellFrameProjectorTests
 
     private static readonly string[] StandardInventoryQuickActionControlIds =
     [
-        "gear_add"
+        "gear_add",
+        "gear_edit",
+        "gear_delete",
+        "combat_damage_track",
+        "gear_source",
+        "toggle_free_paid",
+        "gear_mount"
     ];
 
     private static readonly string[] StandardInventoryQuickActionLabels =
     [
-        "Add Gear"
+        "Add Gear",
+        "Edit Gear",
+        "Remove Gear",
+        "Damage Track",
+        "Source",
+        "Free / Paid",
+        "Mount Gear"
     ];
 
-    private static readonly (string SectionId, string ControlId, string Label)[] RuntimeBackedSectionQuickActions =
+    private static readonly (string SectionId, string[] ControlIds, string[] Labels)[] RuntimeBackedSectionQuickActions =
     [
-        ("cyberwares", "cyberware_add", "Add Cyberware"),
-        ("spells", "spell_add", "Add Spell"),
-        ("powers", "adept_power_add", "Add Adept Power"),
-        ("complexforms", "complex_form_add", "Add Complex Form"),
-        ("initiationgrades", "initiation_add", "Add Initiation"),
-        ("spirits", "spirit_add", "Add Spirit"),
-        ("critterpowers", "critter_power_add", "Add Critter Power"),
-        ("aiprograms", "matrix_program_add", "Add Program")
+        ("cyberwares", ["cyberware_add", "cyberware_edit", "cyberware_delete", "combat_damage_track", "show_source"], ["Add Cyberware", "Edit Cyberware", "Remove Cyberware", "Damage Track", "Source"]),
+        ("spells", ["spell_add", "magic_source"], ["Add Spell", "Source"]),
+        ("powers", ["adept_power_add", "magic_source"], ["Add Adept Power", "Source"]),
+        ("complexforms", ["complex_form_add", "show_source"], ["Add Complex Form", "Source"]),
+        ("foci", ["magic_bind", "magic_delete", "magic_source"], ["Bind Focus", "Remove Focus", "Source"]),
+        ("metamagics", ["initiation_add", "magic_delete", "magic_source"], ["Add Grade", "Remove Grade", "Source"]),
+        ("initiationgrades", ["initiation_add", "show_source"], ["Add Initiation", "Source"]),
+        ("spirits", ["spirit_add", "show_source"], ["Add Spirit", "Source"]),
+        ("sprites", ["sprite_add", "show_source"], ["Add Sprite", "Source"]),
+        ("conditionmonitor", ["combat_damage_track"], ["Damage Track"]),
+        ("critterpowers", ["critter_power_add", "show_source"], ["Add Critter Power", "Source"]),
+        ("aiprograms", ["matrix_program_add", "show_source"], ["Add Program", "Source"]),
+        ("relationships", ["contact_add", "contact_edit", "contact_connection", "contact_remove"], ["Add Contact", "Edit Contact", "Connection / Loyalty", "Remove Contact"]),
+        ("enemies", ["contact_add", "contact_edit", "contact_connection", "contact_remove"], ["Add Contact", "Edit Contact", "Connection / Loyalty", "Remove Contact"]),
+        ("pets", ["contact_add", "contact_edit", "contact_connection", "contact_remove"], ["Add Contact", "Edit Contact", "Connection / Loyalty", "Remove Contact"]),
+        ("expenses", ["create_entry", "edit_entry", "delete_entry"], ["Add Expense", "Edit Expense", "Remove Expense"]),
+        ("improvements", ["show_source"], ["Source"]),
+        ("sources", ["show_source"], ["Source"])
     ];
 }

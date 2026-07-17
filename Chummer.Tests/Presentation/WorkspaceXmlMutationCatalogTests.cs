@@ -1,6 +1,8 @@
 #nullable enable annotations
 
 using System;
+using System.Linq;
+using System.Xml.Linq;
 using Chummer.Presentation.Overview;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 
@@ -148,5 +150,115 @@ public sealed class WorkspaceXmlMutationCatalogTests
         StringAssert.Contains(karmaMutatedXml, "<base>5</base>");
         StringAssert.Contains(karmaMutatedXml, "<karma>4</karma>");
         StringAssert.Contains(karmaMutatedXml, "<totalvalue>9</totalvalue>");
+    }
+
+    [TestMethod]
+    public void ApplyAttributeEdit_burn_decrements_edge_and_can_cross_the_floor()
+    {
+        const string xml = """
+<character>
+  <attributes>
+    <attribute>
+      <name>EDG</name>
+      <base>1</base>
+      <karma>0</karma>
+      <value>1</value>
+      <totalvalue>1</totalvalue>
+      <metatypemin>1</metatypemin>
+      <metatypemax>6</metatypemax>
+      <metatypeaugmax>6</metatypeaugmax>
+    </attribute>
+  </attributes>
+</character>
+""";
+
+        string burnedXml = WorkspaceXmlMutationCatalog.ApplyAttributeEdit(
+            xml,
+            new AttributeEditRequest("Edge", "burn", 0));
+
+        StringAssert.Contains(burnedXml, "<name>EDG</name>");
+        StringAssert.Contains(burnedXml, "<base>0</base>");
+        StringAssert.Contains(burnedXml, "<karma>0</karma>");
+        StringAssert.Contains(burnedXml, "<metatypemin>0</metatypemin>");
+        StringAssert.Contains(burnedXml, "<totalvalue>0</totalvalue>");
+    }
+
+    [TestMethod]
+    public void ApplyAttributeEdit_improve_spends_root_karma_and_appends_expense()
+    {
+        const string xml = """
+<character>
+  <created>True</created>
+  <karma>15</karma>
+  <attributes>
+    <attribute>
+      <name>Body</name>
+      <base>1</base>
+      <karma>0</karma>
+      <value>1</value>
+      <totalvalue>1</totalvalue>
+      <metatypemin>1</metatypemin>
+      <metatypemax>6</metatypemax>
+      <metatypeaugmax>9</metatypeaugmax>
+    </attribute>
+  </attributes>
+</character>
+""";
+
+        string improvedXml = WorkspaceXmlMutationCatalog.ApplyAttributeEdit(
+            xml,
+            new AttributeEditRequest("Body", "improve", 2));
+        XDocument document = XDocument.Parse(improvedXml);
+        XElement root = document.Root!;
+        XElement attribute = root.Element("attributes")!.Elements("attribute").Single();
+        XElement expense = root.Element("expenses")!.Elements("expense").Single();
+
+        Assert.AreEqual("5", root.Element("karma")!.Value);
+        Assert.AreEqual("1", attribute.Element("base")!.Value);
+        Assert.AreEqual("1", attribute.Element("karma")!.Value);
+        Assert.AreEqual("2", attribute.Element("totalvalue")!.Value);
+        Assert.AreEqual("10", expense.Element("amount")!.Value);
+        Assert.AreEqual("Improve Body", expense.Element("reason")!.Value);
+        Assert.AreEqual("Karma", expense.Element("type")!.Value);
+        Assert.AreEqual("False", expense.Element("refund")!.Value);
+    }
+
+    [TestMethod]
+    public void ApplyAttributeEdit_improve_restores_burned_edge_before_adding_karma()
+    {
+        const string xml = """
+<character>
+  <created>True</created>
+  <karma>15</karma>
+  <attributes>
+    <attribute>
+      <name>EDG</name>
+      <base>0</base>
+      <karma>0</karma>
+      <value>0</value>
+      <totalvalue>0</totalvalue>
+      <metatypemin>0</metatypemin>
+      <metatypemax>6</metatypemax>
+      <metatypeaugmax>6</metatypeaugmax>
+    </attribute>
+  </attributes>
+</character>
+""";
+
+        string restoredXml = WorkspaceXmlMutationCatalog.ApplyAttributeEdit(
+            xml,
+            new AttributeEditRequest("Edge", "improve", 1));
+        XDocument document = XDocument.Parse(restoredXml);
+        XElement root = document.Root!;
+        XElement attribute = root.Element("attributes")!.Elements("attribute").Single();
+        XElement expense = root.Element("expenses")!.Elements("expense").Single();
+
+        Assert.AreEqual("10", root.Element("karma")!.Value);
+        Assert.AreEqual("1", attribute.Element("base")!.Value);
+        Assert.AreEqual("0", attribute.Element("karma")!.Value);
+        Assert.AreEqual("1", attribute.Element("metatypemin")!.Value);
+        Assert.AreEqual("1", attribute.Element("totalvalue")!.Value);
+        Assert.AreEqual("5", expense.Element("amount")!.Value);
+        Assert.AreEqual("Improve Edge", expense.Element("reason")!.Value);
     }
 }

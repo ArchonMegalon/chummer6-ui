@@ -1,12 +1,16 @@
 from __future__ import annotations
 
+import hashlib
 import importlib.util
 import json
+import os
 import sys
 import tempfile
 import unittest
+from datetime import datetime, timedelta, timezone
 from pathlib import Path
 from types import SimpleNamespace
+from unittest import mock
 
 import yaml
 
@@ -76,6 +80,56 @@ class SelectDefaultFixturesTests(unittest.TestCase):
             ["Bastion.chum5", "Fuzzy-chargen.chum5", "Soma.chum5", "Popstar.chum5", "Wesson.chum5"],
         )
         self.assertIn("cyberware-bioware-modular-hierarchies-nested-plugins", fixtures[2].workflow_family_ids)
+
+
+class ImmutableJsonLoaderTests(unittest.TestCase):
+    def test_rejects_oversized_json_before_parsing(self) -> None:
+        with tempfile.TemporaryDirectory() as tmpdir:
+            path = Path(tmpdir) / "oversized.json"
+            path.write_bytes(b"{" + (b" " * tester.IMMUTABLE_JSON_MAX_BYTES) + b"}")
+
+            payload, raw, reasons = tester.try_load_immutable_json(path, "test evidence")
+
+        self.assertEqual(payload, {})
+        self.assertEqual(raw, b"")
+        self.assertTrue(any("byte safety limit" in reason for reason in reasons))
+
+    def test_rejects_non_regular_input(self) -> None:
+        with tempfile.TemporaryDirectory() as tmpdir:
+            path = Path(tmpdir) / "directory.json"
+            path.mkdir()
+
+            payload, raw, reasons = tester.try_load_immutable_json(path, "test evidence")
+
+        self.assertEqual(payload, {})
+        self.assertEqual(raw, b"")
+        self.assertTrue(any("stable regular non-symlink file" in reason for reason in reasons))
+
+    def test_rejects_path_replacement_during_descriptor_read(self) -> None:
+        with tempfile.TemporaryDirectory() as tmpdir:
+            root = Path(tmpdir)
+            path = root / "evidence.json"
+            replacement = root / "replacement.json"
+            write_json(path, {"status": "pass"})
+            write_json(replacement, {"status": "fail"})
+            real_read = tester.os.read
+            replaced = False
+
+            def replacing_read(descriptor: int, size: int) -> bytes:
+                nonlocal replaced
+                chunk = real_read(descriptor, size)
+                if chunk and not replaced:
+                    os.replace(replacement, path)
+                    replaced = True
+                return chunk
+
+            with mock.patch.object(tester.os, "read", side_effect=replacing_read):
+                payload, raw, reasons = tester.try_load_immutable_json(path, "test evidence")
+
+        self.assertTrue(replaced)
+        self.assertEqual(payload, {})
+        self.assertEqual(raw, b"")
+        self.assertTrue(any("changed while being read" in reason for reason in reasons))
 
 
 class RunGateTests(unittest.TestCase):
@@ -558,11 +612,19 @@ class RunGateTests(unittest.TestCase):
                     "assertions": row["assertions"],
                 }
             )
+        trace_path = root / "USER_JOURNEY_TESTER_TRACE.generated.json"
+        trace_generated_at_utc = (
+            datetime.now(timezone.utc)
+            .replace(microsecond=0)
+            .isoformat()
+            .replace("+00:00", "Z")
+        )
         write_json(
-            root / "USER_JOURNEY_TESTER_TRACE.generated.json",
+            trace_path,
             {
                 "contract_name": tester.USER_JOURNEY_TRACE_CONTRACT,
                 "status": "pass",
+                "generated_at_utc": trace_generated_at_utc,
                 "tester_shard_id": "tester-shard",
                 "fix_shard_id": "fixer-shard",
                 "linux_binary_under_test": True,
@@ -571,20 +633,32 @@ class RunGateTests(unittest.TestCase):
                 "workflows": workflow_rows,
             },
         )
+        trace_sha256 = hashlib.sha256(trace_path.read_bytes()).hexdigest()
         write_json(
             root / "USER_JOURNEY_TESTER_AUDIT.generated.json",
             {
                 "contract_name": tester.USER_JOURNEY_AUDIT_CONTRACT,
                 "status": "pass",
-                "generated_at": "2026-05-02T00:00:00Z",
-                "generatedAt": "2026-05-02T00:00:00Z",
+                "generated_at": trace_generated_at_utc,
+                "generatedAt": trace_generated_at_utc,
                 "reasons": [],
                 "open_blocking_findings_count": 0,
                 "linux_binary_under_test": True,
                 "used_internal_apis": False,
                 "fix_shard_separate": True,
+                "trace_mutation_requested": False,
+                "trace_mutation_performed": False,
                 "evidence": {
-                    "trace_path": str(root / "USER_JOURNEY_TESTER_TRACE.generated.json"),
+                    "trace_path": str(trace_path),
+                    "trace_sha256": trace_sha256,
+                    "trace_sha256_after_audit": trace_sha256,
+                    "trace_bytes_unchanged_during_audit": True,
+                    "trace_mutation_requested": False,
+                    "trace_mutation_allowed": False,
+                    "trace_mutation_performed": False,
+                    "trace_generated_at_utc": trace_generated_at_utc,
+                    "trace_max_age_hours": tester.USER_JOURNEY_TRACE_MAX_AGE_HOURS,
+                    "trace_future_skew_minutes": tester.USER_JOURNEY_TRACE_FUTURE_SKEW_MINUTES,
                     "linux_gate_path": str(root / "UI_LINUX_DESKTOP_EXIT_GATE.generated.json"),
                     "screenshot_dir": str(journey_screenshot_dir),
                     "linux_gate_status": "pass",
@@ -747,6 +821,34 @@ class RunGateTests(unittest.TestCase):
             fixture=None,
         )
 
+    def rebind_user_journey_audit_to_current_trace(self, args: SimpleNamespace) -> None:
+        trace = json.loads(args.user_journey_trace.read_text(encoding="utf-8"))
+        trace_sha256 = hashlib.sha256(args.user_journey_trace.read_bytes()).hexdigest()
+        trace_generated_at_utc = str(
+            trace.get("generated_at_utc")
+            or trace.get("generated_at")
+            or trace.get("generatedAt")
+            or ""
+        ).strip()
+        audit = json.loads(args.user_journey_audit.read_text(encoding="utf-8"))
+        evidence = audit["evidence"]
+        evidence["trace_sha256"] = trace_sha256
+        evidence["trace_sha256_after_audit"] = trace_sha256
+        evidence["trace_generated_at_utc"] = trace_generated_at_utc
+        write_json(args.user_journey_audit, audit)
+
+    def user_journey_failure_actuals(
+        self,
+        args: SimpleNamespace,
+        checkpoint: str,
+    ) -> list[str]:
+        failures = json.loads((args.artifacts / "failures.json").read_text(encoding="utf-8"))
+        return [
+            str(item["actual"])
+            for item in failures["failures"]
+            if item["checkpoint"] == checkpoint
+        ]
+
     def test_run_gate_passes_with_complete_proof(self) -> None:
         with tempfile.TemporaryDirectory() as tmpdir:
             args = self.build_args(tmpdir)
@@ -885,6 +987,234 @@ class RunGateTests(unittest.TestCase):
             self.assertEqual(result, tester.FAIL_EXIT)
             failures = json.loads((args.artifacts / "failures.json").read_text(encoding="utf-8"))
             self.assertTrue(any(item["checkpoint"] == "fixture_ui_reconstruction_receipts" for item in failures["failures"]))
+
+    def test_run_gate_rejects_missing_user_journey_trace_timestamp_even_with_bound_pass_audit(self) -> None:
+        with tempfile.TemporaryDirectory() as tmpdir:
+            args = self.build_args(tmpdir)
+            trace = json.loads(args.user_journey_trace.read_text(encoding="utf-8"))
+            trace.pop("generated_at_utc", None)
+            trace.pop("generated_at", None)
+            trace.pop("generatedAt", None)
+            write_json(args.user_journey_trace, trace)
+            self.rebind_user_journey_audit_to_current_trace(args)
+
+            result = tester.run_gate(args)
+
+            self.assertEqual(result, tester.FAIL_EXIT)
+            self.assertTrue(
+                any(
+                    "offset-aware generated_at_utc" in actual
+                    for actual in self.user_journey_failure_actuals(args, "user_journey_tester_trace")
+                )
+            )
+            self.assertTrue(
+                any(
+                    "offset-aware generated_at_utc" in actual
+                    for actual in self.user_journey_failure_actuals(args, "user_journey_tester_audit")
+                )
+            )
+
+    def test_run_gate_rejects_stale_user_journey_trace_using_audit_policy(self) -> None:
+        with tempfile.TemporaryDirectory() as tmpdir:
+            args = self.build_args(tmpdir)
+            trace = json.loads(args.user_journey_trace.read_text(encoding="utf-8"))
+            trace["generated_at_utc"] = (
+                (datetime.now(timezone.utc) - timedelta(hours=25))
+                .replace(microsecond=0)
+                .isoformat()
+                .replace("+00:00", "Z")
+            )
+            write_json(args.user_journey_trace, trace)
+            self.rebind_user_journey_audit_to_current_trace(args)
+
+            result = tester.run_gate(args)
+
+            self.assertEqual(result, tester.FAIL_EXIT)
+            self.assertTrue(
+                any(
+                    "trace is stale" in actual
+                    for actual in self.user_journey_failure_actuals(args, "user_journey_tester_trace")
+                )
+            )
+            self.assertTrue(
+                any(
+                    "trace is stale" in actual
+                    for actual in self.user_journey_failure_actuals(args, "user_journey_tester_audit")
+                )
+            )
+
+    def test_run_gate_enforces_stricter_trace_age_recorded_by_owning_audit(self) -> None:
+        with tempfile.TemporaryDirectory() as tmpdir:
+            args = self.build_args(tmpdir)
+            trace = json.loads(args.user_journey_trace.read_text(encoding="utf-8"))
+            trace["generated_at_utc"] = (
+                (datetime.now(timezone.utc) - timedelta(hours=2))
+                .replace(microsecond=0)
+                .isoformat()
+                .replace("+00:00", "Z")
+            )
+            write_json(args.user_journey_trace, trace)
+            audit = json.loads(args.user_journey_audit.read_text(encoding="utf-8"))
+            audit["evidence"]["trace_max_age_hours"] = 1
+            write_json(args.user_journey_audit, audit)
+            self.rebind_user_journey_audit_to_current_trace(args)
+
+            result = tester.run_gate(args)
+
+            self.assertEqual(result, tester.FAIL_EXIT)
+            self.assertEqual(
+                self.user_journey_failure_actuals(args, "user_journey_tester_trace"),
+                [],
+            )
+            self.assertTrue(
+                any(
+                    "older than 1 hours" in actual
+                    for actual in self.user_journey_failure_actuals(args, "user_journey_tester_audit")
+                )
+            )
+
+    def test_run_gate_rejects_naive_user_journey_trace_timestamp(self) -> None:
+        with tempfile.TemporaryDirectory() as tmpdir:
+            args = self.build_args(tmpdir)
+            trace = json.loads(args.user_journey_trace.read_text(encoding="utf-8"))
+            trace["generated_at_utc"] = datetime.now().replace(microsecond=0).isoformat()
+            write_json(args.user_journey_trace, trace)
+            self.rebind_user_journey_audit_to_current_trace(args)
+
+            result = tester.run_gate(args)
+
+            self.assertEqual(result, tester.FAIL_EXIT)
+            self.assertTrue(
+                any(
+                    "offset-aware generated_at_utc" in actual
+                    for actual in self.user_journey_failure_actuals(args, "user_journey_tester_trace")
+                )
+            )
+
+    def test_run_gate_rejects_future_user_journey_trace_using_audit_policy(self) -> None:
+        with tempfile.TemporaryDirectory() as tmpdir:
+            args = self.build_args(tmpdir)
+            trace = json.loads(args.user_journey_trace.read_text(encoding="utf-8"))
+            trace["generated_at_utc"] = (
+                (datetime.now(timezone.utc) + timedelta(minutes=6))
+                .replace(microsecond=0)
+                .isoformat()
+                .replace("+00:00", "Z")
+            )
+            write_json(args.user_journey_trace, trace)
+            self.rebind_user_journey_audit_to_current_trace(args)
+
+            result = tester.run_gate(args)
+
+            self.assertEqual(result, tester.FAIL_EXIT)
+            self.assertTrue(
+                any(
+                    "generated_at_utc is in the future" in actual
+                    for actual in self.user_journey_failure_actuals(args, "user_journey_tester_trace")
+                )
+            )
+            self.assertTrue(
+                any(
+                    "generated_at_utc is in the future" in actual
+                    for actual in self.user_journey_failure_actuals(args, "user_journey_tester_audit")
+                )
+            )
+
+    def test_run_gate_rejects_user_journey_trace_changed_after_audit(self) -> None:
+        with tempfile.TemporaryDirectory() as tmpdir:
+            args = self.build_args(tmpdir)
+            trace = json.loads(args.user_journey_trace.read_text(encoding="utf-8"))
+            trace["post_audit_change"] = "bytes changed after immutable audit"
+            write_json(args.user_journey_trace, trace)
+
+            result = tester.run_gate(args)
+
+            self.assertEqual(result, tester.FAIL_EXIT)
+            audit_actuals = self.user_journey_failure_actuals(args, "user_journey_tester_audit")
+            self.assertTrue(any("trace_sha256 does not match current trace bytes" in actual for actual in audit_actuals))
+            self.assertTrue(
+                any("trace_sha256_after_audit does not match current trace bytes" in actual for actual in audit_actuals)
+            )
+
+    def test_run_gate_rejects_pass_shaped_audit_that_denies_immutable_trace_proof(self) -> None:
+        with tempfile.TemporaryDirectory() as tmpdir:
+            args = self.build_args(tmpdir)
+            audit = json.loads(args.user_journey_audit.read_text(encoding="utf-8"))
+            audit["status"] = "pass"
+            audit["reasons"] = []
+            audit["evidence"]["trace_bytes_unchanged_during_audit"] = False
+            audit["trace_mutation_performed"] = True
+            write_json(args.user_journey_audit, audit)
+
+            result = tester.run_gate(args)
+
+            self.assertEqual(result, tester.FAIL_EXIT)
+            audit_actuals = self.user_journey_failure_actuals(args, "user_journey_tester_audit")
+            self.assertTrue(any("trace bytes were unchanged during audit" in actual for actual in audit_actuals))
+            self.assertTrue(any("trace_mutation_performed=false" in actual for actual in audit_actuals))
+
+    def test_run_gate_rejects_malformed_user_journey_trace_without_crashing(self) -> None:
+        with tempfile.TemporaryDirectory() as tmpdir:
+            args = self.build_args(tmpdir)
+            args.user_journey_trace.write_text("{not-json\n", encoding="utf-8")
+
+            result = tester.run_gate(args)
+
+            self.assertEqual(result, tester.FAIL_EXIT)
+            self.assertTrue(
+                any(
+                    "Unreadable user journey trace" in actual
+                    for actual in self.user_journey_failure_actuals(args, "user_journey_tester_trace")
+                )
+            )
+            self.assertTrue(
+                any(
+                    "Unreadable user journey trace" in actual
+                    for actual in self.user_journey_failure_actuals(args, "user_journey_tester_audit")
+                )
+            )
+
+    def test_run_gate_rejects_symlinked_user_journey_trace_as_unsafe(self) -> None:
+        with tempfile.TemporaryDirectory() as tmpdir:
+            args = self.build_args(tmpdir)
+            trace_target = args.user_journey_trace.with_name("user-journey-trace-target.json")
+            trace_target.write_bytes(args.user_journey_trace.read_bytes())
+            args.user_journey_trace.unlink()
+            args.user_journey_trace.symlink_to(trace_target)
+
+            result = tester.run_gate(args)
+
+            self.assertEqual(result, tester.FAIL_EXIT)
+            self.assertTrue(
+                any(
+                    "regular non-symlink file" in actual
+                    for actual in self.user_journey_failure_actuals(args, "user_journey_tester_trace")
+                )
+            )
+            self.assertTrue(
+                any(
+                    "regular non-symlink file" in actual
+                    for actual in self.user_journey_failure_actuals(args, "user_journey_tester_audit")
+                )
+            )
+
+    def test_run_gate_rejects_symlinked_user_journey_audit_as_unsafe(self) -> None:
+        with tempfile.TemporaryDirectory() as tmpdir:
+            args = self.build_args(tmpdir)
+            audit_target = args.user_journey_audit.with_name("user-journey-audit-target.json")
+            audit_target.write_bytes(args.user_journey_audit.read_bytes())
+            args.user_journey_audit.unlink()
+            args.user_journey_audit.symlink_to(audit_target)
+
+            result = tester.run_gate(args)
+
+            self.assertEqual(result, tester.FAIL_EXIT)
+            self.assertTrue(
+                any(
+                    "regular non-symlink file" in actual
+                    for actual in self.user_journey_failure_actuals(args, "user_journey_tester_audit")
+                )
+            )
 
     def test_run_gate_rejects_missing_user_journey_assertion(self) -> None:
         with tempfile.TemporaryDirectory() as tmpdir:

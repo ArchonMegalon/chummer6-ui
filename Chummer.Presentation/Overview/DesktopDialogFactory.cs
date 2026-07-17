@@ -16,6 +16,7 @@ public sealed class DesktopDialogFactory : IDesktopDialogFactory
     private const string NewCharacterKarmaWorkflowDialogId = "dialog.new_character.karma_workflow";
     private const string NewCharacterOriginWizardDialogId = "dialog.new_character.origin_wizard";
     private const string NewCharacterOriginBuildDialogId = "dialog.new_character.origin_build";
+    private const string OriginDossierOnlineRoute = "/app";
     private const string NewCharacterPriorityWorkflowStateFieldId = "newCharacterPriorityWorkflowState";
     private const string NewCharacterPriorityLastChangedFieldId = "newCharacterPriorityLastChangedFieldId";
     private const string NewCharacterMetavariantFieldId = "newCharacterMetavariant";
@@ -202,6 +203,48 @@ public sealed class DesktopDialogFactory : IDesktopDialogFactory
                 + " Language search and enabled overlays remain visible.",
                 BuildTranslatorFields(language, masterIndex, translatorLanguages),
                 [new DesktopDialogAction("close", S("desktop.dialog.action.close"), true)]),
+            "open_sourcebooks" => CreateGovernedUtilityDialog(
+                "dialog.open_sourcebooks",
+                "Sourcebooks",
+                "Review governed sourcebook coverage and linked references without leaving the shared shell.",
+                "Reference Surface",
+                "Master Index keeps sourcebook coverage, linked PDFs, and governed reference posture visible together.",
+                "Open Master Index when you need search, source toggles, or linked reference receipts."),
+            "open_errata" => CreateGovernedUtilityDialog(
+                "dialog.open_errata",
+                "Errata",
+                "Errata references stay in the governed rules and reference lane rather than a detached shell surface.",
+                "Errata Surface",
+                "Keep sourcebook context and errata follow-through together in the shared reference lane.",
+                "Open Master Index before you jump to external errata references so the current source context stays visible."),
+            "open_custom_data" => CreateGovernedUtilityDialog(
+                "dialog.open_custom_data",
+                "Custom Data",
+                "Custom data stays governed through the XML and overlay lane instead of mutating the runner shell directly.",
+                "Custom Data Posture",
+                "XML Editor tracks overlay directories, authoring posture, and XML bridge receipts together.",
+                "Open XML Editor when you need overlay directory counts, authoring receipts, or bridge posture."),
+            "update_data_packs" => CreateGovernedUtilityDialog(
+                "dialog.update_data_packs",
+                "Update Data Packs",
+                "Data pack refresh stays governed through the XML and custom-data lane.",
+                "Update Posture",
+                "Refreshes should follow the governed XML bridge and custom-data posture instead of bypassing shared verification surfaces.",
+                "Review XML Editor and governed release receipts before you refresh external data packs."),
+            "validate_data_scope" => CreateGovernedUtilityDialog(
+                "dialog.validate_data_scope",
+                "Validate Data Scope",
+                "Data-scope validation is surfaced through governed XML posture and release verification receipts.",
+                "Validation Surface",
+                "Use the shared XML and custom-data lane to confirm which overlays, directories, and receipts define the active scope.",
+                "Review XML Editor and release receipts when you need to verify overlay scope or authoring status."),
+            "open_data_folder" => CreateGovernedUtilityDialog(
+                "dialog.open_data_folder",
+                "Data Folder",
+                "Data folders stay host-owned and governed outside the shared runner surface.",
+                "Folder Posture",
+                "The shared shell keeps data-lane posture visible before you move into host file-system actions.",
+                "Use XML Editor and custom-data posture to review the active lane before you open host file locations."),
             "xml_editor" => new DesktopDialogState(
                 "dialog.xml_editor",
                 "XML Editor",
@@ -481,8 +524,28 @@ public sealed class DesktopDialogFactory : IDesktopDialogFactory
             ],
             Actions:
             [
+                new DesktopDialogAction("refresh", "Refresh", true),
                 new DesktopDialogAction("close", "Close", true)
             ]);
+    }
+
+    private static DesktopDialogState CreateGovernedUtilityDialog(
+        string dialogId,
+        string title,
+        string message,
+        string summaryLabel,
+        string summary,
+        string nextStep)
+    {
+        return new DesktopDialogState(
+            dialogId,
+            title,
+            message,
+            [
+                new DesktopDialogField("utilitySummary", summaryLabel, summary, summary, IsReadOnly: true, IsMultiline: true),
+                new DesktopDialogField("utilityNextStep", "Next Step", nextStep, nextStep, IsReadOnly: true, IsMultiline: true)
+            ],
+            [new DesktopDialogAction("close", "Close", true)]);
     }
 
     private static DesktopDialogState CreateOpenCharacterDialog(
@@ -915,6 +978,7 @@ public sealed class DesktopDialogFactory : IDesktopDialogFactory
             DesktopDialogFieldValueParser.GetValue(originDialog, "newCharacterOriginGmRequirements"));
         string name = DesktopDialogFieldValueParser.GetValue(originDialog, "newCharacterName") ?? "New runner";
         string alias = DesktopDialogFieldValueParser.GetValue(originDialog, "newCharacterAlias") ?? "Runner";
+        string dossierRoute = BuildOriginDossierOnlineRoute(rulesetId, alias);
         string buildLogic = BuildGridValue(
             ("Build Method", recommendation.BuildMethod),
             ("Likely Archetype", recommendation.ArchetypeLabel),
@@ -927,6 +991,7 @@ public sealed class DesktopDialogFactory : IDesktopDialogFactory
             "Alice Seed | approved origin story" + Environment.NewLine +
             $"Build | {recommendation.BuildSummary}{Environment.NewLine}" +
             $"GM Requirements | {recommendation.GmRequirementSummary}{Environment.NewLine}" +
+            $"Dossier Link | {dossierRoute}{Environment.NewLine}" +
             "Sheet Changes | none yet; review the path before applying mechanics";
         string bookPreview = BuildOriginBookPreview(alias, recommendation);
 
@@ -942,6 +1007,23 @@ public sealed class DesktopDialogFactory : IDesktopDialogFactory
                 BuildNewCharacterContextField("newCharacterWorkflowHouseRulesEnabled", "Workflow House Rules", "false"),
                 BuildNewCharacterContextField("newCharacterOriginSummary", "Origin Summary", recommendation.OriginSummary),
                 BuildNewCharacterContextField("newCharacterOriginAliceSeedSource", "Alice Seed Source", "approved_origin_story"),
+                new DesktopDialogField(
+                    "newCharacterOriginDossierLink",
+                    "Origin Dossier Link",
+                    dossierRoute,
+                    dossierRoute,
+                    IsReadOnly: true,
+                    InputType: "url",
+                    LayoutSlot: DesktopDialogFieldLayoutSlots.Right),
+                new DesktopDialogField(
+                    "newCharacterOriginDossierLinkNotes",
+                    "Link Notes",
+                    "Opens Chummer Online directly into the Origin Dossier workflow. The story text stays local until you publish it.",
+                    "Opens Chummer Online directly into the Origin Dossier workflow. The story text stays local until you publish it.",
+                    IsReadOnly: true,
+                    IsMultiline: true,
+                    VisualKind: DesktopDialogFieldVisualKinds.Snippet,
+                    LayoutSlot: DesktopDialogFieldLayoutSlots.Right),
                 new DesktopDialogField(
                     "newCharacterOriginBookPreview",
                     "Book Preview",
@@ -978,9 +1060,28 @@ public sealed class DesktopDialogFactory : IDesktopDialogFactory
                     LayoutSlot: DesktopDialogFieldLayoutSlots.Right)
             ],
             [
+                new DesktopDialogAction("show_origin_dossier_link", "Show dossier link"),
                 new DesktopDialogAction("open_origin_guided_chargen", "Start character creation", true),
                 new DesktopDialogAction("cancel", "Cancel")
             ]);
+    }
+
+    private static string BuildOriginDossierOnlineRoute(string? rulesetId, string? alias)
+    {
+        string normalizedRulesetId = RulesetDefaults.NormalizeOptional(rulesetId) ?? RulesetDefaults.Sr5;
+        string aliasToken = string.IsNullOrWhiteSpace(alias) ? string.Empty : alias.Trim();
+        List<string> query =
+        [
+            $"command={Uri.EscapeDataString("new_character_origin")}",
+            $"ruleset={Uri.EscapeDataString(normalizedRulesetId)}"
+        ];
+
+        if (!string.IsNullOrWhiteSpace(aliasToken))
+        {
+            query.Add($"alias={Uri.EscapeDataString(aliasToken)}");
+        }
+
+        return $"{OriginDossierOnlineRoute}?{string.Join("&", query)}";
     }
 
     private static string BuildOriginBookPreview(string alias, OriginBuildRecommendation recommendation)
@@ -2015,7 +2116,7 @@ public sealed class DesktopDialogFactory : IDesktopDialogFactory
         string resolvedPossessionMethod = possessionMethodOptions.Any(option => string.Equals(option.Value, possessionMethod, StringComparison.Ordinal))
             ? possessionMethod
             : possessionMethodOptions[0].Value;
-        IReadOnlyList<PriorityWorkflowInspectAttributeState> inspectAttributes = BuildPriorityInspectAttributes(metatype, metavariant);
+        IReadOnlyList<PriorityWorkflowInspectAttributeState> inspectAttributes = BuildPriorityInspectAttributes(rulesetId, metatype, metavariant);
         IReadOnlyList<string> qualities = BuildPriorityMetatypeQualities(metatype, metavariant);
         string sumToTenLabel = string.Equals(buildMethod, "SumToTen", StringComparison.OrdinalIgnoreCase)
             ? $"{GetPriorityLetterValue(heritagePriority) + GetPriorityLetterValue(attributesPriority) + GetPriorityLetterValue(talentPriority) + GetPriorityLetterValue(skillsPriority) + GetPriorityLetterValue(resourcesPriority)}/10"
@@ -2058,7 +2159,7 @@ public sealed class DesktopDialogFactory : IDesktopDialogFactory
         return visibleValues.Length == visibleValues.Distinct(StringComparer.Ordinal).Count();
     }
 
-    private static IReadOnlyList<PriorityWorkflowInspectAttributeState> BuildPriorityInspectAttributes(string metatype, string metavariant)
+    private static IReadOnlyList<PriorityWorkflowInspectAttributeState> BuildPriorityInspectAttributes(string rulesetId, string metatype, string metavariant)
     {
         IReadOnlyDictionary<string, string> values = (metatype, metavariant) switch
         {
@@ -2165,16 +2266,43 @@ public sealed class DesktopDialogFactory : IDesktopDialogFactory
 
         return new[]
         {
-            new PriorityWorkflowInspectAttributeState("BOD", values["BOD"]),
-            new PriorityWorkflowInspectAttributeState("AGI", values["AGI"]),
-            new PriorityWorkflowInspectAttributeState("REA", values["REA"]),
-            new PriorityWorkflowInspectAttributeState("STR", values["STR"]),
-            new PriorityWorkflowInspectAttributeState("CHA", values["CHA"]),
-            new PriorityWorkflowInspectAttributeState("INT", values["INT"]),
-            new PriorityWorkflowInspectAttributeState("LOG", values["LOG"]),
-            new PriorityWorkflowInspectAttributeState("WIL", values["WIL"])
+            new PriorityWorkflowInspectAttributeState(FormatPriorityInspectAttributeLabel(rulesetId, "BOD"), FormatPriorityInspectAttributeValue(rulesetId, values["BOD"])),
+            new PriorityWorkflowInspectAttributeState(FormatPriorityInspectAttributeLabel(rulesetId, "AGI"), FormatPriorityInspectAttributeValue(rulesetId, values["AGI"])),
+            new PriorityWorkflowInspectAttributeState(FormatPriorityInspectAttributeLabel(rulesetId, "REA"), FormatPriorityInspectAttributeValue(rulesetId, values["REA"])),
+            new PriorityWorkflowInspectAttributeState(FormatPriorityInspectAttributeLabel(rulesetId, "STR"), FormatPriorityInspectAttributeValue(rulesetId, values["STR"])),
+            new PriorityWorkflowInspectAttributeState(FormatPriorityInspectAttributeLabel(rulesetId, "CHA"), FormatPriorityInspectAttributeValue(rulesetId, values["CHA"])),
+            new PriorityWorkflowInspectAttributeState(FormatPriorityInspectAttributeLabel(rulesetId, "INT"), FormatPriorityInspectAttributeValue(rulesetId, values["INT"])),
+            new PriorityWorkflowInspectAttributeState(FormatPriorityInspectAttributeLabel(rulesetId, "LOG"), FormatPriorityInspectAttributeValue(rulesetId, values["LOG"])),
+            new PriorityWorkflowInspectAttributeState(FormatPriorityInspectAttributeLabel(rulesetId, "WIL"), FormatPriorityInspectAttributeValue(rulesetId, values["WIL"]))
         };
     }
+
+    private static string FormatPriorityInspectAttributeLabel(string rulesetId, string attributeId)
+    {
+        if (!IsSr6Ruleset(rulesetId))
+        {
+            return attributeId;
+        }
+
+        return attributeId switch
+        {
+            "BOD" => "Body",
+            "AGI" => "Agility",
+            "REA" => "Reaction",
+            "STR" => "Strength",
+            "CHA" => "Charisma",
+            "INT" => "Intuition",
+            "LOG" => "Logic",
+            "WIL" => "Willpower",
+            _ => attributeId
+        };
+    }
+
+    private static string FormatPriorityInspectAttributeValue(string rulesetId, string value)
+        => value;
+
+    private static bool IsSr6Ruleset(string? rulesetId)
+        => string.Equals(RulesetDefaults.NormalizeOptional(rulesetId), RulesetDefaults.Sr6, StringComparison.Ordinal);
 
     private static IReadOnlyList<string> BuildPriorityMetatypeQualities(string metatype, string metavariant)
     {
@@ -5789,6 +5917,38 @@ public sealed class DesktopDialogFactory : IDesktopDialogFactory
         ];
     }
 
+    private static IReadOnlyList<DesktopDialogField> BuildSpriteSelectionFields()
+    {
+        string categoryTree =
+            "[Sprites]" + Environment.NewLine +
+            "├─ Courier" + Environment.NewLine +
+            "├─ Crack" + Environment.NewLine +
+            "├─ Fault" + Environment.NewLine +
+            "└─ Machine";
+        string candidateList =
+            "Courier Sprite · Sprite" + Environment.NewLine +
+            "Machine Sprite · Sprite" + Environment.NewLine +
+            "Fault Sprite · Sprite";
+        string selectionDetails = BuildGridValue(
+            ("Selected", "Courier Sprite"),
+            ("Level", "3"),
+            ("Type", "Sprite"),
+            ("Source", "Core Rulebook p. 251"));
+
+        return
+        [
+            BuildSelectionSectionsField("uiSpriteSections"),
+            BuildSelectionTreeField("uiSpriteCategoryTree", "Categories", categoryTree),
+            new DesktopDialogField("uiSpriteSearch", "Search", string.Empty, "Search sprites"),
+            new DesktopDialogField("uiSpriteType", "Type", "Sprite", "Sprite"),
+            new DesktopDialogField("uiSpriteName", "Name", "Courier Sprite", "Courier Sprite"),
+            new DesktopDialogField("uiSpriteCandidateList", "Available Entries", candidateList, candidateList, IsReadOnly: true, IsMultiline: true, VisualKind: DesktopDialogFieldVisualKinds.List, LayoutSlot: DesktopDialogFieldLayoutSlots.Left),
+            new DesktopDialogField("uiSpriteForce", "Level", "3", "3", InputType: "number"),
+            new DesktopDialogField("uiSpriteSelectionDetails", "Selection Details", selectionDetails, selectionDetails, IsReadOnly: true, IsMultiline: true, VisualKind: DesktopDialogFieldVisualKinds.Grid, LayoutSlot: DesktopDialogFieldLayoutSlots.Right),
+            new DesktopDialogField("uiSpriteNotes", "Notes", "Type, level, and source remain visible before confirmation.", "Type, level, and source remain visible before confirmation.", IsReadOnly: true, IsMultiline: true, VisualKind: DesktopDialogFieldVisualKinds.Snippet)
+        ];
+    }
+
     private static IReadOnlyList<DesktopDialogField> BuildCritterPowerSelectionFields()
     {
         string categoryTree =
@@ -6615,6 +6775,12 @@ public sealed class DesktopDialogFactory : IDesktopDialogFactory
                 "Browse spirits and allies, inspect force and type, then confirm the selected entry.",
                 BuildSpiritSelectionFields(),
                 BuildSelectionConfirmationActions()),
+            "sprite_add" => new DesktopDialogState(
+                "dialog.ui.sprite_add",
+                "Add Sprite",
+                "Browse sprites, inspect level and type, then confirm the selected entry.",
+                BuildSpriteSelectionFields(),
+                BuildSelectionConfirmationActions()),
             "critter_power_add" => new DesktopDialogState(
                 "dialog.ui.critter_power_add",
                 "Add Critter Power",
@@ -6700,14 +6866,16 @@ public sealed class DesktopDialogFactory : IDesktopDialogFactory
             "combat_damage_track" => new DesktopDialogState(
                 "dialog.ui.combat_damage_track",
                 "Damage Track",
-                "Current physical and stun tracks stay visible before applying the change.",
+                "Current physical, stun, matrix, and asset tracks stay visible before applying the change.",
                 [
                     BuildUtilitySectionsField("uiDamageTrackSections", "Tracks", "Details", "Notes"),
                     new DesktopDialogField("uiDamageTrackPhysical", "Physical", "3 / 10", "3 / 10", IsReadOnly: true),
                     new DesktopDialogField("uiDamageTrackStun", "Stun", "1 / 10", "1 / 10", IsReadOnly: true),
-                    new DesktopDialogField("uiDamageTrackDetails", "Track Details", "Physical | 3 / 10" + Environment.NewLine + "Stun | 1 / 10" + Environment.NewLine + "Penalty | none", "Physical | 3 / 10" + Environment.NewLine + "Stun | 1 / 10" + Environment.NewLine + "Penalty | none", IsReadOnly: true, IsMultiline: true, VisualKind: DesktopDialogFieldVisualKinds.Grid, LayoutSlot: DesktopDialogFieldLayoutSlots.Right),
-                    new DesktopDialogField("uiDamageTrackCommands", "Commands", "Apply current damage step" + Environment.NewLine + "Keep penalty visible" + Environment.NewLine + "Return to combat tab after applying", "Apply current damage step", IsReadOnly: true, IsMultiline: true, VisualKind: DesktopDialogFieldVisualKinds.List, LayoutSlot: DesktopDialogFieldLayoutSlots.Right),
-                    new DesktopDialogField("uiDamageTrackNotes", "Notes", "Current track state remains visible before applying the damage step.", "Current track state remains visible before applying the damage step.", IsReadOnly: true, IsMultiline: true, VisualKind: DesktopDialogFieldVisualKinds.Snippet)
+                    new DesktopDialogField("uiDamageTrackMatrix", "Matrix", "2 / 8", "2 / 8", IsReadOnly: true),
+                    new DesktopDialogField("uiDamageTrackAsset", "Item / Vehicle", "0 / 6", "0 / 6", IsReadOnly: true),
+                    new DesktopDialogField("uiDamageTrackDetails", "Track Details", "Physical | 3 / 10" + Environment.NewLine + "Stun | 1 / 10" + Environment.NewLine + "Matrix | 2 / 8" + Environment.NewLine + "Item / Vehicle | 0 / 6" + Environment.NewLine + "Penalty | none", "Physical | 3 / 10" + Environment.NewLine + "Stun | 1 / 10" + Environment.NewLine + "Matrix | 2 / 8" + Environment.NewLine + "Item / Vehicle | 0 / 6" + Environment.NewLine + "Penalty | none", IsReadOnly: true, IsMultiline: true, VisualKind: DesktopDialogFieldVisualKinds.Grid, LayoutSlot: DesktopDialogFieldLayoutSlots.Right),
+                    new DesktopDialogField("uiDamageTrackCommands", "Commands", "Apply current damage step" + Environment.NewLine + "Keep wound, matrix, and asset state visible" + Environment.NewLine + "Return to combat tab after applying", "Apply current damage step", IsReadOnly: true, IsMultiline: true, VisualKind: DesktopDialogFieldVisualKinds.List, LayoutSlot: DesktopDialogFieldLayoutSlots.Right),
+                    new DesktopDialogField("uiDamageTrackNotes", "Notes", "Current physical, stun, matrix, and asset tracks remain visible before applying the damage step.", "Current physical, stun, matrix, and asset tracks remain visible before applying the damage step.", IsReadOnly: true, IsMultiline: true, VisualKind: DesktopDialogFieldVisualKinds.Snippet)
                 ],
                 [
                     new DesktopDialogAction("apply", "Apply", true),

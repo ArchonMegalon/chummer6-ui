@@ -163,5 +163,5 @@ internal readonly record struct DesktopMouseFirstJourneyVisibleShellState(
     string CharacterStateText,
     string ComplianceStateText)
 {
-    public bool HasActiveWorkspace => !string.IsNullOrWhiteSpace(WorkspaceId);
+    public bool HasActiveWorkspace => !string.IsNullOrWhiteSpace(WorkspaceId) || CharacterLoaded;
 }

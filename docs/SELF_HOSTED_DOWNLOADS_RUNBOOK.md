@@ -36,7 +36,7 @@ Treat that handoff as staged-nightly-only evidence: it refreshes staged receipts
 
 1. Default recommendation: use `CHUMMER_PORTAL_DOWNLOADS_DEPLOY_DIR` with a self-hosted runner that can write directly into the portal downloads storage mount.
 2. Reason: this keeps `/downloads/` self-hosted, lets the deploy job verify both the local manifest file and the live portal manifest, and matches the canonical topology enforced in repo docs.
-3. Treat object storage as the alternate topology for environments where the runner cannot write to portal storage directly; keep portal proxying and live manifest verification enabled there too.
+3. The legacy fixed-key S3/R2 publisher is disabled fail-closed. When the runner cannot write the portal mount, use the authenticated HTTP upload-session lane instead of object storage.
 4. Start from [`docs/examples/self-hosted-downloads.env.example`](examples/self-hosted-downloads.env.example) and adapt it to your portal base URL and storage target.
 
 ## Mode A: Filesystem Deploy (shared mount)
@@ -58,31 +58,21 @@ Manual path:
 2. `RUNBOOK_MODE=downloads-verify DOWNLOADS_VERIFY_LINKS=1 DOWNLOADS_VERIFY_TARGET=<portalBaseOrManifestUrl> bash scripts/runbook.sh`
 3. `RUNBOOK_MODE=downloads-smoke bash scripts/runbook.sh`
 
-## Mode B: Object Storage Deploy (S3/R2 compatible)
+## Mode B: Object Storage Deploy (disabled)
 
-Repository variables:
-1. `CHUMMER_PORTAL_DOWNLOADS_S3_URI`
-2. `CHUMMER_PORTAL_DOWNLOADS_S3_LATEST_URI` (optional)
-3. `CHUMMER_PORTAL_DOWNLOADS_S3_ENDPOINT_URL` (optional; required for many R2/S3-compatible endpoints)
-4. `CHUMMER_PORTAL_DOWNLOADS_S3_REGION` (optional, defaults to `us-east-1`)
-5. `CHUMMER_PORTAL_DOWNLOADS_VERIFY_URL`
-6. Optional `CHUMMER_DESKTOP_RELEASE_CHANNEL` override for non-mainline lanes
-7. `CHUMMER_ALLOW_UNSIGNED_PUBLIC_RELEASE` (optional; explicit unsigned public-release posture)
+This mode is intentionally unavailable. `scripts/publish-download-bundle-s3.sh` exits with `EX_CONFIG` (`78`) before it resolves repositories, generates manifests, validates proof, touches mirrors, or invokes AWS. Setting the former `CHUMMER_PORTAL_DOWNLOADS_S3_*` variables does not override that boundary.
 
-Repository secrets:
-1. `CHUMMER_PORTAL_DOWNLOADS_AWS_ACCESS_KEY_ID`
-2. `CHUMMER_PORTAL_DOWNLOADS_AWS_SECRET_ACCESS_KEY`
-3. `CHUMMER_PORTAL_DOWNLOADS_AWS_SESSION_TOKEN` (optional)
+When checking this refusal directly, use `./scripts/publish-download-bundle-s3.sh` or `/bin/bash -p scripts/publish-download-bundle-s3.sh`. For the wrapper, use `RUNBOOK_MODE=downloads-sync-s3 ./scripts/runbook.sh`. Do not invoke either boundary as `bash <script>`: an explicitly started ordinary Bash may execute caller-controlled `BASH_ENV` or exported functions before the script body, which no in-script guard can undo. The supported direct entry points use absolute privileged Bash to ignore those startup hooks.
 
-Local release path:
-1. Push the release-ready source to `main`, then build the release bundle on the controlled release host.
-2. If `CHUMMER_PORTAL_DOWNLOADS_S3_URI` is configured, run `RUNBOOK_MODE=downloads-sync-s3` after bundle generation.
-3. The runbook syncs the bundle using `scripts/publish-download-bundle-s3.sh`.
-4. The runbook verifies the live manifest URL.
+Why it is disabled:
 
-Manual path:
-1. `RUNBOOK_MODE=downloads-sync-s3 DOWNLOAD_BUNDLE_DIR=<bundleDir> CHUMMER_PORTAL_DOWNLOADS_S3_URI=<s3://bucket/path> CHUMMER_PORTAL_DOWNLOADS_VERIFY_URL=<portalBaseOrManifestUrl> [CHUMMER_PORTAL_DOWNLOADS_S3_ENDPOINT_URL=<endpoint>] bash scripts/runbook.sh`
-2. `RUNBOOK_MODE=downloads-verify DOWNLOADS_VERIFY_LINKS=1 DOWNLOADS_VERIFY_TARGET=<portalBaseOrManifestUrl> bash scripts/runbook.sh`
+1. The fixed-key layout overwrote or deleted artifact/proof objects before its multi-object manifest cutover. An AWS failure could therefore invalidate the previously served shelf.
+2. High-level S3 synchronization did not prove remote SHA-256 equality; a same-size stale object could survive selection or backend-specific checksum behavior.
+3. Updating `releases.json`, `RELEASE_CHANNEL.generated.json`, and an optional latest alias is not one atomic operation.
+
+Use Mode A for a controlled filesystem promotion or Mode C for authenticated HTTP upload sessions.
+
+Re-enabling object storage requires a coordinated portal and release-contract migration: immutable versioned artifact/proof keys, forced object writes, checksum-and-size verified remote inventory, one atomic canonical pointer understood by the serving portal, and stateful rollback tests for every write phase. Do not implement an environment-variable bypass around the current fail-closed script.
 
 ## Mode C: Live `chummer.run` HTTP Publish
 
@@ -122,6 +112,8 @@ Release-build handoff expectation:
 1. If a staged latest-build bundle verifies but still lists `missingRequiredPlatforms` for the public Windows/Linux promotion scope, do not promote it to `public_stable`.
 2. Materialize the release-build handoff and finish the missing platform smoke/signing/upload work first.
 3. A completed staged nightly handoff is still not a stable release. The live downloads shelf remains unchanged until a separate guarded publish lane runs.
+4. Windows bootstrap installer smoke for a publishable preview shelf must run with `CHUMMER_WINDOWS_STARTUP_SMOKE_PAYLOAD_MODE=download`; local payload handoff receipts are diagnostic only and must not be used as public bootstrap proof.
+5. On Linux/Wine release hosts, keep the bounded Wine defaults enabled (`CHUMMER_WINEPATH_TIMEOUT_SECONDS`, `CHUMMER_WINEBOOT_INIT_TIMEOUT_SECONDS`, and `CHUMMER_WINDOWS_BINARY_TIMEOUT_SECONDS`) so path conversion, prefix initialization, and app startup failures produce receipts or regression packets instead of hanging the nightly lane.
 
 Operational rule:
 1. The public `chummer.run` shelf is a rolling daily shelf. It should advance once per day in the morning release window after the required proof passes, not after every local build.

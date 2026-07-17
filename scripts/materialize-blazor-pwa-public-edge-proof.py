@@ -9,10 +9,15 @@ from datetime import datetime, timezone
 from html.parser import HTMLParser
 from pathlib import Path
 from typing import Any
+from urllib.parse import urljoin, urlparse
 
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
 BASE_URL = os.environ.get("CHUMMER_BLAZOR_PWA_PUBLIC_EDGE_BASE_URL", "https://chummer.run/blazor").rstrip("/")
+PUBLIC_ENTRY_URL = os.environ.get(
+    "CHUMMER_BLAZOR_PWA_PUBLIC_ENTRY_URL",
+    urljoin(f"{BASE_URL}/", "../app") if urlparse(BASE_URL).path.rstrip("/") == "/blazor" else f"{BASE_URL}/app",
+)
 OUTPUT_PATH = Path(
     os.environ.get(
         "CHUMMER_BLAZOR_PWA_PUBLIC_EDGE_PROOF_PATH",
@@ -39,12 +44,31 @@ class HeadProbe(HTMLParser):
             self.bases.append(data)
 
 
-def fetch_text(path: str) -> dict[str, Any]:
-    url = f"{BASE_URL}{path}"
+def fetch_text_url(url: str) -> dict[str, Any]:
     request = urllib.request.Request(url, headers={"User-Agent": USER_AGENT})
     started = time.perf_counter()
     with urllib.request.urlopen(request, timeout=30) as response:
         body = response.read().decode("utf-8", errors="replace")
+
+    return {
+        "url": url,
+        "status_code": response.status,
+        "content_type": response.headers.get("content-type") or "",
+        "elapsed_ms": round((time.perf_counter() - started) * 1000),
+        "body": body,
+    }
+
+
+def fetch_text(path: str) -> dict[str, Any]:
+    return fetch_text_url(f"{BASE_URL}{path}")
+
+
+def fetch_bytes(path: str) -> dict[str, Any]:
+    url = f"{BASE_URL}{path}"
+    request = urllib.request.Request(url, headers={"User-Agent": USER_AGENT})
+    started = time.perf_counter()
+    with urllib.request.urlopen(request, timeout=30) as response:
+        body = response.read()
 
     return {
         "url": url,
@@ -90,7 +114,7 @@ def check_manifest() -> dict[str, Any]:
     except json.JSONDecodeError as error:
         return failed_check(
             "manifest_install_contract",
-            "deployed manifest is installable and starts the PWA on the mobile Play surface",
+            "deployed manifest is installable and starts the distinct Build PWA on the runner roster",
             result["url"],
             f"manifest JSON parse failed: {error}",
             facts,
@@ -99,6 +123,7 @@ def check_manifest() -> dict[str, Any]:
     shortcuts = {str(item.get("short_name") or "") for item in manifest.get("shortcuts") or [] if isinstance(item, dict)}
     facts.update(
         {
+            "id": manifest.get("id"),
             "name": manifest.get("name"),
             "short_name": manifest.get("short_name"),
             "start_url": manifest.get("start_url"),
@@ -112,19 +137,25 @@ def check_manifest() -> dict[str, Any]:
 
     required = [
         (result["status_code"] == 200, "manifest did not return HTTP 200"),
-        (manifest.get("name") == "Chummer Online", "manifest name mismatch"),
-        (manifest.get("start_url") == "./app?source=pwa", "manifest start_url must target Play app"),
+        (manifest.get("id") == "./app", "manifest id must remain the scoped Build app identity"),
+        (manifest.get("name") == "Chummer Runner Builder", "manifest name mismatch"),
+        (manifest.get("short_name") == "Chummer Build", "manifest short_name mismatch"),
+        (
+            manifest.get("start_url") == "./app?command=character_roster&source=pwa",
+            "manifest start_url must target the runner roster",
+        ),
         (manifest.get("scope") == "./", "manifest scope must remain under /blazor/"),
         (manifest.get("display") == "standalone", "manifest display must be standalone"),
         (any((item.get("purpose") == "maskable") for item in manifest.get("icons") or [] if isinstance(item, dict)), "manifest missing maskable icon"),
-        ({"Play", "Roster"}.issubset(shortcuts), "manifest shortcuts must include Play and Roster"),
+        ({"New", "Roster"}.issubset(shortcuts), "manifest shortcuts must include New and Roster"),
+        ("Play" not in shortcuts, "Build manifest must not advertise the separate Play companion"),
         (len(manifest.get("screenshots") or []) >= 2, "manifest must include screenshots for store/install surfaces"),
     ]
     failures = [message for passed, message in required if not passed]
     if failures:
         return failed_check(
             "manifest_install_contract",
-            "deployed manifest is installable and starts the PWA on the mobile Play surface",
+            "deployed manifest is installable and starts the distinct Build PWA on the runner roster",
             result["url"],
             "; ".join(failures),
             facts,
@@ -132,7 +163,7 @@ def check_manifest() -> dict[str, Any]:
 
     return passed_check(
         "manifest_install_contract",
-        "deployed manifest is installable and starts the PWA on the mobile Play surface",
+        "deployed manifest is installable and starts the distinct Build PWA on the runner roster",
         result["url"],
         facts,
     )
@@ -146,6 +177,9 @@ def check_service_worker() -> dict[str, Any]:
         "content_type": result["content_type"],
         "elapsed_ms": result["elapsed_ms"],
         "declares_static_cache": "CHUMMER_PWA_CACHE" in body,
+        "uses_build_cache_namespace": "chummer-build-static-v2" in body,
+        "migrates_legacy_online_cache": "chummer-online-static-" in body,
+        "does_not_manage_play_cache": "chummer-shell-play-shell-" not in body,
         "handles_navigations_with_offline_fallback": "request.mode === 'navigate'" in body and "caches.match('./offline.html')" in body,
         "rejects_query_asset_cache": "url.search" in body,
         "excludes_api": "path.includes('/api/')" in body,
@@ -156,6 +190,9 @@ def check_service_worker() -> dict[str, Any]:
     required = [
         (result["status_code"] == 200, "service worker did not return HTTP 200"),
         (facts["declares_static_cache"], "service worker missing static cache declaration"),
+        (facts["uses_build_cache_namespace"], "service worker must use the Build-specific cache namespace"),
+        (facts["migrates_legacy_online_cache"], "service worker must clean up the legacy Chummer Online cache namespace"),
+        (facts["does_not_manage_play_cache"], "Build service worker must not manage Play companion caches"),
         (facts["handles_navigations_with_offline_fallback"], "service worker missing navigation offline fallback"),
         (facts["rejects_query_asset_cache"], "service worker must reject query-string asset caching"),
         (facts["excludes_api"], "service worker must exclude API routes"),
@@ -274,22 +311,226 @@ def check_app_head() -> dict[str, Any]:
     )
 
 
+def check_clean_public_entry_route() -> dict[str, Any]:
+    result = fetch_text_url(PUBLIC_ENTRY_URL)
+    body = result["body"]
+    probe = HeadProbe()
+    probe.feed(body)
+
+    base_hrefs = [str(base.get("href") or "") for base in probe.bases]
+    manifest_hrefs = [
+        str(link.get("href") or "")
+        for link in probe.links
+        if str(link.get("rel") or "") == "manifest"
+    ]
+    icon_hrefs = [
+        str(link.get("href") or "")
+        for link in probe.links
+        if str(link.get("rel") or "") == "icon"
+    ]
+    base_scope_urls = [urljoin(PUBLIC_ENTRY_URL, href) for href in base_hrefs]
+    hosted_base_scope_url = next((url for url in base_scope_urls if url.rstrip("/") == BASE_URL), f"{BASE_URL}/")
+    resolved_manifest_urls = [urljoin(hosted_base_scope_url, href) for href in manifest_hrefs]
+    resolved_icon_urls = [urljoin(hosted_base_scope_url, href) for href in icon_hrefs]
+    service_worker_registration_is_relative = (
+        "const serviceWorkerScript = 'service-worker.js'" in body
+        and "const serviceWorkerScope = './'" in body
+    )
+    facts = {
+        "status_code": result["status_code"],
+        "content_type": result["content_type"],
+        "elapsed_ms": result["elapsed_ms"],
+        "base_hrefs": base_hrefs,
+        "base_scope_urls": base_scope_urls,
+        "manifest_hrefs": manifest_hrefs,
+        "icon_hrefs": icon_hrefs,
+        "resolved_manifest_urls": resolved_manifest_urls,
+        "resolved_icon_urls": resolved_icon_urls,
+        "service_worker_registration_is_relative": service_worker_registration_is_relative,
+    }
+    required = [
+        (result["status_code"] == 200, "clean public app route did not return HTTP 200"),
+        ("text/html" in str(result["content_type"]), "clean public app route must return HTML"),
+        ("/blazor/" in base_hrefs, "clean public app route must keep base href scoped to /blazor/"),
+        ("manifest.webmanifest" in manifest_hrefs, "clean public app route missing relative manifest link"),
+        ("icons/chummer-pwa.svg" in icon_hrefs, "clean public app route missing relative PWA icon link"),
+        (
+            any(url.rstrip("/") == f"{BASE_URL}/manifest.webmanifest" for url in resolved_manifest_urls),
+            "clean public app route manifest must resolve under the hosted /blazor scope",
+        ),
+        (
+            any(url.rstrip("/") == f"{BASE_URL}/icons/chummer-pwa.svg" for url in resolved_icon_urls),
+            "clean public app route icon must resolve under the hosted /blazor scope",
+        ),
+        (
+            service_worker_registration_is_relative,
+            "clean public app route must keep service-worker script and scope relative to /blazor/",
+        ),
+    ]
+    failures = [message for passed, message in required if not passed]
+    if failures:
+        return failed_check(
+            "clean_public_entry_route_contract",
+            "clean /app route resolves installable PWA assets through the hosted /blazor scope",
+            result["url"],
+            "; ".join(failures),
+            facts,
+        )
+
+    return passed_check(
+        "clean_public_entry_route_contract",
+        "clean /app route resolves installable PWA assets through the hosted /blazor scope",
+        result["url"],
+        facts,
+    )
+
+
+def check_static_assets() -> dict[str, Any]:
+    required_assets = [
+        ("/app.css", "text/css", 1000),
+        ("/icons/chummer-pwa.svg", "image/svg+xml", 100),
+        ("/icons/chummer-pwa-maskable.svg", "image/svg+xml", 100),
+        ("/media/chummer6/chummer6-hero-baseline.png", "image/png", 100),
+        ("/media/chummer6/karma-forge-baseline.png", "image/png", 100),
+    ]
+    asset_facts: list[dict[str, Any]] = []
+    failures: list[str] = []
+    responsive_css_seen = False
+
+    for path, expected_content_type, minimum_size in required_assets:
+        result = fetch_bytes(path)
+        body = result["body"]
+        content_type = str(result["content_type"])
+        size_bytes = len(body)
+        fact = {
+            "path": path,
+            "url": result["url"],
+            "status_code": result["status_code"],
+            "content_type": content_type,
+            "size_bytes": size_bytes,
+            "elapsed_ms": result["elapsed_ms"],
+        }
+        asset_facts.append(fact)
+
+        if result["status_code"] != 200:
+            failures.append(f"{path} did not return HTTP 200")
+        if expected_content_type not in content_type:
+            failures.append(f"{path} content-type must include {expected_content_type}")
+        if size_bytes < minimum_size:
+            failures.append(f"{path} is unexpectedly small ({size_bytes} bytes)")
+
+        if path == "/app.css":
+            css_text = body.decode("utf-8", errors="replace")
+            responsive_css_seen = "@media" in css_text and "max-width" in css_text
+
+    if not responsive_css_seen:
+        failures.append("app.css must include deployed responsive mobile media queries")
+
+    facts = {
+        "asset_count": len(asset_facts),
+        "assets": asset_facts,
+        "responsive_css_seen": responsive_css_seen,
+    }
+    if failures:
+        return failed_check(
+            "static_asset_fetch_contract",
+            "deployed PWA static assets are fetchable under /blazor and include responsive shell CSS",
+            BASE_URL,
+            "; ".join(failures),
+            facts,
+        )
+
+    return passed_check(
+        "static_asset_fetch_contract",
+        "deployed PWA static assets are fetchable under /blazor and include responsive shell CSS",
+        BASE_URL,
+        facts,
+    )
+
+
+def check_mobile_viewport_shell() -> dict[str, Any]:
+    result = fetch_text("/app?source=pwa&viewport=mobile-proof")
+    body = result["body"]
+    probe = HeadProbe()
+    probe.feed(body)
+    viewport_content = next(
+        (
+            str(meta.get("content") or "")
+            for meta in probe.metas
+            if meta.get("name") == "viewport"
+        ),
+        "",
+    )
+    base_hrefs = [base.get("href") for base in probe.bases]
+    facts = {
+        "status_code": result["status_code"],
+        "content_type": result["content_type"],
+        "elapsed_ms": result["elapsed_ms"],
+        "viewport_content": viewport_content,
+        "base_hrefs": base_hrefs,
+        "has_mobile_web_app_capable": any(
+            meta.get("name") == "mobile-web-app-capable" and meta.get("content") == "yes"
+            for meta in probe.metas
+        ),
+        "has_apple_mobile_web_app_capable": any(
+            meta.get("name") == "apple-mobile-web-app-capable" and meta.get("content") == "yes"
+            for meta in probe.metas
+        ),
+        "has_pwa_install_state_object": "window.chummerPwa" in body,
+    }
+    required = [
+        (result["status_code"] == 200, "mobile app route did not return HTTP 200"),
+        ("text/html" in str(result["content_type"]), "mobile app route must return HTML"),
+        (viewport_content == "width=device-width, initial-scale=1.0", "viewport meta must stay mobile-width and initial-scale 1.0"),
+        ("/blazor/" in {str(item or "") for item in base_hrefs}, "base href must stay scoped to /blazor/"),
+        (facts["has_mobile_web_app_capable"], "mobile route missing mobile-web-app-capable meta"),
+        (facts["has_apple_mobile_web_app_capable"], "mobile route missing apple mobile web app meta"),
+        (facts["has_pwa_install_state_object"], "mobile route missing PWA install state object"),
+    ]
+    failures = [message for passed, message in required if not passed]
+    if failures:
+        return failed_check(
+            "mobile_viewport_shell_contract",
+            "deployed PWA app route exposes a mobile viewport and scoped install shell under /blazor",
+            result["url"],
+            "; ".join(failures),
+            facts,
+        )
+
+    return passed_check(
+        "mobile_viewport_shell_contract",
+        "deployed PWA app route exposes a mobile viewport and scoped install shell under /blazor",
+        result["url"],
+        facts,
+    )
+
+
 def main() -> int:
-    checks = [check_manifest(), check_service_worker(), check_offline_shell(), check_app_head()]
+    checks = [
+        check_manifest(),
+        check_service_worker(),
+        check_offline_shell(),
+        check_app_head(),
+        check_clean_public_entry_route(),
+        check_static_assets(),
+        check_mobile_viewport_shell(),
+    ]
     failures = [check for check in checks if check["status"] != "passed"]
     receipt = {
         "contract_name": "chummer6-ui.blazor_pwa_public_edge_proof",
         "generated_at": datetime.now(timezone.utc).isoformat(),
         "status": "failed" if failures else "passed",
         "base_url": BASE_URL,
+        "public_entry_url": PUBLIC_ENTRY_URL,
         "proof_tier": "hosted_pwa_public_edge_execution",
-        "route_lane": "blazor_pwa_play_shell",
+        "route_lane": "blazor_pwa_build_shell",
         "checks": checks,
         "failures": failures,
         "notes": [
             "This receipt proves the deployed /blazor PWA shell contract, not app-store acceptance or offline runner-data parity.",
+            "The public /app route is also fetched to prove it resolves installable PWA assets through the hosted /blazor base scope.",
             "The service worker is required to cache only static shell assets and leave runner, workspace, API, Black Ledger, heat, and session data server-bound.",
-            "The installed start URL remains the Play app surface; full character building stays outside the in-session PWA use case.",
+            "The installed start URL opens the runner roster; live-session Play remains a separately identified mobile companion.",
         ],
     }
     OUTPUT_PATH.parent.mkdir(parents=True, exist_ok=True)

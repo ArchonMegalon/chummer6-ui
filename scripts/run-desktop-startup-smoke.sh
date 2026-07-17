@@ -47,6 +47,11 @@ WINDOWS_STARTUP_SMOKE_EFFECTIVE_PAYLOAD_URL=""
 WINDOWS_STARTUP_SMOKE_EFFECTIVE_PAYLOAD_SHA256=""
 WINDOWS_STARTUP_SMOKE_EFFECTIVE_PAYLOAD_SIZE_BYTES=""
 WINDOWS_STARTUP_SMOKE_EFFECTIVE_PAYLOAD_FILE_NAME=""
+WINDOWS_EXECUTION_ENVIRONMENT="not_executed"
+WINDOWS_EXECUTION_RUNNER="unavailable"
+WINDOWS_EXECUTION_HOST_PLATFORM="unknown"
+WINDOWS_EXECUTION_HOST_KERNEL=""
+WINDOWS_NATIVE_HOST_EVIDENCE_SOURCE="startup_smoke_execution_lane"
 
 cleanup() {
   if [[ -n "$WINDOWS_PAYLOAD_HTTP_PID" ]]; then
@@ -121,6 +126,39 @@ print(hasher.hexdigest())
 PY
 }
 
+lower_ascii() {
+  printf '%s' "${1:-}" | tr '[:upper:]' '[:lower:]'
+}
+
+upper_ascii() {
+  printf '%s' "${1:-}" | tr '[:lower:]' '[:upper:]'
+}
+
+array_count() {
+  local array_name="${1:-}"
+  [[ -n "$array_name" ]] || {
+    printf '0\n'
+    return 0
+  }
+
+  local restore_nounset=0
+  case "$-" in
+    *u*)
+      restore_nounset=1
+      set +u
+      ;;
+  esac
+
+  eval "set -- \"\${${array_name}[@]}\""
+  local count="$#"
+
+  if (( restore_nounset == 1 )); then
+    set -u
+  fi
+
+  printf '%s\n' "$count"
+}
+
 host_machine() {
   local machine=""
   machine="$(uname -m 2>/dev/null | tr '[:upper:]' '[:lower:]' || true)"
@@ -130,7 +168,7 @@ host_machine() {
   fi
 
   if [[ -n "${PROCESSOR_ARCHITECTURE:-}" ]]; then
-    printf '%s\n' "${PROCESSOR_ARCHITECTURE,,}"
+    printf '%s\n' "$(lower_ascii "$PROCESSOR_ARCHITECTURE")"
     return
   fi
 
@@ -140,8 +178,8 @@ host_machine() {
 host_can_execute_windows_arm64() {
   local arch_primary="${PROCESSOR_ARCHITECTURE:-}"
   local arch_secondary="${PROCESSOR_ARCHITEW6432:-}"
-  arch_primary="${arch_primary^^}"
-  arch_secondary="${arch_secondary^^}"
+  arch_primary="$(upper_ascii "$arch_primary")"
+  arch_secondary="$(upper_ascii "$arch_secondary")"
   [[ "$arch_primary" == "ARM64" || "$arch_secondary" == "ARM64" ]]
 }
 
@@ -152,6 +190,84 @@ host_can_execute_windows_binary() {
     || command -v powershell.exe >/dev/null 2>&1 \
     || command -v pwsh >/dev/null 2>&1 \
     || command -v cygpath >/dev/null 2>&1
+}
+
+host_kernel_name() {
+  uname -s 2>/dev/null | tr -d '\r' || printf 'unknown\n'
+}
+
+host_platform_name() {
+  local kernel
+  kernel="$(lower_ascii "$(host_kernel_name)")"
+  case "$kernel" in
+    mingw*|msys*|cygwin*|windows*) printf 'windows\n' ;;
+    darwin*) printf 'macos\n' ;;
+    linux*) printf 'linux\n' ;;
+    *) printf 'unknown\n' ;;
+  esac
+}
+
+detect_windows_execution_lane() {
+  WINDOWS_EXECUTION_ENVIRONMENT="not_executed"
+  WINDOWS_EXECUTION_RUNNER="unavailable"
+  WINDOWS_EXECUTION_HOST_KERNEL="$(host_kernel_name)"
+  WINDOWS_EXECUTION_HOST_PLATFORM="$(host_platform_name)"
+  WINDOWS_NATIVE_HOST_EVIDENCE_SOURCE="startup_smoke_execution_lane"
+
+  local wine_bin=""
+  if command -v wine >/dev/null 2>&1; then
+    wine_bin="wine"
+  elif command -v wine64 >/dev/null 2>&1; then
+    wine_bin="wine64"
+  elif [[ -x /usr/lib/wine/wine64 ]]; then
+    wine_bin="/usr/lib/wine/wine64"
+  fi
+  if [[ -n "$wine_bin" ]]; then
+    WINDOWS_EXECUTION_ENVIRONMENT="wine_compatibility"
+    WINDOWS_EXECUTION_RUNNER="$(basename "$wine_bin")"
+    WINDOWS_NATIVE_HOST_EVIDENCE_SOURCE="wine_runner_selection"
+    return
+  fi
+
+  if command -v powershell.exe >/dev/null 2>&1 || command -v pwsh >/dev/null 2>&1; then
+    local powershell_bin="powershell.exe"
+    if command -v pwsh >/dev/null 2>&1; then
+      powershell_bin="pwsh"
+    fi
+    WINDOWS_EXECUTION_RUNNER="$(basename "$powershell_bin")"
+    WINDOWS_NATIVE_HOST_EVIDENCE_SOURCE="powershell_runtime_os_probe"
+    if "$powershell_bin" -NoLogo -NoProfile -Command '
+      if ([System.Environment]::OSVersion.Platform -eq [System.PlatformID]::Win32NT) { exit 0 }
+      exit 1
+    ' >/dev/null 2>&1 && [[ "$WINDOWS_EXECUTION_HOST_PLATFORM" == "windows" ]]; then
+      WINDOWS_EXECUTION_ENVIRONMENT="native_windows"
+    else
+      WINDOWS_EXECUTION_ENVIRONMENT="windows_compatibility"
+      WINDOWS_NATIVE_HOST_EVIDENCE_SOURCE="powershell_runtime_os_probe_non_native_host"
+    fi
+    return
+  fi
+
+  if command -v cygpath >/dev/null 2>&1; then
+    WINDOWS_EXECUTION_RUNNER="cygwin_direct"
+    if [[ "$WINDOWS_EXECUTION_HOST_PLATFORM" == "windows" ]]; then
+      WINDOWS_EXECUTION_ENVIRONMENT="native_windows"
+      WINDOWS_NATIVE_HOST_EVIDENCE_SOURCE="cygwin_runtime"
+    else
+      WINDOWS_EXECUTION_ENVIRONMENT="windows_compatibility"
+      WINDOWS_NATIVE_HOST_EVIDENCE_SOURCE="cygwin_bridge_non_native_host"
+    fi
+    return
+  fi
+
+  WINDOWS_EXECUTION_RUNNER="direct"
+  if [[ "$WINDOWS_EXECUTION_HOST_PLATFORM" == "windows" ]]; then
+    WINDOWS_EXECUTION_ENVIRONMENT="native_windows"
+    WINDOWS_NATIVE_HOST_EVIDENCE_SOURCE="native_windows_shell_runtime"
+  else
+    WINDOWS_EXECUTION_ENVIRONMENT="windows_compatibility"
+    WINDOWS_NATIVE_HOST_EVIDENCE_SOURCE="non_windows_direct_runtime"
+  fi
 }
 
 host_can_execute_linux_arm64() {
@@ -167,7 +283,7 @@ host_can_execute_linux_arm64() {
 }
 
 env_truthy() {
-  case "${1,,}" in
+  case "$(lower_ascii "${1:-}")" in
     1|true|yes|on)
       return 0
       ;;
@@ -280,7 +396,10 @@ payload_file_name = str(sys.argv[7]).strip()
 
 payload = json.loads(receipt_path.read_text(encoding="utf-8-sig"))
 payload["artifactInstallMode"] = "nsis_bootstrap_installer"
-payload["artifactPath"] = str(artifact_path)
+payload["artifactPath"] = artifact_path.name
+payload["artifactPathDisclosure"] = "file_name_only"
+payload["artifactFileName"] = artifact_path.name
+payload["artifactRelativePath"] = artifact_path.name
 if payload_mode:
     payload["bootstrapPayloadAcquisitionMode"] = payload_mode
 if payload_url:
@@ -422,10 +541,13 @@ reason = str(sys.argv[11]).strip()
 host_machine = str(sys.argv[12]).strip()
 now = dt.datetime.now(dt.timezone.utc).isoformat()
 
-artifact_file_name = artifact_path.name
-artifact_relative_path = artifact_file_name
-if artifact_path.parent.name:
-    artifact_relative_path = f"{artifact_path.parent.name}/{artifact_file_name}"
+normalized_artifact_path = str(artifact_path).strip().replace("\\", "/").rstrip("/")
+artifact_path_parts = [part for part in normalized_artifact_path.split("/") if part]
+artifact_file_name = artifact_path_parts[-1] if artifact_path_parts else ""
+artifact_parent_name = artifact_path_parts[-2].casefold() if len(artifact_path_parts) > 1 else ""
+artifact_shelf_token = artifact_parent_name if artifact_parent_name in {"files"} else ""
+artifact_relative_path = f"{artifact_shelf_token}/{artifact_file_name}" if artifact_shelf_token else artifact_file_name
+artifact_path_disclosure = "artifact_shelf_relative_path" if artifact_shelf_token else "file_name_only"
 
 payload = {
     "status": "skipped",
@@ -443,7 +565,8 @@ payload = {
     "recordedAtUtc": now,
     "startedAtUtc": now,
     "completedAtUtc": now,
-    "artifactPath": str(artifact_path),
+    "artifactPath": artifact_relative_path,
+    "artifactPathDisclosure": artifact_path_disclosure,
     "artifactFileName": artifact_file_name,
     "fileName": artifact_file_name,
     "artifactRelativePath": artifact_relative_path,
@@ -482,6 +605,51 @@ print(status)
 PY
 }
 
+requested_mouse_first_journey_passes() {
+  local mouse_receipt_path="${CHUMMER_DESKTOP_MOUSE_FIRST_JOURNEY_RECEIPT:-}"
+  if [[ -z "$mouse_receipt_path" ]]; then
+    return 0
+  fi
+
+  if [[ ! -s "$mouse_receipt_path" ]]; then
+    echo "Requested mouse-first desktop journey did not emit a receipt: $mouse_receipt_path" >&2
+    return 1
+  fi
+
+  local mouse_status
+  mouse_status="$($PYTHON_BIN - "$mouse_receipt_path" <<'PY'
+import json
+import pathlib
+import sys
+
+path = pathlib.Path(sys.argv[1])
+try:
+    payload = json.loads(path.read_text(encoding="utf-8-sig"))
+except Exception:
+    raise SystemExit(1)
+if not isinstance(payload, dict):
+    raise SystemExit(1)
+status = str(payload.get("status") or "").strip().lower()
+if not status:
+    raise SystemExit(1)
+print(status)
+PY
+)" || {
+    echo "Requested mouse-first desktop journey receipt is unreadable: $mouse_receipt_path" >&2
+    return 1
+  }
+  if [[ "$mouse_status" != "pass" && "$mouse_status" != "passed" ]]; then
+    echo "Requested mouse-first desktop journey did not pass (status=$mouse_status): $mouse_receipt_path" >&2
+    return 1
+  fi
+
+  local user_journey_trace_path="${CHUMMER_DESKTOP_USER_JOURNEY_TRACE_OUTPUT:-}"
+  if [[ -n "$user_journey_trace_path" && ! -s "$user_journey_trace_path" ]]; then
+    echo "Requested user-journey tester trace was not emitted: $user_journey_trace_path" >&2
+    return 1
+  fi
+}
+
 to_native_path() {
   local input_path="$1"
 
@@ -491,8 +659,36 @@ to_native_path() {
   fi
 
   if command -v winepath >/dev/null 2>&1; then
-    winepath -w "$input_path" | tr -d '\r'
-    return
+    local native_path=""
+    local winepath_timeout="${CHUMMER_WINEPATH_TIMEOUT_SECONDS:-15}"
+    if command -v timeout >/dev/null 2>&1; then
+      native_path="$(timeout "$winepath_timeout" winepath -w "$input_path" 2>/dev/null | tr -d '\r' || true)"
+    else
+      native_path="$(winepath -w "$input_path" 2>/dev/null | tr -d '\r' || true)"
+    fi
+    if [[ -n "$native_path" ]]; then
+      printf '%s\n' "$native_path"
+      return
+    fi
+
+    case "$input_path" in
+      [A-Za-z]:[\\/]*)
+        printf '%s\n' "$input_path"
+        return
+        ;;
+      */dosdevices/[A-Za-z]:/*)
+        local dosdevices_path="${input_path#*/dosdevices/}"
+        local drive="${dosdevices_path%%:*}"
+        local drive_path="${dosdevices_path#*:}"
+        printf '%s:%s\n' "$(upper_ascii "$drive")" "${drive_path//\//\\}"
+        return
+        ;;
+      /*)
+        # Wine maps the Unix filesystem root to Z: by default; use it when winepath hangs.
+        printf 'Z:%s\n' "${input_path//\//\\}"
+        return
+        ;;
+    esac
   fi
 
   if pwd -W >/dev/null 2>&1; then
@@ -518,6 +714,20 @@ to_native_path() {
   fi
 
   echo "$input_path"
+}
+
+to_native_launch_path() {
+  local input_path="$1"
+
+  case "$input_path" in
+    */dosdevices/[A-Za-z]:/*)
+      # Keep Wine-prefix temp installs addressable as concrete filesystem paths.
+      printf 'Z:%s\n' "${input_path//\//\\}"
+      return
+      ;;
+  esac
+
+  to_native_path "$input_path"
 }
 
 resolve_wine_temp_dir() {
@@ -585,14 +795,19 @@ run_windows_binary() {
   fi
   if [[ -n "$wine_bin" ]]; then
     local native_executable_path
-    native_executable_path="$(to_native_path "$executable_path")"
-    run_with_optional_xvfb "$wine_bin" "$native_executable_path" "$@"
+    native_executable_path="$(to_native_launch_path "$executable_path")"
+    local wine_binary_timeout="${CHUMMER_WINDOWS_BINARY_TIMEOUT_SECONDS:-300}"
+    if command -v timeout >/dev/null 2>&1 && [[ -n "$wine_binary_timeout" && "$wine_binary_timeout" != "0" ]]; then
+      run_with_optional_xvfb timeout "$wine_binary_timeout" "$wine_bin" "$native_executable_path" "$@"
+    else
+      run_with_optional_xvfb "$wine_bin" "$native_executable_path" "$@"
+    fi
     return
   fi
 
   if command -v powershell.exe >/dev/null 2>&1 || command -v pwsh >/dev/null 2>&1; then
     local native_executable_path
-    native_executable_path="$(to_native_path "$executable_path")"
+    native_executable_path="$(to_native_launch_path "$executable_path")"
     local powershell_bin="powershell.exe"
     if command -v pwsh >/dev/null 2>&1; then
       powershell_bin="pwsh"
@@ -669,6 +884,53 @@ run_mouse_first_journey_process() {
   run_with_optional_xvfb "$launch_path" --mouse-first-user-journey
 }
 
+initialize_windows_startup_wine_prefix() {
+  local runtime_home="$1"
+
+  if [[ "$(platform_from_rid "$RID")" != "windows" ]]; then
+    return 0
+  fi
+  if ! command -v wine >/dev/null 2>&1 || ! command -v wineboot >/dev/null 2>&1 || ! command -v wineserver >/dev/null 2>&1; then
+    return 0
+  fi
+
+  local wineboot_timeout="${CHUMMER_WINEBOOT_INIT_TIMEOUT_SECONDS:-180}"
+  local -a timeout_prefix=()
+  if command -v timeout >/dev/null 2>&1 && [[ -n "$wineboot_timeout" && "$wineboot_timeout" != "0" ]]; then
+    timeout_prefix=(timeout "$wineboot_timeout")
+  fi
+
+  if (( $(array_count timeout_prefix) > 0 )); then
+    HOME="$runtime_home" \
+    XDG_CONFIG_HOME="$runtime_home/.config" \
+    XDG_DATA_HOME="$runtime_home/.local/share" \
+    XDG_STATE_HOME="$runtime_home/.local/state" \
+    XDG_CACHE_HOME="$runtime_home/.cache" \
+    run_with_optional_xvfb "${timeout_prefix[@]}" wineboot --init
+
+    HOME="$runtime_home" \
+    XDG_CONFIG_HOME="$runtime_home/.config" \
+    XDG_DATA_HOME="$runtime_home/.local/share" \
+    XDG_STATE_HOME="$runtime_home/.local/state" \
+    XDG_CACHE_HOME="$runtime_home/.cache" \
+    run_with_optional_xvfb "${timeout_prefix[@]}" wineserver -w
+  else
+    HOME="$runtime_home" \
+    XDG_CONFIG_HOME="$runtime_home/.config" \
+    XDG_DATA_HOME="$runtime_home/.local/share" \
+    XDG_STATE_HOME="$runtime_home/.local/state" \
+    XDG_CACHE_HOME="$runtime_home/.cache" \
+    run_with_optional_xvfb wineboot --init
+
+    HOME="$runtime_home" \
+    XDG_CONFIG_HOME="$runtime_home/.config" \
+    XDG_DATA_HOME="$runtime_home/.local/share" \
+    XDG_STATE_HOME="$runtime_home/.local/state" \
+    XDG_CACHE_HOME="$runtime_home/.cache" \
+    run_with_optional_xvfb wineserver -w
+  fi
+}
+
 run_head_smoke() {
   local launch_path="$1"
   local receipt_path="$RECEIPT_PATH"
@@ -677,6 +939,13 @@ run_head_smoke() {
   artifact_sha="$(sha256_file "$ARTIFACT_PATH")"
   local public_web_base_url
   public_web_base_url="$(resolve_public_web_base_url "${CHUMMER_PUBLIC_WEB_BASE_URL:-}" "${CHUMMER_WEB_BASE_URL:-}")"
+  local use_existing_windows_wine_home="false"
+  if [[ "$(platform_from_rid "$RID")" == "windows" ]] \
+    && command -v winepath >/dev/null 2>&1 \
+    && { command -v wine >/dev/null 2>&1 || command -v wine64 >/dev/null 2>&1 || [[ -x /usr/lib/wine/wine64 ]]; } \
+    && ! env_truthy "${CHUMMER_WINDOWS_STARTUP_SMOKE_ISOLATED_PREFIX:-0}"; then
+    use_existing_windows_wine_home="true"
+  fi
 
   if [[ ! -f "$launch_path" ]]; then
     echo "Launch target missing for startup smoke: $launch_path" >&2
@@ -691,38 +960,62 @@ run_head_smoke() {
   if [[ -z "$BUNDLE_EXTRACT_ROOT" ]]; then
     BUNDLE_EXTRACT_ROOT="$(mktemp -d "${TMPDIR:-/tmp}/chummer-startup-bundle.XXXXXX")"
   fi
-  if [[ -z "$RUNTIME_HOME" ]]; then
+  if [[ -z "$RUNTIME_HOME" && "$use_existing_windows_wine_home" != "true" ]]; then
     RUNTIME_HOME="$(mktemp -d "${TMPDIR:-/tmp}/chummer-startup-home.XXXXXX")"
   fi
 
   local bundle_extract_base_dir="$BUNDLE_EXTRACT_ROOT"
   local runtime_home="$RUNTIME_HOME"
+  if [[ "$use_existing_windows_wine_home" == "true" ]]; then
+    runtime_home="${HOME:-}"
+  fi
   if [[ "$(platform_from_rid "$RID")" == "windows" ]]; then
     receipt_path="$(to_native_path "$receipt_path")"
     packet_path="$(to_native_path "$packet_path")"
     bundle_extract_base_dir="$(to_native_path "$BUNDLE_EXTRACT_ROOT")"
-    if ! command -v wine >/dev/null 2>&1; then
+    if [[ "$use_existing_windows_wine_home" != "true" ]] && ! command -v wine >/dev/null 2>&1; then
       runtime_home="$(to_native_path "$RUNTIME_HOME")"
     fi
   fi
 
-  CHUMMER_DESKTOP_STARTUP_SMOKE_RECEIPT="$receipt_path" \
-  CHUMMER_DESKTOP_STARTUP_SMOKE_FAILURE_PACKET="$packet_path" \
-  CHUMMER_DESKTOP_STARTUP_SMOKE_ARTIFACT_DIGEST="sha256:${artifact_sha}" \
-  CHUMMER_DESKTOP_STARTUP_SMOKE_HOST_CLASS="$HOST_CLASS" \
-  CHUMMER_DESKTOP_STARTUP_SMOKE_RELEASE_VERSION="$VERSION_HINT" \
-  CHUMMER_DESKTOP_STARTUP_SMOKE_RID="$RID" \
-  CHUMMER_DESKTOP_STARTUP_SMOKE_READY_CHECKPOINT="pre_ui_event_loop" \
-  CHUMMER_DESKTOP_UPDATE_ENABLED=0 \
-  CHUMMER_PUBLIC_WEB_BASE_URL="$public_web_base_url" \
-  CHUMMER_ALLOW_INTERNAL_PUBLIC_WEB_HOSTS="${CHUMMER_ALLOW_INTERNAL_PUBLIC_WEB_HOSTS:-0}" \
-  DOTNET_BUNDLE_EXTRACT_BASE_DIR="$bundle_extract_base_dir" \
-  HOME="$runtime_home" \
-  XDG_CONFIG_HOME="$runtime_home/.config" \
-  XDG_DATA_HOME="$runtime_home/.local/share" \
-  XDG_STATE_HOME="$runtime_home/.local/state" \
-  XDG_CACHE_HOME="$runtime_home/.cache" \
-  run_startup_smoke_process "$launch_path" >>"$LOG_PATH" 2>&1
+  if [[ "$use_existing_windows_wine_home" != "true" ]] \
+    && ! initialize_windows_startup_wine_prefix "$runtime_home" >>"$LOG_PATH" 2>&1; then
+    echo "Wine prefix initialization failed for Windows startup smoke." >>"$LOG_PATH"
+    return 1
+  fi
+
+  if [[ "$use_existing_windows_wine_home" == "true" ]]; then
+    CHUMMER_DESKTOP_STARTUP_SMOKE_RECEIPT="$receipt_path" \
+    CHUMMER_DESKTOP_STARTUP_SMOKE_FAILURE_PACKET="$packet_path" \
+    CHUMMER_DESKTOP_STARTUP_SMOKE_ARTIFACT_DIGEST="sha256:${artifact_sha}" \
+    CHUMMER_DESKTOP_STARTUP_SMOKE_HOST_CLASS="$HOST_CLASS" \
+    CHUMMER_DESKTOP_STARTUP_SMOKE_RELEASE_VERSION="$VERSION_HINT" \
+    CHUMMER_DESKTOP_STARTUP_SMOKE_RID="$RID" \
+    CHUMMER_DESKTOP_STARTUP_SMOKE_READY_CHECKPOINT="pre_ui_event_loop" \
+    CHUMMER_DESKTOP_UPDATE_ENABLED=0 \
+    CHUMMER_PUBLIC_WEB_BASE_URL="$public_web_base_url" \
+    CHUMMER_ALLOW_INTERNAL_PUBLIC_WEB_HOSTS="${CHUMMER_ALLOW_INTERNAL_PUBLIC_WEB_HOSTS:-0}" \
+    DOTNET_BUNDLE_EXTRACT_BASE_DIR="$bundle_extract_base_dir" \
+    run_startup_smoke_process "$launch_path" >>"$LOG_PATH" 2>&1
+  else
+    CHUMMER_DESKTOP_STARTUP_SMOKE_RECEIPT="$receipt_path" \
+    CHUMMER_DESKTOP_STARTUP_SMOKE_FAILURE_PACKET="$packet_path" \
+    CHUMMER_DESKTOP_STARTUP_SMOKE_ARTIFACT_DIGEST="sha256:${artifact_sha}" \
+    CHUMMER_DESKTOP_STARTUP_SMOKE_HOST_CLASS="$HOST_CLASS" \
+    CHUMMER_DESKTOP_STARTUP_SMOKE_RELEASE_VERSION="$VERSION_HINT" \
+    CHUMMER_DESKTOP_STARTUP_SMOKE_RID="$RID" \
+    CHUMMER_DESKTOP_STARTUP_SMOKE_READY_CHECKPOINT="pre_ui_event_loop" \
+    CHUMMER_DESKTOP_UPDATE_ENABLED=0 \
+    CHUMMER_PUBLIC_WEB_BASE_URL="$public_web_base_url" \
+    CHUMMER_ALLOW_INTERNAL_PUBLIC_WEB_HOSTS="${CHUMMER_ALLOW_INTERNAL_PUBLIC_WEB_HOSTS:-0}" \
+    DOTNET_BUNDLE_EXTRACT_BASE_DIR="$bundle_extract_base_dir" \
+    HOME="$runtime_home" \
+    XDG_CONFIG_HOME="$runtime_home/.config" \
+    XDG_DATA_HOME="$runtime_home/.local/share" \
+    XDG_STATE_HOME="$runtime_home/.local/state" \
+    XDG_CACHE_HOME="$runtime_home/.cache" \
+    run_startup_smoke_process "$launch_path" >>"$LOG_PATH" 2>&1
+  fi
 
   local mouse_journey_receipt_path="${CHUMMER_DESKTOP_MOUSE_FIRST_JOURNEY_RECEIPT:-}"
   if [[ -z "$mouse_journey_receipt_path" ]]; then
@@ -734,24 +1027,40 @@ run_head_smoke() {
   local mouse_journey_trace_path="${CHUMMER_DESKTOP_MOUSE_FIRST_JOURNEY_TRACE:-$OUTPUT_DIR/mouse-first-journey-$APP_KEY-$RID.trace.json}"
   mkdir -p "$(dirname "$mouse_journey_receipt_path")" "$mouse_journey_screenshot_dir" "$(dirname "$mouse_journey_trace_path")"
 
-  CHUMMER_DESKTOP_MOUSE_FIRST_JOURNEY_RECEIPT="$mouse_journey_receipt_path" \
-  CHUMMER_DESKTOP_MOUSE_FIRST_JOURNEY_FAILURE_PACKET="$mouse_journey_failure_packet_path" \
-  CHUMMER_DESKTOP_MOUSE_FIRST_JOURNEY_SCREENSHOT_DIR="$mouse_journey_screenshot_dir" \
-  CHUMMER_DESKTOP_MOUSE_FIRST_JOURNEY_TRACE="$mouse_journey_trace_path" \
-  CHUMMER_DESKTOP_MOUSE_FIRST_JOURNEY_ARTIFACT_DIGEST="sha256:${artifact_sha}" \
-  CHUMMER_DESKTOP_MOUSE_FIRST_JOURNEY_HOST_CLASS="$HOST_CLASS" \
-  CHUMMER_DESKTOP_MOUSE_FIRST_JOURNEY_RELEASE_VERSION="$VERSION_HINT" \
-  CHUMMER_DESKTOP_MOUSE_FIRST_JOURNEY_RID="$RID" \
-  CHUMMER_DESKTOP_RELEASE_CHANNEL="$CHANNEL_HINT" \
-  CHUMMER_PUBLIC_WEB_BASE_URL="$public_web_base_url" \
-  CHUMMER_ALLOW_INTERNAL_PUBLIC_WEB_HOSTS="${CHUMMER_ALLOW_INTERNAL_PUBLIC_WEB_HOSTS:-0}" \
-  DOTNET_BUNDLE_EXTRACT_BASE_DIR="$bundle_extract_base_dir" \
-  HOME="$runtime_home" \
-  XDG_CONFIG_HOME="$runtime_home/.config" \
-  XDG_DATA_HOME="$runtime_home/.local/share" \
-  XDG_STATE_HOME="$runtime_home/.local/state" \
-  XDG_CACHE_HOME="$runtime_home/.cache" \
-  run_mouse_first_journey_process "$launch_path" >>"$LOG_PATH" 2>&1
+  if [[ "$use_existing_windows_wine_home" == "true" ]]; then
+    CHUMMER_DESKTOP_MOUSE_FIRST_JOURNEY_RECEIPT="$mouse_journey_receipt_path" \
+    CHUMMER_DESKTOP_MOUSE_FIRST_JOURNEY_FAILURE_PACKET="$mouse_journey_failure_packet_path" \
+    CHUMMER_DESKTOP_MOUSE_FIRST_JOURNEY_SCREENSHOT_DIR="$mouse_journey_screenshot_dir" \
+    CHUMMER_DESKTOP_MOUSE_FIRST_JOURNEY_TRACE="$mouse_journey_trace_path" \
+    CHUMMER_DESKTOP_MOUSE_FIRST_JOURNEY_ARTIFACT_DIGEST="sha256:${artifact_sha}" \
+    CHUMMER_DESKTOP_MOUSE_FIRST_JOURNEY_HOST_CLASS="$HOST_CLASS" \
+    CHUMMER_DESKTOP_MOUSE_FIRST_JOURNEY_RELEASE_VERSION="$VERSION_HINT" \
+    CHUMMER_DESKTOP_MOUSE_FIRST_JOURNEY_RID="$RID" \
+    CHUMMER_DESKTOP_RELEASE_CHANNEL="$CHANNEL_HINT" \
+    CHUMMER_PUBLIC_WEB_BASE_URL="$public_web_base_url" \
+    CHUMMER_ALLOW_INTERNAL_PUBLIC_WEB_HOSTS="${CHUMMER_ALLOW_INTERNAL_PUBLIC_WEB_HOSTS:-0}" \
+    DOTNET_BUNDLE_EXTRACT_BASE_DIR="$bundle_extract_base_dir" \
+    run_mouse_first_journey_process "$launch_path" >>"$LOG_PATH" 2>&1
+  else
+    CHUMMER_DESKTOP_MOUSE_FIRST_JOURNEY_RECEIPT="$mouse_journey_receipt_path" \
+    CHUMMER_DESKTOP_MOUSE_FIRST_JOURNEY_FAILURE_PACKET="$mouse_journey_failure_packet_path" \
+    CHUMMER_DESKTOP_MOUSE_FIRST_JOURNEY_SCREENSHOT_DIR="$mouse_journey_screenshot_dir" \
+    CHUMMER_DESKTOP_MOUSE_FIRST_JOURNEY_TRACE="$mouse_journey_trace_path" \
+    CHUMMER_DESKTOP_MOUSE_FIRST_JOURNEY_ARTIFACT_DIGEST="sha256:${artifact_sha}" \
+    CHUMMER_DESKTOP_MOUSE_FIRST_JOURNEY_HOST_CLASS="$HOST_CLASS" \
+    CHUMMER_DESKTOP_MOUSE_FIRST_JOURNEY_RELEASE_VERSION="$VERSION_HINT" \
+    CHUMMER_DESKTOP_MOUSE_FIRST_JOURNEY_RID="$RID" \
+    CHUMMER_DESKTOP_RELEASE_CHANNEL="$CHANNEL_HINT" \
+    CHUMMER_PUBLIC_WEB_BASE_URL="$public_web_base_url" \
+    CHUMMER_ALLOW_INTERNAL_PUBLIC_WEB_HOSTS="${CHUMMER_ALLOW_INTERNAL_PUBLIC_WEB_HOSTS:-0}" \
+    DOTNET_BUNDLE_EXTRACT_BASE_DIR="$bundle_extract_base_dir" \
+    HOME="$runtime_home" \
+    XDG_CONFIG_HOME="$runtime_home/.config" \
+    XDG_DATA_HOME="$runtime_home/.local/share" \
+    XDG_STATE_HOME="$runtime_home/.local/state" \
+    XDG_CACHE_HOME="$runtime_home/.cache" \
+    run_mouse_first_journey_process "$launch_path" >>"$LOG_PATH" 2>&1
+  fi
 }
 
 run_windows_smoke() {
@@ -785,7 +1094,8 @@ run_windows_smoke() {
   local local_payload_path=""
   local local_payload_sha256=""
   local local_payload_size_bytes=""
-  local configured_payload_mode="${WINDOWS_STARTUP_SMOKE_PAYLOAD_MODE,,}"
+  local configured_payload_mode
+  configured_payload_mode="$(lower_ascii "$WINDOWS_STARTUP_SMOKE_PAYLOAD_MODE")"
   local artifact_dir
   artifact_dir="$(dirname "$ARTIFACT_PATH")"
   local artifact_name
@@ -802,7 +1112,7 @@ run_windows_smoke() {
     ""|auto)
       configured_payload_mode="local"
       ;;
-    local|download|none)
+    local|download|embedded|none)
       ;;
     *)
       echo "Unsupported CHUMMER_WINDOWS_STARTUP_SMOKE_PAYLOAD_MODE: $configured_payload_mode" >&2
@@ -810,8 +1120,12 @@ run_windows_smoke() {
       ;;
   esac
 
-  if [[ "$configured_payload_mode" == "download" && -z "$local_payload_path" ]]; then
-    echo "Windows startup smoke download mode requires a local bootstrap payload zip beside the installer." >&2
+  if LC_ALL=C grep -aFq 'payloadAcquisitionMode=embedded' "$ARTIFACT_PATH"; then
+    configured_payload_mode="embedded"
+  fi
+
+  if [[ "$configured_payload_mode" =~ ^(download|embedded)$ && -z "$local_payload_path" ]]; then
+    echo "Windows startup smoke $configured_payload_mode mode requires a local bootstrap payload zip beside the installer for receipt binding." >&2
     return 1
   fi
 
@@ -846,6 +1160,9 @@ run_windows_smoke() {
     CHUMMER_INSTALLER_PAYLOAD_URL="$WINDOWS_STARTUP_SMOKE_EFFECTIVE_PAYLOAD_URL" \
     CHUMMER_INSTALLER_PAYLOAD_SHA256="$local_payload_sha256" \
     CHUMMER_INSTALLER_PAYLOAD_SIZE_BYTES="$local_payload_size_bytes" \
+    run_windows_binary "$ARTIFACT_PATH" "${installer_args[@]}" >>"$LOG_PATH" 2>&1
+  elif [[ "$configured_payload_mode" == "embedded" ]]; then
+    WINDOWS_STARTUP_SMOKE_EFFECTIVE_PAYLOAD_MODE="embedded"
     run_windows_binary "$ARTIFACT_PATH" "${installer_args[@]}" >>"$LOG_PATH" 2>&1
   else
     WINDOWS_STARTUP_SMOKE_EFFECTIVE_PAYLOAD_MODE="embedded_metadata"
@@ -990,7 +1307,7 @@ PY
       fi
     done < <(printf '%s' "$required_paths" | tr ';' '\n')
 
-    if (( ${#missing_paths[@]} > 0 )); then
+    if (( $(array_count missing_paths) > 0 )); then
       {
         printf 'Missing required installed path(s) after Windows smoke install:%s\n' " ${missing_paths[*]}"
         find "$INSTALL_ROOT" -maxdepth 6 -type f | sort || true
@@ -1202,7 +1519,10 @@ payload["artifactInstallDpkgLogPath"] = str(dpkg_log_path)
 payload["artifactInstallLaunchCapturePath"] = str(installed_launch_capture_path)
 payload["artifactInstallWrapperCapturePath"] = str(wrapper_capture_path)
 payload["artifactInstallDesktopEntryCapturePath"] = str(desktop_entry_capture_path)
-payload["artifactPath"] = str(artifact_path)
+payload["artifactPath"] = artifact_path.name
+payload["artifactPathDisclosure"] = "file_name_only"
+payload["artifactFileName"] = artifact_path.name
+payload["artifactRelativePath"] = artifact_path.name
 receipt_path.write_text(json.dumps(payload, indent=2) + "\n", encoding="utf-8")
 PY
 }
@@ -1381,6 +1701,7 @@ import datetime as dt
 import hashlib
 import json
 import pathlib
+import re
 import sys
 
 packet_path = pathlib.Path(sys.argv[1])
@@ -1400,21 +1721,55 @@ if receipt_path.exists():
     receipt = json.loads(receipt_path.read_text(encoding="utf-8-sig"))
 
 log_text = log_path.read_text(encoding="utf-8", errors="replace") if log_path.exists() else ""
-tail_lines = log_text.strip().splitlines()[-40:]
-tail_text = "\n".join(tail_lines)
+raw_tail_lines = log_text.strip().splitlines()[-40:]
+raw_tail_text = "\n".join(raw_tail_lines)
 fingerprint_source = "|".join(
     [
         app_key,
         rid,
         str(exit_code),
         receipt.get("readyCheckpoint", ""),
-        tail_text,
+        raw_tail_text,
     ]
 )
 fingerprint = hashlib.sha256(fingerprint_source.encode("utf-8")).hexdigest()[:16]
 
+user_profile_path_patterns = (
+    (re.compile(r"/home/[A-Za-z0-9_.-]+/"), "<redacted:linux-user-profile>/"),
+    (re.compile(r"/Users/[A-Za-z0-9_.-]+/"), "<redacted:macos-user-profile>/"),
+    (
+        re.compile(
+            r"(?i)(?:[A-Z]:[\\/])(?:Users|Documents and Settings)[\\/]"
+            r"[^\\/\s\"'<>]+[\\/]"
+        ),
+        "<redacted:windows-user-profile>/",
+    ),
+)
+
+
+def redact_user_profile_paths(value: str) -> str:
+    redacted = value
+    for pattern, replacement in user_profile_path_patterns:
+        redacted = pattern.sub(lambda _match, marker=replacement: marker, redacted)
+    return redacted
+
+
+tail_lines = [redact_user_profile_paths(line) for line in raw_tail_lines]
+log_tail_redaction_applied = tail_lines != raw_tail_lines
+
 platform = "windows" if rid.startswith("win-") else "linux" if rid.startswith("linux-") else "macos" if rid.startswith("osx-") else "unknown"
 arch = "arm64" if rid.endswith("arm64") else "x64" if rid.endswith("x64") else "x86" if rid.endswith("x86") else "unknown"
+host_process_path = str(receipt.get("processPath") or "").strip()
+normalized_process_path = host_process_path.replace("\\", "/").rstrip("/")
+portable_process_path = normalized_process_path.rsplit("/", 1)[-1].strip() if normalized_process_path else None
+normalized_artifact_path = str(artifact_path or "").strip().replace("\\", "/").rstrip("/")
+artifact_path_parts = [part for part in normalized_artifact_path.split("/") if part]
+artifact_file_name = artifact_path_parts[-1] if artifact_path_parts else ""
+artifact_parent_name = artifact_path_parts[-2].casefold() if len(artifact_path_parts) > 1 else ""
+artifact_shelf_token = artifact_parent_name if artifact_parent_name in {"files"} else ""
+artifact_relative_path = f"{artifact_shelf_token}/{artifact_file_name}" if artifact_shelf_token else artifact_file_name
+artifact_path_disclosure = "artifact_shelf_relative_path" if artifact_shelf_token else "file_name_only"
+startup_receipt_name = receipt_path.name
 
 packet = {
     "signalClass": "release_smoke_start_failure",
@@ -1426,15 +1781,23 @@ packet = {
     "channel": receipt.get("channelId", channel_hint),
     "version": receipt.get("version", version_hint),
     "verificationHostClass": host_class,
-    "artifactPath": artifact_path,
+    "artifactPath": artifact_relative_path,
+    "artifactPathDisclosure": artifact_path_disclosure,
+    "artifactFileName": artifact_file_name,
+    "artifactRelativePath": artifact_relative_path,
     "artifactSha256": artifact_sha,
-    "startupReceiptPath": str(receipt_path),
+    "startupReceiptPath": startup_receipt_name,
+    "startupReceiptPathDisclosure": "file_name_only",
+    "startupReceiptName": startup_receipt_name,
     "startupReceiptFound": receipt_path.exists(),
     "readyCheckpoint": receipt.get("readyCheckpoint"),
-    "processPath": receipt.get("processPath"),
+    "processPath": portable_process_path,
+    "processPathDisclosure": "file_name_only" if portable_process_path else "unavailable",
     "exitCode": exit_code,
     "crashFingerprint": fingerprint,
     "logTail": tail_lines,
+    "logTailRedaction": "known_user_profile_paths",
+    "logTailRedactionApplied": log_tail_redaction_applied,
     "capturedAtUtc": dt.datetime.now(dt.timezone.utc).isoformat().replace("+00:00", "Z"),
     "oodaRecommendation": "freeze_or_fix_before_promotion",
 }
@@ -1460,6 +1823,27 @@ payload = json.loads(receipt_path.read_text(encoding="utf-8-sig"))
 if not isinstance(payload, dict):
     raise SystemExit(0)
 
+host_process_path = str(payload.get("processPath") or "").strip()
+if host_process_path:
+    normalized_process_path = host_process_path.replace("\\", "/").rstrip("/")
+    process_file_name = normalized_process_path.rsplit("/", 1)[-1].strip()
+    payload["processPath"] = process_file_name or "<redacted:process-path>"
+    payload["processPathDisclosure"] = "file_name_only"
+
+host_artifact_path = str(payload.get("artifactPath") or "").strip()
+if host_artifact_path:
+    normalized_artifact_path = host_artifact_path.replace("\\", "/").rstrip("/")
+    artifact_path_parts = [part for part in normalized_artifact_path.split("/") if part]
+    artifact_file_name = artifact_path_parts[-1] if artifact_path_parts else ""
+    artifact_parent_name = artifact_path_parts[-2].casefold() if len(artifact_path_parts) > 1 else ""
+    artifact_shelf_token = artifact_parent_name if artifact_parent_name in {"files"} else ""
+    artifact_relative_path = f"{artifact_shelf_token}/{artifact_file_name}" if artifact_shelf_token else artifact_file_name
+    artifact_path_disclosure = "artifact_shelf_relative_path" if artifact_shelf_token else "file_name_only"
+    payload["artifactPath"] = artifact_relative_path or "<redacted:artifact-path>"
+    payload["artifactPathDisclosure"] = artifact_path_disclosure
+    payload["artifactFileName"] = artifact_file_name
+    payload["artifactRelativePath"] = artifact_relative_path
+
 payload["status"] = status_value
 receipt_path.write_text(json.dumps(payload, indent=2) + "\n", encoding="utf-8")
 PY
@@ -1484,6 +1868,27 @@ raise SystemExit(0 if ready else 1)
 PY
 }
 
+attach_windows_execution_environment_to_receipt() {
+  if [[ "$RID" != win-* || ! -s "$RECEIPT_PATH" ]]; then
+    return 0
+  fi
+
+  local execution_environment="$WINDOWS_EXECUTION_ENVIRONMENT"
+  local evidence_source="$WINDOWS_NATIVE_HOST_EVIDENCE_SOURCE"
+  if [[ "$(receipt_status 2>/dev/null || true)" == "skipped" ]]; then
+    execution_environment="not_executed"
+    evidence_source="incompatible_host_skip"
+  fi
+
+  "$PYTHON_BIN" "$SCRIPT_DIR/annotate-windows-startup-smoke-receipt.py" \
+    --receipt "$RECEIPT_PATH" \
+    --execution-environment "$execution_environment" \
+    --runner "$WINDOWS_EXECUTION_RUNNER" \
+    --host-platform "$WINDOWS_EXECUTION_HOST_PLATFORM" \
+    --host-kernel "$WINDOWS_EXECUTION_HOST_KERNEL" \
+    --evidence-source "$evidence_source"
+}
+
 attach_release_artifact_metadata_to_receipt() {
   local artifact_sha
   artifact_sha="$(sha256_file "$ARTIFACT_PATH")"
@@ -1505,12 +1910,23 @@ payload = json.loads(receipt_path.read_text(encoding="utf-8-sig"))
 if not isinstance(payload, dict):
     raise SystemExit(0)
 
-artifact_file_name = artifact_path.name
-artifact_relative_path = artifact_file_name
-if artifact_path.parent.name:
-    artifact_relative_path = f"{artifact_path.parent.name}/{artifact_file_name}"
+host_process_path = str(payload.get("processPath") or "").strip()
+if host_process_path:
+    normalized_process_path = host_process_path.replace("\\", "/").rstrip("/")
+    process_file_name = normalized_process_path.rsplit("/", 1)[-1].strip()
+    payload["processPath"] = process_file_name or "<redacted:process-path>"
+    payload["processPathDisclosure"] = "file_name_only"
 
-payload["artifactPath"] = str(artifact_path)
+normalized_artifact_path = str(artifact_path).strip().replace("\\", "/").rstrip("/")
+artifact_path_parts = [part for part in normalized_artifact_path.split("/") if part]
+artifact_file_name = artifact_path_parts[-1] if artifact_path_parts else ""
+artifact_parent_name = artifact_path_parts[-2].casefold() if len(artifact_path_parts) > 1 else ""
+artifact_shelf_token = artifact_parent_name if artifact_parent_name in {"files"} else ""
+artifact_relative_path = f"{artifact_shelf_token}/{artifact_file_name}" if artifact_shelf_token else artifact_file_name
+artifact_path_disclosure = "artifact_shelf_relative_path" if artifact_shelf_token else "file_name_only"
+
+payload["artifactPath"] = artifact_relative_path
+payload["artifactPathDisclosure"] = artifact_path_disclosure
 payload["artifactFileName"] = artifact_file_name
 payload["fileName"] = artifact_file_name
 payload["artifactRelativePath"] = artifact_relative_path
@@ -1527,6 +1943,7 @@ main() {
 
   case "$RID" in
     win-*)
+      detect_windows_execution_lane
       run_windows_smoke
       ;;
     linux-*)
@@ -1559,7 +1976,15 @@ main() {
 status=0
 main || status=$?
 
-if [[ "$status" -ne 0 ]] && receipt_has_ready_checkpoint; then
+mouse_first_journey_validation_failed=0
+if ! requested_mouse_first_journey_passes; then
+  mouse_first_journey_validation_failed=1
+  if [[ "$status" -eq 0 ]]; then
+    status=1
+  fi
+fi
+
+if [[ "$status" -ne 0 && "$mouse_first_journey_validation_failed" -eq 0 ]] && receipt_has_ready_checkpoint; then
   {
     printf 'startup smoke process exited %s after emitting ready checkpoint; accepting receipt-backed pass for %s %s\n' "$status" "$APP_KEY" "$RID"
   } | tee -a "$LOG_PATH" >&2
@@ -1573,8 +1998,9 @@ if [[ "$status" -ne 0 ]]; then
   exit "$status"
 fi
 
-attach_release_artifact_metadata_to_receipt
-if [[ "$(receipt_status 2>/dev/null || true)" == "skipped" ]]; then
+  attach_release_artifact_metadata_to_receipt
+  attach_windows_execution_environment_to_receipt
+  if [[ "$(receipt_status 2>/dev/null || true)" == "skipped" ]]; then
   echo "startup smoke skipped for $APP_KEY $RID; receipt: $RECEIPT_PATH"
   exit 0
 fi

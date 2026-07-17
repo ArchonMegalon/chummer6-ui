@@ -1,6 +1,6 @@
 # Chummer6 At The Table
 
-Start with the person at the table, not the system diagram. Chummer6 is strongest when a player can build a runner, understand the choices, give that runner a past, and then watch the campaign remember the consequences without stealing authority from the GM.
+A Chummer6 campaign begins with a runner the player understands and grows through consequences the table can trust. The workbench gives that runner shape; the campaign layer is designed to remember what follows without taking authority away from the GM.
 
 ## In One Sentence
 
@@ -8,17 +8,15 @@ Chummer6 turns live table pressure, between-session faction motion, and public-s
 
 ## Where It Fits
 
-Use this as the presentation story for the workbench plus campaign layer. Some surfaces are live and some are target shape; the guide keeps that boundary visible without making the reader decode internal release evidence.
+The downloadable workbench and the campaign-layer direction share one story, but not one delivery status. The Status and Download pages describe the current public release. Table Pulse, Runner Passport, GM Cockpit, remote reactions, and the living newsroom remain governed campaign-layer direction unless their own current-stage note records a shipped slice.
 
 ## What Belongs Where
 
-Chummer6 should read like one product with a strong core and a few ambitious expansion bets. If a user needs it to build, understand, run, remember, or return to a campaign, it belongs in the product story. The future shelf is only for the larger bets that still need distance from today’s download.
+Chummer6 is one product with a strong workbench core and a few ambitious campaign bets. Tools that help a user build, understand, run, remember, or return to a campaign belong in the same story, while larger bets keep honest distance from today’s download.
 
-The core story stays anchored in Workbench, ALICE, Origin Dossier, NEXUS-PAN, Ready for Tonight, Runner Passport, Knowledge Fabric, and Table Pulse and GM Cockpit. Those are the surfaces that make Chummer feel useful before it feels ambitious.
+The core product story connects Workbench, ALICE, Origin Dossier, NEXUS-PAN, Ready for Tonight, Runner Passport, Knowledge Fabric, and Table Pulse and GM Cockpit. This map explains how the pieces relate; the current-stage notes and release pages carry availability claims.
 
-Keep Karma Forge, Black Ledger, Runbook Press and Creator OS, Community Hub and Jackpoint, and Runsite, Ghostwire, and Anarchy on the future shelf for now. They matter, but they should not be the first burden on a new visitor.
-
-A few labels should stay quiet: Onramp, Quicksilver as a headline Horizon, and Local Co-Processor as a public promise. They are starter help, navigation polish, or infrastructure, so the app should absorb them instead of selling them as separate ideas.
+The larger expansion shelf holds Karma Forge, Black Ledger, Runbook Press and Creator OS, Community Hub and Jackpoint, and Runsite, Ghostwire, and Anarchy. They matter, but they are not the first promise made to a new visitor.
 
 
 ## Why You Would Open This
@@ -38,11 +36,20 @@ system is dramatic without becoming fake authority:
 
 The best version reads as one connected play loop, not as separate modules:
 
-1. **Table Pulse Core**: heat domains, thresholds, recipient packets, GM adjudication.
+1. **Table Pulse Live Core**: heat domains, thresholds, recipient packets, GM adjudication.
 2. **Living World Engagement**: inbox, rumor market, standing orders, Runner Passport.
 3. **Remote Reaction And Opt-Out Safety**: quiet hours, suppression record, consent defaults, remote mini-games.
 4. **Pulse Director Control Surface**: GM cockpit, pressure economy, after-action projection, review suggestions.
 5. **Player-Facing Action Layer**: sharp player action cards, stronger Passport framing, faction role paths, opposition clocks, living newsroom framing.
+
+## A Separate Private Aftermath Rail
+
+Table Pulse Aftermath is private coaching and recap support, not another heat or scoring system. It may share consent records and receipts with Table Pulse Live, but its observations do not become world truth, moderation truth, player rankings, or automatic campaign consequences.
+
+Live handles heat, delivery policy, bounded reactions, and GM adjudication.
+
+Aftermath handles GM-private recap, pacing reflection, and optional player-safe debrief artifacts.
+
 
 ## Product Scenes
 
@@ -70,59 +77,44 @@ Origin Dossier and ALICE bring a user-first lane into the stack: approved canon,
 
 Videos should feel authored and cinematic, but they still explain the product rather than performing as evidence. Only narrated, captioned clips belong in this reader-facing list.
 
-What stays visible:
+In the public guide:
 
-- use clear voice direction and cinematic narration for public scenes
-- keep captions beside every linked video
-- treat origin, ALICE, Table Pulse, and product-thread videos as explanation surfaces
-- keep production labels out of the reader-facing story
+- Public scenes use clear voice direction and cinematic narration.
+- Every linked video includes a caption link.
+- Origin, ALICE, Table Pulse, and product-thread videos explain the product; they do not prove delivery.
+- Production labels stay outside the reader-facing story.
 
-What stays out of the pitch:
+The evidence boundary:
 
-- claim a video has narration when the local file has no audio stream
-- turn captions, logs, or production labels into the product pitch
-- let a rendered scene become rules or release truth
+- A narration claim requires a verified audio stream in the local publishable file.
+- Captions, logs, and production labels are not the product pitch.
+- A rendered scene never becomes rules or release truth.
 
-## Downloads And Support Should Feel Boring
+## Downloads Without Guesswork
 
-Release, updater, Arch/CachyOS packaging, account claiming, and instant help are maintenance lanes. They should make the product feel dependable without becoming another branded surface a new visitor has to decode.
+Distribution and support stay deliberately quiet. The live Status and Download pages remain the authority for platforms, files, checksums, known limits, and support routes.
 
-What a user should be able to rely on:
+The public path today:
 
-- Windows and Linux are the primary public desktop lanes.
-- Arch and CachyOS users get an AUR-compatible source sidecar for the same Linux build.
-- Stable and nightly remain visibly separate, with a predictable morning publish cadence when a build is needed.
-- A downloaded copy can be claimed online; account linking should feel like claiming your copy, not like a detour through a website.
-- Instant help starts with short text, optional show-me video, and guided repair before escalation.
+- The current public shelf covers Windows x64 and Linux x64; platforms not listed on the Download page are outside the supported download scope.
+- Stable availability comes from promoted release metadata, while preview and nightly artifacts remain visibly separate.
+- Advanced Linux users retain an inspectable local source-build path with a reproducible container gate.
+- Arch and CachyOS sidecars remain preview artifacts until the public release metadata explicitly promotes them.
+- Support routes remain discoverable from the live public guide instead of being inferred from roadmap copy.
 
-Keep these as maintenance lanes:
-
-- download catalog
-- AUR sidecar
-- auto-updater
-- install-link callback
-- account claim
-- instant support video library
-- EA channel messaging
-
-Do not present them as:
-
-- a Horizon
-- an internal audit trail
-- a release ceremony
-- an automation showcase
+Downloads, updates, account claim, and support stay in the background as product hygiene—not as a Horizon, a release ceremony, or an automation showcase.
 
 
 ## User-First Entry Arc
 
-The flagship story no longer starts only with table heat. A player can begin with a grounded origin dossier, approve canon, let ALICE use that canon as bounded build-help context, and then carry that identity into Passport, player action cards, and the living-world stack.
+The intended flagship arc no longer starts only with table heat. It begins with a grounded origin dossier, player-approved canon, and bounded ALICE context, then carries that identity toward Passport, player action cards, and the living-world stack.
 
 1. A player starts from Origin Dossier instead of facing a cold chargen sheet.
 2. Approved canon freezes a stable narrative spine before downstream media regenerates.
 3. ALICE uses the approved canon later as bounded context for build help, rules coach follow-up, and GM-steered tradeoff explanation.
 4. Table Pulse, Runner Passport, and the living newsroom then make that runner feel present in a governed city instead of trapped in a one-session character form.
 
-What stays trustworthy:
+The authority line stays visible:
 
 - approved origin canon may shape later ALICE suggestions
 - GM gimmicks and allowances may steer narrative context without becoming auto-applied mechanics
@@ -131,9 +123,9 @@ What stays trustworthy:
 
 ## Origin Dossier And ALICE
 
-Origin Dossier should now read as a flagship base feature: a player enters Chummer as a runner with causes, debts, people, scars, secrets, and unfinished consequences. ALICE keeps that story connected to rules explanation without letting prose silently mutate build truth.
+At flagship depth, Origin Dossier lets a player enter Chummer as a runner with causes, debts, people, scars, secrets, and unfinished consequences. ALICE can keep that story connected to grounded explanation without letting prose silently mutate build truth.
 
-A player should leave this lane with:
+A complete experience connects:
 
 - origin draft and canon approval
 - blank-state start and finished-runner additive entry points
@@ -142,26 +134,26 @@ A player should leave this lane with:
 - bounded GM gimmick steering as advisory context
 - later ALICE follow-up that references approved canon instead of inventing a new story spine
 
-ALICE keeps the line tight by doing the following:
+ALICE stays grounded in the following ways:
 
-- ALICE owns the native desktop workbench for Build Help, Rules Coach, and Origin Dossier.
+- ALICE’s shipped MVP supplies grounded desktop build assistance; broader coaching and Origin Dossier integration remain in hardening.
 - Origin Dossier may start before chargen or from an already-finished runner without forcing mechanics back into edit mode.
 - The approved origin canon feeds later ALICE explanations about tradeoffs, upgrades, and risk.
 - GM allowances may appear in ALICE context and output, but they must not silently rewrite mechanics.
-- Narration lanes should expose voice posture as an explicit user choice, not an invisible provider default.
+- The narration target exposes voice posture as an explicit user choice, not an invisible provider default.
 - The lane is strongest when narrative continuity and rules explanation stay on the same governed rail.
 
-That still does not mean:
+The boundary excludes:
 
-- origin prose becomes mechanical truth by itself
-- downstream portrait or video providers become rules authority
-- ALICE is an autonomous build oracle
+- turning origin prose into mechanical truth
+- letting portrait or video providers become rules authority
+- presenting ALICE as an autonomous build oracle
 
 ## GM Cockpit And Steering
 
 GM Cockpit is the calm authority surface for steering Table Pulse, origin-dossier context, remote reactions, and public-safe fallout without turning a maintenance list into the product experience.
 
-A GM should be able to trust these rails immediately:
+The cockpit brings these decisions together:
 
 - pulse policy and heat thresholds
 - recipient reasoning, quiet-hours, mute, and opt-out posture
@@ -170,49 +162,49 @@ A GM should be able to trust these rails immediately:
 - public-safe release controls before any newsroom or public map projection
 - receipt trail, override reason, and what remains manual review
 
-From origin story to table call, the intended flow is:
+From origin story to table call, the review path is:
 
-1. GM steer may come before the origin story so it can shape tone, faction pressure, and allowed context.
-2. The fixed SR4 troll decker test gimmick is a clinic contact that fronts restricted starter ware and one over-availability deck part.
-3. ALICE may explain how that changes story pressure, legality posture, availability risk, and ware consequences.
-4. The cockpit must keep those allowances advisory until a GM or player explicitly applies legal mechanics in the normal character workflow.
+1. A GM steer may come before the origin story so it can shape tone, faction pressure, and allowed context.
+2. A clearly labeled campaign allowance can give ALICE context for explaining story pressure, legality, availability, and ware consequences.
+3. ALICE presents the tradeoffs and cites the active rule environment without treating the allowance as an automatic edit.
+4. The normal character workflow remains the only place a GM or player explicitly applies legal mechanical changes.
 
-The visual language should read as:
+Its visual language:
 
 - control room, action board, pressure map, and dossier drawer rather than admin table
 - dense but scannable cards for heat, consent, receipt, and consequence state
 - one strong primary action for adjudicate, approve, suppress, or request revision
 
-That still does not permit:
+The cockpit never authorizes:
 
-- the GM cockpit is an autonomous simulator
-- GM gimmicks auto-apply ware, money, gear, qualities, or availability exceptions
-- public media can bypass private campaign posture or GM approval
+- turning the GM cockpit into an autonomous simulator
+- auto-applying ware, money, gear, qualities, or availability exceptions from GM guidance
+- letting public media bypass private campaign posture or GM approval
 
 
 ## Hero Surfaces
 
 ### Player Action Cards
 
-Player Action Cards is the quick player-facing response surface. It should feel urgent, tactical, dense but readable, and connected to the city, not just the session transcript. A reader should immediately grasp current signals, heat pressure, reaction windows, consequence lanes, and validated follow-through.
+Player Action Cards is the quick player-facing response surface: urgent, tactical, dense but readable, and connected to the city, not just the session transcript. It brings current signals, heat pressure, reaction windows, consequence lanes, and validated follow-through into one legible view.
 
 ### Runner Passport
 
-Runner Passport is the identity and continuity surface. It should feel personal, earned, faction-aware, and session-to-session. A reader should immediately grasp standing, role path, recent receipts, unlocked pressure lanes, and social and faction context.
+Runner Passport is the identity and continuity surface: personal, earned, faction-aware, and session-to-session. It brings standing, role path, recent receipts, unlocked pressure lanes, and social and faction context into one legible view.
 
 ### GM Cockpit
 
-GM Cockpit is the authority surface. It should feel calm, sovereign, and readable under pressure. A reader should immediately grasp pulse policy, heat thresholds, recipient routes, mini-game approvals, quiet-hours and opt-out posture, and public-safe release controls.
+GM Cockpit is the authority surface: calm, sovereign, and readable under pressure. It brings pulse policy, heat thresholds, recipient routes, mini-game approvals, quiet-hours and opt-out posture, and public-safe release controls into one legible view.
 
 ### Living Newsroom
 
-Living Newsroom is the public-safe consequence layer. It should feel cinematic, reactive, and consequence-driven. A reader should immediately grasp aftermath, faction motion, opposition clocks, and GM-approved public fallout.
+Living Newsroom is the public-safe consequence layer: cinematic, reactive, and consequence-driven. It brings aftermath, faction motion, opposition clocks, and GM-approved public fallout into one legible view.
 
-It should never imply:
+Its authority boundary:
 
-- private table truth leaked automatically
-- the event was invented after the fact
-- media became truth by itself
+- leaking private table truth automatically
+- inventing an event after the fact
+- letting media become truth by itself
 
 ## Core Play Loop
 
@@ -232,13 +224,13 @@ If policy and consent allow it, the pulse packet becomes player-facing or factio
 
 ### 3. Response
 
-Players or factions respond inside governed rails.
+Players or factions respond inside governed rails. Their choices create receipts and proposals; only GM adjudication can apply campaign consequences.
 
-- advance Passport standing
-- change a role path
-- change faction heat
-- nudge opposition clocks
-- create after-action record
+- propose Passport standing movement
+- offer a role-path choice
+- propose a faction-pressure change
+- propose opposition-clock movement
+- create an after-action receipt
 
 ### 4. Fallout
 
@@ -255,7 +247,7 @@ A visitor should be able to picture an action board, not an admin form.
 The effect comes from:
 
 - seeing live pressure become playable
-- watching a player action card cascade into faction consequences
+- watching an adjudicated player action card cascade into faction consequences
 - seeing Passport identity, role path, and city pressure connect
 - watching a remote reaction mini-game end in a newsroom or public-safe city fallout beat
 
@@ -272,10 +264,10 @@ The flagship version should let a reader immediately picture the best-case loop:
 
 1. a run spikes heat and the GM approves a bounded pulse packet
 2. a player receives an action card with one sharp risky choice and one safer choice
-3. the choice resolves into Passport movement, faction pressure, and a receipt trail
+3. the choice creates a receipt and a bounded consequence proposal for GM adjudication
 4. the city later reflects that action through rumor, newsroom fallout, or public-safe consequence
 
-## Promises We Should Not Break
+## Promises That Hold
 
 - private campaigns default silent
 - notifications are opt-in
@@ -284,9 +276,9 @@ The flagship version should let a reader immediately picture the best-case loop:
 - receipts outrank summaries
 - BeHuman and Answerly stay adapter layers
 
-## What Good Looks Like
+## Flagship Launch Bar
 
-Call the stack ready only when all of the following are true:
+The campaign layer earns flagship status only when all of the following are true:
 
 1. player action cards, Passport, and GM cockpit all exist as coherent product surfaces.
 2. Remote reaction mini-games are real moments a player can understand and answer.
@@ -298,25 +290,20 @@ Call the stack ready only when all of the following are true:
 
 ### ALICE
 
-Current status: Shipped native desktop workbench with build help, rules coach, and origin-first chargen handoff.
+**Current stage:** Shipped MVP for grounded desktop build assistance; broader coaching and origin integration remain in hardening.
 
-Why a reader should care: This is the closest user-first entry into Chummer’s broader living-world stack.
+Grounded desktop assistance is the closest available entry into Chummer’s broader living-world direction.
 
-Connection here: Origin Dossier creates approved canon; ALICE later uses that canon as bounded follow-up context for build help, rules coaching, and GM-steered explanation.
+The governed target lets ALICE use player-approved origin canon as bounded follow-up context for build help, rules coaching, and GM-steered explanation.
 
 ### Origin Dossier
 
-Current status: Presentation-critical base feature for origin canon, dossier media, narration, and ALICE handoff.
+**Current stage:** Signed-in MVP available today; the ebook, portrait, chosen-voice audio, cinematic, and ALICE handoff sequence remains in flagship hardening.
 
-Why a reader should care: It gives a casual visitor the immediate wow: this is not only a rules editor, it can make the life behind the stats matter.
+It gives a casual visitor the immediate wow: this is not only a rules editor, it can make the life behind the stats matter.
 
-Connection here: The approved origin becomes the narrative spine that ALICE, Runner Passport, and campaign follow-through can reference without inventing new truth.
+The governed target makes approved origin canon the narrative spine that ALICE, Runner Passport, and campaign follow-through can reference without inventing new truth.
 
-## Where This Comes From
+## The Authority Line
 
-This guide follows the Chummer6 design canon and the public-guide source set. Treat it as a product guide, not as a rules engine or an unbounded release promise.
-
-- TABLE_PULSE_LIVING_WORLD_STACK_20260523.md
-- TABLE_PULSE_LIVING_WORLD_DRAMA6_BRIEF_20260523.md
-- ORIGIN_DOSSIER_ALICE_GM_GIMMICK_E2E_GATE.md
-- horizons/alice.md
+This is a product guide, not an availability guarantee. The current Status and Download pages are the authority for what a visitor can install today; campaign-layer scenes describe governed product direction unless a current-stage note says otherwise.

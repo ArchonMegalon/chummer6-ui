@@ -1,15 +1,7 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-repo_root_physical="$(cd "$(dirname "${BASH_SOURCE[0]}")/../../.." && pwd -P)"
-repo_root_alias_candidate="${CHUMMER_UI_REPO_ROOT_ALIAS:-/docker/chummercomplete/chummer6-ui}"
-repo_root="$repo_root_physical"
-if [[ -n "$repo_root_alias_candidate" && -d "$repo_root_alias_candidate" ]]; then
-  alias_physical="$(cd "$repo_root_alias_candidate" && pwd -P)"
-  if [[ "$alias_physical" == "$repo_root_physical" ]]; then
-    repo_root="$(cd -L "$repo_root_alias_candidate" && pwd -L)"
-  fi
-fi
+repo_root="$(cd "$(dirname "${BASH_SOURCE[0]}")/../../.." && pwd -P)"
 cd "$repo_root"
 
 receipt_path="$repo_root/.codex-studio/published/SR4_DESKTOP_WORKFLOW_PARITY.generated.json"
@@ -41,9 +33,8 @@ mkdir -p "$(dirname "$receipt_path")"
 mkdir -p "$lock_dir"
 exec 9>"$workflow_family_chain_lock_path"
 flock 9
-workflow_gate_build_exit=0
 workflow_gate_exit=0
-dotnet test --project Chummer.Tests/Chummer.Tests.csproj --no-restore --filter "FullyQualifiedName~WorkflowParityGateTests" -v minimal >/dev/null || workflow_gate_exit=$?
+bash "$repo_root/scripts/ai/milestones/run-workflow-parity-gate-tests.sh" "$repo_root" >/dev/null || workflow_gate_exit=$?
 execution_exit=0
 verification_exit=0
 materializer_exit=0

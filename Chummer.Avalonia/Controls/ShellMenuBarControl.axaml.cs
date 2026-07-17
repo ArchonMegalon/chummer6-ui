@@ -72,12 +72,12 @@ public partial class ShellMenuBarControl : UserControl, IMenuBarSurface
             string menuId = GetMenuId(button);
             bool known = knownMenus.Contains(menuId);
             bool hasCommands = _commandsByMenuId.TryGetValue(menuId, out IReadOnlyList<MenuCommandItem>? commands) && commands.Count > 0;
-            bool active = known && string.Equals(openMenuId, menuId, StringComparison.Ordinal);
+            bool active = known && hasCommands && string.Equals(openMenuId, menuId, StringComparison.Ordinal);
 
             button.IsVisible = known;
-            button.IsEnabled = known;
+            button.IsEnabled = known && hasCommands;
             button.Classes.Set("active-menu", active);
-            RebuildMenuItemCommands(button, commandsEnabled: known && hasCommands);
+            RebuildMenuItemCommands(button, commandsAvailable: known && hasCommands);
         }
 
     }
@@ -106,6 +106,11 @@ public partial class ShellMenuBarControl : UserControl, IMenuBarSurface
             return;
         }
 
+        if (!HasVisibleMenuCommands(menuId))
+        {
+            return;
+        }
+
         _openMenuId = menuId;
         MenuSelected?.Invoke(this, menuId);
     }
@@ -126,13 +131,14 @@ public partial class ShellMenuBarControl : UserControl, IMenuBarSurface
         MenuCommandSelected?.Invoke(this, commandId);
     }
 
-    private void RebuildMenuItemCommands(MenuItem rootMenuItem, bool commandsEnabled)
+    private void RebuildMenuItemCommands(MenuItem rootMenuItem, bool commandsAvailable)
     {
         rootMenuItem.Items.Clear();
 
         string menuId = GetMenuId(rootMenuItem);
         if (!_commandsByMenuId.TryGetValue(menuId, out IReadOnlyList<MenuCommandItem>? commands) || commands.Count == 0)
         {
+            rootMenuItem.Items.Add(CreatePlaceholderMenuItem(_isBusy));
             return;
         }
 
@@ -142,7 +148,7 @@ public partial class ShellMenuBarControl : UserControl, IMenuBarSurface
             {
                 Header = command.Label,
                 Tag = command.Id,
-                IsEnabled = commandsEnabled && command.Enabled
+                IsEnabled = commandsAvailable && command.Enabled
             };
             commandItem.Classes.Add("menu-command");
             if (command.IsPrimary)
@@ -169,6 +175,21 @@ public partial class ShellMenuBarControl : UserControl, IMenuBarSurface
 
     private static string GetMenuId(MenuItem button)
         => button.Tag?.ToString()?.Trim().ToLowerInvariant() ?? string.Empty;
+
+    private bool HasVisibleMenuCommands(string menuId)
+        => _commandsByMenuId.TryGetValue(menuId, out IReadOnlyList<MenuCommandItem>? commands)
+            && commands.Count > 0;
+
+    private static MenuItem CreatePlaceholderMenuItem(bool isBusy)
+    {
+        MenuItem item = new()
+        {
+            Header = isBusy ? "Loading actions..." : "No actions available",
+            IsEnabled = false
+        };
+        item.Classes.Add("menu-command");
+        return item;
+    }
 }
 
 public sealed record MenuBarState(

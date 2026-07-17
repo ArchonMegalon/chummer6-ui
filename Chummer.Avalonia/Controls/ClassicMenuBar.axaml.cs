@@ -1,4 +1,5 @@
 using Avalonia.Controls;
+using Avalonia.Input;
 using Avalonia.Interactivity;
 using Avalonia.Markup.Xaml;
 using Chummer.Presentation.Overview;
@@ -10,6 +11,7 @@ public partial class ClassicMenuBar : UserControl, IMenuBarSurface
 {
     private readonly IReadOnlyList<MenuItem> _rootMenuItems;
     private readonly Dictionary<string, IReadOnlyList<MenuCommandItem>> _commandsByMenuId = new(StringComparer.Ordinal);
+    private bool _isBusy;
 
     public ClassicMenuBar()
     {
@@ -34,6 +36,7 @@ public partial class ClassicMenuBar : UserControl, IMenuBarSurface
     public void SetState(MenuBarState state)
     {
         _commandsByMenuId.Clear();
+        _isBusy = state.IsBusy;
         foreach ((string menuId, IReadOnlyList<MenuCommandItem> commands) in state.MenuCommandsByMenuId)
         {
             _commandsByMenuId[menuId] = commands;
@@ -49,9 +52,11 @@ public partial class ClassicMenuBar : UserControl, IMenuBarSurface
         {
             string menuId = GetMenuId(button);
             bool known = knownMenus.Contains(menuId);
+            bool hasCommands = _commandsByMenuId.TryGetValue(menuId, out IReadOnlyList<MenuCommandItem>? commands)
+                && commands.Count > 0;
             button.IsVisible = known;
-            button.IsEnabled = known;
-            button.Classes.Set("active-menu", string.Equals(state.OpenMenuId, menuId, StringComparison.Ordinal));
+            button.IsEnabled = known && hasCommands;
+            button.Classes.Set("active-menu", known && hasCommands && string.Equals(state.OpenMenuId, menuId, StringComparison.Ordinal));
             RebuildMenuCommands(button);
         }
 
@@ -59,13 +64,14 @@ public partial class ClassicMenuBar : UserControl, IMenuBarSurface
 
     private void RootMenuItem_OnSubmenuOpened(object? sender, RoutedEventArgs e) => SelectRootMenuItem(sender);
     private void RootMenuItem_OnClick(object? sender, RoutedEventArgs e) => SelectRootMenuItem(sender);
+    private void RootMenuItem_OnPointerPressed(object? sender, PointerPressedEventArgs e) => SelectRootMenuItem(sender);
 
     private void SelectRootMenuItem(object? sender)
     {
         if (sender is MenuItem item)
         {
             string menuId = GetMenuId(item);
-            if (!string.IsNullOrWhiteSpace(menuId))
+            if (!string.IsNullOrWhiteSpace(menuId) && HasVisibleMenuCommands(menuId))
             {
                 MenuSelected?.Invoke(this, menuId);
             }
@@ -82,12 +88,14 @@ public partial class ClassicMenuBar : UserControl, IMenuBarSurface
 
     private void RebuildMenuCommands(MenuItem rootMenuItem)
     {
+        rootMenuItem.Items.Clear();
+
         if (!_commandsByMenuId.TryGetValue(GetMenuId(rootMenuItem), out IReadOnlyList<MenuCommandItem>? commands) || commands.Count == 0)
         {
+            rootMenuItem.Items.Add(CreatePlaceholderMenuItem(_isBusy));
             return;
         }
 
-        rootMenuItem.Items.Clear();
         foreach (MenuCommandItem command in commands)
         {
             MenuItem item = new()
@@ -104,4 +112,19 @@ public partial class ClassicMenuBar : UserControl, IMenuBarSurface
 
     private static string GetMenuId(MenuItem item)
         => item?.Tag?.ToString()?.Trim().ToLowerInvariant() ?? string.Empty;
+
+    private bool HasVisibleMenuCommands(string menuId)
+        => _commandsByMenuId.TryGetValue(menuId, out IReadOnlyList<MenuCommandItem>? commands)
+            && commands.Count > 0;
+
+    private static MenuItem CreatePlaceholderMenuItem(bool isBusy)
+    {
+        MenuItem item = new()
+        {
+            Header = isBusy ? "Loading actions..." : "No actions available",
+            IsEnabled = false
+        };
+        item.Classes.Add("menu-command");
+        return item;
+    }
 }

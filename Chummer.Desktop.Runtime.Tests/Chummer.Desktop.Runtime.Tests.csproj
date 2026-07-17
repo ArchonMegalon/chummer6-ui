@@ -18,6 +18,7 @@
     <ProjectReference Include="..\Chummer.Desktop.Runtime\Chummer.Desktop.Runtime.csproj" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="DesktopOriginWizardDialogSourceTests.cs" />
     <Compile Include="..\Chummer.Tests\DesktopPreferenceRuntimeTests.cs" Link="DesktopPreferenceRuntimeTests.cs" />
     <Compile Include="GlobalUsings.cs" />
     <Compile Include="..\Chummer.Tests\DesktopStartupSmokeRuntimeTests.cs" Link="DesktopStartupSmokeRuntimeTests.cs" />

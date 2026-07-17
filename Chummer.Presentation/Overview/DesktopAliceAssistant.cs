@@ -352,9 +352,11 @@ internal static class DesktopAliceAssistant
             "complexforms" => BuildPlan("complexforms", "Complex Forms", AliceSupportMode.QuickAddApply),
             "initiationgrades" => BuildPlan("initiationgrades", "Initiation / Submersion", AliceSupportMode.QuickAddApply),
             "spirits" => BuildPlan("spirits", "Spirits", AliceSupportMode.QuickAddApply),
+            "sprites" => BuildPlan("sprites", "Sprites", AliceSupportMode.QuickAddApply),
             "critterpowers" => BuildPlan("critterpowers", "Critter Powers", AliceSupportMode.QuickAddApply),
             "aiprograms" => BuildPlan("aiprograms", "Programs", AliceSupportMode.QuickAddApply),
             "vehicles" => BuildPlan("vehicles", "Vehicles", AliceSupportMode.QuickAddApply),
+            "relationships" => BuildPlan("contacts", "Relationships", AliceSupportMode.QuickAddApply),
             "contacts" => BuildPlan("contacts", "Contacts", AliceSupportMode.QuickAddApply),
             "skills" => BuildPlan("skills", "Skills", AliceSupportMode.QuickAddApply),
             "qualities" => BuildPlan("qualities", "Qualities", AliceSupportMode.QuickAddApply),
@@ -478,6 +480,7 @@ internal static class DesktopAliceAssistant
             "complexforms" => BuildComplexFormRequest(optimization),
             "initiationgrades" => BuildInitiationRequest(optimization),
             "spirits" => BuildSpiritRequest(optimization),
+            "sprites" => BuildSpriteRequest(optimization),
             "critterpowers" => BuildCritterPowerRequest(),
             "aiprograms" => BuildMatrixProgramRequest(archetype),
             "vehicles" => BuildVehicleRequest(archetype),
@@ -807,6 +810,9 @@ internal static class DesktopAliceAssistant
 
     private static WorkspaceQuickAddRequest BuildSpiritRequest(string optimization)
         => new(WorkspaceQuickAddKinds.Spirit, "Air Spirit", Category: "Spirit", Source: "Core Rulebook", Force: ResolveScale(optimization, 3, 4, 6), Services: ResolveScale(optimization, 1, 2, 3));
+
+    private static WorkspaceQuickAddRequest BuildSpriteRequest(string optimization)
+        => new(WorkspaceQuickAddKinds.Spirit, "Courier Sprite", Category: "Sprite", Source: "Core Rulebook", Force: ResolveScale(optimization, 3, 4, 6), Services: ResolveScale(optimization, 1, 2, 3));
 
     private static WorkspaceQuickAddRequest BuildCritterPowerRequest()
         => new(WorkspaceQuickAddKinds.CritterPower, "Enhanced Senses", Category: "Critter Power", Source: "Core Rulebook");

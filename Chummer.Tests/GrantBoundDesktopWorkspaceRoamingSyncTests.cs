@@ -4,6 +4,8 @@ using System.Net;
 using System.Net.Http;
 using System.Text;
 using System.Text.Json;
+using System.Threading;
+using System.Threading.Tasks;
 using Chummer.Application.Workspaces;
 using Chummer.Contracts.Characters;
 using Chummer.Contracts.Owners;
@@ -19,12 +21,12 @@ public sealed class GrantBoundDesktopWorkspaceRoamingSyncTests
 {
     private const string ApiBaseUrlEnvironmentVariable = "CHUMMER_API_BASE_URL";
     private const string WebBaseUrlEnvironmentVariable = "CHUMMER_WEB_BASE_URL";
-    private static readonly object EnvironmentLock = new();
+    private static readonly SemaphoreSlim EnvironmentLock = new(1, 1);
 
     [TestMethod]
     public async Task SynchronizeInboundAsync_imports_remote_snapshot_when_local_workspace_is_missing()
     {
-        lock (EnvironmentLock)
+        using (await EnterEnvironmentLockAsync().ConfigureAwait(false))
         {
             string? previousApiBase = Environment.GetEnvironmentVariable(ApiBaseUrlEnvironmentVariable);
             Environment.SetEnvironmentVariable(ApiBaseUrlEnvironmentVariable, "https://hub.example/");
@@ -68,7 +70,9 @@ public sealed class GrantBoundDesktopWorkspaceRoamingSyncTests
 
                 await sync.SynchronizeInboundAsync(owner, CancellationToken.None);
 
-                Assert.IsTrue(store.TryGet(owner, new CharacterWorkspaceId("ws-remote"), out WorkspaceDocument? document));
+                WorkspaceStoreReadResult read = store.Get(owner, new CharacterWorkspaceId("ws-remote"));
+                Assert.IsTrue(read.Success, read.Error);
+                WorkspaceDocument document = read.Value!.Document;
                 Assert.AreEqual("sr6", document.RulesetId);
                 StringAssert.Contains(document.Content, "Remote Runner");
             }
@@ -82,7 +86,7 @@ public sealed class GrantBoundDesktopWorkspaceRoamingSyncTests
     [TestMethod]
     public async Task SynchronizeOutboundAsync_posts_local_snapshot_to_hub()
     {
-        lock (EnvironmentLock)
+        using (await EnterEnvironmentLockAsync().ConfigureAwait(false))
         {
             string? previousApiBase = Environment.GetEnvironmentVariable(ApiBaseUrlEnvironmentVariable);
             Environment.SetEnvironmentVariable(ApiBaseUrlEnvironmentVariable, "https://hub.example/");
@@ -90,10 +94,11 @@ public sealed class GrantBoundDesktopWorkspaceRoamingSyncTests
             {
                 InMemoryWorkspaceStore store = new();
                 OwnerScope owner = new("install-account:subject-alpha");
-                CharacterWorkspaceId workspaceId = store.Create(owner, new WorkspaceDocument(
-                    "<character><name>Local Runner</name></character>",
-                    RulesetId: "sr5",
-                    Format: WorkspaceDocumentFormat.NativeXml));
+                CharacterWorkspaceId workspaceId = store.CreateWorkspaceDocument(owner, new WorkspaceDocument(
+                        "<character><name>Local Runner</name></character>",
+                        RulesetId: "sr5",
+                        Format: WorkspaceDocumentFormat.NativeXml))
+                    .Entry!.Value.Id;
                 RecordingWorkspaceService workspaceService = new()
                 {
                     SummaryByWorkspaceId =
@@ -171,7 +176,7 @@ public sealed class GrantBoundDesktopWorkspaceRoamingSyncTests
     [TestMethod]
     public async Task SynchronizeInboundAsync_noops_without_configured_hub_base_url()
     {
-        lock (EnvironmentLock)
+        using (await EnterEnvironmentLockAsync().ConfigureAwait(false))
         {
             string? previousApiBase = Environment.GetEnvironmentVariable(ApiBaseUrlEnvironmentVariable);
             string? previousWebBase = Environment.GetEnvironmentVariable(WebBaseUrlEnvironmentVariable);
@@ -204,7 +209,7 @@ public sealed class GrantBoundDesktopWorkspaceRoamingSyncTests
     [TestMethod]
     public async Task SynchronizeOutboundAsync_noops_for_guest_install_without_grant()
     {
-        lock (EnvironmentLock)
+        using (await EnterEnvironmentLockAsync().ConfigureAwait(false))
         {
             string? previousApiBase = Environment.GetEnvironmentVariable(ApiBaseUrlEnvironmentVariable);
             Environment.SetEnvironmentVariable(ApiBaseUrlEnvironmentVariable, "https://hub.example/");
@@ -212,10 +217,11 @@ public sealed class GrantBoundDesktopWorkspaceRoamingSyncTests
             {
                 InMemoryWorkspaceStore store = new();
                 OwnerScope owner = new("local-single-user");
-                CharacterWorkspaceId workspaceId = store.Create(owner, new WorkspaceDocument(
-                    "<character><name>Guest Runner</name></character>",
-                    RulesetId: "sr5",
-                    Format: WorkspaceDocumentFormat.NativeXml));
+                CharacterWorkspaceId workspaceId = store.CreateWorkspaceDocument(new WorkspaceDocument(
+                        "<character><name>Guest Runner</name></character>",
+                        RulesetId: "sr5",
+                        Format: WorkspaceDocumentFormat.NativeXml))
+                    .Entry!.Value.Id;
                 RecordingWorkspaceService workspaceService = new()
                 {
                     SummaryByWorkspaceId =
@@ -261,7 +267,7 @@ public sealed class GrantBoundDesktopWorkspaceRoamingSyncTests
     [TestMethod]
     public async Task SynchronizeInboundAsync_pushes_local_snapshot_when_local_copy_is_newer_than_remote()
     {
-        lock (EnvironmentLock)
+        using (await EnterEnvironmentLockAsync().ConfigureAwait(false))
         {
             string? previousApiBase = Environment.GetEnvironmentVariable(ApiBaseUrlEnvironmentVariable);
             Environment.SetEnvironmentVariable(ApiBaseUrlEnvironmentVariable, "https://hub.example/");
@@ -269,10 +275,11 @@ public sealed class GrantBoundDesktopWorkspaceRoamingSyncTests
             {
                 InMemoryWorkspaceStore store = new();
                 OwnerScope owner = new("install-account:subject-alpha");
-                CharacterWorkspaceId workspaceId = store.Create(owner, new WorkspaceDocument(
-                    "<character><name>Local Newer</name></character>",
-                    RulesetId: "sr6",
-                    Format: WorkspaceDocumentFormat.NativeXml));
+                CharacterWorkspaceId workspaceId = store.CreateWorkspaceDocument(owner, new WorkspaceDocument(
+                        "<character><name>Local Newer</name></character>",
+                        RulesetId: "sr6",
+                        Format: WorkspaceDocumentFormat.NativeXml))
+                    .Entry!.Value.Id;
                 RecordingWorkspaceService workspaceService = new()
                 {
                     SummaryByWorkspaceId =
@@ -365,9 +372,9 @@ public sealed class GrantBoundDesktopWorkspaceRoamingSyncTests
     }
 
     [TestMethod]
-    public async Task SynchronizeInboundAsync_overwrites_existing_local_workspace_when_remote_is_newer()
+    public async Task SynchronizeInboundAsync_applies_normal_newer_snapshot_once_then_reports_already_current()
     {
-        lock (EnvironmentLock)
+        using (await EnterEnvironmentLockAsync().ConfigureAwait(false))
         {
             string? previousApiBase = Environment.GetEnvironmentVariable(ApiBaseUrlEnvironmentVariable);
             Environment.SetEnvironmentVariable(ApiBaseUrlEnvironmentVariable, "https://hub.example/");
@@ -375,11 +382,90 @@ public sealed class GrantBoundDesktopWorkspaceRoamingSyncTests
             {
                 InMemoryWorkspaceStore store = new();
                 OwnerScope owner = new("install-account:subject-alpha");
-                CharacterWorkspaceId workspaceId = store.Create(owner, new WorkspaceDocument(
-                    "<character><name>Local Older</name></character>",
-                    RulesetId: "sr6",
-                    Format: WorkspaceDocumentFormat.NativeXml));
+                CharacterWorkspaceId workspaceId = store.CreateWorkspaceDocument(owner, new WorkspaceDocument(
+                        "<character><name>Local older</name></character>",
+                        RulesetId: "sr6",
+                        Format: WorkspaceDocumentFormat.NativeXml))
+                    .Entry!.Value.Id;
+                DateTimeOffset remoteUpdatedAtUtc = DateTimeOffset.UtcNow.AddMinutes(1);
+                HttpClient client = new(new StubHandler(request =>
+                {
+                    if (request.RequestUri?.AbsolutePath.EndsWith("/api/v1/install-linking/continuation/workspaces/list", StringComparison.Ordinal) == true)
+                    {
+                        return JsonResponse($$"""
+                            {
+                              "snapshots": [
+                                {
+                                  "workspaceId": "{{workspaceId.Value}}",
+                                  "rulesetId": "sr6",
+                                  "format": "NativeXml",
+                                  "schemaVersion": 1,
+                                  "payloadKind": "workspace",
+                                  "payload": "<character><name>Remote applied once</name></character>",
+                                  "updatedAtUtc": "{{remoteUpdatedAtUtc:O}}",
+                                  "remoteRevision": 7
+                                }
+                              ]
+                            }
+                            """);
+                    }
+
+                    return new HttpResponseMessage(HttpStatusCode.NotFound);
+                }))
+                {
+                    BaseAddress = new Uri("https://hub.example/")
+                };
+                GrantBoundDesktopWorkspaceRoamingSync sync = new(
+                    "avalonia",
+                    store,
+                    new RecordingWorkspaceService(),
+                    client,
+                    () => ClaimedState());
+
+                DesktopWorkspaceRoamingResult first = await sync.SynchronizeInboundAsync(owner, CancellationToken.None);
+                DesktopWorkspaceRoamingResult second = await sync.SynchronizeInboundAsync(owner, CancellationToken.None);
+
+                WorkspaceStoreReadResult read = store.Get(owner, workspaceId);
+                Assert.AreEqual(DesktopWorkspaceRoamingOutcome.Applied, first.Outcome);
+                Assert.AreEqual(DesktopWorkspaceRoamingOutcome.AlreadyCurrent, second.Outcome);
+                Assert.AreEqual(2L, read.Value?.ContentRevision);
+                StringAssert.Contains(read.Value?.Document.Content ?? string.Empty, "Remote applied once");
+            }
+            finally
+            {
+                Environment.SetEnvironmentVariable(ApiBaseUrlEnvironmentVariable, previousApiBase);
+            }
+        }
+    }
+
+    [TestMethod]
+    public async Task SynchronizeInboundAsync_rejects_far_future_remote_and_later_local_edit_still_propagates()
+    {
+        using (await EnterEnvironmentLockAsync().ConfigureAwait(false))
+        {
+            string? previousApiBase = Environment.GetEnvironmentVariable(ApiBaseUrlEnvironmentVariable);
+            Environment.SetEnvironmentVariable(ApiBaseUrlEnvironmentVariable, "https://hub.example/");
+            try
+            {
+                InMemoryWorkspaceStore store = new();
+                OwnerScope owner = new("install-account:subject-alpha");
+                CharacterWorkspaceId workspaceId = store.CreateWorkspaceDocument(owner, new WorkspaceDocument(
+                        "<character><name>Local Older</name></character>",
+                        RulesetId: "sr6",
+                        Format: WorkspaceDocumentFormat.NativeXml))
+                    .Entry!.Value.Id;
                 RecordingWorkspaceService workspaceService = new();
+                workspaceService.SummaryByWorkspaceId[workspaceId.Value] = new CharacterFileSummary(
+                    Name: "Local Older",
+                    Alias: "Local Older",
+                    Metatype: "Human",
+                    BuildMethod: "Priority",
+                    CreatedVersion: "5",
+                    AppVersion: "5",
+                    Karma: 0,
+                    Nuyen: 0,
+                    Created: true);
+                int upsertCalls = 0;
                 HttpClient client = new(new StubHandler(request =>
                 {
                     if (request.RequestUri?.AbsolutePath.EndsWith("/api/v1/install-linking/continuation/workspaces/list", StringComparison.Ordinal) == true)
@@ -401,6 +487,12 @@ public sealed class GrantBoundDesktopWorkspaceRoamingSyncTests
                             """);
                     }
 
+                    if (request.RequestUri?.AbsolutePath.EndsWith("/api/v1/install-linking/continuation/workspaces/upsert", StringComparison.Ordinal) == true)
+                    {
+                        Interlocked.Increment(ref upsertCalls);
+                        return JsonResponse("{\"remoteRevision\":42,\"serverToken\":\"remote-42\"}");
+                    }
+
                     return new HttpResponseMessage(HttpStatusCode.NotFound);
                 }))
                 {
@@ -413,10 +505,104 @@ public sealed class GrantBoundDesktopWorkspaceRoamingSyncTests
                     client,
                     () => ClaimedState());
 
-                await sync.SynchronizeInboundAsync(owner, CancellationToken.None);
+                DesktopWorkspaceRoamingResult first = await sync.SynchronizeInboundAsync(owner, CancellationToken.None);
+                DesktopWorkspaceRoamingResult second = await sync.SynchronizeInboundAsync(owner, CancellationToken.None);
 
-                Assert.IsTrue(store.TryGet(owner, workspaceId, out WorkspaceDocument? document));
-                StringAssert.Contains(document.Content, "Remote Newer");
+                WorkspaceStoreReadResult read = store.Get(owner, workspaceId);
+                Assert.IsTrue(read.Success, read.Error);
+                WorkspaceDocument document = read.Value!.Document;
+                Assert.AreEqual(DesktopWorkspaceRoamingOutcome.Conflict, first.Outcome);
+                Assert.AreEqual(DesktopWorkspaceRoamingOutcome.Conflict, second.Outcome);
+                Assert.AreEqual(1L, read.Value.ContentRevision);
+                StringAssert.Contains(document.Content, "Local Older");
+                Assert.AreEqual(2, upsertCalls);
+
+                WorkspaceStoreMutationResult edited = store.ReplaceWorkspaceDocument(
+                    owner,
+                    workspaceId,
+                    read.Value.ContentRevision,
+                    new WorkspaceDocument(
+                        "<character><name>Later local edit</name></character>",
+                        RulesetId: "sr6",
+                        Format: WorkspaceDocumentFormat.NativeXml));
+                Assert.IsTrue(edited.Success, edited.Error);
+
+                DesktopWorkspaceRoamingResult afterEdit = await sync.SynchronizeInboundAsync(owner, CancellationToken.None);
+                Assert.AreEqual(DesktopWorkspaceRoamingOutcome.Conflict, afterEdit.Outcome);
+                Assert.AreEqual(3, upsertCalls);
+                Assert.AreEqual(2L, store.Get(owner, workspaceId).Value?.ContentRevision);
+            }
+            finally
+            {
+                Environment.SetEnvironmentVariable(ApiBaseUrlEnvironmentVariable, previousApiBase);
+            }
+        }
+    }
+
+    [TestMethod]
+    public async Task SynchronizeInboundAsync_skips_byte_equivalent_far_future_snapshot_without_revision_churn()
+    {
+        using (await EnterEnvironmentLockAsync().ConfigureAwait(false))
+        {
+            string? previousApiBase = Environment.GetEnvironmentVariable(ApiBaseUrlEnvironmentVariable);
+            Environment.SetEnvironmentVariable(ApiBaseUrlEnvironmentVariable, "https://hub.example/");
+            try
+            {
+                const string payload = "<character><name>Same bytes</name></character>";
+                InMemoryWorkspaceStore store = new();
+                OwnerScope owner = new("install-account:subject-alpha");
+                CharacterWorkspaceId workspaceId = store.CreateWorkspaceDocument(owner, new WorkspaceDocument(
+                        payload,
+                        RulesetId: "sr6",
+                        Format: WorkspaceDocumentFormat.NativeXml))
+                    .Entry!.Value.Id;
+                int upsertCalls = 0;
+                HttpClient client = new(new StubHandler(request =>
+                {
+                    if (request.RequestUri?.AbsolutePath.EndsWith("/api/v1/install-linking/continuation/workspaces/list", StringComparison.Ordinal) == true)
+                    {
+                        return JsonResponse($$"""
+                            {
+                              "serverToken": "remote-99",
+                              "snapshots": [
+                                {
+                                  "workspaceId": "{{workspaceId.Value}}",
+                                  "rulesetId": "sr6",
+                                  "format": "NativeXml",
+                                  "schemaVersion": 1,
+                                  "payloadKind": "workspace",
+                                  "payload": "<character><name>Same bytes</name></character>",
+                                  "updatedAtUtc": "2999-01-01T00:00:00Z",
+                                  "remoteRevision": 99,
+                                  "serverToken": "remote-99"
+                                }
+                              ]
+                            }
+                            """);
+                    }
+
+                    Interlocked.Increment(ref upsertCalls);
+                    return JsonResponse("{}");
+                }))
+                {
+                    BaseAddress = new Uri("https://hub.example/")
+                };
+                GrantBoundDesktopWorkspaceRoamingSync sync = new(
+                    "avalonia",
+                    store,
+                    new RecordingWorkspaceService(),
+                    client,
+                    () => ClaimedState());
+
+                DesktopWorkspaceRoamingResult first = await sync.SynchronizeInboundAsync(owner, CancellationToken.None);
+                DesktopWorkspaceRoamingResult second = await sync.SynchronizeInboundAsync(owner, CancellationToken.None);
+
+                Assert.AreEqual(DesktopWorkspaceRoamingOutcome.AlreadyCurrent, first.Outcome);
+                Assert.AreEqual(DesktopWorkspaceRoamingOutcome.AlreadyCurrent, second.Outcome);
+                Assert.AreEqual(99L, first.RemoteRevision);
+                Assert.AreEqual("remote-99", first.ServerToken);
+                Assert.AreEqual(1L, store.Get(owner, workspaceId).Value?.ContentRevision);
+                Assert.AreEqual(0, upsertCalls);
             }
             finally
             {
@@ -428,7 +614,7 @@ public sealed class GrantBoundDesktopWorkspaceRoamingSyncTests
     [TestMethod]
     public async Task SynchronizeInboundAsync_uses_web_base_url_when_api_base_url_is_missing()
     {
-        lock (EnvironmentLock)
+        using (await EnterEnvironmentLockAsync().ConfigureAwait(false))
         {
             string? previousApiBase = Environment.GetEnvironmentVariable(ApiBaseUrlEnvironmentVariable);
             string? previousWebBase = Environment.GetEnvironmentVariable(WebBaseUrlEnvironmentVariable);
@@ -472,7 +658,7 @@ public sealed class GrantBoundDesktopWorkspaceRoamingSyncTests
     [TestMethod]
     public async Task SynchronizeInboundAsync_keeps_local_workspace_when_hub_replies_unauthorized()
     {
-        lock (EnvironmentLock)
+        using (await EnterEnvironmentLockAsync().ConfigureAwait(false))
         {
             string? previousApiBase = Environment.GetEnvironmentVariable(ApiBaseUrlEnvironmentVariable);
             Environment.SetEnvironmentVariable(ApiBaseUrlEnvironmentVariable, "https://hub.example/");
@@ -480,10 +666,11 @@ public sealed class GrantBoundDesktopWorkspaceRoamingSyncTests
             {
                 InMemoryWorkspaceStore store = new();
                 OwnerScope owner = new("install-account:subject-alpha");
-                CharacterWorkspaceId workspaceId = store.Create(owner, new WorkspaceDocument(
-                    "<character><name>Keep Local</name></character>",
-                    RulesetId: "sr5",
-                    Format: WorkspaceDocumentFormat.NativeXml));
+                CharacterWorkspaceId workspaceId = store.CreateWorkspaceDocument(owner, new WorkspaceDocument(
+                        "<character><name>Keep Local</name></character>",
+                        RulesetId: "sr5",
+                        Format: WorkspaceDocumentFormat.NativeXml))
+                    .Entry!.Value.Id;
                 RecordingWorkspaceService workspaceService = new();
                 HttpClient client = new(new StubHandler(_ => new HttpResponseMessage(HttpStatusCode.Unauthorized)))
                 {
@@ -496,9 +683,12 @@ public sealed class GrantBoundDesktopWorkspaceRoamingSyncTests
                     client,
                     () => ClaimedState());
 
-                await sync.SynchronizeInboundAsync(owner, CancellationToken.None);
+                DesktopWorkspaceRoamingResult result = await sync.SynchronizeInboundAsync(owner, CancellationToken.None);
 
-                Assert.IsTrue(store.TryGet(owner, workspaceId, out WorkspaceDocument? document));
+                WorkspaceStoreReadResult read = store.Get(owner, workspaceId);
+                Assert.IsTrue(read.Success, read.Error);
+                Assert.AreEqual(DesktopWorkspaceRoamingOutcome.Unauthorized, result.Outcome);
+                WorkspaceDocument document = read.Value!.Document;
                 StringAssert.Contains(document.Content, "Keep Local");
             }
             finally
@@ -511,7 +701,7 @@ public sealed class GrantBoundDesktopWorkspaceRoamingSyncTests
     [TestMethod]
     public async Task SynchronizeInboundAsync_keeps_local_workspace_when_hub_returns_malformed_json()
     {
-        lock (EnvironmentLock)
+        using (await EnterEnvironmentLockAsync().ConfigureAwait(false))
         {
             string? previousApiBase = Environment.GetEnvironmentVariable(ApiBaseUrlEnvironmentVariable);
             Environment.SetEnvironmentVariable(ApiBaseUrlEnvironmentVariable, "https://hub.example/");
@@ -519,10 +709,11 @@ public sealed class GrantBoundDesktopWorkspaceRoamingSyncTests
             {
                 InMemoryWorkspaceStore store = new();
                 OwnerScope owner = new("install-account:subject-alpha");
-                CharacterWorkspaceId workspaceId = store.Create(owner, new WorkspaceDocument(
-                    "<character><name>Keep On Parse Failure</name></character>",
-                    RulesetId: "sr5",
-                    Format: WorkspaceDocumentFormat.NativeXml));
+                CharacterWorkspaceId workspaceId = store.CreateWorkspaceDocument(owner, new WorkspaceDocument(
+                        "<character><name>Keep On Parse Failure</name></character>",
+                        RulesetId: "sr5",
+                        Format: WorkspaceDocumentFormat.NativeXml))
+                    .Entry!.Value.Id;
                 RecordingWorkspaceService workspaceService = new();
                 HttpClient client = new(new StubHandler(_ => new HttpResponseMessage(HttpStatusCode.OK)
                 {
@@ -538,10 +729,146 @@ public sealed class GrantBoundDesktopWorkspaceRoamingSyncTests
                     client,
                     () => ClaimedState());
 
-                await sync.SynchronizeInboundAsync(owner, CancellationToken.None);
+                DesktopWorkspaceRoamingResult result = await sync.SynchronizeInboundAsync(owner, CancellationToken.None);
 
-                Assert.IsTrue(store.TryGet(owner, workspaceId, out WorkspaceDocument? document));
+                WorkspaceStoreReadResult read = store.Get(owner, workspaceId);
+                Assert.IsTrue(read.Success, read.Error);
+                Assert.AreEqual(DesktopWorkspaceRoamingOutcome.Unavailable, result.Outcome);
+                WorkspaceDocument document = read.Value!.Document;
                 StringAssert.Contains(document.Content, "Keep On Parse Failure");
+            }
+            finally
+            {
+                Environment.SetEnvironmentVariable(ApiBaseUrlEnvironmentVariable, previousApiBase);
+            }
+        }
+    }
+
+    [TestMethod]
+    public async Task SynchronizeInboundAsync_does_not_retry_over_a_concurrent_replace_winner()
+    {
+        using (await EnterEnvironmentLockAsync().ConfigureAwait(false))
+        {
+            string? previousApiBase = Environment.GetEnvironmentVariable(ApiBaseUrlEnvironmentVariable);
+            Environment.SetEnvironmentVariable(ApiBaseUrlEnvironmentVariable, "https://hub.example/");
+            try
+            {
+                InterleavingWorkspaceStore store = new();
+                OwnerScope owner = new("install-account:subject-alpha");
+                CharacterWorkspaceId id = new("wsreplaceconflict");
+                Assert.IsTrue(store.CreateWorkspaceDocument(owner, id, new WorkspaceDocument(
+                    "<character><name>Local Old</name></character>",
+                    RulesetId: "sr6")).Success);
+                store.ArmReplaceWinner(new WorkspaceDocument(
+                    "<character><name>Concurrent Winner</name></character>",
+                    RulesetId: "sr6"));
+                HttpClient client = new(new StubHandler(request =>
+                {
+                    if (request.RequestUri?.AbsolutePath.EndsWith("/api/v1/install-linking/continuation/workspaces/list", StringComparison.Ordinal) == true)
+                    {
+                        return JsonResponse($$"""
+                            {
+                              "snapshots": [
+                                {
+                                  "workspaceId": "{{id.Value}}",
+                                  "rulesetId": "sr6",
+                                  "format": "NativeXml",
+                                  "schemaVersion": 1,
+                                  "payloadKind": "workspace",
+                                  "payload": "<character><name>Remote Candidate</name></character>",
+                                  "updatedAtUtc": "{{DateTimeOffset.UtcNow.AddMinutes(1):O}}"
+                                }
+                              ]
+                            }
+                            """);
+                    }
+
+                    return new HttpResponseMessage(HttpStatusCode.NotFound);
+                }))
+                {
+                    BaseAddress = new Uri("https://hub.example/")
+                };
+                GrantBoundDesktopWorkspaceRoamingSync sync = new(
+                    "avalonia",
+                    store,
+                    new RecordingWorkspaceService(),
+                    client,
+                    ClaimedState);
+
+                DesktopWorkspaceRoamingResult result = await sync.SynchronizeInboundAsync(owner, CancellationToken.None);
+
+                WorkspaceStoreReadResult final = store.Get(owner, id);
+                Assert.IsTrue(final.Success, final.Error);
+                Assert.AreEqual(DesktopWorkspaceRoamingOutcome.Conflict, result.Outcome);
+                Assert.AreEqual(2L, final.Value?.ContentRevision);
+                StringAssert.Contains(final.Value?.Document.Content ?? string.Empty, "Concurrent Winner");
+                Assert.AreEqual(1, store.ReplaceCallCount);
+                Assert.AreEqual(1, store.ConflictCount);
+            }
+            finally
+            {
+                Environment.SetEnvironmentVariable(ApiBaseUrlEnvironmentVariable, previousApiBase);
+            }
+        }
+    }
+
+    [TestMethod]
+    public async Task SynchronizeInboundAsync_does_not_retry_over_a_concurrent_create_winner()
+    {
+        using (await EnterEnvironmentLockAsync().ConfigureAwait(false))
+        {
+            string? previousApiBase = Environment.GetEnvironmentVariable(ApiBaseUrlEnvironmentVariable);
+            Environment.SetEnvironmentVariable(ApiBaseUrlEnvironmentVariable, "https://hub.example/");
+            try
+            {
+                InterleavingWorkspaceStore store = new();
+                OwnerScope owner = new("install-account:subject-alpha");
+                CharacterWorkspaceId id = new("wscreateconflict");
+                store.ArmCreateWinner(new WorkspaceDocument(
+                    "<character><name>Concurrent Creator</name></character>",
+                    RulesetId: "sr6"));
+                HttpClient client = new(new StubHandler(request =>
+                {
+                    if (request.RequestUri?.AbsolutePath.EndsWith("/api/v1/install-linking/continuation/workspaces/list", StringComparison.Ordinal) == true)
+                    {
+                        return JsonResponse($$"""
+                            {
+                              "snapshots": [
+                                {
+                                  "workspaceId": "{{id.Value}}",
+                                  "rulesetId": "sr6",
+                                  "format": "NativeXml",
+                                  "schemaVersion": 1,
+                                  "payloadKind": "workspace",
+                                  "payload": "<character><name>Remote Candidate</name></character>",
+                                  "updatedAtUtc": "{{DateTimeOffset.UtcNow.AddMinutes(1):O}}"
+                                }
+                              ]
+                            }
+                            """);
+                    }
+
+                    return new HttpResponseMessage(HttpStatusCode.NotFound);
+                }))
+                {
+                    BaseAddress = new Uri("https://hub.example/")
+                };
+                GrantBoundDesktopWorkspaceRoamingSync sync = new(
+                    "avalonia",
+                    store,
+                    new RecordingWorkspaceService(),
+                    client,
+                    ClaimedState);
+
+                DesktopWorkspaceRoamingResult result = await sync.SynchronizeInboundAsync(owner, CancellationToken.None);
+
+                WorkspaceStoreReadResult final = store.Get(owner, id);
+                Assert.IsTrue(final.Success, final.Error);
+                Assert.AreEqual(DesktopWorkspaceRoamingOutcome.Conflict, result.Outcome);
+                Assert.AreEqual(1L, final.Value?.ContentRevision);
+                StringAssert.Contains(final.Value?.Document.Content ?? string.Empty, "Concurrent Creator");
+                Assert.AreEqual(1, store.ConditionalCreateCallCount);
+                Assert.AreEqual(1, store.ConflictCount);
             }
             finally
             {
@@ -598,6 +925,25 @@ public sealed class GrantBoundDesktopWorkspaceRoamingSyncTests
             Content = new StringContent(json, Encoding.UTF8, "application/json")
         };
 
+    private static async Task<IDisposable> EnterEnvironmentLockAsync()
+    {
+        await EnvironmentLock.WaitAsync().ConfigureAwait(false);
+        return new EnvironmentLockLease();
+    }
+
+    private sealed class EnvironmentLockLease : IDisposable
+    {
+        private int _released;
+
+        public void Dispose()
+        {
+            if (Interlocked.Exchange(ref _released, 1) == 0)
+            {
+                EnvironmentLock.Release();
+            }
+        }
+    }
+
     private sealed class StubHandler : HttpMessageHandler
     {
         private readonly Func<HttpRequestMessage, HttpResponseMessage> _handle;
@@ -609,6 +955,126 @@ public sealed class GrantBoundDesktopWorkspaceRoamingSyncTests
 
         protected override Task<HttpResponseMessage> SendAsync(HttpRequestMessage request, CancellationToken cancellationToken)
             => Task.FromResult(_handle(request));
+    }
+
+    private sealed class InterleavingWorkspaceStore : IWorkspaceStore
+    {
+        private readonly InMemoryWorkspaceStore _inner = new();
+        private WorkspaceDocument? _createWinner;
+        private WorkspaceDocument? _replaceWinner;
+        private int _createArmed;
+        private int _replaceArmed;
+
+        public int ConditionalCreateCallCount { get; private set; }
+
+        public int ReplaceCallCount { get; private set; }
+
+        public int ConflictCount { get; private set; }
+
+        public void ArmCreateWinner(WorkspaceDocument winner)
+        {
+            _createWinner = winner;
+            Volatile.Write(ref _createArmed, 1);
+        }
+
+        public void ArmReplaceWinner(WorkspaceDocument winner)
+        {
+            _replaceWinner = winner;
+            Volatile.Write(ref _replaceArmed, 1);
+        }
+
+        public WorkspaceStoreMutationResult CreateWorkspaceDocument(WorkspaceDocument document)
+            => _inner.CreateWorkspaceDocument(document);
+
+        public WorkspaceStoreMutationResult CreateWorkspaceDocument(OwnerScope owner, WorkspaceDocument document)
+            => _inner.CreateWorkspaceDocument(owner, document);
+
+        public WorkspaceStoreMutationResult CreateWorkspaceDocument(CharacterWorkspaceId id, WorkspaceDocument document)
+        {
+            ConditionalCreateCallCount++;
+            return TrackConflict(_inner.CreateWorkspaceDocument(id, document));
+        }
+
+        public WorkspaceStoreMutationResult CreateWorkspaceDocument(OwnerScope owner, CharacterWorkspaceId id, WorkspaceDocument document)
+        {
+            ConditionalCreateCallCount++;
+            return TrackConflict(_inner.CreateWorkspaceDocument(owner, id, document));
+        }
+
+        public IReadOnlyList<WorkspaceStoreEntry> List() => _inner.List();
+
+        public IReadOnlyList<WorkspaceStoreEntry> List(OwnerScope owner) => _inner.List(owner);
+
+        public WorkspaceStoreReadResult Get(CharacterWorkspaceId id)
+            => GetCore(OwnerScope.LocalSingleUser, id, trustedLocalScope: true);
+
+        public WorkspaceStoreReadResult Get(OwnerScope owner, CharacterWorkspaceId id)
+            => GetCore(owner, id, trustedLocalScope: false);
+
+        public WorkspaceStoreMutationResult ReplaceWorkspaceDocument(CharacterWorkspaceId id, long expectedContentRevision, WorkspaceDocument document)
+        {
+            ReplaceCallCount++;
+            return TrackConflict(_inner.ReplaceWorkspaceDocument(id, expectedContentRevision, document));
+        }
+
+        public WorkspaceStoreMutationResult ReplaceWorkspaceDocument(OwnerScope owner, CharacterWorkspaceId id, long expectedContentRevision, WorkspaceDocument document)
+        {
+            ReplaceCallCount++;
+            return TrackConflict(_inner.ReplaceWorkspaceDocument(owner, id, expectedContentRevision, document));
+        }
+
+        public WorkspaceStoreMutationResult SaveCheckpoint(CharacterWorkspaceId id, long expectedContentRevision)
+            => _inner.SaveCheckpoint(id, expectedContentRevision);
+
+        public WorkspaceStoreMutationResult SaveCheckpoint(OwnerScope owner, CharacterWorkspaceId id, long expectedContentRevision)
+            => _inner.SaveCheckpoint(owner, id, expectedContentRevision);
+
+        public WorkspaceStoreMutationResult Delete(CharacterWorkspaceId id, long expectedContentRevision)
+            => _inner.Delete(id, expectedContentRevision);
+
+        public WorkspaceStoreMutationResult Delete(OwnerScope owner, CharacterWorkspaceId id, long expectedContentRevision)
+            => _inner.Delete(owner, id, expectedContentRevision);
+
+        private WorkspaceStoreReadResult GetCore(
+            OwnerScope owner,
+            CharacterWorkspaceId id,
+            bool trustedLocalScope)
+        {
+            WorkspaceStoreReadResult stale = trustedLocalScope
+                ? _inner.Get(id)
+                : _inner.Get(owner, id);
+            if (Interlocked.Exchange(ref _createArmed, 0) == 1
+                && stale.Outcome == WorkspaceOperationOutcome.Missing
+                && _createWinner is WorkspaceDocument createWinner)
+            {
+                WorkspaceStoreMutationResult won = trustedLocalScope
+                    ? _inner.CreateWorkspaceDocument(id, createWinner)
+                    : _inner.CreateWorkspaceDocument(owner, id, createWinner);
+                Assert.IsTrue(won.Success, won.Error);
+            }
+
+            if (Interlocked.Exchange(ref _replaceArmed, 0) == 1
+                && stale.Value is WorkspaceStoredDocument current
+                && _replaceWinner is WorkspaceDocument replaceWinner)
+            {
+                WorkspaceStoreMutationResult won = trustedLocalScope
+                    ? _inner.ReplaceWorkspaceDocument(id, current.ContentRevision, replaceWinner)
+                    : _inner.ReplaceWorkspaceDocument(owner, id, current.ContentRevision, replaceWinner);
+                Assert.IsTrue(won.Success, won.Error);
+            }
+
+            return stale;
+        }
+
+        private WorkspaceStoreMutationResult TrackConflict(WorkspaceStoreMutationResult result)
+        {
+            if (result.Outcome == WorkspaceOperationOutcome.Conflict)
+            {
+                ConflictCount++;
+            }
+
+            return result;
+        }
     }
 
     private sealed class RecordingWorkspaceService : IWorkspaceService

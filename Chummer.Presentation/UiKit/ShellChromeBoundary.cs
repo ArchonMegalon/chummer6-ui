@@ -25,6 +25,7 @@ public static class ShellChromeBoundary
         ["open_for_export"] = "Open Runner for Export...",
         ["save_character"] = "Save Runner",
         ["save_character_as"] = "Save Runner As...",
+        ["refresh_character"] = "Reload Runner",
         ["print_character"] = "Print Runner...",
         ["copy"] = "Copy",
         ["paste"] = "Paste",

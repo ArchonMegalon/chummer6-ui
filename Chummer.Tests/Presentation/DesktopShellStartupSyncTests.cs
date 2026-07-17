@@ -2,6 +2,7 @@
 
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using Bunit;
@@ -13,6 +14,7 @@ using Chummer.Contracts.Workspaces;
 using Chummer.Presentation.Overview;
 using Chummer.Presentation.Shell;
 using Chummer.Rulesets.Sr5;
+using Microsoft.AspNetCore.Components;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 
@@ -83,6 +85,43 @@ public sealed class DesktopShellStartupSyncTests
     }
 
     [TestMethod]
+    public void Startup_dialog_locks_shell_chrome_and_keyboard_shortcuts()
+    {
+        using var context = new BunitContext();
+        context.JSInterop.Mode = JSRuntimeMode.Loose;
+
+        StartupDialogOverviewPresenter presenter = new(CreateStartupOverviewState());
+        RecordingShellPresenter shellPresenter = new(CreateStartupShellState(), throwOnSync: true);
+        RegisterDesktopShellServices(context, presenter, shellPresenter);
+
+        IRenderedComponent<DesktopShell> cut = context.Render<DesktopShell>();
+
+        Assert.IsFalse(cut.Find(".menu-btn").HasAttribute("disabled"));
+        Assert.IsFalse(cut.FindAll(".tool-btn").All(button => button.HasAttribute("disabled")));
+
+        cut.Find("[data-startup-command='new_character']").Click();
+
+        cut.WaitForAssertion(() =>
+        {
+            Assert.IsNotNull(cut.Find("#dialogTitle"));
+            Assert.IsTrue(cut.Find(".menu-btn").HasAttribute("disabled"));
+            Assert.IsTrue(cut.FindAll(".tool-btn").All(button => button.HasAttribute("disabled")));
+        });
+
+        int executionCountAfterDialogOpen = presenter.ExecutionCount;
+        cut.Find(".desktop-shell").KeyDown(new Microsoft.AspNetCore.Components.Web.KeyboardEventArgs
+        {
+            Key = "n",
+            CtrlKey = true
+        });
+
+        Assert.AreEqual(
+            executionCountAfterDialogOpen,
+            presenter.ExecutionCount,
+            "Ctrl+N should not re-dispatch while a modal dialog is open.");
+    }
+
+    [TestMethod]
     public void DemoWorkspaceId_loads_non_legacy_workspace_without_importing_seed_fixture()
     {
         using var context = new BunitContext();
@@ -116,6 +155,96 @@ public sealed class DesktopShellStartupSyncTests
         Assert.IsNull(presenter.ImportedContent);
         StringAssert.Contains(cut.Markup, "data-demo-workspace-route-warning");
         StringAssert.Contains(cut.Markup, "legacy sample workspace link");
+    }
+
+    [TestMethod]
+    public void DemoFixtureId_imports_seed_fixture_and_rewrites_preview_route_to_workspace_query()
+    {
+        using var context = new BunitContext();
+        context.JSInterop.Mode = JSRuntimeMode.Loose;
+        EnsureBrowserFixtureAvailable("BLUE.chum5");
+
+        FixtureImportingOverviewPresenter presenter = new(CreateStartupOverviewState());
+        RecordingShellPresenter shellPresenter = new(CreateStartupShellState());
+        RegisterDesktopShellServices(context, presenter, shellPresenter);
+
+        NavigationManager navigation = context.Services.GetRequiredService<NavigationManager>();
+        navigation.NavigateTo("/preview?fixture=blue&tab=tab-rules");
+
+        IRenderedComponent<DesktopShell> cut = context.Render<DesktopShell>(parameters => parameters
+            .Add(shell => shell.DemoFixtureId, "blue")
+            .Add(shell => shell.DemoTabId, "tab-rules"));
+
+        cut.WaitForAssertion(() =>
+        {
+            Assert.IsNotNull(presenter.ImportedContent);
+            Assert.AreEqual(RulesetDefaults.Sr5, presenter.ImportedRulesetId);
+            Assert.AreEqual("fixture-ws", presenter.State.WorkspaceId?.Value);
+            Assert.AreEqual("tab-rules", presenter.SelectedTabId);
+            StringAssert.EndsWith(navigation.Uri, "/preview?workspace=fixture-ws&tab=tab-rules");
+        });
+    }
+
+    [TestMethod]
+    public void DemoFixtureId_rewrites_workbench_route_and_preserves_tab_control_and_dialog_action_queries()
+    {
+        using var context = new BunitContext();
+        context.JSInterop.Mode = JSRuntimeMode.Loose;
+        EnsureBrowserFixtureAvailable("BLUE.chum5");
+
+        FixtureImportingOverviewPresenter presenter = new(CreateStartupOverviewState());
+        RecordingShellPresenter shellPresenter = new(CreateStartupShellState());
+        RegisterDesktopShellServices(context, presenter, shellPresenter);
+
+        NavigationManager navigation = context.Services.GetRequiredService<NavigationManager>();
+        navigation.NavigateTo("/workbench?fixture=blue&tab=tab-magician&control=spell_add&dialog_action=add");
+
+        IRenderedComponent<DesktopShell> cut = context.Render<DesktopShell>(parameters => parameters
+            .Add(shell => shell.DemoFixtureId, "blue")
+            .Add(shell => shell.DemoTabId, "tab-magician")
+            .Add(shell => shell.DemoUiControlId, "spell_add")
+            .Add(shell => shell.DemoDialogActionId, "add"));
+
+        cut.WaitForAssertion(() =>
+        {
+            Assert.IsNotNull(presenter.ImportedContent);
+            Assert.AreEqual("tab-magician", presenter.SelectedTabId);
+            Assert.AreEqual("spell_add", presenter.HandledUiControlId);
+            Assert.AreEqual("add", presenter.ExecutedDialogActionId);
+            StringAssert.EndsWith(
+                navigation.Uri,
+                "/workbench?workspace=fixture-ws&tab=tab-magician&control=spell_add&dialog_action=add");
+        });
+    }
+
+    [TestMethod]
+    public void DemoFixtureId_rewrites_preview_route_and_preserves_output_command_and_dialog_action_queries()
+    {
+        using var context = new BunitContext();
+        context.JSInterop.Mode = JSRuntimeMode.Loose;
+        EnsureBrowserFixtureAvailable("BLUE.chum5");
+
+        FixtureImportingOverviewPresenter presenter = new(CreateStartupOverviewState());
+        RecordingShellPresenter shellPresenter = new(CreateStartupShellState());
+        RegisterDesktopShellServices(context, presenter, shellPresenter);
+
+        NavigationManager navigation = context.Services.GetRequiredService<NavigationManager>();
+        navigation.NavigateTo("/preview?fixture=blue&command=export_character&dialog_action=download");
+
+        IRenderedComponent<DesktopShell> cut = context.Render<DesktopShell>(parameters => parameters
+            .Add(shell => shell.DemoFixtureId, "blue")
+            .Add(shell => shell.DemoStartupCommandId, "export_character")
+            .Add(shell => shell.DemoDialogActionId, "download"));
+
+        cut.WaitForAssertion(() =>
+        {
+            Assert.IsNotNull(presenter.ImportedContent);
+            Assert.AreEqual("export_character", presenter.ExecutedCommandId);
+            Assert.AreEqual("download", presenter.ExecutedDialogActionId);
+            StringAssert.EndsWith(
+                navigation.Uri,
+                "/preview?workspace=fixture-ws&command=export_character&dialog_action=download");
+        });
     }
 
     private static void RegisterDesktopShellServices(
@@ -211,6 +340,38 @@ public sealed class DesktopShellStartupSyncTests
         };
     }
 
+    private static void EnsureBrowserFixtureAvailable(string fileName)
+    {
+        string repoRoot = TestContextLocator.ResolveChummerPresentationRepoRoot();
+        string sourcePath = Path.Combine(repoRoot, "Chummer.Tests", "TestFiles", fileName);
+        string fixtureDirectory = Path.Combine(AppContext.BaseDirectory, "Fixtures");
+        Directory.CreateDirectory(fixtureDirectory);
+
+        string destinationPath = Path.Combine(fixtureDirectory, fileName);
+        for (int attempt = 0; attempt < 20; attempt++)
+        {
+            try
+            {
+                if (!File.Exists(destinationPath))
+                {
+                    File.Copy(sourcePath, destinationPath, overwrite: false);
+                }
+
+                using FileStream stream = File.Open(destinationPath, FileMode.Open, FileAccess.Read, FileShare.Read);
+                if (stream.Length > 0)
+                {
+                    return;
+                }
+            }
+            catch (IOException) when (attempt < 19)
+            {
+                Thread.Sleep(50);
+            }
+        }
+
+        throw new IOException($"Browser demo fixture '{fileName}' could not be staged at '{destinationPath}'.");
+    }
+
     private sealed class RecordingShellPresenter : IShellPresenter
     {
         private readonly bool _throwOnSync;
@@ -278,6 +439,7 @@ public sealed class DesktopShellStartupSyncTests
 
         public CharacterOverviewState State { get; private set; }
         public string? ExecutedCommandId { get; private set; }
+        public int ExecutionCount { get; private set; }
 
         public event EventHandler? StateChanged;
 
@@ -290,6 +452,7 @@ public sealed class DesktopShellStartupSyncTests
         public Task ExecuteCommandAsync(string commandId, CancellationToken ct)
         {
             ExecutedCommandId = commandId;
+            ExecutionCount++;
             State = State with
             {
                 LastCommandId = commandId,
@@ -311,6 +474,93 @@ public sealed class DesktopShellStartupSyncTests
         public Task ExecuteDialogActionAsync(string actionId, CancellationToken ct) => Task.CompletedTask;
         public Task CloseDialogAsync(CancellationToken ct) => Task.CompletedTask;
         public Task SelectTabAsync(string tabId, CancellationToken ct) => Task.CompletedTask;
+        public Task UpdateMetadataAsync(UpdateWorkspaceMetadata command, CancellationToken ct) => Task.CompletedTask;
+        public Task SaveAsync(CancellationToken ct) => Task.CompletedTask;
+        public Task ExportAsync(CancellationToken ct) => Task.CompletedTask;
+        public Task PrintAsync(CancellationToken ct) => Task.CompletedTask;
+    }
+
+    private sealed class FixtureImportingOverviewPresenter : ICharacterOverviewPresenter
+    {
+        public FixtureImportingOverviewPresenter(CharacterOverviewState state)
+        {
+            State = state;
+        }
+
+        public CharacterOverviewState State { get; private set; }
+        public string? ImportedContent { get; private set; }
+        public string? ImportedRulesetId { get; private set; }
+        public string? ExecutedCommandId { get; private set; }
+        public string? SelectedTabId { get; private set; }
+        public string? HandledUiControlId { get; private set; }
+        public string? ExecutedDialogActionId { get; private set; }
+
+        public event EventHandler? StateChanged;
+
+        public Task InitializeAsync(CancellationToken ct) => Task.CompletedTask;
+
+        public Task ImportAsync(WorkspaceImportDocument document, CancellationToken ct)
+        {
+            ImportedContent = document.Content;
+            ImportedRulesetId = document.RulesetId;
+
+            CharacterWorkspaceId workspaceId = new("fixture-ws");
+            OpenWorkspaceState openWorkspace = new(
+                Id: workspaceId,
+                Name: "Fixture Runner",
+                Alias: "FIX",
+                LastOpenedUtc: DateTimeOffset.UtcNow,
+                RulesetId: document.RulesetId,
+                HasSavedWorkspace: false);
+
+            State = State with
+            {
+                Session = new WorkspaceSessionState(
+                    ActiveWorkspaceId: workspaceId,
+                    OpenWorkspaces: [openWorkspace],
+                    RecentWorkspaceIds: [workspaceId]),
+                OpenWorkspaces = [openWorkspace],
+                WorkspaceId = workspaceId
+            };
+            StateChanged?.Invoke(this, EventArgs.Empty);
+            return Task.CompletedTask;
+        }
+
+        public Task LoadAsync(CharacterWorkspaceId id, CancellationToken ct) => Task.CompletedTask;
+        public Task SwitchWorkspaceAsync(CharacterWorkspaceId id, CancellationToken ct) => Task.CompletedTask;
+        public Task CloseWorkspaceAsync(CharacterWorkspaceId id, CancellationToken ct) => Task.CompletedTask;
+        public Task ExecuteCommandAsync(string commandId, CancellationToken ct)
+        {
+            ExecutedCommandId = commandId;
+            return Task.CompletedTask;
+        }
+
+        public Task HandleUiControlAsync(string controlId, CancellationToken ct)
+        {
+            HandledUiControlId = controlId;
+            return Task.CompletedTask;
+        }
+
+        public Task ExecuteWorkspaceActionAsync(WorkspaceSurfaceActionDefinition action, CancellationToken ct) => Task.CompletedTask;
+        public Task UpdateDialogFieldAsync(string fieldId, string? value, CancellationToken ct) => Task.CompletedTask;
+        public Task ApplyAttributeEditAsync(AttributeEditRequest request, CancellationToken ct) => Task.CompletedTask;
+
+        public Task ExecuteDialogActionAsync(string actionId, CancellationToken ct)
+        {
+            ExecutedDialogActionId = actionId;
+            return Task.CompletedTask;
+        }
+
+        public Task CloseDialogAsync(CancellationToken ct) => Task.CompletedTask;
+
+        public Task SelectTabAsync(string tabId, CancellationToken ct)
+        {
+            SelectedTabId = tabId;
+            State = State with { ActiveTabId = tabId };
+            StateChanged?.Invoke(this, EventArgs.Empty);
+            return Task.CompletedTask;
+        }
+
         public Task UpdateMetadataAsync(UpdateWorkspaceMetadata command, CancellationToken ct) => Task.CompletedTask;
         public Task SaveAsync(CancellationToken ct) => Task.CompletedTask;
         public Task ExportAsync(CancellationToken ct) => Task.CompletedTask;

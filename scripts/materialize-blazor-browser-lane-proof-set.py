@@ -91,13 +91,16 @@ REQUIRED_RECEIPTS = [
             "route_lane": "blazor_pwa_play_shell",
         },
         "minimum_lengths": {
-            "checks": 4,
+            "checks": 7,
         },
         "required_check_ids": [
             "manifest_install_contract",
             "service_worker_static_privacy_contract",
             "offline_living_world_boundary",
             "app_head_and_registration",
+            "clean_public_entry_route_contract",
+            "static_asset_fetch_contract",
+            "mobile_viewport_shell_contract",
         ],
     },
     {
@@ -192,6 +195,9 @@ EXAMPLE_RECEIPT_TOKENS = [
     '"service_worker_static_privacy_contract"',
     '"offline_living_world_boundary"',
     '"app_head_and_registration"',
+    '"clean_public_entry_route_contract"',
+    '"static_asset_fetch_contract"',
+    '"mobile_viewport_shell_contract"',
     '"id": "source_staged_release_boundary"',
     '"contract_name": "chummer6-ui.blazor_source_staged_release_boundary"',
     '"scope": "staged_and_source_plan_receipts_must_not_enter_release_readiness_aggregation"',

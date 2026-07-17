@@ -8,6 +8,7 @@ receipt_path="${CHUMMER_SR6_RULESET_UI_SOPHISTICATION_RECEIPT_PATH:-$repo_root/.
 policy_path="${CHUMMER_SR6_RULESET_UI_SOPHISTICATION_POLICY_PATH:-$repo_root/docs/CHUMMER_SR6_RULESET_UI_SOPHISTICATION_POLICY.json}"
 design_doc_path="$repo_root/docs/CHUMMER_SR6_RULESET_UI_SOPHISTICATION_EXIT_TESTS.md"
 ruleset_adaptation_receipt_path="${CHUMMER_RULESET_UI_ADAPTATION_RECEIPT_PATH:-$repo_root/.codex-studio/published/RULESET_UI_ADAPTATION.generated.json}"
+section_host_receipt_path="${CHUMMER_SECTION_HOST_RULESET_PARITY_RECEIPT_PATH:-$repo_root/.codex-studio/published/SECTION_HOST_RULESET_PARITY.generated.json}"
 sr6_workflow_receipt_path="${CHUMMER_SR6_WORKFLOW_PARITY_RECEIPT_PATH:-$repo_root/.codex-studio/published/SR6_DESKTOP_WORKFLOW_PARITY.generated.json}"
 sr6_shared_muscle_receipt_path="${CHUMMER_SR6_SHARED_MUSCLE_MEMORY_RECEIPT_PATH:-$repo_root/.codex-studio/published/CHUMMER_SR6_SHARED_MUSCLE_MEMORY_PARITY_GATE.generated.json}"
 interactive_inventory_receipt_path="${CHUMMER_INTERACTIVE_CONTROL_INVENTORY_RECEIPT_PATH:-$repo_root/.codex-studio/published/INTERACTIVE_CONTROL_INVENTORY.generated.json}"
@@ -16,6 +17,7 @@ directive_catalog_path="$repo_root/Chummer.Presentation/Rulesets/RulesetUiDirect
 ruleset_tests_path="$repo_root/Chummer.Tests/Presentation/RulesetUiDirectiveCatalogTests.cs"
 desktop_shell_tests_path="$repo_root/Chummer.Tests/Presentation/DesktopShellRulesetCatalogTests.cs"
 avalonia_gate_tests_path="$repo_root/Chummer.Tests/Presentation/AvaloniaFlagshipUiGateTests.cs"
+sr5_sr6_provider_parity_tests_path="$repo_root/Chummer.Tests/Presentation/Sr5Sr6RulesetParityAuditTests.cs"
 verify_script_path="$repo_root/scripts/ai/verify.sh"
 b14_script_path="$repo_root/scripts/ai/milestones/b14-flagship-ui-release-gate.sh"
 
@@ -26,6 +28,7 @@ python3 - <<'PY' \
   "$policy_path" \
   "$design_doc_path" \
   "$ruleset_adaptation_receipt_path" \
+  "$section_host_receipt_path" \
   "$sr6_workflow_receipt_path" \
   "$sr6_shared_muscle_receipt_path" \
   "$interactive_inventory_receipt_path" \
@@ -34,6 +37,7 @@ python3 - <<'PY' \
   "$ruleset_tests_path" \
   "$desktop_shell_tests_path" \
   "$avalonia_gate_tests_path" \
+  "$sr5_sr6_provider_parity_tests_path" \
   "$verify_script_path" \
   "$b14_script_path"
 from __future__ import annotations
@@ -49,6 +53,7 @@ from typing import Any
     policy_path,
     design_doc_path,
     ruleset_adaptation_receipt_path,
+    section_host_receipt_path,
     sr6_workflow_receipt_path,
     sr6_shared_muscle_receipt_path,
     interactive_inventory_receipt_path,
@@ -57,9 +62,10 @@ from typing import Any
     ruleset_tests_path,
     desktop_shell_tests_path,
     avalonia_gate_tests_path,
+    sr5_sr6_provider_parity_tests_path,
     verify_script_path,
     b14_script_path,
-) = [Path(value) for value in sys.argv[1:15]]
+) = [Path(value) for value in sys.argv[1:17]]
 
 
 def now_iso() -> str:
@@ -90,6 +96,7 @@ required_paths = {
     "policy": policy_path,
     "designDoc": design_doc_path,
     "rulesetAdaptationReceipt": ruleset_adaptation_receipt_path,
+    "sectionHostReceipt": section_host_receipt_path,
     "sr6WorkflowReceipt": sr6_workflow_receipt_path,
     "sr6SharedMuscleReceipt": sr6_shared_muscle_receipt_path,
     "interactiveInventoryReceipt": interactive_inventory_receipt_path,
@@ -98,6 +105,7 @@ required_paths = {
     "rulesetTests": ruleset_tests_path,
     "desktopShellTests": desktop_shell_tests_path,
     "avaloniaGateTests": avalonia_gate_tests_path,
+    "sr5Sr6ProviderParityTests": sr5_sr6_provider_parity_tests_path,
     "verifyScript": verify_script_path,
     "b14Script": b14_script_path,
 }
@@ -118,6 +126,7 @@ if missing_paths:
 
 policy = load_json(policy_path)
 ruleset_adaptation_receipt = load_json(ruleset_adaptation_receipt_path)
+section_host_receipt = load_json(section_host_receipt_path)
 sr6_workflow_receipt = load_json(sr6_workflow_receipt_path)
 sr6_shared_muscle_receipt = load_json(sr6_shared_muscle_receipt_path)
 interactive_inventory_receipt = load_json(interactive_inventory_receipt_path)
@@ -127,6 +136,7 @@ directive_catalog_text = read_text(directive_catalog_path)
 ruleset_tests_text = read_text(ruleset_tests_path)
 desktop_shell_tests_text = read_text(desktop_shell_tests_path)
 avalonia_gate_tests_text = read_text(avalonia_gate_tests_path)
+sr5_sr6_provider_parity_tests_text = read_text(sr5_sr6_provider_parity_tests_path)
 verify_script_text = read_text(verify_script_path)
 b14_script_text = read_text(b14_script_path)
 
@@ -141,10 +151,12 @@ payload: dict[str, Any] = {
         "policyPath": str(policy_path),
         "designDocPath": str(design_doc_path),
         "rulesetAdaptationReceiptPath": str(ruleset_adaptation_receipt_path),
+        "sectionHostReceiptPath": str(section_host_receipt_path),
         "sr6WorkflowReceiptPath": str(sr6_workflow_receipt_path),
         "sr6SharedMuscleReceiptPath": str(sr6_shared_muscle_receipt_path),
         "interactiveInventoryReceiptPath": str(interactive_inventory_receipt_path),
         "runtimeRouteInventoryReceiptPath": str(runtime_route_inventory_receipt_path),
+        "sr5Sr6ProviderParityTestSourcePath": str(sr5_sr6_provider_parity_tests_path),
         "runtimeRouteIdCount": 0,
         "runtimeRouteFamilyCount": 0,
         "runtimeRulesetLaneCount": 0,
@@ -173,6 +185,8 @@ if policy.get("scopeStrategy") != "sr6_ruleset_specific_surface_depth_must_match
     add_failure("SR6 sophistication policy scopeStrategy is missing or incorrect.", policy_reasons)
 if policy.get("sr5ComparisonContract") != "chummer6-ui.ruleset_ui_adaptation_frontier":
     add_failure("SR6 sophistication policy must pin the ruleset UI adaptation contract.", policy_reasons)
+if policy.get("sectionHostParityContract") != "chummer6-ui.section_host_ruleset_parity":
+    add_failure("SR6 sophistication policy must pin the section-host/ruleset parity contract.", policy_reasons)
 if policy.get("sr6WorkflowParityContract") != "chummer6-ui.sr6_desktop_workflow_parity":
     add_failure("SR6 sophistication policy must pin the SR6 workflow parity contract.", policy_reasons)
 if policy.get("sr6SharedMuscleMemoryContract") != "chummer6-ui.chummer_sr6_shared_muscle_memory_parity_gate":
@@ -203,6 +217,7 @@ for key in (
 
 for receipt, label, expected_contract in (
     (ruleset_adaptation_receipt, "ruleset adaptation receipt", "chummer6-ui.ruleset_ui_adaptation_frontier"),
+    (section_host_receipt, "section-host parity receipt", "chummer6-ui.section_host_ruleset_parity"),
     (sr6_workflow_receipt, "SR6 workflow receipt", "chummer6-ui.sr6_desktop_workflow_parity"),
     (sr6_shared_muscle_receipt, "SR6 shared muscle-memory receipt", "chummer6-ui.chummer_sr6_shared_muscle_memory_parity_gate"),
     (interactive_inventory_receipt, "interactive inventory receipt", "chummer6-ui.interactive_control_inventory"),
@@ -257,16 +272,25 @@ for expected_text in (
     if expected_text not in inventory_text:
         add_failure(f"Interactive inventory receipt is missing required SR6/SR5 parity evidence: {expected_text}", runtime_reasons)
 
+section_host_evidence = section_host_receipt.get("evidence") or {}
+provider_parity_marker_results = section_host_evidence.get("sr5Sr6ProviderParityTests") or {}
+evidence["providerParityMarkers"] = provider_parity_marker_results
+for marker in policy.get("requiredProviderParityTestMarkers") or []:
+    if marker not in sr5_sr6_provider_parity_tests_text:
+        add_failure(f"SR5/SR6 provider parity source marker is missing: {marker}", source_reasons)
+    if provider_parity_marker_results.get(marker) is not True:
+        add_failure(f"Section-host parity receipt is missing a passing SR5/SR6 provider parity marker: {marker}", receipt_reasons)
+
 for marker in policy.get("requiredSourceMarkers") or []:
     if marker not in directive_catalog_text and marker not in ruleset_tests_text and marker not in desktop_shell_tests_text:
         add_failure(f"SR6 sophistication source marker is missing: {marker}", source_reasons)
 
 for marker in (
-    "Desktop Summary · SR6 Setup Tools",
-    "SR6 Setup Tabs",
-    "SR6 Setup Actions",
-    "SR6 Setup Flows",
-    "No SR6 setup tools are currently available.",
+    "Desktop Summary · SR6 Character Builder",
+    "SR6 Character Tabs",
+    "SR6 Character Actions",
+    "SR6 Character Flows",
+    "No SR6 character commands are currently available.",
     "SR6 Matrix Action",
     "DesktopShell_renders_ruleset_specific_flagship_posture_for_each_supported_lane",
     "DesktopShell_uses_active_ruleset_plugin_catalogs_for_actions_and_workflow_surfaces",
@@ -287,6 +311,8 @@ for marker in (
     "zero hosts",
     "ruleset-specific action and workflow labels",
     "promoted SR4, SR5, and SR6 lanes",
+    "section-host and ruleset parity receipt is present and passing",
+    "direct SR5-versus-SR6 provider parity audit",
 ):
     if marker not in design_doc_text:
         add_failure(f"SR6 sophistication design doc is missing marker: {marker}", policy_reasons)
@@ -321,6 +347,23 @@ payload["reviews"] = {
         "reasonCount": len(runtime_reasons),
         "reasons": runtime_reasons,
     },
+    "providerParityReview": {
+        "status": "pass" if not [
+            reason
+            for reason in receipt_reasons + source_reasons
+            if "provider parity" in reason.lower() or "section-host parity receipt is missing a passing sr5/sr6 provider parity marker" in reason.lower()
+        ] else "fail",
+        "reasonCount": len([
+            reason
+            for reason in receipt_reasons + source_reasons
+            if "provider parity" in reason.lower() or "section-host parity receipt is missing a passing sr5/sr6 provider parity marker" in reason.lower()
+        ]),
+        "reasons": [
+            reason
+            for reason in receipt_reasons + source_reasons
+            if "provider parity" in reason.lower() or "section-host parity receipt is missing a passing sr5/sr6 provider parity marker" in reason.lower()
+        ],
+    },
     "sourceReview": {
         "status": "pass" if not source_reasons else "fail",
         "reasonCount": len(source_reasons),
@@ -341,7 +384,7 @@ evidence["reasonCount"] = len(reasons)
 evidence["failureCount"] = len(reasons)
 payload["status"] = "pass" if not reasons else "fail"
 payload["summary"] = (
-    "SR6 authored ruleset UI sophistication is pinned against SR5 richness and backed by runtime inventory, workflow parity, and shared muscle-memory proof."
+    "SR6 authored ruleset UI sophistication is pinned against SR5 richness and backed by section-host parity, runtime inventory, workflow parity, and shared muscle-memory proof."
     if not reasons
     else "SR6 authored ruleset UI sophistication is not yet proven equal to the SR5 lane."
 )

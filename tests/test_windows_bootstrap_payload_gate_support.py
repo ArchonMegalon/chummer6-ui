@@ -108,3 +108,37 @@ def test_windows_bootstrap_build_fails_from_measured_size_gate_instead_of_hardco
     combined_output = f"{result.stdout}\n{result.stderr}"
     assert "built installer" in combined_output
     assert "blocked until the native bootstrap builder is wired" not in combined_output
+
+
+def test_public_preview_bootstrap_rejects_single_file_publish_before_installer_build(tmp_path: Path) -> None:
+    publish_dir = tmp_path / "publish"
+    dist_dir = tmp_path / "dist"
+    publish_dir.mkdir()
+    dist_dir.mkdir()
+    (publish_dir / "Chummer.Avalonia.exe").write_bytes(b"single-file-stub")
+
+    result = subprocess.run(
+        [
+            "bash",
+            str(REPO_ROOT / "scripts" / "build-desktop-installer.sh"),
+            str(publish_dir),
+            "avalonia",
+            "win-x64",
+            "Chummer.Avalonia.exe",
+            str(dist_dir),
+            "run-preview-expanded-apphost-gate",
+        ],
+        text=True,
+        capture_output=True,
+        check=False,
+        env={
+            **dict(os.environ),
+            "CHUMMER_DESKTOP_RELEASE_CHANNEL": "preview",
+            "CHUMMER_WINDOWS_INSTALLER_MODE": "bootstrap",
+        },
+    )
+
+    assert result.returncode != 0
+    assert "Public Windows bootstrap packaging requires an expanded self-contained apphost" in result.stderr
+    assert "-p:PublishSingleFile=false" in result.stderr
+    assert not (dist_dir / "chummer-avalonia-win-x64-installer.exe").exists()

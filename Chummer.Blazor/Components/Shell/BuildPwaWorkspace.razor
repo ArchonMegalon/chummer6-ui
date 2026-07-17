@@ -1,0 +1,1153 @@
+@namespace Chummer.Blazor.Components.Shell
+@using Chummer.Contracts.Rulesets
+@using Chummer.Blazor.Services
+@using Chummer.Presentation.Overview
+@using Chummer.Presentation.Rulesets
+@using Chummer.Presentation.Shell
+@using Chummer.Presentation.UiKit
+@using Microsoft.JSInterop
+@inject IJSRuntime JsRuntime
+@inject IWorkspacePrivacyLifecycleCapabilities PrivacyLifecycleCapabilities
+@implements IAsyncDisposable
+
+<section class="build-pwa-workspace"
+         data-build-pwa-layout="responsive"
+         data-build-pwa-layout-source="browser-measured-geometry"
+         data-active-builder-section="@(ActiveTabId ?? "none")">
+    <header class="build-pwa-compact-context" aria-labelledby="build-pwa-compact-title">
+        <div class="build-pwa-compact-copy">
+            <p>Chummer builder</p>
+            <h1 id="build-pwa-compact-title">@BuilderTitle</h1>
+            <span aria-live="polite">@CurrentStepText</span>
+        </div>
+        <progress value="@CurrentStepNumber"
+                  max="@Math.Max(StepCount, 1)"
+                  aria-label="Builder section position">
+            @CurrentStepText
+        </progress>
+        @if (MobileCommands.Count > 0)
+        {
+            <details class="build-pwa-mobile-command-menu">
+                <summary>Actions</summary>
+                <div>
+                    @foreach (AppCommandDefinition command in MobileCommands)
+                    {
+                        <button type="button"
+                                data-build-pwa-command="@command.Id"
+                                disabled="@(!IsCommandEnabled(command) || State.IsBusy)"
+                                @onclick="() => ExecuteCommandRequested.InvokeAsync(command.Id)">
+                            @ShellChromeBoundary.FormatCommandLabel(command.Id)
+                        </button>
+                    }
+                </div>
+            </details>
+        }
+    </header>
+
+    @if (_externalRevision is not null)
+    {
+        <section class="build-pwa-integrity-alert"
+                 data-build-pwa-integrity-conflict
+                 data-build-pwa-integrity-revision="@_externalRevision.Revision"
+                 data-build-pwa-integrity-deleted="@_externalRevision.IsDeleted.ToString().ToLowerInvariant()"
+                 role="alert"
+                 aria-labelledby="build-pwa-integrity-alert-heading"
+                 aria-describedby="build-pwa-integrity-alert-guidance"
+                 tabindex="-1"
+                 @ref="_integrityAlert">
+            <div>
+                <p>@(_externalRevision.IsDeleted ? "Another tab deleted this runner" : "Another tab changed this runner")</p>
+                <h2 id="build-pwa-integrity-alert-heading">
+                    @(_externalRevision.IsDeleted
+                        ? (HasValidatedRecoveryCopy ? "Save the exact recovery copy" : "Recovery copy unavailable")
+                        : "Review the newer workspace revision")
+                </h2>
+                <p id="build-pwa-integrity-alert-guidance">
+                    @if (_externalRevision.IsDeleted)
+                    {
+                        @if (HasValidatedRecoveryCopy)
+                        {
+                            <text>The durable runner was deleted elsewhere. This tab retained one complete, validated, memory-only dossier payload without recreating the deleted runner. Save that exact recovery copy, then close the preserved runner.</text>
+                        }
+                        else
+                        {
+                            <text>The durable runner was deleted elsewhere, but this tab has no complete validated dossier payload for the current revision. @RecoveryUnavailableReason Keep this tab open while you review the visible edits; this app will not reconstruct or upload a partial copy.</text>
+                        }
+                    }
+                    else
+                    {
+                        <text>This tab kept your current view and did not overwrite it. Reload the newest state and discard this tab's in-memory view, or keep editing and save a copy before you reconcile.</text>
+                    }
+                </p>
+            </div>
+            <div class="build-pwa-integrity-alert__actions">
+                @if (!_externalRevision.IsDeleted)
+                {
+                    <button type="button"
+                            data-build-pwa-integrity-reload
+                            disabled="@State.IsBusy"
+                            @onclick="ReloadExternalRevisionAsync">
+                        Reload newest / discard this tab
+                    </button>
+                }
+                @if (!_externalRevision.IsDeleted
+                    || (HasValidatedRecoveryCopy && !RecoveryExportPrepared && !RecoveryExportConfirmed))
+                {
+                    <button type="button"
+                            data-build-pwa-integrity-save-copy
+                            data-build-pwa-recovery-save="@(_externalRevision.IsDeleted ? "true" : null)"
+                            disabled="@State.IsBusy"
+                            @onclick="KeepEditingAndSaveCopyAsync">
+                        @(_externalRevision.IsDeleted ? "Save exact recovery copy" : "Keep editing and save a copy")
+                    </button>
+                }
+                @if (_externalRevision.IsDeleted
+                    && HasValidatedRecoveryCopy
+                    && RecoveryAwaitingExplicitUserAck
+                    && !RecoveryExportConfirmed)
+                {
+                    <button type="button"
+                            data-build-pwa-integrity-confirm-recovery
+                            disabled="@State.IsBusy"
+                            @onclick="ConfirmFallbackRecoverySavedAsync">
+                        I saved and can open the recovery file
+                    </button>
+                }
+                @if (_externalRevision.IsDeleted
+                    && HasValidatedRecoveryCopy
+                    && RecoveryExportConfirmed)
+                {
+                    <button type="button"
+                            data-build-pwa-integrity-close-recovery
+                            disabled="@State.IsBusy"
+                            @onclick="CloseExportedRecoveryAsync">
+                        Close preserved runner
+                    </button>
+                }
+            </div>
+        </section>
+    }
+
+    @if (!string.IsNullOrWhiteSpace(_integrityNotice))
+    {
+        <p class="build-pwa-integrity-status"
+           data-build-pwa-integrity-status
+           role="status"
+           aria-live="polite"
+           aria-atomic="true">@_integrityNotice</p>
+    }
+
+    @if ((State.IsDirty || State.ConflictState is not null)
+        && _activeRecoveryReadiness is { Available: false } readiness)
+    {
+        <p class="build-pwa-integrity-status"
+           data-build-pwa-recovery-readiness="blocked"
+           role="status"
+           aria-live="polite">
+            Exact recovery protection is not ready: @readiness.UnavailableReason
+        </p>
+    }
+
+    <nav class="build-pwa-step-rail" aria-labelledby="build-pwa-step-heading">
+        <div class="build-pwa-step-rail-heading">
+            <p>Build path</p>
+            <h2 id="build-pwa-step-heading">@BuildNavigationTabsHeading()</h2>
+            <span>@CurrentStepText</span>
+        </div>
+
+        <fieldset class="build-pwa-layout-picker" data-build-pwa-layout-picker>
+            <legend>Layout</legend>
+            <div>
+                <label>
+                    <input type="radio"
+                           name="build-pwa-layout"
+                           value="auto"
+                           data-build-pwa-layout-choice="auto"
+                           aria-describedby="build-pwa-layout-status"
+                           checked="checked" />
+                    <span>Auto</span>
+                </label>
+                <label>
+                    <input type="radio"
+                           name="build-pwa-layout"
+                           value="compact"
+                           data-build-pwa-layout-choice="compact"
+                           aria-describedby="build-pwa-layout-status" />
+                    <span>Compact</span>
+                </label>
+                <label>
+                    <input type="radio"
+                           name="build-pwa-layout"
+                           value="workspace"
+                           data-build-pwa-layout-choice="workspace"
+                           aria-describedby="build-pwa-layout-status" />
+                    <span>Workspace</span>
+                </label>
+            </div>
+            <span id="build-pwa-layout-status" role="status" aria-live="polite">
+                Auto follows the current browser width.
+            </span>
+        </fieldset>
+
+        @if (OpenWorkspaces.Count > 1)
+        {
+            <details class="build-pwa-runner-switcher" open>
+                <summary>@OpenWorkspaces.Count open runners</summary>
+                <OpenWorkspaceTree OpenWorkspaces="OpenWorkspaces"
+                                   CurrentLanguage="@(DesktopLocalizationCatalog.NormalizeOrDefault(State.Preferences.Language))"
+                                   ActiveWorkspaceId="ActiveWorkspaceId"
+                                   IsBusy="State.IsBusy"
+                                   OpenWorkspaceRequested="OpenWorkspaceRequested"
+                                   CloseWorkspaceRequested="CloseWorkspaceRequested" />
+            </details>
+        }
+
+        <ol class="build-pwa-step-list">
+            @for (int index = 0; index < NavigationTabs.Count; index++)
+            {
+                NavigationTabDefinition tab = NavigationTabs[index];
+                bool isActive = string.Equals(ActiveTabId, tab.Id, StringComparison.Ordinal);
+                bool enabled = IsNavigationTabEnabled(tab);
+                <li class="@(isActive ? "active" : null)">
+                    <button type="button"
+                            id="@tab.Id"
+                            class="build-pwa-step-button"
+                            data-nav-tab="@tab.Id"
+                            data-build-pwa-step="@(index + 1)"
+                            aria-current="@(isActive ? "step" : null)"
+                            aria-controls="chummer-workspace-main"
+                            aria-label="@BuildStepAriaLabel(tab, index)"
+                            disabled="@(!enabled || State.IsBusy)"
+                            @onclick="() => SelectTabRequested.InvokeAsync(tab.Id)">
+                        <span aria-hidden="true">@(index + 1)</span>
+                        <strong>@FormatNavigationTabLabel(tab)</strong>
+                    </button>
+                </li>
+            }
+        </ol>
+    </nav>
+
+    <main id="chummer-workspace-main"
+          class="center-pane build-pwa-editor"
+          tabindex="-1"
+          aria-label="@CurrentSectionLabel">
+        <SectionPane State="State"
+                     IsCommandEnabled="IsCommandEnabled"
+                     ExecuteCommandRequested="ExecuteCommandRequested"
+                     ExecuteUiControlRequested="ExecuteUiControlRequested"
+                     AttributeEditRequested="AttributeEditRequested"
+                     LoadWorkspaceRequested="LoadWorkspaceRequested" />
+    </main>
+
+    <aside id="build-pwa-summary"
+           class="build-pwa-summary-rail"
+           tabindex="-1"
+           aria-label="Builder summary and actions">
+        <SummaryHeader State="State"
+                       ShellSurface="ShellSurface"
+                       NavigationTabs="NavigationTabs"
+                       ActiveTabId="ActiveTabId"
+                       IsNavigationTabEnabled="IsNavigationTabEnabled"
+                       SelectTabRequested="SelectTabRequested"
+                       InspectRuntimeRequested="InspectRuntimeRequested" />
+
+        <section class="panel build-pwa-workspace-status" aria-labelledby="build-pwa-status-heading">
+            <div>
+                <p>Workspace status</p>
+                <h2 id="build-pwa-status-heading">@WorkspaceStatusText</h2>
+            </div>
+            <dl>
+                <div><dt>Section</dt><dd>@CurrentSectionLabel</dd></div>
+                <div><dt>Runtime</dt><dd>@RuntimeStatusText</dd></div>
+                @if (State.ActiveBuildLab is not null)
+                {
+                    <div><dt>Intake</dt><dd>@(State.ActiveBuildLab.CanContinue ? "Ready to compare" : "Needs required input")</dd></div>
+                }
+            </dl>
+        </section>
+
+        @{ HostedBuildPrivacyLifecycleSnapshot privacyLifecycle = PrivacyLifecycleCapabilities.Current; }
+        <section class="panel build-pwa-privacy-lifecycle"
+                 data-hosted-build-privacy-lifecycle="@privacyLifecycle.ContractName"
+                 data-privacy-launch-status="@privacyLifecycle.Status"
+                 data-privacy-launch-review-required="@privacyLifecycle.ReviewRequired.ToString().ToLowerInvariant()"
+                 aria-labelledby="build-pwa-privacy-lifecycle-heading">
+            <div>
+                <p>Hosted Build data lifecycle</p>
+                <h2 id="build-pwa-privacy-lifecycle-heading">
+                    @(privacyLifecycle.ReviewRequired ? "Privacy review required" : "Privacy lifecycle documented")
+                </h2>
+            </div>
+            <p data-hosted-build-privacy-summary>@privacyLifecycle.Summary</p>
+            <ul aria-label="Current Hosted Build privacy lifecycle facts">
+                @foreach (HostedBuildPrivacyLifecycleFact fact in privacyLifecycle.Facts)
+                {
+                    <li data-hosted-build-privacy-capability="@fact.Id">
+                        <strong>@fact.Label</strong>
+                        <span>@fact.Disclosure</span>
+                    </li>
+                }
+            </ul>
+        </section>
+
+        @if (ActiveWorkspaceActions.Count > 0)
+        {
+            <section class="panel build-pwa-action-panel" aria-labelledby="build-pwa-actions-heading">
+                <h2 id="build-pwa-actions-heading">@BuildSectionActionsHeading()</h2>
+                <div class="build-pwa-action-list">
+                    @foreach (WorkspaceSurfaceActionDefinition action in ActiveWorkspaceActions)
+                    {
+                        <button type="button"
+                                class="action-button @(State.ActiveActionId == action.Id ? "selected" : null)"
+                                data-workspace-action="@action.Id"
+                                disabled="@State.IsBusy"
+                                @onclick="() => ExecuteWorkspaceActionRequested.InvokeAsync(action)">
+                            @FormatWorkspaceActionLabel(action)
+                        </button>
+                    }
+                </div>
+            </section>
+        }
+
+        @if (ActiveWorkflowSurfaceActions.Count > 0)
+        {
+            <section class="panel build-pwa-action-panel" aria-labelledby="build-pwa-flows-heading">
+                <h2 id="build-pwa-flows-heading">@BuildWorkflowSurfacesHeading()</h2>
+                <div class="build-pwa-action-list">
+                    @foreach (WorkflowSurfaceActionBinding surface in ActiveWorkflowSurfaceActions)
+                    {
+                        <button type="button"
+                                class="mini-btn"
+                                data-workflow-surface="@surface.SurfaceId"
+                                disabled="@State.IsBusy"
+                                @onclick="() => ExecuteWorkflowSurfaceRequested.InvokeAsync(surface.ActionId)">
+                            @FormatWorkflowSurfaceLabel(surface)
+                        </button>
+                    }
+                </div>
+            </section>
+        }
+    </aside>
+
+    <nav class="build-pwa-mobile-dock" aria-label="Builder step actions">
+        <button type="button"
+                data-build-pwa-previous
+                disabled="@(PreviousTab is null || State.IsBusy)"
+                @onclick="SelectPreviousTabAsync">
+            <span aria-hidden="true">&#8592;</span>
+            Previous
+        </button>
+        <a href="#build-pwa-summary" data-build-pwa-review>Review</a>
+        <button type="button"
+                data-build-pwa-next
+                disabled="@(NextTab is null || State.IsBusy)"
+                @onclick="SelectNextTabAsync">
+            Next
+            <span aria-hidden="true">&#8594;</span>
+        </button>
+    </nav>
+</section>
+
+@code {
+    [Parameter]
+    public CharacterOverviewState State { get; set; } = CharacterOverviewState.Empty;
+
+    [Parameter]
+    public ShellSurfaceState ShellSurface { get; set; } = ShellSurfaceState.Empty;
+
+    [Parameter]
+    public IReadOnlyList<OpenWorkspaceState> OpenWorkspaces { get; set; } = [];
+
+    [Parameter]
+    public CharacterWorkspaceId? ActiveWorkspaceId { get; set; }
+
+    [Parameter]
+    public string? ActiveTabId { get; set; }
+
+    [Parameter]
+    public IReadOnlyList<NavigationTabDefinition> NavigationTabs { get; set; } = [];
+
+    [Parameter]
+    public IReadOnlyList<WorkspaceSurfaceActionDefinition> ActiveWorkspaceActions { get; set; } = [];
+
+    [Parameter]
+    public IReadOnlyList<WorkflowSurfaceActionBinding> ActiveWorkflowSurfaceActions { get; set; } = [];
+
+    [Parameter]
+    public IReadOnlyList<AppCommandDefinition> MobileCommands { get; set; } = [];
+
+    [Parameter]
+    public Func<NavigationTabDefinition, bool> IsNavigationTabEnabled { get; set; } = _ => false;
+
+    [Parameter]
+    public Func<AppCommandDefinition, bool> IsCommandEnabled { get; set; } = _ => false;
+
+    [Parameter]
+    public EventCallback<string> OpenWorkspaceRequested { get; set; }
+
+    [Parameter]
+    public EventCallback<string> CloseWorkspaceRequested { get; set; }
+
+    [Parameter]
+    public EventCallback<string> SelectTabRequested { get; set; }
+
+    [Parameter]
+    public EventCallback<WorkspaceSurfaceActionDefinition> ExecuteWorkspaceActionRequested { get; set; }
+
+    [Parameter]
+    public EventCallback<string> ExecuteWorkflowSurfaceRequested { get; set; }
+
+    [Parameter]
+    public EventCallback<string> ExecuteCommandRequested { get; set; }
+
+    [Parameter]
+    public EventCallback<string> ExecuteUiControlRequested { get; set; }
+
+    [Parameter]
+    public EventCallback<AttributeEditRequest> AttributeEditRequested { get; set; }
+
+    [Parameter]
+    public EventCallback<string> LoadWorkspaceRequested { get; set; }
+
+    [Parameter]
+    public EventCallback InspectRuntimeRequested { get; set; }
+
+    [Parameter]
+    public IWorkspaceDeletionCommitSource? DeletionCommitSource { get; set; }
+
+    [Parameter]
+    public IWorkspaceRecoveryCopySource? RecoveryCopySource { get; set; }
+
+    protected override void OnParametersSet()
+    {
+        UpdateDeletionCommitSubscription();
+        _activeRecoveryReadiness = State.WorkspaceId is { } readinessWorkspace
+            && State.ContentRevision > 0
+            && (State.IsDirty || State.ConflictState is not null)
+            && RecoveryCopySource is not null
+                ? ResolveRecoveryCopyAvailability(readinessWorkspace.Value)
+                : null;
+        if (_externalRevision is not null
+            && (!string.Equals(_externalRevision.WorkspaceId, State.WorkspaceId?.Value, StringComparison.Ordinal)
+                || (!_externalRevision.IsDeleted && State.ContentRevision >= _externalRevision.Revision)))
+        {
+            _externalRevision = null;
+            _recoveryCopyPreparedGeneration = null;
+        }
+        else if (_externalRevision?.IsDeleted == true)
+        {
+            bool wasPrepared = _recoveryCopyPreparedGeneration is not null;
+            WorkspaceRecoveryCopyAvailability? recovery = ResolveRecoveryCopyAvailability(
+                _externalRevision.WorkspaceId);
+            _externalRevision = _externalRevision with { Recovery = recovery };
+            _recoveryCopyPreparedGeneration = recovery?.ExportPrepared == true
+                ? recovery.LocalGeneration
+                : null;
+            if (recovery?.ExportConfirmed == true)
+            {
+                _integrityNotice = "Recovery file is confirmed. You can now close the preserved runner.";
+            }
+            else if (wasPrepared && recovery?.ExportPrepared != true)
+            {
+                _integrityNotice = "Recovery save did not complete. The exact memory-only payload is still available; retry before closing.";
+            }
+        }
+    }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (_disposed)
+            return;
+
+        bool retryRegistration = false;
+        if (_integrityBridgeToken is null)
+        {
+            _integrityBridge ??= DotNetObjectReference.Create(this);
+            _integrityRegistrationAttempts = Math.Min(_integrityRegistrationAttempts + 1, 32);
+            try
+            {
+                _integrityBridgeToken = await RecoveryInteropDeadlineRuntime.RunAsync(
+                    token => JsRuntime.InvokeAsync<string?>(
+                        "chummerBuildPwaIntegrity.registerBridge",
+                        token,
+                        _integrityBridge).AsTask(),
+                    IntegrityInteropDeadline,
+                    _componentLifetime.Token);
+                retryRegistration = _integrityBridgeToken is null;
+            }
+            catch (JSDisconnectedException)
+            {
+                // A later circuit render gets another bounded registration attempt.
+                retryRegistration = true;
+            }
+            catch (JSException)
+            {
+                retryRegistration = true;
+            }
+            catch (OperationCanceledException) when (_componentLifetime.IsCancellationRequested)
+            {
+                return;
+            }
+            catch (OperationCanceledException)
+            {
+                _integrityBridgeToken = null;
+                retryRegistration = true;
+            }
+        }
+
+        if (_integrityBridgeToken is not null)
+        {
+            try
+            {
+                BuildPwaIntegritySnapshot snapshot = CreateIntegritySnapshot();
+                string mutationKind = ResolveMutationKind(snapshot);
+                BuildPwaIntegritySnapshot published = await RecoveryInteropDeadlineRuntime.RunAsync(
+                    token => JsRuntime.InvokeAsync<BuildPwaIntegritySnapshot>(
+                        "chummerBuildPwaIntegrity.updateState",
+                        token,
+                        snapshot,
+                        mutationKind,
+                        _integrityBridgeToken).AsTask(),
+                    IntegrityInteropDeadline,
+                    _componentLifetime.Token);
+                if (published.BridgeAvailable)
+                {
+                    RememberPublishedSnapshot(snapshot);
+                    _integrityRegistrationAttempts = 0;
+                }
+                else
+                {
+                    _integrityBridgeToken = null;
+                    retryRegistration = true;
+                }
+            }
+            catch (JSDisconnectedException)
+            {
+                _integrityBridgeToken = null;
+                retryRegistration = true;
+            }
+            catch (JSException)
+            {
+                _integrityBridgeToken = null;
+                retryRegistration = true;
+            }
+            catch (OperationCanceledException) when (_componentLifetime.IsCancellationRequested)
+            {
+                return;
+            }
+            catch (OperationCanceledException)
+            {
+                _integrityBridgeToken = null;
+                retryRegistration = true;
+            }
+        }
+
+        if (firstRender)
+        {
+            try
+            {
+                await JsRuntime.InvokeVoidAsync("chummerBuildPwaLayout.applyAll");
+            }
+            catch (JSDisconnectedException)
+            {
+                // The server-rendered workspace remains accessible without layout JS.
+            }
+            catch (JSException)
+            {
+                // Browser media queries retain the default responsive layout.
+            }
+        }
+
+        if (_focusIntegrityAlert)
+        {
+            _focusIntegrityAlert = false;
+            try
+            {
+                await _integrityAlert.FocusAsync(preventScroll: true);
+            }
+            catch (JSDisconnectedException)
+            {
+                // Focus recovery is best-effort during circuit teardown.
+            }
+            catch (JSException)
+            {
+                // The alert remains a named, keyboard-focusable landmark.
+            }
+        }
+
+        if (retryRegistration && !_disposed)
+            ScheduleIntegrityBridgeRegistrationRetry();
+    }
+
+    [JSInvokable]
+    public Task<BuildPwaIntegritySnapshot> GetBuildPwaIntegrityStateAsync()
+        => Task.FromResult(CreateIntegritySnapshot());
+
+    [JSInvokable]
+    public async Task SetUpdateDeferredAsync(bool deferred)
+    {
+        await InvokeAsync(() =>
+        {
+            _updateDeferred = deferred;
+            _integrityNotice = deferred
+                ? "An app update is waiting until this runner is clean and conflict-free."
+                : _externalRevision is null ? null : _integrityNotice;
+            StateHasChanged();
+        });
+    }
+
+    [JSInvokable]
+    public Task RequestBuildPwaIntegrityBridgeRecoveryAsync()
+        => InvokeAsync(() =>
+        {
+            if (_disposed)
+                return;
+
+            _integrityBridgeToken = null;
+            _integrityRegistrationAttempts = 0;
+            StateHasChanged();
+        });
+
+    private void ScheduleIntegrityBridgeRegistrationRetry()
+    {
+        if (_disposed)
+            return;
+
+        long owner = Interlocked.Increment(ref _integrityRetryGeneration);
+        if (Interlocked.CompareExchange(ref _integrityRetryOwner, owner, 0) != 0)
+            return;
+
+        int exponent = Math.Min(Math.Max(_integrityRegistrationAttempts - 1, 0), 6);
+        TimeSpan delay = TimeSpan.FromMilliseconds(Math.Min(250 * (1 << exponent), 15_000));
+        _ = RetryIntegrityBridgeRegistrationAsync(delay, owner);
+    }
+
+    private async Task RetryIntegrityBridgeRegistrationAsync(TimeSpan delay, long owner)
+    {
+        try
+        {
+            await Task.Delay(delay, _componentLifetime.Token).ConfigureAwait(false);
+            if (_disposed
+                || Interlocked.CompareExchange(ref _integrityRetryOwner, 0, owner) != owner)
+                return;
+
+            // Release this generation before rendering. A re-entrant render may
+            // own the next timer; this generation's finally block cannot clear it.
+            await InvokeAsync(StateHasChanged);
+        }
+        catch (OperationCanceledException) when (_componentLifetime.IsCancellationRequested)
+        {
+            // Disposal cancels every pending retry without reviving the component.
+        }
+        finally
+        {
+            Interlocked.CompareExchange(ref _integrityRetryOwner, 0, owner);
+        }
+    }
+
+    [JSInvokable]
+    public async Task HandleExternalWorkspaceRevisionAsync(
+        string workspaceId,
+        long revision,
+        string mutationKind)
+    {
+        if (!AllowedExternalMutationKinds.Contains(mutationKind)
+            || revision is <= 0 or > MaxJavaScriptSafeInteger)
+        {
+            return;
+        }
+
+        bool closeCleanDeletedView = false;
+        bool loadNewerRevision = false;
+        await InvokeAsync(() =>
+        {
+            string? activeWorkspaceId = State.WorkspaceId?.Value;
+            bool isDelete = string.Equals(mutationKind, "delete", StringComparison.Ordinal);
+            bool isStale = isDelete
+                ? revision < State.ContentRevision
+                : revision <= State.ContentRevision;
+            if (string.IsNullOrWhiteSpace(activeWorkspaceId)
+                || !string.Equals(activeWorkspaceId, workspaceId, StringComparison.Ordinal)
+                || isStale)
+            {
+                return;
+            }
+
+            if (State.IsDirty || State.ConflictState is not null || _externalRevision is not null)
+            {
+                bool firstTransition = _externalRevision is null;
+                WorkspaceRecoveryCopyAvailability? recovery = isDelete
+                    ? ResolveRecoveryCopyAvailability(workspaceId)
+                    : _externalRevision?.Recovery;
+                _externalRevision = new ExternalWorkspaceRevision(
+                    workspaceId,
+                    Math.Max(revision, _externalRevision?.Revision ?? 0),
+                    isDelete || _externalRevision?.IsDeleted == true,
+                    recovery);
+                _integrityNotice = _externalRevision.IsDeleted
+                    ? HasValidatedRecoveryCopy
+                        ? "This runner was deleted elsewhere. An exact validated recovery copy is available from memory."
+                        : "This runner was deleted elsewhere. A complete validated recovery payload is unavailable; keep this tab open."
+                    : "A newer revision is available. This tab kept your current edits and did not reload.";
+                _focusIntegrityAlert = firstTransition;
+                StateHasChanged();
+                return;
+            }
+
+            if (isDelete)
+            {
+                _externalRevision = new ExternalWorkspaceRevision(
+                    workspaceId,
+                    revision,
+                    IsDeleted: true,
+                    Recovery: null);
+                _integrityNotice = "This runner was deleted in another tab. Closing its clean local view.";
+                _focusIntegrityAlert = true;
+                StateHasChanged();
+                closeCleanDeletedView = true;
+                return;
+            }
+
+            _integrityNotice = "Loading newer changes from another tab.";
+            StateHasChanged();
+            loadNewerRevision = true;
+        });
+
+        // Publish callbacks only after the component transition has completed;
+        // consumer re-entry cannot observe partially updated integrity state.
+        if (closeCleanDeletedView)
+        {
+            await CloseWorkspaceRequested.InvokeAsync(workspaceId);
+        }
+        else if (loadNewerRevision)
+        {
+            await LoadWorkspaceRequested.InvokeAsync(workspaceId);
+        }
+    }
+
+    public async ValueTask DisposeAsync()
+    {
+        if (_disposed)
+            return;
+
+        _disposed = true;
+        Interlocked.Exchange(ref _integrityRetryOwner, 0);
+        _componentLifetime.Cancel();
+        if (_subscribedDeletionCommitSource is not null)
+        {
+            _subscribedDeletionCommitSource.WorkspaceDeletionCommitted -= PublishWorkspaceDeletionAsync;
+            _subscribedDeletionCommitSource = null;
+        }
+
+        DotNetObjectReference<BuildPwaWorkspace>? bridge = _integrityBridge;
+        string? bridgeToken = _integrityBridgeToken;
+        _integrityBridge = null;
+        _integrityBridgeToken = null;
+        if (bridge is null)
+        {
+            _componentLifetime.Dispose();
+            return;
+        }
+
+        try
+        {
+            if (bridgeToken is not null)
+            {
+                await RecoveryInteropDeadlineRuntime.RunAsync(
+                    token => JsRuntime.InvokeAsync<bool>(
+                        "chummerBuildPwaIntegrity.unregisterBridge",
+                        token,
+                        bridgeToken).AsTask(),
+                    IntegrityTeardownDeadline,
+                    CancellationToken.None);
+            }
+        }
+        catch (JSDisconnectedException)
+        {
+            // The circuit already owns teardown.
+        }
+        catch (JSException)
+        {
+            // A missing script during teardown cannot make an update safe.
+        }
+        catch (OperationCanceledException)
+        {
+            // Teardown owns a short independent deadline; a wedged browser call
+            // must not retain the circuit or its .NET callback indefinitely.
+        }
+        finally
+        {
+            bridge.Dispose();
+            _componentLifetime.Dispose();
+        }
+    }
+
+    private async Task ReloadExternalRevisionAsync()
+    {
+        if (_externalRevision is null)
+            return;
+
+        _integrityNotice = "Reloading the newest workspace state. This tab will not overwrite it.";
+        await LoadWorkspaceRequested.InvokeAsync(_externalRevision.WorkspaceId);
+    }
+
+    private async Task KeepEditingAndSaveCopyAsync()
+    {
+        if (_externalRevision?.IsDeleted == true)
+        {
+            WorkspaceRecoveryCopyAvailability? recovery = _externalRevision.Recovery;
+            if (RecoveryCopySource is null || recovery?.Available != true)
+            {
+                _integrityNotice = "Recovery copy unavailable. Keep this tab open; no partial dossier was exported.";
+                return;
+            }
+
+            WorkspaceRecoveryCopyExportResult result;
+            try
+            {
+                result = await RecoveryCopySource.PrepareRecoveryCopyAsync(
+                    new CharacterWorkspaceId(_externalRevision.WorkspaceId),
+                    recovery.SourceRevision,
+                    recovery.LocalGeneration,
+                    _componentLifetime.Token);
+            }
+            catch
+            {
+                _integrityNotice = "Recovery copy unavailable. Keep this tab open; no partial dossier was exported.";
+                return;
+            }
+            if (!result.Success)
+            {
+                _integrityNotice = result.Error
+                    ?? "Recovery copy unavailable. Keep this tab open; no partial dossier was exported.";
+                return;
+            }
+
+            WorkspaceRecoveryCopyAvailability? refreshedRecovery = ResolveRecoveryCopyAvailability(
+                _externalRevision.WorkspaceId);
+            _externalRevision = _externalRevision with { Recovery = refreshedRecovery };
+            _recoveryCopyPreparedGeneration = refreshedRecovery?.ExportPrepared == true
+                ? refreshedRecovery.LocalGeneration
+                : null;
+            _integrityNotice = refreshedRecovery?.ExportConfirmed == true
+                ? "Recovery file is confirmed. You can now close the preserved runner."
+                : $"Recovery save request prepared as {result.FileName} ({result.ContentType}). Waiting for a verified browser outcome.";
+            return;
+        }
+
+        _integrityNotice = "Your current view is still open. Save a copy before reconciling the newer revision.";
+        await ExecuteCommandRequested.InvokeAsync("save_character_as");
+    }
+
+    private Task ConfirmFallbackRecoverySavedAsync()
+    {
+        if (_externalRevision?.IsDeleted != true
+            || _externalRevision.Recovery is not { Available: true, AwaitingExplicitUserAck: true } recovery
+            || RecoveryCopySource is null)
+        {
+            _integrityNotice = "Recovery confirmation is unavailable. Keep this tab open and retry the save.";
+            return Task.CompletedTask;
+        }
+
+        bool confirmed = RecoveryCopySource.AcknowledgeRecoveryCopySaved(
+            new CharacterWorkspaceId(_externalRevision.WorkspaceId),
+            recovery.SourceRevision,
+            recovery.LocalGeneration);
+        WorkspaceRecoveryCopyAvailability? refreshed = ResolveRecoveryCopyAvailability(
+            _externalRevision.WorkspaceId);
+        _externalRevision = _externalRevision with { Recovery = refreshed };
+        _integrityNotice = confirmed
+            ? "Recovery file confirmed. You can now close the preserved runner."
+            : "Recovery confirmation became stale. Keep this tab open and prepare a fresh save.";
+        return Task.CompletedTask;
+    }
+
+    private async Task CloseExportedRecoveryAsync()
+    {
+        if (_externalRevision?.IsDeleted != true
+            || _externalRevision.Recovery is not { Available: true } recovery
+            || !recovery.ExportConfirmed
+            || RecoveryCopySource is null)
+        {
+            _integrityNotice = "Export the exact recovery copy before closing this preserved runner.";
+            return;
+        }
+
+        WorkspaceRecoveryCloseResult result;
+        try
+        {
+            result = await RecoveryCopySource.CloseExportedRecoveryCopyAsync(
+                new CharacterWorkspaceId(_externalRevision.WorkspaceId),
+                recovery.SourceRevision,
+                recovery.LocalGeneration,
+                _componentLifetime.Token);
+        }
+        catch
+        {
+            _integrityNotice = "The preserved runner could not be closed. Its recovery payload remains in memory.";
+            return;
+        }
+        if (!result.Success && !result.PostCommit)
+        {
+            _integrityNotice = result.Error ?? "The preserved runner could not be closed.";
+            return;
+        }
+
+        _externalRevision = null;
+        _recoveryCopyPreparedGeneration = null;
+        _integrityNotice = result.Error
+            ?? "Closed the preserved runner after its exact recovery file was confirmed.";
+    }
+
+    private WorkspaceRecoveryCopyAvailability? ResolveRecoveryCopyAvailability(string workspaceId)
+    {
+        if (RecoveryCopySource is null || State.ContentRevision <= 0)
+            return null;
+
+        try
+        {
+            return RecoveryCopySource.GetRecoveryCopyAvailability(
+                new CharacterWorkspaceId(workspaceId),
+                State.ContentRevision);
+        }
+        catch
+        {
+            return WorkspaceRecoveryCopyAvailability.Unavailable(
+                State.ContentRevision,
+                "Recovery readiness could not be verified; keep this tab open.");
+        }
+    }
+
+    private void UpdateDeletionCommitSubscription()
+    {
+        if (ReferenceEquals(_subscribedDeletionCommitSource, DeletionCommitSource))
+            return;
+
+        if (_subscribedDeletionCommitSource is not null)
+            _subscribedDeletionCommitSource.WorkspaceDeletionCommitted -= PublishWorkspaceDeletionAsync;
+
+        _subscribedDeletionCommitSource = DeletionCommitSource;
+        if (_subscribedDeletionCommitSource is not null)
+            _subscribedDeletionCommitSource.WorkspaceDeletionCommitted += PublishWorkspaceDeletionAsync;
+    }
+
+    private Task PublishWorkspaceDeletionAsync(
+        WorkspaceDeletionCommit commit,
+        CancellationToken ct)
+    {
+        string? bridgeToken = _integrityBridgeToken;
+        if (_disposed || bridgeToken is null)
+            return Task.CompletedTask;
+
+        return InvokeAsync(() => JsRuntime.InvokeVoidAsync(
+                "chummerBuildPwaIntegrity.publishDelete",
+                ct,
+                commit.WorkspaceId.Value,
+                commit.Revision,
+                bridgeToken)
+            .AsTask());
+    }
+
+    private BuildPwaIntegritySnapshot CreateIntegritySnapshot()
+        => new(
+            WorkspaceId: State.WorkspaceId?.Value,
+            ContentRevision: State.ContentRevision,
+            SavedRevision: State.SavedRevision,
+            IsDirty: State.IsDirty,
+            HasConflict: State.ConflictState is not null || _externalRevision is not null,
+            UpdateDeferred: _updateDeferred,
+            BridgeAvailable: true);
+
+    private string ResolveMutationKind(BuildPwaIntegritySnapshot snapshot)
+    {
+        if (!string.Equals(_publishedWorkspaceId, snapshot.WorkspaceId, StringComparison.Ordinal))
+            return "snapshot";
+        if (snapshot.ContentRevision > _publishedContentRevision)
+            return "workspace-update";
+        if (snapshot.SavedRevision > _publishedSavedRevision)
+            return "checkpoint";
+        return "snapshot";
+    }
+
+    private void RememberPublishedSnapshot(BuildPwaIntegritySnapshot snapshot)
+    {
+        _publishedWorkspaceId = snapshot.WorkspaceId;
+        _publishedContentRevision = snapshot.ContentRevision;
+        _publishedSavedRevision = snapshot.SavedRevision;
+    }
+
+    private DotNetObjectReference<BuildPwaWorkspace>? _integrityBridge;
+    private IWorkspaceDeletionCommitSource? _subscribedDeletionCommitSource;
+    private string? _integrityBridgeToken;
+    private int _integrityRegistrationAttempts;
+    private long _integrityRetryGeneration;
+    private long _integrityRetryOwner;
+    private ExternalWorkspaceRevision? _externalRevision;
+    private ElementReference _integrityAlert;
+    private bool _focusIntegrityAlert;
+    private bool _updateDeferred;
+    private string? _integrityNotice;
+    private string? _publishedWorkspaceId;
+    private long _publishedContentRevision;
+    private long _publishedSavedRevision;
+    private long? _recoveryCopyPreparedGeneration;
+    private WorkspaceRecoveryCopyAvailability? _activeRecoveryReadiness;
+    private readonly CancellationTokenSource _componentLifetime = new();
+    private bool _disposed;
+
+    private const long MaxJavaScriptSafeInteger = 9_007_199_254_740_991L;
+    private static readonly TimeSpan IntegrityInteropDeadline = TimeSpan.FromSeconds(5);
+    private static readonly TimeSpan IntegrityTeardownDeadline = TimeSpan.FromSeconds(1);
+
+    private static readonly HashSet<string> AllowedExternalMutationKinds = new(StringComparer.Ordinal)
+    {
+        "workspace-update",
+        "checkpoint",
+        "delete"
+    };
+
+    public sealed record BuildPwaIntegritySnapshot(
+        string? WorkspaceId,
+        long ContentRevision,
+        long SavedRevision,
+        bool IsDirty,
+        bool HasConflict,
+        bool UpdateDeferred,
+        bool BridgeAvailable);
+
+    private bool HasValidatedRecoveryCopy
+        => _externalRevision?.IsDeleted == true
+            && _externalRevision.Recovery is { Available: true } recovery
+            && recovery.SourceRevision == State.ContentRevision
+            && recovery.LocalGeneration > 0;
+
+    private bool RecoveryExportPrepared
+        => HasValidatedRecoveryCopy
+            && _externalRevision?.Recovery is { ExportPrepared: true } recovery
+            && _recoveryCopyPreparedGeneration == recovery.LocalGeneration;
+
+    private bool RecoveryExportConfirmed
+        => HasValidatedRecoveryCopy
+            && _externalRevision?.Recovery is { ExportConfirmed: true };
+
+    private bool RecoveryAwaitingExplicitUserAck
+        => HasValidatedRecoveryCopy
+            && _externalRevision?.Recovery is { AwaitingExplicitUserAck: true };
+
+    private string RecoveryUnavailableReason
+        => _externalRevision?.Recovery?.UnavailableReason
+            ?? "Recovery capacity or canonical validation is not ready.";
+
+    private sealed record ExternalWorkspaceRevision(
+        string WorkspaceId,
+        long Revision,
+        bool IsDeleted,
+        WorkspaceRecoveryCopyAvailability? Recovery);
+
+    private int StepCount => NavigationTabs.Count;
+
+    private int ActiveTabIndex
+    {
+        get
+        {
+            for (int index = 0; index < NavigationTabs.Count; index++)
+            {
+                if (string.Equals(NavigationTabs[index].Id, ActiveTabId, StringComparison.Ordinal))
+                    return index;
+            }
+
+            return -1;
+        }
+    }
+
+    private int CurrentStepNumber => ActiveTabIndex >= 0 ? ActiveTabIndex + 1 : 1;
+
+    private string CurrentSectionLabel => ActiveTabIndex >= 0
+        ? FormatNavigationTabLabel(NavigationTabs[ActiveTabIndex])
+        : "Choose a section";
+
+    private string CurrentStepText => StepCount == 0
+        ? "No builder sections available"
+        : $"Section {CurrentStepNumber} of {StepCount}: {CurrentSectionLabel}";
+
+    private string BuilderTitle => State.Profile?.Alias
+        ?? State.Profile?.Name
+        ?? "Runner workspace";
+
+    private string WorkspaceStatusText => State.IsBusy
+        ? "Updating"
+        : !string.IsNullOrWhiteSpace(ShellSurface.Error) || !string.IsNullOrWhiteSpace(State.Error)
+            ? "Needs attention"
+            : State.ActiveBuildLab is { CanContinue: false }
+                ? "Continue the intake"
+                : "Ready for edits";
+
+    private string RuntimeStatusText => !string.IsNullOrWhiteSpace(ShellSurface.Error) || !string.IsNullOrWhiteSpace(State.Error)
+        ? "Unavailable"
+        : State.IsBusy
+            ? "Updating"
+            : "Available";
+
+    private NavigationTabDefinition? PreviousTab => FindEnabledTab(-1);
+
+    private NavigationTabDefinition? NextTab => FindEnabledTab(1);
+
+    private NavigationTabDefinition? FindEnabledTab(int direction)
+    {
+        if (ActiveTabIndex < 0)
+            return null;
+
+        for (int index = ActiveTabIndex + direction;
+             index >= 0 && index < NavigationTabs.Count;
+             index += direction)
+        {
+            NavigationTabDefinition tab = NavigationTabs[index];
+            if (IsNavigationTabEnabled(tab))
+                return tab;
+        }
+
+        return null;
+    }
+
+    private Task SelectPreviousTabAsync()
+        => PreviousTab is { } tab
+            ? SelectTabRequested.InvokeAsync(tab.Id)
+            : Task.CompletedTask;
+
+    private Task SelectNextTabAsync()
+        => NextTab is { } tab
+            ? SelectTabRequested.InvokeAsync(tab.Id)
+            : Task.CompletedTask;
+
+    private string BuildNavigationTabsHeading()
+        => RulesetUiDirectiveCatalog.BuildNavigationTabsHeading(ResolveActiveRulesetId());
+
+    private string BuildSectionActionsHeading()
+        => RulesetUiDirectiveCatalog.BuildSectionActionsHeading(ResolveActiveRulesetId());
+
+    private string BuildWorkflowSurfacesHeading()
+        => RulesetUiDirectiveCatalog.BuildWorkflowSurfacesHeading(ResolveActiveRulesetId());
+
+    private string FormatNavigationTabLabel(NavigationTabDefinition tab)
+        => RulesetUiDirectiveCatalog.FormatNavigationTabLabel(tab.RulesetId, tab.Id, tab.Label);
+
+    private string FormatWorkspaceActionLabel(WorkspaceSurfaceActionDefinition action)
+        => RulesetUiDirectiveCatalog.FormatWorkspaceActionLabel(action.RulesetId, action.Id, action.TargetId, action.Label);
+
+    private string FormatWorkflowSurfaceLabel(WorkflowSurfaceActionBinding surface)
+        => RulesetUiDirectiveCatalog.FormatWorkflowSurfaceLabel(ResolveActiveRulesetId(), surface.ActionId, surface.Label);
+
+    private string BuildStepAriaLabel(NavigationTabDefinition tab, int index)
+        => $"Section {index + 1} of {StepCount}: {FormatNavigationTabLabel(tab)}";
+
+    private string? ResolveActiveRulesetId()
+    {
+        string? workspaceRulesetId = OpenWorkspaces
+            .FirstOrDefault(workspace => string.Equals(workspace.Id.Value, ActiveWorkspaceId?.Value, StringComparison.Ordinal))
+            ?.RulesetId;
+        return RulesetDefaults.NormalizeOptional(NavigationTabs.FirstOrDefault()?.RulesetId)
+            ?? RulesetDefaults.NormalizeOptional(ActiveWorkspaceActions.FirstOrDefault()?.RulesetId)
+            ?? RulesetDefaults.NormalizeOptional(workspaceRulesetId)
+            ?? RulesetDefaults.NormalizeOptional(OpenWorkspaces.FirstOrDefault()?.RulesetId);
+    }
+}

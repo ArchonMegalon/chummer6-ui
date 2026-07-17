@@ -632,7 +632,7 @@ public sealed class AvaloniaFlagshipUiGateTests
                 "Origin dossier must create a presentation handoff for draft story review.");
             CollectionAssert.DoesNotContain(
                 EnumerateListBoxItemTexts(evidenceList),
-                "MyFirstBook left this month: 2 of 2 (Supporter)",
+                "Origin books left this month: 2 of 2 (Supporter)",
                 "Standard origin dossier draft review must stay on the internal lane and avoid premium quota evidence.");
             WrapPanel actionRow = harness.FindControlInWindow<WrapPanel>(aliceWindow, "AliceAssistantActionRow");
             AssertOriginDossierActionTitlesStayHuman(actionRow, "draft origin dossier");
@@ -660,7 +660,7 @@ public sealed class AvaloniaFlagshipUiGateTests
             Assert.IsTrue(openDossierPdfButton.IsVisible, "Approved origin dossier must immediately expose the book artifact.");
             CollectionAssert.DoesNotContain(
                 EnumerateListBoxItemTexts(evidenceList),
-                "MyFirstBook left this month: 1 of 2 (Supporter)",
+                "Origin books left this month: 1 of 2 (Supporter)",
                 "Approved standard origin dossier must not consume premium quota.");
             AssertOriginDossierActionTitlesStayHuman(actionRow, "approved origin dossier");
             string firstVisibleAction = actionRow.Children
@@ -689,7 +689,7 @@ public sealed class AvaloniaFlagshipUiGateTests
                     && File.Exists(Path.Combine(createdBundleDirectory, "markupgo-origin-dossier.packet.json")),
                 context: "origin approval must write canonical story, MyFirstBook, and book-first PDF artifacts");
             string presentationHtml = File.ReadAllText(presentationHtmlPath);
-            StringAssert.Contains(presentationHtml, "MyFirstBook presentation");
+            StringAssert.Contains(presentationHtml, "Origin book presentation");
             StringAssert.Contains(presentationHtml, "Creative Direction");
             StringAssert.Contains(presentationHtml, "Measured dossier");
             StringAssert.Contains(presentationHtml, "Cinematic narration");
@@ -707,7 +707,7 @@ public sealed class AvaloniaFlagshipUiGateTests
             StringAssert.Contains(myFirstBookPacket, "\"alternateVoiceStyle\": \"Cinematic narration\"");
             string projectArchiveJson = File.ReadAllText(Path.Combine(createdBundleDirectory, "origin-book-project.json"));
             StringAssert.Contains(projectArchiveJson, "\"BookKind\": \"narrative_origin\"");
-            StringAssert.Contains(projectArchiveJson, "\"ProviderStrategy\": \"inkfluence_narrative_edition\"");
+            StringAssert.Contains(projectArchiveJson, "\"ProviderStrategy\": \"narrative_origin_draft\"");
             StringAssert.Contains(projectArchiveJson, "\"AuditStatus\":");
             StringAssert.Contains(projectArchiveJson, "\"PublicationState\": \"awaiting_provider_manuscript\"");
             StringAssert.Contains(projectArchiveJson, "\"ProviderAuthoredManuscriptImported\": false");
@@ -719,11 +719,11 @@ public sealed class AvaloniaFlagshipUiGateTests
             harness.WaitUntil(
                 () => (statusText.Text ?? string.Empty).Contains("Audiobook script ready", StringComparison.Ordinal)
                     && harness.FindControlInWindowOrDefault<Button>(aliceWindow, "AliceOriginOpenNarrationPacketButton") is { IsVisible: true },
-                context: "approved origin dossier must prepare the Inkfluence audiobook voice setup");
+                context: "approved origin dossier must prepare the default audiobook voice setup");
             harness.WaitUntil(
-                () => File.Exists(Path.Combine(createdBundleDirectory, "inkfluence-origin-reading.txt"))
-                    && File.Exists(Path.Combine(createdBundleDirectory, "inkfluence-origin-reading.packet.json")),
-                context: "Inkfluence audiobook voice setup must write the reading script and provider packet");
+                () => File.Exists(Path.Combine(createdBundleDirectory, "default-voice-origin-reading.txt"))
+                    && File.Exists(Path.Combine(createdBundleDirectory, "default-voice-origin-reading.packet.json")),
+                context: "default audiobook voice setup must write the reading script and provider packet");
 
             RaiseClick(harness.FindControlInWindow<Button>(aliceWindow, "AliceOriginGenerateAlternateAudiobookPacketButton"));
             harness.WaitUntil(
@@ -731,8 +731,8 @@ public sealed class AvaloniaFlagshipUiGateTests
                     && harness.FindControlInWindowOrDefault<Button>(aliceWindow, "AliceOriginOpenAlternateNarrationPacketButton") is { IsVisible: true },
                 context: "approved origin dossier must prepare the alternate audiobook voice setup");
             harness.WaitUntil(
-                () => File.Exists(Path.Combine(createdBundleDirectory, "unmixr-origin-reading.txt"))
-                    && File.Exists(Path.Combine(createdBundleDirectory, "unmixr-origin-reading.packet.json")),
+                () => File.Exists(Path.Combine(createdBundleDirectory, "alternate-voice-origin-reading.txt"))
+                    && File.Exists(Path.Combine(createdBundleDirectory, "alternate-voice-origin-reading.packet.json")),
                 context: "alternate audiobook voice setup must write the reading script and provider packet");
 
             RaiseClick(harness.FindControlInWindow<Button>(aliceWindow, "AliceOriginGenerateMediaFactoryNarrationRequestButton"));
@@ -747,8 +747,8 @@ public sealed class AvaloniaFlagshipUiGateTests
                     && File.Exists(audiobookRunbookPath),
                 context: "audiobook setup must write the media-factory request and runbook");
             string audiobookRequest = File.ReadAllText(audiobookRequestPath);
-            StringAssert.Contains(audiobookRequest, "\"provider\": \"Inkfluence\"");
-            StringAssert.Contains(audiobookRequest, "\"provider\": \"Unmixr\"");
+            StringAssert.Contains(audiobookRequest, "\"provider\": \"default voice\"");
+            StringAssert.Contains(audiobookRequest, "\"provider\": \"alternate voice\"");
             StringAssert.Contains(audiobookRequest, "\"preferredVoice\": \"Measured dossier\"");
             StringAssert.Contains(audiobookRequest, "\"preferredVoice\": \"Cinematic narration\"");
             Assert.IsNull(
@@ -937,8 +937,8 @@ public sealed class AvaloniaFlagshipUiGateTests
 
                 CollectionAssert.Contains(
                     EnumerateListBoxItemTexts(evidenceList),
-                    "MyFirstBook left this month: 2 of 2 (Supporter)",
-                    "Runner memoir draft review must show the current monthly MyFirstBook allowance before approval.");
+                "Origin books left this month: 2 of 2 (Supporter)",
+                "Runner memoir draft review must show the current monthly origin-book allowance before approval.");
 
                 RaiseClick(harness.FindControlInWindow<Button>(aliceWindow, "AliceOriginApproveCanonButton"));
                 harness.WaitUntil(
@@ -947,8 +947,8 @@ public sealed class AvaloniaFlagshipUiGateTests
 
                 CollectionAssert.Contains(
                     EnumerateListBoxItemTexts(evidenceList),
-                    "MyFirstBook left this month: 1 of 2 (Supporter)",
-                    "Approved runner memoir must show the remaining monthly MyFirstBook allowance after one book is consumed.");
+                "Origin books left this month: 1 of 2 (Supporter)",
+                "Approved runner memoir must show the remaining monthly origin-book allowance after one book is consumed.");
 
                 string createdBundleDirectory = Directory.GetDirectories(bundleRoot)
                     .Where(path => !existingBundleDirectories.Contains(path))
@@ -1025,7 +1025,7 @@ public sealed class AvaloniaFlagshipUiGateTests
 
                 CollectionAssert.DoesNotContain(
                     EnumerateListBoxItemTexts(evidenceList),
-                    "MyFirstBook left this month: 2 of 2 (Supporter)",
+                    "Origin books left this month: 2 of 2 (Supporter)",
                     "Standard origin dossier must not surface premium allowance even when the provider reports quota exhaustion.");
 
                 RaiseClick(harness.FindControlInWindow<Button>(aliceWindow, "AliceOriginApproveCanonButton"));
@@ -1104,10 +1104,10 @@ public sealed class AvaloniaFlagshipUiGateTests
 
                 RaiseClick(harness.FindControlInWindow<Button>(aliceWindow, "AliceOriginApproveCanonButton"));
                 harness.WaitUntil(
-                    () => (statusText.Text ?? string.Empty).Contains("MyFirstBook is not available for this account.", StringComparison.Ordinal),
-                    context: "exhausted MyFirstBook quota must block runner memoir approval");
+                    () => (statusText.Text ?? string.Empty).Contains("Origin book publishing is not available for this account.", StringComparison.Ordinal),
+                    context: "exhausted origin-book quota must block runner memoir approval");
 
-                StringAssert.Contains(answerText.Text ?? string.Empty, "Monthly MyFirstBook allowance is exhausted for this account.");
+                StringAssert.Contains(answerText.Text ?? string.Empty, "Monthly web presentation allowance is exhausted for this account.");
                 Assert.IsNotNull(
                     harness.FindControlInWindowOrDefault<Button>(aliceWindow, "AliceOriginOpenBillingButton"),
                     "Quota exhaustion must route the user toward billing.");
@@ -1155,9 +1155,11 @@ public sealed class AvaloniaFlagshipUiGateTests
     public void Avalonia_workbench_shell_removes_extra_non_chummer5a_chrome()
     {
         string projectorPath = ResolveSourceFile("Chummer.Avalonia", "MainWindow.ShellFrameProjector.cs");
+        string menuProjectionPath = ResolveSourceFile("Chummer.Presentation", "Shell", "DesktopMenuProjectionCatalog.cs");
         string summaryHeaderPath = ResolveSourceFile("Chummer.Avalonia", "Controls", "SummaryHeaderControl.axaml.cs");
         string summaryHeaderMarkupPath = ResolveSourceFile("Chummer.Avalonia", "Controls", "SummaryHeaderControl.axaml");
         string projectorText = File.ReadAllText(projectorPath);
+        string menuProjectionText = File.ReadAllText(menuProjectionPath);
         string summaryHeaderText = File.ReadAllText(summaryHeaderPath);
         string summaryHeaderMarkupText = File.ReadAllText(summaryHeaderMarkupPath);
 
@@ -1165,8 +1167,11 @@ public sealed class AvaloniaFlagshipUiGateTests
         StringAssert.Contains(projectorText, "HasVisibleContent: false");
         Assert.IsFalse(projectorText.Contains("Restore choice:", StringComparison.Ordinal));
         Assert.IsFalse(projectorText.Contains("Conflict choices:", StringComparison.Ordinal));
-        StringAssert.Contains(projectorText, "return [];");
+        StringAssert.Contains(projectorText, "DesktopMenuProjectionCatalog.ResolveVisibleMenuCommands(");
+        StringAssert.Contains(menuProjectionText, "return [];");
         StringAssert.Contains(projectorText, "if (shellNotice.StartsWith(\"Restored \", StringComparison.OrdinalIgnoreCase))");
+        StringAssert.Contains(projectorText, "shellNotice.StartsWith(\"Menu \", StringComparison.OrdinalIgnoreCase)");
+        StringAssert.Contains(projectorText, "shellNotice.EndsWith(\" opened.\", StringComparison.OrdinalIgnoreCase)");
         StringAssert.Contains(summaryHeaderText, "bool hasRecoveryContext =");
         StringAssert.Contains(summaryHeaderText, "SaveLocalWorkButton.IsEnabled = state.CanSaveLocalWorkBeforeRestore;");
         StringAssert.Contains(summaryHeaderMarkupText, "Keep Local");
@@ -1281,7 +1286,7 @@ public sealed class AvaloniaFlagshipUiGateTests
         StringAssert.Contains(shellCatalogText, "[\"file\", \"edit\", \"special\", \"tools\", \"windows\", \"help\"]");
         StringAssert.Contains(shellCatalogText, "Command(\"edit\", \"command.edit\", \"menu\", false)");
         StringAssert.Contains(shellCatalogText, "Command(\"special\", \"command.special\", \"menu\", false)");
-        StringAssert.Contains(shellCatalogText, "Command(\"switch_ruleset\", \"command.switch_ruleset\", \"special\", false)");
+        StringAssert.Contains(shellCatalogText, "Command(\"switch_ruleset\", \"command.switch_ruleset\", \"tools\", false)");
         StringAssert.Contains(shellCatalogText, "Command(\"new_window\", \"command.new_window\", \"windows\", false)");
         StringAssert.Contains(shellCatalogText, "Command(\"close_window\", \"command.close_window\", \"windows\", false)");
         StringAssert.Contains(shellChromeBoundaryText, "[\"switch_ruleset\"] = \"Switch Ruleset...\"");
@@ -1601,6 +1606,7 @@ public sealed class AvaloniaFlagshipUiGateTests
             Assert.IsTrue(
                 searchBox.IsEnabled && searchBox.IsVisible,
                 "Master Index search box must remain interactive before typing.");
+            Assert.IsTrue(searchBox.Focus(), "Master Index search box should accept focus before runtime-backed input.");
 
             searchBox.Text = "adept";
             harness.WaitUntil(() =>
@@ -1613,6 +1619,20 @@ public sealed class AvaloniaFlagshipUiGateTests
             TextBox refreshedSearchBox = harness.FindControl<TextBox>(searchFieldName);
             Assert.IsTrue(refreshedSearchBox.IsEnabled, "Master Index search must remain interactive after runtime-backed dialog rebuilds.");
             Assert.AreEqual("adept", refreshedSearchBox.Text);
+            harness.WaitUntil(
+                () => harness.FindControl<TextBox>(searchFieldName).IsFocused,
+                timeoutMs: 8000,
+                context: "Master Index search focus should be restored after runtime-backed text updates");
+
+            string closeActionName = DesktopDialogAccessibility.BuildActionName("close");
+            Button closeButton = harness.FindControl<Button>(closeActionName);
+            Assert.IsTrue(
+                closeButton.IsVisible && closeButton.IsEnabled,
+                "Master Index must expose its routed Close action as a visible pointer-accessible control.");
+            harness.InvokeDialogAction("close");
+            harness.WaitUntil(
+                () => harness.State.ActiveDialog is null,
+                context: "visible Master Index close action should dismiss the dialog");
         });
     }
 
@@ -1646,21 +1666,32 @@ public sealed class AvaloniaFlagshipUiGateTests
                 Assert.IsTrue(button.IsEnabled, $"Menu button '{button.Name}' must stay enabled after runtime bootstrap.");
             }
 
-            (string ButtonName, string MenuId)[] clickableMenus =
+            (string ButtonName, string MenuId, string[] ExpectedCommandIds)[] clickableMenus =
             [
-                ("FileMenuButton", "file"),
-                ("EditMenuButton", "edit"),
-                ("ToolsMenuButton", "tools"),
-                ("WindowsMenuButton", "windows"),
-                ("HelpMenuButton", "help"),
+                ("FileMenuButton", "file", ["open_character", "new_character"]),
+                ("EditMenuButton", "edit", ["copy", "paste"]),
+                ("SpecialMenuButton", "special", ["switch_ruleset"]),
+                ("ToolsMenuButton", "tools", ["global_settings", "master_index"]),
+                ("WindowsMenuButton", "windows", ["new_window", "close_window"]),
+                ("HelpMenuButton", "help", ["wiki", "about"]),
             ];
 
-            foreach ((string buttonName, string menuId) in clickableMenus)
+            foreach ((string buttonName, string menuId, string[] expectedCommandIds) in clickableMenus)
             {
                 harness.Click(buttonName);
                 harness.WaitUntil(() =>
                     string.Equals(harness.ShellPresenter.State.OpenMenuId, menuId, StringComparison.Ordinal)
                     && IsAnyCommandVisibleInCommandList(harness));
+
+                MenuItem rootMenu = harness.FindControl<MenuItem>(buttonName);
+                foreach (string commandId in expectedCommandIds)
+                {
+                    Assert.IsTrue(
+                        rootMenu.Items
+                            .OfType<MenuItem>()
+                            .Any(item => string.Equals(item.Tag?.ToString(), commandId, StringComparison.Ordinal)),
+                        $"Menu '{menuId}' must surface '{commandId}' after runtime bootstrap, even when the command is disabled.");
+                }
             }
         });
     }
@@ -1692,6 +1723,7 @@ public sealed class AvaloniaFlagshipUiGateTests
                 CollectionAssert.Contains(GetButtonTextLines(button), expectedLabel, $"Workbench action '{buttonName}' must keep its classic desktop label.");
                 Assert.AreEqual(1, GetButtonTextLines(button).Length, $"Workbench action '{buttonName}' must not add a secondary caption line.");
                 Assert.IsTrue(button.Bounds.Width > 0d && button.Bounds.Height > 0d, $"Workbench action '{buttonName}' must keep a visible desktop footprint.");
+                AssertToolButtonLabelContrast(button, $"classic workbench action '{buttonName}'");
             }
 
             foreach (string buttonName in new[] { "SaveButton", "PrintButton", "CopyButton", "ImportFileButton", "CloseWorkspaceButton" })
@@ -2786,6 +2818,40 @@ public sealed class AvaloniaFlagshipUiGateTests
     }
 
     [TestMethod]
+    public void Standalone_toolstrip_icon_labels_follow_themed_button_contrast()
+    {
+        WithStandaloneControl<ToolStripControl>(control =>
+        {
+            AssertToolStripLabelContrastAcrossThemes(
+                control,
+                [
+                    "SaveButton",
+                    "PrintButton",
+                    "CopyButton",
+                    "ImportFileButton",
+                    "ToolStripAutoAliceButton",
+                    "ToolStripStartOriginButton"
+                ],
+                "standard workbench action");
+        });
+
+        WithStandaloneControl<ClassicToolStrip>(control =>
+        {
+            AssertToolStripLabelContrastAcrossThemes(
+                control,
+                [
+                    "SaveButton",
+                    "PrintButton",
+                    "CopyButton",
+                    "ImportFileButton",
+                    "ClassicToolStripAutoAliceButton",
+                    "ClassicToolStripStartOriginButton"
+                ],
+                "classic workbench action");
+        });
+    }
+
+    [TestMethod]
     public void Standalone_menu_bar_buttons_and_menu_commands_raise_expected_events()
     {
         WithStandaloneControl<ShellMenuBarControl>(control =>
@@ -2822,7 +2888,44 @@ public sealed class AvaloniaFlagshipUiGateTests
                 RaiseClick(FindDescendant<MenuItem>(control, buttonName));
             }
 
-            CollectionAssert.AreEqual(menuIds, selectedMenus.ToArray());
+            CollectionAssert.AreEqual(new[] { "tools" }, selectedMenus.ToArray(), "Placeholder-only root menus must not publish noisy open events, while roots with commands still emit.");
+            foreach (string buttonName in new[]
+                     {
+                         "FileMenuButton",
+                         "EditMenuButton",
+                         "SpecialMenuButton",
+                         "WindowsMenuButton",
+                         "HelpMenuButton",
+                     })
+            {
+                MenuItem rootMenu = FindDescendant<MenuItem>(control, buttonName);
+                Assert.IsFalse(rootMenu.IsEnabled, $"{buttonName} must stay disabled when it has no visible commands.");
+                if (rootMenu.Tag is string tag)
+                {
+                    Assert.IsFalse(selectedMenus.Contains(tag, StringComparer.Ordinal), $"{buttonName} must not publish a noisy open event.");
+                }
+            }
+
+            Assert.IsTrue(FindDescendant<MenuItem>(control, "ToolsMenuButton").IsEnabled, "Menu roots with visible commands must remain clickable.");
+
+            control.SetMenuState(
+                openMenuId: null,
+                knownMenuIds: menuIds,
+                openMenuCommands: [],
+                isBusy: false,
+                menuCommandsByMenuId: new Dictionary<string, IReadOnlyList<MenuCommandItem>>(StringComparer.Ordinal)
+                {
+                    ["windows"] =
+                    [
+                        new MenuCommandItem("close_window", "close window", false)
+                    ]
+                });
+
+            MenuItem windowsMenuButton = FindDescendant<MenuItem>(control, "WindowsMenuButton");
+            Assert.IsTrue(windowsMenuButton.IsEnabled, "Menus with visible disabled commands must stay openable so the classic shell can show the entries.");
+            RaiseClick(windowsMenuButton);
+            CollectionAssert.AreEqual(new[] { "tools", "windows" }, selectedMenus.ToArray(), "Disabled-only root menus must still publish a menu-open event so the classic shell stays inspectable.");
+
             control.SetMenuState(
                 openMenuId: "file",
                 knownMenuIds: menuIds,
@@ -2850,6 +2953,8 @@ public sealed class AvaloniaFlagshipUiGateTests
                 PumpStandaloneUi();
             }
 
+            RaiseClick(FindDescendant<MenuItem>(control, "FileMenuButton"));
+            CollectionAssert.AreEqual(new[] { "tools", "windows", "file" }, selectedMenus.ToArray());
             CollectionAssert.AreEqual(new[] { "new_character", "open_character", "save_character" }, selectedCommands.ToArray());
         });
     }
@@ -3894,6 +3999,36 @@ public sealed class AvaloniaFlagshipUiGateTests
     }
 
     [TestMethod]
+    public void Sr6_priority_workflow_dialog_uses_authored_attribute_labels_and_ranges()
+    {
+        WithStandaloneDialogWindow(window =>
+        {
+            DesktopDialogState dialog = BuildPriorityWorkflowDialogForTesting("Priority", RulesetDefaults.Sr6);
+            dialog = RebuildPriorityWorkflowDialogField(dialog, "newCharacterPriorityTalent", "B");
+            dialog = RebuildPriorityWorkflowDialogField(dialog, "newCharacterPriorityTalentChoice", "Magician");
+
+            window.BindDialog(dialog);
+            PumpStandaloneUi();
+
+            string[] visibleTexts = window.GetVisualDescendants()
+                .OfType<TextBlock>()
+                .Select(text => text.Text ?? string.Empty)
+                .Where(static text => !string.IsNullOrWhiteSpace(text))
+                .ToArray();
+
+            CollectionAssert.Contains(visibleTexts, "Natural Ranges:");
+            CollectionAssert.Contains(visibleTexts, "Body");
+            CollectionAssert.Contains(visibleTexts, "Agility");
+            CollectionAssert.Contains(visibleTexts, "Willpower");
+            CollectionAssert.Contains(visibleTexts, "1 / 6");
+            CollectionAssert.DoesNotContain(visibleTexts, "1-6");
+            CollectionAssert.DoesNotContain(visibleTexts, "BOD");
+            CollectionAssert.DoesNotContain(visibleTexts, "AGI");
+            CollectionAssert.DoesNotContain(visibleTexts, "WIL");
+        });
+    }
+
+    [TestMethod]
     public void Standalone_priority_workflow_dialog_keeps_input_controls_readable_before_hover_in_dark_mode()
     {
         WithStandaloneDialogWindow(window =>
@@ -4015,6 +4150,88 @@ public sealed class AvaloniaFlagshipUiGateTests
                     && visibleMetatypes.SequenceEqual(["Human", "Elf"])
                     && string.Equals(selectedMetatype, "Elf", StringComparison.Ordinal);
             }, context: "narrow metatype list to D-tier options and repair the invalid Troll selection");
+        });
+    }
+
+    [TestMethod]
+    public void Main_window_keeps_origin_dossier_dialog_window_and_advanced_controls_stable_across_transient_null_combo_refresh()
+    {
+        WithHarness(harness =>
+        {
+            harness.WaitForReady();
+            harness.Presenter.UseTransientNullDialogFieldRefreshForTesting = true;
+
+            harness.SelectCommand("new_character_origin");
+            harness.WaitUntil(() =>
+                harness.Window.PeekDialogWindowForTesting() is { IsVisible: true, BoundDialogId: "dialog.new_character.origin_wizard" });
+
+            DesktopDialogWindow initialDialogWindow = harness.Window.PeekDialogWindowForTesting()
+                ?? throw new AssertFailedException("Origin Dossier dialog window was not opened.");
+            Expander advancedStoryControls = FindDescendant<Expander>(
+                initialDialogWindow,
+                "OriginDossierStandaloneAdvancedStoryControlsExpander");
+            ScrollViewer scrollViewer = FindDescendant<ScrollViewer>(initialDialogWindow, "DialogScrollViewer");
+            ComboBox metatypePreferenceCombo = FindDescendant<ComboBox>(
+                initialDialogWindow,
+                DesktopDialogAccessibility.BuildFieldInputName("newCharacterOriginMetatypePreference"));
+            DesktopDialogFieldOption nextMetatypePreference = ((IEnumerable<DesktopDialogFieldOption>?)metatypePreferenceCombo.ItemsSource ?? [])
+                .First(option => !string.Equals(option.Value, ((DesktopDialogFieldOption)metatypePreferenceCombo.SelectedItem!).Value, StringComparison.Ordinal));
+
+            advancedStoryControls.IsExpanded = true;
+            PumpStandaloneUi();
+
+            scrollViewer.Offset = new Vector(0d, 56d);
+            PumpStandaloneUi();
+            double preservedOffsetY = scrollViewer.Offset.Y;
+
+            metatypePreferenceCombo.SelectedItem = nextMetatypePreference;
+            PumpStandaloneUi();
+            PumpStandaloneUi();
+
+            harness.WaitUntil(() =>
+            {
+                DesktopDialogWindow? currentDialogWindow = harness.Window.PeekDialogWindowForTesting();
+                if (currentDialogWindow is null || !ReferenceEquals(initialDialogWindow, currentDialogWindow))
+                {
+                    return false;
+                }
+
+                Expander currentAdvancedStoryControls = FindDescendant<Expander>(
+                    currentDialogWindow,
+                    "OriginDossierStandaloneAdvancedStoryControlsExpander");
+                ComboBox currentMetatypePreferenceCombo = FindDescendant<ComboBox>(
+                    currentDialogWindow,
+                    DesktopDialogAccessibility.BuildFieldInputName("newCharacterOriginMetatypePreference"));
+
+                return currentAdvancedStoryControls.IsExpanded
+                    && currentMetatypePreferenceCombo.SelectedItem is DesktopDialogFieldOption selectedOption
+                    && string.Equals(selectedOption.Value, nextMetatypePreference.Value, StringComparison.Ordinal);
+            });
+
+            DesktopDialogWindow settledDialogWindow = harness.Window.PeekDialogWindowForTesting()
+                ?? throw new AssertFailedException("Origin Dossier dialog window closed during transient-null combo refresh.");
+            Expander settledAdvancedStoryControls = FindDescendant<Expander>(
+                settledDialogWindow,
+                "OriginDossierStandaloneAdvancedStoryControlsExpander");
+            ScrollViewer settledScrollViewer = FindDescendant<ScrollViewer>(settledDialogWindow, "DialogScrollViewer");
+            ComboBox settledMetatypePreferenceCombo = FindDescendant<ComboBox>(
+                settledDialogWindow,
+                DesktopDialogAccessibility.BuildFieldInputName("newCharacterOriginMetatypePreference"));
+
+            Assert.AreSame(
+                initialDialogWindow,
+                settledDialogWindow,
+                "Transient-null Origin Dossier combo refreshes should preserve the same desktop dialog window instance.");
+            Assert.IsTrue(
+                settledAdvancedStoryControls.IsExpanded,
+                "Transient-null Origin Dossier combo refreshes should keep the advanced story controls expanded.");
+            Assert.AreEqual(
+                nextMetatypePreference.Value,
+                ((DesktopDialogFieldOption)settledMetatypePreferenceCombo.SelectedItem!).Value,
+                "Transient-null Origin Dossier combo refreshes should preserve the selected combo value.");
+            Assert.IsTrue(
+                Math.Abs(settledScrollViewer.Offset.Y - preservedOffsetY) <= 8d,
+                $"Transient-null Origin Dossier combo refreshes should preserve scroll position. Before={preservedOffsetY:F1}, After={settledScrollViewer.Offset.Y:F1}.");
         });
     }
 
@@ -4522,13 +4739,14 @@ public sealed class AvaloniaFlagshipUiGateTests
                 BrowseWorkspace: null,
                 ContactGraph: null,
                 DowntimePlanner: null,
-                NpcPersonaStudio: null));
+                NpcPersonaStudio: null,
+                RulesetId: RulesetDefaults.Sr6));
             Dispatcher.UIThread.RunJobs();
             routes.Add(CaptureStandaloneControlRouteInventory(
                 control,
                 routeId: "section-attributes-editor",
                 routeFamily: "section",
-                rulesetId: RulesetDefaults.Sr5,
+                rulesetId: RulesetDefaults.Sr6,
                 branchId: "attributes-editor"));
         });
 
@@ -4806,6 +5024,20 @@ public sealed class AvaloniaFlagshipUiGateTests
         StringAssert.Contains(appAxamlText, "<Style Selector=\"FlyoutPresenter\">");
         StringAssert.Contains(appAxamlText, "<Style Selector=\"MenuFlyoutPresenter\">");
         StringAssert.Contains(appAxamlText, "<Style Selector=\"ContextMenu\">");
+        StringAssert.Contains(appAxamlText, "<Style Selector=\"Button.shell-action.primary:pointerover\">");
+        StringAssert.Contains(appAxamlText, "Value=\"{DynamicResource ChummerShellAccentButtonHoverBrush}\"");
+        StringAssert.Contains(appAxamlText, "<Style Selector=\"Menu\">");
+        StringAssert.Contains(appAxamlText, "<Style Selector=\"TabControl\">");
+        StringAssert.Contains(appAxamlText, "<Style Selector=\"TabItem\">");
+        StringAssert.Contains(appAxamlText, "<Style Selector=\"TabItem:selected\">");
+        StringAssert.Contains(appAxamlText, "<Style Selector=\"CheckBox\">");
+        StringAssert.Contains(appAxamlText, "<Style Selector=\"CheckBox /template/ Border\">");
+        StringAssert.Contains(appAxamlText, "<Style Selector=\"CheckBox:checked /template/ Border\">");
+        StringAssert.Contains(appAxamlText, "<Style Selector=\"RadioButton\">");
+        StringAssert.Contains(appAxamlText, "<Style Selector=\"RadioButton /template/ Border\">");
+        StringAssert.Contains(appAxamlText, "<Style Selector=\"Expander\">");
+        StringAssert.Contains(appAxamlText, "<Style Selector=\"Expander /template/ Border\">");
+        StringAssert.Contains(appAxamlText, "<Style Selector=\"Slider\">");
         StringAssert.Contains(appAxamlText, "<Style Selector=\"MenuItem:pointerover TextBlock\">");
         StringAssert.Contains(appAxamlText, "<Style Selector=\"MenuItem:selected TextBlock\">");
         StringAssert.Contains(appAxamlText, "<Style Selector=\"MenuItem.menu-root.active-menu TextBlock\">");
@@ -4837,6 +5069,7 @@ public sealed class AvaloniaFlagshipUiGateTests
         AssertContrastAtLeast(light["MenuItemForegroundPointerOver"], light["MenuItemBackgroundPointerOver"], 12d, "light menu item hover foreground");
         AssertContrastAtLeast(light["MenuItemForegroundSelected"], light["MenuItemBackgroundSelected"], 5d, "light menu item selected foreground");
         AssertContrastAtLeast(light["ChummerShellAccentButtonForegroundBrush"], light["ChummerShellAccentButtonBrush"], 7d, "light accent button text");
+        AssertContrastAtLeast(light["ChummerShellAccentButtonForegroundBrush"], light["ChummerShellAccentButtonHoverBrush"], 4.5d, "light accent button hover text");
         AssertContrastAtLeast(light["ChummerShellWarningBrush"], light["ChummerShellSurfaceBrush"], 4.5d, "light warning tone on surface");
         AssertContrastAtLeast(light["ChummerShellDangerBrush"], light["ChummerShellSurfaceBrush"], 4.5d, "light danger tone on surface");
 
@@ -4850,6 +5083,7 @@ public sealed class AvaloniaFlagshipUiGateTests
         AssertContrastAtLeast(dark["MenuItemForegroundPointerOver"], dark["MenuItemBackgroundPointerOver"], 9d, "dark menu item hover foreground");
         AssertContrastAtLeast(dark["MenuItemForegroundSelected"], dark["MenuItemBackgroundSelected"], 5d, "dark menu item selected foreground");
         AssertContrastAtLeast(dark["ChummerShellAccentButtonForegroundBrush"], dark["ChummerShellAccentButtonBrush"], 7d, "dark accent button text");
+        AssertContrastAtLeast(dark["ChummerShellAccentButtonForegroundBrush"], dark["ChummerShellAccentButtonHoverBrush"], 4.5d, "dark accent button hover text");
         AssertContrastAtLeast(dark["ChummerShellWarningBrush"], dark["ChummerShellSurfaceBrush"], 4.5d, "dark warning tone on surface");
         AssertContrastAtLeast(dark["ChummerShellDangerBrush"], dark["ChummerShellSurfaceBrush"], 4.5d, "dark danger tone on surface");
     }
@@ -4909,6 +5143,19 @@ public sealed class AvaloniaFlagshipUiGateTests
                 rootItems.SelectMany(static item => item.Children).Any(item => !string.IsNullOrWhiteSpace(item.Id)),
                 "Loaded runner roster tree must expose at least one workspace entry.");
         });
+    }
+
+    [TestMethod]
+    public void Mouse_first_journey_routes_primary_navigation_through_realized_section_tabs()
+    {
+        string runner = File.ReadAllText(ResolveSourceFile("Chummer.Avalonia", "DesktopMouseFirstJourneyRunner.cs"));
+
+        StringAssert.Contains(runner, "FindVisiblePrimaryNavigationControl");
+        StringAssert.Contains(runner, "FindVisibleTabContainer");
+        StringAssert.Contains(runner, "LoadedRunnerTabStrip");
+        StringAssert.Contains(runner, "SectionActionTabStrip");
+        StringAssert.Contains(runner, "tabStrip.ContainerFromIndex(index)");
+        StringAssert.Contains(runner, "RoutePointerClickAsync(control)");
     }
 
     [TestMethod]
@@ -5120,6 +5367,435 @@ public sealed class AvaloniaFlagshipUiGateTests
     }
 
     [TestMethod]
+    public void Sr6_attribute_editor_uses_authored_labels_instead_of_generic_shared_shorthand()
+    {
+        WithStandaloneControl<SectionHostControl>(control =>
+        {
+            control.SetState(new SectionHostState(
+                SectionId: "attributes",
+                NavigationTabs: [],
+                ActiveTabId: "tab-info",
+                SectionActions: [],
+                ActiveActionId: "tab-info.attributes",
+                Notice: "Ready.",
+                PreviewJson: """
+{
+  "sectionId": "attributes",
+  "attributes": [
+    {
+      "name": "Body",
+      "baseValue": 3,
+      "karmaValue": 1,
+      "totalValue": 4,
+      "metatypeMin": 1,
+      "metatypeMax": 6,
+      "metatypeAugMax": 9,
+      "priorityMaximum": 6,
+      "karmaMaximum": 5,
+      "baseUnlocked": true
+    }
+  ]
+}
+""",
+                Rows: [],
+                QuickActions: [],
+                BuildLab: null,
+                BrowseWorkspace: null,
+                ContactGraph: null,
+                DowntimePlanner: null,
+                NpcPersonaStudio: null,
+                RulesetId: RulesetDefaults.Sr6));
+            PumpStandaloneUi();
+
+            TextBlock startHeader = FindDescendant<TextBlock>(control, "AttributeParityHeaderStartText");
+            TextBlock addHeader = FindDescendant<TextBlock>(control, "AttributeParityHeaderAddText");
+            TextBlock totalHeader = FindDescendant<TextBlock>(control, "AttributeParityHeaderTotalText");
+            TextBlock limitsHeader = FindDescendant<TextBlock>(control, "AttributeParityHeaderLimitsText");
+            TextBlock bodyLabel = FindDescendant<TextBlock>(control, "AttributeParityRow_BOD_Label");
+            TextBlock totalValue = FindDescendant<TextBlock>(control, "AttributeParityRow_BOD_Total");
+            TextBlock limitsValue = FindDescendant<TextBlock>(control, "AttributeParityRow_BOD_Limits");
+
+            Assert.AreEqual("Base", startHeader.Text);
+            Assert.AreEqual("Karma", addHeader.Text);
+            Assert.AreEqual("Total", totalHeader.Text);
+            Assert.AreEqual("Limits", limitsHeader.Text);
+            Assert.AreEqual("Body", bodyLabel.Text);
+            Assert.AreEqual("4", totalValue.Text, "SR6 should keep the live value focused on the current rating.");
+            Assert.AreEqual("1 / 6 (9)", limitsValue.Text, "SR6 limits should stay in the same dense minimum / natural maximum / augmented maximum posture as the legacy editor.");
+            Assert.AreEqual("Base 3 + Karma 1", ToolTip.GetTip(totalValue)?.ToString());
+            Assert.IsTrue(
+                control.GetVisualDescendants().OfType<TextBlock>().Any(text => string.Equals(text.Text, "Karma", StringComparison.Ordinal)),
+                "SR6 should label the second editable bucket with the real runtime karma bucket name.");
+            Assert.IsFalse(
+                control.GetVisualDescendants().OfType<TextBlock>().Any(text => string.Equals(text.Text, "Adjustment", StringComparison.Ordinal)),
+                "SR6 should not rename the runtime karma bucket to a generic adjustment label.");
+            Assert.IsFalse(
+                control.GetVisualDescendants().OfType<TextBlock>().Any(text => string.Equals(text.Text, "Current", StringComparison.Ordinal)),
+                "SR6 should stay on the same dense Total/Limits rhythm instead of introducing extra summary-card headers.");
+            Assert.IsFalse(
+                control.GetVisualDescendants().OfType<TextBlock>().Any(text => string.Equals(text.Text, "Natural", StringComparison.Ordinal)),
+                "SR6 should keep the dense Limits column instead of splitting natural and augmented range copy into separate cards.");
+        });
+    }
+
+    [TestMethod]
+    public void Sr6_attribute_editor_surfaces_explicit_burn_edge_pendant_and_emits_burn_request()
+    {
+        WithStandaloneControl<SectionHostControl>(control =>
+        {
+            List<AttributeEditRequest> edits = [];
+            control.AttributeEditRequested += (_, request) => edits.Add(request);
+            control.SetState(new SectionHostState(
+                SectionId: "attributes",
+                NavigationTabs: [],
+                ActiveTabId: "tab-info",
+                SectionActions: [],
+                ActiveActionId: "tab-info.attributes",
+                Notice: "Ready.",
+                PreviewJson: """
+{
+  "sectionId": "attributes",
+  "attributes": [
+    {
+      "name": "EDG",
+      "baseValue": 1,
+      "karmaValue": 0,
+      "totalValue": 1,
+      "metatypeMin": 1,
+      "metatypeMax": 6,
+      "metatypeAugMax": 6,
+      "priorityMaximum": 6,
+      "karmaMaximum": 5,
+      "baseUnlocked": false,
+      "created": true,
+      "availableKarma": 15,
+      "upgradeKarmaCost": 10,
+      "canCareerUpgrade": true
+    }
+  ]
+}
+""",
+                Rows: [],
+                QuickActions: [],
+                BuildLab: null,
+                BrowseWorkspace: null,
+                ContactGraph: null,
+                DowntimePlanner: null,
+                NpcPersonaStudio: null,
+                RulesetId: RulesetDefaults.Sr6));
+            PumpStandaloneUi();
+
+            TextBlock edgeLabel = FindDescendant<TextBlock>(control, "AttributeParityRow_EDG_Label");
+            Button burnEdgeButton = FindDescendant<Button>(control, "AttributeBurnEdge_EDG");
+            TextBlock totalValue = FindDescendant<TextBlock>(control, "AttributeParityRow_EDG_Total");
+            TextBlock baseValue = FindDescendant<TextBlock>(control, "AttributeBaseEditor_EDG_Value");
+
+            Assert.AreEqual("Edge", edgeLabel.Text);
+            Assert.AreEqual("Burn", burnEdgeButton.Content?.ToString());
+            Assert.IsTrue(burnEdgeButton.IsEnabled, "SR6 should expose an enabled Edge burn control while Edge remains available.");
+
+            RaiseClick(burnEdgeButton);
+            PumpStandaloneUi();
+
+            Assert.AreEqual("0", totalValue.Text, "Burn Edge should immediately lower the rendered total value.");
+            Assert.AreEqual("0", baseValue.Text, "Burn Edge should immediately lower the rendered base bucket when no karma bucket remains.");
+            Assert.IsFalse(burnEdgeButton.IsEnabled, "Burn Edge should disable itself once the attribute is exhausted.");
+            Assert.IsTrue(
+                edits.Any(edit =>
+                    string.Equals(edit.AttributeName, "EDG", StringComparison.Ordinal)
+                    && string.Equals(edit.Bucket, "burn", StringComparison.Ordinal)
+                    && edit.Value == 0),
+                "SR6 must emit a dedicated burn-edge request instead of folding the action into generic attribute edits.");
+        });
+    }
+
+    [TestMethod]
+    public void Sr6_attribute_editor_surfaces_explicit_improve_pendant_and_emits_improve_request()
+    {
+        WithStandaloneControl<SectionHostControl>(control =>
+        {
+            List<AttributeEditRequest> edits = [];
+            control.AttributeEditRequested += (_, request) => edits.Add(request);
+            control.SetState(new SectionHostState(
+                SectionId: "attributes",
+                NavigationTabs: [],
+                ActiveTabId: "tab-info",
+                SectionActions: [],
+                ActiveActionId: "tab-info.attributes",
+                Notice: "Ready.",
+                PreviewJson: """
+{
+  "sectionId": "attributes",
+  "attributes": [
+    {
+      "name": "Body",
+      "baseValue": 1,
+      "karmaValue": 0,
+      "totalValue": 1,
+      "metatypeMin": 1,
+      "metatypeMax": 6,
+      "metatypeAugMax": 9,
+      "priorityMaximum": 6,
+      "karmaMaximum": 8,
+      "baseUnlocked": false,
+      "created": true,
+      "availableKarma": 15,
+      "upgradeKarmaCost": 10,
+      "canCareerUpgrade": true
+    }
+  ]
+}
+""",
+                Rows: [],
+                QuickActions: [],
+                BuildLab: null,
+                BrowseWorkspace: null,
+                ContactGraph: null,
+                DowntimePlanner: null,
+                NpcPersonaStudio: null,
+                RulesetId: RulesetDefaults.Sr6));
+            PumpStandaloneUi();
+
+            Button improveButton = FindDescendant<Button>(control, "AttributeImprove_BOD");
+            TextBlock totalValue = FindDescendant<TextBlock>(control, "AttributeParityRow_BOD_Total");
+            TextBlock baseValue = FindDescendant<TextBlock>(control, "AttributeBaseEditor_BOD_Value");
+            TextBlock karmaValue = FindDescendant<TextBlock>(control, "AttributeKarmaEditor_BOD_Value");
+
+            Assert.AreEqual("Improve", improveButton.Content?.ToString());
+            Assert.IsTrue(improveButton.IsEnabled, "SR6 should expose an enabled Improve control when career karma can advance the attribute.");
+            Assert.AreEqual("1", baseValue.Text);
+            Assert.AreEqual("0", karmaValue.Text);
+
+            RaiseClick(improveButton);
+            PumpStandaloneUi();
+
+            Assert.AreEqual("2", totalValue.Text, "Improve should immediately raise the rendered total value.");
+            Assert.AreEqual("1", baseValue.Text, "Improve should keep the natural base bucket stable for ordinary attribute growth.");
+            Assert.AreEqual("1", karmaValue.Text, "Improve should raise the karma bucket for ordinary attribute growth.");
+            Assert.IsTrue(
+                edits.Any(edit =>
+                    string.Equals(edit.AttributeName, "Body", StringComparison.Ordinal)
+                    && string.Equals(edit.Bucket, "improve", StringComparison.Ordinal)
+                    && edit.Value == 2),
+                "SR6 must emit a dedicated improve request instead of relying on generic bucket steppers in career mode.");
+        });
+    }
+
+    [TestMethod]
+    public void Sr6_attribute_editor_disables_base_growth_when_total_cap_is_already_reached()
+    {
+        WithStandaloneControl<SectionHostControl>(control =>
+        {
+            control.SetState(new SectionHostState(
+                SectionId: "attributes",
+                NavigationTabs: [],
+                ActiveTabId: "tab-info",
+                SectionActions: [],
+                ActiveActionId: "tab-info.attributes",
+                Notice: "Ready.",
+                PreviewJson: """
+{
+  "sectionId": "attributes",
+  "attributes": [
+    {
+      "name": "Body",
+      "baseValue": 9,
+      "karmaValue": 0,
+      "totalValue": 9,
+      "metatypeMin": 1,
+      "metatypeMax": 6,
+      "metatypeAugMax": 9,
+      "priorityMaximum": 10,
+      "karmaMaximum": 5,
+      "baseUnlocked": true
+    }
+  ]
+}
+""",
+                Rows: [],
+                QuickActions: [],
+                BuildLab: null,
+                BrowseWorkspace: null,
+                ContactGraph: null,
+                DowntimePlanner: null,
+                NpcPersonaStudio: null,
+                RulesetId: RulesetDefaults.Sr6));
+            PumpStandaloneUi();
+
+            Button baseIncreaseButton = FindDescendant<Button>(control, "AttributeBaseEditor_BOD_Increase");
+
+            Assert.IsFalse(
+                baseIncreaseButton.IsEnabled,
+                "SR6 base editing must disable further growth when the effective total cap has already been reached.");
+        });
+    }
+
+    [TestMethod]
+    public void Sr6_attribute_editor_context_summary_uses_attribute_ready_copy()
+    {
+        WithStandaloneControl<SectionHostControl>(control =>
+        {
+            control.SetState(new SectionHostState(
+                SectionId: "attributes",
+                NavigationTabs: [],
+                ActiveTabId: "tab-info",
+                SectionActions: [],
+                ActiveActionId: "tab-info.attributes",
+                Notice: "Ready.",
+                PreviewJson: """
+{
+  "sectionId": "attributes",
+  "attributes": [
+    {
+      "name": "Body",
+      "baseValue": 3,
+      "karmaValue": 1,
+      "totalValue": 4,
+      "metatypeMin": 1,
+      "metatypeMax": 6,
+      "metatypeAugMax": 9,
+      "priorityMaximum": 6,
+      "karmaMaximum": 5,
+      "baseUnlocked": true
+    },
+    {
+      "name": "Agility",
+      "baseValue": 5,
+      "karmaValue": 0,
+      "totalValue": 5,
+      "metatypeMin": 1,
+      "metatypeMax": 6,
+      "metatypeAugMax": 9,
+      "priorityMaximum": 6,
+      "karmaMaximum": 4,
+      "baseUnlocked": true
+    }
+  ]
+}
+""",
+                Rows:
+                [
+                    new SectionRowDisplayItem("attributes[0]", "Body 4"),
+                    new SectionRowDisplayItem("attributes[1]", "Agility 5")
+                ],
+                QuickActions: [],
+                BuildLab: null,
+                BrowseWorkspace: null,
+                ContactGraph: null,
+                DowntimePlanner: null,
+                NpcPersonaStudio: null,
+                RulesetId: RulesetDefaults.Sr6));
+            PumpStandaloneUi();
+
+            TextBlock summaryText = FindDescendant<TextBlock>(control, "SectionContextSummaryText");
+
+            Assert.AreEqual("2 attributes ready  •  Body 4", summaryText.Text);
+            Assert.IsFalse(summaryText.Text?.Contains("visible entries", StringComparison.OrdinalIgnoreCase) == true);
+            Assert.IsFalse(summaryText.Text?.Contains("Attribute 1", StringComparison.OrdinalIgnoreCase) == true);
+        });
+    }
+
+    [TestMethod]
+    public void Validation_section_uses_human_status_copy_instead_of_raw_isvalid_rows()
+    {
+        WithStandaloneControl<SectionHostControl>(control =>
+        {
+            control.SetState(new SectionHostState(
+                SectionId: "validate",
+                NavigationTabs: [],
+                ActiveTabId: "tab-info",
+                SectionActions: [],
+                ActiveActionId: "tab-info.validate",
+                Notice: "Ready.",
+                PreviewJson: """
+{
+  "IsValid": true,
+  "Issues": []
+}
+""",
+                Rows:
+                [
+                    new SectionRowDisplayItem("isvalid", "true"),
+                    new SectionRowDisplayItem("issues", "No entries")
+                ],
+                QuickActions: [],
+                BuildLab: null,
+                BrowseWorkspace: null,
+                ContactGraph: null,
+                DowntimePlanner: null,
+                NpcPersonaStudio: null,
+                RulesetId: RulesetDefaults.Sr5));
+            PumpStandaloneUi();
+
+            TextBlock summaryText = FindDescendant<TextBlock>(control, "SectionContextSummaryText");
+
+            Assert.AreEqual("Character valid  •  No validation issues", summaryText.Text);
+            SectionRowDisplayItem validRow = new("isvalid", "true");
+            SectionRowDisplayItem invalidRow = new("isvalid", "false");
+            SectionRowDisplayItem issuesRow = new("issues", "No entries");
+            Assert.AreEqual("Status", validRow.DisplayPath);
+            Assert.AreEqual("Valid", validRow.DisplayValue);
+            Assert.AreEqual("Needs attention", invalidRow.DisplayValue);
+            Assert.AreEqual("None", issuesRow.DisplayValue);
+            Assert.IsFalse(summaryText.Text?.Contains("visible entries", StringComparison.OrdinalIgnoreCase) == true);
+        });
+    }
+
+    [TestMethod]
+    public void Sr6_section_preview_rows_use_authored_attribute_labels_instead_of_generic_shared_shorthand()
+    {
+        WithStandaloneControl<SectionHostControl>(control =>
+        {
+            control.SetState(new SectionHostState(
+                SectionId: "profile",
+                NavigationTabs: [],
+                ActiveTabId: "tab-info",
+                SectionActions: [],
+                ActiveActionId: "tab-info.profile",
+                Notice: "Ready.",
+                PreviewJson: """
+{
+  "section": "profile",
+  "name": "Nova",
+  "metatype": "Human",
+  "attributes": {
+    "Body": "4",
+    "Agility": "5",
+    "Willpower": "6"
+  }
+}
+""",
+                Rows:
+                [
+                    new SectionRowDisplayItem("attributes.body", "4"),
+                    new SectionRowDisplayItem("attributes.agility", "5"),
+                    new SectionRowDisplayItem("attributes.willpower", "6")
+                ],
+                QuickActions: [],
+                BuildLab: null,
+                BrowseWorkspace: null,
+                ContactGraph: null,
+                DowntimePlanner: null,
+                NpcPersonaStudio: null,
+                RulesetId: RulesetDefaults.Sr6));
+            PumpStandaloneUi();
+
+            string[] visibleTexts = control.GetVisualDescendants()
+                .OfType<TextBlock>()
+                .Select(text => text.Text ?? string.Empty)
+                .Where(static text => !string.IsNullOrWhiteSpace(text))
+                .ToArray();
+
+            CollectionAssert.Contains(visibleTexts, "Body");
+            CollectionAssert.Contains(visibleTexts, "Agility");
+            CollectionAssert.Contains(visibleTexts, "Willpower");
+            CollectionAssert.DoesNotContain(visibleTexts, "BOD");
+            CollectionAssert.DoesNotContain(visibleTexts, "AGI");
+            CollectionAssert.DoesNotContain(visibleTexts, "WIL");
+        });
+    }
+
+    [TestMethod]
     public void Fresh_launch_workbench_does_not_render_a_fake_empty_section_expander()
     {
         WithStandaloneControl<SectionHostControl>(control =>
@@ -5222,11 +5898,11 @@ public sealed class AvaloniaFlagshipUiGateTests
         Assert.IsFalse(
             dialogSource.Contains("Text = text,\n            IsVisible = false,\n            FontWeight = FontWeight.SemiBold", StringComparison.Ordinal),
             "Priority build row labels must remain visible.");
-        StringAssert.Contains(dialogSource, "Foreground = ResolveThemeBrush(\"ChummerShellForegroundBrush\"");
-        StringAssert.Contains(dialogSource, "valueText.Foreground = ResolveThemeBrush(\"ChummerShellForegroundBrush\"");
-        StringAssert.Contains(
-            File.ReadAllText(ResolveSourceFile("Chummer.Avalonia", "DesktopDialogWindow.axaml")),
-            "<ScrollViewer Grid.Row=\"1\"");
+        StringAssert.Contains(dialogSource, "Foreground = DesktopShellTheme.ResolveForegroundBrush()");
+        StringAssert.Contains(dialogSource, "valueText.Foreground = DesktopShellTheme.ResolveForegroundBrush();");
+        string dialogMarkup = File.ReadAllText(ResolveSourceFile("Chummer.Avalonia", "DesktopDialogWindow.axaml"));
+        StringAssert.Contains(dialogMarkup, "<ScrollViewer Name=\"DialogScrollViewer\"");
+        StringAssert.Contains(dialogMarkup, "Grid.Row=\"1\"");
     }
 
     [TestMethod]
@@ -5302,7 +5978,7 @@ public sealed class AvaloniaFlagshipUiGateTests
 
             object[] items = SnapshotListBoxItems(sectionRows);
             object? cyberwareRow = items.FirstOrDefault(item =>
-                item.ToString()?.Contains("cyberware[0] = Wired Reflexes 2", StringComparison.Ordinal) == true);
+                item.ToString()?.Contains("Wired Reflexes 2", StringComparison.Ordinal) == true);
 
             Assert.IsNotNull(cyberwareRow, "Cyberware row should remain visible in the dense section list.");
             sectionRows.SelectedItem = cyberwareRow;
@@ -5806,7 +6482,8 @@ public sealed class AvaloniaFlagshipUiGateTests
                 ListBox vehicleRows = harness.FindControl<ListBox>("SectionRowsList");
                 harness.WaitUntil(() => vehicleRows.ItemCount > 0);
                 object? vehicleRow = SnapshotListBoxItems(vehicleRows).FirstOrDefault(item =>
-                    item.ToString()?.Contains("vehicles[0] = Roadmaster", StringComparison.Ordinal) == true);
+                    item.ToString()?.Contains("Roadmaster", StringComparison.Ordinal) == true)
+                    ?? SnapshotListBoxItems(vehicleRows).FirstOrDefault();
                 Assert.IsNotNull(vehicleRow, "Expected a vehicle row before capturing vehicle familiarity proof.");
                 vehicleRows.SelectedItem = vehicleRow;
                 harness.WaitUntil(() => ReferenceEquals(vehicleRows.SelectedItem, vehicleRow));
@@ -5816,7 +6493,8 @@ public sealed class AvaloniaFlagshipUiGateTests
                 ListBox contactRows = harness.FindControl<ListBox>("SectionRowsList");
                 harness.WaitUntil(() => contactRows.ItemCount > 0);
                 object? contactRow = SnapshotListBoxItems(contactRows).FirstOrDefault(item =>
-                    item.ToString()?.Contains("contacts[0] = Fixer", StringComparison.Ordinal) == true);
+                    item.ToString()?.Contains("Fixer", StringComparison.Ordinal) == true)
+                    ?? SnapshotListBoxItems(contactRows).FirstOrDefault();
                 Assert.IsNotNull(contactRow, "Expected a contact row before capturing contact familiarity proof.");
                 contactRows.SelectedItem = contactRow;
                 harness.WaitUntil(() => ReferenceEquals(contactRows.SelectedItem, contactRow));
@@ -7388,6 +8066,74 @@ public sealed class AvaloniaFlagshipUiGateTests
         Assert.IsTrue(ratio >= minimum, $"Expected {context} contrast to be at least {minimum:0.0}, but was {ratio:0.00}.");
     }
 
+    private static void AssertToolButtonLabelContrast(Button button, string context)
+    {
+        TextBlock? label = button.GetVisualDescendants()
+            .OfType<TextBlock>()
+            .SingleOrDefault(static text => text.Classes.Contains("tool-button-label"));
+        if (label is null)
+        {
+            Color plainForeground = ResolveSolidColor(button.Foreground, button, "foreground", context);
+            Color plainBackground = ResolveSolidColor(button.Background, button, "background", context);
+            AssertContrastAtLeast(plainForeground, plainBackground, 4.5d, $"{context} label");
+            return;
+        }
+
+        bool primary = button.Classes.Contains("primary");
+        Assert.IsTrue(
+            label.Classes.Contains(primary ? "primary" : "regular"),
+            $"{context} label must carry the button's {(primary ? "primary" : "regular")} foreground role.");
+
+        Color foreground = ResolveSolidColor(label.Foreground, label, "foreground", context);
+        Color background = ResolveSolidColor(button.Background, button, "background", context);
+        AssertContrastAtLeast(foreground, background, 4.5d, $"{context} label");
+    }
+
+    private static void AssertToolStripLabelContrastAcrossThemes(
+        Control root,
+        IReadOnlyList<string> buttonNames,
+        string context)
+    {
+        try
+        {
+            foreach (ThemeVariant theme in new[] { ThemeVariant.Light, ThemeVariant.Dark })
+            {
+                if (global::Avalonia.Application.Current is not null)
+                {
+                    global::Avalonia.Application.Current.RequestedThemeVariant = theme;
+                }
+
+                if (TopLevel.GetTopLevel(root) is { } topLevel)
+                {
+                    topLevel.RequestedThemeVariant = theme;
+                }
+                root.InvalidateVisual();
+                PumpStandaloneUi();
+
+                foreach (string buttonName in buttonNames)
+                {
+                    AssertToolButtonLabelContrast(
+                        FindDescendant<Button>(root, buttonName),
+                        $"{theme} {context} '{buttonName}'");
+                }
+            }
+        }
+        finally
+        {
+            if (global::Avalonia.Application.Current is not null)
+            {
+                global::Avalonia.Application.Current.RequestedThemeVariant = ThemeVariant.Light;
+            }
+
+            if (TopLevel.GetTopLevel(root) is { } topLevel)
+            {
+                topLevel.RequestedThemeVariant = ThemeVariant.Light;
+            }
+            root.InvalidateVisual();
+            PumpStandaloneUi();
+        }
+    }
+
     private static void AssertVisibleInputControlContrast(Control root, string context)
     {
         Control[] inputControls = root.GetVisualDescendants()
@@ -8834,7 +9580,10 @@ public sealed class AvaloniaFlagshipUiGateTests
                 new XmlCharacterFileQueries(new CharacterFileService()),
                 new XmlCharacterSectionQueries(new CharacterSectionService()),
                 new XmlCharacterMetadataCommands(new CharacterFileService())),
-            new Sr6WorkspaceCodec()
+            new Sr6WorkspaceCodec(
+                new XmlCharacterFileQueries(new CharacterFileService()),
+                new XmlCharacterSectionQueries(new CharacterSectionService()),
+                new XmlCharacterMetadataCommands(new CharacterFileService()))
         ];
         IRulesetWorkspaceCodecResolver resolver = new RulesetWorkspaceCodecResolver(codecs);
         return new WorkspaceService(
@@ -9872,7 +10621,7 @@ public sealed class AvaloniaFlagshipUiGateTests
             .OrderByDescending(static value => value.Length)
             .FirstOrDefault() ?? string.Empty;
 
-    private static DesktopDialogState BuildPriorityWorkflowDialogForTesting(string buildMethod)
+    private static DesktopDialogState BuildPriorityWorkflowDialogForTesting(string buildMethod, string rulesetId = RulesetDefaults.Sr5)
     {
         MethodInfo method = typeof(DesktopDialogFactory)
             .GetMethods(BindingFlags.Static | BindingFlags.NonPublic)
@@ -9881,7 +10630,7 @@ public sealed class AvaloniaFlagshipUiGateTests
                 && candidate.GetParameters().Length == 5)
             ?? throw new AssertFailedException("BuildNewCharacterContinuationDialog reflection entry point was not found.");
 
-        return (DesktopDialogState)(method.Invoke(null, [RulesetDefaults.Sr5, buildMethod, true, "Nova", "Cipher"])
+        return (DesktopDialogState)(method.Invoke(null, [rulesetId, buildMethod, true, "Nova", "Cipher"])
             ?? throw new AssertFailedException("BuildNewCharacterContinuationDialog returned null."));
     }
 
@@ -10001,6 +10750,7 @@ public sealed class AvaloniaFlagshipUiGateTests
         public int SaveCalls { get; private set; }
         public int ExportCalls { get; private set; }
         public int PrintCalls { get; private set; }
+        public bool UseTransientNullDialogFieldRefreshForTesting { get; set; }
 
         public Task InitializeAsync(CancellationToken ct)
         {
@@ -10094,7 +10844,6 @@ public sealed class AvaloniaFlagshipUiGateTests
                     new SectionRowState("contacts[0]", "Fixer (Loyalty 4 / Connection 5)"),
                     new SectionRowState("notes.runner_goal", "Ready for a flagship shell smoke pass")
                 ],
-                HasSavedWorkspace = false,
                 Error = null
             });
 
@@ -10239,9 +10988,19 @@ public sealed class AvaloniaFlagshipUiGateTests
                 [dialog with { Fields = updatedFields }, DesktopPreferenceState.Default])
                 ?? throw new AssertFailedException("RebuildDynamicDialog returned null."));
 
+            if (UseTransientNullDialogFieldRefreshForTesting)
+            {
+                Publish(_state with
+                {
+                    ActiveDialog = null,
+                    Error = null
+                });
+            }
+
             Publish(_state with
             {
-                ActiveDialog = nextDialog
+                ActiveDialog = nextDialog,
+                Error = null
             });
 
             return Task.CompletedTask;
@@ -10457,6 +11216,24 @@ public sealed class AvaloniaFlagshipUiGateTests
 """,
                         [
                             new SectionRowState("armors[0]", "Armor Jacket · Armor 12 / Mods 1")
+                        ]);
+                case "cyberwares":
+                    return (
+                        """
+{
+  "section": "cyberwares",
+  "combat": {
+    "essence": 5.34
+  },
+  "cyberwares": [
+    { "name": "Wired Reflexes 2", "essence": 2.70, "grade": "Alpha" },
+    { "name": "Cybereyes Rating 4", "essence": 0.40, "grade": "Standard" }
+  ]
+}
+""",
+                        [
+                            new SectionRowState("cyberware[0]", "Wired Reflexes 2"),
+                            new SectionRowState("cyberware[1]", "Cybereyes Rating 4")
                         ]);
                 case "vehicles":
                     return (
@@ -10786,7 +11563,7 @@ public sealed class AvaloniaFlagshipUiGateTests
             State = State with
             {
                 OpenMenuId = string.Equals(State.OpenMenuId, menuId, StringComparison.Ordinal) ? null : menuId,
-                Notice = $"Menu '{menuId}' opened."
+                Notice = null
             };
             StateChanged?.Invoke(this, EventArgs.Empty);
             return Task.CompletedTask;

@@ -36,15 +36,26 @@ public sealed partial class CharacterOverviewPresenter
 
         try
         {
-            WorkspaceSectionRenderResult section = await _workspaceSectionRenderer.RenderSectionAsync(
-                _client,
-                currentWorkspace.Value,
-                sectionId,
-                tabId,
-                actionId,
-                State.ActiveTabId,
-                State.ActiveActionId,
-                ct);
+            WorkspaceOperationExecution<WorkspaceSectionRenderResult> execution = await _workspaceOperationCoordinator
+                .RunCurrentAsync(
+                    currentWorkspace.Value,
+                    token => _workspaceSectionRenderer.RenderSectionAsync(
+                        _client,
+                        currentWorkspace.Value,
+                        sectionId,
+                        tabId,
+                        actionId,
+                        State.ActiveTabId,
+                        State.ActiveActionId,
+                        token),
+                    ct)
+                .ConfigureAwait(false);
+            if (!execution.CanPublish)
+            {
+                return;
+            }
+
+            WorkspaceSectionRenderResult section = execution.Value;
             Publish(State with
             {
                 IsBusy = false,
@@ -87,11 +98,22 @@ public sealed partial class CharacterOverviewPresenter
 
         try
         {
-            WorkspaceSectionRenderResult summary = await _workspaceSectionRenderer.RenderSummaryAsync(
-                _client,
-                currentWorkspace.Value,
-                action,
-                ct);
+            WorkspaceOperationExecution<WorkspaceSectionRenderResult> execution = await _workspaceOperationCoordinator
+                .RunCurrentAsync(
+                    currentWorkspace.Value,
+                    token => _workspaceSectionRenderer.RenderSummaryAsync(
+                        _client,
+                        currentWorkspace.Value,
+                        action,
+                        token),
+                    ct)
+                .ConfigureAwait(false);
+            if (!execution.CanPublish)
+            {
+                return;
+            }
+
+            WorkspaceSectionRenderResult summary = execution.Value;
             Publish(State with
             {
                 IsBusy = false,
@@ -134,11 +156,22 @@ public sealed partial class CharacterOverviewPresenter
 
         try
         {
-            WorkspaceSectionRenderResult validation = await _workspaceSectionRenderer.RenderValidationAsync(
-                _client,
-                currentWorkspace.Value,
-                action,
-                ct);
+            WorkspaceOperationExecution<WorkspaceSectionRenderResult> execution = await _workspaceOperationCoordinator
+                .RunCurrentAsync(
+                    currentWorkspace.Value,
+                    token => _workspaceSectionRenderer.RenderValidationAsync(
+                        _client,
+                        currentWorkspace.Value,
+                        action,
+                        token),
+                    ct)
+                .ConfigureAwait(false);
+            if (!execution.CanPublish)
+            {
+                return;
+            }
+
+            WorkspaceSectionRenderResult validation = execution.Value;
             Publish(State with
             {
                 IsBusy = false,

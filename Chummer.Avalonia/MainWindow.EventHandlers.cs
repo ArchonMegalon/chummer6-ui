@@ -28,7 +28,7 @@ public partial class MainWindow
 
         await RunUiActionAsync(
             () => _adapter.ImportAsync(Encoding.UTF8.GetBytes(importText), CancellationToken.None),
-            "import debug XML");
+            "import character XML");
     }
 
     private async void ToolStrip_OnImportFileRequested(object? sender, EventArgs e)

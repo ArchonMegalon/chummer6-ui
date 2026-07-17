@@ -76,4 +76,20 @@ public sealed class DesktopMouseFirstJourneyVisibleShellStateReaderTests
         Assert.IsTrue(state.CharacterLoaded);
         Assert.AreEqual("sr5", state.RulesetId);
     }
+
+    [TestMethod]
+    public void Read_treats_visible_loaded_character_status_as_active_workspace_evidence()
+    {
+        DesktopMouseFirstJourneyVisibleShellState state = DesktopMouseFirstJourneyVisibleShellStateReader.Read(
+            workspaceStripText: string.Empty,
+            toolStripStatusText: string.Empty,
+            characterStateText: "Character: loaded",
+            complianceStateText: "Ruleset: Shadowrun 5 .chum5 | Workflows: 5 defs / 6 surfaces | Prefs: 100%/classic/en-us",
+            language: "en-us");
+
+        Assert.IsNull(state.WorkspaceId);
+        Assert.IsTrue(state.CharacterLoaded);
+        Assert.IsTrue(state.HasActiveWorkspace);
+        Assert.AreEqual("sr5", state.RulesetId);
+    }
 }

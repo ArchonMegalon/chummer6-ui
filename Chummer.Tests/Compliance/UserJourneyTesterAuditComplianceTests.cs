@@ -38,8 +38,15 @@ public sealed class UserJourneyTesterAuditComplianceTests
         StringAssert.Contains(scriptText, "new_character_action_opened_visible_workspace");
         StringAssert.Contains(scriptText, "starter_attributes_match_seeded_workspace");
         StringAssert.Contains(scriptText, "section_preview_omits_review_copy");
-        StringAssert.Contains(scriptText, "runtimeBackedNewCharacterFileWorkflow");
-        StringAssert.Contains(scriptText, "Runtime_backed_new_character_starter_attributes_match_seeded_workspace_and_omit_review_copy");
+        StringAssert.Contains(scriptText, "CHUMMER_USER_JOURNEY_TESTER_REFRESH_TRACE_FROM_FLAGSHIP_GATE:-0");
+        StringAssert.Contains(scriptText, "trace mutation request is prohibited");
+        StringAssert.Contains(scriptText, "\"trace_mutation_requested\"");
+        StringAssert.Contains(scriptText, "\"trace_mutation_allowed\": False");
+        StringAssert.Contains(scriptText, "\"trace_mutation_performed\": False");
+        StringAssert.Contains(scriptText, "\"trace_bytes_unchanged_during_audit\"");
+        Assert.IsFalse(
+            scriptText.Contains("trace_path.write_text", System.StringComparison.Ordinal),
+            "The audit must never rewrite the external user-journey trace evidence.");
         StringAssert.Contains(scriptText, "tester_shard_id and fix_shard_id must both be present and different");
         StringAssert.Contains(scriptText, "used_internal_apis=false");
         StringAssert.Contains(scriptText, "PNG_SIGNATURE");

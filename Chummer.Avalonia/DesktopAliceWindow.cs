@@ -58,7 +58,7 @@ internal sealed class DesktopAliceWindow : Window
     private string _originArchetypeSelection = "Use current character";
     private string _originBuildFrameSelection = "Use current ruleset";
     private string _originPressureSelection = "Street-level survival";
-    private string _originBookSurfaceSelection = "PDF book and MyFirstBook presentation";
+    private string _originBookSurfaceSelection = "PDF book and web presentation";
     private string _originPrimaryVoiceSelection = "Measured dossier";
     private string _originAlternateVoiceSelection = "Cinematic narration";
     private string _originPortraitStyleSelection = "Noir Ink";
@@ -888,12 +888,12 @@ internal sealed class DesktopAliceWindow : Window
                     }
                     catch (InvalidOperationException ex)
                     {
-                        statusText.Text = "MyFirstBook is not available for this account.";
+                        statusText.Text = "Origin book publishing is not available for this account.";
                         answerText.Text = HumanCopy(ex.Message);
                         evidenceList.ItemsSource = HumanLines(
                         [
-                            "Free accounts can create 1 MyFirstBook origin book each month.",
-                            "Supporter accounts can create 2 MyFirstBook origin books each month.",
+                            "Free accounts can create 1 origin book each month.",
+                            "Supporter accounts can create 2 origin books each month.",
                             "Link your copy and sign in before creating the book."
                         ]);
                         actionRow.Children.Clear();
@@ -997,7 +997,7 @@ internal sealed class DesktopAliceWindow : Window
         {
             if (_originDraft is null || _originPacket is null)
             {
-                statusText.Text = "Create an origin draft before preparing the Inkfluence voice script.";
+                statusText.Text = "Create an origin draft before preparing the default voice script.";
                 return Task.CompletedTask;
             }
 
@@ -1005,7 +1005,7 @@ internal sealed class DesktopAliceWindow : Window
             _originBundle = bundle;
             ShowOriginBundleState(
                 "Audiobook script ready.",
-                $"Script: {Path.GetFileName(bundle.InkfluenceScriptPath)}. Voice notes: {Path.GetFileName(bundle.InkfluencePacketPath)}.",
+                "Default voice script and setup notes are ready.",
                 BuildOriginBundleEvidence(bundle),
                 CreateButton("Open voice notes", () => !string.IsNullOrWhiteSpace(bundle.InkfluencePacketPath) && DesktopCrashRuntime.TryOpenPathInShell(bundle.InkfluencePacketPath), isPrimary: true, name: "AliceOriginOpenNarrationPacketButton"),
                 CreateButton("Open audiobook script", () => !string.IsNullOrWhiteSpace(bundle.InkfluenceScriptPath) && DesktopCrashRuntime.TryOpenPathInShell(bundle.InkfluenceScriptPath), name: "AliceOriginOpenNarrationScriptButton"),
@@ -1027,7 +1027,7 @@ internal sealed class DesktopAliceWindow : Window
             _originBundle = bundle;
             ShowOriginBundleState(
                 "Alternate voice ready.",
-                $"Script: {Path.GetFileName(bundle.UnmixrScriptPath)}. Voice notes: {Path.GetFileName(bundle.UnmixrPacketPath)}.",
+                "Alternate voice script and setup notes are ready.",
                 BuildOriginBundleEvidence(bundle),
                 CreateButton("Open alternate voice setup", () => !string.IsNullOrWhiteSpace(bundle.UnmixrPacketPath) && DesktopCrashRuntime.TryOpenPathInShell(bundle.UnmixrPacketPath), isPrimary: true, name: "AliceOriginOpenAlternateNarrationPacketButton"),
                 CreateButton("Open alternate script", () => !string.IsNullOrWhiteSpace(bundle.UnmixrScriptPath) && DesktopCrashRuntime.TryOpenPathInShell(bundle.UnmixrScriptPath), name: "AliceOriginOpenAlternateNarrationScriptButton"),
@@ -1959,9 +1959,9 @@ internal sealed class DesktopAliceWindow : Window
     private static IReadOnlyList<string> BuildOriginBookSurfaceOptions()
         =>
         [
-            "PDF book and MyFirstBook presentation",
+            "PDF book and web presentation",
             "PDF book",
-            "MyFirstBook presentation"
+            "Web presentation"
         ];
 
     private static IReadOnlyList<string> BuildOriginPrimaryVoiceOptions()
@@ -1969,7 +1969,7 @@ internal sealed class DesktopAliceWindow : Window
         [
             "Measured dossier",
             "Warm witness",
-            "Quiet operator"
+            "Quiet professional"
         ];
 
     private static IReadOnlyList<string> BuildOriginAlternateVoiceOptions()
@@ -2259,7 +2259,7 @@ internal sealed class DesktopAliceWindow : Window
 
         if (IsOriginDossierMode(normalizedMode))
         {
-            return "Only the edition, metatype, and archetype are needed to start. Build frame, pressure, GM constraints, voices, and style are optional. Finished characters are not changed. Runner Memoir is the premium guided manuscript path; shorter editions stay internal first.";
+            return "Only the edition, metatype, and archetype are needed to start. Build frame, pressure, GM constraints, voices, and style are optional. Finished characters are not changed. Runner Memoir is the premium guided manuscript path; shorter editions stay private until approved.";
         }
 
         return "Legality controls how conservative the advice is: Strict avoids restricted picks, Standard allows common legal restricted choices, and Anything needs manual review. Complexity controls depth: Simple stays obvious, Standard balances depth, and Deep explores tighter optimizations. Ware suggestions include the rules tradeoff before anything is applied.";
@@ -2563,10 +2563,10 @@ internal sealed class DesktopAliceWindow : Window
         => bookKind switch
         {
             OriginBookProjectKinds.RunnerMemoir => OriginBookProviderStrategies.PremiumGuidedAuthoring,
-            OriginBookProjectKinds.IntelligenceCasefile => OriginBookProviderStrategies.YoubooksGroundedDrafting,
-            OriginBookProjectKinds.OriginDossier => OriginBookProviderStrategies.YoubooksGroundedDrafting,
-            OriginBookProjectKinds.NarrativeOrigin => OriginBookProviderStrategies.InkfluenceNarrativeEdition,
-            _ => OriginBookProviderStrategies.InkfluenceNarrativeEdition
+            OriginBookProjectKinds.IntelligenceCasefile => "guided_casefile_draft",
+            OriginBookProjectKinds.OriginDossier => "guided_dossier_draft",
+            OriginBookProjectKinds.NarrativeOrigin => "narrative_origin_draft",
+            _ => "narrative_origin_draft"
         };
 
     private static string ResolveOriginProjectPhase(string bookKind)
@@ -2583,26 +2583,26 @@ internal sealed class DesktopAliceWindow : Window
         => ShouldUsePremiumGuidedAuthoring(bookKind)
             ? new OriginBookPremiumManuscriptPlan(
                 PremiumGuidedAuthoringRequired: true,
-                QueueStatus: "queued_for_operator_guided_authoring",
-                Provider: "First Book AI",
+                QueueStatus: "queued_for_guided_authoring",
+                Provider: "Guided manuscript",
                 ManuscriptTarget: "25000-35000 words / 8 chapter premium memoir",
                 OutlinePosture: "outline_approval_required_before_credit_use",
                 HumanChapterReviewRequired: true)
             : new OriginBookPremiumManuscriptPlan(
                 PremiumGuidedAuthoringRequired: false,
-                QueueStatus: "queued_for_operator_authoring",
+                QueueStatus: "queued_for_authoring",
                 Provider: ResolveOriginAuthoringProvider(bookKind),
                 ManuscriptTarget: ResolveOriginManuscriptTarget(bookKind),
-                OutlinePosture: "chummer_packet_then_provider_authoring_then_humanizer_post_step",
+                OutlinePosture: "chummer_source_then_story_review",
                 HumanChapterReviewRequired: true);
 
     private static string ResolveOriginAuthoringProvider(string bookKind)
         => bookKind switch
         {
-            OriginBookProjectKinds.OriginDossier => "Youbooks",
-            OriginBookProjectKinds.IntelligenceCasefile => "Youbooks",
-            OriginBookProjectKinds.RunnerMemoir => "First Book AI",
-            _ => "Inkfluence"
+            OriginBookProjectKinds.OriginDossier => "Guided dossier draft",
+            OriginBookProjectKinds.IntelligenceCasefile => "Guided casefile draft",
+            OriginBookProjectKinds.RunnerMemoir => "Guided manuscript",
+            _ => "Narrative origin draft"
         };
 
     private static string ResolveOriginManuscriptTarget(string bookKind)
@@ -2692,7 +2692,7 @@ internal sealed class DesktopAliceWindow : Window
                 $"# Runner Memoir Outline Review · {packet.Alias}",
                 string.Empty,
                 $"Canon summary: {draft.Summary}",
-                $"Provider lane: {ResolveOriginProviderStrategy(packet.BookKind)}",
+                $"Writing path: {ResolveOriginProviderStrategy(packet.BookKind)}",
                 "Credit rule: do not spend the premium manuscript lane until the outline, voice, and chapter objectives are approved.",
                 string.Empty,
                 "## Chapter spine"
@@ -2705,7 +2705,7 @@ internal sealed class DesktopAliceWindow : Window
                 "- No unapproved contacts, enemies, debts, skills, gear, or qualities.",
                 "- Keep chronology aligned with the approved runner packet.",
                 "- Preserve uncertainty where the packet is incomplete.",
-                $"- Run imported provider prose through {OriginBookPostProcessingSteps.UndetectableHumanizer} before player-facing publication."
+                $"- Run imported draft prose through {OriginBookPostProcessingSteps.UndetectableHumanizer} before player-facing publication."
             ]));
         File.WriteAllText(outlineMarkdownPath, outlineMarkdown);
 
@@ -2789,7 +2789,7 @@ internal sealed class DesktopAliceWindow : Window
     {
         string alias = FirstNonEmpty(packet.Alias, "The runner");
         string metatype = FirstNonEmpty(packet.Metatype, "runner");
-        string archetype = FirstNonEmpty(packet.ArchetypeHint, "operator").ToLowerInvariant();
+        string archetype = FirstNonEmpty(packet.ArchetypeHint, "runner").ToLowerInvariant();
         string buildMethod = FirstNonEmpty(packet.BuildMethod, "survival").ToLowerInvariant();
         string pressure = FirstNonEmpty(packet.LeadBuildPathTitle, packet.CausalityHints.FirstOrDefault(), packet.StandoutSignals.FirstOrDefault(), "the kind of work that did not forgive hesitation").TrimEnd('.');
         string gmPressure = FirstNonEmpty(packet.GmAllowanceNotes, packet.GmConstraintLabels.FirstOrDefault(), "no one was coming to make the choice clean").TrimEnd('.');
@@ -2834,7 +2834,7 @@ internal sealed class DesktopAliceWindow : Window
         [
             $"Runner: {packet.Alias} · {packet.Metatype}",
             $"Edition: {packet.BookKind}",
-            $"Provider strategy: {packet.ProviderStrategy}",
+            $"Draft strategy: {packet.ProviderStrategy}",
             $"Ruleset: {packet.RulesetId} · Build: {packet.BuildMethod}",
             $"Archetype hint: {packet.ArchetypeHint}"
         ];
@@ -2917,7 +2917,7 @@ internal sealed class DesktopAliceWindow : Window
     private static async Task<MyFirstBookQuotaConsumeResultDto> EnsureMyFirstBookAllowanceAsync()
     {
         IChummerClient client = (IChummerClient)(App.Services?.GetService(typeof(IChummerClient))
-            ?? throw new InvalidOperationException("Link your copy before creating a MyFirstBook origin book."));
+            ?? throw new InvalidOperationException("Link your copy before creating an origin book."));
         return await client.ConsumeMyFirstBookQuotaAsync(CancellationToken.None).ConfigureAwait(true);
     }
 
@@ -2949,7 +2949,7 @@ internal sealed class DesktopAliceWindow : Window
         string planLabel = quota.SupporterActive ? "Supporter" : "Free";
         return HumanLines(
         [
-            $"MyFirstBook left this month: {quota.MonthlyRemaining} of {quota.MonthlyLimit} ({planLabel})"
+            $"Origin books left this month: {quota.MonthlyRemaining} of {quota.MonthlyLimit} ({planLabel})"
         ]);
     }
 
@@ -3105,14 +3105,14 @@ internal sealed class DesktopAliceWindow : Window
     private static string InferScratchAttributes(string role)
         => role switch
         {
-            "decker" => "LOG, INT, REA, then enough BOD/WIL to survive bad turns.",
-            "rigger" => "REA, LOG, INT, then AGI if the runner may leave the vehicle.",
-            "face" => "CHA, INT, WIL, then enough REA/BOD to stay standing.",
-            "mage" => "MAG path first, then WIL, LOG, INT, with enough CHA or AGI to match tradition and table role.",
-            "adept" => "AGI or STR first depending on offense, then REA and WIL.",
-            "street samurai" => "AGI, REA, BOD, then STR or WIL depending on the combat plan.",
-            "shaman" => "CHA, WIL, INT, then enough REA/BOD for table survival.",
-            _ => "BOD, REA, WIL, then the primary mental or social stat for the chosen role."
+            "decker" => "Logic, Intuition, and Reaction first, then enough Body and Willpower to survive bad turns.",
+            "rigger" => "Reaction, Logic, and Intuition first, then Agility if the runner may leave the vehicle.",
+            "face" => "Charisma, Intuition, and Willpower first, then enough Reaction and Body to stay standing.",
+            "mage" => "Magic first, then Willpower, Logic, and Intuition, with enough Charisma or Agility to match tradition and table role.",
+            "adept" => "Agility or Strength first depending on offense, then Reaction and Willpower.",
+            "street samurai" => "Agility, Reaction, and Body first, then Strength or Willpower depending on the combat plan.",
+            "shaman" => "Charisma, Willpower, and Intuition first, then enough Reaction and Body for table survival.",
+            _ => "Body, Reaction, and Willpower first, then the primary mental or social stat for the chosen role."
         };
 
     private static string InferScratchSkills(string role)
@@ -3276,12 +3276,12 @@ internal sealed class DesktopAliceWindow : Window
                 canon = project.Canon,
                 providerLanes = new
                 {
-                    document = "MarkupGo",
-                    portraits = "First-party render",
-                    scenes = "First-party render",
-                    narrationDefault = "Inkfluence",
-                    narrationAlternate = "Unmixr",
-                    dossierVideo = "vidBoard"
+                    document = "book renderer",
+                    portraits = "Chummer render",
+                    scenes = "Chummer render",
+                    narrationDefault = "default voice",
+                    narrationAlternate = "alternate voice",
+                    dossierVideo = "video renderer"
                 }
             },
             new JsonSerializerOptions { WriteIndented = true }));
@@ -3301,8 +3301,8 @@ internal sealed class DesktopAliceWindow : Window
         [
             HumanCopy(bundle.Canon.Prose),
             string.Empty,
-            $"Authoring provider: {ResolveOriginAuthoringProvider(bundle.BookKind)}",
-            $"Authoring role: {ResolveOriginAuthoringRole(bundle.BookKind)}",
+            $"Writing path: {ResolveOriginAuthoringProvider(bundle.BookKind)}",
+            $"Writing mode: {ResolveOriginAuthoringRole(bundle.BookKind)}",
             $"Post step: {OriginBookPostProcessingSteps.UndetectableHumanizer}",
             $"Origin summary: {HumanCopy(bundle.Canon.Summary)}",
             string.Empty,
@@ -3637,19 +3637,19 @@ internal sealed class DesktopAliceWindow : Window
             return bundle;
         }
 
-        string scriptPath = Path.Combine(bundle.BundleDirectory, "inkfluence-origin-reading.txt");
-        string packetPath = Path.Combine(bundle.BundleDirectory, "inkfluence-origin-reading.packet.json");
+        string scriptPath = Path.Combine(bundle.BundleDirectory, "default-voice-origin-reading.txt");
+        string packetPath = Path.Combine(bundle.BundleDirectory, "default-voice-origin-reading.packet.json");
         string script = BuildInkfluenceNarrationScript(bundle);
         File.WriteAllText(scriptPath, script);
         File.WriteAllText(packetPath, JsonSerializer.Serialize(
             new
             {
-                tool = "Inkfluence",
-                artifactKind = "origin_audiobook_inkfluence_voice",
+                tool = "Default voice",
+                artifactKind = "origin_audiobook_default_voice",
                 approvedAtUtc = bundle.ApprovedAtUtc,
                 source = "first_party_origin_canon",
                 title = $"{bundle.Packet.Alias} Origin Reading",
-                narrationMode = "inkfluence_audiobook_chapter",
+                narrationMode = "default_voice_reading",
                 preferredVoice = _originPrimaryVoiceSelection,
                 scriptPath,
                 durationTargetSeconds = 75,
@@ -3683,14 +3683,14 @@ internal sealed class DesktopAliceWindow : Window
             return bundle;
         }
 
-        string scriptPath = Path.Combine(bundle.BundleDirectory, "unmixr-origin-reading.txt");
-        string packetPath = Path.Combine(bundle.BundleDirectory, "unmixr-origin-reading.packet.json");
+        string scriptPath = Path.Combine(bundle.BundleDirectory, "alternate-voice-origin-reading.txt");
+        string packetPath = Path.Combine(bundle.BundleDirectory, "alternate-voice-origin-reading.packet.json");
         string script = BuildUnmixrNarrationScript(bundle);
         File.WriteAllText(scriptPath, script);
         File.WriteAllText(packetPath, JsonSerializer.Serialize(
             new
             {
-                tool = "Unmixr",
+                tool = "Alternate voice",
                 artifactKind = "origin_audiobook_alternate_voice",
                 approvedAtUtc = bundle.ApprovedAtUtc,
                 source = "first_party_origin_canon",
@@ -3758,18 +3758,18 @@ internal sealed class DesktopAliceWindow : Window
                 },
                 providerLanes = new
                 {
-                    @default = "Inkfluence",
-                    alternate = "Unmixr"
+                    @default = "default voice",
+                    alternate = "alternate voice"
                 },
                 narrationArtifacts = new object[]
                 {
                     new
                     {
                         role = "audio",
-                        provider = "Inkfluence",
+                        provider = "default voice",
                         providerState = "promoted",
                         outputFormat = "mp3",
-                        variant = "inkfluence_voice",
+                        variant = "default_voice",
                         preferredVoice = _originPrimaryVoiceSelection,
                         companionRef = $"{approvedOriginPacketId}/audio/inkfluence",
                         scriptPath = bundle.InkfluenceScriptPath,
@@ -3780,7 +3780,7 @@ internal sealed class DesktopAliceWindow : Window
                     new
                     {
                         role = "audio",
-                        provider = "Unmixr",
+                        provider = "alternate voice",
                         providerState = "candidate",
                         outputFormat = "mp3",
                         variant = "alternate_voice",
@@ -3836,13 +3836,13 @@ internal sealed class DesktopAliceWindow : Window
         if (quota is not null)
         {
             string planLabel = quota.SupporterActive ? "Supporter" : "Free";
-            lines.Add($"MyFirstBook left this month: {quota.MonthlyRemaining} of {quota.MonthlyLimit} ({planLabel})");
+            lines.Add($"Origin books left this month: {quota.MonthlyRemaining} of {quota.MonthlyLimit} ({planLabel})");
         }
 
         if (bundle.PremiumPlan.PremiumGuidedAuthoringRequired)
         {
             lines.Add($"Premium manuscript queue: {bundle.PremiumPlan.QueueStatus}");
-            lines.Add($"Premium provider: {bundle.PremiumPlan.Provider}");
+            lines.Add($"Premium manuscript path: {bundle.PremiumPlan.Provider}");
             lines.Add($"Memoir target: {bundle.PremiumPlan.ManuscriptTarget}");
             lines.Add($"Outline posture: {bundle.PremiumPlan.OutlinePosture}");
             lines.Add($"Outline review: {bundle.OutlineReviewState}");
@@ -3925,12 +3925,12 @@ internal sealed class DesktopAliceWindow : Window
 
         if (!string.IsNullOrWhiteSpace(bundle.InkfluenceScriptPath))
         {
-            lines.Add($"Inkfluence voice script: {Path.GetFileName(bundle.InkfluenceScriptPath)}");
+            lines.Add($"Default voice script: {Path.GetFileName(bundle.InkfluenceScriptPath)}");
         }
 
         if (!string.IsNullOrWhiteSpace(bundle.InkfluencePacketPath))
         {
-            lines.Add($"Inkfluence voice notes: {Path.GetFileName(bundle.InkfluencePacketPath)}");
+            lines.Add($"Default voice notes: {Path.GetFileName(bundle.InkfluencePacketPath)}");
         }
 
         if (!string.IsNullOrWhiteSpace(bundle.UnmixrScriptPath))
@@ -3991,7 +3991,7 @@ internal sealed class DesktopAliceWindow : Window
 
         if (!ShouldAllowLiveMediaFactoryExecution())
         {
-            lines.Add($"Live render locked: set {MediaFactoryAllowLiveExecutionEnv}=1 only when real provider execution is approved.");
+            lines.Add("Live rendering is locked until production approval is complete.");
         }
 
         return HumanLines(lines);
@@ -4005,7 +4005,7 @@ internal sealed class DesktopAliceWindow : Window
         }
         if (!ShouldAllowLiveMediaFactoryExecution())
         {
-            throw new InvalidOperationException($"Live Origin Dossier audiobook rendering is disabled. Set {MediaFactoryAllowLiveExecutionEnv}=1 only after provider execution is approved.");
+            throw new InvalidOperationException("Live Origin Dossier audiobook rendering is disabled until production approval is complete.");
         }
 
         string mediaFactoryRepoRoot = ResolveMediaFactoryRepoRoot();
@@ -4050,7 +4050,7 @@ internal sealed class DesktopAliceWindow : Window
             ?? string.Empty;
         if (receiptPath.Length == 0 || !File.Exists(receiptPath))
         {
-            throw new InvalidOperationException("Origin dossier narration render did not return a valid receipt path.");
+            throw new InvalidOperationException("Origin dossier narration render did not return a valid details path.");
         }
 
         return receiptPath;
@@ -4064,7 +4064,7 @@ internal sealed class DesktopAliceWindow : Window
         }
         if (!ShouldAllowLiveMediaFactoryExecution())
         {
-            throw new InvalidOperationException($"Live Origin Dossier video rendering is disabled. Set {MediaFactoryAllowLiveExecutionEnv}=1 only after provider execution is approved.");
+            throw new InvalidOperationException("Live Origin Dossier video rendering is disabled until production approval is complete.");
         }
 
         string mediaFactoryRepoRoot = ResolveMediaFactoryRepoRoot();
@@ -4109,20 +4109,20 @@ internal sealed class DesktopAliceWindow : Window
             ?? string.Empty;
         if (receiptPath.Length == 0 || !File.Exists(receiptPath))
         {
-            throw new InvalidOperationException("Origin dossier video render did not return a valid receipt path.");
+            throw new InvalidOperationException("Origin dossier video render did not return a valid details path.");
         }
 
         using JsonDocument document = JsonDocument.Parse(await File.ReadAllTextAsync(receiptPath).ConfigureAwait(false));
         if (!document.RootElement.TryGetProperty("renderedVideoPath", out JsonElement renderedVideoPathElement)
             || renderedVideoPathElement.ValueKind is not JsonValueKind.String)
         {
-            throw new InvalidOperationException("Origin dossier video receipt is missing renderedVideoPath.");
+            throw new InvalidOperationException("Origin dossier video details are missing the rendered video path.");
         }
 
         string renderedVideoPath = renderedVideoPathElement.GetString()?.Trim() ?? string.Empty;
         if (renderedVideoPath.Length == 0 || !File.Exists(renderedVideoPath))
         {
-            throw new InvalidOperationException("Origin dossier video receipt did not return a valid rendered video path.");
+            throw new InvalidOperationException("Origin dossier video details did not return a valid rendered video path.");
         }
 
         return (receiptPath, renderedVideoPath);
@@ -4193,9 +4193,14 @@ internal sealed class DesktopAliceWindow : Window
 
     private static Control BuildOriginPortraitCard(OriginDossierBundle bundle, OriginPortraitCandidate candidate)
     {
+        IBrush hardCardBrush = DesktopShellTheme.ResolveThemeBrush("ChummerShellMediaBackdropBrush", "#020617");
+        IBrush hardInsetBrush = DesktopShellTheme.ResolveThemeBrush("ChummerShellSurfaceBrush", "#111827");
+        IBrush hardTextBrush = DesktopShellTheme.ResolveThemeBrush("ChummerShellMediaOverlayForegroundBrush", "#F8FAFC");
+        IBrush hardMutedBrush = new SolidColorBrush(Color.Parse("#D8E3F0"));
+        IBrush hardAccentBrush = new SolidColorBrush(Color.Parse("#93C5FD"));
         Border accentPanel = new()
         {
-            Background = new SolidColorBrush(Color.Parse(candidate.AccentHex)),
+            Background = hardInsetBrush,
             CornerRadius = new CornerRadius(14),
             Padding = new Thickness(18),
             Child = new StackPanel
@@ -4208,21 +4213,21 @@ internal sealed class DesktopAliceWindow : Window
                         Text = candidate.StyleLabel,
                         FontSize = 28,
                         FontWeight = FontWeight.SemiBold,
-                        Foreground = new SolidColorBrush(Color.Parse(candidate.ForegroundHex))
+                        Foreground = hardTextBrush
                     },
                     new TextBlock
                     {
                         Text = bundle.Packet.Alias,
                         FontSize = 44,
                         FontWeight = FontWeight.Bold,
-                        Foreground = new SolidColorBrush(Color.Parse(candidate.HighlightHex))
+                        Foreground = hardAccentBrush
                     },
                     new TextBlock
                     {
                         Text = candidate.Summary,
                         FontSize = 18,
                         TextWrapping = TextWrapping.Wrap,
-                        Foreground = new SolidColorBrush(Color.Parse(candidate.ForegroundHex))
+                        Foreground = hardMutedBrush
                     }
                 }
             }
@@ -4246,7 +4251,7 @@ internal sealed class DesktopAliceWindow : Window
                 {
                     Width = 88,
                     Height = 88,
-                    Fill = new SolidColorBrush(Color.Parse(candidate.BackgroundHex)),
+                    Fill = hardCardBrush,
                     [Canvas.LeftProperty] = 86d,
                     [Canvas.TopProperty] = 48d
                 },
@@ -4263,7 +4268,7 @@ internal sealed class DesktopAliceWindow : Window
                 {
                     Width = 128,
                     Height = 8,
-                    Fill = new SolidColorBrush(Color.Parse(candidate.ForegroundHex)),
+                    Fill = hardTextBrush,
                     RadiusX = 4,
                     RadiusY = 4,
                     [Canvas.LeftProperty] = 66d,
@@ -4273,7 +4278,7 @@ internal sealed class DesktopAliceWindow : Window
                 {
                     Width = 104,
                     Height = 8,
-                    Fill = new SolidColorBrush(Color.Parse(candidate.ForegroundHex)),
+                    Fill = hardTextBrush,
                     RadiusX = 4,
                     RadiusY = 4,
                     [Canvas.LeftProperty] = 78d,
@@ -4284,7 +4289,7 @@ internal sealed class DesktopAliceWindow : Window
 
         return new Border
         {
-            Background = new SolidColorBrush(Color.Parse(candidate.BackgroundHex)),
+            Background = hardCardBrush,
             Padding = new Thickness(28),
             Child = new Grid
             {
@@ -4305,7 +4310,7 @@ internal sealed class DesktopAliceWindow : Window
                                 {
                                     Text = $"{bundle.Packet.Metatype} · {bundle.Packet.BuildMethod}",
                                     FontSize = 18,
-                                    Foreground = new SolidColorBrush(Color.Parse(candidate.ForegroundHex))
+                                    Foreground = hardMutedBrush
                                 },
                                 silhouette,
                                 new TextBlock
@@ -4313,7 +4318,7 @@ internal sealed class DesktopAliceWindow : Window
                                     Text = bundle.Canon.Summary,
                                     TextWrapping = TextWrapping.Wrap,
                                     FontSize = 16,
-                                    Foreground = new SolidColorBrush(Color.Parse(candidate.ForegroundHex))
+                                    Foreground = hardMutedBrush
                                 }
                             }
                         },
@@ -4327,9 +4332,11 @@ internal sealed class DesktopAliceWindow : Window
     private static Control BuildOriginSceneCard(OriginDossierBundle bundle, OriginSceneCandidate candidate, string portraitPath)
     {
         Bitmap portraitBitmap = new(portraitPath);
+        IBrush sceneBackdrop = DesktopShellTheme.ResolveThemeBrush("ChummerShellMediaBackdropBrush", "#020617");
+        IBrush scenePanel = DesktopShellTheme.ResolveThemeBrush("ChummerShellSurfaceBrush", "#111827");
         return new Border
         {
-            Background = new SolidColorBrush(Color.Parse(candidate.BackgroundHex)),
+            Background = sceneBackdrop,
             Padding = new Thickness(28),
             Child = new Grid
             {
@@ -4367,8 +4374,8 @@ internal sealed class DesktopAliceWindow : Window
                             EndPoint = new RelativePoint(1d, 1d, RelativeUnit.Relative),
                             GradientStops =
                             [
-                                new GradientStop(Color.Parse(candidate.AccentHex), 0d),
-                                new GradientStop(Color.Parse(candidate.BackgroundHex), 1d)
+                                new GradientStop(Color.Parse("#1E3A8A"), 0d),
+                                new GradientStop(Color.Parse("#020617"), 1d)
                             ]
                         },
                         CornerRadius = new CornerRadius(18),
@@ -4400,7 +4407,7 @@ internal sealed class DesktopAliceWindow : Window
                         [Grid.ColumnProperty] = 1,
                         [Grid.RowSpanProperty] = 2,
                         Margin = new Thickness(22, 0, 0, 0),
-                        Background = new SolidColorBrush(Color.Parse("#0B1220")),
+                        Background = scenePanel,
                         CornerRadius = new CornerRadius(16),
                         Padding = new Thickness(18),
                         Child = new StackPanel
@@ -4547,8 +4554,8 @@ internal sealed class DesktopAliceWindow : Window
         builder.AppendLine("6. Close card");
         builder.AppendLine();
         builder.AppendLine("Narration");
-        builder.AppendLine("- Main: Inkfluence");
-        builder.AppendLine("- Alternate: Unmixr");
+        builder.AppendLine("- Main: default voice");
+        builder.AppendLine("- Alternate: alternate voice");
         builder.AppendLine("- Visual packet: vidBoard");
         return builder.ToString().TrimEnd();
     }
@@ -4561,9 +4568,9 @@ internal sealed class DesktopAliceWindow : Window
         builder.AppendLine(HumanCopy(draft.Prose));
         builder.AppendLine();
         builder.AppendLine("## Production Notes");
-        builder.AppendLine($"- Authoring provider: {ResolveOriginAuthoringProvider(packet.BookKind)}");
-        builder.AppendLine($"- Authoring role: {ResolveOriginAuthoringRole(packet.BookKind)}");
-        builder.AppendLine($"- Provider strategy: {packet.ProviderStrategy}");
+        builder.AppendLine($"- Writing path: {ResolveOriginAuthoringProvider(packet.BookKind)}");
+        builder.AppendLine($"- Writing mode: {ResolveOriginAuthoringRole(packet.BookKind)}");
+        builder.AppendLine($"- Draft strategy: {packet.ProviderStrategy}");
         builder.AppendLine($"- Post step: {OriginBookPostProcessingSteps.UndetectableHumanizer}");
         builder.AppendLine($"- Ruleset: {packet.RulesetId}");
         builder.AppendLine($"- Metatype: {packet.Metatype}");
@@ -4610,7 +4617,7 @@ internal sealed class DesktopAliceWindow : Window
         => JsonSerializer.Serialize(
             new
             {
-                tool = "MyFirstBook",
+                tool = "Chummer origin book",
                 artifactKind = "origin_story_presentation_handoff",
                 contractName = "chummer.origin_dossier.myfirstbook_presentation_handoff.v1",
                 status,
@@ -4668,7 +4675,7 @@ internal sealed class DesktopAliceWindow : Window
 <section>
   <h2>Creative Direction</h2>
   <div class="meta">
-    <div><span class="label">Surface</span>{{Html(FirstNonEmpty(packet.BookSurface, "MyFirstBook presentation"))}}</div>
+    <div><span class="label">Surface</span>{{Html(FirstNonEmpty(packet.BookSurface, "web presentation"))}}</div>
     <div><span class="label">Primary voice</span>{{Html(FirstNonEmpty(packet.PrimaryVoiceStyle, "Measured dossier"))}}</div>
     <div><span class="label">Alternate voice</span>{{Html(FirstNonEmpty(packet.AlternateVoiceStyle, "Cinematic narration"))}}</div>
     <div><span class="label">Portrait style</span>{{Html(FirstNonEmpty(packet.PortraitStyle, "Noir Ink"))}}</div>
@@ -4733,13 +4740,13 @@ internal sealed class DesktopAliceWindow : Window
 <body>
   <main class="shell">
     <section class="hero">
-      <p class="eyebrow">MyFirstBook presentation</p>
+      <p class="eyebrow">Origin book presentation</p>
       <h1>{{Html(packet.Alias)}} Origin Story</h1>
       <p>{{Html(HumanCopy(draft.Summary))}}</p>
       <div class="meta">
         <div><span class="label">Status</span>{{Html(stageLabel)}}</div>
         <div><span class="label">Edition</span>{{Html(packet.BookKind)}}</div>
-        <div><span class="label">Authoring</span>{{Html(ResolveOriginAuthoringProvider(packet.BookKind))}}</div>
+        <div><span class="label">Writing path</span>{{Html(ResolveOriginAuthoringProvider(packet.BookKind))}}</div>
         <div><span class="label">Post step</span>{{Html(OriginBookPostProcessingSteps.UndetectableHumanizer)}}</div>
         <div><span class="label">Ruleset</span>{{Html(packet.RulesetId)}}</div>
         <div><span class="label">Metatype</span>{{Html(packet.Metatype)}}</div>
@@ -4776,7 +4783,7 @@ internal sealed class DesktopAliceWindow : Window
     private static string BuildInkfluenceNarrationScript(OriginDossierBundle bundle)
     {
         StringBuilder builder = new();
-        builder.AppendLine($"Inkfluence audiobook brief for {bundle.Packet.Alias}");
+        builder.AppendLine($"Default audiobook brief for {bundle.Packet.Alias}");
         builder.AppendLine();
         if (!string.IsNullOrWhiteSpace(bundle.GmAllowanceNotes))
         {
@@ -4799,7 +4806,7 @@ internal sealed class DesktopAliceWindow : Window
     private static string BuildUnmixrNarrationScript(OriginDossierBundle bundle)
     {
         StringBuilder builder = new();
-        builder.AppendLine($"Unmixr alternate voice brief for {bundle.Packet.Alias}");
+        builder.AppendLine($"Alternate voice brief for {bundle.Packet.Alias}");
         builder.AppendLine();
         builder.AppendLine("Voice direction: intimate dossier reading with slightly more expressive cadence than the default voice.");
         builder.AppendLine();
@@ -4831,7 +4838,7 @@ internal sealed class DesktopAliceWindow : Window
         builder.AppendLine("## Inputs");
         builder.AppendLine($"- Story markdown: {bundle.CanonMarkdownPath}");
         builder.AppendLine($"- Story data: {bundle.CanonJsonPath}");
-        builder.AppendLine($"- Inkfluence voice script: {bundle.InkfluenceScriptPath}");
+        builder.AppendLine($"- Default voice script: {bundle.InkfluenceScriptPath}");
         builder.AppendLine($"- Alternate voice script: {bundle.UnmixrScriptPath}");
         builder.AppendLine($"- Render request: {requestPath}");
         if (!string.IsNullOrWhiteSpace(bundle.GmAllowanceNotes))
@@ -4840,8 +4847,8 @@ internal sealed class DesktopAliceWindow : Window
         }
         builder.AppendLine();
         builder.AppendLine("## Voices");
-        builder.AppendLine("- Main: Inkfluence");
-        builder.AppendLine("- Alternate: Unmixr");
+        builder.AppendLine("- Main: default voice");
+        builder.AppendLine("- Alternate: alternate voice");
         builder.AppendLine();
         builder.AppendLine("## Boundary");
         builder.AppendLine("- Audio output does not change rules or the character sheet.");
@@ -5073,7 +5080,7 @@ internal sealed class DesktopAliceWindow : Window
                 AliceConversationTurnKind.Assistant,
                 "Alice",
                 "Origin Dossier ready",
-                "Choose metatype and archetype, then draft the story. The PDF book or MyFirstBook presentation comes before audio, portrait, scene, or video work.",
+                "Choose metatype and archetype, then draft the story. The PDF book or web presentation comes before audio, portrait, scene, or video work.",
                 [],
                 BuildStarterPrompts(normalizedMode));
         }

@@ -904,6 +904,7 @@ public partial class CommandDialogPaneControl : UserControl
                 IsChecked = ParseCheckbox(field.Value),
                 IsEnabled = !field.IsReadOnly
             };
+            DesktopShellTheme.ApplyShellCheckBoxTheme(checkBox);
             if (!field.IsReadOnly)
             {
                 checkBox.IsCheckedChanged += (_, _) =>
@@ -1131,7 +1132,7 @@ public partial class CommandDialogPaneControl : UserControl
                 ? string.Equals(field.VisualKind, DesktopDialogFieldVisualKinds.Detail, StringComparison.Ordinal) ? 140 : 120
                 : 32
         };
-        ApplyTextBoxAccessibility(textBox, field.AccessibleName, field.ToolTip, field.HelpText);
+        ApplyTextBoxAccessibility(textBox, field.AccessibleName, field.ToolTip, field.HelpText, field.IsReadOnly);
         if (!field.IsReadOnly)
         {
             textBox.TextChanged += (_, _) =>
@@ -1163,9 +1164,17 @@ public partial class CommandDialogPaneControl : UserControl
         ToolTip.SetTip(control, toolTip);
     }
 
-    private static void ApplyTextBoxAccessibility(TextBox textBox, string accessibleName, string toolTip, string helpText)
+    private static void ApplyTextBoxAccessibility(TextBox textBox, string accessibleName, string toolTip, string helpText, bool readOnly = false)
     {
-        DesktopShellTheme.ApplyShellTextInputTheme(textBox);
+        if (readOnly || textBox.IsReadOnly)
+        {
+            DesktopShellTheme.ApplyShellReadOnlyTextBoxTheme(textBox);
+        }
+        else
+        {
+            DesktopShellTheme.ApplyShellTextInputTheme(textBox);
+        }
+
         ApplyAccessibility(textBox, accessibleName, toolTip, helpText);
         ToolTip.SetTip(textBox, null);
     }

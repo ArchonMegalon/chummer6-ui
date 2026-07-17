@@ -394,6 +394,12 @@ public static class DesktopHomeBuildExplainProjector
             parts.Add($"Campaign handoff: {leadHandoff.Summary}");
         }
 
+        string? campaignNextSafeAction = BuildCampaignNextSafeAction(campaignSummary);
+        if (!string.IsNullOrWhiteSpace(campaignNextSafeAction))
+        {
+            parts.Add($"Campaign next step: {campaignNextSafeAction}");
+        }
+
         if (!string.IsNullOrWhiteSpace(leadRulesAnswer?.BeforeSummary))
         {
             parts.Add($"Rules question: {leadRulesAnswer.BeforeSummary}");
