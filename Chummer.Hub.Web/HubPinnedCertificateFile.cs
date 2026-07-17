@@ -32,36 +32,129 @@ internal sealed class HubPinnedCertificateFile : IDisposable
     private const uint StatxBasicStats = 0x07ff;
     private const ushort FileTypeMask = 0xf000;
     private const ushort RegularFileType = 0x8000;
+    private const ushort DirectoryFileType = 0x4000;
     private const ushort ModeBitsMask = 0x0fff;
     private const ushort UserRead = 0x0100;
     private const ushort UserWrite = 0x0080;
+    private const ushort UserExecute = 0x0040;
     private const int MaxCertificateBytes = 16 * 1024 * 1024;
+    private const int MaxKeyRingEntryBytes = 1024 * 1024;
 
     private readonly object _gate = new();
     private readonly string _configurationKey;
+    private readonly int _maximumBytes;
+    private readonly bool _allowReadOnly;
     private SafeFileHandle? _fileHandle;
 
     private HubPinnedCertificateFile(
         SafeFileHandle fileHandle,
-        string configurationKey)
+        string configurationKey,
+        int maximumBytes,
+        bool allowReadOnly)
     {
         _fileHandle = fileHandle;
         _configurationKey = configurationKey;
+        _maximumBytes = maximumBytes;
+        _allowReadOnly = allowReadOnly;
     }
 
     internal static HubPinnedCertificateFile Open(
         string certificatePath,
         string configurationKey)
-    {
-        ArgumentException.ThrowIfNullOrWhiteSpace(certificatePath);
-        ArgumentException.ThrowIfNullOrWhiteSpace(configurationKey);
-        if (!OperatingSystem.IsLinux())
-        {
-            throw new PlatformNotSupportedException(
-                "Pinned Hub Data Protection certificate loading requires Linux openat/statx semantics.");
-        }
+        => OpenPrivateFile(
+            certificatePath,
+            configurationKey,
+            MaxCertificateBytes,
+            allowReadOnly: true);
 
-        string fullPath = Path.GetFullPath(certificatePath);
+    internal static HubPinnedCertificateFile OpenKeyRingEntry(string keyPath)
+        => OpenPrivateFile(
+            keyPath,
+            "Hub Data Protection key-ring entry",
+            MaxKeyRingEntryBytes,
+            allowReadOnly: false);
+
+    internal static void ValidatePrivateDirectory(
+        string directoryPath,
+        string configurationKey)
+    {
+        ArgumentException.ThrowIfNullOrWhiteSpace(directoryPath);
+        ArgumentException.ThrowIfNullOrWhiteSpace(configurationKey);
+        RequireLinux();
+
+        SafeFileHandle? current = null;
+        try
+        {
+            current = OpenPinnedPath(directoryPath, finalIsDirectory: true, configurationKey);
+            LinuxStatx status = ReadStatus(current);
+            ushort modeBits = (ushort)(status.Mode & ModeBitsMask);
+            if ((status.Mode & FileTypeMask) != DirectoryFileType
+                || status.UserId != GetEffectiveUserId()
+                || modeBits != (UserRead | UserWrite | UserExecute))
+            {
+                throw new InvalidOperationException(
+                    $"{configurationKey} must be an owner-owned directory with mode 0700.");
+            }
+            if (!HasDescriptorCloseOnExec(current))
+            {
+                throw new InvalidOperationException(
+                    $"The pinned {configurationKey} descriptor is not close-on-exec.");
+            }
+        }
+        finally
+        {
+            current?.Dispose();
+        }
+    }
+
+    private static HubPinnedCertificateFile OpenPrivateFile(
+        string path,
+        string configurationKey,
+        int maximumBytes,
+        bool allowReadOnly)
+    {
+        ArgumentException.ThrowIfNullOrWhiteSpace(path);
+        ArgumentException.ThrowIfNullOrWhiteSpace(configurationKey);
+        ArgumentOutOfRangeException.ThrowIfNegativeOrZero(maximumBytes);
+        RequireLinux();
+
+        SafeFileHandle? current = null;
+        try
+        {
+            current = OpenPinnedPath(path, finalIsDirectory: false, configurationKey);
+
+            LinuxStatx status = ReadStatus(current);
+            RequireRegularPrivateFile(
+                status,
+                configurationKey,
+                maximumBytes,
+                allowReadOnly);
+            if (!HasDescriptorCloseOnExec(current))
+            {
+                throw new InvalidOperationException(
+                    $"The pinned {configurationKey} descriptor is not close-on-exec.");
+            }
+
+            var pinned = new HubPinnedCertificateFile(
+                current,
+                configurationKey,
+                maximumBytes,
+                allowReadOnly);
+            current = null;
+            return pinned;
+        }
+        finally
+        {
+            current?.Dispose();
+        }
+    }
+
+    private static SafeFileHandle OpenPinnedPath(
+        string path,
+        bool finalIsDirectory,
+        string configurationKey)
+    {
+        string fullPath = Path.GetFullPath(path);
         string root = Path.GetPathRoot(fullPath)
             ?? throw new InvalidOperationException($"{configurationKey} must be an absolute path.");
         string[] segments = fullPath[root.Length..].Split(
@@ -70,7 +163,7 @@ internal sealed class HubPinnedCertificateFile : IDisposable
         if (segments.Length == 0)
         {
             throw new InvalidOperationException(
-                $"{configurationKey} must identify a regular certificate file.");
+                $"{configurationKey} must not identify the filesystem root.");
         }
 
         SafeFileHandle? current = null;
@@ -84,33 +177,34 @@ internal sealed class HubPinnedCertificateFile : IDisposable
             for (int index = 0; index < segments.Length; index++)
             {
                 bool final = index == segments.Length - 1;
-                int flags = final
+                int flags = final && !finalIsDirectory
                     ? OpenReadOnly | OpenNonBlocking | OpenNoFollow | OpenCloseOnExec
                     : OpenPath | OpenDirectory | OpenNoFollow | OpenCloseOnExec;
                 SafeFileHandle next = OpenRelativeHandle(
                     current,
                     segments[index],
                     flags,
-                    $"{configurationKey} must traverse only non-symbolic-link directories and identify a non-symbolic-link regular file.");
+                    $"{configurationKey} must traverse only non-symbolic-link directories and identify a non-symbolic-link {(finalIsDirectory ? "directory" : "regular file")}.");
                 current.Dispose();
                 current = next;
             }
 
-            LinuxStatx status = ReadStatus(current);
-            RequireRegularCertificate(status, configurationKey);
-            if (!HasDescriptorCloseOnExec(current))
-            {
-                throw new InvalidOperationException(
-                    "The pinned Hub Data Protection certificate descriptor is not close-on-exec.");
-            }
-
-            var pinned = new HubPinnedCertificateFile(current, configurationKey);
+            SafeFileHandle result = current;
             current = null;
-            return pinned;
+            return result;
         }
         finally
         {
             current?.Dispose();
+        }
+    }
+
+    private static void RequireLinux()
+    {
+        if (!OperatingSystem.IsLinux())
+        {
+            throw new PlatformNotSupportedException(
+                "Pinned Hub Data Protection storage requires Linux openat/statx semantics.");
         }
     }
 
@@ -120,7 +214,11 @@ internal sealed class HubPinnedCertificateFile : IDisposable
         {
             SafeFileHandle handle = GetHandleLocked();
             LinuxStatx before = ReadStatus(handle);
-            RequireRegularCertificate(before, _configurationKey);
+            RequireRegularPrivateFile(
+                before,
+                _configurationKey,
+                _maximumBytes,
+                _allowReadOnly);
             int length = checked((int)before.Size);
             byte[] first = GC.AllocateUninitializedArray<byte>(length);
             byte[] verification = GC.AllocateUninitializedArray<byte>(length);
@@ -254,19 +352,21 @@ internal sealed class HubPinnedCertificateFile : IDisposable
         return new LinuxDevice(major, minor);
     }
 
-    private static void RequireRegularCertificate(
+    private static void RequireRegularPrivateFile(
         LinuxStatx status,
-        string configurationKey)
+        string configurationKey,
+        int maximumBytes,
+        bool allowReadOnly)
     {
         if ((status.Mode & FileTypeMask) != RegularFileType)
         {
             throw new InvalidOperationException(
                 $"{configurationKey} must identify a regular file.");
         }
-        if (status.Size == 0 || status.Size > MaxCertificateBytes)
+        if (status.Size == 0 || status.Size > (ulong)maximumBytes)
         {
             throw new InvalidOperationException(
-                $"{configurationKey} must contain between 1 and {MaxCertificateBytes} bytes.");
+                $"{configurationKey} must contain between 1 and {maximumBytes} bytes.");
         }
         if (status.UserId != GetEffectiveUserId())
         {
@@ -275,8 +375,8 @@ internal sealed class HubPinnedCertificateFile : IDisposable
         }
 
         ushort modeBits = (ushort)(status.Mode & ModeBitsMask);
-        if (modeBits != UserRead
-            && modeBits != (UserRead | UserWrite))
+        if (modeBits != (UserRead | UserWrite)
+            && (!allowReadOnly || modeBits != UserRead))
         {
             throw new InvalidOperationException(
                 $"{configurationKey} must use owner-only mode 0400 or 0600.");

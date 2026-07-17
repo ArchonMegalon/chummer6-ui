@@ -17,6 +17,7 @@ public static class HubDataProtection
 
     private const string ApplicationName = "Chummer.Hub.Web";
     private const int MinimumRsaKeyBits = 3072;
+    private const long MaximumKeyRingXmlCharacters = 1024 * 1024;
     private const UnixFileMode PrivateDirectoryMode =
         UnixFileMode.UserRead | UnixFileMode.UserWrite | UnixFileMode.UserExecute;
 
@@ -184,6 +185,14 @@ public static class HubDataProtection
     {
         _ = ResolveExternalPath(keysPath, KeysPathConfigurationKey, contentRoot);
 
+        if (OperatingSystem.IsLinux())
+        {
+            HubPinnedCertificateFile.ValidatePrivateDirectory(
+                keysPath,
+                KeysPathConfigurationKey);
+            return;
+        }
+
         if (!Directory.Exists(keysPath))
         {
             throw new InvalidOperationException(
@@ -208,73 +217,89 @@ public static class HubDataProtection
         string keysPath,
         bool requireAtLeastOneKey = false)
     {
-        string[] keyFiles = Directory
-            .EnumerateFiles(keysPath, "key-*.xml", SearchOption.TopDirectoryOnly)
+        string[] xmlFiles = Directory
+            .EnumerateFiles(keysPath, "*.xml", SearchOption.TopDirectoryOnly)
             .Order(StringComparer.Ordinal)
             .ToArray();
-        if (requireAtLeastOneKey && keyFiles.Length == 0)
+
+        int keyCount = 0;
+        foreach (string xmlFile in xmlFiles)
+        {
+            using HubPinnedCertificateFile pinnedEntry =
+                HubPinnedCertificateFile.OpenKeyRingEntry(xmlFile);
+            byte[] xmlBytes = pinnedEntry.ReadStableBytes();
+            try
+            {
+                using MemoryStream stream = new(xmlBytes, writable: false);
+                using XmlReader reader = XmlReader.Create(
+                    stream,
+                    new XmlReaderSettings
+                    {
+                        DtdProcessing = DtdProcessing.Prohibit,
+                        XmlResolver = null,
+                        CloseInput = false,
+                        MaxCharactersInDocument = MaximumKeyRingXmlCharacters
+                    });
+                XDocument document = XDocument.Load(reader, LoadOptions.None);
+                XElement root = document.Root
+                    ?? throw new InvalidOperationException(
+                        "The Hub Data Protection key ring contains an empty XML entry.");
+                string fileName = Path.GetFileName(xmlFile);
+                string rootName = root.Name.LocalName;
+                bool isKey = string.Equals(rootName, "key", StringComparison.Ordinal);
+                bool isRevocation = string.Equals(rootName, "revocation", StringComparison.Ordinal);
+                if ((isKey && !fileName.StartsWith("key-", StringComparison.Ordinal))
+                    || (isRevocation && !fileName.StartsWith("revocation-", StringComparison.Ordinal))
+                    || (!isKey && !isRevocation))
+                {
+                    throw new InvalidOperationException(
+                        "The Hub Data Protection key ring contains an unexpected XML entry.");
+                }
+
+                bool containsPlaintextMasterKey = document
+                    .Descendants()
+                    .Any(element => element.Name.LocalName == "masterKey");
+                if (containsPlaintextMasterKey)
+                {
+                    throw new InvalidOperationException(
+                        "The Hub Data Protection key ring contains plaintext key material.");
+                }
+
+                if (isKey)
+                {
+                    keyCount++;
+                    XElement[] encryptedSecrets = document
+                        .Descendants()
+                        .Where(element => element.Name.LocalName == "encryptedSecret")
+                        .ToArray();
+                    bool hasDecryptor = encryptedSecrets.Length == 1
+                        && encryptedSecrets[0].Attributes().Any(attribute =>
+                            attribute.Name.LocalName == "decryptorType"
+                            && !string.IsNullOrWhiteSpace(attribute.Value));
+                    bool hasCipherValue = encryptedSecrets.Length == 1
+                        && encryptedSecrets[0]
+                            .Descendants()
+                            .Any(element => element.Name.LocalName == "CipherValue"
+                                            && !string.IsNullOrWhiteSpace(element.Value));
+                    if (encryptedSecrets.Length != 1
+                        || !hasDecryptor
+                        || !hasCipherValue)
+                    {
+                        throw new InvalidOperationException(
+                            "The Hub Data Protection key ring contains a key that is not certificate encrypted.");
+                    }
+                }
+            }
+            finally
+            {
+                CryptographicOperations.ZeroMemory(xmlBytes);
+            }
+        }
+
+        if (requireAtLeastOneKey && keyCount == 0)
         {
             throw new InvalidOperationException(
                 "Hub Data Protection did not persist an encrypted key during its startup probe.");
-        }
-
-        foreach (string keyFile in keyFiles)
-        {
-            FileAttributes attributes = File.GetAttributes(keyFile);
-            if ((attributes & (FileAttributes.Directory | FileAttributes.ReparsePoint)) != 0)
-            {
-                throw new InvalidOperationException(
-                    "The Hub Data Protection key ring contains a non-regular or symbolic-link key entry.");
-            }
-
-            if (!OperatingSystem.IsWindows()
-                && File.GetUnixFileMode(keyFile)
-                    != (UnixFileMode.UserRead | UnixFileMode.UserWrite))
-            {
-                throw new InvalidOperationException(
-                    "Hub Data Protection key files must use owner-only mode 0600.");
-            }
-
-            using FileStream stream = new(
-                keyFile,
-                FileMode.Open,
-                FileAccess.Read,
-                FileShare.Read,
-                bufferSize: 4096,
-                FileOptions.SequentialScan);
-            using XmlReader reader = XmlReader.Create(
-                stream,
-                new XmlReaderSettings
-                {
-                    DtdProcessing = DtdProcessing.Prohibit,
-                    XmlResolver = null,
-                    CloseInput = false
-                });
-            XDocument document = XDocument.Load(reader, LoadOptions.None);
-            XElement[] encryptedSecrets = document
-                .Descendants()
-                .Where(element => element.Name.LocalName == "encryptedSecret")
-                .ToArray();
-            bool containsPlaintextMasterKey = document
-                .Descendants()
-                .Any(element => element.Name.LocalName == "masterKey");
-            bool hasDecryptor = encryptedSecrets.Length == 1
-                && encryptedSecrets[0].Attributes().Any(attribute =>
-                    attribute.Name.LocalName == "decryptorType"
-                    && !string.IsNullOrWhiteSpace(attribute.Value));
-            bool hasCipherValue = encryptedSecrets.Length == 1
-                && encryptedSecrets[0]
-                    .Descendants()
-                    .Any(element => element.Name.LocalName == "CipherValue"
-                                    && !string.IsNullOrWhiteSpace(element.Value));
-            if (containsPlaintextMasterKey
-                || encryptedSecrets.Length != 1
-                || !hasDecryptor
-                || !hasCipherValue)
-            {
-                throw new InvalidOperationException(
-                    "The Hub Data Protection key ring contains a key that is not certificate encrypted.");
-            }
         }
     }
 

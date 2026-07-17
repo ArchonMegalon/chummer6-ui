@@ -4,9 +4,11 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Runtime.InteropServices;
 using System.Runtime.Versioning;
 using System.Security.Cryptography;
 using System.Security.Cryptography.X509Certificates;
+using System.Threading.Tasks;
 using System.Xml.Linq;
 using Chummer.Hub.Web;
 using Microsoft.AspNetCore.DataProtection;
@@ -266,6 +268,120 @@ public sealed class HubDataProtectionTests
                 fixture.Environment));
     }
 
+    [TestMethod]
+    public void Key_ring_directory_must_be_private_and_must_not_be_a_symbolic_link()
+    {
+        RequireLinux();
+        using var fixture = new HubDataProtectionFixture();
+        WriteRsaCertificate(
+            fixture.CurrentCertificatePath,
+            keySize: 3072,
+            password: CertificatePassword,
+            subjectName: "CN=Chummer Hub Key Ring Directory Test");
+
+        File.SetUnixFileMode(
+            fixture.KeysPath,
+            PrivateDirectoryMode | UnixFileMode.GroupRead);
+        IConfiguration insecureConfiguration = fixture.CreateCurrentConfiguration(
+            fixture.CurrentCertificatePath,
+            CertificatePassword);
+        Assert.ThrowsExactly<InvalidOperationException>(() =>
+            HubDataProtection.Configure(
+                new ServiceCollection(),
+                insecureConfiguration,
+                fixture.Environment));
+
+        File.SetUnixFileMode(fixture.KeysPath, PrivateDirectoryMode);
+        string symbolicKeysPath = Path.Combine(fixture.ExternalRoot, "keys-link");
+        Directory.CreateSymbolicLink(symbolicKeysPath, fixture.KeysPath);
+        IConfiguration symbolicConfiguration = CreateConfiguration(
+            new Dictionary<string, string?>
+            {
+                [HubDataProtection.KeysPathConfigurationKey] = symbolicKeysPath,
+                [HubDataProtection.CertificatePathConfigurationKey] = fixture.CurrentCertificatePath,
+                [HubDataProtection.CertificatePasswordConfigurationKey] = CertificatePassword
+            });
+        Assert.ThrowsExactly<InvalidOperationException>(() =>
+            HubDataProtection.Configure(
+                new ServiceCollection(),
+                symbolicConfiguration,
+                fixture.Environment));
+    }
+
+    [TestMethod]
+    public void Key_ring_rejects_unexpected_and_symbolic_link_xml_entries()
+    {
+        RequireLinux();
+        using var fixture = new HubDataProtectionFixture();
+        WriteRsaCertificate(
+            fixture.CurrentCertificatePath,
+            keySize: 3072,
+            password: CertificatePassword,
+            subjectName: "CN=Chummer Hub Key Ring Entry Test");
+        IConfiguration configuration = fixture.CreateCurrentConfiguration(
+            fixture.CurrentCertificatePath,
+            CertificatePassword);
+
+        string unexpectedPath = Path.Combine(fixture.KeysPath, "unexpected.xml");
+        File.WriteAllText(unexpectedPath, "<unexpected />");
+        File.SetUnixFileMode(unexpectedPath, PrivateFileMode);
+        Assert.ThrowsExactly<InvalidOperationException>(() =>
+            HubDataProtection.Configure(
+                new ServiceCollection(),
+                configuration,
+                fixture.Environment));
+        File.Delete(unexpectedPath);
+
+        string outsideKeyPath = Path.Combine(fixture.ExternalRoot, "outside-key.xml");
+        File.WriteAllText(outsideKeyPath, "<key />");
+        File.SetUnixFileMode(outsideKeyPath, PrivateFileMode);
+        string symbolicKeyPath = Path.Combine(
+            fixture.KeysPath,
+            $"key-{Guid.NewGuid():D}.xml");
+        File.CreateSymbolicLink(symbolicKeyPath, outsideKeyPath);
+        Assert.ThrowsExactly<InvalidOperationException>(() =>
+            HubDataProtection.Configure(
+                new ServiceCollection(),
+                configuration,
+                fixture.Environment));
+    }
+
+    [TestMethod]
+    public async Task Certificate_symbolic_links_and_fifos_are_rejected_without_blocking()
+    {
+        RequireLinux();
+        using var fixture = new HubDataProtectionFixture();
+        WriteRsaCertificate(
+            fixture.CurrentCertificatePath,
+            keySize: 3072,
+            password: CertificatePassword,
+            subjectName: "CN=Chummer Hub Pinned Certificate Test");
+
+        string symbolicCertificatePath = fixture.CertificatePath("current-link.p12");
+        File.CreateSymbolicLink(symbolicCertificatePath, fixture.CurrentCertificatePath);
+        IConfiguration symbolicConfiguration = fixture.CreateCurrentConfiguration(
+            symbolicCertificatePath,
+            CertificatePassword);
+        Assert.ThrowsExactly<InvalidOperationException>(() =>
+            HubDataProtection.Configure(
+                new ServiceCollection(),
+                symbolicConfiguration,
+                fixture.Environment));
+
+        string fifoPath = fixture.CertificatePath("certificate-fifo.p12");
+        Assert.AreEqual(0, CreateFifo(fifoPath, Convert.ToUInt32("600", 8)));
+        IConfiguration fifoConfiguration = fixture.CreateCurrentConfiguration(
+            fifoPath,
+            CertificatePassword);
+        await Task.Run(() =>
+                Assert.ThrowsExactly<InvalidOperationException>(() =>
+                    HubDataProtection.Configure(
+                        new ServiceCollection(),
+                        fifoConfiguration,
+                        fixture.Environment)))
+            .WaitAsync(TimeSpan.FromSeconds(2));
+    }
+
     private static ServiceProvider CreateProvider(
         HubDataProtectionFixture fixture,
         IConfiguration configuration)
@@ -352,6 +468,11 @@ public sealed class HubDataProtectionTests
         if (!OperatingSystem.IsLinux())
             Assert.Inconclusive("Hub certificate pinning and Unix-mode contracts require Linux.");
     }
+
+    [DllImport("libc", EntryPoint = "mkfifo", SetLastError = true)]
+    private static extern int CreateFifo(
+        [MarshalAs(UnmanagedType.LPUTF8Str)] string path,
+        uint mode);
 
     private sealed class HubDataProtectionFixture : IDisposable
     {
