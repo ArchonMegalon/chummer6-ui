@@ -175,6 +175,8 @@ def maybe_materialize_windows_visual_proof_handoff(stage_dir: Path) -> dict[str,
                 "only_blocker_is_visual_proof": bool(child.get("only_blocker_is_visual_proof")),
                 "blockers": child.get("blockers") or [],
                 "next_actions": child.get("next_actions") or [],
+                "windows_operator_commands": child.get("windows_operator_commands") or {},
+                "operator_artifact_intake": child.get("operator_artifact_intake") or {},
             }
         )
     elif completed.returncode == 0:
@@ -340,6 +342,17 @@ def render_markdown(payload: dict[str, Any]) -> str:
         ]
         if normalize(windows_visual_proof_handoff.get("summary")):
             windows_visual_proof_lines.append(f"- Summary: {normalize(windows_visual_proof_handoff.get('summary'))}")
+        artifact_intake = windows_visual_proof_handoff.get("operator_artifact_intake")
+        if isinstance(artifact_intake, dict) and artifact_intake:
+            windows_visual_proof_lines.extend(
+                [
+                    f"- Artifact intake required: `{artifact_intake.get('external_artifact_required')}`",
+                    f"- Preferred drop root: `{normalize(artifact_intake.get('preferred_drop_root'))}`",
+                    f"- Preferred receipt path: `{normalize(artifact_intake.get('preferred_visual_proof_receipt_path'))}`",
+                    f"- Preferred screenshot dir: `{normalize(artifact_intake.get('preferred_screenshot_dir'))}`",
+                    f"- Post-copy verify command: `{normalize(artifact_intake.get('post_copy_verify_command'))}`",
+                ]
+            )
 
     lines = [
         "# Release Build Handoff",

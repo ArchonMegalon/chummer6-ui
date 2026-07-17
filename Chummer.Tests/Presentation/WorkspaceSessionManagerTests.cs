@@ -21,12 +21,16 @@ public class WorkspaceSessionManagerTests
                 new CharacterWorkspaceId("ws-old"),
                 CreateSummary("Old", "O"),
                 DateTimeOffset.UtcNow.AddMinutes(-10),
-                RulesetDefaults.Sr5),
+                RulesetDefaults.Sr5,
+                ContentRevision: 3,
+                SavedRevision: 2),
             new(
                 new CharacterWorkspaceId("ws-new"),
                 CreateSummary("New", "N"),
                 DateTimeOffset.UtcNow.AddMinutes(-1),
-                "sr6")
+                "sr6",
+                ContentRevision: 5,
+                SavedRevision: 5)
         ];
 
         IReadOnlyList<OpenWorkspaceState> restored = manager.Restore(input);
@@ -34,8 +38,15 @@ public class WorkspaceSessionManagerTests
         Assert.HasCount(2, restored);
         Assert.AreEqual("ws-new", restored[0].Id.Value);
         Assert.AreEqual("sr6", restored[0].RulesetId);
+        Assert.AreEqual(5L, restored[0].ContentRevision);
+        Assert.AreEqual(5L, restored[0].SavedRevision);
+        Assert.IsFalse(restored[0].IsDirty);
+        Assert.IsTrue(restored[0].HasSavedWorkspace);
         Assert.AreEqual("ws-old", restored[1].Id.Value);
         Assert.AreEqual(RulesetDefaults.Sr5, restored[1].RulesetId);
+        Assert.AreEqual(3L, restored[1].ContentRevision);
+        Assert.AreEqual(2L, restored[1].SavedRevision);
+        Assert.IsTrue(restored[1].IsDirty);
     }
 
     [TestMethod]
@@ -58,6 +69,36 @@ public class WorkspaceSessionManagerTests
         Assert.AreEqual("One Updated", updated[0].Name);
         Assert.AreEqual("A2", updated[0].Alias);
         Assert.AreEqual(RulesetDefaults.Sr5, updated[0].RulesetId);
+    }
+
+    [TestMethod]
+    public void Activate_preserves_revision_and_conflict_state_for_existing_workspace()
+    {
+        WorkspaceSessionManager manager = new();
+        WorkspaceConflictState conflict = new(
+            Operation: "metadata",
+            ExpectedContentRevision: 4,
+            ActualContentRevision: 5,
+            Message: "The workspace changed elsewhere.");
+        OpenWorkspaceState existing = new(
+            new CharacterWorkspaceId("ws-1"),
+            "One",
+            "A",
+            DateTimeOffset.UtcNow.AddMinutes(-10),
+            RulesetDefaults.Sr5,
+            ContentRevision: 4,
+            SavedRevision: 3,
+            ConflictState: conflict);
+
+        IReadOnlyList<OpenWorkspaceState> updated = manager.Activate(
+            [existing],
+            existing.Id,
+            CreateProfile("One Updated", "A2"));
+
+        Assert.AreEqual(4L, updated[0].ContentRevision);
+        Assert.AreEqual(3L, updated[0].SavedRevision);
+        Assert.IsTrue(updated[0].IsDirty);
+        Assert.AreSame(conflict, updated[0].ConflictState);
     }
 
     [TestMethod]

@@ -15,7 +15,8 @@ public sealed class WorkspaceSessionManager : IWorkspaceSessionManager
                 Alias: workspace.Summary.Alias ?? string.Empty,
                 LastOpenedUtc: workspace.LastUpdatedUtc,
                 RulesetId: RulesetDefaults.NormalizeOptional(workspace.RulesetId) ?? string.Empty,
-                HasSavedWorkspace: workspace.HasSavedWorkspace))
+                ContentRevision: workspace.ContentRevision,
+                SavedRevision: workspace.SavedRevision))
             .OrderByDescending(workspace => workspace.LastOpenedUtc)
             .ToArray();
     }
@@ -26,8 +27,12 @@ public sealed class WorkspaceSessionManager : IWorkspaceSessionManager
         CharacterProfileSection? profile,
         string? rulesetId = null)
     {
-        string workspaceName = string.IsNullOrWhiteSpace(profile?.Name) ? "(Unnamed Character)" : profile.Name;
-        string workspaceAlias = profile?.Alias ?? string.Empty;
+        OpenWorkspaceState? currentWorkspace = existing.FirstOrDefault(
+            workspace => string.Equals(workspace.Id.Value, id.Value, StringComparison.Ordinal));
+        string workspaceName = profile is null
+            ? currentWorkspace?.Name ?? "(Unnamed Character)"
+            : string.IsNullOrWhiteSpace(profile.Name) ? "(Unnamed Character)" : profile.Name;
+        string workspaceAlias = profile?.Alias ?? currentWorkspace?.Alias ?? string.Empty;
         string resolvedRulesetId = ResolveRulesetId(existing, id, rulesetId);
         DateTimeOffset now = DateTimeOffset.UtcNow;
 
@@ -35,13 +40,23 @@ public sealed class WorkspaceSessionManager : IWorkspaceSessionManager
             .Where(workspace => !string.Equals(workspace.Id.Value, id.Value, StringComparison.Ordinal))
             .ToArray();
 
-        return retained
-            .Append(new OpenWorkspaceState(
+        OpenWorkspaceState activatedWorkspace = currentWorkspace is null
+            ? new OpenWorkspaceState(
                 Id: id,
                 Name: workspaceName,
                 Alias: workspaceAlias,
                 LastOpenedUtc: now,
-                RulesetId: resolvedRulesetId))
+                RulesetId: resolvedRulesetId)
+            : currentWorkspace with
+            {
+                Name = workspaceName,
+                Alias = workspaceAlias,
+                LastOpenedUtc = now,
+                RulesetId = resolvedRulesetId
+            };
+
+        return retained
+            .Append(activatedWorkspace)
             .OrderByDescending(workspace => workspace.LastOpenedUtc)
             .ToArray();
     }

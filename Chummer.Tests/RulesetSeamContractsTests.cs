@@ -2558,7 +2558,16 @@ public class RulesetSeamContractsTests
         Assert.IsTrue(sr6Actions.Any(action => string.Equals(action.Id, "tab-cyberware.cyberwares", StringComparison.Ordinal) && string.Equals(action.TargetId, "cyberwares", StringComparison.Ordinal)));
         Assert.IsTrue(sr6Tabs.Any(tab => string.Equals(tab.Id, "tab-adept", StringComparison.Ordinal) && string.Equals(tab.SectionId, "powers", StringComparison.Ordinal)));
         Assert.IsTrue(sr6Tabs.Any(tab => string.Equals(tab.Id, "tab-technomancer", StringComparison.Ordinal) && string.Equals(tab.SectionId, "complexforms", StringComparison.Ordinal)));
+        Assert.IsTrue(sr6Tabs.Any(tab => string.Equals(tab.Id, "tab-relationships", StringComparison.Ordinal) && string.Equals(tab.SectionId, "relationships", StringComparison.Ordinal)));
+        Assert.IsTrue(sr6Tabs.Any(tab => string.Equals(tab.Id, "tab-karma", StringComparison.Ordinal) && string.Equals(tab.SectionId, "karmasummary", StringComparison.Ordinal)));
         Assert.IsTrue(sr6Actions.Any(action => string.Equals(action.Id, "tab-technomancer.complexforms", StringComparison.Ordinal) && string.Equals(action.TargetId, "complexforms", StringComparison.Ordinal)));
+        Assert.IsTrue(sr6Actions.Any(action => string.Equals(action.Id, "tab-technomancer.sprites", StringComparison.Ordinal) && string.Equals(action.TargetId, "sprites", StringComparison.Ordinal)));
+        Assert.IsTrue(sr6Actions.Any(action => string.Equals(action.Id, "tab-relationships.relationships", StringComparison.Ordinal) && string.Equals(action.TargetId, "relationships", StringComparison.Ordinal)));
+        Assert.IsTrue(sr6Actions.Any(action => string.Equals(action.Id, "tab-relationships.enemies", StringComparison.Ordinal) && string.Equals(action.TargetId, "enemies", StringComparison.Ordinal)));
+        Assert.IsTrue(sr6Actions.Any(action => string.Equals(action.Id, "tab-relationships.pets", StringComparison.Ordinal) && string.Equals(action.TargetId, "pets", StringComparison.Ordinal)));
+        Assert.IsTrue(sr6Actions.Any(action => string.Equals(action.Id, "tab-karma.summary", StringComparison.Ordinal) && string.Equals(action.TargetId, "karmasummary", StringComparison.Ordinal)));
+        Assert.IsTrue(sr6Actions.Any(action => string.Equals(action.Id, "tab-combat.conditionmonitor", StringComparison.Ordinal) && string.Equals(action.TargetId, "conditionmonitor", StringComparison.Ordinal)));
+        Assert.IsTrue(sr6Actions.Any(action => string.Equals(action.Id, "tab-info.spelldefense", StringComparison.Ordinal) && string.Equals(action.TargetId, "spelldefense", StringComparison.Ordinal)));
 
         Assert.IsTrue(sr5Surfaces.Any(surface => string.Equals(surface.SurfaceId, "sr5.career.section", StringComparison.Ordinal) && surface.ActionIds.Contains("tab-create.intake")));
         Assert.IsTrue(sr4Surfaces.Any(surface => string.Equals(surface.SurfaceId, "sr4.career.section", StringComparison.Ordinal) && surface.ActionIds.Contains("tab-create.intake")));
@@ -2838,7 +2847,10 @@ public class RulesetSeamContractsTests
                 new XmlCharacterFileQueries(new CharacterFileService()),
                 new XmlCharacterSectionQueries(new CharacterSectionService()),
                 new XmlCharacterMetadataCommands(new CharacterFileService())),
-            CreateSr6WorkspaceCodec()
+            new Sr6WorkspaceCodec(
+                new XmlCharacterFileQueries(new CharacterFileService()),
+                new XmlCharacterSectionQueries(new CharacterSectionService()),
+                new XmlCharacterMetadataCommands(new CharacterFileService()))
         ];
 
         foreach (IRulesetWorkspaceCodec codec in codecs)
@@ -2951,7 +2963,10 @@ public class RulesetSeamContractsTests
     public async Task Sr6_plugin_exposes_independent_catalogs_and_executes_deterministic_baseline_capabilities()
     {
         Sr6RulesetPlugin plugin = new();
-        Sr6WorkspaceCodec codec = CreateSr6WorkspaceCodec();
+        Sr6WorkspaceCodec codec = new(
+            new XmlCharacterFileQueries(new CharacterFileService()),
+            new XmlCharacterSectionQueries(new CharacterSectionService()),
+            new XmlCharacterMetadataCommands(new CharacterFileService()));
 
         Assert.AreEqual(RulesetDefaults.Sr6, plugin.Id.NormalizedValue);
         Assert.AreEqual("Shadowrun 6", plugin.DisplayName);
@@ -2962,7 +2977,9 @@ public class RulesetSeamContractsTests
 
         WorkspacePayloadEnvelope wrapped = codec.WrapImport(
             RulesetDefaults.Sr6,
-            new WorkspaceImportDocument("<character><name>Switchback</name><alias>Ghost</alias></character>", RulesetDefaults.Sr6));
+            new WorkspaceImportDocument(
+                "<character><name>Switchback</name><alias>Ghost</alias><metatype>Human</metatype><buildmethod>Priority</buildmethod><createdversion>1.0</createdversion><appversion>1.0</appversion><karma>0</karma><nuyen>0</nuyen><created>true</created></character>",
+                RulesetDefaults.Sr6));
         CharacterFileSummary summary = codec.ParseSummary(wrapped);
 
         Assert.AreEqual(RulesetDefaults.Sr6, wrapped.RulesetId);
@@ -3034,12 +3051,6 @@ public class RulesetSeamContractsTests
                 .Single(descriptor => string.Equals(descriptor.CapabilityId, RulePackCapabilityIds.SessionQuickActions, StringComparison.Ordinal))
                 .TitleKey);
     }
-
-    private static Sr6WorkspaceCodec CreateSr6WorkspaceCodec()
-        => new(
-            new XmlCharacterFileQueries(new CharacterFileService()),
-            new XmlCharacterSectionQueries(new CharacterSectionService()),
-            new XmlCharacterMetadataCommands(new CharacterFileService()));
 
     [TestMethod]
     public async Task Sr4_plugin_exposes_independent_catalogs_and_executes_deterministic_baseline_capabilities()

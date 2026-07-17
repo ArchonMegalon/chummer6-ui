@@ -14,6 +14,8 @@ public sealed partial class CharacterOverviewPresenter
 
     public async Task ImportAsync(WorkspaceImportDocument document, CancellationToken ct)
     {
+        using PresenterOperationLease operation = EnterPresenterOperation(ct);
+        ct = operation.Token;
         Publish(State with
         {
             IsBusy = true,
@@ -24,6 +26,12 @@ public sealed partial class CharacterOverviewPresenter
         {
             WorkspaceImportDocument resolvedDocument = await ResolveImportDocumentAsync(document, ct);
             WorkspaceOverviewLifecycleResult result = await _workspaceOverviewLifecycleCoordinator.ImportAsync(State, resolvedDocument, ct);
+            if (!result.CanPublish)
+            {
+                return;
+            }
+
+            CaptureRecoveryPayload(result);
             Publish(result.State);
             await RefreshNavigationContextForCurrentWorkspaceAsync(ct);
             await EnsureDefaultWorkspaceSurfaceAsync(ct);
@@ -114,6 +122,7 @@ public sealed partial class CharacterOverviewPresenter
 
     private async Task EnsureNavigationContextAsync(CancellationToken ct)
     {
+        CharacterWorkspaceId? expectedWorkspace = ResolveCurrentWorkspaceId();
         IReadOnlyList<AppCommandDefinition> commands = State.Commands ?? [];
         IReadOnlyList<NavigationTabDefinition> navigationTabs = State.NavigationTabs ?? [];
         if (commands.Count > 0 && navigationTabs.Count > 0)
@@ -127,6 +136,11 @@ public sealed partial class CharacterOverviewPresenter
         ShellBootstrapData bootstrap = TryCreateBootstrapFromShellState(out ShellBootstrapData shellBootstrap)
             ? shellBootstrap
             : await _bootstrapDataProvider.GetAsync(rulesetId, ct);
+        if (!IsWorkspaceContextCurrent(expectedWorkspace))
+        {
+            return;
+        }
+
         bootstrap = NormalizeBootstrapData(bootstrap, rulesetId);
         Publish(State with
         {
@@ -166,6 +180,11 @@ public sealed partial class CharacterOverviewPresenter
         }
 
         ShellBootstrapData bootstrap = await _bootstrapDataProvider.GetAsync(rulesetId, ct);
+        if (!IsWorkspaceContextCurrent(currentWorkspaceId))
+        {
+            return;
+        }
+
         bootstrap = NormalizeBootstrapData(bootstrap, rulesetId);
         Publish(State with
         {
@@ -177,12 +196,17 @@ public sealed partial class CharacterOverviewPresenter
 
     private async Task EnsureDefaultWorkspaceSurfaceAsync(CancellationToken ct)
     {
-        if (ResolveCurrentWorkspaceId() is null || !string.IsNullOrWhiteSpace(State.ActiveSectionId))
+        CharacterWorkspaceId? expectedWorkspace = ResolveCurrentWorkspaceId();
+        if (expectedWorkspace is null || !string.IsNullOrWhiteSpace(State.ActiveSectionId))
         {
             return;
         }
 
         await EnsureNavigationContextAsync(ct);
+        if (!IsWorkspaceContextCurrent(expectedWorkspace))
+        {
+            return;
+        }
 
         IReadOnlyList<NavigationTabDefinition> navigationTabs = State.NavigationTabs ?? [];
         string? defaultTabId = !string.IsNullOrWhiteSpace(State.ActiveTabId)
@@ -239,6 +263,8 @@ public sealed partial class CharacterOverviewPresenter
 
     public async Task LoadAsync(CharacterWorkspaceId id, CancellationToken ct)
     {
+        using PresenterOperationLease operation = EnterPresenterOperation(ct);
+        ct = operation.Token;
         Publish(State with
         {
             IsBusy = true,
@@ -248,6 +274,12 @@ public sealed partial class CharacterOverviewPresenter
         try
         {
             WorkspaceOverviewLifecycleResult result = await _workspaceOverviewLifecycleCoordinator.LoadAsync(State, id, ct);
+            if (!result.CanPublish)
+            {
+                return;
+            }
+
+            CaptureRecoveryPayload(result);
             Publish(result.State);
             await RefreshNavigationContextForCurrentWorkspaceAsync(ct);
             await EnsureDefaultWorkspaceSurfaceAsync(ct);
@@ -265,7 +297,15 @@ public sealed partial class CharacterOverviewPresenter
 
     public async Task SwitchWorkspaceAsync(CharacterWorkspaceId id, CancellationToken ct)
     {
+        using PresenterOperationLease operation = EnterPresenterOperation(ct);
+        ct = operation.Token;
         WorkspaceOverviewLifecycleResult result = await _workspaceOverviewLifecycleCoordinator.SwitchAsync(State, id, ct);
+        if (!result.CanPublish)
+        {
+            return;
+        }
+
+        CaptureRecoveryPayload(result);
         Publish(result.State);
         await RefreshNavigationContextForCurrentWorkspaceAsync(ct);
         await SyncShellWorkspaceContextAsync(ct);
@@ -273,16 +313,183 @@ public sealed partial class CharacterOverviewPresenter
 
     public async Task CloseWorkspaceAsync(CharacterWorkspaceId id, CancellationToken ct)
     {
+        using PresenterOperationLease operation = EnterPresenterOperation(ct);
+        ct = operation.Token;
         WorkspaceOverviewLifecycleResult result = await _workspaceOverviewLifecycleCoordinator.CloseAsync(State, id, ct);
-        Publish(result.State);
-        await SyncShellWorkspaceContextAsync(ct);
+        if (!result.CanPublish)
+        {
+            return;
+        }
+
+        if (result.PostCommit)
+        {
+            try { CaptureRecoveryPayload(result); } catch { }
+            PublishPostCommitState(result.State);
+            using var postCommitBudget = new CancellationTokenSource(PostCommitShellSyncBudget);
+            try
+            {
+                await SyncShellWorkspaceContextAsync(postCommitBudget.Token);
+            }
+            catch
+            {
+                PublishPostCommitWarning("Shell synchronization will retry later.");
+            }
+        }
+        else
+        {
+            CaptureRecoveryPayload(result);
+            Publish(result.State);
+            await SyncShellWorkspaceContextAsync(ct);
+        }
+    }
+
+    public async Task DeleteWorkspaceAsync(CharacterWorkspaceId id, bool confirmed, CancellationToken ct)
+    {
+        using PresenterOperationLease operation = EnterPresenterOperation(ct);
+        ct = operation.Token;
+        WorkspaceOverviewLifecycleResult result = await _workspaceOverviewLifecycleCoordinator.DeleteAsync(
+            State,
+            id,
+            confirmed,
+            ct);
+        if (!result.CanPublish)
+        {
+            return;
+        }
+
+        if (result.PostCommit)
+        {
+            try { CaptureRecoveryPayload(result); } catch { }
+            PublishPostCommitState(result.State);
+            using var postCommitBudget = new CancellationTokenSource(PostCommitShellSyncBudget);
+            try
+            {
+                await SyncShellWorkspaceContextAsync(postCommitBudget.Token);
+            }
+            catch
+            {
+                PublishPostCommitWarning("The deletion committed; shell synchronization will retry later.");
+            }
+        }
+        else
+        {
+            CaptureRecoveryPayload(result);
+            Publish(result.State);
+            await SyncShellWorkspaceContextAsync(ct);
+        }
+    }
+
+    private void PublishPostCommitState(CharacterOverviewState state)
+    {
+        try
+        {
+            Publish(state with { Error = null });
+        }
+        catch
+        {
+            // Publish assigns State before invoking shell/subscriber callbacks.
+            // Reassert committed success without letting observer failure escape.
+            State = state with { Error = null };
+        }
+    }
+
+    private void PublishPostCommitWarning(string warning)
+    {
+        string separator = string.IsNullOrWhiteSpace(State.Notice) ? string.Empty : " ";
+        CharacterOverviewState warningState = State with
+        {
+            Error = null,
+            Notice = $"{State.Notice}{separator}{warning}"
+        };
+        try
+        {
+            Publish(warningState);
+        }
+        catch
+        {
+            State = warningState;
+        }
+    }
+
+    private void TryCapturePostCommitWorkspaceView(string warning)
+    {
+        try
+        {
+            _workspaceOverviewLifecycleCoordinator.CaptureCurrentWorkspaceView(State);
+        }
+        catch
+        {
+            // A view-store projection is an observer of the durable commit.
+            // It can request a later refresh, but it cannot turn success into
+            // an operation failure.
+            PublishPostCommitWarning(warning);
+        }
+    }
+
+    private void GateStalePostCommitRecovery(
+        CharacterWorkspaceId workspaceId,
+        long committedRevision,
+        string operation,
+        string message)
+    {
+        try
+        {
+            _workspaceSessionPresenter.SetConflictState(
+                workspaceId,
+                new WorkspaceConflictState(
+                    operation,
+                    committedRevision,
+                    committedRevision,
+                    message));
+        }
+        catch
+        {
+            // The stale operation must never replace the winning UI. Recovery
+            // capture failure remains recorded by the vault when validation
+            // reached its commit boundary.
+        }
+
+        try
+        {
+            _workspaceRecoveryPayloadStore.SetProtected(
+                workspaceId,
+                committedRevision,
+                protectedFromEviction: true);
+        }
+        catch
+        {
+            // Best-effort protection cannot justify publishing stale state.
+        }
     }
 
     private async Task CloseAllWorkspacesAsync(CancellationToken ct, string notice)
     {
         WorkspaceOverviewLifecycleResult result = await _workspaceOverviewLifecycleCoordinator.CloseAllAsync(State, ct, notice);
-        Publish(result.State);
-        await SyncShellWorkspaceContextAsync(ct);
+        if (!result.CanPublish)
+        {
+            return;
+        }
+
+        if (result.PostCommit)
+        {
+            try { CaptureRecoveryPayload(result); } catch { }
+            PublishPostCommitState(result.State);
+            using var postCommitBudget = new CancellationTokenSource(PostCommitShellSyncBudget);
+            try
+            {
+                await SyncShellWorkspaceContextAsync(postCommitBudget.Token);
+            }
+            catch
+            {
+                PublishPostCommitWarning("Shell synchronization will retry later.");
+            }
+        }
+        else
+        {
+            CaptureRecoveryPayload(result);
+            Publish(result.State);
+            await SyncShellWorkspaceContextAsync(ct);
+        }
     }
 
     private Task SyncShellWorkspaceContextAsync(CancellationToken ct)
@@ -299,5 +506,163 @@ public sealed partial class CharacterOverviewPresenter
     private CharacterOverviewState CreateWorkspaceResetState(string commandId, string notice)
     {
         return _workspaceOverviewLifecycleCoordinator.CreateResetState(State, commandId, notice).State;
+    }
+
+    private bool IsWorkspaceContextCurrent(CharacterWorkspaceId? expectedWorkspace)
+    {
+        CharacterWorkspaceId? currentWorkspace = ResolveCurrentWorkspaceId();
+        if (expectedWorkspace is null || currentWorkspace is null)
+        {
+            return expectedWorkspace is null && currentWorkspace is null;
+        }
+
+        return string.Equals(expectedWorkspace.Value.Value, currentWorkspace.Value.Value, StringComparison.Ordinal)
+            && _workspaceOperationCoordinator.IsCurrent(expectedWorkspace.Value);
+    }
+
+    private void CaptureRecoveryPayload(
+        WorkspaceOverviewLifecycleResult result,
+        IWorkspaceRecoveryCaptureIntent? advertisedIntent = null)
+    {
+        if (!result.CanPublish
+            || result.RecoveryDocument is null
+            || result.RecoveryValidation is null
+            || result.CurrentWorkspaceId is not { } workspaceId
+            || result.State.ContentRevision <= 0)
+        {
+            return;
+        }
+
+        bool ownsIntent = advertisedIntent is null;
+        IWorkspaceRecoveryCaptureIntent? captureIntent = advertisedIntent;
+        if (captureIntent is null
+            && !_workspaceRecoveryPayloadStore.TryBeginCaptureIntent(
+                workspaceId,
+                result.State.ContentRevision,
+                out captureIntent))
+        {
+            return;
+        }
+
+        try
+        {
+            TryCommitRecoveryCapture(
+                captureIntent!,
+                workspaceId,
+                result.State.ContentRevision,
+                result.RecoveryDocument,
+                result.RecoveryValidation,
+                protectFromEviction: result.State.IsDirty || result.State.ConflictState is not null);
+        }
+        finally
+        {
+            if (ownsIntent)
+                captureIntent?.Dispose();
+        }
+    }
+
+    private bool HasAuthoritativeRecoveryLoader
+        => _workspaceOverviewLoader is IAuthoritativeWorkspaceOverviewLoader
+        {
+            IsCompositionBound: true
+        };
+
+    private async Task<bool> TryCaptureRecoveryPayloadAsync(
+        CharacterWorkspaceId workspaceId,
+        long expectedContentRevision,
+        CancellationToken ct,
+        IWorkspaceRecoveryCaptureIntent? advertisedIntent = null,
+        WorkspaceDocument? expectedDocument = null)
+    {
+        IWorkspaceRecoveryCaptureIntent? captureIntent = advertisedIntent;
+        if (captureIntent is null
+            && !_workspaceRecoveryPayloadStore.TryBeginCaptureIntent(
+                workspaceId,
+                expectedContentRevision,
+                out captureIntent))
+        {
+            return false;
+        }
+
+        using (captureIntent)
+        {
+            try
+            {
+                if (_workspaceOverviewLoader is not IAuthoritativeWorkspaceOverviewLoader
+                    {
+                        IsCompositionBound: true
+                    } authoritativeLoader)
+                {
+                    return false;
+                }
+
+                WorkspaceRecoveryAuthoritySnapshot loaded = await authoritativeLoader
+                    .LoadRecoverySnapshotAsync(workspaceId, ct)
+                    .ConfigureAwait(false);
+                if (loaded.ContentRevision != expectedContentRevision)
+                {
+                    return false;
+                }
+
+                if (expectedDocument is not null
+                    && !RecoveryDocumentsMatch(loaded.Document, expectedDocument))
+                {
+                    return false;
+                }
+
+                return TryCommitRecoveryCapture(
+                    captureIntent!,
+                    workspaceId,
+                    expectedContentRevision,
+                    loaded.Document,
+                    loaded.Validation,
+                    protectFromEviction: true);
+            }
+            catch (OperationCanceledException)
+            {
+                // The presenter-owned postcommit budget expired. Recovery stays
+                // unavailable rather than reconstructing a lossy payload.
+                return false;
+            }
+            catch
+            {
+                // Mutation success is durable even if exact recovery capture is
+                // unavailable. Never substitute a lossy reconstructed payload.
+                return false;
+            }
+        }
+    }
+
+    private static bool RecoveryDocumentsMatch(WorkspaceDocument left, WorkspaceDocument right)
+        => left.Format == right.Format
+            && string.Equals(left.RulesetId, right.RulesetId, StringComparison.Ordinal)
+            && left.SchemaVersion == right.SchemaVersion
+            && string.Equals(left.PayloadKind, right.PayloadKind, StringComparison.Ordinal)
+            && string.Equals(left.Content, right.Content, StringComparison.Ordinal);
+
+    private bool TryCommitRecoveryCapture(
+        IWorkspaceRecoveryCaptureIntent captureIntent,
+        CharacterWorkspaceId workspaceId,
+        long sourceRevision,
+        WorkspaceDocument document,
+        WorkspaceOverviewLoader.CanonicalValidationCapability validationCapability,
+        bool protectFromEviction)
+    {
+        try
+        {
+            if (_workspaceRecoveryPayloadStore is not IWorkspaceRecoveryCaptureStore captureStore)
+                return false;
+
+            WorkspaceRecoveryCaptureResult captured = captureStore.Capture(
+                captureIntent,
+                document,
+                validationCapability,
+                protectFromEviction);
+            return captured.Success && captured.SourceRevision == sourceRevision;
+        }
+        catch
+        {
+            return false;
+        }
     }
 }

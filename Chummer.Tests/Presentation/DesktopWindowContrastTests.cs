@@ -17,9 +17,9 @@ using Chummer.Avalonia;
 using Chummer.Avalonia.Controls;
 using Chummer.Campaign.Contracts;
 using Chummer.Contracts.Presentation;
+using Chummer.Contracts.Workspaces;
 using Chummer.Desktop.Runtime;
 using Chummer.Contracts.Rulesets;
-using Chummer.Contracts.Workspaces;
 using Chummer.Presentation.Overview;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 
@@ -154,7 +154,7 @@ public sealed class DesktopWindowContrastTests
     }
 
     [TestMethod]
-    public void Origin_dossier_advanced_story_controls_do_not_jump_or_collapse_after_live_combo_selection()
+    public void Origin_dossier_advanced_story_controls_stay_expanded_after_dialog_rebind()
     {
         DesktopDialogState originWizard = new DesktopDialogFactory().CreateCommandDialog(
             "new_character_origin",
@@ -163,7 +163,52 @@ public sealed class DesktopWindowContrastTests
             activeSectionJson: null,
             currentWorkspace: null,
             rulesetId: RulesetDefaults.Sr5);
-        WithPresenterBoundDialogWindow(originWizard, window =>
+
+        WithBoundDialogWindow(originWizard, window =>
+        {
+            Expander advancedStoryControls = window.GetVisualDescendants()
+                .OfType<Expander>()
+                .Single(expander => string.Equals(expander.Name, "OriginDossierStandaloneAdvancedStoryControlsExpander", StringComparison.Ordinal));
+
+            advancedStoryControls.IsExpanded = true;
+            PumpUi();
+
+            DesktopDialogState updatedWizard = originWizard with
+            {
+                Fields = originWizard.Fields
+                    .Select(field => string.Equals(field.Id, "newCharacterOriginBuildPreference", StringComparison.Ordinal)
+                        ? field with { Value = "LifeModule" }
+                        : field)
+                    .ToArray()
+            };
+
+            window.BindDialog(updatedWizard);
+            PumpUi();
+
+            Expander reboundAdvancedStoryControls = window.GetVisualDescendants()
+                .OfType<Expander>()
+                .Single(expander => string.Equals(expander.Name, "OriginDossierStandaloneAdvancedStoryControlsExpander", StringComparison.Ordinal));
+            ComboBox buildPreferenceCombo = window.GetVisualDescendants()
+                .OfType<ComboBox>()
+                .Single(comboBox => string.Equals(comboBox.Name, DesktopDialogAccessibility.BuildFieldInputName("newCharacterOriginBuildPreference"), StringComparison.Ordinal));
+
+            Assert.IsTrue(reboundAdvancedStoryControls.IsExpanded, "Advanced story controls should stay expanded after a select-driven dialog refresh.");
+            Assert.IsNotNull(buildPreferenceCombo.SelectedItem, "The build-preference combo should keep a selected item after rebinding.");
+        });
+    }
+
+    [TestMethod]
+    public void Origin_dossier_advanced_story_controls_keep_scroll_position_after_dialog_rebind()
+    {
+        DesktopDialogState originWizard = new DesktopDialogFactory().CreateCommandDialog(
+            "new_character_origin",
+            profile: null,
+            DesktopPreferenceState.Default,
+            activeSectionJson: null,
+            currentWorkspace: null,
+            rulesetId: RulesetDefaults.Sr5);
+
+        WithBoundDialogWindow(originWizard, window =>
         {
             window.Height = 420;
             PumpUi();
@@ -176,64 +221,250 @@ public sealed class DesktopWindowContrastTests
             advancedStoryControls.IsExpanded = true;
             PumpUi();
 
-            foreach (string fieldId in new[]
-                     {
-                         "newCharacterOriginMetatypePreference",
-                         "newCharacterOriginArchetypeIntent",
-                         "newCharacterRulesetId",
-                         "newCharacterOriginBuildPreference",
-                         "newCharacterOriginBackground",
-                         "newCharacterOriginTurningPoint",
-                         "newCharacterOriginTrainingPath",
-                         "newCharacterOriginUpgradeExposure",
-                         "newCharacterOriginPressureCost",
-                         "newCharacterOriginMotivation",
-                         "newCharacterOriginTone",
-                         "newCharacterOriginGmConstraintPreset"
-                     })
+            scrollViewer.Offset = new Vector(0d, 180d);
+            PumpUi();
+            double preservedOffsetY = scrollViewer.Offset.Y;
+
+            Assert.IsTrue(preservedOffsetY >= 120d, "Origin Dossier should be scrollable once the advanced story controls are expanded.");
+
+            DesktopDialogState updatedWizard = originWizard with
             {
-                ComboBox comboBox = window.GetVisualDescendants()
-                    .OfType<ComboBox>()
-                    .Single(control => string.Equals(control.Name, DesktopDialogAccessibility.BuildFieldInputName(fieldId), StringComparison.Ordinal));
+                Fields = originWizard.Fields
+                    .Select(field => string.Equals(field.Id, "newCharacterOriginBuildPreference", StringComparison.Ordinal)
+                        ? field with { Value = "LifeModule" }
+                        : field)
+                    .ToArray()
+            };
 
-                if (comboBox.TranslatePoint(default, scrollViewer) is { } translated)
-                {
-                    double nextOffsetY = Math.Max(0d, scrollViewer.Offset.Y + translated.Y - 96d);
-                    scrollViewer.Offset = new Vector(scrollViewer.Offset.X, nextOffsetY);
-                    PumpUi();
-                }
+            window.BindDialog(updatedWizard);
+            PumpUi();
 
-                DesktopDialogFieldOption currentOption = (DesktopDialogFieldOption)(comboBox.SelectedItem
-                    ?? throw new AssertFailedException($"Origin combo '{fieldId}' did not expose a selected option."));
-                DesktopDialogFieldOption nextOption = (((System.Collections.IEnumerable?)comboBox.ItemsSource)?.Cast<DesktopDialogFieldOption>() ?? Enumerable.Empty<DesktopDialogFieldOption>())
-                    .First(option => !string.Equals(option.Value, currentOption.Value, StringComparison.Ordinal));
-                double preservedOffsetY = scrollViewer.Offset.Y;
+            Expander reboundAdvancedStoryControls = window.GetVisualDescendants()
+                .OfType<Expander>()
+                .Single(expander => string.Equals(expander.Name, "OriginDossierStandaloneAdvancedStoryControlsExpander", StringComparison.Ordinal));
+            ScrollViewer reboundScrollViewer = window.FindControl<ScrollViewer>("DialogScrollViewer")!;
 
-                comboBox.SelectedItem = nextOption;
-                PumpUi();
-                PumpUi();
-                PumpUi();
-                PumpUi();
-
-                Expander reboundAdvancedStoryControls = window.GetVisualDescendants()
-                    .OfType<Expander>()
-                    .Single(expander => string.Equals(expander.Name, "OriginDossierStandaloneAdvancedStoryControlsExpander", StringComparison.Ordinal));
-                ScrollViewer reboundScrollViewer = window.FindControl<ScrollViewer>("DialogScrollViewer")!;
-                ComboBox reboundComboBox = window.GetVisualDescendants()
-                    .OfType<ComboBox>()
-                    .Single(control => string.Equals(control.Name, DesktopDialogAccessibility.BuildFieldInputName(fieldId), StringComparison.Ordinal));
-
-                Assert.IsTrue(reboundAdvancedStoryControls.IsExpanded, $"Advanced story controls should stay expanded after a live combo selection refresh from '{fieldId}'.");
-                Assert.AreEqual(nextOption.Value, ((DesktopDialogFieldOption)reboundComboBox.SelectedItem!).Value, $"The live combo selection should survive the dialog refresh for '{fieldId}'.");
-                Assert.IsTrue(
-                    Math.Abs(reboundScrollViewer.Offset.Y - preservedOffsetY) <= 12d,
-                    $"Origin Dossier should preserve scroll position across a live combo selection refresh from '{fieldId}'. Before={preservedOffsetY:F1}, After={reboundScrollViewer.Offset.Y:F1}.");
-            }
+            Assert.IsTrue(reboundAdvancedStoryControls.IsExpanded, "Advanced story controls should stay expanded after a select-driven dialog refresh.");
+            Assert.IsTrue(
+                Math.Abs(reboundScrollViewer.Offset.Y - preservedOffsetY) <= 8d,
+                $"Origin Dossier should preserve scroll position across combo-driven dialog refreshes. Before={preservedOffsetY:F1}, After={reboundScrollViewer.Offset.Y:F1}.");
         });
     }
 
     [TestMethod]
-    public void Origin_dossier_advanced_story_controls_keep_current_scroll_anchor_when_another_combo_gains_focus_before_selection()
+    public void Origin_dossier_advanced_story_controls_keep_scroll_position_during_dialog_rebind()
+    {
+        DesktopDialogState originWizard = new DesktopDialogFactory().CreateCommandDialog(
+            "new_character_origin",
+            profile: null,
+            DesktopPreferenceState.Default,
+            activeSectionJson: null,
+            currentWorkspace: null,
+            rulesetId: RulesetDefaults.Sr5);
+
+        WithBoundDialogWindow(originWizard, window =>
+        {
+            window.Height = 420;
+            PumpUi();
+
+            Expander advancedStoryControls = window.GetVisualDescendants()
+                .OfType<Expander>()
+                .Single(expander => string.Equals(expander.Name, "OriginDossierStandaloneAdvancedStoryControlsExpander", StringComparison.Ordinal));
+            ScrollViewer scrollViewer = window.FindControl<ScrollViewer>("DialogScrollViewer")!;
+
+            advancedStoryControls.IsExpanded = true;
+            PumpUi();
+
+            scrollViewer.Offset = new Vector(0d, 180d);
+            PumpUi();
+            double preservedOffsetY = scrollViewer.Offset.Y;
+
+            DesktopDialogState updatedWizard = originWizard with
+            {
+                Fields = originWizard.Fields
+                    .Select(field => string.Equals(field.Id, "newCharacterOriginBuildPreference", StringComparison.Ordinal)
+                        ? field with { Value = "LifeModule" }
+                        : field)
+                    .ToArray()
+            };
+
+            window.BindDialog(updatedWizard);
+
+            Expander reboundAdvancedStoryControls = window.GetVisualDescendants()
+                .OfType<Expander>()
+                .Single(expander => string.Equals(expander.Name, "OriginDossierStandaloneAdvancedStoryControlsExpander", StringComparison.Ordinal));
+            ScrollViewer reboundScrollViewer = window.FindControl<ScrollViewer>("DialogScrollViewer")!;
+
+            Assert.IsTrue(reboundAdvancedStoryControls.IsExpanded, "Advanced story controls should stay expanded during the same-tick dialog rebind.");
+            Assert.IsTrue(
+                Math.Abs(reboundScrollViewer.Offset.Y - preservedOffsetY) <= 8d,
+                $"Origin Dossier should keep scroll position stable during the same-tick combo-driven dialog rebind. Before={preservedOffsetY:F1}, During={reboundScrollViewer.Offset.Y:F1}.");
+        });
+    }
+
+    [TestMethod]
+    public void Origin_dossier_advanced_story_controls_keep_viewport_anchor_after_dialog_rebind_changes_content_above_them()
+    {
+        DesktopDialogState originWizard = new DesktopDialogFactory().CreateCommandDialog(
+            "new_character_origin",
+            profile: null,
+            DesktopPreferenceState.Default,
+            activeSectionJson: null,
+            currentWorkspace: null,
+            rulesetId: RulesetDefaults.Sr5);
+
+        WithBoundDialogWindow(originWizard, window =>
+        {
+            window.Height = 420;
+            PumpUi();
+
+            Expander advancedStoryControls = window.GetVisualDescendants()
+                .OfType<Expander>()
+                .Single(expander => string.Equals(expander.Name, "OriginDossierStandaloneAdvancedStoryControlsExpander", StringComparison.Ordinal));
+            ScrollViewer scrollViewer = window.FindControl<ScrollViewer>("DialogScrollViewer")!;
+
+            advancedStoryControls.IsExpanded = true;
+            PumpUi();
+
+            scrollViewer.Offset = new Vector(0d, 180d);
+            PumpUi();
+
+            Point? preservedAnchor = advancedStoryControls.TranslatePoint(default, scrollViewer);
+            Assert.IsNotNull(preservedAnchor, "The expanded advanced story controls should expose a stable viewport anchor before rebinding.");
+
+            DesktopDialogState updatedWizard = originWizard with
+            {
+                Fields = originWizard.Fields
+                    .Select(field => field.Id switch
+                    {
+                        "newCharacterOriginMetatypePreference" => field with { Value = "troll" },
+                        "newCharacterOriginPathSummary" => field with
+                        {
+                            Value = "Street exile corridor" + Environment.NewLine
+                                + "Brokered SIN fragments, debt markers, and burned cover identities now frame the path summary."
+                        },
+                        _ => field
+                    })
+                    .ToArray()
+            };
+
+            window.BindDialog(updatedWizard);
+            PumpUi();
+
+            Expander reboundAdvancedStoryControls = window.GetVisualDescendants()
+                .OfType<Expander>()
+                .Single(expander => string.Equals(expander.Name, "OriginDossierStandaloneAdvancedStoryControlsExpander", StringComparison.Ordinal));
+            ScrollViewer reboundScrollViewer = window.FindControl<ScrollViewer>("DialogScrollViewer")!;
+            Point? reboundAnchor = reboundAdvancedStoryControls.TranslatePoint(default, reboundScrollViewer);
+
+            Assert.IsNotNull(reboundAnchor, "The expanded advanced story controls should still expose a viewport anchor after rebinding.");
+            Assert.IsTrue(reboundAdvancedStoryControls.IsExpanded, "Advanced story controls should stay expanded after content above them changes during rebinding.");
+            Assert.IsTrue(
+                Math.Abs(reboundAnchor.Value.Y - preservedAnchor.Value.Y) <= 8d,
+                $"Origin Dossier should preserve the advanced controls viewport anchor when content above them changes. Before={preservedAnchor.Value.Y:F1}, After={reboundAnchor.Value.Y:F1}.");
+        });
+    }
+
+    [TestMethod]
+    public void Origin_dossier_combo_scroll_preservation_survives_transient_missing_expander_tree()
+    {
+        DesktopDialogState originWizard = new DesktopDialogFactory().CreateCommandDialog(
+            "new_character_origin",
+            profile: null,
+            DesktopPreferenceState.Default,
+            activeSectionJson: null,
+            currentWorkspace: null,
+            rulesetId: RulesetDefaults.Sr5);
+
+        WithBoundDialogWindow(originWizard, window =>
+        {
+            PumpUi();
+
+            Expander advancedStoryControls = window.GetVisualDescendants()
+                .OfType<Expander>()
+                .Single(expander => string.Equals(expander.Name, "OriginDossierStandaloneAdvancedStoryControlsExpander", StringComparison.Ordinal));
+            advancedStoryControls.IsExpanded = true;
+            PumpUi();
+
+            StackPanel dialogFieldsPanel = window.FindControl<StackPanel>("DialogFieldsPanel")!;
+            dialogFieldsPanel.Children.Clear();
+
+            FieldInfo expandedStateField = typeof(DesktopDialogWindow).GetField(
+                "_originWizardAdvancedStoryControlsExpanded",
+                BindingFlags.Instance | BindingFlags.NonPublic)
+                ?? throw new AssertFailedException("Expanded-state backing field was not found.");
+            expandedStateField.SetValue(window, true);
+
+            MethodInfo preservationMethod = typeof(DesktopDialogWindow).GetMethod(
+                "ShouldPreserveOriginWizardComboInteractionScroll",
+                BindingFlags.Instance | BindingFlags.NonPublic)
+                ?? throw new AssertFailedException("Combo scroll preservation guard was not found.");
+            bool shouldPreserve = (bool)(preservationMethod.Invoke(window, null)
+                ?? throw new AssertFailedException("Combo scroll preservation guard returned null."));
+
+            Assert.IsTrue(
+                shouldPreserve,
+                "Origin Dossier combo refreshes should keep the advanced controls armed even while the old expander tree is temporarily absent during dialog rebuild.");
+        });
+    }
+
+    [TestMethod]
+    public void Origin_dossier_advanced_story_controls_keep_scroll_position_when_dialog_rebind_cannot_restore_combo_focus()
+    {
+        DesktopDialogState originWizard = new DesktopDialogFactory().CreateCommandDialog(
+            "new_character_origin",
+            profile: null,
+            DesktopPreferenceState.Default,
+            activeSectionJson: null,
+            currentWorkspace: null,
+            rulesetId: RulesetDefaults.Sr5);
+
+        WithBoundDialogWindow(originWizard, window =>
+        {
+            window.Height = 420;
+            PumpUi();
+
+            Expander advancedStoryControls = window.GetVisualDescendants()
+                .OfType<Expander>()
+                .Single(expander => string.Equals(expander.Name, "OriginDossierStandaloneAdvancedStoryControlsExpander", StringComparison.Ordinal));
+            ScrollViewer scrollViewer = window.FindControl<ScrollViewer>("DialogScrollViewer")!;
+
+            advancedStoryControls.IsExpanded = true;
+            PumpUi();
+
+            scrollViewer.Offset = new Vector(0d, 180d);
+            PumpUi();
+            double preservedOffsetY = scrollViewer.Offset.Y;
+
+            window.Focus();
+            PumpUi();
+
+            DesktopDialogState updatedWizard = originWizard with
+            {
+                Fields = originWizard.Fields
+                    .Select(field => string.Equals(field.Id, "newCharacterOriginBuildPreference", StringComparison.Ordinal)
+                        ? field with { Value = "LifeModule" }
+                        : field)
+                    .ToArray()
+            };
+
+            window.BindDialog(updatedWizard);
+            PumpUi();
+
+            Expander reboundAdvancedStoryControls = window.GetVisualDescendants()
+                .OfType<Expander>()
+                .Single(expander => string.Equals(expander.Name, "OriginDossierStandaloneAdvancedStoryControlsExpander", StringComparison.Ordinal));
+            ScrollViewer reboundScrollViewer = window.FindControl<ScrollViewer>("DialogScrollViewer")!;
+
+            Assert.IsTrue(reboundAdvancedStoryControls.IsExpanded, "Advanced story controls should stay expanded even when the dialog cannot recover combo focus from a select popup.");
+            Assert.IsTrue(
+                Math.Abs(reboundScrollViewer.Offset.Y - preservedOffsetY) <= 8d,
+                $"Origin Dossier should preserve scroll position when a combo-driven refresh cannot recover focused combo state. Before={preservedOffsetY:F1}, After={reboundScrollViewer.Offset.Y:F1}.");
+        });
+    }
+
+    [TestMethod]
+    public void Origin_dossier_advanced_story_controls_do_not_jump_or_collapse_after_live_combo_selection()
     {
         DesktopDialogState originWizard = new DesktopDialogFactory().CreateCommandDialog(
             "new_character_origin",
@@ -256,28 +487,309 @@ public sealed class DesktopWindowContrastTests
                 .OfType<Expander>()
                 .Single(expander => string.Equals(expander.Name, "OriginDossierStandaloneAdvancedStoryControlsExpander", StringComparison.Ordinal));
             ScrollViewer scrollViewer = window.FindControl<ScrollViewer>("DialogScrollViewer")!;
+            ComboBox metatypePreferenceCombo = window.GetVisualDescendants()
+                .OfType<ComboBox>()
+                .Single(comboBox => string.Equals(comboBox.Name, DesktopDialogAccessibility.BuildFieldInputName("newCharacterOriginMetatypePreference"), StringComparison.Ordinal));
 
             advancedStoryControls.IsExpanded = true;
             PumpUi();
 
             scrollViewer.Offset = new Vector(0d, 180d);
             PumpUi();
+            double preservedOffsetY = scrollViewer.Offset.Y;
 
-            ComboBox buildPreferenceCombo = window.GetVisualDescendants()
+            metatypePreferenceCombo.SelectedItem = nextMetatypePreference;
+            PumpUi();
+            PumpUi();
+
+            Expander reboundAdvancedStoryControls = window.GetVisualDescendants()
+                .OfType<Expander>()
+                .Single(expander => string.Equals(expander.Name, "OriginDossierStandaloneAdvancedStoryControlsExpander", StringComparison.Ordinal));
+            ScrollViewer reboundScrollViewer = window.FindControl<ScrollViewer>("DialogScrollViewer")!;
+            ComboBox reboundMetatypePreferenceCombo = window.GetVisualDescendants()
                 .OfType<ComboBox>()
-                .Single(comboBox => string.Equals(comboBox.Name, DesktopDialogAccessibility.BuildFieldInputName("newCharacterOriginBuildPreference"), StringComparison.Ordinal));
+                .Single(comboBox => string.Equals(comboBox.Name, DesktopDialogAccessibility.BuildFieldInputName("newCharacterOriginMetatypePreference"), StringComparison.Ordinal));
+
+            Assert.IsTrue(reboundAdvancedStoryControls.IsExpanded, "Advanced story controls should stay expanded after a live combo selection refresh.");
+            Assert.AreEqual(nextMetatypePreference.Value, ((DesktopDialogFieldOption)reboundMetatypePreferenceCombo.SelectedItem!).Value, "The live combo selection should survive the dialog refresh.");
+            Assert.IsTrue(
+                Math.Abs(reboundScrollViewer.Offset.Y - preservedOffsetY) <= 8d,
+                $"Origin Dossier should preserve scroll position across a live combo selection refresh. Before={preservedOffsetY:F1}, After={reboundScrollViewer.Offset.Y:F1}.");
+        });
+    }
+
+    [TestMethod]
+    public void Origin_dossier_advanced_story_controls_ignore_same_refresh_collapse_after_live_combo_selection()
+    {
+        DesktopDialogState originWizard = new DesktopDialogFactory().CreateCommandDialog(
+            "new_character_origin",
+            profile: null,
+            DesktopPreferenceState.Default,
+            activeSectionJson: null,
+            currentWorkspace: null,
+            rulesetId: RulesetDefaults.Sr5);
+        DesktopDialogField metatypePreferenceField = originWizard.Fields
+            .Single(field => string.Equals(field.Id, "newCharacterOriginMetatypePreference", StringComparison.Ordinal));
+        DesktopDialogFieldOption nextMetatypePreference = (metatypePreferenceField.Options ?? [])
+            .First(option => !string.Equals(option.Value, metatypePreferenceField.Value, StringComparison.Ordinal));
+
+        WithPresenterBoundDialogWindow(originWizard, window =>
+        {
+            window.Height = 420;
+            PumpUi();
+
+            Expander staleAdvancedStoryControls = window.GetVisualDescendants()
+                .OfType<Expander>()
+                .Single(expander => string.Equals(expander.Name, "OriginDossierStandaloneAdvancedStoryControlsExpander", StringComparison.Ordinal));
+            ScrollViewer scrollViewer = window.FindControl<ScrollViewer>("DialogScrollViewer")!;
             ComboBox metatypePreferenceCombo = window.GetVisualDescendants()
                 .OfType<ComboBox>()
                 .Single(comboBox => string.Equals(comboBox.Name, DesktopDialogAccessibility.BuildFieldInputName("newCharacterOriginMetatypePreference"), StringComparison.Ordinal));
 
-            buildPreferenceCombo.Focus();
+            staleAdvancedStoryControls.IsExpanded = true;
             PumpUi();
 
-            scrollViewer.Offset = new Vector(0d, 28d);
+            scrollViewer.Offset = new Vector(0d, 180d);
             PumpUi();
             double preservedOffsetY = scrollViewer.Offset.Y;
 
+            metatypePreferenceCombo.SelectedItem = nextMetatypePreference;
+            staleAdvancedStoryControls.IsExpanded = false;
+            PumpUi();
+            PumpUi();
+
+            Expander reboundAdvancedStoryControls = window.GetVisualDescendants()
+                .OfType<Expander>()
+                .Single(expander => string.Equals(expander.Name, "OriginDossierStandaloneAdvancedStoryControlsExpander", StringComparison.Ordinal));
+            ScrollViewer reboundScrollViewer = window.FindControl<ScrollViewer>("DialogScrollViewer")!;
+            ComboBox reboundMetatypePreferenceCombo = window.GetVisualDescendants()
+                .OfType<ComboBox>()
+                .Single(comboBox => string.Equals(comboBox.Name, DesktopDialogAccessibility.BuildFieldInputName("newCharacterOriginMetatypePreference"), StringComparison.Ordinal));
+
+            Assert.IsTrue(
+                reboundAdvancedStoryControls.IsExpanded,
+                "Combo-driven Origin Dossier refreshes must ignore collapse events from the pre-refresh advanced controls tree.");
+            Assert.AreEqual(
+                nextMetatypePreference.Value,
+                ((DesktopDialogFieldOption)reboundMetatypePreferenceCombo.SelectedItem!).Value,
+                "The live combo selection should survive the same-refresh collapse attempt.");
+            Assert.IsTrue(
+                Math.Abs(reboundScrollViewer.Offset.Y - preservedOffsetY) <= 8d,
+                $"Origin Dossier should preserve scroll position even if the pre-refresh advanced controls collapse during the combo refresh. Before={preservedOffsetY:F1}, After={reboundScrollViewer.Offset.Y:F1}.");
+        });
+    }
+
+    [TestMethod]
+    public void Origin_dossier_advanced_story_controls_ignore_transient_stale_collapse_during_same_dialog_rebind()
+    {
+        DesktopDialogState originWizard = new DesktopDialogFactory().CreateCommandDialog(
+            "new_character_origin",
+            profile: null,
+            DesktopPreferenceState.Default,
+            activeSectionJson: null,
+            currentWorkspace: null,
+            rulesetId: RulesetDefaults.Sr5);
+
+        WithBoundDialogWindow(originWizard, window =>
+        {
+            Expander staleAdvancedStoryControls = window.GetVisualDescendants()
+                .OfType<Expander>()
+                .Single(expander => string.Equals(expander.Name, "OriginDossierStandaloneAdvancedStoryControlsExpander", StringComparison.Ordinal));
+
+            FieldInfo expandedStateField = typeof(DesktopDialogWindow).GetField(
+                "_originWizardAdvancedStoryControlsExpanded",
+                BindingFlags.Instance | BindingFlags.NonPublic)
+                ?? throw new AssertFailedException("Expanded-state backing field was not found.");
+            FieldInfo suppressCollapseField = typeof(DesktopDialogWindow).GetField(
+                "_suppressOriginWizardAdvancedStoryControlsCollapseDuringComboRefresh",
+                BindingFlags.Instance | BindingFlags.NonPublic)
+                ?? throw new AssertFailedException("Combo-refresh collapse suppression backing field was not found.");
+
+            staleAdvancedStoryControls.IsExpanded = true;
+            PumpUi();
+
+            expandedStateField.SetValue(window, true);
+            suppressCollapseField.SetValue(window, true);
+            staleAdvancedStoryControls.IsExpanded = false;
+            PumpUi();
+
+            DesktopDialogState updatedWizard = originWizard with
+            {
+                Fields = originWizard.Fields
+                    .Select(field => string.Equals(field.Id, "newCharacterOriginBackground", StringComparison.Ordinal)
+                        ? field with { Value = "corporate" }
+                        : field)
+                    .ToArray()
+            };
+
+            window.BindDialog(updatedWizard);
+            PumpUi();
+
+            Expander reboundAdvancedStoryControls = window.GetVisualDescendants()
+                .OfType<Expander>()
+                .Single(expander => string.Equals(expander.Name, "OriginDossierStandaloneAdvancedStoryControlsExpander", StringComparison.Ordinal));
+
+            Assert.IsTrue(
+                reboundAdvancedStoryControls.IsExpanded,
+                "Origin Dossier should keep advanced story controls expanded when a same-dialog refresh observes a stale collapsed expander during a combo-preservation pass.");
+        });
+    }
+
+    [TestMethod]
+    public void Origin_dossier_advanced_story_controls_ignore_transient_pending_collapse_before_same_dialog_rebind()
+    {
+        DesktopDialogState originWizard = new DesktopDialogFactory().CreateCommandDialog(
+            "new_character_origin",
+            profile: null,
+            DesktopPreferenceState.Default,
+            activeSectionJson: null,
+            currentWorkspace: null,
+            rulesetId: RulesetDefaults.Sr5);
+
+        WithBoundDialogWindow(originWizard, window =>
+        {
+            Expander staleAdvancedStoryControls = window.GetVisualDescendants()
+                .OfType<Expander>()
+                .Single(expander => string.Equals(expander.Name, "OriginDossierStandaloneAdvancedStoryControlsExpander", StringComparison.Ordinal));
+
+            FieldInfo expandedStateField = typeof(DesktopDialogWindow).GetField(
+                "_originWizardAdvancedStoryControlsExpanded",
+                BindingFlags.Instance | BindingFlags.NonPublic)
+                ?? throw new AssertFailedException("Expanded-state backing field was not found.");
+            FieldInfo transientPendingField = typeof(DesktopDialogWindow).GetField(
+                "_originWizardTransientRefreshPending",
+                BindingFlags.Instance | BindingFlags.NonPublic)
+                ?? throw new AssertFailedException("Transient-refresh backing field was not found.");
+
+            staleAdvancedStoryControls.IsExpanded = true;
+            PumpUi();
+
+            expandedStateField.SetValue(window, true);
+            transientPendingField.SetValue(window, true);
+            staleAdvancedStoryControls.IsExpanded = false;
+            PumpUi();
+
+            Assert.IsTrue(
+                (bool)(expandedStateField.GetValue(window) ?? false),
+                "Origin Dossier should ignore stale collapse events while a combo-triggered transient refresh is still pending.");
+
+            DesktopDialogState updatedWizard = originWizard with
+            {
+                Fields = originWizard.Fields
+                    .Select(field => string.Equals(field.Id, "newCharacterOriginBackground", StringComparison.Ordinal)
+                        ? field with { Value = "corporate" }
+                        : field)
+                    .ToArray()
+            };
+
+            window.BindDialog(updatedWizard);
+            PumpUi();
+
+            Expander reboundAdvancedStoryControls = window.GetVisualDescendants()
+                .OfType<Expander>()
+                .Single(expander => string.Equals(expander.Name, "OriginDossierStandaloneAdvancedStoryControlsExpander", StringComparison.Ordinal));
+
+            Assert.IsTrue(
+                reboundAdvancedStoryControls.IsExpanded,
+                "Origin Dossier should stay expanded when a stale collapse lands during the transient-refresh window before the same-dialog rebind completes.");
+        });
+    }
+
+    [TestMethod]
+    public void Origin_dossier_advanced_story_controls_only_commit_collapsed_state_when_the_live_expander_is_still_collapsed()
+    {
+        DesktopDialogState originWizard = new DesktopDialogFactory().CreateCommandDialog(
+            "new_character_origin",
+            profile: null,
+            DesktopPreferenceState.Default,
+            activeSectionJson: null,
+            currentWorkspace: null,
+            rulesetId: RulesetDefaults.Sr5);
+
+        WithBoundDialogWindow(originWizard, window =>
+        {
+            Expander advancedStoryControls = window.GetVisualDescendants()
+                .OfType<Expander>()
+                .Single(expander => string.Equals(expander.Name, "OriginDossierStandaloneAdvancedStoryControlsExpander", StringComparison.Ordinal));
+
+            FieldInfo expandedStateField = typeof(DesktopDialogWindow).GetField(
+                "_originWizardAdvancedStoryControlsExpanded",
+                BindingFlags.Instance | BindingFlags.NonPublic)
+                ?? throw new AssertFailedException("Expanded-state backing field was not found.");
+            FieldInfo bindVersionField = typeof(DesktopDialogWindow).GetField(
+                "_dialogBindVersion",
+                BindingFlags.Instance | BindingFlags.NonPublic)
+                ?? throw new AssertFailedException("Dialog bind-version backing field was not found.");
+            MethodInfo commitCollapseMethod = typeof(DesktopDialogWindow).GetMethod(
+                "CommitOriginWizardAdvancedStoryControlsCollapsedStateIfCurrentExpanderStillCollapsed",
+                BindingFlags.Instance | BindingFlags.NonPublic)
+                ?? throw new AssertFailedException("Deferred collapse-commit helper was not found.");
+
+            advancedStoryControls.IsExpanded = true;
+            PumpUi();
+
+            expandedStateField.SetValue(window, true);
+            int bindVersion = (int)(bindVersionField.GetValue(window) ?? 0);
+
+            commitCollapseMethod.Invoke(window, [bindVersion]);
+            PumpUi();
+
+            Assert.IsTrue(
+                (bool)(expandedStateField.GetValue(window) ?? false),
+                "Transient combo noise must not close advanced story controls while the live expander is still open.");
+
+            advancedStoryControls.IsExpanded = false;
+            PumpUi();
+
+            commitCollapseMethod.Invoke(window, [bindVersion]);
+            PumpUi();
+
+            Assert.IsFalse(
+                (bool)(expandedStateField.GetValue(window) ?? true),
+                "An explicit user collapse should still be committed once the live expander is actually closed.");
+        });
+    }
+
+    [TestMethod]
+    public void Origin_dossier_advanced_story_controls_restore_pre_combo_scroll_anchor_after_popup_like_combo_shift()
+    {
+        DesktopDialogState originWizard = new DesktopDialogFactory().CreateCommandDialog(
+            "new_character_origin",
+            profile: null,
+            DesktopPreferenceState.Default,
+            activeSectionJson: null,
+            currentWorkspace: null,
+            rulesetId: RulesetDefaults.Sr5);
+        DesktopDialogField metatypePreferenceField = originWizard.Fields
+            .Single(field => string.Equals(field.Id, "newCharacterOriginMetatypePreference", StringComparison.Ordinal));
+        DesktopDialogFieldOption nextMetatypePreference = (metatypePreferenceField.Options ?? [])
+            .First(option => !string.Equals(option.Value, metatypePreferenceField.Value, StringComparison.Ordinal));
+
+        WithPresenterBoundDialogWindow(originWizard, window =>
+        {
+            window.Height = 420;
+            PumpUi();
+
+            Expander advancedStoryControls = window.GetVisualDescendants()
+                .OfType<Expander>()
+                .Single(expander => string.Equals(expander.Name, "OriginDossierStandaloneAdvancedStoryControlsExpander", StringComparison.Ordinal));
+            ScrollViewer scrollViewer = window.FindControl<ScrollViewer>("DialogScrollViewer")!;
+            ComboBox metatypePreferenceCombo = window.GetVisualDescendants()
+                .OfType<ComboBox>()
+                .Single(comboBox => string.Equals(comboBox.Name, DesktopDialogAccessibility.BuildFieldInputName("newCharacterOriginMetatypePreference"), StringComparison.Ordinal));
+
+            advancedStoryControls.IsExpanded = true;
+            PumpUi();
+
+            scrollViewer.Offset = new Vector(0d, 180d);
+            PumpUi();
+            double preservedOffsetY = scrollViewer.Offset.Y;
+
+            window.Focus();
             metatypePreferenceCombo.Focus();
+            PumpUi();
+
+            scrollViewer.Offset = new Vector(0d, 28d);
             PumpUi();
 
             metatypePreferenceCombo.SelectedItem = nextMetatypePreference;
@@ -292,64 +804,29 @@ public sealed class DesktopWindowContrastTests
                 .OfType<ComboBox>()
                 .Single(comboBox => string.Equals(comboBox.Name, DesktopDialogAccessibility.BuildFieldInputName("newCharacterOriginMetatypePreference"), StringComparison.Ordinal));
 
-            Assert.IsTrue(reboundAdvancedStoryControls.IsExpanded, "Advanced story controls should stay expanded when another combo gains focus before the selection refresh.");
-            Assert.AreEqual(nextMetatypePreference.Value, ((DesktopDialogFieldOption)reboundMetatypePreferenceCombo.SelectedItem!).Value, "The later combo selection should survive the cross-field focus refresh.");
+            Assert.IsTrue(reboundAdvancedStoryControls.IsExpanded, "Advanced story controls should stay expanded after a combo interaction nudges scroll before the selection refresh.");
+            Assert.AreEqual(nextMetatypePreference.Value, ((DesktopDialogFieldOption)reboundMetatypePreferenceCombo.SelectedItem!).Value, "The live combo selection should survive the popup-like interaction refresh.");
             Assert.IsTrue(
                 Math.Abs(reboundScrollViewer.Offset.Y - preservedOffsetY) <= 8d,
-                $"Origin Dossier should keep the current scroll anchor when another combo gains focus before refresh. Before={preservedOffsetY:F1}, After={reboundScrollViewer.Offset.Y:F1}.");
+                $"Origin Dossier should restore the pre-combo scroll anchor when a combo interaction nudges the dialog before refresh. Before={preservedOffsetY:F1}, After={reboundScrollViewer.Offset.Y:F1}.");
+
+            Thread.Sleep(440);
+            PumpUi();
+
+            Expander settledAdvancedStoryControls = window.GetVisualDescendants()
+                .OfType<Expander>()
+                .Single(expander => string.Equals(expander.Name, "OriginDossierStandaloneAdvancedStoryControlsExpander", StringComparison.Ordinal));
+            ScrollViewer settledScrollViewer = window.FindControl<ScrollViewer>("DialogScrollViewer")!;
+
+            Assert.IsTrue(settledAdvancedStoryControls.IsExpanded, "Advanced story controls should stay expanded after delayed settle passes following a popup-like combo interaction refresh.");
+            Assert.IsTrue(
+                Math.Abs(settledScrollViewer.Offset.Y - preservedOffsetY) <= 8d,
+                $"Origin Dossier should not drift after delayed settle passes following a popup-like combo interaction refresh. Before={preservedOffsetY:F1}, After={settledScrollViewer.Offset.Y:F1}.");
         });
     }
 
     [TestMethod]
-    public void Origin_dossier_combo_refresh_prefers_active_combo_anchor_before_advanced_panel_anchor_in_desktop_restore_lane()
-    {
-        string source = System.IO.File.ReadAllText(System.IO.Path.Combine(
-            TestContextLocator.ResolveChummerPresentationRepoRoot(),
-            "Chummer.Avalonia",
-            "DesktopDialogWindow.axaml.cs"));
-
-        int methodIndex = source.IndexOf("private void RestorePreferredScrollAnchorDuringOriginWizardComboInteraction()", StringComparison.Ordinal);
-        Assert.IsTrue(methodIndex >= 0, "Desktop origin combo restore helper must stay present.");
-
-        int interactionIndex = source.IndexOf("if (_preferredDialogInteractionAnchor is { } interactionAnchor)", methodIndex, StringComparison.Ordinal);
-        int viewportIndex = source.IndexOf("if (_preferredDialogViewportAnchor is { } viewportAnchor)", methodIndex, StringComparison.Ordinal);
-
-        Assert.IsTrue(interactionIndex >= 0, "Desktop origin combo restore must keep an explicit active-combo anchor path.");
-        Assert.IsTrue(viewportIndex >= 0, "Desktop origin combo restore must keep an advanced-panel fallback anchor path.");
-        Assert.IsTrue(
-            interactionIndex < viewportIndex,
-            "Desktop origin combo restore must prefer the active combo anchor before the advanced-panel anchor to avoid jumpy refreshes.");
-    }
-
-    [TestMethod]
-    public void Origin_dossier_combo_refresh_primes_active_combo_anchor_before_raw_scroll_offset_in_desktop_restore_lane()
-    {
-        string source = System.IO.File.ReadAllText(System.IO.Path.Combine(
-            TestContextLocator.ResolveChummerPresentationRepoRoot(),
-            "Chummer.Avalonia",
-            "DesktopDialogWindow.axaml.cs"));
-
-        int methodIndex = source.IndexOf("private void PrimePreferredScrollOffsetForDialogRebind(", StringComparison.Ordinal);
-        Assert.IsTrue(methodIndex >= 0, "Desktop origin combo prime helper must stay present.");
-
-        int interactionIndex = source.IndexOf(
-            "if (preservedInteractionAnchor is { } interactionAnchor",
-            methodIndex,
-            StringComparison.Ordinal);
-        int rawOffsetIndex = source.IndexOf(
-            "_dialogScrollViewer.Offset = offset;",
-            methodIndex,
-            StringComparison.Ordinal);
-
-        Assert.IsTrue(interactionIndex >= 0, "Desktop origin combo prime helper must keep the active-combo anchor path.");
-        Assert.IsTrue(rawOffsetIndex >= 0, "Desktop origin combo prime helper must keep the raw scroll-offset fallback path.");
-        Assert.IsTrue(
-            interactionIndex < rawOffsetIndex,
-            "Desktop origin combo prime helper must try the active combo anchor before falling back to the prior raw scroll offset.");
-    }
-
-    [TestMethod]
-    public void Origin_dossier_combo_refresh_defers_transient_presenter_close()
+    public void Origin_dossier_advanced_story_controls_keep_scroll_anchor_during_combo_focus_interaction()
     {
         DesktopDialogState originWizard = new DesktopDialogFactory().CreateCommandDialog(
             "new_character_origin",
@@ -359,8 +836,53 @@ public sealed class DesktopWindowContrastTests
             currentWorkspace: null,
             rulesetId: RulesetDefaults.Sr5);
 
-        RebindingDialogPresenter presenter = new(originWizard, deferFieldUpdates: true);
-        WithPresenterBoundDialogWindow(originWizard, presenter, window =>
+        WithPresenterBoundDialogWindow(originWizard, window =>
+        {
+            window.Height = 420;
+            PumpUi();
+
+            Expander advancedStoryControls = window.GetVisualDescendants()
+                .OfType<Expander>()
+                .Single(expander => string.Equals(expander.Name, "OriginDossierStandaloneAdvancedStoryControlsExpander", StringComparison.Ordinal));
+            ScrollViewer scrollViewer = window.FindControl<ScrollViewer>("DialogScrollViewer")!;
+            ComboBox metatypePreferenceCombo = window.GetVisualDescendants()
+                .OfType<ComboBox>()
+                .Single(comboBox => string.Equals(comboBox.Name, DesktopDialogAccessibility.BuildFieldInputName("newCharacterOriginMetatypePreference"), StringComparison.Ordinal));
+
+            advancedStoryControls.IsExpanded = true;
+            PumpUi();
+
+            scrollViewer.Offset = new Vector(0d, 180d);
+            PumpUi();
+            double preservedOffsetY = scrollViewer.Offset.Y;
+
+            metatypePreferenceCombo.Focus();
+            scrollViewer.Offset = new Vector(0d, 28d);
+            PumpUi();
+
+            Assert.IsTrue(advancedStoryControls.IsExpanded, "Advanced story controls should stay expanded while a combo interaction is active.");
+            Assert.IsTrue(
+                Math.Abs(scrollViewer.Offset.Y - preservedOffsetY) <= 8d,
+                $"Origin Dossier should restore the pre-combo scroll anchor during combo focus interactions. Before={preservedOffsetY:F1}, After={scrollViewer.Offset.Y:F1}.");
+        });
+    }
+
+    [TestMethod]
+    public void Origin_dossier_advanced_story_controls_do_not_jump_or_collapse_after_live_combo_selection_inside_advanced_controls()
+    {
+        DesktopDialogState originWizard = new DesktopDialogFactory().CreateCommandDialog(
+            "new_character_origin",
+            profile: null,
+            DesktopPreferenceState.Default,
+            activeSectionJson: null,
+            currentWorkspace: null,
+            rulesetId: RulesetDefaults.Sr5);
+        DesktopDialogField buildPreferenceField = originWizard.Fields
+            .Single(field => string.Equals(field.Id, "newCharacterOriginBuildPreference", StringComparison.Ordinal));
+        DesktopDialogFieldOption nextBuildPreference = (buildPreferenceField.Options ?? [])
+            .First(option => !string.Equals(option.Value, buildPreferenceField.Value, StringComparison.Ordinal));
+
+        WithPresenterBoundDialogWindow(originWizard, window =>
         {
             window.Height = 420;
             PumpUi();
@@ -371,92 +893,446 @@ public sealed class DesktopWindowContrastTests
             ScrollViewer scrollViewer = window.FindControl<ScrollViewer>("DialogScrollViewer")!;
 
             advancedStoryControls.IsExpanded = true;
+            PumpUi();
+
             scrollViewer.Offset = new Vector(0d, 180d);
             PumpUi();
+            double preservedOffsetY = scrollViewer.Offset.Y;
 
-            ComboBox refreshCombo = window.GetVisualDescendants()
+            ComboBox buildPreferenceCombo = window.GetVisualDescendants()
                 .OfType<ComboBox>()
-                .First(control => (control.ItemsSource as System.Collections.IEnumerable)?.Cast<object>().OfType<DesktopDialogFieldOption>().Any() == true);
-            DesktopDialogFieldOption currentOption = (DesktopDialogFieldOption)(refreshCombo.SelectedItem
-                ?? throw new AssertFailedException("Origin combo did not expose a selected option."));
-            DesktopDialogFieldOption nextOption = (((System.Collections.IEnumerable?)refreshCombo.ItemsSource)?.Cast<DesktopDialogFieldOption>() ?? Enumerable.Empty<DesktopDialogFieldOption>())
-                .First(option => !string.Equals(option.Value, currentOption.Value, StringComparison.Ordinal));
+                .Single(comboBox => string.Equals(comboBox.Name, DesktopDialogAccessibility.BuildFieldInputName("newCharacterOriginBuildPreference"), StringComparison.Ordinal));
 
-            refreshCombo.SelectedItem = nextOption;
-            PumpUi();
-
-            Assert.IsTrue(
-                window.TryDeferCloseForPendingOriginWizardTransientRefresh(),
-                "Origin Dossier should defer a transient presenter close while a combo refresh is preserving the current viewport.");
-
-            presenter.ReleaseFieldUpdates();
-            PumpUi();
-            Assert.IsTrue(window.IsVisible, "Origin Dossier should remain visible after the deferred refresh is rebound.");
-        });
-    }
-
-    [TestMethod]
-    public void Origin_dossier_combo_refresh_keeps_dialog_visible_during_slow_rebind()
-    {
-        DesktopDialogState originWizard = new DesktopDialogFactory().CreateCommandDialog(
-            "new_character_origin",
-            profile: null,
-            DesktopPreferenceState.Default,
-            activeSectionJson: null,
-            currentWorkspace: null,
-            rulesetId: RulesetDefaults.Sr5);
-
-        RebindingDialogPresenter presenter = new(originWizard, deferFieldUpdates: true);
-        WithPresenterBoundDialogWindow(originWizard, presenter, window =>
-        {
-            window.Height = 420;
-            PumpUi();
-
-            Expander advancedStoryControls = window.GetVisualDescendants()
-                .OfType<Expander>()
-                .Single(expander => string.Equals(expander.Name, "OriginDossierStandaloneAdvancedStoryControlsExpander", StringComparison.Ordinal));
-            ScrollViewer scrollViewer = window.FindControl<ScrollViewer>("DialogScrollViewer")!;
-
-            advancedStoryControls.IsExpanded = true;
-            scrollViewer.Offset = new Vector(0d, 180d);
-            PumpUi();
-
-            ComboBox refreshCombo = window.GetVisualDescendants()
-                .OfType<ComboBox>()
-                .First(control => (control.ItemsSource as System.Collections.IEnumerable)?.Cast<object>().OfType<DesktopDialogFieldOption>().Any() == true);
-            DesktopDialogFieldOption currentOption = (DesktopDialogFieldOption)(refreshCombo.SelectedItem
-                ?? throw new AssertFailedException("Origin combo did not expose a selected option."));
-            DesktopDialogFieldOption nextOption = (((System.Collections.IEnumerable?)refreshCombo.ItemsSource)?.Cast<DesktopDialogFieldOption>() ?? Enumerable.Empty<DesktopDialogFieldOption>())
-                .First(option => !string.Equals(option.Value, currentOption.Value, StringComparison.Ordinal));
-
-            refreshCombo.SelectedItem = nextOption;
-            PumpUi();
-
-            Assert.IsTrue(
-                window.TryDeferCloseForPendingOriginWizardTransientRefresh(),
-                "Origin Dossier should defer a transient presenter close while a combo refresh is preserving the current viewport.");
-
-            for (int i = 0; i < 10; i++)
-            {
-                Thread.Sleep(50);
-                PumpUi();
-                Assert.IsTrue(window.IsVisible, "Origin Dossier should remain visible while a slow combo refresh is still pending.");
-            }
-
-            presenter.ReleaseFieldUpdates();
+            buildPreferenceCombo.SelectedItem = nextBuildPreference;
             PumpUi();
             PumpUi();
 
             Expander reboundAdvancedStoryControls = window.GetVisualDescendants()
                 .OfType<Expander>()
                 .Single(expander => string.Equals(expander.Name, "OriginDossierStandaloneAdvancedStoryControlsExpander", StringComparison.Ordinal));
-            ComboBox reboundRefreshCombo = window.GetVisualDescendants()
+            ScrollViewer reboundScrollViewer = window.FindControl<ScrollViewer>("DialogScrollViewer")!;
+            ComboBox reboundBuildPreferenceCombo = window.GetVisualDescendants()
                 .OfType<ComboBox>()
-                .First(control => (control.ItemsSource as System.Collections.IEnumerable)?.Cast<object>().OfType<DesktopDialogFieldOption>().Any() == true);
+                .Single(comboBox => string.Equals(comboBox.Name, DesktopDialogAccessibility.BuildFieldInputName("newCharacterOriginBuildPreference"), StringComparison.Ordinal));
 
-            Assert.IsTrue(reboundAdvancedStoryControls.IsExpanded, "Origin Dossier should keep advanced story controls expanded after a slow combo refresh rebounds.");
-            Assert.AreEqual(nextOption.Value, ((DesktopDialogFieldOption)reboundRefreshCombo.SelectedItem!).Value, "Origin Dossier should keep the selected combo value after a slow refresh rebounds.");
+            Assert.IsTrue(reboundAdvancedStoryControls.IsExpanded, "Advanced story controls should stay expanded after a live combo selection from inside the advanced section.");
+            Assert.AreEqual(nextBuildPreference.Value, ((DesktopDialogFieldOption)reboundBuildPreferenceCombo.SelectedItem!).Value, "The in-section combo selection should survive the dialog refresh.");
+            Assert.IsTrue(
+                Math.Abs(reboundScrollViewer.Offset.Y - preservedOffsetY) <= 8d,
+                $"Origin Dossier should preserve scroll position across an in-section live combo selection refresh. Before={preservedOffsetY:F1}, After={reboundScrollViewer.Offset.Y:F1}.");
         });
+    }
+
+    [TestMethod]
+    public void Origin_dossier_advanced_story_controls_do_not_jump_or_collapse_after_any_live_combo_selection()
+    {
+        string[] renderedOriginSelectFieldIds =
+        [
+            "newCharacterOriginMetatypePreference",
+            "newCharacterOriginArchetypeIntent",
+            "newCharacterRulesetId",
+            "newCharacterOriginBuildPreference",
+            "newCharacterOriginBackground",
+            "newCharacterOriginTurningPoint",
+            "newCharacterOriginTrainingPath",
+            "newCharacterOriginUpgradeExposure",
+            "newCharacterOriginPressureCost",
+            "newCharacterOriginMotivation",
+            "newCharacterOriginTone",
+            "newCharacterOriginGmConstraintPreset"
+        ];
+
+        foreach (string fieldId in renderedOriginSelectFieldIds)
+        {
+            DesktopDialogState originWizard = new DesktopDialogFactory().CreateCommandDialog(
+                "new_character_origin",
+                profile: null,
+                DesktopPreferenceState.Default,
+                activeSectionJson: null,
+                currentWorkspace: null,
+                rulesetId: RulesetDefaults.Sr5);
+            DesktopDialogField field = originWizard.Fields.Single(candidate => string.Equals(candidate.Id, fieldId, StringComparison.Ordinal));
+            DesktopDialogFieldOption nextOption = (field.Options ?? [])
+                .First(option => !string.Equals(option.Value, field.Value, StringComparison.Ordinal));
+
+            WithPresenterBoundDialogWindow(originWizard, window =>
+            {
+                window.Height = 420;
+                PumpUi();
+
+                Expander advancedStoryControls = window.GetVisualDescendants()
+                    .OfType<Expander>()
+                    .Single(expander => string.Equals(expander.Name, "OriginDossierStandaloneAdvancedStoryControlsExpander", StringComparison.Ordinal));
+                ScrollViewer scrollViewer = window.FindControl<ScrollViewer>("DialogScrollViewer")!;
+
+                advancedStoryControls.IsExpanded = true;
+                PumpUi();
+
+                ComboBox? comboBox = window.GetVisualDescendants()
+                    .OfType<ComboBox>()
+                    .SingleOrDefault(combo => string.Equals(combo.Name, DesktopDialogAccessibility.BuildFieldInputName(fieldId), StringComparison.Ordinal));
+                Assert.IsNotNull(comboBox, $"Expected an Origin Dossier combo for {fieldId} before the live selection refresh.");
+
+                scrollViewer.Offset = new Vector(0d, 180d);
+                PumpUi();
+                double preservedOffsetY = scrollViewer.Offset.Y;
+
+                comboBox.SelectedItem = nextOption;
+                PumpUi();
+                PumpUi();
+
+                Expander reboundAdvancedStoryControls = window.GetVisualDescendants()
+                    .OfType<Expander>()
+                    .Single(expander => string.Equals(expander.Name, "OriginDossierStandaloneAdvancedStoryControlsExpander", StringComparison.Ordinal));
+                ScrollViewer reboundScrollViewer = window.FindControl<ScrollViewer>("DialogScrollViewer")!;
+                ComboBox? reboundComboBox = window.GetVisualDescendants()
+                    .OfType<ComboBox>()
+                    .SingleOrDefault(combo => string.Equals(combo.Name, DesktopDialogAccessibility.BuildFieldInputName(fieldId), StringComparison.Ordinal));
+                Assert.IsNotNull(reboundComboBox, $"Expected an Origin Dossier combo for {fieldId} after the live selection refresh.");
+
+                Assert.IsTrue(
+                    reboundAdvancedStoryControls.IsExpanded,
+                    $"Advanced story controls should stay expanded after a live combo selection refresh for {fieldId}.");
+                Assert.AreEqual(
+                    nextOption.Value,
+                    ((DesktopDialogFieldOption)reboundComboBox.SelectedItem!).Value,
+                    $"The live combo selection should survive the dialog refresh for {fieldId}.");
+                Assert.IsTrue(
+                    Math.Abs(reboundScrollViewer.Offset.Y - preservedOffsetY) <= 8d,
+                    $"Origin Dossier should preserve scroll position across a live combo selection refresh for {fieldId}. Before={preservedOffsetY:F1}, After={reboundScrollViewer.Offset.Y:F1}.");
+            });
+        }
+    }
+
+    [TestMethod]
+    public void Origin_dossier_advanced_story_controls_do_not_jump_or_collapse_across_sequential_live_combo_selections()
+    {
+        string[] sequentialFieldIds =
+        [
+            "newCharacterOriginMetatypePreference",
+            "newCharacterOriginArchetypeIntent",
+            "newCharacterRulesetId",
+            "newCharacterOriginBuildPreference",
+            "newCharacterOriginBackground",
+            "newCharacterOriginTurningPoint",
+            "newCharacterOriginTrainingPath",
+            "newCharacterOriginUpgradeExposure",
+            "newCharacterOriginPressureCost",
+            "newCharacterOriginMotivation",
+            "newCharacterOriginTone",
+            "newCharacterOriginGmConstraintPreset"
+        ];
+
+        DesktopDialogState originWizard = new DesktopDialogFactory().CreateCommandDialog(
+            "new_character_origin",
+            profile: null,
+            DesktopPreferenceState.Default,
+            activeSectionJson: null,
+            currentWorkspace: null,
+            rulesetId: RulesetDefaults.Sr5);
+
+        WithPresenterBoundDialogWindow(originWizard, window =>
+        {
+            window.Height = 420;
+            PumpUi();
+
+            Expander advancedStoryControls = window.GetVisualDescendants()
+                .OfType<Expander>()
+                .Single(expander => string.Equals(expander.Name, "OriginDossierStandaloneAdvancedStoryControlsExpander", StringComparison.Ordinal));
+            ScrollViewer scrollViewer = window.FindControl<ScrollViewer>("DialogScrollViewer")!;
+
+            advancedStoryControls.IsExpanded = true;
+            PumpUi();
+
+            scrollViewer.Offset = new Vector(0d, 180d);
+            PumpUi();
+            double preservedOffsetY = scrollViewer.Offset.Y;
+            Dictionary<string, string> appliedValues = new(StringComparer.Ordinal);
+
+            foreach (string fieldId in sequentialFieldIds)
+            {
+                ComboBox comboBox = window.GetVisualDescendants()
+                    .OfType<ComboBox>()
+                    .Single(combo => string.Equals(combo.Name, DesktopDialogAccessibility.BuildFieldInputName(fieldId), StringComparison.Ordinal));
+                DesktopDialogFieldOption currentOption = (DesktopDialogFieldOption)comboBox.SelectedItem!;
+                DesktopDialogFieldOption nextOption = ((IEnumerable<DesktopDialogFieldOption>?)comboBox.ItemsSource ?? [])
+                    .First(option => !string.Equals(option.Value, currentOption.Value, StringComparison.Ordinal));
+
+                comboBox.SelectedItem = nextOption;
+                appliedValues[fieldId] = nextOption.Value;
+                PumpUi();
+                PumpUi();
+
+                Expander reboundAdvancedStoryControls = window.GetVisualDescendants()
+                    .OfType<Expander>()
+                    .Single(expander => string.Equals(expander.Name, "OriginDossierStandaloneAdvancedStoryControlsExpander", StringComparison.Ordinal));
+                ScrollViewer reboundScrollViewer = window.FindControl<ScrollViewer>("DialogScrollViewer")!;
+                ComboBox reboundComboBox = window.GetVisualDescendants()
+                    .OfType<ComboBox>()
+                    .Single(combo => string.Equals(combo.Name, DesktopDialogAccessibility.BuildFieldInputName(fieldId), StringComparison.Ordinal));
+
+                Assert.IsTrue(
+                    reboundAdvancedStoryControls.IsExpanded,
+                    $"Advanced story controls should stay expanded after the sequential live combo refresh for {fieldId}.");
+                foreach ((string expectedFieldId, string expectedValue) in appliedValues)
+                {
+                    ComboBox reboundExpectedComboBox = window.GetVisualDescendants()
+                        .OfType<ComboBox>()
+                        .Single(combo => string.Equals(combo.Name, DesktopDialogAccessibility.BuildFieldInputName(expectedFieldId), StringComparison.Ordinal));
+                    Assert.AreEqual(
+                        expectedValue,
+                        ((DesktopDialogFieldOption)reboundExpectedComboBox.SelectedItem!).Value,
+                        $"Sequential live Origin Dossier combo refreshes should preserve the updated value for {expectedFieldId}.");
+                }
+                Assert.IsTrue(
+                    Math.Abs(reboundScrollViewer.Offset.Y - preservedOffsetY) <= 8d,
+                    $"Origin Dossier should preserve scroll position across sequential live combo refreshes for {fieldId}. Before={preservedOffsetY:F1}, After={reboundScrollViewer.Offset.Y:F1}.");
+            }
+
+            Thread.Sleep(440);
+            PumpUi();
+
+            Expander settledAdvancedStoryControls = window.GetVisualDescendants()
+                .OfType<Expander>()
+                .Single(expander => string.Equals(expander.Name, "OriginDossierStandaloneAdvancedStoryControlsExpander", StringComparison.Ordinal));
+            ScrollViewer settledScrollViewer = window.FindControl<ScrollViewer>("DialogScrollViewer")!;
+
+            Assert.IsTrue(
+                settledAdvancedStoryControls.IsExpanded,
+                "Advanced story controls should stay expanded after delayed settle passes following sequential live combo refreshes.");
+            Assert.IsTrue(
+                Math.Abs(settledScrollViewer.Offset.Y - preservedOffsetY) <= 8d,
+                $"Origin Dossier should not keep shifting after sequential live combo refreshes. Before={preservedOffsetY:F1}, After={settledScrollViewer.Offset.Y:F1}.");
+        });
+    }
+
+    [TestMethod]
+    public void Origin_dossier_advanced_story_controls_ignore_stale_expander_events_after_live_combo_rebind()
+    {
+        DesktopDialogState originWizard = new DesktopDialogFactory().CreateCommandDialog(
+            "new_character_origin",
+            profile: null,
+            DesktopPreferenceState.Default,
+            activeSectionJson: null,
+            currentWorkspace: null,
+            rulesetId: RulesetDefaults.Sr5);
+
+        WithPresenterBoundDialogWindow(originWizard, window =>
+        {
+            window.Height = 420;
+            PumpUi();
+
+            Expander staleAdvancedStoryControls = window.GetVisualDescendants()
+                .OfType<Expander>()
+                .Single(expander => string.Equals(expander.Name, "OriginDossierStandaloneAdvancedStoryControlsExpander", StringComparison.Ordinal));
+            ScrollViewer scrollViewer = window.FindControl<ScrollViewer>("DialogScrollViewer")!;
+
+            staleAdvancedStoryControls.IsExpanded = true;
+            PumpUi();
+
+            scrollViewer.Offset = new Vector(0d, 180d);
+            PumpUi();
+            double preservedOffsetY = scrollViewer.Offset.Y;
+
+            ComboBox metatypePreferenceCombo = window.GetVisualDescendants()
+                .OfType<ComboBox>()
+                .Single(comboBox => string.Equals(comboBox.Name, DesktopDialogAccessibility.BuildFieldInputName("newCharacterOriginMetatypePreference"), StringComparison.Ordinal));
+            DesktopDialogFieldOption nextMetatypePreference = ((IEnumerable<DesktopDialogFieldOption>?)metatypePreferenceCombo.ItemsSource ?? [])
+                .First(option => !string.Equals(option.Value, ((DesktopDialogFieldOption)metatypePreferenceCombo.SelectedItem!).Value, StringComparison.Ordinal));
+
+            metatypePreferenceCombo.SelectedItem = nextMetatypePreference;
+            PumpUi();
+            PumpUi();
+
+            Expander reboundAdvancedStoryControls = window.GetVisualDescendants()
+                .OfType<Expander>()
+                .Single(expander => string.Equals(expander.Name, "OriginDossierStandaloneAdvancedStoryControlsExpander", StringComparison.Ordinal));
+            Assert.IsTrue(reboundAdvancedStoryControls.IsExpanded, "Advanced story controls should still be expanded after the first live combo rebind.");
+
+            staleAdvancedStoryControls.IsExpanded = false;
+            PumpUi();
+
+            ComboBox buildPreferenceCombo = window.GetVisualDescendants()
+                .OfType<ComboBox>()
+                .Single(comboBox => string.Equals(comboBox.Name, DesktopDialogAccessibility.BuildFieldInputName("newCharacterOriginBuildPreference"), StringComparison.Ordinal));
+            DesktopDialogFieldOption nextBuildPreference = ((IEnumerable<DesktopDialogFieldOption>?)buildPreferenceCombo.ItemsSource ?? [])
+                .First(option => !string.Equals(option.Value, ((DesktopDialogFieldOption)buildPreferenceCombo.SelectedItem!).Value, StringComparison.Ordinal));
+
+            buildPreferenceCombo.SelectedItem = nextBuildPreference;
+            PumpUi();
+            PumpUi();
+
+            Expander settledAdvancedStoryControls = window.GetVisualDescendants()
+                .OfType<Expander>()
+                .Single(expander => string.Equals(expander.Name, "OriginDossierStandaloneAdvancedStoryControlsExpander", StringComparison.Ordinal));
+            ScrollViewer settledScrollViewer = window.FindControl<ScrollViewer>("DialogScrollViewer")!;
+
+            Assert.IsTrue(
+                settledAdvancedStoryControls.IsExpanded,
+                "Stale expander collapse events from a prior Origin Dossier rebind must not collapse the current advanced story controls.");
+            Assert.IsTrue(
+                Math.Abs(settledScrollViewer.Offset.Y - preservedOffsetY) <= 8d,
+                $"Origin Dossier should preserve scroll position even if a stale expander instance fires after rebind. Before={preservedOffsetY:F1}, After={settledScrollViewer.Offset.Y:F1}.");
+        });
+    }
+
+    [TestMethod]
+    public void Origin_dossier_advanced_story_controls_ignore_stale_combo_selection_events_after_live_combo_rebind()
+    {
+        DesktopDialogState originWizard = new DesktopDialogFactory().CreateCommandDialog(
+            "new_character_origin",
+            profile: null,
+            DesktopPreferenceState.Default,
+            activeSectionJson: null,
+            currentWorkspace: null,
+            rulesetId: RulesetDefaults.Sr5);
+
+        WithPresenterBoundDialogWindow(originWizard, window =>
+        {
+            window.Height = 420;
+            PumpUi();
+
+            Expander advancedStoryControls = window.GetVisualDescendants()
+                .OfType<Expander>()
+                .Single(expander => string.Equals(expander.Name, "OriginDossierStandaloneAdvancedStoryControlsExpander", StringComparison.Ordinal));
+            ScrollViewer scrollViewer = window.FindControl<ScrollViewer>("DialogScrollViewer")!;
+
+            advancedStoryControls.IsExpanded = true;
+            PumpUi();
+
+            scrollViewer.Offset = new Vector(0d, 180d);
+            PumpUi();
+            double preservedOffsetY = scrollViewer.Offset.Y;
+
+            ComboBox staleMetatypePreferenceCombo = window.GetVisualDescendants()
+                .OfType<ComboBox>()
+                .Single(comboBox => string.Equals(comboBox.Name, DesktopDialogAccessibility.BuildFieldInputName("newCharacterOriginMetatypePreference"), StringComparison.Ordinal));
+            DesktopDialogFieldOption originalMetatypePreference = (DesktopDialogFieldOption)staleMetatypePreferenceCombo.SelectedItem!;
+            DesktopDialogFieldOption nextMetatypePreference = ((IEnumerable<DesktopDialogFieldOption>?)staleMetatypePreferenceCombo.ItemsSource ?? [])
+                .First(option => !string.Equals(option.Value, originalMetatypePreference.Value, StringComparison.Ordinal));
+
+            staleMetatypePreferenceCombo.SelectedItem = nextMetatypePreference;
+            PumpUi();
+            PumpUi();
+
+            Expander reboundAdvancedStoryControls = window.GetVisualDescendants()
+                .OfType<Expander>()
+                .Single(expander => string.Equals(expander.Name, "OriginDossierStandaloneAdvancedStoryControlsExpander", StringComparison.Ordinal));
+            ComboBox reboundMetatypePreferenceCombo = window.GetVisualDescendants()
+                .OfType<ComboBox>()
+                .Single(comboBox => string.Equals(comboBox.Name, DesktopDialogAccessibility.BuildFieldInputName("newCharacterOriginMetatypePreference"), StringComparison.Ordinal));
+
+            Assert.IsTrue(reboundAdvancedStoryControls.IsExpanded, "Advanced story controls should still be expanded after the live combo rebind.");
+            Assert.AreEqual(
+                nextMetatypePreference.Value,
+                ((DesktopDialogFieldOption)reboundMetatypePreferenceCombo.SelectedItem!).Value,
+                "The live combo rebind should keep the first updated metatype preference selection.");
+
+            staleMetatypePreferenceCombo.SelectedItem = originalMetatypePreference;
+            PumpUi();
+            PumpUi();
+
+            Expander settledAdvancedStoryControls = window.GetVisualDescendants()
+                .OfType<Expander>()
+                .Single(expander => string.Equals(expander.Name, "OriginDossierStandaloneAdvancedStoryControlsExpander", StringComparison.Ordinal));
+            ScrollViewer settledScrollViewer = window.FindControl<ScrollViewer>("DialogScrollViewer")!;
+            ComboBox settledMetatypePreferenceCombo = window.GetVisualDescendants()
+                .OfType<ComboBox>()
+                .Single(comboBox => string.Equals(comboBox.Name, DesktopDialogAccessibility.BuildFieldInputName("newCharacterOriginMetatypePreference"), StringComparison.Ordinal));
+
+            Assert.IsTrue(
+                settledAdvancedStoryControls.IsExpanded,
+                "Stale combo selection events from a prior Origin Dossier rebind must not collapse the current advanced story controls.");
+            Assert.AreEqual(
+                nextMetatypePreference.Value,
+                ((DesktopDialogFieldOption)settledMetatypePreferenceCombo.SelectedItem!).Value,
+                "Stale combo selection events from a prior Origin Dossier rebind must not overwrite the current metatype preference.");
+            Assert.IsTrue(
+                Math.Abs(settledScrollViewer.Offset.Y - preservedOffsetY) <= 8d,
+                $"Origin Dossier should preserve scroll position even if a stale combo instance changes selection after rebind. Before={preservedOffsetY:F1}, After={settledScrollViewer.Offset.Y:F1}.");
+        });
+    }
+
+    [TestMethod]
+    public void Origin_dossier_advanced_story_controls_stay_stable_between_immediate_and_delayed_combo_restore_passes()
+    {
+        string[] renderedOriginSelectFieldIds =
+        [
+            "newCharacterOriginMetatypePreference",
+            "newCharacterOriginArchetypeIntent",
+            "newCharacterRulesetId",
+            "newCharacterOriginBuildPreference",
+            "newCharacterOriginBackground",
+            "newCharacterOriginTurningPoint",
+            "newCharacterOriginTrainingPath",
+            "newCharacterOriginUpgradeExposure",
+            "newCharacterOriginPressureCost",
+            "newCharacterOriginMotivation",
+            "newCharacterOriginTone",
+            "newCharacterOriginGmConstraintPreset"
+        ];
+
+        foreach (string fieldId in renderedOriginSelectFieldIds)
+        {
+            DesktopDialogState originWizard = new DesktopDialogFactory().CreateCommandDialog(
+                "new_character_origin",
+                profile: null,
+                DesktopPreferenceState.Default,
+                activeSectionJson: null,
+                currentWorkspace: null,
+                rulesetId: RulesetDefaults.Sr5);
+            DesktopDialogField field = originWizard.Fields.Single(candidate => string.Equals(candidate.Id, fieldId, StringComparison.Ordinal));
+            DesktopDialogFieldOption nextOption = (field.Options ?? [])
+                .First(option => !string.Equals(option.Value, field.Value, StringComparison.Ordinal));
+
+            WithPresenterBoundDialogWindow(originWizard, window =>
+            {
+                window.Height = 420;
+                PumpUi();
+
+                Expander advancedStoryControls = window.GetVisualDescendants()
+                    .OfType<Expander>()
+                    .Single(expander => string.Equals(expander.Name, "OriginDossierStandaloneAdvancedStoryControlsExpander", StringComparison.Ordinal));
+                ScrollViewer scrollViewer = window.FindControl<ScrollViewer>("DialogScrollViewer")!;
+
+                advancedStoryControls.IsExpanded = true;
+                PumpUi();
+
+                scrollViewer.Offset = new Vector(0d, 180d);
+                PumpUi();
+
+                ComboBox comboBox = window.GetVisualDescendants()
+                    .OfType<ComboBox>()
+                    .Single(combo => string.Equals(combo.Name, DesktopDialogAccessibility.BuildFieldInputName(fieldId), StringComparison.Ordinal));
+
+                comboBox.SelectedItem = nextOption;
+                PumpUi();
+
+                Expander reboundAdvancedStoryControls = window.GetVisualDescendants()
+                    .OfType<Expander>()
+                    .Single(expander => string.Equals(expander.Name, "OriginDossierStandaloneAdvancedStoryControlsExpander", StringComparison.Ordinal));
+                ScrollViewer reboundScrollViewer = window.FindControl<ScrollViewer>("DialogScrollViewer")!;
+                double immediateOffsetY = reboundScrollViewer.Offset.Y;
+
+                Thread.Sleep(440);
+                PumpUi();
+
+                Expander settledAdvancedStoryControls = window.GetVisualDescendants()
+                    .OfType<Expander>()
+                    .Single(expander => string.Equals(expander.Name, "OriginDossierStandaloneAdvancedStoryControlsExpander", StringComparison.Ordinal));
+                ScrollViewer settledScrollViewer = window.FindControl<ScrollViewer>("DialogScrollViewer")!;
+
+                Assert.IsTrue(
+                    reboundAdvancedStoryControls.IsExpanded,
+                    $"Advanced story controls should still be expanded immediately after the live combo refresh for {fieldId}.");
+                Assert.IsTrue(
+                    settledAdvancedStoryControls.IsExpanded,
+                    $"Advanced story controls should still be expanded after delayed combo-settle passes for {fieldId}.");
+                Assert.IsTrue(
+                    Math.Abs(settledScrollViewer.Offset.Y - immediateOffsetY) <= 2d,
+                    $"Origin Dossier should not keep shifting after the immediate combo refresh for {fieldId}. Immediate={immediateOffsetY:F1}, Settled={settledScrollViewer.Offset.Y:F1}.");
+            });
+        }
     }
 
     [TestMethod]
@@ -580,6 +1456,239 @@ public sealed class DesktopWindowContrastTests
     }
 
     [TestMethod]
+    public void Origin_dossier_advanced_story_controls_keep_first_pre_selection_scroll_anchor_when_combo_regains_focus_before_selection()
+    {
+        DesktopDialogState originWizard = new DesktopDialogFactory().CreateCommandDialog(
+            "new_character_origin",
+            profile: null,
+            DesktopPreferenceState.Default,
+            activeSectionJson: null,
+            currentWorkspace: null,
+            rulesetId: RulesetDefaults.Sr5);
+        DesktopDialogField buildPreferenceField = originWizard.Fields
+            .Single(field => string.Equals(field.Id, "newCharacterOriginBuildPreference", StringComparison.Ordinal));
+        DesktopDialogFieldOption nextBuildPreference = (buildPreferenceField.Options ?? [])
+            .First(option => !string.Equals(option.Value, buildPreferenceField.Value, StringComparison.Ordinal));
+
+        WithPresenterBoundDialogWindow(originWizard, window =>
+        {
+            window.Height = 420;
+            PumpUi();
+
+            Expander advancedStoryControls = window.GetVisualDescendants()
+                .OfType<Expander>()
+                .Single(expander => string.Equals(expander.Name, "OriginDossierStandaloneAdvancedStoryControlsExpander", StringComparison.Ordinal));
+            ScrollViewer scrollViewer = window.FindControl<ScrollViewer>("DialogScrollViewer")!;
+
+            advancedStoryControls.IsExpanded = true;
+            PumpUi();
+
+            scrollViewer.Offset = new Vector(0d, 180d);
+            PumpUi();
+            double preservedOffsetY = scrollViewer.Offset.Y;
+
+            ComboBox buildPreferenceCombo = window.GetVisualDescendants()
+                .OfType<ComboBox>()
+                .Single(comboBox => string.Equals(comboBox.Name, DesktopDialogAccessibility.BuildFieldInputName("newCharacterOriginBuildPreference"), StringComparison.Ordinal));
+
+            buildPreferenceCombo.Focus();
+            PumpUi();
+
+            scrollViewer.Focus();
+            PumpUi();
+
+            scrollViewer.Offset = new Vector(0d, 28d);
+            PumpUi();
+
+            buildPreferenceCombo.Focus();
+            PumpUi();
+
+            buildPreferenceCombo.SelectedItem = nextBuildPreference;
+            PumpUi();
+            PumpUi();
+
+            Expander reboundAdvancedStoryControls = window.GetVisualDescendants()
+                .OfType<Expander>()
+                .Single(expander => string.Equals(expander.Name, "OriginDossierStandaloneAdvancedStoryControlsExpander", StringComparison.Ordinal));
+            ScrollViewer reboundScrollViewer = window.FindControl<ScrollViewer>("DialogScrollViewer")!;
+            ComboBox reboundBuildPreferenceCombo = window.GetVisualDescendants()
+                .OfType<ComboBox>()
+                .Single(comboBox => string.Equals(comboBox.Name, DesktopDialogAccessibility.BuildFieldInputName("newCharacterOriginBuildPreference"), StringComparison.Ordinal));
+
+            Assert.IsTrue(reboundAdvancedStoryControls.IsExpanded, "Advanced story controls should stay expanded when a combo regains focus before the selection refresh.");
+            Assert.AreEqual(nextBuildPreference.Value, ((DesktopDialogFieldOption)reboundBuildPreferenceCombo.SelectedItem!).Value, "The in-section combo selection should survive the focus-return refresh.");
+            Assert.IsTrue(
+                Math.Abs(reboundScrollViewer.Offset.Y - preservedOffsetY) <= 8d,
+                $"Origin Dossier should keep the first pre-selection scroll anchor when combo focus returns before refresh. Before={preservedOffsetY:F1}, After={reboundScrollViewer.Offset.Y:F1}.");
+        });
+    }
+
+    [TestMethod]
+    public void Origin_dossier_advanced_story_controls_keep_first_pre_selection_scroll_anchor_when_combo_dropdown_reopens_before_selection()
+    {
+        DesktopDialogState originWizard = new DesktopDialogFactory().CreateCommandDialog(
+            "new_character_origin",
+            profile: null,
+            DesktopPreferenceState.Default,
+            activeSectionJson: null,
+            currentWorkspace: null,
+            rulesetId: RulesetDefaults.Sr5);
+        DesktopDialogField buildPreferenceField = originWizard.Fields
+            .Single(field => string.Equals(field.Id, "newCharacterOriginBuildPreference", StringComparison.Ordinal));
+        DesktopDialogFieldOption nextBuildPreference = (buildPreferenceField.Options ?? [])
+            .First(option => !string.Equals(option.Value, buildPreferenceField.Value, StringComparison.Ordinal));
+
+        WithPresenterBoundDialogWindow(originWizard, window =>
+        {
+            window.Height = 420;
+            PumpUi();
+
+            Expander advancedStoryControls = window.GetVisualDescendants()
+                .OfType<Expander>()
+                .Single(expander => string.Equals(expander.Name, "OriginDossierStandaloneAdvancedStoryControlsExpander", StringComparison.Ordinal));
+            ScrollViewer scrollViewer = window.FindControl<ScrollViewer>("DialogScrollViewer")!;
+
+            advancedStoryControls.IsExpanded = true;
+            PumpUi();
+
+            scrollViewer.Offset = new Vector(0d, 180d);
+            PumpUi();
+            double preservedOffsetY = scrollViewer.Offset.Y;
+
+            ComboBox buildPreferenceCombo = window.GetVisualDescendants()
+                .OfType<ComboBox>()
+                .Single(comboBox => string.Equals(comboBox.Name, DesktopDialogAccessibility.BuildFieldInputName("newCharacterOriginBuildPreference"), StringComparison.Ordinal));
+
+            buildPreferenceCombo.Focus();
+            PumpUi();
+
+            scrollViewer.Offset = new Vector(0d, 28d);
+            PumpUi();
+
+            buildPreferenceCombo.IsDropDownOpen = true;
+            PumpUi();
+            buildPreferenceCombo.IsDropDownOpen = false;
+            PumpUi();
+
+            buildPreferenceCombo.SelectedItem = nextBuildPreference;
+            PumpUi();
+            PumpUi();
+
+            Expander reboundAdvancedStoryControls = window.GetVisualDescendants()
+                .OfType<Expander>()
+                .Single(expander => string.Equals(expander.Name, "OriginDossierStandaloneAdvancedStoryControlsExpander", StringComparison.Ordinal));
+            ScrollViewer reboundScrollViewer = window.FindControl<ScrollViewer>("DialogScrollViewer")!;
+            ComboBox reboundBuildPreferenceCombo = window.GetVisualDescendants()
+                .OfType<ComboBox>()
+                .Single(comboBox => string.Equals(comboBox.Name, DesktopDialogAccessibility.BuildFieldInputName("newCharacterOriginBuildPreference"), StringComparison.Ordinal));
+
+            Assert.IsTrue(reboundAdvancedStoryControls.IsExpanded, "Advanced story controls should stay expanded when a combo dropdown reopens before the selection refresh.");
+            Assert.AreEqual(nextBuildPreference.Value, ((DesktopDialogFieldOption)reboundBuildPreferenceCombo.SelectedItem!).Value, "The in-section combo selection should survive the dropdown-reopen refresh.");
+            Assert.IsTrue(
+                Math.Abs(reboundScrollViewer.Offset.Y - preservedOffsetY) <= 8d,
+                $"Origin Dossier should keep the first pre-selection scroll anchor when a combo dropdown reopens before refresh. Before={preservedOffsetY:F1}, After={reboundScrollViewer.Offset.Y:F1}.");
+        });
+    }
+
+    [TestMethod]
+    public void Origin_dossier_advanced_story_controls_keep_first_pre_selection_scroll_anchor_when_another_combo_gains_focus_before_selection()
+    {
+        DesktopDialogState originWizard = new DesktopDialogFactory().CreateCommandDialog(
+            "new_character_origin",
+            profile: null,
+            DesktopPreferenceState.Default,
+            activeSectionJson: null,
+            currentWorkspace: null,
+            rulesetId: RulesetDefaults.Sr5);
+        DesktopDialogField metatypePreferenceField = originWizard.Fields
+            .Single(field => string.Equals(field.Id, "newCharacterOriginMetatypePreference", StringComparison.Ordinal));
+        DesktopDialogFieldOption nextMetatypePreference = (metatypePreferenceField.Options ?? [])
+            .First(option => !string.Equals(option.Value, metatypePreferenceField.Value, StringComparison.Ordinal));
+
+        WithPresenterBoundDialogWindow(originWizard, window =>
+        {
+            window.Height = 420;
+            PumpUi();
+
+            Expander advancedStoryControls = window.GetVisualDescendants()
+                .OfType<Expander>()
+                .Single(expander => string.Equals(expander.Name, "OriginDossierStandaloneAdvancedStoryControlsExpander", StringComparison.Ordinal));
+            ScrollViewer scrollViewer = window.FindControl<ScrollViewer>("DialogScrollViewer")!;
+
+            advancedStoryControls.IsExpanded = true;
+            PumpUi();
+
+            scrollViewer.Offset = new Vector(0d, 180d);
+            PumpUi();
+            double preservedOffsetY = scrollViewer.Offset.Y;
+
+            ComboBox buildPreferenceCombo = window.GetVisualDescendants()
+                .OfType<ComboBox>()
+                .Single(comboBox => string.Equals(comboBox.Name, DesktopDialogAccessibility.BuildFieldInputName("newCharacterOriginBuildPreference"), StringComparison.Ordinal));
+            ComboBox metatypePreferenceCombo = window.GetVisualDescendants()
+                .OfType<ComboBox>()
+                .Single(comboBox => string.Equals(comboBox.Name, DesktopDialogAccessibility.BuildFieldInputName("newCharacterOriginMetatypePreference"), StringComparison.Ordinal));
+
+            buildPreferenceCombo.Focus();
+            PumpUi();
+
+            scrollViewer.Offset = new Vector(0d, 28d);
+            PumpUi();
+
+            metatypePreferenceCombo.Focus();
+            PumpUi();
+
+            metatypePreferenceCombo.SelectedItem = nextMetatypePreference;
+            PumpUi();
+            PumpUi();
+
+            Expander reboundAdvancedStoryControls = window.GetVisualDescendants()
+                .OfType<Expander>()
+                .Single(expander => string.Equals(expander.Name, "OriginDossierStandaloneAdvancedStoryControlsExpander", StringComparison.Ordinal));
+            ScrollViewer reboundScrollViewer = window.FindControl<ScrollViewer>("DialogScrollViewer")!;
+            ComboBox reboundMetatypePreferenceCombo = window.GetVisualDescendants()
+                .OfType<ComboBox>()
+                .Single(comboBox => string.Equals(comboBox.Name, DesktopDialogAccessibility.BuildFieldInputName("newCharacterOriginMetatypePreference"), StringComparison.Ordinal));
+
+            Assert.IsTrue(reboundAdvancedStoryControls.IsExpanded, "Advanced story controls should stay expanded when another combo gains focus before the selection refresh.");
+            Assert.AreEqual(nextMetatypePreference.Value, ((DesktopDialogFieldOption)reboundMetatypePreferenceCombo.SelectedItem!).Value, "The later combo selection should survive the cross-field focus refresh.");
+            Assert.IsTrue(
+                Math.Abs(reboundScrollViewer.Offset.Y - preservedOffsetY) <= 8d,
+                $"Origin Dossier should keep the first pre-selection scroll anchor when another combo gains focus before refresh. Before={preservedOffsetY:F1}, After={reboundScrollViewer.Offset.Y:F1}.");
+        });
+    }
+
+    [TestMethod]
+    public void Metatype_continuation_dialogs_keep_labels_and_inputs_readable_in_dark_mode()
+    {
+        DesktopDialogState priorityDialog = BuildNewCharacterContinuationDialogForTesting("Priority");
+        priorityDialog = RebuildNewCharacterContinuationDialogField(priorityDialog, "newCharacterPriorityTalent", "B");
+        priorityDialog = RebuildNewCharacterContinuationDialogField(priorityDialog, "newCharacterPriorityTalentChoice", "Magician");
+
+        WithBoundDialogWindow(priorityDialog, window =>
+        {
+            using ThemeScope scope = ThemeScope.Dark(window);
+            ListBox metatypeList = window.GetVisualDescendants()
+                .OfType<ListBox>()
+                .Single(listBox => string.Equals(listBox.Name, DesktopDialogAccessibility.BuildFieldInputName("newCharacterMetatype"), StringComparison.Ordinal));
+            metatypeList.SelectedIndex = Math.Max(0, metatypeList.SelectedIndex);
+            PumpUi();
+            AssertVisibleInputControlContrast(window, "priority metatype continuation dark mode", minimumVisibleInputControls: 7);
+            AssertVisibleSelectedListItemContrast(window, "priority metatype continuation dark mode", minimumSelectedItems: 1);
+            AssertVisibleChoiceTextContrast(window, "priority metatype continuation dark mode", minimumVisibleChoiceTexts: 2);
+            AssertVisibleTextBlockContrast(window, "priority metatype continuation dark mode", minimumVisibleTextBlocks: 18);
+        }, requestedTheme: ThemeVariant.Dark);
+
+        DesktopDialogState karmaDialog = BuildNewCharacterContinuationDialogForTesting("Karma");
+        WithBoundDialogWindow(karmaDialog, window =>
+        {
+            using ThemeScope scope = ThemeScope.Dark(window);
+            AssertVisibleInputControlContrast(window, "karma metatype continuation dark mode", minimumVisibleInputControls: 2);
+            AssertVisibleTextBlockContrast(window, "karma metatype continuation dark mode", minimumVisibleTextBlocks: 5);
+        }, requestedTheme: ThemeVariant.Dark);
+    }
+
+    [TestMethod]
     public void Shell_theme_helpers_keep_idle_input_controls_readable_in_dark_mode()
     {
         WithStandaloneShellInputThemeWindow(window =>
@@ -611,6 +1720,35 @@ public sealed class DesktopWindowContrastTests
         });
     }
 
+    [TestMethod]
+    public void Character_create_priorities_port_keeps_notice_selector_and_priority_list_readable_in_dark_mode()
+    {
+        WithStandaloneCharacterCreateClassicPort(window =>
+        {
+            using ThemeScope scope = ThemeScope.Dark(window);
+            ComboBox prioritySelector = window.GetVisualDescendants()
+                .OfType<ComboBox>()
+                .Single(comboBox => string.Equals(comboBox.Name, "CreatePrioritySelector", StringComparison.Ordinal));
+            ListBox prioritiesList = window.GetVisualDescendants()
+                .OfType<ListBox>()
+                .Single(listBox => string.Equals(listBox.Name, "CreatePrioritiesList", StringComparison.Ordinal));
+            TextBlock noticeText = window.GetVisualDescendants()
+                .OfType<TextBlock>()
+                .Single(textBlock => string.Equals(textBlock.Name, "CreateNoticeText", StringComparison.Ordinal));
+
+            Assert.IsTrue(prioritySelector.IsVisible, "The character-create Priorities selector must be visible for dark-mode contrast proof.");
+            Assert.IsTrue(prioritiesList.IsVisible, "The character-create Priorities list must be visible for dark-mode contrast proof.");
+            Assert.IsTrue(noticeText.IsVisible, "The character-create lead notice must stay visible for dark-mode contrast proof.");
+
+            prioritiesList.SelectedIndex = 0;
+            PumpUi();
+            AssertVisibleInputControlContrast(window, "character-create priorities dark mode", minimumVisibleInputControls: 2);
+            AssertVisibleSelectedListItemContrast(window, "character-create priorities dark mode", minimumSelectedItems: 1);
+            AssertVisibleChoiceTextContrast(window, "character-create priorities dark mode", minimumVisibleChoiceTexts: 4);
+            AssertVisibleTextBlockContrast(window, "character-create priorities dark mode", minimumVisibleTextBlocks: 8);
+        }, activeTabId: "Priorities");
+    }
+
     private static void EnsureHeadlessPlatform()
     {
         lock (HeadlessInitLock)
@@ -624,15 +1762,57 @@ public sealed class DesktopWindowContrastTests
         }
     }
 
+    private static DesktopDialogState BuildNewCharacterContinuationDialogForTesting(string buildMethod)
+    {
+        MethodInfo method = typeof(DesktopDialogFactory)
+            .GetMethods(BindingFlags.Static | BindingFlags.NonPublic)
+            .Single(candidate =>
+                string.Equals(candidate.Name, "BuildNewCharacterContinuationDialog", StringComparison.Ordinal)
+                && candidate.GetParameters().Length == 5);
+
+        return (DesktopDialogState)(method.Invoke(null, [RulesetDefaults.Sr5, buildMethod, true, "Nova", "Cipher"])
+            ?? throw new AssertFailedException("BuildNewCharacterContinuationDialog returned null."));
+    }
+
+    private static DesktopDialogState RebuildNewCharacterContinuationDialogField(DesktopDialogState dialog, string fieldId, string value)
+    {
+        MethodInfo method = typeof(DesktopDialogFactory).GetMethod(
+            "RebuildDynamicDialog",
+            BindingFlags.Static | BindingFlags.NonPublic)
+            ?? throw new AssertFailedException("RebuildDynamicDialog reflection entry point was not found.");
+
+        DesktopDialogField[] updatedFields = dialog.Fields
+            .Select(field =>
+            {
+                if (string.Equals(field.Id, fieldId, StringComparison.Ordinal))
+                {
+                    return field with { Value = value };
+                }
+
+                if (string.Equals(field.Id, "newCharacterPriorityLastChangedFieldId", StringComparison.Ordinal))
+                {
+                    return field with { Value = fieldId };
+                }
+
+                return field;
+            })
+            .ToArray();
+
+        return (DesktopDialogState)(method.Invoke(null, [dialog with { Fields = updatedFields }, DesktopPreferenceState.Default])
+            ?? throw new AssertFailedException("RebuildDynamicDialog returned null."));
+    }
+
     private static void WithStandaloneInstallLinkingWindow(Action<Window> assertion)
     {
         EnsureHeadlessPlatform();
         Exception? lastFailure = null;
         for (int attempt = 1; attempt <= HeadlessSessionAttempts; attempt++)
         {
+            HeadlessUnitTestSession? session = null;
             try
             {
-                RunContrastHeadless(session => session.Dispatch(
+                session = HeadlessUnitTestSession.StartNew(typeof(ContrastHeadlessAppBootstrap));
+                session.Dispatch(
                         () =>
                         {
                             Window window = new DesktopInstallLinkingWindow(CreateInstallLinkingStartupContext())
@@ -655,12 +1835,16 @@ public sealed class DesktopWindowContrastTests
                         },
                         CancellationToken.None)
                     .GetAwaiter()
-                    .GetResult());
+                    .GetResult();
                 return;
             }
             catch (Exception ex) when (IsTransientHeadlessFailure(ex) && attempt < HeadlessSessionAttempts)
             {
                 lastFailure = ex;
+            }
+            finally
+            {
+                SafeDisposeHeadlessSession(session);
             }
         }
 
@@ -673,9 +1857,11 @@ public sealed class DesktopWindowContrastTests
         Exception? lastFailure = null;
         for (int attempt = 1; attempt <= HeadlessSessionAttempts; attempt++)
         {
+            HeadlessUnitTestSession? session = null;
             try
             {
-                RunContrastHeadless(session => session.Dispatch(
+                session = HeadlessUnitTestSession.StartNew(typeof(ContrastHeadlessAppBootstrap));
+                session.Dispatch(
                         () =>
                         {
                             ConstructorInfo constructor = typeof(DesktopReportIssueWindow).GetConstructor(
@@ -711,12 +1897,16 @@ public sealed class DesktopWindowContrastTests
                         },
                         CancellationToken.None)
                     .GetAwaiter()
-                    .GetResult());
+                    .GetResult();
                 return;
             }
             catch (Exception ex) when (IsTransientHeadlessFailure(ex) && attempt < HeadlessSessionAttempts)
             {
                 lastFailure = ex;
+            }
+            finally
+            {
+                SafeDisposeHeadlessSession(session);
             }
         }
 
@@ -744,9 +1934,11 @@ public sealed class DesktopWindowContrastTests
         Exception? lastFailure = null;
         for (int attempt = 1; attempt <= HeadlessSessionAttempts; attempt++)
         {
+            HeadlessUnitTestSession? session = null;
             try
             {
-                RunContrastHeadless(session => session.Dispatch(
+                session = HeadlessUnitTestSession.StartNew(typeof(ContrastHeadlessAppBootstrap));
+                session.Dispatch(
                         () =>
                         {
                             ConstructorInfo constructor = typeof(DesktopUpdateWindow).GetConstructor(
@@ -782,12 +1974,16 @@ public sealed class DesktopWindowContrastTests
                         },
                         CancellationToken.None)
                     .GetAwaiter()
-                    .GetResult());
+                    .GetResult();
                 return;
             }
             catch (Exception ex) when (IsTransientHeadlessFailure(ex) && attempt < HeadlessSessionAttempts)
             {
                 lastFailure = ex;
+            }
+            finally
+            {
+                SafeDisposeHeadlessSession(session);
             }
         }
 
@@ -800,9 +1996,11 @@ public sealed class DesktopWindowContrastTests
         Exception? lastFailure = null;
         for (int attempt = 1; attempt <= HeadlessSessionAttempts; attempt++)
         {
+            HeadlessUnitTestSession? session = null;
             try
             {
-                RunContrastHeadless(session => session.Dispatch(
+                session = HeadlessUnitTestSession.StartNew(typeof(ContrastHeadlessAppBootstrap));
+                session.Dispatch(
                         () =>
                         {
                             ConstructorInfo constructor = typeof(DesktopStartupUpdateWindow).GetConstructor(
@@ -828,12 +2026,16 @@ public sealed class DesktopWindowContrastTests
                         },
                         CancellationToken.None)
                     .GetAwaiter()
-                    .GetResult());
+                    .GetResult();
                 return;
             }
             catch (Exception ex) when (IsTransientHeadlessFailure(ex) && attempt < HeadlessSessionAttempts)
             {
                 lastFailure = ex;
+            }
+            finally
+            {
+                SafeDisposeHeadlessSession(session);
             }
         }
 
@@ -846,9 +2048,11 @@ public sealed class DesktopWindowContrastTests
         Exception? lastFailure = null;
         for (int attempt = 1; attempt <= HeadlessSessionAttempts; attempt++)
         {
+            HeadlessUnitTestSession? session = null;
             try
             {
-                RunContrastHeadless(session => session.Dispatch(
+                session = HeadlessUnitTestSession.StartNew(typeof(ContrastHeadlessAppBootstrap));
+                session.Dispatch(
                         () =>
                         {
                             ConstructorInfo constructor = typeof(DesktopDevicesAccessWindow).GetConstructor(
@@ -888,12 +2092,16 @@ public sealed class DesktopWindowContrastTests
                         },
                         CancellationToken.None)
                     .GetAwaiter()
-                    .GetResult());
+                    .GetResult();
                 return;
             }
             catch (Exception ex) when (IsTransientHeadlessFailure(ex) && attempt < HeadlessSessionAttempts)
             {
                 lastFailure = ex;
+            }
+            finally
+            {
+                SafeDisposeHeadlessSession(session);
             }
         }
 
@@ -909,9 +2117,11 @@ public sealed class DesktopWindowContrastTests
         Exception? lastFailure = null;
         for (int attempt = 1; attempt <= HeadlessSessionAttempts; attempt++)
         {
+            HeadlessUnitTestSession? session = null;
             try
             {
-                RunContrastHeadless(session => session.Dispatch(
+                session = HeadlessUnitTestSession.StartNew(typeof(ContrastHeadlessAppBootstrap));
+                session.Dispatch(
                         () =>
                         {
                             ThemeVariant? priorAppTheme = global::Avalonia.Application.Current?.RequestedThemeVariant;
@@ -946,12 +2156,16 @@ public sealed class DesktopWindowContrastTests
                         },
                         CancellationToken.None)
                     .GetAwaiter()
-                    .GetResult());
+                    .GetResult();
                 return;
             }
             catch (Exception ex) when (IsTransientHeadlessFailure(ex) && attempt < HeadlessSessionAttempts)
             {
                 lastFailure = ex;
+            }
+            finally
+            {
+                SafeDisposeHeadlessSession(session);
             }
         }
 
@@ -963,22 +2177,15 @@ public sealed class DesktopWindowContrastTests
         Action<DesktopDialogWindow> assertion,
         ThemeVariant? requestedTheme = null)
     {
-        WithPresenterBoundDialogWindow(dialog, new RebindingDialogPresenter(dialog), assertion, requestedTheme);
-    }
-
-    private static void WithPresenterBoundDialogWindow(
-        DesktopDialogState dialog,
-        RebindingDialogPresenter presenter,
-        Action<DesktopDialogWindow> assertion,
-        ThemeVariant? requestedTheme = null)
-    {
         EnsureHeadlessPlatform();
         Exception? lastFailure = null;
         for (int attempt = 1; attempt <= HeadlessSessionAttempts; attempt++)
         {
+            HeadlessUnitTestSession? session = null;
             try
             {
-                RunContrastHeadless(session => session.Dispatch(
+                session = HeadlessUnitTestSession.StartNew(typeof(ContrastHeadlessAppBootstrap));
+                session.Dispatch(
                         () =>
                         {
                             ThemeVariant? priorAppTheme = global::Avalonia.Application.Current?.RequestedThemeVariant;
@@ -987,6 +2194,7 @@ public sealed class DesktopWindowContrastTests
                                 global::Avalonia.Application.Current.RequestedThemeVariant = requestedTheme;
                             }
 
+                            RebindingDialogPresenter presenter = new(dialog);
                             using CharacterOverviewViewModelAdapter adapter = new(presenter);
                             DesktopDialogWindow window = new(adapter)
                             {
@@ -1024,12 +2232,16 @@ public sealed class DesktopWindowContrastTests
                         },
                         CancellationToken.None)
                     .GetAwaiter()
-                    .GetResult());
+                    .GetResult();
                 return;
             }
             catch (Exception ex) when (IsTransientHeadlessFailure(ex) && attempt < HeadlessSessionAttempts)
             {
                 lastFailure = ex;
+            }
+            finally
+            {
+                SafeDisposeHeadlessSession(session);
             }
         }
 
@@ -1042,9 +2254,11 @@ public sealed class DesktopWindowContrastTests
         Exception? lastFailure = null;
         for (int attempt = 1; attempt <= HeadlessSessionAttempts; attempt++)
         {
+            HeadlessUnitTestSession? session = null;
             try
             {
-                RunContrastHeadless(session => session.Dispatch(
+                session = HeadlessUnitTestSession.StartNew(typeof(ContrastHeadlessAppBootstrap));
+                session.Dispatch(
                         () =>
                         {
                             TextBox textBox = new() { Name = "ShellThemeTextBox", Text = "Runner note" };
@@ -1101,27 +2315,37 @@ public sealed class DesktopWindowContrastTests
                         },
                         CancellationToken.None)
                     .GetAwaiter()
-                    .GetResult());
+                    .GetResult();
                 return;
             }
             catch (Exception ex) when (IsTransientHeadlessFailure(ex) && attempt < HeadlessSessionAttempts)
             {
                 lastFailure = ex;
             }
+            finally
+            {
+                SafeDisposeHeadlessSession(session);
+            }
         }
 
         throw new AssertFailedException("Avalonia shell input theme headless session did not stabilize for contrast proof.", lastFailure);
     }
 
-    private static void WithStandaloneCharacterCreateClassicPort(Action<Window> assertion)
+    private static void WithStandaloneCharacterCreateClassicPort(
+        Action<Window> assertion,
+        string activeTabId = "Attributes",
+        string notice = "Ready.",
+        string? previewJson = null)
     {
         EnsureHeadlessPlatform();
         Exception? lastFailure = null;
         for (int attempt = 1; attempt <= HeadlessSessionAttempts; attempt++)
         {
+            HeadlessUnitTestSession? session = null;
             try
             {
-                RunContrastHeadless(session => session.Dispatch(
+                session = HeadlessUnitTestSession.StartNew(typeof(ContrastHeadlessAppBootstrap));
+                session.Dispatch(
                         () =>
                         {
                             CharacterCreateClassicPort port = new()
@@ -1129,7 +2353,7 @@ public sealed class DesktopWindowContrastTests
                                 Width = 760,
                                 Height = 520
                             };
-                            string previewJson = """
+                            string effectivePreviewJson = previewJson ?? """
                                 {
                                   "ruleset": "sr5",
                                   "buildMethod": "Priority",
@@ -1142,14 +2366,14 @@ public sealed class DesktopWindowContrastTests
                                   ]
                                 }
                                 """;
-                            ClassicFormPortDocument document = ClassicFormPortDocument.CreateFromPreview(previewJson, "character_create");
+                            ClassicFormPortDocument document = ClassicFormPortDocument.CreateFromPreview(effectivePreviewJson, "character_create");
                             port.SetState(new ClassicFormPortState(
                                 SurfaceId: "character_create",
                                 RuntimeSectionId: "character_create",
-                                ActiveTabId: "Attributes",
+                                ActiveTabId: activeTabId,
                                 ActiveActionId: null,
-                                Notice: "Ready.",
-                                PreviewJson: previewJson,
+                                Notice: notice,
+                                PreviewJson: effectivePreviewJson,
                                 Rows: [],
                                 QuickActions: [],
                                 NavigationTabs: [],
@@ -1177,12 +2401,16 @@ public sealed class DesktopWindowContrastTests
                         },
                         CancellationToken.None)
                     .GetAwaiter()
-                    .GetResult());
+                    .GetResult();
                 return;
             }
             catch (Exception ex) when (IsTransientHeadlessFailure(ex) && attempt < HeadlessSessionAttempts)
             {
                 lastFailure = ex;
+            }
+            finally
+            {
+                SafeDisposeHeadlessSession(session);
             }
         }
 
@@ -1489,23 +2717,6 @@ public sealed class DesktopWindowContrastTests
             || message.Contains("Operation is not valid due to the current state of the object", StringComparison.Ordinal);
     }
 
-    private static void RunContrastHeadless(Action<HeadlessUnitTestSession> action)
-    {
-        lock (AvaloniaHeadlessSessionGate.SyncRoot)
-        {
-            HeadlessUnitTestSession? session = null;
-            try
-            {
-                session = HeadlessUnitTestSession.StartNew(typeof(ContrastHeadlessAppBootstrap));
-                action(session);
-            }
-            finally
-            {
-                SafeDisposeHeadlessSession(session);
-            }
-        }
-    }
-
     private static void SafeDisposeHeadlessSession(HeadlessUnitTestSession? session)
     {
         try
@@ -1586,15 +2797,8 @@ public sealed class DesktopWindowContrastTests
 
     private sealed class RebindingDialogPresenter : ICharacterOverviewPresenter
     {
-        private readonly TaskCompletionSource? _fieldUpdateGate;
-
-        public RebindingDialogPresenter(DesktopDialogState dialog, bool deferFieldUpdates = false)
+        public RebindingDialogPresenter(DesktopDialogState dialog)
         {
-            if (deferFieldUpdates)
-            {
-                _fieldUpdateGate = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
-            }
-
             State = CharacterOverviewState.Empty with
             {
                 ActiveDialog = dialog,
@@ -1618,24 +2822,12 @@ public sealed class DesktopWindowContrastTests
 
         public Task ExecuteCommandAsync(string commandId, CancellationToken ct) => Task.CompletedTask;
 
-        public Task SelectTabAsync(string tabId, CancellationToken ct) => Task.CompletedTask;
-
         public Task HandleUiControlAsync(string controlId, CancellationToken ct) => Task.CompletedTask;
 
         public Task ExecuteWorkspaceActionAsync(WorkspaceSurfaceActionDefinition action, CancellationToken ct) => Task.CompletedTask;
 
-        public void ReleaseFieldUpdates()
+        public Task UpdateDialogFieldAsync(string fieldId, string? value, CancellationToken ct)
         {
-            _fieldUpdateGate?.TrySetResult();
-        }
-
-        public async Task UpdateDialogFieldAsync(string fieldId, string? value, CancellationToken ct)
-        {
-            if (_fieldUpdateGate is not null)
-            {
-                await _fieldUpdateGate.Task.WaitAsync(ct);
-            }
-
             DesktopDialogState dialog = State.ActiveDialog
                 ?? throw new AssertFailedException("A dialog update was requested without an active dialog.");
 
@@ -1651,7 +2843,7 @@ public sealed class DesktopWindowContrastTests
                 ?? throw new AssertFailedException("RebuildDynamicDialog reflection entry point was not found.");
             DesktopDialogState nextDialog = (DesktopDialogState)(rebuildMethod.Invoke(
                 null,
-                new object[] { dialog with { Fields = updatedFields }, DesktopPreferenceState.Default })
+                [dialog with { Fields = updatedFields }, DesktopPreferenceState.Default])
                 ?? throw new AssertFailedException("RebuildDynamicDialog returned null."));
 
             Publish(State with
@@ -1659,6 +2851,7 @@ public sealed class DesktopWindowContrastTests
                 ActiveDialog = nextDialog
             });
 
+            return Task.CompletedTask;
         }
 
         public Task ApplyAttributeEditAsync(AttributeEditRequest request, CancellationToken ct) => Task.CompletedTask;
@@ -1666,6 +2859,8 @@ public sealed class DesktopWindowContrastTests
         public Task ExecuteDialogActionAsync(string actionId, CancellationToken ct) => Task.CompletedTask;
 
         public Task CloseDialogAsync(CancellationToken ct) => Task.CompletedTask;
+
+        public Task SelectTabAsync(string tabId, CancellationToken ct) => Task.CompletedTask;
 
         public Task UpdateMetadataAsync(UpdateWorkspaceMetadata command, CancellationToken ct) => Task.CompletedTask;
 

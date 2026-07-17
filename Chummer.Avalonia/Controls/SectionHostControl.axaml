@@ -147,8 +147,8 @@
                 x:Name="AttributeParityEditorBorder"
                 Classes="shell-panel"
                 IsVisible="False"
-                Padding="4,3">
-          <Grid RowDefinitions="Auto,*" RowSpacing="4">
+                Padding="6,4">
+          <Grid RowDefinitions="Auto,*" RowSpacing="6">
             <Grid x:Name="AttributeParityHeaderGrid"
                   ColumnDefinitions="*,128,128,72,120"
                   ColumnSpacing="8">
@@ -161,10 +161,10 @@
             <ScrollViewer Grid.Row="1"
                           VerticalScrollBarVisibility="Auto"
                           HorizontalScrollBarVisibility="Disabled"
-                          MinHeight="208"
-                          MaxHeight="360">
+                          MinHeight="136"
+                          MaxHeight="320">
               <StackPanel x:Name="AttributeParityRowsHost"
-                          Spacing="2" />
+                          Spacing="4" />
             </ScrollViewer>
           </Grid>
         </Border>
@@ -232,9 +232,8 @@
                 Classes="shell-panel"
                 Padding="1,0"
                 IsVisible="False">
-          <StackPanel x:Name="SectionQuickActionsHost"
-                      Orientation="Horizontal"
-                      Spacing="4" />
+          <WrapPanel x:Name="SectionQuickActionsHost"
+                     Orientation="Horizontal" />
         </Border>
       </Grid>
       </Border>

@@ -10,6 +10,9 @@ from typing import Any
 
 
 PASSING_STATUSES = {"pass", "passed", "ready"}
+NATIVE_WINDOWS_EXECUTION_ENVIRONMENT = "native_windows"
+WINDOWS_COMPATIBILITY_EXECUTION_ENVIRONMENTS = {"wine_compatibility", "windows_compatibility"}
+NATIVE_WINDOWS_REQUIRED_CHANNELS = {"stable", "public_stable"}
 BOOTSTRAP_PROGRESS_FAILURE_MARKERS = (
     "Payload download failed:",
     "Bundled curl download failed",
@@ -22,6 +25,94 @@ BOOTSTRAP_PROGRESS_FAILURE_MARKERS = (
 
 def norm(value: Any) -> str:
     return str(value or "").strip().lower()
+
+
+def native_windows_proof_required(
+    release_payload: dict[str, Any],
+    *,
+    release_channel: str,
+    explicit_requirement: bool,
+) -> bool:
+    if explicit_requirement or release_channel in NATIVE_WINDOWS_REQUIRED_CHANNELS:
+        return True
+    if release_payload.get("requireNativeWindowsStartupProof") is True:
+        return True
+    return norm(release_payload.get("windowsStartupProofPolicy")) == "native_required"
+
+
+def validate_windows_execution_evidence(
+    receipt: dict[str, Any],
+    *,
+    receipt_name: str,
+    require_native_windows: bool,
+) -> list[str]:
+    errors: list[str] = []
+    execution_environment = norm(receipt.get("executionEnvironment"))
+    evidence = receipt.get("nativeHostEvidence")
+
+    if execution_environment not in {
+        NATIVE_WINDOWS_EXECUTION_ENVIRONMENT,
+        *WINDOWS_COMPATIBILITY_EXECUTION_ENVIRONMENTS,
+    }:
+        errors.append(
+            f"Windows installer startup-smoke receipt executionEnvironment is missing or unsupported: {receipt_name}"
+        )
+        return errors
+    if not isinstance(evidence, dict):
+        errors.append(
+            f"Windows installer startup-smoke receipt nativeHostEvidence is missing or invalid: {receipt_name}"
+        )
+        return errors
+
+    contract_name = str(evidence.get("contractName") or "").strip()
+    evidence_status = norm(evidence.get("status"))
+    is_native_windows = evidence.get("isNativeWindows")
+    host_platform = norm(evidence.get("hostPlatform"))
+    host_kernel = norm(evidence.get("hostKernel"))
+    runner = norm(evidence.get("runner"))
+    evidence_source = norm(evidence.get("evidenceSource"))
+
+    if contract_name != "chummer6-ui.native_windows_host_evidence":
+        errors.append(f"Windows installer startup-smoke receipt nativeHostEvidence contract is invalid: {receipt_name}")
+    if not isinstance(is_native_windows, bool):
+        errors.append(
+            f"Windows installer startup-smoke receipt nativeHostEvidence.isNativeWindows must be boolean: {receipt_name}"
+        )
+    if not host_platform:
+        errors.append(f"Windows installer startup-smoke receipt nativeHostEvidence hostPlatform is missing: {receipt_name}")
+    if not host_kernel:
+        errors.append(f"Windows installer startup-smoke receipt nativeHostEvidence hostKernel is missing: {receipt_name}")
+    if not runner:
+        errors.append(f"Windows installer startup-smoke receipt nativeHostEvidence runner is missing: {receipt_name}")
+    if not evidence_source:
+        errors.append(
+            f"Windows installer startup-smoke receipt nativeHostEvidence evidenceSource is missing: {receipt_name}"
+        )
+
+    if execution_environment == NATIVE_WINDOWS_EXECUTION_ENVIRONMENT:
+        if evidence_status != "verified" or is_native_windows is not True or host_platform != "windows":
+            errors.append(
+                f"Windows installer startup-smoke receipt native Windows evidence is internally inconsistent: {receipt_name}"
+            )
+        if "wine" in runner:
+            errors.append(f"Windows installer startup-smoke receipt cannot classify Wine as native Windows: {receipt_name}")
+        if not any(token in host_kernel for token in ("mingw", "msys", "cygwin", "windows")):
+            errors.append(
+                f"Windows installer startup-smoke receipt native Windows evidence has a non-Windows host kernel: {receipt_name}"
+            )
+    else:
+        if evidence_status != "not_native" or is_native_windows is not False:
+            errors.append(
+                f"Windows installer startup-smoke receipt compatibility evidence is internally inconsistent: {receipt_name}"
+            )
+        if execution_environment == "wine_compatibility" and "wine" not in runner:
+            errors.append(f"Windows installer startup-smoke receipt Wine evidence has a non-Wine runner: {receipt_name}")
+
+    if require_native_windows and execution_environment != NATIVE_WINDOWS_EXECUTION_ENVIRONMENT:
+        errors.append(
+            f"Native Windows startup proof is required; compatibility execution cannot satisfy this release: {receipt_name}"
+        )
+    return errors
 
 
 def parse_int(value: Any) -> int:
@@ -66,6 +157,55 @@ def windows_path_file_name(value: str) -> str:
     return normalized.rsplit("\\", 1)[-1].lower()
 
 
+def expected_payload_acquisition_mode(row: dict[str, Any]) -> str:
+    return norm(row.get("payloadAcquisitionMode")) or "download"
+
+
+def startup_smoke_search_roots(
+    *,
+    release_channel_manifest: Path,
+    startup_smoke_dir: Path,
+) -> list[Path]:
+    roots: list[Path] = [startup_smoke_dir]
+    for source_path in (startup_smoke_dir, release_channel_manifest):
+        roots.extend(list(source_path.parents[:5]))
+
+    candidate_paths: list[Path] = []
+    for root in roots:
+        candidate_paths.append(root / "startup-smoke")
+        candidate_paths.append(root / ".codex-studio" / "published" / "startup-smoke")
+        candidate_paths.append(root / "Docker" / "Downloads" / "startup-smoke")
+        candidate_paths.append(root / "Chummer.Portal" / "downloads" / "startup-smoke")
+
+    ordered: list[Path] = []
+    seen: set[Path] = set()
+    for candidate in candidate_paths:
+        resolved = candidate.resolve(strict=False)
+        if resolved in seen or not resolved.is_dir():
+            continue
+        seen.add(resolved)
+        ordered.append(resolved)
+    return ordered
+
+
+def resolve_windows_progress_log(
+    *,
+    release_channel_manifest: Path,
+    startup_smoke_dir: Path,
+    head: str,
+    rid: str,
+) -> Path:
+    progress_log_name = f"windows-installer-progress-{head}-{rid}.log"
+    for root in startup_smoke_search_roots(
+        release_channel_manifest=release_channel_manifest,
+        startup_smoke_dir=startup_smoke_dir,
+    ):
+        candidate = root / progress_log_name
+        if candidate.is_file():
+            return candidate
+    return startup_smoke_dir / progress_log_name
+
+
 def receipt_matches_current_release(receipt: dict[str, Any], *, release_version: str, release_channel: str) -> bool:
     receipt_version = str(receipt.get("releaseVersion") or receipt.get("version") or "").strip()
     receipt_channel = norm(receipt.get("channelId") or receipt.get("channel"))
@@ -86,7 +226,11 @@ def find_row(rows: list[dict[str, Any]], *, head: str, rid: str, platform: str, 
         row_platform = norm(row.get("platform"))
         row_platform_id = norm(row.get("platformId"))
         if row_platform_id:
-            if row_platform_id != normalized_platform:
+            accepted_platform_ids = {
+                normalized_platform,
+                f"{normalized_platform}-{normalized_arch}",
+            }
+            if row_platform_id not in accepted_platform_ids:
                 continue
         elif row_platform != normalized_platform:
             continue
@@ -110,6 +254,7 @@ def verify(
     startup_smoke_dir: Path,
     files_dir: Path,
     downloads_manifest: Path | None = None,
+    require_native_windows: bool = False,
 ) -> dict[str, Any]:
     payload = load_json(release_channel_manifest)
     downloads_payload = load_json(downloads_manifest) if downloads_manifest and downloads_manifest.is_file() else {}
@@ -120,6 +265,11 @@ def verify(
 
     release_version = str(payload.get("version") or payload.get("releaseVersion") or "").strip()
     release_channel = norm(payload.get("channelId") or payload.get("channel"))
+    native_windows_required = native_windows_proof_required(
+        payload,
+        release_channel=release_channel,
+        explicit_requirement=require_native_windows,
+    )
 
     for artifact in artifact_rows:
         if norm(artifact.get("platform")) != "windows":
@@ -146,6 +296,13 @@ def verify(
         status = norm(receipt.get("status"))
         if status not in PASSING_STATUSES:
             errors.append(f"Windows installer startup-smoke receipt is not passing: {receipt_path.name} status={status or 'missing'}")
+        errors.extend(
+            validate_windows_execution_evidence(
+                receipt,
+                receipt_name=receipt_path.name,
+                require_native_windows=native_windows_required,
+            )
+        )
         if norm(receipt.get("readyCheckpoint")) != "pre_ui_event_loop":
             errors.append(f"Windows installer startup-smoke receipt did not reach pre_ui_event_loop: {receipt_path.name}")
         if norm(receipt.get("headId")) != head:
@@ -163,22 +320,40 @@ def verify(
             errors.append(f"Windows installer startup-smoke receipt artifactDigest mismatch: {receipt_path.name}")
         if norm(artifact.get("installerMode")) == "bootstrap":
             payload_file_name = str(artifact.get("payloadFileName") or "").strip()
-            progress_log_path = startup_smoke_dir / f"windows-installer-progress-{head}-{rid}.log"
+            expected_acquisition_mode = expected_payload_acquisition_mode(artifact)
+            if expected_acquisition_mode not in {"download", "embedded"}:
+                errors.append(
+                    f"Windows bootstrap installer manifest payloadAcquisitionMode is unsupported: {expected_acquisition_mode}"
+                )
+            progress_log_path = resolve_windows_progress_log(
+                release_channel_manifest=release_channel_manifest,
+                startup_smoke_dir=startup_smoke_dir,
+                head=head,
+                rid=rid,
+            )
             if not progress_log_path.is_file():
                 errors.append(
                     f"Windows bootstrap installer startup-smoke progress log is missing: {progress_log_path.name}"
                 )
             else:
                 progress_text = load_text(progress_log_path)
-                required_markers = (
+                required_markers = [
                     "Bootstrap temp root:",
-                    "Payload download target:",
-                    "Downloading application files",
                     "Verifying payload size",
                     "Verifying payload checksum",
                     "Extracting application files",
                     "Install complete",
-                )
+                ]
+                if expected_acquisition_mode == "embedded":
+                    required_markers.extend(
+                        (
+                            "Payload acquisition mode: embedded",
+                            "Payload acquisition target:",
+                            "Using embedded payload",
+                        )
+                    )
+                else:
+                    required_markers.extend(("Payload download target:", "Downloading application files"))
                 for marker in required_markers:
                     if marker not in progress_text:
                         errors.append(
@@ -189,25 +364,31 @@ def verify(
                         errors.append(
                             f"Windows bootstrap installer startup-smoke progress log contains failure marker '{marker}': {progress_log_path.name}"
                         )
-                progress_metric_lines = [
-                    line.strip()
-                    for line in progress_text.splitlines()
-                    if line.strip().startswith("Downloading application files -")
-                ]
-                if not progress_metric_lines:
-                    errors.append(
-                        f"Windows bootstrap installer startup-smoke progress log is missing live download detail lines: {progress_log_path.name}"
-                    )
-                elif not any("%" in line and "/s" in line for line in progress_metric_lines):
-                    errors.append(
-                        f"Windows bootstrap installer startup-smoke progress log is missing a percent-and-speed download line: {progress_log_path.name}"
-                    )
+                if expected_acquisition_mode == "download":
+                    progress_metric_lines = [
+                        line.strip()
+                        for line in progress_text.splitlines()
+                        if line.strip().startswith("Downloading application files -")
+                    ]
+                    if not progress_metric_lines:
+                        errors.append(
+                            f"Windows bootstrap installer startup-smoke progress log is missing live download detail lines: {progress_log_path.name}"
+                        )
+                    elif not any("%" in line and "/s" in line for line in progress_metric_lines):
+                        errors.append(
+                            f"Windows bootstrap installer startup-smoke progress log is missing a percent-and-speed download line: {progress_log_path.name}"
+                        )
                 bootstrap_temp_root = extract_prefixed_line(progress_text, "Bootstrap temp root:")
                 if not bootstrap_temp_root:
                     errors.append(
                         f"Windows bootstrap installer startup-smoke progress log is missing the bootstrap temp root value: {progress_log_path.name}"
                     )
-                payload_target = extract_prefixed_line(progress_text, "Payload download target:")
+                payload_target_prefix = (
+                    "Payload acquisition target:"
+                    if expected_acquisition_mode == "embedded"
+                    else "Payload download target:"
+                )
+                payload_target = extract_prefixed_line(progress_text, payload_target_prefix)
                 if not payload_target:
                     errors.append(
                         f"Windows bootstrap installer startup-smoke progress log is missing the payload target value: {progress_log_path.name}"
@@ -229,9 +410,10 @@ def verify(
                         errors.append(
                             f"Windows bootstrap installer startup-smoke progress log payload target file name does not match release metadata: {progress_log_path.name}"
                         )
-            if norm(receipt.get("bootstrapPayloadAcquisitionMode")) != "download":
+            if norm(receipt.get("bootstrapPayloadAcquisitionMode")) != expected_acquisition_mode:
                 errors.append(
-                    f"Windows bootstrap installer startup-smoke receipt did not exercise payload download mode: {receipt_path.name}"
+                    "Windows bootstrap installer startup-smoke receipt did not exercise expected payload "
+                    f"acquisition mode {expected_acquisition_mode}: {receipt_path.name}"
                 )
             if payload_file_name and norm(receipt.get("bootstrapPayloadFileName")) != norm(payload_file_name):
                 errors.append(
@@ -255,6 +437,12 @@ def verify(
                 "receipt": str(receipt_path),
                 "progressLog": str(startup_smoke_dir / f"windows-installer-progress-{head}-{rid}.log"),
                 "installerMode": norm(artifact.get("installerMode")),
+                "payloadAcquisitionMode": (
+                    expected_payload_acquisition_mode(artifact)
+                    if norm(artifact.get("installerMode")) == "bootstrap"
+                    else ""
+                ),
+                "executionEnvironment": norm(receipt.get("executionEnvironment")),
             }
         )
 
@@ -311,9 +499,11 @@ def verify(
             continue
         reference_row = manifest_row or downloads_row
         if reference_row is not None and norm(reference_row.get("installerMode")) == "bootstrap":
-            if norm(receipt.get("bootstrapPayloadAcquisitionMode")) != "download":
+            expected_acquisition_mode = expected_payload_acquisition_mode(reference_row)
+            if norm(receipt.get("bootstrapPayloadAcquisitionMode")) != expected_acquisition_mode:
                 errors.append(
-                    f"Windows installer startup-smoke receipt exists for the current release but did not prove bootstrap payload download mode: {receipt_path.name}"
+                    "Windows installer startup-smoke receipt exists for the current release but did not prove "
+                    f"bootstrap payload acquisition mode {expected_acquisition_mode}: {receipt_path.name}"
                 )
 
     return {
@@ -322,6 +512,7 @@ def verify(
         "checkedArtifacts": results,
         "releaseVersion": release_version,
         "releaseChannel": release_channel,
+        "nativeWindowsRequired": native_windows_required,
         "releaseChannelManifest": str(release_channel_manifest),
         "downloadsManifest": str(downloads_manifest) if downloads_manifest else "",
         "filesDir": str(files_dir),
@@ -335,6 +526,11 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--startup-smoke-dir", required=True, type=Path)
     parser.add_argument("--files-dir", required=True, type=Path)
     parser.add_argument("--downloads-manifest", type=Path, default=None)
+    parser.add_argument(
+        "--require-native-windows",
+        action="store_true",
+        help="Require native Windows execution evidence even for a preview/nightly manifest.",
+    )
     parser.add_argument("--output", type=Path, default=None)
     return parser.parse_args()
 
@@ -346,6 +542,7 @@ def main() -> int:
         startup_smoke_dir=args.startup_smoke_dir,
         files_dir=args.files_dir,
         downloads_manifest=args.downloads_manifest,
+        require_native_windows=args.require_native_windows,
     )
     if args.output is not None:
         args.output.write_text(json.dumps(payload, indent=2) + "\n", encoding="utf-8")

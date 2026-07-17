@@ -103,6 +103,24 @@ public sealed class DesktopShellRulesetCatalogTests
         }
     }
 
+    [TestMethod]
+    public void Blazor_desktop_shell_keeps_menu_chrome_above_active_dialog_backdrop()
+    {
+        string shellPath = SourcePath("Chummer.Blazor", "Components", "Layout", "DesktopShell.razor");
+        string cssPath = SourcePath("Chummer.Blazor", "wwwroot", "app.css");
+
+        string shellText = File.ReadAllText(shellPath);
+        string cssText = File.ReadAllText(cssPath);
+
+        StringAssert.Contains(shellText, "desktop-shell--dialog-open");
+        StringAssert.Contains(cssText, ".desktop-shell--dialog-open .menu-shell");
+        StringAssert.Contains(cssText, ".desktop-shell--dialog-open .tool-strip");
+        StringAssert.Contains(cssText, ".desktop-shell--dialog-open .menu-dropdown");
+        StringAssert.Contains(cssText, "z-index: 1002;");
+        StringAssert.Contains(cssText, "z-index: 1001;");
+        StringAssert.Contains(cssText, "z-index: 1003;");
+    }
+
     private static bool ContainsBlockedTerm(string value, string blockedFragment)
     {
         if (string.IsNullOrWhiteSpace(value) || string.IsNullOrWhiteSpace(blockedFragment))
@@ -117,7 +135,7 @@ public sealed class DesktopShellRulesetCatalogTests
     [DataTestMethod]
     [DataRow(RulesetDefaults.Sr4, "SR4 Characters", "Import SR4 Character File", "SR4 Import Summary", "SR4 Import Tools")]
     [DataRow(RulesetDefaults.Sr5, "SR5 Characters", "Import SR5 Character File", "SR5 Editor Result", "SR5 Editor Commands")]
-    [DataRow(RulesetDefaults.Sr6, "SR6 Characters", "Import SR6 Character File", "SR6 Editor Result", "SR6 Editor Commands")]
+    [DataRow(RulesetDefaults.Sr6, "SR6 Characters", "Import SR6 Character File", "SR6 Character Summary", "SR6 Character Commands")]
     public void DesktopShell_renders_ruleset_specific_flagship_posture_for_each_supported_lane(
         string rulesetId,
         string expectedDossiers,
@@ -285,8 +303,9 @@ public sealed class DesktopShellRulesetCatalogTests
             Assert.IsFalse(cut.Markup.Contains("data-testid=\"desktop-flagship-marquee\"", StringComparison.Ordinal));
             Assert.IsFalse(cut.Markup.Contains("Starter and beta desk", StringComparison.Ordinal));
             Assert.IsFalse(cut.Markup.Contains("Shadowrun 6 guided starter cockpit", StringComparison.Ordinal));
+            Assert.IsFalse(cut.Markup.Contains("SR6 home cockpit foregrounds starter kits", StringComparison.Ordinal));
             StringAssert.Contains(cut.Markup, "SR6 Characters");
-            StringAssert.Contains(cut.Markup, "SR6 Editor Tabs");
+            StringAssert.Contains(cut.Markup, "SR6 Character Tabs");
         });
     }
 
@@ -512,54 +531,6 @@ public sealed class DesktopShellRulesetCatalogTests
             Assert.AreEqual(1, cut.FindAll(".mdi-strip").Count, "Multi-workspace posture must restore the MDI workspace strip.");
             StringAssert.Contains(cut.Find(".workspace-layout").ClassName, "workspace-layout--with-left-pane");
             StringAssert.Contains(cut.Markup, "SR5 Characters");
-        });
-    }
-
-    [TestMethod]
-    public void DesktopShell_uses_dossier_navigation_copy_for_skip_link_and_readiness_summary()
-    {
-        using var context = new BunitContext();
-        context.JSInterop.Mode = JSRuntimeMode.Loose;
-
-        CharacterWorkspaceId workspaceId = new("ws-sr5");
-        OpenWorkspaceState openWorkspace = new(
-            Id: workspaceId,
-            Name: "SR5 Runner",
-            Alias: "SR5",
-            LastOpenedUtc: DateTimeOffset.UtcNow,
-            RulesetId: RulesetDefaults.Sr5,
-            HasSavedWorkspace: true);
-        CharacterOverviewState overviewState = CharacterOverviewState.Empty with
-        {
-            Session = new WorkspaceSessionState(workspaceId, [openWorkspace], [workspaceId]),
-            OpenWorkspaces = [openWorkspace],
-            WorkspaceId = workspaceId,
-            ActiveTabId = "tab-info",
-            IsBusy = false
-        };
-        ShellState shellState = CreateShellState(
-            workspaceId,
-            openWorkspace,
-            RulesetDefaults.Sr5,
-            runtimeTitle: "SR5 Core",
-            runtimeFingerprint: "sr5-runtime-fp-shell-copy");
-
-        RegisterDesktopShellServices(
-            context,
-            overviewState,
-            shellState,
-            FakeWorkbenchCoachApiClient.CreateDefault("sr5-runtime-fp-shell-copy"),
-            new CatalogOnlyRulesetPlugin(RulesetDefaults.Sr5));
-
-        IRenderedComponent<DesktopShell> cut = context.Render<DesktopShell>();
-
-        cut.WaitForAssertion(() =>
-        {
-            Assert.AreEqual("Skip to dossier", cut.Find(".skip-link").TextContent.Trim());
-            Assert.AreEqual("Dossier", cut.Find(".desktop-shell-title h1").TextContent.Trim());
-            StringAssert.Contains(cut.Find(".desktop-shell-readiness").TextContent, "Dossiers");
-            StringAssert.Contains(cut.Find(".desktop-shell-readiness").TextContent, "1 open");
-            Assert.IsFalse(cut.Find(".desktop-shell-readiness").TextContent.Contains("Runners", StringComparison.Ordinal));
         });
     }
 

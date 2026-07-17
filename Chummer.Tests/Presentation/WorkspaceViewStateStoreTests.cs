@@ -15,8 +15,26 @@ public class WorkspaceViewStateStoreTests
     {
         var store = new WorkspaceViewStateStore();
         var workspaceId = new CharacterWorkspaceId("ws-a");
+        var conflict = new WorkspaceConflictState(
+            "save",
+            ExpectedContentRevision: 7,
+            ActualContentRevision: 8,
+            Message: "A newer revision won.");
+        var openWorkspace = new OpenWorkspaceState(
+            workspaceId,
+            "Runner",
+            "RUN",
+            DateTimeOffset.UtcNow,
+            "sr5",
+            ContentRevision: 7,
+            SavedRevision: 6,
+            ConflictState: conflict);
+        var session = new WorkspaceSessionState(workspaceId, [openWorkspace], [workspaceId]);
         var state = CharacterOverviewState.Empty with
         {
+            Session = session,
+            WorkspaceId = workspaceId,
+            OpenWorkspaces = session.OpenWorkspaces,
             ActiveTabId = "tab-skills",
             ActiveActionId = "tab-skills.skills",
             ActiveSectionId = "skills",
@@ -94,8 +112,7 @@ public class WorkspaceViewStateStoreTests
                 ActiveResultIndex: 0,
                 ActiveResultItemId: "armor-jacket",
                 QueryOffset: 150,
-                QueryLimit: 50),
-            HasSavedWorkspace = true
+                QueryLimit: 50)
         };
 
         store.Capture(workspaceId, state);
@@ -121,6 +138,10 @@ public class WorkspaceViewStateStoreTests
         Assert.AreEqual(150, restored.ActiveBrowseWorkspace.QueryOffset);
         Assert.AreEqual(50, restored.ActiveBrowseWorkspace.QueryLimit);
         Assert.IsTrue(restored.HasSavedWorkspace);
+        Assert.AreEqual(7L, restored.ContentRevision);
+        Assert.AreEqual(6L, restored.SavedRevision);
+        Assert.IsTrue(restored.IsDirty);
+        Assert.AreEqual("save", restored.ConflictState?.Operation);
     }
 
     [TestMethod]

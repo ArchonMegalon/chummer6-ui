@@ -8,6 +8,8 @@
       <ResourceDictionary.ThemeDictionaries>
         <ResourceDictionary x:Key="Light">
           <SolidColorBrush x:Key="ChummerShellWindowBackgroundBrush" Color="#E3EAF3" />
+          <SolidColorBrush x:Key="ChummerShellHardBackdropBrush" Color="#E3EAF3" />
+          <SolidColorBrush x:Key="ChummerShellHardPanelBrush" Color="#FBFCFE" />
           <SolidColorBrush x:Key="ChummerShellForegroundBrush" Color="#111827" />
           <SolidColorBrush x:Key="ChummerShellMutedForegroundBrush" Color="#334155" />
           <SolidColorBrush x:Key="ChummerShellTextMutedBrush" Color="#475569" />
@@ -75,7 +77,10 @@
           <SolidColorBrush x:Key="ComboBoxBorderBrushPressed" Color="#1C4A2D" />
           <SolidColorBrush x:Key="ComboBoxBorderBrushDisabled" Color="#CBD5E1" />
           <SolidColorBrush x:Key="ComboBoxDropDownBackground" Color="#FBFCFE" />
+          <SolidColorBrush x:Key="ComboBoxDropDownForeground" Color="#111827" />
           <SolidColorBrush x:Key="ComboBoxDropDownBorderBrush" Color="#B5C0CF" />
+          <SolidColorBrush x:Key="ListBoxBackground" Color="#FBFCFE" />
+          <SolidColorBrush x:Key="ListBoxForeground" Color="#111827" />
           <SolidColorBrush x:Key="ComboBoxItemBackground" Color="#FBFCFE" />
           <SolidColorBrush x:Key="ComboBoxItemBackgroundPointerOver" Color="#F5F8FC" />
           <SolidColorBrush x:Key="ComboBoxItemBackgroundPressed" Color="#EEF3F8" />
@@ -86,6 +91,16 @@
           <SolidColorBrush x:Key="ComboBoxItemForegroundPressed" Color="#111827" />
           <SolidColorBrush x:Key="ComboBoxItemForegroundSelected" Color="#FFFFFF" />
           <SolidColorBrush x:Key="ComboBoxItemForegroundDisabled" Color="#475569" />
+          <SolidColorBrush x:Key="ListBoxItemBackground" Color="#FBFCFE" />
+          <SolidColorBrush x:Key="ListBoxItemBackgroundPointerOver" Color="#F5F8FC" />
+          <SolidColorBrush x:Key="ListBoxItemBackgroundSelected" Color="#2C5FB8" />
+          <SolidColorBrush x:Key="ListBoxItemBackgroundDisabled" Color="#EEF3F8" />
+          <SolidColorBrush x:Key="ListBoxItemForeground" Color="#111827" />
+          <SolidColorBrush x:Key="ListBoxItemForegroundPointerOver" Color="#111827" />
+          <SolidColorBrush x:Key="ListBoxItemForegroundSelected" Color="#FFFFFF" />
+          <SolidColorBrush x:Key="ListBoxItemForegroundDisabled" Color="#475569" />
+          <SolidColorBrush x:Key="TreeViewBackground" Color="#FBFCFE" />
+          <SolidColorBrush x:Key="TreeViewForeground" Color="#111827" />
           <SolidColorBrush x:Key="FlyoutPresenterBackground" Color="#FBFCFE" />
           <SolidColorBrush x:Key="FlyoutPresenterForeground" Color="#111827" />
           <SolidColorBrush x:Key="FlyoutPresenterBorderBrush" Color="#B5C0CF" />
@@ -100,6 +115,7 @@
           <SolidColorBrush x:Key="MenuItemForegroundSelected" Color="#FFFFFF" />
           <SolidColorBrush x:Key="MenuItemForegroundDisabled" Color="#475569" />
           <SolidColorBrush x:Key="ChummerShellAccentButtonBrush" Color="#1C4A2D" />
+          <SolidColorBrush x:Key="ChummerShellAccentButtonHoverBrush" Color="#255E39" />
           <SolidColorBrush x:Key="ChummerShellAccentButtonForegroundBrush" Color="#FFFFFF" />
           <SolidColorBrush x:Key="ChummerShellInfoBrush" Color="#173A6C" />
           <SolidColorBrush x:Key="ChummerShellWarningBrush" Color="#9A6700" />
@@ -109,6 +125,8 @@
         </ResourceDictionary>
         <ResourceDictionary x:Key="Dark">
           <SolidColorBrush x:Key="ChummerShellWindowBackgroundBrush" Color="#050B16" />
+          <SolidColorBrush x:Key="ChummerShellHardBackdropBrush" Color="#050B16" />
+          <SolidColorBrush x:Key="ChummerShellHardPanelBrush" Color="#111827" />
           <SolidColorBrush x:Key="ChummerShellForegroundBrush" Color="#E5E7EB" />
           <SolidColorBrush x:Key="ChummerShellMutedForegroundBrush" Color="#D8E1EC" />
           <SolidColorBrush x:Key="ChummerShellTextMutedBrush" Color="#94A3B8" />
@@ -176,7 +194,10 @@
           <SolidColorBrush x:Key="ComboBoxBorderBrushPressed" Color="#90C39A" />
           <SolidColorBrush x:Key="ComboBoxBorderBrushDisabled" Color="#334155" />
           <SolidColorBrush x:Key="ComboBoxDropDownBackground" Color="#111827" />
+          <SolidColorBrush x:Key="ComboBoxDropDownForeground" Color="#E5E7EB" />
           <SolidColorBrush x:Key="ComboBoxDropDownBorderBrush" Color="#334155" />
+          <SolidColorBrush x:Key="ListBoxBackground" Color="#111827" />
+          <SolidColorBrush x:Key="ListBoxForeground" Color="#E5E7EB" />
           <SolidColorBrush x:Key="ComboBoxItemBackground" Color="#111827" />
           <SolidColorBrush x:Key="ComboBoxItemBackgroundPointerOver" Color="#223149" />
           <SolidColorBrush x:Key="ComboBoxItemBackgroundPressed" Color="#0F172A" />
@@ -187,6 +208,16 @@
           <SolidColorBrush x:Key="ComboBoxItemForegroundPressed" Color="#E5E7EB" />
           <SolidColorBrush x:Key="ComboBoxItemForegroundSelected" Color="#F8FAFC" />
           <SolidColorBrush x:Key="ComboBoxItemForegroundDisabled" Color="#94A3B8" />
+          <SolidColorBrush x:Key="ListBoxItemBackground" Color="#111827" />
+          <SolidColorBrush x:Key="ListBoxItemBackgroundPointerOver" Color="#223149" />
+          <SolidColorBrush x:Key="ListBoxItemBackgroundSelected" Color="#1D4ED8" />
+          <SolidColorBrush x:Key="ListBoxItemBackgroundDisabled" Color="#0F172A" />
+          <SolidColorBrush x:Key="ListBoxItemForeground" Color="#E5E7EB" />
+          <SolidColorBrush x:Key="ListBoxItemForegroundPointerOver" Color="#E5E7EB" />
+          <SolidColorBrush x:Key="ListBoxItemForegroundSelected" Color="#F8FAFC" />
+          <SolidColorBrush x:Key="ListBoxItemForegroundDisabled" Color="#94A3B8" />
+          <SolidColorBrush x:Key="TreeViewBackground" Color="#111827" />
+          <SolidColorBrush x:Key="TreeViewForeground" Color="#E5E7EB" />
           <SolidColorBrush x:Key="FlyoutPresenterBackground" Color="#111827" />
           <SolidColorBrush x:Key="FlyoutPresenterForeground" Color="#E5E7EB" />
           <SolidColorBrush x:Key="FlyoutPresenterBorderBrush" Color="#334155" />
@@ -201,6 +232,7 @@
           <SolidColorBrush x:Key="MenuItemForegroundSelected" Color="#F8FAFC" />
           <SolidColorBrush x:Key="MenuItemForegroundDisabled" Color="#94A3B8" />
           <SolidColorBrush x:Key="ChummerShellAccentButtonBrush" Color="#1C4A2D" />
+          <SolidColorBrush x:Key="ChummerShellAccentButtonHoverBrush" Color="#2F6F46" />
           <SolidColorBrush x:Key="ChummerShellAccentButtonForegroundBrush" Color="#FFFFFF" />
           <SolidColorBrush x:Key="ChummerShellInfoBrush" Color="#60A5FA" />
           <SolidColorBrush x:Key="ChummerShellWarningBrush" Color="#F59E0B" />
@@ -220,8 +252,16 @@
       <Setter Property="FontSize" Value="13" />
     </Style>
     <Style Selector="UserControl">
+      <Setter Property="Background" Value="{DynamicResource ChummerShellHardPanelBrush}" />
       <Setter Property="Foreground" Value="{DynamicResource ChummerShellForegroundBrush}" />
       <Setter Property="FontFamily" Value="Segoe UI,Verdana,Arial" />
+    </Style>
+    <Style Selector="ContentControl">
+      <Setter Property="Background" Value="{DynamicResource ChummerShellHardPanelBrush}" />
+      <Setter Property="Foreground" Value="{DynamicResource ChummerShellForegroundBrush}" />
+    </Style>
+    <Style Selector="ScrollViewer">
+      <Setter Property="Background" Value="{DynamicResource ChummerShellHardPanelBrush}" />
     </Style>
     <Style Selector="TextBlock">
       <Setter Property="Foreground" Value="{DynamicResource ChummerShellForegroundBrush}" />
@@ -328,8 +368,8 @@
       <Setter Property="BorderBrush" Value="{DynamicResource ChummerShellFocusRingBrush}" />
     </Style>
     <Style Selector="Button.menu-button">
-      <Setter Property="Background" Value="Transparent" />
-      <Setter Property="BorderBrush" Value="Transparent" />
+      <Setter Property="Background" Value="{DynamicResource ChummerShellMenuBarBrush}" />
+      <Setter Property="BorderBrush" Value="{DynamicResource ChummerShellMenuRootBorderBrush}" />
       <Setter Property="Padding" Value="9,4" />
       <Setter Property="MinHeight" Value="24" />
     </Style>
@@ -343,7 +383,7 @@
       <Setter Property="BorderBrush" Value="{DynamicResource ChummerShellAccentButtonBrush}" />
     </Style>
     <Style Selector="Button.shell-action.primary:pointerover">
-      <Setter Property="Background" Value="{DynamicResource ChummerShellActiveMenuBorderBrush}" />
+      <Setter Property="Background" Value="{DynamicResource ChummerShellAccentButtonHoverBrush}" />
       <Setter Property="BorderBrush" Value="{DynamicResource ChummerShellActiveMenuBorderBrush}" />
     </Style>
     <Style Selector="Button.shell-action.quiet">
@@ -361,9 +401,13 @@
       <Setter Property="Height" Value="16" />
     </Style>
     <Style Selector="TextBlock.tool-button-label">
+      <Setter Property="Foreground" Value="{DynamicResource ChummerShellForegroundBrush}" />
       <Setter Property="FontSize" Value="12" />
       <Setter Property="FontWeight" Value="SemiBold" />
       <Setter Property="TextWrapping" Value="NoWrap" />
+    </Style>
+    <Style Selector="TextBlock.tool-button-label.primary">
+      <Setter Property="Foreground" Value="{DynamicResource ChummerShellAccentButtonForegroundBrush}" />
     </Style>
     <Style Selector="FlyoutPresenter">
       <Setter Property="Background" Value="{DynamicResource FlyoutPresenterBackground}" />
@@ -379,6 +423,11 @@
       <Setter Property="Background" Value="{DynamicResource MenuFlyoutPresenterBackground}" />
       <Setter Property="Foreground" Value="{DynamicResource MenuFlyoutPresenterForeground}" />
       <Setter Property="BorderBrush" Value="{DynamicResource MenuFlyoutPresenterBorderBrush}" />
+    </Style>
+    <Style Selector="Menu">
+      <Setter Property="Background" Value="{DynamicResource ChummerShellMenuBarBrush}" />
+      <Setter Property="Foreground" Value="{DynamicResource ChummerShellForegroundBrush}" />
+      <Setter Property="BorderBrush" Value="{DynamicResource ChummerShellMenuRootBorderBrush}" />
     </Style>
     <Style Selector="Menu.classic-menu">
       <Setter Property="Background" Value="{DynamicResource ChummerShellMenuBarBrush}" />
@@ -488,17 +537,68 @@
       <Setter Property="Background" Value="{DynamicResource ChummerShellSurfaceBrush}" />
       <Setter Property="BorderBrush" Value="{DynamicResource ChummerShellActiveMenuBorderBrush}" />
     </Style>
-    <Style Selector="TreeView">
+    <Style Selector="TabControl">
       <Setter Property="Background" Value="{DynamicResource ChummerShellSurfaceBrush}" />
+      <Setter Property="Foreground" Value="{DynamicResource ChummerShellForegroundBrush}" />
+      <Setter Property="BorderBrush" Value="{DynamicResource ChummerShellBorderBrush}" />
+      <Setter Property="BorderThickness" Value="1" />
+    </Style>
+    <Style Selector="TabControl /template/ Border">
+      <Setter Property="Background" Value="{DynamicResource ChummerShellSurfaceBrush}" />
+      <Setter Property="BorderBrush" Value="{DynamicResource ChummerShellBorderBrush}" />
+    </Style>
+    <Style Selector="TabItem">
+      <Setter Property="Background" Value="{DynamicResource ChummerShellChromeSubtleBrush}" />
+      <Setter Property="Foreground" Value="{DynamicResource ChummerShellForegroundBrush}" />
+      <Setter Property="BorderBrush" Value="{DynamicResource ChummerShellBorderBrush}" />
+      <Setter Property="BorderThickness" Value="1" />
+      <Setter Property="Padding" Value="10,5" />
+      <Setter Property="MinHeight" Value="30" />
+    </Style>
+    <Style Selector="TabItem:pointerover">
+      <Setter Property="Background" Value="{DynamicResource ChummerShellSurfaceAltBrush}" />
+      <Setter Property="Foreground" Value="{DynamicResource ChummerShellForegroundBrush}" />
+      <Setter Property="BorderBrush" Value="{DynamicResource ChummerShellActiveMenuBorderBrush}" />
+    </Style>
+    <Style Selector="TabItem:selected">
+      <Setter Property="Background" Value="{DynamicResource ChummerShellSurfaceBrush}" />
+      <Setter Property="Foreground" Value="{DynamicResource ChummerShellForegroundBrush}" />
+      <Setter Property="BorderBrush" Value="{DynamicResource ChummerShellActiveMenuBorderBrush}" />
+    </Style>
+    <Style Selector="TabItem TextBlock">
+      <Setter Property="Foreground" Value="{DynamicResource ChummerShellForegroundBrush}" />
+    </Style>
+    <Style Selector="TabItem /template/ ContentPresenter">
+      <Setter Property="TextElement.Foreground" Value="{DynamicResource ChummerShellForegroundBrush}" />
+    </Style>
+    <Style Selector="TabItem:pointerover TextBlock">
+      <Setter Property="Foreground" Value="{DynamicResource ChummerShellForegroundBrush}" />
+    </Style>
+    <Style Selector="TabItem:pointerover /template/ ContentPresenter">
+      <Setter Property="TextElement.Foreground" Value="{DynamicResource ChummerShellForegroundBrush}" />
+    </Style>
+    <Style Selector="TabItem:selected TextBlock">
+      <Setter Property="Foreground" Value="{DynamicResource ChummerShellForegroundBrush}" />
+    </Style>
+    <Style Selector="TabItem:selected /template/ ContentPresenter">
+      <Setter Property="TextElement.Foreground" Value="{DynamicResource ChummerShellForegroundBrush}" />
+    </Style>
+    <Style Selector="TreeView">
+      <Setter Property="Background" Value="{DynamicResource TreeViewBackground}" />
+      <Setter Property="Foreground" Value="{DynamicResource TreeViewForeground}" />
       <Setter Property="BorderThickness" Value="0" />
+    </Style>
+    <Style Selector="TreeView /template/ Border">
+      <Setter Property="Background" Value="{DynamicResource TreeViewBackground}" />
+      <Setter Property="BorderBrush" Value="{DynamicResource ChummerShellBorderBrush}" />
     </Style>
     <Style Selector="TreeViewItem">
       <Setter Property="Padding" Value="2,1" />
-      <Setter Property="Foreground" Value="{DynamicResource ChummerShellForegroundBrush}" />
-      <Setter Property="Background" Value="Transparent" />
+      <Setter Property="Foreground" Value="{DynamicResource TreeViewForeground}" />
+      <Setter Property="Background" Value="{DynamicResource TreeViewBackground}" />
     </Style>
     <Style Selector="TreeViewItem:pointerover">
-      <Setter Property="Foreground" Value="{DynamicResource ChummerShellForegroundBrush}" />
+      <Setter Property="Foreground" Value="{DynamicResource TreeViewForeground}" />
       <Setter Property="Background" Value="{DynamicResource ChummerShellChromeSubtleBrush}" />
     </Style>
     <Style Selector="TreeViewItem:selected">
@@ -516,16 +616,16 @@
       <Setter Property="Background" Value="{DynamicResource ChummerShellSelectionBrush}" />
     </Style>
     <Style Selector="TreeViewItem TextBlock">
-      <Setter Property="Foreground" Value="{DynamicResource ChummerShellForegroundBrush}" />
+      <Setter Property="Foreground" Value="{DynamicResource TreeViewForeground}" />
     </Style>
     <Style Selector="TreeViewItem /template/ ContentPresenter">
-      <Setter Property="TextElement.Foreground" Value="{DynamicResource ChummerShellForegroundBrush}" />
+      <Setter Property="TextElement.Foreground" Value="{DynamicResource TreeViewForeground}" />
     </Style>
     <Style Selector="TreeViewItem:pointerover TextBlock">
-      <Setter Property="Foreground" Value="{DynamicResource ChummerShellForegroundBrush}" />
+      <Setter Property="Foreground" Value="{DynamicResource TreeViewForeground}" />
     </Style>
     <Style Selector="TreeViewItem:pointerover /template/ ContentPresenter">
-      <Setter Property="TextElement.Foreground" Value="{DynamicResource ChummerShellForegroundBrush}" />
+      <Setter Property="TextElement.Foreground" Value="{DynamicResource TreeViewForeground}" />
     </Style>
     <Style Selector="TreeViewItem:selected TextBlock">
       <Setter Property="Foreground" Value="{DynamicResource ChummerShellSelectionForegroundBrush}" />
@@ -540,88 +640,114 @@
       <Setter Property="TextElement.Foreground" Value="{DynamicResource ChummerShellSelectionForegroundBrush}" />
     </Style>
     <Style Selector="ListBox">
-      <Setter Property="Background" Value="{DynamicResource ChummerShellSurfaceBrush}" />
-      <Setter Property="Foreground" Value="{DynamicResource ChummerShellForegroundBrush}" />
+      <Setter Property="Background" Value="{DynamicResource ListBoxBackground}" />
+      <Setter Property="Foreground" Value="{DynamicResource ListBoxForeground}" />
       <Setter Property="BorderBrush" Value="{DynamicResource ChummerShellBorderBrush}" />
       <Setter Property="BorderThickness" Value="1" />
+    </Style>
+    <Style Selector="ListBox /template/ Border">
+      <Setter Property="Background" Value="{DynamicResource ListBoxBackground}" />
+      <Setter Property="BorderBrush" Value="{DynamicResource ChummerShellBorderBrush}" />
     </Style>
     <Style Selector="ListBoxItem">
       <Setter Property="Padding" Value="3,1" />
       <Setter Property="Margin" Value="0,0,0,2" />
-      <Setter Property="Foreground" Value="{DynamicResource ChummerShellForegroundBrush}" />
+      <Setter Property="Foreground" Value="{DynamicResource ListBoxItemForeground}" />
       <Setter Property="BorderBrush" Value="{DynamicResource ChummerShellBorderBrush}" />
       <Setter Property="BorderThickness" Value="1" />
       <Setter Property="CornerRadius" Value="6" />
-      <Setter Property="Background" Value="Transparent" />
+      <Setter Property="Background" Value="{DynamicResource ListBoxItemBackground}" />
     </Style>
     <Style Selector="ListBoxItem /template/ Border">
-      <Setter Property="Background" Value="Transparent" />
+      <Setter Property="Background" Value="{DynamicResource ListBoxItemBackground}" />
       <Setter Property="BorderBrush" Value="{DynamicResource ChummerShellBorderBrush}" />
     </Style>
     <Style Selector="ListBoxItem:pointerover">
       <Setter Property="BorderBrush" Value="{DynamicResource ChummerShellActiveMenuBorderBrush}" />
-      <Setter Property="Background" Value="{DynamicResource ChummerShellChromeSubtleBrush}" />
+      <Setter Property="Background" Value="{DynamicResource ListBoxItemBackgroundPointerOver}" />
+      <Setter Property="Foreground" Value="{DynamicResource ListBoxItemForegroundPointerOver}" />
     </Style>
     <Style Selector="ListBoxItem:pointerover /template/ Border">
-      <Setter Property="Background" Value="{DynamicResource ChummerShellChromeSubtleBrush}" />
+      <Setter Property="Background" Value="{DynamicResource ListBoxItemBackgroundPointerOver}" />
       <Setter Property="BorderBrush" Value="{DynamicResource ChummerShellActiveMenuBorderBrush}" />
     </Style>
+    <Style Selector="ListBoxItem:pointerover TextBlock">
+      <Setter Property="Foreground" Value="{DynamicResource ListBoxItemForegroundPointerOver}" />
+    </Style>
+    <Style Selector="ListBoxItem:pointerover /template/ ContentPresenter">
+      <Setter Property="TextElement.Foreground" Value="{DynamicResource ListBoxItemForegroundPointerOver}" />
+    </Style>
     <Style Selector="ListBoxItem:selected">
-      <Setter Property="Background" Value="{DynamicResource ChummerShellSelectionBrush}" />
-      <Setter Property="Foreground" Value="{DynamicResource ChummerShellSelectionForegroundBrush}" />
+      <Setter Property="Background" Value="{DynamicResource ListBoxItemBackgroundSelected}" />
+      <Setter Property="Foreground" Value="{DynamicResource ListBoxItemForegroundSelected}" />
       <Setter Property="BorderBrush" Value="{DynamicResource ChummerShellActiveMenuBorderBrush}" />
     </Style>
     <Style Selector="ListBoxItem:selected /template/ Border">
-      <Setter Property="Background" Value="{DynamicResource ChummerShellSelectionBrush}" />
+      <Setter Property="Background" Value="{DynamicResource ListBoxItemBackgroundSelected}" />
       <Setter Property="BorderBrush" Value="{DynamicResource ChummerShellActiveMenuBorderBrush}" />
     </Style>
     <Style Selector="ListBoxItem:selected:pointerover">
-      <Setter Property="Background" Value="{DynamicResource ChummerShellSelectionBrush}" />
-      <Setter Property="Foreground" Value="{DynamicResource ChummerShellSelectionForegroundBrush}" />
+      <Setter Property="Background" Value="{DynamicResource ListBoxItemBackgroundSelected}" />
+      <Setter Property="Foreground" Value="{DynamicResource ListBoxItemForegroundSelected}" />
       <Setter Property="BorderBrush" Value="{DynamicResource ChummerShellActiveMenuBorderBrush}" />
     </Style>
     <Style Selector="ListBoxItem:selected:pointerover /template/ Border">
-      <Setter Property="Background" Value="{DynamicResource ChummerShellSelectionBrush}" />
+      <Setter Property="Background" Value="{DynamicResource ListBoxItemBackgroundSelected}" />
       <Setter Property="BorderBrush" Value="{DynamicResource ChummerShellActiveMenuBorderBrush}" />
     </Style>
+    <Style Selector="ListBoxItem:disabled">
+      <Setter Property="Background" Value="{DynamicResource ListBoxItemBackgroundDisabled}" />
+      <Setter Property="Foreground" Value="{DynamicResource ListBoxItemForegroundDisabled}" />
+      <Setter Property="BorderBrush" Value="{DynamicResource ChummerShellBorderBrush}" />
+    </Style>
+    <Style Selector="ListBoxItem:disabled /template/ Border">
+      <Setter Property="Background" Value="{DynamicResource ListBoxItemBackgroundDisabled}" />
+      <Setter Property="BorderBrush" Value="{DynamicResource ChummerShellBorderBrush}" />
+    </Style>
     <Style Selector="ListBoxItem TextBlock">
-      <Setter Property="Foreground" Value="{DynamicResource ChummerShellForegroundBrush}" />
+      <Setter Property="Foreground" Value="{DynamicResource ListBoxItemForeground}" />
     </Style>
     <Style Selector="ListBoxItem /template/ ContentPresenter">
-      <Setter Property="TextElement.Foreground" Value="{DynamicResource ChummerShellForegroundBrush}" />
+      <Setter Property="TextElement.Foreground" Value="{DynamicResource ListBoxItemForeground}" />
     </Style>
     <Style Selector="ListBoxItem:selected TextBlock">
-      <Setter Property="Foreground" Value="{DynamicResource ChummerShellSelectionForegroundBrush}" />
+      <Setter Property="Foreground" Value="{DynamicResource ListBoxItemForegroundSelected}" />
     </Style>
     <Style Selector="ListBoxItem:selected /template/ ContentPresenter">
-      <Setter Property="TextElement.Foreground" Value="{DynamicResource ChummerShellSelectionForegroundBrush}" />
+      <Setter Property="TextElement.Foreground" Value="{DynamicResource ListBoxItemForegroundSelected}" />
     </Style>
     <Style Selector="ListBoxItem:selected TextBlock.shell-caption">
-      <Setter Property="Foreground" Value="{DynamicResource ChummerShellSelectionForegroundBrush}" />
+      <Setter Property="Foreground" Value="{DynamicResource ListBoxItemForegroundSelected}" />
     </Style>
     <Style Selector="ListBoxItem:selected TextBlock.shell-option-label">
-      <Setter Property="Foreground" Value="{DynamicResource ChummerShellSelectionForegroundBrush}" />
+      <Setter Property="Foreground" Value="{DynamicResource ListBoxItemForegroundSelected}" />
     </Style>
     <Style Selector="ListBoxItem:selected TextBlock.shell-option-meta">
-      <Setter Property="Foreground" Value="{DynamicResource ChummerShellSelectionForegroundBrush}" />
+      <Setter Property="Foreground" Value="{DynamicResource ListBoxItemForegroundSelected}" />
     </Style>
     <Style Selector="ListBoxItem:pointerover TextBlock.shell-option-label">
-      <Setter Property="Foreground" Value="{DynamicResource ChummerShellForegroundBrush}" />
+      <Setter Property="Foreground" Value="{DynamicResource ListBoxItemForegroundPointerOver}" />
     </Style>
     <Style Selector="ListBoxItem:pointerover TextBlock.shell-option-meta">
-      <Setter Property="Foreground" Value="{DynamicResource ChummerShellForegroundBrush}" />
+      <Setter Property="Foreground" Value="{DynamicResource ListBoxItemForegroundPointerOver}" />
     </Style>
     <Style Selector="ListBoxItem:selected:pointerover TextBlock">
-      <Setter Property="Foreground" Value="{DynamicResource ChummerShellSelectionForegroundBrush}" />
+      <Setter Property="Foreground" Value="{DynamicResource ListBoxItemForegroundSelected}" />
     </Style>
     <Style Selector="ListBoxItem:selected:pointerover /template/ ContentPresenter">
-      <Setter Property="TextElement.Foreground" Value="{DynamicResource ChummerShellSelectionForegroundBrush}" />
+      <Setter Property="TextElement.Foreground" Value="{DynamicResource ListBoxItemForegroundSelected}" />
+    </Style>
+    <Style Selector="ListBoxItem:disabled TextBlock">
+      <Setter Property="Foreground" Value="{DynamicResource ListBoxItemForegroundDisabled}" />
+    </Style>
+    <Style Selector="ListBoxItem:disabled /template/ ContentPresenter">
+      <Setter Property="TextElement.Foreground" Value="{DynamicResource ListBoxItemForegroundDisabled}" />
     </Style>
     <Style Selector="ListBoxItem:selected:pointerover TextBlock.shell-option-label">
-      <Setter Property="Foreground" Value="{DynamicResource ChummerShellSelectionForegroundBrush}" />
+      <Setter Property="Foreground" Value="{DynamicResource ListBoxItemForegroundSelected}" />
     </Style>
     <Style Selector="ListBoxItem:selected:pointerover TextBlock.shell-option-meta">
-      <Setter Property="Foreground" Value="{DynamicResource ChummerShellSelectionForegroundBrush}" />
+      <Setter Property="Foreground" Value="{DynamicResource ListBoxItemForegroundSelected}" />
     </Style>
     <Style Selector="ComboBox">
       <Setter Property="MinHeight" Value="30" />
@@ -906,6 +1032,14 @@
       <Setter Property="SelectionBrush" Value="{DynamicResource ChummerShellSelectionBrush}" />
       <Setter Property="SelectionForegroundBrush" Value="{DynamicResource TextControlSelectionForeground}" />
     </Style>
+    <Style Selector="TextBox.shell-readonly-input">
+      <Setter Property="Background" Value="{DynamicResource ChummerShellSurfaceBrush}" />
+      <Setter Property="Foreground" Value="{DynamicResource ChummerShellForegroundBrush}" />
+      <Setter Property="BorderBrush" Value="{DynamicResource ChummerShellBorderBrush}" />
+      <Setter Property="CaretBrush" Value="{DynamicResource ChummerShellForegroundBrush}" />
+      <Setter Property="SelectionBrush" Value="{DynamicResource ChummerShellSelectionBrush}" />
+      <Setter Property="SelectionForegroundBrush" Value="{DynamicResource ChummerShellSelectionForegroundBrush}" />
+    </Style>
     <Style Selector="TextBox:pointerover">
       <Setter Property="BorderBrush" Value="{DynamicResource TextControlBorderBrushPointerOver}" />
       <Setter Property="Background" Value="{DynamicResource TextControlBackgroundPointerOver}" />
@@ -915,6 +1049,11 @@
       <Setter Property="BorderBrush" Value="{DynamicResource TextControlBorderBrushPointerOver}" />
       <Setter Property="Background" Value="{DynamicResource TextControlBackgroundPointerOver}" />
       <Setter Property="Foreground" Value="{DynamicResource TextControlForegroundPointerOver}" />
+    </Style>
+    <Style Selector="TextBox.shell-readonly-input:pointerover">
+      <Setter Property="BorderBrush" Value="{DynamicResource ChummerShellActiveMenuBorderBrush}" />
+      <Setter Property="Background" Value="{DynamicResource ChummerShellSurfaceBrush}" />
+      <Setter Property="Foreground" Value="{DynamicResource ChummerShellForegroundBrush}" />
     </Style>
     <Style Selector="TextBox:focus">
       <Setter Property="BorderBrush" Value="{DynamicResource TextControlBorderBrushFocused}" />
@@ -926,6 +1065,11 @@
       <Setter Property="Background" Value="{DynamicResource TextControlBackgroundFocused}" />
       <Setter Property="Foreground" Value="{DynamicResource TextControlForegroundFocused}" />
     </Style>
+    <Style Selector="TextBox.shell-readonly-input:focus">
+      <Setter Property="BorderBrush" Value="{DynamicResource ChummerShellActiveMenuBorderBrush}" />
+      <Setter Property="Background" Value="{DynamicResource ChummerShellSurfaceBrush}" />
+      <Setter Property="Foreground" Value="{DynamicResource ChummerShellForegroundBrush}" />
+    </Style>
     <Style Selector="TextBox:disabled">
       <Setter Property="Foreground" Value="{DynamicResource TextControlForegroundDisabled}" />
       <Setter Property="Background" Value="{DynamicResource TextControlBackgroundDisabled}" />
@@ -936,15 +1080,27 @@
       <Setter Property="Background" Value="{DynamicResource TextControlBackgroundDisabled}" />
       <Setter Property="BorderBrush" Value="{DynamicResource TextControlBorderBrushDisabled}" />
     </Style>
+    <Style Selector="TextBox.shell-readonly-input:disabled">
+      <Setter Property="Foreground" Value="{DynamicResource ChummerShellTextMutedBrush}" />
+      <Setter Property="Background" Value="{DynamicResource ChummerShellSurfaceBrush}" />
+      <Setter Property="BorderBrush" Value="{DynamicResource ChummerShellBorderBrush}" />
+    </Style>
     <Style Selector="TextBox /template/ TextBlock">
       <Setter Property="Foreground" Value="{DynamicResource TextControlPlaceholderForeground}" />
     </Style>
     <Style Selector="TextBox /template/ TextPresenter">
       <Setter Property="TextElement.Foreground" Value="{DynamicResource TextControlForeground}" />
     </Style>
+    <Style Selector="TextBox.shell-readonly-input /template/ TextPresenter">
+      <Setter Property="TextElement.Foreground" Value="{DynamicResource ChummerShellForegroundBrush}" />
+    </Style>
     <Style Selector="TextBox /template/ Border">
       <Setter Property="Background" Value="{DynamicResource TextControlBackground}" />
       <Setter Property="BorderBrush" Value="{DynamicResource TextControlBorderBrush}" />
+    </Style>
+    <Style Selector="TextBox.shell-readonly-input /template/ Border">
+      <Setter Property="Background" Value="{DynamicResource ChummerShellSurfaceBrush}" />
+      <Setter Property="BorderBrush" Value="{DynamicResource ChummerShellBorderBrush}" />
     </Style>
     <Style Selector="TextBox:pointerover /template/ TextBlock">
       <Setter Property="Foreground" Value="{DynamicResource TextControlPlaceholderForegroundPointerOver}" />
@@ -952,9 +1108,16 @@
     <Style Selector="TextBox:pointerover /template/ TextPresenter">
       <Setter Property="TextElement.Foreground" Value="{DynamicResource TextControlForegroundPointerOver}" />
     </Style>
+    <Style Selector="TextBox.shell-readonly-input:pointerover /template/ TextPresenter">
+      <Setter Property="TextElement.Foreground" Value="{DynamicResource ChummerShellForegroundBrush}" />
+    </Style>
     <Style Selector="TextBox:pointerover /template/ Border">
       <Setter Property="Background" Value="{DynamicResource TextControlBackgroundPointerOver}" />
       <Setter Property="BorderBrush" Value="{DynamicResource TextControlBorderBrushPointerOver}" />
+    </Style>
+    <Style Selector="TextBox.shell-readonly-input:pointerover /template/ Border">
+      <Setter Property="Background" Value="{DynamicResource ChummerShellSurfaceBrush}" />
+      <Setter Property="BorderBrush" Value="{DynamicResource ChummerShellActiveMenuBorderBrush}" />
     </Style>
     <Style Selector="TextBox:focus /template/ TextBlock">
       <Setter Property="Foreground" Value="{DynamicResource TextControlPlaceholderForegroundFocused}" />
@@ -962,9 +1125,16 @@
     <Style Selector="TextBox:focus /template/ TextPresenter">
       <Setter Property="TextElement.Foreground" Value="{DynamicResource TextControlForegroundFocused}" />
     </Style>
+    <Style Selector="TextBox.shell-readonly-input:focus /template/ TextPresenter">
+      <Setter Property="TextElement.Foreground" Value="{DynamicResource ChummerShellForegroundBrush}" />
+    </Style>
     <Style Selector="TextBox:focus /template/ Border">
       <Setter Property="Background" Value="{DynamicResource TextControlBackgroundFocused}" />
       <Setter Property="BorderBrush" Value="{DynamicResource TextControlBorderBrushFocused}" />
+    </Style>
+    <Style Selector="TextBox.shell-readonly-input:focus /template/ Border">
+      <Setter Property="Background" Value="{DynamicResource ChummerShellSurfaceBrush}" />
+      <Setter Property="BorderBrush" Value="{DynamicResource ChummerShellActiveMenuBorderBrush}" />
     </Style>
     <Style Selector="TextBox:disabled /template/ TextBlock">
       <Setter Property="Foreground" Value="{DynamicResource TextControlPlaceholderForegroundDisabled}" />
@@ -1081,24 +1251,153 @@
     <Style Selector="ScrollBar /template/ Thumb">
       <Setter Property="Background" Value="{DynamicResource ChummerShellMutedForegroundBrush}" />
     </Style>
+    <Style Selector="ToggleButton">
+      <Setter Property="Background" Value="{DynamicResource ChummerShellSurfaceBrush}" />
+      <Setter Property="Foreground" Value="{DynamicResource ChummerShellForegroundBrush}" />
+      <Setter Property="BorderBrush" Value="{DynamicResource ChummerShellBorderBrush}" />
+      <Setter Property="BorderThickness" Value="1" />
+      <Setter Property="MinHeight" Value="30" />
+    </Style>
+    <Style Selector="ToggleButton:pointerover">
+      <Setter Property="Background" Value="{DynamicResource ChummerShellChromeSubtleBrush}" />
+      <Setter Property="Foreground" Value="{DynamicResource ChummerShellForegroundBrush}" />
+      <Setter Property="BorderBrush" Value="{DynamicResource ChummerShellActiveMenuBorderBrush}" />
+    </Style>
+    <Style Selector="ToggleButton:checked">
+      <Setter Property="Background" Value="{DynamicResource ChummerShellSelectionBrush}" />
+      <Setter Property="Foreground" Value="{DynamicResource ChummerShellSelectionForegroundBrush}" />
+      <Setter Property="BorderBrush" Value="{DynamicResource ChummerShellActiveMenuBorderBrush}" />
+    </Style>
+    <Style Selector="ToggleButton:disabled">
+      <Setter Property="Background" Value="{DynamicResource ChummerShellPanelMutedBrush}" />
+      <Setter Property="Foreground" Value="{DynamicResource ChummerShellTextMutedBrush}" />
+      <Setter Property="BorderBrush" Value="{DynamicResource ChummerShellBorderBrush}" />
+    </Style>
     <Style Selector="CheckBox">
       <Setter Property="Foreground" Value="{DynamicResource ChummerShellForegroundBrush}" />
+      <Setter Property="Background" Value="{DynamicResource ChummerShellSurfaceBrush}" />
+      <Setter Property="BorderBrush" Value="{DynamicResource ChummerShellBorderBrush}" />
+      <Setter Property="Padding" Value="4,2" />
+    </Style>
+    <Style Selector="CheckBox:pointerover">
+      <Setter Property="Foreground" Value="{DynamicResource ChummerShellForegroundBrush}" />
+      <Setter Property="Background" Value="{DynamicResource ChummerShellChromeSubtleBrush}" />
+      <Setter Property="BorderBrush" Value="{DynamicResource ChummerShellActiveMenuBorderBrush}" />
+    </Style>
+    <Style Selector="CheckBox:checked">
+      <Setter Property="Foreground" Value="{DynamicResource ChummerShellForegroundBrush}" />
+      <Setter Property="Background" Value="{DynamicResource ChummerShellSurfaceBrush}" />
+      <Setter Property="BorderBrush" Value="{DynamicResource ChummerShellActiveMenuBorderBrush}" />
     </Style>
     <Style Selector="CheckBox ContentPresenter">
-      <Setter Property="Foreground" Value="{DynamicResource ChummerShellForegroundBrush}" />
+      <Setter Property="TextElement.Foreground" Value="{DynamicResource ChummerShellForegroundBrush}" />
+    </Style>
+    <Style Selector="CheckBox /template/ ContentPresenter">
+      <Setter Property="TextElement.Foreground" Value="{DynamicResource ChummerShellForegroundBrush}" />
     </Style>
     <Style Selector="CheckBox TextBlock">
       <Setter Property="Foreground" Value="{DynamicResource ChummerShellForegroundBrush}" />
     </Style>
     <Style Selector="CheckBox /template/ Border">
-      <Setter Property="Background" Value="Transparent" />
+      <Setter Property="Background" Value="{DynamicResource ChummerShellSurfaceBrush}" />
+      <Setter Property="BorderBrush" Value="{DynamicResource ChummerShellBorderBrush}" />
+    </Style>
+    <Style Selector="CheckBox:pointerover /template/ Border">
+      <Setter Property="Background" Value="{DynamicResource ChummerShellChromeSubtleBrush}" />
+      <Setter Property="BorderBrush" Value="{DynamicResource ChummerShellActiveMenuBorderBrush}" />
+    </Style>
+    <Style Selector="CheckBox:checked /template/ Border">
+      <Setter Property="Background" Value="{DynamicResource ChummerShellSelectionBrush}" />
+      <Setter Property="BorderBrush" Value="{DynamicResource ChummerShellActiveMenuBorderBrush}" />
+    </Style>
+    <Style Selector="CheckBox:disabled">
+      <Setter Property="Foreground" Value="{DynamicResource ChummerShellMutedForegroundBrush}" />
+      <Setter Property="Background" Value="{DynamicResource ChummerShellPanelMutedBrush}" />
       <Setter Property="BorderBrush" Value="{DynamicResource ChummerShellBorderBrush}" />
     </Style>
     <Style Selector="CheckBox:disabled ContentPresenter">
-      <Setter Property="Foreground" Value="{DynamicResource ChummerShellMutedForegroundBrush}" />
+      <Setter Property="TextElement.Foreground" Value="{DynamicResource ChummerShellMutedForegroundBrush}" />
+    </Style>
+    <Style Selector="CheckBox:disabled /template/ ContentPresenter">
+      <Setter Property="TextElement.Foreground" Value="{DynamicResource ChummerShellMutedForegroundBrush}" />
     </Style>
     <Style Selector="CheckBox:disabled TextBlock">
       <Setter Property="Foreground" Value="{DynamicResource ChummerShellMutedForegroundBrush}" />
+    </Style>
+    <Style Selector="RadioButton">
+      <Setter Property="Foreground" Value="{DynamicResource ChummerShellForegroundBrush}" />
+      <Setter Property="Background" Value="{DynamicResource ChummerShellSurfaceBrush}" />
+      <Setter Property="BorderBrush" Value="{DynamicResource ChummerShellBorderBrush}" />
+      <Setter Property="Padding" Value="4,2" />
+    </Style>
+    <Style Selector="RadioButton:pointerover">
+      <Setter Property="Foreground" Value="{DynamicResource ChummerShellForegroundBrush}" />
+      <Setter Property="Background" Value="{DynamicResource ChummerShellChromeSubtleBrush}" />
+      <Setter Property="BorderBrush" Value="{DynamicResource ChummerShellActiveMenuBorderBrush}" />
+    </Style>
+    <Style Selector="RadioButton:checked">
+      <Setter Property="Foreground" Value="{DynamicResource ChummerShellForegroundBrush}" />
+      <Setter Property="Background" Value="{DynamicResource ChummerShellSurfaceBrush}" />
+      <Setter Property="BorderBrush" Value="{DynamicResource ChummerShellActiveMenuBorderBrush}" />
+    </Style>
+    <Style Selector="RadioButton ContentPresenter">
+      <Setter Property="TextElement.Foreground" Value="{DynamicResource ChummerShellForegroundBrush}" />
+    </Style>
+    <Style Selector="RadioButton /template/ ContentPresenter">
+      <Setter Property="TextElement.Foreground" Value="{DynamicResource ChummerShellForegroundBrush}" />
+    </Style>
+    <Style Selector="RadioButton TextBlock">
+      <Setter Property="Foreground" Value="{DynamicResource ChummerShellForegroundBrush}" />
+    </Style>
+    <Style Selector="RadioButton /template/ Border">
+      <Setter Property="Background" Value="{DynamicResource ChummerShellSurfaceBrush}" />
+      <Setter Property="BorderBrush" Value="{DynamicResource ChummerShellBorderBrush}" />
+    </Style>
+    <Style Selector="RadioButton:pointerover /template/ Border">
+      <Setter Property="Background" Value="{DynamicResource ChummerShellChromeSubtleBrush}" />
+      <Setter Property="BorderBrush" Value="{DynamicResource ChummerShellActiveMenuBorderBrush}" />
+    </Style>
+    <Style Selector="RadioButton:checked /template/ Border">
+      <Setter Property="Background" Value="{DynamicResource ChummerShellSelectionBrush}" />
+      <Setter Property="BorderBrush" Value="{DynamicResource ChummerShellActiveMenuBorderBrush}" />
+    </Style>
+    <Style Selector="RadioButton:disabled">
+      <Setter Property="Foreground" Value="{DynamicResource ChummerShellMutedForegroundBrush}" />
+      <Setter Property="Background" Value="{DynamicResource ChummerShellPanelMutedBrush}" />
+      <Setter Property="BorderBrush" Value="{DynamicResource ChummerShellBorderBrush}" />
+    </Style>
+    <Style Selector="RadioButton:disabled ContentPresenter">
+      <Setter Property="TextElement.Foreground" Value="{DynamicResource ChummerShellMutedForegroundBrush}" />
+    </Style>
+    <Style Selector="RadioButton:disabled /template/ ContentPresenter">
+      <Setter Property="TextElement.Foreground" Value="{DynamicResource ChummerShellMutedForegroundBrush}" />
+    </Style>
+    <Style Selector="RadioButton:disabled TextBlock">
+      <Setter Property="Foreground" Value="{DynamicResource ChummerShellMutedForegroundBrush}" />
+    </Style>
+    <Style Selector="Expander">
+      <Setter Property="Background" Value="{DynamicResource ChummerShellSurfaceBrush}" />
+      <Setter Property="Foreground" Value="{DynamicResource ChummerShellForegroundBrush}" />
+      <Setter Property="BorderBrush" Value="{DynamicResource ChummerShellBorderBrush}" />
+      <Setter Property="BorderThickness" Value="1" />
+    </Style>
+    <Style Selector="Expander /template/ Border">
+      <Setter Property="Background" Value="{DynamicResource ChummerShellSurfaceBrush}" />
+      <Setter Property="BorderBrush" Value="{DynamicResource ChummerShellBorderBrush}" />
+    </Style>
+    <Style Selector="Expander TextBlock">
+      <Setter Property="Foreground" Value="{DynamicResource ChummerShellForegroundBrush}" />
+    </Style>
+    <Style Selector="Expander /template/ ContentPresenter">
+      <Setter Property="TextElement.Foreground" Value="{DynamicResource ChummerShellForegroundBrush}" />
+    </Style>
+    <Style Selector="Slider">
+      <Setter Property="Background" Value="{DynamicResource ChummerShellProgressTrackBrush}" />
+      <Setter Property="Foreground" Value="{DynamicResource ChummerShellProgressValueBrush}" />
+    </Style>
+    <Style Selector="Slider /template/ Thumb">
+      <Setter Property="Background" Value="{DynamicResource ChummerShellProgressValueBrush}" />
+      <Setter Property="BorderBrush" Value="{DynamicResource ChummerShellActiveMenuBorderBrush}" />
     </Style>
   </Application.Styles>
 </Application>

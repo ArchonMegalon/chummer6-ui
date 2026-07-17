@@ -6,6 +6,12 @@ public static class UndetectableHumanizerCopyAdapter
 {
     private const string GroundedDossierToken = "__CHUMMER_KEEP_GROUNDED_DOSSIER__";
     private const string GroundedDossierPortraitToken = "__CHUMMER_KEEP_GROUNDED_DOSSIER_PORTRAIT__";
+    private const string ProtectedSegmentPrefix = "__CHUMMER_KEEP_LITERAL_SEGMENT_";
+    private const string ProtectedSegmentSuffix = "__";
+
+    private static readonly Regex ProtectedSegmentRegex = new(
+        @"https?://[^\s|;]+|(?<!\S)(?:[A-Za-z]:\\|\\\\|/(?=\S)|~[/\\])[^|\r\n]*",
+        RegexOptions.CultureInvariant | RegexOptions.Compiled);
 
     private static readonly (string From, string To)[] PhraseReplacements =
     [
@@ -58,7 +64,30 @@ public static class UndetectableHumanizerCopyAdapter
         ("explain companion", "details"),
         ("Explain receipts", "Explanations"),
         ("Explain receipt", "Explanation"),
-        ("Unmixr AI", "Unmixr"),
+        ("Unmixr AI", "alternate voice"),
+        ("Unmixr", "alternate voice"),
+        ("Inkfluence", "default voice"),
+        ("Audiobookshelf", "private reader"),
+        ("MyFirstBook", "web presentation"),
+        ("MarkupGo", "book renderer"),
+        ("VidBoard", "video renderer"),
+        ("MediaFactory", "media renderer"),
+        ("Media Factory", "media renderer"),
+        ("Magicfit", "scene renderer"),
+        ("MagicAI", "scene renderer"),
+        ("ProductLift", "feedback board"),
+        ("Emailit", "mail delivery"),
+        ("Icanpreneur", "planning path"),
+        ("Teable", "work board"),
+        ("Codex", "Chummer"),
+        ("Fleet", "Chummer"),
+        ("internal_canonical", "private story path"),
+        ("youbooks_grounded_drafting", "guided story draft"),
+        ("inkfluence_narrative_edition", "narrative edition"),
+        ("premium_guided_authoring", "guided manuscript"),
+        ("provider_manuscript_review_required", "manuscript review required"),
+        ("awaiting_provider_manuscript", "awaiting manuscript"),
+        ("ready_for_operator_queue", "ready for review"),
         ("AI narration", "alternate narration"),
         ("AI coach route", "assistant service"),
         ("approved origin canon", "approved origin story"),
@@ -70,6 +99,8 @@ public static class UndetectableHumanizerCopyAdapter
         ("deterministic providers", "rules services"),
         ("provider bindings", "service links"),
         ("provider binding", "service link"),
+        ("provider-created", "service-created"),
+        ("provider-authored", "drafted"),
         ("service truth", "service status"),
         ("runtime truth", "runtime status"),
         ("provider truth", "service status"),
@@ -133,6 +164,8 @@ public static class UndetectableHumanizerCopyAdapter
         string cleaned = value.Trim()
             .Replace("Grounded dossier portrait", GroundedDossierPortraitToken, StringComparison.OrdinalIgnoreCase)
             .Replace("Grounded dossier", GroundedDossierToken, StringComparison.OrdinalIgnoreCase);
+        List<string> protectedSegments = [];
+        cleaned = ProtectLiteralSegments(cleaned, protectedSegments);
 
         foreach ((string from, string to) in PhraseReplacements)
         {
@@ -148,6 +181,7 @@ public static class UndetectableHumanizerCopyAdapter
         cleaned = Regex.Replace(cleaned, @"[ \t]{2,}", " ", RegexOptions.CultureInvariant);
         cleaned = Regex.Replace(cleaned, @" ?([,.;:])", "$1", RegexOptions.CultureInvariant);
         cleaned = Regex.Replace(cleaned, @"\s+\n", "\n", RegexOptions.CultureInvariant);
+        cleaned = RestoreLiteralSegments(cleaned, protectedSegments);
         return cleaned.Trim();
     }
 
@@ -155,6 +189,28 @@ public static class UndetectableHumanizerCopyAdapter
     {
         string pattern = $@"(?<!\w){Regex.Escape(from)}(?!\w)";
         return Regex.Replace(value, pattern, to, RegexOptions.IgnoreCase | RegexOptions.CultureInvariant);
+    }
+
+    private static string ProtectLiteralSegments(string value, List<string> protectedSegments)
+        => ProtectedSegmentRegex.Replace(value, match =>
+        {
+            int index = protectedSegments.Count;
+            protectedSegments.Add(match.Value);
+            return $"{ProtectedSegmentPrefix}{index}{ProtectedSegmentSuffix}";
+        });
+
+    private static string RestoreLiteralSegments(string value, IReadOnlyList<string> protectedSegments)
+    {
+        string restored = value;
+        for (int index = 0; index < protectedSegments.Count; index++)
+        {
+            restored = restored.Replace(
+                $"{ProtectedSegmentPrefix}{index}{ProtectedSegmentSuffix}",
+                protectedSegments[index],
+                StringComparison.Ordinal);
+        }
+
+        return restored;
     }
 
     public static string[] HumanizeLines(IEnumerable<string> values)

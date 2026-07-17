@@ -10,7 +10,6 @@ using Avalonia.Media;
 using Avalonia.Media.Imaging;
 using Avalonia.Threading;
 using Avalonia.VisualTree;
-using Chummer.Contracts.Rulesets;
 using Chummer.Desktop.Runtime;
 using Chummer.Presentation.Overview;
 using Chummer.Presentation.UiKit;
@@ -28,12 +27,11 @@ public partial class DesktopDialogWindow : Window
     [
         TimeSpan.FromMilliseconds(48),
         TimeSpan.FromMilliseconds(96),
-        TimeSpan.FromMilliseconds(192)
+        TimeSpan.FromMilliseconds(192),
+        TimeSpan.FromMilliseconds(384)
     ];
-    // Origin wizard field refreshes can take longer than a light-weight dialog rebind.
-    // Keep the current dialog alive long enough that combo-driven refreshes do not visibly
-    // collapse the advanced expander or recenter the viewport before the rebound dialog arrives.
-    private static readonly TimeSpan OriginWizardTransientRefreshCloseGrace = TimeSpan.FromMilliseconds(1500);
+    private static readonly TimeSpan OriginWizardComboRestorePreservationGrace = TimeSpan.FromMilliseconds(480);
+    private static readonly TimeSpan OriginWizardTransientRefreshCloseGrace = TimeSpan.FromMilliseconds(300);
     private static readonly string UiKitAccessibilityAdapterMarker = AccessibilityPrimitiveBoundary.RootClass;
     private CharacterOverviewViewModelAdapter? _adapter;
     private readonly TextBlock _dialogTitleText;
@@ -44,7 +42,6 @@ public partial class DesktopDialogWindow : Window
     private readonly Border _dialogActionsBorder;
     private readonly StackPanel _dialogActionsPanel;
     private IReadOnlyList<DesktopDialogField> _boundDialogFields = Array.Empty<DesktopDialogField>();
-    private string _boundDialogMessage = string.Empty;
     private string? _preferredFocusControlName;
     private int? _preferredFocusSelectionStart;
     private bool _originWizardAdvancedStoryControlsExpanded;
@@ -57,11 +54,12 @@ public partial class DesktopDialogWindow : Window
     private bool _suppressProgrammaticComboFocusAnchorCapture;
     private bool _skipPreferredFocusRestoreOnNextBind;
     private bool _suppressOriginWizardAdvancedStoryControlsCollapseDuringComboRefresh;
+    private bool _preferRawOriginWizardScrollAnchorOnNextBind;
+    private DateTimeOffset _originWizardComboRestorePreservationUntilUtc;
     private int _dialogBindVersion;
     private bool _originWizardTransientRefreshPending;
     private DateTimeOffset _originWizardTransientRefreshPendingAtUtc;
     private int _originWizardTransientRefreshCloseDeferralVersion;
-    private int _originWizardTransientRefreshReleaseVersion;
     private bool _suppressCloseNotification;
     private bool _suppressDialogUpdates;
 
@@ -126,11 +124,14 @@ public partial class DesktopDialogWindow : Window
         _dialogBindVersion++;
         if (!preserveOriginWizardComboRefreshStateThroughBind)
         {
-            _originWizardTransientRefreshReleaseVersion++;
             _suppressOriginWizardAdvancedStoryControlsCollapseDuringComboRefresh = false;
             if (string.Equals(dialog.Id, OriginWizardDialogId, StringComparison.Ordinal))
             {
                 ClearPendingOriginWizardTransientRefresh();
+            }
+            else
+            {
+                ClearOriginWizardComboRestorePreservation();
             }
         }
 
@@ -150,14 +151,11 @@ public partial class DesktopDialogWindow : Window
         {
             _originWizardAdvancedStoryControlsExpanded = false;
         }
-
         _boundDialogFields = dialog.Fields;
-        _boundDialogMessage = dialog.Message ?? string.Empty;
         if (!preserveInteractionContext)
         {
             ApplyDialogSizing(dialog.Id);
         }
-
         Title = dialog.Title;
         _dialogTitleText.Text = dialog.Title;
         string visibleMessage = SuppressDialogBanner(dialog.Id) ? string.Empty : dialog.Message ?? string.Empty;
@@ -173,9 +171,9 @@ public partial class DesktopDialogWindow : Window
         RestoreTransientDialogState(dialog.Id, preservedOriginWizardAdvancedStoryControlsExpanded);
         if (preserveOriginWizardComboRefreshStateThroughBind)
         {
-            ReleaseOriginWizardTransientRefreshAfterRestore();
+            _suppressOriginWizardAdvancedStoryControlsCollapseDuringComboRefresh = false;
+            ClearPendingOriginWizardTransientRefresh();
         }
-
         BuildActions(dialog.Actions);
         RefreshDialogVisuals();
         PrimePreferredScrollOffsetForDialogRebind(dialog.Id, preservedScrollOffset, preservedViewportAnchor, preservedInteractionAnchor);
@@ -213,33 +211,37 @@ public partial class DesktopDialogWindow : Window
     private void BuildFields(IReadOnlyList<DesktopDialogField> fields)
     {
         _suppressDialogUpdates = true;
-        _dialogFieldsPanel.Children.Clear();
-        if (TryBuildLegacyParityDialog(fields))
+        try
         {
-            _suppressDialogUpdates = false;
-            return;
-        }
-
-        DesktopDialogField[] visibleFields = fields
-            .Where(field => !string.Equals(field.LayoutSlot, DesktopDialogFieldLayoutSlots.Hidden, StringComparison.Ordinal))
-            .Where(ShouldRenderField)
-            .ToArray();
-        for (int index = 0; index < visibleFields.Length; index++)
-        {
-            DesktopDialogField field = visibleFields[index];
-            if (string.Equals(field.LayoutSlot, DesktopDialogFieldLayoutSlots.Left, StringComparison.Ordinal)
-                && index + 1 < visibleFields.Length
-                && string.Equals(visibleFields[index + 1].LayoutSlot, DesktopDialogFieldLayoutSlots.Right, StringComparison.Ordinal))
+            _dialogFieldsPanel.Children.Clear();
+            if (TryBuildLegacyParityDialog(fields))
             {
-                _dialogFieldsPanel.Children.Add(CreateSplitFieldRow(field, visibleFields[index + 1]));
-                index++;
-                continue;
+                return;
             }
 
-            _dialogFieldsPanel.Children.Add(CreateStandaloneFieldRow(field));
-        }
+            DesktopDialogField[] visibleFields = fields
+                .Where(field => !string.Equals(field.LayoutSlot, DesktopDialogFieldLayoutSlots.Hidden, StringComparison.Ordinal))
+                .Where(ShouldRenderField)
+                .ToArray();
+            for (int index = 0; index < visibleFields.Length; index++)
+            {
+                DesktopDialogField field = visibleFields[index];
+                if (string.Equals(field.LayoutSlot, DesktopDialogFieldLayoutSlots.Left, StringComparison.Ordinal)
+                    && index + 1 < visibleFields.Length
+                    && string.Equals(visibleFields[index + 1].LayoutSlot, DesktopDialogFieldLayoutSlots.Right, StringComparison.Ordinal))
+                {
+                    _dialogFieldsPanel.Children.Add(CreateSplitFieldRow(field, visibleFields[index + 1]));
+                    index++;
+                    continue;
+                }
 
-        _suppressDialogUpdates = false;
+                _dialogFieldsPanel.Children.Add(CreateStandaloneFieldRow(field));
+            }
+        }
+        finally
+        {
+            _suppressDialogUpdates = false;
+        }
     }
 
     private bool TryBuildLegacyParityDialog(IReadOnlyList<DesktopDialogField> fields)
@@ -256,7 +258,7 @@ public partial class DesktopDialogWindow : Window
             return true;
         }
 
-        if (string.Equals(BoundDialogId, "dialog.new_character.origin_wizard", StringComparison.Ordinal))
+        if (string.Equals(BoundDialogId, OriginWizardDialogId, StringComparison.Ordinal))
         {
             _dialogFieldsPanel.Children.Add(CreateLegacyOriginWizardPane(fields));
             return true;
@@ -654,12 +656,14 @@ public partial class DesktopDialogWindow : Window
         {
             BorderBrush = DesktopShellTheme.ResolveBorderBrush(),
             BorderThickness = new Thickness(0, 0, 0, 1),
+            Background = DesktopShellTheme.ResolveSelectionPanelBrush(),
             Padding = new Thickness(0, 0, 0, 4),
             Child = new TextBlock
             {
                 Text = title,
                 FontWeight = FontWeight.SemiBold,
-                FontSize = 12
+                FontSize = 12,
+                Foreground = DesktopShellTheme.ResolveForegroundBrush()
             }
         };
     }
@@ -675,7 +679,8 @@ public partial class DesktopDialogWindow : Window
         TextBlock title = new()
         {
             Text = label,
-            FontWeight = FontWeight.SemiBold
+            FontWeight = FontWeight.SemiBold,
+            Foreground = DesktopShellTheme.ResolveForegroundBrush()
         };
         TextBlock badge = new()
         {
@@ -694,6 +699,7 @@ public partial class DesktopDialogWindow : Window
         {
             BorderBrush = DesktopShellTheme.ResolveBorderBrush(),
             BorderThickness = new Thickness(0, 0, 0, 1),
+            Background = DesktopShellTheme.ResolveSelectionPanelBrush(),
             Padding = new Thickness(0, 0, 0, 4),
             Child = header
         };
@@ -950,8 +956,6 @@ public partial class DesktopDialogWindow : Window
     private static bool SuppressDialogBanner(string? dialogId)
     {
         return string.Equals(dialogId, "dialog.new_character", StringComparison.Ordinal)
-            || string.Equals(dialogId, "dialog.new_character.origin_wizard", StringComparison.Ordinal)
-            || string.Equals(dialogId, "dialog.new_character.origin_build", StringComparison.Ordinal)
             || string.Equals(dialogId, "dialog.dice_roller", StringComparison.Ordinal)
             || string.Equals(dialogId, "dialog.global_settings", StringComparison.Ordinal)
             || string.Equals(dialogId, "dialog.character_settings", StringComparison.Ordinal)
@@ -1304,7 +1308,7 @@ public partial class DesktopDialogWindow : Window
             Text = field.Value,
             IsReadOnly = field.IsReadOnly
         };
-        ApplyTextBoxAccessibility(textBox, field.AccessibleName, field.ToolTip, field.HelpText);
+        ApplyTextBoxAccessibility(textBox, field.AccessibleName, field.ToolTip, field.HelpText, field.IsReadOnly);
         if (!field.IsReadOnly)
         {
             textBox.TextChanged += (_, _) =>
@@ -1477,8 +1481,6 @@ public partial class DesktopDialogWindow : Window
     {
         DesktopDialogField nameField = FindRequiredField(fields, "newCharacterName");
         DesktopDialogField aliasField = FindRequiredField(fields, "newCharacterAlias");
-        DesktopDialogField displayNameField = NormalizeOriginIdentityFieldForDisplay(nameField);
-        DesktopDialogField displayAliasField = NormalizeOriginIdentityFieldForDisplay(aliasField);
         DesktopDialogField rulesetField = FindRequiredField(fields, "newCharacterRulesetId");
         DesktopDialogField archetypeField = FindRequiredField(fields, "newCharacterOriginArchetypeIntent");
         DesktopDialogField buildPreferenceField = FindRequiredField(fields, "newCharacterOriginBuildPreference");
@@ -1492,13 +1494,12 @@ public partial class DesktopDialogWindow : Window
         DesktopDialogField toneField = FindRequiredField(fields, "newCharacterOriginTone");
         DesktopDialogField gmPresetField = FindRequiredField(fields, "newCharacterOriginGmConstraintPreset");
         DesktopDialogField gmRequirementsField = FindRequiredField(fields, "newCharacterOriginGmRequirements");
-        IReadOnlyList<DesktopDialogField> displayFields = DesktopDialogFactory.NormalizeOriginWizardFieldsForDisplay(fields);
-        DesktopDialogField displaySummaryField = FindRequiredField(displayFields, "newCharacterOriginSummary");
-        DesktopDialogField displayMetatypeField = FindRequiredField(displayFields, "newCharacterOriginMetatype");
-        DesktopDialogField displayArchetypeField = FindRequiredField(displayFields, "newCharacterOriginArchetype");
-        DesktopDialogField displayQualityFocusField = FindRequiredField(displayFields, "newCharacterOriginQualityFocus");
-        DesktopDialogField displayPathSummaryField = FindRequiredField(displayFields, "newCharacterOriginPathSummary");
-        DesktopDialogField displayGmSummaryField = FindRequiredField(displayFields, "newCharacterOriginGmRequirementSummary");
+        DesktopDialogField summaryField = FindRequiredField(fields, "newCharacterOriginSummary");
+        DesktopDialogField buildMethodField = FindRequiredField(fields, "newCharacterOriginBuildMethod");
+        DesktopDialogField metatypeField = FindRequiredField(fields, "newCharacterOriginMetatype");
+        DesktopDialogField qualityFocusField = FindRequiredField(fields, "newCharacterOriginQualityFocus");
+        DesktopDialogField pathSummaryField = FindRequiredField(fields, "newCharacterOriginPathSummary");
+        DesktopDialogField gmSummaryField = FindRequiredField(fields, "newCharacterOriginGmRequirementSummary");
 
         StackPanel shell = new()
         {
@@ -1510,9 +1511,9 @@ public partial class DesktopDialogWindow : Window
             CreateLegacyGroupLead("Pick only the basics, then build the story. Advanced controls are optional."),
             CreateSplitFieldRow(metatypePreferenceField, archetypeField),
             CreateOriginSummaryStrip(
-                ("Metatype", displayMetatypeField.Value),
-                ("Archetype", displayArchetypeField.Value),
-                ("Path", displayPathSummaryField.Value))));
+                ("Metatype", metatypeField.Value),
+                ("Archetype", archetypeField.Value),
+                ("Path", pathSummaryField.Value))));
 
         Grid lifePathGrid = new()
         {
@@ -1554,18 +1555,20 @@ public partial class DesktopDialogWindow : Window
                 Spacing = 12,
                 Children =
                 {
-                    CreateLegacyGroupLead("Optional dossier identity, life-path steering, and GM guidance for the story packet."),
                     CreateLegacyFieldGroup(
-                        "Dossier",
-                        CreateSplitFieldRow(displayNameField, displayAliasField),
+                        "Runner",
+                        CreateLegacyGroupLead("Optional identity and rules context for the story packet."),
+                        CreateSplitFieldRow(nameField, aliasField),
                         CreateSplitFieldRow(rulesetField, buildPreferenceField)),
                     CreateLegacyFieldGroup(
                         "Life Path",
+                        CreateLegacyGroupLead("Optional life-module-style steering: where the runner came from, what broke, how they trained, and what still costs them."),
                         lifePathGrid),
                     CreateLegacyFieldGroup(
                         "GM Steering",
+                        CreateLegacyGroupLead("Optional table permissions or requirements. These guide the story and build handoff; they do not edit a sheet by themselves."),
                         CreateSplitFieldRow(gmPresetField, gmRequirementsField),
-                        CreateOriginSummaryStrip(("Applied GM Constraint", displayGmSummaryField.Value), ("Pressure", displayQualityFocusField.Value)))
+                        CreateOriginSummaryStrip(("Applied GM Constraint", gmSummaryField.Value), ("Pressure", qualityFocusField.Value)))
                 }
             }
         };
@@ -1583,19 +1586,21 @@ public partial class DesktopDialogWindow : Window
         {
             if (_suppressDialogUpdates
                 || advancedStoryControlsBindVersion != _dialogBindVersion
-                || _suppressOriginWizardAdvancedStoryControlsCollapseDuringComboRefresh)
+                || _suppressOriginWizardAdvancedStoryControlsCollapseDuringComboRefresh
+                || _originWizardTransientRefreshPending
+                || HasActiveOriginWizardComboRestorePreservation())
             {
                 return;
             }
 
-            _originWizardAdvancedStoryControlsExpanded = false;
+            CommitOriginWizardAdvancedStoryControlsCollapsedStateIfCurrentExpanderStillCollapsed(advancedStoryControlsBindVersion);
         };
         shell.Children.Add(advancedStoryControls);
 
         shell.Children.Add(CreateLegacySummaryCard(
             "Story Preview",
             "Review the story seed first. Mechanics can follow after the story is accepted.",
-            CreateNarrativePanel(displaySummaryField.Value, minHeight: 120, maxHeight: 240)));
+            CreateNarrativePanel(summaryField.Value, minHeight: 120, maxHeight: 240)));
 
         return shell;
     }
@@ -1603,16 +1608,13 @@ public partial class DesktopDialogWindow : Window
     private Control CreateLegacyOriginBuildPane(IReadOnlyList<DesktopDialogField> fields)
     {
         DesktopDialogField bookField = FindRequiredField(fields, "newCharacterOriginBookPreview");
-        DesktopDialogField displayBookField = NormalizeOriginFieldForDisplay(fields, bookField);
         DesktopDialogField storyField = FindRequiredField(fields, "newCharacterOriginStory");
-        DesktopDialogField displayStoryField = NormalizeOriginFieldForDisplay(fields, storyField);
         DesktopDialogField buildLogicField = FindRequiredField(fields, "newCharacterOriginBuildLogic");
         DesktopDialogField implicationsField = FindRequiredField(fields, "newCharacterOriginImplications");
-        DesktopDialogField displayImplicationsField = NormalizeOriginFieldForDisplay(fields, implicationsField);
         DesktopDialogField dossierLinkField = FindRequiredField(fields, "newCharacterOriginDossierLink");
-        DesktopDialogField displayDossierLinkField = NormalizeOriginFieldForDisplay(fields, dossierLinkField);
         DesktopDialogField dossierLinkNotesField = FindRequiredField(fields, "newCharacterOriginDossierLinkNotes");
-        DesktopDialogField displayDossierLinkNotesField = NormalizeOriginFieldForDisplay(fields, dossierLinkNotesField);
+        DesktopDialogField rulesetField = FindRequiredField(fields, "newCharacterWorkflowRulesetId");
+        DesktopDialogField methodField = FindRequiredField(fields, "newCharacterWorkflowBuildMethod");
         DesktopDialogField aliasField = FindRequiredField(fields, "newCharacterWorkflowAlias");
 
         StackPanel shell = new()
@@ -1623,25 +1625,25 @@ public partial class DesktopDialogWindow : Window
         shell.Children.Add(CreateLegacyFieldGroup(
             "Build Handoff",
             CreateOriginSummaryStrip(
-                ("Dossier", NormalizeOriginIdentityValueForDisplay("newCharacterWorkflowAlias", aliasField.Value)),
-                ("Ruleset", GetOriginRulesetLabelForDisplay(fields)),
-                ("Method", GetOriginBuildMethodForDisplay(fields)))));
+                ("Runner", aliasField.Value),
+                ("Ruleset", rulesetField.Value.ToUpperInvariant()),
+                ("Method", methodField.Value))));
 
         shell.Children.Add(CreateLegacyFieldGroup(
             "Origin Dossier Link",
-            CreateLegacyGroupLead("Use this clean route to reopen Origin Dossier without publishing the story text."),
-            CreateStandaloneFieldRow(displayDossierLinkField),
-            CreateFieldControl(displayDossierLinkNotesField)));
+            CreateLegacyGroupLead("Use this route to reopen the Origin Dossier workflow without publishing the story text."),
+            CreateStandaloneFieldRow(dossierLinkField),
+            CreateFieldControl(dossierLinkNotesField)));
 
         shell.Children.Add(CreateLegacySummaryCard(
             "Book Preview",
-            GetOriginBuildMessageForDisplay(),
-            CreateFieldControl(displayBookField)));
+            "Read this first. Character creation starts after the story feels right.",
+            CreateBookPreviewPanel(bookField.Value)));
 
         shell.Children.Add(CreateLegacySummaryCard(
             "Story",
             "Alice can use this text later; it does not change the sheet by itself.",
-            CreateNarrativePanel(displayStoryField.Value, minHeight: 144, maxHeight: 260)));
+            CreateNarrativePanel(storyField.Value, minHeight: 144, maxHeight: 260)));
 
         Grid supportGrid = new()
         {
@@ -1655,310 +1657,12 @@ public partial class DesktopDialogWindow : Window
         Border constraintsCard = CreateLegacySummaryCard(
             "Constraints",
             "GM grants and requirements stay visible before opening chargen.",
-            CreateFieldControl(displayImplicationsField));
+            CreateFieldControl(implicationsField));
         Grid.SetColumn(constraintsCard, 1);
         supportGrid.Children.Add(constraintsCard);
         shell.Children.Add(supportGrid);
         return shell;
     }
-
-    private string GetOriginBuildMessageForDisplay()
-        => string.IsNullOrWhiteSpace(_boundDialogMessage)
-            ? DesktopDialogFactory.BuildOriginBuildDialogMessageDisplayValue()
-            : _boundDialogMessage;
-
-    private static DesktopDialogField NormalizeOriginIdentityFieldForDisplay(DesktopDialogField field)
-        => field.Id switch
-        {
-            "newCharacterName" or "newCharacterAlias" or "newCharacterWorkflowName" or "newCharacterWorkflowAlias"
-                => field with { Value = NormalizeOriginIdentityValueForDisplay(field.Id, field.Value) },
-            _ => field
-        };
-
-    private static DesktopDialogField NormalizeOriginFieldForDisplay(IReadOnlyList<DesktopDialogField> fields, DesktopDialogField field)
-        => field.Id switch
-        {
-            "newCharacterOriginDossierLink" => field with { Value = BuildOriginDossierDisplayRoute(fields) },
-            "newCharacterOriginDossierLinkNotes" => field with { Value = DesktopDialogFactory.BuildOriginDossierLinkNotesDisplayValue() },
-            "newCharacterOriginBookPreview" => field with { Value = BuildOriginBookPreviewDisplayValue(fields, field.Value) },
-            "newCharacterOriginStory" => field with { Value = BuildOriginStoryDisplayValue(fields, field.Value) },
-            "newCharacterOriginImplications" => field with { Value = BuildOriginImplicationsDisplayValue(fields, field.Value) },
-            _ => NormalizeOriginIdentityFieldForDisplay(field)
-        };
-
-    private static string NormalizeOriginIdentityValueForDisplay(string fieldId, string? value)
-    {
-        string trimmed = value?.Trim() ?? string.Empty;
-
-        return fieldId switch
-        {
-            "newCharacterName" or "newCharacterWorkflowName"
-                when string.IsNullOrWhiteSpace(trimmed)
-                    || string.Equals(trimmed, "New runner", StringComparison.OrdinalIgnoreCase)
-                => "New dossier",
-            "newCharacterAlias" or "newCharacterWorkflowAlias"
-                when string.IsNullOrWhiteSpace(trimmed)
-                    || string.Equals(trimmed, "Runner", StringComparison.OrdinalIgnoreCase)
-                => "Dossier",
-            _ => trimmed
-        };
-    }
-
-    private static string BuildOriginDossierDisplayRoute(IReadOnlyList<DesktopDialogField> fields)
-    {
-        string normalizedRulesetId = GetOriginRulesetIdForDisplay(fields);
-        string aliasToken = GetOriginAliasForDisplay(fields);
-        List<string> query =
-        [
-            $"command={Uri.EscapeDataString("new_character_origin")}",
-            $"ruleset={Uri.EscapeDataString(normalizedRulesetId)}"
-        ];
-
-        if (!string.IsNullOrWhiteSpace(aliasToken))
-        {
-            query.Add($"alias={Uri.EscapeDataString(aliasToken)}");
-        }
-
-        return $"/app?{string.Join("&", query)}";
-    }
-
-    private static string BuildOriginBookPreviewDisplayValue(IReadOnlyList<DesktopDialogField> fields, string? value)
-    {
-        string normalized = (value ?? string.Empty).Replace("\r\n", "\n", StringComparison.Ordinal);
-        string title = $"{GetOriginAliasForDisplay(fields)}: Origin Dossier";
-        string[] paragraphs = normalized
-            .Split(["\n\n"], StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
-
-        if (paragraphs.Length == 0
-            || (paragraphs.Length == 1 && string.Equals(paragraphs[0], title, StringComparison.Ordinal)))
-        {
-            return BuildOriginBookPreviewFallbackValue(fields, title);
-        }
-
-        if (paragraphs.Length == 1)
-        {
-            string[] lines = paragraphs[0].Split('\n', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
-            if (lines.Length > 0 && lines[0].Contains("Origin Dossier", StringComparison.OrdinalIgnoreCase))
-            {
-                string trimmedLeadingLine = lines[0].Trim();
-                if (string.Equals(trimmedLeadingLine, title, StringComparison.Ordinal))
-                {
-                    return paragraphs[0];
-                }
-
-                if (trimmedLeadingLine.EndsWith(": Origin Dossier", StringComparison.OrdinalIgnoreCase))
-                {
-                    lines[0] = title;
-                    return lines.Length == 1
-                        ? title
-                        : string.Join(
-                            Environment.NewLine + Environment.NewLine,
-                            new[]
-                            {
-                                lines[0],
-                                string.Join(Environment.NewLine, lines.Skip(1))
-                            });
-                }
-
-                return paragraphs[0];
-            }
-
-            return string.Join(
-                Environment.NewLine + Environment.NewLine,
-                new[]
-                {
-                    title,
-                    paragraphs[0]
-                });
-        }
-
-        paragraphs[0] = title;
-        return string.Join(Environment.NewLine + Environment.NewLine, paragraphs);
-    }
-
-    private static string BuildOriginBookPreviewFallbackValue(IReadOnlyList<DesktopDialogField> fields, string title)
-    {
-        List<string> paragraphs = [title];
-        string storySummary = GetFieldValue(fields, "newCharacterOriginSummary").Trim();
-        string buildSummary = GetStructuredDisplayLineValue(GetFieldValue(fields, "newCharacterOriginImplications"), "Build") ?? string.Empty;
-        string gmRequirements = GetStructuredDisplayLineValue(GetFieldValue(fields, "newCharacterOriginImplications"), "GM Requirements")
-            ?? GetStructuredDisplayLineValue(GetFieldValue(fields, "newCharacterOriginBuildLogic"), "GM Requirements")
-            ?? string.Empty;
-
-        if (!string.IsNullOrWhiteSpace(storySummary))
-        {
-            paragraphs.Add(storySummary);
-        }
-
-        if (!string.IsNullOrWhiteSpace(buildSummary))
-        {
-            paragraphs.Add($"The shape of the build is visible in the fiction: {buildSummary}");
-        }
-
-        if (!string.IsNullOrWhiteSpace(gmRequirements))
-        {
-            paragraphs.Add($"At the table, the story keeps these constraints in view: {gmRequirements}");
-        }
-
-        paragraphs.Add("When this origin feels right, start character creation. Alice can use the story as context later; no numbers are written to the sheet from this preview alone.");
-        return string.Join(Environment.NewLine + Environment.NewLine, paragraphs);
-    }
-
-    private static string BuildOriginImplicationsDisplayValue(IReadOnlyList<DesktopDialogField> fields, string? value)
-    {
-        string dossierLine = $"Dossier Link | {BuildOriginDossierDisplayRoute(fields)}";
-        string[] rawLines = (value ?? string.Empty)
-            .Replace("\r\n", "\n", StringComparison.Ordinal)
-            .Split('\n', StringSplitOptions.RemoveEmptyEntries);
-
-        List<string> lines = [];
-        bool dossierLineAdded = false;
-        foreach (string rawLine in rawLines)
-        {
-            string trimmed = rawLine.Trim();
-            if (string.IsNullOrWhiteSpace(trimmed))
-            {
-                continue;
-            }
-
-            if (IsDossierLinkLine(trimmed))
-            {
-                if (!dossierLineAdded)
-                {
-                    lines.Add(dossierLine);
-                    dossierLineAdded = true;
-                }
-
-                continue;
-            }
-
-            lines.Add(trimmed);
-        }
-
-        int dossierLineIndex = lines.FindIndex(IsDossierLinkLine);
-        if (dossierLineIndex >= 0)
-        {
-            return string.Join(Environment.NewLine, lines);
-        }
-
-        int sheetChangesIndex = lines.FindIndex(IsSheetChangesLine);
-        if (sheetChangesIndex >= 0)
-        {
-            lines.Insert(sheetChangesIndex, dossierLine);
-        }
-        else
-        {
-            lines.Add(dossierLine);
-        }
-
-        return string.Join(Environment.NewLine, lines);
-    }
-
-    private static bool IsDossierLinkLine(string value)
-        => HasOriginImplicationLineLabel(value, "Dossier Link");
-
-    private static bool IsSheetChangesLine(string value)
-        => HasOriginImplicationLineLabel(value, "Sheet Changes");
-
-    private static bool HasOriginImplicationLineLabel(string value, string label)
-    {
-        int separatorIndex = value.AsSpan().IndexOfAny('|', ':');
-        if (separatorIndex <= 0)
-        {
-            return false;
-        }
-
-        ReadOnlySpan<char> fieldLabel = value.AsSpan(0, separatorIndex).Trim();
-        return fieldLabel.Equals(label.AsSpan(), StringComparison.OrdinalIgnoreCase);
-    }
-
-    private static string BuildOriginStoryDisplayValue(IReadOnlyList<DesktopDialogField> fields, string? value)
-        => string.IsNullOrWhiteSpace(value)
-            ? GetFieldValue(fields, "newCharacterOriginSummary")
-            : value;
-
-    private static string GetOriginRulesetIdForDisplay(IReadOnlyList<DesktopDialogField> fields)
-        => RulesetDefaults.NormalizeOptional(GetFieldValue(fields, "newCharacterWorkflowRulesetId"))
-            ?? RulesetDefaults.NormalizeOptional(GetFieldValue(fields, "newCharacterRulesetId"))
-            ?? RulesetDefaults.NormalizeOptional(GetOriginDossierRouteQueryValue(GetFieldValue(fields, "newCharacterOriginDossierLink"), "ruleset"))
-            ?? RulesetDefaults.Sr5;
-
-    private static string GetOriginRulesetLabelForDisplay(IReadOnlyList<DesktopDialogField> fields)
-        => GetOriginRulesetIdForDisplay(fields).ToUpperInvariant();
-
-    private static string GetOriginAliasForDisplay(IReadOnlyList<DesktopDialogField> fields)
-    {
-        string aliasValue = GetFieldValue(fields, "newCharacterWorkflowAlias");
-        if (string.IsNullOrWhiteSpace(aliasValue))
-        {
-            aliasValue = GetFieldValue(fields, "newCharacterAlias");
-        }
-
-        return NormalizeOriginIdentityValueForDisplay("newCharacterWorkflowAlias", aliasValue);
-    }
-
-    private static string GetOriginBuildMethodForDisplay(IReadOnlyList<DesktopDialogField> fields)
-    {
-        string buildMethod = GetFieldValue(fields, "newCharacterWorkflowBuildMethod").Trim();
-        if (!string.IsNullOrWhiteSpace(buildMethod))
-        {
-            return buildMethod;
-        }
-
-        return GetStructuredDisplayLineValue(GetFieldValue(fields, "newCharacterOriginBuildLogic"), "Build Method") ?? string.Empty;
-    }
-
-    private static string? GetOriginDossierRouteQueryValue(string? route, string queryKey)
-    {
-        if (string.IsNullOrWhiteSpace(route))
-        {
-            return null;
-        }
-
-        int queryStart = route.IndexOf('?', StringComparison.Ordinal);
-        if (queryStart < 0 || queryStart == route.Length - 1)
-        {
-            return null;
-        }
-
-        foreach (string segment in route[(queryStart + 1)..].Split('&', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries))
-        {
-            string[] parts = segment.Split('=', 2, StringSplitOptions.TrimEntries);
-            if (parts.Length != 2
-                || !string.Equals(parts[0], queryKey, StringComparison.OrdinalIgnoreCase))
-            {
-                continue;
-            }
-
-            return Uri.UnescapeDataString(parts[1]);
-        }
-
-        return null;
-    }
-
-    private static string? GetStructuredDisplayLineValue(string? value, string label)
-    {
-        if (string.IsNullOrWhiteSpace(value))
-        {
-            return null;
-        }
-
-        foreach (string line in value.Replace("\r\n", "\n", StringComparison.Ordinal)
-                     .Split('\n', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries))
-        {
-            string[] parts = line.Split('|', 2, StringSplitOptions.TrimEntries);
-            if (parts.Length == 2
-                && string.Equals(parts[0], label, StringComparison.Ordinal))
-            {
-                return parts[1];
-            }
-        }
-
-        return null;
-    }
-
-    private static string GetFieldValue(IReadOnlyList<DesktopDialogField> source, string fieldId)
-        => source.FirstOrDefault(field => string.Equals(field.Id, fieldId, StringComparison.Ordinal))?.Value ?? string.Empty;
 
     private static Control CreateOriginSummaryStrip(params (string Label, string Value)[] metrics)
     {
@@ -2001,6 +1705,8 @@ public partial class DesktopDialogWindow : Window
 
     private Control CreateLegacyPriorityWorkflowPane(IReadOnlyList<DesktopDialogField> fields)
     {
+        IBrush paneBackground = DesktopShellTheme.ResolveSurfaceBrush();
+        IBrush subtlePaneBackground = DesktopShellTheme.ResolveChromeSubtleBrush();
         DesktopDialogField categoryField = FindRequiredField(fields, "newCharacterMetatypeCategory");
         DesktopDialogField metatypeField = FindRequiredField(fields, "newCharacterMetatype");
         DesktopDialogField heritageField = FindRequiredField(fields, "newCharacterPriorityHeritage");
@@ -2025,7 +1731,15 @@ public partial class DesktopDialogWindow : Window
             Name = name,
             Text = text,
             FontWeight = FontWeight.SemiBold,
+            Foreground = DesktopShellTheme.ResolveForegroundBrush(),
             VerticalAlignment = global::Avalonia.Layout.VerticalAlignment.Center
+        };
+
+        static TextBlock CreateValueLabel(string text, TextWrapping wrapping = TextWrapping.NoWrap) => new()
+        {
+            Text = text,
+            Foreground = DesktopShellTheme.ResolveForegroundBrush(),
+            TextWrapping = wrapping
         };
 
         ComboBox BuildRuntimeCombo(DesktopDialogField field, double minWidth = 160d)
@@ -2041,7 +1755,8 @@ public partial class DesktopDialogWindow : Window
             ColumnDefinitions = new ColumnDefinitions("Auto,132,Auto,132,Auto,160"),
             RowDefinitions = new RowDefinitions("Auto,Auto,Auto"),
             ColumnSpacing = 8,
-            RowSpacing = 8
+            RowSpacing = 8,
+            Background = paneBackground
         };
         topMatrix.Children.Add(CreateRowLabel("Metatype:", DesktopDialogAccessibility.BuildFieldLabelName(heritageField.Id)));
         ComboBox heritageCombo = BuildRuntimeCombo(heritageField, 120);
@@ -2093,7 +1808,7 @@ public partial class DesktopDialogWindow : Window
             Name = "newCharacterPrioritySumToTenLabel",
             Text = runtimeState.SumToTenLabel,
             FontWeight = FontWeight.SemiBold,
-            Foreground = ResolveThemeBrush("ChummerShellInfoBrush", "#173A6C"),
+            Foreground = DesktopShellTheme.ResolveInfoBrush(),
             VerticalAlignment = global::Avalonia.Layout.VerticalAlignment.Center,
             IsVisible = !string.IsNullOrWhiteSpace(runtimeState.SumToTenLabel)
         };
@@ -2112,6 +1827,7 @@ public partial class DesktopDialogWindow : Window
         ComboBox categoryCombo = BuildRuntimeCombo(categoryField, 180);
         ListBox metatypeList = BuildSelectListBox(metatypeField);
         metatypeList.Name = DesktopDialogAccessibility.BuildFieldInputName(metatypeField.Id);
+        metatypeList.Background = paneBackground;
         metatypeList.MinHeight = 280;
         ApplyAccessibility(metatypeList, metatypeField.AccessibleName, metatypeField.ToolTip, metatypeField.HelpText);
         metatypeList.DoubleTapped += async (_, _) =>
@@ -2128,6 +1844,7 @@ public partial class DesktopDialogWindow : Window
 
         StackPanel browseLane = new()
         {
+            Background = paneBackground,
             Spacing = 8,
             Children =
             {
@@ -2151,55 +1868,69 @@ public partial class DesktopDialogWindow : Window
             ColumnDefinitions = new ColumnDefinitions("Auto,*"),
             RowDefinitions = new RowDefinitions("Auto,Auto,Auto,Auto"),
             ColumnSpacing = 8,
-            RowSpacing = 6
+            RowSpacing = 6,
+            Background = paneBackground
         };
         AddLabeledValueRow(
             rightFactsGrid,
             0,
             "Metavariant:",
             BuildRuntimeCombo(metavariantField with { Options = runtimeState.MetavariantOptions }, 180));
-        AddLabeledValueRow(rightFactsGrid, 1, "Karma:", new TextBlock { Text = runtimeState.MetatypeKarma });
-        AddLabeledValueRow(rightFactsGrid, 2, "Special Attributes:", new TextBlock { Text = runtimeState.SpecialAttributes });
-        AddLabeledValueRow(rightFactsGrid, 3, "Source:", new TextBlock { Text = runtimeState.Source, TextWrapping = TextWrapping.Wrap });
+        AddLabeledValueRow(rightFactsGrid, 1, "Karma:", CreateValueLabel(runtimeState.MetatypeKarma));
+        AddLabeledValueRow(rightFactsGrid, 2, "Special Attributes:", CreateValueLabel(runtimeState.SpecialAttributes));
+        AddLabeledValueRow(rightFactsGrid, 3, "Source:", CreateValueLabel(runtimeState.Source, TextWrapping.Wrap));
 
-        Grid inspectAttributesGrid = new()
+        WrapPanel inspectAttributesGrid = new()
         {
-            ColumnDefinitions = new ColumnDefinitions("Auto,*,Auto,*"),
-            ColumnSpacing = 8,
-            RowSpacing = 4
+            Orientation = global::Avalonia.Layout.Orientation.Horizontal,
+            ItemWidth = 132
         };
         for (int index = 0; index < runtimeState.InspectAttributes.Count; index++)
         {
             PriorityWorkflowInspectAttributeState attribute = runtimeState.InspectAttributes[index];
-            int row = index / 2;
-            while (inspectAttributesGrid.RowDefinitions.Count <= row)
+            inspectAttributesGrid.Children.Add(new Border
             {
-                inspectAttributesGrid.RowDefinitions.Add(new RowDefinition(GridLength.Auto));
-            }
-
-            int column = (index % 2) * 2;
-            TextBlock label = CreateRowLabel(attribute.Label);
-            Grid.SetRow(label, row);
-            Grid.SetColumn(label, column);
-            inspectAttributesGrid.Children.Add(label);
-
-            TextBlock value = new()
-            {
-                Text = attribute.Value,
-                Foreground = DesktopShellTheme.ResolveForegroundBrush(),
-                FontWeight = FontWeight.SemiBold,
-                HorizontalAlignment = global::Avalonia.Layout.HorizontalAlignment.Left
-            };
-            Grid.SetRow(value, row);
-            Grid.SetColumn(value, column + 1);
-            inspectAttributesGrid.Children.Add(value);
+                Background = DesktopShellTheme.ResolveSurfaceBrush(),
+                BorderBrush = DesktopShellTheme.ResolveBorderBrush(),
+                BorderThickness = new Thickness(1),
+                CornerRadius = new CornerRadius(8),
+                Padding = new Thickness(8, 6),
+                Margin = new Thickness(0, 0, 8, 8),
+                Child = new StackPanel
+                {
+                    Spacing = 2,
+                    Children =
+                    {
+                        new TextBlock
+                        {
+                            Text = attribute.Label,
+                            Classes = { "shell-caption" },
+                            Foreground = DesktopShellTheme.ResolveTextMutedBrush()
+                        },
+                        new TextBlock
+                        {
+                            Text = attribute.Value,
+                            Foreground = DesktopShellTheme.ResolveForegroundBrush(),
+                            FontWeight = FontWeight.SemiBold,
+                            FontSize = 15
+                        },
+                        new TextBlock
+                        {
+                            Text = "Natural range",
+                            Classes = { "shell-caption" },
+                            Foreground = DesktopShellTheme.ResolveMutedForegroundBrush()
+                        }
+                    }
+                }
+            });
         }
 
         ListBox qualitiesList = new()
         {
             Name = "newCharacterPriorityQualitiesList",
             ItemsSource = runtimeState.Qualities.Count == 0 ? new[] { "No innate qualities" } : runtimeState.Qualities,
-            MinHeight = 96
+            MinHeight = 96,
+            Background = paneBackground
         };
         ApplyShellListBoxTheme(qualitiesList);
         qualitiesList.ItemTemplate = new FuncDataTemplate<string>((line, _) =>
@@ -2207,15 +1938,23 @@ public partial class DesktopDialogWindow : Window
 
         StackPanel inspectLane = new()
         {
+            Background = paneBackground,
             Spacing = 10,
             Children =
             {
                 rightFactsGrid,
+                CreateRowLabel("Natural Ranges:")
+                    .Also(label => label.IsVisible = runtimeState.InspectAttributes.Count > 0),
                 new Border
                 {
                     Classes = { "shell-panel", "subtle" },
+                    Background = DesktopShellTheme.ResolveChromeSubtleBrush(),
+                    BorderBrush = DesktopShellTheme.ResolveBorderBrush(),
+                    BorderThickness = new Thickness(1),
+                    CornerRadius = new CornerRadius(8),
                     Padding = new Thickness(8),
-                    Child = inspectAttributesGrid
+                    Child = inspectAttributesGrid,
+                    IsVisible = runtimeState.InspectAttributes.Count > 0
                 },
                 CreateRowLabel("Qualities:"),
                 qualitiesList
@@ -2233,7 +1972,8 @@ public partial class DesktopDialogWindow : Window
         Grid centerGrid = new()
         {
             ColumnDefinitions = new ColumnDefinitions("300,*"),
-            ColumnSpacing = 12
+            ColumnSpacing = 12,
+            Background = subtlePaneBackground
         };
         centerGrid.Children.Add(browseLaneBorder);
         Grid.SetColumn(inspectLaneBorder, 1);
@@ -2241,6 +1981,7 @@ public partial class DesktopDialogWindow : Window
 
         StackPanel skillChoiceLane = new()
         {
+            Background = paneBackground,
             Spacing = 6,
             IsVisible = skillChoice1Field.Options is { Count: > 0 } || skillChoice2Field.Options is { Count: > 0 } || skillChoice3Field.Options is { Count: > 0 }
         };
@@ -2275,6 +2016,7 @@ public partial class DesktopDialogWindow : Window
 
         StackPanel shell = new()
         {
+            Background = subtlePaneBackground,
             Spacing = 14,
             Children =
             {
@@ -2302,6 +2044,7 @@ public partial class DesktopDialogWindow : Window
             Name = name,
             Text = text,
             FontWeight = FontWeight.SemiBold,
+            Foreground = DesktopShellTheme.ResolveForegroundBrush(),
             VerticalAlignment = global::Avalonia.Layout.VerticalAlignment.Center
         };
 
@@ -2341,6 +2084,7 @@ public partial class DesktopDialogWindow : Window
         {
             Name = "newCharacterKarmaWorkflowSummaryText",
             Text = summaryField.Value,
+            Foreground = DesktopShellTheme.ResolveForegroundBrush(),
             TextWrapping = TextWrapping.Wrap
         };
 
@@ -2541,6 +2285,7 @@ public partial class DesktopDialogWindow : Window
         body.Children.Add(new TextBlock
         {
             Text = title,
+            Foreground = DesktopShellTheme.ResolveForegroundBrush(),
             Classes = { "shell-section-title" }
         });
         foreach (Control child in children)
@@ -2551,6 +2296,10 @@ public partial class DesktopDialogWindow : Window
         return new Border
         {
             Classes = { "shell-panel", "subtle" },
+            Background = DesktopShellTheme.ResolveChromeSubtleBrush(),
+            BorderBrush = DesktopShellTheme.ResolveBorderBrush(),
+            BorderThickness = new Thickness(1),
+            CornerRadius = new CornerRadius(8),
             Padding = new Thickness(12),
             Child = body
         };
@@ -2561,6 +2310,7 @@ public partial class DesktopDialogWindow : Window
         return new TextBlock
         {
             Text = text,
+            Foreground = DesktopShellTheme.ResolveMutedForegroundBrush(),
             Classes = { "shell-caption" }
         };
     }
@@ -2572,6 +2322,10 @@ public partial class DesktopDialogWindow : Window
         {
             Name = $"Legacy{normalizedTitle}SummaryCard",
             Classes = { "shell-panel", "accent" },
+            Background = DesktopShellTheme.ResolveChromeAccentBrush(),
+            BorderBrush = DesktopShellTheme.ResolveActiveMenuBorderBrush(),
+            BorderThickness = new Thickness(1),
+            CornerRadius = new CornerRadius(8),
             Padding = new Thickness(12),
             Child = new StackPanel
             {
@@ -2582,12 +2336,14 @@ public partial class DesktopDialogWindow : Window
                     {
                         Name = $"Legacy{normalizedTitle}SummaryTitle",
                         Text = title,
+                        Foreground = DesktopShellTheme.ResolveForegroundBrush(),
                         Classes = { "shell-section-title" }
                     },
                     new TextBlock
                     {
                         Name = $"Legacy{normalizedTitle}SummaryText",
                         Text = summary,
+                        Foreground = DesktopShellTheme.ResolveMutedForegroundBrush(),
                         Classes = { "shell-caption" }
                     },
                     content
@@ -2765,7 +2521,7 @@ public partial class DesktopDialogWindow : Window
         if (linkedSourceAvailable)
         {
             sourceValueText.TextDecorations = TextDecorations.Underline;
-            sourceValueText.Foreground = ResolveThemeBrush("ChummerShellInfoBrush", "#173A6C");
+            sourceValueText.Foreground = DesktopShellTheme.ResolveInfoBrush();
             sourceValueText.PointerPressed += async (_, _) =>
             {
                 await ExecuteSafeAsync(
@@ -3034,6 +2790,7 @@ public partial class DesktopDialogWindow : Window
                 IsEnabled = !field.IsReadOnly,
                 HorizontalAlignment = global::Avalonia.Layout.HorizontalAlignment.Stretch
             };
+            DesktopShellTheme.ApplyShellCheckBoxTheme(checkBox);
             ApplyAccessibility(checkBox, field.AccessibleName, field.ToolTip, field.HelpText);
             return checkBox.Also(checkBox =>
             {
@@ -3236,7 +2993,7 @@ public partial class DesktopDialogWindow : Window
             };
         }
 
-        ApplyTextBoxAccessibility(textBox, field.AccessibleName, field.ToolTip, field.HelpText);
+        ApplyTextBoxAccessibility(textBox, field.AccessibleName, field.ToolTip, field.HelpText, field.IsReadOnly);
         return textBox;
     }
 
@@ -3674,6 +3431,7 @@ public partial class DesktopDialogWindow : Window
             IsChecked = ParseCheckbox(field.Value),
             IsEnabled = !field.IsReadOnly
         };
+        DesktopShellTheme.ApplyShellCheckBoxTheme(checkBox);
         ApplyAccessibility(checkBox, field.AccessibleName, field.ToolTip, field.HelpText);
         if (!field.IsReadOnly)
         {
@@ -3797,9 +3555,17 @@ public partial class DesktopDialogWindow : Window
         ToolTip.SetTip(control, toolTip);
     }
 
-    private static void ApplyTextBoxAccessibility(TextBox textBox, string accessibleName, string toolTip, string helpText)
+    private static void ApplyTextBoxAccessibility(TextBox textBox, string accessibleName, string toolTip, string helpText, bool readOnly = false)
     {
-        DesktopShellTheme.ApplyShellTextInputTheme(textBox);
+        if (readOnly || textBox.IsReadOnly)
+        {
+            DesktopShellTheme.ApplyShellReadOnlyTextBoxTheme(textBox);
+        }
+        else
+        {
+            DesktopShellTheme.ApplyShellTextInputTheme(textBox);
+        }
+
         ApplyAccessibility(textBox, accessibleName, toolTip, helpText);
         ToolTip.SetTip(textBox, null);
     }
@@ -3808,8 +3574,15 @@ public partial class DesktopDialogWindow : Window
     {
         _dialogActionsPanel.Children.Clear();
         IEnumerable<DesktopDialogAction> visibleActions = actions;
-        if (string.Equals(BoundDialogId, "dialog.master_index", StringComparison.Ordinal)
-            || string.Equals(BoundDialogId, "dialog.character_roster", StringComparison.Ordinal)
+        if (string.Equals(BoundDialogId, "dialog.master_index", StringComparison.Ordinal))
+        {
+            // The legacy Master Index pane owns its inline source-link action, but it
+            // does not render an exit control. Keep the explicit routed Close action
+            // in the dialog footer so keyboard, pointer, and automation users all
+            // have the same discoverable way out of the modal surface.
+            visibleActions = actions.Where(action => string.Equals(action.Id, "close", StringComparison.Ordinal));
+        }
+        else if (string.Equals(BoundDialogId, "dialog.character_roster", StringComparison.Ordinal)
             || string.Equals(BoundDialogId, "dialog.dice_roller", StringComparison.Ordinal))
         {
             visibleActions = [];
@@ -3937,11 +3710,22 @@ public partial class DesktopDialogWindow : Window
                 return;
             }
 
-            _preferredDialogScrollAnchor = _dialogScrollViewer.Offset;
-            _preferredDialogScrollAnchorVersion++;
+            bool preservePendingPreSelectionAnchor =
+                ShouldPreserveOriginWizardComboInteractionScroll()
+                && _preferredDialogScrollAnchor is not null;
+            if (preservePendingPreSelectionAnchor && _preferredDialogScrollAnchor is { } anchor)
+            {
+                RestoreDialogScrollOffset(anchor);
+            }
+            else
+            {
+                _preferredDialogScrollAnchor ??= _dialogScrollViewer.Offset;
+            }
+
+            PreferRawOriginWizardScrollAnchorOnNextBind();
+            CaptureTransientDialogState();
             CapturePreferredDialogViewportAnchor();
             CapturePreferredDialogInteractionAnchor(comboBox);
-            CaptureTransientDialogState();
             RestorePreferredScrollAnchorDuringOriginWizardComboInteraction();
         }
 
@@ -4107,7 +3891,7 @@ public partial class DesktopDialogWindow : Window
             AcceptsReturn = true,
             TextWrapping = TextWrapping.Wrap
         };
-        DesktopShellTheme.ApplyShellTextInputTheme(textBox);
+        DesktopShellTheme.ApplyShellReadOnlyTextBoxTheme(textBox);
         ToolTip.SetTip(textBox, null);
         return textBox;
     }
@@ -4167,37 +3951,6 @@ public partial class DesktopDialogWindow : Window
         UpdateLayout();
     }
 
-    private void ApplyDialogSizing(string? dialogId)
-    {
-        (double width, double height, double minWidth, double minHeight) size = dialogId switch
-        {
-            "dialog.new_character" => (820d, 250d, 680d, 220d),
-            "dialog.new_character.priority_workflow" => (980d, 720d, 820d, 560d),
-            "dialog.new_character.karma_workflow" => (820d, 250d, 680d, 220d),
-            "dialog.master_index" => (980d, 640d, 760d, 440d),
-            "dialog.character_roster" => (900d, 620d, 700d, 420d),
-            "dialog.global_settings" => (920d, 600d, 700d, 420d),
-            _ when !string.IsNullOrWhiteSpace(dialogId)
-                && dialogId.StartsWith("dialog.ui.", StringComparison.Ordinal)
-                && dialogId.EndsWith("_add", StringComparison.Ordinal) => (1040d, 670d, 880d, 560d),
-            _ => (860d, 560d, 640d, 360d)
-        };
-
-        Width = size.width;
-        Height = size.height;
-        MinWidth = size.minWidth;
-        MinHeight = size.minHeight;
-    }
-
-    private void OnOpened(object? sender, EventArgs e)
-    {
-        Dispatcher.UIThread.Post(() =>
-        {
-            Activate();
-            FocusPreferredControlDuringRestore();
-        }, DispatcherPriority.Input);
-    }
-
     private void CaptureTransientDialogState()
     {
         Expander? advancedStoryControls = _dialogFieldsPanel.GetVisualDescendants()
@@ -4207,7 +3960,9 @@ public partial class DesktopDialogWindow : Window
         {
             if (!advancedStoryControls.IsExpanded
                 && _originWizardAdvancedStoryControlsExpanded
-                && (_suppressOriginWizardAdvancedStoryControlsCollapseDuringComboRefresh || _originWizardTransientRefreshPending))
+                && (_suppressOriginWizardAdvancedStoryControlsCollapseDuringComboRefresh
+                    || _originWizardTransientRefreshPending
+                    || HasActiveOriginWizardComboRestorePreservation()))
             {
                 return;
             }
@@ -4240,7 +3995,6 @@ public partial class DesktopDialogWindow : Window
             return;
         }
 
-        _preferredDialogViewportAnchorVersion++;
         _preferredDialogViewportAnchor = (advancedStoryControls.Name, translated.Value.Y);
     }
 
@@ -4260,7 +4014,6 @@ public partial class DesktopDialogWindow : Window
             return;
         }
 
-        _preferredDialogInteractionAnchorVersion++;
         _preferredDialogInteractionAnchor = (control.Name, translated.Value.Y);
     }
 
@@ -4274,6 +4027,18 @@ public partial class DesktopDialogWindow : Window
     {
         _preferredDialogInteractionAnchor = null;
         _preferredDialogInteractionAnchorVersion++;
+    }
+
+    private void PreferRawOriginWizardScrollAnchorOnNextBind()
+    {
+        if (!ShouldPreserveOriginWizardComboInteractionScroll())
+        {
+            return;
+        }
+
+        _preferRawOriginWizardScrollAnchorOnNextBind = true;
+        ClearPreferredDialogViewportAnchor();
+        ClearPreferredDialogInteractionAnchor();
     }
 
     private Vector? CapturePreferredScrollOffset(string nextDialogId)
@@ -4299,6 +4064,11 @@ public partial class DesktopDialogWindow : Window
         {
             ClearPreferredDialogViewportAnchor();
             return null;
+        }
+
+        if (_preferRawOriginWizardScrollAnchorOnNextBind)
+        {
+            _preferRawOriginWizardScrollAnchorOnNextBind = false;
         }
 
         (string ControlName, double OffsetY)? preservedAnchor = _preferredDialogViewportAnchor;
@@ -4367,18 +4137,17 @@ public partial class DesktopDialogWindow : Window
             ApplyPreferredDialogInteractionAnchor(interactionAnchor.ControlName, interactionAnchor.OffsetY, interactionAnchorVersion, DispatcherPriority.Loaded);
             ApplyPreferredDialogInteractionAnchor(interactionAnchor.ControlName, interactionAnchor.OffsetY, interactionAnchorVersion, DispatcherPriority.Background);
             ScheduleDelayedPreferredDialogInteractionAnchor(interactionAnchor.ControlName, interactionAnchor.OffsetY, interactionAnchorVersion);
-            return;
         }
 
-        bool hasPreferredViewportAnchor = preservedViewportAnchor is not null
-            && string.Equals(dialogId, OriginWizardDialogId, StringComparison.Ordinal);
-        if (!hasPreferredViewportAnchor)
+        if (hasPreferredInteractionAnchor
+            || preservedViewportAnchor is null
+            || !string.Equals(dialogId, OriginWizardDialogId, StringComparison.Ordinal))
         {
             return;
         }
 
         int anchorVersion = ++_preferredDialogViewportAnchorVersion;
-        ApplyPreferredDialogViewportAnchor(preservedViewportAnchor!.Value.ControlName, preservedViewportAnchor.Value.OffsetY, anchorVersion, DispatcherPriority.Input);
+        ApplyPreferredDialogViewportAnchor(preservedViewportAnchor.Value.ControlName, preservedViewportAnchor.Value.OffsetY, anchorVersion, DispatcherPriority.Input);
         ApplyPreferredDialogViewportAnchor(preservedViewportAnchor.Value.ControlName, preservedViewportAnchor.Value.OffsetY, anchorVersion, DispatcherPriority.Loaded);
         ApplyPreferredDialogViewportAnchor(preservedViewportAnchor.Value.ControlName, preservedViewportAnchor.Value.OffsetY, anchorVersion, DispatcherPriority.Background);
         ScheduleDelayedPreferredDialogViewportAnchor(preservedViewportAnchor.Value.ControlName, preservedViewportAnchor.Value.OffsetY, anchorVersion);
@@ -4390,22 +4159,6 @@ public partial class DesktopDialogWindow : Window
         (string ControlName, double OffsetY)? preservedViewportAnchor,
         (string ControlName, double OffsetY)? preservedInteractionAnchor)
     {
-        bool isOriginWizardDialog = string.Equals(dialogId, OriginWizardDialogId, StringComparison.Ordinal);
-        if (isOriginWizardDialog)
-        {
-            if (preservedInteractionAnchor is { } interactionAnchor
-                && TryAdjustDialogScrollOffsetForAnchor(interactionAnchor.ControlName, interactionAnchor.OffsetY))
-            {
-                return;
-            }
-
-            if (preservedViewportAnchor is { } viewportAnchor
-                && TryAdjustDialogScrollOffsetForAnchor(viewportAnchor.ControlName, viewportAnchor.OffsetY))
-            {
-                return;
-            }
-        }
-
         if (preservedScrollOffset is { } offset)
         {
             _dialogScrollViewer.Offset = offset;
@@ -4415,20 +4168,19 @@ public partial class DesktopDialogWindow : Window
             _dialogScrollViewer.Offset = default;
         }
 
-        if (!isOriginWizardDialog)
+        if (!string.Equals(dialogId, OriginWizardDialogId, StringComparison.Ordinal))
         {
             return;
         }
 
-        if (preservedInteractionAnchor is { } interactionRestoreAnchor)
+        if (preservedInteractionAnchor is { } interactionAnchor)
         {
-            ApplyPreferredDialogInteractionAnchorNow(interactionRestoreAnchor.ControlName, interactionRestoreAnchor.OffsetY);
-            return;
+            ApplyPreferredDialogInteractionAnchorNow(interactionAnchor.ControlName, interactionAnchor.OffsetY);
         }
 
-        if (preservedViewportAnchor is { } viewportRestoreAnchor)
+        if (preservedInteractionAnchor is null && preservedViewportAnchor is { } viewportAnchor)
         {
-            ApplyPreferredDialogViewportAnchorNow(viewportRestoreAnchor.ControlName, viewportRestoreAnchor.OffsetY);
+            ApplyPreferredDialogViewportAnchorNow(viewportAnchor.ControlName, viewportAnchor.OffsetY);
         }
     }
 
@@ -4449,9 +4201,35 @@ public partial class DesktopDialogWindow : Window
 
         bool shouldRemainExpanded = preservedOriginWizardAdvancedStoryControlsExpanded
             || _suppressOriginWizardAdvancedStoryControlsCollapseDuringComboRefresh
-            || _originWizardTransientRefreshPending;
+            || _originWizardTransientRefreshPending
+            || HasActiveOriginWizardComboRestorePreservation();
         advancedStoryControls.IsExpanded = shouldRemainExpanded;
         _originWizardAdvancedStoryControlsExpanded = shouldRemainExpanded;
+    }
+
+    private void CommitOriginWizardAdvancedStoryControlsCollapsedStateIfCurrentExpanderStillCollapsed(int bindVersion)
+    {
+        Dispatcher.UIThread.Post(() =>
+        {
+            if (_suppressDialogUpdates
+                || bindVersion != _dialogBindVersion
+                || _suppressOriginWizardAdvancedStoryControlsCollapseDuringComboRefresh
+                || _originWizardTransientRefreshPending
+                || HasActiveOriginWizardComboRestorePreservation())
+            {
+                return;
+            }
+
+            Expander? currentAdvancedStoryControls = _dialogFieldsPanel.GetVisualDescendants()
+                .OfType<Expander>()
+                .FirstOrDefault(expander => string.Equals(expander.Name, OriginWizardAdvancedStoryControlsExpanderName, StringComparison.Ordinal));
+            if (currentAdvancedStoryControls is null || currentAdvancedStoryControls.IsExpanded)
+            {
+                return;
+            }
+
+            _originWizardAdvancedStoryControlsExpanded = false;
+        }, DispatcherPriority.Background);
     }
 
     private (string ControlName, double OffsetY)? CaptureCurrentOriginWizardViewportAnchor()
@@ -4481,6 +4259,37 @@ public partial class DesktopDialogWindow : Window
         }
 
         return (advancedStoryControls.Name, translated.Value.Y);
+    }
+
+    private void ApplyDialogSizing(string? dialogId)
+    {
+        (double width, double height, double minWidth, double minHeight) size = dialogId switch
+        {
+            "dialog.new_character" => (820d, 250d, 680d, 220d),
+            "dialog.new_character.priority_workflow" => (980d, 720d, 820d, 560d),
+            "dialog.new_character.karma_workflow" => (820d, 250d, 680d, 220d),
+            "dialog.master_index" => (980d, 640d, 760d, 440d),
+            "dialog.character_roster" => (900d, 620d, 700d, 420d),
+            "dialog.global_settings" => (920d, 600d, 700d, 420d),
+            _ when !string.IsNullOrWhiteSpace(dialogId)
+                && dialogId.StartsWith("dialog.ui.", StringComparison.Ordinal)
+                && dialogId.EndsWith("_add", StringComparison.Ordinal) => (1040d, 670d, 880d, 560d),
+            _ => (860d, 560d, 640d, 360d)
+        };
+
+        Width = size.width;
+        Height = size.height;
+        MinWidth = size.minWidth;
+        MinHeight = size.minHeight;
+    }
+
+    private void OnOpened(object? sender, EventArgs e)
+    {
+        Dispatcher.UIThread.Post(() =>
+        {
+            Activate();
+            FocusPreferredControlDuringRestore();
+        }, DispatcherPriority.Input);
     }
 
     private void CapturePreferredFocusState()
@@ -4533,14 +4342,26 @@ public partial class DesktopDialogWindow : Window
             suppressOriginWizardCollapseDuringRefresh = ShouldPreserveOriginWizardComboInteractionScroll();
             _suppressOriginWizardAdvancedStoryControlsCollapseDuringComboRefresh = suppressOriginWizardCollapseDuringRefresh;
             ArmOriginWizardTransientRefresh();
-            _preferredDialogScrollAnchor = _dialogScrollViewer.Offset;
-            _preferredDialogScrollAnchorVersion++;
-            CapturePreferredDialogViewportAnchor();
-            CapturePreferredDialogInteractionAnchor(preferredControl);
+            ArmOriginWizardComboRestorePreservation();
+
+            Vector pendingScrollAnchor = _preferredDialogScrollAnchor ?? default;
+            bool preservePendingPreSelectionScrollAnchor = _preferredDialogScrollAnchor is not null;
+            if (preservePendingPreSelectionScrollAnchor)
+            {
+                RestoreDialogScrollOffset(pendingScrollAnchor);
+                PreferRawOriginWizardScrollAnchorOnNextBind();
+            }
+            else
+            {
+                _preferredDialogScrollAnchor ??= _dialogScrollViewer.Offset;
+                PreferRawOriginWizardScrollAnchorOnNextBind();
+            }
+
             RestorePreferredScrollAnchorDuringOriginWizardComboInteraction();
         }
         else
         {
+            ClearOriginWizardComboRestorePreservation();
             _preferredDialogScrollAnchor = null;
             _preferredDialogScrollAnchorVersion++;
             ClearPreferredDialogViewportAnchor();
@@ -4562,13 +4383,12 @@ public partial class DesktopDialogWindow : Window
         await ExecuteSafeAsync(
             () => _adapter.UpdateDialogFieldAsync(fieldId, value, CancellationToken.None),
             $"update field '{fieldId}'");
+        if (suppressOriginWizardCollapseDuringRefresh)
+        {
+            _suppressOriginWizardAdvancedStoryControlsCollapseDuringComboRefresh = false;
+        }
         if (_dialogBindVersion == bindVersionBeforeUpdate)
         {
-            if (suppressOriginWizardCollapseDuringRefresh)
-            {
-                ReleaseOriginWizardTransientRefreshAfterRestore();
-            }
-
             _skipPreferredFocusRestoreOnNextBind = false;
             FocusPreferredControlDuringRestore();
         }
@@ -4631,7 +4451,31 @@ public partial class DesktopDialogWindow : Window
     {
         return _originWizardAdvancedStoryControlsExpanded
             || _suppressOriginWizardAdvancedStoryControlsCollapseDuringComboRefresh
-            || _originWizardTransientRefreshPending;
+            || _originWizardTransientRefreshPending
+            || HasActiveOriginWizardComboRestorePreservation();
+    }
+
+    private void ArmOriginWizardComboRestorePreservation()
+    {
+        if (!string.Equals(BoundDialogId, OriginWizardDialogId, StringComparison.Ordinal)
+            || !IsOriginWizardAdvancedStoryControlsEffectivelyExpanded())
+        {
+            return;
+        }
+
+        _originWizardComboRestorePreservationUntilUtc = DateTimeOffset.UtcNow + OriginWizardComboRestorePreservationGrace;
+    }
+
+    private void ClearOriginWizardComboRestorePreservation()
+    {
+        _originWizardComboRestorePreservationUntilUtc = default;
+    }
+
+    private bool HasActiveOriginWizardComboRestorePreservation()
+    {
+        return string.Equals(BoundDialogId, OriginWizardDialogId, StringComparison.Ordinal)
+            && _originWizardComboRestorePreservationUntilUtc != default
+            && DateTimeOffset.UtcNow <= _originWizardComboRestorePreservationUntilUtc;
     }
 
     private void ArmOriginWizardTransientRefresh()
@@ -4642,7 +4486,6 @@ public partial class DesktopDialogWindow : Window
             return;
         }
 
-        _originWizardTransientRefreshReleaseVersion++;
         _originWizardTransientRefreshPending = true;
         _originWizardTransientRefreshPendingAtUtc = DateTimeOffset.UtcNow;
         _originWizardTransientRefreshCloseDeferralVersion++;
@@ -4650,45 +4493,9 @@ public partial class DesktopDialogWindow : Window
 
     private void ClearPendingOriginWizardTransientRefresh()
     {
-        _originWizardTransientRefreshReleaseVersion++;
         _originWizardTransientRefreshPending = false;
         _originWizardTransientRefreshPendingAtUtc = default;
         _originWizardTransientRefreshCloseDeferralVersion++;
-    }
-
-    private void ReleaseOriginWizardTransientRefreshAfterRestore()
-    {
-        // A deferred presenter-close request is only valid until the rebound Origin dialog arrives.
-        // Once we are restoring the refreshed dialog, invalidate any previously armed close timer so
-        // it cannot win a race and collapse the dialog after the combo refresh has already recovered.
-        _originWizardTransientRefreshCloseDeferralVersion++;
-        int releaseVersion = _originWizardTransientRefreshReleaseVersion;
-        Dispatcher.UIThread.Post(() =>
-        {
-            if (releaseVersion != _originWizardTransientRefreshReleaseVersion
-                || !ShouldPreserveOriginWizardComboInteractionScroll())
-            {
-                return;
-            }
-
-            RestorePreferredScrollAnchorDuringOriginWizardComboInteraction();
-        }, DispatcherPriority.Render);
-
-        DispatcherTimer.RunOnce(() =>
-        {
-            if (releaseVersion != _originWizardTransientRefreshReleaseVersion)
-            {
-                return;
-            }
-
-            if (ShouldPreserveOriginWizardComboInteractionScroll())
-            {
-                RestorePreferredScrollAnchorDuringOriginWizardComboInteraction();
-            }
-
-            _suppressOriginWizardAdvancedStoryControlsCollapseDuringComboRefresh = false;
-            ClearPendingOriginWizardTransientRefresh();
-        }, DelayedOriginWizardComboRestoreDelays[^1]);
     }
 
     private bool ShouldPreservePendingOriginWizardTransientRefresh()
@@ -4724,19 +4531,18 @@ public partial class DesktopDialogWindow : Window
             ScheduleDelayedPreferredDialogScrollAnchor(anchor, anchorVersion);
         }
 
+        if (_preferredDialogInteractionAnchor is null && _preferredDialogViewportAnchor is { } viewportAnchor)
+        {
+            int viewportAnchorVersion = ++_preferredDialogViewportAnchorVersion;
+            ApplyPreferredDialogViewportAnchor(viewportAnchor.ControlName, viewportAnchor.OffsetY, viewportAnchorVersion, DispatcherPriority.Background);
+            ScheduleDelayedPreferredDialogViewportAnchor(viewportAnchor.ControlName, viewportAnchor.OffsetY, viewportAnchorVersion);
+        }
+
         if (_preferredDialogInteractionAnchor is { } interactionAnchor)
         {
             int interactionAnchorVersion = ++_preferredDialogInteractionAnchorVersion;
             ApplyPreferredDialogInteractionAnchor(interactionAnchor.ControlName, interactionAnchor.OffsetY, interactionAnchorVersion, DispatcherPriority.Background);
             ScheduleDelayedPreferredDialogInteractionAnchor(interactionAnchor.ControlName, interactionAnchor.OffsetY, interactionAnchorVersion);
-            return;
-        }
-
-        if (_preferredDialogViewportAnchor is { } viewportAnchor)
-        {
-            int viewportAnchorVersion = ++_preferredDialogViewportAnchorVersion;
-            ApplyPreferredDialogViewportAnchor(viewportAnchor.ControlName, viewportAnchor.OffsetY, viewportAnchorVersion, DispatcherPriority.Background);
-            ScheduleDelayedPreferredDialogViewportAnchor(viewportAnchor.ControlName, viewportAnchor.OffsetY, viewportAnchorVersion);
         }
     }
 

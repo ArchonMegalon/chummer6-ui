@@ -10,6 +10,7 @@ import urllib.error
 import urllib.request
 from pathlib import Path
 from typing import Any
+from urllib.parse import urlparse
 
 
 UTC = dt.timezone.utc
@@ -31,21 +32,28 @@ DEFAULT_BROWSER_ROUTES = [
     "/blazor/app",
     "/blazor/workbench",
     "/blazor/workbench?workspace=ws-1",
+    "/blazor/workbench?command=new_character",
     "/blazor/workbench?command=new_character_origin",
     "/blazor/workbench?command=character_roster",
     "/blazor/workbench?command=master_index",
+    "/blazor/workbench?command=open_character",
+    "/blazor/workbench?command=open_for_printing",
+    "/blazor/workbench?command=open_for_export",
     "/blazor/preview?command=new_character",
     "/blazor/workbench?workspace=ws-1&command=save_character_as",
     "/blazor/workbench?workspace=ws-1&command=export_character&dialog_action=download",
     "/blazor/workbench?workspace=ws-1&command=print_character",
     "/blazor/workbench?workspace=ws-1&tab=tab-contacts&control=contact_add",
     "/blazor/workbench?workspace=ws-1&tab=tab-contacts&control=contact_add&dialog_action=add",
+    "/blazor/workbench?workspace=ws-1&tab=tab-technomancer&control=complex_form_add",
+    "/blazor/workbench?workspace=ws-1&tab=tab-technomancer&control=complex_form_add&dialog_action=add",
 ]
 EXPANDED_ROUTE_PROOF_MARKERS = {
     "public_startup_workbench_command_routes",
     "public_advanced_action_routes",
     "public_advanced_committed_action_routes",
 }
+DEFAULT_WINDOWS_EXIT_GATE = REPO_ROOT / ".codex-studio" / "published" / "UI_WINDOWS_DESKTOP_EXIT_GATE.generated.json"
 
 
 def classify_route_entry_proof_shape(payload: dict[str, Any]) -> str:
@@ -71,6 +79,7 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--downloads-dir", required=True, type=Path)
     parser.add_argument("--startup-smoke-dir", required=True, type=Path)
     parser.add_argument("--output", required=True, type=Path)
+    parser.add_argument("--windows-exit-gate", type=Path, default=DEFAULT_WINDOWS_EXIT_GATE)
     parser.add_argument("--browser-proof-output", type=Path)
     parser.add_argument("--display-manifest", type=Path)
     parser.add_argument("--display-downloads-dir", type=Path)
@@ -106,6 +115,15 @@ def load_json(path: Path) -> dict[str, Any]:
     return payload
 
 
+def load_optional_json(path: Path | None) -> dict[str, Any]:
+    if path is None or not path.is_file():
+        return {}
+    try:
+        return load_json(path)
+    except Exception:
+        return {}
+
+
 def norm(value: Any) -> str:
     return str(value or "").strip().lower()
 
@@ -131,6 +149,11 @@ def sha256_file(path: Path) -> str:
         for chunk in iter(lambda: handle.read(1024 * 1024), b""):
             digest.update(chunk)
     return digest.hexdigest().lower()
+
+
+def normalize_sha256(value: Any) -> str:
+    normalized = norm(value).replace("sha256:", "")
+    return normalized
 
 
 def check_public_route(*, base_url: str, route: str, timeout_seconds: int) -> dict[str, Any]:
@@ -258,6 +281,32 @@ def installer_access_class(
     return ""
 
 
+def find_installer_artifact(*, manifest: dict[str, Any], tuple_id: str, artifact_id: str) -> dict[str, Any] | None:
+    tuple_parts = tuple_id.split(":")
+    tuple_head = norm(tuple_parts[0]) if len(tuple_parts) > 0 else ""
+    tuple_rid = norm(tuple_parts[1]) if len(tuple_parts) > 1 else ""
+    tuple_platform = norm(tuple_parts[2]) if len(tuple_parts) > 2 else ""
+
+    artifacts = manifest.get("artifacts")
+    if not isinstance(artifacts, list):
+        return None
+
+    expected_artifact_id = norm(artifact_id)
+    for item in artifacts:
+        if not isinstance(item, dict):
+            continue
+        item_artifact_id = norm(item.get("artifactId") or item.get("id"))
+        item_head = norm(item.get("head"))
+        item_rid = norm(item.get("rid"))
+        item_platform = norm(item.get("platform"))
+        if expected_artifact_id and item_artifact_id == expected_artifact_id:
+            return item
+        if tuple_head and tuple_rid and tuple_platform:
+            if item_head == tuple_head and item_rid == tuple_rid and item_platform == tuple_platform:
+                return item
+    return None
+
+
 def fallback_install_access_class(*, tuple_id: str, route: str, required_host: str) -> str:
     route_token = str(route or "").strip().lower()
     if not route_token.startswith("/downloads/install/"):
@@ -270,6 +319,152 @@ def fallback_install_access_class(*, tuple_id: str, route: str, required_host: s
         return "account_required"
 
     return ""
+
+
+def find_public_install_route(*, manifest: dict[str, Any], tuple_id: str, artifact: dict[str, Any] | None) -> str:
+    desktop_truth = ((manifest.get("desktopTupleCoverage") or {}).get("desktopRouteTruth") or [])
+    if isinstance(desktop_truth, list):
+        for row in desktop_truth:
+            if not isinstance(row, dict):
+                continue
+            if str(row.get("tupleId") or "").strip() == tuple_id:
+                route = str(row.get("publicInstallRoute") or "").strip()
+                if route:
+                    return route
+
+    if isinstance(artifact, dict):
+        download_url = str(artifact.get("downloadUrl") or "").strip()
+        if download_url:
+            parsed = urlparse(download_url)
+            if parsed.path:
+                return parsed.path
+    return ""
+
+
+def boolish(value: Any) -> bool:
+    if isinstance(value, bool):
+        return value
+    token = norm(value)
+    return token in {"1", "true", "yes", "on"}
+
+
+def materialize_windows_visual_proof_backlog_row(
+    *,
+    manifest: dict[str, Any],
+    windows_exit_gate: dict[str, Any],
+    skip_public_route_check: bool,
+    base_url: str,
+    timeout_seconds: int,
+) -> dict[str, Any] | None:
+    if not isinstance(windows_exit_gate, dict):
+        return None
+
+    checks = windows_exit_gate.get("checks")
+    if not isinstance(checks, dict):
+        checks = {}
+
+    gate_channel = norm(checks.get("release_channel_id") or windows_exit_gate.get("channelId") or windows_exit_gate.get("channel"))
+    gate_version = str(
+        checks.get("release_channel_version")
+        or windows_exit_gate.get("releaseVersion")
+        or windows_exit_gate.get("version")
+        or ""
+    ).strip()
+    manifest_channel = norm(manifest.get("channelId") or manifest.get("channel"))
+    manifest_version = str(manifest.get("version") or "").strip()
+    if manifest_channel and gate_channel and manifest_channel != gate_channel:
+        return None
+    if manifest_version and gate_version and manifest_version != gate_version:
+        return None
+
+    blocking_mode = norm(windows_exit_gate.get("blockingMode") or windows_exit_gate.get("blocking_mode"))
+    reasons = [str(item).strip() for item in (windows_exit_gate.get("reasons") or []) if str(item).strip()]
+    if blocking_mode != "external_only":
+        return None
+    if not reasons or not all("windows installer visual proof" in item.lower() for item in reasons):
+        return None
+
+    current_capture_pending = boolish(checks.get("windows_installer_visual_proof_current_capture_pending"))
+    only_visual_blocker = boolish(checks.get("windows_installer_visual_proof_handoff_only_blocker_is_visual_proof"))
+    external_artifact_required = boolish(checks.get("windows_installer_visual_proof_handoff_external_artifact_required"))
+    if not (current_capture_pending or only_visual_blocker or external_artifact_required):
+        return None
+
+    expected_head = str(checks.get("expected_windows_head") or "avalonia").strip()
+    expected_rid = str(checks.get("expected_windows_rid") or "win-x64").strip()
+    tuple_id = f"{expected_head}:{expected_rid}:windows"
+    expected_artifact_id = str(
+        ((checks.get("release_channel_windows_artifact") or {}).get("artifactId"))
+        or "avalonia-win-x64-installer"
+    ).strip()
+    artifact = find_installer_artifact(manifest=manifest, tuple_id=tuple_id, artifact_id=expected_artifact_id)
+    route = find_public_install_route(manifest=manifest, tuple_id=tuple_id, artifact=artifact)
+    access_class = installer_access_class(
+        manifest=manifest,
+        tuple_id=tuple_id,
+        artifact_id=expected_artifact_id,
+        installer_name=str(checks.get("expected_windows_file_name") or "").strip(),
+    )
+    if not access_class:
+        access_class = fallback_install_access_class(tuple_id=tuple_id, route=route, required_host="windows")
+
+    if skip_public_route_check or not route:
+        route_probe = {
+            "checked": False,
+            "url": "",
+            "http_status": None,
+            "ok": False,
+            "error": "skipped" if skip_public_route_check else "missing_route",
+        }
+    else:
+        route_probe = check_public_route(
+            base_url=base_url,
+            route=route,
+            timeout_seconds=timeout_seconds,
+        )
+        route_probe["installAccessClass"] = access_class
+        route_probe["authExpected"] = False
+        route_probe["authChallengeAccepted"] = False
+
+    installer_path = Path(str(checks.get("windows_installer_path") or "").strip())
+    installer_present = installer_path.is_file() if str(installer_path) else boolish(checks.get("installer_exists"))
+    installer_sha = ""
+    if installer_present and str(installer_path) and installer_path.is_file():
+        installer_sha = sha256_file(installer_path)
+    else:
+        installer_sha = normalize_sha256(checks.get("installer_sha256"))
+
+    blocker_codes = ["windows_visual_proof_capture_pending"]
+    blocker_messages = reasons[:]
+    if boolish(checks.get("windows_installer_visual_proof_handoff_current_visual_proof_stale")):
+        blocker_codes.append("windows_visual_proof_stale")
+        blocker_messages.append(
+            "Current Windows installer visual proof is stale for the promoted release and must be recaptured on a Windows host."
+        )
+
+    return {
+        "tupleId": tuple_id,
+        "requiredHost": "windows",
+        "expectedPublicInstallRoute": route,
+        "requiredProofs": ["windows_installer_visual_proof"],
+        "expectedArtifactId": expected_artifact_id,
+        "installAccessClass": access_class,
+        "expectedInstallerRelativePath": f"files/{str(checks.get('expected_windows_file_name') or '').strip()}",
+        "expectedStartupSmokeReceiptPath": "",
+        "installerPresent": installer_present,
+        "installerSha256": installer_sha,
+        "expectedInstallerSha256": normalize_sha256(checks.get("installer_sha256")),
+        "startupSmokeReceiptPresent": False,
+        "startupSmokeReceiptRecordedAtUtc": "",
+        "startupSmokeReceiptAgeSeconds": None,
+        "startupSmokeReceiptStatus": "",
+        "startupSmokeReceiptChannelId": "",
+        "startupSmokeReceiptVersion": "",
+        "publicRouteProbe": route_probe,
+        "blockerCodes": blocker_codes,
+        "blockerMessages": blocker_messages,
+        "ready": False,
+    }
 
 
 def main() -> int:
@@ -286,6 +481,7 @@ def main() -> int:
     missing_tuples = coverage.get("missingRequiredPlatformHeadRidTuples")
     if not isinstance(missing_tuples, list):
         missing_tuples = []
+    windows_exit_gate = load_optional_json(args.windows_exit_gate)
 
     release_channel = norm(manifest.get("channelId") or manifest.get("channel"))
     release_version = str(manifest.get("version") or "").strip()
@@ -474,11 +670,35 @@ def main() -> int:
             }
         )
 
+    existing_tuple_ids = {
+        str(row.get("tupleId") or "").strip()
+        for row in blockers
+        if isinstance(row, dict) and str(row.get("tupleId") or "").strip()
+    }
+    windows_visual_proof_row = materialize_windows_visual_proof_backlog_row(
+        manifest=manifest,
+        windows_exit_gate=windows_exit_gate,
+        skip_public_route_check=args.skip_public_route_check,
+        base_url=args.base_url,
+        timeout_seconds=args.timeout_seconds,
+    )
+    if windows_visual_proof_row is not None:
+        tuple_id = str(windows_visual_proof_row.get("tupleId") or "").strip()
+        required_host = norm(windows_visual_proof_row.get("requiredHost"))
+        if tuple_id and tuple_id not in existing_tuple_ids:
+            blockers.append(windows_visual_proof_row)
+            if required_host and required_host not in unresolved_hosts:
+                unresolved_hosts.append(required_host)
+            if tuple_id not in unresolved_tuples:
+                unresolved_tuples.append(tuple_id)
+
+    should_materialize_browser_proof = args.browser_proof_output is not None
     browser_routes: list[str] = []
-    for route in [*DEFAULT_BROWSER_ROUTES, *args.browser_routes]:
-        route_text = str(route or "").strip()
-        if route_text and route_text not in browser_routes:
-            browser_routes.append(route_text)
+    if should_materialize_browser_proof:
+        for route in [*DEFAULT_BROWSER_ROUTES, *args.browser_routes]:
+            route_text = str(route or "").strip()
+            if route_text and route_text not in browser_routes:
+                browser_routes.append(route_text)
 
     browser_route_probes: list[dict[str, Any]] = []
     browser_route_blockers: list[dict[str, Any]] = []
@@ -531,7 +751,7 @@ def main() -> int:
         "external_proof_request_count": len(blockers),
         "external_proof_requests": blockers,
     }
-    if browser_route_blockers:
+    if should_materialize_browser_proof and browser_route_blockers:
         payload["status"] = "blocked"
     args.output.parent.mkdir(parents=True, exist_ok=True)
     args.output.write_text(json.dumps(payload, indent=2) + "\n", encoding="utf-8")

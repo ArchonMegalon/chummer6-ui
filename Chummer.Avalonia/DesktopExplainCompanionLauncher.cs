@@ -141,7 +141,7 @@ internal sealed class DesktopExplainCompanionWindow : Window
             TextWrapping = TextWrapping.Wrap,
             MinHeight = 34
         };
-        DesktopShellTheme.ApplyShellTextInputTheme(launchUriTextBox);
+        DesktopShellTheme.ApplyShellReadOnlyTextBoxTheme(launchUriTextBox);
         AutomationProperties.SetName(launchUriTextBox, "Explanation help link");
         AutomationProperties.SetHelpText(launchUriTextBox, "Copy-safe link for reopening the same blocker, comparison, and system details.");
         content.Children.Add(launchUriTextBox);
@@ -171,7 +171,7 @@ internal sealed class DesktopExplainCompanionWindow : Window
             MinHeight = 120,
             AcceptsReturn = true
         };
-        DesktopShellTheme.ApplyShellTextInputTheme(receiptTextBox);
+        DesktopShellTheme.ApplyShellReadOnlyTextBoxTheme(receiptTextBox);
         AutomationProperties.SetName(receiptTextBox, "Explanation details");
         AutomationProperties.SetHelpText(receiptTextBox, "Copy-safe details for support, blocker, comparison, and system review.");
         content.Children.Add(receiptTextBox);

@@ -501,6 +501,125 @@ stage_installer_for_downloads_manifest() {
   cp -f "$installer_path" "$downloads_files_dir/$installer_name"
 }
 
+windows_build_provenance_required() {
+  env_truthy "${CHUMMER_WINDOWS_BUILD_PROVENANCE_REQUIRED:-0}"
+}
+
+windows_provenance_project_path() {
+  case "$APP_KEY" in
+    avalonia) printf '%s\n' "Chummer.Avalonia/Chummer.Avalonia.csproj" ;;
+    blazor-desktop) printf '%s\n' "Chummer.Blazor.Desktop/Chummer.Blazor.Desktop.csproj" ;;
+    *)
+      echo "Unsupported Windows provenance app key: $APP_KEY" >&2
+      return 1
+      ;;
+  esac
+}
+
+begin_windows_build_provenance() {
+  if ! windows_build_provenance_required; then
+    return 0
+  fi
+  if [[ "$APP_KEY" != "avalonia" || "$RID" != "win-x64" ]]; then
+    echo "The Windows proof provenance contract currently admits only avalonia/win-x64." >&2
+    exit 1
+  fi
+  "$PYTHON_BIN" - "$VERSION" <<'PY'
+import re
+import sys
+
+value = sys.argv[1]
+if re.fullmatch(r"[A-Za-z0-9][A-Za-z0-9._-]{0,127}", value) is None or ".." in value:
+    raise SystemExit("Windows proof provenance requires a portable release version")
+PY
+
+  local workspace_root="${CHUMMER_WORKSPACE_ROOT:-$(cd "$REPO_ROOT/.." && pwd -P)}"
+  local generator="${CHUMMER_WINDOWS_BUILD_PROVENANCE_GENERATOR:-$workspace_root/scripts/release/materialize_build_provenance.py}"
+  local support="${CHUMMER_WINDOWS_BUILD_PROVENANCE_SUPPORT:-$workspace_root/scripts/release/verify_supply_chain_evidence.py}"
+  local project_path
+  project_path="$(windows_provenance_project_path)"
+  local invocation_id="$VERSION.avalonia.win-x64.installer"
+  local governed_root="$DIST_DIR/proof/build-provenance/v1"
+  local private_root="$DIST_DIR/.windows-build-provenance-private"
+  local receipt_path="$governed_root/invocations/$invocation_id.json"
+  local state_path="$private_root/$invocation_id.state.json"
+  local sbom_path="$governed_root/sbom/desktop-avalonia.cdx.json"
+  local artifact_path="$DIST_DIR/chummer-$APP_KEY-$RID-installer.exe"
+  local core_root="${CHUMMER_WINDOWS_SOURCE_CORE_ROOT:-$workspace_root/chummer-core-engine}"
+  local run_services_root="${CHUMMER_WINDOWS_SOURCE_RUN_SERVICES_ROOT:-$workspace_root/chummer.run-services}"
+  local ui_kit_root="${CHUMMER_WINDOWS_SOURCE_UI_KIT_ROOT:-$workspace_root/chummer-ui-kit}"
+  local registry_root="${CHUMMER_WINDOWS_SOURCE_REGISTRY_ROOT:-$workspace_root/chummer-hub-registry}"
+  local media_root="${CHUMMER_WINDOWS_SOURCE_MEDIA_ROOT:-$workspace_root/chummer-media-factory}"
+  local legacy_root="${CHUMMER_WINDOWS_SOURCE_LEGACY_ROOT:-$workspace_root/chummer5a}"
+
+  [[ -f "$generator" && ! -L "$generator" ]] || {
+    echo "Windows build provenance generator is unavailable: $generator" >&2
+    exit 1
+  }
+  [[ -f "$support" && ! -L "$support" ]] || {
+    echo "Windows build provenance support is unavailable: $support" >&2
+    exit 1
+  }
+  [[ ! -e "$artifact_path" && ! -L "$artifact_path" ]] || {
+    echo "Windows proof provenance requires a fresh installer output path: $artifact_path" >&2
+    exit 1
+  }
+  mkdir -p "$(dirname "$receipt_path")" "$(dirname "$sbom_path")" "$private_root"
+
+  "$PYTHON_BIN" "$generator" begin \
+    --state "$state_path" \
+    --output "$receipt_path" \
+    --builder-id "chummer-windows-release-bootstrap" \
+    --build-type "windows-desktop-release" \
+    --invocation-id "$invocation_id" \
+    --release-version "$VERSION" \
+    --supply-chain-script "$support" \
+    --source-repository "chummer-presentation" \
+    --source-repo-root "$REPO_ROOT" \
+    --source-material "chummer-core-engine=$core_root" \
+    --source-material "chummer.run-services=$run_services_root" \
+    --source-material "chummer-ui-kit=$ui_kit_root" \
+    --source-material "chummer-hub-registry=$registry_root" \
+    --source-material "chummer-media-factory=$media_root" \
+    --source-material "chummer5a=$legacy_root" \
+    --build-root "$REPO_ROOT" \
+    --target-id "desktop-avalonia" \
+    --project-path "$project_path" \
+    --artifact-id "avalonia-win-x64-installer" \
+    --artifact-kind "desktop_download" \
+    --artifact-name "chummer-avalonia-win-x64-installer.exe" \
+    --artifact-path "$artifact_path" \
+    --sbom-path "$sbom_path" \
+    --build-input "desktop-project=$REPO_ROOT/$project_path" \
+    --build-input "desktop-installer-recipe=$REPO_ROOT/scripts/build-desktop-installer.sh" \
+    --build-input "windows-bootstrap-recipe=$REPO_ROOT/scripts/build-native-windows-bootstrap-installer.sh" \
+    --build-input "dotnet-sdk-selection=$REPO_ROOT/global.json"
+}
+
+finalize_windows_build_provenance() {
+  if ! windows_build_provenance_required; then
+    return 0
+  fi
+
+  local workspace_root="${CHUMMER_WORKSPACE_ROOT:-$(cd "$REPO_ROOT/.." && pwd -P)}"
+  local generator="${CHUMMER_WINDOWS_BUILD_PROVENANCE_GENERATOR:-$workspace_root/scripts/release/materialize_build_provenance.py}"
+  local invocation_id="$VERSION.avalonia.win-x64.installer"
+  local private_root="$DIST_DIR/.windows-build-provenance-private"
+  local state_path="$private_root/$invocation_id.state.json"
+  local receipt_path="$DIST_DIR/proof/build-provenance/v1/invocations/$invocation_id.json"
+
+  "$PYTHON_BIN" "$generator" finalize \
+    --state "$state_path" \
+    --output "$receipt_path" \
+    --builder-id "chummer-windows-release-bootstrap" \
+    --build-type "windows-desktop-release" \
+    --invocation-id "$invocation_id" \
+    --release-version "$VERSION"
+  rm -f "$state_path"
+  rm -rf "$private_root/.$invocation_id.state.json.finalized"
+  rmdir "$private_root" 2>/dev/null || true
+}
+
 has_macos_signing_identity() {
   [[ -n "${CHUMMER_MAC_APP_SIGN_IDENTITY:-}" ]]
 }
@@ -668,23 +787,7 @@ build_payload_zip() {
 build_payload_zip_from_dir() {
   local source_dir="$1"
   local target="$2"
-  python3 - "$source_dir" "$target" <<'PY'
-import sys
-import zipfile
-from pathlib import Path
-
-source = Path(sys.argv[1])
-target = Path(sys.argv[2])
-if not source.exists():
-    raise SystemExit(f"publish directory not found: {source}")
-if target.exists():
-    target.unlink()
-with zipfile.ZipFile(target, "w", compression=zipfile.ZIP_DEFLATED) as zf:
-    for file in sorted(source.rglob("*")):
-        if file.is_file():
-            zf.write(file, file.relative_to(source))
-print(target)
-PY
+  "$PYTHON_BIN" "$SCRIPT_DIR/build-reproducible-zip.py" "$source_dir" "$target"
 }
 
 append_payload_zip_to_windows_installer() {
@@ -711,32 +814,6 @@ with installer.open("ab") as handle:
     handle.write(magic)
 
 print(installer)
-PY
-}
-
-append_bootstrap_metadata_to_windows_installer() {
-  local installer_path="$1"
-  local payload_url="$2"
-  local payload_sha256="$3"
-  local payload_size_bytes="$4"
-  python3 - "$installer_path" "$payload_url" "$payload_sha256" "$payload_size_bytes" <<'PY'
-from pathlib import Path
-import sys
-
-installer = Path(sys.argv[1])
-payload_url = sys.argv[2]
-payload_sha256 = sys.argv[3]
-payload_size_bytes = sys.argv[4]
-
-metadata = (
-    "\nCHUMMER6_BOOTSTRAP_METADATA\n"
-    f"payloadDownloadUrl={payload_url}\n"
-    f"payloadSha256={payload_sha256}\n"
-    f"payloadSizeBytes={payload_size_bytes}\n"
-).encode("utf-8")
-
-with installer.open("ab") as handle:
-    handle.write(metadata)
 PY
 }
 
@@ -887,6 +964,28 @@ if runtime_options.get("framework") or runtime_options.get("frameworks"):
         "Re-publish with --self-contained true before building installers."
     )
 PY
+}
+
+public_windows_bootstrap_requires_expanded_apphost() {
+  case "$(desktop_release_channel)" in
+    preview|stable|public_stable)
+      return 0
+      ;;
+    *)
+      return 1
+      ;;
+  esac
+}
+
+require_expanded_windows_apphost_dir() {
+  local publish_dir="$1"
+  local launch_target="$2"
+
+  if [[ ! -f "$publish_dir/System.Private.CoreLib.dll" ]]; then
+    echo "Public Windows bootstrap packaging requires an expanded self-contained apphost: $publish_dir/System.Private.CoreLib.dll is missing." >&2
+    echo "Re-publish $launch_target with -p:PublishSingleFile=false before building preview or stable installers." >&2
+    exit 1
+  fi
 }
 
 build_portable_artifacts() {
@@ -1127,10 +1226,12 @@ write_windows_bootstrap_config() {
   local head2_launch_executable="${19:-}"
   local head2_shortcut_name="${20:-}"
   local head2_relative_root="${21:-}"
+  local payload_acquisition_mode="${22:-download}"
+  local embedded_payload_path="${23:-}"
 
   local rid_suffix="${RID#win-}"
 
-  python3 - "$config_path" "$stage_dir" "$icon_path" "$APP_KEY" "$RID" "$rid_suffix" "$installer_display_name" "$installer_install_dir_name" "$VERSION" "ArchonMegalon" "$SHORTCUT_NAME" "$installer_output_name" "$payload_file_name" "$payload_url" "$payload_sha256" "$payload_size_bytes" "$head_count" "$head1_id" "$head1_display_name" "$head1_launch_executable" "$head1_shortcut_name" "$head1_relative_root" "$head2_id" "$head2_display_name" "$head2_launch_executable" "$head2_shortcut_name" "$head2_relative_root" <<'PY'
+  python3 - "$config_path" "$stage_dir" "$icon_path" "$APP_KEY" "$RID" "$rid_suffix" "$installer_display_name" "$installer_install_dir_name" "$VERSION" "ArchonMegalon" "$SHORTCUT_NAME" "$installer_output_name" "$payload_file_name" "$payload_url" "$payload_sha256" "$payload_size_bytes" "$head_count" "$head1_id" "$head1_display_name" "$head1_launch_executable" "$head1_shortcut_name" "$head1_relative_root" "$head2_id" "$head2_display_name" "$head2_launch_executable" "$head2_shortcut_name" "$head2_relative_root" "$payload_acquisition_mode" "$embedded_payload_path" <<'PY'
 from pathlib import Path
 import sys
 
@@ -1162,6 +1263,8 @@ import sys
     head2_launch_executable,
     head2_shortcut_name,
     head2_relative_root,
+    payload_acquisition_mode,
+    embedded_payload_path,
 ) = sys.argv[1:]
 
 
@@ -1185,6 +1288,7 @@ lines = [
     f'!define CHUMMER_PAYLOAD_URL "{esc(payload_url)}"',
     f'!define CHUMMER_PAYLOAD_SHA256 "{esc(payload_sha256)}"',
     f'!define CHUMMER_PAYLOAD_SIZE_BYTES "{esc(payload_size_bytes)}"',
+    f'!define CHUMMER_PAYLOAD_ACQUISITION_MODE "{esc(payload_acquisition_mode)}"',
     f'!define CHUMMER_ARCH "{esc(rid.split("-")[-1])}"',
     f'!define CHUMMER_HEAD_COUNT "{esc(head_count)}"',
     f'!define CHUMMER_HEAD_1_ID "{esc(head1_id)}"',
@@ -1198,6 +1302,9 @@ lines = [
     f'!define CHUMMER_HEAD_2_SHORTCUT_NAME "{esc(head2_shortcut_name)}"',
     f'!define CHUMMER_HEAD_2_RELATIVE_ROOT "{esc(head2_relative_root)}"',
 ]
+
+if embedded_payload_path:
+    lines.append(f'!define CHUMMER_EMBEDDED_PAYLOAD_PATH "{esc(embedded_payload_path)}"')
 
 Path(config_path).write_text("\n".join(lines) + "\n", encoding="utf-8")
 PY
@@ -1225,6 +1332,8 @@ build_windows_installer() {
   local bootstrap_payload_url=""
   local bootstrap_payload_sha256=""
   local bootstrap_payload_size_bytes=""
+  local bootstrap_payload_acquisition_mode="download"
+  local bootstrap_embedded_payload_path=""
   local head_count="1"
   local head1_id="$APP_KEY"
   local head1_display_name="$installer_display_name"
@@ -1284,6 +1393,15 @@ build_windows_installer() {
       installer_mode="bootstrap"
       local downloads_prefix="${CHUMMER_PUBLIC_DOWNLOADS_PREFIX:-https://chummer.run/downloads/files}"
       bootstrap_payload_url="${CHUMMER_WINDOWS_BOOTSTRAP_PAYLOAD_URL:-${downloads_prefix%/}/$(basename "$payload_zip")}"
+      bootstrap_payload_acquisition_mode="$(echo "${CHUMMER_WINDOWS_BOOTSTRAP_ACQUISITION_MODE:-download}" | tr '[:upper:]' '[:lower:]')"
+      case "$bootstrap_payload_acquisition_mode" in
+        download|embedded)
+          ;;
+        *)
+          echo "Unsupported CHUMMER_WINDOWS_BOOTSTRAP_ACQUISITION_MODE: $bootstrap_payload_acquisition_mode (expected download or embedded)." >&2
+          exit 1
+          ;;
+      esac
       ;;
     bundled|append|appended)
       installer_mode="bundled"
@@ -1294,10 +1412,21 @@ build_windows_installer() {
       ;;
   esac
 
+  if [[ "$installer_mode" == "bootstrap" ]] && public_windows_bootstrap_requires_expanded_apphost; then
+    require_expanded_windows_apphost_dir "$PUBLISH_DIR" "$LAUNCH_TARGET"
+    if [[ -n "$secondary_publish_dir" ]]; then
+      require_expanded_windows_apphost_dir "$secondary_publish_dir" "$secondary_launch_target"
+    fi
+  fi
+
     if [[ "$installer_mode" == "bootstrap" ]]; then
     rm -rf "$native_bootstrap_stage_dir"
     mkdir -p "$native_bootstrap_stage_dir"
     cp -f "$REPO_ROOT/Chummer/chummer.ico" "$native_bootstrap_stage_dir/chummer.ico"
+    if [[ "$bootstrap_payload_acquisition_mode" == "embedded" ]]; then
+      cp -f "$payload_zip" "$native_bootstrap_stage_dir/$(basename "$payload_zip")"
+      bootstrap_embedded_payload_path="/work/$(basename "$payload_zip")"
+    fi
     write_windows_bootstrap_config \
       "$native_bootstrap_stage_dir/bootstrap-config.nsh" \
       "$native_bootstrap_stage_dir" \
@@ -1319,15 +1448,12 @@ build_windows_installer() {
       "$head2_display_name" \
       "$head2_launch_executable" \
       "$head2_shortcut_name" \
-      "$head2_relative_root"
+      "$head2_relative_root" \
+      "$bootstrap_payload_acquisition_mode" \
+      "$bootstrap_embedded_payload_path"
     "$REPO_ROOT/scripts/build-native-windows-bootstrap-installer.sh" \
       "$native_bootstrap_stage_dir" \
       "$DIST_DIR/$installer_name"
-    append_bootstrap_metadata_to_windows_installer \
-      "$DIST_DIR/$installer_name" \
-      "$bootstrap_payload_url" \
-      "$bootstrap_payload_sha256" \
-      "$bootstrap_payload_size_bytes"
     mkdir -p "$DIST_DIR/files"
     cp -f "$payload_zip" "$DIST_DIR/files/$(basename "$payload_zip")"
     cat > "$DIST_DIR/files/$(basename "$payload_zip").json" <<EOF
@@ -1337,6 +1463,7 @@ build_windows_installer() {
   "downloadUrl": "$bootstrap_payload_url",
   "sha256": "$bootstrap_payload_sha256",
   "sizeBytes": $bootstrap_payload_size_bytes,
+  "payloadAcquisitionMode": "$bootstrap_payload_acquisition_mode",
   "installerFileName": "$installer_name",
   "releaseVersion": "$VERSION"
 }
@@ -1488,8 +1615,10 @@ case "$RID" in
     prune_release_symbols
     pre_sign_windows_payloads_if_configured
     build_portable_artifacts
+    begin_windows_build_provenance
     build_windows_installer
     finalize_windows_signing_receipt
+    finalize_windows_build_provenance
     stage_installer_for_downloads_manifest "chummer-$APP_KEY-$RID-installer.exe"
     ;;
   linux-*)

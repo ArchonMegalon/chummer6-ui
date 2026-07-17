@@ -57,7 +57,20 @@ public sealed class AccessibilitySignoffSmokeTests
         DesktopInstallLinkingWindow_exposes_trust_actions_and_locale_guidance();
         BlazorDesktopShell_blocks_unlinked_installs_with_visible_claim_gate();
         BlazorDesktopPrintPreview_waits_for_loaded_document_before_printing();
+        BlazorDialogReveal_skips_same_dialog_recenters_across_transient_refreshes();
         DesktopHead_uses_canonical_catalog_only_resolver();
+    }
+
+    [TestMethod]
+    public void Blazor_dialog_reveal_scroll_restore_contract_keeps_origin_refreshes_stable()
+    {
+        BlazorDialogReveal_skips_same_dialog_recenters_across_transient_refreshes();
+    }
+
+    [TestMethod]
+    public void Blazor_print_and_analytics_privacy_boundaries_are_fail_closed()
+    {
+        BlazorDesktopPrintPreview_waits_for_loaded_document_before_printing();
     }
 
     private static void SectionPane_renders_browse_projection_with_saved_filters_and_keyboard_navigation()
@@ -679,7 +692,7 @@ public sealed class AccessibilitySignoffSmokeTests
 
         DesktopHomeBuildExplainProjection projection = DesktopHomeBuildExplainProjector.Create([workspace], build, rules, campaignSummary, activeRuntime, runtimeInspector, buildPathCandidates);
         RequireContains(projection.NextSafeAction, "rebind the active profile");
-        RequireContains(projection.RulesetSpotlight, "SR6 opens to the Sixth World dossier editor");
+        RequireContains(projection.RulesetSpotlight, "SR6 opens to the character builder");
         RequireContains(projection.ExplainFocus, "Explain focus:");
         RequireContains(projection.ExplainFocus, "Build path focus: Edge Runner Starter");
         RequireContains(projection.ExplainFocus, "Campaign next step:");
@@ -1985,7 +1998,7 @@ public sealed class AccessibilitySignoffSmokeTests
         RequireContains(toolStripSource, "desktop.shell.tool.open_support");
         RequireContains(toolStripSource, "desktop.shell.tool.report_issue");
         RequireContains(toolStripSource, "desktop.shell.tool.settings");
-        RequireContains(toolStripSource, "desktop.shell.tool.status_idle");
+        RequireDoesNotContain(toolStripSource, "desktop.shell.tool.status_idle");
 
         string menuBarMarkup = ReadSource("Chummer.Avalonia/Controls/ShellMenuBarControl.axaml");
         RequireContains(menuBarMarkup, "Tag=\"file\"");
@@ -2154,10 +2167,8 @@ public sealed class AccessibilitySignoffSmokeTests
         RequireContains(shellCodeBehind, "ShowInstallClaimGate");
         RequireContains(shellCodeBehind, "BuildInstallClaimHref()");
         RequireContains(shellCodeBehind, "BuildInstallSupportHref()");
-        RequireContains(shellCodeBehind, "BuildInstallOriginDossierHref()");
         RequireContains(shellSource, "Please claim your app");
         RequireContains(shellSource, "Claim this app on chummer.run");
-        RequireContains(shellSource, "desktop-install-origin-dossier");
         RequireContains(shellSource, "desktop-install-claim-gate");
         RequireContains(shellSource, "desktop-install-claim-start");
     }
@@ -2165,10 +2176,93 @@ public sealed class AccessibilitySignoffSmokeTests
     private static void BlazorDesktopPrintPreview_waits_for_loaded_document_before_printing()
     {
         string appSource = ReadSource("Chummer.Blazor/Components/App.razor");
-        RequireContains(appSource, "window.chummerPrints.openBase64");
-        RequireContains(appSource, "printWindow.document.readyState === 'complete'");
-        RequireContains(appSource, "printWindow.addEventListener('load', triggerPrint, { once: true })");
-        RequireContains(appSource, "printWindow.requestAnimationFrame");
+        string privacySource = ReadSource("Chummer.Blazor/wwwroot/js/privacy-boundaries.js");
+
+        RequireContains(appSource, "js/privacy-boundaries.js");
+        RequireContains(appSource, "data-consent-default=\"denied\"");
+        RequireContains(appSource, "data-automatic-pageviews=\"disabled\"");
+        RequireContains(appSource, "data-chummer-analytics-preferences");
+        RequireContains(appSource, "data-chummer-analytics-consent-status");
+        RequireContains(appSource, "data-chummer-analytics-consent-grant");
+        RequireContains(appSource, "data-chummer-analytics-consent-revoke");
+        RequireContains(appSource, "RybbitDefaultTrackUrl = \"https://app.rybbit.io/api/track\"");
+        RequireContains(appSource, "TryBuildRybbitTrackEndpointFromScript");
+        RequireDoesNotContain(appSource, "<script src=\"@rybbitAnalytics");
+        RequireDoesNotContain(appSource, "window.open('', '_blank')");
+        RequireDoesNotContain(appSource, "printWindow.document.write");
+
+        RequireContains(privacySource, "frame.setAttribute('sandbox', '')");
+        RequireContains(privacySource, "frame.setAttribute('referrerpolicy', 'no-referrer')");
+        RequireContains(privacySource, "frame.srcdoc = safePrintDocument");
+        RequireContains(privacySource, "default-src 'none'; script-src 'none'; connect-src 'none'");
+        RequireContains(privacySource, "object-src 'none'; frame-src 'none'");
+        RequireContains(privacySource, "base-uri 'none'; form-action 'none'");
+        RequireContains(privacySource, "preformatted.textContent = decoded");
+        RequireContains(privacySource, "sourceElement.namespaceURI !== 'http://www.w3.org/1999/xhtml'");
+        RequireContains(privacySource, "frame.addEventListener('load', triggerPrint, { once: true })");
+        RequireContains(privacySource, "global.requestAnimationFrame(() => global.print())");
+        RequireDoesNotContain(privacySource, "window.open(");
+        RequireDoesNotContain(privacySource, "document.write(");
+        RequireDoesNotContain(privacySource, "allow-same-origin");
+
+        RequireContains(privacySource, "analyticsConsentStorageKey");
+        RequireContains(privacySource, "navigator.globalPrivacyControl === true");
+        RequireContains(privacySource, "navigator.doNotTrack");
+        RequireContains(privacySource, "automaticPageviews: false");
+        RequireContains(privacySource, "pendingEventCount: 0");
+        RequireContains(privacySource, "credentials: 'omit'");
+        RequireContains(privacySource, "referrerPolicy: 'no-referrer'");
+        RequireContains(privacySource, "abortActiveAnalyticsRequests()");
+        RequireContains(privacySource, "properties: JSON.stringify(sanitized)");
+        RequireDoesNotContain(privacySource, "location.search");
+        RequireDoesNotContain(privacySource, "document.referrer");
+        RequireDoesNotContain(privacySource, "history.pushState");
+        RequireDoesNotContain(privacySource, "session_replay");
+    }
+
+    private static void BlazorDialogReveal_skips_same_dialog_recenters_across_transient_refreshes()
+    {
+        string appSource = ReadSource("Chummer.Blazor/Components/App.razor");
+        RequireContains(appSource, "window.chummerDialogs._pendingRevealResetHandle");
+        RequireContains(appSource, "window.chummerDialogs._pendingOriginAdvancedAnchor");
+        RequireContains(appSource, "window.chummerDialogs._pendingOriginFieldAnchor");
+        RequireContains(appSource, "window.chummerDialogs._pendingOriginAnchorCapturedAtMs");
+        RequireContains(appSource, "window.chummerDialogs._pendingSameDialogRefreshDialogId");
+        RequireContains(appSource, "window.chummerDialogs._pendingSameDialogRefreshCapturedAtMs");
+        RequireContains(appSource, "window.chummerDialogs._pendingDialogScrollRestoreVersion");
+        RequireContains(appSource, "window.chummerDialogs._originSameDialogAnchorGraceWindowMs");
+        RequireContains(appSource, "window.chummerDialogs._sameDialogRefreshArmWindowMs");
+        RequireContains(appSource, "window.chummerDialogs._sameDialogRefreshGraceWindowMs");
+        RequireContains(appSource, "window.chummerDialogs.clearPendingOriginAnchors");
+        RequireContains(appSource, "window.chummerDialogs.armSameDialogRefresh");
+        RequireContains(appSource, "window.chummerDialogs.hasPendingSameDialogRefresh");
+        RequireContains(appSource, "window.chummerDialogs.hasPendingOriginAnchor");
+        RequireContains(appSource, "window.chummerDialogs.hasPendingDialogScrollRestore");
+        RequireContains(appSource, "window.chummerDialogs.scheduleRevealReset");
+        RequireContains(appSource, "window.chummerDialogs.cancelRevealReset");
+        RequireContains(appSource, "window.chummerDialogs.isSameDialogRefresh");
+        RequireContains(appSource, "data-origin-advanced-controls][data-expanded=\"true\"]");
+        RequireContains(appSource, "captureDialogScroll = function(element, fieldId)");
+        RequireContains(appSource, "window.chummerDialogs._pendingDialogScrollOffset");
+        RequireContains(appSource, "fieldAnchorElement.closest('[data-origin-wizard]')");
+        RequireContains(appSource, "restoreOriginAdvancedAnchor");
+        RequireContains(appSource, "restoreOriginFieldAnchor");
+        RequireContains(appSource, "window.chummerDialogs.restorePendingDialogScroll = function(element, dialogId)");
+        RequireContains(appSource, "const restoreVersion = Number(window.chummerDialogs._pendingDialogScrollRestoreVersion || 0);");
+        RequireContains(appSource, "if (restoreVersion !== Number(window.chummerDialogs._pendingDialogScrollRestoreVersion || 0)) {");
+        RequireContains(appSource, "window.chummerDialogs.scheduleRevealReset();");
+        RequireContains(appSource, "window.chummerDialogs.cancelRevealReset();");
+        RequireContains(appSource, "window.chummerDialogs.isSameDialogRefresh(dialogId)");
+        RequireContains(appSource, "&& (window.chummerDialogs._lastRevealedDialogId === dialogId");
+        RequireContains(appSource, "|| window.chummerDialogs.hasPendingSameDialogRefresh(dialogId)");
+        RequireContains(appSource, "|| window.chummerDialogs.hasPendingOriginAnchor(dialogId)));");
+        Assert.IsFalse(
+            appSource.Contains("const shouldPreferOriginAdvancedAnchor = function()", StringComparison.Ordinal),
+            "Origin scroll restoration should anchor to the active field before falling back to the advanced panel.");
+        RequireContains(appSource, "window.chummerDialogs.hasPendingOriginAnchor(window.chummerDialogs._lastRevealedDialogId || null)");
+        RequireContains(appSource, "window.chummerDialogs.hasPendingSameDialogRefresh(window.chummerDialogs._lastRevealedDialogId || null)");
+        RequireContains(appSource, "window.chummerDialogs.armSameDialogRefresh(dialogId || null);");
+        RequireContains(appSource, "}, window.chummerDialogs._sameDialogRefreshGraceWindowMs);");
     }
 
     private static void BlazorHome_uses_local_chummer6_flagship_media_samples()

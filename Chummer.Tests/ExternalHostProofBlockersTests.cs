@@ -7,6 +7,7 @@ using System.Net;
 using System.Net.Sockets;
 using System.Text;
 using System.Text.Json;
+using System.Linq;
 using System.Threading.Tasks;
 using Chummer.Desktop.Runtime;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
@@ -224,6 +225,141 @@ public sealed class ExternalHostProofBlockersTests
             Assert.AreEqual(receiptRecordedAt.ToString("O"), request.GetProperty("startupSmokeReceiptRecordedAtUtc").GetString());
             StringAssert.Contains(request.GetProperty("blockerCodes").ToString(), "receipt_precedes_release_publication");
             StringAssert.Contains(request.GetProperty("blockerMessages").ToString(), "current release channel was published");
+        }
+        finally
+        {
+            if (Directory.Exists(tempRoot))
+            {
+                Directory.Delete(tempRoot, recursive: true);
+            }
+        }
+    }
+
+    [TestMethod]
+    public async Task Materializer_surfaces_current_windows_visual_proof_backlog_even_when_release_manifest_has_no_external_request_rows()
+    {
+        string repoRoot = FindRepoRoot();
+        string scriptPath = Path.Combine(repoRoot, "scripts", "materialize-external-host-proof-blockers.py");
+        string tempRoot = Path.Combine(Path.GetTempPath(), $"external-host-proof-blockers-{Guid.NewGuid():N}");
+        Directory.CreateDirectory(tempRoot);
+
+        try
+        {
+            string downloadsDir = Path.Combine(tempRoot, "files");
+            string startupSmokeDir = Path.Combine(tempRoot, "startup-smoke");
+            Directory.CreateDirectory(downloadsDir);
+            Directory.CreateDirectory(startupSmokeDir);
+
+            string releaseVersion = "run-20260704-test";
+            string installerFileName = "chummer-avalonia-win-x64-installer.exe";
+            string installerPath = Path.Combine(downloadsDir, installerFileName);
+            byte[] installerBytes = Encoding.UTF8.GetBytes("windows-proof-installer");
+            await File.WriteAllBytesAsync(installerPath, installerBytes).ConfigureAwait(false);
+            string installerSha = Convert.ToHexString(System.Security.Cryptography.SHA256.HashData(installerBytes)).ToLowerInvariant();
+
+            string manifestPath = Path.Combine(tempRoot, "RELEASE_CHANNEL.generated.json");
+            await File.WriteAllTextAsync(
+                manifestPath,
+                JsonSerializer.Serialize(
+                    new
+                    {
+                        channelId = "preview",
+                        version = releaseVersion,
+                        artifacts = new object[]
+                        {
+                            new
+                            {
+                                artifactId = "avalonia-win-x64-installer",
+                                head = "avalonia",
+                                rid = "win-x64",
+                                platform = "windows",
+                                kind = "installer",
+                                fileName = installerFileName,
+                                installAccessClass = "open_public",
+                                downloadUrl = "https://chummer.run/downloads/install/avalonia-win-x64-installer",
+                            },
+                        },
+                        desktopTupleCoverage = new
+                        {
+                            missingRequiredPlatformHeadRidTuples = Array.Empty<string>(),
+                            externalProofRequests = Array.Empty<object>(),
+                            desktopRouteTruth = new object[]
+                            {
+                                new
+                                {
+                                    tupleId = "avalonia:win-x64:windows",
+                                    publicInstallRoute = "/downloads/install/avalonia-win-x64-installer",
+                                },
+                            },
+                        },
+                    }),
+                Encoding.UTF8).ConfigureAwait(false);
+
+            string windowsGatePath = Path.Combine(tempRoot, "UI_WINDOWS_DESKTOP_EXIT_GATE.generated.json");
+            await File.WriteAllTextAsync(
+                windowsGatePath,
+                JsonSerializer.Serialize(
+                    new
+                    {
+                        contract_name = "chummer6-ui.windows_desktop_exit_gate",
+                        channelId = "preview",
+                        releaseVersion = releaseVersion,
+                        status = "failed",
+                        blockingMode = "external_only",
+                        reasons = new[]
+                        {
+                            "Windows installer visual proof is missing; capture progress and completion screenshots on a Windows host.",
+                        },
+                        checks = new
+                        {
+                            release_channel_id = "preview",
+                            release_channel_version = releaseVersion,
+                            expected_windows_head = "avalonia",
+                            expected_windows_rid = "win-x64",
+                            expected_windows_file_name = installerFileName,
+                            windows_installer_path = installerPath,
+                            installer_exists = true,
+                            installer_sha256 = installerSha,
+                            release_channel_windows_artifact = new
+                            {
+                                artifactId = "avalonia-win-x64-installer",
+                            },
+                            windows_installer_visual_proof_current_capture_pending = true,
+                            windows_installer_visual_proof_handoff_only_blocker_is_visual_proof = true,
+                            windows_installer_visual_proof_handoff_external_artifact_required = true,
+                            windows_installer_visual_proof_handoff_current_visual_proof_stale = true,
+                        },
+                    }),
+                Encoding.UTF8).ConfigureAwait(false);
+
+            string outputPath = Path.Combine(tempRoot, "UI_EXTERNAL_HOST_PROOF_BLOCKERS.generated.json");
+            (int exitCode, string output) = RunProcess(
+                fileName: "python3",
+                arguments:
+                    $"\"{scriptPath}\" --manifest \"{manifestPath}\" --downloads-dir \"{downloadsDir}\" --startup-smoke-dir \"{startupSmokeDir}\" --output \"{outputPath}\" --windows-exit-gate \"{windowsGatePath}\" --skip-public-route-check",
+                workingDirectory: repoRoot);
+
+            Assert.AreEqual(0, exitCode, output);
+            using JsonDocument payload = JsonDocument.Parse(await File.ReadAllTextAsync(outputPath).ConfigureAwait(false));
+            Assert.AreEqual("blocked", payload.RootElement.GetProperty("status").GetString());
+            CollectionAssert.AreEqual(
+                new[] { "windows" },
+                payload.RootElement.GetProperty("unresolved_hosts").EnumerateArray().Select(item => item.GetString()).ToArray());
+            CollectionAssert.AreEqual(
+                new[] { "avalonia:win-x64:windows" },
+                payload.RootElement.GetProperty("unresolved_tuples").EnumerateArray().Select(item => item.GetString()).ToArray());
+
+            JsonElement request = payload.RootElement.GetProperty("external_proof_requests")[0];
+            Assert.AreEqual("avalonia:win-x64:windows", request.GetProperty("tupleId").GetString());
+            Assert.AreEqual("windows", request.GetProperty("requiredHost").GetString());
+            Assert.AreEqual("open_public", request.GetProperty("installAccessClass").GetString());
+            Assert.AreEqual("/downloads/install/avalonia-win-x64-installer", request.GetProperty("expectedPublicInstallRoute").GetString());
+            Assert.AreEqual(installerSha, request.GetProperty("expectedInstallerSha256").GetString());
+            StringAssert.Contains(request.GetProperty("blockerCodes").ToString(), "windows_visual_proof_capture_pending");
+            StringAssert.Contains(request.GetProperty("blockerCodes").ToString(), "windows_visual_proof_stale");
+            StringAssert.Contains(
+                request.GetProperty("blockerMessages").ToString(),
+                "Windows installer visual proof is missing; capture progress and completion screenshots on a Windows host.");
         }
         finally
         {

@@ -23,4 +23,28 @@ public sealed class WorkspaceRemoteCloseService : IWorkspaceRemoteCloseService
             await TryCloseAsync(client, workspaceId, ct);
         }
     }
+
+    public async Task<CommandResult<WorkspaceRevisionReceipt>> TryDeleteAsync(
+        IChummerClient client,
+        CharacterWorkspaceId workspaceId,
+        long expectedContentRevision,
+        CancellationToken ct)
+    {
+        try
+        {
+            return await client.CloseWorkspaceAsync(workspaceId, expectedContentRevision, ct);
+        }
+        catch (OperationCanceledException) when (ct.IsCancellationRequested)
+        {
+            throw;
+        }
+        catch (Exception ex)
+        {
+            return new CommandResult<WorkspaceRevisionReceipt>(
+                Success: false,
+                Value: null,
+                Error: ex.Message,
+                OperationOutcome: WorkspaceOperationOutcome.Unavailable);
+        }
+    }
 }

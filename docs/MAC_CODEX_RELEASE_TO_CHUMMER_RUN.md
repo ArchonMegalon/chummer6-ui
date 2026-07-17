@@ -41,9 +41,7 @@ Recommended topology:
 5. Runner codesigns, notarizes, and staples the `.dmg`.
 6. Runner runs startup smoke on the notarized `.dmg`.
 7. Runner stages the desktop bundle under `dist/`.
-8. Runner publishes the bundle either:
-   - to the portal downloads filesystem root, or
-   - to object storage
+8. Runner publishes the bundle either through the controlled portal downloads filesystem root or the authenticated HTTP upload-session lane. The legacy fixed-key object-storage publisher is disabled fail-closed.
 9. Runner verifies both the deployed manifest and the live `https://chummer.run/downloads/releases.json`.
 
 ## Mac prerequisites
@@ -85,9 +83,7 @@ The Mac runner needs:
 3. Apple signing identity name
 4. Apple team id
 5. notarytool keychain profile name
-6. publish target, either:
-   - a filesystem path on the server, or
-   - an object storage URI and credentials
+6. publish target, either a controlled filesystem path on the server or authenticated HTTP upload-session credentials
 
 Suggested env vars:
 
@@ -254,7 +250,14 @@ dist/
   files/
   releases.json
   RELEASE_CHANNEL.generated.json
+  proof/
+    build-provenance/
+      v1/
+        invocations/
+        sbom/
 ```
+
+For a Mac shelf, `proof/build-provenance/v1` is part of the release candidate, not optional side evidence. It must contain the governed invocation receipts and SBOM material for the exact artifact bytes named by both manifests. Do not replace this directory with a hand-written receipt or point the publisher at an accept-all validator.
 
 Move artifacts into `dist/files` and materialize the manifests:
 
@@ -345,19 +348,13 @@ bash scripts/publish-download-bundle.sh \
 EOF
 ```
 
-### Supported mode B: object storage publish
+### Disabled mode B: object storage publish
 
-Use this when the portal serves downloads from S3/R2-compatible storage.
+This mode is disabled. `scripts/publish-download-bundle-s3.sh` exits `78` without invoking a validator, generator, mirror sync, or AWS command. Use supported mode A or the authenticated HTTP upload-session lane.
 
-```bash
-export CHUMMER_PORTAL_DOWNLOADS_S3_URI="s3://bucket/path"
-export CHUMMER_PORTAL_DOWNLOADS_VERIFY_URL="https://chummer.run/downloads/releases.json"
-export AWS_ACCESS_KEY_ID="..."
-export AWS_SECRET_ACCESS_KEY="..."
-export AWS_DEFAULT_REGION="us-east-1"
+To inspect the refusal, execute `./scripts/publish-download-bundle-s3.sh` (or `/bin/bash -p scripts/publish-download-bundle-s3.sh`) directly. Do not wrap it in ordinary `bash`: caller-controlled `BASH_ENV` or exported functions can execute before any script body. `RUNBOOK_MODE=downloads-sync-s3 ./scripts/runbook.sh` uses the same absolute privileged-Bash boundary.
 
-bash scripts/publish-download-bundle-s3.sh dist
-```
+The fixed-key S3/R2 layout cannot preserve the old shelf across every artifact, proof, manifest, canonical-manifest, or latest-alias failure, and synchronization does not establish exact remote bytes. Re-enabling it requires immutable versioned artifact/proof keys, checksum-and-size verified remote inventory, and a single atomic canonical pointer that the portal understands. This is a serving-topology migration, not an operator override.
 
 ## Verify live publication
 
@@ -411,6 +408,7 @@ You are done when all of these are true:
 2. notarization succeeded
 3. startup smoke passed on macOS
 4. the generated manifest contains the mac artifact
-5. `https://chummer.run/downloads/releases.json` shows the mac artifact
-6. `https://chummer.run/downloads/files/<your dmg>` is fetchable
-7. public release truth no longer says mac is withheld
+5. the exact staged `proof/build-provenance/v1` validates against the artifact bytes and is published with the shelf
+6. `https://chummer.run/downloads/releases.json` shows the mac artifact
+7. `https://chummer.run/downloads/files/<your dmg>` is fetchable
+8. public release truth no longer says mac is withheld

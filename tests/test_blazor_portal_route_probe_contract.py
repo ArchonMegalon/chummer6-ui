@@ -23,27 +23,29 @@ def test_portal_route_probe_no_longer_depends_on_stale_copy_for_minimal_portal_s
     assert "data-portal-contact-scenarios=\"installer-account-app\"" not in script
 
 
-def test_portal_route_probe_verifies_public_online_alias_redirects_into_hosted_app_contract() -> None:
+def test_portal_route_probe_rejects_new_character_app_route_roster_fallback() -> None:
     script = Path("scripts/e2e-portal.cjs").read_text(encoding="utf-8")
 
-    assert "url: `${baseUrl}/online?command=character_roster`," in script
-    assert "/\\/blazor\\/app\\/?\\?command=character_roster$/.test(response.url)" in script
-    assert "typeof payload?.paths?.['/online'] === 'object'" in script
+    assert "url: `${baseUrl}/blazor/app?command=new_character`," in script
+    assert "text.includes('data-active-workflow=\"build-lab\"')" in script
+    assert "text.includes('data-command=\"new-character\"')" in script
+    assert "text.includes('data-chummer-app-startup-command=\"new_character\"')" in script
+    assert "text.includes('data-app-route-shared-shell=\"true\"')" in script
+    assert "text.includes('Build Lab shell')" in script
+    assert "!text.includes('Your runners will appear here.')" in script
 
 
-def test_portal_playwright_contract_tracks_current_dossier_facing_workbench_markers() -> None:
+def test_portal_playwright_contract_uses_runner_shell_language_instead_of_stale_dossier_copy() -> None:
     script = Path("scripts/e2e-portal-playwright.cjs").read_text(encoding="utf-8")
 
-    assert "expectTextIncludes(bodyText, 'Import dossier XML', 'portal workbench route');" in script
-    assert "expectTextIncludes(bodyText, 'Saved Dossiers', 'portal workbench route');" in script
+    assert "expectTextIncludes(bodyText, 'Import runner XML', 'portal workbench route');" in script
+    assert "expectTextIncludes(bodyText, 'Saved Runners', 'portal workbench route');" in script
     assert "expectTextIncludes(bodyText, 'Active Table', 'portal workbench route');" in script
     assert "expectTextIncludes(bodyText, 'Browser preview is not ready right now.', 'portal blazor root route');" in script
     assert "expectTextIncludes(bodyText, 'The downloadable Chummer client is the current stable path.', 'portal blazor root route');" in script
     assert "Import an existing dossier" not in script
-    assert "Import runner XML" not in script
     assert "No recent dossiers yet" not in script
     assert "Continue a recent dossier" not in script
-    assert "Saved Runners" not in script
     assert "Active Dossier" not in script
 
 
@@ -64,7 +66,9 @@ def test_portal_playwright_retries_transient_navigation_abortions_on_self_host_r
     assert "const routeNavigationRetryAttempts = Number(process.env.CHUMMER_PORTAL_ROUTE_RETRY_ATTEMPTS || '3');" in script
     assert "const routeNavigationRetryDelayMs = Number(process.env.CHUMMER_PORTAL_ROUTE_RETRY_DELAY_MS || '1500');" in script
     assert "function shouldRetryRouteNavigation(error)" in script
-    assert "message.includes('ERR_ABORTED') || message.includes('Timeout')" in script
+    assert "message.includes('ERR_ABORTED')" in script
+    assert "message.includes('ERR_NETWORK_CHANGED')" in script
+    assert "message.includes('Timeout')" in script
     assert "async function openPortalRoute(page, route, readySelector, waitUntilOverride)" in script
     assert "await page.goto('about:blank', { waitUntil: 'load', timeout: 5000 }).catch(() => {});" in script
     assert "await page.waitForTimeout(routeNavigationRetryDelayMs);" in script
@@ -78,6 +82,19 @@ def test_portal_playwright_supports_smoke_and_full_scopes_for_self_host_gating()
     assert "const fullOnlyAudits = [" in script
     assert "portal playwright scope: ${normalizedScope}" in script
     assert "if (normalizedScope === 'full')" in script
+
+
+def test_portal_playwright_new_character_audit_reopens_dialog_from_file_menu() -> None:
+    script = Path("scripts/e2e-portal-playwright.cjs").read_text(encoding="utf-8")
+
+    assert "async function expectNewRunnerMenuReopensDialog(page, context)" in script
+    assert "label[data-field-id=\"newCharacterBuildMethod\"] select" in script
+    assert "button.menu-btn.classic-menu-button" in script
+    assert "button.menu-item.classic-menu-item" in script
+    assert "Expected ${context} File menu to expand while the startup dialog is open" in script
+    assert "Expected ${context} File -> New runner to reopen the startup dialog with Priority selected" in script
+    assert "await expectNewRunnerMenuReopensDialog(page, 'portal new character dialog');" in script
+    assert "await expectNewRunnerMenuReopensDialog(page, 'portal new character deep link');" in script
 
 
 def test_portal_playwright_origin_dossier_audit_measures_story_preview_contrast() -> None:

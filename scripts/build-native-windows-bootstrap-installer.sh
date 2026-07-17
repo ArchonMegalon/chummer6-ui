@@ -36,6 +36,10 @@ SEVENZIP_EXTRA_SHA256="${CHUMMER_WINDOWS_7ZIP_EXTRA_SHA256:-081df9e9311dfd9c9e0e
 CURL_WINDOWS_URL="${CHUMMER_WINDOWS_CURL_URL:-https://curl.se/windows/dl-8.21.0_1/curl-8.21.0_1-win64-mingw.zip}"
 CURL_WINDOWS_SHA256="${CHUMMER_WINDOWS_CURL_SHA256:-157068447d5b0b178dcc650f29d4746049fa4c7cc12db5f2bc050c0b84e48e7a}"
 
+python3 "$REPO_ROOT/scripts/finalize-windows-bootstrap-installer.py" \
+  --config "$CONFIG_PATH" \
+  --validate-payload-only
+
 docker run --rm \
   -e HOST_UID="$(id -u)" \
   -e HOST_GID="$(id -g)" \
@@ -79,5 +83,9 @@ if [[ ! -f "$STAGE_DIR/output-installer.exe" ]]; then
   echo "NSIS bootstrap build did not produce $STAGE_DIR/output-installer.exe" >&2
   exit 1
 fi
+
+python3 "$REPO_ROOT/scripts/finalize-windows-bootstrap-installer.py" \
+  --installer "$STAGE_DIR/output-installer.exe" \
+  --config "$CONFIG_PATH"
 
 mv -f "$STAGE_DIR/output-installer.exe" "$OUTPUT_PATH"

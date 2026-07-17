@@ -5,9 +5,7 @@
           BorderThickness="0,0,0,1"
           Background="{DynamicResource ChummerShellChromeSubtleBrush}"
           Padding="8,6">
-    <Grid RowDefinitions="Auto,Auto"
-          ColumnDefinitions="*,Auto"
-          RowSpacing="4">
+    <Grid ColumnDefinitions="*,Auto">
       <WrapPanel x:Name="ClassicActionStrip"
                  Grid.Column="0"
                  Orientation="Horizontal"
@@ -165,21 +163,6 @@
                 Click="StartOriginButton_OnClick" />
       </StackPanel>
 
-      <Border x:Name="StatusTextBorder"
-              Grid.Row="1"
-              Grid.ColumnSpan="2"
-              IsVisible="False"
-              BorderBrush="{DynamicResource ChummerShellBorderBrush}"
-              BorderThickness="1"
-              CornerRadius="6"
-              Background="{DynamicResource ChummerShellSurfaceAltBrush}"
-              Padding="10,4"
-              HorizontalAlignment="Left"
-              VerticalAlignment="Center">
-        <TextBlock x:Name="StatusText"
-                   Text="Ready"
-                   FontSize="11" />
-      </Border>
     </Grid>
   </Border>
 </UserControl>

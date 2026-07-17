@@ -37,6 +37,7 @@ public static class LegacyUiControlCatalog
         "spell_add",
         "adept_power_add",
         "complex_form_add",
+        "sprite_add",
         "initiation_add",
         "spirit_add",
         "critter_power_add",

@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd -P)"
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 source "$SCRIPT_DIR/_env.sh"
 
 declare -a args=("$@")
@@ -13,6 +13,7 @@ find_mstest_runner_binary() {
   local project_path="$1"
   local configuration="$2"
   local framework="$3"
+  local artifacts_path="${4:-}"
   local project_dir project_name candidate
   local -a search_roots=()
 
@@ -20,6 +21,9 @@ find_mstest_runner_binary() {
   project_name="$(basename "$project_path")"
   project_name="${project_name%.*}"
 
+  if [[ -n "$artifacts_path" ]]; then
+    search_roots+=("$artifacts_path/bin/$project_name")
+  fi
   if [[ -n "$framework" ]]; then
     search_roots+=("$project_dir/bin/$configuration/$framework")
   fi
@@ -37,7 +41,7 @@ find_mstest_runner_binary() {
           return 0
           ;;
       esac
-    done < <(find "$search_root" -maxdepth 2 -type f \( -perm -111 -o -name '*.exe' \) | sort)
+    done < <(find "$search_root" -maxdepth 4 -type f \( -perm -111 -o -name '*.exe' \) | sort)
   done
 
   return 1
@@ -47,7 +51,7 @@ run_mstest_runner() {
   local project_path="$test_target_path"
   local configuration="Debug"
   local framework=""
-  local skip_build=0
+  local artifacts_path="${CHUMMER_TEST_ARTIFACTS_PATH:-}"
   local -a build_args=(build "$project_path")
   local -a runner_args=()
   local index=0
@@ -58,6 +62,12 @@ run_mstest_runner() {
     normalized_project_path="$(realpath "$project_path")"
   else
     normalized_project_path="$project_path"
+  fi
+
+  if [[ -n "$artifacts_path" ]]; then
+    mkdir -p "$artifacts_path"
+    artifacts_path="$(realpath "$artifacts_path")"
+    build_args+=(--artifacts-path "$artifacts_path")
   fi
 
   while (( index < ${#args[@]} )); do
@@ -100,6 +110,24 @@ run_mstest_runner() {
         ((index += 1))
         continue
         ;;
+      --artifacts-path)
+        if (( index + 1 < ${#args[@]} )); then
+          artifacts_path="${args[$((index + 1))]}"
+          mkdir -p "$artifacts_path"
+          artifacts_path="$(realpath "$artifacts_path")"
+          build_args+=(--artifacts-path "$artifacts_path")
+          ((index += 2))
+          continue
+        fi
+        ;;
+      --artifacts-path=*)
+        artifacts_path="${args[$index]#*=}"
+        mkdir -p "$artifacts_path"
+        artifacts_path="$(realpath "$artifacts_path")"
+        build_args+=(--artifacts-path "$artifacts_path")
+        ((index += 1))
+        continue
+        ;;
       -p:*|/p:*|--property:*)
         case "${args[$index]}" in
           -p:ProduceReferenceAssembly=*|/p:ProduceReferenceAssembly=*|--property:ProduceReferenceAssembly=*)
@@ -112,7 +140,6 @@ run_mstest_runner() {
         continue
         ;;
       --no-build)
-        skip_build=1
         ((index += 1))
         continue
         ;;
@@ -145,13 +172,11 @@ run_mstest_runner() {
     ((index += 1))
   done
 
-  if [[ "$skip_build" -eq 0 ]]; then
-    "$SCRIPT_DIR/with-package-plane.sh" "${build_args[@]}"
-  fi
+  "$SCRIPT_DIR/with-package-plane.sh" "${build_args[@]}"
 
-  target_path="$(find_mstest_runner_binary "$project_path" "$configuration" "$framework" || true)"
+  target_path="$(find_mstest_runner_binary "$project_path" "$configuration" "$framework" "$artifacts_path" || true)"
   if [[ -z "$target_path" ]]; then
-    echo "unable to locate MSTest runner output for $project_path (configuration=$configuration framework=${framework:-default})" >&2
+    echo "unable to locate MSTest runner output for $project_path (configuration=$configuration framework=${framework:-default} artifacts_path=${artifacts_path:-default})" >&2
     return 1
   fi
 

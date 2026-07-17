@@ -6,9 +6,9 @@
 {
     <div class="desktop-shell classic-desktop-shell"
          @ref="_shellRoot"
-         tabindex="0"
+         tabindex="-1"
          @onkeydown="OnShellKeyDown">
-        <a class="skip-link" href="#chummer-workspace-main">Skip to dossier</a>
+        <a class="skip-link" href="#chummer-workspace-main">Skip to runner</a>
         <header class="desktop-shell-topline desktop-shell-topline--gate" aria-label="Chummer install claim state">
             <div class="desktop-shell-title">
                 <p>Chummer Online</p>
@@ -52,11 +52,6 @@
                        href="@BuildInstallDownloadsHref()">
                         Open downloads
                     </a>
-                    <a class="mini-btn"
-                       data-testid="desktop-install-origin-dossier"
-                       href="@BuildInstallOriginDossierHref()">
-                        Open clean Origin Dossier route
-                    </a>
                 </div>
             </section>
         </main>
@@ -64,22 +59,16 @@
 }
 else
 {
-<section class="desktop-shell classic-desktop-shell"
-         @ref="_shellRoot"
-         tabindex="0"
-         aria-busy="@State.IsBusy"
-         data-tab="@ClassicShellActiveTabId"
-         data-ruleset="@ClassicShellRulesetId"
-         data-active-workflow="@ClassicShellActiveWorkflowId"
-         data-route-segment="@ClassicShellRouteSegment"
-         data-active-runner="@ClassicShellActiveRunner"
-         data-legacy-runner="@ClassicShellActiveRunner"
-         @onkeydown="OnShellKeyDown">
-    <a class="skip-link" href="#chummer-workspace-main">Skip to dossier</a>
+<div class="desktop-shell classic-desktop-shell @(State.ActiveDialog is not null ? "desktop-shell--dialog-open" : string.Empty) @(UseResponsiveBuildWorkspace ? "desktop-shell--responsive-build" : string.Empty)"
+     @ref="_shellRoot"
+     tabindex="-1"
+     aria-busy="@State.IsBusy"
+     @onkeydown="OnShellKeyDown">
+    <a class="skip-link" href="#chummer-workspace-main">Skip to runner</a>
     <MenuBar MenuRoots="@MenuRoots.ToArray()"
              CurrentLanguage="@CurrentLanguage"
              OpenMenuId="@_shellSurfaceState.OpenMenuId"
-             IsBusy="@State.IsBusy"
+             IsBusy="@IsShellChromeLocked"
              MenuCommands="@MenuCommands"
              IsCommandEnabled="@IsCommandEnabled"
              ToggleMenuRequested="@ToggleMenu"
@@ -88,18 +77,18 @@ else
     <ToolStrip Commands="@ToolStripCommands.ToArray()"
                CurrentLanguage="@CurrentLanguage"
                LastCommandId="@(_shellSurfaceState.LastCommandId ?? State.LastCommandId)"
-               IsBusy="@State.IsBusy"
+               IsBusy="@IsShellChromeLocked"
                IsCommandEnabled="@IsCommandEnabled"
                ExecuteCommandRequested="@ExecuteCommandAsync" />
 
     <header class="desktop-shell-topline" aria-label="Chummer Online session state">
         <div class="desktop-shell-title">
             <p>Chummer Online</p>
-            <h1>@(State.Profile?.Alias ?? State.Profile?.Name ?? "Dossier")</h1>
+            <h1>@(State.Profile?.Alias ?? State.Profile?.Name ?? "Runner")</h1>
         </div>
         <dl class="desktop-shell-readiness">
             <div><dt>Route</dt><dd>Browser app</dd></div>
-            <div><dt>Dossiers</dt><dd>@_shellSurfaceState.OpenWorkspaces.Count open</dd></div>
+            <div><dt>Runners</dt><dd>@_shellSurfaceState.OpenWorkspaces.Count open</dd></div>
             <div><dt>Ruleset</dt><dd>@(_shellSurfaceState.ActiveRulesetId ?? State.Rules?.GameEdition ?? "not set")</dd></div>
             <div><dt>State</dt><dd>@(State.IsBusy ? "Working" : string.IsNullOrWhiteSpace(_shellSurfaceState.Error) ? "Ready" : "Needs attention")</dd></div>
         </dl>
@@ -115,136 +104,95 @@ else
                   CloseWorkspaceRequested="@CloseWorkspaceAsync" />
     }
 
-    <SummaryHeader State="@State"
-                   ShellSurface="@_shellSurfaceState"
-                   NavigationTabs="@NavigationTabs"
-                   ActiveTabId="@_shellSurfaceState.ActiveTabId"
-                   IsNavigationTabEnabled="@IsNavigationTabEnabled"
-                   SelectTabRequested="@SelectTabAsync"
-                   InspectRuntimeRequested="@OpenRuntimeInspectorAsync" />
+    @if (!UseResponsiveBuildWorkspace)
+    {
+        <SummaryHeader State="@State"
+                       ShellSurface="@_shellSurfaceState"
+                       NavigationTabs="@NavigationTabs"
+                       ActiveTabId="@_shellSurfaceState.ActiveTabId"
+                       IsNavigationTabEnabled="@IsNavigationTabEnabled"
+                       SelectTabRequested="@SelectTabAsync"
+                       InspectRuntimeRequested="@OpenRuntimeInspectorAsync" />
+    }
 
     @if (!string.IsNullOrWhiteSpace(State.Notice))
     {
-        @if (OriginDossierNoticeHref is { } originDossierNoticeHref)
-        {
-            <div class="shell-notice" role="status" data-shell-notice data-shell-notice-kind="origin-dossier-link">
-                <p>@State.Notice</p>
-                <div class="shell-notice-actions">
-                    <a href="@originDossierNoticeHref"
-                       data-shell-notice-link="origin-dossier">
-                        Open clean Origin Dossier route
-                    </a>
-                </div>
-                <code class="shell-notice-code" data-shell-notice-route="origin-dossier">@originDossierNoticeHref</code>
-            </div>
-        }
-        else if (DownloadNoticeReceipt is { } downloadNoticeReceipt)
-        {
-            <div class="shell-notice" role="status" data-shell-notice data-shell-notice-kind="download">
-                <p>@State.Notice</p>
-                <div class="shell-notice-actions">
-                    <button type="button"
-                            data-shell-notice-action="download"
-                            @onclick="RetryPendingDownloadAsync">
-                        Download again
-                    </button>
-                </div>
-                <code class="shell-notice-code" data-shell-notice-file="download">@downloadNoticeReceipt.FileName</code>
-            </div>
-        }
-        else if (ExportNoticeReceipt is { } exportNoticeReceipt)
-        {
-            <div class="shell-notice" role="status" data-shell-notice data-shell-notice-kind="export">
-                <p>@State.Notice</p>
-                <div class="shell-notice-actions">
-                    <button type="button"
-                            data-shell-notice-action="export"
-                            @onclick="RetryPendingExportAsync">
-                        Export again
-                    </button>
-                </div>
-                <code class="shell-notice-code" data-shell-notice-file="export">@exportNoticeReceipt.FileName</code>
-            </div>
-        }
-        else if (PrintNoticeReceipt is { } printNoticeReceipt)
-        {
-            <div class="shell-notice" role="status" data-shell-notice data-shell-notice-kind="print">
-                <p>@State.Notice</p>
-                <div class="shell-notice-actions">
-                    <button type="button"
-                            data-shell-notice-action="print"
-                            @onclick="RetryPendingPrintAsync">
-                        Open preview again
-                    </button>
-                </div>
-                <code class="shell-notice-code" data-shell-notice-file="print">@printNoticeReceipt.FileName</code>
-            </div>
-        }
-        else
-        {
-            <p class="shell-notice" role="status" data-shell-notice>@State.Notice</p>
-        }
+        <p class="shell-notice" role="status" data-shell-notice>@State.Notice</p>
     }
     @if (!string.IsNullOrWhiteSpace(_demoWorkspaceRouteWarning))
     {
-        <div class="shell-notice shell-notice--warning" role="alert" data-demo-workspace-route-warning>
-            <p>@_demoWorkspaceRouteWarning</p>
-            <div class="shell-notice-actions">
-                <a href="@DemoWorkspaceRecoveryAppHref"
-                   data-demo-workspace-route-recovery="app">
-                    Open seeded Build Lab on Chummer Online
-                </a>
-                <a href="@DemoWorkspaceRecoveryWorkbenchHref"
-                   data-demo-workspace-route-recovery="workbench">
-                    Open seeded compatibility shell
-                </a>
-            </div>
-        </div>
+        <p class="shell-notice shell-notice--warning" role="alert" data-demo-workspace-route-warning>@_demoWorkspaceRouteWarning</p>
     }
 
-    <div class="workspace-layout @(ShowLeftPane ? "workspace-layout--with-left-pane" : "workspace-layout--without-left-pane")">
-        @if (ShowLeftPane)
-        {
-            <WorkspaceLeftPane State="@State"
-                               OpenWorkspaces="@_shellSurfaceState.OpenWorkspaces"
-                               ActiveWorkspaceId="@_shellSurfaceState.ActiveWorkspaceId"
-                               ActiveTabId="@_shellSurfaceState.ActiveTabId"
-                               NavigationTabs="@NavigationTabs"
-                               ActiveWorkspaceActions="@ActiveWorkspaceActions"
-                               ActiveWorkflowSurfaceActions="@ActiveWorkflowSurfaceActions"
-                               IsNavigationTabEnabled="@IsNavigationTabEnabled"
-                               OpenWorkspaceRequested="@OpenWorkspaceAsync"
-                               CloseWorkspaceRequested="@CloseWorkspaceAsync"
-                               SelectTabRequested="@SelectTabAsync"
-                               ExecuteWorkspaceActionRequested="@ExecuteWorkspaceActionAsync"
-                               ExecuteWorkflowSurfaceRequested="@ExecuteWorkflowSurfaceAsync" />
-        }
+    @if (UseResponsiveBuildWorkspace)
+    {
+        <BuildPwaWorkspace State="@State"
+                           ShellSurface="@_shellSurfaceState"
+                           OpenWorkspaces="@_shellSurfaceState.OpenWorkspaces"
+                           ActiveWorkspaceId="@_shellSurfaceState.ActiveWorkspaceId"
+                           ActiveTabId="@_shellSurfaceState.ActiveTabId"
+                           NavigationTabs="@NavigationTabs"
+                           ActiveWorkspaceActions="@ActiveWorkspaceActions"
+                           ActiveWorkflowSurfaceActions="@ActiveWorkflowSurfaceActions"
+                           MobileCommands="@HeadCommands.ToArray()"
+                           IsNavigationTabEnabled="@IsNavigationTabEnabled"
+                           IsCommandEnabled="@IsCommandEnabled"
+                           OpenWorkspaceRequested="@OpenWorkspaceAsync"
+                           CloseWorkspaceRequested="@CloseWorkspaceAsync"
+                           SelectTabRequested="@SelectTabAsync"
+                           ExecuteWorkspaceActionRequested="@ExecuteWorkspaceActionAsync"
+                           ExecuteWorkflowSurfaceRequested="@ExecuteWorkflowSurfaceAsync"
+                           ExecuteCommandRequested="@ExecuteCommandAsync"
+                           ExecuteUiControlRequested="@HandleUiControlAsync"
+                           AttributeEditRequested="@HandleAttributeEditAsync"
+                           LoadWorkspaceRequested="@(workspaceId => LoadWorkspaceAsync(workspaceId))"
+                           DeletionCommitSource="@(Presenter as IWorkspaceDeletionCommitSource)"
+                           RecoveryCopySource="@(Presenter as IWorkspaceRecoveryCopySource)"
+                           InspectRuntimeRequested="@OpenRuntimeInspectorAsync" />
+    }
+    else
+    {
+        <div class="workspace-layout @(ShowLeftPane ? "workspace-layout--with-left-pane" : "workspace-layout--without-left-pane")">
+            @if (ShowLeftPane)
+            {
+                <WorkspaceLeftPane State="@State"
+                                   OpenWorkspaces="@_shellSurfaceState.OpenWorkspaces"
+                                   ActiveWorkspaceId="@_shellSurfaceState.ActiveWorkspaceId"
+                                   ActiveTabId="@_shellSurfaceState.ActiveTabId"
+                                   NavigationTabs="@NavigationTabs"
+                                   ActiveWorkspaceActions="@ActiveWorkspaceActions"
+                                   ActiveWorkflowSurfaceActions="@ActiveWorkflowSurfaceActions"
+                                   IsNavigationTabEnabled="@IsNavigationTabEnabled"
+                                   OpenWorkspaceRequested="@OpenWorkspaceAsync"
+                                   CloseWorkspaceRequested="@CloseWorkspaceAsync"
+                                   SelectTabRequested="@SelectTabAsync"
+                                   ExecuteWorkspaceActionRequested="@ExecuteWorkspaceActionAsync"
+                                   ExecuteWorkflowSurfaceRequested="@ExecuteWorkflowSurfaceAsync" />
+            }
 
-        <main id="chummer-workspace-main" class="center-pane" tabindex="-1">
-            <SectionPane State="@State"
-                         IsCommandEnabled="@IsCommandEnabled"
-                         ExecuteCommandRequested="@ExecuteCommandAsync"
-                         ExecuteUiControlRequested="@HandleUiControlAsync"
-                         LoadWorkspaceRequested="@(workspaceId => LoadWorkspaceAsync(workspaceId))"
-                         RetryPendingDownloadRequested="@RetryPendingDownloadAsync"
-                         RetryPendingExportRequested="@RetryPendingExportAsync"
-                         RetryPendingPrintRequested="@RetryPendingPrintAsync" />
-        </main>
-
-    </div>
+            <main id="chummer-workspace-main" class="center-pane" tabindex="-1">
+                <SectionPane State="@State"
+                             IsCommandEnabled="@IsCommandEnabled"
+                             ExecuteCommandRequested="@ExecuteCommandAsync"
+                             ExecuteUiControlRequested="@HandleUiControlAsync"
+                             AttributeEditRequested="@HandleAttributeEditAsync"
+                             LoadWorkspaceRequested="@(workspaceId => LoadWorkspaceAsync(workspaceId))" />
+            </main>
+        </div>
+    }
 
     <StatusStrip WorkspaceId="@_shellSurfaceState.ActiveWorkspaceId"
                  Error="@_shellSurfaceState.Error"
                  LastUiUtc="@_lastUiUtc"
                  ComplianceState="@ComplianceState" />
-</section>
+</div>
 
 <DialogHost Dialog="@State.ActiveDialog"
+            OriginWizardAdvancedControlsOpen="@_originWizardAdvancedControlsOpen"
+            OriginWizardAdvancedControlsOpenChanged="@OnOriginWizardAdvancedControlsOpenChangedAsync"
             CloseRequested="@CloseDialogAsync"
             ExecuteDialogActionRequested="@ExecuteDialogActionAsync"
             FieldInputRequested="@OnDialogFieldInputAsync"
             FieldCheckboxRequested="@OnDialogCheckboxChangedAsync"
-            RosterDropRequested="@OnDialogRosterDropAsync"
-            OriginWizardAdvancedControlsOpen="@_originWizardAdvancedControlsOpen"
-            OriginWizardAdvancedControlsOpenChanged="@OnOriginWizardAdvancedControlsOpenChangedAsync" />
+            RosterDropRequested="@OnDialogRosterDropAsync" />
 }

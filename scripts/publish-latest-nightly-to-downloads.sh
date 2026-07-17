@@ -1,18 +1,9 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-SCRIPT_DIR_PHYSICAL="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd -P)"
-REPO_ROOT_PHYSICAL="$(cd "$SCRIPT_DIR_PHYSICAL/.." && pwd -P)"
-REPO_ROOT_ALIAS_CANDIDATE="${CHUMMER_UI_REPO_ROOT_ALIAS:-$REPO_ROOT_PHYSICAL}"
-REPO_ROOT="$REPO_ROOT_PHYSICAL"
-if [[ -n "$REPO_ROOT_ALIAS_CANDIDATE" && -d "$REPO_ROOT_ALIAS_CANDIDATE" ]]; then
-  ALIAS_PHYSICAL="$(cd "$REPO_ROOT_ALIAS_CANDIDATE" && pwd -P)"
-  if [[ "$ALIAS_PHYSICAL" == "$REPO_ROOT_PHYSICAL" ]]; then
-    REPO_ROOT="$(cd -L "$REPO_ROOT_ALIAS_CANDIDATE" && pwd -L)"
-  fi
-fi
-SCRIPT_DIR="$REPO_ROOT/scripts"
-WORKSPACE_ROOT="$(cd "$REPO_ROOT_PHYSICAL/.." && pwd -P)"
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+REPO_ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"
+WORKSPACE_ROOT="$(cd "$REPO_ROOT/.." && pwd)"
 
 STAGING_ROOT="${CHUMMER_STAGING_ROOT:-$WORKSPACE_ROOT/_staging}"
 DEPLOY_DIR="${1:-${CHUMMER_PORTAL_DOWNLOADS_DEPLOY_DIR:-$WORKSPACE_ROOT/chummer.run-services/Chummer.Portal/downloads}}"
@@ -32,8 +23,6 @@ FORCE_NIGHTLY_PUBLISH="${CHUMMER_FORCE_NIGHTLY_PUBLISH:-0}"
 PUBLIC_EDGE_VERIFY_BASE_URL="${CHUMMER_PUBLIC_EDGE_VERIFY_BASE_URL:-http://127.0.0.1:${CHUMMER_PUBLIC_EDGE_PORT:-8091}}"
 PUBLIC_EDGE_VERIFY_HOST="${CHUMMER_PUBLIC_EDGE_VERIFY_HOST:-chummer.run}"
 PUBLIC_EDGE_VERIFY_PROTO="${CHUMMER_PUBLIC_EDGE_VERIFY_PROTO:-https}"
-PUBLIC_EDGE_VERIFY_ATTEMPTS="${CHUMMER_PUBLIC_EDGE_VERIFY_ATTEMPTS:-20}"
-PUBLIC_EDGE_VERIFY_RETRY_DELAY_SECONDS="${CHUMMER_PUBLIC_EDGE_VERIFY_RETRY_DELAY_SECONDS:-2}"
 
 to_bool() {
   local value
@@ -41,22 +30,113 @@ to_bool() {
   [[ "$value" == "1" || "$value" == "true" || "$value" == "yes" || "$value" == "on" ]]
 }
 
-validate_absolute_http_url() {
-  local value="$1"
-  local label="$2"
-  python3 - "$value" "$label" <<'PY'
-import sys
-from urllib.parse import urlparse
+assert_legacy_release_shelf_target() {
+  local target_dir="$1"
+  local layout_marker="$target_dir/.release-shelf-layout-v1"
+  local active_pointer="$target_dir/current.json"
+  local writer_policy="$target_dir/.release-shelf-writer-policy.json"
 
-value = sys.argv[1].strip()
-label = sys.argv[2]
-parsed = urlparse(value)
-if parsed.scheme.lower() not in {"http", "https"} or not parsed.netloc:
-    print(
-        f"Invalid {label}: {value!r} (expected absolute http:// or https:// URL).",
-        file=sys.stderr,
-    )
-    raise SystemExit(1)
+  if [[ -e "$writer_policy" || -L "$writer_policy" ]]; then
+    echo "Refusing nightly filesystem publication into $target_dir: server-journal-v1 owns this shelf." >&2
+    echo "Use the staged HTTP upload API." >&2
+    return 1
+  fi
+  if [[ -e "$layout_marker" || -L "$layout_marker" || -e "$active_pointer" || -L "$active_pointer" ]]; then
+    echo "Refusing nightly fixed-path publication into $target_dir: immutable release shelf layout v1 is active." >&2
+    echo "Use the generation-aware publisher; this writer must not mutate paths behind current.json." >&2
+    return 1
+  fi
+}
+
+assert_legacy_release_shelf_target "$DEPLOY_DIR"
+
+normalized_public_release_channel="$(echo "$PUBLIC_RELEASE_CHANNEL" | tr '[:upper:]' '[:lower:]')"
+if [[ "$normalized_public_release_channel" =~ ^(public_stable|stable)$ ]] && ! to_bool "$ALLOW_STABLE_CHANNEL_FROM_NIGHTLY_PUBLISH"; then
+  echo "Nightly publisher is the preview handoff lane. Refusing stable/public_stable publication from this script." >&2
+  echo "Use the stable release publisher, or set CHUMMER_ALLOW_STABLE_CHANNEL_FROM_NIGHTLY_PUBLISH=true for an explicit one-off override." >&2
+  exit 1
+fi
+
+refresh_release_build_handoff() {
+  local stage_dir="$1"
+  local handoff_script="${CHUMMER_RELEASE_BUILD_HANDOFF_SCRIPT_PATH:-$SCRIPT_DIR/materialize_release_candidate_handoff.py}"
+
+  if [[ ! -f "$handoff_script" ]]; then
+    echo "Missing release build handoff materializer: $handoff_script" >&2
+    exit 1
+  fi
+
+  if ! python3 "$handoff_script" "$stage_dir" >/dev/null; then
+    echo "Failed to refresh release build handoff for nightly stage: $stage_dir" >&2
+    exit 1
+  fi
+
+  if [[ ! -f "$stage_dir/RELEASE_BUILD_HANDOFF.generated.json" ]]; then
+    echo "Nightly stage is missing RELEASE_BUILD_HANDOFF.generated.json after refresh: $stage_dir" >&2
+    exit 1
+  fi
+}
+
+emit_windows_visual_proof_handoff_guidance() {
+  local stage_dir="$1"
+  python3 - "$stage_dir" <<'PY' || true
+from __future__ import annotations
+
+import json
+import sys
+from pathlib import Path
+
+
+def load_json(path: Path) -> dict:
+    try:
+        payload = json.loads(path.read_text(encoding="utf-8-sig"))
+    except Exception:
+        return {}
+    return payload if isinstance(payload, dict) else {}
+
+
+def normalize(value: object) -> str:
+    return str(value or "").strip()
+
+
+stage_dir = Path(sys.argv[1])
+handoff_payload = {}
+handoff_path = None
+
+direct_path = stage_dir / "WINDOWS_INSTALLER_VISUAL_PROOF_HANDOFF.generated.json"
+if direct_path.is_file():
+    handoff_payload = load_json(direct_path)
+    handoff_path = direct_path
+
+if not handoff_payload:
+    release_handoff_path = stage_dir / "RELEASE_BUILD_HANDOFF.generated.json"
+    if release_handoff_path.is_file():
+        release_handoff = load_json(release_handoff_path)
+        candidate = release_handoff.get("windows_visual_proof_handoff")
+        if isinstance(candidate, dict):
+            handoff_payload = candidate
+            candidate_path = normalize(candidate.get("json_path"))
+            if candidate_path:
+                handoff_path = Path(candidate_path)
+
+if not handoff_payload:
+    raise SystemExit(0)
+
+status = normalize(handoff_payload.get("status"))
+summary = normalize(handoff_payload.get("summary"))
+next_actions = handoff_payload.get("next_actions") if isinstance(handoff_payload.get("next_actions"), list) else []
+json_path = normalize(handoff_payload.get("json_path")) or str(handoff_path or "")
+
+if json_path:
+    print(f"Windows visual proof handoff: {json_path}", file=sys.stderr)
+if status:
+    print(f"Windows visual proof status: {status}", file=sys.stderr)
+if summary:
+    print(f"Windows visual proof summary: {summary}", file=sys.stderr)
+for index, action in enumerate(next_actions[:2], start=1):
+    normalized_action = normalize(action)
+    if normalized_action:
+        print(f"Windows visual proof next action {index}: {normalized_action}", file=sys.stderr)
 PY
 }
 
@@ -115,165 +195,6 @@ print("ok")
 PY
 }
 
-validate_http_host_header() {
-  local value="$1"
-  local label="$2"
-  python3 - "$value" "$label" <<'PY'
-import sys
-
-value = sys.argv[1].strip()
-label = sys.argv[2]
-if not value or any(ch.isspace() for ch in value) or "://" in value or "/" in value:
-    print(
-        f"Invalid {label}: {value!r} (expected bare host header value).",
-        file=sys.stderr,
-    )
-    raise SystemExit(1)
-PY
-}
-
-validate_forwarded_proto() {
-  local value="$1"
-  local label="$2"
-  python3 - "$value" "$label" <<'PY'
-import sys
-
-value = sys.argv[1].strip().lower()
-label = sys.argv[2]
-if value not in {"http", "https"}:
-    print(
-        f"Invalid {label}: {sys.argv[1]!r} (expected 'http' or 'https').",
-        file=sys.stderr,
-    )
-    raise SystemExit(1)
-PY
-}
-
-manifest_channel_is_preview() {
-  local manifest_path="$1"
-  python3 - "$manifest_path" <<'PY'
-import json
-import sys
-from pathlib import Path
-
-path = Path(sys.argv[1])
-try:
-    payload = json.loads(path.read_text(encoding="utf-8-sig"))
-except Exception:
-    raise SystemExit(1)
-
-channel = str(payload.get("channel") or payload.get("channelId") or "").strip().lower()
-raise SystemExit(0 if channel == "preview" else 1)
-PY
-}
-
-normalized_public_release_channel="$(echo "$PUBLIC_RELEASE_CHANNEL" | tr '[:upper:]' '[:lower:]')"
-if [[ "$normalized_public_release_channel" =~ ^(public_stable|stable)$ ]] && ! to_bool "$ALLOW_STABLE_CHANNEL_FROM_NIGHTLY_PUBLISH"; then
-  echo "Nightly publisher is the preview handoff lane. Refusing stable/public_stable publication from this script." >&2
-  echo "Use the stable release publisher, or set CHUMMER_ALLOW_STABLE_CHANNEL_FROM_NIGHTLY_PUBLISH=true for an explicit one-off override." >&2
-  exit 1
-fi
-
-if to_bool "$REDEPLOY_PUBLIC_EDGE" && [[ "$DEPLOY_DIR" == "$WORKSPACE_ROOT/chummer.run-services/Chummer.Portal/downloads" ]]; then
-  validate_absolute_http_url "$PUBLIC_EDGE_VERIFY_BASE_URL" "CHUMMER_PUBLIC_EDGE_VERIFY_BASE_URL"
-  validate_http_host_header "$PUBLIC_EDGE_VERIFY_HOST" "CHUMMER_PUBLIC_EDGE_VERIFY_HOST"
-  validate_forwarded_proto "$PUBLIC_EDGE_VERIFY_PROTO" "CHUMMER_PUBLIC_EDGE_VERIFY_PROTO"
-fi
-
-refresh_release_build_handoff() {
-  local stage_dir="$1"
-  local handoff_script="${CHUMMER_RELEASE_BUILD_HANDOFF_SCRIPT_PATH:-$SCRIPT_DIR/materialize_release_candidate_handoff.py}"
-
-  if [[ ! -f "$handoff_script" ]]; then
-    echo "Missing release build handoff materializer: $handoff_script" >&2
-    exit 1
-  fi
-
-  if ! python3 "$handoff_script" "$stage_dir" >/dev/null; then
-    echo "Failed to refresh release build handoff for nightly stage: $stage_dir" >&2
-    exit 1
-  fi
-
-  if [[ ! -f "$stage_dir/RELEASE_BUILD_HANDOFF.generated.json" ]]; then
-    echo "Nightly stage is missing RELEASE_BUILD_HANDOFF.generated.json after refresh: $stage_dir" >&2
-    exit 1
-  fi
-}
-
-emit_windows_visual_proof_handoff_guidance() {
-  local stage_dir="$1"
-  python3 - "$stage_dir" <<'PY'
-from __future__ import annotations
-
-import json
-import sys
-from pathlib import Path
-
-
-def load_json(path: Path) -> dict:
-    try:
-        payload = json.loads(path.read_text(encoding="utf-8-sig"))
-    except Exception:
-        return {}
-    return payload if isinstance(payload, dict) else {}
-
-
-def normalize(value: object) -> str:
-    return str(value or "").strip()
-
-
-stage_dir = Path(sys.argv[1])
-handoff_payload = {}
-handoff_path = None
-
-direct_path = stage_dir / "WINDOWS_INSTALLER_VISUAL_PROOF_HANDOFF.generated.json"
-if direct_path.is_file():
-    handoff_payload = load_json(direct_path)
-    handoff_path = direct_path
-
-if not handoff_payload:
-    release_handoff_path = stage_dir / "RELEASE_BUILD_HANDOFF.generated.json"
-    if release_handoff_path.is_file():
-        release_handoff = load_json(release_handoff_path)
-        candidate = release_handoff.get("windows_visual_proof_handoff")
-        if isinstance(candidate, dict):
-            handoff_payload = candidate
-            candidate_path = normalize(candidate.get("json_path"))
-            if candidate_path:
-                handoff_path = Path(candidate_path)
-
-if not handoff_payload:
-    raise SystemExit(1)
-
-status = normalize(handoff_payload.get("status"))
-summary = normalize(handoff_payload.get("summary"))
-next_actions = handoff_payload.get("next_actions") if isinstance(handoff_payload.get("next_actions"), list) else []
-json_path = normalize(handoff_payload.get("json_path")) or str(handoff_path or "")
-json_artifact_path = None
-if handoff_path and handoff_path.is_file():
-    json_artifact_path = handoff_path
-elif json_path:
-    candidate = Path(json_path)
-    if candidate.is_file():
-        json_artifact_path = candidate
-blockers = handoff_payload.get("blockers")
-blockers_present = isinstance(blockers, list) and any(str(item).strip() for item in blockers)
-actionable = status in {"ready", "ready_for_windows_host"} and not blockers_present and json_artifact_path is not None
-
-if json_path:
-    print(f"Windows visual proof handoff: {json_path}", file=sys.stderr)
-if status:
-    print(f"Windows visual proof status: {status}", file=sys.stderr)
-if summary:
-    print(f"Windows visual proof summary: {summary}", file=sys.stderr)
-if next_actions:
-    first_action = normalize(next_actions[0])
-    if first_action:
-        print(f"Windows visual proof next action: {first_action}", file=sys.stderr)
-raise SystemExit(0 if actionable else 2)
-PY
-}
-
 verify_latest_stage_windows_payload_gate() {
   local stage_dir="$1"
   local files_dir="$stage_dir/files"
@@ -281,7 +202,6 @@ verify_latest_stage_windows_payload_gate() {
   local release_channel_manifest="$stage_dir/RELEASE_CHANNEL.generated.json"
   local -a gate_args=(
     --files-dir "$files_dir"
-    --allow-empty
     --require-embedded-bootstrap-metadata
     --require-manifest-row
   )
@@ -372,7 +292,7 @@ verify_latest_stage_windows_exit_gate() {
     bash "$SCRIPT_DIR/materialize-windows-desktop-exit-gate.sh" >/dev/null
   then
     rm -f "$gate_output"
-    emit_windows_visual_proof_handoff_guidance "$stage_dir" || true
+    emit_windows_visual_proof_handoff_guidance "$stage_dir"
     if forced_preview_nightly_visual_handoff_allowed "$stage_dir" >/dev/null; then
       echo "Forced preview nightly publication continuing with Windows visual proof handoff only; stable promotion remains blocked." >&2
       return 0
@@ -384,24 +304,43 @@ verify_latest_stage_windows_exit_gate() {
   rm -f "$gate_output"
 }
 
-verify_latest_stage_layout() {
+verify_latest_stage_windows_release_evidence() {
   local stage_dir="$1"
-  local normalized_stage_dir="${stage_dir%/}"
-  local parent_dir
-  parent_dir="$(dirname "$normalized_stage_dir")"
+  local release_channel_manifest="$stage_dir/RELEASE_CHANNEL.generated.json"
+  local releases_manifest="$stage_dir/releases.json"
   local files_dir="$stage_dir/files"
-  local nested_files_dir="$files_dir/files"
+  local signing_dir="$stage_dir/signing"
+  local startup_smoke_dir="$stage_dir/startup-smoke"
+  local windows_exit_gate="$stage_dir/UI_WINDOWS_DESKTOP_EXIT_GATE.generated.json"
+  local -a evidence_args=(
+    --release-channel "$release_channel_manifest"
+    --downloads-manifest "$releases_manifest"
+    --files-dir "$files_dir"
+    --signing-dir "$signing_dir"
+    --startup-smoke-dir "$startup_smoke_dir"
+    --windows-exit-gate "$windows_exit_gate"
+  )
 
-  if [[ "$(basename "$normalized_stage_dir")" == "files" ]] \
-    && [[ -f "$parent_dir/releases.json" || -f "$parent_dir/RELEASE_CHANNEL.generated.json" ]]; then
-    echo "Nightly staging root points at files/ directory: $normalized_stage_dir" >&2
-    echo "Build the nightly stage root, not its files/ child, before publishing." >&2
+  if [[ ! -f "$SCRIPT_DIR/verify-windows-release-evidence.py" ]]; then
+    echo "Missing Windows release evidence verifier: $SCRIPT_DIR/verify-windows-release-evidence.py" >&2
     exit 1
   fi
 
-  if [[ -d "$nested_files_dir" ]] && find "$nested_files_dir" -mindepth 1 -maxdepth 1 | grep -q .; then
-    echo "Nightly stage is malformed: found nested files directory under $nested_files_dir" >&2
-    echo "Build the nightly stage root, not its files/ child, before publishing." >&2
+  case "$normalized_public_release_channel" in
+    stable|public_stable)
+      evidence_args+=(--require-authenticode --require-native-windows)
+      ;;
+  esac
+
+  if forced_preview_nightly_visual_handoff_allowed "$stage_dir" >/dev/null; then
+    evidence_args+=(
+      --windows-visual-proof-handoff "$stage_dir/WINDOWS_INSTALLER_VISUAL_PROOF_HANDOFF.generated.json"
+      --allow-proof-only-visual-handoff
+    )
+  fi
+
+  if ! python3 "$SCRIPT_DIR/verify-windows-release-evidence.py" "${evidence_args[@]}"; then
+    echo "Nightly stage failed cross-evidence Windows release preflight. Rebuild a single-version Windows evidence set before publishing." >&2
     exit 1
   fi
 }
@@ -447,18 +386,15 @@ verify_public_edge_open_public_install_routes() {
   local base_url="$2"
   local public_host="$3"
   local forwarded_proto="$4"
-  local attempts="$5"
-  local retry_delay_seconds="$6"
 
   if [[ ! -f "$manifest_path" ]]; then
     echo "Published downloads shelf is missing canonical manifest for install-route verification: $manifest_path" >&2
     exit 1
   fi
 
-  if ! python3 - "$manifest_path" "$base_url" "$public_host" "$forwarded_proto" "$attempts" "$retry_delay_seconds" <<'PY'
+  if ! python3 - "$manifest_path" "$base_url" "$public_host" "$forwarded_proto" <<'PY'
 import json
 import sys
-import time
 import urllib.error
 import urllib.request
 from pathlib import Path
@@ -468,13 +404,6 @@ manifest_path = Path(sys.argv[1])
 base_url = sys.argv[2].rstrip("/")
 public_host = sys.argv[3].strip()
 forwarded_proto = sys.argv[4].strip()
-try:
-    attempts = int(sys.argv[5])
-    retry_delay_seconds = float(sys.argv[6])
-except ValueError as exc:
-    raise SystemExit(f"Invalid public-edge retry configuration: {exc}") from exc
-if attempts < 1 or retry_delay_seconds < 0:
-    raise SystemExit("Public-edge retry attempts must be positive and delay must be non-negative.")
 
 payload = json.loads(manifest_path.read_text(encoding="utf-8-sig"))
 downloads = []
@@ -504,37 +433,6 @@ class NoRedirectHandler(urllib.request.HTTPRedirectHandler):
 opener = urllib.request.build_opener(NoRedirectHandler)
 errors = []
 
-def request_route(route, headers):
-    request = urllib.request.Request(f"{base_url}{route}", method="GET", headers=headers)
-    for attempt in range(1, attempts + 1):
-        try:
-            with opener.open(request) as response:
-                status = getattr(response, "status", None) or response.getcode()
-                location = response.headers.get("Location", "")
-        except urllib.error.HTTPError as exc:
-            status = exc.code
-            location = exc.headers.get("Location", "")
-        except Exception as exc:
-            if attempt >= attempts:
-                return None, "", f"request failed after {attempts} attempts ({exc})"
-            print(
-                f"{route}: public edge not ready on attempt {attempt}/{attempts} ({exc}); retrying",
-                file=sys.stderr,
-            )
-            time.sleep(retry_delay_seconds)
-            continue
-
-        if status in {500, 502, 503, 504} and attempt < attempts:
-            print(
-                f"{route}: public edge returned {status} on attempt {attempt}/{attempts}; retrying",
-                file=sys.stderr,
-            )
-            time.sleep(retry_delay_seconds)
-            continue
-        return status, location, ""
-
-    return None, "", f"request failed after {attempts} attempts"
-
 for download in downloads:
     if not is_public_desktop_installer(download):
         continue
@@ -546,9 +444,16 @@ for download in downloads:
         headers["Host"] = public_host
     if forwarded_proto:
         headers["X-Forwarded-Proto"] = forwarded_proto
-    status, location, request_error = request_route(route, headers)
-    if request_error:
-        errors.append(f"{route}: {request_error}")
+    request = urllib.request.Request(f"{base_url}{route}", method="HEAD", headers=headers)
+    try:
+        response = opener.open(request)
+        status = getattr(response, "status", None) or response.getcode()
+        location = response.headers.get("Location", "")
+    except urllib.error.HTTPError as exc:
+        status = exc.code
+        location = exc.headers.get("Location", "")
+    except Exception as exc:
+        errors.append(f"{route}: request failed ({exc})")
         continue
 
     decoded_location = unquote(location or "")
@@ -639,24 +544,13 @@ case "$publish_guard_result" in
     ;;
 esac
 
-if [[ ! -d "$STAGING_ROOT" ]]; then
-  echo "Nightly staging root not found: $STAGING_ROOT" >&2
-  exit 1
-fi
-
 latest_stage=""
-verify_latest_stage_layout "$STAGING_ROOT"
-
-if is_publishable_nightly_stage "$STAGING_ROOT"; then
-  latest_stage="$STAGING_ROOT"
-else
-  while IFS= read -r candidate; do
-    if ! is_publishable_nightly_stage "$candidate"; then
-      continue
-    fi
-    latest_stage="$candidate"
-  done < <(find "$STAGING_ROOT" -maxdepth 1 -mindepth 1 \( -type d -o -type l \) -name 'nightly-run-*' | sort)
-fi
+while IFS= read -r candidate; do
+  if ! is_publishable_nightly_stage "$candidate"; then
+    continue
+  fi
+  latest_stage="$candidate"
+done < <(find "$STAGING_ROOT" -maxdepth 1 -mindepth 1 \( -type d -o -type l \) -name 'nightly-run-*' | sort)
 
 if [[ -z "$latest_stage" ]]; then
   echo "No publishable nightly stage found under $STAGING_ROOT" >&2
@@ -670,11 +564,11 @@ fi
 
 refresh_release_build_handoff "$latest_stage"
 
-verify_latest_stage_layout "$latest_stage"
 verify_latest_stage_artifact_scope_gate "$latest_stage"
 verify_latest_stage_windows_payload_gate "$latest_stage"
 verify_latest_stage_windows_startup_smoke_gate "$latest_stage"
 verify_latest_stage_windows_exit_gate "$latest_stage"
+verify_latest_stage_windows_release_evidence "$latest_stage"
 
 echo "Publishing latest nightly stage: $latest_stage"
 echo "Target downloads shelf: $DEPLOY_DIR"
@@ -700,8 +594,6 @@ CHUMMER_RELEASE_REQUIRE_COMPLETE_DESKTOP_COVERAGE="$REQUIRE_COMPLETE_DESKTOP_COV
 CHUMMER_PROMOTE_PROOF_BACKED_QUARANTINED_INSTALLERS="$PROMOTE_PROOF_BACKED_QUARANTINED_INSTALLERS" \
 CHUMMER_SKIP_STARTUP_SMOKE_HYDRATION="$SKIP_STARTUP_SMOKE_HYDRATION" \
 CHUMMER_ALLOW_SKIPPED_STARTUP_SMOKE="$ALLOW_SKIPPED_STARTUP_SMOKE" \
-CHUMMER_FORCE_NIGHTLY_PUBLISH="$FORCE_NIGHTLY_PUBLISH" \
-CHUMMER_RELEASE_SCOPE_TO_STAGE_ARTIFACTS=1 \
 bash "$SCRIPT_DIR/publish-download-bundle.sh" "$latest_stage" "$DEPLOY_DIR"
 
 if to_bool "$REDEPLOY_PUBLIC_EDGE" && [[ "$DEPLOY_DIR" == "$WORKSPACE_ROOT/chummer.run-services/Chummer.Portal/downloads" ]]; then
@@ -714,9 +606,7 @@ if to_bool "$REDEPLOY_PUBLIC_EDGE" && [[ "$DEPLOY_DIR" == "$WORKSPACE_ROOT/chumm
     "$DEPLOY_DIR/RELEASE_CHANNEL.generated.json" \
     "$PUBLIC_EDGE_VERIFY_BASE_URL" \
     "$PUBLIC_EDGE_VERIFY_HOST" \
-    "$PUBLIC_EDGE_VERIFY_PROTO" \
-    "$PUBLIC_EDGE_VERIFY_ATTEMPTS" \
-    "$PUBLIC_EDGE_VERIFY_RETRY_DELAY_SECONDS"
+    "$PUBLIC_EDGE_VERIFY_PROTO"
 fi
 
 python3 - "$DEPLOY_DIR/RELEASE_CHANNEL.generated.json" "$expected_version" <<'PY'

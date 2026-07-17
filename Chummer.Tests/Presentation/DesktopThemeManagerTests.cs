@@ -741,6 +741,7 @@ public sealed class DesktopThemeManagerTests
         string versionHistorySource = File.ReadAllText(Path.Combine(repoRoot, "Chummer.Avalonia", "DesktopVersionHistoryWindow.cs"));
         string desktopDialogSource = File.ReadAllText(Path.Combine(repoRoot, "Chummer.Avalonia", "DesktopDialogWindow.axaml.cs"));
         string commandDialogSource = File.ReadAllText(Path.Combine(repoRoot, "Chummer.Avalonia", "Controls", "CommandDialogPaneControl.axaml.cs"));
+        string classicMenuText = File.ReadAllText(Path.Combine(repoRoot, "Chummer.Avalonia", "Controls", "ClassicMenuBar.axaml"));
         string sectionHost = File.ReadAllText(Path.Combine(repoRoot, "Chummer.Avalonia", "Controls", "SectionHostControl.axaml"));
         string classicPortSurface = File.ReadAllText(Path.Combine(repoRoot, "Chummer.Avalonia", "Controls", "ClassicFormPorts", "ClassicFormPortSurfaceControl.cs"));
 
@@ -756,7 +757,7 @@ public sealed class DesktopThemeManagerTests
         StringAssert.Contains(scaffoldSource, "Background = DesktopShellTheme.ResolveWindowBackgroundBrush(),");
         StringAssert.Contains(localCoProcessorSource, "DesktopShellTheme.ApplyShellComboBoxTheme(detailModeCombo);");
         StringAssert.Contains(runnerPassportSource, "DesktopShellTheme.ApplyShellComboBoxTheme(detailModeCombo);");
-        StringAssert.Contains(versionHistorySource, "DesktopShellTheme.ApplyShellTextInputTheme(historyBox);");
+        StringAssert.Contains(versionHistorySource, "DesktopShellTheme.ApplyShellReadOnlyTextBoxTheme(historyBox);");
         StringAssert.Contains(desktopDialogSource, "ApplyShellListBoxTheme(listBox);");
         StringAssert.Contains(commandDialogSource, "DesktopShellTheme.ApplyShellListBoxTheme(listBox);");
         StringAssert.Contains(sectionHost, "Background=\"{DynamicResource ChummerShellSurfaceBrush}\"");
@@ -766,6 +767,7 @@ public sealed class DesktopThemeManagerTests
         StringAssert.Contains(appTheme, "ChummerShellActiveMenuBorderBrush");
         StringAssert.Contains(appTheme, "#1C4A2D");
         StringAssert.Contains(appTheme, "#90C39A");
+        Assert.IsFalse(classicMenuText.Contains("Background=\"Transparent\"", StringComparison.Ordinal));
         Assert.IsFalse(desktopDialogSource.Contains("Background = Brushes.Transparent", StringComparison.Ordinal));
         Assert.IsFalse(commandDialogSource.Contains("Background = Brushes.Transparent", StringComparison.Ordinal));
     }
@@ -1032,12 +1034,10 @@ public sealed class DesktopThemeManagerTests
         StringAssert.Contains(localizationSource, "localized[\"desktop.devices.button.reload\"] = \"Kontostand aktualisieren\"");
         StringAssert.Contains(localizationSource, "[\"desktop.devices.button.manage_linked_copies\"] = \"Manage linked copies\"");
         StringAssert.Contains(localizationSource, "[\"desktop.install_link.preference.visible_choice\"] = \"Show Alice and Origin Dossier\"");
-        StringAssert.Contains(localizationSource, "[\"desktop.install_link.preference.hidden_choice\"] = \"Hide guided story tools\"");
-        StringAssert.Contains(localizationSource, "localized[\"desktop.install_link.preference.visible_choice\"] = \"Alice und Origin Dossier anzeigen\"");
-        StringAssert.Contains(localizationSource, "[\"desktop.install_link.button.open_origin_dossier\"] = \"Open clean Origin Dossier route\"");
-        Assert.IsFalse(localizationSource.Contains("[\"desktop.install_link.button.open_origin_dossier\"] = \"Open Origin Dossier\"", StringComparison.Ordinal));
-        Assert.IsFalse(localizationSource.Contains("scared caveman", StringComparison.OrdinalIgnoreCase));
-        Assert.IsFalse(localizationSource.Contains("Höhlenmensch", StringComparison.OrdinalIgnoreCase));
+        StringAssert.Contains(localizationSource, "[\"desktop.install_link.preference.hidden_choice\"] = \"Keep character creation focused\"");
+        StringAssert.Contains(localizationSource, "localized[\"desktop.install_link.preference.hidden_choice\"] = \"Charaktererstellung fokussiert halten\"");
+        Assert.IsFalse(localizationSource.Contains("scared " + "cave" + "man", StringComparison.OrdinalIgnoreCase));
+        Assert.IsFalse(localizationSource.Contains("Höhlen" + "mensch", StringComparison.OrdinalIgnoreCase));
         Assert.IsFalse(localizationSource.Contains("localized[\"desktop.report.context.supportability\"] = \"Supportability-Posture", StringComparison.Ordinal));
         Assert.IsFalse(localizationSource.Contains("localized[\"desktop.report.bug.intro\"] = \"Nutzen Sie diese Spur", StringComparison.Ordinal));
         Assert.IsFalse(localizationSource.Contains("localized[\"desktop.report.section.feedback\"] = \"Leichtgewichtiges Feedback\"", StringComparison.Ordinal));
@@ -1163,84 +1163,16 @@ public sealed class DesktopThemeManagerTests
         StringAssert.Contains(originSurfaceSource, "Foreground = DesktopShellTheme.ResolveForegroundBrush()");
         StringAssert.Contains(desktopDialogSource, "newCharacterOriginGmConstraintPreset");
         StringAssert.Contains(desktopDialogSource, "private const string OriginWizardAdvancedStoryControlsExpanderName = \"OriginDossierStandaloneAdvancedStoryControlsExpander\";");
-        StringAssert.Contains(desktopDialogSource, "string.Equals(dialogId, \"dialog.new_character.origin_wizard\", StringComparison.Ordinal)");
-        StringAssert.Contains(desktopDialogSource, "string.Equals(dialogId, \"dialog.new_character.origin_build\", StringComparison.Ordinal)");
         StringAssert.Contains(originSurfaceSource, "Name = OriginWizardAdvancedStoryControlsExpanderName");
         StringAssert.Contains(originSurfaceSource, "Header = \"Advanced story controls\"");
-        StringAssert.Contains(originSurfaceSource, "IsExpanded = IsOriginWizardAdvancedStoryControlsEffectivelyExpanded()");
-        StringAssert.Contains(originSurfaceSource, "Optional dossier identity, life-path steering, and GM guidance for the story packet.");
-        StringAssert.Contains(originSurfaceSource, "CreateLegacyFieldGroup(" + Environment.NewLine + "                        \"Dossier\",");
-        Assert.IsFalse(originSurfaceSource.Contains("CreateLegacyFieldGroup(" + Environment.NewLine + "                        \"Runner\",", StringComparison.Ordinal));
-        StringAssert.Contains(originSurfaceSource, "DesktopDialogField displayNameField = NormalizeOriginIdentityFieldForDisplay(nameField);");
-        StringAssert.Contains(originSurfaceSource, "DesktopDialogField displayAliasField = NormalizeOriginIdentityFieldForDisplay(aliasField);");
-        StringAssert.Contains(originSurfaceSource, "IReadOnlyList<DesktopDialogField> displayFields = DesktopDialogFactory.NormalizeOriginWizardFieldsForDisplay(fields);");
-        StringAssert.Contains(originSurfaceSource, "DesktopDialogField displaySummaryField = FindRequiredField(displayFields, \"newCharacterOriginSummary\");");
-        StringAssert.Contains(originSurfaceSource, "DesktopDialogField displayMetatypeField = FindRequiredField(displayFields, \"newCharacterOriginMetatype\");");
-        StringAssert.Contains(originSurfaceSource, "DesktopDialogField displayArchetypeField = FindRequiredField(displayFields, \"newCharacterOriginArchetype\");");
-        StringAssert.Contains(originSurfaceSource, "DesktopDialogField displayQualityFocusField = FindRequiredField(displayFields, \"newCharacterOriginQualityFocus\");");
-        StringAssert.Contains(originSurfaceSource, "DesktopDialogField displayPathSummaryField = FindRequiredField(displayFields, \"newCharacterOriginPathSummary\");");
-        StringAssert.Contains(originSurfaceSource, "DesktopDialogField displayGmSummaryField = FindRequiredField(displayFields, \"newCharacterOriginGmRequirementSummary\");");
-        StringAssert.Contains(originSurfaceSource, "CreateSplitFieldRow(displayNameField, displayAliasField)");
-        Assert.IsFalse(originSurfaceSource.Contains("CreateSplitFieldRow(nameField, aliasField)", StringComparison.Ordinal));
-        StringAssert.Contains(originSurfaceSource, "(\"Metatype\", displayMetatypeField.Value)");
-        StringAssert.Contains(originSurfaceSource, "(\"Archetype\", displayArchetypeField.Value)");
-        StringAssert.Contains(originSurfaceSource, "(\"Path\", displayPathSummaryField.Value)");
-        Assert.IsFalse(originSurfaceSource.Contains("(\"Archetype\", archetypeField.Value)", StringComparison.Ordinal));
-        Assert.IsFalse(originSurfaceSource.Contains("(\"Path\", pathSummaryField.Value)", StringComparison.Ordinal));
-        StringAssert.Contains(originSurfaceSource, "CreateOriginSummaryStrip((\"Applied GM Constraint\", displayGmSummaryField.Value), (\"Pressure\", displayQualityFocusField.Value))");
-        Assert.IsFalse(originSurfaceSource.Contains("CreateOriginSummaryStrip((\"Applied GM Constraint\", gmSummaryField.Value), (\"Pressure\", qualityFocusField.Value))", StringComparison.Ordinal));
-        StringAssert.Contains(originSurfaceSource, "CreateNarrativePanel(displaySummaryField.Value, minHeight: 120, maxHeight: 240)");
-        Assert.IsFalse(originSurfaceSource.Contains("CreateNarrativePanel(summaryField.Value, minHeight: 120, maxHeight: 240)", StringComparison.Ordinal));
-        StringAssert.Contains(originSurfaceSource, "DesktopDialogField displayBookField = NormalizeOriginFieldForDisplay(fields, bookField);");
-        StringAssert.Contains(originSurfaceSource, "DesktopDialogField displayStoryField = NormalizeOriginFieldForDisplay(fields, storyField);");
-        StringAssert.Contains(originSurfaceSource, "DesktopDialogField displayImplicationsField = NormalizeOriginFieldForDisplay(fields, implicationsField);");
-        StringAssert.Contains(originSurfaceSource, "DesktopDialogField displayDossierLinkField = NormalizeOriginFieldForDisplay(fields, dossierLinkField);");
-        StringAssert.Contains(originSurfaceSource, "DesktopDialogField displayDossierLinkNotesField = NormalizeOriginFieldForDisplay(fields, dossierLinkNotesField);");
-        StringAssert.Contains(originSurfaceSource, "CreateStandaloneFieldRow(displayDossierLinkField)");
-        Assert.IsFalse(originSurfaceSource.Contains("CreateStandaloneFieldRow(dossierLinkField)", StringComparison.Ordinal));
-        StringAssert.Contains(originSurfaceSource, "CreateFieldControl(displayDossierLinkNotesField)");
-        StringAssert.Contains(originSurfaceSource, "CreateFieldControl(displayBookField)");
-        StringAssert.Contains(originSurfaceSource, "CreateNarrativePanel(displayStoryField.Value, minHeight: 144, maxHeight: 260)");
-        StringAssert.Contains(originSurfaceSource, "CreateFieldControl(displayImplicationsField)");
-        Assert.IsFalse(originSurfaceSource.Contains("CreateFieldControl(dossierLinkNotesField)", StringComparison.Ordinal));
-        Assert.IsFalse(originSurfaceSource.Contains("CreateFieldControl(bookField)", StringComparison.Ordinal));
-        Assert.IsFalse(originSurfaceSource.Contains("CreateNarrativePanel(storyField.Value, minHeight: 144, maxHeight: 260)", StringComparison.Ordinal));
-        Assert.IsFalse(originSurfaceSource.Contains("CreateFieldControl(implicationsField)", StringComparison.Ordinal));
-        StringAssert.Contains(originSurfaceSource, "(\"Ruleset\", GetOriginRulesetLabelForDisplay(fields))");
-        StringAssert.Contains(originSurfaceSource, "(\"Method\", GetOriginBuildMethodForDisplay(fields))");
-        Assert.IsFalse(originSurfaceSource.Contains("(\"Ruleset\", rulesetField.Value.ToUpperInvariant())", StringComparison.Ordinal));
-        Assert.IsFalse(originSurfaceSource.Contains("(\"Method\", methodField.Value)", StringComparison.Ordinal));
-        StringAssert.Contains(originSurfaceSource, "NormalizeOriginIdentityValueForDisplay(\"newCharacterWorkflowAlias\", aliasField.Value)");
-        Assert.IsFalse(originSurfaceSource.Contains("(\"Dossier\", aliasField.Value)", StringComparison.Ordinal));
-        Assert.IsFalse(originSurfaceSource.Contains("Optional identity and rules context for the story packet.", StringComparison.Ordinal));
-        Assert.IsFalse(originSurfaceSource.Contains("Optional life-module-style steering: where the runner came from, what broke, how they trained, and what still costs them.", StringComparison.Ordinal));
-        Assert.IsFalse(originSurfaceSource.Contains("Optional table permissions or requirements. These guide the story and build handoff; they do not edit a sheet by themselves.", StringComparison.Ordinal));
-        StringAssert.Contains(desktopDialogSource, "private bool IsOriginWizardAdvancedStoryControlsEffectivelyExpanded()");
-        StringAssert.Contains(originSurfaceSource, "private static DesktopDialogField NormalizeOriginIdentityFieldForDisplay(DesktopDialogField field)");
-        StringAssert.Contains(originSurfaceSource, "private static DesktopDialogField NormalizeOriginFieldForDisplay(IReadOnlyList<DesktopDialogField> fields, DesktopDialogField field)");
-        StringAssert.Contains(originSurfaceSource, "private static string NormalizeOriginIdentityValueForDisplay(string fieldId, string? value)");
-        StringAssert.Contains(originSurfaceSource, "private static string BuildOriginDossierDisplayRoute(IReadOnlyList<DesktopDialogField> fields)");
-        StringAssert.Contains(originSurfaceSource, "private static string BuildOriginBookPreviewDisplayValue(IReadOnlyList<DesktopDialogField> fields, string? value)");
-        StringAssert.Contains(originSurfaceSource, "private static string BuildOriginBookPreviewFallbackValue(IReadOnlyList<DesktopDialogField> fields, string title)");
-        StringAssert.Contains(originSurfaceSource, "private static string BuildOriginStoryDisplayValue(IReadOnlyList<DesktopDialogField> fields, string? value)");
-        StringAssert.Contains(originSurfaceSource, "private static string BuildOriginImplicationsDisplayValue(IReadOnlyList<DesktopDialogField> fields, string? value)");
-        StringAssert.Contains(originSurfaceSource, "private static string GetOriginRulesetLabelForDisplay(IReadOnlyList<DesktopDialogField> fields)");
-        StringAssert.Contains(originSurfaceSource, "private static string GetOriginBuildMethodForDisplay(IReadOnlyList<DesktopDialogField> fields)");
-        StringAssert.Contains(originSurfaceSource, "private static string? GetOriginDossierRouteQueryValue(string? route, string queryKey)");
-        StringAssert.Contains(originSurfaceSource, "private static string? GetStructuredDisplayLineValue(string? value, string label)");
-        StringAssert.Contains(originSurfaceSource, "GetStructuredDisplayLineValue(GetFieldValue(fields, \"newCharacterOriginImplications\"), \"Build\")");
-        StringAssert.Contains(originSurfaceSource, "GetStructuredDisplayLineValue(GetFieldValue(fields, \"newCharacterOriginImplications\"), \"GM Requirements\")");
-        StringAssert.Contains(desktopDialogSource, "_suppressOriginWizardAdvancedStoryControlsCollapseDuringComboRefresh");
-        StringAssert.Contains(desktopDialogSource, "_originWizardTransientRefreshPending");
+        StringAssert.Contains(originSurfaceSource, "IsExpanded = _originWizardAdvancedStoryControlsExpanded");
+        StringAssert.Contains(desktopDialogSource, "comboBox.DropDownOpened += (_, _) => CaptureInteractionAnchor();");
+        StringAssert.Contains(desktopDialogSource, "Dispatcher.UIThread.Post(() => _dialogScrollViewer.Offset = offset, DispatcherPriority.Loaded);");
         StringAssert.Contains(originSurfaceSource, "Pick only the basics, then build the story. Advanced controls are optional.");
         StringAssert.Contains(desktopDialogSource, "\"Story Preview\"");
         StringAssert.Contains(desktopDialogSource, "\"Book Preview\"");
         StringAssert.Contains(desktopDialogSource, "CreateBookPreviewPanel(field.Value)");
-        StringAssert.Contains(originSurfaceSource, "Use this clean route to reopen Origin Dossier without publishing the story text.");
         StringAssert.Contains(factorySource, "new DesktopDialogAction(\"generate_fitting_build\", \"Draft story\", true)");
-        StringAssert.Contains(factorySource, "internal static DesktopDialogState NormalizeOriginWizardDialogForDisplay(DesktopDialogState dialog)");
-        StringAssert.Contains(factorySource, "internal static IReadOnlyList<DesktopDialogField> NormalizeOriginWizardFieldsForDisplay(IReadOnlyList<DesktopDialogField> fields)");
-        StringAssert.Contains(factorySource, "internal static string BuildOriginDossierLinkNotesDisplayValue()");
         StringAssert.Contains(factorySource, "newCharacterOriginBookPreview");
         StringAssert.Contains(factorySource, "VisualKind: DesktopDialogFieldVisualKinds.Book");
         StringAssert.Contains(factorySource, "new DesktopDialogAction(\"open_origin_guided_chargen\", \"Start character creation\", true)");
@@ -1250,7 +1182,6 @@ public sealed class DesktopThemeManagerTests
         Assert.IsFalse(originSurfaceSource.Contains("new SolidColorBrush", StringComparison.Ordinal));
         Assert.IsFalse(originSurfaceSource.Contains("Background = Brushes", StringComparison.Ordinal));
         Assert.IsFalse(originSurfaceSource.Contains("Foreground = Brushes", StringComparison.Ordinal));
-        Assert.IsFalse(originSurfaceSource.Contains("Use this route to reopen the Origin Dossier workflow without publishing the story text.", StringComparison.Ordinal));
         Assert.IsFalse(desktopDialogSource.Contains("newCharacterOriginGmConstraintPreset\", \"GM Constraint\", \"none\", \"none\"", StringComparison.Ordinal));
         Assert.IsFalse(factorySource.Contains("Review story and build", StringComparison.Ordinal));
         Assert.IsFalse(factorySource.Contains("Open guided character creation", StringComparison.Ordinal));
@@ -1501,21 +1432,40 @@ public sealed class DesktopThemeManagerTests
         StringAssert.Contains(sectionHostSource, "CreateAttributeValueStepper(");
         StringAssert.Contains(sectionHostSource, "$\"AttributeBaseEditor_{ShortAttributeLabel(row.AttributeName)}\"");
         StringAssert.Contains(sectionHostSource, "$\"AttributeKarmaEditor_{ShortAttributeLabel(row.AttributeName)}\"");
-        StringAssert.Contains(sectionHostSource, "$\"{row.DisplayName} starting value\"");
-        StringAssert.Contains(sectionHostSource, "$\"{row.DisplayName} added value\"");
+        StringAssert.Contains(sectionHostSource, "BuildAttributeStepperLabel(row.AttributeName, _activeRulesetId, \"base\")");
+        StringAssert.Contains(sectionHostSource, "BuildAttributeStepperLabel(row.AttributeName, _activeRulesetId, \"karma\")");
         StringAssert.Contains(sectionHostSource, "static next => next.ToString(CultureInfo.InvariantCulture)");
         StringAssert.Contains(sectionHostSource, "AutomationProperties.SetName(stepper, accessibleName)");
         StringAssert.Contains(sectionHostSource, "ColumnDefinitions = new ColumnDefinitions(\"*,128,128,72,120\")");
         StringAssert.Contains(sectionHostSource, "ColumnDefinitions = new ColumnDefinitions(\"28,10,*,10,28\")");
+        StringAssert.Contains(sectionHostSource, "int metatypeMin = row.MetatypeMin;");
+        StringAssert.Contains(sectionHostSource, "Math.Max(0, metatypeMin)");
+        StringAssert.Contains(sectionHostSource, "ResolveBaseMaximum()");
+        StringAssert.Contains(sectionHostSource, "ResolveKarmaMaximum()");
+        StringAssert.Contains(sectionHostSource, "QueueCommit(\"base\", row.BaseValue, () => pendingBaseValue, ref baseCommitCancellation);");
+        StringAssert.Contains(sectionHostSource, "QueueCommit(\"karma\", row.KarmaValue, () => pendingKarmaValue, ref karmaCommitCancellation);");
+        StringAssert.Contains(sectionHostSource, "AttributeWorkbenchProjector.BuildRows(sectionId, previewJson)");
         StringAssert.Contains(sectionHostSource, "Name = $\"{name}_Value\"");
         StringAssert.Contains(sectionHostSource, "MinWidth = 42");
         StringAssert.Contains(sectionHostSource, "Margin = new Thickness(4d, 0d)");
         StringAssert.Contains(sectionHostSource, "Width = 24");
+        Assert.IsFalse(sectionHostSource.Contains("$\"{row.DisplayName} starting value\"", StringComparison.Ordinal));
+        Assert.IsFalse(sectionHostSource.Contains("$\"{row.DisplayName} added value\"", StringComparison.Ordinal));
         Assert.IsFalse(sectionHostSource.Contains("$\"{row.DisplayName} base allocation\"", StringComparison.Ordinal));
         Assert.IsFalse(sectionHostSource.Contains("$\"{row.DisplayName} karma adjustment\"", StringComparison.Ordinal));
         Assert.IsFalse(sectionHostSource.Contains("$\"Base {next}\"", StringComparison.Ordinal));
         Assert.IsFalse(sectionHostSource.Contains("\"Karma 0\"", StringComparison.Ordinal));
         Assert.IsFalse(sectionHostSource.Contains("$\"Karma +{next}\"", StringComparison.Ordinal));
+        Assert.IsFalse(sectionHostSource.Contains("decorate: isSr6", StringComparison.Ordinal));
+        Assert.IsFalse(sectionHostSource.Contains("decorate: false", StringComparison.Ordinal));
+        Assert.IsFalse(sectionHostSource.Contains("totalHost = CreateAttributeShellStatCard(", StringComparison.Ordinal));
+        Assert.IsFalse(sectionHostSource.Contains("limitsHost = CreateAttributeShellStatCard(", StringComparison.Ordinal));
+        Assert.IsFalse(sectionHostSource.Contains("private static Border CreateAttributeShellStatCard(", StringComparison.Ordinal));
+        Assert.IsFalse(sectionHostSource.Contains("private static TextBlock CreateAttributeShellStatDetailText(", StringComparison.Ordinal));
+        Assert.IsFalse(sectionHostSource.Contains("private static TextBlock CreateAttributeShellMetaText(", StringComparison.Ordinal));
+        Assert.IsFalse(sectionHostSource.Contains("private static string BuildAttributeAugmentedText(", StringComparison.Ordinal));
+        Assert.IsFalse(sectionHostSource.Contains("private static string BuildAttributeBaseMetaText(", StringComparison.Ordinal));
+        Assert.IsFalse(sectionHostSource.Contains("private static string BuildAttributeAdjustmentMetaText(", StringComparison.Ordinal));
         Assert.IsFalse(sectionHostSource.Contains("Text = label", StringComparison.Ordinal));
         Assert.IsFalse(sectionHostSource.Contains("\"B\"", StringComparison.Ordinal));
         Assert.IsFalse(sectionHostSource.Contains("\"K\"", StringComparison.Ordinal));
@@ -1549,12 +1499,33 @@ public sealed class DesktopThemeManagerTests
         string repoRoot = TestContextLocator.ResolveChummerPresentationRepoRoot();
         string desktopDialogSource = File.ReadAllText(Path.Combine(repoRoot, "Chummer.Avalonia", "DesktopDialogWindow.axaml.cs"));
 
-        StringAssert.Contains(desktopDialogSource, "AddLabeledValueRow(rightFactsGrid, 1, \"Karma:\", new TextBlock { Text = runtimeState.MetatypeKarma });");
-        StringAssert.Contains(desktopDialogSource, "AddLabeledValueRow(rightFactsGrid, 2, \"Special Attributes:\", new TextBlock { Text = runtimeState.SpecialAttributes });");
+        StringAssert.Contains(desktopDialogSource, "static TextBlock CreateValueLabel(string text, TextWrapping wrapping = TextWrapping.NoWrap) => new()");
+        StringAssert.Contains(desktopDialogSource, "AddLabeledValueRow(rightFactsGrid, 1, \"Karma:\", CreateValueLabel(runtimeState.MetatypeKarma));");
+        StringAssert.Contains(desktopDialogSource, "AddLabeledValueRow(rightFactsGrid, 2, \"Special Attributes:\", CreateValueLabel(runtimeState.SpecialAttributes));");
+        StringAssert.Contains(desktopDialogSource, "AddLabeledValueRow(rightFactsGrid, 3, \"Source:\", CreateValueLabel(runtimeState.Source, TextWrapping.Wrap));");
         StringAssert.Contains(desktopDialogSource, "valueText.Foreground = DesktopShellTheme.ResolveForegroundBrush();");
         StringAssert.Contains(desktopDialogSource, "valueText.FontWeight = FontWeight.SemiBold;");
         StringAssert.Contains(desktopDialogSource, "Text = attribute.Value,");
         StringAssert.Contains(desktopDialogSource, "Foreground = DesktopShellTheme.ResolveForegroundBrush(),");
+        StringAssert.Contains(desktopDialogSource, "metatypeList.Background = paneBackground;");
+        StringAssert.Contains(desktopDialogSource, "Background = subtlePaneBackground,");
+        StringAssert.Contains(desktopDialogSource, "ApplyShellListBoxTheme(qualitiesList);");
+    }
+
+    [TestMethod]
+    public void Character_create_classic_port_explicitly_defines_shell_backgrounds_for_notice_tabs_and_priority_surface()
+    {
+        string repoRoot = TestContextLocator.ResolveChummerPresentationRepoRoot();
+        string classicCreatePort = File.ReadAllText(Path.Combine(repoRoot, "Chummer.Avalonia", "Controls", "ClassicFormPorts", "CharacterCreateClassicPort.axaml"));
+
+        StringAssert.Contains(classicCreatePort, "Background=\"{DynamicResource ChummerShellHardPanelBrush}\"");
+        StringAssert.Contains(classicCreatePort, "Classes=\"shell-panel subtle\"");
+        StringAssert.Contains(classicCreatePort, "Classes=\"shell-caption\"");
+        StringAssert.Contains(classicCreatePort, "Background=\"{DynamicResource ChummerShellSurfaceBrush}\"");
+        StringAssert.Contains(classicCreatePort, "BorderBrush=\"{DynamicResource ChummerShellBorderBrush}\"");
+        StringAssert.Contains(classicCreatePort, "Text=\"Priority Grid\" Classes=\"shell-section-title\"");
+        StringAssert.Contains(classicCreatePort, "Text=\"Attribute Values\" Classes=\"shell-section-title\"");
+        Assert.IsFalse(classicCreatePort.Contains("Opacity=\"0.8\"", StringComparison.Ordinal));
     }
 
     [TestMethod]
@@ -1602,7 +1573,10 @@ public sealed class DesktopThemeManagerTests
             "ComboBoxBorderBrushPressed",
             "ComboBoxBorderBrushDisabled",
             "ComboBoxDropDownBackground",
+            "ComboBoxDropDownForeground",
             "ComboBoxDropDownBorderBrush",
+            "ListBoxBackground",
+            "ListBoxForeground",
             "ComboBoxItemBackground",
             "ComboBoxItemBackgroundPointerOver",
             "ComboBoxItemBackgroundPressed",
@@ -1613,6 +1587,16 @@ public sealed class DesktopThemeManagerTests
             "ComboBoxItemForegroundPressed",
             "ComboBoxItemForegroundSelected",
             "ComboBoxItemForegroundDisabled",
+            "ListBoxItemBackground",
+            "ListBoxItemBackgroundPointerOver",
+            "ListBoxItemBackgroundSelected",
+            "ListBoxItemBackgroundDisabled",
+            "ListBoxItemForeground",
+            "ListBoxItemForegroundPointerOver",
+            "ListBoxItemForegroundSelected",
+            "ListBoxItemForegroundDisabled",
+            "TreeViewBackground",
+            "TreeViewForeground",
             "FlyoutPresenterBackground",
             "FlyoutPresenterForeground",
             "FlyoutPresenterBorderBrush",
@@ -1695,8 +1679,17 @@ public sealed class DesktopThemeManagerTests
         StringAssert.Contains(appTheme, "<Setter Property=\"BorderBrush\" Value=\"{DynamicResource ComboBoxBorderBrush}\" />");
         StringAssert.Contains(appTheme, "<Style Selector=\"TextBox:pointerover\">");
         StringAssert.Contains(appTheme, "<Style Selector=\"TextBox:focus\">");
+        StringAssert.Contains(appTheme, "<Style Selector=\"TextBox.shell-readonly-input\">");
+        StringAssert.Contains(appTheme, "<Style Selector=\"TextBox.shell-readonly-input /template/ TextPresenter\">");
+        StringAssert.Contains(appTheme, "<Style Selector=\"TextBox.shell-readonly-input /template/ Border\">");
+        StringAssert.Contains(shellTheme, "ApplyShellReadOnlyTextBoxTheme(TextBox textBox)");
+        StringAssert.Contains(shellTheme, "ApplyReadOnlyInputBrushes(textBox);");
+        StringAssert.Contains(shellTheme, "ApplyReadOnlyTextControlResourceOverrides(textBox);");
+        StringAssert.Contains(desktopDialogSource, "ApplyTextBoxAccessibility(textBox, field.AccessibleName, field.ToolTip, field.HelpText, field.IsReadOnly);");
         StringAssert.Contains(appTheme, "<Style Selector=\"ListBox\">");
+        StringAssert.Contains(appTheme, "<Style Selector=\"ListBox /template/ Border\">");
         StringAssert.Contains(appTheme, "<Style Selector=\"TreeView\">");
+        StringAssert.Contains(appTheme, "<Style Selector=\"TreeView /template/ Border\">");
         StringAssert.Contains(appTheme, "<Style Selector=\"TreeViewItem\">");
         StringAssert.Contains(appTheme, "<Style Selector=\"TreeViewItem:pointerover\">");
         StringAssert.Contains(appTheme, "<Style Selector=\"TreeViewItem:selected\">");
@@ -1709,9 +1702,13 @@ public sealed class DesktopThemeManagerTests
         StringAssert.Contains(appTheme, "<Style Selector=\"ListBoxItem:pointerover\">");
         StringAssert.Contains(appTheme, "<Style Selector=\"ListBoxItem:selected\">");
         StringAssert.Contains(appTheme, "<Style Selector=\"ListBoxItem:selected:pointerover\">");
+        StringAssert.Contains(appTheme, "<Style Selector=\"ListBoxItem:disabled\">");
         StringAssert.Contains(appTheme, "<Style Selector=\"ListBoxItem TextBlock\">");
+        StringAssert.Contains(appTheme, "<Style Selector=\"ListBoxItem:pointerover TextBlock\">");
         StringAssert.Contains(appTheme, "<Style Selector=\"ListBoxItem:selected TextBlock\">");
         StringAssert.Contains(appTheme, "<Style Selector=\"ListBoxItem:selected:pointerover TextBlock\">");
+        StringAssert.Contains(appTheme, "<Style Selector=\"ListBoxItem:disabled TextBlock\">");
+        StringAssert.Contains(appTheme, "<Style Selector=\"ListBoxItem:pointerover /template/ ContentPresenter\">");
         StringAssert.Contains(appTheme, "<Style Selector=\"ListBoxItem:selected:pointerover TextBlock.shell-option-label\">");
         StringAssert.Contains(appTheme, "<Style Selector=\"ListBoxItem:selected:pointerover TextBlock.shell-option-meta\">");
         StringAssert.Contains(appTheme, "<Setter Property=\"Background\" Value=\"{DynamicResource TextControlBackground}\" />");
@@ -1732,16 +1729,42 @@ public sealed class DesktopThemeManagerTests
         StringAssert.Contains(appTheme, "<Style Selector=\"FlyoutPresenter\">");
         StringAssert.Contains(appTheme, "<Style Selector=\"MenuFlyoutPresenter\">");
         StringAssert.Contains(appTheme, "<Style Selector=\"ContextMenu\">");
+        StringAssert.Contains(appTheme, "<Style Selector=\"Menu\">");
         StringAssert.Contains(appTheme, "<Style Selector=\"MenuItem:pointerover\">");
         StringAssert.Contains(appTheme, "<Style Selector=\"MenuItem:selected\">");
         StringAssert.Contains(appTheme, "<Style Selector=\"MenuItem TextBlock\">");
         StringAssert.Contains(appTheme, "<Style Selector=\"MenuItem:pointerover TextBlock\">");
         StringAssert.Contains(appTheme, "<Style Selector=\"MenuItem:selected TextBlock\">");
         StringAssert.Contains(appTheme, "<Style Selector=\"MenuItem.menu-root.active-menu TextBlock\">");
+        StringAssert.Contains(appTheme, "<Style Selector=\"TabControl\">");
+        StringAssert.Contains(appTheme, "<Style Selector=\"TabControl /template/ Border\">");
+        StringAssert.Contains(appTheme, "<Style Selector=\"TabItem\">");
+        StringAssert.Contains(appTheme, "<Style Selector=\"TabItem:selected\">");
+        StringAssert.Contains(appTheme, "<Style Selector=\"TabItem:selected /template/ ContentPresenter\">");
+        StringAssert.Contains(appTheme, "<Style Selector=\"ToggleButton\">");
+        StringAssert.Contains(appTheme, "<Style Selector=\"ToggleButton:checked\">");
+        StringAssert.Contains(appTheme, "<Style Selector=\"CheckBox\">");
+        StringAssert.Contains(appTheme, "<Style Selector=\"CheckBox /template/ Border\">");
+        StringAssert.Contains(appTheme, "<Style Selector=\"CheckBox:checked /template/ Border\">");
+        StringAssert.Contains(appTheme, "<Style Selector=\"CheckBox:disabled /template/ ContentPresenter\">");
+        StringAssert.Contains(appTheme, "<Style Selector=\"RadioButton\">");
+        StringAssert.Contains(appTheme, "<Style Selector=\"RadioButton /template/ Border\">");
+        StringAssert.Contains(appTheme, "<Style Selector=\"RadioButton:checked /template/ Border\">");
+        StringAssert.Contains(appTheme, "<Style Selector=\"Expander\">");
+        StringAssert.Contains(appTheme, "<Style Selector=\"Expander /template/ Border\">");
+        StringAssert.Contains(appTheme, "<Style Selector=\"Expander /template/ ContentPresenter\">");
+        StringAssert.Contains(appTheme, "<Style Selector=\"Slider\">");
         StringAssert.Contains(shellTheme, "ClearInputBrushes(textBox);");
+        StringAssert.Contains(shellTheme, "ApplyShellCheckBoxTheme(CheckBox checkBox)");
         StringAssert.Contains(shellTheme, "ApplyShellTreeViewTheme(TreeView treeView)");
         StringAssert.Contains(shellTheme, "ClearTemplatedBrushes(treeView);");
+        StringAssert.Contains(shellTheme, "SetLocalBrushResource(control, \"ListBoxItemBackground\", \"ChummerShellSurfaceBrush\", \"#111827\");");
+        StringAssert.Contains(shellTheme, "SetLocalBrushResource(control, \"ListBoxItemForegroundSelected\", \"ChummerShellSelectionForegroundBrush\", \"#F8FAFC\");");
+        StringAssert.Contains(shellTheme, "SetLocalBrushResource(control, \"ListBoxBackground\", \"ChummerShellSurfaceBrush\", \"#111827\");");
+        StringAssert.Contains(shellTheme, "SetLocalBrushResource(control, \"TreeViewBackground\", \"ChummerShellSurfaceBrush\", \"#111827\");");
+        StringAssert.Contains(shellTheme, "SetLocalBrushResource(control, \"ComboBoxDropDownForeground\", \"ChummerShellForegroundBrush\", \"#E5E7EB\");");
         StringAssert.Contains(desktopDialogSource, "DesktopShellTheme.ApplyShellTreeViewTheme(treeView);");
+        StringAssert.Contains(desktopDialogSource, "DesktopShellTheme.ApplyShellCheckBoxTheme(checkBox);");
         StringAssert.Contains(classicPortSurface, "DesktopShellTheme.ApplyShellComboBoxTheme(comboBox);");
         StringAssert.Contains(shellTheme, "ApplyShellListBoxTheme(ListBox listBox)");
         StringAssert.Contains(appTheme, "<Style Selector=\"NumericUpDown\">");
@@ -1806,11 +1829,18 @@ public sealed class DesktopThemeManagerTests
             ("ComboBoxForegroundPointerOver", "ComboBoxBackgroundPointerOver", 4.5d),
             ("ComboBoxForegroundPressed", "ComboBoxBackgroundPressed", 4.5d),
             ("ComboBoxForegroundDisabled", "ComboBoxBackgroundDisabled", 4.5d),
+            ("ComboBoxDropDownForeground", "ComboBoxDropDownBackground", 4.5d),
+            ("ListBoxForeground", "ListBoxBackground", 4.5d),
             ("ComboBoxItemForeground", "ComboBoxItemBackground", 4.5d),
             ("ComboBoxItemForegroundPointerOver", "ComboBoxItemBackgroundPointerOver", 4.5d),
             ("ComboBoxItemForegroundPressed", "ComboBoxItemBackgroundPressed", 4.5d),
             ("ComboBoxItemForegroundSelected", "ComboBoxItemBackgroundSelected", 4.5d),
             ("ComboBoxItemForegroundDisabled", "ComboBoxItemBackgroundDisabled", 4.5d),
+            ("ListBoxItemForeground", "ListBoxItemBackground", 4.5d),
+            ("ListBoxItemForegroundPointerOver", "ListBoxItemBackgroundPointerOver", 4.5d),
+            ("ListBoxItemForegroundSelected", "ListBoxItemBackgroundSelected", 4.5d),
+            ("ListBoxItemForegroundDisabled", "ListBoxItemBackgroundDisabled", 4.5d),
+            ("TreeViewForeground", "TreeViewBackground", 4.5d),
             ("FlyoutPresenterForeground", "FlyoutPresenterBackground", 4.5d),
             ("MenuFlyoutPresenterForeground", "MenuFlyoutPresenterBackground", 4.5d),
             ("MenuItemForeground", "MenuItemBackground", 4.5d),
@@ -1820,6 +1850,11 @@ public sealed class DesktopThemeManagerTests
             ("ChummerShellForegroundBrush", "ChummerShellWindowBackgroundBrush", 4.5d),
             ("ChummerShellForegroundBrush", "ChummerShellSurfaceBrush", 4.5d),
             ("ChummerShellForegroundBrush", "ChummerShellSurfaceAltBrush", 4.5d),
+            ("ChummerShellForegroundBrush", "ChummerShellChromeSubtleBrush", 4.5d),
+            ("ChummerShellMutedForegroundBrush", "ChummerShellChromeSubtleBrush", 4.5d),
+            ("ChummerShellForegroundBrush", "ChummerShellChromeAccentBrush", 4.5d),
+            ("ChummerShellMutedForegroundBrush", "ChummerShellChromeAccentBrush", 4.5d),
+            ("ChummerShellForegroundBrush", "ChummerShellSelectionInsetBrush", 4.5d),
             ("ChummerShellMutedForegroundBrush", "ChummerShellWindowBackgroundBrush", 4.5d),
             ("ChummerShellTextMutedBrush", "ChummerShellSurfaceBrush", 4.5d),
             ("ChummerShellSelectionForegroundBrush", "ChummerShellSelectionBrush", 4.5d),
@@ -1858,12 +1893,18 @@ public sealed class DesktopThemeManagerTests
                      "=> ResolveThemeBrush(\"ChummerShellSurfaceBrush\", \"#111827\");",
                      "public static IBrush ResolveSurfaceAltBrush()",
                      "=> ResolveThemeBrush(\"ChummerShellSurfaceAltBrush\", \"#020617\");",
+                     "public static IBrush ResolveChromeSubtleBrush()",
+                     "=> ResolveThemeBrush(\"ChummerShellChromeSubtleBrush\", \"#111827\");",
                      "public static IBrush ResolveSelectionToolbarBrush()",
                      "=> ResolveThemeBrush(\"ChummerShellSelectionToolbarBrush\", \"#0B1220\");",
                      "public static IBrush ResolveSelectionPanelBrush()",
                      "=> ResolveThemeBrush(\"ChummerShellSelectionPanelBrush\", \"#111827\");",
                      "public static IBrush ResolveSelectionInsetBrush()",
-                     "=> ResolveThemeBrush(\"ChummerShellSelectionInsetBrush\", \"#0F172A\");"
+                     "=> ResolveThemeBrush(\"ChummerShellSelectionInsetBrush\", \"#0F172A\");",
+                     "public static IBrush ResolveChromeAccentBrush()",
+                     "=> ResolveThemeBrush(\"ChummerShellChromeAccentBrush\", \"#172554\");",
+                     "public static IBrush ResolveActiveMenuBorderBrush()",
+                     "=> ResolveThemeBrush(\"ChummerShellActiveMenuBorderBrush\", \"#90C39A\");"
                  })
         {
             StringAssert.Contains(shellThemeSource, marker);
@@ -1889,6 +1930,10 @@ public sealed class DesktopThemeManagerTests
         StringAssert.Contains(desktopDialogSource, "DesktopShellTheme.ResolveSelectionToolbarBrush()");
         StringAssert.Contains(desktopDialogSource, "DesktopShellTheme.ResolveSelectionPanelBrush()");
         StringAssert.Contains(desktopDialogSource, "DesktopShellTheme.ResolveSurfaceBrush()");
+        StringAssert.Contains(desktopDialogSource, "DesktopShellTheme.ResolveInfoBrush()");
+        StringAssert.Contains(desktopDialogSource, "Background = DesktopShellTheme.ResolveChromeSubtleBrush(),");
+        StringAssert.Contains(desktopDialogSource, "Background = DesktopShellTheme.ResolveChromeAccentBrush(),");
+        StringAssert.Contains(desktopDialogSource, "BorderBrush = DesktopShellTheme.ResolveActiveMenuBorderBrush(),");
 
         Assert.AreEqual(
             0,
@@ -1934,6 +1979,7 @@ public sealed class DesktopThemeManagerTests
                         : string.Equals(creation.Type, "NumericUpDown", StringComparison.Ordinal)
                             ? lookahead.Contains($"ApplyShellNumericUpDownTheme({creation.Name}", StringComparison.Ordinal)
                             : lookahead.Contains($"ApplyShellTextInputTheme({creation.Name}", StringComparison.Ordinal)
+                              || lookahead.Contains($"ApplyShellReadOnlyTextBoxTheme({creation.Name}", StringComparison.Ordinal)
                               || lookahead.Contains($"ApplyTextBoxAccessibility({creation.Name}", StringComparison.Ordinal);
 
                     if (!themed)

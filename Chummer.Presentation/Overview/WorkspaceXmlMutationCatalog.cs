@@ -100,6 +100,7 @@ internal static class WorkspaceXmlMutationCatalog
         bool created = ParseBool(root.Element("created")?.Value);
         XElement baseElement = EnsureElement(attribute, "base");
         XElement karmaElement = EnsureElement(attribute, "karma");
+        XElement totalKarmaElement = EnsureElement(root, "karma");
         int currentBaseValue = ParseInt(baseElement.Value);
         int currentKarmaValue = ParseInt(karmaElement.Value);
         int currentTotalValue = ParseInt(
@@ -113,6 +114,7 @@ internal static class WorkspaceXmlMutationCatalog
         int metatypeMin = Math.Max(0, ParseInt(attribute.Element("metatypemin")?.Value, fallback: 0));
         int metatypeMax = Math.Max(metatypeMin, ParseInt(attribute.Element("metatypemax")?.Value, fallback: Math.Max(currentBaseValue, requestedValue)));
         int metatypeAugMax = Math.Max(metatypeMax, ParseInt(attribute.Element("metatypeaugmax")?.Value, fallback: metatypeMax));
+        decimal availableKarma = ParseDecimal(totalKarmaElement.Value);
 
         switch (normalizedBucket)
         {
@@ -134,8 +136,6 @@ internal static class WorkspaceXmlMutationCatalog
                     throw new InvalidOperationException($"Attribute '{request.AttributeName}' is already at its current ceiling.");
                 }
 
-                XElement totalKarmaElement = EnsureElement(root, "karma");
-                decimal availableKarma = ParseDecimal(totalKarmaElement.Value);
                 if (availableKarma < improveCost)
                 {
                     throw new InvalidOperationException($"Attribute '{request.AttributeName}' requires {improveCost} Karma but only {availableKarma.ToString(CultureInfo.InvariantCulture)} is available.");

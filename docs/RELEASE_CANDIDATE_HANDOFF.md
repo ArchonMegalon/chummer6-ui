@@ -53,6 +53,10 @@ Do not promote the bundle to `public_stable` if the handoff still shows:
 
 In that state, the bundle is a valid release-build handoff, not a promotable stable release. The live downloads shelf and stable channel should remain unchanged.
 
+For Windows bootstrap installers, a passing startup-smoke receipt must exercise bootstrap download mode. A local payload handoff is useful for diagnosis, but it is not enough for the publish preflight because it does not prove the public bootstrap path, payload download target, size verification, checksum verification, extraction, and installed app launch. On Linux/Wine hosts, keep `CHUMMER_WINDOWS_STARTUP_SMOKE_PAYLOAD_MODE=download` and let the smoke script use its bounded Wine path, Wine prefix, and Windows binary timeouts so failed proof becomes a regression packet instead of a hanging nightly lane.
+
 Even when `stage_proof_complete: true`, the handoff is still only a staged nightly artifact. Public/stable publication remains a separate explicit operator lane.
 
 If the handoff includes `windows_visual_proof_handoff.status: ready_for_windows_host`, the staged Windows bytes are locally verified and blocked only by the missing Windows screenshots. Use the emitted `WINDOWS_INSTALLER_VISUAL_PROOF_HANDOFF.generated.{json,md}` packet from the same stage directory to drive the real Windows capture step. Do not substitute repo-default downloads paths at that point; the packet is already pinned to the exact staged manifest, installer, payload, and startup-smoke receipt.
+
+If the Windows host cannot see the staged Linux path directly, copy the whole stage directory to the Windows host and keep its relative layout intact. Run the handoff packet's Windows-local template command against that copied stage, then copy back `WINDOWS_INSTALLER_VISUAL_PROOF.generated.json` plus `windows-installer-visual-proof/windows-installer-progress.png` and `windows-installer-visual-proof/windows-installer-completion.png` to the original stage before rerunning the Linux Windows-exit gate.

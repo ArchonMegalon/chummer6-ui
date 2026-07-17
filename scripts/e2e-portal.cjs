@@ -7,6 +7,12 @@ const requiredLandingLinks = [
   '/help',
   '/contact'
 ];
+const expectedProofRequiredInstallerRoutes = [
+  '/downloads/install/avalonia-linux-x64-installer',
+  '/downloads/install/avalonia-win-x64-installer',
+  '/downloads/install/blazor-desktop-linux-x64-installer',
+  '/downloads/install/blazor-desktop-win-x64-installer'
+];
 
 function hasIsolationHeaders(response) {
   return response.headers.get('cross-origin-opener-policy') === 'same-origin'
@@ -46,18 +52,21 @@ const checks = [
   {
     url: `${baseUrl}/`,
     assert: text =>
-      text.includes('data-homepage-section="hero"') &&
-      text.includes('A Shadowrun character manager for clean sheets and faster tables.') &&
-      text.includes('Download Chummer') &&
-      text.includes('Current public installers: Windows and Linux.') &&
-      text.includes('Watch the Chummer promo video') &&
-      text.includes('Watch 90 sec') &&
-      text.includes('/media/promo/every-wonder-horizon-promo.mp4') &&
-      text.includes('aria-label="Example runners"') &&
-      text.includes('Kestrel') &&
-      text.includes('Brick') &&
-      text.includes('Whisper') &&
-      requiredLandingLinks.every(link => text.includes(link))
+      text.includes('Explore Chummer Online, downloads, and support from one self-hosted edge.') &&
+      text.includes('Start in the Character Roster, continue into Chummer Online') &&
+      text.includes('data-portal-home-action="explore-chummer-online"') &&
+      text.includes('/app?command=character_roster') &&
+      text.includes('aria-label="Chummer Online routes"') &&
+      text.includes('data-portal-home-route="chummer-app-roster"') &&
+      text.includes('data-portal-home-route="chummer-app"') &&
+      text.includes('data-portal-home-route="chummer-home"') &&
+      text.includes('data-portal-home-route="downloads"') &&
+      text.includes('Open Character Roster') &&
+      text.includes('Open Chummer Online') &&
+      text.includes('Open Chummer Online overview') &&
+      text.includes('Get desktop client') &&
+      requiredLandingLinks.every(link => text.includes(link)) &&
+      hasPortalChrome(text)
   },
   {
     url: `${baseUrl}/blazor/health`,
@@ -90,6 +99,18 @@ const checks = [
   {
     url: `${baseUrl}/blazor/app`,
     assert: text => /<base href="[^"]*\/blazor\/"/i.test(text)
+  },
+  {
+    url: `${baseUrl}/blazor/app?command=new_character`,
+    assert: text =>
+      /<base href="[^"]*\/blazor\/"/i.test(text)
+      && text.includes('data-route-family="app"')
+      && text.includes('data-active-workflow="build-lab"')
+      && text.includes('data-command="new-character"')
+      && text.includes('data-chummer-app-startup-command="new_character"')
+      && text.includes('data-app-route-shared-shell="true"')
+      && text.includes('Build Lab shell')
+      && !text.includes('Your runners will appear here.')
   },
   {
     url: `${baseUrl}/blazor/home`,
@@ -261,6 +282,7 @@ const checks = [
       text.includes('/app?command=character_roster') &&
       text.includes('data-portal-help-action="open-downloads"') &&
       text.includes('data-portal-help-action="open-status"') &&
+      text.includes('data-portal-help-action="open-discord"') &&
       text.includes('data-portal-help-action="open-contact"') &&
       text.includes('data-portal-help-action="open-docs"') &&
       hasPortalChrome(text) &&

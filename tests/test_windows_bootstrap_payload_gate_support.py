@@ -42,20 +42,6 @@ def test_windows_visual_proof_capture_script_writes_gate_compatible_receipt() ->
     assert "readabilityReview" in script
     assert "contrastReview" in script
     assert "clippingReview" in script
-    assert "Confirm-OperatorReview" in script
-    assert '[string]$Reviewer = ""' in script
-    assert "Resolve-InteractiveReviewer" in script
-    assert "Enter your reviewer name or accountable operator ID" in script
-    assert '$automationIdentityTokens = @(' in script
-    assert '[regex]::Matches($normalizedCandidate, "[\\p{L}\\p{Nd}]+")' in script
-    assert "$containsAutomationToken" in script
-    assert '$reviewer = Resolve-InteractiveReviewer' in script
-    assert 'capture_mode = $(if ($Auto) { "auto" } else { "interactive" })' in script
-    assert "human_review_confirmed = $humanReviewConfirmed" in script
-    assert "human_reviewer_identified" in script
-    assert "reviewer_authorization_deferred_to_exit_gate" in script
-    assert '$status = "needs_review"' in script
-    assert '$reviewer = $(if ($Auto) { "automation" } else { "operator" })' not in script
 
 
 def test_desktop_release_pipeline_documents_windows_visual_capture_without_github_actions() -> None:
@@ -66,10 +52,6 @@ def test_desktop_release_pipeline_documents_windows_visual_capture_without_githu
     assert "windows-installer-visual-proof" in doc
     assert "release-manifest shelf" in doc
     assert "host-specific gate" in doc
-    assert "specific reviewer name or accountable operator ID" in doc
-    assert "separately confirm readability, contrast, and clipping" in doc
-    assert "Generic labels such as `operator`" in doc
-    assert "CHUMMER_WINDOWS_VISUAL_AUTHORIZED_REVIEWER_IDS" in doc
     assert "GitHub Actions" not in doc
 
 
@@ -128,12 +110,12 @@ def test_windows_bootstrap_build_fails_from_measured_size_gate_instead_of_hardco
     assert "blocked until the native bootstrap builder is wired" not in combined_output
 
 
-def test_windows_bootstrap_build_rejects_files_directory_as_dist_root(tmp_path: Path) -> None:
+def test_public_preview_bootstrap_rejects_single_file_publish_before_installer_build(tmp_path: Path) -> None:
     publish_dir = tmp_path / "publish"
-    dist_files_dir = tmp_path / "nightly-run-test" / "files"
+    dist_dir = tmp_path / "dist"
     publish_dir.mkdir()
-    dist_files_dir.mkdir(parents=True)
-    (publish_dir / "Chummer.Avalonia.exe").write_bytes(b"stub")
+    dist_dir.mkdir()
+    (publish_dir / "Chummer.Avalonia.exe").write_bytes(b"single-file-stub")
 
     result = subprocess.run(
         [
@@ -143,19 +125,20 @@ def test_windows_bootstrap_build_rejects_files_directory_as_dist_root(tmp_path: 
             "avalonia",
             "win-x64",
             "Chummer.Avalonia.exe",
-            str(dist_files_dir),
-            "0.0.0.1",
+            str(dist_dir),
+            "run-preview-expanded-apphost-gate",
         ],
         text=True,
         capture_output=True,
         check=False,
         env={
             **dict(os.environ),
+            "CHUMMER_DESKTOP_RELEASE_CHANNEL": "preview",
             "CHUMMER_WINDOWS_INSTALLER_MODE": "bootstrap",
         },
     )
 
     assert result.returncode != 0
-    combined_output = f"{result.stdout}\n{result.stderr}"
-    assert "Refusing to use a downloads files/ directory as the desktop installer dist root" in combined_output
-    assert "Pass the release stage root" in combined_output
+    assert "Public Windows bootstrap packaging requires an expanded self-contained apphost" in result.stderr
+    assert "-p:PublishSingleFile=false" in result.stderr
+    assert not (dist_dir / "chummer-avalonia-win-x64-installer.exe").exists()

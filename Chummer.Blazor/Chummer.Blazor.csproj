@@ -7,6 +7,8 @@
     <ProduceReferenceAssembly>true</ProduceReferenceAssembly>
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
+    <RunBlazorShellComponentTestsOnly Condition="'$(RunBlazorShellComponentTestsOnly)' == ''">false</RunBlazorShellComponentTestsOnly>
+    <OutputType Condition="'$(RunBlazorShellComponentTestsOnly)' == 'true'">Library</OutputType>
   </PropertyGroup>
   <ItemGroup Condition="'$(ChummerUseLocalCompatibilityTree)' == 'true'">
     <ProjectReference Include="$(ChummerLocalCampaignContractsProject)"
@@ -22,14 +24,20 @@
     <PackageReference Include="$(ChummerRunContractsPackageId)" Version="$(ChummerRunContractsPackageVersion)" />
   </ItemGroup>
   <ItemGroup>
+    <PackageReference Include="Microsoft.AspNetCore.Authentication.JwtBearer" Version="10.0.9" />
     <ProjectReference Include="..\Chummer.Desktop.Runtime\Chummer.Desktop.Runtime.csproj"
                       AdditionalProperties="RuntimeIdentifier=$(RuntimeIdentifier);RuntimeIdentifiers=$(RuntimeIdentifiers)" />
     <ProjectReference Include="..\Chummer.Presentation\Chummer.Presentation.csproj"
+                      AdditionalProperties="RuntimeIdentifier=$(RuntimeIdentifier);RuntimeIdentifiers=$(RuntimeIdentifiers)" />
+    <ProjectReference Include="..\Chummer.Workspaces.Postgres\Chummer.Workspaces.Postgres.csproj"
                       AdditionalProperties="RuntimeIdentifier=$(RuntimeIdentifier);RuntimeIdentifiers=$(RuntimeIdentifiers)" />
   </ItemGroup>
   <ItemGroup>
     <Content Include="..\Chummer.Tests\TestFiles\BLUE.chum5"
              Link="Fixtures\BLUE.chum5"
              CopyToOutputDirectory="PreserveNewest" />
+  </ItemGroup>
+  <ItemGroup Condition="'$(RunBlazorShellComponentTestsOnly)' == 'true'">
+    <Compile Remove="Program.cs" />
   </ItemGroup>
 </Project>

@@ -1,0 +1,449 @@
+.build-pwa-install-panel {
+  position: fixed;
+  z-index: 1200;
+  right: 1rem;
+  top: 4.25rem;
+  display: grid;
+  width: min(25rem, calc(100vw - 2rem));
+  max-height: calc(100vh - 2rem);
+  overflow: auto;
+  gap: 0.75rem;
+  padding: 1rem;
+  border: 1px solid color-mix(in srgb, #31d0aa 48%, #24344a);
+  border-radius: 1rem;
+  background: color-mix(in srgb, #08111f 94%, transparent);
+  color: #f8fafc;
+  box-shadow: 0 1.1rem 3rem rgba(0, 0, 0, 0.42);
+  backdrop-filter: blur(0.9rem);
+}
+
+.build-pwa-install-launcher {
+  position: fixed;
+  z-index: 1199;
+  top: max(0.75rem, env(safe-area-inset-top));
+  right: 1rem;
+  min-width: 44px;
+  min-height: 44px;
+  padding: 0.45rem 0.8rem;
+  border: 1px solid #31d0aa;
+  border-radius: 999px;
+  background: #0f3b3e;
+  color: #f8fafc;
+  font: inherit;
+  font-size: 14px;
+  font-weight: 750;
+  box-shadow: 0 0.5rem 1.4rem rgba(0, 0, 0, 0.28);
+  cursor: pointer;
+}
+
+.build-pwa-install-launcher[hidden] {
+  display: none;
+}
+
+.build-pwa-install-launcher:hover {
+  background: #17545a;
+}
+
+.build-pwa-install-launcher:focus-visible {
+  outline: 3px solid #8cf5dd;
+  outline-offset: 3px;
+}
+
+.build-pwa-install-panel[hidden] {
+  display: none;
+}
+
+.build-pwa-install-panel__copy,
+.build-pwa-install-panel__copy p,
+.build-pwa-install-panel__copy h2,
+.build-pwa-install-panel__steps p {
+  margin: 0;
+}
+
+.build-pwa-install-panel__copy {
+  display: grid;
+  gap: 0.35rem;
+}
+
+.build-pwa-install-panel__eyebrow {
+  color: #8cf5dd;
+  font-size: 12px;
+  font-weight: 750;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
+.build-pwa-install-panel__copy h2 {
+  font-size: 16px;
+  line-height: 1.25;
+}
+
+.build-pwa-install-panel__copy [role="status"],
+.build-pwa-install-panel__steps {
+  color: #cbd5e1;
+  font-size: 14px;
+  line-height: 1.45;
+}
+
+.build-pwa-install-panel__handoff {
+  display: grid;
+  gap: 0.65rem;
+  padding: 0.75rem;
+  border: 1px solid rgba(140, 245, 221, 0.36);
+  border-radius: 0.85rem;
+  background: rgba(15, 35, 55, 0.72);
+}
+
+.build-pwa-install-panel__handoff h3,
+.build-pwa-install-panel__handoff p,
+.build-pwa-install-panel__device-picker {
+  margin: 0;
+}
+
+.build-pwa-install-panel__handoff h3 {
+  font-size: 15px;
+  line-height: 1.25;
+}
+
+.build-pwa-install-panel__device-picker {
+  display: grid;
+  gap: 0.35rem;
+  min-width: 0;
+  padding: 0.4rem;
+  border: 1px solid rgba(148, 163, 184, 0.42);
+}
+
+.build-pwa-install-panel__device-picker legend {
+  padding-inline: 0.2rem;
+  color: #dffbf4;
+  font-size: 13px;
+  font-weight: 750;
+}
+
+.build-pwa-install-panel__device-picker > div {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 0.3rem;
+}
+
+.build-pwa-install-panel__device-picker label {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.25rem;
+  min-width: 0;
+  min-height: 44px;
+  padding: 0.25rem;
+  border: 1px solid transparent;
+  border-radius: 0.55rem;
+  color: #f8fafc;
+  font-size: 13px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.build-pwa-install-panel__device-picker label:has(input:checked) {
+  border-color: #8cf5dd;
+  background: #0f3b3e;
+}
+
+.build-pwa-install-panel__device-picker input {
+  min-width: 22px;
+  min-height: 22px;
+  margin: 0;
+  accent-color: #31d0aa;
+}
+
+[data-build-pwa-install-device-status],
+.build-pwa-install-panel__handoff-copy,
+.build-pwa-install-panel__mobile-handoff {
+  color: #cbd5e1;
+  font-size: 13px;
+  line-height: 1.45;
+}
+
+.build-pwa-install-panel__desktop-handoff {
+  display: grid;
+  grid-template-columns: minmax(9rem, 12rem) minmax(0, 1fr);
+  gap: 0.75rem;
+  align-items: start;
+}
+
+.build-pwa-install-panel__desktop-handoff[hidden],
+.build-pwa-install-panel__mobile-handoff[hidden] {
+  display: none;
+}
+
+.build-pwa-install-panel__qr {
+  display: grid;
+  place-items: center;
+  width: 100%;
+  max-width: 16.25rem;
+  aspect-ratio: 1;
+  box-sizing: border-box;
+  padding: 0.35rem;
+  border: 1px solid #d8fff6;
+  border-radius: 0.55rem;
+  background: #ffffff;
+}
+
+.build-pwa-install-panel__qr svg {
+  display: block;
+  width: 100%;
+  height: 100%;
+  shape-rendering: crispEdges;
+}
+
+.build-pwa-install-panel__handoff-copy {
+  display: grid;
+  gap: 0.45rem;
+  min-width: 0;
+}
+
+.build-pwa-install-panel__handoff-copy a {
+  width: fit-content;
+  color: #8cf5dd;
+  overflow-wrap: anywhere;
+  font-weight: 750;
+}
+
+.build-pwa-install-panel__handoff-copy code {
+  display: block;
+  max-width: 100%;
+  overflow-wrap: anywhere;
+  color: #dffbf4;
+  font-family: ui-monospace, "SFMono-Regular", Consolas, monospace;
+  font-size: 12px;
+  user-select: all;
+}
+
+.build-pwa-install-panel__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.55rem;
+}
+
+.build-pwa-install-panel button {
+  min-width: 44px;
+  min-height: 44px;
+  padding: 0.55rem 0.85rem;
+  border: 1px solid #31d0aa;
+  border-radius: 0.7rem;
+  background: #0f3b3e;
+  color: #f8fafc;
+  font: inherit;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.build-pwa-install-panel button:hover {
+  background: #17545a;
+}
+
+.build-pwa-install-panel button:focus-visible,
+.build-pwa-install-panel summary:focus-visible {
+  outline: 3px solid #8cf5dd;
+  outline-offset: 3px;
+}
+
+.build-pwa-install-panel button:disabled {
+  cursor: wait;
+  opacity: 0.72;
+}
+
+.build-pwa-install-panel__manual {
+  border-top: 1px solid rgba(148, 163, 184, 0.28);
+  padding-top: 0.7rem;
+}
+
+.build-pwa-install-panel__update {
+  display: grid;
+  gap: 0.55rem;
+  padding: 0.75rem;
+  border: 1px solid rgba(140, 245, 221, 0.48);
+  border-radius: 0.75rem;
+  background: rgba(15, 59, 62, 0.48);
+  color: #dffbf4;
+  font-size: 14px;
+  line-height: 1.45;
+}
+
+.build-pwa-install-panel__update[hidden] {
+  display: none;
+}
+
+.build-pwa-install-panel__update h3,
+.build-pwa-install-panel__update ol,
+.build-pwa-install-panel__update p {
+  margin: 0;
+}
+
+.build-pwa-install-panel__update ol {
+  display: grid;
+  gap: 0.35rem;
+  padding-left: 1.25rem;
+}
+
+.build-pwa-install-panel__update:focus-visible {
+  outline: 3px solid #8cf5dd;
+  outline-offset: 3px;
+}
+
+.build-pwa-install-panel__manual summary {
+  width: fit-content;
+  color: #8cf5dd;
+  cursor: pointer;
+  font-size: 14px;
+  font-weight: 700;
+}
+
+.build-pwa-integrity-alert,
+.build-pwa-integrity-status {
+  grid-column: 1 / -1;
+  margin: 0;
+  border: 1px solid #f6c85f;
+  border-radius: 0.85rem;
+  background: #2a2110;
+  color: #fff8e6;
+}
+
+.build-pwa-integrity-alert {
+  display: grid;
+  gap: 0.8rem;
+  padding: 1rem;
+}
+
+.build-pwa-integrity-alert p,
+.build-pwa-integrity-alert h2 {
+  margin: 0;
+}
+
+.build-pwa-integrity-alert__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.65rem;
+}
+
+.build-pwa-integrity-alert button {
+  min-width: 44px;
+  min-height: 44px;
+  border: 1px solid currentColor;
+  border-radius: 0.65rem;
+  background: #453514;
+  color: inherit;
+  font: inherit;
+  font-weight: 700;
+}
+
+.build-pwa-integrity-alert:focus-visible,
+.build-pwa-integrity-alert button:focus-visible {
+  outline: 3px solid #fff3bf;
+  outline-offset: 3px;
+}
+
+.build-pwa-integrity-status {
+  padding: 0.7rem 1rem;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .build-pwa-integrity-alert,
+  .build-pwa-integrity-status {
+    scroll-behavior: auto;
+    transition: none;
+  }
+}
+
+.build-pwa-install-panel__steps {
+  display: grid;
+  gap: 0.55rem;
+  padding-top: 0.65rem;
+}
+
+@media (max-width: 46rem) {
+  .build-pwa-install-panel {
+    right: 0.65rem;
+    top: max(3.9rem, calc(env(safe-area-inset-top) + 3.25rem));
+    width: calc(100vw - 1.3rem);
+    max-height: min(52svh, 25rem);
+    box-sizing: border-box;
+    border-radius: 0.9rem;
+  }
+
+  .build-pwa-install-launcher:not([hidden]) {
+    position: relative;
+    inset: auto;
+    display: block;
+    margin: max(0.5rem, env(safe-area-inset-top)) 0.65rem 0.5rem auto;
+  }
+
+  .build-pwa-install-panel__actions button {
+    flex: 1 1 10rem;
+  }
+
+  .build-pwa-install-panel__desktop-handoff {
+    grid-template-columns: 1fr;
+  }
+
+  .build-pwa-install-panel__qr {
+    justify-self: center;
+  }
+}
+
+@media (max-width: 22rem) {
+  .build-pwa-install-panel__device-picker > div {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 59.999rem) {
+  .build-pwa-install-launcher:not([hidden]) {
+    position: relative;
+    inset: auto;
+    display: block;
+    margin: max(0.5rem, env(safe-area-inset-top)) 1rem 0.5rem auto;
+  }
+}
+
+body:has(.build-pwa-layout--compact) .build-pwa-install-launcher:not([hidden]) {
+  position: relative;
+  inset: auto;
+  display: block;
+  margin: max(0.5rem, env(safe-area-inset-top)) 1rem 0.5rem auto;
+}
+
+@media (prefers-reduced-transparency: reduce) {
+  .build-pwa-install-panel {
+    background: #08111f;
+    backdrop-filter: none;
+  }
+}
+
+@media (forced-colors: active) {
+  .build-pwa-install-panel,
+  .build-pwa-install-launcher,
+  .build-pwa-install-panel__handoff,
+  .build-pwa-install-panel__device-picker,
+  .build-pwa-install-panel__device-picker label,
+  .build-pwa-install-panel__update,
+  .build-pwa-install-panel button,
+  .build-pwa-integrity-alert,
+  .build-pwa-integrity-status,
+  .build-pwa-integrity-alert button {
+    border-color: CanvasText;
+    background: Canvas;
+    color: CanvasText;
+    box-shadow: none;
+    backdrop-filter: none;
+  }
+
+  .build-pwa-install-panel__qr {
+    border-color: CanvasText;
+    background: Canvas;
+  }
+
+  .build-pwa-install-launcher:focus-visible,
+  .build-pwa-install-panel button:focus-visible,
+  .build-pwa-install-panel summary:focus-visible {
+    outline-color: Highlight;
+  }
+}

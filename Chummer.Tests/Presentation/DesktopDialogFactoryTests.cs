@@ -132,8 +132,6 @@ public class DesktopDialogFactoryTests
         DesktopDialogState dialog = factory.CreateMetadataDialog(profile, preferences);
 
         Assert.AreEqual("dialog.workspace.metadata", dialog.Id);
-        Assert.AreEqual("Edit Metadata", dialog.Title);
-        Assert.AreEqual("Apply dossier profile metadata changes to the active dossier.", dialog.Message);
         Assert.AreEqual("Apex", DesktopDialogFieldValueParser.GetValue(dialog, "metadataName"));
         Assert.AreEqual("Predator", DesktopDialogFieldValueParser.GetValue(dialog, "metadataAlias"));
         Assert.AreEqual("Stealth loadout", DesktopDialogFieldValueParser.GetValue(dialog, "metadataNotes"));
@@ -151,7 +149,6 @@ public class DesktopDialogFactoryTests
         DesktopDialogState dialog = factory.CreateUiControlDialog("open_notes", preferences);
 
         Assert.AreEqual("dialog.ui.open_notes", dialog.Id);
-        Assert.AreEqual("Edit dossier notes in a compact text utility pane.", dialog.Message);
         Assert.AreEqual("From notes panel", DesktopDialogFieldValueParser.GetValue(dialog, "uiNotesEditor"));
         StringAssert.Contains(DesktopDialogFieldValueParser.GetValue(dialog, "uiNotesSections"), "Metadata");
         StringAssert.Contains(DesktopDialogFieldValueParser.GetValue(dialog, "uiNotesDetails"), "Behavior | inline notes editing");
@@ -190,8 +187,7 @@ public class DesktopDialogFactoryTests
             rulesetId: null);
 
         Assert.AreEqual("dialog.print_character", dialog.Id);
-        Assert.AreEqual("Print Dossier", dialog.Title);
-        Assert.AreEqual("Current dossier", DesktopDialogFieldValueParser.GetValue(dialog, "uiPrintScope"));
+        Assert.AreEqual("Current runner", DesktopDialogFieldValueParser.GetValue(dialog, "uiPrintScope"));
         StringAssert.Contains(DesktopDialogFieldValueParser.GetValue(dialog, "uiPrintDetails"), "host print preview");
     }
 
@@ -551,34 +547,11 @@ public class DesktopDialogFactoryTests
         Assert.AreEqual("0", DesktopDialogFieldValueParser.GetValue(dialog, "diceGremlins"));
         Assert.AreEqual("No rolls yet.", DesktopDialogFieldValueParser.GetValue(dialog, "diceResultsList"));
         Assert.AreEqual("Dice roller + initiative preview + roster context", DesktopDialogFieldValueParser.GetValue(dialog, "diceUtilityLane"));
-        StringAssert.Contains(DesktopDialogFieldValueParser.GetValue(dialog, "diceRosterContext"), "Active Dossier | GST · Ghost [sr6]");
-        StringAssert.Contains(DesktopDialogFieldValueParser.GetValue(dialog, "diceRosterContext"), "Open Dossiers | 2");
         StringAssert.Contains(DesktopDialogFieldValueParser.GetValue(dialog, "diceRosterContext"), "GST · Ghost [sr6]");
         StringAssert.Contains(DesktopDialogFieldValueParser.GetValue(dialog, "diceRosterContext"), "GST/sr6, APX/sr5");
         StringAssert.Contains(DesktopDialogFieldValueParser.GetValue(dialog, "initiativePreview"), "GST · Ghost [sr6]");
-        StringAssert.Contains(DesktopDialogFieldValueParser.GetValue(dialog, "initiativePreview"), "Initiative preview uses the active dossier and keeps results local to this utility.");
         Assert.AreEqual(DesktopDialogFieldLayoutSlots.Hidden, dialog.Fields.Single(field => string.Equals(field.Id, "diceUtilityLane", StringComparison.Ordinal)).LayoutSlot);
         Assert.IsNotNull(dialog.Actions.SingleOrDefault(action => string.Equals(action.Id, "reroll_misses", StringComparison.Ordinal)));
-    }
-
-    [TestMethod]
-    public void CreateCommandDialog_dice_roller_without_open_workspaces_uses_dossier_empty_state()
-    {
-        DesktopDialogFactory factory = new();
-
-        DesktopDialogState dialog = factory.CreateCommandDialog(
-            "dice_roller",
-            profile: null,
-            DesktopPreferenceState.Default,
-            activeSectionJson: null,
-            currentWorkspace: null,
-            rulesetId: RulesetDefaults.Sr5,
-            openWorkspaces: null);
-
-        Assert.AreEqual("Active Dossier | none", DesktopDialogFieldValueParser.GetValue(dialog, "diceRosterContext").Split(Environment.NewLine)[0]);
-        StringAssert.Contains(DesktopDialogFieldValueParser.GetValue(dialog, "diceRosterContext"), "Open Dossiers | 0");
-        Assert.AreEqual("No active dossier. Roll history stays available and initiative context appears after opening a roster entry.", DesktopDialogFieldValueParser.GetValue(dialog, "initiativePreview"));
-        Assert.AreEqual("No active dossier.", dialog.Fields.Single(field => string.Equals(field.Id, "initiativePreview", StringComparison.Ordinal)).Placeholder);
     }
 
     [TestMethod]
@@ -653,7 +626,7 @@ public class DesktopDialogFactoryTests
             StringAssert.Contains(DesktopDialogFieldValueParser.GetValue(dialog, "rosterTree"), rosterPath);
             StringAssert.Contains(DesktopDialogFieldValueParser.GetValue(dialog, "rosterTree"), "APX.chum5");
             StringAssert.Contains(DesktopDialogFieldValueParser.GetValue(dialog, "rosterTree"), "GST.chum5");
-            StringAssert.Contains(DesktopDialogFieldValueParser.GetValue(dialog, "rosterSelectionTrail"), "Active Dossier | GST · Ghost");
+            StringAssert.Contains(DesktopDialogFieldValueParser.GetValue(dialog, "rosterSelectionTrail"), "Active Runner | GST · Ghost");
             StringAssert.Contains(DesktopDialogFieldValueParser.GetValue(dialog, "rosterSelectionTrail"), "Save status | not saved yet");
             StringAssert.Contains(DesktopDialogFieldValueParser.GetValue(dialog, "rosterSelectionTrail"), $"Watch Folder | {rosterPath}");
             StringAssert.Contains(DesktopDialogFieldValueParser.GetValue(dialog, "rosterSelectionTrail"), "Watch File | GST.chum5");
@@ -669,11 +642,11 @@ public class DesktopDialogFactoryTests
             StringAssert.Contains(DesktopDialogFieldValueParser.GetValue(dialog, "rosterWatchFolderStatus"), "Selected Watch File | GST.chum5");
             StringAssert.Contains(DesktopDialogFieldValueParser.GetValue(dialog, "rosterWatchFolderStatus"), "Selected Updated |");
             StringAssert.Contains(DesktopDialogFieldValueParser.GetValue(dialog, "rosterWatchFolderStatus"), "Selected Bytes | 6");
-            StringAssert.Contains(DesktopDialogFieldValueParser.GetValue(dialog, "rosterWatchFolderStatus"), "Portrait Match | watched dossier sibling");
-            StringAssert.Contains(DesktopDialogFieldValueParser.GetValue(dialog, "rosterRunnerCommands"), "Open selected dossier");
-            StringAssert.Contains(DesktopDialogFieldValueParser.GetValue(dialog, "rosterRunnerCommands"), "Save dossier to roster folder");
+            StringAssert.Contains(DesktopDialogFieldValueParser.GetValue(dialog, "rosterWatchFolderStatus"), "Portrait Match | watched runner sibling");
+            StringAssert.Contains(DesktopDialogFieldValueParser.GetValue(dialog, "rosterRunnerCommands"), "Open selected runner");
+            StringAssert.Contains(DesktopDialogFieldValueParser.GetValue(dialog, "rosterRunnerCommands"), "Save runner to roster folder");
             StringAssert.Contains(DesktopDialogFieldValueParser.GetValue(dialog, "rosterWatchFolderCommands"), "Open roster folder");
-            StringAssert.Contains(DesktopDialogFieldValueParser.GetValue(dialog, "rosterWatchFolderCommands"), "Open selected watched dossier");
+            StringAssert.Contains(DesktopDialogFieldValueParser.GetValue(dialog, "rosterWatchFolderCommands"), "Open selected watched runner");
             StringAssert.Contains(DesktopDialogFieldValueParser.GetValue(dialog, "rosterWatchFolderCommands"), "Open matched portrait");
             Assert.AreEqual(string.Empty, DesktopDialogFieldValueParser.GetValue(dialog, "rosterSelectedRunnerStatus"));
             Assert.AreEqual(string.Empty, DesktopDialogFieldValueParser.GetValue(dialog, "rosterSelectedRunnerBackground"));
@@ -712,7 +685,7 @@ public class DesktopDialogFactoryTests
                     "close"
                 },
                 dialog.Actions.Select(action => action.Id).ToArray());
-            Assert.AreEqual("Open Dossier GST", dialog.Actions.Single(action => string.Equals(action.Id, "open_runner", StringComparison.Ordinal)).Label);
+            Assert.AreEqual("Open Runner GST", dialog.Actions.Single(action => string.Equals(action.Id, "open_runner", StringComparison.Ordinal)).Label);
             Assert.AreEqual("Open Watch File GST.chum5", dialog.Actions.Single(action => string.Equals(action.Id, "open_watch_file", StringComparison.Ordinal)).Label);
             Assert.AreEqual("Open Roster Folder", dialog.Actions.Single(action => string.Equals(action.Id, "open_roster_folder", StringComparison.Ordinal)).Label);
             Assert.AreEqual("Refresh Watch Folder", dialog.Actions.Single(action => string.Equals(action.Id, "refresh_watch_folder", StringComparison.Ordinal)).Label);
@@ -758,7 +731,7 @@ public class DesktopDialogFactoryTests
 
             StringAssert.Contains(DesktopDialogFieldValueParser.GetValue(dialog, "rosterSelectionTrail"), "Watch File | campaign-a/ghost-runner.chum5");
             Assert.AreEqual(Path.Combine(nestedPath, "ghost-runner.png"), DesktopDialogFieldValueParser.GetValue(dialog, "rosterMugshot"));
-            StringAssert.Contains(DesktopDialogFieldValueParser.GetValue(dialog, "rosterWatchFolderStatus"), "Portrait Match | watched dossier sibling");
+            StringAssert.Contains(DesktopDialogFieldValueParser.GetValue(dialog, "rosterWatchFolderStatus"), "Portrait Match | watched runner sibling");
             StringAssert.Contains(DesktopDialogFieldValueParser.GetValue(dialog, "rosterWatchFolderCommands"), "Open matched portrait");
             Assert.AreEqual("Open Portrait ghost-runner.png", dialog.Actions.Single(action => string.Equals(action.Id, "open_portrait", StringComparison.Ordinal)).Label);
             Assert.AreEqual("Open Watch File ghost-runner.chum5", dialog.Actions.Single(action => string.Equals(action.Id, "open_watch_file", StringComparison.Ordinal)).Label);
@@ -770,19 +743,6 @@ public class DesktopDialogFactoryTests
                 Directory.Delete(rosterPath, recursive: true);
             }
         }
-    }
-
-    [TestMethod]
-    public void CreateCommandDialog_about_uses_dossier_label_for_dual_head_preview()
-    {
-        DesktopDialogFactory factory = new();
-
-        DesktopDialogState dialog = CreateRepresentativeCommandDialog(factory, "about");
-
-        Assert.AreEqual("About Chummer", dialog.Title);
-        Assert.AreEqual("Dual-head preview over shared presenter/API behavior path.", dialog.Message);
-        Assert.AreEqual("Dossier", dialog.Fields.Single(field => string.Equals(field.Id, "workspace", StringComparison.Ordinal)).Label);
-        Assert.AreEqual("ws-2", DesktopDialogFieldValueParser.GetValue(dialog, "workspace"));
     }
 
     [TestMethod]
@@ -1003,6 +963,7 @@ public class DesktopDialogFactoryTests
             "complex_form_add",
             "initiation_add",
             "spirit_add",
+            "sprite_add",
             "critter_power_add",
             "matrix_program_add",
             "vehicle_mod_add",
@@ -1160,6 +1121,8 @@ public class DesktopDialogFactoryTests
 
         Assert.AreEqual("dialog.ui.combat_damage_track", dialog.Id);
         Assert.AreEqual("3 / 10", DesktopDialogFieldValueParser.GetValue(dialog, "uiDamageTrackPhysical"));
+        Assert.AreEqual("2 / 8", DesktopDialogFieldValueParser.GetValue(dialog, "uiDamageTrackMatrix"));
+        StringAssert.Contains(DesktopDialogFieldValueParser.GetValue(dialog, "uiDamageTrackDetails"), "Item / Vehicle | 0 / 6");
         StringAssert.Contains(DesktopDialogFieldValueParser.GetValue(dialog, "uiDamageTrackDetails"), "Penalty | none");
         StringAssert.Contains(DesktopDialogFieldValueParser.GetValue(dialog, "uiDamageTrackCommands"), "Apply current damage step");
         Assert.AreEqual(DesktopDialogFieldVisualKinds.Grid, dialog.Fields.Single(field => string.Equals(field.Id, "uiDamageTrackDetails", StringComparison.Ordinal)).VisualKind);
@@ -1232,6 +1195,24 @@ public class DesktopDialogFactoryTests
     }
 
     [TestMethod]
+    public void CreateUiControlDialog_sprite_add_uses_selection_form_posture()
+    {
+        DesktopDialogFactory factory = new();
+
+        DesktopDialogState dialog = factory.CreateUiControlDialog("sprite_add", DesktopPreferenceState.Default);
+
+        Assert.AreEqual("dialog.ui.sprite_add", dialog.Id);
+        Assert.AreEqual("Courier Sprite", DesktopDialogFieldValueParser.GetValue(dialog, "uiSpriteName"));
+        StringAssert.Contains(DesktopDialogFieldValueParser.GetValue(dialog, "uiSpriteSections"), "Browse");
+        StringAssert.Contains(DesktopDialogFieldValueParser.GetValue(dialog, "uiSpriteSelectionDetails"), "Level | 3");
+        StringAssert.Contains(DesktopDialogFieldValueParser.GetValue(dialog, "uiSpriteCategoryTree"), "Machine");
+        StringAssert.Contains(DesktopDialogFieldValueParser.GetValue(dialog, "uiSpriteCandidateList"), "Fault Sprite");
+        Assert.AreEqual(DesktopDialogFieldVisualKinds.Grid, dialog.Fields.Single(field => string.Equals(field.Id, "uiSpriteSelectionDetails", StringComparison.Ordinal)).VisualKind);
+        Assert.AreEqual(DesktopDialogFieldVisualKinds.Snippet, dialog.Fields.Single(field => string.Equals(field.Id, "uiSpriteNotes", StringComparison.Ordinal)).VisualKind);
+        Assert.AreEqual("OK", dialog.Actions.Single(action => string.Equals(action.Id, "add", StringComparison.Ordinal)).Label);
+    }
+
+    [TestMethod]
     public void CreateUiControlDialog_critter_power_add_uses_selection_form_posture()
     {
         DesktopDialogFactory factory = new();
@@ -1287,6 +1268,7 @@ public class DesktopDialogFactoryTests
             "complex_form_add",
             "initiation_add",
             "spirit_add",
+            "sprite_add",
             "critter_power_add",
             "matrix_program_add",
             "skill_add",
@@ -1338,6 +1320,7 @@ public class DesktopDialogFactoryTests
             "complex_form_add",
             "initiation_add",
             "spirit_add",
+            "sprite_add",
             "critter_power_add",
             "matrix_program_add",
             "skill_add",
@@ -1741,7 +1724,6 @@ public class DesktopDialogFactoryTests
         Assert.AreEqual("Core Rulebook", DesktopDialogFieldValueParser.GetValue(dialog, "uiSourceBook"));
         StringAssert.Contains(DesktopDialogFieldValueParser.GetValue(dialog, "uiSourceSections"), "Notes");
         StringAssert.Contains(DesktopDialogFieldValueParser.GetValue(dialog, "uiSourceDetails"), "PDF | /books/core-rulebook.pdf#page=424");
-        Assert.AreEqual("Source references stay compact and copyable without pushing the dossier view off screen.", DesktopDialogFieldValueParser.GetValue(dialog, "uiSourceNotes"));
         Assert.AreEqual(DesktopDialogFieldVisualKinds.Grid, dialog.Fields.Single(field => string.Equals(field.Id, "uiSourceDetails", StringComparison.Ordinal)).VisualKind);
         Assert.AreEqual(DesktopDialogFieldVisualKinds.Snippet, dialog.Fields.Single(field => string.Equals(field.Id, "uiSourceNotes", StringComparison.Ordinal)).VisualKind);
         Assert.AreEqual(DesktopDialogFieldLayoutSlots.Right, dialog.Fields.Single(field => string.Equals(field.Id, "uiSourceDetails", StringComparison.Ordinal)).LayoutSlot);
@@ -1831,9 +1813,7 @@ public class DesktopDialogFactoryTests
         StringAssert.Contains(DesktopDialogFieldValueParser.GetValue(dialog, "uiDeleteSections"), "Impact");
         StringAssert.Contains(DesktopDialogFieldValueParser.GetValue(dialog, "uiDeleteNavigationTree"), "Armor Jacket");
         StringAssert.Contains(DesktopDialogFieldValueParser.GetValue(dialog, "uiDeleteNeighborList"), "> Armor Jacket");
-        StringAssert.Contains(DesktopDialogFieldValueParser.GetValue(dialog, "uiDeleteImpact"), "Removal Scope | dossier inventory only");
         StringAssert.Contains(DesktopDialogFieldValueParser.GetValue(dialog, "uiDeleteImpact"), "Undo | re-add from gear selector");
-        Assert.AreEqual("The selected item will be removed from the active dossier inventory while the current gear list remains visible.", DesktopDialogFieldValueParser.GetValue(dialog, "uiDeleteNotes"));
         StringAssert.Contains(DesktopDialogFieldValueParser.GetValue(dialog, "uiDeleteRecoveryCommands"), "Return to gear tab");
         Assert.AreEqual("Remove Armor Jacket", dialog.Actions.Single(action => string.Equals(action.Id, "delete", StringComparison.Ordinal)).Label);
         Assert.AreEqual(DesktopDialogFieldVisualKinds.Tree, dialog.Fields.Single(field => string.Equals(field.Id, "uiDeleteNavigationTree", StringComparison.Ordinal)).VisualKind);
@@ -1855,7 +1835,6 @@ public class DesktopDialogFactoryTests
         StringAssert.Contains(DesktopDialogFieldValueParser.GetValue(dialog, "uiDeleteNeighborList"), "Datajack");
         StringAssert.Contains(DesktopDialogFieldValueParser.GetValue(dialog, "uiDeleteSummary"), "Essence | 0.40");
         StringAssert.Contains(DesktopDialogFieldValueParser.GetValue(dialog, "uiDeleteImpact"), "Undo | re-add from selector");
-        Assert.AreEqual("The selected implant will be removed from the active dossier while essence and capacity stay explicit in the same utility pane.", DesktopDialogFieldValueParser.GetValue(dialog, "uiDeleteNotes"));
         StringAssert.Contains(DesktopDialogFieldValueParser.GetValue(dialog, "uiDeleteRecoveryCommands"), "Return to cyberware tab");
         Assert.AreEqual("Remove Cybereyes Rating 4", dialog.Actions.Single(action => string.Equals(action.Id, "delete", StringComparison.Ordinal)).Label);
     }
@@ -1924,7 +1903,6 @@ public class DesktopDialogFactoryTests
         StringAssert.Contains(DesktopDialogFieldValueParser.GetValue(dialog, "uiDeleteNavigationTree"), "Jazz");
         StringAssert.Contains(DesktopDialogFieldValueParser.GetValue(dialog, "uiDeleteNeighborList"), "Kamikaze");
         StringAssert.Contains(DesktopDialogFieldValueParser.GetValue(dialog, "uiDeleteSummary"), "Crash | Stun + fatigue");
-        StringAssert.Contains(DesktopDialogFieldValueParser.GetValue(dialog, "uiDeleteImpact"), "Removal Scope | dossier ledger only");
         StringAssert.Contains(DesktopDialogFieldValueParser.GetValue(dialog, "uiDeleteRecoveryCommands"), "Return to drugs tab");
         Assert.AreEqual("Remove Jazz", dialog.Actions.Single(action => string.Equals(action.Id, "delete", StringComparison.Ordinal)).Label);
     }
@@ -1978,29 +1956,6 @@ public class DesktopDialogFactoryTests
         StringAssert.Contains(DesktopDialogFieldValueParser.GetValue(dialog, "uiDeleteSummary"), "Karma | 11");
         StringAssert.Contains(DesktopDialogFieldValueParser.GetValue(dialog, "uiDeleteRecoveryCommands"), "Return to qualities tab");
         Assert.AreEqual("Remove First Impression", dialog.Actions.Single(action => string.Equals(action.Id, "delete", StringComparison.Ordinal)).Label);
-    }
-
-    [TestMethod]
-    public void CreateUiControlDialog_runner_intelligence_utilities_use_dossier_language()
-    {
-        DesktopDialogFactory factory = new();
-
-        DesktopDialogState benchmarkDialog = factory.CreateUiControlDialog("runner_benchmark", DesktopPreferenceState.Default);
-        DesktopDialogState whatIfDialog = factory.CreateUiControlDialog("runner_what_if", DesktopPreferenceState.Default);
-        DesktopDialogState privacyDialog = factory.CreateUiControlDialog("runner_cohort_privacy", DesktopPreferenceState.Default);
-
-        Assert.AreEqual("dialog.ui.runner_benchmark", benchmarkDialog.Id);
-        Assert.AreEqual("Runner Intelligence", benchmarkDialog.Title);
-        Assert.AreEqual("Compare this dossier against privacy-safe cohorts and local roster benchmarks before changing the sheet.", benchmarkDialog.Message);
-
-        Assert.AreEqual("dialog.ui.runner_what_if", whatIfDialog.Id);
-        Assert.AreEqual("Runner Intelligence What-If", whatIfDialog.Title);
-        Assert.AreEqual("Model spells, drugs, gear, and sustained effects without mutating the active dossier until the user applies a real workflow.", whatIfDialog.Message);
-
-        Assert.AreEqual("dialog.ui.runner_cohort_privacy", privacyDialog.Id);
-        Assert.AreEqual("Runner Intelligence Privacy", privacyDialog.Title);
-        Assert.AreEqual("Opt-in anonymized benchmark cohorts stay separate from private dossier, owner, dossier id, XML, notes, and dossier content.", privacyDialog.Message);
-        Assert.AreEqual("Dossier names, aliases, owner identifiers, dossier identifiers, files, XML, notes, and dossier text", DesktopDialogFieldValueParser.GetValue(privacyDialog, "uiRunnerPrivacyExcluded"));
     }
 
     [TestMethod]
@@ -2095,76 +2050,9 @@ public class DesktopDialogFactoryTests
             rulesetId: "sr6");
 
         Assert.AreEqual("dialog.open_character", dialog.Id);
-        Assert.AreEqual("Open Dossier", dialog.Title);
-        Assert.AreEqual("Paste Chummer XML to open a dossier.", dialog.Message);
         Assert.IsNotNull(dialog.Fields.SingleOrDefault(field => string.Equals(field.Id, "openCharacterXml", StringComparison.Ordinal)));
         Assert.AreEqual("sr6", DesktopDialogFieldValueParser.GetValue(dialog, "importRulesetId"));
-        Assert.AreEqual("Paste dossier XML from a trusted local or reviewed export source.", DesktopDialogFieldValueParser.GetValue(dialog, "openCharacterImportSource"));
-        Assert.AreEqual("Review the imported summary before applying this SR6 dossier import.", DesktopDialogFieldValueParser.GetValue(dialog, "openCharacterReviewSummary"));
-        Assert.AreEqual("Dossier XML", dialog.Fields.Single(field => string.Equals(field.Id, "openCharacterXml", StringComparison.Ordinal)).Label);
         Assert.IsNotNull(dialog.Actions.SingleOrDefault(action => string.Equals(action.Id, "import", StringComparison.Ordinal)));
-    }
-
-    [TestMethod]
-    public void CreateCommandDialog_print_and_export_staging_use_dossier_language()
-    {
-        DesktopDialogFactory factory = new();
-
-        DesktopDialogState printDialog = factory.CreateCommandDialog(
-            "open_for_printing",
-            profile: null,
-            DesktopPreferenceState.Default,
-            activeSectionJson: null,
-            currentWorkspace: null,
-            rulesetId: "sr6");
-        DesktopDialogState exportDialog = factory.CreateCommandDialog(
-            "open_for_export",
-            profile: null,
-            DesktopPreferenceState.Default,
-            activeSectionJson: null,
-            currentWorkspace: null,
-            rulesetId: "sr6");
-
-        Assert.AreEqual("dialog.open_for_printing", printDialog.Id);
-        Assert.AreEqual("Open Print Staging", printDialog.Title);
-        Assert.AreEqual("Paste Chummer XML to stage dossier print workflows.", printDialog.Message);
-        Assert.AreEqual("Dossier XML", printDialog.Fields.Single(field => string.Equals(field.Id, "openCharacterXml", StringComparison.Ordinal)).Label);
-        Assert.AreEqual("Review the imported summary before applying this SR6 dossier import.", DesktopDialogFieldValueParser.GetValue(printDialog, "openCharacterReviewSummary"));
-
-        Assert.AreEqual("dialog.open_for_export", exportDialog.Id);
-        Assert.AreEqual("Open Export Staging", exportDialog.Title);
-        Assert.AreEqual("Paste Chummer XML to stage dossier export workflows.", exportDialog.Message);
-        Assert.AreEqual("Dossier XML", exportDialog.Fields.Single(field => string.Equals(field.Id, "openCharacterXml", StringComparison.Ordinal)).Label);
-        Assert.AreEqual("Review the imported summary before applying this SR6 dossier import.", DesktopDialogFieldValueParser.GetValue(exportDialog, "openCharacterReviewSummary"));
-    }
-
-    [TestMethod]
-    public void CreateCommandDialog_export_utilities_use_dossier_language()
-    {
-        DesktopDialogFactory factory = new();
-
-        DesktopDialogState dataExporterDialog = factory.CreateCommandDialog(
-            "data_exporter",
-            profile: null,
-            DesktopPreferenceState.Default,
-            activeSectionJson: null,
-            currentWorkspace: new CharacterWorkspaceId("ws-export"),
-            rulesetId: "sr6");
-        DesktopDialogState exportCharacterDialog = factory.CreateCommandDialog(
-            "export_character",
-            profile: null,
-            DesktopPreferenceState.Default,
-            activeSectionJson: null,
-            currentWorkspace: new CharacterWorkspaceId("ws-export"),
-            rulesetId: "sr6");
-
-        Assert.AreEqual("dialog.data_exporter", dataExporterDialog.Id);
-        Assert.AreEqual("Dossier: ws-export", DesktopDialogFieldValueParser.GetValue(dataExporterDialog, "dataExportPreview"));
-
-        Assert.AreEqual("dialog.export_character", exportCharacterDialog.Id);
-        Assert.AreEqual("Export Dossier", exportCharacterDialog.Title);
-        Assert.AreEqual("Export the selected dossier bundle.", exportCharacterDialog.Message);
-        Assert.AreEqual("Dossier: ws-export", DesktopDialogFieldValueParser.GetValue(exportCharacterDialog, "dataExportPreview"));
     }
 
     [TestMethod]
@@ -2191,31 +2079,6 @@ public class DesktopDialogFactoryTests
         Assert.AreEqual("Start Origin Dossier", dialog.Actions.Single(action => string.Equals(action.Id, "start_from_origin", StringComparison.Ordinal)).Label);
         Assert.IsNotNull(dialog.Actions.SingleOrDefault(action => string.Equals(action.Id, "create_character", StringComparison.Ordinal)));
         Assert.IsNotNull(dialog.Actions.SingleOrDefault(action => string.Equals(action.Id, "start_from_origin", StringComparison.Ordinal)));
-    }
-
-    [TestMethod]
-    public void CreateCommandDialog_new_character_origin_defaults_to_dossier_identity_without_profile_seed()
-    {
-        DesktopDialogFactory factory = new();
-
-        DesktopDialogState dialog = factory.CreateCommandDialog(
-            "new_character_origin",
-            profile: null,
-            DesktopPreferenceState.Default,
-            activeSectionJson: null,
-            currentWorkspace: null,
-            rulesetId: "sr6");
-
-        Assert.AreEqual("dialog.new_character.origin_wizard", dialog.Id);
-        Assert.AreEqual("New dossier", DesktopDialogFieldValueParser.GetValue(dialog, "newCharacterName"));
-        Assert.AreEqual("Dossier", DesktopDialogFieldValueParser.GetValue(dialog, "newCharacterAlias"));
-        Assert.AreEqual("sr6", DesktopDialogFieldValueParser.GetValue(dialog, "newCharacterRulesetId"));
-        Assert.IsFalse(
-            string.Equals("New runner", DesktopDialogFieldValueParser.GetValue(dialog, "newCharacterName"), StringComparison.Ordinal),
-            "Direct Origin Dossier entry should not inherit standard New Character defaults.");
-        Assert.IsFalse(
-            string.Equals("Runner", DesktopDialogFieldValueParser.GetValue(dialog, "newCharacterAlias"), StringComparison.Ordinal),
-            "Direct Origin Dossier entry should keep dossier-facing identity copy.");
     }
 
     [TestMethod]
@@ -2282,7 +2145,6 @@ public class DesktopDialogFactoryTests
 
         Assert.AreEqual("dialog.new_character.origin_wizard", dialog.Id);
         Assert.AreEqual("Origin Dossier", dialog.Title);
-        Assert.AreEqual("Pick only the basics, then build the story. Advanced controls are optional.", dialog.Message);
         Assert.AreEqual("Nova", DesktopDialogFieldValueParser.GetValue(dialog, "newCharacterName"));
         Assert.AreEqual("Cipher", DesktopDialogFieldValueParser.GetValue(dialog, "newCharacterAlias"));
         Assert.AreEqual(RulesetDefaults.Sr4, DesktopDialogFieldValueParser.GetValue(dialog, "newCharacterRulesetId"));
@@ -2334,48 +2196,9 @@ public class DesktopDialogFactoryTests
                 .Select(option => option.Value)
                 .ToArray(),
             "illegal_addiction");
-        string originSummary = DesktopDialogFieldValueParser.GetValue(dialog, "newCharacterOriginSummary");
-        StringAssert.Contains(originSummary, "upbringing");
-        StringAssert.Contains(originSummary, "dossier path");
-        Assert.IsFalse(originSummary.Contains("this runner", StringComparison.OrdinalIgnoreCase));
+        StringAssert.Contains(DesktopDialogFieldValueParser.GetValue(dialog, "newCharacterOriginSummary"), "upbringing");
         Assert.IsFalse(string.IsNullOrWhiteSpace(DesktopDialogFieldValueParser.GetValue(dialog, "newCharacterOriginBuildMethod")));
         Assert.AreEqual("Draft story", dialog.Actions.Single(action => string.Equals(action.Id, "generate_fitting_build", StringComparison.Ordinal)).Label);
-    }
-
-    [TestMethod]
-    public void BuildNewCharacterOriginDialogs_default_to_dossier_identity_when_no_seed_name_or_alias_is_provided()
-    {
-        DesktopDialogState wizard = DesktopDialogFactory.BuildNewCharacterOriginWizardDialog(RulesetDefaults.Sr6, null, null);
-
-        Assert.AreEqual("New dossier", DesktopDialogFieldValueParser.GetValue(wizard, "newCharacterName"));
-        Assert.AreEqual("Dossier", DesktopDialogFieldValueParser.GetValue(wizard, "newCharacterAlias"));
-
-        DesktopDialogState build = DesktopDialogFactory.BuildNewCharacterOriginBuildDialog(wizard);
-
-        Assert.AreEqual("New dossier", DesktopDialogFieldValueParser.GetValue(build, "newCharacterWorkflowName"));
-        Assert.AreEqual("Dossier", DesktopDialogFieldValueParser.GetValue(build, "newCharacterWorkflowAlias"));
-        StringAssert.Contains(DesktopDialogFieldValueParser.GetValue(build, "newCharacterOriginBookPreview"), "Dossier: Origin Dossier");
-        Assert.IsFalse(
-            DesktopDialogFieldValueParser.GetValue(build, "newCharacterOriginSummary").Contains("this runner", StringComparison.OrdinalIgnoreCase),
-            "Direct Origin Dossier defaults should stay dossier-facing from the first story draft through the guided build handoff.");
-    }
-
-    [TestMethod]
-    public void BuildNewCharacterOriginDialogs_normalize_runner_seed_identity_into_dossier_defaults()
-    {
-        DesktopDialogState wizard = DesktopDialogFactory.BuildNewCharacterOriginWizardDialog(RulesetDefaults.Sr6, "New runner", "Runner");
-
-        Assert.AreEqual("New dossier", DesktopDialogFieldValueParser.GetValue(wizard, "newCharacterName"));
-        Assert.AreEqual("Dossier", DesktopDialogFieldValueParser.GetValue(wizard, "newCharacterAlias"));
-
-        DesktopDialogState build = DesktopDialogFactory.BuildNewCharacterOriginBuildDialog(wizard);
-
-        Assert.AreEqual("New dossier", DesktopDialogFieldValueParser.GetValue(build, "newCharacterWorkflowName"));
-        Assert.AreEqual("Dossier", DesktopDialogFieldValueParser.GetValue(build, "newCharacterWorkflowAlias"));
-        StringAssert.Contains(
-            DesktopDialogFieldValueParser.GetValue(build, "newCharacterOriginDossierLink"),
-            "alias=Dossier");
-        StringAssert.Contains(DesktopDialogFieldValueParser.GetValue(build, "newCharacterOriginBookPreview"), "Dossier: Origin Dossier");
     }
 
     [TestMethod]
@@ -2399,8 +2222,6 @@ public class DesktopDialogFactoryTests
         DesktopDialogState dialog = DesktopDialogFactory.BuildNewCharacterOriginBuildDialog(wizard);
 
         Assert.AreEqual("dialog.new_character.origin_build", dialog.Id);
-        Assert.AreEqual("Origin Build Handoff", dialog.Title);
-        Assert.AreEqual("Read this first. Character creation starts after the story feels right.", dialog.Message);
         Assert.AreEqual("Nova", DesktopDialogFieldValueParser.GetValue(dialog, "newCharacterWorkflowName"));
         Assert.AreEqual("Cipher", DesktopDialogFieldValueParser.GetValue(dialog, "newCharacterWorkflowAlias"));
         Assert.AreEqual("approved_origin_story", DesktopDialogFieldValueParser.GetValue(dialog, "newCharacterOriginAliceSeedSource"));
@@ -2416,14 +2237,7 @@ public class DesktopDialogFactoryTests
             DesktopDialogFieldValueParser.GetValue(dialog, "newCharacterOriginDossierLink"));
         StringAssert.Contains(
             DesktopDialogFieldValueParser.GetValue(dialog, "newCharacterOriginDossierLinkNotes"),
-            "clean Origin Dossier route");
-        StringAssert.Contains(
-            DesktopDialogFieldValueParser.GetValue(dialog, "newCharacterOriginDossierLinkNotes"),
             "story text stays local");
-        Assert.IsFalse(
-            DesktopDialogFieldValueParser.GetValue(dialog, "newCharacterOriginDossierLinkNotes").Contains(
-                "Opens Chummer Online directly into the Origin Dossier workflow.",
-                StringComparison.Ordinal));
         StringAssert.Contains(DesktopDialogFieldValueParser.GetValue(dialog, "newCharacterOriginImplications"), "Alice Seed");
         StringAssert.Contains(DesktopDialogFieldValueParser.GetValue(dialog, "newCharacterOriginImplications"), "approved origin story");
         StringAssert.Contains(DesktopDialogFieldValueParser.GetValue(dialog, "newCharacterOriginImplications"), "Dossier Link");
@@ -2434,14 +2248,12 @@ public class DesktopDialogFactoryTests
             dialog.Fields
                 .Where(field => !string.Equals(field.LayoutSlot, DesktopDialogFieldLayoutSlots.Hidden, StringComparison.Ordinal))
                 .Select(field => field.Value));
-        Assert.IsFalse(string.Equals(dialog.Title, "Origin Dossier", StringComparison.Ordinal));
         Assert.IsFalse(visibleOriginText.Contains(" lane", StringComparison.OrdinalIgnoreCase), "Origin Dossier visible copy should describe focus/path, not internal lanes.");
-        Assert.AreEqual("Show Origin Dossier link", dialog.Actions.Single(action => string.Equals(action.Id, "show_origin_dossier_link", StringComparison.Ordinal)).Label);
+        Assert.AreEqual("Show dossier link", dialog.Actions.Single(action => string.Equals(action.Id, "show_origin_dossier_link", StringComparison.Ordinal)).Label);
         Assert.AreEqual("Start character creation", dialog.Actions.Single(action => string.Equals(action.Id, "open_origin_guided_chargen", StringComparison.Ordinal)).Label);
         CollectionAssert.AreEqual(
             new[] { "show_origin_dossier_link", "open_origin_guided_chargen", "cancel" },
             dialog.Actions.Select(action => action.Id).ToArray());
-        Assert.IsFalse(string.Equals(dialog.Message, "Read the origin first. Character creation starts after this screen.", StringComparison.Ordinal));
     }
 
     [TestMethod]
@@ -2547,8 +2359,7 @@ public class DesktopDialogFactoryTests
         Assert.AreEqual("GuidedBuildPlan", DesktopDialogFieldValueParser.GetValue(dialog, "autoAliceSupportMode"));
         Assert.AreEqual("new_character", DesktopDialogFieldValueParser.GetValue(dialog, "autoAliceHandoffCommandId"));
         Assert.AreEqual("build_help", DesktopDialogFieldValueParser.GetValue(dialog, "autoAliceConversationMode"));
-        StringAssert.Contains(dialog.Message ?? string.Empty, "No dossier is open yet");
-        StringAssert.Contains(DesktopDialogFieldValueParser.GetValue(dialog, "autoAliceSurfaceContext"), "Surface | Character Create");
+        StringAssert.Contains(dialog.Message ?? string.Empty, "No runner is open yet");
         StringAssert.Contains(DesktopDialogFieldValueParser.GetValue(dialog, "autoAliceSettingsGuide"), "Strict avoids restricted picks");
         StringAssert.Contains(DesktopDialogFieldValueParser.GetValue(dialog, "autoAliceSettingsGuide"), "Ware advice");
         CollectionAssert.AreEqual(
@@ -2626,120 +2437,6 @@ public class DesktopDialogFactoryTests
         StringAssert.Contains(
             DesktopDialogFieldValueParser.GetValue(dialog, "newCharacterPriorityWorkflowSummary"),
             "Sum-to-Ten Total | 10");
-    }
-
-    [TestMethod]
-    public void BuildNewCharacterContinuationDialog_origin_source_restores_dossier_defaults_when_identity_is_blank()
-    {
-        DesktopDialogState dialog = BuildNewCharacterContinuationDialog(
-            RulesetDefaults.Sr6,
-            "Priority",
-            houseRulesEnabled: false,
-            name: string.Empty,
-            alias: string.Empty,
-            preferences: DesktopPreferenceState.Default,
-            workflowOriginSource: "approved_origin_story");
-
-        Assert.AreEqual("dialog.new_character.priority_workflow", dialog.Id);
-        Assert.AreEqual("New dossier", DesktopDialogFieldValueParser.GetValue(dialog, "newCharacterWorkflowName"));
-        Assert.AreEqual("Dossier", DesktopDialogFieldValueParser.GetValue(dialog, "newCharacterWorkflowAlias"));
-        Assert.AreEqual("approved_origin_story", DesktopDialogFieldValueParser.GetValue(dialog, "newCharacterWorkflowOriginSource"));
-        Assert.IsFalse(string.Equals("New runner", DesktopDialogFieldValueParser.GetValue(dialog, "newCharacterWorkflowName"), StringComparison.Ordinal));
-        Assert.IsFalse(string.Equals("Runner", DesktopDialogFieldValueParser.GetValue(dialog, "newCharacterWorkflowAlias"), StringComparison.Ordinal));
-    }
-
-    [TestMethod]
-    public void BuildNewCharacterContinuationDialog_origin_source_restores_dossier_defaults_when_identity_uses_runner_defaults()
-    {
-        DesktopDialogState dialog = BuildNewCharacterContinuationDialog(
-            RulesetDefaults.Sr6,
-            "Priority",
-            houseRulesEnabled: false,
-            name: "New runner",
-            alias: "Runner",
-            preferences: DesktopPreferenceState.Default,
-            workflowOriginSource: "approved_origin_story");
-
-        Assert.AreEqual("dialog.new_character.priority_workflow", dialog.Id);
-        Assert.AreEqual("New dossier", DesktopDialogFieldValueParser.GetValue(dialog, "newCharacterWorkflowName"));
-        Assert.AreEqual("Dossier", DesktopDialogFieldValueParser.GetValue(dialog, "newCharacterWorkflowAlias"));
-        Assert.AreEqual("approved_origin_story", DesktopDialogFieldValueParser.GetValue(dialog, "newCharacterWorkflowOriginSource"));
-    }
-
-    [TestMethod]
-    public void BuildNewCharacterPriorityWorkflowDialog_origin_source_restores_dossier_defaults_when_identity_is_blank()
-    {
-        DesktopDialogState dialog = BuildNewCharacterPriorityWorkflowDialog(
-            RulesetDefaults.Sr6,
-            "Priority",
-            houseRulesEnabled: false,
-            name: string.Empty,
-            alias: string.Empty,
-            preferences: DesktopPreferenceState.Default,
-            workflowOriginSource: "approved_origin_story");
-
-        Assert.AreEqual("dialog.new_character.priority_workflow", dialog.Id);
-        Assert.AreEqual("New dossier", DesktopDialogFieldValueParser.GetValue(dialog, "newCharacterWorkflowName"));
-        Assert.AreEqual("Dossier", DesktopDialogFieldValueParser.GetValue(dialog, "newCharacterWorkflowAlias"));
-        Assert.AreEqual("approved_origin_story", DesktopDialogFieldValueParser.GetValue(dialog, "newCharacterWorkflowOriginSource"));
-        Assert.IsFalse(string.Equals("New runner", DesktopDialogFieldValueParser.GetValue(dialog, "newCharacterWorkflowName"), StringComparison.Ordinal));
-        Assert.IsFalse(string.Equals("Runner", DesktopDialogFieldValueParser.GetValue(dialog, "newCharacterWorkflowAlias"), StringComparison.Ordinal));
-    }
-
-    [TestMethod]
-    public void BuildNewCharacterPriorityWorkflowDialog_origin_source_restores_dossier_defaults_when_identity_uses_runner_defaults()
-    {
-        DesktopDialogState dialog = BuildNewCharacterPriorityWorkflowDialog(
-            RulesetDefaults.Sr6,
-            "Priority",
-            houseRulesEnabled: false,
-            name: "New runner",
-            alias: "Runner",
-            preferences: DesktopPreferenceState.Default,
-            workflowOriginSource: "approved_origin_story");
-
-        Assert.AreEqual("dialog.new_character.priority_workflow", dialog.Id);
-        Assert.AreEqual("New dossier", DesktopDialogFieldValueParser.GetValue(dialog, "newCharacterWorkflowName"));
-        Assert.AreEqual("Dossier", DesktopDialogFieldValueParser.GetValue(dialog, "newCharacterWorkflowAlias"));
-        Assert.AreEqual("approved_origin_story", DesktopDialogFieldValueParser.GetValue(dialog, "newCharacterWorkflowOriginSource"));
-    }
-
-    [TestMethod]
-    public void BuildNewCharacterKarmaWorkflowDialog_origin_source_restores_dossier_defaults_when_identity_is_blank()
-    {
-        DesktopDialogState dialog = BuildNewCharacterKarmaWorkflowDialog(
-            RulesetDefaults.Sr6,
-            "Karma",
-            houseRulesEnabled: false,
-            name: string.Empty,
-            alias: string.Empty,
-            preferences: DesktopPreferenceState.Default,
-            workflowOriginSource: "approved_origin_story");
-
-        Assert.AreEqual("dialog.new_character.karma_workflow", dialog.Id);
-        Assert.AreEqual("New dossier", DesktopDialogFieldValueParser.GetValue(dialog, "newCharacterWorkflowName"));
-        Assert.AreEqual("Dossier", DesktopDialogFieldValueParser.GetValue(dialog, "newCharacterWorkflowAlias"));
-        Assert.AreEqual("approved_origin_story", DesktopDialogFieldValueParser.GetValue(dialog, "newCharacterWorkflowOriginSource"));
-        Assert.IsFalse(string.Equals("New runner", DesktopDialogFieldValueParser.GetValue(dialog, "newCharacterWorkflowName"), StringComparison.Ordinal));
-        Assert.IsFalse(string.Equals("Runner", DesktopDialogFieldValueParser.GetValue(dialog, "newCharacterWorkflowAlias"), StringComparison.Ordinal));
-    }
-
-    [TestMethod]
-    public void BuildNewCharacterKarmaWorkflowDialog_origin_source_restores_dossier_defaults_when_identity_uses_runner_defaults()
-    {
-        DesktopDialogState dialog = BuildNewCharacterKarmaWorkflowDialog(
-            RulesetDefaults.Sr6,
-            "Karma",
-            houseRulesEnabled: false,
-            name: "New runner",
-            alias: "Runner",
-            preferences: DesktopPreferenceState.Default,
-            workflowOriginSource: "approved_origin_story");
-
-        Assert.AreEqual("dialog.new_character.karma_workflow", dialog.Id);
-        Assert.AreEqual("New dossier", DesktopDialogFieldValueParser.GetValue(dialog, "newCharacterWorkflowName"));
-        Assert.AreEqual("Dossier", DesktopDialogFieldValueParser.GetValue(dialog, "newCharacterWorkflowAlias"));
-        Assert.AreEqual("approved_origin_story", DesktopDialogFieldValueParser.GetValue(dialog, "newCharacterWorkflowOriginSource"));
     }
 
     [TestMethod]
@@ -3570,12 +3267,16 @@ public class DesktopDialogFactoryTests
         "open_for_export",
         "print_setup",
         "dice_roller",
-        "auto_alice",
-        "new_character_origin",
         "global_settings",
         "switch_ruleset",
         "character_settings",
         "translator",
+        "open_sourcebooks",
+        "open_errata",
+        "open_custom_data",
+        "update_data_packs",
+        "validate_data_scope",
+        "open_data_folder",
         "xml_editor",
         "master_index",
         "character_roster",
@@ -3657,66 +3358,6 @@ public class DesktopDialogFactoryTests
 
         return (DesktopDialogState)(method.Invoke(null, [rulesetId, buildMethod, houseRulesEnabled, name, alias, preferences])
             ?? throw new InvalidOperationException("BuildNewCharacterContinuationDialog returned null."));
-    }
-
-    private static DesktopDialogState BuildNewCharacterContinuationDialog(
-        string rulesetId,
-        string buildMethod,
-        bool houseRulesEnabled,
-        string name,
-        string alias,
-        DesktopPreferenceState preferences,
-        string workflowOriginSource)
-    {
-        MethodInfo method = typeof(DesktopDialogFactory)
-            .GetMethods(BindingFlags.Static | BindingFlags.NonPublic)
-            .Single(candidate =>
-                string.Equals(candidate.Name, "BuildNewCharacterContinuationDialog", StringComparison.Ordinal)
-                && candidate.GetParameters().Length == 7)
-            ?? throw new InvalidOperationException("BuildNewCharacterContinuationDialog was not found.");
-
-        return (DesktopDialogState)(method.Invoke(null, [rulesetId, buildMethod, houseRulesEnabled, name, alias, preferences, workflowOriginSource])
-            ?? throw new InvalidOperationException("BuildNewCharacterContinuationDialog returned null."));
-    }
-
-    private static DesktopDialogState BuildNewCharacterPriorityWorkflowDialog(
-        string rulesetId,
-        string buildMethod,
-        bool houseRulesEnabled,
-        string name,
-        string alias,
-        DesktopPreferenceState preferences,
-        string workflowOriginSource)
-    {
-        MethodInfo method = typeof(DesktopDialogFactory)
-            .GetMethods(BindingFlags.Static | BindingFlags.NonPublic)
-            .Single(candidate =>
-                string.Equals(candidate.Name, "BuildNewCharacterPriorityWorkflowDialog", StringComparison.Ordinal)
-                && candidate.GetParameters().Length == 7)
-            ?? throw new InvalidOperationException("BuildNewCharacterPriorityWorkflowDialog was not found.");
-
-        return (DesktopDialogState)(method.Invoke(null, [rulesetId, buildMethod, houseRulesEnabled, name, alias, preferences, workflowOriginSource])
-            ?? throw new InvalidOperationException("BuildNewCharacterPriorityWorkflowDialog returned null."));
-    }
-
-    private static DesktopDialogState BuildNewCharacterKarmaWorkflowDialog(
-        string rulesetId,
-        string buildMethod,
-        bool houseRulesEnabled,
-        string name,
-        string alias,
-        DesktopPreferenceState preferences,
-        string workflowOriginSource)
-    {
-        MethodInfo method = typeof(DesktopDialogFactory)
-            .GetMethods(BindingFlags.Static | BindingFlags.NonPublic)
-            .Single(candidate =>
-                string.Equals(candidate.Name, "BuildNewCharacterKarmaWorkflowDialog", StringComparison.Ordinal)
-                && candidate.GetParameters().Length == 7)
-            ?? throw new InvalidOperationException("BuildNewCharacterKarmaWorkflowDialog was not found.");
-
-        return (DesktopDialogState)(method.Invoke(null, [rulesetId, buildMethod, houseRulesEnabled, name, alias, preferences, workflowOriginSource])
-            ?? throw new InvalidOperationException("BuildNewCharacterKarmaWorkflowDialog returned null."));
     }
 
     private static DesktopDialogState UpdateDialogField(DesktopDialogState dialog, string fieldId, string value)

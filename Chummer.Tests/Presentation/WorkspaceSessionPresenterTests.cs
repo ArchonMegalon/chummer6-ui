@@ -32,6 +32,10 @@ public class WorkspaceSessionPresenterTests
         CollectionAssert.AreEqual(
             expectedOrder,
             state.RecentWorkspaceIds.Select(id => id.Value).ToArray());
+        Assert.AreEqual(2L, state.ContentRevision);
+        Assert.AreEqual(1L, state.SavedRevision);
+        Assert.IsTrue(state.IsDirty);
+        Assert.IsTrue(state.HasSavedWorkspace);
     }
 
     [TestMethod]
@@ -136,29 +140,182 @@ public class WorkspaceSessionPresenterTests
     }
 
     [TestMethod]
-    public void SetSavedStatus_updates_only_target_workspace()
+    public void SetRevisions_updates_only_target_workspace_and_drives_derived_status()
     {
         WorkspaceSessionPresenter presenter = new();
         presenter.Open(new CharacterWorkspaceId("ws-1"), CreateProfile("One", "A"), rulesetId: "sr5");
         presenter.Open(new CharacterWorkspaceId("ws-2"), CreateProfile("Two", "B"), rulesetId: "sr5");
 
-        WorkspaceSessionState updated = presenter.SetSavedStatus(new CharacterWorkspaceId("ws-1"), hasSavedWorkspace: true);
+        presenter.SetRevisions(new CharacterWorkspaceId("ws-2"), contentRevision: 2, savedRevision: 2);
+        WorkspaceSessionState updated = presenter.SetRevisions(
+            new CharacterWorkspaceId("ws-1"),
+            contentRevision: 3,
+            savedRevision: 2);
 
         OpenWorkspaceState ws1 = updated.OpenWorkspaces.First(workspace => string.Equals(workspace.Id.Value, "ws-1", StringComparison.Ordinal));
         OpenWorkspaceState ws2 = updated.OpenWorkspaces.First(workspace => string.Equals(workspace.Id.Value, "ws-2", StringComparison.Ordinal));
+        Assert.AreEqual(3L, ws1.ContentRevision);
+        Assert.AreEqual(2L, ws1.SavedRevision);
+        Assert.IsTrue(ws1.IsDirty);
         Assert.IsTrue(ws1.HasSavedWorkspace);
-        Assert.IsFalse(ws2.HasSavedWorkspace);
+        Assert.AreEqual(2L, ws2.ContentRevision);
+        Assert.AreEqual(2L, ws2.SavedRevision);
+        Assert.IsFalse(ws2.IsDirty);
+        Assert.IsTrue(ws2.HasSavedWorkspace);
         string[] expectedRecent = ["ws-2", "ws-1"];
         CollectionAssert.AreEqual(
             expectedRecent,
             updated.RecentWorkspaceIds.Select(id => id.Value).ToArray());
     }
 
+    [TestMethod]
+    public void Conflict_state_is_typed_and_successful_revision_update_clears_it()
+    {
+        WorkspaceSessionPresenter presenter = new();
+        CharacterWorkspaceId workspaceId = new("ws-conflict");
+        presenter.Open(workspaceId, CreateProfile("Conflict", "C"), rulesetId: "sr5");
+        presenter.SetRevisions(workspaceId, contentRevision: 4, savedRevision: 3);
+        WorkspaceConflictState conflict = new(
+            Operation: "save",
+            ExpectedContentRevision: 4,
+            ActualContentRevision: 5,
+            Message: "The workspace changed elsewhere.");
+
+        WorkspaceSessionState conflicted = presenter.SetConflictState(workspaceId, conflict);
+
+        Assert.AreSame(conflict, conflicted.ConflictState);
+        Assert.AreEqual(WorkspaceOperationOutcome.Conflict, conflicted.ConflictState?.Outcome);
+        Assert.AreEqual(4L, conflicted.ContentRevision);
+        Assert.AreEqual(3L, conflicted.SavedRevision);
+
+        WorkspaceSessionState resolved = presenter.SetRevisions(workspaceId, contentRevision: 6, savedRevision: 6);
+
+        Assert.IsNull(resolved.ConflictState);
+        Assert.IsFalse(resolved.IsDirty);
+    }
+
+    [TestMethod]
+    public void Close_then_open_preserves_revision_and_conflict_state()
+    {
+        WorkspaceSessionPresenter presenter = new();
+        CharacterWorkspaceId workspaceId = new("ws-reopen");
+        presenter.Open(workspaceId, CreateProfile("Reopen", "R"), rulesetId: "sr5");
+        presenter.SetRevisions(workspaceId, contentRevision: 7, savedRevision: 5);
+        WorkspaceConflictState conflict = new(
+            Operation: "metadata",
+            ExpectedContentRevision: 7,
+            ActualContentRevision: 8,
+            Message: "The workspace changed elsewhere.");
+        presenter.SetConflictState(workspaceId, conflict);
+
+        presenter.Close(workspaceId);
+        WorkspaceSessionState reopened = presenter.Open(workspaceId, profile: null, rulesetId: null);
+
+        Assert.AreEqual(7L, reopened.ContentRevision);
+        Assert.AreEqual(5L, reopened.SavedRevision);
+        Assert.IsTrue(reopened.IsDirty);
+        Assert.AreSame(conflict, reopened.ConflictState);
+        Assert.AreEqual("Reopen", reopened.ActiveWorkspace?.Name);
+    }
+
+    [TestMethod]
+    public void Forget_removes_cached_revision_and_conflict_state_after_delete()
+    {
+        WorkspaceSessionPresenter presenter = new();
+        CharacterWorkspaceId workspaceId = new("ws-delete");
+        presenter.Open(workspaceId, CreateProfile("Delete", "D"), rulesetId: "sr5");
+        presenter.SetRevisions(workspaceId, contentRevision: 9, savedRevision: 8);
+        presenter.SetConflictState(
+            workspaceId,
+            new WorkspaceConflictState("delete", 9, 10, "The workspace changed elsewhere."));
+
+        presenter.Forget(workspaceId);
+        WorkspaceSessionState reopened = presenter.Open(workspaceId, CreateProfile("Replacement", "N"), rulesetId: "sr5");
+
+        Assert.AreEqual(0L, reopened.ContentRevision);
+        Assert.AreEqual(0L, reopened.SavedRevision);
+        Assert.IsNull(reopened.ConflictState);
+        CollectionAssert.AreEqual(
+            new[] { "ws-delete" },
+            reopened.RecentWorkspaceIds.Select(id => id.Value).ToArray());
+    }
+
+    [TestMethod]
+    public void Active_character_overview_state_derives_revision_truth_from_session()
+    {
+        WorkspaceSessionPresenter presenter = new();
+        CharacterWorkspaceId workspaceId = new("ws-overview");
+        presenter.Open(workspaceId, CreateProfile("Overview", "O"), rulesetId: "sr5");
+        WorkspaceSessionState session = presenter.SetRevisions(workspaceId, contentRevision: 12, savedRevision: 10);
+
+        CharacterOverviewState overview = CharacterOverviewState.Empty with
+        {
+            Session = session,
+            WorkspaceId = workspaceId,
+            OpenWorkspaces = session.OpenWorkspaces
+        };
+
+        Assert.AreEqual(12L, overview.ContentRevision);
+        Assert.AreEqual(10L, overview.SavedRevision);
+        Assert.IsTrue(overview.IsDirty);
+        Assert.IsTrue(overview.HasSavedWorkspace);
+    }
+
+    [TestMethod]
+    public void Workspace_view_state_derives_dirty_and_saved_status_from_revisions()
+    {
+        WorkspaceConflictState conflict = new(
+            Operation: "metadata",
+            ExpectedContentRevision: 3,
+            ActualContentRevision: 4,
+            Message: "The workspace changed elsewhere.");
+        WorkspaceViewState viewState = new(
+            ActiveTabId: "tab-info",
+            ActiveActionId: "tab-info.summary",
+            ActiveSectionId: "summary",
+            ActiveSectionJson: null,
+            ActiveSectionRows: [],
+            ActiveBuildLab: null,
+            ActiveBrowseWorkspace: null,
+            ContentRevision: 3,
+            SavedRevision: 2,
+            ConflictState: conflict);
+
+        Assert.AreEqual(3L, viewState.ContentRevision);
+        Assert.AreEqual(2L, viewState.SavedRevision);
+        Assert.IsTrue(viewState.IsDirty);
+        Assert.IsTrue(viewState.HasSavedWorkspace);
+        Assert.AreSame(conflict, viewState.ConflictState);
+    }
+
+    [TestMethod]
+    public void Workspace_conflict_state_rejects_invalid_revision_evidence()
+    {
+        Assert.ThrowsExactly<ArgumentException>(() => new WorkspaceConflictState(" ", 1, 2, "Conflict"));
+        Assert.ThrowsExactly<ArgumentOutOfRangeException>(() => new WorkspaceConflictState("save", 0, 2, "Conflict"));
+        Assert.ThrowsExactly<ArgumentOutOfRangeException>(() => new WorkspaceConflictState("save", 1, 0, "Conflict"));
+        Assert.ThrowsExactly<ArgumentException>(() => new WorkspaceConflictState("save", 1, 2, " "));
+    }
+
+    [TestMethod]
+    public void SetRevisions_rejects_invalid_revision_relationships()
+    {
+        WorkspaceSessionPresenter presenter = new();
+        CharacterWorkspaceId workspaceId = new("ws-invalid");
+        presenter.Open(workspaceId, CreateProfile("Invalid", "I"), rulesetId: "sr5");
+
+        Assert.ThrowsExactly<ArgumentOutOfRangeException>(() => presenter.SetRevisions(workspaceId, -1, 0));
+        Assert.ThrowsExactly<ArgumentOutOfRangeException>(() => presenter.SetRevisions(workspaceId, 1, -1));
+        Assert.ThrowsExactly<ArgumentException>(() => presenter.SetRevisions(workspaceId, 1, 2));
+    }
+
     private static WorkspaceListItem CreateWorkspace(
         string id,
         string name,
         string alias,
-        DateTimeOffset lastUpdatedUtc)
+        DateTimeOffset lastUpdatedUtc,
+        long contentRevision = 2,
+        long savedRevision = 1)
     {
         return new WorkspaceListItem(
             Id: new CharacterWorkspaceId(id),
@@ -173,7 +330,9 @@ public class WorkspaceSessionPresenterTests
                 Nuyen: 0m,
                 Created: true),
             LastUpdatedUtc: lastUpdatedUtc,
-            RulesetId: "sr5");
+            RulesetId: "sr5",
+            ContentRevision: contentRevision,
+            SavedRevision: savedRevision);
     }
 
     private static CharacterProfileSection CreateProfile(string name, string alias)

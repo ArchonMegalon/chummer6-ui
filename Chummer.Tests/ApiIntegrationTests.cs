@@ -35,10 +35,13 @@ public class ApiIntegrationTests
         "inventory",
         "profile",
         "progress",
+        "karmasummary",
+        "conditionmonitor",
         "rules",
         "build",
         "movement",
         "awakening",
+        "spelldefense",
         "gear",
         "weapons",
         "weaponaccessories",
@@ -50,10 +53,14 @@ public class ApiIntegrationTests
         "skills",
         "qualities",
         "contacts",
+        "relationships",
+        "enemies",
+        "pets",
         "spells",
         "powers",
         "complexforms",
         "spirits",
+        "sprites",
         "foci",
         "aiprograms",
         "martialarts",
@@ -2628,10 +2635,18 @@ public class ApiIntegrationTests
             ["notes"] = "Updated notes"
         };
 
-        JsonObject patchResponse = await PatchRequiredJsonObject(client, $"/api/workspaces/{workspaceId}/metadata", patchBody);
+        JsonObject patchResponse = await PatchRequiredJsonObject(
+            client,
+            $"/api/workspaces/{workspaceId}/metadata",
+            patchBody,
+            RevisionTag(importResponse));
         Assert.AreEqual("Updated Name", patchResponse["profile"]?["name"]?.GetValue<string>());
 
-        JsonObject saveResponse = await PostRequiredJsonObject(client, $"/api/workspaces/{workspaceId}/save", new JsonObject());
+        JsonObject saveResponse = await PostConditionalRequiredJsonObject(
+            client,
+            $"/api/workspaces/{workspaceId}/save",
+            new JsonObject(),
+            RevisionTag(patchResponse));
         Assert.AreEqual(workspaceId, saveResponse["id"]?.GetValue<string>());
         Assert.IsGreaterThan(0, saveResponse["documentLength"]?.GetValue<int>() ?? 0);
         Assert.AreEqual("sr5", (saveResponse["rulesetId"]?.GetValue<string>() ?? string.Empty).ToLowerInvariant());
@@ -2695,7 +2710,11 @@ public class ApiIntegrationTests
         Assert.IsGreaterThan(0, listedItem.Count, "Expected workspace list entry for imported workspace.");
         Assert.AreEqual("sr6", (listedItem["rulesetId"]?.GetValue<string>() ?? string.Empty).ToLowerInvariant());
 
-        JsonObject saveResponse = await PostRequiredJsonObject(client, $"/api/workspaces/{workspaceId}/save", new JsonObject());
+        JsonObject saveResponse = await PostConditionalRequiredJsonObject(
+            client,
+            $"/api/workspaces/{workspaceId}/save",
+            new JsonObject(),
+            RevisionTag(importResponse));
         Assert.AreEqual("sr6", (saveResponse["rulesetId"]?.GetValue<string>() ?? string.Empty).ToLowerInvariant());
 
         JsonObject downloadResponse = await PostRequiredJsonObject(client, $"/api/workspaces/{workspaceId}/download", new JsonObject());
@@ -2729,8 +2748,11 @@ public class ApiIntegrationTests
                 .Where(id => !string.IsNullOrWhiteSpace(id))
                 .ToArray());
 
-        using HttpResponseMessage closeResponse = await client.DeleteAsync($"/api/workspaces/{workspaceA}");
-        Assert.AreEqual(204, (int)closeResponse.StatusCode);
+        using HttpResponseMessage closeResponse = await SendConditionalDeleteAsync(
+            client,
+            $"/api/workspaces/{workspaceA}",
+            RevisionTag(importA));
+        Assert.AreEqual(200, (int)closeResponse.StatusCode);
 
         JsonObject listedAfterClose = await GetRequiredJsonObject(client, "/api/workspaces");
         JsonArray listedAfterCloseItems = listedAfterClose["workspaces"]?.AsArray() ?? [];
@@ -2853,17 +2875,59 @@ public class ApiIntegrationTests
         return ParseRequiredJsonObject(content);
     }
 
-    private static async Task<JsonObject> PatchRequiredJsonObject(HttpClient client, string relativePath, JsonObject payload)
+    private static async Task<JsonObject> PatchRequiredJsonObject(
+        HttpClient client,
+        string relativePath,
+        JsonObject payload,
+        string? ifMatch = null)
     {
         using var request = new HttpRequestMessage(HttpMethod.Patch, relativePath)
         {
             Content = new StringContent(payload.ToJsonString(), Encoding.UTF8, "application/json")
         };
+        if (!string.IsNullOrWhiteSpace(ifMatch))
+        {
+            request.Headers.TryAddWithoutValidation("If-Match", ifMatch);
+        }
         using HttpResponseMessage response = await client.SendAsync(request);
         string content = await response.Content.ReadAsStringAsync();
         Assert.IsTrue(response.IsSuccessStatusCode, $"PATCH {relativePath} failed with {(int)response.StatusCode}: {content}");
 
         return ParseRequiredJsonObject(content);
+    }
+
+    private static async Task<JsonObject> PostConditionalRequiredJsonObject(
+        HttpClient client,
+        string relativePath,
+        JsonObject payload,
+        string ifMatch)
+    {
+        using HttpRequestMessage request = new(HttpMethod.Post, relativePath)
+        {
+            Content = new StringContent(payload.ToJsonString(), Encoding.UTF8, "application/json")
+        };
+        request.Headers.TryAddWithoutValidation("If-Match", ifMatch);
+        using HttpResponseMessage response = await client.SendAsync(request);
+        string content = await response.Content.ReadAsStringAsync();
+        Assert.IsTrue(response.IsSuccessStatusCode, $"POST {relativePath} failed with {(int)response.StatusCode}: {content}");
+        return ParseRequiredJsonObject(content);
+    }
+
+    private static async Task<HttpResponseMessage> SendConditionalDeleteAsync(
+        HttpClient client,
+        string relativePath,
+        string ifMatch)
+    {
+        using HttpRequestMessage request = new(HttpMethod.Delete, relativePath);
+        request.Headers.TryAddWithoutValidation("If-Match", ifMatch);
+        return await client.SendAsync(request);
+    }
+
+    private static string RevisionTag(JsonObject payload)
+    {
+        long revision = payload["contentRevision"]?.GetValue<long>() ?? 0;
+        Assert.IsGreaterThan(0, revision, "Workspace response did not include a positive content revision.");
+        return $"\"{revision}\"";
     }
 
     private static async Task<JsonObject> PutRequiredJsonObject(HttpClient client, string relativePath, JsonObject payload)
@@ -2922,7 +2986,12 @@ public class ApiIntegrationTests
                     continue;
                 }
 
-                using HttpResponseMessage response = await client.DeleteAsync($"/api/workspaces/{workspaceId}");
+                long contentRevision = node?["contentRevision"]?.GetValue<long>() ?? 0;
+                Assert.IsGreaterThan(0, contentRevision);
+                using HttpResponseMessage response = await SendConditionalDeleteAsync(
+                    client,
+                    $"/api/workspaces/{workspaceId}",
+                    $"\"{contentRevision}\"");
                 Assert.IsTrue(
                     response.IsSuccessStatusCode || response.StatusCode == System.Net.HttpStatusCode.NotFound,
                     $"DELETE /api/workspaces/{workspaceId} failed with {(int)response.StatusCode}");

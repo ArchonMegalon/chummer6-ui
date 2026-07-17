@@ -104,11 +104,16 @@ public class WorkspaceServiceTests
         Assert.IsNotNull(section);
         Assert.AreEqual(1, section.Count);
 
-        var update = workspaceService.UpdateMetadata(imported.Id, new UpdateWorkspaceMetadata("Updated", "Alias", "Notes"));
+        CommandResult<WorkspaceMetadataResult> update = workspaceService.UpdateMetadata(
+            imported.Id,
+            imported.ContentRevision,
+            new UpdateWorkspaceMetadata("Updated", "Alias", "Notes"));
         Assert.IsTrue(update.Success);
-        Assert.AreEqual("Updated", update.Value?.Name);
+        Assert.AreEqual("Updated", update.Value?.Profile.Name);
 
-        var save = workspaceService.Save(imported.Id);
+        CommandResult<WorkspaceSaveReceipt> save = workspaceService.Save(
+            imported.Id,
+            update.Value?.ContentRevision ?? 0);
         Assert.IsTrue(save.Success);
         Assert.AreEqual(imported.Id, save.Value?.Id);
         Assert.IsGreaterThan(0, save.Value?.DocumentLength ?? 0);
@@ -118,8 +123,10 @@ public class WorkspaceServiceTests
         Assert.IsTrue(download.Success);
         Assert.AreEqual("sr5", download.Value?.RulesetId);
 
-        bool closed = workspaceService.Close(imported.Id);
-        Assert.IsTrue(closed);
+        CommandResult<WorkspaceRevisionReceipt> closed = workspaceService.Close(
+            imported.Id,
+            save.Value?.ContentRevision ?? 0);
+        Assert.IsTrue(closed.Success, closed.Error);
         Assert.IsFalse(workspaceService.List().Any(item => string.Equals(item.Id.Value, imported.Id.Value, StringComparison.Ordinal)));
     }
 
@@ -254,6 +261,7 @@ public class WorkspaceServiceTests
 
         Assert.IsNotNull(build);
         Assert.AreEqual("Priority", build.BuildMethod);
+        Assert.AreEqual(28, build.TotalAttributes);
     }
 
     [TestMethod]
@@ -300,7 +308,7 @@ public class WorkspaceServiceTests
     public void GetSummary_uses_codec_defaults_when_document_envelope_metadata_is_incomplete()
     {
         InMemoryWorkspaceStore store = new();
-        CharacterWorkspaceId id = store.Create(new WorkspaceDocument(
+        CharacterWorkspaceId id = Create(store, new WorkspaceDocument(
             PayloadEnvelope: new WorkspacePayloadEnvelope(
                 RulesetId: "sr6",
                 SchemaVersion: 0,
@@ -324,7 +332,7 @@ public class WorkspaceServiceTests
     public void Download_delegates_file_shape_to_ruleset_codec()
     {
         InMemoryWorkspaceStore store = new();
-        CharacterWorkspaceId id = store.Create(new WorkspaceDocument(
+        CharacterWorkspaceId id = Create(store, new WorkspaceDocument(
             PayloadEnvelope: new WorkspacePayloadEnvelope(
                 RulesetId: "sr6",
                 SchemaVersion: 0,
@@ -350,7 +358,7 @@ public class WorkspaceServiceTests
     public void Export_builds_receipt_from_ruleset_codec_sections()
     {
         InMemoryWorkspaceStore store = new();
-        CharacterWorkspaceId id = store.Create(new WorkspaceDocument(
+        CharacterWorkspaceId id = Create(store, new WorkspaceDocument(
             PayloadEnvelope: new WorkspacePayloadEnvelope(
                 RulesetId: "sr6",
                 SchemaVersion: 0,
@@ -382,57 +390,78 @@ public class WorkspaceServiceTests
 
         public OwnerScope? LastCreateOwner { get; private set; }
 
-        public CharacterWorkspaceId Create(WorkspaceDocument document)
+        public WorkspaceStoreMutationResult CreateWorkspaceDocument(WorkspaceDocument document)
         {
-            return Create(OwnerScope.LocalSingleUser, document);
+            CreateCallCount++;
+            LastCreateOwner = null;
+            return Created(new CharacterWorkspaceId(Guid.NewGuid().ToString("N")));
         }
 
-        public CharacterWorkspaceId Create(OwnerScope owner, WorkspaceDocument document)
+        public WorkspaceStoreMutationResult CreateWorkspaceDocument(OwnerScope owner, WorkspaceDocument document)
         {
             CreateCallCount++;
             LastCreateOwner = owner;
-            return new CharacterWorkspaceId(Guid.NewGuid().ToString("N"));
+            return Created(new CharacterWorkspaceId(Guid.NewGuid().ToString("N")));
         }
 
-        public bool TryGet(CharacterWorkspaceId id, out WorkspaceDocument document)
+        public WorkspaceStoreMutationResult CreateWorkspaceDocument(CharacterWorkspaceId id, WorkspaceDocument document)
         {
-            return TryGet(OwnerScope.LocalSingleUser, id, out document);
+            CreateCallCount++;
+            LastCreateOwner = null;
+            return Created(id);
         }
 
-        public bool TryGet(OwnerScope owner, CharacterWorkspaceId id, out WorkspaceDocument document)
+        public WorkspaceStoreMutationResult CreateWorkspaceDocument(OwnerScope owner, CharacterWorkspaceId id, WorkspaceDocument document)
         {
-            document = null!;
-            return false;
+            CreateCallCount++;
+            LastCreateOwner = owner;
+            return Created(id);
         }
 
-        public IReadOnlyList<WorkspaceStoreEntry> List()
-        {
-            return List(OwnerScope.LocalSingleUser);
-        }
+        public IReadOnlyList<WorkspaceStoreEntry> List() => [];
 
-        public IReadOnlyList<WorkspaceStoreEntry> List(OwnerScope owner)
-        {
-            return [];
-        }
+        public IReadOnlyList<WorkspaceStoreEntry> List(OwnerScope owner) => [];
 
-        public void Save(CharacterWorkspaceId id, WorkspaceDocument document)
-        {
-            Save(OwnerScope.LocalSingleUser, id, document);
-        }
+        public WorkspaceStoreReadResult Get(CharacterWorkspaceId id) => MissingRead();
 
-        public void Save(OwnerScope owner, CharacterWorkspaceId id, WorkspaceDocument document)
-        {
-        }
+        public WorkspaceStoreReadResult Get(OwnerScope owner, CharacterWorkspaceId id) => MissingRead();
 
-        public bool Delete(CharacterWorkspaceId id)
-        {
-            return Delete(OwnerScope.LocalSingleUser, id);
-        }
+        public WorkspaceStoreMutationResult ReplaceWorkspaceDocument(CharacterWorkspaceId id, long expectedContentRevision, WorkspaceDocument document)
+            => UnavailableMutation();
 
-        public bool Delete(OwnerScope owner, CharacterWorkspaceId id)
-        {
-            return false;
-        }
+        public WorkspaceStoreMutationResult ReplaceWorkspaceDocument(OwnerScope owner, CharacterWorkspaceId id, long expectedContentRevision, WorkspaceDocument document)
+            => UnavailableMutation();
+
+        public WorkspaceStoreMutationResult SaveCheckpoint(CharacterWorkspaceId id, long expectedContentRevision)
+            => UnavailableMutation();
+
+        public WorkspaceStoreMutationResult SaveCheckpoint(OwnerScope owner, CharacterWorkspaceId id, long expectedContentRevision)
+            => UnavailableMutation();
+
+        public WorkspaceStoreMutationResult Delete(CharacterWorkspaceId id, long expectedContentRevision)
+            => UnavailableMutation();
+
+        public WorkspaceStoreMutationResult Delete(OwnerScope owner, CharacterWorkspaceId id, long expectedContentRevision)
+            => UnavailableMutation();
+
+        private static WorkspaceStoreMutationResult Created(CharacterWorkspaceId id)
+            => new(
+                WorkspaceOperationOutcome.Success,
+                new WorkspaceStoreEntry(id, DateTimeOffset.UtcNow, 1, 0));
+
+        private static WorkspaceStoreReadResult MissingRead()
+            => new(WorkspaceOperationOutcome.Missing, Error: "Workspace not found.");
+
+        private static WorkspaceStoreMutationResult UnavailableMutation()
+            => new(WorkspaceOperationOutcome.Unavailable, Error: "Tracking store operation is unavailable.");
+    }
+
+    private static CharacterWorkspaceId Create(IWorkspaceStore store, WorkspaceDocument document)
+    {
+        WorkspaceStoreMutationResult result = store.CreateWorkspaceDocument(document);
+        Assert.IsTrue(result.Success, result.Error);
+        Assert.IsNotNull(result.Entry);
+        return result.Entry.Value.Id;
     }
 
     private sealed class ThrowingCharacterFileQueries : ICharacterFileQueries

@@ -19,6 +19,9 @@ public interface ICharacterOverviewPresenter
 
     Task CloseWorkspaceAsync(CharacterWorkspaceId id, CancellationToken ct);
 
+    Task DeleteWorkspaceAsync(CharacterWorkspaceId id, bool confirmed, CancellationToken ct)
+        => Task.CompletedTask;
+
     Task ExecuteCommandAsync(string commandId, CancellationToken ct);
 
     Task HandleUiControlAsync(string controlId, CancellationToken ct);

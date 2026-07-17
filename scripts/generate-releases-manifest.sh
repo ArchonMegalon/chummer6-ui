@@ -1,24 +1,16 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-SCRIPT_DIR_PHYSICAL="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd -P)"
-REPO_ROOT_PHYSICAL="$(cd "$SCRIPT_DIR_PHYSICAL/.." && pwd -P)"
-REPO_ROOT_ALIAS_CANDIDATE="${CHUMMER_UI_REPO_ROOT_ALIAS:-$REPO_ROOT_PHYSICAL}"
-REPO_ROOT="$REPO_ROOT_PHYSICAL"
-if [[ -n "$REPO_ROOT_ALIAS_CANDIDATE" && -d "$REPO_ROOT_ALIAS_CANDIDATE" ]]; then
-  ALIAS_PHYSICAL="$(cd "$REPO_ROOT_ALIAS_CANDIDATE" && pwd -P)"
-  if [[ "$ALIAS_PHYSICAL" == "$REPO_ROOT_PHYSICAL" ]]; then
-    REPO_ROOT="$(cd -L "$REPO_ROOT_ALIAS_CANDIDATE" && pwd -L)"
-  fi
-fi
-SCRIPT_DIR="$REPO_ROOT/scripts"
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+REPO_ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"
 REGISTRY_ROOT="$("$SCRIPT_DIR/resolve-hub-registry-root.sh")"
 
 DOWNLOADS_DIR="${DOWNLOADS_DIR:-$REPO_ROOT/Docker/Downloads/files}"
 MANIFEST_PATH="${MANIFEST_PATH:-$REPO_ROOT/Docker/Downloads/releases.json}"
 PORTAL_MANIFEST_PATH="${PORTAL_MANIFEST_PATH:-$REPO_ROOT/Chummer.Portal/downloads/releases.json}"
 PORTAL_DOWNLOADS_DIR="${PORTAL_DOWNLOADS_DIR:-$REPO_ROOT/Chummer.Portal/downloads}"
-PRESENTATION_MIRROR_ROOT="${PRESENTATION_MIRROR_ROOT:-$REPO_ROOT}"
+PRESENTATION_MIRROR_ROOT="${PRESENTATION_MIRROR_ROOT:-/docker/chummercomplete/chummer-presentation}"
+RUN_SERVICES_DOWNLOADS_ROOT="${RUN_SERVICES_DOWNLOADS_ROOT:-$REPO_ROOT/../chummer.run-services/Chummer.Portal/downloads}"
 STARTUP_SMOKE_DIR="${STARTUP_SMOKE_DIR:-$(dirname "$DOWNLOADS_DIR")/startup-smoke}"
 SIGNING_RECEIPTS_DIR="${SIGNING_RECEIPTS_DIR:-$(dirname "$DOWNLOADS_DIR")/signing}"
 STARTUP_SMOKE_MAX_AGE_SECONDS="${CHUMMER_PUBLIC_STARTUP_SMOKE_MAX_AGE_SECONDS:-}"
@@ -33,6 +25,7 @@ PROMOTE_PROOF_BACKED_QUARANTINED_INSTALLERS="${CHUMMER_PROMOTE_PROOF_BACKED_QUAR
 UI_LOCALIZATION_RELEASE_GATE_PATH="${CHUMMER_UI_LOCALIZATION_RELEASE_GATE_PATH:-$REPO_ROOT/.codex-studio/published/UI_LOCALIZATION_RELEASE_GATE.generated.json}"
 EXTERNAL_HOST_PROOF_BLOCKERS_PATH="${CHUMMER_UI_EXTERNAL_HOST_PROOF_BLOCKERS_PATH:-$REPO_ROOT/.codex-studio/published/UI_EXTERNAL_HOST_PROOF_BLOCKERS.generated.json}"
 PUBLIC_EDGE_WORKBENCH_PROOF_PATH="${CHUMMER_BLAZOR_PUBLIC_EDGE_WORKBENCH_PROOF_PATH:-$REPO_ROOT/.codex-studio/published/BLAZOR_PUBLIC_EDGE_WORKBENCH_PROOF.generated.json}"
+BLAZOR_PLAY_SURFACE_HORIZON_PATH="${CHUMMER_BLAZOR_PLAY_SURFACE_HORIZON_PATH:-$REPO_ROOT/.codex-studio/published/BLAZOR_PLAY_SURFACE_HORIZON.generated.json}"
 GENERATE_EXTERNAL_HOST_PROOF_BLOCKERS="${CHUMMER_GENERATE_EXTERNAL_HOST_PROOF_BLOCKERS:-1}"
 CANONICAL_MANIFEST_PATH="${CANONICAL_MANIFEST_PATH:-$(dirname "$MANIFEST_PATH")/RELEASE_CHANNEL.generated.json}"
 PORTAL_CANONICAL_MANIFEST_PATH="${PORTAL_CANONICAL_MANIFEST_PATH:-$(dirname "$PORTAL_MANIFEST_PATH")/RELEASE_CHANNEL.generated.json}"
@@ -40,7 +33,6 @@ PROMOTION_EVIDENCE_PATH="${PROMOTION_EVIDENCE_PATH:-$(dirname "$MANIFEST_PATH")/
 QUARANTINE_PROMOTION_EVIDENCE_PATH="${QUARANTINE_PROMOTION_EVIDENCE_PATH:-$REPO_ROOT/.codex-studio/published/QUARANTINED_INSTALLER_PROMOTION.generated.json}"
 SOURCE_MANIFEST_PATH="${SOURCE_MANIFEST_PATH:-}"
 RELEASE_PROOF_PATH="${RELEASE_PROOF_PATH:-${CHUMMER_HUB_LOCAL_RELEASE_PROOF_PATH:-}}"
-FLAGSHIP_READINESS_PATH="${CHUMMER_FLAGSHIP_READINESS_PATH:-${CHUMMER_FLAGSHIP_PRODUCT_READINESS_RECEIPT_PATH:-}}"
 PREVIEW_INSTALL_ACCESS_CLASS="${CHUMMER_PREVIEW_INSTALL_ACCESS_CLASS:-}"
 EXTERNAL_PROOF_BASE_URL="${CHUMMER_EXTERNAL_PROOF_BASE_URL:-https://chummer.run}"
 DOWNLOADS_PREFIX="${CHUMMER_PUBLIC_DOWNLOADS_PREFIX:-${EXTERNAL_PROOF_BASE_URL%/}/downloads/files}"
@@ -50,7 +42,10 @@ REGISTRY_CANONICAL_MANIFEST_PATH="${REGISTRY_CANONICAL_MANIFEST_PATH:-$REGISTRY_
 REGISTRY_RELEASES_MANIFEST_PATH="${REGISTRY_RELEASES_MANIFEST_PATH:-$REGISTRY_ROOT/.codex-studio/published/releases.json}"
 REGISTRY_FILES_DIR="${REGISTRY_FILES_DIR:-$REGISTRY_ROOT/.codex-studio/published/files}"
 CANONICAL_FILES_DIR="${CANONICAL_FILES_DIR:-$(dirname "$CANONICAL_MANIFEST_PATH")/files}"
-SCOPE_TO_STAGE_ARTIFACTS="${CHUMMER_RELEASE_SCOPE_TO_STAGE_ARTIFACTS:-0}"
+SCOPE_TO_STAGE_ARTIFACTS="${CHUMMER_RELEASE_SCOPE_TO_STAGE_ARTIFACTS:-}"
+MANIFEST_REHYDRATION_PASS="${CHUMMER_RELEASE_MANIFEST_REHYDRATION_PASS:-0}"
+MANIFEST_STAGE_ONLY="${CHUMMER_RELEASE_MANIFEST_STAGE_ONLY:-0}"
+PROMOTED_DOWNLOADS_SOURCE_RESTORED=0
 
 lower_ascii() {
   printf '%s' "${1:-}" | tr '[:upper:]' '[:lower:]'
@@ -80,6 +75,14 @@ array_count() {
 
   printf '%s\n' "$count"
 }
+
+if [[ -z "$SCOPE_TO_STAGE_ARTIFACTS" ]]; then
+  if [[ "$(lower_ascii "$RELEASE_CHANNEL")" == "preview" && "$REQUIRE_COMPLETE_DESKTOP_COVERAGE" == "0" ]]; then
+    SCOPE_TO_STAGE_ARTIFACTS="1"
+  else
+    SCOPE_TO_STAGE_ARTIFACTS="0"
+  fi
+fi
 
 to_bool() {
   local value
@@ -171,17 +174,6 @@ import sys
 
 print(pathlib.Path(sys.argv[1]).resolve(strict=False))
 PY
-}
-
-path_is_tmp_outside_repo() {
-  local candidate="${1:-}"
-  local resolved_candidate=""
-  local resolved_repo_root=""
-
-  [[ -n "$candidate" ]] || return 1
-  resolved_candidate="$(resolve_path_allow_missing "$candidate")"
-  resolved_repo_root="$(resolve_path_allow_missing "$REPO_ROOT")"
-  [[ "$resolved_candidate" == /tmp/* && "$resolved_candidate" != "$resolved_repo_root" && "$resolved_candidate" != "$resolved_repo_root/"* ]]
 }
 
 presentation_mirror_enabled() {
@@ -495,7 +487,8 @@ resolve_ui_localization_release_gate_generator_root() {
   local -a roots=(
     "$REPO_ROOT"
     "$REPO_ROOT/../chummer6-ui"
-    "$PRESENTATION_MIRROR_ROOT"
+    "/docker/chummercomplete/chummer-presentation"
+    "/docker/chummercomplete/chummer6-ui"
   )
   local root
   for root in "${roots[@]}"; do
@@ -700,7 +693,8 @@ resolve_ui_localization_release_gate_path() {
   candidates+=(
     "$REPO_ROOT/.codex-studio/published/UI_LOCALIZATION_RELEASE_GATE.generated.json"
     "$REPO_ROOT/../chummer6-ui/.codex-studio/published/UI_LOCALIZATION_RELEASE_GATE.generated.json"
-    "$PRESENTATION_MIRROR_ROOT/.codex-studio/published/UI_LOCALIZATION_RELEASE_GATE.generated.json"
+    "/docker/chummercomplete/chummer-presentation/.codex-studio/published/UI_LOCALIZATION_RELEASE_GATE.generated.json"
+    "/docker/chummercomplete/chummer6-ui/.codex-studio/published/UI_LOCALIZATION_RELEASE_GATE.generated.json"
     "$REGISTRY_ROOT/.codex-studio/published/.tmp_ui_localization_release_gate.json"
   )
 
@@ -979,8 +973,6 @@ def is_public_file_name(file_name: str) -> bool:
     if not name:
         return False
     if name.endswith(("-installer.deb", "-installer.exe", "-installer.pkg", "-installer.dmg", "-installer.msix")):
-        if "-osx-" in name or "-macos-" in name:
-            return False
         return True
     if name.endswith((".zip", ".tar.gz")):
         return False
@@ -1096,7 +1088,7 @@ from pathlib import Path
 
 
 def parse_timestamp(payload: dict) -> dt.datetime:
-    for key in ("completedAtUtc", "recordedAtUtc", "generatedAt", "generated_at", "startedAtUtc"):
+    for key in ("sourceUpdatedAtUtc", "completedAtUtc", "recordedAtUtc", "generatedAt", "generated_at", "startedAtUtc"):
         raw = str(payload.get(key) or "").strip()
         if not raw:
             continue
@@ -1277,6 +1269,7 @@ sanitize_startup_smoke_dir() {
   python3 - "$source_dir" "$output_dir" "$release_channel" "$release_version" "$downloads_dir" "$display_downloads_dir" "$scope_to_downloads_dir" <<'PY'
 from __future__ import annotations
 
+import datetime as dt
 import hashlib
 import json
 import os
@@ -1293,6 +1286,7 @@ display_downloads_dir = Path(sys.argv[6]).resolve(strict=False) if str(sys.argv[
 scope_to_downloads_dir = str(sys.argv[7] or "").strip().lower() in {"1", "true", "yes", "on"}
 
 output_dir.mkdir(parents=True, exist_ok=True)
+STARTUP_SMOKE_READY_MARKER = "startup smoke ready:"
 
 
 def sha256_file(path: Path) -> str:
@@ -1311,6 +1305,30 @@ def receipt_digest(payload: dict) -> str:
     if artifact_digest.startswith("sha256:") and len(artifact_digest) == 71:
         return artifact_digest.split(":", 1)[1]
     return ""
+
+
+def companion_log_path(receipt_path: Path) -> Path | None:
+    if receipt_path.name.endswith(".receipt.json"):
+        companion_name = receipt_path.name[: -len(".receipt.json")] + ".log"
+        return receipt_path.with_name(companion_name)
+    return None
+
+
+def companion_log_ready_timestamp(receipt_path: Path) -> dt.datetime | None:
+    log_path = companion_log_path(receipt_path)
+    if log_path is None or not log_path.is_file():
+        return None
+    try:
+        contents = log_path.read_text(encoding="utf-8", errors="replace")
+    except OSError:
+        return None
+    if STARTUP_SMOKE_READY_MARKER not in contents.lower():
+        return None
+    return dt.datetime.fromtimestamp(log_path.stat().st_mtime, tz=dt.timezone.utc)
+
+
+def format_utc(value: dt.datetime) -> str:
+    return value.astimezone(dt.timezone.utc).isoformat().replace("+00:00", "Z")
 
 for path in sorted(source_dir.iterdir()):
     if path.is_file():
@@ -1347,6 +1365,10 @@ for receipt_path in sorted(output_dir.glob("startup-smoke-*.receipt.json")):
         payload["artifactRelativePath"] = f"files/{artifact_file_name}"
         if display_downloads_dir is not None:
             payload["artifactPath"] = str((display_downloads_dir / artifact_file_name).resolve(strict=False))
+    source_updated_at = companion_log_ready_timestamp(receipt_path)
+    if source_updated_at is not None:
+        payload["sourceUpdatedAtUtc"] = format_utc(source_updated_at)
+        payload["sourceUpdatedAtSource"] = "companion_log_mtime"
     receipt_path.write_text(json.dumps(payload, indent=2) + "\n", encoding="utf-8")
 PY
 }
@@ -1369,8 +1391,12 @@ import tempfile
 from pathlib import Path
 
 
-def parse_timestamp(payload: dict) -> dt.datetime:
-    for key in ("recordedAtUtc", "completedAtUtc", "generatedAt", "generated_at", "startedAtUtc"):
+STARTUP_SMOKE_READY_MARKER = "startup smoke ready:"
+
+
+def parse_timestamp(payload: dict, receipt_path: Path | None = None) -> dt.datetime:
+    candidates: list[dt.datetime] = []
+    for key in ("sourceUpdatedAtUtc", "recordedAtUtc", "completedAtUtc", "generatedAt", "generated_at", "startedAtUtc"):
         raw = str(payload.get(key) or "").strip()
         if not raw:
             continue
@@ -1382,8 +1408,14 @@ def parse_timestamp(payload: dict) -> dt.datetime:
             continue
         if parsed.tzinfo is None:
             parsed = parsed.replace(tzinfo=dt.timezone.utc)
-        return parsed.astimezone(dt.timezone.utc)
-    return dt.datetime.min.replace(tzinfo=dt.timezone.utc)
+        candidates.append(parsed.astimezone(dt.timezone.utc))
+    if receipt_path is not None:
+        companion_timestamp = companion_log_timestamp(receipt_path)
+        if companion_timestamp is not None:
+            candidates.append(companion_timestamp)
+    if not candidates:
+        return dt.datetime.min.replace(tzinfo=dt.timezone.utc)
+    return max(candidates)
 
 
 def load_json(path: Path) -> dict | None:
@@ -1392,6 +1424,34 @@ def load_json(path: Path) -> dict | None:
     except Exception:
         return None
     return loaded if isinstance(loaded, dict) else None
+
+
+def companion_log_path(receipt_path: Path) -> Path | None:
+    if receipt_path.name.endswith(".receipt.json"):
+        companion_name = receipt_path.name[: -len(".receipt.json")] + ".log"
+        return receipt_path.with_name(companion_name)
+    return None
+
+
+def companion_log_timestamp(receipt_path: Path) -> dt.datetime | None:
+    log_path = companion_log_path(receipt_path)
+    if log_path is None or not log_path.is_file():
+        return None
+    try:
+        contents = log_path.read_text(encoding="utf-8", errors="replace")
+    except OSError:
+        return None
+    if STARTUP_SMOKE_READY_MARKER not in contents.lower():
+        return None
+    return dt.datetime.fromtimestamp(log_path.stat().st_mtime, tz=dt.timezone.utc)
+
+
+def windows_bootstrap_progress_log_path(payload: dict, receipt_path: Path) -> Path | None:
+    head = str(payload.get("headId") or "").strip()
+    rid = str(payload.get("rid") or "").strip()
+    if not head or not rid:
+        return None
+    return receipt_path.with_name(f"windows-installer-progress-{head}-{rid}.log")
 
 
 source_dir = Path(sys.argv[1]).resolve(strict=False)
@@ -1451,13 +1511,17 @@ def receipt_matches_download_bytes(payload: dict) -> bool:
 def trusted_receipt_artifact_dirs(repo_root: Path, registry_root: Path) -> list[Path]:
     roots = [
         downloads_dir,
+        repo_root / ".codex-studio" / "published" / "portal" / "files",
         repo_root / "Chummer.Portal" / "downloads" / "files",
         repo_root / "Docker" / "Downloads" / "files",
         repo_root.parent / "chummer.run-services" / "Chummer.Portal" / "downloads" / "files",
         repo_root.parent / "chummer.run-services" / "legacy" / "tooling" / "docker" / "Docker" / "Downloads" / "files",
+        repo_root.parent / "chummer-presentation" / ".codex-studio" / "published" / "portal" / "files",
+        repo_root.parent / "chummer6-ui" / ".codex-studio" / "published" / "portal" / "files",
         repo_root.parent / "chummer-presentation" / "Docker" / "Downloads" / "files",
     ]
     if registry_root:
+        roots.append(registry_root / ".codex-studio" / "published" / "files")
         roots.append(registry_root / "Chummer.Portal" / "downloads" / "files")
 
     ordered: list[Path] = []
@@ -1481,7 +1545,8 @@ def restore_missing_receipt_backed_artifact(payload: dict) -> Path | None:
 
     target_path = downloads_dir / file_name
     if target_path.is_file():
-        return target_path if receipt_matches_download_bytes(payload) else None
+        if receipt_matches_download_bytes(payload):
+            return target_path
 
     for candidate_dir in trusted_receipt_artifact_dirs(repo_root, registry_root):
         candidate_path = candidate_dir / file_name
@@ -1492,6 +1557,8 @@ def restore_missing_receipt_backed_artifact(payload: dict) -> Path | None:
             cached = sha256_file(candidate_path)
             artifact_digest_cache[candidate_path] = cached
         if cached != digest:
+            continue
+        if candidate_path.resolve(strict=False) == target_path.resolve(strict=False):
             continue
         target_path.parent.mkdir(parents=True, exist_ok=True)
         shutil.copy2(candidate_path, target_path)
@@ -1545,17 +1612,147 @@ for candidate_dir in candidate_dirs:
         if not payload:
             continue
         name = receipt_path.name
-        timestamp = parse_timestamp(payload)
+        timestamp = parse_timestamp(payload, receipt_path)
         selection_rank = 1 if receipt_matches_download_bytes(payload) else 0
+        log_rank = 1 if companion_log_timestamp(receipt_path) is not None else 0
         current = selected_by_name.get(name)
-        if current is None or (selection_rank, timestamp, str(receipt_path)) >= (current[0], current[1], str(current[2])):
-            selected_by_name[name] = (selection_rank, timestamp, receipt_path)
+        if current is None or (selection_rank, log_rank, timestamp, str(receipt_path)) >= (current[0], current[1], current[2], str(current[3])):
+            selected_by_name[name] = (selection_rank, log_rank, timestamp, receipt_path)
 
-for _, _, receipt_path in sorted(selected_by_name.values(), key=lambda item: item[2].name):
+for _, _, _, receipt_path in sorted(selected_by_name.values(), key=lambda item: item[3].name):
     payload = load_json(receipt_path)
     if payload:
         restore_missing_receipt_backed_artifact(payload)
     shutil.copy2(receipt_path, output_dir / receipt_path.name)
+    log_path = companion_log_path(receipt_path)
+    if log_path is not None and log_path.is_file():
+        shutil.copy2(log_path, output_dir / log_path.name)
+    if payload:
+        progress_log_path = windows_bootstrap_progress_log_path(payload, receipt_path)
+        if progress_log_path is not None and progress_log_path.is_file():
+            shutil.copy2(progress_log_path, output_dir / progress_log_path.name)
+PY
+}
+
+startup_smoke_dir_matches_downloads_dir() {
+  local source_dir="${1:-}"
+  local downloads_dir="${2:-}"
+  python3 - "$source_dir" "$downloads_dir" <<'PY'
+from __future__ import annotations
+
+import hashlib
+import json
+import re
+import sys
+from pathlib import Path
+
+
+ARTIFACT_PATTERN = re.compile(
+    r"^chummer-(?P<head>avalonia|blazor-desktop)-(?P<rid>[^.]+?)(?P<installer>-installer)?\.(?P<ext>exe|zip|tar\.gz|deb|dmg|pkg|msix)$"
+)
+RID_TO_PLATFORM_ARCH = {
+    "win-x64": ("windows", "x64"),
+    "win-arm64": ("windows", "arm64"),
+    "linux-x64": ("linux", "x64"),
+    "linux-arm64": ("linux", "arm64"),
+    "osx-arm64": ("macos", "arm64"),
+    "osx-x64": ("macos", "x64"),
+}
+STARTUP_SMOKE_READY_MARKER = "startup smoke ready:"
+STARTUP_SMOKE_GATED_PLATFORMS = {"linux", "windows", "macos"}
+
+source_dir = Path(sys.argv[1]).resolve(strict=False)
+downloads_dir = Path(sys.argv[2]).resolve(strict=False)
+if not source_dir.is_dir() or not downloads_dir.is_dir():
+    raise SystemExit(1)
+
+
+def sha256_file(path: Path) -> str:
+    hasher = hashlib.sha256()
+    with path.open("rb") as handle:
+        for chunk in iter(lambda: handle.read(1024 * 1024), b""):
+            hasher.update(chunk)
+    return hasher.hexdigest().lower()
+
+
+def receipt_digest(payload: dict) -> str:
+    digest = str(payload.get("artifactSha256") or "").strip().lower()
+    if len(digest) == 64:
+        return digest
+    artifact_digest = str(payload.get("artifactDigest") or "").strip().lower()
+    if artifact_digest.startswith("sha256:") and len(artifact_digest) == 71:
+        return artifact_digest.split(":", 1)[1]
+    return ""
+
+
+def has_ready_log(receipt_path: Path) -> bool:
+    if not receipt_path.name.endswith(".receipt.json"):
+        return False
+    log_path = receipt_path.with_name(receipt_path.name[: -len(".receipt.json")] + ".log")
+    if not log_path.is_file():
+        return False
+    try:
+        contents = log_path.read_text(encoding="utf-8", errors="replace")
+    except OSError:
+        return False
+    return STARTUP_SMOKE_READY_MARKER in contents.lower()
+
+
+receipts: list[dict] = []
+for receipt_path in sorted(source_dir.glob("startup-smoke-*.receipt.json")):
+    try:
+        payload = json.loads(receipt_path.read_text(encoding="utf-8-sig"))
+    except Exception:
+        continue
+    if not isinstance(payload, dict):
+        continue
+    if not has_ready_log(receipt_path):
+        continue
+    receipts.append(payload)
+
+if not receipts:
+    raise SystemExit(1)
+
+artifact_digest_cache: dict[Path, str] = {}
+expected_cover_count = 0
+
+for artifact_path in sorted(downloads_dir.iterdir()):
+    if not artifact_path.is_file():
+        continue
+    match = ARTIFACT_PATTERN.match(artifact_path.name)
+    if not match or not match.group("installer"):
+        continue
+    head = match.group("head")
+    rid = match.group("rid")
+    platform, arch = RID_TO_PLATFORM_ARCH.get(rid, ("", ""))
+    if platform not in STARTUP_SMOKE_GATED_PLATFORMS:
+        continue
+    expected_cover_count += 1
+    digest = artifact_digest_cache.get(artifact_path)
+    if digest is None:
+        digest = sha256_file(artifact_path)
+        artifact_digest_cache[artifact_path] = digest
+
+    matched = False
+    for payload in receipts:
+        receipt_head = str(payload.get("headId") or "").strip()
+        receipt_rid = str(payload.get("rid") or payload.get("runtimeIdentifier") or "").strip().lower()
+        receipt_platform = str(payload.get("platform") or "").strip().lower()
+        receipt_arch = str(payload.get("arch") or "").strip().lower()
+        if receipt_head != head or receipt_rid != rid:
+            continue
+        if receipt_platform and receipt_platform != platform:
+            continue
+        if receipt_arch and receipt_arch != arch:
+            continue
+        if receipt_digest(payload) != digest:
+            continue
+        matched = True
+        break
+    if not matched:
+        raise SystemExit(1)
+
+raise SystemExit(0 if expected_cover_count > 0 else 1)
 PY
 }
 
@@ -1589,7 +1786,7 @@ cleanup_generate_release_manifest() {
 }
 trap cleanup_generate_release_manifest EXIT
 if [[ -n "$RELEASE_PROOF_PATH" && -f "$RELEASE_PROOF_PATH" ]]; then
-  if path_is_tmp_outside_repo "$RELEASE_PROOF_PATH"; then
+  if [[ "$RELEASE_PROOF_PATH" == /tmp/* ]]; then
     GENERATED_RELEASE_PROOF_PATH="$RELEASE_PROOF_PATH"
   fi
   SANITIZED_RELEASE_PROOF_PATH="$(mktemp)"
@@ -1597,7 +1794,7 @@ if [[ -n "$RELEASE_PROOF_PATH" && -f "$RELEASE_PROOF_PATH" ]]; then
   RELEASE_PROOF_PATH="$SANITIZED_RELEASE_PROOF_PATH"
 fi
 if [[ -n "$UI_LOCALIZATION_RELEASE_GATE_PATH" && -f "$UI_LOCALIZATION_RELEASE_GATE_PATH" ]]; then
-  if path_is_tmp_outside_repo "$UI_LOCALIZATION_RELEASE_GATE_PATH"; then
+  if [[ "$UI_LOCALIZATION_RELEASE_GATE_PATH" == /tmp/* ]]; then
     GENERATED_UI_LOCALIZATION_RELEASE_GATE_PATH="$UI_LOCALIZATION_RELEASE_GATE_PATH"
   fi
   SANITIZED_UI_LOCALIZATION_RELEASE_GATE_PATH="$(mktemp)"
@@ -1609,10 +1806,13 @@ fi
 if [[ -d "$STARTUP_SMOKE_DIR" ]] && find "$STARTUP_SMOKE_DIR" -maxdepth 1 -type f -name 'startup-smoke-*.receipt.json' | grep -q .; then
   hydrated_startup_smoke_dir="$(mktemp -d)"
   if to_bool "$SKIP_STARTUP_SMOKE_HYDRATION"; then
-    cp "$STARTUP_SMOKE_DIR"/startup-smoke-*.receipt.json "$hydrated_startup_smoke_dir"/
+    cp "$STARTUP_SMOKE_DIR"/* "$hydrated_startup_smoke_dir"/
+  elif startup_smoke_dir_matches_downloads_dir "$STARTUP_SMOKE_DIR" "$DOWNLOADS_DIR"; then
+    echo "local startup-smoke receipts already match downloads source; skipped registry startup-smoke hydration"
+    cp "$STARTUP_SMOKE_DIR"/* "$hydrated_startup_smoke_dir"/
   elif to_bool "$SCOPE_TO_STAGE_ARTIFACTS"; then
     echo "scoped stage artifacts active; skipped registry startup-smoke hydration"
-    cp "$STARTUP_SMOKE_DIR"/startup-smoke-*.receipt.json "$hydrated_startup_smoke_dir"/
+    cp "$STARTUP_SMOKE_DIR"/* "$hydrated_startup_smoke_dir"/
   else
     hydrate_startup_smoke_dir \
       "$STARTUP_SMOKE_DIR" \
@@ -1699,18 +1899,6 @@ run_materializer() {
 
   if [[ -n "$UI_LOCALIZATION_RELEASE_GATE_PATH" && -f "$UI_LOCALIZATION_RELEASE_GATE_PATH" ]]; then
     materialize_args+=(--ui-localization-release-gate "$UI_LOCALIZATION_RELEASE_GATE_PATH")
-  fi
-
-  if [[ -n "$FLAGSHIP_READINESS_PATH" ]]; then
-    if [[ ! -f "$FLAGSHIP_READINESS_PATH" ]]; then
-      echo "Flagship readiness receipt does not exist: $FLAGSHIP_READINESS_PATH" >&2
-      exit 1
-    fi
-    if [[ "$materializer_help" != *"--flagship-readiness"* ]]; then
-      echo "Registry materializer CLI mismatch: $REGISTRY_ROOT/scripts/materialize_public_release_channel.py does not support --flagship-readiness." >&2
-      exit 1
-    fi
-    materialize_args+=(--flagship-readiness "$FLAGSHIP_READINESS_PATH")
   fi
 
   if [[ -d "$STARTUP_SMOKE_DIR" ]] && find "$STARTUP_SMOKE_DIR" -type f -name 'startup-smoke-*.receipt.json' | grep -q .; then
@@ -1891,12 +2079,26 @@ def enrich_manifest(path: Path, downloads_dir: Path, downloads_prefix: str) -> N
             payload_url = f"{downloads_prefix.rstrip('/')}/{payload_name}"
             payload_sha256 = sha256_file(payload_path)
             payload_size = payload_path.stat().st_size
+            payload_acquisition_mode = "download"
+            payload_metadata_path = Path(str(payload_path) + ".json")
+            if payload_metadata_path.is_file():
+                payload_metadata = json.loads(payload_metadata_path.read_text(encoding="utf-8-sig"))
+                if not isinstance(payload_metadata, dict):
+                    raise SystemExit(f"Windows bootstrap payload metadata must be an object: {payload_metadata_path}")
+                payload_acquisition_mode = str(
+                    payload_metadata.get("payloadAcquisitionMode") or "download"
+                ).strip().lower()
+            if payload_acquisition_mode not in {"download", "embedded"}:
+                raise SystemExit(
+                    f"Windows bootstrap payload acquisition mode must be download or embedded: {payload_metadata_path}"
+                )
             expected = {
                 "installerMode": "bootstrap",
                 "payloadFileName": payload_name,
                 "payloadDownloadUrl": payload_url,
                 "payloadSha256": payload_sha256,
                 "payloadSizeBytes": payload_size,
+                "payloadAcquisitionMode": payload_acquisition_mode,
             }
             for key, value in expected.items():
                 if artifact.get(key) != value:
@@ -1940,6 +2142,72 @@ def coverage_is_incomplete(payload: dict) -> bool:
     return False
 
 
+def proof_freshness_requires_review(payload: dict) -> bool:
+    public_trust_metrics = payload.get("publicTrustMetrics")
+    if not isinstance(public_trust_metrics, dict):
+        return False
+    proof_freshness = public_trust_metrics.get("proofFreshness")
+    if not isinstance(proof_freshness, dict):
+        return False
+    return normalize(proof_freshness.get("status")) in {"stale", "missing"}
+
+
+def stronger_rollout_blocker(value: object) -> bool:
+    return normalize(value) in {
+        "coverage_incomplete",
+        "release_review_required",
+        "desktop_polish_needed",
+        "revoked",
+        "unpublished",
+        "blocked",
+        "disabled",
+    }
+
+
+def apply_proof_freshness_floor(payload: dict) -> None:
+    if not proof_freshness_requires_review(payload):
+        return
+
+    review_rollout_state = "public_release_review_required"
+    existing_rollout_state = normalize(payload.get("rolloutState"))
+    effective_rollout_state = (
+        existing_rollout_state
+        if stronger_rollout_blocker(existing_rollout_state)
+        or existing_rollout_state == review_rollout_state
+        else review_rollout_state
+    )
+    payload["rolloutState"] = effective_rollout_state
+    payload["supportabilityState"] = "review_required"
+
+    public_trust_metrics = payload.setdefault("publicTrustMetrics", {})
+    public_release_channel = public_trust_metrics.setdefault("releaseChannel", {})
+    if isinstance(public_release_channel, dict):
+        nested_rollout_state = normalize(public_release_channel.get("rolloutState"))
+        public_release_channel["rolloutState"] = (
+            nested_rollout_state
+            if stronger_rollout_blocker(nested_rollout_state)
+            or nested_rollout_state == review_rollout_state
+            else effective_rollout_state
+        )
+        public_release_channel["supportabilityState"] = "review_required"
+
+    registry_boundary_coverage = payload.setdefault("registryBoundaryCoverage", {})
+    registry_release_channel = (
+        registry_boundary_coverage.setdefault("releaseChannel", {})
+        if isinstance(registry_boundary_coverage, dict)
+        else None
+    )
+    if isinstance(registry_release_channel, dict):
+        nested_rollout_state = normalize(registry_release_channel.get("rolloutState"))
+        registry_release_channel["rolloutState"] = (
+            nested_rollout_state
+            if stronger_rollout_blocker(nested_rollout_state)
+            or nested_rollout_state == review_rollout_state
+            else effective_rollout_state
+        )
+        registry_release_channel["supportabilityState"] = "review_required"
+
+
 def apply_honesty_state(path: Path) -> None:
     if not path.is_file():
         return
@@ -1952,8 +2220,13 @@ def apply_honesty_state(path: Path) -> None:
     if coverage_is_incomplete(payload):
         payload["rolloutState"] = "coverage_incomplete"
         payload["supportabilityState"] = "review_required"
-    elif channel_id == "preview" and normalize(payload.get("rolloutState")) == "promoted_preview":
+    elif (
+        channel_id == "preview"
+        and normalize(payload.get("rolloutState")) == "promoted_preview"
+        and not proof_freshness_requires_review(payload)
+    ):
         payload["supportabilityState"] = "preview_supported"
+    apply_proof_freshness_floor(payload)
     path.write_text(json.dumps(payload, indent=2) + "\n", encoding="utf-8")
 
 
@@ -1970,6 +2243,185 @@ from pathlib import Path
 
 def normalized_token(value) -> str:
     return str(value or "").strip().lower().replace("-", "_").replace(" ", "_")
+
+
+STALE_PROOF_COPY = "stale or incomplete proof receipts"
+
+
+def proof_freshness_requires_review(local_payload: dict) -> bool:
+    metrics = local_payload.get("publicTrustMetrics")
+    proof_freshness = metrics.get("proofFreshness") if isinstance(metrics, dict) else None
+    freshness_status = (
+        normalized_token(proof_freshness.get("status"))
+        if isinstance(proof_freshness, dict)
+        else ""
+    )
+    return freshness_status in {"stale", "missing"}
+
+
+def stronger_rollout_blocker(value: object) -> bool:
+    return normalized_token(value) in {
+        "coverage_incomplete",
+        "release_review_required",
+        "public_release_review_required",
+        "desktop_polish_needed",
+        "revoked",
+        "unpublished",
+        "blocked",
+        "disabled",
+    }
+
+
+def nonnegative_int(value: object) -> int:
+    try:
+        return max(int(value), 0)
+    except (TypeError, ValueError):
+        return 0
+
+
+def apply_final_proof_freshness_floor(local_payload: dict) -> bool:
+    """Keep stale proof fail-closed at the final manifest write boundary."""
+    if normalized_token(local_payload.get("status")) != "published":
+        return False
+    if not proof_freshness_requires_review(local_payload):
+        return False
+
+    review_rollout_state = "public_release_review_required"
+    current_rollout_state = normalized_token(local_payload.get("rolloutState"))
+    effective_rollout_state = (
+        current_rollout_state
+        if stronger_rollout_blocker(current_rollout_state)
+        else review_rollout_state
+    )
+    local_payload["rolloutState"] = effective_rollout_state
+    local_payload["supportabilityState"] = "review_required"
+
+    stale_copy_by_field = {
+        "rolloutReason": (
+            "Current shelf remains visible, but stale or incomplete proof receipts block current "
+            "rollout-readiness claims."
+        ),
+        "supportabilitySummary": (
+            "Treat this shelf as review-required because stale or incomplete proof receipts block "
+            "current supportability claims."
+        ),
+        "knownIssueSummary": (
+            "Known issue: stale or incomplete proof receipts still block launch-readiness claims."
+        ),
+        "fixAvailabilitySummary": (
+            "Only send fixed notices after stale or incomplete proof receipts are refreshed and the "
+            "affected install is on a currently verified shelf."
+        ),
+    }
+    for field_name, safe_copy in stale_copy_by_field.items():
+        current_copy = str(local_payload.get(field_name) or "").strip()
+        if STALE_PROOF_COPY not in current_copy.casefold():
+            local_payload[field_name] = safe_copy
+
+    route_truth = (
+        local_payload.get("desktopTupleCoverage", {}).get("desktopRouteTruth", [])
+        if isinstance(local_payload.get("desktopTupleCoverage"), dict)
+        else []
+    )
+    blocked_route_floor = sum(
+        1
+        for row in route_truth
+        if isinstance(row, dict)
+        and normalized_token(row.get("promotionState")) in {"promoted", "proof_required"}
+        and normalized_token(row.get("revokeState")) != "revoked"
+    )
+
+    public_trust_metrics = local_payload.setdefault("publicTrustMetrics", {})
+    release_channel = (
+        public_trust_metrics.setdefault("releaseChannel", {})
+        if isinstance(public_trust_metrics, dict)
+        else None
+    )
+    if isinstance(release_channel, dict):
+        nested_rollout_state = normalized_token(release_channel.get("rolloutState"))
+        release_channel_was_honest = (
+            normalized_token(release_channel.get("supportabilityState")) == "review_required"
+            and normalized_token(release_channel.get("posture")) == "blocked"
+            and nonnegative_int(release_channel.get("recommendedRouteCount")) == 0
+            and "fallbackRecoveryRouteCount" not in release_channel
+            and stronger_rollout_blocker(nested_rollout_state)
+        )
+        release_channel["rolloutState"] = (
+            nested_rollout_state
+            if stronger_rollout_blocker(nested_rollout_state)
+            else effective_rollout_state
+        )
+        release_channel["supportabilityState"] = "review_required"
+        release_channel["posture"] = "blocked"
+        release_channel["recommendedRouteCount"] = 0
+        # Fallback recovery belongs to adoptionHealth; it is not part of the
+        # strict releaseChannel public-trust contract.
+        release_channel.pop("fallbackRecoveryRouteCount", None)
+        release_channel["blockedRouteCount"] = max(
+            nonnegative_int(release_channel.get("blockedRouteCount")),
+            blocked_route_floor,
+        )
+        if not release_channel_was_honest:
+            release_channel["summary"] = (
+                "Current release routes remain visible for review, but stale or incomplete proof receipts "
+                "leave zero routes recommended as current proof-backed output."
+            )
+
+    adoption_health = (
+        public_trust_metrics.get("adoptionHealth")
+        if isinstance(public_trust_metrics, dict)
+        else None
+    )
+    if isinstance(adoption_health, dict):
+        adoption_health_was_honest = (
+            normalized_token(adoption_health.get("status")) == "blocked"
+            and nonnegative_int(adoption_health.get("primaryPromotedCount")) == 0
+            and nonnegative_int(adoption_health.get("publicInstallCount")) == 0
+            and nonnegative_int(adoption_health.get("accountLinkedInstallCount")) == 0
+            and nonnegative_int(adoption_health.get("fallbackRecoveryCount")) == 0
+        )
+        adoption_health["status"] = "blocked"
+        adoption_health["primaryPromotedCount"] = 0
+        adoption_health["publicInstallCount"] = 0
+        adoption_health["accountLinkedInstallCount"] = 0
+        adoption_health["fallbackRecoveryCount"] = 0
+        adoption_health["blockedRouteCount"] = max(
+            nonnegative_int(adoption_health.get("blockedRouteCount")),
+            blocked_route_floor,
+        )
+        if not adoption_health_was_honest:
+            adoption_health["summary"] = (
+                "No route is counted as current proof-backed output while stale or incomplete proof "
+                "receipts remain unresolved."
+            )
+
+    registry_boundary_coverage = local_payload.setdefault("registryBoundaryCoverage", {})
+    registry_release_channel = (
+        registry_boundary_coverage.setdefault("releaseChannel", {})
+        if isinstance(registry_boundary_coverage, dict)
+        else None
+    )
+    if isinstance(registry_release_channel, dict):
+        nested_rollout_state = normalized_token(registry_release_channel.get("rolloutState"))
+        registry_release_channel_was_honest = (
+            normalized_token(registry_release_channel.get("supportabilityState")) == "review_required"
+            and normalized_token(registry_release_channel.get("publicTrustPosture")) == "blocked"
+            and stronger_rollout_blocker(nested_rollout_state)
+        )
+        registry_release_channel["rolloutState"] = (
+            nested_rollout_state
+            if stronger_rollout_blocker(nested_rollout_state)
+            else effective_rollout_state
+        )
+        registry_release_channel["supportabilityState"] = "review_required"
+        registry_release_channel["publicTrustPosture"] = "blocked"
+        if not registry_release_channel_was_honest:
+            registry_release_channel["summary"] = (
+                "Release-channel output remains review-required because stale or incomplete proof receipts "
+                "block current readiness claims."
+            )
+    return True
+
 
 def load_verifier(path: Path):
     spec = importlib.util.spec_from_file_location("verify_public_release_channel", path)
@@ -2053,6 +2505,7 @@ def hydrate_download_compatibility_from_canonical(local_payload: dict) -> None:
             ("payloadDownloadUrl", "payloadDownloadUrl"),
             ("payloadSha256", "payloadSha256"),
             ("payloadSizeBytes", "payloadSizeBytes"),
+            ("payloadAcquisitionMode", "payloadAcquisitionMode"),
         ):
             value = canonical.get(source_key)
             if value is not None and str(value).strip():
@@ -2353,17 +2806,11 @@ for raw_path in sys.argv[2:]:
         "expected_public_trust_metrics",
         payload.get("publicTrustMetrics") or {},
     )
-    trust_release_channel = payload.get("publicTrustMetrics", {}).get("releaseChannel", {})
-    trust_supportability_state = normalized_token(trust_release_channel.get("supportabilityState"))
-    if normalized_token(payload.get("status")) == "published" and trust_supportability_state:
-        payload["supportabilityState"] = trust_supportability_state
-        if trust_supportability_state == "review_required":
-            payload["supportabilitySummary"] = (
-                "Treat this shelf as review-required until stale or incomplete proof receipts are refreshed."
-            )
-            payload["knownIssueSummary"] = (
-                "The preview shelf remains visible, but stale or incomplete proof receipts mean it is not yet gold-ready."
-            )
+apply_final_proof_freshness_floor(payload)
+trust_release_channel = payload.get("publicTrustMetrics", {}).get("releaseChannel", {})
+trust_supportability_state = normalized_token(trust_release_channel.get("supportabilityState"))
+if normalized_token(payload.get("status")) == "published" and trust_supportability_state:
+    payload["supportabilityState"] = trust_supportability_state
     # Recompute verifier-owned registry surfaces once more after supportability/trust normalization
     # so carried-forward manifests cannot keep stale dependent rows such as desktopSurfaceRefs.
     coverage = payload.get("desktopTupleCoverage")
@@ -2425,13 +2872,44 @@ for raw_path in sys.argv[2:]:
         "expected_registry_boundary_coverage",
         payload.get("registryBoundaryCoverage") or {},
     )
+    if apply_final_proof_freshness_floor(payload):
+        payload["publicTrustMetrics"] = derive_verifier_owned_value(
+            "expected_public_trust_metrics",
+            payload.get("publicTrustMetrics") or {},
+        )
+        coverage = payload.get("desktopTupleCoverage")
+        if isinstance(coverage, dict):
+            fresh_tuple_coverage = fallback_tuple_coverage(payload)
+            if isinstance(fresh_tuple_coverage, dict):
+                coverage.update(fresh_tuple_coverage)
+            coverage["externalProofRequests"] = derive_verifier_owned_value(
+                "expected_external_proof_request_rows",
+                coverage.get("externalProofRequests") or [],
+            )
+            coverage["desktopRouteTruth"] = derive_verifier_owned_value(
+                "expected_desktop_route_truth_rows",
+                coverage.get("desktopRouteTruth") or [],
+            )
+        for payload_key, helper_name in verifier_owned_top_level_rows.items():
+            helper = getattr(verifier, helper_name, None)
+            if callable(helper):
+                payload[payload_key] = helper(payload)
+        prune_rows_to_manifest_artifacts(payload)
+        prune_release_proof_routes_to_manifest_artifacts(payload)
+        payload["registryBoundaryCoverage"] = derive_verifier_owned_value(
+            "expected_registry_boundary_coverage",
+            payload.get("registryBoundaryCoverage") or {},
+        )
+        # The floor is deliberately last as well: a helper must never be able to
+        # resurrect a supported/recommended posture from stale proof.
+        apply_final_proof_freshness_floor(payload)
     assert_desktop_surface_ref_consistency(payload)
     manifest_path.write_text(json.dumps(payload, indent=2) + "\n", encoding="utf-8")
 PY
 canonical_startup_smoke_dir="$(dirname "$CANONICAL_MANIFEST_PATH")/startup-smoke"
 if [[ -n "$STARTUP_SMOKE_DIR" && -d "$STARTUP_SMOKE_DIR" ]]; then
-  resolved_startup_smoke_dir="$(resolve_path_allow_missing "$STARTUP_SMOKE_DIR")"
-  resolved_canonical_startup_smoke_dir="$(resolve_path_allow_missing "$canonical_startup_smoke_dir")"
+  resolved_startup_smoke_dir="$(realpath -m "$STARTUP_SMOKE_DIR")"
+  resolved_canonical_startup_smoke_dir="$(realpath -m "$canonical_startup_smoke_dir")"
   if [[ "$resolved_startup_smoke_dir" != "$resolved_canonical_startup_smoke_dir" ]]; then
     mkdir -p "$canonical_startup_smoke_dir"
     find "$canonical_startup_smoke_dir" -maxdepth 1 -type f -name 'startup-smoke-*.receipt.json' -exec rm -f -- {} +
@@ -2442,13 +2920,31 @@ if [[ -n "$STARTUP_SMOKE_DIR" && -d "$STARTUP_SMOKE_DIR" ]]; then
   fi
 fi
 if to_bool "$GENERATE_EXTERNAL_HOST_PROOF_BLOCKERS"; then
+  external_host_proof_manifest_path="$CANONICAL_MANIFEST_PATH"
+  external_host_proof_downloads_dir="$DOWNLOADS_DIR"
+  external_host_proof_startup_smoke_dir="$STARTUP_SMOKE_DIR"
+  external_host_proof_display_manifest="$CANONICAL_MANIFEST_PATH"
+  external_host_proof_display_downloads_dir="$CANONICAL_FILES_DIR"
+  external_host_proof_display_startup_smoke_dir="$(dirname "$CANONICAL_MANIFEST_PATH")/startup-smoke"
+  run_services_canonical_manifest_path="$RUN_SERVICES_DOWNLOADS_ROOT/RELEASE_CHANNEL.generated.json"
+  run_services_files_dir="$RUN_SERVICES_DOWNLOADS_ROOT/files"
+  run_services_startup_smoke_dir="$RUN_SERVICES_DOWNLOADS_ROOT/startup-smoke"
+  if [[ -f "$run_services_canonical_manifest_path" \
+    && ( ! -f "$external_host_proof_manifest_path" || "$run_services_canonical_manifest_path" -nt "$external_host_proof_manifest_path" ) ]]; then
+    external_host_proof_manifest_path="$run_services_canonical_manifest_path"
+    external_host_proof_downloads_dir="$run_services_files_dir"
+    external_host_proof_startup_smoke_dir="$run_services_startup_smoke_dir"
+    external_host_proof_display_manifest="$run_services_canonical_manifest_path"
+    external_host_proof_display_downloads_dir="$run_services_files_dir"
+    external_host_proof_display_startup_smoke_dir="$run_services_startup_smoke_dir"
+  fi
   python3 "$SCRIPT_DIR/materialize-external-host-proof-blockers.py" \
-    --manifest "$CANONICAL_MANIFEST_PATH" \
-    --downloads-dir "$DOWNLOADS_DIR" \
-    --startup-smoke-dir "$STARTUP_SMOKE_DIR" \
-    --display-manifest "$CANONICAL_MANIFEST_PATH" \
-    --display-downloads-dir "$CANONICAL_FILES_DIR" \
-    --display-startup-smoke-dir "$(dirname "$CANONICAL_MANIFEST_PATH")/startup-smoke" \
+    --manifest "$external_host_proof_manifest_path" \
+    --downloads-dir "$external_host_proof_downloads_dir" \
+    --startup-smoke-dir "$external_host_proof_startup_smoke_dir" \
+    --display-manifest "$external_host_proof_display_manifest" \
+    --display-downloads-dir "$external_host_proof_display_downloads_dir" \
+    --display-startup-smoke-dir "$external_host_proof_display_startup_smoke_dir" \
     --output "$EXTERNAL_HOST_PROOF_BLOCKERS_PATH" \
     --browser-proof-output "$PUBLIC_EDGE_WORKBENCH_PROOF_PATH" \
     --base-url "${CHUMMER_EXTERNAL_PROOF_BASE_URL:-https://chummer.run}" \
@@ -2496,8 +2992,8 @@ prune_downloads_dir_to_promoted_files() {
     return 0
   fi
 
-  repo_owned_downloads_dir="$(resolve_path_allow_missing "$REPO_ROOT/Docker/Downloads/files")"
-  resolved_downloads_dir="$(resolve_path_allow_missing "$DOWNLOADS_DIR")"
+  repo_owned_downloads_dir="$(realpath -m "$REPO_ROOT/Docker/Downloads/files")"
+  resolved_downloads_dir="$(realpath -m "$DOWNLOADS_DIR")"
   if [[ "$resolved_downloads_dir" != "$repo_owned_downloads_dir" ]]; then
     echo "skipping downloads prune because source dir is external to repo-owned staging: $DOWNLOADS_DIR"
     return 0
@@ -2528,6 +3024,25 @@ prune_downloads_dir_to_promoted_files() {
   done
 }
 
+local_windows_bootstrap_artifact_source_is_incomplete() {
+  local candidate_path="$1"
+  local file_name="$2"
+  local candidate_size=""
+
+  if [[ "$file_name" == chummer-*-win-*-installer.exe ]]; then
+    candidate_size="$(stat -c %s "$candidate_path" 2>/dev/null || printf '0')"
+    if (( candidate_size <= 20 )); then
+      return 0
+    fi
+  fi
+
+  if [[ "$file_name" == chummer-*-win-*-payload.zip && ! -f "$candidate_path.json" ]]; then
+    return 0
+  fi
+
+  return 1
+}
+
 resolve_promoted_artifact_source() {
   local file_name="$1"
   local candidate_dir=""
@@ -2549,6 +3064,11 @@ resolve_promoted_artifact_source() {
     [[ -z "$candidate_dir" ]] && continue
     candidate_path="$candidate_dir/$file_name"
     if [[ -f "$candidate_path" ]]; then
+      if [[ "$candidate_dir" == "$DOWNLOADS_DIR" ]] \
+        && local_windows_bootstrap_artifact_source_is_incomplete "$candidate_path" "$file_name"; then
+        echo "skipping incomplete local promoted artifact source: $candidate_path" >&2
+        continue
+      fi
       printf '%s\n' "$candidate_path"
       return 0
     fi
@@ -2569,10 +3089,12 @@ windows_payload_name_for_installer() {
 sync_promoted_files_dir() {
   local target_dir="$1"
   local target_label="$2"
+  local artifact_path=""
   local file_name=""
   local payload_file_name=""
   local payload_source_path=""
   local payload_sidecar_path=""
+  local payload_sidecar_source_path=""
   local portal_artifact_count=""
   # portal_artifacts: keep historical variable naming expected by migration compliance checks.
   local -a portal_artifacts=()
@@ -2589,6 +3111,7 @@ sync_promoted_files_dir() {
       mkdir -p "$DOWNLOADS_DIR"
       cp -f "$source_path" "$DOWNLOADS_DIR/$file_name"
       echo "restored missing artifact into downloads source: $file_name"
+      PROMOTED_DOWNLOADS_SOURCE_RESTORED=1
       source_path="$DOWNLOADS_DIR/$file_name"
     fi
     portal_artifacts+=("$source_path")
@@ -2604,13 +3127,28 @@ sync_promoted_files_dir() {
         mkdir -p "$DOWNLOADS_DIR"
         cp -f "$payload_source_path" "$DOWNLOADS_DIR/$payload_file_name"
         echo "restored missing artifact into downloads source: $payload_file_name"
+        PROMOTED_DOWNLOADS_SOURCE_RESTORED=1
         payload_source_path="$DOWNLOADS_DIR/$payload_file_name"
       fi
       portal_artifacts+=("$payload_source_path")
 
+      payload_sidecar_source_path="${payload_source_path}.json"
+      if [[ ! -f "$payload_sidecar_source_path" ]]; then
+        payload_sidecar_source_path="$(resolve_promoted_artifact_source "${payload_file_name}.json" || true)"
+        if [[ -n "$payload_sidecar_source_path" ]]; then
+          mkdir -p "$DOWNLOADS_DIR"
+          cp -f "$payload_sidecar_source_path" "$DOWNLOADS_DIR/${payload_file_name}.json"
+          echo "restored missing artifact into downloads source: ${payload_file_name}.json"
+          PROMOTED_DOWNLOADS_SOURCE_RESTORED=1
+          payload_sidecar_source_path="$DOWNLOADS_DIR/${payload_file_name}.json"
+        fi
+      fi
+
       payload_sidecar_path="$payload_source_path.json"
       if [[ -f "$payload_sidecar_path" ]]; then
         portal_artifacts+=("$payload_sidecar_path")
+      elif [[ -n "$payload_sidecar_source_path" && -f "$payload_sidecar_source_path" ]]; then
+        portal_artifacts+=("$payload_sidecar_source_path")
       fi
     fi
   done
@@ -2669,6 +3207,7 @@ sync_portal_outputs() {
 
   portal_files_dir="$PORTAL_DOWNLOADS_DIR/files"
   sync_promoted_files_dir "$portal_files_dir" "local portal"
+  sync_browser_lane_release_evidence_dir "$PORTAL_DOWNLOADS_DIR" "local portal"
 }
 
 sync_presentation_downloads_mirror() {
@@ -2711,26 +3250,101 @@ sync_presentation_downloads_mirror() {
 
   mirror_files_dir="$mirror_downloads_dir/files"
   sync_promoted_files_dir "$mirror_files_dir" "$mirror_label"
+  sync_browser_lane_release_evidence_dir "$mirror_downloads_dir" "$mirror_label"
+}
+
+sync_browser_lane_release_evidence_dir() {
+  local target_root="$1"
+  local target_label="$2"
+  local target_dir="$target_root/release-evidence/browser-lane"
+  local receipt_sources=(
+    "$BLAZOR_PLAY_SURFACE_HORIZON_PATH"
+    "$REPO_ROOT/.codex-studio/published/BLAZOR_BROWSER_LANE_PROOF_SET.generated.json"
+    "$REPO_ROOT/.codex-studio/published/BLAZOR_PUBLIC_EDGE_EXECUTION_HORIZON.generated.json"
+    "$REPO_ROOT/.codex-studio/published/BLAZOR_PWA_PUBLIC_EDGE_PROOF.generated.json"
+    "$REPO_ROOT/.codex-studio/published/BLAZOR_WORKBENCH_TOUCH_MOBILE_STAGED_PROOF.generated.json"
+    "$REPO_ROOT/.codex-studio/published/BLAZOR_WORKBENCH_CAMPAIGN_SESSION_STAGED_PROOF.generated.json"
+    "$REPO_ROOT/.codex-studio/published/BLAZOR_WORKBENCH_TABLE_HANDOFF_STAGED_PROOF.generated.json"
+    "$REPO_ROOT/.codex-studio/published/BLAZOR_WORKBENCH_WORKFLOW_LEDGER_STAGED_PROOF.generated.json"
+    "$REPO_ROOT/.codex-studio/published/BLAZOR_WORKBENCH_PROGRESSION_LEDGER_STAGED_PROOF.generated.json"
+  )
+
+  mkdir -p "$target_dir"
+  rm -f \
+    "$target_dir"/BLAZOR_PLAY_SURFACE_HORIZON.generated.json \
+    "$target_dir"/BLAZOR_BROWSER_LANE_PROOF_SET.generated.json \
+    "$target_dir"/BLAZOR_PUBLIC_EDGE_EXECUTION_HORIZON.generated.json \
+    "$target_dir"/BLAZOR_PWA_PUBLIC_EDGE_PROOF.generated.json \
+    "$target_dir"/BLAZOR_WORKBENCH_TOUCH_MOBILE_STAGED_PROOF.generated.json \
+    "$target_dir"/BLAZOR_WORKBENCH_CAMPAIGN_SESSION_STAGED_PROOF.generated.json \
+    "$target_dir"/BLAZOR_WORKBENCH_TABLE_HANDOFF_STAGED_PROOF.generated.json \
+    "$target_dir"/BLAZOR_WORKBENCH_WORKFLOW_LEDGER_STAGED_PROOF.generated.json \
+    "$target_dir"/BLAZOR_WORKBENCH_PROGRESSION_LEDGER_STAGED_PROOF.generated.json
+
+  for receipt_path in "${receipt_sources[@]}"; do
+    if [[ ! -f "$receipt_path" ]]; then
+      echo "browser-lane release evidence receipt is missing for $target_label sync: $receipt_path" >&2
+      return 1
+    fi
+  done
+
+  cp -f "${receipt_sources[@]}" "$target_dir"/
+  echo "synced browser-lane release evidence -> $target_dir ($target_label)"
+}
+
+sync_public_promotion_evidence_file() {
+  local target_root="$1"
+  local target_label="$2"
+  local target_dir="$target_root/release-evidence"
+  local target_path="$target_dir/public-promotion.json"
+  local resolved_source_path=""
+  local resolved_target_path=""
+
+  if [[ ! -f "$PROMOTION_EVIDENCE_PATH" ]]; then
+    echo "public promotion evidence is missing for $target_label sync: $PROMOTION_EVIDENCE_PATH" >&2
+    return 1
+  fi
+
+  resolved_source_path="$(resolve_path_allow_missing "$PROMOTION_EVIDENCE_PATH")"
+  resolved_target_path="$(resolve_path_allow_missing "$target_path")"
+  if [[ "$resolved_source_path" == "$resolved_target_path" ]]; then
+    echo "$target_label public promotion evidence path matches source; skipped secondary sync"
+    return 0
+  fi
+
+  mkdir -p "$target_dir"
+  cp -f "$PROMOTION_EVIDENCE_PATH" "$target_path"
+  echo "synced public promotion evidence -> $target_path ($target_label)"
 }
 
 canonical_files_dir="$(dirname "$CANONICAL_MANIFEST_PATH")/files"
-resolved_downloads_dir="$(resolve_path_allow_missing "$DOWNLOADS_DIR")"
-resolved_canonical_files_dir="$(resolve_path_allow_missing "$canonical_files_dir")"
+resolved_downloads_dir="$(realpath -m "$DOWNLOADS_DIR")"
+resolved_canonical_files_dir="$(realpath -m "$canonical_files_dir")"
 if [[ "$resolved_downloads_dir" == "$resolved_canonical_files_dir" ]]; then
   echo "canonical files dir matches downloads source; skipped canonical files sync"
 else
   sync_promoted_files_dir "$canonical_files_dir" "canonical release"
 fi
+sync_browser_lane_release_evidence_dir "$(dirname "$CANONICAL_MANIFEST_PATH")" "canonical release"
 
 resolved_manifest_path="$(resolve_path_allow_missing "$MANIFEST_PATH")"
 resolved_portal_manifest_path="$(resolve_path_allow_missing "$PORTAL_MANIFEST_PATH")"
-sync_portal_outputs "$resolved_manifest_path" "$resolved_portal_manifest_path"
-if presentation_mirror_enabled; then
-  sync_presentation_downloads_mirror \
-    "$PRESENTATION_MIRROR_ROOT/Docker/Downloads/releases.json" \
-    "$PRESENTATION_MIRROR_ROOT/Docker/Downloads/RELEASE_CHANNEL.generated.json" \
-    "$PRESENTATION_MIRROR_ROOT/Docker/Downloads" \
-    "presentation downloads mirror"
+if ! to_bool "$MANIFEST_STAGE_ONLY"; then
+  sync_portal_outputs "$resolved_manifest_path" "$resolved_portal_manifest_path"
+  if presentation_mirror_enabled; then
+    sync_presentation_downloads_mirror \
+      "$PRESENTATION_MIRROR_ROOT/Docker/Downloads/releases.json" \
+      "$PRESENTATION_MIRROR_ROOT/Docker/Downloads/RELEASE_CHANNEL.generated.json" \
+      "$PRESENTATION_MIRROR_ROOT/Docker/Downloads" \
+      "presentation downloads mirror"
+  fi
+else
+  echo "stage-only manifest generation skipped portal and presentation mirror sync"
+fi
+
+if (( PROMOTED_DOWNLOADS_SOURCE_RESTORED == 1 )) && [[ "$MANIFEST_REHYDRATION_PASS" == "0" ]]; then
+  echo "rerunning release manifest generator after hydrating promoted downloads source from registry-backed artifacts"
+  exec env CHUMMER_RELEASE_MANIFEST_REHYDRATION_PASS=1 bash "$SCRIPT_DIR/generate-releases-manifest.sh"
 fi
 
 verify_registry_boundary_consistency \
@@ -2760,12 +3374,13 @@ fi
 python3 "$SCRIPT_DIR/generate-public-promotion-evidence.py" "${promotion_evidence_args[@]}"
 
 if [[ "$REQUIRE_STARTUP_SMOKE_PROOF" != "0" ]]; then
-  if ! python3 - "$PROMOTION_EVIDENCE_PATH" <<'PY'
+  if ! python3 - "$PROMOTION_EVIDENCE_PATH" "$RELEASE_CHANNEL" <<'PY'
 import json
 import sys
 from pathlib import Path
 
 payload = json.loads(Path(sys.argv[1]).read_text(encoding="utf-8"))
+release_channel = str(sys.argv[2] if len(sys.argv) > 2 else "").strip().lower()
 failures: list[str] = []
 artifacts = payload.get("artifacts") or []
 for artifact in artifacts:
@@ -2773,6 +3388,9 @@ for artifact in artifacts:
         continue
     kind = str(artifact.get("kind") or "").strip().lower()
     if kind not in {"installer", "dmg", "pkg", "msix"}:
+        continue
+    install_access_class = str(artifact.get("installAccessClass") or "").strip().lower()
+    if release_channel == "preview" and install_access_class in {"account_required", "account_recommended"}:
         continue
     startup_status = str(artifact.get("startupSmokeStatus") or "").strip().lower()
     if startup_status in {"pass", "skipped_incompatible_host"}:
@@ -2790,4 +3408,26 @@ PY
   then
     exit 1
   fi
+fi
+
+if ! to_bool "$MANIFEST_STAGE_ONLY"; then
+  sync_public_promotion_evidence_file "$PORTAL_DOWNLOADS_DIR" "local portal"
+  sync_presentation_downloads_mirror \
+    "$RUN_SERVICES_DOWNLOADS_ROOT/releases.json" \
+    "$RUN_SERVICES_DOWNLOADS_ROOT/RELEASE_CHANNEL.generated.json" \
+    "$RUN_SERVICES_DOWNLOADS_ROOT" \
+    "run-services downloads mirror"
+  sync_public_promotion_evidence_file "$RUN_SERVICES_DOWNLOADS_ROOT" "run-services downloads mirror"
+  if presentation_mirror_enabled; then
+    sync_public_promotion_evidence_file "$PRESENTATION_MIRROR_ROOT/Docker/Downloads" "presentation downloads mirror"
+  fi
+  sync_presentation_downloads_mirror \
+    "$REGISTRY_RELEASES_MANIFEST_PATH" \
+    "$REGISTRY_CANONICAL_MANIFEST_PATH" \
+    "$(dirname "$REGISTRY_RELEASES_MANIFEST_PATH")" \
+    "registry published"
+  sync_public_promotion_evidence_file "$(dirname "$REGISTRY_CANONICAL_MANIFEST_PATH")" "registry published"
+  python3 "$REGISTRY_ROOT/scripts/verify_public_release_channel.py" "${verify_args[@]}" "$REGISTRY_CANONICAL_MANIFEST_PATH" >/dev/null
+else
+  echo "stage-only manifest generation skipped portal, run-services, presentation, and registry publication sync"
 fi

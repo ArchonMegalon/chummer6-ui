@@ -12,7 +12,8 @@ using Chummer.Presentation.Overview;
 using Chummer.Presentation.Shell;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Hosting;
+using Microsoft.Extensions.Logging.Abstractions;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 
 namespace Chummer.Tests.Presentation;
@@ -21,206 +22,168 @@ namespace Chummer.Tests.Presentation;
 public sealed class BlazorPublicEdgeWarmupServiceTests
 {
     [TestMethod]
-    public async Task StartAsync_warms_shell_overview_and_ruleset_bootstrap()
+    public async Task WarmAsync_warms_owner_independent_ruleset_catalogs()
     {
-        var shellPresenter = new RecordingShellPresenter();
-        var overviewPresenter = new RecordingOverviewPresenter();
-        var bootstrapProvider = new RecordingBootstrapProvider();
-
-        BlazorPublicEdgeWarmupService service = CreateService(shellPresenter, overviewPresenter, bootstrapProvider);
+        var catalogResolver = new RecordingRulesetShellCatalogResolver();
+        BlazorPublicEdgeWarmupService service = CreateService(catalogResolver);
 
         await service.WarmAsync(CancellationToken.None);
 
-        Assert.AreEqual(1, shellPresenter.InitializeCalls);
-        Assert.AreEqual(1, overviewPresenter.InitializeCalls);
         CollectionAssert.AreEqual(
             BlazorPublicEdgeWarmupService.WarmedRulesetIds,
-            bootstrapProvider.RequestedRulesetIds.ToArray());
+            catalogResolver.CommandRulesetIds.ToArray());
+        CollectionAssert.AreEqual(
+            BlazorPublicEdgeWarmupService.WarmedRulesetIds,
+            catalogResolver.NavigationRulesetIds.ToArray());
+        CollectionAssert.AreEqual(
+            BlazorPublicEdgeWarmupService.WarmedRulesetIds,
+            catalogResolver.WorkflowDefinitionRulesetIds.ToArray());
+        CollectionAssert.AreEqual(
+            BlazorPublicEdgeWarmupService.WarmedRulesetIds,
+            catalogResolver.WorkflowSurfaceRulesetIds.ToArray());
     }
 
     [TestMethod]
-    public async Task StartAsync_fails_open_when_warmup_dependency_throws()
+    public async Task WarmAsync_fails_open_when_owner_independent_catalog_throws()
     {
-        var shellPresenter = new RecordingShellPresenter { ThrowOnInitialize = true };
-        var overviewPresenter = new RecordingOverviewPresenter();
-        var bootstrapProvider = new RecordingBootstrapProvider();
-
-        BlazorPublicEdgeWarmupService service = CreateService(shellPresenter, overviewPresenter, bootstrapProvider);
+        var catalogResolver = new RecordingRulesetShellCatalogResolver { ThrowOnResolveCommands = true };
+        BlazorPublicEdgeWarmupService service = CreateService(catalogResolver);
 
         await service.WarmAsync(CancellationToken.None);
 
-        Assert.AreEqual(1, shellPresenter.InitializeCalls);
-        Assert.AreEqual(0, overviewPresenter.InitializeCalls);
-        Assert.HasCount(0, bootstrapProvider.RequestedRulesetIds);
+        CollectionAssert.AreEqual(
+            new[] { BlazorPublicEdgeWarmupService.WarmedRulesetIds[0] },
+            catalogResolver.CommandRulesetIds.ToArray());
+        Assert.HasCount(0, catalogResolver.NavigationRulesetIds);
+        Assert.HasCount(0, catalogResolver.WorkflowDefinitionRulesetIds);
+        Assert.HasCount(0, catalogResolver.WorkflowSurfaceRulesetIds);
     }
 
     [TestMethod]
-    public async Task StartAsync_returns_without_waiting_for_warmup_to_finish()
+    public async Task WarmAsync_never_resolves_owner_scoped_presenters_or_bootstrap_clients()
     {
-        var shellPresenter = new RecordingShellPresenter { HoldInitializeUntilReleased = true };
-        var overviewPresenter = new RecordingOverviewPresenter();
-        var bootstrapProvider = new RecordingBootstrapProvider();
-        BlazorPublicEdgeWarmupService service = CreateService(shellPresenter, overviewPresenter, bootstrapProvider);
+        var catalogResolver = new RecordingRulesetShellCatalogResolver();
+        var services = new ServiceCollection();
+        services.AddSingleton<IRulesetShellCatalogResolver>(catalogResolver);
+        services.AddScoped<IShellPresenter>(_ =>
+            throw new AssertFailedException("Startup warm-up resolved an owner-scoped shell presenter."));
+        services.AddScoped<ICharacterOverviewPresenter>(_ =>
+            throw new AssertFailedException("Startup warm-up resolved an owner-scoped overview presenter."));
+        services.AddScoped<IShellBootstrapDataProvider>(_ =>
+            throw new AssertFailedException("Startup warm-up resolved an owner-scoped bootstrap provider."));
+        services.AddSingleton<IConfiguration>(new ConfigurationBuilder().Build());
+        services.AddSingleton<IHostApplicationLifetime>(new TestHostApplicationLifetime());
+        services.AddLogging();
+        services.AddSingleton<BlazorPublicEdgeWarmupService>();
+        using ServiceProvider provider = services.BuildServiceProvider(validateScopes: true);
 
-        Task startTask = service.StartAsync(CancellationToken.None);
+        BlazorPublicEdgeWarmupService service =
+            provider.GetRequiredService<BlazorPublicEdgeWarmupService>();
+        await service.WarmAsync(CancellationToken.None);
 
-        Task completedTask = await Task.WhenAny(startTask, Task.Delay(TimeSpan.FromMilliseconds(250)));
-        Assert.AreSame(startTask, completedTask);
-        Assert.IsTrue(startTask.IsCompleted);
-        await WaitUntilAsync(() => shellPresenter.InitializeCalls == 1);
-        Assert.AreEqual(0, overviewPresenter.InitializeCalls);
+        CollectionAssert.AreEqual(
+            BlazorPublicEdgeWarmupService.WarmedRulesetIds,
+            catalogResolver.CommandRulesetIds.ToArray());
+    }
 
-        shellPresenter.ReleaseInitialize();
+    [TestMethod]
+    public async Task StartAsync_waits_for_host_started_before_loopback_route_warmup()
+    {
+        var catalogResolver = new RecordingRulesetShellCatalogResolver();
+        var lifetime = new TestHostApplicationLifetime();
+        IConfiguration configuration = new ConfigurationBuilder()
+            .AddInMemoryCollection(new Dictionary<string, string?>
+            {
+                ["urls"] = "http://127.0.0.1:1"
+            })
+            .Build();
+        var service = new BlazorPublicEdgeWarmupService(
+            catalogResolver,
+            lifetime,
+            configuration,
+            NullLogger<BlazorPublicEdgeWarmupService>.Instance);
+
+        await service.StartAsync(CancellationToken.None);
+        await Task.Delay(TimeSpan.FromMilliseconds(50));
+        Task executeTask = service.ExecuteTask
+            ?? throw new AssertFailedException("The hosted warm-up did not expose its background execution task.");
+        Assert.IsFalse(executeTask.IsCompleted);
+
+        lifetime.NotifyStarted();
+        await executeTask.WaitAsync(TimeSpan.FromSeconds(2));
         await service.StopAsync(CancellationToken.None);
     }
 
-    private static async Task WaitUntilAsync(Func<bool> predicate)
-    {
-        using var timeout = new CancellationTokenSource(TimeSpan.FromSeconds(2));
-        while (!predicate())
-        {
-            await Task.Delay(TimeSpan.FromMilliseconds(25), timeout.Token);
-        }
-    }
-
     private static BlazorPublicEdgeWarmupService CreateService(
-        RecordingShellPresenter shellPresenter,
-        RecordingOverviewPresenter overviewPresenter,
-        RecordingBootstrapProvider bootstrapProvider)
+        IRulesetShellCatalogResolver catalogResolver)
     {
-        var services = new ServiceCollection();
-        services.AddSingleton<IShellPresenter>(shellPresenter);
-        services.AddSingleton<ICharacterOverviewPresenter>(overviewPresenter);
-        services.AddSingleton<IShellBootstrapDataProvider>(bootstrapProvider);
-        services.AddSingleton<IConfiguration>(new ConfigurationBuilder().Build());
-        services.AddLogging();
-
-        ServiceProvider provider = services.BuildServiceProvider();
         return new BlazorPublicEdgeWarmupService(
-            provider.GetRequiredService<IServiceScopeFactory>(),
-            provider.GetRequiredService<IConfiguration>(),
-            provider.GetRequiredService<ILogger<BlazorPublicEdgeWarmupService>>());
+            catalogResolver,
+            new TestHostApplicationLifetime(),
+            new ConfigurationBuilder().Build(),
+            NullLogger<BlazorPublicEdgeWarmupService>.Instance);
     }
 
-    private sealed class RecordingShellPresenter : IShellPresenter
+    private sealed class TestHostApplicationLifetime : IHostApplicationLifetime
     {
-        public ShellState State { get; private set; } = ShellState.Empty;
+        private readonly CancellationTokenSource _started = new();
+        private readonly CancellationTokenSource _stopping = new();
+        private readonly CancellationTokenSource _stopped = new();
 
-        public event EventHandler? StateChanged
-        {
-            add { }
-            remove { }
-        }
+        public CancellationToken ApplicationStarted => _started.Token;
 
-        public int InitializeCalls { get; private set; }
+        public CancellationToken ApplicationStopping => _stopping.Token;
 
-        public bool ThrowOnInitialize { get; set; }
+        public CancellationToken ApplicationStopped => _stopped.Token;
 
-        public bool HoldInitializeUntilReleased { get; set; }
+        public void NotifyStarted()
+            => _started.Cancel();
 
-        private readonly TaskCompletionSource _releaseInitialize = new(TaskCreationOptions.RunContinuationsAsynchronously);
-
-        public async Task InitializeAsync(CancellationToken ct)
-        {
-            InitializeCalls++;
-            if (ThrowOnInitialize)
-            {
-                throw new InvalidOperationException("warmup shell failed");
-            }
-
-            if (HoldInitializeUntilReleased)
-            {
-                await _releaseInitialize.Task.WaitAsync(ct);
-            }
-        }
-
-        public void ReleaseInitialize()
-        {
-            _releaseInitialize.TrySetResult();
-        }
-
-        public Task ExecuteCommandAsync(string commandId, CancellationToken ct) => Task.CompletedTask;
-
-        public Task SelectTabAsync(string tabId, CancellationToken ct) => Task.CompletedTask;
-
-        public Task ToggleMenuAsync(string menuId, CancellationToken ct) => Task.CompletedTask;
-
-        public Task SetPreferredRulesetAsync(string rulesetId, CancellationToken ct) => Task.CompletedTask;
-
-        public Task SyncWorkspaceContextAsync(CharacterWorkspaceId? activeWorkspaceId, CancellationToken ct) => Task.CompletedTask;
+        public void StopApplication()
+            => _stopping.Cancel();
     }
 
-    private sealed class RecordingOverviewPresenter : ICharacterOverviewPresenter
+    private sealed class RecordingRulesetShellCatalogResolver : IRulesetShellCatalogResolver
     {
-        public CharacterOverviewState State { get; private set; } = CharacterOverviewState.Empty;
+        public List<string> CommandRulesetIds { get; } = [];
 
-        public event EventHandler? StateChanged
+        public List<string> NavigationRulesetIds { get; } = [];
+
+        public List<string> WorkflowDefinitionRulesetIds { get; } = [];
+
+        public List<string> WorkflowSurfaceRulesetIds { get; } = [];
+
+        public bool ThrowOnResolveCommands { get; set; }
+
+        public IReadOnlyList<AppCommandDefinition> ResolveCommands(string? rulesetId)
         {
-            add { }
-            remove { }
+            CommandRulesetIds.Add(rulesetId ?? string.Empty);
+            if (ThrowOnResolveCommands)
+                throw new InvalidOperationException("owner-independent catalog warm-up failed");
+            return [];
         }
 
-        public int InitializeCalls { get; private set; }
-
-        public Task InitializeAsync(CancellationToken ct)
+        public IReadOnlyList<NavigationTabDefinition> ResolveNavigationTabs(string? rulesetId)
         {
-            InitializeCalls++;
-            return Task.CompletedTask;
+            NavigationRulesetIds.Add(rulesetId ?? string.Empty);
+            return [];
         }
 
-        public Task ImportAsync(WorkspaceImportDocument document, CancellationToken ct) => Task.CompletedTask;
-
-        public Task LoadAsync(CharacterWorkspaceId id, CancellationToken ct) => Task.CompletedTask;
-
-        public Task SwitchWorkspaceAsync(CharacterWorkspaceId id, CancellationToken ct) => Task.CompletedTask;
-
-        public Task CloseWorkspaceAsync(CharacterWorkspaceId id, CancellationToken ct) => Task.CompletedTask;
-
-        public Task ExecuteCommandAsync(string commandId, CancellationToken ct) => Task.CompletedTask;
-
-        public Task HandleUiControlAsync(string controlId, CancellationToken ct) => Task.CompletedTask;
-
-        public Task ExecuteWorkspaceActionAsync(WorkspaceSurfaceActionDefinition action, CancellationToken ct) => Task.CompletedTask;
-
-        public Task UpdateDialogFieldAsync(string fieldId, string? value, CancellationToken ct) => Task.CompletedTask;
-
-        public Task ApplyAttributeEditAsync(AttributeEditRequest request, CancellationToken ct) => Task.CompletedTask;
-
-        public Task ExecuteDialogActionAsync(string actionId, CancellationToken ct) => Task.CompletedTask;
-
-        public Task CloseDialogAsync(CancellationToken ct) => Task.CompletedTask;
-
-        public Task SelectTabAsync(string tabId, CancellationToken ct) => Task.CompletedTask;
-
-        public Task UpdateMetadataAsync(UpdateWorkspaceMetadata command, CancellationToken ct) => Task.CompletedTask;
-
-        public Task SaveAsync(CancellationToken ct) => Task.CompletedTask;
-
-        public Task ExportAsync(CancellationToken ct) => Task.CompletedTask;
-
-        public Task PrintAsync(CancellationToken ct) => Task.CompletedTask;
-    }
-
-    private sealed class RecordingBootstrapProvider : IShellBootstrapDataProvider
-    {
-        public List<string> RequestedRulesetIds { get; } = [];
-
-        public Task<ShellBootstrapData> GetAsync(CancellationToken ct)
-            => Task.FromResult(CreateBootstrap(RulesetDefaults.Sr5));
-
-        public Task<ShellBootstrapData> GetAsync(string? rulesetId, CancellationToken ct)
+        public IReadOnlyList<WorkflowDefinition> ResolveWorkflowDefinitions(string? rulesetId)
         {
-            RequestedRulesetIds.Add(rulesetId ?? string.Empty);
-            return Task.FromResult(CreateBootstrap(rulesetId ?? RulesetDefaults.Sr5));
+            WorkflowDefinitionRulesetIds.Add(rulesetId ?? string.Empty);
+            return [];
         }
 
-        private static ShellBootstrapData CreateBootstrap(string rulesetId)
-            => new(
-                RulesetId: rulesetId,
-                Commands: [],
-                NavigationTabs: [],
-                Workspaces: [],
-                PreferredRulesetId: RulesetDefaults.Sr5,
-                ActiveRulesetId: rulesetId);
+        public IReadOnlyList<WorkflowSurfaceDefinition> ResolveWorkflowSurfaces(string? rulesetId)
+        {
+            WorkflowSurfaceRulesetIds.Add(rulesetId ?? string.Empty);
+            return [];
+        }
+
+        public IReadOnlyList<WorkspaceSurfaceActionDefinition> ResolveWorkspaceActionsForTab(
+            string? tabId,
+            string? rulesetId)
+            => [];
     }
 }

@@ -2,14 +2,27 @@ services:
   # Primary migration runtime: API + Blazor head. Legacy Chummer.Web is intentionally excluded.
   chummer-api:
     image: chummer-api:local
+    init: true
+    restart: "${CHUMMER_RESTART_POLICY:-unless-stopped}"
+    stop_grace_period: 30s
+    logging:
+      driver: local
+      options:
+        max-size: "10m"
+        max-file: "5"
+    read_only: true
+    tmpfs:
+      - /tmp:rw,nosuid,nodev,noexec,size=64m,mode=1777
+    security_opt:
+      - no-new-privileges:true
+    cap_drop:
+      - ALL
     build:
       context: ..
       dockerfile: chummer-presentation/Chummer.Api/Dockerfile
     environment:
       CHUMMER_STATE_PATH: "/app/state"
-      CHUMMER_API_KEY: "${CHUMMER_API_KEY:-}"
       CHUMMER_PROTECT_API_DOCS: "${CHUMMER_PROTECT_API_DOCS:-}"
-      CHUMMER_PORTAL_OWNER_SHARED_KEY: "${CHUMMER_PORTAL_OWNER_SHARED_KEY:-local-self-hosted-portal-shared-key}"
       CHUMMER_AMENDS_PATH: "/app/amends"
       CHUMMER_AI_AIMAGICX_PRIMARY_API_KEY: "${CHUMMER_AI_AIMAGICX_PRIMARY_API_KEY:-}"
       CHUMMER_AI_AIMAGICX_FALLBACK_API_KEY: "${CHUMMER_AI_AIMAGICX_FALLBACK_API_KEY:-}"
@@ -20,19 +33,50 @@ services:
       CHUMMER_AI_AIMAGICX_MODEL: "${CHUMMER_AI_AIMAGICX_MODEL:-}"
       CHUMMER_AI_1MINAI_BASE_URL: "${CHUMMER_AI_1MINAI_BASE_URL:-}"
       CHUMMER_AI_1MINAI_MODEL: "${CHUMMER_AI_1MINAI_MODEL:-}"
-    ports:
-      - "${CHUMMER_API_PORT:-${CHUMMER_WEB_PORT:-8088}}:8080"
+    expose:
+      - "8080"
     volumes:
       - chummer-state:/app/state
       - ./Docker/Amends:/app/amends:ro
+      - type: bind
+        source: "${CHUMMER_PORTAL_OWNER_SECRETS_DIRECTORY:-./Docker/Secrets/portal-owner}"
+        target: /run/secrets/chummer-config
+        read_only: true
+        bind:
+          create_host_path: false
+    healthcheck:
+      test:
+        - CMD-SHELL
+        - 'curl --fail --silent --show-error http://127.0.0.1:8080/health/ready >/dev/null'
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 30s
   chummer-blazor:
     image: chummer-blazor:local
+    init: true
+    restart: "${CHUMMER_RESTART_POLICY:-unless-stopped}"
+    stop_grace_period: 30s
+    logging:
+      driver: local
+      options:
+        max-size: "10m"
+        max-file: "5"
+    read_only: true
+    tmpfs:
+      - /tmp:rw,nosuid,nodev,noexec,size=64m,mode=1777
+    security_opt:
+      - no-new-privileges:true
+    cap_drop:
+      - ALL
     build:
       context: ..
       dockerfile: chummer-presentation/Chummer.Blazor/Dockerfile
     depends_on:
-      - chummer-api
+      chummer-api:
+        condition: service_healthy
     environment:
+      CHUMMER_STATE_PATH: "/app/state"
       CHUMMER_API_BASE_URL: "http://chummer-api:8080"
       CHUMMER_API_KEY: "${CHUMMER_API_KEY:-}"
       CHUMMER_BLAZOR_PATH_BASE: "${CHUMMER_BLAZOR_PATH_BASE:-}"
@@ -43,18 +87,58 @@ services:
       CHUMMER_PORTAL_SESSION_PROXY_URL: "${CHUMMER_PORTAL_SESSION_PROXY_URL:-}"
       CHUMMER_PORTAL_COACH_PROXY_URL: "${CHUMMER_PORTAL_COACH_PROXY_URL:-}"
       CHUMMER_PORTAL_AI_PROXY_URL: "${CHUMMER_PORTAL_AI_PROXY_URL:-}"
+      # This profile is deliberately single-instance until the dedicated
+      # chummer_build PostgreSQL release/backup lane is operator-configured.
+      CHUMMER_BUILD_WORKSPACE_STORE_PROVIDER: "file"
+      CHUMMER_BUILD_EXPECTED_REPLICA_COUNT: "1"
+      CHUMMER_BLAZOR_DATA_PROTECTION_KEYS_DIRECTORY: "/var/lib/chummer-build/data-protection"
+      CHUMMER_BLAZOR_DATA_PROTECTION_CERTIFICATE_PATH: "/run/secrets/chummer-config/certificates/chummer-build-data-protection.p12"
+    volumes:
+      - chummer-blazor-state:/app/state
+      - chummer-blazor-data-protection:/var/lib/chummer-build/data-protection
+      - type: bind
+        source: "${CHUMMER_BUILD_SECRETS_DIRECTORY:-./Docker/Secrets/build}"
+        target: /run/secrets/chummer-config
+        read_only: true
+        bind:
+          create_host_path: false
+    healthcheck:
+      test:
+        - CMD-SHELL
+        - 'base="$${CHUMMER_BLAZOR_PATH_BASE%/}"; curl --fail --silent --show-error "http://127.0.0.1:8080$${base}/health/ready" >/dev/null'
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 30s
     ports:
-      - "${CHUMMER_BLAZOR_PORT:-8089}:8080"
-      - "${CHUMMER_HUB_PORT:-8092}:8080"
+      - "127.0.0.1:${CHUMMER_BLAZOR_PORT:-8089}:8080"
+      - "127.0.0.1:${CHUMMER_HUB_PORT:-8092}:8080"
   chummer-blazor-portal:
     image: chummer-blazor:local
+    init: true
+    restart: "${CHUMMER_RESTART_POLICY:-unless-stopped}"
+    stop_grace_period: 30s
+    logging:
+      driver: local
+      options:
+        max-size: "10m"
+        max-file: "5"
+    read_only: true
+    tmpfs:
+      - /tmp:rw,nosuid,nodev,noexec,size=64m,mode=1777
+    security_opt:
+      - no-new-privileges:true
+    cap_drop:
+      - ALL
     build:
       context: ..
       dockerfile: chummer-presentation/Chummer.Blazor/Dockerfile
     depends_on:
-      - chummer-api
-    profiles: ["portal"]
+      chummer-api:
+        condition: service_healthy
+    profiles: ["portal", "portal-e2e"]
     environment:
+      CHUMMER_STATE_PATH: "/app/state"
       CHUMMER_API_BASE_URL: "http://chummer-api:8080"
       CHUMMER_API_KEY: "${CHUMMER_API_KEY:-}"
       CHUMMER_BLAZOR_PATH_BASE: "/blazor"
@@ -65,35 +149,135 @@ services:
       CHUMMER_PORTAL_SESSION_PROXY_URL: "${CHUMMER_PORTAL_SESSION_PROXY_URL:-}"
       CHUMMER_PORTAL_COACH_PROXY_URL: "${CHUMMER_PORTAL_COACH_PROXY_URL:-}"
       CHUMMER_PORTAL_AI_PROXY_URL: "${CHUMMER_PORTAL_AI_PROXY_URL:-}"
+      # The portal route has an independent local volume and is not an HA
+      # replica. Select PostgreSQL before treating both routes as one store.
+      CHUMMER_BUILD_WORKSPACE_STORE_PROVIDER: "file"
+      CHUMMER_BUILD_EXPECTED_REPLICA_COUNT: "1"
+      CHUMMER_BLAZOR_DATA_PROTECTION_KEYS_DIRECTORY: "/var/lib/chummer-build/data-protection"
+      CHUMMER_BLAZOR_DATA_PROTECTION_CERTIFICATE_PATH: "/run/secrets/chummer-config/certificates/chummer-build-data-protection.p12"
+    volumes:
+      - chummer-blazor-portal-state:/app/state
+      - chummer-blazor-data-protection:/var/lib/chummer-build/data-protection
+      - type: bind
+        source: "${CHUMMER_BUILD_SECRETS_DIRECTORY:-./Docker/Secrets/build}"
+        target: /run/secrets/chummer-config
+        read_only: true
+        bind:
+          create_host_path: false
+    healthcheck:
+      test:
+        - CMD-SHELL
+        - 'base="$${CHUMMER_BLAZOR_PATH_BASE%/}"; curl --fail --silent --show-error "http://127.0.0.1:8080$${base}/health/ready" >/dev/null'
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 30s
   chummer-hub-web-portal:
     image: chummer-hub-web:local
+    init: true
+    restart: "${CHUMMER_RESTART_POLICY:-unless-stopped}"
+    stop_grace_period: 30s
+    logging:
+      driver: local
+      options:
+        max-size: "10m"
+        max-file: "5"
+    read_only: true
+    tmpfs:
+      - /tmp:rw,nosuid,nodev,noexec,size=64m,mode=1777
+    security_opt:
+      - no-new-privileges:true
+    cap_drop:
+      - ALL
     build:
       context: ..
       dockerfile: chummer-presentation/Chummer.Hub.Web/Dockerfile
     depends_on:
-      - chummer-api
-    profiles: ["portal"]
+      chummer-api:
+        condition: service_healthy
+    profiles: ["portal", "portal-e2e"]
     environment:
       CHUMMER_HUB_PATH_BASE: "/hub"
+      CHUMMER_HUB_DATA_PROTECTION_KEYS_PATH: "/var/lib/chummer-hub/data-protection"
+      CHUMMER_HUB_DATA_PROTECTION_CERTIFICATE_PATH: "/run/secrets/chummer-config/certificates/chummer-hub-data-protection.p12"
+      CHUMMER_HUB_DATA_PROTECTION_PREVIOUS_CERTIFICATE_PATH: "${CHUMMER_HUB_DATA_PROTECTION_PREVIOUS_CERTIFICATE_PATH:-}"
+    volumes:
+      - chummer-hub-data-protection:/var/lib/chummer-hub/data-protection
+      - type: bind
+        source: "${CHUMMER_HUB_SECRETS_DIRECTORY:-./Docker/Secrets/hub}"
+        target: /run/secrets/chummer-config
+        read_only: true
+        bind:
+          create_host_path: false
+    healthcheck:
+      test:
+        - CMD-SHELL
+        - 'curl --fail --silent --show-error http://127.0.0.1:8080/hub/health >/dev/null'
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 30s
   chummer-avalonia-browser:
     image: chummer-avalonia-browser:local
+    init: true
+    restart: "${CHUMMER_RESTART_POLICY:-unless-stopped}"
+    stop_grace_period: 30s
+    logging:
+      driver: local
+      options:
+        max-size: "10m"
+        max-file: "5"
+    read_only: true
+    tmpfs:
+      - /tmp:rw,nosuid,nodev,noexec,size=64m,mode=1777
+    security_opt:
+      - no-new-privileges:true
+    cap_drop:
+      - ALL
     build:
       context: .
       dockerfile: Chummer.Avalonia.Browser/Dockerfile
-    profiles: ["portal"]
+    profiles: ["portal", "portal-e2e"]
     environment:
       CHUMMER_AVALONIA_BROWSER_PATH_BASE: "/avalonia"
+    healthcheck:
+      test:
+        - CMD-SHELL
+        - 'curl --fail --silent --show-error http://127.0.0.1:8080/avalonia/health >/dev/null'
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 30s
   chummer-portal:
     image: chummer-portal:local
+    init: true
+    restart: "${CHUMMER_RESTART_POLICY:-unless-stopped}"
+    stop_grace_period: 30s
+    logging:
+      driver: local
+      options:
+        max-size: "10m"
+        max-file: "5"
+    read_only: true
+    tmpfs:
+      - /tmp:rw,nosuid,nodev,noexec,size=64m,mode=1777
+    security_opt:
+      - no-new-privileges:true
+    cap_drop:
+      - ALL
     build:
       context: ..
       dockerfile: chummer-presentation/Chummer.Portal/Dockerfile
     depends_on:
-      - chummer-api
-      - chummer-blazor-portal
-      - chummer-hub-web-portal
-      - chummer-avalonia-browser
-    profiles: ["portal"]
+      chummer-api:
+        condition: service_healthy
+      chummer-blazor-portal:
+        condition: service_healthy
+      chummer-hub-web-portal:
+        condition: service_healthy
+      chummer-avalonia-browser:
+        condition: service_healthy
+    profiles: ["portal", "portal-e2e"]
     environment:
       CHUMMER_PORTAL_BLAZOR_URL: "${CHUMMER_PORTAL_BLAZOR_URL:-/blazor/}"
       CHUMMER_PORTAL_BLAZOR_PROXY_URL: "${CHUMMER_PORTAL_BLAZOR_PROXY_URL:-http://chummer-blazor-portal:8080/}"
@@ -115,19 +299,33 @@ services:
       CHUMMER_PORTAL_DOWNLOADS_PROXY_URL: "${CHUMMER_PORTAL_DOWNLOADS_PROXY_URL:-}"
       CHUMMER_PORTAL_RELEASES_FILE: "${CHUMMER_PORTAL_RELEASES_FILE:-/app/downloads/releases.json}"
       CHUMMER_PORTAL_RELEASES_DIR: "${CHUMMER_PORTAL_RELEASES_DIR:-/app/downloads}"
-      CHUMMER_PORTAL_OWNER_SHARED_KEY: "${CHUMMER_PORTAL_OWNER_SHARED_KEY:-local-self-hosted-portal-shared-key}"
-      CHUMMER_PORTAL_IMPLICIT_OWNER: "${CHUMMER_PORTAL_IMPLICIT_OWNER:-local@self-host}"
+      CHUMMER_PORTAL_IMPLICIT_OWNER: "${CHUMMER_PORTAL_IMPLICIT_OWNER:-}"
     volumes:
       - ./Docker/Downloads:/app/downloads:ro
+      - type: bind
+        source: "${CHUMMER_PORTAL_OWNER_SECRETS_DIRECTORY:-./Docker/Secrets/portal-owner}"
+        target: /run/secrets/chummer-config
+        read_only: true
+        bind:
+          create_host_path: false
+    healthcheck:
+      test:
+        - CMD-SHELL
+        - 'curl --fail --silent --show-error http://127.0.0.1:8080/health >/dev/null'
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 30s
     ports:
-      - "${CHUMMER_PORTAL_PORT:-8091}:8080"
+      - "127.0.0.1:${CHUMMER_PORTAL_PORT:-8091}:8080"
   chummer-tests:
     image: chummer-tests:local
     build:
       context: .
       dockerfile: Docker/Dockerfile.tests
     depends_on:
-      - chummer-api
+      chummer-api:
+        condition: service_healthy
     profiles: ["test"]
     environment:
       CHUMMER_API_BASE_URL: "http://chummer-api:8080"
@@ -150,12 +348,13 @@ services:
       context: .
       dockerfile: Docker/Dockerfile.playwright
     depends_on:
-      - chummer-api
-      - chummer-blazor
+      chummer-api:
+        condition: service_healthy
+      chummer-blazor:
+        condition: service_healthy
     profiles: ["test"]
-    network_mode: host
     environment:
-      CHUMMER_BLAZOR_BASE_URL: "${CHUMMER_UI_PLAYWRIGHT_BASE_URL:-http://127.0.0.1:${CHUMMER_BLAZOR_PORT:-8089}}"
+      CHUMMER_BLAZOR_BASE_URL: "${CHUMMER_UI_PLAYWRIGHT_BASE_URL:-http://chummer-blazor:8080}"
       CHUMMER_API_BASE_URL: "http://chummer-api:8080"
       CHUMMER_API_KEY: "${CHUMMER_API_KEY:-}"
     command: >
@@ -166,10 +365,15 @@ services:
       context: .
       dockerfile: Docker/Dockerfile.playwright
     depends_on:
-      - chummer-portal
-    profiles: ["portal"]
+      chummer-portal:
+        condition: service_healthy
+    profiles: ["portal-e2e"]
     command: >
       node /work/scripts/e2e-portal.cjs
 
 volumes:
   chummer-state:
+  chummer-blazor-state:
+  chummer-blazor-portal-state:
+  chummer-blazor-data-protection:
+  chummer-hub-data-protection:

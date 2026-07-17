@@ -7,11 +7,15 @@
         MinWidth="960"
         MinHeight="560"
         Title="Chummer Desktop Classic"
-        Icon="/Assets/chummer.ico">
-  <Grid RowDefinitions="Auto,Auto,*,Auto">
+        Icon="/Assets/chummer.ico"
+        Background="{DynamicResource ChummerShellWindowBackgroundBrush}">
+  <Grid RowDefinitions="Auto,Auto,*,Auto"
+        Background="{DynamicResource ChummerShellWindowBackgroundBrush}">
     <controls:ClassicMenuBar Grid.Row="0" />
     <controls:ClassicToolStrip Grid.Row="1" />
-    <Border Grid.Row="2" Padding="0">
+    <Border Grid.Row="2"
+            Padding="0"
+            Background="{DynamicResource ChummerShellSurfaceBrush}">
       <controls:ClassicFormPortHostControl />
     </Border>
     <controls:ClassicStatusStrip Grid.Row="3" />

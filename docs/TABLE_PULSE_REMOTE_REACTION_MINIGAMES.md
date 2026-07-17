@@ -8,8 +8,10 @@ Give players a dramatic city-is-still-moving moment without breaking consent, au
 
 ## What They Are
 
-Remote reaction mini-games are short governed follow-up encounters that occur after a
-Table Pulse packet is emitted.
+Remote reaction mini-games are designed as short governed follow-up encounters offered
+after an eligible Table Pulse packet passes policy, consent, and recipient checks.
+
+These families describe the bounded interaction contract and target experience. They are not a claim that every campaign, client, or delivery channel ships them today.
 
 They stay:
 
@@ -31,31 +33,31 @@ They are not:
 
 The player receives a short intelligence or courier card and chooses how aggressively to intercept, forward, or suppress it.
 
-The payoff can be rumor gain, heat shift, and faction notice.
+After review, the response can inform rumor gain, heat shift, and faction notice.
 
 ### Cover Story
 
 The player gets a social or public-facing cleanup card and must pick a cover approach.
 
-The payoff can be public fallout softening, reputation lane protection, and possible contradiction receipt for later review.
+After review, the response can inform public fallout softening, reputation lane protection, and possible contradiction receipt for later review.
 
 ### Scramble
 
 The player gets a time-sensitive logistics or support card.
 
-The payoff can be small resource preservation, standing-order reinforcement, and opposition-clock movement.
+After review, the response can inform small resource preservation, standing-order reinforcement, and opposition-clock movement.
 
 ### Temptation
 
 The player gets a morally gray opportunity card.
 
-The payoff can be faction favor, pressure increase, and future story hook.
+After review, the response can inform faction favor, pressure increase, and future story hook.
 
 ### Shadow Reply
 
 A player or faction representative sends back a coded answer to a pulse packet.
 
-The payoff can be role-path advancement, Passport identity flavor, and follow-on rumor or order hook.
+After review, the response can inform role-path advancement, Passport identity flavor, and follow-on rumor or order hook.
 
 ## Table Rules
 
@@ -67,14 +69,14 @@ Every mini-game follows:
 - GM override authority
 - bounded consequence rules
 
-They can:
+Inside those rails, a response may:
 
 - draft consequences
-- move pressure
+- propose pressure movement
 - create receipts
 - recommend fallout
 
-They cannot:
+A response never gains authority to:
 
 - create public truth on their own
 - reveal private session content by default
@@ -84,15 +86,15 @@ They cannot:
 
 ### On Mobile / PWA
 
-A phone card should feel immediate, sharp, and readable in under a minute. A player should see why this arrived, what is at stake, how strong the consequence is, and whether the GM must still approve fallout.
+On a phone, the card is immediate, sharp, and readable in under a minute. It shows why this arrived, what is at stake, how strong the consequence is, and whether the GM must still approve fallout.
 
 ### In Player Action Cards
 
-The mini-game should appear as a live card, visible pressure and countdown, and one strong dramatic choice and one safer choice.
+The player view combines a live card, visible pressure and countdown, and one strong dramatic choice and one safer choice.
 
 ### In GM Cockpit
 
-The GM should see card source, recipient reasoning, chosen response, proposed consequence, and proof chain.
+The GM view combines card source, recipient reasoning, chosen response, proposed consequence, and proof chain.
 
 ## Best-Case Pattern
 
@@ -113,11 +115,11 @@ What to avoid:
 
 ## Example Loop
 
-After a high-heat extraction, a player receives a Scramble mini-game as a short action card. They choose to burn a favor to reroute a courier instead of going dark. That choice creates a receipt, nudges a faction pressure lane, preserves one standing-order asset, and later lets the newsroom surface show a subtle public-safe consequence instead of exposing the whole private session.
+After a high-heat extraction, an eligible player receives a GM-approved Scramble card and chooses to burn a favor to reroute a courier instead of going dark. The choice creates a receipt and proposes a faction-pressure shift. If the GM adjudicates it, one standing-order asset is preserved; only a separately approved public-safe projection can later become a newsroom beat.
 
-## What Good Looks Like
+## Flagship Launch Bar
 
-Call it ready only when:
+A remote-reaction surface earns flagship status only when:
 
 1. the card is dramatic in under one screen
 2. the choice is meaningful but bounded

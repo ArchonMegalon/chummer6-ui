@@ -25,7 +25,7 @@ internal sealed class DesktopVersionHistoryWindow : Window
             AcceptsReturn = true,
             TextWrapping = TextWrapping.Wrap
         };
-        DesktopShellTheme.ApplyShellTextInputTheme(historyBox);
+        DesktopShellTheme.ApplyShellReadOnlyTextBoxTheme(historyBox);
 
         Content = DesktopShellTheme.CreateWindowSurface(historyBox, padding: 12);
     }

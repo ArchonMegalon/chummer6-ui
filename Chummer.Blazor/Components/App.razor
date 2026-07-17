@@ -1,5 +1,10 @@
+@using Chummer.Blazor.Services
 @inject NavigationManager Navigation
 @inject IConfiguration Configuration
+@inject IWebHostEnvironment BuildPwaEnvironment
+@inject Chummer.Application.Owners.IOwnerContextAccessor OwnerContextAccessor
+@inject Chummer.Blazor.Services.HostedBuildOwnerInvalidationTokenService OwnerInvalidationTokens
+@implements IDisposable
 
 <!DOCTYPE html>
 <html lang="en">
@@ -9,27 +14,299 @@
     <meta name="theme-color" content="#0f3b3e" />
     <meta name="mobile-web-app-capable" content="yes" />
     <meta name="apple-mobile-web-app-capable" content="yes" />
-    <meta name="apple-mobile-web-app-title" content="Chummer Online" />
-    <meta name="application-name" content="Chummer Online" />
+    <meta name="apple-mobile-web-app-title" content="Chummer Build" />
+    <meta name="application-name" content="Chummer Build" />
     <base href="@BuildBaseHref()" />
-    <title>Chummer Online</title>
+    <title>Chummer Build</title>
     <link rel="manifest" href="@BuildStaticAssetHref("manifest.webmanifest")" />
     <link rel="icon" type="image/svg+xml" href="@BuildStaticAssetHref("icons/chummer-pwa.svg")" />
-    <link rel="apple-touch-icon" href="@BuildStaticAssetHref("media/chummer6/chummer6-hero-baseline.png")" />
-    <link rel="stylesheet" href="@BuildStaticAssetHref("Chummer.Blazor.styles.css")" />
-    <link rel="stylesheet" href="@BuildStaticAssetHref("app.css")" />
+    <link rel="apple-touch-icon" sizes="180x180" href="@BuildStaticAssetHref("icons/chummer-build-180.png")" />
+    <link rel="stylesheet" href="@BuildStaticAssetHref("Chummer.Blazor.styles.css")" integrity="@BuildStaticAssetIntegrity("Chummer.Blazor.styles.css")" crossorigin="anonymous" />
+    <link rel="stylesheet" href="@BuildStaticAssetHref("app.css")" integrity="@BuildStaticAssetIntegrity("app.css")" crossorigin="anonymous" />
+    <link rel="stylesheet" href="@BuildStaticAssetHref("build-pwa-install.css")" integrity="@BuildStaticAssetIntegrity("build-pwa-install.css")" crossorigin="anonymous" />
     @if (BuildRybbitAnalyticsOptions() is { } rybbitAnalytics)
     {
-        <script src="@rybbitAnalytics.ScriptUrl"
-                async
-                data-site-id="@rybbitAnalytics.SiteId"
-                data-chummer-analytics-provider="rybbit"
-                data-chummer-analytics-scope="route-workflow-metadata-only"
-                data-chummer-session-replay="disabled"
-                data-chummer-autocapture="disabled"></script>
+        <meta name="chummer-analytics-config"
+              data-provider="rybbit"
+              data-endpoint-url="@rybbitAnalytics.EndpointUrl"
+              data-site-id="@rybbitAnalytics.SiteId"
+              data-consent-default="denied"
+              data-automatic-pageviews="disabled" />
     }
 </head>
 <body>
+@if (BuildAppRouteFallback() is { } appRouteFallback)
+{
+    <section id="chummer-online-app"
+             class="browser-app-roster"
+             tabindex="-1"
+             aria-label="@appRouteFallback.AriaLabel"
+             data-ssr-app-route-fallback="true"
+             data-enhance-nav="false"
+             data-active-workflow="@appRouteFallback.ActiveWorkflow"
+             data-route-family="@appRouteFallback.RouteFamily"
+             data-route-segment="@appRouteFallback.RouteSegment"
+             data-route-surface="@appRouteFallback.RouteSurface"
+             data-canonical-route="@appRouteFallback.CanonicalRoute"
+             data-route-alias="@appRouteFallback.RouteAlias"
+             data-command="@appRouteFallback.CommandDataKey"
+             data-tab="@appRouteFallback.TabDataKey"
+             data-workspace="@appRouteFallback.WorkspaceDataKey"
+             data-control="@appRouteFallback.ControlDataKey"
+             data-dialog-action="@appRouteFallback.DialogActionDataKey"
+             data-fixture="@appRouteFallback.FixtureDataKey"
+             data-legacy-runner="@appRouteFallback.LegacyRunnerDataKey"
+             data-chummer-app-startup-command="@appRouteFallback.StartupCommandLabel"
+             data-browser-shell-command="@appRouteFallback.CommandDataKey">
+        <header class="browser-app-roster-head">
+            <div>
+                <span>Chummer Online</span>
+                <h1>@appRouteFallback.Title</h1>
+                <p>@appRouteFallback.Description</p>
+            </div>
+            <nav class="browser-app-roster-actions" aria-label="Roster actions">
+                <a href="@BuildAppNewRunnerHref(appRouteFallback)">New runner</a>
+                <a href="@BuildAppHref(command: "new_character_origin")">Origin Dossier</a>
+                <a href="@BuildAppHref(command: "open_character")">Import</a>
+                <a href="@BuildAppSeedHref(appRouteFallback)">Open example</a>
+            </nav>
+        </header>
+
+        @if (appRouteFallback.ShouldRenderStartupShell)
+        {
+            <section class="browser-preview-frame browser-preview-frame--app-route"
+                     aria-label="@appRouteFallback.FrameLabel"
+                     data-app-route-shared-shell="true"
+                     data-app-route-workflow="@appRouteFallback.ActiveWorkflow">
+                <div class="browser-preview-frame-header">
+                    <div>
+                        <p class="browser-preview-frame-kicker">@appRouteFallback.Title</p>
+                        <h2>@appRouteFallback.FrameTitle</h2>
+                    </div>
+                    <p data-chummer-app-startup-command="@appRouteFallback.StartupCommandLabel">
+                        <strong>@appRouteFallback.Title</strong>
+                        @appRouteFallback.FrameSummary
+                    </p>
+                </div>
+                <section class="desktop-shell classic-desktop-shell"
+                         data-ssr-shared-shell-fallback="true"
+                         data-active-workflow="@appRouteFallback.ActiveWorkflow"
+                         data-route-segment="@appRouteFallback.RouteSegment"
+                         data-command="@appRouteFallback.CommandDataKey"
+                         data-tab="@appRouteFallback.TabDataKey"
+                         data-workspace="@appRouteFallback.WorkspaceDataKey"
+                         data-client-kind="browser">
+                    <aside class="workspace-left-pane" aria-label="Recent work">
+                        <a data-workbench-recovery-action="build-lab" href="@BuildAppContinuationHref(appRouteFallback, tab: "tab-create")">Continue Build Lab</a>
+                        <a data-workbench-recovery-action="continue-recent" href="@BuildAppSeedHref(appRouteFallback, tab: "tab-contacts")">Continue BLUE</a>
+                        <a data-workbench-recovery-action="import" href="@BuildAppHref(command: "open_character")">Import runner XML</a>
+                    </aside>
+                    <main class="section-preview" aria-label="@appRouteFallback.SectionHeading">
+                        <h2>@appRouteFallback.SectionHeading</h2>
+                        <p>@appRouteFallback.SectionSummary</p>
+                    </main>
+                </section>
+            </section>
+        }
+        else
+        {
+            <div class="browser-app-classic-chrome" data-app-classic-chrome="true">
+                <nav class="browser-app-classic-menu-bar" aria-label="Chummer Online menu">
+                    <details class="browser-app-classic-menu-root" data-app-menu-root="file">
+                        <summary role="button" tabindex="0" aria-expanded="false" data-app-menu-summary="file">File</summary>
+                        <div class="browser-app-classic-menu-flyout" role="menu" data-app-menu-flyout="file">
+                            <a href="@BuildAppNewRunnerHref(appRouteFallback)"
+                               role="menuitem"
+                               data-app-menu-item="new-runner">New runner</a>
+                            <a href="@BuildAppHref(command: "open_character")"
+                               role="menuitem"
+                               data-app-menu-item="open-runner">Open Runner</a>
+                            <a href="@BuildAppContinuationHref(appRouteFallback, command: "save_character_as")"
+                               role="menuitem"
+                               data-app-menu-item="save-download">Save/download</a>
+                            <a href="@BuildAppContinuationHref(appRouteFallback, command: "print_character")"
+                               role="menuitem"
+                               data-app-menu-item="print">Print</a>
+                            <a href="@BuildAppContinuationHref(appRouteFallback, command: "export_character", dialogAction: "download")"
+                               role="menuitem"
+                               data-app-menu-item="export">Export</a>
+                        </div>
+                    </details>
+                    <details class="browser-app-classic-menu-root" data-app-menu-root="edit">
+                        <summary role="button" tabindex="0" aria-expanded="false" data-app-menu-summary="edit">Edit</summary>
+                        <div class="browser-app-classic-menu-flyout" role="menu" data-app-menu-flyout="edit">
+                            <a href="@BuildAppContinuationHref(appRouteFallback, tab: "tab-create")"
+                               role="menuitem"
+                               data-app-menu-item="build-lab">Build Lab</a>
+                            <a href="@BuildAppContinuationHref(appRouteFallback, tab: "tab-gear")"
+                               role="menuitem"
+                               data-app-menu-item="gear">Gear</a>
+                            <a href="@BuildAppContinuationHref(appRouteFallback, tab: "tab-info")"
+                               role="menuitem"
+                               data-app-menu-item="profile">Profile</a>
+                        </div>
+                    </details>
+                    <details class="browser-app-classic-menu-root" data-app-menu-root="view">
+                        <summary role="button" tabindex="0" aria-expanded="false" data-app-menu-summary="view">View</summary>
+                        <div class="browser-app-classic-menu-flyout" role="menu" data-app-menu-flyout="view">
+                            <a href="@BuildAppContinuationHref(appRouteFallback, tab: "tab-info")"
+                               role="menuitem"
+                               data-app-menu-item="view-profile">Profile</a>
+                            <a href="@BuildAppContinuationHref(appRouteFallback, tab: "tab-rules")"
+                               role="menuitem"
+                               data-app-menu-item="view-rules">Rules</a>
+                            <a href="@BuildAppContinuationHref(appRouteFallback, tab: "tab-contacts")"
+                               role="menuitem"
+                               data-app-menu-item="view-contacts">Contacts</a>
+                        </div>
+                    </details>
+                    <details class="browser-app-classic-menu-root" data-app-menu-root="runner">
+                        <summary role="button" tabindex="0" aria-expanded="false" data-app-menu-summary="runner">Runner</summary>
+                        <div class="browser-app-classic-menu-flyout" role="menu" data-app-menu-flyout="runner">
+                            <a href="@BuildAppHref(command: "character_roster")"
+                               role="menuitem"
+                               aria-current="@(IsCharacterRosterCommand(appRouteFallback.Command) ? "page" : null)"
+                               data-app-menu-item="character-roster">Character Roster</a>
+                            <a href="@BuildAppSeedHref(appRouteFallback, tab: "tab-contacts")"
+                               role="menuitem"
+                               data-app-menu-item="continue-runner">Continue runner</a>
+                            <a href="@BuildAppHref(command: "open_character")"
+                               role="menuitem"
+                               data-app-menu-item="import-runner-xml">Import runner XML</a>
+                        </div>
+                    </details>
+                    <details class="browser-app-classic-menu-root" data-app-menu-root="tools">
+                        <summary role="button" tabindex="0" aria-expanded="false" data-app-menu-summary="tools">Tools</summary>
+                        <div class="browser-app-classic-menu-flyout" role="menu" data-app-menu-flyout="tools">
+                            <a href="@BuildAppHref(command: "global_settings")"
+                               role="menuitem"
+                               data-app-menu-item="options">Options</a>
+                            <a href="/status"
+                               role="menuitem"
+                               data-app-menu-item="status">Status</a>
+                            <a href="/downloads/"
+                               role="menuitem"
+                               data-app-menu-item="desktop-installers">Desktop installers</a>
+                        </div>
+                    </details>
+                    <details class="browser-app-classic-menu-root" data-app-menu-root="help">
+                        <summary role="button" tabindex="0" aria-expanded="false" data-app-menu-summary="help">Help</summary>
+                        <div class="browser-app-classic-menu-flyout" role="menu" data-app-menu-flyout="help">
+                            <a href="/help"
+                               role="menuitem"
+                               data-app-menu-item="help">Help</a>
+                            <a href="/docs/"
+                               role="menuitem"
+                               data-app-menu-item="docs">Docs</a>
+                            <a href="/contact"
+                               role="menuitem"
+                               data-app-menu-item="support">Support</a>
+                        </div>
+                    </details>
+                </nav>
+                <nav class="browser-app-classic-toolstrip"
+                     role="toolbar"
+                     aria-label="Chummer Online quick actions"
+                     data-app-toolstrip="classic">
+                    <a href="@BuildAppNewRunnerHref(appRouteFallback)"
+                       data-app-toolstrip-action="new-runner">New runner</a>
+                    <a href="@BuildAppHref(command: "open_character")"
+                       data-app-toolstrip-action="open-runner">Open Runner</a>
+                    <a href="@BuildAppContinuationHref(appRouteFallback, command: "save_character_as")"
+                       data-app-toolstrip-action="save-download">Save/download</a>
+                    <a href="@BuildAppContinuationHref(appRouteFallback, command: "print_character")"
+                       data-app-toolstrip-action="print">Print</a>
+                    <a href="@BuildAppContinuationHref(appRouteFallback, command: "export_character", dialogAction: "download")"
+                       data-app-toolstrip-action="export">Export</a>
+                    <a href="@BuildAppHref(command: "character_roster")"
+                       aria-current="@(IsCharacterRosterCommand(appRouteFallback.Command) ? "page" : null)"
+                       data-app-toolstrip-action="character-roster">Character Roster</a>
+                    <a href="@BuildAppContinuationHref(appRouteFallback, tab: "tab-create")"
+                       data-app-toolstrip-action="build-lab">Build Lab</a>
+                </nav>
+            </div>
+            <div class="browser-app-roster-grid">
+            <aside class="browser-app-roster-tree" aria-label="Runner folders">
+                <div class="browser-app-roster-toolbar" role="toolbar" aria-label="Organize runners">
+                    <button type="button">New folder</button>
+                    <button type="button">Rename</button>
+                    <button type="button">Move</button>
+                </div>
+                <ul role="tree" aria-label="Character roster">
+                    <li role="treeitem" aria-expanded="true" data-drop-target="runner-folder">
+                        <span>Current table</span>
+                        <ul role="group">
+                            <li role="treeitem" aria-selected="true" draggable="true">
+                                <a href="@BuildAppSeedHref(appRouteFallback)">Kestrel</a>
+                            </li>
+                            <li role="treeitem" draggable="true">
+                                <a href="@BuildAppSeedHref(appRouteFallback, tab: "tab-technomancer")">Rook</a>
+                            </li>
+                        </ul>
+                    </li>
+                    <li role="treeitem" aria-expanded="true" data-drop-target="runner-folder">
+                        <span>Examples</span>
+                        <ul role="group">
+                            <li role="treeitem" draggable="true">
+                                <a href="@BuildAppSeedHref(appRouteFallback, tab: "tab-info")">Mara</a>
+                            </li>
+                            <li role="treeitem" draggable="true">
+                                <a href="@BuildAppSeedHref(appRouteFallback, tab: "tab-rules")">Ash</a>
+                            </li>
+                        </ul>
+                    </li>
+                </ul>
+            </aside>
+
+            <section class="browser-app-runner-panel" aria-label="Selected runner">
+                <header>
+                    <span>Street samurai</span>
+                    <h2>Kestrel</h2>
+                    <p>Fast, direct, gear-heavy.</p>
+                </header>
+                    <div class="browser-app-runner-stats" aria-label="Runner summary">
+                        <span><strong>SR5</strong><small>rules</small></span>
+                        <span><strong>12</strong><small>karma</small></span>
+                        <span><strong>8,450 nuyen</strong><small>cash</small></span>
+                        <span><strong>5.4</strong><small>essence</small></span>
+                    </div>
+                    <nav class="browser-app-runner-actions" aria-label="Open Kestrel">
+                    <a href="@BuildAppSeedHref(appRouteFallback, tab: "tab-create")">Build</a>
+                    <a href="@BuildAppSeedHref(appRouteFallback, tab: "tab-gear")">Gear</a>
+                    <a href="@BuildAppSeedHref(appRouteFallback, tab: "tab-contacts")">Contacts</a>
+                    <a href="@BuildAppSeedHref(appRouteFallback, command: "save_character_as")">Download</a>
+                </nav>
+            </section>
+
+            <section class="browser-app-example-panel" aria-label="Example archetypes">
+                <h2>Examples</h2>
+                <div class="browser-app-example-runners" role="list">
+                    <a role="listitem" href="@BuildAppSeedHref(appRouteFallback)">
+                        <span>Kestrel</span>
+                        <strong>Street samurai</strong>
+                        <small>Fast, direct, gear-heavy.</small>
+                    </a>
+                    <a role="listitem" href="@BuildAppSeedHref(appRouteFallback, tab: "tab-technomancer")">
+                        <span>Rook</span>
+                        <strong>Decker</strong>
+                        <small>Matrix work and quiet entry.</small>
+                    </a>
+                    <a role="listitem" href="@BuildAppSeedHref(appRouteFallback, tab: "tab-info")">
+                        <span>Mara</span>
+                        <strong>Face</strong>
+                        <small>Contacts, leverage, social pressure.</small>
+                    </a>
+                    <a role="listitem" href="@BuildAppSeedHref(appRouteFallback, tab: "tab-rules")">
+                        <span>Ash</span>
+                        <strong>Mage</strong>
+                        <small>Spells, spirits, and astral risk.</small>
+                    </a>
+                </div>
+            </section>
+        </div>
+        }
+    </section>
+}
 @if (BuildWorkbenchFallback() is { } workbenchFallback)
 {
     <section id="chummer-online-app"
@@ -37,52 +314,25 @@
              tabindex="-1"
              aria-label="Chummer Online classic desktop shell"
              data-ssr-workbench-fallback="true"
+             data-enhance-nav="false"
              data-chummer-classic-shell="true"
              data-active-workflow="@workbenchFallback.ActiveWorkflow"
-             data-output-workflow="@workbenchFallback.OutputWorkflow"
-             data-output-state="@workbenchFallback.OutputState"
-             data-output-target="@workbenchFallback.OutputTarget"
-             data-route-family="@workbenchFallback.RouteFamily"
              data-route-segment="workbench"
-             data-route-surface="@workbenchFallback.RouteSurface"
+             data-route-surface="classic-desktop"
              data-canonical-route="workbench"
-             data-route-alias="@workbenchFallback.RouteAlias"
              data-command="@workbenchFallback.Command"
              data-tab="@workbenchFallback.Tab"
              data-workspace="@workbenchFallback.Workspace"
              data-active-runner="@workbenchFallback.Runner"
-             data-roster-selected-node="@workbenchFallback.SelectedRosterNode"
-             data-dossier-state="@workbenchFallback.DossierState"
-             data-dossier-storage="@workbenchFallback.DossierStorage"
              data-legacy-runner="@workbenchFallback.Runner"
              data-ruleset="sr5"
-             data-validation-state="@workbenchFallback.ValidationState"
-             data-privacy-mode="@workbenchFallback.PrivacyMode"
-             data-analytics-scope="@workbenchFallback.AnalyticsScope"
-             data-hosting-mode="@workbenchFallback.HostingMode"
-             data-deployment-target="@workbenchFallback.DeploymentTarget"
-             data-self-hostable="@workbenchFallback.SelfHostable"
-             data-container-target="@workbenchFallback.ContainerTarget"
-             data-auth-gate="@workbenchFallback.AuthGate"
-             data-session-state="@workbenchFallback.SessionState"
-             data-login-target="@workbenchFallback.LoginTarget"
-             data-auth-return-policy="@workbenchFallback.AuthReturnPolicy"
              data-fixture="@workbenchFallback.Fixture"
              data-control="@workbenchFallback.Control"
              data-dialog-action="@workbenchFallback.DialogAction"
-             data-client-kind="@workbenchFallback.ClientKind"
-             data-parity-target="@workbenchFallback.ParityTarget"
-             data-calculation-owner="@workbenchFallback.CalculationOwner"
-             data-statistics-runtime="@workbenchFallback.StatisticsRuntime"
-             data-character-statistics="@workbenchFallback.CharacterStatistics"
-             data-statistics-scope="@workbenchFallback.StatisticsScope"
-             data-recommendation-mode="@workbenchFallback.RecommendationMode"
-             data-recommendation-inputs="@workbenchFallback.RecommendationInputs"
-             data-risk-model="@workbenchFallback.RiskModel"
-             data-calculation-boundary="@workbenchFallback.CalculationBoundary"
-             data-result-consumer="@workbenchFallback.ResultConsumer">
+             data-client-kind="browser"
+             data-parity-target="desktop">
         <header class="classic-chummer-titlebar" aria-label="Chummer Online window title">
-            <div class="classic-chummer-titlebar-title">Chummer Online - @workbenchFallback.Runner - @workbenchFallback.WorkflowLabel</div>
+            <div class="classic-chummer-titlebar-title">Chummer Online - BLUE - @workbenchFallback.Title</div>
             <div class="classic-window-controls" aria-hidden="true"><span>_</span><span>[]</span><span>X</span></div>
         </header>
 
@@ -96,11 +346,40 @@
             </section>
         }
 
-        <nav class="classic-chummer-menu" aria-label="Classic Chummer menu">
-            <a href="@BuildFallbackWorkbenchHref(workbenchFallback, command: "new_character")">File</a>
-            <a href="@BuildFallbackWorkbenchHref(workbenchFallback, tab: "tab-create")">Edit</a>
-            <a href="@BuildFallbackWorkbenchHref(workbenchFallback, tab: "tab-rules")">View</a>
-            <a href="@BuildFallbackWorkbenchHref(workbenchFallback, tab: "tab-technomancer", control: "complex_form_add")">Special</a>
+        <nav class="classic-chummer-menu browser-app-classic-menu-bar" aria-label="Classic Chummer menu">
+            <details class="browser-app-classic-menu-root" data-app-menu-root="file">
+                <summary role="button" tabindex="0" aria-expanded="false" data-app-menu-summary="file">File</summary>
+                <div class="browser-app-classic-menu-flyout" role="menu" data-app-menu-flyout="file">
+                    <a href="@BuildWorkbenchNewRunnerHref(workbenchFallback)" role="menuitem" data-app-menu-item="new-runner">New runner</a>
+                    <a href="@BuildWorkbenchHref(workbenchFallback.Workspace, tab: "tab-create")" role="menuitem" data-app-menu-item="build-lab">Continue Build Lab</a>
+                    <a href="@BuildWorkbenchHref(workbenchFallback.Workspace)" role="menuitem" data-app-menu-item="continue-runner">Continue BLUE</a>
+                    <a href="@BuildWorkbenchHref(workbenchFallback.Workspace, command: "open_character")" role="menuitem" data-app-menu-item="open-runner">Import runner XML</a>
+                </div>
+            </details>
+            <details class="browser-app-classic-menu-root" data-app-menu-root="edit">
+                <summary role="button" tabindex="0" aria-expanded="false" data-app-menu-summary="edit">Edit</summary>
+                <div class="browser-app-classic-menu-flyout" role="menu" data-app-menu-flyout="edit">
+                    <a href="@BuildWorkbenchHref(workbenchFallback.Workspace, tab: "tab-create")" role="menuitem" data-app-menu-item="build-lab">Build Lab</a>
+                    <a href="@BuildWorkbenchHref(workbenchFallback.Workspace, tab: "tab-info")" role="menuitem" data-app-menu-item="profile">Profile</a>
+                    <a href="@BuildWorkbenchHref(workbenchFallback.Workspace, tab: "tab-gear")" role="menuitem" data-app-menu-item="gear">Gear</a>
+                </div>
+            </details>
+            <details class="browser-app-classic-menu-root" data-app-menu-root="view">
+                <summary role="button" tabindex="0" aria-expanded="false" data-app-menu-summary="view">View</summary>
+                <div class="browser-app-classic-menu-flyout" role="menu" data-app-menu-flyout="view">
+                    <a href="@BuildWorkbenchHref(workbenchFallback.Workspace, tab: "tab-rules")" role="menuitem" data-app-menu-item="view-rules">Rules</a>
+                    <a href="@BuildWorkbenchHref(workbenchFallback.Workspace, tab: "tab-technomancer")" role="menuitem" data-app-menu-item="view-advanced">Advanced</a>
+                    <a href="@BuildWorkbenchHref(workbenchFallback.Workspace, tab: "tab-calendar")" role="menuitem" data-app-menu-item="view-career">Career log</a>
+                </div>
+            </details>
+            <details class="browser-app-classic-menu-root" data-app-menu-root="special">
+                <summary role="button" tabindex="0" aria-expanded="false" data-app-menu-summary="special">Special</summary>
+                <div class="browser-app-classic-menu-flyout" role="menu" data-app-menu-flyout="special">
+                    <a href="@BuildWorkbenchHref(workbenchFallback.Workspace, tab: "tab-technomancer", control: "complex_form_add")" role="menuitem" data-app-menu-item="complex-form-add">Add complex form</a>
+                    <a href="@BuildWorkbenchHref(workbenchFallback.Workspace, tab: "tab-create", control: "cyberware_add")" role="menuitem" data-app-menu-item="cyberware-add">Add cyberware</a>
+                    <a href="@BuildWorkbenchHref(workbenchFallback.Workspace, tab: "tab-create", control: "spell_add")" role="menuitem" data-app-menu-item="spell-add">Add spell</a>
+                </div>
+            </details>
         </nav>
 
         <section class="desktop-shell classic-desktop-shell"
@@ -113,25 +392,24 @@
             <aside class="workspace-left-pane" aria-label="Recent work">
                 <a data-workbench-recent-workspace="true"
                    data-workbench-route-query="workspace"
-                   href="@BuildFallbackWorkbenchHref(workbenchFallback)">Resume @workbenchFallback.Runner</a>
-                <p data-workbench-recovery-workspace="true">Resume @workbenchFallback.Runner from the current table.</p>
+                   href="@BuildWorkbenchHref(workbenchFallback.Workspace)">Resume BLUE</a>
+                <p data-workbench-recovery-workspace="true">Resume BLUE from the current table.</p>
                 <nav aria-label="Recovery actions">
-                    <a data-workbench-recovery-action="continue-recent" href="@BuildFallbackWorkbenchHref(workbenchFallback)">Continue @workbenchFallback.Runner</a>
-                    <a data-workbench-recovery-action="build-lab" href="@BuildFallbackWorkbenchHref(workbenchFallback, tab: "tab-create")">Continue Build Lab</a>
-                    <a data-workbench-recovery-action="restore-workspace" href="@BuildFallbackWorkbenchHref(workbenchFallback)">Restore @workbenchFallback.Runner</a>
+                    <a data-workbench-recovery-action="continue-recent" href="@BuildWorkbenchHref(workbenchFallback.Workspace)">Continue BLUE</a>
+                    <a data-workbench-recovery-action="build-lab" href="@BuildWorkbenchHref(workbenchFallback.Workspace, tab: "tab-create")">Continue Build Lab</a>
+                    <a data-workbench-recovery-action="restore-workspace" href="@BuildWorkbenchHref(workbenchFallback.Workspace)">Restore BLUE</a>
                 </nav>
                 <section data-workbench-entry-card="restored-continuations" data-workbench-route-query="workspace">
-                    <a href="@BuildFallbackWorkbenchHref(workbenchFallback, tab: "tab-info")">Resume @workbenchFallback.Runner on profile</a>
-                    <a href="@BuildFallbackWorkbenchHref(workbenchFallback, tab: "tab-info", control: "identity_license_edit")">Resume @workbenchFallback.Runner on SIN/license review</a>
-                    <a href="@BuildFallbackWorkbenchHref(workbenchFallback, tab: "tab-rules")">Resume @workbenchFallback.Runner on rules</a>
-                    <a href="@BuildFallbackWorkbenchHref(workbenchFallback, tab: "tab-gear")">Resume @workbenchFallback.Runner on gear</a>
-                    <a href="@BuildFallbackWorkbenchHref(workbenchFallback, tab: "tab-calendar")">Resume @workbenchFallback.Runner on career log</a>
-                    <a href="@BuildFallbackWorkbenchHref(workbenchFallback, tab: "tab-technomancer")">Resume @workbenchFallback.Runner on advanced</a>
+                    <a href="@BuildWorkbenchHref(workbenchFallback.Workspace, tab: "tab-info")">Resume BLUE on profile</a>
+                    <a href="@BuildWorkbenchHref(workbenchFallback.Workspace, tab: "tab-rules")">Resume BLUE on rules</a>
+                    <a href="@BuildWorkbenchHref(workbenchFallback.Workspace, tab: "tab-gear")">Resume BLUE on gear</a>
+                    <a href="@BuildWorkbenchHref(workbenchFallback.Workspace, tab: "tab-calendar")">Resume BLUE on career log</a>
+                    <a href="@BuildWorkbenchHref(workbenchFallback.Workspace, tab: "tab-technomancer")">Resume BLUE on advanced</a>
                 </section>
                 <section data-workbench-entry-card="restored-actions" data-workbench-route-query="workspace">
-                    @foreach (WorkbenchFallbackAction action in WorkbenchFallbackActions)
+                    @foreach (string action in WorkbenchFallbackActionLabels)
                     {
-                        <a href="@BuildFallbackActionHref(workbenchFallback, action)">@BuildFallbackActionLabel(action, workbenchFallback.Runner)</a>
+                        <a href="@BuildWorkbenchHref(workbenchFallback.Workspace)">@action</a>
                     }
                 </section>
             </aside>
@@ -141,26 +419,7 @@
                 <p>@workbenchFallback.SectionSummary</p>
                 @if (!string.IsNullOrWhiteSpace(workbenchFallback.ResultText))
                 {
-                    @if (!string.IsNullOrWhiteSpace(workbenchFallback.ResultRouteHref))
-                    {
-                        <section class="result-panel"
-                                 role="status"
-                                 data-result-panel-kind="@workbenchFallback.ActiveWorkflow">
-                            <p>@workbenchFallback.ResultText</p>
-                            <div class="shell-notice-actions">
-                                <a href="@workbenchFallback.ResultRouteHref"
-                                   data-result-route-link="@workbenchFallback.ActiveWorkflow">
-                                    @BuildFallbackResultRouteLinkLabel(workbenchFallback.ActiveWorkflow)
-                                </a>
-                            </div>
-                            <code class="shell-notice-code"
-                                  data-result-route="@workbenchFallback.ActiveWorkflow">@workbenchFallback.ResultRouteHref</code>
-                        </section>
-                    }
-                    else
-                    {
-                        <section class="result-panel" role="status">@workbenchFallback.ResultText</section>
-                    }
+                    <section class="result-panel" role="status">@workbenchFallback.ResultText</section>
                 }
                 @if (workbenchFallback.Dialog is { } dialog)
                 {
@@ -174,7 +433,7 @@
                         {
                             <section data-origin-wizard-details="true">
                                 <h3>Advanced story controls</h3>
-                                <p>Pick only the basics, then build the story. Advanced controls are optional.</p>
+                                <p>Create the story first. Review it, then continue to a guided build if you want mechanics.</p>
                                 <h3>Story Preview</h3>
                             </section>
                         }
@@ -182,30 +441,77 @@
                 }
             </main>
         </section>
-
-        <footer class="classic-chummer-status" aria-label="Classic Chummer status">
-            <span><strong>Ready</strong><em>Local</em></span>
-            <span><strong>Dirty</strong><em>Unsaved dossier</em></span>
-            <span><strong>Rules</strong><em>SR5</em></span>
-            <span><strong>Checks</strong><em>Review required</em></span>
-            <span><strong>Privacy</strong><em>Local-first</em></span>
-            <span><strong>Workflow</strong><em>@workbenchFallback.WorkflowLabel</em></span>
-        </footer>
     </section>
 }
+<BuildPwaInstallPanel />
 <Routes @rendermode="new InteractiveServerRenderMode(prerender: false)" />
-<script src="@BuildStaticAssetHref("_framework/blazor.web.js")"></script>
+<details class="chummer-analytics-preferences" data-chummer-analytics-preferences>
+    <summary>Analytics privacy</summary>
+    <div role="group" aria-labelledby="chummer-analytics-preferences-heading">
+        <h2 id="chummer-analytics-preferences-heading">Anonymous editor analytics</h2>
+        <p>Optional analytics use fixed editor categories only. Runner content, names, workspace IDs, query text, session replay, and automatic pageviews are never sent.</p>
+        <p role="status" aria-live="polite" data-chummer-analytics-consent-status>Anonymous editor analytics are off. No usage events are sent.</p>
+        <button type="button" data-chummer-analytics-consent-grant>Allow anonymous editor analytics</button>
+        <button type="button" data-chummer-analytics-consent-revoke hidden>Turn analytics off</button>
+    </div>
+</details>
+@{
+    string buildPwaExpectedAuthorityJson = BuildPwaExpectedAuthorityJson();
+}
+<script>
+    (function initializeBuildPwaExpectedAuthority(pwa, expectedAuthority) {
+        if (Object.prototype.hasOwnProperty.call(pwa, 'expectedAuthority')) return;
+        if (Array.isArray(expectedAuthority.ownerInvalidationTokens)) {
+            Object.freeze(expectedAuthority.ownerInvalidationTokens);
+        }
+        Object.freeze(expectedAuthority);
+        Object.defineProperty(pwa, 'expectedAuthority', {
+            value: expectedAuthority,
+            writable: false,
+            configurable: false,
+            enumerable: true
+        });
+    })(window.chummerPwa = window.chummerPwa || {}, @((Microsoft.AspNetCore.Components.MarkupString)buildPwaExpectedAuthorityJson));
+</script>
+<script src="@BuildStaticAssetHref("js/build-pwa-layout.js")" integrity="@BuildStaticAssetIntegrity("js/build-pwa-layout.js")" crossorigin="anonymous"></script>
+<script src="@BuildStaticAssetHref("js/build-pwa-recovery.js")" integrity="@BuildStaticAssetIntegrity("js/build-pwa-recovery.js")" crossorigin="anonymous"></script>
+<script src="@BuildStaticAssetHref("js/build-pwa-integrity.js")" integrity="@BuildStaticAssetIntegrity("js/build-pwa-integrity.js")" crossorigin="anonymous"></script>
+<script src="@BuildStaticAssetHref("js/build-pwa-install.js")" integrity="@BuildStaticAssetIntegrity("js/build-pwa-install.js")" crossorigin="anonymous"></script>
+<script src="@BuildStaticAssetHref("js/privacy-boundaries.js")" integrity="@BuildStaticAssetIntegrity("js/privacy-boundaries.js")" crossorigin="anonymous"></script>
+<script src="@BuildStaticAssetHref("_framework/blazor.web.js")" integrity="@BuildStaticAssetIntegrity("_framework/blazor.web.js")" crossorigin="anonymous"></script>
 <script>
     window.chummerWorkbenchFallback = window.chummerWorkbenchFallback || {};
+    window.chummerWorkbenchFallback.hasOpenFallbackMenu = function(fallback) {
+        return !!(fallback && fallback.querySelector('.browser-app-classic-menu-root[open]'));
+    };
+    window.chummerWorkbenchFallback.scheduleRemovalCheck = function() {
+        window.setTimeout(window.chummerWorkbenchFallback.removeWhenInteractiveShellAppears, 0);
+    };
     window.chummerWorkbenchFallback.removeWhenInteractiveShellAppears = function() {
-        const fallback = document.querySelector('[data-ssr-workbench-fallback="true"]');
-        if (!fallback) {
+        const appFallback = document.querySelector('[data-ssr-app-route-fallback="true"]');
+        if (appFallback) {
+            const hasInteractiveAppShell = !!document.querySelector('section.browser-app-roster:not([data-ssr-app-route-fallback])');
+            if (hasInteractiveAppShell) {
+                if (window.chummerWorkbenchFallback.hasOpenFallbackMenu(appFallback)) {
+                    return;
+                }
+
+                appFallback.remove();
+            }
+        }
+
+        const workbenchFallback = document.querySelector('[data-ssr-workbench-fallback="true"]');
+        if (!workbenchFallback) {
             return;
         }
 
         const hasInteractiveShell = !!document.querySelector('section.classic-chummer-shell:not([data-ssr-workbench-fallback])');
         if (hasInteractiveShell) {
-            fallback.remove();
+            if (window.chummerWorkbenchFallback.hasOpenFallbackMenu(workbenchFallback)) {
+                return;
+            }
+
+            workbenchFallback.remove();
         }
     };
     window.chummerWorkbenchFallback.observe = function() {
@@ -219,10 +525,62 @@
     };
     window.chummerWorkbenchFallback.observe();
 
+    window.chummerFallbackNavigation = window.chummerFallbackNavigation || {};
+    window.chummerFallbackNavigation.forceDocumentNavigation = function(event) {
+        if (!event || event.defaultPrevented || event.button !== 0 || event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) {
+            return;
+        }
+
+        const target = event.target instanceof Element ? event.target : (event.target ? event.target.parentElement : null);
+        const anchor = target ? target.closest('a[href]') : null;
+        if (!anchor || !anchor.closest('[data-ssr-app-route-fallback="true"], [data-ssr-workbench-fallback="true"]')) {
+            return;
+        }
+
+        const rawHref = anchor.getAttribute('href') || '';
+        if (!rawHref || rawHref.startsWith('#') || anchor.hasAttribute('download')) {
+            return;
+        }
+
+        const targetName = (anchor.getAttribute('target') || '').trim().toLowerCase();
+        if (targetName && targetName !== '_self') {
+            return;
+        }
+
+        let destination;
+        try {
+            destination = new URL(anchor.href, window.location.href);
+        } catch {
+            return;
+        }
+
+        if (destination.origin !== window.location.origin) {
+            return;
+        }
+
+        event.preventDefault();
+        event.stopPropagation();
+        window.location.assign(destination.href);
+    };
+    if (!window.chummerFallbackNavigation._bound) {
+        window.chummerFallbackNavigation._bound = true;
+        document.addEventListener('click', window.chummerFallbackNavigation.forceDocumentNavigation, true);
+    }
+
     window.chummerPwa = window.chummerPwa || {};
     (function(pwa) {
-        const serviceWorkerScript = '@BuildStaticAssetHref("service-worker.js")';
-        const serviceWorkerScope = '@BuildServiceWorkerScope()';
+        const expectedAuthority = pwa.expectedAuthority;
+        if (!Object.isFrozen(expectedAuthority)
+            || typeof expectedAuthority.scriptUrl !== 'string'
+            || typeof expectedAuthority.scope !== 'string'
+            || typeof expectedAuthority.contentRevision !== 'string'
+            || !/^[a-f0-9]{64}$/.test(expectedAuthority.contentRevision)) {
+            return;
+        }
+        const serviceWorkerScript = expectedAuthority.scriptUrl;
+        const serviceWorkerScope = expectedAuthority.scope;
+        const registrationEventName = 'chummer-build:service-worker-registration';
+        const registrationFailedEventName = 'chummer-build:service-worker-registration-failed';
         pwa.installState = pwa.installState || 'unsupported';
         if (!('serviceWorker' in navigator)) {
             return;
@@ -230,14 +588,31 @@
 
         pwa.installState = 'pending';
         window.addEventListener('load', function() {
-            navigator.serviceWorker.register(serviceWorkerScript, { scope: serviceWorkerScope })
+            navigator.serviceWorker.register(serviceWorkerScript, {
+                scope: serviceWorkerScope,
+                updateViaCache: 'none'
+            })
                 .then(function(registration) {
                     pwa.installState = 'ready';
+                    pwa.registration = registration;
                     pwa.registrationScope = registration.scope;
+                    window.dispatchEvent(new CustomEvent(registrationEventName, {
+                        detail: {
+                            registration: registration,
+                            scriptUrl: expectedAuthority.scriptUrl,
+                            scope: expectedAuthority.scope
+                        }
+                    }));
                 })
                 .catch(function(error) {
                     pwa.installState = 'failed';
                     pwa.installError = error && error.message ? error.message : String(error || 'unknown');
+                    window.dispatchEvent(new CustomEvent(registrationFailedEventName, {
+                        detail: {
+                            scriptUrl: expectedAuthority.scriptUrl,
+                            scope: expectedAuthority.scope
+                        }
+                    }));
                 });
         }, { once: true });
     })(window.chummerPwa);
@@ -268,234 +643,6 @@
     window.chummerExports.downloadBase64 = function(fileName, contentBase64, mimeType) {
         window.chummerDownloads.downloadBase64(fileName, contentBase64, mimeType);
     };
-    window.chummerAnalytics = window.chummerAnalytics || {};
-    (function(analytics) {
-        const maxQueueLength = 20;
-        const eventPrefix = 'chummer_';
-        const browserRouteEventName = 'browser_route';
-        const hostClassBlazor = 'blazor';
-        const analyticsScopeRouteWorkflowMetadataOnly = 'route-workflow-metadata-only';
-        const analyticsDisabledPolicy = 'disabled';
-        const propertyHostClass = 'host_class';
-        const propertyAnalyticsScope = 'analytics_scope';
-        const propertySessionReplay = 'session_replay';
-        const propertyAutocapture = 'autocapture';
-        const propertyRouteFamily = 'route_family';
-        const propertyCommandId = 'command_id';
-        const propertyTabId = 'tab_id';
-        const propertyControlId = 'control_id';
-        const propertyDialogActionId = 'dialog_action_id';
-        const propertyHasWorkspace = 'has_workspace';
-        const propertyHasDossier = 'has_dossier';
-        const propertyHasFixture = 'has_fixture';
-        const queryCommand = 'command';
-        const queryTab = 'tab';
-        const queryControl = 'control';
-        const queryDialogAction = 'dialog_action';
-        const queryWorkspace = 'workspace';
-        const queryFixture = 'fixture';
-        const allowedPropertyKeys = new Set([
-            propertyHostClass,
-            propertyAnalyticsScope,
-            propertySessionReplay,
-            propertyAutocapture,
-            propertyRouteFamily,
-            propertyCommandId,
-            propertyTabId,
-            propertyControlId,
-            propertyDialogActionId,
-            propertyHasWorkspace,
-            propertyHasDossier,
-            propertyHasFixture
-        ]);
-        const forbiddenPropertyPattern = /(alias|character|content|document|dossier|email|file|hash|name|owner|payload|workspace|xml)/i;
-        const safeTokenPattern = /^[a-z0-9_.:-]{1,80}$/i;
-        const analyticsScope = analyticsScopeRouteWorkflowMetadataOnly;
-        const sessionReplayPolicy = analyticsDisabledPolicy;
-        const autocapturePolicy = analyticsDisabledPolicy;
-        const routeFamilyChummerApp = 'chummer_app';
-        const routeFamilyPreview = 'preview';
-        const routeFamilyShowcase = 'showcase';
-        const routeFamilyDownloads = 'downloads';
-        const routeFamilyDocs = 'docs';
-        const routeFamilyOther = 'other';
-        const pathBlazor = '/blazor';
-        const pathBlazorSlash = '/blazor/';
-        const pathApp = '/app';
-        const pathOnline = '/online';
-        const pathWorkbench = '/workbench';
-        const pathPreview = '/preview';
-        const pathShowcase = '/showcase';
-        const pathDownloads = '/downloads';
-        const pathDocs = '/docs';
-        let lastRouteKey = '';
-
-        analytics._queue = analytics._queue || [];
-
-        function safeToken(value) {
-            if (typeof value !== 'string') {
-                return null;
-            }
-
-            const trimmed = value.trim();
-            return safeTokenPattern.test(trimmed) ? trimmed : null;
-        }
-
-        function safePropertyKey(key) {
-            const normalized = String(key || '')
-                .trim()
-                .toLowerCase()
-                .replace(/[^a-z0-9_]/g, '_')
-                .slice(0, 64);
-
-            if (!normalized) {
-                return null;
-            }
-
-            if (allowedPropertyKeys.has(normalized)) {
-                return normalized;
-            }
-
-            if (forbiddenPropertyPattern.test(normalized)) {
-                return null;
-            }
-
-            return null;
-        }
-
-        function safePropertyValue(value) {
-            if (typeof value === 'number' && Number.isFinite(value)) {
-                return value;
-            }
-
-            if (typeof value === 'boolean') {
-                return value;
-            }
-
-            if (typeof value === 'string') {
-                const trimmed = value.trim();
-                return trimmed.length <= 120 && safeTokenPattern.test(trimmed) ? trimmed : null;
-            }
-
-            return null;
-        }
-
-        function sanitizeProperties(properties) {
-            const safe = {};
-            const entries = Object.entries(properties || {});
-            for (const [key, value] of entries) {
-                const safeKey = safePropertyKey(key);
-                if (!safeKey) {
-                    continue;
-                }
-
-                const safeValue = safePropertyValue(value);
-                if (safeValue === null) {
-                    continue;
-                }
-
-                safe[safeKey] = safeValue;
-            }
-
-            return safe;
-        }
-
-        function dispatch(eventName, properties) {
-            const safeEventName = safeToken(eventName);
-            if (!safeEventName) {
-                return;
-            }
-
-            const payload = sanitizeProperties(properties);
-            if (window.rybbit && typeof window.rybbit.event === 'function') {
-                window.rybbit.event(`${eventPrefix}${safeEventName}`, payload);
-                return;
-            }
-
-            if (analytics._queue.length < maxQueueLength) {
-                analytics._queue.push([safeEventName, payload]);
-            }
-        }
-
-        function flush() {
-            if (!window.rybbit || typeof window.rybbit.event !== 'function') {
-                return;
-            }
-
-            const queued = analytics._queue.splice(0, analytics._queue.length);
-            for (const [eventName, payload] of queued) {
-                window.rybbit.event(`${eventPrefix}${eventName}`, payload);
-            }
-        }
-
-        function currentRouteProperties() {
-            const url = new URL(window.location.href);
-            const path = url.pathname.toLowerCase();
-            const query = url.searchParams;
-            let routeFamily = routeFamilyOther;
-
-            if (path.endsWith(pathBlazor) || path.endsWith(pathBlazorSlash) || path.endsWith(pathApp) || path.endsWith(pathOnline) || path.endsWith(pathWorkbench)) {
-                routeFamily = routeFamilyChummerApp;
-            } else if (path.endsWith(pathPreview)) {
-                routeFamily = routeFamilyPreview;
-            } else if (path.endsWith(pathShowcase)) {
-                routeFamily = routeFamilyShowcase;
-            } else if (path.includes(pathDownloads)) {
-                routeFamily = routeFamilyDownloads;
-            } else if (path.includes(pathDocs)) {
-                routeFamily = routeFamilyDocs;
-            }
-
-            return {
-                [propertyHostClass]: hostClassBlazor,
-                [propertyAnalyticsScope]: analyticsScope,
-                [propertySessionReplay]: sessionReplayPolicy,
-                [propertyAutocapture]: autocapturePolicy,
-                [propertyRouteFamily]: routeFamily,
-                [propertyCommandId]: safeToken(query.get(queryCommand)),
-                [propertyTabId]: safeToken(query.get(queryTab)),
-                [propertyControlId]: safeToken(query.get(queryControl)),
-                [propertyDialogActionId]: safeToken(query.get(queryDialogAction)),
-                [propertyHasWorkspace]: query.has(queryWorkspace),
-                [propertyHasDossier]: query.has(queryWorkspace),
-                [propertyHasFixture]: query.has(queryFixture)
-            };
-        }
-
-        function trackRoute() {
-            const properties = currentRouteProperties();
-            const routeKey = JSON.stringify(properties);
-            if (routeKey === lastRouteKey) {
-                return;
-            }
-
-            lastRouteKey = routeKey;
-            dispatch(browserRouteEventName, properties);
-        }
-
-        function scheduleRouteTracking() {
-            window.setTimeout(trackRoute, 0);
-        }
-
-        const originalPushState = window.history.pushState;
-        const originalReplaceState = window.history.replaceState;
-        window.history.pushState = function() {
-            const result = originalPushState.apply(this, arguments);
-            scheduleRouteTracking();
-            return result;
-        };
-        window.history.replaceState = function() {
-            const result = originalReplaceState.apply(this, arguments);
-            scheduleRouteTracking();
-            return result;
-        };
-
-        analytics.event = dispatch;
-        analytics.trackRoute = trackRoute;
-        window.addEventListener('popstate', scheduleRouteTracking);
-        window.setInterval(flush, 1000);
-        scheduleRouteTracking();
-    })(window.chummerAnalytics);
     window.chummerDialogs = window.chummerDialogs || {};
     window.chummerDialogs._lastRevealedBackdrop = window.chummerDialogs._lastRevealedBackdrop || null;
     window.chummerDialogs._lastRevealedDialogId = window.chummerDialogs._lastRevealedDialogId || null;
@@ -776,13 +923,12 @@
                 return;
             }
 
-            const anchoredRestorePending = hasOriginAnchor();
-            if (!anchoredRestorePending) {
-                element.scrollTop = top;
-                element.scrollLeft = left;
-            }
+            element.scrollTop = top;
+            element.scrollLeft = left;
 
-            if (anchoredRestorePending && !restoreOriginFieldAnchor()) {
+            const needsOriginAnchorFallback = hasOriginAnchor()
+                && Math.abs((element.scrollTop || 0) - top) > 0.5;
+            if (needsOriginAnchorFallback && !restoreOriginFieldAnchor()) {
                 restoreOriginAdvancedAnchor();
             }
         };
@@ -797,6 +943,7 @@
         window.setTimeout(() => restore(), 32);
         window.setTimeout(() => restore(), 96);
         window.setTimeout(() => restore(), 192);
+        window.setTimeout(() => restore(), 384);
     };
     window.chummerDialogs.restorePendingDialogScroll = function(element, dialogId) {
         if (!element || !window.chummerDialogs.hasPendingDialogScrollRestore(dialogId)) {
@@ -840,56 +987,222 @@
         window.setTimeout(revealIfNeeded, 0);
     };
     window.chummerDialogs.startObserver();
-    window.chummerPrints = window.chummerPrints || {};
-    window.chummerPrints.openBase64 = function(fileName, contentBase64, mimeType, title) {
-        if (!contentBase64) {
+    window.chummerMenuBehavior = window.chummerMenuBehavior || {};
+    window.chummerMenuBehavior._resolveMenuSummaryFromTarget = function(target) {
+        if (!target) {
+            return null;
+        }
+
+        const element = target instanceof Element ? target : target.parentElement;
+        if (!element || typeof element.closest !== 'function') {
+            return null;
+        }
+
+        const summary = element.closest('.browser-app-classic-menu-root > summary, .browser-app-classic-menu-root > summary[data-app-menu-summary]');
+        if (!summary || !summary.parentElement) {
+            return null;
+        }
+
+        return summary;
+    };
+    window.chummerMenuBehavior._syncBrowserMenuSummaryState = function(summary) {
+        if (!summary || !summary.parentElement) {
             return;
         }
 
-        const printWindow = window.open('', '_blank');
-        if (!printWindow) {
-            throw new Error('Print window could not be opened.');
+        const root = summary.parentElement;
+        if (!root.classList || !root.classList.contains('browser-app-classic-menu-root')) {
+            return;
         }
 
-        const decoded = window.chummerUtilities.decodeBase64Utf8(contentBase64);
-        if ((mimeType || '').toLowerCase() === 'text/html') {
-            printWindow.document.open();
-            printWindow.document.write(decoded);
-            printWindow.document.close();
-        } else {
-            printWindow.document.open();
-            printWindow.document.write(`<pre>${decoded}</pre>`);
-            printWindow.document.close();
+        summary.setAttribute('role', 'button');
+        summary.setAttribute('aria-expanded', root.hasAttribute('open') ? 'true' : 'false');
+    };
+    window.chummerMenuBehavior._toggleBrowserMenuRoot = function(root) {
+        if (!root || !root.classList || !root.classList.contains('browser-app-classic-menu-root')) {
+            return;
         }
 
-        if (title) {
-            printWindow.document.title = title;
-        } else if (fileName) {
-            printWindow.document.title = fileName;
+        const summary = root.querySelector(':scope > summary[data-app-menu-summary], :scope > summary');
+        const wasOpen = root.hasAttribute('open');
+        window.chummerMenuBehavior.closeAllAppMenus();
+
+        if (!wasOpen) {
+            root.setAttribute('open', '');
+            if (summary) {
+                summary.setAttribute('aria-expanded', 'true');
+            }
+
+            return;
         }
 
-        const triggerPrint = function() {
-            printWindow.focus();
-            if (printWindow.requestAnimationFrame) {
-                printWindow.requestAnimationFrame(() => printWindow.print());
+        if (summary) {
+            summary.setAttribute('aria-expanded', 'false');
+        }
+    };
+    window.chummerMenuBehavior.closeAllAppMenus = function() {
+        document.querySelectorAll('.browser-app-classic-menu-root[open]').forEach(function(root) {
+            root.removeAttribute('open');
+            const summary = root.querySelector(':scope > summary');
+            if (summary) {
+                summary.setAttribute('aria-expanded', 'false');
+            }
+        });
+
+        if (window.chummerWorkbenchFallback && typeof window.chummerWorkbenchFallback.scheduleRemovalCheck === 'function') {
+            window.chummerWorkbenchFallback.scheduleRemovalCheck();
+        }
+    };
+    window.chummerMenuBehavior.bindBrowserAppMenu = function() {
+        const menuBars = document.querySelectorAll('.browser-app-classic-menu-bar');
+        menuBars.forEach(function(bar) {
+            const menuRoots = Array.from(bar.querySelectorAll('.browser-app-classic-menu-root'));
+            menuRoots.forEach(function(root) {
+                const summary = root.querySelector(':scope > summary[data-app-menu-summary], :scope > summary');
+                if (!summary) {
+                    return;
+                }
+
+                window.chummerMenuBehavior._syncBrowserMenuSummaryState(summary);
+            });
+
+            if (bar.dataset.chummerMenuBehaviorBound === '1') {
                 return;
             }
 
-            printWindow.print();
-        };
+            const toggleMenuFromEvent = function(event) {
+                const summary = window.chummerMenuBehavior._resolveMenuSummaryFromTarget(event.target);
+                if (!summary) {
+                    return;
+                }
 
-        if (printWindow.document.readyState === 'complete') {
-            triggerPrint();
-            return;
-        }
+                const root = summary.parentElement;
+                if (!root) {
+                    return;
+                }
 
-        printWindow.addEventListener('load', triggerPrint, { once: true });
+                event.preventDefault();
+                event.stopPropagation();
+                window.chummerMenuBehavior._toggleBrowserMenuRoot(root);
+            };
+
+            let ignoreNextClick = false;
+            bar.addEventListener('pointerdown', function(event) {
+                if (event.target && event.target.closest('.browser-app-classic-menu-flyout')) {
+                    return;
+                }
+
+                const summary = window.chummerMenuBehavior._resolveMenuSummaryFromTarget(event.target);
+                if (!summary) {
+                    return;
+                }
+
+                ignoreNextClick = true;
+                toggleMenuFromEvent(event);
+            }, { passive: false });
+
+            bar.dataset.chummerMenuBehaviorBound = '1';
+            bar.addEventListener('click', function(event) {
+                if (event.target && event.target.closest('.browser-app-classic-menu-flyout')) {
+                    return;
+                }
+
+                if (ignoreNextClick) {
+                    ignoreNextClick = false;
+                    if (event.cancelable) {
+                        event.preventDefault();
+                    }
+
+                    event.stopPropagation();
+                    return;
+                }
+
+                toggleMenuFromEvent(event);
+            }, { passive: false });
+
+            bar.addEventListener('keydown', function(event) {
+                const summary = window.chummerMenuBehavior._resolveMenuSummaryFromTarget(event.target);
+                if (!summary) {
+                    return;
+                }
+
+                if (event.key === 'Escape') {
+                    event.preventDefault();
+                    event.stopPropagation();
+                    const root = summary.parentElement;
+                    if (root) {
+                        root.removeAttribute('open');
+                        summary.setAttribute('aria-expanded', 'false');
+                    }
+
+                    return;
+                }
+
+                if (event.key !== 'Enter' && event.key !== ' ') {
+                    return;
+                }
+
+                event.preventDefault();
+                event.stopPropagation();
+                window.chummerMenuBehavior._toggleBrowserMenuRoot(summary.parentElement);
+            });
+        });
     };
+    window.chummerMenuBehavior.init = function() {
+        if (!window.chummerMenuBehavior._initialized) {
+            window.chummerMenuBehavior._initialized = true;
+            window.chummerMenuBehavior.bindBrowserAppMenu();
+            const appMenuObserver = new MutationObserver(function() {
+                window.chummerMenuBehavior.bindBrowserAppMenu();
+            });
+            appMenuObserver.observe(document.body, { childList: true, subtree: true });
+            window.chummerMenuBehavior._observer = appMenuObserver;
+            document.addEventListener('pointerdown', function(event) {
+                const target = event.target instanceof Element ? event.target : (event.target ? event.target.parentElement : null);
+                if (!target || target.closest('.browser-app-classic-menu-bar')) {
+                    return;
+                }
+
+                window.chummerMenuBehavior.closeAllAppMenus();
+            }, true);
+            document.addEventListener('keydown', function(event) {
+                if (event.key !== 'Escape') {
+                    return;
+                }
+
+                window.chummerMenuBehavior.closeAllAppMenus();
+            });
+        } else {
+            window.chummerMenuBehavior.bindBrowserAppMenu();
+        }
+    };
+
+    if (document.readyState === 'loading') {
+        window.addEventListener('DOMContentLoaded', window.chummerMenuBehavior.init, { once: true });
+    } else {
+        window.chummerMenuBehavior.init();
+    }
 </script>
 </body>
 </html>
 
 @code {
+    private string BuildPwaExpectedAuthorityJson()
+    {
+        Uri navigationBase = new(Navigation.BaseUri, UriKind.Absolute);
+        string scriptUrl = new Uri(navigationBase, BuildStaticAssetHref("service-worker.js")).AbsoluteUri;
+        string scope = new Uri(navigationBase, BuildServiceWorkerScope()).AbsoluteUri;
+        IReadOnlyList<string> ownerInvalidationTokens = OwnerInvalidationTokens.CreateTokens(
+            OwnerContextAccessor.Current);
+        return System.Text.Json.JsonSerializer.Serialize(new
+        {
+            scriptUrl,
+            scope,
+            contentRevision = BuildPwaRelease.ContentRevision,
+            ownerInvalidationTokens
+        });
+    }
+
     private string BuildBaseHref()
         => ShouldUseCleanPublicRouteBaseHref() ? "/" : BuildHostedBaseHref();
 
@@ -897,10 +1210,24 @@
     {
         string normalizedAssetPath = NormalizeAssetPath(assetPath);
         string hostedBaseHref = BuildHostedBaseHref();
-        return hostedBaseHref == "/"
+        string assetHref = hostedBaseHref == "/"
             ? $"/{normalizedAssetPath}"
             : $"{hostedBaseHref}{normalizedAssetPath}";
+        return $"{assetHref}?{BuildPwaReleaseContract.QueryKey}={BuildPwaRelease.ContentRevision}";
     }
+
+    private string BuildStaticAssetIntegrity(string assetPath)
+    {
+        string normalizedAssetPath = NormalizeAssetPath(assetPath);
+        if (!BuildPwaRelease.Assets.TryGetValue(normalizedAssetPath, out BuildPwaReleaseAsset? asset))
+            throw new InvalidOperationException(
+                $"Build PWA direct asset '{normalizedAssetPath}' is outside the sealed release contract.");
+
+        return asset.SubresourceIntegrity;
+    }
+
+    private BuildPwaReleaseSnapshot BuildPwaRelease
+        => _buildPwaRelease ??= BuildPwaReleaseContract.GetSnapshot(BuildPwaEnvironment);
 
     private string BuildServiceWorkerScope()
         => BuildHostedBaseHref();
@@ -954,30 +1281,88 @@
         if (siteId is null)
             return null;
 
-        string scriptUrl = ResolveRybbitScriptUrl();
-        return new RybbitAnalyticsOptions(scriptUrl, siteId);
+        string? endpointUrl = ResolveRybbitTrackEndpointUrl();
+        return endpointUrl is null ? null : new RybbitAnalyticsOptions(endpointUrl, siteId);
     }
 
-    private string ResolveRybbitScriptUrl()
+    private string? ResolveRybbitTrackEndpointUrl()
     {
         string? configuredScriptUrl = NormalizeOptionalValue(Configuration[RybbitScriptUrlConfigKey]);
-        if (configuredScriptUrl is not null && IsSafeScriptUrl(configuredScriptUrl))
-            return configuredScriptUrl;
+        if (configuredScriptUrl is not null)
+            return TryBuildRybbitTrackEndpointFromScript(configuredScriptUrl, out string? scriptEndpoint)
+                ? scriptEndpoint
+                : null;
 
         string? baseUrl = NormalizeOptionalValue(Configuration[RybbitBaseUrlConfigKey]);
-        if (baseUrl is not null && Uri.TryCreate(baseUrl, UriKind.Absolute, out Uri? uri))
-        {
-            return new Uri(uri, RybbitScriptPath).ToString();
-        }
+        if (baseUrl is not null)
+            return TryBuildRybbitTrackEndpointFromBase(baseUrl, out string? baseEndpoint)
+                ? baseEndpoint
+                : null;
 
-        return RybbitDefaultScriptUrl;
+        return RybbitDefaultTrackUrl;
     }
 
-    private static bool IsSafeScriptUrl(string value)
-        => value.StartsWith("/", StringComparison.Ordinal)
-            || (Uri.TryCreate(value, UriKind.Absolute, out Uri? uri)
-                && (string.Equals(uri.Scheme, Uri.UriSchemeHttps, StringComparison.OrdinalIgnoreCase)
-                    || string.Equals(uri.Scheme, Uri.UriSchemeHttp, StringComparison.OrdinalIgnoreCase)));
+    private bool TryBuildRybbitTrackEndpointFromScript(string value, out string? endpoint)
+    {
+        endpoint = null;
+        if (!TryResolveSafeAnalyticsUri(value, out Uri? scriptUri)
+            || scriptUri is null
+            || !scriptUri.AbsolutePath.EndsWith(RybbitScriptSuffix, StringComparison.OrdinalIgnoreCase))
+            return false;
+
+        var builder = new UriBuilder(scriptUri)
+        {
+            Path = $"{scriptUri.AbsolutePath[..^RybbitScriptSuffix.Length]}/track"
+        };
+        endpoint = builder.Uri.ToString();
+        return true;
+    }
+
+    private bool TryBuildRybbitTrackEndpointFromBase(string value, out string? endpoint)
+    {
+        endpoint = null;
+        if (!TryResolveSafeAnalyticsUri(value, out Uri? baseUri)
+            || baseUri is null)
+            return false;
+
+        var builder = new UriBuilder(baseUri)
+        {
+            Path = RybbitTrackPath
+        };
+        endpoint = builder.Uri.ToString();
+        return true;
+    }
+
+    private bool TryResolveSafeAnalyticsUri(string value, out Uri? uri)
+    {
+        uri = null;
+        if (value.Contains('\\')
+            || value.Contains('?')
+            || value.Contains('#'))
+            return false;
+
+        if (value.StartsWith("/", StringComparison.Ordinal)
+            && !value.StartsWith("//", StringComparison.Ordinal)
+            && Uri.TryCreate(Navigation.BaseUri, UriKind.Absolute, out Uri? baseUri))
+        {
+            uri = new Uri(baseUri, value);
+        }
+        else if (!Uri.TryCreate(value, UriKind.Absolute, out uri))
+        {
+            return false;
+        }
+
+        if (!string.IsNullOrEmpty(uri.UserInfo))
+            return false;
+        if (string.Equals(uri.Scheme, Uri.UriSchemeHttps, StringComparison.OrdinalIgnoreCase))
+            return true;
+        if (!Uri.TryCreate(Navigation.Uri, UriKind.Absolute, out Uri? currentUri))
+            return false;
+
+        return string.Equals(uri.Scheme, currentUri.Scheme, StringComparison.OrdinalIgnoreCase)
+            && string.Equals(uri.Host, currentUri.Host, StringComparison.OrdinalIgnoreCase)
+            && uri.Port == currentUri.Port;
+    }
 
     private static string? NormalizeAnalyticsToken(string? value)
     {
@@ -996,6 +1381,75 @@
 
     private static string? NormalizeOptionalValue(string? value)
         => string.IsNullOrWhiteSpace(value) ? null : value.Trim();
+
+    protected override void OnInitialized()
+    {
+        Navigation.LocationChanged += HandleLocationChanged;
+    }
+
+    private void HandleLocationChanged(object? sender, LocationChangedEventArgs args)
+        => _ = InvokeAsync(StateHasChanged);
+
+    public void Dispose()
+        => Navigation.LocationChanged -= HandleLocationChanged;
+
+    private AppRouteFallback? BuildAppRouteFallback()
+    {
+        if (!Uri.TryCreate(Navigation.Uri, UriKind.Absolute, out Uri? uri))
+            return null;
+
+        if (!IsAppRoute(uri.AbsolutePath))
+            return null;
+
+        IReadOnlyDictionary<string, string> query = ParseQuery(uri.Query);
+        string command = NormalizeDataToken(GetQueryValue(query, "command"));
+        string tab = NormalizeDataToken(GetQueryValue(query, "tab"));
+        string control = NormalizeDataToken(GetQueryValue(query, "control"));
+        string dialogAction = NormalizeDataToken(GetQueryValue(query, "dialog_action"));
+        string runner = NormalizeDataToken(GetQueryValue(query, "runner"));
+        string requestedWorkspace = NormalizeDataToken(GetQueryValue(query, "workspace"));
+        string workspace = string.IsNullOrWhiteSpace(requestedWorkspace) ? "blue-workspace" : requestedWorkspace;
+        string fixture = NormalizeDataToken(GetQueryValue(query, "fixture"), "blue");
+        string routeSegment = ResolveAppRouteSegment(uri.AbsolutePath);
+        bool isOnlineAliasRoute = string.Equals(routeSegment, "online", StringComparison.Ordinal);
+        bool shouldRenderStartupShell = ShouldRenderAppFallbackStartupShell(query, command);
+        string activeWorkflow = ResolveAppFallbackActiveWorkflow(command, tab);
+        string title = ResolveAppFallbackTitle(command, activeWorkflow, shouldRenderStartupShell);
+        string description = shouldRenderStartupShell
+            ? ResolveAppFallbackDescription(command, activeWorkflow)
+            : "Your runners will appear here. Start one, import one, or open an example.";
+        string frameTitle = ResolveAppFallbackFrameTitle(command, activeWorkflow);
+
+        return new AppRouteFallback(
+            Workspace: workspace,
+            WorkspaceDataKey: NormalizeDataToken(workspace),
+            Fixture: fixture,
+            FixtureDataKey: NormalizeRouteDataKey(fixture),
+            HasExplicitWorkspace: !string.IsNullOrWhiteSpace(requestedWorkspace),
+            Runner: runner,
+            LegacyRunnerDataKey: NormalizeRouteDataKey(runner),
+            Command: command,
+            CommandDataKey: NormalizeRouteDataKey(command),
+            StartupCommandLabel: string.IsNullOrWhiteSpace(command) ? "none" : command,
+            TabDataKey: NormalizeRouteDataKey(tab),
+            ControlDataKey: NormalizeRouteDataKey(control),
+            DialogActionDataKey: NormalizeRouteDataKey(dialogAction),
+            ActiveWorkflow: activeWorkflow,
+            RouteFamily: isOnlineAliasRoute ? "online-alias" : "app",
+            RouteSegment: routeSegment,
+            RouteSurface: shouldRenderStartupShell ? "shared-shell" : "roster",
+            CanonicalRoute: "app",
+            RouteAlias: isOnlineAliasRoute ? "online" : "none",
+            AriaLabel: shouldRenderStartupShell ? title : "Character roster",
+            Title: title,
+            Description: description,
+            ShouldRenderStartupShell: shouldRenderStartupShell,
+            FrameLabel: $"{title} shared shell",
+            FrameTitle: frameTitle,
+            FrameSummary: ResolveAppFallbackFrameSummary(command, activeWorkflow),
+            SectionHeading: ResolveAppFallbackSectionHeading(command, activeWorkflow),
+            SectionSummary: ResolveAppFallbackSectionSummary(command, activeWorkflow));
+    }
 
     private WorkbenchFallback? BuildWorkbenchFallback()
     {
@@ -1023,18 +1477,13 @@
         if (string.IsNullOrWhiteSpace(tab))
             tab = ResolveFallbackTab(command, control);
 
-        string activeWorkflow = ResolveFallbackActiveWorkflow(command, tab);
-        string outputWorkflow = ResolveFallbackOutputWorkflow(command);
-        string outputState = ResolveFallbackOutputState(outputWorkflow);
-        string outputTarget = ResolveFallbackOutputTarget(outputWorkflow);
-        string selectedRosterNode = ResolveFallbackSelectedRosterNode(command);
-        string dossierState = ResolveFallbackDossierState(command);
-        string title = ResolveFallbackTitle(command, control, tab, dialogAction);
-        string workflowLabel = ResolveFallbackWorkflowLabel(command, tab, dialogAction);
-        string sectionHeading = ResolveFallbackSectionHeading(command, tab, dialogAction);
-        string sectionSummary = ResolveFallbackSectionSummary(command, tab, runner, dialogAction);
-        string? resultText = ResolveFallbackResultText(command, runner, dialogAction);
-        string? resultRouteHref = ResolveFallbackResultRouteHref(command, workspace, fixture, dialogAction);
+        string activeWorkflow = string.Equals(tab, "tab-create", StringComparison.Ordinal)
+            ? "build-lab"
+            : "workbench";
+        string title = ResolveFallbackTitle(command, control, tab);
+        string sectionHeading = ResolveFallbackSectionHeading(tab);
+        string sectionSummary = ResolveFallbackSectionSummary(tab);
+        string? resultText = ResolveFallbackResultText(command);
         string? committedResult = ResolveFallbackCommittedResult(control, dialogAction);
         WorkbenchFallbackDialog? dialog = string.IsNullOrWhiteSpace(committedResult)
             ? ResolveFallbackDialog(command, control)
@@ -1048,44 +1497,11 @@
             Workspace: workspace,
             Fixture: fixture,
             Runner: runner,
-            SelectedRosterNode: selectedRosterNode,
-            DossierState: dossierState,
-            DossierStorage: "local",
             ActiveWorkflow: activeWorkflow,
-            OutputWorkflow: outputWorkflow,
-            OutputState: outputState,
-            OutputTarget: outputTarget,
-            RouteFamily: "compatibility",
-            RouteSurface: "compatibility",
-            RouteAlias: "none",
-            ValidationState: "review-required",
-            PrivacyMode: "local-first",
-            AnalyticsScope: "route-workflow-only",
-            HostingMode: "hosted-or-self-hosted",
-            DeploymentTarget: "compatibility",
-            SelfHostable: "true",
-            ContainerTarget: "docker",
-            AuthGate: "none",
-            SessionState: "local-preview",
-            LoginTarget: "none",
-            AuthReturnPolicy: "none",
-            ClientKind: "web-desktop",
-            ParityTarget: "desktop-client",
-            CalculationOwner: "shared-chummer-core",
-            StatisticsRuntime: "reusable-by-avalonia",
-            CharacterStatistics: "enabled",
-            StatisticsScope: "anonymized-build-comparisons",
-            RecommendationMode: "explainable-local-inputs",
-            RecommendationInputs: "spells-inventory-drugs-gear-qualities",
-            RiskModel: "damage-threshold-probability",
-            CalculationBoundary: "shared-engine-only",
-            ResultConsumer: "blazor-renders-shared-results",
-            WorkflowLabel: workflowLabel,
             Title: title,
             SectionHeading: sectionHeading,
             SectionSummary: sectionSummary,
             ResultText: resultText,
-            ResultRouteHref: resultRouteHref,
             CommittedResult: committedResult,
             Dialog: dialog);
     }
@@ -1097,25 +1513,13 @@
         string? control = null,
         string? dialogAction = null,
         string? runner = null)
-        => BuildWorkbenchHrefCore(workspace, null, runner, tab, command, control, dialogAction);
-
-    private static string BuildWorkbenchHrefCore(
-        string workspace,
-        string? fixture,
-        string? runner,
-        string? tab,
-        string? command,
-        string? control,
-        string? dialogAction)
     {
         var parts = new List<string>
         {
             $"workspace={Uri.EscapeDataString(NormalizeDataToken(workspace, "blue-workspace"))}"
         };
 
-        AddNonDefaultQueryPart(parts, "fixture", fixture, "blue");
-        AddNonDefaultQueryPart(parts, "runner", runner, "BLUE");
-
+        AddQueryPart(parts, "runner", runner);
         AddQueryPart(parts, "tab", tab);
         AddQueryPart(parts, "command", command);
         AddQueryPart(parts, "control", control);
@@ -1123,79 +1527,75 @@
         return $"workbench?{string.Join("&", parts)}";
     }
 
-    private static string BuildFallbackWorkbenchHref(
-        WorkbenchFallback fallback,
+    private static string BuildAppHref(
+        string? fixture = null,
+        string? workspace = null,
         string? tab = null,
         string? command = null,
         string? control = null,
         string? dialogAction = null)
-        => BuildWorkbenchHrefCore(fallback.Workspace, fallback.Fixture, fallback.Runner, tab, command, control, dialogAction);
-
-    private static string BuildPublicAppHref(
-        string? workspace = null,
-        string? tab = null,
-        string? command = null)
-        => BuildPublicAppHrefCore(null, workspace, tab, command, null);
-
-    private static string BuildPublicAppHref(
-        string? workspace,
-        string? tab,
-        string? command,
-        string? dialogAction)
-        => BuildPublicAppHrefCore(null, workspace, tab, command, dialogAction);
-
-    private static string BuildPublicAppHref(
-        string? fixture,
-        string? workspace,
-        string? tab,
-        string? command,
-        string? dialogAction)
-        => BuildPublicAppHrefCore(fixture, workspace, tab, command, dialogAction);
-
-    private static string BuildPublicAppHrefCore(
-        string? fixture,
-        string? workspace,
-        string? tab,
-        string? command,
-        string? dialogAction)
     {
         var parts = new List<string>();
-        AddNonDefaultQueryPart(parts, "fixture", fixture, "blue");
+        AddQueryPart(parts, "fixture", fixture);
         AddQueryPart(parts, "workspace", workspace);
         AddQueryPart(parts, "tab", tab);
         AddQueryPart(parts, "command", command);
+        AddQueryPart(parts, "control", control);
         AddQueryPart(parts, "dialog_action", dialogAction);
         return parts.Count == 0
-            ? "/app"
-            : $"/app?{string.Join("&", parts)}";
+            ? "app"
+            : $"app?{string.Join("&", parts)}";
     }
 
-    private static string BuildFallbackActionHref(WorkbenchFallback fallback, WorkbenchFallbackAction action)
-        => !string.IsNullOrWhiteSpace(action.Command)
-            ? BuildPublicAppHref(fallback.Fixture, fallback.Workspace, null, action.Command, action.DialogAction)
-            : BuildWorkbenchHrefCore(
-                fallback.Workspace,
-                fallback.Fixture,
-                fallback.Runner,
-                action.Tab,
-                null,
-                action.Control,
-                action.DialogAction);
+    private static string BuildAppContinuationHref(
+        AppRouteFallback fallback,
+        string? tab = null,
+        string? command = null,
+        string? control = null,
+        string? dialogAction = null)
+        => fallback.HasExplicitWorkspace
+            ? BuildAppHref(
+                workspace: fallback.Workspace,
+                tab: tab,
+                command: command,
+                control: control,
+                dialogAction: dialogAction)
+            : BuildAppSeedHref(
+                fallback,
+                tab: tab,
+                command: command,
+                control: control,
+                dialogAction: dialogAction);
 
-    private static string BuildFallbackActionLabel(WorkbenchFallbackAction action, string runner)
-        => action.Label.Replace("BLUE", string.IsNullOrWhiteSpace(runner) ? "BLUE" : runner, StringComparison.Ordinal);
+    private static string BuildAppSeedHref(
+        AppRouteFallback fallback,
+        string? tab = null,
+        string? command = null,
+        string? control = null,
+        string? dialogAction = null)
+        => BuildAppHref(
+            fixture: fallback.Fixture,
+            tab: tab,
+            command: command,
+            control: control,
+            dialogAction: dialogAction);
+
+    private static string BuildAppNewRunnerHref(AppRouteFallback fallback)
+        => fallback.ShouldRenderStartupShell
+            && string.Equals(fallback.Command, "new_character", StringComparison.OrdinalIgnoreCase)
+            ? BuildAppContinuationHref(fallback, tab: "tab-create")
+            : BuildAppHref(command: "new_character");
+
+    private static string BuildWorkbenchNewRunnerHref(WorkbenchFallback fallback)
+        => BuildWorkbenchHref(
+            fallback.Workspace,
+            tab: "tab-create",
+            command: "new_character");
 
     private static void AddQueryPart(List<string> parts, string key, string? value)
     {
         string normalized = NormalizeDataToken(value);
         if (!string.IsNullOrWhiteSpace(normalized))
-            parts.Add($"{key}={Uri.EscapeDataString(normalized)}");
-    }
-
-    private static void AddNonDefaultQueryPart(List<string> parts, string key, string? value, string defaultValue)
-    {
-        string normalized = NormalizeDataToken(value);
-        if (!string.IsNullOrWhiteSpace(normalized) && !string.Equals(normalized, defaultValue, StringComparison.Ordinal))
             parts.Add($"{key}={Uri.EscapeDataString(normalized)}");
     }
 
@@ -1242,378 +1642,292 @@
         return index == 0 ? fallback : new string(buffer[..index]);
     }
 
+    private static bool IsAppRoute(string absolutePath)
+    {
+        if (string.IsNullOrWhiteSpace(absolutePath))
+            return false;
+
+        string normalizedPath = absolutePath.TrimEnd('/');
+        if (normalizedPath.Length == 0)
+            normalizedPath = "/";
+
+        return normalizedPath.EndsWith("/app", StringComparison.OrdinalIgnoreCase)
+            || normalizedPath.EndsWith("/online", StringComparison.OrdinalIgnoreCase);
+    }
+
+    private static string ResolveAppRouteSegment(string absolutePath)
+    {
+        string normalizedPath = string.IsNullOrWhiteSpace(absolutePath)
+            ? string.Empty
+            : absolutePath.TrimEnd('/');
+
+        return normalizedPath.EndsWith("/online", StringComparison.OrdinalIgnoreCase)
+            ? "online"
+            : "app";
+    }
+
+    private static bool ShouldRenderAppFallbackStartupShell(IReadOnlyDictionary<string, string> query, string command)
+    {
+        if (!string.IsNullOrWhiteSpace(command)
+            && !IsCharacterRosterCommand(command))
+            return true;
+
+        foreach (string key in AppFallbackStartupPayloadKeys)
+        {
+            if (!string.IsNullOrWhiteSpace(GetQueryValue(query, key)))
+                return true;
+        }
+
+        return false;
+    }
+
+    private static string ResolveAppFallbackActiveWorkflow(string command, string tab)
+    {
+        if (IsCharacterRosterCommand(command))
+            return "character-roster";
+        if (string.Equals(command, "new_character_origin", StringComparison.OrdinalIgnoreCase))
+            return "origin-dossier";
+        if (string.Equals(command, "master_index", StringComparison.OrdinalIgnoreCase))
+            return "master-index";
+        if (string.Equals(command, "global_settings", StringComparison.OrdinalIgnoreCase))
+            return "global-settings";
+        if (string.Equals(command, "new_character", StringComparison.OrdinalIgnoreCase)
+            || string.Equals(tab, "tab-create", StringComparison.OrdinalIgnoreCase))
+            return "build-lab";
+        if (string.Equals(command, "open_character", StringComparison.OrdinalIgnoreCase))
+            return "open-dossier";
+        if (string.Equals(command, "save_character", StringComparison.OrdinalIgnoreCase)
+            || string.Equals(command, "save_character_as", StringComparison.OrdinalIgnoreCase))
+            return "save";
+        if (string.Equals(command, "print_character", StringComparison.OrdinalIgnoreCase)
+            || string.Equals(command, "open_for_printing", StringComparison.OrdinalIgnoreCase))
+            return "print";
+        if (string.Equals(command, "export_character", StringComparison.OrdinalIgnoreCase)
+            || string.Equals(command, "open_for_export", StringComparison.OrdinalIgnoreCase))
+            return "export";
+        if (string.Equals(tab, "tab-info", StringComparison.OrdinalIgnoreCase))
+            return "profile";
+        if (string.Equals(tab, "tab-rules", StringComparison.OrdinalIgnoreCase))
+            return "rules";
+        if (string.Equals(tab, "tab-gear", StringComparison.OrdinalIgnoreCase))
+            return "gear";
+        if (string.Equals(tab, "tab-combat", StringComparison.OrdinalIgnoreCase))
+            return "combat";
+        if (string.Equals(tab, "tab-magician", StringComparison.OrdinalIgnoreCase))
+            return "magic";
+        if (string.Equals(tab, "tab-technomancer", StringComparison.OrdinalIgnoreCase))
+            return "matrix";
+        if (string.Equals(tab, "tab-contacts", StringComparison.OrdinalIgnoreCase))
+            return "contacts";
+        if (string.Equals(tab, "tab-calendar", StringComparison.OrdinalIgnoreCase))
+            return "career";
+        if (string.IsNullOrWhiteSpace(command)
+            || IsCharacterRosterCommand(command))
+            return "character-roster";
+
+        return "app-shell";
+    }
+
+    private static bool IsCharacterRosterCommand(string command)
+    {
+        if (string.IsNullOrWhiteSpace(command))
+            return false;
+
+        string normalizedCommand = NormalizeDataToken(command).Replace('_', '-').ToLowerInvariant();
+        return string.Equals(normalizedCommand, "character-roster", StringComparison.OrdinalIgnoreCase);
+    }
+
+    private static string ResolveAppFallbackTitle(string command, string activeWorkflow, bool shouldRenderStartupShell)
+    {
+        if (!shouldRenderStartupShell)
+            return "Character Roster";
+
+        return command switch
+        {
+            "new_character" => "New runner",
+            "new_character_origin" => "Origin Dossier",
+            "open_character" => "Open Dossier",
+            "save_character" => "Save Runner",
+            "save_character_as" => "Save Runner",
+            "print_character" => "Print",
+            "open_for_printing" => "Open for Printing",
+            "export_character" => "Export",
+            "open_for_export" => "Open for Export",
+            _ => ResolveAppFallbackWorkflowLabel(activeWorkflow)
+        };
+    }
+
+    private static string ResolveAppFallbackDescription(string command, string activeWorkflow)
+        => activeWorkflow switch
+        {
+            "build-lab" => "Open the shared Build Lab from Chummer Online so creation and continuation stay inside the app.",
+            "rules" => "Open the shared rules-facing lane from Chummer Online so source and rules context stay on the app route.",
+            "origin-dossier" => "Start with the story-first dossier path, then move into standard character creation when the origin is ready.",
+            "open-dossier" => "Open the shared import flow from Chummer Online instead of silently falling back to the roster.",
+            "master-index" => "Open the shared rules and source reference index from Chummer Online without falling back to the roster.",
+            "global-settings" => "Open the shared global settings workflow from Chummer Online without falling back to the roster.",
+            "save" => "Run the shared runner-save workflow while keeping browser and desktop shell semantics aligned.",
+            "print" => "Open the shared print workflow while keeping browser and desktop shell semantics aligned.",
+            "export" => "Open the shared export workflow while keeping browser and desktop shell semantics aligned.",
+            _ when !string.Equals(activeWorkflow, "character-roster", StringComparison.OrdinalIgnoreCase)
+                && !string.Equals(activeWorkflow, "app-shell", StringComparison.OrdinalIgnoreCase)
+                => "Open the requested runner context directly in the shared Chummer Online shell.",
+            _ when !string.IsNullOrWhiteSpace(command) => "Open the requested runner context directly in the shared Chummer Online shell.",
+            _ => "Open the shared Chummer Online shell."
+        };
+
+    private static string ResolveAppFallbackFrameTitle(string command, string activeWorkflow)
+        => activeWorkflow switch
+        {
+            "build-lab" => "Build Lab shell",
+            "rules" => "Rules shell",
+            "origin-dossier" => "Origin Dossier shell",
+            "open-dossier" => "Open Dossier shell",
+            "master-index" => "Master Index shell",
+            "global-settings" => "Global Settings shell",
+            "save" => "Save Runner shell",
+            "print" => "Print shell",
+            "export" => "Export shell",
+            _ when !string.Equals(ResolveAppFallbackWorkflowLabel(activeWorkflow), "Chummer Online", StringComparison.Ordinal)
+                => $"{ResolveAppFallbackWorkflowLabel(activeWorkflow)} shell",
+            _ when !string.IsNullOrWhiteSpace(command) => "Chummer Online shell",
+            _ => "Character Roster"
+        };
+
+    private static string ResolveAppFallbackFrameSummary(string command, string activeWorkflow)
+        => activeWorkflow switch
+        {
+            "build-lab" => "Chummer Online is opening directly into Build Lab so new-runner and live continuation links stay on the app route.",
+            "rules" => "Chummer Online is opening directly into the rules lane so source and rules context stay on the app route.",
+            "origin-dossier" => "Chummer Online is opening directly into Origin Dossier with the story-first path ready.",
+            "open-dossier" => "Chummer Online is opening directly into the shared import workflow so local dossiers can be selected from the app route.",
+            "master-index" => "Chummer Online is opening directly into the shared Master Index so rules and source references stay on the app route.",
+            "global-settings" => "Chummer Online is opening directly into shared global settings so preferences can be adjusted from the app route.",
+            "save" => "Chummer Online is opening directly into the shared runner-save continuation from the app route.",
+            "print" => "Chummer Online is opening directly into the print continuation path from the app route.",
+            "export" => "Chummer Online is opening directly into the export continuation path from the app route.",
+            _ when !string.Equals(activeWorkflow, "character-roster", StringComparison.OrdinalIgnoreCase)
+                && !string.Equals(activeWorkflow, "app-shell", StringComparison.OrdinalIgnoreCase)
+                => "Chummer Online is opening the requested workflow directly from the app route.",
+            _ when !string.IsNullOrWhiteSpace(command) => "Chummer Online is opening the requested workflow directly from the app route.",
+            _ => "Chummer Online is opening directly into the Character Roster."
+        };
+
+    private static string ResolveAppFallbackSectionHeading(string command, string activeWorkflow)
+        => activeWorkflow switch
+        {
+            _ when !string.Equals(ResolveAppFallbackWorkflowLabel(activeWorkflow), "Chummer Online", StringComparison.Ordinal)
+                => ResolveAppFallbackWorkflowLabel(activeWorkflow),
+            _ when !string.IsNullOrWhiteSpace(command) => "Chummer Online",
+            _ => "Character Roster"
+        };
+
+    private static string ResolveAppFallbackSectionSummary(string command, string activeWorkflow)
+        => activeWorkflow switch
+        {
+            "build-lab" => "Choose a ruleset and start the build without leaving the app route.",
+            "rules" => "Keep rules, sources, and guidance context visible while the interactive shell starts.",
+            "origin-dossier" => "Draft story-first identity, then continue into the guided build.",
+            "open-dossier" => "Select or import a local runner dossier from the app route.",
+            "save" => "Prepare the current runner for local download.",
+            "print" => "Prepare the current runner for print output.",
+            "export" => "Prepare the current runner for export output.",
+            _ when !string.Equals(activeWorkflow, "character-roster", StringComparison.OrdinalIgnoreCase)
+                && !string.Equals(activeWorkflow, "app-shell", StringComparison.OrdinalIgnoreCase)
+                => "The requested app workflow is ready while the interactive shell starts.",
+            _ when !string.IsNullOrWhiteSpace(command) => "The requested app workflow is ready while the interactive shell starts.",
+            _ => "Group runners, resume recent work, or open an example."
+        };
+
+    private static string ResolveAppFallbackWorkflowLabel(string activeWorkflow)
+        => activeWorkflow switch
+        {
+            "character-roster" => "Character Roster",
+            "origin-dossier" => "Origin Dossier",
+            "build-lab" => "Build Lab",
+            "rules" => "Rules",
+            "open-dossier" => "Open Dossier",
+            "master-index" => "Master Index",
+            "global-settings" => "Global Settings",
+            "save" => "Save Runner",
+            "print" => "Print",
+            "export" => "Export",
+            "profile" => "Profile",
+            "gear" => "Gear",
+            "combat" => "Combat",
+            "magic" => "Magic",
+            "matrix" => "Matrix",
+            "contacts" => "Contacts",
+            "career" => "Career",
+            _ => "Chummer Online"
+        };
+
+    private static string NormalizeRouteDataKey(string? value)
+    {
+        string normalized = NormalizeDataToken(value);
+        return string.IsNullOrWhiteSpace(normalized)
+            ? "none"
+            : normalized.Replace('_', '-').ToLowerInvariant();
+    }
+
     private static string ResolveFallbackTab(string command, string control)
     {
         if (!string.IsNullOrWhiteSpace(control))
         {
-            string normalizedControl = NormalizeDataToken(control);
-            return normalizedControl switch
-            {
-                "create_entry" or "edit_entry" or "delete_entry" or "move_up" or "move_down" => "tab-calendar",
-                "open_notes" or "identity_license_add" or "identity_license_edit" or "identity_license_delete" => "tab-info",
-                "show_source" => "tab-rules",
-                "gear_add" or "gear_edit" or "gear_delete" or "gear_mount" or "gear_source" or "toggle_free_paid"
-                    or "drug_add" or "drug_delete" or "vehicle_add" or "vehicle_edit" or "vehicle_delete" or "vehicle_mod_add" => "tab-gear",
-                "combat_add_weapon" or "combat_add_armor" or "combat_reload" or "combat_damage_track" => "tab-combat",
-                "runner_benchmark" or "runner_what_if" or "runner_cohort_privacy" => "tab-stats",
-                "contact_add" or "contact_edit" or "contact_remove" or "contact_connection" => "tab-contacts",
-                "skill_add" or "skill_specialize" or "skill_remove" or "skill_group" => "tab-skills",
-                "cyberware_add" or "cyberware_edit" or "cyberware_delete" => "tab-cyberware",
-                "quality_add" or "quality_delete" => "tab-qualities",
-                "adept_power_add" or "initiation_add" => "tab-adept",
-                "magic_add" or "magic_delete" or "magic_bind" or "magic_source" or "spell_add" or "spirit_add" => "tab-magician",
-                "critter_power_add" => "tab-critter",
-                "complex_form_add" or "matrix_program_add" => "tab-technomancer",
-                _ => "none"
-            };
+            if (control.Contains("complex_form", StringComparison.OrdinalIgnoreCase))
+                return "tab-technomancer";
+            if (control.Contains("entry", StringComparison.OrdinalIgnoreCase))
+                return "tab-calendar";
         }
 
-        return "none";
+        return string.Equals(command, "new_character", StringComparison.Ordinal)
+            ? "tab-create"
+            : "tab-info";
     }
 
-    private static string ResolveFallbackTitle(string command, string control, string tab, string dialogAction)
+    private static string ResolveFallbackTitle(string command, string control, string tab)
     {
-        return ResolveFallbackSectionHeading(command, tab, dialogAction);
-    }
+        if (ResolveFallbackDialog(command, control) is { } dialog)
+            return dialog.Title;
 
-    private static string ResolveFallbackActiveWorkflow(string command, string tab)
-    {
-        if (ResolveActionFallbackCommand(command) is { } actionCommand)
-            return actionCommand.Workflow;
-
-        if (ResolveDataPackCommand(command) is { } dataPackCommand)
-            return dataPackCommand.Workflow;
-
-        if (ResolveDialogFallbackCommand(command) is { } dialogCommand)
-            return dialogCommand.Workflow;
-
-        return command switch
-        {
-            "new_character_origin" => "origin-dossier",
-            "character_roster" => "character-roster",
-            "master_index" => "master-index",
-            "global_settings" => "global-settings",
-            "character_settings" => "character-settings",
-            "switch_ruleset" => "switch-ruleset",
-            "report_bug" => "support",
-            "about" => "about",
-            OverviewCommandPolicy.RuntimeInspectorCommandId => "runtime-inspector",
-            "auto_alice" => "assistant",
-            "translator" => "translator",
-            "xml_editor" => "xml-editor",
-            "hero_lab_importer" => "hero-lab-importer",
-            "open_character" => "open-dossier",
-            "save_character" or "save_character_as" => "save",
-            "print_character" or "print_preview" or "open_for_printing" => "print",
-            "export_character" or "open_for_export" => "export",
-            "new_character" => "build-lab",
-            _ => tab switch
+        if (!string.IsNullOrWhiteSpace(command))
+            return command switch
             {
-                "tab-create" => "build-lab",
-                "tab-info" => "profile",
-                "tab-rules" => "rules",
-                "tab-gear" => "gear",
-                "tab-combat" => "combat",
-                "tab-calendar" => "career",
-                "tab-technomancer" => "matrix",
-                "tab-contacts" => "contacts",
-                "tab-cyberware" => "cyberware",
-                "tab-qualities" => "qualities",
-                "tab-skills" => "skills",
-                "tab-adept" => "adept",
-                "tab-magician" => "magic",
-                "tab-critter" => "critter",
-                "tab-stats" => "stats",
-                _ => "workbench"
-            }
-        };
+                "save_character_as" => "Download prepared",
+                "print_character" => "Print preview prepared",
+                _ => "Chummer Online"
+            };
+
+        return ResolveFallbackSectionHeading(tab);
     }
-
-    private static string ResolveFallbackOutputWorkflow(string command)
-        => command switch
-        {
-            "save_character" or "save_character_as" => "save",
-            "print_character" or "print_preview" or "open_for_printing" => "print",
-            "export_character" or "open_for_export" => "export",
-            _ => "none"
-        };
-
-    private static string ResolveFallbackOutputState(string outputWorkflow)
-        => string.Equals(outputWorkflow, "none", StringComparison.Ordinal) ? "idle" : "requested";
-
-    private static string ResolveFallbackOutputTarget(string outputWorkflow)
-        => outputWorkflow switch
-        {
-            "save" => "local-dossier",
-            "print" => "print-view",
-            "export" => "download-package",
-            _ => "none"
-        };
-
-    private static string ResolveFallbackSelectedRosterNode(string command)
-        => string.Equals(command, "character_roster", StringComparison.Ordinal) ? "runner-active" : "none";
-
-    private static string ResolveFallbackDossierState(string command)
-        => string.Equals(command, "new_character_origin", StringComparison.Ordinal) ? "origin-draft" : "unsaved";
-
-    private static string ResolveFallbackSectionHeading(string command, string tab, string dialogAction = "")
-    {
-        if (ResolveFallbackOutputCommandLabel(command, dialogAction) is { } outputLabel)
-            return outputLabel;
-
-        if (ResolveActionFallbackCommand(command) is { } actionCommand)
-            return actionCommand.Heading;
-
-        if (ResolveDataPackCommand(command) is { } dataPackCommand)
-            return dataPackCommand.Label;
-
-        if (ResolveDialogFallbackCommand(command) is { } dialogCommand)
-            return dialogCommand.Heading;
-
-        return command switch
-        {
-            "new_character_origin" => "Origin Dossier",
-            "character_roster" => "Character Roster",
-            "master_index" => "Master Index",
-            "global_settings" => "Global Settings",
-            "character_settings" => "Character Settings",
-            "switch_ruleset" => "Switch Ruleset",
-            "report_bug" => "Support and bug reporting",
-            "about" => "About Chummer",
-            OverviewCommandPolicy.RuntimeInspectorCommandId => "Runtime Inspector",
-            "auto_alice" => "Auto ALICE",
-            "translator" => "Translator",
-            "xml_editor" => "XML Editor",
-            "hero_lab_importer" => "Hero Lab Importer",
-            "open_character" => "Open Dossier",
-            "new_character" => "Build Lab",
-            _ => ResolveFallbackSectionHeading(tab)
-        };
-    }
-
-    private static string ResolveFallbackWorkflowLabel(string command, string tab, string dialogAction = "")
-    {
-        if (ResolveFallbackOutputCommandLabel(command, dialogAction) is { } outputLabel)
-            return outputLabel;
-
-        if (ResolveActionFallbackCommand(command) is { } actionCommand)
-            return actionCommand.WorkflowLabel ?? actionCommand.Heading;
-
-        if (ResolveDataPackCommand(command) is { } dataPackCommand)
-            return dataPackCommand.Label;
-
-        if (ResolveDialogFallbackCommand(command) is { } dialogCommand)
-            return dialogCommand.WorkflowLabel ?? dialogCommand.Heading;
-
-        return command switch
-        {
-            "report_bug" => "Support",
-            "auto_alice" => "Assistant",
-            _ => ResolveFallbackSectionHeading(command, tab, dialogAction)
-        };
-    }
-
-    private static string? ResolveFallbackOutputCommandLabel(string command, string dialogAction)
-        => command switch
-        {
-            "save_character" => "Save Dossier",
-            "save_character_as" when string.Equals(dialogAction, "download", StringComparison.Ordinal) => "Download Dossier",
-            "save_character_as" => "Save Dossier As",
-            "open_for_printing" => "Open Print Staging",
-            "print_character" => "Prepare Print Preview",
-            "print_preview" => "Open Print Preview",
-            "open_for_export" => "Open Export Staging",
-            "export_character" when string.Equals(dialogAction, "download", StringComparison.Ordinal) => "Download Export Package",
-            "export_character" => "Prepare Export Package",
-            _ => null
-        };
 
     private static string ResolveFallbackSectionHeading(string tab)
         => tab switch
         {
-            "tab-info" => "Profile",
             "tab-create" => "Build Lab",
             "tab-rules" => "Rules",
             "tab-gear" => "Gear",
-            "tab-combat" => "Combat",
-            "tab-calendar" => "Career",
-            "tab-technomancer" => "Matrix",
-            "tab-contacts" => "Contacts",
-            "tab-cyberware" => "Cyberware",
-            "tab-qualities" => "Qualities",
-            "tab-skills" => "Skills",
-            "tab-adept" => "Adept",
-            "tab-magician" => "Magic",
-            "tab-critter" => "Critter",
-            "tab-stats" => "Stats",
+            "tab-calendar" => "Career Log",
+            "tab-technomancer" => "Complex Forms",
             _ => "Profile"
         };
 
-    private static string ResolveFallbackSectionSummary(string command, string tab, string runner, string dialogAction)
-    {
-        string runnerLabel = string.IsNullOrWhiteSpace(runner) ? "BLUE" : runner;
-        if (ResolveActionFallbackCommand(command) is { } actionCommand)
-            return actionCommand.Summary;
-
-        if (ResolveDataPackCommand(command) is { } dataPackCommand)
-            return dataPackCommand.Summary;
-
-        if (ResolveDialogFallbackCommand(command) is { } dialogCommand)
-            return dialogCommand.Summary;
-
-        switch (command)
+    private static string ResolveFallbackSectionSummary(string tab)
+        => tab switch
         {
-            case "new_character_origin":
-                return $"Start the story-first dossier path for {runnerLabel}.";
-            case "character_roster":
-                return "Group dossiers into your own folders.";
-            case "master_index":
-                return "Search rules, gear, qualities, spells, and references.";
-            case "global_settings":
-                return "Update language, UI scale, and dossier defaults.";
-            case "character_settings":
-                return "Edit the current character-setting defaults used when creating and validating dossiers.";
-            case "switch_ruleset":
-                return "Set the preferred ruleset used when no workspace is active.";
-            case "report_bug":
-                return "Open tracked support, guest support, or the public GitHub issue form.";
-            case "about":
-                return "Review the shared preview/runtime identity path.";
-            case OverviewCommandPolicy.RuntimeInspectorCommandId:
-                return "Inspect the resolved runtime, rule packs, and provider bindings.";
-            case "auto_alice":
-                return "Plan a build, explain rules posture, or prepare an explicit handoff without mutating the runner silently.";
-            case "translator":
-                return "Search languages and review enabled overlays.";
-            case "xml_editor":
-                return "Review XML bridge and custom data posture before editing local payloads.";
-            case "hero_lab_importer":
-                return "Import Hero Lab XML while import-oracle posture stays visible.";
-            case "open_character":
-                return "Open a local runner dossier.";
-            case "new_character":
-                return $"Continue Build Lab for {runnerLabel}.";
-            case "save_character":
-                return $"Save dossier workflow is ready for {runnerLabel}.";
-            case "save_character_as":
-                if (string.Equals(dialogAction, "download", StringComparison.Ordinal))
-                    return $"Dossier download ready for {runnerLabel}.";
-
-                return $"Browser dossier download prepared for {runnerLabel}.";
-            case "print_character":
-                return $"Print preview prepared for {runnerLabel}.";
-            case "print_preview":
-                return $"Inspect the print preview for {runnerLabel}.";
-            case "open_for_printing":
-                return $"Prepare a print preview for {runnerLabel}.";
-            case "export_character":
-                if (string.Equals(dialogAction, "download", StringComparison.Ordinal))
-                    return $"Export package download ready for {runnerLabel}.";
-
-                return $"Export dossier prepared for {runnerLabel}.";
-            case "open_for_export":
-                return $"Prepare an export dossier for {runnerLabel}.";
-        }
-
-        return tab switch
-        {
-            "tab-create" => $"Continue Build Lab for {runnerLabel}.",
-            "tab-rules" => $"SR5 rules are active for {runnerLabel}.",
-            "tab-gear" => $"Gear for {runnerLabel}.",
-            "tab-combat" => $"Combat for {runnerLabel}.",
-            "tab-technomancer" => $"Complex Forms for {runnerLabel}.",
-            "tab-calendar" => $"Career log for {runnerLabel}.",
-            "tab-contacts" => $"Contacts for {runnerLabel}.",
-            "tab-cyberware" => $"Cyberware for {runnerLabel}.",
-            "tab-qualities" => $"Qualities for {runnerLabel}.",
-            "tab-skills" => $"Skills for {runnerLabel}.",
-            "tab-adept" => $"Adept powers for {runnerLabel}.",
-            "tab-magician" => $"Magic for {runnerLabel}.",
-            "tab-critter" => $"Critter powers for {runnerLabel}.",
-            "tab-stats" => $"Runner Intelligence for {runnerLabel}.",
-            _ => $"Profile summary for {runnerLabel}."
+            "tab-create" => "Continue Build Lab for BLUE.",
+            "tab-rules" => "SR5 rules are active for BLUE.",
+            "tab-technomancer" => "Complex Forms for BLUE.",
+            "tab-calendar" => "Career log for BLUE.",
+            _ => "Profile summary for BLUE."
         };
-    }
 
-    private static string? ResolveFallbackResultText(string command, string runner, string dialogAction)
-    {
-        string runnerLabel = string.IsNullOrWhiteSpace(runner) ? "BLUE" : runner;
-        if (ResolveActionFallbackCommand(command) is { } actionCommand)
-            return actionCommand.ResultText;
-
-        if (ResolveDataPackCommand(command) is { } dataPackCommand)
-            return dataPackCommand.ResultText;
-
-        if (ResolveDialogFallbackCommand(command) is { } dialogCommand)
-            return dialogCommand.ResultText;
-
-        return command switch
+    private static string? ResolveFallbackResultText(string command)
+        => command switch
         {
-            "new_character" => "Continue Build Lab on Chummer Online.",
-            "new_character_origin" => "Continue Origin Dossier on the clean route.",
-            "character_roster" => "Continue Character Roster on Chummer Online.",
-            "master_index" => "Continue Master Index on Chummer Online.",
-            "global_settings" => "Continue Global Settings on Chummer Online.",
-            "character_settings" => "Continue Character Settings on Chummer Online.",
-            "switch_ruleset" => "Continue Switch Ruleset on Chummer Online.",
-            "report_bug" => "Continue Support on Chummer Online.",
-            "about" => "Continue About Chummer on Chummer Online.",
-            OverviewCommandPolicy.RuntimeInspectorCommandId => "Continue Runtime Inspector on Chummer Online.",
-            "auto_alice" => "Continue Assistant on Chummer Online.",
-            "translator" => "Continue Translator on Chummer Online.",
-            "xml_editor" => "Continue XML Editor on Chummer Online.",
-            "hero_lab_importer" => "Continue Hero Lab Importer on Chummer Online.",
-            "open_character" => $"Continue local dossier import while {runnerLabel} stays loaded.",
-            "save_character" => $"Continue dossier save workflow for {runnerLabel}.",
-            "save_character_as" when string.Equals(dialogAction, "download", StringComparison.Ordinal) => $"Dossier download ready: {runnerLabel}.chum6",
-            "save_character_as" => $"Download prepared: {runnerLabel}.chum6",
-            "open_for_printing" => $"Continue print preview setup for {runnerLabel}.",
-            "print_character" or "print_preview" => $"Print preview prepared: {runnerLabel}",
-            "open_for_export" => $"Continue export dossier setup for {runnerLabel}.",
-            "export_character" when string.Equals(dialogAction, "download", StringComparison.Ordinal) => $"Export package download ready: {runnerLabel}",
-            "export_character" => $"Export Dossier prepared: {runnerLabel}",
-            _ => null
-        };
-    }
-
-    private static string BuildFallbackResultRouteLinkLabel(string activeWorkflow)
-        => string.Equals(activeWorkflow, "origin-dossier", StringComparison.Ordinal)
-            ? "Open clean Origin Dossier route"
-            : "Continue this workflow on Chummer Online";
-
-    private static string? ResolveFallbackResultRouteHref(string command, string workspace, string fixture, string dialogAction)
-    {
-        if (ResolveActionFallbackCommand(command) is { } actionCommand)
-        {
-            return BuildPublicAppHref(
-                fixture,
-                actionCommand.PreserveWorkspace ? workspace : null,
-                null,
-                command,
-                null);
-        }
-
-        if (ResolveDialogFallbackCommand(command) is not null)
-            return BuildPublicAppHref(fixture, null, null, command, null);
-
-        if (ResolveDataPackCommand(command) is not null)
-            return BuildPublicAppHref(fixture, null, null, command, null);
-
-        return command switch
-        {
-            "new_character" or "new_character_origin" or "character_roster" or "master_index" or "global_settings" or "character_settings" or "switch_ruleset" or "report_bug" or "about" or OverviewCommandPolicy.RuntimeInspectorCommandId or "auto_alice" or "translator" or "xml_editor" or "hero_lab_importer"
-                => BuildPublicAppHref(fixture, null, null, command, null),
-            "open_character" or "save_character" or "save_character_as" or "open_for_printing" or "print_character" or "print_preview" or "open_for_export" or "export_character"
-                => BuildPublicAppHref(fixture, workspace, null, command, ResolveFallbackResultDialogAction(command, dialogAction)),
-            _ => null
-        };
-    }
-
-    private static string? ResolveFallbackResultDialogAction(string command, string dialogAction)
-        => (command, dialogAction) switch
-        {
-            ("save_character_as", "download") => dialogAction,
-            ("export_character", "download") => dialogAction,
+            "save_character_as" => "Download prepared: BLUE.chum6",
+            "print_character" => "Print preview prepared: BLUE",
+            "export_character" => "Export Dossier prepared: BLUE",
             _ => null
         };
 
@@ -1624,12 +1938,10 @@
             ("edit_entry", "apply") => "Entry renamed to 'Current Entry'.",
             ("delete_entry", "delete") => "Entry 'Current Entry' removed.",
             ("open_notes", "save") => "Notes saved.",
-            ("contact_add", "add") => "Contact 'Fixer' added.",
             ("complex_form_add", "add") => "Complex form 'Cleaner' added.",
             ("initiation_add", "add") => "Initiation/submersion reward 'Masking' added.",
             ("cyberware_add", "add") => "Cyberware 'Wired Reflexes 2' added.",
             ("spell_add", "add") => "Spell 'Stunbolt' added.",
-            ("critter_power_add", "add") => "Critter power 'Natural Weapon' added.",
             _ => null
         };
 
@@ -1646,102 +1958,59 @@
                 _ => null
             };
 
-        if (ResolveDialogFallbackCommand(command) is { } dialogCommand)
-            return new WorkbenchFallbackDialog(dialogCommand.Heading, dialogCommand.DialogLines, false);
-
         return command switch
         {
             "new_character" => new WorkbenchFallbackDialog("New runner", ["Continue Build Lab", "Choose a ruleset and start the build."], false),
-            "new_character_origin" => new WorkbenchFallbackDialog("Origin Dossier", ["Pick only the basics, then build the story. Advanced controls are optional.", "Advanced story controls", "Story Preview"], true),
-            "character_roster" => new WorkbenchFallbackDialog("Character Roster", ["Group dossiers into your own folders.", "Dossier Status", "Bio / Concept / Notes"], false),
+            "new_character_origin" => new WorkbenchFallbackDialog("Origin Dossier", ["Create the story first. Review it, then continue to a guided build if you want mechanics.", "Advanced story controls", "Story Preview"], true),
+            "character_roster" => new WorkbenchFallbackDialog("Character Roster", ["Group runners into your own folders.", "Runner Status", "Bio / Concept / Notes"], false),
             "master_index" => new WorkbenchFallbackDialog("Master Index", ["Search rules, gear, qualities, spells, and references."], false),
-            "global_settings" => new WorkbenchFallbackDialog("Global Settings", ["Update language, UI scale, and dossier defaults."], false),
-            "character_settings" => new WorkbenchFallbackDialog("Character Settings", ["Edit the current character-setting defaults used when creating and validating dossiers."], false),
-            "switch_ruleset" => new WorkbenchFallbackDialog("Switch Ruleset", ["Set the preferred ruleset used when no workspace is active."], false),
-            "report_bug" => new WorkbenchFallbackDialog("Support and bug reporting", ["Use signed-in support at /account/support for private install issues. GitHub is still available for public bug reports."], false),
-            "about" => new WorkbenchFallbackDialog("About Chummer", ["Dual-head preview over shared presenter/API behavior path."], false),
-            OverviewCommandPolicy.RuntimeInspectorCommandId => new WorkbenchFallbackDialog("Runtime Inspector", ["Inspect the resolved runtime, rule packs, and provider bindings."], false),
-            "auto_alice" => new WorkbenchFallbackDialog("Auto ALICE", ["ALICE can plan a build, explain settings posture, or prepare an explicit handoff without mutating the runner silently."], false),
-            "translator" => new WorkbenchFallbackDialog("Translator", ["Search languages and review enabled overlays."], false),
-            "xml_editor" => new WorkbenchFallbackDialog("XML Editor", ["Review XML bridge and custom data posture before editing local payloads."], false),
-            "hero_lab_importer" => new WorkbenchFallbackDialog("Hero Lab Importer", ["Import Hero Lab XML while import-oracle posture stays visible."], false),
             "open_character" => new WorkbenchFallbackDialog("Open Dossier", ["Open a local runner dossier."], false),
-            "open_for_printing" => new WorkbenchFallbackDialog("Open Print Staging", ["Prepare a print preview."], false),
-            "open_for_export" => new WorkbenchFallbackDialog("Open Export Staging", ["Prepare an export dossier."], false),
+            "open_for_printing" => new WorkbenchFallbackDialog("Open for Printing", ["Prepare a print preview."], false),
+            "open_for_export" => new WorkbenchFallbackDialog("Open for Export", ["Prepare an export dossier."], false),
             _ => null
         };
     }
 
-    private static readonly WorkbenchFallbackAction[] WorkbenchFallbackActions =
+    private static readonly string[] WorkbenchFallbackActionLabels =
     [
-        new("Add and keep contact for BLUE", "tab-contacts", "contact_add", "add"),
-        new("Add a contact for BLUE", "tab-contacts", "contact_add"),
-        new("Edit contact for BLUE", "tab-contacts", "contact_edit"),
-        new("Remove contact for BLUE", "tab-contacts", "contact_remove"),
-        new("Adjust contact connection for BLUE", "tab-contacts", "contact_connection"),
-        new("Add and keep career entry for BLUE", "tab-calendar", "create_entry", "add"),
-        new("Add career entry for BLUE", "tab-calendar", "create_entry"),
-        new("Apply career entry edit for BLUE", "tab-calendar", "edit_entry", "apply"),
-        new("Edit career entry for BLUE", "tab-calendar", "edit_entry"),
-        new("Remove and keep career entry result for BLUE", "tab-calendar", "delete_entry", "delete"),
-        new("Remove career entry for BLUE", "tab-calendar", "delete_entry"),
-        new("Save dossier notes for BLUE", "tab-info", "open_notes", "save"),
-        new("Edit dossier notes for BLUE", "tab-info", "open_notes"),
-        new("Save BLUE in browser", Command: "save_character"),
-        new("Prepare BLUE browser download", Command: "save_character_as"),
-        new("Download BLUE from browser", DialogAction: "download", Command: "save_character_as"),
-        new("Prepare BLUE export package", Command: "export_character"),
-        new("Download BLUE export package", DialogAction: "download", Command: "export_character"),
-        new("Prepare BLUE print preview", Command: "print_character"),
-        new("Move career entry up for BLUE", "tab-calendar", "move_up"),
-        new("Move career entry down for BLUE", "tab-calendar", "move_down"),
-        new("Add SIN/license for BLUE", "tab-info", "identity_license_add"),
-        new("Edit SIN/license for BLUE", "tab-info", "identity_license_edit"),
-        new("Remove SIN/license for BLUE", "tab-info", "identity_license_delete"),
-        new("Add weapon for BLUE", "tab-combat", "combat_add_weapon"),
-        new("Add armor for BLUE", "tab-combat", "combat_add_armor"),
-        new("Reload weapon for BLUE", "tab-combat", "combat_reload"),
-        new("Review damage track for BLUE", "tab-combat", "combat_damage_track"),
-        new("Add skill for BLUE", "tab-skills", "skill_add"),
-        new("Specialize skill for BLUE", "tab-skills", "skill_specialize"),
-        new("Remove skill for BLUE", "tab-skills", "skill_remove"),
-        new("Edit skill group for BLUE", "tab-skills", "skill_group"),
-        new("Add adept power for BLUE", "tab-adept", "adept_power_add"),
-        new("Add spirit for BLUE", "tab-magician", "spirit_add"),
-        new("Add and keep critter power for BLUE", "tab-critter", "critter_power_add", "add"),
-        new("Add critter power for BLUE", "tab-critter", "critter_power_add"),
-        new("Add Matrix program for BLUE", "tab-technomancer", "matrix_program_add"),
-        new("Add vehicle for BLUE", "tab-gear", "vehicle_add"),
-        new("Edit vehicle for BLUE", "tab-gear", "vehicle_edit"),
-        new("Remove vehicle for BLUE", "tab-gear", "vehicle_delete"),
-        new("Add vehicle mod for BLUE", "tab-gear", "vehicle_mod_add"),
-        new("Add gear for BLUE", "tab-gear", "gear_add"),
-        new("Edit gear for BLUE", "tab-gear", "gear_edit"),
-        new("Remove gear for BLUE", "tab-gear", "gear_delete"),
-        new("Open Runner Intelligence benchmarks for BLUE", "tab-stats", "runner_benchmark"),
-        new("Model Increase Initiative and inventory what-if stack for BLUE", "tab-stats", "runner_what_if"),
-        new("Review Runner Intelligence privacy cohorts for BLUE", "tab-stats", "runner_cohort_privacy"),
-        new("Show source for BLUE", "tab-rules", "show_source"),
-        new("Show gear source for BLUE", "tab-gear", "gear_source"),
-        new("Mount gear for BLUE", "tab-gear", "gear_mount"),
-        new("Toggle gear free/paid for BLUE", "tab-gear", "toggle_free_paid"),
-        new("Add general magic item for BLUE", "tab-magician", "magic_add"),
-        new("Bind spirit for BLUE", "tab-magician", "magic_bind"),
-        new("Show magic source for BLUE", "tab-magician", "magic_source"),
-        new("Remove magic item for BLUE", "tab-magician", "magic_delete"),
-        new("Remove quality for BLUE", "tab-qualities", "quality_delete"),
-        new("Add drug for BLUE", "tab-gear", "drug_add"),
-        new("Remove drug for BLUE", "tab-gear", "drug_delete"),
-        new("Add and keep complex form for BLUE", "tab-technomancer", "complex_form_add", "add"),
-        new("Add a complex form for BLUE", "tab-technomancer", "complex_form_add"),
-        new("Add and keep initiation for BLUE", "tab-adept", "initiation_add", "add"),
-        new("Add initiation for BLUE", "tab-adept", "initiation_add"),
-        new("Add and keep cyberware for BLUE", "tab-cyberware", "cyberware_add", "add"),
-        new("Add cyberware for BLUE", "tab-cyberware", "cyberware_add"),
-        new("Edit cyberware for BLUE", "tab-cyberware", "cyberware_edit"),
-        new("Remove cyberware for BLUE", "tab-cyberware", "cyberware_delete"),
-        new("Add and keep spell for BLUE", "tab-magician", "spell_add", "add"),
-        new("Add a spell for BLUE", "tab-magician", "spell_add")
+        "Add a complex form for BLUE",
+        "Add initiation for BLUE",
+        "Add cyberware for BLUE",
+        "Add a spell for BLUE",
+        "Add and keep career entry for BLUE",
+        "Add career entry for BLUE",
+        "Apply career entry edit for BLUE",
+        "Edit career entry for BLUE",
+        "Remove and keep career entry result for BLUE",
+        "Remove career entry for BLUE",
+        "Save dossier notes for BLUE",
+        "Edit dossier notes for BLUE",
+        "Move career entry up for BLUE",
+        "Move career entry down for BLUE",
+        "Add SIN/license for BLUE",
+        "Edit SIN/license for BLUE",
+        "Remove SIN/license for BLUE",
+        "Add armor for BLUE",
+        "Reload weapon for BLUE",
+        "Review damage track for BLUE",
+        "Specialize skill for BLUE",
+        "Remove skill for BLUE",
+        "Edit skill group for BLUE",
+        "Add adept power for BLUE",
+        "Add spirit for BLUE",
+        "Add critter power for BLUE",
+        "Add Matrix program for BLUE",
+        "Add gear for BLUE",
+        "Edit gear for BLUE",
+        "Remove gear for BLUE",
+        "Show source for BLUE",
+        "Show gear source for BLUE",
+        "Mount gear for BLUE",
+        "Toggle gear free/paid for BLUE",
+        "Add general magic item for BLUE",
+        "Bind spirit for BLUE",
+        "Show magic source for BLUE",
+        "Remove drug for BLUE"
     ];
 
     private const string AnalyticsProviderConfigKey = "CHUMMER_ANALYTICS_PROVIDER";
@@ -1749,9 +2018,50 @@
     private const string RybbitSiteIdConfigKey = "CHUMMER_RYBBIT_SITE_ID";
     private const string RybbitScriptUrlConfigKey = "CHUMMER_RYBBIT_SCRIPT_URL";
     private const string RybbitBaseUrlConfigKey = "CHUMMER_RYBBIT_BASE_URL";
-    private const string RybbitScriptPath = "/api/script.js";
-    private const string RybbitDefaultScriptUrl = "https://app.rybbit.io/api/script.js";
+    private const string RybbitScriptSuffix = "/script.js";
+    private const string RybbitTrackPath = "/api/track";
+    private const string RybbitDefaultTrackUrl = "https://app.rybbit.io/api/track";
+    private BuildPwaReleaseSnapshot? _buildPwaRelease;
 
+    private static readonly string[] AppFallbackStartupPayloadKeys =
+    [
+        "fixture",
+        "workspace",
+        "runner",
+        "tab",
+        "control",
+        "dialog_action"
+    ];
+
+    private sealed record AppRouteFallback(
+        string Workspace,
+        string WorkspaceDataKey,
+        string Fixture,
+        string FixtureDataKey,
+        bool HasExplicitWorkspace,
+        string Runner,
+        string LegacyRunnerDataKey,
+        string Command,
+        string CommandDataKey,
+        string StartupCommandLabel,
+        string TabDataKey,
+        string ControlDataKey,
+        string DialogActionDataKey,
+        string ActiveWorkflow,
+        string RouteFamily,
+        string RouteSegment,
+        string RouteSurface,
+        string CanonicalRoute,
+        string RouteAlias,
+        string AriaLabel,
+        string Title,
+        string Description,
+        bool ShouldRenderStartupShell,
+        string FrameLabel,
+        string FrameTitle,
+        string FrameSummary,
+        string SectionHeading,
+        string SectionSummary);
     private sealed record WorkbenchFallback(
         string Command,
         string Control,
@@ -1760,119 +2070,15 @@
         string Workspace,
         string Fixture,
         string Runner,
-        string SelectedRosterNode,
-        string DossierState,
-        string DossierStorage,
         string ActiveWorkflow,
-        string OutputWorkflow,
-        string OutputState,
-        string OutputTarget,
-        string RouteFamily,
-        string RouteSurface,
-        string RouteAlias,
-        string ValidationState,
-        string PrivacyMode,
-        string AnalyticsScope,
-        string HostingMode,
-        string DeploymentTarget,
-        string SelfHostable,
-        string ContainerTarget,
-        string AuthGate,
-        string SessionState,
-        string LoginTarget,
-        string AuthReturnPolicy,
-        string ClientKind,
-        string ParityTarget,
-        string CalculationOwner,
-        string StatisticsRuntime,
-        string CharacterStatistics,
-        string StatisticsScope,
-        string RecommendationMode,
-        string RecommendationInputs,
-        string RiskModel,
-        string CalculationBoundary,
-        string ResultConsumer,
-        string WorkflowLabel,
         string Title,
         string SectionHeading,
         string SectionSummary,
         string? ResultText,
-        string? ResultRouteHref,
         string? CommittedResult,
         WorkbenchFallbackDialog? Dialog);
 
-    private sealed record DataPackFallbackCommand(
-        string Label,
-        string Workflow,
-        string Summary,
-        string ResultText);
-
-    private sealed record ActionFallbackCommand(
-        string Heading,
-        string Workflow,
-        string Summary,
-        string ResultText,
-        bool PreserveWorkspace = false,
-        string? WorkflowLabel = null);
-
-    private sealed record DialogFallbackCommand(
-        string Heading,
-        string Workflow,
-        string Summary,
-        string ResultText,
-        IReadOnlyList<string> DialogLines,
-        string? WorkflowLabel = null);
-
     private sealed record WorkbenchFallbackDialog(string Title, IReadOnlyList<string> Lines, bool IsOriginWizard);
 
-    private sealed record WorkbenchFallbackAction(
-        string Label,
-        string? Tab = null,
-        string? Control = null,
-        string? DialogAction = null,
-        string? Command = null);
-
-    private static DataPackFallbackCommand? ResolveDataPackCommand(string command)
-        => command switch
-        {
-            "open_sourcebooks" => new("Sourcebooks", "sourcebooks", "Review the active book selection posture.", "Continue Sourcebooks on Chummer Online."),
-            "open_errata" => new("Errata", "errata", "Reserve visible rules-update context.", "Continue Errata on Chummer Online."),
-            "open_custom_data" => new("Custom Data", "custom-data", "Keep homebrew and local packs discoverable.", "Continue Custom Data on Chummer Online."),
-            "update_data_packs" => new("Update Pack", "update-pack", "Show data refresh as an operator action.", "Continue Update Pack on Chummer Online."),
-            "validate_data_scope" => new("Validation Scope", "validation-scope", "Connect rules data to build readiness.", "Continue Validation Scope on Chummer Online."),
-            "open_data_folder" => new("Data Folder", "data-folder", "Keep local and self-host paths visible.", "Continue Data Folder on Chummer Online."),
-            _ => null
-        };
-
-    private static ActionFallbackCommand? ResolveActionFallbackCommand(string command)
-        => command switch
-        {
-            "copy" => new("Copy", "copy", "Keep the active editor copy relay visible without dropping back to generic shell chrome.", "Continue Copy on Chummer Online.", PreserveWorkspace: true),
-            "paste" => new("Paste", "paste", "Keep the active editor paste relay visible without dropping back to generic shell chrome.", "Continue Paste on Chummer Online.", PreserveWorkspace: true),
-            "new_critter" => new("New Critter", "new-critter", "Start a critter-first starter import without leaving the shared shell.", "Continue New Critter on Chummer Online."),
-            "restart" => new("Restart", "restart", "Reset open dossiers so the next launch can start clean.", "Continue Restart on Chummer Online.", PreserveWorkspace: true),
-            "exit" => new("Exit", "exit", "Keep desktop-only exit posture visible without dropping back to generic shell chrome.", "Continue Exit on Chummer Online."),
-            "close_window" => new("Close Window", "close-window", "Close the active dossier window without dropping back to generic shell chrome.", "Continue Close Window on Chummer Online.", PreserveWorkspace: true),
-            "close_all" => new("Close All", "close-all", "Close all open dossier windows without dropping back to generic shell chrome.", "Continue Close All on Chummer Online.", PreserveWorkspace: true),
-            _ => null
-        };
-
-    private static DialogFallbackCommand? ResolveDialogFallbackCommand(string command)
-        => command switch
-        {
-            "dice_roller" => new("Dice Roller", "dice-roller", "Choose a roll method, threshold, and reroll options.", "Continue Dice Roller on Chummer Online.", ["Choose a roll method, threshold, and reroll options."]),
-            "data_exporter" => new("Data Exporter", "data-exporter", "Export pipeline is routed through API tool endpoints.", "Continue Data Exporter on Chummer Online.", ["Export pipeline is routed through API tool endpoints."]),
-            "print_setup" => new("Print Setup", "print-setup", "Printer setup is delegated to host/browser print capabilities.", "Continue Print Setup on Chummer Online.", ["Printer setup is delegated to host/browser print capabilities."]),
-            "print_multiple" => new("Print Multiple", "print-multiple", "Batch print is available through roster and print endpoints.", "Continue Print Multiple on Chummer Online.", ["Batch print is available through roster and print endpoints."]),
-            "update" => new("Check for Updates", "update", "See where this copy gets updates, how it behaves when a newer build is available, and where support picks up if an update needs help.", "Continue Update on Chummer Online.", ["See where this copy gets updates, how it behaves when a newer build is available, and where support picks up if an update needs help."], "Update"),
-            "new_window" => new("New Window", "new-window", "Open a second shell instance from your platform runtime.", "Continue New Window on Chummer Online.", ["Open a second shell instance from your platform runtime."]),
-            "wiki" => new("Wiki", "wiki", "Use the legacy wiki as an external reference without displacing the current view.", "Continue Wiki on Chummer Online.", ["Use the legacy wiki as an external reference without displacing the current view."]),
-            "discord" => new("Discord", "discord", "Community chat opens in the browser instead of replacing the desktop view.", "Continue Discord on Chummer Online.", ["Community chat opens in the browser instead of replacing the desktop view."]),
-            "show_login_video" => new("Show Login Video", "login-video", "The Avalonia desktop host opens the Matrix uplink login video on demand, including after the install is already linked.", "Continue Login Video on Chummer Online.", ["The Avalonia desktop host opens the Matrix uplink login video on demand, including after the install is already linked."], "Login Video"),
-            "revision_history" => new("Revision History", "revision-history", "Release notes open as an external help surface.", "Continue Revision History on Chummer Online.", ["Release notes open as an external help surface."]),
-            "dumpshock" => new("Issue Tracker", "issue-tracker", "The Chummer6 issue tracker opens externally and stays outside the desktop view.", "Continue Issue Tracker on Chummer Online.", ["The Chummer6 issue tracker opens externally and stays outside the desktop view."]),
-            _ => null
-        };
-
-    private sealed record RybbitAnalyticsOptions(string ScriptUrl, string SiteId);
+    private sealed record RybbitAnalyticsOptions(string EndpointUrl, string SiteId);
 }

@@ -1,15 +1,7 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-repo_root_physical="$(cd "$(dirname "${BASH_SOURCE[0]}")/../../.." && pwd -P)"
-repo_root_alias_candidate="${CHUMMER_UI_REPO_ROOT_ALIAS:-$repo_root_physical}"
-repo_root="$repo_root_physical"
-if [[ -n "$repo_root_alias_candidate" && -d "$repo_root_alias_candidate" ]]; then
-  alias_physical="$(cd "$repo_root_alias_candidate" && pwd -P)"
-  if [[ "$alias_physical" == "$repo_root_physical" ]]; then
-    repo_root="$(cd -L "$repo_root_alias_candidate" && pwd -L)"
-  fi
-fi
+repo_root="$(cd "$(dirname "${BASH_SOURCE[0]}")/../../.." && pwd -P)"
 cd "$repo_root"
 
 receipt_path="${CHUMMER_RULESET_UI_ADAPTATION_RECEIPT_PATH:-$repo_root/.codex-studio/published/RULESET_UI_ADAPTATION.generated.json}"
@@ -88,11 +80,21 @@ unit_test_build_exit=0
 signoff_test_build_exit=0
 signoff_test_run_exit=0
 signoff_test_dll="Chummer.Tests/Presentation/bin/Debug/net10.0/Chummer.Presentation.Signoff.Tests.dll"
+signoff_test_additional_deps="Chummer.Tests/Presentation/bin/Debug/net10.0/Chummer.Presentation.deps.json"
+skip_restore="${CHUMMER_RULESET_UI_ADAPTATION_SKIP_RESTORE:-0}"
 if [[ ! -s "$directive_matrix_reasons_file" && ! -s "$catalog_definition_reasons_file" && ! -s "$shell_binding_reasons_file" ]]; then
   echo "[UI-RS] executing targeted ruleset posture and shell acceptance tests..."
-  dotnet build Chummer.Tests/Chummer.Tests.csproj -c Debug --no-restore --nologo -m:1 -v quiet || unit_test_build_exit=$?
-  dotnet build Chummer.Tests/Presentation/Chummer.Presentation.Signoff.Tests.csproj -c Debug --no-restore --nologo -m:1 -v quiet || signoff_test_build_exit=$?
-  dotnet "$signoff_test_dll" || signoff_test_run_exit=$?
+  build_args=(dotnet build Chummer.Tests/Presentation/Chummer.Presentation.Signoff.Tests.csproj -c Debug --nologo -m:1 -v quiet)
+  if [[ "$skip_restore" == "1" ]]; then
+    build_args+=(--no-restore)
+  fi
+  "${build_args[@]}" || signoff_test_build_exit=$?
+  unit_test_build_exit=$signoff_test_build_exit
+  if [[ -f "$signoff_test_additional_deps" ]]; then
+    DOTNET_ADDITIONAL_DEPS="$signoff_test_additional_deps" dotnet "$signoff_test_dll" || signoff_test_run_exit=$?
+  else
+    dotnet "$signoff_test_dll" || signoff_test_run_exit=$?
+  fi
 fi
 
 python3 - <<'PY' "$receipt_path" "$directive_matrix_reasons_file" "$catalog_definition_reasons_file" "$shell_binding_reasons_file" "$unit_test_build_exit" "$signoff_test_build_exit" "$signoff_test_run_exit" "$release_channel_path"

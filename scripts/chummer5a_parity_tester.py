@@ -2,14 +2,16 @@
 from __future__ import annotations
 
 import argparse
+import hashlib
 import json
 import os
 import shutil
+import stat
 import subprocess
 import sys
 import xml.etree.ElementTree as ET
 from dataclasses import dataclass
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
 from pathlib import Path
 from typing import Any
 
@@ -85,6 +87,9 @@ REFERENCE_SENTINEL = "reference-screenshots-not-captured.txt"
 DIFF_SENTINEL = "diff-images-not-generated.txt"
 USER_JOURNEY_TRACE_CONTRACT = "chummer6-ui.user_journey_tester_trace"
 USER_JOURNEY_AUDIT_CONTRACT = "chummer6-ui.user_journey_tester_audit"
+USER_JOURNEY_TRACE_MAX_AGE_HOURS = 24
+USER_JOURNEY_TRACE_FUTURE_SKEW_MINUTES = 5
+IMMUTABLE_JSON_MAX_BYTES = 1024 * 1024
 WORKFLOW_VERIFICATION_CONTRACT = "chummer6-ui.sr6_workflow_family_verification_receipt"
 EXECUTED_WORKFLOW_CONTRACT = "chummer6-ui.sr6_workflow_family_execution_receipt"
 FIXTURE_RECONSTRUCTION_CONTRACT = "chummer6-ui.chummer5a_fixture_ui_reconstruction"
@@ -526,8 +531,161 @@ def json_list(value: Any) -> list[Any]:
     return value if isinstance(value, list) else []
 
 
+def try_load_immutable_json(path: Path, label: str) -> tuple[dict[str, Any], bytes, list[str]]:
+    unsafe_reason = f"{label} must be a stable regular non-symlink file: {path}"
+    try:
+        path_before = os.stat(path, follow_symlinks=False)
+    except FileNotFoundError:
+        return {}, b"", [f"Missing {label}: {path}"]
+    except OSError:
+        return {}, b"", [f"Unable to inspect {label} safely: {path}"]
+    if not stat.S_ISREG(path_before.st_mode):
+        return {}, b"", [unsafe_reason]
+
+    open_flags = os.O_RDONLY
+    for optional_flag in ("O_CLOEXEC", "O_NOFOLLOW", "O_NONBLOCK"):
+        open_flags |= int(getattr(os, optional_flag, 0))
+
+    try:
+        descriptor = os.open(path, open_flags)
+    except FileNotFoundError:
+        return {}, b"", [f"Missing {label}: {path}"]
+    except OSError:
+        return {}, b"", [unsafe_reason]
+
+    try:
+        try:
+            before = os.fstat(descriptor)
+        except OSError:
+            return {}, b"", [f"Unable to inspect opened {label} safely: {path}"]
+        if not stat.S_ISREG(before.st_mode):
+            return {}, b"", [unsafe_reason]
+
+        path_identity_before = (path_before.st_dev, path_before.st_ino)
+        descriptor_identity_before = (before.st_dev, before.st_ino)
+        if path_identity_before != descriptor_identity_before:
+            return {}, b"", [f"{label} changed while being opened: {path}"]
+        if before.st_size < 0 or before.st_size > IMMUTABLE_JSON_MAX_BYTES:
+            return {}, b"", [
+                f"{label} exceeds the {IMMUTABLE_JSON_MAX_BYTES}-byte safety limit: {path}"
+            ]
+
+        chunks: list[bytes] = []
+        bytes_read = 0
+        try:
+            while bytes_read <= IMMUTABLE_JSON_MAX_BYTES:
+                chunk = os.read(
+                    descriptor,
+                    min(64 * 1024, IMMUTABLE_JSON_MAX_BYTES + 1 - bytes_read),
+                )
+                if not chunk:
+                    break
+                chunks.append(chunk)
+                bytes_read += len(chunk)
+        except OSError:
+            return {}, b"", [f"Unable to read {label} safely: {path}"]
+        raw = b"".join(chunks)
+        if len(raw) > IMMUTABLE_JSON_MAX_BYTES:
+            return {}, b"", [
+                f"{label} exceeds the {IMMUTABLE_JSON_MAX_BYTES}-byte safety limit: {path}"
+            ]
+
+        try:
+            after = os.fstat(descriptor)
+            path_after = os.stat(path, follow_symlinks=False)
+        except OSError:
+            return {}, b"", [f"{label} changed while being read: {path}"]
+
+        before_stability = (
+            before.st_dev,
+            before.st_ino,
+            before.st_mode,
+            before.st_size,
+            before.st_mtime_ns,
+        )
+        after_stability = (
+            after.st_dev,
+            after.st_ino,
+            after.st_mode,
+            after.st_size,
+            after.st_mtime_ns,
+        )
+        path_stability_after = (
+            path_after.st_dev,
+            path_after.st_ino,
+            path_after.st_mode,
+            path_after.st_size,
+            path_after.st_mtime_ns,
+        )
+        if (
+            before_stability != after_stability
+            or after_stability != path_stability_after
+            or len(raw) != after.st_size
+        ):
+            return {}, b"", [f"{label} changed while being read: {path}"]
+    finally:
+        os.close(descriptor)
+
+    try:
+        loaded = json.loads(raw.decode("utf-8-sig"))
+    except (UnicodeError, json.JSONDecodeError):
+        return {}, b"", [f"Unreadable {label}: invalid UTF-8 JSON: {path}"]
+    if not isinstance(loaded, dict):
+        return {}, raw, [f"{label} must contain a JSON object: {path}"]
+    return loaded, raw, []
+
+
+def parse_offset_aware_timestamp(value: Any) -> datetime | None:
+    text = str(value or "").strip()
+    if not text:
+        return None
+    try:
+        parsed = datetime.fromisoformat(text.replace("Z", "+00:00"))
+    except ValueError:
+        return None
+    if parsed.tzinfo is None or parsed.utcoffset() is None:
+        return None
+    return parsed.astimezone(timezone.utc)
+
+
+def user_journey_trace_timestamp(payload: dict[str, Any]) -> tuple[str, datetime | None]:
+    for key in ("generated_at_utc", "generated_at", "generatedAt"):
+        raw = str(payload.get(key) or "").strip()
+        if raw:
+            return raw, parse_offset_aware_timestamp(raw)
+    return "", None
+
+
+def validate_user_journey_trace_freshness(
+    payload: dict[str, Any],
+    trace_path: Path,
+    *,
+    max_age_hours: int = USER_JOURNEY_TRACE_MAX_AGE_HOURS,
+    future_skew_minutes: int = USER_JOURNEY_TRACE_FUTURE_SKEW_MINUTES,
+    evaluated_at: datetime | None = None,
+) -> tuple[datetime | None, list[str]]:
+    raw_timestamp, generated_at = user_journey_trace_timestamp(payload)
+    if not raw_timestamp or generated_at is None:
+        return None, [
+            f"user journey trace must include an offset-aware generated_at_utc timestamp: {trace_path}"
+        ]
+
+    now = (evaluated_at or datetime.now(timezone.utc)).astimezone(timezone.utc)
+    reasons: list[str] = []
+    if generated_at > now + timedelta(minutes=future_skew_minutes):
+        reasons.append(
+            "user journey trace generated_at_utc is in the future "
+            f"(more than {future_skew_minutes} minutes): {trace_path}"
+        )
+    elif now - generated_at > timedelta(hours=max_age_hours):
+        reasons.append(
+            f"user journey trace is stale (older than {max_age_hours} hours): {trace_path}"
+        )
+    return generated_at, reasons
+
+
 def validate_user_journey_trace(trace_path: Path, screenshot_dir: Path) -> list[str]:
-    payload, reasons = try_load_json(trace_path)
+    payload, _, reasons = try_load_immutable_json(trace_path, "user journey trace")
     if reasons:
         return reasons
     if normalize_contract_name(payload) != USER_JOURNEY_TRACE_CONTRACT:
@@ -545,6 +703,8 @@ def validate_user_journey_trace(trace_path: Path, screenshot_dir: Path) -> list[
     blocking_findings = payload.get("open_blocking_findings") or []
     if isinstance(blocking_findings, list) and any(str(item or "").strip() for item in blocking_findings):
         reasons.append(f"user journey trace still reports open blocking findings: {trace_path}")
+    _, freshness_reasons = validate_user_journey_trace_freshness(payload, trace_path)
+    reasons.extend(freshness_reasons)
 
     workflows = payload.get("workflows") or []
     workflow_by_id = {
@@ -583,7 +743,7 @@ def validate_user_journey_trace(trace_path: Path, screenshot_dir: Path) -> list[
 
 
 def validate_user_journey_audit_receipt(audit_path: Path, trace_path: Path, screenshot_dir: Path) -> list[str]:
-    payload, reasons = try_load_json(audit_path)
+    payload, _, reasons = try_load_immutable_json(audit_path, "user journey audit receipt")
     if reasons:
         return reasons
     if normalize_contract_name(payload) != USER_JOURNEY_AUDIT_CONTRACT:
@@ -599,10 +759,102 @@ def validate_user_journey_audit_receipt(audit_path: Path, trace_path: Path, scre
         reasons.append(f"user journey audit receipt must declare used_internal_apis=false: {audit_path}")
     if payload.get("fix_shard_separate") is not True:
         reasons.append(f"user journey audit receipt must prove tester/fixer shard separation: {audit_path}")
-    if int(payload.get("open_blocking_findings_count") or 0) != 0:
-        reasons.append(f"user journey audit receipt reports open blocking findings: {audit_path}")
+    open_blocking_findings_count = payload.get("open_blocking_findings_count")
+    if isinstance(open_blocking_findings_count, bool):
+        reasons.append(f"user journey audit receipt open_blocking_findings_count is malformed: {audit_path}")
+    else:
+        try:
+            parsed_open_blocking_findings_count = int(open_blocking_findings_count or 0)
+        except (TypeError, ValueError):
+            parsed_open_blocking_findings_count = -1
+            reasons.append(f"user journey audit receipt open_blocking_findings_count is malformed: {audit_path}")
+        if parsed_open_blocking_findings_count != 0:
+            reasons.append(f"user journey audit receipt reports open blocking findings: {audit_path}")
 
-    evidence = payload.get("evidence") or {}
+    if payload.get("trace_mutation_requested") is not False:
+        reasons.append(f"user journey audit receipt must declare trace_mutation_requested=false: {audit_path}")
+    if payload.get("trace_mutation_performed") is not False:
+        reasons.append(f"user journey audit receipt must declare trace_mutation_performed=false: {audit_path}")
+
+    evidence_value = payload.get("evidence")
+    if not isinstance(evidence_value, dict):
+        reasons.append(f"user journey audit receipt evidence must be a JSON object: {audit_path}")
+        evidence: dict[str, Any] = {}
+    else:
+        evidence = evidence_value
+
+    trace_payload, trace_bytes, trace_read_reasons = try_load_immutable_json(
+        trace_path,
+        "user journey trace",
+    )
+    reasons.extend(trace_read_reasons)
+    current_trace_sha256 = hashlib.sha256(trace_bytes).hexdigest() if not trace_read_reasons else ""
+
+    max_age_value = evidence.get("trace_max_age_hours")
+    if isinstance(max_age_value, bool):
+        trace_max_age_hours = USER_JOURNEY_TRACE_MAX_AGE_HOURS
+        reasons.append(f"user journey audit receipt trace_max_age_hours is malformed: {audit_path}")
+    else:
+        try:
+            trace_max_age_hours = int(max_age_value)
+        except (TypeError, ValueError):
+            trace_max_age_hours = USER_JOURNEY_TRACE_MAX_AGE_HOURS
+            reasons.append(f"user journey audit receipt trace_max_age_hours is malformed: {audit_path}")
+        else:
+            if trace_max_age_hours < 1:
+                reasons.append(f"user journey audit receipt trace_max_age_hours must be positive: {audit_path}")
+                trace_max_age_hours = USER_JOURNEY_TRACE_MAX_AGE_HOURS
+
+    future_skew_value = evidence.get("trace_future_skew_minutes")
+    if isinstance(future_skew_value, bool):
+        trace_future_skew_minutes = USER_JOURNEY_TRACE_FUTURE_SKEW_MINUTES
+        reasons.append(f"user journey audit receipt trace_future_skew_minutes is malformed: {audit_path}")
+    else:
+        try:
+            trace_future_skew_minutes = int(future_skew_value)
+        except (TypeError, ValueError):
+            trace_future_skew_minutes = USER_JOURNEY_TRACE_FUTURE_SKEW_MINUTES
+            reasons.append(f"user journey audit receipt trace_future_skew_minutes is malformed: {audit_path}")
+        else:
+            if trace_future_skew_minutes < 0:
+                reasons.append(f"user journey audit receipt trace_future_skew_minutes must not be negative: {audit_path}")
+                trace_future_skew_minutes = USER_JOURNEY_TRACE_FUTURE_SKEW_MINUTES
+
+    trace_generated_at: datetime | None = None
+    if not trace_read_reasons:
+        trace_generated_at, freshness_reasons = validate_user_journey_trace_freshness(
+            trace_payload,
+            trace_path,
+            max_age_hours=trace_max_age_hours,
+            future_skew_minutes=trace_future_skew_minutes,
+        )
+        reasons.extend(freshness_reasons)
+
+    for digest_field in ("trace_sha256", "trace_sha256_after_audit"):
+        raw_recorded_digest = evidence.get(digest_field)
+        recorded_digest = raw_recorded_digest.strip().lower() if isinstance(raw_recorded_digest, str) else ""
+        if len(recorded_digest) != 64 or any(character not in "0123456789abcdef" for character in recorded_digest):
+            reasons.append(f"user journey audit receipt {digest_field} is missing or malformed: {audit_path}")
+        elif current_trace_sha256 and recorded_digest != current_trace_sha256:
+            reasons.append(
+                f"user journey audit receipt {digest_field} does not match current trace bytes: {audit_path}"
+            )
+
+    recorded_trace_generated_at = parse_offset_aware_timestamp(evidence.get("trace_generated_at_utc"))
+    if recorded_trace_generated_at is None:
+        reasons.append(f"user journey audit receipt trace_generated_at_utc is missing or malformed: {audit_path}")
+    elif trace_generated_at is not None and recorded_trace_generated_at != trace_generated_at:
+        reasons.append(f"user journey audit receipt trace_generated_at_utc does not match the trace: {audit_path}")
+
+    if evidence.get("trace_bytes_unchanged_during_audit") is not True:
+        reasons.append(f"user journey audit receipt must prove trace bytes were unchanged during audit: {audit_path}")
+    if evidence.get("trace_mutation_requested") is not False:
+        reasons.append(f"user journey audit evidence must declare trace_mutation_requested=false: {audit_path}")
+    if evidence.get("trace_mutation_allowed") is not False:
+        reasons.append(f"user journey audit evidence must declare trace_mutation_allowed=false: {audit_path}")
+    if evidence.get("trace_mutation_performed") is not False:
+        reasons.append(f"user journey audit evidence must declare trace_mutation_performed=false: {audit_path}")
+
     if normalize_path_string(trace_path) != str((evidence or {}).get("trace_path") or "").strip():
         reasons.append(f"user journey audit receipt trace_path does not match the trace under test: {audit_path}")
     if normalize_path_string(screenshot_dir) != str((evidence or {}).get("screenshot_dir") or "").strip():

@@ -31,13 +31,12 @@ Treat that handoff as staged-nightly-only evidence: it refreshes staged receipts
 6. Mainline `Desktop Downloads Matrix` runs on `main` resolve to `preview` automatically for the rolling Windows/Linux shelf. Set `CHUMMER_DESKTOP_RELEASE_CHANNEL` only when you intentionally want a non-mainline `docker`, `release_candidate`, or `public_stable` lane.
 7. Set `CHUMMER_ALLOW_UNSIGNED_PUBLIC_RELEASE=true` only when you are intentionally publishing an unsigned public build. Without that override, `public_stable` and any explicit `release_candidate` lane fail closed unless the workflow can emit signing receipts:
 `CHUMMER_WINDOWS_SIGN_PFX_BASE64` / `CHUMMER_WINDOWS_SIGN_PFX_PASSWORD` for Windows Authenticode, plus either a preconfigured mac keychain identity/profile, a hosted-signing P12 (`CHUMMER_MAC_CERTIFICATE_P12_BASE64` / `CHUMMER_MAC_CERTIFICATE_PASSWORD` / `CHUMMER_MAC_KEYCHAIN_PASSWORD` / `CHUMMER_MAC_APPLE_ID` / `CHUMMER_MAC_APPLE_APP_PASSWORD` / `CHUMMER_MAC_TEAM_ID`), or the persistent local-keychain fallback for Mac-hosted preview lanes (`CHUMMER_MAC_KEYCHAIN_PATH`, `CHUMMER_MAC_LOCAL_KEYCHAIN_PASSWORD`, `CHUMMER_MAC_LOCAL_CERT_COMMON_NAME`).
-8. `public_stable` promotion also requires fresh root blocker truth from `RELEASE_BLOCKERS.generated.json`. The default max age is `86400` seconds via `CHUMMER_PUBLIC_STABLE_BLOCKERS_MAX_AGE_SECONDS`; override it only when the release lane explicitly approves an adjusted blocker-truth window.
 
 ## Recommended Production Topology
 
 1. Default recommendation: use `CHUMMER_PORTAL_DOWNLOADS_DEPLOY_DIR` with a self-hosted runner that can write directly into the portal downloads storage mount.
 2. Reason: this keeps `/downloads/` self-hosted, lets the deploy job verify both the local manifest file and the live portal manifest, and matches the canonical topology enforced in repo docs.
-3. Treat object storage as the alternate topology for environments where the runner cannot write to portal storage directly; keep portal proxying and live manifest verification enabled there too.
+3. The legacy fixed-key S3/R2 publisher is disabled fail-closed. When the runner cannot write the portal mount, use the authenticated HTTP upload-session lane instead of object storage.
 4. Start from [`docs/examples/self-hosted-downloads.env.example`](examples/self-hosted-downloads.env.example) and adapt it to your portal base URL and storage target.
 
 ## Mode A: Filesystem Deploy (shared mount)
@@ -47,7 +46,6 @@ Repository variables:
 2. `CHUMMER_PORTAL_DOWNLOADS_VERIFY_URL`
 3. Optional `CHUMMER_DESKTOP_RELEASE_CHANNEL` override for non-mainline lanes
 4. `CHUMMER_ALLOW_UNSIGNED_PUBLIC_RELEASE` (optional; explicit unsigned public-release posture)
-5. `CHUMMER_PUBLIC_STABLE_BLOCKERS_MAX_AGE_SECONDS` (optional; only when the release lane explicitly approves an adjusted blocker-truth window)
 
 Local release path:
 1. Push the release-ready source to `main`, then build the release bundle on the controlled release host.
@@ -60,32 +58,21 @@ Manual path:
 2. `RUNBOOK_MODE=downloads-verify DOWNLOADS_VERIFY_LINKS=1 DOWNLOADS_VERIFY_TARGET=<portalBaseOrManifestUrl> bash scripts/runbook.sh`
 3. `RUNBOOK_MODE=downloads-smoke bash scripts/runbook.sh`
 
-## Mode B: Object Storage Deploy (S3/R2 compatible)
+## Mode B: Object Storage Deploy (disabled)
 
-Repository variables:
-1. `CHUMMER_PORTAL_DOWNLOADS_S3_URI`
-2. `CHUMMER_PORTAL_DOWNLOADS_S3_LATEST_URI` (optional)
-3. `CHUMMER_PORTAL_DOWNLOADS_S3_ENDPOINT_URL` (optional; required for many R2/S3-compatible endpoints)
-4. `CHUMMER_PORTAL_DOWNLOADS_S3_REGION` (optional, defaults to `us-east-1`)
-5. `CHUMMER_PORTAL_DOWNLOADS_VERIFY_URL`
-6. Optional `CHUMMER_DESKTOP_RELEASE_CHANNEL` override for non-mainline lanes
-7. `CHUMMER_ALLOW_UNSIGNED_PUBLIC_RELEASE` (optional; explicit unsigned public-release posture)
-8. `CHUMMER_PUBLIC_STABLE_BLOCKERS_MAX_AGE_SECONDS` (optional; only when the release lane explicitly approves an adjusted blocker-truth window)
+This mode is intentionally unavailable. `scripts/publish-download-bundle-s3.sh` exits with `EX_CONFIG` (`78`) before it resolves repositories, generates manifests, validates proof, touches mirrors, or invokes AWS. Setting the former `CHUMMER_PORTAL_DOWNLOADS_S3_*` variables does not override that boundary.
 
-Repository secrets:
-1. `CHUMMER_PORTAL_DOWNLOADS_AWS_ACCESS_KEY_ID`
-2. `CHUMMER_PORTAL_DOWNLOADS_AWS_SECRET_ACCESS_KEY`
-3. `CHUMMER_PORTAL_DOWNLOADS_AWS_SESSION_TOKEN` (optional)
+When checking this refusal directly, use `./scripts/publish-download-bundle-s3.sh` or `/bin/bash -p scripts/publish-download-bundle-s3.sh`. For the wrapper, use `RUNBOOK_MODE=downloads-sync-s3 ./scripts/runbook.sh`. Do not invoke either boundary as `bash <script>`: an explicitly started ordinary Bash may execute caller-controlled `BASH_ENV` or exported functions before the script body, which no in-script guard can undo. The supported direct entry points use absolute privileged Bash to ignore those startup hooks.
 
-Local release path:
-1. Push the release-ready source to `main`, then build the release bundle on the controlled release host.
-2. If `CHUMMER_PORTAL_DOWNLOADS_S3_URI` is configured, run `RUNBOOK_MODE=downloads-sync-s3` after bundle generation.
-3. The runbook syncs the bundle using `scripts/publish-download-bundle-s3.sh`.
-4. The runbook verifies the live manifest URL.
+Why it is disabled:
 
-Manual path:
-1. `RUNBOOK_MODE=downloads-sync-s3 DOWNLOAD_BUNDLE_DIR=<bundleDir> CHUMMER_PORTAL_DOWNLOADS_S3_URI=<s3://bucket/path> CHUMMER_PORTAL_DOWNLOADS_VERIFY_URL=<portalBaseOrManifestUrl> [CHUMMER_PORTAL_DOWNLOADS_S3_ENDPOINT_URL=<endpoint>] bash scripts/runbook.sh`
-2. `RUNBOOK_MODE=downloads-verify DOWNLOADS_VERIFY_LINKS=1 DOWNLOADS_VERIFY_TARGET=<portalBaseOrManifestUrl> bash scripts/runbook.sh`
+1. The fixed-key layout overwrote or deleted artifact/proof objects before its multi-object manifest cutover. An AWS failure could therefore invalidate the previously served shelf.
+2. High-level S3 synchronization did not prove remote SHA-256 equality; a same-size stale object could survive selection or backend-specific checksum behavior.
+3. Updating `releases.json`, `RELEASE_CHANNEL.generated.json`, and an optional latest alias is not one atomic operation.
+
+Use Mode A for a controlled filesystem promotion or Mode C for authenticated HTTP upload sessions.
+
+Re-enabling object storage requires a coordinated portal and release-contract migration: immutable versioned artifact/proof keys, forced object writes, checksum-and-size verified remote inventory, one atomic canonical pointer understood by the serving portal, and stateful rollback tests for every write phase. Do not implement an environment-variable bypass around the current fail-closed script.
 
 ## Mode C: Live `chummer.run` HTTP Publish
 
@@ -97,11 +84,10 @@ Repository variables and secrets:
 3. `CHUMMER_RELEASE_UPLOAD_TOKEN`
 4. Optional `CHUMMER_DESKTOP_RELEASE_CHANNEL` override for non-mainline lanes
 5. `CHUMMER_ALLOW_UNSIGNED_PUBLIC_RELEASE` (optional; set to `true` only when you deliberately want an unsigned public build)
-6. `CHUMMER_PUBLIC_STABLE_BLOCKERS_MAX_AGE_SECONDS` (optional; only when the release lane explicitly approves an adjusted blocker-truth window)
-7. Windows public release secrets: `CHUMMER_WINDOWS_SIGN_PFX_BASE64`, `CHUMMER_WINDOWS_SIGN_PFX_PASSWORD`
-8. macOS public release secrets/vars for hosted signing: `CHUMMER_MAC_CERTIFICATE_P12_BASE64`, `CHUMMER_MAC_CERTIFICATE_PASSWORD`, `CHUMMER_MAC_KEYCHAIN_PASSWORD`, `CHUMMER_MAC_APPLE_ID`, `CHUMMER_MAC_APPLE_APP_PASSWORD`, `CHUMMER_MAC_TEAM_ID`
-9. Optional preconfigured mac runner vars: `CHUMMER_MAC_APP_SIGN_IDENTITY`, `CHUMMER_MAC_NOTARY_PROFILE`
-10. Optional persistent local-preview vars on a Mac host when no P12 is configured: `CHUMMER_MAC_KEYCHAIN_PATH`, `CHUMMER_MAC_LOCAL_KEYCHAIN_PASSWORD`, `CHUMMER_MAC_LOCAL_CERT_COMMON_NAME`
+6. Windows public release secrets: `CHUMMER_WINDOWS_SIGN_PFX_BASE64`, `CHUMMER_WINDOWS_SIGN_PFX_PASSWORD`
+7. macOS public release secrets/vars for hosted signing: `CHUMMER_MAC_CERTIFICATE_P12_BASE64`, `CHUMMER_MAC_CERTIFICATE_PASSWORD`, `CHUMMER_MAC_KEYCHAIN_PASSWORD`, `CHUMMER_MAC_APPLE_ID`, `CHUMMER_MAC_APPLE_APP_PASSWORD`, `CHUMMER_MAC_TEAM_ID`
+8. Optional preconfigured mac runner vars: `CHUMMER_MAC_APP_SIGN_IDENTITY`, `CHUMMER_MAC_NOTARY_PROFILE`
+9. Optional persistent local-preview vars on a Mac host when no P12 is configured: `CHUMMER_MAC_KEYCHAIN_PATH`, `CHUMMER_MAC_LOCAL_KEYCHAIN_PASSWORD`, `CHUMMER_MAC_LOCAL_CERT_COMMON_NAME`
 
 Local-preview note:
 1. `scripts/prepare-macos-signing-keychain.sh` now defaults the local bootstrap keychain to `~/Library/Keychains/chummer-signing.keychain-db` on macOS.
@@ -126,6 +112,8 @@ Release-build handoff expectation:
 1. If a staged latest-build bundle verifies but still lists `missingRequiredPlatforms` for the public Windows/Linux promotion scope, do not promote it to `public_stable`.
 2. Materialize the release-build handoff and finish the missing platform smoke/signing/upload work first.
 3. A completed staged nightly handoff is still not a stable release. The live downloads shelf remains unchanged until a separate guarded publish lane runs.
+4. Windows bootstrap installer smoke for a publishable preview shelf must run with `CHUMMER_WINDOWS_STARTUP_SMOKE_PAYLOAD_MODE=download`; local payload handoff receipts are diagnostic only and must not be used as public bootstrap proof.
+5. On Linux/Wine release hosts, keep the bounded Wine defaults enabled (`CHUMMER_WINEPATH_TIMEOUT_SECONDS`, `CHUMMER_WINEBOOT_INIT_TIMEOUT_SECONDS`, and `CHUMMER_WINDOWS_BINARY_TIMEOUT_SECONDS`) so path conversion, prefix initialization, and app startup failures produce receipts or regression packets instead of hanging the nightly lane.
 
 Operational rule:
 1. The public `chummer.run` shelf is a rolling daily shelf. It should advance once per day in the morning release window after the required proof passes, not after every local build.
@@ -135,7 +123,6 @@ Operational rule:
 5. Public channels are proof-backed, not best-effort. If the resolved channel is `release_candidate` or `public_stable`, the workflow must either:
 emit Windows signing and macOS signing/notarization receipts, or
 run with `CHUMMER_ALLOW_UNSIGNED_PUBLIC_RELEASE=true` so the public-promotion evidence records `unsigned_public_release` explicitly.
-6. `public_stable` publication also requires fresh root blocker truth from `RELEASE_BLOCKERS.generated.json`; the default max age is `86400` seconds via `CHUMMER_PUBLIC_STABLE_BLOCKERS_MAX_AGE_SECONDS`.
 
 ## Strict Test Gate Commands (host-side)
 

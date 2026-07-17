@@ -3,14 +3,17 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 using System.Text;
 using System.Text.Json;
 using System.Threading;
 using System.Threading.Tasks;
+using Chummer.Application.Owners;
 using Chummer.Application.Tools;
 using Chummer.Application.Workspaces;
 using Chummer.Contracts.Api;
 using Chummer.Contracts.Characters;
+using Chummer.Contracts.Owners;
 using Chummer.Contracts.Presentation;
 using Chummer.Contracts.Rulesets;
 using Chummer.Contracts.Workspaces;
@@ -71,7 +74,10 @@ public class RestartSafeWorkspacePersistenceTests
             Assert.AreEqual("Restart Safe Runner", bootstrap.Workspaces[0].Summary.Name);
             Assert.AreEqual("sr6", bootstrap.Workspaces[0].RulesetId);
 
-            CommandResult<WorkspaceSaveReceipt> save = await restarted.Client.SaveAsync(imported.Id, CancellationToken.None);
+            CommandResult<WorkspaceSaveReceipt> save = await restarted.Client.SaveAsync(
+                imported.Id,
+                bootstrap.Workspaces[0].ContentRevision,
+                CancellationToken.None);
             Assert.IsTrue(save.Success);
             Assert.IsNotNull(save.Value);
             Assert.AreEqual(imported.Id, save.Value.Id);
@@ -107,7 +113,12 @@ public class RestartSafeWorkspacePersistenceTests
             StringAssert.Contains(printPayload, "Restart Safe Runner");
             StringAssert.Contains(printPayload, "<html");
 
-            string persistedPath = Path.Combine(stateDirectory, "workspaces", $"{imported.Id.Value}.json");
+            string persistedPath = Directory
+                .EnumerateFiles(
+                    stateDirectory,
+                    $"{imported.Id.Value}.json",
+                    SearchOption.AllDirectories)
+                .Single();
             using JsonDocument json = JsonDocument.Parse(File.ReadAllText(persistedPath));
             JsonElement root = json.RootElement;
             Assert.AreEqual("Json", root.GetProperty("Format").GetString());
@@ -148,7 +159,8 @@ public class RestartSafeWorkspacePersistenceTests
             shellCatalogResolver,
             rulesetSelectionPolicy: rulesetSelectionPolicy,
             shellPreferencesService: preferencesService,
-            shellSessionService: sessionService);
+            shellSessionService: sessionService,
+            ownerContextAccessor: new FixedOwnerContextAccessor(new OwnerScope("restart-safe-workspace-test-owner")));
         return new RuntimeHarness(client, new ShellBootstrapDataProvider(client));
     }
 
@@ -162,6 +174,11 @@ public class RestartSafeWorkspacePersistenceTests
     private sealed record RuntimeHarness(
         InProcessChummerClient Client,
         ShellBootstrapDataProvider BootstrapProvider);
+
+    private sealed class FixedOwnerContextAccessor(OwnerScope owner) : IOwnerContextAccessor
+    {
+        public OwnerScope Current => owner;
+    }
 
     private sealed class RestartSafeWorkspaceCodec : IRulesetWorkspaceCodec
     {

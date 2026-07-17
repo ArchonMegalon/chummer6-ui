@@ -1,50 +1,72 @@
+using System;
 using System.IO;
-using System.Runtime.CompilerServices;
-using Chummer.Desktop.Runtime;
+using System.Collections.Generic;
 
 namespace Chummer.Tests.Presentation;
 
 internal static class TestContextLocator
 {
-    public static string ResolveChummerPresentationRepoRoot([CallerFilePath] string callerFilePath = "")
+    private const string RepoMarkerFileName = "Chummer.sln";
+
+    public static string ResolveChummerPresentationRepoRoot()
     {
-        foreach (string candidate in EnumerateCallerRootCandidates(callerFilePath))
+        return TryResolveChummerPresentationRepoRoot(AppContext.BaseDirectory, Directory.GetCurrentDirectory())
+            ?? Path.GetFullPath(string.IsNullOrWhiteSpace(Directory.GetCurrentDirectory()) ? AppContext.BaseDirectory : Directory.GetCurrentDirectory());
+    }
+
+    private static string? TryResolveChummerPresentationRepoRoot(string baseDirectory, string currentDirectory)
+    {
+        foreach (string candidate in EnumerateSearchRoots(baseDirectory, currentDirectory))
         {
-            if (LooksLikeChummerPresentationRepoRoot(candidate))
+            if (!File.Exists(Path.Combine(candidate, RepoMarkerFileName)))
+            {
+                continue;
+            }
+
+            if (Directory.Exists(Path.Combine(candidate, "Chummer.Blazor"))
+                && Directory.Exists(Path.Combine(candidate, "Chummer.Presentation"))
+                && Directory.Exists(Path.Combine(candidate, "Chummer.Tests")))
             {
                 return candidate;
             }
         }
 
-        return DesktopRepoRootLocator.ResolveChummerPresentationRepoRootOrFallback(
-            AppContext.BaseDirectory,
-            Directory.GetCurrentDirectory());
+        return null;
     }
 
-    private static IEnumerable<string> EnumerateCallerRootCandidates(string callerFilePath)
+    private static IEnumerable<string> EnumerateSearchRoots(string baseDirectory, string currentDirectory)
     {
-        if (string.IsNullOrWhiteSpace(callerFilePath))
+        var seen = new HashSet<string>(StringComparer.Ordinal);
+
+        foreach (string root in EnumerateAncestorDirectories(currentDirectory))
+        {
+            if (seen.Add(root))
+            {
+                yield return root;
+            }
+        }
+
+        foreach (string root in EnumerateAncestorDirectories(baseDirectory))
+        {
+            if (seen.Add(root))
+            {
+                yield return root;
+            }
+        }
+    }
+
+    private static IEnumerable<string> EnumerateAncestorDirectories(string startPath)
+    {
+        if (string.IsNullOrWhiteSpace(startPath))
         {
             yield break;
         }
 
-        DirectoryInfo? directory = new(Path.GetDirectoryName(callerFilePath)!);
-        while (directory is not null)
+        DirectoryInfo? current = new(Path.GetFullPath(startPath));
+        while (current is not null)
         {
-            yield return directory.FullName;
-            directory = directory.Parent;
+            yield return current.FullName;
+            current = current.Parent;
         }
     }
-
-    private static bool LooksLikeChummerPresentationRepoRoot(string candidate)
-    {
-        return Directory.Exists(Path.Combine(candidate, "Chummer.Presentation"))
-            && Directory.Exists(Path.Combine(candidate, "Chummer.Tests"));
-    }
-}
-
-internal static class AvaloniaHeadlessSessionGate
-{
-    // Serializes headless session lifecycles across test classes.
-    internal static object SyncRoot { get; } = new();
 }

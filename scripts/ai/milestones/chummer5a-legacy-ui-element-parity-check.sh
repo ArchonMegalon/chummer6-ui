@@ -52,6 +52,7 @@ contract_name = sys.argv[10]
 reuse_existing_test_build = str(
     os.environ.get("CHUMMER_LEGACY_UI_PARITY_REUSE_EXISTING_TEST_BUILD") or "1"
 ).strip().lower() in {"1", "true", "yes", "on"}
+details_path_override = str(os.environ.get("LEGACY_UI_PARITY_DETAILS_PATH") or "").strip()
 
 
 def resolve_path(value: str) -> Path:
@@ -104,8 +105,13 @@ AVALONIA_TARGET_TYPED_INTERACTIVE_RE = re.compile(
     r"\s+[A-Za-z_]\w*\s*=\s*new\s*\("
 )
 AVALONIA_NAMED_AXAML_RE = re.compile(
-    r"<(?P<type>Button|MenuItem|CheckBox|ComboBox|TextBox|ListBox|TreeView|TabControl|"
-    r"ToggleButton|RadioButton|TabStrip|Expander)\b[^>]*(?:x:Name|Name)=\"(?P<name>[^\"]+)\"",
+    r"<(?P<type>Button|MenuItem|CheckBox|ComboBox|TextBox|ListBox|TreeView|TabControl|TabItem|"
+    r"ToggleButton|RadioButton|NumericUpDown|ContextMenu|Menu|TabStrip|Expander)\b[^>]*(?:x:Name|Name)=\"(?P<name>[^\"]+)\"",
+    re.MULTILINE,
+)
+AVALONIA_AXAML_INTERACTIVE_RE = re.compile(
+    r"<(?P<type>Button|MenuItem|CheckBox|ComboBox|TextBox|ListBox|TreeView|TabControl|TabItem|"
+    r"ToggleButton|RadioButton|NumericUpDown|ContextMenu|Menu|TabStrip|Expander)\b",
     re.MULTILINE,
 )
 
@@ -126,13 +132,19 @@ SOURCE_PATHS = {
     "catalogResolver": repo_root / "Chummer.Presentation" / "Shell" / "CatalogOnlyRulesetShellCatalogResolver.cs",
     "legacyUiControlCatalog": repo_root / "Chummer.Presentation" / "Overview" / "LegacyUiControlCatalog.cs",
     "sectionQuickActionCatalog": repo_root / "Chummer.Presentation" / "Rulesets" / "SectionQuickActionCatalog.cs",
+    "attributeWorkbenchProjector": repo_root / "Chummer.Presentation" / "Overview" / "AttributeWorkbenchProjector.cs",
+    "workspaceXmlMutationCatalog": repo_root / "Chummer.Presentation" / "Overview" / "WorkspaceXmlMutationCatalog.cs",
     "desktopDialogFactory": repo_root / "Chummer.Presentation" / "Overview" / "DesktopDialogFactory.cs",
     "desktopDialogWindow": repo_root / "Chummer.Avalonia" / "DesktopDialogWindow.axaml.cs",
+    "sectionHostControl": repo_root / "Chummer.Avalonia" / "Controls" / "SectionHostControl.axaml.cs",
+    "blazorAttributeWorkbench": repo_root / "Chummer.Blazor" / "Components" / "Shell" / "Sr6AttributeWorkbench.razor",
     "avaloniaGateTests": repo_root / "Chummer.Tests" / "Presentation" / "AvaloniaFlagshipUiGateTests.cs",
     "dualHeadTests": repo_root / "Chummer.Tests" / "Presentation" / "DualHeadAcceptanceTests.cs",
+    "blazorComponentTests": repo_root / "Chummer.Tests" / "Presentation" / "BlazorShellComponentTests.cs",
     "desktopDialogFactoryTests": repo_root / "Chummer.Tests" / "Presentation" / "DesktopDialogFactoryTests.cs",
     "desktopInstallLinkingTests": repo_root / "Chummer.Tests" / "Presentation" / "DesktopInstallLinkingShellChromeTests.cs",
     "presenterTests": repo_root / "Chummer.Tests" / "Presentation" / "CharacterOverviewPresenterTests.cs",
+    "workspaceMutationTests": repo_root / "Chummer.Tests" / "Presentation" / "WorkspaceXmlMutationCatalogTests.cs",
     "verifyScript": repo_root / "scripts" / "ai" / "verify.sh",
     "b14Script": repo_root / "scripts" / "ai" / "milestones" / "b14-flagship-ui-release-gate.sh",
 }
@@ -154,6 +166,14 @@ PROOF_TEST_MARKERS = [
     "Interactive_runtime_route_inventory_receipt_captures_recursive_shell_dialog_popup_and_ruleset_branches",
     "Loaded_runner_main_window_routes_navigation_palette_dialog_and_quick_action_surfaces_end_to_end",
     "Windows_install_link_gate_copy_stays_fail_closed_until_user_claims_online",
+    "SectionPane_renders_sr6_attribute_workbench_and_emits_attribute_edits",
+    "SectionPane_renders_sr6_career_improve_action_and_emits_improve_request",
+    "SectionPane_renders_sr6_edge_burn_action_and_emits_burn_request",
+    "Sr6_attribute_editor_surfaces_explicit_improve_pendant_and_emits_improve_request",
+    "Sr6_attribute_editor_surfaces_explicit_burn_edge_pendant_and_emits_burn_request",
+    "ApplyAttributeEdit_improve_spends_root_karma_and_appends_expense",
+    "ApplyAttributeEdit_improve_restores_burned_edge_before_adding_karma",
+    "ApplyAttributeEdit_burn_decrements_edge_and_can_cross_the_floor",
 ]
 
 PROOF_FILTER = (
@@ -173,6 +193,14 @@ PROOF_FILTER = (
     "|Name~Interactive_runtime_route_inventory_receipt_captures_recursive_shell_dialog_popup_and_ruleset_branches"
     "|Name~Loaded_runner_main_window_routes_navigation_palette_dialog_and_quick_action_surfaces_end_to_end"
     "|Name~Windows_install_link_gate_copy_stays_fail_closed_until_user_claims_online"
+    "|Name~SectionPane_renders_sr6_attribute_workbench_and_emits_attribute_edits"
+    "|Name~SectionPane_renders_sr6_career_improve_action_and_emits_improve_request"
+    "|Name~SectionPane_renders_sr6_edge_burn_action_and_emits_burn_request"
+    "|Name~Sr6_attribute_editor_surfaces_explicit_improve_pendant_and_emits_improve_request"
+    "|Name~Sr6_attribute_editor_surfaces_explicit_burn_edge_pendant_and_emits_burn_request"
+    "|Name~ApplyAttributeEdit_improve_spends_root_karma_and_appends_expense"
+    "|Name~ApplyAttributeEdit_improve_restores_burned_edge_before_adding_karma"
+    "|Name~ApplyAttributeEdit_burn_decrements_edge_and_can_cross_the_floor"
 )
 
 PARITY_FAMILIES: dict[str, dict[str, list[str]]] = {
@@ -220,6 +248,32 @@ PARITY_FAMILIES: dict[str, dict[str, list[str]]] = {
         "currentIds": ["command:new_character", "action:tab-info.attributes", "action:tab-skills.skills"],
         "proofMarkers": ["File_menu_new_character_completes_into_visible_runtime_workspace", "Avalonia_and_Blazor_all_workspace_section_actions_render_matching_sections"],
     },
+    "attribute_editor": {
+        "currentIds": [
+            "action:tab-info.attributes",
+            "action:tab-info.attributedetails",
+            "action:tab-attributes.attributedetails",
+            "source-marker:AttributeParityEditorBorder",
+            "source-marker:AttributeBaseEditor_",
+            "source-marker:AttributeKarmaEditor_",
+            "source-marker:AttributeEditRequested",
+            "source-marker:new AttributeEditRequest(row.AttributeName, bucket, value)",
+            "source-marker:AttributeImprove_",
+            "source-marker:new AttributeEditRequest(row.AttributeName, \"improve\"",
+            "source-marker:AttributeBurnEdge_",
+            "source-marker:new AttributeEditRequest(row.AttributeName, \"burn\"",
+        ],
+        "proofMarkers": [
+            "SectionPane_renders_sr6_attribute_workbench_and_emits_attribute_edits",
+            "SectionPane_renders_sr6_career_improve_action_and_emits_improve_request",
+            "SectionPane_renders_sr6_edge_burn_action_and_emits_burn_request",
+            "Sr6_attribute_editor_surfaces_explicit_improve_pendant_and_emits_improve_request",
+            "Sr6_attribute_editor_surfaces_explicit_burn_edge_pendant_and_emits_burn_request",
+            "ApplyAttributeEdit_improve_spends_root_karma_and_appends_expense",
+            "ApplyAttributeEdit_improve_restores_burned_edge_before_adding_karma",
+            "ApplyAttributeEdit_burn_decrements_edge_and_can_cross_the_floor",
+        ],
+    },
     "selection_dialog": {
         "currentIds": ["ui:gear_add", "ui:combat_add_weapon", "ui:combat_add_armor", "ui:cyberware_add"],
         "proofMarkers": ["CreateUiControlDialog_all_catalog_controls_surface_named_fields_and_actions", "RebuildDynamicDialog_all_rebuildable_dialogs_preserve_named_fields_and_actions"],
@@ -241,7 +295,7 @@ PARITY_FAMILIES: dict[str, dict[str, list[str]]] = {
         "proofMarkers": ["CreateUiControlDialog_all_catalog_controls_surface_named_fields_and_actions", "Desktop_surface_commands_open_settings_master_index_and_roster_from_visible_chrome"],
     },
     "confirm_submit": {
-        "currentIds": ["dialog-action:ok", "dialog-action:apply", "dialog-action:save_global_settings", "dialog-action:create_character"],
+        "currentIds": ["dialog-action:ok", "dialog-action:apply", "dialog-action:save", "dialog-action:create_character"],
         "proofMarkers": ["CreateUiControlDialog_all_catalog_controls_surface_named_fields_and_actions", "CreateCommandDialog_all_factory_mapped_commands_surface_named_fields_and_actions"],
     },
     "cancel_close": {
@@ -368,7 +422,18 @@ FORM_COUNTERPART_RULES: list[tuple[list[str], list[str]]] = [
 SOURCE_COUNTERPART_RULES: list[tuple[list[str], list[str]]] = [
     (["dpifriendlytoolstripbutton"], ["current-dynamic:Button"]),
     (["dpifriendlytoolstripmenuitem", "splitbutton"], ["current-dynamic:MenuItem", "current-dynamic:ContextMenu"]),
-    (["attributecontrol"], ["action:tab-info.attributes"]),
+    (["attributecontrol"], [
+        "action:tab-info.attributes",
+        "action:tab-info.attributedetails",
+        "action:tab-attributes.attributedetails",
+        "source-marker:AttributeParityEditorBorder",
+        "source-marker:AttributeBaseEditor_",
+        "source-marker:AttributeKarmaEditor_",
+        "source-marker:AttributeEditRequested",
+        "source-marker:new AttributeEditRequest(row.AttributeName, bucket, value)",
+        "source-marker:AttributeImprove_",
+        "source-marker:new AttributeEditRequest(row.AttributeName, \"improve\"",
+    ]),
     (["contactcontrol"], ["ui:contact_edit", "ui:contact_connection", "ui:contact_remove"]),
     (["petcontrol"], ["ui:contact_edit", "ui:contact_remove"]),
     (["spiritcontrol"], ["ui:spirit_add", "ui:magic_bind"]),
@@ -389,7 +454,7 @@ SOURCE_COUNTERPART_RULES: list[tuple[list[str], list[str]]] = [
     (["editglobalsettings"], ["command:global_settings"]),
     (["editcharactersettings"], ["command:character_settings"]),
     (["editnotes", "rtfeditor"], ["ui:open_notes", "action:tab-notes.metadata"]),
-    (["desktopinstalllinkinggateform"], ["current-dynamic:Button", "Windows_install_link_gate_copy_stays_fail_closed_until_user_claims_online"]),
+    (["desktopinstalllinkinggateform"], ["current-dynamic:Button"]),
     (["masterindex"], ["command:master_index"]),
     (["characterroster"], ["command:character_roster"]),
     (["diceroller", "initiativeroller"], ["command:dice_roller"]),
@@ -503,6 +568,20 @@ SOURCE_COUNTERPART_RULES: list[tuple[list[str], list[str]]] = [
     ]),
 ]
 
+SOURCE_PROOF_MARKER_RULES: list[tuple[list[str], list[str]]] = [
+    (["desktopinstalllinkinggateform"], ["Windows_install_link_gate_copy_stays_fail_closed_until_user_claims_online"]),
+    (["attributecontrol"], [
+        "SectionPane_renders_sr6_career_improve_action_and_emits_improve_request",
+        "SectionPane_renders_sr6_attribute_workbench_and_emits_attribute_edits",
+        "SectionPane_renders_sr6_edge_burn_action_and_emits_burn_request",
+        "Sr6_attribute_editor_surfaces_explicit_improve_pendant_and_emits_improve_request",
+        "Sr6_attribute_editor_surfaces_explicit_burn_edge_pendant_and_emits_burn_request",
+        "ApplyAttributeEdit_improve_spends_root_karma_and_appends_expense",
+        "ApplyAttributeEdit_improve_restores_burned_edge_before_adding_karma",
+        "ApplyAttributeEdit_burn_decrements_edge_and_can_cross_the_floor",
+    ]),
+]
+
 TOKEN_COUNTERPART_RULES: list[tuple[list[str], list[str]]] = [
     (["cancel"], ["dialog-action:cancel"]),
     (["cmdok", "btnok", "okclick", "okadd"], ["dialog-action:ok"]),
@@ -543,7 +622,9 @@ TOKEN_COUNTERPART_RULES: list[tuple[list[str], list[str]]] = [
     (["aiprogram", "matrixprogram"], ["ui:matrix_program_add"]),
     (["poweradd", "adeptpower"], ["ui:adept_power_add"]),
     (["initiation", "metamagic", "martialart", "mentor", "cyberzombie", "possess", "cloning"], ["ui:initiation_add"]),
-    (["karma", "nuyen", "expense", "calendar", "week", "improvement", "improve", "streetcred", "edgegained", "edgespent", "burnedge"], ["ui:create_entry", "ui:edit_entry", "ui:delete_entry", "action:tab-info.attributes"]),
+    (["improveatt", "improveattribute", "cmdimproveatt"], ["source-marker:AttributeImprove_", "source-marker:new AttributeEditRequest(row.AttributeName, \"improve\""]),
+    (["burnedge"], ["source-marker:AttributeBurnEdge_", "source-marker:new AttributeEditRequest(row.AttributeName, \"burn\""]),
+    (["karma", "nuyen", "expense", "calendar", "week", "improvement", "streetcred", "edgegained", "edgespent"], ["ui:create_entry", "ui:edit_entry", "ui:delete_entry", "action:tab-info.attributes"]),
     (["freeitem", "freepaid"], ["ui:toggle_free_paid"]),
     (["up"], ["ui:move_up"]),
     (["down"], ["ui:move_down"]),
@@ -588,6 +669,8 @@ def classify_legacy_behavior(path: str, control: str, event: str, handler: str, 
     def has(*words: str) -> bool:
         return any(word in blob for word in words)
 
+    if "attributecontrol" in path_lower:
+        return "attribute_editor"
     if "editglobalsettings" in path_lower:
         if has("cancel"):
             return "cancel_close"
@@ -779,6 +862,15 @@ payload: dict[str, Any] = {
 reasons: list[str] = payload["reasons"]
 evidence: dict[str, Any] = payload["evidence"]
 
+if details_path_override:
+    details_path = resolve_path(details_path_override)
+elif receipt_path.name.endswith(".generated.json"):
+    details_path = receipt_path.with_name(receipt_path.name.replace(".generated.json", "_DETAILS.generated.json"))
+else:
+    details_path = receipt_path.with_name(receipt_path.name + ".details.json")
+details_path.parent.mkdir(parents=True, exist_ok=True)
+evidence["detailsPath"] = str(details_path)
+
 
 def add_reason(message: str) -> None:
     if message not in reasons:
@@ -793,7 +885,29 @@ if missing_files:
 texts = {key: read_text(path) for key, path in SOURCE_PATHS.items() if path.exists() and path.is_file()}
 test_corpus = "\n".join(
     texts.get(key, "")
-    for key in ("avaloniaGateTests", "dualHeadTests", "desktopDialogFactoryTests", "desktopInstallLinkingTests", "presenterTests")
+    for key in (
+        "avaloniaGateTests",
+        "dualHeadTests",
+        "blazorComponentTests",
+        "desktopDialogFactoryTests",
+        "desktopInstallLinkingTests",
+        "presenterTests",
+        "workspaceMutationTests",
+    )
+)
+current_source_corpus = "\n".join(
+    texts.get(key, "")
+    for key in (
+        "catalogResolver",
+        "legacyUiControlCatalog",
+        "sectionQuickActionCatalog",
+        "attributeWorkbenchProjector",
+        "workspaceXmlMutationCatalog",
+        "desktopDialogFactory",
+        "desktopDialogWindow",
+        "sectionHostControl",
+        "blazorAttributeWorkbench",
+    )
 )
 
 legacy_events: list[dict[str, Any]] = []
@@ -910,6 +1024,7 @@ current_inventory = {
 
 current_dynamic_elements: list[dict[str, Any]] = []
 current_named_axaml_elements: list[dict[str, Any]] = []
+current_axaml_interactive_elements: list[dict[str, Any]] = []
 for path in all_source_files(CURRENT_SOURCE_ROOTS):
     relative = display_path(path)
     text = read_text(path)
@@ -936,6 +1051,13 @@ for root in CURRENT_SOURCE_ROOTS:
         if "/bin/" in path.as_posix() or "/obj/" in path.as_posix():
             continue
         text = read_text(path)
+        for match in AVALONIA_AXAML_INTERACTIVE_RE.finditer(text):
+            current_axaml_interactive_elements.append(
+                {
+                    "source": display_path(path),
+                    "type": match.group("type"),
+                }
+            )
         for match in AVALONIA_NAMED_AXAML_RE.finditer(text):
             current_named_axaml_elements.append(
                 {
@@ -946,9 +1068,14 @@ for root in CURRENT_SOURCE_ROOTS:
             )
 evidence["currentDynamicInteractiveElementCount"] = len(current_dynamic_elements)
 evidence["currentNamedAxamlInteractiveElementCount"] = len(current_named_axaml_elements)
+evidence["currentAxamlInteractiveElementCount"] = len(current_axaml_interactive_elements)
 evidence["currentDynamicElementSamples"] = current_dynamic_elements[:30]
 evidence["currentNamedAxamlElementSamples"] = current_named_axaml_elements[:30]
+current_axaml_interactive_types = {str(item["type"]) for item in current_axaml_interactive_elements}
+evidence["currentAxamlInteractiveTypeCount"] = len(current_axaml_interactive_types)
+evidence["currentAxamlInteractiveTypeSamples"] = sorted(current_axaml_interactive_types)[:30]
 current_inventory["current-dynamic"] = {str(item["type"]) for item in current_dynamic_elements}
+current_inventory["current-dynamic"].update(current_axaml_interactive_types)
 current_inventory["current-named"] = {str(item["name"]) for item in current_named_axaml_elements}
 evidence["currentInventoryCounts"] = {key: len(value) for key, value in current_inventory.items()}
 
@@ -970,6 +1097,8 @@ def current_id_available(current_id: str) -> bool:
     if ":" not in current_id:
         return current_id in test_corpus
     prefix, value = current_id.split(":", 1)
+    if prefix == "source-marker":
+        return value in current_source_corpus
     if prefix in current_inventory:
         return value in current_inventory[prefix]
     return current_id in test_corpus
@@ -985,7 +1114,7 @@ def legacy_element_id(item: dict[str, Any]) -> str:
     return f"{source}:{line}:{kind}:{control}.{event}->{handler}"
 
 
-def resolve_legacy_element_counterparts(item: dict[str, Any]) -> tuple[list[str], list[str]]:
+def resolve_legacy_element_counterparts(item: dict[str, Any]) -> tuple[list[str], list[str], list[str]]:
     family = str(item.get("family") or "")
     source_token = normalize_token(str(item.get("source") or ""))
     control_token = normalize_token(str(item.get("control") or item.get("type") or ""))
@@ -995,6 +1124,7 @@ def resolve_legacy_element_counterparts(item: dict[str, Any]) -> tuple[list[str]
     blob = source_token + control_token + event_token + handler_token + context_token
     current_ids: list[str] = []
     strategies: list[str] = []
+    source_proof_markers: list[str] = []
 
     def apply_rules(
         rules: list[tuple[list[str], list[str]]],
@@ -1013,6 +1143,18 @@ def resolve_legacy_element_counterparts(item: dict[str, Any]) -> tuple[list[str]
     apply_rules(SOURCE_COUNTERPART_RULES, "legacy-source-token", match_path_only=True)
     apply_rules(TOKEN_COUNTERPART_RULES, "legacy-control-token")
 
+    if family == "attribute_editor":
+        current_ids = [
+            current_id
+            for current_id in current_ids
+            if current_id not in {"ui:create_entry", "ui:edit_entry", "ui:delete_entry"}
+        ]
+
+    for tokens, markers in SOURCE_PROOF_MARKER_RULES:
+        if any(contains_token(source_token, token) for token in tokens):
+            add_unique(source_proof_markers, markers)
+            strategies.append("legacy-source-proof:" + "+".join(tokens[:3]))
+
     if "editglobalsettings" in source_token:
         add_unique(current_ids, ["command:global_settings"])
         strategies.append("legacy-form:global-settings")
@@ -1030,11 +1172,11 @@ def resolve_legacy_element_counterparts(item: dict[str, Any]) -> tuple[list[str]
         add_unique(current_ids, PARITY_FAMILIES[family]["currentIds"])
         strategies.append(f"legacy-family:{family}")
 
-    return current_ids, strategies
+    return current_ids, strategies, source_proof_markers
 
 
 missing_family_mappings: list[str] = []
-missing_family_ids: dict[str, list[str]] = {}
+unavailable_family_ids: dict[str, list[str]] = {}
 missing_family_tests: dict[str, list[str]] = {}
 for family in observed_families:
     mapping = PARITY_FAMILIES.get(family)
@@ -1042,9 +1184,10 @@ for family in observed_families:
         missing_family_mappings.append(family)
         continue
     available_ids = [current_id for current_id in mapping["currentIds"] if current_id_available(current_id)]
+    unavailable_ids = [current_id for current_id in mapping["currentIds"] if current_id not in available_ids]
     missing_tests = [marker for marker in mapping["proofMarkers"] if marker not in test_corpus]
-    if not available_ids:
-        missing_family_ids[family] = mapping["currentIds"]
+    if unavailable_ids:
+        unavailable_family_ids[family] = unavailable_ids
     if missing_tests:
         missing_family_tests[family] = missing_tests
     evidence["familyReviews"][family] = {
@@ -1052,17 +1195,18 @@ for family in observed_families:
         "legacyDynamicElementCount": dynamic_family_counts.get(family, 0),
         "mappedCurrentIds": mapping["currentIds"],
         "availableCurrentIds": available_ids,
+        "unavailableCurrentIds": unavailable_ids,
         "proofMarkers": mapping["proofMarkers"],
         "missingProofMarkers": missing_tests,
-        "status": "pass" if available_ids and not missing_tests else "fail",
+        "status": "pass" if available_ids and not unavailable_ids and not missing_tests else "fail",
     }
 
 if missing_family_mappings:
     add_reason("Observed legacy UI behavior families have no Chummer6 parity mapping: " + ", ".join(missing_family_mappings))
-if missing_family_ids:
+if unavailable_family_ids:
     add_reason(
-        "Observed legacy UI behavior families have no live Chummer6 command/control/action IDs: "
-        + ", ".join(f"{family}: {', '.join(ids)}" for family, ids in sorted(missing_family_ids.items()))
+        "Observed legacy UI behavior families still point to unavailable Chummer6 command/control/action IDs: "
+        + ", ".join(f"{family}: {', '.join(ids)}" for family, ids in sorted(unavailable_family_ids.items()))
     )
 if missing_family_tests:
     add_reason(
@@ -1076,9 +1220,11 @@ family_fallback_reviews: list[dict[str, Any]] = []
 all_legacy_elements = legacy_events + legacy_dynamic_elements
 for item in all_legacy_elements:
     family = str(item.get("family") or "")
-    mapped_current_ids, mapping_strategies = resolve_legacy_element_counterparts(item)
+    mapped_current_ids, mapping_strategies, source_proof_markers = resolve_legacy_element_counterparts(item)
     available_current_ids = [current_id for current_id in mapped_current_ids if current_id_available(current_id)]
-    proof_markers = PARITY_FAMILIES.get(family, {}).get("proofMarkers", [])
+    unavailable_current_ids = [current_id for current_id in mapped_current_ids if current_id not in available_current_ids]
+    proof_markers = list(PARITY_FAMILIES.get(family, {}).get("proofMarkers", []))
+    add_unique(proof_markers, source_proof_markers)
     missing_proof_markers = [marker for marker in proof_markers if marker not in test_corpus]
     review = {
         "legacyElementId": legacy_element_id(item),
@@ -1091,10 +1237,12 @@ for item in all_legacy_elements:
         "family": family,
         "mappedCurrentIds": mapped_current_ids,
         "availableCurrentIds": available_current_ids,
+        "unavailableCurrentIds": unavailable_current_ids,
         "mappingStrategies": mapping_strategies,
+        "sourceProofMarkers": source_proof_markers,
         "proofMarkers": proof_markers,
         "missingProofMarkers": missing_proof_markers,
-        "status": "pass" if available_current_ids and not missing_proof_markers else "fail",
+        "status": "pass" if available_current_ids and not unavailable_current_ids and not missing_proof_markers else "fail",
     }
     legacy_element_reviews.append(review)
     if mapping_strategies == [f"legacy-family:{family}"]:
@@ -1102,17 +1250,22 @@ for item in all_legacy_elements:
     if review["status"] != "pass":
         missing_element_reviews.append(review)
 
+unavailable_element_reviews = [review for review in legacy_element_reviews if review["unavailableCurrentIds"]]
 evidence["legacyElementDispositionCount"] = len(legacy_element_reviews)
 evidence["legacyElementDispositionSamples"] = legacy_element_reviews[:80]
 evidence["missingLegacyElementDispositionCount"] = len(missing_element_reviews)
 evidence["missingLegacyElementDispositions"] = missing_element_reviews[:80]
 evidence["familyFallbackLegacyElementDispositionCount"] = len(family_fallback_reviews)
 evidence["familyFallbackLegacyElementDispositionSamples"] = family_fallback_reviews[:40]
+evidence["familyReviewsWithUnavailableMappedCurrentIds"] = len(unavailable_family_ids)
+evidence["familyUnavailableMappedCurrentIdCount"] = sum(len(ids) for ids in unavailable_family_ids.values())
+evidence["legacyElementsWithUnavailableMappedCurrentIds"] = len(unavailable_element_reviews)
+evidence["unavailableMappedCurrentIdCount"] = sum(len(review["unavailableCurrentIds"]) for review in unavailable_element_reviews)
 if missing_element_reviews:
     add_reason(
         f"Individual {legacy_subject} legacy UI elements lack concrete Chummer6 counterpart disposition: "
         + ", ".join(
-            f"{item['legacyElementId']} -> {', '.join(item['mappedCurrentIds']) or 'none'}"
+            f"{item['legacyElementId']} -> {', '.join(item['unavailableCurrentIds']) or ', '.join(item['mappedCurrentIds']) or 'none'}"
             for item in missing_element_reviews[:12]
         )
     )
@@ -1139,20 +1292,18 @@ if not evidence["b14ConsumesReceipt"]:
     add_reason(f"B14 flagship UI release gate does not consume the {legacy_subject} legacy UI element parity receipt.")
 
 test_assembly_path = repo_root / "Chummer.Tests" / "bin" / "Debug" / "net10.0" / "Chummer.Tests.dll"
+test_runner_path = test_assembly_path.with_suffix("")
 evidence["testAssemblyPath"] = str(test_assembly_path)
-evidence["reusedExistingTestBuild"] = bool(reuse_existing_test_build and test_assembly_path.is_file())
-if reuse_existing_test_build and test_assembly_path.is_file():
+evidence["testRunnerPath"] = str(test_runner_path)
+evidence["reusedExistingTestBuild"] = bool(reuse_existing_test_build and test_runner_path.is_file())
+if reuse_existing_test_build and test_runner_path.is_file():
     test_command = [
-        "dotnet",
-        "test",
-        "--project",
-        "Chummer.Tests/Chummer.Tests.csproj",
-        "--no-restore",
-        "--no-build",
+        str(test_runner_path),
         "--filter",
         PROOF_FILTER,
-        "-v",
-        "minimal",
+        "--output",
+        "Normal",
+        "--no-progress",
     ]
 else:
     test_command = [
@@ -1164,8 +1315,9 @@ else:
         "net10.0",
         "--filter",
         PROOF_FILTER,
-        "-v",
-        "minimal",
+        "--output",
+        "Normal",
+        "--no-progress",
     ]
 evidence["testCommand"] = test_command
 evidence["testFilter"] = PROOF_FILTER
@@ -1234,10 +1386,10 @@ payload["legacyExtractionReview"] = {
     "unclassifiedLegacyDynamicElements": unclassified_dynamic[:50],
 }
 payload["currentMappingReview"] = {
-    "status": "pass" if not missing_family_mappings and not missing_family_ids and not missing_family_tests and not missing_element_reviews else "fail",
+    "status": "pass" if not missing_family_mappings and not unavailable_family_ids and not missing_family_tests and not missing_element_reviews else "fail",
     "summary": (
         "Every observed legacy UI element and behavior family maps to live Chummer6 IDs and executable proof markers."
-        if not missing_family_mappings and not missing_family_ids and not missing_family_tests and not missing_element_reviews
+        if not missing_family_mappings and not unavailable_family_ids and not missing_family_tests and not missing_element_reviews
         else "One or more observed legacy UI elements or behavior families lack Chummer6 parity mapping."
     ),
     "familyReviews": evidence["familyReviews"],
@@ -1303,10 +1455,39 @@ if not reasons:
         "has an individual live Chummer6 command/control/action counterpart disposition and executable proof coverage."
     )
 
+details_payload = {
+    "generatedAt": payload["generatedAt"],
+    "contract_name": contract_name + ".details",
+    "status": payload["status"],
+    "summary": (
+        f"Full per-element {legacy_subject} legacy UI parity inventory with explicit Chummer6 counterpart dispositions."
+    ),
+    "sourceReceiptPath": str(receipt_path),
+    "detailsPath": str(details_path),
+    "legacySubject": legacy_subject,
+    "legacySubjectSlug": legacy_subject_slug,
+    "legacyElementDispositionCount": len(legacy_element_reviews),
+    "missingLegacyElementDispositionCount": len(missing_element_reviews),
+    "familyFallbackLegacyElementDispositionCount": len(family_fallback_reviews),
+    "familyReviewsWithUnavailableMappedCurrentIds": len(unavailable_family_ids),
+    "familyUnavailableMappedCurrentIdCount": sum(len(ids) for ids in unavailable_family_ids.values()),
+    "legacyElementsWithUnavailableMappedCurrentIds": len(unavailable_element_reviews),
+    "unavailableMappedCurrentIdCount": sum(len(review["unavailableCurrentIds"]) for review in unavailable_element_reviews),
+    "observedFamilyCount": len(observed_families),
+    "observedFamilies": observed_families,
+    "currentInventoryCounts": evidence["currentInventoryCounts"],
+    "familyReviews": evidence["familyReviews"],
+    "legacyElementDispositions": legacy_element_reviews,
+    "missingLegacyElementDispositions": missing_element_reviews,
+    "familyFallbackLegacyElementDispositions": family_fallback_reviews,
+}
+
+details_path.write_text(json.dumps(details_payload, indent=2) + "\n", encoding="utf-8")
 receipt_path.write_text(json.dumps(payload, indent=2) + "\n", encoding="utf-8")
 if payload["status"] != "pass":
     raise SystemExit(48)
 
 print(f"[{script_label}] PASS: legacy UI elements, dynamic handlers, and Chummer6 behavior counterparts are covered.")
 print(f"[{script_label}] evidence: {receipt_path}")
+print(f"[{script_label}] detail inventory: {details_path}")
 PY

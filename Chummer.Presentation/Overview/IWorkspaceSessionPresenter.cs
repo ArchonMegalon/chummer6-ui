@@ -19,6 +19,17 @@ public interface IWorkspaceSessionPresenter
 
     WorkspaceSessionState CloseAll();
 
+    WorkspaceSessionState Forget(CharacterWorkspaceId id);
+
+    WorkspaceSessionState SetRevisions(
+        CharacterWorkspaceId id,
+        long contentRevision,
+        long savedRevision,
+        bool clearConflict = true);
+
+    WorkspaceSessionState SetConflictState(CharacterWorkspaceId id, WorkspaceConflictState? conflictState);
+
+    [Obsolete("Use SetRevisions. HasSavedWorkspace is derived from SavedRevision.")]
     WorkspaceSessionState SetSavedStatus(CharacterWorkspaceId id, bool hasSavedWorkspace);
 
     bool Contains(CharacterWorkspaceId id);

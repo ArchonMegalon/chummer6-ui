@@ -247,6 +247,20 @@ public sealed class DesktopAliceWindowTests
     }
 
     [TestMethod]
+    public void DesktopAliceWindow_source_keeps_blank_state_attribute_guidance_readable_for_player_facing_build_help()
+    {
+        string repoRoot = TestContextLocator.ResolveChummerPresentationRepoRoot();
+        string source = File.ReadAllText(Path.Combine(repoRoot, "Chummer.Avalonia", "DesktopAliceWindow.cs"));
+
+        StringAssert.Contains(source, "Logic, Intuition, and Reaction first, then enough Body and Willpower to survive bad turns.");
+        StringAssert.Contains(source, "Magic first, then Willpower, Logic, and Intuition");
+        StringAssert.Contains(source, "Agility, Reaction, and Body first, then Strength or Willpower depending on the combat plan.");
+        Assert.IsFalse(source.Contains("\"LOG, INT, REA, then enough BOD/WIL to survive bad turns.\"", StringComparison.Ordinal));
+        Assert.IsFalse(source.Contains("\"MAG path first, then WIL, LOG, INT, with enough CHA or AGI to match tradition and table role.\"", StringComparison.Ordinal));
+        Assert.IsFalse(source.Contains("\"AGI, REA, BOD, then STR or WIL depending on the combat plan.\"", StringComparison.Ordinal));
+    }
+
+    [TestMethod]
     public void PlayerFacingCopyHumanizer_removes_provider_and_proof_language_from_visible_copy()
     {
         const string raw = "ALICE generated proofs and an Unmixr AI narration receipt from the approved origin canon through a media-factory provider lane after validation checks, audit verdict, registry posture, explain receipt, grounded explain receipt, explain companion, explain proof, proof trail, receipt-backed authority truth, environment truth, Public Proof Shelf, Rule Environment Studio, Before-after diffs, and available follow-up. The synthetic flagship client keeps reporter-ready release path copy visible in the signed-in support lane.";
@@ -302,6 +316,33 @@ public sealed class DesktopAliceWindowTests
         Assert.IsFalse(cleaned.Contains("flagship", StringComparison.OrdinalIgnoreCase));
         Assert.IsFalse(cleaned.Contains("reporter-ready", StringComparison.OrdinalIgnoreCase));
         Assert.IsFalse(cleaned.Contains("signed-in support", StringComparison.OrdinalIgnoreCase));
+    }
+
+    [TestMethod]
+    public void PlayerFacingCopyHumanizer_preserves_paths_while_cleaning_surrounding_copy()
+    {
+        const string raw = "Watch Folder | /tmp/chummer-ai/tmp/chummer-roster-123\nOpen proof at https://chummer.run/downloads/files/chummer-ai-proof.json before validation.";
+
+        string cleaned = Chummer.Presentation.UndetectableHumanizerCopyAdapter.Humanize(raw);
+
+        StringAssert.Contains(cleaned, "/tmp/chummer-ai/tmp/chummer-roster-123");
+        StringAssert.Contains(cleaned, "https://chummer.run/downloads/files/chummer-ai-proof.json");
+        Assert.IsFalse(cleaned.Contains("/tmp/chummer-assistant", StringComparison.OrdinalIgnoreCase));
+        Assert.IsFalse(cleaned.Contains("proof at", StringComparison.OrdinalIgnoreCase));
+        Assert.IsFalse(cleaned.Contains("validation", StringComparison.OrdinalIgnoreCase));
+    }
+
+    [TestMethod]
+    public void PlayerFacingCopyHumanizer_does_not_treat_slash_separated_limits_as_a_literal_path_tail()
+    {
+        const string raw = "Limits: 50 Karma / 450000 nuyen. Build path focus keeps the next grounded handoff explicit.";
+
+        string cleaned = Chummer.Presentation.UndetectableHumanizerCopyAdapter.Humanize(raw);
+
+        StringAssert.Contains(cleaned, "50 Karma / 450000 nuyen");
+        StringAssert.Contains(cleaned, "next step");
+        Assert.IsFalse(cleaned.Contains("grounded", StringComparison.OrdinalIgnoreCase));
+        Assert.IsFalse(cleaned.Contains("handoff", StringComparison.OrdinalIgnoreCase));
     }
 
     [TestMethod]

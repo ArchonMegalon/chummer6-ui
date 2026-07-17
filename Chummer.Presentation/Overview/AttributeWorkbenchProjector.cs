@@ -128,6 +128,11 @@ public static class AttributeWorkbenchProjector
             ? FormatFullLabel(attributeName)
             : FormatCompactLabel(attributeName);
 
+    public static string FormatTotalDisplay(AttributeWorkbenchRow row, string? rulesetId)
+        => IsSr6Ruleset(rulesetId)
+            ? row.TotalValue.ToString(CultureInfo.InvariantCulture)
+            : $"{row.TotalValue} ({row.MetatypeAugMax})";
+
     public static string FormatLimitsDisplay(AttributeWorkbenchRow row, string? rulesetId)
         => $"{row.MetatypeMin} / {row.MetatypeMax} ({row.MetatypeAugMax})";
 
@@ -442,4 +447,8 @@ public sealed record AttributeWorkbenchRow(
     public int EffectiveKarmaMaximum => Math.Max(
         0,
         Math.Min(Math.Max(0, KarmaMaximum), TotalCap - Math.Max(EffectiveBaseMinimum, BaseValue)));
+
+    public string NaturalRangeText => $"{MetatypeMin}-{MetatypeMax}";
+
+    public string AugmentedRangeText => $"Aug {MetatypeAugMax}";
 }

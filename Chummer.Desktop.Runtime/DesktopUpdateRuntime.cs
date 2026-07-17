@@ -28,45 +28,6 @@ public sealed record DesktopUpdateProgressUpdate(
     int? Completed = null,
     int? Total = null);
 
-public sealed record DesktopUpdateClientStatus(
-    string HeadId,
-    string InstalledVersion,
-    string ChannelId,
-    string Platform,
-    string Arch,
-    bool UpdatesEnabled,
-    bool AutoApply,
-    string ManifestLocation,
-    DateTimeOffset? LastCheckedAtUtc,
-    string? LastManifestVersion,
-    DateTimeOffset? LastManifestPublishedAtUtc,
-    string? LastError,
-    string Status,
-    string RecommendedAction,
-    string? RolloutState = null,
-    string? RolloutReason = null,
-    string? SupportabilityState = null,
-    string? SupportabilitySummary = null,
-    string? KnownIssueSummary = null,
-    string? FixAvailabilitySummary = null,
-    string? ProofStatus = null,
-    DateTimeOffset? ProofGeneratedAtUtc = null,
-    string? InstallAccessClass = null,
-    string? DesktopChannelRef = null,
-    string? InstallGuidanceRef = null,
-    string? ParticipationReceiptRef = null,
-    string? RewardPublicationRef = null,
-    string? PublicInstallRoute = null,
-    string? DesktopSurfaceRationale = null,
-    string? PendingUpdateVersion = null,
-    string? PendingUpdateChannelId = null,
-    string? PendingInstallerPath = null,
-    DateTimeOffset? LastUpdateLaunchAttemptAtUtc = null,
-    DateTimeOffset? RollbackWindowStartedAtUtc = null,
-    DateTimeOffset? RollbackWindowExpiresAtUtc = null,
-    string? LastManifestChannelId = null,
-    string UpdateMode = "full");
-
 public static class DesktopUpdateRuntime
 {
     private const string ApplySwitch = "--desktop-update-apply";
