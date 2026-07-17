@@ -37,6 +37,7 @@ public partial class DesktopShell : IDisposable
     private CharacterOverviewStateBridge? _bridge;
     private const long MaxImportBytes = 8 * 1024 * 1024;
     private ElementReference _shellRoot;
+    private readonly CancellationTokenSource _componentLifetime = new();
 
     [Inject]
     public ICharacterOverviewPresenter Presenter { get; set; } = default!;
@@ -93,6 +94,7 @@ public partial class DesktopShell : IDisposable
     private string MetadataNotes { get; set; } = string.Empty;
     private string _lastUiUtc = DateTimeOffset.UtcNow.ToString("u");
     private long _lastDownloadVersionHandled;
+    private long _lastRecoveryExportVersionHandled;
     private long _lastExportVersionHandled;
     private long _lastPrintVersionHandled;
     private bool _isDisposed;
@@ -123,6 +125,10 @@ public partial class DesktopShell : IDisposable
     private bool ShowLeftPane =>
         _shellSurfaceState.ActiveWorkspaceId is not null
         && _shellSurfaceState.OpenWorkspaces.Count > 1;
+
+    private bool UseResponsiveBuildWorkspace =>
+        (_shellSurfaceState.ActiveWorkspaceId is not null || State.WorkspaceId is not null)
+        && NavigationTabs.Count > 0;
 
     private IReadOnlyList<AppCommandDefinition> MenuRoots =>
         _shellSurfaceState.MenuRoots;
@@ -248,7 +254,7 @@ public partial class DesktopShell : IDisposable
     protected override async Task OnInitializedAsync()
     {
         ShellPresenter.StateChanged += OnShellStateChanged;
-        await ShellPresenter.InitializeAsync(CancellationToken.None);
+        await ShellPresenter.InitializeAsync(_componentLifetime.Token);
 
         _bridge = new CharacterOverviewStateBridge(Presenter, state =>
         {
@@ -260,7 +266,7 @@ public partial class DesktopShell : IDisposable
             _lastUiUtc = DateTimeOffset.UtcNow.ToString("u");
             _ = InvokeAsync(StateHasChanged);
         });
-        await _bridge.InitializeAsync(CancellationToken.None);
+        await _bridge.InitializeAsync(_componentLifetime.Token);
         SyncOriginWizardDialogUiState(clearWhenDialogClosed: true);
         if (ShouldSyncShellWorkspaceContext(State, ShellState))
         {
@@ -273,11 +279,7 @@ public partial class DesktopShell : IDisposable
 
     protected override async Task OnAfterRenderAsync(bool firstRender)
     {
-        if (firstRender)
-        {
-            await _shellRoot.FocusAsync();
-        }
-
+        await DispatchPendingRecoveryExportAsync();
         await DispatchPendingDownloadAsync();
         await DispatchPendingExportAsync();
         await DispatchPendingPrintAsync();
@@ -314,15 +316,20 @@ public partial class DesktopShell : IDisposable
 
     public void Dispose()
     {
+        if (_isDisposed)
+            return;
+
         _isDisposed = true;
+        _componentLifetime.Cancel();
         ShellPresenter.StateChanged -= OnShellStateChanged;
         _bridge?.Dispose();
+        _componentLifetime.Dispose();
     }
 
     private Task SyncShellWorkspaceContextAsync()
     {
         CharacterWorkspaceId? activeWorkspaceId = State.Session.ActiveWorkspaceId ?? State.WorkspaceId;
-        return ShellPresenter.SyncWorkspaceContextAsync(activeWorkspaceId, CancellationToken.None);
+        return ShellPresenter.SyncWorkspaceContextAsync(activeWorkspaceId, _componentLifetime.Token);
     }
 
     private void RefreshShellSurfaceState()

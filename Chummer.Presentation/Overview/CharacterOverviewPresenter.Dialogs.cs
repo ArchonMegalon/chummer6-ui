@@ -9,6 +9,9 @@ public sealed partial class CharacterOverviewPresenter
 {
     public Task HandleUiControlAsync(string controlId, CancellationToken ct)
     {
+        using PresenterOperationLease operation = EnterPresenterOperation(ct);
+        ct = operation.Token;
+        ct.ThrowIfCancellationRequested();
         if (string.IsNullOrWhiteSpace(controlId))
         {
             Publish(State with { Error = "UI control id is required." });
@@ -26,6 +29,9 @@ public sealed partial class CharacterOverviewPresenter
 
     public Task UpdateDialogFieldAsync(string fieldId, string? value, CancellationToken ct)
     {
+        using PresenterOperationLease operation = EnterPresenterOperation(ct);
+        ct = operation.Token;
+        ct.ThrowIfCancellationRequested();
         DesktopDialogState? dialog = State.ActiveDialog;
         if (dialog is null)
             return Task.CompletedTask;
@@ -61,6 +67,8 @@ public sealed partial class CharacterOverviewPresenter
 
     public async Task ExecuteDialogActionAsync(string actionId, CancellationToken ct)
     {
+        using PresenterOperationLease operation = EnterPresenterOperation(ct);
+        ct = operation.Token;
         DialogCoordinationContext context = new(
             State: State,
             Publish: Publish,
@@ -78,6 +86,9 @@ public sealed partial class CharacterOverviewPresenter
 
     public Task CloseDialogAsync(CancellationToken ct)
     {
+        using PresenterOperationLease operation = EnterPresenterOperation(ct);
+        ct = operation.Token;
+        ct.ThrowIfCancellationRequested();
         Publish(State with
         {
             ActiveDialog = null,

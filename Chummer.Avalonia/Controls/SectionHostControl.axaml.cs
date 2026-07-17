@@ -5,6 +5,7 @@ using Avalonia.Interactivity;
 using Avalonia.Media;
 using Avalonia.Threading;
 using Chummer.Contracts.Presentation;
+using Chummer.Contracts.Rulesets;
 using Chummer.Desktop.Runtime;
 using Chummer.Presentation.Overview;
 using System.Globalization;
@@ -25,6 +26,7 @@ public partial class SectionHostControl : UserControl
     private bool _suppressNavigationTabSelectionChanged;
     private bool _suppressSectionActionSelectionChanged;
     private ExplainDrawerContext? _currentExplainDrawerContext;
+    private string? _activeRulesetId;
 
     public event EventHandler<string>? NavigationTabSelected;
     public event EventHandler<string>? SectionActionSelected;
@@ -47,6 +49,7 @@ public partial class SectionHostControl : UserControl
 
     public void SetState(SectionHostState state)
     {
+        _activeRulesetId = RulesetDefaults.NormalizeOptional(state.RulesetId);
         SetNavigationTabs(state.NavigationTabs, state.ActiveTabId);
         SetSectionActions(state.SectionActions, state.ActiveActionId);
         SetNotice(state.Notice);
@@ -160,12 +163,12 @@ public partial class SectionHostControl : UserControl
             return;
         }
 
-        string previewText = BuildSectionPreviewText(sectionId, previewJson, rowArray);
+        string previewText = BuildSectionPreviewText(sectionId, previewJson, rowArray, _activeRulesetId);
         SectionPreviewBox.Text = previewText;
         bool showingAttributeParityEditor = AttributeParityEditorBorder.IsVisible;
         SectionReviewPanel.IsVisible = false;
         SectionRowsList.ItemsSource = null;
-        SectionRowsList.ItemsSource = rowArray;
+        SectionRowsList.ItemsSource = BuildSectionRowViewItems(rowArray, _activeRulesetId);
         SectionRowsBorder.IsVisible = !showingAttributeParityEditor && !GearWorkbenchBorder.IsVisible;
     }
 
@@ -192,7 +195,7 @@ public partial class SectionHostControl : UserControl
 
         SectionContextBorder.IsVisible = showContext;
         SectionContextTitleText.Text = showContext ? BuildSectionTitle(sectionId, previewJson) : string.Empty;
-        SectionContextSummaryText.Text = showContext ? BuildSectionSummary(sectionId, previewJson, rowArray, quickActions) : string.Empty;
+        SectionContextSummaryText.Text = showContext ? BuildSectionSummary(sectionId, previewJson, rowArray, quickActions, _activeRulesetId) : string.Empty;
         SectionContextTitleText.IsVisible = showContext && !string.IsNullOrWhiteSpace(SectionContextTitleText.Text);
         SectionContextSummaryText.IsVisible = showContext && !string.IsNullOrWhiteSpace(SectionContextSummaryText.Text);
         UpdateSectionRowsHeight();
@@ -211,7 +214,7 @@ public partial class SectionHostControl : UserControl
         }
 
         IReadOnlyList<ClassicSheetFactDisplayItem> summaryFacts = BuildCharacterSummaryFacts(previewJson);
-        IReadOnlyList<ClassicSheetFactDisplayItem> attributeFacts = BuildCharacterAttributeFacts(previewJson, rows);
+        IReadOnlyList<ClassicSheetFactDisplayItem> attributeFacts = BuildCharacterAttributeFacts(previewJson, rows, _activeRulesetId);
         ClassicCharacterSummaryTitle.Text = BuildClassicSheetTitle(sectionId, previewJson);
         ClassicCharacterSummaryTitle.IsVisible = !string.IsNullOrWhiteSpace(ClassicCharacterSummaryTitle.Text);
 
@@ -285,7 +288,9 @@ public partial class SectionHostControl : UserControl
 
     private void SetAttributeParityEditor(string? sectionId, string previewJson)
     {
+        ApplyAttributeParityHeaderLabels(_activeRulesetId);
         AttributeParityRowsHost.Children.Clear();
+        AttributeParityRowsHost.Spacing = 4d;
         if (!TryBuildAttributeParityRows(sectionId, previewJson, out AttributeParityRowState[] rows))
         {
             AttributeParityEditorBorder.IsVisible = false;
@@ -302,27 +307,78 @@ public partial class SectionHostControl : UserControl
 
     private Control CreateAttributeParityRow(AttributeParityRowState row)
     {
+        bool isSr6 = AttributeWorkbenchProjector.IsSr6Ruleset(_activeRulesetId);
         IBrush rowForeground = DesktopShellTheme.ResolveForegroundBrush();
+        IBrush rowMutedForeground = DesktopShellTheme.ResolveTextMutedBrush();
+        IBrush rowSurface = DesktopShellTheme.ResolveSurfaceBrush();
+        IBrush rowSurfaceAlt = DesktopShellTheme.ResolveSurfaceAltBrush();
+        IBrush rowBorder = DesktopShellTheme.ResolveBorderBrush();
+        string rowLabel = BuildAttributeEditorRowLabel(row.AttributeName, _activeRulesetId);
+        bool isEdgeAttribute = AttributeWorkbenchProjector.IsEdgeAttribute(row.AttributeName);
+        bool careerMode = row.CareerMode;
+        bool showImproveButton = isSr6 && careerMode;
+        bool showBurnEdgeButton = isSr6 && careerMode && isEdgeAttribute;
+        int metatypeMin = row.MetatypeMin;
+        int metatypeMax = row.MetatypeMax;
+        int metatypeAugMax = row.MetatypeAugMax;
+        int availableKarma = row.AvailableKarma;
         Grid grid = new()
         {
             Name = $"AttributeParityRow_{ShortAttributeLabel(row.AttributeName)}",
             ColumnDefinitions = new ColumnDefinitions("*,128,128,72,120"),
             ColumnSpacing = 8,
-            Margin = new Thickness(0d, 0d, 0d, 1d)
+            Margin = new Thickness(0d)
         };
 
         TextBlock nameLabel = new()
         {
-            Text = row.DisplayName,
+            Name = $"AttributeParityRow_{ShortAttributeLabel(row.AttributeName)}_Label",
+            Text = rowLabel,
             Foreground = rowForeground,
+            FontWeight = isSr6 ? FontWeight.SemiBold : FontWeight.Normal,
             VerticalAlignment = global::Avalonia.Layout.VerticalAlignment.Center
         };
-        grid.Children.Add(nameLabel);
+        ToolTip.SetTip(nameLabel, row.AttributeName);
+        Grid nameCell = new()
+        {
+            ColumnDefinitions = showImproveButton || showBurnEdgeButton ? new ColumnDefinitions("*,Auto") : new ColumnDefinitions("*"),
+            ColumnSpacing = 6d,
+            HorizontalAlignment = global::Avalonia.Layout.HorizontalAlignment.Stretch
+        };
+        nameCell.Children.Add(nameLabel);
+        StackPanel? actionHost = null;
+        if (showImproveButton || showBurnEdgeButton)
+        {
+            actionHost = new StackPanel
+            {
+                Orientation = global::Avalonia.Layout.Orientation.Horizontal,
+                Spacing = 6d,
+                HorizontalAlignment = global::Avalonia.Layout.HorizontalAlignment.Right,
+                VerticalAlignment = global::Avalonia.Layout.VerticalAlignment.Center
+            };
+            Grid.SetColumn(actionHost, 1);
+            nameCell.Children.Add(actionHost);
+        }
 
-        int baseValue = Math.Clamp(row.BaseValue, 0, Math.Max(0, row.PriorityMaximum));
+        int baseValue = Math.Clamp(
+            row.BaseValue,
+            Math.Max(0, metatypeMin),
+            Math.Max(Math.Max(0, metatypeMin), Math.Max(0, row.PriorityMaximum)));
         int karmaValue = Math.Clamp(row.KarmaValue, 0, Math.Max(0, row.KarmaMaximum));
-        Action<int> setBaseStepperValue = static _ => { };
-        Action<int> setKarmaStepperValue = static _ => { };
+        int ResolveTotalCap() => Math.Max(metatypeMax, metatypeAugMax);
+        int ResolveBaseMinimum() => Math.Max(0, metatypeMin);
+        int ResolveBaseMaximum() => Math.Max(
+            ResolveBaseMinimum(),
+            Math.Min(Math.Max(0, row.PriorityMaximum), ResolveTotalCap() - Math.Max(0, karmaValue)));
+        int ResolveKarmaMaximum() => Math.Max(
+            0,
+            Math.Min(Math.Max(0, row.KarmaMaximum), ResolveTotalCap() - Math.Max(ResolveBaseMinimum(), baseValue)));
+        Func<int, int> setBaseStepperValue = static value => value;
+        Func<int, int> setKarmaStepperValue = static value => value;
+        Action<int> setBaseReadonlyValue = static _ => { };
+        Action<int> setKarmaReadonlyValue = static _ => { };
+        Action refreshBaseStepperBounds = static () => { };
+        Action refreshKarmaStepperBounds = static () => { };
         bool suppressMirror = false;
         CancellationTokenSource? baseCommitCancellation = null;
         CancellationTokenSource? karmaCommitCancellation = null;
@@ -331,76 +387,141 @@ public partial class SectionHostControl : UserControl
 
         TextBlock totalValueText = new()
         {
-            Text = BuildAttributeValueDisplay(baseValue + karmaValue, row.MetatypeAugMax),
+            Name = $"AttributeParityRow_{ShortAttributeLabel(row.AttributeName)}_Total",
+            Text = BuildAttributeValueDisplay(baseValue + karmaValue, metatypeAugMax, _activeRulesetId),
             Foreground = rowForeground,
             FontWeight = FontWeight.SemiBold,
             HorizontalAlignment = global::Avalonia.Layout.HorizontalAlignment.Right,
             VerticalAlignment = global::Avalonia.Layout.VerticalAlignment.Center
         };
+        ToolTip.SetTip(totalValueText, isSr6 ? BuildAttributeBreakdownText(baseValue, karmaValue) : BuildAttributeTotalToolTip(row.AttributeName, _activeRulesetId));
         Grid.SetColumn(totalValueText, 3);
         grid.Children.Add(totalValueText);
 
         TextBlock limitsText = new()
         {
-            Text = $"{row.MetatypeMin} / {row.MetatypeMax} ({row.MetatypeAugMax})",
-            Foreground = rowForeground,
+            Name = $"AttributeParityRow_{ShortAttributeLabel(row.AttributeName)}_Limits",
+            Text = BuildAttributeLimitsDisplay(metatypeMin, metatypeMax, metatypeAugMax),
+            Foreground = rowMutedForeground,
             HorizontalAlignment = global::Avalonia.Layout.HorizontalAlignment.Right,
             VerticalAlignment = global::Avalonia.Layout.VerticalAlignment.Center
         };
+        ToolTip.SetTip(limitsText, BuildAttributeLimitsToolTip(_activeRulesetId));
         Grid.SetColumn(limitsText, 4);
         grid.Children.Add(limitsText);
 
-        Control baseEditor = CreateAttributeValueStepper(
-            $"AttributeBaseEditor_{ShortAttributeLabel(row.AttributeName)}",
-            $"{row.DisplayName} starting value",
-            baseValue,
-            0,
-            Math.Max(0, row.PriorityMaximum),
-            row.BaseUnlocked,
-            static next => next.ToString(CultureInfo.InvariantCulture),
-            next =>
+        Button? improveButton = null;
+        if (showImproveButton)
+        {
+            improveButton = new Button
             {
-                baseValue = next;
-                pendingBaseValue = baseValue;
-                MirrorCapPressure(baseChanged: true);
-                pendingKarmaValue = karmaValue;
-                RefreshLiveValue();
-                baseCommitCancellation?.Cancel();
-                baseCommitCancellation?.Dispose();
-                baseCommitCancellation = new CancellationTokenSource();
-                _ = ScheduleCommitAsync("base", row.BaseValue, () => pendingBaseValue, baseCommitCancellation.Token);
-            },
-            out setBaseStepperValue);
+                Name = $"AttributeImprove_{ShortAttributeLabel(row.AttributeName)}",
+                Content = "Improve",
+                MinWidth = 72,
+                Height = 24,
+                Padding = new Thickness(8d, 1d),
+                HorizontalAlignment = global::Avalonia.Layout.HorizontalAlignment.Right,
+                VerticalAlignment = global::Avalonia.Layout.VerticalAlignment.Center,
+                Foreground = rowForeground,
+                Background = rowSurfaceAlt,
+                BorderBrush = rowBorder,
+                BorderThickness = new Thickness(1)
+            };
+            actionHost?.Children.Add(improveButton);
+        }
+
+        Button? burnEdgeButton = null;
+        if (showBurnEdgeButton)
+        {
+            burnEdgeButton = new Button
+            {
+                Name = $"AttributeBurnEdge_{ShortAttributeLabel(row.AttributeName)}",
+                Content = "Burn",
+                MinWidth = 50,
+                Height = 24,
+                Padding = new Thickness(8d, 1d),
+                HorizontalAlignment = global::Avalonia.Layout.HorizontalAlignment.Right,
+                VerticalAlignment = global::Avalonia.Layout.VerticalAlignment.Center,
+                Foreground = rowForeground,
+                Background = rowSurfaceAlt,
+                BorderBrush = rowBorder,
+                BorderThickness = new Thickness(1)
+            };
+            actionHost?.Children.Add(burnEdgeButton);
+        }
+
+        grid.Children.Add(nameCell);
+
+        Control baseEditor = careerMode
+            ? CreateReadonlyAttributeValueDisplay(
+                $"AttributeBaseEditor_{ShortAttributeLabel(row.AttributeName)}",
+                BuildAttributeStepperLabel(row.AttributeName, _activeRulesetId, "base"),
+                baseValue.ToString(CultureInfo.InvariantCulture),
+                out setBaseReadonlyValue)
+            : CreateAttributeValueStepper(
+                $"AttributeBaseEditor_{ShortAttributeLabel(row.AttributeName)}",
+                BuildAttributeStepperLabel(row.AttributeName, _activeRulesetId, "base"),
+                baseValue,
+                ResolveBaseMinimum,
+                ResolveBaseMaximum,
+                row.BaseUnlocked,
+                static next => next.ToString(CultureInfo.InvariantCulture),
+                next =>
+                {
+                    baseValue = next;
+                    MirrorCapPressure(baseChanged: true);
+                    QueueCommit("base", row.BaseValue, () => pendingBaseValue, ref baseCommitCancellation);
+                    QueueCommit("karma", row.KarmaValue, () => pendingKarmaValue, ref karmaCommitCancellation);
+                },
+                out setBaseStepperValue,
+                out refreshBaseStepperBounds);
         Grid.SetColumn(baseEditor, 1);
         grid.Children.Add(baseEditor);
 
-        Control karmaEditor = CreateAttributeValueStepper(
-            $"AttributeKarmaEditor_{ShortAttributeLabel(row.AttributeName)}",
-            $"{row.DisplayName} added value",
-            karmaValue,
-            0,
-            Math.Max(0, row.KarmaMaximum),
-            enabled: true,
-            static next => next.ToString(CultureInfo.InvariantCulture),
-            next =>
-            {
-                karmaValue = next;
-                pendingKarmaValue = karmaValue;
-                MirrorCapPressure(baseChanged: false);
-                pendingBaseValue = baseValue;
-                RefreshLiveValue();
-                karmaCommitCancellation?.Cancel();
-                karmaCommitCancellation?.Dispose();
-                karmaCommitCancellation = new CancellationTokenSource();
-                _ = ScheduleCommitAsync("karma", row.KarmaValue, () => pendingKarmaValue, karmaCommitCancellation.Token);
-            },
-            out setKarmaStepperValue);
+        Control karmaEditor = careerMode
+            ? CreateReadonlyAttributeValueDisplay(
+                $"AttributeKarmaEditor_{ShortAttributeLabel(row.AttributeName)}",
+                BuildAttributeStepperLabel(row.AttributeName, _activeRulesetId, "karma"),
+                karmaValue.ToString(CultureInfo.InvariantCulture),
+                out setKarmaReadonlyValue)
+            : CreateAttributeValueStepper(
+                $"AttributeKarmaEditor_{ShortAttributeLabel(row.AttributeName)}",
+                BuildAttributeStepperLabel(row.AttributeName, _activeRulesetId, "karma"),
+                karmaValue,
+                static () => 0,
+                ResolveKarmaMaximum,
+                enabled: true,
+                static next => next.ToString(CultureInfo.InvariantCulture),
+                next =>
+                {
+                    karmaValue = next;
+                    MirrorCapPressure(baseChanged: false);
+                    QueueCommit("base", row.BaseValue, () => pendingBaseValue, ref baseCommitCancellation);
+                    QueueCommit("karma", row.KarmaValue, () => pendingKarmaValue, ref karmaCommitCancellation);
+                },
+                out setKarmaStepperValue,
+                out refreshKarmaStepperBounds);
         Grid.SetColumn(karmaEditor, 2);
         grid.Children.Add(karmaEditor);
 
+        Border rowBorderShell = new()
+        {
+            Background = row.BaseUnlocked && !careerMode ? rowSurface : rowSurfaceAlt,
+            BorderBrush = rowBorder,
+            BorderThickness = new Thickness(1),
+            Padding = new Thickness(6d, 4d),
+            Child = grid
+        };
+
         void RefreshLiveValue()
         {
-            totalValueText.Text = BuildAttributeValueDisplay(baseValue + karmaValue, row.MetatypeAugMax);
+            setBaseReadonlyValue(baseValue);
+            setKarmaReadonlyValue(karmaValue);
+            totalValueText.Text = BuildAttributeValueDisplay(baseValue + karmaValue, metatypeAugMax, _activeRulesetId);
+            ToolTip.SetTip(totalValueText, isSr6 ? BuildAttributeBreakdownText(baseValue, karmaValue) : BuildAttributeTotalToolTip(row.AttributeName, _activeRulesetId));
+            limitsText.Text = BuildAttributeLimitsDisplay(metatypeMin, metatypeMax, metatypeAugMax);
+            RefreshImproveAvailability();
+            RefreshBurnEdgeAvailability();
         }
 
         void MirrorCapPressure(bool baseChanged)
@@ -413,37 +534,103 @@ public partial class SectionHostControl : UserControl
             suppressMirror = true;
             try
             {
-                int total = baseValue + karmaValue;
-                int totalCap = Math.Max(row.MetatypeMax, row.MetatypeAugMax);
-                if (total <= totalCap)
-                {
-                    return;
-                }
-
                 if (baseChanged)
                 {
-                    while (baseValue + karmaValue > totalCap && karmaValue > 0)
+                    karmaValue = setKarmaStepperValue(karmaValue);
+                    if (baseValue + karmaValue > ResolveTotalCap())
                     {
-                        karmaValue--;
+                        baseValue = setBaseStepperValue(baseValue);
                     }
-
-                    setKarmaStepperValue(karmaValue);
                 }
                 else
                 {
-                    while (baseValue + karmaValue > totalCap && baseValue > 0)
+                    baseValue = setBaseStepperValue(baseValue);
+                    if (baseValue + karmaValue > ResolveTotalCap())
                     {
-                        baseValue--;
+                        karmaValue = setKarmaStepperValue(karmaValue);
                     }
-
-                    setBaseStepperValue(baseValue);
                 }
             }
             finally
             {
+                refreshBaseStepperBounds();
+                refreshKarmaStepperBounds();
+                pendingBaseValue = baseValue;
+                pendingKarmaValue = karmaValue;
                 suppressMirror = false;
                 RefreshLiveValue();
             }
+        }
+
+        void RefreshBurnEdgeAvailability()
+        {
+            if (burnEdgeButton is null)
+            {
+                return;
+            }
+
+            bool canBurnEdge = AttributeWorkbenchProjector.CanBurnEdge(new AttributeWorkbenchRow(
+                row.AttributeName,
+                rowLabel,
+                ShortAttributeLabel(row.AttributeName),
+                baseValue,
+                karmaValue,
+                baseValue + karmaValue,
+                metatypeMin,
+                metatypeMax,
+                metatypeAugMax,
+                row.PriorityMaximum,
+                row.KarmaMaximum,
+                row.BaseUnlocked,
+                row.CareerMode,
+                availableKarma,
+                ComputeCareerAttributeUpgradeCost(baseValue + karmaValue, metatypeAugMax),
+                row.CanCareerUpgrade));
+            burnEdgeButton.IsEnabled = canBurnEdge;
+            string helpText = canBurnEdge
+                ? "Burn Edge"
+                : "Edge is already exhausted.";
+            ToolTip.SetTip(burnEdgeButton, helpText);
+            global::Avalonia.Automation.AutomationProperties.SetName(burnEdgeButton, "Burn Edge");
+            global::Avalonia.Automation.AutomationProperties.SetHelpText(burnEdgeButton, helpText);
+        }
+
+        void RefreshImproveAvailability()
+        {
+            if (improveButton is null)
+            {
+                return;
+            }
+
+            int improveCost = ComputeCareerAttributeUpgradeCost(baseValue + karmaValue, metatypeAugMax);
+            bool canImprove = careerMode && improveCost > 0 && availableKarma >= improveCost;
+            improveButton.IsEnabled = canImprove;
+            string helpText = canImprove
+                ? $"Improve {rowLabel} for {improveCost} Karma"
+                : improveCost <= 0
+                    ? $"{rowLabel} is already at its current ceiling."
+                    : $"Need {improveCost} Karma to improve {rowLabel}.";
+            ToolTip.SetTip(improveButton, helpText);
+            global::Avalonia.Automation.AutomationProperties.SetName(improveButton, "Improve Attribute");
+            global::Avalonia.Automation.AutomationProperties.SetHelpText(improveButton, helpText);
+        }
+
+        void CancelPendingAttributeCommits()
+        {
+            baseCommitCancellation?.Cancel();
+            baseCommitCancellation?.Dispose();
+            baseCommitCancellation = null;
+            karmaCommitCancellation?.Cancel();
+            karmaCommitCancellation?.Dispose();
+            karmaCommitCancellation = null;
+        }
+
+        void QueueCommit(string bucket, int originalValue, Func<int> getPendingValue, ref CancellationTokenSource? cancellation)
+        {
+            cancellation?.Cancel();
+            cancellation?.Dispose();
+            cancellation = new CancellationTokenSource();
+            _ = ScheduleCommitAsync(bucket, originalValue, getPendingValue, cancellation.Token);
         }
 
         async Task ScheduleCommitAsync(string bucket, int originalValue, Func<int> getPendingValue, CancellationToken cancellationToken)
@@ -474,44 +661,127 @@ public partial class SectionHostControl : UserControl
             });
         }
 
+        if (burnEdgeButton is not null)
+        {
+            burnEdgeButton.Click += (_, _) =>
+            {
+                if (!burnEdgeButton.IsEnabled)
+                {
+                    return;
+                }
+
+                CancelPendingAttributeCommits();
+                suppressMirror = true;
+                try
+                {
+                    if (karmaValue > 0)
+                    {
+                        karmaValue -= 1;
+                    }
+                    else if (baseValue > ResolveBaseMinimum())
+                    {
+                        baseValue -= 1;
+                    }
+                    else if (baseValue > 0 && metatypeMin > 0)
+                    {
+                        baseValue -= 1;
+                        metatypeMin -= 1;
+                    }
+
+                    baseValue = setBaseStepperValue(baseValue);
+                    karmaValue = setKarmaStepperValue(karmaValue);
+                }
+                finally
+                {
+                    refreshBaseStepperBounds();
+                    refreshKarmaStepperBounds();
+                    pendingBaseValue = baseValue;
+                    pendingKarmaValue = karmaValue;
+                    suppressMirror = false;
+                    RefreshLiveValue();
+                }
+
+                AttributeEditRequested?.Invoke(this, new AttributeEditRequest(row.AttributeName, "burn", Math.Max(0, baseValue + karmaValue)));
+            };
+        }
+
+        if (improveButton is not null)
+        {
+            improveButton.Click += (_, _) =>
+            {
+                int improveCost = ComputeCareerAttributeUpgradeCost(baseValue + karmaValue, metatypeAugMax);
+                if (!improveButton.IsEnabled || improveCost <= 0)
+                {
+                    return;
+                }
+
+                availableKarma = Math.Max(0, availableKarma - improveCost);
+                if (isEdgeAttribute && metatypeMin < 1 && baseValue == metatypeMin && karmaValue == 0)
+                {
+                    metatypeMin += 1;
+                    baseValue += 1;
+                }
+                else
+                {
+                    karmaValue += 1;
+                }
+
+                pendingBaseValue = baseValue;
+                pendingKarmaValue = karmaValue;
+                RefreshLiveValue();
+                AttributeEditRequested?.Invoke(this, new AttributeEditRequest(row.AttributeName, "improve", Math.Max(0, baseValue + karmaValue)));
+            };
+        }
+
         grid.DetachedFromVisualTree += (_, _) =>
         {
-            baseCommitCancellation?.Cancel();
-            baseCommitCancellation?.Dispose();
-            baseCommitCancellation = null;
-            karmaCommitCancellation?.Cancel();
-            karmaCommitCancellation?.Dispose();
-            karmaCommitCancellation = null;
+            CancelPendingAttributeCommits();
         };
 
-        return grid;
+        RefreshLiveValue();
+        return rowBorderShell;
     }
 
-    private static Grid CreateAttributeValueStepper(
+    private static int ComputeCareerAttributeUpgradeCost(int currentValue, int totalMaximum)
+    {
+        if (currentValue >= totalMaximum)
+        {
+            return -1;
+        }
+
+        int nextRank = Math.Max(1, currentValue + 1);
+        return nextRank * 5;
+    }
+
+    private static Control CreateAttributeValueStepper(
         string name,
         string accessibleName,
         int value,
-        int minimum,
-        int maximum,
+        Func<int> minimumResolver,
+        Func<int> maximumResolver,
         bool enabled,
         Func<int, string> valueFormatter,
         Action<int> valueChanged,
-        out Action<int> setValue)
+        out Func<int, int> setValue,
+        out Action refreshBounds)
     {
-        int current = Math.Clamp(value, minimum, maximum);
+        int initialMinimum = minimumResolver();
+        int initialMaximum = Math.Max(initialMinimum, maximumResolver());
+        int current = Math.Clamp(value, initialMinimum, initialMaximum);
         IBrush foreground = DesktopShellTheme.ResolveForegroundBrush();
-        IBrush surface = DesktopShellTheme.ResolveSurfaceBrush();
+        IBrush surface = DesktopShellTheme.ResolveSurfaceAltBrush();
         IBrush border = DesktopShellTheme.ResolveBorderBrush();
         Grid stepper = new()
         {
             Name = name,
             ColumnDefinitions = new ColumnDefinitions("28,10,*,10,28"),
             MinHeight = 26,
+            Background = surface,
             HorizontalAlignment = global::Avalonia.Layout.HorizontalAlignment.Stretch
         };
-        ToolTip.SetTip(stepper, $"{accessibleName}: {minimum}-{maximum}");
+        ToolTip.SetTip(stepper, $"{accessibleName}: {initialMinimum}-{initialMaximum}");
         global::Avalonia.Automation.AutomationProperties.SetName(stepper, accessibleName);
-        global::Avalonia.Automation.AutomationProperties.SetHelpText(stepper, $"{accessibleName}. Use minus and plus to set a value from {minimum} to {maximum}.");
+        global::Avalonia.Automation.AutomationProperties.SetHelpText(stepper, $"{accessibleName}. Use minus and plus to set a value from {initialMinimum} to {initialMaximum}.");
 
         Button decrement = CreateAttributeStepperButton("-", $"{name}_Decrease", enabled, foreground, surface, border, $"Decrease {accessibleName}");
         TextBlock valueText = new()
@@ -539,30 +809,72 @@ public partial class SectionHostControl : UserControl
 
         void ApplyValue(int next, bool emit)
         {
+            int minimum = minimumResolver();
+            int maximum = Math.Max(minimum, maximumResolver());
             int clamped = Math.Clamp(next, minimum, maximum);
             string formatted = valueFormatter(clamped);
-            if (clamped == current && string.Equals(valueText.Text, formatted, StringComparison.Ordinal))
-            {
-                decrement.IsEnabled = enabled && current > minimum;
-                increment.IsEnabled = enabled && current < maximum;
-                return;
-            }
+            bool changed = clamped != current || !string.Equals(valueText.Text, formatted, StringComparison.Ordinal);
 
             current = clamped;
             valueText.Text = formatted;
             decrement.IsEnabled = enabled && current > minimum;
             increment.IsEnabled = enabled && current < maximum;
+            ToolTip.SetTip(stepper, $"{accessibleName}: {minimum}-{maximum}");
+            global::Avalonia.Automation.AutomationProperties.SetHelpText(stepper, $"{accessibleName}. Use minus and plus to set a value from {minimum} to {maximum}.");
             if (emit)
             {
-                valueChanged(current);
+                if (changed)
+                {
+                    valueChanged(current);
+                }
             }
         }
 
         decrement.Click += (_, _) => ApplyValue(current - 1, emit: true);
         increment.Click += (_, _) => ApplyValue(current + 1, emit: true);
-        setValue = next => ApplyValue(next, emit: false);
+        setValue = next =>
+        {
+            ApplyValue(next, emit: false);
+            return current;
+        };
+        refreshBounds = () => ApplyValue(current, emit: false);
         ApplyValue(current, emit: false);
         return stepper;
+    }
+
+    private static Control CreateReadonlyAttributeValueDisplay(
+        string name,
+        string accessibleName,
+        string value,
+        out Action<int> setValue)
+    {
+        IBrush foreground = DesktopShellTheme.ResolveForegroundBrush();
+        IBrush surface = DesktopShellTheme.ResolveSurfaceAltBrush();
+        IBrush border = DesktopShellTheme.ResolveBorderBrush();
+        Border host = new()
+        {
+            Name = name,
+            MinHeight = 26,
+            Background = surface,
+            BorderBrush = border,
+            BorderThickness = new Thickness(1),
+            Padding = new Thickness(8d, 2d)
+        };
+        ToolTip.SetTip(host, accessibleName);
+        global::Avalonia.Automation.AutomationProperties.SetName(host, accessibleName);
+        TextBlock valueText = new()
+        {
+            Name = $"{name}_Value",
+            Text = value,
+            Foreground = foreground,
+            FontWeight = FontWeight.SemiBold,
+            HorizontalAlignment = global::Avalonia.Layout.HorizontalAlignment.Center,
+            VerticalAlignment = global::Avalonia.Layout.VerticalAlignment.Center,
+            TextAlignment = TextAlignment.Center
+        };
+        host.Child = valueText;
+        setValue = next => valueText.Text = next.ToString(CultureInfo.InvariantCulture);
+        return host;
     }
 
     private static Button CreateAttributeStepperButton(
@@ -597,102 +909,88 @@ public partial class SectionHostControl : UserControl
 
     private static bool TryBuildAttributeParityRows(string? sectionId, string previewJson, out AttributeParityRowState[] rows)
     {
-        rows = [];
-        string? normalizedSectionId = NormalizeSectionId(sectionId);
-        if (!string.Equals(normalizedSectionId, "attributes", StringComparison.OrdinalIgnoreCase)
-            && !string.Equals(normalizedSectionId, "attributedetails", StringComparison.OrdinalIgnoreCase))
-        {
-            return false;
-        }
-
-        JsonObject? root = TryParseRootObject(previewJson);
-        if (root is null)
-        {
-            return false;
-        }
-
-        List<AttributeParityRowState> projectedRows = [];
-        if (ReadArray(root, "attributes") is { Count: > 0 } attributeArray)
-        {
-            foreach (JsonNode? node in attributeArray)
-            {
-                if (node is JsonObject attribute
-                    && TryReadAttributeParityRow(attribute, out AttributeParityRowState row))
-                {
-                    projectedRows.Add(row);
-                }
-            }
-        }
-        else if (ReadObject(root, "attributes") is { } attributesObject)
-        {
-            foreach ((string name, JsonNode? valueNode) in attributesObject)
-            {
-                if (valueNode is not JsonValue
-                    || !int.TryParse(valueNode.ToJsonString().Trim('"'), NumberStyles.Integer, CultureInfo.InvariantCulture, out int value))
-                {
-                    continue;
-                }
-
-                projectedRows.Add(new AttributeParityRowState(
-                    AttributeName: name,
-                    DisplayName: ShortAttributeLabel(name),
-                    BaseValue: value,
-                    KarmaValue: 0,
-                    MetatypeMin: 1,
-                    MetatypeMax: Math.Max(6, value),
-                    MetatypeAugMax: Math.Max(9, value),
-                    PriorityMaximum: Math.Max(6, value),
-                    KarmaMaximum: Math.Max(0, Math.Max(9, value) - value),
-                    BaseUnlocked: true));
-            }
-        }
-
-        rows = projectedRows.ToArray();
+        rows = AttributeWorkbenchProjector.BuildRows(sectionId, previewJson)
+            .Select(static row => new AttributeParityRowState(
+                AttributeName: row.AttributeName,
+                BaseValue: row.BaseValue,
+                KarmaValue: row.KarmaValue,
+                MetatypeMin: row.MetatypeMin,
+                MetatypeMax: row.MetatypeMax,
+                MetatypeAugMax: row.MetatypeAugMax,
+                PriorityMaximum: row.PriorityMaximum,
+                KarmaMaximum: row.KarmaMaximum,
+                BaseUnlocked: row.BaseUnlocked,
+                CareerMode: row.CareerMode,
+                AvailableKarma: row.AvailableKarma,
+                UpgradeKarmaCost: row.UpgradeKarmaCost,
+                CanCareerUpgrade: row.CanCareerUpgrade))
+            .ToArray();
         return rows.Length > 0;
     }
 
-    private static bool TryReadAttributeParityRow(JsonObject attribute, out AttributeParityRowState row)
+    private void ApplyAttributeParityHeaderLabels(string? rulesetId)
     {
-        string attributeName = FirstNonBlank(
-            ReadString(attribute, "name"),
-            ReadString(attribute, "label"));
-        if (string.IsNullOrWhiteSpace(attributeName))
-        {
-            row = default!;
-            return false;
-        }
-
-        int baseValue = ReadInt(attribute, "baseValue", ReadInt(attribute, "base", 0));
-        int karmaValue = ReadInt(attribute, "karmaValue", ReadInt(attribute, "karma", 0));
-        int totalValue = ReadInt(attribute, "totalValue", ReadInt(attribute, "value", baseValue + karmaValue));
-        if (karmaValue == 0 && totalValue >= baseValue)
-        {
-            karmaValue = totalValue - baseValue;
-        }
-
-        int metatypeMin = ReadInt(attribute, "metatypeMin", ReadInt(attribute, "metatypemin", 1));
-        int metatypeMax = ReadInt(attribute, "metatypeMax", ReadInt(attribute, "metatypemax", Math.Max(6, totalValue)));
-        int metatypeAugMax = ReadInt(attribute, "metatypeAugMax", ReadInt(attribute, "metatypeaugmax", Math.Max(metatypeMax + 3, totalValue)));
-        int priorityMaximum = ReadInt(attribute, "priorityMaximum", ReadInt(attribute, "prioritymaximum", Math.Max(baseValue, metatypeMax)));
-        int karmaMaximum = ReadInt(attribute, "karmaMaximum", ReadInt(attribute, "karmamaximum", Math.Max(0, metatypeAugMax - baseValue)));
-        bool baseUnlocked = ReadBool(attribute, "baseUnlocked", defaultValue: true);
-
-        row = new AttributeParityRowState(
-            AttributeName: attributeName,
-            DisplayName: ShortAttributeLabel(attributeName),
-            BaseValue: baseValue,
-            KarmaValue: karmaValue,
-            MetatypeMin: metatypeMin,
-            MetatypeMax: metatypeMax,
-            MetatypeAugMax: metatypeAugMax,
-            PriorityMaximum: priorityMaximum,
-            KarmaMaximum: karmaMaximum,
-            BaseUnlocked: baseUnlocked);
-        return true;
+        bool isSr6 = AttributeWorkbenchProjector.IsSr6Ruleset(rulesetId);
+        AttributeParityHeaderGrid.ColumnDefinitions = new ColumnDefinitions("*,128,128,72,120");
+        AttributeParityHeaderGrid.ColumnSpacing = 8d;
+        AttributeParityHeaderAttributeText.Text = "Attribute";
+        AttributeParityHeaderStartText.Text = isSr6 ? "Base" : "Start";
+        AttributeParityHeaderAddText.Text = isSr6 ? "Karma" : "Add";
+        AttributeParityHeaderTotalText.Text = "Total";
+        AttributeParityHeaderLimitsText.Text = "Limits";
+        AttributeParityHeaderStartText.HorizontalAlignment = global::Avalonia.Layout.HorizontalAlignment.Right;
+        AttributeParityHeaderAddText.HorizontalAlignment = global::Avalonia.Layout.HorizontalAlignment.Right;
+        AttributeParityHeaderTotalText.HorizontalAlignment = global::Avalonia.Layout.HorizontalAlignment.Right;
+        AttributeParityHeaderLimitsText.HorizontalAlignment = global::Avalonia.Layout.HorizontalAlignment.Right;
     }
 
-    private static string BuildAttributeValueDisplay(int totalValue, int metatypeAugMax)
-        => $"{totalValue} ({metatypeAugMax})";
+    private static string BuildAttributeEditorRowLabel(string attributeName, string? rulesetId)
+        => AttributeWorkbenchProjector.FormatDisplayLabel(attributeName, rulesetId);
+
+    private static string BuildAttributeStepperLabel(string attributeName, string? rulesetId, string bucket)
+    {
+        string fullName = FormatAttributeFullName(attributeName);
+        if (!IsSr6Ruleset(rulesetId))
+        {
+            return string.Equals(bucket, "base", StringComparison.Ordinal)
+                ? $"{fullName} starting value"
+                : $"{fullName} added value";
+        }
+
+        return string.Equals(bucket, "base", StringComparison.Ordinal)
+            ? $"{fullName} base"
+            : $"{fullName} karma";
+    }
+
+    private static string BuildAttributeBreakdownText(int baseValue, int karmaValue)
+        => $"Base {baseValue} + Karma {karmaValue}";
+
+    private static string BuildAttributeValueDisplay(int totalValue, int metatypeAugMax, string? rulesetId)
+        => AttributeWorkbenchProjector.IsSr6Ruleset(rulesetId)
+            ? totalValue.ToString(CultureInfo.InvariantCulture)
+            : $"{totalValue} ({metatypeAugMax})";
+
+    private static string BuildAttributeLimitsDisplay(AttributeParityRowState row, string? rulesetId)
+        => BuildAttributeLimitsDisplay(row.MetatypeMin, row.MetatypeMax, row.MetatypeAugMax);
+
+    private static string BuildAttributeLimitsDisplay(int metatypeMin, int metatypeMax, int metatypeAugMax)
+        => $"{metatypeMin} / {metatypeMax} ({metatypeAugMax})";
+
+    private static string BuildAttributeTotalToolTip(string attributeName, string? rulesetId)
+    {
+        string fullName = FormatAttributeFullName(attributeName);
+        return AttributeWorkbenchProjector.IsSr6Ruleset(rulesetId)
+            ? $"{fullName} current rating"
+            : $"{fullName} total rating and augmented ceiling";
+    }
+
+    private static string BuildAttributeLimitsToolTip(string? rulesetId)
+        => AttributeWorkbenchProjector.IsSr6Ruleset(rulesetId)
+            ? "Minimum, natural maximum, and augmented maximum"
+            : "Minimum, natural maximum, and augmented maximum";
+
+    private static bool IsSr6Ruleset(string? rulesetId)
+        => AttributeWorkbenchProjector.IsSr6Ruleset(rulesetId);
 
     private static int ReadInt(JsonObject source, string propertyName, int defaultValue)
     {
@@ -809,7 +1107,23 @@ public partial class SectionHostControl : UserControl
 
     public void SetContactGraph(ContactRelationshipGraphState? contactGraph)
     {
-        // Chummer5a parity posture: remove synthetic contact-graph scaffolding.
+        if (contactGraph is null)
+        {
+            return;
+        }
+
+        SectionContextSummaryText.Text = $"{contactGraph.Nodes.Count} contacts · {contactGraph.EdgeCount} links · {contactGraph.Obligations.Count} obligations";
+        SectionContextSummaryText.IsVisible = true;
+        SectionPreviewBox.Text = string.Join(
+            Environment.NewLine + Environment.NewLine,
+            new[]
+            {
+                BuildFactionStatusText(contactGraph),
+                BuildHeatAndObligationText(contactGraph),
+                BuildFavorRailText(contactGraph)
+            }.Where(static section => !string.IsNullOrWhiteSpace(section)));
+        SectionReviewPanel.IsVisible = !string.IsNullOrWhiteSpace(SectionPreviewBox.Text);
+        UpdateSectionRowsHeight();
     }
 
     public void SetNpcPersonaStudio(NpcPersonaStudioState? npcPersonaStudio)
@@ -1371,7 +1685,7 @@ public partial class SectionHostControl : UserControl
             Content = quickAction.Label,
             Tag = quickAction.ControlId,
             IsVisible = true,
-            Margin = new Thickness(0d, 0d, 8d, 0d)
+            Margin = new Thickness(0d, 0d, 8d, 6d)
         };
         button.Classes.Add("shell-action");
         button.Classes.Add(quickAction.IsPrimary ? "primary" : "quiet");
@@ -1423,6 +1737,12 @@ public partial class SectionHostControl : UserControl
             ReadString(root, "ruleset"))?.ToUpperInvariant());
         AppendFact(facts, "Karma", ReadScalar(root, "karma"));
         AppendFact(facts, "Nuyen", ReadScalar(root, "nuyen"));
+        AppendFact(facts, "Street Cred", ReadScalar(root, "streetCred"));
+        AppendFact(facts, "Notoriety", ReadScalar(root, "notoriety"));
+        AppendFact(facts, "Public Awareness", ReadScalar(root, "publicAwareness"));
+        AppendFact(facts, "Physical", BuildTrackSummary(root, "physicalTrack", "physicalFilled"));
+        AppendFact(facts, "Stun", BuildTrackSummary(root, "stunTrack", "stunFilled"));
+        AppendFact(facts, "Counterspelling", ReadScalar(root, "currentCounterspellingDice"));
 
         JsonObject? combat = ReadObject(root, "combat");
         if (combat is not null)
@@ -1435,9 +1755,22 @@ public partial class SectionHostControl : UserControl
         return facts.Take(6).ToArray();
     }
 
+    private static string? BuildTrackSummary(JsonObject root, string totalPropertyName, string filledPropertyName)
+    {
+        string? total = ReadScalar(root, totalPropertyName);
+        string? filled = ReadScalar(root, filledPropertyName);
+        if (string.IsNullOrWhiteSpace(total) && string.IsNullOrWhiteSpace(filled))
+        {
+            return null;
+        }
+
+        return $"{filled ?? "0"} / {total ?? "0"}";
+    }
+
     private static IReadOnlyList<ClassicSheetFactDisplayItem> BuildCharacterAttributeFacts(
         string previewJson,
-        IEnumerable<SectionRowDisplayItem> rows)
+        IEnumerable<SectionRowDisplayItem> rows,
+        string? rulesetId)
     {
         JsonObject? root = TryParseRootObject(previewJson);
         List<ClassicSheetFactDisplayItem> facts = [];
@@ -1461,7 +1794,7 @@ public partial class SectionHostControl : UserControl
                     ReadScalar(attribute, "base"));
                 if (!string.IsNullOrWhiteSpace(name) && !string.IsNullOrWhiteSpace(value))
                 {
-                    facts.Add(new ClassicSheetFactDisplayItem(ShortAttributeLabel(name), value));
+                    facts.Add(new ClassicSheetFactDisplayItem(FormatCompactAttributeLabel(name, rulesetId), value));
                 }
             }
         }
@@ -1473,7 +1806,7 @@ public partial class SectionHostControl : UserControl
                 string? value = ReadScalar(attributesObject, key);
                 if (!string.IsNullOrWhiteSpace(value))
                 {
-                    facts.Add(new ClassicSheetFactDisplayItem(ShortAttributeLabel(key), value));
+                    facts.Add(new ClassicSheetFactDisplayItem(FormatCompactAttributeLabel(key, rulesetId), value));
                 }
             }
         }
@@ -1490,7 +1823,7 @@ public partial class SectionHostControl : UserControl
                 string attributeName = row.Path["attributes.".Length..];
                 if (!string.IsNullOrWhiteSpace(row.DisplayValue))
                 {
-                    facts.Add(new ClassicSheetFactDisplayItem(ShortAttributeLabel(attributeName), row.DisplayValue));
+                    facts.Add(new ClassicSheetFactDisplayItem(FormatCompactAttributeLabel(attributeName, rulesetId), row.DisplayValue));
                 }
             }
         }
@@ -1525,7 +1858,13 @@ public partial class SectionHostControl : UserControl
             "profile" => "Profile",
             "cyberwares" => "Cyberware",
             "attributedetails" => "Attributes",
+            "conditionmonitor" => "Condition Monitor",
             "complexforms" => "Complex Forms",
+            "enemies" => "Enemies",
+            "karmasummary" => "Karma Summary",
+            "pets" => "Pets & Cohorts",
+            "spelldefense" => "Spell Defense",
+            "sprites" => "Sprites",
             "initiationgrades" => "Initiation & Submersion",
             "mentorspirits" => "Mentor Spirits",
             "progress" => "Karma Journal",
@@ -1537,13 +1876,59 @@ public partial class SectionHostControl : UserControl
         string? sectionId,
         string previewJson,
         IEnumerable<SectionRowDisplayItem> rows,
-        IReadOnlyList<SectionQuickActionDisplayItem> quickActions)
+        IReadOnlyList<SectionQuickActionDisplayItem> quickActions,
+        string? rulesetId)
     {
         SectionRowDisplayItem[] rowArray = rows.ToArray();
         List<string> parts = [];
         JsonObject? root = TryParseRootObject(previewJson);
         string title = BuildSectionTitle(sectionId, previewJson);
         int? recordedCount = ReadCount(root);
+
+        if (string.Equals(sectionId, "validate", StringComparison.OrdinalIgnoreCase)
+            && root is not null
+            && TryGetPropertyValueIgnoreCase(root, "isValid", out _))
+        {
+            bool isValid = IsTruthy(root, "isValid");
+            int issueCount = ReadArray(root, "issues")?.Count ?? 0;
+            parts.Add(isValid ? "Character valid" : "Character needs attention");
+            parts.Add(issueCount switch
+            {
+                0 => "No validation issues",
+                1 => "1 validation issue",
+                _ => $"{issueCount} validation issues"
+            });
+            return string.Join("  •  ", parts);
+        }
+
+        if (IsSr6Ruleset(rulesetId) && AttributeWorkbenchProjector.IsAttributeSection(sectionId))
+        {
+            IReadOnlyList<AttributeWorkbenchRow> attributeRows = AttributeWorkbenchProjector.BuildRows(sectionId, previewJson);
+            if (attributeRows.Count > 0)
+            {
+                parts.Add(attributeRows.Count == 1 ? "1 attribute ready" : $"{attributeRows.Count} attributes ready");
+                AttributeWorkbenchRow leadAttribute = attributeRows[0];
+                parts.Add($"{leadAttribute.DisplayName} {leadAttribute.TotalValue}");
+
+                if (quickActions.Count > 0)
+                {
+                    string actionSummary = string.Join(", ", quickActions.Take(2).Select(action => action.Label));
+                    if (quickActions.Count > 2)
+                    {
+                        actionSummary = $"{actionSummary}, +{quickActions.Count - 2} more";
+                    }
+
+                    parts.Add($"Actions: {actionSummary}");
+                }
+
+                if (TryBuildExplainDrawerSummary(root) is { } sr6ExplainSummary)
+                {
+                    parts.Add(sr6ExplainSummary);
+                }
+
+                return string.Join("  •  ", parts);
+            }
+        }
 
         if (recordedCount is > 0)
         {
@@ -1556,7 +1941,7 @@ public partial class SectionHostControl : UserControl
 
         if (rowArray.Length > 0)
         {
-            string leadPath = rowArray[0].DisplayPath.Trim();
+            string leadPath = rowArray[0].GetDisplayPath(rulesetId).Trim();
             string leadValue = rowArray[0].DisplayValue.Trim();
             if (!string.IsNullOrWhiteSpace(leadValue) || !string.IsNullOrWhiteSpace(leadPath))
             {
@@ -1724,7 +2109,8 @@ public partial class SectionHostControl : UserControl
     private static string BuildSectionPreviewText(
         string? sectionId,
         string previewJson,
-        IEnumerable<SectionRowDisplayItem> rows)
+        IEnumerable<SectionRowDisplayItem> rows,
+        string? rulesetId)
     {
         JsonObject? root = TryParseRootObject(previewJson);
         SectionRowDisplayItem[] rowArray = rows.ToArray();
@@ -1764,7 +2150,7 @@ public partial class SectionHostControl : UserControl
         {
             foreach (SectionRowDisplayItem row in rowArray.Take(10))
             {
-                string label = row.DisplayPath.Trim();
+                string label = row.GetDisplayPath(rulesetId).Trim();
                 string value = row.DisplayValue.Trim();
                 if (string.IsNullOrWhiteSpace(label) && string.IsNullOrWhiteSpace(value))
                 {
@@ -1803,6 +2189,18 @@ public partial class SectionHostControl : UserControl
         return string.Join(Environment.NewLine, lines.Where(static line => line is not null)).Trim();
     }
 
+    private static IReadOnlyList<SectionRowDisplayViewItem> BuildSectionRowViewItems(
+        IEnumerable<SectionRowDisplayItem> rows,
+        string? rulesetId)
+        => rows
+            .Select(row => new SectionRowDisplayViewItem(row.GetDisplayPath(rulesetId), row.DisplayValue, row.Path, row.Value))
+            .ToArray();
+
+    private static string FormatCompactAttributeLabel(string attributeName, string? rulesetId)
+        => IsSr6Ruleset(rulesetId)
+            ? FormatAttributeFullName(attributeName)
+            : ShortAttributeLabel(attributeName);
+
     private static string BuildSectionPreviewHeader(string? sectionId, string previewJson)
     {
         string title = BuildSectionTitle(sectionId, previewJson);
@@ -1823,14 +2221,19 @@ public partial class SectionHostControl : UserControl
             "skills" => "No active or knowledge skills are recorded yet.",
             "qualities" => "No positive or negative qualities are recorded yet.",
             "contacts" => "No contacts are recorded yet.",
+            "relationships" => "No relationships are recorded yet.",
+            "enemies" => "No enemies are recorded yet.",
             "gear" or "inventory" => "No carried gear is recorded yet.",
             "weapons" => "No weapons are recorded yet.",
             "armors" => "No armor pieces are recorded yet.",
             "cyberwares" => "No cyberware or bioware is recorded yet.",
             "vehicles" => "No vehicles are recorded yet.",
+            "pets" => "No pets or cohorts are recorded yet.",
             "spells" => "No spells are recorded yet.",
+            "spelldefense" => "No spell-defense values are recorded yet.",
             "powers" => "No adept powers are recorded yet.",
             "complexforms" => "No complex forms or programs are recorded yet.",
+            "sprites" => "No sprites are recorded yet.",
             "drugs" => "No drugs or consumables are recorded yet.",
             "progress" or "calendar" => "No journal entries are recorded yet.",
             "initiationgrades" => "No initiation or submersion grades are recorded yet.",
@@ -1875,14 +2278,19 @@ public partial class SectionHostControl : UserControl
             "skills" => "No skills are recorded yet.",
             "qualities" => "No qualities are recorded yet.",
             "contacts" => "No contacts are recorded yet.",
+            "relationships" => "No relationships are recorded yet.",
+            "enemies" => "No enemies are recorded yet.",
             "gear" or "inventory" => "No gear entries are recorded yet.",
             "weapons" => "No weapons are recorded yet.",
             "armors" => "No armor entries are recorded yet.",
             "cyberwares" => "No cyberware entries are recorded yet.",
             "vehicles" => "No vehicles are recorded yet.",
+            "pets" => "No pets or cohorts are recorded yet.",
             "spells" => "No spells are recorded yet.",
+            "spelldefense" => "No spell-defense values are recorded yet.",
             "powers" => "No adept powers are recorded yet.",
             "complexforms" => "No complex forms are recorded yet.",
+            "sprites" => "No sprites are recorded yet.",
             "drugs" => "No consumables are recorded yet.",
             "progress" or "calendar" => "No karma journal entries are recorded yet.",
             "initiationgrades" => "No initiation entries are recorded yet.",
@@ -2314,21 +2722,10 @@ public partial class SectionHostControl : UserControl
     }
 
     private static string ShortAttributeLabel(string attributeName)
-        => attributeName.Trim().ToLowerInvariant() switch
-        {
-            "body" => "BOD",
-            "agility" => "AGI",
-            "reaction" => "REA",
-            "strength" => "STR",
-            "willpower" => "WIL",
-            "logic" => "LOG",
-            "intuition" => "INT",
-            "charisma" => "CHA",
-            "edge" => "EDG",
-            "magic" => "MAG",
-            "resonance" => "RES",
-            _ => attributeName.Length <= 3 ? attributeName.ToUpperInvariant() : attributeName[..Math.Min(3, attributeName.Length)].ToUpperInvariant()
-        };
+        => AttributeWorkbenchProjector.FormatCompactLabel(attributeName);
+
+    private static string FormatAttributeFullName(string attributeName)
+        => AttributeWorkbenchProjector.FormatFullLabel(attributeName);
 
     private static Control CreateClassicFactCard(ClassicSheetFactDisplayItem fact, bool emphasizeValue)
     {
@@ -2595,11 +2992,17 @@ public sealed record SectionHostState(
     BrowseWorkspaceState? BrowseWorkspace,
     ContactRelationshipGraphState? ContactGraph,
     DowntimePlannerState? DowntimePlanner,
-    NpcPersonaStudioState? NpcPersonaStudio);
+    NpcPersonaStudioState? NpcPersonaStudio,
+    string? RulesetId = null);
+
+internal sealed record SectionRowDisplayViewItem(string DisplayPath, string DisplayValue, string Path, string Value)
+{
+    public override string ToString()
+        => $"{Path} = {Value}";
+}
 
 internal sealed record AttributeParityRowState(
     string AttributeName,
-    string DisplayName,
     int BaseValue,
     int KarmaValue,
     int MetatypeMin,
@@ -2607,19 +3010,26 @@ internal sealed record AttributeParityRowState(
     int MetatypeAugMax,
     int PriorityMaximum,
     int KarmaMaximum,
-    bool BaseUnlocked);
+    bool BaseUnlocked,
+    bool CareerMode,
+    int AvailableKarma,
+    int UpgradeKarmaCost,
+    bool CanCareerUpgrade);
 
 public sealed record SectionRowDisplayItem(string Path, string Value)
 {
     public string DisplayPath => BuildDisplayPath(Path);
-    public string DisplayValue => SanitizeValue(Value);
+    public string DisplayValue => BuildDisplayValue(Path, Value);
+
+    public string GetDisplayPath(string? rulesetId)
+        => BuildDisplayPath(Path, rulesetId);
 
     public override string ToString()
     {
         return $"{Path} = {Value}";
     }
 
-    private static string BuildDisplayPath(string path)
+    private static string BuildDisplayPath(string path, string? rulesetId = null)
     {
         if (string.IsNullOrWhiteSpace(path))
         {
@@ -2637,9 +3047,14 @@ public sealed record SectionRowDisplayItem(string Path, string Value)
         string leaf = segments[^1];
         string bareLeaf = RemoveIndexer(leaf);
         string bareSection = RemoveIndexer(section);
+        if (string.Equals(bareLeaf, "isvalid", StringComparison.OrdinalIgnoreCase))
+        {
+            return "Status";
+        }
+
         if (string.Equals(section, "attributes", StringComparison.OrdinalIgnoreCase))
         {
-            return FormatAttributeLabel(bareLeaf);
+            return FormatAttributeLabel(bareLeaf, rulesetId);
         }
 
         if (string.Equals(section, "combat", StringComparison.OrdinalIgnoreCase))
@@ -2660,6 +3075,33 @@ public sealed record SectionRowDisplayItem(string Path, string Value)
         }
 
         return FormatDesktopLabel(leaf);
+    }
+
+    private static string BuildDisplayValue(string path, string value)
+    {
+        string displayValue = SanitizeValue(value);
+        string leaf = path
+            .Split('.', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
+            .LastOrDefault() ?? string.Empty;
+        string bareLeaf = RemoveIndexer(leaf);
+
+        if (string.Equals(bareLeaf, "isvalid", StringComparison.OrdinalIgnoreCase))
+        {
+            return displayValue.Trim().ToLowerInvariant() switch
+            {
+                "true" or "1" or "yes" => "Valid",
+                "false" or "0" or "no" => "Needs attention",
+                _ => displayValue
+            };
+        }
+
+        if (string.Equals(bareLeaf, "issues", StringComparison.OrdinalIgnoreCase)
+            && string.Equals(displayValue, "No entries", StringComparison.OrdinalIgnoreCase))
+        {
+            return "None";
+        }
+
+        return displayValue;
     }
 
     private static string SanitizeValue(string value)
@@ -2727,6 +3169,7 @@ public sealed record SectionRowDisplayItem(string Path, string Value)
             "expenses" => "expense",
             "improvements" => "improvement",
             "complexforms" => "complex form",
+            "sprites" => "sprite",
             "initiationgrades" => "initiation grade",
             "mentorspirits" => "mentor spirit",
             "progress" => "entry",
@@ -2749,22 +3192,41 @@ public sealed record SectionRowDisplayItem(string Path, string Value)
         return title;
     }
 
-    private static string FormatAttributeLabel(string attributeName)
-        => attributeName.Trim().ToLowerInvariant() switch
-        {
-            "body" => "BOD",
-            "agility" => "AGI",
-            "reaction" => "REA",
-            "strength" => "STR",
-            "willpower" => "WIL",
-            "logic" => "LOG",
-            "intuition" => "INT",
-            "charisma" => "CHA",
-            "edge" => "EDG",
-            "magic" => "MAG",
-            "resonance" => "RES",
-            _ => attributeName.Length <= 3 ? attributeName.ToUpperInvariant() : attributeName[..Math.Min(3, attributeName.Length)].ToUpperInvariant()
-        };
+    private static string FormatAttributeLabel(string attributeName, string? rulesetId)
+        => IsSr6Ruleset(rulesetId)
+            ? attributeName.Trim().ToLowerInvariant() switch
+            {
+                "body" => "Body",
+                "agility" => "Agility",
+                "reaction" => "Reaction",
+                "strength" => "Strength",
+                "willpower" => "Willpower",
+                "logic" => "Logic",
+                "intuition" => "Intuition",
+                "charisma" => "Charisma",
+                "edge" => "Edge",
+                "magic" => "Magic",
+                "resonance" => "Resonance",
+                _ => CultureInfo.InvariantCulture.TextInfo.ToTitleCase(attributeName.Trim().ToLowerInvariant())
+            }
+            : attributeName.Trim().ToLowerInvariant() switch
+            {
+                "body" => "BOD",
+                "agility" => "AGI",
+                "reaction" => "REA",
+                "strength" => "STR",
+                "willpower" => "WIL",
+                "logic" => "LOG",
+                "intuition" => "INT",
+                "charisma" => "CHA",
+                "edge" => "EDG",
+                "magic" => "MAG",
+                "resonance" => "RES",
+                _ => attributeName.Length <= 3 ? attributeName.ToUpperInvariant() : attributeName[..Math.Min(3, attributeName.Length)].ToUpperInvariant()
+            };
+
+    private static bool IsSr6Ruleset(string? rulesetId)
+        => string.Equals(RulesetDefaults.NormalizeOptional(rulesetId), RulesetDefaults.Sr6, StringComparison.Ordinal);
 
     private static string RemoveIndexer(string token)
     {

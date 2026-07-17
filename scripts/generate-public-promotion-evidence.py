@@ -4,6 +4,7 @@ from __future__ import annotations
 import argparse
 import json
 import os
+import re
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
@@ -11,6 +12,10 @@ from typing import Any
 
 INSTALLER_KINDS = {"installer", "dmg", "pkg", "msix"}
 PASSING_STARTUP_SMOKE_STATUSES = {"pass", "passed", "ready"}
+NATIVE_WINDOWS_EXECUTION_ENVIRONMENT = "native_windows"
+WINDOWS_COMPATIBILITY_EXECUTION_ENVIRONMENTS = {"wine_compatibility", "windows_compatibility"}
+NATIVE_WINDOWS_REQUIRED_CHANNELS = {"stable", "public_stable"}
+STARTUP_SMOKE_READY_MARKER = "startup smoke ready:"
 STARTUP_SMOKE_MAX_AGE_SECONDS = int(
     os.environ.get("CHUMMER_PUBLIC_PROMOTION_STARTUP_SMOKE_MAX_AGE_SECONDS")
     or os.environ.get("CHUMMER_DESKTOP_STARTUP_SMOKE_MAX_AGE_SECONDS")
@@ -26,6 +31,7 @@ PUBLIC_SKIP_STARTUP_SMOKE_FILTER = str(
     or os.environ.get("CHUMMER_VERIFY_SKIP_STARTUP_SMOKE_FILTER")
     or ""
 ).strip().lower() in {"1", "true", "yes", "on"}
+SAFE_RECEIPT_BASENAME_RE = re.compile(r"^[A-Za-z0-9][A-Za-z0-9._-]{0,199}\.receipt\.json$")
 
 
 def parse_args() -> argparse.Namespace:
@@ -107,7 +113,9 @@ def load_receipts(startup_smoke_dir: Path) -> list[dict]:
     if not startup_smoke_dir.is_dir():
         return receipts
 
-    for path in startup_smoke_dir.rglob("startup-smoke-*.receipt.json"):
+    for path in sorted(startup_smoke_dir.glob("startup-smoke-*.receipt.json")):
+        if path.is_symlink() or not path.is_file() or not SAFE_RECEIPT_BASENAME_RE.fullmatch(path.name):
+            raise ValueError("startup-smoke receipt must be a regular file with a safe public basename")
         try:
             payload = load_json(path)
         except json.JSONDecodeError:
@@ -125,7 +133,9 @@ def load_signing_receipts(signing_receipts_dir: Path) -> list[dict]:
     if not signing_receipts_dir.is_dir():
         return receipts
 
-    for path in signing_receipts_dir.rglob("*.receipt.json"):
+    for path in sorted(signing_receipts_dir.glob("*.receipt.json")):
+        if path.is_symlink() or not path.is_file() or not SAFE_RECEIPT_BASENAME_RE.fullmatch(path.name):
+            raise ValueError("signing receipt must be a regular file with a safe public basename")
         try:
             payload = load_json(path)
         except json.JSONDecodeError:
@@ -155,8 +165,42 @@ def parse_iso_utc(raw: Any) -> datetime | None:
     return parsed.astimezone(timezone.utc)
 
 
+def companion_log_recorded_at(receipt: dict) -> datetime | None:
+    source_path_raw = str(receipt.get("__sourcePath") or "").strip()
+    if not source_path_raw:
+        return None
+
+    source_path = Path(source_path_raw)
+    if source_path.name.endswith(".receipt.json"):
+        companion_name = source_path.name[: -len(".receipt.json")] + ".log"
+    else:
+        companion_name = f"{source_path.name}.log"
+    companion_path = source_path.with_name(companion_name)
+    if not companion_path.is_file():
+        return None
+
+    try:
+        contents = companion_path.read_text(encoding="utf-8", errors="replace")
+    except OSError:
+        return None
+    if STARTUP_SMOKE_READY_MARKER not in contents.lower():
+        return None
+
+    return datetime.fromtimestamp(companion_path.stat().st_mtime, tz=timezone.utc)
+
+
 def receipt_recorded_at(receipt: dict) -> datetime | None:
-    return parse_iso_utc(receipt.get("completedAtUtc") or receipt.get("recordedAtUtc") or receipt.get("startedAtUtc"))
+    candidates = [
+        parse_iso_utc(receipt.get("sourceUpdatedAtUtc")),
+        parse_iso_utc(receipt.get("completedAtUtc")),
+        parse_iso_utc(receipt.get("recordedAtUtc")),
+        parse_iso_utc(receipt.get("startedAtUtc")),
+        companion_log_recorded_at(receipt),
+    ]
+    valid_candidates = [candidate for candidate in candidates if candidate is not None]
+    if not valid_candidates:
+        return None
+    return max(valid_candidates)
 
 
 def incompatible_host_startup_smoke_receipt(receipt: dict) -> bool:
@@ -166,6 +210,64 @@ def incompatible_host_startup_smoke_receipt(receipt: dict) -> bool:
     verification_disposition = normalize_token(receipt.get("verificationDisposition"))
     skip_class = normalize_token(receipt.get("skipClass"))
     return verification_disposition == "incompatible_host" or skip_class == "incompatible_host"
+
+
+def native_windows_proof_required(manifest: dict, channel: str) -> bool:
+    if normalize_token(channel) in NATIVE_WINDOWS_REQUIRED_CHANNELS:
+        return True
+    if manifest.get("requireNativeWindowsStartupProof") is True:
+        return True
+    return normalize_token(manifest.get("windowsStartupProofPolicy")) == "native_required"
+
+
+def validate_windows_execution_evidence(receipt: dict, require_native_windows: bool) -> tuple[bool, str]:
+    execution_environment = normalize_token(receipt.get("executionEnvironment"))
+    evidence = receipt.get("nativeHostEvidence")
+    if execution_environment not in {
+        NATIVE_WINDOWS_EXECUTION_ENVIRONMENT,
+        *WINDOWS_COMPATIBILITY_EXECUTION_ENVIRONMENTS,
+    }:
+        return False, "startup-smoke receipt executionEnvironment is missing or unsupported"
+    if not isinstance(evidence, dict):
+        return False, "startup-smoke receipt nativeHostEvidence is missing or invalid"
+
+    contract_name = str(evidence.get("contractName") or "").strip()
+    evidence_status = normalize_token(evidence.get("status"))
+    is_native_windows = evidence.get("isNativeWindows")
+    host_platform = normalize_token(evidence.get("hostPlatform"))
+    host_kernel = normalize_token(evidence.get("hostKernel"))
+    runner = normalize_token(evidence.get("runner"))
+    evidence_source = normalize_token(evidence.get("evidenceSource"))
+
+    if contract_name != "chummer6-ui.native_windows_host_evidence":
+        return False, "startup-smoke receipt nativeHostEvidence contract is invalid"
+    if not isinstance(is_native_windows, bool):
+        return False, "startup-smoke receipt nativeHostEvidence.isNativeWindows must be boolean"
+    if not host_platform:
+        return False, "startup-smoke receipt nativeHostEvidence hostPlatform is missing"
+    if not host_kernel:
+        return False, "startup-smoke receipt nativeHostEvidence hostKernel is missing"
+    if not runner:
+        return False, "startup-smoke receipt nativeHostEvidence runner is missing"
+    if not evidence_source:
+        return False, "startup-smoke receipt nativeHostEvidence evidenceSource is missing"
+
+    if execution_environment == NATIVE_WINDOWS_EXECUTION_ENVIRONMENT:
+        if evidence_status != "verified" or is_native_windows is not True or host_platform != "windows":
+            return False, "startup-smoke receipt native Windows evidence is internally inconsistent"
+        if "wine" in runner:
+            return False, "startup-smoke receipt cannot classify Wine as native Windows"
+        if not any(token in host_kernel for token in ("mingw", "msys", "cygwin", "windows")):
+            return False, "startup-smoke receipt native Windows evidence has a non-Windows host kernel"
+    else:
+        if evidence_status != "not_native" or is_native_windows is not False:
+            return False, "startup-smoke receipt compatibility evidence is internally inconsistent"
+        if execution_environment == "wine_compatibility" and "wine" not in runner:
+            return False, "startup-smoke receipt Wine evidence has a non-Wine runner"
+
+    if require_native_windows and execution_environment != NATIVE_WINDOWS_EXECUTION_ENVIRONMENT:
+        return False, "native Windows startup proof is required; compatibility execution is insufficient"
+    return True, ""
 
 
 def signing_receipt_generated_at(receipt: dict) -> datetime | None:
@@ -178,6 +280,7 @@ def validate_receipt_for_artifact(
     expected_rid: str,
     expected_digest: str,
     now_utc: datetime,
+    require_native_windows: bool = False,
 ) -> tuple[bool, str]:
     status = normalize_token(receipt.get("status"))
     incompatible_host_skip = incompatible_host_startup_smoke_receipt(receipt)
@@ -201,6 +304,17 @@ def validate_receipt_for_artifact(
             return False, f"startup-smoke receipt hostClass does not identify the {expected_platform} host"
     if not incompatible_host_skip and not operating_system:
         return False, "startup-smoke receipt operatingSystem is missing"
+
+    if normalize_platform(expected_platform) == "windows":
+        if incompatible_host_skip and require_native_windows:
+            return False, "native Windows startup proof is required; an incompatible-host skip is insufficient"
+        if not incompatible_host_skip:
+            valid_execution_evidence, execution_reason = validate_windows_execution_evidence(
+                receipt,
+                require_native_windows,
+            )
+            if not valid_execution_evidence:
+                return False, execution_reason
 
     receipt_rid = normalize_token(receipt.get("rid"))
     if not receipt_rid:
@@ -226,7 +340,13 @@ def validate_receipt_for_artifact(
     return True, "incompatible-host skip accepted" if incompatible_host_skip else ""
 
 
-def find_matching_receipt(artifact: dict, receipts: list[dict], now_utc: datetime) -> tuple[dict | None, str]:
+def find_matching_receipt(
+    artifact: dict,
+    receipts: list[dict],
+    now_utc: datetime,
+    *,
+    require_native_windows: bool = False,
+) -> tuple[dict | None, str]:
     expected_head = (artifact.get("head") or "").strip()
     expected_platform = normalize_platform(artifact.get("platform"))
     expected_rid = normalize_token(artifact.get("rid"))
@@ -257,20 +377,30 @@ def find_matching_receipt(artifact: dict, receipts: list[dict], now_utc: datetim
 
     matching_receipts.sort(key=receipt_sort_key, reverse=True)
     candidate = matching_receipts[0]
-    is_valid, reason = validate_receipt_for_artifact(candidate, expected_platform, expected_rid, expected_digest, now_utc)
+    is_valid, reason = validate_receipt_for_artifact(
+        candidate,
+        expected_platform,
+        expected_rid,
+        expected_digest,
+        now_utc,
+        require_native_windows=require_native_windows,
+    )
     if not is_valid:
         return None, reason
 
     return candidate, ""
 
 
-def materialized_receipt_path(receipt: dict | None, startup_smoke_dir: Path) -> str:
+def public_receipt_reference(receipt: dict | None, directory: str) -> str:
     if not receipt:
         return ""
     source_path = str((receipt or {}).get("__sourcePath") or "").strip()
     if not source_path:
         return ""
-    return str(startup_smoke_dir / Path(source_path).name)
+    basename = Path(source_path).name
+    if not SAFE_RECEIPT_BASENAME_RE.fullmatch(basename):
+        raise ValueError("receipt filename is unsafe for public evidence")
+    return f"{directory}/{basename}"
 
 
 def find_matching_signing_receipt(artifact: dict, receipts: list[dict]) -> tuple[dict | None, dict | None]:
@@ -405,7 +535,8 @@ def main() -> int:
     if not isinstance(artifacts, list):
         raise SystemExit("manifest artifacts must be a list")
 
-    channel = (args.channel or manifest.get("channelId") or "").strip().lower()
+    channel = (args.channel or manifest.get("channelId") or manifest.get("channel") or "").strip().lower()
+    require_native_windows = native_windows_proof_required(manifest, channel)
     generated_at = args.generated_at.strip() or now_rfc3339()
     receipts = load_receipts(startup_smoke_dir)
     signing_receipts = load_signing_receipts(signing_receipts_dir) if args.signing_receipts_dir else []
@@ -421,7 +552,12 @@ def main() -> int:
         startup_smoke_reason = ""
         receipt = None
         if installer:
-            receipt, startup_smoke_reason = find_matching_receipt(artifact, receipts, now_utc)
+            receipt, startup_smoke_reason = find_matching_receipt(
+                artifact,
+                receipts,
+                now_utc,
+                require_native_windows=platform == "windows" and require_native_windows,
+            )
         if not installer:
             startup_smoke_status = "pass"
         elif receipt is None:
@@ -438,7 +574,7 @@ def main() -> int:
         if signing_receipt is not None:
             signing_status = normalize_token((signing_artifact or {}).get("signingStatus") or signing_receipt.get("signingStatus")) or None
             notarization_status = normalize_token((signing_artifact or {}).get("notarizationStatus") or signing_receipt.get("notarizationStatus")) or None
-            signing_receipt_path = str(signing_receipt.get("__sourcePath") or "")
+            signing_receipt_path = public_receipt_reference(signing_receipt, "signing")
         if platform == "windows":
             if not signing_status:
                 signing_status = allowed_windows_status(channel)
@@ -453,10 +589,13 @@ def main() -> int:
                 "artifactId": artifact.get("artifactId"),
                 "fileName": resolve_file_name(artifact),
                 "platform": platform,
+                "installAccessClass": artifact.get("installAccessClass"),
                 "promotionStatus": compute_promotion_status(platform, channel, startup_smoke_status, signing_status, notarization_status),
                 "startupSmokeStatus": startup_smoke_status,
                 "startupSmokeReason": startup_smoke_reason,
-                "startupSmokeReceiptPath": materialized_receipt_path(receipt, startup_smoke_dir),
+                "startupSmokeReceiptPath": public_receipt_reference(receipt, "startup-smoke"),
+                "startupSmokeExecutionEnvironment": normalize_token((receipt or {}).get("executionEnvironment")),
+                "nativeWindowsStartupProofRequired": platform == "windows" and require_native_windows,
                 "signingReceiptPath": signing_receipt_path,
                 "signingStatus": signing_status,
                 "notarizationStatus": notarization_status,

@@ -2,6 +2,7 @@ using System.Linq;
 using System.Text;
 using Chummer.Contracts.Presentation;
 using Chummer.Contracts.Workspaces;
+using Chummer.Presentation.Overview;
 using Microsoft.AspNetCore.Components.Forms;
 
 namespace Chummer.Blazor.Components.Layout;
@@ -127,6 +128,14 @@ public partial class DesktopShell
             return;
 
         await _bridge.HandleUiControlAsync(controlId, CancellationToken.None);
+    }
+
+    private async Task HandleAttributeEditAsync(AttributeEditRequest request)
+    {
+        if (_bridge is null)
+            return;
+
+        await _bridge.ApplyAttributeEditAsync(request, CancellationToken.None);
     }
 
     private void SyncMetadataDraftFromState()

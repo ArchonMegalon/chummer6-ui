@@ -1,7 +1,5 @@
 using Chummer.Contracts.Rulesets;
-using Chummer.Presentation.Overview;
-using Chummer.Presentation.Shell;
-using Microsoft.Extensions.DependencyInjection;
+using Chummer.Presentation.Rulesets;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
@@ -24,19 +22,21 @@ public sealed class BlazorPublicEdgeWarmupService : BackgroundService
         RulesetDefaults.Sr4
     ];
 
-    private static readonly TimeSpan WarmupTimeout = TimeSpan.FromSeconds(45);
     private static readonly TimeSpan RouteWarmupTimeout = TimeSpan.FromSeconds(30);
 
-    private readonly IServiceScopeFactory _scopeFactory;
+    private readonly IRulesetShellCatalogResolver _catalogResolver;
+    private readonly IHostApplicationLifetime _applicationLifetime;
     private readonly IConfiguration _configuration;
     private readonly ILogger<BlazorPublicEdgeWarmupService> _logger;
 
     public BlazorPublicEdgeWarmupService(
-        IServiceScopeFactory scopeFactory,
+        IRulesetShellCatalogResolver catalogResolver,
+        IHostApplicationLifetime applicationLifetime,
         IConfiguration configuration,
         ILogger<BlazorPublicEdgeWarmupService> logger)
     {
-        _scopeFactory = scopeFactory;
+        _catalogResolver = catalogResolver;
+        _applicationLifetime = applicationLifetime;
         _configuration = configuration;
         _logger = logger;
     }
@@ -44,40 +44,53 @@ public sealed class BlazorPublicEdgeWarmupService : BackgroundService
     protected override async Task ExecuteAsync(CancellationToken stoppingToken)
     {
         await WarmAsync(stoppingToken);
+        if (!await WaitForApplicationStartedAsync(stoppingToken))
+            return;
         await WarmPublicRoutesAsync(stoppingToken);
     }
 
-    public async Task WarmAsync(CancellationToken cancellationToken)
+    public Task WarmAsync(CancellationToken cancellationToken)
     {
-        using CancellationTokenSource timeout = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
-        timeout.CancelAfter(WarmupTimeout);
-
         try
         {
-            using IServiceScope scope = _scopeFactory.CreateScope();
-            IServiceProvider services = scope.ServiceProvider;
-
-            IShellPresenter shellPresenter = services.GetRequiredService<IShellPresenter>();
-            ICharacterOverviewPresenter overviewPresenter = services.GetRequiredService<ICharacterOverviewPresenter>();
-            IShellBootstrapDataProvider bootstrapDataProvider = services.GetRequiredService<IShellBootstrapDataProvider>();
-
-            await shellPresenter.InitializeAsync(timeout.Token);
-            await overviewPresenter.InitializeAsync(timeout.Token);
-
             foreach (string rulesetId in WarmedRulesetIds)
             {
-                await bootstrapDataProvider.GetAsync(rulesetId, timeout.Token);
+                cancellationToken.ThrowIfCancellationRequested();
+                _ = RulesetUiDirectiveCatalog.Resolve(rulesetId);
+                _ = _catalogResolver.ResolveCommands(rulesetId);
+                _ = _catalogResolver.ResolveNavigationTabs(rulesetId);
+                _ = _catalogResolver.ResolveWorkflowDefinitions(rulesetId);
+                _ = _catalogResolver.ResolveWorkflowSurfaces(rulesetId);
             }
 
-            _logger.LogInformation("Blazor public-edge startup warm-up completed.");
+            _logger.LogInformation("Blazor public-edge owner-independent catalog warm-up completed.");
         }
-        catch (OperationCanceledException) when (!cancellationToken.IsCancellationRequested)
+        catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
         {
-            _logger.LogWarning("Blazor public-edge startup warm-up timed out after {TimeoutSeconds} seconds.", WarmupTimeout.TotalSeconds);
+            // Host shutdown is not a warm-up failure.
         }
         catch (Exception ex)
         {
-            _logger.LogWarning(ex, "Blazor public-edge startup warm-up failed; continuing with lazy request warm-up.");
+            _logger.LogWarning(ex, "Blazor public-edge owner-independent catalog warm-up failed; continuing with lazy request warm-up.");
+        }
+
+        return Task.CompletedTask;
+    }
+
+    private async Task<bool> WaitForApplicationStartedAsync(CancellationToken cancellationToken)
+    {
+        var started = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+        using CancellationTokenRegistration registration = _applicationLifetime.ApplicationStarted.Register(
+            static state => ((TaskCompletionSource)state!).TrySetResult(),
+            started);
+        try
+        {
+            await started.Task.WaitAsync(cancellationToken);
+            return true;
+        }
+        catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
+        {
+            return false;
         }
     }
 

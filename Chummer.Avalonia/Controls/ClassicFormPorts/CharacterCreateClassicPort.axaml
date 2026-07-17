@@ -1,6 +1,7 @@
 <UserControl xmlns="https://github.com/avaloniaui"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-             x:Class="Chummer.Avalonia.Controls.CharacterCreateClassicPort">
+             x:Class="Chummer.Avalonia.Controls.CharacterCreateClassicPort"
+             Background="{DynamicResource ChummerShellHardPanelBrush}">
   <UserControl.KeyBindings>
     <KeyBinding Gesture="Ctrl+N" Command="{Binding Commands.AddCommand}" />
     <KeyBinding Gesture="Ctrl+E" Command="{Binding Commands.EditCommand}" />
@@ -13,57 +14,109 @@
       <MenuItem Header="Delete selected choice" Command="{Binding Commands.DeleteCommand}" />
     </ContextMenu>
   </UserControl.ContextMenu>
-  <ScrollViewer HorizontalScrollBarVisibility="Disabled"
+  <ScrollViewer Background="{DynamicResource ChummerShellHardPanelBrush}"
+                HorizontalScrollBarVisibility="Disabled"
                 VerticalScrollBarVisibility="Auto">
-    <StackPanel Margin="8" Spacing="10">
-      <TextBlock x:Name="CreateNoticeText"
-                 TextWrapping="Wrap"
-                 Opacity="0.8" />
+    <StackPanel Margin="8"
+                Spacing="10"
+                Background="{DynamicResource ChummerShellHardPanelBrush}">
+      <Border Classes="shell-panel subtle"
+              Background="{DynamicResource ChummerShellChromeSubtleBrush}"
+              BorderBrush="{DynamicResource ChummerShellBorderBrush}"
+              Padding="8,6">
+        <TextBlock x:Name="CreateNoticeText"
+                   TextWrapping="Wrap"
+                   Classes="shell-caption" />
+      </Border>
 
-      <TabControl x:Name="CreateTabs">
+      <TabControl x:Name="CreateTabs"
+                  Background="{DynamicResource ChummerShellSurfaceBrush}"
+                  BorderBrush="{DynamicResource ChummerShellBorderBrush}">
         <TabItem Header="Priorities">
-          <StackPanel Spacing="8" Margin="6">
-            <TextBlock Text="Priority Grid" FontWeight="SemiBold" />
-            <ComboBox x:Name="CreatePrioritySelector" MinWidth="180" />
-            <ListBox x:Name="CreatePrioritiesList" MinHeight="180" />
-          </StackPanel>
+          <Border Classes="shell-panel"
+                  Background="{DynamicResource ChummerShellSurfaceBrush}"
+                  BorderBrush="{DynamicResource ChummerShellBorderBrush}"
+                  Padding="8"
+                  Margin="6">
+            <StackPanel Spacing="8"
+                        Background="{DynamicResource ChummerShellSurfaceBrush}">
+              <TextBlock Text="Priority Grid" Classes="shell-section-title" />
+              <ComboBox x:Name="CreatePrioritySelector" MinWidth="180" />
+              <ListBox x:Name="CreatePrioritiesList" MinHeight="180" />
+            </StackPanel>
+          </Border>
         </TabItem>
 
         <TabItem Header="Attributes">
-          <StackPanel Spacing="8" Margin="6">
-            <TextBlock Text="Attribute Values" FontWeight="SemiBold" />
-            <ListBox x:Name="CreateAttributesList" MinHeight="180" />
-          </StackPanel>
+          <Border Classes="shell-panel"
+                  Background="{DynamicResource ChummerShellSurfaceBrush}"
+                  BorderBrush="{DynamicResource ChummerShellBorderBrush}"
+                  Padding="8"
+                  Margin="6">
+            <StackPanel Spacing="8"
+                        Background="{DynamicResource ChummerShellSurfaceBrush}">
+              <TextBlock Text="Attribute Values" Classes="shell-section-title" />
+              <ListBox x:Name="CreateAttributesList" MinHeight="180" />
+            </StackPanel>
+          </Border>
         </TabItem>
 
         <TabItem Header="Skills">
-          <StackPanel Spacing="8" Margin="6">
-            <TextBlock Text="Skill Picks" FontWeight="SemiBold" />
-            <TreeView x:Name="CreateSkillsTree" MinHeight="180" />
-          </StackPanel>
+          <Border Classes="shell-panel"
+                  Background="{DynamicResource ChummerShellSurfaceBrush}"
+                  BorderBrush="{DynamicResource ChummerShellBorderBrush}"
+                  Padding="8"
+                  Margin="6">
+            <StackPanel Spacing="8"
+                        Background="{DynamicResource ChummerShellSurfaceBrush}">
+              <TextBlock Text="Skill Picks" Classes="shell-section-title" />
+              <TreeView x:Name="CreateSkillsTree" MinHeight="180" />
+            </StackPanel>
+          </Border>
         </TabItem>
 
         <TabItem Header="Gear">
-          <StackPanel Spacing="8" Margin="6">
-            <TextBlock Text="Starting Gear" FontWeight="SemiBold" />
-            <ListBox x:Name="CreateGearList" MinHeight="180" />
-          </StackPanel>
+          <Border Classes="shell-panel"
+                  Background="{DynamicResource ChummerShellSurfaceBrush}"
+                  BorderBrush="{DynamicResource ChummerShellBorderBrush}"
+                  Padding="8"
+                  Margin="6">
+            <StackPanel Spacing="8"
+                        Background="{DynamicResource ChummerShellSurfaceBrush}">
+              <TextBlock Text="Starting Gear" Classes="shell-section-title" />
+              <ListBox x:Name="CreateGearList" MinHeight="180" />
+            </StackPanel>
+          </Border>
         </TabItem>
 
         <TabItem Header="Spells">
-          <StackPanel Spacing="8" Margin="6">
-            <TextBlock Text="Spells and Traditions" FontWeight="SemiBold" />
-            <TreeView x:Name="CreateSpellsTree" MinHeight="180" />
-          </StackPanel>
+          <Border Classes="shell-panel"
+                  Background="{DynamicResource ChummerShellSurfaceBrush}"
+                  BorderBrush="{DynamicResource ChummerShellBorderBrush}"
+                  Padding="8"
+                  Margin="6">
+            <StackPanel Spacing="8"
+                        Background="{DynamicResource ChummerShellSurfaceBrush}">
+              <TextBlock Text="Spells and Traditions" Classes="shell-section-title" />
+              <TreeView x:Name="CreateSpellsTree" MinHeight="180" />
+            </StackPanel>
+          </Border>
         </TabItem>
 
         <TabItem Header="Final">
-          <StackPanel Spacing="8" Margin="6">
-            <TextBlock Text="Finalized Profile" FontWeight="SemiBold" />
-            <ListBox x:Name="CreateFinalList" MinHeight="140" />
-            <TextBlock Text="Create Actions" FontWeight="SemiBold" Margin="0,8,0,0" />
-            <ListBox x:Name="CreateActionsList" MinHeight="120" />
-          </StackPanel>
+          <Border Classes="shell-panel"
+                  Background="{DynamicResource ChummerShellSurfaceBrush}"
+                  BorderBrush="{DynamicResource ChummerShellBorderBrush}"
+                  Padding="8"
+                  Margin="6">
+            <StackPanel Spacing="8"
+                        Background="{DynamicResource ChummerShellSurfaceBrush}">
+              <TextBlock Text="Finalized Profile" Classes="shell-section-title" />
+              <ListBox x:Name="CreateFinalList" MinHeight="140" />
+              <TextBlock Text="Create Actions" Classes="shell-section-title" Margin="0,8,0,0" />
+              <ListBox x:Name="CreateActionsList" MinHeight="120" />
+            </StackPanel>
+          </Border>
         </TabItem>
       </TabControl>
     </StackPanel>

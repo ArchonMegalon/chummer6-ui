@@ -75,9 +75,10 @@ public static class SectionRowProjector
             return rows.Count > 0 ? rows : null;
         }
 
+        string displayCollectionPath = ResolveDisplayCollectionPath(normalizedSectionId, collectionProperty);
         if (collection.Count == 0)
         {
-            rows.Add(new SectionRowState(collectionProperty, "No entries"));
+            rows.Add(new SectionRowState(displayCollectionPath, "No entries"));
             return rows;
         }
 
@@ -90,7 +91,7 @@ public static class SectionRowProjector
             }
 
             rows.Add(new SectionRowState(
-                $"{collectionProperty}[{index}]",
+                $"{displayCollectionPath}[{index}]",
                 SummarizeCollectionItem(collectionProperty, index, item)));
         }
 
@@ -218,8 +219,14 @@ public static class SectionRowProjector
             case "powers":
                 yield return "adeptPowers";
                 break;
+            case "armors":
+                yield return "armor";
+                break;
             case "complexforms":
                 yield return "complexForms";
+                break;
+            case "sprites":
+                yield return "spirits";
                 break;
             case "attributes":
             case "attributedetails":
@@ -240,7 +247,32 @@ public static class SectionRowProjector
             case "drugs":
                 yield return "consumables";
                 break;
+            case "spelldefense":
+                yield return "metrics";
+                break;
         }
+    }
+
+    private static string ResolveDisplayCollectionPath(string? normalizedSectionId, string collectionProperty)
+    {
+        if (string.IsNullOrWhiteSpace(normalizedSectionId))
+        {
+            return collectionProperty;
+        }
+
+        string normalizedCollection = Normalize(collectionProperty) ?? string.Empty;
+        return normalizedSectionId switch
+        {
+            "powers" when string.Equals(normalizedCollection, "adeptpowers", StringComparison.Ordinal) => normalizedSectionId,
+            "armors" when string.Equals(normalizedCollection, "armor", StringComparison.Ordinal) => normalizedSectionId,
+            "complexforms" when string.Equals(normalizedCollection, "complexforms", StringComparison.Ordinal) => normalizedSectionId,
+            "sprites" when string.Equals(normalizedCollection, "spirits", StringComparison.Ordinal) => normalizedSectionId,
+            "progress" or "calendar" when string.Equals(normalizedCollection, "diary", StringComparison.Ordinal)
+                || string.Equals(normalizedCollection, "entries", StringComparison.Ordinal) => normalizedSectionId,
+            "initiationgrades" when string.Equals(normalizedCollection, "grades", StringComparison.Ordinal) => normalizedSectionId,
+            "drugs" when string.Equals(normalizedCollection, "consumables", StringComparison.Ordinal) => normalizedSectionId,
+            _ => collectionProperty
+        };
     }
 
     private static string SummarizeCollectionItem(string collectionProperty, int index, JsonNode item)
@@ -274,6 +306,7 @@ public static class SectionRowProjector
             "progress" or "calendar" or "diary" => SummarizeProgressEntry(obj),
             "initiationgrades" or "grades" => SummarizeInitiationGrade(obj),
             "mentorspirits" => SummarizeMentorSpirit(obj),
+            "metrics" => SummarizeSpellDefenseMetric(obj),
             _ => null
         };
         if (!string.IsNullOrWhiteSpace(specializedSummary))
@@ -632,6 +665,26 @@ public static class SectionRowProjector
         return JoinParts(parts);
     }
 
+    private static string? SummarizeSpellDefenseMetric(JsonObject obj)
+    {
+        string label = FirstNonBlank(ReadScalarProperty(obj, "label"), ReadScalarProperty(obj, "name"));
+        List<string> parts = [label];
+        string baseValue = ReadScalarProperty(obj, "baseValue");
+        string totalValue = ReadScalarProperty(obj, "totalValue");
+        string counterspellingDice = ReadScalarProperty(obj, "counterspellingDice");
+
+        AppendLabeled(parts, "Base", baseValue);
+        if (!string.IsNullOrWhiteSpace(totalValue) && !string.Equals(totalValue, baseValue, StringComparison.Ordinal))
+        {
+            parts.Add(string.IsNullOrWhiteSpace(counterspellingDice) || string.Equals(counterspellingDice, "0", StringComparison.Ordinal)
+                ? $"Total {totalValue}"
+                : $"With Counter {totalValue}");
+        }
+
+        AppendIfPresent(parts, ReadScalarProperty(obj, "formula"));
+        return JoinParts(parts);
+    }
+
     private static void AppendIfPresent(List<string> parts, string value)
     {
         if (!string.IsNullOrWhiteSpace(value))
@@ -700,6 +753,9 @@ public static class SectionRowProjector
                 return ["rating", "pointsPerLevel", "source"];
             case "complexforms":
                 return ["target", "duration", "fadingValue", "source"];
+            case "spirits":
+            case "sprites":
+                return ["force", "services", "bound"];
             case "drugs":
                 return ["category", "quantity", "qty", "duration", "availability", "source"];
             case "calendar":

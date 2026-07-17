@@ -251,7 +251,7 @@ public sealed class AvaloniaHeadlessSmokeTests
             State = State with
             {
                 OpenMenuId = string.Equals(State.OpenMenuId, menuId, StringComparison.Ordinal) ? null : menuId,
-                Notice = $"Menu '{menuId}' opened."
+                Notice = null
             };
             StateChanged?.Invoke(this, EventArgs.Empty);
             return Task.CompletedTask;

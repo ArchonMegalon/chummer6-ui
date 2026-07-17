@@ -16,7 +16,9 @@ public sealed class WorkspaceViewStateStore : IWorkspaceViewStateStore
             ActiveSectionRows: state.ActiveSectionRows.ToArray(),
             ActiveBuildLab: state.ActiveBuildLab,
             ActiveBrowseWorkspace: state.ActiveBrowseWorkspace,
-            HasSavedWorkspace: state.HasSavedWorkspace,
+            ContentRevision: state.ContentRevision,
+            SavedRevision: state.SavedRevision,
+            ConflictState: state.ConflictState,
             ActiveNpcPersonaStudio: state.ActiveNpcPersonaStudio);
     }
 

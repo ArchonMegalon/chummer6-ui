@@ -8,6 +8,7 @@ namespace Chummer.Desktop.Runtime;
 
 public static class DesktopStartupSmokeRuntime
 {
+    private const string PortableProcessPathDisclosure = "file_name_only";
     private const string StartupSmokeSwitch = "--startup-smoke";
     private const string StartupSmokeReceiptEnvironmentVariable = "CHUMMER_DESKTOP_STARTUP_SMOKE_RECEIPT";
     private const string StartupSmokeFailurePacketEnvironmentVariable = "CHUMMER_DESKTOP_STARTUP_SMOKE_FAILURE_PACKET";
@@ -64,6 +65,7 @@ public static class DesktopStartupSmokeRuntime
                 ReadyCheckpoint: context.ReadyCheckpoint,
                 HostClass: context.HostClass,
                 ProcessPath: context.ProcessPath,
+                ProcessPathDisclosure: PortableProcessPathDisclosure,
                 ArtifactDigest: context.ArtifactDigest,
                 ArtifactDigestSource: context.ArtifactDigestSource,
                 InstallLinkingStatus: installLinkingStartupContext?.State.Status,
@@ -111,8 +113,8 @@ public static class DesktopStartupSmokeRuntime
     private static DesktopStartupSmokeContext BuildContext(string headId, DateTimeOffset startedAtUtc)
     {
         Assembly assembly = ResolveDesktopAssembly();
-        string processPath = Environment.ProcessPath ?? AppContext.BaseDirectory;
-        (string? artifactDigest, string artifactDigestSource) = ResolveArtifactDigest(processPath);
+        string hostProcessPath = Environment.ProcessPath ?? AppContext.BaseDirectory;
+        (string? artifactDigest, string artifactDigestSource) = ResolveArtifactDigest(hostProcessPath);
         string resolvedVersion = ResolveStartupSmokeVersion(assembly);
         return new DesktopStartupSmokeContext(
             HeadId: ReadAssemblyMetadata(assembly, "ChummerDesktopHeadId") ?? headId,
@@ -124,12 +126,25 @@ public static class DesktopStartupSmokeRuntime
             Rid: ResolveStartupSmokeRid(),
             ReadyCheckpoint: Environment.GetEnvironmentVariable(StartupSmokeReadyCheckpointEnvironmentVariable) ?? "pre_ui_event_loop",
             HostClass: Environment.GetEnvironmentVariable(StartupSmokeHostClassEnvironmentVariable) ?? Environment.MachineName,
-            ProcessPath: processPath,
+            ProcessPath: ToPortableProcessReference(hostProcessPath),
             ArtifactDigest: artifactDigest,
             ArtifactDigestSource: artifactDigestSource,
             Framework: RuntimeInformation.FrameworkDescription,
             OperatingSystem: RuntimeInformation.OSDescription,
             StartedAtUtc: startedAtUtc);
+    }
+
+    private static string ToPortableProcessReference(string? hostProcessPath)
+    {
+        string normalized = (hostProcessPath ?? string.Empty).Trim().Replace('\\', '/').TrimEnd('/');
+        if (string.IsNullOrWhiteSpace(normalized))
+        {
+            return "<redacted:process-path-unavailable>";
+        }
+
+        int separatorIndex = normalized.LastIndexOf('/');
+        string leaf = separatorIndex >= 0 ? normalized[(separatorIndex + 1)..] : normalized;
+        return string.IsNullOrWhiteSpace(leaf) ? "<redacted:process-path>" : leaf;
     }
 
     private static (string? ArtifactDigest, string ArtifactDigestSource) ResolveArtifactDigest(string processPath)
@@ -358,6 +373,7 @@ public static class DesktopStartupSmokeRuntime
             ReadyCheckpoint: context.ReadyCheckpoint,
             HostClass: context.HostClass,
             ProcessPath: context.ProcessPath,
+            ProcessPathDisclosure: PortableProcessPathDisclosure,
             ArtifactDigest: context.ArtifactDigest,
             ArtifactDigestSource: context.ArtifactDigestSource,
             Framework: context.Framework,
@@ -416,6 +432,7 @@ public static class DesktopStartupSmokeRuntime
         string ReadyCheckpoint,
         string HostClass,
         string ProcessPath,
+        string ProcessPathDisclosure,
         string? ArtifactDigest,
         string ArtifactDigestSource,
         string? InstallLinkingStatus,
@@ -456,6 +473,7 @@ public static class DesktopStartupSmokeRuntime
         string ReadyCheckpoint,
         string HostClass,
         string ProcessPath,
+        string ProcessPathDisclosure,
         string? ArtifactDigest,
         string ArtifactDigestSource,
         string Framework,

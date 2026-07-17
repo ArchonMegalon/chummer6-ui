@@ -16,6 +16,33 @@ namespace Chummer.Tests;
 public class WorkspaceStoreTests
 {
     [TestMethod]
+    public void File_workspace_store_readiness_probe_is_owner_scoped_and_leaves_no_payload()
+    {
+        string stateDirectory = CreateTempStateDirectory();
+        try
+        {
+            FileWorkspaceStore store = new(stateDirectory);
+            IWorkspaceStoreReadinessProbe probe = store;
+            OwnerScope owner = new("hosted-build-readiness-test-owner");
+
+            probe.Probe(owner);
+
+            Assert.AreEqual(0, store.List(owner).Count);
+            Assert.AreEqual(
+                0,
+                Directory.EnumerateFiles(
+                    stateDirectory,
+                    "*.probe",
+                    SearchOption.AllDirectories).Count());
+            Assert.ThrowsExactly<ArgumentException>(() => probe.Probe(OwnerScope.LocalSingleUser));
+        }
+        finally
+        {
+            Directory.Delete(stateDirectory, recursive: true);
+        }
+    }
+
+    [TestMethod]
     public void File_workspace_store_create_and_get_roundtrip()
     {
         string stateDirectory = CreateTempStateDirectory();
@@ -24,10 +51,10 @@ public class WorkspaceStoreTests
             FileWorkspaceStore store = new(stateDirectory);
             WorkspaceDocument expected = new("<character><name>Neo</name></character>", RulesetId: RulesetDefaults.Sr5);
 
-            CharacterWorkspaceId id = store.Create(expected);
-            bool found = store.TryGet(id, out WorkspaceDocument actual);
+            WorkspaceStoreEntry created = Create(store, expected);
+            WorkspaceStoredDocument stored = Get(store, created.Id);
+            WorkspaceDocument actual = stored.Document;
 
-            Assert.IsTrue(found);
             Assert.AreEqual(expected.State, actual.State);
             Assert.AreEqual(expected.PayloadEnvelope.Payload, actual.PayloadEnvelope.Payload);
             Assert.AreEqual(expected.Format, actual.Format);
@@ -48,14 +75,15 @@ public class WorkspaceStoreTests
             CharacterWorkspaceId id;
             {
                 FileWorkspaceStore store = new(stateDirectory);
-                id = store.Create(new WorkspaceDocument("<character><alias>BLUE</alias></character>", RulesetId: RulesetDefaults.Sr5));
+                id = Create(
+                    store,
+                    new WorkspaceDocument("<character><alias>BLUE</alias></character>", RulesetId: RulesetDefaults.Sr5)).Id;
             }
 
             {
                 FileWorkspaceStore store = new(stateDirectory);
-                bool found = store.TryGet(id, out WorkspaceDocument loaded);
-                Assert.IsTrue(found);
-                StringAssert.Contains(loaded.PayloadEnvelope.Payload, "BLUE");
+                WorkspaceStoredDocument loaded = Get(store, id);
+                StringAssert.Contains(loaded.Document.PayloadEnvelope.Payload, "BLUE");
             }
         }
         finally
@@ -73,14 +101,15 @@ public class WorkspaceStoreTests
             CharacterWorkspaceId id;
             {
                 FileWorkspaceStore store = new(stateDirectory);
-                id = store.Create(new WorkspaceDocument("<character><name>Ruleset</name></character>", RulesetId: "SR6"));
+                id = Create(
+                    store,
+                    new WorkspaceDocument("<character><name>Ruleset</name></character>", RulesetId: "SR6")).Id;
             }
 
             {
                 FileWorkspaceStore store = new(stateDirectory);
-                bool found = store.TryGet(id, out WorkspaceDocument loaded);
-                Assert.IsTrue(found);
-                Assert.AreEqual("sr6", loaded.PayloadEnvelope.RulesetId);
+                WorkspaceStoredDocument loaded = Get(store, id);
+                Assert.AreEqual("sr6", loaded.Document.PayloadEnvelope.RulesetId);
             }
         }
         finally
@@ -96,9 +125,11 @@ public class WorkspaceStoreTests
         try
         {
             FileWorkspaceStore store = new(stateDirectory);
-            CharacterWorkspaceId id = store.Create(new WorkspaceDocument(
-                "<character><name>Envelope</name></character>",
-                RulesetId: "SR6"));
+            CharacterWorkspaceId id = Create(
+                store,
+                new WorkspaceDocument(
+                    "<character><name>Envelope</name></character>",
+                    RulesetId: "SR6")).Id;
             string persistedPath = Path.Combine(stateDirectory, "workspaces", $"{id.Value}.json");
 
             using JsonDocument json = JsonDocument.Parse(File.ReadAllText(persistedPath));
@@ -136,13 +167,12 @@ public class WorkspaceStoreTests
                 }
                 """);
 
-            bool found = store.TryGet(id, out WorkspaceDocument loaded);
+            WorkspaceStoredDocument loaded = Get(store, id);
 
-            Assert.IsTrue(found);
-            StringAssert.Contains(loaded.PayloadEnvelope.Payload, "Legacy");
-            StringAssert.Contains(loaded.State.Payload, "Legacy");
-            Assert.AreEqual(WorkspaceDocumentFormat.NativeXml, loaded.Format);
-            Assert.AreEqual("sr6", loaded.PayloadEnvelope.RulesetId);
+            StringAssert.Contains(loaded.Document.PayloadEnvelope.Payload, "Legacy");
+            StringAssert.Contains(loaded.Document.State.Payload, "Legacy");
+            Assert.AreEqual(WorkspaceDocumentFormat.NativeXml, loaded.Document.Format);
+            Assert.AreEqual("sr6", loaded.Document.PayloadEnvelope.RulesetId);
         }
         finally
         {
@@ -168,11 +198,10 @@ public class WorkspaceStoreTests
                 }
                 """);
 
-            bool found = store.TryGet(id, out WorkspaceDocument loaded);
+            WorkspaceStoredDocument loaded = Get(store, id);
 
-            Assert.IsTrue(found);
-            Assert.AreEqual(RulesetDefaults.Sr4, loaded.PayloadEnvelope.RulesetId);
-            StringAssert.Contains(loaded.PayloadEnvelope.Payload, "Starter Shadow");
+            Assert.AreEqual(RulesetDefaults.Sr4, loaded.Document.PayloadEnvelope.RulesetId);
+            StringAssert.Contains(loaded.Document.PayloadEnvelope.Payload, "Starter Shadow");
         }
         finally
         {
@@ -187,8 +216,8 @@ public class WorkspaceStoreTests
         try
         {
             FileWorkspaceStore store = new(stateDirectory);
-            bool found = store.TryGet(new CharacterWorkspaceId("../bad"), out _);
-            Assert.IsFalse(found);
+            WorkspaceStoreReadResult read = store.Get(new CharacterWorkspaceId("../bad"));
+            Assert.AreEqual(WorkspaceOperationOutcome.Missing, read.Outcome);
         }
         finally
         {
@@ -203,13 +232,15 @@ public class WorkspaceStoreTests
         try
         {
             FileWorkspaceStore store = new(stateDirectory);
-            CharacterWorkspaceId id = store.Create(new WorkspaceDocument("<character><name>Neo</name></character>", RulesetId: RulesetDefaults.Sr5));
+            CharacterWorkspaceId id = Create(
+                store,
+                new WorkspaceDocument("<character><name>Neo</name></character>", RulesetId: RulesetDefaults.Sr5)).Id;
             string persistedPath = Path.Combine(stateDirectory, "workspaces", $"{id.Value}.json");
 
             File.WriteAllText(persistedPath, "{invalid-json");
 
-            bool found = store.TryGet(id, out _);
-            Assert.IsFalse(found);
+            WorkspaceStoreReadResult read = store.Get(id);
+            Assert.AreEqual(WorkspaceOperationOutcome.Corrupt, read.Outcome);
         }
         finally
         {
@@ -224,8 +255,12 @@ public class WorkspaceStoreTests
         try
         {
             FileWorkspaceStore store = new(stateDirectory);
-            CharacterWorkspaceId first = store.Create(new WorkspaceDocument("<character><name>First</name></character>", RulesetId: RulesetDefaults.Sr5));
-            CharacterWorkspaceId second = store.Create(new WorkspaceDocument("<character><name>Second</name></character>", RulesetId: RulesetDefaults.Sr5));
+            CharacterWorkspaceId first = Create(
+                store,
+                new WorkspaceDocument("<character><name>First</name></character>", RulesetId: RulesetDefaults.Sr5)).Id;
+            CharacterWorkspaceId second = Create(
+                store,
+                new WorkspaceDocument("<character><name>Second</name></character>", RulesetId: RulesetDefaults.Sr5)).Id;
 
             IReadOnlyList<WorkspaceStoreEntry> listed = store.List();
 
@@ -246,13 +281,15 @@ public class WorkspaceStoreTests
         try
         {
             FileWorkspaceStore store = new(stateDirectory);
-            CharacterWorkspaceId id = store.Create(new WorkspaceDocument("<character><name>DeleteMe</name></character>", RulesetId: RulesetDefaults.Sr5));
+            WorkspaceStoreEntry created = Create(
+                store,
+                new WorkspaceDocument("<character><name>DeleteMe</name></character>", RulesetId: RulesetDefaults.Sr5));
 
-            bool deleted = store.Delete(id);
-            bool found = store.TryGet(id, out _);
+            WorkspaceStoreMutationResult deleted = store.Delete(created.Id, created.ContentRevision);
+            WorkspaceStoreReadResult read = store.Get(created.Id);
 
-            Assert.IsTrue(deleted);
-            Assert.IsFalse(found);
+            Assert.IsTrue(deleted.Success, deleted.Error);
+            Assert.AreEqual(WorkspaceOperationOutcome.Missing, read.Outcome);
         }
         finally
         {
@@ -269,14 +306,20 @@ public class WorkspaceStoreTests
             FileWorkspaceStore store = new(stateDirectory);
             OwnerScope alice = new("Alice@example.com");
 
-            CharacterWorkspaceId globalId = store.Create(new WorkspaceDocument("<character><name>Global</name></character>", RulesetId: RulesetDefaults.Sr5));
-            CharacterWorkspaceId aliceId = store.Create(alice, new WorkspaceDocument("<character><name>Alice</name></character>", RulesetId: RulesetDefaults.Sr6));
+            CharacterWorkspaceId globalId = Create(
+                store,
+                new WorkspaceDocument("<character><name>Global</name></character>", RulesetId: RulesetDefaults.Sr5)).Id;
+            CharacterWorkspaceId aliceId = Create(
+                store,
+                alice,
+                new WorkspaceDocument("<character><name>Alice</name></character>", RulesetId: RulesetDefaults.Sr6)).Id;
+            WorkspaceStoredDocument globalDocument = Get(store, globalId);
+            WorkspaceStoreReadResult crossOwnerRead = store.Get(alice, globalId);
+            WorkspaceStoredDocument aliceDocument = Get(store, alice, aliceId);
 
-            Assert.IsTrue(store.TryGet(globalId, out WorkspaceDocument globalDocument));
-            Assert.IsFalse(store.TryGet(alice, globalId, out _));
-            Assert.IsTrue(store.TryGet(alice, aliceId, out WorkspaceDocument aliceDocument));
-            Assert.AreEqual(RulesetDefaults.Sr5, globalDocument.PayloadEnvelope.RulesetId);
-            Assert.AreEqual(RulesetDefaults.Sr6, aliceDocument.PayloadEnvelope.RulesetId);
+            Assert.AreEqual(WorkspaceOperationOutcome.Missing, crossOwnerRead.Outcome);
+            Assert.AreEqual(RulesetDefaults.Sr5, globalDocument.Document.PayloadEnvelope.RulesetId);
+            Assert.AreEqual(RulesetDefaults.Sr6, aliceDocument.Document.PayloadEnvelope.RulesetId);
             Assert.HasCount(1, store.List());
             Assert.HasCount(1, store.List(alice));
             Assert.IsTrue(File.Exists(Path.Combine(stateDirectory, "workspaces", $"{globalId.Value}.json")));
@@ -293,5 +336,43 @@ public class WorkspaceStoreTests
         string path = Path.Combine(Path.GetTempPath(), "chummer-tests", Guid.NewGuid().ToString("N"));
         Directory.CreateDirectory(path);
         return path;
+    }
+
+    private static WorkspaceStoreEntry Create(IWorkspaceStore store, WorkspaceDocument document)
+    {
+        WorkspaceStoreMutationResult result = store.CreateWorkspaceDocument(document);
+        Assert.IsTrue(result.Success, result.Error);
+        Assert.IsNotNull(result.Entry);
+        return result.Entry.Value;
+    }
+
+    private static WorkspaceStoreEntry Create(
+        IWorkspaceStore store,
+        OwnerScope owner,
+        WorkspaceDocument document)
+    {
+        WorkspaceStoreMutationResult result = store.CreateWorkspaceDocument(owner, document);
+        Assert.IsTrue(result.Success, result.Error);
+        Assert.IsNotNull(result.Entry);
+        return result.Entry.Value;
+    }
+
+    private static WorkspaceStoredDocument Get(IWorkspaceStore store, CharacterWorkspaceId id)
+    {
+        WorkspaceStoreReadResult result = store.Get(id);
+        Assert.IsTrue(result.Success, result.Error);
+        Assert.IsNotNull(result.Value);
+        return result.Value;
+    }
+
+    private static WorkspaceStoredDocument Get(
+        IWorkspaceStore store,
+        OwnerScope owner,
+        CharacterWorkspaceId id)
+    {
+        WorkspaceStoreReadResult result = store.Get(owner, id);
+        Assert.IsTrue(result.Success, result.Error);
+        Assert.IsNotNull(result.Value);
+        return result.Value;
     }
 }

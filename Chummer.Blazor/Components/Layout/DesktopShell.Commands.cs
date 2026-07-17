@@ -102,7 +102,7 @@ public partial class DesktopShell
 
     private async Task OnShellKeyDown(KeyboardEventArgs args)
     {
-        if (_bridge is null || State.IsBusy)
+        if (_bridge is null || State.IsBusy || State.ActiveDialog is not null)
             return;
 
         bool commandModifier = args.CtrlKey || args.MetaKey;

@@ -1,5 +1,6 @@
 using Avalonia;
 using Avalonia.Controls;
+using Avalonia.Controls.Templates;
 using Avalonia.Layout;
 using Avalonia.Media;
 using Chummer.Avalonia;
@@ -108,9 +109,10 @@ public abstract class ClassicFormPortSurfaceControl : UserControl
         }
 
         DesktopShellTheme.ApplyShellListBoxTheme(listBox);
+        listBox.ItemTemplate ??= new ClassicLineItemTemplate();
         ClassicPortLineItem[] materialized = lines.Where(static line => !string.IsNullOrWhiteSpace(line.Detail)).ToArray();
         listBox.ItemsSource = materialized.Length == 0
-            ? [new ClassicPortLineItem("Status", emptyMessage)]
+            ? [new ClassicPortLineItem("Note", emptyMessage)]
             : materialized;
     }
 
@@ -122,9 +124,10 @@ public abstract class ClassicFormPortSurfaceControl : UserControl
         }
 
         DesktopShellTheme.ApplyShellTreeViewTheme(treeView);
+        treeView.ItemTemplate ??= new ClassicLineItemTemplate();
         ClassicPortLineItem[] materialized = lines.Where(static line => !string.IsNullOrWhiteSpace(line.Detail)).ToArray();
         treeView.ItemsSource = materialized.Length == 0
-            ? [new ClassicPortLineItem("Status", emptyMessage)]
+            ? [new ClassicPortLineItem("Note", emptyMessage)]
             : materialized;
     }
 
@@ -137,7 +140,9 @@ public abstract class ClassicFormPortSurfaceControl : UserControl
 
         DesktopShellTheme.ApplyShellComboBoxTheme(comboBox);
         string[] materialized = labels.Where(static label => !string.IsNullOrWhiteSpace(label)).Distinct(StringComparer.OrdinalIgnoreCase).ToArray();
-        comboBox.ItemsSource = materialized.Length == 0 ? [emptyMessage] : materialized;
+        comboBox.ItemsSource = (materialized.Length == 0 ? [emptyMessage] : materialized)
+            .Select(static label => DesktopShellTheme.CreateComboBoxOptionText(label))
+            .ToArray();
         comboBox.SelectedIndex = 0;
     }
 
@@ -174,7 +179,7 @@ public abstract class ClassicFormPortSurfaceControl : UserControl
     {
         if (noticeText is not null)
         {
-            noticeText.Text = $"{SurfaceTitle}: {verb} command routed through the classic port command bridge.";
+            noticeText.Text = $"{SurfaceTitle}: choose an available {verb.ToLowerInvariant()} action from this pane.";
         }
     }
 
@@ -203,6 +208,46 @@ public abstract class ClassicFormPortSurfaceControl : UserControl
         };
     }
 
+}
+
+internal sealed class ClassicLineItemTemplate : IDataTemplate
+{
+    public Control Build(object? param)
+    {
+        if (param is not ClassicPortLineItem item)
+        {
+            return new TextBlock
+            {
+                Text = Convert.ToString(param, System.Globalization.CultureInfo.InvariantCulture) ?? string.Empty,
+                Foreground = DesktopShellTheme.ResolveForegroundBrush(),
+                TextWrapping = TextWrapping.Wrap
+            };
+        }
+
+        return new StackPanel
+        {
+            Spacing = 2,
+            Children =
+            {
+                new TextBlock
+                {
+                    Text = item.Label,
+                    Foreground = DesktopShellTheme.ResolveForegroundBrush(),
+                    FontWeight = FontWeight.SemiBold,
+                    TextWrapping = TextWrapping.Wrap
+                },
+                new TextBlock
+                {
+                    Text = item.Detail,
+                    Foreground = DesktopShellTheme.ResolveMutedForegroundBrush(),
+                    TextWrapping = TextWrapping.Wrap
+                }
+            }
+        };
+    }
+
+    public bool Match(object? data)
+        => data is ClassicPortLineItem || data is string;
 }
 
 public sealed record ClassicPortLineItem(string Label, string Detail);

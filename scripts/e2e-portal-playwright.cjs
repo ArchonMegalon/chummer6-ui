@@ -36,7 +36,7 @@ function expectAnyTextIncludes(actual, expectedValues, context) {
 
 function shouldRetryRouteNavigation(error) {
   const message = String(error && error.message || '');
-  return message.includes('ERR_ABORTED') || message.includes('Timeout');
+  return message.includes('ERR_ABORTED') || message.includes('ERR_NETWORK_CHANGED') || message.includes('Timeout');
 }
 
 async function openPortalRoute(page, route, readySelector, waitUntilOverride) {
@@ -91,17 +91,18 @@ async function openPortalPreviewPath(page, relativePath, readySelector, waitUnti
 }
 
 async function auditPortalHome(page) {
-  await openPortalRoute(page, '/', '.minimal-hero');
+  await openPortalRoute(page, '/', '[data-portal-home-action="explore-chummer-online"]');
 
   const bodyText = await page.locator('body').innerText();
   expectTextIncludes(bodyText, 'Chummer', 'portal home');
-  expectTextIncludes(bodyText, 'A Shadowrun character manager for clean sheets and faster tables.', 'portal home');
-  expectTextIncludes(bodyText, 'Download Chummer', 'portal home');
-  expectTextIncludes(bodyText, 'Current public installers: Windows and Linux.', 'portal home');
-  expectTextIncludes(bodyText, 'Watch 90 sec', 'portal home');
-  expectAnyTextIncludes(bodyText, ['Kestrel', 'Brick', 'Whisper'], 'portal home example runner rail');
-  await expectVisibleSelector(page, '.minimal-hero [href="/downloads"]', 'portal home downloads CTA');
-  await expectVisibleSelector(page, '.minimal-hero__visual[href="/media/promo/every-wonder-horizon-promo.mp4"]', 'portal home promo video link');
+  expectTextIncludes(bodyText, 'Explore Chummer Online, downloads, and support from one self-hosted edge.', 'portal home');
+  expectTextIncludes(bodyText, 'Start in the Character Roster, continue into Chummer Online', 'portal home');
+  expectTextIncludes(bodyText, 'Open Character Roster', 'portal home');
+  expectTextIncludes(bodyText, 'Open Chummer Online overview', 'portal home');
+  await expectVisibleSelector(page, 'a.cta[href="/app?command=character_roster"][data-portal-home-action="explore-chummer-online"]', 'portal home Chummer Online roster CTA');
+  await expectVisibleSelector(page, '[data-portal-home-route="chummer-app"]', 'portal home Chummer Online route');
+  await expectVisibleSelector(page, '[data-portal-home-route="chummer-home"]', 'portal home Chummer Online overview route');
+  await expectVisibleSelector(page, '[data-portal-home-route="downloads"]', 'portal home desktop downloads route');
 }
 
 async function expectVisibleSelector(page, selector, context) {
@@ -484,6 +485,57 @@ async function openStartupCommandDialog(page, commandId, expectedTitle) {
   }
 }
 
+async function expectNewRunnerMenuReopensDialog(page, context) {
+  const buildMethod = page.locator('label[data-field-id="newCharacterBuildMethod"] select');
+  await buildMethod.waitFor({ state: 'visible', timeout: 15000 });
+  await buildMethod.selectOption('Karma');
+  const buildMethodValue = await buildMethod.inputValue();
+  if (buildMethodValue !== 'Karma') {
+    throw new Error(`Expected ${context} Build Method to switch to Karma before using File -> New runner, got '${buildMethodValue}'.`);
+  }
+
+  const fileMenu = page.locator('button.menu-btn.classic-menu-button').filter({ hasText: 'File' }).first();
+  await fileMenu.waitFor({ state: 'visible', timeout: 15000 });
+  await fileMenu.click({ timeout: 15000 });
+  const fileMenuExpandedState = await fileMenu.evaluate((element) => ({
+    ariaExpanded: element.getAttribute('aria-expanded') || '',
+    className: element.getAttribute('class') || ''
+  }));
+  const fileMenuExpanded = fileMenuExpandedState.ariaExpanded === 'true'
+    || fileMenuExpandedState.className.split(/\s+/).includes('active');
+  if (!fileMenuExpanded) {
+    throw new Error(
+      `Expected ${context} File menu to expand while the startup dialog is open, got `
+      + `aria-expanded='${fileMenuExpandedState.ariaExpanded}' class='${fileMenuExpandedState.className}'.`);
+  }
+
+  const newRunner = page.locator('button.menu-item.classic-menu-item').filter({ hasText: 'New runner' }).first();
+  await newRunner.waitFor({ state: 'visible', timeout: 15000 });
+  await newRunner.click({ timeout: 15000 });
+
+  const buildMethodReset = await buildMethod.inputValue();
+  if (buildMethodReset !== 'Priority') {
+    throw new Error(`Expected ${context} File -> New runner to reopen the startup dialog with Priority selected, got '${buildMethodReset}'.`);
+  }
+
+  const dialogVisible = await page.locator('#dialogBackdrop[data-dialog-id="dialog.new_character"]').isVisible();
+  if (!dialogVisible) {
+    throw new Error(`Expected ${context} startup dialog to remain visible after File -> New runner.`);
+  }
+
+  const fileMenuCollapsedState = await fileMenu.evaluate((element) => ({
+    ariaExpanded: element.getAttribute('aria-expanded') || '',
+    className: element.getAttribute('class') || ''
+  }));
+  const fileMenuCollapsed = fileMenuCollapsedState.ariaExpanded === 'false'
+    || !fileMenuCollapsedState.className.split(/\s+/).includes('active');
+  if (!fileMenuCollapsed) {
+    throw new Error(
+      `Expected ${context} File menu to collapse after selecting New runner, got `
+      + `aria-expanded='${fileMenuCollapsedState.ariaExpanded}' class='${fileMenuCollapsedState.className}'.`);
+  }
+}
+
 async function auditPortalWorkbenchDesktop(page) {
   await openPortalPreview(page);
   await expectVisibleSelector(page, '.browser-preview-boundary', 'portal preview boundary');
@@ -576,6 +628,7 @@ async function auditPortalNewCharacter(page) {
   await expectVisibleCollectionMinimumTextContrast(page, '.desktop-dialog .dialog-label', 4.5, 3, 'portal new character labels');
   await expectVisibleCollectionMinimumTextContrast(page, '.desktop-dialog .dialog-input', 4.5, 3, 'portal new character inputs');
   await expectVisibleSelector(page, '#dialogBackdrop [aria-label="Ruleset"]', 'portal ruleset field');
+  await expectNewRunnerMenuReopensDialog(page, 'portal new character dialog');
 }
 
 async function auditPortalNewCharacterDeepLink(page) {
@@ -590,6 +643,7 @@ async function auditPortalNewCharacterDeepLink(page) {
   const dialogText = await page.locator('.desktop-dialog').innerText();
   expectTextIncludes(dialogText, 'Character Name', 'portal new character deep link');
   expectTextIncludes(dialogText, 'Build Method', 'portal new character deep link');
+  await expectNewRunnerMenuReopensDialog(page, 'portal new character deep link');
 }
 
 async function auditPortalOriginDossierDeepLink(page) {

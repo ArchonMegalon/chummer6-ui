@@ -673,8 +673,7 @@ public sealed class BlazorShellComponentTests
             Session = new WorkspaceSessionState(workspaceId, [savedWorkspace], [workspaceId]),
             OpenWorkspaces = [savedWorkspace],
             WorkspaceId = workspaceId,
-            LastCommandId = "save_character",
-            HasSavedWorkspace = true
+            LastCommandId = "save_character"
         };
 
         using var context = CreateContext();

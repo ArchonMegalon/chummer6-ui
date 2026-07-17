@@ -2,13 +2,17 @@ using Chummer.Blazor;
 using Chummer.Blazor.Components;
 using Chummer.Blazor.RunnerIntelligence;
 using Chummer.Blazor.Services;
+using Chummer.Application.Owners;
 using Chummer.Desktop.Runtime;
 using Chummer.Presentation;
 using Chummer.Presentation.Overview;
 using Chummer.Presentation.RunnerIntelligence;
 using Chummer.Presentation.Shell;
-using Microsoft.AspNetCore.DataProtection;
+using Microsoft.AspNetCore.Components.Authorization;
 using Microsoft.AspNetCore.Hosting.StaticWebAssets;
+using Microsoft.AspNetCore.Components.Server.Circuits;
+using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.DependencyInjection.Extensions;
 
 const string AnalyticsPayloadsExclusion = "payloads";
 const string AnalyticsHashesExclusion = "hashes";
@@ -34,19 +38,39 @@ const string AnalyticsDialogActionIdField = "dialog_action_id";
 const string AnalyticsHasWorkspaceField = "has_workspace";
 const string AnalyticsHasDossierField = "has_dossier";
 const string AnalyticsHasFixtureField = "has_fixture";
-const string DataProtectionKeysPathConfigKey = "CHUMMER_BLAZOR_DATA_PROTECTION_KEYS_PATH";
-
 WebApplicationBuilder builder = WebApplication.CreateBuilder(args);
+builder.Configuration.AddKeyPerFile(
+    directoryPath: "/run/secrets/chummer-config",
+    optional: true,
+    reloadOnChange: false);
 StaticWebAssetsLoader.UseStaticWebAssets(builder.Environment, builder.Configuration);
 PathString pathBase = NormalizePathBase(builder.Configuration["CHUMMER_BLAZOR_PATH_BASE"]);
-ConfigureDataProtection(builder.Services, builder.Configuration);
+HostedBuildDataProtection.ConfigureFromConfiguration(builder.Services, builder.Configuration, builder.Environment);
+HostedBuildOwnerAuthenticationOptions hostedBuildAuthentication =
+    builder.Services.AddHostedBuildOwnerAuthentication(builder.Configuration);
 
 builder.Services.AddRazorComponents()
     .AddInteractiveServerComponents();
+builder.Services.AddCascadingAuthenticationState();
 string contentRoot = DesktopRepoRootLocator.ResolveChummerPresentationRepoRootOrFallback(
     AppContext.BaseDirectory,
     Directory.GetCurrentDirectory());
 builder.Services.AddChummerLocalRuntimeClient(AppContext.BaseDirectory, contentRoot);
+EnsureHostedInProcessClientMode(builder.Configuration);
+builder.Services.AddHostedBuildWorkspaceStore(builder.Configuration, builder.Environment);
+builder.Services.AddHttpContextAccessor();
+builder.Services.AddSingleton<HostedBuildOwnerGrantService>();
+builder.Services.AddHostedBuildOwnerInvalidationTokens(builder.Configuration);
+builder.Services.RemoveAll<IOwnerContextAccessor>();
+builder.Services.AddScoped<HostedBuildOwnerContextAccessor>();
+builder.Services.AddScoped<IOwnerContextAccessor>(serviceProvider =>
+    serviceProvider.GetRequiredService<HostedBuildOwnerContextAccessor>());
+builder.Services.AddScoped<CircuitHandler>(serviceProvider =>
+    serviceProvider.GetRequiredService<HostedBuildOwnerContextAccessor>());
+builder.Services.RemoveAll<IChummerClient>();
+builder.Services.AddScoped<IChummerClient, InProcessChummerClient>();
+builder.Services.RemoveAll<ISessionClient>();
+builder.Services.AddScoped<ISessionClient, InProcessSessionClient>();
 builder.Services.AddScoped<EngineClient>(_ =>
 {
     HttpClient client = new()
@@ -58,37 +82,67 @@ builder.Services.AddScoped<EngineClient>(_ =>
 });
 builder.Services.AddHttpClient<IWorkbenchCoachApiClient, WorkbenchCoachApiClient>();
 builder.Services.AddScoped<IShellBootstrapDataProvider, ShellBootstrapDataProvider>();
+builder.Services.AddScoped<IWorkspaceOverviewLoader>(services =>
+    WorkspaceOverviewLoader.CreateCompositionBound(services.GetRequiredService<IChummerClient>()));
 builder.Services.AddScoped<ICharacterOverviewPresenter, CharacterOverviewPresenter>();
 builder.Services.AddScoped<IShellPresenter, ShellPresenter>();
 builder.Services.AddScoped<ICommandAvailabilityEvaluator, DefaultCommandAvailabilityEvaluator>();
 builder.Services.AddScoped<IShellSurfaceResolver, ShellSurfaceResolver>();
 builder.Services.AddBlazorRunnerIntelligence();
+builder.Services.AddSingleton<IWorkspacePrivacyLifecycleCapabilities>(
+    HostedBuildPrivacyLifecycleCapabilities.Instance);
+builder.Services.AddHostedBuildWorkspacePersistenceReadiness();
 builder.Services.AddHostedService<BlazorPublicEdgeWarmupService>();
 
 WebApplication app = builder.Build();
+_ = app.Services.GetRequiredService<HostedBuildOwnerInvalidationTokenService>();
+HostedBuildWorkspacePersistenceReadiness workspacePersistenceReadiness =
+    app.Services.GetRequiredService<HostedBuildWorkspacePersistenceReadiness>();
+HostedBuildWorkspaceStoreSelection workspaceStoreSelection =
+    app.Services.GetRequiredService<HostedBuildWorkspaceStoreSelection>();
+workspacePersistenceReadiness.StartProbe();
+app.UseHostedBuildHealthChecks(
+    pathBase,
+    () => BuildLivenessHealth(builder.Configuration, pathBase, workspaceStoreSelection),
+    cancellationToken => BuildReadinessHealthAsync(
+        builder.Configuration,
+        pathBase,
+        workspaceStoreSelection,
+        workspacePersistenceReadiness,
+        cancellationToken));
+if (hostedBuildAuthentication.Enabled)
+{
+    app.UseAuthentication();
+}
+app.UseMiddleware<HostedBuildOwnerGrantMiddleware>();
+app.UseBuildPwaReleaseContract(pathBase);
 
 if (pathBase.HasValue)
 {
-    app.UsePathBase(pathBase);
+    app.Map(pathBase.Value, subapp =>
+    {
+        subapp.UsePathBase(pathBase);
+        subapp.UseRouting();
+        subapp.UseAntiforgery();
+        subapp.UseEndpoints(endpoints =>
+        {
+            endpoints.MapMethods("/", [HttpMethods.Head], () => Results.Ok());
+            endpoints.MapStaticAssets();
+            endpoints.MapRazorComponents<App>()
+                .AddInteractiveServerRenderMode();
+        });
+    });
 }
-
-app.UseAntiforgery();
-
-app.MapMethods("/", [HttpMethods.Head], () => Results.Ok());
-
-app.MapGet("/health", () => Results.Ok(new
+else
 {
-    ok = true,
-    service = "Chummer",
-    status = "running",
-    head = "blazor",
-    pathBase = pathBase.Value,
-    analytics = BuildAnalyticsHealth(builder.Configuration)
-}));
+    app.UseAntiforgery();
 
-app.MapStaticAssets();
-app.MapRazorComponents<App>()
-    .AddInteractiveServerRenderMode();
+    app.MapMethods("/", [HttpMethods.Head], () => Results.Ok());
+
+    app.MapStaticAssets();
+    app.MapRazorComponents<App>()
+        .AddInteractiveServerRenderMode();
+}
 
 app.Run();
 
@@ -129,19 +183,60 @@ static Uri ResolveEngineBaseAddress(IConfiguration configuration)
     return uri;
 }
 
-static void ConfigureDataProtection(IServiceCollection services, IConfiguration configuration)
+static void EnsureHostedInProcessClientMode(IConfiguration configuration)
 {
-    string? configuredPath = configuration[DataProtectionKeysPathConfigKey];
-    if (string.IsNullOrWhiteSpace(configuredPath))
+    string? configuredMode = configuration["CHUMMER_CLIENT_MODE"]
+        ?? configuration["CHUMMER_DESKTOP_CLIENT_MODE"];
+    if (string.Equals(configuredMode?.Trim(), "http", StringComparison.OrdinalIgnoreCase))
     {
-        return;
+        throw new InvalidOperationException(
+            "Hosted Build cannot use the desktop HTTP client mode because it has no server-owned owner-grant propagation contract.");
     }
+}
 
-    DirectoryInfo keyDirectory = Directory.CreateDirectory(configuredPath.Trim());
-    services
-        .AddDataProtection()
-        .SetApplicationName("Chummer.Blazor")
-        .PersistKeysToFileSystem(keyDirectory);
+static IResult BuildLivenessHealth(
+    IConfiguration configuration,
+    PathString pathBase,
+    HostedBuildWorkspaceStoreSelection workspaceStore)
+{
+    return Results.Ok(new
+    {
+        ok = true,
+        service = "Chummer",
+        status = "alive",
+        check = "liveness",
+        head = "blazor",
+        pathBase = pathBase.Value,
+        workspaceStore,
+        analytics = BuildAnalyticsHealth(configuration)
+    });
+}
+
+static async Task<IResult> BuildReadinessHealthAsync(
+    IConfiguration configuration,
+    PathString pathBase,
+    HostedBuildWorkspaceStoreSelection workspaceStore,
+    HostedBuildWorkspacePersistenceReadiness persistenceReadiness,
+    CancellationToken cancellationToken)
+{
+    HostedBuildWorkspacePersistenceStatus persistence =
+        await persistenceReadiness.CheckAsync(cancellationToken);
+    var payload = new
+    {
+        ok = persistence.Ready,
+        service = "Chummer",
+        status = persistence.Ready ? "running" : "not_ready",
+        check = "readiness",
+        head = "blazor",
+        pathBase = pathBase.Value,
+        workspaceStore,
+        workspacePersistence = persistence.Status,
+        analytics = BuildAnalyticsHealth(configuration)
+    };
+
+    return persistence.Ready
+        ? Results.Ok(payload)
+        : Results.Json(payload, statusCode: StatusCodes.Status503ServiceUnavailable);
 }
 
 static AnalyticsHealth BuildAnalyticsHealth(IConfiguration configuration)

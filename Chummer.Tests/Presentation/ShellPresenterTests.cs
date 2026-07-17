@@ -188,9 +188,141 @@ public class ShellPresenterTests
 
         await presenter.ToggleMenuAsync("file", CancellationToken.None);
         Assert.AreEqual("file", presenter.State.OpenMenuId);
+        Assert.IsNull(presenter.State.Notice);
 
         await presenter.ToggleMenuAsync("file", CancellationToken.None);
         Assert.IsNull(presenter.State.OpenMenuId);
+        Assert.IsNull(presenter.State.Notice);
+    }
+
+    [TestMethod]
+    public async Task ToggleMenuAsync_noop_for_menu_with_no_visible_commands()
+    {
+        var client = new ShellClientStub
+        {
+            Commands =
+            [
+                new AppCommandDefinition("file", "command.file", "menu", false, true, RulesetDefaults.Sr5),
+                new AppCommandDefinition("archive", "command.archive", "menu", false, true, RulesetDefaults.Sr5),
+                new AppCommandDefinition("help", "command.help", "menu", false, true, RulesetDefaults.Sr5)
+            ]
+        };
+
+        var presenter = new ShellPresenter(client);
+        await presenter.InitializeAsync(CancellationToken.None);
+
+        await presenter.ToggleMenuAsync("archive", CancellationToken.None);
+
+        Assert.IsNull(presenter.State.OpenMenuId);
+        Assert.IsNull(presenter.State.LastCommandId);
+        Assert.IsNull(presenter.State.Error);
+        Assert.IsNull(presenter.State.Notice);
+    }
+
+    [TestMethod]
+    public async Task ToggleMenuAsync_opens_special_menu_when_switch_ruleset_is_visible()
+    {
+        var client = new ShellClientStub
+        {
+            Commands =
+            [
+                new AppCommandDefinition("file", "command.file", "menu", false, true, RulesetDefaults.Sr5),
+                new AppCommandDefinition("special", "command.special", "menu", false, true, RulesetDefaults.Sr5),
+                new AppCommandDefinition("switch_ruleset", "command.switch_ruleset", "special", false, true, RulesetDefaults.Sr5),
+                new AppCommandDefinition("help", "command.help", "menu", false, true, RulesetDefaults.Sr5)
+            ]
+        };
+
+        var presenter = new ShellPresenter(client);
+        await presenter.InitializeAsync(CancellationToken.None);
+
+        await presenter.ToggleMenuAsync("special", CancellationToken.None);
+
+        Assert.AreEqual("special", presenter.State.OpenMenuId);
+        Assert.IsNull(presenter.State.LastCommandId);
+        Assert.IsNull(presenter.State.Error);
+        Assert.IsNull(presenter.State.Notice);
+    }
+
+    [TestMethod]
+    public async Task ExecuteCommandAsync_noop_for_menu_root_with_no_visible_commands()
+    {
+        var client = new ShellClientStub
+        {
+            Commands =
+            [
+                new AppCommandDefinition("file", "command.file", "menu", false, true, RulesetDefaults.Sr5),
+                new AppCommandDefinition("archive", "command.archive", "menu", false, true, RulesetDefaults.Sr5),
+                new AppCommandDefinition("help", "command.help", "menu", false, true, RulesetDefaults.Sr5)
+            ]
+        };
+
+        var presenter = new ShellPresenter(client);
+        await presenter.InitializeAsync(CancellationToken.None);
+
+        await presenter.ExecuteCommandAsync("archive", CancellationToken.None);
+
+        Assert.IsNull(presenter.State.OpenMenuId);
+        Assert.IsNull(presenter.State.LastCommandId);
+        Assert.IsNull(presenter.State.Error);
+        Assert.IsNull(presenter.State.Notice);
+    }
+
+    [TestMethod]
+    public async Task ToggleMenuAsync_opens_edit_menu_when_workspace_scoped_copy_is_enabled()
+    {
+        DateTimeOffset now = DateTimeOffset.UtcNow;
+        var client = new ShellClientStub
+        {
+            Workspaces =
+            [
+                CreateWorkspace("ws-active", "Runner", "R", now.AddMinutes(-5))
+            ],
+            Session = new ShellSessionState("ws-active"),
+            Commands =
+            [
+                new AppCommandDefinition("file", "command.file", "menu", false, true, RulesetDefaults.Sr5),
+                new AppCommandDefinition("edit", "command.edit", "menu", false, true, RulesetDefaults.Sr5),
+                new AppCommandDefinition("copy", "command.copy", "edit", true, true, RulesetDefaults.Sr5),
+                new AppCommandDefinition("paste", "command.paste", "edit", true, true, RulesetDefaults.Sr5),
+                new AppCommandDefinition("help", "command.help", "menu", false, true, RulesetDefaults.Sr5)
+            ]
+        };
+
+        var presenter = new ShellPresenter(client);
+        await presenter.InitializeAsync(CancellationToken.None);
+
+        await presenter.ToggleMenuAsync("edit", CancellationToken.None);
+
+        Assert.AreEqual("edit", presenter.State.OpenMenuId);
+        Assert.IsNull(presenter.State.LastCommandId);
+        Assert.IsNull(presenter.State.Error);
+        Assert.IsNull(presenter.State.Notice);
+    }
+
+    [TestMethod]
+    public async Task ToggleMenuAsync_opens_menu_with_only_disabled_commands_so_classic_root_stays_visible()
+    {
+        var client = new ShellClientStub
+        {
+            Commands =
+            [
+                new AppCommandDefinition("edit", "command.edit", "menu", false, true, RulesetDefaults.Sr5),
+                new AppCommandDefinition("copy", "command.copy", "edit", true, true, RulesetDefaults.Sr5),
+                new AppCommandDefinition("paste", "command.paste", "edit", true, true, RulesetDefaults.Sr5),
+                new AppCommandDefinition("help", "command.help", "menu", false, true, RulesetDefaults.Sr5)
+            ]
+        };
+
+        var presenter = new ShellPresenter(client);
+        await presenter.InitializeAsync(CancellationToken.None);
+
+        await presenter.ToggleMenuAsync("edit", CancellationToken.None);
+
+        Assert.AreEqual("edit", presenter.State.OpenMenuId);
+        Assert.IsNull(presenter.State.LastCommandId);
+        Assert.IsNull(presenter.State.Error);
+        Assert.IsNull(presenter.State.Notice);
     }
 
     [TestMethod]
@@ -235,6 +367,7 @@ public class ShellPresenterTests
         Assert.AreEqual("file", presenter.State.OpenMenuId);
         Assert.AreEqual("file", presenter.State.LastCommandId);
         Assert.IsNull(presenter.State.Error);
+        Assert.IsNull(presenter.State.Notice);
     }
 
     [TestMethod]

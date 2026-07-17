@@ -16,51 +16,6 @@ internal static class MainWindowShellFrameProjector
 {
     private const string ReleaseChannelEnvironmentVariable = "CHUMMER_DESKTOP_RELEASE_CHANNEL";
     private const string SampleControlsEnvironmentVariable = "CHUMMER_DESKTOP_ENABLE_SAMPLES";
-    private static readonly IReadOnlyDictionary<string, HashSet<string>> VisibleMenuCommandsByMenuId =
-        new Dictionary<string, HashSet<string>>(StringComparer.Ordinal)
-        {
-            ["file"] = new(StringComparer.Ordinal)
-            {
-                "new_character",
-                "new_critter",
-                "open_character",
-                "open_for_printing",
-                "open_for_export",
-                "save_character",
-                "save_character_as",
-                "print_character",
-                "exit"
-            },
-            ["tools"] = new(StringComparer.Ordinal)
-            {
-                "auto_alice",
-                "dice_roller",
-                "global_settings",
-                "character_settings",
-                "update",
-                "translator",
-                "xml_editor",
-                "hero_lab_importer",
-                "master_index",
-                "character_roster",
-                "report_bug"
-            },
-            ["windows"] = new(StringComparer.Ordinal)
-            {
-                "new_window",
-                "close_window",
-                "close_all"
-            },
-            ["help"] = new(StringComparer.Ordinal)
-            {
-                "wiki",
-                "discord",
-                "show_login_video",
-                "revision_history",
-                "dumpshock",
-                "about"
-            }
-        };
 
     public static MainWindowShellFrame Project(
         CharacterOverviewState state,
@@ -142,7 +97,8 @@ internal static class MainWindowShellFrameProjector
                 BrowseWorkspace: state.ActiveBrowseWorkspace,
                 ContactGraph: BuildContactGraph(state),
                 DowntimePlanner: BuildDowntimePlanner(state),
-                NpcPersonaStudio: state.ActiveNpcPersonaStudio),
+                NpcPersonaStudio: state.ActiveNpcPersonaStudio,
+                RulesetId: shellSurface.ActiveRulesetId),
             RosterPaneState: new RosterPaneState(
                 Items: CharacterRosterDataBinder.CreateRosterNodes(resolvedOpenWorkspaces).ToArray(),
                 SelectedWorkspaceId: workspaceContext.ActiveWorkspaceId?.Value),
@@ -279,6 +235,13 @@ internal static class MainWindowShellFrameProjector
             return true;
         }
 
+        if (shellNotice.StartsWith("Menu ", StringComparison.OrdinalIgnoreCase)
+            && (shellNotice.EndsWith(" opened.", StringComparison.OrdinalIgnoreCase)
+                || shellNotice.EndsWith(" opened", StringComparison.OrdinalIgnoreCase)))
+        {
+            return true;
+        }
+
         return shellNotice.StartsWith("Command '", StringComparison.OrdinalIgnoreCase)
             && shellNotice.EndsWith("dispatched.", StringComparison.OrdinalIgnoreCase);
     }
@@ -305,7 +268,7 @@ internal static class MainWindowShellFrameProjector
             state.HasSavedWorkspace
                 ? DesktopLocalizationCatalog.GetRequiredString("desktop.shell.state.value.saved", language)
                 : DesktopLocalizationCatalog.GetRequiredString("desktop.shell.state.value.unsaved", language),
-            FormatCommandLabel(shellSurface.LastCommandId, language));
+            FormatCommandLabel(SanitizeLastCommandIdForStatus(shellSurface), language));
     }
 
     private static string BuildWorkspaceStripText(ActiveWorkspaceContext workspaceContext, string language)
@@ -363,6 +326,30 @@ internal static class MainWindowShellFrameProjector
             commandId
                 .Split(['_', '-'], StringSplitOptions.RemoveEmptyEntries)
                 .Select(segment => char.ToUpperInvariant(segment[0]) + segment[1..]));
+    }
+
+    private static string? SanitizeLastCommandIdForStatus(ShellSurfaceState shellSurface)
+    {
+        if (string.IsNullOrWhiteSpace(shellSurface.LastCommandId))
+        {
+            return null;
+        }
+
+        if (shellSurface.MenuRoots.Any(root => string.Equals(root.Id, shellSurface.LastCommandId, StringComparison.Ordinal)))
+        {
+            return null;
+        }
+
+        foreach (AppCommandDefinition command in shellSurface.Commands)
+        {
+            if (string.Equals(command.Id, shellSurface.LastCommandId, StringComparison.Ordinal)
+                && string.Equals(command.Group, "menu", StringComparison.Ordinal))
+            {
+                return null;
+            }
+        }
+
+        return shellSurface.LastCommandId;
     }
 
     private static ActiveWorkspaceContext ResolveActiveWorkspaceContext(
@@ -425,16 +412,21 @@ internal static class MainWindowShellFrameProjector
         ShellSurfaceState shellSurface,
         ICommandAvailabilityEvaluator commandAvailabilityEvaluator)
     {
-        IEnumerable<AppCommandDefinition> visibleCommands = shellSurface.Commands
-            .Where(command => !string.Equals(command.Group, "menu", StringComparison.Ordinal));
+        IEnumerable<AppCommandDefinition> visibleCommands;
+        if (!string.IsNullOrWhiteSpace(shellSurface.OpenMenuId))
+        {
+            visibleCommands = ResolveMenuCommandsForGroup(shellSurface, shellSurface.OpenMenuId)
+                .Where(command => IsStateVisibleMenuCommand(state, shellSurface.OpenMenuId, command.Id));
+        }
+        else
+        {
+            visibleCommands = shellSurface.Commands
+                .Where(command => !string.Equals(command.Group, "menu", StringComparison.Ordinal));
+        }
+
         if (state.Preferences.DisableAiFeatures)
         {
             visibleCommands = visibleCommands.Where(command => !OverviewCommandPolicy.IsAiFeatureCommand(command.Id));
-        }
-
-        if (!string.IsNullOrWhiteSpace(shellSurface.OpenMenuId))
-        {
-            visibleCommands = visibleCommands.Where(command => string.Equals(GetProjectedMenuGroupId(command), shellSurface.OpenMenuId, StringComparison.Ordinal));
         }
 
         return visibleCommands
@@ -498,28 +490,13 @@ internal static class MainWindowShellFrameProjector
     private static IReadOnlyList<AppCommandDefinition> ResolveMenuCommandsForGroup(
         ShellSurfaceState shellSurface,
         string menuId)
-    {
-        AppCommandDefinition[] runtimeCommands = shellSurface.Commands
-            .Where(command => string.Equals(GetProjectedMenuGroupId(command), menuId, StringComparison.Ordinal))
-            .Where(command => IsVisibleMenuCommand(menuId, command.Id))
-            .ToArray();
-        if (runtimeCommands.Length > 0)
-        {
-            return runtimeCommands;
-        }
-
-        return [];
-    }
+        => DesktopMenuProjectionCatalog.ResolveVisibleMenuCommands(
+            shellSurface.ActiveRulesetId,
+            shellSurface.Commands,
+            menuId);
 
     private static bool IsVisibleMenuCommand(string menuId, string commandId)
-    {
-        if (!VisibleMenuCommandsByMenuId.TryGetValue(menuId, out HashSet<string>? visibleCommands))
-        {
-            return false;
-        }
-
-        return visibleCommands.Contains(commandId);
-    }
+        => DesktopMenuProjectionCatalog.IsVisibleMenuCommand(menuId, commandId);
 
     private static bool IsStateVisibleMenuCommand(CharacterOverviewState state, string menuId, string commandId)
     {
@@ -544,14 +521,7 @@ internal static class MainWindowShellFrameProjector
     }
 
     private static string GetProjectedMenuGroupId(AppCommandDefinition command)
-    {
-        if (string.Equals(command.Id, "report_bug", StringComparison.Ordinal))
-        {
-            return "tools";
-        }
-
-        return command.Group;
-    }
+        => DesktopMenuProjectionCatalog.ResolveProjectedMenuGroupId(command);
 
     private static NavigatorWorkspaceItem[] ProjectOpenWorkspaces(CharacterOverviewState state, ShellSurfaceState shellSurface)
     {
@@ -678,7 +648,7 @@ internal static class MainWindowShellFrameProjector
 
     private static ContactRelationshipGraphState? BuildContactGraph(CharacterOverviewState state)
     {
-        if (!string.Equals(state.ActiveSectionId, "contacts", StringComparison.OrdinalIgnoreCase))
+        if (!string.Equals(state.ActiveSectionId, "relationships", StringComparison.OrdinalIgnoreCase))
         {
             return null;
         }

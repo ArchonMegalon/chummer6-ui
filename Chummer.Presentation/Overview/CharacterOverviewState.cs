@@ -31,14 +31,15 @@ public sealed record CharacterOverviewState(
     DesktopPreferenceState Preferences,
     IReadOnlyList<AppCommandDefinition> Commands,
     IReadOnlyList<NavigationTabDefinition> NavigationTabs,
-    bool HasSavedWorkspace,
     WorkspaceDownloadReceipt? PendingDownload = null,
     long PendingDownloadVersion = 0,
     WorkspaceExportReceipt? PendingExport = null,
     long PendingExportVersion = 0,
     WorkspacePrintReceipt? PendingPrint = null,
     long PendingPrintVersion = 0,
-    NpcPersonaStudioState? ActiveNpcPersonaStudio = null)
+    NpcPersonaStudioState? ActiveNpcPersonaStudio = null,
+    WorkspaceRecoveryExportRequest? PendingRecoveryExport = null,
+    long PendingRecoveryExportVersion = 0)
 {
     public static CharacterOverviewState Empty { get; } = new(
         IsBusy: false,
@@ -67,14 +68,27 @@ public sealed record CharacterOverviewState(
         Preferences: DesktopPreferenceState.Default,
         Commands: [],
         NavigationTabs: [],
-        HasSavedWorkspace: false,
         PendingDownload: null,
         PendingDownloadVersion: 0,
         PendingExport: null,
         PendingExportVersion: 0,
         PendingPrint: null,
         PendingPrintVersion: 0,
-        ActiveNpcPersonaStudio: null);
+        ActiveNpcPersonaStudio: null,
+        PendingRecoveryExport: null,
+        PendingRecoveryExportVersion: 0);
+
+    public OpenWorkspaceState? ActiveWorkspace => Session.ActiveWorkspace;
+
+    public long ContentRevision => ActiveWorkspace?.ContentRevision ?? 0;
+
+    public long SavedRevision => ActiveWorkspace?.SavedRevision ?? 0;
+
+    public bool IsDirty => ActiveWorkspace?.IsDirty ?? false;
+
+    public WorkspaceConflictState? ConflictState => ActiveWorkspace?.ConflictState;
+
+    public bool HasSavedWorkspace => ActiveWorkspace?.HasSavedWorkspace ?? false;
 }
 
 /// <summary>

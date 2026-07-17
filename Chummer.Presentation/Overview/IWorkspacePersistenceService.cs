@@ -12,10 +12,34 @@ public interface IWorkspacePersistenceService
         DesktopPreferenceState preferences,
         CancellationToken ct);
 
+    Task<WorkspaceMetadataUpdateResult> UpdateMetadataAsync(
+        IChummerClient client,
+        CharacterWorkspaceId workspaceId,
+        long expectedContentRevision,
+        UpdateWorkspaceMetadata command,
+        DesktopPreferenceState preferences,
+        CancellationToken ct)
+        => Task.FromResult(new WorkspaceMetadataUpdateResult(
+            Success: false,
+            Profile: null,
+            Preferences: preferences,
+            Error: "Revision-aware metadata persistence is unavailable.",
+            Outcome: WorkspaceOperationOutcome.Unavailable));
+
     Task<WorkspaceSaveResult> SaveAsync(
         IChummerClient client,
         CharacterWorkspaceId workspaceId,
         CancellationToken ct);
+
+    Task<WorkspaceSaveResult> SaveAsync(
+        IChummerClient client,
+        CharacterWorkspaceId workspaceId,
+        long expectedContentRevision,
+        CancellationToken ct)
+        => Task.FromResult(new WorkspaceSaveResult(
+            Success: false,
+            Error: "Revision-aware save persistence is unavailable.",
+            Outcome: WorkspaceOperationOutcome.Unavailable));
 
     Task<WorkspaceDownloadResult> DownloadAsync(
         IChummerClient client,
@@ -37,11 +61,16 @@ public sealed record WorkspaceMetadataUpdateResult(
     bool Success,
     CharacterProfileSection? Profile,
     DesktopPreferenceState Preferences,
-    string? Error);
+    string? Error,
+    long ContentRevision = 0,
+    long SavedRevision = 0,
+    WorkspaceOperationOutcome Outcome = WorkspaceOperationOutcome.Success);
 
 public sealed record WorkspaceSaveResult(
     bool Success,
-    string? Error);
+    string? Error,
+    WorkspaceSaveReceipt? Receipt = null,
+    WorkspaceOperationOutcome Outcome = WorkspaceOperationOutcome.Success);
 
 public sealed record WorkspaceDownloadResult(
     bool Success,

@@ -17,6 +17,11 @@ AutoCloseWindow false
 !include "WinMessages.nsh"
 !include "${CHUMMER_BOOTSTRAP_CONFIG}"
 
+; The official native builder appends CHUMMER6_BOOTSTRAP_METADATA after
+; makensis completes. NSIS compresses File payloads, so the post-build trailer
+; is the stable plain-byte release-evidence boundary for acquisition mode,
+; payload URL, SHA-256, and size.
+
 Var CommandLine
 Var SmokeInstallPath
 Var PayloadPathOverride
@@ -30,6 +35,7 @@ Var EffectivePayloadPath
 Var EffectivePayloadUrl
 Var EffectivePayloadSha256
 Var EffectivePayloadSizeBytes
+Var PayloadAcquisitionMode
 Var UninstallRequested
 Var AutoUpdateRequested
 Var IsSmokeInstall
@@ -524,9 +530,37 @@ FunctionEnd
 Function EnsurePayloadPath
   Call EnsurePayloadMetadata
   Call EnsureBootstrapTempRoot
+  !ifdef CHUMMER_EMBEDDED_PAYLOAD_PATH
+    Push "$BootstrapTempRoot\${CHUMMER_PAYLOAD_FILE_NAME}"
+    Call NormalizePathToR9
+    ${If} $9 != ""
+      StrCpy $EffectivePayloadPath $9
+    ${Else}
+      StrCpy $EffectivePayloadPath "$BootstrapTempRoot\${CHUMMER_PAYLOAD_FILE_NAME}"
+    ${EndIf}
+    ${IfNot} ${FileExists} "$EffectivePayloadPath"
+      Push "The installer could not extract its embedded application payload."
+      Call AbortInstallWithMessage
+    ${EndIf}
+    ; An embedded build must always verify the compiled bytes. A caller-provided
+    ; payload path cannot turn smoke mode into the local-handoff verification exception.
+    StrCpy $PayloadPathOverride ""
+    StrCpy $PayloadAcquisitionMode "embedded"
+    Push "Payload acquisition mode: embedded"
+    Call TraceLine
+    Push "Payload acquisition target: $EffectivePayloadPath"
+    Call TraceLine
+    Push "Using embedded payload $EffectivePayloadPath"
+    Call TraceLine
+    Return
+  !endif
+
   ${If} $PayloadPathOverride != ""
     ${If} ${FileExists} "$PayloadPathOverride"
       StrCpy $EffectivePayloadPath $PayloadPathOverride
+      StrCpy $PayloadAcquisitionMode "local_handoff"
+      Push "Payload acquisition mode: local_handoff"
+      Call TraceLine
       Push "Using local payload $EffectivePayloadPath"
       Call TraceLine
       Return
@@ -553,6 +587,9 @@ Function EnsurePayloadPath
   ${EndIf}
   Delete "$EffectivePayloadPath"
   Push "Payload download target: $EffectivePayloadPath"
+  Call TraceLine
+  StrCpy $PayloadAcquisitionMode "download"
+  Push "Payload acquisition mode: download"
   Call TraceLine
   Push "Downloading application files"
   Call TraceLine
@@ -632,7 +669,7 @@ Function VerifyPayloadSize
   ${If} $1 != $EffectivePayloadSizeBytes
     Push "Payload size mismatch expected=$EffectivePayloadSizeBytes actual=$1"
     Call TraceLine
-    Push "The downloaded Chummer payload has the wrong size."
+    Push "The Chummer payload has the wrong size."
     Call AbortInstallWithMessage
   ${EndIf}
 FunctionEnd
@@ -705,7 +742,7 @@ Function VerifyPayloadSha256
   ${If} $2 != $EffectivePayloadSha256
     Push "Payload checksum mismatch expected=$EffectivePayloadSha256 actual=$2"
     Call TraceLine
-    Push "The downloaded Chummer payload failed checksum verification."
+    Push "The Chummer payload failed checksum verification."
     Call AbortInstallWithMessage
   ${EndIf}
 FunctionEnd
@@ -851,6 +888,9 @@ Section "Install"
   File /oname=curl.exe "${CHUMMER_STAGE_DIR}/curl/curl.exe"
   File /oname=libcurl-x64.dll "${CHUMMER_STAGE_DIR}/curl/libcurl-x64.dll"
   File /oname=curl-ca-bundle.crt "${CHUMMER_STAGE_DIR}/curl/curl-ca-bundle.crt"
+  !ifdef CHUMMER_EMBEDDED_PAYLOAD_PATH
+    File /oname=${CHUMMER_PAYLOAD_FILE_NAME} "${CHUMMER_EMBEDDED_PAYLOAD_PATH}"
+  !endif
   SetOutPath "$BootstrapTempRoot"
 
   ${If} $UninstallRequested == "1"

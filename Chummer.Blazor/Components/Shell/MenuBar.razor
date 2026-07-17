@@ -10,6 +10,7 @@
                     type="button"
                     role="menuitem"
                     aria-expanded="@string.Equals(OpenMenuId, menu.Id, StringComparison.Ordinal)"
+                    disabled="@IsBusy"
                     @onclick="() => ToggleMenuAsync(menu.Id)">
                 @ShellChromeBoundary.FormatCommandLabel(menu.Id)
             </button>

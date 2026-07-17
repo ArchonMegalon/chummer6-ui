@@ -1,0 +1,118 @@
+<button type="button"
+        class="build-pwa-install-launcher"
+        data-build-pwa-install-help
+        aria-controls="build-pwa-install-panel"
+        aria-expanded="false"
+        hidden>
+    Install app
+</button>
+<section id="build-pwa-install-panel"
+         class="build-pwa-install-panel"
+         data-build-pwa-install
+         aria-labelledby="build-pwa-install-heading"
+         hidden>
+    <div class="build-pwa-install-panel__copy">
+        <p class="build-pwa-install-panel__eyebrow">Installable workspace</p>
+        <h2 id="build-pwa-install-heading">Keep Chummer Build within reach</h2>
+        <p data-build-pwa-install-status role="status" aria-live="polite" aria-atomic="true">
+            Use your browser's install or Add to Home Screen command. Your current runner is not copied into the install prompt.
+        </p>
+    </div>
+    <section class="build-pwa-install-panel__handoff"
+             data-build-pwa-install-handoff
+             data-build-pwa-handoff-effective="pending"
+             aria-labelledby="build-pwa-install-handoff-heading">
+        <h3 id="build-pwa-install-handoff-heading">Choose where to install</h3>
+        <fieldset class="build-pwa-install-panel__device-picker">
+            <legend>Installation handoff</legend>
+            <div>
+                <label>
+                    <input type="radio"
+                           name="build-pwa-install-device"
+                           value="auto"
+                           data-build-pwa-install-device-choice="auto"
+                           aria-describedby="build-pwa-install-device-status"
+                           checked="checked" />
+                    <span>Auto</span>
+                </label>
+                <label>
+                    <input type="radio"
+                           name="build-pwa-install-device"
+                           value="mobile"
+                           data-build-pwa-install-device-choice="mobile"
+                           aria-describedby="build-pwa-install-device-status" />
+                    <span>Mobile</span>
+                </label>
+                <label>
+                    <input type="radio"
+                           name="build-pwa-install-device"
+                           value="desktop"
+                           data-build-pwa-install-device-choice="desktop"
+                           aria-describedby="build-pwa-install-device-status" />
+                    <span>Desktop</span>
+                </label>
+            </div>
+        </fieldset>
+        <p id="build-pwa-install-device-status"
+           data-build-pwa-install-device-status
+           role="status"
+           aria-live="polite"
+           aria-atomic="true">
+            Auto checks this browser without reading your runner or account data.
+        </p>
+        <div class="build-pwa-install-panel__desktop-handoff"
+             data-build-pwa-desktop-handoff
+             hidden>
+            <div class="build-pwa-install-panel__qr"
+                 data-build-pwa-install-qr
+                 aria-live="off"></div>
+            <div class="build-pwa-install-panel__handoff-copy">
+                <p><strong>Scan with your phone</strong> to open the clean Chummer Build install page.</p>
+                <p>The code contains only this site's Build app address. It never contains a runner, workspace, sign-in token, or account context.</p>
+                <a data-build-pwa-install-link
+                   target="_blank"
+                   rel="noopener noreferrer">Open the mobile install page</a>
+                <code data-build-pwa-install-link-text></code>
+                <button type="button" data-build-pwa-copy-install-link>Copy mobile install link</button>
+            </div>
+        </div>
+        <div class="build-pwa-install-panel__mobile-handoff"
+             data-build-pwa-mobile-handoff
+             hidden>
+            <p><strong>Install on this device.</strong> Use the install button when your browser offers it. Otherwise follow the browser-specific Add to Home Screen steps below.</p>
+        </div>
+    </section>
+    <div class="build-pwa-install-panel__actions" aria-label="Chummer Build installation actions">
+        <button type="button" data-build-pwa-install-action hidden>Install Chummer Build</button>
+        <button type="button"
+                data-build-pwa-update-action
+                aria-controls="build-pwa-update-guidance"
+                aria-expanded="false"
+                hidden>
+            Review update steps
+        </button>
+        <button type="button" data-build-pwa-dismiss-action>Not now</button>
+    </div>
+    <section id="build-pwa-update-guidance"
+             class="build-pwa-install-panel__update"
+             data-build-pwa-update-guidance
+             aria-labelledby="build-pwa-update-guidance-heading"
+             tabindex="-1"
+             hidden>
+        <h3 id="build-pwa-update-guidance-heading">Finish the update without displacing another runner</h3>
+        <ol>
+            <li>Save this runner, or save a copy if it has a conflict.</li>
+            <li>Close every Chummer Build browser tab and installed-app window.</li>
+            <li>Reopen Chummer Build. The browser will start the waiting version.</li>
+        </ol>
+        <p>An open Chummer Build window keeps the current version active so another tab's in-memory work is not displaced.</p>
+    </section>
+    <details class="build-pwa-install-panel__manual" data-build-pwa-manual>
+        <summary>Manual install steps</summary>
+        <div class="build-pwa-install-panel__steps">
+            <p><strong>iPhone or iPad:</strong> open this page in Safari, choose Share, then Add to Home Screen.</p>
+            <p><strong>Android:</strong> open the browser menu, then choose Install app or Add to Home screen.</p>
+            <p><strong>Desktop:</strong> use the install icon in the address bar or the browser menu's install command.</p>
+        </div>
+    </details>
+</section>

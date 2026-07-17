@@ -33,6 +33,13 @@ bld/
 *.exe
 /dist/
 
+# Local analysis, build, and verification state. Historical files already
+# tracked below these roots remain tracked; new runtime output does not.
+/.vexp/
+/out/
+/.state/
+/.tmpverify.*/
+
 # Visual Studio 2015 cache/options directory
 .vs/
 # Uncomment if you have tasks that create the project's static files in wwwroot
@@ -294,3 +301,4 @@ Chummer/Resources/source/upscaling/4x_FireAlpha.pth
 *.deb
 *.tar.gz
 *.tgz
+/NEXT_SESSION_HANDOFF.md

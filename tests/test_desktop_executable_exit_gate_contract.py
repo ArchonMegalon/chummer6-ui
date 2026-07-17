@@ -23,6 +23,7 @@ MOUSE_FIRST_JOURNEY_MATRIX = REPO_ROOT / "scripts" / "run-desktop-mouse-first-jo
 
 def test_desktop_executable_exit_gate_materializer_exposes_external_blocking_mode_contract() -> None:
     text = MATERIALIZER.read_text(encoding="utf-8")
+    assert 'run_services_release_channel_path="${CHUMMER_RUN_SERVICES_RELEASE_CHANNEL_PATH:-/docker/chummercomplete/chummer.run-services/Chummer.Portal/downloads/RELEASE_CHANNEL.generated.json}"' in text
     assert '"blockingMode": blocking_mode' in text
     assert '"blocking_mode": blocking_mode' in text
     assert '"blockedByExternalConstraintsOnly": blocked_by_external_constraints_only' in text

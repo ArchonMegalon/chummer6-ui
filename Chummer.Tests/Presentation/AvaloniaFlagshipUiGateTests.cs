@@ -10622,7 +10622,6 @@ public sealed class AvaloniaFlagshipUiGateTests
                     new SectionRowState("contacts[0]", "Fixer (Loyalty 4 / Connection 5)"),
                     new SectionRowState("notes.runner_goal", "Ready for a flagship shell smoke pass")
                 ],
-                HasSavedWorkspace = false,
                 Error = null
             });
 

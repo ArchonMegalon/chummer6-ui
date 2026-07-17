@@ -6,7 +6,7 @@
 {
     <div class="desktop-shell classic-desktop-shell"
          @ref="_shellRoot"
-         tabindex="0"
+         tabindex="-1"
          @onkeydown="OnShellKeyDown">
         <a class="skip-link" href="#chummer-workspace-main">Skip to dossier</a>
         <header class="desktop-shell-topline desktop-shell-topline--gate" aria-label="Chummer install claim state">
@@ -64,9 +64,9 @@
 }
 else
 {
-<section class="desktop-shell classic-desktop-shell"
+<section class="desktop-shell classic-desktop-shell @(State.ActiveDialog is not null ? "desktop-shell--dialog-open" : string.Empty) @(UseResponsiveBuildWorkspace ? "desktop-shell--responsive-build" : string.Empty)"
          @ref="_shellRoot"
-         tabindex="0"
+         tabindex="-1"
          aria-busy="@State.IsBusy"
          data-tab="@ClassicShellActiveTabId"
          data-ruleset="@ClassicShellRulesetId"
@@ -115,13 +115,16 @@ else
                   CloseWorkspaceRequested="@CloseWorkspaceAsync" />
     }
 
-    <SummaryHeader State="@State"
-                   ShellSurface="@_shellSurfaceState"
-                   NavigationTabs="@NavigationTabs"
-                   ActiveTabId="@_shellSurfaceState.ActiveTabId"
-                   IsNavigationTabEnabled="@IsNavigationTabEnabled"
-                   SelectTabRequested="@SelectTabAsync"
-                   InspectRuntimeRequested="@OpenRuntimeInspectorAsync" />
+    @if (!UseResponsiveBuildWorkspace)
+    {
+        <SummaryHeader State="@State"
+                       ShellSurface="@_shellSurfaceState"
+                       NavigationTabs="@NavigationTabs"
+                       ActiveTabId="@_shellSurfaceState.ActiveTabId"
+                       IsNavigationTabEnabled="@IsNavigationTabEnabled"
+                       SelectTabRequested="@SelectTabAsync"
+                       InspectRuntimeRequested="@OpenRuntimeInspectorAsync" />
+    }
 
     @if (!string.IsNullOrWhiteSpace(State.Notice))
     {
@@ -202,36 +205,65 @@ else
         </div>
     }
 
-    <div class="workspace-layout @(ShowLeftPane ? "workspace-layout--with-left-pane" : "workspace-layout--without-left-pane")">
-        @if (ShowLeftPane)
-        {
-            <WorkspaceLeftPane State="@State"
-                               OpenWorkspaces="@_shellSurfaceState.OpenWorkspaces"
-                               ActiveWorkspaceId="@_shellSurfaceState.ActiveWorkspaceId"
-                               ActiveTabId="@_shellSurfaceState.ActiveTabId"
-                               NavigationTabs="@NavigationTabs"
-                               ActiveWorkspaceActions="@ActiveWorkspaceActions"
-                               ActiveWorkflowSurfaceActions="@ActiveWorkflowSurfaceActions"
-                               IsNavigationTabEnabled="@IsNavigationTabEnabled"
-                               OpenWorkspaceRequested="@OpenWorkspaceAsync"
-                               CloseWorkspaceRequested="@CloseWorkspaceAsync"
-                               SelectTabRequested="@SelectTabAsync"
-                               ExecuteWorkspaceActionRequested="@ExecuteWorkspaceActionAsync"
-                               ExecuteWorkflowSurfaceRequested="@ExecuteWorkflowSurfaceAsync" />
-        }
+    @if (UseResponsiveBuildWorkspace)
+    {
+        <BuildPwaWorkspace State="@State"
+                           ShellSurface="@_shellSurfaceState"
+                           OpenWorkspaces="@_shellSurfaceState.OpenWorkspaces"
+                           ActiveWorkspaceId="@_shellSurfaceState.ActiveWorkspaceId"
+                           ActiveTabId="@_shellSurfaceState.ActiveTabId"
+                           NavigationTabs="@NavigationTabs"
+                           ActiveWorkspaceActions="@ActiveWorkspaceActions"
+                           ActiveWorkflowSurfaceActions="@ActiveWorkflowSurfaceActions"
+                           MobileCommands="@HeadCommands.ToArray()"
+                           IsNavigationTabEnabled="@IsNavigationTabEnabled"
+                           IsCommandEnabled="@IsCommandEnabled"
+                           OpenWorkspaceRequested="@OpenWorkspaceAsync"
+                           CloseWorkspaceRequested="@CloseWorkspaceAsync"
+                           SelectTabRequested="@SelectTabAsync"
+                           ExecuteWorkspaceActionRequested="@ExecuteWorkspaceActionAsync"
+                           ExecuteWorkflowSurfaceRequested="@ExecuteWorkflowSurfaceAsync"
+                           ExecuteCommandRequested="@ExecuteCommandAsync"
+                           ExecuteUiControlRequested="@HandleUiControlAsync"
+                           AttributeEditRequested="@HandleAttributeEditAsync"
+                           LoadWorkspaceRequested="@(workspaceId => LoadWorkspaceAsync(workspaceId))"
+                           DeletionCommitSource="@(Presenter as IWorkspaceDeletionCommitSource)"
+                           RecoveryCopySource="@(Presenter as IWorkspaceRecoveryCopySource)"
+                           InspectRuntimeRequested="@OpenRuntimeInspectorAsync" />
+    }
+    else
+    {
+        <div class="workspace-layout @(ShowLeftPane ? "workspace-layout--with-left-pane" : "workspace-layout--without-left-pane")">
+            @if (ShowLeftPane)
+            {
+                <WorkspaceLeftPane State="@State"
+                                   OpenWorkspaces="@_shellSurfaceState.OpenWorkspaces"
+                                   ActiveWorkspaceId="@_shellSurfaceState.ActiveWorkspaceId"
+                                   ActiveTabId="@_shellSurfaceState.ActiveTabId"
+                                   NavigationTabs="@NavigationTabs"
+                                   ActiveWorkspaceActions="@ActiveWorkspaceActions"
+                                   ActiveWorkflowSurfaceActions="@ActiveWorkflowSurfaceActions"
+                                   IsNavigationTabEnabled="@IsNavigationTabEnabled"
+                                   OpenWorkspaceRequested="@OpenWorkspaceAsync"
+                                   CloseWorkspaceRequested="@CloseWorkspaceAsync"
+                                   SelectTabRequested="@SelectTabAsync"
+                                   ExecuteWorkspaceActionRequested="@ExecuteWorkspaceActionAsync"
+                                   ExecuteWorkflowSurfaceRequested="@ExecuteWorkflowSurfaceAsync" />
+            }
 
-        <main id="chummer-workspace-main" class="center-pane" tabindex="-1">
-            <SectionPane State="@State"
-                         IsCommandEnabled="@IsCommandEnabled"
-                         ExecuteCommandRequested="@ExecuteCommandAsync"
-                         ExecuteUiControlRequested="@HandleUiControlAsync"
-                         LoadWorkspaceRequested="@(workspaceId => LoadWorkspaceAsync(workspaceId))"
-                         RetryPendingDownloadRequested="@RetryPendingDownloadAsync"
-                         RetryPendingExportRequested="@RetryPendingExportAsync"
-                         RetryPendingPrintRequested="@RetryPendingPrintAsync" />
-        </main>
-
-    </div>
+            <main id="chummer-workspace-main" class="center-pane" tabindex="-1">
+                <SectionPane State="@State"
+                             IsCommandEnabled="@IsCommandEnabled"
+                             ExecuteCommandRequested="@ExecuteCommandAsync"
+                             ExecuteUiControlRequested="@HandleUiControlAsync"
+                             AttributeEditRequested="@HandleAttributeEditAsync"
+                             LoadWorkspaceRequested="@(workspaceId => LoadWorkspaceAsync(workspaceId))"
+                             RetryPendingDownloadRequested="@RetryPendingDownloadAsync"
+                             RetryPendingExportRequested="@RetryPendingExportAsync"
+                             RetryPendingPrintRequested="@RetryPendingPrintAsync" />
+            </main>
+        </div>
+    }
 
     <StatusStrip WorkspaceId="@_shellSurfaceState.ActiveWorkspaceId"
                  Error="@_shellSurfaceState.Error"

@@ -86,6 +86,11 @@ public sealed class ClassicFormPortDesktopGuardTests
         Assert.IsFalse(hostText.Contains("Legacy form:", StringComparison.Ordinal));
         Assert.IsFalse(hostText.Contains("Classic Default", StringComparison.Ordinal));
         Assert.IsFalse(classicSurfaceText.Contains("Classic form-native projection", StringComparison.Ordinal));
+        Assert.IsFalse(classicSurfaceText.Contains("classic port command bridge", StringComparison.OrdinalIgnoreCase));
+        Assert.IsFalse(classicSurfaceText.Contains("command routed", StringComparison.OrdinalIgnoreCase));
+        StringAssert.Contains(classicSurfaceText, "choose an available");
+        StringAssert.Contains(classicSurfaceText, "ClassicLineItemTemplate");
+        StringAssert.Contains(classicSurfaceText, "new ClassicPortLineItem(\"Note\", emptyMessage)");
         Assert.IsFalse(classicSurfaceText.Contains("snapshot.EventHandlers", StringComparison.Ordinal));
         Assert.IsFalse(classicSurfaceText.Contains("state.Rows.Take(20)", StringComparison.Ordinal));
         Assert.IsFalse(bridgeText.Contains("foreach (var row in state.Rows)", StringComparison.Ordinal));

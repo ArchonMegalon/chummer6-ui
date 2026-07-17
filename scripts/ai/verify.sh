@@ -168,6 +168,9 @@ bash scripts/ai/milestones/chummer5a-legacy-ui-element-parity-check.sh
 echo "[verify] checking Chummer4 legacy UI element parity guard..."
 bash scripts/ai/milestones/chummer4-legacy-ui-element-parity-check.sh
 
+echo "[verify] checking direct SR5/SR6 UI parity audit..."
+bash scripts/ai/milestones/sr5-sr6-ui-parity-audit-check.sh
+
 echo "[verify] checking ui-kit shell chrome guard..."
 bash scripts/ai/milestones/p5-ui-kit-shell-chrome-check.sh
 
@@ -241,6 +244,12 @@ bash scripts/ai/milestones/blazor-public-edge-workbench-proof-check.sh
 
 echo "[verify] checking hosted public-edge Blazor execution-proof receipt guard..."
 bash scripts/ai/milestones/blazor-public-edge-execution-proof-check.sh
+
+echo "[verify] checking aggregate Blazor browser-lane proof-set receipt guard..."
+bash scripts/ai/milestones/blazor-browser-lane-proof-set-check.sh
+
+echo "[verify] checking public browser/PWA play-surface horizon guard..."
+bash scripts/ai/milestones/blazor-play-surface-horizon-check.sh
 
 echo "[verify] checking classic dense workbench posture gate..."
 bash scripts/ai/milestones/classic-dense-workbench-posture-gate.sh

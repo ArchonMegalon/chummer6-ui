@@ -4,8 +4,10 @@ from __future__ import annotations
 import json
 import shutil
 import subprocess
+from html import escape
 from pathlib import Path
 from typing import Any
+from urllib.parse import urlparse
 
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -17,6 +19,17 @@ INDEX_PATH = DOCS / "index.html"
 
 INDEX_START = "<!-- GENERATED:TABLE_PULSE_DOCS_START -->"
 INDEX_END = "<!-- GENERATED:TABLE_PULSE_DOCS_END -->"
+
+FORBIDDEN_PUBLIC_COPY = (
+    "acceptance bar",
+    "ai harness",
+    "fixed sr4",
+    "generated file",
+    "must never imply",
+    "must show",
+    "presentation-critical base feature",
+    "test gimmick",
+)
 
 
 def bullet_lines(items: list[str]) -> list[str]:
@@ -42,23 +55,45 @@ def image_markdown(image_output: str, alt: str) -> str:
     return f"![{alt}]({image_output})"
 
 
-def video_lines(items: list[dict[str, Any]]) -> list[str]:
-    rendered: list[str] = []
+def is_public_https_url(value: str) -> bool:
+    parsed = urlparse(value)
+    return parsed.scheme == "https" and bool(parsed.netloc)
+
+
+def verified_videos(items: list[dict[str, Any]]) -> list[dict[str, str]]:
+    verified: list[dict[str, str]] = []
     for item in items:
         title = str(item.get("title") or "").strip()
         url = str(item.get("url") or "").strip()
         local_path_text = str(item.get("local_path") or "").strip()
-        if local_path_text and not video_has_audio(Path(local_path_text)):
+        if not local_path_text or not video_has_audio(Path(local_path_text)):
             continue
         note = str(item.get("note") or "Video with narration.").strip()
         caption_url = str(item.get("caption_url") or "").strip()
-        if not title or not url:
+        if not title or not is_public_https_url(url) or not is_public_https_url(caption_url):
             continue
+        verified.append(
+            {
+                "title": title,
+                "url": url,
+                "note": note,
+                "caption_url": caption_url,
+            }
+        )
+    return verified
+
+
+def video_lines(items: list[dict[str, Any]]) -> list[str]:
+    rendered: list[str] = []
+    for item in verified_videos(items):
+        title = item["title"]
+        url = item["url"]
+        note = item["note"]
+        caption_url = item["caption_url"]
         line = f"- [{title}]({url})"
         if note:
             line += f" - {note}"
-        if caption_url:
-            line += f" [Captions]({caption_url})."
+        line += f" [Captions]({caption_url})."
         rendered.append(line)
     return rendered
 
@@ -99,7 +134,11 @@ def sync_visual_gallery(spec: dict[str, Any]) -> list[dict[str, str]]:
         output_rel = str(row.get("image_output") or "").strip()
         if not source.is_file() or not output_rel:
             continue
-        destination = DOCS / output_rel
+        destination = (DOCS / output_rel).resolve()
+        try:
+            destination.relative_to(DOCS.resolve())
+        except ValueError as exc:
+            raise ValueError(f"visual gallery output escapes docs root: {output_rel}") from exc
         destination.parent.mkdir(parents=True, exist_ok=True)
         shutil.copy2(source, destination)
         synced.append(
@@ -113,8 +152,31 @@ def sync_visual_gallery(spec: dict[str, Any]) -> list[dict[str, str]]:
     return synced
 
 
+def validate_spec(spec: dict[str, Any]) -> None:
+    overview = dict(spec.get("overview") or {})
+    minigames = dict(spec.get("minigames") or {})
+    if not overview.get("aftermath_boundary"):
+        raise ValueError("overview must preserve the separate Table Pulse Aftermath boundary")
+    if not minigames.get("delivery_posture"):
+        raise ValueError("minigames must state their delivery posture")
+    for item in list(spec.get("public_videos") or []):
+        row = dict(item or {})
+        if not is_public_https_url(str(row.get("url") or "")):
+            raise ValueError(f"public video URL must be HTTPS: {row.get('title', 'untitled')}")
+        if not is_public_https_url(str(row.get("caption_url") or "")):
+            raise ValueError(f"public video captions must use HTTPS: {row.get('title', 'untitled')}")
+
+
+def validate_public_copy(*documents: str) -> None:
+    public_copy = "\n".join(documents).casefold()
+    found = [phrase for phrase in FORBIDDEN_PUBLIC_COPY if phrase in public_copy]
+    if found:
+        raise ValueError("public docs contain internal scaffold language: " + ", ".join(found))
+
+
 def render_showcase(spec: dict[str, Any]) -> str:
     overview = spec["overview"]
+    aftermath = dict(overview.get("aftermath_boundary") or {})
     editorial = dict(spec.get("editorial_posture") or {})
     taxonomy = dict(spec.get("product_taxonomy") or {})
     user_first = dict(spec.get("user_first_story") or {})
@@ -146,37 +208,26 @@ def render_showcase(spec: dict[str, Any]) -> str:
     if taxonomy:
         base_names = [str(dict(item).get("name") or "").strip() for item in list(taxonomy.get("base_features") or [])]
         future_names = [str(dict(item).get("name") or "").strip() for item in list(taxonomy.get("future_horizons") or [])]
-        quiet_names = [str(dict(item).get("name") or "").strip() for item in list(taxonomy.get("throw_out") or [])]
         base_names = [name for name in base_names if name]
         future_names = [name for name in future_names if name]
-        quiet_names = [name for name in quiet_names if name]
         lines.extend(
             [
                 f"## {taxonomy['title']}",
                 "",
                 str(taxonomy.get("summary") or "").strip(),
                 "",
-                "The core story stays anchored in "
+                "The core product story connects "
                 + sentence_join(base_names)
-                + ". Those are the surfaces that make Chummer feel useful before it feels ambitious.",
+                + ". This map explains how the pieces relate; the current-stage notes and release pages carry availability claims.",
                 "",
             ]
         )
         if future_names:
             lines.extend(
                 [
-                    "Keep "
+                    "The larger expansion shelf holds "
                     + sentence_join(future_names)
-                    + " on the future shelf for now. They matter, but they should not be the first burden on a new visitor.",
-                    "",
-                ]
-            )
-        if taxonomy.get("throw_out"):
-            lines.extend(
-                [
-                    "A few labels should stay quiet: "
-                    + sentence_join(quiet_names)
-                    + ". They are starter help, navigation polish, or infrastructure, so the app should absorb them instead of selling them as separate ideas.",
+                    + ". They matter, but they are not the first promise made to a new visitor.",
                     "",
                 ]
             )
@@ -202,6 +253,20 @@ def render_showcase(spec: dict[str, Any]) -> str:
     for index, layer in enumerate(overview["layers"], start=1):
         joined = ", ".join(layer["items"])
         lines.append(f"{index}. **{layer['name']}**: {joined}.")
+    if aftermath:
+        lines.extend(
+            [
+                "",
+                f"## {aftermath['title']}",
+                "",
+                str(aftermath.get("summary") or "").strip(),
+                "",
+                str(aftermath.get("live_owns") or "").strip(),
+                "",
+                str(aftermath.get("aftermath_owns") or "").strip(),
+                "",
+            ]
+        )
     if visual_gallery:
         lines.extend(["", "## Product Scenes", ""])
         for item in visual_gallery:
@@ -225,11 +290,11 @@ def render_showcase(spec: dict[str, Any]) -> str:
                 "",
                 str(media_posture.get("summary") or "").strip(),
                 "",
-                "What stays visible:",
+                "In the public guide:",
                 "",
                 *bullet_lines(list(media_posture.get("must_do") or [])),
                 "",
-                "What stays out of the pitch:",
+                "The evidence boundary:",
                 "",
                 *bullet_lines(list(media_posture.get("must_not_do") or [])),
                 "",
@@ -242,17 +307,11 @@ def render_showcase(spec: dict[str, Any]) -> str:
                 "",
                 str(release_posture.get("summary") or "").strip(),
                 "",
-                "What a user should be able to rely on:",
+                "The public path today:",
                 "",
                 *bullet_lines(list(release_posture.get("user_promises") or [])),
                 "",
-                "Keep these as maintenance lanes:",
-                "",
-                *bullet_lines(list(release_posture.get("maintenance_lanes") or [])),
-                "",
-                "Do not present them as:",
-                "",
-                *bullet_lines(list(release_posture.get("must_not_present_as") or [])),
+                "Downloads, updates, account claim, and support stay in the background as product hygiene—not as a Horizon, a release ceremony, or an automation showcase.",
                 "",
             ]
         )
@@ -266,7 +325,7 @@ def render_showcase(spec: dict[str, Any]) -> str:
                 "",
                 *numbered_lines(list(user_first.get("beats") or [])),
                 "",
-                "What stays trustworthy:",
+                "The authority line stays visible:",
                 "",
                 *bullet_lines(list(user_first.get("truths") or [])),
                 "",
@@ -279,15 +338,15 @@ def render_showcase(spec: dict[str, Any]) -> str:
                 "",
                 str(origin.get("summary") or "").strip(),
                 "",
-                "A player should leave this lane with:",
+                "A complete experience connects:",
                 "",
                 *bullet_lines(list(origin.get("must_show") or [])),
                 "",
-                "ALICE keeps the line tight by doing the following:",
+                "ALICE stays grounded in the following ways:",
                 "",
                 *bullet_lines(list(origin.get("alice_connection") or [])),
                 "",
-                "That still does not mean:",
+                "The boundary excludes:",
                 "",
                 *bullet_lines(list(origin.get("must_not_imply") or [])),
                 "",
@@ -300,19 +359,19 @@ def render_showcase(spec: dict[str, Any]) -> str:
                 "",
                 str(gm_cockpit.get("summary") or "").strip(),
                 "",
-                "A GM should be able to trust these rails immediately:",
+                "The cockpit brings these decisions together:",
                 "",
                 *bullet_lines(list(gm_cockpit.get("must_show") or [])),
                 "",
-                "From origin story to table call, the intended flow is:",
+                "From origin story to table call, the review path is:",
                 "",
                 *numbered_lines(list(gm_cockpit.get("origin_gimmick_flow") or [])),
                 "",
-                "The visual language should read as:",
+                "Its visual language:",
                 "",
                 *bullet_lines(list(gm_cockpit.get("visual_language") or [])),
                 "",
-                "That still does not permit:",
+                "The cockpit never authorizes:",
                 "",
                 *bullet_lines(list(gm_cockpit.get("must_not_imply") or [])),
                 "",
@@ -327,11 +386,11 @@ def render_showcase(spec: dict[str, Any]) -> str:
             [
                 f"### {surface['name']}",
                 "",
-                f"{surface['name']} is {descriptor}. It should feel {feels}. A reader should immediately grasp {must_show}.",
+                f"{surface['name']} is {descriptor}: {feels}. It brings {must_show} into one legible view.",
             ]
         )
         if surface.get("must_never_imply"):
-            lines.extend(["", "It should never imply:", "", *bullet_lines(surface["must_never_imply"])])
+            lines.extend(["", "Its authority boundary:", "", *bullet_lines(surface["must_never_imply"])])
         lines.append("")
     lines.extend(["## Core Play Loop", ""])
     for index, beat in enumerate(overview["play_loop"], start=1):
@@ -359,13 +418,13 @@ def render_showcase(spec: dict[str, Any]) -> str:
             "",
             *numbered_lines(overview["hero_moment"]),
             "",
-            "## Promises We Should Not Break",
+            "## Promises That Hold",
             "",
             *bullet_lines(overview["hard_truths"]),
             "",
-            "## What Good Looks Like",
+            "## Flagship Launch Bar",
             "",
-            "Call the stack ready only when all of the following are true:",
+            "The campaign layer earns flagship status only when all of the following are true:",
             "",
             *numbered_lines(overview["flagship_bar"]),
             "",
@@ -378,21 +437,19 @@ def render_showcase(spec: dict[str, Any]) -> str:
             [
                 f"### {row['name']}",
                 "",
-                f"Current status: {row['status']}",
+                f"**Current stage:** {row['status']}",
                 "",
-                f"Why a reader should care: {row['reader_why']}",
+                f"{row['reader_why']}",
                 "",
-                f"Connection here: {row['connection']}",
+                f"{row['connection']}",
                 "",
             ]
         )
     lines.extend(
         [
-            "## Where This Comes From",
+            "## The Authority Line",
             "",
             str(editorial.get("source_note") or "This page is maintained from the Chummer6 design canon and public-guide source set.").strip(),
-            "",
-            *bullet_lines(spec["published_design_sources"]),
         ]
     )
     return "\n".join(lines) + "\n"
@@ -415,8 +472,10 @@ def render_minigames(spec: dict[str, Any]) -> str:
         "",
         "## What They Are",
         "",
-        "Remote reaction mini-games are short governed follow-up encounters that occur after a",
-        "Table Pulse packet is emitted.",
+        "Remote reaction mini-games are designed as short governed follow-up encounters offered",
+        "after an eligible Table Pulse packet passes policy, consent, and recipient checks.",
+        "",
+        str(mg.get("delivery_posture") or "").strip(),
         "",
         "They stay:",
         "",
@@ -442,7 +501,7 @@ def render_minigames(spec: dict[str, Any]) -> str:
                 "",
                 family["description"],
                 "",
-                "The payoff can be " + sentence_join(list(family["payoff"])) + ".",
+                "After review, the response can inform " + sentence_join(list(family["payoff"])) + ".",
                 "",
             ]
         )
@@ -454,11 +513,11 @@ def render_minigames(spec: dict[str, Any]) -> str:
             "",
             *bullet_lines(mg["policy_rules"]["inherit"]),
             "",
-            "They can:",
+            "Inside those rails, a response may:",
             "",
             *bullet_lines(mg["policy_rules"]["may"]),
             "",
-            "They cannot:",
+            "A response never gains authority to:",
             "",
             *bullet_lines(mg["policy_rules"]["may_not"]),
             "",
@@ -466,15 +525,15 @@ def render_minigames(spec: dict[str, Any]) -> str:
             "",
             "### On Mobile / PWA",
             "",
-            "A phone card should feel " + mobile_feel + ". A player should see " + mobile_must_show + ".",
+            "On a phone, the card is " + mobile_feel + ". It shows " + mobile_must_show + ".",
             "",
             "### In Player Action Cards",
             "",
-            "The mini-game should appear as " + player_action_card_shape + ".",
+            "The player view combines " + player_action_card_shape + ".",
             "",
             "### In GM Cockpit",
             "",
-            "The GM should see " + gm_cockpit_shape + ".",
+            "The GM view combines " + gm_cockpit_shape + ".",
             "",
             "## Best-Case Pattern",
             "",
@@ -492,9 +551,9 @@ def render_minigames(spec: dict[str, Any]) -> str:
             "",
             mg["example_loop"],
             "",
-            "## What Good Looks Like",
+            "## Flagship Launch Bar",
             "",
-            "Call it ready only when:",
+            "A remote-reaction surface earns flagship status only when:",
             "",
             *numbered_lines(mg["flagship_bar"]),
         ]
@@ -516,29 +575,37 @@ def render_index_section(spec: dict[str, Any]) -> str:
     videos = [dict(item) for item in list(spec.get("public_videos") or []) if isinstance(item, dict)]
     gallery_lines: list[str] = []
     if visual_gallery:
-        gallery_lines.extend(["<div>", "  <p><strong>Visual notes</strong></p>"])
+        gallery_lines.extend(["<div>", "  <p><strong>Product scenes</strong></p>"])
         for item in visual_gallery:
             gallery_lines.extend(
                 [
                     "  <div>",
-                    f"    <p><img src=\"{item['image_output']}\" alt=\"{item['alt']}\" style=\"max-width:100%; height:auto;\"></p>",
-                    f"    <p><strong>{item['title']}</strong>: {item['caption']}</p>",
+                    f"    <p><img src=\"{escape(item['image_output'], quote=True)}\" alt=\"{escape(item['alt'], quote=True)}\" style=\"max-width:100%; height:auto;\"></p>",
+                    f"    <p><strong>{escape(item['title'])}</strong>: {escape(item['caption'])}</p>",
                     "  </div>",
                 ]
             )
         gallery_lines.append("</div>")
-    video_items = video_lines(videos)
+    video_items = verified_videos(videos)
     video_html: list[str] = []
     if video_items:
         video_html.extend(["<p><strong>Videos</strong></p>", "<ul>"])
         for item in video_items:
-            video_html.append(f"  <li>{item[2:]}</li>")
+            video_html.append(
+                "  <li>"
+                f"<a href=\"{escape(item['url'], quote=True)}\">{escape(item['title'])}</a>"
+                f" — {escape(item['note'])} "
+                f"<a href=\"{escape(item['caption_url'], quote=True)}\">Captions</a>."
+                "</li>"
+            )
         video_html.append("</ul>")
     surface_lines: list[str] = []
     if related_surfaces:
         surface_lines.extend(["<ul>"])
         for row in related_surfaces:
-            surface_lines.append(f"  <li><strong>{row['name']}</strong>: {row['connection']}</li>")
+            surface_lines.append(
+                f"  <li><strong>{escape(row['name'])}</strong>: {escape(row['connection'])}</li>"
+            )
         surface_lines.append("</ul>")
     return "\n".join(
         [
@@ -546,7 +613,7 @@ def render_index_section(spec: dict[str, Any]) -> str:
             "<h3>",
             "<a id=\"flagship-table-pulse-and-living-world\" class=\"anchor\" href=\"#flagship-table-pulse-and-living-world\" aria-hidden=\"true\"><span class=\"octicon octicon-link\"></span></a>Flagship Table Pulse and Living World</h3>",
             "",
-            f"<p>{spec['site_summary']}</p>",
+            f"<p>{escape(spec['site_summary'])}</p>",
             "",
             "<ul>",
             "  <li><a href=\"TABLE_PULSE_FLAGSHIP_SHOWCASE.md\">Table Pulse Flagship Showcase</a></li>",
@@ -554,13 +621,13 @@ def render_index_section(spec: dict[str, Any]) -> str:
             "</ul>",
             "",
             "<p>Use these notes when you want the larger table picture: player action cards, runner identity, GM steering, public-safe fallout, Origin Dossier, ALICE, and short reaction moments that keep the city moving without taking authority away from the GM.</p>",
-            f"<p><strong>{taxonomy.get('title', 'Product taxonomy')}</strong>: {taxonomy.get('summary', 'Base features and future expansion bets are separated so the public story stays readable.')}</p>",
+            f"<p><strong>{escape(str(taxonomy.get('title', 'Product taxonomy')))}</strong>: {escape(str(taxonomy.get('summary', 'Base features and future expansion bets are separated so the public story stays readable.')))}</p>",
             *gallery_lines,
             *video_html,
-            f"<p><strong>{media_posture.get('title', 'Video and narration')}</strong>: {media_posture.get('summary', 'Linked media should be authored, captioned, and grounded in product truth.')}</p>",
-            f"<p><strong>{release_posture.get('title', 'Downloads and support')}</strong>: {release_posture.get('summary', 'Distribution and support stay quiet, reliable, and separate from product horizons.')}</p>",
-            "<p><strong>Origin dossier and ALICE</strong> are now part of this public explanation layer because the flagship story no longer starts only with table heat.</p>",
-            f"<p><strong>{gm_cockpit.get('title', 'GM Cockpit')}</strong> keeps GM steering, allowances, mini-game adjudication, and public-safe fallout on one calm control surface.</p>",
+            f"<p><strong>{escape(str(media_posture.get('title', 'Video and narration')))}</strong>: {escape(str(media_posture.get('summary', 'Linked media should be authored, captioned, and grounded in product truth.')))}</p>",
+            f"<p><strong>{escape(str(release_posture.get('title', 'Downloads and support')))}</strong>: {escape(str(release_posture.get('summary', 'Distribution and support stay quiet, reliable, and separate from product horizons.')))}</p>",
+            "<p><strong>Origin Dossier and ALICE</strong> connect runner identity to grounded assistance while preserving player and GM authority.</p>",
+            f"<p><strong>{escape(str(gm_cockpit.get('title', 'GM Cockpit')))}</strong> keeps GM steering, allowances, mini-game adjudication, and public-safe fallout on one calm control surface.</p>",
             *surface_lines,
             INDEX_END,
         ]
@@ -578,12 +645,17 @@ def replace_between(text: str, start: str, end: str, replacement: str) -> str:
 
 def main() -> None:
     spec = json.loads(SPEC_PATH.read_text(encoding="utf-8"))
+    validate_spec(spec)
     spec["_synced_visual_gallery"] = sync_visual_gallery(spec)
-    SHOWCASE_PATH.write_text(render_showcase(spec), encoding="utf-8")
-    MINIGAMES_PATH.write_text(render_minigames(spec), encoding="utf-8")
+    showcase_text = render_showcase(spec)
+    minigames_text = render_minigames(spec)
+    replacement = render_index_section(spec)
+    validate_public_copy(showcase_text, minigames_text, replacement)
+
+    SHOWCASE_PATH.write_text(showcase_text, encoding="utf-8")
+    MINIGAMES_PATH.write_text(minigames_text, encoding="utf-8")
 
     index_text = INDEX_PATH.read_text(encoding="utf-8")
-    replacement = render_index_section(spec)
     INDEX_PATH.write_text(replace_between(index_text, INDEX_START, INDEX_END, replacement), encoding="utf-8")
 
     print(f"wrote {SHOWCASE_PATH}")

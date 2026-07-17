@@ -24,6 +24,15 @@ public interface IChummerClient
 
     Task<IReadOnlyList<WorkspaceListItem>> ListWorkspacesAsync(CancellationToken ct);
 
+    Task<CommandResult<WorkspaceDocumentSnapshot>> GetWorkspaceAsync(
+        CharacterWorkspaceId id,
+        CancellationToken ct)
+        => Task.FromResult(new CommandResult<WorkspaceDocumentSnapshot>(
+            false,
+            null,
+            "Revision-aware workspace reads are unavailable on this compatibility client.",
+            WorkspaceOperationOutcome.Unavailable));
+
     Task<AccountCampaignSummary?> GetAccountCampaignSummaryAsync(CancellationToken ct);
 
     Task<MyFirstBookQuotaSnapshotDto?> GetMyFirstBookQuotaAsync(CancellationToken ct);
@@ -39,6 +48,16 @@ public interface IChummerClient
     Task<DesktopInstallLinkingSummaryProjection> GetDesktopInstallLinkingSummaryAsync(CancellationToken ct);
 
     Task<bool> CloseWorkspaceAsync(CharacterWorkspaceId id, CancellationToken ct);
+
+    Task<CommandResult<WorkspaceRevisionReceipt>> CloseWorkspaceAsync(
+        CharacterWorkspaceId id,
+        long expectedContentRevision,
+        CancellationToken ct)
+        => Task.FromResult(new CommandResult<WorkspaceRevisionReceipt>(
+            false,
+            null,
+            "Revision-aware close is unavailable on this compatibility client.",
+            WorkspaceOperationOutcome.Unavailable));
 
     Task<IReadOnlyList<AppCommandDefinition>> GetCommandsAsync(string? rulesetId, CancellationToken ct);
 
@@ -81,7 +100,39 @@ public interface IChummerClient
         UpdateWorkspaceMetadata command,
         CancellationToken ct);
 
+    Task<CommandResult<WorkspaceMetadataResult>> UpdateMetadataAsync(
+        CharacterWorkspaceId id,
+        long expectedContentRevision,
+        UpdateWorkspaceMetadata command,
+        CancellationToken ct)
+        => Task.FromResult(new CommandResult<WorkspaceMetadataResult>(
+            false,
+            null,
+            "Revision-aware metadata update is unavailable on this compatibility client.",
+            WorkspaceOperationOutcome.Unavailable));
+
+    Task<CommandResult<WorkspaceRevisionReceipt>> ReplaceWorkspaceDocumentAsync(
+        CharacterWorkspaceId id,
+        long expectedContentRevision,
+        WorkspaceDocument document,
+        CancellationToken ct)
+        => Task.FromResult(new CommandResult<WorkspaceRevisionReceipt>(
+            false,
+            null,
+            "Revision-aware replacement is unavailable on this compatibility client.",
+            WorkspaceOperationOutcome.Unavailable));
+
     Task<CommandResult<WorkspaceSaveReceipt>> SaveAsync(CharacterWorkspaceId id, CancellationToken ct);
+
+    Task<CommandResult<WorkspaceSaveReceipt>> SaveAsync(
+        CharacterWorkspaceId id,
+        long expectedContentRevision,
+        CancellationToken ct)
+        => Task.FromResult(new CommandResult<WorkspaceSaveReceipt>(
+            false,
+            null,
+            "Revision-aware save is unavailable on this compatibility client.",
+            WorkspaceOperationOutcome.Unavailable));
 
     Task<CommandResult<WorkspaceDownloadReceipt>> DownloadAsync(CharacterWorkspaceId id, CancellationToken ct);
 

@@ -34,6 +34,43 @@ public sealed class WorkspacePersistenceService : IWorkspacePersistenceService
             Error: null);
     }
 
+    public async Task<WorkspaceMetadataUpdateResult> UpdateMetadataAsync(
+        IChummerClient client,
+        CharacterWorkspaceId workspaceId,
+        long expectedContentRevision,
+        UpdateWorkspaceMetadata command,
+        DesktopPreferenceState preferences,
+        CancellationToken ct)
+    {
+        string? normalizedNotes = string.IsNullOrWhiteSpace(command.Notes) ? null : command.Notes;
+        CommandResult<WorkspaceMetadataResult> result = await client.UpdateMetadataAsync(
+            workspaceId,
+            expectedContentRevision,
+            command,
+            ct);
+        if (!result.Success || result.Value is null)
+        {
+            return new WorkspaceMetadataUpdateResult(
+                Success: false,
+                Profile: null,
+                Preferences: preferences,
+                Error: result.Error ?? "Metadata update failed.",
+                Outcome: result.Outcome);
+        }
+
+        DesktopPreferenceState updatedPreferences = normalizedNotes is null
+            ? preferences
+            : preferences with { CharacterNotes = normalizedNotes };
+        return new WorkspaceMetadataUpdateResult(
+            Success: true,
+            Profile: result.Value.Profile,
+            Preferences: updatedPreferences,
+            Error: null,
+            ContentRevision: result.Value.ContentRevision,
+            SavedRevision: result.Value.SavedRevision,
+            Outcome: WorkspaceOperationOutcome.Success);
+    }
+
     public async Task<WorkspaceSaveResult> SaveAsync(
         IChummerClient client,
         CharacterWorkspaceId workspaceId,
@@ -50,6 +87,31 @@ public sealed class WorkspacePersistenceService : IWorkspacePersistenceService
         return new WorkspaceSaveResult(
             Success: true,
             Error: null);
+    }
+
+    public async Task<WorkspaceSaveResult> SaveAsync(
+        IChummerClient client,
+        CharacterWorkspaceId workspaceId,
+        long expectedContentRevision,
+        CancellationToken ct)
+    {
+        CommandResult<WorkspaceSaveReceipt> result = await client.SaveAsync(
+            workspaceId,
+            expectedContentRevision,
+            ct);
+        if (!result.Success || result.Value is null)
+        {
+            return new WorkspaceSaveResult(
+                Success: false,
+                Error: result.Error ?? "Save failed.",
+                Outcome: result.Outcome);
+        }
+
+        return new WorkspaceSaveResult(
+            Success: true,
+            Error: null,
+            Receipt: result.Value,
+            Outcome: WorkspaceOperationOutcome.Success);
     }
 
     public async Task<WorkspaceDownloadResult> DownloadAsync(

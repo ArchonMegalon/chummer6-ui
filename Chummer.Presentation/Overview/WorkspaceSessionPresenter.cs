@@ -7,6 +7,7 @@ public sealed class WorkspaceSessionPresenter : IWorkspaceSessionPresenter
 {
     private const int MaxRecentWorkspaceCount = 24;
     private readonly IWorkspaceSessionManager _manager;
+    private readonly Dictionary<string, OpenWorkspaceState> _closedWorkspaceCache = new(StringComparer.Ordinal);
 
     public WorkspaceSessionPresenter(IWorkspaceSessionManager? manager = null)
     {
@@ -17,7 +18,12 @@ public sealed class WorkspaceSessionPresenter : IWorkspaceSessionPresenter
 
     public WorkspaceSessionState Restore(IReadOnlyList<WorkspaceListItem> workspaces, CharacterWorkspaceId? activeWorkspaceId = null)
     {
-        IReadOnlyList<OpenWorkspaceState> openWorkspaces = _manager.Restore(workspaces);
+        IReadOnlyList<OpenWorkspaceState> openWorkspaces = _manager.Restore(workspaces)
+            .Select(MergeRetainedState)
+            .ToArray();
+        foreach (OpenWorkspaceState workspace in openWorkspaces)
+            _closedWorkspaceCache.Remove(workspace.Id.Value);
+
         CharacterWorkspaceId? activeWorkspace = ResolveActiveWorkspaceId(activeWorkspaceId, openWorkspaces);
 
         State = new WorkspaceSessionState(
@@ -34,7 +40,12 @@ public sealed class WorkspaceSessionPresenter : IWorkspaceSessionPresenter
 
     public WorkspaceSessionState Open(CharacterWorkspaceId id, CharacterProfileSection? profile, string? rulesetId)
     {
-        IReadOnlyList<OpenWorkspaceState> openWorkspaces = _manager.Activate(State.OpenWorkspaces, id, profile, rulesetId);
+        IReadOnlyList<OpenWorkspaceState> activationSource = State.OpenWorkspaces;
+        if (!Contains(activationSource, id) && _closedWorkspaceCache.TryGetValue(id.Value, out OpenWorkspaceState? retainedWorkspace))
+            activationSource = activationSource.Append(retainedWorkspace).ToArray();
+
+        IReadOnlyList<OpenWorkspaceState> openWorkspaces = _manager.Activate(activationSource, id, profile, rulesetId);
+        _closedWorkspaceCache.Remove(id.Value);
         State = State with
         {
             ActiveWorkspaceId = id,
@@ -68,6 +79,28 @@ public sealed class WorkspaceSessionPresenter : IWorkspaceSessionPresenter
 
     public WorkspaceSessionState Close(CharacterWorkspaceId id)
     {
+        OpenWorkspaceState? closingWorkspace = State.FindWorkspace(id);
+        if (closingWorkspace is not null)
+            CacheClosedWorkspace(closingWorkspace);
+
+        return RemoveOpenWorkspace(id);
+    }
+
+    public WorkspaceSessionState Forget(CharacterWorkspaceId id)
+    {
+        _closedWorkspaceCache.Remove(id.Value);
+        RemoveOpenWorkspace(id);
+        State = State with
+        {
+            RecentWorkspaceIds = State.RecentWorkspaceIds
+                .Where(workspaceId => !WorkspaceIdsEqual(workspaceId, id))
+                .ToArray()
+        };
+        return State;
+    }
+
+    private WorkspaceSessionState RemoveOpenWorkspace(CharacterWorkspaceId id)
+    {
         bool closedActiveWorkspace = State.ActiveWorkspaceId is { } activeWorkspace
             && WorkspaceIdsEqual(activeWorkspace, id);
         IReadOnlyList<OpenWorkspaceState> remaining = _manager.Close(State.OpenWorkspaces, id);
@@ -95,6 +128,9 @@ public sealed class WorkspaceSessionPresenter : IWorkspaceSessionPresenter
 
     public WorkspaceSessionState CloseAll()
     {
+        foreach (OpenWorkspaceState workspace in State.OpenWorkspaces)
+            CacheClosedWorkspace(workspace);
+
         State = State with
         {
             ActiveWorkspaceId = null,
@@ -103,24 +139,106 @@ public sealed class WorkspaceSessionPresenter : IWorkspaceSessionPresenter
         return State;
     }
 
+    public WorkspaceSessionState SetRevisions(
+        CharacterWorkspaceId id,
+        long contentRevision,
+        long savedRevision,
+        bool clearConflict = true)
+    {
+        ValidateRevisions(contentRevision, savedRevision);
+        return UpdateWorkspace(
+            id,
+            workspace => workspace with
+            {
+                ContentRevision = contentRevision,
+                SavedRevision = savedRevision,
+                ConflictState = clearConflict ? null : workspace.ConflictState
+            });
+    }
+
+    public WorkspaceSessionState SetConflictState(CharacterWorkspaceId id, WorkspaceConflictState? conflictState)
+    {
+        return UpdateWorkspace(id, workspace => workspace with { ConflictState = conflictState });
+    }
+
+    [Obsolete("Use SetRevisions. HasSavedWorkspace is derived from SavedRevision.")]
     public WorkspaceSessionState SetSavedStatus(CharacterWorkspaceId id, bool hasSavedWorkspace)
     {
-        OpenWorkspaceState[] updated = State.OpenWorkspaces
-            .Select(workspace => WorkspaceIdsEqual(workspace.Id, id)
-                ? workspace with { HasSavedWorkspace = hasSavedWorkspace }
-                : workspace)
-            .ToArray();
-
-        State = State with
-        {
-            OpenWorkspaces = updated
-        };
-        return State;
+        return UpdateWorkspace(
+            id,
+            workspace =>
+            {
+                long contentRevision = Math.Max(workspace.ContentRevision, 1);
+                return workspace with
+                {
+                    ContentRevision = contentRevision,
+                    SavedRevision = hasSavedWorkspace ? contentRevision : 0,
+                    ConflictState = null
+                };
+            });
     }
 
     public bool Contains(CharacterWorkspaceId id)
     {
         return Contains(State.OpenWorkspaces, id);
+    }
+
+    private OpenWorkspaceState MergeRetainedState(OpenWorkspaceState restoredWorkspace)
+    {
+        OpenWorkspaceState? retainedWorkspace = State.FindWorkspace(restoredWorkspace.Id);
+        if (retainedWorkspace is null)
+            _closedWorkspaceCache.TryGetValue(restoredWorkspace.Id.Value, out retainedWorkspace);
+        if (retainedWorkspace is null)
+            return restoredWorkspace;
+
+        bool restoredRevisionIsKnown = restoredWorkspace.ContentRevision > 0 || restoredWorkspace.SavedRevision > 0;
+        return restoredWorkspace with
+        {
+            ContentRevision = restoredRevisionIsKnown
+                ? restoredWorkspace.ContentRevision
+                : retainedWorkspace.ContentRevision,
+            SavedRevision = restoredRevisionIsKnown
+                ? restoredWorkspace.SavedRevision
+                : retainedWorkspace.SavedRevision,
+            ConflictState = retainedWorkspace.ConflictState
+        };
+    }
+
+    private WorkspaceSessionState UpdateWorkspace(
+        CharacterWorkspaceId id,
+        Func<OpenWorkspaceState, OpenWorkspaceState> update)
+    {
+        OpenWorkspaceState[] updated = State.OpenWorkspaces
+            .Select(workspace => WorkspaceIdsEqual(workspace.Id, id) ? update(workspace) : workspace)
+            .ToArray();
+
+        if (_closedWorkspaceCache.TryGetValue(id.Value, out OpenWorkspaceState? retainedWorkspace))
+            _closedWorkspaceCache[id.Value] = update(retainedWorkspace);
+
+        State = State with { OpenWorkspaces = updated };
+        return State;
+    }
+
+    private void CacheClosedWorkspace(OpenWorkspaceState workspace)
+    {
+        _closedWorkspaceCache[workspace.Id.Value] = workspace;
+        if (_closedWorkspaceCache.Count <= MaxRecentWorkspaceCount)
+            return;
+
+        OpenWorkspaceState oldestWorkspace = _closedWorkspaceCache.Values
+            .OrderBy(candidate => candidate.LastOpenedUtc)
+            .First();
+        _closedWorkspaceCache.Remove(oldestWorkspace.Id.Value);
+    }
+
+    private static void ValidateRevisions(long contentRevision, long savedRevision)
+    {
+        if (contentRevision < 0)
+            throw new ArgumentOutOfRangeException(nameof(contentRevision), "Content revision cannot be negative.");
+        if (savedRevision < 0)
+            throw new ArgumentOutOfRangeException(nameof(savedRevision), "Saved revision cannot be negative.");
+        if (savedRevision > contentRevision)
+            throw new ArgumentException("Saved revision cannot be newer than content revision.", nameof(savedRevision));
     }
 
     private static IReadOnlyList<CharacterWorkspaceId> TouchRecent(

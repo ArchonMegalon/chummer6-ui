@@ -1,4 +1,5 @@
 using Chummer.Api.Endpoints;
+using Chummer.Api.Health;
 using Chummer.Api.Owners;
 using Chummer.Application.Owners;
 using Chummer.Contracts.Owners;
@@ -7,11 +8,20 @@ using Chummer.Infrastructure.DependencyInjection;
 using Chummer.Presentation;
 using Chummer.Rulesets.Sr4;
 using Chummer.Rulesets.Sr6;
+using Microsoft.Extensions.Configuration;
+using System.Text;
 
 WebApplicationBuilder builder = WebApplication.CreateBuilder(args);
+builder.Configuration.AddKeyPerFile(
+    directoryPath: "/run/secrets/chummer-config",
+    optional: true,
+    reloadOnChange: false);
 string contentRoot = ResolveContentRoot();
+string? portalOwnerSharedKey = ResolvePortalOwnerSharedKey(builder.Configuration);
+ValidatePortalOwnerSharedKey(portalOwnerSharedKey, builder.Environment);
 
 builder.Services.AddRouting();
+builder.Services.AddSingleton<StateVolumeReadinessProbe>();
 builder.Services.AddHttpContextAccessor();
 builder.Services.AddChummerHeadlessCore(
     contentRoot,
@@ -24,7 +34,7 @@ builder.Services.AddSingleton<IOwnerContextAccessor>(_ =>
         new HttpContextAccessor(),
         allowOwnerHeader: ResolveBooleanEnvironmentVariable("CHUMMER_ALLOW_OWNER_HEADER"),
         headerName: Environment.GetEnvironmentVariable("CHUMMER_OWNER_HEADER_NAME") ?? "X-Chummer-Owner",
-        portalOwnerSharedKey: ResolvePortalOwnerSharedKey(),
+        portalOwnerSharedKey: portalOwnerSharedKey,
         portalOwnerMaxAgeSeconds: ResolvePortalOwnerMaxAgeSeconds()));
 builder.Services.AddSingleton<IChummerClient, InProcessChummerClient>();
 
@@ -32,9 +42,9 @@ WebApplication app = builder.Build();
 
 app.UseRouting();
 
-// Treat X-Api-Key mode as local/dev/ops or private-upstream protection.
-// Hosted/public deployments should expose Chummer.Portal as the public edge and keep Chummer.Api private behind signed portal-owner propagation.
-// Neither CHUMMER_API_KEY nor CHUMMER_PORTAL_OWNER_SHARED_KEY is configured.
+// CHUMMER_API_KEY is not an authentication boundary for this process. Hosted
+// deployments must keep Chummer.Api private and reach it only through the
+// public edge with the production-required signed owner-propagation secret.
 app.MapInfoEndpoints();
 app.MapCommandEndpoints();
 app.MapNavigationEndpoints();
@@ -51,8 +61,22 @@ static bool ResolveBooleanEnvironmentVariable(string variableName)
     return bool.TryParse(raw, out bool parsed) && parsed;
 }
 
-static string? ResolvePortalOwnerSharedKey()
-    => Environment.GetEnvironmentVariable(PortalOwnerPropagationContract.SharedKeyEnvironmentVariable);
+static string? ResolvePortalOwnerSharedKey(IConfiguration configuration)
+    => configuration[PortalOwnerPropagationContract.SharedKeyEnvironmentVariable];
+
+static void ValidatePortalOwnerSharedKey(string? key, IHostEnvironment environment)
+{
+    if (!environment.IsProduction())
+        return;
+
+    string normalized = key?.Trim() ?? string.Empty;
+    if (Encoding.UTF8.GetByteCount(normalized) < 32
+        || string.Equals(normalized, "local-self-hosted-portal-shared-key", StringComparison.Ordinal))
+    {
+        throw new InvalidOperationException(
+            $"Production requires {PortalOwnerPropagationContract.SharedKeyEnvironmentVariable} with at least 32 UTF-8 bytes of externally generated secret material.");
+    }
+}
 
 static int ResolvePortalOwnerMaxAgeSeconds()
 {

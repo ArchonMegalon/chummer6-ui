@@ -10,6 +10,7 @@ using System.Text.Json;
 using System.Threading;
 using System.Threading.Tasks;
 using Chummer.Application.Owners;
+using Chummer.Application.Workspaces;
 using Chummer.Contracts.Characters;
 using Chummer.Contracts.Owners;
 using Chummer.Contracts.Presentation;
@@ -48,11 +49,15 @@ public class ServiceCollectionDesktopRuntimeExtensionsTests
                     ISessionClient sessionClient = provider.GetRequiredService<ISessionClient>();
                     IOwnerContextAccessor ownerContextAccessor = provider.GetRequiredService<IOwnerContextAccessor>();
                     IDesktopWorkspaceRoamingSync roamingSync = provider.GetRequiredService<IDesktopWorkspaceRoamingSync>();
+                    IWorkspaceStore workspaceStore = provider.GetRequiredService<IWorkspaceStore>();
+                    IWorkspaceStoreReadinessProbe workspaceReadiness =
+                        provider.GetRequiredService<IWorkspaceStoreReadinessProbe>();
                     IReadOnlyList<IRulesetPlugin> plugins = provider.GetServices<IRulesetPlugin>().ToArray();
 
                     Assert.IsInstanceOfType<InProcessChummerClient>(client);
                     Assert.IsInstanceOfType<InProcessSessionClient>(sessionClient);
                     Assert.IsInstanceOfType<NoOpDesktopWorkspaceRoamingSync>(roamingSync);
+                    Assert.IsTrue(ReferenceEquals(workspaceStore, workspaceReadiness));
                     Assert.AreEqual(OwnerScope.LocalSingleUser.NormalizedValue, ownerContextAccessor.Current.NormalizedValue);
                     Assert.IsTrue(plugins.Any(plugin => string.Equals(plugin.Id.NormalizedValue, RulesetDefaults.Sr4, StringComparison.Ordinal)));
                     Assert.IsTrue(plugins.Any(plugin => string.Equals(plugin.Id.NormalizedValue, RulesetDefaults.Sr5, StringComparison.Ordinal)));

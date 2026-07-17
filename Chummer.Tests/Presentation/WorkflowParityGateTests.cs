@@ -778,7 +778,6 @@ public sealed class WorkflowParityGateTests
             Preferences = DesktopPreferenceState.Default,
             Commands = commands,
             NavigationTabs = tabs,
-            HasSavedWorkspace = true,
             LastCommandId = string.Equals(dialog.Id, "dialog.new_character", StringComparison.Ordinal) ? "new_character" : null
         };
 
